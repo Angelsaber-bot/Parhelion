@@ -98,6 +98,13 @@ $('play').onclick = async () => {
     $('lobby').classList.add('hidden');
     hud.show(true);
     game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason));
+    game.onEnded = (title) => {
+      $('endtitle').textContent = title;
+      $('pause').classList.add('hidden');
+      $('endcard').classList.remove('hidden');
+      if (document.pointerLockElement) document.exitPointerLock();
+    };
+    game.onRestart = () => { $('endcard').classList.add('hidden'); controls.lock(); };
     (window as unknown as { game: unknown; session: unknown }).game = game;
     (window as unknown as { session: unknown }).session = session;
     controls.lock();
@@ -112,17 +119,22 @@ function backToLobby(reason: string) {
   game = null;
   hud.show(false);
   $('pause').classList.add('hidden');
+  $('endcard').classList.add('hidden');
   $('lobby').classList.remove('hidden');
   if (document.pointerLockElement) document.exitPointerLock();
   if (reason) showError(reason);
 }
 
 controls.onLockChange = (locked) => {
-  if (!game) return;
+  if (!game || game.ended) return;
   $('pause').classList.toggle('hidden', locked);
+  // offline: Esc freezes everything (bots, bullets, clock, effects); online the server keeps going
+  game.setPaused(!locked && !game.online);
 };
 $('resume').onclick = () => controls.lock();
-canvas.addEventListener('click', () => { if (game && !controls.locked) controls.lock(); });
+canvas.addEventListener('click', () => { if (game && !game.ended && !controls.locked) controls.lock(); });
+$('rematch').onclick = () => game?.rematch();
+$('endleave').onclick = () => game?.stop();
 $('leave').onclick = () => game?.stop();
 
 // idle render behind the lobby

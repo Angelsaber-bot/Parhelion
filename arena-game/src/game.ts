@@ -33,6 +33,12 @@ export class Game {
   private names = new Map<string, PlayerSnap>();
   private readonly map: ArenaMap;
   private feel = new Feel();
+  /** Frozen: no input, no simulation (offline), no animation, effects or render clock. */
+  paused = false;
+  /** Results screen is up (match ended, waiting for 再来一局 / 返回大厅). */
+  ended = false;
+  onEnded: (title: string) => void = () => {};
+  onRestart: () => void = () => {};
   private streak = 0;
   private lastLook = [0, 0];
 
@@ -128,12 +134,18 @@ export class Game {
       case 'shieldUp': sfx.shield(); break;
       case 'shieldBreak': sfx.shieldBreak(); break;
       case 'phase':
-        if (e.phase === 'countdown') this.hud.announce('准备', 2);
+        if (e.phase === 'countdown') {
+          this.hud.announce('准备', 2);
+          if (this.ended) { this.ended = false; this.onRestart(); }
+        }
         if (e.phase === 'live') this.hud.announce('开战！', 1.5);
         if (e.phase === 'waiting') this.hud.announce('等待对手加入', 2);
         if (e.phase === 'ended') {
           const mine = this.names.get(myId);
-          this.hud.announce(e.winner === 'draw' ? '平局' : e.winner === mine?.team ? '胜利' : '失败', 5);
+          const title = e.winner === 'draw' ? '平局' : e.winner === mine?.team ? '胜利' : '失败';
+          this.hud.announce(title, 3);
+          this.ended = true;
+          this.onEnded(title);
         }
         break;
       case 'fx':
@@ -144,12 +156,31 @@ export class Game {
 
   // ---------- loop ----------
 
+  get online() { return this.session.online; }
+
+  setPaused(p: boolean) {
+    if (this.paused === p) return;
+    this.paused = p;
+    this.session.setPaused(p);
+    this.acc = 0;
+  }
+
+  /** From the results screen: start the next match. */
+  rematch() {
+    this.session.rematch();
+  }
+
   private frame(t: number) {
     if (!this.running) return;
     this.raf = requestAnimationFrame((tt) => this.frame(tt));
     const real = Math.max(0, (t - this.last) / 1000);
     const dt = Math.min(0.1, real);
     this.last = t;
+    if (this.paused) {
+      // keep the last frame on screen; nothing moves, nothing ticks
+      this.scene.render(!!this.me?.alive);
+      return;
+    }
 
     this.acc = Math.min(this.acc + dt, DT * 6);
     while (this.acc >= DT) {

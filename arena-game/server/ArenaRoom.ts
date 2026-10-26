@@ -25,6 +25,7 @@ export class ArenaRoom extends Room {
     const cap = TEAM_CAPACITY[layout];
     this.maxClients = cap.A + cap.B;
     this.setMetadata({ layout, map });
+    this.onMessage('rematch', () => this.match.rematch());
     this.onMessage('input', (client: Client, inputs: unknown) => {
       if (Array.isArray(inputs)) this.match.queueInputs(client.sessionId, inputs.slice(0, 16));
     });

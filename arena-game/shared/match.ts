@@ -82,6 +82,8 @@ const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a sta
 export class Match {
   tick = 0;
   phase: Phase = 'waiting';
+  /** After a match ends: false (default) holds on the results until rematch(); true restarts by itself. */
+  autoRestart = false;
   phaseT = 0;
   score: Record<Team, number> = { A: 0, B: 0 };
   shields: Shield[] = [];
@@ -191,14 +193,19 @@ export class Match {
         const limit = SCORE_LIMIT[this.layout];
         if (--this.phaseT <= 0 || this.score.A >= limit || this.score.B >= limit) {
           const w = this.score.A === this.score.B ? 'draw' : this.score.A > this.score.B ? 'A' : 'B';
-          this.setPhase('ended', END_TICKS, w);
+          this.setPhase('ended', this.autoRestart ? END_TICKS : 0, w);
         }
         break;
       }
       case 'ended':
-        if (--this.phaseT <= 0) this.setPhase('countdown', COUNTDOWN_TICKS);
+        if (this.autoRestart && --this.phaseT <= 0) this.setPhase('countdown', COUNTDOWN_TICKS);
         break;
     }
+  }
+
+  /** Start the next match from the results screen (a player chose 再来一局). */
+  rematch(): void {
+    if (this.phase === 'ended') this.setPhase('countdown', COUNTDOWN_TICKS);
   }
 
   private setPhase(phase: Phase, ticks: number, winner?: Team | 'draw'): void {

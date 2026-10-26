@@ -18,6 +18,10 @@ export interface Session {
   onSnapshot: (s: Snapshot) => void;
   onClose: (reason: string) => void;
   close(): void;
+  /** Ask for the next match after the results screen. */
+  rematch(): void;
+  /** Freeze the whole match (offline only; an online server keeps running). */
+  setPaused(paused: boolean): void;
   /** Offline only: the in-browser authoritative match (debug/testing). */
   match?: Match;
 }
@@ -33,6 +37,8 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     onSnapshot: () => {},
     onClose: () => {},
     close: () => { void room.leave(); },
+    rematch: () => room.send('rematch', true),
+    setPaused: () => {},
   };
   room.onMessage('snap', (snap: Snapshot) => s.onSnapshot(snap));
   room.onMessage('welcome', () => {});
@@ -53,7 +59,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
       match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
-  let last = performance.now(), acc = 0;
+  let last = performance.now(), acc = 0, paused = false;
   const s: Session = {
     id,
     online: false,
@@ -62,9 +68,12 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
     onSnapshot: () => {},
     onClose: () => {},
     close: () => clearInterval(timer),
+    rematch: () => match.rematch(),
+    setPaused: (p) => { paused = p; last = performance.now(); acc = 0; },
     match,
   };
   const timer = setInterval(() => {
+    if (paused) return;
     const now = performance.now();
     acc = Math.min(acc + (now - last) / 1000, 0.25);
     last = now;

@@ -20,6 +20,7 @@ export interface JoinOptions {
 
 export interface ClientMessages {
   input: Input[];
+  rematch: true;
 }
 
 export interface ServerMessages {

@@ -127,3 +127,6 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 #scoreboard i { font-size: 10px; color: #a9bac2; font-style: normal; }
 @media (max-width: 700px) { #scoreboard { flex-direction: column; } #hpbar { width: 140px; } }
 @media (prefers-reduced-motion: reduce) { .card.lobby, h1, button.primary::after { animation: none !important; } }
+
+#endcard { background: #07122a66; align-items: flex-end; padding-bottom: 8vh; }
+#endcard h2 { font-size: 34px; letter-spacing: 6px; }

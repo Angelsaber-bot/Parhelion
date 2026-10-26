@@ -146,3 +146,18 @@ describe('nav', () => {
     expect(nav.path(a, deck)).not.toBeNull();
   });
 });
+
+describe('match end', () => {
+  it('holds on the results until rematch(), then counts down again', () => {
+    const match = new Match(m, '1v1');
+    match.addPlayer('a', { name: 'a', team: 'A', char: 0, skins: [], bot: true }, new Bot(1, BOT_SKILL.hard));
+    match.addPlayer('b', { name: 'b', team: 'B', char: 0, skins: [], bot: true }, new Bot(2, BOT_SKILL.hard));
+    let t = 0;
+    while (match.phase !== 'ended' && t++ < 400 * TICK_HZ) match.step();
+    expect(match.phase).toBe('ended');
+    for (let i = 0; i < 30 * TICK_HZ; i++) match.step();
+    expect(match.phase).toBe('ended'); // no automatic next match
+    match.rematch();
+    expect(match.phase).toBe('countdown');
+  }, 60000);
+});

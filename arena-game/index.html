@@ -43,9 +43,19 @@
   <div id="pause" class="overlay hidden">
     <div class="card small">
       <h2>已暂停</h2>
-      <p class="muted">对局仍在继续（服务器权威）。</p>
+      <p class="muted" id="pausenote">单机对局已完全暂停；联机对局在服务器上仍会继续。</p>
       <button id="resume" class="primary">继续</button>
       <button id="leave">退出到大厅</button>
+    </div>
+  </div>
+
+  <div id="endcard" class="overlay hidden">
+    <div class="card small">
+      <div class="eyebrow">MATCH OVER</div>
+      <h2 id="endtitle">胜利</h2>
+      <p class="muted">按 Tab 可查看计分板。</p>
+      <button id="rematch" class="primary">再来一局</button>
+      <button id="endleave">返回大厅</button>
     </div>
   </div>
 
