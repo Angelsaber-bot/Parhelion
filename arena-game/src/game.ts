@@ -266,6 +266,7 @@ export class Game {
       ids.add(r.snap.id);
       this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
     }
+    this.scene.endAvatars();
     this.scene.pruneAvatars(ids);
     if (this.latest) this.scene.syncShields(this.latest.shields);
 

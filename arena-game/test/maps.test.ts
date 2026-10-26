@@ -147,3 +147,23 @@ describe('map sakura specifics', () => {
     expect(lineOfSight(m, [-20, m.eye, 0], [20, m.eye, 0])).toBe(false);
   });
 });
+
+describe('map neon specifics', () => {
+  const m = getMap('neon');
+  const nav = new NavGrid(m);
+  it('spawns are in opposite corners and the gantry deck is reachable from both', () => {
+    const sp = m.data.anchors.filter((a) => a.kind === 'spawn');
+    for (const a of sp) expect(Math.abs(a.position[0]) > 20 && Math.abs(a.position[2]) > 20, a.id).toBe(true);
+    const deck = nav.nearest(0, 5.2, 0)!;
+    expect(deck.y).toBeCloseTo(5.2, 1);
+    for (const a of sp) expect(nav.path(nav.nearest(a.position[0], 0, a.position[2])!, deck), a.id).not.toBeNull();
+  });
+  it('is a maze: no clear ground sightline across the yard through the centre', () => {
+    for (const [a, b] of [[[-20, 0, 0], [20, 0, 0]], [[0, 0, -20], [0, 0, 20]], [[-18, 0, 18], [18, 0, -18]]] as Vec3[][]) {
+      expect(lineOfSight(m, [a[0], m.eye, a[2]], [b[0], m.eye, b[2]])).toBe(false);
+    }
+  });
+  it('anyone right under the deck is hidden from the deck', () => {
+    expect(lineOfSight(m, [0, 5.2 + m.eye, 0], [0, 1.1, 0])).toBe(false);
+  });
+});

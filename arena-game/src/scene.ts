@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
+import neonGlb from '../../arena-maps/neon/assets/neon_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
@@ -14,9 +15,11 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
+import { buildFighter, FighterAnimator } from './fighter.ts';
+import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -44,6 +47,7 @@ export class ArenaScene {
   private sun: THREE.DirectionalLight;
   private composer: EffectComposer | null = null;
   private bloom: UnrealBloomPass | null = null;
+  private outline: OutlinePass | null = null;
   private particles: Particles | null = null;
   private atmo: Atmosphere = atmosphereFor('day');
 
@@ -84,8 +88,12 @@ export class ArenaScene {
 
     if (quality === 'high') {
       // bloom makes emissive trims, lanterns and neon glow; the viewmodel is drawn after it, unbloomed
-      this.composer = new EffectComposer(r);
+      // the composer's targets carry a depth texture so the outline pass can read scene depth
+      const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(1, 1) });
+      this.composer = new EffectComposer(r, rt);
       this.composer.addPass(new RenderPass(s, this.camera));
+      this.outline = new OutlinePass(this.camera);
+      this.composer.addPass(this.outline);
       this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.82);
       this.composer.addPass(this.bloom);
       this.composer.addPass(new OutputPass());
@@ -116,7 +124,7 @@ export class ArenaScene {
     u.uHorizon.value = lin(a.sky.horizon); u.uMid.value = lin(a.sky.mid); u.uTop.value = lin(a.sky.top);
     u.uSun.value = lin(a.sky.sun); u.uCloudLit.value = lin(a.sky.cloudLit); u.uCloudShade.value = lin(a.sky.cloudShade);
     u.uNight.value = a.sky.night;
-    if (this.bloom) this.bloom.strength = a.bloom;
+    if (this.bloom) { this.bloom.strength = a.bloom; this.bloom.threshold = a.bloomThreshold; }
     if (this.particles) { this.particles.dispose(s); this.particles = null; }
     if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
     this.renderer.shadowMap.needsUpdate = true;
@@ -234,12 +242,18 @@ export class ArenaScene {
     }
     a.root.visible = p.alive;
     a.setAlly(ally);
+    const now = performance.now() / 1000;
+    a.animate(pos, Math.min(0.1, now - this.lastAnim));
     a.root.position.set(pos[0], pos[1], pos[2]);
     a.root.rotation.y = yaw;
     a.aim.rotation.x = pitch;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     a.setHp(p.hp / CHARACTERS[p.char].hp, p.name);
   }
+
+  private lastAnim = performance.now() / 1000;
+  /** Call once per frame after all syncAvatar calls. */
+  endAvatars() { this.lastAnim = performance.now() / 1000; }
 
   pruneAvatars(ids: Set<string>) {
     for (const [id, a] of this.avatars) if (!ids.has(id)) { a.dispose(this.scene); this.avatars.delete(id); }
@@ -325,7 +339,7 @@ export class ArenaScene {
   render(showViewmodel: boolean) {
     const r = this.renderer;
     r.clear();
-    if (this.composer && this.atmo.bloom > 0) this.composer.render();
+    if (this.composer) this.composer.render();
     else r.render(this.scene, this.camera);
     if (showViewmodel) {
       r.clearDepth();
@@ -350,30 +364,57 @@ export function buildGun(weapon: number, skin: number): { group: THREE.Group; mu
     g.add(mesh);
     return mesh;
   };
+  const cyl = (r: number, l: number, m: THREE.Material, x = 0, y = 0, z = 0, seg = 12) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, seg), m);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.set(x, y, z);
+    g.add(mesh);
+    return mesh;
+  };
+  const metal = toon(0x3a4250), glow = toon(s.accent, s.accent);
   let len: number;
-  if (weapon === 0) { // compact AR
-    box(0.07, 0.09, 0.42, body);
-    box(0.072, 0.02, 0.3, accent, 0, 0.055, -0.02);
-    box(0.05, 0.12, 0.06, dark, 0, -0.1, 0.06);
-    box(0.045, 0.1, 0.05, dark, 0, -0.09, -0.08).rotation.x = 0.25;
-    box(0.04, 0.04, 0.2, body, 0, 0, -0.3);
-    box(0.06, 0.08, 0.16, body, 0, -0.01, 0.27);
-    len = 0.42;
-  } else if (weapon === 1) { // chunky shotgun
-    box(0.09, 0.11, 0.48, body);
-    box(0.06, 0.06, 0.32, dark, 0, -0.07, -0.08);
-    box(0.092, 0.025, 0.4, accent, 0, 0.065, 0);
+  if (weapon === 0) { // Lumen AR: bullpup-ish carbine, rail, red-dot, glowing energy strip
+    box(0.068, 0.09, 0.4, body);
+    box(0.07, 0.022, 0.28, accent, 0, 0.056, -0.02);
+    box(0.05, 0.12, 0.06, dark, 0, -0.1, 0.07);                 // grip
+    box(0.045, 0.13, 0.07, metal, 0, -0.1, -0.05).rotation.x = 0.18; // magazine
+    box(0.074, 0.03, 0.18, dark, 0, -0.035, -0.22);             // handguard
+    cyl(0.017, 0.2, metal, 0, 0.005, -0.33);                    // barrel
+    cyl(0.025, 0.05, dark, 0, 0.005, -0.43);                    // flash hider
+    box(0.06, 0.08, 0.16, body, 0, -0.012, 0.27);               // stock
+    box(0.064, 0.02, 0.05, dark, 0, 0.012, 0.34);
+    box(0.03, 0.035, 0.06, dark, 0, 0.085, 0.02);               // red-dot housing
+    box(0.022, 0.022, 0.004, glow, 0, 0.088, -0.012);
+    box(0.072, 0.008, 0.12, glow, 0, 0.0, -0.14);               // energy strip
+    len = 0.46;
+  } else if (weapon === 1) { // Corona SG: wide twin-tube shotgun with a pump and a shell rack
+    box(0.09, 0.105, 0.42, body);
+    cyl(0.026, 0.42, metal, -0.022, 0.02, -0.27);
+    cyl(0.026, 0.42, metal, 0.022, 0.02, -0.27);
+    box(0.1, 0.07, 0.16, dark, 0, -0.045, -0.22);               // pump
+    for (let i = 0; i < 4; i++) box(0.102, 0.012, 0.012, glow, 0, -0.045, -0.28 + i * 0.04);
+    box(0.092, 0.024, 0.36, accent, 0, 0.064, 0.02);
     box(0.05, 0.12, 0.06, dark, 0, -0.11, 0.12);
-    box(0.08, 0.1, 0.2, body, 0, -0.02, 0.32);
-    len = 0.26;
-  } else { // long DMR with scope
-    box(0.06, 0.08, 0.6, body);
-    box(0.035, 0.035, 0.26, body, 0, 0, -0.42);
-    box(0.05, 0.05, 0.2, dark, 0, 0.075, 0);
-    box(0.062, 0.015, 0.5, accent, 0, -0.045, 0);
+    box(0.082, 0.1, 0.2, body, 0, -0.02, 0.32);
+    for (let i = 0; i < 4; i++) cyl(0.011, 0.05, toon(0xe0524a), 0.05, -0.01, 0.03 + i * 0.03, 8).rotation.set(0, 0, Math.PI / 2);
+    len = 0.48;
+  } else { // Halo DMR: long rifle, ringed scope, fluted barrel, halo emblem
+    box(0.058, 0.08, 0.5, body);
+    cyl(0.016, 0.34, metal, 0, 0.005, -0.42);
+    for (let i = 0; i < 3; i++) cyl(0.021, 0.02, dark, 0, 0.005, -0.32 - i * 0.07);
+    cyl(0.017, 0.17, dark, 0, 0.07, -0.02);                    // scope tube
+    cyl(0.022, 0.025, dark, 0, 0.07, -0.1);
+    cyl(0.022, 0.025, dark, 0, 0.07, 0.06);
+    cyl(0.016, 0.005, glow, 0, 0.07, -0.115);                  // lens glint
+    box(0.06, 0.014, 0.44, accent, 0, -0.046, -0.02);
     box(0.045, 0.12, 0.05, dark, 0, -0.1, 0.08);
-    box(0.06, 0.1, 0.18, body, 0, -0.02, 0.36);
-    len = 0.55;
+    box(0.04, 0.09, 0.05, metal, 0, -0.085, -0.04);
+    box(0.06, 0.1, 0.2, body, 0, -0.02, 0.34);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 6, 20), glow);
+    halo.position.set(0.031, 0, 0.12);
+    halo.rotation.y = Math.PI / 2;
+    g.add(halo);
+    len = 0.6;
   }
   const muzzle = new THREE.Object3D();
   muzzle.position.set(0, 0, -len);
@@ -480,7 +521,7 @@ export class Viewmodel {
 
 class Avatar {
   readonly root = new THREE.Group();
-  readonly aim = new THREE.Group();
+  readonly aim: THREE.Group;
   muzzle = new THREE.Object3D();
   readonly char: number;
   readonly team: Team;
@@ -489,53 +530,21 @@ class Avatar {
   private plate: THREE.Sprite;
   private plateCtx: CanvasRenderingContext2D;
   private plateKey = '';
+  private anim: FighterAnimator;
+  private last: Vec3 | null = null;
+  private speed = 0;
+  private vy = 0;
 
   constructor(p: PlayerSnap) {
     this.char = p.char;
     this.team = p.team;
     const teamCol = TEAM_COLOR[p.team];
-    const suit = toon(p.char === 0 ? 0xeef2f6 : 0x2c3442);
-    const trim = toon(teamCol, teamCol);
-    const skin = toon(0xffe1d0);
-    const hair = toon(p.char === 0 ? 0x9fd8ff : 0xffb347);
+    const rig = buildFighter(p.char, teamCol);
+    this.aim = rig.aim;
+    this.anim = new FighterAnimator(rig);
+    this.root.add(rig.root);
 
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.6, 4, 12), suit);
-    body.position.y = 0.95;
-    const belt = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.035, 6, 20), trim);
-    belt.rotation.x = Math.PI / 2;
-    belt.position.y = 0.82;
-    const legs = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.35, 4, 10), suit);
-    legs.position.y = 0.4;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 14), skin);
-    head.position.y = 1.6;
-    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.215, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
-    hairCap.position.y = 1.62;
-    hairCap.rotation.x = -0.25;
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.05), trim);
-    visor.position.set(0, 1.62, -0.19);
-    this.root.add(body, belt, legs, head, hairCap, visor);
-
-    if (p.char === 0) {
-      // Aster: floating parhelion halo
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.018, 6, 28), toon(0xfff2b0, 0xffe58a));
-      halo.rotation.x = Math.PI / 2;
-      halo.position.y = 1.95;
-      this.root.add(halo);
-    } else {
-      // Vega: twin ear fins and a ponytail
-      for (const sx of [-1, 1]) {
-        const fin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 4), trim);
-        fin.position.set(sx * 0.18, 1.78, 0.02);
-        fin.rotation.z = -sx * 0.5;
-        this.root.add(fin);
-      }
-      const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.3, 4, 8), hair);
-      tail.position.set(0, 1.45, 0.24);
-      tail.rotation.x = 0.4;
-      this.root.add(tail);
-    }
-
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.44, 28), new THREE.MeshBasicMaterial({ color: teamCol, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.44, 28), new THREE.MeshBasicMaterial({ color: teamCol, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.03;
     const blob = new THREE.Mesh(new THREE.CircleGeometry(0.4, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
@@ -543,13 +552,10 @@ class Avatar {
     blob.position.y = 0.02;
     this.root.add(blob, ring);
 
-    this.aim.position.set(0, 1.35, 0);
-    this.root.add(this.aim);
-
     const c = document.createElement('canvas');
     c.width = 256; c.height = 64;
     this.plateCtx = c.getContext('2d')!;
-    this.plate = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+    this.plate = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, depthWrite: false, transparent: true }));
     this.plate.scale.set(1.2, 0.3, 1);
     this.plate.position.y = 2.25;
     this.plate.renderOrder = 10;
@@ -561,14 +567,25 @@ class Avatar {
     this.plate.material.depthTest = !ally;
   }
 
+  /** Drive the run cycle from how far the interpolated position moved since last frame. */
+  animate(pos: Vec3, dt: number) {
+    if (this.last && dt > 0) {
+      const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
+      this.speed += (Math.min(v, 12) - this.speed) * Math.min(1, dt * 10);
+      this.vy += ((pos[1] - this.last[1]) / dt - this.vy) * Math.min(1, dt * 10);
+    }
+    this.last = [pos[0], pos[1], pos[2]];
+    this.anim.update(dt, this.speed, this.vy);
+  }
+
   setWeapon(weapon: number, skin: number) {
     const k = `${weapon}:${skin}`;
     if (k === this.gunKey) return;
     this.gunKey = k;
     if (this.gun) this.aim.remove(this.gun);
     const { group, muzzle } = buildGun(weapon, skin);
-    group.position.set(0.24, 0, -0.25);
-    group.scale.setScalar(1.3);
+    group.position.set(0.16, -0.08, -0.32);
+    group.scale.setScalar(1.15);
     this.gun = group;
     this.muzzle = muzzle;
     this.aim.add(group);
@@ -659,7 +676,8 @@ class Particles {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const color = kind === 'petals' ? 0xffb7cf : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
     const mat = new THREE.PointsMaterial({
-      color, map: tex, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08, transparent: true, depthWrite: false,
+      color, map: tex, alphaMap: tex, alphaTest: 0.02, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08,
+      transparent: true, depthWrite: false,
       blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
     });
     this.points = new THREE.Points(geo, mat);

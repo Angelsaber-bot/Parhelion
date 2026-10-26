@@ -1,0 +1,1574 @@
+{
+  "mapId": "neon_harbour",
+  "name": "NEON 夜港",
+  "version": "0.1.0",
+  "mode": "arena",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "units": "metres",
+  "upAxis": "Y",
+  "bounds": {
+    "min": [
+      -28,
+      0,
+      -28
+    ],
+    "max": [
+      28,
+      8,
+      28
+    ]
+  },
+  "symmetry": "point (x, z) -> (-x, -z)",
+  "presentation": {
+    "preset": "night"
+  },
+  "palette": {
+    "asphalt": "#2b2f3e",
+    "steel": "#5d6680",
+    "red": "#e0525a",
+    "blue": "#3f7fd6",
+    "teal": "#2fb5a8",
+    "orange": "#f08a3a",
+    "yellow": "#f2c94c",
+    "white": "#e9eef7",
+    "neon_pink": "#ff4fb3",
+    "neon_cyan": "#3ff2ff",
+    "cyan": "#5fd0d8",
+    "amber": "#f2b25c"
+  },
+  "objects": [
+    {
+      "id": "floor_quay",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        56,
+        0.6,
+        56
+      ],
+      "material": "asphalt",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "wall_west",
+      "type": "box",
+      "position": [
+        -28,
+        3.5,
+        0
+      ],
+      "size": [
+        0.5,
+        7,
+        56
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_east",
+      "type": "box",
+      "position": [
+        28,
+        3.5,
+        0
+      ],
+      "size": [
+        0.5,
+        7,
+        56
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_north",
+      "type": "box",
+      "position": [
+        0,
+        3.5,
+        -28
+      ],
+      "size": [
+        56,
+        7,
+        0.5
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_south",
+      "type": "box",
+      "position": [
+        0,
+        3.5,
+        28
+      ],
+      "size": [
+        56,
+        7,
+        0.5
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_wall_e_a",
+      "type": "box",
+      "position": [
+        -17.5,
+        1.3,
+        21
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "blue",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_wall_e_b",
+      "type": "box",
+      "position": [
+        17.5,
+        1.3,
+        -21
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_wall_n_a",
+      "type": "box",
+      "position": [
+        -21,
+        1.3,
+        14.5
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "teal",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_wall_n_b",
+      "type": "box",
+      "position": [
+        21,
+        1.3,
+        -14.5
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_pad_a",
+      "type": "box",
+      "position": [
+        -23.5,
+        0.025,
+        22
+      ],
+      "size": [
+        4,
+        0.05,
+        4
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_pad_b",
+      "type": "box",
+      "position": [
+        23.5,
+        0.025,
+        -22
+      ],
+      "size": [
+        4,
+        0.05,
+        4
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "ramp_ground_a",
+      "type": "ramp",
+      "position": [
+        -20,
+        0,
+        -6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "ramp_ground_b",
+      "type": "ramp",
+      "position": [
+        20,
+        0,
+        6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "stair_base_a",
+      "type": "box",
+      "position": [
+        -14,
+        1.3,
+        -6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stair_base_b",
+      "type": "box",
+      "position": [
+        14,
+        1.3,
+        6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ramp_upper_a",
+      "type": "ramp",
+      "position": [
+        -14,
+        2.6,
+        -6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "ramp_upper_b",
+      "type": "ramp",
+      "position": [
+        14,
+        2.6,
+        6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "stack_low_a",
+      "type": "box",
+      "position": [
+        -8,
+        1.3,
+        -6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stack_low_b",
+      "type": "box",
+      "position": [
+        8,
+        1.3,
+        6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "blue",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stack_high_a",
+      "type": "box",
+      "position": [
+        -8,
+        3.9,
+        -6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stack_high_b",
+      "type": "box",
+      "position": [
+        8,
+        3.9,
+        6
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "catwalk_a",
+      "type": "box",
+      "position": [
+        -5.25,
+        5.1,
+        -3.85
+      ],
+      "size": [
+        1.5,
+        0.2,
+        1.7
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "catwalk_b",
+      "type": "box",
+      "position": [
+        5.25,
+        5.1,
+        3.85
+      ],
+      "size": [
+        1.5,
+        0.2,
+        1.7
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "gantry_deck",
+      "type": "box",
+      "position": [
+        0,
+        5.1,
+        0
+      ],
+      "size": [
+        10,
+        0.2,
+        6
+      ],
+      "material": "steel",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "gantry_leg_n_a",
+      "type": "box",
+      "position": [
+        -5.3,
+        2.5,
+        -3.3
+      ],
+      "size": [
+        0.5,
+        5,
+        0.5
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "gantry_leg_n_b",
+      "type": "box",
+      "position": [
+        5.3,
+        2.5,
+        3.3
+      ],
+      "size": [
+        0.5,
+        5,
+        0.5
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "gantry_leg_s_a",
+      "type": "box",
+      "position": [
+        -5.3,
+        2.5,
+        3.3
+      ],
+      "size": [
+        0.5,
+        5,
+        0.5
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "gantry_leg_s_b",
+      "type": "box",
+      "position": [
+        5.3,
+        2.5,
+        -3.3
+      ],
+      "size": [
+        0.5,
+        5,
+        0.5
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "deck_crate_a",
+      "type": "box",
+      "position": [
+        -2.4,
+        5.8,
+        1.6
+      ],
+      "size": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "deck_crate_b",
+      "type": "box",
+      "position": [
+        2.4,
+        5.8,
+        -1.6
+      ],
+      "size": [
+        1.2,
+        1.2,
+        1.2
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_1_a",
+      "type": "box",
+      "position": [
+        -21,
+        1.3,
+        2
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_1_b",
+      "type": "box",
+      "position": [
+        21,
+        1.3,
+        -2
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "teal",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_2_a",
+      "type": "box",
+      "position": [
+        -12,
+        1.3,
+        7
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "blue",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_2_b",
+      "type": "box",
+      "position": [
+        12,
+        1.3,
+        -7
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_3_a",
+      "type": "box",
+      "position": [
+        -7,
+        1.3,
+        15
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "teal",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_3_b",
+      "type": "box",
+      "position": [
+        7,
+        1.3,
+        -15
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_4_a",
+      "type": "box",
+      "position": [
+        2,
+        1.3,
+        21
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_4_b",
+      "type": "box",
+      "position": [
+        -2,
+        1.3,
+        -21
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_5_a",
+      "type": "box",
+      "position": [
+        -11,
+        1.3,
+        19.5
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_5_b",
+      "type": "box",
+      "position": [
+        11,
+        1.3,
+        -19.5
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_8_a",
+      "type": "box",
+      "position": [
+        -8,
+        1.3,
+        -14
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "yellow",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "maze_8_b",
+      "type": "box",
+      "position": [
+        8,
+        1.3,
+        14
+      ],
+      "size": [
+        6,
+        2.6,
+        2.6
+      ],
+      "material": "blue",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tall_low_a",
+      "type": "box",
+      "position": [
+        -18,
+        1.3,
+        -16
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "teal",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tall_low_b",
+      "type": "box",
+      "position": [
+        18,
+        1.3,
+        16
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tall_high_a",
+      "type": "box",
+      "position": [
+        -18,
+        3.9,
+        -16
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tall_high_b",
+      "type": "box",
+      "position": [
+        18,
+        3.9,
+        16
+      ],
+      "size": [
+        2.6,
+        2.6,
+        6
+      ],
+      "material": "teal",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_1_a",
+      "type": "box",
+      "position": [
+        -14,
+        0.6,
+        1
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_1_b",
+      "type": "box",
+      "position": [
+        14,
+        0.6,
+        -1
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_2_a",
+      "type": "box",
+      "position": [
+        -3,
+        0.6,
+        9
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_2_b",
+      "type": "box",
+      "position": [
+        3,
+        0.6,
+        -9
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_3_a",
+      "type": "box",
+      "position": [
+        -24,
+        0.6,
+        -3
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_3_b",
+      "type": "box",
+      "position": [
+        24,
+        0.6,
+        3
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_4_a",
+      "type": "box",
+      "position": [
+        -12,
+        0.6,
+        -20.5
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_4_b",
+      "type": "box",
+      "position": [
+        12,
+        0.6,
+        20.5
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_5_a",
+      "type": "box",
+      "position": [
+        -1.6,
+        0.6,
+        -1.4
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_5_b",
+      "type": "box",
+      "position": [
+        1.6,
+        0.6,
+        1.4
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_6_a",
+      "type": "box",
+      "position": [
+        -24.5,
+        0.6,
+        7.5
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "crate_6_b",
+      "type": "box",
+      "position": [
+        24.5,
+        0.6,
+        -7.5
+      ],
+      "size": [
+        1.4,
+        1.2,
+        1.4
+      ],
+      "material": "orange",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_01",
+      "kind": "spawn",
+      "position": [
+        -24,
+        0,
+        21
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_02",
+      "kind": "spawn",
+      "position": [
+        -22.5,
+        0,
+        24.2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_east_01",
+      "kind": "spawn",
+      "position": [
+        24,
+        0,
+        -21
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_02",
+      "kind": "spawn",
+      "position": [
+        22.5,
+        0,
+        -24.2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_deck_a",
+      "kind": "cover",
+      "position": [
+        -2.4,
+        5.2,
+        0
+      ],
+      "height": 1.2,
+      "exposure": "whole yard"
+    },
+    {
+      "id": "cover_deck_b",
+      "kind": "cover",
+      "position": [
+        2.4,
+        5.2,
+        0
+      ],
+      "height": 1.2,
+      "exposure": "whole yard"
+    },
+    {
+      "id": "cover_stack_top_a",
+      "kind": "cover",
+      "position": [
+        -9.5,
+        5.2,
+        -6
+      ],
+      "height": 0,
+      "exposure": "open top of the stack"
+    },
+    {
+      "id": "cover_stack_top_b",
+      "kind": "cover",
+      "position": [
+        9.5,
+        5.2,
+        6
+      ],
+      "height": 0,
+      "exposure": "open top of the stack"
+    },
+    {
+      "id": "cover_crate_1_a",
+      "kind": "cover",
+      "position": [
+        -14,
+        0,
+        2.1
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_1_b",
+      "kind": "cover",
+      "position": [
+        14,
+        0,
+        -2.1
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_2_a",
+      "kind": "cover",
+      "position": [
+        -3,
+        0,
+        10.1
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_2_b",
+      "kind": "cover",
+      "position": [
+        3,
+        0,
+        -10.1
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_3_a",
+      "kind": "cover",
+      "position": [
+        -24,
+        0,
+        -1.9
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_3_b",
+      "kind": "cover",
+      "position": [
+        24,
+        0,
+        1.9
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_4_a",
+      "kind": "cover",
+      "position": [
+        -12,
+        0,
+        -19.4
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_4_b",
+      "kind": "cover",
+      "position": [
+        12,
+        0,
+        19.4
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_5_a",
+      "kind": "cover",
+      "position": [
+        -1.6,
+        0,
+        -0.3
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_crate_5_b",
+      "kind": "cover",
+      "position": [
+        1.6,
+        0,
+        0.3
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_maze_2_a",
+      "kind": "cover",
+      "position": [
+        -12,
+        0,
+        9.3
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_2_b",
+      "kind": "cover",
+      "position": [
+        12,
+        0,
+        -9.3
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_3_a",
+      "kind": "cover",
+      "position": [
+        -5.1,
+        0,
+        15
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_3_b",
+      "kind": "cover",
+      "position": [
+        5.1,
+        0,
+        -15
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_8_a",
+      "kind": "cover",
+      "position": [
+        -8,
+        0,
+        -12.1
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_8_b",
+      "kind": "cover",
+      "position": [
+        8,
+        0,
+        12.1
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_tall_a",
+      "kind": "cover",
+      "position": [
+        -16.1,
+        0,
+        -16
+      ],
+      "height": 5.2
+    },
+    {
+      "id": "cover_tall_b",
+      "kind": "cover",
+      "position": [
+        16.1,
+        0,
+        16
+      ],
+      "height": 5.2
+    },
+    {
+      "id": "cover_maze_1_a",
+      "kind": "cover",
+      "position": [
+        -19.1,
+        0,
+        2
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_maze_1_b",
+      "kind": "cover",
+      "position": [
+        19.1,
+        0,
+        -2
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "objective_crossroad",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        -4.6
+      ],
+      "radius": 2,
+      "interaction": "future objective, no capture logic"
+    },
+    {
+      "id": "shield_socket_cross_a",
+      "kind": "reserved_shield",
+      "position": [
+        -6,
+        0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    },
+    {
+      "id": "shield_socket_cross_b",
+      "kind": "reserved_shield",
+      "position": [
+        6,
+        0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "west_quay",
+      "name": "A spawn / west quay / north edge",
+      "points": [
+        [
+          -24,
+          0,
+          21
+        ],
+        [
+          -26,
+          0,
+          12
+        ],
+        [
+          -26,
+          0,
+          -8
+        ],
+        [
+          -26,
+          0,
+          -24
+        ],
+        [
+          -14,
+          0,
+          -24.5
+        ],
+        [
+          -7,
+          0,
+          -24.5
+        ],
+        [
+          -7,
+          0,
+          -17
+        ]
+      ]
+    },
+    {
+      "id": "the_climb",
+      "name": "A staircase to the gantry deck",
+      "points": [
+        [
+          -24,
+          0,
+          21
+        ],
+        [
+          -26,
+          0,
+          12
+        ],
+        [
+          -25,
+          0,
+          -6
+        ],
+        [
+          -23,
+          0,
+          -6
+        ],
+        [
+          -17,
+          2.6,
+          -6
+        ],
+        [
+          -11,
+          5.2,
+          -6
+        ],
+        [
+          -5.25,
+          5.2,
+          -5.4
+        ],
+        [
+          -5.25,
+          5.2,
+          -3.4
+        ],
+        [
+          0,
+          5.2,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "crossroad",
+      "name": "Through the maze under the deck to B",
+      "points": [
+        [
+          -22,
+          0,
+          17
+        ],
+        [
+          -16,
+          0,
+          16.5
+        ],
+        [
+          -16,
+          0,
+          11
+        ],
+        [
+          -8,
+          0,
+          10
+        ],
+        [
+          -8,
+          0,
+          4
+        ],
+        [
+          -3,
+          0,
+          1.5
+        ],
+        [
+          0,
+          0,
+          -1
+        ],
+        [
+          3,
+          0,
+          -1.5
+        ],
+        [
+          8,
+          0,
+          -4
+        ],
+        [
+          8,
+          0,
+          -10
+        ],
+        [
+          16,
+          0,
+          -11
+        ],
+        [
+          16,
+          0,
+          -16.5
+        ],
+        [
+          22,
+          0,
+          -17
+        ]
+      ]
+    },
+    {
+      "id": "south_quay",
+      "name": "A spawn / south quay to the east",
+      "points": [
+        [
+          -22.5,
+          0,
+          24.2
+        ],
+        [
+          -14,
+          0,
+          25.5
+        ],
+        [
+          8,
+          0,
+          25.5
+        ],
+        [
+          24,
+          0,
+          25.5
+        ],
+        [
+          25.5,
+          0,
+          12
+        ]
+      ]
+    }
+  ],
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "clearances": {
+    "container": [
+      6,
+      2.6,
+      2.6
+    ],
+    "deckHeight": 5.2,
+    "rampWidth": 2.6
+  }
+}
