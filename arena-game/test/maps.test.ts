@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getMap, MAPS } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL } from '../shared/bot.ts';
 import { TICK_HZ } from '../shared/content.ts';
-import { blockedAt, groundAt, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
+import { blockedAt, ceilingAt, groundAt, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { Match } from '../shared/match.ts';
 import { NavGrid } from '../shared/nav.ts';
 import { applyInput, newPlayer, type Input, type PlayerState } from '../shared/sim.ts';
@@ -125,5 +125,25 @@ describe('map zenith specifics', () => {
   });
   it('the two towers have no clear sightline between their centres (gnomon)', () => {
     expect(lineOfSight(m, [-8, 4 + m.eye, -18.5], [8, 4 + m.eye, 18.5])).toBe(false);
+  });
+});
+
+describe('map sakura specifics', () => {
+  const m = getMap('sakura');
+  it('is mirror-symmetric across x = 0', () => {
+    const key = (s: { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number }) =>
+      [s.minX, s.maxX, s.minY, s.maxY, s.minZ, s.maxZ].map((v) => Math.round(v * 1000)).join();
+    const all = m.solids.map(key);
+    for (const s of m.solids) expect(all, s.id).toContain(key({ ...s, minX: -s.maxX, maxX: -s.minX }));
+  });
+  it('the hall is roofed and closed except for its four doors', () => {
+    expect(ceilingAt(m, 0, -3.6, 0)).toBeCloseTo(3.4);
+    expect(ceilingAt(m, 0, -12, 0)).toBe(Infinity);
+    // stage-to-stage through both side doors is cut by the sanctuary
+    expect(lineOfSight(m, [-16, 1.2 + m.eye, 0], [16, 1.2 + m.eye, 0])).toBe(false);
+  });
+  it('the sando is the long lane: 30 m+ sightlines exist there and nowhere through the hall', () => {
+    expect(lineOfSight(m, [-20, m.eye, -17], [20, m.eye, -17])).toBe(true);
+    expect(lineOfSight(m, [-20, m.eye, 0], [20, m.eye, 0])).toBe(false);
   });
 });

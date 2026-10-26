@@ -156,6 +156,7 @@ data = dict(
     supportedTeamLayouts=['1v1', '1v2', '2v2'], units='metres', upAxis='Y',
     bounds=dict(min=[-30, 0, -24], max=[30, 8, 24]), symmetry='point (x, z) -> (-x, -z)',
     levels=dict(pit=0, terrace=L1, high=L2),
+    presentation=dict(preset='noon'),
     palette=palette, objects=objects, anchors=anchors, routes=routes,
     player=dict(radius=.32, height=1.8, eyeHeight=1.65, walkSpeed=4.2, stepHeight=.28),
     clearances=dict(spawnRamps=5, pitRamps=4, towerRamps=4, pit=[28, 20]),

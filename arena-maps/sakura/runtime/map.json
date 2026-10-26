@@ -1,0 +1,1996 @@
+{
+  "mapId": "sakura_shrine",
+  "name": "SAKURA 樱庭",
+  "version": "0.1.0",
+  "mode": "arena",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "units": "metres",
+  "upAxis": "Y",
+  "bounds": {
+    "min": [
+      -32,
+      0,
+      -22
+    ],
+    "max": [
+      32,
+      7,
+      22
+    ]
+  },
+  "symmetry": "mirror x -> -x",
+  "presentation": {
+    "preset": "dusk"
+  },
+  "palette": {
+    "floor": "#d9c9ad",
+    "gravel": "#cfc6b6",
+    "stone": "#b9b2a6",
+    "wood": "#a8573f",
+    "woodDark": "#5a2f2a",
+    "plaster": "#f3ead9",
+    "roof": "#3f4a63",
+    "moss": "#7fae6a",
+    "water": "#5fa7c4",
+    "red": "#d4483a",
+    "cyan": "#5fd0d8",
+    "amber": "#f2b25c",
+    "gold": "#f0c46a",
+    "paper": "#fff4e0"
+  },
+  "objects": [
+    {
+      "id": "floor_precinct",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        64,
+        0.6,
+        44
+      ],
+      "material": "floor",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "wall_west",
+      "type": "box",
+      "position": [
+        -32,
+        3,
+        0
+      ],
+      "size": [
+        0.5,
+        6,
+        44
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_east",
+      "type": "box",
+      "position": [
+        32,
+        3,
+        0
+      ],
+      "size": [
+        0.5,
+        6,
+        44
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_north",
+      "type": "box",
+      "position": [
+        0,
+        3,
+        -22
+      ],
+      "size": [
+        64,
+        6,
+        0.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_south",
+      "type": "box",
+      "position": [
+        0,
+        3,
+        22
+      ],
+      "size": [
+        64,
+        6,
+        0.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_screen_a",
+      "type": "box",
+      "position": [
+        -24.5,
+        1.8,
+        0
+      ],
+      "size": [
+        0.6,
+        3.6,
+        14
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_screen_b",
+      "type": "box",
+      "position": [
+        24.5,
+        1.8,
+        0
+      ],
+      "size": [
+        0.6,
+        3.6,
+        14
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_pad_a",
+      "type": "box",
+      "position": [
+        -28.5,
+        0.025,
+        0
+      ],
+      "size": [
+        3.4,
+        0.05,
+        6
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_pad_b",
+      "type": "box",
+      "position": [
+        28.5,
+        0.025,
+        0
+      ],
+      "size": [
+        3.4,
+        0.05,
+        6
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_lantern_n_a",
+      "type": "box",
+      "position": [
+        -27,
+        0.8,
+        -9.5
+      ],
+      "size": [
+        0.8,
+        1.6,
+        0.8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_lantern_n_b",
+      "type": "box",
+      "position": [
+        27,
+        0.8,
+        -9.5
+      ],
+      "size": [
+        0.8,
+        1.6,
+        0.8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_lantern_s_a",
+      "type": "box",
+      "position": [
+        -27,
+        0.8,
+        9.5
+      ],
+      "size": [
+        0.8,
+        1.6,
+        0.8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "spawn_lantern_s_b",
+      "type": "box",
+      "position": [
+        27,
+        0.8,
+        9.5
+      ],
+      "size": [
+        0.8,
+        1.6,
+        0.8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lane_wall_n_a",
+      "type": "box",
+      "position": [
+        -15.25,
+        1.3,
+        -11.0
+      ],
+      "size": [
+        11.5,
+        2.6,
+        0.6
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "lane_wall_n_b",
+      "type": "box",
+      "position": [
+        15.25,
+        1.3,
+        -11.0
+      ],
+      "size": [
+        11.5,
+        2.6,
+        0.6
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "lane_wall_s_a",
+      "type": "box",
+      "position": [
+        -15.25,
+        1.3,
+        11.0
+      ],
+      "size": [
+        11.5,
+        2.6,
+        0.6
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "lane_wall_s_b",
+      "type": "box",
+      "position": [
+        15.25,
+        1.3,
+        11.0
+      ],
+      "size": [
+        11.5,
+        2.6,
+        0.6
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "torii_17_n_a",
+      "type": "box",
+      "position": [
+        -17,
+        2.1,
+        -19.6
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_17_n_b",
+      "type": "box",
+      "position": [
+        17,
+        2.1,
+        -19.6
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_17_s_a",
+      "type": "box",
+      "position": [
+        -17,
+        2.1,
+        -14.4
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_17_s_b",
+      "type": "box",
+      "position": [
+        17,
+        2.1,
+        -14.4
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_6_n_a",
+      "type": "box",
+      "position": [
+        -6,
+        2.1,
+        -19.6
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_6_n_b",
+      "type": "box",
+      "position": [
+        6,
+        2.1,
+        -19.6
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_6_s_a",
+      "type": "box",
+      "position": [
+        -6,
+        2.1,
+        -14.4
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "torii_6_s_b",
+      "type": "box",
+      "position": [
+        6,
+        2.1,
+        -14.4
+      ],
+      "size": [
+        0.7,
+        4.2,
+        0.7
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_21_n_a",
+      "type": "box",
+      "position": [
+        -21,
+        0.8,
+        -20.6
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_21_n_b",
+      "type": "box",
+      "position": [
+        21,
+        0.8,
+        -20.6
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_21_s_a",
+      "type": "box",
+      "position": [
+        -21,
+        0.8,
+        -13.4
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_21_s_b",
+      "type": "box",
+      "position": [
+        21,
+        0.8,
+        -13.4
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_11_n_a",
+      "type": "box",
+      "position": [
+        -11,
+        0.8,
+        -20.6
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_11_n_b",
+      "type": "box",
+      "position": [
+        11,
+        0.8,
+        -20.6
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_11_s_a",
+      "type": "box",
+      "position": [
+        -11,
+        0.8,
+        -13.4
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lantern_11_s_b",
+      "type": "box",
+      "position": [
+        11,
+        0.8,
+        -13.4
+      ],
+      "size": [
+        0.9,
+        1.6,
+        0.9
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "sando_bench_a",
+      "type": "box",
+      "position": [
+        -1.6,
+        0.45,
+        -17
+      ],
+      "size": [
+        1,
+        0.9,
+        3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "sando_bench_b",
+      "type": "box",
+      "position": [
+        1.6,
+        0.45,
+        -17
+      ],
+      "size": [
+        1,
+        0.9,
+        3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "sando_shrine_box",
+      "type": "box",
+      "position": [
+        0,
+        1,
+        -21
+      ],
+      "size": [
+        3,
+        2,
+        1.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_wall_n_a",
+      "type": "box",
+      "position": [
+        -5.1,
+        1.7,
+        -5.0
+      ],
+      "size": [
+        6.2,
+        3.4,
+        0.4
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_n_b",
+      "type": "box",
+      "position": [
+        5.1,
+        1.7,
+        -5.0
+      ],
+      "size": [
+        6.2,
+        3.4,
+        0.4
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_s_a",
+      "type": "box",
+      "position": [
+        -5.1,
+        1.7,
+        5.0
+      ],
+      "size": [
+        6.2,
+        3.4,
+        0.4
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_s_b",
+      "type": "box",
+      "position": [
+        5.1,
+        1.7,
+        5.0
+      ],
+      "size": [
+        6.2,
+        3.4,
+        0.4
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_w_n_a",
+      "type": "box",
+      "position": [
+        -8.0,
+        1.7,
+        -3.25
+      ],
+      "size": [
+        0.4,
+        3.4,
+        3.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_w_n_b",
+      "type": "box",
+      "position": [
+        8.0,
+        1.7,
+        -3.25
+      ],
+      "size": [
+        0.4,
+        3.4,
+        3.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_w_s_a",
+      "type": "box",
+      "position": [
+        -8.0,
+        1.7,
+        3.25
+      ],
+      "size": [
+        0.4,
+        3.4,
+        3.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_wall_w_s_b",
+      "type": "box",
+      "position": [
+        8.0,
+        1.7,
+        3.25
+      ],
+      "size": [
+        0.4,
+        3.4,
+        3.5
+      ],
+      "material": "plaster",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_roof",
+      "type": "box",
+      "position": [
+        0,
+        3.6,
+        0
+      ],
+      "size": [
+        17.4,
+        0.4,
+        11.4
+      ],
+      "material": "roof",
+      "collision": true,
+      "role": "roof"
+    },
+    {
+      "id": "hall_pillar_w_n",
+      "type": "box",
+      "position": [
+        -4.5,
+        1.7,
+        -2.4
+      ],
+      "size": [
+        0.5,
+        3.4,
+        0.5
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_pillar_w_s",
+      "type": "box",
+      "position": [
+        -4.5,
+        1.7,
+        2.4
+      ],
+      "size": [
+        0.5,
+        3.4,
+        0.5
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_pillar_e_n",
+      "type": "box",
+      "position": [
+        4.5,
+        1.7,
+        -2.4
+      ],
+      "size": [
+        0.5,
+        3.4,
+        0.5
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_pillar_e_s",
+      "type": "box",
+      "position": [
+        4.5,
+        1.7,
+        2.4
+      ],
+      "size": [
+        0.5,
+        3.4,
+        0.5
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "honden",
+      "type": "box",
+      "position": [
+        0,
+        1.5,
+        0
+      ],
+      "size": [
+        2.6,
+        3.0,
+        2
+      ],
+      "material": "woodDark",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_a",
+      "type": "box",
+      "position": [
+        -16.0,
+        0.6,
+        0.0
+      ],
+      "size": [
+        6,
+        1.2,
+        8
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "stage_b",
+      "type": "box",
+      "position": [
+        16.0,
+        0.6,
+        0.0
+      ],
+      "size": [
+        6,
+        1.2,
+        8
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "stage_ramp_front_a",
+      "type": "ramp",
+      "position": [
+        -11.5,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        3.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "stage_ramp_front_b",
+      "type": "ramp",
+      "position": [
+        11.5,
+        0,
+        0
+      ],
+      "size": [
+        3,
+        1.2,
+        3.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "stage_ramp_back_a",
+      "type": "ramp",
+      "position": [
+        -21,
+        0,
+        -2.4
+      ],
+      "size": [
+        4,
+        1.2,
+        2.6
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "stage_ramp_back_b",
+      "type": "ramp",
+      "position": [
+        21,
+        0,
+        -2.4
+      ],
+      "size": [
+        4,
+        1.2,
+        2.6
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "stage_rail_n_a",
+      "type": "box",
+      "position": [
+        -16,
+        1.65,
+        -3.75
+      ],
+      "size": [
+        4,
+        0.9,
+        0.3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_rail_n_b",
+      "type": "box",
+      "position": [
+        16,
+        1.65,
+        -3.75
+      ],
+      "size": [
+        4,
+        0.9,
+        0.3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_rail_s_a",
+      "type": "box",
+      "position": [
+        -16,
+        1.65,
+        3.75
+      ],
+      "size": [
+        4,
+        0.9,
+        0.3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_rail_s_b",
+      "type": "box",
+      "position": [
+        16,
+        1.65,
+        3.75
+      ],
+      "size": [
+        4,
+        0.9,
+        0.3
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_drum_a",
+      "type": "box",
+      "position": [
+        -17.8,
+        1.75,
+        2
+      ],
+      "size": [
+        1,
+        1.1,
+        1
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stage_drum_b",
+      "type": "box",
+      "position": [
+        17.8,
+        1.75,
+        2
+      ],
+      "size": [
+        1,
+        1.1,
+        1
+      ],
+      "material": "red",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_planter_n_a",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.5,
+        -8
+      ],
+      "size": [
+        2.6,
+        1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_planter_n_b",
+      "type": "box",
+      "position": [
+        10.5,
+        0.5,
+        -8
+      ],
+      "size": [
+        2.6,
+        1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_planter_s_a",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.5,
+        8
+      ],
+      "size": [
+        2.6,
+        1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_planter_s_b",
+      "type": "box",
+      "position": [
+        10.5,
+        0.5,
+        8
+      ],
+      "size": [
+        2.6,
+        1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_crate_a",
+      "type": "box",
+      "position": [
+        -21.5,
+        0.55,
+        6.5
+      ],
+      "size": [
+        1.4,
+        1.1,
+        1.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_crate_b",
+      "type": "box",
+      "position": [
+        21.5,
+        0.55,
+        6.5
+      ],
+      "size": [
+        1.4,
+        1.1,
+        1.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "saisen_box_a",
+      "type": "box",
+      "position": [
+        -3,
+        0.45,
+        -7
+      ],
+      "size": [
+        1.6,
+        0.9,
+        1
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "saisen_box_b",
+      "type": "box",
+      "position": [
+        3,
+        0.45,
+        -7
+      ],
+      "size": [
+        1.6,
+        0.9,
+        1
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pond",
+      "type": "box",
+      "position": [
+        0,
+        0.01,
+        16.5
+      ],
+      "size": [
+        24,
+        0.02,
+        7
+      ],
+      "material": "water",
+      "collision": false,
+      "role": "water"
+    },
+    {
+      "id": "bridge_up",
+      "type": "ramp",
+      "position": [
+        -3.5,
+        0,
+        16.5
+      ],
+      "size": [
+        5,
+        1.2,
+        2.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "bridge_top",
+      "type": "box",
+      "position": [
+        0,
+        0.6,
+        16.5
+      ],
+      "size": [
+        2,
+        1.2,
+        2.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "bridge_down",
+      "type": "ramp",
+      "position": [
+        3.5,
+        0,
+        16.5
+      ],
+      "size": [
+        5,
+        1.2,
+        2.4
+      ],
+      "material": "wood",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "pond_rock_1_a",
+      "type": "box",
+      "position": [
+        -9,
+        0.6,
+        15
+      ],
+      "size": [
+        2,
+        1.2,
+        1.6
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pond_rock_1_b",
+      "type": "box",
+      "position": [
+        9,
+        0.6,
+        15
+      ],
+      "size": [
+        2,
+        1.2,
+        1.6
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pond_rock_2_a",
+      "type": "box",
+      "position": [
+        -5,
+        0.8,
+        19.6
+      ],
+      "size": [
+        1.6,
+        1.6,
+        1.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pond_rock_2_b",
+      "type": "box",
+      "position": [
+        5,
+        0.8,
+        19.6
+      ],
+      "size": [
+        1.6,
+        1.6,
+        1.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "garden_rock_a",
+      "type": "box",
+      "position": [
+        -17,
+        0.7,
+        17
+      ],
+      "size": [
+        2.2,
+        1.4,
+        2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "garden_rock_b",
+      "type": "box",
+      "position": [
+        17,
+        0.7,
+        17
+      ],
+      "size": [
+        2.2,
+        1.4,
+        2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "garden_lantern_a",
+      "type": "box",
+      "position": [
+        -21,
+        1,
+        14
+      ],
+      "size": [
+        1,
+        2,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "garden_lantern_b",
+      "type": "box",
+      "position": [
+        21,
+        1,
+        14
+      ],
+      "size": [
+        1,
+        2,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_01",
+      "kind": "spawn",
+      "position": [
+        -29,
+        0,
+        -2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_east_01",
+      "kind": "spawn",
+      "position": [
+        29,
+        0,
+        -2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_west_02",
+      "kind": "spawn",
+      "position": [
+        -29.6,
+        0,
+        2.2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_east_02",
+      "kind": "spawn",
+      "position": [
+        29.6,
+        0,
+        2.2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "objective_hall",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        -2.4
+      ],
+      "radius": 2,
+      "interaction": "future objective, no capture logic"
+    },
+    {
+      "id": "cover_hall_pillar_a",
+      "kind": "cover",
+      "position": [
+        -4.5,
+        0,
+        -1.6
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "cover_hall_pillar_b",
+      "kind": "cover",
+      "position": [
+        4.5,
+        0,
+        -1.6
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "cover_honden_a",
+      "kind": "cover",
+      "position": [
+        -1.9,
+        0,
+        0
+      ],
+      "height": 3.0
+    },
+    {
+      "id": "cover_honden_b",
+      "kind": "cover",
+      "position": [
+        1.9,
+        0,
+        0
+      ],
+      "height": 3.0
+    },
+    {
+      "id": "cover_stage_a",
+      "kind": "cover",
+      "position": [
+        -16,
+        1.2,
+        -3
+      ],
+      "height": 0.9
+    },
+    {
+      "id": "cover_stage_b",
+      "kind": "cover",
+      "position": [
+        16,
+        1.2,
+        -3
+      ],
+      "height": 0.9
+    },
+    {
+      "id": "cover_court_planter_n_a",
+      "kind": "cover",
+      "position": [
+        -10.5,
+        0,
+        -6.9
+      ],
+      "height": 1
+    },
+    {
+      "id": "cover_court_planter_n_b",
+      "kind": "cover",
+      "position": [
+        10.5,
+        0,
+        -6.9
+      ],
+      "height": 1
+    },
+    {
+      "id": "cover_court_planter_s_a",
+      "kind": "cover",
+      "position": [
+        -10.5,
+        0,
+        6.9
+      ],
+      "height": 1
+    },
+    {
+      "id": "cover_court_planter_s_b",
+      "kind": "cover",
+      "position": [
+        10.5,
+        0,
+        6.9
+      ],
+      "height": 1
+    },
+    {
+      "id": "cover_court_crate_a",
+      "kind": "cover",
+      "position": [
+        -21.5,
+        0,
+        5.3
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_court_crate_b",
+      "kind": "cover",
+      "position": [
+        21.5,
+        0,
+        5.3
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_saisen_box_a",
+      "kind": "cover",
+      "position": [
+        -3,
+        0,
+        -8
+      ],
+      "height": 0.9
+    },
+    {
+      "id": "cover_saisen_box_b",
+      "kind": "cover",
+      "position": [
+        3,
+        0,
+        -8
+      ],
+      "height": 0.9
+    },
+    {
+      "id": "cover_pond_rock_1_a",
+      "kind": "cover",
+      "position": [
+        -9,
+        0,
+        13.6
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_pond_rock_1_b",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        13.6
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_pond_rock_2_a",
+      "kind": "cover",
+      "position": [
+        -5,
+        0,
+        18.3
+      ],
+      "height": 1.6
+    },
+    {
+      "id": "cover_pond_rock_2_b",
+      "kind": "cover",
+      "position": [
+        5,
+        0,
+        18.3
+      ],
+      "height": 1.6
+    },
+    {
+      "id": "cover_garden_rock_a",
+      "kind": "cover",
+      "position": [
+        -17,
+        0,
+        15.4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_garden_rock_b",
+      "kind": "cover",
+      "position": [
+        17,
+        0,
+        15.4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_torii_a",
+      "kind": "cover",
+      "position": [
+        -17,
+        0,
+        -15.6
+      ],
+      "height": 4.2
+    },
+    {
+      "id": "cover_torii_b",
+      "kind": "cover",
+      "position": [
+        17,
+        0,
+        -15.6
+      ],
+      "height": 4.2
+    },
+    {
+      "id": "cover_lantern_a",
+      "kind": "cover",
+      "position": [
+        -11,
+        0,
+        -14.4
+      ],
+      "height": 1.6
+    },
+    {
+      "id": "cover_lantern_b",
+      "kind": "cover",
+      "position": [
+        11,
+        0,
+        -14.4
+      ],
+      "height": 1.6
+    },
+    {
+      "id": "shield_socket_door_a",
+      "kind": "reserved_shield",
+      "position": [
+        -10,
+        0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    },
+    {
+      "id": "shield_socket_door_b",
+      "kind": "reserved_shield",
+      "position": [
+        10,
+        0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "sando",
+      "name": "North lane: A spawn / sando / B spawn",
+      "points": [
+        [
+          -29,
+          0,
+          -2
+        ],
+        [
+          -26,
+          0,
+          -9
+        ],
+        [
+          -24,
+          0,
+          -12.5
+        ],
+        [
+          -22,
+          0,
+          -16
+        ],
+        [
+          -12.5,
+          0,
+          -17
+        ],
+        [
+          -8,
+          0,
+          -12.4
+        ],
+        [
+          8,
+          0,
+          -12.4
+        ],
+        [
+          12.5,
+          0,
+          -17
+        ],
+        [
+          22,
+          0,
+          -16
+        ],
+        [
+          24,
+          0,
+          -12.5
+        ],
+        [
+          26,
+          0,
+          -9
+        ],
+        [
+          29,
+          0,
+          -2
+        ]
+      ]
+    },
+    {
+      "id": "hall",
+      "name": "Middle: stage / west door / hall / east door / stage",
+      "points": [
+        [
+          -23.5,
+          0,
+          -2.4
+        ],
+        [
+          -19,
+          1.2,
+          -2.4
+        ],
+        [
+          -14,
+          1.2,
+          0
+        ],
+        [
+          -10,
+          0,
+          0
+        ],
+        [
+          -7,
+          0,
+          0
+        ],
+        [
+          -6,
+          0,
+          -3.6
+        ],
+        [
+          6,
+          0,
+          -3.6
+        ],
+        [
+          7,
+          0,
+          0
+        ],
+        [
+          10,
+          0,
+          0
+        ],
+        [
+          14,
+          1.2,
+          0
+        ],
+        [
+          19,
+          1.2,
+          -2.4
+        ],
+        [
+          23.5,
+          0,
+          -2.4
+        ]
+      ]
+    },
+    {
+      "id": "koi",
+      "name": "South lane over the bridge",
+      "points": [
+        [
+          -26,
+          0,
+          9
+        ],
+        [
+          -22,
+          0,
+          12.5
+        ],
+        [
+          -12,
+          0,
+          17.5
+        ],
+        [
+          -6.5,
+          0,
+          16.5
+        ],
+        [
+          0,
+          1.2,
+          16.5
+        ],
+        [
+          6.5,
+          0,
+          16.5
+        ],
+        [
+          12,
+          0,
+          17.5
+        ],
+        [
+          22,
+          0,
+          12.5
+        ],
+        [
+          26,
+          0,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "north_door",
+      "name": "Sando to the hall north door",
+      "points": [
+        [
+          0,
+          0,
+          -17
+        ],
+        [
+          0,
+          0,
+          -9
+        ],
+        [
+          0,
+          0,
+          -3.6
+        ],
+        [
+          -3,
+          0,
+          -3.6
+        ]
+      ]
+    }
+  ],
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "clearances": {
+    "hallDoorsNS": 4,
+    "hallDoorsWE": 3,
+    "laneWidth": 9,
+    "roofHeight": 3.4
+  }
+}

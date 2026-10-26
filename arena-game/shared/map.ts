@@ -37,6 +37,8 @@ export interface MapData {
   anchors: MapAnchor[];
   routes: { id: string; name: string; points: Vec3[] }[];
   player: { radius: number; height: number; eyeHeight: number; walkSpeed: number; stepHeight: number };
+  /** Optional lighting mood for the client (see src/atmosphere.ts). */
+  presentation?: { preset?: string };
 }
 
 /** Collision solids only, with precomputed extents. */

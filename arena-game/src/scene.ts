@@ -5,12 +5,18 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
+import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -34,6 +40,12 @@ export class ArenaScene {
   private maps = new Map<string, Promise<THREE.Object3D>>();
   private shownMap: THREE.Object3D | null = null;
   private wantMap = '';
+  private hemi: THREE.HemisphereLight;
+  private sun: THREE.DirectionalLight;
+  private composer: EffectComposer | null = null;
+  private bloom: UnrealBloomPass | null = null;
+  private particles: Particles | null = null;
+  private atmo: Atmosphere = atmosphereFor('day');
 
   constructor(canvas: HTMLCanvasElement, quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -51,8 +63,10 @@ export class ArenaScene {
     s.fog = new THREE.Fog(0xc4e2f6, 70, 220);
     this.sky = makeSky(new THREE.Vector3(-22, 35, 18));
     s.add(this.sky);
-    s.add(new THREE.HemisphereLight(0xd6ecff, 0x6a7088, 1.8));
+    this.hemi = new THREE.HemisphereLight(0xd6ecff, 0x6a7088, 1.8);
+    s.add(this.hemi);
     const sun = new THREE.DirectionalLight(0xffe7c8, 3.0);
+    this.sun = sun;
     sun.position.set(-22, 35, 18);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -68,13 +82,50 @@ export class ArenaScene {
     key.position.set(1, 2, 1);
     this.vmScene.add(key, this.viewmodel.root);
 
+    if (quality === 'high') {
+      // bloom makes emissive trims, lanterns and neon glow; the viewmodel is drawn after it, unbloomed
+      this.composer = new EffectComposer(r);
+      this.composer.addPass(new RenderPass(s, this.camera));
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.82);
+      this.composer.addPass(this.bloom);
+      this.composer.addPass(new OutputPass());
+    }
+
     this.resize();
     addEventListener('resize', () => this.resize());
   }
 
+  /** Apply a map's lighting mood: sky, fog, sun, ambient, exposure, bloom and ambient particles. */
+  setAtmosphere(a: Atmosphere) {
+    this.atmo = a;
+    const s = this.scene;
+    (s.background as THREE.Color).set(a.background);
+    (s.fog as THREE.Fog).color.set(a.fog[0]);
+    (s.fog as THREE.Fog).near = a.fog[1];
+    (s.fog as THREE.Fog).far = a.fog[2];
+    this.renderer.toneMappingExposure = a.exposure;
+    this.hemi.color.set(a.hemi[0]);
+    this.hemi.groundColor.set(a.hemi[1]);
+    this.hemi.intensity = a.hemi[2];
+    this.sun.color.set(a.sun.color);
+    this.sun.intensity = a.sun.intensity;
+    this.sun.position.set(...a.sun.pos);
+    const u = (this.sky.material as THREE.ShaderMaterial).uniforms;
+    (u.sunDir.value as THREE.Vector3).set(...a.sun.pos).normalize();
+    const lin = (hex: number) => new THREE.Color().setHex(hex, THREE.LinearSRGBColorSpace); // raw shader values
+    u.uHorizon.value = lin(a.sky.horizon); u.uMid.value = lin(a.sky.mid); u.uTop.value = lin(a.sky.top);
+    u.uSun.value = lin(a.sky.sun); u.uCloudLit.value = lin(a.sky.cloudLit); u.uCloudShade.value = lin(a.sky.cloudShade);
+    u.uNight.value = a.sky.night;
+    if (this.bloom) this.bloom.strength = a.bloom;
+    if (this.particles) { this.particles.dispose(s); this.particles = null; }
+    if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
+    this.renderer.shadowMap.needsUpdate = true;
+  }
+
   /** Show a map's art (loaded once per map, then cached); resolves when it is on screen. */
-  async loadMap(id: string): Promise<void> {
+  async loadMap(id: string, preset?: string): Promise<void> {
     this.wantMap = id;
+    this.setAtmosphere(atmosphereFor(preset));
     let p = this.maps.get(id);
     if (!p) {
       p = new GLTFLoader().loadAsync(MAP_GLB[id] ?? asterGlb).then((gltf) => {
@@ -108,6 +159,8 @@ export class ArenaScene {
     this.camera.aspect = this.vmCamera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.vmCamera.updateProjectionMatrix();
+    this.composer?.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer?.setSize(w, h);
   }
 
   setView(x: number, y: number, z: number, yaw: number, pitch: number, roll = 0, fovAdd = 0) {
@@ -266,12 +319,14 @@ export class ArenaScene {
     this.flashT -= dt;
     this.muzzleLight.intensity = this.flashT > 0 ? this.muzzleLight.intensity * 0.6 : 0;
     this.viewmodel.update(dt);
+    this.particles?.update(dt, this.camera.position);
   }
 
   render(showViewmodel: boolean) {
     const r = this.renderer;
     r.clear();
-    r.render(this.scene, this.camera);
+    if (this.composer && this.atmo.bloom > 0) this.composer.render();
+    else r.render(this.scene, this.camera);
     if (showViewmodel) {
       r.clearDepth();
       r.render(this.vmScene, this.vmCamera);
@@ -576,4 +631,64 @@ function makeGlowTexture(): THREE.Texture {
   g.fillStyle = grad;
   g.fillRect(0, 0, 64, 64);
   return new THREE.CanvasTexture(c);
+}
+
+// ---------- ambient particles (petals at dusk, dust motes at noon, embers at night) ----------
+
+class Particles {
+  private points: THREE.Points;
+  private vel: Float32Array;
+  private phase: Float32Array;
+  private readonly n: number;
+  private readonly box = [26, 12, 26];
+
+  constructor(private kind: 'petals' | 'motes' | 'embers', tex: THREE.Texture, scene: THREE.Scene) {
+    this.n = kind === 'petals' ? 420 : kind === 'embers' ? 360 : 220;
+    const pos = new Float32Array(this.n * 3);
+    this.vel = new Float32Array(this.n * 3);
+    this.phase = new Float32Array(this.n);
+    for (let i = 0; i < this.n; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 2 * this.box[0];
+      pos[i * 3 + 1] = Math.random() * this.box[1];
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 2 * this.box[2];
+      this.phase[i] = Math.random() * 10;
+      const fall = kind === 'petals' ? -(0.5 + Math.random() * 0.6) : kind === 'embers' ? 0.25 + Math.random() * 0.4 : (Math.random() - 0.5) * 0.15;
+      this.vel.set([0.6 + Math.random() * 0.5, fall, 0.2 + Math.random() * 0.3], i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const color = kind === 'petals' ? 0xffb7cf : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
+    const mat = new THREE.PointsMaterial({
+      color, map: tex, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08, transparent: true, depthWrite: false,
+      blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
+    });
+    this.points = new THREE.Points(geo, mat);
+    this.points.frustumCulled = false;
+    scene.add(this.points);
+  }
+
+  update(dt: number, around: THREE.Vector3) {
+    const p = this.points.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const a = p.array as Float32Array;
+    const [bx, by, bz] = this.box;
+    for (let i = 0; i < this.n; i++) {
+      const k = i * 3;
+      this.phase[i] += dt;
+      const sway = Math.sin(this.phase[i] * 1.7) * (this.kind === 'petals' ? 0.9 : 0.25);
+      a[k] += (this.vel[k] + sway) * dt;
+      a[k + 1] += this.vel[k + 1] * dt;
+      a[k + 2] += (this.vel[k + 2] + Math.cos(this.phase[i] * 1.3) * 0.3) * dt;
+      // keep the cloud centred on the camera so it is always around the player
+      if (a[k] - around.x > bx) a[k] -= 2 * bx; else if (a[k] - around.x < -bx) a[k] += 2 * bx;
+      if (a[k + 2] - around.z > bz) a[k + 2] -= 2 * bz; else if (a[k + 2] - around.z < -bz) a[k + 2] += 2 * bz;
+      if (a[k + 1] < 0) a[k + 1] += by; else if (a[k + 1] > by) a[k + 1] -= by;
+    }
+    p.needsUpdate = true;
+  }
+
+  dispose(scene: THREE.Scene) {
+    scene.remove(this.points);
+    this.points.geometry.dispose();
+    (this.points.material as THREE.Material).dispose();
+  }
 }

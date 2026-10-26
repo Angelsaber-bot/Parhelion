@@ -28,6 +28,9 @@
     "terrace": 2.0,
     "high": 4.0
   },
+  "presentation": {
+    "preset": "noon"
+  },
   "palette": {
     "floor": "#e3d8c4",
     "tile": "#d2c6b0",
