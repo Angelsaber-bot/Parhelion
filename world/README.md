@@ -49,3 +49,20 @@ world/
   public/assets/           生成好的 GLB + layout JSON
   docs/                    截图
 ```
+
+## 查看器修复与验证（2026-10-26）
+
+- 只有进入鼠标锁定且大地图关闭时，移动、互动、重置和射击才有效；ESC / 切出窗口会清除按键，大地图打开时清空并阻止操作。
+- 飞行模式的 E 只负责上升，不会同时启动中继器；传送和切换飞行会清除旧的落地/游泳状态。
+- 小地图的 X/Z 坐标分别使用正确的视口偏移。
+- 地图布局先检查 HTTP 响应与数据结构；加载失败显示原因和“重新加载”按钮，鼠标锁定失败也可以再次点击。
+- 保留地图生成器、美术资产、布局与总体风格，不涉及 Arena。
+
+```bash
+npm ci
+npm test              # 19 项：真实源码输入集成、地图、加载、胶囊碰撞和真实 GLB smoke
+npm run typecheck
+npm run build
+```
+
+详细覆盖范围与当前浏览器验证限制见 [validation/VALIDATION.md](validation/VALIDATION.md)。

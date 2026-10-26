@@ -6,13 +6,19 @@ import { toonMaterial, addOutline, makeSky, SUN_DIR } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
+import { loadLayout } from './load';
 
 const params = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
+let bootFailed = false;
+let disposeRenderer = () => {};
+
+async function boot() {
 
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: params.has('shot') });
+disposeRenderer = () => renderer.dispose();
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -43,10 +49,15 @@ addEventListener('resize', () => {
 
 // ───────────── load ─────────────
 const [layout, gltf] = await Promise.all([
-  fetch('./assets/world_alpha.layout.json').then((r) => r.json() as Promise<Layout>),
-  new GLTFLoader().loadAsync('./assets/world_alpha.glb'),
+  loadLayout(),
+  new GLTFLoader().loadAsync('./assets/world_alpha.glb', (progress) => {
+    if (!bootFailed && progress.lengthComputable && progress.total > 0) $('loading').textContent = `加载地图… ${Math.round(progress.loaded / progress.total * 100)}%`;
+  }),
 ]);
 const world = gltf.scene;
+for (const name of ['ART', 'COLLISION', 'Terrain']) {
+  if (!world.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
+}
 scene.add(world);
 world.updateMatrixWorld(true);
 
@@ -172,28 +183,48 @@ spawnAt(params.get('spawn') ?? undefined);
 const keys = new Set<string>();
 let locked = false;
 const start = $('start');
+const gameplayActive = () => locked && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const lockError = () => {
+  if (locked) return;
+  keys.clear();
+  $('loading').textContent = '无法锁定鼠标，请再次点击进入（或检查浏览器权限）';
+  start.classList.remove('hidden');
+};
 $('loading').textContent = '点击进入（ESC 释放鼠标）';
-start.addEventListener('click', () => canvas.requestPointerLock());
+start.addEventListener('click', async () => {
+  try { await canvas.requestPointerLock(); } catch { lockError(); }
+});
+document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
-  if (!locked) keys.clear(); // keyups during ESC / unlock never reach us
+  keys.clear(); // never carry input across entering/leaving pointer lock
+  if (!locked) $('bigmap').classList.remove('open');
+  else $('loading').textContent = '点击进入（ESC 释放鼠标）';
   start.classList.toggle('hidden', locked);
 });
 document.addEventListener('mousemove', (e) => {
-  if (!locked) return;
+  if (!gameplayActive()) return;
   player.yaw -= e.movementX * 0.0022;
   player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * 0.0022, -1.5, 1.5);
 });
 addEventListener('keydown', (e) => {
   // macOS swallows keyups while Cmd is held (Cmd+Tab etc.), which used to leave a key stuck down
   if (e.metaKey || e.ctrlKey || e.altKey) { keys.clear(); return; }
+  if (!locked || document.visibilityState !== 'visible' || !document.hasFocus()) return;
+  // The map is a modal view: it cannot also move, shoot, interact or reset progress.
+  if (e.code === 'KeyM') {
+    e.preventDefault();
+    if (!e.repeat) { keys.clear(); $('bigmap').classList.toggle('open'); }
+    return;
+  }
+  if (!gameplayActive()) return;
+  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
   keys.add(e.code);
   if (e.repeat) return;
   if (e.code === 'KeyF') { player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
   if (e.code === 'KeyC') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
-  if (e.code === 'KeyM') $('bigmap').classList.toggle('open');
   if (e.code === 'KeyH') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
-  if (e.code === 'KeyE') interact();
+  if (e.code === 'KeyE' && !player.flying) interact();
   if (e.code === 'KeyR' && e.shiftKey === false) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
   const n = Number(e.key);
   if (n >= 1 && n <= layout.areas.length) spawnAt(layout.areas[n - 1].id);
@@ -209,7 +240,7 @@ const sparks: { m: THREE.Mesh; t: number }[] = [];
 const sparkGeo = new THREE.IcosahedronGeometry(0.12, 0);
 const sparkMat = new THREE.MeshBasicMaterial({ color: '#fff3a0' });
 canvas.addEventListener('mousedown', (e) => {
-  if (!locked || e.button !== 0) return;
+  if (!gameplayActive() || e.button !== 0) return;
   const origin = player.eyePos(new THREE.Vector3());
   const look = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
   ray.set(origin, look);
@@ -287,6 +318,7 @@ function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   acc += dt;
+  if (!gameplayActive()) keys.clear();
   const input = {
     x: (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0),
     z: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0),
@@ -332,3 +364,18 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 (window as any).__world = { player, scene, camera, layout, done, found, colliders, ground, ready: true };
+}
+
+void boot().catch((error: unknown) => {
+  bootFailed = true;
+  disposeRenderer();
+  const message = error instanceof Error ? error.message : String(error);
+  $('loading').textContent = `地图加载失败：${message}。请检查网络后重试。`;
+  $('start').classList.remove('hidden');
+  const retry = document.createElement('button');
+  retry.id = 'retry';
+  retry.type = 'button';
+  retry.textContent = '重新加载';
+  retry.addEventListener('click', (event) => { event.stopPropagation(); location.reload(); });
+  $('start').append(retry);
+});

@@ -59,20 +59,21 @@ export class WorldMap {
       oz = this.px(player.z) - W / 2 / scale;
     }
     const tx = (x: number) => (this.px(x) - ox) * scale;
+    const tz = (z: number) => (this.px(z) - oz) * scale;
     ctx.drawImage(this.base, -ox * scale, -oz * scale, this.size * scale, this.size * scale);
 
     // area labels
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     for (const a of this.layout.areas) {
-      const x = tx(a.c[0]), y = tx(a.c[1]);
+      const x = tx(a.c[0]), y = tz(a.c[1]);
       ctx.font = `700 ${opts.full ? 26 : 18}px system-ui, sans-serif`;
       ctx.lineWidth = 4; ctx.strokeStyle = '#1f2a44aa'; ctx.fillStyle = '#fff';
       ctx.strokeText(a.name, x, y - (opts.full ? 22 : 0)); ctx.fillText(a.name, x, y - (opts.full ? 22 : 0));
     }
     // markers
     for (const m of this.layout.markers) {
-      const x = tx(m.p[0]), y = tx(m.p[2]);
+      const x = tx(m.p[0]), y = tz(m.p[2]);
       let color = '';
       if (m.type === 'interact') color = opts.done.has(m.id) ? '#7ad18a' : '#ffb547';
       else if (m.type === 'discovery') { if (!opts.found.has(m.id) && !opts.full) continue; color = opts.found.has(m.id) ? '#c9a2ff' : '#ffffff55'; }
@@ -85,7 +86,7 @@ export class WorldMap {
       ctx.lineWidth = 2; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
     }
     // player arrow
-    const x = tx(player.x), y = tx(player.z);
+    const x = tx(player.x), y = tz(player.z);
     ctx.translate(x, y);
     ctx.rotate(-yaw);
     ctx.beginPath();

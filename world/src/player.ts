@@ -33,13 +33,25 @@ export class Player {
   pitch = 0;
   onGround = false;
   swimming = false;
-  flying = false;
+  private _flying = false;
+  get flying() { return this._flying; }
+  set flying(value: boolean) {
+    if (value === this._flying) return;
+    this._flying = value;
+    // Debug flight can move arbitrarily far from the last grounded/water contact.
+    this.vel.set(0, 0, 0);
+    this.onGround = false;
+    this.swimming = false;
+  }
 
   constructor(public colliders: Collider[], public waterLevel: number) {}
 
   teleport(x: number, y: number, z: number, yaw?: number) {
     this.pos.set(x, y, z);
     this.vel.set(0, 0, 0);
+    // Contact flags belong to the old location, not the destination.
+    this.onGround = false;
+    this.swimming = false;
     if (yaw !== undefined) this.yaw = yaw;
   }
 
