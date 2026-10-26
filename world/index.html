@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Parhelion · 幻日谷 World Alpha</title>
+  <style>
+    :root { --ink: #1f2a44; --paper: rgba(255, 255, 255, 0.82); --accent: #ffb547; --cyan: #5fe7f2; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: #9fd3f2; font-family: system-ui, "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--ink); }
+    canvas#view { display: block; width: 100vw; height: 100vh; }
+    .hud { position: fixed; pointer-events: none; }
+    #crosshair { left: 50%; top: 50%; width: 22px; height: 22px; margin: -11px 0 0 -11px; }
+    #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #0008; }
+    #crosshair::before { left: 10px; top: 3px; width: 2px; height: 16px; }
+    #crosshair::after { top: 10px; left: 3px; height: 2px; width: 16px; }
+    #crosshair.hit::before, #crosshair.hit::after { background: var(--accent); }
+    #objective { left: 18px; top: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; min-width: 260px; font-size: 13px; line-height: 1.6; box-shadow: 0 4px 16px #0002; }
+    #objective h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: 1px; }
+    #objective .done { color: #3a9a64; text-decoration: line-through; }
+    #objective .cur { font-weight: 700; }
+    #minimap { right: 18px; top: 18px; width: 190px; height: 190px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 16px #0003; overflow: hidden; background: #cde; }
+    #bigmap { inset: 0; display: none; align-items: center; justify-content: center; background: #0009; pointer-events: auto; }
+    #bigmap.open { display: flex; }
+    #bigmap canvas { width: min(88vh, 92vw); height: min(88vh, 92vw); border-radius: 14px; box-shadow: 0 8px 40px #0006; }
+    #area { left: 50%; top: 16%; transform: translateX(-50%); text-align: center; opacity: 0; transition: opacity .6s; color: #fff; text-shadow: 0 2px 8px #0008; }
+    #area.show { opacity: 1; }
+    #area .zh { font-size: 34px; font-weight: 800; letter-spacing: 6px; }
+    #area .en { font-size: 13px; letter-spacing: 4px; opacity: .9; }
+    #toast { left: 50%; bottom: 22%; transform: translateX(-50%); background: var(--paper); padding: 8px 18px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .3s; }
+    #toast.show { opacity: 1; }
+    #prompt { left: 50%; top: 58%; transform: translateX(-50%); color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000a; }
+    #help { left: 18px; bottom: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
+    #help b { display: inline-block; min-width: 54px; }
+    #stats { white-space: pre; right: 18px; bottom: 18px; font: 11px ui-monospace, monospace; color: #fff; text-shadow: 0 1px 2px #000; text-align: right; }
+    #start { inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: linear-gradient(#0000, #0006); color: #fff; pointer-events: auto; cursor: pointer; text-shadow: 0 2px 8px #0008; }
+    #start h1 { margin: 0; font-size: 44px; letter-spacing: 10px; }
+    #start p { margin: 0; opacity: .9; }
+    #start.hidden { display: none; }
+    body.clean .hud { display: none !important; }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+  <div id="crosshair" class="hud"></div>
+  <div id="objective" class="hud"></div>
+  <canvas id="minimap" class="hud" width="380" height="380"></canvas>
+  <div id="bigmap" class="hud"><canvas width="1200" height="1200"></canvas></div>
+  <div id="area" class="hud"><div class="zh"></div><div class="en"></div></div>
+  <div id="toast" class="hud"></div>
+  <div id="prompt" class="hud"></div>
+  <div id="help" class="hud">
+    <div><b>WASD</b>移动　<b>Shift</b>奔跑　<b>Space</b>跳</div>
+    <div><b>左键</b>射击　<b>E</b>互动　<b>M</b>大地图</div>
+    <div><b>F</b>飞行(调试)　<b>C</b>碰撞体　<b>1–7</b>传送</div>
+    <div><b>R</b>重置进度　<b>H</b>隐藏帮助</div>
+  </div>
+  <div id="stats" class="hud"></div>
+  <div id="start" class="hud"><h1>幻日谷</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p></div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{
+  "name": "parhelion-world",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Parhelion Alpha - World first area (幻日谷) blockout generator + Three.js viewer",
+  "scripts": {
+    "build:world": "tsx tools/build-world.ts",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "three": "0.186.1",
+    "three-mesh-bvh": "0.9.16"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.5",
+    "@types/three": "0.186.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.5"
+  }
+}
