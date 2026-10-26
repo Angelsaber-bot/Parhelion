@@ -56,12 +56,12 @@ export function makeSky(sunDir: THREE.Vector3): THREE.Mesh {
       uHorizon: { value: new THREE.Color(0.95, 0.96, 1.0) }, uMid: { value: new THREE.Color(0.49, 0.77, 0.96) },
       uTop: { value: new THREE.Color(0.17, 0.45, 0.86) }, uSun: { value: new THREE.Color(1.0, 0.97, 0.85) },
       uCloudLit: { value: new THREE.Color(1.0, 0.99, 0.97) }, uCloudShade: { value: new THREE.Color(0.72, 0.76, 0.92) },
-      uNight: { value: 0 },
+      uNight: { value: 0 }, uAurora: { value: 0 },
     },
     vertexShader: `varying vec3 vDir; void main() { vDir = normalize(position); vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
     fragmentShader: `
       uniform vec3 sunDir; uniform float uTime; varying vec3 vDir;
-      uniform vec3 uHorizon, uMid, uTop, uSun, uCloudLit, uCloudShade; uniform float uNight;
+      uniform vec3 uHorizon, uMid, uTop, uSun, uCloudLit, uCloudShade; uniform float uNight, uAurora;
       float h12(vec2 p) { vec3 q = fract(vec3(p.xyx) * 0.1031); q += dot(q, q.yzx + 33.33); return fract((q.x + q.y) * q.z); }
       float vn(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
         return mix(mix(h12(i), h12(i + vec2(1, 0)), f.x), mix(h12(i + vec2(0, 1)), h12(i + vec2(1, 1)), f.x), f.y); }
@@ -79,6 +79,18 @@ export function makeSky(sunDir: THREE.Vector3): THREE.Mesh {
           float dotMask = smoothstep(0.09, 0.0, length(fract(sp) - off)); // round pin-point stars
           float st = step(0.975, h12(cell)) * dotMask * (0.55 + 0.45 * sin(uTime * 2.0 + h12(cell + 7.0) * 30.0)) * 1.6;
           col += vec3(0.85, 0.9, 1.0) * st * uNight * smoothstep(0.05, 0.4, d.y);
+        }
+        if (uAurora > 0.0 && d.y > 0.02) {
+          // aurora: two wavy curtains of green-cyan light fading into violet at their tops
+          for (int k = 0; k < 2; k++) {
+            float fk = float(k);
+            vec2 ap = d.xz / (d.y + 0.25) * (0.9 + fk * 0.35) + vec2(uTime * 0.01 * (1.0 + fk), fk * 3.7);
+            float band = abs(ap.y + sin(ap.x * 1.6 + uTime * 0.05) * 0.45 + fbm(ap * 1.3) * 0.6 - 0.2 - fk * 0.9);
+            float curtain = smoothstep(0.32, 0.0, band) * (0.55 + 0.45 * fbm(vec2(ap.x * 6.0, uTime * 0.08)));
+            float hgt = smoothstep(0.04, 0.25, d.y) * (1.0 - smoothstep(0.55, 0.95, d.y));
+            vec3 ac = mix(vec3(0.25, 1.0, 0.65), vec3(0.65, 0.4, 1.0), smoothstep(0.15, 0.55, d.y));
+            col += ac * curtain * hgt * uAurora * (0.9 - fk * 0.35);
+          }
         }
         if (d.y > 0.0) {
           vec2 uv = d.xz / (d.y + 0.12) * 1.6 + vec2(uTime * 0.012, uTime * 0.004);

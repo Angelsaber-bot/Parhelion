@@ -7,6 +7,7 @@ import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
 import neonGlb from '../../arena-maps/neon/assets/neon_visual.glb?url';
+import asterOverlayGlb from '../../arena-maps/aster/assets/aster_overlay.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
@@ -20,6 +21,8 @@ import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
+/** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
+const MAP_OVERLAY: Record<string, string> = { aster: asterOverlayGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -124,6 +127,7 @@ export class ArenaScene {
     u.uHorizon.value = lin(a.sky.horizon); u.uMid.value = lin(a.sky.mid); u.uTop.value = lin(a.sky.top);
     u.uSun.value = lin(a.sky.sun); u.uCloudLit.value = lin(a.sky.cloudLit); u.uCloudShade.value = lin(a.sky.cloudShade);
     u.uNight.value = a.sky.night;
+    u.uAurora.value = a.sky.aurora ?? 0;
     if (this.bloom) { this.bloom.strength = a.bloom; this.bloom.threshold = a.bloomThreshold; }
     if (this.particles) { this.particles.dispose(s); this.particles = null; }
     if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
@@ -136,8 +140,11 @@ export class ArenaScene {
     this.setAtmosphere(atmosphereFor(preset));
     let p = this.maps.get(id);
     if (!p) {
-      p = new GLTFLoader().loadAsync(MAP_GLB[id] ?? asterGlb).then((gltf) => {
-        gltf.scene.traverse((o) => {
+      const urls = [MAP_GLB[id] ?? asterGlb, ...(MAP_OVERLAY[id] ? [MAP_OVERLAY[id]] : [])];
+      p = Promise.all(urls.map((u) => new GLTFLoader().loadAsync(u))).then((gltfs) => {
+        const group = new THREE.Group();
+        for (const gltf of gltfs) group.add(gltf.scene);
+        group.traverse((o) => {
           const m = o as THREE.Mesh;
           if (!m.isMesh) return;
           const decorative = m.userData.decorative === true;
@@ -146,7 +153,7 @@ export class ArenaScene {
           m.receiveShadow = true;
           m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
         });
-        return gltf.scene;
+        return group;
       });
       this.maps.set(id, p);
       p.catch(() => this.maps.delete(id));
@@ -659,8 +666,8 @@ class Particles {
   private readonly n: number;
   private readonly box = [26, 12, 26];
 
-  constructor(private kind: 'petals' | 'motes' | 'embers', tex: THREE.Texture, scene: THREE.Scene) {
-    this.n = kind === 'petals' ? 420 : kind === 'embers' ? 360 : 220;
+  constructor(private kind: 'petals' | 'motes' | 'embers' | 'snow', tex: THREE.Texture, scene: THREE.Scene) {
+    this.n = kind === 'petals' ? 420 : kind === 'embers' ? 360 : kind === 'snow' ? 900 : 220;
     const pos = new Float32Array(this.n * 3);
     this.vel = new Float32Array(this.n * 3);
     this.phase = new Float32Array(this.n);
@@ -669,16 +676,16 @@ class Particles {
       pos[i * 3 + 1] = Math.random() * this.box[1];
       pos[i * 3 + 2] = (Math.random() - 0.5) * 2 * this.box[2];
       this.phase[i] = Math.random() * 10;
-      const fall = kind === 'petals' ? -(0.5 + Math.random() * 0.6) : kind === 'embers' ? 0.25 + Math.random() * 0.4 : (Math.random() - 0.5) * 0.15;
+      const fall = kind === 'petals' ? -(0.5 + Math.random() * 0.6) : kind === 'snow' ? -(0.7 + Math.random() * 0.7) : kind === 'embers' ? 0.25 + Math.random() * 0.4 : (Math.random() - 0.5) * 0.15;
       this.vel.set([0.6 + Math.random() * 0.5, fall, 0.2 + Math.random() * 0.3], i * 3);
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    const color = kind === 'petals' ? 0xffb7cf : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
+    const color = kind === 'petals' ? 0xffb7cf : kind === 'snow' ? 0xf4f8ff : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
     const mat = new THREE.PointsMaterial({
-      color, map: tex, alphaMap: tex, alphaTest: 0.02, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08,
+      color, map: tex, alphaMap: tex, alphaTest: 0.02, size: kind === 'petals' ? 0.16 : kind === 'snow' ? 0.1 : kind === 'embers' ? 0.12 : 0.08,
       transparent: true, depthWrite: false,
-      blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
+      blending: kind === 'petals' || kind === 'snow' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
     });
     this.points = new THREE.Points(geo, mat);
     this.points.frustumCulled = false;
@@ -692,7 +699,7 @@ class Particles {
     for (let i = 0; i < this.n; i++) {
       const k = i * 3;
       this.phase[i] += dt;
-      const sway = Math.sin(this.phase[i] * 1.7) * (this.kind === 'petals' ? 0.9 : 0.25);
+      const sway = Math.sin(this.phase[i] * 1.7) * (this.kind === 'petals' ? 0.9 : this.kind === 'snow' ? 0.4 : 0.25);
       a[k] += (this.vel[k] + sway) * dt;
       a[k + 1] += this.vel[k + 1] * dt;
       a[k + 2] += (this.vel[k + 2] + Math.cos(this.phase[i] * 1.3) * 0.3) * dt;
