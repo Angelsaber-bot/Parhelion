@@ -1,0 +1,236 @@
+// Basic explorer character for World exploration: an anime-proportioned, procedurally built
+// placeholder (toon + outline, ~1.7 m) with a simple procedural rig for idle / walk / run / jump / swim.
+// It is meant to be replaced by a Blender model that keeps the same joint names
+// (Hips, Spine, Head, Arm_L/R + Forearm_L/R, Thigh_L/R + Shin_L/R).
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+
+export const PALETTE = {
+  skin: '#ffe3d2',
+  blush: '#ffb5b0',
+  hair: '#eef3ff',
+  hairTip: '#6fd6ea',
+  coat: '#f6f3ec',
+  trim: '#2fb3b4',
+  inner: '#2c3550',
+  scarf: '#f08a4b',
+  pants: '#3a4560',
+  boots: '#4b3a33',
+  glove: '#2c3550',
+  eye: '#24345c',
+  iris: '#3fd0e0',
+  gold: '#f4c95d',
+  pack: '#8b6a4f',
+  metal: '#6f7a8c',
+};
+
+type Piece = [THREE.BufferGeometry, THREE.ColorRepresentation, THREE.Matrix4?];
+
+const _q = new THREE.Quaternion(), _e = new THREE.Euler();
+function T(x: number, y: number, z: number, sx = 1, sy = 1, sz = 1, rx = 0, ry = 0, rz = 0) {
+  _e.set(rx, ry, rz);
+  _q.setFromEuler(_e);
+  return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), _q, new THREE.Vector3(sx, sy, sz));
+}
+
+function build(pieces: Piece[]): THREE.BufferGeometry {
+  const gs = pieces.map(([geo, color, m]) => {
+    const g = (geo.index ? geo.toNonIndexed() : geo.clone());
+    for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);
+    if (m) g.applyMatrix4(m);
+    g.computeVertexNormals();
+    const c = new THREE.Color(color);
+    const arr = new Float32Array(g.attributes.position.count * 3);
+    for (let i = 0; i < arr.length; i += 3) { arr[i] = c.r; arr[i + 1] = c.g; arr[i + 2] = c.b; }
+    g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+    return g;
+  });
+  return mergeGeometries(gs);
+}
+
+const sphere = (d = 2) => new THREE.IcosahedronGeometry(1, d);
+const cyl = (rt: number, rb: number, h: number, s = 10) => new THREE.CylinderGeometry(rt, rb, h, s);
+const cone = (r: number, h: number, s = 6) => new THREE.ConeGeometry(r, h, s);
+const box = () => new THREE.BoxGeometry(1, 1, 1);
+
+export interface CharacterRig {
+  root: THREE.Group;
+  joints: Record<string, THREE.Object3D>;
+  meshes: THREE.Mesh[];
+}
+
+/**
+ * Builds the rig. Faces +Z. `material` is applied to every part (pass the world's toon material).
+ */
+export function buildCharacter(material: THREE.Material): CharacterRig {
+  const P = PALETTE;
+  const joints: Record<string, THREE.Object3D> = {};
+  const meshes: THREE.Mesh[] = [];
+  const joint = (name: string, parent: THREE.Object3D, x: number, y: number, z: number) => {
+    const o = new THREE.Group();
+    o.name = name;
+    o.position.set(x, y, z);
+    parent.add(o);
+    joints[name] = o;
+    return o;
+  };
+  const part = (name: string, parent: THREE.Object3D, pieces: Piece[]) => {
+    const m = new THREE.Mesh(build(pieces), material);
+    m.name = name;
+    m.castShadow = true;
+    parent.add(m);
+    meshes.push(m);
+    return m;
+  };
+
+  const root = new THREE.Group();
+  root.name = 'Explorer';
+  const hips = joint('Hips', root, 0, 0.92, 0);
+  part('Pelvis', hips, [
+    [cyl(0.15, 0.17, 0.2), P.pants, T(0, -0.02, 0, 1, 1, 0.8)],
+    [cyl(0.175, 0.175, 0.06, 14), P.inner, T(0, 0.08, 0, 1, 1, 0.82)], // belt
+    [box(), P.gold, T(0, 0.08, 0.14, 0.07, 0.05, 0.02)], // buckle
+    [box(), P.metal, T(0.19, -0.02, 0.02, 0.06, 0.16, 0.1)], // holster
+  ]);
+  // coat tails (two flaps behind and at the sides)
+  const tails = joint('CoatTails', hips, 0, 0.06, 0);
+  part('CoatTail', tails, [
+    [box(), P.coat, T(-0.09, -0.24, -0.12, 0.15, 0.42, 0.03, 0.14)],
+    [box(), P.coat, T(0.09, -0.24, -0.12, 0.15, 0.42, 0.03, 0.14)],
+    [box(), P.trim, T(0, -0.45, -0.15, 0.34, 0.03, 0.035, 0.14)],
+  ]);
+
+  const spine = joint('Spine', hips, 0, 0.1, 0);
+  part('Torso', spine, [
+    [cyl(0.2, 0.155, 0.46, 12), P.coat, T(0, 0.22, 0, 1, 1, 0.72)],
+    [cyl(0.1, 0.13, 0.42, 8), P.inner, T(0, 0.23, 0.035, 1, 1, 0.75)], // inner shirt showing at the open front
+    [box(), P.trim, T(-0.07, 0.22, 0.13, 0.025, 0.44, 0.02, 0, 0, -0.08)],
+    [box(), P.trim, T(0.07, 0.22, 0.13, 0.025, 0.44, 0.02, 0, 0, 0.08)],
+    [sphere(1), P.coat, T(-0.2, 0.43, 0, 0.09, 0.07, 0.09)], // shoulder pads
+    [sphere(1), P.coat, T(0.2, 0.43, 0, 0.09, 0.07, 0.09)],
+    [box(), P.pack, T(0, 0.26, -0.17, 0.26, 0.3, 0.12)], // backpack
+    [box(), P.trim, T(0, 0.33, -0.235, 0.2, 0.04, 0.02)],
+    [cyl(0.105, 0.11, 0.08, 12), P.scarf, T(0, 0.47, 0.0)], // scarf ring
+  ]);
+  const scarf = joint('ScarfTail', spine, 0.06, 0.46, -0.1);
+  part('Scarf', scarf, [
+    [box(), P.scarf, T(0, -0.14, -0.02, 0.07, 0.3, 0.02, 0.35)],
+    [box(), P.trim, T(0, -0.29, -0.07, 0.07, 0.03, 0.022, 0.35)],
+  ]);
+
+  const head = joint('Head', spine, 0, 0.56, 0.01);
+  part('HeadMesh', head, [
+    [cyl(0.04, 0.045, 0.08, 8), P.skin, T(0, -0.04, 0)], // neck
+    [sphere(2), P.skin, T(0, 0.11, 0.0, 0.135, 0.15, 0.135)],
+    [sphere(1), P.skin, T(0, 0.04, 0.05, 0.08, 0.06, 0.07)], // jaw/chin
+    // eyes: large anime eyes with iris + highlight
+    [sphere(1), P.eye, T(-0.05, 0.1, 0.118, 0.032, 0.045, 0.012)],
+    [sphere(1), P.eye, T(0.05, 0.1, 0.118, 0.032, 0.045, 0.012)],
+    [sphere(1), P.iris, T(-0.05, 0.092, 0.125, 0.022, 0.028, 0.008)],
+    [sphere(1), P.iris, T(0.05, 0.092, 0.125, 0.022, 0.028, 0.008)],
+    [sphere(0), '#ffffff', T(-0.042, 0.112, 0.131, 0.009, 0.011, 0.004)],
+    [sphere(0), '#ffffff', T(0.058, 0.112, 0.131, 0.009, 0.011, 0.004)],
+    [sphere(0), P.blush, T(-0.075, 0.055, 0.105, 0.022, 0.01, 0.006)],
+    [sphere(0), P.blush, T(0.075, 0.055, 0.105, 0.022, 0.01, 0.006)],
+    [box(), '#c9776b', T(0, 0.035, 0.13, 0.025, 0.006, 0.004)], // mouth
+  ]);
+  // hair: cap + bangs + side locks + ponytail, white with cyan tips
+  const hairPieces: Piece[] = [
+    [sphere(2), P.hair, T(0, 0.15, -0.012, 0.152, 0.15, 0.155)],
+    [sphere(1), P.hair, T(0, 0.12, -0.06, 0.15, 0.13, 0.13)],
+  ];
+  const bangs: [number, number, number][] = [[-0.09, -0.35, 0.3], [-0.045, -0.15, 0.1], [0.0, 0.0, 0.0], [0.05, 0.15, -0.1], [0.095, 0.35, -0.3]];
+  for (const [x, rz, ry] of bangs) {
+    hairPieces.push([cone(0.042, 0.15, 5), P.hair, T(x, 0.19, 0.115, 1, 1, 0.6, Math.PI - 0.35, ry, rz)]);
+  }
+  for (const s of [-1, 1]) {
+    hairPieces.push([cone(0.04, 0.24, 5), P.hair, T(0.125 * s, 0.05, 0.03, 1, 1, 0.7, Math.PI + 0.1, 0, -0.12 * s)]);
+    hairPieces.push([cone(0.018, 0.06, 5), P.hairTip, T(0.135 * s, -0.08, 0.035, 1, 1, 0.7, Math.PI + 0.1, 0, -0.12 * s)]);
+  }
+  part('Hair', head, hairPieces);
+  const tail = joint('Ponytail', head, 0, 0.2, -0.13);
+  part('PonytailMesh', tail, [
+    [sphere(1), P.trim, T(0, 0, 0, 0.035, 0.035, 0.035)], // hair tie
+    [cone(0.07, 0.42, 6), P.hair, T(0, -0.2, -0.05, 1, 1, 0.8, Math.PI + 0.25)],
+    [cone(0.028, 0.1, 6), P.hairTip, T(0, -0.42, -0.1, 1, 1, 0.8, Math.PI + 0.25)],
+  ]);
+  // ahoge (antenna strand), because anime
+  part('Ahoge', head, [[cone(0.012, 0.11, 4), P.hair, T(0.01, 0.31, 0.02, 1, 1, 1, -0.5, 0, 0.3)]]);
+
+  for (const s of [-1, 1]) {
+    const side = s < 0 ? 'L' : 'R';
+    const arm = joint(`Arm_${side}`, spine, 0.235 * s, 0.42, 0);
+    part(`UpperArm_${side}`, arm, [
+      [cyl(0.055, 0.048, 0.27, 8), P.coat, T(0, -0.13, 0)],
+      [cyl(0.058, 0.058, 0.03, 8), P.trim, T(0, -0.25, 0)],
+    ]);
+    const fore = joint(`Forearm_${side}`, arm, 0, -0.27, 0);
+    part(`Forearm_${side}Mesh`, fore, [
+      [cyl(0.047, 0.04, 0.24, 8), P.inner, T(0, -0.12, 0)],
+      [sphere(1), P.glove, T(0, -0.28, 0.01, 0.045, 0.055, 0.04)],
+    ]);
+    const thigh = joint(`Thigh_${side}`, hips, 0.09 * s, -0.06, 0);
+    part(`ThighMesh_${side}`, thigh, [[cyl(0.078, 0.06, 0.42, 9), P.pants, T(0, -0.21, 0)]]);
+    const shin = joint(`Shin_${side}`, thigh, 0, -0.42, 0);
+    part(`ShinMesh_${side}`, shin, [
+      [cyl(0.058, 0.05, 0.36, 9), P.pants, T(0, -0.18, 0)],
+      [cyl(0.065, 0.06, 0.2, 9), P.boots, T(0, -0.32, 0)],
+      [box(), P.boots, T(0, -0.42, 0.04, 0.11, 0.07, 0.22)],
+      [box(), P.trim, T(0, -0.25, 0.0, 0.135, 0.025, 0.135)],
+    ]);
+  }
+  return { root, joints, meshes };
+}
+
+/** Procedural animation state machine driven by the physics controller. */
+export class CharacterAnimator {
+  private phase = 0;
+  private t = 0;
+  private air = 0;
+  facing = 0;
+
+  constructor(public rig: CharacterRig) {}
+
+  update(dt: number, s: { speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null; flying?: boolean }) {
+    const J = this.rig.joints;
+    this.t += dt;
+    // turn towards the movement direction (Genshin-style free movement)
+    if (s.moveYaw !== null) {
+      let d = s.moveYaw - this.facing;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      this.facing += d * Math.min(1, dt * 12);
+    }
+    this.rig.root.rotation.y = this.facing;
+    this.air = THREE.MathUtils.damp(this.air, s.onGround || s.swimming ? 0 : 1, 10, dt);
+
+    const run = THREE.MathUtils.clamp(s.speed / 9, 0, 1);
+    const move = THREE.MathUtils.clamp(s.speed / 2, 0, 1);
+    this.phase += dt * (4 + s.speed * 1.25);
+    const sw = Math.sin(this.phase);
+    const amp = (0.35 + run * 0.5) * move;
+
+    // legs
+    for (const [side, sgn] of [['L', 1], ['R', -1]] as const) {
+      const ph = sw * sgn;
+      const kneeBend = Math.max(0, Math.sin(this.phase + (sgn > 0 ? 0 : Math.PI) + 0.9));
+      J[`Thigh_${side}`].rotation.x = -ph * amp - this.air * 0.7;
+      J[`Shin_${side}`].rotation.x = kneeBend * (0.25 + run * 0.9) * move + this.air * 1.1;
+      // arms swing opposite to legs; elbows bend more when running
+      J[`Arm_${side}`].rotation.x = ph * amp * 0.9 + (s.swimming ? -2.6 + Math.sin(this.t * 4 + sgn) * 0.6 : 0) - this.air * 0.4;
+      J[`Arm_${side}`].rotation.z = (0.12 + this.air * 0.5) * -sgn;
+      J[`Forearm_${side}`].rotation.x = -(0.25 + run * 0.9) * (s.swimming ? 0.2 : 1);
+    }
+    // body
+    const breathe = Math.sin(this.t * 2.2) * 0.012 * (1 - move);
+    J.Hips.position.y = 0.92 + Math.abs(Math.cos(this.phase)) * 0.05 * move - run * 0.03 + breathe - (s.swimming ? 0.55 : 0);
+    J.Spine.rotation.x = run * 0.22 + (s.swimming ? 0.9 : 0);
+    J.Spine.rotation.y = sw * 0.12 * move;
+    J.Hips.rotation.y = -sw * 0.08 * move;
+    J.Head.rotation.x = -run * 0.16 + Math.sin(this.t * 1.1) * 0.02 - (s.swimming ? 0.7 : 0);
+    // secondary motion
+    J.Ponytail.rotation.x = 0.25 + run * 0.6 + Math.sin(this.phase * 2) * 0.12 * move + this.air * Math.sign(-s.vy) * 0.3 + Math.sin(this.t * 1.7) * 0.05;
+    J.Ponytail.rotation.z = Math.sin(this.phase) * 0.15 * move;
+    J.ScarfTail.rotation.x = 0.2 + run * 0.9 + Math.sin(this.t * 6) * 0.08 * (0.3 + run);
+    J.CoatTails.rotation.x = run * 0.6 + this.air * 0.4 + Math.abs(sw) * 0.1 * move;
+  }
+}

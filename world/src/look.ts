@@ -136,17 +136,27 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
   }
 }
 
-const outlineMat = new THREE.MeshBasicMaterial({ color: '#3a3556', side: THREE.BackSide });
-outlineMat.onBeforeCompile = (sh) => {
-  sh.vertexShader = sh.vertexShader.replace(
-    '#include <begin_vertex>',
-    `vec3 transformed = position + normalize(normal) * 0.045;`,
-  );
-};
+const outlineMats = new Map<number, THREE.MeshBasicMaterial>();
+function outlineMat(width: number, color: THREE.ColorRepresentation) {
+  const key = Math.round(width * 1e4) + new THREE.Color(color).getHex() * 1e5;
+  let m = outlineMats.get(key);
+  if (!m) {
+    m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+    m.onBeforeCompile = (sh) => {
+      sh.vertexShader = sh.vertexShader.replace(
+        '#include <begin_vertex>',
+        `vec3 transformed = position + normalize(normal) * ${width.toFixed(4)};`,
+      );
+    };
+    m.customProgramCacheKey = () => `outline-${width}`;
+    outlineMats.set(key, m);
+  }
+  return m;
+}
 
 /** Inverted-hull outline sharing the mesh's geometry. */
-export function addOutline(mesh: THREE.Mesh) {
-  const o = new THREE.Mesh(mesh.geometry, outlineMat);
+export function addOutline(mesh: THREE.Mesh, width = 0.045, color: THREE.ColorRepresentation = '#2b2f45') {
+  const o = new THREE.Mesh(mesh.geometry, outlineMat(width, color));
   o.name = `${mesh.name}__outline`;
   o.raycast = () => {};
   mesh.add(o);

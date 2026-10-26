@@ -11,6 +11,7 @@ import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
+import { buildCharacter, CharacterAnimator } from './character';
 
 const params = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -195,6 +196,17 @@ const spawnAt = (areaId?: string) => {
 };
 spawnAt(params.get('spawn') ?? undefined);
 
+// explorer character + third-person camera (V toggles first person)
+const charMat = toonMaterial(Object.assign(new THREE.MeshStandardMaterial({ vertexColors: true }), { name: 'M_Toon' }));
+const rig = buildCharacter(charMat);
+rig.meshes.forEach((m) => { m.receiveShadow = true; if (!params.has('noline')) addOutline(m, 0.012); });
+scene.add(rig.root);
+const anim = new CharacterAnimator(rig);
+anim.facing = player.yaw + Math.PI;
+let thirdPerson = !params.has('fps') && !params.has('cam');
+let camDist = 3.6;
+const prevPos = player.pos.clone();
+
 const keys = new Set<string>();
 let locked = false;
 const start = $('start');
@@ -238,6 +250,7 @@ addEventListener('keydown', (e) => {
   if (e.repeat) return;
   if (e.code === 'KeyF') { player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
   if (e.code === 'KeyC') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
+  if (e.code === 'KeyV') { thirdPerson = !thirdPerson; toast(thirdPerson ? '第三人称' : '第一人称'); }
   if (e.code === 'KeyH') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
   if (e.code === 'KeyE' && !player.flying) interact();
   if (e.code === 'KeyR' && e.shiftKey === false) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
@@ -256,8 +269,8 @@ const sparkGeo = new THREE.IcosahedronGeometry(0.12, 0);
 const sparkMat = new THREE.MeshBasicMaterial({ color: '#fff3a0' });
 canvas.addEventListener('mousedown', (e) => {
   if (!gameplayActive() || e.button !== 0) return;
-  const origin = player.eyePos(new THREE.Vector3());
-  const look = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(player.pitch, player.yaw, 0, 'YXZ'));
+  const origin = camera.position.clone();
+  const look = camera.getWorldDirection(new THREE.Vector3());
   ray.set(origin, look);
   ray.far = 150;
   const wall = staticBVH.raycastFirst(ray.ray, THREE.DoubleSide);
@@ -344,8 +357,26 @@ function frame(now: number) {
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
   player.eyePos(eye);
-  camera.position.copy(eye);
   camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
+  // character: face the movement direction, animate from actual displacement
+  const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
+  const wx = fx * input.z + rx * input.x, wz = fz * input.z + rz * input.x;
+  const hs = dt > 0 ? Math.hypot(player.pos.x - prevPos.x, player.pos.z - prevPos.z) / dt : 0;
+  prevPos.copy(player.pos);
+  rig.root.position.copy(player.pos);
+  rig.root.visible = thirdPerson;
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: wx || wz ? Math.atan2(wx, wz) : null });
+  if (thirdPerson) {
+    // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
+    const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
+    const pivot = new THREE.Vector3(player.pos.x + rx * 0.45, player.pos.y + 1.55, player.pos.z + rz * 0.45);
+    const back = look.clone().negate();
+    const hit = staticBVH.raycastFirst(new THREE.Ray(pivot, back), THREE.DoubleSide);
+    const want = Math.min(3.6, hit ? Math.max(0.4, hit.distance - 0.3) : 3.6);
+    camDist = want < camDist ? want : THREE.MathUtils.damp(camDist, want, 6, dt);
+    camera.position.copy(pivot).addScaledVector(back, camDist);
+    eye.copy(camera.position);
+  } else camera.position.copy(eye);
   sky.position.copy(eye);
   sun.position.copy(eye).addScaledVector(SUN_DIR, 200);
   sun.target.position.copy(eye);
@@ -379,7 +410,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { player, scene, camera, layout, done, found, colliders, ground, ready: true };
+(window as any).__world = { rig, anim, setThirdPerson: (v: boolean) => { thirdPerson = v; }, player, scene, camera, layout, done, found, colliders, ground, ready: true };
 }
 
 void boot().catch((error: unknown) => {
