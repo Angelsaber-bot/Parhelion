@@ -228,6 +228,59 @@ function applyWorldState() {
   renderObjective();
 }
 
+// ───────────── quest guide (G): waypoint to the next objective, beacon pillar, map marker ─────────────
+let guideOn = true;
+try { guideOn = localStorage.getItem('parhelion.guide') !== 'off'; } catch { /* storage unavailable */ }
+const PASS: [number, number, number] = [240, 16, 30];
+const guideBeam = new THREE.Mesh(
+  new THREE.CylinderGeometry(0.9, 1.4, 70, 16, 1, true).translate(0, 35, 0),
+  new THREE.MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }),
+);
+guideBeam.raycast = () => {};
+scene.add(guideBeam);
+function toggleGuide() {
+  guideOn = !guideOn;
+  try { localStorage.setItem('parhelion.guide', guideOn ? 'on' : 'off'); } catch { /* ignore */ }
+  toast(guideOn ? '任务指引 开' : '任务指引 关');
+}
+/** Next objective marker: current region first; the other region's goal routes through the east pass. */
+function guideTarget(): { p: [number, number, number]; label: string } | null {
+  const here = regionAt(player.pos.x).id;
+  const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
+  for (const o of order)
+    for (const s of o.objective.steps) {
+      const left = s.done.filter((id) => !done.has(id)).map((id) => markers.get(id)!).filter(Boolean);
+      if (!left.length) continue;
+      if (o.region !== here) return { p: PASS, label: `前往${o.region === 'coast' ? '星落海岸' : '幻日谷'}（东侧山口）` };
+      left.sort((a, b) => Math.hypot(a.p[0] - player.pos.x, a.p[2] - player.pos.z) - Math.hypot(b.p[0] - player.pos.x, b.p[2] - player.pos.z));
+      return { p: left[0].p, label: left[0].label };
+    }
+  return null;
+}
+const _gv = new THREE.Vector3();
+function updateGuide(t: { p: [number, number, number]; label: string } | null, now: number) {
+  const el = $('guide');
+  guideBeam.visible = !!t;
+  el.classList.toggle('on', !!t && !$('bigmap').classList.contains('open'));
+  if (!t) return;
+  guideBeam.position.set(t.p[0], t.p[1], t.p[2]);
+  (guideBeam.material as THREE.MeshBasicMaterial).opacity = 0.16 + 0.06 * Math.sin(now / 300);
+  const d = Math.hypot(t.p[0] - player.pos.x, t.p[1] - player.pos.y, t.p[2] - player.pos.z);
+  (el.querySelector('.dist') as HTMLElement).textContent = `${Math.round(d)} m`;
+  (el.querySelector('.label') as HTMLElement).textContent = t.label;
+  _gv.set(t.p[0], t.p[1] + 2.2, t.p[2]).project(camera);
+  const behind = _gv.z > 1;
+  let sx = _gv.x, sy = _gv.y;
+  if (behind) { sx = -sx; sy = -sy; }
+  const m = Math.max(Math.abs(sx), Math.abs(sy));
+  const edge = behind || m > 0.92;
+  if (edge) { const k = 0.88 / Math.max(m, 1e-3); sx *= k; sy *= k; if (behind && Math.abs(sy) < 0.5) sy = -0.88; }
+  el.classList.toggle('edge', edge);
+  (el.querySelector('.arrow') as HTMLElement).style.transform = `rotate(${Math.atan2(sx, sy)}rad)`;
+  el.style.left = `${(sx * 0.5 + 0.5) * innerWidth}px`;
+  el.style.top = `${(-sy * 0.5 + 0.5) * innerHeight}px`;
+}
+
 function renderObjective() {
   const objective = objectiveFor(player.pos.x);
   const steps = objective.steps;
@@ -333,6 +386,7 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyF') { player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
   if (e.code === 'KeyC') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (e.code === 'KeyV') { thirdPerson = !thirdPerson; toast(thirdPerson ? '第三人称' : '第一人称'); }
+  if (e.code === 'KeyG') toggleGuide();
   if (e.code === 'KeyH') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
   if (e.code === 'KeyE' && !player.flying) interact();
   if (e.code === 'KeyR' && e.shiftKey === false) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
@@ -500,8 +554,11 @@ function frame(now: number) {
     if (Math.abs(next - dpr) > 0.01) { dpr = next; renderer.setPixelRatio(dpr); composer.setPixelRatio(dpr); }
     dynT = 0; dynFrames = 0;
   }
-  map.draw(mini, player.pos, player.yaw, { full: false, done, found });
-  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found });
+  const tgt = guideOn ? guideTarget() : null;
+  updateGuide(tgt, now);
+  const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
+  map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
+  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt });
 
   timeUniform.value = now / 1000;
   shafts.update(camera, SUN_DIR);

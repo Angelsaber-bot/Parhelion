@@ -34,6 +34,7 @@ npm run build        # 类型检查 + 打包到 dist/
 | 1–7 | 传送到各区域（调试） |
 | F | 飞行模式（调试，Q/E 下降/上升） |
 | C | 显示碰撞体 |
+| G | 任务指引开/关（屏幕路标 + 光柱 + 地图标记，跨区域会先指向东侧山口） |
 | R | 重置进度 |
 
 URL 参数（截图/调试）：`?region=coast`（星落海岸）、`?q=low`（低画质）、`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。

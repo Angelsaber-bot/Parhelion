@@ -48,7 +48,7 @@ export class WorldMap {
   px(x: number) { return ((x - (this.x0 ?? -this.half)) / (this.half * 2)) * this.size; }
   pz(z: number) { return ((z - (this.z0 ?? -this.half)) / (this.half * 2)) * this.size; }
 
-  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string> }) {
+  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null }) {
     const W = ctx.canvas.width;
     ctx.save();
     ctx.clearRect(0, 0, W, W);
@@ -88,6 +88,13 @@ export class WorldMap {
       ctx.arc(x, y, m.type === 'interact' ? 9 : 5, 0, Math.PI * 2);
       ctx.fillStyle = color; ctx.fill();
       ctx.lineWidth = 2; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
+    }
+    // quest guide target: pulsing gold diamond
+    if (opts.target) {
+      const gx = tx(opts.target[0]), gy = tz(opts.target[1]), r = (opts.full ? 13 : 10) * (1 + 0.15 * Math.sin(performance.now() / 220));
+      ctx.beginPath();
+      ctx.moveTo(gx, gy - r); ctx.lineTo(gx + r * 0.75, gy); ctx.lineTo(gx, gy + r); ctx.lineTo(gx - r * 0.75, gy); ctx.closePath();
+      ctx.fillStyle = '#ffd76a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
     }
     // player arrow
     const x = tx(player.x), y = tz(player.z);

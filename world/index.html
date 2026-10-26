@@ -29,6 +29,14 @@
     #area .en { font-size: 13px; letter-spacing: 4px; opacity: .9; }
     #toast { left: 50%; bottom: 22%; transform: translateX(-50%); background: var(--paper); padding: 8px 18px; border-radius: 20px; font-size: 14px; opacity: 0; transition: opacity .3s; }
     #toast.show { opacity: 1; }
+    #guide { left: 0; top: 0; transform: translate(-50%, -100%); display: none; flex-direction: column; align-items: center; gap: 2px; color: #fff; text-shadow: 0 1px 4px #000c; font-size: 12px; white-space: nowrap; }
+    #guide.on { display: flex; }
+    #guide .gem { width: 18px; height: 18px; background: linear-gradient(135deg, #fff3b0, #ffb547); border: 2px solid #fff; transform: rotate(45deg); box-shadow: 0 0 10px #ffd76a; animation: gpulse 1.4s ease-in-out infinite; }
+    #guide .arrow { display: none; width: 0; height: 0; border-left: 9px solid transparent; border-right: 9px solid transparent; border-bottom: 16px solid #ffd76a; filter: drop-shadow(0 0 3px #000a); }
+    #guide.edge .gem { display: none; }
+    #guide.edge .arrow { display: block; }
+    #guide .dist { font-weight: 700; font-size: 13px; }
+    @keyframes gpulse { 50% { box-shadow: 0 0 18px #ffe9a0; transform: rotate(45deg) scale(1.12); } }
     #prompt { left: 50%; top: 58%; transform: translateX(-50%); color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000a; }
     #help { left: 18px; bottom: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
     #help b { display: inline-block; min-width: 54px; }
@@ -49,11 +57,12 @@
   <div id="area" class="hud"><div class="zh"></div><div class="en"></div></div>
   <div id="toast" class="hud"></div>
   <div id="prompt" class="hud"></div>
+  <div id="guide" class="hud"><div class="arrow"></div><div class="gem"></div><div class="dist"></div><div class="label"></div></div>
   <div id="help" class="hud">
     <div><b>WASD</b>移动　<b>Shift</b>奔跑　<b>Space</b>跳／空中滑翔</div>
     <div><b>左键</b>射击　<b>E</b>互动　<b>M</b>大地图</div>
     <div><b>V</b>第一/第三人称　<b>F</b>飞行(调试)　<b>C</b>碰撞体　<b>1–7</b>传送</div>
-    <div><b>R</b>重置进度　<b>H</b>隐藏帮助</div>
+    <div><b>G</b>任务指引开/关　<b>R</b>重置进度　<b>H</b>隐藏帮助</div>
   </div>
   <div id="stats" class="hud"></div>
   <div id="start" class="hud"><h1>幻日谷 · 星落海岸</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p></div>
