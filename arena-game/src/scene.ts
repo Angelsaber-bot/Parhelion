@@ -15,6 +15,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
+import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
@@ -45,6 +46,7 @@ export class ArenaScene {
   private sun: THREE.DirectionalLight;
   private composer: EffectComposer | null = null;
   private bloom: UnrealBloomPass | null = null;
+  private outline: OutlinePass | null = null;
   private particles: Particles | null = null;
   private atmo: Atmosphere = atmosphereFor('day');
 
@@ -85,8 +87,12 @@ export class ArenaScene {
 
     if (quality === 'high') {
       // bloom makes emissive trims, lanterns and neon glow; the viewmodel is drawn after it, unbloomed
-      this.composer = new EffectComposer(r);
+      // the composer's targets carry a depth texture so the outline pass can read scene depth
+      const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(1, 1) });
+      this.composer = new EffectComposer(r, rt);
       this.composer.addPass(new RenderPass(s, this.camera));
+      this.outline = new OutlinePass(this.camera);
+      this.composer.addPass(this.outline);
       this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.82);
       this.composer.addPass(this.bloom);
       this.composer.addPass(new OutputPass());
@@ -326,7 +332,7 @@ export class ArenaScene {
   render(showViewmodel: boolean) {
     const r = this.renderer;
     r.clear();
-    if (this.composer && this.atmo.bloom > 0) this.composer.render();
+    if (this.composer) this.composer.render();
     else r.render(this.scene, this.camera);
     if (showViewmodel) {
       r.clearDepth();
