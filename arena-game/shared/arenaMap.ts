@@ -15,7 +15,7 @@ export interface MapInfo {
 
 export const MAPS: MapInfo[] = [
   { id: 'aster', name: 'ASTER 研究站', blurb: '72×56 · 镜像对称 · 北侧长廊高台 + 中央反应堆庭院', data: aster as unknown as MapData },
-  { id: 'zenith', name: 'ZENITH 日冕天台', blurb: '60×44 · 点对称 · 两座对角高台 + 花园侧翼 + 日晷中庭', data: zenith as unknown as MapData },
+  { id: 'zenith', name: 'ZENITH 日冕天台', blurb: '60×48 · 三层阶梯 · 下沉日晷池 + 双塔悬台 + 高台出生', data: zenith as unknown as MapData },
 ];
 export const DEFAULT_MAP = 'aster';
 

@@ -1,7 +1,7 @@
 {
   "mapId": "zenith_sky_terrace",
   "name": "ZENITH 日冕天台",
-  "version": "0.1.0",
+  "version": "0.2.0-tiers",
   "mode": "arena",
   "supportedTeamLayouts": [
     "1v1",
@@ -14,22 +14,28 @@
     "min": [
       -30,
       0,
-      -22
+      -24
     ],
     "max": [
       30,
-      7,
-      22
+      8,
+      24
     ]
   },
   "symmetry": "point (x, z) -> (-x, -z)",
+  "levels": {
+    "pit": 0,
+    "terrace": 2.0,
+    "high": 4.0
+  },
   "palette": {
     "floor": "#e3d8c4",
     "tile": "#d2c6b0",
     "wall": "#b58b72",
-    "dark": "#3d3a58",
+    "dark": "#4a4872",
     "cover": "#f1e9da",
     "stone": "#cdbfa8",
+    "terrace": "#e9dcc4",
     "hedge": "#79c48a",
     "cyan": "#5fd0d8",
     "amber": "#f2b25c",
@@ -50,7 +56,7 @@
       "size": [
         60,
         0.6,
-        44
+        48
       ],
       "material": "floor",
       "collision": true,
@@ -61,13 +67,13 @@
       "type": "box",
       "position": [
         -30,
-        2.5,
+        3.5,
         0
       ],
       "size": [
         0.5,
-        5,
-        44
+        7,
+        48
       ],
       "material": "wall",
       "collision": true,
@@ -78,13 +84,13 @@
       "type": "box",
       "position": [
         30,
-        2.5,
+        3.5,
         0
       ],
       "size": [
         0.5,
-        5,
-        44
+        7,
+        48
       ],
       "material": "wall",
       "collision": true,
@@ -95,12 +101,12 @@
       "type": "box",
       "position": [
         0,
-        2.5,
-        -22
+        3.5,
+        -24
       ],
       "size": [
         60,
-        5,
+        7,
         0.5
       ],
       "material": "wall",
@@ -112,12 +118,12 @@
       "type": "box",
       "position": [
         0,
-        2.5,
-        22
+        3.5,
+        24
       ],
       "size": [
         60,
-        5,
+        7,
         0.5
       ],
       "material": "wall",
@@ -125,16 +131,186 @@
       "role": "structure"
     },
     {
-      "id": "west_spawn_screen",
+      "id": "band_n_a",
       "type": "box",
       "position": [
-        -21.5,
-        2.2,
+        0.0,
+        1.0,
+        -17.0
+      ],
+      "size": [
+        44,
+        2.0,
+        14
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "band_n_b",
+      "type": "box",
+      "position": [
+        -0.0,
+        1.0,
+        17.0
+      ],
+      "size": [
+        44,
+        2.0,
+        14
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "band_w_a",
+      "type": "box",
+      "position": [
+        -18.0,
+        1.0,
+        0.0
+      ],
+      "size": [
+        8,
+        2.0,
+        20
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "band_w_b",
+      "type": "box",
+      "position": [
+        18.0,
+        1.0,
+        -0.0
+      ],
+      "size": [
+        8,
+        2.0,
+        20
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "corner_n_a",
+      "type": "box",
+      "position": [
+        -26.0,
+        1.0,
+        -18.0
+      ],
+      "size": [
+        8,
+        2.0,
+        12
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "corner_n_b",
+      "type": "box",
+      "position": [
+        26.0,
+        1.0,
+        18.0
+      ],
+      "size": [
+        8,
+        2.0,
+        12
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "corner_s_a",
+      "type": "box",
+      "position": [
+        -26.0,
+        1.0,
+        18.0
+      ],
+      "size": [
+        8,
+        2.0,
+        12
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "corner_s_b",
+      "type": "box",
+      "position": [
+        26.0,
+        1.0,
+        -18.0
+      ],
+      "size": [
+        8,
+        2.0,
+        12
+      ],
+      "material": "terrace",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "spawn_platform_a",
+      "type": "box",
+      "position": [
+        -26.0,
+        2.0,
+        0.0
+      ],
+      "size": [
+        8,
+        4.0,
+        24
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "spawn_platform_b",
+      "type": "box",
+      "position": [
+        26.0,
+        2.0,
+        -0.0
+      ],
+      "size": [
+        8,
+        4.0,
+        24
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "spawn_screen_a",
+      "type": "box",
+      "position": [
+        -23.2,
+        5.3,
         0
       ],
       "size": [
         0.6,
-        4.4,
+        2.6,
         12
       ],
       "material": "dark",
@@ -142,101 +318,16 @@
       "role": "structure"
     },
     {
-      "id": "west_pocket_n",
+      "id": "spawn_screen_b",
       "type": "box",
       "position": [
-        -27.5,
-        2.2,
-        -7
-      ],
-      "size": [
-        5,
-        4.4,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "west_door_trim_n",
-      "type": "box",
-      "position": [
-        -23.5,
-        0.04,
-        -7
-      ],
-      "size": [
-        3,
-        0.08,
-        2.4
-      ],
-      "material": "cyan",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "west_pocket_s",
-      "type": "box",
-      "position": [
-        -27.5,
-        2.2,
-        7
-      ],
-      "size": [
-        5,
-        4.4,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "west_door_trim_s",
-      "type": "box",
-      "position": [
-        -23.5,
-        0.04,
-        7
-      ],
-      "size": [
-        3,
-        0.08,
-        2.4
-      ],
-      "material": "cyan",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "west_spawn_pad",
-      "type": "box",
-      "position": [
-        -27.5,
-        0.025,
-        0
-      ],
-      "size": [
-        3.4,
-        0.05,
-        5.4
-      ],
-      "material": "cyan",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "east_spawn_screen",
-      "type": "box",
-      "position": [
-        21.5,
-        2.2,
+        23.2,
+        5.3,
         0
       ],
       "size": [
         0.6,
-        4.4,
+        2.6,
         12
       ],
       "material": "dark",
@@ -244,174 +335,55 @@
       "role": "structure"
     },
     {
-      "id": "east_pocket_n",
-      "type": "box",
-      "position": [
-        27.5,
-        2.2,
-        -7
-      ],
-      "size": [
-        5,
-        4.4,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "east_door_trim_n",
-      "type": "box",
-      "position": [
-        23.5,
-        0.04,
-        -7
-      ],
-      "size": [
-        3,
-        0.08,
-        2.4
-      ],
-      "material": "amber",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "east_pocket_s",
-      "type": "box",
-      "position": [
-        27.5,
-        2.2,
-        7
-      ],
-      "size": [
-        5,
-        4.4,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "east_door_trim_s",
-      "type": "box",
-      "position": [
-        23.5,
-        0.04,
-        7
-      ],
-      "size": [
-        3,
-        0.08,
-        2.4
-      ],
-      "material": "amber",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "east_spawn_pad",
-      "type": "box",
-      "position": [
-        27.5,
-        0.025,
-        0
-      ],
-      "size": [
-        3.4,
-        0.05,
-        5.4
-      ],
-      "material": "amber",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "terrace_deck_a",
-      "type": "box",
-      "position": [
-        -9.5,
-        2.8,
-        -16
-      ],
-      "size": [
-        17,
-        0.4,
-        6
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "floor"
-    },
-    {
-      "id": "terrace_deck_b",
-      "type": "box",
-      "position": [
-        9.5,
-        2.8,
-        16
-      ],
-      "size": [
-        17,
-        0.4,
-        6
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "floor"
-    },
-    {
-      "id": "ramp_home_a",
+      "id": "ramp_spawn_n_a",
       "type": "ramp",
       "position": [
-        -23,
-        0,
-        -16
+        -26.5,
+        2.0,
+        -15
       ],
       "size": [
-        10,
-        3,
+        5,
+        2,
         6
       ],
       "material": "cyan",
       "collision": true,
       "role": "ramp",
-      "axis": "x",
+      "axis": "z",
       "lowAt": -1
     },
     {
-      "id": "ramp_home_b",
+      "id": "ramp_spawn_n_b",
       "type": "ramp",
       "position": [
-        23,
-        0,
-        16
+        26.5,
+        2.0,
+        15
       ],
       "size": [
-        10,
-        3,
+        5,
+        2,
         6
       ],
       "material": "amber",
       "collision": true,
       "role": "ramp",
-      "axis": "x",
+      "axis": "z",
       "lowAt": 1
     },
     {
-      "id": "ramp_counter_a",
+      "id": "ramp_spawn_s_a",
       "type": "ramp",
       "position": [
-        -4,
-        0,
-        -8.5
+        -26.5,
+        2.0,
+        15
       ],
       "size": [
-        4,
-        3,
-        9
+        5,
+        2,
+        6
       ],
       "material": "cyan",
       "collision": true,
@@ -420,17 +392,17 @@
       "lowAt": 1
     },
     {
-      "id": "ramp_counter_b",
+      "id": "ramp_spawn_s_b",
       "type": "ramp",
       "position": [
-        4,
-        0,
-        8.5
+        26.5,
+        2.0,
+        -15
       ],
       "size": [
-        4,
-        3,
-        9
+        5,
+        2,
+        6
       ],
       "material": "amber",
       "collision": true,
@@ -439,378 +411,284 @@
       "lowAt": -1
     },
     {
-      "id": "terrace_parapet_w_a",
+      "id": "spawn_pad_a",
       "type": "box",
+      "position": [
+        -27.2,
+        4.025,
+        0
+      ],
+      "size": [
+        3.4,
+        0.05,
+        6
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_pad_b",
+      "type": "box",
+      "position": [
+        27.2,
+        4.025,
+        0
+      ],
+      "size": [
+        3.4,
+        0.05,
+        6
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "tower_a",
+      "type": "box",
+      "position": [
+        -8.0,
+        3.0,
+        -18.5
+      ],
+      "size": [
+        8,
+        2.0,
+        7
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "tower_b",
+      "type": "box",
+      "position": [
+        8.0,
+        3.0,
+        18.5
+      ],
+      "size": [
+        8,
+        2.0,
+        7
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "tower_prow_a",
+      "type": "box",
+      "position": [
+        -8.0,
+        3.0,
+        -12.5
+      ],
+      "size": [
+        4,
+        2.0,
+        5
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "tower_prow_b",
+      "type": "box",
+      "position": [
+        8.0,
+        3.0,
+        12.5
+      ],
+      "size": [
+        4,
+        2.0,
+        5
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "ramp_tower_home_a",
+      "type": "ramp",
       "position": [
         -15,
-        3.55,
-        -13.25
+        2.0,
+        -18.5
       ],
       "size": [
-        4,
-        1.1,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_parapet_w_b",
-      "type": "box",
-      "position": [
-        15,
-        3.55,
-        13.25
-      ],
-      "size": [
-        4,
-        1.1,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_parapet_m_a",
-      "type": "box",
-      "position": [
-        -9.5,
-        3.55,
-        -13.25
-      ],
-      "size": [
-        3,
-        1.1,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_parapet_m_b",
-      "type": "box",
-      "position": [
-        9.5,
-        3.55,
-        13.25
-      ],
-      "size": [
-        3,
-        1.1,
-        0.5
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_panel_a",
-      "type": "box",
-      "position": [
-        -6.5,
-        3.85,
-        -17.5
-      ],
-      "size": [
-        1.2,
-        1.7,
-        0.6
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_panel_b",
-      "type": "box",
-      "position": [
-        6.5,
-        3.85,
-        17.5
-      ],
-      "size": [
-        1.2,
-        1.7,
-        0.6
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_panel_back_a",
-      "type": "box",
-      "position": [
-        -14,
-        3.85,
-        -18.2
-      ],
-      "size": [
-        1.8,
-        1.7,
-        0.6
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_panel_back_b",
-      "type": "box",
-      "position": [
-        14,
-        3.85,
-        18.2
-      ],
-      "size": [
-        1.8,
-        1.7,
-        0.6
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "terrace_column_00_a",
-      "type": "box",
-      "position": [
-        -17.4,
-        1.3,
-        -18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_00_b",
-      "type": "box",
-      "position": [
-        17.4,
-        1.3,
-        18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_01_a",
-      "type": "box",
-      "position": [
-        -17.4,
-        1.3,
-        -13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_01_b",
-      "type": "box",
-      "position": [
-        17.4,
-        1.3,
-        13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_10_a",
-      "type": "box",
-      "position": [
-        -9.5,
-        1.3,
-        -18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_10_b",
-      "type": "box",
-      "position": [
-        9.5,
-        1.3,
-        18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_11_a",
-      "type": "box",
-      "position": [
-        -9.5,
-        1.3,
-        -13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_11_b",
-      "type": "box",
-      "position": [
-        9.5,
-        1.3,
-        13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_20_a",
-      "type": "box",
-      "position": [
-        -2,
-        1.3,
-        -18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_20_b",
-      "type": "box",
-      "position": [
+        6,
         2,
-        1.3,
-        18.6
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_21_a",
-      "type": "box",
-      "position": [
-        -2,
-        1.3,
-        -13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_column_21_b",
-      "type": "box",
-      "position": [
-        2,
-        1.3,
-        13.4
-      ],
-      "size": [
-        0.5,
-        2.6,
-        0.5
-      ],
-      "material": "white",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "terrace_strip_a",
-      "type": "box",
-      "position": [
-        -9.5,
-        3.025,
-        -16
-      ],
-      "size": [
-        15,
-        0.05,
-        0.14
+        4
       ],
       "material": "cyan",
-      "collision": false,
-      "role": "wayfinding"
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
     },
     {
-      "id": "terrace_strip_b",
-      "type": "box",
+      "id": "ramp_tower_home_b",
+      "type": "ramp",
       "position": [
-        9.5,
-        3.025,
-        16
+        15,
+        2.0,
+        18.5
       ],
       "size": [
-        15,
-        0.05,
-        0.14
+        6,
+        2,
+        4
       ],
       "material": "amber",
-      "collision": false,
-      "role": "wayfinding"
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "ramp_tower_far_a",
+      "type": "ramp",
+      "position": [
+        -1,
+        2.0,
+        -18.5
+      ],
+      "size": [
+        6,
+        2,
+        4
+      ],
+      "material": "cyan",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "ramp_tower_far_b",
+      "type": "ramp",
+      "position": [
+        1,
+        2.0,
+        18.5
+      ],
+      "size": [
+        6,
+        2,
+        4
+      ],
+      "material": "amber",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "tower_parapet_a",
+      "type": "box",
+      "position": [
+        -8,
+        4.55,
+        -10.3
+      ],
+      "size": [
+        4,
+        1.1,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tower_parapet_b",
+      "type": "box",
+      "position": [
+        8,
+        4.55,
+        10.3
+      ],
+      "size": [
+        4,
+        1.1,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tower_panel_a",
+      "type": "box",
+      "position": [
+        -10.8,
+        4.85,
+        -21.2
+      ],
+      "size": [
+        1.6,
+        1.7,
+        0.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tower_panel_b",
+      "type": "box",
+      "position": [
+        10.8,
+        4.85,
+        21.2
+      ],
+      "size": [
+        1.6,
+        1.7,
+        0.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tower_panel_e_a",
+      "type": "box",
+      "position": [
+        -5.4,
+        4.85,
+        -21
+      ],
+      "size": [
+        0.6,
+        1.7,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "tower_panel_e_b",
+      "type": "box",
+      "position": [
+        5.4,
+        4.85,
+        21
+      ],
+      "size": [
+        0.6,
+        1.7,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
     },
     {
       "id": "court_dais",
@@ -834,12 +712,12 @@
       "type": "box",
       "position": [
         0,
-        2.5,
+        3,
         0
       ],
       "size": [
         3.2,
-        5,
+        6,
         3.2
       ],
       "material": "white",
@@ -864,378 +742,386 @@
       "role": "landmark"
     },
     {
-      "id": "court_half_a",
-      "type": "box",
+      "id": "ramp_pit_n_a",
+      "type": "ramp",
       "position": [
-        -9,
-        0.55,
-        -3
+        -2.5,
+        0,
+        -7
       ],
       "size": [
-        3,
-        1.1,
-        1.4
+        4,
+        2,
+        6
       ],
-      "material": "cover",
+      "material": "cyan",
       "collision": true,
-      "role": "cover"
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1
     },
     {
-      "id": "court_half_b",
-      "type": "box",
+      "id": "ramp_pit_n_b",
+      "type": "ramp",
       "position": [
-        9,
-        0.55,
-        3
+        2.5,
+        0,
+        7
       ],
       "size": [
-        3,
-        1.1,
-        1.4
+        4,
+        2,
+        6
       ],
-      "material": "cover",
+      "material": "amber",
       "collision": true,
-      "role": "cover"
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1
     },
     {
-      "id": "court_tall_a",
-      "type": "box",
+      "id": "ramp_pit_w_a",
+      "type": "ramp",
       "position": [
-        -12,
-        1.1,
-        4
-      ],
-      "size": [
-        1.6,
-        2.2,
-        3
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "court_tall_b",
-      "type": "box",
-      "position": [
-        12,
-        1.1,
-        -4
-      ],
-      "size": [
-        1.6,
-        2.2,
-        3
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "court_mid_a",
-      "type": "box",
-      "position": [
-        5,
-        0.55,
-        -5
-      ],
-      "size": [
-        2.4,
-        1.1,
-        1.2
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "court_mid_b",
-      "type": "box",
-      "position": [
-        -5,
-        0.55,
+        -11,
+        0,
         5
       ],
       "size": [
-        2.4,
-        1.1,
-        1.2
+        6,
+        2,
+        4
       ],
-      "material": "cover",
+      "material": "cyan",
       "collision": true,
-      "role": "cover"
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
     },
     {
-      "id": "spawn_front_n_a",
+      "id": "ramp_pit_w_b",
+      "type": "ramp",
+      "position": [
+        11,
+        0,
+        -5
+      ],
+      "size": [
+        6,
+        2,
+        4
+      ],
+      "material": "amber",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "pit_tall_a",
       "type": "box",
       "position": [
-        -17,
-        0.55,
+        -8,
+        1.1,
         -6.5
       ],
       "size": [
-        2.6,
-        1.1,
-        1.2
+        1.6,
+        2.2,
+        2.4
       ],
       "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "spawn_front_n_b",
+      "id": "pit_tall_b",
       "type": "box",
       "position": [
-        17,
-        0.55,
+        8,
+        1.1,
         6.5
       ],
       "size": [
-        2.6,
-        1.1,
-        1.2
+        1.6,
+        2.2,
+        2.4
       ],
       "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "spawn_front_s_a",
+      "id": "pit_half_a",
       "type": "box",
       "position": [
-        -17,
+        -10.5,
         0.55,
-        6.5
+        -2.5
       ],
       "size": [
-        2.6,
+        1.4,
         1.1,
-        1.2
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "spawn_front_s_b",
-      "type": "box",
-      "position": [
-        17,
-        0.55,
-        -6.5
-      ],
-      "size": [
-        2.6,
-        1.1,
-        1.2
-      ],
-      "material": "cover",
-      "collision": true,
-      "role": "cover"
-    },
-    {
-      "id": "garden_screen_a",
-      "type": "box",
-      "position": [
-        11.5,
-        1.8,
-        -9
-      ],
-      "size": [
-        7,
-        3.6,
-        0.45
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "garden_screen_b",
-      "type": "box",
-      "position": [
-        -11.5,
-        1.8,
-        9
-      ],
-      "size": [
-        7,
-        3.6,
-        0.45
-      ],
-      "material": "wall",
-      "collision": true,
-      "role": "structure"
-    },
-    {
-      "id": "planter_tall_1_a",
-      "type": "box",
-      "position": [
-        13,
-        1.2,
-        -15.5
-      ],
-      "size": [
-        3,
-        2.4,
         3
       ],
-      "material": "hedge",
+      "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_tall_1_b",
+      "id": "pit_half_b",
       "type": "box",
       "position": [
-        -13,
-        1.2,
-        15.5
+        10.5,
+        0.55,
+        2.5
       ],
       "size": [
-        3,
-        2.4,
+        1.4,
+        1.1,
         3
       ],
-      "material": "hedge",
+      "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_tall_2_a",
+      "id": "pit_mid_a",
       "type": "box",
       "position": [
         5,
-        1.2,
-        -17.5
+        0.55,
+        -4.5
       ],
       "size": [
-        2.2,
         2.4,
-        4
+        1.1,
+        1.2
       ],
-      "material": "hedge",
+      "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_tall_2_b",
+      "id": "pit_mid_b",
       "type": "box",
       "position": [
         -5,
-        1.2,
-        17.5
+        0.55,
+        4.5
       ],
       "size": [
-        2.2,
         2.4,
-        4
+        1.1,
+        1.2
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pit_corner_a",
+      "type": "box",
+      "position": [
+        -12.2,
+        1.1,
+        -8.2
+      ],
+      "size": [
+        2,
+        2.2,
+        2
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pit_corner_b",
+      "type": "box",
+      "position": [
+        12.2,
+        1.1,
+        8.2
+      ],
+      "size": [
+        2,
+        2.2,
+        2
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "rim_planter_n_a",
+      "type": "box",
+      "position": [
+        3,
+        2.55,
+        -11.6
+      ],
+      "size": [
+        3.2,
+        1.1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "rim_planter_n_b",
+      "type": "box",
+      "position": [
+        -3,
+        2.55,
+        11.6
+      ],
+      "size": [
+        3.2,
+        1.1,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "rim_planter_w_a",
+      "type": "box",
+      "position": [
+        -15.6,
+        2.55,
+        -3
+      ],
+      "size": [
+        1.2,
+        1.1,
+        3.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "rim_planter_w_b",
+      "type": "box",
+      "position": [
+        15.6,
+        2.55,
+        3
+      ],
+      "size": [
+        1.2,
+        1.1,
+        3.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "terrace_hedge_a",
+      "type": "box",
+      "position": [
+        12,
+        3.2,
+        -19
+      ],
+      "size": [
+        3,
+        2.4,
+        3
       ],
       "material": "hedge",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_low_1_a",
+      "id": "terrace_hedge_b",
       "type": "box",
       "position": [
-        7,
-        0.55,
-        -12
+        -12,
+        3.2,
+        19
       ],
       "size": [
+        3,
         2.4,
-        1.1,
-        2.4
+        3
       ],
-      "material": "stone",
+      "material": "hedge",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_low_1_b",
+      "id": "terrace_hedge_2_a",
       "type": "box",
       "position": [
-        -7,
-        0.55,
-        12
+        -19,
+        3.2,
+        6
       ],
       "size": [
+        2.2,
         2.4,
-        1.1,
-        2.4
+        2.2
       ],
-      "material": "stone",
+      "material": "hedge",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_low_2_a",
+      "id": "terrace_hedge_2_b",
       "type": "box",
       "position": [
-        20,
-        0.55,
-        -14
+        19,
+        3.2,
+        -6
       ],
       "size": [
+        2.2,
         2.4,
-        1.1,
-        2.4
+        2.2
       ],
-      "material": "stone",
+      "material": "hedge",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "planter_low_2_b",
+      "id": "corner_crate_a",
       "type": "box",
       "position": [
-        -20,
-        0.55,
-        14
+        -25,
+        2.55,
+        -21.5
       ],
       "size": [
         2.4,
         1.1,
-        2.4
+        1.4
       ],
-      "material": "stone",
+      "material": "cover",
       "collision": true,
       "role": "cover"
     },
     {
-      "id": "garden_path_a",
+      "id": "corner_crate_b",
       "type": "box",
       "position": [
-        10,
-        0.03,
-        -20.2
+        25,
+        2.55,
+        21.5
       ],
       "size": [
-        20,
-        0.06,
-        0.16
+        2.4,
+        1.1,
+        1.4
       ],
-      "material": "gold",
-      "collision": false,
-      "role": "wayfinding"
-    },
-    {
-      "id": "garden_path_b",
-      "type": "box",
-      "position": [
-        -10,
-        0.03,
-        20.2
-      ],
-      "size": [
-        20,
-        0.06,
-        0.16
-      ],
-      "material": "gold",
-      "collision": false,
-      "role": "wayfinding"
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
     }
   ],
   "anchors": [
@@ -1244,19 +1130,8 @@
       "kind": "spawn",
       "position": [
         -27,
-        0,
+        4.0,
         -1.5
-      ],
-      "yaw": 1.5708,
-      "team": "west"
-    },
-    {
-      "id": "spawn_west_02",
-      "kind": "spawn",
-      "position": [
-        -27.8,
-        0,
-        1.5
       ],
       "yaw": 1.5708,
       "team": "west"
@@ -1266,188 +1141,155 @@
       "kind": "spawn",
       "position": [
         27,
-        0,
+        4.0,
         1.5
       ],
       "yaw": -1.5708,
       "team": "east"
     },
     {
+      "id": "spawn_west_02",
+      "kind": "spawn",
+      "position": [
+        -27.6,
+        4.0,
+        1.8
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
       "id": "spawn_east_02",
       "kind": "spawn",
       "position": [
-        27.8,
-        0,
-        -1.5
+        27.6,
+        4.0,
+        -1.8
       ],
       "yaw": -1.5708,
       "team": "east"
     },
     {
-      "id": "cover_terrace_w_a",
+      "id": "cover_tower_prow_a",
       "kind": "cover",
       "position": [
-        -15,
-        3,
-        -14.4
+        -8,
+        4.0,
+        -11.2
       ],
       "height": 1.1,
-      "exposure": "court and enemy terrace"
+      "exposure": "pit and far terrace"
     },
     {
-      "id": "cover_terrace_w_b",
+      "id": "cover_tower_prow_b",
       "kind": "cover",
       "position": [
-        15,
-        3,
-        14.4
+        8,
+        4.0,
+        11.2
       ],
       "height": 1.1,
-      "exposure": "court and enemy terrace"
+      "exposure": "pit and far terrace"
     },
     {
-      "id": "cover_terrace_m_a",
+      "id": "cover_tower_back_a",
       "kind": "cover",
       "position": [
-        -9.5,
-        3,
-        -14.4
+        -10.8,
+        4.0,
+        -20.2
       ],
-      "height": 1.1,
-      "exposure": "court and enemy terrace"
+      "height": 1.7
     },
     {
-      "id": "cover_terrace_m_b",
+      "id": "cover_tower_back_b",
       "kind": "cover",
       "position": [
-        9.5,
-        3,
-        14.4
+        10.8,
+        4.0,
+        20.2
       ],
-      "height": 1.1,
-      "exposure": "court and enemy terrace"
+      "height": 1.7
     },
     {
-      "id": "cover_terrace_panel_a",
+      "id": "cover_pit_tall_a",
       "kind": "cover",
       "position": [
-        -6.5,
-        3,
-        -16.4
-      ],
-      "height": 1.7,
-      "exposure": "counter ramp and garden"
-    },
-    {
-      "id": "cover_terrace_panel_b",
-      "kind": "cover",
-      "position": [
-        6.5,
-        3,
-        16.4
-      ],
-      "height": 1.7,
-      "exposure": "counter ramp and garden"
-    },
-    {
-      "id": "cover_court_half_a",
-      "kind": "cover",
-      "position": [
-        -9,
+        -8,
         0,
-        -1.7
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_court_half_b",
-      "kind": "cover",
-      "position": [
-        9,
-        0,
-        1.7
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_court_tall_a",
-      "kind": "cover",
-      "position": [
-        -13.2,
-        0,
-        4
+        -4.9
       ],
       "height": 2.2
     },
     {
-      "id": "cover_court_tall_b",
+      "id": "cover_pit_tall_b",
       "kind": "cover",
       "position": [
-        13.2,
+        8,
         0,
-        -4
+        4.9
       ],
       "height": 2.2
     },
     {
-      "id": "cover_court_mid_a",
+      "id": "cover_pit_half_a",
+      "kind": "cover",
+      "position": [
+        -9.3,
+        0,
+        -2.5
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_pit_half_b",
+      "kind": "cover",
+      "position": [
+        9.3,
+        0,
+        2.5
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_pit_mid_a",
       "kind": "cover",
       "position": [
         5,
         0,
-        -3.8
+        -3.4
       ],
       "height": 1.1
     },
     {
-      "id": "cover_court_mid_b",
+      "id": "cover_pit_mid_b",
       "kind": "cover",
       "position": [
         -5,
         0,
-        3.8
+        3.4
       ],
       "height": 1.1
     },
     {
-      "id": "cover_spawn_front_n_a",
+      "id": "cover_pit_corner_a",
       "kind": "cover",
       "position": [
-        -17,
+        -10.7,
         0,
-        -5.3
+        -8.2
       ],
-      "height": 1.1
+      "height": 2.2
     },
     {
-      "id": "cover_spawn_front_n_b",
+      "id": "cover_pit_corner_b",
       "kind": "cover",
       "position": [
-        17,
+        10.7,
         0,
-        5.3
+        8.2
       ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_spawn_front_s_a",
-      "kind": "cover",
-      "position": [
-        -17,
-        0,
-        5.3
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_spawn_front_s_b",
-      "kind": "cover",
-      "position": [
-        17,
-        0,
-        -5.3
-      ],
-      "height": 1.1
+      "height": 2.2
     },
     {
       "id": "objective_dais_n",
@@ -1472,377 +1314,282 @@
       "interaction": "future objective, no capture logic"
     },
     {
-      "id": "shield_socket_court_a",
-      "kind": "reserved_shield",
+      "id": "cover_rim_planter_n_a",
+      "kind": "cover",
       "position": [
-        -9,
-        0,
-        -5.5
+        3,
+        2.0,
+        -12.8
       ],
-      "width": 2.4,
-      "height": 2
+      "height": 1.1
     },
     {
-      "id": "shield_socket_court_b",
-      "kind": "reserved_shield",
+      "id": "cover_rim_planter_n_b",
+      "kind": "cover",
       "position": [
-        9,
-        0,
-        5.5
+        -3,
+        2.0,
+        12.8
       ],
-      "width": 2.4,
-      "height": 2
+      "height": 1.1
     },
     {
-      "id": "dash_lane_spawn_a",
-      "kind": "reserved_dash",
+      "id": "cover_rim_planter_w_a",
+      "kind": "cover",
+      "position": [
+        -16.8,
+        2.0,
+        -3
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_rim_planter_w_b",
+      "kind": "cover",
+      "position": [
+        16.8,
+        2.0,
+        3
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_terrace_hedge_a",
+      "kind": "cover",
+      "position": [
+        10,
+        2.0,
+        -19
+      ],
+      "height": 2.4
+    },
+    {
+      "id": "cover_terrace_hedge_b",
+      "kind": "cover",
+      "position": [
+        -10,
+        2.0,
+        19
+      ],
+      "height": 2.4
+    },
+    {
+      "id": "cover_terrace_hedge_2_a",
+      "kind": "cover",
       "position": [
         -19,
-        0,
-        -9
+        2.0,
+        7.7
       ],
-      "length": 8,
-      "width": 4
+      "height": 2.4
     },
     {
-      "id": "dash_lane_spawn_b",
-      "kind": "reserved_dash",
+      "id": "cover_terrace_hedge_2_b",
+      "kind": "cover",
       "position": [
         19,
+        2.0,
+        -7.7
+      ],
+      "height": 2.4
+    },
+    {
+      "id": "cover_corner_crate_a",
+      "kind": "cover",
+      "position": [
+        -25,
+        2.0,
+        -20.2
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "cover_corner_crate_b",
+      "kind": "cover",
+      "position": [
+        25,
+        2.0,
+        20.2
+      ],
+      "height": 1.1
+    },
+    {
+      "id": "shield_socket_rim_a",
+      "kind": "reserved_shield",
+      "position": [
+        -16,
+        2.0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    },
+    {
+      "id": "shield_socket_rim_b",
+      "kind": "reserved_shield",
+      "position": [
+        16,
+        2.0,
+        0
+      ],
+      "width": 2.4,
+      "height": 2
+    },
+    {
+      "id": "dash_lane_pit_a",
+      "kind": "reserved_dash",
+      "position": [
         0,
-        9
+        0,
+        -8.5
       ],
       "length": 8,
       "width": 4
     },
     {
-      "id": "cover_planter_tall_1_a",
-      "kind": "cover",
+      "id": "dash_lane_pit_b",
+      "kind": "reserved_dash",
       "position": [
-        10.9,
         0,
-        -15.5
-      ],
-      "height": 2.4
-    },
-    {
-      "id": "cover_planter_tall_1_b",
-      "kind": "cover",
-      "position": [
-        -10.9,
         0,
-        15.5
+        8.5
       ],
-      "height": 2.4
-    },
-    {
-      "id": "cover_planter_tall_2_a",
-      "kind": "cover",
-      "position": [
-        6.8,
-        0,
-        -17.5
-      ],
-      "height": 2.4
-    },
-    {
-      "id": "cover_planter_tall_2_b",
-      "kind": "cover",
-      "position": [
-        -6.8,
-        0,
-        17.5
-      ],
-      "height": 2.4
-    },
-    {
-      "id": "cover_planter_low_1_a",
-      "kind": "cover",
-      "position": [
-        7,
-        0,
-        -10.2
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_planter_low_1_b",
-      "kind": "cover",
-      "position": [
-        -7,
-        0,
-        10.2
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_planter_low_2_a",
-      "kind": "cover",
-      "position": [
-        18.2,
-        0,
-        -14
-      ],
-      "height": 1.1
-    },
-    {
-      "id": "cover_planter_low_2_b",
-      "kind": "cover",
-      "position": [
-        -18.2,
-        0,
-        14
-      ],
-      "height": 1.1
+      "length": 8,
+      "width": 4
     }
   ],
   "routes": [
     {
-      "id": "mid_lane",
-      "name": "Spawn A / court / spawn B",
+      "id": "spawn_to_tower",
+      "name": "A spawn / north corner / tower / prow",
       "points": [
         [
           -27,
-          0,
+          4.0,
           -1.5
         ],
         [
-          -24,
-          0,
-          -2
+          -26.5,
+          4.0,
+          -10
         ],
         [
-          -23.5,
-          0,
-          -8
+          -26.5,
+          2.0,
+          -19.5
+        ],
+        [
+          -21,
+          2.0,
+          -22.6
+        ],
+        [
+          -18.6,
+          2.0,
+          -18.5
         ],
         [
           -12,
-          0,
-          -8.5
+          4.0,
+          -18.5
         ],
         [
-          -7,
-          0,
-          -5.5
+          -8,
+          4.0,
+          -16
         ],
         [
-          -7,
-          0,
-          -2
-        ],
-        [
-          -4,
-          0,
-          2.6
-        ],
-        [
-          0,
-          0.24,
-          2.8
-        ],
-        [
-          4,
-          0,
-          2.6
-        ],
-        [
-          7,
-          0,
-          2
-        ],
-        [
-          7,
-          0,
-          -2
-        ],
-        [
-          12.5,
-          0,
-          -0.5
-        ],
-        [
-          14.5,
-          0,
-          8.5
-        ],
-        [
-          23.5,
-          0,
-          8
-        ],
-        [
-          24,
-          0,
-          2
-        ],
-        [
-          27,
-          0,
-          1.5
+          -8,
+          4.0,
+          -11.2
         ]
       ]
     },
     {
-      "id": "terrace_a",
-      "name": "A home ramp / terrace / counter ramp",
+      "id": "pit_crossing",
+      "name": "Pit: A north ramp / round the gnomon / B north ramp",
       "points": [
         [
-          -27,
-          0,
-          -1.5
-        ],
-        [
-          -24,
-          0,
-          -2
-        ],
-        [
-          -23.5,
-          0,
-          -8
-        ],
-        [
-          -28.8,
-          0,
-          -10.5
-        ],
-        [
-          -28.8,
-          0,
-          -16
-        ],
-        [
-          -18,
-          3,
-          -16
-        ],
-        [
-          -4,
-          3,
-          -16
-        ],
-        [
-          -4,
-          3,
-          -13
-        ],
-        [
-          -4,
-          0,
-          -4
-        ],
-        [
-          -7,
-          0,
-          -2
-        ]
-      ]
-    },
-    {
-      "id": "garden_flank_b",
-      "name": "B north exit / garden / under terrace A",
-      "points": [
-        [
-          27,
-          0,
-          1.5
-        ],
-        [
-          24,
-          0,
-          2
-        ],
-        [
-          23.5,
-          0,
-          -8
-        ],
-        [
-          16.5,
-          0,
+          -2.5,
+          2.0,
           -12
         ],
         [
-          9.5,
+          -2.5,
           0,
-          -14
+          -4.3
         ],
         [
-          3,
+          -4.6,
           0,
-          -14
+          -2.5
         ],
         [
-          -1,
+          -4.6,
           0,
-          -11
+          2.5
         ],
         [
-          -1,
-          0,
-          -16
+          2.5,
+          0.24,
+          3.4
         ],
         [
-          -16,
-          0,
-          -16
-        ],
-        [
-          -16,
-          0,
-          -11
-        ],
-        [
-          -12,
-          0,
-          -8.5
+          2.5,
+          2.0,
+          12
         ]
       ]
     },
     {
-      "id": "counter_climb_b",
-      "name": "B garden to A terrace via counter ramp",
+      "id": "tower_far_side",
+      "name": "Tower A from the east (enemy) ramp",
       "points": [
         [
-          9.5,
-          0,
+          8,
+          2.0,
           -14
         ],
         [
-          3,
-          0,
-          -13
-        ],
-        [
-          0,
-          0,
-          -9
-        ],
-        [
-          -1.2,
-          0,
-          -3.6
+          3.5,
+          2.0,
+          -18.5
         ],
         [
           -4,
+          4.0,
+          -18.5
+        ],
+        [
+          -8,
+          4.0,
+          -18.5
+        ]
+      ]
+    },
+    {
+      "id": "pit_west_ramp",
+      "name": "West pit ramp up to the west terrace",
+      "points": [
+        [
+          -4,
           0,
-          -3.6
+          7.5
         ],
         [
-          -4,
-          3,
-          -13
+          -7,
+          0,
+          5
         ],
         [
-          -4,
-          3,
-          -16
+          -14,
+          2.0,
+          5
         ],
         [
-          -12,
-          3,
-          -16
+          -18,
+          2.0,
+          2
         ]
       ]
     }
@@ -1855,10 +1602,12 @@
     "stepHeight": 0.28
   },
   "clearances": {
-    "spawnDoor": 3.6,
-    "homeRampWidth": 6,
-    "counterRampWidth": 4,
-    "underTerraceHeadroom": 2.6,
-    "gardenLanes": 2.25
+    "spawnRamps": 5,
+    "pitRamps": 4,
+    "towerRamps": 4,
+    "pit": [
+      28,
+      20
+    ]
   }
 }
