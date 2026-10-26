@@ -1,0 +1,11 @@
+{
+  "mapId": "neon_harbour",
+  "version": "0.1.0",
+  "checks": 291,
+  "failed": [],
+  "visualNodes": 60,
+  "visualTriangles": 20582,
+  "visualBytes": 1310384,
+  "collisionNodes": 56,
+  "collisionBytes": 77188
+}

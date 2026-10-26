@@ -9,8 +9,10 @@ import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
 import zenithThumb from './assets/maps/zenith.webp';
+import sakuraThumb from './assets/maps/sakura.webp';
+import neonThumb from './assets/maps/neon.webp';
 
-const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb };
+const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb, sakura: sakuraThumb, neon: neonThumb };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);

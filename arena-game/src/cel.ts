@@ -75,7 +75,9 @@ export function makeSky(sunDir: THREE.Vector3): THREE.Mesh {
         col += uSun * smoothstep(0.05, 0.035, a) + uSun * 0.35 * exp(-a * 10.0);
         if (uNight > 0.0 && d.y > 0.0) {
           vec2 sp = d.xz / (d.y + 0.3) * 60.0;
-          float st = step(0.985, h12(floor(sp))) * (0.5 + 0.5 * sin(uTime * 2.0 + h12(floor(sp) + 7.0) * 30.0));
+          vec2 cell = floor(sp), off = vec2(h12(cell + 3.0), h12(cell + 5.0)) * 0.6 + 0.2;
+          float dotMask = smoothstep(0.09, 0.0, length(fract(sp) - off)); // round pin-point stars
+          float st = step(0.975, h12(cell)) * dotMask * (0.55 + 0.45 * sin(uTime * 2.0 + h12(cell + 7.0) * 30.0)) * 1.6;
           col += vec3(0.85, 0.9, 1.0) * st * uNight * smoothstep(0.05, 0.4, d.y);
         }
         if (d.y > 0.0) {

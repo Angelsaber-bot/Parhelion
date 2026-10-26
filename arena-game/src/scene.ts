@@ -6,6 +6,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
+import neonGlb from '../../arena-maps/neon/assets/neon_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
@@ -16,7 +17,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -659,7 +660,8 @@ class Particles {
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
     const color = kind === 'petals' ? 0xffb7cf : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
     const mat = new THREE.PointsMaterial({
-      color, map: tex, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08, transparent: true, depthWrite: false,
+      color, map: tex, alphaMap: tex, alphaTest: 0.02, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08,
+      transparent: true, depthWrite: false,
       blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
     });
     this.points = new THREE.Points(geo, mat);

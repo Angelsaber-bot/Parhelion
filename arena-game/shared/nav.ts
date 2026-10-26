@@ -29,8 +29,9 @@ export class NavGrid {
         const ids: number[] = [];
         for (const y of this.surfaces(x, z)) {
           if (blockedAt(map, x, z, y)) continue;
-          // need headroom: no solid underside within player height
-          if (map.solids.some((s) => s.minY > y + 0.05 && s.minY < y + map.height && x > s.minX - map.radius &&
+          // need headroom: no solid underside within player height (a ramp that starts within step
+          // height, e.g. one stacked on a container, is something to walk onto, not a ceiling)
+          if (map.solids.some((s) => s.minY > y + map.step && s.minY < y + map.height && x > s.minX - map.radius &&
             x < s.maxX + map.radius && z > s.minZ - map.radius && z < s.maxZ + map.radius)) continue;
           const id = this.nodes.length;
           this.nodes.push({ id, x, y, z, links: [], costs: [] });

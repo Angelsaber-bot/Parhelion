@@ -1,11 +1,13 @@
 # Parhelion · Arena game (Alpha)
 
-可以打的 Arena：1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。两张地图：ASTER 研究站、ZENITH 日冕天台，在大厅里选。
+可以打的 Arena：1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。四张风格各不相同的地图，在大厅里选：ASTER 研究站（正午，开阔中庭 + 长廊高台）、ZENITH 日冕天台（正午，三层阶梯 + 下沉日晷池）、SAKURA 樱庭（黄昏，经典三路 + 室内拜殿）、NEON 夜港（夜晚，集装箱迷宫 + 吊车甲板）。
 
 地图和美术**不在这里**：直接读取各地图目录的 `runtime/map.json`（碰撞与锚点）和视觉 GLB，不复制、不修改：
 
 - ASTER：`../arena/runtime/map.json` + `../arena/assets/station_visual.glb`
-- ZENITH：`../arena-maps/zenith/runtime/map.json` + `../arena-maps/zenith/assets/zenith_visual.glb`
+- ZENITH / SAKURA / NEON：`../arena-maps/<id>/runtime/map.json` + `../arena-maps/<id>/assets/<id>_visual.glb`（生成脚本在各自 `source/`，共享工具在 `../arena-maps/_lib/`）
+
+每张图可在 `map.json` 的 `presentation.preset` 里选氛围（`src/atmosphere.ts`：day / noon / dusk / night），控制天空、太阳、雾、曝光、辉光和环境粒子。
 
 地图在 `shared/arenaMap.ts` 的 `MAPS` 里注册（加新图只需同格式的数据 + 在这里加一行，`scene.ts` 里加 GLB 路径）。各地图的生成流程照旧在自己的目录维护，改了这里自动生效。
 
