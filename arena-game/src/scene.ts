@@ -15,6 +15,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
+import { buildFighter, FighterAnimator } from './fighter.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
@@ -241,12 +242,18 @@ export class ArenaScene {
     }
     a.root.visible = p.alive;
     a.setAlly(ally);
+    const now = performance.now() / 1000;
+    a.animate(pos, Math.min(0.1, now - this.lastAnim));
     a.root.position.set(pos[0], pos[1], pos[2]);
     a.root.rotation.y = yaw;
     a.aim.rotation.x = pitch;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     a.setHp(p.hp / CHARACTERS[p.char].hp, p.name);
   }
+
+  private lastAnim = performance.now() / 1000;
+  /** Call once per frame after all syncAvatar calls. */
+  endAvatars() { this.lastAnim = performance.now() / 1000; }
 
   pruneAvatars(ids: Set<string>) {
     for (const [id, a] of this.avatars) if (!ids.has(id)) { a.dispose(this.scene); this.avatars.delete(id); }
@@ -487,7 +494,7 @@ export class Viewmodel {
 
 class Avatar {
   readonly root = new THREE.Group();
-  readonly aim = new THREE.Group();
+  readonly aim: THREE.Group;
   muzzle = new THREE.Object3D();
   readonly char: number;
   readonly team: Team;
@@ -496,53 +503,21 @@ class Avatar {
   private plate: THREE.Sprite;
   private plateCtx: CanvasRenderingContext2D;
   private plateKey = '';
+  private anim: FighterAnimator;
+  private last: Vec3 | null = null;
+  private speed = 0;
+  private vy = 0;
 
   constructor(p: PlayerSnap) {
     this.char = p.char;
     this.team = p.team;
     const teamCol = TEAM_COLOR[p.team];
-    const suit = toon(p.char === 0 ? 0xeef2f6 : 0x2c3442);
-    const trim = toon(teamCol, teamCol);
-    const skin = toon(0xffe1d0);
-    const hair = toon(p.char === 0 ? 0x9fd8ff : 0xffb347);
+    const rig = buildFighter(p.char, teamCol);
+    this.aim = rig.aim;
+    this.anim = new FighterAnimator(rig);
+    this.root.add(rig.root);
 
-    const body = new THREE.Mesh(new THREE.CapsuleGeometry(0.27, 0.6, 4, 12), suit);
-    body.position.y = 0.95;
-    const belt = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.035, 6, 20), trim);
-    belt.rotation.x = Math.PI / 2;
-    belt.position.y = 0.82;
-    const legs = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.35, 4, 10), suit);
-    legs.position.y = 0.4;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 18, 14), skin);
-    head.position.y = 1.6;
-    const hairCap = new THREE.Mesh(new THREE.SphereGeometry(0.215, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.55), hair);
-    hairCap.position.y = 1.62;
-    hairCap.rotation.x = -0.25;
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.06, 0.05), trim);
-    visor.position.set(0, 1.62, -0.19);
-    this.root.add(body, belt, legs, head, hairCap, visor);
-
-    if (p.char === 0) {
-      // Aster: floating parhelion halo
-      const halo = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.018, 6, 28), toon(0xfff2b0, 0xffe58a));
-      halo.rotation.x = Math.PI / 2;
-      halo.position.y = 1.95;
-      this.root.add(halo);
-    } else {
-      // Vega: twin ear fins and a ponytail
-      for (const sx of [-1, 1]) {
-        const fin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 4), trim);
-        fin.position.set(sx * 0.18, 1.78, 0.02);
-        fin.rotation.z = -sx * 0.5;
-        this.root.add(fin);
-      }
-      const tail = new THREE.Mesh(new THREE.CapsuleGeometry(0.07, 0.3, 4, 8), hair);
-      tail.position.set(0, 1.45, 0.24);
-      tail.rotation.x = 0.4;
-      this.root.add(tail);
-    }
-
-    const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.44, 28), new THREE.MeshBasicMaterial({ color: teamCol, transparent: true, opacity: 0.7, side: THREE.DoubleSide }));
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.44, 28), new THREE.MeshBasicMaterial({ color: teamCol, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.03;
     const blob = new THREE.Mesh(new THREE.CircleGeometry(0.4, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.28, depthWrite: false }));
@@ -550,13 +525,10 @@ class Avatar {
     blob.position.y = 0.02;
     this.root.add(blob, ring);
 
-    this.aim.position.set(0, 1.35, 0);
-    this.root.add(this.aim);
-
     const c = document.createElement('canvas');
     c.width = 256; c.height = 64;
     this.plateCtx = c.getContext('2d')!;
-    this.plate = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+    this.plate = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, depthWrite: false, transparent: true }));
     this.plate.scale.set(1.2, 0.3, 1);
     this.plate.position.y = 2.25;
     this.plate.renderOrder = 10;
@@ -568,14 +540,25 @@ class Avatar {
     this.plate.material.depthTest = !ally;
   }
 
+  /** Drive the run cycle from how far the interpolated position moved since last frame. */
+  animate(pos: Vec3, dt: number) {
+    if (this.last && dt > 0) {
+      const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
+      this.speed += (Math.min(v, 12) - this.speed) * Math.min(1, dt * 10);
+      this.vy += ((pos[1] - this.last[1]) / dt - this.vy) * Math.min(1, dt * 10);
+    }
+    this.last = [pos[0], pos[1], pos[2]];
+    this.anim.update(dt, this.speed, this.vy);
+  }
+
   setWeapon(weapon: number, skin: number) {
     const k = `${weapon}:${skin}`;
     if (k === this.gunKey) return;
     this.gunKey = k;
     if (this.gun) this.aim.remove(this.gun);
     const { group, muzzle } = buildGun(weapon, skin);
-    group.position.set(0.24, 0, -0.25);
-    group.scale.setScalar(1.3);
+    group.position.set(0.16, -0.08, -0.32);
+    group.scale.setScalar(1.15);
     this.gun = group;
     this.muzzle = muzzle;
     this.aim.add(group);
