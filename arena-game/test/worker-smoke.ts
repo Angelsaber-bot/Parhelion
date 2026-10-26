@@ -30,3 +30,5 @@ console.log('A moved (seen by B):', pa(before), '→', pa(after), last.phase, `s
 a.ws.close(); b.ws.close();
 console.log('OK');
 process.exit(0);
+
+export {};
