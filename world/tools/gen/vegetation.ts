@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Batch, T, distToPolyline } from './geo.js';
 import { mulberry32, range, fbm } from './rng.js';
-import { WORLD, PATHS, CAMP, STATION, TOWER, RUIN, LAKE, ISLAND, FALLS, BRIDGE, POND } from './layout.js';
+import { WORLD, PATHS, CAMP, STATION, TOWER, RUIN, LAKE, ISLAND, FALLS, BRIDGE, POND, CAMPUS, SEAM_W, SEAM_E, BAY_N } from './layout.js';
 import { PAL, type Piece } from './structures.js';
 
 type HeightAt = (x: number, z: number) => number;
@@ -89,6 +89,9 @@ function blocked(x: number, z: number) {
   if (Math.abs(x - CAMP.c[0]) < 26 && z > CAMP.c[1] - 70 && z < CAMP.c[1]) return true; // keep the camp's view of the tower open
   if (x > STATION.x0 - 8 && x < STATION.x1 + 8 && z > STATION.z0 - 8 && z < STATION.z1 + 8) return true;
   if (x > FALLS.x - 14 && x < FALLS.x + 4 && z > -72 && z < -48) return true;
+  if (x > CAMPUS.x0 - 6 && x < CAMPUS.x1 + 6 && z > CAMPUS.z0 - 6 && z < CAMPUS.z1 + 8) return true;
+  if (near(SEAM_W.c, 26) || near(SEAM_E.c, 18)) return true;
+  if (Math.hypot((x - BAY_N.c[0]) / (BAY_N.rx + 10), (z - BAY_N.c[1]) / (BAY_N.rz + 10)) < 1) return true;
   for (const p of PATHS) if (distToPolyline(x, z, p) < 4) return true;
   return false;
 }
@@ -99,8 +102,12 @@ function forestDensity(x: number, z: number) {
   const towerSlope = Math.hypot(x - 60, z + 120) < 38;
   const n = fbm(x * 0.02, z * 0.02, 3, WORLD.seed + 40);
   if (inForest) return 0.62 + n * 0.3;
+  // groves of the enlarged valley: SE downs, behind the HQ, NE highland pines
+  if (Math.hypot(x - 236, z - 190) < 80 || Math.hypot(x + 262, z - 186) < 55 || Math.hypot(x - 210, z + 250) < 70) return 0.15 + n * 0.2;
   if (nwGrove || towerSlope) return 0.35 + n * 0.3;
-  return 0.05 + Math.max(0, n) * 0.12;
+  // the enlarged outer valley stays mostly open meadow (keeps the canopy budget near the old map's)
+  const outer = Math.max(Math.abs(x), Math.abs(z)) > 214;
+  return outer ? 0.02 + Math.max(0, n) * 0.05 : 0.05 + Math.max(0, n) * 0.12;
 }
 
 export function buildVegetation(heightAt: HeightAt): Piece[] {
@@ -125,7 +132,7 @@ export function buildVegetation(heightAt: HeightAt): Piece[] {
       if (Math.abs(x) > WORLD.playHalf + 12 || Math.abs(z) > WORLD.playHalf + 12) continue;
       if (h < WORLD.waterLevel + 0.8 || blocked(x, z)) continue;
       const sl = slope(x, z);
-      const dens = h > 46 ? 0.05 : forestDensity(x, z);
+      const dens = h > 46 ? 0.03 : forestDensity(x, z);
       if (sl > 0.9 || roll > dens) continue;
       trees++;
       const y = h - 0.3;

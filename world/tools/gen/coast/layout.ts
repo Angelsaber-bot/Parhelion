@@ -22,7 +22,7 @@ export const COAST = {
 };
 
 /** Where this region sits in the shared world (metres). Its west edge meets 幻日谷's east pass. */
-export const OFFSET: V2 = [480, 50];
+export const OFFSET: V2 = [600, 50];
 
 export const AREAS: Area[] = [
   { id: 'pier', name: '潮汐码头', nameEn: 'Tide Pier', c: [70, 152], r: 34, color: '#f08a4b', tp: [62, 140] },

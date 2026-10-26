@@ -2,18 +2,18 @@
  "world": {
   "id": "world_alpha_sundog_valley",
   "name": "幻日谷",
-  "nameEn": "Sundog Valley",
-  "version": 1,
+  "nameEn": "Parhelion Valley",
+  "version": 2,
   "seed": 20261026,
-  "half": 240,
-  "playHalf": 214,
+  "half": 360,
+  "playHalf": 334,
   "cell": 2,
   "waterLevel": 1
  },
  "areas": [
   {
    "id": "camp",
-   "name": "降落营地",
+   "name": "初始营地",
    "nameEn": "Landing Camp",
    "c": [
     5,
@@ -24,6 +24,66 @@
    "tp": [
     3,
     159
+   ]
+  },
+  {
+   "id": "hq",
+   "name": "幻日观测所",
+   "nameEn": "Parhelion Observatory",
+   "c": [
+    -118,
+    222
+   ],
+   "r": 26,
+   "color": "#6ff4ff",
+   "tp": [
+    -112,
+    246
+   ]
+  },
+  {
+   "id": "armory",
+   "name": "枪械工坊",
+   "nameEn": "Armory",
+   "c": [
+    -70,
+    252
+   ],
+   "r": 20,
+   "color": "#f4c95d",
+   "tp": [
+    -92,
+    252
+   ]
+  },
+  {
+   "id": "summon",
+   "name": "召唤大厅",
+   "nameEn": "Summoning Hall",
+   "c": [
+    -166,
+    256
+   ],
+   "r": 20,
+   "color": "#c9a2ff",
+   "tp": [
+    -144,
+    256
+   ]
+  },
+  {
+   "id": "tower",
+   "name": "幻日塔",
+   "nameEn": "Parhelion Tower",
+   "c": [
+    0,
+    -162
+   ],
+   "r": 34,
+   "color": "#ffd76a",
+   "tp": [
+    0,
+    -142
    ]
   },
   {
@@ -58,8 +118,8 @@
   },
   {
    "id": "station",
-   "name": "旧观测站",
-   "nameEn": "Old Observatory",
+   "name": "废弃前哨站",
+   "nameEn": "Abandoned Outpost",
    "c": [
     -140,
     -51
@@ -69,21 +129,6 @@
    "tp": [
     -140,
     -8
-   ]
-  },
-  {
-   "id": "tower",
-   "name": "幻日塔",
-   "nameEn": "Parhelion Tower",
-   "c": [
-    0,
-    -162
-   ],
-   "r": 34,
-   "color": "#ffd76a",
-   "tp": [
-    0,
-    -142
    ]
   },
   {
@@ -114,6 +159,51 @@
    "tp": [
     -84,
     82
+   ]
+  },
+  {
+   "id": "seam_w",
+   "name": "西部时层",
+   "nameEn": "Western Era Seam",
+   "c": [
+    -304,
+    -30
+   ],
+   "r": 30,
+   "color": "#ffb36b",
+   "tp": [
+    -280,
+    -30
+   ]
+  },
+  {
+   "id": "seam_n",
+   "name": "北方冰海断面",
+   "nameEn": "Northern Ice Seam",
+   "c": [
+    0,
+    -292
+   ],
+   "r": 40,
+   "color": "#bfe9ff",
+   "tp": [
+    0,
+    -246
+   ]
+  },
+  {
+   "id": "pass",
+   "name": "东部山口",
+   "nameEn": "Eastern Pass",
+   "c": [
+    300,
+    30
+   ],
+   "r": 30,
+   "color": "#7fb0ff",
+   "tp": [
+    276,
+    30
    ]
   }
  ],
@@ -176,6 +266,14 @@
    [
     -250,
     108
+   ],
+   [
+    -310,
+    122
+   ],
+   [
+    -380,
+    138
    ]
   ]
  },
@@ -308,8 +406,88 @@
     30
    ],
    [
-    240,
+    260,
     30
+   ],
+   [
+    320,
+    30
+   ],
+   [
+    360,
+    30
+   ]
+  ],
+  [
+   [
+    -6,
+    146
+   ],
+   [
+    -34,
+    152
+   ],
+   [
+    -62,
+    182
+   ],
+   [
+    -90,
+    212
+   ],
+   [
+    -112,
+    236
+   ]
+  ],
+  [
+   [
+    -130,
+    214
+   ],
+   [
+    -124,
+    170
+   ],
+   [
+    -108,
+    120
+   ],
+   [
+    -96,
+    82
+   ]
+  ],
+  [
+   [
+    -176,
+    -36
+   ],
+   [
+    -230,
+    -34
+   ],
+   [
+    -280,
+    -30
+   ],
+   [
+    -300,
+    -30
+   ]
+  ],
+  [
+   [
+    2,
+    -178
+   ],
+   [
+    8,
+    -212
+   ],
+   [
+    0,
+    -244
    ]
   ],
   [
@@ -581,7 +759,7 @@
   {
    "id": "relay_b",
    "type": "interact",
-   "label": "中继器 B（观测站）",
+   "label": "中继器 B（前哨站）",
    "p": [
     -148,
     8,
@@ -814,12 +992,171 @@
    ],
    "radius": 2.5,
    "note": "跳台小挑战"
+  },
+  {
+   "id": "hq_terminal",
+   "type": "interact",
+   "label": "观测终端（幻日观测所）",
+   "p": [
+    -118,
+    10,
+    229.6
+   ],
+   "radius": 3.5,
+   "note": "登记调查员身份，打开世界地图与历史档案"
+  },
+  {
+   "id": "hq_archive",
+   "type": "poi",
+   "label": "历史档案 · 世界地图全息台",
+   "p": [
+    -123,
+    10,
+    229
+   ]
+  },
+  {
+   "id": "armory_rack",
+   "type": "interact",
+   "label": "武器架（枪械工坊）",
+   "p": [
+    -65,
+    10,
+    250
+   ],
+   "radius": 3.5,
+   "note": "领取 Lumen AR 与弹药"
+  },
+  {
+   "id": "range_target_1",
+   "type": "objective",
+   "label": "练习靶 1",
+   "p": [
+    -81,
+    12,
+    286
+   ]
+  },
+  {
+   "id": "range_target_2",
+   "type": "objective",
+   "label": "练习靶 2",
+   "p": [
+    -75,
+    12,
+    286
+   ]
+  },
+  {
+   "id": "range_target_3",
+   "type": "objective",
+   "label": "练习靶 3",
+   "p": [
+    -69,
+    12,
+    286
+   ]
+  },
+  {
+   "id": "range_line",
+   "type": "poi",
+   "label": "靶场射击线",
+   "p": [
+    -75,
+    10,
+    264.5
+   ]
+  },
+  {
+   "id": "summon_circle",
+   "type": "interact",
+   "label": "召唤阵（召唤大厅）",
+   "p": [
+    -166,
+    10.8,
+    256
+   ],
+   "radius": 4,
+   "requires": [
+    "seam_west",
+    "seam_north",
+    "seam_east"
+   ],
+   "note": "稳定召唤阵，为第一份 Servant 契约做准备"
+  },
+  {
+   "id": "seam_west",
+   "type": "interact",
+   "label": "西部时层断面 · 落日王国",
+   "p": [
+    -306,
+    3.673647880554199,
+    -30
+   ],
+   "radius": 4.5,
+   "requires": [
+    "tower_console"
+   ],
+   "note": "约 537 年 · 不列颠：永恒黄昏"
+  },
+  {
+   "id": "seam_north",
+   "type": "interact",
+   "label": "北方冰海断面 · 永冬之城",
+   "p": [
+    0,
+    1.12,
+    -314
+   ],
+   "radius": 4.5,
+   "requires": [
+    "tower_console"
+   ],
+   "note": "1812 年 · 俄罗斯：不会结束的冬天"
+  },
+  {
+   "id": "seam_east",
+   "type": "interact",
+   "label": "东部山口断面 · 黑帆尽头",
+   "p": [
+    314,
+    15.847418785095215,
+    30
+   ],
+   "radius": 4.5,
+   "requires": [
+    "tower_console"
+   ],
+   "note": "1718 年 · 大西洋：海盗黄金时代（现为星落海岸）"
   }
  ],
  "objective": {
   "id": "restart_parhelion_tower",
-  "name": "重启幻日塔",
+  "name": "幻日谷：重启幻日塔",
   "steps": [
+   {
+    "id": "hq",
+    "text": "前往幻日观测所，启动观测终端",
+    "done": [
+     "hq_terminal"
+    ]
+   },
+   {
+    "id": "armory",
+    "text": "在枪械工坊领取装备",
+    "done": [
+     "armory_rack"
+    ]
+   },
+   {
+    "id": "range",
+    "text": "在靶场击中 3 个练习靶",
+    "done": [
+     "range_target_1",
+     "range_target_2",
+     "range_target_3"
+    ]
+   },
    {
     "id": "ruin_targets",
     "text": "在回声森林遗迹击中 3 个机关靶，打开神龛",
@@ -838,7 +1175,7 @@
    },
    {
     "id": "relay_b",
-    "text": "清除旧观测站并启动中继器 B",
+    "text": "清除废弃前哨站并启动中继器 B",
     "done": [
      "relay_b"
     ]
@@ -848,6 +1185,22 @@
     "text": "前往幻日塔，启动控制台",
     "done": [
      "tower_console"
+    ]
+   },
+   {
+    "id": "seams",
+    "text": "调查三处时层断面（西 / 北 / 东）",
+    "done": [
+     "seam_west",
+     "seam_north",
+     "seam_east"
+    ]
+   },
+   {
+    "id": "summon",
+    "text": "回到召唤大厅，稳定召唤阵",
+    "done": [
+     "summon_circle"
     ]
    }
   ]

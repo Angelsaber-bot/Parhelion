@@ -14,7 +14,7 @@ import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
 import { buildCharacter, CharacterAnimator } from './character';
-import { REGIONS, GRID, mergeLayouts, boundaryWalls, regionAt } from './regions';
+import { REGIONS, GRID, PASS_POINT, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 
@@ -131,7 +131,7 @@ const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geom
   (b.geometry.boundingSphere ?? (b.geometry.computeBoundingSphere(), b.geometry.boundingSphere!)).radius ? a : b));
 for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
 const culler = new DistanceCuller(lowQ ? 90 : 160);
-const DRAW_DIST: Record<string, number> = { Bushes: 200, Trees_Leaves: 460, Trees_Trunks: 300, Rocks: 380, Lamps: 260, Glow_Props: 500 };
+const DRAW_DIST: Record<string, number> = { Bushes: 180, Trees_Leaves: 380, Trees_Trunks: 260, Rocks: 320, Lamps: 240, Glow_Props: 500, Terrain: 760 };
 for (const m of artMeshes) {
   if (m.name === 'Water' && m !== waterMesh) continue;
   if (m.name === 'Terrain') terrains.push(m);
@@ -231,7 +231,7 @@ function applyWorldState() {
 // ───────────── quest guide (G): waypoint to the next objective, beacon pillar, map marker ─────────────
 let guideOn = true;
 try { guideOn = localStorage.getItem('parhelion.guide') !== 'off'; } catch { /* storage unavailable */ }
-const PASS: [number, number, number] = [240, 16, 30];
+const PASS = PASS_POINT;
 const guideBeam = new THREE.Mesh(
   new THREE.CylinderGeometry(0.9, 1.4, 70, 16, 1, true).translate(0, 35, 0),
   new THREE.MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }),
@@ -418,8 +418,10 @@ canvas.addEventListener('mousedown', (e) => {
     point = hit.point;
     const id = hit.object.userData.target as string;
     done.add(id);
-    const n = ['ruin_target_1', 'ruin_target_2', 'ruin_target_3'].filter((x) => done.has(x)).length;
-    toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
+    const group = id.replace(/_\d+$/, '');
+    const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
+    if (group === 'range_target') toast(n === 3 ? '射击练习完成' : `练习靶命中 ${n}/3`);
+    else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
     $('crosshair').classList.add('hit');
     setTimeout(() => $('crosshair').classList.remove('hit'), 140);
@@ -451,7 +453,13 @@ function interact() {
   done.add(m.id);
   save(); applyWorldState();
   const msg: Record<string, string> = {
-    tower_console: '幻日塔重启！光环点亮了整个山谷',
+    tower_console: '幻日塔重启！光环点亮了整个山谷，三处时层断面同时显现',
+    hq_terminal: '调查员身份已登记：世界地图与历史档案已开放',
+    armory_rack: '领取 Lumen AR 与弹药，去靶场试试手感',
+    seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
+    seam_north: '北方冰海：1812 年的冬天没有尽头',
+    seam_east: '东部山口：海风里混着 1718 年的火药味',
+    summon_circle: '召唤阵稳定了。落日王国的入口正在开启（制作中）',
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
     lighthouse_lamp: '守望灯塔重新点亮，光束扫过整片海岸',
   };
