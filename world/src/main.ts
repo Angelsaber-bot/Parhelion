@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -17,6 +16,7 @@ import { buildCharacter, CharacterAnimator } from './character';
 import { REGIONS, GRID, PASS_POINT, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
+import { regionLoader, bakeQuantized } from './glb';
 
 const params = new URLSearchParams(location.search);
 // One open world: 幻日谷 + 星落海岸 (east through the mountain pass). ?region=coast starts on the coast.
@@ -94,11 +94,12 @@ const progress = (file: string) => (e: ProgressEvent) => {
 const parts = await Promise.all(REGIONS.map(async (def) => {
   const [lay, gltf] = await Promise.all([
     loadLayout(`./assets/${def.file}.layout.json`),
-    new GLTFLoader().loadAsync(`./assets/${def.file}.glb`, progress(def.file)),
+    regionLoader().loadAsync(`./assets/${def.file}.glb`, progress(def.file)),
   ]);
   for (const name of ['ART', 'COLLISION', 'Terrain']) {
     if (!gltf.scene.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
   }
+  bakeQuantized(gltf.scene);
   gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
   return { def, layout: lay, root: gltf.scene };
 }));

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { regionLoader, bakeQuantized } from '../src/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player.ts';
@@ -12,7 +12,8 @@ import { REGIONS, boundaryWalls, regionAt } from '../src/regions.ts';
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
 for (const def of REGIONS) {
   const buf = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
-  const gltf = await new GLTFLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
+  const gltf = await regionLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
+  bakeQuantized(gltf.scene);
   gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('COLLISION')!.traverse(o => {

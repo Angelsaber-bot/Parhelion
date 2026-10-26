@@ -2,14 +2,15 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { regionLoader, bakeQuantized } from '../src/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player, type Collider } from '../src/player.ts';
 import type { Layout } from '../src/types.ts';
 
 const buffer = readFileSync(new URL('../public/assets/world_alpha.glb', import.meta.url));
-const gltf = await new GLTFLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+const gltf = await regionLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');
+bakeQuantized(gltf.scene);
 gltf.scene.updateMatrixWorld(true);
 const dynamic: Collider[] = [], staticGeos: THREE.BufferGeometry[] = [];
 gltf.scene.getObjectByName('COLLISION')!.traverse(o => {

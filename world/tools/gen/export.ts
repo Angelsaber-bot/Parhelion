@@ -5,6 +5,10 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
+import { reorder, quantize } from '@gltf-transform/functions';
+import { MeshoptEncoder } from 'meshoptimizer';
 import type { Piece } from './structures.js';
 import type { Marker } from './layout.js';
 
@@ -68,7 +72,7 @@ export async function writeRegion(r: RegionOut) {
   const water = new THREE.Mesh(new THREE.PlaneGeometry(ws, ws).rotateX(-Math.PI / 2), mat('M_Water'));
   water.geometry.deleteAttribute('uv');
   water.name = 'Water';
-  water.position.y = W.waterLevel;
+  water.geometry.translate(0, W.waterLevel, 0); // baked, not a node transform (see compress())
   water.userData = { water: true, level: W.waterLevel };
   art.add(water);
 
@@ -114,7 +118,24 @@ export async function writeRegion(r: RegionOut) {
   scene.add(root);
   const glb = (await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false })) as ArrayBuffer;
   mkdirSync(outDir, { recursive: true });
-  writeFileSync(resolve(outDir, `${r.file}.glb`), Buffer.from(glb));
+  const packed = await compress(new Uint8Array(glb));
+  writeFileSync(resolve(outDir, `${r.file}.glb`), packed);
   writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
-  return { bytes: glb.byteLength, tris };
+  return { bytes: packed.byteLength, tris };
+}
+
+/**
+ * Meshopt-compress + quantize (16-bit positions ≈ 1 cm over a 720 m region). Cloudflare Pages caps a
+ * file at 25 MiB; the raw export of 幻日谷 is ~32 MiB, compressed ~5 MiB. The runtime decodes with
+ * MeshoptDecoder and folds the dequantization back into the geometry (src/glb.ts), so every mesh node
+ * must carry an identity transform here.
+ */
+async function compress(glb: Uint8Array) {
+  await MeshoptEncoder.ready;
+  const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
+  const doc = await io.readBinary(glb);
+  doc.setLogger(new (class { debug() {} info() {} warn(m: string) { console.warn(m); } error(m: string) { console.error(m); } })() as never);
+  await doc.transform(reorder({ encoder: MeshoptEncoder }), quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeColor: 8 }));
+  doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.FILTER });
+  return io.writeBinary(doc);
 }
