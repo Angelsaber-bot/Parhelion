@@ -117,7 +117,7 @@ export class ArenaScene {
     u.uHorizon.value = lin(a.sky.horizon); u.uMid.value = lin(a.sky.mid); u.uTop.value = lin(a.sky.top);
     u.uSun.value = lin(a.sky.sun); u.uCloudLit.value = lin(a.sky.cloudLit); u.uCloudShade.value = lin(a.sky.cloudShade);
     u.uNight.value = a.sky.night;
-    if (this.bloom) this.bloom.strength = a.bloom;
+    if (this.bloom) { this.bloom.strength = a.bloom; this.bloom.threshold = a.bloomThreshold; }
     if (this.particles) { this.particles.dispose(s); this.particles = null; }
     if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
     this.renderer.shadowMap.needsUpdate = true;
