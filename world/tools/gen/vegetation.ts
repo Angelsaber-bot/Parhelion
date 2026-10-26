@@ -7,8 +7,6 @@ import { PAL, type Piece } from './structures.js';
 type HeightAt = (x: number, z: number) => number;
 
 const TRUNK = new THREE.CylinderGeometry(0.22, 0.34, 1, 6);
-const CONE_A = new THREE.ConeGeometry(2.2, 3.6, 7);
-const CONE_B = new THREE.ConeGeometry(1.6, 3.0, 7);
 const BALL = new THREE.IcosahedronGeometry(1, 0);
 const ROCK = new THREE.DodecahedronGeometry(1, 0);
 const BOXG = new THREE.BoxGeometry(1, 1, 1);
@@ -16,6 +14,72 @@ const BOXG = new THREE.BoxGeometry(1, 1, 1);
 const LEAF_PINE = ['#3f9a5a', '#4aa863', '#368c55'];
 const LEAF_ROUND = ['#6cc56a', '#5bb85f', '#7fd06f'];
 const LEAF_BLOSSOM = ['#f7b2cf', '#f39fc2'];
+
+
+const BLOB = new THREE.IcosahedronGeometry(1, 1); // already non-indexed: clone, never toNonIndexed()
+const CONE_T = new THREE.ConeGeometry(1, 1, 9, 1, true);
+const _c = new THREE.Color(), _c2 = new THREE.Color();
+
+/**
+ * Anime canopy: a cluster of blobs whose normals point away from the canopy centre
+ * ("normal transfer", the trick Genshin-style foliage uses) so the toon terminator reads as one
+ * soft volume instead of facets. Vertex colours run from a cool shadow tone at the bottom to a
+ * warm highlight on top.
+ */
+function canopy(out: Batch, rng: () => number, cx: number, cy: number, cz: number, rx: number, ry: number, color: string) {
+  const parts: THREE.BufferGeometry[] = [];
+  const blobs = 4 + Math.floor(rng() * 2);
+  for (let i = 0; i < blobs; i++) {
+    const a = rng() * Math.PI * 2, e = (rng() - 0.35) * 1.1;
+    const d = i === 0 ? 0 : 0.55 + rng() * 0.25;
+    const r = (i === 0 ? 0.8 : 0.48 + rng() * 0.22);
+    const g = BLOB.clone();
+    g.applyMatrix4(T(cx + Math.cos(a) * Math.cos(e) * rx * d, cy + Math.sin(e) * ry * d, cz + Math.sin(a) * Math.cos(e) * rx * d, rng() * 6, rx * r, ry * r * 0.9, rx * r));
+    parts.push(g);
+  }
+  _c.set(color);
+  for (const g of parts) {
+    for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const nor = new Float32Array(pos.count * 3), col = new Float32Array(pos.count * 3);
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      v.set(pos.getX(i) - cx, (pos.getY(i) - cy) * (rx / ry), pos.getZ(i) - cz).normalize();
+      nor[i * 3] = v.x; nor[i * 3 + 1] = v.y; nor[i * 3 + 2] = v.z;
+      const t = THREE.MathUtils.clamp((pos.getY(i) - (cy - ry)) / (2 * ry), 0, 1);
+      _c2.copy(_c).multiplyScalar(0.72 + 0.4 * t);
+      _c2.offsetHSL(-0.02 * (1 - t), 0, 0);
+      col[i * 3] = _c2.r; col[i * 3 + 1] = _c2.g; col[i * 3 + 2] = _c2.b;
+    }
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    out.vis.push(g);
+  }
+}
+
+/** Layered conifer tiers with cylindrical (axis-outward, up-tilted) normals. */
+function conifer(out: Batch, cx: number, base: number, cz: number, s: number, color: string, ry: number) {
+  _c.set(color);
+  const tiers: [number, number, number][] = [[2.3, 2.4, 0], [1.8, 2.2, 1.5], [1.25, 2.0, 2.9], [0.7, 1.6, 4.1]];
+  for (const [r, h, y0] of tiers) {
+    const g = CONE_T.index ? CONE_T.toNonIndexed() : CONE_T.clone();
+    for (const k of Object.keys(g.attributes)) if (k !== 'position') g.deleteAttribute(k);
+    g.applyMatrix4(T(cx, base + (y0 + h / 2) * s, cz, ry, r * s, h * s, r * s));
+    const pos = g.attributes.position as THREE.BufferAttribute;
+    const nor = new Float32Array(pos.count * 3), col = new Float32Array(pos.count * 3);
+    const v = new THREE.Vector3();
+    for (let i = 0; i < pos.count; i++) {
+      const ly = (pos.getY(i) - base) / (5.7 * s);
+      v.set(pos.getX(i) - cx, 0.55, pos.getZ(i) - cz).normalize();
+      nor[i * 3] = v.x; nor[i * 3 + 1] = v.y; nor[i * 3 + 2] = v.z;
+      _c2.copy(_c).multiplyScalar(0.75 + 0.35 * ly);
+      col[i * 3] = _c2.r; col[i * 3 + 1] = _c2.g; col[i * 3 + 2] = _c2.b;
+    }
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3));
+    out.vis.push(g);
+  }
+}
 
 /** Exclusion zones where nothing should grow (structures, water, trails). */
 function blocked(x: number, z: number) {
@@ -70,15 +134,13 @@ export function buildVegetation(heightAt: HeightAt): Piece[] {
         // conifer
         const th = 2.6 * s;
         trunks.add(TRUNK, PAL.woodDark, T(x, y + th / 2, z, ry, s, th, s), false);
-        leaves.add(CONE_A, LEAF_PINE[Math.floor(rng() * 3)], T(x, y + th + 1.2 * s, z, ry, s, s, s), false);
-        leaves.add(CONE_B, LEAF_PINE[Math.floor(rng() * 3)], T(x, y + th + 3.2 * s, z, ry + 0.5, s, s, s), false);
+        conifer(leaves, x, y + th * 0.75, z, s, LEAF_PINE[Math.floor(rng() * 3)], ry);
       } else {
         // broadleaf / blossom
         const th = 3.0 * s;
         const pal = blossom && kind > 0.4 ? LEAF_BLOSSOM : LEAF_ROUND;
         trunks.add(TRUNK, PAL.wood, T(x, y + th / 2, z, ry, s * 1.2, th, s * 1.2), false);
-        leaves.add(BALL, pal[Math.floor(rng() * pal.length)], T(x, y + th + 1.4 * s, z, ry, 2.6 * s, 2.1 * s, 2.6 * s), false);
-        leaves.add(BALL, pal[Math.floor(rng() * pal.length)], T(x + 1.1 * s, y + th + 0.6 * s, z + 0.6 * s, ry, 1.5 * s, 1.3 * s, 1.5 * s), false);
+        canopy(leaves, rng, x, y + th + 1.3 * s, z, 2.5 * s, 2.0 * s, pal[Math.floor(rng() * pal.length)]);
       }
       // trunk collider: simple box
       trunks.addCol(BOXG, T(x, y + 2, z, ry, 0.6 * s, 4, 0.6 * s));

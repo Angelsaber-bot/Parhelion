@@ -6,6 +6,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
+import { makeGrassField, makeSunShafts } from './fx';
 import { toonMaterial, addOutline, makeSky, SUN_DIR, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
@@ -48,11 +50,21 @@ const caveLight = new THREE.PointLight('#7ff6ff', 60, 26, 1.6); // hidden cave g
 caveLight.position.set(182, 6, -60);
 scene.add(caveLight);
 
-// post: soft bloom on sun, halo, glowing flowers and water glints (?nopost to disable)
-const composer = params.has('nopost') ? null : new EffectComposer(renderer);
+// post: MSAA → GTAO (ambient occlusion) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
+const lowQ = params.get('q') === 'low';
+const composer = params.has('nopost') ? null : new EffectComposer(renderer, new THREE.WebGLRenderTarget(
+  innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { samples: 4, type: THREE.HalfFloatType }));
+const shafts = makeSunShafts();
 if (composer) {
   composer.addPass(new RenderPass(scene, camera));
+  if (!lowQ) {
+    const ao = new GTAOPass(scene, camera, innerWidth, innerHeight);
+    ao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 12, distanceFallOff: 0.6 });
+    ao.blendIntensity = 0.75;
+    composer.addPass(ao);
+  }
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.45, 0.97));
+  if (!lowQ) composer.addPass(shafts.pass);
   composer.addPass(new OutputPass());
 }
 
@@ -114,6 +126,8 @@ collisionRoot.traverse((o) => {
 const staticGeo = mergeGeometries(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(terrainMesh!, staticBVH, layout.world.waterLevel, { count: params.has('shot') ? 90000 : 160000, size: 90 }) : null;
+if (grass) scene.add(grass.mesh);
 debugCol.add(new THREE.Mesh(staticGeo, debugMat));
 debugCol.visible = false;
 scene.add(debugCol);
@@ -398,6 +412,8 @@ function frame(now: number) {
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found });
 
   timeUniform.value = now / 1000;
+  shafts.update(camera, SUN_DIR);
+  grass?.update(camera.position);
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += dt;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
