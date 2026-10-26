@@ -1,1 +1,29 @@
 # Parhelion
+
+动漫风 3D 网页游戏（Alpha）：**Arena 竞技场**（第一人称对战）和 **World 幻日谷**（开放探索）。
+
+## 一键启动（Mac）
+
+双击 `启动 Parhelion.command`，浏览器会打开 http://127.0.0.1:4173/ ；停止时双击 `停止 Parhelion.command`，或在启动终端按 Ctrl+C。网站本体在 `Parhelion-Website/`（本机构建产物，不在 Git 里）。
+
+## 目录
+
+| 目录 | 内容 |
+|---|---|
+| `arena-game/` | Arena 可玩运行时：TypeScript + Three.js 客户端、Colyseus 服务器、共享确定性规则、Bot、测试 |
+| `arena/` | 第 1 张 Arena 地图 ASTER 研究站（Blender 流程，ChatGPT 制作） |
+| `arena-maps/` | 第 2–4 张地图：`zenith/`（日冕天台）、`sakura/`（樱庭）、`neon/`（夜港）；`_lib/` 是共享的 GLB 生成与检查工具 |
+| `world/` | World 幻日谷 |
+| `Parhelion-Website/` | 本机一键网站（首页 + Arena + World），`npm run build` 重建 |
+| `_local/` | 本机备份、旧工作区、日志、截图（不在 Git 里） |
+
+## Arena 地图
+
+| 地图 | 时间 | 打法 |
+|---|---|---|
+| ASTER 研究站 | 正午 | 开阔中庭 + 北侧长廊高台，镜像对称 |
+| ZENITH 日冕天台 | 正午 | 三层阶梯：高台出生、台地环、下沉日晷池、双塔悬台，点对称 |
+| SAKURA 樱庭 | 黄昏 | 经典三路：鸟居参道长枪 / 室内拜殿近战 / 锦鲤池拱桥，镜像对称 |
+| NEON 夜港 | 夜晚 | 集装箱迷宫 + 5 米吊车甲板，对角出生，点对称 |
+
+每张图的说明、重建命令和测试在各自目录的 README 里；`arena-game/README.md` 说明运行、联机和测试。
