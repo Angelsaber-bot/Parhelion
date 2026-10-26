@@ -5,6 +5,10 @@ import type { Input } from './sim.ts';
 
 export const ROOM_NAME = 'arena';
 export const DEFAULT_PORT = 2567;
+/** Public Arena server (Cloudflare Worker + Durable Objects, worker/index.ts) used by the public site. */
+export const PUBLIC_SERVER = 'wss://parhelion-arena.WORKERS_SUBDOMAIN.workers.dev/arena';
+/** A server URL with an /arena path speaks the Worker's plain-JSON protocol; bare host:port is Colyseus. */
+export const isWorkerUrl = (url: string) => /^wss?:\/\/[^/]+\/arena\/?(\?|$)/.test(url.trim());
 
 export interface JoinOptions {
   layout: TeamLayout;

@@ -1,6 +1,6 @@
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, WEAPONS, type TeamLayout } from '../shared/content.ts';
-import { DEFAULT_PORT, type JoinOptions } from '../shared/protocol.ts';
+import { DEFAULT_PORT, PUBLIC_SERVER, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './audio.ts';
 import { Controls } from './controls.ts';
 import { Game } from './game.ts';
@@ -32,7 +32,11 @@ let char = saved.char ?? 0;
 let mapId = mapIdOf(params.get('map') ?? saved.map);
 const skins: number[] = saved.skins ?? WEAPONS.map(() => 0);
 $<HTMLInputElement>('name').value = saved.name ?? 'Max';
-$<HTMLInputElement>('server').value = params.get('server') ?? saved.server ?? `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}`;
+// Local/LAN pages default to the Colyseus server next to them; the public (https) site defaults to the
+// Cloudflare Worker, and ignores a remembered plain ws:// address that an https page can't open anyway.
+const localHost = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)|\.local$/.test(location.hostname) || !location.hostname;
+const savedServer = location.protocol === 'https:' && String(saved.server ?? '').startsWith('ws://') ? undefined : saved.server;
+$<HTMLInputElement>('server').value = params.get('server') ?? savedServer ?? (localHost ? `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}` : PUBLIC_SERVER);
 if (saved.layout) $<HTMLSelectElement>('layout').value = saved.layout;
 
 function renderChars() {
@@ -109,7 +113,7 @@ $('play').onclick = async () => {
     (window as unknown as { session: unknown }).session = session;
     controls.lock();
   } catch (e) {
-    showError(mode === 'online' ? `连接失败：${(e as Error).message}。确认服务器已启动（npm run server）。` : String(e));
+    showError(mode === 'online' ? `连接失败：${(e as Error).message}。确认服务器地址正确（本地需先 npm run server）。` : String(e));
   } finally {
     $('loading').classList.add('hidden');
   }

@@ -7,7 +7,7 @@ import { Bot, BOT_SKILL, navFor } from '../shared/bot.ts';
 import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, type Team } from '../shared/content.ts';
 import type { ArenaMap } from '../shared/map.ts';
 import { Match, type Snapshot } from '../shared/match.ts';
-import { ROOM_NAME, type JoinOptions } from '../shared/protocol.ts';
+import { isWorkerUrl, ROOM_NAME, type JoinOptions } from '../shared/protocol.ts';
 import type { Input } from '../shared/sim.ts';
 
 export interface Session {
@@ -27,6 +27,7 @@ export interface Session {
 }
 
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
+  if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
   const room = await client.joinOrCreate(ROOM_NAME, opts);
   const s: Session = {
@@ -44,6 +45,52 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   room.onMessage('welcome', () => {});
   room.onLeave((code: number) => s.onClose(`disconnected (${code})`));
   return s;
+}
+
+/** Public server: plain-JSON WebSocket to the Cloudflare Durable Object room (worker/index.ts). */
+function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
+  const ws = new WebSocket(`${url.trim().replace(/\/?(\?.*)?$/, '')}?o=${encodeURIComponent(JSON.stringify(opts))}`);
+  // batch inputs to ~30 Hz: halves the message count (the free Cloudflare tier counts messages)
+  let outbox: Input[] = [];
+  let flush: ReturnType<typeof setTimeout> | null = null;
+  const sendNow = () => {
+    flush = null;
+    if (outbox.length && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'input', d: outbox }));
+    outbox = [];
+  };
+  return new Promise((resolve, reject) => {
+    let s: Session | null = null;
+    const timeout = setTimeout(() => { reject(new Error('timeout')); ws.close(); }, 10000);
+    ws.onmessage = (ev) => {
+      let msg: { t: string; d: unknown };
+      try { msg = JSON.parse(ev.data as string); } catch { return; }
+      if (msg.t === 'snap') s?.onSnapshot(msg.d as Snapshot);
+      else if (msg.t === 'welcome' && !s) {
+        clearTimeout(timeout);
+        s = {
+          id: (msg.d as { id: string }).id,
+          online: true,
+          map: getMap(opts.map),
+          send: (inputs) => {
+            outbox.push(...inputs);
+            if (outbox.length > 16) sendNow();
+            else flush ??= setTimeout(sendNow, 30);
+          },
+          onSnapshot: () => {},
+          onClose: () => {},
+          close: () => ws.close(1000),
+          rematch: () => ws.send(JSON.stringify({ t: 'rematch' })),
+          setPaused: () => {},
+        };
+        resolve(s);
+      } else if (msg.t === 'error' && !s) { clearTimeout(timeout); reject(new Error(String(msg.d))); }
+    };
+    ws.onerror = () => { if (!s) { clearTimeout(timeout); reject(new Error('无法连接服务器')); } };
+    ws.onclose = (ev) => {
+      if (s) s.onClose(`disconnected (${ev.code})`);
+      else { clearTimeout(timeout); reject(new Error(`连接被关闭 (${ev.code})`)); }
+    };
+  });
 }
 
 export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL): Session {

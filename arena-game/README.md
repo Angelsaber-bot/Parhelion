@@ -25,6 +25,16 @@ npm test             # 规则、bot 对战、Colyseus 端到端测试
 
 操作：WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停。
 
+### 公网联机（Cloudflare）
+
+公网站点 https://parhelion-game.pages.dev 是纯静态的，联机服务器是单独的 Cloudflare Worker `parhelion-arena`（`worker/index.ts`，Durable Objects：一个 Lobby 负责配对，每个房间一个 DO 跑 60 Hz 对局）。规则和本地 Colyseus 服务器完全一样（两边都包装 `shared/room.ts`），协议是普通 JSON WebSocket。公网页面默认连 `shared/protocol.ts` 里的 `PUBLIC_SERVER`；地址带 `/arena` 路径就走 Worker 协议，不带就是 Colyseus。
+
+```sh
+npm run worker:dev                     # 本地 Worker ws://127.0.0.1:8787/arena
+npm run worker:deploy                  # 部署（需要 wrangler 登录，只部署 parhelion-arena 这个 Worker）
+npx tsx test/worker-smoke.ts <wss-url> # 两个客户端进同一房间的冒烟测试
+```
+
 ## 内容
 
 | | |

@@ -8,9 +8,11 @@
     "dev": "vite",
     "server": "tsx watch server/index.ts",
     "server:once": "tsx server/index.ts",
-    "build": "tsc --noEmit && vite build",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "build": "npm run typecheck && vite build",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p worker",
+    "test": "vitest run",
+    "worker:dev": "wrangler dev -c worker/wrangler.toml",
+    "worker:deploy": "wrangler deploy -c worker/wrangler.toml"
   },
   "dependencies": {
     "@colyseus/core": "0.18.23",
@@ -19,11 +21,13 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20261026.1",
     "@types/node": "26.6.5",
     "@types/three": "0.186.0",
     "tsx": "4.23.15",
     "typescript": "7.0.2",
     "vite": "8.3.5",
-    "vitest": "5.0.5"
+    "vitest": "5.0.5",
+    "wrangler": "4.153.0"
   }
 }
