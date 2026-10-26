@@ -13,14 +13,14 @@ import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
 import { buildCharacter, CharacterAnimator } from './character';
-import { REGIONS, GRID, PASS_POINT, mergeLayouts, boundaryWalls, regionAt } from './regions';
+import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
 
 const params = new URLSearchParams(location.search);
-// One open world: 幻日谷 + 星落海岸 (east through the mountain pass). ?region=coast starts on the coast.
-const startRegion = params.get('region') === 'coast' ? 'coast' : 'alpha';
+// One open world: 幻日谷 + 落日王国 (west seam) + 星落海岸 (east pass). ?region=coast|britain starts there.
+const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
@@ -161,6 +161,7 @@ for (const m of artMeshes) {
 
 // colliders: everything static merged into one BVH; dynamic pieces (door, targets) keep their own
 const colliders: Collider[] = [];
+const gates: { name: string; opensWhen: string[] }[] = [];
 const staticGeos: THREE.BufferGeometry[] = [boundaryWalls()];
 const debugCol = new THREE.Group();
 const debugMat = new THREE.MeshBasicMaterial({ color: '#ff3d7f', wireframe: true, transparent: true, opacity: 0.35 });
@@ -174,12 +175,13 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
   if (g.index) g = g.toNonIndexed();
   if (m.userData.dynamic) colliders.push({ name: m.name, bvh: new MeshBVH(g), enabled: true });
   else staticGeos.push(g);
+  if (Array.isArray(m.userData.opensWhen)) gates.push({ name: m.userData.art as string, opensWhen: m.userData.opensWhen as string[] });
 });
 const staticGeo = mergeGeometries(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 
-const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell);
+const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
 const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, staticBVH, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68 }) : null;
 if (grass) scene.add(grass.mesh);
@@ -217,12 +219,16 @@ function applyWorldState() {
     t.visible = !hit;
     const c = collider(`COL_${t.name}`); if (c) c.enabled = !hit;
   }
-  const doorOpen = ['ruin_target_1', 'ruin_target_2', 'ruin_target_3'].every((x) => done.has(x));
-  const door = byName('Ruin_Door'); if (door) door.visible = !doorOpen;
-  const dc = collider('COL_Ruin_Door'); if (dc) dc.enabled = !doorOpen;
+  // doors and gates: a dynamic piece with opensWhen disappears (art + collider) once all ids are done
+  for (const g of gates) {
+    const open = g.opensWhen.every((x) => done.has(x));
+    const art = byName(g.name); if (art) art.visible = !open;
+    const c = collider(`COL_${g.name}`); if (c) c.enabled = !open;
+  }
   if (haloMat) haloMat.color.setScalar(done.has('tower_console') ? 1 : 0.32);
   for (const m of stateful) {
-    const show = m.userData.showWhen ? done.has(m.userData.showWhen as string) : true;
+    const sw = m.userData.showWhen as string | string[] | undefined;
+    const show = sw ? [sw].flat().every((x) => done.has(x)) : true;
     const hide = m.userData.hideWhen ? done.has(m.userData.hideWhen as string) : false;
     m.visible = show && !hide;
   }
@@ -232,7 +238,6 @@ function applyWorldState() {
 // ───────────── quest guide (G): waypoint to the next objective, beacon pillar, map marker ─────────────
 let guideOn = true;
 try { guideOn = localStorage.getItem('parhelion.guide') !== 'off'; } catch { /* storage unavailable */ }
-const PASS = PASS_POINT;
 const guideBeam = new THREE.Mesh(
   new THREE.CylinderGeometry(0.9, 1.4, 70, 16, 1, true).translate(0, 35, 0),
   new THREE.MeshBasicMaterial({ color: '#ffd76a', transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }),
@@ -244,7 +249,8 @@ function toggleGuide() {
   try { localStorage.setItem('parhelion.guide', guideOn ? 'on' : 'off'); } catch { /* ignore */ }
   toast(guideOn ? '任务指引 开' : '任务指引 关');
 }
-/** Next objective marker: current region first; the other region's goal routes through the east pass. */
+/** Next objective marker: current region first; another region's goal routes through its gate via 幻日谷. */
+const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', coast: '星落海岸' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x).id;
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
@@ -252,8 +258,15 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     for (const s of o.objective.steps) {
       const left = s.done.filter((id) => !done.has(id)).map((id) => markers.get(id)!).filter(Boolean);
       if (!left.length) continue;
-      if (o.region !== here) return { p: PASS, label: `前往${o.region === 'coast' ? '星落海岸' : '幻日谷'}（东侧山口）` };
-      left.sort((a, b) => Math.hypot(a.p[0] - player.pos.x, a.p[2] - player.pos.z) - Math.hypot(b.p[0] - player.pos.x, b.p[2] - player.pos.z));
+      if (o.region !== here) {
+        // leave through this region's own gate, or from 幻日谷 head for the target region's gate
+        const gate = here === 'alpha' ? GATES[o.region] : GATES[here];
+        const to = here === 'alpha' ? o.region : 'alpha';
+        if (gate) return { p: gate.p, label: `前往${REGION_NAME[to] ?? to}（${gate.via}）` };
+      }
+      // markers that can be used now come first (e.g. the dummies before the shard they unlock)
+      const ready = (m: Marker) => (m.requires ?? []).every((r) => done.has(r)) ? 0 : 1;
+      left.sort((a, b) => ready(a) - ready(b) || Math.hypot(a.p[0] - player.pos.x, a.p[2] - player.pos.z) - Math.hypot(b.p[0] - player.pos.x, b.p[2] - player.pos.z));
       return { p: left[0].p, label: left[0].label };
     }
   return null;
@@ -322,7 +335,7 @@ function showArea(a: Layout['areas'][number]) {
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
 player.updrafts = layout.updrafts ?? [];
-const spawn = markers.get(startRegion === 'coast' ? 'coast_spawn_p1' : 'spawn_p1') ?? markers.get('spawn_p1')!;
+const spawn = markers.get(startRegion === 'alpha' ? 'spawn_p1' : `${startRegion}_spawn_p1`) ?? markers.get('spawn_p1')!;
 const spawnAt = (areaId?: string) => {
   const a = layout.areas.find((x) => x.id === areaId);
   if (!a) return player.teleport(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
@@ -422,6 +435,7 @@ canvas.addEventListener('mousedown', (e) => {
     const group = id.replace(/_\d+$/, '');
     const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
     if (group === 'range_target') toast(n === 3 ? '射击练习完成' : `练习靶命中 ${n}/3`);
+    else if (group === 'camp_dummy') toast(n === 3 ? '试炼完成：营帐里出现了王之碎片' : `试炼木人 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
     $('crosshair').classList.add('hit');
@@ -460,10 +474,16 @@ function interact() {
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
     seam_east: '东部山口：海风里混着 1718 年的火药味',
-    summon_circle: '召唤阵稳定了。落日王国的入口正在开启（制作中）',
+    summon_circle: '召唤阵稳定了。西部时层断面已经打开：去落日王国',
+    saber_contract: '契约成立。「我问你，你就是我的御主吗？」Saber 加入了队伍',
+    sun_core: '落日之核重新燃起。永恒的黄昏开始退去……',
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
     lighthouse_lamp: '守望灯塔重新点亮，光束扫过整片海岸',
   };
+  if (m.id.startsWith('hall_brazier_')) {
+    const n = [1, 2, 3].filter((k) => done.has(`hall_brazier_${k}`)).length;
+    return toast(n === 3 ? '三个火盆都燃起来了：圆桌中央浮现出王之碎片' : `火盆点燃 ${n}/3`);
+  }
   toast(msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
 }
 function checkDiscoveries() {

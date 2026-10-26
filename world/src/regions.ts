@@ -1,6 +1,6 @@
 // The open world is several generated regions placed side by side in one scene.
-// 幻日谷 sits at the origin; 星落海岸 continues east through the mountain pass at z ≈ 30.
-// (幻日谷 is 720 m across since World Architecture v1.0, so the coast starts at x = 360.)
+// 幻日谷 sits at the origin; 星落海岸 continues east through the mountain pass at z ≈ 30, and
+// 落日王国 lies west through the era seam gorge at z ≈ -30 (each region is 720 m across).
 import * as THREE from 'three';
 import type { Layout, Marker } from './types';
 
@@ -14,20 +14,27 @@ export interface RegionDef {
 
 export const REGIONS: RegionDef[] = [
   { id: 'alpha', file: 'world_alpha', offset: [0, 0], play: [-334, 334, -334, 334] },
+  { id: 'britain', file: 'world_britain', offset: [-720, 0], play: [-334, 334, -334, 334] },
   { id: 'coast', file: 'world_coast', offset: [600, 50], play: [-214, 214, -214, 214] },
 ];
 
-/** Extra walkable rects in world coordinates joining regions (the east pass). */
-export const LINKS: [number, number, number, number][] = [[316, 410, 14, 46]];
+/** Extra walkable rects in world coordinates joining regions (the east pass, the west seam gorge). */
+export const LINKS: [number, number, number, number][] = [[316, 410, 14, 46], [-410, -316, -46, -14]];
 
 /** Where the east pass crosses from 幻日谷 into 星落海岸 (world coordinates, ground height). */
 export const PASS_POINT: [number, number, number] = [360, 16, 30];
 
-/** Square terrain grid covering every region (2 m cells, aligned with each region's own grid). */
-export const GRID = { x0: -360, z0: -420, span: 1200, cell: 2 };
+/** Where the route from 幻日谷 crosses into each other region, and what the guide calls it. */
+export const GATES: Record<string, { p: [number, number, number]; via: string }> = {
+  coast: { p: PASS_POINT, via: '东侧山口' },
+  britain: { p: [-322, 0, -30], via: '西部时层断面' },
+};
+
+/** Terrain grid covering every region (2 m cells, aligned with each region's own grid). */
+export const GRID = { x0: -1080, z0: -360, span: 2040, spanZ: 780, cell: 2 };
 
 export function regionAt(x: number): RegionDef {
-  return x > 360 ? REGIONS[1] : REGIONS[0];
+  return REGIONS.find((r) => r.id === (x > 360 ? 'coast' : x < -360 ? 'britain' : 'alpha'))!;
 }
 
 export interface RegionLayout { def: RegionDef; layout: Layout }
@@ -50,7 +57,7 @@ export function mergeLayouts(parts: RegionLayout[]) {
   }
   const base = parts[0].layout;
   const out: Layout & { objectives: { region: string; objective: Layout['objective'] }[] } = {
-    world: { ...base.world, id: 'parhelion_world', name: '幻日谷 · 星落海岸', nameEn: 'Parhelion World' },
+    world: { ...base.world, id: 'parhelion_world', name: '幻日谷 · 落日王国 · 星落海岸', nameEn: 'Parhelion World' },
     areas: [], paths: [], markers: [], updrafts: [], lights: [],
     objective: base.objective,
     objectives: [],
@@ -77,7 +84,7 @@ export function boundaryWalls(): THREE.BufferGeometry {
     ...REGIONS.map((r) => [r.play[0] + r.offset[0], r.play[1] + r.offset[0], r.play[2] + r.offset[1], r.play[3] + r.offset[1]] as [number, number, number, number]),
     ...LINKS,
   ];
-  const c = 2, x0 = -380, z0 = -380, nx = 630, nz = 380;
+  const c = 2, x0 = -1080, z0 = -380, nx = 1030, nz = 380;
   const inside = (i: number, j: number) => {
     const x = x0 + (i + 0.5) * c, z = z0 + (j + 0.5) * c;
     return rects.some(([a, b, d, e]) => x > a && x < b && z > d && z < e);

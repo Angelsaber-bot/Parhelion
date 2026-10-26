@@ -33,7 +33,7 @@ const layout = {
     ],
   },
 };
-const { bytes, tris } = await writeRegion({ file: 'world_coast', world: COAST, terrain, pieces, markers, layout, waterSize: 2400 });
+const { bytes, tris } = await writeRegion({ file: 'world_coast', world: COAST, terrain, pieces, markers, layout, waterSize: 4000 });
 console.log(
   `world_coast.glb ${(bytes / 1024 / 1024).toFixed(2)} MB, ~${Math.round(tris / 1000)}k tris, ` +
     `${markers.length} markers, ${pieces.length} pieces, ${((performance.now() - t0) / 1000).toFixed(1)}s`,

@@ -23,11 +23,11 @@ function mulberry32(seed: number) {
  * and a mask texture removes blades from water, cliffs, paths and anything built on top.
  */
 export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number, opts: { count: number; size: number }) {
-  const n = grid.n;
+  const n = grid.nx, nz = grid.nz;
   // bake colour+mask texture on the world grid (height comes from the grid's own texture)
-  const cData = new Uint8Array(n * n * 4);
+  const cData = new Uint8Array(n * nz * 4);
   const ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
-  for (let k = 0; k < n * n; k++) {
+  for (let k = 0; k < n * nz; k++) {
     const x = grid.x0 + (k % n) * grid.cell, z = grid.z0 + Math.floor(k / n) * grid.cell, y = grid.h[k];
     const r = grid.col[k * 3], gg = grid.col[k * 3 + 1], b = grid.col[k * 3 + 2];
     let mask = y > waterLevel + 0.6 && grid.ny[k] > 0.8 && gg > r * 1.12 && gg > b * 1.25 ? 1 : 0;
@@ -40,7 +40,7 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
     cData[k * 4 + 3] = mask * 255;
   }
   const tH = grid.heightTexture();
-  const tC = new THREE.DataTexture(cData, n, n, THREE.RGBAFormat);
+  const tC = new THREE.DataTexture(cData, n, nz, THREE.RGBAFormat);
   tC.magFilter = tC.minFilter = THREE.LinearFilter;
   tC.needsUpdate = true;
 
@@ -58,8 +58,8 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
     uCam: { value: new THREE.Vector3() },
     uSize: { value: opts.size },
     uOrigin: { value: new THREE.Vector2(grid.x0, grid.z0) },
-    uSpan: { value: grid.span },
-    uN: { value: n },
+    uSpan: { value: new THREE.Vector2(grid.span, grid.spanZ) },
+    uN: { value: new THREE.Vector2(n, nz) },
     tH: { value: tH },
     tC: { value: tC },
   }]);
@@ -69,8 +69,8 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
     fog: true,
     uniforms,
     vertexShader: /* glsl */ `
-      uniform float uTime, uSize, uSpan, uN;
-      uniform vec2 uOrigin;
+      uniform float uTime, uSize;
+      uniform vec2 uOrigin, uSpan, uN;
       uniform vec3 uCam;
       uniform sampler2D tH, tC;
       attribute vec4 aRand;
@@ -172,10 +172,10 @@ export function enhanceWater(mat: THREE.Material, grid: WorldGrid, waterLevel: n
     prev(sh, r);
     sh.uniforms.tWaterH = { value: tex };
     sh.uniforms.uTOrigin = { value: new THREE.Vector2(grid.x0, grid.z0) };
-    sh.uniforms.uTSpan = { value: grid.span };
+    sh.uniforms.uTSpan = { value: new THREE.Vector2(grid.span, grid.spanZ) };
     sh.uniforms.uWL = { value: waterLevel };
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D tWaterH;\nuniform vec2 uTOrigin;\nuniform float uTSpan, uWL;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D tWaterH;\nuniform vec2 uTOrigin, uTSpan;\nuniform float uWL;')
       .replace('#include <opaque_fragment>', /* glsl */ `
         {
           vec2 tuv = (vWPos.xz - uTOrigin) / uTSpan;

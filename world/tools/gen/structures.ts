@@ -566,6 +566,10 @@ export function buildStructures(heightAt: HeightAt) {
       b.box(sxw, sy + 2.8, szw, 0.2, 0.18, 1.3, PAL.gold, 0, false); // crossguard
       b.box(sxw, sy + 2.9, szw, 0.16, 0.7, 0.16, '#2c3f8f', 0, false); // grip
       seam('west', cx, cz, y, Math.PI / 2, '#ffb36b', '西部时层断面 · 落日王国', '约 537 年 · 不列颠：永恒黄昏');
+      // the gorge runs on into 落日王国; this invisible gate holds until the summoning circle is stable
+      const gate = new Batch('Seam_west_Gate');
+      gate.addCol(BOX, T(cx - 24.5, y + 30, cz, 0, 1, 80, 40)); // across the link at x = -334
+      pieces.push({ name: 'Seam_west_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
     }
     // north → 永冬之城 (1812): the frozen bay, ice spikes and two frost-bound field guns
     {

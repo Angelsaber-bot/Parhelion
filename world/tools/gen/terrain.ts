@@ -33,9 +33,9 @@ function natural(x: number, z: number) {
     + bump(x, z, -262, 186, 70) * 14 + bump(x, z, 120, 250, 60) * 9 + bump(x, z, 280, 66, 40) * 7;
   // ring of mountains (superellipse so the corners stay playable), notched where the era seams open
   const se = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  // (the notches close again just past the boundary, so each seam sits in a gorge backed by a cliff)
+  // (the west notch runs on into 落日王国; the north one closes past the boundary, backed by a cliff)
   const notch = Math.max(
-    (1 - smoothstep(18, 46, Math.abs(z - SEAM_W.c[1]))) * smoothstep(-200, -260, x) * smoothstep(-362, -340, x),
+    (1 - smoothstep(18, 46, Math.abs(z - SEAM_W.c[1]))) * smoothstep(-200, -260, x),
     (1 - smoothstep(60, 100, Math.abs(x - BAY_N.c[0]))) * smoothstep(-200, -250, z) * smoothstep(-362, -340, z),
   );
   const ring = smoothstep(296, 356, se) * (1 - notch * 0.9);
