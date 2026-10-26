@@ -8,8 +8,8 @@ export interface Atmosphere {
   exposure: number;
   hemi: [number, number, number]; // sky, ground, intensity
   sun: { color: number; intensity: number; pos: [number, number, number] };
-  sky: { horizon: number; mid: number; top: number; sun: number; cloudLit: number; cloudShade: number; night: number };
-  particles: 'none' | 'petals' | 'motes' | 'embers';
+  sky: { horizon: number; mid: number; top: number; sun: number; cloudLit: number; cloudShade: number; night: number; aurora?: number };
+  particles: 'none' | 'petals' | 'motes' | 'embers' | 'snow';
   bloom: number; // UnrealBloom strength (0 = off)
   bloomThreshold: number; // linear luminance that starts to glow; daylight must stay above lit sand/plaster
 }
@@ -32,6 +32,12 @@ export const ATMOSPHERES: Record<string, Atmosphere> = {
     sun: { color: 0xffa26b, intensity: 3.3, pos: [-46, 13, 10] },
     sky: { horizon: 0xffc58f, mid: 0xf28aa0, top: 0x5a4b9e, sun: 0xffe0a8, cloudLit: 0xffd2b0, cloudShade: 0x9c7aa8, night: 0.15 },
     particles: 'petals', bloom: 0.55, bloomThreshold: 1.15,
+  },
+  aurora: {
+    background: 0x1c3456, fog: [0x2c4a6e, 55, 210], exposure: 1.12, hemi: [0x9fc8ff, 0x3a3f66, 1.6],
+    sun: { color: 0xbfd6ff, intensity: 2.1, pos: [-30, 18, 26] },
+    sky: { horizon: 0x5f8fbf, mid: 0x1f3f74, top: 0x0a1433, sun: 0xd8ecff, cloudLit: 0x3c5580, cloudShade: 0x1c2a4c, night: 0.85, aurora: 1.8 },
+    particles: 'snow', bloom: 0.75, bloomThreshold: 0.95,
   },
   night: {
     background: 0x0d1430, fog: [0x141c3c, 30, 140], exposure: 1.15, hemi: [0x6e7fd6, 0x1a1530, 1.1],

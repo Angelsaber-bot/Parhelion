@@ -15,10 +15,12 @@ export interface MapInfo {
   name: string;
   blurb: string;
   data: MapData;
+  /** Client atmosphere when the map data has none (ASTER's map.json is owned by its own pipeline). */
+  preset?: string;
 }
 
 export const MAPS: MapInfo[] = [
-  { id: 'aster', name: 'ASTER 研究站', blurb: '72×56 · 镜像对称 · 北侧长廊高台 + 中央反应堆庭院', data: aster as unknown as MapData },
+  { id: 'aster', name: 'ASTER 研究站', blurb: '72×56 · 极光下的极地研究站 · 北侧长廊高台 + HELIOS 反应堆庭院', data: aster as unknown as MapData, preset: 'aurora' },
   { id: 'zenith', name: 'ZENITH 日冕天台', blurb: '60×48 · 三层阶梯 · 下沉日晷池 + 双塔悬台 + 高台出生', data: zenith as unknown as MapData },
   { id: 'sakura', name: 'SAKURA 樱庭', blurb: '64×44 · 黄昏神社 · 经典三路：参道长枪 / 拜殿室内近战 / 锦鲤池', data: sakura as unknown as MapData },
   { id: 'neon', name: 'NEON 夜港', blurb: '56×56 · 霓虹夜景 · 集装箱迷宫 + 对角出生 + 5 米吊桥甲板', data: neon as unknown as MapData },

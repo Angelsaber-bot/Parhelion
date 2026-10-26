@@ -50,7 +50,7 @@ let mapReady: Promise<void>;
 function pickMap(id: string) {
   mapId = mapIdOf(id);
   renderMaps();
-  mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset);
+  mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset);
   mapReady.catch((e) => showError(`地图加载失败：${(e as Error).message}`));
 }
 function renderSkins() {
