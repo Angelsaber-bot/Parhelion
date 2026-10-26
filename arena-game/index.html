@@ -49,30 +49,35 @@
   </div>
 
   <div id="lobby" class="overlay">
-    <div class="card">
-      <div class="eyebrow">PARHELION · ALPHA</div>
-      <h1 id="title">ASTER 研究站</h1>
-      <h4>地图</h4>
-      <div id="maps" class="maps"></div>
-      <div class="tabs">
-        <button data-mode="offline" class="tab on">单机 vs Bot</button>
-        <button data-mode="online" class="tab">联机</button>
-      </div>
-      <div class="grid">
-        <label>名字<input id="name" maxlength="16" value="Max" /></label>
-        <label>对局<select id="layout"><option>1v1</option><option>1v2</option><option selected>2v2</option></select></label>
-        <label>队伍<select id="team"><option value="A">西 · 青</option><option value="B">东 · 橙</option><option value="auto" class="onlineOnly">自动</option></select></label>
-        <label class="offlineOnly">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
-        <label class="onlineOnly">服务器<input id="server" /></label>
-        <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
-      </div>
-      <h4>角色</h4>
-      <div id="chars" class="chars"></div>
-      <h4>枪械皮肤</h4>
-      <div id="skins" class="grid"></div>
-      <div id="error" class="error hidden"></div>
-      <button id="play" class="primary">开始</button>
-      <p class="muted keys">WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停</p>
+    <div class="card lobby">
+      <section class="lobby-main">
+        <div class="eyebrow">PARHELION · ARENA ALPHA</div>
+        <h1 id="title">ASTER 研究站</h1>
+        <p class="tagline">选好战场和角色，冲刺、开盾、拿下高台。</p>
+        <h4>战场</h4>
+        <div id="maps" class="maps"></div>
+        <h4>角色</h4>
+        <div id="chars" class="chars"></div>
+      </section>
+      <section class="lobby-side">
+        <div class="tabs">
+          <button data-mode="offline" class="tab on">单机 vs Bot</button>
+          <button data-mode="online" class="tab">联机</button>
+        </div>
+        <div class="grid">
+          <label>名字<input id="name" maxlength="16" value="Max" /></label>
+          <label>对局<select id="layout"><option>1v1</option><option>1v2</option><option selected>2v2</option></select></label>
+          <label>队伍<select id="team"><option value="A">西 · 青</option><option value="B">东 · 橙</option><option value="auto" class="onlineOnly">自动</option></select></label>
+          <label class="offlineOnly">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
+          <label class="onlineOnly">服务器<input id="server" /></label>
+          <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
+        </div>
+        <h4>枪械皮肤</h4>
+        <div id="skins" class="grid skins"></div>
+        <div id="error" class="error hidden"></div>
+        <button id="play" class="primary"><span>开始战斗</span><small>ENTER THE ARENA</small></button>
+        <p class="muted keys">WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停</p>
+      </section>
     </div>
   </div>
   <div id="loading" class="overlay hidden"><div class="card small"><p>加载地图…</p></div></div>

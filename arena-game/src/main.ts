@@ -7,6 +7,10 @@ import { Game } from './game.ts';
 import { Hud } from './hud.ts';
 import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline } from './session.ts';
+import asterThumb from './assets/maps/aster.webp';
+import zenithThumb from './assets/maps/zenith.webp';
+
+const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
@@ -36,7 +40,7 @@ function renderChars() {
 }
 function renderMaps() {
   $('maps').innerHTML = MAPS.map((m) =>
-    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><b>${m.name}</b><span>${m.blurb}</span></button>`).join('');
+    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${m.name}</b><span>${m.blurb}</span></button>`).join('');
   $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
   $('title').textContent = MAPS.find((m) => m.id === mapId)!.name;
 }
