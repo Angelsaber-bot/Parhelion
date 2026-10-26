@@ -114,3 +114,49 @@ test('coast: the lighthouse spiral ramp reaches the lamp gallery', () => {
   }
   assert.ok(p.pos.y > lamp.p[1] - 0.5, `reached gallery height (${p.pos.y.toFixed(1)} / ${lamp.p[1].toFixed(1)})`);
 });
+
+test('coast: the lighthouse ramp keeps head room all the way up (no head bumps under the gallery)', () => {
+  const [cx, cz] = [-150, -20];
+  let worst = Infinity;
+  for (let a = 0; a < Math.PI * 2 * 4; a += 0.05) {
+    const x = cx + Math.cos(a) * 5.65, z = cz + Math.sin(a) * 5.65;
+    const lamp = layout.markers.find(m => m.id === 'lighthouse_lamp')!;
+    const yRamp = lamp.p[1] - 24 + (a / (Math.PI * 8)) * 24; // ramp surface at this angle
+    const up = bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, yRamp + 0.3, z), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
+    if (up && yRamp < lamp.p[1] - 0.5) worst = Math.min(worst, up.distance + 0.3);
+  }
+  assert.ok(worst > 2.2, `head room ${worst.toFixed(2)} m`);
+});
+
+test('coast: the arch stepping stones lead from the beach and hop up to the crown', () => {
+  const arch = layout.markers.find(m => m.id === 'shard_arch')!;
+  const [ax, az] = [arch.p[0], arch.p[2]];
+  const p = make();
+  // start on the beach, hop the low lead-in stones, then the tall ones
+  p.teleport(ax + 38, ground(ax + 38, az + 0.1) + 0.3, az + 0.1);
+  run(p, 1);
+  const stones: [number, number][] = [];
+  for (let m = 6; m >= 1; m--) stones.push([ax + 22 + 2 * m, az - 4.7 + m * 0.6]);
+  for (let i = 0; i <= 10; i++) stones.push([ax + 22 - 2.05 * i, az - 4.7 - Math.sin(i * 0.6) * 0.4]);
+  stones.push([ax - 1, az]);
+  for (const [x, z] of stones) {
+    for (let i = 0; i < 4 * 120; i++) {
+      const d = Math.hypot(p.pos.x - x, p.pos.z - z);
+      if (d < 0.5 && (p.onGround)) break;
+      face(p, x, z);
+      p.step(1 / 120, { ...idle, z: d > 0.3 ? 1 : 0, jump: (p.onGround || p.swimming) && i % 30 < 2 });
+    }
+  }
+  assert.ok(p.pos.y > arch.p[1] - 1.5, `reached the crown (y ${p.pos.y.toFixed(1)} / ${arch.p[1].toFixed(1)})`);
+});
+
+test('coast: a swimmer can lunge out of the water onto a low stone', () => {
+  const arch = layout.markers.find(m => m.id === 'shard_arch')!;
+  const [x, z] = [arch.p[0] + 22 + 2 * 4, arch.p[2] - 4.7 + 4 * 0.6]; // lead-in stone, top ~0.2 m above the sea
+  const p = make();
+  p.teleport(x, 0.2, z - 3.2);
+  run(p, 1);
+  assert.ok(p.swimming, `starts swimming ${p.pos.toArray().map(v => v.toFixed(2))} ground ${ground(x, z - 3.2).toFixed(2)}`);
+  for (let i = 0; i < 3 * 120 && !p.onGround; i++) { face(p, x, z); p.step(1 / 120, { ...idle, z: 1, jump: i % 40 < 2 }); }
+  assert.ok(p.onGround && !p.swimming, `climbed out at ${p.pos.toArray().map(v => v.toFixed(1))}`);
+});

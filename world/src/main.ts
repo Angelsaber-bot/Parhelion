@@ -459,6 +459,9 @@ function frame(now: number) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
     const pivot = new THREE.Vector3(player.pos.x + rx * 0.45, player.pos.y + 1.55, player.pos.z + rz * 0.45);
+    // keep the pivot under any ceiling (gallery floors, arches) so the arm never starts inside geometry
+    const up = staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(player.pos.x, player.pos.y + 1.0, player.pos.z), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
+    if (up && up.distance < 0.85) pivot.y = Math.max(player.pos.y + 0.9, up.point.y - 0.3);
     const back = look.clone().negate();
     const hit = staticBVH.raycastFirst(new THREE.Ray(pivot, back), THREE.DoubleSide);
     const armLen = player.gliding ? 5.2 : 3.6;

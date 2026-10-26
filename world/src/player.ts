@@ -112,6 +112,8 @@ export class Player {
       this.vel.y += (feetDepth - 1.15) * 30 * dt; // buoyancy keeps the head above water
       this.vel.y *= Math.pow(0.02, dt);
       if (input.jump) this.vel.y = Math.max(this.vel.y, 2.5);
+      // lunge out of the water onto a low ledge (rocks, piers, stepping stones)
+      if (jumpPressed && feetDepth < 1.6) this.vel.y = 8.2;
     } else {
       if (this.onGround && input.jump) this.vel.y = PLAYER.jump;
       this.vel.y = Math.max(this.vel.y - PLAYER.gravity * dt, -PLAYER.maxFall);

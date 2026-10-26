@@ -187,7 +187,7 @@ export function buildCoast(heightAt: HeightAt) {
     // door + windows
     b.box(cx + 4.05, base + 0.8, cz, 0.3, 2.2, 1.3, C.woodDark, 0, false);
     // spiral ramp around the outside
-    const R = 5.65, seg = 16, turns = 4, rise = H / (seg * turns);
+    const R = 5.65, seg = 24, turns = 4, rise = H / (seg * turns);
     const segLen = (2 * Math.PI * R) / seg;
     const slopeA = Math.atan2(rise, segLen);
     let lastA = 0;
@@ -199,7 +199,7 @@ export function buildCoast(heightAt: HeightAt) {
       // rail
       const rx = cx + Math.cos(a) * (R + 1.1), rz = cz + Math.sin(a) * (R + 1.1);
       b.add(BOX, C.woodDark, T(rx, y + 0.35, rz, -a, 0.12, 0.9, segLen + 0.3, -slopeA));
-      if (k % 2 === 0) b.add(CYL8, C.woodDark, T(cx + Math.cos(a) * (R - 0.4), y - 1.4, cz + Math.sin(a) * (R - 0.4), 0, 0.12, 2.4, 0.12), false);
+      if (k % 3 === 0) b.add(CYL8, C.woodDark, T(cx + Math.cos(a) * (R - 0.4), y - 1.4, cz + Math.sin(a) * (R - 0.4), 0, 0.12, 2.4, 0.12), false);
       lastA = a;
     }
     // gallery: ring sectors, leaving an opening above the last flight of the ramp
@@ -208,7 +208,7 @@ export function buildCoast(heightAt: HeightAt) {
     for (let s = 0; s < nSec; s++) {
       const a = ((s + 0.5) / nSec) * Math.PI * 2;
       let da = ((lastA - a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
-      if (da < 1.35) continue; // stairwell opening (headroom for the ramp below)
+      if (da < 3.1) continue; // stairwell opening: keeps > 2.4 m headroom over the ramp below
       const w = (2 * Math.PI * 5.4) / nSec + 0.3;
       b.add(BOX, C.concrete, T(cx + Math.cos(a) * 5.4, top - 0.2, cz + Math.sin(a) * 5.4, -a, 4.2, 0.4, w));
       b.add(BOX, C.red, T(cx + Math.cos(a) * 7.35, top + 0.5, cz + Math.sin(a) * 7.35, -a, 0.15, 1.0, w));
@@ -248,11 +248,18 @@ export function buildCoast(heightAt: HeightAt) {
     }
     // grassy cap on the crown
     rocks.add(CYL20, C.moss, T(ax, y0 + 12.05, az, 0, 2.2, 0.25, 2.6), false);
-    // stepping stones from the beach up to the crown
-    for (let i = 0; i <= 10; i++) {
-      const x = ax + 22 - 2.05 * i, z = az - 4.7 - Math.sin(i * 0.6) * 0.4, h = WL + 1.2 + 1.0 * i;
+    // stepping stones: low lead-in stones rise out of the sand, then climb to the crown
+    const stone = (x: number, z: number, h: number, i: number) => {
       const g = Math.min(heightAt(x, z), WL - 0.5);
-      rocks.add(CYL8, i % 2 ? C.rock : C.stone, T(x, (h + g - 1) / 2, z, i, 1.05, h - g + 1, 1.05));
+      rocks.add(CYL8, i % 2 ? C.rock : C.stone, T(x, (h - 0.35 + g - 1) / 2, z, i, 1.1, h - 0.35 - g + 1, 1.1));
+      rocks.add(new THREE.CylinderGeometry(1.0, 1.25, 0.5, 8), C.rockDark, T(x, h - 0.25, z, i * 0.7));
+      rocks.add(CYL8, C.moss, T(x, h + 0.02, z, i * 0.7, 0.95, 0.06, 0.95), false);
+    };
+    for (let i = 0; i <= 10; i++) stone(ax + 22 - 2.05 * i, az - 4.7 - Math.sin(i * 0.6) * 0.4, WL + 1.2 + 1.0 * i, i);
+    for (let m = 1; m <= 14; m++) {
+      const x = ax + 22 + 2.0 * m, z = az - 4.7 + m * 0.6, h = WL + 1.2 - 0.25 * m;
+      if (heightAt(x, z) > h - 0.3) break; // reached the beach
+      stone(x, z, h, m + 20);
     }
     // tide pools and shells on the beach
     for (let i = 0; i < 18; i++) {
