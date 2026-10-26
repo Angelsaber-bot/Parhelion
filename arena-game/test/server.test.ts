@@ -99,6 +99,22 @@ describe('ArenaRoom', () => {
     await expect(new Client(`ws://127.0.0.1:${PORT}`).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'Old' })).rejects.toThrow(/版本/);
   });
 
+  it('real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs', async () => {
+    const url = `ws://127.0.0.1:${PORT}`;
+    await expect(new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', loadout: ['lumen', 'lumen', 'blade'] })).rejects.toThrow(/装备/);
+    await expect(new Client(url).joinOrCreate('arena', { rulesVersion: 2, layout: '1v1', team: 'A' })).rejects.toThrow(/版本/);
+    const session = await joinOnline(url, { layout: '1v1', team: 'A', name: 'Loadout', char: 0, skins: [], map: 'sakura', loadout: ['firefly', 'longnight', 'hammer'] });
+    let last: Snapshot | null = null; session.onSnapshot = (snap) => last = snap;
+    try {
+      for (const [seq, slot] of [0, 1, 2].entries()) {
+        session.send([{ seq: seq + 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: slot, view: 0 }]);
+        await wait(130);
+        const p = (last as unknown as Snapshot).players.find((p) => p.id === session.id)!;
+        expect(p.loadout).toEqual(['firefly', 'longnight', 'hammer']); expect(p.weaponSlot).toBe(slot); expect(p.weapon).toBe([3, 4, 7][slot]);
+      }
+    } finally { session.close(); }
+  });
+
   it('new client rejects an old server welcome before prediction begins', async () => {
     class LegacyRoom extends Room {
       onJoin(client: ServerClient) { client.send('welcome', { id: client.sessionId, tick: 0, map: 'aster' }); }
@@ -109,5 +125,7 @@ describe('ArenaRoom', () => {
       await expect(joinOnline(`ws://127.0.0.1:${PORT + 1000}`, { layout: '1v1', team: 'A', name: 'New', char: 0, skins: [] })).rejects.toThrow(/版本/);
     } finally { await legacy.gracefullyShutdown(false); }
   });
+
+
 
 });

@@ -44,6 +44,7 @@
     #settings-open { top: 16px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff; border: 1px solid #87a9b1; color: #24404f; cursor: pointer; }
     #settings-open.hidden { display: none; }
     #help b { display: inline-block; min-width: 54px; }
+    #movement-mode { left: 18px; bottom: 160px; background: var(--paper); padding: 7px 12px; border-radius: 8px; font-size: 12px; }
     #stats { white-space: pre; right: 18px; bottom: 18px; font: 11px ui-monospace, monospace; color: #fff; text-shadow: 0 1px 2px #000; text-align: right; }
     #start { inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: linear-gradient(#0000, #0006); color: #fff; pointer-events: auto; cursor: pointer; text-shadow: 0 2px 8px #0008; }
     #start h1 { margin: 0; font-size: 44px; letter-spacing: 10px; }
@@ -63,6 +64,7 @@
   <div id="toast" class="hud"></div>
   <div id="prompt" class="hud"></div>
   <div id="guide" class="hud"><div class="arrow"></div><div class="gem"></div><div class="dist"></div><div class="label"></div></div>
+  <div id="movement-mode" class="hud" role="status"></div>
   <div id="help" class="hud">读取操作设置…</div>
   <div id="stats" class="hud"></div>
   <div id="start" class="hud"><h1>幻日谷 · 落日王国 · 星落海岸</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p></div>

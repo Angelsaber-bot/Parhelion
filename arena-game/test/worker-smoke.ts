@@ -1,37 +1,65 @@
-import { RULES_VERSION } from '../shared/protocol.ts';
+// Actual local/production Worker smoke. Intentionally opens temporary 1v1 clients, then leaves.
+// npx tsx test/worker-smoke.ts wss://parhelion-arena.lejiazhang-us.workers.dev/arena
+import { RULES_VERSION, type JoinOptions } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
-// Smoke test for the Cloudflare Worker server (local `npm run worker:dev` or the deployed URL):
-//   npx tsx test/worker-smoke.ts wss://parhelion-arena.<sub>.workers.dev/arena
-// Two clients join a 1v1, must share a room, see both players in snapshots, and move by input.
+import type { Snapshot } from '../shared/match.ts';
+import { loadoutWeapon, type Loadout } from '../shared/content.ts';
 const url = process.argv[2] ?? 'ws://127.0.0.1:8787/arena';
-const join = (team: string, name: string) => new Promise<{ ws: WebSocket; id: string; snaps: any[] }>((res, rej) => {
-  const o = { rulesVersion: RULES_VERSION, layout: '1v1', team, name, char: 0, skins: [], map: 'aster' };
-  const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(o))}`);
-  const c = { ws, id: '', snaps: [] as any[] };
-  ws.onmessage = (e) => { const m = JSON.parse(String(e.data)); if (m.t === 'welcome') { if (m.d.rulesVersion !== RULES_VERSION) return rej(new Error('rules version mismatch')); c.id = m.d.id; res(c); } else if (m.t === 'snap') c.snaps.push(m.d); else if (m.t === 'error') rej(new Error(m.d)); };
-  ws.onerror = () => rej(new Error('ws error'));
-  setTimeout(() => rej(new Error('timeout')), 10000);
-});
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const a = await join('A', 'SmokeA');
-const b = await join('auto', 'SmokeB');
-await wait(500);
-const last = a.snaps.at(-1);
-const ids = last.players.map((p: any) => p.id).sort();
-console.log('players in A snapshot:', last.players.map((p: any) => `${p.name}/${p.team}`).join(', '));
-if (!ids.includes(a.id) || !ids.includes(b.id)) throw new Error('clients are not in the same room');
-const before = last.players.find((p: any) => p.id === a.id); const pa = (p: any) => [p.x.toFixed(2), p.z.toFixed(2)];
-let seq = 0;
-for (let i = 0; i < 6; i++) {
-  a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 10 }, () => ({ seq: ++seq, mx: 0, mz: 1, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 })) }));
-  await wait(170);
+const sockets: WebSocket[] = [];
+function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION) {
+  return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[] }>((resolve, reject) => {
+    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: [], map: 'aster', loadout };
+    const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(opts))}`); sockets.push(ws);
+    const client = { ws, id: '', snaps: [] as Snapshot[] };
+    const timer = setTimeout(() => { ws.close(); reject(new Error('join timeout')); }, 10000);
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(String(e.data));
+      if (msg.t === 'welcome') {
+        clearTimeout(timer);
+        if (msg.d.rulesVersion !== RULES_VERSION) { ws.close(); reject(new Error('rules version mismatch')); return; }
+        client.id = msg.d.id; resolve(client);
+      } else if (msg.t === 'snap') client.snaps.push(msg.d);
+      else if (msg.t === 'error') { clearTimeout(timer); ws.close(); reject(new Error(String(msg.d))); }
+    };
+    ws.onerror = () => { clearTimeout(timer); reject(new Error('WebSocket refused')); };
+    ws.onclose = () => { clearTimeout(timer); if (!client.id) reject(new Error('closed before welcome')); };
+  });
 }
-await wait(300);
-const after = b.snaps.at(-1).players.find((p: any) => p.id === a.id);
-if (!after.crouched) throw new Error('crouch missing from remote snapshot');
-console.log('A moved crouched (seen by B):', pa(before), '→', pa(after), last.phase, `snapshots/s ≈ ${(a.snaps.length / 1.8).toFixed(0)}`);
-a.ws.close(); b.ws.close();
-console.log('OK');
-process.exit(0);
-
-export {};
+async function refused(choice: Loadout, version = RULES_VERSION) {
+  let accepted = false;
+  try { await join('auto', 'InvalidSmoke', choice, version); accepted = true; } catch { /* expected handshake refusal */ }
+  if (accepted) throw new Error('server accepted invalid rules/loadout');
+}
+try {
+  const choice: Loadout = ['firefly', 'longnight', 'hammer'];
+  const a = await join('A', 'SmokeA', choice), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm']);
+  await wait(500);
+  const first = a.snaps.at(-1)!;
+  if (!first?.players.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
+  let seq = 0;
+  for (const slot of [0, 1, 2]) {
+    a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: slot, view: 0 }] }));
+    await wait(200);
+    const p = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+    if (!p.crouched || p.weaponSlot !== slot || p.weapon !== loadoutWeapon(choice, slot) || JSON.stringify(p.loadout) !== JSON.stringify(choice)) throw new Error('remote selected loadout/crouch snapshot mismatch');
+  }
+  a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 20 }, () => ({ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 2, view: 0 })) }));
+  await wait(450); // let the normal 15-input equip recovery finish before starting the strike
+  a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.FIRE, weapon: 2, view: 0 }] }));
+  await wait(850); // hammer windup is 500ms; scheduled impact must occur with no extra packets
+  const events = b.snaps.flatMap((s) => s.events);
+  if (!events.some((e) => e.t === 'meleeStart' && e.id === a.id && e.w === 7) || !events.some((e) => e.t === 'meleeStrike' && e.id === a.id && e.w === 7)) throw new Error('authoritative melee telegraph/impact missing');
+  const before = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+  for (let batch = 0; batch < 6; batch++) {
+    a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 10 }, () => ({ seq: ++seq, mx: 0, mz: 1, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 })) })); await wait(170);
+  }
+  await wait(250);
+  const after = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+  if (!after.crouched || Math.hypot(after.x - before.x, after.z - before.z) < .1) throw new Error('movement or crouch missing remotely');
+  a.ws.close(); b.ws.close(); await wait(250);
+  await refused(['lumen', 'lumen', 'blade']);
+  await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
+  await refused(['lumen', 'corona', 'blade'], 2);
+  console.log('OK: v3 two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/v2 rejection');
+} finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

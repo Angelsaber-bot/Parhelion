@@ -205,6 +205,14 @@ export class FighterAnimator {
 
   constructor(private rig: FighterRig) {}
 
+  melee(windup: number, strike: number) {
+    const J = this.rig.joints;
+    J.Arm_R.rotation.set(1.15 + windup * .6 - strike * .35, -windup * .25 + strike * .2, -.12 + windup * .15);
+    J.Forearm_R.rotation.x = .45 + windup * .25;
+    J.Arm_L.rotation.set(1.25 + windup * .3 - strike * .2, 0, .62);
+    J.Forearm_L.rotation.x = .7 + windup * .1;
+  }
+
   update(dt: number, speed: number, vy: number, crouched = false) {
     const J = this.rig.joints;
     this.crouch += ((crouched ? 1 : 0) - this.crouch) * Math.min(1, dt * 15);

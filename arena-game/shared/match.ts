@@ -4,12 +4,12 @@
 
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
-  SHIELD, TEAM_CAPACITY, WEAPONS, falloff, type Team, type TeamLayout,
+  SHIELD, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
 } from './content.ts';
 import { RULES_VERSION } from './protocol.ts';
-import { rayPlayer, rayShield } from './hit.ts';
+import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
-import { applyInput, clonePlayer, newPlayer, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
+import { aimDir, applyInput, clonePlayer, newPlayer, playerEye, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
 
 export type Phase = 'waiting' | 'countdown' | 'live' | 'ended';
 
@@ -29,6 +29,8 @@ export interface Shield {
 
 export type NetEvent =
   | { t: 'shot'; id: string; w: number; from: Vec3; to: Vec3[] }
+  | { t: 'meleeStart'; id: string; w: number; windup: number; yaw: number; pitch: number }
+  | { t: 'meleeStrike'; id: string; w: number; from: Vec3; to: Vec3 }
   | { t: 'hit'; shooter: string; victim: string; dmg: number; head: boolean }
   | { t: 'kill'; killer: string; victim: string; w: number; head: boolean }
   | { t: 'shieldUp'; sid: number; owner: string }
@@ -41,7 +43,8 @@ export interface PlayerInfo {
   name: string;
   team: Team;
   char: number;
-  skins: number[]; // skin index per weapon
+  skins: number[]; // skin index per catalog weapon
+  loadout?: Loadout;
   bot: boolean;
 }
 
@@ -75,6 +78,8 @@ interface Slot {
   kills: number;
   deaths: number;
   respawn: number;
+  meleeReadyTick: number;
+  melee: { weapon: number; impactTick: number; yaw: number; pitch: number } | null;
 }
 
 type HistoricalPose = [number, number, number, boolean, boolean]; // x, y, z, alive, crouched
@@ -121,10 +126,11 @@ export class Match {
     if (!this.hasRoom(info.team)) throw new Error(`team ${info.team} is full`);
     const char = Math.max(0, Math.min(CHARACTERS.length - 1, info.char | 0));
     const skins = WEAPONS.map((w, i) => Math.max(0, Math.min(w.skins.length - 1, info.skins[i] | 0)));
+    const loadout = validateLoadout(info.loadout);
     const slot: Slot = {
-      state: newPlayer(id, info.team, char),
-      info: { ...info, char, skins },
-      queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0,
+      state: newPlayer(id, info.team, char, loadout),
+      info: { ...info, char, skins, loadout },
+      queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0, meleeReadyTick: 0, melee: null,
     };
     this.slots.set(id, slot);
     this.spawn(slot);
@@ -168,7 +174,23 @@ export class Match {
       while (slot.credits >= 1 && slot.queue.length) {
         const inp = slot.queue.shift()!;
         slot.credits--;
-        for (const ev of applyInput(this.map, slot.state, inp)) this.handle(slot, ev);
+        const events = applyInput(this.map, slot.state, inp);
+        // A swap cancels the armed hit immediately, even if a catch-up batch swaps back.
+        if (slot.melee && slot.melee.weapon !== slot.state.weapon) slot.melee = null;
+        for (const ev of events) this.handle(slot, ev);
+      }
+    }
+
+    // Attack timing belongs to the authoritative world clock, not input packet counts.
+    // Delayed/catch-up inputs cannot compress the visible telegraph or restart recovery.
+    for (const slot of this.slots.values()) {
+      const p = slot.state;
+      if (!p.alive || (slot.melee && slot.melee.weapon !== p.weapon)) slot.melee = null;
+      p.meleeWindup = slot.melee ? Math.max(0, slot.melee.impactTick - this.tick) : 0;
+      p.fireCd = Math.max(p.fireCd, slot.meleeReadyTick - this.tick);
+      if (slot.melee && slot.melee.impactTick <= this.tick) {
+        const attack = slot.melee; slot.melee = null;
+        this.resolveMelee(slot, attack);
       }
     }
 
@@ -246,9 +268,10 @@ export class Match {
       x, y, z, vx: 0, vy: 0, vz: 0,
       yaw: Math.atan2(x, z), // face the map centre
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
+      weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0,
     });
-    slot.respawn = 0;
+    slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
     this.events.push({ t: 'spawn', id: p.id });
   }
 
@@ -256,6 +279,19 @@ export class Match {
     const id = slot.state.id;
     switch (ev.type) {
       case 'fire': this.resolveFire(slot, ev); break;
+      case 'meleeStart': {
+        const w = WEAPONS[ev.weapon];
+        if (slot.melee || this.tick < slot.meleeReadyTick || this.phase === 'ended') {
+          slot.state.meleeWindup = slot.melee ? Math.max(0, slot.melee.impactTick - this.tick) : 0;
+          break;
+        }
+        slot.meleeReadyTick = this.tick + w.interval;
+        slot.melee = { weapon: ev.weapon, impactTick: this.tick + w.windup!, yaw: ev.yaw, pitch: ev.pitch };
+        this.events.push({ t: 'meleeStart', id, w: ev.weapon, windup: w.windup!, yaw: ev.yaw, pitch: ev.pitch });
+        break;
+      }
+      // Predicted timing is useful locally; authoritative impacts are fixed-step scheduled above.
+      case 'meleeStrike': break;
       case 'shield':
         this.shields.push({
           id: this.nextShield, team: slot.state.team, owner: id,
@@ -327,6 +363,60 @@ export class Match {
     for (const [vid, { dmg, head }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon);
   }
 
+  /** One current-time contact in a fixed 3D arc. Walls and hostile shields block every candidate. */
+  private resolveMelee(slot: Slot, attack: NonNullable<Slot['melee']>): void {
+    const p = slot.state, w = WEAPONS[attack.weapon];
+    const origin: Vec3 = [p.x, p.y + playerEye(this.map, p), p.z];
+    const aim = aimDir(attack.yaw, attack.pitch);
+    let nearest = w.range, victim: string | null = null, shield: Shield | null = null;
+    let end = origin.map((v, i) => v + aim[i] * w.range) as Vec3;
+    // Only one victim per swing; distance to the contacted hit volume, not its centre.
+    for (const [id, other] of this.slots) {
+      const target = other.state;
+      if (!target.alive || target.team === p.team || id === p.id) continue;
+      const h = playerHitbox(target.crouched);
+      const points: Vec3[] = [
+        [target.x, target.y + h.headY, target.z],
+        [target.x, target.y + (h.bodyBottom + h.bodyTop) * .5, target.z],
+      ];
+      for (const point of points) {
+        const delta = point.map((v, i) => v - origin[i]) as Vec3;
+        const length = Math.hypot(...delta);
+        if (length < 1e-6) continue;
+        const dir = delta.map((v) => v / length) as Vec3;
+        if (dir.reduce((dot, v, i) => dot + v * aim[i], 0) < Math.cos(w.arc!)) continue;
+        const hit = rayPlayer(origin, dir, target.x, target.y, target.z, target.crouched);
+        if (!hit || hit.t > nearest || hit.t > w.range) continue;
+        if (raycastMap(this.map, origin, dir, hit.t + .001) <= hit.t + .001) continue;
+        let blocked: Shield | null = null, distance = hit.t;
+        for (const sh of this.shields) {
+          if (sh.team === p.team || sh.hp <= 0) continue;
+          const t = rayShield(origin, dir, sh.x, sh.y, sh.z, sh.yaw);
+          if (t < distance) { distance = t; blocked = sh; }
+        }
+        if (distance < nearest) {
+          nearest = distance; victim = blocked ? null : id; shield = blocked;
+          end = origin.map((v, i) => v + dir[i] * distance) as Vec3;
+        }
+      }
+    }
+    // A directly aimed shield can also be struck without a player behind it.
+    for (const sh of this.shields) {
+      if (sh.team === p.team || sh.hp <= 0) continue;
+      const t = rayShield(origin, aim, sh.x, sh.y, sh.z, sh.yaw);
+      if (t < nearest && raycastMap(this.map, origin, aim, t + .001) > t + .001) {
+        nearest = t; victim = null; shield = sh;
+        end = origin.map((v, i) => v + aim[i] * t) as Vec3;
+      }
+    }
+    this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
+    if (this.phase === 'ended') return;
+    if (shield) {
+      shield.hp -= w.damage;
+      if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
+    } else if (victim) this.damage(slot, victim, w.damage, false, attack.weapon);
+  }
+
   private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0) return;
@@ -334,7 +424,7 @@ export class Match {
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
     v.state.alive = false;
-    v.state.dashT = 0;
+    v.state.dashT = 0; v.state.meleeWindup = 0; v.melee = null;
     v.respawn = RESPAWN_TICKS;
     v.deaths++;
     from.kills++;
@@ -382,7 +472,7 @@ export function sanitize(raw: unknown): Input | null {
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
     buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 63,
-    weapon: (num(r.weapon, 0, WEAPONS.length - 1) ?? 0) | 0,
+    weapon: typeof r.weapon === 'number' && Number.isInteger(r.weapon) && r.weapon >= 0 && r.weapon < 3 ? r.weapon : -1,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };
 }

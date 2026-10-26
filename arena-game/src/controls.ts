@@ -1,5 +1,4 @@
 // Configurable browser input. Simulation only receives its existing bitmask plus authoritative crouch.
-import { WEAPONS } from '../shared/content.ts';
 import { BTN } from '../shared/sim.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
 const BUTTONS: Record<string, number> = { jump: BTN.JUMP, dash: BTN.DASH, shield: BTN.SHIELD, reload: BTN.RELOAD, fire: BTN.FIRE, crouch: BTN.CROUCH };
@@ -54,20 +53,20 @@ export class Controls {
     if (action === 'scoreboard') this.scoreboard = true;
     if (/^weapon[1-3]$/.test(action)) { this.weapon = Number(action.slice(-1)) - 1; this.clearAim(); }
     if (action === 'nextWeapon' || action === 'prevWeapon') {
-      this.clearAim(); this.weapon = (this.weapon + (action === 'nextWeapon' ? 1 : WEAPONS.length - 1)) % WEAPONS.length;
+      this.clearAim(); this.weapon = (this.weapon + (action === 'nextWeapon' ? 1 : 2)) % 3;
     }
   }
   private release(binding: string) {
     this.keys.delete(binding);
     const action = this.settings.action(binding);
-    if (action === 'aim') this.aimHeld = false;
-    if (action === 'scoreboard') this.scoreboard = false;
+    if (action === 'aim') this.aimHeld = this.settings.isDown(this.keys, 'aim');
+    if (action === 'scoreboard') this.scoreboard = this.settings.isDown(this.keys, 'scoreboard');
   }
   /** Automated browser tests may explicitly bypass pointer lock; menus still block them. */
   force = false;
   get locked() { return !this.blocked && (this.force || document.pointerLockElement === this.canvas); }
   get adsSensitivity() { return this.settings.value.adsSensitivity; }
-  clearAim() { this.aimHeld = false; this.lookScale = 1; }
+  clearAim() { for (const binding of this.settings.bindingsFor('aim')) this.keys.delete(binding); this.aimHeld = false; this.lookScale = 1; }
   clearAll() { this.keys.clear(); this.latched = 0; this.scoreboard = false; this.clearAim(); }
   lock() { if (!this.blocked) void this.canvas.requestPointerLock(); }
   sample(): { mx: number; mz: number; buttons: number } {

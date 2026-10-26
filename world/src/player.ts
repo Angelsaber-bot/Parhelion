@@ -49,6 +49,7 @@ export class Player {
   set flying(value: boolean) {
     if (value === this._flying) return;
     this._flying = value;
+    this.jumpHeld = false;
     this.gliding = false;
     // Debug flight can move arbitrarily far from the last grounded/water contact.
     this.vel.set(0, 0, 0);
@@ -70,7 +71,7 @@ export class Player {
   }
 
   /** input: x = strafe (+right), z = forward (+fwd) */
-  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean; up: number }) {
+  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean }) {
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(input.z).add(right.multiplyScalar(input.x));
@@ -78,10 +79,10 @@ export class Player {
 
     if (this.flying) {
       const sp = PLAYER.fly * (input.sprint ? 2.5 : 1);
-      const look = new THREE.Vector3(0, 0, -1).applyEuler(new THREE.Euler(this.pitch, this.yaw, 0, 'YXZ'));
+      // Debug traversal is horizontal only. Manual flight ascend/descend was removed.
+      const look = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
       const r = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
       this.pos.addScaledVector(look, input.z * sp * dt).addScaledVector(r, input.x * sp * dt);
-      this.pos.y += input.up * sp * dt;
       this.vel.set(0, 0, 0);
       return;
     }

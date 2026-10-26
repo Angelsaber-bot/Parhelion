@@ -3,7 +3,7 @@
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { CHARACTERS, CROUCH, DASH, DT, MOVE, SHIELD, WEAPONS, type Team } from './content.ts';
+import { CHARACTERS, CROUCH, DASH, DT, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
 import { blockedAt, ceilingAt, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
 export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
@@ -15,7 +15,7 @@ export interface Input {
   yaw: number;
   pitch: number;
   buttons: number;
-  weapon: number; // index into WEAPONS
+  weapon: number; // selected loadout slot 0..2; never a catalog ID
   view: number; // server tick of the remote frame the client was showing (lag compensation)
 }
 
@@ -30,7 +30,11 @@ export interface PlayerState {
   alive: boolean;
   grounded: boolean;
   crouched: boolean; // authoritative stance; remains true while standing would hit a ceiling
-  weapon: number;
+  weapon: number; // actual WEAPONS catalog index for rendering and damage
+  weaponSlot: number;
+  loadout: Loadout;
+  meleeWindup: number;
+  meleeYaw: number; meleePitch: number;
   ammo: number[];
   reload: number; // ticks left
   fireCd: number;
@@ -44,6 +48,8 @@ export interface PlayerState {
 
 export type SimEvent =
   | { type: 'fire'; weapon: number; origin: Vec3; dirs: Vec3[]; view: number; seq: number }
+  | { type: 'meleeStart'; weapon: number; yaw: number; pitch: number }
+  | { type: 'meleeStrike'; weapon: number; origin: Vec3; dir: Vec3 }
   | { type: 'shield'; x: number; y: number; z: number; yaw: number }
   | { type: 'dash' }
   | { type: 'reload' }
@@ -54,12 +60,13 @@ const Q = 4096;
 export const quant = (v: number) => Math.round(v * Q) / Q;
 export const quantAngle = (v: number) => Math.round(v * 10000) / 10000;
 
-export function newPlayer(id: string, team: Team, char: number): PlayerState {
+export function newPlayer(id: string, team: Team, char: number, choice?: Loadout): PlayerState {
+  const loadout = validateLoadout(choice);
   return {
     id, team, char,
     x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0,
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
-    weapon: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
+    weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, prevButtons: 0, lastSeq: -1,
   };
 }
@@ -72,7 +79,7 @@ export function playerEye(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number
 }
 
 export function clonePlayer(p: PlayerState): PlayerState {
-  return { ...p, ammo: p.ammo.slice() };
+  return { ...p, ammo: p.ammo.slice(), loadout: [...p.loadout] };
 }
 
 /** Forward unit vector for yaw (Three.js camera convention: yaw 0 looks down -Z). */
@@ -174,7 +181,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
   if (p.fireCd > 0) p.fireCd--;
   if (p.dashCd > 0) p.dashCd--;
   if (p.shieldCd > 0) p.shieldCd--;
-  if (!p.alive) return events;
+  if (!p.alive) { p.meleeWindup = 0; return events; }
 
   // --- movement ---
   const wantsCrouch = !!(inp.buttons & BTN.CROUCH);
@@ -257,15 +264,26 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     });
   }
 
-  // --- weapons ---
-  const wi = Math.max(0, Math.min(WEAPONS.length - 1, inp.weapon | 0));
-  if (wi !== p.weapon) {
-    p.weapon = wi;
-    p.reload = 0;
-    p.fireCd = Math.max(p.fireCd, 15); // 0.25 s swap
+  // --- weapons: input selects a slot, only the server-approved loadout resolves to an ID ---
+  const slot = Number.isInteger(inp.weapon) && inp.weapon >= 0 && inp.weapon < 3 ? inp.weapon : p.weaponSlot;
+  const wi = loadoutWeapon(p.loadout, slot);
+  if (wi !== p.weapon || slot !== p.weaponSlot) {
+    p.weapon = wi; p.weaponSlot = slot;
+    p.reload = 0; p.meleeWindup = 0;
+    p.fireCd = Math.max(p.fireCd, 15); // 0.25 s swap; never resets an existing attack cooldown
   }
   const w = WEAPONS[p.weapon];
-  if (p.reload > 0) {
+  if (w.kind === 'melee') {
+    p.reload = 0;
+    if (p.meleeWindup > 0) {
+      if (--p.meleeWindup === 0) events.push({ type: 'meleeStrike', weapon: p.weapon,
+        origin: [p.x, p.y + playerEye(m, p), p.z], dir: aimDir(p.meleeYaw, p.meleePitch) });
+    } else if (pressed & BTN.FIRE && p.fireCd === 0) {
+      p.fireCd = w.interval; p.meleeWindup = w.windup!;
+      p.meleeYaw = p.yaw; p.meleePitch = p.pitch;
+      events.push({ type: 'meleeStart', weapon: p.weapon, yaw: p.meleeYaw, pitch: p.meleePitch });
+    }
+  } else if (p.reload > 0) {
     p.reload--;
     if (p.reload === 0) p.ammo[p.weapon] = w.mag;
   } else if ((pressed & BTN.RELOAD && p.ammo[p.weapon] < w.mag) || p.ammo[p.weapon] === 0) {

@@ -11,7 +11,7 @@
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, WEAPONS } from './content.ts';
+import { CHARACTERS, WEAPONS, falloff, loadoutWeapon } from './content.ts';
 import { playerHitbox } from './hit.ts';
 import { lineOfSight, type Vec3 } from './map.ts';
 import type { Controller, Match } from './match.ts';
@@ -108,7 +108,7 @@ export class Bot implements Controller {
 
   think(match: Match, id: string): Input {
     const me = match.player(id)!;
-    const inp: Input = { seq: ++this.seq, mx: 0, mz: 0, yaw: this.yaw, pitch: this.pitch, buttons: 0, weapon: me.weapon, view: match.tick };
+    const inp: Input = { seq: ++this.seq, mx: 0, mz: 0, yaw: this.yaw, pitch: this.pitch, buttons: 0, weapon: me.weaponSlot, view: match.tick };
     if (!me.alive) {
       this.targetId = null; this.path = []; this.goal = null; this.lastSeen = null; this.trail = []; this.chase = null;
       this.lastHp = CHARACTERS[me.char].hp;
@@ -160,11 +160,22 @@ export class Bot implements Controller {
     const reaction = this.skill.reaction * (1 + Math.min(bestD, 40) / 35) * (tookDamage ? 0.75 : 1);
     const engaged = !!target && this.seenFor > reaction * 0.5;
 
-    // --- weapon choice by range and personality ---
+    // --- choose only among the validated equipped slots; bots use all eight real rules ---
     const range = target ? bestD : 18;
-    let want = range < 8 * (this.style === 'rusher' ? 1.3 : 1) ? 1 : range > 26 ? 2 : 0;
-    if (me.ammo[want] === 0 && me.reload === 0) want = (want + 1) % WEAPONS.length;
-    inp.weapon = want;
+    let wantSlot = me.weaponSlot, bestWeaponScore = -Infinity;
+    if (me.meleeWindup <= 0) {
+      for (let slot = 0; slot < 2; slot++) {
+        const wi = loadoutWeapon(me.loadout, slot), weapon = WEAPONS[wi];
+        const spreadPenalty = 1 / (1 + weapon.spread * range * 1.8);
+        const score = weapon.damage * weapon.pellets / weapon.interval * falloff(weapon, range) * spreadPenalty *
+          (me.ammo[wi] > 0 ? 1 : .15) * (slot === me.weaponSlot ? 1.12 : 1);
+        if (score > bestWeaponScore) { bestWeaponScore = score; wantSlot = slot; }
+      }
+      const melee = WEAPONS[loadoutWeapon(me.loadout, 2)];
+      if (target && range < melee.range * .88 && (me.fireCd === 0 || me.weaponSlot === 2)) wantSlot = 2;
+    }
+    const want = loadoutWeapon(me.loadout, wantSlot);
+    inp.weapon = wantSlot;
 
     // --- movement goal ---
     const nav = navFor(match);
@@ -172,7 +183,7 @@ export class Bot implements Controller {
     const hurt = me.hp < maxHp * (this.style === 'holder' ? 0.55 : this.style === 'flanker' ? 0.4 : 0.25);
     const reloading = me.reload > 0;
     if (target && (hurt || (reloading && this.aggression < 0.6))) goal = this.coverAway(match, me, target);
-    else if (target && this.style === 'rusher' && bestD > 7 && engaged) goal = [target.x, target.y, target.z];
+    else if (target && (WEAPONS[want].kind === 'melee' || this.style === 'rusher') && bestD > (WEAPONS[want].kind === 'melee' ? WEAPONS[want].range * .7 : 7) && engaged) goal = [target.x, target.y, target.z];
     else if (target) goal = null; // fight where it stands
     else {
       if (this.lastSeen && this.chase === null) this.chase = this.rand() < 0.35 + this.aggression * 0.6;
@@ -214,7 +225,7 @@ export class Bot implements Controller {
         if (this.rand() < 0.08) inp.buttons |= BTN.JUMP;
       }
       const [fx, fz] = forward(this.yaw);
-      const prefer = WEAPONS[want].falloffStart * 0.8 * this.preferMul;
+      const prefer = WEAPONS[want].kind === 'melee' ? WEAPONS[want].range * .65 : WEAPONS[want].falloffStart * 0.8 * this.preferMul;
       const toward = bestD > prefer + 6 ? 0.6 + this.aggression * 0.4 : bestD < Math.min(prefer, 5) ? -0.6 : 0;
       const side = this.stand ? 0 : this.strafe;
       moveX += (-fz * side + fx * toward) * 2;
@@ -275,7 +286,7 @@ export class Bot implements Controller {
     // --- trigger: bursts for automatics, uneven follow-ups for semi-autos ---
     const w = WEAPONS[me.weapon];
     const onTarget = Math.abs(errYaw) < this.skill.fireCone + 0.4 / Math.max(bestD, 1);
-    if (target && this.seenFor > reaction && onTarget) {
+    if (target && this.seenFor > reaction && onTarget && (w.kind === 'gun' || bestD <= w.range)) {
       if (w.auto) {
         if (this.pauseT > 0) this.pauseT--;
         else {
@@ -289,7 +300,7 @@ export class Bot implements Controller {
         this.shotGap = w.interval + this.range([4, 22]);
       }
     } else if (!target) { this.burstT = 0; this.pauseT = Math.max(this.pauseT, 6); }
-    if (!target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
+    if (w.kind === 'gun' && !target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
 
     // --- abilities, used sparingly ---
     if (target && tookDamage && me.dashCd === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;

@@ -4,7 +4,7 @@
 
 import { getMap, mapIdOf } from './arenaMap.ts';
 import { Bot, BOT_SKILL } from './bot.ts';
-import { SNAPSHOT_EVERY, TEAM_CAPACITY, type Team, type TeamLayout } from './content.ts';
+import { SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, validateLoadout, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
 import { LAYOUTS, RULES_VERSION, assertRulesVersion, type JoinOptions } from './protocol.ts';
 
@@ -30,6 +30,7 @@ export class RoomCore {
   /** Seat a human; throws 'Room is full' when every seat holds a human. */
   join(id: string, options: Partial<JoinOptions>): { id: string; tick: number; map: string; rulesVersion: number } {
     assertRulesVersion(options.rulesVersion);
+    const loadout = validateLoadout(options.loadout);
     const m = this.match;
     let team: Team | null = options.team === 'A' || options.team === 'B' ? options.team : null;
     if (team && !m.hasRoom(team)) {
@@ -50,7 +51,7 @@ export class RoomCore {
       team,
       char: Number(options.char) || 0,
       skins: Array.isArray(options.skins) ? options.skins.map(Number) : [],
-      bot: false,
+      bot: false, loadout,
     });
     return { id, tick: m.tick, map: this.mapId, rulesVersion: RULES_VERSION };
   }
@@ -77,7 +78,7 @@ export class RoomCore {
     for (const team of ['A', 'B'] as Team[]) {
       while (m.hasRoom(team)) {
         const n = botSeed++;
-        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: n % 2, skins: [n % 2, n % 2, n % 2], bot: true }, new Bot(n, BOT_SKILL.normal));
+        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), bot: true }, new Bot(n, BOT_SKILL.normal));
       }
     }
   }

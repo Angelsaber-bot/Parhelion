@@ -2,14 +2,16 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { WEAPON_ART, weaponArtPool, type ArtHandle } from './weaponArt.ts';
+import { WEAPONS } from '../shared/content.ts';
+import { weaponRole, weaponStats } from './loadout.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
 export function openArmory() {
   if (document.getElementById('armory-dialog')) return;
   const dialog = document.createElement('dialog'); dialog.id = 'armory-dialog';
   dialog.innerHTML = `<header><div><small>PARHELION / WAYFARER ARMORY</small><h2>旅人武装</h2></div><button id="armory-close" aria-label="关闭武器展示">关闭 ✕</button></header>
-    <div class="armory-layout"><nav aria-label="模型选择">${WEAPON_ART.map((a) => `<button data-art="${a.id}"><b>${a.name}</b><span>${a.category} · ${a.combat ? '已接入战斗外观' : '仅模型展示'}</span></button>`).join('')}</nav>
-    <section><canvas aria-label="可旋转的三维武器模型"></canvas><h3 id="art-title"></h3><p id="art-info"></p><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p class="muted">拖动旋转 · 滚轮缩放 · Esc 关闭。这里不改变配装或战斗数值。</p></section></div>`;
+    <div class="armory-layout"><nav aria-label="模型选择">${WEAPON_ART.map((a) => `<button data-art="${a.id}"><b>${a.name}</b><span>${a.category} · 可装备作战</span></button>`).join('')}</nav>
+    <section><canvas aria-label="可旋转的三维武器模型"></canvas><h3 id="art-title"></h3><p id="art-info"></p><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p class="muted">拖动旋转 · 滚轮缩放 · Esc 关闭。在大厅选择两把枪和一件近战；这里仅预览外观，不更改配装。数值是尚未完成竞技平衡验证的 Alpha 原型。</p></section></div>`;
   document.body.append(dialog); dialog.showModal();
   const canvas = dialog.querySelector('canvas')!;
   let renderer: THREE.WebGLRenderer;
@@ -34,9 +36,10 @@ export function openArmory() {
     const status = dialog.querySelector('#art-status')!, retry = dialog.querySelector<HTMLButtonElement>('#art-retry')!;
     retry.hidden = true; status.textContent = '正在加载所选模型…';
     dialog.querySelector('#art-title')!.textContent = def.name;
-    dialog.querySelector('#art-info')!.textContent = def.combat
-      ? `${def.category} · ${def.combat === 'lumen' ? 'Lumen AR' : def.combat === 'corona' ? 'Corona SG' : 'Halo DMR'} 外观已接入；保留现有伤害、弹药与射速。`
-      : `${def.category} · 仅模型展示。尚无该类别的战斗规则，不能装备作战。`;
+    const weapon = WEAPONS.find((w) => w.id === def.combat);
+    dialog.querySelector('#art-info')!.textContent = weapon
+      ? `${weapon.name} · ${weaponRole(weapon.id)}。${weaponStats(weapon)}。可在大厅对应配装槽装备。`
+      : `${def.category} · 战斗数据未匹配，请重新加载同版本客户端。`;
     dialog.querySelectorAll<HTMLButtonElement>('[data-art]').forEach((b) => { const on = b.dataset.art === id; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
     const current = handle = weaponArtPool.acquire(def);
     try {

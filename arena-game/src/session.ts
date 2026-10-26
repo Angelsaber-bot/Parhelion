@@ -4,7 +4,7 @@
 import { Client } from '@colyseus/sdk';
 import { getMap } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../shared/bot.ts';
-import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, type Team } from '../shared/content.ts';
+import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, type Team } from '../shared/content.ts';
 import type { ArenaMap } from '../shared/map.ts';
 import { Match, type Snapshot } from '../shared/match.ts';
 import { isWorkerUrl, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../shared/protocol.ts';
@@ -47,7 +47,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     catch (error) { s.onClose((error as Error).message); void room.leave(); return; }
     s.onSnapshot(snap);
   });
-  // Old servers accept unknown join fields but advertise no v2: fail before starting prediction.
+  // Old servers accept unknown join fields but advertise no current rules version: fail before starting prediction.
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => { void room.leave(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
     room.onMessage('welcome', (welcome: { rulesVersion?: number }) => {
@@ -120,12 +120,12 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   navFor(match); // build the nav grid up front so the first bot tick doesn't hitch
   const team: Team = opts.team === 'B' ? 'B' : 'A';
   const id = 'you';
-  match.addPlayer(id, { name: opts.name || 'You', team, char: opts.char, skins: opts.skins, bot: false });
+  match.addPlayer(id, { name: opts.name || 'You', team, char: opts.char, skins: opts.skins, loadout: opts.loadout, bot: false });
   let seed = 7;
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++;
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], bot: true }, new Bot(n, BOT_SKILL[difficulty]));
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
   let last = performance.now(), acc = 0, paused = false;

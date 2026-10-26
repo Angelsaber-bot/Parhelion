@@ -37,7 +37,7 @@ test('walking east through the pass crosses from 幻日谷 onto the lighthouse r
     const [x, z] = route[k];
     if (Math.hypot(p.pos.x - x, p.pos.z - z) < 1) { k++; continue; }
     p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z));
-    p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true, up: 0 });
+    p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true });
     if (p.pos.x > 320) minY = Math.min(minY, p.pos.y);
   }
   assert.equal(k, route.length, `walked the pass (stuck at ${p.pos.toArray().map(v => v.toFixed(1))})`);
@@ -50,6 +50,6 @@ test('boundary walls still close the world outside the pass', () => {
   p.flying = true;
   p.teleport(325, 90, -100); // on alpha's east mountains, north of the pass
   p.flying = false;
-  for (let i = 0; i < 20 * 120; i++) { p.yaw = -Math.PI / 2; p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true, up: 0 }); }
+  for (let i = 0; i < 20 * 120; i++) { p.yaw = -Math.PI / 2; p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true }); }
   assert.ok(p.pos.x < 335, `blocked at x=${p.pos.x.toFixed(1)}`);
 });

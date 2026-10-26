@@ -10,7 +10,7 @@ import { sfx } from './audio.ts';
 import type { Controls } from './controls.ts';
 import type { Hud } from './hud.ts';
 import { Feel } from './feel.ts';
-import { AimState, aimSensitivity } from './aim.ts';
+import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './aim.ts';
 import { TEAM_COLOR, type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
 
@@ -111,6 +111,21 @@ export class Game {
         const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
         if (d < 30) this.scene.muzzleFlash(from, 0.6);
         sfx.shot(e.w, d < 25, d);
+        break;
+      }
+      case 'meleeStart': {
+        if (e.id !== myId) {
+          const p = this.names.get(e.id), d = p && this.me ? Math.hypot(p.x - this.me.x, p.z - this.me.z) : 99;
+          if (d < 28) sfx.melee(e.w, true, d);
+        }
+        break;
+      }
+      case 'meleeStrike': {
+        if (e.id !== myId) {
+          this.scene.meleeStrike(e.id);
+          const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
+          if (d < 28) sfx.melee(e.w, false, d);
+        }
         break;
       }
       case 'hit': {
@@ -262,6 +277,8 @@ export class Game {
         }
         break;
       }
+      case 'meleeStart': sfx.melee(e.weapon, true); break;
+      case 'meleeStrike': this.scene.viewmodel.strike(); sfx.melee(e.weapon, false); break;
       case 'dash': sfx.dash(); break;
       case 'reload': sfx.reload(); break;
     }
@@ -311,11 +328,11 @@ export class Game {
     const me = this.me;
     if (me) {
       if (this.aimWeapon !== me.weapon) { this.controls.clearAim(); this.aimWeapon = me.weapon; }
-      const activeAim = me.alive && this.controls.locked && document.visibilityState === 'visible' && document.hasFocus() && !this.ended && me.reload <= 0;
+      const activeAim = canAimWeapon(me.weapon) && me.alive && this.controls.locked && document.visibilityState === 'visible' && document.hasFocus() && !this.ended && me.reload <= 0;
       if (!activeAim) this.controls.clearAim();
       const aim = this.aim.update(dt, this.controls.aimHeld, activeAim, me.weapon);
       this.controls.lookScale = 1 + (aimSensitivity(this.aim.fov(me.weapon), this.controls.adsSensitivity) - 1) * aim;
-      this.hud.aim(aim, me.weapon === 2);
+      this.hud.aim(aim, isScopedWeapon(me.weapon));
       const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead
       const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
       this.feel.update(dt, this.controls, speed);
@@ -329,6 +346,7 @@ export class Game {
       vm.set(me.weapon, snapMe?.skins[me.weapon] ?? 0);
       const w = WEAPONS[me.weapon];
       vm.aim = aim;
+      vm.meleeWindup = me.meleeWindup;
       vm.reloading = me.reload > 0 ? 1 - me.reload / w.reload : 0;
       vm.moving = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 0;
     }

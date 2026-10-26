@@ -49,3 +49,17 @@ it('plain JSON Worker protocol carries crouch and standing snapshots through act
 it('new Worker client refuses a legacy welcome rather than silently stripping crouch', async () => {
   await expect(joinOnline(`ws://127.0.0.1:${PORT + 1000}/arena`, { layout: '1v1', team: 'A', name: 'New', char: 0, skins: [] })).rejects.toThrow(/版本/);
 });
+
+it('plain JSON Worker protocol rejects forged loadouts and carries selected slot/catalog state', async () => {
+  const url = `ws://127.0.0.1:${PORT}/arena`;
+  await expect(joinOnline(url, { layout: '1v1', team: 'A', name: 'Bad', char: 0, skins: [], loadout: ['lumen', 'corona', 'admin'] as never })).rejects.toThrow(/装备/);
+  const session = await joinOnline(url, { layout: '1v1', team: 'auto', name: 'New', char: 0, skins: [], loadout: ['longnight', 'halo', 'polearm'] });
+  try {
+    for (const [seq, slot] of [0, 1, 2].entries()) {
+      const snapshot = new Promise<Snapshot>((resolve) => session.onSnapshot = resolve);
+      session.send([{ seq: seq + 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: slot, view: 0 }]);
+      const p = (await snapshot).players.find((p) => p.id === session.id)!;
+      expect(p.loadout).toEqual(['longnight', 'halo', 'polearm']); expect(p.weaponSlot).toBe(slot); expect(p.weapon).toBe([4, 2, 6][slot]);
+    }
+  } finally { session.close(); }
+});

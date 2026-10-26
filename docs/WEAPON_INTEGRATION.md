@@ -1,5 +1,7 @@
 # Parhelion · 武器 / 开镜 / 下蹲 / 操作设置接入
 
+> 历史说明：以下记录上一轮 8ecf300 接入。当前八件真实战斗、双枪＋近战、E/右键、World 删除升降及规则 v3 见 [LOADOUT_CONTROLS_V3.md](LOADOUT_CONTROLS_V3.md)。
+
 ## 先读的最新开发基线
 
 本次从 `main` 的 **f9cd5877f4a69b51f148f8d1c944ccc75c19dbcf**（2026-10-26 18:38:52 UTC）建立独立云端检出，不覆盖其他工作区。相较此前 a96bfef，已包含：

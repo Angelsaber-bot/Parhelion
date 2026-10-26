@@ -21,6 +21,8 @@ import { buildFighter, FighterAnimator } from './fighter.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 import { attachGunArt, type GunPresentation } from './gunArt.ts';
+import { isScopedWeapon } from './aim.ts';
+import { meleeWindupProgress, poseMelee } from './meleeArt.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -265,13 +267,15 @@ export class ArenaScene {
     a.root.visible = p.alive;
     a.setAlly(ally);
     const now = performance.now() / 1000;
-    a.animate(pos, Math.min(0.1, now - this.lastAnim), p.crouched);
-    a.root.position.set(pos[0], pos[1], pos[2]);
-    a.root.rotation.y = yaw;
-    a.aim.rotation.x = pitch;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
+    a.animate(pos, Math.min(0.1, now - this.lastAnim), p.crouched, p.meleeWindup);
+    a.root.position.set(pos[0], pos[1], pos[2]);
+    a.root.rotation.y = p.meleeWindup > 0 ? p.meleeYaw : yaw;
+    a.aim.rotation.x = p.meleeWindup > 0 ? p.meleePitch : pitch;
     a.setHp(p.hp / CHARACTERS[p.char].hp, p.name);
   }
+
+  meleeStrike(id: string) { this.avatars.get(id)?.strike(); }
 
   private lastAnim = performance.now() / 1000;
   /** Call once per frame after all syncAvatar calls. */
@@ -395,7 +399,12 @@ function buildFallbackGun(weapon: number, skin: number): { group: THREE.Group; m
   };
   const metal = toon(0x3a4250), glow = toon(s.accent, s.accent);
   let len: number;
-  if (weapon === 0) { // Lumen AR: bullpup-ish carbine, rail, red-dot, glowing energy strip
+  if (WEAPONS[weapon].kind === 'melee') { // Honest usable fallback, never a rifle for failed melee art.
+    box(.045, .045, weapon === 6 ? 1.4 : .65, dark, 0, -.1, -.22);
+    if (weapon === 7) box(.3, .22, .22, body, 0, -.1, -.5);
+    else box(weapon === 6 ? .09 : .07, .025, weapon === 6 ? .45 : .55, accent, 0, -.1, weapon === 6 ? -.85 : -.5);
+    len = weapon === 6 ? 1.05 : .75;
+  } else if (weapon === 0 || weapon === 3) { // Lumen AR: bullpup-ish carbine, rail, red-dot, glowing energy strip
     box(0.068, 0.09, 0.4, body);
     box(0.07, 0.022, 0.28, accent, 0, 0.056, -0.02);
     box(0.05, 0.12, 0.06, dark, 0, -0.1, 0.07);                 // grip
@@ -457,6 +466,8 @@ export class Viewmodel {
   private key = '';
   private kick = 0;
   private kickMax = 1;
+  private meleeHit = 0;
+  meleeWindup = 0;
   private weapon = 0;
   private swap = 0;
   private bob = 0;
@@ -481,29 +492,32 @@ export class Viewmodel {
     this.key = k;
     this.presentation?.dispose();
     const { group, muzzle } = this.presentation = buildGun(weapon, skin, true);
-    group.scale.setScalar(0.72);
+    group.scale.setScalar(weapon === 6 ? .6 : .72);
     this.gun = group;
     this.muzzle = muzzle;
     this.root.add(group);
     this.swap = 1;
-    this.weapon = weapon;
+    this.weapon = weapon; this.meleeHit = 0; this.meleeWindup = 0; this.kick = 0;
   }
 
   clear() {
     this.presentation?.dispose(); this.presentation = null; this.gun = null; this.muzzle = null; this.key = '';
     for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
-    this.flash.visible = false; this.aim = 0;
+    this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.meleeWindup = 0;
   }
 
   muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
+  strike() { this.meleeHit = 1; }
+
   fire() {
     const w = this.weapon;
-    this.kickMax = w === 1 ? 1.9 : w === 2 ? 1.4 : 0.85;
+    if (WEAPONS[w].kind === 'melee') return;
+    this.kickMax = w === 1 ? 1.9 : (w === 2 || w === 4) ? 1.4 : 0.85;
     this.kick = this.kickMax;
     this.flash.visible = true;
     this.flash.material.rotation = Math.random() * Math.PI;
-    this.flash.scale.setScalar(w === 1 ? 0.3 : w === 2 ? 0.24 : 0.17);
+    this.flash.scale.setScalar(w === 1 ? 0.3 : (w === 2 || w === 4) ? 0.24 : 0.17);
     setTimeout(() => (this.flash.visible = false), w === 1 ? 60 : 40);
     if (w !== 1) this.ejectShell();
   }
@@ -549,7 +563,11 @@ export class Viewmodel {
       this.gun.rotation.x *= 1 - this.aim; this.gun.rotation.y *= 1 - this.aim; this.gun.rotation.z *= 1 - this.aim;
       this.presentation.animate(kick, this.reloading);
     }
-    this.gun.visible = !(this.weapon === 2 && this.aim > 0.92); // DMR uses the unobstructed magnified scope view
+    if (WEAPONS[this.weapon].kind === 'melee') {
+      poseMelee(this.gun, this.weapon, meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit, true);
+      this.meleeHit = Math.max(0, this.meleeHit - dt * 7);
+    }
+    this.gun.visible = !(isScopedWeapon(this.weapon) && this.aim > 0.92); // scopes have an unobstructed magnified view
     for (let i = this.shells.length - 1; i >= 0; i--) {
       const sh = this.shells[i];
       sh.life -= dt;
@@ -580,6 +598,8 @@ class Avatar {
   private last: Vec3 | null = null;
   private speed = 0;
   private vy = 0;
+  private weapon = 0;
+  private meleeHit = 0;
 
   constructor(p: PlayerSnap) {
     this.char = p.char;
@@ -614,7 +634,9 @@ class Avatar {
   }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
-  animate(pos: Vec3, dt: number, crouched = false) {
+  strike() { this.meleeHit = 1; }
+
+  animate(pos: Vec3, dt: number, crouched = false, meleeWindup = 0) {
     if (this.last && dt > 0) {
       const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
       this.speed += (Math.min(v, 12) - this.speed) * Math.min(1, dt * 10);
@@ -623,12 +645,18 @@ class Avatar {
     this.last = [pos[0], pos[1], pos[2]];
     this.anim.update(dt, this.speed, this.vy, crouched);
     this.plate.position.y = crouched ? 1.7 : 2.25;
+    if (this.gun && WEAPONS[this.weapon].kind === 'melee') {
+      const windup = meleeWindupProgress(meleeWindup, WEAPONS[this.weapon].windup ?? 1);
+      poseMelee(this.gun, this.weapon, windup, this.meleeHit, false);
+      this.anim.melee(windup, this.meleeHit);
+      this.meleeHit = Math.max(0, this.meleeHit - dt * 7);
+    } else this.anim.melee(0, 0);
   }
 
   setWeapon(weapon: number, skin: number) {
     const k = `${weapon}:${skin}`;
     if (k === this.gunKey) return;
-    this.gunKey = k;
+    this.gunKey = k; this.weapon = weapon; this.meleeHit = 0;
     this.presentation?.dispose();
     const { group, muzzle } = this.presentation = buildGun(weapon, skin);
     group.position.set(0.16, -0.08, -0.32);

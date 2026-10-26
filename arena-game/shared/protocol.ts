@@ -1,12 +1,12 @@
 // Client <-> server message contract.
-import type { TeamLayout } from './content.ts';
+import type { Loadout, TeamLayout } from './content.ts';
 import type { Snapshot } from './match.ts';
 import type { Input } from './sim.ts';
 
 export const ROOM_NAME = 'arena';
-/** v2 adds authoritative crouch (input bit 32, stance-dependent collision/hits/eye). */
-export const RULES_VERSION = 2;
-export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。当前下蹲功能需要更新后的服务器。';
+/** v3 adds validated two-gun/one-melee loadouts, slot input, and authoritative melee windup. */
+export const RULES_VERSION = 3;
+export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。当前装备与近战规则需要版本 3 客户端和服务器。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
 }
@@ -24,6 +24,7 @@ export interface JoinOptions {
   name: string;
   char: number;
   skins: number[];
+  loadout?: Loadout;
   /** Arena map id (see shared/arenaMap.ts); players on different maps never share a room. */
   map?: string;
   /** Fill empty slots with bots (room creator decides). */

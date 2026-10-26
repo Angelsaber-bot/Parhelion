@@ -48,3 +48,9 @@ WORLD_URL=http://127.0.0.1:4177 npm run test:browser
 If using an existing runner/browser, set `PLAYWRIGHT_MODULE` to its module path and `CHROMIUM_EXECUTABLE` to the browser path. The suite writes a JSON result and a new spawn screenshot to ignored `validation/artifacts/` (or `WORLD_TEST_OUTPUT`). It covers minimap alignment, unlocked/locked input, modal map, flight interaction, HTTP failure/retry, pointer-lock rejection, and a healthy scene load.
 
 No performance/FPS improvement, full map traversal, combat AI or multiplayer validation is claimed.
+
+## 2026-10-26 E／右键与移除手动飞行升降
+
+按最新用户澄清，删除了 `descend` 设置、旧互动／上升复用和 `Player.step` 的 `up` 输入。水平飞行调试保留为 V；WASD 不受相机俯仰影响。Space 仍是正常跳跃、出水和滑翔开关，自动上升气流不变。共享设置 v2 为主／副按键“或”关系，迁移保留旧自定义键并报告单项冲突。
+
+当前全套 World Node 测试 53/53 通过，TypeScript 检查通过；包括生产输入事件段执行、实际 Player、地图 GLB 与海岸／不列颠路线。真实浏览器交互仍未验收，沿用先前环境启动受限的说明，不将 Node 断言描述为浏览器画面测试。

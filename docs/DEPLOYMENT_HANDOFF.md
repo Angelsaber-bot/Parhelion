@@ -18,7 +18,7 @@ A separately approved operator can use the existing authenticated environment fo
 
 ## Paired rollout
 
-Rules version 2 adds authoritative crouch. Old and new clients/servers must not silently interoperate. Schedule a brief online maintenance window: old sessions can disconnect when the Worker updates; old pages will need refresh. Offline play and World do not require the server. Prepare the static stage first, then deploy the Worker, run its two-client smoke test, and immediately deploy Pages. Do not publish the new static client if the Worker test fails. Retain the current production Worker and Pages deployment IDs before starting; roll back the pair if production verification fails.
+Rules version 3 adds validated two-gun/one-melee loadouts and timed authoritative melee, retaining crouch. Old and new clients/servers must not silently interoperate. Schedule a brief online maintenance window: old sessions can disconnect when the Worker updates; old pages will need refresh. Offline play and World do not require the server. Prepare the static stage first, then deploy the Worker, run its two-client smoke test, and immediately deploy Pages. Do not publish the new static client if the Worker test fails. Retain the current production Worker and Pages deployment IDs before starting; roll back the pair if production verification fails.
 
 From a fresh checkout of the published commit (Node 22+):
 
@@ -49,4 +49,8 @@ npx tsx test/worker-smoke.ts wss://parhelion-arena.lejiazhang-us.workers.dev/are
 npx wrangler pages deploy "$STAGE" --project-name=parhelion-game --branch="$CONFIRMED_PRODUCTION_BRANCH"
 ```
 
-Post-deploy verify `/`, `/arena/`, `/world/`; compare deployed JS and weapon GLB hashes to this build; check both players' crouched snapshots in the Worker smoke test; check a legacy client is rejected explicitly; test settings save/rebind/reset and FPS/TPS/ADS in a real browser. The integration passed 104 Arena + 48 World automated tests and both builds, but cloud Chromium and local Durable Objects runtime are blocked by host restrictions. Browser/production verification is not claimed until performed.
+Post-deploy verify `/`, `/arena/`, `/world/`; compare deployed JS and weapon GLB hashes to this build; check both players' selected-loadout/crouched snapshots and scheduled melee in the Worker smoke test; check a legacy client is rejected explicitly; test settings save/rebind/reset and FPS/TPS/ADS in a real browser. Read the current delivery validation-summary.json for exact test counts; both full suites and builds must pass, but cloud Chromium and local Durable Objects runtime are blocked by host restrictions. Browser/production verification is not claimed until performed.
+
+## Applying this follow-on source patch
+
+Base is `8ecf30046e7c950cf2d8855e7f6cda41f120d2ad`. Fetch the same repository first, inspect dirty desktop files, preserve them, and use a clean integration branch. Check `git apply --check selected-loadouts-v3.patch` before applying (or `git am` the supplied single-commit mail patch). Never overwrite a newer checkout blindly. The package contains source changes and tests only, not node_modules, the old homepage/site shell or duplicate GLBs. Build the current repository and stage only its Arena/World outputs into the existing website shell. Keep existing site/map/quest files and launcher layout.

@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player.ts';
-const idle = { x: 0, z: 0, jump: false, sprint: false, up: 0 };
+const idle = { x: 0, z: 0, jump: false, sprint: false };
 test('teleport clears stale floor and water contacts, preventing an air jump', () => {
   const p = new Player([], 1);
   p.onGround = true; p.swimming = true;
@@ -62,4 +62,25 @@ test('normal diagonal walking is not faster than straight walking', () => {
   a.teleport(0, 10, 0); b.teleport(0, 10, 0);
   a.step(1/120, { ...idle, z: 1 }); b.step(1/120, { ...idle, z: 1, x: 1 });
   assert.ok(Math.abs(Math.hypot(a.pos.x, a.pos.z) - Math.hypot(b.pos.x,b.pos.z)) < 1e-8);
+});
+
+test('debug flight is horizontal only, even with pitched look, jump, or obsolete vertical input', () => {
+  const p = new Player([], -100); p.teleport(0, 25, 0); p.flying = true; p.pitch = 1.3;
+  const oldInput = { ...idle, z: 1, jump: true, up: 1 };
+  for (let i = 0; i < 120; i++) p.step(1/120, oldInput);
+  assert.equal(p.pos.y, 25); assert.ok(p.pos.z < -39);
+  oldInput.up = -1;
+  for (let i = 0; i < 120; i++) p.step(1/120, oldInput);
+  assert.equal(p.pos.y, 25);
+});
+test('removing manual flight controls preserves jump, glide toggles, water jump and updraft lift', () => {
+  const p = new Player([], -100); p.teleport(0, 10, 0);
+  p.step(1/120, { ...idle, jump: true }); assert.equal(p.gliding, true);
+  p.step(1/120, idle); p.step(1/120, { ...idle, jump: true }); assert.equal(p.gliding, false);
+  p.updrafts = [{ x: 0, z: 0, r: 10, y0: 0, y1: 60 }];
+  const initial = p.pos.y;
+  for (let i = 0; i < 120; i++) p.step(1/120, idle);
+  assert.equal(p.gliding, true); assert.ok(p.pos.y > initial + 1);
+  const swimmer = new Player([], 10); swimmer.teleport(0, 8.7, 0); swimmer.step(1/120, { ...idle, jump: true });
+  assert.equal(swimmer.swimming, true); assert.ok(swimmer.vel.y > 0);
 });

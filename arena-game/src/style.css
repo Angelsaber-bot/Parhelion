@@ -159,3 +159,20 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 .armory-layout p { font-size: 13px; line-height: 1.65; }
 #art-status { color: #8ae0d6; min-height: 24px; }
 @media (max-width: 700px) { .armory-layout { grid-template-columns: 1fr; } .armory-layout nav { grid-template-columns: 1fr 1fr; } #armory-dialog { padding: 16px; } .armory-layout canvas { height: 32vh; } }
+
+/* Three selected slots, not an eight-weapon backpack. */
+.loadout { display: grid; gap: 9px; }
+.loadout-item { padding: 12px; background: #07162c7a; border: 1px solid #ffffff22; border-radius: 12px; gap: 7px; }
+.loadout-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.loadout-heading b { color: #d9e7f4; }
+.loadout-heading kbd { max-width: 60%; overflow-wrap: anywhere; font: 11px ui-monospace, monospace; color: var(--gold); }
+.loadout-item select { width: 100%; }
+.loadout-role { color: #c4d2df; font-size: 12px; line-height: 1.5; }
+.loadout-item small { color: #9bafc3; line-height: 1.5; }
+.prototype-note { border-left: 2px solid #ffcf6b77; padding-left: 10px; }
+button:disabled { cursor: wait; opacity: .6; transform: none; }
+.wslot { flex-direction: column; gap: 2px; min-width: 74px; max-width: 140px; }
+.wslot kbd { font: 11px ui-monospace, monospace; }
+.wslot small { font-size: 10px; color: #c0d0d9; }
+#weapon.melee #ammo { font-size: 24px; }
+#weapon.melee #mag { font-size: 12px; }

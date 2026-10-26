@@ -4,7 +4,7 @@
 // The public site uses the same RoomCore inside a Cloudflare Durable Object (worker/index.ts).
 
 import { Room, type Client } from '@colyseus/core';
-import { TICK_HZ } from '../shared/content.ts';
+import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import type { Match } from '../shared/match.ts';
 import { assertRulesVersion, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
@@ -28,6 +28,7 @@ export class ArenaRoom extends Room {
 
   onAuth(_client: Client, options: Partial<JoinOptions>) {
     assertRulesVersion(options.rulesVersion);
+    validateLoadout(options.loadout);
     return true;
   }
 

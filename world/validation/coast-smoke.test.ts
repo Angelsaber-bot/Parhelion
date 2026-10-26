@@ -26,7 +26,7 @@ gltf.scene.getObjectByName('COLLISION')!.traverse(o => {
 const bvh = new MeshBVH(mergeGeometries(geos));
 const colliders: Collider[] = [{ name: 'static', bvh, enabled: true }];
 const layout: Layout = JSON.parse(readFileSync(new URL('../public/assets/world_coast.layout.json', import.meta.url), 'utf8'));
-const idle = { x: 0, z: 0, jump: false, sprint: false, up: 0 };
+const idle = { x: 0, z: 0, jump: false, sprint: false };
 const ground = (x: number, z: number) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)!.point.y;
 const make = () => { const p = new Player(colliders, layout.world.waterLevel); p.updrafts = layout.updrafts ?? []; return p; };
 const run = (p: Player, s: number, input = idle) => { for (let i = 0; i < s * 120; i++) p.step(1 / 120, input); };

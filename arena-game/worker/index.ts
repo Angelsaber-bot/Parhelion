@@ -6,7 +6,7 @@
 // Lobby (one DO) keeps open rooms per layout/map/bots key; each ArenaRoomDO runs one 60 Hz match.
 
 import { DurableObject } from 'cloudflare:workers';
-import { TICK_HZ } from '../shared/content.ts';
+import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 
@@ -18,7 +18,7 @@ interface Env {
 const CORS = { 'access-control-allow-origin': '*' };
 
 function parseOptions(url: URL): Partial<JoinOptions> {
-  try { return JSON.parse(url.searchParams.get('o') ?? '{}'); } catch { return {}; }
+  try { const value: unknown = JSON.parse(url.searchParams.get('o') ?? '{}'); return value && typeof value === 'object' && !Array.isArray(value) ? value as Partial<JoinOptions> : {}; } catch { return {}; }
 }
 
 function roomKey(o: Partial<JoinOptions>) {
@@ -37,6 +37,7 @@ export default {
     }
     const opts = parseOptions(url);
     if (opts.rulesVersion !== RULES_VERSION) return new Response(RULES_MISMATCH, { status: 426, headers: CORS });
+    try { validateLoadout(opts.loadout); } catch (e) { return new Response((e as Error).message, { status: 400, headers: CORS }); }
     const key = roomKey(opts);
     const lobby = env.LOBBY.get(env.LOBBY.idFromName('lobby'));
     const room = await lobby.assign(key, new RoomCore(opts).capacity);

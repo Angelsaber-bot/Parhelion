@@ -106,12 +106,24 @@ export const sfx = {
         noise(0.04, 2200, 0.25, 3, { delay: 0.32 });
         noise(0.05, 1500, 0.3, 3, { delay: 0.43 });
       }
+    } else if (weapon === 3) { // Firefly: lighter, rapid mechanical crack
+      noise(0.014, 5400, 0.4 * v, 0.7, o); noise(0.055, 1800, 0.4 * v, 1, o);
+      tone(190, 0.045, 0.3 * v, 'sine', 0.45, o);
+    } else if (weapon === 4) { // Longnight: slow, heavy report with bolt return
+      noise(0.025, 4800, 0.85 * v, 0.6, o); noise(0.3, 1100, 0.9 * v, 0.7, o);
+      tone(80, 0.28, 0.95 * v, 'sine', 0.35, o);
+      if (dist <= 0) noise(0.05, 2000, 0.24, 3, { delay: 0.5 });
     } else { // Halo DMR: whip crack, metallic ring, heavy thump
       noise(0.03, 5200, 0.7 * v, 0.6, o);
       noise(0.16, 1600, 0.65 * v, 0.8, o);
       tone(540, 0.26, 0.16 * v, 'triangle', 0.5, o);
       tone(110, 0.16, 0.65 * v, 'sine', 0.4, o);
     }
+  },
+  melee(weapon: number, windup: boolean, dist = 0) {
+    const gain = Math.max(.06, .35 * (1 - dist / 28));
+    if (windup) { tone(weapon === 7 ? 170 : 320, .16, gain * .45, 'triangle', 1.25); }
+    else { noise(weapon === 7 ? .22 : .12, weapon === 7 ? 700 : 2200, gain, .6); }
   },
   impact(dist: number) { noise(0.05, 2400, Math.max(0.05, 0.22 - dist / 200), 2, { lowpass: 5000 }); },
   hit(head: boolean) {

@@ -34,7 +34,7 @@
     <div id="weapon">
       <div id="ammoline"><span id="ammo">30</span><span id="mag">/ 30</span></div>
       <div id="wname"></div>
-      <div id="wslots"><span class="wslot">1</span><span class="wslot">2</span><span class="wslot">3</span></div>
+      <div id="wslots"><span class="wslot"><kbd>1</kbd><small></small></span><span class="wslot"><kbd>2</kbd><small></small></span><span class="wslot"><kbd>3</kbd><small></small></span></div>
     </div>
     <div id="ping"></div>
     <div id="dead" class="hidden"><div>被 <b id="killer"></b> 击败</div><div><span id="respawn">3</span> 秒后重生</div></div>
@@ -55,7 +55,7 @@
     <div class="card small">
       <div class="eyebrow">MATCH OVER</div>
       <h2 id="endtitle">胜利</h2>
-      <p class="muted">按 Tab 可查看计分板。</p>
+      <p class="muted" id="end-score-hint">读取计分板按键…</p>
       <button id="rematch" class="primary">再来一局</button>
       <button id="endleave">返回大厅</button>
     </div>
@@ -71,6 +71,10 @@
         <div id="maps" class="maps"></div>
         <h4>角色</h4>
         <div id="chars" class="chars"></div>
+        <h4>出战配装 · 两把枪 ＋ 一件近战</h4>
+        <div id="loadout" class="loadout" aria-label="出战配装"></div>
+        <p id="loadout-status" class="muted" role="status" aria-live="polite">两把枪必须不同。5 把枪和 3 件近战均可装备。</p>
+        <p class="muted prototype-note">Alpha 原型数值：武器已有不同定位，尚未经过竞技平衡验证。近战有前摇和恢复，受距离、朝向与墙体遮挡限制。</p>
       </section>
       <section class="lobby-side">
         <div class="tabs">
@@ -85,11 +89,11 @@
           <label class="onlineOnly">服务器<input id="server" /></label>
           <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
         </div>
-        <h4>枪械皮肤</h4>
+        <h4>当前配装外观</h4>
         <div id="skins" class="grid skins"></div>
-        <button id="armory" type="button">旅人武装 · 查看 8 件模型</button>
+        <button id="armory" type="button">旅人武装 · 查看 8 件可用装备</button>
         <button id="settings-lobby" type="button">按键与灵敏度设置</button>
-        <p class="muted">曙光 / 余辉 / 子午线：对应现有 AR / SG / DMR 外观，战斗数值不变。</p>
+        <p class="muted">配装在大厅选择，下一局生效。单机与联机使用相同的装备和伤害规则。</p>
         <div id="error" class="error hidden"></div>
         <button id="play" class="primary"><span>开始战斗</span><small>ENTER THE ARENA</small></button>
         <p id="control-hints" class="muted keys">读取操作设置…</p>

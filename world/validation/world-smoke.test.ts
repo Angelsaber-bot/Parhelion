@@ -26,7 +26,7 @@ gltf.scene.getObjectByName('COLLISION')!.traverse(o => {
 const bvh = new MeshBVH(mergeGeometries(staticGeos));
 const colliders = [{ name: 'static', bvh, enabled: true }, ...dynamic];
 const layout: Layout = JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json', import.meta.url), 'utf8'));
-const idle = { x: 0, z: 0, jump: false, sprint: false, up: 0 };
+const idle = { x: 0, z: 0, jump: false, sprint: false };
 
 test('all seven real-world teleport destinations settle on collision or water', () => {
   for (const area of layout.areas) {

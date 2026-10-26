@@ -38,7 +38,7 @@ function walk(from: [number, number], route: [number, number][]) {
     if (Math.hypot(p.pos.x - x, p.pos.z - z) < 1.5) { k++; continue; }
     p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z));
     if (i % 120 === 0) { stuck = p.pos.distanceTo(last) < 1 ? stuck + 1 : 0; last = p.pos.clone(); }
-    p.step(1 / 120, { x: 0, z: 1, jump: stuck > 0 && i % 60 < 5, sprint: true, up: 0 });
+    p.step(1 / 120, { x: 0, z: 1, jump: stuck > 0 && i % 60 < 5, sprint: true });
   }
   return { p, k };
 }

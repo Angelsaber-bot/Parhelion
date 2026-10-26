@@ -41,7 +41,7 @@ function setup() {
 test('unlocked keys cannot move, interact or reset progress', () => {
   const s = setup();
   s.target.emit('keydown', { code: 'KeyW', key: 'w' });
-  s.target.emit('keydown', { code: 'KeyE', key: 'e' });
+  s.target.emit('keydown', { code: 'KeyF', key: 'f' });
   s.target.emit('keydown', { code: 'KeyR', key: 'r' });
   assert.equal(s.context.state.keys.size, 0);
   assert.equal(s.actions(), 0);
@@ -51,7 +51,7 @@ test('locked controls work and unlock/blur/hidden clear keys', () => {
   const s = setup(); s.lock();
   s.target.emit('keydown', { code: 'KeyW', key: 'w' });
   assert.equal(s.context.state.keys.has('KeyW'), true);
-  s.target.emit('keydown', { code: 'KeyE', key: 'e' });
+  s.target.emit('keydown', { code: 'KeyF', key: 'f' });
   assert.equal(s.actions(), 1);
   s.document.pointerLockElement = null; s.document.emit('pointerlockchange');
   assert.equal(s.context.state.keys.size, 0);
@@ -66,22 +66,22 @@ test('map opening clears controls and blocks gameplay, closing restores control'
   s.target.emit('keydown', { code: 'KeyM', key: 'm' });
   assert.equal(s.$('bigmap').classList.contains('open'), true);
   assert.equal(s.context.state.keys.size, 0);
-  s.target.emit('keydown', { code: 'KeyE' }); s.target.emit('keydown', { code: 'KeyR' });
+  s.target.emit('keydown', { code: 'KeyF' }); s.target.emit('keydown', { code: 'KeyR' });
   assert.equal(s.actions(), 0); assert.equal(s.context.done.has('relay_b'), true);
   s.target.emit('keydown', { code: 'KeyM', key: 'm' });
   assert.equal(s.$('bigmap').classList.contains('open'), false);
   s.target.emit('keydown', { code: 'KeyW' });
   assert.equal(s.context.state.keys.has('KeyW'), true);
 });
-test('flight E only ascends; modified shortcuts and repeats do not trigger actions', () => {
+test('flight has no interaction/rise alias; modified shortcuts and repeats do not trigger actions', () => {
   const s = setup(); s.lock(); s.context.player.flying = true;
-  s.target.emit('keydown', { code: 'KeyE', key: 'e' });
+  s.target.emit('keydown', { code: 'KeyF', key: 'f' });
   assert.equal(s.actions(), 0);
-  assert.equal(s.context.state.keys.has('KeyE'), true);
+  assert.equal(s.context.state.keys.has('KeyF'), true);
   s.target.emit('keydown', { code: 'KeyR', key: 'r', metaKey: true });
   assert.equal(s.context.done.has('relay_b'), true);
   assert.equal(s.context.state.keys.size, 0);
-  s.target.emit('keydown', { code: 'KeyF', repeat: true });
+  s.target.emit('keydown', { code: 'KeyV', repeat: true });
   assert.equal(s.context.player.flying, true);
 });
 test('pointer-lock rejection is handled and the entry prompt remains retryable', async () => {
@@ -136,4 +136,44 @@ test('World settings hotkey/menu clears movement and aim, blocks gameplay and ne
   s.target.emit('keydown', { code: 'KeyR' }); assert.equal(s.context.done.has('relay_b'), true);
   s.context.state.settingsPanel.close(); assert.equal(s.context.state.locked, false);
   s.target.emit('keydown', { code: 'KeyW' }); assert.equal(s.context.state.keys.size, 0);
+});
+
+test('World E and RMB are OR aliases; release one keeps shoulder aim while the other is held', () => {
+  for (const mouseFirst of [false, true]) {
+    const s = setup(); s.lock();
+    const key = () => s.target.emit('keydown', { code: 'KeyE' });
+    const mouse = () => s.target.emit('mousedown', { button: 2 });
+    if (mouseFirst) { mouse(); key(); } else { key(); mouse(); }
+    assert.equal(s.context.state.aim.held, true); assert.equal(s.actions(), 0);
+    if (mouseFirst) s.target.emit('keyup', { code: 'KeyE' }); else s.target.emit('mouseup', { button: 2 });
+    assert.equal(s.context.state.aim.held, true);
+    if (mouseFirst) s.target.emit('mouseup', { button: 2 }); else s.target.emit('keyup', { code: 'KeyE' });
+    assert.equal(s.context.state.aim.held, false);
+    assert.match(s.$('help').textContent, /E \/ 鼠标右键 按住肩射瞄准/);
+    assert.match(s.$('help').textContent, /F 互动/);
+  }
+});
+test('World alias rebind/menu/blur clear both keys and stale repeats never restore movement or aim', () => {
+  for (const interrupt of ['blur', 'map', 'settings', 'rebind']) {
+    const s = setup(); s.lock();
+    s.target.emit('keydown', { code: 'KeyE' }); s.target.emit('mousedown', { button: 2 }); s.target.emit('keydown', { code: 'KeyW' });
+    if (interrupt === 'blur') s.target.emit('blur');
+    if (interrupt === 'map') s.target.emit('keydown', { code: 'KeyM' });
+    if (interrupt === 'settings') s.target.emit('keydown', { code: 'KeyO' });
+    if (interrupt === 'rebind') s.context.state.settings.bind('aim', 'Mouse4', false, 'secondary');
+    s.target.emit('mouseup', { button: 2 }); s.target.emit('keydown', { code: 'KeyE', repeat: true }); s.target.emit('keydown', { code: 'KeyW', repeat: true });
+    assert.equal(s.context.state.aim.held, false, interrupt); assert.equal(s.context.state.keys.size, 0, interrupt);
+  }
+});
+test('manual flight vertical controls are absent; Space stays jump/glide and F only interacts', () => {
+  const s = setup(); s.lock(); const settings = s.context.state.settings;
+  assert.equal(settings.value.bindings.ascend, undefined); assert.equal(settings.value.bindings.descend, undefined);
+  assert.equal(settings.action('Space'), 'jump'); assert.equal(settings.action('KeyQ'), undefined); assert.equal(settings.action('ControlLeft'), undefined);
+  assert.doesNotMatch(s.$('help').textContent, /飞行上升|飞行下降|互动／飞行/);
+  s.target.emit('keydown', { code: 'KeyF' }); assert.equal(s.actions(), 1);
+  s.target.emit('keydown', { code: 'KeyV' }); assert.equal(s.context.player.flying, true);
+  s.target.emit('keydown', { code: 'KeyF' }); assert.equal(s.actions(), 1);
+  assert.equal(settings.action('KeyE'), 'aim');
+  const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(source, /down\('(?:ascend|descend)'\)|\bup:\s/);
 });

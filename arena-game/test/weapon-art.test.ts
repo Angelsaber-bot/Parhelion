@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { WEAPON_ART, WeaponArtPool, artPoint, combatArt, makeArtMount } from '../src/weaponArt.ts';
 import { attachGunArt } from '../src/gunArt.ts';
+import { poseMelee } from '../src/meleeArt.ts';
 import { WEAPONS } from '../shared/content.ts';
 
 async function parse(def = WEAPON_ART[0]) {
@@ -31,9 +32,9 @@ for (const def of WEAPON_ART) it(`real GLTFLoader: ${def.id}, exact geometry, PB
   h.release(); expect(pool.size).toBe(0);
 });
 
-it('only existing AR / SG / DMR are mapped; other categories are never passed to simulation', () => {
-  expect(WEAPON_ART.filter((x) => x.combat).map((x) => x.combat)).toEqual(WEAPONS.map((w) => w.id));
-  expect(WEAPON_ART.filter((x) => !x.combat)).toHaveLength(5);
+it('all eight modeled weapons map one-to-one to real gameplay definitions', () => {
+  expect(WEAPON_ART.map((x) => x.combat).sort()).toEqual(WEAPONS.map((w) => w.id).sort());
+  expect(WEAPON_ART.filter((x) => !x.combat)).toHaveLength(0);
 });
 it('one load per active model, independent materials/poses, resource lifetime follows last owner', async () => {
   const source = (await parse()).scene;
@@ -85,7 +86,7 @@ it('load failure retains the usable fallback and its muzzle', async () => {
   expect(gun.group.children).toContain(old.group); expect(gun.group.userData.artState).toBe('fallback'); expect(gun.muzzle.position.z).toBe(-.45);
   gun.dispose(); expect(pool.size).toBe(0);
 });
-for (const w of WEAPONS) it(`${w.id}: one axis transform, hand anchor, on-screen muzzle, centred ADS sight`, async () => {
+for (const w of WEAPONS.filter((w) => w.kind === 'gun')) it(`${w.id}: one axis transform, hand anchor, on-screen muzzle, centred ADS sight`, async () => {
   const def = combatArt(w.id)!, source = (await parse(def)).scene;
   const mount = makeArtMount(def, source), gun = new THREE.Group(); gun.add(mount); gun.scale.setScalar(.72);
   const expectedForward = new THREE.Vector3(1, 0, 0).applyQuaternion(mount.quaternion); expect(expectedForward.distanceTo(new THREE.Vector3(0, 0, -1))).toBeLessThan(1e-9);
@@ -100,4 +101,24 @@ for (const w of WEAPONS) it(`${w.id}: one axis transform, hand anchor, on-screen
   expect(Math.abs(center.x)).toBeLessThan(1e-8); expect(Math.abs(center.y)).toBeLessThan(1e-8);
   // No vertex is behind the eye / near clip when the sight is aligned.
   const bounds = new THREE.Box3().setFromObject(gun); expect(bounds.max.z).toBeLessThan(-.01);
+});
+
+for (const w of WEAPONS.filter((w) => w.kind === 'melee')) it(`${w.id}: actual combat model, hand grip, wind-up/swing and safe first-person bounds`, async () => {
+  const index = WEAPONS.indexOf(w), def = combatArt(w.id)!;
+  const pool = new WeaponArtPool(async () => (await parse(def)).scene);
+  const presentation = attachGunArt(index, 0, fallback(), true, pool); await presentation.ready;
+  expect(presentation.group.userData.artState).toBe('ready');
+  expect(presentation.group.userData.artId).toBe(def.id);
+  expect(artPoint(def, def.grip!).distanceTo(new THREE.Vector3(0, -.1, .07))).toBeLessThan(.001);
+  const group = presentation.group; group.scale.setScalar(index === 6 ? .6 : .72);
+  const poses: number[][] = [];
+  for (const [ready, strike] of [[0, 0], [.25, 0], [.5, 0], [1, 0], [0, 1], [0, .5]]) {
+    poseMelee(group, index, ready, strike, true); group.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(group);
+    expect(box.max.z).toBeLessThan(-.01);
+    expect(box.min.toArray().every(Number.isFinite)).toBe(true);
+    poses.push(group.rotation.toArray().slice(0, 3) as number[]);
+  }
+  expect(poses[0]).not.toEqual(poses[3]); expect(poses[3]).not.toEqual(poses[4]);
+  presentation.dispose(); expect(pool.size).toBe(0);
 });

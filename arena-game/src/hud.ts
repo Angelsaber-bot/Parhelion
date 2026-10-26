@@ -3,6 +3,7 @@
 import { CHARACTERS, DASH, SCORE_LIMIT, SHIELD, TICK_HZ, WEAPONS, type Team } from '../shared/content.ts';
 import type { PlayerSnap, Snapshot } from '../shared/match.ts';
 import type { PlayerState } from '../shared/sim.ts';
+import { weaponHud } from './loadout.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
 const TEAM_NAME: Record<Team, string> = { A: '西 · 青', B: '东 · 橙' };
@@ -49,11 +50,18 @@ export class Hud {
       const maxHp = CHARACTERS[me.char].hp;
       ($('hpfill') as HTMLElement).style.width = `${(100 * me.hp) / maxHp}%`;
       $('hptext').textContent = `${Math.ceil(me.hp)}`;
-      const w = WEAPONS[me.weapon];
-      $('ammo').textContent = me.reload > 0 ? '装填中' : `${me.ammo[me.weapon]}`;
-      $('mag').textContent = `/ ${w.mag}`;
-      $('wname').textContent = `${w.name} · ${w.skins[self.skins[me.weapon] ?? 0].name}`;
-      document.querySelectorAll<HTMLElement>('.wslot').forEach((el, i) => el.classList.toggle('on', i === me.weapon));
+      const equipment = weaponHud(me, self.skins);
+      $('weapon').classList.toggle('melee', equipment.melee);
+      $('ammo').textContent = equipment.ammo;
+      $('mag').textContent = equipment.detail;
+      $('wname').textContent = equipment.name;
+      $('scope').querySelector('b')!.textContent = equipment.scope;
+      $('wslots').querySelectorAll<HTMLElement>('.wslot').forEach((el, i) => {
+        const slot = equipment.slots[i];
+        el.classList.toggle('on', slot.active);
+        el.querySelector('small')!.textContent = slot.name;
+        el.setAttribute('aria-label', `${el.querySelector('kbd')!.textContent} · ${slot.name}`);
+      });
       cooldown($('dash'), me.dashCd / DASH.cooldown, me.dashCd);
       cooldown($('shield'), me.shieldCd / SHIELD.cooldown, me.shieldCd);
       const dead = !me.alive;

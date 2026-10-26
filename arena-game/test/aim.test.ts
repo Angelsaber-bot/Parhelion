@@ -65,3 +65,36 @@ it('remote crouch visibly bends knees and places the head within the short hull'
     expect(rig.aim.position.y).toBeGreaterThan(1.3);
   }
 });
+
+it('E and RMB stay aimed until BOTH aliases are released, in either press/release order', () => {
+  for (const mouseFirst of [false, true]) {
+    const { controls, window, canvas } = setup();
+    const keyDown = () => window.emit('keydown', { code: 'KeyE' });
+    const mouseDown = () => canvas.emit('mousedown', { button: 2 });
+    if (mouseFirst) { mouseDown(); keyDown(); } else { keyDown(); mouseDown(); }
+    expect(controls.aimHeld).toBe(true);
+    if (mouseFirst) window.emit('keyup', { code: 'KeyE' }); else window.emit('mouseup', { button: 2 });
+    expect(controls.aimHeld).toBe(true);
+    if (mouseFirst) window.emit('mouseup', { button: 2 }); else window.emit('keyup', { code: 'KeyE' });
+    expect(controls.aimHeld).toBe(false);
+  }
+});
+it('ADS aliases cannot revive after blur, menu, rebind or equipment change without a fresh press', () => {
+  for (const action of ['blur', 'menu', 'rebind', 'weapon']) {
+    const { controls, window, canvas } = setup();
+    window.emit('keydown', { code: 'KeyE' }); canvas.emit('mousedown', { button: 2 });
+    if (action === 'blur') window.emit('blur');
+    if (action === 'menu') window.emit('keydown', { code: 'KeyO' });
+    if (action === 'rebind') controls.settings.bind('aim', 'KeyP');
+    if (action === 'weapon') window.emit('keydown', { code: 'Digit3' });
+    window.emit('mouseup', { button: 2 }); window.emit('keydown', { code: 'KeyE', repeat: true });
+    expect(controls.aimHeld, action).toBe(false);
+  }
+});
+it('wheel cycles exactly three selected equipment slots, not the global weapon catalog', () => {
+  const { controls, window } = setup();
+  const slots: number[] = [];
+  for (let i = 0; i < 6; i++) { window.emit('wheel', { deltaY: 1 }); slots.push(controls.weapon); }
+  expect(slots).toEqual([1,2,0,1,2,0]);
+  window.emit('wheel', { deltaY: -1 }); expect(controls.weapon).toBe(2);
+});

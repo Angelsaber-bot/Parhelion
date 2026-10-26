@@ -57,7 +57,7 @@ function walk(from: [number, number], route: [number, number][], extra: string[]
     if (Math.hypot(p.pos.x - x, p.pos.z - z) < 1.5) { k++; continue; }
     p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z));
     if (i % 120 === 0) { stuck = p.pos.distanceTo(last) < 1 ? stuck + 1 : 0; last = p.pos.clone(); }
-    p.step(1 / 120, { x: 0, z: 1, jump: stuck > 0 && i % 60 < 5, sprint: true, up: 0 });
+    p.step(1 / 120, { x: 0, z: 1, jump: stuck > 0 && i % 60 < 5, sprint: true });
   }
   return { p, k };
 }
@@ -80,7 +80,7 @@ test('britain: every teleport destination and the spawn settle', () => {
   for (const [x, z] of spots) {
     const p = make();
     p.teleport(x, ground(x, z) + 0.5, z);
-    for (let i = 0; i < 600; i++) p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false, up: 0 });
+    for (let i = 0; i < 600; i++) p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false });
     assert.ok(p.onGround && !p.swimming, `settled on dry ground at ${x},${z}: ${where(p)}`);
   }
 });
@@ -105,7 +105,7 @@ test('britain: lake road climbs to the Camelot gate, through the town to the rou
   const { p, k } = walk(W(2, 58), route);
   assert.equal(k, route.length, `stuck at ${where(p)} heading for ${route[k]}`);
   // keep walking toward the table until the seats stop us, then check the interact radius
-  for (let i = 0; i < 240; i++) { p.yaw = Math.atan2(-(at('shard_table')[0] - p.pos.x), -(at('shard_table')[1] - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false, up: 0 }); }
+  for (let i = 0; i < 240; i++) { p.yaw = Math.atan2(-(at('shard_table')[0] - p.pos.x), -(at('shard_table')[1] - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); }
   const m = marker('shard_table');
   const d = Math.hypot(p.pos.x - m.p[0], p.pos.y - m.p[1], p.pos.z - m.p[2]);
   assert.ok(d < m.radius!, `in reach of the table shard (${d.toFixed(1)} / ${m.radius})`);
@@ -120,7 +120,7 @@ test('britain: the keep spiral ramp reaches the shard at the top', () => {
   for (let i = 0; i < 120 * 120 && p.pos.y < shard.p[1] - 0.3; i++) {
     const a = Math.atan2(p.pos.z - cz, p.pos.x - cx) + 0.4;
     p.yaw = Math.atan2(-(cx + Math.cos(a) * R - p.pos.x), -(cz + Math.sin(a) * R - p.pos.z));
-    p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false, up: 0 });
+    p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
   }
   assert.ok(p.pos.y > shard.p[1] - 0.5, `reached the top (${p.pos.y.toFixed(1)} / ${shard.p[1].toFixed(1)})`);
 });

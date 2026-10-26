@@ -74,9 +74,9 @@ describe('applyInput', () => {
   });
   it('semi-auto needs a fresh press', () => {
     const p = spawned(0, 20);
-    p.weapon = 2;
+    p.loadout = ['halo', 'lumen', 'blade']; p.weapon = 2;
     let shots = 0;
-    for (let i = 1; i <= 120; i++) shots += applyInput(m, p, inp(i, { weapon: 2, buttons: BTN.FIRE })).filter((e) => e.type === 'fire').length;
+    for (let i = 1; i <= 120; i++) shots += applyInput(m, p, inp(i, { weapon: 0, buttons: BTN.FIRE })).filter((e) => e.type === 'fire').length;
     expect(shots).toBe(1);
   });
   it('is deterministic: replaying the same inputs gives the same state', () => {

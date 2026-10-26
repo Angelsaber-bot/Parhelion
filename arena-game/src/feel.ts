@@ -19,6 +19,8 @@ export const FEEL: WeaponFeel[] = [
   { kick: 0.014, kickYaw: 0.006, aimKick: 0.0055, aimReturn: 0.7, shake: 0.004, fov: 0.7, bloom: 0.18, roll: 0.004 }, // Lumen AR
   { kick: 0.075, kickYaw: 0.016, aimKick: 0.022, aimReturn: 0.85, shake: 0.03, fov: 4.5, bloom: 0.9, roll: 0.02 }, // Corona SG
   { kick: 0.05, kickYaw: 0.008, aimKick: 0.016, aimReturn: 0.9, shake: 0.014, fov: 2.4, bloom: 0.6, roll: 0.01 }, // Halo DMR
+  { kick: 0.009, kickYaw: 0.005, aimKick: 0.0035, aimReturn: 0.65, shake: 0.003, fov: 0.4, bloom: 0.13, roll: 0.003 }, // Firefly SMG
+  { kick: 0.09, kickYaw: 0.009, aimKick: 0.028, aimReturn: 0.9, shake: 0.02, fov: 3.5, bloom: 0.8, roll: 0.015 }, // Longnight sniper
 ];
 
 export class Feel {

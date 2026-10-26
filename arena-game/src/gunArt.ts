@@ -23,7 +23,7 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
     if (dead || !loaded || !def) return;
     art = loaded;
     group.add(makeArtMount(def, art.root));
-    muzzle.position.copy(artPoint(def, def.muzzle!));
+    if (def.muzzle) muzzle.position.copy(artPoint(def, def.muzzle));
     if (def.sight) sight.copy(artPoint(def, def.sight));
     for (const [role, part] of Object.entries(art.parts)) poses.set(role, part.position.clone());
     if (firstPerson) art.root.traverse((o) => {

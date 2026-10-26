@@ -379,7 +379,7 @@ const gameplayActive = () => locked && !settingsPanel.open && document.visibilit
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
-  $('help').textContent = `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动／飞行上升 · ${k('descend')} 飞行下降\n${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 飞行调试 · ${k('collision')} 碰撞体 · ${[1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/')} 调试传送 · ${k('reset')} 重置进度`;
+  $('help').textContent = `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 水平飞行调试（非滑翔） · ${k('collision')} 碰撞体 · ${[1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/')} 调试传送 · ${k('reset')} 重置进度`;
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
 const lockError = () => {
@@ -417,11 +417,11 @@ function press(binding: string, repeat = false) {
     return;
   }
   if (!gameplayActive()) return;
-  keys.add(binding);
   if (repeat) return;
+  keys.add(binding);
   if (action === 'aim') aim.held = true;
   if (action === 'fire') shoot();
-  if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
+  if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '水平飞行调试 开' : '水平飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
   if (action === 'help') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
@@ -433,7 +433,7 @@ function press(binding: string, repeat = false) {
     if (n >= 1 && n <= here.length) spawnAt(here[n - 1].id);
   }
 }
-function release(binding: string) { keys.delete(binding); if (settings.action(binding) === 'aim') aim.held = false; }
+function release(binding: string) { keys.delete(binding); if (settings.action(binding) === 'aim') aim.held = down('aim'); }
 addEventListener('keydown', (e) => {
   if (e.metaKey || e.ctrlKey || e.altKey) { clearInput(); return; }
   if (!settingsPanel.open && locked && settings.action(e.code)) e.preventDefault();
@@ -562,11 +562,16 @@ function frame(now: number) {
     z: Number(down('forward')) - Number(down('back')),
     jump: down('jump'),
     sprint: down('sprint'),
-    up: (down('interact') && player.flying ? 1 : 0) - Number(down('descend')),
   };
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
-  const ads = aim.step(dt, gameplayActive() && !player.swimming && !player.gliding && !player.flying);
+  const canAim = gameplayActive() && !player.swimming && !player.gliding && !player.flying;
+  if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
+  const ads = aim.step(dt, canAim);
+  $('movement-mode').textContent = player.flying ? `水平飞行调试 · ${settings.label('fly')} 退出`
+    : player.swimming ? `游泳 · ${settings.label('jump')} 出水`
+    : player.gliding ? `滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`
+    : `探索 · ${settings.label('jump')} 跳跃／空中展开滑翔翼`;
   const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
   $('crosshair').classList.toggle('aiming', ads > 0.7);
@@ -616,7 +621,7 @@ function frame(now: number) {
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
-  $('prompt').textContent = it && !done.has(it.id) ? `[${settings.label('interact')}] ${it.label}` :
+  $('prompt').textContent = !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${it.label}` :
     player.inUpdraft && player.onGround ? `[${settings.label('jump')}] 跳入上升气流` : '';
 
   if (regionAt(player.pos.x).id !== lastRegion) { lastRegion = regionAt(player.pos.x).id; renderObjective(); }
