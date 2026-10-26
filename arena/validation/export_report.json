@@ -1,0 +1,35 @@
+{
+  "mapId": "aster_research_station",
+  "version": "0.3.0-art-pass",
+  "files": [
+    {
+      "name": "station_visual.glb",
+      "bytes": 5326468,
+      "sha256": "748a9c55fec4e4e439dcc3eaab43443ed51007c4ead23c86dcb21c5f2a9dfe5f",
+      "nodes": 73,
+      "triangles": 98004,
+      "materialCount": 16,
+      "embeddedBuffers": true,
+      "allBoundsMatch": true,
+      "rampNormalsPass": true,
+      "maxBoundsErrorMetres": 8.106231632609706e-07
+    },
+    {
+      "name": "station_collision.glb",
+      "bytes": 56796,
+      "sha256": "a86c356aad05e3db774ad2851462ad363d0d950f94f8fbe7b450bf310658fc90",
+      "nodes": 36,
+      "triangles": 432,
+      "materialCount": 6,
+      "embeddedBuffers": true,
+      "allBoundsMatch": true,
+      "rampNormalsPass": true,
+      "maxBoundsErrorMetres": 8.106231632609706e-07
+    }
+  ],
+  "blend": {
+    "name": "aster_research_station.blend",
+    "bytes": 1544625,
+    "sha256": "fd1fe83d520bc32280ec1dcb94077037ed8effdc0cd9b06af36a294a16557332"
+  }
+}

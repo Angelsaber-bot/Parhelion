@@ -1,0 +1,674 @@
+{
+  "mapId": "aster_research_station",
+  "version": "0.3.0-art-pass",
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "objectCount": 57,
+  "collisionCount": 36,
+  "anchorCount": 18,
+  "checks": [
+    {
+      "name": "identity and metre scale",
+      "passed": true,
+      "details": "0.3.0-art-pass"
+    },
+    {
+      "name": "unique object and anchor IDs",
+      "passed": true
+    },
+    {
+      "name": "clear anchor spawn_west_01",
+      "passed": true,
+      "details": [
+        -32,
+        0,
+        -1.5
+      ]
+    },
+    {
+      "name": "supported anchor spawn_west_01",
+      "passed": true,
+      "details": [
+        -32,
+        0,
+        -1.5
+      ]
+    },
+    {
+      "name": "clear anchor spawn_west_02",
+      "passed": true,
+      "details": [
+        -33,
+        0,
+        1.5
+      ]
+    },
+    {
+      "name": "supported anchor spawn_west_02",
+      "passed": true,
+      "details": [
+        -33,
+        0,
+        1.5
+      ]
+    },
+    {
+      "name": "clear anchor spawn_east_01",
+      "passed": true,
+      "details": [
+        32,
+        0,
+        -1.5
+      ]
+    },
+    {
+      "name": "supported anchor spawn_east_01",
+      "passed": true,
+      "details": [
+        32,
+        0,
+        -1.5
+      ]
+    },
+    {
+      "name": "clear anchor spawn_east_02",
+      "passed": true,
+      "details": [
+        33,
+        0,
+        1.5
+      ]
+    },
+    {
+      "name": "supported anchor spawn_east_02",
+      "passed": true,
+      "details": [
+        33,
+        0,
+        1.5
+      ]
+    },
+    {
+      "name": "clear anchor cover_gallery_-8",
+      "passed": true,
+      "details": [
+        -8,
+        3,
+        -15.5
+      ]
+    },
+    {
+      "name": "supported anchor cover_gallery_-8",
+      "passed": true,
+      "details": [
+        -8,
+        3,
+        -15.5
+      ]
+    },
+    {
+      "name": "clear anchor cover_gallery_8",
+      "passed": true,
+      "details": [
+        8,
+        3,
+        -15.5
+      ]
+    },
+    {
+      "name": "supported anchor cover_gallery_8",
+      "passed": true,
+      "details": [
+        8,
+        3,
+        -15.5
+      ]
+    },
+    {
+      "name": "clear anchor court_cover_-9_-4_anchor",
+      "passed": true,
+      "details": [
+        -9,
+        0,
+        -2.7
+      ]
+    },
+    {
+      "name": "supported anchor court_cover_-9_-4_anchor",
+      "passed": true,
+      "details": [
+        -9,
+        0,
+        -2.7
+      ]
+    },
+    {
+      "name": "clear anchor court_cover_9_4_anchor",
+      "passed": true,
+      "details": [
+        9,
+        0,
+        2.7
+      ]
+    },
+    {
+      "name": "supported anchor court_cover_9_4_anchor",
+      "passed": true,
+      "details": [
+        9,
+        0,
+        2.7
+      ]
+    },
+    {
+      "name": "clear anchor court_cover_-9_4_anchor",
+      "passed": true,
+      "details": [
+        -9,
+        0,
+        2.7
+      ]
+    },
+    {
+      "name": "supported anchor court_cover_-9_4_anchor",
+      "passed": true,
+      "details": [
+        -9,
+        0,
+        2.7
+      ]
+    },
+    {
+      "name": "clear anchor court_cover_9_-4_anchor",
+      "passed": true,
+      "details": [
+        9,
+        0,
+        -2.7
+      ]
+    },
+    {
+      "name": "supported anchor court_cover_9_-4_anchor",
+      "passed": true,
+      "details": [
+        9,
+        0,
+        -2.7
+      ]
+    },
+    {
+      "name": "clear anchor objective_console",
+      "passed": true,
+      "details": [
+        0,
+        0,
+        7
+      ]
+    },
+    {
+      "name": "supported anchor objective_console",
+      "passed": true,
+      "details": [
+        0,
+        0,
+        7
+      ]
+    },
+    {
+      "name": "clear anchor cover_lab_-10",
+      "passed": true,
+      "details": [
+        -12.2,
+        0,
+        19
+      ]
+    },
+    {
+      "name": "supported anchor cover_lab_-10",
+      "passed": true,
+      "details": [
+        -12.2,
+        0,
+        19
+      ]
+    },
+    {
+      "name": "clear anchor cover_lab_0",
+      "passed": true,
+      "details": [
+        -2.2,
+        0,
+        17
+      ]
+    },
+    {
+      "name": "supported anchor cover_lab_0",
+      "passed": true,
+      "details": [
+        -2.2,
+        0,
+        17
+      ]
+    },
+    {
+      "name": "clear anchor cover_lab_10",
+      "passed": true,
+      "details": [
+        7.8,
+        0,
+        19
+      ]
+    },
+    {
+      "name": "supported anchor cover_lab_10",
+      "passed": true,
+      "details": [
+        7.8,
+        0,
+        19
+      ]
+    },
+    {
+      "name": "opposing spawn sightlines blocked",
+      "passed": true,
+      "details": [
+        {
+          "from": "spawn_west_01",
+          "to": "spawn_east_01",
+          "visible": false
+        },
+        {
+          "from": "spawn_west_01",
+          "to": "spawn_east_02",
+          "visible": false
+        },
+        {
+          "from": "spawn_west_02",
+          "to": "spawn_east_01",
+          "visible": false
+        },
+        {
+          "from": "spawn_west_02",
+          "to": "spawn_east_02",
+          "visible": false
+        },
+        {
+          "from": "spawn_east_01",
+          "to": "spawn_west_01",
+          "visible": false
+        },
+        {
+          "from": "spawn_east_01",
+          "to": "spawn_west_02",
+          "visible": false
+        },
+        {
+          "from": "spawn_east_02",
+          "to": "spawn_west_01",
+          "visible": false
+        },
+        {
+          "from": "spawn_east_02",
+          "to": "spawn_west_02",
+          "visible": false
+        }
+      ]
+    },
+    {
+      "name": "two non-overlapping spawns west",
+      "passed": true,
+      "details": {
+        "distance": 3.1622776601683795
+      }
+    },
+    {
+      "name": "two non-overlapping spawns east",
+      "passed": true,
+      "details": {
+        "distance": 3.1622776601683795
+      }
+    },
+    {
+      "name": "sampled gallery cannot see spawn anchors",
+      "passed": true,
+      "details": {
+        "highSamples": 2551,
+        "rayCount": 10204,
+        "visibleSpawnRays": 0,
+        "spacing": 0.25,
+        "eyeHeight": 1.65
+      }
+    },
+    {
+      "name": "continuous route direct_west_objective",
+      "passed": true,
+      "details": {
+        "id": "direct_west_objective",
+        "reverse": false,
+        "steps": 1215,
+        "distance": 42.52,
+        "walkSeconds": 10.12,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.06009976589238225,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route direct_west_objective reverse",
+      "passed": true,
+      "details": {
+        "id": "direct_west_objective",
+        "reverse": true,
+        "steps": 1215,
+        "distance": 42.52,
+        "walkSeconds": 10.12,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.060406749816490746,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route south_flank",
+      "passed": true,
+      "details": {
+        "id": "south_flank",
+        "reverse": false,
+        "steps": 2867,
+        "distance": 100.34,
+        "walkSeconds": 23.89,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.06056605181614664,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route south_flank reverse",
+      "passed": true,
+      "details": {
+        "id": "south_flank",
+        "reverse": true,
+        "steps": 2867,
+        "distance": 100.34,
+        "walkSeconds": 23.89,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.06056605181614664,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route north_gallery",
+      "passed": true,
+      "details": {
+        "id": "north_gallery",
+        "reverse": false,
+        "steps": 2553,
+        "distance": 90.23,
+        "walkSeconds": 21.48,
+        "minY": 0,
+        "maxY": 3,
+        "endError": 0.06086196789804655,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route north_gallery reverse",
+      "passed": true,
+      "details": {
+        "id": "north_gallery",
+        "reverse": true,
+        "steps": 2553,
+        "distance": 90.23,
+        "walkSeconds": 21.48,
+        "minY": 0,
+        "maxY": 3,
+        "endError": 0.06086196789804655,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route gallery_counter",
+      "passed": true,
+      "details": {
+        "id": "gallery_counter",
+        "reverse": false,
+        "steps": 948,
+        "distance": 33.67,
+        "walkSeconds": 8.02,
+        "minY": 0,
+        "maxY": 3,
+        "endError": 0.0409997287351098,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route gallery_counter reverse",
+      "passed": true,
+      "details": {
+        "id": "gallery_counter",
+        "reverse": true,
+        "steps": 949,
+        "distance": 33.7,
+        "walkSeconds": 8.02,
+        "minY": 0,
+        "maxY": 3,
+        "endError": 0.0433191388108573,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route east_objective",
+      "passed": true,
+      "details": {
+        "id": "east_objective",
+        "reverse": false,
+        "steps": 1215,
+        "distance": 42.52,
+        "walkSeconds": 10.12,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.06009976589238225,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "continuous route east_objective reverse",
+      "passed": true,
+      "details": {
+        "id": "east_objective",
+        "reverse": true,
+        "steps": 1215,
+        "distance": 42.52,
+        "walkSeconds": 10.12,
+        "minY": 0,
+        "maxY": 0,
+        "endError": 0.060406749816490746,
+        "heightError": 0,
+        "stuck": false
+      }
+    },
+    {
+      "name": "spawn screen stops long movement",
+      "passed": true,
+      "details": {
+        "x": -26.660000000000114,
+        "y": 0,
+        "z": 0,
+        "vy": 0
+      }
+    },
+    {
+      "name": "outer boundary stops movement",
+      "passed": true,
+      "details": {
+        "x": 35.37724550898202,
+        "y": 0,
+        "z": 11,
+        "vy": 0
+      }
+    },
+    {
+      "name": "gravity lands on station floor",
+      "passed": true,
+      "details": {
+        "x": 9,
+        "y": 0,
+        "z": 0,
+        "vy": 0
+      }
+    },
+    {
+      "name": "gallery descent does not fall through",
+      "passed": true,
+      "details": {
+        "x": 4,
+        "y": 0,
+        "z": -9.580000000000096,
+        "vy": 0
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "direct_west_objective",
+      "reverse": false,
+      "steps": 1215,
+      "distance": 42.52,
+      "walkSeconds": 10.12,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.06009976589238225,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "direct_west_objective",
+      "reverse": true,
+      "steps": 1215,
+      "distance": 42.52,
+      "walkSeconds": 10.12,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.060406749816490746,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "south_flank",
+      "reverse": false,
+      "steps": 2867,
+      "distance": 100.34,
+      "walkSeconds": 23.89,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.06056605181614664,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "south_flank",
+      "reverse": true,
+      "steps": 2867,
+      "distance": 100.34,
+      "walkSeconds": 23.89,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.06056605181614664,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "north_gallery",
+      "reverse": false,
+      "steps": 2553,
+      "distance": 90.23,
+      "walkSeconds": 21.48,
+      "minY": 0,
+      "maxY": 3,
+      "endError": 0.06086196789804655,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "north_gallery",
+      "reverse": true,
+      "steps": 2553,
+      "distance": 90.23,
+      "walkSeconds": 21.48,
+      "minY": 0,
+      "maxY": 3,
+      "endError": 0.06086196789804655,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "gallery_counter",
+      "reverse": false,
+      "steps": 948,
+      "distance": 33.67,
+      "walkSeconds": 8.02,
+      "minY": 0,
+      "maxY": 3,
+      "endError": 0.0409997287351098,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "gallery_counter",
+      "reverse": true,
+      "steps": 949,
+      "distance": 33.7,
+      "walkSeconds": 8.02,
+      "minY": 0,
+      "maxY": 3,
+      "endError": 0.0433191388108573,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "east_objective",
+      "reverse": false,
+      "steps": 1215,
+      "distance": 42.52,
+      "walkSeconds": 10.12,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.06009976589238225,
+      "heightError": 0,
+      "stuck": false
+    },
+    {
+      "id": "east_objective",
+      "reverse": true,
+      "steps": 1215,
+      "distance": 42.52,
+      "walkSeconds": 10.12,
+      "minY": 0,
+      "maxY": 0,
+      "endError": 0.060406749816490746,
+      "heightError": 0,
+      "stuck": false
+    }
+  ],
+  "limitations": [
+    "Static geometry tests; no live enemies, occupancy-aware respawn selection or match balance test.",
+    "LOS uses solid box occluders; ramps are omitted, making visible-ray counts conservative."
+  ]
+}

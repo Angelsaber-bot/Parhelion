@@ -1,0 +1,1478 @@
+{
+  "mapId": "aster_research_station",
+  "version": "0.3.0-art-pass",
+  "mode": "arena",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "units": "metres",
+  "upAxis": "Y",
+  "bounds": {
+    "min": [
+      -36,
+      0,
+      -28
+    ],
+    "max": [
+      36,
+      7,
+      28
+    ]
+  },
+  "palette": {
+    "floor": "#c1cbd1",
+    "wall": "#8796a6",
+    "dark": "#27394b",
+    "cover": "#dae1df",
+    "cyan": "#63d9db",
+    "amber": "#efb76a",
+    "white": "#eaf0ee",
+    "red": "#d98282"
+  },
+  "objects": [
+    {
+      "id": "floor_station",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        72,
+        0.6,
+        56
+      ],
+      "material": "floor",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "wall_west",
+      "type": "box",
+      "position": [
+        -36,
+        2.5,
+        0
+      ],
+      "size": [
+        0.5,
+        5,
+        56
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_east",
+      "type": "box",
+      "position": [
+        36,
+        2.5,
+        0
+      ],
+      "size": [
+        0.5,
+        5,
+        56
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_north",
+      "type": "box",
+      "position": [
+        0,
+        2.5,
+        -28
+      ],
+      "size": [
+        72,
+        5,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_south",
+      "type": "box",
+      "position": [
+        0,
+        2.5,
+        28
+      ],
+      "size": [
+        72,
+        5,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_spawn_screen",
+      "type": "box",
+      "position": [
+        -26,
+        2.2,
+        0
+      ],
+      "size": [
+        0.6,
+        4.4,
+        16
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_pocket_-1",
+      "type": "box",
+      "position": [
+        -33.7,
+        2.2,
+        -7.5
+      ],
+      "size": [
+        4.4,
+        4.4,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_door_trim_-1",
+      "type": "box",
+      "position": [
+        -26,
+        0.04,
+        -9
+      ],
+      "size": [
+        3,
+        0.08,
+        4
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "west_pocket_1",
+      "type": "box",
+      "position": [
+        -33.7,
+        2.2,
+        7.5
+      ],
+      "size": [
+        4.4,
+        4.4,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_door_trim_1",
+      "type": "box",
+      "position": [
+        -26,
+        0.04,
+        9
+      ],
+      "size": [
+        3,
+        0.08,
+        4
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "west_spawn_pad",
+      "type": "box",
+      "position": [
+        -32,
+        0.025,
+        0
+      ],
+      "size": [
+        4,
+        0.05,
+        5
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "east_spawn_screen",
+      "type": "box",
+      "position": [
+        26,
+        2.2,
+        0
+      ],
+      "size": [
+        0.6,
+        4.4,
+        16
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "east_pocket_-1",
+      "type": "box",
+      "position": [
+        33.7,
+        2.2,
+        -7.5
+      ],
+      "size": [
+        4.4,
+        4.4,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "east_door_trim_-1",
+      "type": "box",
+      "position": [
+        26,
+        0.04,
+        -9
+      ],
+      "size": [
+        3,
+        0.08,
+        4
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "east_pocket_1",
+      "type": "box",
+      "position": [
+        33.7,
+        2.2,
+        7.5
+      ],
+      "size": [
+        4.4,
+        4.4,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "east_door_trim_1",
+      "type": "box",
+      "position": [
+        26,
+        0.04,
+        9
+      ],
+      "size": [
+        3,
+        0.08,
+        4
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "east_spawn_pad",
+      "type": "box",
+      "position": [
+        32,
+        0.025,
+        0
+      ],
+      "size": [
+        4,
+        0.05,
+        5
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "court_wall_-15.5_-9",
+      "type": "box",
+      "position": [
+        -15.5,
+        1.8,
+        -9
+      ],
+      "size": [
+        5,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "court_wall_15.5_-9",
+      "type": "box",
+      "position": [
+        15.5,
+        1.8,
+        -9
+      ],
+      "size": [
+        5,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "north_court_wing_-5",
+      "type": "box",
+      "position": [
+        -5,
+        1.8,
+        -9
+      ],
+      "size": [
+        4,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "north_court_wing_5",
+      "type": "box",
+      "position": [
+        5,
+        1.8,
+        -9
+      ],
+      "size": [
+        4,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "court_wall_-15.5_11",
+      "type": "box",
+      "position": [
+        -15.5,
+        1.8,
+        11
+      ],
+      "size": [
+        5,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "court_wall_15.5_11",
+      "type": "box",
+      "position": [
+        15.5,
+        1.8,
+        11
+      ],
+      "size": [
+        5,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_court_screen",
+      "type": "box",
+      "position": [
+        0,
+        1.8,
+        11
+      ],
+      "size": [
+        14,
+        3.6,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "gallery_deck",
+      "type": "box",
+      "position": [
+        0,
+        2.8,
+        -18
+      ],
+      "size": [
+        24,
+        0.4,
+        8
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "ramp_gallery_west",
+      "type": "ramp",
+      "position": [
+        -17,
+        0,
+        -18
+      ],
+      "size": [
+        10,
+        3,
+        8
+      ],
+      "material": "cyan",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "ramp_gallery_east",
+      "type": "ramp",
+      "position": [
+        17,
+        0,
+        -18
+      ],
+      "size": [
+        10,
+        3,
+        8
+      ],
+      "material": "cyan",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "ramp_gallery_central",
+      "type": "ramp",
+      "position": [
+        0,
+        0,
+        -9.5
+      ],
+      "size": [
+        6,
+        3,
+        9
+      ],
+      "material": "cyan",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1
+    },
+    {
+      "id": "gallery_half_cover_-8",
+      "type": "box",
+      "position": [
+        -8,
+        3.55,
+        -14.3
+      ],
+      "size": [
+        4,
+        1.1,
+        0.6
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gallery_half_cover_8",
+      "type": "box",
+      "position": [
+        8,
+        3.55,
+        -14.3
+      ],
+      "size": [
+        4,
+        1.1,
+        0.6
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gallery_panel_-5",
+      "type": "box",
+      "position": [
+        -5,
+        3.85,
+        -21
+      ],
+      "size": [
+        1.2,
+        1.7,
+        0.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gallery_panel_5",
+      "type": "box",
+      "position": [
+        5,
+        3.85,
+        -21
+      ],
+      "size": [
+        1.2,
+        1.7,
+        0.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gallery_route_strip",
+      "type": "box",
+      "position": [
+        0,
+        3.025,
+        -19
+      ],
+      "size": [
+        22,
+        0.05,
+        0.14
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "reactor_plinth",
+      "type": "box",
+      "position": [
+        0,
+        0.2,
+        1.2
+      ],
+      "size": [
+        4.4,
+        0.4,
+        4.4
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "reactor_core",
+      "type": "box",
+      "position": [
+        0,
+        2,
+        1.2
+      ],
+      "size": [
+        3.6,
+        3.6,
+        3.6
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "reactor_band",
+      "type": "box",
+      "position": [
+        0,
+        2.8,
+        1.2
+      ],
+      "size": [
+        3.7,
+        0.18,
+        3.7
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "landmark"
+    },
+    {
+      "id": "court_cover_-9_-4",
+      "type": "box",
+      "position": [
+        -9,
+        0.575,
+        -4
+      ],
+      "size": [
+        3.2,
+        1.15,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_cover_-9_-4_cap",
+      "type": "box",
+      "position": [
+        -9,
+        1.19,
+        -4
+      ],
+      "size": [
+        3.26,
+        0.08,
+        1.66
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "court_cover_9_4",
+      "type": "box",
+      "position": [
+        9,
+        0.575,
+        4
+      ],
+      "size": [
+        3.2,
+        1.15,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_cover_9_4_cap",
+      "type": "box",
+      "position": [
+        9,
+        1.19,
+        4
+      ],
+      "size": [
+        3.26,
+        0.08,
+        1.66
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "court_cover_-9_4",
+      "type": "box",
+      "position": [
+        -9,
+        0.925,
+        4
+      ],
+      "size": [
+        3.2,
+        1.85,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_cover_-9_4_cap",
+      "type": "box",
+      "position": [
+        -9,
+        1.8900000000000001,
+        4
+      ],
+      "size": [
+        3.26,
+        0.08,
+        1.66
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "court_cover_9_-4",
+      "type": "box",
+      "position": [
+        9,
+        0.925,
+        -4
+      ],
+      "size": [
+        3.2,
+        1.85,
+        1.6
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "court_cover_9_-4_cap",
+      "type": "box",
+      "position": [
+        9,
+        1.8900000000000001,
+        -4
+      ],
+      "size": [
+        3.26,
+        0.08,
+        1.66
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "objective_pad",
+      "type": "box",
+      "position": [
+        0,
+        0.025,
+        7
+      ],
+      "size": [
+        4,
+        0.05,
+        3
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "objective_console_visual",
+      "type": "box",
+      "position": [
+        0,
+        0.7,
+        9.5
+      ],
+      "size": [
+        2.6,
+        1.4,
+        0.7
+      ],
+      "material": "dark",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lab_pod_-10",
+      "type": "box",
+      "position": [
+        -10,
+        1.6,
+        19
+      ],
+      "size": [
+        3,
+        3.2,
+        3
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lab_pod_band_-10",
+      "type": "box",
+      "position": [
+        -10,
+        2.7,
+        19
+      ],
+      "size": [
+        3.06,
+        0.18,
+        3.06
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "lab_pod_0",
+      "type": "box",
+      "position": [
+        0,
+        1.6,
+        17
+      ],
+      "size": [
+        3,
+        3.2,
+        3
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lab_pod_band_0",
+      "type": "box",
+      "position": [
+        0,
+        2.7,
+        17
+      ],
+      "size": [
+        3.06,
+        0.18,
+        3.06
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "lab_pod_10",
+      "type": "box",
+      "position": [
+        10,
+        1.6,
+        19
+      ],
+      "size": [
+        3,
+        3.2,
+        3
+      ],
+      "material": "white",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "lab_pod_band_10",
+      "type": "box",
+      "position": [
+        10,
+        2.7,
+        19
+      ],
+      "size": [
+        3.06,
+        0.18,
+        3.06
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "lab_route_strip",
+      "type": "box",
+      "position": [
+        0,
+        0.035,
+        24
+      ],
+      "size": [
+        47,
+        0.07,
+        0.15
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "entry_marker_-10_-7",
+      "type": "box",
+      "position": [
+        -10,
+        0.03,
+        -7
+      ],
+      "size": [
+        0.18,
+        0.06,
+        3
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "entry_marker_-10_9",
+      "type": "box",
+      "position": [
+        -10,
+        0.03,
+        9
+      ],
+      "size": [
+        0.18,
+        0.06,
+        3
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "entry_marker_10_-7",
+      "type": "box",
+      "position": [
+        10,
+        0.03,
+        -7
+      ],
+      "size": [
+        0.18,
+        0.06,
+        3
+      ],
+      "material": "cyan",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "entry_marker_10_9",
+      "type": "box",
+      "position": [
+        10,
+        0.03,
+        9
+      ],
+      "size": [
+        0.18,
+        0.06,
+        3
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_01",
+      "kind": "spawn",
+      "position": [
+        -32,
+        0,
+        -1.5
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_02",
+      "kind": "spawn",
+      "position": [
+        -33,
+        0,
+        1.5
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "dash_lane_west",
+      "kind": "reserved_dash",
+      "position": [
+        -21,
+        0,
+        7
+      ],
+      "length": 10,
+      "width": 5
+    },
+    {
+      "id": "spawn_east_01",
+      "kind": "spawn",
+      "position": [
+        32,
+        0,
+        -1.5
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_02",
+      "kind": "spawn",
+      "position": [
+        33,
+        0,
+        1.5
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "dash_lane_east",
+      "kind": "reserved_dash",
+      "position": [
+        21,
+        0,
+        7
+      ],
+      "length": 10,
+      "width": 5
+    },
+    {
+      "id": "cover_gallery_-8",
+      "kind": "cover",
+      "position": [
+        -8,
+        3,
+        -15.5
+      ],
+      "height": 1.1,
+      "exposure": "court and multiple ramp approaches"
+    },
+    {
+      "id": "cover_gallery_8",
+      "kind": "cover",
+      "position": [
+        8,
+        3,
+        -15.5
+      ],
+      "height": 1.1,
+      "exposure": "court and multiple ramp approaches"
+    },
+    {
+      "id": "court_cover_-9_-4_anchor",
+      "kind": "cover",
+      "position": [
+        -9,
+        0,
+        -2.7
+      ],
+      "height": 1.15
+    },
+    {
+      "id": "court_cover_9_4_anchor",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        2.7
+      ],
+      "height": 1.15
+    },
+    {
+      "id": "court_cover_-9_4_anchor",
+      "kind": "cover",
+      "position": [
+        -9,
+        0,
+        2.7
+      ],
+      "height": 1.85
+    },
+    {
+      "id": "court_cover_9_-4_anchor",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        -2.7
+      ],
+      "height": 1.85
+    },
+    {
+      "id": "objective_console",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        7
+      ],
+      "radius": 2,
+      "interaction": "future objective, no capture logic"
+    },
+    {
+      "id": "shield_socket_court",
+      "kind": "reserved_shield",
+      "position": [
+        5,
+        0,
+        7
+      ],
+      "width": 2.4,
+      "height": 2,
+      "remainingBypass": 4
+    },
+    {
+      "id": "cover_lab_-10",
+      "kind": "cover",
+      "position": [
+        -12.2,
+        0,
+        19
+      ],
+      "height": 3.2
+    },
+    {
+      "id": "cover_lab_0",
+      "kind": "cover",
+      "position": [
+        -2.2,
+        0,
+        17
+      ],
+      "height": 3.2
+    },
+    {
+      "id": "cover_lab_10",
+      "kind": "cover",
+      "position": [
+        7.8,
+        0,
+        19
+      ],
+      "height": 3.2
+    },
+    {
+      "id": "shield_socket_lab",
+      "kind": "reserved_shield",
+      "position": [
+        5,
+        0,
+        16
+      ],
+      "width": 2.4,
+      "height": 2,
+      "remainingBypass": 4.5
+    }
+  ],
+  "routes": [
+    {
+      "id": "direct_west_objective",
+      "name": "Court / objective",
+      "points": [
+        [
+          -32,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          9
+        ],
+        [
+          -22,
+          0,
+          9
+        ],
+        [
+          -16,
+          0,
+          9
+        ],
+        [
+          -10,
+          0,
+          8
+        ],
+        [
+          -5,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "south_flank",
+      "name": "Lab / ground flank",
+      "points": [
+        [
+          -32,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          9
+        ],
+        [
+          -24,
+          0,
+          18
+        ],
+        [
+          -18,
+          0,
+          24
+        ],
+        [
+          18,
+          0,
+          24
+        ],
+        [
+          24,
+          0,
+          18
+        ],
+        [
+          29,
+          0,
+          9
+        ],
+        [
+          29,
+          0,
+          -1.5
+        ],
+        [
+          32,
+          0,
+          -1.5
+        ]
+      ]
+    },
+    {
+      "id": "north_gallery",
+      "name": "Gallery / high ground",
+      "points": [
+        [
+          -32,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          -1.5
+        ],
+        [
+          -29,
+          0,
+          -9
+        ],
+        [
+          -24,
+          0,
+          -18
+        ],
+        [
+          -22.3,
+          0,
+          -18
+        ],
+        [
+          -12,
+          3,
+          -18
+        ],
+        [
+          12,
+          3,
+          -18
+        ],
+        [
+          22.3,
+          0,
+          -18
+        ],
+        [
+          24,
+          0,
+          -18
+        ],
+        [
+          29,
+          0,
+          -9
+        ],
+        [
+          29,
+          0,
+          -1.5
+        ],
+        [
+          32,
+          0,
+          -1.5
+        ]
+      ]
+    },
+    {
+      "id": "gallery_counter",
+      "name": "Court to gallery counter ramp",
+      "points": [
+        [
+          0,
+          0,
+          7
+        ],
+        [
+          -5,
+          0,
+          5
+        ],
+        [
+          -5,
+          0,
+          -4.8
+        ],
+        [
+          0,
+          0,
+          -4.8
+        ],
+        [
+          0,
+          3,
+          -14
+        ],
+        [
+          0,
+          3,
+          -18
+        ]
+      ]
+    },
+    {
+      "id": "east_objective",
+      "name": "East court entry",
+      "points": [
+        [
+          32,
+          0,
+          -1.5
+        ],
+        [
+          29,
+          0,
+          -1.5
+        ],
+        [
+          29,
+          0,
+          9
+        ],
+        [
+          22,
+          0,
+          9
+        ],
+        [
+          16,
+          0,
+          9
+        ],
+        [
+          10,
+          0,
+          8
+        ],
+        [
+          5,
+          0,
+          7
+        ],
+        [
+          0,
+          0,
+          7
+        ]
+      ]
+    }
+  ],
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "planning": {
+    "hoursPerWeek": 70,
+    "testingReserveHours": 14,
+    "note": "Planning budget only; map prototype, no AI, networking, weapons or abilities."
+  },
+  "clearances": {
+    "spawnTurn": 5.2,
+    "sideEntries": 6,
+    "rampFrontLane": 4.775,
+    "labFrontLane": 4.275,
+    "labRearLane": 7.25,
+    "reactorCoverBypass": 5.2
+  }
+}

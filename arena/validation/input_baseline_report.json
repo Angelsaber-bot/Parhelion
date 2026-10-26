@@ -1,0 +1,219 @@
+{
+  "runtime": "arena/runtime",
+  "execution": "Node VM; real app.js, physics.js, Three.js and GLB; mocked DOM events, WebGL renderer and animation clock; not real-browser validation",
+  "passed": 15,
+  "failed": 30,
+  "checks": [
+    {
+      "name": "rendered asset geometry still loads from the real GLB",
+      "passed": true
+    },
+    {
+      "name": "KeyW acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyS acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyA acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyD acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowLeft acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowRight acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowUp acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowDown acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "diagonal motion is normalized to 4.2 m/s",
+      "passed": true
+    },
+    {
+      "name": "opposite directions cancel without losing the still-held key",
+      "passed": true
+    },
+    {
+      "name": "pointer-lock loss cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "pointer-lock acquire cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "pointer-lock error cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "blur then focus cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "hidden then visible cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "pagehide then pageshow cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "freeze then resume cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "frame suspended for 1.1 seconds cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.41800000000000026,\n+   x: -30.24440000001188,\n-   pitch: 0.098,\n-   x: -31.58840000000278,\n    yaw: 1.5708,\n+   z: -1.4999935513211153\n-   z: -1.4999984881087784\n  }\n"
+    },
+    {
+      "name": "overview round trip cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "respawn cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: 30.6560000000091,\n-   pitch: 0,\n-   x: 32,\n    yaw: -1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "keyboard respawn shortcut cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: 30.6560000000091,\n-   pitch: 0,\n-   x: 32,\n    yaw: -1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "Escape in keyboard fallback cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "OS meta shortcut cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "window resized cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "fullscreen change cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "context menu cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "pointer cancelled cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "route selector focus cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "outside pointer cancels simultaneous W/look and stale repeats",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3680000000000002,\n+   x: -30.454400000010466,\n-   pitch: 0.048,\n-   x: -31.798400000001365,\n    yaw: 1.5708,\n+   z: -1.4999943226941874\n-   z: -1.4999992594818505\n  }\n"
+    },
+    {
+      "name": "long uninterrupted holds do not expire",
+      "passed": true
+    },
+    {
+      "name": "movement pressed in overview is not replayed on return",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: -30.6560000000091,\n-   pitch: 0,\n-   x: -32,\n    yaw: 1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "route selector native arrows and shortcuts never move/teleport the player",
+      "passed": false,
+      "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ true\n- undefined\n"
+    },
+    {
+      "name": "spawn buttons return keyboard focus to the view",
+      "passed": false,
+      "error": "Expected \"actual\" to be reference-equal to \"expected\":\n+ actual - expected\n... Skipped lines\n\n  Target {\n    classList: {\n      add: [Function: add],\n      remove: [Function: remove],\n      toggle: [Function: toggle]\n...\n    getContext: [Function (anonymous)],\n+   id: 'east',\n-   id: 'view',\n    listeners: Map(0) {},\n    onclick: [Function (anonymous)],\n+   tagName: 'BUTTON'\n-   requestPointerLock: [Function (anonymous)],\n-   tagName: 'CANVAS'\n  }\n"
+    },
+    {
+      "name": "mouse lock remains optional and locked mouse look still works",
+      "passed": true
+    },
+    {
+      "name": "pointer lock missing clears input but preserves fresh-key fallback",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: -30.6560000000091,\n-   pitch: 0,\n-   x: -32,\n    yaw: 1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "pointer lock throws clears input but preserves fresh-key fallback",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: -30.6560000000091,\n-   pitch: 0,\n-   x: -32,\n    yaw: 1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "pointer lock rejects clears input but preserves fresh-key fallback",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n+   pitch: 0.3200000000000002,\n+   x: -30.6560000000091,\n-   pitch: 0,\n-   x: -32,\n    yaw: 1.5708,\n+   z: -1.4999950632123369\n-   z: -1.5\n  }\n"
+    },
+    {
+      "name": "clicking an already-locked scene does not interrupt a legitimate held key",
+      "passed": true
+    },
+    {
+      "name": "automatic route still advances and WASD can take over",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on blur rather than looking like stuck input",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n    pitch: 0,\n+   x: -30.320000000000007,\n-   x: -31.664,\n    yaw: 1.5707963267948966,\n    z: -1.5\n  }\n"
+    },
+    {
+      "name": "automatic route pauses on overview rather than looking like stuck input",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n    pitch: 0,\n+   x: -30.320000000000007,\n-   x: -31.664,\n    yaw: 1.5707963267948966,\n    z: -1.5\n  }\n"
+    },
+    {
+      "name": "automatic route pauses on pointer-lock loss rather than looking like stuck input",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n    pitch: 0,\n+   x: -30.320000000000007,\n-   x: -31.664,\n    yaw: 1.5707963267948966,\n    z: -1.5\n  }\n"
+    },
+    {
+      "name": "automatic route pauses on missed focus event rather than looking like stuck input",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n    pitch: 0,\n+   x: -30.252800000000008,\n-   x: -31.5968,\n    yaw: 1.5707963267948966,\n    z: -1.5\n  }\n"
+    },
+    {
+      "name": "automatic route pauses on missed visibility event rather than looking like stuck input",
+      "passed": false,
+      "error": "no horizontal sliding or camera drift\n+ actual - expected\n\n  {\n    pitch: 0,\n+   x: -30.252800000000008,\n-   x: -31.5968,\n    yaw: 1.5707963267948966,\n    z: -1.5\n  }\n"
+    }
+  ],
+  "source": "Unmodified Parhelion-Aster-Arena-0.3.0.zip, Library version 2; same integration assertions as fixed build"
+}
