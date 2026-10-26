@@ -79,6 +79,19 @@ export function buildStructures(heightAt: HeightAt) {
     mk({ id: 'spawn_p1', type: 'spawn', label: '玩家1出生点', p: [cx - 2, y, cz - 6] });
     mk({ id: 'spawn_p2', type: 'spawn', label: '玩家2出生点', p: [cx + 2, y, cz - 6] });
     mk({ id: 'camp_terminal', type: 'poi', label: '营地终端（存档点）', p: [cx - 13, y, cz - 8] });
+
+    // 幻日门: portal to region 2 (星落海岸)
+    {
+      const px = cx + 15, pz = cz - 19;
+      b.add(CYL16, PAL.stone, T(px, y + 0.25, pz, 0, 4.2, 0.5, 4.2));
+      b.add(CYL16, PAL.white, T(px, y + 0.6, pz, 0, 3.4, 0.3, 3.4));
+      for (const s of [-1, 1]) b.add(BOX, PAL.stone, T(px + s * 3.2, y + 2.2, pz, 0, 0.8, 3.2, 0.8));
+      glow.add(new THREE.TorusGeometry(3, 0.28, 10, 40), PAL.glowCyan, T(px, y + 4, pz), false);
+      const veil = new Batch('Portal_Veil', 'M_Beam');
+      veil.add(new THREE.CircleGeometry(2.75, 40), PAL.glowCyan, T(px, y + 4, pz), false);
+      pieces.push({ name: 'Portal_Veil', material: 'M_Beam', batch: veil });
+      mk({ id: 'portal_coast', type: 'interact', label: '幻日门（前往星落海岸）', p: [px, y + 0.75, pz - 2.5], radius: 4, note: 'portal:coast' });
+    }
   }
 
   // ───────────────────────── Old Observatory station (PvE stronghold) ─────────────────────────

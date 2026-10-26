@@ -126,6 +126,8 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
     case 'M_Emissive':
     case 'M_Target':
       return Object.assign(new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(1.6, 1.6, 1.6) }), { name });
+    case 'M_Beam': // light beams / portal veil: additive, see-through, never writes depth
+      return Object.assign(new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, fog: false }), { name });
     case 'M_Halo':
       return Object.assign(new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(0.32, 0.32, 0.36) }), { name });
     default: {

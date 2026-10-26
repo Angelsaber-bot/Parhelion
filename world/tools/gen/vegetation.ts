@@ -26,7 +26,7 @@ const _c = new THREE.Color(), _c2 = new THREE.Color();
  * soft volume instead of facets. Vertex colours run from a cool shadow tone at the bottom to a
  * warm highlight on top.
  */
-function canopy(out: Batch, rng: () => number, cx: number, cy: number, cz: number, rx: number, ry: number, color: string) {
+export function canopy(out: Batch, rng: () => number, cx: number, cy: number, cz: number, rx: number, ry: number, color: string) {
   const parts: THREE.BufferGeometry[] = [];
   const blobs = 4 + Math.floor(rng() * 2);
   for (let i = 0; i < blobs; i++) {
@@ -58,7 +58,7 @@ function canopy(out: Batch, rng: () => number, cx: number, cy: number, cz: numbe
 }
 
 /** Layered conifer tiers with cylindrical (axis-outward, up-tilted) normals. */
-function conifer(out: Batch, cx: number, base: number, cz: number, s: number, color: string, ry: number) {
+export function conifer(out: Batch, cx: number, base: number, cz: number, s: number, color: string, ry: number) {
   _c.set(color);
   const tiers: [number, number, number][] = [[2.3, 2.4, 0], [1.8, 2.2, 1.5], [1.25, 2.0, 2.9], [0.7, 1.6, 4.1]];
   for (const [r, h, y0] of tiers) {

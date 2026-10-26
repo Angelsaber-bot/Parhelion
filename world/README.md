@@ -17,6 +17,7 @@ npm run dev          # 打开 http://localhost:5173
 
 ```bash
 npm run build:world  # 重新生成 world_alpha.glb + world_alpha.layout.json（同种子结果一致）
+npm run build:coast  # 重新生成区域 2「星落海岸」world_coast.glb + layout
 npm run build        # 类型检查 + 打包到 dist/
 ```
 
@@ -25,7 +26,8 @@ npm run build        # 类型检查 + 打包到 dist/
 | 键 | 作用 |
 |---|---|
 | 点击画面 | 锁定鼠标进入 |
-| WASD / Shift / Space | 移动 / 奔跑 / 跳 |
+| WASD / Shift / Space | 移动 / 奔跑 / 跳（空中再按 Space 展开滑翔翼） |
+| V | 第一 / 第三人称 |
 | 左键 | 射击（可打机关靶） |
 | E | 互动（中继器、控制台） |
 | M | 大地图 |
@@ -34,7 +36,32 @@ npm run build        # 类型检查 + 打包到 dist/
 | C | 显示碰撞体 |
 | R | 重置进度 |
 
-URL 参数（截图/调试）：`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。
+URL 参数（截图/调试）：`?region=coast`（星落海岸）、`?q=low`（低画质）、`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。
+
+## 区域 2：星落海岸（Starfall Coast）
+
+![星落海岸](docs/coast_overview.png)
+
+从幻日谷营地的「幻日门」（E 互动）或 `?region=coast` 进入；海岸的码头旁也有一座幻日门回幻日谷。
+
+- **潮汐码头**（出生点）：高脚渔屋、栈桥、渔船、灯笼。
+- **风铃草原**：花海与草海。
+- **白沙湾**：海蚀拱，可以踩着石柱跳上拱顶。
+- **守望灯塔**：在海岬上，沿外侧螺旋坡道登顶。
+- **星陨坑**：陨石核心周围是发光晶簇，旁边有上升气流。
+- **浮空群岛**：6 座浮岛，靠上升气流和滑翔翼逐岛前进，岛下有瀑布。
+- **断崖神殿**：从折返石阶或山脚上升气流上到崖顶高台。
+
+任务线：收集 3 枚星之碎片（陨坑、浮空岛、海蚀拱）→ 点亮断崖神殿的星辉祭坛（光柱冲天）→ 点亮灯塔（旋转光束）。另有 6 个隐藏发现。
+
+新玩法与渲染：
+
+- 滑翔翼（原神式）：空中按 Space 展开或收起；进入上升气流后自动展开。
+- 水面会按深度变色（浅滩青绿、外海深蓝），岸边有浪花线和向岸推进的浪带，两张地图都生效。
+- 环境里有飘落的花瓣和花粉。上升气流有螺旋风粒子和风壁。
+- 后处理：MSAA、GTAO、Bloom 和体积光。草海用 GPU 实例渲染；树冠采用原神式球形法线。
+
+`validation/coast-smoke.test.ts` 用真实碰撞体验证了以下路线：出生点和传送点能稳定落地；上升气流配合滑翔翼可以依次飞到 i1、i2、i3、i4；折返石阶能上到崖顶；灯塔螺旋坡道能走到顶。
 
 ## 目录
 
@@ -45,6 +72,8 @@ world/
   tools/gen/terrain.ts     高度图地形 + 顶点色
   tools/gen/structures.ts  营地、观测站、遗迹、幻日塔、瀑布洞穴、桥、路灯、边界
   tools/gen/vegetation.ts  树、石头、灌木
+  tools/build-coast.ts     区域 2 生成入口；tools/gen/coast/* 布局、地形、建筑与植被
+  tools/gen/export.ts      各区域共用的 GLB/layout 导出
   src/                     Three.js 查看器（卡通材质、描边、天空、胶囊碰撞、小地图、目标流程）
   public/assets/           生成好的 GLB + layout JSON
   docs/                    截图

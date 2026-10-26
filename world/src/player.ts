@@ -5,6 +5,8 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 
 export interface Collider { name: string; bvh: MeshBVH; enabled: boolean }
+/** Vertical wind column: lifts a gliding player from y0 up to about y1. */
+export interface Updraft { x: number; z: number; r: number; y0: number; y1: number }
 
 export const PLAYER = {
   radius: 0.35,
@@ -16,6 +18,10 @@ export const PLAYER = {
   gravity: 22,
   fly: 40,
   maxFall: 28, // keeps per-step travel below the capsule radius at 120 Hz
+  glide: 8.5, // horizontal glider speed
+  glideSink: 2.4, // glider descent rate
+  lift: 30, // updraft acceleration
+  liftMax: 10,
 };
 
 const seg = new THREE.Line3();
@@ -33,15 +39,22 @@ export class Player {
   pitch = 0;
   onGround = false;
   swimming = false;
+  /** Genshin-style glider: press jump in the air to open/close. Updrafts open it automatically. */
+  gliding = false;
+  inUpdraft = false;
+  updrafts: Updraft[] = [];
+  private jumpHeld = false;
   private _flying = false;
   get flying() { return this._flying; }
   set flying(value: boolean) {
     if (value === this._flying) return;
     this._flying = value;
+    this.gliding = false;
     // Debug flight can move arbitrarily far from the last grounded/water contact.
     this.vel.set(0, 0, 0);
     this.onGround = false;
     this.swimming = false;
+    this.gliding = false;
   }
 
   constructor(public colliders: Collider[], public waterLevel: number) {}
@@ -52,6 +65,7 @@ export class Player {
     // Contact flags belong to the old location, not the destination.
     this.onGround = false;
     this.swimming = false;
+    this.gliding = false;
     if (yaw !== undefined) this.yaw = yaw;
   }
 
@@ -72,10 +86,28 @@ export class Player {
       return;
     }
 
+    const jumpPressed = input.jump && !this.jumpHeld;
+    this.jumpHeld = input.jump;
     const feetDepth = this.waterLevel - this.pos.y;
     this.swimming = feetDepth > 1.15;
     let speed = input.sprint ? PLAYER.sprint : PLAYER.walk;
-    if (this.swimming) {
+    let lift = 0;
+    this.inUpdraft = false;
+    for (const u of this.updrafts) {
+      if (Math.hypot(this.pos.x - u.x, this.pos.z - u.z) > u.r || this.pos.y < u.y0 - 1 || this.pos.y > u.y1 + 2) continue;
+      this.inUpdraft = true;
+      lift = PLAYER.lift * THREE.MathUtils.smoothstep(u.y1 + 1, u.y1 - 6, this.pos.y);
+    }
+    if (this.onGround || this.swimming) this.gliding = false;
+    else if (jumpPressed) this.gliding = !this.gliding;
+    if (this.inUpdraft && !this.onGround && !this.swimming) this.gliding = true;
+    if (this.gliding) {
+      speed = PLAYER.glide;
+      this.vel.y -= PLAYER.gravity * 0.35 * dt;
+      if (lift > 0) this.vel.y = Math.min(this.vel.y + lift * dt, PLAYER.liftMax);
+      else if (this.vel.y > 0) this.vel.y *= Math.pow(0.15, dt);
+      this.vel.y = Math.max(this.vel.y, -PLAYER.glideSink);
+    } else if (this.swimming) {
       speed *= 0.55;
       this.vel.y += (feetDepth - 1.15) * 30 * dt; // buoyancy keeps the head above water
       this.vel.y *= Math.pow(0.02, dt);
@@ -83,6 +115,8 @@ export class Player {
     } else {
       if (this.onGround && input.jump) this.vel.y = PLAYER.jump;
       this.vel.y = Math.max(this.vel.y - PLAYER.gravity * dt, -PLAYER.maxFall);
+      // vents also kick a standing/jumping player up so the column is easy to enter
+      if (lift > 0) this.vel.y = Math.max(this.vel.y, 4);
     }
 
     this.pos.addScaledVector(wish, speed * dt);

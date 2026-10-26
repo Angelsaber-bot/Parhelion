@@ -7,7 +7,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
-import { makeGrassField, makeSunShafts } from './fx';
+import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts, makeAmbientParticles } from './fx';
 import { toonMaterial, addOutline, makeSky, SUN_DIR, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
@@ -16,6 +16,10 @@ import { loadLayout } from './load';
 import { buildCharacter, CharacterAnimator } from './character';
 
 const params = new URLSearchParams(location.search);
+// World regions: ?region=coast loads 星落海岸; default is 幻日谷. Portals in each region link them.
+const REGIONS: Record<string, string> = { alpha: 'world_alpha', coast: 'world_coast' };
+const region = REGIONS[params.get('region') ?? ''] ? params.get('region')! : 'alpha';
+const regionFile = REGIONS[region];
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let bootFailed = false;
 let disposeRenderer = () => {};
@@ -77,12 +81,21 @@ addEventListener('resize', () => {
 
 // ───────────── load ─────────────
 const [layout, gltf] = await Promise.all([
-  loadLayout(),
-  new GLTFLoader().loadAsync('./assets/world_alpha.glb', (progress) => {
+  loadLayout(`./assets/${regionFile}.layout.json`),
+  new GLTFLoader().loadAsync(`./assets/${regionFile}.glb`, (progress) => {
     if (!bootFailed && progress.lengthComputable && progress.total > 0) $('loading').textContent = `加载地图… ${Math.round(progress.loaded / progress.total * 100)}%`;
   }),
 ]);
 const world = gltf.scene;
+document.title = `Parhelion · ${layout.world.name} World Alpha`;
+$('start').querySelector('h1')!.textContent = layout.world.name;
+caveLight.visible = region === 'alpha';
+for (const l of layout.lights ?? []) {
+  const pl = new THREE.PointLight(l.color, l.intensity, l.distance, 1.6);
+  pl.position.set(...l.p);
+  scene.add(pl);
+}
+if (layout.atmosphere) scene.fog = new THREE.Fog(layout.atmosphere.fog, layout.atmosphere.near, layout.atmosphere.far);
 for (const name of ['ART', 'COLLISION', 'Terrain']) {
   if (!world.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
 }
@@ -97,15 +110,28 @@ if (markerRoot) markerRoot.visible = false;
 let terrainMesh: THREE.Mesh | null = null;
 const targets: THREE.Mesh[] = [];
 const artMeshes: THREE.Mesh[] = [];
+const spinners: THREE.Mesh[] = [], stateful: THREE.Mesh[] = [], bobbers: THREE.Mesh[] = [];
 byName('ART')!.traverse((o) => { if ((o as THREE.Mesh).isMesh) artMeshes.push(o as THREE.Mesh); });
 artMeshes.forEach((m) => {
   if (m.name === 'Terrain') terrainMesh = m;
   m.material = toonMaterial(m.material as THREE.Material);
   m.receiveShadow = true;
-  m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name);
+  m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && m.material.name !== 'M_Beam';
+  if (m.material.name === 'M_Beam') m.receiveShadow = false;
   if (m.userData.outline && !params.has('noline')) addOutline(m);
   if (m.name.startsWith('TGT_')) targets.push(m);
+  // spinning pieces are exported in world space: move their pivot to the mesh origin
+  if (m.userData.spin && Array.isArray(m.userData.pivot)) {
+    const [px, pz] = m.userData.pivot as [number, number];
+    m.geometry.translate(-px, 0, -pz);
+    m.position.set(px, 0, pz);
+    spinners.push(m);
+  }
+  if (m.userData.showWhen || m.userData.hideWhen) stateful.push(m);
+  if (m.userData.bob) bobbers.push(m);
 });
+const waterMesh = artMeshes.find((m) => m.name === 'Water');
+if (waterMesh && terrainMesh && !lowQ) enhanceWater(waterMesh.material as THREE.Material, terrainMesh, layout.world.waterLevel);
 
 // colliders: everything static merged into one BVH; dynamic pieces (door, targets) keep their own
 const colliders: Collider[] = [];
@@ -128,6 +154,9 @@ const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 const grass = !lowQ && !params.has('nograss') ? makeGrassField(terrainMesh!, staticBVH, layout.world.waterLevel, { count: params.has('shot') ? 90000 : 160000, size: 90 }) : null;
 if (grass) scene.add(grass.mesh);
+scene.add(makeUpdrafts(layout.updrafts ?? []));
+const ambient = lowQ ? null : makeAmbientParticles();
+if (ambient) scene.add(ambient.points);
 debugCol.add(new THREE.Mesh(staticGeo, debugMat));
 debugCol.visible = false;
 scene.add(debugCol);
@@ -137,7 +166,7 @@ const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
 const map = new WorldMap(terrainMesh!, layout);
 
 // ───────────── progress (local, per browser) ─────────────
-const SAVE_KEY = 'parhelion.world_alpha.progress.v1';
+const SAVE_KEY = `parhelion.${regionFile}.progress.v1`;
 const done = new Set<string>();
 const found = new Set<string>();
 try {
@@ -159,6 +188,11 @@ function applyWorldState() {
   const door = byName('Ruin_Door'); if (door) door.visible = !doorOpen;
   const dc = collider('COL_Ruin_Door'); if (dc) dc.enabled = !doorOpen;
   if (haloMat) haloMat.color.setScalar(done.has('tower_console') ? 1 : 0.32);
+  for (const m of stateful) {
+    const show = m.userData.showWhen ? done.has(m.userData.showWhen as string) : true;
+    const hide = m.userData.hideWhen ? done.has(m.userData.hideWhen as string) : false;
+    m.visible = show && !hide;
+  }
   renderObjective();
 }
 
@@ -169,7 +203,7 @@ function renderObjective() {
     const ok = s.done.every((x) => done.has(x));
     let cls = ok ? 'done' : '';
     if (!ok && !current) { cls = 'cur'; current = true; }
-    const extra = s.id === 'ruin_targets' && !ok ? ` (${s.done.filter((x) => done.has(x)).length}/3)` : '';
+    const extra = s.done.length > 1 && !ok ? ` (${s.done.filter((x) => done.has(x)).length}/${s.done.length})` : '';
     return `<div class="${cls}">${ok ? '✓' : '◇'} ${s.text}${extra}</div>`;
   });
   const disc = layout.markers.filter((m) => m.type === 'discovery');
@@ -200,6 +234,7 @@ function showArea(a: Layout['areas'][number]) {
 
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
+player.updrafts = layout.updrafts ?? [];
 const spawn = markers.get('spawn_p1')!;
 const spawnAt = (areaId?: string) => {
   const a = layout.areas.find((x) => x.id === areaId);
@@ -322,12 +357,26 @@ function nearestInteract(): Marker | null {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (m.note?.startsWith('portal:')) {
+    const to = m.note.slice(7);
+    toast(`正在前往${to === 'alpha' ? '幻日谷' : '星落海岸'}…`);
+    const q = new URLSearchParams(location.search);
+    q.delete('spawn');
+    if (to === 'alpha') q.delete('region'); else q.set('region', to);
+    setTimeout(() => { location.search = q.toString(); }, 500);
+    return;
+  }
   if (done.has(m.id)) return toast(`${m.label}：已启动`);
   const missing = (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`);
   done.add(m.id);
   save(); applyWorldState();
-  toast(m.id === 'tower_console' ? '幻日塔重启！光环点亮了整个山谷' : `${m.label} 已启动`);
+  const msg: Record<string, string> = {
+    tower_console: '幻日塔重启！光环点亮了整个山谷',
+    temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
+    lighthouse_lamp: '守望灯塔重新点亮，光束扫过整片海岸',
+  };
+  toast(msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
 }
 function checkDiscoveries() {
   for (const m of layout.markers) {
@@ -379,14 +428,15 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: wx || wz ? Math.atan2(wx, wz) : null });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
     const pivot = new THREE.Vector3(player.pos.x + rx * 0.45, player.pos.y + 1.55, player.pos.z + rz * 0.45);
     const back = look.clone().negate();
     const hit = staticBVH.raycastFirst(new THREE.Ray(pivot, back), THREE.DoubleSide);
-    const want = Math.min(3.6, hit ? Math.max(0.4, hit.distance - 0.3) : 3.6);
+    const armLen = player.gliding ? 5.2 : 3.6;
+    const want = Math.min(armLen, hit ? Math.max(0.4, hit.distance - 0.3) : armLen);
     camDist = want < camDist ? want : THREE.MathUtils.damp(camDist, want, 6, dt);
     camera.position.copy(pivot).addScaledVector(back, camDist);
     eye.copy(camera.position);
@@ -396,6 +446,8 @@ function frame(now: number) {
   sun.target.position.copy(eye);
 
   if (haloMat && done.has('tower_console')) haloMat.color.setScalar(0.85 + Math.sin(now / 400) * 0.15);
+  for (const m of spinners) m.rotation.y += (m.userData.spin as number) * dt;
+  for (const m of bobbers) m.position.y = Math.sin(now / 600) * 0.25;
   for (let i = sparks.length - 1; i >= 0; i--) {
     sparks[i].t -= dt;
     if (sparks[i].t <= 0) { scene.remove(sparks[i].m); sparks.splice(i, 1); }
@@ -406,7 +458,8 @@ function frame(now: number) {
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
-  $('prompt').textContent = it && !done.has(it.id) ? `[E] ${it.label}` : '';
+  $('prompt').textContent = it && !done.has(it.id) ? `[E] ${it.label}` :
+    player.inUpdraft && player.onGround ? '[Space] 跳入上升气流' : '';
 
   map.draw(mini, player.pos, player.yaw, { full: false, done, found });
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found });
@@ -414,12 +467,13 @@ function frame(now: number) {
   timeUniform.value = now / 1000;
   shafts.update(camera, SUN_DIR);
   grass?.update(camera.position);
+  ambient?.update(camera.position);
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += dt;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
   const info = renderer.info.render;
   stats.textContent = `${fps} fps · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n` +
-    `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? ' · fly' : ''}${player.swimming ? ' · swim' : ''}`;
+    `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? ' · fly' : ''}${player.gliding ? ' · glide' : ''}${player.swimming ? ' · swim' : ''}`;
   requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

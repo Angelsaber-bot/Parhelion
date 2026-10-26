@@ -1,0 +1,120 @@
+// Shared GLB/layout writer for every World region generator.
+import * as THREE from 'three';
+import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { writeFileSync, mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { Piece } from './structures.js';
+import type { Marker } from './layout.js';
+
+// GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
+(globalThis as any).FileReader ??= class {
+  result: ArrayBuffer | string | null = null;
+  onload: ((e: unknown) => void) | null = null;
+  onloadend: ((e: unknown) => void) | null = null;
+  readAsArrayBuffer(blob: Blob) {
+    blob.arrayBuffer().then((buf) => { this.result = buf; this.onload?.({ target: this }); this.onloadend?.({ target: this }); });
+  }
+  readAsDataURL(blob: Blob) {
+    blob.arrayBuffer().then((buf) => {
+      this.result = `data:${blob.type || 'application/octet-stream'};base64,${Buffer.from(buf).toString('base64')}`;
+      this.onload?.({ target: this }); this.onloadend?.({ target: this });
+    });
+  }
+};
+
+const here = dirname(fileURLToPath(import.meta.url));
+const outDir = resolve(here, '../../public/assets');
+
+export interface RegionOut {
+  file: string; // basename, e.g. world_alpha
+  world: { id: string; version: number; seed: number; half: number; waterLevel: number };
+  terrain: { vis: THREE.BufferGeometry; col: THREE.BufferGeometry };
+  pieces: Piece[];
+  markers: Marker[];
+  layout: Record<string, unknown>;
+  /** water plane size (m); defaults to the map size. A sea region uses a larger one for the horizon. */
+  waterSize?: number;
+}
+
+export async function writeRegion(r: RegionOut) {
+  const { world: W } = r;
+  const materials = new Map<string, THREE.Material>();
+  const mat = (name: string) => {
+    let m = materials.get(name);
+    if (!m) {
+      m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: 1, metalness: 0 });
+      if (name === 'M_Water') Object.assign(m, { transparent: true, opacity: 0.75, vertexColors: false, color: new THREE.Color('#46b8d8') });
+      if (name === 'M_Waterfall') Object.assign(m, { transparent: true, opacity: 0.7, vertexColors: false, color: new THREE.Color('#c9f3ff') });
+      materials.set(name, m);
+    }
+    return m;
+  };
+
+  const root = new THREE.Group();
+  root.name = W.id;
+  root.userData = { world: W.id, version: W.version, seed: W.seed, units: 'meters', up: 'Y', north: '-Z' };
+  const art = new THREE.Group(); art.name = 'ART';
+  const collision = new THREE.Group(); collision.name = 'COLLISION'; collision.userData = { collision: true };
+  const markerRoot = new THREE.Group(); markerRoot.name = 'MARKERS';
+  root.add(art, collision, markerRoot);
+
+  const terrainMesh = new THREE.Mesh(r.terrain.vis, mat('M_Terrain'));
+  terrainMesh.name = 'Terrain';
+  art.add(terrainMesh);
+
+  const ws = r.waterSize ?? W.half * 2;
+  const water = new THREE.Mesh(new THREE.PlaneGeometry(ws, ws).rotateX(-Math.PI / 2), mat('M_Water'));
+  water.geometry.deleteAttribute('uv');
+  water.name = 'Water';
+  water.position.y = W.waterLevel;
+  water.userData = { water: true, level: W.waterLevel };
+  art.add(water);
+
+  const colTerrain = new THREE.Mesh(r.terrain.col, mat('M_Collision'));
+  colTerrain.name = 'COL_Terrain';
+  collision.add(colTerrain);
+
+  const staticCol: THREE.BufferGeometry[] = [];
+  let tris = r.terrain.vis.index!.count / 3;
+  for (const p of r.pieces) {
+    const { vis, col } = p.batch.build();
+    if (vis) {
+      const m = new THREE.Mesh(vis, mat(p.material));
+      m.name = p.name;
+      m.userData = { ...(p.userData ?? {}), outline: !!p.outline, dynamic: !!p.dynamic };
+      art.add(m);
+      tris += vis.attributes.position.count / 3;
+    }
+    if (col) {
+      if (p.dynamic) {
+        const c = new THREE.Mesh(col, mat('M_Collision'));
+        c.name = `COL_${p.name}`;
+        c.userData = { dynamic: true, art: p.name, ...(p.userData ?? {}) };
+        collision.add(c);
+      } else staticCol.push(col);
+    }
+  }
+  {
+    const c = new THREE.Mesh(mergeGeometries(staticCol), mat('M_Collision'));
+    c.name = 'COL_Props';
+    collision.add(c);
+  }
+
+  for (const m of r.markers) {
+    const o = new THREE.Object3D();
+    o.name = `MK_${m.type}_${m.id}`;
+    o.position.set(...m.p);
+    o.userData = { ...m };
+    markerRoot.add(o);
+  }
+
+  const scene = new THREE.Scene();
+  scene.add(root);
+  const glb = (await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false })) as ArrayBuffer;
+  mkdirSync(outDir, { recursive: true });
+  writeFileSync(resolve(outDir, `${r.file}.glb`), Buffer.from(glb));
+  writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
+  return { bytes: glb.byteLength, tris };
+}

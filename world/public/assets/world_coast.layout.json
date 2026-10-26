@@ -1,0 +1,655 @@
+{
+ "world": {
+  "id": "world_coast_starfall",
+  "name": "星落海岸",
+  "nameEn": "Starfall Coast",
+  "version": 1,
+  "seed": 20261027,
+  "half": 240,
+  "playHalf": 214,
+  "cell": 2,
+  "waterLevel": 1
+ },
+ "areas": [
+  {
+   "id": "pier",
+   "name": "潮汐码头",
+   "nameEn": "Tide Pier",
+   "c": [
+    70,
+    152
+   ],
+   "r": 34,
+   "color": "#f08a4b",
+   "tp": [
+    62,
+    140
+   ]
+  },
+  {
+   "id": "meadow",
+   "name": "风铃草原",
+   "nameEn": "Bellwind Meadow",
+   "c": [
+    10,
+    40
+   ],
+   "r": 50,
+   "color": "#8fd36b",
+   "tp": [
+    12,
+    66
+   ]
+  },
+  {
+   "id": "bay",
+   "name": "白沙湾",
+   "nameEn": "Whitesand Bay",
+   "c": [
+    -58,
+    118
+   ],
+   "r": 40,
+   "color": "#ecd9a0",
+   "tp": [
+    -34,
+    104
+   ]
+  },
+  {
+   "id": "light",
+   "name": "守望灯塔",
+   "nameEn": "Watch Lighthouse",
+   "c": [
+    -150,
+    -20
+   ],
+   "r": 26,
+   "color": "#ff6b6b",
+   "tp": [
+    -122,
+    -20
+   ]
+  },
+  {
+   "id": "crater",
+   "name": "星陨坑",
+   "nameEn": "Starfall Crater",
+   "c": [
+    10,
+    -80
+   ],
+   "r": 44,
+   "color": "#a98bff",
+   "tp": [
+    10,
+    -30
+   ]
+  },
+  {
+   "id": "isles",
+   "name": "浮空群岛",
+   "nameEn": "Floating Isles",
+   "c": [
+    76,
+    -134
+   ],
+   "r": 40,
+   "color": "#9fe3f0",
+   "tp": [
+    40,
+    -112
+   ]
+  },
+  {
+   "id": "temple",
+   "name": "断崖神殿",
+   "nameEn": "Cliff Temple",
+   "c": [
+    166,
+    0
+   ],
+   "r": 30,
+   "color": "#ffd76a",
+   "tp": [
+    146,
+    8
+   ]
+  }
+ ],
+ "paths": [
+  [
+   [
+    66,
+    140
+   ],
+   [
+    50,
+    110
+   ],
+   [
+    24,
+    70
+   ],
+   [
+    12,
+    30
+   ],
+   [
+    8,
+    -10
+   ],
+   [
+    10,
+    -40
+   ]
+  ],
+  [
+   [
+    8,
+    20
+   ],
+   [
+    -24,
+    0
+   ],
+   [
+    -50,
+    -18
+   ],
+   [
+    -90,
+    -20
+   ],
+   [
+    -136,
+    -20
+   ]
+  ],
+  [
+   [
+    14,
+    60
+   ],
+   [
+    -14,
+    86
+   ],
+   [
+    -38,
+    104
+   ]
+  ],
+  [
+   [
+    80,
+    136
+   ],
+   [
+    100,
+    96
+   ],
+   [
+    108,
+    60
+   ],
+   [
+    110,
+    48
+   ]
+  ],
+  [
+   [
+    124,
+    30
+   ],
+   [
+    140,
+    16
+   ],
+   [
+    150,
+    8
+   ]
+  ]
+ ],
+ "markers": [
+  {
+   "id": "spawn_p1",
+   "type": "spawn",
+   "label": "玩家1出生点",
+   "p": [
+    64,
+    3.5704987049102783,
+    146
+   ]
+  },
+  {
+   "id": "spawn_p2",
+   "type": "spawn",
+   "label": "玩家2出生点",
+   "p": [
+    68,
+    3.6486458778381348,
+    146
+   ]
+  },
+  {
+   "id": "pier_end",
+   "type": "poi",
+   "label": "码头尽头",
+   "p": [
+    70,
+    2.4,
+    213
+   ]
+  },
+  {
+   "id": "portal_alpha",
+   "type": "interact",
+   "label": "幻日门（前往幻日谷）",
+   "p": [
+    48,
+    2.9318443536758423,
+    138.5
+   ],
+   "radius": 4,
+   "note": "portal:alpha"
+  },
+  {
+   "id": "lighthouse_lamp",
+   "type": "interact",
+   "label": "灯塔明灯",
+   "p": [
+    -145.6,
+    37.87694454193115,
+    -19.5
+   ],
+   "radius": 3.2,
+   "requires": [
+    "temple_altar"
+   ]
+  },
+  {
+   "id": "disc_lighthouse_top",
+   "type": "discovery",
+   "label": "灯塔之巅",
+   "p": [
+    -150,
+    37.87694454193115,
+    -15.4
+   ],
+   "radius": 3,
+   "note": "从这里可以滑翔到海蚀柱"
+  },
+  {
+   "id": "shard_arch",
+   "type": "interact",
+   "label": "星之碎片·潮",
+   "p": [
+    -84,
+    11.9,
+    142
+   ],
+   "radius": 3.2
+  },
+  {
+   "id": "disc_tidepool",
+   "type": "discovery",
+   "label": "潮池星螺",
+   "p": [
+    -64,
+    -1.086028814315796,
+    154
+   ],
+   "radius": 4
+  },
+  {
+   "id": "disc_stack_top",
+   "type": "discovery",
+   "label": "海蚀柱之巅",
+   "p": [
+    -128,
+    19,
+    34
+   ],
+   "radius": 4,
+   "note": "从灯塔滑翔而来"
+  },
+  {
+   "id": "shard_crater",
+   "type": "interact",
+   "label": "星之碎片·陨",
+   "p": [
+    17.5,
+    5.319176435470581,
+    -80
+   ],
+   "radius": 4
+  },
+  {
+   "id": "disc_crater_rim",
+   "type": "discovery",
+   "label": "陨坑北缘",
+   "p": [
+    10,
+    16.687335968017578,
+    -118
+   ],
+   "radius": 5
+  },
+  {
+   "id": "enemy_crater_-14",
+   "type": "enemy",
+   "label": "晶化守卫（占位）",
+   "p": [
+    -4,
+    6.729929447174072,
+    -74
+   ],
+   "note": "巡逻/掩体战 AI 训练场景"
+  },
+  {
+   "id": "enemy_crater_12",
+   "type": "enemy",
+   "label": "晶化守卫（占位）",
+   "p": [
+    22,
+    7.411905765533447,
+    -66
+   ],
+   "note": "巡逻/掩体战 AI 训练场景"
+  },
+  {
+   "id": "enemy_crater_16",
+   "type": "enemy",
+   "label": "晶化守卫（占位）",
+   "p": [
+    26,
+    8.567885398864746,
+    -92
+   ],
+   "note": "巡逻/掩体战 AI 训练场景"
+  },
+  {
+   "id": "shard_isle",
+   "type": "interact",
+   "label": "星之碎片·空",
+   "p": [
+    82,
+    66.4,
+    -162
+   ],
+   "radius": 3
+  },
+  {
+   "id": "disc_isle6",
+   "type": "discovery",
+   "label": "孤岛秘庭",
+   "p": [
+    -12,
+    20,
+    -138
+   ],
+   "radius": 4,
+   "note": "从陨坑上升气流滑翔可达"
+  },
+  {
+   "id": "isle_i1",
+   "type": "poi",
+   "label": "浮空岛 I1",
+   "p": [
+    40,
+    30,
+    -112
+   ]
+  },
+  {
+   "id": "isle_i2",
+   "type": "poi",
+   "label": "浮空岛 I2",
+   "p": [
+    72,
+    44,
+    -128
+   ]
+  },
+  {
+   "id": "isle_i3",
+   "type": "poi",
+   "label": "浮空岛 I3",
+   "p": [
+    100,
+    56,
+    -104
+   ]
+  },
+  {
+   "id": "isle_i4",
+   "type": "poi",
+   "label": "浮空岛 I4",
+   "p": [
+    82,
+    66,
+    -162
+   ]
+  },
+  {
+   "id": "isle_i5",
+   "type": "poi",
+   "label": "浮空岛 I5",
+   "p": [
+    124,
+    48,
+    -140
+   ]
+  },
+  {
+   "id": "isle_i6",
+   "type": "poi",
+   "label": "浮空岛 I6",
+   "p": [
+    -12,
+    20,
+    -140
+   ]
+  },
+  {
+   "id": "stairs_foot",
+   "type": "poi",
+   "label": "断崖石阶",
+   "p": [
+    110,
+    14.470264530181884,
+    46
+   ]
+  },
+  {
+   "id": "temple_altar",
+   "type": "interact",
+   "label": "星辉祭坛",
+   "p": [
+    163.4,
+    39.8,
+    0
+   ],
+   "radius": 3.5,
+   "requires": [
+    "shard_crater",
+    "shard_isle",
+    "shard_arch"
+   ]
+  },
+  {
+   "id": "disc_temple_view",
+   "type": "discovery",
+   "label": "断崖观景台",
+   "p": [
+    128,
+    35.99852752685547,
+    -36
+   ],
+   "radius": 5
+  },
+  {
+   "id": "enemy_temple_-6",
+   "type": "enemy",
+   "label": "神殿守卫（占位）",
+   "p": [
+    160,
+    39.8,
+    12
+   ]
+  },
+  {
+   "id": "enemy_temple_8",
+   "type": "enemy",
+   "label": "神殿守卫（占位）",
+   "p": [
+    174,
+    39.8,
+    -10
+   ]
+  }
+ ],
+ "updrafts": [
+  {
+   "x": 22,
+   "z": -72,
+   "r": 4,
+   "y0": 4,
+   "y1": 44
+  },
+  {
+   "x": 36,
+   "z": -108,
+   "r": 3,
+   "y0": 29,
+   "y1": 58
+  },
+  {
+   "x": 76,
+   "z": -124,
+   "r": 3.5,
+   "y0": 43,
+   "y1": 72
+  },
+  {
+   "x": 96,
+   "z": -100,
+   "r": 3,
+   "y0": 55,
+   "y1": 84
+  },
+  {
+   "x": 104,
+   "z": 30,
+   "r": 3.5,
+   "y0": 6,
+   "y1": 46
+  }
+ ],
+ "isles": [
+  {
+   "id": "i1",
+   "c": [
+    40,
+    -112
+   ],
+   "y": 30,
+   "r": 9
+  },
+  {
+   "id": "i2",
+   "c": [
+    72,
+    -128
+   ],
+   "y": 44,
+   "r": 11
+  },
+  {
+   "id": "i3",
+   "c": [
+    100,
+    -104
+   ],
+   "y": 56,
+   "r": 8
+  },
+  {
+   "id": "i4",
+   "c": [
+    82,
+    -162
+   ],
+   "y": 66,
+   "r": 13
+  },
+  {
+   "id": "i5",
+   "c": [
+    124,
+    -140
+   ],
+   "y": 48,
+   "r": 7
+  },
+  {
+   "id": "i6",
+   "c": [
+    -12,
+    -140
+   ],
+   "y": 20,
+   "r": 8
+  }
+ ],
+ "lights": [
+  {
+   "p": [
+    10,
+    13.000007629394531,
+    -80
+   ],
+   "color": "#b9a8ff",
+   "intensity": 120,
+   "distance": 60
+  }
+ ],
+ "atmosphere": {
+  "fog": "#c9e6f4",
+  "near": 140,
+  "far": 820,
+  "sea": true
+ },
+ "objective": {
+  "id": "light_the_lighthouse",
+  "name": "点亮守望灯塔",
+  "steps": [
+   {
+    "id": "shards",
+    "text": "收集 3 枚星之碎片（陨坑 / 浮空岛 / 海蚀拱）",
+    "done": [
+     "shard_crater",
+     "shard_isle",
+     "shard_arch"
+    ]
+   },
+   {
+    "id": "altar",
+    "text": "在断崖神殿献上碎片，点亮星辉祭坛",
+    "done": [
+     "temple_altar"
+    ]
+   },
+   {
+    "id": "lamp",
+    "text": "登上守望灯塔，点亮明灯",
+    "done": [
+     "lighthouse_lamp"
+    ]
+   }
+  ]
+ }
+}

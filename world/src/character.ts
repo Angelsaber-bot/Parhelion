@@ -179,6 +179,20 @@ export function buildCharacter(material: THREE.Material): CharacterRig {
       [box(), P.trim, T(0, -0.25, 0.0, 0.135, 0.025, 0.135)],
     ]);
   }
+  // wind glider (Genshin-style wings), folded away unless gliding
+  const glider = joint('Glider', spine, 0, 0.36, -0.24);
+  const wing: Piece[] = [];
+  for (const s of [-1, 1]) {
+    wing.push(
+      [box(), P.trim, T(0.72 * s, 0.06, 0.02, 1.15, 0.018, 0.5, 0, 0.18 * s, 0.1 * s)],
+      [box(), P.inner, T(0.6 * s, 0.07, -0.3, 0.86, 0.016, 0.32, 0, 0.32 * s, 0.1 * s)],
+      [box(), P.scarf, T(0.74 * s, 0.075, 0.27, 1.15, 0.03, 0.04, 0, 0.18 * s, 0.1 * s)],
+      [cyl(0.012, 0.012, 1.25, 5), P.metal, T(0.72 * s, 0.05, 0.0, 1, 1, 1, 0, 0.18 * s, Math.PI / 2 + 0.1 * s)],
+    );
+  }
+  wing.push([cyl(0.025, 0.025, 0.42, 6), P.metal, T(0, -0.15, 0)]);
+  part('GliderWings', glider, wing);
+  glider.scale.setScalar(0.001);
   return { root, joints, meshes };
 }
 
@@ -187,11 +201,12 @@ export class CharacterAnimator {
   private phase = 0;
   private t = 0;
   private air = 0;
+  private glide = 0;
   facing = 0;
 
   constructor(public rig: CharacterRig) {}
 
-  update(dt: number, s: { speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null; flying?: boolean }) {
+  update(dt: number, s: { speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null; flying?: boolean; gliding?: boolean }) {
     const J = this.rig.joints;
     this.t += dt;
     // turn towards the movement direction (Genshin-style free movement)
@@ -232,5 +247,27 @@ export class CharacterAnimator {
     J.Ponytail.rotation.z = Math.sin(this.phase) * 0.15 * move;
     J.ScarfTail.rotation.x = 0.2 + run * 0.9 + Math.sin(this.t * 6) * 0.08 * (0.3 + run);
     J.CoatTails.rotation.x = run * 0.6 + this.air * 0.4 + Math.abs(sw) * 0.1 * move;
+
+    // gliding: wings unfold, arms up holding the frame, body tilts forward, legs trail
+    this.glide = THREE.MathUtils.damp(this.glide, s.gliding ? 1 : 0, 9, dt);
+    const g = this.glide;
+    if (J.Glider) J.Glider.scale.setScalar(Math.max(0.001, g));
+    if (g > 0.001) {
+      const lerp = THREE.MathUtils.lerp;
+      const flutter = Math.sin(this.t * 9) * 0.04;
+      for (const [side, sgn] of [['L', 1], ['R', -1]] as const) {
+        J[`Arm_${side}`].rotation.x = lerp(J[`Arm_${side}`].rotation.x, -2.7, g);
+        J[`Arm_${side}`].rotation.z = lerp(J[`Arm_${side}`].rotation.z, -0.55 * sgn, g);
+        J[`Forearm_${side}`].rotation.x = lerp(J[`Forearm_${side}`].rotation.x, -0.25, g);
+        J[`Thigh_${side}`].rotation.x = lerp(J[`Thigh_${side}`].rotation.x, 0.35 + Math.sin(this.t * 3 + sgn) * 0.08, g);
+        J[`Shin_${side}`].rotation.x = lerp(J[`Shin_${side}`].rotation.x, 0.35, g);
+      }
+      J.Spine.rotation.x = lerp(J.Spine.rotation.x, 0.45, g);
+      J.Head.rotation.x = lerp(J.Head.rotation.x, -0.45, g);
+      J.Ponytail.rotation.x = lerp(J.Ponytail.rotation.x, 1.3 + flutter * 3, g);
+      J.ScarfTail.rotation.x = lerp(J.ScarfTail.rotation.x, 1.35 + flutter * 4, g);
+      J.CoatTails.rotation.x = lerp(J.CoatTails.rotation.x, 1.1 + flutter * 2, g);
+      if (J.Glider) J.Glider.rotation.z = Math.sin(this.t * 1.3) * 0.05;
+    }
   }
 }
