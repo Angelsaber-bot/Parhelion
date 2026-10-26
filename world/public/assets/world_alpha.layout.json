@@ -1,0 +1,837 @@
+{
+ "world": {
+  "id": "world_alpha_sundog_valley",
+  "name": "幻日谷",
+  "nameEn": "Sundog Valley",
+  "version": 1,
+  "seed": 20261026,
+  "half": 240,
+  "playHalf": 214,
+  "cell": 2,
+  "waterLevel": 1
+ },
+ "areas": [
+  {
+   "id": "camp",
+   "name": "降落营地",
+   "nameEn": "Landing Camp",
+   "c": [
+    5,
+    165
+   ],
+   "r": 34,
+   "color": "#f08a4b",
+   "tp": [
+    3,
+    159
+   ]
+  },
+  {
+   "id": "lake",
+   "name": "镜湖",
+   "nameEn": "Mirror Lake",
+   "c": [
+    0,
+    -10
+   ],
+   "r": 44,
+   "color": "#46b8d8",
+   "tp": [
+    -26,
+    16
+   ]
+  },
+  {
+   "id": "forest",
+   "name": "回声森林",
+   "nameEn": "Echo Forest",
+   "c": [
+    110,
+    40
+   ],
+   "r": 70,
+   "color": "#3d9a58",
+   "tp": [
+    92,
+    72
+   ]
+  },
+  {
+   "id": "station",
+   "name": "旧观测站",
+   "nameEn": "Old Observatory",
+   "c": [
+    -140,
+    -51
+   ],
+   "r": 42,
+   "color": "#e8e6df",
+   "tp": [
+    -140,
+    -8
+   ]
+  },
+  {
+   "id": "tower",
+   "name": "幻日塔",
+   "nameEn": "Parhelion Tower",
+   "c": [
+    0,
+    -162
+   ],
+   "r": 34,
+   "color": "#ffd76a",
+   "tp": [
+    0,
+    -142
+   ]
+  },
+  {
+   "id": "falls",
+   "name": "雾瀑",
+   "nameEn": "Mist Falls",
+   "c": [
+    158,
+    -60
+   ],
+   "r": 22,
+   "color": "#9fe3f0",
+   "tp": [
+    140,
+    -46
+   ]
+  },
+  {
+   "id": "ford",
+   "name": "西岸渡口",
+   "nameEn": "West Ford",
+   "c": [
+    -95,
+    62
+   ],
+   "r": 26,
+   "color": "#c9a46b",
+   "tp": [
+    -84,
+    82
+   ]
+  }
+ ],
+ "water": {
+  "lake": {
+   "c": [
+    0,
+    -10
+   ],
+   "r": 36
+  },
+  "pond": {
+   "c": [
+    148,
+    -60
+   ],
+   "r": 10
+  },
+  "river": [
+   [
+    148,
+    -60
+   ],
+   [
+    118,
+    -48
+   ],
+   [
+    80,
+    -36
+   ],
+   [
+    45,
+    -26
+   ],
+   [
+    20,
+    -16
+   ],
+   [
+    -18,
+    12
+   ],
+   [
+    -58,
+    38
+   ],
+   [
+    -95,
+    60
+   ],
+   [
+    -140,
+    76
+   ],
+   [
+    -190,
+    92
+   ],
+   [
+    -250,
+    108
+   ]
+  ]
+ },
+ "paths": [
+  [
+   [
+    2,
+    142
+   ],
+   [
+    -22,
+    118
+   ],
+   [
+    -60,
+    92
+   ],
+   [
+    -88,
+    74
+   ],
+   [
+    -102,
+    50
+   ],
+   [
+    -124,
+    22
+   ],
+   [
+    -140,
+    -14
+   ]
+  ],
+  [
+   [
+    16,
+    144
+   ],
+   [
+    48,
+    118
+   ],
+   [
+    86,
+    80
+   ],
+   [
+    110,
+    50
+   ]
+  ],
+  [
+   [
+    -24,
+    14
+   ],
+   [
+    -44,
+    -20
+   ],
+   [
+    -36,
+    -60
+   ],
+   [
+    -16,
+    -100
+   ],
+   [
+    -4,
+    -136
+   ]
+  ],
+  [
+   [
+    112,
+    30
+   ],
+   [
+    96,
+    -4
+   ],
+   [
+    82,
+    -36
+   ],
+   [
+    64,
+    -78
+   ],
+   [
+    30,
+    -126
+   ],
+   [
+    10,
+    -142
+   ]
+  ],
+  [
+   [
+    -156,
+    -86
+   ],
+   [
+    -124,
+    -118
+   ],
+   [
+    -70,
+    -146
+   ],
+   [
+    -18,
+    -160
+   ]
+  ],
+  [
+   [
+    104,
+    10
+   ],
+   [
+    128,
+    -34
+   ],
+   [
+    140,
+    -48
+   ]
+  ]
+ ],
+ "markers": [
+  {
+   "id": "spawn_p1",
+   "type": "spawn",
+   "label": "玩家1出生点",
+   "p": [
+    3,
+    20,
+    159
+   ]
+  },
+  {
+   "id": "spawn_p2",
+   "type": "spawn",
+   "label": "玩家2出生点",
+   "p": [
+    7,
+    20,
+    159
+   ]
+  },
+  {
+   "id": "camp_terminal",
+   "type": "poi",
+   "label": "营地终端（存档点）",
+   "p": [
+    -8,
+    20,
+    157
+   ]
+  },
+  {
+   "id": "station_cover_0",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -124,
+    8,
+    -34
+   ],
+   "radius": 3
+  },
+  {
+   "id": "station_cover_1",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -123,
+    8,
+    -38
+   ],
+   "radius": 3
+  },
+  {
+   "id": "station_cover_2",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -168,
+    8,
+    -70
+   ],
+   "radius": 3
+  },
+  {
+   "id": "station_cover_3",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -119,
+    8,
+    -60
+   ],
+   "radius": 3
+  },
+  {
+   "id": "station_cover_4",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -146,
+    8,
+    -33
+   ],
+   "radius": 3
+  },
+  {
+   "id": "station_cover_5",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -140,
+    8,
+    -28
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_6",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -131,
+    8,
+    -30
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_7",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -155,
+    8,
+    -38
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_8",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -128,
+    8,
+    -47
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_9",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -114,
+    8,
+    -52
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_10",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -117,
+    8,
+    -28
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_11",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -160,
+    8,
+    -73
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_12",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -141,
+    8,
+    -72
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_13",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -130,
+    8,
+    -70
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_14",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -170,
+    8,
+    -45
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_15",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -112,
+    8,
+    -40
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_16",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -146,
+    8,
+    -40
+   ],
+   "radius": 0.7
+  },
+  {
+   "id": "station_cover_17",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -136,
+    8,
+    -40
+   ],
+   "radius": 1.5
+  },
+  {
+   "id": "station_cover_18",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -160,
+    8,
+    -40
+   ],
+   "radius": 1.5
+  },
+  {
+   "id": "station_cover_19",
+   "type": "cover",
+   "label": "掩体",
+   "p": [
+    -128,
+    8,
+    -76
+   ],
+   "radius": 1.5
+  },
+  {
+   "id": "relay_b",
+   "type": "interact",
+   "label": "中继器 B（观测站）",
+   "p": [
+    -148,
+    8,
+    -58
+   ],
+   "radius": 3,
+   "note": "清除据点后启动"
+  },
+  {
+   "id": "station_gate_s",
+   "type": "poi",
+   "label": "正门",
+   "p": [
+    -140,
+    8,
+    -18
+   ]
+  },
+  {
+   "id": "station_breach_e",
+   "type": "poi",
+   "label": "东侧破墙（侧翼入口）",
+   "p": [
+    -102,
+    8,
+    -54
+   ]
+  },
+  {
+   "id": "station_door_n",
+   "type": "poi",
+   "label": "北侧后门（撤离路线）",
+   "p": [
+    -156,
+    8,
+    -84
+   ]
+  },
+  {
+   "id": "station_enemy_0",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -140,
+    12.9,
+    -50
+   ]
+  },
+  {
+   "id": "station_enemy_1",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -168,
+    14.4,
+    -30
+   ]
+  },
+  {
+   "id": "station_enemy_2",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -112,
+    14.4,
+    -74
+   ]
+  },
+  {
+   "id": "station_enemy_3",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -125,
+    8,
+    -45
+   ]
+  },
+  {
+   "id": "station_enemy_4",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -150,
+    8,
+    -34
+   ]
+  },
+  {
+   "id": "station_enemy_5",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -155,
+    8,
+    -52
+   ]
+  },
+  {
+   "id": "station_enemy_6",
+   "type": "enemy",
+   "label": "敌人刷新点",
+   "p": [
+    -130,
+    8,
+    -66
+   ]
+  },
+  {
+   "id": "ruin_target_1",
+   "type": "objective",
+   "label": "机关靶 1",
+   "p": [
+    126.00631961798275,
+    10.069876877451316,
+    31.431240025699143
+   ]
+  },
+  {
+   "id": "ruin_target_2",
+   "type": "objective",
+   "label": "机关靶 2",
+   "p": [
+    110.5901671120627,
+    12.615710445307196,
+    45.57777156360456
+   ]
+  },
+  {
+   "id": "ruin_target_3",
+   "type": "objective",
+   "label": "机关靶 3",
+   "p": [
+    116,
+    11.410106182098389,
+    27
+   ]
+  },
+  {
+   "id": "relay_a",
+   "type": "interact",
+   "label": "中继器 A（森林遗迹）",
+   "p": [
+    116,
+    5.910106182098389,
+    25.4
+   ],
+   "radius": 3,
+   "requires": [
+    "ruin_target_1",
+    "ruin_target_2",
+    "ruin_target_3"
+   ]
+  },
+  {
+   "id": "ruin_enemy_0",
+   "type": "enemy",
+   "label": "巡逻敌人",
+   "p": [
+    124,
+    5.910106182098389,
+    42
+   ]
+  },
+  {
+   "id": "ruin_enemy_1",
+   "type": "enemy",
+   "label": "巡逻敌人",
+   "p": [
+    110,
+    5.910106182098389,
+    46
+   ]
+  },
+  {
+   "id": "tower_console",
+   "type": "interact",
+   "label": "幻日塔控制台",
+   "p": [
+    0,
+    30.5,
+    -150.5
+   ],
+   "radius": 3.5,
+   "requires": [
+    "relay_a",
+    "relay_b"
+   ]
+  },
+  {
+   "id": "tower_enemy_0",
+   "type": "enemy",
+   "label": "守卫（精英）",
+   "p": [
+    -6,
+    30.5,
+    -156
+   ]
+  },
+  {
+   "id": "tower_enemy_1",
+   "type": "enemy",
+   "label": "守卫",
+   "p": [
+    7,
+    30.5,
+    -158
+   ]
+  },
+  {
+   "id": "secret_cave",
+   "type": "discovery",
+   "label": "瀑布后的观测日志",
+   "p": [
+    186,
+    2.4,
+    -60
+   ],
+   "radius": 6,
+   "note": "奖励：故事碎片 + 武器外观"
+  },
+  {
+   "id": "secret_pillar",
+   "type": "discovery",
+   "label": "湖心石柱宝箱",
+   "p": [
+    6,
+    11.6,
+    -16
+   ],
+   "radius": 2.5,
+   "note": "跳台小挑战"
+  }
+ ],
+ "objective": {
+  "id": "restart_parhelion_tower",
+  "name": "重启幻日塔",
+  "steps": [
+   {
+    "id": "ruin_targets",
+    "text": "在回声森林遗迹击中 3 个机关靶，打开神龛",
+    "done": [
+     "ruin_target_1",
+     "ruin_target_2",
+     "ruin_target_3"
+    ]
+   },
+   {
+    "id": "relay_a",
+    "text": "启动中继器 A（森林遗迹）",
+    "done": [
+     "relay_a"
+    ]
+   },
+   {
+    "id": "relay_b",
+    "text": "清除旧观测站并启动中继器 B",
+    "done": [
+     "relay_b"
+    ]
+   },
+   {
+    "id": "tower",
+    "text": "前往幻日塔，启动控制台",
+    "done": [
+     "tower_console"
+    ]
+   }
+  ]
+ }
+}
