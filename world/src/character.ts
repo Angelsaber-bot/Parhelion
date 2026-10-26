@@ -57,6 +57,48 @@ export interface CharacterRig {
   root: THREE.Group;
   joints: Record<string, THREE.Object3D>;
   meshes: THREE.Mesh[];
+  /** Rifle pose (Spine space): held in both hands at the low ready, or slung across the back. */
+  gunHold: { p: THREE.Vector3; q: THREE.Quaternion };
+  gunSling: { p: THREE.Vector3; q: THREE.Quaternion };
+}
+
+/** Arm angles for the low-ready rifle hold: right hand on the grip, left hand under the handguard. */
+export const READY = {
+  Arm_R: [0.3, -0.35], Forearm_R: -1.575,
+  Arm_L: [-0.8, 0.5], Forearm_L: -0.4,
+};
+
+// The Arena's Lumen AR (Dawn skin), rebuilt from vertex-coloured parts so it shares the explorer's
+// toon material and outline. Gun space as in the Arena: barrel along -Z, grip below the receiver.
+const GUN = { body: '#eaf0ee', accent: '#63d9db', dark: '#1d2630', metal: '#3a4250', scale: 1.1 };
+const GRIP = new THREE.Vector3(0, -0.1, 0.07);
+const HANDGUARD = new THREE.Vector3(0, -0.06, -0.2);
+function gunPieces(): Piece[] {
+  const b = (w: number, h: number, d: number, c: string, x = 0, y = 0, z = 0, rx = 0): Piece => [box(), c, T(x, y, z, w, h, d, rx)];
+  const c = (r: number, l: number, col: string, x = 0, y = 0, z = 0): Piece => [cyl(r, r, l, 12), col, T(x, y, z, 1, 1, 1, Math.PI / 2)];
+  return [
+    b(0.068, 0.09, 0.4, GUN.body),
+    b(0.07, 0.022, 0.28, GUN.accent, 0, 0.056, -0.02),
+    b(0.05, 0.12, 0.06, GUN.dark, 0, -0.1, 0.07), // grip
+    b(0.045, 0.13, 0.07, GUN.metal, 0, -0.1, -0.05, 0.18), // magazine
+    b(0.074, 0.03, 0.18, GUN.dark, 0, -0.035, -0.22), // handguard
+    c(0.017, 0.2, GUN.metal, 0, 0.005, -0.33), // barrel
+    c(0.025, 0.05, GUN.dark, 0, 0.005, -0.43), // flash hider
+    b(0.06, 0.08, 0.16, GUN.body, 0, -0.012, 0.27), // stock
+    b(0.064, 0.02, 0.05, GUN.dark, 0, 0.012, 0.34),
+    b(0.03, 0.035, 0.06, GUN.dark, 0, 0.085, 0.02), // red-dot housing
+    b(0.022, 0.022, 0.004, GUN.accent, 0, 0.088, -0.012),
+    b(0.072, 0.008, 0.12, GUN.accent, 0, 0.0, -0.14), // energy strip
+    b(0.03, 0.012, 0.42, GUN.dark, 0.036, -0.01, 0.0), // sling strap
+  ];
+}
+
+/** Rotation taking gun space (-Z barrel, +Y up) to a barrel direction `fwd` with the gun's top towards `up`. */
+function gunBasis(fwd: THREE.Vector3, up: THREE.Vector3) {
+  const z = fwd.clone().normalize().negate();
+  const x = up.clone().cross(z).normalize();
+  const y = z.clone().cross(x);
+  return new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
 }
 
 /**
@@ -193,7 +235,30 @@ export function buildCharacter(material: THREE.Material): CharacterRig {
   wing.push([cyl(0.025, 0.025, 0.42, 6), P.metal, T(0, -0.15, 0)]);
   part('GliderWings', glider, wing);
   glider.scale.setScalar(0.001);
-  return { root, joints, meshes };
+
+  // rifle: solve the hold from where the ready pose puts the hands, so grip and handguard sit in them
+  const gun = joint('Gun', spine, 0, 0, 0);
+  part('Rifle', gun, gunPieces()).scale.setScalar(GUN.scale);
+  const handAt = (side: 'L' | 'R') => {
+    const arm = joints[`Arm_${side}`], fore = joints[`Forearm_${side}`];
+    const [ax, az] = READY[`Arm_${side}`];
+    arm.rotation.set(ax, 0, az);
+    fore.rotation.set(READY[`Forearm_${side}`], 0, 0);
+    arm.updateMatrix(); fore.updateMatrix();
+    return new THREE.Vector3(0, -0.28, 0).applyMatrix4(fore.matrix).applyMatrix4(arm.matrix);
+  };
+  const handR = handAt('R'), handL = handAt('L');
+  const axis = HANDGUARD.clone().sub(GRIP).multiplyScalar(GUN.scale);
+  const holdQ = gunBasis(handL.clone().sub(handR), new THREE.Vector3(0, 1, 0));
+  // tilt so the gun-space grip→handguard line (not quite the barrel) runs hand to hand
+  holdQ.multiply(new THREE.Quaternion().setFromUnitVectors(axis.clone().normalize(), new THREE.Vector3(0, 0, -1)));
+  const gunHold = { p: handR.clone().sub(GRIP.clone().multiplyScalar(GUN.scale).applyQuaternion(holdQ)), q: holdQ };
+  const gunSling = {
+    p: new THREE.Vector3(0.02, 0.26, -0.27),
+    q: gunBasis(new THREE.Vector3(-0.55, 0.84, 0), new THREE.Vector3(0, 0, -1)),
+  };
+  gun.position.copy(gunHold.p); gun.quaternion.copy(gunHold.q);
+  return { root, joints, meshes, gunHold, gunSling };
 }
 
 /** Procedural animation state machine driven by the physics controller. */
@@ -202,6 +267,7 @@ export class CharacterAnimator {
   private t = 0;
   private air = 0;
   private glide = 0;
+  private ready = 1;
   facing = 0;
 
   constructor(public rig: CharacterRig) {}
@@ -235,6 +301,22 @@ export class CharacterAnimator {
       J[`Arm_${side}`].rotation.z = (0.12 + this.air * 0.5) * -sgn;
       J[`Forearm_${side}`].rotation.x = -(0.25 + run * 0.9) * (s.swimming ? 0.2 : 1);
     }
+    // rifle at the low ready on foot; slung on the back while swimming or gliding
+    this.ready = THREE.MathUtils.damp(this.ready, s.swimming || s.gliding ? 0 : 1, 8, dt);
+    const r = this.ready;
+    if (r > 0.001) {
+      const lerp = THREE.MathUtils.lerp;
+      for (const side of ['L', 'R'] as const) {
+        const [ax, az] = READY[`Arm_${side}`];
+        J[`Arm_${side}`].rotation.x = lerp(J[`Arm_${side}`].rotation.x, ax, r);
+        J[`Arm_${side}`].rotation.z = lerp(J[`Arm_${side}`].rotation.z, az, r);
+        J[`Forearm_${side}`].rotation.x = lerp(J[`Forearm_${side}`].rotation.x, READY[`Forearm_${side}`], r);
+      }
+    }
+    const { gunHold: H, gunSling: S } = this.rig;
+    J.Gun.position.lerpVectors(S.p, H.p, r);
+    J.Gun.quaternion.slerpQuaternions(S.q, H.q, r);
+
     // body
     const breathe = Math.sin(this.t * 2.2) * 0.012 * (1 - move);
     J.Hips.position.y = 0.92 + Math.abs(Math.cos(this.phase)) * 0.05 * move - run * 0.03 + breathe - (s.swimming ? 0.55 : 0);
