@@ -364,30 +364,57 @@ export function buildGun(weapon: number, skin: number): { group: THREE.Group; mu
     g.add(mesh);
     return mesh;
   };
+  const cyl = (r: number, l: number, m: THREE.Material, x = 0, y = 0, z = 0, seg = 12) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, l, seg), m);
+    mesh.rotation.x = Math.PI / 2;
+    mesh.position.set(x, y, z);
+    g.add(mesh);
+    return mesh;
+  };
+  const metal = toon(0x3a4250), glow = toon(s.accent, s.accent);
   let len: number;
-  if (weapon === 0) { // compact AR
-    box(0.07, 0.09, 0.42, body);
-    box(0.072, 0.02, 0.3, accent, 0, 0.055, -0.02);
-    box(0.05, 0.12, 0.06, dark, 0, -0.1, 0.06);
-    box(0.045, 0.1, 0.05, dark, 0, -0.09, -0.08).rotation.x = 0.25;
-    box(0.04, 0.04, 0.2, body, 0, 0, -0.3);
-    box(0.06, 0.08, 0.16, body, 0, -0.01, 0.27);
-    len = 0.42;
-  } else if (weapon === 1) { // chunky shotgun
-    box(0.09, 0.11, 0.48, body);
-    box(0.06, 0.06, 0.32, dark, 0, -0.07, -0.08);
-    box(0.092, 0.025, 0.4, accent, 0, 0.065, 0);
+  if (weapon === 0) { // Lumen AR: bullpup-ish carbine, rail, red-dot, glowing energy strip
+    box(0.068, 0.09, 0.4, body);
+    box(0.07, 0.022, 0.28, accent, 0, 0.056, -0.02);
+    box(0.05, 0.12, 0.06, dark, 0, -0.1, 0.07);                 // grip
+    box(0.045, 0.13, 0.07, metal, 0, -0.1, -0.05).rotation.x = 0.18; // magazine
+    box(0.074, 0.03, 0.18, dark, 0, -0.035, -0.22);             // handguard
+    cyl(0.017, 0.2, metal, 0, 0.005, -0.33);                    // barrel
+    cyl(0.025, 0.05, dark, 0, 0.005, -0.43);                    // flash hider
+    box(0.06, 0.08, 0.16, body, 0, -0.012, 0.27);               // stock
+    box(0.064, 0.02, 0.05, dark, 0, 0.012, 0.34);
+    box(0.03, 0.035, 0.06, dark, 0, 0.085, 0.02);               // red-dot housing
+    box(0.022, 0.022, 0.004, glow, 0, 0.088, -0.012);
+    box(0.072, 0.008, 0.12, glow, 0, 0.0, -0.14);               // energy strip
+    len = 0.46;
+  } else if (weapon === 1) { // Corona SG: wide twin-tube shotgun with a pump and a shell rack
+    box(0.09, 0.105, 0.42, body);
+    cyl(0.026, 0.42, metal, -0.022, 0.02, -0.27);
+    cyl(0.026, 0.42, metal, 0.022, 0.02, -0.27);
+    box(0.1, 0.07, 0.16, dark, 0, -0.045, -0.22);               // pump
+    for (let i = 0; i < 4; i++) box(0.102, 0.012, 0.012, glow, 0, -0.045, -0.28 + i * 0.04);
+    box(0.092, 0.024, 0.36, accent, 0, 0.064, 0.02);
     box(0.05, 0.12, 0.06, dark, 0, -0.11, 0.12);
-    box(0.08, 0.1, 0.2, body, 0, -0.02, 0.32);
-    len = 0.26;
-  } else { // long DMR with scope
-    box(0.06, 0.08, 0.6, body);
-    box(0.035, 0.035, 0.26, body, 0, 0, -0.42);
-    box(0.05, 0.05, 0.2, dark, 0, 0.075, 0);
-    box(0.062, 0.015, 0.5, accent, 0, -0.045, 0);
+    box(0.082, 0.1, 0.2, body, 0, -0.02, 0.32);
+    for (let i = 0; i < 4; i++) cyl(0.011, 0.05, toon(0xe0524a), 0.05, -0.01, 0.03 + i * 0.03, 8).rotation.set(0, 0, Math.PI / 2);
+    len = 0.48;
+  } else { // Halo DMR: long rifle, ringed scope, fluted barrel, halo emblem
+    box(0.058, 0.08, 0.5, body);
+    cyl(0.016, 0.34, metal, 0, 0.005, -0.42);
+    for (let i = 0; i < 3; i++) cyl(0.021, 0.02, dark, 0, 0.005, -0.32 - i * 0.07);
+    cyl(0.017, 0.17, dark, 0, 0.07, -0.02);                    // scope tube
+    cyl(0.022, 0.025, dark, 0, 0.07, -0.1);
+    cyl(0.022, 0.025, dark, 0, 0.07, 0.06);
+    cyl(0.016, 0.005, glow, 0, 0.07, -0.115);                  // lens glint
+    box(0.06, 0.014, 0.44, accent, 0, -0.046, -0.02);
     box(0.045, 0.12, 0.05, dark, 0, -0.1, 0.08);
-    box(0.06, 0.1, 0.18, body, 0, -0.02, 0.36);
-    len = 0.55;
+    box(0.04, 0.09, 0.05, metal, 0, -0.085, -0.04);
+    box(0.06, 0.1, 0.2, body, 0, -0.02, 0.34);
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.03, 0.005, 6, 20), glow);
+    halo.position.set(0.031, 0, 0.12);
+    halo.rotation.y = Math.PI / 2;
+    g.add(halo);
+    len = 0.6;
   }
   const muzzle = new THREE.Object3D();
   muzzle.position.set(0, 0, -len);
