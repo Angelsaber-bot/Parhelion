@@ -68,8 +68,11 @@ export class Hud {
   }
 
   hit(head: boolean, kill: boolean) {
-    this.hitT = 0.25;
+    this.hitT = kill ? 0.45 : 0.25;
     const el = $('hitmarker');
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
     el.classList.toggle('head', head);
     el.classList.toggle('kill', kill);
   }
@@ -85,6 +88,19 @@ export class Hud {
   }
 
   deathBy(name: string) { $('killer').textContent = name; }
+
+  /** Centre-screen kill confirmation with streak name, re-triggering its pop animation. */
+  killPop(head: boolean, streak: number) {
+    const el = $('killpop');
+    const names = ['', '击杀', '双杀', '三杀', '四杀', '五杀'];
+    el.innerHTML = `<b>${names[Math.min(streak, 5)] || `${streak} 连杀`}</b>${head ? '<i>爆头</i>' : ''}`;
+    el.classList.remove('pop');
+    void el.offsetWidth;
+    el.classList.add('pop');
+  }
+
+  /** Crosshair spread from recoil and movement, 0..1. */
+  bloom(v: number) { ($('crosshair') as HTMLElement).style.setProperty('--bloom', v.toFixed(3)); }
 
   announce(text: string, secs = 2) {
     this.banner.textContent = text;
