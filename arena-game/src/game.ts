@@ -5,11 +5,12 @@ import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import type { NetEvent, PlayerSnap, Snapshot } from '../shared/match.ts';
-import { applyInput, clonePlayer, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
+import { applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './audio.ts';
 import type { Controls } from './controls.ts';
 import type { Hud } from './hud.ts';
 import { Feel } from './feel.ts';
+import { AimState, aimSensitivity } from './aim.ts';
 import { TEAM_COLOR, type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
 
@@ -33,6 +34,8 @@ export class Game {
   private names = new Map<string, PlayerSnap>();
   private readonly map: ArenaMap;
   private feel = new Feel();
+  private aim = new AimState();
+  private aimWeapon = -1;
   /** Frozen: no input, no simulation (offline), no animation, effects or render clock. */
   paused = false;
   /** Results screen is up (match ended, waiting for 再来一局 / 返回大厅). */
@@ -59,6 +62,9 @@ export class Game {
     if (!this.running) return;
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.resetAim();
+    this.scene.viewmodel.clear();
+    this.scene.pruneAvatars(new Set());
     this.session.close();
     this.onExit(reason);
   }
@@ -145,6 +151,7 @@ export class Game {
           const title = e.winner === 'draw' ? '平局' : e.winner === mine?.team ? '胜利' : '失败';
           this.hud.announce(title, 3);
           this.ended = true;
+          this.resetAim();
           this.onEnded(title);
         }
         break;
@@ -161,8 +168,14 @@ export class Game {
   setPaused(p: boolean) {
     if (this.paused === p) return;
     this.paused = p;
+    if (p) this.resetAim();
     this.session.setPaused(p);
     this.acc = 0;
+  }
+
+  private resetAim() {
+    this.aim.reset(); this.controls.clearAim(); this.scene.viewmodel.aim = 0; this.hud.aim(0, false);
+    this.scene.camera.fov = 78; this.scene.camera.updateProjectionMatrix();
   }
 
   /** From the results screen: start the next match. */
@@ -229,14 +242,8 @@ export class Game {
         sfx.shot(e.weapon, true, 0);
         this.feel.fire(e.weapon);
         this.feel.kickAim(this.controls, e.weapon);
-        const cam = this.scene.camera;
-        // tracer starts a little right/below the eye, where the viewmodel muzzle appears
-        const yaw = this.controls.yaw;
-        const start: Vec3 = [
-          cam.position.x + Math.cos(yaw) * 0.18 - Math.sin(yaw) * 0.4,
-          cam.position.y - 0.16,
-          cam.position.z - Math.sin(yaw) * 0.18 - Math.cos(yaw) * 0.4,
-        ];
+        // Cosmetic tracer begins at the actual loaded-model muzzle, transformed from view space.
+        const start = this.scene.localMuzzle();
         this.scene.muzzleFlash(start, e.weapon === 1 ? 1.4 : 1);
         const w = WEAPONS[e.weapon];
         for (const d of e.dirs) {
@@ -245,7 +252,7 @@ export class Game {
           let onPlayer = false;
           for (const p of this.remotes) {
             if (p.snap.team === this.me?.team || !p.snap.alive) continue;
-            const h = rayPlayer(e.origin, d, p.pos[0], p.pos[1], p.pos[2]);
+            const h = rayPlayer(e.origin, d, p.pos[0], p.pos[1], p.pos[2], p.snap.crouched);
             if (h && h.t < t) { t = h.t; onPlayer = true; }
           }
           const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
@@ -303,11 +310,17 @@ export class Game {
 
     const me = this.me;
     if (me) {
-      const eye = me.alive ? this.map.eye : 0.5; // drop the camera when dead
+      if (this.aimWeapon !== me.weapon) { this.controls.clearAim(); this.aimWeapon = me.weapon; }
+      const activeAim = me.alive && this.controls.locked && document.visibilityState === 'visible' && document.hasFocus() && !this.ended && me.reload <= 0;
+      if (!activeAim) this.controls.clearAim();
+      const aim = this.aim.update(dt, this.controls.aimHeld, activeAim, me.weapon);
+      this.controls.lookScale = 1 + (aimSensitivity(this.aim.fov(me.weapon), this.controls.adsSensitivity) - 1) * aim;
+      this.hud.aim(aim, me.weapon === 2);
+      const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead
       const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
       this.feel.update(dt, this.controls, speed);
       const [op, oy, roll] = this.feel.offsets();
-      this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw + oy, this.controls.pitch + op, roll, this.feel.fov);
+      this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw + oy * (1 - aim), this.controls.pitch + op * (1 - aim), roll * (1 - aim), this.aim.fov(me.weapon) - 78 + this.feel.fov * (1 - aim));
       this.scene.viewmodel.look(this.controls.yaw - this.lastLook[0], this.controls.pitch - this.lastLook[1]);
       this.lastLook = [this.controls.yaw, this.controls.pitch];
       this.hud.bloom(this.feel.bloom);
@@ -315,6 +328,7 @@ export class Game {
       const vm = this.scene.viewmodel;
       vm.set(me.weapon, snapMe?.skins[me.weapon] ?? 0);
       const w = WEAPONS[me.weapon];
+      vm.aim = aim;
       vm.reloading = me.reload > 0 ? 1 - me.reload / w.reload : 0;
       vm.moving = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 0;
     }

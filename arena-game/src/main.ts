@@ -3,6 +3,8 @@ import { CHARACTERS, WEAPONS, type TeamLayout } from '../shared/content.ts';
 import { DEFAULT_PORT, PUBLIC_SERVER, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './audio.ts';
 import { Controls } from './controls.ts';
+import { SettingsStore, createSettingsPanel } from '../../shared-client/settings.ts';
+import '../../shared-client/settings.css';
 import { Game } from './game.ts';
 import { Hud } from './hud.ts';
 import { ArenaScene } from './scene.ts';
@@ -18,12 +20,32 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const params = new URLSearchParams(location.search);
 const canvas = $<HTMLCanvasElement>('view');
 const scene = new ArenaScene(canvas, params.has('low') ? 'low' : 'high');
-const controls = new Controls(canvas);
+const settings = new SettingsStore('arena');
+const controls = new Controls(canvas, settings);
 controls.force = params.has('test');
 (window as unknown as { arena: unknown }).arena = { controls, scene };
 const hud = new Hud();
 let game: Game | null = null;
 let mode: 'offline' | 'online' = params.get('mode') === 'online' ? 'online' : 'offline';
+const settingsPanel = createSettingsPanel(settings, {
+  onOpen() {
+    controls.blocked = true; controls.clearAll();
+    if (game && !game.online) game.setPaused(true);
+    if (document.pointerLockElement) document.exitPointerLock();
+  },
+  onClose() { controls.blocked = false; controls.clearAll(); },
+});
+controls.onSettings = () => settingsPanel.show();
+$('settings-lobby').onclick = () => settingsPanel.show();
+$('settings-pause').onclick = () => settingsPanel.show();
+function renderControlHints() {
+  const k = (action: string) => settings.label(action);
+  $('control-hints').textContent = `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('fire')} 射击 · ${k('aim')} 按住瞄准 · ${k('jump')} 跳 · ${k('dash')} 冲刺 · ${k('shield')} 护盾 · ${k('reload')} 换弹 · ${k('crouch')} 按住下蹲 · ${k('weapon1')}/${k('weapon2')}/${k('weapon3')} 切枪 · ${k('prevWeapon')}/${k('nextWeapon')} 循环切枪 · ${k('scoreboard')} 计分板 · ${k('settings')} 设置 · Esc 暂停`;
+  $('dash').querySelector('kbd')!.textContent = k('dash'); $('shield').querySelector('kbd')!.textContent = k('shield');
+  $('wslots').querySelectorAll('span').forEach((el, i) => el.textContent = k(`weapon${i + 1}`));
+}
+settings.subscribe(renderControlHints); renderControlHints();
+
 
 // ---------- lobby ----------
 
@@ -69,6 +91,10 @@ function setMode(m: typeof mode) {
   if (m === 'offline' && $<HTMLSelectElement>('team').value === 'auto') $<HTMLSelectElement>('team').value = 'A';
 }
 document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.onclick = () => setMode(t.dataset.mode as typeof mode));
+$('armory').onclick = async () => {
+  try { (await import('./armory.ts')).openArmory(); }
+  catch (error) { showError(`武器展示无法打开：${String(error)}`); }
+};
 renderChars();
 renderSkins();
 setMode(mode);
@@ -136,7 +162,7 @@ controls.onLockChange = (locked) => {
   game.setPaused(!locked && !game.online);
 };
 $('resume').onclick = () => controls.lock();
-canvas.addEventListener('click', () => { if (game && !game.ended && !controls.locked) controls.lock(); });
+canvas.addEventListener('click', () => { if (game && !game.ended && !controls.locked && !settingsPanel.open) controls.lock(); });
 $('rematch').onclick = () => game?.rematch();
 $('endleave').onclick = () => game?.stop();
 $('leave').onclick = () => game?.stop();

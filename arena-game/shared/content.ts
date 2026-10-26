@@ -117,3 +117,11 @@ export const HITBOX = {
   headY: 1.6,
   headRadius: 0.21,
 };
+
+/** Authoritative crouch stance. No weapon accuracy/damage bonus; hold-to-crouch is client input. */
+export const CROUCH = {
+  height: 1.2,
+  eye: 1.05,
+  speedMultiplier: 0.55,
+  hitbox: { bodyRadius: 0.3, bodyBottom: 0.18, bodyTop: 0.85, headY: 1.0, headRadius: 0.18 },
+};

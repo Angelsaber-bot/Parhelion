@@ -7,7 +7,7 @@ import { Bot, BOT_SKILL, navFor } from '../shared/bot.ts';
 import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, type Team } from '../shared/content.ts';
 import type { ArenaMap } from '../shared/map.ts';
 import { Match, type Snapshot } from '../shared/match.ts';
-import { isWorkerUrl, ROOM_NAME, type JoinOptions } from '../shared/protocol.ts';
+import { isWorkerUrl, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../shared/protocol.ts';
 import type { Input } from '../shared/sim.ts';
 
 export interface Session {
@@ -27,6 +27,7 @@ export interface Session {
 }
 
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
+  opts = { ...opts, rulesVersion: RULES_VERSION };
   if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
   const room = await client.joinOrCreate(ROOM_NAME, opts);
@@ -41,8 +42,21 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     rematch: () => room.send('rematch', true),
     setPaused: () => {},
   };
-  room.onMessage('snap', (snap: Snapshot) => s.onSnapshot(snap));
-  room.onMessage('welcome', () => {});
+  room.onMessage('snap', (snap: Snapshot) => {
+    try { assertRulesVersion(snap.rulesVersion); }
+    catch (error) { s.onClose((error as Error).message); void room.leave(); return; }
+    s.onSnapshot(snap);
+  });
+  // Old servers accept unknown join fields but advertise no v2: fail before starting prediction.
+  await new Promise<void>((resolve, reject) => {
+    const timeout = setTimeout(() => { void room.leave(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
+    room.onMessage('welcome', (welcome: { rulesVersion?: number }) => {
+      clearTimeout(timeout);
+      try { assertRulesVersion(welcome.rulesVersion); resolve(); }
+      catch (error) { void room.leave(); reject(error); }
+    });
+    room.onLeave(() => { clearTimeout(timeout); reject(new Error('服务器在版本确认前断开连接')); });
+  });
   room.onLeave((code: number) => s.onClose(`disconnected (${code})`));
   return s;
 }
@@ -64,9 +78,16 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     ws.onmessage = (ev) => {
       let msg: { t: string; d: unknown };
       try { msg = JSON.parse(ev.data as string); } catch { return; }
-      if (msg.t === 'snap') s?.onSnapshot(msg.d as Snapshot);
+      if (msg.t === 'snap') {
+        const snap = msg.d as Snapshot;
+        try { assertRulesVersion(snap.rulesVersion); }
+        catch (error) { clearTimeout(timeout); if (s) s.onClose((error as Error).message); else reject(error); ws.close(); return; }
+        s?.onSnapshot(snap);
+      }
       else if (msg.t === 'welcome' && !s) {
         clearTimeout(timeout);
+        try { assertRulesVersion((msg.d as { rulesVersion?: number }).rulesVersion); }
+        catch (error) { reject(error); ws.close(); return; }
         s = {
           id: (msg.d as { id: string }).id,
           online: true,
@@ -87,6 +108,7 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     };
     ws.onerror = () => { if (!s) { clearTimeout(timeout); reject(new Error('无法连接服务器')); } };
     ws.onclose = (ev) => {
+      if (flush) clearTimeout(flush); outbox = [];
       if (s) s.onClose(`disconnected (${ev.code})`);
       else { clearTimeout(timeout); reject(new Error(`连接被关闭 (${ev.code})`)); }
     };

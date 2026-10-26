@@ -1,0 +1,45 @@
+{
+  "originals_unchanged": true,
+  "files": [
+    {
+      "file": "glb/01_Dawn_AR.glb",
+      "bytes": 2553624,
+      "sha256": "f036d0203140134b6ddb526abdfa8e55de5929b0489d267e84c9fce71cce4ada"
+    },
+    {
+      "file": "glb/02_Firefly_SMG.glb",
+      "bytes": 1707912,
+      "sha256": "d1a77682a4c882b187948b75371a6257eec507160fd93625318c0d7e7ba4411b"
+    },
+    {
+      "file": "glb/03_Afterglow_Shotgun.glb",
+      "bytes": 1842684,
+      "sha256": "338b847930902a66023dea543a47ce24e34dd80ced11b79feecca5e1a7a0451a"
+    },
+    {
+      "file": "glb/04_Meridian_DMR.glb",
+      "bytes": 2275472,
+      "sha256": "ef286324634b37de96789c6b153816ac649745d5a735c8e1f0381c2f4dca5916"
+    },
+    {
+      "file": "glb/05_Longnight_Sniper.glb",
+      "bytes": 2653960,
+      "sha256": "55517d6f0accd540b5d8150b3410152d5bcc9294316d9e3737143b7f6c3e07e4"
+    },
+    {
+      "file": "glb/06_Refract_Blade.glb",
+      "bytes": 836088,
+      "sha256": "c02b47720eb61133b137e713d220b8ef9668c87bec27b0cd2b2560b2f00972e3"
+    },
+    {
+      "file": "glb/07_Meteor_Polearm.glb",
+      "bytes": 1501728,
+      "sha256": "979f17c703db051bdb412ab988c9a9826c62e0357d78fdb2bc1af70376150886"
+    },
+    {
+      "file": "glb/08_Faultline_Hammer.glb",
+      "bytes": 1893472,
+      "sha256": "3a0f3b95beed6af23a75e9b79ed38db0467b0591397c44654db11c5a2dcf6086"
+    }
+  ]
+}

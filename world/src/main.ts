@@ -13,12 +13,18 @@ import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
 import { buildCharacter, CharacterAnimator } from './character';
+import { attachExplorerRifle } from './weaponArt';
+import { ShoulderAim, shoulderArmLength } from './aim';
+import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
+import '../../shared-client/settings.css';
 import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
 
 const params = new URLSearchParams(location.search);
+const requestedFov = Number(params.get('fov'));
+const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
 // One open world: 幻日谷 + 落日王国 (west seam) + 星落海岸 (east pass). ?region=coast|britain starts there.
 const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
@@ -345,81 +351,113 @@ const spawnAt = (areaId?: string) => {
 };
 spawnAt(params.get('spawn') ?? undefined);
 
-// explorer character + third-person camera (V toggles first person)
+// explorer character + third-person shoulder camera
 const charMat = toonMaterial(Object.assign(new THREE.MeshStandardMaterial({ vertexColors: true }), { name: 'M_Toon' }));
 const rig = buildCharacter(charMat);
 rig.meshes.forEach((m) => { m.receiveShadow = true; if (!params.has('noline')) addOutline(m, 0.012); });
 scene.add(rig.root);
+const rifle = attachExplorerRifle(rig, renderer);
+addEventListener('pagehide', (e) => { if (!e.persisted) rifle.dispose(); });
 const anim = new CharacterAnimator(rig);
 anim.facing = player.yaw + Math.PI;
-let thirdPerson = !params.has('fps') && !params.has('cam');
+const thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
 let camDist = 3.6;
 const prevPos = player.pos.clone();
 
 const keys = new Set<string>();
+const aim = new ShoulderAim();
+const settings = new SettingsStore('world');
 let locked = false;
 const start = $('start');
-const gameplayActive = () => locked && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const clearInput = () => { keys.clear(); aim.clear(); };
+const settingsPanel = createSettingsPanel(settings, {
+  onOpen() { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
+  onClose() { clearInput(); },
+});
+$('settings-open').addEventListener('click', (e) => { e.stopPropagation(); settingsPanel.show(); });
+const gameplayActive = () => locked && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const down = (action: string) => settings.isDown(keys, action);
+function renderControlHints() {
+  const k = (action: string) => settings.label(action);
+  $('help').textContent = `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动／飞行上升 · ${k('descend')} 飞行下降\n${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 飞行调试 · ${k('collision')} 碰撞体 · ${[1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/')} 调试传送 · ${k('reset')} 重置进度`;
+}
+settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
 const lockError = () => {
   if (locked) return;
-  keys.clear();
+  clearInput();
   $('loading').textContent = '无法锁定鼠标，请再次点击进入（或检查浏览器权限）';
   start.classList.remove('hidden');
 };
 $('loading').textContent = '点击进入（ESC 释放鼠标）';
 start.addEventListener('click', async () => {
+  if (settingsPanel.open) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
 document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
-  keys.clear(); // never carry input across entering/leaving pointer lock
+  clearInput();
   if (!locked) $('bigmap').classList.remove('open');
   else $('loading').textContent = '点击进入（ESC 释放鼠标）';
   start.classList.toggle('hidden', locked);
+  $('settings-open').classList.toggle('hidden', locked);
 });
 document.addEventListener('mousemove', (e) => {
   if (!gameplayActive()) return;
-  player.yaw -= e.movementX * 0.0022;
-  player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * 0.0022, -1.5, 1.5);
+  const sensitivity = .0022 * settings.value.sensitivity * (1 + (settings.value.adsSensitivity - 1) * aim.value);
+  player.yaw -= e.movementX * sensitivity;
+  player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * sensitivity * (settings.value.invertY ? -1 : 1), -1.5, 1.5);
 });
-addEventListener('keydown', (e) => {
-  // macOS swallows keyups while Cmd is held (Cmd+Tab etc.), which used to leave a key stuck down
-  if (e.metaKey || e.ctrlKey || e.altKey) { keys.clear(); return; }
-  if (!locked || document.visibilityState !== 'visible' || !document.hasFocus()) return;
-  // The map is a modal view: it cannot also move, shoot, interact or reset progress.
-  if (e.code === 'KeyM') {
-    e.preventDefault();
-    if (!e.repeat) { keys.clear(); $('bigmap').classList.toggle('open'); }
+function press(binding: string, repeat = false) {
+  const action = settings.action(binding);
+  if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
+  if (action === 'settings') { if (!repeat) settingsPanel.show(); return; }
+  if (action === 'map') {
+    if (!repeat) { clearInput(); $('bigmap').classList.toggle('open'); }
     return;
   }
   if (!gameplayActive()) return;
-  if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
-  keys.add(e.code);
-  if (e.repeat) return;
-  if (e.code === 'KeyF') { player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
-  if (e.code === 'KeyC') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
-  if (e.code === 'KeyV') { thirdPerson = !thirdPerson; toast(thirdPerson ? '第三人称' : '第一人称'); }
-  if (e.code === 'KeyG') toggleGuide();
-  if (e.code === 'KeyH') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
-  if (e.code === 'KeyE' && !player.flying) interact();
-  if (e.code === 'KeyR' && e.shiftKey === false) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
-  const n = Number(e.key);
-  const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x).id);
-  if (n >= 1 && n <= here.length) spawnAt(here[n - 1].id);
+  keys.add(binding);
+  if (repeat) return;
+  if (action === 'aim') aim.held = true;
+  if (action === 'fire') shoot();
+  if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
+  if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
+  if (action === 'guide') toggleGuide();
+  if (action === 'help') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
+  if (action === 'interact' && !player.flying) interact();
+  if (action === 'reset' && !down('sprint')) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
+  if (action.startsWith('teleport')) {
+    clearInput(); const n = Number(action.slice('teleport'.length));
+    const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x).id);
+    if (n >= 1 && n <= here.length) spawnAt(here[n - 1].id);
+  }
+}
+function release(binding: string) { keys.delete(binding); if (settings.action(binding) === 'aim') aim.held = false; }
+addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) { clearInput(); return; }
+  if (!settingsPanel.open && locked && settings.action(e.code)) e.preventDefault();
+  press(e.code, e.repeat);
 });
-addEventListener('keyup', (e) => keys.delete(e.code));
-addEventListener('blur', () => keys.clear());
-document.addEventListener('visibilitychange', () => keys.clear());
+addEventListener('keyup', (e) => release(e.code));
+addEventListener('blur', clearInput);
+document.addEventListener('visibilitychange', clearInput);
 addEventListener('contextmenu', (e) => e.preventDefault());
+addEventListener('auxclick', (e) => { if (locked || settingsPanel.open) e.preventDefault(); });
+addEventListener('mousedown', (e) => { if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
+addEventListener('mouseup', (e) => release(`Mouse${e.button}`));
+addEventListener('wheel', (e) => {
+  if (!gameplayActive()) return;
+  e.preventDefault(); const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp'; press(binding); release(binding);
+}, { passive: false });
 
 // ───────────── shooting (hitscan) ─────────────
 const ray = new THREE.Raycaster();
 const sparks: { m: THREE.Mesh; t: number }[] = [];
 const sparkGeo = new THREE.IcosahedronGeometry(0.12, 0);
 const sparkMat = new THREE.MeshBasicMaterial({ color: '#fff3a0' });
-canvas.addEventListener('mousedown', (e) => {
-  if (!gameplayActive() || e.button !== 0) return;
+function shoot() {
+  if (!gameplayActive()) return;
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
   ray.set(origin, look);
@@ -447,7 +485,7 @@ canvas.addEventListener('mousedown', (e) => {
     scene.add(s);
     sparks.push({ m: s, t: 0.25 });
   }
-});
+}
 
 // ───────────── interaction / discovery ─────────────
 function nearestInteract(): Marker | null {
@@ -511,23 +549,27 @@ if (camParam) { player.flying = true; player.teleport(camParam[0], camParam[1] -
 if (params.has('clean')) document.body.classList.add('clean');
 if (params.has('nofog')) scene.fog = null;
 if (params.has('lit')) done.add('tower_console');
-if (params.has('fov')) { camera.fov = Number(params.get('fov')); camera.updateProjectionMatrix(); }
+camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 function frame(now: number) {
   const dt = Math.min(0.1, (now - last) / 1000);
   last = now;
   acc += dt;
-  if (!gameplayActive()) keys.clear();
+  if (!gameplayActive()) { keys.clear(); aim.clear(); }
   const input = {
-    x: (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0),
-    z: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0),
-    jump: keys.has('Space'),
-    sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
-    up: (keys.has('KeyE') && player.flying ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0),
+    x: Number(down('right')) - Number(down('left')),
+    z: Number(down('forward')) - Number(down('back')),
+    jump: down('jump'),
+    sprint: down('sprint'),
+    up: (down('interact') && player.flying ? 1 : 0) - Number(down('descend')),
   };
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
+  const ads = aim.step(dt, gameplayActive() && !player.swimming && !player.gliding && !player.flying);
+  const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
+  if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
+  $('crosshair').classList.toggle('aiming', ads > 0.7);
   player.eyePos(eye);
   camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
   // character: face the movement direction, animate from actual displacement
@@ -537,7 +579,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, aim: ads, pitch: player.pitch });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -545,10 +587,14 @@ function frame(now: number) {
     // keep the pivot under any ceiling (gallery floors, arches) so the arm never starts inside geometry
     const up = staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(player.pos.x, player.pos.y + 1.0, player.pos.z), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
     if (up && up.distance < 0.85) pivot.y = Math.max(player.pos.y + 0.9, up.point.y - 0.3);
+    // The shoulder offset itself must not start on the other side of a nearby wall.
+    const origin = new THREE.Vector3(player.pos.x, pivot.y, player.pos.z);
+    const side = pivot.clone().sub(origin), sideLength = side.length();
+    const sideHit = staticBVH.raycastFirst(new THREE.Ray(origin, side.clone().normalize()), THREE.DoubleSide);
+    if (sideHit && sideHit.distance < sideLength + 0.15) pivot.copy(origin).addScaledVector(side.normalize(), Math.max(0, sideHit.distance - 0.15));
     const back = look.clone().negate();
     const hit = staticBVH.raycastFirst(new THREE.Ray(pivot, back), THREE.DoubleSide);
-    const armLen = player.gliding ? 5.2 : 3.6;
-    const want = Math.min(armLen, hit ? Math.max(0.4, hit.distance - 0.3) : armLen);
+    const want = shoulderArmLength(ads, player.gliding, hit?.distance);
     camDist = want < camDist ? want : THREE.MathUtils.damp(camDist, want, 6, dt);
     camera.position.copy(pivot).addScaledVector(back, camDist);
     eye.copy(camera.position);
@@ -570,8 +616,8 @@ function frame(now: number) {
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
-  $('prompt').textContent = it && !done.has(it.id) ? `[E] ${it.label}` :
-    player.inUpdraft && player.onGround ? '[Space] 跳入上升气流' : '';
+  $('prompt').textContent = it && !done.has(it.id) ? `[${settings.label('interact')}] ${it.label}` :
+    player.inUpdraft && player.onGround ? `[${settings.label('jump')}] 跳入上升气流` : '';
 
   if (regionAt(player.pos.x).id !== lastRegion) { lastRegion = regionAt(player.pos.x).id; renderObjective(); }
   culler.update(eye, lowQ ? 0.7 : 1);
@@ -605,7 +651,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, setThirdPerson: (v: boolean) => { thirdPerson = v; }, player, scene, camera, layout, done, found, colliders, ground, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, ready: true };
 }
 
 void boot().catch((error: unknown) => {

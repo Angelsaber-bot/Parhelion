@@ -1,0 +1,20 @@
+.input-settings { width: min(780px, 94vw); max-height: 92vh; padding: 24px; border: 1px solid #68888f; border-radius: 18px; color: #e5f2f4; background: #10232d; box-shadow: 0 20px 100px #000a; font: 14px system-ui, sans-serif; }
+.input-settings::backdrop { background: #051119d9; }
+.input-settings header { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.input-settings h2 { margin: 6px 0; }
+.input-settings header small { color: #9ebbbf; letter-spacing: .15em; }
+.input-settings button { color: #e5f2f4; background: #1d3945; border: 1px solid #547580; border-radius: 7px; padding: 9px 13px; cursor: pointer; font: inherit; }
+.input-settings button:hover, .input-settings button:focus-visible { border-color: #72eee0; background: #2a4a55; outline: 2px solid #72eee066; }
+.input-settings [hidden] { display: none !important; }
+.settings-note { color: #aec6cc; line-height: 1.7; font-size: 12px; }
+.settings-sliders { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; padding: 14px 0; }
+.settings-sliders label { display: block; }
+.settings-sliders input[type=range] { width: 100%; margin: 12px 0; accent-color: #69d4d0; }
+.settings-sliders output { float: right; color: #8cebdd; font-variant-numeric: tabular-nums; }
+.settings-sliders .settings-check { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; }
+.settings-bindings { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 22px; }
+.settings-bindings > div { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.settings-bindings button { min-width: 114px; }
+.settings-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.input-settings [data-status] { min-height: 24px; line-height: 1.6; color: #8cebdd; }
+@media (max-width: 600px) { .settings-bindings, .settings-sliders { grid-template-columns: 1fr; } .input-settings { padding: 16px; } }

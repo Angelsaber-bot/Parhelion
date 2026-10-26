@@ -1,10 +1,12 @@
 // End-to-end: real Colyseus server + SDK clients exchanging inputs and snapshots.
-import { Server } from '@colyseus/core';
+import { Server, Room, type Client as ServerClient } from '@colyseus/core';
+import { joinOnline } from '../src/session.ts';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Client } from '@colyseus/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
 import type { Snapshot } from '../shared/match.ts';
+import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN, type Input } from '../shared/sim.ts';
 
 const PORT = 25670 + Math.floor(Math.random() * 100);
@@ -21,8 +23,8 @@ const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 describe('ArenaRoom', () => {
   it('1v1: two clients get teams, snapshots, and a team-full rejection', async () => {
     const url = `ws://127.0.0.1:${PORT}`;
-    const a = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'A', char: 0, skins: [] });
-    const b = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'auto', name: 'B', char: 1, skins: [] });
+    const a = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'A', char: 0, skins: [] });
+    const b = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'auto', name: 'B', char: 1, skins: [] });
     expect(b.roomId).toBe(a.roomId);
     let last: Snapshot | null = null;
     a.onMessage('snap', (s: Snapshot) => { last = s; });
@@ -32,7 +34,7 @@ describe('ArenaRoom', () => {
     const snap = last as unknown as Snapshot;
     expect(snap.players.map((p) => p.team).sort()).toEqual(['A', 'B']);
     // a third client asking for team A in this full 1v1 room lands in a new room instead
-    const c = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'C', char: 0, skins: [] });
+    const c = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'C', char: 0, skins: [] });
     expect(c.roomId).not.toBe(a.roomId);
     // inputs move the player authoritatively
     const meBefore = snap.players.find((p) => p.id === a.sessionId)!;
@@ -52,7 +54,7 @@ describe('ArenaRoom', () => {
   });
 
   it('bot fill: a lone human gets bots in the other slots', async () => {
-    const r = await new Client(`ws://127.0.0.1:${PORT}`).joinOrCreate('arena', { layout: '2v2', team: 'B', name: 'H', char: 0, skins: [], bots: true });
+    const r = await new Client(`ws://127.0.0.1:${PORT}`).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '2v2', team: 'B', name: 'H', char: 0, skins: [], bots: true });
     let last: Snapshot | null = null;
     r.onMessage('snap', (s: Snapshot) => { last = s; });
     await wait(300);
@@ -67,17 +69,45 @@ describe('ArenaRoom', () => {
     const url = `ws://127.0.0.1:${PORT}`;
     const welcome = (r: { onMessage: (t: string, cb: (m: { map: string }) => void) => void }) =>
       new Promise<string>((res) => r.onMessage('welcome', (m) => res(m.map)));
-    const z = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'Z', char: 0, skins: [], map: 'zenith' });
+    const z = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'Z', char: 0, skins: [], map: 'zenith' });
     const zMap = welcome(z);
-    const a = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'S', char: 0, skins: [], map: 'aster' });
+    const a = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'S', char: 0, skins: [], map: 'aster' });
     const aMap = welcome(a);
     z.onMessage('snap', () => {}); a.onMessage('snap', () => {});
     expect(a.roomId).not.toBe(z.roomId);
     expect(await zMap).toBe('zenith');
     expect(await aMap).toBe('aster');
-    const z2 = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'auto', name: 'Z2', char: 1, skins: [], map: 'zenith' });
+    const z2 = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'auto', name: 'Z2', char: 1, skins: [], map: 'zenith' });
     z2.onMessage('snap', () => {}); z2.onMessage('welcome', () => {});
     expect(z2.roomId).toBe(z.roomId);
     await Promise.all([z.leave(), a.leave(), z2.leave()]);
   });
+  it('crouch bit reaches authoritative Colyseus snapshot; release stands again', async () => {
+    const session = await joinOnline(`ws://127.0.0.1:${PORT}`, { layout: '1v1', team: 'A', name: 'Crouch', char: 0, skins: [], map: 'neon' });
+    let snap: Snapshot | null = null; session.onSnapshot = (s) => snap = s;
+    session.send([{ seq: 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 }]);
+    await wait(150);
+    expect((snap as unknown as Snapshot).rulesVersion).toBe(RULES_VERSION);
+    expect((snap as unknown as Snapshot).players.find((p) => p.id === session.id)!.crouched).toBe(true);
+    session.send([{ seq: 2, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 0, view: 0 }]);
+    await wait(150);
+    expect((snap as unknown as Snapshot).players.find((p) => p.id === session.id)!.crouched).toBe(false);
+    session.close();
+  });
+
+  it('new server rejects an old client without crouch rules version', async () => {
+    await expect(new Client(`ws://127.0.0.1:${PORT}`).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'Old' })).rejects.toThrow(/版本/);
+  });
+
+  it('new client rejects an old server welcome before prediction begins', async () => {
+    class LegacyRoom extends Room {
+      onJoin(client: ServerClient) { client.send('welcome', { id: client.sessionId, tick: 0, map: 'aster' }); }
+    }
+    const legacy = new Server({ transport: new WebSocketTransport() }); legacy.define('arena', LegacyRoom);
+    await legacy.listen(PORT + 1000);
+    try {
+      await expect(joinOnline(`ws://127.0.0.1:${PORT + 1000}`, { layout: '1v1', team: 'A', name: 'New', char: 0, skins: [] })).rejects.toThrow(/版本/);
+    } finally { await legacy.gracefullyShutdown(false); }
+  });
+
 });

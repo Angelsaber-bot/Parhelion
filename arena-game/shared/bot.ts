@@ -11,11 +11,12 @@
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, HITBOX, WEAPONS } from './content.ts';
+import { CHARACTERS, WEAPONS } from './content.ts';
+import { playerHitbox } from './hit.ts';
 import { lineOfSight, type Vec3 } from './map.ts';
 import type { Controller, Match } from './match.ts';
 import { NavGrid, type NavNode } from './nav.ts';
-import { BTN, forward, type Input, type PlayerState } from './sim.ts';
+import { BTN, forward, playerEye, type Input, type PlayerState } from './sim.ts';
 
 export interface BotSkill {
   reaction: number; // base ticks from first sight to first shot (grows with distance)
@@ -116,7 +117,7 @@ export class Bot implements Controller {
     }
     if (!this.wasAlive) { this.yaw = me.yaw; this.pitch = 0; this.wasAlive = true; this.holdT = 0; }
 
-    const eye: Vec3 = [me.x, me.y + match.map.eye, me.z];
+    const eye: Vec3 = [me.x, me.y + playerEye(match.map, me), me.z];
     const tookDamage = me.hp < this.lastHp;
     this.lastHp = me.hp;
     const maxHp = CHARACTERS[me.char].hp;
@@ -130,7 +131,8 @@ export class Bot implements Controller {
       const d = Math.hypot(o.x - me.x, o.y - me.y, o.z - me.z);
       const off = Math.abs(wrap(Math.atan2(-(o.x - me.x), -(o.z - me.z)) - this.yaw));
       if (off > 1.3 && !tookDamage && d > 3 && oid !== this.targetId) continue;
-      const chest: Vec3 = [o.x, o.y + 1.1, o.z], head: Vec3 = [o.x, o.y + HITBOX.headY, o.z];
+      const h = playerHitbox(o.crouched);
+      const chest: Vec3 = [o.x, o.y + (o.crouched ? 0.65 : 1.1), o.z], head: Vec3 = [o.x, o.y + h.headY, o.z];
       if ((lineOfSight(match.map, eye, chest) || lineOfSight(match.map, eye, head)) && d < bestD) {
         bestD = d; target = o;
       }
@@ -243,7 +245,7 @@ export class Bot implements Controller {
       // aim where the target was `lag` ticks ago
       const p = this.trail[Math.max(0, this.trail.length - 1 - this.skill.lag)];
       const dx = p[0] - me.x, dz = p[2] - me.z;
-      const ty = p[1] + (this.aimHead ? HITBOX.headY - 0.05 : 1.1);
+      const ty = p[1] + (this.aimHead ? playerHitbox(target.crouched).headY - 0.05 : target.crouched ? 0.65 : 1.1);
       aimYaw = Math.atan2(-dx, -dz);
       aimPitch = Math.atan2(ty - eye[1], Math.hypot(dx, dz));
       if (this.rand() < 0.06) this.wobble = [(this.rand() - 0.5) * 2 * err, (this.rand() - 0.5) * err];
@@ -302,7 +304,7 @@ export class Bot implements Controller {
       const p: Vec3 = [a.position[0], a.position[1], a.position[2]];
       const dMe = Math.hypot(p[0] - me.x, p[2] - me.z);
       if (dMe > 25) continue;
-      const hidden = !lineOfSight(match.map, [enemy.x, enemy.y + match.map.eye, enemy.z], [p[0], p[1] + 1.1, p[2]]);
+      const hidden = !lineOfSight(match.map, [enemy.x, enemy.y + playerEye(match.map, enemy), enemy.z], [p[0], p[1] + 1.1, p[2]]);
       const score = (hidden ? 30 : 0) - dMe + Math.hypot(p[0] - enemy.x, p[2] - enemy.z) * 0.3 + this.rand() * 4;
       if (score > bestScore) { bestScore = score; best = p; }
     }

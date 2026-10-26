@@ -1,0 +1,10 @@
+[
+  {"id":"dawn","file":"01_Dawn_AR","name":"曙光 · Dawn AR","category":"突击步枪","combat":"lumen","scale":0.24,"offset":[0,-0.0496,-0.05],"muzzle":[1.887,0.29,0],"grip":[-0.5,-0.21,0],"support":[0.86,0.04,0],"sight":[-0.146,0.783,0],"triangles":40360},
+  {"id":"firefly","file":"02_Firefly_SMG","name":"流萤 · Firefly SMG","category":"冲锋枪","combat":null,"scale":0.24,"offset":[0,0,0],"muzzle":[1.267,0.31,0],"grip":[-0.41,-0.135,0],"support":[0.7,-0.1,0],"triangles":27828},
+  {"id":"afterglow","file":"03_Afterglow_Shotgun","name":"余辉 · Afterglow SG","category":"霰弹枪","combat":"corona","scale":0.24,"offset":[0,-0.046,-0.05],"muzzle":[1.773,0.31,0],"grip":[-0.5,-0.225,0],"support":[0.8,0.08,0],"sight":[-0.306,0.793,0],"triangles":29908},
+  {"id":"meridian","file":"04_Meridian_DMR","name":"子午线 · Meridian DMR","category":"精确射手步枪","combat":"halo","scale":0.25,"offset":[0,-0.07875,0.04],"muzzle":[1.817,0.33,0],"grip":[-0.12,-0.085,0],"support":[0.84,0.12,0],"sight":[-0.24,0.81,0],"triangles":40266},
+  {"id":"longnight","file":"05_Longnight_Sniper","name":"长夜 · Longnight Sniper","category":"狙击步枪","combat":null,"scale":0.24,"offset":[0,0,0],"muzzle":[2.417,0.29,0],"grip":[-0.52,-0.21,0],"support":[0.93,0.05,0],"triangles":47542},
+  {"id":"refract","file":"06_Refract_Blade","name":"折光 · Refract Blade","category":"单手刃","combat":null,"scale":0.4,"offset":[0,0,0],"triangles":15676},
+  {"id":"meteor","file":"07_Meteor_Polearm","name":"流星 · Meteor Polearm","category":"长兵器","combat":null,"scale":0.5,"offset":[0,0,0],"triangles":32094},
+  {"id":"faultline","file":"08_Faultline_Hammer","name":"断层 · Faultline Hammer","category":"战锤","combat":null,"scale":0.5,"offset":[0,0,0],"triangles":37802}
+]

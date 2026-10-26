@@ -6,6 +6,7 @@ import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
   SHIELD, TEAM_CAPACITY, WEAPONS, falloff, type Team, type TeamLayout,
 } from './content.ts';
+import { RULES_VERSION } from './protocol.ts';
 import { rayPlayer, rayShield } from './hit.ts';
 import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
 import { applyInput, clonePlayer, newPlayer, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
@@ -54,6 +55,7 @@ export interface PlayerSnap extends PlayerState {
 }
 
 export interface Snapshot {
+  rulesVersion: number;
   tick: number;
   layout: TeamLayout;
   phase: Phase;
@@ -75,6 +77,7 @@ interface Slot {
   respawn: number;
 }
 
+type HistoricalPose = [number, number, number, boolean, boolean]; // x, y, z, alive, crouched
 const HISTORY = 64;
 const MAX_QUEUE = 30;
 const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a stall
@@ -89,7 +92,7 @@ export class Match {
   shields: Shield[] = [];
   readonly slots = new Map<string, Slot>();
   private events: NetEvent[] = [];
-  private history: Map<string, [number, number, number, boolean]>[] = [];
+  private history: Map<string, HistoricalPose>[] = [];
   private nextShield = 1;
 
   constructor(readonly map: ArenaMap, readonly layout: TeamLayout) {}
@@ -242,7 +245,7 @@ export class Match {
     Object.assign(p, {
       x, y, z, vx: 0, vy: 0, vz: 0,
       yaw: Math.atan2(x, z), // face the map centre
-      pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true,
+      pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0,
     });
     slot.respawn = 0;
@@ -267,19 +270,19 @@ export class Match {
   }
 
   /** Other players' positions as the shooter saw them (interpolated history, clamped). */
-  private rewound(view: number): Map<string, [number, number, number, boolean]> {
-    const now = new Map<string, [number, number, number, boolean]>();
-    for (const [id, s] of this.slots) now.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive]);
+  private rewound(view: number): Map<string, HistoricalPose> {
+    const now = new Map<string, HistoricalPose>();
+    for (const [id, s] of this.slots) now.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched]);
     const v = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick - 1, view));
     if (!(v < this.tick - 1) || !Number.isFinite(v)) return now;
     const a = this.history[Math.floor(v) % HISTORY], b = this.history[Math.ceil(v) % HISTORY];
     if (!a || !b) return now;
     const f = v - Math.floor(v);
-    const out = new Map<string, [number, number, number, boolean]>();
+    const out = new Map<string, HistoricalPose>();
     for (const [id, cur] of now) {
       const pa = a.get(id), pb = b.get(id);
       if (!pa || !pb || !cur[3]) { out.set(id, cur); continue; }
-      out.set(id, [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f, pa[2] + (pb[2] - pa[2]) * f, cur[3]]);
+      out.set(id, [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f, pa[2] + (pb[2] - pa[2]) * f, cur[3], f < 0.5 ? pa[4] : pb[4]]);
     }
     return out;
   }
@@ -303,7 +306,7 @@ export class Match {
         if (id === shooter.id || s.info.team === shooter.team) continue;
         const p = pos.get(id)!;
         if (!p[3]) continue;
-        const h = rayPlayer(ev.origin, d, p[0], p[1], p[2]);
+        const h = rayPlayer(ev.origin, d, p[0], p[1], p[2], p[4]);
         if (h && h.t < best) { best = h.t; target = { kind: 'player', id, head: h.head }; }
       }
       ends.push([quant(ev.origin[0] + d[0] * best), quant(ev.origin[1] + d[1] * best), quant(ev.origin[2] + d[2] * best)]);
@@ -340,8 +343,8 @@ export class Match {
   }
 
   private record(): void {
-    const frame = new Map<string, [number, number, number, boolean]>();
-    for (const [id, s] of this.slots) frame.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive]);
+    const frame = new Map<string, HistoricalPose>();
+    for (const [id, s] of this.slots) frame.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched]);
     this.history[this.tick % HISTORY] = frame;
   }
 
@@ -357,7 +360,7 @@ export class Match {
     const events = this.events;
     this.events = [];
     return {
-      tick: this.tick, layout: this.layout, phase: this.phase, phaseT: this.phaseT,
+      rulesVersion: RULES_VERSION, tick: this.tick, layout: this.layout, phase: this.phase, phaseT: this.phaseT,
       score: { ...this.score }, players, shields: this.shields.map((s) => ({ ...s })), events,
     };
   }
@@ -378,7 +381,7 @@ export function sanitize(raw: unknown): Input | null {
     mx: Math.round(num(r.mx, -1, 1) ?? 0),
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
-    buttons: (num(r.buttons, 0, 31) ?? 0) | 0,
+    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 63,
     weapon: (num(r.weapon, 0, WEAPONS.length - 1) ?? 0) | 0,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };

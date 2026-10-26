@@ -2,6 +2,7 @@
 // first-person weapon. No game rules in here.
 
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
@@ -19,6 +20,7 @@ import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { buildFighter, FighterAnimator } from './fighter.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
+import { attachGunArt, type GunPresentation } from './gunArt.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -64,6 +66,10 @@ export class ArenaScene {
     r.shadowMap.type = THREE.PCFShadowMap;
     r.autoClear = false;
     this.renderer = r;
+    const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(r);
+    const environment = pmrem.fromScene(room);
+    this.scene.environment = this.vmScene.environment = environment.texture;
+    room.dispose(); pmrem.dispose();
 
     const s = this.scene;
     s.background = new THREE.Color(0xbfdcf2);
@@ -187,6 +193,15 @@ export class ArenaScene {
     if (Math.abs(this.camera.fov - fov) > 0.01) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
   }
 
+  localMuzzle(): Vec3 {
+    this.camera.updateMatrixWorld(); this.vmCamera.updateMatrixWorld();
+    const v = this.viewmodel.muzzlePosition();
+    const ndc = v.clone().project(this.vmCamera);
+    const ray = new THREE.Vector3(ndc.x, ndc.y, 0.5).unproject(this.camera).sub(this.camera.position).normalize();
+    const at = this.camera.position.clone().addScaledVector(ray, Math.max(0.2, v.length()));
+    return [at.x, at.y, at.z];
+  }
+
   /** Muzzle light: a brief warm flash on the world around the shooter. */
   muzzleFlash(at: Vec3, strength = 1) {
     this.muzzleLight.position.set(at[0], at[1], at[2]);
@@ -250,7 +265,7 @@ export class ArenaScene {
     a.root.visible = p.alive;
     a.setAlly(ally);
     const now = performance.now() / 1000;
-    a.animate(pos, Math.min(0.1, now - this.lastAnim));
+    a.animate(pos, Math.min(0.1, now - this.lastAnim), p.crouched);
     a.root.position.set(pos[0], pos[1], pos[2]);
     a.root.rotation.y = yaw;
     a.aim.rotation.x = pitch;
@@ -361,7 +376,7 @@ function toon(color: number, emissive = 0) {
   return celMaterial({ color, emissive, emissiveIntensity: emissive ? 1.2 : 0 });
 }
 
-export function buildGun(weapon: number, skin: number): { group: THREE.Group; muzzle: THREE.Object3D } {
+function buildFallbackGun(weapon: number, skin: number): { group: THREE.Group; muzzle: THREE.Object3D } {
   const s = WEAPONS[weapon].skins[skin] ?? WEAPONS[weapon].skins[0];
   const body = toon(s.body), accent = toon(s.accent, s.accent), dark = toon(0x1d2630);
   const g = new THREE.Group();
@@ -429,9 +444,14 @@ export function buildGun(weapon: number, skin: number): { group: THREE.Group; mu
   return { group: g, muzzle };
 }
 
+export function buildGun(weapon: number, skin: number, firstPerson = false): GunPresentation {
+  return attachGunArt(weapon, skin, buildFallbackGun(weapon, skin), firstPerson);
+}
+
 export class Viewmodel {
   readonly root = new THREE.Group();
   private gun: THREE.Group | null = null;
+  private presentation: GunPresentation | null = null;
   private muzzle: THREE.Object3D | null = null;
   private flash: THREE.Sprite;
   private key = '';
@@ -446,6 +466,7 @@ export class Viewmodel {
   private shellMat = celMaterial({ color: 0xe6b55a, emissive: 0x3a2400 });
   reloading = 0; // 0..1 progress, set by game
   moving = 0;
+  aim = 0;
 
   constructor() {
     this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xfff1b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
@@ -458,8 +479,8 @@ export class Viewmodel {
     const k = `${weapon}:${skin}`;
     if (k === this.key) return;
     this.key = k;
-    if (this.gun) this.root.remove(this.gun);
-    const { group, muzzle } = buildGun(weapon, skin);
+    this.presentation?.dispose();
+    const { group, muzzle } = this.presentation = buildGun(weapon, skin, true);
     group.scale.setScalar(0.72);
     this.gun = group;
     this.muzzle = muzzle;
@@ -467,6 +488,14 @@ export class Viewmodel {
     this.swap = 1;
     this.weapon = weapon;
   }
+
+  clear() {
+    this.presentation?.dispose(); this.presentation = null; this.gun = null; this.muzzle = null; this.key = '';
+    for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
+    this.flash.visible = false; this.aim = 0;
+  }
+
+  muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
   fire() {
     const w = this.weapon;
@@ -512,6 +541,15 @@ export class Viewmodel {
     const kick = this.kick;
     this.gun.position.set(0.17 + bobX - this.sway[0], -0.16 + bobY - this.swap * 0.2 - rel * 0.1 + this.sway[1] * 0.6 + kick * 0.012, -0.4 + kick * 0.06);
     this.gun.rotation.set(kick * 0.16 + rel * 0.6, 0.04 + this.sway[0] * 1.5, rel * 0.4 - kick * 0.03 + this.sway[0] * 0.8);
+    // At full ADS the authored optic axis runs through the centre of the view camera.
+    if (this.presentation) {
+      const sight = this.presentation.sight.clone().multiplyScalar(0.72);
+      const aimPosition = new THREE.Vector3(-sight.x, -sight.y, -0.34 - sight.z);
+      this.gun.position.lerp(aimPosition, this.aim);
+      this.gun.rotation.x *= 1 - this.aim; this.gun.rotation.y *= 1 - this.aim; this.gun.rotation.z *= 1 - this.aim;
+      this.presentation.animate(kick, this.reloading);
+    }
+    this.gun.visible = !(this.weapon === 2 && this.aim > 0.92); // DMR uses the unobstructed magnified scope view
     for (let i = this.shells.length - 1; i >= 0; i--) {
       const sh = this.shells[i];
       sh.life -= dt;
@@ -534,6 +572,7 @@ class Avatar {
   readonly team: Team;
   private gunKey = '';
   private gun: THREE.Group | null = null;
+  private presentation: GunPresentation | null = null;
   private plate: THREE.Sprite;
   private plateCtx: CanvasRenderingContext2D;
   private plateKey = '';
@@ -575,22 +614,23 @@ class Avatar {
   }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
-  animate(pos: Vec3, dt: number) {
+  animate(pos: Vec3, dt: number, crouched = false) {
     if (this.last && dt > 0) {
       const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
       this.speed += (Math.min(v, 12) - this.speed) * Math.min(1, dt * 10);
       this.vy += ((pos[1] - this.last[1]) / dt - this.vy) * Math.min(1, dt * 10);
     }
     this.last = [pos[0], pos[1], pos[2]];
-    this.anim.update(dt, this.speed, this.vy);
+    this.anim.update(dt, this.speed, this.vy, crouched);
+    this.plate.position.y = crouched ? 1.7 : 2.25;
   }
 
   setWeapon(weapon: number, skin: number) {
     const k = `${weapon}:${skin}`;
     if (k === this.gunKey) return;
     this.gunKey = k;
-    if (this.gun) this.aim.remove(this.gun);
-    const { group, muzzle } = buildGun(weapon, skin);
+    this.presentation?.dispose();
+    const { group, muzzle } = this.presentation = buildGun(weapon, skin);
     group.position.set(0.16, -0.08, -0.32);
     group.scale.setScalar(1.15);
     this.gun = group;
@@ -618,6 +658,8 @@ class Avatar {
   }
 
   dispose(scene: THREE.Scene) {
+    this.presentation?.dispose();
+    this.plate.material.map?.dispose(); this.plate.material.dispose();
     scene.remove(this.root);
   }
 }

@@ -60,6 +60,8 @@ export interface CharacterRig {
   /** Rifle pose (Spine space): held in both hands at the low ready, or slung across the back. */
   gunHold: { p: THREE.Vector3; q: THREE.Quaternion };
   gunSling: { p: THREE.Vector3; q: THREE.Quaternion };
+  gunHands: { right: THREE.Vector3; left: THREE.Vector3 };
+  gunAnchors: { grip: THREE.Vector3; support: THREE.Vector3 };
 }
 
 /** Arm angles for the low-ready rifle hold: right hand on the grip, left hand under the handguard. */
@@ -258,7 +260,7 @@ export function buildCharacter(material: THREE.Material): CharacterRig {
     q: gunBasis(new THREE.Vector3(-0.55, 0.84, 0), new THREE.Vector3(0, 0, -1)),
   };
   gun.position.copy(gunHold.p); gun.quaternion.copy(gunHold.q);
-  return { root, joints, meshes, gunHold, gunSling };
+  return { root, joints, meshes, gunHold, gunSling, gunHands: { right: handR, left: handL }, gunAnchors: { grip: GRIP.clone().multiplyScalar(GUN.scale), support: HANDGUARD.clone().multiplyScalar(GUN.scale) } };
 }
 
 /** Procedural animation state machine driven by the physics controller. */
@@ -272,7 +274,7 @@ export class CharacterAnimator {
 
   constructor(public rig: CharacterRig) {}
 
-  update(dt: number, s: { speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null; flying?: boolean; gliding?: boolean }) {
+  update(dt: number, s: { speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null; flying?: boolean; gliding?: boolean; aim?: number; pitch?: number }) {
     const J = this.rig.joints;
     this.t += dt;
     // turn towards the movement direction (Genshin-style free movement)
@@ -296,6 +298,8 @@ export class CharacterAnimator {
       const kneeBend = Math.max(0, Math.sin(this.phase + (sgn > 0 ? 0 : Math.PI) + 0.9));
       J[`Thigh_${side}`].rotation.x = -ph * amp - this.air * 0.7;
       J[`Shin_${side}`].rotation.x = kneeBend * (0.25 + run * 0.9) * move + this.air * 1.1;
+      J[`Arm_${side}`].rotation.y = 0;
+      J[`Forearm_${side}`].rotation.y = J[`Forearm_${side}`].rotation.z = 0;
       // arms swing opposite to legs; elbows bend more when running
       J[`Arm_${side}`].rotation.x = ph * amp * 0.9 + (s.swimming ? -2.6 + Math.sin(this.t * 4 + sgn) * 0.6 : 0) - this.air * 0.4;
       J[`Arm_${side}`].rotation.z = (0.12 + this.air * 0.5) * -sgn;
@@ -351,5 +355,32 @@ export class CharacterAnimator {
       J.CoatTails.rotation.x = lerp(J.CoatTails.rotation.x, 1.1 + flutter * 2, g);
       if (J.Glider) J.Glider.rotation.z = Math.sin(this.t * 1.3) * 0.05;
     }
+    applyRifleAim(this.rig, s.aim ?? 0, s.pitch ?? 0);
+  }
+}
+
+/** Two-bone arms hold the grip/support anchors when the TPS rifle is raised to aim. */
+export function applyRifleAim(rig: CharacterRig, amount: number, pitch: number) {
+  if (amount <= 0) return;
+  const J = rig.joints, a = THREE.MathUtils.clamp(amount, 0, 1);
+  J.Spine.rotation.x *= 1 - a; J.Spine.rotation.y *= 1 - a; J.Hips.rotation.y *= 1 - a;
+  J.Head.rotation.x = THREE.MathUtils.lerp(J.Head.rotation.x, -pitch, a);
+  const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, Math.PI, 0, 'YXZ'));
+  const gripTarget = new THREE.Vector3(0.10, 0.34, 0.08);
+  const position = gripTarget.clone().sub(rig.gunAnchors.grip.clone().applyQuaternion(q));
+  J.Gun.position.lerp(position, a); J.Gun.quaternion.slerp(q, a);
+  for (const side of ['R', 'L'] as const) {
+    const target = (side === 'R' ? rig.gunAnchors.grip : rig.gunAnchors.support).clone().applyQuaternion(q).add(position);
+    const arm = J[`Arm_${side}`], fore = J[`Forearm_${side}`];
+    const delta = target.clone().sub(arm.position), distance = Math.min(0.549, Math.max(.001, delta.length()));
+    const axis = delta.normalize(), pole = new THREE.Vector3(side === 'R' ? 1 : -1, -0.7, -0.3);
+    pole.addScaledVector(axis, -pole.dot(axis)).normalize();
+    const along = (0.27 ** 2 - 0.28 ** 2 + distance ** 2) / (2 * distance);
+    const height = Math.sqrt(Math.max(0, 0.27 ** 2 - along ** 2));
+    const elbow = arm.position.clone().addScaledVector(axis, along).addScaledVector(pole, height);
+    const armQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), elbow.clone().sub(arm.position).normalize());
+    const foreQ = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, -1, 0), target.clone().sub(elbow).normalize());
+    foreQ.premultiply(armQ.clone().invert());
+    arm.quaternion.slerp(armQ, a); fore.quaternion.slerp(foreQ, a);
   }
 }

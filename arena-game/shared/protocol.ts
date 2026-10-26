@@ -4,6 +4,12 @@ import type { Snapshot } from './match.ts';
 import type { Input } from './sim.ts';
 
 export const ROOM_NAME = 'arena';
+/** v2 adds authoritative crouch (input bit 32, stance-dependent collision/hits/eye). */
+export const RULES_VERSION = 2;
+export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。当前下蹲功能需要更新后的服务器。';
+export function assertRulesVersion(version: unknown): void {
+  if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
+}
 export const DEFAULT_PORT = 2567;
 /** Public Arena server (Cloudflare Worker + Durable Objects, worker/index.ts) used by the public site. */
 export const PUBLIC_SERVER = 'wss://parhelion-arena.lejiazhang-us.workers.dev/arena';
@@ -11,6 +17,8 @@ export const PUBLIC_SERVER = 'wss://parhelion-arena.lejiazhang-us.workers.dev/ar
 export const isWorkerUrl = (url: string) => /^wss?:\/\/[^/]+\/arena\/?(\?|$)/.test(url.trim());
 
 export interface JoinOptions {
+  /** Online handshake, injected by joinOnline; never silently mix pre-crouch servers/clients. */
+  rulesVersion?: number;
   layout: TeamLayout;
   team: 'A' | 'B' | 'auto';
   name: string;
@@ -28,7 +36,7 @@ export interface ClientMessages {
 }
 
 export interface ServerMessages {
-  welcome: { id: string; tick: number; map: string };
+  welcome: { id: string; tick: number; map: string; rulesVersion: number };
   snap: Snapshot;
 }
 

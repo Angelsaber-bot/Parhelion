@@ -14,6 +14,7 @@
     #crosshair::before, #crosshair::after { content: ""; position: absolute; background: #fff; box-shadow: 0 0 2px #0008; }
     #crosshair::before { left: 10px; top: 3px; width: 2px; height: 16px; }
     #crosshair::after { top: 10px; left: 3px; height: 2px; width: 16px; }
+    #crosshair.aiming { transform: scale(.6); filter: drop-shadow(0 0 3px #63ffe4); }
     #crosshair.hit::before, #crosshair.hit::after { background: var(--accent); }
     #objective { left: 18px; top: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; min-width: 260px; font-size: 13px; line-height: 1.6; box-shadow: 0 4px 16px #0002; }
     #objective h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: 1px; }
@@ -39,6 +40,9 @@
     @keyframes gpulse { 50% { box-shadow: 0 0 18px #ffe9a0; transform: rotate(45deg) scale(1.12); } }
     #prompt { left: 50%; top: 58%; transform: translateX(-50%); color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000a; }
     #help { left: 18px; bottom: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
+    #help { white-space: pre-line; max-width: min(760px, 70vw); }
+    #settings-open { top: 16px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff; border: 1px solid #87a9b1; color: #24404f; cursor: pointer; }
+    #settings-open.hidden { display: none; }
     #help b { display: inline-block; min-width: 54px; }
     #stats { white-space: pre; right: 18px; bottom: 18px; font: 11px ui-monospace, monospace; color: #fff; text-shadow: 0 1px 2px #000; text-align: right; }
     #start { inset: 0; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; background: linear-gradient(#0000, #0006); color: #fff; pointer-events: auto; cursor: pointer; text-shadow: 0 2px 8px #0008; }
@@ -50,6 +54,7 @@
 </head>
 <body>
   <canvas id="view"></canvas>
+  <button id="settings-open" type="button" class="hud">按键与灵敏度设置</button>
   <div id="crosshair" class="hud"></div>
   <div id="objective" class="hud"></div>
   <canvas id="minimap" class="hud" width="380" height="380"></canvas>
@@ -58,12 +63,7 @@
   <div id="toast" class="hud"></div>
   <div id="prompt" class="hud"></div>
   <div id="guide" class="hud"><div class="arrow"></div><div class="gem"></div><div class="dist"></div><div class="label"></div></div>
-  <div id="help" class="hud">
-    <div><b>WASD</b>移动　<b>Shift</b>奔跑　<b>Space</b>跳／空中滑翔</div>
-    <div><b>左键</b>射击　<b>E</b>互动　<b>M</b>大地图</div>
-    <div><b>V</b>第一/第三人称　<b>F</b>飞行(调试)　<b>C</b>碰撞体　<b>1–7</b>传送</div>
-    <div><b>G</b>任务指引开/关　<b>R</b>重置进度　<b>H</b>隐藏帮助</div>
-  </div>
+  <div id="help" class="hud">读取操作设置…</div>
   <div id="stats" class="hud"></div>
   <div id="start" class="hud"><h1>幻日谷 · 落日王国 · 星落海岸</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p></div>
   <script type="module" src="/src/main.ts"></script>

@@ -6,7 +6,7 @@
 import { Room, type Client } from '@colyseus/core';
 import { TICK_HZ } from '../shared/content.ts';
 import type { Match } from '../shared/match.ts';
-import type { JoinOptions } from '../shared/protocol.ts';
+import { assertRulesVersion, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 
 export class ArenaRoom extends Room {
@@ -24,6 +24,11 @@ export class ArenaRoom extends Room {
       const snap = core.step();
       if (snap) this.broadcast('snap', snap);
     }, 1000 / TICK_HZ);
+  }
+
+  onAuth(_client: Client, options: Partial<JoinOptions>) {
+    assertRulesVersion(options.rulesVersion);
+    return true;
   }
 
   onJoin(client: Client, options: Partial<JoinOptions>) {

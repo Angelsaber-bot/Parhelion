@@ -1,0 +1,47 @@
+{
+  "baseline": "f9cd5877f4a69b51f148f8d1c944ccc75c19dbcf",
+  "latest_remote_main_verified": "same baseline at 2026-10-26 19:29 UTC",
+  "completed_utc": "2026-10-26T19:29:00Z",
+  "arena": {
+    "tests_passed": 104,
+    "tests_failed": 0,
+    "typecheck_client_server": "passed",
+    "typecheck_worker": "passed",
+    "production_build": "passed"
+  },
+  "world": {
+    "tests_passed": 48,
+    "tests_failed": 0,
+    "typecheck": "passed",
+    "production_build": "passed"
+  },
+  "asset_validation": {
+    "actual_GLTFLoader_models": 8,
+    "triangles": 271476,
+    "original_GLB_bytes": "unchanged SHA-256 matches",
+    "arena_bundled_weapon_models": 8,
+    "world_bundled_weapon_models": 1,
+    "runtime_loading": "equipped/selected only",
+    "projection_and_hand_anchor_tests": "passed"
+  },
+  "transport_tests": {
+    "real_Colyseus": "passed",
+    "real_JSON_WebSocket_RoomCore": "passed",
+    "legacy_version_rejection": "passed",
+    "Cloudflare_DO_host": "blocked: uv_interface_addresses error 1"
+  },
+  "browser_QA": {
+    "status": "blocked before launch; not passed",
+    "reason": "Chromium socket() EPERM; escalated launch could not initialize readonly execution mount",
+    "script": "arena-game/test/weapon-browser.mjs",
+    "script_syntax": "passed"
+  },
+  "geometry_preview": "Blender reimported final GLBs at runtime transforms, hipfire 3 weapons and centred AR ADS inspected; not a browser test",
+  "git_diff_check": "passed",
+  "publication": {
+    "pushed": false,
+    "deployed": false,
+    "requires_rules_version": 2,
+    "online_notice": "new client requires matching server/Worker; current public server not modified"
+  }
+}

@@ -119,35 +119,35 @@ export function groundAt(m: ArenaMap, x: number, z: number, y: number): number {
 }
 
 /** Solid whose side would intersect the player's footprint at (x,z) standing at y, if any. */
-export function blockedAt(m: ArenaMap, x: number, z: number, y: number): Solid | null {
+export function blockedAt(m: ArenaMap, x: number, z: number, y: number, height = m.height): Solid | null {
   for (const s of m.solids) {
     if (!overlaps(s, x, z, m.radius)) continue;
     const qx = Math.max(s.minX, Math.min(x, s.maxX));
     const qz = Math.max(s.minZ, Math.min(z, s.maxZ));
-    if (topAt(s, qx, qz) > y + m.step + EPS && s.minY < y + m.height - 0.02) return s;
+    if (topAt(s, qx, qz) > y + m.step + EPS && s.minY < y + height - 0.02) return s;
   }
   return null;
 }
 
 /** Lowest solid underside above the player's head, for jump ceilings. */
-export function ceilingAt(m: ArenaMap, x: number, z: number, y: number): number {
+export function ceilingAt(m: ArenaMap, x: number, z: number, y: number, height = m.height): number {
   let c = Infinity;
   for (const s of m.solids) {
     if (!overlaps(s, x, z, m.radius)) continue;
-    if (s.minY >= y + m.height - 0.05 && s.minY < c) c = s.minY;
+    if (s.minY >= y + height - 0.05 && s.minY < c) c = s.minY;
   }
   return c;
 }
 
 /** Push the footprint out of any solid side it already overlaps (e.g. after falling beside a ramp). */
-export function recover(m: ArenaMap, p: { x: number; y: number; z: number }): void {
+export function recover(m: ArenaMap, p: { x: number; y: number; z: number }, height = m.height): void {
   for (let pass = 0; pass < 8; pass++) {
     let changed = false;
     for (const s of m.solids) {
       if (!overlaps(s, p.x, p.z, m.radius)) continue;
       const qx = Math.max(s.minX, Math.min(p.x, s.maxX));
       const qz = Math.max(s.minZ, Math.min(p.z, s.maxZ));
-      if (topAt(s, qx, qz) <= p.y + m.step + EPS || s.minY >= p.y + m.height - 0.02) continue;
+      if (topAt(s, qx, qz) <= p.y + m.step + EPS || s.minY >= p.y + height - 0.02) continue;
       const dx = p.x - qx, dz = p.z - qz, d = Math.hypot(dx, dz);
       let nx: number, nz: number, depth: number;
       if (d > 1e-7) {

@@ -201,29 +201,32 @@ export class FighterAnimator {
   private phase = 0;
   private t = 0;
   private air = 0;
+  private crouch = 0;
 
   constructor(private rig: FighterRig) {}
 
-  update(dt: number, speed: number, vy: number) {
+  update(dt: number, speed: number, vy: number, crouched = false) {
     const J = this.rig.joints;
+    this.crouch += ((crouched ? 1 : 0) - this.crouch) * Math.min(1, dt * 15);
+    const crouch = this.crouch;
     this.t += dt;
     const airborne = Math.abs(vy) > 0.6 ? 1 : 0;
     this.air += (airborne - this.air) * Math.min(1, dt * 10);
     const run = Math.min(1, speed / 5.5), move = Math.min(1, speed / 1.5);
     this.phase += dt * (5 + speed * 1.6);
     const sw = Math.sin(this.phase);
-    const amp = (0.4 + run * 0.45) * move;
+    const amp = (0.4 + run * 0.45) * move * (1 - crouch * 0.65);
     for (const [side, sgn] of [['L', 1], ['R', -1]] as const) {
       const knee = Math.max(0, Math.sin(this.phase + (sgn > 0 ? 0 : Math.PI) + 0.9));
-      J[`Thigh_${side}`].rotation.x = ph(sw, sgn) * amp - this.air * 0.6;
-      J[`Shin_${side}`].rotation.x = -(knee * (0.3 + run * 0.9) * move + this.air * 1.0);
+      J[`Thigh_${side}`].rotation.x = ph(sw, sgn) * amp - this.air * 0.6 + crouch * 1.15;
+      J[`Shin_${side}`].rotation.x = -(knee * (0.3 + run * 0.9) * move + this.air * 1.0) - crouch * 2.3;
     }
     const breathe = Math.sin(this.t * 2.2) * 0.012 * (1 - move);
-    J.Hips.position.y = 0.9 + Math.abs(Math.cos(this.phase)) * 0.05 * move - run * 0.03 + breathe;
-    J.Spine.rotation.x = -run * 0.15;
+    J.Hips.position.y = 0.9 + Math.abs(Math.cos(this.phase)) * 0.05 * move - run * 0.03 + breathe - crouch * 0.5;
+    J.Spine.rotation.x = -run * 0.15 - crouch * 0.12;
     J.Spine.rotation.y = sw * 0.12 * move;
     J.Hips.rotation.y = -sw * 0.08 * move;
-    this.rig.aim.position.y = 1.35 + (J.Hips.position.y - 0.9);
+    this.rig.aim.position.y = 1.35 + (J.Hips.position.y - 0.9) - crouch * .16;
     if (J.Halo) J.Halo.position.y = 0.42 + Math.sin(this.t * 2) * 0.02;
     for (const s of ['L', 'R']) {
       if (J[`Tail_${s}`]) {

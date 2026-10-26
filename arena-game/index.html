@@ -18,6 +18,7 @@
     </div>
     <div id="feed"></div>
     <div id="crosshair"></div>
+    <div id="scope" class="hidden" aria-hidden="true"><div class="scope-ring"><i></i><b>HALO · 3.8×</b></div></div>
     <div id="hitmarker"></div>
     <div id="killpop"></div>
     <div id="hurt"></div>
@@ -45,6 +46,7 @@
       <h2>已暂停</h2>
       <p class="muted" id="pausenote">单机对局已完全暂停；联机对局在服务器上仍会继续。</p>
       <button id="resume" class="primary">继续</button>
+      <button id="settings-pause" type="button">操作设置</button>
       <button id="leave">退出到大厅</button>
     </div>
   </div>
@@ -85,9 +87,12 @@
         </div>
         <h4>枪械皮肤</h4>
         <div id="skins" class="grid skins"></div>
+        <button id="armory" type="button">旅人武装 · 查看 8 件模型</button>
+        <button id="settings-lobby" type="button">按键与灵敏度设置</button>
+        <p class="muted">曙光 / 余辉 / 子午线：对应现有 AR / SG / DMR 外观，战斗数值不变。</p>
         <div id="error" class="error hidden"></div>
         <button id="play" class="primary"><span>开始战斗</span><small>ENTER THE ARENA</small></button>
-        <p class="muted keys">WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停</p>
+        <p id="control-hints" class="muted keys">读取操作设置…</p>
       </section>
     </div>
   </div>

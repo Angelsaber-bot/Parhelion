@@ -3,10 +3,10 @@
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { CHARACTERS, DASH, DT, MOVE, SHIELD, WEAPONS, type Team } from './content.ts';
+import { CHARACTERS, CROUCH, DASH, DT, MOVE, SHIELD, WEAPONS, type Team } from './content.ts';
 import { blockedAt, ceilingAt, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
-export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16 } as const;
+export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
 
 export interface Input {
   seq: number;
@@ -29,6 +29,7 @@ export interface PlayerState {
   hp: number;
   alive: boolean;
   grounded: boolean;
+  crouched: boolean; // authoritative stance; remains true while standing would hit a ceiling
   weapon: number;
   ammo: number[];
   reload: number; // ticks left
@@ -57,10 +58,17 @@ export function newPlayer(id: string, team: Team, char: number): PlayerState {
   return {
     id, team, char,
     x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0,
-    hp: CHARACTERS[char].hp, alive: false, grounded: true,
+    hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, prevButtons: 0, lastSeq: -1,
   };
+}
+
+export function playerHeight(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number {
+  return p.crouched ? Math.min(m.height, CROUCH.height) : m.height;
+}
+export function playerEye(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number {
+  return p.crouched ? Math.min(m.eye, CROUCH.eye) : m.eye;
 }
 
 export function clonePlayer(p: PlayerState): PlayerState {
@@ -122,16 +130,27 @@ function spreadDirs(p: PlayerState, seq: number, wi: number, moving: boolean): V
   return dirs;
 }
 
+/** Test both the current capsule and the height of an automatic step beneath a low ceiling. */
+function canSlideTo(m: ArenaMap, p: PlayerState, x: number, z: number): boolean {
+  const height = playerHeight(m, p);
+  if (blockedAt(m, x, z, p.y, height)) return false;
+  if (p.grounded && p.vy <= 0) {
+    const ground = groundAt(m, x, z, p.y);
+    if (ground > p.y && blockedAt(m, x, z, ground, height)) return false;
+  }
+  return true;
+}
+
 /** Move horizontally by (dx,dz) with axis-separated sliding, stepping onto low ledges and ramps. */
 function slide(m: ArenaMap, p: PlayerState, dx: number, dz: number): void {
   const n = Math.max(1, Math.ceil(Math.hypot(dx, dz) / MOVE.substep));
   const sx = dx / n, sz = dz / n;
   for (let i = 0; i < n; i++) {
     if (sx !== 0) {
-      if (!blockedAt(m, p.x + sx, p.z, p.y)) { p.x += sx; snapToStep(m, p); } else p.vx = 0;
+      if (canSlideTo(m, p, p.x + sx, p.z)) { p.x += sx; snapToStep(m, p); } else p.vx = 0;
     }
     if (sz !== 0) {
-      if (!blockedAt(m, p.x, p.z + sz, p.y)) { p.z += sz; snapToStep(m, p); } else p.vz = 0;
+      if (canSlideTo(m, p, p.x, p.z + sz)) { p.z += sz; snapToStep(m, p); } else p.vz = 0;
     }
   }
 }
@@ -158,16 +177,23 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
   if (!p.alive) return events;
 
   // --- movement ---
+  const wantsCrouch = !!(inp.buttons & BTN.CROUCH);
+  if (wantsCrouch) p.crouched = true;
+  else if (p.crouched && !blockedAt(m, p.x, p.z, p.y, m.height)) p.crouched = false;
+  // Full dash speed cannot be carried into the short collision stance.
+  if (p.crouched) p.dashT = 0;
+  const height = playerHeight(m, p);
   const char = CHARACTERS[p.char];
+  const speed = char.speed * (p.crouched ? CROUCH.speedMultiplier : 1);
   let mx = Math.max(-1, Math.min(1, inp.mx)), mz = Math.max(-1, Math.min(1, inp.mz));
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
   const [fx, fz] = forward(p.yaw);
-  const wishX = (fx * mz + -fz * mx) * char.speed; // right = (cos yaw, -sin yaw) = (-fz, fx)
-  const wishZ = (fz * mz + fx * mx) * char.speed;
+  const wishX = (fx * mz + -fz * mx) * speed; // right = (cos yaw, -sin yaw) = (-fz, fx)
+  const wishZ = (fz * mz + fx * mx) * speed;
   const moving = len > 0.01;
 
-  if (pressed & BTN.DASH && p.dashCd === 0) {
+  if (pressed & BTN.DASH && p.dashCd === 0 && !p.crouched) {
     let dx = wishX, dz = wishZ;
     if (!moving) { dx = fx; dz = fz; }
     const l = Math.hypot(dx, dz);
@@ -191,20 +217,25 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     p.vz += (wishZ - p.vz) * k;
   }
 
+  if (p.crouched) {
+    const horizontal = Math.hypot(p.vx, p.vz);
+    if (horizontal > speed) { p.vx *= speed / horizontal; p.vz *= speed / horizontal; }
+  }
+
   if (pressed & BTN.JUMP && p.grounded) {
     p.vy = MOVE.jump;
     p.grounded = false;
     events.push({ type: 'jump' });
   }
 
-  recover(m, p);
+  recover(m, p, height);
   slide(m, p, p.vx * DT, p.vz * DT);
 
   if (p.dashT === 0 || p.vy > 0) p.vy -= MOVE.gravity * DT;
   let ny = p.y + p.vy * DT;
   if (p.vy > 0) {
-    const c = ceilingAt(m, p.x, p.z, p.y);
-    if (ny + m.height > c) { ny = c - m.height; p.vy = 0; }
+    const c = ceilingAt(m, p.x, p.z, p.y, height);
+    if (ny + height > c) { ny = c - height; p.vy = 0; }
   }
   const g = groundAt(m, p.x, p.z, Math.max(p.y, ny));
   const wasGrounded = p.grounded;
@@ -215,7 +246,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     p.grounded = false;
   }
   p.y = ny;
-  recover(m, p);
+  recover(m, p, height);
 
   // --- abilities ---
   if (pressed & BTN.SHIELD && p.shieldCd === 0) {
@@ -245,7 +276,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     p.fireCd = w.interval;
     events.push({
       type: 'fire', weapon: p.weapon, seq: inp.seq, view: inp.view,
-      origin: [p.x, p.y + m.eye, p.z],
+      origin: [p.x, p.y + playerEye(m, p), p.z],
       dirs: spreadDirs(p, inp.seq, p.weapon, moving),
     });
   }

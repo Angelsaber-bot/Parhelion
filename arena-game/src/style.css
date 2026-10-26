@@ -102,18 +102,18 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 #hpfill { height: 100%; width: 100%; background: linear-gradient(90deg, #7ef2c9, #4fd6e0); transition: width .12s; }
 #hptext { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; text-shadow: 0 2px 6px #0009; }
 #skills { position: absolute; left: 24px; bottom: 60px; display: flex; gap: 8px; }
-.skill { --cd: 0; position: relative; width: 64px; height: 50px; background: #0d1a24c0; border: 1px solid #ffffff40; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; overflow: hidden; }
+.skill { --cd: 0; position: relative; min-width: 64px; max-width: 96px; width: auto; padding: 0 8px; height: 50px; background: #0d1a24c0; border: 1px solid #ffffff40; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; overflow: hidden; }
 .skill::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--cd) * 100%); background: #00000090; }
 .skill.ready { border-color: var(--cyan); box-shadow: 0 0 10px #4fd6e055; }
-.skill kbd { font: 10px ui-monospace, monospace; color: #a9bac2; }
+.skill kbd { font: 10px/1.15 ui-monospace, monospace; color: #a9bac2; max-width: 100%; overflow-wrap: anywhere; text-align: center; white-space: normal; }
 .skill b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 2; }
 #weapon { position: absolute; right: 24px; bottom: 24px; text-align: right; }
 #ammoline { font-variant-numeric: tabular-nums; text-shadow: 0 2px 6px #0009; }
 #ammo { font-size: 38px; font-weight: 800; }
 #mag { font-size: 16px; color: #b9c8ce; margin-left: 6px; }
 #wname { font-size: 13px; color: #d4e0e4; }
-#wslots { margin-top: 6px; display: flex; gap: 5px; justify-content: flex-end; }
-.wslot { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; background: #0d1a24c0; border: 1px solid #ffffff30; border-radius: 4px; }
+#wslots { margin-top: 6px; display: flex; flex-wrap: wrap; max-width: min(310px, 70vw); gap: 5px; justify-content: flex-end; }
+.wslot { min-width: 24px; max-width: 96px; width: auto; min-height: 24px; height: auto; padding: 2px 5px; overflow-wrap: anywhere; text-align: center; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; background: #0d1a24c0; border: 1px solid #ffffff30; border-radius: 4px; }
 .wslot.on { border-color: var(--cyan); color: var(--cyan); }
 #ping { position: absolute; left: 24px; top: 16px; font: 11px ui-monospace, monospace; color: #a9bac2; }
 #dead { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); text-align: center; font-size: 20px; padding: 16px 28px; background: #0d1a24d0; border-radius: 10px; line-height: 1.8; }
@@ -130,3 +130,32 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 
 #endcard { background: #07122a66; align-items: flex-end; padding-bottom: 8vh; }
 #endcard h2 { font-size: 34px; letter-spacing: 6px; }
+
+/* ADS is a real camera zoom; these are only its reticle / peripheral mask. */
+#scope { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; background: radial-gradient(circle at center, transparent 0 33vh, #07111ce8 34vh); }
+#scope.hidden { display: none; }
+.scope-ring { position: relative; width: 66vh; height: 66vh; border: 3px solid #111e2d; border-radius: 50%; box-shadow: 0 0 0 2px #a1b9c044, inset 0 0 28px #0008; }
+.scope-ring::before, .scope-ring::after { content: ''; position: absolute; background: #14202c; }
+.scope-ring::before { width: 1px; height: 100%; left: 50%; }
+.scope-ring::after { height: 1px; width: 100%; top: 50%; }
+.scope-ring i { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; transform: translate(-50%, -50%); border-radius: 50%; background: #65f6e7; z-index: 1; }
+.scope-ring b { position: absolute; bottom: 12%; left: 50%; transform: translateX(-50%); font: 11px monospace; color: #c5e3de; }
+#crosshair.ads { width: 4px; height: 4px; background: #79fff0; border-radius: 50%; box-shadow: 0 0 3px #10252a; }
+#crosshair.ads::before, #crosshair.ads::after { display: none; }
+#crosshair.scoped { opacity: 0; }
+#armory { width: 100%; margin-top: 10px; }
+#armory-dialog { width: min(1100px, 95vw); max-height: 94vh; color: #e5f2f4; background: #10232d; border: 1px solid #68888f; border-radius: 18px; padding: 24px; box-shadow: 0 20px 100px #000a; }
+#armory-dialog::backdrop { background: #051119d9; }
+#armory-dialog header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+#armory-dialog header small { letter-spacing: .18em; color: #9cbcbf; }
+#armory-dialog h2 { margin: 7px 0 0; }
+.armory-layout { display: grid; grid-template-columns: 250px 1fr; gap: 20px; }
+.armory-layout nav { display: grid; gap: 7px; align-content: start; }
+.armory-layout nav button { text-align: left; padding: 10px; }
+.armory-layout nav span { display: block; font-size: 11px; margin-top: 4px; color: #9bb6bc; }
+.armory-layout nav button.on { border-color: #61d5d6; background: #24434c; }
+.armory-layout section { min-width: 0; }
+.armory-layout canvas { display: block; width: 100%; height: min(45vh, 440px); border-radius: 12px; touch-action: none; }
+.armory-layout p { font-size: 13px; line-height: 1.65; }
+#art-status { color: #8ae0d6; min-height: 24px; }
+@media (max-width: 700px) { .armory-layout { grid-template-columns: 1fr; } .armory-layout nav { grid-template-columns: 1fr 1fr; } #armory-dialog { padding: 16px; } .armory-layout canvas { height: 32vh; } }

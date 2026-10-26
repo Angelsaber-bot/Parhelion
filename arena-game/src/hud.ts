@@ -14,6 +14,14 @@ export class Hud {
   private hitT = 0;
   private hurtT = 0;
 
+  aim(value: number, scoped: boolean) {
+    const scope = $('scope');
+    scope.style.opacity = String(scoped ? Math.max(0, (value - 0.7) / 0.3) : 0);
+    scope.classList.toggle('hidden', !scoped || value < 0.7);
+    $('crosshair').classList.toggle('ads', value > 0.8);
+    $('crosshair').classList.toggle('scoped', scoped && value > 0.9);
+  }
+
   show(on: boolean) { $('hud').classList.toggle('hidden', !on); }
 
   update(dt: number, me: PlayerState | null, snap: Snapshot | null, myId: string, scoreboard: boolean, ping: string) {

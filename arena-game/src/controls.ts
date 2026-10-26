@@ -1,84 +1,82 @@
-// Keyboard + mouse sampling. Keys are cleared on every lifecycle event that can swallow a keyup
-// (blur, visibility, pointer-lock loss) so movement never sticks.
-
+// Configurable browser input. Simulation only receives its existing bitmask plus authoritative crouch.
 import { WEAPONS } from '../shared/content.ts';
 import { BTN } from '../shared/sim.ts';
-
-const BIND: Record<string, number> = {
-  Space: BTN.JUMP,
-  ShiftLeft: BTN.DASH, ShiftRight: BTN.DASH, KeyE: BTN.DASH,
-  KeyQ: BTN.SHIELD,
-  KeyR: BTN.RELOAD,
-};
-
+import { SettingsStore } from '../../shared-client/settings.ts';
+const BUTTONS: Record<string, number> = { jump: BTN.JUMP, dash: BTN.DASH, shield: BTN.SHIELD, reload: BTN.RELOAD, fire: BTN.FIRE, crouch: BTN.CROUCH };
 export class Controls {
   yaw = 0;
   pitch = 0;
   weapon = 0;
-  sensitivity = 0.0022;
+  sensitivity = .0022;
+  aimHeld = false;
+  lookScale = 1;
   scoreboard = false;
+  blocked = false;
   private keys = new Set<string>();
-  private mouseDown = false;
-  private latched = 0; // presses that happened between ticks, held for one tick
+  private latched = 0;
   onLockChange: (locked: boolean) => void = () => {};
-
-  constructor(private canvas: HTMLCanvasElement) {
-    const clear = () => { this.keys.clear(); this.mouseDown = false; this.scoreboard = false; };
+  onSettings: () => void = () => {};
+  constructor(private canvas: HTMLCanvasElement, readonly settings = new SettingsStore('arena')) {
+    settings.subscribe(() => this.clearAll());
     addEventListener('keydown', (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) { this.clearAll(); return; }
       if (!this.locked) return;
-      if (e.code === 'Tab') { e.preventDefault(); this.scoreboard = true; return; }
-      if (/^Digit[1-9]$/.test(e.code)) {
-        const n = Number(e.code.slice(5)) - 1;
-        if (n < WEAPONS.length) this.weapon = n;
-        return;
-      }
-      if (e.metaKey || e.ctrlKey || e.altKey) { clear(); return; }
-      if (e.repeat) return;
-      this.keys.add(e.code);
-      this.latched |= BIND[e.code] ?? 0;
-      if (BIND[e.code] || e.code.startsWith('Key') || e.code === 'Space') e.preventDefault();
+      if (this.settings.action(e.code)) { e.preventDefault(); this.press(e.code, e.repeat); }
     });
-    addEventListener('keyup', (e) => {
-      this.keys.delete(e.code);
-      if (e.code === 'Tab') this.scoreboard = false;
-    });
-    addEventListener('blur', clear);
-    document.addEventListener('visibilitychange', clear);
-    document.addEventListener('pointerlockchange', () => { clear(); this.onLockChange(this.locked); });
-    canvas.addEventListener('mousedown', (e) => {
-      if (!this.locked) return;
-      if (e.button === 0) { this.mouseDown = true; this.latched |= BTN.FIRE; }
-      if (e.button === 2) this.latched |= BTN.SHIELD;
-    });
-    addEventListener('mouseup', (e) => { if (e.button === 0) this.mouseDown = false; });
+    addEventListener('keyup', (e) => this.release(e.code));
+    addEventListener('blur', () => this.clearAll());
+    document.addEventListener('visibilitychange', () => this.clearAll());
+    document.addEventListener('pointerlockchange', () => { this.clearAll(); this.onLockChange(this.locked); });
+    canvas.addEventListener('mousedown', (e) => { if (this.locked) { e.preventDefault(); this.press(`Mouse${e.button}`); } });
+    addEventListener('mouseup', (e) => this.release(`Mouse${e.button}`));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('auxclick', (e) => { if (this.locked) e.preventDefault(); });
     addEventListener('mousemove', (e) => {
       if (!this.locked) return;
-      this.yaw -= e.movementX * this.sensitivity;
-      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * this.sensitivity));
+      const sensitivity = this.sensitivity * this.settings.value.sensitivity * this.lookScale;
+      this.yaw -= e.movementX * sensitivity;
+      this.pitch = Math.max(-1.45, Math.min(1.45, this.pitch - e.movementY * sensitivity * (this.settings.value.invertY ? -1 : 1)));
     });
     addEventListener('wheel', (e) => {
       if (!this.locked) return;
-      this.weapon = (this.weapon + (e.deltaY > 0 ? 1 : WEAPONS.length - 1)) % WEAPONS.length;
-    });
+      e.preventDefault();
+      const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp';
+      this.press(binding); this.release(binding); // wheel actions are pulses, never stuck holds
+    }, { passive: false });
   }
-
-  /** Automated browser tests can't take pointer lock; ?test treats the page as locked. */
+  private press(binding: string, repeat = false) {
+    const action = this.settings.action(binding);
+    if (!action || repeat) return;
+    if (action === 'settings') { this.clearAll(); this.onSettings(); return; }
+    this.keys.add(binding);
+    this.latched |= BUTTONS[action] ?? 0;
+    if (action === 'aim') this.aimHeld = true;
+    if (action === 'scoreboard') this.scoreboard = true;
+    if (/^weapon[1-3]$/.test(action)) { this.weapon = Number(action.slice(-1)) - 1; this.clearAim(); }
+    if (action === 'nextWeapon' || action === 'prevWeapon') {
+      this.clearAim(); this.weapon = (this.weapon + (action === 'nextWeapon' ? 1 : WEAPONS.length - 1)) % WEAPONS.length;
+    }
+  }
+  private release(binding: string) {
+    this.keys.delete(binding);
+    const action = this.settings.action(binding);
+    if (action === 'aim') this.aimHeld = false;
+    if (action === 'scoreboard') this.scoreboard = false;
+  }
+  /** Automated browser tests may explicitly bypass pointer lock; menus still block them. */
   force = false;
-
-  get locked() { return this.force || document.pointerLockElement === this.canvas; }
-
-  lock() { void this.canvas.requestPointerLock(); }
-
-  /** Movement axes and button mask for one simulation tick. */
+  get locked() { return !this.blocked && (this.force || document.pointerLockElement === this.canvas); }
+  get adsSensitivity() { return this.settings.value.adsSensitivity; }
+  clearAim() { this.aimHeld = false; this.lookScale = 1; }
+  clearAll() { this.keys.clear(); this.latched = 0; this.scoreboard = false; this.clearAim(); }
+  lock() { if (!this.blocked) void this.canvas.requestPointerLock(); }
   sample(): { mx: number; mz: number; buttons: number } {
-    const k = this.keys;
-    const mz = (k.has('KeyW') || k.has('ArrowUp') ? 1 : 0) - (k.has('KeyS') || k.has('ArrowDown') ? 1 : 0);
-    const mx = (k.has('KeyD') || k.has('ArrowRight') ? 1 : 0) - (k.has('KeyA') || k.has('ArrowLeft') ? 1 : 0);
-    let buttons = this.latched;
-    this.latched = 0;
-    for (const code of k) buttons |= BIND[code] ?? 0;
-    if (this.mouseDown) buttons |= BTN.FIRE;
+    if (this.blocked) { this.clearAll(); return { mx: 0, mz: 0, buttons: 0 }; }
+    const down = (action: string) => this.settings.isDown(this.keys, action);
+    const mz = Number(down('forward')) - Number(down('back'));
+    const mx = Number(down('right')) - Number(down('left'));
+    let buttons = this.latched; this.latched = 0;
+    for (const [action, bit] of Object.entries(BUTTONS)) if (down(action)) buttons |= bit;
     return { mx, mz, buttons };
   }
 }

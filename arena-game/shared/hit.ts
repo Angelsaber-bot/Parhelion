@@ -1,6 +1,6 @@
 // Ray tests against player hit volumes and deployed shields.
 
-import { HITBOX, SHIELD } from './content.ts';
+import { CROUCH, HITBOX, SHIELD } from './content.ts';
 import type { Vec3 } from './map.ts';
 
 /** Distance along unit ray d to a sphere, or Infinity. */
@@ -39,10 +39,13 @@ export function rayCapsule(o: Vec3, d: Vec3, x: number, z: number, y0: number, y
 
 export interface BodyHit { t: number; head: boolean }
 
-export function rayPlayer(o: Vec3, d: Vec3, px: number, py: number, pz: number): BodyHit | null {
-  const th = raySphere(o, d, [px, py + HITBOX.headY, pz], HITBOX.headRadius);
-  const tb = rayCapsule(o, d, px, pz, py + HITBOX.bodyBottom + HITBOX.bodyRadius,
-    py + HITBOX.bodyTop - HITBOX.bodyRadius, HITBOX.bodyRadius);
+export const playerHitbox = (crouched = false) => crouched ? CROUCH.hitbox : HITBOX;
+
+export function rayPlayer(o: Vec3, d: Vec3, px: number, py: number, pz: number, crouched = false): BodyHit | null {
+  const hitbox = playerHitbox(crouched);
+  const th = raySphere(o, d, [px, py + hitbox.headY, pz], hitbox.headRadius);
+  const tb = rayCapsule(o, d, px, pz, py + hitbox.bodyBottom + hitbox.bodyRadius,
+    py + hitbox.bodyTop - hitbox.bodyRadius, hitbox.bodyRadius);
   if (th === Infinity && tb === Infinity) return null;
   return th <= tb ? { t: th, head: true } : { t: tb, head: false };
 }

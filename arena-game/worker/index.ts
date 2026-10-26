@@ -2,12 +2,12 @@
 // Same rules as the local Colyseus server (both wrap shared/room.ts), plain-JSON WebSocket protocol:
 //   connect  wss://<worker>/arena?o=<encodeURIComponent(JSON JoinOptions)>
 //   client → {t:'input', d:Input[]} | {t:'rematch'}
-//   server → {t:'welcome', d:{id,tick,map}} | {t:'snap', d:Snapshot} | {t:'error', d:string}
+//   server → {t:'welcome', d:{id,tick,map,rulesVersion}} | {t:'snap', d:Snapshot} | {t:'error', d:string}
 // Lobby (one DO) keeps open rooms per layout/map/bots key; each ArenaRoomDO runs one 60 Hz match.
 
 import { DurableObject } from 'cloudflare:workers';
 import { TICK_HZ } from '../shared/content.ts';
-import type { JoinOptions } from '../shared/protocol.ts';
+import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 
 interface Env {
@@ -22,7 +22,7 @@ function parseOptions(url: URL): Partial<JoinOptions> {
 }
 
 function roomKey(o: Partial<JoinOptions>) {
-  return `${o.layout ?? '1v1'}|${o.map ?? ''}|${o.bots ? 1 : 0}`;
+  return `v${o.rulesVersion ?? 0}|${o.layout ?? '1v1'}|${o.map ?? ''}|${o.bots ? 1 : 0}`;
 }
 
 export default {
@@ -36,6 +36,7 @@ export default {
       return new Response('expected websocket', { status: 426, headers: CORS });
     }
     const opts = parseOptions(url);
+    if (opts.rulesVersion !== RULES_VERSION) return new Response(RULES_MISMATCH, { status: 426, headers: CORS });
     const key = roomKey(opts);
     const lobby = env.LOBBY.get(env.LOBBY.idFromName('lobby'));
     const room = await lobby.assign(key, new RoomCore(opts).capacity);
