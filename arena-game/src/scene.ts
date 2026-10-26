@@ -5,12 +5,18 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
+import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -23,13 +29,23 @@ export class ArenaScene {
   private avatars = new Map<string, Avatar>();
   private shields = new Map<number, THREE.Group>();
   private tracers: { line: THREE.Line; life: number; max: number }[] = [];
-  private sparks: { s: THREE.Sprite; life: number }[] = [];
+  private sparks: { s: THREE.Sprite; life: number; max: number; grow: number; vel?: THREE.Vector3 }[] = [];
+  private numbers: { s: THREE.Sprite; life: number; vy: number }[] = [];
+  private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
+  private flashT = 0;
+  private baseFov = 78;
   readonly viewmodel = new Viewmodel();
   private sparkTex = makeGlowTexture();
   private sky: THREE.Mesh;
   private maps = new Map<string, Promise<THREE.Object3D>>();
   private shownMap: THREE.Object3D | null = null;
   private wantMap = '';
+  private hemi: THREE.HemisphereLight;
+  private sun: THREE.DirectionalLight;
+  private composer: EffectComposer | null = null;
+  private bloom: UnrealBloomPass | null = null;
+  private particles: Particles | null = null;
+  private atmo: Atmosphere = atmosphereFor('day');
 
   constructor(canvas: HTMLCanvasElement, quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -47,8 +63,10 @@ export class ArenaScene {
     s.fog = new THREE.Fog(0xc4e2f6, 70, 220);
     this.sky = makeSky(new THREE.Vector3(-22, 35, 18));
     s.add(this.sky);
-    s.add(new THREE.HemisphereLight(0xd6ecff, 0x6a7088, 1.8));
+    this.hemi = new THREE.HemisphereLight(0xd6ecff, 0x6a7088, 1.8);
+    s.add(this.hemi);
     const sun = new THREE.DirectionalLight(0xffe7c8, 3.0);
+    this.sun = sun;
     sun.position.set(-22, 35, 18);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -57,19 +75,57 @@ export class ArenaScene {
     sun.shadow.normalBias = 0.045;
     s.add(sun);
     this.camera.rotation.order = 'YXZ';
+    s.add(this.muzzleLight); // always present (intensity 0 when idle) so firing never recompiles shaders
 
     this.vmScene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2));
     const key = new THREE.DirectionalLight(0xfff0dd, 2.2);
     key.position.set(1, 2, 1);
     this.vmScene.add(key, this.viewmodel.root);
 
+    if (quality === 'high') {
+      // bloom makes emissive trims, lanterns and neon glow; the viewmodel is drawn after it, unbloomed
+      this.composer = new EffectComposer(r);
+      this.composer.addPass(new RenderPass(s, this.camera));
+      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.82);
+      this.composer.addPass(this.bloom);
+      this.composer.addPass(new OutputPass());
+    }
+
     this.resize();
     addEventListener('resize', () => this.resize());
   }
 
+  /** Apply a map's lighting mood: sky, fog, sun, ambient, exposure, bloom and ambient particles. */
+  setAtmosphere(a: Atmosphere) {
+    this.atmo = a;
+    const s = this.scene;
+    (s.background as THREE.Color).set(a.background);
+    (s.fog as THREE.Fog).color.set(a.fog[0]);
+    (s.fog as THREE.Fog).near = a.fog[1];
+    (s.fog as THREE.Fog).far = a.fog[2];
+    this.renderer.toneMappingExposure = a.exposure;
+    this.hemi.color.set(a.hemi[0]);
+    this.hemi.groundColor.set(a.hemi[1]);
+    this.hemi.intensity = a.hemi[2];
+    this.sun.color.set(a.sun.color);
+    this.sun.intensity = a.sun.intensity;
+    this.sun.position.set(...a.sun.pos);
+    const u = (this.sky.material as THREE.ShaderMaterial).uniforms;
+    (u.sunDir.value as THREE.Vector3).set(...a.sun.pos).normalize();
+    const lin = (hex: number) => new THREE.Color().setHex(hex, THREE.LinearSRGBColorSpace); // raw shader values
+    u.uHorizon.value = lin(a.sky.horizon); u.uMid.value = lin(a.sky.mid); u.uTop.value = lin(a.sky.top);
+    u.uSun.value = lin(a.sky.sun); u.uCloudLit.value = lin(a.sky.cloudLit); u.uCloudShade.value = lin(a.sky.cloudShade);
+    u.uNight.value = a.sky.night;
+    if (this.bloom) this.bloom.strength = a.bloom;
+    if (this.particles) { this.particles.dispose(s); this.particles = null; }
+    if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
+    this.renderer.shadowMap.needsUpdate = true;
+  }
+
   /** Show a map's art (loaded once per map, then cached); resolves when it is on screen. */
-  async loadMap(id: string): Promise<void> {
+  async loadMap(id: string, preset?: string): Promise<void> {
     this.wantMap = id;
+    this.setAtmosphere(atmosphereFor(preset));
     let p = this.maps.get(id);
     if (!p) {
       p = new GLTFLoader().loadAsync(MAP_GLB[id] ?? asterGlb).then((gltf) => {
@@ -103,13 +159,67 @@ export class ArenaScene {
     this.camera.aspect = this.vmCamera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.vmCamera.updateProjectionMatrix();
+    this.composer?.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer?.setSize(w, h);
   }
 
-  setView(x: number, y: number, z: number, yaw: number, pitch: number) {
+  setView(x: number, y: number, z: number, yaw: number, pitch: number, roll = 0, fovAdd = 0) {
     this.camera.position.set(x, y, z);
     this.sky.position.set(x, y, z);
     ((this.sky.material as THREE.ShaderMaterial).uniforms.uTime.value = performance.now() / 1000);
-    this.camera.rotation.set(pitch, yaw, 0);
+    this.camera.rotation.set(pitch, yaw, roll);
+    const fov = this.baseFov + fovAdd;
+    if (Math.abs(this.camera.fov - fov) > 0.01) { this.camera.fov = fov; this.camera.updateProjectionMatrix(); }
+  }
+
+  /** Muzzle light: a brief warm flash on the world around the shooter. */
+  muzzleFlash(at: Vec3, strength = 1) {
+    this.muzzleLight.position.set(at[0], at[1], at[2]);
+    this.muzzleLight.intensity = 9 * strength;
+    this.flashT = 0.06;
+  }
+
+  /** Bullet impact: a dust puff and flying chips on the map, a bright star burst on a player. */
+  impact(at: Vec3, onPlayer: boolean, color = 0xfff4c0) {
+    if (onPlayer) {
+      this.burst(at, 0xffffff, 0.55, 0.12, 0);
+      this.burst(at, 0xff6f91, 0.9, 0.16, 0);
+      for (let i = 0; i < 5; i++) this.burst(at, 0xffc2d4, 0.12, 0.25, 3.2);
+    } else {
+      this.burst(at, 0xf3ead8, 0.5, 0.35, 0);
+      this.burst(at, color, 0.3, 0.1, 0);
+      for (let i = 0; i < 4; i++) this.burst(at, 0xffe2a6, 0.08, 0.3, 4);
+    }
+  }
+
+  private burst(at: Vec3, color: number, size: number, life: number, speed: number) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.sparkTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    s.position.set(...at);
+    s.scale.setScalar(size * 0.4);
+    this.scene.add(s);
+    const vel = speed ? new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.8 + 0.2, Math.random() - 0.5).normalize().multiplyScalar(speed) : undefined;
+    this.sparks.push({ s, life, max: life, grow: size * (speed ? 0.2 : 2.4), vel });
+  }
+
+  /** Floating damage number over a hit player (anime-shooter style). */
+  damageNumber(at: Vec3, dmg: number, head: boolean, kill: boolean) {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 64;
+    const g = c.getContext('2d')!;
+    g.font = `900 ${head || kill ? 46 : 38}px sans-serif`;
+    g.textAlign = 'center';
+    g.lineWidth = 6;
+    g.strokeStyle = '#1a1030';
+    g.fillStyle = kill ? '#ff5d7a' : head ? '#ffd34d' : '#ffffff';
+    const txt = String(Math.round(dmg));
+    g.strokeText(txt, 64, 48);
+    g.fillText(txt, 64, 48);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+    s.position.set(at[0] + (Math.random() - 0.5) * 0.5, at[1], at[2] + (Math.random() - 0.5) * 0.5);
+    s.scale.set(0.9, 0.45, 1);
+    s.renderOrder = 20;
+    this.scene.add(s);
+    this.numbers.push({ s, life: 0.8, vy: 1.6 });
   }
 
   // ---------- players ----------
@@ -178,11 +288,7 @@ export class ArenaScene {
   }
 
   spark(at: Vec3, color: number) {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.sparkTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    s.position.set(...at);
-    s.scale.setScalar(0.35);
-    this.scene.add(s);
-    this.sparks.push({ s, life: 0.14 });
+    this.burst(at, color, 0.35, 0.14, 0);
   }
 
   update(dt: number) {
@@ -195,17 +301,32 @@ export class ArenaScene {
     for (let i = this.sparks.length - 1; i >= 0; i--) {
       const s = this.sparks[i];
       s.life -= dt;
-      s.s.scale.setScalar(0.35 + (0.14 - s.life) * 2);
-      s.s.material.opacity = Math.max(0, s.life / 0.14);
+      if (s.vel) { s.vel.y -= 9 * dt; s.s.position.addScaledVector(s.vel, dt); }
+      s.s.scale.setScalar(Math.max(0.01, s.s.scale.x + s.grow * dt));
+      s.s.material.opacity = Math.max(0, s.life / s.max);
       if (s.life <= 0) { this.scene.remove(s.s); s.s.material.dispose(); this.sparks.splice(i, 1); }
     }
+    for (let i = this.numbers.length - 1; i >= 0; i--) {
+      const n = this.numbers[i];
+      n.life -= dt;
+      n.vy -= 3 * dt;
+      n.s.position.y += n.vy * dt;
+      n.s.material.opacity = Math.min(1, n.life / 0.3);
+      const pop = 1 + Math.max(0, n.life - 0.65) * 4;
+      n.s.scale.set(0.9 * pop, 0.45 * pop, 1);
+      if (n.life <= 0) { this.scene.remove(n.s); n.s.material.map?.dispose(); n.s.material.dispose(); this.numbers.splice(i, 1); }
+    }
+    this.flashT -= dt;
+    this.muzzleLight.intensity = this.flashT > 0 ? this.muzzleLight.intensity * 0.6 : 0;
     this.viewmodel.update(dt);
+    this.particles?.update(dt, this.camera.position);
   }
 
   render(showViewmodel: boolean) {
     const r = this.renderer;
     r.clear();
-    r.render(this.scene, this.camera);
+    if (this.composer && this.atmo.bloom > 0) this.composer.render();
+    else r.render(this.scene, this.camera);
     if (showViewmodel) {
       r.clearDepth();
       r.render(this.vmScene, this.vmCamera);
@@ -267,8 +388,14 @@ export class Viewmodel {
   private flash: THREE.Sprite;
   private key = '';
   private kick = 0;
+  private kickMax = 1;
+  private weapon = 0;
   private swap = 0;
   private bob = 0;
+  private sway = [0, 0];
+  private shells: { m: THREE.Mesh; v: THREE.Vector3; spin: THREE.Vector3; life: number }[] = [];
+  private shellGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.028, 6);
+  private shellMat = celMaterial({ color: 0xe6b55a, emissive: 0x3a2400 });
   reloading = 0; // 0..1 progress, set by game
   moving = 0;
 
@@ -290,24 +417,61 @@ export class Viewmodel {
     this.muzzle = muzzle;
     this.root.add(group);
     this.swap = 1;
+    this.weapon = weapon;
   }
 
   fire() {
-    this.kick = 1;
+    const w = this.weapon;
+    this.kickMax = w === 1 ? 1.9 : w === 2 ? 1.4 : 0.85;
+    this.kick = this.kickMax;
     this.flash.visible = true;
     this.flash.material.rotation = Math.random() * Math.PI;
-    setTimeout(() => (this.flash.visible = false), 40);
+    this.flash.scale.setScalar(w === 1 ? 0.3 : w === 2 ? 0.24 : 0.17);
+    setTimeout(() => (this.flash.visible = false), w === 1 ? 60 : 40);
+    if (w !== 1) this.ejectShell();
+  }
+
+  /** Spent casing flies out to the right of the gun (viewmodel space). */
+  private ejectShell() {
+    const m = new THREE.Mesh(this.shellGeo, this.shellMat);
+    m.position.set(0.2, -0.13, -0.42);
+    m.rotation.set(Math.random() * 3, Math.random() * 3, Math.PI / 2);
+    this.root.add(m);
+    this.shells.push({
+      m, life: 0.6,
+      v: new THREE.Vector3(0.9 + Math.random() * 0.5, 0.9 + Math.random() * 0.4, 0.15 + Math.random() * 0.2),
+      spin: new THREE.Vector3(Math.random() * 20, Math.random() * 20, Math.random() * 20),
+    });
+  }
+
+  /** Gun lags behind fast mouse turns, like weapon sway in mature FPS games. */
+  look(dYaw: number, dPitch: number) {
+    this.sway[0] = Math.max(-0.05, Math.min(0.05, this.sway[0] + dYaw * 0.35));
+    this.sway[1] = Math.max(-0.05, Math.min(0.05, this.sway[1] + dPitch * 0.35));
   }
 
   update(dt: number) {
     if (!this.gun) return;
-    this.kick = Math.max(0, this.kick - dt * 9);
+    // fast snap back, then a softer settle: reads as a punchy shot rather than a slide
+    this.kick = Math.max(0, this.kick - dt * (this.kick > 0.4 * this.kickMax ? 14 : 6) * this.kickMax);
     this.swap = Math.max(0, this.swap - dt * 5);
     this.bob += dt * (4 + this.moving * 5);
+    const k = 1 - Math.exp(-dt * 10);
+    this.sway[0] -= this.sway[0] * k;
+    this.sway[1] -= this.sway[1] * k;
     const bobY = Math.sin(this.bob * 2) * 0.006 * this.moving, bobX = Math.cos(this.bob) * 0.008 * this.moving;
     const rel = Math.sin(this.reloading * Math.PI);
-    this.gun.position.set(0.17 + bobX, -0.16 + bobY - this.swap * 0.2 - rel * 0.1, -0.4 + this.kick * 0.05);
-    this.gun.rotation.set(this.kick * 0.12 + rel * 0.6, 0.04, rel * 0.4);
+    const kick = this.kick;
+    this.gun.position.set(0.17 + bobX - this.sway[0], -0.16 + bobY - this.swap * 0.2 - rel * 0.1 + this.sway[1] * 0.6 + kick * 0.012, -0.4 + kick * 0.06);
+    this.gun.rotation.set(kick * 0.16 + rel * 0.6, 0.04 + this.sway[0] * 1.5, rel * 0.4 - kick * 0.03 + this.sway[0] * 0.8);
+    for (let i = this.shells.length - 1; i >= 0; i--) {
+      const sh = this.shells[i];
+      sh.life -= dt;
+      sh.v.y -= 6 * dt;
+      sh.m.position.addScaledVector(sh.v, dt);
+      sh.m.rotation.x += sh.spin.x * dt; sh.m.rotation.y += sh.spin.y * dt; sh.m.rotation.z += sh.spin.z * dt;
+      if (sh.life <= 0) { this.root.remove(sh.m); this.shells.splice(i, 1); }
+    }
     if (this.muzzle) this.flash.position.copy(this.muzzle.getWorldPosition(new THREE.Vector3()));
   }
 }
@@ -467,4 +631,64 @@ function makeGlowTexture(): THREE.Texture {
   g.fillStyle = grad;
   g.fillRect(0, 0, 64, 64);
   return new THREE.CanvasTexture(c);
+}
+
+// ---------- ambient particles (petals at dusk, dust motes at noon, embers at night) ----------
+
+class Particles {
+  private points: THREE.Points;
+  private vel: Float32Array;
+  private phase: Float32Array;
+  private readonly n: number;
+  private readonly box = [26, 12, 26];
+
+  constructor(private kind: 'petals' | 'motes' | 'embers', tex: THREE.Texture, scene: THREE.Scene) {
+    this.n = kind === 'petals' ? 420 : kind === 'embers' ? 360 : 220;
+    const pos = new Float32Array(this.n * 3);
+    this.vel = new Float32Array(this.n * 3);
+    this.phase = new Float32Array(this.n);
+    for (let i = 0; i < this.n; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 2 * this.box[0];
+      pos[i * 3 + 1] = Math.random() * this.box[1];
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 2 * this.box[2];
+      this.phase[i] = Math.random() * 10;
+      const fall = kind === 'petals' ? -(0.5 + Math.random() * 0.6) : kind === 'embers' ? 0.25 + Math.random() * 0.4 : (Math.random() - 0.5) * 0.15;
+      this.vel.set([0.6 + Math.random() * 0.5, fall, 0.2 + Math.random() * 0.3], i * 3);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const color = kind === 'petals' ? 0xffb7cf : kind === 'embers' ? 0x7ff6ff : 0xfff1c4;
+    const mat = new THREE.PointsMaterial({
+      color, map: tex, size: kind === 'petals' ? 0.16 : kind === 'embers' ? 0.12 : 0.08, transparent: true, depthWrite: false,
+      blending: kind === 'petals' ? THREE.NormalBlending : THREE.AdditiveBlending, opacity: kind === 'motes' ? 0.55 : 0.95,
+    });
+    this.points = new THREE.Points(geo, mat);
+    this.points.frustumCulled = false;
+    scene.add(this.points);
+  }
+
+  update(dt: number, around: THREE.Vector3) {
+    const p = this.points.geometry.getAttribute('position') as THREE.BufferAttribute;
+    const a = p.array as Float32Array;
+    const [bx, by, bz] = this.box;
+    for (let i = 0; i < this.n; i++) {
+      const k = i * 3;
+      this.phase[i] += dt;
+      const sway = Math.sin(this.phase[i] * 1.7) * (this.kind === 'petals' ? 0.9 : 0.25);
+      a[k] += (this.vel[k] + sway) * dt;
+      a[k + 1] += this.vel[k + 1] * dt;
+      a[k + 2] += (this.vel[k + 2] + Math.cos(this.phase[i] * 1.3) * 0.3) * dt;
+      // keep the cloud centred on the camera so it is always around the player
+      if (a[k] - around.x > bx) a[k] -= 2 * bx; else if (a[k] - around.x < -bx) a[k] += 2 * bx;
+      if (a[k + 2] - around.z > bz) a[k + 2] -= 2 * bz; else if (a[k + 2] - around.z < -bz) a[k + 2] += 2 * bz;
+      if (a[k + 1] < 0) a[k + 1] += by; else if (a[k + 1] > by) a[k + 1] -= by;
+    }
+    p.needsUpdate = true;
+  }
+
+  dispose(scene: THREE.Scene) {
+    scene.remove(this.points);
+    this.points.geometry.dispose();
+    (this.points.material as THREE.Material).dispose();
+  }
 }

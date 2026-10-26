@@ -24,7 +24,8 @@ def lin(h):
 # name: (sRGB hex, metallic, roughness, emissive strength, alpha)
 MATS = {
     'floor': ('#e3d8c4', .05, .8, 0, 1), 'tile': ('#d0c2aa', .05, .78, 0, 1), 'wall': ('#b58b72', .1, .7, 0, 1),
-    'dark': ('#4a4872', .3, .45, 0, 1), 'cover': ('#f1e9da', .1, .55, 0, 1), 'stone': ('#cdbfa8', .04, .85, 0, 1),
+    'dark': ('#4a4872', .3, .45, 0, 1), 'cover': ('#f1e9da', .1, .55, 0, 1), 'stone': ('#cdbfa8', .04, .85, 0, 1), 'terrace': ('#efe2c8', .05, .8, 0, 1), 'riser': ('#c98f6e', .08, .7, 0, 1),
+    'pool': ('#8fd0e4', .1, .5, 0, 1), 'pool2': ('#a9def0', .1, .5, 0, 1),
     'hedge': ('#79c48a', 0, .9, 0, 1), 'leaf': ('#a5dc8c', 0, .9, 0, 1), 'cyan': ('#5fd0d8', .2, .4, 0, 1),
     'amber': ('#f2b25c', .2, .4, 0, 1), 'white': ('#f8f4ec', .1, .5, 0, 1), 'gold': ('#f3cd6b', .6, .35, 0, 1),
     'coral': ('#ee8c7a', .05, .6, 0, 1), 'seam': ('#8f7c6c', .1, .8, 0, 1), 'sail': ('#fff1e4', 0, .7, .45, 1),
@@ -63,10 +64,10 @@ class Mesh:
             P.extend(p); N.extend([x / L for x in n])
         I.extend([base, base + 1, base + 2])
 
-    def box(self, mat, lo, hi, skip_bottom=False):
+    def box(self, mat, lo, hi, skip_bottom=False, top_mat=None):
         x0, y0, z0 = lo; x1, y1, z1 = hi
         q = self.quad
-        q(mat, (x0, y1, z1), (x1, y1, z1), (x1, y1, z0), (x0, y1, z0))  # top
+        q(top_mat or mat, (x0, y1, z1), (x1, y1, z1), (x1, y1, z0), (x0, y1, z0))  # top
         if not skip_bottom:
             q(mat, (x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1))
         q(mat, (x0, y0, z1), (x1, y0, z1), (x1, y1, z1), (x0, y1, z1))  # +z
@@ -144,11 +145,15 @@ for o in data['objects']:
         # 1.2 m stone parapet; the glass windbreak above is a separate, non-shadowing batch
         m.box('wall', (x - w / 2, 0, z - d / 2), (x + w / 2, 1.2, z + d / 2))
     elif mat == 'hedge':
-        m.box('stone', (x - w / 2, 0, z - d / 2), (x + w / 2, .8, z + d / 2))
-        m.box('hedge', (x - w / 2 + .05, .8, z - d / 2 + .05), (x + w / 2 - .05, y + h / 2, z + d / 2 - .05), skip_bottom=True)
+        b = y - h / 2
+        m.box('stone', (x - w / 2, b, z - d / 2), (x + w / 2, b + .8, z + d / 2))
+        m.box('hedge', (x - w / 2 + .05, b + .8, z - d / 2 + .05), (x + w / 2 - .05, y + h / 2, z + d / 2 - .05), skip_bottom=True)
     elif mat == 'stone' and o['role'] == 'cover':
-        m.box('stone', (x - w / 2, 0, z - d / 2), (x + w / 2, y + h / 2 - .12, z + d / 2))
+        m.box('stone', (x - w / 2, y - h / 2, z - d / 2), (x + w / 2, y + h / 2 - .12, z + d / 2))
         m.box('hedge', (x - w / 2 + .12, y + h / 2 - .12, z - d / 2 + .12), (x + w / 2 - .12, y + h / 2, z + d / 2 - .12), skip_bottom=True)
+    elif o['role'] == 'floor' and y > .5:
+        # raised tiers: pale walkable tops, terracotta risers so the levels read from anywhere
+        m.box('riser', (x - w / 2, y - h / 2, z - d / 2), (x + w / 2, y + h / 2, z + d / 2), skip_bottom=True, top_mat=mat)
     else:
         m.cbox(mat if mat in MATS else 'cover', o['position'], o['size'], skip_bottom=o['role'] == 'wayfinding')
     nodes.append(('VIS_' + o['id'], m, dict(source_id=o['id'], role=o['role'], collision=o['collision'], decorative=False)))
@@ -160,13 +165,18 @@ objs = {o['id']: o for o in data['objects']}
 bmin, bmax = data['bounds']['min'], data['bounds']['max']
 X, Z = bmax[0], bmax[2]
 
-# floor: 4 m checker tiles and seams; brass sundial ring on the dais
+# floor: 4 m checker tiles and seams; the pit is a sky-blue 'sundial pool'; brass ring on the dais
+D.box('pool', (-14, 0, -10), (14, .004, 10), skip_bottom=True)
+for i in range(-7, 7):
+    for k in range(-5, 5):
+        if (i + k) % 2 == 0:
+            D.box('pool2', (i * 2, .004, k * 2), (i * 2 + 2, .008, k * 2 + 2), skip_bottom=True)
 for i in range(-7, 8):
     for k in range(-5, 6):
         if (i + k) % 2 == 0:
             x0, z0 = i * 4 - 2, k * 4 - 2
             x0, x1 = max(x0, -X + .25), min(x0 + 4, X - .25); z0, z1 = max(z0, -Z + .25), min(z0 + 4, Z - .25)
-            if x1 > x0 and z1 > z0:
+            if x1 > x0 and z1 > z0 and not (x0 >= -14 and x1 <= 14 and z0 >= -10 and z1 <= 10):
                 D.box('tile', (x0, 0, z0), (x1, .006, z1), skip_bottom=True)
 for i in range(-7, 8):
     D.box('seam', (i * 4 - 2 - .03, 0, -Z + .25), (i * 4 - 2 + .03, .008, Z - .25), skip_bottom=True)
@@ -197,29 +207,30 @@ for i in range(4):
 for sx in (-1, 1):
     for sz in (-1, 1):
         D.box('light_warm', (sx * gh - .05 - (.0 if sx < 0 else .0), 1.2, sz * gh - .05), (sx * gh + .05, 3.3, sz * gh + .05))
-for r0, r1, yy, n, mat in ((2.5, 2.75, 8.2, 48, 'light_warm'), (3.3, 3.4, 8.2, 48, 'gold')):
+for r0, r1, yy, n, mat in ((2.5, 2.75, 9.6, 48, 'light_warm'), (3.3, 3.4, 9.6, 48, 'gold')):
     for i in range(n):  # flat annulus, both faces (double-sided material)
         a0, a1 = 2 * math.pi * i / n, 2 * math.pi * (i + 1) / n
         D.quad(mat, (r0 * math.cos(a0), yy, r0 * math.sin(a0)), (r0 * math.cos(a1), yy, r0 * math.sin(a1)),
                (r1 * math.cos(a1), yy, r1 * math.sin(a1)), (r1 * math.cos(a0), yy, r1 * math.sin(a0)))
-D.blob('light_warm', (0, 8.25, 0), .7)
+D.blob('light_warm', (0, 9.65, 0), .7)
 for i in range(4):  # parhelia: the two mock suns either side, and above/below
     a = i * math.pi / 2
-    D.blob('light_warm', (2.62 * math.cos(a), 8.2, 2.62 * math.sin(a)), .26)
+    D.blob('light_warm', (2.62 * math.cos(a), 9.6, 2.62 * math.sin(a)), .26)
 
 # windbreak: stone coping, white mullions, glass above, gold top rail
 for wid in ('wall_west', 'wall_east', 'wall_north', 'wall_south'):
     o = objs[wid]; x, y, z = o['position']; w, h, d = o['size']
     lo, hi = (x - w / 2, z - d / 2), (x + w / 2, z + d / 2)
+    top = y + h / 2
     D.box('white', (lo[0] - .08, 1.2, lo[1] - .08), (hi[0] + .08, 1.32, hi[1] + .08))
-    D.box('gold', (lo[0] - .05, 4.9, lo[1] - .05), (hi[0] + .05, 5.02, hi[1] + .05))
-    G.box('glass', (lo[0] + .1, 1.32, lo[1] + .1), (hi[0] - .1, 4.9, hi[1] - .1))
+    D.box('gold', (lo[0] - .05, top - .1, lo[1] - .05), (hi[0] + .05, top + .02, hi[1] + .05))
+    G.box('glass', (lo[0] + .1, 1.32, lo[1] + .1), (hi[0] - .1, top - .1, hi[1] - .1))
     along_x = w > d
     L = w if along_x else d
     for i in range(int(L // 4) + 1):
         t = -L / 2 + i * 4
         cx, cz = (x + t, z) if along_x else (x, z + t)
-        D.box('white', (cx - .07, 1.32, cz - .07), (cx + .07, 4.9, cz + .07))
+        D.box('white', (cx - .07, 1.32, cz - .07), (cx + .07, top - .1, cz + .07))
 
 # building edge outside the windbreak: ledge, tower body, cloud sea, distant spires
 D.box('stone', (-X - 2.2, -.6, -Z - 2.2), (X + 2.2, 0, -Z + .2)); D.box('stone', (-X - 2.2, -.6, Z - .2), (X + 2.2, 0, Z + 2.2))
@@ -243,35 +254,66 @@ for i, (a, r, hgt) in enumerate([(.4, 95, 60), (1.3, 120, 80), (2.2, 105, 50), (
     D.prism('gold', (cx, 0, cz), 4.6 + i % 3, .8, n=8, y0=-20 + hgt * .7)
     D.prism('light_cyan' if i % 2 else 'light_amber', (cx, 0, cz), 1.2, 6, n=6, y0=-20 + hgt)
 
-# spawn screens and pockets: team light band, coping, team banners on the back wall
-for side, light, team in ((-1, 'light_cyan', 'cyan'), (1, 'light_amber', 'amber')):
-    label = 'west' if side < 0 else 'east'
-    o = objs[f'{label}_spawn_screen']; x, y, z = o['position']; w, h, d = o['size']
-    D.box('white', (x - w / 2 - .06, h, z - d / 2 - .06), (x + w / 2 + .06, h + .12, z + d / 2 + .06))
-    D.box(light, (x - w / 2 - .03, 3.2, z - d / 2 - .03), (x + w / 2 + .03, 3.4, z + d / 2 + .03))
-    for sz in (-1, 1):
-        D.box(light, (x - w / 2 - .03, 0, z + sz * d / 2 - .12), (x + w / 2 + .03, 3.2, z + sz * d / 2 + .12))
-        p = objs[f'{label}_pocket_{"n" if sz < 0 else "s"}']; px, py, pz = p['position']; pw, ph, pd = p['size']
-        D.box('white', (px - pw / 2 - .05, ph, pz - pd / 2 - .05), (px + pw / 2 + .05, ph + .1, pz + pd / 2 + .05))
-    bx = side * (X - .3)
-    D.box(team, (bx - .04, 1.5, -2.2), (bx + .04, 4.6, 2.2))
-    D.box('white', (bx - .05, 2.6, -1.2), (bx + .05, 3.6, 1.2))
-    D.box(light, (bx - .06, 2.9, -.3), (bx + .06, 3.3, .3))
+# tiers: checker tiles on every raised top, gold coping and a white cornice, pilasters on the faces
+def tile_top(lo, hi, yy, cell=2.0):
+    i0, i1 = math.floor(lo[0] / cell), math.ceil(hi[0] / cell)
+    k0, k1 = math.floor(lo[1] / cell), math.ceil(hi[1] / cell)
+    for i in range(i0, i1):
+        for k in range(k0, k1):
+            if (i + k) % 2:
+                continue
+            x0, x1 = max(i * cell, lo[0] + .05), min((i + 1) * cell, hi[0] - .05)
+            z0, z1 = max(k * cell, lo[1] + .05), min((k + 1) * cell, hi[1] - .05)
+            if x1 > x0 and z1 > z0:
+                D.box('tile', (x0, yy, z0), (x1, yy + .006, z1), skip_bottom=True)
+for o in data['objects']:
+    if o['type'] != 'box' or o['role'] != 'floor' or not o['collision'] or o['position'][1] < .5:
+        continue
+    x, y, z = o['position']; w, h, d = o['size']
+    x0, x1, z0, z1, top, bot = x - w / 2, x + w / 2, z - d / 2, z + d / 2, y + h / 2, y - h / 2
+    tile_top((x0, z0), (x1, z1), top)
+    D.box('white', (x0 - .06, top - .3, z0 - .06), (x1 + .06, top - .02, z1 + .06))
+    D.box('gold', (x0 - .07, top - .38, z0 - .07), (x1 + .07, top - .3, z1 + .07))
+    for xx in [x0 + 1.5 + 3 * i for i in range(int((w - 1) // 3))]:
+        for zz, sgn in ((z0, -1), (z1, 1)):
+            D.box('stone', (xx - .2, bot, zz - .04 if sgn > 0 else zz - .05), (xx + .2, top - .38, zz + .05 if sgn > 0 else zz + .04))
+    for zz in [z0 + 1.5 + 3 * i for i in range(int((d - 1) // 3))]:
+        for xx in (x0, x1):
+            D.box('stone', (xx - .05, bot, zz - .2), (xx + .05, top - .38, zz + .2))
 
-# terraces: gold edge trim, lanterns at the back corners, deck soffit lights, ramp stripes and coping
-for suffix, light in (('_a', 'light_cyan'), ('_b', 'light_amber')):
-    o = objs['terrace_deck' + suffix]; x, y, z = o['position']; w, h, d = o['size']
+# spawn screens: team light band and coping; team banner on the back wall above the platform
+for side, light, team in ((-1, 'light_cyan', 'cyan'), (1, 'light_amber', 'amber')):
+    o = objs['spawn_screen_' + ('a' if side < 0 else 'b')]; x, y, z = o['position']; w, h, d = o['size']
+    top = y + h / 2
+    D.box('white', (x - w / 2 - .06, top, z - d / 2 - .06), (x + w / 2 + .06, top + .12, z + d / 2 + .06))
+    D.box(light, (x - w / 2 - .03, top - .7, z - d / 2 - .03), (x + w / 2 + .03, top - .5, z + d / 2 + .03))
+    for sz in (-1, 1):
+        D.box(light, (x - w / 2 - .03, y - h / 2, z + sz * d / 2 - .12), (x + w / 2 + .03, top - .7, z + sz * d / 2 + .12))
+    bx = side * (X - .3)
+    D.box(team, (bx - .04, 4.6, -3), (bx + .04, 6.8, 3))
+    D.box('white', (bx - .05, 5.3, -1.6), (bx + .05, 6.2, 1.6))
+    D.box(light, (bx - .06, 5.55, -.35), (bx + .06, 5.95, .35))
+
+# towers: lanterns, a team pennant, and a shade canopy over the back half
+for suffix, light, team in (('_a', 'light_cyan', 'cyan'), ('_b', 'light_amber', 'amber')):
+    o = objs['tower' + suffix]; x, y, z = o['position']; w, h, d = o['size']
     top, x0, x1, z0, z1 = y + h / 2, x - w / 2, x + w / 2, z - d / 2, z + d / 2
-    for a, b_ in (((x0, z0 - .04), (x1, z0 + .08)), ((x0, z1 - .08), (x1, z1 + .04)), ((x0 - .04, z0), (x0 + .08, z1)), ((x1 - .08, z0), (x1 + .04, z1))):
-        D.box('gold', (a[0], top - .25, a[1]), (b_[0], top + .03, b_[1]))
-    for i in range(4):
-        lx = x0 + 2 + i * (w - 4) / 3
-        D.box(light, (lx - .4, y - h / 2 - .06, z - .12), (lx + .4, y - h / 2 - .02, z + .12))
-    back_z = z0 + .25 if suffix == '_a' else z1 - .25
-    for lx in (x0 + .25, x1 - .25):
-        D.prism('dark', (lx, 0, back_z), .06, 1.4, n=6, y0=top)
-        D.box('light_warm', (lx - .14, top + 1.4, back_z - .14), (lx + .14, top + 1.72, back_z + .14))
-        D.box('gold', (lx - .17, top + 1.72, back_z - .17), (lx + .17, top + 1.78, back_z + .17))
+    back = z0 if suffix == '_a' else z1
+    inward = 1 if suffix == '_a' else -1
+    for lx in (x0 + .3, x1 - .3):
+        D.prism('dark', (lx, 0, back + inward * .3), .06, 1.4, n=6, y0=top)
+        D.box('light_warm', (lx - .14, top + 1.4, back + inward * .3 - .14), (lx + .14, top + 1.72, back + inward * .3 + .14))
+    poles = [(x0 + .3, back + inward * .3), (x1 - .3, back + inward * .3), (x1 - .3, back + inward * 3.6), (x0 + .3, back + inward * 3.6)]
+    for px, pz in poles[2:]:
+        D.prism('white', (px, 0, pz), .07, 2.9, n=6, y0=top)
+    for px, pz in poles[:2]:
+        D.prism('white', (px, 0, pz), .07, 3.4, n=6, y0=top + 1.72)
+    hi_y, lo_y = top + 5.1, top + 2.9
+    a, b_, c, d_ = [(poles[0][0], hi_y, poles[0][1]), (poles[1][0], hi_y, poles[1][1]), (poles[2][0], lo_y, poles[2][1]), (poles[3][0], lo_y, poles[3][1])]
+    D.quad('sail', a, b_, c, d_) if inward < 0 else D.quad('sail', d_, c, b_, a)
+    fx, fz = (x1 - .4, back + inward * .3) if suffix == '_a' else (x0 + .4, back + inward * .3)
+    D.prism('white', (fx, 0, fz), .05, 3.6, n=6, y0=top + 1.72)
+    D.tri(team, (fx, top + 5.3, fz), (fx, top + 4.5, fz), (fx + 1.6 * (1 if suffix == '_a' else -1), top + 4.9, fz))
 for rid, (o, top) in ramps.items():
     x, y, z = o['position']; w, h, d = o['size']
     stripe = 'cyan' if rid.endswith('_a') else 'amber'
@@ -306,11 +348,8 @@ for o in data['objects']:
         D.box('dark', (lo[0] - .02, lo[1], lo[2] - .02), (hi[0] + .02, lo[1] + .14, hi[2] + .02))
         if h > 1.5:
             D.box('coral', (lo[0] - .02, hi[1] - .55, lo[2] - .02), (hi[0] + .02, hi[1] - .45, hi[2] + .02))
-    elif o['id'].startswith('terrace_parapet'):
+    elif o['id'].startswith('tower_parapet'):
         D.box('gold', (lo[0] - .03, hi[1], lo[2] - .03), (hi[0] + .03, hi[1] + .05, hi[2] + .03))
-    elif o['id'].startswith('terrace_column'):
-        D.box('gold', (lo[0] - .05, hi[1] - .3, lo[2] - .05), (hi[0] + .05, hi[1] - .2, hi[2] + .05))
-        D.box('dark', (lo[0] - .04, 0, lo[2] - .04), (hi[0] + .04, .2, hi[2] + .04))
     elif o['material'] == 'hedge':
         k = 0
         for i in range(max(1, int(w // .9))):
@@ -320,32 +359,11 @@ for o in data['objects']:
                 D.blob('leaf' if k % 3 else 'hedge', (px, hi[1] - .05, pz), .42, squash=.55)
                 if k % 4 == 1:
                     D.blob('flower_pink' if k % 8 == 1 else 'gold', (px + .2, hi[1] + .12, pz - .15), .1)
-        D.box('white', (lo[0] - .03, .8, lo[2] - .03), (hi[0] + .03, .88, hi[2] + .03))
+        D.box('white', (lo[0] - .03, lo[1] + .8, lo[2] - .03), (hi[0] + .03, lo[1] + .88, hi[2] + .03))
     elif o['material'] == 'stone' and o['role'] == 'cover':
         for i, (fx, fz) in enumerate(((-.5, -.5), (.4, -.2), (-.1, .45), (.5, .5))):
             D.blob('flower_pink' if i % 2 else 'gold', (x + fx * w * .6, hi[1] + .06, z + fz * d * .6), .12)
         D.box('white', (lo[0] - .03, hi[1] - .12, lo[2] - .03), (hi[0] + .03, hi[1] - .06, hi[2] + .03))
-    elif o['id'].startswith('garden_screen'):
-        # white trellis lattice on both faces, and a shade-sail pole on each end
-        for face in (lo[2] - .03, hi[2] + .03):
-            for i in range(8):
-                xx = lo[0] + .3 + i * (w - .6) / 7
-                D.box('white', (xx - .04, .4, face - .02), (xx + .04, hi[1] - .1, face + .02))
-            for yy in (1.1, 2.2, 3.2):
-                D.box('white', (lo[0] + .2, yy - .04, face - .02), (hi[0] - .2, yy + .04, face + .02))
-        D.box('coral', (lo[0] - .04, hi[1], lo[2] - .04), (hi[0] + .04, hi[1] + .1, hi[2] + .04))
-
-# shade sails over each garden (point mirrored), on poles that stand inside walls/screens
-for flip in (False, True):
-    f = xform_flip if flip else (lambda p: p)
-    tri_a = [f((3, 6.4, -21.7)), f((19, 5.6, -21.7)), f((11.5, 5.0, -9.2))]
-    tri_b = [f((19, 5.6, -21.7)), f((26, 6.2, -14)), f((11.5, 5.0, -9.2))]
-    for t in (tri_a, tri_b):
-        D.tri('sail', t[0], t[2], t[1])  # normal up: the sun-lit face
-    for p in (tri_a[0], tri_a[1], tri_b[1]):
-        D.prism('white', (p[0], 0, p[2]), .07, p[1] - 4.9 + .1, n=6, y0=4.9)
-    p = tri_a[2]
-    D.prism('white', (p[0], 0, p[2]), .07, p[1] - 3.6, n=6, y0=3.6)
 
 nodes.append(('DETAIL_batch', D, dict(decorative=True, collision=False, role='detail_batch')))
 nodes.append(('DETAIL_glass', G, dict(decorative=True, collision=False, role='detail_batch')))

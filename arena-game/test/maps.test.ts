@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { getMap, MAPS } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL } from '../shared/bot.ts';
 import { TICK_HZ } from '../shared/content.ts';
-import { blockedAt, groundAt, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
+import { blockedAt, ceilingAt, groundAt, lineOfSight, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { Match } from '../shared/match.ts';
 import { NavGrid } from '../shared/nav.ts';
 import { applyInput, newPlayer, type Input, type PlayerState } from '../shared/sim.ts';
@@ -98,24 +98,52 @@ describe('map zenith specifics', () => {
       expect(solids, s.id).toContain(mirrored);
     }
   });
-  it('terraces cannot see the enemy spawn; court centre cannot see either spawn', () => {
+  it('towers cannot see the enemy spawn; the pit cannot see either spawn', () => {
     let rays = 0;
-    for (const deck of m.solids.filter((s) => s.id.startsWith('terrace_deck'))) {
+    for (const deck of m.solids.filter((s) => s.id.startsWith('tower'))) {
       const enemy = spawns.filter((a) => a.team === (deck.id.endsWith('_a') ? 'east' : 'west'));
       for (let x = deck.minX + 0.4; x <= deck.maxX - 0.4; x += 0.5) for (let z = deck.minZ + 0.4; z <= deck.maxZ - 0.4; z += 0.5) {
-        if (blockedAt(m, x, z, 3)) continue;
+        if (blockedAt(m, x, z, deck.maxY)) continue;
         for (const a of enemy) {
           rays++;
-          expect(lineOfSight(m, [x, 3 + m.eye, z], [a.position[0], a.position[1] + 1.0, a.position[2]]), `${deck.id} ${x},${z} -> ${a.id}`).toBe(false);
+          expect(lineOfSight(m, [x, deck.maxY + m.eye, z], [a.position[0], a.position[1] + 1.0, a.position[2]]), `${deck.id} ${x},${z} -> ${a.id}`).toBe(false);
         }
       }
     }
-    expect(rays).toBeGreaterThan(400);
-    for (let x = -10; x <= 10; x += 1) for (const z of [-6, 6]) for (const a of spawns) {
-      expect(lineOfSight(m, [x, m.eye, z], [a.position[0], 1.0, a.position[2]]), `court ${x},${z} -> ${a.id}`).toBe(false);
+    expect(rays).toBeGreaterThan(200);
+    for (let x = -12; x <= 12; x += 1) for (const z of [-8, -4, 4, 8]) for (const a of spawns) {
+      if (blockedAt(m, x, z, 0)) continue;
+      expect(lineOfSight(m, [x, m.eye, z], [a.position[0], a.position[1] + 1.0, a.position[2]]), `pit ${x},${z} -> ${a.id}`).toBe(false);
     }
   });
-  it('the two terraces have no clear deck-centre-to-deck-centre sightline (gnomon)', () => {
-    expect(lineOfSight(m, [-9.5, 3 + m.eye, -16], [9.5, 3 + m.eye, 16])).toBe(false);
+  it('has three walkable tiers (pit, terrace ring, high ground)', () => {
+    const nav = new NavGrid(m);
+    const tiers = new Set(nav.nodes.map((n) => Math.round(n.y)));
+    for (const y of [0, 2, 4]) expect(tiers.has(y), `tier ${y}`).toBe(true);
+    const share = (y: number) => nav.nodes.filter((n) => Math.abs(n.y - y) < 0.05).length / nav.nodes.length;
+    expect(share(0)).toBeLessThan(0.4); // most of the map is raised, unlike ASTER's flat floor
+  });
+  it('the two towers have no clear sightline between their centres (gnomon)', () => {
+    expect(lineOfSight(m, [-8, 4 + m.eye, -18.5], [8, 4 + m.eye, 18.5])).toBe(false);
+  });
+});
+
+describe('map sakura specifics', () => {
+  const m = getMap('sakura');
+  it('is mirror-symmetric across x = 0', () => {
+    const key = (s: { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number }) =>
+      [s.minX, s.maxX, s.minY, s.maxY, s.minZ, s.maxZ].map((v) => Math.round(v * 1000)).join();
+    const all = m.solids.map(key);
+    for (const s of m.solids) expect(all, s.id).toContain(key({ ...s, minX: -s.maxX, maxX: -s.minX }));
+  });
+  it('the hall is roofed and closed except for its four doors', () => {
+    expect(ceilingAt(m, 0, -3.6, 0)).toBeCloseTo(3.4);
+    expect(ceilingAt(m, 0, -12, 0)).toBe(Infinity);
+    // stage-to-stage through both side doors is cut by the sanctuary
+    expect(lineOfSight(m, [-16, 1.2 + m.eye, 0], [16, 1.2 + m.eye, 0])).toBe(false);
+  });
+  it('the sando is the long lane: 30 m+ sightlines exist there and nowhere through the hall', () => {
+    expect(lineOfSight(m, [-20, m.eye, -17], [20, m.eye, -17])).toBe(true);
+    expect(lineOfSight(m, [-20, m.eye, 0], [20, m.eye, 0])).toBe(false);
   });
 });

@@ -9,6 +9,7 @@ import { applyInput, clonePlayer, quantAngle, type Input, type PlayerState, type
 import { sfx } from './audio.ts';
 import type { Controls } from './controls.ts';
 import type { Hud } from './hud.ts';
+import { Feel } from './feel.ts';
 import { TEAM_COLOR, type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
 
@@ -31,6 +32,9 @@ export class Game {
   private snapGap = 50; // ms between snapshots, smoothed (shown as a rough link-quality hint)
   private names = new Map<string, PlayerSnap>();
   private readonly map: ArenaMap;
+  private feel = new Feel();
+  private streak = 0;
+  private lastLook = [0, 0];
 
   constructor(
     private session: Session,
@@ -93,18 +97,25 @@ export class Game {
         const col = TEAM_COLOR[this.names.get(e.id)?.team ?? 'A'];
         for (const to of e.to) this.scene.tracer(from, to, col, 0.7);
         const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
-        sfx.shot(e.w, d < 25);
+        if (d < 30) this.scene.muzzleFlash(from, 0.6);
+        sfx.shot(e.w, d < 25, d);
         break;
       }
-      case 'hit':
-        if (e.shooter === myId) { this.hud.hit(e.head, false); sfx.hit(e.head); }
-        if (e.victim === myId) { this.hud.hurt(); sfx.hurt(); }
+      case 'hit': {
+        if (e.shooter === myId) {
+          this.hud.hit(e.head, false);
+          sfx.hit(e.head);
+          const v = this.remotes.find((r) => r.snap.id === e.victim);
+          if (v) this.scene.damageNumber([v.pos[0], v.pos[1] + (e.head ? 2.0 : 1.6), v.pos[2]], e.dmg, e.head, false);
+        }
+        if (e.victim === myId) { this.hud.hurt(); sfx.hurt(); this.feel.hurt(e.dmg); }
         break;
+      }
       case 'kill': {
         const k = this.names.get(e.killer), v = this.names.get(e.victim);
         this.hud.kill(name(e.killer), name(e.victim), e.w, e.head, k?.team ?? 'A', v?.team ?? 'B');
-        if (e.killer === myId) { this.hud.hit(e.head, true); sfx.kill(); }
-        if (e.victim === myId) this.hud.deathBy(name(e.killer));
+        if (e.killer === myId && e.victim !== myId) { this.hud.hit(e.head, true); sfx.kill(e.head); this.hud.killPop(e.head, ++this.streak); }
+        if (e.victim === myId) { this.hud.deathBy(name(e.killer)); this.streak = 0; }
         break;
       }
       case 'spawn':
@@ -184,7 +195,9 @@ export class Game {
     switch (e.type) {
       case 'fire': {
         this.scene.viewmodel.fire();
-        sfx.shot(e.weapon, true);
+        sfx.shot(e.weapon, true, 0);
+        this.feel.fire(e.weapon);
+        this.feel.kickAim(this.controls, e.weapon);
         const cam = this.scene.camera;
         // tracer starts a little right/below the eye, where the viewmodel muzzle appears
         const yaw = this.controls.yaw;
@@ -193,16 +206,21 @@ export class Game {
           cam.position.y - 0.16,
           cam.position.z - Math.sin(yaw) * 0.18 - Math.cos(yaw) * 0.4,
         ];
+        this.scene.muzzleFlash(start, e.weapon === 1 ? 1.4 : 1);
         const w = WEAPONS[e.weapon];
         for (const d of e.dirs) {
           let t = raycastMap(this.map, e.origin, d, w.range);
           if (t === Infinity) t = w.range;
+          let onPlayer = false;
           for (const p of this.remotes) {
             if (p.snap.team === this.me?.team || !p.snap.alive) continue;
             const h = rayPlayer(e.origin, d, p.pos[0], p.pos[1], p.pos[2]);
-            if (h && h.t < t) t = h.t;
+            if (h && h.t < t) { t = h.t; onPlayer = true; }
           }
-          this.scene.tracer(start, [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t], 0xfff4c0, w.pellets > 1 ? 0.5 : 1);
+          const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
+          this.scene.tracer(start, end, 0xfff4c0, w.pellets > 1 ? 0.5 : 1);
+          if (t < w.range) this.scene.impact(end, onPlayer);
+          if (!onPlayer && t < w.range && Math.random() < (w.pellets > 1 ? 0.15 : 0.6)) sfx.impact(t);
         }
         break;
       }
@@ -254,7 +272,13 @@ export class Game {
     const me = this.me;
     if (me) {
       const eye = me.alive ? this.map.eye : 0.5; // drop the camera when dead
-      this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw, this.controls.pitch);
+      const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
+      this.feel.update(dt, this.controls, speed);
+      const [op, oy, roll] = this.feel.offsets();
+      this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw + oy, this.controls.pitch + op, roll, this.feel.fov);
+      this.scene.viewmodel.look(this.controls.yaw - this.lastLook[0], this.controls.pitch - this.lastLook[1]);
+      this.lastLook = [this.controls.yaw, this.controls.pitch];
+      this.hud.bloom(this.feel.bloom);
       const snapMe = this.latest?.players.find((p) => p.id === this.session.id);
       const vm = this.scene.viewmodel;
       vm.set(me.weapon, snapMe?.skins[me.weapon] ?? 0);

@@ -1,20 +1,29 @@
-"""Parhelion Arena map 2: ZENITH sky terrace 0.1.0.
+"""Parhelion Arena map 2: ZENITH sky amphitheatre 0.2.0.
 
 Same data format as arena/runtime/map.json (ASTER): metre units, Y up, axis-aligned boxes and
 ramps, anchors and routes. Team A (west) and team B (east) halves are point-symmetric about the
-origin, (x, z) -> (-x, -z), so each team owns one diagonal high terrace and one ground flank.
+origin, (x, z) -> (-x, -z).
 
-Layout (top view, north is -Z):
+Where ASTER is one flat floor with a single gallery, ZENITH is built in three tiers:
 
-    +------------------------------------------------------------+
-    |  A1 ramp ==[ A TERRACE 3 m ]=+   . G3 .  G1      G4         |  north: A high ground
-    |  (from A spawn)     parapets  A2   G2   [screen]            |         + B garden flank
-    | [A spawn]   front      P1  ramp   P3        P2     [B spawn]|
-    |  screen               [  gnomon on dais  ]           screen |  middle: open court
-    | [       ]     P2        P3   B2      P1       front  [     ]|
-    |            [screen]   G2   ramp  parapets                   |  south: A garden flank
-    |    G4       G1   G3 .   +=[ B TERRACE 3 m ]== B1 ramp       |         + B high ground
-    +------------------------------------------------------------+
+    L2  4 m   spawn platforms (west/east ends) and two towers with prows over the pit
+    L1  2 m   a ring of terraces around the pit, plus the corners beside the spawns
+    L0  0 m   the sunken sundial pit in the middle, with the gnomon at its centre
+
+Spawning is high; everyone fights downhill first. The pit is the shortest way across but every
+tier above can shoot into it; four ramps climb out of it. Each tower has a ramp on both sides, so
+whoever holds it can be pushed from the terrace below.
+
+    north (-Z)
+    +----------------------------------------------------------------+
+    | corner L1 \\ramp  band L1  ramp=[tower A L2]=ramp     band L1    |
+    |  spawn A  |                    [ prow ]                         |
+    |  L2  [scr]| band W L1  +--------- PIT L0 ---------+  band E L1 | |
+    |           |            | ramp     (gnomon)   ramp |       [scr]|B|
+    |           |            +--------------------------+         L2 | |
+    |                band L1             [ prow ]                 ramp/ |
+    |    band L1            ramp=[tower B L2]=ramp           corner L1  |
+    +----------------------------------------------------------------+
 
 Run: python3 source/make_map.py  (writes runtime/map.json)
 """
@@ -23,18 +32,19 @@ import json
 
 ROOT = Path(__file__).resolve().parents[1]
 objects, anchors = [], []
-palette = dict(floor='#e3d8c4', tile='#d2c6b0', wall='#b58b72', dark='#3d3a58', cover='#f1e9da',
-               stone='#cdbfa8', hedge='#79c48a', cyan='#5fd0d8', amber='#f2b25c', white='#f8f4ec',
-               gold='#f3cd6b', coral='#ee8c7a', glass='#9fd6f0')
+palette = dict(floor='#e3d8c4', tile='#d2c6b0', wall='#b58b72', dark='#4a4872', cover='#f1e9da',
+               stone='#cdbfa8', terrace='#e9dcc4', hedge='#79c48a', cyan='#5fd0d8', amber='#f2b25c',
+               white='#f8f4ec', gold='#f3cd6b', coral='#ee8c7a', glass='#9fd6f0')
+L1, L2 = 2.0, 4.0
 
 
 def box(name, p, s, mat='wall', collision=True, role='structure'):
-    objects.append(dict(id=name, type='box', position=[round(v, 4) for v in p], size=s, material=mat,
-                        collision=collision, role=role))
+    objects.append(dict(id=name, type='box', position=[round(v, 4) for v in p], size=[round(v, 4) for v in s],
+                        material=mat, collision=collision, role=role))
 
 
-def ramp(name, x, z, w, d, axis, low_at, mat):
-    objects.append(dict(id=name, type='ramp', position=[x, 0, z], size=[w, 3, d], material=mat,
+def ramp(name, x, y, z, w, h, d, axis, low_at, mat):
+    objects.append(dict(id=name, type='ramp', position=[x, y, z], size=[w, h, d], material=mat,
                         collision=True, role='ramp', axis=axis, lowAt=low_at))
 
 
@@ -52,99 +62,104 @@ def pair(name, p, s, mat='cover', collision=True, role='cover', mat_b=None):
     box(name + '_b', mirror(p), s, mat_b or mat, collision, role)
 
 
+def pair_ramp(name, x, y, z, w, h, d, axis, low_at):
+    ramp(name + '_a', x, y, z, w, h, d, axis, low_at, 'cyan')
+    ramp(name + '_b', -x, y, -z, w, h, d, axis, -low_at, 'amber')
+
+
 def pair_anchor(name, kind, p, **extra):
     anchor(name + '_a', kind, p, **extra)
     anchor(name + '_b', kind, mirror(p), **extra)
 
 
-# ---- shell: 60 x 44 m roof slab with a 5 m windbreak (glass above a stone parapet in the art)
-box('floor_terrace', [0, -.3, 0], [60, .6, 44], 'floor', role='floor')
-box('wall_west', [-30, 2.5, 0], [.5, 5, 44]); box('wall_east', [30, 2.5, 0], [.5, 5, 44])
-box('wall_north', [0, 2.5, -22], [60, 5, .5]); box('wall_south', [0, 2.5, 22], [60, 5, .5])
+def solid(lo, hi):
+    """Centre and size from min/max corners."""
+    return [(lo[i] + hi[i]) / 2 for i in range(3)], [hi[i] - lo[i] for i in range(3)]
 
-# ---- spawns: screened alcoves, two diagonal doors each (north and south)
-for side, label, team_mat in ((-1, 'west', 'cyan'), (1, 'east', 'amber')):
-    box(f'{label}_spawn_screen', [side * 21.5, 2.2, 0], [.6, 4.4, 12], 'dark')
-    for sign in (-1, 1):
-        box(f'{label}_pocket_{"n" if sign < 0 else "s"}', [side * 27.5, 2.2, sign * 7], [5, 4.4, .5])
-        box(f'{label}_door_trim_{"n" if sign < 0 else "s"}', [side * 23.5, .04, sign * 7], [3, .08, 2.4], team_mat, False, 'wayfinding')
-    box(f'{label}_spawn_pad', [side * 27.5, .025, 0], [3.4, .05, 5.4], team_mat, False, 'wayfinding')
-    yaw = 1.5708 if side < 0 else -1.5708
-    anchor(f'spawn_{label}_01', 'spawn', [side * 27, 0, side * 1.5], yaw=yaw, team=label)
-    anchor(f'spawn_{label}_02', 'spawn', [side * 27.8, 0, -side * 1.5], yaw=yaw, team=label)
 
-# ---- diagonal terraces: deck at 3 m, home ramp from the spawn, counter ramp from the court.
-# A's terrace sits north-west, B's (point mirror) south-east.
-pair('terrace_deck', [-9.5, 2.8, -16], [17, .4, 6], 'white', role='floor')
-ramp('ramp_home_a', -23, -16, 10, 6, 'x', -1, 'cyan')      # low end at the west wall, beside A spawn
-ramp('ramp_home_b', 23, 16, 10, 6, 'x', 1, 'amber')
-ramp('ramp_counter_a', -4, -8.5, 4, 9, 'z', 1, 'cyan')     # low end in the court: the enemy's way up
-ramp('ramp_counter_b', 4, 8.5, 4, 9, 'z', -1, 'amber')
-# Court-facing parapets are half cover (1.1 m); a tall panel guards the counter-ramp landing.
-pair('terrace_parapet_w', [-15, 3.55, -13.25], [4, 1.1, .5], 'wall')
-pair('terrace_parapet_m', [-9.5, 3.55, -13.25], [3, 1.1, .5], 'wall')
-pair('terrace_panel', [-6.5, 3.85, -17.5], [1.2, 1.7, .6], 'cover')
-pair('terrace_panel_back', [-14, 3.85, -18.2], [1.8, 1.7, .6], 'cover')
-# Columns under the deck: real collision, so the covered walkway beneath has pillars to fight around.
-for i, x in enumerate((-17.4, -9.5, -2)):
-    for j, z in enumerate((-18.6, -13.4)):
-        pair(f'terrace_column_{i}{j}', [x, 1.3, z], [.5, 2.6, .5], 'white', role='structure')
-pair('terrace_strip', [-9.5, 3.025, -16], [15, .05, .14], 'cyan', False, 'wayfinding', mat_b='amber')
-pair_anchor('cover_terrace_w', 'cover', [-15, 3, -14.4], height=1.1, exposure='court and enemy terrace')
-pair_anchor('cover_terrace_m', 'cover', [-9.5, 3, -14.4], height=1.1, exposure='court and enemy terrace')
-pair_anchor('cover_terrace_panel', 'cover', [-6.5, 3, -16.4], height=1.7, exposure='counter ramp and garden')
+# ---- shell: 60 x 48 m roof slab, 7 m windbreak (stone parapet + glass in the art)
+box('floor_terrace', [0, -.3, 0], [60, .6, 48], 'floor', role='floor')
+box('wall_west', [-30, 3.5, 0], [.5, 7, 48]); box('wall_east', [30, 3.5, 0], [.5, 7, 48])
+box('wall_north', [0, 3.5, -24], [60, 7, .5]); box('wall_south', [0, 3.5, 24], [60, 7, .5])
 
-# ---- court: dais and gnomon break the spawn-to-spawn and terrace-to-terrace diagonals
+# ---- L1 ring (top 2 m) around the pit x[-14,14] z[-10,10]
+pair('band_n', *solid([-22, 0, -24], [22, L1, -10]), 'terrace', role='floor')
+pair('band_w', *solid([-22, 0, -10], [-14, L1, 10]), 'terrace', role='floor')
+pair('corner_n', *solid([-30, 0, -24], [-22, L1, -12]), 'terrace', role='floor')
+pair('corner_s', *solid([-30, 0, 12], [-22, L1, 24]), 'terrace', role='floor')
+
+# ---- L2 spawn platforms (top 4 m): screened at the front, ramps down to both corners
+pair('spawn_platform', *solid([-30, 0, -12], [-22, L2, 12]), 'white', role='floor')
+pair('spawn_screen', [-23.2, L2 + 1.3, 0], [.6, 2.6, 12], 'dark', role='structure')
+pair_ramp('ramp_spawn_n', -26.5, L1, -15, 5, 2, 6, 'z', -1)
+pair_ramp('ramp_spawn_s', -26.5, L1, 15, 5, 2, 6, 'z', 1)
+pair('spawn_pad', [-27.2, L2 + .025, 0], [3.4, .05, 6], 'cyan', False, 'wayfinding', mat_b='amber')
+for i, (x, z) in enumerate(((-27, -1.5), (-27.6, 1.8))):
+    anchor(f'spawn_west_0{i + 1}', 'spawn', [x, L2, z], yaw=1.5708, team='west')
+    anchor(f'spawn_east_0{i + 1}', 'spawn', [-x, L2, -z], yaw=-1.5708, team='east')
+
+# ---- towers (L2) on the north (A) and south (B) terraces, with a prow over the pit
+pair('tower', *solid([-12, L1, -22], [-4, L2, -15]), 'white', role='floor')
+pair('tower_prow', *solid([-10, L1, -15], [-6, L2, -10]), 'white', role='floor')
+pair_ramp('ramp_tower_home', -15, L1, -18.5, 6, 2, 4, 'x', -1)   # from A's side, low end west
+pair_ramp('ramp_tower_far', -1, L1, -18.5, 6, 2, 4, 'x', 1)      # from the enemy side, low end east
+pair('tower_parapet', [-8, L2 + .55, -10.3], [4, 1.1, .5], 'wall')
+pair('tower_panel', [-10.8, L2 + .85, -21.2], [1.6, 1.7, .6], 'cover')
+pair('tower_panel_e', [-5.4, L2 + .85, -21], [.6, 1.7, 1.6], 'cover')
+pair_anchor('cover_tower_prow', 'cover', [-8, L2, -11.2], height=1.1, exposure='pit and far terrace')
+pair_anchor('cover_tower_back', 'cover', [-10.8, L2, -20.2], height=1.7)
+
+# ---- pit (L0): gnomon on its dais, four ramps up to the ring, low and tall cover
 box('court_dais', [0, .12, 0], [7, .24, 7], 'tile', role='floor')
-box('gnomon', [0, 2.5, 0], [3.2, 5, 3.2], 'white', role='cover')
+box('gnomon', [0, 3, 0], [3.2, 6, 3.2], 'white', role='cover')
 box('gnomon_band', [0, 3.6, 0], [3.3, .22, 3.3], 'gold', False, 'landmark')
-pair('court_half', [-9, .55, -3], [3, 1.1, 1.4], 'cover')
-pair('court_tall', [-12, 1.1, 4], [1.6, 2.2, 3], 'cover')
-pair('court_mid', [5, .55, -5], [2.4, 1.1, 1.2], 'cover')
-pair('spawn_front_n', [-17, .55, -6.5], [2.6, 1.1, 1.2], 'cover')
-pair('spawn_front_s', [-17, .55, 6.5], [2.6, 1.1, 1.2], 'cover')
-for n, p, h in [('court_half', [-9, 0, -1.7], 1.1), ('court_tall', [-13.2, 0, 4], 2.2), ('court_mid', [5, 0, -3.8], 1.1),
-                ('spawn_front_n', [-17, 0, -5.3], 1.1), ('spawn_front_s', [-17, 0, 5.3], 1.1)]:
+pair_ramp('ramp_pit_n', -2.5, 0, -7, 4, 2, 6, 'z', 1)    # against the north wall of the pit
+pair_ramp('ramp_pit_w', -11, 0, 5, 6, 2, 4, 'x', 1)    # against the west wall of the pit
+pair('pit_tall', [-8, 1.1, -6.5], [1.6, 2.2, 2.4], 'cover')
+pair('pit_half', [-10.5, .55, -2.5], [1.4, 1.1, 3], 'cover')
+pair('pit_mid', [5, .55, -4.5], [2.4, 1.1, 1.2], 'cover')
+pair('pit_corner', [-12.2, 1.1, -8.2], [2, 2.2, 2], 'cover')
+for n, p, h in [('pit_tall', [-8, 0, -4.9], 2.2), ('pit_half', [-9.3, 0, -2.5], 1.1), ('pit_mid', [5, 0, -3.4], 1.1),
+                ('pit_corner', [-10.7, 0, -8.2], 2.2)]:
     pair_anchor('cover_' + n, 'cover', p, height=h)
 anchor('objective_dais_n', 'objective', [0, .24, -2.8], radius=1.5, interaction='future objective, no capture logic')
 anchor('objective_dais_s', 'objective', [0, .24, 2.8], radius=1.5, interaction='future objective, no capture logic')
-pair_anchor('shield_socket_court', 'reserved_shield', [-9, 0, -5.5], width=2.4, height=2)
-pair_anchor('dash_lane_spawn', 'reserved_dash', [-19, 0, -9], length=8, width=4)
 
-# ---- gardens: each team's ground flank runs through the garden on the ENEMY terrace's side.
-# North garden (east half) is B's flank toward A's terrace; the south garden mirrors it for A.
-pair('garden_screen', [11.5, 1.8, -9], [7, 3.6, .45], 'wall', role='structure')
-pair('planter_tall_1', [13, 1.2, -15.5], [3, 2.4, 3], 'hedge')
-pair('planter_tall_2', [5, 1.2, -17.5], [2.2, 2.4, 4], 'hedge')
-pair('planter_low_1', [7, .55, -12], [2.4, 1.1, 2.4], 'stone')
-pair('planter_low_2', [20, .55, -14], [2.4, 1.1, 2.4], 'stone')
-for n, p, h in [('planter_tall_1', [10.9, 0, -15.5], 2.4), ('planter_tall_2', [6.8, 0, -17.5], 2.4),
-                ('planter_low_1', [7, 0, -10.2], 1.1), ('planter_low_2', [18.2, 0, -14], 1.1)]:
+# ---- terrace (L1) cover: planters along the pit rim, hedges, corner crates
+pair('rim_planter_n', [3, L1 + .55, -11.6], [3.2, 1.1, 1.2], 'stone')
+pair('rim_planter_w', [-15.6, L1 + .55, -3], [1.2, 1.1, 3.2], 'stone')
+pair('terrace_hedge', [12, L1 + 1.2, -19], [3, 2.4, 3], 'hedge')
+pair('terrace_hedge_2', [-19, L1 + 1.2, 6], [2.2, 2.4, 2.2], 'hedge')
+pair('corner_crate', [-25, L1 + .55, -21.5], [2.4, 1.1, 1.4], 'cover')
+for n, p, h in [('rim_planter_n', [3, L1, -12.8], 1.1), ('rim_planter_w', [-16.8, L1, -3], 1.1),
+                ('terrace_hedge', [10, L1, -19], 2.4), ('terrace_hedge_2', [-19, L1, 7.7], 2.4),
+                ('corner_crate', [-25, L1, -20.2], 1.1)]:
     pair_anchor('cover_' + n, 'cover', p, height=h)
-pair('garden_path', [10, .03, -20.2], [20, .06, .16], 'gold', False, 'wayfinding')
+pair_anchor('shield_socket_rim', 'reserved_shield', [-16, L1, 0], width=2.4, height=2)
+pair_anchor('dash_lane_pit', 'reserved_dash', [0, 0, -8.5], length=8, width=4)
 
 # Routes are walked by validation in both directions with the shared game physics.
 routes = [
-    dict(id='mid_lane', name='Spawn A / court / spawn B', points=[
-        [-27, 0, -1.5], [-24, 0, -2], [-23.5, 0, -8], [-12, 0, -8.5], [-7, 0, -5.5], [-7, 0, -2], [-4, 0, 2.6],
-        [0, .24, 2.8], [4, 0, 2.6], [7, 0, 2], [7, 0, -2], [12.5, 0, -0.5], [14.5, 0, 8.5], [23.5, 0, 8], [24, 0, 2], [27, 0, 1.5]]),
-    dict(id='terrace_a', name='A home ramp / terrace / counter ramp', points=[
-        [-27, 0, -1.5], [-24, 0, -2], [-23.5, 0, -8], [-28.8, 0, -10.5], [-28.8, 0, -16], [-18, 3, -16],
-        [-4, 3, -16], [-4, 3, -13], [-4, 0, -4], [-7, 0, -2]]),
-    dict(id='garden_flank_b', name='B north exit / garden / under terrace A', points=[
-        [27, 0, 1.5], [24, 0, 2], [23.5, 0, -8], [16.5, 0, -12], [9.5, 0, -14], [3, 0, -14], [-1, 0, -11],
-        [-1, 0, -16], [-16, 0, -16], [-16, 0, -11], [-12, 0, -8.5]]),
-    dict(id='counter_climb_b', name='B garden to A terrace via counter ramp', points=[
-        [9.5, 0, -14], [3, 0, -13], [0, 0, -9], [-1.2, 0, -3.6], [-4, 0, -3.6], [-4, 3, -13], [-4, 3, -16], [-12, 3, -16]]),
+    dict(id='spawn_to_tower', name='A spawn / north corner / tower / prow', points=[
+        [-27, L2, -1.5], [-26.5, L2, -10], [-26.5, L1, -19.5], [-21, L1, -22.6], [-18.6, L1, -18.5],
+        [-12, L2, -18.5], [-8, L2, -16], [-8, L2, -11.2]]),
+    dict(id='pit_crossing', name='Pit: A north ramp / round the gnomon / B north ramp', points=[
+        [-2.5, L1, -12], [-2.5, 0, -4.3], [-4.6, 0, -2.5], [-4.6, 0, 2.5], [2.5, .24, 3.4], [2.5, L1, 12]]),
+    dict(id='tower_far_side', name='Tower A from the east (enemy) ramp', points=[
+        [8, L1, -14], [3.5, L1, -18.5], [-4, L2, -18.5], [-8, L2, -18.5]]),
+    dict(id='pit_west_ramp', name='West pit ramp up to the west terrace', points=[
+        [-4, 0, 7.5], [-7, 0, 5], [-14, L1, 5], [-18, L1, 2]]),
 ]
 
 data = dict(
-    mapId='zenith_sky_terrace', name='ZENITH 日冕天台', version='0.1.0', mode='arena',
+    mapId='zenith_sky_terrace', name='ZENITH 日冕天台', version='0.2.0-tiers', mode='arena',
     supportedTeamLayouts=['1v1', '1v2', '2v2'], units='metres', upAxis='Y',
-    bounds=dict(min=[-30, 0, -22], max=[30, 7, 22]), symmetry='point (x, z) -> (-x, -z)',
+    bounds=dict(min=[-30, 0, -24], max=[30, 8, 24]), symmetry='point (x, z) -> (-x, -z)',
+    levels=dict(pit=0, terrace=L1, high=L2),
+    presentation=dict(preset='noon'),
     palette=palette, objects=objects, anchors=anchors, routes=routes,
     player=dict(radius=.32, height=1.8, eyeHeight=1.65, walkSpeed=4.2, stepHeight=.28),
-    clearances=dict(spawnDoor=3.6, homeRampWidth=6, counterRampWidth=4, underTerraceHeadroom=2.6, gardenLanes=2.25),
+    clearances=dict(spawnRamps=5, pitRamps=4, towerRamps=4, pit=[28, 20]),
 )
 (ROOT / 'runtime/map.json').write_text(json.dumps(data, indent=2, ensure_ascii=False) + '\n')
-print(f'Wrote {len(objects)} objects, {len(anchors)} anchors; 60 x 44 m Arena')
+print(f'Wrote {len(objects)} objects, {len(anchors)} anchors; 60 x 48 m Arena, 3 tiers')

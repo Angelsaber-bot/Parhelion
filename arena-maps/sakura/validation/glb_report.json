@@ -1,0 +1,11 @@
+{
+  "mapId": "sakura_shrine",
+  "version": "0.1.0",
+  "checks": 409,
+  "failed": [],
+  "visualNodes": 83,
+  "visualTriangles": 20810,
+  "visualBytes": 1627752,
+  "collisionNodes": 79,
+  "collisionBytes": 109476
+}
