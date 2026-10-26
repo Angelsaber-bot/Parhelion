@@ -7,6 +7,7 @@ import glbUrl from '../../arena/assets/station_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
+import { celMaterial, toCel, makeSky } from './cel.ts';
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -22,22 +23,25 @@ export class ArenaScene {
   private sparks: { s: THREE.Sprite; life: number }[] = [];
   readonly viewmodel = new Viewmodel();
   private sparkTex = makeGlowTexture();
+  private sky: THREE.Mesh;
 
   constructor(canvas: HTMLCanvasElement, quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1));
     r.outputColorSpace = THREE.SRGBColorSpace;
-    r.toneMapping = THREE.ACESFilmicToneMapping;
-    r.toneMappingExposure = 1.2;
+    r.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
+    r.toneMappingExposure = 1.05;
     r.shadowMap.enabled = quality === 'high';
     r.shadowMap.type = THREE.PCFShadowMap;
     r.autoClear = false;
     this.renderer = r;
 
     const s = this.scene;
-    s.background = new THREE.Color(0x9fb8c6);
-    s.fog = new THREE.Fog(0x9fb8c6, 70, 200);
-    s.add(new THREE.HemisphereLight(0xdceeff, 0x536372, 2.0));
+    s.background = new THREE.Color(0xbfdcf2);
+    s.fog = new THREE.Fog(0xc4e2f6, 70, 220);
+    this.sky = makeSky(new THREE.Vector3(-22, 35, 18));
+    s.add(this.sky);
+    s.add(new THREE.HemisphereLight(0xd6ecff, 0x6a7088, 1.8));
     const sun = new THREE.DirectionalLight(0xffe7c8, 3.0);
     sun.position.set(-22, 35, 18);
     sun.castShadow = true;
@@ -64,6 +68,7 @@ export class ArenaScene {
       if (!m.isMesh) return;
       const decorative = m.userData.decorative === true;
       const role = m.userData.role as string | undefined;
+      m.material = Array.isArray(m.material) ? m.material.map(toCel) : toCel(m.material);
       m.receiveShadow = true;
       m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
     });
@@ -83,6 +88,8 @@ export class ArenaScene {
 
   setView(x: number, y: number, z: number, yaw: number, pitch: number) {
     this.camera.position.set(x, y, z);
+    this.sky.position.set(x, y, z);
+    ((this.sky.material as THREE.ShaderMaterial).uniforms.uTime.value = performance.now() / 1000);
     this.camera.rotation.set(pitch, yaw, 0);
   }
 
@@ -190,7 +197,7 @@ export class ArenaScene {
 // ---------- weapon meshes (shared by viewmodel and avatars) ----------
 
 function toon(color: number, emissive = 0) {
-  return new THREE.MeshToonMaterial({ color, emissive, emissiveIntensity: emissive ? 1.2 : 0 });
+  return celMaterial({ color, emissive, emissiveIntensity: emissive ? 1.2 : 0 });
 }
 
 export function buildGun(weapon: number, skin: number): { group: THREE.Group; muzzle: THREE.Object3D } {
