@@ -12,7 +12,7 @@ export interface Marker {
 
 export interface Layout {
   world: { id: string; name: string; nameEn: string; half: number; playHalf: number; waterLevel: number; seed: number; version: number };
-  areas: { id: string; name: string; nameEn: string; c: V2; r: number; color: string; tp: V2 }[];
+  areas: { id: string; name: string; nameEn: string; c: V2; r: number; color: string; tp: V2; region?: string }[];
   paths: V2[][];
   markers: Marker[];
   objective: { id: string; name: string; steps: { id: string; text: string; done: string[] }[] };

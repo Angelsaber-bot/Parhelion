@@ -21,6 +21,9 @@ export const COAST = {
   waterLevel: 1.0,
 };
 
+/** Where this region sits in the shared world (metres). Its west edge meets 幻日谷's east pass. */
+export const OFFSET: V2 = [480, 50];
+
 export const AREAS: Area[] = [
   { id: 'pier', name: '潮汐码头', nameEn: 'Tide Pier', c: [70, 152], r: 34, color: '#f08a4b', tp: [62, 140] },
   { id: 'meadow', name: '风铃草原', nameEn: 'Bellwind Meadow', c: [10, 40], r: 50, color: '#8fd36b', tp: [12, 66] },
@@ -45,7 +48,6 @@ export const STAIRS = { z0: 14, z1: 46, lanes: [110, 114.5] };
 export const VILLAGE = { c: [70, 150] as V2 };
 export const PIER = { x: 70, z0: 166, z1: 210, y: 2.4 };
 export const ARCH = { c: [-84, 142] as V2 };
-export const PORTAL = { c: [48, 136] as V2 };
 
 /** Floating isles: centre, top height, radius. */
 export const ISLES: { id: string; c: V2; y: number; r: number }[] = [

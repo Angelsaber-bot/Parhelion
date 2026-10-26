@@ -14,12 +14,16 @@ import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
 import { buildCharacter, CharacterAnimator } from './character';
+import { REGIONS, GRID, mergeLayouts, boundaryWalls, regionAt } from './regions';
+import { WorldGrid } from './grid';
+import { chunkMesh, DistanceCuller } from './chunk';
 
 const params = new URLSearchParams(location.search);
-// World regions: ?region=coast loads 星落海岸; default is 幻日谷. Portals in each region link them.
-const REGIONS: Record<string, string> = { alpha: 'world_alpha', coast: 'world_coast' };
-const region = REGIONS[params.get('region') ?? ''] ? params.get('region')! : 'alpha';
-const regionFile = REGIONS[region];
+// One open world: 幻日谷 + 星落海岸 (east through the mountain pass). ?region=coast starts on the coast.
+const startRegion = params.get('region') === 'coast' ? 'coast' : 'alpha';
+// Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
+const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
+const lowQ = quality === 'low', highQ = quality === 'high';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let bootFailed = false;
 let disposeRenderer = () => {};
@@ -30,22 +34,24 @@ async function boot() {
 const canvas = $<HTMLCanvasElement>('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: params.has('shot') });
 disposeRenderer = () => renderer.dispose();
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const maxDpr = Math.min(devicePixelRatio, highQ ? 2 : lowQ ? 1 : 1.25);
+let dpr = maxDpr;
+renderer.setPixelRatio(dpr);
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;
 renderer.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
 renderer.toneMappingExposure = 0.98;
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog('#c4e2f6', 120, 720);
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 2000);
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1300);
 const sky = makeSky();
 scene.add(sky);
 scene.add(new THREE.HemisphereLight('#d6ecff', '#9aa98a', 1.15));
 const sun = new THREE.DirectionalLight('#fff0d2', 2.7);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.setScalar(lowQ ? 1024 : 2048);
 Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 400 });
 sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.04;
@@ -54,14 +60,13 @@ const caveLight = new THREE.PointLight('#7ff6ff', 60, 26, 1.6); // hidden cave g
 caveLight.position.set(182, 6, -60);
 scene.add(caveLight);
 
-// post: MSAA → GTAO (ambient occlusion) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
-const lowQ = params.get('q') === 'low';
+// post: MSAA → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
 const composer = params.has('nopost') ? null : new EffectComposer(renderer, new THREE.WebGLRenderTarget(
-  innerWidth * renderer.getPixelRatio(), innerHeight * renderer.getPixelRatio(), { samples: 4, type: THREE.HalfFloatType }));
+  innerWidth * dpr, innerHeight * dpr, { samples: highQ ? 4 : lowQ ? 0 : 2, type: THREE.HalfFloatType }));
 const shafts = makeSunShafts();
 if (composer) {
   composer.addPass(new RenderPass(scene, camera));
-  if (!lowQ) {
+  if (highQ) {
     const ao = new GTAOPass(scene, camera, innerWidth, innerHeight);
     ao.updateGtaoMaterial({ radius: 0.9, distanceExponent: 1.4, thickness: 1.2, scale: 1.1, samples: 12, distanceFallOff: 0.6 });
     ao.blendIntensity = 0.75;
@@ -79,48 +84,63 @@ addEventListener('resize', () => {
   composer?.setSize(innerWidth, innerHeight);
 });
 
-// ───────────── load ─────────────
-const [layout, gltf] = await Promise.all([
-  loadLayout(`./assets/${regionFile}.layout.json`),
-  new GLTFLoader().loadAsync(`./assets/${regionFile}.glb`, (progress) => {
-    if (!bootFailed && progress.lengthComputable && progress.total > 0) $('loading').textContent = `加载地图… ${Math.round(progress.loaded / progress.total * 100)}%`;
-  }),
-]);
-const world = gltf.scene;
-document.title = `Parhelion · ${layout.world.name} World Alpha`;
-$('start').querySelector('h1')!.textContent = layout.world.name;
-caveLight.visible = region === 'alpha';
+// ───────────── load: every region into one scene ─────────────
+const loaded = new Map<string, number>();
+const progress = (file: string) => (e: ProgressEvent) => {
+  if (bootFailed || !e.lengthComputable || !e.total) return;
+  loaded.set(file, e.loaded / e.total);
+  $('loading').textContent = `加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`;
+};
+const parts = await Promise.all(REGIONS.map(async (def) => {
+  const [lay, gltf] = await Promise.all([
+    loadLayout(`./assets/${def.file}.layout.json`),
+    new GLTFLoader().loadAsync(`./assets/${def.file}.glb`, progress(def.file)),
+  ]);
+  for (const name of ['ART', 'COLLISION', 'Terrain']) {
+    if (!gltf.scene.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
+  }
+  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  return { def, layout: lay, root: gltf.scene };
+}));
+const layout = mergeLayouts(parts);
+const world = new THREE.Group();
+world.name = 'World';
+for (const p of parts) world.add(p.root);
+scene.add(world);
+world.updateMatrixWorld(true);
+document.title = 'Parhelion · World Alpha';
 for (const l of layout.lights ?? []) {
   const pl = new THREE.PointLight(l.color, l.intensity, l.distance, 1.6);
   pl.position.set(...l.p);
   scene.add(pl);
 }
-if (layout.atmosphere) scene.fog = new THREE.Fog(layout.atmosphere.fog, layout.atmosphere.near, layout.atmosphere.far);
-for (const name of ['ART', 'COLLISION', 'Terrain']) {
-  if (!world.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
-}
-scene.add(world);
-world.updateMatrixWorld(true);
 
 const byName = (n: string) => world.getObjectByName(n) as THREE.Mesh | undefined;
-const collisionRoot = byName('COLLISION')!;
-const markerRoot = byName('MARKERS');
-if (markerRoot) markerRoot.visible = false;
-
-let terrainMesh: THREE.Mesh | null = null;
 const targets: THREE.Mesh[] = [];
 const artMeshes: THREE.Mesh[] = [];
+const terrains: THREE.Mesh[] = [];
 const spinners: THREE.Mesh[] = [], stateful: THREE.Mesh[] = [], bobbers: THREE.Mesh[] = [];
-byName('ART')!.traverse((o) => { if ((o as THREE.Mesh).isMesh) artMeshes.push(o as THREE.Mesh); });
-artMeshes.forEach((m) => {
-  if (m.name === 'Terrain') terrainMesh = m;
+for (const p of parts) {
+  const mk = p.root.getObjectByName('MARKERS');
+  if (mk) mk.visible = false;
+  p.root.getObjectByName('ART')!.traverse((o) => { if ((o as THREE.Mesh).isMesh) artMeshes.push(o as THREE.Mesh); });
+}
+// the coast's large sea plane covers both regions; drop the others so water never doubles up
+const waters = artMeshes.filter((m) => m.name === 'Water');
+const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geometry.computeBoundingSphere(), a.geometry.boundingSphere!)).radius >=
+  (b.geometry.boundingSphere ?? (b.geometry.computeBoundingSphere(), b.geometry.boundingSphere!)).radius ? a : b));
+for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
+const culler = new DistanceCuller(lowQ ? 90 : 160);
+const DRAW_DIST: Record<string, number> = { Bushes: 200, Trees_Leaves: 460, Trees_Trunks: 300, Rocks: 380, Lamps: 260, Glow_Props: 500 };
+for (const m of artMeshes) {
+  if (m.name === 'Water' && m !== waterMesh) continue;
+  if (m.name === 'Terrain') terrains.push(m);
   m.material = toonMaterial(m.material as THREE.Material);
   m.receiveShadow = true;
-  m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && m.material.name !== 'M_Beam';
-  if (m.material.name === 'M_Beam') m.receiveShadow = false;
-  if (m.userData.outline && !params.has('noline')) addOutline(m);
+  m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && (m.material as THREE.Material).name !== 'M_Beam';
+  if ((m.material as THREE.Material).name === 'M_Beam') m.receiveShadow = false;
   if (m.name.startsWith('TGT_')) targets.push(m);
-  // spinning pieces are exported in world space: move their pivot to the mesh origin
+  // spinning pieces are exported in region space: move their pivot to the mesh origin
   if (m.userData.spin && Array.isArray(m.userData.pivot)) {
     const [px, pz] = m.userData.pivot as [number, number];
     m.geometry.translate(-px, 0, -pz);
@@ -129,16 +149,21 @@ artMeshes.forEach((m) => {
   }
   if (m.userData.showWhen || m.userData.hideWhen) stateful.push(m);
   if (m.userData.bob) bobbers.push(m);
-});
-const waterMesh = artMeshes.find((m) => m.name === 'Water');
-if (waterMesh && terrainMesh && !lowQ) enhanceWater(waterMesh.material as THREE.Material, terrainMesh, layout.world.waterLevel);
+  const special = m.name === 'Water' || m.name.startsWith('TGT_') || m.userData.spin || m.userData.showWhen || m.userData.hideWhen || m.userData.bob || m.userData.dynamic;
+  const tris = (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3;
+  const pieces = !special && tris > 4000 ? chunkMesh(m, 64) : [m];
+  for (const c of pieces) {
+    if (m.userData.outline && !params.has('noline')) addOutline(c);
+    if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9);
+  }
+}
 
 // colliders: everything static merged into one BVH; dynamic pieces (door, targets) keep their own
 const colliders: Collider[] = [];
-const staticGeos: THREE.BufferGeometry[] = [];
+const staticGeos: THREE.BufferGeometry[] = [boundaryWalls()];
 const debugCol = new THREE.Group();
 const debugMat = new THREE.MeshBasicMaterial({ color: '#ff3d7f', wireframe: true, transparent: true, opacity: 0.35 });
-collisionRoot.traverse((o) => {
+for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
   const m = o as THREE.Mesh;
   if (!m.isMesh) return;
   m.visible = false;
@@ -152,10 +177,13 @@ collisionRoot.traverse((o) => {
 const staticGeo = mergeGeometries(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(terrainMesh!, staticBVH, layout.world.waterLevel, { count: params.has('shot') ? 90000 : 160000, size: 90 }) : null;
+
+const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell);
+if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, staticBVH, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68 }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
-const ambient = lowQ ? null : makeAmbientParticles();
+const ambient = lowQ ? null : makeAmbientParticles(highQ ? 1600 : 900);
 if (ambient) scene.add(ambient.points);
 debugCol.add(new THREE.Mesh(staticGeo, debugMat));
 debugCol.visible = false;
@@ -163,17 +191,21 @@ scene.add(debugCol);
 
 const collider = (name: string) => colliders.find((c) => c.name === name);
 const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
-const map = new WorldMap(terrainMesh!, layout);
+const map = new WorldMap(grid, layout);
+const objectiveFor = (x: number) => layout.objectives.find((o) => o.region === regionAt(x).id)!.objective;
 
 // ───────────── progress (local, per browser) ─────────────
-const SAVE_KEY = `parhelion.${regionFile}.progress.v1`;
+const SAVE_KEY = 'parhelion.world.progress.v2';
 const done = new Set<string>();
 const found = new Set<string>();
-try {
-  const s = JSON.parse(localStorage.getItem(SAVE_KEY) ?? '{}');
-  (s.done ?? []).forEach((x: string) => done.add(x));
-  (s.found ?? []).forEach((x: string) => found.add(x));
-} catch { /* storage unavailable */ }
+// v1 saves were per region; fold them in once (marker ids are unique across regions except spawns)
+for (const key of [SAVE_KEY, 'parhelion.world_alpha.progress.v1', 'parhelion.world_coast.progress.v1']) {
+  try {
+    const s = JSON.parse(localStorage.getItem(key) ?? '{}');
+    (s.done ?? []).forEach((x: string) => done.add(x));
+    (s.found ?? []).forEach((x: string) => found.add(x));
+  } catch { /* storage unavailable */ }
+}
 const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ done: [...done], found: [...found] })); } catch { /* ignore */ } };
 
 const haloMat = (byName('Tower_Halo')?.material as THREE.MeshBasicMaterial | undefined);
@@ -197,7 +229,8 @@ function applyWorldState() {
 }
 
 function renderObjective() {
-  const steps = layout.objective.steps;
+  const objective = objectiveFor(player.pos.x);
+  const steps = objective.steps;
   let current = false;
   const rows = steps.map((s) => {
     const ok = s.done.every((x) => done.has(x));
@@ -208,7 +241,7 @@ function renderObjective() {
   });
   const disc = layout.markers.filter((m) => m.type === 'discovery');
   $('objective').innerHTML =
-    `<h3>${layout.objective.name}</h3>${rows.join('')}` +
+    `<h3>${objective.name}</h3>${rows.join('')}` +
     `<div style="margin-top:6px;opacity:.75">隐藏发现 ${disc.filter((d) => found.has(d.id)).length}/${disc.length}</div>`;
 }
 
@@ -235,7 +268,7 @@ function showArea(a: Layout['areas'][number]) {
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
 player.updrafts = layout.updrafts ?? [];
-const spawn = markers.get('spawn_p1')!;
+const spawn = markers.get(startRegion === 'coast' ? 'coast_spawn_p1' : 'spawn_p1') ?? markers.get('spawn_p1')!;
 const spawnAt = (areaId?: string) => {
   const a = layout.areas.find((x) => x.id === areaId);
   if (!a) return player.teleport(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
@@ -304,7 +337,8 @@ addEventListener('keydown', (e) => {
   if (e.code === 'KeyE' && !player.flying) interact();
   if (e.code === 'KeyR' && e.shiftKey === false) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
   const n = Number(e.key);
-  if (n >= 1 && n <= layout.areas.length) spawnAt(layout.areas[n - 1].id);
+  const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x).id);
+  if (n >= 1 && n <= here.length) spawnAt(here[n - 1].id);
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
@@ -357,15 +391,6 @@ function nearestInteract(): Marker | null {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
-  if (m.note?.startsWith('portal:')) {
-    const to = m.note.slice(7);
-    toast(`正在前往${to === 'alpha' ? '幻日谷' : '星落海岸'}…`);
-    const q = new URLSearchParams(location.search);
-    q.delete('spawn');
-    if (to === 'alpha') q.delete('region'); else q.set('region', to);
-    setTimeout(() => { location.search = q.toString(); }, 500);
-    return;
-  }
   if (done.has(m.id)) return toast(`${m.label}：已启动`);
   const missing = (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`);
@@ -395,6 +420,7 @@ const stats = $('stats');
 const eye = new THREE.Vector3();
 let last = performance.now(), acc = 0, frames = 0, fpsT = 0, fps = 0;
 const STEP = 1 / 120;
+let lastRegion = '', dynT = 0, dynFrames = 0;
 
 // screenshot / fixed-camera mode: ?cam=x,y,z,yawDeg,pitchDeg&clean
 const camParam = params.get('cam')?.split(',').map(Number);
@@ -461,6 +487,16 @@ function frame(now: number) {
   $('prompt').textContent = it && !done.has(it.id) ? `[E] ${it.label}` :
     player.inUpdraft && player.onGround ? '[Space] 跳入上升气流' : '';
 
+  if (regionAt(player.pos.x).id !== lastRegion) { lastRegion = regionAt(player.pos.x).id; renderObjective(); }
+  culler.update(eye, lowQ ? 0.7 : 1);
+  // dynamic resolution: trade pixels for frame rate, recover when there is headroom
+  dynT += dt; dynFrames++;
+  if (dynT > 1 && composer && !params.has('shot')) {
+    const f = dynFrames / dynT;
+    const next = f < 48 ? Math.max(0.6, dpr - 0.1) : f > 58 ? Math.min(maxDpr, dpr + 0.05) : dpr;
+    if (Math.abs(next - dpr) > 0.01) { dpr = next; renderer.setPixelRatio(dpr); composer.setPixelRatio(dpr); }
+    dynT = 0; dynFrames = 0;
+  }
   map.draw(mini, player.pos, player.yaw, { full: false, done, found });
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found });
 
@@ -480,7 +516,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { rig, anim, setThirdPerson: (v: boolean) => { thirdPerson = v; }, player, scene, camera, layout, done, found, colliders, ground, ready: true };
+(window as any).__world = { renderer, rig, anim, setThirdPerson: (v: boolean) => { thirdPerson = v; }, player, scene, camera, layout, done, found, colliders, ground, ready: true };
 }
 
 void boot().catch((error: unknown) => {

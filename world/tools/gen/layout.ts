@@ -53,6 +53,8 @@ export const PATHS: V2[][] = [
   [[112, 30], [96, -4], [82, -36], [64, -78], [30, -126], [10, -142]],
   // station back door -> tower (escape route)
   [[-156, -86], [-124, -118], [-70, -146], [-18, -160]],
+  // forest -> east pass -> 星落海岸
+  [[132, 40], [170, 32], [210, 30], [240, 30]],
   // forest -> falls
   [[104, 10], [128, -34], [140, -48]],
 ];
@@ -65,6 +67,8 @@ export const TOWER = { c: [0, -162] as V2, top: 30 };
 export const FALLS = { x: 166, z: -60 };
 export const CAVE = { x0: 172, x1: 192, z0: -68, z1: -52, floor: 2.4, ceil: 9 };
 export const BRIDGE = { c: [-95, 61] as V2 };
+/** Mountain pass on the east edge that leads into 星落海岸 (world x > 240). */
+export const PASS = { z: 30, y: 16 };
 export const LOG_BRIDGE = { c: [81, -36] as V2 };
 
 export type MarkerType =

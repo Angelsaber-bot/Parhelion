@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import type { MeshBVH } from 'three-mesh-bvh';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { timeUniform } from './look';
+import type { WorldGrid } from './grid';
 
 function mulberry32(seed: number) {
   let s = seed >>> 0;
@@ -21,23 +22,15 @@ function mulberry32(seed: number) {
  * stable (toroidal wrap), its height and colour are read from textures baked from the terrain,
  * and a mask texture removes blades from water, cliffs, paths and anything built on top.
  */
-export function makeGrassField(terrain: THREE.Mesh, bvh: MeshBVH, waterLevel: number, opts: { count: number; size: number }) {
-  const g = terrain.geometry as THREE.BufferGeometry;
-  const pos = g.attributes.position as THREE.BufferAttribute;
-  const col = g.attributes.color as THREE.BufferAttribute;
-  const nor = g.attributes.normal as THREE.BufferAttribute;
-  const n = Math.round(Math.sqrt(pos.count));
-  const half = -pos.getX(0);
-
-  // bake height / colour+mask textures on the terrain grid
-  const hData = new Float32Array(n * n);
+export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number, opts: { count: number; size: number }) {
+  const n = grid.n;
+  // bake colour+mask texture on the world grid (height comes from the grid's own texture)
   const cData = new Uint8Array(n * n * 4);
   const ray = new THREE.Ray(new THREE.Vector3(), new THREE.Vector3(0, -1, 0));
   for (let k = 0; k < n * n; k++) {
-    const x = pos.getX(k), y = pos.getY(k), z = pos.getZ(k);
-    hData[k] = y;
-    const r = col.getX(k), gg = col.getY(k), b = col.getZ(k);
-    let mask = y > waterLevel + 0.6 && nor.getY(k) > 0.8 && gg > r * 1.12 && gg > b * 1.25 ? 1 : 0;
+    const x = grid.x0 + (k % n) * grid.cell, z = grid.z0 + Math.floor(k / n) * grid.cell, y = grid.h[k];
+    const r = grid.col[k * 3], gg = grid.col[k * 3 + 1], b = grid.col[k * 3 + 2];
+    let mask = y > waterLevel + 0.6 && grid.ny[k] > 0.8 && gg > r * 1.12 && gg > b * 1.25 ? 1 : 0;
     if (mask) {
       ray.origin.set(x, y + 40, z);
       const hit = bvh.raycastFirst(ray, THREE.DoubleSide);
@@ -46,9 +39,7 @@ export function makeGrassField(terrain: THREE.Mesh, bvh: MeshBVH, waterLevel: nu
     cData[k * 4] = Math.min(255, r * 255); cData[k * 4 + 1] = Math.min(255, gg * 255); cData[k * 4 + 2] = Math.min(255, b * 255);
     cData[k * 4 + 3] = mask * 255;
   }
-  const tH = new THREE.DataTexture(hData, n, n, THREE.RedFormat, THREE.FloatType);
-  tH.magFilter = tH.minFilter = THREE.LinearFilter;
-  tH.needsUpdate = true;
+  const tH = grid.heightTexture();
   const tC = new THREE.DataTexture(cData, n, n, THREE.RGBAFormat);
   tC.magFilter = tC.minFilter = THREE.LinearFilter;
   tC.needsUpdate = true;
@@ -66,7 +57,8 @@ export function makeGrassField(terrain: THREE.Mesh, bvh: MeshBVH, waterLevel: nu
   const uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
     uCam: { value: new THREE.Vector3() },
     uSize: { value: opts.size },
-    uHalf: { value: half },
+    uOrigin: { value: new THREE.Vector2(grid.x0, grid.z0) },
+    uSpan: { value: grid.span },
     uN: { value: n },
     tH: { value: tH },
     tC: { value: tC },
@@ -77,7 +69,8 @@ export function makeGrassField(terrain: THREE.Mesh, bvh: MeshBVH, waterLevel: nu
     fog: true,
     uniforms,
     vertexShader: /* glsl */ `
-      uniform float uTime, uSize, uHalf, uN;
+      uniform float uTime, uSize, uSpan, uN;
+      uniform vec2 uOrigin;
       uniform vec3 uCam;
       uniform sampler2D tH, tC;
       attribute vec4 aRand;
@@ -87,7 +80,7 @@ export function makeGrassField(terrain: THREE.Mesh, bvh: MeshBVH, waterLevel: nu
       void main() {
         vec2 lo = uCam.xz - 0.5 * uSize;
         vec2 wxz = lo + mod(aRand.xy * uSize - lo, uSize);
-        vec2 tuv = ((wxz + uHalf) / (2.0 * uHalf)) * ((uN - 1.0) / uN) + 0.5 / uN;
+        vec2 tuv = ((wxz - uOrigin) / uSpan) * ((uN - 1.0) / uN) + 0.5 / uN;
         vec4 cm = texture2D(tC, tuv);
         float h = texture2D(tH, tuv).r;
         float dist = length(wxz - uCam.xz);
@@ -141,19 +134,19 @@ export function makeSunShafts() {
       void main() {
         vec4 base = texture2D(tDiffuse, vUv);
         if (strength <= 0.001) { gl_FragColor = base; return; }
-        vec2 d = (vUv - sunUv) / 48.0 * 0.9;
+        vec2 d = (vUv - sunUv) / 32.0 * 0.9;
         vec2 uv = vUv;
         float decay = 1.0, acc = 0.0;
-        for (int i = 0; i < 48; i++) {
+        for (int i = 0; i < 32; i++) {
           uv -= d;
           vec3 s = texture2D(tDiffuse, clamp(uv, 0.0, 1.0)).rgb;
           float l = dot(s, vec3(0.299, 0.587, 0.114));
           acc += smoothstep(0.9, 1.0, l) * decay;
-          decay *= 0.955;
+          decay *= 0.935;
         }
         vec2 off = (vUv - sunUv) * vec2(aspect, 1.0);
         float fall = exp(-dot(off, off) * 1.6);
-        gl_FragColor = vec4(base.rgb + vec3(1.0, 0.9, 0.72) * acc / 48.0 * strength * fall, base.a);
+        gl_FragColor = vec4(base.rgb + vec3(1.0, 0.9, 0.72) * acc / 32.0 * strength * fall, base.a);
       }`,
   });
   const v = new THREE.Vector3();
@@ -168,35 +161,24 @@ export function makeSunShafts() {
   return { pass, update };
 }
 
-/** Height of the terrain grid as a float texture (shared by water depth and other effects). */
-export function terrainHeightTexture(terrain: THREE.Mesh) {
-  const pos = (terrain.geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
-  const n = Math.round(Math.sqrt(pos.count));
-  const data = new Float32Array(n * n);
-  for (let k = 0; k < n * n; k++) data[k] = pos.getY(k);
-  const tex = new THREE.DataTexture(data, n, n, THREE.RedFormat, THREE.FloatType);
-  tex.magFilter = tex.minFilter = THREE.LinearFilter;
-  tex.needsUpdate = true;
-  return { tex, half: -pos.getX(0) };
-}
-
 /**
  * Depth-aware water on top of look.ts's toon water: turquoise shallows over sand, deep blue
  * offshore, a foam line hugging every shore and wave bands rolling in toward the beach.
  */
-export function enhanceWater(mat: THREE.Material, terrain: THREE.Mesh, waterLevel: number) {
-  const { tex, half } = terrainHeightTexture(terrain);
+export function enhanceWater(mat: THREE.Material, grid: WorldGrid, waterLevel: number) {
+  const tex = grid.heightTexture();
   const prev = mat.onBeforeCompile.bind(mat);
   mat.onBeforeCompile = (sh, r) => {
     prev(sh, r);
     sh.uniforms.tWaterH = { value: tex };
-    sh.uniforms.uTHalf = { value: half };
+    sh.uniforms.uTOrigin = { value: new THREE.Vector2(grid.x0, grid.z0) };
+    sh.uniforms.uTSpan = { value: grid.span };
     sh.uniforms.uWL = { value: waterLevel };
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\nuniform sampler2D tWaterH;\nuniform float uTHalf, uWL;')
+      .replace('#include <common>', '#include <common>\nuniform sampler2D tWaterH;\nuniform vec2 uTOrigin;\nuniform float uTSpan, uWL;')
       .replace('#include <opaque_fragment>', /* glsl */ `
         {
-          vec2 tuv = (vWPos.xz + uTHalf) / (2.0 * uTHalf);
+          vec2 tuv = (vWPos.xz - uTOrigin) / uTSpan;
           float inside = step(0.0, tuv.x) * step(tuv.x, 1.0) * step(0.0, tuv.y) * step(tuv.y, 1.0);
           float depth = mix(14.0, uWL - texture2D(tWaterH, clamp(tuv, 0.0, 1.0)).r, inside);
           float dn = vnoise(vWPos.xz * 0.35 + vec2(uTime * 0.3, -uTime * 0.2));

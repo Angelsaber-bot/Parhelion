@@ -245,18 +245,6 @@
    ]
   },
   {
-   "id": "portal_alpha",
-   "type": "interact",
-   "label": "幻日门（前往幻日谷）",
-   "p": [
-    48,
-    2.9318443536758423,
-    138.5
-   ],
-   "radius": 4,
-   "note": "portal:alpha"
-  },
-  {
    "id": "lighthouse_lamp",
    "type": "interact",
    "label": "灯塔明灯",

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from './rng.js';
 import { distToPolyline } from './geo.js';
 import {
-  WORLD, RIVER, RIVER_OUT, POND, LAKE, ISLAND, PATHS, CAMP, STATION, TOWER, RUIN, CAVE, FALLS,
+  WORLD, RIVER, RIVER_OUT, POND, LAKE, ISLAND, PATHS, CAMP, STATION, TOWER, RUIN, CAVE, FALLS, PASS,
 } from './layout.js';
 
 const S = WORLD.seed;
@@ -80,6 +80,13 @@ export function heightFn(x: number, z: number): number {
   if (x < FALLS.x - 1) {
     const d = rectDist(x, z, FALLS.x - 12, FALLS.x - 1, CAVE.z0 - 1, CAVE.z1 + 1);
     h = lerp(CAVE.floor, h, smoothstep(0, 4, d));
+  }
+
+  // East pass to 星落海岸 (the coast region continues past x = 240)
+  {
+    const band = 1 - smoothstep(8, 16, Math.abs(z - PASS.z));
+    const floor = lerp(14, PASS.y, smoothstep(170, 238, x)) + fbm(x * 0.05, z * 0.05, 2, S + 31) * 0.8;
+    h = lerp(h, Math.min(h, floor), band * smoothstep(165, 195, x));
   }
 
   // Island in Mirror Lake

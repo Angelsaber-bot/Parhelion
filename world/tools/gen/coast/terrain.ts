@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline, distToSegment } from '../geo.js';
-import type { TerrainOut } from '../terrain.js';
-import { COAST, shoreX, shoreZ, BAY, CRATER, HEADLAND, PLATEAU, TEMPLE, STAIRS, VILLAGE, PATHS } from './layout.js';
+import { heightFn as alphaHeight, type TerrainOut } from '../terrain.js';
+import { COAST, OFFSET, shoreX, shoreZ, BAY, CRATER, HEADLAND, PLATEAU, TEMPLE, STAIRS, VILLAGE, PATHS } from './layout.js';
 
 const S = COAST.seed;
 const WL = COAST.waterLevel;
@@ -64,6 +64,19 @@ export function heightFn(x: number, z: number): number {
     const r = HEADLAND.r * lerp(0.8, 1.1, smoothstep(0.6, 1, t));
     const top = lerp(4, 13, smoothstep(0.1, 0.75, t)) + fbm(x * 0.04, z * 0.04, 2, S + 15) * 1.2;
     h = Math.max(h, lerp(top, h, smoothstep(r - 7, r + 1, dh)));
+  }
+  // ridge from the lighthouse west to the mountain pass into 幻日谷
+  {
+    const a: [number, number] = [HEADLAND.b[0], HEADLAND.b[1]], b: [number, number] = [-246, HEADLAND.b[1]];
+    const t = clamp((a[0] - x) / (a[0] - b[0]), 0, 1);
+    const dr = distToSegment(x, z, a, b) + fbm(x * 0.05, z * 0.05, 2, S + 16) * 2;
+    const top = lerp(13, 16, t);
+    h = Math.max(h, lerp(top, h, smoothstep(9, 15, dr)));
+  }
+  // west edge: blend into 幻日谷's eastern mountains so the two terrains meet without a seam
+  {
+    const k = smoothstep(-196, -240, x);
+    if (k > 0) h = lerp(h, alphaHeight(x + OFFSET[0], z + OFFSET[1]), k);
   }
   // temple terrace on the plateau
   {

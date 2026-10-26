@@ -6,7 +6,7 @@ import { PAL, type Piece } from '../structures.js';
 import { canopy, conifer } from '../vegetation.js';
 import type { Marker } from '../layout.js';
 import {
-  COAST, CRATER, LIGHTHOUSE, PLATEAU, TEMPLE, STAIRS, VILLAGE, PIER, ARCH, PORTAL, ISLES, STACKS, PATHS, UPDRAFTS,
+  COAST, CRATER, LIGHTHOUSE, PLATEAU, TEMPLE, STAIRS, VILLAGE, PIER, ARCH, ISLES, STACKS, PATHS, UPDRAFTS,
 } from './layout.js';
 import { coastD } from './terrain.js';
 
@@ -169,20 +169,6 @@ export function buildCoast(heightAt: HeightAt) {
     mk({ id: 'pier_end', type: 'poi', label: '码头尽头', p: [px, py, z1 + 3] });
   }
 
-  // ───────────────────────── Portal back to 幻日谷 ─────────────────────────
-  {
-    const b = new Batch('Portal');
-    const [x, z] = PORTAL.c, g = lowest(x, z, 3);
-    b.add(CYL20, C.stone, T(x, g + 0.25, z, 0, 4.2, 0.5, 4.2));
-    b.add(CYL20, C.white, T(x, g + 0.6, z, 0, 3.4, 0.3, 3.4));
-    for (const s of [-1, 1]) b.add(BOX, C.stone, T(x + s * 3.2, g + 0.6 + 1.6, z, 0, 0.8, 3.2, 0.8));
-    glow.add(new THREE.TorusGeometry(3, 0.28, 10, 40), C.glowCyan, T(x, g + 4.0, z), false);
-    pieces.push({ name: 'Portal', material: 'M_Toon', batch: b, outline: true });
-    const veil = new Batch('Portal_Veil', 'M_Beam');
-    veil.add(new THREE.CircleGeometry(2.75, 40), C.glowCyan, T(x, g + 4.0, z), false);
-    pieces.push({ name: 'Portal_Veil', material: 'M_Beam', batch: veil });
-    mk({ id: 'portal_alpha', type: 'interact', label: '幻日门（前往幻日谷）', p: [x, g + 0.75, z + 2.5], radius: 4, note: 'portal:alpha' });
-  }
 
   // ───────────────────────── Watch Lighthouse ─────────────────────────
   {
@@ -513,7 +499,7 @@ export function buildCoast(heightAt: HeightAt) {
   // ───────────────────────── Vegetation ─────────────────────────
   const blocked = (x: number, z: number) => {
     const near = (c: readonly [number, number], r: number) => Math.hypot(x - c[0], z - c[1]) < r;
-    if (near(VILLAGE.c, 30) || near(PORTAL.c, 7) || near(LIGHTHOUSE.c, 12) || near(TEMPLE.c, TEMPLE.r + 4) || near(CRATER.c, CRATER.R + 3)) return true;
+    if (near(VILLAGE.c, 30) || near(LIGHTHOUSE.c, 12) || near(TEMPLE.c, TEMPLE.r + 4) || near(CRATER.c, CRATER.R + 3)) return true;
     if (x > STAIRS.lanes[0] - 5 && x < PLATEAU.edge + 10 && z > STAIRS.z0 - 4 && z < STAIRS.z1 + 4) return true;
     if (Math.abs(x - PIER.x) < 6 && z > 150) return true;
     for (const u of UPDRAFTS) if (near([u.x, u.z], u.r + 2)) return true;
@@ -616,15 +602,5 @@ export function buildCoast(heightAt: HeightAt) {
     { name: 'Waterfall', material: 'M_Waterfall', batch: falls },
   );
 
-  // ───────────────────────── Boundary ─────────────────────────
-  {
-    const b = new Batch('Bounds');
-    const P = COAST.playHalf, H = 300;
-    b.addCol(BOX, T(0, H / 2 - 20, -P, 0, P * 2, H, 2));
-    b.addCol(BOX, T(0, H / 2 - 20, P, 0, P * 2, H, 2));
-    b.addCol(BOX, T(-P, H / 2 - 20, 0, 0, 2, H, P * 2));
-    b.addCol(BOX, T(P, H / 2 - 20, 0, 0, 2, H, P * 2));
-    pieces.push({ name: 'Bounds', material: 'M_Toon', batch: b });
-  }
   return { pieces, markers };
 }

@@ -1,48 +1,52 @@
 // Minimap + full map, baked from the terrain's own vertex colours so it always matches the GLB.
 import * as THREE from 'three';
 import type { Layout } from './types';
+import type { WorldGrid } from './grid';
 
 export class WorldMap {
   base: HTMLCanvasElement;
   size: number;
   half: number;
+  /** grid origin; defaults to a square centred on the origin of `half` */
+  x0?: number;
+  z0?: number;
 
-  constructor(terrain: THREE.Mesh, public layout: Layout) {
-    const g = terrain.geometry as THREE.BufferGeometry;
-    const pos = g.attributes.position as THREE.BufferAttribute;
-    const col = g.attributes.color as THREE.BufferAttribute;
-    const n = Math.round(Math.sqrt(pos.count));
-    this.half = layout.world.half;
+  constructor(grid: WorldGrid, public layout: Layout) {
+    const n = grid.n;
     this.size = n;
+    this.half = grid.span / 2;
+    this.x0 = grid.x0;
+    this.z0 = grid.z0;
     const c = document.createElement('canvas');
     c.width = c.height = n;
     const ctx = c.getContext('2d')!;
     const img = ctx.createImageData(n, n);
     const tmp = new THREE.Color();
     const wl = layout.world.waterLevel;
-    for (let k = 0; k < pos.count; k++) {
-      const y = pos.getY(k);
-      tmp.setRGB(col.getX(k), col.getY(k), col.getZ(k), THREE.LinearSRGBColorSpace);
-      if (y < wl) tmp.set('#5cc6e4');
+    const H = grid.h;
+    for (let k = 0; k < n * n; k++) {
+      const y = H[k];
+      tmp.setRGB(grid.col[k * 3], grid.col[k * 3 + 1], grid.col[k * 3 + 2], THREE.LinearSRGBColorSpace);
+      if (y < wl) tmp.set(y < wl - 4 ? '#3fa9d6' : '#5cc6e4');
       const rgb = { r: 0, g: 0, b: 0 };
       tmp.getRGB(rgb, THREE.SRGBColorSpace);
       // simple hillshade from the height gradient
       const i = k % n, j = Math.floor(k / n);
-      const hx = pos.getY(Math.min(k + 1, pos.count - 1)) - pos.getY(Math.max(k - 1, 0));
-      const hz = j + 1 < n && j > 0 ? pos.getY(k + n) - pos.getY(k - n) : 0;
+      const hx = i > 0 && i < n - 1 ? H[k + 1] - H[k - 1] : 0;
+      const hz = j + 1 < n && j > 0 ? H[k + n] - H[k - n] : 0;
       const shade = y < wl ? 1 : THREE.MathUtils.clamp(1 + (-hx * 0.6 - hz * 0.6) * 0.06, 0.7, 1.2);
       img.data[k * 4] = Math.min(255, rgb.r * 255 * shade);
       img.data[k * 4 + 1] = Math.min(255, rgb.g * 255 * shade);
       img.data[k * 4 + 2] = Math.min(255, rgb.b * 255 * shade);
       img.data[k * 4 + 3] = 255;
-      void i;
     }
     ctx.putImageData(img, 0, 0);
     this.base = c;
   }
 
   /** world -> base canvas pixel */
-  px(x: number) { return ((x + this.half) / (this.half * 2)) * this.size; }
+  px(x: number) { return ((x - (this.x0 ?? -this.half)) / (this.half * 2)) * this.size; }
+  pz(z: number) { return ((z - (this.z0 ?? -this.half)) / (this.half * 2)) * this.size; }
 
   draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string> }) {
     const W = ctx.canvas.width;
@@ -56,10 +60,10 @@ export class WorldMap {
       const view = 70; // metres of world visible across the minimap radius... about 140 m wide
       scale = W / ((view * 2) / (this.half * 2) * this.size);
       ox = this.px(player.x) - W / 2 / scale;
-      oz = this.px(player.z) - W / 2 / scale;
+      oz = this.pz(player.z) - W / 2 / scale;
     }
     const tx = (x: number) => (this.px(x) - ox) * scale;
-    const tz = (z: number) => (this.px(z) - oz) * scale;
+    const tz = (z: number) => (this.pz(z) - oz) * scale;
     ctx.drawImage(this.base, -ox * scale, -oz * scale, this.size * scale, this.size * scale);
 
     // area labels
