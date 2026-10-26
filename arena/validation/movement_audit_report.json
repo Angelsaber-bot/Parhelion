@@ -1,0 +1,2658 @@
+{
+  "mapId": "aster_research_station",
+  "version": "0.3.0-art-pass",
+  "checks": 164,
+  "edgeCases": 30,
+  "cornerCases": 92,
+  "grid": {
+    "spacing": 0.5,
+    "nodes": 14330,
+    "components": [
+      14330
+    ]
+  },
+  "widths": {
+    "before": {
+      "bounds": [
+        48,
+        36
+      ],
+      "area": 1728,
+      "rampSideSlot": 0.975,
+      "spawnTurn": 3.2,
+      "courtEntry": 4,
+      "labFront": 2.175,
+      "labRear": 3.25,
+      "reactorCoverBypass": 2.6,
+      "sideRampWidth": 5.6,
+      "centralRampWidth": 4
+    },
+    "after": {
+      "bounds": [
+        72,
+        56
+      ],
+      "area": 4032,
+      "rampSideSlot": 4.775,
+      "spawnTurn": 5.2,
+      "courtEntry": 6,
+      "labFront": 4.275,
+      "labRear": 7.25,
+      "reactorCoverBypass": 5.2,
+      "sideRampWidth": 8,
+      "centralRampWidth": 6
+    },
+    "playerUnchanged": {
+      "radius": 0.32,
+      "height": 1.8,
+      "eyeHeight": 1.65,
+      "walkSpeed": 4.2,
+      "stepHeight": 0.28
+    }
+  },
+  "results": [
+    {
+      "name": "old solver reproduces screenshot immobilization",
+      "passed": true,
+      "detail": {
+        "x": -11.1,
+        "y": 0,
+        "z": -9.1,
+        "vy": 0
+      }
+    },
+    {
+      "name": "fixed solver escapes the SAME old geometry",
+      "passed": true,
+      "detail": {
+        "x": -15.300000000000017,
+        "y": 0,
+        "z": -8.8798,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.15 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -20.5,
+          "y": 0.45000000000000007,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": -20.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.15 -1",
+      "passed": true,
+      "detail": {
+        "x": -19.000000000000085,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.15 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -20.5,
+          "y": 0.45000000000000007,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": -20.5,
+          "y": 0,
+          "z": -9.149999999999979,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.15 1",
+      "passed": true,
+      "detail": {
+        "x": -19.000000000000085,
+        "y": 0,
+        "z": -10.65,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.35 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -18.5,
+          "y": 1.0499999999999998,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": -18.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.35 -1",
+      "passed": true,
+      "detail": {
+        "x": -17.000000000000085,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.35 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -18.5,
+          "y": 1.0499999999999998,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": -18.5,
+          "y": 0,
+          "z": -9.149999999999979,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.35 1",
+      "passed": true,
+      "detail": {
+        "x": -17.07500000000008,
+        "y": 0,
+        "z": -10.65,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.5 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -17,
+          "y": 1.5,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": -17,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.5 -1",
+      "passed": true,
+      "detail": {
+        "x": -15.50000000000005,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.5 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -17,
+          "y": 1.5,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": -17,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.5 1",
+      "passed": true,
+      "detail": {
+        "x": -15.50000000000005,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.65 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -15.5,
+          "y": 1.9500000000000002,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": -15.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.65 -1",
+      "passed": true,
+      "detail": {
+        "x": -13.999999999999979,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.65 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -15.5,
+          "y": 1.9500000000000002,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": -15.5,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.65 1",
+      "passed": true,
+      "detail": {
+        "x": -13.999999999999979,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.85 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -13.5,
+          "y": 2.55,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": -13.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.85 -1",
+      "passed": true,
+      "detail": {
+        "x": -11.999999999999979,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_west 0.85 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -13.5,
+          "y": 2.55,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": -13.5,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_west 0.85 1",
+      "passed": true,
+      "detail": {
+        "x": -11.999999999999979,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.15 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 13.5,
+          "y": 2.55,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": 13.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.15 -1",
+      "passed": true,
+      "detail": {
+        "x": 15.000000000000021,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.15 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 13.5,
+          "y": 2.55,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": 13.5,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.15 1",
+      "passed": true,
+      "detail": {
+        "x": 15.000000000000021,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.35 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 15.5,
+          "y": 1.9500000000000002,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": 15.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.35 -1",
+      "passed": true,
+      "detail": {
+        "x": 16.99999999999995,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.35 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 15.5,
+          "y": 1.9500000000000002,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": 15.5,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.35 1",
+      "passed": true,
+      "detail": {
+        "x": 16.99999999999995,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.5 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 17,
+          "y": 1.5,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": 17,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.5 -1",
+      "passed": true,
+      "detail": {
+        "x": 18.499999999999915,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.5 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 17,
+          "y": 1.5,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": 17,
+          "y": 0,
+          "z": -9.56999999999998,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.5 1",
+      "passed": true,
+      "detail": {
+        "x": 18.499999999999915,
+        "y": 0,
+        "z": -11.070000000000002,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.65 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 18.5,
+          "y": 1.0499999999999998,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": 18.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.65 -1",
+      "passed": true,
+      "detail": {
+        "x": 19.999999999999915,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.65 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 18.5,
+          "y": 1.0499999999999998,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": 18.5,
+          "y": 0,
+          "z": -9.149999999999979,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.65 1",
+      "passed": true,
+      "detail": {
+        "x": 19.999999999999915,
+        "y": 0,
+        "z": -10.65,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.85 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 20.5,
+          "y": 0.45000000000000007,
+          "z": -21.6,
+          "vy": 0
+        },
+        "end": {
+          "x": 20.5,
+          "y": 0,
+          "z": -26.850000000000023,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.85 -1",
+      "passed": true,
+      "detail": {
+        "x": 21.999999999999915,
+        "y": 0,
+        "z": -25.350000000000108,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_east 0.85 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 20.5,
+          "y": 0.45000000000000007,
+          "z": -14.4,
+          "vy": 0
+        },
+        "end": {
+          "x": 20.5,
+          "y": 0,
+          "z": -9.149999999999979,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_east 0.85 1",
+      "passed": true,
+      "detail": {
+        "x": 21.999999999999915,
+        "y": 0,
+        "z": -10.65,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.15 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -2.6,
+          "y": 2.5500000000000003,
+          "z": -12.65,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.850000000000021,
+          "y": 0,
+          "z": -12.65,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.15 -1",
+      "passed": true,
+      "detail": {
+        "x": -6.35,
+        "y": 0,
+        "z": -11.149999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.15 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 2.6,
+          "y": 2.5500000000000003,
+          "z": -12.65,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.850000000000021,
+          "y": 0,
+          "z": -12.65,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.15 1",
+      "passed": true,
+      "detail": {
+        "x": 6.35,
+        "y": 0,
+        "z": -11.149999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.35 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -2.6,
+          "y": 1.9499999999999997,
+          "z": -10.85,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.850000000000021,
+          "y": 0,
+          "z": -10.85,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.35 -1",
+      "passed": true,
+      "detail": {
+        "x": -6.35,
+        "y": 0,
+        "z": -9.549999999999981,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.35 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 2.6,
+          "y": 1.9499999999999997,
+          "z": -10.85,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.850000000000021,
+          "y": 0,
+          "z": -10.85,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.35 1",
+      "passed": true,
+      "detail": {
+        "x": 6.35,
+        "y": 0,
+        "z": -9.549999999999981,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.5 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -2.6,
+          "y": 1.5,
+          "z": -9.5,
+          "vy": 0
+        },
+        "end": {
+          "x": -2.810000000000001,
+          "y": 1.5,
+          "z": -9.5,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.5 -1",
+      "passed": true,
+      "detail": {
+        "x": -1.3100000000000063,
+        "y": 0.9999999999999928,
+        "z": -7.999999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.5 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 2.6,
+          "y": 1.5,
+          "z": -9.5,
+          "vy": 0
+        },
+        "end": {
+          "x": 2.810000000000001,
+          "y": 1.5,
+          "z": -9.5,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.5 1",
+      "passed": true,
+      "detail": {
+        "x": 1.3100000000000063,
+        "y": 0.9999999999999928,
+        "z": -7.999999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.65 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -2.6,
+          "y": 1.05,
+          "z": -8.15,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.850000000000021,
+          "y": 0,
+          "z": -8.15,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.65 -1",
+      "passed": true,
+      "detail": {
+        "x": -6.35,
+        "y": 0,
+        "z": -6.649999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.65 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 2.6,
+          "y": 1.05,
+          "z": -8.15,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.850000000000021,
+          "y": 0,
+          "z": -8.15,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.65 1",
+      "passed": true,
+      "detail": {
+        "x": 6.35,
+        "y": 0,
+        "z": -6.649999999999979,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.85 -1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": -2.6,
+          "y": 0.4499999999999999,
+          "z": -6.35,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.850000000000021,
+          "y": 0,
+          "z": -6.35,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.85 -1",
+      "passed": true,
+      "detail": {
+        "x": -6.35,
+        "y": 0,
+        "z": -4.849999999999978,
+        "vy": 0
+      }
+    },
+    {
+      "name": "ramp side fall/recovery ramp_gallery_central 0.85 1",
+      "passed": true,
+      "detail": {
+        "start": {
+          "x": 2.6,
+          "y": 0.4499999999999999,
+          "z": -6.35,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.850000000000021,
+          "y": 0,
+          "z": -6.35,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "ramp reverse diagonal remains valid ramp_gallery_central 0.85 1",
+      "passed": true,
+      "detail": {
+        "x": 6.35,
+        "y": 0,
+        "z": -4.849999999999978,
+        "vy": 0
+      }
+    },
+    {
+      "name": "no invalid post-step ramp frames",
+      "passed": true,
+      "detail": {
+        "edgeCases": 30,
+        "invalidFrames": 0
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_spawn_screen -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -26.520000000000007,
+          "y": 0,
+          "z": -8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": -27.51999999999995,
+          "y": 0,
+          "z": -9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_spawn_screen -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -26.520000000000007,
+          "y": 0,
+          "z": 8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": -27.51999999999995,
+          "y": 0,
+          "z": 9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_spawn_screen 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -25.479999999999993,
+          "y": 0,
+          "z": -8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": -24.48000000000005,
+          "y": 0,
+          "z": -9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_spawn_screen 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -25.479999999999993,
+          "y": 0,
+          "z": 8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": -24.48000000000005,
+          "y": 0,
+          "z": 9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_pocket_-1 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -31.279999999999998,
+          "y": 0,
+          "z": -7.994999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -30.280000000000054,
+          "y": 0,
+          "z": -8.995000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_pocket_-1 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -31.279999999999998,
+          "y": 0,
+          "z": -7.005000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -30.280000000000054,
+          "y": 0,
+          "z": -6.004999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_pocket_1 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -31.279999999999998,
+          "y": 0,
+          "z": 7.005000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -30.280000000000054,
+          "y": 0,
+          "z": 6.004999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal west_pocket_1 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -31.279999999999998,
+          "y": 0,
+          "z": 7.994999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -30.280000000000054,
+          "y": 0,
+          "z": 8.995000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_spawn_screen -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 25.479999999999993,
+          "y": 0,
+          "z": -8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": 24.48000000000005,
+          "y": 0,
+          "z": -9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_spawn_screen -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 25.479999999999993,
+          "y": 0,
+          "z": 8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": 24.48000000000005,
+          "y": 0,
+          "z": 9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_spawn_screen 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 26.520000000000007,
+          "y": 0,
+          "z": -8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": 27.51999999999995,
+          "y": 0,
+          "z": -9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_spawn_screen 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 26.520000000000007,
+          "y": 0,
+          "z": 8.245,
+          "vy": 0
+        },
+        "end": {
+          "x": 27.51999999999995,
+          "y": 0,
+          "z": 9.245000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_pocket_-1 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 31.279999999999998,
+          "y": 0,
+          "z": -7.994999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 30.280000000000054,
+          "y": 0,
+          "z": -8.995000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_pocket_-1 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 31.279999999999998,
+          "y": 0,
+          "z": -7.005000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 30.280000000000054,
+          "y": 0,
+          "z": -6.004999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_pocket_1 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 31.279999999999998,
+          "y": 0,
+          "z": 7.005000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 30.280000000000054,
+          "y": 0,
+          "z": 6.004999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal east_pocket_1 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 31.279999999999998,
+          "y": 0,
+          "z": 7.994999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 30.280000000000054,
+          "y": 0,
+          "z": 8.995000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_-9 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -18.220000000000006,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -19.21999999999995,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_-9 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -18.220000000000006,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -19.21999999999995,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_-9 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -12.780000000000001,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.779999999999987,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_-9 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -12.780000000000001,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.779999999999987,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_-9 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 12.780000000000001,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.779999999999987,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_-9 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 12.780000000000001,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.779999999999987,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_-9 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 18.220000000000006,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 19.21999999999995,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_-9 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 18.220000000000006,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 19.21999999999995,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal north_court_wing_-5 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.219999999999999,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -8.220000000000013,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal north_court_wing_-5 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.219999999999999,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -8.220000000000013,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal north_court_wing_5 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.219999999999999,
+          "y": 0,
+          "z": -9.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 8.220000000000013,
+          "y": 0,
+          "z": -10.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal north_court_wing_5 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.219999999999999,
+          "y": 0,
+          "z": -8.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 8.220000000000013,
+          "y": 0,
+          "z": -7.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_11 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -18.220000000000006,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -19.21999999999995,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_11 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -18.220000000000006,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -19.21999999999995,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_11 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -12.780000000000001,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.779999999999987,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_-15.5_11 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -12.780000000000001,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.779999999999987,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_11 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 12.780000000000001,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.779999999999987,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_11 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 12.780000000000001,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.779999999999987,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_11 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 18.220000000000006,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 19.21999999999995,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_wall_15.5_11 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 18.220000000000006,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 19.21999999999995,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal south_court_screen -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.219999999999999,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -8.220000000000013,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal south_court_screen -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.219999999999999,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -8.220000000000013,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal south_court_screen 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.219999999999999,
+          "y": 0,
+          "z": 10.530000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 8.220000000000013,
+          "y": 0,
+          "z": 9.529999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal south_court_screen 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.219999999999999,
+          "y": 0,
+          "z": 11.469999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 8.220000000000013,
+          "y": 0,
+          "z": 12.470000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_-8 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -9.319999999999986,
+          "y": 0,
+          "z": -13.919999999999986,
+          "vy": 0
+        },
+        "end": {
+          "x": -10.32,
+          "y": 0,
+          "z": -14.92,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_-8 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -9.319999999999986,
+          "y": 0,
+          "z": -14.680000000000016,
+          "vy": 0
+        },
+        "end": {
+          "x": -10.32,
+          "y": 0,
+          "z": -13.680000000000001,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_-8 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -6.680000000000014,
+          "y": 0,
+          "z": -13.919999999999986,
+          "vy": 0
+        },
+        "end": {
+          "x": -5.68,
+          "y": 0,
+          "z": -14.92,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_-8 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -6.680000000000014,
+          "y": 0,
+          "z": -14.680000000000016,
+          "vy": 0
+        },
+        "end": {
+          "x": -5.68,
+          "y": 0,
+          "z": -13.680000000000001,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_8 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 6.680000000000014,
+          "y": 0,
+          "z": -13.919999999999986,
+          "vy": 0
+        },
+        "end": {
+          "x": 5.68,
+          "y": 0,
+          "z": -14.92,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_8 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 6.680000000000014,
+          "y": 0,
+          "z": -14.680000000000016,
+          "vy": 0
+        },
+        "end": {
+          "x": 5.68,
+          "y": 0,
+          "z": -13.680000000000001,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_8 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 9.319999999999986,
+          "y": 0,
+          "z": -13.919999999999986,
+          "vy": 0
+        },
+        "end": {
+          "x": 10.32,
+          "y": 0,
+          "z": -14.92,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_half_cover_8 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 9.319999999999986,
+          "y": 0,
+          "z": -14.680000000000016,
+          "vy": 0
+        },
+        "end": {
+          "x": 10.32,
+          "y": 0,
+          "z": -13.680000000000001,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_-5 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -4.919999999999986,
+          "y": 0,
+          "z": -20.620000000000058,
+          "vy": 0
+        },
+        "end": {
+          "x": -5.92,
+          "y": 0,
+          "z": -21.62,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_-5 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -4.919999999999986,
+          "y": 0,
+          "z": -21.379999999999942,
+          "vy": 0
+        },
+        "end": {
+          "x": -5.92,
+          "y": 0,
+          "z": -20.38,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_-5 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -5.080000000000014,
+          "y": 0,
+          "z": -20.620000000000058,
+          "vy": 0
+        },
+        "end": {
+          "x": -4.08,
+          "y": 0,
+          "z": -21.62,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_-5 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -5.080000000000014,
+          "y": 0,
+          "z": -21.379999999999942,
+          "vy": 0
+        },
+        "end": {
+          "x": -4.08,
+          "y": 0,
+          "z": -20.38,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_5 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 5.080000000000014,
+          "y": 0,
+          "z": -20.620000000000058,
+          "vy": 0
+        },
+        "end": {
+          "x": 4.08,
+          "y": 0,
+          "z": -21.62,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_5 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 5.080000000000014,
+          "y": 0,
+          "z": -21.379999999999942,
+          "vy": 0
+        },
+        "end": {
+          "x": 4.08,
+          "y": 0,
+          "z": -20.38,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_5 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 4.919999999999986,
+          "y": 0,
+          "z": -20.620000000000058,
+          "vy": 0
+        },
+        "end": {
+          "x": 5.92,
+          "y": 0,
+          "z": -21.62,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal gallery_panel_5 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 4.919999999999986,
+          "y": 0,
+          "z": -21.379999999999942,
+          "vy": 0
+        },
+        "end": {
+          "x": 5.92,
+          "y": 0,
+          "z": -20.38,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal reactor_plinth -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -2.4200000000000004,
+          "y": 0,
+          "z": -1.2450000000000003,
+          "vy": 0
+        },
+        "end": {
+          "x": -3.419999999999997,
+          "y": 0,
+          "z": -2.244999999999997,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal reactor_plinth -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -2.4200000000000004,
+          "y": 0,
+          "z": 3.645,
+          "vy": 0
+        },
+        "end": {
+          "x": -3.419999999999997,
+          "y": 0,
+          "z": 4.645000000000008,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal reactor_plinth 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 2.4200000000000004,
+          "y": 0,
+          "z": -1.2450000000000003,
+          "vy": 0
+        },
+        "end": {
+          "x": 3.419999999999997,
+          "y": 0,
+          "z": -2.244999999999997,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal reactor_plinth 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 2.4200000000000004,
+          "y": 0,
+          "z": 3.645,
+          "vy": 0
+        },
+        "end": {
+          "x": 3.419999999999997,
+          "y": 0,
+          "z": 4.645000000000008,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_-4 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -10.819999999999999,
+          "y": 0,
+          "z": -5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.820000000000013,
+          "y": 0,
+          "z": -6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_-4 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -10.819999999999999,
+          "y": 0,
+          "z": -2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.820000000000013,
+          "y": 0,
+          "z": -1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_-4 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.1800000000000015,
+          "y": 0,
+          "z": -5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -6.179999999999987,
+          "y": 0,
+          "z": -6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_-4 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.1800000000000015,
+          "y": 0,
+          "z": -2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": -6.179999999999987,
+          "y": 0,
+          "z": -1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_4 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.1800000000000015,
+          "y": 0,
+          "z": 2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": 6.179999999999987,
+          "y": 0,
+          "z": 1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_4 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.1800000000000015,
+          "y": 0,
+          "z": 5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 6.179999999999987,
+          "y": 0,
+          "z": 6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_4 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 10.819999999999999,
+          "y": 0,
+          "z": 2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.820000000000013,
+          "y": 0,
+          "z": 1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_4 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 10.819999999999999,
+          "y": 0,
+          "z": 5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.820000000000013,
+          "y": 0,
+          "z": 6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_4 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -10.819999999999999,
+          "y": 0,
+          "z": 2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.820000000000013,
+          "y": 0,
+          "z": 1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_4 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -10.819999999999999,
+          "y": 0,
+          "z": 5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -11.820000000000013,
+          "y": 0,
+          "z": 6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_4 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.1800000000000015,
+          "y": 0,
+          "z": 2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": -6.179999999999987,
+          "y": 0,
+          "z": 1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_-9_4 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -7.1800000000000015,
+          "y": 0,
+          "z": 5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -6.179999999999987,
+          "y": 0,
+          "z": 6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_-4 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.1800000000000015,
+          "y": 0,
+          "z": -5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 6.179999999999987,
+          "y": 0,
+          "z": -6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_-4 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 7.1800000000000015,
+          "y": 0,
+          "z": -2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": 6.179999999999987,
+          "y": 0,
+          "z": -1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_-4 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 10.819999999999999,
+          "y": 0,
+          "z": -5.044999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.820000000000013,
+          "y": 0,
+          "z": -6.045000000000013,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal court_cover_9_-4 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 10.819999999999999,
+          "y": 0,
+          "z": -2.9549999999999996,
+          "vy": 0
+        },
+        "end": {
+          "x": 11.820000000000013,
+          "y": 0,
+          "z": -1.9550000000000032,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal objective_console_visual -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -1.5200000000000005,
+          "y": 0,
+          "z": 8.905000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": -2.519999999999997,
+          "y": 0,
+          "z": 7.904999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal objective_console_visual -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -1.5200000000000005,
+          "y": 0,
+          "z": 10.094999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": -2.519999999999997,
+          "y": 0,
+          "z": 10.445000000000004,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal objective_console_visual 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 1.5200000000000005,
+          "y": 0,
+          "z": 8.905000000000001,
+          "vy": 0
+        },
+        "end": {
+          "x": 2.519999999999997,
+          "y": 0,
+          "z": 7.904999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal objective_console_visual 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 1.5200000000000005,
+          "y": 0,
+          "z": 10.094999999999999,
+          "vy": 0
+        },
+        "end": {
+          "x": 2.519999999999997,
+          "y": 0,
+          "z": 10.445000000000004,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_-10 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -11.719999999999999,
+          "y": 0,
+          "z": 17.254999999999995,
+          "vy": 0
+        },
+        "end": {
+          "x": -12.720000000000013,
+          "y": 0,
+          "z": 16.255000000000052,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_-10 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -11.719999999999999,
+          "y": 0,
+          "z": 20.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": -12.720000000000013,
+          "y": 0,
+          "z": 21.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_-10 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -8.280000000000001,
+          "y": 0,
+          "z": 17.254999999999995,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.279999999999987,
+          "y": 0,
+          "z": 16.255000000000052,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_-10 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -8.280000000000001,
+          "y": 0,
+          "z": 20.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": -7.279999999999987,
+          "y": 0,
+          "z": 21.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_0 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -1.7200000000000004,
+          "y": 0,
+          "z": 15.255,
+          "vy": 0
+        },
+        "end": {
+          "x": -2.719999999999997,
+          "y": 0,
+          "z": 14.254999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_0 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": -1.7200000000000004,
+          "y": 0,
+          "z": 18.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": -2.719999999999997,
+          "y": 0,
+          "z": 19.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_0 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 1.7200000000000004,
+          "y": 0,
+          "z": 15.255,
+          "vy": 0
+        },
+        "end": {
+          "x": 2.719999999999997,
+          "y": 0,
+          "z": 14.254999999999987,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_0 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 1.7200000000000004,
+          "y": 0,
+          "z": 18.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": 2.719999999999997,
+          "y": 0,
+          "z": 19.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_10 -1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 8.280000000000001,
+          "y": 0,
+          "z": 17.254999999999995,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.279999999999987,
+          "y": 0,
+          "z": 16.255000000000052,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_10 -1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 8.280000000000001,
+          "y": 0,
+          "z": 20.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": 7.279999999999987,
+          "y": 0,
+          "z": 21.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_10 1 -1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 11.719999999999999,
+          "y": 0,
+          "z": 17.254999999999995,
+          "vy": 0
+        },
+        "end": {
+          "x": 12.720000000000013,
+          "y": 0,
+          "z": 16.255000000000052,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "corner reverse/diagonal lab_pod_10 1 1",
+      "passed": true,
+      "detail": {
+        "contact": {
+          "x": 11.719999999999999,
+          "y": 0,
+          "z": 20.745000000000005,
+          "vy": 0
+        },
+        "end": {
+          "x": 12.720000000000013,
+          "y": 0,
+          "z": 21.744999999999948,
+          "vy": 0
+        }
+      }
+    },
+    {
+      "name": "entire sampled walkable floor/ramp/deck graph connected",
+      "passed": true,
+      "detail": {
+        "spacing": 0.5,
+        "nodes": 14330,
+        "components": [
+          14330
+        ]
+      }
+    },
+    {
+      "name": "measured clearance rampSideSlot",
+      "passed": true,
+      "detail": {
+        "metres": 4.775,
+        "centreTravelWidth": 4.135000000000001
+      }
+    },
+    {
+      "name": "measured clearance spawnTurn",
+      "passed": true,
+      "detail": {
+        "metres": 5.200000000000003,
+        "centreTravelWidth": 4.560000000000003
+      }
+    },
+    {
+      "name": "measured clearance courtEntry",
+      "passed": true,
+      "detail": {
+        "metres": 6,
+        "centreTravelWidth": 5.36
+      }
+    },
+    {
+      "name": "measured clearance labFront",
+      "passed": true,
+      "detail": {
+        "metres": 4.275,
+        "centreTravelWidth": 3.6350000000000002
+      }
+    },
+    {
+      "name": "measured clearance labRear",
+      "passed": true,
+      "detail": {
+        "metres": 7.25,
+        "centreTravelWidth": 6.61
+      }
+    },
+    {
+      "name": "measured clearance reactorCoverBypass",
+      "passed": true,
+      "detail": {
+        "metres": 5.2,
+        "centreTravelWidth": 4.5600000000000005
+      }
+    },
+    {
+      "name": "measured clearance sideRampWidth",
+      "passed": true,
+      "detail": {
+        "metres": 8,
+        "centreTravelWidth": 7.36
+      }
+    },
+    {
+      "name": "measured clearance centralRampWidth",
+      "passed": true,
+      "detail": {
+        "metres": 6,
+        "centreTravelWidth": 5.36
+      }
+    }
+  ],
+  "limitations": [
+    "0.5 m raster connectivity and finite movement samples are broader coverage, not proof of every continuous state.",
+    "Box/ramp cylinder-footprint solver remains a local inspection prototype."
+  ]
+}

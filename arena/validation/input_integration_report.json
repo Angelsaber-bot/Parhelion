@@ -1,0 +1,188 @@
+{
+  "runtime": "arena/runtime",
+  "execution": "Node VM; real app.js, physics.js, Three.js and GLB; mocked DOM events, WebGL renderer and animation clock; not real-browser validation",
+  "passed": 45,
+  "failed": 0,
+  "checks": [
+    {
+      "name": "rendered asset geometry still loads from the real GLB",
+      "passed": true
+    },
+    {
+      "name": "KeyW acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyS acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyA acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "KeyD acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowLeft acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowRight acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowUp acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "ArrowDown acts in the original direction and stops on keyup",
+      "passed": true
+    },
+    {
+      "name": "diagonal motion is normalized to 4.2 m/s",
+      "passed": true
+    },
+    {
+      "name": "opposite directions cancel without losing the still-held key",
+      "passed": true
+    },
+    {
+      "name": "pointer-lock loss cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "pointer-lock acquire cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "pointer-lock error cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "blur then focus cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "hidden then visible cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "pagehide then pageshow cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "freeze then resume cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "frame suspended for 1.1 seconds cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "overview round trip cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "respawn cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "keyboard respawn shortcut cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "Escape in keyboard fallback cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "OS meta shortcut cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "window resized cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "fullscreen change cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "context menu cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "pointer cancelled cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "route selector focus cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "outside pointer cancels simultaneous W/look and stale repeats",
+      "passed": true
+    },
+    {
+      "name": "long uninterrupted holds do not expire",
+      "passed": true
+    },
+    {
+      "name": "movement pressed in overview is not replayed on return",
+      "passed": true
+    },
+    {
+      "name": "route selector native arrows and shortcuts never move/teleport the player",
+      "passed": true
+    },
+    {
+      "name": "spawn buttons return keyboard focus to the view",
+      "passed": true
+    },
+    {
+      "name": "mouse lock remains optional and locked mouse look still works",
+      "passed": true
+    },
+    {
+      "name": "pointer lock missing clears input but preserves fresh-key fallback",
+      "passed": true
+    },
+    {
+      "name": "pointer lock throws clears input but preserves fresh-key fallback",
+      "passed": true
+    },
+    {
+      "name": "pointer lock rejects clears input but preserves fresh-key fallback",
+      "passed": true
+    },
+    {
+      "name": "clicking an already-locked scene does not interrupt a legitimate held key",
+      "passed": true
+    },
+    {
+      "name": "automatic route still advances and WASD can take over",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on blur rather than looking like stuck input",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on overview rather than looking like stuck input",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on pointer-lock loss rather than looking like stuck input",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on missed focus event rather than looking like stuck input",
+      "passed": true
+    },
+    {
+      "name": "automatic route pauses on missed visibility event rather than looking like stuck input",
+      "passed": true
+    }
+  ]
+}

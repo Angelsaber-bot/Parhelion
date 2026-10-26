@@ -1,0 +1,82 @@
+{
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "objects": [
+    {
+      "id": "floor_station",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        48,
+        0.6,
+        36
+      ],
+      "material": "floor",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "court_wall_-11.5_-8",
+      "type": "box",
+      "position": [
+        -11.5,
+        1.7,
+        -8
+      ],
+      "size": [
+        5,
+        3.4,
+        0.45
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "ramp_gallery_west",
+      "type": "ramp",
+      "position": [
+        -11,
+        0,
+        -12
+      ],
+      "size": [
+        6,
+        2.4,
+        5.6
+      ],
+      "material": "cyan",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    }
+  ],
+  "screenshotPosition": [
+    -11.1,
+    0,
+    -9.1
+  ],
+  "oldBounds": {
+    "min": [
+      -24,
+      0,
+      -18
+    ],
+    "max": [
+      24,
+      6,
+      18
+    ]
+  },
+  "oldVersion": "0.1.0-graybox"
+}

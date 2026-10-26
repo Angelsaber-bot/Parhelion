@@ -1,0 +1,9 @@
+{
+  "version": "0.3.0-art-pass",
+  "routeSamples": 3129,
+  "certifiedSurfaceDetails": 57,
+  "editableDetails": 883,
+  "batches": 16,
+  "decorativeRouteIntersections": 0,
+  "method": "0.1m samples; full player radius/height against editable decoration AABBs; 0.06m floor/tread allowance; complements actual keyboard walkthrough and exact base/collision GLB bounds checks."
+}
