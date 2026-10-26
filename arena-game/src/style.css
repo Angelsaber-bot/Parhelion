@@ -1,0 +1,92 @@
+:root {
+  --cyan: #4fd6e0;
+  --amber: #f09a4a;
+  --ink: #eef4f3;
+  --panel: #13232fe8;
+  --line: #6f8a9a66;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: #0e1820; color: var(--ink); font-family: Inter, -apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", sans-serif; }
+canvas#view { display: block; width: 100vw; height: 100vh; }
+.hidden { display: none !important; }
+.tA { color: var(--cyan); }
+.tB { color: var(--amber); }
+.muted { color: #a9bac2; font-size: 12px; line-height: 1.7; }
+
+/* ---------- overlays ---------- */
+.overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; background: #0b1620a0; backdrop-filter: blur(4px); z-index: 20; }
+.card { width: 640px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow: auto; padding: 28px 32px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 24px 80px #0007; }
+.card.small { width: 340px; text-align: center; }
+.eyebrow { font-size: 11px; letter-spacing: 3px; color: var(--cyan); }
+h1 { margin: 6px 0 16px; font-size: 30px; letter-spacing: 1px; }
+h2 { margin: 0 0 8px; }
+h4 { margin: 18px 0 8px; font-size: 12px; letter-spacing: 2px; color: #a9bac2; font-weight: 600; }
+button { cursor: pointer; font: inherit; color: var(--ink); background: #213848; border: 1px solid #6f8a9a; border-radius: 7px; padding: 9px 14px; }
+button:hover { border-color: var(--cyan); }
+button.primary { display: block; width: 100%; margin-top: 18px; padding: 13px; background: var(--cyan); color: #10232e; border: 0; font-weight: 700; font-size: 15px; }
+.card.small button { width: 100%; margin-top: 10px; }
+.tabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.tab.on { background: #2f5568; border-color: var(--cyan); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px 14px; }
+label { display: flex; flex-direction: column; gap: 5px; font-size: 12px; color: #b9c8ce; }
+label.check { flex-direction: row; align-items: center; gap: 8px; padding-top: 18px; }
+input, select { font: inherit; font-size: 13px; color: var(--ink); background: #1b2f3d; border: 1px solid #6f8a9a; border-radius: 6px; padding: 8px; }
+body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
+.chars { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.char { text-align: left; display: flex; flex-direction: column; gap: 4px; border-left: 4px solid var(--c); }
+.char.on { background: #2f5568; border-color: var(--c); }
+.char span { font-size: 12px; color: #b9c8ce; }
+.error { margin-top: 12px; padding: 10px; border: 1px solid #e07a7a; color: #ffb3b3; border-radius: 6px; font-size: 13px; }
+.keys { margin: 12px 0 0; }
+
+/* ---------- HUD ---------- */
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+#top { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; }
+#top .score { font-size: 34px; font-weight: 800; min-width: 52px; text-align: center; text-shadow: 0 2px 8px #0008; }
+#top .mid { text-align: center; padding: 6px 14px; background: #0d1a24b0; border-radius: 8px; }
+#clock { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+#limit { font-size: 11px; color: #a9bac2; }
+#feed { position: absolute; top: 16px; right: 18px; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; font-size: 13px; }
+#feed div { background: #0d1a24c0; padding: 5px 10px; border-radius: 5px; }
+#feed em { color: #c8d4d8; font-style: normal; font-size: 11px; margin: 0 6px; }
+#crosshair { position: absolute; left: 50%; top: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+#crosshair::before, #crosshair::after { content: ''; position: absolute; background: #fff; box-shadow: 0 0 2px #000; }
+#crosshair::before { left: 0; right: 0; top: 10px; height: 2px; clip-path: polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 100% 0, 100% 100%, 65% 100%, 65% 0); }
+#crosshair::after { top: 0; bottom: 0; left: 10px; width: 2px; clip-path: polygon(0 0, 100% 0, 100% 35%, 0 35%, 0 65%, 100% 65%, 100% 100%, 0 100%); }
+#hitmarker { position: absolute; left: 50%; top: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%) rotate(45deg); opacity: 0; }
+#hitmarker::before, #hitmarker::after { content: ''; position: absolute; background: #fff; }
+#hitmarker::before { left: 0; right: 0; top: 14px; height: 2px; clip-path: polygon(0 0, 30% 0, 30% 100%, 0 100%, 0 0, 100% 0, 100% 100%, 70% 100%, 70% 0); }
+#hitmarker::after { top: 0; bottom: 0; left: 14px; width: 2px; clip-path: polygon(0 0, 100% 0, 100% 30%, 0 30%, 0 70%, 100% 70%, 100% 100%, 0 100%); }
+#hitmarker.head::before, #hitmarker.head::after { background: #ffd34d; }
+#hitmarker.kill::before, #hitmarker.kill::after { background: #ff4d5e; }
+#hurt { position: absolute; inset: 0; opacity: 0; background: radial-gradient(ellipse at center, transparent 55%, #d0102890 100%); }
+#banner { position: absolute; top: 28%; left: 50%; transform: translateX(-50%); font-size: 44px; font-weight: 800; letter-spacing: 6px; text-shadow: 0 4px 20px #000a; }
+#vitals { position: absolute; left: 24px; bottom: 24px; display: flex; align-items: center; gap: 10px; }
+#hpbar { width: 240px; height: 14px; background: #0d1a24c0; border: 1px solid #ffffff40; border-radius: 3px; overflow: hidden; transform: skewX(-18deg); }
+#hpfill { height: 100%; width: 100%; background: linear-gradient(90deg, #7ef2c9, #4fd6e0); transition: width .12s; }
+#hptext { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; text-shadow: 0 2px 6px #0009; }
+#skills { position: absolute; left: 24px; bottom: 60px; display: flex; gap: 8px; }
+.skill { --cd: 0; position: relative; width: 64px; height: 50px; background: #0d1a24c0; border: 1px solid #ffffff40; border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; overflow: hidden; }
+.skill::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--cd) * 100%); background: #00000090; }
+.skill.ready { border-color: var(--cyan); box-shadow: 0 0 10px #4fd6e055; }
+.skill kbd { font: 10px ui-monospace, monospace; color: #a9bac2; }
+.skill b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; z-index: 2; }
+#weapon { position: absolute; right: 24px; bottom: 24px; text-align: right; }
+#ammoline { font-variant-numeric: tabular-nums; text-shadow: 0 2px 6px #0009; }
+#ammo { font-size: 38px; font-weight: 800; }
+#mag { font-size: 16px; color: #b9c8ce; margin-left: 6px; }
+#wname { font-size: 13px; color: #d4e0e4; }
+#wslots { margin-top: 6px; display: flex; gap: 5px; justify-content: flex-end; }
+.wslot { width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; background: #0d1a24c0; border: 1px solid #ffffff30; border-radius: 4px; }
+.wslot.on { border-color: var(--cyan); color: var(--cyan); }
+#ping { position: absolute; left: 24px; top: 16px; font: 11px ui-monospace, monospace; color: #a9bac2; }
+#dead { position: absolute; top: 40%; left: 50%; transform: translateX(-50%); text-align: center; font-size: 20px; padding: 16px 28px; background: #0d1a24d0; border-radius: 10px; line-height: 1.8; }
+#scoreboard { position: absolute; top: 18%; left: 50%; transform: translateX(-50%); display: flex; gap: 16px; }
+#scoreboard .team { min-width: 300px; background: #0d1a24e0; border-radius: 10px; padding: 14px 18px; border-top: 3px solid currentColor; }
+#scoreboard h3 { margin: 0 0 8px; display: flex; justify-content: space-between; }
+#scoreboard table { width: 100%; border-collapse: collapse; color: var(--ink); font-size: 13px; }
+#scoreboard th { text-align: left; font-weight: 500; color: #a9bac2; font-size: 11px; }
+#scoreboard td, #scoreboard th { padding: 4px 6px; }
+#scoreboard tr.me td { color: #fff3b0; }
+#scoreboard i { font-size: 10px; color: #a9bac2; font-style: normal; }
+@media (max-width: 700px) { #scoreboard { flex-direction: column; } #hpbar { width: 140px; } }

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="icon" href="data:," />
+  <title>Parhelion · Arena</title>
+  <link rel="stylesheet" href="./src/style.css" />
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="top">
+      <div class="score tA" id="scoreA">0</div>
+      <div class="mid"><div id="clock">—</div><div id="limit"></div></div>
+      <div class="score tB" id="scoreB">0</div>
+    </div>
+    <div id="feed"></div>
+    <div id="crosshair"></div>
+    <div id="hitmarker"></div>
+    <div id="hurt"></div>
+    <div id="banner" class="hidden"></div>
+    <div id="vitals">
+      <div id="hpbar"><div id="hpfill"></div></div>
+      <div id="hptext">150</div>
+    </div>
+    <div id="skills">
+      <div class="skill" id="dash"><span>冲刺</span><kbd>Shift</kbd><b></b></div>
+      <div class="skill" id="shield"><span>护盾</span><kbd>Q</kbd><b></b></div>
+    </div>
+    <div id="weapon">
+      <div id="ammoline"><span id="ammo">30</span><span id="mag">/ 30</span></div>
+      <div id="wname"></div>
+      <div id="wslots"><span class="wslot">1</span><span class="wslot">2</span><span class="wslot">3</span></div>
+    </div>
+    <div id="ping"></div>
+    <div id="dead" class="hidden"><div>被 <b id="killer"></b> 击败</div><div><span id="respawn">3</span> 秒后重生</div></div>
+    <div id="scoreboard" class="hidden"></div>
+  </div>
+
+  <div id="pause" class="overlay hidden">
+    <div class="card small">
+      <h2>已暂停</h2>
+      <p class="muted">对局仍在继续（服务器权威）。</p>
+      <button id="resume" class="primary">继续</button>
+      <button id="leave">退出到大厅</button>
+    </div>
+  </div>
+
+  <div id="lobby" class="overlay">
+    <div class="card">
+      <div class="eyebrow">PARHELION · ALPHA</div>
+      <h1>ASTER 研究站竞技场</h1>
+      <div class="tabs">
+        <button data-mode="offline" class="tab on">单机 vs Bot</button>
+        <button data-mode="online" class="tab">联机</button>
+      </div>
+      <div class="grid">
+        <label>名字<input id="name" maxlength="16" value="Max" /></label>
+        <label>对局<select id="layout"><option>1v1</option><option>1v2</option><option selected>2v2</option></select></label>
+        <label>队伍<select id="team"><option value="A">西 · 青</option><option value="B">东 · 橙</option><option value="auto" class="onlineOnly">自动</option></select></label>
+        <label class="offlineOnly">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
+        <label class="onlineOnly">服务器<input id="server" /></label>
+        <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
+      </div>
+      <h4>角色</h4>
+      <div id="chars" class="chars"></div>
+      <h4>枪械皮肤</h4>
+      <div id="skins" class="grid"></div>
+      <div id="error" class="error hidden"></div>
+      <button id="play" class="primary">开始</button>
+      <p class="muted keys">WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停</p>
+    </div>
+  </div>
+  <div id="loading" class="overlay hidden"><div class="card small"><p>加载地图…</p></div></div>
+  <script type="module" src="./src/main.ts"></script>
+</body>
+</html>
