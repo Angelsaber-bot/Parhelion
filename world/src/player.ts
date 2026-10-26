@@ -24,6 +24,7 @@ const triPoint = new THREE.Vector3();
 const capPoint = new THREE.Vector3();
 const delta = new THREE.Vector3();
 const dir = new THREE.Vector3();
+const WALKABLE = Math.cos(THREE.MathUtils.degToRad(50));
 
 export class Player {
   pos = new THREE.Vector3(); // feet
@@ -74,15 +75,23 @@ export class Player {
 
     this.pos.addScaledVector(wish, speed * dt);
     this.pos.addScaledVector(this.vel, dt);
-    this.collide(dt);
+    this.collide();
+    // Horizontal velocity only comes from slope slides / landings. Kill it on the ground and
+    // bleed it off in the air or water, otherwise it carries over and the player keeps gliding.
+    if (this.onGround) { this.vel.x = 0; this.vel.z = 0; }
+    else {
+      const k = Math.pow(this.swimming ? 0.02 : 0.3, dt);
+      this.vel.x *= k; this.vel.z *= k;
+    }
     if (this.pos.y < -30) this.pos.y = 40; // safety net
   }
 
-  private collide(dt: number) {
+  private collide() {
     const r = PLAYER.radius;
     seg.start.set(this.pos.x, this.pos.y + r, this.pos.z);
     seg.end.set(this.pos.x, this.pos.y + PLAYER.height - r, this.pos.z);
     const before = seg.start.clone();
+    let floorContact = false;
     for (const c of this.colliders) {
       if (!c.enabled) continue;
       box.makeEmpty().expandByPoint(seg.start).expandByPoint(seg.end);
@@ -94,15 +103,23 @@ export class Player {
           if (d < r) {
             dir.subVectors(capPoint, triPoint).normalize();
             const depth = r - d;
-            seg.start.addScaledVector(dir, depth);
-            seg.end.addScaledVector(dir, depth);
+            if (dir.y > WALKABLE) {
+              // walkable floor: resolve straight up so standing on a slope doesn't creep downhill
+              floorContact = true;
+              const up = depth / dir.y;
+              seg.start.y += up;
+              seg.end.y += up;
+            } else {
+              seg.start.addScaledVector(dir, depth);
+              seg.end.addScaledVector(dir, depth);
+            }
           }
         },
       });
     }
     delta.subVectors(seg.start, before);
-    // grounded if we were pushed up more than gravity pulled us down (i.e. standing on something walkable)
-    this.onGround = delta.y > Math.abs(dt * this.vel.y * 0.25) && delta.y > 0.6 * delta.length();
+    // grounded = touching a walkable surface (≤ ~50°) while not moving upwards (e.g. mid-jump)
+    this.onGround = floorContact && this.vel.y <= 0;
     this.pos.add(delta);
     if (this.onGround) this.vel.y = Math.max(0, Math.min(this.vel.y, 0));
     else if (delta.lengthSq() > 1e-10) {

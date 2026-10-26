@@ -176,6 +176,7 @@ $('loading').textContent = '点击进入（ESC 释放鼠标）';
 start.addEventListener('click', () => canvas.requestPointerLock());
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
+  if (!locked) keys.clear(); // keyups during ESC / unlock never reach us
   start.classList.toggle('hidden', locked);
 });
 document.addEventListener('mousemove', (e) => {
@@ -184,6 +185,8 @@ document.addEventListener('mousemove', (e) => {
   player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * 0.0022, -1.5, 1.5);
 });
 addEventListener('keydown', (e) => {
+  // macOS swallows keyups while Cmd is held (Cmd+Tab etc.), which used to leave a key stuck down
+  if (e.metaKey || e.ctrlKey || e.altKey) { keys.clear(); return; }
   keys.add(e.code);
   if (e.repeat) return;
   if (e.code === 'KeyF') { player.flying = !player.flying; toast(player.flying ? '飞行模式 开' : '飞行模式 关'); }
@@ -197,6 +200,8 @@ addEventListener('keydown', (e) => {
 });
 addEventListener('keyup', (e) => keys.delete(e.code));
 addEventListener('blur', () => keys.clear());
+document.addEventListener('visibilitychange', () => keys.clear());
+addEventListener('contextmenu', (e) => e.preventDefault());
 
 // ───────────── shooting (hitscan) ─────────────
 const ray = new THREE.Raycaster();
@@ -283,8 +288,8 @@ function frame(now: number) {
   last = now;
   acc += dt;
   const input = {
-    x: (keys.has('KeyD') ? 1 : 0) - (keys.has('KeyA') ? 1 : 0),
-    z: (keys.has('KeyW') ? 1 : 0) - (keys.has('KeyS') ? 1 : 0),
+    x: (keys.has('KeyD') || keys.has('ArrowRight') ? 1 : 0) - (keys.has('KeyA') || keys.has('ArrowLeft') ? 1 : 0),
+    z: (keys.has('KeyW') || keys.has('ArrowUp') ? 1 : 0) - (keys.has('KeyS') || keys.has('ArrowDown') ? 1 : 0),
     jump: keys.has('Space'),
     sprint: keys.has('ShiftLeft') || keys.has('ShiftRight'),
     up: (keys.has('KeyE') && player.flying ? 1 : 0) - (keys.has('KeyQ') ? 1 : 0),
