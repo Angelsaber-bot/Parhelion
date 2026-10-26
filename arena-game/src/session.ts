@@ -2,9 +2,10 @@
 // it is the same shared Match running in the browser with bots. The game code is identical.
 
 import { Client } from '@colyseus/sdk';
-import { ARENA_MAP } from '../shared/arenaMap.ts';
+import { getMap } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../shared/bot.ts';
 import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, type Team } from '../shared/content.ts';
+import type { ArenaMap } from '../shared/map.ts';
 import { Match, type Snapshot } from '../shared/match.ts';
 import { ROOM_NAME, type JoinOptions } from '../shared/protocol.ts';
 import type { Input } from '../shared/sim.ts';
@@ -12,6 +13,7 @@ import type { Input } from '../shared/sim.ts';
 export interface Session {
   readonly id: string;
   readonly online: boolean;
+  readonly map: ArenaMap;
   send(inputs: Input[]): void;
   onSnapshot: (s: Snapshot) => void;
   onClose: (reason: string) => void;
@@ -26,6 +28,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   const s: Session = {
     id: room.sessionId,
     online: true,
+    map: getMap(opts.map),
     send: (inputs) => room.send('input', inputs),
     onSnapshot: () => {},
     onClose: () => {},
@@ -38,7 +41,7 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
 }
 
 export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL): Session {
-  const match = new Match(ARENA_MAP, opts.layout);
+  const match = new Match(getMap(opts.map), opts.layout);
   navFor(match); // build the nav grid up front so the first bot tick doesn't hitch
   const team: Team = opts.team === 'B' ? 'B' : 'A';
   const id = 'you';
@@ -54,6 +57,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   const s: Session = {
     id,
     online: false,
+    map: match.map,
     send: (inputs) => match.queueInputs(id, inputs),
     onSnapshot: () => {},
     onClose: () => {},

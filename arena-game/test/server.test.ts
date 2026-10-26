@@ -11,7 +11,7 @@ const PORT = 25670 + Math.floor(Math.random() * 100);
 let server: Server;
 beforeAll(async () => {
   server = new Server({ transport: new WebSocketTransport() });
-  server.define('arena', ArenaRoom).filterBy(['layout', 'bots']);
+  server.define('arena', ArenaRoom).filterBy(['layout', 'map', 'bots']);
   await server.listen(PORT);
 });
 afterAll(async () => { await server.gracefullyShutdown(false); });
@@ -61,5 +61,23 @@ describe('ArenaRoom', () => {
     expect(s.players.filter((p) => p.bot).length).toBe(3);
     expect(s.players.find((p) => p.id === r.sessionId)!.team).toBe('B');
     await r.leave();
+  });
+
+  it('map choice: players on different maps get different rooms, each told its map', async () => {
+    const url = `ws://127.0.0.1:${PORT}`;
+    const welcome = (r: { onMessage: (t: string, cb: (m: { map: string }) => void) => void }) =>
+      new Promise<string>((res) => r.onMessage('welcome', (m) => res(m.map)));
+    const z = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'Z', char: 0, skins: [], map: 'zenith' });
+    const zMap = welcome(z);
+    const a = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'A', name: 'S', char: 0, skins: [], map: 'aster' });
+    const aMap = welcome(a);
+    z.onMessage('snap', () => {}); a.onMessage('snap', () => {});
+    expect(a.roomId).not.toBe(z.roomId);
+    expect(await zMap).toBe('zenith');
+    expect(await aMap).toBe('aster');
+    const z2 = await new Client(url).joinOrCreate('arena', { layout: '1v1', team: 'auto', name: 'Z2', char: 1, skins: [], map: 'zenith' });
+    z2.onMessage('snap', () => {}); z2.onMessage('welcome', () => {});
+    expect(z2.roomId).toBe(z.roomId);
+    await Promise.all([z.leave(), a.leave(), z2.leave()]);
   });
 });

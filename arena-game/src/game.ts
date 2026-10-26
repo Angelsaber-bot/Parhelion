@@ -1,10 +1,9 @@
 // Client game loop: fixed 60 Hz input ticks with local prediction of the own player, server
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
 
-import { ARENA_MAP } from '../shared/arenaMap.ts';
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer } from '../shared/hit.ts';
-import { raycastMap, type Vec3 } from '../shared/map.ts';
+import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import type { NetEvent, PlayerSnap, Snapshot } from '../shared/match.ts';
 import { applyInput, clonePlayer, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './audio.ts';
@@ -13,7 +12,6 @@ import type { Hud } from './hud.ts';
 import { TEAM_COLOR, type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
 
-const map = ARENA_MAP;
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class Game {
@@ -32,6 +30,7 @@ export class Game {
   private running = true;
   private snapGap = 50; // ms between snapshots, smoothed (shown as a rough link-quality hint)
   private names = new Map<string, PlayerSnap>();
+  private readonly map: ArenaMap;
 
   constructor(
     private session: Session,
@@ -40,6 +39,7 @@ export class Game {
     private hud: Hud,
     private onExit: (reason: string) => void,
   ) {
+    this.map = session.map;
     session.onSnapshot = (s) => this.onSnapshot(s);
     session.onClose = (r) => this.stop(r);
     this.raf = requestAnimationFrame((t) => this.frame(t));
@@ -70,7 +70,7 @@ export class Game {
       const before = this.me;
       const next = clonePlayer(mine);
       this.pending = this.pending.filter((i) => i.seq > mine.lastSeq);
-      for (const i of this.pending) applyInput(map, next, i);
+      for (const i of this.pending) applyInput(this.map, next, i);
       if (before && before.alive && next.alive) {
         const dx = before.x - next.x, dy = before.y - next.y, dz = before.z - next.z;
         if (Math.hypot(dx, dy, dz) < 2) {
@@ -174,7 +174,7 @@ export class Game {
       weapon: c.weapon,
       view: Math.round(this.renderTick * 100) / 100,
     };
-    if (this.me) for (const e of applyInput(map, this.me, inp)) this.onLocal(e);
+    if (this.me) for (const e of applyInput(this.map, this.me, inp)) this.onLocal(e);
     this.pending.push(inp);
     if (this.pending.length > 240) this.pending.shift();
     this.outbox.push(inp);
@@ -195,7 +195,7 @@ export class Game {
         ];
         const w = WEAPONS[e.weapon];
         for (const d of e.dirs) {
-          let t = raycastMap(map, e.origin, d, w.range);
+          let t = raycastMap(this.map, e.origin, d, w.range);
           if (t === Infinity) t = w.range;
           for (const p of this.remotes) {
             if (p.snap.team === this.me?.team || !p.snap.alive) continue;
@@ -253,7 +253,7 @@ export class Game {
 
     const me = this.me;
     if (me) {
-      const eye = me.alive ? map.eye : 0.5; // drop the camera when dead
+      const eye = me.alive ? this.map.eye : 0.5; // drop the camera when dead
       this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw, this.controls.pitch);
       const snapMe = this.latest?.players.find((p) => p.id === this.session.id);
       const vm = this.scene.viewmodel;

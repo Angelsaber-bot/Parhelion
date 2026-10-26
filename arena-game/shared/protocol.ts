@@ -12,6 +12,8 @@ export interface JoinOptions {
   name: string;
   char: number;
   skins: number[];
+  /** Arena map id (see shared/arenaMap.ts); players on different maps never share a room. */
+  map?: string;
   /** Fill empty slots with bots (room creator decides). */
   bots?: boolean;
 }
@@ -21,7 +23,7 @@ export interface ClientMessages {
 }
 
 export interface ServerMessages {
-  welcome: { id: string; tick: number };
+  welcome: { id: string; tick: number; map: string };
   snap: Snapshot;
 }
 

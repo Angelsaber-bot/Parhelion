@@ -3,7 +3,7 @@
 // client's prediction/reconciliation code identical for online and offline play.
 
 import { Room, type Client } from '@colyseus/core';
-import { ARENA_MAP } from '../shared/arenaMap.ts';
+import { getMap, mapIdOf } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL } from '../shared/bot.ts';
 import { SNAPSHOT_EVERY, TEAM_CAPACITY, TICK_HZ, type Team, type TeamLayout } from '../shared/content.ts';
 import { Match } from '../shared/match.ts';
@@ -14,15 +14,17 @@ let botSeed = 1;
 export class ArenaRoom extends Room {
   match!: Match;
   fillBots = false;
+  mapId = '';
   maxMessagesPerSecond = 120;
 
   onCreate(options: Partial<JoinOptions>) {
     const layout: TeamLayout = LAYOUTS.includes(options.layout as TeamLayout) ? options.layout as TeamLayout : '1v1';
-    this.match = new Match(ARENA_MAP, layout);
+    const map = this.mapId = mapIdOf(options.map);
+    this.match = new Match(getMap(map), layout);
     this.fillBots = !!options.bots;
     const cap = TEAM_CAPACITY[layout];
     this.maxClients = cap.A + cap.B;
-    this.setMetadata({ layout });
+    this.setMetadata({ layout, map });
     this.onMessage('input', (client: Client, inputs: unknown) => {
       if (Array.isArray(inputs)) this.match.queueInputs(client.sessionId, inputs.slice(0, 16));
     });
@@ -56,7 +58,7 @@ export class ArenaRoom extends Room {
       skins: Array.isArray(options.skins) ? options.skins.map(Number) : [],
       bot: false,
     });
-    client.send('welcome', { id: client.sessionId, tick: m.tick });
+    client.send('welcome', { id: client.sessionId, tick: m.tick, map: this.mapId });
   }
 
   onLeave(client: Client) {

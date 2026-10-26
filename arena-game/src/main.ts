@@ -1,3 +1,4 @@
+import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, WEAPONS, type TeamLayout } from '../shared/content.ts';
 import { DEFAULT_PORT, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './audio.ts';
@@ -22,6 +23,7 @@ let mode: 'offline' | 'online' = params.get('mode') === 'online' ? 'online' : 'o
 
 const saved = (() => { try { return JSON.parse(localStorage.getItem('arena-lobby') ?? '{}'); } catch { return {}; } })();
 let char = saved.char ?? 0;
+let mapId = mapIdOf(params.get('map') ?? saved.map);
 const skins: number[] = saved.skins ?? WEAPONS.map(() => 0);
 $<HTMLInputElement>('name').value = saved.name ?? 'Max';
 $<HTMLInputElement>('server').value = params.get('server') ?? saved.server ?? `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}`;
@@ -31,6 +33,19 @@ function renderChars() {
   $('chars').innerHTML = CHARACTERS.map((c, i) =>
     `<button class="char ${i === char ? 'on' : ''}" data-i="${i}" style="--c:#${c.color.toString(16)}"><b>${c.name}</b><span>HP ${c.hp} · 速度 ${c.speed}</span></button>`).join('');
   $('chars').querySelectorAll<HTMLButtonElement>('.char').forEach((b) => b.onclick = () => { char = Number(b.dataset.i); renderChars(); });
+}
+function renderMaps() {
+  $('maps').innerHTML = MAPS.map((m) =>
+    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><b>${m.name}</b><span>${m.blurb}</span></button>`).join('');
+  $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
+  $('title').textContent = MAPS.find((m) => m.id === mapId)!.name;
+}
+let mapReady: Promise<void>;
+function pickMap(id: string) {
+  mapId = mapIdOf(id);
+  renderMaps();
+  mapReady = scene.loadMap(mapId);
+  mapReady.catch((e) => showError(`地图加载失败：${(e as Error).message}`));
 }
 function renderSkins() {
   $('skins').innerHTML = WEAPONS.map((w, i) =>
@@ -47,8 +62,7 @@ document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.onclick = 
 renderChars();
 renderSkins();
 setMode(mode);
-
-const mapReady = scene.loadMap();
+pickMap(mapId);
 
 function showError(msg: string) {
   $('error').textContent = msg;
@@ -63,11 +77,12 @@ $('play').onclick = async () => {
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
     name: $<HTMLInputElement>('name').value.trim() || 'Player',
     char, skins: skins.slice(),
+    map: mapId,
     // only sent when on: the matchmaker can't filter on a false value
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();
-  try { localStorage.setItem('arena-lobby', JSON.stringify({ name: opts.name, layout: opts.layout, char, skins, server })); } catch { /* private mode */ }
+  try { localStorage.setItem('arena-lobby', JSON.stringify({ name: opts.name, layout: opts.layout, char, skins, server, map: mapId })); } catch { /* private mode */ }
   $('loading').classList.remove('hidden');
   try {
     await mapReady;
@@ -107,8 +122,8 @@ $('leave').onclick = () => game?.stop();
 // idle render behind the lobby
 (function idle(t: number) {
   if (!game) {
-    const a = t / 9000;
-    scene.setView(Math.sin(a) * 30, 18, Math.cos(a) * 24, a, -0.5);
+    const a = t / 9000, [bx, , bz] = getMap(mapId).data.bounds.max;
+    scene.setView(Math.sin(a) * bx * 0.83, 18, Math.cos(a) * bz * 0.86, a, -0.5);
     scene.render(false);
   }
   requestAnimationFrame(idle);

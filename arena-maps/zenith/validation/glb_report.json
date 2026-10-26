@@ -1,0 +1,11 @@
+{
+  "mapId": "zenith_sky_terrace",
+  "version": "0.1.0",
+  "checks": 333,
+  "failed": [],
+  "visualNodes": 72,
+  "visualTriangles": 10842,
+  "visualBytes": 833608,
+  "collisionNodes": 59,
+  "collisionBytes": 82124
+}

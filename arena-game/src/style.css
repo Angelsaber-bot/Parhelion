@@ -36,6 +36,10 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 .char { text-align: left; display: flex; flex-direction: column; gap: 4px; border-left: 4px solid var(--c); }
 .char.on { background: #2f5568; border-color: var(--c); }
 .char span { font-size: 12px; color: #b9c8ce; }
+.maps { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.mapcard { text-align: left; display: flex; flex-direction: column; gap: 4px; border-left: 4px solid #8fd3e8; }
+.mapcard.on { background: #2f5568; border-color: #ffd36e; }
+.mapcard span { font-size: 12px; color: #b9c8ce; }
 .error { margin-top: 12px; padding: 10px; border: 1px solid #e07a7a; color: #ffb3b3; border-radius: 6px; font-size: 13px; }
 .keys { margin: 12px 0 0; }
 

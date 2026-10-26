@@ -1,13 +1,16 @@
-// Three.js presentation: the ASTER map, placeholder anime-style avatars, shields, tracers and the
+// Three.js presentation: the arena map art, placeholder anime-style avatars, shields, tracers and the
 // first-person weapon. No game rules in here.
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import glbUrl from '../../arena/assets/station_visual.glb?url';
+import asterGlb from '../../arena/assets/station_visual.glb?url';
+import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
+
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb };
 
 export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
@@ -24,6 +27,9 @@ export class ArenaScene {
   readonly viewmodel = new Viewmodel();
   private sparkTex = makeGlowTexture();
   private sky: THREE.Mesh;
+  private maps = new Map<string, Promise<THREE.Object3D>>();
+  private shownMap: THREE.Object3D | null = null;
+  private wantMap = '';
 
   constructor(canvas: HTMLCanvasElement, quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -61,19 +67,32 @@ export class ArenaScene {
     addEventListener('resize', () => this.resize());
   }
 
-  async loadMap(): Promise<void> {
-    const gltf = await new GLTFLoader().loadAsync(glbUrl);
-    gltf.scene.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (!m.isMesh) return;
-      const decorative = m.userData.decorative === true;
-      const role = m.userData.role as string | undefined;
-      m.material = Array.isArray(m.material) ? m.material.map(toCel) : toCel(m.material);
-      m.receiveShadow = true;
-      m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
-    });
-    this.scene.add(gltf.scene);
-    // the map is static: render its shadow map once
+  /** Show a map's art (loaded once per map, then cached); resolves when it is on screen. */
+  async loadMap(id: string): Promise<void> {
+    this.wantMap = id;
+    let p = this.maps.get(id);
+    if (!p) {
+      p = new GLTFLoader().loadAsync(MAP_GLB[id] ?? asterGlb).then((gltf) => {
+        gltf.scene.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (!m.isMesh) return;
+          const decorative = m.userData.decorative === true;
+          const role = m.userData.role as string | undefined;
+          m.material = Array.isArray(m.material) ? m.material.map(toCel) : toCel(m.material);
+          m.receiveShadow = true;
+          m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
+        });
+        return gltf.scene;
+      });
+      this.maps.set(id, p);
+      p.catch(() => this.maps.delete(id));
+    }
+    const root = await p;
+    if (this.wantMap !== id || this.shownMap === root) return; // a later pick won
+    if (this.shownMap) this.scene.remove(this.shownMap);
+    this.scene.add(root);
+    this.shownMap = root;
+    // the map is static: render its shadow map once per map change
     this.renderer.shadowMap.autoUpdate = false;
     this.renderer.shadowMap.needsUpdate = true;
   }

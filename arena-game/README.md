@@ -1,8 +1,13 @@
 # Parhelion · Arena game (Alpha)
 
-可以打的 Arena：ASTER 研究站地图上的 1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。
+可以打的 Arena：1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。两张地图：ASTER 研究站、ZENITH 日冕天台，在大厅里选。
 
-地图和美术**不在这里**：直接读取 `../arena/runtime/map.json`（碰撞与锚点）和 `../arena/assets/station_visual.glb`（模型），不复制、不修改。`arena/` 的地图流程（Blender 源、验证脚本）照旧维护，改了地图这里自动生效。
+地图和美术**不在这里**：直接读取各地图目录的 `runtime/map.json`（碰撞与锚点）和视觉 GLB，不复制、不修改：
+
+- ASTER：`../arena/runtime/map.json` + `../arena/assets/station_visual.glb`
+- ZENITH：`../arena-maps/zenith/runtime/map.json` + `../arena-maps/zenith/assets/zenith_visual.glb`
+
+地图在 `shared/arenaMap.ts` 的 `MAPS` 里注册（加新图只需同格式的数据 + 在这里加一行，`scene.ts` 里加 GLB 路径）。各地图的生成流程照旧在自己的目录维护，改了这里自动生效。
 
 ## 运行
 
@@ -14,7 +19,7 @@ npm run server       # 联机服务器 ws://localhost:2567（单机模式不需�
 npm test             # 规则、bot 对战、Colyseus 端到端测试
 ```
 
-大厅里选「单机 vs Bot」直接开打；选「联机」填服务器地址，同一 layout 的玩家进同一个房间。勾「空位用 Bot 补齐」可以一个人开 2v2。地址栏参数：`?low` 关阴影（低端机/软件渲染），`?mode=online&server=ws://host:2567`。
+大厅里先选地图，再选「单机 vs Bot」直接开打；选「联机」填服务器地址，同一地图、同一 layout 的玩家进同一个房间。勾「空位用 Bot 补齐」可以一个人开 2v2。地址栏参数：`?low` 关阴影（低端机/软件渲染），`?map=zenith` 预选地图，`?mode=online&server=ws://host:2567`。
 
 操作：WASD 移动 · 鼠标瞄准 · 左键射击 · 空格跳 · Shift/E 冲刺 · Q/右键 护盾 · R 换弹 · 1/2/3/滚轮 切枪 · Tab 计分板 · Esc 暂停。
 
@@ -33,6 +38,7 @@ npm test             # 规则、bot 对战、Colyseus 端到端测试
 ```
 shared/   客户端和服务器共用，纯 TS，无 Three.js
   map.ts        碰撞（AABB + 坡道楔形）、射线、视线；移植自 arena/runtime/physics.js 已验证的 0.2 求解器
+  arenaMap.ts   地图注册表：getMap(id)，服务器按房间选图
   sim.ts        applyInput(map, state, input) → events：移动/跳/冲刺/护盾/开火/换弹，确定性
   match.ts      权威对局：输入队列、命中判定与延迟补偿、护盾、计分、阶段、重生、快照
   content.ts    tick、角色、枪械、皮肤、规则数值
