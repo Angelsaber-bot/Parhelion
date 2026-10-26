@@ -2,7 +2,11 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { toonMaterial, addOutline, makeSky, SUN_DIR } from './look';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { toonMaterial, addOutline, makeSky, SUN_DIR, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
@@ -23,14 +27,16 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
+renderer.toneMappingExposure = 0.98;
 
 const scene = new THREE.Scene();
-scene.fog = new THREE.Fog('#cfeaf8', 140, 760);
+scene.fog = new THREE.Fog('#c4e2f6', 120, 720);
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 2000);
 const sky = makeSky();
 scene.add(sky);
-scene.add(new THREE.HemisphereLight('#dff3ff', '#8fae7a', 1.25));
-const sun = new THREE.DirectionalLight('#fff4dc', 2.4);
+scene.add(new THREE.HemisphereLight('#d6ecff', '#9aa98a', 1.15));
+const sun = new THREE.DirectionalLight('#fff0d2', 2.7);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048, 2048);
 Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, near: 1, far: 400 });
@@ -41,10 +47,19 @@ const caveLight = new THREE.PointLight('#7ff6ff', 60, 26, 1.6); // hidden cave g
 caveLight.position.set(182, 6, -60);
 scene.add(caveLight);
 
+// post: soft bloom on sun, halo, glowing flowers and water glints (?nopost to disable)
+const composer = params.has('nopost') ? null : new EffectComposer(renderer);
+if (composer) {
+  composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.45, 0.97));
+  composer.addPass(new OutputPass());
+}
+
 addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  composer?.setSize(innerWidth, innerHeight);
 });
 
 // ───────────── load ─────────────
@@ -351,7 +366,8 @@ function frame(now: number) {
   map.draw(mini, player.pos, player.yaw, { full: false, done, found });
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found });
 
-  renderer.render(scene, camera);
+  timeUniform.value = now / 1000;
+  if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += dt;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
   const info = renderer.info.render;
