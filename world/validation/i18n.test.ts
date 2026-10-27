@@ -38,7 +38,7 @@ test('typed dictionary has paired entries, interpolation never leaks raw keys, a
 });
 test('all current World region names, quests, markers and discovery notes have English coverage', () => {
   setLanguage('en');
-  for (const region of ['alpha', 'britain', 'blacksail', 'winter']) {
+  for (const region of ['alpha', 'britain', 'blacksail', 'winter', 'kyoto']) {
     const layout = JSON.parse(readFileSync(new URL(`../public/assets/world_${region}.layout.json`, import.meta.url), 'utf8'));
     const texts = [layout.world.name, layout.objective.name, ...layout.objective.steps.map((s: { text: string }) => s.text),
       ...layout.areas.map((a: { name: string }) => a.name), ...layout.markers.flatMap((m: { label: string; note?: string }) => [m.label, m.note].filter(Boolean))];

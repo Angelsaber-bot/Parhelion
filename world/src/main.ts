@@ -33,8 +33,8 @@ import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageC
 const params = new URLSearchParams(location.search);
 const requestedFov = Number(params.get('fov'));
 const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
-// One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass) + 永冬之城 (north ice seam).
-// ?region=britain|blacksail|winter starts there.
+// One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass) + 永冬之城 (north ice seam) +
+// 业火京都 (south torii seam). ?region=britain|blacksail|winter|kyoto starts there.
 const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
@@ -286,7 +286,7 @@ function toggleGuide() {
   toast(guideOn ? '任务指引 开' : '任务指引 关');
 }
 /** Next objective marker: current region first; another region's goal routes through its gate via 幻日谷. */
-const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城' };
+const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
@@ -591,6 +591,7 @@ function shoot() {
     const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
     if (group === 'range_target') toast(n === 3 ? '射击练习完成' : `练习靶命中 ${n}/3`);
     else if (group === 'camp_dummy') toast(n === 3 ? '试炼完成：营帐里出现了王之碎片' : `试炼木人 ${n}/3`);
+    else if (group === 'kikyo_banner') toast(n === 3 ? '三面桔梗大旗全部烧毁：明智本阵里亮起了京之碎片' : `桔梗大旗烧毁 ${n}/3`);
     else if (group === 'frost_seal') toast(n === 3 ? '三枚冰封印全部碎裂：峡谷里的冰墙崩塌了' : `冰封印击碎 ${n}/3`);
     else if (group === 'ghost_boat') toast(n === 3 ? '幽灵小艇全部击沉：火药库里亮起了海之碎片' : `炮击命中 幽灵小艇 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
@@ -624,12 +625,13 @@ function interact() {
   if (m.id === 'saber_contract') contract.recruit();
   save(); applyWorldState();
   const msg: Record<string, string> = {
-    tower_console: '幻日塔重启！光环点亮了整个山谷，三处时层断面同时显现',
+    tower_console: '幻日塔重启！光环点亮了整个山谷，四处时层断面同时显现',
     hq_terminal: '调查员身份已登记：世界地图与历史档案已开放',
     armory_rack: '领取 Lumen AR 与弹药，去靶场试试手感',
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
     seam_east: '东部山口：海风里混着 1718 年的火药味',
+    seam_south: '南方鸟居：鸟居那头的京都正在燃烧，1582 年的那一夜',
     blackbeard_meet: '「哈！又一个被冷灯招来的旱鸭子。」黑胡子答应：点亮海之核，就跟你签约',
     fort_cannon: '大炮装填完毕：站在炮位上，射击海面上的幽灵小艇',
     sea_core: '海之核重新燃起，冷灯熄灭了。风暴正在散去……',
@@ -637,7 +639,10 @@ function interact() {
     winter_core: '冬之核重新燃起。雪停了，莫斯科上空第一次看见太阳……',
     napoleon_contract: '契约成立。「不可能？这个词只在傻瓜的字典里。」拿破仑成为你的从者',
     blackbeard_contract: '契约成立。「这片海以后归我们俩了，御主。」黑胡子成为你的从者',
-    summon_circle: '召唤阵稳定了。三处时层断面都已打开：西去落日王国，东去黑帆尽头，北去永冬之城',
+    summon_circle: '召唤阵稳定了。四处时层断面都已打开：西去落日王国，东去黑帆尽头，北去永冬之城，南去业火京都',
+    musashi_meet: '「在下宫本武藏。这把火里有个值得一战的对手。」武藏答应：点亮京之核，就和你签约',
+    fire_core: '京之核重新燃起，本能寺的业火熄灭了。天快亮了……',
+    musashi_contract: '契约成立。「千日之锻为锻，万日之炼为炼。」宫本武藏成为你的从者',
     saber_contract: '契约成立。「我问你，你就是我的御主吗？」Saber 加入了队伍',
     sun_core: '落日之核重新燃起。永恒的黄昏开始退去……',
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
@@ -743,7 +748,7 @@ function frame(now: number) {
   servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
   renderContract();
   sky.position.copy(eye);
-  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'));
+  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   updateCold(dt);
   sun.position.copy(eye).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(eye);

@@ -35,6 +35,7 @@ export const AREAS: Area[] = [
   { id: 'ford', name: '西岸渡口', nameEn: 'West Ford', c: [-95, 62], r: 26, color: '#c9a46b', tp: [-84, 82] },
   { id: 'seam_w', name: '西部时层', nameEn: 'Western Era Seam', c: [-304, -30], r: 30, color: '#ffb36b', tp: [-280, -30] },
   { id: 'seam_n', name: '北方冰海断面', nameEn: 'Northern Ice Seam', c: [0, -292], r: 40, color: '#bfe9ff', tp: [0, -246] },
+  { id: 'seam_s', name: '南方鸟居断面', nameEn: 'Southern Torii Seam', c: [40, 300], r: 30, color: '#ff6a3d', tp: [40, 290] },
   { id: 'pass', name: '东部山口', nameEn: 'Eastern Pass', c: [300, 30], r: 30, color: '#7fb0ff', tp: [276, 30] },
 ];
 
@@ -91,11 +92,13 @@ export const PLAZA = { c: [-118, 246] as V2, r: 15 };
 export const HQ = { x0: -138, x1: -98, z0: 202, z1: 224 };
 export const ARMORY = { x0: -86, x1: -62, z0: 238, z1: 262 };
 export const SUMMON = { c: [-166, 256] as V2, r: 12 };
-/** Era seams: west (落日王国), north on the frozen bay (永冬之城), east at the pass (黑帆尽头). */
+/** Era seams: west (落日王国), north on the frozen bay (永冬之城), east at the pass (黑帆尽头), south through the torii (业火京都). */
 export const SEAM_W = { c: [-310, -30] as V2 };
 export const BAY_N = { c: [0, -292] as V2, rx: 64, rz: 40 };
 export const SEAM_N = { c: [0, -318] as V2 };
 export const SEAM_E = { c: [318, 30] as V2 };
+/** The southern torii seam: a flat corridor floor (height y) running south across the boundary. */
+export const SEAM_S = { c: [40, 318] as V2, y: 10 };
 export const LOG_BRIDGE = { c: [81, -36] as V2 };
 
 export type MarkerType =

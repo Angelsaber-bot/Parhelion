@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Batch, T, distToPolyline } from './geo.js';
 import { mulberry32, range, fbm } from './rng.js';
-import { WORLD, PATHS, CAMP, STATION, TOWER, RUIN, LAKE, ISLAND, FALLS, BRIDGE, POND, CAMPUS, SEAM_W, SEAM_E, BAY_N } from './layout.js';
+import { WORLD, PATHS, CAMP, STATION, TOWER, RUIN, LAKE, ISLAND, FALLS, BRIDGE, POND, CAMPUS, SEAM_W, SEAM_E, BAY_N, SEAM_S } from './layout.js';
 import { PAL, type Piece } from './structures.js';
 
 type HeightAt = (x: number, z: number) => number;
@@ -91,6 +91,7 @@ function blocked(x: number, z: number) {
   if (x > FALLS.x - 14 && x < FALLS.x + 4 && z > -72 && z < -48) return true;
   if (x > CAMPUS.x0 - 6 && x < CAMPUS.x1 + 6 && z > CAMPUS.z0 - 6 && z < CAMPUS.z1 + 8) return true;
   if (near(SEAM_W.c, 26) || near(SEAM_E.c, 18)) return true;
+  if (Math.abs(x - SEAM_S.c[0]) < 18 && z > 270) return true; // the torii corridor south
   if (Math.hypot((x - BAY_N.c[0]) / (BAY_N.rx + 10), (z - BAY_N.c[1]) / (BAY_N.rz + 10)) < 1) return true;
   for (const p of PATHS) if (distToPolyline(x, z, p) < 4) return true;
   return false;

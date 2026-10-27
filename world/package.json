@@ -9,6 +9,7 @@
     "build:britain": "tsx tools/build-britain.ts",
     "build:blacksail": "tsx tools/build-blacksail.ts",
     "build:winter": "tsx tools/build-winter.ts",
+    "build:kyoto": "tsx tools/build-kyoto.ts",
     "build:character": "tsx tools/build-character.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

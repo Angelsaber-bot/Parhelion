@@ -13,7 +13,7 @@
 | `arena-game/` | Arena 可玩运行时：TypeScript + Three.js 客户端、Colyseus 服务器、共享确定性规则、Bot、测试 |
 | `arena/` | 第 1 张 Arena 地图 ASTER 研究站（Blender 流程，ChatGPT 制作） |
 | `arena-maps/` | 第 2–4 张地图：`zenith/`（日冕天台）、`sakura/`（樱庭）、`neon/`（夜港）；`_lib/` 是共享的 GLB 生成与检查工具 |
-| `world/` | World 幻日谷、落日王国、黑帆尽头与永冬之城（第三人称探索） |
+| `world/` | World 幻日谷、落日王国、黑帆尽头、永冬之城与业火京都（第三人称探索） |
 | `assets/weapons/` | 8 件武器 GLB 与外观登记表；5 枪＋3 近战，均为可选战斗装备 |
 | `shared-client/` | Arena / World 共用的本机按键与灵敏度设置 |
 | `Parhelion-Website/` | 本机一键网站（首页 + Arena + World），`npm run build` 重建 |

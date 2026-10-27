@@ -46,6 +46,16 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
     sweep: ['寒霜横扫：拉开距离！', 'Frost sweep: move away!'],
     colors: ['#3a4a66', '#9fd8ff', '#e8fbff'],
   },
+  boss_hellfire_lord: {
+    name: ['业火之主', 'THE LORD OF HELLFIRE'],
+    start: ['业火之主从本能寺的火海里走出：离开红色预警圈，射击它胸口的火核！', 'The Lord of Hellfire walks out of the blaze at Honnō-ji: leave the red tells and shoot the fire core in its chest!'],
+    reset: ['战斗重置：回到京之核可再次挑战', 'Encounter reset: return to the Kyoto Core to retry.'],
+    phase: ['第二阶段 · 天魔焚城：攻势更快，预警仍可闪避', 'Phase II · Demon Fire: faster attacks, still dodgeable.'],
+    victory: ['业火之主已击败 · 获得「二天」纪念徽记', 'Lord of Hellfire defeated · Two Heavens keepsake earned'],
+    burst: ['火雨坠落：离开红圈！', 'Rain of fire: leave the red circle!'],
+    sweep: ['烈焰横扫：拉开距离！', 'Flame sweep: move away!'],
+    colors: ['#3a1a1a', '#ff6a3d', '#ffd27a'],
+  },
 };
 const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
 

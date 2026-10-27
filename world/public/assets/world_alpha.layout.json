@@ -192,6 +192,21 @@
    ]
   },
   {
+   "id": "seam_s",
+   "name": "南方鸟居断面",
+   "nameEn": "Southern Torii Seam",
+   "c": [
+    40,
+    300
+   ],
+   "r": 30,
+   "color": "#ff6a3d",
+   "tp": [
+    40,
+    290
+   ]
+  },
+  {
    "id": "pass",
    "name": "东部山口",
    "nameEn": "Eastern Pass",
@@ -1080,7 +1095,8 @@
    "requires": [
     "seam_west",
     "seam_north",
-    "seam_east"
+    "seam_east",
+    "seam_south"
    ],
    "note": "稳定召唤阵，为第一份 Servant 契约做准备"
   },
@@ -1128,6 +1144,21 @@
     "tower_console"
    ],
    "note": "1718 年 · 加勒比海：海盗黄金时代的最后一年"
+  },
+  {
+   "id": "seam_south",
+   "type": "interact",
+   "label": "南方鸟居断面 · 业火京都",
+   "p": [
+    40,
+    10,
+    314
+   ],
+   "radius": 4.5,
+   "requires": [
+    "tower_console"
+   ],
+   "note": "1582 年 · 京都：本能寺之变的那一夜"
   }
  ],
  "objective": {
@@ -1189,11 +1220,12 @@
    },
    {
     "id": "seams",
-    "text": "调查三处时层断面（西 / 北 / 东）",
+    "text": "调查四处时层断面（西 / 北 / 东 / 南）",
     "done": [
      "seam_west",
      "seam_north",
-     "seam_east"
+     "seam_east",
+     "seam_south"
     ]
    },
    {

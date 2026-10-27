@@ -3,7 +3,7 @@ import { fbm, lerp, smoothstep, clamp } from './rng.js';
 import { distToPolyline } from './geo.js';
 import {
   WORLD, RIVER, RIVER_OUT, POND, LAKE, ISLAND, PATHS, CAMP, STATION, TOWER, RUIN, CAVE, FALLS, PASS,
-  CAMPUS, SEAM_W, BAY_N, PLAZA, HQ, ARMORY, SUMMON,
+  CAMPUS, SEAM_W, BAY_N, PLAZA, HQ, ARMORY, SUMMON, SEAM_S,
 } from './layout.js';
 
 const S = WORLD.seed;
@@ -33,10 +33,12 @@ function natural(x: number, z: number) {
     + bump(x, z, -262, 186, 70) * 14 + bump(x, z, 120, 250, 60) * 9 + bump(x, z, 280, 66, 40) * 7;
   // ring of mountains (superellipse so the corners stay playable), notched where the era seams open
   const se = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  // (the west notch runs on into 落日王国, the north one on into 永冬之城 along the frozen channel)
+  // (the west notch runs on into 落日王国, the north one on into 永冬之城 along the frozen channel,
+  // the south one on into 业火京都 through the torii)
   const notch = Math.max(
     (1 - smoothstep(18, 46, Math.abs(z - SEAM_W.c[1]))) * smoothstep(-200, -260, x),
     (1 - smoothstep(60, 100, Math.abs(x - BAY_N.c[0]))) * smoothstep(-200, -250, z),
+    (1 - smoothstep(18, 44, Math.abs(x - SEAM_S.c[0]))) * smoothstep(250, 300, z),
   );
   const ring = smoothstep(296, 356, se) * (1 - notch * 0.9);
   h += ring * (52 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
@@ -116,6 +118,12 @@ export function heightFn(x: number, z: number): number {
     // past the eastern downs the road climbs steadily up to the saddle (never a step)
     const climb = lerp(-50, lerp(3, PASS.y, smoothstep(250, 330, x)), smoothstep(230, 250, x));
     h = lerp(h, Math.max(Math.min(h, floor), climb), band * smoothstep(165, 195, x));
+  }
+
+  // South seam to 业火京都: a level corridor floor through the notch, on across the boundary
+  {
+    const band = (1 - smoothstep(12, 22, Math.abs(x - SEAM_S.c[0]))) * smoothstep(262, 292, z);
+    h = lerp(h, SEAM_S.y, band);
   }
 
   // Island in Mirror Lake

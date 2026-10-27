@@ -36,6 +36,16 @@ const SNOW = {
   fog: new THREE.Color('#dce5f0'), sun: new THREE.Color('#f2f6ff'), sky: new THREE.Color('#e2eaf6'), ground: new THREE.Color('#c3cbd8'),
 };
 const SNOW_SUN = new THREE.Vector3(-.2, .22, -.95).normalize();
+/** 业火京都: a smoky, fire-lit night sky to the south; dawn breaks once the core is relit. */
+export function fireWeight(worldZ: number, restored = false): number {
+  const z = THREE.MathUtils.clamp((worldZ - 330) / 170, 0, 1);
+  return z * z * (3 - 2 * z) * (restored ? .3 : 1);
+}
+const FIRE = {
+  top: new THREE.Color('#1d1a3a'), mid: new THREE.Color('#6a2f4a'), horizon: new THREE.Color('#ff8a4a'),
+  fog: new THREE.Color('#7a4a52'), sun: new THREE.Color('#ffb070'), sky: new THREE.Color('#8f7ab8'), ground: new THREE.Color('#8a6058'),
+};
+const FIRE_SUN = new THREE.Vector3(.3, .2, .93).normalize();
 
 /** Reuses the existing sky, sunlight and fog; adds no passes, particles or shadow maps. */
 export class KingdomTwilight {
@@ -43,29 +53,31 @@ export class KingdomTwilight {
   private blend = 0;
   private storm = 0;
   private snow = 0;
+  private fire = 0;
   private readonly uniforms: Record<string, THREE.IUniform>;
   constructor(private sky: THREE.Mesh, private sun: THREE.DirectionalLight,
     private hemisphere: THREE.HemisphereLight, private scene: THREE.Scene) {
     this.uniforms = (sky.material as THREE.ShaderMaterial).uniforms;
     this.uniforms.sunDir.value = this.direction;
   }
-  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false) {
+  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false, fireRestored = false) {
     this.blend = THREE.MathUtils.damp(this.blend, twilightWeight(x, restored), 1.8, dt);
     this.storm = THREE.MathUtils.damp(this.storm, stormWeight(x, stormRestored), 1.8, dt);
     this.snow = THREE.MathUtils.damp(this.snow, snowWeight(z, snowRestored), 1.8, dt);
-    const a = this.blend, b = this.storm, c = this.snow;
-    for (const key of ['top', 'mid', 'horizon'] as const) (this.uniforms[key].value as THREE.Color).copy(DAY[key]).lerp(DUSK[key], a).lerp(STORM[key], b).lerp(SNOW[key], c);
-    this.direction.copy(SUN_DIR).lerp(DUSK_SUN, a).lerp(STORM_SUN, b).lerp(SNOW_SUN, c).normalize();
-    this.sun.color.copy(DAY.sun).lerp(DUSK.sun, a).lerp(STORM.sun, b).lerp(SNOW.sun, c);
-    this.sun.intensity = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(2.7, 2.05, a), 2.1, b), 2.2, c);
-    this.hemisphere.color.copy(DAY.sky).lerp(DUSK.sky, a).lerp(STORM.sky, b).lerp(SNOW.sky, c);
-    this.hemisphere.groundColor.copy(DAY.ground).lerp(DUSK.ground, a).lerp(STORM.ground, b).lerp(SNOW.ground, c);
+    this.fire = THREE.MathUtils.damp(this.fire, fireWeight(z, fireRestored), 1.8, dt);
+    const a = this.blend, b = this.storm, c = this.snow, f = this.fire;
+    for (const key of ['top', 'mid', 'horizon'] as const) (this.uniforms[key].value as THREE.Color).copy(DAY[key]).lerp(DUSK[key], a).lerp(STORM[key], b).lerp(SNOW[key], c).lerp(FIRE[key], f);
+    this.direction.copy(SUN_DIR).lerp(DUSK_SUN, a).lerp(STORM_SUN, b).lerp(SNOW_SUN, c).lerp(FIRE_SUN, f).normalize();
+    this.sun.color.copy(DAY.sun).lerp(DUSK.sun, a).lerp(STORM.sun, b).lerp(SNOW.sun, c).lerp(FIRE.sun, f);
+    this.sun.intensity = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(2.7, 2.05, a), 2.1, b), 2.2, c), 1.7, f);
+    this.hemisphere.color.copy(DAY.sky).lerp(DUSK.sky, a).lerp(STORM.sky, b).lerp(SNOW.sky, c).lerp(FIRE.sky, f);
+    this.hemisphere.groundColor.copy(DAY.ground).lerp(DUSK.ground, a).lerp(STORM.ground, b).lerp(SNOW.ground, c).lerp(FIRE.ground, f);
     // Keep the battle floor and silhouettes readable even at deepest twilight.
-    this.hemisphere.intensity = THREE.MathUtils.lerp(1.15, 1.32, Math.max(a, b, c));
+    this.hemisphere.intensity = THREE.MathUtils.lerp(1.15, 1.32, Math.max(a, b, c, f));
     if (this.scene.fog instanceof THREE.Fog) {
-      this.scene.fog.color.copy(DAY.fog).lerp(DUSK.fog, a).lerp(STORM.fog, b).lerp(SNOW.fog, c);
-      this.scene.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(120, 145, a), 120, b), 100, c);
-      this.scene.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(720, 680, a), 640, b), 600, c);
+      this.scene.fog.color.copy(DAY.fog).lerp(DUSK.fog, a).lerp(STORM.fog, b).lerp(SNOW.fog, c).lerp(FIRE.fog, f);
+      this.scene.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(120, 145, a), 120, b), 100, c), 110, f);
+      this.scene.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(720, 680, a), 640, b), 600, c), 620, f);
     }
   }
 }

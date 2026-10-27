@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 17, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 22, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -31,6 +31,7 @@ export const BOSSES: BossDef[] = [
   { id: 'boss_vacant_king', core: 'sun_core', requires: BOSS_REQUIREMENTS, reward: BOSS_REWARD },
   { id: 'boss_drowned_admiral', core: 'sea_core', requires: ['shard_powder', 'shard_compass', 'shard_treasure'], reward: 'reward_black_sail' },
   { id: 'boss_winter_warden', core: 'winter_core', requires: ['shard_eagle', 'shard_bell', 'shard_frost'], reward: 'reward_last_eagle' },
+  { id: 'boss_hellfire_lord', core: 'fire_core', requires: ['shard_kinkaku', 'shard_kiyomizu', 'shard_kikyo'], reward: 'reward_two_heavens' },
 ];
 export interface BossSpawn extends SpawnPoint { requires?: readonly string[]; cleared?: boolean }
 export const distanceXZ = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -57,6 +58,12 @@ export const WILDERNESS_ZONES = [
   { x: 40, z: -680, r: 24, kind: 'shade' as const },
   { x: 130, z: -550, r: 22, kind: 'crystal' as const },
   { x: 90, z: -800, r: 20, kind: 'shade' as const },
+  // 业火京都 (region offset z + 720): north-east streets, the Kinkaku road, below Higashiyama, the ninth street, the southern plain
+  { x: 100, z: 560, r: 20, kind: 'shade' as const },
+  { x: -172, z: 612, r: 20, kind: 'crystal' as const },
+  { x: 222, z: 652, r: 18, kind: 'shade' as const },
+  { x: -100, z: 855, r: 22, kind: 'shade' as const },
+  { x: 60, z: 950, r: 26, kind: 'crystal' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;

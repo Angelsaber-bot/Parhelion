@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { Batch, T, BOX } from './geo.js';
 import {
   WORLD, CAMP, STATION, RUIN, TOWER, FALLS, CAVE, ISLAND, BRIDGE, LOG_BRIDGE, RIVER, RIVER_OUT, PATHS,
-  CAMPUS, PLAZA, HQ, ARMORY, SUMMON, SEAM_W, SEAM_N, SEAM_E, BAY_N,
+  CAMPUS, PLAZA, HQ, ARMORY, SUMMON, SEAM_W, SEAM_N, SEAM_E, BAY_N, SEAM_S,
   type Marker, type V2,
 } from './layout.js';
 import { mulberry32, range } from './rng.js';
@@ -513,7 +513,7 @@ export function buildStructures(heightAt: HeightAt) {
       const beam = new Batch('Summon_Beam', 'M_Beam');
       beam.add(new THREE.CylinderGeometry(4, 6, 60, 24, 1, true), '#d8a6ff', T(cx, y + 30.4, cz), false);
       pieces.push({ name: 'Summon_Beam', material: 'M_Beam', batch: beam, userData: { showWhen: 'summon_circle' } });
-      mk({ id: 'summon_circle', type: 'interact', label: '召唤阵（召唤大厅）', p: [cx, y + 0.8, cz], radius: 4, requires: ['seam_west', 'seam_north', 'seam_east'], note: '稳定召唤阵，为第一份 Servant 契约做准备' });
+      mk({ id: 'summon_circle', type: 'interact', label: '召唤阵（召唤大厅）', p: [cx, y + 0.8, cz], radius: 4, requires: ['seam_west', 'seam_north', 'seam_east', 'seam_south'], note: '稳定召唤阵，为第一份 Servant 契约做准备' });
     }
 
     // helipad + hedges + flags around the plaza
@@ -616,6 +616,34 @@ export function buildStructures(heightAt: HeightAt) {
       const gate = new Batch('Seam_east_Gate');
       gate.addCol(BOX, T(cx + 24.5, y + 30, cz, 0, 1, 80, 40)); // across the link at x = 342
       pieces.push({ name: 'Seam_east_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
+    }
+    // south → 业火京都 (1582): a great vermilion torii, stone foxes and the first of a thousand gates
+    {
+      const [cx, cz] = SEAM_S.c, y = SEAM_S.y;
+      const red = '#d8452b', black = '#2a2422';
+      const torii = (z: number, w: number, h: number, t: number) => {
+        for (const s of [-1, 1]) {
+          b.add(CYL16, red, T(cx + s * w / 2, y + h / 2, z, 0, t, h, t));
+          b.add(CYL16, black, T(cx + s * w / 2, y + 0.4, z, 0, t * 1.15, 0.8, t * 1.15), false);
+        }
+        b.box(cx, y + h * 0.78, z, w + t * 2, t * 0.9, t * 1.1, red, 0, false); // nuki
+        b.box(cx, y + h, z, w + t * 5, t * 1.1, t * 1.6, red, 0, false); // kasagi
+        b.box(cx, y + h + t * 1.1, z, w + t * 6, t * 0.5, t * 1.8, black, 0, false);
+        b.box(cx, y + h * 0.82, z, t * 0.8, h * 0.18, t * 0.9, red, 0, false); // gakuzuka
+      };
+      torii(300, 12, 11, 0.7);
+      for (let z = 330; z < 361; z += 2.4) torii(z, 3.4, 3.8, 0.22);
+      for (const s of [-1, 1]) { // stone foxes on plinths either side of the great torii
+        b.box(cx + s * 9, y, 296, 1.6, 1.4, 1.6, PAL.stone);
+        b.box(cx + s * 9, y + 1.4, 296, 0.8, 1.4, 1.2, '#e8e2d4', 0, false);
+        b.add(new THREE.ConeGeometry(1, 1, 6), '#e8e2d4', T(cx + s * 9, y + 3.0, 295.6, 0, 0.35, 0.9, 0.35), false);
+        glow.box(cx + s * 9, y + 2.2, 295.3, 0.3, 0.3, 0.1, '#ff7a3a', 0, false);
+      }
+      seam('south', cx, cz, y, Math.PI, '#ff6a3d', '南方鸟居断面 · 业火京都', '1582 年 · 京都：本能寺之变的那一夜');
+      // like the other seams, the torii road holds until the summoning circle is stable
+      const gate = new Batch('Seam_south_Gate');
+      gate.addCol(BOX, T(cx, y + 30, cz + 24, 0, 100, 80, 1)); // across the link at z = 342
+      pieces.push({ name: 'Seam_south_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
     }
     pieces.push({ name: 'Seams', material: 'M_Toon', batch: b, outline: true });
   }

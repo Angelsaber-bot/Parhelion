@@ -33,7 +33,7 @@ const layout = {
       { id: 'relay_a', text: '启动中继器 A（森林遗迹）', done: ['relay_a'] },
       { id: 'relay_b', text: '清除废弃前哨站并启动中继器 B', done: ['relay_b'] },
       { id: 'tower', text: '前往幻日塔，启动控制台', done: ['tower_console'] },
-      { id: 'seams', text: '调查三处时层断面（西 / 北 / 东）', done: ['seam_west', 'seam_north', 'seam_east'] },
+      { id: 'seams', text: '调查四处时层断面（西 / 北 / 东 / 南）', done: ['seam_west', 'seam_north', 'seam_east', 'seam_south'] },
       { id: 'summon', text: '回到召唤大厅，稳定召唤阵', done: ['summon_circle'] },
     ],
   },
