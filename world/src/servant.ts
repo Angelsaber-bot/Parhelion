@@ -126,11 +126,14 @@ export class ContractServant {
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
         const bone = (n: string) => candidate!.scene.getObjectByName(`mixamorig${n}`) ?? candidate!.scene.getObjectByName(`mixamorig:${n}`);
-        // Right hand holds the sword: keep its authored pose so the blade stays upright.
-        this.arms = (['LeftArm'] as const).flatMap((n) => { const b = bone(n); return b ? [[b, 0] as [THREE.Object3D, number]] : []; });
+        this.bones = new Map((['RightArm', 'RightForeArm', 'RightHand', 'LeftArm', 'LeftForeArm', 'LeftHand'] as const).flatMap((n) => { const b = bone(n); return b ? [[n, b] as [string, THREE.Object3D]] : []; }));
         this.mixer = mixer; this.clips = clips;
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
         this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
+        // The authored Idle holds the blade vertical: record its axis in hand space once.
+        this.bladeLocal = undefined; this.mixer.update(0); this.root.updateWorldMatrix(true, true);
+        const hand = this.bones.get('RightHand');
+        if (hand) this.bladeLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()).invert());
         candidate = undefined;
       } catch (error) {
         if (candidate) disposeObject(candidate.scene, this.environment?.texture);
@@ -144,28 +147,35 @@ export class ContractServant {
     }
     if (!this.disposed && this.activeOutfit === this.appearance.outfit) this.state = 'ready';
   }
-  /** Authored Idle holds the arms out; lower them to hang relaxed, weighted by Idle so other clips are untouched. */
-  static relaxAngle = .3;
-  private arms: Array<[THREE.Object3D, number]> = [];
+  /** Idle rest pose: arms hang clear of the armour and the sword rests point-down; weighted by Idle only. */
+  private bones = new Map<string, THREE.Object3D>();
+  private bladeLocal?: THREE.Vector3;
   private readonly relax = new THREE.Quaternion();
   private tick(dt: number) {
     this.mixer?.update(dt);
     const weight = this.clips.get('idle')?.getEffectiveWeight() ?? 0;
-    if (weight <= 0) return;
-    // World-space swing of each upper arm toward straight down; independent of the rig's local bone axes.
-    for (const [bone] of this.arms) {
-      const hand = bone.children.find((c) => /ForeArm/.test(c.name)) ?? bone.children[0];
-      if (!hand || !bone.parent) continue;
-      bone.updateWorldMatrix(true, true);
-      const shoulder = bone.getWorldPosition(new THREE.Vector3()), dir = hand.getWorldPosition(new THREE.Vector3()).sub(shoulder).normalize();
-      const down = new THREE.Vector3(0, -1, 0), angle = Math.min(ContractServant.relaxAngle, dir.angleTo(down) - .52) * weight; // stay ~30° clear of the armored torso
-      if (angle <= 0) continue;
-      const axis = new THREE.Vector3().crossVectors(dir, down).normalize();
-      const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-      const swing = this.relax.setFromAxisAngle(axis, angle);
-      // local' = parentWorld⁻¹ · swing · parentWorld · local
-      bone.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
-    }
+    if (weight <= 0 || !this.bones.size) return;
+    const q = this.root.getWorldQuaternion(new THREE.Quaternion());
+    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q), right = new THREE.Vector3(-1, 0, 0).applyQuaternion(q), down = new THREE.Vector3(0, -1, 0);
+    const dir = (...parts: Array<[THREE.Vector3, number]>) => parts.reduce((v, [d, k]) => v.addScaledVector(d, k), new THREE.Vector3()).normalize();
+    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .42], [fwd, .08]), weight);
+    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .6], [right, .1]), weight);
+    this.aim('RightHand', null, dir([down, .9], [fwd, .3], [right, .08]), weight);
+    this.aim('LeftArm', 'LeftForeArm', dir([down, 1], [right, -.32], [fwd, .04]), weight);
+    this.aim('LeftForeArm', 'LeftHand', dir([down, 1], [right, -.18], [fwd, .22]), weight);
+  }
+  /** World-space swing of a bone so its direction (to `child`, or the sword blade) meets `target`. */
+  private aim(name: string, child: string | null, target: THREE.Vector3, weight: number) {
+    const bone = this.bones.get(name), end = child ? this.bones.get(child) : undefined;
+    if (!bone?.parent || (child && !end) || (!child && !this.bladeLocal)) return;
+    bone.updateWorldMatrix(true, true);
+    const world = bone.getWorldQuaternion(new THREE.Quaternion());
+    const from = end ? end.getWorldPosition(new THREE.Vector3()).sub(bone.getWorldPosition(new THREE.Vector3())).normalize() : this.bladeLocal!.clone().applyQuaternion(world);
+    const swing = this.relax.setFromUnitVectors(from, target);
+    swing.slerp(new THREE.Quaternion(), 1 - weight);
+    const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+    bone.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
+    bone.updateWorldMatrix(false, true);
   }
   private play(name: string, restart = false, rate = 1) {
     const next = this.clips.get(name);
