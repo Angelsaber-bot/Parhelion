@@ -14,6 +14,8 @@ import type { Marker } from './layout.js';
 import { kyotoMaterialProfile } from '../../src/kyotoMaterialProfiles.js';
 import { winterMaterialProfile } from '../../src/winterMaterialProfiles.js';
 import { blackSailMaterialProfile } from '../../src/blackSailMaterialProfiles.js';
+import { britainMaterialProfile } from '../../src/britainMaterialProfiles.js';
+import { valleyMaterialProfile } from '../../src/valleyMaterialProfiles.js';
 
 // GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
 (globalThis as any).FileReader ??= class {
@@ -61,12 +63,16 @@ export async function writeRegion(r: RegionOut) {
       const kyotoProfile = kyotoMaterialProfile(name);
       const winterProfile = winterMaterialProfile(name);
       const blackSailProfile = blackSailMaterialProfile(name);
-      const profile = kyotoProfile ?? winterProfile ?? blackSailProfile;
+      const britainProfile = britainMaterialProfile(name);
+      const valleyProfile = valleyMaterialProfile(name);
+      const profile = kyotoProfile ?? winterProfile ?? blackSailProfile ?? britainProfile ?? valleyProfile;
       m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: profile?.roughness ?? 1, metalness: profile?.metalness ?? 0 });
       if (kyotoProfile) m.userData = { kyotoSurface: name, artStyle: 'painted-anime' };
       if (winterProfile) m.userData = { winterSurface: name, artStyle: 'painted-anime' };
       if (blackSailProfile) m.userData = { blackSailSurface: name, artStyle: 'painted-anime' };
-      if (name === 'M_BlackSailCanvas') m.side = THREE.DoubleSide; // thin sails/awnings read from both sides
+      if (britainProfile) m.userData = { britainSurface: name, artStyle: 'painted-anime' };
+      if (valleyProfile) m.userData = { valleySurface: name, artStyle: 'painted-anime' };
+      if (name === 'M_BlackSailCanvas' || name === 'M_BritainWool' || name === 'M_ValleyCanvas') m.side = THREE.DoubleSide; // thin sails/awnings read from both sides
       applyBlackSailBeamFallback(m, r.file);
       if (name === 'M_Water') Object.assign(m, { transparent: true, opacity: 0.75, vertexColors: false, color: new THREE.Color('#46b8d8') });
       if (name === 'M_Waterfall') Object.assign(m, { transparent: true, opacity: 0.7, vertexColors: false, color: new THREE.Color('#c9f3ff') });
@@ -137,7 +143,7 @@ export async function writeRegion(r: RegionOut) {
   scene.add(root);
   const glb = (await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false })) as ArrayBuffer;
   mkdirSync(outDir, { recursive: true });
-  const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto' || r.file === 'world_winter' || r.file === 'world_blacksail');
+  const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto' || r.file === 'world_winter' || r.file === 'world_blacksail' || r.file === 'world_britain' || r.file === 'world_alpha');
   writeFileSync(resolve(outDir, `${r.file}.glb`), packed);
   writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
   return { bytes: packed.byteLength, tris };
@@ -155,7 +161,7 @@ async function compress(glb: Uint8Array, exactWeld = false) {
   const doc = await io.readBinary(glb);
   doc.setLogger(new (class { debug() {} info() {} warn(m: string) { console.warn(m); } error(m: string) { console.error(m); } })() as never);
   await doc.transform(reorder({ encoder: MeshoptEncoder }), quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeColor: 8 }));
-  // Kyoto, Everwinter and BlackSail's dense crafted geometry reuses only bitwise-identical full vertices.
+  // The five crafted regions' dense ART geometry reuses only bitwise-identical full vertices.
   // No simplification, tolerance-based welding, triangle removal or material change.
   if (exactWeld) for (const mesh of doc.getRoot().listMeshes()) {
     for (const primitive of mesh.listPrimitives()) {

@@ -6,6 +6,7 @@ import {
   type Marker, type V2,
 } from './layout.js';
 import { mulberry32, range } from './rng.js';
+import { buildValleyCraft, decorateValleyRuinDoor, decorateValleyWaterfall, decorateValleyFallsRock } from './valley/craft.js';
 
 export const PAL = {
   white: '#ece9e1',
@@ -60,14 +61,14 @@ export function buildStructures(heightAt: HeightAt) {
     b.add(CYL16, PAL.teal, T(cx, y + 0.2, cz - 6, 0, 6.5, 0.5, 6.5));
     b.add(CYL16, PAL.white, T(cx, y + 0.25, cz - 6, 0, 5, 0.5, 5));
     // dropship hull (crash-landed, tilted)
-    b.add(BOX, PAL.white, T(cx + 16, y + 1.6, cz + 9, 0.5, 5, 3.2, 11, 0, 0.12));
+    b.addCol(BOX, T(cx + 16, y + 1.6, cz + 9, 0.5, 5, 3.2, 11, 0, 0.12)); // original exact proxy; new pressure-hull ART
     b.add(BOX, PAL.orange, T(cx + 16, y + 3.4, cz + 9, 0.5, 3.6, 0.6, 9, 0, 0.12));
     b.add(BOX, PAL.metal, T(cx + 19.5, y + 1.2, cz + 7.5, 0.5, 4, 0.5, 2.4, 0, 0.5));
     b.add(BOX, PAL.metal, T(cx + 12.5, y + 1.2, cz + 10.5, 0.5, 4, 0.5, 2.4, 0, -0.5));
     // tents (triangular prisms)
     const prism = new THREE.CylinderGeometry(1, 1, 1, 3);
     for (const [tx, tz, r] of [[-13, 4, 0.2], [-16, 12, -0.3], [-6, 16, 0.6]] as const) {
-      b.add(prism, PAL.canvas, T(cx + tx, y + 1.1, cz + tz, r, 2.2, 4.2, 2.2, 0, Math.PI / 2));
+      b.addCol(prism, T(cx + tx, y + 1.1, cz + tz, r, 2.2, 4.2, 2.2, 0, Math.PI / 2)); // field shelter ART follows its actual clipped prism envelope
     }
     // crates + terminal + antenna
     for (const [x, z, s, r] of [[8, -16, 1.2, 0.2], [9.4, -16.2, 1.0, 0.7], [-8, -14, 1.3, 0.1], [-9, -12.5, 0.9, 0.9], [4, 10, 1.4, 0.4]] as const)
@@ -132,7 +133,7 @@ export function buildStructures(heightAt: HeightAt) {
     // satellite dish landmark on the roof
     b.add(CYL6, PAL.metal, T(-139, ry + 2, -59, 0, 0.35, 4, 0.35));
     const dish = new THREE.CylinderGeometry(4.2, 1.2, 1.4, 18);
-    b.add(dish, PAL.white, T(-139, ry + 4.4, -59, 0.6, 1, 1, 1, -0.9), false);
+    // Parabolic dish ART is authored by buildValleyCraft; original mast proxy stays.
 
     // watchtowers
     const tower = (tx: number, tz: number, side: 'S' | 'E') => {
@@ -195,7 +196,7 @@ export function buildStructures(heightAt: HeightAt) {
       if (Math.abs(a - Math.PI * 1.5) < 0.5) continue; // leave the shrine side open
       const h = range(rng, 1.5, 6.5);
       const px = cx + Math.cos(a) * 11, pz = cz + Math.sin(a) * 11;
-      b.box(px, y, pz, 1.4, h, 1.4, PAL.stone, a);
+      b.addCol(BOX, T(px, y + h / 2, pz, a, 1.4, h, 1.4)); // old exact upright proxy, clipped-corner stone ART separately
       tops.push([px, y + h, pz]);
     }
     // broken arch
@@ -205,13 +206,14 @@ export function buildStructures(heightAt: HeightAt) {
     const sz = cz - 9;
     b.box(cx - 3, y, sz, 0.8, 4, 6, PAL.stone); b.box(cx + 3, y, sz, 0.8, 4, 6, PAL.stone);
     b.box(cx, y, sz - 3, 6.8, 4, 0.8, PAL.stone);
-    b.box(cx, y + 4, sz, 7.6, 0.6, 7.2, PAL.teal);
+    b.box(cx, y + 4, sz, 7.6, 0.6, 7.2, '#899b98'); // weathered resonator stone, not campus teal roof
     b.box(cx, y, sz - 1.6, 1.6, 1.0, 0.8, PAL.metalDark);
     glow.box(cx, y + 1.0, sz - 1.6, 1.2, 0.08, 0.6, PAL.glowCyan, 0, false);
     pieces.push({ name: 'Ruin', material: 'M_Toon', batch: b, outline: true });
 
     const door = new Batch('Ruin_Door');
-    door.box(cx, y, sz + 3, 5.2, 3.8, 0.5, PAL.gold);
+    door.box(cx, y, sz + 3, 5.2, 3.8, 0.5, '#8b8974');
+    decorateValleyRuinDoor(door, cx, y, sz + 3);
     pieces.push({ name: 'Ruin_Door', material: 'M_Toon', batch: door, outline: true, dynamic: true, userData: { opensWhen: ['ruin_target_1', 'ruin_target_2', 'ruin_target_3'] } });
 
     // three shootable targets: low pillar, tall pillar, shrine roof
@@ -272,6 +274,9 @@ export function buildStructures(heightAt: HeightAt) {
     b.box((cxA + x0) / 2, floor, -64.6, x0 - cxA, 36, 1.2, PAL.rock);
     b.box((cxA + x0) / 2, floor, -55.4, x0 - cxA, 36, 1.2, PAL.rock);
     b.box((cxA + x0) / 2 + 0.5, floor + 6, (z0 + z1) / 2, x0 - cxA + 1, 30, 9, PAL.rock);
+    // Retain exact legacy collision proxies but replace the exposed box ART.
+    for (const g of b.vis.splice(1, 3)) g.dispose();
+    decorateValleyFallsRock(b);
     // chamber
     b.box((x0 + x1) / 2, floor - 0.6, (z0 + z1) / 2, x1 - x0, 0.6, z1 - z0, PAL.rockDark);
     b.box((x0 + x1) / 2, ceil, (z0 + z1) / 2, x1 - x0, 0.8, z1 - z0, PAL.rockDark);
@@ -291,7 +296,7 @@ export function buildStructures(heightAt: HeightAt) {
     }
     // waterfall sheet in front of the entrance
     const fall = new Batch('Waterfall', 'M_Waterfall');
-    fall.add(new THREE.PlaneGeometry(1, 1), '#ffffff', T(FALLS.x - 2.6, 18, (z0 + z1) / 2, -Math.PI / 2, 14, 34, 1), false);
+    decorateValleyWaterfall(fall); // continuous irregular curtain, existing shader and traversal unchanged
     pieces.push({ name: 'Waterfall', material: 'M_Waterfall', batch: fall });
     // glowing flower trail along the shore = the visual clue
     for (let i = 0; i < 14; i++) {
@@ -414,7 +419,7 @@ export function buildStructures(heightAt: HeightAt) {
     glow.add(new THREE.TorusGeometry(6, 0.18, 4, 48), PAL.glowGold, T(px, y + 0.2, pz, 0, 1, 1, 1, Math.PI / 2), false);
     for (const s of [-1, 1]) glow.add(new THREE.OctahedronGeometry(0.9, 0), PAL.glowGold, T(px + s * 9, y + 0.2, pz, 0, 1, 0.12, 1.6), false);
     // walkways joining the plaza to each building
-    b.box(px, y - 0.1, (HQ.z1 + pz - PLAZA.r) / 2, 6, 0.25, pz - PLAZA.r - HQ.z1 + 1, PAL.concreteDark);
+    b.addCol(BOX, T(px, y - 0.1 + 0.25 / 2, (HQ.z1 + pz - PLAZA.r) / 2, 0, 6, 0.25, pz - PLAZA.r - HQ.z1 + 1)); // exact walkway proxy; grounded bevel ART
     b.box((ARMORY.x0 + px + PLAZA.r) / 2, y - 0.1, pz + 4, ARMORY.x0 - px - PLAZA.r + 1, 0.25, 6, PAL.concreteDark);
     b.box((SUMMON.c[0] + SUMMON.r + px - PLAZA.r) / 2, y - 0.1, SUMMON.c[1], px - PLAZA.r - SUMMON.c[0] - SUMMON.r + 1, 0.25, 6, PAL.concreteDark);
 
@@ -423,21 +428,20 @@ export function buildStructures(heightAt: HeightAt) {
       const cx = (HQ.x0 + HQ.x1) / 2, cz = (HQ.z0 + HQ.z1) / 2, w = HQ.x1 - HQ.x0, d = HQ.z1 - HQ.z0;
       b.box(cx, y, cz, w, 8, d, PAL.white);
       b.box(cx, y + 2.2, HQ.z1 + 0.15, w - 4, 3.2, 0.4, PAL.teal, 0, false);
-      b.box(cx, y + 6.4, HQ.z1 + 0.15, w - 4, 0.5, 0.5, PAL.gold, 0, false);
+      b.box(cx, y + 6.4, HQ.z1 + 0.15, w - 4, 0.5, 0.5, '#b8c9c7', 0, false); // quiet alloy fascia, not royal gold
       b.box(cx, y, HQ.z1 + 0.2, 5, 3.4, 0.3, PAL.metalDark, 0, false); // doors
       b.box(cx, y + 8, cz, w + 0.6, 0.5, d + 0.6, PAL.teal);
       b.box(cx - 7, y + 8.5, cz - 1, 22, 5, 15, PAL.white);
       b.box(cx - 7, y + 10.3, cz + 6.6, 20, 1.6, 0.4, PAL.teal, 0, false);
-      b.box(cx - 7, y + 13.5, cz - 1, 22.6, 0.5, 15.6, PAL.gold);
+      b.box(cx - 7, y + 13.5, cz - 1, 22.6, 0.5, 15.6, '#d9e1db'); // matte instrument roof; shared PAL unchanged
       // dome with its observing slit and telescope
       const dome = new THREE.SphereGeometry(7, 22, 10, 0, Math.PI * 2, 0, Math.PI / 2);
       b.add(CYL16, PAL.concrete, T(cx + 11, y + 8.5, cz - 1, 0, 7.3, 1.6, 7.3));
-      b.add(dome, PAL.white, T(cx + 11, y + 9.3, cz - 1));
-      b.add(BOX, PAL.metalDark, T(cx + 11, y + 13.6, cz + 1.2, 0, 1.8, 6.8, 5, -0.55), false);
+      b.addCol(dome, T(cx + 11, y + 9.3, cz - 1)); // preserve collision; real split observing shell in ART
       b.add(CYL6, PAL.metal, T(cx + 11, y + 15, cz + 3.5, 0, 0.8, 6, 0.8, -0.9), false);
       // rooftop dish + antenna mast
       b.add(CYL6, PAL.metal, T(cx - 14, y + 16, cz - 2, 0, 0.3, 5, 0.3));
-      b.add(new THREE.CylinderGeometry(3.4, 1, 1.2, 18), PAL.white, T(cx - 14, y + 18.6, cz - 2, 0.7, 1, 1, 1, -0.9), false);
+      // Optical dish now has a parabolic shell and suspended feed in ART.
       b.add(CYL6, PAL.metal, T(cx + 2, y + 18, cz - 4, 0, 0.12, 9, 0.12), false);
       glow.add(new THREE.IcosahedronGeometry(0.45, 0), PAL.glowCyan, T(cx + 2, y + 22.6, cz - 4), false);
       // entrance canopy on two pillars
@@ -648,6 +652,9 @@ export function buildStructures(heightAt: HeightAt) {
     pieces.push({ name: 'Seams', material: 'M_Toon', batch: b, outline: true });
   }
 
+  // Independent 2026 observatory craftsmanship, all ART only, appended after
+  // legacy batches so their exact ordered collision streams remain unchanged.
+  pieces.push(...buildValleyCraft(heightAt));
   // Boundary walls are built at runtime from the union of all regions (see src/regions.ts).
   return { pieces, markers };
 }

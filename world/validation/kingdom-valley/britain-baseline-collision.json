@@ -1,0 +1,141 @@
+[
+  {
+    "name": "COL_Terrain",
+    "triangles": 259200,
+    "orderedPositionHash": "8d135fb94943627c35d49a14ca133a9df523279ac5a98627cc84d2ab5bd632e0",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Terrain"
+    }
+  },
+  {
+    "name": "COL_TGT_camp_dummy_1",
+    "triangles": 52,
+    "orderedPositionHash": "dd4b245111738bc1636a3790dfe0f61b508026aba566f801d73b381909b903f0",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_camp_dummy_1",
+      "dynamic": true,
+      "art": "TGT_camp_dummy_1",
+      "target": "camp_dummy_1"
+    }
+  },
+  {
+    "name": "COL_TGT_camp_dummy_2",
+    "triangles": 52,
+    "orderedPositionHash": "226097c5f604c2f92856e68fe9e06b1085a5b07fe9cb7b504abfb6b2ceeae8b0",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_camp_dummy_2",
+      "dynamic": true,
+      "art": "TGT_camp_dummy_2",
+      "target": "camp_dummy_2"
+    }
+  },
+  {
+    "name": "COL_TGT_camp_dummy_3",
+    "triangles": 52,
+    "orderedPositionHash": "7c34b3609421580770051ded8f060187e1853e2a82ccf0d768ce4c8b647f694f",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_camp_dummy_3",
+      "dynamic": true,
+      "art": "TGT_camp_dummy_3",
+      "target": "camp_dummy_3"
+    }
+  },
+  {
+    "name": "COL_Props",
+    "triangles": 35412,
+    "orderedPositionHash": "432e563aff49d2bfdb68d1eff0cc494de237859f21abecd67989552daeb6ee7a",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Props"
+    }
+  }
+]

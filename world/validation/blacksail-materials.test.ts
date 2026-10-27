@@ -123,7 +123,7 @@ test('Three runtime provides WebGL2 derivatives and fragment view matrix for Bla
 
 test('BlackSail export exact weld remains art-only, after existing quantization, without second reorder', () => {
   const exporter = readFileSync(new URL('../tools/gen/export.ts', import.meta.url), 'utf8');
-  assert.match(exporter, /compress\(new Uint8Array\(glb\), r\.file === 'world_kyoto' \|\| r\.file === 'world_winter' \|\| r\.file === 'world_blacksail'\)/);
+  assert.match(exporter, /compress\(new Uint8Array\(glb\), r\.file === 'world_kyoto' \|\| r\.file === 'world_winter' \|\| r\.file === 'world_blacksail' \|\| r\.file === 'world_britain' \|\| r\.file === 'world_alpha'\)/);
   assert.match(exporter, /if \(primitive\.getMaterial\(\)\?\.getName\(\) !== 'M_Collision'\) weldPrimitive/);
   assert.ok(exporter.indexOf('await doc.transform(reorder') < exporter.indexOf('if (exactWeld)'));
   assert.equal((exporter.match(/reorder\(\{/g) ?? []).length, 1, 'no post-quantization reorder: collision order is contractual');

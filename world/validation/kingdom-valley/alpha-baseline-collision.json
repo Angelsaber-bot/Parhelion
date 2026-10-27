@@ -1,0 +1,385 @@
+[
+  {
+    "name": "COL_Terrain",
+    "triangles": 259168,
+    "orderedPositionHash": "9616fa49aeb625b4263aa4196c6c2d60598c95ee92fed49cd272effb6cdcfb54",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Terrain"
+    }
+  },
+  {
+    "name": "COL_Ruin_Door",
+    "triangles": 12,
+    "orderedPositionHash": "71cc4aac9654a499e2251234553faee0fe12280d3371d1114a0894d7c6dd4798",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Ruin_Door",
+      "dynamic": true,
+      "art": "Ruin_Door",
+      "opensWhen": [
+        "ruin_target_1",
+        "ruin_target_2",
+        "ruin_target_3"
+      ]
+    }
+  },
+  {
+    "name": "COL_TGT_ruin_target_1",
+    "triangles": 64,
+    "orderedPositionHash": "199a65123ea366a6b537c720351fedfed053c42b2f1bc3650410e49984aa1789",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ruin_target_1",
+      "dynamic": true,
+      "art": "TGT_ruin_target_1",
+      "target": "ruin_target_1"
+    }
+  },
+  {
+    "name": "COL_TGT_ruin_target_2",
+    "triangles": 64,
+    "orderedPositionHash": "8e34b800e08a264f2a9c831a910badc71247e71a9a0d652b84d38ac3b874e169",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ruin_target_2",
+      "dynamic": true,
+      "art": "TGT_ruin_target_2",
+      "target": "ruin_target_2"
+    }
+  },
+  {
+    "name": "COL_TGT_ruin_target_3",
+    "triangles": 64,
+    "orderedPositionHash": "843a71e47e29c1ffba28818a0562214ee9dd0f8479616f62c02bbcb5219a3510",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ruin_target_3",
+      "dynamic": true,
+      "art": "TGT_ruin_target_3",
+      "target": "ruin_target_3"
+    }
+  },
+  {
+    "name": "COL_TGT_range_target_1",
+    "triangles": 64,
+    "orderedPositionHash": "ecda2a549fee9dce8802832e66627d8913615b372768df387c825ce5f3a017bf",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_range_target_1",
+      "dynamic": true,
+      "art": "TGT_range_target_1",
+      "target": "range_target_1"
+    }
+  },
+  {
+    "name": "COL_TGT_range_target_2",
+    "triangles": 64,
+    "orderedPositionHash": "23b7237e4822fa8e343ebe95b2405a8dbb9448bbfe9191acc4e5925ab0b391c3",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_range_target_2",
+      "dynamic": true,
+      "art": "TGT_range_target_2",
+      "target": "range_target_2"
+    }
+  },
+  {
+    "name": "COL_TGT_range_target_3",
+    "triangles": 64,
+    "orderedPositionHash": "757d6ee61da880da836a86a7eed54caf255bbf958c2da61a0d945c5d8feaa2e2",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_range_target_3",
+      "dynamic": true,
+      "art": "TGT_range_target_3",
+      "target": "range_target_3"
+    }
+  },
+  {
+    "name": "COL_Seam_west_Gate",
+    "triangles": 12,
+    "orderedPositionHash": "f2e480ac2235f2e173e626e8b34485d0a3f2cbf1c5e93c913754b825acd3d876",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Seam_west_Gate",
+      "dynamic": true,
+      "art": "Seam_west_Gate",
+      "opensWhen": [
+        "summon_circle"
+      ]
+    }
+  },
+  {
+    "name": "COL_Seam_north_Gate",
+    "triangles": 12,
+    "orderedPositionHash": "aab868a7f0891e38926876f7ac14cb878bce7de4cbbd27e3e63fee86922972db",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Seam_north_Gate",
+      "dynamic": true,
+      "art": "Seam_north_Gate",
+      "opensWhen": [
+        "summon_circle"
+      ]
+    }
+  },
+  {
+    "name": "COL_Seam_east_Gate",
+    "triangles": 12,
+    "orderedPositionHash": "912527756279935eda2f03d8641aa5b87faccc2f3c1f9640edf68d1e45a9241f",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Seam_east_Gate",
+      "dynamic": true,
+      "art": "Seam_east_Gate",
+      "opensWhen": [
+        "summon_circle"
+      ]
+    }
+  },
+  {
+    "name": "COL_Seam_south_Gate",
+    "triangles": 12,
+    "orderedPositionHash": "baf9072a7dc69793480f9054d117300b4e699b010467a2fdd0aecb5e6a81f535",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Seam_south_Gate",
+      "dynamic": true,
+      "art": "Seam_south_Gate",
+      "opensWhen": [
+        "summon_circle"
+      ]
+    }
+  },
+  {
+    "name": "COL_Props",
+    "triangles": 25882,
+    "orderedPositionHash": "75c50762289141f58a71c86b4cdd19bb605be3eba50e15001e8a118c46bb6101",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Props"
+    }
+  }
+]

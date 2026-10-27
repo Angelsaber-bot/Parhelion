@@ -1,10 +1,11 @@
-// Structures, props and vegetation for 落日王国 (whitebox v1: real collision, blockout-level art).
+// Sunset Kingdom: authored Romance-Camelot art over unchanged gameplay collision and layout.
 import * as THREE from 'three';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
 import { canopy, conifer } from '../vegetation.js';
 import type { Marker } from '../layout.js';
+import { KingdomCraft, townHouse, wallCraft, roundTower, pavilion, roundHall, bridgeCraft, standingStone, swordDais, shrineCraft, battlefieldCraft, surfaceOriginals, removeUpFaces, gateCraft, keepBracket, farFoundation, mergeKingdomVisuals, deckSector, keepCrown } from './craft.js';
 import {
   BRITAIN, SEAM_Z, LAKE, ISLET, KCAMP, CASTLE, KEEP, HALL, CAMLANN, CORE, CAMELOT_FAR, PATHS, AREAS,
 } from './layout.js';
@@ -46,6 +47,7 @@ const C = {
 
 export function buildBritain(heightAt: HeightAt) {
   const pieces: Piece[] = [];
+  const craft = new KingdomCraft();
   const markers: Marker[] = [];
   const mk = (m: Marker) => markers.push(m);
   const rng = mulberry32(BRITAIN.seed + 5);
@@ -85,7 +87,9 @@ export function buildBritain(heightAt: HeightAt) {
       if (Math.abs(Math.sin(a)) < 0.35) continue; // keep the road through the ring open (east–west)
       const x = cx + Math.cos(a) * 13, z = cz + Math.sin(a) * 13, g = lowest(x, z, 1.2);
       const h = range(rng, 3.8, 5.6);
-      b.add(BOX, i % 2 ? C.stone : C.wallDark, T(x, g + h / 2 - 0.4, z, -a + range(rng, -0.2, 0.2), 1.4, h, 0.9, range(rng, -0.06, 0.06)));
+      const ry = -a + range(rng, -0.2, 0.2), tilt = range(rng, -0.06, 0.06);
+      b.add(BOX, i % 2 ? C.stone : C.wallDark, T(x, g + h / 2 - 0.4, z, ry, 1.4, h, 0.9, tilt));
+      standingStone(craft, x, g - .4, z, ry, h, i);
     }
     glow.add(new THREE.TorusGeometry(2.6, 0.08, 6, 32), C.sunset, T(cx, heightAt(cx, cz) + 0.12, cz, 0, 1, 1, 1, Math.PI / 2), false);
     banner(b, cx - 18, heightAt(cx - 18, cz - 6), cz - 6, Math.PI, C.blue);
@@ -116,6 +120,7 @@ export function buildBritain(heightAt: HeightAt) {
     }
     b.add(CONE8, C.roofSlate, T(x, g + 4.2, z, Math.PI / 8, 3.8, 1.8, 3.8));
     glow.add(CRYSTAL, '#8ff1ff', T(x, g + 1.6, z, 0, 0.35, 0.7, 0.35), false);
+    shrineCraft(craft, x, g, z);
     pieces.push({ name: 'Mistwood_Shrine', material: 'M_Toon', batch: b, outline: true });
     mk({ id: 'disc_mistwood_shrine', type: 'discovery', label: '隐士的林中祠', p: [x, g + 0.5, z], radius: 4 });
     for (const [dx, dz] of [[-20, 30], [24, -34]])
@@ -142,6 +147,7 @@ export function buildBritain(heightAt: HeightAt) {
       lamps.add(CYL8, C.iron, T(ix - 1.6, deck + 1.1, z, 0, 0.06, 2.2, 0.06), false);
       glow.add(BALL, C.sunset, T(ix - 1.6, deck + 2.3, z, 0, 0.22, 0.3, 0.22), false);
     }
+    bridgeCraft(craft, ix, deck, z0, z1);
     // islet: stone ring + the sword
     const top = heightAt(ix, iz);
     b.add(CYL20, C.stone, T(ix, top - 0.2, iz, 0, 4.2, 0.6, 4.2));
@@ -156,6 +162,7 @@ export function buildBritain(heightAt: HeightAt) {
     b.add(BOX, C.gold, T(ix, top + 3.1, iz + 0.6, 0, 0.9, 0.12, 0.14), false); // guard
     b.add(CYL8, C.blueDark, T(ix, top + 3.5, iz + 0.6, 0, 0.06, 0.7, 0.06), false); // grip
     glow.add(BALL, C.glowGold, T(ix, top + 3.95, iz + 0.6, 0, 0.13, 0.13, 0.13), false);
+    swordDais(craft, ix, top, iz);
     pieces.push({ name: 'Sword_Lake', material: 'M_Toon', batch: b, outline: true });
     const beam = new Batch('Sword_Beam', 'M_Beam');
     beam.add(new THREE.CylinderGeometry(0.7, 1.2, 120, 16, 1, true), C.glowGold, T(ix, top + 60, iz + 0.6), false);
@@ -198,6 +205,8 @@ export function buildBritain(heightAt: HeightAt) {
         }
       } else b.add(CYL20, col, T(x, g + 1.1, z, 0, r, 2.2, r));
       b.add(CONE16, i % 2 ? C.blue : C.red, T(x, g + 2.2 + r * 0.45, z, 0, r * 1.08, r * 0.9, r * 1.08));
+      b.vis.pop(); // replace only ART with panelled cloth; keep the original cone collider
+      pavilion(craft, x, g, z, r, i);
       b.add(CYL8, C.gold, T(x, g + 2.2 + r * 0.9 + 0.5, z, 0, 0.05, 1.2, 0.05), false);
       b.add(BOX, C.banner, T(x + 0.35, g + 2.2 + r * 0.9 + 0.9, z, 0, 0.7, 0.4, 0.03), false);
     });
@@ -242,7 +251,9 @@ export function buildBritain(heightAt: HeightAt) {
       const x = cx + Math.cos(a) * R, z = cz + Math.sin(a) * R;
       const g = Math.min(y, lowest(x, z, 1.5));
       b.add(BOX, i % 2 ? C.wall : C.wallDark, T(x, (g - 2 + y + wallH) / 2, z, -a, 2.4, y + wallH - g + 2, segLen));
+      b.vis[b.vis.length-1] = removeUpFaces(b.vis[b.vis.length-1]); // coplanar adjacent box tops replaced by a continuous annular ART coping
       if (i % 2) b.add(BOX, C.wall, T(x + Math.cos(a) * 0.7, y + wallH + 0.5, z + Math.sin(a) * 0.7, -a, 0.8, 1.0, segLen * 0.5), false);
+      wallCraft(craft, x, g - 2, z, -a, y + wallH - g + 2, segLen, i, R);
     }
     // wall towers
     for (let k = 0; k < 8; k++) {
@@ -254,6 +265,7 @@ export function buildBritain(heightAt: HeightAt) {
         const h = y + wallH + 4 - g;
         b.add(CYL20, C.wallDark, T(x, g + h / 2 - 1, z, 0, 3.4, h + 2, 3.4));
         b.add(CONE16, C.roofSlate, T(x, g + h + 1.6, z, 0, 3.9, 3.4, 3.9));
+        roundTower(craft, 'Wall_Towers', x, g - 1, z, 3.4, h + 1);
         b.add(CYL8, C.timber, T(x, g + h + 4.3, z, 0, 0.05, 2, 0.05), false);
         b.add(BOX, C.blue, T(x + 0.45, g + h + 4.8, z, 0, 0.9, 0.5, 0.03), false);
       }
@@ -262,6 +274,7 @@ export function buildBritain(heightAt: HeightAt) {
     {
       const gx = cx + Math.cos(CASTLE.gateA) * R, gz = cz + Math.sin(CASTLE.gateA) * R;
       b.add(BOX, C.wallDark, T(gx, y + wallH + 1.2, gz, -CASTLE.gateA, 2.6, 3.2, 2 * R * gateHalf + 1.5));
+      gateCraft(craft, gx, y, gz, Math.PI/2 - CASTLE.gateA);
       glow.add(BOX, C.sunset, T(gx + Math.cos(CASTLE.gateA) * 1.32, y + wallH + 1.2, gz + Math.sin(CASTLE.gateA) * 1.32, -CASTLE.gateA, 0.05, 0.8, 1.6), false);
       torch(gx + Math.cos(CASTLE.gateA) * 4 - Math.sin(CASTLE.gateA) * 5, gz + Math.sin(CASTLE.gateA) * 4 + Math.cos(CASTLE.gateA) * 5);
       torch(gx + Math.cos(CASTLE.gateA) * 4 + Math.sin(CASTLE.gateA) * 5, gz + Math.sin(CASTLE.gateA) * 4 - Math.cos(CASTLE.gateA) * 5);
@@ -291,6 +304,7 @@ export function buildBritain(heightAt: HeightAt) {
     }
     houses.forEach(([x, z, ry], i) => {
       const w = 5 + (i % 3), d = 4.5, h = 3.4 + (i % 2) * 1.6;
+      const oldVisualStart = b.vis.length;
       b.add(BOX, C.plaster, T(x, y + h / 2, z, ry, w, h, d));
       for (const s of [-1, 1]) b.add(BOX, C.timber, T(x + Math.cos(ry) * s * (w / 2), y + h / 2, z - Math.sin(ry) * s * (w / 2), ry, 0.2, h, d + 0.05), false);
       b.add(BOX, C.timber, T(x, y + h - 0.1, z, ry, w + 0.05, 0.2, d + 0.05), false);
@@ -298,6 +312,9 @@ export function buildBritain(heightAt: HeightAt) {
       const fx = x + Math.sin(ry) * (d / 2 + 0.03), fz = z + Math.cos(ry) * (d / 2 + 0.03);
       b.add(BOX, C.woodDark, T(fx, y + 1.0, fz, ry, 1.0, 2.0, 0.06), false);
       glow.add(BOX, C.sunset, T(fx + Math.cos(ry) * 1.5, y + 2.2, fz - Math.sin(ry) * 1.5, ry, 0.7, 0.6, 0.05), false);
+      b.vis.splice(oldVisualStart); // authored house art, exact old body/roof collision remains
+      glow.vis.pop(); // old rectangular window patch is replaced by framed lancet glazing
+      townHouse(craft, x, y, z, ry, w, d, h, i);
     });
     // market square: well + stalls
     b.add(CYL20, C.stone, T(cx, y + 0.5, cz, 0, 1.6, 1.0, 1.6));
@@ -331,8 +348,12 @@ export function buildBritain(heightAt: HeightAt) {
         const a = ((s + 0.5) / seg) * Math.PI * 2;
         const yy = base + 0.8 + (s + 0.5) * rise;
         k.add(BOX, s % 2 ? C.stone : C.wall, T(kx + Math.cos(a) * R2, yy - 0.15, kz + Math.sin(a) * R2, -a, 2.3, 0.3, sl + 0.35, -slopeA));
-        k.add(BOX, C.timber, T(kx + Math.cos(a) * (R2 + 1.1), yy + 0.35, kz + Math.sin(a) * (R2 + 1.1), -a, 0.12, 0.9, sl + 0.3, -slopeA));
-        if (s % 3 === 0) k.add(CYL8, C.timber, T(kx + Math.cos(a) * (R2 - 0.4), yy - 1.4, kz + Math.sin(a) * (R2 - 0.4), 0, 0.12, 2.4, 0.12), false);
+        k.add(BOX, C.wallDark, T(kx + Math.cos(a) * (R2 + 1.1), yy + 0.35, kz + Math.sin(a) * (R2 + 1.1), -a, 0.12, 0.9, sl + 0.3, -slopeA));
+        if (s % 3 === 0) {
+          k.add(CYL8, C.timber, T(kx + Math.cos(a) * (R2 - 0.4), yy - 1.4, kz + Math.sin(a) * (R2 - 0.4), 0, 0.12, 2.4, 0.12), false);
+          k.vis.pop();
+          keepBracket(craft, kx, yy, kz, a, KEEP.r);
+        }
         lastA = a;
       }
       const top = base + 0.8 + H;
@@ -343,16 +364,25 @@ export function buildBritain(heightAt: HeightAt) {
         if (da < 3.1) continue; // stairwell opening above the last flight
         const w = (2 * Math.PI * (KEEP.r + 1.4)) / nSec + 0.3;
         k.add(BOX, C.wall, T(kx + Math.cos(a) * (KEEP.r + 1.4), top - 0.2, kz + Math.sin(a) * (KEEP.r + 1.4), -a, 4.2, 0.4, w));
+        k.vis[k.vis.length-1] = removeUpFaces(k.vis[k.vis.length-1]);
+        deckSector(craft, kx, top + .015, kz, KEEP.r + .1, KEEP.r + 3.5, s);
         k.add(BOX, C.wallDark, T(kx + Math.cos(a) * (KEEP.r + 3.35), top + 0.6, kz + Math.sin(a) * (KEEP.r + 3.35), -a, 0.4, 1.2, w));
+        k.vis[k.vis.length-1] = removeUpFaces(k.vis[k.vis.length-1]);
+        deckSector(craft, kx, top + 1.215, kz, KEEP.r + 3.15, KEEP.r + 3.55, s);
       }
       k.add(CYL20, C.wall, T(kx, top - 0.2, kz, 0, KEEP.r + 0.1, 0.4, KEEP.r + 0.1));
+      k.vis[k.vis.length-1] = removeUpFaces(k.vis[k.vis.length-1]);
+      for(let s=0;s<24;s++) deckSector(craft, kx, top + .015, kz, 0, KEEP.r + .1, s);
       k.add(CONE16, C.roofSlate, T(kx, top + 6.5, kz, 0, 3.0, 5, 3.0), false);
+      k.vis.pop(); // crown pavilion replaces the nautical conical silhouette, ART only
+      keepCrown(craft, kx, top, kz, KEEP.r, H);
       for (let s = 0; s < 4; s++) {
         const a = (s / 4) * Math.PI * 2;
         k.add(CYL8, C.timber, T(kx + Math.cos(a) * 2.6, top + 2, kz + Math.sin(a) * 2.6, 0, 0.14, 4, 0.14));
       }
       k.add(CYL8, C.gold, T(kx, top + 10, kz, 0, 0.06, 2, 0.06), false);
       k.add(BOX, C.blue, T(kx + 0.7, top + 10.5, kz, 0, 1.4, 0.8, 0.03), false);
+      roundTower(craft, 'Keep_Stone', kx, base, kz, KEEP.r, H, 1);
       pieces.push({ name: 'Camelot_Keep', material: 'M_Toon', batch: k, outline: true });
       const shard = new Batch('Shard_tower', 'M_Emissive');
       shard.add(CRYSTAL, C.sunset, T(kx, top + 1.4, kz, 0.4, 0.4, 0.8, 0.4), false);
@@ -372,10 +402,13 @@ export function buildBritain(heightAt: HeightAt) {
         if (angDiff(a, doorA) < 0.16) continue;
         const sl = (2 * Math.PI * r) / n + 0.25;
         h.add(BOX, i % 2 ? C.wall : C.wallDark, T(hx + Math.cos(a) * r, y + hH / 2, hz + Math.sin(a) * r, -a, wallT, hH, sl));
-        if (i % 4 === 2) glow.add(BOX, C.sunset, T(hx + Math.cos(a) * (r + 0.52), y + 4.4, hz + Math.sin(a) * (r + 0.52), -a, 0.05, 1.8, 0.7), false);
+        if (i % 4 === 2) {
+          glow.add(BOX, C.sunset, T(hx + Math.cos(a) * (r + 0.52), y + 4.4, hz + Math.sin(a) * (r + 0.52), -a, 0.05, 1.8, 0.7), false);
+          glow.vis.pop(); // replace old unframed gold window decals with authored stone lancets
+        }
       }
       h.add(BOX, C.wallDark, T(hx + Math.cos(doorA) * r, y + hH - 1, hz + Math.sin(doorA) * r, -doorA, wallT + 0.4, 2, 5));
-      h.add(CONE16, C.roofGold, T(hx, y + hH + 4, hz, 0, r + 1.8, 8, r + 1.8));
+      h.add(CONE16, C.roofSlate, T(hx, y + hH + 4, hz, 0, r + 1.8, 8, r + 1.8));
       h.add(CYL20, C.stone, T(hx, y + 0.08, hz, 0, r - 0.4, 0.16, r - 0.4), false);
       // the table: a ring, thirteen seats (one left empty: 危险席)
       h.add(new THREE.TorusGeometry(5, 0.75, 6, 40), C.timber, T(hx, y + 1.0, hz, 0, 1, 1, 0.6, Math.PI / 2));
@@ -394,6 +427,7 @@ export function buildBritain(heightAt: HeightAt) {
         const a = (s / 6) * Math.PI * 2 + 0.3;
         banner(h, hx + Math.cos(a) * (r - 1.0), y, hz + Math.sin(a) * (r - 1.0), -a + Math.PI, s % 2 ? C.blue : C.red, 4.5);
       }
+      roundHall(craft, hx, y, hz, r, doorA);
       pieces.push({ name: 'Round_Hall', material: 'M_Toon', batch: h, outline: true });
       // three braziers between the seats: interact to light, then the shard rises from the table centre
       for (let i = 0; i < 3; i++) {
@@ -423,10 +457,12 @@ export function buildBritain(heightAt: HeightAt) {
     const [fx, fz] = CAMELOT_FAR.c, g = lowest(fx, fz, 20);
     const spires: [number, number, number, number][] = [[0, 0, 48, 6], [-16, 10, 34, 4.5], [16, 8, 36, 4.5], [-8, -14, 30, 4], [12, -12, 28, 4], [-26, -2, 24, 3.5], [26, -4, 26, 3.5]];
     b.add(BOX, C.wall, T(fx, g + 6, fz, 0.6, 62, 14, 34));
+    farFoundation(craft, fx, g, fz, heightAt);
     for (const [dx, dz, h, r] of spires) {
       const x = fx + dx, z = fz + dz;
       b.add(CYL20, C.wall, T(x, g + h / 2, z, 0, r, h, r));
       b.add(CONE16, C.roofGold, T(x, g + h + r * 1.2, z, 0, r * 1.2, r * 2.4, r * 1.2));
+      roundTower(craft, 'Distant_Crown', x, g, z, r, h, 1);
       for (let k = 0; k < 3; k++) glow.add(BOX, C.glowGold, T(x + r + 0.02, g + h * (0.45 + k * 0.17), z, 0, 0.05, 1.6, 0.9), false);
     }
     pieces.push({ name: 'Camelot_Far', material: 'M_Toon', batch: b, outline: true });
@@ -456,6 +492,8 @@ export function buildBritain(heightAt: HeightAt) {
         const ry = range(rng, 0, 6.28);
         b.box(x, g + 0.5, z, 1.8, 0.7, 3.2, '#3d302b', ry);
         b.add(new THREE.TorusGeometry(0.6, 0.1, 6, 12), '#2b2220', T(x + Math.cos(ry) * 1.0, g + 0.55, z - Math.sin(ry) * 1.0, ry + Math.PI / 2, 1, 1, 1), false);
+        b.vis.pop(); // replace the single old wheel with a correctly oriented paired wheelset
+        battlefieldCraft(craft, x, g, z, ry, 1);
       } else if (roll < 0.86) {
         glow.add(CONE8, C.ember, T(x, g + 0.3, z, 0, 0.35, 0.6, 0.35), false);
       }
@@ -569,5 +607,8 @@ export function buildBritain(heightAt: HeightAt) {
     { name: 'Bushes', material: 'M_Foliage', batch: bushes },
   );
 
+  surfaceOriginals(pieces);
+  pieces.push(...craft.pieces());
+  mergeKingdomVisuals(pieces);
   return { pieces, markers };
 }
