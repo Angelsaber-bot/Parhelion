@@ -126,7 +126,8 @@ export class ContractServant {
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
         const bone = (n: string) => candidate!.scene.getObjectByName(`mixamorig${n}`) ?? candidate!.scene.getObjectByName(`mixamorig:${n}`);
-        this.arms = (['LeftArm', 'RightArm'] as const).flatMap((n) => { const b = bone(n); return b ? [[b, 0] as [THREE.Object3D, number]] : []; });
+        // Right hand holds the sword: keep its authored pose so the blade stays upright.
+        this.arms = (['LeftArm'] as const).flatMap((n) => { const b = bone(n); return b ? [[b, 0] as [THREE.Object3D, number]] : []; });
         this.mixer = mixer; this.clips = clips;
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
         this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
@@ -144,7 +145,7 @@ export class ContractServant {
     if (!this.disposed && this.activeOutfit === this.appearance.outfit) this.state = 'ready';
   }
   /** Authored Idle holds the arms out; lower them to hang relaxed, weighted by Idle so other clips are untouched. */
-  static relaxAngle = .55;
+  static relaxAngle = .3;
   private arms: Array<[THREE.Object3D, number]> = [];
   private readonly relax = new THREE.Quaternion();
   private tick(dt: number) {
@@ -157,7 +158,7 @@ export class ContractServant {
       if (!hand || !bone.parent) continue;
       bone.updateWorldMatrix(true, true);
       const shoulder = bone.getWorldPosition(new THREE.Vector3()), dir = hand.getWorldPosition(new THREE.Vector3()).sub(shoulder).normalize();
-      const down = new THREE.Vector3(0, -1, 0), angle = Math.min(ContractServant.relaxAngle, dir.angleTo(down) - .12) * weight;
+      const down = new THREE.Vector3(0, -1, 0), angle = Math.min(ContractServant.relaxAngle, dir.angleTo(down) - .52) * weight; // stay ~30° clear of the armored torso
       if (angle <= 0) continue;
       const axis = new THREE.Vector3().crossVectors(dir, down).normalize();
       const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
