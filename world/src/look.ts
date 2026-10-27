@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { kyotoToonMaterial } from './kyotoMaterials.js';
 import { winterToonMaterial } from './winterMaterials.js';
+import { blackSailToonMaterial } from './blackSailMaterials.js';
 
 export const SUN_DIR = new THREE.Vector3(-0.45, 0.62, 0.64).normalize(); // from the south-west, afternoon
 
@@ -122,6 +123,8 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
   if (kyoto) return kyoto;
   const winter = winterToonMaterial(src, toonGradient());
   if (winter) return winter;
+  const blackSail = blackSailToonMaterial(src, toonGradient());
+  if (blackSail) return blackSail;
   const name = src.name;
   const s = src as THREE.MeshStandardMaterial;
   switch (name) {

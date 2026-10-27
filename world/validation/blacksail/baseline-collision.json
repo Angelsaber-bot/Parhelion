@@ -1,0 +1,197 @@
+[
+  {
+    "name": "COL_Terrain",
+    "triangles": 259200,
+    "orderedPositionHash": "241bdac764ecbf158b9651568d1d69038b55b4a7950ce59b7c0d1d3e5cc39ed0",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Terrain"
+    }
+  },
+  {
+    "name": "COL_TGT_ghost_boat_1",
+    "triangles": 56,
+    "orderedPositionHash": "fda8c955e92a2154f40a954f5ced9cc4f0f411629f23ce055ef64960c1ce22c1",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ghost_boat_1",
+      "dynamic": true,
+      "art": "TGT_ghost_boat_1",
+      "target": "ghost_boat_1",
+      "needs": "fort_cannon",
+      "near": [
+        203.5,
+        -172
+      ],
+      "nearR": 8
+    }
+  },
+  {
+    "name": "COL_TGT_ghost_boat_2",
+    "triangles": 56,
+    "orderedPositionHash": "54c7289181fd5172c65b12a57b36f5391c27eb7d2d313dc792360023851c94d2",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ghost_boat_2",
+      "dynamic": true,
+      "art": "TGT_ghost_boat_2",
+      "target": "ghost_boat_2",
+      "needs": "fort_cannon",
+      "near": [
+        203.5,
+        -172
+      ],
+      "nearR": 8
+    }
+  },
+  {
+    "name": "COL_TGT_ghost_boat_3",
+    "triangles": 56,
+    "orderedPositionHash": "fe73f3c937ccd0abebb74fb3dba980c3af6e6e5ee84b31aaacd47ce919096607",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_ghost_boat_3",
+      "dynamic": true,
+      "art": "TGT_ghost_boat_3",
+      "target": "ghost_boat_3",
+      "needs": "fort_cannon",
+      "near": [
+        203.5,
+        -172
+      ],
+      "nearR": 8
+    }
+  },
+  {
+    "name": "COL_Ghost_Bridge",
+    "triangles": 36,
+    "orderedPositionHash": "f1a093b71dadc0a8154ccce348fd034b26a3787443d39cb4c56faaeeb8f18c27",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Ghost_Bridge",
+      "dynamic": true,
+      "art": "Ghost_Bridge",
+      "showWhen": [
+        "shard_powder",
+        "shard_compass",
+        "shard_treasure"
+      ],
+      "solidWhen": [
+        "shard_powder",
+        "shard_compass",
+        "shard_treasure"
+      ]
+    }
+  },
+  {
+    "name": "COL_Props",
+    "triangles": 24048,
+    "orderedPositionHash": "a7c4230740da35793089c13c9aa2495a8c209e72ab1f02527b5a396dc40c48d3",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Props"
+    }
+  }
+]

@@ -10,6 +10,8 @@ import {
   SANDBAR, HALF_WRECK, WRECK_SPIT, LIGHTHOUSE, FLEET, PATHS,
 } from './layout.js';
 import { coastD } from './terrain.js';
+import { architectureBatches, portHouse, tavernCraft, pierCraft, millCraft, lighthouseCraft, fortWallCraft, fortCraft, reefCraft, marketCraft, gateCraft, lighthouseGallery } from './architecture.js';
+import { buildMaritimeShip, buildSmallCraft, buildHalfWreckHull, buildShipyardFrame } from './ships.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -79,7 +81,7 @@ interface ShipStyle { hull: string; hullDark: string; deck: string; sail: string
  * A walkable sailing ship along heading ry (+local z = stern). Deck top at `deck`; rails leave both
  * ends open so gangways and bridges can meet the bow and the stern. Returns bow/stern deck points.
  */
-function ship(b: Batch, cx: number, cz: number, ry: number, len: number, deck: number, st: ShipStyle) {
+function legacyShip(b: Batch, cx: number, cz: number, ry: number, len: number, deck: number, st: ShipStyle) {
   const f: V2 = [Math.sin(ry), Math.cos(ry)], s: V2 = [Math.cos(ry), -Math.sin(ry)];
   const at = (u: number, v = 0): V2 => [cx + f[0] * u + s[0] * v, cz + f[1] * u + s[1] * v];
   const W = Math.max(6, len * 0.27), keel = st.keel ?? WL - 2.5;
@@ -127,6 +129,16 @@ function ship(b: Batch, cx: number, cz: number, ry: number, len: number, deck: n
 export function buildBlacksail(heightAt: HeightAt) {
   const pieces: Piece[] = [];
   const markers: Marker[] = [];
+  const architecture = architectureBatches(), art = architecture.art;
+  // Preserve every legacy collision primitive, in order, but replace its old box art.
+  const ship = (b: Batch,cx:number,cz:number,ry:number,len:number,deck:number,st:ShipStyle) => {
+    const n=b.vis.length, sn=st.sailBatch?.vis.length;
+    const result=legacyShip(b,cx,cz,ry,len,deck,st);
+    b.vis.length=n;
+    if(st.sailBatch && sn!==undefined) st.sailBatch.vis.length=sn;
+    pieces.push(...buildMaritimeShip(`${b.name}_Ship_${cx}_${cz}`,cx,cz,ry,len,deck,st,WL));
+    return result;
+  };
   const mk = (m: Marker) => markers.push(m);
   const rng = mulberry32(BLACKSAIL.seed + 5);
   const glow = new Batch('Glow_Props', 'M_Emissive');
@@ -197,6 +209,7 @@ export function buildBlacksail(heightAt: HeightAt) {
       while (z0 < PORT.pierZ1 && heightAt(x, z0) > y - 0.4) z0 += 0.5;
       z0 -= 4;
       const z1 = PORT.pierZ1 - i * 8;
+      pierCraft(art,x,y,z0,z1);
       b.box(x, y - 0.35, (z0 + z1) / 2, 5, 0.35, z1 - z0, C.wood);
       for (let z = z0 + 1; z < z1; z += 4) for (const s of [-2.2, 2.2]) b.add(CYL8, C.woodDark, T(x + s, (y - 5) / 2, z, 0, 0.2, y + 5, 0.2), false);
       for (let z = z0 + 0.5; z < z1; z += 1.2) b.box(x, y - 0.01, z, 5.02, 0.02, 0.12, C.woodDark, 0, false);
@@ -219,12 +232,17 @@ export function buildBlacksail(heightAt: HeightAt) {
     // tavern: open-fronted hall facing the square, with the counter where Blackbeard waits
     {
       const [tx, tz] = TAVERN.c, w = TAVERN.w, d = TAVERN.d, h = 5;
-      b.box(tx, y, tz - d / 2, w, h, 0.8, C.plasterB); // back (north)
-      for (const s of [-1, 1]) b.box(tx + s * w / 2, y, tz, 0.8, h, d, C.plasterB);
-      for (const s of [-1, 1]) b.box(tx + s * (w / 2 - 2.5), y, tz + d / 2, 5, h, 0.8, C.plasterB); // front with a wide door
-      b.box(tx, y + 3.4, tz + d / 2, 6, h - 3.4, 0.8, C.plasterB);
+      const wall=(x:number,yy:number,z:number,ww:number,hh:number,dd:number,_color:string) => {
+        b.addCol(BOX,T(x,yy+hh/2,z,0,ww,hh,dd));
+        art.add(BOX,'#d9c9a9',T(x,yy+hh/2,z,0,ww,hh,dd),false);
+      };
+      wall(tx, y, tz - d / 2, w, h, 0.8, C.plasterB); // back (north)
+      for (const s of [-1, 1]) wall(tx + s * w / 2, y, tz, 0.8, h, d, C.plasterB);
+      for (const s of [-1, 1]) wall(tx + s * (w / 2 - 2.5), y, tz + d / 2, 5, h, 0.8, C.plasterB); // front with a wide door
+      wall(tx, y + 3.4, tz + d / 2, 6, h - 3.4, 0.8, C.plasterB);
       for (const s of [-1, 1]) b.add(BOX, C.woodDark, T(tx + s * (w / 2), y + h / 2, tz + d / 2, 0, 0.3, h, 0.3), false);
-      b.add(ROOF, C.roofRed, T(tx, y + h + 1.6, tz, Math.PI / 2, 3.2, w + 1.4, (d + 2) / 1.732, 0, Math.PI / 2));
+      b.addCol(ROOF, T(tx, y + h + 1.6, tz, Math.PI / 2, 3.2, w + 1.4, (d + 2) / 1.732, 0, Math.PI / 2));
+      tavernCraft(art,tx,y,tz,w,d);
       b.box(tx, y, tz - d / 2 + 2.2, w - 4, 1.1, 1.0, C.woodDark); // counter
       for (let k = 0; k < 5; k++) barrel(b, tx - w / 2 + 2 + k * 1.1, tz - d / 2 + 1.0, y + 1.1, false);
       for (const [dx, dz] of [[-4, 1.5], [3.5, 2]]) {
@@ -232,7 +250,7 @@ export function buildBlacksail(heightAt: HeightAt) {
         b.add(CYL8, C.woodDark, T(tx + dx, y + 0.45, tz + dz, 0, 0.15, 0.9, 0.15), false);
       }
       glow.add(BOX, C.lantern, T(tx, y + 4.2, tz, 0, 0.4, 0.5, 0.4), false);
-      b.add(BOX, C.woodDark, T(tx + 4, y + 4.4, tz + d / 2 + 0.9, 0, 2.4, 1.0, 0.1), false); // sign
+      // Tavern sign is authored with the facade in tavernCraft.
       mk({ id: 'blackbeard_meet', type: 'interact', label: '黑胡子（酒馆）', p: [tx, y, tz - d / 2 + 3.6], radius: 3.4, note: '海盗王愿意帮你打破这片海的循环' });
       mk({ id: 'blackbeard_contract', type: 'interact', label: '与黑胡子缔结契约', p: [tx + 3, y, tz - d / 2 + 3.6], radius: 3, requires: ['sea_core'], note: 'Rider 职阶从者 · 安妮女王复仇号的船长' });
       mk({ id: 'disc_tavern_cellar', type: 'discovery', label: '朗姆酒窖', p: [tx - w / 2 + 2, y, tz - d / 2 + 2], radius: 2.5 });
@@ -244,10 +262,13 @@ export function buildBlacksail(heightAt: HeightAt) {
     ];
     homes.forEach(([x, z, ry, roof], i) => {
       const w = 7 + (i % 2) * 2, d = 6, h = 4 + (i % 3);
+      const legacyVisualStart=b.vis.length, legacyGlowStart=glow.vis.length;
       b.add(BOX, i % 2 ? C.plaster : C.plasterB, T(x, y + h / 2, z, ry, w, h, d));
       b.add(ROOF, roof, T(x, y + h + 1.1, z, ry, 2.2, w + 1, (d + 1.6) / 1.732, 0, Math.PI / 2));
       b.add(BOX, C.woodDark, T(x + Math.sin(ry) * (d / 2 + 0.03), y + 1.1, z + Math.cos(ry) * (d / 2 + 0.03), ry, 1.2, 2.2, 0.06), false);
       glow.add(BOX, C.lantern, T(x + Math.sin(ry) * (d / 2 + 0.04) + Math.cos(ry) * 2, y + 2.4, z + Math.cos(ry) * (d / 2 + 0.04) - Math.sin(ry) * 2, ry, 0.9, 0.7, 0.05), false);
+      b.vis.length=legacyVisualStart; glow.vis.length=legacyGlowStart;
+      portHouse(art,x,y,z,ry,w,d,h,i);
     });
     // square: gallows + well + market stalls
     {
@@ -259,7 +280,7 @@ export function buildBlacksail(heightAt: HeightAt) {
       for (let k = 0; k < 4; k++) {
         const x = sx - 6 + k * 6, z = sz + 14;
         b.box(x, y, z, 2.6, 1.0, 1.4, C.wood);
-        b.add(BOX, [C.red, C.roofTeal, C.sail, C.gold][k], T(x, y + 2.4, z, 0, 3.0, 0.08, 2.0), false);
+        marketCraft(art,x,y,z,k);
         for (const s of [-1.3, 1.3]) b.add(CYL8, C.woodDark, T(x + s, y + 1.2, z + 0.9, 0, 0.05, 2.4, 0.05), false);
       }
       for (let k = 0; k < 8; k++) lantern(sx + Math.cos(k * 0.8) * 16, sz + Math.sin(k * 0.8) * 12, y);
@@ -269,7 +290,7 @@ export function buildBlacksail(heightAt: HeightAt) {
     {
       const yx = -196, yz = 158;
       const g = heightAt(yx, yz);
-      for (let k = 0; k < 9; k++) b.add(CYL8, C.wood, T(yx + (k - 4) * 2.2, g + 2.4, yz, 0, 0.18, 4.8, 0.18, 0, 0.12 * (k - 4)), false);
+      pieces.push(...buildShipyardFrame(yx,g,yz));
       b.add(BOX, C.hull, T(yx, g + 0.6, yz, 0, 1.2, 1.2, 20));
       for (let k = 0; k < 6; k++) b.box(yx + 8, g, yz - 6 + k * 1.1, 4, 0.5, 0.5, C.wood, 0.05 * k);
       b.box(yx - 8, g, yz - 4, 3, 1.0, 1.4, C.woodDark);
@@ -287,14 +308,18 @@ export function buildBlacksail(heightAt: HeightAt) {
   {
     const b = new Batch('Smugglers');
     const [wx, wz] = WINDMILL.c, g = lowest(wx, wz, 4) - 0.2;
-    b.add(new THREE.CylinderGeometry(3.2, 4.2, 12, 12), C.plaster, T(wx, g + 6, wz));
-    b.add(CONE16, C.roofRed, T(wx, g + 13.6, wz, 0, 4.0, 3.4, 4.0));
+    b.addCol(new THREE.CylinderGeometry(3.2, 4.2, 12, 12), T(wx, g + 6, wz));
+    art.add(new THREE.CylinderGeometry(3.2, 4.2, 12, 12), '#e4d6ba', T(wx, g + 6, wz),false);
+    b.addCol(CONE16, T(wx, g + 13.6, wz, 0, 4.0, 3.4, 4.0));
+    art.add(CONE16, '#a96850', T(wx, g + 13.6, wz, 0, 4.0, 3.4, 4.0),false);
     b.box(wx, g, wz + 4.1, 1.4, 2.4, 0.3, C.woodDark, 0, false);
     const blades = new Batch('Windmill_Blades');
     for (let k = 0; k < 4; k++) {
       const a = (k / 4) * Math.PI * 2;
       blades.add(BOX, C.canvas, T(wx + Math.cos(a) * 4.5, g + 11 + Math.sin(a) * 4.5, wz + 4.6, 0, 1.4, 8, 0.08, 0, a - Math.PI / 2), false);
     }
+    blades.vis.length=0;
+    millCraft(art,art,wx,g,wz);
     pieces.push({ name: 'Windmill_Blades', material: 'M_Toon', batch: blades, outline: true });
     mk({ id: 'map_piece_2', type: 'interact', label: '藏宝图碎片·其二（风车）', p: [wx, g + 0.2, wz + 5.4], radius: 3 });
     const piece = new Batch('Map_Piece_2', 'M_Emissive');
@@ -337,28 +362,33 @@ export function buildBlacksail(heightAt: HeightAt) {
           const gnd = Math.min(y, lowest(x, z, 1.5));
           // in front of the battery the east curtain is only a parapet, so the guns can see the sea
           const top = k === 3 && Math.abs(z - CANNON.c[1]) < 15 ? 1.0 : wallH;
-          b.add(BOX, i % 2 ? C.stoneWall : C.stoneDark, T(x, (gnd - 2 + y + top) / 2, z, ry, 2.6, y + top - gnd + 2, len / n + 0.3));
+          b.addCol(BOX, T(x, (gnd - 2 + y + top) / 2, z, ry, 2.6, y + top - gnd + 2, len / n + 0.3));
+          art.add(BOX, i%3===0?'#d8c5a2':'#bba88a', T(x, (gnd - 2 + y + top) / 2, z, ry, 2.6, y + top - gnd + 2, len / n - 0.035),false);
+          fortWallCraft(art,x,z,gnd-2,y+top,ry,len/n-.035,Boolean(i%2 && top===wallH));
           if (i % 2 && top === wallH) b.add(BOX, C.stoneWall, T(x, y + wallH + 0.5, z, ry, 2.6, 1.0, (len / n) * 0.5), false);
         }
       }
       // bastion tip: watchtower
       const g = Math.min(y, lowest(ax, az, 3));
-      b.add(CYL20, C.stoneDark, T(ax, (g + y + wallH + 3) / 2 - 1, az, 0, 2.6, y + wallH + 5 - g, 2.6));
-      b.add(CONE16, C.roofRed, T(ax, y + wallH + 5.4, az, 0, 3.1, 2.6, 3.1));
+      b.addCol(CYL20, T(ax, (g + y + wallH + 3) / 2 - 1, az, 0, 2.6, y + wallH + 5 - g, 2.6));
+      art.add(CYL20,'#bba88a', T(ax, (g + y + wallH + 3) / 2 - 1, az, 0, 2.6, y + wallH + 5 - g, 2.6),false);
+      b.addCol(CONE16, T(ax, y + wallH + 5.4, az, 0, 3.1, 2.6, 3.1));
+      art.add(CONE16,'#a96850', T(ax, y + wallH + 5.4, az, 0, 3.1, 2.6, 3.1),false);
     }
     // gate arch + torches
     {
       const gx = fx + Math.cos(FORT.gateA) * R, gz = fz + Math.sin(FORT.gateA) * R;
-      b.add(BOX, C.stoneDark, T(gx, y + wallH + 1, gz, -FORT.gateA, 3, 2.4, 9));
+      b.addCol(BOX, T(gx, y + wallH + 1, gz, -FORT.gateA, 3, 2.4, 9));
+      gateCraft(art,fx,y,fz,FORT.gateA,R);
       flag(b, gx, y + wallH + 2.2, gz, 5);
       lantern(gx + Math.cos(FORT.gateA) * 5 + 3, gz + Math.sin(FORT.gateA) * 5 + 3);
       lantern(gx + Math.cos(FORT.gateA) * 5 - 3, gz + Math.sin(FORT.gateA) * 5 - 3);
     }
     // barracks, captain's house and the powder magazine
     b.box(fx - 14, y, fz + 4, 14, 4, 7, C.plasterB);
-    b.add(ROOF, C.roofRed, T(fx - 14, y + 5, fz + 4, 0, 1.8, 15, 4.6, 0, Math.PI / 2));
+    b.addCol(ROOF, T(fx - 14, y + 5, fz + 4, 0, 1.8, 15, 4.6, 0, Math.PI / 2));
     b.box(fx - 6, y, fz - 18, 9, 5, 8, C.stoneWall);
-    b.add(ROOF, C.roofBlue, T(fx - 6, y + 6.2, fz - 18, Math.PI / 2, 2.2, 9.6, 5.2, 0, Math.PI / 2));
+    b.addCol(ROOF, T(fx - 6, y + 6.2, fz - 18, Math.PI / 2, 2.2, 9.6, 5.2, 0, Math.PI / 2));
     const [gx0, gz0] = [fx + 4, fz + 16];
     b.box(gx0, y, gz0, 7, 3.4, 6, C.stoneDark);
     b.add(new THREE.CylinderGeometry(3.6, 3.6, 7, 12, 1, false, 0, Math.PI), C.stoneDark, T(gx0, y + 3.4, gz0, 0, 1, 1, 1, 0, Math.PI / 2), false);
@@ -374,7 +404,7 @@ export function buildBlacksail(heightAt: HeightAt) {
       const z = cz + k * 4.5, top = y + deckH;
       b.add(BOX, C.woodDark, T(cx - 2.5, top + 0.35, z, 0, 1.6, 0.7, 2.0), k !== 0); // stand right at the working gun
       for (const s of [-0.9, 0.9]) b.add(new THREE.CylinderGeometry(0.45, 0.45, 0.15, 12), C.woodDark, T(cx - 2.5 + s * 0.6, top + 0.4, z + s, 0, 1, 1, 1, Math.PI / 2), false);
-      b.add(CYL8, C.iron, T(cx - 1.4, top + 1.0, z, Math.PI / 2, 0.32, 3.0, 0.32, 0, Math.PI / 2), false);
+      // Correctly aligned ART cannon barrels are authored in fortCraft; this never had COL.
       if (k === 0) glow.add(new THREE.TorusGeometry(1.6, 0.06, 6, 24), C.lantern, T(cx - 2.5, top + 0.05, z, 0, 1, 1, 1, Math.PI / 2), false);
     }
     // the gunner stands at the front edge of the deck, beside the working gun (nothing in front but sea)
@@ -394,6 +424,7 @@ export function buildBlacksail(heightAt: HeightAt) {
     pieces.push({ name: 'Shard_powder', material: 'M_Emissive', batch: shard, userData: { showWhen: ['ghost_boat_1', 'ghost_boat_2', 'ghost_boat_3'], hideWhen: 'shard_powder', bob: true } });
     mk({ id: 'shard_powder', type: 'interact', label: '海之碎片·火药', p: [gx0, y, gz0 - 4.4], radius: 3.2, requires: ['ghost_boat_1', 'ghost_boat_2', 'ghost_boat_3'] });
     mk({ id: 'disc_fort_tower', type: 'discovery', label: '要塞瞭望', p: [corner(0)[0] - 4, y, corner(0)[1] - 4], radius: 5 });
+    fortCraft(art,fx,y,fz,cx,cz);
     pieces.push({ name: 'Fort', material: 'M_Toon', batch: b, outline: true });
     for (const [dx, dz] of [[-20, -6], [6, 8], [-8, 22]])
       mk({ id: `enemy_fort_${dx}`, type: 'enemy', label: '要塞海盗（占位）', p: [fx + dx, y, fz + dz] });
@@ -455,6 +486,7 @@ export function buildBlacksail(heightAt: HeightAt) {
     b.add(BOX, C.boneDark, T(kx, kg + 1.2, kz, 0.6, 12, 2.4, 10));
     for (const s of [-1, 1]) b.add(SPHERE, '#24212a', T(kx + Math.cos(0.6) * s * 3.6 - Math.sin(0.6) * 7.2, kg + 7, kz - Math.sin(0.6) * s * 3.6 - Math.cos(0.6) * 7.2, 0.6, 2.4, 2.8, 1.2), false);
     for (let k = -2; k <= 2; k++) b.add(BOX, C.bone, T(kx + Math.cos(0.6) * k * 1.6 - Math.sin(0.6) * 7.6, kg + 2.6, kz - Math.sin(0.6) * k * 1.6 - Math.cos(0.6) * 7.6, 0.6, 1.0, 1.6, 0.8), false);
+    reefCraft(art,kx,kg,kz);
     // stepping stones along the sandbar
     for (let i = 0; i < SANDBAR.length; i++) {
       const [x, z] = SANDBAR[i];
@@ -475,7 +507,8 @@ export function buildBlacksail(heightAt: HeightAt) {
     pieces.push({ name: 'Shard_treasure', material: 'M_Emissive', batch: shard, userData: { showWhen: ['map_piece_1', 'map_piece_2', 'map_piece_3'], hideWhen: 'shard_treasure', bob: true } });
     mk({ id: 'shard_treasure', type: 'interact', label: '海之碎片·藏宝（在 X 处挖掘）', p: [xx, xg, xz], radius: 3.4, requires: ['map_piece_1', 'map_piece_2', 'map_piece_3'] });
     // palms and a beached longboat on the reef
-    b.add(BOX, C.hull, T(rx - 14, g + 0.3, rz + 6, 1.1, 1.6, 0.8, 5), true);
+    b.addCol(BOX, T(rx - 14, g + 0.3, rz + 6, 1.1, 1.6, 0.8, 5));
+    pieces.push(...buildSmallCraft('Reef_Yawl',rx-14,rz+6,1.1,5,1.6,g+.7,'fishing'));
     flag(b, rx - 4, g, rz - 12, 4);
     mk({ id: 'disc_skull_eyes', type: 'discovery', label: '骷髅之眼', p: [kx - Math.sin(0.6) * 9, heightAt(kx - Math.sin(0.6) * 9, kz - Math.cos(0.6) * 9), kz - Math.cos(0.6) * 9], radius: 4 });
     pieces.push({ name: 'Skull_Reef', material: 'M_Toon', batch: b, outline: true });
@@ -483,7 +516,8 @@ export function buildBlacksail(heightAt: HeightAt) {
     {
       const w = new Batch('Half_Wreck');
       const [hx, hz] = HALF_WRECK.c;
-      w.add(BOX, C.hull, T(hx, WL + 0.4, hz, 0.7, 6, 5, 16, 0.18), true);
+      w.addCol(BOX, T(hx, WL + 0.4, hz, 0.7, 6, 5, 16, 0.18));
+      pieces.push(...buildHalfWreckHull(hx,hz,WL));
       w.add(BOX, C.deck, T(hx + Math.sin(0.7) * 4, WL + 2.6, hz + Math.cos(0.7) * 4, 0.7, 5.4, 0.3, 7, 0.08), true);
       w.add(CYL8, C.hullDark, T(hx, WL + 6, hz, 0.7, 0.25, 9, 0.25, 0.4), false);
       const [ex, ez] = [hx + Math.sin(0.7) * 5, hz + Math.cos(0.7) * 5];
@@ -507,7 +541,7 @@ export function buildBlacksail(heightAt: HeightAt) {
     const base = heightAt(cx, cz) - 0.3, H = LIGHTHOUSE.h;
     for (let i = 0; i < 6; i++) {
       const y0 = base + (H * i) / 6, h = H / 6;
-      b.add(new THREE.CylinderGeometry(4.2 - i / 6, 4.2 - (i - 1) / 6 - 1 / 6, 1, 24), i % 2 ? '#4f5f7a' : '#d9dfe8', T(cx, y0 + h / 2, cz, 0, 1, h, 1));
+      b.addCol(new THREE.CylinderGeometry(4.2 - i / 6, 4.2 - (i - 1) / 6 - 1 / 6, 1, 24), T(cx, y0 + h / 2, cz, 0, 1, h, 1));
     }
     b.add(CYL20, C.stoneDark, T(cx, base + 0.4, cz, 0, 5.4, 0.8, 5.4));
     b.box(cx - 4.05, base + 0.8, cz, 0.3, 2.2, 1.3, C.woodDark, 0, false);
@@ -518,7 +552,7 @@ export function buildBlacksail(heightAt: HeightAt) {
       const a = ((k + 0.5) / seg) * Math.PI * 2, yy = base + 0.8 + (k + 0.5) * rise;
       b.add(BOX, k % 2 ? C.stoneWall : C.stoneDark, T(cx + Math.cos(a) * R, yy - 0.15, cz + Math.sin(a) * R, -a, 2.3, 0.3, segLen + 0.35, -slopeA));
       b.add(BOX, C.woodDark, T(cx + Math.cos(a) * (R + 1.1), yy + 0.35, cz + Math.sin(a) * (R + 1.1), -a, 0.12, 0.9, segLen + 0.3, -slopeA));
-      if (k % 3 === 0) b.add(CYL8, C.woodDark, T(cx + Math.cos(a) * (R - 0.4), yy - 1.4, cz + Math.sin(a) * (R - 0.4), 0, 0.12, 2.4, 0.12), false);
+      // Timber knees in lighthouseCraft socket into the tower; no dangling visual poles.
       lastA = a;
     }
     const top = base + 0.8 + H;
@@ -527,21 +561,24 @@ export function buildBlacksail(heightAt: HeightAt) {
       const da = ((lastA - a) % (Math.PI * 2) + Math.PI * 2) % (Math.PI * 2);
       if (da < 3.1) continue;
       const w = (2 * Math.PI * 5.4) / 24 + 0.3;
-      b.add(BOX, C.stoneWall, T(cx + Math.cos(a) * 5.4, top - 0.2, cz + Math.sin(a) * 5.4, -a, 4.2, 0.4, w));
+      b.addCol(BOX, T(cx + Math.cos(a) * 5.4, top - 0.2, cz + Math.sin(a) * 5.4, -a, 4.2, 0.4, w));
       b.add(BOX, C.iron, T(cx + Math.cos(a) * 7.35, top + 0.5, cz + Math.sin(a) * 7.35, -a, 0.15, 1.0, w));
     }
-    b.add(CYL20, C.stoneWall, T(cx, top - 0.2, cz, 0, 3.4, 0.4, 3.4));
+    b.addCol(CYL20, T(cx, top - 0.2, cz, 0, 3.4, 0.4, 3.4));
+    lighthouseGallery(art,cx,top,cz,lastA);
     for (let i = 0; i < 8; i++) {
       const a = (i / 8) * Math.PI * 2;
       b.add(BOX, C.iron, T(cx + Math.cos(a) * 2.35, top + 1.4, cz + Math.sin(a) * 2.35, -a, 0.18, 2.8, 0.18), false);
     }
-    b.add(CONE16, '#4f5f7a', T(cx, top + 3.8, cz, 0, 3.0, 2.2, 3.0));
+    b.addCol(CONE16, T(cx, top + 3.8, cz, 0, 3.0, 2.2, 3.0));
+    art.add(CONE16,'#414e50', T(cx, top + 3.8, cz, 0, 3.0, 2.2, 3.0),false);
+    lighthouseCraft(art,cx,base,cz,H,top);
     pieces.push({ name: 'Lighthouse', material: 'M_Toon', batch: b, outline: true });
     const cold = new Batch('Cold_Lamp', 'M_Emissive');
-    cold.add(new THREE.CylinderGeometry(2.3, 2.3, 2.8, 16), C.coldLight, T(cx, top + 1.4, cz), false);
+    cold.add(new THREE.IcosahedronGeometry(1,1), C.coldLight, T(cx, top + 1.28, cz,0,.7,.95,.7), false);
     pieces.push({ name: 'Cold_Lamp', material: 'M_Emissive', batch: cold, userData: { hideWhen: 'sea_core' } });
     const warm = new Batch('Warm_Lamp', 'M_Emissive');
-    warm.add(new THREE.CylinderGeometry(2.3, 2.3, 2.8, 16), C.lantern, T(cx, top + 1.4, cz), false);
+    warm.add(new THREE.IcosahedronGeometry(1,1), C.lantern, T(cx, top + 1.28, cz,0,.7,.95,.7), false);
     pieces.push({ name: 'Warm_Lamp', material: 'M_Emissive', batch: warm, userData: { showWhen: 'sea_core' } });
     const beam = new Batch('Lighthouse_Beam', 'M_Beam');
     for (const s of [0, Math.PI]) beam.add(new THREE.ConeGeometry(5, 90, 16, 1, true).translate(0, -45, 0), C.coldLight, T(cx, top + 1.4, cz, s, 1, 1, 1, Math.PI / 2 + 0.05), false);
@@ -695,5 +732,6 @@ export function buildBlacksail(heightAt: HeightAt) {
     { name: 'Rocks', material: 'M_Toon', batch: rocks, outline: true, userData: { count: nRocks } },
     { name: 'Bushes', material: 'M_Foliage', batch: bushes },
   );
+  pieces.push(...architecture.pieces());
   return { pieces, markers };
 }
