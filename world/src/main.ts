@@ -23,7 +23,8 @@ import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
 import { KingdomTwilight } from './twilight';
-import { FirstContract } from './contracts';
+import { FirstContract, SERVANTS, servantByContract, type ServantId } from './contracts';
+import { KitCompanion } from './kitCompanion';
 import { ContractServant } from './servant';
 import { CHARACTER_KITS } from './characters/catalog';
 import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
@@ -433,21 +434,34 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
 // Era servants are visual/animation actors attached to their existing quest
 // markers. They lazy-load only near the marker, share the normal scene
 // lifecycle, and do not invent new classes or damage rules.
-const eraActors: Array<{ markerId: string; kit: keyof typeof CHARACTER_KITS; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number }> = [
-  { markerId: 'blackbeard_meet', kit: 'blackbeard', retryAt: 0, failures: 0 },
-  { markerId: 'napoleon_meet', kit: 'napoleonMounted', retryAt: 0, failures: 0 },
-  { markerId: 'musashi_meet', kit: 'musashi', retryAt: 0, failures: 0 },
+// Once contracted and chosen as the companion, the same actor follows the player (KitCompanion).
+const companion = (range: number, damage: number) => new KitCompanion({ colliders, range, damage,
+  target: (position, r) => { const hit = combat.allyTarget(position, r); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+});
+const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof CHARACTER_KITS; follow: KitCompanion; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number }> = [
+  { markerId: 'blackbeard_meet', servant: 'blackbeard', kit: 'blackbeard', follow: companion(12, 12), retryAt: 0, failures: 0 },
+  { markerId: 'napoleon_meet', servant: 'napoleon', kit: 'napoleonMounted', follow: companion(4.5, 16), retryAt: 0, failures: 0 },
+  { markerId: 'musashi_meet', servant: 'musashi', kit: 'musashi', follow: companion(3.5, 9), retryAt: 0, failures: 0 },
 ];
 let eraActorsDisposed = false;
+const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
+const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
+function servantStatus() {
+  const n = servantName(contract.selected);
+  return bilingual(`${n.zh} · ${contract.companionSummoned ? '同行中' : '已收回'}`, `${n.en} · ${contract.companionSummoned ? 'Following' : 'Recalled'}`);
+}
 function updateEraActors(dt: number) {
   if (eraActorsDisposed) return;
   const now = performance.now();
   for (const entry of eraActors) {
     const marker = markers.get(entry.markerId);
     if (!marker) continue;
-    const nearby = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
+    const nearMarker = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
+    const following = contract.isFollowing(entry.servant) && companionEnabled();
+    const nearby = nearMarker || following;
     if (nearby && !entry.actor && !entry.loading && now >= entry.retryAt) {
-      entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: scene.environment ?? undefined })
+      entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: scene.environment ?? undefined, onEvent: (event) => { if (entry.actor) entry.follow.onEvent(entry.actor, event); } })
         .then((actor) => {
           if (eraActorsDisposed) { actor.dispose(); return; }
           entry.failures = 0; entry.error = undefined;
@@ -464,10 +478,13 @@ function updateEraActors(dt: number) {
         })
         .finally(() => { entry.loading = undefined; });
     }
-    if (entry.actor) {
-      entry.actor.root.visible = nearby;
-      entry.actor.update(dt, !nearby || !gameplayActive());
-    }
+    if (!entry.actor) continue;
+    entry.actor.root.visible = nearby;
+    if (following) { entry.follow.update(entry.actor, dt, player.pos, player.yaw, !gameplayActive()); continue; }
+    entry.follow.release(entry.actor);
+    // Not following: wait at the meeting spot (also after the contract, until chosen).
+    entry.actor.root.position.fromArray(marker.p); entry.actor.root.rotation.y = Math.PI;
+    entry.actor.update(dt, !nearby || !gameplayActive());
   }
 }
 const servantPanel = createServantPanel(servant, contract, () => { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
@@ -478,8 +495,9 @@ Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px',
 document.body.append(contractCard);
 function renderContract() {
   servantPanel.render();
-  const state = servant.status;
-  const hint = contract.recruited ? bilingual(`[${settings.label('summon')}] 召唤／收回 · 近身协助攻击`, `[${settings.label('summon')}] Summon / recall · Close-range assistance`)
+  const state = contract.selected && contract.selected !== 'saber' ? servantStatus() : servant.status;
+  const multi = contract.roster.length > 1 ? bilingual(`\n[${settings.label('switchServant')}] 切换从者（${contract.roster.length} 位已缔约）`, `\n[${settings.label('switchServant')}] Switch servant (${contract.roster.length} contracted)`) : '';
+  const hint = contract.anyRecruited ? bilingual(`[${settings.label('summon')}] 召唤／收回 · 协助攻击`, `[${settings.label('summon')}] Summon / recall · Assists in combat`) + multi
     : bilingual('前往圣剑湖，与第一位契约从者会面', 'Visit Sword Lake to meet your first contracted servant');
   const next = `${state}\n${hint}`;
   if (contractCard.textContent !== next) contractCard.textContent = next;
@@ -511,8 +529,8 @@ function renderControlHints() {
   const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
   const teleports = [1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/');
   $('help').textContent = bilingual(
-    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
-    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
 
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
@@ -562,8 +580,13 @@ function press(binding: string, repeat = false) {
   if (action === 'help') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
   if (action === 'interact' && !player.flying) interact();
   if (action === 'summon') {
-    if (contract.toggle()) toast(contract.summoned ? bilingual('Saber 已召唤', 'Saber summoned') : bilingual('Saber 已收回', 'Saber recalled'));
+    if (contract.toggle()) { const n = servantName(contract.selected); toast(contract.companionSummoned ? bilingual(`${n.zh} 已召唤`, `${n.en} summoned`) : bilingual(`${n.zh} 已收回`, `${n.en} recalled`)); }
     else toast(bilingual('先前往圣剑湖缔结第一份契约', 'Form your first contract at Sword Lake'));
+  }
+  if (action === 'switchServant') {
+    const next = contract.cycle();
+    if (next) { const n = servantName(next); toast(bilingual(`切换从者：${n.zh}`, `Servant switched: ${n.en}`)); }
+    else toast(bilingual('缔结第二份契约后才能切换从者', 'Contract a second servant to switch'));
   }
   if (action === 'reset' && !down('sprint')) { resetProgress(); toast('进度已重置'); }
   if (action.startsWith('teleport')) {
@@ -668,7 +691,7 @@ function interact() {
     return;
   }
   done.add(m.id);
-  if (m.id === 'saber_contract') contract.recruit();
+  if (servantByContract(m.id)) contract.recruit(m.id);
   save(); applyWorldState();
   const msg: Record<string, string> = {
     tower_console: '幻日塔重启！光环点亮了整个山谷，四处时层断面同时显现',
@@ -791,7 +814,7 @@ function frame(now: number) {
   } else camera.position.copy(eye);
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (down('fire')) shoot();
-  servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
+  servant.update(dt, player.pos, player.yaw, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
   renderContract();
   sky.position.copy(eye);

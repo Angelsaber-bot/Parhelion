@@ -19,7 +19,7 @@ export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
     { id: 'nextWeapon', label: '下一个装备槽', binding: 'WheelDown' }, { id: 'prevWeapon', label: '上一个装备槽', binding: 'WheelUp' }],
   world: [...move.map((a) => a.id === 'fire' ? { ...a, label: '射击' } : a),
     { id: 'sprint', label: '奔跑', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'interact', label: '互动', binding: 'KeyF' },
-    { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' },
+    { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' }, { id: 'switchServant', label: '切换从者', binding: 'KeyY' },
     { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' },
     { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '自由飞行调试', binding: 'KeyV' },
     { id: 'collision', label: '碰撞体调试', binding: 'KeyC' }, { id: 'reset', label: '重置进度', binding: 'KeyR' },

@@ -20,3 +20,13 @@ test('corrupt and denied storage remain playable without granting a missing ques
   const c = new FirstContract(new Set(), { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } });
   assert.doesNotThrow(() => c.recruit()); assert.equal(c.summoned,true);
 });
+test('second contract can be switched to, cycled and persisted; only one companion follows', () => {
+  const done = new Set<string>(), storage = memory(), c = new FirstContract(done,storage);
+  c.recruit(); assert.equal(c.cycle(),null);
+  c.recruit('blackbeard_contract'); assert.equal(c.selected,'blackbeard'); assert.equal(c.summoned,false); assert.equal(c.isFollowing('blackbeard'),true);
+  assert.equal(c.cycle(),'saber'); assert.equal(c.summoned,true); assert.equal(c.isFollowing('blackbeard'),false);
+  c.recruit('musashi_contract'); assert.deepEqual(c.roster,['saber','blackbeard','musashi']);
+  assert.equal(c.select('napoleon'),false); assert.equal(c.select('blackbeard'),true);
+  const reloaded = new FirstContract(done,storage); assert.equal(reloaded.selected,'blackbeard'); assert.equal(reloaded.companionSummoned,true);
+  c.toggle(); assert.equal(new FirstContract(done,storage).companionSummoned,false);
+});

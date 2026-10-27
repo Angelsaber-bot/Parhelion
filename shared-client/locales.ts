@@ -1,6 +1,6 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
-  ['召唤／收回从者', 'Summon / dismiss Servant'],
+  ['召唤／收回从者', 'Summon / dismiss Servant'], ['切换从者', 'Switch servant'],
   ['自由飞行调试（随镜头俯仰升降）', 'Free-flight test (climb or descend with camera pitch)'],
   ['自由飞行调试 开 · 抬头前进上升，低头前进下降', 'Free-flight on · Look up and move forward to rise; look down to descend'],
   ['按键与灵敏度设置', 'Controls & sensitivity'], ['操作设置', 'Controls'], ['读取操作设置…', 'Loading controls…'],
