@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 22, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 27, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -64,6 +64,14 @@ export const WILDERNESS_ZONES = [
   { x: 222, z: 652, r: 18, kind: 'shade' as const },
   { x: -100, z: 855, r: 22, kind: 'shade' as const },
   { x: 60, z: 950, r: 26, kind: 'crystal' as const },
+  // Additional remote pockets: keep the 82 m active window and town-safe placement,
+  // while raising the seeded wilderness roster by roughly 23%.
+  { x: -260, z: -220, r: 20, kind: 'shade' as const },
+  { x: 260, z: -210, r: 20, kind: 'shade' as const },
+  { x: 300, z: 120, r: 18, kind: 'shade' as const },
+  { x: 900, z: 130, r: 20, kind: 'crystal' as const },
+  { x: -220, z: -840, r: 20, kind: 'crystal' as const },
+  { x: 260, z: 860, r: 20, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;
@@ -78,7 +86,7 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
       break;
     }
   }
-  return points;
+  return points.slice(0, COMBAT.wildernessCap);
 }
 
 function makeEnemy(s: SpawnPoint): Enemy {
