@@ -158,9 +158,10 @@ export class ContractServant {
     const q = this.root.getWorldQuaternion(new THREE.Quaternion());
     const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q), right = new THREE.Vector3(-1, 0, 0).applyQuaternion(q), down = new THREE.Vector3(0, -1, 0);
     const dir = (...parts: Array<[THREE.Vector3, number]>) => parts.reduce((v, [d, k]) => v.addScaledVector(d, k), new THREE.Vector3()).normalize();
-    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .42], [fwd, .08]), weight);
-    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .6], [right, .1]), weight);
-    this.aim('RightHand', null, dir([down, .9], [fwd, .3], [right, .08]), weight);
+    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .5], [fwd, .08]), weight);
+    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .5], [right, .3]), weight);
+    // Blade flares outward more than the armoured skirt so the sword never sinks into it.
+    this.aim('RightHand', null, dir([down, .85], [fwd, .2], [right, .55]), weight);
     this.aim('LeftArm', 'LeftForeArm', dir([down, 1], [right, -.32], [fwd, .04]), weight);
     this.aim('LeftForeArm', 'LeftHand', dir([down, 1], [right, -.18], [fwd, .22]), weight);
   }
