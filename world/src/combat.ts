@@ -25,6 +25,13 @@ export const COMBAT = {
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
 export const BOSS_REWARD = 'reward_sunset_oath';
+/** One sun-core boss per era: the marker it stands on, the core that starts it, what it needs and grants. */
+export interface BossDef { id: string; core: string; requires: readonly string[]; reward: string }
+export const BOSSES: BossDef[] = [
+  { id: 'boss_vacant_king', core: 'sun_core', requires: BOSS_REQUIREMENTS, reward: BOSS_REWARD },
+  { id: 'boss_drowned_admiral', core: 'sea_core', requires: ['shard_powder', 'shard_compass', 'shard_treasure'], reward: 'reward_black_sail' },
+];
+export interface BossSpawn extends SpawnPoint { requires?: readonly string[]; cleared?: boolean }
 export const distanceXZ = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
 const clone = (p: Point3): Point3 => ({ x: p.x, y: p.y, z: p.z });
 
@@ -36,11 +43,12 @@ export const WILDERNESS_ZONES = [
   { x: -500, z: 25, r: 28, kind: 'shade' as const },
   { x: -454, z: -100, r: 26, kind: 'shade' as const },
   { x: -724, z: -100, r: 28, kind: 'shade' as const },
-  { x: 650, z: 90, r: 22, kind: 'crystal' as const },
-  { x: 566, z: 28, r: 22, kind: 'crystal' as const },
-  { x: 630, z: -24, r: 22, kind: 'crystal' as const },
-  { x: 706, z: -102, r: 20, kind: 'crystal' as const },
-  { x: 680, z: 50, r: 20, kind: 'crystal' as const },
+  // 黑帆尽头 (region offset x + 720): the downs, the fort road, the vortex rim, the headland road
+  { x: 660, z: -60, r: 24, kind: 'crystal' as const },
+  { x: 780, z: -70, r: 22, kind: 'crystal' as const },
+  { x: 640, z: -100, r: 20, kind: 'crystal' as const },
+  { x: 850, z: 10, r: 20, kind: 'crystal' as const },
+  { x: 760, z: 70, r: 22, kind: 'crystal' as const },
   { x: 145, z: 140, r: 20, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
@@ -67,37 +75,53 @@ function makeEnemy(s: SpawnPoint): Enemy {
 
 export class WorldCombatState {
   readonly enemies: Enemy[];
-  readonly boss: Enemy;
+  /** Every era boss; `boss` is the one last challenged (only one fight runs at a time). */
+  readonly bosses: Enemy[];
+  private readonly requires: (readonly string[])[];
+  private readonly cleared: boolean[];
+  private current = 0;
   hp: number = COMBAT.playerHp;
   defeatedFor = 0;
   bossStarted = false;
-  bossCleared = false;
   shotCooldown = 0;
   hurtCooldown = 0;
   quietFor = 0;
   private readonly events: CombatEvent[] = [];
-  constructor(spawns: SpawnPoint[], boss: SpawnPoint, cleared = false) {
+  constructor(spawns: SpawnPoint[], boss: BossSpawn | BossSpawn[], cleared = false) {
+    const list = [boss].flat();
     this.enemies = spawns.slice(0, COMBAT.wildernessCap).map(makeEnemy);
-    this.boss = makeEnemy({ ...boss, kind: 'king' });
-    this.enemies.push(this.boss);
-    this.bossCleared = cleared;
-    if (cleared) { this.boss.hp = 0; this.boss.mode = 'dead'; }
+    this.bosses = list.map(b => makeEnemy({ id: b.id, p: b.p, kind: 'king' }));
+    this.requires = list.map(b => b.requires ?? BOSS_REQUIREMENTS);
+    this.cleared = list.map(b => b.cleared ?? cleared);
+    this.enemies.push(...this.bosses);
+    this.bosses.forEach((b, i) => { if (this.cleared[i]) { b.hp = 0; b.mode = 'dead'; } });
   }
+  get boss() { return this.bosses[this.current]; }
+  get bossCleared() { return this.cleared[this.current]; }
+  isCleared(id: string) { const i = this.bosses.findIndex(b => b.id === id); return i >= 0 && this.cleared[i]; }
   drainEvents() { return this.events.splice(0); }
   get defeated() { return this.defeatedFor > 0; }
-  beginBoss(done: ReadonlySet<string>) {
-    if (this.bossStarted || this.bossCleared || this.defeated || !BOSS_REQUIREMENTS.every(id => done.has(id))) return false;
+  /** Start a boss fight (the first boss when no id is given) once its requirements are done. */
+  beginBoss(done: ReadonlySet<string>, id?: string) {
+    const i = id === undefined ? 0 : this.bosses.findIndex(b => b.id === id);
+    if (i < 0 || this.bossStarted) return false;
+    this.current = i;
+    if (this.bossCleared || this.defeated || !this.requires[i].every(r => done.has(r))) return false;
     this.resetEnemy(this.boss);
     this.boss.active = true; this.boss.mode = 'chase'; this.boss.timer = 1.4;
     this.bossStarted = true; this.hp = COMBAT.playerHp; this.quietFor = 0;
     this.events.push({ type: 'bossStart' });
     return true;
   }
-  resetAll(cleared = false) {
-    this.bossStarted = false; this.bossCleared = cleared;
+  /** `cleared` applies to every boss, or pass a per-boss list (same order as the constructor). */
+  resetAll(cleared: boolean | boolean[] = false) {
+    this.bossStarted = false;
     this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.hurtCooldown = 0;
     for (const e of this.enemies) this.resetEnemy(e);
-    if (cleared) { this.boss.hp = 0; this.boss.mode = 'dead'; }
+    this.bosses.forEach((b, i) => {
+      this.cleared[i] = Array.isArray(cleared) ? !!cleared[i] : cleared;
+      if (this.cleared[i]) { b.hp = 0; b.mode = 'dead'; }
+    });
     this.events.length = 0;
   }
   private resetEnemy(e: Enemy) {
@@ -122,7 +146,7 @@ export class WorldCombatState {
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = COMBAT.respawn; e.active = false;
       this.events.push({ type: 'kill', id });
-      if (e === this.boss) { this.bossStarted = false; this.bossCleared = true; this.events.push({ type: 'victory' }); }
+      if (e === this.boss) { this.bossStarted = false; this.cleared[this.current] = true; this.events.push({ type: 'victory' }); }
     } else {
       if (e.mode === 'idle') e.mode = 'chase';
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
@@ -158,7 +182,7 @@ export class WorldCombatState {
     this.events.push({ type: 'hurt', damage: amount });
     if (!this.hp) {
       this.defeatedFor = 2.5; this.resetBoss();
-      for (const e of this.enemies) if (e !== this.boss && e.mode !== 'dead') this.resetEnemy(e);
+      for (const e of this.enemies) if (!this.bosses.includes(e) && e.mode !== 'dead') this.resetEnemy(e);
       this.events.push({ type: 'death' });
     }
   }
@@ -176,7 +200,7 @@ export class WorldCombatState {
     let threatened = false;
     for (const e of this.enemies) {
       e.hitTime = Math.max(0, e.hitTime - dt);
-      if (e === this.boss && !this.bossStarted) { e.active = false; continue; }
+      if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
         e.timer -= dt;

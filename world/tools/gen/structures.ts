@@ -595,7 +595,7 @@ export function buildStructures(heightAt: HeightAt) {
       pieces.push({ name: 'Ice_Bay', material: 'M_Toon', batch: ice, outline: true });
       seam('north', SEAM_N.c[0], SEAM_N.c[1], top, 0, '#bfe9ff', '北方冰海断面 · 永冬之城', '1812 年 · 俄罗斯：不会结束的冬天');
     }
-    // east → the coast (星落海岸, later 黑帆尽头, 1718): a mast with a black sail at the pass
+    // east → 黑帆尽头 (1718): a mast with a black sail at the pass
     {
       const [cx, cz] = SEAM_E.c, y = heightAt(cx, cz);
       for (const s of [-1, 1]) {
@@ -604,7 +604,11 @@ export function buildStructures(heightAt: HeightAt) {
         b.box(mx, my + 10, mz, 0.3, 0.3, 4, PAL.woodDark, 0, false);
         b.box(mx + 0.2, my + 7.4, mz, 0.06, 2.6, 3.6, '#22252e', 0, false);
       }
-      seam('east', cx, cz, y, -Math.PI / 2, '#7fb0ff', '东部山口断面 · 黑帆尽头', '1718 年 · 大西洋：海盗黄金时代（现为星落海岸）');
+      seam('east', cx, cz, y, -Math.PI / 2, '#7fb0ff', '东部山口断面 · 黑帆尽头', '1718 年 · 加勒比海：海盗黄金时代的最后一年');
+      // like the west seam, the pass road into 黑帆尽头 holds until the summoning circle is stable
+      const gate = new Batch('Seam_east_Gate');
+      gate.addCol(BOX, T(cx + 24.5, y + 30, cz, 0, 1, 80, 40)); // across the link at x = 342
+      pieces.push({ name: 'Seam_east_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
     }
     pieces.push({ name: 'Seams', material: 'M_Toon', batch: b, outline: true });
   }

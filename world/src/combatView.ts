@@ -2,21 +2,47 @@ import * as THREE from 'three';
 import type { Collider } from './player';
 import type { Layout } from './types';
 import { bilingual } from '../../shared-client/i18n';
-import { BOSS_REWARD, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, type Enemy, type Point3 } from './combat';
+import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, type Enemy, type Point3 } from './combat';
 import './combat.css';
 import { makeCombatTerrain } from './combatTerrain';
 
 export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
-  toast: (message: string) => void; onVictory: () => void; onPlayerDefeated: () => void;
+  toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
 interface EnemyVisual { root: THREE.Group; body: THREE.Group; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
+type Line = [string, string];
+/** Per-boss names and battle lines (zh, en); attack names follow the boss's sweep / burst. */
+const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: Line; victory: Line; burst: Line; sweep: Line; colors: [string, string, string] }> = {
+  boss_vacant_king: {
+    name: ['空位之王', 'THE VACANT KING'],
+    start: ['空位之王苏醒：离开红色预警圈，射击核心！', 'The Vacant King awakens: leave the red tells and fire at its core!'],
+    reset: ['战斗重置：回到落日之核可再次挑战', 'Encounter reset: return to the Sun Core to retry.'],
+    phase: ['第二阶段 · 余烬暴怒：攻击加速，预警仍可闪避', 'Phase II · Ember Fury: faster attacks, still dodgeable.'],
+    victory: ['空位之王已击败 · 获得「落日誓约」纪念徽记', 'Vacant King defeated · Sunset Oath keepsake earned'],
+    burst: ['日蚀冲击：离开红圈！', 'Eclipse burst: leave the red circle!'],
+    sweep: ['王剑横扫：拉开距离！', 'Royal sweep: move away!'],
+    colors: ['#3a3152', '#e57a3f', '#ffbe62'],
+  },
+  boss_drowned_admiral: {
+    name: ['亡航提督', 'THE DROWNED ADMIRAL'],
+    start: ['亡航提督从甲板下爬起：离开红色预警圈，射击它胸前的冷灯！', 'The Drowned Admiral rises from below deck: leave the red tells and shoot its cold lamp!'],
+    reset: ['战斗重置：回到海之核可再次挑战', 'Encounter reset: return to the Sea Core to retry.'],
+    phase: ['第二阶段 · 怒潮：舷炮齐射更快，预警仍可闪避', 'Phase II · Raging Tide: faster broadsides, still dodgeable.'],
+    victory: ['亡航提督已击败 · 获得「黑帆」纪念徽记', 'Drowned Admiral defeated · Black Sail keepsake earned'],
+    burst: ['舷炮齐射：离开红圈！', 'Broadside: leave the red circle!'],
+    sweep: ['锚链横扫：拉开距离！', 'Anchor sweep: move away!'],
+    colors: ['#24404a', '#5fe0c0', '#a8fff0'],
+  },
+};
+const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
 
 /** Bounded renderer/facade around the local simulation. All combat resources are disposed on exit. */
 export class WorldCombat {
   readonly state: WorldCombatState;
+  private readonly bossDefs: typeof BOSSES;
   readonly geometry;
   private readonly visuals = new Map<string, EnemyVisual>();
   private readonly shots: ShotVisual[] = [];
@@ -43,9 +69,13 @@ export class WorldCombat {
   private playable = false;
   constructor(private readonly options: WorldCombatOptions) {
     this.geometry = makeCombatTerrain(options.colliders, options.layout);
-    const marker = options.layout.markers.find(m => m.id === 'boss_vacant_king')!;
-    const p = { x: marker.p[0], y: marker.p[1] + 0.05, z: marker.p[2] };
-    this.state = new WorldCombatState(makeWildernessSpawns(options.layout.world.seed ^ 537, this.geometry.safeSpawn), { id: 'boss_vacant_king', kind: 'king', p }, options.done.has('sun_core'));
+    // every era boss whose marker is in this world (a single-region layout may hold just one)
+    this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
+    const bosses = this.bossDefs.map(b => {
+      const marker = options.layout.markers.find(m => m.id === b.id)!;
+      return { id: b.id, kind: 'king' as const, p: { x: marker.p[0], y: marker.p[1] + 0.05, z: marker.p[2] }, requires: b.requires, cleared: options.done.has(b.core) };
+    });
+    this.state = new WorldCombatState(makeWildernessSpawns(options.layout.world.seed ^ 537, this.geometry.safeSpawn), bosses);
     for (const enemy of this.state.enemies) this.visuals.set(enemy.id, this.makeEnemy(enemy));
     options.scene.add(this.effectGroup);
     this.hud.id = 'world-vitals'; this.hud.className = 'combat-hud';
@@ -60,9 +90,13 @@ export class WorldCombat {
   }
   get defeated() { return this.state.defeated; }
   get bossStarted() { return this.state.bossStarted; }
-  beginBoss() { const began = this.state.beginBoss(this.options.done); this.events(); return began; }
+  /** Start the boss guarding this core (default: the first era's sun core). */
+  beginBoss(core = 'sun_core') {
+    const def = this.bossDefs.find(b => b.core === core);
+    const began = !!def && this.state.beginBoss(this.options.done, def.id); this.events(); return began;
+  }
   reset() {
-    this.state.resetAll(this.options.done.has('sun_core'));
+    this.state.resetAll(this.bossDefs.map(b => this.options.done.has(b.core)));
     this.acc = 0; this.allyCooldown = 0; this.impactFor = 0; this.hurtFor = 0;
     for (const shot of this.shots) this.removeShot(shot);
     this.shots.length = 0;
@@ -157,12 +191,13 @@ export class WorldCombat {
         document.getElementById('crosshair')?.classList.add('hit');
         window.setTimeout(() => document.getElementById('crosshair')?.classList.remove('hit'), 130);
       } else if (event.type === 'hurt') this.hurtFor = 0.4;
-      else if (event.type === 'bossStart') this.options.toast(bilingual('空位之王苏醒：离开红色预警圈，射击核心！', 'The Vacant King awakens: leave the red tells and fire at its core!'));
-      else if (event.type === 'bossReset') this.options.toast(bilingual('战斗重置：回到落日之核可再次挑战', 'Encounter reset: return to the Sun Core to retry.'));
-      else if (event.type === 'phase') this.options.toast(bilingual('第二阶段 · 余烬暴怒：攻击加速，预警仍可闪避', 'Phase II · Ember Fury: faster attacks, still dodgeable.'));
+      else if (event.type === 'bossStart') this.options.toast(bilingual(...bossText(this.state.boss.id).start));
+      else if (event.type === 'bossReset') this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
+      else if (event.type === 'phase') this.options.toast(bilingual(...bossText(this.state.boss.id).phase));
       else if (event.type === 'victory') {
-        this.options.done.add(BOSS_REWARD); this.options.onVictory();
-        this.options.toast(bilingual('空位之王已击败 · 获得「落日誓约」纪念徽记', 'Vacant King defeated · Sunset Oath keepsake earned'));
+        const def = this.bossDefs.find(b => b.id === this.state.boss.id)!;
+        this.options.done.add(def.reward); this.options.onVictory(def.core);
+        this.options.toast(bilingual(...bossText(def.id).victory));
       } else if (event.type === 'revive') this.options.onPlayerDefeated();
     }
   }
@@ -171,19 +206,21 @@ export class WorldCombat {
     (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp}%`;
     this.hud.title = bilingual('脱离战斗 5 秒后恢复生命', 'Health recovers after 5 seconds out of combat');
     this.bossHud.hidden = !this.state.bossStarted;
-    this.bossHud.querySelector('strong')!.textContent = bilingual('空位之王', 'THE VACANT KING');
+    const text = bossText(this.state.boss.id);
+    this.bossHud.querySelector('strong')!.textContent = bilingual(...text.name);
     (this.bossHud.querySelector('.combat-fill') as HTMLElement).style.width = `${100 * this.state.boss.hp / this.state.boss.maxHp}%`;
     const b = this.state.boss;
     this.bossHud.querySelector('small')!.textContent = `${bilingual('阶段', 'Phase')} ${b.phase} · ${Math.ceil(b.hp)} / ${b.maxHp} · ` +
-      (b.mode === 'windup' ? b.attack === 'burst' ? bilingual('日蚀冲击：离开红圈！', 'Eclipse burst: leave the red circle!') : bilingual('王剑横扫：拉开距离！', 'Royal sweep: move away!') : bilingual('射击核心 · 离开战场将重置', 'Fire at the core · Leaving resets the encounter'));
+      (b.mode === 'windup' ? b.attack === 'burst' ? bilingual(...text.burst) : bilingual(...text.sweep) : bilingual('射击核心 · 离开战场将重置', 'Fire at the core · Leaving resets the encounter'));
     this.defeat.hidden = !this.state.defeated;
     this.defeat.textContent = bilingual('你倒下了\n即将回到安全地点 · 进度保留', 'You have fallen\nReturning to safety · Progress is kept');
   }
   private makeEnemy(e: Enemy): EnemyVisual {
     const king = e.kind === 'king', crystal = e.kind === 'crystal';
     const root = new THREE.Group(), body = new THREE.Group(); root.add(body); root.name = e.id;
-    const material = new THREE.MeshStandardMaterial({ color: king ? '#3a3152' : crystal ? '#49859b' : '#52637d', metalness: 0.35, roughness: 0.5, emissive: king ? '#e57a3f' : crystal ? '#63e4ed' : '#ac96fb', emissiveIntensity: 0.12 });
-    const glow = new THREE.MeshBasicMaterial({ color: king ? '#ffbe62' : crystal ? '#9dffff' : '#b9a6ff', toneMapped: false });
+    const [kBody, kGlow, kLight] = bossText(e.id).colors;
+    const material = new THREE.MeshStandardMaterial({ color: king ? kBody : crystal ? '#49859b' : '#52637d', metalness: 0.35, roughness: 0.5, emissive: king ? kGlow : crystal ? '#63e4ed' : '#ac96fb', emissiveIntensity: 0.12 });
+    const glow = new THREE.MeshBasicMaterial({ color: king ? kLight : crystal ? '#9dffff' : '#b9a6ff', toneMapped: false });
     this.materials.push(material, glow);
     const mesh = (g: THREE.BufferGeometry, m: THREE.Material, p: [number, number, number], scale?: [number, number, number]) => {
       this.shared.push(g); const o = new THREE.Mesh(g, m); o.position.set(...p); if (scale) o.scale.set(...scale);

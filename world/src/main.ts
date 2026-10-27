@@ -18,6 +18,7 @@ import { ShoulderAim, shoulderArmLength } from './aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
 import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
+import { BOSSES } from './combat';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
@@ -32,7 +33,7 @@ import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageC
 const params = new URLSearchParams(location.search);
 const requestedFov = Number(params.get('fov'));
 const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
-// One open world: 幻日谷 + 落日王国 (west seam) + 星落海岸 (east pass). ?region=coast|britain starts there.
+// One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass). ?region=blacksail|britain starts there.
 const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
@@ -151,7 +152,7 @@ for (const p of parts) {
   if (mk) mk.visible = false;
   p.root.getObjectByName('ART')!.traverse((o) => { if ((o as THREE.Mesh).isMesh) artMeshes.push(o as THREE.Mesh); });
 }
-// the coast's large sea plane covers both regions; drop the others so water never doubles up
+// 黑帆尽头's large sea plane covers every region; drop the others so water never doubles up
 const waters = artMeshes.filter((m) => m.name === 'Water');
 const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geometry.computeBoundingSphere(), a.geometry.boundingSphere!)).radius >=
   (b.geometry.boundingSphere ?? (b.geometry.computeBoundingSphere(), b.geometry.boundingSphere!)).radius ? a : b));
@@ -165,7 +166,13 @@ for (const m of artMeshes) {
   m.receiveShadow = true;
   m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && (m.material as THREE.Material).name !== 'M_Beam';
   if ((m.material as THREE.Material).name === 'M_Beam') m.receiveShadow = false;
-  if (m.name.startsWith('TGT_')) targets.push(m);
+  if (m.name.startsWith('TGT_')) {
+    targets.push(m);
+    // a target that must be shot from a spot (the fort cannon): that spot is region-local, make it world
+    const near = m.userData.near as [number, number] | undefined;
+    const part = parts.find((p) => { let o: THREE.Object3D | null = m; while (o && o !== p.root) o = o.parent; return !!o; });
+    if (near && part) m.userData.nearWorld = [near[0] + part.def.offset[0], near[1] + part.def.offset[1]];
+  }
   // spinning pieces are exported in region space: move their pivot to the mesh origin
   if (m.userData.spin && Array.isArray(m.userData.pivot)) {
     const [px, pz] = m.userData.pivot as [number, number];
@@ -187,6 +194,7 @@ for (const m of artMeshes) {
 // colliders: everything static merged into one BVH; dynamic pieces (door, targets) keep their own
 const colliders: Collider[] = [];
 const gates: { name: string; opensWhen: string[] }[] = [];
+const solids: { name: string; solidWhen: string[] }[] = []; // e.g. the ghost bridge: walkable once it appears
 const staticGeos: THREE.BufferGeometry[] = [boundaryWalls()];
 const debugCol = new THREE.Group();
 const debugMat = new THREE.MeshBasicMaterial({ color: '#ff3d7f', wireframe: true, transparent: true, opacity: 0.35 });
@@ -201,6 +209,7 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
   if (m.userData.dynamic) colliders.push({ name: m.name, bvh: new MeshBVH(g), enabled: true });
   else staticGeos.push(g);
   if (Array.isArray(m.userData.opensWhen)) gates.push({ name: m.userData.art as string, opensWhen: m.userData.opensWhen as string[] });
+  if (Array.isArray(m.userData.solidWhen)) solids.push({ name: m.userData.art as string, solidWhen: m.userData.solidWhen as string[] });
 });
 const staticGeo = mergeGeometries(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
@@ -220,7 +229,7 @@ scene.add(debugCol);
 const collider = (name: string) => colliders.find((c) => c.name === name);
 const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
 const map = new WorldMap(grid, layout);
-const objectiveFor = (x: number) => layout.objectives.find((o) => o.region === regionAt(x).id)!.objective;
+const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.region === regionAt(x, z).id)!.objective;
 
 // ───────────── progress (local, per browser) ─────────────
 const SAVE_KEY = 'parhelion.world.progress.v2';
@@ -250,6 +259,7 @@ function applyWorldState() {
     const art = byName(g.name); if (art) art.visible = !open;
     const c = collider(`COL_${g.name}`); if (c) c.enabled = !open;
   }
+  for (const g of solids) { const c = collider(`COL_${g.name}`); if (c) c.enabled = g.solidWhen.every((x) => done.has(x)); }
   if (haloMat) haloMat.color.setScalar(done.has('tower_console') ? 1 : 0.32);
   for (const m of stateful) {
     const sw = m.userData.showWhen as string | string[] | undefined;
@@ -275,9 +285,9 @@ function toggleGuide() {
   toast(guideOn ? '任务指引 开' : '任务指引 关');
 }
 /** Next objective marker: current region first; another region's goal routes through its gate via 幻日谷. */
-const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', coast: '星落海岸' };
+const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
-  const here = regionAt(player.pos.x).id;
+  const here = regionAt(player.pos.x, player.pos.z).id;
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
   for (const o of order)
     for (const s of o.objective.steps) {
@@ -321,7 +331,7 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
 }
 
 function renderObjective() {
-  const objective = objectiveFor(player.pos.x);
+  const objective = objectiveFor(player.pos.x, player.pos.z);
   const steps = objective.steps;
   let current = false;
   const rows = steps.map((s) => {
@@ -484,7 +494,7 @@ function press(binding: string, repeat = false) {
   if (action === 'reset' && !down('sprint')) { resetProgress(); toast('进度已重置'); }
   if (action.startsWith('teleport')) {
     clearInput(); const n = Number(action.slice('teleport'.length));
-    const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x).id);
+    const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x, player.pos.z).id);
     if (n >= 1 && n <= here.length) spawnAt(here[n - 1].id);
   }
 }
@@ -508,7 +518,7 @@ addEventListener('wheel', (e) => {
 
 // ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
 const combat = new WorldCombat({ scene, colliders, layout, done, toast,
-  onVictory() { done.add('sun_core'); save(); applyWorldState(); },
+  onVictory(core) { done.add(core); save(); applyWorldState(); },
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
@@ -541,6 +551,11 @@ function shoot() {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
   } else if (enemy) {
     combat.damageEnemy(enemy.id);
+  } else if (questHit && questHit.object.userData.needs && !done.has(questHit.object.userData.needs as string)) {
+    toast(bilingual('子弹打不了那么远 · 先去装填要塞大炮', 'Bullets cannot reach that far · Load the fort cannon first'));
+  } else if (questHit && questHit.object.userData.nearWorld &&
+    Math.hypot(player.pos.x - (questHit.object.userData.nearWorld as number[])[0], player.pos.z - (questHit.object.userData.nearWorld as number[])[1]) > (questHit.object.userData.nearR as number ?? 8)) {
+    toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
     done.add(id);
@@ -548,6 +563,7 @@ function shoot() {
     const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
     if (group === 'range_target') toast(n === 3 ? '射击练习完成' : `练习靶命中 ${n}/3`);
     else if (group === 'camp_dummy') toast(n === 3 ? '试炼完成：营帐里出现了王之碎片' : `试炼木人 ${n}/3`);
+    else if (group === 'ghost_boat') toast(n === 3 ? '幽灵小艇全部击沉：火药库里亮起了海之碎片' : `炮击命中 幽灵小艇 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
     $('crosshair').classList.add('hit'); setTimeout(() => $('crosshair').classList.remove('hit'),140);
@@ -571,8 +587,8 @@ function interact() {
   if (done.has(m.id)) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
   const missing = (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(bilingual(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`, `${localizeText(m.label)}: requires ${missing.map((r) => localizeText(markers.get(r)?.label ?? '尚未完成的任务')).join(', ')}`));
-  if (m.id === 'sun_core') {
-    if (!combat.beginBoss()) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
+  if (BOSSES.some((b) => b.core === m.id)) {
+    if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
   }
   done.add(m.id);
@@ -585,7 +601,11 @@ function interact() {
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
     seam_east: '东部山口：海风里混着 1718 年的火药味',
-    summon_circle: '召唤阵稳定了。西部时层断面已经打开：去落日王国',
+    blackbeard_meet: '「哈！又一个被冷灯招来的旱鸭子。」黑胡子答应：点亮海之核，就跟你签约',
+    fort_cannon: '大炮装填完毕：站在炮位上，射击海面上的幽灵小艇',
+    sea_core: '海之核重新燃起，冷灯熄灭了。风暴正在散去……',
+    blackbeard_contract: '契约成立。「这片海以后归我们俩了，御主。」黑胡子成为你的从者',
+    summon_circle: '召唤阵稳定了。西部时层断面和东部山口都已打开：去落日王国或黑帆尽头',
     saber_contract: '契约成立。「我问你，你就是我的御主吗？」Saber 加入了队伍',
     sun_core: '落日之核重新燃起。永恒的黄昏开始退去……',
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
@@ -594,6 +614,10 @@ function interact() {
   if (m.id.startsWith('hall_brazier_')) {
     const n = [1, 2, 3].filter((k) => done.has(`hall_brazier_${k}`)).length;
     return toast(n === 3 ? '三个火盆都燃起来了：圆桌中央浮现出王之碎片' : `火盆点燃 ${n}/3`);
+  }
+  if (m.id.startsWith('map_piece_')) {
+    const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
+    return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
   toast(msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
 }
@@ -682,7 +706,7 @@ function frame(now: number) {
   servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
   renderContract();
   sky.position.copy(eye);
-  twilight.update(dt, player.pos.x, done.has('sun_core'));
+  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'));
   sun.position.copy(eye).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(eye);
 
@@ -699,7 +723,8 @@ function frame(now: number) {
   $('prompt').textContent = !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${localizeText(it.label)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
-  if (regionAt(player.pos.x).id !== lastRegion) { lastRegion = regionAt(player.pos.x).id; renderObjective(); }
+  const nowRegion = regionAt(player.pos.x, player.pos.z).id;
+  if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }
   culler.update(eye, lowQ ? 0.7 : 1);
   // dynamic resolution: trade pixels for frame rate, recover when there is headroom
   dynT += dt; dynFrames++;

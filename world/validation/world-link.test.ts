@@ -8,7 +8,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player.ts';
 import { REGIONS, boundaryWalls, regionAt } from '../src/regions.ts';
 
-// 幻日谷 and 星落海岸 load side by side; walking east through the mountain pass reaches the coast.
+// All regions load side by side; walking east through the mountain pass reaches 黑帆尽头.
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
 for (const def of REGIONS) {
   const buf = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
@@ -28,7 +28,7 @@ for (const def of REGIONS) {
 const bvh = new MeshBVH(mergeGeometries(geos));
 const ground = (x: number, z: number) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)!.point.y;
 
-test('walking east through the pass crosses from 幻日谷 onto the lighthouse ridge', () => {
+test('walking east through the pass crosses from 幻日谷 onto the 黑帆尽头 pass trail', () => {
   const p = new Player([{ name: 'static', bvh, enabled: true }], 1);
   p.teleport(280, ground(280, 30) + 0.5, 30);
   const route: [number, number][] = [[320, 30], [360, 30], [400, 30], [436, 30]];
@@ -41,7 +41,7 @@ test('walking east through the pass crosses from 幻日谷 onto the lighthouse r
     if (p.pos.x > 320) minY = Math.min(minY, p.pos.y);
   }
   assert.equal(k, route.length, `walked the pass (stuck at ${p.pos.toArray().map(v => v.toFixed(1))})`);
-  assert.equal(regionAt(p.pos.x).id, 'coast');
+  assert.equal(regionAt(p.pos.x, p.pos.z).id, 'blacksail');
   assert.ok(!p.swimming && minY > 8, `stayed on the ridge (lowest y ${minY.toFixed(1)})`);
 });
 

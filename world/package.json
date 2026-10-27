@@ -6,8 +6,8 @@
   "description": "Parhelion Alpha - World first area (幻日谷) blockout generator + Three.js viewer",
   "scripts": {
     "build:world": "tsx tools/build-world.ts",
-    "build:coast": "tsx tools/build-coast.ts",
     "build:britain": "tsx tools/build-britain.ts",
+    "build:blacksail": "tsx tools/build-blacksail.ts",
     "build:character": "tsx tools/build-character.ts",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

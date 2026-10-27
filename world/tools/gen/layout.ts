@@ -61,7 +61,7 @@ export const PATHS: V2[][] = [
   [[112, 30], [96, -4], [82, -36], [64, -78], [30, -126], [10, -142]],
   // station back door -> tower (escape route)
   [[-156, -86], [-124, -118], [-70, -146], [-18, -160]],
-  // forest -> east pass -> 星落海岸
+  // forest -> east pass -> 黑帆尽头
   [[132, 40], [170, 32], [210, 30], [260, 30], [320, 30], [360, 30]],
   // camp -> observatory HQ plaza
   [[-6, 146], [-34, 152], [-62, 182], [-90, 212], [-112, 236]],
@@ -83,7 +83,7 @@ export const TOWER = { c: [0, -162] as V2, top: 30 };
 export const FALLS = { x: 166, z: -60 };
 export const CAVE = { x0: 172, x1: 192, z0: -68, z1: -52, floor: 2.4, ceil: 9 };
 export const BRIDGE = { c: [-95, 61] as V2 };
-/** Mountain pass on the east edge that leads into 星落海岸 (world x > 360). */
+/** Mountain pass on the east edge that leads into 黑帆尽头 (world x > 360). */
 export const PASS = { z: 30, y: 16 };
 /** Observatory HQ campus terrace (south-west of the camp) and its buildings. */
 export const CAMPUS = { x0: -200, x1: -40, z0: 196, z1: 292, y: 10 };
@@ -91,7 +91,7 @@ export const PLAZA = { c: [-118, 246] as V2, r: 15 };
 export const HQ = { x0: -138, x1: -98, z0: 202, z1: 224 };
 export const ARMORY = { x0: -86, x1: -62, z0: 238, z1: 262 };
 export const SUMMON = { c: [-166, 256] as V2, r: 12 };
-/** Era seams: west (落日王国), north on the frozen bay (永冬之城), east at the pass (星落海岸 → 黑帆尽头). */
+/** Era seams: west (落日王国), north on the frozen bay (永冬之城), east at the pass (黑帆尽头). */
 export const SEAM_W = { c: [-310, -30] as V2 };
 export const BAY_N = { c: [0, -292] as V2, rx: 64, rz: 40 };
 export const SEAM_N = { c: [0, -318] as V2 };

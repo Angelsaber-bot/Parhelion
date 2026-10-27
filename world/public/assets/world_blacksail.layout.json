@@ -1,0 +1,758 @@
+{
+ "world": {
+  "id": "world_blacksail_end",
+  "name": "黑帆尽头",
+  "nameEn": "Black Sail's End",
+  "version": 1,
+  "seed": 17181122,
+  "half": 360,
+  "playHalf": 334,
+  "cell": 2,
+  "waterLevel": 1
+ },
+ "areas": [
+  {
+   "id": "pass_trail",
+   "name": "山口栈道",
+   "nameEn": "Pass Trail",
+   "c": [
+    -300,
+    30
+   ],
+   "r": 40,
+   "color": "#c9b58f",
+   "tp": [
+    -318,
+    30
+   ]
+  },
+  {
+   "id": "port",
+   "name": "拿骚港",
+   "nameEn": "Nassau Port",
+   "c": [
+    -120,
+    150
+   ],
+   "r": 60,
+   "color": "#f08a4b",
+   "tp": [
+    -110,
+    138
+   ]
+  },
+  {
+   "id": "smugglers",
+   "name": "走私者草原",
+   "nameEn": "Smugglers' Downs",
+   "c": [
+    -50,
+    10
+   ],
+   "r": 70,
+   "color": "#9fcf6b",
+   "tp": [
+    -60,
+    40
+   ]
+  },
+  {
+   "id": "fort",
+   "name": "黑胡子要塞",
+   "nameEn": "Blackbeard's Fort",
+   "c": [
+    180,
+    -190
+   ],
+   "r": 56,
+   "color": "#d9534f",
+   "tp": [
+    124,
+    -142
+   ]
+  },
+  {
+   "id": "wrecks",
+   "name": "浮空沉船群",
+   "nameEn": "Sky Wrecks",
+   "c": [
+    -140,
+    -190
+   ],
+   "r": 70,
+   "color": "#9fe3f0",
+   "tp": [
+    -140,
+    -120
+   ]
+  },
+  {
+   "id": "reef",
+   "name": "骷髅礁",
+   "nameEn": "Skull Reef",
+   "c": [
+    160,
+    186
+   ],
+   "r": 46,
+   "color": "#ecd9a0",
+   "tp": [
+    100,
+    120
+   ]
+  },
+  {
+   "id": "lighthouse",
+   "name": "亡航灯塔",
+   "nameEn": "Drowned Lighthouse",
+   "c": [
+    262,
+    -14
+   ],
+   "r": 34,
+   "color": "#7fb8ff",
+   "tp": [
+    214,
+    -14
+   ]
+  }
+ ],
+ "paths": [
+  [
+   [
+    -360,
+    30
+   ],
+   [
+    -300,
+    30
+   ],
+   [
+    -240,
+    26
+   ],
+   [
+    -170,
+    20
+   ],
+   [
+    -100,
+    16
+   ],
+   [
+    -60,
+    30
+   ],
+   [
+    -100,
+    90
+   ],
+   [
+    -120,
+    116
+   ]
+  ],
+  [
+   [
+    -60,
+    4
+   ],
+   [
+    -80,
+    -60
+   ],
+   [
+    -110,
+    -110
+   ],
+   [
+    -130,
+    -140
+   ]
+  ],
+  [
+   [
+    -40,
+    0
+   ],
+   [
+    20,
+    -40
+   ],
+   [
+    80,
+    -90
+   ],
+   [
+    126,
+    -150
+   ]
+  ],
+  [
+   [
+    -30,
+    20
+   ],
+   [
+    60,
+    6
+   ],
+   [
+    140,
+    -6
+   ],
+   [
+    200,
+    -12
+   ]
+  ],
+  [
+   [
+    -70,
+    160
+   ],
+   [
+    0,
+    150
+   ],
+   [
+    60,
+    128
+   ],
+   [
+    92,
+    128
+   ]
+  ]
+ ],
+ "markers": [
+  {
+   "id": "spawn_p1",
+   "type": "spawn",
+   "label": "玩家1出生点（东侧山口）",
+   "p": [
+    -318,
+    15.91185188293457,
+    30
+   ]
+  },
+  {
+   "id": "spawn_p2",
+   "type": "spawn",
+   "label": "玩家2出生点（东侧山口）",
+   "p": [
+    -318,
+    15.911983966827393,
+    33
+   ]
+  },
+  {
+   "id": "disc_first_sea",
+   "type": "discovery",
+   "label": "初见黑帆海",
+   "p": [
+    -252,
+    15.116327285766602,
+    30
+   ],
+   "radius": 6,
+   "note": "远处灯塔外海泊着一排幽灵船"
+  },
+  {
+   "id": "blackbeard_meet",
+   "type": "interact",
+   "label": "黑胡子（酒馆）",
+   "p": [
+    -128,
+    3.4,
+    126.1
+   ],
+   "radius": 3.4,
+   "note": "海盗王愿意帮你打破这片海的循环"
+  },
+  {
+   "id": "blackbeard_contract",
+   "type": "interact",
+   "label": "与黑胡子缔结契约",
+   "p": [
+    -125,
+    3.4,
+    126.1
+   ],
+   "radius": 3,
+   "requires": [
+    "sea_core"
+   ],
+   "note": "Rider 职阶从者 · 安妮女王复仇号的船长"
+  },
+  {
+   "id": "disc_tavern_cellar",
+   "type": "discovery",
+   "label": "朗姆酒窖",
+   "p": [
+    -134,
+    3.4,
+    124.5
+   ],
+   "radius": 2.5
+  },
+  {
+   "id": "disc_gallows",
+   "type": "discovery",
+   "label": "绞刑架广场",
+   "p": [
+    -128,
+    3.4,
+    150
+   ],
+   "radius": 4,
+   "note": "1718 年，总督的赦免令就贴在这里"
+  },
+  {
+   "id": "map_piece_1",
+   "type": "interact",
+   "label": "藏宝图碎片·其一（造船厂）",
+   "p": [
+    -204,
+    7.744564056396484,
+    154
+   ],
+   "radius": 3
+  },
+  {
+   "id": "enemy_port_-30",
+   "type": "enemy",
+   "label": "醉酒水手（占位）",
+   "p": [
+    -150,
+    3.4,
+    140
+   ]
+  },
+  {
+   "id": "enemy_port_24",
+   "type": "enemy",
+   "label": "醉酒水手（占位）",
+   "p": [
+    -96,
+    3.4,
+    144
+   ]
+  },
+  {
+   "id": "map_piece_2",
+   "type": "interact",
+   "label": "藏宝图碎片·其二（风车）",
+   "p": [
+    -20,
+    20.242259979248047,
+    -18.6
+   ],
+   "radius": 3
+  },
+  {
+   "id": "disc_smugglers_cave",
+   "type": "discovery",
+   "label": "走私者洞口",
+   "p": [
+    2,
+    15.678351402282715,
+    -35
+   ],
+   "radius": 4
+  },
+  {
+   "id": "fort_cannon",
+   "type": "interact",
+   "label": "要塞大炮",
+   "p": [
+    203.5,
+    32.6,
+    -172
+   ],
+   "radius": 3,
+   "note": "装填后，在炮位附近射击海面上的幽灵小艇"
+  },
+  {
+   "id": "cannon_post",
+   "type": "poi",
+   "label": "炮位",
+   "p": [
+    203.5,
+    32.6,
+    -172
+   ]
+  },
+  {
+   "id": "ghost_boat_1",
+   "type": "objective",
+   "label": "幽灵小艇 1",
+   "p": [
+    300,
+    3,
+    -132
+   ]
+  },
+  {
+   "id": "ghost_boat_2",
+   "type": "objective",
+   "label": "幽灵小艇 2",
+   "p": [
+    312,
+    3,
+    -196
+   ]
+  },
+  {
+   "id": "ghost_boat_3",
+   "type": "objective",
+   "label": "幽灵小艇 3",
+   "p": [
+    292,
+    3,
+    -258
+   ]
+  },
+  {
+   "id": "shard_powder",
+   "type": "interact",
+   "label": "海之碎片·火药",
+   "p": [
+    184,
+    30,
+    -178.4
+   ],
+   "radius": 3.2,
+   "requires": [
+    "ghost_boat_1",
+    "ghost_boat_2",
+    "ghost_boat_3"
+   ]
+  },
+  {
+   "id": "disc_fort_tower",
+   "type": "discovery",
+   "label": "要塞瞭望",
+   "p": [
+    206.0873935394876,
+    30,
+    -163.9126064605124
+   ],
+   "radius": 5
+  },
+  {
+   "id": "enemy_fort_-20",
+   "type": "enemy",
+   "label": "要塞海盗（占位）",
+   "p": [
+    160,
+    30,
+    -196
+   ]
+  },
+  {
+   "id": "enemy_fort_6",
+   "type": "enemy",
+   "label": "要塞海盗（占位）",
+   "p": [
+    186,
+    30,
+    -182
+   ]
+  },
+  {
+   "id": "enemy_fort_-8",
+   "type": "enemy",
+   "label": "要塞海盗（占位）",
+   "p": [
+    172,
+    30,
+    -168
+   ]
+  },
+  {
+   "id": "shard_compass",
+   "type": "interact",
+   "label": "海之碎片·罗盘",
+   "p": [
+    -160,
+    68.4,
+    -214
+   ],
+   "radius": 3.2
+  },
+  {
+   "id": "disc_vortex_eye",
+   "type": "discovery",
+   "label": "风暴之眼",
+   "p": [
+    -140,
+    6.000296115875244,
+    -190
+   ],
+   "radius": 6,
+   "note": "踩上发光的气流，一艘接一艘往上滑翔"
+  },
+  {
+   "id": "wreck_w1",
+   "type": "poi",
+   "label": "浮空沉船 W1",
+   "p": [
+    -112,
+    26,
+    -160
+   ]
+  },
+  {
+   "id": "wreck_w2",
+   "type": "poi",
+   "label": "浮空沉船 W2",
+   "p": [
+    -146,
+    40,
+    -142
+   ]
+  },
+  {
+   "id": "wreck_w3",
+   "type": "poi",
+   "label": "浮空沉船 W3",
+   "p": [
+    -178,
+    54,
+    -170
+   ]
+  },
+  {
+   "id": "wreck_w4",
+   "type": "poi",
+   "label": "浮空沉船 W4",
+   "p": [
+    -160,
+    68,
+    -214
+   ]
+  },
+  {
+   "id": "wreck_w5",
+   "type": "poi",
+   "label": "浮空沉船 W5",
+   "p": [
+    -108,
+    46,
+    -214
+   ]
+  },
+  {
+   "id": "shard_treasure",
+   "type": "interact",
+   "label": "海之碎片·藏宝（在 X 处挖掘）",
+   "p": [
+    152,
+    3.3621773719787598,
+    192
+   ],
+   "radius": 3.4,
+   "requires": [
+    "map_piece_1",
+    "map_piece_2",
+    "map_piece_3"
+   ]
+  },
+  {
+   "id": "disc_skull_eyes",
+   "type": "discovery",
+   "label": "骷髅之眼",
+   "p": [
+    164.91821773944469,
+    3.5821021623276095,
+    198.5719794658129
+   ],
+   "radius": 4
+  },
+  {
+   "id": "map_piece_3",
+   "type": "interact",
+   "label": "藏宝图碎片·其三（半沉商船）",
+   "p": [
+    107.22108843618845,
+    3.8,
+    217.82421093642245
+   ],
+   "radius": 3.2
+  },
+  {
+   "id": "disc_lighthouse_top",
+   "type": "discovery",
+   "label": "冷灯之巅",
+   "p": [
+    266,
+    36.02726745605469,
+    -18.6
+   ],
+   "radius": 3,
+   "note": "从这里看得见整支幽灵舰队"
+  },
+  {
+   "id": "sea_core",
+   "type": "interact",
+   "label": "海之核",
+   "p": [
+    294.8044949402112,
+    7,
+    96.08983137651167
+   ],
+   "radius": 3.6,
+   "requires": [
+    "shard_powder",
+    "shard_compass",
+    "shard_treasure"
+   ]
+  },
+  {
+   "id": "boss_drowned_admiral",
+   "type": "enemy",
+   "label": "亡航提督（Boss）",
+   "p": [
+    296.5977525298944,
+    7,
+    107.95508431174417
+   ]
+  },
+  {
+   "id": "disc_flagship",
+   "type": "discovery",
+   "label": "安妮女王复仇号",
+   "p": [
+    296,
+    7,
+    104
+   ],
+   "radius": 6,
+   "note": "幽灵舰队的旗舰"
+  }
+ ],
+ "updrafts": [
+  {
+   "x": -128,
+   "z": -184,
+   "r": 4,
+   "y0": 6,
+   "y1": 40
+  },
+  {
+   "x": -112,
+   "z": -156,
+   "r": 3,
+   "y0": 25,
+   "y1": 56
+  },
+  {
+   "x": -146,
+   "z": -138,
+   "r": 3.5,
+   "y0": 39,
+   "y1": 70
+  },
+  {
+   "x": -180,
+   "z": -166,
+   "r": 3,
+   "y0": 53,
+   "y1": 84
+  }
+ ],
+ "lights": [
+  {
+   "p": [
+    266,
+    39.52726745605469,
+    -14
+   ],
+   "color": "#8fd8ff",
+   "intensity": 140,
+   "distance": 80
+  },
+  {
+   "p": [
+    296,
+    16,
+    104
+   ],
+   "color": "#6fe7c8",
+   "intensity": 90,
+   "distance": 50
+  },
+  {
+   "p": [
+    -128,
+    8.4,
+    128
+   ],
+   "color": "#ffb36b",
+   "intensity": 50,
+   "distance": 28
+  }
+ ],
+ "atmosphere": {
+  "fog": "#b9c9d8",
+  "near": 130,
+  "far": 800,
+  "sea": true
+ },
+ "objective": {
+  "id": "quench_the_cold_lamp",
+  "name": "黑帆尽头：熄灭冷灯",
+  "steps": [
+   {
+    "id": "meet",
+    "text": "在拿骚港的酒馆找到黑胡子",
+    "done": [
+     "blackbeard_meet"
+    ]
+   },
+   {
+    "id": "powder",
+    "text": "登上黑胡子要塞，用炮台击沉 3 艘幽灵小艇，取得碎片·火药",
+    "done": [
+     "fort_cannon",
+     "ghost_boat_1",
+     "ghost_boat_2",
+     "ghost_boat_3",
+     "shard_powder"
+    ]
+   },
+   {
+    "id": "compass",
+    "text": "乘上升气流攀上浮空沉船群，取得碎片·罗盘",
+    "done": [
+     "shard_compass"
+    ]
+   },
+   {
+    "id": "treasure",
+    "text": "找齐 3 片藏宝图，在骷髅礁挖出碎片·藏宝",
+    "done": [
+     "map_piece_1",
+     "map_piece_2",
+     "map_piece_3",
+     "shard_treasure"
+    ]
+   },
+   {
+    "id": "core",
+    "text": "走过幽灵栈桥登上旗舰，击败亡航提督，点亮海之核",
+    "done": [
+     "sea_core"
+    ]
+   },
+   {
+    "id": "contract",
+    "text": "回到酒馆，与黑胡子缔结契约",
+    "done": [
+     "blackbeard_contract"
+    ]
+   }
+  ]
+ }
+}

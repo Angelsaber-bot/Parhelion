@@ -14,6 +14,15 @@ export function regionLoader() {
  * (chunking, pivots and the terrain grid all expect that).
  */
 export function bakeQuantized(root: THREE.Object3D) {
+  // identical quantized meshes (same-shaped gates, targets) can share one geometry: give each its own
+  // copy before baking, or the shared one would take every node's transform in turn
+  const seen = new Set<THREE.BufferGeometry>();
+  root.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    if (seen.has(m.geometry)) m.geometry = m.geometry.clone();
+    seen.add(m.geometry);
+  });
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;

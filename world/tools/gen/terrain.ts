@@ -106,7 +106,7 @@ export function heightFn(x: number, z: number): number {
     h = lerp(CAVE.floor, h, smoothstep(0, 4, d));
   }
 
-  // East pass to 星落海岸 (the coast region continues past x = 240)
+  // East pass to 黑帆尽头 (that region continues past x = 360)
   {
     const band = 1 - smoothstep(8, 16, Math.abs(z - PASS.z));
     const floor = lerp(14, PASS.y, smoothstep(170, 330, x)) + fbm(x * 0.05, z * 0.05, 2, S + 31) * 0.8;

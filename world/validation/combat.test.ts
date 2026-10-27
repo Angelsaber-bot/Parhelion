@@ -91,3 +91,19 @@ test('invalid damage, time, ray and oversized spawn input are bounded', () => {
   const hp = s.hp; s.step(NaN, { x: 0, y: 0, z: 0 }, true, ground); assert.equal(s.hp, hp);
   assert.equal(s.raycast({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0 }), null);
 });
+
+test('each era boss has its own core requirements and cleared state; only one fight runs at a time', () => {
+  const sea = { id: 'admiral', kind: 'king' as const, p: { x: 200, y: 0, z: 0 }, requires: ['shard_a'] };
+  const s = new WorldCombatState([], [{ ...boss, requires: BOSS_REQUIREMENTS }, { ...sea, cleared: false }]);
+  assert.equal(s.beginBoss(new Set(), 'admiral'), false, 'admiral needs its own shard');
+  assert.equal(s.beginBoss(new Set(['shard_a']), 'admiral'), true);
+  assert.equal(s.boss.id, 'admiral');
+  assert.equal(s.beginBoss(ready, 'boss'), false, 'no second fight while one runs');
+  advance(s, 0.1, { x: 200, y: 0, z: 5 });
+  assert.equal(s.bosses[0].active, false, 'the other boss stays dormant');
+  s.hitEnemy('admiral', 1e4);
+  assert.equal(s.isCleared('admiral'), true); assert.equal(s.isCleared('boss'), false);
+  assert.equal(s.beginBoss(ready, 'boss'), true, 'the first era boss is still available');
+  s.resetAll([true, false]);
+  assert.equal(s.isCleared('boss'), true); assert.equal(s.isCleared('admiral'), false);
+});
