@@ -1,0 +1,210 @@
+[
+  {
+    "name": "overview",
+    "eye": [
+      490,
+      440,
+      530
+    ],
+    "target": [
+      0,
+      5,
+      -10
+    ]
+  },
+  {
+    "name": "city-street",
+    "eye": [
+      155,
+      67,
+      -66
+    ],
+    "target": [
+      48,
+      23,
+      -155
+    ]
+  },
+  {
+    "name": "kremlin-bell",
+    "eye": [
+      -100,
+      86,
+      -115
+    ],
+    "target": [
+      -9,
+      34,
+      -207
+    ]
+  },
+  {
+    "name": "basil-square",
+    "eye": [
+      158,
+      61,
+      -156
+    ],
+    "target": [
+      96,
+      28,
+      -247
+    ]
+  },
+  {
+    "name": "napoleon-camp",
+    "eye": [
+      -110,
+      47,
+      217
+    ],
+    "target": [
+      -187,
+      11,
+      151
+    ]
+  },
+  {
+    "name": "berezina-crossing",
+    "eye": [
+      83,
+      56,
+      325
+    ],
+    "target": [
+      -5,
+      4,
+      247
+    ]
+  },
+  {
+    "name": "beacon-snowfield",
+    "eye": [
+      -345,
+      101,
+      131
+    ],
+    "target": [
+      -234,
+      6,
+      20
+    ]
+  },
+  {
+    "name": "gorge-cavern",
+    "eye": [
+      192,
+      108,
+      7
+    ],
+    "target": [
+      279,
+      13,
+      -67
+    ]
+  },
+  {
+    "name": "street-ground",
+    "eye": [
+      72,
+      26,
+      -102
+    ],
+    "target": [
+      8,
+      18,
+      -145
+    ]
+  },
+  {
+    "name": "imperial-tent",
+    "eye": [
+      -149,
+      22,
+      158
+    ],
+    "target": [
+      -177,
+      10,
+      132
+    ]
+  },
+  {
+    "name": "beacon-detail",
+    "eye": [
+      -309,
+      27,
+      97
+    ],
+    "target": [
+      -286,
+      17,
+      76
+    ]
+  },
+  {
+    "name": "cavern-mouth",
+    "eye": [
+      264,
+      24,
+      -57
+    ],
+    "target": [
+      295,
+      9,
+      -124
+    ]
+  },
+  {
+    "name": "basil-detail",
+    "eye": [
+      112,
+      32,
+      -232
+    ],
+    "target": [
+      102,
+      30,
+      -244
+    ]
+  },
+  {
+    "name": "bridge-detail",
+    "eye": [
+      12,
+      9,
+      277
+    ],
+    "target": [
+      -3,
+      3,
+      262
+    ]
+  },
+  {
+    "name": "canvas-detail",
+    "eye": [
+      -166,
+      12,
+      146
+    ],
+    "target": [
+      -177,
+      10,
+      134
+    ]
+  },
+  {
+    "name": "ivan-detail",
+    "eye": [
+      22,
+      60,
+      -178
+    ],
+    "target": [
+      -8,
+      46,
+      -214
+    ]
+  }
+]

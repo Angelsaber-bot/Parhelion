@@ -10,6 +10,9 @@ import {
   CORE, ICE_GATE, CAVERN, PATHS,
 } from './layout.js';
 import { riverD } from './terrain.js';
+import { frostCavernPieces, frostGorgePieces } from './frostwork.js';
+import { resetFieldworkSurfaces, fieldworkSurfacePieces, fieldBeaconBase, fieldFrozenSoldier, fieldTent, buildCrossingTimber, fieldWagon, fieldCannon, imperialPavilion, decorateFieldworks } from './fieldworks.js';
+import { resetArchitecture, architecturePieces, architectureManifest, winterHouse, basilCathedral, cathedral, ivanTower, kremlinFortifications, oldPalace, bellScaffoldDetail, squarePaving } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -58,6 +61,8 @@ const C = {
 };
 
 export function buildWinter(heightAt: HeightAt) {
+  resetArchitecture();
+  resetFieldworkSurfaces();
   const pieces: Piece[] = [];
   const markers: Marker[] = [];
   const mk = (m: Marker) => markers.push(m);
@@ -97,12 +102,16 @@ export function buildWinter(heightAt: HeightAt) {
   };
   /** A soldier's A-frame tent along heading ry. */
   const tent = (b: Batch, x: number, z: number, ry: number, w = 3, d = 4, color = C.tentA) => {
+    const start = b.vis.length;
     const y = lowest(x, z, 2);
     b.add(ROOF, color, T(x, y + w * 0.25, z, ry, w * 0.5, d, w * 0.5, 0, Math.PI / 2));
     b.add(CYL6, C.woodDark, T(x + Math.sin(ry) * (d / 2), y + w * 0.45, z + Math.cos(ry) * (d / 2), 0, 0.05, w * 0.9, 0.05), false);
+    b.vis.length = start; fieldTent(b, x, z, ry, w, d, color, heightAt);
   };
   /** A log house (izba); `burnt` blackens it, leaves the roof open and adds glowing embers. */
+  let houseIndex = 0;
   const izba = (b: Batch, x: number, z: number, ry: number, burnt: boolean) => {
+    const visualStart = b.vis.length, glowStart = glow.vis.length;
     const y = lowest(x, z, 3), w = range(rng, 6, 8), d = range(rng, 5, 7), h = range(rng, 3.2, 4.2);
     b.add(BOX, burnt ? C.charred : C.logs, T(x, y + h / 2, z, ry, w, h, d));
     for (let k = 1; k < 5; k++) b.add(BOX, burnt ? '#2a2224' : C.woodDark, T(x, y + (h * k) / 5, z, ry, w + 0.1, 0.08, d + 0.1), false);
@@ -116,6 +125,12 @@ export function buildWinter(heightAt: HeightAt) {
       }
       b.add(BOX, C.charred, T(x - Math.cos(ry) * w * 0.3, y + h + 0.8, z + Math.sin(ry) * w * 0.3, ry, 0.25, 1.6, d * 0.6, 0.4), false);
     }
+    // Baseline RNG calls and collision triangles above are deliberately unchanged.
+    b.vis.length = visualStart;
+    if (burnt && (houseIndex % 5 === 0 || houseIndex % 5 === 4)) {
+      for (const g of glow.vis.slice(glowStart)) g.translate(0, -h + .25, 0);
+    } else glow.vis.length = glowStart;
+    winterHouse(b, x, y, z, ry, w, d, h, burnt, houseIndex++);
   };
   /** Onion dome on a drum. */
   const dome = (b: Batch, x: number, y: number, z: number, r: number, drumH: number, color: string, drum = C.whiteStone) => {
@@ -142,14 +157,19 @@ export function buildWinter(heightAt: HeightAt) {
         b.ramp(x - dir * 4, z, g, y, 8, 4.2, C.wood, dir > 0 ? Math.PI / 2 : -Math.PI / 2);
       }
     }
+    b.vis.length = 0; buildCrossingTimber(b, heightAt);
     // abandoned wagons, a cannon and chests on the ice
     for (const [x, z, ry] of [[-14, 244, 0.4], [10, 238, -0.3], [-2, 284, 1.2], [18, 300, 0.2], [-20, 296, -0.8]] as const) {
+      const start = b.vis.length;
       b.add(BOX, C.wood, T(x, ICE_Y + 0.9, z, ry, 2.2, 0.9, 3.6));
       b.add(BOX, C.snow, T(x, ICE_Y + 1.4, z, ry, 2.0, 0.15, 3.3), false);
       for (const s of [-1, 1]) for (const u of [-1.2, 1.2]) b.add(CYL16, C.woodDark, T(x + Math.cos(ry) * s * 1.2 + Math.sin(ry) * u, ICE_Y + 0.55, z - Math.sin(ry) * s * 1.2 + Math.cos(ry) * u, ry, 0.55, 0.12, 0.55, 0, Math.PI / 2), false);
+      b.vis.length = start; fieldWagon(b, x, ICE_Y, z, ry);
     }
+    const cannonStart = b.vis.length;
     b.add(BOX, C.woodDark, T(24, ICE_Y + 0.4, 252, 0.5, 1.4, 0.6, 2.2));
     b.add(CYL8, C.iron, T(24.6, ICE_Y + 0.9, 251, 0.5, 0.3, 2.6, 0.3, Math.PI / 2 - 0.1), false);
+    b.vis.length = cannonStart; fieldCannon(b, 24, ICE_Y, 252, 0.5);
     campfire(b, 34, 278, { big: true, r: 9 });
     lantern(26, 300);
     pieces.push({ name: 'Crossing', material: 'M_Toon', batch: b, outline: true });
@@ -172,6 +192,7 @@ export function buildWinter(heightAt: HeightAt) {
     // Napoleon's tent: striped blue and white, an eagle standard at the door, a map table inside
     {
       const [tx, tz] = IMPERIAL_TENT.c, w = IMPERIAL_TENT.w, d = IMPERIAL_TENT.d, y = BIVOUAC.y;
+      const imperialStart = b.vis.length;
       for (const s of [-1, 1]) b.box(tx + s * (w / 2), y, tz, 0.3, 3.2, d, C.imperial);
       b.box(tx, y, tz - d / 2, w, 3.2, 0.3, C.imperial);
       for (const s of [-1, 1]) b.box(tx + s * (w / 2 - 2), y, tz + d / 2, 4, 3.2, 0.3, C.imperial); // door in the middle
@@ -183,6 +204,7 @@ export function buildWinter(heightAt: HeightAt) {
       b.add(CYL8, C.woodDark, T(sx, y + 1.8, sz, 0, 0.06, 3.6, 0.06), false);
       b.add(BOX, C.goldDome, T(sx, y + 3.8, sz, 0, 0.5, 0.45, 0.2), false);
       b.add(BOX, C.imperial, T(sx + 0.55, y + 3.0, sz, 0, 1.0, 0.8, 0.03), false);
+      b.vis.length = imperialStart; imperialPavilion(b, tx, y, tz, w, d);
       campfire(b, tx - 4, tz + d / 2 + 4, { r: 9 });
       glow.add(BOX, C.fire, T(tx, y + 2.6, tz, 0, 0.3, 0.4, 0.3), false);
       mk({ id: 'warm_tent', type: 'poi', label: '皇帝帐篷（取暖）', p: [tx, y, tz], radius: 9 });
@@ -192,9 +214,11 @@ export function buildWinter(heightAt: HeightAt) {
     // artillery park and supply wagons
     for (let k = 0; k < 4; k++) {
       const x = bx + 34, z = bz - 20 + k * 7, y = heightAt(x, z);
+      const start = b.vis.length;
       b.add(BOX, C.woodDark, T(x, y + 0.4, z, Math.PI / 2, 1.3, 0.6, 2.2));
       b.add(CYL8, '#6a6f78', T(x - 1.0, y + 0.95, z, Math.PI / 2, 0.28, 2.4, 0.28, 0, Math.PI / 2 - 0.15), false);
       b.add(BOX, C.snow, T(x, y + 0.75, z, Math.PI / 2, 1.2, 0.08, 2.0), false);
+      b.vis.length = start; fieldCannon(b, x, y, z, Math.PI / 2);
     }
     pieces.push({ name: 'Bivouac', material: 'M_Toon', batch: b, outline: true });
     mk({ id: 'disc_old_guard', type: 'discovery', label: '老近卫军的营火', p: [-222, heightAt(-222, 200), 200], radius: 5, note: '「近卫军可以死，但绝不投降」' });
@@ -206,8 +230,10 @@ export function buildWinter(heightAt: HeightAt) {
     const b = new Batch('Snowfield');
     BEACONS.forEach(([x, z], i) => {
       const id = `beacon_${i + 1}`, y = lowest(x, z, 3);
+      const beaconStart = b.vis.length;
       b.add(CYL8, C.rockDark, T(x, y + 0.6, z, 0, 2.6, 1.2, 2.6));
       for (let k = 0; k < 8; k++) b.add(CYL6, C.logs, T(x, y + 1.9, z, (k / 8) * Math.PI, 0.18, 3.2, 0.18, 0.5), false);
+      b.vis.length = beaconStart; fieldBeaconBase(b, x, y, z, i);
       const unlit = new Batch(`Beacon_Frost_${i + 1}`, 'M_Emissive');
       unlit.add(CRYSTAL, C.iceGlow, T(x, y + 2.4, z, 0.3, 0.5, 0.9, 0.5), false);
       pieces.push({ name: `Beacon_Frost_${i + 1}`, material: 'M_Emissive', batch: unlit, userData: { hideWhen: id, bob: true } });
@@ -235,8 +261,10 @@ export function buildWinter(heightAt: HeightAt) {
     // a column frozen where it halted: snow-covered figures in a line
     for (let k = 0; k < 12; k++) {
       const x = -300 + k * 3.2, z = 140 + Math.sin(k * 0.7) * 1.5, g = heightAt(x, z);
+      const start = b.vis.length;
       b.add(CYL8, C.snowShade, T(x, g + 0.85, z, 0, 0.32, 1.7, 0.32));
       b.add(BALL, C.snow, T(x, g + 1.85, z, k, 0.28, 0.3, 0.28), false);
+      b.vis.length = start; fieldFrozenSoldier(b, x, g, z, k);
     }
     pieces.push({ name: 'Snowfield', material: 'M_Toon', batch: b, outline: true });
     mk({ id: 'disc_frozen_column', type: 'discovery', label: '冻住的行军队列', p: [-282, heightAt(-282, 140), 140], radius: 6, note: '他们停下来休息，就再也没有起来' });
@@ -310,27 +338,48 @@ export function buildWinter(heightAt: HeightAt) {
         glow.add(CRYSTAL, '#ff5a4a', T(gx, y + H + 16.6, gz, 0, 0.7, 0.9, 0.25), false);
       }
     }
+    // Preserve baseline wall/gate collision stream, replace only the coarse art.
+    b.vis.length = 0;
+    // Remove the old luminous clock and ahistorical Soviet red star.
+    glow.vis.splice(glow.vis.length - 2, 2);
+    kremlinFortifications(b, kx, y, kz, R, heightAt);
     // Assumption Cathedral (five gold domes) and the Archangel Cathedral
     for (const [cx, cz, w, d, gold] of [[22, -192, 18, 14, true], [24, -232, 14, 12, false]] as const) {
+      const start = b.vis.length;
       b.box(cx, y, cz, w, 11, d, C.whiteStone);
       b.add(BOX, C.whiteStone, T(cx, y + 11.4, cz, 0, w - 1, 0.8, d - 1), false);
       dome(b, cx, y + 11.8, cz, 2.6, 4, gold ? C.goldDome : '#c9ced8');
       for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) dome(b, cx + sx * (w / 2 - 3), y + 11.8, cz + sz * (d / 2 - 3), 1.6, 2.6, gold ? C.goldDome : '#c9ced8');
+      b.vis.length = start; cathedral(b, cx, y, cz, w, d, gold);
     }
     // the palace along the west side
+    const palaceStart = b.vis.length;
     b.box(-30, y, -232, 14, 12, 22, '#e8d9b8');
     b.add(BOX, C.roofGreen, T(-30, y + 12.4, -232, 0, 14.4, 0.8, 22.4), false);
+    b.vis.length = palaceStart; oldPalace(b, -30, y, -232);
     // Tsar Cannon and the Tsar Bell
     b.add(BOX, '#7a7466', T(-30, y + 0.7, -186, 0.3, 2.2, 1.4, 4.2));
     b.add(CYL16, '#7d7a6c', T(-30, y + 1.9, -186, 0.3, 0.9, 5.4, 0.9, Math.PI / 2), false);
     for (let k = 0; k < 3; k++) b.add(BALL, '#5f5c55', T(-27 + k * 1.1, y + 0.5, -181, k, 0.5, 0.5, 0.5));
+    const tsarBellStart = b.vis.length;
     b.add(new THREE.CylinderGeometry(1.6, 2.6, 4, 16), '#9c8a62', T(10, y + 2.0, -246), true);
     b.add(BOX, '#9c8a62', T(11.8, y + 0.5, -244.5, 0.5, 1.4, 1.0, 0.9), false); // the broken-off piece
+    b.vis.length = tsarBellStart;
+    // In 1812 the bell still lay in its casting pit (raised in 1836). Timber protection
+    // conservatively occupies the legacy collider; the bronze is revealed below its rim.
+    for (const side of [-1, 1]) {
+      b.add(BOX, C.logs, T(10 + side * 2.5, y + 1.8, -246, 0, .22, 3.6, 4.8), false);
+      for (let k = 0; k < 7; k++) b.add(BOX, k % 2 ? C.wood : C.logs, T(10, y + .24 + k * .48, -246 + side * 2.4, 0, 5, .4, .2), false);
+    }
+    b.add(BOX, C.woodDark, T(10, y + 3.78, -246, 0, 5.2, .28, 5.1), false);
+    b.add(BOX, C.snowShade, T(10, y + 3.97, -246, 0, 5.1, .1, 5), false);
+    b.add(new THREE.CylinderGeometry(1.4, 2.3, 2.2, 16), '#8b7756', T(10, y + 1.1, -246), false);
     mk({ id: 'disc_tsar_bell', type: 'discovery', label: '沙皇钟', p: [10, y, -242], radius: 4, note: '世界上最大的钟，从来没有响过' });
     mk({ id: 'disc_tsar_cannon', type: 'discovery', label: '沙皇炮', p: [-30, y, -182], radius: 4, note: '世界上最大的炮，从来没有开过火' });
 
     // Ivan the Great bell tower: white octagonal tiers; scaffolding switchbacks up its south face
     const [bx, bz] = BELL.c;
+    const towerStart = b.vis.length;
     const tiers: [number, number][] = [[6.5, 12], [5.5, 10], [4.5, 8], [3.6, 7]];
     let ty = y;
     for (const [r, h] of tiers) {
@@ -345,6 +394,7 @@ export function buildWinter(heightAt: HeightAt) {
     dome(b, bx, ty, bz, 3.0, 2.5, C.goldDome);
     const bellTop = y + 30; // floor of the third tier's gallery: the belfry
     b.add(new THREE.CylinderGeometry(0.9, 1.6, 2.2, 16), '#b8894a', T(bx, bellTop + 3.2, bz + 2.4), false);
+    b.vis.length = towerStart; ivanTower(b, bx, y, bz);
     // scaffold: two lanes of flights along x, landings at both ends, 3 m per flight, rails outside
     const zs = bz + 8.0, L = 10, rise = 3, flights = 10;
     const lane = (k: number) => zs + (k % 2) * 2.6;
@@ -357,15 +407,24 @@ export function buildWinter(heightAt: HeightAt) {
     for (let k = 1; k <= flights; k++) {
       const end = k % 2 === 1 ? 1 : -1, ly = y + k * rise;
       const lx = bx + end * (L / 2 + 1.2);
+      const landingStart = b.vis.length;
       b.box(lx, ly - 0.3, zs + 1.3, 2.4, 0.3, 5.0, C.wood);
+      b.vis.length = landingStart; // Individual full-depth boards supply the art, not a second slab.
       // the belfry deck runs back over the outer lane only, so the last flight never hits its underside
-      if (k === flights) b.box(bx - 1.2, ly - 0.3, zs, L + 2.4, 0.3, 2.4, C.wood);
+      if (k === flights) {
+        // Legacy landing and gallery overlap by 2.4m: keep collision, trim art overlap.
+        const galleryStart = b.vis.length;
+        b.box(bx - 1.2, ly - 0.3, zs, L + 2.4, 0.3, 2.4, C.wood);
+        b.vis.length = galleryStart;
+        // Individual full-depth gallery boards are emitted by bellScaffoldDetail.
+      }
       b.add(BOX, C.woodDark, T(lx, ly + 0.5, zs + 3.95, 0, 2.4, 1.0, 0.12)); // outer rail at the landing
     }
     b.box(bx - (L / 2 + 1.2), y - 0.3, zs + 1.3, 2.4, 0.3, 5.0, C.wood); // ground landing
-    for (let k = 0; k <= flights; k += 2)
-      for (const x of [bx - L / 2 - 2.4, bx + L / 2 + 2.4]) for (const z of [zs - 1.2, zs + 3.8])
-        b.add(CYL6, C.woodDark, T(x, y + (k * rise) / 2 + 0.1, z, 0, 0.1, k * rise + 0.2, 0.1), false);
+    // Four continuous posts replace six nested copies at each corner (visual-only).
+    for (const x of [bx - L / 2 - 2.4, bx + L / 2 + 2.4]) for (const z of [zs - 1.2, zs + 3.8])
+      b.add(CYL6, C.woodDark, T(x, y + flights * rise / 2 + .1, z, 0, .1, flights * rise + .2, .1), false);
+    bellScaffoldDetail(b, bx, y, bz);
     const top: [number, number, number] = [bx - 2, bellTop, zs];
     const shard = new Batch('Shard_bell', 'M_Emissive');
     shard.add(CRYSTAL, C.iceGlow, T(top[0], top[1] + 1.8, top[2], 0.4, 0.4, 0.8, 0.4), false);
@@ -391,9 +450,14 @@ export function buildWinter(heightAt: HeightAt) {
       dome(b, x, y + h, z, k % 2 ? 2.0 : 2.5, 1.2, C.basil[k]);
     }
     b.box(qx, y, qz - 2, 26, 2.4, 22, '#c9573f'); // gallery base linking the towers
-    // Lobnoye Mesto and the Minin–Pozharsky plinth
+    b.vis.length = 0; basilCathedral(b, qx, y, qz);
+    squarePaving(b, REDSQ.c[0], y, REDSQ.c[1], REDSQ.w, REDSQ.d);
+    // Lobnoye Mesto; retain the legacy plinth proxy only (the monument dates to 1818).
     b.add(CYL16, C.whiteStone, T(qx + 14, y + 0.6, qz + 22, 0, 4, 1.2, 4));
-    b.box(qx - 10, y, qz + 30, 3, 3, 5, '#9c8a62');
+    b.addCol(BOX, T(qx - 10, y + 1.5, qz + 30, 0, 3, 3, 5));
+    // A low supply stack occupies the legacy gameplay obstacle, not a later monument.
+    b.box(qx - 10, y, qz + 30, 3, 3, 5, C.logs, 0, false);
+    b.add(BOX, C.snowShade, T(qx - 10, y + 3.06, qz + 30, 0, 2.9, .12, 4.9), false);
     // the winter core in front of the cathedral
     const [cx, cz] = CORE.c;
     b.add(CYL16, '#7f8fa8', T(cx, y + 0.35, cz, 0, 2.2, 0.7, 2.2));
@@ -459,6 +523,7 @@ export function buildWinter(heightAt: HeightAt) {
     }
     // the cavern: a ring of great rocks with a mouth towards the river and a roof of ice overhead
     const [cx, cz] = CAVERN.c, mouth = Math.atan2(RIVER[RIVER.length - 2][1] - cz, RIVER[RIVER.length - 2][0] - cx);
+    const cavernArtStart = b.vis.length;
     for (let k = 0; k < 14; k++) {
       const a = (k / 14) * Math.PI * 2;
       if (Math.abs(Math.atan2(Math.sin(a - mouth), Math.cos(a - mouth))) < 0.45) continue;
@@ -466,6 +531,8 @@ export function buildWinter(heightAt: HeightAt) {
       b.add(ROCK, C.rockDark, T(x, ICE_Y + 6, z, a, 7, 12, 6));
     }
     b.add(new THREE.SphereGeometry(CAVERN.r + 6, 16, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), '#9fb6cf', T(cx, ICE_Y + 4, cz, 0, 1, 0.55, 1), false);
+    b.vis.length = cavernArtStart; // Keep exact cavern COL; replace only coarse rock-ring/lid art.
+    pieces.push(...frostCavernPieces(), ...frostGorgePieces(heightAt));
     for (let k = 0; k < 9; k++) {
       const a = mouth + Math.PI + (k - 4) * 0.22, x = cx + Math.cos(a) * (CAVERN.r - 4), z = cz + Math.sin(a) * (CAVERN.r - 4);
       glow.add(CYL6, '#bdf0ff', T(x, ICE_Y + 7, z, a, 1.1, 14, 1.1), false); // the frozen falls at the back
@@ -543,5 +610,9 @@ export function buildWinter(heightAt: HeightAt) {
     { name: 'Rocks', material: 'M_Toon', batch: rocks, outline: true, userData: { count: nRocks } },
     { name: 'Bushes', material: 'M_Foliage', batch: bushes },
   );
+  pieces.push(...architecturePieces(), ...decorateFieldworks(heightAt));
+  pieces.push(...fieldworkSurfacePieces());
+  const moscow = pieces.find(p => p.name === 'Moscow');
+  if (moscow) moscow.userData = { architectureManifest };
   return { pieces, markers };
 }

@@ -12,6 +12,7 @@ import { MeshoptEncoder } from 'meshoptimizer';
 import type { Piece } from './structures.js';
 import type { Marker } from './layout.js';
 import { kyotoMaterialProfile } from '../../src/kyotoMaterialProfiles.js';
+import { winterMaterialProfile } from '../../src/winterMaterialProfiles.js';
 
 // GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
 (globalThis as any).FileReader ??= class {
@@ -49,9 +50,12 @@ export async function writeRegion(r: RegionOut) {
   const mat = (name: string) => {
     let m = materials.get(name);
     if (!m) {
-      const profile = kyotoMaterialProfile(name);
+      const kyotoProfile = kyotoMaterialProfile(name);
+      const winterProfile = winterMaterialProfile(name);
+      const profile = kyotoProfile ?? winterProfile;
       m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: profile?.roughness ?? 1, metalness: profile?.metalness ?? 0 });
-      if (profile) m.userData = { kyotoSurface: name, artStyle: 'painted-anime' };
+      if (kyotoProfile) m.userData = { kyotoSurface: name, artStyle: 'painted-anime' };
+      if (winterProfile) m.userData = { winterSurface: name, artStyle: 'painted-anime' };
       if (name === 'M_Water') Object.assign(m, { transparent: true, opacity: 0.75, vertexColors: false, color: new THREE.Color('#46b8d8') });
       if (name === 'M_Waterfall') Object.assign(m, { transparent: true, opacity: 0.7, vertexColors: false, color: new THREE.Color('#c9f3ff') });
       materials.set(name, m);
@@ -121,7 +125,7 @@ export async function writeRegion(r: RegionOut) {
   scene.add(root);
   const glb = (await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false })) as ArrayBuffer;
   mkdirSync(outDir, { recursive: true });
-  const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto');
+  const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto' || r.file === 'world_winter');
   writeFileSync(resolve(outDir, `${r.file}.glb`), packed);
   writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
   return { bytes: packed.byteLength, tris };
@@ -139,7 +143,7 @@ async function compress(glb: Uint8Array, exactWeld = false) {
   const doc = await io.readBinary(glb);
   doc.setLogger(new (class { debug() {} info() {} warn(m: string) { console.warn(m); } error(m: string) { console.error(m); } })() as never);
   await doc.transform(reorder({ encoder: MeshoptEncoder }), quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeColor: 8 }));
-  // Kyoto's dense crafted geometry reuses only bitwise-identical full vertices.
+  // Kyoto and Everwinter's dense crafted geometry reuses only bitwise-identical full vertices.
   // No simplification, tolerance-based welding, triangle removal or material change.
   if (exactWeld) for (const mesh of doc.getRoot().listMeshes()) {
     for (const primitive of mesh.listPrimitives()) {

@@ -1,0 +1,174 @@
+[
+  {
+    "name": "COL_Terrain",
+    "triangles": 259200,
+    "orderedPositionHash": "e79fc1ff2d1ee8d761e959925812aed704089978fa74d83a745325eaeeb29d4a",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Terrain"
+    }
+  },
+  {
+    "name": "COL_Ice_Gate",
+    "triangles": 116,
+    "orderedPositionHash": "c3dbecd8571efb6b7306c381adbeb9020338c376c2a4c3035f2a2fd8ec6a2251",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Ice_Gate",
+      "dynamic": true,
+      "art": "Ice_Gate",
+      "opensWhen": [
+        "frost_seal_1",
+        "frost_seal_2",
+        "frost_seal_3"
+      ]
+    }
+  },
+  {
+    "name": "COL_TGT_frost_seal_1",
+    "triangles": 224,
+    "orderedPositionHash": "2636717deb19a50c71f773a3347869bc836492d271c08c05d6bf1786717f088a",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_frost_seal_1",
+      "dynamic": true,
+      "art": "TGT_frost_seal_1",
+      "target": "frost_seal_1"
+    }
+  },
+  {
+    "name": "COL_TGT_frost_seal_2",
+    "triangles": 224,
+    "orderedPositionHash": "7b93eb688b04c2ecc3ffe01a93c2018bdedf0269253034801046b8bd356b7cb1",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_frost_seal_2",
+      "dynamic": true,
+      "art": "TGT_frost_seal_2",
+      "target": "frost_seal_2"
+    }
+  },
+  {
+    "name": "COL_TGT_frost_seal_3",
+    "triangles": 224,
+    "orderedPositionHash": "2669a9f89385da852b2e89ac0fb895fe0120759d36783d5213692bf83adcef9a",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_TGT_frost_seal_3",
+      "dynamic": true,
+      "art": "TGT_frost_seal_3",
+      "target": "frost_seal_3"
+    }
+  },
+  {
+    "name": "COL_Props",
+    "triangles": 24928,
+    "orderedPositionHash": "c06198def0b06b24cb018d0690db23f2fee4b7344ef6bf38847b8648f62822ce",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Props"
+    }
+  }
+]
