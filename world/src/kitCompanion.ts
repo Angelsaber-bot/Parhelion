@@ -11,6 +11,8 @@ export interface KitCompanionOptions {
   damage: number;
   target: (position: THREE.Vector3, range: number) => Target;
   strike: (position: THREE.Vector3, range: number, damage: number, targetId: string) => Target;
+  /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
+  engage?: (player: THREE.Vector3) => Target;
 }
 
 /**
@@ -42,7 +44,10 @@ export class KitCompanion {
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     const root = actor.root;
     // Opposite side from Saber's slot so a quick switch never stacks them visually.
-    const destination = player.clone().add(new THREE.Vector3(Math.cos(yaw) * 2.4 - Math.sin(yaw) * .8, 0, -Math.sin(yaw) * 2.4 - Math.cos(yaw) * .8));
+    const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw) * 2.4 - Math.sin(yaw) * .8, 0, Math.sin(yaw) * 2.4 - Math.cos(yaw) * .8));
+    const prey = this.options.engage?.(player);
+    // Melee closes in; Blackbeard keeps pistol distance.
+    if (prey) destination.copy(prey.position).add(root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(Math.max(1.4, Math.min(5, this.options.range) - 1.5)));
     const ground = this.floor(destination.x, destination.z, player.y);
     if (ground !== null) destination.y = ground;
     if (!this.activeLast || root.position.distanceTo(player) > 24) {

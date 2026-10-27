@@ -132,11 +132,18 @@ export class WorldCombat {
   damageEnemy(id: string, amount: number = COMBAT.shotDamage) { const hit = this.state.hitEnemy(id, amount); this.events(); return hit; }
   /** Read-only anticipation target. Contact revalidates this exact enemy below. */
   allyTarget(position: Point3, range = 3.5, targetId?: string): { id: string; p: Point3 } | null {
-    if (!this.playable || this.state.defeated || this.allyCooldown > 0 || distanceXZ(position, this.player) > 12) return null;
-    const enemy = this.state.enemies.filter(e => (!targetId || e.id === targetId) && e.active && e.mode !== 'dead' && e.mode !== 'idle' && distanceXZ(e.p, position) < Math.min(5, range) && Math.abs(e.p.y - position.y) < 3)
+    if (!this.playable || this.state.defeated || this.allyCooldown > 0 || distanceXZ(position, this.player) > 25) return null;
+    const enemy = this.state.enemies.filter(e => (!targetId || e.id === targetId) && e.active && e.mode !== 'dead' && distanceXZ(e.p, position) < Math.min(5, range) && Math.abs(e.p.y - position.y) < 3)
       .sort((a, b) => distanceXZ(a.p, position) - distanceXZ(b.p, position))[0];
     if (!enemy || !this.geometry.terrain.lineOfSight({ ...position, y: position.y + 1 }, { ...enemy.p, y: enemy.p.y + 1 })) return null;
     return { id: enemy.id, p: { ...enemy.p } };
+  }
+  /** Servant lock-on: nearest live enemy within `radius` of the player (hit reach is still allyTarget's). */
+  allyEngage(radius = 15): { id: string; p: Point3 } | null {
+    if (!this.playable || this.state.defeated) return null;
+    const enemy = this.state.enemies.filter(e => e.active && e.mode !== 'dead' && distanceXZ(e.p, this.player) < radius && Math.abs(e.p.y - this.player.y) < 6)
+      .sort((a, b) => distanceXZ(a.p, this.player) - distanceXZ(b.p, this.player))[0];
+    return enemy ? { id: enemy.id, p: { ...enemy.p } } : null;
   }
   /** Animation contact only: range/LOS/liveness/cooldown are checked again after wind-up. */
   allyStrike(position: Point3, range = 3.5, damage = 14, targetId?: string): { id: string; p: Point3 } | null {

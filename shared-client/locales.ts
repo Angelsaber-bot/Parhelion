@@ -13,6 +13,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['茶棚、舟具小屋与土藏各循其用，西山脚下仍有未被战火吞没的日常。', 'A tea shelter, boat shed and storehouse serve different daily needs. At the foot of the western mountains, ordinary life has not yet been consumed by war.'],
   ['召唤／收回从者', 'Summon / dismiss Servant'],
   ['任务栏 显示／隐藏', 'Show / hide quest panel'],
+  ['界面显示', 'HUD visibility'], ['显示任务栏', 'Show quest panel'], ['显示帮助', 'Show help'], ['显示小地图', 'Show minimap'], ['显示从者卡片', 'Show servant card'],
   ['隐藏界面（截图）', 'Hide HUD (screenshot)'],
   ['截图模式 · 按任意键或点击恢复界面', 'Screenshot mode · Press any key or click to restore the HUD'],
   ['查看从者模型', 'View Servant model'], ['切换从者', 'Switch servant'],

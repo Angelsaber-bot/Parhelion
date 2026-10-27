@@ -38,6 +38,8 @@ export interface ServantOptions {
   appearance?: ServantAppearance; colliders: Collider[];
   target: (position: THREE.Vector3) => Target;
   strike: (position: THREE.Vector3, targetId: string) => Target;
+  /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
+  engage?: (player: THREE.Vector3) => Target;
   load?: (url: string) => Promise<GLTF>;
 }
 
@@ -181,7 +183,9 @@ export class ContractServant {
       return;
     }
     if (paused) return;
-    const destination = player.clone().add(new THREE.Vector3(Math.cos(yaw)*2.4 - Math.sin(yaw)*.8,0,-Math.sin(yaw)*2.4 - Math.cos(yaw)*.8));
+    const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4 - Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4 - Math.cos(yaw)*.8));
+    const prey = this.options.engage?.(player);
+    if (prey) destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1.4));
     const ground = this.floor(destination.x,destination.z,player.y);
     if (ground !== null) destination.y = ground;
     if (!this.activeLast || this.root.position.distanceTo(player) > 24) {

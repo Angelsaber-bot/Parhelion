@@ -284,11 +284,13 @@ const guideBeam = new THREE.Mesh(
 guideBeam.raycast = () => {};
 scene.add(guideBeam);
 // Quest and help panels remember whether they are hidden.
-function togglePanel(id: 'help' | 'objective', hidden = $(id).style.display !== 'none') {
+type HudPanel = 'help' | 'objective' | 'minimap' | 'contract-card';
+function togglePanel(id: HudPanel, hidden = $(id).style.display !== 'none') {
   $(id).style.display = hidden ? 'none' : '';
   try { localStorage.setItem(`parhelion.world.hide.${id}`, hidden ? '1' : '0'); } catch { /* memory-only */ }
+  const box = document.querySelector?.(`[data-hud-panel="${id}"]`) as HTMLInputElement | null;
+  if (box) box.checked = !hidden;
 }
-for (const id of ['help', 'objective'] as const) { try { if (localStorage.getItem(`parhelion.world.hide.${id}`) === '1') $(id).style.display = 'none'; } catch { /* ignore */ } }
 function toggleGuide() {
   guideOn = !guideOn;
   try { localStorage.setItem('parhelion.guide', guideOn ? 'on' : 'off'); } catch { /* ignore */ }
@@ -436,6 +438,7 @@ const servantAppearance = new ServantAppearance(contractStorage);
 const servant = new ContractServant({ scene, renderer, marker: markers.get('saber_contract')!, contract, appearance: servantAppearance, colliders,
   target: (position) => { const hit = combat.allyTarget(position); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, targetId) => { const hit = combat.allyStrike(position, 3.5, 14, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: () => { const hit = combat.allyEngage(15); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 // Era servants are visual/animation actors attached to their existing quest
 // markers. They lazy-load only near the marker, share the normal scene
@@ -444,6 +447,7 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
 const companion = (range: number, damage: number) => new KitCompanion({ colliders, range, damage,
   target: (position, r) => { const hit = combat.allyTarget(position, r); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: () => { const hit = combat.allyEngage(15); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof CHARACTER_KITS; follow: KitCompanion; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number }> = [
   { markerId: 'blackbeard_meet', servant: 'blackbeard', kit: 'blackbeard', follow: companion(12, 12), retryAt: 0, failures: 0 },
@@ -541,6 +545,21 @@ const settingsPanel = createSettingsPanel(settings, {
   onClose() { clearInput(); },
 });
 $('settings-open').addEventListener('click', (e) => { e.stopPropagation(); settingsPanel.show(); });
+// Settings → 界面显示: every hideable HUD panel, remembered on this device (J/H stay as shortcuts).
+if (typeof document.querySelector === 'function') {
+  const panels: Array<[HudPanel, string]> = [['objective', '显示任务栏'], ['help', '显示帮助'], ['minimap', '显示小地图'], ['contract-card', '显示从者卡片']];
+  const group = document.createElement('div'); group.className = 'settings-sliders';
+  const title = document.createElement('p'); title.className = 'settings-note'; title.textContent = '界面显示'; group.append(title);
+  for (const [id, text] of panels) {
+    try { if (localStorage.getItem(`parhelion.world.hide.${id}`) === '1') $(id).style.display = 'none'; } catch { /* ignore */ }
+    const label = document.createElement('label'); label.className = 'settings-check';
+    const box = document.createElement('input'); box.type = 'checkbox'; box.dataset.hudPanel = id; box.checked = $(id).style.display !== 'none';
+    box.addEventListener('change', () => togglePanel(id, !box.checked));
+    label.append(box, ` ${text}`); group.append(label);
+  }
+  document.querySelector('#world-settings .settings-sliders')?.after(group);
+  localizeDom(group);
+}
 const gameplayActive = () => locked && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
