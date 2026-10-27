@@ -54,7 +54,7 @@ export class KitCompanion {
     this.attackTarget = null;
     let speed = 0;
     const distance = root.position.distanceTo(destination);
-    if (distance > .35 && ground !== null && this.visiblePath(root.position, destination)) {
+    if (distance > .6 && ground !== null && this.visiblePath(root.position, destination)) {
       const delta = destination.clone().sub(root.position);
       speed = Math.min(6, (distance - .25) * 3);
       root.position.addScaledVector(delta, Math.min(1, dt * speed / distance));

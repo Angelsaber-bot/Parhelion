@@ -192,7 +192,7 @@ export class ContractServant {
     if (this.attackTime > 0) { this.advanceAttack(dt); return; }
     let speed = 0;
     const distance = this.root.position.distanceTo(destination);
-    if (distance > .35 && ground !== null && this.visiblePath(this.root.position,destination)) {
+    if (distance > .6 && ground !== null && this.visiblePath(this.root.position,destination)) {
       const delta = destination.clone().sub(this.root.position);
       speed = Math.min(SERVANT_MOTION.followSpeed, (distance - .25) * 3);
       this.root.position.addScaledVector(delta,Math.min(1,dt*speed/distance));

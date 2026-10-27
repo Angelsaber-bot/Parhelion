@@ -482,7 +482,7 @@ function updateEraActors(dt: number) {
     }
     if (!entry.actor) continue;
     entry.actor.root.visible = nearby;
-    if (following) { entry.follow.update(entry.actor, dt, player.pos, player.yaw, !gameplayActive()); continue; }
+    if (following) { entry.follow.update(entry.actor, dt, player.pos, anim.facing - Math.PI, !gameplayActive()); continue; }
     entry.follow.release(entry.actor);
     // Not following: wait at the meeting spot (also after the contract, until chosen).
     entry.actor.root.position.fromArray(marker.p); entry.actor.root.rotation.y = Math.PI;
@@ -828,7 +828,7 @@ function frame(now: number) {
   } else inspectServant = false;
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (down('fire')) shoot();
-  servant.update(dt, player.pos, player.yaw, companionEnabled(), !gameplayActive());
+  servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
   renderContract();
   sky.position.copy(eye);
