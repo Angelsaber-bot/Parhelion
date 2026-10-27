@@ -20,7 +20,7 @@ export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
   world: [...move.map((a) => a.id === 'fire' ? { ...a, label: '射击' } : a),
     { id: 'sprint', label: '奔跑', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'interact', label: '互动', binding: 'KeyF' },
     { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' }, { id: 'inspectServant', label: '查看从者模型', binding: 'KeyU' }, { id: 'switchServant', label: '切换从者', binding: 'KeyY' },
-    { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' },
+    { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' }, { id: 'objectives', label: '任务栏 显示／隐藏', binding: 'KeyJ' },
     { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '自由飞行调试', binding: 'KeyV' },
     { id: 'collision', label: '碰撞体调试', binding: 'KeyC' }, { id: 'reset', label: '重置进度', binding: 'KeyR' },
     ...[1,2,3,4,5,6,7].map((n) => ({ id: `teleport${n}`, label: `调试传送 ${n}`, binding: `Digit${n}` }))],

@@ -283,6 +283,12 @@ const guideBeam = new THREE.Mesh(
 );
 guideBeam.raycast = () => {};
 scene.add(guideBeam);
+// Quest and help panels remember whether they are hidden.
+function togglePanel(id: 'help' | 'objective', hidden = $(id).style.display !== 'none') {
+  $(id).style.display = hidden ? 'none' : '';
+  try { localStorage.setItem(`parhelion.world.hide.${id}`, hidden ? '1' : '0'); } catch { /* memory-only */ }
+}
+for (const id of ['help', 'objective'] as const) { try { if (localStorage.getItem(`parhelion.world.hide.${id}`) === '1') $(id).style.display = 'none'; } catch { /* ignore */ } }
 function toggleGuide() {
   guideOn = !guideOn;
   try { localStorage.setItem('parhelion.guide', guideOn ? 'on' : 'off'); } catch { /* ignore */ }
@@ -518,6 +524,17 @@ const aim = new ShoulderAim();
 const settings = new SettingsStore('world');
 let locked = false;
 const start = $('start');
+// Screenshot mode leaves only the canvas; the first key or click afterwards only restores the HUD.
+$('shot-mode').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.add('shot-mode'); });
+let swallowClick = false;
+for (const type of ['keydown', 'pointerdown', 'mousedown', 'click'] as const) document.addEventListener(type, (e) => {
+  const shooting = document.body?.classList.contains('shot-mode');
+  if (!shooting && !(type === 'click' && swallowClick)) return;
+  e.stopImmediatePropagation(); e.preventDefault();
+  if (type === 'click') { swallowClick = false; return; }
+  if (type === 'pointerdown') swallowClick = true;
+  document.body.classList.remove('shot-mode');
+}, true);
 const clearInput = () => { keys.clear(); aim.clear(); };
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
@@ -531,8 +548,8 @@ function renderControlHints() {
   const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
   const teleports = [1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/');
   $('help').textContent = bilingual(
-    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
-    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('objectives')} 任务栏 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
 
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
@@ -579,7 +596,8 @@ function press(binding: string, repeat = false) {
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
-  if (action === 'help') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
+  if (action === 'help') togglePanel('help');
+  if (action === 'objectives') togglePanel('objective');
   if (action === 'interact' && !player.flying) interact();
   if (action === 'summon') {
     if (contract.toggle()) { const n = servantName(contract.selected); toast(contract.companionSummoned ? bilingual(`${n.zh} 已召唤`, `${n.en} summoned`) : bilingual(`${n.zh} 已收回`, `${n.en} recalled`)); }
@@ -785,7 +803,7 @@ function frame(now: number) {
   $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
     : player.swimming ? bilingual(`游泳 · ${settings.label('jump')} 出水`, `Swimming · ${settings.label('jump')} Leave water`)
     : player.gliding ? bilingual(`滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`, `Gliding · ${settings.label('jump')} Fold glider · Updrafts provide lift`)
-    : bilingual(`探索 · ${settings.label('jump')} 跳跃／空中展开滑翔翼`, `Exploring · ${settings.label('jump')} Jump / deploy glider in air`);
+    : '';
   const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
   $('crosshair').classList.toggle('aiming', ads > 0.7);

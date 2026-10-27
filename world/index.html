@@ -39,7 +39,7 @@
     #guide .dist { font-weight: 700; font-size: 13px; }
     @keyframes gpulse { 50% { box-shadow: 0 0 18px #ffe9a0; transform: rotate(45deg) scale(1.12); } }
     #prompt { left: 50%; top: 58%; transform: translateX(-50%); color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000a; }
-    #help { left: 18px; bottom: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
+    #help { left: 18px; bottom: 74px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
     #help { white-space: pre-line; max-width: min(760px, 70vw); }
     #settings-open { top: 16px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff; border: 1px solid #87a9b1; color: #24404f; cursor: pointer; }
     #settings-open.hidden { display: none; }
@@ -50,6 +50,9 @@
     #start h1 { margin: 0; font-size: 44px; letter-spacing: 10px; }
     #start p { margin: 0; opacity: .9; }
     #start.hidden { display: none; }
+    #movement-mode:empty { display: none; }
+    #shot-mode { margin-top: 14px; padding: 8px 16px; border: 1px solid #fff8; border-radius: 8px; background: #0006; color: #fff; font: inherit; cursor: pointer; }
+    body.shot-mode > :not(#view) { visibility: hidden !important; }
     body.clean .hud { display: none !important; }
   </style>
 </head>
@@ -67,7 +70,7 @@
   <div id="movement-mode" class="hud" role="status"></div>
   <div id="help" class="hud">读取操作设置…</div>
   <div id="stats" class="hud"></div>
-  <div id="start" class="hud"><h1>幻日谷 · 落日王国 · 黑帆尽头 · 永冬之城 · 业火京都</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p></div>
+  <div id="start" class="hud"><h1>幻日谷 · 落日王国 · 黑帆尽头 · 永冬之城 · 业火京都</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p><button id="shot-mode" type="button" title="截图模式 · 按任意键或点击恢复界面">隐藏界面（截图）</button></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

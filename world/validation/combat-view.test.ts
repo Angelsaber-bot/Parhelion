@@ -59,11 +59,11 @@ test('ally assist is player-proximity, range, LOS and cooldown limited', () => {
   combat.dispose();
 });
 
-test('HUD source keeps health above controls and gives the narrow boss layout priority over the contract card', () => {
+test('HUD source keeps health in the bottom-left corner and gives the narrow boss layout priority over the contract card', () => {
   // Source-layout guard only: a browser render is still required for final visual acceptance.
   const css = readFileSync(new URL('../src/combat.css', import.meta.url), 'utf8');
   const vitals = css.match(/#world-vitals\s*\{([^}]+)\}/)![1];
-  assert.match(vitals, /bottom:\s*205px/); assert.match(vitals, /left:\s*18px/);
+  assert.match(vitals, /bottom:\s*18px/); assert.match(vitals, /left:\s*18px/);
   assert.doesNotMatch(vitals, /translateX|left:\s*50%/, 'do not put HP back across the wide help panel');
   const index = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
   assert.match(index, /#movement-mode[^}]*bottom:\s*160px/);

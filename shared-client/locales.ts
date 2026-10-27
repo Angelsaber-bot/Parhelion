@@ -1,5 +1,7 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ["2026 现代总部：720 米的幻日谷里有幻日观测所、枪械工坊和三道靶场，还有召唤大厅。重启幻日塔后，西、北、东、南四处时层断面会打开，分别通往落日王国、永冬之城、黑帆尽头和业火京都，一路走过去就到，不用传送。", "2026 modern HQ: the 720 m Parhelion Valley holds the Parhelion Observatory, the Armory, three firing ranges and the Summoning Hall. Restart the Parhelion Tower and four time seams open to the west, north, east and south, leading to the Sunset Kingdom, Everwinter City, Black Sail's End and Kyoto Ablaze. Just walk there; no teleporting."],
+  ["换弹 ·", "Reload ·"],
   ['岚山·渡月桥', 'Arashiyama · Timber Crossing'],
   ['岚山·木构渡月桥', 'Arashiyama · Wooden Togetsu Bridge'],
   ['山影与桂川之间的木桥。此处为1582年氛围的地理压缩，并非现代渡月桥复原。', 'A timber bridge between the mountains and the Katsura River. This is a compressed landscape inspired by 1582, not a replica of the modern Togetsukyo Bridge.'],
@@ -10,6 +12,9 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['桂川河畔', 'Katsura Riverfront'],
   ['茶棚、舟具小屋与土藏各循其用，西山脚下仍有未被战火吞没的日常。', 'A tea shelter, boat shed and storehouse serve different daily needs. At the foot of the western mountains, ordinary life has not yet been consumed by war.'],
   ['召唤／收回从者', 'Summon / dismiss Servant'],
+  ['任务栏 显示／隐藏', 'Show / hide quest panel'],
+  ['隐藏界面（截图）', 'Hide HUD (screenshot)'],
+  ['截图模式 · 按任意键或点击恢复界面', 'Screenshot mode · Press any key or click to restore the HUD'],
   ['查看从者模型', 'View Servant model'], ['切换从者', 'Switch servant'],
   ['自由飞行调试（随镜头俯仰升降）', 'Free-flight test (climb or descend with camera pitch)'],
   ['自由飞行调试 开 · 抬头前进上升，低头前进下降', 'Free-flight on · Look up and move forward to rise; look down to descend'],
