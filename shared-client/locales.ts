@@ -15,7 +15,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['任务栏 显示／隐藏', 'Show / hide quest panel'],
   ['界面显示', 'HUD visibility'], ['显示任务栏', 'Show quest panel'], ['显示帮助', 'Show help'], ['显示小地图', 'Show minimap'], ['显示从者卡片', 'Show servant card'],
   ['隐藏界面（截图）', 'Hide HUD (screenshot)'],
-  ['截图模式 · 按任意键或点击恢复界面', 'Screenshot mode · Press any key or click to restore the HUD'],
+  ['截图模式 · 单击画面恢复界面', 'Screenshot mode · Click the screen to restore the HUD'],
   ['查看从者模型', 'View Servant model'], ['切换从者', 'Switch servant'],
   ['自由飞行调试（随镜头俯仰升降）', 'Free-flight test (climb or descend with camera pitch)'],
   ['自由飞行调试 开 · 抬头前进上升，低头前进下降', 'Free-flight on · Look up and move forward to rise; look down to descend'],

@@ -125,6 +125,8 @@ export class ContractServant {
         const clips = new Map(candidate.animations.map(clip => [clip.name.toLowerCase(), mixer.clipAction(clip)]));
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
+        const bone = (n: string) => candidate!.scene.getObjectByName(`mixamorig${n}`) ?? candidate!.scene.getObjectByName(`mixamorig:${n}`);
+        this.arms = (['LeftArm', 'RightArm'] as const).flatMap((n) => { const b = bone(n); return b ? [[b, 0] as [THREE.Object3D, number]] : []; });
         this.mixer = mixer; this.clips = clips;
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
         this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
@@ -140,6 +142,29 @@ export class ContractServant {
       }
     }
     if (!this.disposed && this.activeOutfit === this.appearance.outfit) this.state = 'ready';
+  }
+  /** Authored Idle holds the arms out; lower them to hang relaxed, weighted by Idle so other clips are untouched. */
+  static relaxAngle = .55;
+  private arms: Array<[THREE.Object3D, number]> = [];
+  private readonly relax = new THREE.Quaternion();
+  private tick(dt: number) {
+    this.mixer?.update(dt);
+    const weight = this.clips.get('idle')?.getEffectiveWeight() ?? 0;
+    if (weight <= 0) return;
+    // World-space swing of each upper arm toward straight down; independent of the rig's local bone axes.
+    for (const [bone] of this.arms) {
+      const hand = bone.children.find((c) => /ForeArm/.test(c.name)) ?? bone.children[0];
+      if (!hand || !bone.parent) continue;
+      bone.updateWorldMatrix(true, true);
+      const shoulder = bone.getWorldPosition(new THREE.Vector3()), dir = hand.getWorldPosition(new THREE.Vector3()).sub(shoulder).normalize();
+      const down = new THREE.Vector3(0, -1, 0), angle = Math.min(ContractServant.relaxAngle, dir.angleTo(down) - .12) * weight;
+      if (angle <= 0) continue;
+      const axis = new THREE.Vector3().crossVectors(dir, down).normalize();
+      const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+      const swing = this.relax.setFromAxisAngle(axis, angle);
+      // local' = parentWorld⁻¹ · swing · parentWorld · local
+      bone.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
+    }
   }
   private play(name: string, restart = false, rate = 1) {
     const next = this.clips.get(name);
@@ -179,7 +204,7 @@ export class ContractServant {
     if (!following) {
       this.activeLast = false; this.cancelAttack();
       if (!contract.recruited) { this.root.position.fromArray(marker.p).add(new THREE.Vector3(1.5,0,0)); this.root.rotation.y = Math.PI; }
-      if (!paused && this.root.visible) this.mixer?.update(dt);
+      if (!paused && this.root.visible) this.tick(dt);
       return;
     }
     if (paused) return;
@@ -214,7 +239,7 @@ export class ContractServant {
           speed < .1 ? 1 : THREE.MathUtils.clamp(speed / (running ? SERVANT_MOTION.runSpeed : SERVANT_MOTION.walkSpeed), .65, SERVANT_MOTION.maxRate));
       }
     }
-    if (this.attackTime > 0) this.advanceAttack(dt); else this.mixer?.update(dt);
+    if (this.attackTime > 0) this.advanceAttack(dt); else this.tick(dt);
   }
   private advanceAttack(dt: number) {
     this.attackTime = Math.max(0, this.attackTime - dt);
@@ -222,7 +247,7 @@ export class ContractServant {
       this.contactPending = false;
       if (this.attackTarget) this.options.strike(this.root.position, this.attackTarget);
     }
-    this.mixer?.update(dt);
+    this.tick(dt);
     if (this.attackTime <= 0) this.cancelAttack();
   }
   private clearModel() {

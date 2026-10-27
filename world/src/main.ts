@@ -535,10 +535,10 @@ const aim = new ShoulderAim();
 const settings = new SettingsStore('world');
 let locked = false;
 const start = $('start');
-// Screenshot mode leaves only the canvas; the first key or click afterwards only restores the HUD.
+// Screenshot mode leaves only the canvas; only a click on the screen restores the HUD.
 $('shot-mode').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.add('shot-mode'); });
 let swallowClick = false;
-for (const type of ['keydown', 'pointerdown', 'mousedown', 'click'] as const) document.addEventListener(type, (e) => {
+for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addEventListener(type, (e) => {
   const shooting = document.body?.classList.contains('shot-mode');
   if (!shooting && !(type === 'click' && swallowClick)) return;
   e.stopImmediatePropagation(); e.preventDefault();
