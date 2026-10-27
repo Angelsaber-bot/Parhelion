@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat.ts';
+import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, WILDERNESS_ZONES, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat.ts';
 
 const ground: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const wall: CombatTerrain = { ...ground, lineOfSight: () => false };
@@ -18,7 +18,7 @@ test('wilderness placement is seeded, bounded, and rejects unsafe candidates', (
   assert.notDeepEqual(a, makeWildernessSpawns(538, place));
   let calls = 0;
   assert.equal(makeWildernessSpawns(537, () => { calls++; return null; }).length, 0);
-  assert.equal(calls, 12 * 32, 'no unbounded spawn retries');
+  assert.equal(calls, WILDERNESS_ZONES.length * 32, 'no unbounded spawn retries');
 });
 
 test('shots are rate limited, nearest-enemy hits respect supplied occlusion and dead enemies cannot be hit', () => {

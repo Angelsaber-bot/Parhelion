@@ -33,7 +33,8 @@ import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageC
 const params = new URLSearchParams(location.search);
 const requestedFov = Number(params.get('fov'));
 const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
-// One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass). ?region=blacksail|britain starts there.
+// One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass) + 永冬之城 (north ice seam).
+// ?region=britain|blacksail|winter starts there.
 const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
@@ -285,7 +286,7 @@ function toggleGuide() {
   toast(guideOn ? '任务指引 开' : '任务指引 关');
 }
 /** Next objective marker: current region first; another region's goal routes through its gate via 幻日谷. */
-const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头' };
+const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
@@ -365,6 +366,33 @@ function showArea(a: Layout['areas'][number]) {
   el.classList.add('show');
   clearTimeout(areaTimer);
   areaTimer = window.setTimeout(() => el.classList.remove('show'), 2400);
+}
+
+// ───────────── cold (永冬之城): warmth drains away from fires until the winter core is lit ─────────────
+const warmSpots = layout.markers.filter((m) => /(^|_)warm_/.test(m.id));
+const cold = { warmth: 100, frozen: false, warned: false };
+const coldHud = document.createElement('div');
+coldHud.id = 'world-cold'; coldHud.className = 'combat-hud'; coldHud.hidden = true;
+Object.assign(coldHud.style, { bottom: '172px', left: '18px', width: 'min(220px, 38vw)', fontSize: '12px' });
+coldHud.innerHTML = '<span></span><div class="combat-track" style="height:6px;margin-top:4px"><div class="combat-fill" style="background:linear-gradient(90deg,#7fb8ff,#e8fbff)"></div></div>';
+const frost = document.createElement('div');
+Object.assign(frost.style, { position: 'fixed', inset: '0', pointerEvents: 'none', zIndex: '3', boxShadow: 'inset 0 0 140px #cfeaff', opacity: '0', transition: 'opacity .3s' });
+document.body.append(coldHud, frost);
+function updateCold(dt: number) {
+  const inWinter = regionAt(player.pos.x, player.pos.z).id === 'winter' && !done.has('winter_core');
+  const nearFire = warmSpots.some((m) => (m.requires ?? []).every((r) => done.has(r)) &&
+    Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]) < (m.radius ?? 6));
+  if (!inWinter || player.flying || !gameplayActive()) cold.warmth = Math.min(100, cold.warmth + dt * (inWinter ? 0 : 40));
+  else cold.warmth = nearFire ? Math.min(100, cold.warmth + dt * 30) : Math.max(0, cold.warmth - dt * 2);
+  cold.frozen = inWinter && cold.warmth <= 0;
+  if (cold.frozen && !cold.warned) toast(bilingual('冻僵了：走不快也跑不动，快去火堆边取暖', 'Frozen stiff: you can barely move. Find a fire to warm up'));
+  cold.warned = cold.frozen || (cold.warned && cold.warmth < 30);
+  coldHud.hidden = !inWinter;
+  if (inWinter) {
+    coldHud.querySelector('span')!.textContent = `${bilingual('体温', 'Warmth')} ${Math.ceil(cold.warmth)}%${nearFire ? bilingual(' · 正在取暖', ' · warming up') : ''}`;
+    (coldHud.querySelector('.combat-fill') as HTMLElement).style.width = `${cold.warmth}%`;
+  }
+  frost.style.opacity = inWinter ? `${Math.max(0, 1 - cold.warmth / 40) * 0.85}` : '0';
 }
 
 // ───────────── player / input ─────────────
@@ -563,6 +591,7 @@ function shoot() {
     const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
     if (group === 'range_target') toast(n === 3 ? '射击练习完成' : `练习靶命中 ${n}/3`);
     else if (group === 'camp_dummy') toast(n === 3 ? '试炼完成：营帐里出现了王之碎片' : `试炼木人 ${n}/3`);
+    else if (group === 'frost_seal') toast(n === 3 ? '三枚冰封印全部碎裂：峡谷里的冰墙崩塌了' : `冰封印击碎 ${n}/3`);
     else if (group === 'ghost_boat') toast(n === 3 ? '幽灵小艇全部击沉：火药库里亮起了海之碎片' : `炮击命中 幽灵小艇 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
@@ -604,8 +633,11 @@ function interact() {
     blackbeard_meet: '「哈！又一个被冷灯招来的旱鸭子。」黑胡子答应：点亮海之核，就跟你签约',
     fort_cannon: '大炮装填完毕：站在炮位上，射击海面上的幽灵小艇',
     sea_core: '海之核重新燃起，冷灯熄灭了。风暴正在散去……',
+    napoleon_meet: '「你也是被这场冬天困住的人吗？」拿破仑答应：点亮冬之核，就和你签约',
+    winter_core: '冬之核重新燃起。雪停了，莫斯科上空第一次看见太阳……',
+    napoleon_contract: '契约成立。「不可能？这个词只在傻瓜的字典里。」拿破仑成为你的从者',
     blackbeard_contract: '契约成立。「这片海以后归我们俩了，御主。」黑胡子成为你的从者',
-    summon_circle: '召唤阵稳定了。西部时层断面和东部山口都已打开：去落日王国或黑帆尽头',
+    summon_circle: '召唤阵稳定了。三处时层断面都已打开：西去落日王国，东去黑帆尽头，北去永冬之城',
     saber_contract: '契约成立。「我问你，你就是我的御主吗？」Saber 加入了队伍',
     sun_core: '落日之核重新燃起。永恒的黄昏开始退去……',
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
@@ -614,6 +646,10 @@ function interact() {
   if (m.id.startsWith('hall_brazier_')) {
     const n = [1, 2, 3].filter((k) => done.has(`hall_brazier_${k}`)).length;
     return toast(n === 3 ? '三个火盆都燃起来了：圆桌中央浮现出王之碎片' : `火盆点燃 ${n}/3`);
+  }
+  if (m.id.startsWith('beacon_')) {
+    const n = [1, 2, 3].filter((k) => done.has(`beacon_${k}`)).length;
+    return toast(n === 3 ? '三座烽火都燃起来了：鹰旗冢上亮起了冬之碎片' : `烽火点燃 ${n}/3 · 火堆旁可以取暖`);
   }
   if (m.id.startsWith('map_piece_')) {
     const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
@@ -660,6 +696,7 @@ function frame(now: number) {
     jump: !combat.defeated && down('jump'),
     sprint: !combat.defeated && down('sprint'),
   };
+  if (cold.frozen) { input.x *= 0.55; input.z *= 0.55; input.sprint = false; }
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
   const canAim = gameplayActive() && !player.swimming && !player.gliding && !player.flying;
@@ -706,7 +743,8 @@ function frame(now: number) {
   servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
   renderContract();
   sky.position.copy(eye);
-  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'));
+  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'));
+  updateCold(dt);
   sun.position.copy(eye).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(eye);
 

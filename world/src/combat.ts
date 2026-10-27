@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 12, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 17, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -30,6 +30,7 @@ export interface BossDef { id: string; core: string; requires: readonly string[]
 export const BOSSES: BossDef[] = [
   { id: 'boss_vacant_king', core: 'sun_core', requires: BOSS_REQUIREMENTS, reward: BOSS_REWARD },
   { id: 'boss_drowned_admiral', core: 'sea_core', requires: ['shard_powder', 'shard_compass', 'shard_treasure'], reward: 'reward_black_sail' },
+  { id: 'boss_winter_warden', core: 'winter_core', requires: ['shard_eagle', 'shard_bell', 'shard_frost'], reward: 'reward_last_eagle' },
 ];
 export interface BossSpawn extends SpawnPoint { requires?: readonly string[]; cleared?: boolean }
 export const distanceXZ = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -50,6 +51,12 @@ export const WILDERNESS_ZONES = [
   { x: 850, z: 10, r: 20, kind: 'crystal' as const },
   { x: 760, z: 70, r: 22, kind: 'crystal' as const },
   { x: 145, z: 140, r: 20, kind: 'shade' as const },
+  // 永冬之城 (region offset z - 720): the bank road, the snowfield, the Smolensk road, the gorge mouth
+  { x: -90, z: -540, r: 24, kind: 'crystal' as const },
+  { x: -120, z: -680, r: 26, kind: 'shade' as const },
+  { x: 40, z: -680, r: 24, kind: 'shade' as const },
+  { x: 130, z: -550, r: 22, kind: 'crystal' as const },
+  { x: 90, z: -800, r: 20, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;

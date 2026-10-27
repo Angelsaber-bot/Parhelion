@@ -585,6 +585,7 @@ export function buildStructures(heightAt: HeightAt) {
         const a = range(rng, 0, Math.PI * 2);
         const x = bx + Math.cos(a) * BAY_N.rx * range(rng, 0.9, 1.05), z = bz + Math.sin(a) * BAY_N.rz * range(rng, 0.9, 1.05);
         const h = range(rng, 2, 6);
+        if (z < bz - 20 && Math.abs(x - bx) < 34) continue; // keep the channel mouth clear
         ice.add(new THREE.ConeGeometry(0.8, 1, 5), '#cfeaff', T(x, Math.max(top, heightAt(x, z)) + h / 2 - 0.3, z, a, range(rng, 0.8, 1.6), h, range(rng, 0.8, 1.6), range(rng, -0.25, 0.25)), true);
       }
       for (const [gx, gz, r] of [[-16, -300, 0.5], [14, -306, -0.4]] as const) {
@@ -592,8 +593,14 @@ export function buildStructures(heightAt: HeightAt) {
         ice.add(CYL6, '#c5d3dd', T(gx + Math.sin(r) * 1.2, top + 1.3, gz + Math.cos(r) * 1.2, r, 0.3, 3.2, 0.3, Math.PI / 2 - 0.15), false);
         for (const s of [-1, 1]) ice.add(CYL16, '#d9e6ee', T(gx + Math.cos(r) * s, top + 0.7, gz - Math.sin(r) * s, r, 0.7, 0.2, 0.7, 0, Math.PI / 2), false);
       }
+      // the ice runs on north as a frozen channel into 永冬之城 (its river meets this sheet at z = -360)
+      ice.add(BOX, '#e3f4ff', T(bx, top - 0.5, -346.5, 0, 50, 1, 31));
       pieces.push({ name: 'Ice_Bay', material: 'M_Toon', batch: ice, outline: true });
       seam('north', SEAM_N.c[0], SEAM_N.c[1], top, 0, '#bfe9ff', '北方冰海断面 · 永冬之城', '1812 年 · 俄罗斯：不会结束的冬天');
+      // like the other seams, the way on holds until the summoning circle is stable
+      const gate = new Batch('Seam_north_Gate');
+      gate.addCol(BOX, T(SEAM_N.c[0], top + 30, SEAM_N.c[1] - 24, 0, 100, 80, 1)); // across the link at z = -342
+      pieces.push({ name: 'Seam_north_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
     }
     // east → 黑帆尽头 (1718): a mast with a black sail at the pass
     {

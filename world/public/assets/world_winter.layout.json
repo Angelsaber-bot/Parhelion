@@ -1,0 +1,916 @@
+{
+ "world": {
+  "id": "world_everwinter",
+  "name": "永冬之城",
+  "nameEn": "Everwinter City",
+  "version": 1,
+  "seed": 18121126,
+  "half": 360,
+  "playHalf": 334,
+  "cell": 2,
+  "waterLevel": 1
+ },
+ "areas": [
+  {
+   "id": "crossing",
+   "name": "别列津纳渡口",
+   "nameEn": "Berezina Crossing",
+   "c": [
+    0,
+    260
+   ],
+   "r": 50,
+   "color": "#bfe9ff",
+   "tp": [
+    0,
+    318
+   ]
+  },
+  {
+   "id": "bivouac",
+   "name": "大军营地",
+   "nameEn": "Grande Armée Bivouac",
+   "c": [
+    -190,
+    170
+   ],
+   "r": 60,
+   "color": "#f0b36b",
+   "tp": [
+    -140,
+    186
+   ]
+  },
+  {
+   "id": "snowfield",
+   "name": "烽火雪原",
+   "nameEn": "Beacon Snowfield",
+   "c": [
+    -224,
+    22
+   ],
+   "r": 80,
+   "color": "#e8eef8",
+   "tp": [
+    -160,
+    74
+   ]
+  },
+  {
+   "id": "moscow",
+   "name": "燃烧的莫斯科",
+   "nameEn": "Burning Moscow",
+   "c": [
+    40,
+    -120
+   ],
+   "r": 56,
+   "color": "#ff8a5c",
+   "tp": [
+    40,
+    -86
+   ]
+  },
+  {
+   "id": "kremlin",
+   "name": "克里姆林宫",
+   "nameEn": "The Kremlin",
+   "c": [
+    -6,
+    -206
+   ],
+   "r": 50,
+   "color": "#d9534f",
+   "tp": [
+    -6,
+    -168
+   ]
+  },
+  {
+   "id": "redsquare",
+   "name": "红场",
+   "nameEn": "Red Square",
+   "c": [
+    96,
+    -200
+   ],
+   "r": 36,
+   "color": "#9fd0ff",
+   "tp": [
+    96,
+    -168
+   ]
+  },
+  {
+   "id": "gorge",
+   "name": "冰封峡谷",
+   "nameEn": "Frozen Gorge",
+   "c": [
+    262,
+    10
+   ],
+   "r": 50,
+   "color": "#7fd8ff",
+   "tp": [
+    214,
+    76
+   ]
+  }
+ ],
+ "paths": [
+  [
+   [
+    22,
+    300
+   ],
+   [
+    30,
+    262
+   ],
+   [
+    -40,
+    214
+   ],
+   [
+    -100,
+    196
+   ],
+   [
+    -140,
+    186
+   ]
+  ],
+  [
+   [
+    -158,
+    150
+   ],
+   [
+    -160,
+    112
+   ],
+   [
+    -190,
+    96
+   ],
+   [
+    -200,
+    60
+   ],
+   [
+    -210,
+    30
+   ]
+  ],
+  [
+   [
+    30,
+    262
+   ],
+   [
+    60,
+    200
+   ],
+   [
+    50,
+    120
+   ],
+   [
+    40,
+    40
+   ],
+   [
+    40,
+    -40
+   ],
+   [
+    40,
+    -100
+   ]
+  ],
+  [
+   [
+    40,
+    -100
+   ],
+   [
+    20,
+    -140
+   ],
+   [
+    -6,
+    -150
+   ]
+  ],
+  [
+   [
+    40,
+    -100
+   ],
+   [
+    80,
+    -150
+   ],
+   [
+    96,
+    -168
+   ]
+  ],
+  [
+   [
+    60,
+    200
+   ],
+   [
+    120,
+    150
+   ],
+   [
+    190,
+    110
+   ],
+   [
+    214,
+    76
+   ]
+  ]
+ ],
+ "markers": [
+  {
+   "id": "warm_1",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    34,
+    6.089764595031738,
+    278
+   ],
+   "radius": 9
+  },
+  {
+   "id": "spawn_p1",
+   "type": "spawn",
+   "label": "玩家1出生点（北方冰海断面）",
+   "p": [
+    0,
+    1.12,
+    330
+   ]
+  },
+  {
+   "id": "spawn_p2",
+   "type": "spawn",
+   "label": "玩家2出生点（北方冰海断面）",
+   "p": [
+    3,
+    1.12,
+    330
+   ]
+  },
+  {
+   "id": "disc_berezina",
+   "type": "discovery",
+   "label": "断桥",
+   "p": [
+    -4,
+    1.12,
+    228
+   ],
+   "radius": 6,
+   "note": "1812 年 11 月，大军在这里渡过了别列津纳河"
+  },
+  {
+   "id": "warm_2",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -205,
+    5.899458169937134,
+    176
+   ],
+   "radius": 7
+  },
+  {
+   "id": "warm_3",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -170,
+    5.9710540771484375,
+    186
+   ],
+   "radius": 7
+  },
+  {
+   "id": "warm_4",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -222,
+    6.0152268409729,
+    200
+   ],
+   "radius": 7
+  },
+  {
+   "id": "warm_5",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -186,
+    5.904164791107178,
+    208
+   ],
+   "radius": 7
+  },
+  {
+   "id": "warm_6",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -150,
+    5.906601905822754,
+    168
+   ],
+   "radius": 7
+  },
+  {
+   "id": "warm_7",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -180,
+    6.198952078819275,
+    140.5
+   ],
+   "radius": 9
+  },
+  {
+   "id": "warm_tent",
+   "type": "poi",
+   "label": "皇帝帐篷（取暖）",
+   "p": [
+    -176,
+    6,
+    132
+   ],
+   "radius": 9
+  },
+  {
+   "id": "napoleon_meet",
+   "type": "interact",
+   "label": "拿破仑（皇帝帐篷）",
+   "p": [
+    -176,
+    6,
+    132.5
+   ],
+   "radius": 3.4,
+   "note": "皇帝说：点亮冬之核，我的大军就能回家"
+  },
+  {
+   "id": "napoleon_contract",
+   "type": "interact",
+   "label": "与拿破仑缔结契约",
+   "p": [
+    -173,
+    6,
+    132.5
+   ],
+   "radius": 3,
+   "requires": [
+    "winter_core"
+   ],
+   "note": "Rider 职阶从者 · 法兰西皇帝"
+  },
+  {
+   "id": "disc_old_guard",
+   "type": "discovery",
+   "label": "老近卫军的营火",
+   "p": [
+    -222,
+    6.0152268409729,
+    200
+   ],
+   "radius": 5,
+   "note": "「近卫军可以死，但绝不投降」"
+  },
+  {
+   "id": "enemy_bivouac_40",
+   "type": "enemy",
+   "label": "冰封幽兵（占位）",
+   "p": [
+    -150,
+    6.095426082611084,
+    140
+   ]
+  },
+  {
+   "id": "enemy_bivouac_-50",
+   "type": "enemy",
+   "label": "冰封幽兵（占位）",
+   "p": [
+    -240,
+    5.947950839996338,
+    150
+   ]
+  },
+  {
+   "id": "warm_8",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -286,
+    15.213158798217773,
+    76
+   ],
+   "radius": 14,
+   "requires": [
+    "beacon_1"
+   ]
+  },
+  {
+   "id": "beacon_1",
+   "type": "interact",
+   "label": "烽火 1",
+   "p": [
+    -286,
+    15.213158798217773,
+    76
+   ],
+   "radius": 3.6
+  },
+  {
+   "id": "warm_9",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -168,
+    15.45798749923706,
+    34
+   ],
+   "radius": 14,
+   "requires": [
+    "beacon_2"
+   ]
+  },
+  {
+   "id": "beacon_2",
+   "type": "interact",
+   "label": "烽火 2",
+   "p": [
+    -168,
+    15.45798749923706,
+    34
+   ],
+   "radius": 3.6
+  },
+  {
+   "id": "warm_10",
+   "type": "poi",
+   "label": "篝火（取暖）",
+   "p": [
+    -262,
+    16.029869270324706,
+    -52
+   ],
+   "radius": 14,
+   "requires": [
+    "beacon_3"
+   ]
+  },
+  {
+   "id": "beacon_3",
+   "type": "interact",
+   "label": "烽火 3",
+   "p": [
+    -262,
+    16.029869270324706,
+    -52
+   ],
+   "radius": 3.6
+  },
+  {
+   "id": "shard_eagle",
+   "type": "interact",
+   "label": "冬之碎片·鹰旗",
+   "p": [
+    -224,
+    7.828937530517578,
+    22
+   ],
+   "radius": 3.4,
+   "requires": [
+    "beacon_1",
+    "beacon_2",
+    "beacon_3"
+   ]
+  },
+  {
+   "id": "disc_frozen_column",
+   "type": "discovery",
+   "label": "冻住的行军队列",
+   "p": [
+    -282,
+    5.7777204513549805,
+    140
+   ],
+   "radius": 6,
+   "note": "他们停下来休息，就再也没有起来"
+  },
+  {
+   "id": "disc_eagles",
+   "type": "discovery",
+   "label": "鹰旗冢",
+   "p": [
+    -224,
+    7.828937530517578,
+    22
+   ],
+   "radius": 7,
+   "note": "每一面军旗都属于一支没能回家的团"
+  },
+  {
+   "id": "warm_ember_1",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    60.82322064554319,
+    12,
+    -187.36751022282988
+   ],
+   "radius": 8
+  },
+  {
+   "id": "warm_ember_2",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    -68.89302708907053,
+    11.865047807240954,
+    -244.875891758129
+   ],
+   "radius": 8
+  },
+  {
+   "id": "warm_ember_3",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    145.77652325155213,
+    9.456828346036097,
+    -288.4504371834919
+   ],
+   "radius": 8
+  },
+  {
+   "id": "warm_ember_4",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    79.68831221107394,
+    10.547114015179798,
+    -111.6529899276793
+   ],
+   "radius": 8
+  },
+  {
+   "id": "warm_ember_5",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    60.56335529545322,
+    12,
+    -210.0069032004103
+   ],
+   "radius": 8
+  },
+  {
+   "id": "warm_ember_6",
+   "type": "poi",
+   "label": "余烬（取暖）",
+   "p": [
+    -14.409857832361013,
+    12.11559550499773,
+    -126.69344139751047
+   ],
+   "radius": 8
+  },
+  {
+   "id": "disc_moscow_fire",
+   "type": "discovery",
+   "label": "大火之后",
+   "p": [
+    40,
+    11.314172744750977,
+    -112
+   ],
+   "radius": 7,
+   "note": "1812 年 9 月，莫斯科烧了整整六天"
+  },
+  {
+   "id": "enemy_moscow_20",
+   "type": "enemy",
+   "label": "冰封幽兵（占位）",
+   "p": [
+    20,
+    11.990094184875488,
+    -120
+   ]
+  },
+  {
+   "id": "enemy_moscow_70",
+   "type": "enemy",
+   "label": "冰封幽兵（占位）",
+   "p": [
+    70,
+    12,
+    -150
+   ]
+  },
+  {
+   "id": "enemy_moscow_-60",
+   "type": "enemy",
+   "label": "冰封幽兵（占位）",
+   "p": [
+    -60,
+    12,
+    -150
+   ]
+  },
+  {
+   "id": "disc_tsar_bell",
+   "type": "discovery",
+   "label": "沙皇钟",
+   "p": [
+    10,
+    12,
+    -242
+   ],
+   "radius": 4,
+   "note": "世界上最大的钟，从来没有响过"
+  },
+  {
+   "id": "disc_tsar_cannon",
+   "type": "discovery",
+   "label": "沙皇炮",
+   "p": [
+    -30,
+    12,
+    -182
+   ],
+   "radius": 4,
+   "note": "世界上最大的炮，从来没有开过火"
+  },
+  {
+   "id": "shard_bell",
+   "type": "interact",
+   "label": "冬之碎片·钟声",
+   "p": [
+    -10,
+    42,
+    -206
+   ],
+   "radius": 3.4
+  },
+  {
+   "id": "disc_bell_view",
+   "type": "discovery",
+   "label": "钟楼之上",
+   "p": [
+    -4,
+    42,
+    -206
+   ],
+   "radius": 3,
+   "note": "整座燃烧的城市都在脚下"
+  },
+  {
+   "id": "enemy_kremlin_20",
+   "type": "enemy",
+   "label": "冰封近卫（占位）",
+   "p": [
+    14,
+    12,
+    -186
+   ]
+  },
+  {
+   "id": "enemy_kremlin_-24",
+   "type": "enemy",
+   "label": "冰封近卫（占位）",
+   "p": [
+    -30,
+    12,
+    -196
+   ]
+  },
+  {
+   "id": "winter_core",
+   "type": "interact",
+   "label": "冬之核",
+   "p": [
+    96,
+    12,
+    -228
+   ],
+   "radius": 3.6,
+   "requires": [
+    "shard_eagle",
+    "shard_bell",
+    "shard_frost"
+   ]
+  },
+  {
+   "id": "boss_winter_warden",
+   "type": "enemy",
+   "label": "执冬者（Boss）",
+   "p": [
+    96,
+    12,
+    -204
+   ]
+  },
+  {
+   "id": "disc_basil",
+   "type": "discovery",
+   "label": "圣瓦西里大教堂",
+   "p": [
+    96,
+    12,
+    -238
+   ],
+   "radius": 6,
+   "note": "九座穹顶，没有一座颜色相同"
+  },
+  {
+   "id": "frost_seal_1",
+   "type": "objective",
+   "label": "冰封印 1",
+   "p": [
+    300.15934202290373,
+    29.881526692522296,
+    -29.773159004744905
+   ]
+  },
+  {
+   "id": "frost_seal_2",
+   "type": "objective",
+   "label": "冰封印 2",
+   "p": [
+    248.26234835412208,
+    6.087165008872756,
+    -14.849953982282763
+   ]
+  },
+  {
+   "id": "frost_seal_3",
+   "type": "objective",
+   "label": "冰封印 3",
+   "p": [
+    272.44216903770257,
+    16.12,
+    -28.462311298702765
+   ]
+  },
+  {
+   "id": "shard_frost",
+   "type": "interact",
+   "label": "冬之碎片·霜晶",
+   "p": [
+    296,
+    1.12,
+    -128
+   ],
+   "radius": 3.4,
+   "requires": [
+    "frost_seal_1",
+    "frost_seal_2",
+    "frost_seal_3"
+   ]
+  },
+  {
+   "id": "disc_frozen_falls",
+   "type": "discovery",
+   "label": "冻结的瀑布",
+   "p": [
+    298.16930457818654,
+    1.12,
+    -137.76187060183952
+   ],
+   "radius": 5,
+   "note": "水还没落地就结成了冰"
+  },
+  {
+   "id": "enemy_gorge_230",
+   "type": "enemy",
+   "label": "冰晶守卫（占位）",
+   "p": [
+    230,
+    1.12,
+    50
+   ]
+  },
+  {
+   "id": "enemy_gorge_262",
+   "type": "enemy",
+   "label": "冰晶守卫（占位）",
+   "p": [
+    262,
+    1.12,
+    10
+   ]
+  }
+ ],
+ "lights": [
+  {
+   "p": [
+    96,
+    28,
+    -228
+   ],
+   "color": "#9fd8ff",
+   "intensity": 140,
+   "distance": 70
+  },
+  {
+   "p": [
+    -176,
+    10,
+    132
+   ],
+   "color": "#ffb36b",
+   "intensity": 60,
+   "distance": 30
+  },
+  {
+   "p": [
+    296,
+    9.120000000000001,
+    -128
+   ],
+   "color": "#8fe4ff",
+   "intensity": 90,
+   "distance": 40
+  }
+ ],
+ "atmosphere": {
+  "fog": "#dfe8f2",
+  "near": 110,
+  "far": 700
+ },
+ "objective": {
+  "id": "end_the_long_winter",
+  "name": "永冬之城：结束永恒的冬天",
+  "steps": [
+   {
+    "id": "meet",
+    "text": "在大军营地的皇帝帐篷里找到拿破仑",
+    "done": [
+     "napoleon_meet"
+    ]
+   },
+   {
+    "id": "eagle",
+    "text": "点燃雪原上的 3 座烽火，取得碎片·鹰旗（离开火堆太久会冻僵）",
+    "done": [
+     "beacon_1",
+     "beacon_2",
+     "beacon_3",
+     "shard_eagle"
+    ]
+   },
+   {
+    "id": "bell",
+    "text": "沿脚手架爬上伊凡大帝钟楼，取得碎片·钟声",
+    "done": [
+     "shard_bell"
+    ]
+   },
+   {
+    "id": "frost",
+    "text": "击碎冰封峡谷的 3 枚冰封印，进入冰窟取得碎片·霜晶",
+    "done": [
+     "frost_seal_1",
+     "frost_seal_2",
+     "frost_seal_3",
+     "shard_frost"
+    ]
+   },
+   {
+    "id": "core",
+    "text": "在红场点亮冬之核，击败执冬者",
+    "done": [
+     "winter_core"
+    ]
+   },
+   {
+    "id": "contract",
+    "text": "回到皇帝帐篷，与拿破仑缔结契约",
+    "done": [
+     "napoleon_contract"
+    ]
+   }
+  ]
+ }
+}

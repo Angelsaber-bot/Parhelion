@@ -52,6 +52,7 @@ npm run dev          # 打开 http://localhost:5173
 ```bash
 npm run build:world  # 重新生成 world_alpha.glb + world_alpha.layout.json（同种子结果一致）
 npm run build:blacksail  # 重新生成 World 02「黑帆尽头」world_blacksail.glb + layout
+npm run build:winter     # 重新生成 World 03「永冬之城」world_winter.glb + layout
 npm run build        # 类型检查 + 打包到 dist/
 ```
 
@@ -73,7 +74,7 @@ npm run build        # 类型检查 + 打包到 dist/
 | G | 任务指引开/关（屏幕路标 + 光柱 + 地图标记，跨区域会先指向东侧山口） |
 | R | 重置进度 |
 
-URL 参数（截图/调试）：`?region=blacksail`（黑帆尽头）、`?region=britain`（落日王国）、`?q=low`（低画质）、`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。
+URL 参数（截图/调试）：`?region=blacksail`（黑帆尽头）、`?region=winter`（永冬之城）、`?region=britain`（落日王国）、`?q=low`（低画质）、`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。
 
 ## World 02：黑帆尽头（Black Sail's End，1718）
 
@@ -93,6 +94,25 @@ URL 参数（截图/调试）：`?region=blacksail`（黑帆尽头）、`?region
 
 `validation/blacksail.test.ts` 用真实碰撞体验证了以下几点：山口门在召唤阵稳定前挡得住；从幻日谷能走到拿骚港；所有传送点都能稳定落地；酒馆、造船厂、风车、栈桥都能走到；要塞路线能上到炮位，炮位对三艘小艇的射界通畅；上升气流能把人依次送上 W1 到 W4；沙洲和半沉船都能走到；灯塔能登顶；幽灵栈桥出现前过不去，出现后能一路走到海之核。
 
+## World 03：永冬之城（Everwinter City，1812）
+
+![永冬之城](docs/winter_overview.png)
+
+1812 年冬天的俄罗斯，拿破仑大军从莫斯科撤退的那一年。放在幻日谷正北（区域偏移 z −720，720 m 见方）。召唤阵稳定后，北方冰海断面的冰门打开，顺着结冰的海湾一路往北走，冰面就接上了别列津纳河，中间没有传送门（`?region=winter` 可以直接从渡口出生）。
+
+- **寒冷机制**：在永冬之城里体温会慢慢下降（左上角有体温条）。靠近篝火、余烬、点燃的烽火或皇帝帐篷可以回暖；体温降到 0 会冻僵，移动变慢、不能冲刺。点亮冬之核以后寒冷解除。
+- **别列津纳渡口**：冰河上两座浮桥（下游那座断在河中间），河上散落着丢下的马车和大炮。
+- **大军营地**：一排排帐篷和营火。拿破仑在蓝白条纹的皇帝帐篷里，契约标记也在这里。
+- **烽火雪原**：三座小山上各有一座烽火，点齐后，中间的鹰旗冢上出现碎片·鹰旗。路边有冻住的行军队列。
+- **燃烧的莫斯科**：烧毁的木屋区，余烬还能取暖。
+- **克里姆林宫**：红砖城墙和塔楼、教堂群、沙皇钟和沙皇炮。伊凡大帝钟楼南面搭着十段脚手架，爬到顶上的钟楼平台拿碎片·钟声。
+- **冰封峡谷**：沿冰河往东走进峡谷，冰墙挡住了去路。击碎两侧崖壁和冰墙上的 3 枚冰封印，冰墙崩塌，后面的冰窟里有碎片·霜晶。
+- **红场**：圣瓦西里大教堂前是冬之核。三枚碎片拿齐后点亮它，触发 Boss 执冬者，击败后雪停、太阳出来，然后回皇帝帐篷和拿破仑签约。
+
+天色：越往北走越接近低沉苍白的冬日天空，点亮冬之核以后转晴（`src/twilight.ts`）。拿破仑和后面的宫本武藏一样只放了契约标记，从者模型不在这一章的范围里。
+
+`validation/winter.test.ts` 用真实碰撞体验证了以下几点：冰门在召唤阵稳定前挡得住；从幻日谷沿冰面能走到渡口和大军营地；所有传送点都能稳定落地；上游浮桥能走过河；能走进皇帝帐篷；三座烽火和鹰旗冢都能走到；斯摩棱斯克大道能走上莫斯科、进克里姆林宫南门、到红场冬之核；钟楼脚手架能一路爬到碎片·钟声；冰封印从河面上看得见、打得到，冰墙没倒时过不去，倒了能走进冰窟。
+
 ## 目录
 
 ```
@@ -104,6 +124,7 @@ world/
   tools/gen/vegetation.ts  树、石头、灌木
   tools/build-britain.ts   World 01 落日王国；tools/gen/britain/*
   tools/build-blacksail.ts World 02 黑帆尽头；tools/gen/blacksail/* 布局、地形、建筑与植被
+  tools/build-winter.ts    World 03 永冬之城；tools/gen/winter/* 布局、地形、建筑与植被
   tools/gen/export.ts      各区域共用的 GLB/layout 导出
   src/                     Three.js 查看器（卡通材质、描边、天空、胶囊碰撞、小地图、目标流程）
   public/assets/           生成好的 GLB + layout JSON

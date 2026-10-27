@@ -33,10 +33,10 @@ function natural(x: number, z: number) {
     + bump(x, z, -262, 186, 70) * 14 + bump(x, z, 120, 250, 60) * 9 + bump(x, z, 280, 66, 40) * 7;
   // ring of mountains (superellipse so the corners stay playable), notched where the era seams open
   const se = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  // (the west notch runs on into 落日王国; the north one closes past the boundary, backed by a cliff)
+  // (the west notch runs on into 落日王国, the north one on into 永冬之城 along the frozen channel)
   const notch = Math.max(
     (1 - smoothstep(18, 46, Math.abs(z - SEAM_W.c[1]))) * smoothstep(-200, -260, x),
-    (1 - smoothstep(60, 100, Math.abs(x - BAY_N.c[0]))) * smoothstep(-200, -250, z) * smoothstep(-362, -340, z),
+    (1 - smoothstep(60, 100, Math.abs(x - BAY_N.c[0]))) * smoothstep(-200, -250, z),
   );
   const ring = smoothstep(296, 356, se) * (1 - notch * 0.9);
   h += ring * (52 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
@@ -46,9 +46,12 @@ function natural(x: number, z: number) {
   h = Math.max(h, lerp(h, 34 + fbm(x * 0.05, z * 0.05, 2, S + 5) * 3, ridgeZ * ridgeX));
   // north-west ridge overlooking the station (sniper high ground)
   h += bump(x, z, -150, -128, 40) * 16;
-  // northern ice bay: the valley floor falls away to a frozen sea arm under the north seam
+  // northern ice bay: the valley floor falls away to a frozen sea arm under the north seam, and a frozen
+  // channel runs on from it across the boundary (the Berezina of 永冬之城)
   {
-    const d = Math.hypot((x - BAY_N.c[0]) / BAY_N.rx, (z - BAY_N.c[1]) / BAY_N.rz) + fbm(x * 0.03, z * 0.03, 2, S + 41) * 0.15;
+    const bay = Math.hypot((x - BAY_N.c[0]) / BAY_N.rx, (z - BAY_N.c[1]) / BAY_N.rz);
+    const channel = z < BAY_N.c[1] ? Math.abs(x - BAY_N.c[0]) / 26 : Infinity;
+    const d = Math.min(bay, channel) + fbm(x * 0.03, z * 0.03, 2, S + 41) * 0.15;
     h = lerp(WORLD.waterLevel - 3, h, smoothstep(0.85, 1.6, d));
   }
   return h;

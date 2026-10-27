@@ -36,6 +36,16 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
     sweep: ['锚链横扫：拉开距离！', 'Anchor sweep: move away!'],
     colors: ['#24404a', '#5fe0c0', '#a8fff0'],
   },
+  boss_winter_warden: {
+    name: ['执冬者', 'THE WINTER WARDEN'],
+    start: ['执冬者从红场的冰雾里站起：离开红色预警圈，射击它的冰心！', 'The Winter Warden rises from the frost on Red Square: leave the red tells and shoot its ice heart!'],
+    reset: ['战斗重置：回到冬之核可再次挑战', 'Encounter reset: return to the Winter Core to retry.'],
+    phase: ['第二阶段 · 暴风雪：攻势更快，预警仍可闪避', 'Phase II · Blizzard: faster attacks, still dodgeable.'],
+    victory: ['执冬者已击败 · 获得「最后的鹰」纪念徽记', 'Winter Warden defeated · Last Eagle keepsake earned'],
+    burst: ['冰枪坠落：离开红圈！', 'Falling ice lances: leave the red circle!'],
+    sweep: ['寒霜横扫：拉开距离！', 'Frost sweep: move away!'],
+    colors: ['#3a4a66', '#9fd8ff', '#e8fbff'],
+  },
 };
 const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
 

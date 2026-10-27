@@ -1,6 +1,7 @@
 // The open world is several generated regions placed side by side in one scene.
 // 幻日谷 sits at the origin; 黑帆尽头 continues east through the mountain pass at z ≈ 30, and
-// 落日王国 lies west through the era seam gorge at z ≈ -30 (each region is 720 m across).
+// 落日王国 lies west through the era seam gorge at z ≈ -30, 永冬之城 north along the frozen channel at
+// x ≈ 0 (each region is 720 m across).
 import * as THREE from 'three';
 import type { Layout, Marker } from './types';
 
@@ -16,10 +17,11 @@ export const REGIONS: RegionDef[] = [
   { id: 'alpha', file: 'world_alpha', offset: [0, 0], play: [-334, 334, -334, 334] },
   { id: 'britain', file: 'world_britain', offset: [-720, 0], play: [-334, 334, -334, 334] },
   { id: 'blacksail', file: 'world_blacksail', offset: [720, 0], play: [-334, 334, -334, 334] },
+  { id: 'winter', file: 'world_winter', offset: [0, -720], play: [-334, 334, -334, 334] },
 ];
 
 /** Extra walkable rects in world coordinates joining regions (the east pass, the west seam gorge). */
-export const LINKS: [number, number, number, number][] = [[316, 410, 14, 46], [-410, -316, -46, -14]];
+export const LINKS: [number, number, number, number][] = [[316, 410, 14, 46], [-410, -316, -46, -14], [-46, 46, -410, -316]];
 
 /** Where the east pass crosses from 幻日谷 into 黑帆尽头 (world coordinates, ground height). */
 export const PASS_POINT: [number, number, number] = [360, 16, 30];
@@ -28,10 +30,11 @@ export const PASS_POINT: [number, number, number] = [360, 16, 30];
 export const GATES: Record<string, { p: [number, number, number]; via: string }> = {
   blacksail: { p: PASS_POINT, via: '东侧山口' },
   britain: { p: [-322, 0, -30], via: '西部时层断面' },
+  winter: { p: [0, 1.1, -330], via: '北方冰海断面' },
 };
 
 /** Terrain grid covering every region (2 m cells, aligned with each region's own grid). */
-export const GRID = { x0: -1080, z0: -360, span: 2160, spanZ: 720, cell: 2 };
+export const GRID = { x0: -1080, z0: -1080, span: 2160, spanZ: 1440, cell: 2 };
 
 /** The region whose 720 m square contains (x, z), or the nearest one (the links sit on the edges). */
 export function regionAt(x: number, z = 0): RegionDef {
@@ -59,7 +62,7 @@ export function mergeLayouts(parts: RegionLayout[]) {
   }
   const base = parts[0].layout;
   const out: Layout & { objectives: { region: string; objective: Layout['objective'] }[] } = {
-    world: { ...base.world, id: 'parhelion_world', name: '幻日谷 · 落日王国 · 黑帆尽头', nameEn: 'Parhelion World' },
+    world: { ...base.world, id: 'parhelion_world', name: '幻日谷 · 落日王国 · 黑帆尽头 · 永冬之城', nameEn: 'Parhelion World' },
     areas: [], paths: [], markers: [], updrafts: [], lights: [],
     objective: base.objective,
     objectives: [],
