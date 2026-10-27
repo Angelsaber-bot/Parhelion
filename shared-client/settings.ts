@@ -1,8 +1,9 @@
+import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from './i18n';
 /** Shared browser settings. No simulation or Three.js dependency. */
 export type SettingsMode = 'arena' | 'world';
 export type BindingSlot = 'primary' | 'secondary';
 export interface ActionDef { id: string; label: string; binding: string; secondary?: string }
-export interface InputSettings { version: 2; sensitivity: number; adsSensitivity: number; invertY: boolean; bindings: Record<string, string>; secondaryBindings: Record<string, string> }
+export interface InputSettings { version: 3; sensitivity: number; adsSensitivity: number; invertY: boolean; bindings: Record<string, string>; secondaryBindings: Record<string, string> }
 export interface SettingsStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 const move: ActionDef[] = [
   { id: 'forward', label: '向前', binding: 'KeyW' }, { id: 'back', label: '向后', binding: 'KeyS' },
@@ -11,20 +12,21 @@ const move: ActionDef[] = [
   { id: 'aim', label: '按住瞄准', binding: 'KeyE', secondary: 'Mouse2' }, { id: 'settings', label: '设置菜单', binding: 'KeyO' },
 ];
 export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
-  arena: [...move, { id: 'dash', label: '冲刺', binding: 'ShiftLeft' }, { id: 'shield', label: '护盾', binding: 'KeyQ' },
+  arena: [...move, { id: 'dash', label: '冲刺', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'shield', label: '护盾', binding: 'KeyQ' },
     { id: 'reload', label: '换弹', binding: 'KeyR' }, { id: 'crouch', label: '按住下蹲', binding: 'KeyC' },
     { id: 'scoreboard', label: '按住计分板', binding: 'Tab' },
     ...[1,2,3].map((n) => ({ id: `weapon${n}`, label: n === 3 ? '近战槽 3' : `枪械槽 ${n}`, binding: `Digit${n}` })),
     { id: 'nextWeapon', label: '下一个装备槽', binding: 'WheelDown' }, { id: 'prevWeapon', label: '上一个装备槽', binding: 'WheelUp' }],
   world: [...move.map((a) => a.id === 'fire' ? { ...a, label: '射击' } : a),
-    { id: 'sprint', label: '奔跑', binding: 'ShiftLeft' }, { id: 'interact', label: '互动', binding: 'KeyF' },
+    { id: 'sprint', label: '奔跑', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'interact', label: '互动', binding: 'KeyF' },
+    { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' },
     { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' },
-    { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '水平飞行调试', binding: 'KeyV' },
+    { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '自由飞行调试', binding: 'KeyV' },
     { id: 'collision', label: '碰撞体调试', binding: 'KeyC' }, { id: 'reset', label: '重置进度', binding: 'KeyR' },
     ...[1,2,3,4,5,6,7].map((n) => ({ id: `teleport${n}`, label: `调试传送 ${n}`, binding: `Digit${n}` }))],
 };
 export function defaultSettings(mode: SettingsMode): InputSettings {
-  return { version: 2, sensitivity: 1, adsSensitivity: mode === 'arena' ? .85 : .55, invertY: false,
+  return { version: 3, sensitivity: 1, adsSensitivity: mode === 'arena' ? .85 : .55, invertY: false,
     bindings: Object.fromEntries(ACTIONS[mode].map((a) => [a.id, a.binding])),
     secondaryBindings: Object.fromEntries(ACTIONS[mode].map((a) => [a.id, a.secondary ?? ''])) };
 }
@@ -39,7 +41,7 @@ const fallbackKeys = ['KeyP','KeyB','KeyN','KeyJ','KeyK','KeyL','KeyU','KeyI','K
 /** Repair only the conflicting/invalid binding, never discard unrelated custom controls. */
 function normalizeSettings(mode: SettingsMode, raw: unknown): { value: InputSettings; notices: string[] } {
   const next = defaultSettings(mode), notices: string[] = [], value = record(raw);
-  if (value.version !== 1 && value.version !== 2) return { value: next, notices };
+  if (value.version !== 1 && value.version !== 2 && value.version !== 3) return { value: next, notices };
   next.sensitivity = clamp(value.sensitivity, .1, 4, next.sensitivity);
   next.adsSensitivity = clamp(value.adsSensitivity, .1, 2, next.adsSensitivity);
   next.invertY = value.invertY === true;
@@ -52,8 +54,15 @@ function normalizeSettings(mode: SettingsMode, raw: unknown): { value: InputSett
     if (old !== undefined && !bindingAllowed(a.id, old)) notices.push(`「${a.label}」的无效主按键已修复。`);
     assignments.push({ action: a.id, slot: 'primary', binding: custom ? old as string : a.binding, custom, order });
     const second = secondary[a.id];
-    const secondBinding = !legacy && (second === '' || bindingAllowed(a.id, second)) ? second as string : a.secondary ?? '';
-    assignments.push({ action: a.id, slot: 'secondary', binding: secondBinding, custom: !legacy && second !== undefined, order });
+    const sprintAction = a.id === 'dash' || a.id === 'sprint';
+    // v2 wrote an empty alternate even for untouched defaults. Add the new alias only
+    // to an unchanged left-Shift action. Existing custom primary/alternate keys win.
+    const addShiftAlias = sprintAction && value.version !== 3 &&
+      (old === undefined || old === 'ShiftLeft') && (second === undefined || second === '');
+    const preserveCustomSprint = sprintAction && value.version !== 3 && !addShiftAlias;
+    const secondBinding = addShiftAlias ? 'ShiftRight' : !legacy && (second === '' || bindingAllowed(a.id, second))
+      ? second as string : preserveCustomSprint ? '' : a.secondary ?? '';
+    assignments.push({ action: a.id, slot: 'secondary', binding: secondBinding, custom: !addShiftAlias && !legacy && second !== undefined, order });
   }
   // Preserve customized slots first. Remaining defaults get a free key (primary) or are omitted (secondary).
   assignments.sort((a, b) => Number(b.custom) - Number(a.custom) || Number(a.slot === 'secondary') - Number(b.slot === 'secondary') || a.order - b.order);
@@ -75,15 +84,20 @@ function normalizeSettings(mode: SettingsMode, raw: unknown): { value: InputSett
   if (legacy) {
     const keys = (action: string) => [next.bindings[action], next.secondaryBindings[action]].filter(Boolean).map(bindingLabel).join(' / ');
     notices.unshift(mode === 'world'
-      ? `操作已更新：${keys('aim')} 按住瞄准，${keys('interact')} 互动，${keys('fly')} 水平飞行调试；已移除手动飞行升降，跳跃、滑翔和上升气流保留。自定义按键已保留。`
+      ? `操作已更新：${keys('aim')} 按住瞄准，${keys('interact')} 互动，${keys('fly')} 自由飞行调试；已移除手动飞行升降，跳跃、滑翔和上升气流保留。自定义按键已保留。`
       : `操作已更新：${keys('aim')} 均可按住瞄准；自定义按键已保留。`);
+  }
+  if (value.version !== 3) {
+    const action = mode === 'arena' ? 'dash' : 'sprint';
+    if (next.bindings[action] === 'ShiftLeft' && next.secondaryBindings[action] === 'ShiftRight')
+      notices.push('冲刺操作已更新：左 Shift 或右 Shift 均可使用；自定义按键已保留。');
   }
   return { value: next, notices };
 }
 export function sanitizeSettings(mode: SettingsMode, raw: unknown): InputSettings { return normalizeSettings(mode, raw).value; }
 export function bindingLabel(code: string) {
   const labels: Record<string,string> = { '': '未设置', Space: '空格', Tab: 'Tab', ShiftLeft: '左 Shift', ShiftRight: '右 Shift', Mouse0: '鼠标左键', Mouse1: '鼠标中键', Mouse2: '鼠标右键', Mouse3: '鼠标侧键 1', Mouse4: '鼠标侧键 2', WheelUp: '滚轮上', WheelDown: '滚轮下', ArrowUp: '↑', ArrowDown: '↓', ArrowLeft: '←', ArrowRight: '→', Backquote: '`', Minus: '-', Equal: '=', BracketLeft: '[', BracketRight: ']', Backslash: '\\', Semicolon: ';', Quote: "'", Comma: ',', Period: '.', Slash: '/' };
-  return labels[code] ?? code.replace(/^Key|^Digit/, '');
+  return localizeText(labels[code] ?? code.replace(/^Key|^Digit/, ''));
 }
 function browserStorage(): SettingsStorage | undefined { try { return typeof localStorage === 'undefined' ? undefined : localStorage; } catch { return undefined; } }
 export class SettingsStore {
@@ -93,16 +107,16 @@ export class SettingsStore {
   private listeners = new Set<() => void>();
   readonly key: string;
   constructor(readonly mode: SettingsMode, private storage: SettingsStorage | undefined = browserStorage()) {
-    this.key = `parhelion-input-${mode}-v2`;
+    this.key = `parhelion-input-${mode}-v3`;
     let raw: unknown;
-    try { raw = JSON.parse(storage?.getItem(this.key) ?? storage?.getItem(`parhelion-input-${mode}-v1`) ?? 'null'); }
+    try { raw = JSON.parse(storage?.getItem(this.key) ?? storage?.getItem(`parhelion-input-${mode}-v2`) ?? storage?.getItem(`parhelion-input-${mode}-v1`) ?? 'null'); }
     catch { raw = null; }
     const normalized = normalizeSettings(mode, raw);
     this.value = normalized.value; this.notices = normalized.notices;
-    if (record(raw).version === 1) this.persist();
+    if (record(raw).version === 1 || record(raw).version === 2) this.persist();
   }
   bindingsFor(action: string) { return [this.value.bindings[action], this.value.secondaryBindings[action]].filter((v): v is string => !!v); }
-  label(action: string, slot?: BindingSlot) { return slot ? bindingLabel((slot === 'primary' ? this.value.bindings : this.value.secondaryBindings)[action] ?? '') : this.bindingsFor(action).map(bindingLabel).join(' / ') || '未设置'; }
+  label(action: string, slot?: BindingSlot) { return slot ? bindingLabel((slot === 'primary' ? this.value.bindings : this.value.secondaryBindings)[action] ?? '') : this.bindingsFor(action).map(bindingLabel).join(' / ') || localizeText('未设置'); }
   action(binding: string) { return ACTIONS[this.mode].find((a) => this.bindingsFor(a.id).includes(binding))?.id; }
   isDown(pressed: Set<string>, action: string) { return this.bindingsFor(action).some((binding) => pressed.has(binding)); }
   subscribe(fn: () => void) { this.listeners.add(fn); return () => this.listeners.delete(fn); }
@@ -138,7 +152,7 @@ export class SettingsStore {
 
 export function createSettingsPanel(store: SettingsStore, hooks: { onOpen(): void; onClose(): void }) {
   const dialog = document.createElement('dialog'); dialog.className = 'input-settings'; dialog.id = `${store.mode}-settings`;
-  dialog.setAttribute('aria-label', `${store.mode === 'arena' ? 'Arena' : 'World'} 操作设置`);
+  dialog.setAttribute('aria-label', `${store.mode === 'arena' ? 'Arena' : 'World'} ${localizeText('操作设置')}`);
   dialog.innerHTML = `<header><div><small>PARHELION / CONTROLS</small><h2>操作设置</h2></div><button type="button" data-close>关闭 ✕</button></header>
     <p class="settings-note">设置只影响当前浏览器的本模式。主按键／副按键任意一个按住即生效，并非组合快捷键；Esc 始终用于取消／关闭。</p>
     <p class="settings-note" data-migration></p>
@@ -146,17 +160,20 @@ export function createSettingsPanel(store: SettingsStore, hooks: { onOpen(): voi
     <div class="settings-bindings">${ACTIONS[store.mode].map((a) => `<div><span>${a.label}</span><div class="binding-pair"><button type="button" data-bind="${a.id}" data-slot="primary" aria-label="${a.label}主按键"></button><button type="button" data-bind="${a.id}" data-slot="secondary" aria-label="${a.label}副按键"></button><button type="button" data-clear="${a.id}" aria-label="移除${a.label}副按键">×</button></div></div>`).join('')}</div>
     <p data-status role="status" aria-live="polite"></p><div class="settings-actions"><button type="button" data-cancel hidden>取消改键</button><button type="button" data-swap hidden>交换这两个动作的按键</button><button type="button" data-reset>恢复默认设置</button></div>`;
   document.body.append(dialog);
+  createLanguageToggle(dialog.querySelector('header')!);
+  localizeDom(dialog);
   const $ = <T extends HTMLElement>(selector: string) => dialog.querySelector<T>(selector)!;
-  $('[data-migration]').textContent = store.notices.join('\n');
+  $('[data-migration]').textContent = localizeText(store.notices.join('\n'));
   if (store.notices.length) {
     const notice = document.createElement('aside'); notice.className = 'control-migration'; notice.setAttribute('role', 'status');
-    const message = document.createElement('span'); message.textContent = store.notices.join('\n');
-    const close = document.createElement('button'); close.type = 'button'; close.textContent = '知道了'; close.onclick = () => notice.remove();
+    const message = document.createElement('span'); message.textContent = localizeText(store.notices.join('\n'));
+    const close = document.createElement('button'); close.type = 'button'; close.textContent = localizeText('知道了'); close.onclick = () => notice.remove();
     notice.append(message, close); document.body.append(notice);
+    onLanguageChange(() => { message.textContent = localizeText(store.notices.join('\n')); close.textContent = localizeText('知道了'); });
   }
   let ignoreClick = false;
   let capturing: { action: string; slot: BindingSlot } | null = null, conflict: { action: string; slot: BindingSlot; binding: string } | null = null;
-  const status = (text: string) => { $('[data-status]').textContent = text; };
+  const status = (text: string) => { $('[data-status]').textContent = localizeText(text); };
   const cancelCapture = () => { capturing = null; conflict = null; $<HTMLButtonElement>('[data-cancel]').hidden = true; $<HTMLButtonElement>('[data-swap]').hidden = true; render(); };
   function render() {
     const v = store.value;
@@ -164,7 +181,7 @@ export function createSettingsPanel(store: SettingsStore, hooks: { onOpen(): voi
     $<HTMLInputElement>('[data-ads]').value = String(v.adsSensitivity); $('[data-ads-value]').textContent = `${v.adsSensitivity.toFixed(2)}×`;
     $<HTMLInputElement>('[data-invert]').checked = v.invertY;
     dialog.querySelectorAll<HTMLButtonElement>('[data-bind]').forEach((b) => {
-      b.textContent = capturing?.action === b.dataset.bind && capturing?.slot === b.dataset.slot ? '按下新按键…' : `${b.dataset.slot === 'primary' ? '主' : '副'}：${store.label(b.dataset.bind!, b.dataset.slot as BindingSlot)}`;
+      b.textContent = capturing?.action === b.dataset.bind && capturing?.slot === b.dataset.slot ? localizeText('按下新按键…') : `${b.dataset.slot === 'primary' ? bilingual('主', 'Primary') : bilingual('副', 'Secondary')}: ${store.label(b.dataset.bind!, b.dataset.slot as BindingSlot)}`;
     });
     dialog.querySelectorAll<HTMLButtonElement>('[data-clear]').forEach((b) => { b.disabled = !store.value.secondaryBindings[b.dataset.clear!]; });
   }
@@ -176,7 +193,7 @@ export function createSettingsPanel(store: SettingsStore, hooks: { onOpen(): voi
     if (result === 'swapHold') { conflict = null; $<HTMLButtonElement>('[data-swap]').hidden = true; status('不能把滚轮或空副按键交换给需要主按键／按住的动作。请先为冲突动作选择另一按键。'); return; }
     if (result) {
       conflict = { action, slot, binding };
-      status(`${bindingLabel(binding)} 已用于「${ACTIONS[store.mode].find((a) => a.id === result)!.label}」。可交换，或按其他键。`);
+      status(bilingual(`${bindingLabel(binding)} 已用于「${ACTIONS[store.mode].find((a) => a.id === result)!.label}」。可交换，或按其他键。`, `${bindingLabel(binding)} is assigned to ${localizeText(ACTIONS[store.mode].find((a) => a.id === result)!.label)}. Swap bindings or press another key.`));
       $<HTMLButtonElement>('[data-swap]').hidden = false; return;
     }
     cancelCapture(); status(store.saved ? '已保存到本机。' : '已应用；当前浏览器无法持久保存。');
@@ -211,6 +228,12 @@ export function createSettingsPanel(store: SettingsStore, hooks: { onOpen(): voi
   store.subscribe(() => { render(); status(store.saved ? '已保存到本机。' : '已应用；当前浏览器无法持久保存。'); });
   dialog.addEventListener('cancel', (e) => { if (capturing) { e.preventDefault(); cancelCapture(); status('已取消改键。'); } });
   dialog.addEventListener('close', () => { cancelCapture(); hooks.onClose(); });
+  onLanguageChange(() => {
+    // Clear a language-specific transient prompt; do not disturb bindings or active key capture.
+    localizeDom(dialog);
+    $('[data-migration]').textContent = localizeText(store.notices.join('\n'));
+    status(''); render();
+  });
   render();
   return { get open() { return dialog.open; }, show() { if (dialog.open) return; hooks.onOpen(); cancelCapture(); status(''); dialog.showModal(); }, close() { dialog.close(); } };
 }

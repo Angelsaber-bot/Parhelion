@@ -234,19 +234,28 @@ export class Match {
   }
 
   private setPhase(phase: Phase, ticks: number, winner?: Team | 'draw'): void {
+    if (this.phase === 'ended' && phase !== 'ended') this.resetRound();
     this.phase = phase;
     this.phaseT = ticks;
     this.events.push({ t: 'phase', phase, winner });
   }
 
-  private startLive(): void {
+  private resetRound(): void {
+    // Keep world tick and acknowledged sequence monotonic, but never replay a prior round.
+    this.events = []; this.history = [];
     this.score = { A: 0, B: 0 };
     this.shields = [];
     for (const s of this.slots.values()) {
       s.kills = 0;
       s.deaths = 0;
+      s.state.lastSeq = Math.max(s.state.lastSeq, s.queue.at(-1)?.seq ?? 0);
+      s.queue = []; s.credits = 0;
       this.spawn(s);
     }
+  }
+
+  private startLive(): void {
+    this.resetRound();
     this.setPhase('live', MATCH_TICKS);
   }
 
@@ -418,6 +427,8 @@ export class Match {
   }
 
   private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
+    // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
+    if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0) return;
     v.state.hp = Math.max(0, v.state.hp - dmg);

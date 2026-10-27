@@ -79,10 +79,14 @@ export class Player {
 
     if (this.flying) {
       const sp = PLAYER.fly * (input.sprint ? 2.5 : 1);
-      // Debug traversal is horizontal only. Manual flight ascend/descend was removed.
-      const look = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
+      // Original free-flight: W/S follow the full camera direction, including pitch.
+      // A/D remain screen-right strafe. Space/F keep their normal meanings; no altitude bindings.
+      const cp = Math.cos(this.pitch);
+      const look = new THREE.Vector3(-Math.sin(this.yaw) * cp, Math.sin(this.pitch), -Math.cos(this.yaw) * cp);
       const r = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
-      this.pos.addScaledVector(look, input.z * sp * dt).addScaledVector(r, input.x * sp * dt);
+      const flight = look.multiplyScalar(input.z).addScaledVector(r, input.x);
+      if (flight.lengthSq() > 1) flight.normalize();
+      this.pos.addScaledVector(flight, sp * dt);
       this.vel.set(0, 0, 0);
       return;
     }

@@ -1,0 +1,26 @@
+{
+  "triangles": 62469,
+  "vertices": 32308,
+  "bones": 42,
+  "materials": 19,
+  "editable_parts": 364,
+  "clips": {
+    "Attack": [
+      1.0,
+      31.0
+    ],
+    "Idle": [
+      1.0,
+      61.0
+    ],
+    "Walk": [
+      1.0,
+      33.0
+    ]
+  },
+  "blender_units": "metres",
+  "gltf_forward": "+Z",
+  "origin": "feet",
+  "estimated_height_without_ahoge_m": 1.686,
+  "glb_bytes": 2339900
+}

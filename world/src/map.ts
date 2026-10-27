@@ -1,5 +1,6 @@
 // Minimap + full map, baked from the terrain's own vertex colours so it always matches the GLB.
 import * as THREE from 'three';
+import { localizeText } from '../../shared-client/i18n';
 import type { Layout } from './types';
 import type { WorldGrid } from './grid';
 
@@ -80,7 +81,8 @@ export class WorldMap {
       const x = tx(a.c[0]), y = tz(a.c[1]);
       ctx.font = `700 ${opts.full ? 26 : 18}px system-ui, sans-serif`;
       ctx.lineWidth = 4; ctx.strokeStyle = '#1f2a44aa'; ctx.fillStyle = '#fff';
-      ctx.strokeText(a.name, x, y - (opts.full ? 22 : 0)); ctx.fillText(a.name, x, y - (opts.full ? 22 : 0));
+      const label = localizeText(a.name);
+      ctx.strokeText(label, x, y - (opts.full ? 22 : 0)); ctx.fillText(label, x, y - (opts.full ? 22 : 0));
     }
     // markers
     for (const m of this.layout.markers) {

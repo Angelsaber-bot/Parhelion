@@ -176,3 +176,13 @@ button:disabled { cursor: wait; opacity: .6; transform: none; }
 .wslot small { font-size: 10px; color: #c0d0d9; }
 #weapon.melee #ammo { font-size: 24px; }
 #weapon.melee #mag { font-size: 12px; }
+
+/* #hud owns a stacking context; lift it, not just its child, above the z=20 overlay.
+   This class exists only while viewing results, so normal pause/lobby layering stays intact. */
+#hud.viewing-scores { z-index: 25; }
+#hud.viewing-scores > :not(#scoreboard) { visibility: hidden; }
+#endcard.viewing-scores .card { visibility: hidden; }
+#scoreboard.results { position: fixed; z-index: 25; top: 12vh; max-height: 76vh; max-width: calc(100vw - 24px); overflow: auto; pointer-events: auto; flex-wrap: wrap; justify-content: center; background: #081322f7; border: 1px solid #ffffff40; border-radius: 16px; padding: 18px; }
+#scoreboard.results .scores-close { width: 100%; text-align: right; }
+#scoreboard.results .scores-close button { font-size: 13px; }
+@media (max-width: 700px) { #scoreboard.results { width: calc(100vw - 24px); align-items: stretch; } #scoreboard.results .team { min-width: 0; } }

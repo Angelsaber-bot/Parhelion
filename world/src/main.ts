@@ -7,7 +7,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts, makeAmbientParticles } from './fx';
-import { toonMaterial, addOutline, makeSky, SUN_DIR, timeUniform } from './look';
+import { toonMaterial, addOutline, makeSky, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
@@ -21,6 +21,13 @@ import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './r
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
+import { KingdomTwilight } from './twilight';
+import { FirstContract } from './contracts';
+import { ContractServant } from './servant';
+import { ServantAppearance } from './servantAppearance';
+import { createServantPanel } from './servantPanel';
+import { WorldCombat } from './combatView';
+import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
 const requestedFov = Number(params.get('fov'));
@@ -33,6 +40,16 @@ const lowQ = quality === 'low', highQ = quality === 'high';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let bootFailed = false;
 let disposeRenderer = () => {};
+const languageToggle = createLanguageToggle();
+let refreshWorldLocale = () => {};
+let loadingSource = '加载中…';
+const setLoading = (source: string) => { loadingSource = source; $('loading').textContent = localizeText(source); };
+localizeDom(document.body);
+onLanguageChange(() => {
+  localizeDom(document.body);
+  $('loading').textContent = localizeText(loadingSource);
+  refreshWorldLocale();
+});
 
 async function boot() {
 
@@ -54,7 +71,8 @@ scene.fog = new THREE.Fog('#c4e2f6', 120, 720);
 const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1300);
 const sky = makeSky();
 scene.add(sky);
-scene.add(new THREE.HemisphereLight('#d6ecff', '#9aa98a', 1.15));
+const hemisphere = new THREE.HemisphereLight('#d6ecff', '#9aa98a', 1.15);
+scene.add(hemisphere);
 const sun = new THREE.DirectionalLight('#fff0d2', 2.7);
 sun.castShadow = true;
 sun.shadow.mapSize.setScalar(lowQ ? 1024 : 2048);
@@ -62,6 +80,7 @@ Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, n
 sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
+const twilight = new KingdomTwilight(sky, sun, hemisphere, scene);
 const caveLight = new THREE.PointLight('#7ff6ff', 60, 26, 1.6); // hidden cave glow
 caveLight.position.set(182, 6, -60);
 scene.add(caveLight);
@@ -95,7 +114,7 @@ const loaded = new Map<string, number>();
 const progress = (file: string) => (e: ProgressEvent) => {
   if (bootFailed || !e.lengthComputable || !e.total) return;
   loaded.set(file, e.loaded / e.total);
-  $('loading').textContent = `加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`;
+  setLoading(`加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`);
 };
 const parts = await Promise.all(REGIONS.map(async (def) => {
   const [lay, gltf] = await Promise.all([
@@ -103,7 +122,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     regionLoader().loadAsync(`./assets/${def.file}.glb`, progress(def.file)),
   ]);
   for (const name of ['ART', 'COLLISION', 'Terrain']) {
-    if (!gltf.scene.getObjectByName(name)) throw new Error(`地图模型缺少 ${name} 节点`);
+    if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
   }
   bakeQuantized(gltf.scene);
   gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
@@ -268,7 +287,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
         // leave through this region's own gate, or from 幻日谷 head for the target region's gate
         const gate = here === 'alpha' ? GATES[o.region] : GATES[here];
         const to = here === 'alpha' ? o.region : 'alpha';
-        if (gate) return { p: gate.p, label: `前往${REGION_NAME[to] ?? to}（${gate.via}）` };
+        if (gate) return { p: gate.p, label: bilingual(`前往${REGION_NAME[to] ?? to}（${gate.via}）`, `Travel to ${localizeText(REGION_NAME[to] ?? to)} (${localizeText(gate.via)})`) };
       }
       // markers that can be used now come first (e.g. the dummies before the shard they unlock)
       const ready = (m: Marker) => (m.requires ?? []).every((r) => done.has(r)) ? 0 : 1;
@@ -287,7 +306,7 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
   (guideBeam.material as THREE.MeshBasicMaterial).opacity = 0.16 + 0.06 * Math.sin(now / 300);
   const d = Math.hypot(t.p[0] - player.pos.x, t.p[1] - player.pos.y, t.p[2] - player.pos.z);
   (el.querySelector('.dist') as HTMLElement).textContent = `${Math.round(d)} m`;
-  (el.querySelector('.label') as HTMLElement).textContent = t.label;
+  (el.querySelector('.label') as HTMLElement).textContent = localizeText(t.label);
   _gv.set(t.p[0], t.p[1] + 2.2, t.p[2]).project(camera);
   const behind = _gv.z > 1;
   let sx = _gv.x, sy = _gv.y;
@@ -310,18 +329,18 @@ function renderObjective() {
     let cls = ok ? 'done' : '';
     if (!ok && !current) { cls = 'cur'; current = true; }
     const extra = s.done.length > 1 && !ok ? ` (${s.done.filter((x) => done.has(x)).length}/${s.done.length})` : '';
-    return `<div class="${cls}">${ok ? '✓' : '◇'} ${s.text}${extra}</div>`;
+    return `<div class="${cls}">${ok ? '✓' : '◇'} ${localizeText(s.text)}${extra}</div>`;
   });
   const disc = layout.markers.filter((m) => m.type === 'discovery');
   $('objective').innerHTML =
-    `<h3>${objective.name}</h3>${rows.join('')}` +
-    `<div style="margin-top:6px;opacity:.75">隐藏发现 ${disc.filter((d) => found.has(d.id)).length}/${disc.length}</div>`;
+    `<h3>${localizeText(objective.name)}</h3>${rows.join('')}` +
+    `<div style="margin-top:6px;opacity:.75">${localizeText('隐藏发现')} ${disc.filter((d) => found.has(d.id)).length}/${disc.length}</div>`;
 }
 
 let toastTimer = 0;
 function toast(text: string) {
   const el = $('toast');
-  el.textContent = text;
+  el.textContent = localizeText(text);
   el.classList.add('show');
   clearTimeout(toastTimer);
   toastTimer = window.setTimeout(() => el.classList.remove('show'), 2600);
@@ -331,8 +350,8 @@ let areaTimer = 0;
 let currentArea = '';
 function showArea(a: Layout['areas'][number]) {
   const el = $('area');
-  (el.querySelector('.zh') as HTMLElement).textContent = a.name;
-  (el.querySelector('.en') as HTMLElement).textContent = a.nameEn.toUpperCase();
+  (el.querySelector('.zh') as HTMLElement).textContent = localizeText(a.name);
+  (el.querySelector('.en') as HTMLElement).textContent = bilingual(a.nameEn.toUpperCase(), 'PARHELION WORLD');
   el.classList.add('show');
   clearTimeout(areaTimer);
   areaTimer = window.setTimeout(() => el.classList.remove('show'), 2400);
@@ -364,6 +383,32 @@ const thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screens
 let camDist = 3.6;
 const prevPos = player.pos.clone();
 
+const contractStorage = (() => { try { return localStorage; } catch { return undefined; } })();
+const contract = new FirstContract(done, contractStorage);
+const servantAppearance = new ServantAppearance(contractStorage);
+const servant = new ContractServant({ scene, renderer, marker: markers.get('saber_contract')!, contract, appearance: servantAppearance, colliders,
+  target: (position) => { const hit = combat.allyTarget(position); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  strike: (position, targetId) => { const hit = combat.allyStrike(position, 3.5, 14, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+});
+const servantPanel = createServantPanel(servant, contract, () => { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
+const contractCard = document.createElement('div');
+contractCard.id = 'contract-card'; contractCard.className = 'hud';
+Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px', padding: '12px', borderRadius: '12px',
+  background: 'rgba(20,30,52,.85)', color: '#f8eaca', fontSize: '12px', lineHeight: '1.6' });
+document.body.append(contractCard);
+function renderContract() {
+  servantPanel.render();
+  const state = servant.status;
+  const hint = contract.recruited ? bilingual(`[${settings.label('summon')}] 召唤／收回 · 近身协助攻击`, `[${settings.label('summon')}] Summon / recall · Close-range assistance`)
+    : bilingual('前往圣剑湖，与第一位契约从者会面', 'Visit Sword Lake to meet your first contracted servant');
+  const next = `${state}\n${hint}`;
+  if (contractCard.textContent !== next) contractCard.textContent = next;
+  contractCard.style.whiteSpace = 'pre-line';
+}
+addEventListener('pagehide', (event) => { if (!event.persisted) { servantPanel.dispose(); servant.dispose(); } });
+function resetProgress() {
+  done.clear(); found.clear(); contract.reset(); combat.reset(); save(); applyWorldState();
+}
 const keys = new Set<string>();
 const aim = new ShoulderAim();
 const settings = new SettingsStore('world');
@@ -379,16 +424,21 @@ const gameplayActive = () => locked && !settingsPanel.open && document.visibilit
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
-  $('help').textContent = `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 水平飞行调试（非滑翔） · ${k('collision')} 碰撞体 · ${[1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/')} 调试传送 · ${k('reset')} 重置进度`;
+  const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
+  const teleports = [1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/');
+  $('help').textContent = bilingual(
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
+
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
 const lockError = () => {
   if (locked) return;
   clearInput();
-  $('loading').textContent = '无法锁定鼠标，请再次点击进入（或检查浏览器权限）';
+  setLoading('无法锁定鼠标，请再次点击进入（或检查浏览器权限）');
   start.classList.remove('hidden');
 };
-$('loading').textContent = '点击进入（ESC 释放鼠标）';
+setLoading('点击进入（ESC 释放鼠标）');
 start.addEventListener('click', async () => {
   if (settingsPanel.open) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
@@ -398,9 +448,10 @@ document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
   clearInput();
   if (!locked) $('bigmap').classList.remove('open');
-  else $('loading').textContent = '点击进入（ESC 释放鼠标）';
+  else setLoading('点击进入（ESC 释放鼠标）');
   start.classList.toggle('hidden', locked);
   $('settings-open').classList.toggle('hidden', locked);
+  languageToggle.hidden = locked;
 });
 document.addEventListener('mousemove', (e) => {
   if (!gameplayActive()) return;
@@ -416,17 +467,21 @@ function press(binding: string, repeat = false) {
     if (!repeat) { clearInput(); $('bigmap').classList.toggle('open'); }
     return;
   }
-  if (!gameplayActive()) return;
+  if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
   keys.add(binding);
   if (action === 'aim') aim.held = true;
   if (action === 'fire') shoot();
-  if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '水平飞行调试 开' : '水平飞行调试 关 · 恢复跳跃／滑翔'); }
+  if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
   if (action === 'help') $('help').style.display = $('help').style.display === 'none' ? '' : 'none';
   if (action === 'interact' && !player.flying) interact();
-  if (action === 'reset' && !down('sprint')) { done.clear(); found.clear(); save(); applyWorldState(); toast('进度已重置'); }
+  if (action === 'summon') {
+    if (contract.toggle()) toast(contract.summoned ? bilingual('Saber 已召唤', 'Saber summoned') : bilingual('Saber 已收回', 'Saber recalled'));
+    else toast(bilingual('先前往圣剑湖缔结第一份契约', 'Form your first contract at Sword Lake'));
+  }
+  if (action === 'reset' && !down('sprint')) { resetProgress(); toast('进度已重置'); }
   if (action.startsWith('teleport')) {
     clearInput(); const n = Number(action.slice('teleport'.length));
     const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x).id);
@@ -451,24 +506,40 @@ addEventListener('wheel', (e) => {
   e.preventDefault(); const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp'; press(binding); release(binding);
 }, { passive: false });
 
-// ───────────── shooting (hitscan) ─────────────
+// ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
+const combat = new WorldCombat({ scene, colliders, layout, done, toast,
+  onVictory() { done.add('sun_core'); save(); applyWorldState(); },
+  onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
+});
+addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const ray = new THREE.Raycaster();
-const sparks: { m: THREE.Mesh; t: number }[] = [];
-const sparkGeo = new THREE.IcosahedronGeometry(0.12, 0);
-const sparkMat = new THREE.MeshBasicMaterial({ color: '#fff3a0' });
 function shoot() {
-  if (!gameplayActive()) return;
+  if (!gameplayActive() || player.flying || !combat.canShoot()) return;
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
-  ray.set(origin, look);
-  ray.far = 150;
-  const wall = staticBVH.raycastFirst(ray.ray, THREE.DoubleSide);
-  const wallDist = wall && wall.distance < 150 ? wall.distance : Infinity;
-  const hit = ray.intersectObjects(targets.filter((t) => t.visible), false)[0];
-  let point: THREE.Vector3 | null = wall && wallDist < Infinity ? wall.point : null;
-  if (hit && hit.distance < wallDist) {
-    point = hit.point;
-    const id = hit.object.userData.target as string;
+  ray.set(origin, look); ray.far = 150;
+  const wall = combat.geometry.cast(origin,look,150);
+  const wallDist = wall?.distance ?? 150;
+  const target = ray.intersectObjects(targets.filter((t) => t.visible), false)[0];
+  const questHit = target && target.distance <= wallDist + .04 ? target : undefined;
+  const enemy = combat.raycast(origin,look,Math.min(wallDist,questHit?.distance ?? 150));
+  let point = enemy ? new THREE.Vector3(enemy.point.x,enemy.point.y,enemy.point.z)
+    : questHit ? questHit.point.clone() : wall ? wall.point.clone() : origin.clone().addScaledVector(look,150);
+  rig.root.updateMatrixWorld(true);
+  const muzzle = rifle.muzzleWorld();
+  // Shoulder-camera aim selects the target, but the actual bullet must have a clear muzzle path.
+  const shoulder = player.pos.clone().add(new THREE.Vector3(0,1.3,0));
+  const toMuzzle = muzzle.clone().sub(shoulder);
+  const blockedMount = combat.geometry.cast(shoulder,toMuzzle,toMuzzle.length());
+  const shotDirection = point.clone().sub(muzzle), shotDistance = shotDirection.length();
+  const blocked = combat.geometry.cast(muzzle,shotDirection,Math.max(0,shotDistance - .06));
+  let hitSomething = !!(wall || questHit || enemy);
+  if (blockedMount || blocked) {
+    point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
+  } else if (enemy) {
+    combat.damageEnemy(enemy.id);
+  } else if (questHit) {
+    const id = questHit.object.userData.target as string;
     done.add(id);
     const group = id.replace(/_\d+$/, '');
     const n = [1, 2, 3].filter((k) => done.has(`${group}_${k}`)).length;
@@ -476,15 +547,9 @@ function shoot() {
     else if (group === 'camp_dummy') toast(n === 3 ? '试炼完成：营帐里出现了王之碎片' : `试炼木人 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
-    $('crosshair').classList.add('hit');
-    setTimeout(() => $('crosshair').classList.remove('hit'), 140);
+    $('crosshair').classList.add('hit'); setTimeout(() => $('crosshair').classList.remove('hit'),140);
   }
-  if (point) {
-    const s = new THREE.Mesh(sparkGeo, sparkMat);
-    s.position.copy(point);
-    scene.add(s);
-    sparks.push({ m: s, t: 0.25 });
-  }
+  combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething);
 }
 
 // ───────────── interaction / discovery ─────────────
@@ -500,10 +565,15 @@ function nearestInteract(): Marker | null {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
-  if (done.has(m.id)) return toast(`${m.label}：已启动`);
+  if (done.has(m.id)) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
   const missing = (m.requires ?? []).filter((r) => !done.has(r));
-  if (missing.length) return toast(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`);
+  if (missing.length) return toast(bilingual(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`, `${localizeText(m.label)}: requires ${missing.map((r) => localizeText(markers.get(r)?.label ?? '尚未完成的任务')).join(', ')}`));
+  if (m.id === 'sun_core') {
+    if (!combat.beginBoss()) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
+    return;
+  }
   done.add(m.id);
+  if (m.id === 'saber_contract') contract.recruit();
   save(); applyWorldState();
   const msg: Record<string, string> = {
     tower_console: '幻日塔重启！光环点亮了整个山谷，三处时层断面同时显现',
@@ -558,20 +628,20 @@ function frame(now: number) {
   acc += dt;
   if (!gameplayActive()) { keys.clear(); aim.clear(); }
   const input = {
-    x: Number(down('right')) - Number(down('left')),
-    z: Number(down('forward')) - Number(down('back')),
-    jump: down('jump'),
-    sprint: down('sprint'),
+    x: combat.defeated ? 0 : Number(down('right')) - Number(down('left')),
+    z: combat.defeated ? 0 : Number(down('forward')) - Number(down('back')),
+    jump: !combat.defeated && down('jump'),
+    sprint: !combat.defeated && down('sprint'),
   };
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
   const canAim = gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
   const ads = aim.step(dt, canAim);
-  $('movement-mode').textContent = player.flying ? `水平飞行调试 · ${settings.label('fly')} 退出`
-    : player.swimming ? `游泳 · ${settings.label('jump')} 出水`
-    : player.gliding ? `滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`
-    : `探索 · ${settings.label('jump')} 跳跃／空中展开滑翔翼`;
+  $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
+    : player.swimming ? bilingual(`游泳 · ${settings.label('jump')} 出水`, `Swimming · ${settings.label('jump')} Leave water`)
+    : player.gliding ? bilingual(`滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`, `Gliding · ${settings.label('jump')} Fold glider · Updrafts provide lift`)
+    : bilingual(`探索 · ${settings.label('jump')} 跳跃／空中展开滑翔翼`, `Exploring · ${settings.label('jump')} Jump / deploy glider in air`);
   const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
   $('crosshair').classList.toggle('aiming', ads > 0.7);
@@ -604,25 +674,27 @@ function frame(now: number) {
     camera.position.copy(pivot).addScaledVector(back, camDist);
     eye.copy(camera.position);
   } else camera.position.copy(eye);
+  combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
+  if (down('fire')) shoot();
+  servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
+  renderContract();
   sky.position.copy(eye);
-  sun.position.copy(eye).addScaledVector(SUN_DIR, 200);
+  twilight.update(dt, player.pos.x, done.has('sun_core'));
+  sun.position.copy(eye).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(eye);
 
   if (haloMat && done.has('tower_console')) haloMat.color.setScalar(0.85 + Math.sin(now / 400) * 0.15);
   for (const m of spinners) m.rotation.y += (m.userData.spin as number) * dt;
   for (const m of bobbers) m.position.y = Math.sin(now / 600) * 0.25;
-  for (let i = sparks.length - 1; i >= 0; i--) {
-    sparks[i].t -= dt;
-    if (sparks[i].t <= 0) { scene.remove(sparks[i].m); sparks.splice(i, 1); }
-  }
+
 
   checkDiscoveries();
   const area = layout.areas.find((a) => Math.hypot(player.pos.x - a.c[0], player.pos.z - a.c[1]) < a.r);
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
-  $('prompt').textContent = !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${it.label}` :
-    player.inUpdraft && player.onGround ? `[${settings.label('jump')}] 跳入上升气流` : '';
+  $('prompt').textContent = !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${localizeText(it.label)}` :
+    player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
   if (regionAt(player.pos.x).id !== lastRegion) { lastRegion = regionAt(player.pos.x).id; renderObjective(); }
   culler.update(eye, lowQ ? 0.7 : 1);
@@ -641,34 +713,42 @@ function frame(now: number) {
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt });
 
   timeUniform.value = now / 1000;
-  shafts.update(camera, SUN_DIR);
+  shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
   ambient?.update(camera.position);
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += dt;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
   const info = renderer.info.render;
-  stats.textContent = `${fps} fps · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n` +
-    `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? ' · fly' : ''}${player.gliding ? ' · glide' : ''}${player.swimming ? ' · swim' : ''}`;
+  stats.textContent = bilingual(`${fps} 帧/秒 · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
+    `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? bilingual(' · 飞行', ' · fly') : ''}${player.gliding ? bilingual(' · 滑翔', ' · glide') : ''}${player.swimming ? bilingual(' · 游泳', ' · swim') : ''}`;
   requestAnimationFrame(frame);
 }
+refreshWorldLocale = () => {
+  renderObjective(); renderControlHints(); renderContract();
+  const area = layout.areas.find((a) => a.id === currentArea);
+  if (area) { $('area').querySelector('.zh')!.textContent = localizeText(area.name); $('area').querySelector('.en')!.textContent = bilingual(area.nameEn.toUpperCase(), 'PARHELION WORLD'); }
+  // Transient combat/toast messages expire rather than retain a previous language.
+  $('toast').classList.remove('show');
+};
 requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, ready: true };
 }
 
 void boot().catch((error: unknown) => {
   bootFailed = true;
   disposeRenderer();
   const message = error instanceof Error ? error.message : String(error);
-  $('loading').textContent = `地图加载失败：${message}。请检查网络后重试。`;
+  setLoading(`地图加载失败：${message}。请检查网络后重试。`);
   $('start').classList.remove('hidden');
   const retry = document.createElement('button');
   retry.id = 'retry';
   retry.type = 'button';
-  retry.textContent = '重新加载';
+  retry.textContent = localizeText('重新加载');
+  onLanguageChange(() => { retry.textContent = localizeText('重新加载'); });
   retry.addEventListener('click', (event) => { event.stopPropagation(); location.reload(); });
   $('start').append(retry);
 });

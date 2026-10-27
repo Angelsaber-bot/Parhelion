@@ -34,7 +34,7 @@ function setup() {
     open: false, show() { if (this.open) return; this.open = true; hooks.onOpen(); }, close() { this.open = false; hooks.onClose(); },
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
-  const context = vm.createContext({ ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({ combat: { defeated: false }, contract: { toggle: () => false }, bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -176,4 +176,25 @@ test('manual flight vertical controls are absent; Space stays jump/glide and F o
   assert.equal(settings.action('KeyE'), 'aim');
   const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(source, /down\('(?:ascend|descend)'\)|\bup:\s/);
+});
+
+test('World both Shift aliases stay active until both release, and defeat blocks gameplay actions', () => {
+  const s = setup(); s.lock();
+  s.target.emit('keydown', { code: 'ShiftLeft' }); s.target.emit('keydown', { code: 'ShiftRight' });
+  assert.equal(s.context.state.down('sprint'),true);
+  s.target.emit('keyup', { code: 'ShiftLeft' }); assert.equal(s.context.state.down('sprint'),true);
+  s.target.emit('keyup', { code: 'ShiftRight' }); assert.equal(s.context.state.down('sprint'),false);
+  s.context.combat.defeated = true;
+  s.target.emit('keydown', { code: 'KeyV' }); s.target.emit('keydown', { code: 'KeyF' });
+  assert.equal(s.context.player.flying,false); assert.equal(s.actions(),0);
+});
+test('World summon hotkey is rebindable, suppressed by maps/settings, and repeats do not retrigger', () => {
+  const s=setup(); s.lock(); let calls=0;
+  s.context.contract.toggle=()=>{calls++;return true;}; s.context.contract.summoned=true;
+  s.target.emit('keydown',{code:'KeyT'}); s.target.emit('keydown',{code:'KeyT',repeat:true}); assert.equal(calls,1);
+  s.context.state.settings.bind('summon','KeyP');
+  s.target.emit('keydown',{code:'KeyT'}); assert.equal(calls,1);
+  s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
+  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
+  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyO'}); s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
 });

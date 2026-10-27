@@ -16,6 +16,8 @@ export function attachExplorerRifle(rig: CharacterRig, renderer?: THREE.WebGLRen
   let stopped = false, loaded: THREE.Group | null = null;
   let environment: THREE.WebGLRenderTarget | null = null;
   const gun = rig.joints.Gun, fallback = gun.getObjectByName('Rifle') as THREE.Mesh;
+  // Keep projectile/muzzle flashes on the actual barrel after the authored art is fitted to both hands.
+  const muzzle = new THREE.Vector3(0, 0.005, -0.455).multiplyScalar(1.1);
   gun.userData.artState = 'loading';
   const ready = load(url).then((gltf) => {
     if (stopped) { dispose(gltf.scene); return; }
@@ -27,6 +29,7 @@ export function attachExplorerRifle(rig: CharacterRig, renderer?: THREE.WebGLRen
     const grip = point(def.grip!), support = point(def.support!), { right, left } = rig.gunHands;
     const scale = right.distanceTo(left) / grip.distanceTo(support);
     visual.scale.setScalar(scale);
+    muzzle.copy(point(def.muzzle!)).multiplyScalar(scale);
     rig.gunAnchors.grip.copy(grip).multiplyScalar(scale); rig.gunAnchors.support.copy(support).multiplyScalar(scale);
     const z = right.clone().sub(left).normalize();
     const x = new THREE.Vector3(0, 1, 0).cross(z).normalize(), y = z.clone().cross(x);
@@ -56,5 +59,7 @@ export function attachExplorerRifle(rig: CharacterRig, renderer?: THREE.WebGLRen
     if (loaded) { dispose(loaded); loaded = null; }
     if (!stopped) { gun.userData.artState = 'fallback'; console.warn('World rifle art unavailable; original rifle retained.', error); }
   });
-  return { ready, dispose() { if (stopped) return; stopped = true; environment?.dispose(); if (loaded) { loaded.removeFromParent(); dispose(loaded); loaded = null; } } };
+  return { ready,
+    muzzleWorld(out = new THREE.Vector3()) { gun.updateWorldMatrix(true, false); return gun.localToWorld(out.copy(muzzle)); },
+    dispose() { if (stopped) return; stopped = true; environment?.dispose(); if (loaded) { loaded.removeFromParent(); dispose(loaded); loaded = null; } } };
 }

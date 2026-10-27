@@ -112,13 +112,14 @@ for (const w of WEAPONS.filter((w) => w.kind === 'melee')) it(`${w.id}: actual c
   expect(artPoint(def, def.grip!).distanceTo(new THREE.Vector3(0, -.1, .07))).toBeLessThan(.001);
   const group = presentation.group; group.scale.setScalar(index === 6 ? .6 : .72);
   const poses: number[][] = [];
-  for (const [ready, strike] of [[0, 0], [.25, 0], [.5, 0], [1, 0], [0, 1], [0, .5]]) {
+  for (const [ready, strike] of [[0, 0], [.25, 0], [.5, 0], [1, 0], [0, 1], [0, .5], ...Array.from({length: 41}, (_, i) => [i/40, 0]), ...Array.from({length: 41}, (_, i) => [0, i/40])]) {
     poseMelee(group, index, ready, strike, true); group.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(group);
     expect(box.max.z).toBeLessThan(-.01);
     expect(box.min.toArray().every(Number.isFinite)).toBe(true);
     poses.push(group.rotation.toArray().slice(0, 3) as number[]);
   }
-  expect(poses[0]).not.toEqual(poses[3]); expect(poses[3]).not.toEqual(poses[4]);
+  expect(poses[0]).not.toEqual(poses[3]); poses[3].forEach((angle, axis) => expect(angle).toBeCloseTo(poses[4][axis], 12)); // contact pose is continuous at the authoritative impact
+  expect(poses[4]).not.toEqual(poses[5]);
   presentation.dispose(); expect(pool.size).toBe(0);
 });

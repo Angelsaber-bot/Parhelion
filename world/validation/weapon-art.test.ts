@@ -23,6 +23,10 @@ test('actual World AR replaces fallback, preserves two-hand anchors, and points 
     const barrel = new THREE.Vector3(0, 0, -1).applyQuaternion(rig.joints.Gun.quaternion);
     assert.ok(barrel.distanceTo(new THREE.Vector3(0, Math.sin(pitch), Math.cos(pitch))) < 1e-6);
     rig.root.updateMatrixWorld(true);
+    const muzzle = rifle.muzzleWorld();
+    assert.ok(muzzle.toArray().every(Number.isFinite), 'muzzle follows animated authored gun');
+    const localMuzzle = rig.joints.Gun.worldToLocal(muzzle.clone());
+    assert.ok(localMuzzle.z < -0.3, 'projectiles originate at the forward barrel, not the receiver');
     for (const side of ['R', 'L']) {
       const anchor = (side === 'R' ? rig.gunAnchors.grip : rig.gunAnchors.support).clone().applyMatrix4(rig.joints.Gun.matrixWorld);
       const hand = new THREE.Vector3(0, -.28, 0).applyMatrix4(rig.joints[`Forearm_${side}`].matrixWorld);
@@ -38,5 +42,6 @@ test('World model failure leaves its original character rifle available', async 
   const rig = buildCharacter(new THREE.MeshStandardMaterial());
   const rifle = attachExplorerRifle(rig, undefined, async () => { throw new Error('offline'); });
   await rifle.ready; assert.equal(rig.joints.Gun.userData.artState, 'fallback'); assert.ok(rig.joints.Gun.getObjectByName('Rifle'));
+  assert.ok(rifle.muzzleWorld().toArray().every(Number.isFinite), 'fallback still supplies a valid muzzle');
   rifle.dispose();
 });

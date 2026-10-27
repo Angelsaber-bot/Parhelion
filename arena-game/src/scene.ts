@@ -22,7 +22,7 @@ import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 import { attachGunArt, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
-import { meleeWindupProgress, poseMelee } from './meleeArt.ts';
+import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -313,7 +313,24 @@ export class ArenaScene {
       g.scale.setScalar(0.3 + 0.7 * Math.min(1, (SHIELD.life - s.life) / 8)); // pop-in
       g.visible = fade > 0;
     }
-    for (const [id, g] of this.shields) if (!live.has(id)) { this.scene.remove(g); this.shields.delete(id); }
+    for (const [id, g] of this.shields) if (!live.has(id)) {
+      this.scene.remove(g); g.traverse((node) => {
+        const drawable = node as THREE.Mesh;
+        drawable.geometry?.dispose();
+        if (drawable.material) for (const material of Array.isArray(drawable.material) ? drawable.material : [drawable.material]) material.dispose();
+      }); this.shields.delete(id);
+    }
+  }
+
+  /** Round boundaries clear transient effects without reloading maps or equipped models. */
+  clearCombatEffects() {
+    for (const { line } of this.tracers) { this.scene.remove(line); line.geometry.dispose(); (line.material as THREE.Material).dispose(); }
+    for (const { s } of this.sparks) { this.scene.remove(s); s.material.dispose(); }
+    for (const { s } of this.numbers) { this.scene.remove(s); s.material.map?.dispose(); s.material.dispose(); }
+    this.tracers = []; this.sparks = []; this.numbers = [];
+    this.flashT = 0; this.muzzleLight.intensity = 0;
+    this.syncShields([]); this.viewmodel.resetMotion();
+    for (const avatar of this.avatars.values()) avatar.resetMotion();
   }
 
   // ---------- effects ----------
@@ -500,7 +517,14 @@ export class Viewmodel {
     this.weapon = weapon; this.meleeHit = 0; this.meleeWindup = 0; this.kick = 0;
   }
 
+  resetMotion() {
+    for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
+    this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.meleeWindup = 0;
+    this.kick = 0; this.bob = 0; this.sway = [0, 0]; this.reloading = 0; this.moving = 0;
+  }
+
   clear() {
+    this.resetMotion();
     this.presentation?.dispose(); this.presentation = null; this.gun = null; this.muzzle = null; this.key = '';
     for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
     this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.meleeWindup = 0;
@@ -565,7 +589,7 @@ export class Viewmodel {
     }
     if (WEAPONS[this.weapon].kind === 'melee') {
       poseMelee(this.gun, this.weapon, meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit, true);
-      this.meleeHit = Math.max(0, this.meleeHit - dt * 7);
+      this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
     }
     this.gun.visible = !(isScopedWeapon(this.weapon) && this.aim > 0.92); // scopes have an unobstructed magnified view
     for (let i = this.shells.length - 1; i >= 0; i--) {
@@ -636,6 +660,8 @@ class Avatar {
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
   strike() { this.meleeHit = 1; }
 
+  resetMotion() { this.meleeHit = 0; this.last = null; this.speed = this.vy = 0; }
+
   animate(pos: Vec3, dt: number, crouched = false, meleeWindup = 0) {
     if (this.last && dt > 0) {
       const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
@@ -648,8 +674,8 @@ class Avatar {
     if (this.gun && WEAPONS[this.weapon].kind === 'melee') {
       const windup = meleeWindupProgress(meleeWindup, WEAPONS[this.weapon].windup ?? 1);
       poseMelee(this.gun, this.weapon, windup, this.meleeHit, false);
-      this.anim.melee(windup, this.meleeHit);
-      this.meleeHit = Math.max(0, this.meleeHit - dt * 7);
+      this.anim.melee(windup, this.meleeHit, this.weapon);
+      this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
     } else this.anim.melee(0, 0);
   }
 

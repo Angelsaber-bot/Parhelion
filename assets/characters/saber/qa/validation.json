@@ -1,0 +1,80 @@
+{
+  "glb_bytes": 2339900,
+  "meshes": 1,
+  "materials": 19,
+  "skins": 1,
+  "joints": 42,
+  "triangle_count": 62469,
+  "primitives": 19,
+  "clips": {
+    "Idle": {
+      "duration_seconds": 2.0333333015441895,
+      "channels": 126,
+      "nonstatic_samplers": 14
+    },
+    "Walk": {
+      "duration_seconds": 1.100000023841858,
+      "channels": 126,
+      "nonstatic_samplers": 19
+    },
+    "Attack": {
+      "duration_seconds": 1.0333333015441895,
+      "channels": 126,
+      "nonstatic_samplers": 15
+    }
+  },
+  "checks": {
+    "finite_positions_uvs_normals": true,
+    "normalized_skin_weights": true,
+    "max_weight_error": 1.0989606380462646e-07,
+    "max_normal_squared_error": 2.26236811506908e-07,
+    "all_joint_indices_valid": true,
+    "real_animation_channels_vary": true,
+    "bounds_gltf_y_up": {
+      "min": [
+        -0.42629218101501465,
+        0.0,
+        -0.3144986033439636
+      ],
+      "max": [
+        0.4031878709793091,
+        1.751530647277832,
+        0.2645462155342102
+      ]
+    },
+    "no_external_resources": true
+  },
+  "reimport": {
+    "armatures": 1,
+    "meshes": 1,
+    "bones": 42,
+    "animation_actions": [
+      {
+        "track": "Attack",
+        "action": "Attack_Saber_Rig"
+      },
+      {
+        "track": "Walk",
+        "action": "Walk_Saber_Rig"
+      },
+      {
+        "track": "Idle",
+        "action": "Idle_Saber_Rig"
+      }
+    ],
+    "mesh_deformation": {
+      "Attack": {
+        "max_vertex_displacement_m": 1.3952692040094286,
+        "sample_frame": 8
+      },
+      "Walk": {
+        "max_vertex_displacement_m": 0.21028603072224153,
+        "sample_frame": 7
+      },
+      "Idle": {
+        "max_vertex_displacement_m": 0.026436332065936232,
+        "sample_frame": 12
+      }
+    }
+  }
+}

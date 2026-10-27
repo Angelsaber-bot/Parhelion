@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
 import { loadLayout } from '../src/load.ts';
+import { localizeText, onLanguageChange, setLanguage } from '../../shared-client/i18n';
 const valid = JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json', import.meta.url), 'utf8'));
 const fetchJSON = (value: unknown) => (async () => new Response(JSON.stringify(value), { status: 200 })) as typeof fetch;
 
@@ -40,13 +41,15 @@ test('bootstrap rejection disposes renderer and exposes a single functional retr
   const loading = { textContent: '' }, children: any[] = [];
   let disposed = 0, reloaded = 0, stopped = 0;
   const start = { classList: { remove() {} }, append(child: any) { children.push(child); } };
-  const context = vm.createContext({ bootFailed: false, boot: async () => { throw new Error('HTTP 503'); }, disposeRenderer() { disposed++; }, $: (id: string) => id === 'loading' ? loading : start, document: { createElement() { return { addEventListener(_s: string, fn: unknown) { this.click = fn; } }; } }, location: { reload() { reloaded++; } } });
+  const context = vm.createContext({ localizeText, onLanguageChange, setLoading: (source: string) => { loading.textContent = localizeText(source); }, bootFailed: false, boot: async () => { throw new Error('HTTP 503'); }, disposeRenderer() { disposed++; }, $: (id: string) => id === 'loading' ? loading : start, document: { createElement() { return { addEventListener(_s: string, fn: unknown) { this.click = fn; } }; } }, location: { reload() { reloaded++; } } });
   vm.runInContext(transformSync(section, { loader: 'ts', format: 'cjs' }).code, context);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(context.bootFailed, true);
   assert.equal(disposed, 1);
   assert.match(loading.textContent, /地图加载失败.*HTTP 503/);
   assert.equal(children.length, 1); assert.equal(children[0].id, 'retry');
+  setLanguage('en'); assert.equal(children[0].textContent, 'Reload');
+  setLanguage('zh'); assert.equal(children[0].textContent, '重新加载');
   children[0].click({ stopPropagation() { stopped++; } });
   assert.equal(reloaded, 1); assert.equal(stopped, 1);
 });

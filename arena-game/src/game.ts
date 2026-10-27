@@ -1,3 +1,4 @@
+import { bilingual } from '../../shared-client/i18n.ts';
 // Client game loop: fixed 60 Hz input ticks with local prediction of the own player, server
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
 
@@ -44,6 +45,7 @@ export class Game {
   onRestart: () => void = () => {};
   private streak = 0;
   private lastLook = [0, 0];
+  private rematchPending = false;
 
   constructor(
     private session: Session,
@@ -53,6 +55,10 @@ export class Game {
     private onExit: (reason: string) => void,
   ) {
     this.map = session.map;
+    // Hud and ArenaScene are reused after returning to the lobby: clear them before
+    // the first snapshot of a new session, not three seconds later at live phase.
+    this.controls.clearAll(); this.controls.resultsScoreboard = false; this.controls.weapon = 0;
+    this.resetAim(); this.hud.resetRound(); this.scene.clearCombatEffects();
     session.onSnapshot = (s) => this.onSnapshot(s);
     session.onClose = (r) => this.stop(r);
     this.raf = requestAnimationFrame((t) => this.frame(t));
@@ -64,6 +70,7 @@ export class Game {
     cancelAnimationFrame(this.raf);
     this.resetAim();
     this.scene.viewmodel.clear();
+    this.scene.clearCombatEffects();
     this.scene.pruneAvatars(new Set());
     this.session.close();
     this.onExit(reason);
@@ -72,6 +79,17 @@ export class Game {
   // ---------- network ----------
 
   private onSnapshot(s: Snapshot) {
+    if (!this.running || (this.latest && s.tick <= this.latest.tick)) return;
+    const previousPhase = this.latest?.phase;
+    if ((previousPhase === 'ended' && s.phase !== 'ended') || (s.phase === 'live' && previousPhase !== 'live')) {
+      const wasEnded = this.ended;
+      this.pending = []; this.outbox = []; this.snaps = []; this.remotes = [];
+      this.smooth = [0, 0, 0]; this.renderTick = 0; this.acc = 0; this.streak = 0;
+      this.feel = new Feel(); this.controls.clearAll(); this.controls.resultsScoreboard = false;
+      this.controls.weapon = 0; this.aimWeapon = -1; this.resetAim(); this.hud.resetRound(); this.scene.clearCombatEffects();
+      this.rematchPending = false; this.ended = false; this.paused = false; this.session.setPaused(false);
+      if (wasEnded) this.onRestart();
+    }
     const now = performance.now();
     if (this.latest) this.snapGap += ((now - this.latestAt) - this.snapGap) * 0.1;
     this.latest = s;
@@ -97,6 +115,9 @@ export class Game {
       this.me = next;
     }
     for (const e of s.events) this.onEvent(e);
+    // A late join or missed event batch still shows the current authoritative result state.
+    if (s.phase === 'ended' && !this.ended) this.onEvent({ t: 'phase', phase: 'ended',
+      winner: s.score.A === s.score.B ? 'draw' : s.score.A > s.score.B ? 'A' : 'B' });
   }
 
   private onEvent(e: NetEvent) {
@@ -165,8 +186,8 @@ export class Game {
           const mine = this.names.get(myId);
           const title = e.winner === 'draw' ? '平局' : e.winner === mine?.team ? '胜利' : '失败';
           this.hud.announce(title, 3);
-          this.ended = true;
-          this.resetAim();
+          this.ended = true; this.rematchPending = false;
+          this.controls.clearAll(); this.resetAim();
           this.onEnded(title);
         }
         break;
@@ -195,7 +216,10 @@ export class Game {
 
   /** From the results screen: start the next match. */
   rematch() {
+    if (!this.ended || this.rematchPending) return false;
+    this.rematchPending = true;
     this.session.rematch();
+    return true;
   }
 
   private frame(t: number) {
@@ -233,7 +257,7 @@ export class Game {
   private tickInput() {
     const c = this.controls;
     const s = c.sample();
-    const active = c.locked;
+    const active = c.locked && !this.ended;
     const inp: Input = {
       seq: ++this.seq,
       mx: active ? s.mx : 0,
@@ -352,7 +376,7 @@ export class Game {
     }
     this.scene.update(dt);
     this.scene.render(!!me?.alive);
-    const ping = this.session.online ? `快照间隔 ${Math.round(this.snapGap)} ms` : '单机';
-    this.hud.update(dt, me, this.latest, this.session.id, this.controls.scoreboard, ping);
+    const ping = this.session.online ? bilingual(`快照间隔 ${Math.round(this.snapGap)} ms`, `Snapshot interval ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');
+    this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping);
   }
 }

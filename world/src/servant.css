@@ -1,0 +1,13 @@
+#servant-open { top: 68px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff9e8; border: 1px solid #b29c69; color: #3a3548; cursor: pointer; }
+#servant-open[hidden] { display: none !important; }
+#servant-settings { width: min(480px, calc(100vw - 28px)); max-height: calc(100vh - 32px); overflow: auto; border: 1px solid #b6a987; border-radius: 16px; padding: 22px; background: #f9f5eb; color: #27364e; box-shadow: 0 16px 70px #0006; font: 14px/1.6 system-ui, sans-serif; }
+#servant-settings::backdrop { background: #10203899; }
+#servant-settings header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+#servant-settings h2 { margin: 0; font-size: 19px; }
+#servant-settings label { display: flex; flex-direction: column; gap: 7px; margin-top: 20px; }
+#servant-settings select, #servant-settings button { font: inherit; padding: 9px 12px; border: 1px solid #b4b6b5; border-radius: 8px; background: white; color: inherit; }
+#servant-settings button { cursor: pointer; }
+#servant-settings button:disabled { opacity: .65; cursor: default; }
+#servant-settings button[hidden] { display: none; }
+#servant-settings .servant-note { color: #526078; }
+#servant-settings .servant-actions { display: flex; gap: 10px; flex-wrap: wrap; }

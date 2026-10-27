@@ -1,0 +1,34 @@
+[
+  {
+    "outfit": "armor",
+    "path": "assets/characters/artoria_refined/runtime_revision1/armor/artoria_armor.glb.gz",
+    "bytes": 23841751,
+    "sha256": "02159c29aa1f2c9a9770b4550a8f4cef3ebe381f80ce684515fe52d3e3fcefdb",
+    "raw_bytes": 43190944,
+    "raw_sha256": "8ac19da3b5d117e788cbd8d08dea8d43ad4fadbc69406a3c4587ccc1af6aa1d5",
+    "animations": [
+      "Attack",
+      "Idle",
+      "Run",
+      "Walk"
+    ],
+    "materials": 30,
+    "images": 5
+  },
+  {
+    "outfit": "civilian",
+    "path": "assets/characters/artoria_refined/runtime_revision1/civilian/artoria_civilian.glb.gz",
+    "bytes": 12623552,
+    "sha256": "ef9fc83324df555bf71693e2f6ad3103f28978582c5daf90a2ee1664360a9d5c",
+    "raw_bytes": 16240588,
+    "raw_sha256": "0bde102d53ccfbaeaa6f6e448876228fd94379b7d3132ddb158e1094130b43e6",
+    "animations": [
+      "Attack",
+      "Idle",
+      "Run",
+      "Walk"
+    ],
+    "materials": 15,
+    "images": 5
+  }
+]

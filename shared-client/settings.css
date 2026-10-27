@@ -26,3 +26,13 @@
 .control-migration button { border: 1px solid #70c7bf; border-radius: 6px; background: #245158; color: #fff; padding: 8px; white-space: nowrap; cursor: pointer; }
 .input-settings [data-migration] { white-space: pre-line; }
 @media (max-width: 600px) { .settings-bindings > div { align-items: flex-start; flex-direction: column; gap: 4px; } .settings-bindings .binding-pair { width: 100%; } .settings-bindings .binding-pair button[data-bind] { min-width: 0; flex: 1; } }
+
+/* Shared, persistent language control. It is hidden while the pointer is locked. */
+.parhelion-language { display: inline-flex; align-items: center; gap: 8px; color: inherit; font: 12px/1.4 system-ui,sans-serif; white-space: nowrap; pointer-events: auto; }
+.parhelion-language select { width: auto; min-width: 85px; padding: 7px 10px; color: #eaf3f5; border: 1px solid #7295a5; background: #15283b; border-radius: 8px; font: inherit; cursor: pointer; }
+.parhelion-language select:focus-visible { outline: 2px solid #ffc66d; outline-offset: 2px; }
+body > .parhelion-language { position: fixed; top: 14px; left: 14px; z-index: 10005; color: #eaf3f5; padding: 7px 10px; background: #12243be8; border-radius: 10px; }
+.input-settings header { flex-wrap: wrap; gap: 12px; }
+.input-settings .parhelion-language { margin-left: auto; }
+
+.parhelion-language[hidden] { display: none !important; }

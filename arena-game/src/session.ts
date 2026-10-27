@@ -67,6 +67,7 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
   // batch inputs to ~30 Hz: halves the message count (the free Cloudflare tier counts messages)
   let outbox: Input[] = [];
   let flush: ReturnType<typeof setTimeout> | null = null;
+  const clearQueued = () => { if (flush) clearTimeout(flush); flush = null; outbox = []; };
   const sendNow = () => {
     flush = null;
     if (outbox.length && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'input', d: outbox }));
@@ -93,14 +94,15 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
           online: true,
           map: getMap(opts.map),
           send: (inputs) => {
+            if (ws.readyState !== WebSocket.OPEN) return;
             outbox.push(...inputs);
             if (outbox.length > 16) sendNow();
             else flush ??= setTimeout(sendNow, 30);
           },
           onSnapshot: () => {},
           onClose: () => {},
-          close: () => ws.close(1000),
-          rematch: () => ws.send(JSON.stringify({ t: 'rematch' })),
+          close: () => { clearQueued(); ws.close(1000); },
+          rematch: () => { clearQueued(); if (ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify({ t: 'rematch' })); },
           setPaused: () => {},
         };
         resolve(s);
@@ -108,7 +110,7 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     };
     ws.onerror = () => { if (!s) { clearTimeout(timeout); reject(new Error('无法连接服务器')); } };
     ws.onclose = (ev) => {
-      if (flush) clearTimeout(flush); outbox = [];
+      clearQueued();
       if (s) s.onClose(`disconnected (${ev.code})`);
       else { clearTimeout(timeout); reject(new Error(`连接被关闭 (${ev.code})`)); }
     };

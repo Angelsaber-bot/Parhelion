@@ -91,6 +91,45 @@ for (const choice of [
     }
   }
 });
+await check('Arena ended S scoreboard and two fresh rematches never retain prior-round scores', async (page) => {
+  await page.goto(arena + '?low&test&autostart');
+  await page.waitForFunction(() => window.session?.match?.player('you'));
+  await page.evaluate(() => { for (const slot of window.session.match.slots.values()) slot.controller = undefined; });
+  for (let round = 0; round < 2; round++) {
+    await page.evaluate(() => {
+      const match = window.session.match; match.phase = 'live'; match.phaseT = 1;
+      match.score = { A: 7, B: 3 };
+      for (const slot of match.slots.values()) { slot.kills = 4; slot.deaths = 2; }
+    });
+    await page.waitForFunction(() => window.game.ended);
+    assert.equal(await page.locator('#scoreboard').isVisible(), false);
+    await page.keyboard.press('s'); await page.waitForSelector('#scoreboard.results:not(.hidden)');
+    assert.equal(await page.locator('#scoreboard [data-close-scores]').isVisible(), true);
+    await page.click('#scoreboard [data-close-scores]'); assert.equal(await page.locator('#scoreboard').isVisible(), false);
+    await page.keyboard.press('s'); await page.waitForSelector('#scoreboard.results:not(.hidden)');
+    await page.keyboard.press('Escape'); assert.equal(await page.locator('#scoreboard').isVisible(), false);
+    await page.click('#rematch'); await page.waitForFunction(() => !window.game.ended);
+    assert.deepEqual(await page.evaluate(() => window.session.match.score), { A: 0, B: 0 });
+    assert.equal(await page.evaluate(() => [...window.session.match.slots.values()].every((p) => p.kills === 0 && p.deaths === 0)), true);
+    assert.equal(await page.locator('#scoreboard').isVisible(), false);
+    await page.keyboard.down('s');
+    assert.equal(await page.evaluate(() => window.arena.controls.sample().mz), -1);
+    await page.keyboard.up('s');
+  }
+});
+await check('Arena language changes live menus and weapon categories without changing player name', async (page) => {
+  await page.goto(arena + '?low');
+  await page.fill('#name', '准备玩家');
+  await page.selectOption('body > .parhelion-language select', 'en');
+  assert.match(await page.textContent('#loadout'), /Assault Rifle AR/);
+  assert.equal(await page.inputValue('#name'), '准备玩家');
+  await page.click('#settings-lobby');
+  assert.match(await page.textContent('#arena-settings h2'), /Controls/);
+  await page.selectOption('#arena-settings .parhelion-language select', 'zh');
+  assert.match(await page.textContent('#arena-settings h2'), /操作设置/);
+  await page.click('#arena-settings [data-close]');
+  assert.match(await page.textContent('#loadout'), /突击步枪 AR/);
+});
 await check('Arena missing model keeps procedural fallback and remains playable', async (page) => {
   await page.route('**/*01_Dawn_AR*.glb', (route) => route.fulfill({ status: 503, body: 'unavailable' }));
   await page.goto(arena + '?low&test&autostart');

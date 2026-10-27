@@ -1,3 +1,4 @@
+import { meleeMotion } from './meleeArt.ts';
 // Anime-proportioned Arena fighters, built procedurally (same approach as the World explorer:
 // merged vertex-coloured parts on a small joint rig, drawn with the cel shader). Two designs:
 //   Aster  white long coat, pale-blue long hair with an ahoge, floating parhelion halo
@@ -205,12 +206,16 @@ export class FighterAnimator {
 
   constructor(private rig: FighterRig) {}
 
-  melee(windup: number, strike: number) {
-    const J = this.rig.joints;
-    J.Arm_R.rotation.set(1.15 + windup * .6 - strike * .35, -windup * .25 + strike * .2, -.12 + windup * .15);
-    J.Forearm_R.rotation.x = .45 + windup * .25;
-    J.Arm_L.rotation.set(1.25 + windup * .3 - strike * .2, 0, .62);
-    J.Forearm_L.rotation.x = .7 + windup * .1;
+  melee(windup: number, strike: number, weapon = 5) {
+    const J = this.rig.joints, motion = meleeMotion(weapon, windup, strike, false);
+    const [pitch, yaw, roll] = motion.rotation;
+    // The support hand follows the same continuous preparation/impact/recovery curve.
+    // Spear and hammer remain two-handed; the sword keeps its off-hand clear.
+    const twoHanded = weapon === 6 || weapon === 7;
+    J.Arm_R.rotation.set(1.15 - pitch * .65, yaw * .45, -.12 + roll * .35);
+    J.Forearm_R.rotation.x = .45 - pitch * .18;
+    J.Arm_L.rotation.set(1.25 - pitch * (twoHanded ? .5 : .1), yaw * (twoHanded ? .32 : -.15), .62 + roll * (twoHanded ? .25 : -.15));
+    J.Forearm_L.rotation.x = .7 - pitch * (twoHanded ? .2 : .04);
   }
 
   update(dt: number, speed: number, vy: number, crouched = false) {

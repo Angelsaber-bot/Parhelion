@@ -10,6 +10,8 @@ export class Controls {
   aimHeld = false;
   lookScale = 1;
   scoreboard = false;
+  /** Results-only display state; S never enters the live movement binding table. */
+  resultsScoreboard = false;
   blocked = false;
   private keys = new Set<string>();
   private latched = 0;

@@ -1,0 +1,24 @@
+[
+  {
+    "variant": "armor",
+    "path": "/workspace/scratch/218192752ff4/Parhelion/assets/characters/artoria_refined/runtime_revision1/armor/artoria_armor.glb",
+    "bytes": 43190944,
+    "sha256": "8ac19da3b5d117e788cbd8d08dea8d43ad4fadbc69406a3c4587ccc1af6aa1d5",
+    "gzip_path": "/workspace/scratch/218192752ff4/Parhelion/assets/characters/artoria_refined/runtime_revision1/armor/artoria_armor.glb.gz",
+    "gzip_bytes": 23841751,
+    "gzip_sha256": "02159c29aa1f2c9a9770b4550a8f4cef3ebe381f80ce684515fe52d3e3fcefdb",
+    "animation_time_origin": 0,
+    "gzip_roundtrip_verified": true
+  },
+  {
+    "variant": "civilian",
+    "path": "/workspace/scratch/218192752ff4/Parhelion/assets/characters/artoria_refined/runtime_revision1/civilian/artoria_civilian.glb",
+    "bytes": 16240588,
+    "sha256": "0bde102d53ccfbaeaa6f6e448876228fd94379b7d3132ddb158e1094130b43e6",
+    "gzip_path": "/workspace/scratch/218192752ff4/Parhelion/assets/characters/artoria_refined/runtime_revision1/civilian/artoria_civilian.glb.gz",
+    "gzip_bytes": 12623552,
+    "gzip_sha256": "ef9fc83324df555bf71693e2f6ad3103f28978582c5daf90a2ee1664360a9d5c",
+    "animation_time_origin": 0,
+    "gzip_roundtrip_verified": true
+  }
+]

@@ -4,7 +4,7 @@ import { newPlayer } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, WEAPONS, weaponIndex, type Loadout } from '../shared/content.ts';
-import { LOADOUT_KEY, LoadoutStore, loadoutCards, sanitizedSkins, weaponHud, weaponStats } from '../src/loadout.ts';
+import { displayWeaponName, LOADOUT_KEY, LoadoutStore, loadoutCards, sanitizedSkins, weaponHud, weaponStats } from '../src/loadout.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
 import { readFileSync } from 'node:fs';
 
@@ -88,15 +88,15 @@ describe('lobby and combat equipment presentation', () => {
     const state = presentation(['longnight', 'firefly', 'hammer'], 1); state.ammo[3] = 7;
     const view = weaponHud(state, sanitizedSkins([1, 1, 1]));
     expect(view.ammo).toBe('7'); expect(view.detail).toBe('/ 36');
-    expect(view.name).toContain('Firefly'); expect(view.slots.map((s) => s.active)).toEqual([false, true, false]);
-    expect(view.slots.map((s) => s.name)).toEqual([WEAPONS[4].name, WEAPONS[3].name, WEAPONS[7].name]);
+    expect(view.name).toBe('冲锋枪 SMG'); expect(view.slots.map((s) => s.active)).toEqual([false, true, false]);
+    expect(view.slots.map((s) => s.name)).toEqual(['狙击步枪', '冲锋枪 SMG', '战锤']);
   });
   it('renders gun reload and the actual scoped weapon name', () => {
     const state = presentation(['longnight', 'halo', 'blade']); state.reload = 60;
     expect(weaponHud(state, []).ammo).toBe('装填中');
-    expect(weaponHud(state, []).scope).toContain('LONGNIGHT');
+    expect(weaponHud(state, []).scope).toContain('狙击镜');
     state.weapon = 2; state.weaponSlot = 1;
-    expect(weaponHud(state, []).scope).toContain('HALO');
+    expect(weaponHud(state, []).scope).toBe('DMR');
   });
   it('shows every melee weapon windup, recovery, and ready state instead of zero ammunition', () => {
     for (const id of MELEE_IDS) {
@@ -155,11 +155,19 @@ it('updates the real HUD using new player state without overwriting remapped key
       hud.update(1 / 60, p, snap, p.id, false, 'local');
       expect(slots.map((node) => node.classList.contains('on'))).toEqual([0, 1, 2].map((n) => n === slot));
       expect(slots.map((node) => node.querySelector('kbd').textContent)).toEqual(['P', '鼠标侧键 1', '3']);
-      expect(el('wname').textContent).toContain(WEAPONS[p.weapon].name);
+      expect(el('wname').textContent).toBe(displayWeaponName(WEAPONS[p.weapon].id));
       expect(el('weapon').classList.contains('melee')).toBe(slot === 2);
     }
     p.meleeWindup = 30; p.fireCd = 72; hud.update(1 / 60, p, snap, p.id, false, 'local');
     expect(el('ammo').textContent).toBe('蓄势'); expect(el('mag').textContent).toContain('0.5s');
-    expect(slots[0].attributes.get('aria-label')).toContain('P · Longnight');
+    expect(slots[0].attributes.get('aria-label')).toContain('P · 狙击步枪');
+    el('scoreA').textContent = '7'; el('scoreB').textContent = '4'; el('clock').textContent = '2:45';
+    el('scoreboard').innerHTML = 'old scores';
+    hud.resetRound();
+    expect(el('scoreA').textContent).toBe('0'); expect(el('scoreB').textContent).toBe('0');
+    expect(el('clock').textContent).toBe('—'); expect(el('limit').textContent).toBe('');
+    expect(el('ammo').textContent).toBe('—'); expect(el('wname').textContent).toBe('');
+    expect(el('scoreboard').innerHTML).toBe(''); expect(el('scoreboard').classList.contains('hidden')).toBe(true);
+    expect(el('banner').textContent).toBe(''); expect(el('banner').classList.contains('hidden')).toBe(true);
   } finally { vi.unstubAllGlobals(); }
 });

@@ -64,14 +64,21 @@ test('normal diagonal walking is not faster than straight walking', () => {
   assert.ok(Math.abs(Math.hypot(a.pos.x, a.pos.z) - Math.hypot(b.pos.x,b.pos.z)) < 1e-8);
 });
 
-test('debug flight is horizontal only, even with pitched look, jump, or obsolete vertical input', () => {
-  const p = new Player([], -100); p.teleport(0, 25, 0); p.flying = true; p.pitch = 1.3;
-  const oldInput = { ...idle, z: 1, jump: true, up: 1 };
-  for (let i = 0; i < 120; i++) p.step(1/120, oldInput);
-  assert.equal(p.pos.y, 25); assert.ok(p.pos.z < -39);
-  oldInput.up = -1;
-  for (let i = 0; i < 120; i++) p.step(1/120, oldInput);
-  assert.equal(p.pos.y, 25);
+test('debug free-flight follows full camera pitch and does not use obsolete vertical input', () => {
+  for (const pitch of [-1.3, 0, 1.3]) {
+    const p = new Player([], -100); p.teleport(0, 25, 0); p.flying = true; p.pitch = pitch;
+    for (let i = 0; i < 120; i++) p.step(1/120, { ...idle, z: 1, jump: true, up: -1 } as typeof idle);
+    assert.ok(Math.abs(p.pos.y - (25 + 40 * Math.sin(pitch))) < 1e-8);
+    assert.ok(Math.abs(p.pos.z + 40 * Math.cos(pitch)) < 1e-8);
+  }
+});
+test('debug flight normalizes diagonals and camera-pitched backward reverses altitude', () => {
+  const a = new Player([], -100), b = new Player([], -100);
+  for (const p of [a,b]) { p.teleport(0, 25, 0); p.flying = true; p.pitch = .7; p.yaw = .9; }
+  a.step(1, { ...idle, z: 1 }); b.step(1, { ...idle, z: 1, x: 1 });
+  assert.ok(Math.abs(a.pos.distanceTo(new THREE.Vector3(0,25,0)) - 40) < 1e-8);
+  assert.ok(Math.abs(b.pos.distanceTo(new THREE.Vector3(0,25,0)) - 40) < 1e-8);
+  a.step(1, { ...idle, z: -1 }); assert.ok(a.pos.distanceTo(new THREE.Vector3(0,25,0)) < 1e-8);
 });
 test('removing manual flight controls preserves jump, glide toggles, water jump and updraft lift', () => {
   const p = new Player([], -100); p.teleport(0, 10, 0);
