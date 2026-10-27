@@ -433,30 +433,40 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
 // Era servants are visual/animation actors attached to their existing quest
 // markers. They lazy-load only near the marker, share the normal scene
 // lifecycle, and do not invent new classes or damage rules.
-const eraActors: Array<{ markerId: string; kit: keyof typeof CHARACTER_KITS; actor?: CharacterKit; loading?: Promise<void> }> = [
-  { markerId: 'blackbeard_meet', kit: 'blackbeard' },
-  { markerId: 'napoleon_meet', kit: 'napoleonMounted' },
-  { markerId: 'musashi_meet', kit: 'musashi' },
+const eraActors: Array<{ markerId: string; kit: keyof typeof CHARACTER_KITS; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number }> = [
+  { markerId: 'blackbeard_meet', kit: 'blackbeard', retryAt: 0, failures: 0 },
+  { markerId: 'napoleon_meet', kit: 'napoleonMounted', retryAt: 0, failures: 0 },
+  { markerId: 'musashi_meet', kit: 'musashi', retryAt: 0, failures: 0 },
 ];
-function updateEraActors() {
+let eraActorsDisposed = false;
+function updateEraActors(dt: number) {
+  if (eraActorsDisposed) return;
+  const now = performance.now();
   for (const entry of eraActors) {
     const marker = markers.get(entry.markerId);
     if (!marker) continue;
     const nearby = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
-    if (nearby && !entry.actor && !entry.loading) {
+    if (nearby && !entry.actor && !entry.loading && now >= entry.retryAt) {
       entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: scene.environment ?? undefined })
         .then((actor) => {
+          if (eraActorsDisposed) { actor.dispose(); return; }
+          entry.failures = 0; entry.error = undefined;
           entry.actor = actor;
           actor.root.position.fromArray(marker.p);
           actor.root.rotation.y = Math.PI;
           scene.add(actor.root);
         })
-        .catch((error) => console.warn(`Could not load ${entry.kit} servant`, error))
+        .catch((error) => {
+          entry.error = error;
+          entry.failures++;
+          entry.retryAt = performance.now() + Math.min(30_000, 1_000 * 2 ** Math.min(5, entry.failures - 1));
+          console.warn(`Could not load ${entry.kit} servant; retrying with backoff`, error);
+        })
         .finally(() => { entry.loading = undefined; });
     }
     if (entry.actor) {
       entry.actor.root.visible = nearby;
-      entry.actor.update(.016, !gameplayActive());
+      entry.actor.update(dt, !nearby || !gameplayActive());
     }
   }
 }
@@ -476,6 +486,7 @@ function renderContract() {
   contractCard.style.whiteSpace = 'pre-line';
 }
 addEventListener('pagehide', (event) => { if (!event.persisted) {
+  eraActorsDisposed = true;
   servantPanel.dispose(); servant.dispose();
   for (const entry of eraActors) entry.actor?.dispose();
 } });
@@ -781,7 +792,7 @@ function frame(now: number) {
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (down('fire')) shoot();
   servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
-  updateEraActors();
+  updateEraActors(dt);
   renderContract();
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
