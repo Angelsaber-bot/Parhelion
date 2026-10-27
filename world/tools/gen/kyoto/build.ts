@@ -11,6 +11,9 @@ import {
   RASHOMON, PATHS,
 } from './layout.js';
 import { kamoD, pondD, inHonnoji, sannen, CITY_RECT } from './terrain.js';
+import { addGateCraft, addKitsune, addPagodaLevelCraft, addKiyomizuCraft, addKinkakuCraft, addOpenRail, addBurntCraft, addHonnojiCraft } from './landmark-craft.js';
+import { buildArashiyama, isArashiyamaReserved } from './arashiyama.js';
+import { addKyotoRoof, addMachiyaCraft, addLattice, addBracket, addBeam, localCraft, addCityBlock } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -58,6 +61,8 @@ export function buildKyoto(heightAt: HeightAt) {
   const glow = new Batch('Glow_Props', 'M_Emissive');
   const flames = new Batch('Kyoto_Flames', 'M_Emissive');
   const lamps = new Batch('Lamps');
+  const roofCraft = new Batch('Kyoto_RoofCraft', 'M_KyotoRoof');
+  pieces.push({ name: 'Kyoto_RoofCraft', material: 'M_KyotoRoof', batch: roofCraft, outline: true });
   const rocks = new Batch('Rocks');
   const leaves = new Batch('Trees_Leaves', 'M_Foliage');
   const trunks = new Batch('Trees_Trunks');
@@ -107,24 +112,30 @@ export function buildKyoto(heightAt: HeightAt) {
   };
   /** A gable roof over a w × d footprint along heading ry, eaves at y. */
   const gable = (b: Batch, x: number, y: number, z: number, ry: number, w: number, d: number, rh: number, color: string) =>
-    b.add(ROOF, color, T(x, y + rh / 3, z, ry, rh / 1.5, w, d / 1.732, 0, Math.PI / 2), false);
+    addKyotoRoof(b.name === 'Unexported_BlockPlan' ? b : roofCraft, x, y, z, ry, w, d, rh, color, 'gable');
   /** A hipped roof over a w × d footprint, eaves at y. */
   const hip = (b: Batch, x: number, y: number, z: number, ry: number, w: number, d: number, rh: number, color: string, collide = false) =>
-    b.add(HIP, color, T(x, y + rh / 2, z, ry, w, rh, d), collide);
+    addKyotoRoof(b.name === 'Unexported_BlockPlan' ? b : roofCraft, x, y, z, ry, w, d, rh, color, 'hip');
   /** A two-storey town house (machiya) facing heading ry; burnt ones are charred, some still burning. */
   const machiya = (b: Batch, x: number, z: number, ry: number, w: number, d: number, state: 'whole' | 'burnt' | 'burning') => {
-    const y = lowest(x, z, Math.min(w, d) / 2), h = range(rng, 4.6, 6.0), fx = Math.sin(ry), fz = Math.cos(ry);
+    const y = lowest(x, z, Math.min(w, d) / 2), baseH = range(rng, 4.6, 6.0), fx = Math.sin(ry), fz = Math.cos(ry);
+    const variant = Math.abs(Math.round(x * 29 + z * 71)) % 8;
+    const h = baseH + (state === 'whole' ? [-0.4, -1.25, -0.65, 0.5, 1.2, 0.85, -1.0, 0.1][variant] : 0);
     const burnt = state !== 'whole';
-    b.add(BOX, burnt ? C.charred : C.plaster, T(x, y + h / 2, z, ry, w, h, d));
-    b.add(BOX, burnt ? '#1e1818' : C.lattice, T(x + fx * (d / 2 + 0.05), y + 1.4, z + fz * (d / 2 + 0.05), ry, w - 0.4, 2.6, 0.12), false);
+    b.add(BOX, burnt ? C.charred : variant === 1 || variant === 6 ? '#a18a68' : variant === 7 ? '#c0b99b' : C.plaster, T(x, y + h / 2, z, ry, w, h, d));
+    if (burnt) b.add(BOX, '#1e1818', T(x + fx * (d / 2 + 0.05), y + 1.4, z + fz * (d / 2 + 0.05), ry, w - 0.4, 2.6, 0.12), false);
     b.add(BOX, burnt ? '#1e1818' : C.woodDark, T(x, y + h * 0.5, z, ry, w + 0.1, 0.18, d + 0.1), false);
     if (!burnt) {
-      b.add(BOX, C.tileDark, T(x + fx * (d / 2 + 0.5), y + 3.0, z + fz * (d / 2 + 0.5), ry, w, 0.14, 1.2, -0.3), false); // hisashi
-      b.add(BOX, C.lattice, T(x + fx * (d / 2 + 0.03), y + h - 1.2, z + fz * (d / 2 + 0.03), ry, w * 0.6, 0.6, 0.06), false); // mushiko
-      gable(b, x, y + h, z, ry, w + 0.4, d + 1.2, 2.0, rng() < 0.85 ? C.tile : C.tileDark);
-      if (rng() < 0.3) glow.add(BOX, C.lantern, T(x + fx * (d / 2 + 0.1), y + 1.2, z + fz * (d / 2 + 0.1), ry, 0.8, 1.6, 0.04), false);
+      const style = addMachiyaCraft(b, x, y, z, ry, w, d, h);
+      // Warehouse, tea-house and townhouse roof pitches read differently even in silhouette.
+      const roofColor = rng() < 0.85 ? C.tile : C.tileDark;
+      if (style === 4) hip(b, x, y + h, z, ry, w + 0.7, d + 1.0, 1.75, roofColor);
+      else if (style === 5) gable(b, x, y + h, z, ry + Math.PI / 2, d + 0.9, w + 0.7, 2.35, roofColor);
+      else gable(b, x, y + h, z, ry, w + 0.4, d + 1.2, style === 1 ? 1.35 : 1.9, roofColor);
+      if (rng() < 0.3 && b.name !== 'Unexported_BlockPlan') glow.add(BOX, C.lantern, T(x + fx * (d / 2 + 0.1), y + 1.2, z + fz * (d / 2 + 0.1), ry, 0.8, 1.6, 0.04), false);
       if (rng() < 0.25) b.add(BOX, ['#3a4a8a', '#8a2a2a', '#3a6a4a'][Math.floor(rng() * 3)], T(x + fx * (d / 2 + 0.2), y + 2.0, z + fz * (d / 2 + 0.2), ry, 1.6, 0.9, 0.03), false); // noren
     } else {
+      addBurntCraft(b, x, y, z, ry, w, d, h);
       for (let k = 0; k < 3; k++) glow.add(BALL, C.ember, T(x + range(rng, -w / 3, w / 3), y + h + 0.05, z + range(rng, -d / 3, d / 3), rng() * 6, range(rng, 0.4, 0.8), 0.22, range(rng, 0.4, 0.8)), false);
       b.add(BOX, C.charred, T(x, y + h + 0.7, z, ry + 0.3, 0.25, 1.4, d * 0.7, 0.5), false); // a fallen beam
       if (state === 'burning') blaze(x, y + h, z, range(rng, 0.9, 1.5));
@@ -157,15 +168,13 @@ export function buildKyoto(heightAt: HeightAt) {
     b.box(gx, y + 7.0, gz, 15, 0.6, 6.2, C.plaster, 0, false);
     hip(b, gx, y + 7.6, gz, 0, 18, 9, 3.4, C.tile);
     hip(b, gx, y + 5.0, gz, 0, 18, 9.6, 0.5, C.tile);
+    addGateCraft(b, gx, y, gz, 0, 14.6, 5.8, 7.6);
     for (const s of [-1, 1]) {
       const fx = gx + s * 9, fz = gz + 5;
       b.box(fx, y, fz, 1.6, 1.6, 1.6, C.stone);
-      b.box(fx, y + 1.6, fz, 0.8, 1.4, 1.2, C.plaster, 0, false);
-      b.add(new THREE.ConeGeometry(1, 1, 6), C.plaster, T(fx, y + 3.2, fz + 0.4, 0, 0.32, 0.8, 0.32), false);
-      b.add(BOX, C.vermilion, T(fx, y + 2.5, fz + 0.5, 0, 0.9, 0.3, 0.1), false); // red bib
-      glow.add(BOX, C.ember, T(fx, y + 2.9, fz + 0.66, 0, 0.24, 0.1, 0.05), false);
+      addKitsune(b, fx, y + 1.6, fz, s * -0.15, 0.9);
     }
-    pieces.push({ name: 'Inari', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Inari', material: 'M_KyotoArchitecture', batch: b, outline: true });
     mk({ id: 'spawn_p1', type: 'spawn', label: '玩家1出生点（南方鸟居断面）', p: [gx - 1.5, heightAt(gx - 1.5, gz + 10), gz + 10] });
     mk({ id: 'spawn_p2', type: 'spawn', label: '玩家2出生点（南方鸟居断面）', p: [gx + 1.5, heightAt(gx + 1.5, gz + 10), gz + 10] });
     mk({ id: 'disc_senbon', type: 'discovery', label: '千本鸟居', p: [TORII_PATH[3][0], heightAt(TORII_PATH[3][0], TORII_PATH[3][1]), TORII_PATH[3][1]], radius: 5, note: '每一座鸟居，都是有人许下的一个愿望' });
@@ -177,14 +186,18 @@ export function buildKyoto(heightAt: HeightAt) {
   {
     const city = new Batch('Rakuchu');
     const cityB = new Batch('Rakuchu_B');
-    let nHouse = 0;
+    let nHouse = 0, nCourtyard = 0;
     for (let i = 0; i < STREETS_X.length - 1; i++)
       for (let j = 0; j < STREETS_Z.length - 1; j++) {
         const x0 = STREETS_X[i] + STREET_W / 2 + 0.5, x1 = STREETS_X[i + 1] - STREET_W / 2 - 0.5;
         const z0 = STREETS_Z[j] + STREET_W / 2 + 0.5, z1 = STREETS_Z[j + 1] - STREET_W / 2 - 0.5;
         const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
         if (inHonnoji(cx, cz, HONNOJI.moat + 16)) continue;
-        const b = (i + j) % 2 ? city : cityB;
+        const blockKind = (i * 7 + j * 11) % 19;
+        const specialBlock = blockKind < 4 && fireDist(cx, cz) > 140 && !nearKamo(cx, cz, 18);
+        const visibleBlock = (i + j) % 2 ? city : cityB;
+        // Consume the same house RNG in replaced blocks, preserving all downstream quest geometry.
+        const b = specialBlock ? new Batch('Unexported_BlockPlan') : visibleBlock;
         const D = 8.5;
         const row = (ax: number, az: number, bx: number, bz: number, ry: number) => {
           const L = Math.hypot(bx - ax, bz - az);
@@ -198,13 +211,18 @@ export function buildKyoto(heightAt: HeightAt) {
             const state = f < 95 ? (rng() < 0.45 ? 'burning' : 'burnt') : f < 140 && rng() < 0.35 ? 'burnt' : 'whole';
             const fx = Math.sin(ry), fz = Math.cos(ry);
             machiya(b, x - fx * D / 2, z - fz * D / 2, ry, w, D, state);
-            nHouse++;
+            if (!specialBlock) nHouse++;
           }
         };
         row(x0, z0, x1, z0, Math.PI); // north side faces north
         row(x0, z1, x1, z1, 0); // south side faces south
         row(x0, z0 + D + 0.5, x0, z1 - D - 0.5, -Math.PI / 2); // west side faces west
         row(x1, z0 + D + 0.5, x1, z1 - D - 0.5, Math.PI / 2); // east side faces east
+        if (specialBlock) {
+          nCourtyard++;
+          addCityBlock(visibleBlock, cx, CITY_Y, cz, x1 - x0, z1 - z0, blockKind);
+          // House plans in the unexported batch are intentionally discarded: negative space is authored.
+        }
         // a garden tree in some courtyards
         if (rng() < 0.5) {
           const tx = cx + range(rng, -2, 2), tz = cz + range(rng, -2, 2), ty = heightAt(tx, tz);
@@ -218,8 +236,8 @@ export function buildKyoto(heightAt: HeightAt) {
       if (sz !== SANJO_Z && sx !== -15 && sx !== 45 && rng() < 0.6) continue;
       chochin(sx + STREET_W / 2 + 0.6, sz + STREET_W / 2 + 0.6);
     }
-    pieces.push({ name: 'Rakuchu', material: 'M_Toon', batch: city, outline: true, userData: { count: nHouse } });
-    pieces.push({ name: 'Rakuchu_B', material: 'M_Toon', batch: cityB, outline: true });
+    pieces.push({ name: 'Rakuchu', material: 'M_KyotoArchitecture', batch: city, outline: true, userData: { count: nHouse, facadeArchetypes: 8, roofProfiles: 3, courtyardBlocks: nCourtyard } });
+    pieces.push({ name: 'Rakuchu_B', material: 'M_KyotoArchitecture', batch: cityB, outline: true });
     mk({ id: 'disc_sanjo_dori', type: 'discovery', label: '三条通', p: [15, CITY_Y, SANJO_Z], radius: 6, note: '平安京的街道横平竖直，像一张棋盘' });
     for (const [x, z] of [[-15, -20], [45, 30], [-45, -45]] as const) mk({ id: `enemy_rakuchu_${x}_${z}`, type: 'enemy', label: '燃烧的亡武者（占位）', p: [x, CITY_Y, z] });
   }
@@ -263,7 +281,8 @@ export function buildKyoto(heightAt: HeightAt) {
     for (const s of [-1, 1]) b.box(mx + mw / 2 + 2.6, y, hz + s * 6, 1.2, 0.5, 8, C.stone); // steps
     b.box(mx, y + 1.0, hz, mw, 7, md, C.charred);
     for (let k = 0; k < 7; k++) b.add(CYL8, '#1e1818', T(mx + mw / 2 + 0.6, y + 4.5, hz - md / 2 + 1 + k * (md - 2) / 6, 0, 0.32, 7, 0.32), false);
-    hip(b, mx, y + 8, hz, 0, mw + 8, md + 8, 9, '#3a3232');
+    hip(b, mx, y + 8, hz, 0, mw + 8, md + 8, 8.3, '#51463a');
+    addHonnojiCraft(b, mx, y, hz, mw, md);
     for (let k = 0; k < 6; k++) blaze(mx + range(rng, -mw / 3, mw / 3), y + 12 + range(rng, -1, 2), hz + range(rng, -md / 3, md / 3), range(rng, 1.6, 2.6));
     for (let k = 0; k < 14; k++) glow.add(BALL, C.ember, T(mx + range(rng, -mw / 2, mw / 2), y + 8.2 + range(rng, 0, 4), hz + range(rng, -md / 2, md / 2), rng() * 6, range(rng, 0.6, 1.2), 0.3, range(rng, 0.6, 1.2)), false);
     // the kuri (priests' quarters) and a bell tower, half burnt; pines; stone lanterns lining the court
@@ -283,7 +302,7 @@ export function buildKyoto(heightAt: HeightAt) {
       trunks.add(new THREE.CylinderGeometry(0.3, 0.45, 1, 6), C.woodDark, T(px, ty + 2.5, pz, 0, 1, 5, 1));
       canopy(leaves, rng, px + 1.4, ty + 6, pz, 3.6, 1.4, '#3f6a3a');
     }
-    pieces.push({ name: 'Honnoji', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Honnoji', material: 'M_KyotoArchitecture', batch: b, outline: true });
     // the Kyoto core in the courtyard: where the boss rises
     const [cx, cz] = CORE.c;
     b.add(CYL16, C.stone, T(cx, y + 0.35, cz, 0, 2.4, 0.7, 2.4));
@@ -347,7 +366,7 @@ export function buildKyoto(heightAt: HeightAt) {
       b.add(BOX, C.wood, T(x, 1.15, z2, ry, 1.8, 0.4, 7));
       b.add(BOX, C.woodDark, T(x, 1.5, z2, ry, 1.9, 0.3, 0.3), false);
     }
-    pieces.push({ name: 'Kamo', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Kamo', material: 'M_KyotoArchitecture', batch: b, outline: true });
     mk({ id: 'musashi_meet', type: 'interact', label: '宫本武藏（三条大桥）', p: [(deck0 + deck1) / 2 - 2, y, z], radius: 3.4, note: '武藏说：点亮京之核，我就陪你打到天亮' });
     mk({ id: 'musashi_contract', type: 'interact', label: '与宫本武藏缔结契约', p: [(deck0 + deck1) / 2 + 2, y, z], radius: 3, requires: ['fire_core'], note: 'Saber 职阶从者 · 二天一流' });
     mk({ id: 'disc_tobiishi', type: 'discovery', label: '鸭川跳石', p: [150, 1.9, TOBI_Z], radius: 4, note: '踩着乌龟形状的石头过河' });
@@ -362,6 +381,7 @@ export function buildKyoto(heightAt: HeightAt) {
       for (const s of [-1, 1]) b.box(gx, y, gz + s * 4.5, 4.6, 5.0, 3.0, C.vermilion, 0);
       b.box(gx, y + 5.0, gz, 5.0, 2.2, 12, C.vermilion, 0, false);
       hip(b, gx, y + 7.2, gz, 0, 8, 16, 3, C.tile);
+      addGateCraft(b, gx, y, gz, -Math.PI / 2, 12, 5.0, 7.2);
       for (const s of [-1, 1]) for (let k = 0; k < 4; k++) glow.add(CYL8, C.lantern, T(gx - 2.6, y + 4.2, gz + s * (2.3 + k * 0.9), 0, 0.28, 0.6, 0.28), false);
       mk({ id: 'disc_yasaka', type: 'discovery', label: '八坂神社', p: [gx - 6, y, gz], radius: 5, note: '祇园祭的山鉾从这里出发' });
     }
@@ -373,9 +393,10 @@ export function buildKyoto(heightAt: HeightAt) {
       y += 0.8;
       for (let k = 0; k < 5; k++) {
         const s = 6.4 - k * 0.55, h = 4.2;
-        b.box(px, y, pz, s, h, s, k === 0 ? C.vermilionDark : C.vermilion, 0, k === 0);
+        b.box(px, y, pz, s, h, s, k === 0 ? '#4b372b' : '#70513b', 0, k === 0);
         b.box(px, y + h * 0.4, pz, s + 0.1, 0.18, s + 0.1, C.plaster, 0, false);
         hip(b, px, y + h - 0.2, pz, 0, s + 4.6, s + 4.6, 1.3, C.tileDark);
+        addPagodaLevelCraft(b, px, y, pz, s, h);
         y += h + 0.6;
       }
       b.add(CYL8, '#6e5a3a', T(px, y + 4, pz, 0, 0.18, 8, 0.18), false);
@@ -392,7 +413,9 @@ export function buildKyoto(heightAt: HeightAt) {
       for (let s = 3; s < L - 2; s += 7)
         for (const side of [-1, 1]) {
           const x = ax + ((bx - ax) * s) / L + Math.cos(ry) * side * 7.5, z = az + ((bz - az) * s) / L - Math.sin(ry) * side * 7.5;
-          machiya(b, x, z, ry + (side > 0 ? -Math.PI / 2 : Math.PI / 2), 5.6, 7, 'whole');
+          // The southern shops stop before the sacred stage forecourt, rather than sitting on it.
+          const shopBatch = x > 252 && z > 50 ? new Batch('Unexported_BlockPlan') : b;
+          machiya(shopBatch, x, z, ry + (side > 0 ? -Math.PI / 2 : Math.PI / 2), 5.6, 7, 'whole');
         }
       if (i % 2 === 0) chochin(ax + Math.cos(ry) * 3, az - Math.sin(ry) * 3, sannen(ax, az).y);
     }
@@ -404,19 +427,24 @@ export function buildKyoto(heightAt: HeightAt) {
       for (const s of [-1, 1]) b.box(gx + cx * s * 4.6, y - 1, gz + cz * s * 4.6, 3.2, 7, 5, C.vermilion, ry);
       b.add(BOX, C.vermilion, T(gx, y + 7.2, gz, ry, 13, 2.4, 5.4), false);
       hip(b, gx, y + 8.4, gz, ry, 16, 9, 3.6, C.bark);
+      addGateCraft(b, gx, y, gz, ry, 13, 5.4, 8.4);
     }
     // Kiyomizu-dera: the main hall on the terrace and its stage on a lattice of pillars over the ravine
     {
       const Y = KIYOMIZU.y, { c: [hx, hz], w, d } = KIYOMIZU.hall, { c: [sx, sz], w: sw, d: sd } = KIYOMIZU.stage;
-      b.box(hx, Y, hz, w, 7, d, C.vermilionDark);
-      for (let k = 0; k < 6; k++) b.add(CYL8, C.vermilion, T(hx - w / 2 - 0.3, Y + 3.5, hz - d / 2 + 1 + k * (d - 2) / 5, 0, 0.32, 7, 0.32), false);
-      hip(b, hx, Y + 7, hz, 0, w + 8, d + 8, 8, C.bark);
+      // Subtle dressed-stone terrace; a visual veneer over the existing walkable heightfield.
+      b.add(BOX, '#b2aa91', T(296, Y + 0.016, 49, 0, 40, 0.028, 42), false);
+      for (let zz = 30; zz < 70; zz += 2.2) b.add(BOX, '#999580', T(282, Y + 0.034, zz, 0, 10, 0.016, 0.035), false);
+      b.box(hx, Y, hz, w, 7, d, '#6b4934');
+      for (let k = 0; k < 6; k++) b.add(CYL8, '#926b46', T(hx - w / 2 - 0.3, Y + 3.5, hz - d / 2 + 1 + k * (d - 2) / 5, 0, 0.32, 7, 0.32), false);
+      hip(b, hx, Y + 7, hz, 0, w + 8, d + 8, 4.0, C.bark);
+      addKiyomizuCraft(b, roofCraft, heightAt);
       // the stage: deck, railing on three sides (it joins the terrace on the east)
       b.box(sx, Y - 0.4, sz, sw, 0.4, sd, C.wood);
       const sx0 = sx - sw / 2, sx1 = sx + sw / 2, sz0 = sz - sd / 2, sz1 = sz + sd / 2;
-      b.box(sx, Y, sz0 + 0.1, sw, 1.0, 0.2, C.wood);
-      b.box(sx, Y, sz1 - 0.1, sw, 1.0, 0.2, C.wood);
-      b.box(sx0 + 0.1, Y, sz, 0.2, 1.0, sd, C.wood);
+      b.addCol(BOX, T(sx, Y + 0.5, sz0 + 0.1, 0, sw, 1.0, 0.2));
+      b.addCol(BOX, T(sx, Y + 0.5, sz1 - 0.1, 0, sw, 1.0, 0.2));
+      b.addCol(BOX, T(sx0 + 0.1, Y + 0.5, sz, 0, 0.2, 1.0, sd));
       for (let x = sx0 + 1.2; x <= sx1 - 1; x += 3.4)
         for (let z = sz0 + 1.2; z <= sz1 - 1; z += 3.2) {
           const g = heightAt(x, z);
@@ -435,6 +463,7 @@ export function buildKyoto(heightAt: HeightAt) {
           const s = 4.6 - k * 0.5;
           b.box(px, y, pz, s, 3.6, s, C.vermilion, 0, k === 0);
           hip(b, px, y + 3.4, pz, 0, s + 3.6, s + 3.6, 1.1, C.bark);
+          addPagodaLevelCraft(b, px, y, pz, s, 3.6, true);
           y += 4.2;
         }
         b.add(CYL8, '#8a7448', T(px, y + 3, pz, 0, 0.14, 6, 0.14), false);
@@ -457,14 +486,14 @@ export function buildKyoto(heightAt: HeightAt) {
       mk({ id: 'disc_kiyomizu_stage', type: 'discovery', label: '清水舞台', p: [sx, Y, sz], radius: 5, note: '「从清水舞台跳下去」，意思是下了天大的决心' });
       mk({ id: 'disc_otowa', type: 'discovery', label: '音羽瀑布', p: [ox, oy, oz], radius: 5, note: '三道泉水：学业、恋爱、长寿' });
     }
-    pieces.push({ name: 'Higashiyama', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Higashiyama', material: 'M_KyotoArchitecture', batch: b, outline: true });
     for (const [x, z] of [[214, 40], [236, 26]] as const) mk({ id: `enemy_higashiyama_${x}`, type: 'enemy', label: '燃烧的亡武者（占位）', p: [x, heightAt(x, z), z] });
   }
 
   // ───────────────────────── 金阁寺: the Golden Pavilion on its pond ─────────────────────────
   {
     const b = new Batch('Kinkaku');
-    const gold = new Batch('Kinkaku_Gold', 'M_Emissive');
+    const gold = new Batch('Kinkaku_Gold', 'M_KyotoGold');
     const [px, pz] = PAVILION.c, { w, d } = PAVILION;
     const y0 = 1.8, f1 = y0 + 0.6, f2 = f1 + 4.2, f3 = f2 + 4.0;
     // the stone footing and the first floor (Hōsui-in): natural wood, open verandas
@@ -480,8 +509,7 @@ export function buildKyoto(heightAt: HeightAt) {
     hip(b, px, f2 + 3.6, pz, 0, w + 3.4, d + 3.4, 0.6, C.bark);
     gold.add(BOX, C.gold, T(px, f3 + 1.7, pz, 0, w - 5, 3.4, d - 4), false);
     hip(b, px, f3 + 3.4, pz, 0, w - 0.8, d + 0.4, 3.0, C.bark);
-    gold.add(CRYSTAL, C.goldDeep, T(px, f3 + 7.0, pz, 0, 0.5, 1.0, 0.9), false); // the phoenix
-    gold.add(BOX, C.goldDeep, T(px, f3 + 7.2, pz - 0.4, 0, 1.8, 0.1, 0.5, 0.3), false);
+    addKinkakuCraft(b, gold, px, pz);
     b.addCol(BOX, T(px, f2 + 3.5, pz, 0, w, 7, d));
     // the fishing deck (tsuri-dono) over the water, with a low step from the stones
     const dz = pz + d / 2 + 2;
@@ -492,8 +520,21 @@ export function buildKyoto(heightAt: HeightAt) {
     // bamboo fence round the back: the only way in is across the water
     const fence = (ax: number, az: number, bx: number, bz: number) => {
       const L = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az);
-      b.add(BOX, '#b8a46a', T((ax + bx) / 2, heightAt((ax + bx) / 2, (az + bz) / 2) + 0.8, (az + bz) / 2, ry, 0.15, 1.6, L));
-      for (let s = 0; s < L; s += 1.5) b.add(CYL6, '#8a7a4a', T(ax + ((bx - ax) * s) / L, heightAt(ax + ((bx - ax) * s) / L, az + ((bz - az) * s) / L) + 0.9, az + ((bz - az) * s) / L, 0, 0.06, 1.8, 0.06), false);
+      // Follow the shore's grade in short rails; the former single panel floated above the slope.
+      const oldMidY = heightAt((ax + bx) / 2, (az + bz) / 2) + 0.8;
+      b.addCol(BOX, T((ax + bx) / 2, oldMidY, (az + bz) / 2, ry, 0.15, 1.6, L));
+      const n = Math.ceil(L / 1.5);
+      for (let k = 0; k <= n; k++) {
+        const t = k / n, x = ax + (bx - ax) * t, z = az + (bz - az) * t, y = heightAt(x, z);
+        b.add(CYL6, '#8c8156', T(x, y + 0.9, z, 0, 0.065, 1.8, 0.065), false);
+        if (k === n) continue;
+        const xx = ax + (bx - ax) * (k + 1) / n, zz = az + (bz - az) * (k + 1) / n, yy = heightAt(xx, zz);
+        for (const h of [0.50, 1.35]) addBeam(b, [x, y + h, z], [xx, yy + h, zz], 0.07, 0.08, '#b7a875');
+        for (let j = 1; j < 4; j++) {
+          const q = j / 4, sx = x + (xx - x) * q, sz = z + (zz - z) * q, sy = heightAt(sx, sz);
+          b.add(CYL6, '#a8a16d', T(sx, sy + 0.85, sz, 0, 0.035, 1.65, 0.035), false);
+        }
+      }
     };
     const fz = POND.c[1] - POND.rz * 0.92;
     fence(px - w / 2 - 6, fz + 4, px - w / 2 - 6, pz - d / 2 - 6);
@@ -515,8 +556,8 @@ export function buildKyoto(heightAt: HeightAt) {
       canopy(leaves, rng, ix + 2.2, ty + 3.6, iz - 1, 3.0, 1.1, '#3f6a3a');
       rocks.add(ROCK, C.rock, T(ix - 1.5, ty + 0.3, iz + 1, rng() * 6, 1.2, 0.8, 1.0));
     }
-    pieces.push({ name: 'Kinkaku', material: 'M_Toon', batch: b, outline: true });
-    pieces.push({ name: 'Kinkaku_Gold', material: 'M_Emissive', batch: gold });
+    pieces.push({ name: 'Kinkaku', material: 'M_KyotoArchitecture', batch: b, outline: true });
+    pieces.push({ name: 'Kinkaku_Gold', material: 'M_KyotoGold', batch: gold });
     const shard = new Batch('Shard_kinkaku', 'M_Emissive');
     const top: [number, number, number] = [px, y0 + 0.2, dz - 0.5];
     shard.add(CRYSTAL, '#ffe08a', T(top[0], top[1] + 1.8, top[2], 0.4, 0.4, 0.8, 0.4), false);
@@ -578,7 +619,7 @@ export function buildKyoto(heightAt: HeightAt) {
       pieces.push({ name: `TGT_kikyo_banner_${i + 1}`, material: 'M_Target', batch: t, dynamic: true, userData: { target: `kikyo_banner_${i + 1}` } });
       mk({ id: `kikyo_banner_${i + 1}`, type: 'objective', label: `桔梗大旗 ${i + 1}`, p: [bx, gy + 6.8, bz + 1.8] });
     });
-    pieces.push({ name: 'Akechi', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Akechi', material: 'M_KyotoArchitecture', batch: b, outline: true });
     const banners = ['kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3'];
     const shard = new Batch('Shard_kikyo', 'M_Emissive');
     const top: [number, number, number] = [ax + 2, y, az];
@@ -601,15 +642,18 @@ export function buildKyoto(heightAt: HeightAt) {
       }
     b.add(BOX, '#5a3e2e', T(rx - 3, y + 1.6, rz + 6, 0.4, 14, 0.6, 0.8, 0, 0.12), false); // a fallen beam
     for (let k = 0; k < 10; k++) b.add(BOX, C.tileDark, T(rx + range(rng, -14, 14), y + 1.0, rz + range(rng, -5, 5), rng() * 3, range(rng, 0.8, 1.6), 0.15, range(rng, 0.6, 1.2), range(rng, -0.3, 0.3)), false);
-    pieces.push({ name: 'Rashomon', material: 'M_Toon', batch: b, outline: true });
+    pieces.push({ name: 'Rashomon', material: 'M_KyotoArchitecture', batch: b, outline: true });
     mk({ id: 'disc_rashomon', type: 'discovery', label: '罗城门遗迹', p: [rx, y + 0.9, rz - 8], radius: 6, note: '平安京的正门，这时只剩下基石和乌鸦' });
   }
+
+  const arashiyama = buildArashiyama(heightAt);
+  pieces.push(...arashiyama.pieces); markers.push(...arashiyama.markers);
 
   // ───────────────────────── Vegetation: cedars on the hills, maples, bamboo groves ─────────────────────────
   const inCity = (x: number, z: number, pad: number) => x > CITY_RECT[0] - pad && x < CITY_RECT[1] + pad && z > CITY_RECT[2] - pad && z < CITY_RECT[3] + pad;
   const onPath = (x: number, z: number, pad: number) => PATHS.some((p) => distToPolyline(x, z, p) < pad) || distToPolyline(x, z, TORII_PATH) < pad + 2 || sannen(x, z).d < pad + 8;
   const blocked = (x: number, z: number) =>
-    inCity(x, z, 4) || onPath(x, z, 4) || kamoD(x, z) < KAMO_BANK + 1 || pondD(x, z) < 1.25 ||
+    isArashiyamaReserved(x, z) || inCity(x, z, 4) || onPath(x, z, 4) || kamoD(x, z) < KAMO_BANK + 1 || pondD(x, z) < 1.25 ||
     Math.hypot(x - AKECHI.c[0], (z - AKECHI.c[1]) * 0.85) < 40 || Math.hypot(x - PAVILION.c[0], z - PAVILION.c[1]) < 16 ||
     (x > KIYOMIZU.terrace[0] - 22 && x < KIYOMIZU.terrace[1] + 2 && z > KIYOMIZU.terrace[2] - 4 && z < KIYOMIZU.terrace[3] + 22) ||
     Math.hypot(x - YASAKA.c[0], z - YASAKA.c[1]) < 12 || Math.hypot(x - YASAKA_SHRINE.c[0], z - YASAKA_SHRINE.c[1]) < 12 ||

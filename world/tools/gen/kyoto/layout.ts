@@ -95,3 +95,23 @@ export const PATHS: V2[][] = [
   // Suzaku south -> Rashōmon
   [[-15, 135], [-15, 280]],
 ];
+
+/** Compressed western excursion: a historical-inspired Arashiyama landscape, not a survey reconstruction.
+ * The timber crossing deliberately does not copy the modern concrete Togetsukyō bridge. */
+export const ARASHIYAMA = {
+  bounds: [-320, -200, -100, 90] as const,
+  bankY: 5.8,
+  bridge: { x: -267, z0: 12, z1: 58, width: 8.8, deckY: 6.05 },
+  river: { x0: -330, x1: -194, z: 35, halfWidth: 12 },
+  garden: { c: [-285, -37] as V2, rx: 15, rz: 11, waterY: 5.05 },
+  hall: { c: [-244, -63] as V2, w: 25, d: 15 },
+  bambooPath: [[-304, -91], [-306, -66], [-308, -43], [-304, -17], [-288, 3], [-267, 8]] as V2[],
+};
+
+AREAS.push({ id: 'arashiyama', name: '岚山·渡月桥', nameEn: 'Arashiyama · Timber Crossing', c: [-270, -8], r: 72, color: '#83c5ae', tp: [-267, 3] });
+// Existing indices 0–5 are a gameplay contract; append optional exploration routes only.
+PATHS.push(
+  [[-165, -75], [-190, -97], [-220, -103], [-267, -100], [-267, -74], [-267, -10], [-267, 12], [-267, 58], [-267, 76]],
+  [[-267, -100], [-286, -100], [-304, -91], ...ARASHIYAMA.bambooPath.slice(1)],
+  [[-267, 76], [-238, 76], [-218, 65]],
+);

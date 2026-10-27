@@ -4,7 +4,7 @@ import { distToPolyline } from '../geo.js';
 import { heightFn as alphaHeight, type TerrainOut } from '../terrain.js';
 import {
   KYOTO, OFFSET, CITY_Y, TORII_PATH, SEAM_Y, STREETS_X, STREETS_Z, STREET_W, HONNOJI, KAMO, KAMO_W, KAMO_BANK,
-  SANNEN, KIYOMIZU, POND, ISLES, PAVILION, AKECHI, PATHS, YASAKA, INARI,
+  SANNEN, KIYOMIZU, POND, ISLES, PAVILION, AKECHI, PATHS, YASAKA, INARI, ARASHIYAMA,
 } from './layout.js';
 
 const S = KYOTO.seed;
@@ -19,6 +19,14 @@ export const kamoD = (x: number, z: number) => distToPolyline(x, z, KAMO) + fbm(
 /** Normalised distance from the pond's centre (1 = the waterline). */
 export const pondD = (x: number, z: number) =>
   Math.hypot((x - POND.c[0]) / POND.rx, (z - POND.c[1]) / POND.rz) + fbm(x * 0.06, z * 0.06, 2, S + 17) * 0.06;
+/** Gently meandering Katsura-inspired river, geographically compressed for this region. */
+export const arashiyamaRiverZ = (x: number) => ARASHIYAMA.river.z + Math.sin((x + 267) * 0.035) * 6.5;
+export const arashiyamaRiverWidth = (x: number) => 11 + Math.sin((x + 267) * 0.07) * 2.5;
+export const arashiyamaPondD = (x: number, z: number) => {
+  const u = (x - ARASHIYAMA.garden.c[0]) / ARASHIYAMA.garden.rx, v = (z - ARASHIYAMA.garden.c[1]) / ARASHIYAMA.garden.rz;
+  const a = Math.atan2(v, u);
+  return Math.hypot(u, v) * (1 + 0.065 * Math.sin(a * 3) + 0.04 * Math.cos(a * 5));
+};
 /** Inside the Honnō-ji compound walls (pad widens the square). */
 export const inHonnoji = (x: number, z: number, pad = 0) =>
   Math.max(Math.abs(x - HONNOJI.c[0]), Math.abs(z - HONNOJI.c[1])) < HONNOJI.half + pad;
@@ -110,6 +118,32 @@ export function heightFn(x: number, z: number): number {
     h = lerp(1.7 + smoothstep(KAMO_W, KAMO_BANK, d) * 0.6, h, smoothstep(KAMO_BANK - 2, KAMO_BANK + 10, d));
     h = Math.min(h, lerp(0.35, h, smoothstep(KAMO_W - 3, KAMO_W + 1, d)));
   }
+  // Arashiyama's shallow western basin. Strictly local: all existing quest terrain stays unchanged.
+  {
+    // A broad asymmetric valley shoulder, not a rectangular excavation. The west flank
+    // has 52 m to climb into the existing mountain; the northeast feather stays narrow
+    // so Kinkaku's pond and its original stepping-stone quest are completely untouched.
+    const west = smoothstep(-352, -300, x);
+    const east = 1 - smoothstep(-202, -190, x);
+    const northStart = lerp(-145, -117, smoothstep(-280, -263, x));
+    const north = smoothstep(northStart, -100, z);
+    const south = 1 - smoothstep(86, 116, z);
+    const blend = west * east * north * south;
+    if (blend > 0) {
+      let floor = ARASHIYAMA.bankY + fbm(x * 0.06, z * 0.06, 2, S + 83) * 0.12;
+      const river = Math.abs(z - arashiyamaRiverZ(x)) + fbm(x * 0.12, z * 0.12, 2, S + 91) * 0.6;
+      const width = arashiyamaRiverWidth(x);
+      const riverEnd = smoothstep(-337, -319, x) * (1 - smoothstep(-209, -191, x));
+      floor = lerp(floor, lerp(0.35, floor, smoothstep(width - 2, width + 8, river)), riverEnd);
+      const pd = arashiyamaPondD(x, z);
+      floor = lerp(4.45, floor, smoothstep(0.78, 1.12, pd));
+      h = lerp(h, floor, blend);
+    }
+    // The city entrance is graded, not a vertical cut into the western hillside.
+    const access = distToPolyline(x, z, [[-165, -75], [-190, -97], [-220, -103], [-267, -100]]);
+    const accessY = lerp(CITY_Y, ARASHIYAMA.bankY, smoothstep(-173, -220, x));
+    h = lerp(accessY, h, smoothstep(4, 9, access));
+  }
   // north edge: meet 幻日谷's heights exactly where the regions join
   {
     const k = smoothstep(-316, -360, z);
@@ -173,7 +207,21 @@ export function buildKyotoTerrain(): TerrainOut {
     if (pondD(x, z) < 1.12 && y > 1.2) tmp.copy(C.moss);
     const dPath = Math.min(...PATHS.map((p) => distToPolyline(x, z, p)), distToPolyline(x, z, TORII_PATH), sannen(x, z).d);
     if (dPath < 2.6 + v && y > 1.4) tmp.copy(C.earth);
+    if (x > -330 && x < -194 && z > -112 && z < 98) {
+      const rd = Math.abs(z - arashiyamaRiverZ(x));
+      if (rd < 20) tmp.copy(C.gravel).lerp(C.earth, clamp((rd - 10) / 10, 0, 1) * 0.3);
+      if (arashiyamaPondD(x, z) < 1.2) tmp.copy(C.moss);
+      if (distToPolyline(x, z, ARASHIYAMA.bambooPath) < 3.4) tmp.copy(C.earth);
+    }
     if (ny < 0.72) tmp.copy(ny < 0.5 ? C.rockDark : C.rock);
+    // Borrowed western scenery: varied cool stone and sage scrub break up the high
+    // mountain face; avoid an untextured charcoal wall behind the bamboo garden.
+    if (x < -302 && x > -354 && z > -126 && z < 116 && y > 12) {
+      const shoulder = smoothstep(-302, -318, x) * smoothstep(-126, -106, z) * (1 - smoothstep(94, 116, z));
+      const patch = clamp(0.46 + fbm(x * 0.09, z * 0.055, 3, S + 107) * 1.4, 0, 1);
+      const mountain = new THREE.Color('#849185').lerp(new THREE.Color('#546d5b'), patch);
+      tmp.lerp(mountain, shoulder * 0.9);
+    }
     col[k * 3] = tmp.r; col[k * 3 + 1] = tmp.g; col[k * 3 + 2] = tmp.b;
   }
   vis.setAttribute('color', new THREE.BufferAttribute(col, 3));

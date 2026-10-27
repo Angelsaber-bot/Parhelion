@@ -1,0 +1,650 @@
+{
+  "world": {
+    "id": "world_kyoto",
+    "name": "业火京都",
+    "nameEn": "Kyoto Ablaze",
+    "version": 1,
+    "seed": 15820621,
+    "half": 360,
+    "playHalf": 334,
+    "cell": 2,
+    "waterLevel": 1
+  },
+  "areas": [
+    {
+      "id": "inari",
+      "name": "千本鸟居",
+      "nameEn": "Senbon Torii",
+      "c": [
+        40,
+        -300
+      ],
+      "r": 50,
+      "color": "#ff6a3d",
+      "tp": [
+        40,
+        -232
+      ]
+    },
+    {
+      "id": "rakuchu",
+      "name": "洛中三条通",
+      "nameEn": "Sanjō Avenue",
+      "c": [
+        -15,
+        -75
+      ],
+      "r": 70,
+      "color": "#f2c35a",
+      "tp": [
+        45,
+        -90
+      ]
+    },
+    {
+      "id": "kamo",
+      "name": "鸭川三条大桥",
+      "nameEn": "Sanjō Bridge on the Kamo",
+      "c": [
+        152,
+        -75
+      ],
+      "r": 40,
+      "color": "#7fd0ff",
+      "tp": [
+        110,
+        -75
+      ]
+    },
+    {
+      "id": "honnoji",
+      "name": "本能寺",
+      "nameEn": "Honnō-ji",
+      "c": [
+        -100,
+        45
+      ],
+      "r": 55,
+      "color": "#ff4a2a",
+      "tp": [
+        -30,
+        45
+      ]
+    },
+    {
+      "id": "higashiyama",
+      "name": "东山清水寺",
+      "nameEn": "Kiyomizu-dera, Higashiyama",
+      "c": [
+        260,
+        40
+      ],
+      "r": 60,
+      "color": "#f08ab0",
+      "tp": [
+        196,
+        30
+      ]
+    },
+    {
+      "id": "kinkaku",
+      "name": "金阁寺",
+      "nameEn": "Kinkaku-ji",
+      "c": [
+        -215,
+        -190
+      ],
+      "r": 55,
+      "color": "#ffd66b",
+      "tp": [
+        -215,
+        -138
+      ]
+    },
+    {
+      "id": "akechi",
+      "name": "明智军阵",
+      "nameEn": "Akechi Camp",
+      "c": [
+        -240,
+        168
+      ],
+      "r": 60,
+      "color": "#8f7bd8",
+      "tp": [
+        -190,
+        150
+      ]
+    }
+  ],
+  "paths": [
+    [
+      [
+        40,
+        -236
+      ],
+      [
+        45,
+        -200
+      ],
+      [
+        45,
+        -75
+      ],
+      [
+        116,
+        -75
+      ]
+    ],
+    [
+      [
+        45,
+        -75
+      ],
+      [
+        -15,
+        -75
+      ],
+      [
+        -15,
+        45
+      ],
+      [
+        -50,
+        45
+      ]
+    ],
+    [
+      [
+        186,
+        -75
+      ],
+      [
+        194,
+        -40
+      ],
+      [
+        196,
+        0
+      ],
+      [
+        192,
+        28
+      ]
+    ],
+    [
+      [
+        -15,
+        -75
+      ],
+      [
+        -165,
+        -75
+      ],
+      [
+        -190,
+        -110
+      ],
+      [
+        -215,
+        -140
+      ]
+    ],
+    [
+      [
+        -15,
+        45
+      ],
+      [
+        -15,
+        135
+      ],
+      [
+        -165,
+        135
+      ],
+      [
+        -200,
+        150
+      ]
+    ],
+    [
+      [
+        -15,
+        135
+      ],
+      [
+        -15,
+        280
+      ]
+    ]
+  ],
+  "markers": [
+    {
+      "id": "spawn_p1",
+      "type": "spawn",
+      "label": "玩家1出生点（南方鸟居断面）",
+      "p": [
+        38.5,
+        4.326560378074646,
+        -232
+      ]
+    },
+    {
+      "id": "spawn_p2",
+      "type": "spawn",
+      "label": "玩家2出生点（南方鸟居断面）",
+      "p": [
+        41.5,
+        4.3268715143203735,
+        -232
+      ]
+    },
+    {
+      "id": "disc_senbon",
+      "type": "discovery",
+      "label": "千本鸟居",
+      "p": [
+        46,
+        6.258713722229004,
+        -290
+      ],
+      "radius": 5,
+      "note": "每一座鸟居，都是有人许下的一个愿望"
+    },
+    {
+      "id": "disc_sanjo_dori",
+      "type": "discovery",
+      "label": "三条通",
+      "p": [
+        15,
+        4,
+        -75
+      ],
+      "radius": 6,
+      "note": "平安京的街道横平竖直，像一张棋盘"
+    },
+    {
+      "id": "enemy_rakuchu_-15_-20",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        -15,
+        4,
+        -20
+      ]
+    },
+    {
+      "id": "enemy_rakuchu_45_30",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        45,
+        4,
+        30
+      ]
+    },
+    {
+      "id": "enemy_rakuchu_-45_-45",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        -45,
+        4,
+        -45
+      ]
+    },
+    {
+      "id": "fire_core",
+      "type": "interact",
+      "label": "京之核",
+      "p": [
+        -74,
+        4.6,
+        45
+      ],
+      "radius": 3.6,
+      "requires": [
+        "shard_kinkaku",
+        "shard_kiyomizu",
+        "shard_kikyo"
+      ]
+    },
+    {
+      "id": "boss_hellfire_lord",
+      "type": "enemy",
+      "label": "业火之主（Boss）",
+      "p": [
+        -86,
+        4.6,
+        45
+      ]
+    },
+    {
+      "id": "disc_honnoji",
+      "type": "discovery",
+      "label": "本能寺",
+      "p": [
+        -51,
+        4,
+        55
+      ],
+      "radius": 6,
+      "note": "「敌在本能寺！」天亮之前，这座寺被大火吞没"
+    },
+    {
+      "id": "enemy_honnoji_-1",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        -45,
+        4,
+        31
+      ]
+    },
+    {
+      "id": "enemy_honnoji_1",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        -45,
+        4,
+        59
+      ]
+    },
+    {
+      "id": "musashi_meet",
+      "type": "interact",
+      "label": "宫本武藏（三条大桥）",
+      "p": [
+        150,
+        5.2,
+        -75
+      ],
+      "radius": 3.4,
+      "note": "武藏说：点亮京之核，我就陪你打到天亮"
+    },
+    {
+      "id": "musashi_contract",
+      "type": "interact",
+      "label": "与宫本武藏缔结契约",
+      "p": [
+        154,
+        5.2,
+        -75
+      ],
+      "radius": 3,
+      "requires": [
+        "fire_core"
+      ],
+      "note": "Saber 职阶从者 · 二天一流"
+    },
+    {
+      "id": "disc_tobiishi",
+      "type": "discovery",
+      "label": "鸭川跳石",
+      "p": [
+        150,
+        1.9,
+        60
+      ],
+      "radius": 4,
+      "note": "踩着乌龟形状的石头过河"
+    },
+    {
+      "id": "disc_yasaka",
+      "type": "discovery",
+      "label": "八坂神社",
+      "p": [
+        206,
+        7.9587812423706055,
+        -20
+      ],
+      "radius": 5,
+      "note": "祇园祭的山鉾从这里出发"
+    },
+    {
+      "id": "disc_yasaka_pagoda",
+      "type": "discovery",
+      "label": "八坂塔",
+      "p": [
+        207,
+        8.810450553894043,
+        6
+      ],
+      "radius": 5,
+      "note": "法观寺五重塔，东山的地标"
+    },
+    {
+      "id": "shard_kiyomizu",
+      "type": "interact",
+      "label": "京之碎片·舞台",
+      "p": [
+        257.5,
+        34,
+        68.5
+      ],
+      "radius": 3.4
+    },
+    {
+      "id": "disc_kiyomizu_stage",
+      "type": "discovery",
+      "label": "清水舞台",
+      "p": [
+        266,
+        34,
+        64
+      ],
+      "radius": 5,
+      "note": "「从清水舞台跳下去」，意思是下了天大的决心"
+    },
+    {
+      "id": "disc_otowa",
+      "type": "discovery",
+      "label": "音羽瀑布",
+      "p": [
+        262,
+        14.01392650604248,
+        80
+      ],
+      "radius": 5,
+      "note": "三道泉水：学业、恋爱、长寿"
+    },
+    {
+      "id": "enemy_higashiyama_214",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        214,
+        10.169877052307129,
+        40
+      ]
+    },
+    {
+      "id": "enemy_higashiyama_236",
+      "type": "enemy",
+      "label": "燃烧的亡武者（占位）",
+      "p": [
+        236,
+        15.197733879089355,
+        26
+      ]
+    },
+    {
+      "id": "shard_kinkaku",
+      "type": "interact",
+      "label": "京之碎片·金阁",
+      "p": [
+        -215,
+        2,
+        -211
+      ],
+      "radius": 3.4
+    },
+    {
+      "id": "disc_kinkaku",
+      "type": "discovery",
+      "label": "金阁",
+      "p": [
+        -215,
+        2,
+        -210.5
+      ],
+      "radius": 4,
+      "note": "上面两层贴满了金箔，倒映在镜湖池里"
+    },
+    {
+      "id": "disc_kyokochi",
+      "type": "discovery",
+      "label": "镜湖池",
+      "p": [
+        -222,
+        1.7000000476837158,
+        -148
+      ],
+      "radius": 5,
+      "note": "踩着池中的石头走过去"
+    },
+    {
+      "id": "kikyo_banner_1",
+      "type": "objective",
+      "label": "桔梗大旗 1",
+      "p": [
+        -286,
+        32.21525268554687,
+        133.8
+      ]
+    },
+    {
+      "id": "kikyo_banner_2",
+      "type": "objective",
+      "label": "桔梗大旗 2",
+      "p": [
+        -292,
+        38.311663436889646,
+        187.8
+      ]
+    },
+    {
+      "id": "kikyo_banner_3",
+      "type": "objective",
+      "label": "桔梗大旗 3",
+      "p": [
+        -262,
+        25.88913230895996,
+        223.8
+      ]
+    },
+    {
+      "id": "shard_kikyo",
+      "type": "interact",
+      "label": "京之碎片·桔梗",
+      "p": [
+        -230,
+        14,
+        168
+      ],
+      "radius": 3.4,
+      "requires": [
+        "kikyo_banner_1",
+        "kikyo_banner_2",
+        "kikyo_banner_3"
+      ]
+    },
+    {
+      "id": "disc_akechi",
+      "type": "discovery",
+      "label": "明智本阵",
+      "p": [
+        -224,
+        14,
+        174
+      ],
+      "radius": 5,
+      "note": "「敌在本能寺」——明智光秀在这里调转了马头"
+    },
+    {
+      "id": "enemy_akechi_30",
+      "type": "enemy",
+      "label": "桔梗足轻（占位）",
+      "p": [
+        -202,
+        13.496166229248047,
+        150
+      ]
+    },
+    {
+      "id": "enemy_akechi_26",
+      "type": "enemy",
+      "label": "桔梗足轻（占位）",
+      "p": [
+        -206,
+        13.821352005004883,
+        188
+      ]
+    },
+    {
+      "id": "disc_rashomon",
+      "type": "discovery",
+      "label": "罗城门遗迹",
+      "p": [
+        -15,
+        6.779728794097901,
+        284
+      ],
+      "radius": 6,
+      "note": "平安京的正门，这时只剩下基石和乌鸦"
+    }
+  ],
+  "objective": {
+    "id": "quench_the_hellfire",
+    "name": "业火京都：熄灭本能寺的业火",
+    "steps": [
+      {
+        "id": "meet",
+        "text": "在鸭川的三条大桥上找到宫本武藏",
+        "done": [
+          "musashi_meet"
+        ]
+      },
+      {
+        "id": "kinkaku",
+        "text": "踩着镜湖池里的石头走到金阁，取得碎片·金阁",
+        "done": [
+          "shard_kinkaku"
+        ]
+      },
+      {
+        "id": "kiyomizu",
+        "text": "登上三年坂，在清水舞台上取得碎片·舞台",
+        "done": [
+          "shard_kiyomizu"
+        ]
+      },
+      {
+        "id": "kikyo",
+        "text": "射落明智军阵的 3 面桔梗大旗，取得碎片·桔梗",
+        "done": [
+          "kikyo_banner_1",
+          "kikyo_banner_2",
+          "kikyo_banner_3",
+          "shard_kikyo"
+        ]
+      },
+      {
+        "id": "core",
+        "text": "在本能寺点亮京之核，击败业火之主",
+        "done": [
+          "fire_core"
+        ]
+      },
+      {
+        "id": "contract",
+        "text": "回到三条大桥，与宫本武藏缔结契约",
+        "done": [
+          "musashi_contract"
+        ]
+      }
+    ]
+  }
+}

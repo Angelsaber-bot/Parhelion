@@ -7,10 +7,11 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
-import { reorder, quantize } from '@gltf-transform/functions';
+import { reorder, quantize, weldPrimitive } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 import type { Piece } from './structures.js';
 import type { Marker } from './layout.js';
+import { kyotoMaterialProfile } from '../../src/kyotoMaterialProfiles.js';
 
 // GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
 (globalThis as any).FileReader ??= class {
@@ -48,7 +49,9 @@ export async function writeRegion(r: RegionOut) {
   const mat = (name: string) => {
     let m = materials.get(name);
     if (!m) {
-      m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: 1, metalness: 0 });
+      const profile = kyotoMaterialProfile(name);
+      m = new THREE.MeshStandardMaterial({ name, vertexColors: true, roughness: profile?.roughness ?? 1, metalness: profile?.metalness ?? 0 });
+      if (profile) m.userData = { kyotoSurface: name, artStyle: 'painted-anime' };
       if (name === 'M_Water') Object.assign(m, { transparent: true, opacity: 0.75, vertexColors: false, color: new THREE.Color('#46b8d8') });
       if (name === 'M_Waterfall') Object.assign(m, { transparent: true, opacity: 0.7, vertexColors: false, color: new THREE.Color('#c9f3ff') });
       materials.set(name, m);
@@ -118,7 +121,7 @@ export async function writeRegion(r: RegionOut) {
   scene.add(root);
   const glb = (await new GLTFExporter().parseAsync(scene, { binary: true, onlyVisible: false })) as ArrayBuffer;
   mkdirSync(outDir, { recursive: true });
-  const packed = await compress(new Uint8Array(glb));
+  const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto');
   writeFileSync(resolve(outDir, `${r.file}.glb`), packed);
   writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
   return { bytes: packed.byteLength, tris };
@@ -130,12 +133,20 @@ export async function writeRegion(r: RegionOut) {
  * MeshoptDecoder and folds the dequantization back into the geometry (src/glb.ts), so every mesh node
  * must carry an identity transform here.
  */
-async function compress(glb: Uint8Array) {
+async function compress(glb: Uint8Array, exactWeld = false) {
   await MeshoptEncoder.ready;
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
   const doc = await io.readBinary(glb);
   doc.setLogger(new (class { debug() {} info() {} warn(m: string) { console.warn(m); } error(m: string) { console.error(m); } })() as never);
   await doc.transform(reorder({ encoder: MeshoptEncoder }), quantize({ quantizePosition: 16, quantizeNormal: 10, quantizeColor: 8 }));
+  // Kyoto's dense crafted geometry reuses only bitwise-identical full vertices.
+  // No simplification, tolerance-based welding, triangle removal or material change.
+  if (exactWeld) for (const mesh of doc.getRoot().listMeshes()) {
+    for (const primitive of mesh.listPrimitives()) {
+      // Collision contact resolution depends on stable triangle ordering.
+      if (primitive.getMaterial()?.getName() !== 'M_Collision') weldPrimitive(primitive, { overwrite: true });
+    }
+  }
   doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.FILTER });
   return io.writeBinary(doc);
 }

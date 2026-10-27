@@ -1,6 +1,7 @@
 // Toon look: banded lighting, inverted-hull outlines, and a sky with a 22° halo + sundogs
 // (the "parhelion" the game is named after).
 import * as THREE from 'three';
+import { kyotoToonMaterial } from './kyotoMaterials.js';
 
 export const SUN_DIR = new THREE.Vector3(-0.45, 0.62, 0.64).normalize(); // from the south-west, afternoon
 
@@ -116,6 +117,8 @@ function waterMaterial(name: string) {
 }
 
 export function toonMaterial(src: THREE.Material): THREE.Material {
+  const kyoto = kyotoToonMaterial(src, toonGradient());
+  if (kyoto) return kyoto;
   const name = src.name;
   const s = src as THREE.MeshStandardMaterial;
   switch (name) {

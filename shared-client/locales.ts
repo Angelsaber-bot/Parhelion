@@ -1,5 +1,14 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['岚山·渡月桥', 'Arashiyama · Timber Crossing'],
+  ['岚山·木构渡月桥', 'Arashiyama · Wooden Togetsu Bridge'],
+  ['山影与桂川之间的木桥。此处为1582年氛围的地理压缩，并非现代渡月桥复原。', 'A timber bridge between the mountains and the Katsura River. This is a compressed landscape inspired by 1582, not a replica of the modern Togetsukyo Bridge.'],
+  ['天龙寺意境·借景庭园', 'Tenryu-inspired Landscape Garden'],
+  ['池石与西山相映的禅寺庭园意境。殿宇为游戏化构作，不冒充现存建筑的16世纪原貌。', 'A Zen-inspired pond and rock garden framed by the western mountains. Its hall is a game interpretation, not a claim to reproduce the surviving buildings as they looked in the sixteenth century.'],
+  ['岚山·竹径', 'Arashiyama · Bamboo Path'],
+  ['竹节、疏叶与山间土径；步道保持宽阔，可从寺庭环行回到木桥。', 'Jointed bamboo and scattered leaves line a broad mountain path that loops from the temple garden back to the wooden bridge.'],
+  ['桂川河畔', 'Katsura Riverfront'],
+  ['茶棚、舟具小屋与土藏各循其用，西山脚下仍有未被战火吞没的日常。', 'A tea shelter, boat shed and storehouse serve different daily needs. At the foot of the western mountains, ordinary life has not yet been consumed by war.'],
   ['召唤／收回从者', 'Summon / dismiss Servant'], ['切换从者', 'Switch servant'],
   ['自由飞行调试（随镜头俯仰升降）', 'Free-flight test (climb or descend with camera pitch)'],
   ['自由飞行调试 开 · 抬头前进上升，低头前进下降', 'Free-flight on · Look up and move forward to rise; look down to descend'],
