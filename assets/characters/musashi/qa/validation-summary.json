@@ -1,0 +1,86 @@
+[
+  {
+    "file": "Parhelion/assets/characters/musashi/Musashi_Runtime.glb",
+    "pass": true,
+    "errors": [],
+    "warnings": [],
+    "triangles": 173648,
+    "draw_material_groups": 13,
+    "bones": 65,
+    "morph_targets": 56,
+    "loop_endpoints": [
+      {
+        "clip": "Attack",
+        "endpoint_bbox_delta_m": 6.317857370596869e-08
+      },
+      {
+        "clip": "Idle",
+        "endpoint_bbox_delta_m": 7.21374964207655e-08
+      },
+      {
+        "clip": "Run",
+        "endpoint_bbox_delta_m": 1.1890856996910307e-07
+      },
+      {
+        "clip": "Walk",
+        "endpoint_bbox_delta_m": 7.466343501539194e-08
+      }
+    ],
+    "stance_checks": [
+      {
+        "clip": "Run",
+        "nominal_forward_mps": 2.0016,
+        "max_stance_compensation_velocity_error_mps": 0.0030887665256857932
+      },
+      {
+        "clip": "Walk",
+        "nominal_forward_mps": 0.7488,
+        "max_stance_compensation_velocity_error_mps": 6.834890116436121e-06
+      }
+    ],
+    "crossfades_tested": 6,
+    "note": "Actual Three.js CPU vertex skinning, morph loading and AnimationMixer. Texture loading stubbed in Node; not a browser/GPU claim."
+  },
+  {
+    "file": "Parhelion/assets/characters/musashi/Musashi_Runtime_LOD1.glb",
+    "pass": true,
+    "errors": [],
+    "warnings": [],
+    "triangles": 85377,
+    "draw_material_groups": 13,
+    "bones": 65,
+    "morph_targets": 56,
+    "loop_endpoints": [
+      {
+        "clip": "Attack",
+        "endpoint_bbox_delta_m": 6.317857370596869e-08
+      },
+      {
+        "clip": "Idle",
+        "endpoint_bbox_delta_m": 7.21374964207655e-08
+      },
+      {
+        "clip": "Run",
+        "endpoint_bbox_delta_m": 1.1890856996910307e-07
+      },
+      {
+        "clip": "Walk",
+        "endpoint_bbox_delta_m": 7.466343501539194e-08
+      }
+    ],
+    "stance_checks": [
+      {
+        "clip": "Run",
+        "nominal_forward_mps": 2.0016,
+        "max_stance_compensation_velocity_error_mps": 0.0030887665256857932
+      },
+      {
+        "clip": "Walk",
+        "nominal_forward_mps": 0.7488,
+        "max_stance_compensation_velocity_error_mps": 6.834890116436121e-06
+      }
+    ],
+    "crossfades_tested": 6,
+    "note": "Actual Three.js CPU vertex skinning, morph loading and AnimationMixer. Texture loading stubbed in Node; not a browser/GPU claim."
+  }
+]

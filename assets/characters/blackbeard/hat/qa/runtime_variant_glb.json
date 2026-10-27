@@ -1,0 +1,45 @@
+{
+  "file": "/workspace/scratch/218192752ff4/Parhelion/assets/characters/blackbeard/refined/hat/blackbeard_tricorn.glb",
+  "bytes": 19647152,
+  "mesh_count": 5,
+  "primitive_count": 33,
+  "materials": 31,
+  "skins": 1,
+  "animations": [
+    {
+      "name": "Attack",
+      "start_seconds": 0.0,
+      "duration_seconds": 1.399999976158142,
+      "channels": 156
+    },
+    {
+      "name": "Idle",
+      "start_seconds": 0.0,
+      "duration_seconds": 3.0,
+      "channels": 156
+    },
+    {
+      "name": "Melee",
+      "start_seconds": 0.0,
+      "duration_seconds": 1.399999976158142,
+      "channels": 156
+    },
+    {
+      "name": "Run",
+      "start_seconds": 0.0,
+      "duration_seconds": 0.800000011920929,
+      "channels": 156
+    },
+    {
+      "name": "Walk",
+      "start_seconds": 0.0,
+      "duration_seconds": 1.0666667222976685,
+      "channels": 156
+    }
+  ],
+  "hat_vertices_exported": 21565,
+  "hat_triangles": 38684,
+  "hat_rigid_head_weights_verified": true,
+  "muzzle_socket_preserved": true,
+  "all_animation_starts_zero": true
+}

@@ -1,0 +1,112 @@
+{
+  "source_sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
+  "bones": 52,
+  "meshes": [
+    {
+      "name": "BB - authored anatomical body",
+      "vertices": 30070,
+      "unweighted": 0,
+      "max_weight_sum_error": 1.4156103134155273e-07
+    },
+    {
+      "name": "Blackbeard_costume",
+      "vertices": 133929,
+      "unweighted": 0,
+      "max_weight_sum_error": 7.264316082000732e-08
+    },
+    {
+      "name": "Blackbeard_firearm",
+      "vertices": 15682,
+      "unweighted": 0,
+      "max_weight_sum_error": 0.0
+    },
+    {
+      "name": "Blackbeard_hair",
+      "vertices": 48089,
+      "unweighted": 0,
+      "max_weight_sum_error": 0.0
+    }
+  ],
+  "actions": [
+    {
+      "name": "Attack_Blackbeard_Rig",
+      "frames": [
+        0.0,
+        33.599998474121094
+      ],
+      "moving_delta": 1.1179491761131481,
+      "loop_delta": 0.0,
+      "bounds_max_abs": 2.0423424243927
+    },
+    {
+      "name": "Idle_Blackbeard_Rig",
+      "frames": [
+        0.0,
+        72.0
+      ],
+      "moving_delta": 0.020229090168530514,
+      "loop_delta": 0.0,
+      "bounds_max_abs": 2.05216646194458
+    },
+    {
+      "name": "Melee_Blackbeard_Rig",
+      "frames": [
+        0.0,
+        33.599998474121094
+      ],
+      "moving_delta": 0.8362204427139238,
+      "loop_delta": 0.0,
+      "bounds_max_abs": 2.0423424243927
+    },
+    {
+      "name": "Run_Blackbeard_Rig",
+      "frames": [
+        0.0,
+        19.200000762939453
+      ],
+      "moving_delta": 0.5914234812470606,
+      "loop_delta": 2.2302015940987714e-07,
+      "bounds_max_abs": 1.9443421363830566
+    },
+    {
+      "name": "Walk_Blackbeard_Rig",
+      "frames": [
+        0.0,
+        25.60000228881836
+      ],
+      "moving_delta": 0.32635625678819336,
+      "loop_delta": 1.341104507446289e-07,
+      "bounds_max_abs": 2.0073423385620117
+    }
+  ],
+  "socket": {
+    "exists": true,
+    "hand_relative_max_drift": 2.5331974029541016e-07,
+    "hand_relative_matrix": [
+      [
+        -0.9674794673919678,
+        -0.05688072741031647,
+        0.24647344648838043,
+        0.03570728749036789
+      ],
+      [
+        -0.0006935521960258484,
+        -0.9737895131111145,
+        -0.22745169699192047,
+        0.5070350766181946
+      ],
+      [
+        0.25295087695121765,
+        -0.22022569179534912,
+        0.9420809745788574,
+        0.23668061196804047
+      ],
+      [
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    ]
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "character": "Blackbeard",
+  "status": "reconstructed runtime candidate; art acceptance pending",
+  "units": "meters",
+  "up_axis": "+Y",
+  "forward_axis": "+Z",
+  "root_motion": false,
+  "skeleton_root": "Blackbeard_Rig",
+  "muzzle_node": "Blackbeard_Muzzle",
+  "muzzle_local_forward_axis": "+Z",
+  "weapon_parent_bone": "HandR",
+  "animations": {
+    "Idle": {
+      "duration": 3,
+      "loop": true,
+      "speed_mps": 0
+    },
+    "Walk": {
+      "duration": 1.0666666666666667,
+      "loop": true,
+      "speed_mps": 0.65625
+    },
+    "Run": {
+      "duration": 0.8,
+      "loop": true,
+      "speed_mps": 2.2368421052631575
+    },
+    "Attack": {
+      "duration": 1.4,
+      "loop": false,
+      "fire_event_seconds": 0.5666666666666667
+    },
+    "Melee": {
+      "duration": 1.4,
+      "loop": false,
+      "contact_event_seconds": null,
+      "note": "Optional sweep; contact timing must be chosen by gameplay design."
+    }
+  },
+  "speed_basis": "Analytic stance-foot travel at 1x playback, not root displacement",
+  "collision_shapes": false,
+  "facial_rig": false,
+  "muzzle_local_up_axis": "+Y",
+  "source_blender_weapon_parent_bone": "Hand.R",
+  "socket_axis_validation": "Three.js deformed barrel triangle normals and muzzle-ring plane verified +Z forward; source Blender firearm -Y is NOT exported socket-local forward.",
+  "rest_sole_y_meters": 0.014,
+  "suggested_ground_offset_y_meters": -0.014,
+  "footplant_validation": {
+    "surface": "flat ground at source Y=.014m, visual-root offset -.014m",
+    "native_quarter_frame_max_stance_error_m": {
+      "Walk": 0.0006655505523085591,
+      "Run": 0.002694434985518456
+    },
+    "three_33_sample_max_penetration_m": {
+      "Walk": 3.15e-07,
+      "Run": 0.002023
+    },
+    "root_hips_unchanged": true,
+    "not_terrain_adaptive": true,
+    "three_120_hz_max_penetration_m": {
+      "Walk": 0.000157,
+      "Run": 0.002692
+    }
+  }
+}

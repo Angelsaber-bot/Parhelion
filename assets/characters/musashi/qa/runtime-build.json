@@ -1,0 +1,21 @@
+{
+  "source_objects": 306,
+  "face_morphs": 56,
+  "limitations": [
+    "Procedural textile micro-bump omitted from runtime PBR; sculpted seams and metal details retained.",
+    "No browser/GPU render tested; Node Three geometry test separate."
+  ],
+  "triangles_before_reduction": 192702,
+  "runtime_objects": 13,
+  "runtime_triangles": 173648,
+  "materials": 13,
+  "bones": 65,
+  "unweighted_vertices": 0,
+  "scale": 0.72,
+  "clips": [
+    "Attack",
+    "Idle",
+    "Run",
+    "Walk"
+  ]
+}

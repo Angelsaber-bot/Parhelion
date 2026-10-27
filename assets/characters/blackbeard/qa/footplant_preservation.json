@@ -1,0 +1,12 @@
+{
+  "untouched_channels_exact_equal": true,
+  "editable_mesh_coordinates_exact_equal": true,
+  "actions_checked": [
+    "Attack",
+    "Idle",
+    "Melee",
+    "Run",
+    "Walk"
+  ],
+  "only_changed_channels": "Walk/Run Thigh/Shin/Foot/Toe location and quaternion"
+}

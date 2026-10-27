@@ -1,0 +1,127 @@
+{
+  "fps": 30,
+  "source_axes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "in_place": true,
+  "ik": "analytical two-bone solution baked every frame; no live constraints",
+  "grip": {
+    "bones": [
+      "mixamorig:RightHand",
+      "mixamorig:LeftHand"
+    ],
+    "blade_axis_rest_world": [
+      0,
+      -1,
+      0
+    ],
+    "handle_center_local": [
+      -0.012,
+      0.055,
+      0
+    ]
+  },
+  "clips": {
+    "Idle": {
+      "frame_start": 1,
+      "frame_end": 91,
+      "duration": 3.0,
+      "loop": true,
+      "in_place": true,
+      "nominal_speed_source_mps": 0,
+      "representative_frames": [
+        1,
+        23,
+        46,
+        68,
+        91
+      ]
+    },
+    "Walk": {
+      "frame_start": 1,
+      "frame_end": 33,
+      "duration": 1.0666666666666667,
+      "loop": true,
+      "in_place": true,
+      "nominal_speed_source_mps": 1.04,
+      "representative_frames": [
+        1,
+        9,
+        17,
+        25,
+        33
+      ],
+      "full_cycle_stride_source_m": 1.1093333333333333,
+      "stance_duty": 0.6,
+      "left_phase_offset": 0,
+      "right_phase_offset": 0.5,
+      "phase_formula": "((frame-1)/cycle_intervals + foot_phase_offset) % 1; stance when phase < duty",
+      "stance_relative_ankle_y_velocity_mps": 1.04,
+      "runtime_forward_velocity_source": [
+        0,
+        -1.04,
+        0
+      ],
+      "swing_clearance_source_m": 0.06
+    },
+    "Run": {
+      "frame_start": 1,
+      "frame_end": 21,
+      "duration": 0.6666666666666666,
+      "loop": true,
+      "in_place": true,
+      "nominal_speed_source_mps": 2.78,
+      "representative_frames": [
+        1,
+        6,
+        11,
+        16,
+        21
+      ],
+      "full_cycle_stride_source_m": 1.853333333333333,
+      "stance_duty": 0.36,
+      "left_phase_offset": 0,
+      "right_phase_offset": 0.5,
+      "phase_formula": "((frame-1)/cycle_intervals + foot_phase_offset) % 1; stance when phase < duty",
+      "stance_relative_ankle_y_velocity_mps": 2.78,
+      "runtime_forward_velocity_source": [
+        0,
+        -2.78,
+        0
+      ],
+      "swing_clearance_source_m": 0.105
+    },
+    "Attack": {
+      "frame_start": 1,
+      "frame_end": 49,
+      "duration": 1.6,
+      "loop": false,
+      "in_place": true,
+      "nominal_speed_source_mps": 0,
+      "representative_frames": [
+        1,
+        13,
+        25,
+        37,
+        49
+      ],
+      "contact_frames": [
+        20,
+        34
+      ],
+      "contact_times": [
+        0.6333333333333333,
+        1.1
+      ],
+      "contact_fractions": [
+        0.4,
+        0.69
+      ],
+      "idle_matching_endpoints": true
+    }
+  },
+  "cloth_secondary_motion": "shared small rotation only, not physical simulation",
+  "reach_clamps": [],
+  "nla_note": "Four muted named NLA tracks retained as action references; export all named Actions (ACTIONS mode). Muted to avoid stacking during active-action preview."
+}

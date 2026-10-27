@@ -1,0 +1,610 @@
+[
+  {
+    "file": "Parhelion/assets/characters/musashi/Musashi_Runtime.glb",
+    "pass": true,
+    "faceGeometryAndMorphHash": "d43ed99d4d403186e0057a8323d8558b970db6f777d4b7e4861cdc74e3978bda",
+    "morphs": [
+      {
+        "name": "target_0",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "Angry",
+        "maxLocalDisplacement": 0.03263009451045977,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_2",
+        "maxLocalDisplacement": 0.011098278528311956,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_3",
+        "maxLocalDisplacement": 0.03881075113490075,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_4",
+        "maxLocalDisplacement": 0.0282945814988789,
+        "nonfinite": 0
+      },
+      {
+        "name": "Surprised",
+        "maxLocalDisplacement": 0.039354461995826616,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_6",
+        "maxLocalDisplacement": 0.03263009451045977,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_7",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_8",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_9",
+        "maxLocalDisplacement": 0.0282945814988789,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_10",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_11",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_12",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "Blink",
+        "maxLocalDisplacement": 0.04040454526605639,
+        "nonfinite": 0
+      },
+      {
+        "name": "BlinkRight",
+        "maxLocalDisplacement": 0.04040438138189577,
+        "nonfinite": 0
+      },
+      {
+        "name": "BlinkLeft",
+        "maxLocalDisplacement": 0.04040454526605639,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_16",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "HappyEyes",
+        "maxLocalDisplacement": 0.02260591835673964,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_18",
+        "maxLocalDisplacement": 0.02260591835673964,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_19",
+        "maxLocalDisplacement": 0.02260591709129802,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_20",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_21",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_22",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "HideIrises",
+        "maxLocalDisplacement": 0.05842782697997805,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_24",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_25",
+        "maxLocalDisplacement": 0.01588026679943027,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_26",
+        "maxLocalDisplacement": 0.030408190711693407,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_27",
+        "maxLocalDisplacement": 0.017811338214119257,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_28",
+        "maxLocalDisplacement": 0.02588398329332463,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_29",
+        "maxLocalDisplacement": 0.027919469059758447,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_30",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_31",
+        "maxLocalDisplacement": 0.011098278528311956,
+        "nonfinite": 0
+      },
+      {
+        "name": "MouthOpenA",
+        "maxLocalDisplacement": 0.03881075113490075,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_33",
+        "maxLocalDisplacement": 0.023935798046608427,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_34",
+        "maxLocalDisplacement": 0.039354461995826616,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_35",
+        "maxLocalDisplacement": 0.010906356807030358,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_36",
+        "maxLocalDisplacement": 0.010906355443604967,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_37",
+        "maxLocalDisplacement": 0.010906356807030358,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_38",
+        "maxLocalDisplacement": 0.020718984577737066,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_39",
+        "maxLocalDisplacement": 0.00861648344618854,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_40",
+        "maxLocalDisplacement": 0.027010897297084443,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_41",
+        "maxLocalDisplacement": 0.013216233066036219,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_42",
+        "maxLocalDisplacement": 0.03266165908930339,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_43",
+        "maxLocalDisplacement": 0.10762060511719533,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_44",
+        "maxLocalDisplacement": 0.013160478608557753,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_45",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_46",
+        "maxLocalDisplacement": 0.013160478608557753,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_47",
+        "maxLocalDisplacement": 0.015838585398221052,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_48",
+        "maxLocalDisplacement": 0.013797451717387456,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_49",
+        "maxLocalDisplacement": 0.015838585398221052,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_50",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_51",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_52",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_53",
+        "maxLocalDisplacement": 0.01205012612513552,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_54",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_55",
+        "maxLocalDisplacement": 0.01205012612513552,
+        "nonfinite": 0
+      }
+    ],
+    "socketBoneLocalOffsets": {
+      "Left": [
+        0.000049956535804085433,
+        0.1068037673830986,
+        0.020196521654725075
+      ],
+      "Right": [
+        -0.0007912870496510349,
+        0.12852168083190885,
+        0.020469089969992638
+      ]
+    },
+    "maxSocketDrift": {
+      "Left": 4.577566798522237e-16,
+      "Right": 7.109319585851707e-16
+    },
+    "scope": "Actual Three.js CPU morph deformation at every target and socket transforms sampled across all four clips; textures stubbed."
+  },
+  {
+    "file": "Parhelion/assets/characters/musashi/Musashi_Runtime_LOD1.glb",
+    "pass": true,
+    "faceGeometryAndMorphHash": "d43ed99d4d403186e0057a8323d8558b970db6f777d4b7e4861cdc74e3978bda",
+    "morphs": [
+      {
+        "name": "target_0",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "Angry",
+        "maxLocalDisplacement": 0.03263009451045977,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_2",
+        "maxLocalDisplacement": 0.011098278528311956,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_3",
+        "maxLocalDisplacement": 0.03881075113490075,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_4",
+        "maxLocalDisplacement": 0.0282945814988789,
+        "nonfinite": 0
+      },
+      {
+        "name": "Surprised",
+        "maxLocalDisplacement": 0.039354461995826616,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_6",
+        "maxLocalDisplacement": 0.03263009451045977,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_7",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_8",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_9",
+        "maxLocalDisplacement": 0.0282945814988789,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_10",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_11",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_12",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "Blink",
+        "maxLocalDisplacement": 0.04040454526605639,
+        "nonfinite": 0
+      },
+      {
+        "name": "BlinkRight",
+        "maxLocalDisplacement": 0.04040438138189577,
+        "nonfinite": 0
+      },
+      {
+        "name": "BlinkLeft",
+        "maxLocalDisplacement": 0.04040454526605639,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_16",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "HappyEyes",
+        "maxLocalDisplacement": 0.02260591835673964,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_18",
+        "maxLocalDisplacement": 0.02260591835673964,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_19",
+        "maxLocalDisplacement": 0.02260591709129802,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_20",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_21",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_22",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "HideIrises",
+        "maxLocalDisplacement": 0.05842782697997805,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_24",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_25",
+        "maxLocalDisplacement": 0.01588026679943027,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_26",
+        "maxLocalDisplacement": 0.030408190711693407,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_27",
+        "maxLocalDisplacement": 0.017811338214119257,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_28",
+        "maxLocalDisplacement": 0.02588398329332463,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_29",
+        "maxLocalDisplacement": 0.027919469059758447,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_30",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_31",
+        "maxLocalDisplacement": 0.011098278528311956,
+        "nonfinite": 0
+      },
+      {
+        "name": "MouthOpenA",
+        "maxLocalDisplacement": 0.03881075113490075,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_33",
+        "maxLocalDisplacement": 0.023935798046608427,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_34",
+        "maxLocalDisplacement": 0.039354461995826616,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_35",
+        "maxLocalDisplacement": 0.010906356807030358,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_36",
+        "maxLocalDisplacement": 0.010906355443604967,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_37",
+        "maxLocalDisplacement": 0.010906356807030358,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_38",
+        "maxLocalDisplacement": 0.020718984577737066,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_39",
+        "maxLocalDisplacement": 0.00861648344618854,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_40",
+        "maxLocalDisplacement": 0.027010897297084443,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_41",
+        "maxLocalDisplacement": 0.013216233066036219,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_42",
+        "maxLocalDisplacement": 0.03266165908930339,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_43",
+        "maxLocalDisplacement": 0.10762060511719533,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_44",
+        "maxLocalDisplacement": 0.013160478608557753,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_45",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_46",
+        "maxLocalDisplacement": 0.013160478608557753,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_47",
+        "maxLocalDisplacement": 0.015838585398221052,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_48",
+        "maxLocalDisplacement": 0.013797451717387456,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_49",
+        "maxLocalDisplacement": 0.015838585398221052,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_50",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_51",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_52",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_53",
+        "maxLocalDisplacement": 0.01205012612513552,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_54",
+        "maxLocalDisplacement": 0.010671331083642707,
+        "nonfinite": 0
+      },
+      {
+        "name": "target_55",
+        "maxLocalDisplacement": 0.01205012612513552,
+        "nonfinite": 0
+      }
+    ],
+    "socketBoneLocalOffsets": {
+      "Left": [
+        0.000049956535804085433,
+        0.1068037673830986,
+        0.020196521654725075
+      ],
+      "Right": [
+        -0.0007912870496510349,
+        0.12852168083190885,
+        0.020469089969992638
+      ]
+    },
+    "maxSocketDrift": {
+      "Left": 4.577566798522237e-16,
+      "Right": 7.109319585851707e-16
+    },
+    "scope": "Actual Three.js CPU morph deformation at every target and socket transforms sampled across all four clips; textures stubbed."
+  }
+]

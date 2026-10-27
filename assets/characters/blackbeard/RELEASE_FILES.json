@@ -1,0 +1,351 @@
+{
+  "status": "reconstructed runtime candidate; art acceptance pending",
+  "root": ".",
+  "exclude": [
+    "reference_base/",
+    "anatomy_base.blend",
+    "character_form.blend",
+    "outfit.blend",
+    "costume_complete.blend",
+    "*.blend1",
+    "superseded study previews"
+  ],
+  "files": [
+    {
+      "path": "RUNTIME_CONTRACT.json",
+      "bytes": 1912,
+      "sha256": "af079ee2a303c2dd56e38ec367343233103b30b748e6bee3f3105957dee1c8ce"
+    },
+    {
+      "path": "FINAL_QA.md",
+      "bytes": 3012,
+      "sha256": "c8e57f9517f7057ab54f825b04d26d26cc3047d587ec27dddb81ba9b76af670e"
+    },
+    {
+      "path": "blackbeard.glb",
+      "bytes": 18285480,
+      "sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f"
+    },
+    {
+      "path": "blackbeard.glb.gz",
+      "bytes": 6923513,
+      "sha256": "39ec618ecc5cfbe497ad53e65e309614c134fdd2ae099a92a4b499a83d901444",
+      "encoding": "gzip; decompress before glTF parsing unless served with Content-Encoding:gzip"
+    },
+    {
+      "path": "blackbeard_editable.blend",
+      "bytes": 7332377,
+      "sha256": "a716eed8e41f10626ce937baac5baf2b609e1d2a5a5b105fa843c11e5b3ac32f"
+    },
+    {
+      "path": "blackbeard_runtime.blend",
+      "bytes": 8926676,
+      "sha256": "9ca0308a93a76d0b069906ad9f4b3904100a515644aaa38c807cb10a2a334d16"
+    },
+    {
+      "path": "RUNTIME_README.md",
+      "bytes": 5102,
+      "sha256": "b98d6ac46a7b7aff8af25157ad1696bd410b8e4105e52aa5cfea3dece28e8054"
+    },
+    {
+      "path": "SOURCE_AND_LICENSE.md",
+      "bytes": 1956,
+      "sha256": "bae84f4925f75d51f70e133a0858c9d6c9da17189e98471a2546de22a37f20e2"
+    },
+    {
+      "path": "hat/blackbeard_tricorn.glb",
+      "bytes": 19647152,
+      "sha256": "c7055fe4a7d7daea936bdee00f8ba812edeeb3e80e456fce1bbdc612041496d7"
+    },
+    {
+      "path": "hat/blackbeard_tricorn.glb.gz",
+      "bytes": 7500677,
+      "sha256": "97f4b71281c85c91836f8a735f5016870edc034ddb7fc5086e56a43afb269b65",
+      "encoding": "gzip; decompress before glTF parsing unless served with Content-Encoding:gzip"
+    },
+    {
+      "path": "hat/blackbeard_tricorn_runtime.blend",
+      "bytes": 9602522,
+      "sha256": "42fa49bff782262f7996a5a2ee7d25f28f4d8a94b04769b6e956e1bf41ca9a77"
+    },
+    {
+      "path": "hat/blackbeard_tricorn_accessory.glb",
+      "bytes": 771440,
+      "sha256": "15d48355a8a602c451c0cd843249dd2d771f4186297295899f653a15beba8c25"
+    },
+    {
+      "path": "hat/blackbeard_tricorn_editable.blend",
+      "bytes": 1495260,
+      "sha256": "24581bf6c84e5fc7d2f1e1faa8a4b024a13d363bb7c46321d82383395d7d53f7"
+    },
+    {
+      "path": "weapon/blackbeard_flintlock.glb",
+      "bytes": 819452,
+      "sha256": "0ed2400cd835070b75289930e3bfeedefe556a60dd3fa3edccfd563a49329e70"
+    },
+    {
+      "path": "weapon/blackbeard_flintlock.glb.gz",
+      "bytes": 443789,
+      "sha256": "caee4732d1d19fa7b32d798db9c50799d892d2e9c2e899500899133a2d0c2be3",
+      "encoding": "gzip; decompress before glTF parsing unless served with Content-Encoding:gzip"
+    },
+    {
+      "path": "weapon/blackbeard_flintlock_editable.blend",
+      "bytes": 1841524,
+      "sha256": "f8e238dfd775ed2db8621b913cfbdcaa606f821147c4aa66052d8d187bb5dfa1"
+    },
+    {
+      "path": "weapon/SOURCE_AND_INTEGRATION.md",
+      "bytes": 2921,
+      "sha256": "5037ce9a04ea56df71c36119ab32223a738f2a106466675ed09035630498a6b1"
+    },
+    {
+      "path": "hat/SOURCE_AND_INTEGRATION.md",
+      "bytes": 6047,
+      "sha256": "79aca337fb55e83ccbdcd151c69c99616e3af7fa8f8e6a269390e600880e2caa"
+    },
+    {
+      "path": "rig/rig_manifest.json",
+      "bytes": 15509,
+      "sha256": "b1471ff0153ea6a272cc0a4f41ca2d0d17d6f3a4883fc87fec05682219e4c010"
+    },
+    {
+      "path": "rig/final_qa/validation.json",
+      "bytes": 2462,
+      "sha256": "e6deb7332344156b7560dd5374040cb658987c359f9f5b81dc9994a5cd97c778"
+    },
+    {
+      "path": "rig/final_qa/Run.png",
+      "bytes": 841374,
+      "sha256": "3494db4b41f9a9c51e11be94986b9cc34345e67c8d1d7df6f52460265c12ebbd"
+    },
+    {
+      "path": "rig/final_qa/Attack.png",
+      "bytes": 843822,
+      "sha256": "b154a2088cbeb1e3d28ba7e9e937164d8a249545aecd4dcfbbbeafdf2aba170d"
+    },
+    {
+      "path": "previews/runtime_01_full.png",
+      "bytes": 1822099,
+      "sha256": "9482dd65e571d513a4009f6b8b8de78d95d4b03482deb192743f9c3c09b30445"
+    },
+    {
+      "path": "previews/runtime_02_face.png",
+      "bytes": 1872498,
+      "sha256": "ed2a43abb937b00c847765f299fd8d775f03be11f24461b1f364f2d1f31d1844"
+    },
+    {
+      "path": "previews/runtime_03_front.png",
+      "bytes": 1751625,
+      "sha256": "b191289a1031459a92d12604cee94cf23c2992c939710dca9a03eaba05ec62b8"
+    },
+    {
+      "path": "previews/runtime_04_profile.png",
+      "bytes": 1760484,
+      "sha256": "67ff09717db6c536101f2de85fa7d7f73739cedd5f15e3f5441af087b65f5910"
+    },
+    {
+      "path": "previews/runtime_05_back.png",
+      "bytes": 1811253,
+      "sha256": "6eddb0ccce4b4220ccf8e76866d01f1268d1d064f2274b85a3abb8ea0266e228"
+    },
+    {
+      "path": "previews/runtime_06_attack.png",
+      "bytes": 1799266,
+      "sha256": "59970f0db6c6452c05ced62283fcca6f54a723115fdd6e7e3cd51143cf242935"
+    },
+    {
+      "path": "previews/runtime_07_run.png",
+      "bytes": 1786193,
+      "sha256": "1b852f286389f3797760bb1fdd37a24e70e01d8832116cc9710924ae257be9d5"
+    },
+    {
+      "path": "rig/final_qa/Run-final-actual-GLB.gif",
+      "bytes": 1464583,
+      "sha256": "5ec584ff405bb37093db15ab3f0d00b1b2c26287931cbaea27d76a4b2bfa7051"
+    },
+    {
+      "path": "source/base_scene.py",
+      "bytes": 4160,
+      "sha256": "f496de1a9fb20b5355fbb0b148219589ed0f0e575ed44bf803d4c2ff03f86481"
+    },
+    {
+      "path": "source/character_form.py",
+      "bytes": 15196,
+      "sha256": "fbfab8918545ec8e3da1cf63d7b755e97f046c50ec162b5fac154df87a79dace"
+    },
+    {
+      "path": "source/make_material_maps.py",
+      "bytes": 940,
+      "sha256": "3b9b967f5bc523c30f54a462a1227185d66749cda8e9143e88855e9ce2d2cb7d"
+    },
+    {
+      "path": "source/outfit.py",
+      "bytes": 13114,
+      "sha256": "551518ad4209a2c7744d32df79841804f10f3ab035ce1ef778cf9ceea52778a3"
+    },
+    {
+      "path": "source/finish_accessories.py",
+      "bytes": 4740,
+      "sha256": "54ded6859c272843fed579d59c499d1df48753bab35518a2844a6104e9565129"
+    },
+    {
+      "path": "source/integrate_runtime.py",
+      "bytes": 7481,
+      "sha256": "4733c7257d4433d4d1d4a1b586734d673b0c7165f34a875e5148848aca167183"
+    },
+    {
+      "path": "source/final_surface_fix.py",
+      "bytes": 788,
+      "sha256": "8a16525c1fe15a5f0e77ba702b8d528d7b7bec279b9e2b3d798deec56c7d2e42"
+    },
+    {
+      "path": "source/knee_backing_fix.py",
+      "bytes": 1655,
+      "sha256": "caff6a77bb438199f0853737e89ad2b9489ff0b1cfd9b2586614a24173651664"
+    },
+    {
+      "path": "source/boot_wrap_surface_fix.py",
+      "bytes": 1878,
+      "sha256": "3907ec5b8f91a5b11dd1a81d136ee7530f240e2d05693e0b67c2340640c0ea36"
+    },
+    {
+      "path": "source/render_integrated.py",
+      "bytes": 1176,
+      "sha256": "c343cbd5dc0cc83b9875bffde81e1b1fb895fcbc478128da7ebbaf475e3726eb"
+    },
+    {
+      "path": "rig/build_rig.py",
+      "bytes": 13765,
+      "sha256": "bc7d4b8a9066bb9cfeef7f369785ef8f755cf4d0ef8c577f679f7783b040fab2"
+    },
+    {
+      "path": "rig/update_actions.py",
+      "bytes": 9913,
+      "sha256": "bd2b542e4968dcbd3f47227f6dc9a1eb7ab4dfbf9b9acef696faf48f89f70f9a"
+    },
+    {
+      "path": "rig/INTEGRATION.md",
+      "bytes": 5257,
+      "sha256": "e940c1b47ba308d14cbf66dabc128f47a879b2c20fbc0070dc5c5f969628f0fe"
+    },
+    {
+      "path": "weapon/source/build_firearm.py",
+      "bytes": 14532,
+      "sha256": "1f3993570f284d97bddea65aa0beacfac315cba165df879e9a4e4e3198cfe12f"
+    },
+    {
+      "path": "hat/source/build_tricorn.py",
+      "bytes": 10018,
+      "sha256": "8b445336362f81287af2f7d978df9ee846e7600bdf6e685caedba28dff4afaed"
+    },
+    {
+      "path": "hat/previews/05_runtime_variant_full.png",
+      "bytes": 2353373,
+      "sha256": "4461130000abe37ff5aa4df4e47ebd49f6caa410db5f1e0bf3b5a057a0458299"
+    },
+    {
+      "path": "hat/previews/06_runtime_variant_face.png",
+      "bytes": 1680995,
+      "sha256": "f7237c092ed9d8dc1ecc4b97b74d05b43030696f4c4a53c96a7be19075ea61c5"
+    },
+    {
+      "path": "hat/qa/runtime_variant_glb.json",
+      "bytes": 1055,
+      "sha256": "2a5166a20c1385618ba41a58e53a37da74c80a82478230501b2568e6a6f70728"
+    },
+    {
+      "path": "hat/qa/runtime_variant_native.json",
+      "bytes": 544,
+      "sha256": "93bba46cfd2c9e981b5205c5ae17a685961ca4726dedde3baf48bea1b3da2ad2"
+    },
+    {
+      "path": "rig/final_qa/Run-final-contact.png",
+      "bytes": 623010,
+      "sha256": "414ec7e74f130e471b8d49a6892d7e07606c42ccfc82ff3e51ae5099896cc256"
+    },
+    {
+      "path": "rig/final_qa/three_socket_proof.json",
+      "bytes": 1511,
+      "sha256": "bca02d004373c7dc87a08424a7ce9a0f5ef766caf7a0d2b24aedb7f5f9d6e447"
+    },
+    {
+      "path": "rig/final_qa/three_runtime_validation.json",
+      "bytes": 34348,
+      "sha256": "15dd7f0d27fd45e9485ab8cf44d64c8c7b47ce8235c94f71151fb225a24af53b"
+    },
+    {
+      "path": "hat/source/create_runtime_variant.py",
+      "bytes": 5123,
+      "sha256": "011170b0793e18b3c09aea38c297e340355ccc03c53f2e0f9b7d8054a9a5fd55"
+    },
+    {
+      "path": "hat/source/validate_runtime_glb.py",
+      "bytes": 2406,
+      "sha256": "19245245ff98bca670ae017e980ce640772087d60578df9c54cf5eaf4b19a303"
+    },
+    {
+      "path": "rig/final_qa/check.py",
+      "bytes": 3623,
+      "sha256": "4f887f20305f25d6edd0130d91451f4c1569fb6a9251643d7c7e7816878ab627"
+    },
+    {
+      "path": "source/footplant_surface_fix.py",
+      "bytes": 5341,
+      "sha256": "b58cbe2d9f13aa3af47ba8e11571bb9ac50542fe19d8f1c6195456c8d421d1b8"
+    },
+    {
+      "path": "source/audit_footplant_preservation.py",
+      "bytes": 1280,
+      "sha256": "4e03ad2bab566269573b6cdd8c371db4b31849bc3ec44f50a2ac18d485403680"
+    },
+    {
+      "path": "qa/footplant_surface_fix.json",
+      "bytes": 23998,
+      "sha256": "3483b20bee8ff86aee2674899308799c5bb4b8b3708a15b2081d5271b83f7d16"
+    },
+    {
+      "path": "qa/footplant_preservation.json",
+      "bytes": 265,
+      "sha256": "0befbc41ac142bd469cf70736bc499facdd16e3f3474c2931872f569b6009657"
+    },
+    {
+      "path": "qa/foot_clearance_before.json",
+      "bytes": 5712,
+      "sha256": "da496068488cfbdfd7c3f041543b2ca6da3b6c3c4c1a029095e9e91c00d5c8b2"
+    }
+  ],
+  "runtime": {
+    "glb_bytes": 18285480,
+    "meshes": 4,
+    "material_primitives": 27,
+    "triangles": 402274,
+    "vertices": 227770,
+    "joints": 52,
+    "materials": 25,
+    "embedded_images": 6,
+    "animations": [
+      {
+        "name": "Attack",
+        "duration": 1.4
+      },
+      {
+        "name": "Idle",
+        "duration": 3
+      },
+      {
+        "name": "Melee",
+        "duration": 1.4
+      },
+      {
+        "name": "Run",
+        "duration": 0.8
+      },
+      {
+        "name": "Walk",
+        "duration": 1.0666666666666667
+      }
+    ]
+  },
+  "source_manifest_sha256": "6ebac7006889b3bbabc7d619423452b604b814251fa23f7a10cdcf5ec46ff66e"
+}

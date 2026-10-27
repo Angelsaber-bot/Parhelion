@@ -1,0 +1,930 @@
+{
+  "schema_version": 1,
+  "base_commit": "0f2eabed3ab67c8a9f028aa2822982dd88f5073d",
+  "default_character_activation": false,
+  "browser_gpu_verified": false,
+  "axes": {
+    "up": "+Y",
+    "forward": "+Z",
+    "units": "meters"
+  },
+  "geometry_policy": "Full authored hero assets are default. Musashi LOD1 is explicit optional. Napoleon source curve sampling was reduced by its author before final freeze; no integration-side decimation.",
+  "runtime_adapter": "world/src/characters/characterKit.ts",
+  "animation_mapping": "world/src/characters/catalog.ts",
+  "rights_scope": "Per-character provenance and creator terms apply. Base mesh licenses do not imply official Fate/FGO character clearance.",
+  "characters": [
+    {
+      "id": "blackbeard",
+      "directory": "blackbeard",
+      "runtime": {
+        "raw_path": "assets/characters/blackbeard/blackbeard.glb",
+        "gzip_path": "assets/characters/blackbeard/blackbeard.glb.gz",
+        "raw_bytes": 18285480,
+        "gzip_bytes": 6923513,
+        "raw_sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
+        "gzip_sha256": "39ec618ecc5cfbe497ad53e65e309614c134fdd2ae099a92a4b499a83d901444",
+        "triangles": 402274,
+        "draw_primitives": 27,
+        "materials": 25,
+        "bones": 52,
+        "embedded_images": 6,
+        "clips": [
+          {
+            "name": "Attack",
+            "start": 0,
+            "duration": 1.4
+          },
+          {
+            "name": "Idle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "Melee",
+            "start": 0,
+            "duration": 1.4
+          },
+          {
+            "name": "Run",
+            "start": 0,
+            "duration": 0.8
+          },
+          {
+            "name": "Walk",
+            "start": 0,
+            "duration": 1.0666666666666667
+          }
+        ]
+      },
+      "author_manifest": "blackbeard/RELEASE_FILES.json",
+      "native": [
+        "blackbeard/blackbeard_editable.blend",
+        "blackbeard/blackbeard_runtime.blend"
+      ],
+      "provenance": [
+        "blackbeard/SOURCE_AND_LICENSE.md"
+      ],
+      "optional_runtime": [
+        {
+          "raw_path": "assets/characters/blackbeard/hat/blackbeard_tricorn.glb",
+          "gzip_path": "assets/characters/blackbeard/hat/blackbeard_tricorn.glb.gz",
+          "raw_bytes": 19647152,
+          "gzip_bytes": 7500677,
+          "raw_sha256": "c7055fe4a7d7daea936bdee00f8ba812edeeb3e80e456fce1bbdc612041496d7",
+          "gzip_sha256": "97f4b71281c85c91836f8a735f5016870edc034ddb7fc5086e56a43afb269b65",
+          "triangles": 440958,
+          "draw_primitives": 33,
+          "materials": 31,
+          "bones": 52,
+          "embedded_images": 6,
+          "clips": [
+            {
+              "name": "Attack",
+              "start": 0,
+              "duration": 1.4
+            },
+            {
+              "name": "Idle",
+              "start": 0,
+              "duration": 3
+            },
+            {
+              "name": "Melee",
+              "start": 0,
+              "duration": 1.4
+            },
+            {
+              "name": "Run",
+              "start": 0,
+              "duration": 0.8
+            },
+            {
+              "name": "Walk",
+              "start": 0,
+              "duration": 1.0666666666666667
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "musashi",
+      "directory": "musashi",
+      "runtime": {
+        "raw_path": "assets/characters/musashi/Musashi_Runtime.glb",
+        "gzip_path": "assets/characters/musashi/Musashi_Runtime.glb.gz",
+        "raw_bytes": 12411768,
+        "gzip_bytes": 6983422,
+        "raw_sha256": "a516c5530338b5207e545d9cac8b0a9a7f6130bddab6e4cb6bb55ebef63327f9",
+        "gzip_sha256": "1ba70b4de720c63f820e25cb264cf7663d4bb208e6a9ee0a48c485ba17900ead",
+        "triangles": 173648,
+        "draw_primitives": 13,
+        "materials": 13,
+        "bones": 65,
+        "embedded_images": 1,
+        "clips": [
+          {
+            "name": "Attack",
+            "start": 0,
+            "duration": 1.6
+          },
+          {
+            "name": "Idle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "Run",
+            "start": 0,
+            "duration": 0.6666666666666666
+          },
+          {
+            "name": "Walk",
+            "start": 0,
+            "duration": 1.0666666666666667
+          }
+        ]
+      },
+      "author_manifest": "musashi/release-manifest.json",
+      "native": [
+        "musashi/Musashi_Editable.blend",
+        "musashi/Musashi_Reference_Presentation.blend"
+      ],
+      "provenance": [
+        "musashi/reference/PROVENANCE.md",
+        "musashi/reference/BASE-CREATOR-TERMS.txt"
+      ],
+      "optional_runtime": [
+        {
+          "raw_path": "assets/characters/musashi/Musashi_Runtime_LOD1.glb",
+          "gzip_path": "assets/characters/musashi/Musashi_Runtime_LOD1.glb.gz",
+          "raw_bytes": 8084556,
+          "gzip_bytes": 4990443,
+          "raw_sha256": "1d970bc560ad09f3c1f7354ab8ced6c2447fcc01972ddc7e7538bc323cfb3196",
+          "gzip_sha256": "e2eb084303c7d8921fa04f7b89b2e7b6d199b64dd2fbb98ff6cbaeeeb11c0b14",
+          "triangles": 85377,
+          "draw_primitives": 13,
+          "materials": 13,
+          "bones": 65,
+          "embedded_images": 1,
+          "clips": [
+            {
+              "name": "Attack",
+              "start": 0,
+              "duration": 1.6
+            },
+            {
+              "name": "Idle",
+              "start": 0,
+              "duration": 3
+            },
+            {
+              "name": "Run",
+              "start": 0,
+              "duration": 0.6666666666666666
+            },
+            {
+              "name": "Walk",
+              "start": 0,
+              "duration": 1.0666666666666667
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "napoleonMounted",
+      "directory": "napoleon",
+      "runtime": {
+        "raw_path": "assets/characters/napoleon/runtime/napoleon_mounted.glb",
+        "gzip_path": "assets/characters/napoleon/runtime/napoleon_mounted.glb.gz",
+        "raw_bytes": 28670192,
+        "gzip_bytes": 21105256,
+        "raw_sha256": "aad3f7d72e6c9b13511bd30c28d0227246f0d8448cb2ef851265f188078836b8",
+        "gzip_sha256": "f42fea01307b5fe8d7dbddb29a53a5b4ae516be1c89990482e5049c10ff201e1",
+        "triangles": 349738,
+        "draw_primitives": 31,
+        "materials": 28,
+        "bones": 76,
+        "embedded_images": 9,
+        "clips": [
+          {
+            "name": "MountedAttack",
+            "start": 0,
+            "duration": 1.4
+          },
+          {
+            "name": "MountedIdle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "MountedRun",
+            "start": 0,
+            "duration": 0.8
+          },
+          {
+            "name": "MountedWalk",
+            "start": 0,
+            "duration": 1.0666666666666667
+          }
+        ]
+      },
+      "author_manifest": "napoleon/asset-manifest.json",
+      "native": [
+        "napoleon/napoleon_mounted_editable.blend"
+      ],
+      "provenance": [
+        "napoleon/SOURCE_AND_LICENSE.md"
+      ],
+      "optional_runtime": []
+    }
+  ],
+  "files": [
+    {
+      "path": "assets/characters/blackbeard/FINAL_QA.md",
+      "bytes": 3012,
+      "sha256": "c8e57f9517f7057ab54f825b04d26d26cc3047d587ec27dddb81ba9b76af670e"
+    },
+    {
+      "path": "assets/characters/blackbeard/RELEASE_FILES.json",
+      "bytes": 11126,
+      "sha256": "09a62477340e4ca0c578c95b374d3652b64b26e3a4192004005663b063364cfb"
+    },
+    {
+      "path": "assets/characters/blackbeard/RUNTIME_CONTRACT.json",
+      "bytes": 1912,
+      "sha256": "af079ee2a303c2dd56e38ec367343233103b30b748e6bee3f3105957dee1c8ce"
+    },
+    {
+      "path": "assets/characters/blackbeard/RUNTIME_README.md",
+      "bytes": 5102,
+      "sha256": "b98d6ac46a7b7aff8af25157ad1696bd410b8e4105e52aa5cfea3dece28e8054"
+    },
+    {
+      "path": "assets/characters/blackbeard/SOURCE_AND_LICENSE.md",
+      "bytes": 1956,
+      "sha256": "bae84f4925f75d51f70e133a0858c9d6c9da17189e98471a2546de22a37f20e2"
+    },
+    {
+      "path": "assets/characters/blackbeard/blackbeard.glb",
+      "bytes": 18285480,
+      "sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f"
+    },
+    {
+      "path": "assets/characters/blackbeard/blackbeard.glb.gz",
+      "bytes": 6923513,
+      "sha256": "39ec618ecc5cfbe497ad53e65e309614c134fdd2ae099a92a4b499a83d901444"
+    },
+    {
+      "path": "assets/characters/blackbeard/blackbeard_editable.blend",
+      "bytes": 7332377,
+      "sha256": "a716eed8e41f10626ce937baac5baf2b609e1d2a5a5b105fa843c11e5b3ac32f"
+    },
+    {
+      "path": "assets/characters/blackbeard/blackbeard_runtime.blend",
+      "bytes": 8926676,
+      "sha256": "9ca0308a93a76d0b069906ad9f4b3904100a515644aaa38c807cb10a2a334d16"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/SOURCE_AND_INTEGRATION.md",
+      "bytes": 6047,
+      "sha256": "79aca337fb55e83ccbdcd151c69c99616e3af7fa8f8e6a269390e600880e2caa"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/blackbeard_tricorn.glb",
+      "bytes": 19647152,
+      "sha256": "c7055fe4a7d7daea936bdee00f8ba812edeeb3e80e456fce1bbdc612041496d7"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/blackbeard_tricorn.glb.gz",
+      "bytes": 7500677,
+      "sha256": "97f4b71281c85c91836f8a735f5016870edc034ddb7fc5086e56a43afb269b65"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/blackbeard_tricorn_accessory.glb",
+      "bytes": 771440,
+      "sha256": "15d48355a8a602c451c0cd843249dd2d771f4186297295899f653a15beba8c25"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/blackbeard_tricorn_editable.blend",
+      "bytes": 1495260,
+      "sha256": "24581bf6c84e5fc7d2f1e1faa8a4b024a13d363bb7c46321d82383395d7d53f7"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/blackbeard_tricorn_runtime.blend",
+      "bytes": 9602522,
+      "sha256": "42fa49bff782262f7996a5a2ee7d25f28f4d8a94b04769b6e956e1bf41ca9a77"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/previews/05_runtime_variant_full.png",
+      "bytes": 2353373,
+      "sha256": "4461130000abe37ff5aa4df4e47ebd49f6caa410db5f1e0bf3b5a057a0458299"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/previews/06_runtime_variant_face.png",
+      "bytes": 1680995,
+      "sha256": "f7237c092ed9d8dc1ecc4b97b74d05b43030696f4c4a53c96a7be19075ea61c5"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/qa/runtime_variant_glb.json",
+      "bytes": 1055,
+      "sha256": "2a5166a20c1385618ba41a58e53a37da74c80a82478230501b2568e6a6f70728"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/qa/runtime_variant_native.json",
+      "bytes": 544,
+      "sha256": "93bba46cfd2c9e981b5205c5ae17a685961ca4726dedde3baf48bea1b3da2ad2"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/source/build_tricorn.py",
+      "bytes": 10018,
+      "sha256": "8b445336362f81287af2f7d978df9ee846e7600bdf6e685caedba28dff4afaed"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/source/create_runtime_variant.py",
+      "bytes": 5123,
+      "sha256": "011170b0793e18b3c09aea38c297e340355ccc03c53f2e0f9b7d8054a9a5fd55"
+    },
+    {
+      "path": "assets/characters/blackbeard/hat/source/validate_runtime_glb.py",
+      "bytes": 2406,
+      "sha256": "19245245ff98bca670ae017e980ce640772087d60578df9c54cf5eaf4b19a303"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_01_full.png",
+      "bytes": 1822099,
+      "sha256": "9482dd65e571d513a4009f6b8b8de78d95d4b03482deb192743f9c3c09b30445"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_02_face.png",
+      "bytes": 1872498,
+      "sha256": "ed2a43abb937b00c847765f299fd8d775f03be11f24461b1f364f2d1f31d1844"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_03_front.png",
+      "bytes": 1751625,
+      "sha256": "b191289a1031459a92d12604cee94cf23c2992c939710dca9a03eaba05ec62b8"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_04_profile.png",
+      "bytes": 1760484,
+      "sha256": "67ff09717db6c536101f2de85fa7d7f73739cedd5f15e3f5441af087b65f5910"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_05_back.png",
+      "bytes": 1811253,
+      "sha256": "6eddb0ccce4b4220ccf8e76866d01f1268d1d064f2274b85a3abb8ea0266e228"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_06_attack.png",
+      "bytes": 1799266,
+      "sha256": "59970f0db6c6452c05ced62283fcca6f54a723115fdd6e7e3cd51143cf242935"
+    },
+    {
+      "path": "assets/characters/blackbeard/previews/runtime_07_run.png",
+      "bytes": 1786193,
+      "sha256": "1b852f286389f3797760bb1fdd37a24e70e01d8832116cc9710924ae257be9d5"
+    },
+    {
+      "path": "assets/characters/blackbeard/qa/foot_clearance_before.json",
+      "bytes": 5712,
+      "sha256": "da496068488cfbdfd7c3f041543b2ca6da3b6c3c4c1a029095e9e91c00d5c8b2"
+    },
+    {
+      "path": "assets/characters/blackbeard/qa/footplant_preservation.json",
+      "bytes": 265,
+      "sha256": "0befbc41ac142bd469cf70736bc499facdd16e3f3474c2931872f569b6009657"
+    },
+    {
+      "path": "assets/characters/blackbeard/qa/footplant_surface_fix.json",
+      "bytes": 23998,
+      "sha256": "3483b20bee8ff86aee2674899308799c5bb4b8b3708a15b2081d5271b83f7d16"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/INTEGRATION.md",
+      "bytes": 5257,
+      "sha256": "e940c1b47ba308d14cbf66dabc128f47a879b2c20fbc0070dc5c5f969628f0fe"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/build_rig.py",
+      "bytes": 13765,
+      "sha256": "bc7d4b8a9066bb9cfeef7f369785ef8f755cf4d0ef8c577f679f7783b040fab2"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/Attack.png",
+      "bytes": 843822,
+      "sha256": "b154a2088cbeb1e3d28ba7e9e937164d8a249545aecd4dcfbbbeafdf2aba170d"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/Run-final-actual-GLB.gif",
+      "bytes": 1464583,
+      "sha256": "5ec584ff405bb37093db15ab3f0d00b1b2c26287931cbaea27d76a4b2bfa7051"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/Run-final-contact.png",
+      "bytes": 623010,
+      "sha256": "414ec7e74f130e471b8d49a6892d7e07606c42ccfc82ff3e51ae5099896cc256"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/Run.png",
+      "bytes": 841374,
+      "sha256": "3494db4b41f9a9c51e11be94986b9cc34345e67c8d1d7df6f52460265c12ebbd"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/check.py",
+      "bytes": 3623,
+      "sha256": "4f887f20305f25d6edd0130d91451f4c1569fb6a9251643d7c7e7816878ab627"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/three_runtime_validation.json",
+      "bytes": 34348,
+      "sha256": "15dd7f0d27fd45e9485ab8cf44d64c8c7b47ce8235c94f71151fb225a24af53b"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/three_socket_proof.json",
+      "bytes": 1511,
+      "sha256": "bca02d004373c7dc87a08424a7ce9a0f5ef766caf7a0d2b24aedb7f5f9d6e447"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/final_qa/validation.json",
+      "bytes": 2462,
+      "sha256": "e6deb7332344156b7560dd5374040cb658987c359f9f5b81dc9994a5cd97c778"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/rig_manifest.json",
+      "bytes": 15509,
+      "sha256": "b1471ff0153ea6a272cc0a4f41ca2d0d17d6f3a4883fc87fec05682219e4c010"
+    },
+    {
+      "path": "assets/characters/blackbeard/rig/update_actions.py",
+      "bytes": 9913,
+      "sha256": "bd2b542e4968dcbd3f47227f6dc9a1eb7ab4dfbf9b9acef696faf48f89f70f9a"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/audit_footplant_preservation.py",
+      "bytes": 1280,
+      "sha256": "4e03ad2bab566269573b6cdd8c371db4b31849bc3ec44f50a2ac18d485403680"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/base_scene.py",
+      "bytes": 4160,
+      "sha256": "f496de1a9fb20b5355fbb0b148219589ed0f0e575ed44bf803d4c2ff03f86481"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/boot_wrap_surface_fix.py",
+      "bytes": 1878,
+      "sha256": "3907ec5b8f91a5b11dd1a81d136ee7530f240e2d05693e0b67c2340640c0ea36"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/character_form.py",
+      "bytes": 15196,
+      "sha256": "fbfab8918545ec8e3da1cf63d7b755e97f046c50ec162b5fac154df87a79dace"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/final_surface_fix.py",
+      "bytes": 788,
+      "sha256": "8a16525c1fe15a5f0e77ba702b8d528d7b7bec279b9e2b3d798deec56c7d2e42"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/finish_accessories.py",
+      "bytes": 4740,
+      "sha256": "54ded6859c272843fed579d59c499d1df48753bab35518a2844a6104e9565129"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/footplant_surface_fix.py",
+      "bytes": 5341,
+      "sha256": "b58cbe2d9f13aa3af47ba8e11571bb9ac50542fe19d8f1c6195456c8d421d1b8"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/integrate_runtime.py",
+      "bytes": 7481,
+      "sha256": "4733c7257d4433d4d1d4a1b586734d673b0c7165f34a875e5148848aca167183"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/knee_backing_fix.py",
+      "bytes": 1655,
+      "sha256": "caff6a77bb438199f0853737e89ad2b9489ff0b1cfd9b2586614a24173651664"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/make_material_maps.py",
+      "bytes": 940,
+      "sha256": "3b9b967f5bc523c30f54a462a1227185d66749cda8e9143e88855e9ce2d2cb7d"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/outfit.py",
+      "bytes": 13114,
+      "sha256": "551518ad4209a2c7744d32df79841804f10f3ab035ce1ef778cf9ceea52778a3"
+    },
+    {
+      "path": "assets/characters/blackbeard/source/render_integrated.py",
+      "bytes": 1176,
+      "sha256": "c343cbd5dc0cc83b9875bffde81e1b1fb895fcbc478128da7ebbaf475e3726eb"
+    },
+    {
+      "path": "assets/characters/blackbeard/weapon/SOURCE_AND_INTEGRATION.md",
+      "bytes": 2921,
+      "sha256": "5037ce9a04ea56df71c36119ab32223a738f2a106466675ed09035630498a6b1"
+    },
+    {
+      "path": "assets/characters/blackbeard/weapon/blackbeard_flintlock.glb",
+      "bytes": 819452,
+      "sha256": "0ed2400cd835070b75289930e3bfeedefe556a60dd3fa3edccfd563a49329e70"
+    },
+    {
+      "path": "assets/characters/blackbeard/weapon/blackbeard_flintlock.glb.gz",
+      "bytes": 443789,
+      "sha256": "caee4732d1d19fa7b32d798db9c50799d892d2e9c2e899500899133a2d0c2be3"
+    },
+    {
+      "path": "assets/characters/blackbeard/weapon/blackbeard_flintlock_editable.blend",
+      "bytes": 1841524,
+      "sha256": "f8e238dfd775ed2db8621b913cfbdcaa606f821147c4aa66052d8d187bb5dfa1"
+    },
+    {
+      "path": "assets/characters/blackbeard/weapon/source/build_firearm.py",
+      "bytes": 14532,
+      "sha256": "1f3993570f284d97bddea65aa0beacfac315cba165df879e9a4e4e3198cfe12f"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Actual_3D_Review.png",
+      "bytes": 745953,
+      "sha256": "06d0f1feac8db98cfcceaac41448412d5ce323b7e9f8ed66cdc0a369933e1472"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Editable.blend",
+      "bytes": 29552900,
+      "sha256": "eb8b925ef0154d54ad75ec8eedf95bdd8b2f61c029915ea9a12d965aa5d271e0"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_ReferencePose.glb",
+      "bytes": 6806312,
+      "sha256": "1601038f942945070fcdd2f15501411a44c374d8253b5f7258318f3fd91bbea5"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_ReferencePose.glb.gz",
+      "bytes": 4394327,
+      "sha256": "36ac0b7993e65f9e6fa8391c81f7c52dbaa64a1103fc8f25c0f377d09d5a06c2"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Reference_Presentation.blend",
+      "bytes": 29813356,
+      "sha256": "9384803d0c3fefa7af5fbe0a10ecf2ccc125c47b312e309a759e11e12d05e9e1"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Runtime.glb",
+      "bytes": 12411768,
+      "sha256": "a516c5530338b5207e545d9cac8b0a9a7f6130bddab6e4cb6bb55ebef63327f9"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Runtime.glb.gz",
+      "bytes": 6983422,
+      "sha256": "1ba70b4de720c63f820e25cb264cf7663d4bb208e6a9ee0a48c485ba17900ead"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Runtime_LOD1.glb",
+      "bytes": 8084556,
+      "sha256": "1d970bc560ad09f3c1f7354ab8ced6c2447fcc01972ddc7e7538bc323cfb3196"
+    },
+    {
+      "path": "assets/characters/musashi/Musashi_Runtime_LOD1.glb.gz",
+      "bytes": 4990443,
+      "sha256": "e2eb084303c7d8921fa04f7b89b2e7b6d199b64dd2fbb98ff6cbaeeeb11c0b14"
+    },
+    {
+      "path": "assets/characters/musashi/README.md",
+      "bytes": 4156,
+      "sha256": "c3311878a442e6f285d05901539b7f8640d1df783ad9c71797c7721150a51d10"
+    },
+    {
+      "path": "assets/characters/musashi/README_中文.md",
+      "bytes": 2117,
+      "sha256": "3f73daf374d6c29eb71662227aa5a73494c6c7c172938b061ff908b897345782"
+    },
+    {
+      "path": "assets/characters/musashi/SHA256SUMS",
+      "bytes": 5118,
+      "sha256": "0d96e16338c23993405c21214367f983efcbf3fa5c343d8ac344d0c1815c3360"
+    },
+    {
+      "path": "assets/characters/musashi/qa/FINAL_QA.md",
+      "bytes": 2745,
+      "sha256": "894311ad3dadc51b61a254efca62058d420e614e4aa0dc0f19d7ba5dd4f6f566"
+    },
+    {
+      "path": "assets/characters/musashi/qa/VERIFIED_MORPHS.md",
+      "bytes": 915,
+      "sha256": "e3d902e173b14c1829d51cc202b0356f4b7259ef65df849c68daacd99a40db75"
+    },
+    {
+      "path": "assets/characters/musashi/qa/animation-metadata.json",
+      "bytes": 2911,
+      "sha256": "0c817572706944f00138a7ec859aa7203b0d34dd4fe30d31ad1e5c741f9bb713"
+    },
+    {
+      "path": "assets/characters/musashi/qa/audit_editable.py",
+      "bytes": 1075,
+      "sha256": "5b3e9adec3e3d1cd6beab0fcf4d3353d0f5faface6a3b175da77e606501b0e4e"
+    },
+    {
+      "path": "assets/characters/musashi/qa/editable-validation.json",
+      "bytes": 764,
+      "sha256": "0dbe4b90220e72327b8f1c2a7ec2ebb53ed89a71f178c6b76fce0c99b7861a09"
+    },
+    {
+      "path": "assets/characters/musashi/qa/lod1-reduction.json",
+      "bytes": 1161,
+      "sha256": "b5d84b88024115018fed0cde63614570fbb4105d5306ee9c7253df28178c76f2"
+    },
+    {
+      "path": "assets/characters/musashi/qa/morph-audit.json",
+      "bytes": 19249,
+      "sha256": "49bba817b5472294f45138c767f1294d1f602b1b6b204687054ecc50e036fe2f"
+    },
+    {
+      "path": "assets/characters/musashi/qa/morph-socket-validation.json",
+      "bytes": 15181,
+      "sha256": "079af5efdc29588998ea1dc7c75123bf2149c962b5311274042fc1b55a698365"
+    },
+    {
+      "path": "assets/characters/musashi/qa/reference-validation.json",
+      "bytes": 502,
+      "sha256": "4b90e67e03a52be316b2d63e79297e84a2c7bfde96e5af28689e7231f6271f31"
+    },
+    {
+      "path": "assets/characters/musashi/qa/runtime-build.json",
+      "bytes": 490,
+      "sha256": "4af0137bc2196c5b741c2f949d85859db93073b85bd804bc3821115ded6528c0"
+    },
+    {
+      "path": "assets/characters/musashi/qa/summarize_validation.py",
+      "bytes": 2695,
+      "sha256": "67455ade8d8cf8fd45ad822216d31b117c74760bf6ee6e4411bd4feb0b8d9888"
+    },
+    {
+      "path": "assets/characters/musashi/qa/three-validation.json",
+      "bytes": 560867,
+      "sha256": "0a71675e60e385ac7813bccb747f02b4ad7f3033b3ae53466a7aba69e463230b"
+    },
+    {
+      "path": "assets/characters/musashi/qa/validate_morphs_sockets.mjs",
+      "bytes": 3909,
+      "sha256": "5c7c9f4b121eec4462f96c4f502471e2075fb6fce72b21dab0a7337740e78318"
+    },
+    {
+      "path": "assets/characters/musashi/qa/validate_reference.mjs",
+      "bytes": 1664,
+      "sha256": "c705f8cf2c38b64e18de71cfe5ff9f2d1edc38c2d7438560d1d8e0c78669bb97"
+    },
+    {
+      "path": "assets/characters/musashi/qa/validate_three.mjs",
+      "bytes": 5310,
+      "sha256": "a5d271490e202482bfd046c283d67c3bcc9c6c0f492de9e8ff851adffa7163b1"
+    },
+    {
+      "path": "assets/characters/musashi/qa/validation-summary.json",
+      "bytes": 2328,
+      "sha256": "477ed3f5b236bbc778b77a05d6ab3e091997460360949655c3e0f43933d17f4b"
+    },
+    {
+      "path": "assets/characters/musashi/reference/BASE-CREATOR-TERMS.txt",
+      "bytes": 1083,
+      "sha256": "6118fc45f7bacbdc178a8bd63802b2d75067360dfdf56acb49a6442e3b53cb09"
+    },
+    {
+      "path": "assets/characters/musashi/reference/PROVENANCE.md",
+      "bytes": 2110,
+      "sha256": "992572bccdf153b3aea12bef5dafbb569730fd51a785964b5b91744e34a529f6"
+    },
+    {
+      "path": "assets/characters/musashi/release-files.txt",
+      "bytes": 1433,
+      "sha256": "42a432e72df219c2f0d84e37ddbe4208a547b5c929f2eb479aeeb81e5f1a0b4d"
+    },
+    {
+      "path": "assets/characters/musashi/release-manifest.json",
+      "bytes": 9111,
+      "sha256": "114e0a50feaa532917580e9ec44b0e56b85436539fc6e65d5e19a8493171da97"
+    },
+    {
+      "path": "assets/characters/musashi/renders/attack-first.png",
+      "bytes": 669972,
+      "sha256": "4a3302ddceba576cfa3c286b2ef51dfd313de77ef34d71dad9d90333eac9f305"
+    },
+    {
+      "path": "assets/characters/musashi/renders/attack-second.png",
+      "bytes": 675777,
+      "sha256": "d487c039148d312014a8cc04fe56c9649c51ec19a86478fa233c73134e1972fc"
+    },
+    {
+      "path": "assets/characters/musashi/renders/costume-detail.png",
+      "bytes": 1723110,
+      "sha256": "638c07a73b13a67d9a9a2bfcc539027263713c77553e26d3d34aaf03bdc53136"
+    },
+    {
+      "path": "assets/characters/musashi/renders/face-detail.png",
+      "bytes": 1486759,
+      "sha256": "a9026db73313a717406d0a3bb6a4d049bafd6d68501d015fe321a345be57a3d3"
+    },
+    {
+      "path": "assets/characters/musashi/renders/hand-grip.png",
+      "bytes": 843861,
+      "sha256": "6735d1fbe6b718c23d9671b6d324b10a553f64c0a36436c81c6549ae3089b89f"
+    },
+    {
+      "path": "assets/characters/musashi/renders/idle-hero.png",
+      "bytes": 695706,
+      "sha256": "f189f13cac37d2276c4662c14e78bf342178867b53bc4b39a218d7f5ad3b0939"
+    },
+    {
+      "path": "assets/characters/musashi/renders/reference-back.png",
+      "bytes": 1148374,
+      "sha256": "b341b109572e73e069a42f4fb7ce69e4da007e6636d24ea57cc66146ca445ef2"
+    },
+    {
+      "path": "assets/characters/musashi/renders/reference-front.png",
+      "bytes": 1182263,
+      "sha256": "dc6d92e16058d1f1f9ced06887d2c5fcbe21ee171f819450871830be2b792465"
+    },
+    {
+      "path": "assets/characters/musashi/renders/reference-hero.png",
+      "bytes": 1188284,
+      "sha256": "ad5a11fb5879d918fe864b119da9504a4b29590ea5ec0ce66ffd12320e3e396b"
+    },
+    {
+      "path": "assets/characters/musashi/renders/reference-side.png",
+      "bytes": 1168999,
+      "sha256": "248e4c47a19a2655ad03936b72bd88c8f97d94cb23a2a71bf25b2ae3646d36c9"
+    },
+    {
+      "path": "assets/characters/musashi/renders/run-flight.png",
+      "bytes": 694289,
+      "sha256": "26e411fe2045af9a4bb554d6ef9aaa6b3e8e58a7d26cab581c2df098a95437b1"
+    },
+    {
+      "path": "assets/characters/musashi/renders/runtime-lod0-roundtrip.png",
+      "bytes": 1184625,
+      "sha256": "1a893d99e4f44225c0722d9f169d67b32c88e8c58660d7c75c32e6e5db19f751"
+    },
+    {
+      "path": "assets/characters/musashi/renders/runtime-lod1-roundtrip.png",
+      "bytes": 1182762,
+      "sha256": "a73d4de2156f46c51b4322e21b1663c0167ad679915c286035be525a911fc849"
+    },
+    {
+      "path": "assets/characters/musashi/renders/walk-contact.png",
+      "bytes": 694758,
+      "sha256": "53a1477d4f6a7f6777a61e2d2796b88829936fe7dbf17bea9fbc12cf199c87f9"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/animate_export.py",
+      "bytes": 3332,
+      "sha256": "b523c8f253fd89b9d94df108b32e03ada890fbdc2f0e453fd44caba2c233111d"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/animation.py",
+      "bytes": 13197,
+      "sha256": "fdc7f3c9fba2fe89b35f452c599d0faab4cf543655532a8eaf80fe31300e7e17"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/audit_morphs.py",
+      "bytes": 831,
+      "sha256": "ca5497879a44ac503fd073c9a424bfef104e20c8e5b203c76bf2749b462b570d"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/build_musashi.py",
+      "bytes": 32766,
+      "sha256": "b7d39ade4268a08d0c236e479b6f57e7914aaf292822b4c1c64131b5bdc069e6"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/export_lod1.py",
+      "bytes": 2222,
+      "sha256": "e12d71431a0c3c8319d5137e496e1a400e67a6bbd6c342d4170b6f76d98e715d"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/export_reference_pose.py",
+      "bytes": 1761,
+      "sha256": "8d12aeb75c1061a60043d1116c07557e74534d61df7deb4a3f9c4a847747875a"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/export_runtime.py",
+      "bytes": 6006,
+      "sha256": "0d18395189731eb99c8c2d2a08fa1b8676f749252a32a8e8447ee7281c36bfc3"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/finalize_editable.py",
+      "bytes": 1191,
+      "sha256": "a14192621a4e50bfa35cad7226b3914defbcebc127fd8bc8e4ee13d8dab52851"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/reference_pose.py",
+      "bytes": 2290,
+      "sha256": "1e4c270c4a5443a9b06b7cd32ed526baf075d28d84bb3a2f8a6ed3d4becb9743"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/render_runtime_roundtrip.py",
+      "bytes": 1991,
+      "sha256": "a74cb6185ff051acd744206a8eab5a1ef37d15ef96406785c70bf6f56ebc2173"
+    },
+    {
+      "path": "assets/characters/musashi/scripts/weapons.py",
+      "bytes": 4980,
+      "sha256": "ecb7000395026e898ffd683f92493ed4c5e55ebea130148ec9546028be3c6017"
+    },
+    {
+      "path": "assets/characters/napoleon/README.md",
+      "bytes": 4526,
+      "sha256": "4f61eb3188398005b47751bc3e6bb9dccd0e75c377e506ca37a8486bade1c660"
+    },
+    {
+      "path": "assets/characters/napoleon/SOURCE_AND_LICENSE.md",
+      "bytes": 2605,
+      "sha256": "5476d9ab2c784cb18b9abf6070b940921ec547201272502db283c25e547cffba"
+    },
+    {
+      "path": "assets/characters/napoleon/asset-manifest.json",
+      "bytes": 7840,
+      "sha256": "40b614275ff8626bf9c5af7e456d3f62a026a3e3d2ff77d912d42d3efedcbe8d"
+    },
+    {
+      "path": "assets/characters/napoleon/napoleon_mounted_editable.blend",
+      "bytes": 23610171,
+      "sha256": "7e8cf503bd1426f4619c4888c993b0bbbeab65dc4bc873a337ea6e60419047a4"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/glb_roundtrip.png",
+      "bytes": 1512513,
+      "sha256": "2c7253b1bc180c43250da3660e8d9948dd951ee5abcb4632a9d8c8f3f5836423"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_attack_contact.png",
+      "bytes": 1941040,
+      "sha256": "6a37f88b8d65475f10614321611ac6360f536666314fb131145e37557a0c5b07"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_attack_raise.png",
+      "bytes": 2017604,
+      "sha256": "c6e44df0fecd0a4b89da81bc1a43e0109b8cff33fcaae35c1ba9b60c45bf3e55"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_back.png",
+      "bytes": 2010901,
+      "sha256": "4ed047d468836e0e51b04d11138e6e7b6a68d242c5e27498bbfbab604dbaba29"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_checkpoint.png",
+      "bytes": 2161650,
+      "sha256": "8880b831771efefe8347dd09dd73d3eff8c2710b0f827fe2daecae66ae7e89ed"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_front.png",
+      "bytes": 1977863,
+      "sha256": "936d28bbe835b2f08ea5ce1f7beb573da3ff9d8a3e5e764f7d8f3c69ebe19535"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_profile.png",
+      "bytes": 2043500,
+      "sha256": "952f2e1e038d930e12d2fc55340f13ba788a6e2d8f492b25854711a2de3e1135"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_run.png",
+      "bytes": 2034712,
+      "sha256": "ab28becd102496566137394bd39b83242ae933319c9f65e7a8c93d98f2abf7ab"
+    },
+    {
+      "path": "assets/characters/napoleon/previews/mounted_walk.png",
+      "bytes": 2031406,
+      "sha256": "0c408046145a835eec268e0ae6c3b2a95e973b382d6d461e489806d3ebb93cf3"
+    },
+    {
+      "path": "assets/characters/napoleon/qa/gait_contact_validation.json",
+      "bytes": 302,
+      "sha256": "bd310a5dc610f3ea11fc8b9929ae8a9a1d88a99e5a2512f61602496066caee28"
+    },
+    {
+      "path": "assets/characters/napoleon/qa/native_mounted_validation.json",
+      "bytes": 156541,
+      "sha256": "7d28ce10c00fa3f46adc6b599ede020a45c2089939b724355c04e2345d9b1d6b"
+    },
+    {
+      "path": "assets/characters/napoleon/qa/runtime_batching.json",
+      "bytes": 224,
+      "sha256": "2d855de3a060006f6468ee235ce8ab6c2003b86ad5cac6d25e8477eda2a5f6d7"
+    },
+    {
+      "path": "assets/characters/napoleon/qa/three_final_validation.json",
+      "bytes": 47910,
+      "sha256": "6c1fb88a6747470c077968c9a91cb994a2a56489ab033d71e7285d6610d550f7"
+    },
+    {
+      "path": "assets/characters/napoleon/runtime/napoleon_mounted.glb",
+      "bytes": 28670192,
+      "sha256": "aad3f7d72e6c9b13511bd30c28d0227246f0d8448cb2ef851265f188078836b8"
+    },
+    {
+      "path": "assets/characters/napoleon/runtime/napoleon_mounted.glb.gz",
+      "bytes": 21105256,
+      "sha256": "f42fea01307b5fe8d7dbddb29a53a5b4ae516be1c89990482e5049c10ff201e1"
+    }
+  ]
+}

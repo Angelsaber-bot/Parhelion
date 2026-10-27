@@ -1,0 +1,45 @@
+[
+  {
+    "file": "Musashi_Editable.blend",
+    "mesh_parts": 306,
+    "bones": 65,
+    "morphs": 56,
+    "actions": [
+      "Attack",
+      "Idle",
+      "Run",
+      "Walk"
+    ],
+    "active_action": "Idle",
+    "images": [
+      {
+        "name": "Musashi_Face_Albedo",
+        "packed": true,
+        "source": "FILE"
+      }
+    ],
+    "pass": true
+  },
+  {
+    "file": "Musashi_Reference_Presentation.blend",
+    "mesh_parts": 306,
+    "bones": 65,
+    "morphs": 56,
+    "actions": [
+      "Attack",
+      "Idle",
+      "ReferencePose",
+      "Run",
+      "Walk"
+    ],
+    "active_action": "ReferencePose",
+    "images": [
+      {
+        "name": "Musashi_Face_Albedo",
+        "packed": true,
+        "source": "FILE"
+      }
+    ],
+    "pass": true
+  }
+]

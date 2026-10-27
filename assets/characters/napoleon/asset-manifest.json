@@ -1,0 +1,264 @@
+{
+  "schema": "parhelion-character-asset-1",
+  "character": "Napoleon — white cavalry horse",
+  "status": "final validated technical package; artistic likeness subject to user review",
+  "created_utc": "2026-10-27",
+  "root_path": "assets/characters/napoleon",
+  "native": "napoleon_mounted_editable.blend",
+  "runtime": "runtime/napoleon_mounted.glb",
+  "transport": "runtime/napoleon_mounted.glb.gz",
+  "gzip_decompresses_byte_exact": true,
+  "units": "meters",
+  "authoring_axes": {
+    "up": "+Z",
+    "forward": "-Y"
+  },
+  "runtime_axes": {
+    "up": "+Y",
+    "forward": "+Z"
+  },
+  "root_motion": "in-place; no planar locomotion translation",
+  "clips": {
+    "MountedIdle": {
+      "duration_seconds": 3.0,
+      "loop": true,
+      "attack_contact_seconds": null
+    },
+    "MountedWalk": {
+      "duration_seconds": 1.0666666666666667,
+      "loop": true,
+      "attack_contact_seconds": null
+    },
+    "MountedRun": {
+      "duration_seconds": 0.8,
+      "loop": true,
+      "attack_contact_seconds": null
+    },
+    "MountedAttack": {
+      "duration_seconds": 1.4,
+      "loop": false,
+      "attack_contact_seconds": 0.7666666666666667
+    }
+  },
+  "nominal_speed_m_s": {
+    "MountedWalk": 0.703125,
+    "MountedRun": 2.0930232558139537
+  },
+  "skeleton": {
+    "rig": "Napoleon_MountedRig",
+    "bones": 76,
+    "skins": 1,
+    "max_skin_influences": 4
+  },
+  "geometry": {
+    "triangles": 349738,
+    "gltf_mesh_definitions": 14,
+    "material_primitives": 31,
+    "materials": 28,
+    "embedded_images": 9,
+    "lod": "high-detail hero; no crowd/mobile LOD supplied",
+    "optimization": "compatible object batching and reduced redundant authoring curve samples; no geometric decimation"
+  },
+  "idle_bounds": {
+    "all": {
+      "blender_min": [
+        -0.5910539031028748,
+        -1.570446491241455,
+        0.010813948698341846
+      ],
+      "blender_max": [
+        0.530123233795166,
+        1.2213348150253296,
+        3.2371439933776855
+      ],
+      "glb_min": [
+        -0.5910539031028748,
+        0.010813948698341846,
+        -1.2213348150253296
+      ],
+      "glb_max": [
+        0.530123233795166,
+        3.2371439933776855,
+        1.570446491241455
+      ]
+    },
+    "without_saber": {
+      "blender_min": [
+        -0.5910539031028748,
+        -1.570446491241455,
+        0.010813948698341846
+      ],
+      "blender_max": [
+        0.530123233795166,
+        1.2213348150253296,
+        2.7843010425567627
+      ],
+      "glb_min": [
+        -0.5910539031028748,
+        0.010813948698341846,
+        -1.2213348150253296
+      ],
+      "glb_max": [
+        0.530123233795166,
+        2.7843010425567627,
+        1.570446491241455
+      ]
+    }
+  },
+  "footprint_xz_m": {
+    "min": [
+      -0.5910539031028748,
+      -1.2213348150253296
+    ],
+    "max": [
+      0.530123233795166,
+      1.570446491241455
+    ]
+  },
+  "sockets": [
+    "SaddleSocket",
+    "RiderSeatAnchor",
+    "ReinSocket",
+    "SaberSocket",
+    "SaberTip"
+  ],
+  "saber": {
+    "blade_length_m": 0.91,
+    "direction_contract": "world position SaberTip minus world position SaberSocket",
+    "contact_seconds": 0.7666666666666667
+  },
+  "validation": {
+    "native_normalized_max4_weights": true,
+    "finite_animation_matrices": true,
+    "max_native_seat_drift_m": 5.524845642649691e-07,
+    "max_native_loop_matrix_error": 9.5367431640625e-07,
+    "actual_blender_multiview_animation_renders": true,
+    "actual_glb_roundtrip_render": true,
+    "three_validation": "PASS: final v4, 13 full asset regressions including geometry, skins, exact clips, 120 Hz hoof scan, attack event, loop endpoints, crossfades, rider-seat synchronization, rigid saber length and byte-exact gzip",
+    "full_browser_game_tested": false,
+    "three_report": "qa/three_final_validation.json"
+  },
+  "public_files": [
+    "asset-manifest.json",
+    "napoleon_mounted_editable.blend",
+    "runtime/napoleon_mounted.glb",
+    "runtime/napoleon_mounted.glb.gz",
+    "README.md",
+    "SOURCE_AND_LICENSE.md",
+    "qa/native_mounted_validation.json",
+    "qa/runtime_batching.json",
+    "qa/gait_contact_validation.json",
+    "previews/mounted_checkpoint.png",
+    "previews/mounted_front.png",
+    "previews/mounted_profile.png",
+    "previews/mounted_back.png",
+    "previews/mounted_attack_raise.png",
+    "previews/mounted_attack_contact.png",
+    "previews/mounted_walk.png",
+    "previews/mounted_run.png",
+    "previews/glb_roundtrip.png",
+    "qa/three_final_validation.json"
+  ],
+  "files": [
+    {
+      "path": "napoleon_mounted_editable.blend",
+      "bytes": 23610171,
+      "sha256": "7e8cf503bd1426f4619c4888c993b0bbbeab65dc4bc873a337ea6e60419047a4"
+    },
+    {
+      "path": "runtime/napoleon_mounted.glb",
+      "bytes": 28670192,
+      "sha256": "aad3f7d72e6c9b13511bd30c28d0227246f0d8448cb2ef851265f188078836b8"
+    },
+    {
+      "path": "runtime/napoleon_mounted.glb.gz",
+      "bytes": 21105256,
+      "sha256": "f42fea01307b5fe8d7dbddb29a53a5b4ae516be1c89990482e5049c10ff201e1"
+    },
+    {
+      "path": "README.md",
+      "bytes": 4526,
+      "sha256": "4f61eb3188398005b47751bc3e6bb9dccd0e75c377e506ca37a8486bade1c660"
+    },
+    {
+      "path": "SOURCE_AND_LICENSE.md",
+      "bytes": 2605,
+      "sha256": "5476d9ab2c784cb18b9abf6070b940921ec547201272502db283c25e547cffba"
+    },
+    {
+      "path": "qa/native_mounted_validation.json",
+      "bytes": 156541,
+      "sha256": "7d28ce10c00fa3f46adc6b599ede020a45c2089939b724355c04e2345d9b1d6b"
+    },
+    {
+      "path": "qa/runtime_batching.json",
+      "bytes": 224,
+      "sha256": "2d855de3a060006f6468ee235ce8ab6c2003b86ad5cac6d25e8477eda2a5f6d7"
+    },
+    {
+      "path": "qa/gait_contact_validation.json",
+      "bytes": 302,
+      "sha256": "bd310a5dc610f3ea11fc8b9929ae8a9a1d88a99e5a2512f61602496066caee28"
+    },
+    {
+      "path": "previews/mounted_checkpoint.png",
+      "bytes": 2161650,
+      "sha256": "8880b831771efefe8347dd09dd73d3eff8c2710b0f827fe2daecae66ae7e89ed"
+    },
+    {
+      "path": "previews/mounted_front.png",
+      "bytes": 1977863,
+      "sha256": "936d28bbe835b2f08ea5ce1f7beb573da3ff9d8a3e5e764f7d8f3c69ebe19535"
+    },
+    {
+      "path": "previews/mounted_profile.png",
+      "bytes": 2043500,
+      "sha256": "952f2e1e038d930e12d2fc55340f13ba788a6e2d8f492b25854711a2de3e1135"
+    },
+    {
+      "path": "previews/mounted_back.png",
+      "bytes": 2010901,
+      "sha256": "4ed047d468836e0e51b04d11138e6e7b6a68d242c5e27498bbfbab604dbaba29"
+    },
+    {
+      "path": "previews/mounted_attack_raise.png",
+      "bytes": 2017604,
+      "sha256": "c6e44df0fecd0a4b89da81bc1a43e0109b8cff33fcaae35c1ba9b60c45bf3e55"
+    },
+    {
+      "path": "previews/mounted_attack_contact.png",
+      "bytes": 1941040,
+      "sha256": "6a37f88b8d65475f10614321611ac6360f536666314fb131145e37557a0c5b07"
+    },
+    {
+      "path": "previews/mounted_walk.png",
+      "bytes": 2031406,
+      "sha256": "0c408046145a835eec268e0ae6c3b2a95e973b382d6d461e489806d3ebb93cf3"
+    },
+    {
+      "path": "previews/mounted_run.png",
+      "bytes": 2034712,
+      "sha256": "ab28becd102496566137394bd39b83242ae933319c9f65e7a8c93d98f2abf7ab"
+    },
+    {
+      "path": "previews/glb_roundtrip.png",
+      "bytes": 1512513,
+      "sha256": "2c7253b1bc180c43250da3660e8d9948dd951ee5abcb4632a9d8c8f3f5836423"
+    },
+    {
+      "path": "qa/three_final_validation.json",
+      "bytes": 47910,
+      "sha256": "6c1fb88a6747470c077968c9a91cb994a2a56489ab033d71e7285d6610d550f7"
+    }
+  ],
+  "exclude_from_public": [
+    "preparation/",
+    "reference screenshots",
+    "downloaded base archives",
+    "source work-in-progress scripts and .blend backups",
+    "runtime/*candidate*.glb",
+    "runtime/napoleon_runtime.blend",
+    "horse/ standalone intermediate work"
+  ],
+  "rights": "See SOURCE_AND_LICENSE.md; CC0 base provenance does not clear FGO character IP."
+}

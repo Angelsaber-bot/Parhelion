@@ -1,0 +1,55 @@
+{
+  "method": "Actual GLTFLoader skin transform of authored barrel muzzle/breech points plus exported socket +Z; actual sampled vertex loop closure",
+  "reports": [
+    {
+      "file": "blackbeard.glb",
+      "sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
+      "sampledTime": 0.5666666666666667,
+      "muzzleErrorM": 2.0199886480489866e-7,
+      "axisDot": 0.9999999999999647,
+      "forward": "+Z",
+      "up": "+Y",
+      "parent": "HandR",
+      "loops": [
+        {
+          "name": "Idle",
+          "maxVertexLoopDeltaM": 2.995491202653633e-8
+        },
+        {
+          "name": "Walk",
+          "maxVertexLoopDeltaM": 1.889339432681325e-7
+        },
+        {
+          "name": "Run",
+          "maxVertexLoopDeltaM": 1.5176645728337546e-7
+        }
+      ],
+      "pass": true
+    },
+    {
+      "file": "hat/blackbeard_tricorn.glb",
+      "sha256": "c7055fe4a7d7daea936bdee00f8ba812edeeb3e80e456fce1bbdc612041496d7",
+      "sampledTime": 0.5666666666666667,
+      "muzzleErrorM": 2.0199886480489866e-7,
+      "axisDot": 0.9999999999999647,
+      "forward": "+Z",
+      "up": "+Y",
+      "parent": "HandR",
+      "loops": [
+        {
+          "name": "Idle",
+          "maxVertexLoopDeltaM": 2.995491202653633e-8
+        },
+        {
+          "name": "Walk",
+          "maxVertexLoopDeltaM": 1.889339432681325e-7
+        },
+        {
+          "name": "Run",
+          "maxVertexLoopDeltaM": 1.5176645728337546e-7
+        }
+      ],
+      "pass": true
+    }
+  ]
+}

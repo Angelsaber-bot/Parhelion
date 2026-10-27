@@ -1,0 +1,12 @@
+{
+  "before": {
+    "vertices": 178572,
+    "triangles": 349738
+  },
+  "after": {
+    "vertices": 178572,
+    "triangles": 349738,
+    "meshes": 14
+  },
+  "method": "material-compatible object batching only; no decimation"
+}

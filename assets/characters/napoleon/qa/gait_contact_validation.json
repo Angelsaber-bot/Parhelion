@@ -1,0 +1,12 @@
+{
+  "Walk": {
+    "nominal_speed_m_s": 0.703125,
+    "stance_pair_checks": 80,
+    "max_planted_hoof_drift_per_frame_m": 8.724499445143013e-07
+  },
+  "Run": {
+    "nominal_speed_m_s": 2.093023255813953,
+    "stance_pair_checks": 38,
+    "max_planted_hoof_drift_per_frame_m": 8.616943535090066e-07
+  }
+}

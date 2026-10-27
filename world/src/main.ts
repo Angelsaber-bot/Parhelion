@@ -25,6 +25,8 @@ import { regionLoader, bakeQuantized } from './glb';
 import { KingdomTwilight } from './twilight';
 import { FirstContract } from './contracts';
 import { ContractServant } from './servant';
+import { CHARACTER_KITS } from './characters/catalog';
+import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './servantAppearance';
 import { createServantPanel } from './servantPanel';
 import { WorldCombat } from './combatView';
@@ -428,6 +430,36 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
   target: (position) => { const hit = combat.allyTarget(position); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, targetId) => { const hit = combat.allyStrike(position, 3.5, 14, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
+// Era servants are visual/animation actors attached to their existing quest
+// markers. They lazy-load only near the marker, share the normal scene
+// lifecycle, and do not invent new classes or damage rules.
+const eraActors: Array<{ markerId: string; kit: keyof typeof CHARACTER_KITS; actor?: CharacterKit; loading?: Promise<void> }> = [
+  { markerId: 'blackbeard_meet', kit: 'blackbeard' },
+  { markerId: 'napoleon_meet', kit: 'napoleonMounted' },
+  { markerId: 'musashi_meet', kit: 'musashi' },
+];
+function updateEraActors() {
+  for (const entry of eraActors) {
+    const marker = markers.get(entry.markerId);
+    if (!marker) continue;
+    const nearby = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
+    if (nearby && !entry.actor && !entry.loading) {
+      entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: scene.environment ?? undefined })
+        .then((actor) => {
+          entry.actor = actor;
+          actor.root.position.fromArray(marker.p);
+          actor.root.rotation.y = Math.PI;
+          scene.add(actor.root);
+        })
+        .catch((error) => console.warn(`Could not load ${entry.kit} servant`, error))
+        .finally(() => { entry.loading = undefined; });
+    }
+    if (entry.actor) {
+      entry.actor.root.visible = nearby;
+      entry.actor.update(.016, !gameplayActive());
+    }
+  }
+}
 const servantPanel = createServantPanel(servant, contract, () => { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
 const contractCard = document.createElement('div');
 contractCard.id = 'contract-card'; contractCard.className = 'hud';
@@ -443,7 +475,10 @@ function renderContract() {
   if (contractCard.textContent !== next) contractCard.textContent = next;
   contractCard.style.whiteSpace = 'pre-line';
 }
-addEventListener('pagehide', (event) => { if (!event.persisted) { servantPanel.dispose(); servant.dispose(); } });
+addEventListener('pagehide', (event) => { if (!event.persisted) {
+  servantPanel.dispose(); servant.dispose();
+  for (const entry of eraActors) entry.actor?.dispose();
+} });
 function resetProgress() {
   done.clear(); found.clear(); contract.reset(); combat.reset(); save(); applyWorldState();
 }
@@ -746,6 +781,7 @@ function frame(now: number) {
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (down('fire')) shoot();
   servant.update(dt, player.pos, player.yaw, !combat.defeated && !player.flying && !player.swimming && !player.gliding, !gameplayActive());
+  updateEraActors();
   renderContract();
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));

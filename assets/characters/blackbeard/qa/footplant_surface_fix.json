@@ -1,0 +1,946 @@
+{
+  "Walk": {
+    "samples": [
+      {
+        "frame": 1,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999958522617817,
+        "ankle_compensation": 0.01997581124305725
+      },
+      {
+        "frame": 1,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000140130519867,
+        "ankle_compensation": 0.0002848505973815918
+      },
+      {
+        "frame": 2,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999643735587597,
+        "ankle_compensation": 0.01895292103290558
+      },
+      {
+        "frame": 2,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399995107203722,
+        "ankle_compensation": 0.0028194859623908997
+      },
+      {
+        "frame": 3,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999730348587036,
+        "ankle_compensation": 0.017927929759025574
+      },
+      {
+        "frame": 3,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399979554116726,
+        "ankle_compensation": 0.005271352827548981
+      },
+      {
+        "frame": 4,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999727554619312,
+        "ankle_compensation": 0.0169011652469635
+      },
+      {
+        "frame": 4,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999835588037968,
+        "ankle_compensation": 0.007637239992618561
+      },
+      {
+        "frame": 5,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999518007040024,
+        "ankle_compensation": 0.01587212085723877
+      },
+      {
+        "frame": 5,
+        "side": "R",
+        "stance": false,
+        "target": 0.02863177415120963,
+        "sole": 0.0286316629499197,
+        "ankle_compensation": 0.001978747546672821
+      },
+      {
+        "frame": 6,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999957591295242,
+        "ankle_compensation": 0.014841578900814056
+      },
+      {
+        "frame": 6,
+        "side": "R",
+        "stance": false,
+        "target": 0.046066632007271166,
+        "sole": 0.04606670141220093,
+        "ankle_compensation": 0.004272043704986572
+      },
+      {
+        "frame": 7,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999822549521923,
+        "ankle_compensation": 0.01380864530801773
+      },
+      {
+        "frame": 7,
+        "side": "R",
+        "stance": false,
+        "target": 0.06157949631227342,
+        "sole": 0.06157967075705528,
+        "ankle_compensation": 0.006251931190490723
+      },
+      {
+        "frame": 8,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999635353684425,
+        "ankle_compensation": 0.012773655354976654
+      },
+      {
+        "frame": 8,
+        "side": "R",
+        "stance": false,
+        "target": 0.07424056486104837,
+        "sole": 0.0742405503988266,
+        "ankle_compensation": 0.007824435830116272
+      },
+      {
+        "frame": 9,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999877497553825,
+        "ankle_compensation": 0.01173701137304306
+      },
+      {
+        "frame": 9,
+        "side": "R",
+        "stance": false,
+        "target": 0.0832909649383465,
+        "sole": 0.0832909643650055,
+        "ankle_compensation": 0.008924216032028198
+      },
+      {
+        "frame": 10,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399989053606987,
+        "ankle_compensation": 0.010698489844799042
+      },
+      {
+        "frame": 10,
+        "side": "R",
+        "stance": false,
+        "target": 0.08818823824735857,
+        "sole": 0.08818800747394562,
+        "ankle_compensation": 0.00951087474822998
+      },
+      {
+        "frame": 11,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999946415424347,
+        "ankle_compensation": 0.009657911956310272
+      },
+      {
+        "frame": 11,
+        "side": "R",
+        "stance": false,
+        "target": 0.08863885450041477,
+        "sole": 0.08863885700702667,
+        "ankle_compensation": 0.009564727544784546
+      },
+      {
+        "frame": 12,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000052586197853,
+        "ankle_compensation": 0.008615575730800629
+      },
+      {
+        "frame": 12,
+        "side": "R",
+        "stance": false,
+        "target": 0.08461580488872655,
+        "sole": 0.08461584150791168,
+        "ankle_compensation": 0.009083807468414307
+      },
+      {
+        "frame": 13,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000046998262405,
+        "ankle_compensation": 0.0075712427496910095
+      },
+      {
+        "frame": 13,
+        "side": "R",
+        "stance": false,
+        "target": 0.0763602209226909,
+        "sole": 0.07636016607284546,
+        "ankle_compensation": 0.008084148168563843
+      },
+      {
+        "frame": 14,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000093564391136,
+        "ankle_compensation": 0.006525121629238129
+      },
+      {
+        "frame": 14,
+        "side": "R",
+        "stance": false,
+        "target": 0.06436692161352639,
+        "sole": 0.06436681002378464,
+        "ankle_compensation": 0.006601601839065552
+      },
+      {
+        "frame": 15,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999841175973415,
+        "ankle_compensation": 0.00547713041305542
+      },
+      {
+        "frame": 15,
+        "side": "R",
+        "stance": false,
+        "target": 0.04935475526194984,
+        "sole": 0.049354638904333115,
+        "ankle_compensation": 0.0046968013048172
+      },
+      {
+        "frame": 16,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399986445903778,
+        "ankle_compensation": 0.004427507519721985
+      },
+      {
+        "frame": 16,
+        "side": "R",
+        "stance": false,
+        "target": 0.032223513492744806,
+        "sole": 0.03222329914569855,
+        "ankle_compensation": 0.0024570822715759277
+      },
+      {
+        "frame": 17,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000175520777702,
+        "ankle_compensation": 0.000284731388092041
+      },
+      {
+        "frame": 17,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999954797327518,
+        "ankle_compensation": 0.01997588574886322
+      },
+      {
+        "frame": 18,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999927788972855,
+        "ankle_compensation": 0.0028196126222610474
+      },
+      {
+        "frame": 18,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999591581523418,
+        "ankle_compensation": 0.018952593207359314
+      },
+      {
+        "frame": 19,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999789953231812,
+        "ankle_compensation": 0.005271226167678833
+      },
+      {
+        "frame": 19,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999802060425282,
+        "ankle_compensation": 0.017928048968315125
+      },
+      {
+        "frame": 20,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399984396994114,
+        "ankle_compensation": 0.007637232542037964
+      },
+      {
+        "frame": 20,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999738730490208,
+        "ankle_compensation": 0.016901150345802307
+      },
+      {
+        "frame": 21,
+        "side": "L",
+        "stance": false,
+        "target": 0.02863177415120963,
+        "sole": 0.02863166108727455,
+        "ankle_compensation": 0.001978747546672821
+      },
+      {
+        "frame": 21,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999656774103642,
+        "ankle_compensation": 0.015872135758399963
+      },
+      {
+        "frame": 22,
+        "side": "L",
+        "stance": false,
+        "target": 0.046066632007271166,
+        "sole": 0.04606662690639496,
+        "ankle_compensation": 0.004272058606147766
+      },
+      {
+        "frame": 22,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000014401972294,
+        "ankle_compensation": 0.014841467142105103
+      },
+      {
+        "frame": 23,
+        "side": "L",
+        "stance": false,
+        "target": 0.06157949631227342,
+        "sole": 0.06157965958118439,
+        "ankle_compensation": 0.006252020597457886
+      },
+      {
+        "frame": 23,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999829068779945,
+        "ankle_compensation": 0.01380869746208191
+      },
+      {
+        "frame": 24,
+        "side": "L",
+        "stance": false,
+        "target": 0.07424056486104837,
+        "sole": 0.07424075901508331,
+        "ankle_compensation": 0.007824495434761047
+      },
+      {
+        "frame": 24,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999712653458118,
+        "ankle_compensation": 0.012773580849170685
+      },
+      {
+        "frame": 25,
+        "side": "L",
+        "stance": false,
+        "target": 0.0832909649383465,
+        "sole": 0.08329084515571594,
+        "ankle_compensation": 0.008924111723899841
+      },
+      {
+        "frame": 25,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999752700328827,
+        "ankle_compensation": 0.011736981570720673
+      },
+      {
+        "frame": 26,
+        "side": "L",
+        "stance": false,
+        "target": 0.08818823824735857,
+        "sole": 0.08818811178207397,
+        "ankle_compensation": 0.009510889649391174
+      },
+      {
+        "frame": 26,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999925926327705,
+        "ankle_compensation": 0.010698489844799042
+      },
+      {
+        "frame": 27,
+        "side": "L",
+        "stance": false,
+        "target": 0.08863885450041477,
+        "sole": 0.08863882720470428,
+        "ankle_compensation": 0.009564727544784546
+      },
+      {
+        "frame": 27,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999815098941326,
+        "ankle_compensation": 0.009657911956310272
+      },
+      {
+        "frame": 28,
+        "side": "L",
+        "stance": false,
+        "target": 0.08461580488872655,
+        "sole": 0.08461564779281616,
+        "ankle_compensation": 0.009083718061447144
+      },
+      {
+        "frame": 28,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999938033521175,
+        "ankle_compensation": 0.008615471422672272
+      },
+      {
+        "frame": 29,
+        "side": "L",
+        "stance": false,
+        "target": 0.0763602209226909,
+        "sole": 0.07636024057865143,
+        "ankle_compensation": 0.008084237575531006
+      },
+      {
+        "frame": 29,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01400029193609953,
+        "ankle_compensation": 0.007571272552013397
+      },
+      {
+        "frame": 30,
+        "side": "L",
+        "stance": false,
+        "target": 0.06436692161352639,
+        "sole": 0.06436675786972046,
+        "ankle_compensation": 0.006601676344871521
+      },
+      {
+        "frame": 30,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000048860907555,
+        "ankle_compensation": 0.006525091826915741
+      },
+      {
+        "frame": 31,
+        "side": "L",
+        "stance": false,
+        "target": 0.04935475526194984,
+        "sole": 0.0493546724319458,
+        "ankle_compensation": 0.004696637392044067
+      },
+      {
+        "frame": 31,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999775052070618,
+        "ankle_compensation": 0.005477219820022583
+      },
+      {
+        "frame": 32,
+        "side": "L",
+        "stance": false,
+        "target": 0.032223513492744806,
+        "sole": 0.032223381102085114,
+        "ankle_compensation": 0.002457171678543091
+      },
+      {
+        "frame": 32,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999903574585915,
+        "ankle_compensation": 0.004427365958690643
+      },
+      {
+        "frame": 33,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999958522617817,
+        "ankle_compensation": 0.01997581124305725
+      },
+      {
+        "frame": 33,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000140130519867,
+        "ankle_compensation": 0.0002848505973815918
+      }
+    ],
+    "max_keyframe_sole_error": 4.819929599764877e-07,
+    "max_ankle_correction": 0.01997588574886322,
+    "dense_min_y": 0.013840856961905956,
+    "dense_stance_max_abs_error": 0.0006655505523085591
+  },
+  "Run": {
+    "samples": [
+      {
+        "frame": 1,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999772258102894,
+        "ankle_compensation": 0.019975945353507996
+      },
+      {
+        "frame": 1,
+        "side": "R",
+        "stance": false,
+        "target": 0.1111155965661147,
+        "sole": 0.11111557483673096,
+        "ankle_compensation": 0.005653709173202515
+      },
+      {
+        "frame": 2,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999647460877895,
+        "ankle_compensation": 0.017820313572883606
+      },
+      {
+        "frame": 2,
+        "side": "R",
+        "stance": false,
+        "target": 0.13819950016849253,
+        "sole": 0.13819937407970428,
+        "ankle_compensation": 0.00715261697769165
+      },
+      {
+        "frame": 3,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999882154166698,
+        "ankle_compensation": 0.01565586030483246
+      },
+      {
+        "frame": 3,
+        "side": "R",
+        "stance": false,
+        "target": 0.15976771314221072,
+        "sole": 0.15976768732070923,
+        "ankle_compensation": 0.008321225643157959
+      },
+      {
+        "frame": 4,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000031165778637,
+        "ankle_compensation": 0.013482421636581421
+      },
+      {
+        "frame": 4,
+        "side": "R",
+        "stance": false,
+        "target": 0.17486239274221227,
+        "sole": 0.17486265301704407,
+        "ankle_compensation": 0.009125769138336182
+      },
+      {
+        "frame": 5,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999806717038155,
+        "ankle_compensation": 0.011300206184387207
+      },
+      {
+        "frame": 5,
+        "side": "R",
+        "stance": false,
+        "target": 0.18281318536240873,
+        "sole": 0.182813361287117,
+        "ankle_compensation": 0.009545117616653442
+      },
+      {
+        "frame": 6,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999809511005878,
+        "ankle_compensation": 0.009109631180763245
+      },
+      {
+        "frame": 6,
+        "side": "R",
+        "stance": false,
+        "target": 0.18326699688981135,
+        "sole": 0.1832672506570816,
+        "ankle_compensation": 0.009569138288497925
+      },
+      {
+        "frame": 7,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399997714906931,
+        "ankle_compensation": 0.006910726428031921
+      },
+      {
+        "frame": 7,
+        "side": "R",
+        "stance": false,
+        "target": 0.1762036735880083,
+        "sole": 0.17620350420475006,
+        "ankle_compensation": 0.009196877479553223
+      },
+      {
+        "frame": 8,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399995293468237,
+        "ankle_compensation": 0.004703953862190247
+      },
+      {
+        "frame": 8,
+        "side": "R",
+        "stance": false,
+        "target": 0.16193689712311019,
+        "sole": 0.1619369387626648,
+        "ankle_compensation": 0.00843799114227295
+      },
+      {
+        "frame": 9,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01400002185255289,
+        "ankle_compensation": 0.002425074577331543
+      },
+      {
+        "frame": 9,
+        "side": "R",
+        "stance": false,
+        "target": 0.1411002539841276,
+        "sole": 0.14110027253627777,
+        "ankle_compensation": 0.007311657071113586
+      },
+      {
+        "frame": 10,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999899849295616,
+        "ankle_compensation": 0.00751514732837677
+      },
+      {
+        "frame": 10,
+        "side": "R",
+        "stance": false,
+        "target": 0.11461909795379299,
+        "sole": 0.11461922526359558,
+        "ankle_compensation": 0.005850404500961304
+      },
+      {
+        "frame": 11,
+        "side": "L",
+        "stance": false,
+        "target": 0.045403429522922194,
+        "sole": 0.04540344327688217,
+        "ankle_compensation": 0.0018749833106994629
+      },
+      {
+        "frame": 11,
+        "side": "R",
+        "stance": false,
+        "target": 0.08366945521541981,
+        "sole": 0.08366955816745758,
+        "ankle_compensation": 0.0041004568338394165
+      },
+      {
+        "frame": 12,
+        "side": "L",
+        "stance": false,
+        "target": 0.0797187964935439,
+        "sole": 0.07971879839897156,
+        "ankle_compensation": 0.003872990608215332
+      },
+      {
+        "frame": 12,
+        "side": "R",
+        "stance": false,
+        "target": 0.049625797116967345,
+        "sole": 0.04962571710348129,
+        "ankle_compensation": 0.002124279737472534
+      },
+      {
+        "frame": 13,
+        "side": "L",
+        "stance": false,
+        "target": 0.1111155965661147,
+        "sole": 0.11111561954021454,
+        "ankle_compensation": 0.005653679370880127
+      },
+      {
+        "frame": 13,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399969682097435,
+        "ankle_compensation": 0.01997581124305725
+      },
+      {
+        "frame": 14,
+        "side": "L",
+        "stance": false,
+        "target": 0.13819950016849253,
+        "sole": 0.13819947838783264,
+        "ankle_compensation": 0.0071524977684021
+      },
+      {
+        "frame": 14,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999614864587784,
+        "ankle_compensation": 0.0178203284740448
+      },
+      {
+        "frame": 15,
+        "side": "L",
+        "stance": false,
+        "target": 0.15976771314221072,
+        "sole": 0.1597677767276764,
+        "ankle_compensation": 0.008321255445480347
+      },
+      {
+        "frame": 15,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999813236296177,
+        "ankle_compensation": 0.015655800700187683
+      },
+      {
+        "frame": 16,
+        "side": "L",
+        "stance": false,
+        "target": 0.17486239274221227,
+        "sole": 0.17486238479614258,
+        "ankle_compensation": 0.009125620126724243
+      },
+      {
+        "frame": 16,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999980874359608,
+        "ankle_compensation": 0.01348237693309784
+      },
+      {
+        "frame": 17,
+        "side": "L",
+        "stance": false,
+        "target": 0.18281318536240873,
+        "sole": 0.18281346559524536,
+        "ankle_compensation": 0.009545356035232544
+      },
+      {
+        "frame": 17,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999887742102146,
+        "ankle_compensation": 0.011300250887870789
+      },
+      {
+        "frame": 18,
+        "side": "L",
+        "stance": false,
+        "target": 0.18326699688981135,
+        "sole": 0.18326705694198608,
+        "ankle_compensation": 0.009569138288497925
+      },
+      {
+        "frame": 18,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01399988867342472,
+        "ankle_compensation": 0.00910961627960205
+      },
+      {
+        "frame": 19,
+        "side": "L",
+        "stance": false,
+        "target": 0.1762036735880083,
+        "sole": 0.17620374262332916,
+        "ankle_compensation": 0.009196966886520386
+      },
+      {
+        "frame": 19,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999922201037407,
+        "ankle_compensation": 0.006910800933837891
+      },
+      {
+        "frame": 20,
+        "side": "L",
+        "stance": false,
+        "target": 0.1619368971231102,
+        "sole": 0.1619369238615036,
+        "ankle_compensation": 0.008437931537628174
+      },
+      {
+        "frame": 20,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.014000019058585167,
+        "ankle_compensation": 0.004704013466835022
+      },
+      {
+        "frame": 21,
+        "side": "L",
+        "stance": false,
+        "target": 0.14110025398412754,
+        "sole": 0.1411001831293106,
+        "ankle_compensation": 0.007311716675758362
+      },
+      {
+        "frame": 21,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.01400001160800457,
+        "ankle_compensation": 0.0024250447750091553
+      },
+      {
+        "frame": 22,
+        "side": "L",
+        "stance": false,
+        "target": 0.11461909795379299,
+        "sole": 0.11461903154850006,
+        "ankle_compensation": 0.00585038959980011
+      },
+      {
+        "frame": 22,
+        "side": "R",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999898917973042,
+        "ankle_compensation": 0.007515154778957367
+      },
+      {
+        "frame": 23,
+        "side": "L",
+        "stance": false,
+        "target": 0.08366945521541995,
+        "sole": 0.08366930484771729,
+        "ankle_compensation": 0.004100322723388672
+      },
+      {
+        "frame": 23,
+        "side": "R",
+        "stance": false,
+        "target": 0.045403429522922055,
+        "sole": 0.04540345072746277,
+        "ankle_compensation": 0.0018749237060546875
+      },
+      {
+        "frame": 24,
+        "side": "L",
+        "stance": false,
+        "target": 0.04962579711696727,
+        "sole": 0.04962582513689995,
+        "ankle_compensation": 0.002124205231666565
+      },
+      {
+        "frame": 24,
+        "side": "R",
+        "stance": false,
+        "target": 0.07971879649354402,
+        "sole": 0.07971882820129395,
+        "ankle_compensation": 0.003873094916343689
+      },
+      {
+        "frame": 25,
+        "side": "L",
+        "stance": true,
+        "target": 0.014,
+        "sole": 0.013999772258102894,
+        "ankle_compensation": 0.019975945353507996
+      },
+      {
+        "frame": 25,
+        "side": "R",
+        "stance": false,
+        "target": 0.1111155965661147,
+        "sole": 0.11111557483673096,
+        "ankle_compensation": 0.005653709173202515
+      }
+    ],
+    "max_keyframe_sole_error": 3.8513541221647796e-07,
+    "max_ankle_correction": 0.019975945353507996,
+    "dense_min_y": 0.011305565014481544,
+    "dense_stance_max_abs_error": 0.002694434985518456
+  }
+}

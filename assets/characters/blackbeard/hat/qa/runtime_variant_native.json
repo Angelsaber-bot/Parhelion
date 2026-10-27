@@ -1,0 +1,17 @@
+{
+  "source_main_sha256": "9ca0308a93a76d0b069906ad9f4b3904100a515644aaa38c807cb10a2a334d16",
+  "source_main_unchanged": true,
+  "actions_preserved": [
+    "Idle",
+    "Walk",
+    "Run",
+    "Attack",
+    "Melee"
+  ],
+  "muzzle_socket": "Blackbeard_Muzzle",
+  "hat_binding": "All vertices Head=1.0; preserve rest-world coordinates",
+  "hat_mesh": "Blackbeard_optional_tricorn",
+  "hat_vertices": 19902,
+  "hat_materials": 6,
+  "preview_note": "Static Idle and face geometry unchanged by Walk/Run footplant revision; retained actual previews."
+}

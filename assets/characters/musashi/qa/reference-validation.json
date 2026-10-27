@@ -1,0 +1,22 @@
+{
+  "file": "Parhelion/assets/characters/musashi/Musashi_ReferencePose.glb",
+  "pass": true,
+  "meshes": 308,
+  "triangles": 287686,
+  "skinnedMeshes": 0,
+  "animations": 0,
+  "nonfinite": 0,
+  "bounds": {
+    "min": [
+      -0.40847186758009,
+      -2.8936972752740604e-7,
+      -0.6109333376460597
+    ],
+    "max": [
+      0.6103278879454876,
+      1.8244360695058504,
+      0.3127828126264731
+    ]
+  },
+  "scope": "Static already-posed preview, CPU vertex/transforms verified; textures stubbed."
+}

@@ -1,0 +1,30 @@
+This 3D model is available for download for free and use as long as you comply
+with the following terms of use below.
+
+- attribution: NOT REQUIRED (highly appreciated)
+- commercial: YES
+- modification: YES
+- redistribution: YES
+
+Contents
+
+- file format: FBX
+- rig: YES (see more below)
+- total models: 2 (see more below)
+
+Others
+
+- The base mesh for this model is created using VRoid Studio. All 50+ facial
+shape keys are available.
+- Clothes, accessories and texturing are done in Blender.
+- Please take note that the model is rig using mixamo which may
+sufficient or not for your usage. Any adjustment may be necessary.
+- There are 2 models in this pack, default and optimized. Default contain all
+mesh faces whereas hidden faces are deleted in optimized mesh.
+
+- If you have any questions feel free to tweet me, I'm happy to answer
+any questions you might have.
+- Contact me if you like to commision custom 3d model
+(Only modeling not rigging or animation).
+- My twitter: https://twitter.com/mastjie
+- Any tip is appreciated: https://ko-fi.com/mastjie
