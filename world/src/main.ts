@@ -445,6 +445,8 @@ const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof
   { markerId: 'musashi_meet', servant: 'musashi', kit: 'musashi', follow: companion(3.5, 9), retryAt: 0, failures: 0 },
 ];
 let eraActorsDisposed = false;
+let inspectServant = false;
+const servantRoot = () => contract.selected === 'saber' ? servant.root : eraActors.find((e) => e.servant === contract.selected)?.actor?.root;
 const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
 const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
 function servantStatus() {
@@ -529,8 +531,8 @@ function renderControlHints() {
   const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
   const teleports = [1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/');
   $('help').textContent = bilingual(
-    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
-    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
 
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
@@ -582,6 +584,10 @@ function press(binding: string, repeat = false) {
   if (action === 'summon') {
     if (contract.toggle()) { const n = servantName(contract.selected); toast(contract.companionSummoned ? bilingual(`${n.zh} 已召唤`, `${n.en} summoned`) : bilingual(`${n.zh} 已收回`, `${n.en} recalled`)); }
     else toast(bilingual('先前往圣剑湖缔结第一份契约', 'Form your first contract at Sword Lake'));
+  }
+  if (action === 'inspectServant') {
+    inspectServant = !inspectServant && !!servantRoot()?.visible;
+    toast(inspectServant ? bilingual(`查看从者模型 · 再按 ${settings.label('inspectServant')} 返回`, `Servant model view · Press ${settings.label('inspectServant')} to return`) : bilingual('已返回游戏视角', 'Back to gameplay view'));
   }
   if (action === 'switchServant') {
     const next = contract.cycle();
@@ -812,6 +818,14 @@ function frame(now: number) {
     camera.position.copy(pivot).addScaledVector(back, camDist);
     eye.copy(camera.position);
   } else camera.position.copy(eye);
+  // Full-body servant viewer: slow orbit in front of the active companion.
+  const viewRoot = inspectServant ? servantRoot() : undefined;
+  if (viewRoot?.visible) {
+    const big = contract.selected === 'napoleon', angle = viewRoot.rotation.y + performance.now() / 4000;
+    const focus = viewRoot.position.clone().add(new THREE.Vector3(0, big ? 1.3 : .95, 0));
+    camera.position.copy(focus).add(new THREE.Vector3(Math.sin(angle) * (big ? 5.5 : 3.6), .35, Math.cos(angle) * (big ? 5.5 : 3.6)));
+    camera.lookAt(focus);
+  } else inspectServant = false;
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (down('fire')) shoot();
   servant.update(dt, player.pos, player.yaw, companionEnabled(), !gameplayActive());

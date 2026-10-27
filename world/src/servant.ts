@@ -181,7 +181,7 @@ export class ContractServant {
       return;
     }
     if (paused) return;
-    const destination = player.clone().add(new THREE.Vector3(Math.cos(yaw)*1.8 + Math.sin(yaw)*1.3,0,-Math.sin(yaw)*1.8 + Math.cos(yaw)*1.3));
+    const destination = player.clone().add(new THREE.Vector3(Math.cos(yaw)*2.4 - Math.sin(yaw)*.8,0,-Math.sin(yaw)*2.4 - Math.cos(yaw)*.8));
     const ground = this.floor(destination.x,destination.z,player.y);
     if (ground !== null) destination.y = ground;
     if (!this.activeLast || this.root.position.distanceTo(player) > 24) {
