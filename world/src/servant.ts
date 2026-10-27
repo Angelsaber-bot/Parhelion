@@ -118,7 +118,7 @@ export class ContractServant {
           // Animated sword/clothes can extend beyond their rest-pose bounds. One actor only.
           mesh.frustumCulled = false;
           for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-            if (this.environment && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) (material as THREE.MeshStandardMaterial).envMap = this.environment.texture;
+            if (this.environment && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) { (material as THREE.MeshStandardMaterial).envMap = this.environment.texture; (material as THREE.MeshStandardMaterial).envMapIntensity = .45; }
           }
         });
         const mixer = new THREE.AnimationMixer(candidate.scene);

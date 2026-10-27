@@ -95,7 +95,7 @@ export class CharacterKit {
       const mesh = object as THREE.Mesh; if (!mesh.isMesh) return;
       mesh.castShadow = true; mesh.receiveShadow = true; mesh.frustumCulled = false;
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-        if (options.environment && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) (material as THREE.MeshStandardMaterial).envMap = options.environment;
+        if (options.environment && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) { (material as THREE.MeshStandardMaterial).envMap = options.environment; (material as THREE.MeshStandardMaterial).envMapIntensity = .75; }
       }
     });
     this.play(definition.defaultState);

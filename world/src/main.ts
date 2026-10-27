@@ -25,6 +25,7 @@ import { regionLoader, bakeQuantized } from './glb';
 import { KingdomTwilight } from './twilight';
 import { FirstContract, SERVANTS, servantByContract, type ServantId } from './contracts';
 import { KitCompanion } from './kitCompanion';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ContractServant } from './servant';
 import { CHARACTER_KITS } from './characters/catalog';
 import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
@@ -457,6 +458,12 @@ const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof
 let eraActorsDisposed = false;
 let inspectServant = false;
 const servantRoot = () => contract.selected === 'saber' ? servant.root : eraActors.find((e) => e.servant === contract.selected)?.actor?.root;
+// Same studio light as Saber's model (scene.environment is unset), so every servant reads equally lit.
+let servantEnv: THREE.Texture | undefined;
+const servantEnvironment = () => {
+  if (!servantEnv) { const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(renderer); servantEnv = pmrem.fromScene(room).texture; room.dispose(); pmrem.dispose(); }
+  return servantEnv;
+};
 const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
 const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
 function servantStatus() {
@@ -473,7 +480,7 @@ function updateEraActors(dt: number) {
     const following = contract.isFollowing(entry.servant) && companionEnabled();
     const nearby = nearMarker || following;
     if (nearby && !entry.actor && !entry.loading && now >= entry.retryAt) {
-      entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: scene.environment ?? undefined, onEvent: (event) => { if (entry.actor) entry.follow.onEvent(entry.actor, event); } })
+      entry.loading = loadCharacterKit(CHARACTER_KITS[entry.kit], { environment: servantEnvironment(), onEvent: (event) => { if (entry.actor) entry.follow.onEvent(entry.actor, event); } })
         .then((actor) => {
           if (eraActorsDisposed) { actor.dispose(); return; }
           entry.failures = 0; entry.error = undefined;
