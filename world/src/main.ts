@@ -515,10 +515,13 @@ addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose()
 const ray = new THREE.Raycaster();
 function shoot() {
   if (!gameplayActive() || player.flying || !combat.canShoot()) return;
+  const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
   ray.set(origin, look); ray.far = 150;
-  const wall = combat.geometry.cast(origin,look,150);
+  // Target meshes have matching dynamic colliders for movement/LOS, but a
+  // target hit must not be reclassified as a wall during the muzzle check.
+  const wall = combat.geometry.cast(origin,look,150,targetCollider);
   const wallDist = wall?.distance ?? 150;
   const target = ray.intersectObjects(targets.filter((t) => t.visible), false)[0];
   const questHit = target && target.distance <= wallDist + .04 ? target : undefined;
@@ -530,9 +533,9 @@ function shoot() {
   // Shoulder-camera aim selects the target, but the actual bullet must have a clear muzzle path.
   const shoulder = player.pos.clone().add(new THREE.Vector3(0,1.3,0));
   const toMuzzle = muzzle.clone().sub(shoulder);
-  const blockedMount = combat.geometry.cast(shoulder,toMuzzle,toMuzzle.length());
+  const blockedMount = combat.geometry.cast(shoulder,toMuzzle,toMuzzle.length(),targetCollider);
   const shotDirection = point.clone().sub(muzzle), shotDistance = shotDirection.length();
-  const blocked = combat.geometry.cast(muzzle,shotDirection,Math.max(0,shotDistance - .06));
+  const blocked = combat.geometry.cast(muzzle,shotDirection,Math.max(0,shotDistance - .06),targetCollider);
   let hitSomething = !!(wall || questHit || enemy);
   if (blockedMount || blocked) {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;

@@ -5,10 +5,10 @@ import type { Point3, CombatTerrain } from './combat';
 
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout) {
-  const cast = (origin: Point3, direction: Point3, max = Infinity) => {
+  const cast = (origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
     const ray = new THREE.Ray(new THREE.Vector3(origin.x, origin.y, origin.z), new THREE.Vector3(direction.x, direction.y, direction.z).normalize());
     let best: ReturnType<Collider['bvh']['raycastFirst']> = null;
-    for (const c of colliders) if (c.enabled) {
+    for (const c of colliders) if (c.enabled && !ignore?.(c)) {
       const hit = c.bvh.raycastFirst(ray, THREE.DoubleSide);
       if (hit && hit.distance < max && (!best || hit.distance < best.distance)) best = hit;
     }

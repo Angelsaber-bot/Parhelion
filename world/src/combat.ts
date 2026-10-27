@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 9, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 12, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -39,6 +39,9 @@ export const WILDERNESS_ZONES = [
   { x: 650, z: 90, r: 22, kind: 'crystal' as const },
   { x: 566, z: 28, r: 22, kind: 'crystal' as const },
   { x: 630, z: -24, r: 22, kind: 'crystal' as const },
+  { x: 706, z: -102, r: 20, kind: 'crystal' as const },
+  { x: 680, z: 50, r: 20, kind: 'crystal' as const },
+  { x: 145, z: 140, r: 20, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;

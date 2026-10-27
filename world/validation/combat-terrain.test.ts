@@ -31,10 +31,10 @@ const layout = mergeLayouts(parts), query = makeCombatTerrain(colliders, layout)
 const spawns = makeWildernessSpawns(layout.world.seed ^ 537, query.safeSpawn);
 
 test('actual three-region map admits bounded dry, clear wilderness encounters away from quest hubs', () => {
-  assert.equal(spawns.length, 9, `expected 9 accepted seeded wilderness locations: ${JSON.stringify(spawns)}`);
+  assert.equal(spawns.length, 12, `expected 12 accepted seeded wilderness locations: ${JSON.stringify(spawns)}`);
   assert.equal(spawns.filter(s => s.p.x < -360).length, 3);
-  assert.equal(spawns.filter(s => s.p.x > 360).length, 3);
-  assert.equal(spawns.filter(s => s.p.x >= -360 && s.p.x <= 360).length, 3);
+  assert.equal(spawns.filter(s => s.p.x > 360).length, 5);
+  assert.equal(spawns.filter(s => s.p.x >= -360 && s.p.x <= 360).length, 4);
   for (const s of spawns) {
     assert.ok(query.clear(s.p), `${s.id} has capsule clearance`);
     assert.ok(s.p.y > layout.world.waterLevel + 0.45, `${s.id} is on dry ground`);
@@ -52,6 +52,18 @@ test('actual closed west-seam gate blocks combat rays and disabled gate does not
   gate.enabled = false;
   assert.equal(query.terrain.lineOfSight(start, end), true);
   gate.enabled = true;
+});
+
+test('target colliders can be excluded from the muzzle wall query without opening terrain', () => {
+  const target = colliders.find(c => c.name === 'COL_TGT_camp_dummy_1')!;
+  assert.ok(target);
+  const box = target.bvh.getBoundingBox(new THREE.Box3());
+  const center = box.getCenter(new THREE.Vector3());
+  const from = { x: center.x, y: center.y, z: center.z + 4 };
+  const direction = { x: 0, y: 0, z: -1 };
+  assert.ok(query.cast(from, direction, 4), 'the target collider is present in the normal query');
+  assert.equal(query.cast(from, direction, 4, c => c.name.startsWith('COL_TGT_')), null,
+    'the shooting wall query ignores the target itself');
 });
 
 test('actual boss arena home is above valid dry ground and open toward the Sun Core approach', () => {
