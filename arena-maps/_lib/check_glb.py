@@ -5,7 +5,7 @@ Usage: python3 _lib/check_glb.py <map dir> <asset prefix>   e.g. sakura sakura
 - each COL_ node's bounds equal the object's collision box exactly
 - each VIS_ node stays inside its object's box (art never sticks out of what you collide with)
 - legacy/proxy materials are factor-only; opted-in new chapter textures must be embedded with UVs
-- budget: 60k triangles, 4MB geometry/JSON, plus <=1MB embedded authored surface textures
+- budget: 60k triangles, 4MB geometry/JSON (textured chapters: 110k / 9MB), plus <=1MB embedded surface textures
 """
 from pathlib import Path
 import json, struct, sys
@@ -81,9 +81,13 @@ for g in (vis, col):
         check('images' not in g and 'textures' not in g, 'legacy/proxy remains factor-only')
 check(all(n['extras'].get('decorative') for n in vis['nodes'] if n['name'].startswith('DETAIL_')), 'detail batches are decorative')
 texture_bytes = sum(vis['bufferViews'][im['bufferView']]['byteLength'] for im in vis.get('images', []) if 'bufferView' in im)
-# Keep the established geometry budget. New chapters may add <=1MB of embedded
-# authored 256px surface channels; do not silently count those as mesh inflation.
-check(tris < 60000 and vis_bytes - texture_bytes < 4_000_000 and texture_bytes < 1_000_000,
+# Legacy maps keep the established geometry budget. The three textured chapter maps
+# (2026-10-28 polish pass) may use up to 110k triangles / 9MB of flat-shaded geometry:
+# still a single static, material-batched scene well inside desktop GPU limits and the
+# 25 MiB Pages file cap. Embedded surface images (<=1MB) are counted separately.
+chapter = bool(m.get('artPipeline', {}).get('embeddedMaterialTextures'))
+max_tris, max_geo = (110_000, 9_000_000) if chapter else (60_000, 4_000_000)
+check(tris < max_tris and vis_bytes - texture_bytes < max_geo and texture_bytes < 1_000_000,
       f'budget: {tris} triangles, {vis_bytes - texture_bytes} geometry/json bytes, {texture_bytes} texture bytes')
 report = dict(mapId=m['mapId'], version=m['version'], checks=checks, failed=fails, visualNodes=len(vis['nodes']),
               visualTriangles=tris, visualBytes=vis_bytes, embeddedTextureBytes=texture_bytes,

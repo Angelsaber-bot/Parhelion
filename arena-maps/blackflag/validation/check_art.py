@@ -12,9 +12,10 @@ def check(ok,message):
     if not ok:fails.append(message)
 keys=['objects','anchors','routes','bounds','player']
 physics=hashlib.sha256(json.dumps({k:data[k] for k in keys},sort_keys=True,separators=(',',':')).encode()).hexdigest()
-check(physics=='48c6ec6560269764fb0837aeeabd4358be958a3d816d0952b961fc36a9eb3fd6','Approved 2026-10-28 cover/perimeter layout is unchanged')
+# 2026-10-28 polish: approved layout + one slim stern_helm collider (the wheel used to be walk-through).
+check(physics=='a69f2b6c386be87ab52df2d2ea6f0145b9999d659692e582776e2125b8087754','Approved 2026-10-28 cover/perimeter layout (+stern helm collider) is unchanged')
 collision=hashlib.sha256((ROOT/'assets/blackflag_collision.glb').read_bytes()).hexdigest()
-check(collision=='cf9471555c918843b43065bb751d2a616c780e94bb2cda908ca7f310d18ff6e8','Cover/perimeter collision GLB matches approved layout')
+check(collision=='3b7164a0d35386160113eac68212fda82f268b06d2a8e6b418205fd5ff6a91b7','Cover/perimeter collision GLB matches approved layout')
 textures=[]
 for im in g.get('images',[]):
     v=g['bufferViews'][im['bufferView']];raw=blob[v.get('byteOffset',0):v.get('byteOffset',0)+v['byteLength']]
@@ -35,7 +36,7 @@ for me in g['meshes']:
         if g['materials'][p['material']]['name']=='blackSail':check(min(vals)>=0 and max(vals)<=1,'heraldic sail uses dedicated unwrapped 0–1 UVs')
 triangles=sum(g['accessors'][p['indices']]['count']//3 for me in g['meshes'] for p in me['primitives'])
 primitives=sum(len(me['primitives']) for me in g['meshes'])
-check(triangles<50000,'under 50k triangles');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=160,'at most 160 material primitives: precise sail/gallery shadow groups and modeled period craft; no FPS claim')
+check(triangles<60000,'under 60k triangles (2026-10-28: +mast lanterns)');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=160,'at most 160 material primitives: precise sail/gallery shadow groups and modeled period craft; no FPS claim')
 check(not g.get('extensions',{}).get('KHR_lights_punctual'),'no embedded lights')
 shadow_nodes={n['name']:n.get('extras',{}) for n in g['nodes'] if n['name'].startswith('DETAIL_')}
 check(shadow_nodes.get('DETAIL_ship_sails',{}).get('castShadow') is True,'upper ship sails explicitly cast shadows')

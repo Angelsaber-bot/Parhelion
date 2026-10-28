@@ -76,7 +76,7 @@ P=dict(timber=mat('#9b623a'), deck=mat('#c29662'), plank=mat('#ad7c4d'), grain=m
        tar=mat('#303a43'), iron=mat('#485962',.88,.88), brass=mat('#d6b878',.9,.7),
        canvas=mat('#e7d8b6'), canvasShade=mat('#c2ad8a'), teal=mat('#4c9b9c'), red=mat('#b95d4e'),
        sea=mat('#397c89',.1,.4), foam=mat('#81bdc4'), glass=mat('#8fc4be',.15,.4,.12), distant=mat('#697e9b'), blackSail=mat('#ffffff'), woodLight=mat('#be925a'),
-       woodDark=mat('#654229'), lamp=mat('#ffe2a0',0,.65,.55), deepSea=mat('#285b70'), farRock=mat('#6c97a4'), tarCloth=mat('#33414b',0,.9))
+       woodDark=mat('#654229'), lamp=mat('#ffe2a0',0,.65,2.0), deepSea=mat('#285b70'), farRock=mat('#6c97a4'), tarCloth=mat('#33414b',0,.9))
 c=ShipChapter(ROOT,'blackflag','BLACKFLAG 黑帆战舰',64,34,'seabreeze',P); D=c.detail
 c.sails=Mesh();c.gallery=Mesh()
 # A broad 64 x 34m game-scaled deck: no obligatory gangplanks or jump gaps.
@@ -98,6 +98,9 @@ for sign,tag,team in [(-1,'bow','west'),(1,'stern','east')]:
     c.box(tag+'_team_mark',[sign*30,2.425,0],[1.2,.05,4],'teal' if sign<0 else 'red','wayfinding',False)
 # Ship anatomy is collision, not a render-only shell. Wide loops surround two staggered cover islands.
 c.box('hatch_coaming',[0,.7,0],[7,1.4,6],'timber')
+# 2026-10-28 collision audit: the helmsman's wheel stood on the stern deck with no
+# collider, so players walked through it. A slim box matches the wheel's disc.
+c.box('stern_helm',[29,3.75,0],[.5,2.7,2.2],'timber','prop')
 c.box('main_mast',[0,8,0],[.9,16,.9],'timber','structure')
 c.box('fore_mast',[-13,6,-2],[.7,12,.7],'timber','structure')
 c.box('cargo_bow',[-9,1.4,4],[4,2.8,3],'canvas')
@@ -150,7 +153,9 @@ def barrel(m,x,y,z,r=.6,h=1.55):
     for zz in (-r*.36,0,r*.36):beam(m,'plank',(x-r*.7,y+h-.025,z+zz),(x+r*.7,y+h-.025,z+zz),.025,4)
     m.prism('brass',(x+.18,0,z),.07,.035,8,y0=y+h-.02)
 
+LANTERNS=[]
 def lantern(m,x,y,z,scale=1):
+    LANTERNS.append((x,y+.42*scale,z,scale))
     m.prism('brass',(x,0,z),.28*scale,.12*scale,6,y0=y)
     m.prism('lamp',(x,0,z),.2*scale,.58*scale,6,y0=y+.13*scale)
     for i in range(6):
@@ -523,6 +528,9 @@ c.data['designNotes']=['Game-scaled fictional ship; not a historical reconstruct
 
 def crafted(m,o):
     x,y,z=o['position'];w,h,d=o['size'];id=o['id'];bottom=y-h/2
+    if id=='stern_helm':
+        # The wheel art stays in the detail batch; a core hidden inside its hub.
+        m.cbox('brass',[29,4.05,0],[.2,.2,.2]); return True
     if id.startswith('cargo_crate_') or id.startswith('gun_breastwork_'):
         # Closed plank backing, recessed seams and iron lashings match solid collision.
         bevelbox(m,'woodDark',o['position'],o['size'],.075)
@@ -673,4 +681,11 @@ def crafted(m,o):
         bevelbox(m,'timber',o['position'],o['size'],.10);return True
     return False
 
+# Lantern light: hung from both masts above head height, plus every carved lantern.
+for x,z,side in [(0,0,1),(0,0,-1),(-13,-2,1),(-13,-2,-1)]:
+    beam(D,'brass',(x,4.9,z+side*.4),(x,4.9,z+side*.95),.03,4)
+    lantern(D,x,4.25,z+side*.95,.55)
+c.data['presentation'].update(
+    glows=[[round(x,3),round(y,3),round(z,3),round(1.7*s,2),'#ffd08a',.3] for x,y,z,s in LANTERNS],
+    pools=[[round(x,3),2.4 if abs(x)>22 else 1.43 if abs(x)<3.5 else 0,round(z,3),2.2,'#ffb36a',.35] for x,y,z,s in LANTERNS if y<6])
 c.save(render_object=crafted)

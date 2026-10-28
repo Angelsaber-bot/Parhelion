@@ -82,3 +82,16 @@ screenshots, browser acceptance or GPU benchmarks. Final image manifests record
 the exact GLB hash and camera/light conditions.
 
 Close-up inspection: [fountain](previews/03-fountain.jpg), [wagon](previews/04-wagon.jpg), [arcade](previews/05-arcade.jpg). Reproduce with `blender -b --factory-startup -t 4 --python arena-maps/frostcourt/validation/render_details.py`.
+
+## 2026-10-28 winter light, dressing and collision audit
+
+- **Light:** `snowcourt` is a low late-afternoon sun from the west with blue snow
+  shadows (environment 0.38). Lit palace windows, wall/park lamps, four arcade
+  lanterns and four warming braziers glow under bloom with runtime halos and pools;
+  diamond-dust glitter drifts in the court.
+- **Art:** icicles along arcade and palace eaves, wind-packed drifts, sled tracks in
+  the park snow, and a burning city skyline (onion domes, bell tower, walls, glowing
+  smoke) on the northern horizon.
+- **Collision:** the palace portico (columns up to 1.4 m proud of the east wall),
+  both garden urns, ten south-wall piers and the four west window bays now have
+  matching colliders; `validation/layout-baseline.json` records the new layout.

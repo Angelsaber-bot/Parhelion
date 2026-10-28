@@ -107,7 +107,7 @@ let mapReady: Promise<void>;
 function pickMap(id: string) {
   mapId = mapIdOf(id);
   renderMaps();
-  mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset);
+  mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
   mapReady.catch((e) => showError(() => bilingual(`地图加载失败：${localizeText((e as Error).message)}`, `Map failed to load: ${localizeText((e as Error).message)}`)));
 }
 function renderSkins() {

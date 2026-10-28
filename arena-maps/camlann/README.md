@@ -60,3 +60,20 @@ texture bytes (3,966,995 geometry/JSON bytes, below the established 4MB budget).
 GLB structural/proxy checks: 820 passed. All 65 focused map/chapter checks passed,
 including both-way real movement, spawn occlusion, anchor connectivity and bots.
 Fresh preview evidence is recorded separately by the independent QA pass.
+
+## 2026-10-28 evening light, war dressing and collision audit
+
+- **Light:** `oathfield` is now an amber evening (sun ~30° from the west) with the
+  room environment dimmed to 0.45 so ruins, stakes and the hall cast readable
+  shadows. 15 braziers/watch fires and 18 crest torches are emissive under bloom and
+  carry runtime halos, ground light pools and rising embers (`presentation` block,
+  drawn by `arena-game/src/chapterEffects.ts`; client-only, never collision).
+- **Art:** sharpened-stake palisade on a solid backing board, stacked hall timbers,
+  dropped shields/spears/arrows (all < 0.35 m), planted swords at the stone, team
+  banners, two army camps with tents and smoking fires, a standing-stone ring and a
+  distant Camelot landmark, smouldering pyres on the horizon, wall-foot grass/flowers.
+- **Collision:** corner moss mounds that overlapped the playable rectangle (1.7 m
+  walk-through hills) now sit outside the banks; the sword and the three braziers on
+  reachable tops have real colliders. `python3 arena-maps/_lib/audit_collision.py
+  arena-maps/camlann camlann` reports no ghost art in the body band.
+- 69,320 triangles / 7.37 MB GLB (chapter budget raised to 110k / 9MB geometry).

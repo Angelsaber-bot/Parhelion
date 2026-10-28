@@ -13,7 +13,7 @@ for k in ['bounds','player','objects','anchors','routes']:
 checks['unchanged_collision_bytes']=sha((ROOT/'assets/frostcourt_collision.glb').read_bytes())==baseline['collisionGLB']
 g=glb(ROOT/'assets/frostcourt_visual.glb');tris=sum(g['accessors'][p['indices']]['count']//3 for m in g['meshes'] for p in m['primitives'])
 checks['under_50k_triangles']=tris<50000
-checks['batched_32_nodes']=len(g['nodes'])==32
+checks['batched_49_nodes']=len(g['nodes'])==49
 checks['embedded_images']=len(g.get('images',[]))==18 and all('bufferView' in im and 'uri' not in im for im in g['images'])
 textured=[m for m in g['materials'] if 'baseColorTexture' in m.get('pbrMetallicRoughness',{})]
 checks['all_surface_channels_present']=len(textured)==18 and all('normalTexture' in m and 'occlusionTexture' in m and 'metallicRoughnessTexture' in m['pbrMetallicRoughness'] for m in textured)

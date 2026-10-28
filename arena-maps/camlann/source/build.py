@@ -4,13 +4,17 @@ Editable Python/mesh-kit source, not an archaeological reconstruction.
 from pathlib import Path
 import sys, math, random
 ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT.parent/'_lib'))
-from chapterkit import Chapter, mat, beam, ring, flag, mountain, box_edges, bevelbox
+from glbkit import Mesh
+from chapterkit import Chapter, mat, beam, ring, flag, mountain, box_edges, bevelbox, cone, frustum, brazier, torch, tent
 from surfaces import build as build_surfaces, ground_atlas
 P=dict(turf=mat('#9caf78'), moss=mat('#6f8d5e'), earth=mat('#947a59'), path=mat('#c5af87'),
     stone=mat('#bdc6b9'), stoneShade=mat('#9aaba5'), stoneLight=mat('#d1d3bd'), timber=mat('#a37f50'),
     grain=mat('#555043'), cloth=mat('#425f88'), gold=mat('#d5b36c',.65,.45), iron=mat('#68767b',.65,.58),
     heather=mat('#b9a8c1'), distant=mat('#9baeb8'), thatch=mat('#bca46b'), thatchShade=mat('#8f8159'),
-    leaf=mat('#92aa68'), leafLight=mat('#b9be78'), bark=mat('#645947'), flower=mat('#e6cf98'), hill=mat('#91a68e'), distantFar=mat('#bac5cb'), battlefield=mat('#ffffff'))
+    leaf=mat('#92aa68'), leafLight=mat('#b9be78'), bark=mat('#645947'), flower=mat('#e6cf98'), hill=mat('#91a68e'), distantFar=mat('#bac5cb'), battlefield=mat('#ffffff'),
+    flame=mat('#ff9a3c',0,1,3.2), flameCore=mat('#ffe6a0',0,1,4.5), coal=mat('#c2461e',0,.9,1.6), ash=mat('#4c4640'),
+    leather=mat('#6e4c33'), shieldRed=mat('#8e3a30'), canvas=mat('#d9c9a3'), canvasShade=mat('#ad9a77'),
+    castle=mat('#a9a6a4'), castleShade=mat('#8a8c93'), castleRoof=mat('#5d6c86'), windowGlow=mat('#ffc477',0,1,2.4))
 c=Chapter(ROOT,'camlann','CAM LANN 誓约荒原',64,48,'oathfield',P); D=c.detail; rng=random.Random(917)
 surfaces=build_surfaces(ROOT/'assets/materials')
 c.textures={name:dict(surfaces[family],scale=scale) for name,family,scale in [
@@ -180,6 +184,8 @@ beam(D,'gold',(sx-.65,3.14,sz),(sx+.65,3.14,sz),.085,7)
 beam(D,'cloth',(sx,3.17,sz),(sx,3.79,sz),.095,8)
 for yy in (3.25,3.39,3.53,3.67): D.prism('gold',(sx,0,sz),.103,.03,n=8,y0=yy)
 D.blob('gold',(sx,3.93,sz),.18,.8)
+# The blade stands on the reachable rubble mound: give it a slim real collider.
+c.box('sword_in_stone',[sx,(1.15+4.1)/2,sz],[.46,2.95,.3],'iron','prop')
 # Broken lintel above the middle breach and one quiet cloth landmark, no glowing-rune noise.
 # One fractured fallen lintel lies on an existing low earthwork rather than blocking a route.
 bevelbox(D,'stoneShade',[-5,1.52,15],[3.1,.24,.9],.13)
@@ -202,7 +208,11 @@ for x in (15.8,18.2): beam(D,'grain',(x,.6,-5.1),(x,.6,-2.9),.5,10)
 # Irregular silhouette beyond the safe playing boundary: turf banks, occasional timber and wind-bent trees.
 for i in range(25):
     a=math.tau*i/25+rng.uniform(-.05,.05); x=math.cos(a)*rng.uniform(35,40); z=math.sin(a)*rng.uniform(28,32)
-    D.blob('moss' if i%4 else 'earth',(x,rng.uniform(.3,1.4),z),rng.uniform(2,5),rng.uniform(.25,.5))
+    r=rng.uniform(2,5); y=rng.uniform(.3,1.4); sq=rng.uniform(.25,.5)
+    # Corner mounds used to overlap the playable rectangle (walk-through ghost hills):
+    # push each mound until its whole footprint clears the earth bank.
+    while abs(x)-r<33 and abs(z)-r<25: x*=1.04; z*=1.04
+    D.blob('moss' if i%4 else 'earth',(x,y,z),r,sq)
 # Soil face strata and sparse rooted grass break up the perimeter without a repeated boulder fence.
 for x in range(-30,31,4):
     for z in (-23.42,23.42):
@@ -255,6 +265,142 @@ for k,(cx,cz,rx,rz) in enumerate([(-19,8,4,3),(18,-15,5,3),(8,18,4,2),(-3,-5,4,2
         D.tri('turf',(x-.1,y,z),(x+.1,y,z),(x+.03,y+.22,z+.06))
         if j%4==0:
             D.blob('flower',(x,.2,z),.07,.6)
+# ---------------------------------------------------------------- 2026-10-28 light & war dressing
+# Fires, war debris, a distant Camelot and an army camp give the evening battlefield
+# depth like SAKURA's lantern-lit precinct. Everything here is decorative: flames and
+# braziers stand on existing solids, flat debris stays below 0.35 m, and the camp,
+# castle and smoke are far outside the playable earth banks.
+GLOWS,POOLS,EMBERS,SMOKE=[],[],[],[]
+def solid_top(x,z):
+    best=0
+    for o in c.objects:
+        if not o['collision'] or o['type']!='box': continue
+        (px,py,pz),(w,h,d)=o['position'],o['size']
+        if abs(x-px)<=w/2 and abs(z-pz)<=d/2: best=max(best,py+h/2)
+    return best
+PROP_ART={}
+def fire(x,z,s=1,y=None,ground=None,pool=3.2,legs=True,solid=False):
+    y=solid_top(x,z) if y is None else y
+    if solid:
+        # Braziers on reachable tops (<=1.45 m) are real little obstacles: their art
+        # lives in the VIS node of a matching collision box, so nobody walks through fire.
+        pid=f'brazier_{len(PROP_ART)}'
+        c.box(pid,[x,round(y+.8*s-.01,3),z],[round(.8*s,3),round(1.6*s+.02,3),round(.8*s,3)],'iron','prop')
+        PROP_ART[pid]=lambda m,x=x,y=y,z=z,s=s,legs=legs: brazier(m,x,y,z,s,legs)
+        fx,fy,fz=brazier(Mesh(),x,y,z,s,legs)
+    else: fx,fy,fz=brazier(D,x,y,z,s,legs)
+    GLOWS.append([round(fx,3),round(fy+.1*s,3),round(fz,3),round(2.1*s,2),'#ffa34d',.8])
+    EMBERS.append([round(fx,3),round(fy,3),round(fz,3),round(.35*s,2)])
+    if pool: POOLS.append([round(x,3),round(solid_top(x,z) if ground is None else ground,3),round(z,3),pool,'#ff9b4a',.55])
+# Hall: fires on both surviving wall stumps light the foundation floor.
+fire(-8.5,-17.6,1.05,ground=1.2); fire(8.5,-12.5,1.05,ground=1.2)
+# Sword stone: two low iron fire bowls flank the blade on its rubble mound.
+fire(-19.3,-4.8,.8,ground=0,pool=2.6,solid=True); fire(-16.7,-3.2,.8,ground=0,pool=2.6,solid=True)
+# Outworks and the baggage line each keep one watch fire.
+fire(14,15,.9,ground=0); fire(-8.7,15.2,.9,ground=0,solid=True); fire(-22.6,9,.8,ground=0,pool=2.4)
+fire(17,-4,.75,ground=0,pool=2.4)
+# Spawn rally fires on the broken spawn walls, team-tinted pools.
+for side,col in ((-1,'#ffb066'),(1,'#ffb066')):
+    fire(side*24,side*7.2,.95,ground=0,pool=3.4)
+# Torches along the palisade crest frame the arena edge at night-ish contrast.
+for zz in (-18,-6,6,18):
+    for xx in (-32,32):
+        fx,fy,fz=torch(D,xx,4.2,zz,1.1); GLOWS.append([fx,round(fy+.05,3),fz,1.5,'#ffad5c',.9])
+for xx in (-24,-12,0,12,24):
+    for zz in (-24,24):
+        fx,fy,fz=torch(D,xx,4.2,zz,1.1); GLOWS.append([fx,round(fy+.05,3),fz,1.5,'#ffad5c',.9])
+# Battlefield remnants: dropped shields, broken spears and spent arrows, all lying
+# flat (< .3 m) and kept out of the main worn tracks so they read, not clutter.
+for k,(x,z) in enumerate([(-11,-10),(4,-9),(12,12),(-17,16),(20,6),(-25,1),(9,19),(-3,-20),(23,-14),(-12,19),(2,13),(24,13)]):
+    a=rng.uniform(0,math.tau)
+    if k%2==0:
+        # round shield, face up, slightly tilted on its boss
+        for i in range(10):
+            t0,t1=math.tau*i/10,math.tau*(i+1)/10
+            D.tri('shieldRed' if k%4==0 else 'cloth',(x,.11,z),(x+.42*math.cos(t1),.05+.03*math.sin(t1),z+.42*math.sin(t1)),(x+.42*math.cos(t0),.05+.03*math.sin(t0),z+.42*math.sin(t0)))
+        D.blob('iron',(x,.12,z),.08,.5)
+        beam(D,'leather',(x-.42,.06,z),(x+.42,.09,z),.025,4)
+    # broken spear shaft with its head
+    dx,dz=math.cos(a),math.sin(a)
+    beam(D,'timber',(x+dx*.6,.04,z+dz*.6),(x+dx*2.1,.07,z+dz*2.1),.03,5)
+    cone(D,'iron',(x+dx*2.1,.07,z+dz*2.1),.05,.0001+.01,4)
+    D.quad('iron',(x+dx*2.1-dz*.05,.07,z+dz*2.1+dx*.05),(x+dx*2.4,.08,z+dz*2.4),(x+dx*2.1+dz*.05,.07,z+dz*2.1-dx*.05),(x+dx*2.05,.07,z+dz*2.05))
+    for j in range(3):
+        # spent arrows still standing in the turf, knee-high at most
+        ax,az=x+rng.uniform(-1.6,1.6),z+rng.uniform(-1.6,1.6); lean=rng.uniform(-.12,.12)
+        beam(D,'timber',(ax,0,az),(ax+lean,.3,az+lean*.5),.012,3)
+        D.tri('canvas',(ax+lean,.3,az+lean*.5),(ax+lean,.22,az+lean*.5+.04),(ax+lean,.22,az+lean*.5-.04))
+# Planted swords around the stone (on the rubble mound, below the blade landmark).
+for k,(x,z) in enumerate([(-19.1,-3.1),(-17.1,-5),(-18.9,-5.2),(-16.6,-4.2)]):
+    yy=1.4; lean=(.08 if k%2 else -.07)
+    D.quad('iron',(x-.03,yy,z),(x+.03,yy,z),(x+.03+lean,yy+.62,z),(x-.03+lean,yy+.62,z))
+    beam(D,'gold',(x+lean-.12,yy+.62,z),(x+lean+.12,yy+.62,z),.02,4)
+    beam(D,'leather',(x+lean,yy+.62,z),(x+lean*1.2,yy+.8,z),.022,4)
+# Ash and scorched earth rings under the fires on the ground.
+for gx,gy,gz,rad,_,_ in POOLS:
+    if gy==0: D.blob('ash',(gx,-.06,gz),rad*.28,.06)
+# Team banners rise from the broken spawn walls (above head height, off the floor).
+for side in (-1,1):
+    top=solid_top(side*24,side*16)
+    beam(D,'timber',(side*24,top,side*16),(side*24,top+3.2,side*16),.05,6)
+    D.quad('cloth' if side<0 else 'shieldRed',(side*24,top+3.1,side*16),(side*24-side*1.4,top+3,side*16+.15),(side*24-side*1.25,top+1.5,side*16+.2),(side*24,top+1.65,side*16))
+    D.tri('gold',(side*24-side*.25,top+2.8,side*16+.02),(side*24-side*1.05,top+2.7,side*16+.1),(side*24-side*.6,top+2.1,side*16+.08))
+# --- Beyond the banks: the army camp (west and east), standing stones and Camelot.
+for side in (-1,1):
+    for k,(dx,z,w) in enumerate([(6,-14,4.2),(10,-4,3.6),(7,7,4.6),(12,15,3.8),(15,-11,3.4),(16,3,4.2)]):
+        x=side*(32+dx); y=terrain_height(x,z)-.15
+        tent(D,x,y,z,w,2.8,2.1,'canvas' if k%3 else 'cloth','canvasShade')
+    for k,(dx,z) in enumerate([(9,0),(13,-7),(10,11)]):
+        x=side*(32+dx); y=terrain_height(x,z)
+        fx,fy,fz=brazier(D,x,y,z,1.3,legs=False)
+        GLOWS.append([round(fx,2),round(fy+.2,2),round(fz,2),3.2,'#ff9c45',.8]); EMBERS.append([round(fx,2),round(fy,2),round(fz,2),.5])
+        SMOKE.append([round(fx,2),round(fy+1,2),round(fz,2),.35,'#7d746c'])
+    for k,z in enumerate((-20,-9,2,13)):
+        x=side*(36+k%2*5); y=terrain_height(x,z)
+        flag(D,'cloth' if side<0 else 'shieldRed',(x,y+4.2,z),side,1.1)
+# A ring of weathered standing stones on the south-east rise.
+for i in range(11):
+    a=math.tau*i/11; x=58+math.cos(a)*9; z=34+math.sin(a)*7; y=terrain_height(x,z)
+    h=2.4+(i*7%5)*.35
+    D.cbox('stoneShade' if i%3 else 'stone',[x,y+h/2-.2,z],[1.1,h,.7])
+    if i%4==0: D.cbox('stone',[x+.6,y+h+.15,z],[2.4,.45,.75])
+# Camelot on the far northern ridge: the chapter's landmark, like SAKURA's pagoda.
+CX,CZ=-30,-150; base=10
+def tower(x,z,r,h,roof=True,n=8):
+    frustum(D,'castle',(x,base-6,z),r*1.08,r,h+6,n)
+    for i in range(n):
+        a=math.tau*(i+.5)/n
+        D.cbox('castleShade',[x+math.cos(a)*r*.95,base+h+.35,z+math.sin(a)*r*.95],[r*.5,.7,r*.5])
+    if roof: cone(D,'castleRoof',(x,base+h+.6,z),r*1.15,r*2.4,n)
+    for k in range(3):
+        a=k*2.1+x
+        D.cbox('windowGlow',[x+math.cos(a)*r*1.01,base+h*(.45+.15*k),z+math.sin(a)*r*1.01],[.5,1.1,.5])
+D.cbox('castleShade',[CX,base+2,CZ],[46,16,10])
+for i in range(12): D.cbox('castle',[CX-22+i*4,base+10.6,CZ+5],[2,1.4,1])
+for x,z,r,h in [(-23,4,3,18),(23,4,3,18),(-12,-3,2.4,22),(12,-3,2.4,22),(0,-6,4,30),(-6,6,1.8,14),(6,6,1.8,14)]:
+    tower(CX+x,CZ+z,r,h)
+cone(D,'gold',(CX,base+30+.6+4*2.4,CZ-6),.25,3,4)
+for k in range(8):
+    x=CX-18+k*5; D.cbox('windowGlow',[x,base+4+(k%3)*2.5,CZ+5.05],[.6,1.2,.1])
+GLOWS.extend([[CX,base+25,CZ-1,9,'#ffc477',0],[CX-12,base+16,CZ+1,6,'#ffc477',0],[CX+12,base+16,CZ+1,6,'#ffc477',0]])
+# Distant pyres of the battle still smoulder on the horizon.
+SMOKE.extend([[-70,2,-60,1.4,'#857b72'],[75,3,-25,1.6,'#857b72'],[40,4,-85,1.8,'#8a8079'],[-85,2,40,1.5,'#857b72']])
+for x,y,z in [(-70,2,-60),(75,3,-25),(40,4,-85),(-85,2,40)]:
+    GLOWS.append([x,y+1,z,5,'#ff8a3a',.6])
+# Denser wildflower and grass at wall feet (below the ghost band, no collision needed).
+for o in c.objects:
+    if o['type']!='box' or o['material'] not in ('stone','stoneShade','timber') or o['role']=='structure': continue
+    (x,y,z),(w,h,d)=o['position'],o['size']
+    if y-h/2>.05: continue
+    for j in range(int((w+d)*2.2)):
+        side=rng.choice((-1,1)); along=rng.random()<w/(w+d)
+        px=x+(rng.uniform(-w/2,w/2) if along else side*(w/2+rng.uniform(.05,.3)))
+        pz=z+(side*(d/2+rng.uniform(.05,.3)) if along else rng.uniform(-d/2,d/2))
+        hh=rng.uniform(.18,.34)
+        D.tri('moss' if j%3 else 'leafLight',(px-.05,.01,pz),(px+.05,.01,pz),(px+rng.uniform(-.06,.06),hh,pz+.03))
+        if j%7==0: D.blob('flower' if j%2 else 'heather',(px,hh,pz),.05,.7)
+c.data['presentation'].update(glows=GLOWS,pools=POOLS,embers=EMBERS,smoke=SMOKE,
+    field=dict(kind='pollen',count=160,color='#ffe2a6',size=.05,min=[-30,.4,-22],max=[30,5,22]))
 c.data['designNotes']=['Early-medieval-inspired fictional battlefield, not a dated reconstruction.','Three offset cover islands with a broad central breach and two foundation ramps.','Rubble chips and distant turf are decorative; no scattered micro-colliders.']
 def rough_stone(m,material,p,s,r):
     x,y,z=p; w,h,d=s
@@ -269,6 +415,11 @@ def rough_stone(m,material,p,s,r):
         m.tri(material,(x,y+h*.48,z),high[j],high[(j+1)%8])
         m.tri(material,(x,y-h*.48,z),low[(j+1)%8],low[j])
 def crafted(m,o):
+    if o['id'] in PROP_ART:
+        PROP_ART[o['id']](m); return True
+    if o['id']=='sword_in_stone':
+        # Hidden core inside the visible blade keeps the node honest; the art is detail.
+        m.cbox('iron',[o['position'][0],2.4,o['position'][2]],[.04,1.6,.04]); return True
     if o['id'].startswith('south_outwork'):
         # Low-cost authored masonry: closed mortar core, offset stone courses,
         # kept in the source object's exact authoritative footprint.
@@ -283,12 +434,38 @@ def crafted(m,o):
                 m.cbox(('stone','stoneLight','stoneShade')[(j+row)%3],p,sz)
         return True
     if o['id'].startswith('crest_palisade_'):
-        # Solid weathered planks have no misleading shoot-through slits.
-        bevelbox(m,'timber',o['position'],o['size'],.045)
+        # Sharpened oak stakes on a solid backing board: the backing keeps the proxy
+        # honestly opaque (no false shoot-through slits), the stakes give the crest
+        # an irregular hand-built silhouette instead of a flat brown fence.
+        x,y,z=o['position']; w,h,d=o['size']; along=w>d; span=w if along else d
+        bottom,top=y-h/2,y+h/2
+        m.cbox('grain',[x,bottom+h*.36,z],[w*.55 if not along else w,h*.72,d*.55 if along else d])
+        rr=random.Random(len(o['id'])*31+int(abs(x+z)))
+        n=int(span/.42)
+        for i in range(n):
+            t=-span/2+(i+.5)*span/n
+            cx,cz=(x+t,z) if along else (x,z+t)
+            r=.17+rr.uniform(-.02,.03); tip=.24+rr.uniform(0,.06)
+            hh=h-tip-rr.uniform(0,.22)
+            m.prism('timber' if i%5 else 'bark',(cx,bottom,cz),r,hh,n=5,rot=rr.uniform(0,1))
+            cone(m,'grain' if i%3==0 else 'timber',(cx,bottom+hh,cz),r,tip,5,rr.uniform(0,1))
+        for yy in (bottom+.35,bottom+.85):
+            m.cbox('leather',[x,yy,z],[w-.02 if along else w*.98,.07,d*.98 if along else d-.02])
         return True
-    if o['id'] in ('baggage_breastwork','baggage_return','fallen_hall_beams'):
+    if o['id']=='fallen_hall_beams':
+        # A collapsed stack of squared hall timbers around a closed core.
         x,y,z=o['position']; w,h,d=o['size']; bottom=y-h/2
-        bevelbox(m,'grain',o['position'],o['size'],.09)
+        m.cbox('grain',[x,y,z],[w*.92,h*.9,d*.8])
+        rows=[(3,.29),(2,.29),(1,.27)]
+        for row,(count,r) in enumerate(rows):
+            yy=bottom+r+row*r*1.72
+            for j in range(count):
+                zz=z+(j-(count-1)/2)*r*2.02
+                beam(m,'timber' if (j+row)%2 else 'bark',(x-w/2+.04+row*.12,yy,zz),(x+w/2-.04-row*.2,yy,zz),r,7)
+        return True
+    if o['id'] in ('baggage_breastwork','baggage_return'):
+        x,y,z=o['position']; w,h,d=o['size']; bottom=y-h/2
+        bevelbox(m,'timber',o['position'],o['size'],.09)
         for j in range(4):
             yy=bottom+(j+.5)*h/4
             for zz in (z-d/2+.035,z+d/2-.035):

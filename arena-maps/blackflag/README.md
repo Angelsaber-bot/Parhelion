@@ -131,3 +131,12 @@ reproducible asset checks. Independent gameplay/render QA is documented under
 `docs/blackflag-polish-qa`. Static checks do not establish human PvP balance,
 real-device FPS, or exact runtime lighting parity. No publication, deployment,
 desktop access or sandbox workaround was performed by this art build.
+
+## 2026-10-28 lantern light and helm collider
+
+Built on the October 28 craft polish without changing its art direction: lantern
+glass is emissive, four lanterns hang from the main and fore masts above head
+height, and every lantern carries a runtime halo and a deck light pool. The ship
+atmosphere dims the room environment to 0.5 so rigging and sail shadows read on
+the deck. The helmsman's wheel was walk-through; `stern_helm` is a slim collider
+matching its disc (approved hashes in `validation/check_art.py` updated for it).

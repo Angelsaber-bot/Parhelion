@@ -1,12 +1,12 @@
 {
   "mapId": "frostcourt",
   "version": "1.0.0",
-  "checks": 283,
+  "checks": 404,
   "failed": [],
-  "visualNodes": 32,
-  "visualTriangles": 34562,
-  "visualBytes": 2957840,
+  "visualNodes": 49,
+  "visualTriangles": 41966,
+  "visualBytes": 3589044,
   "embeddedTextureBytes": 160282,
-  "collisionNodes": 29,
-  "collisionBytes": 40728
+  "collisionNodes": 46,
+  "collisionBytes": 65032
 }

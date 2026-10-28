@@ -4,14 +4,17 @@ Run: python3 arena-maps/frostcourt/source/build.py
 from pathlib import Path
 import sys, math, random
 ROOT=Path(__file__).resolve().parents[1]; sys.path.insert(0,str(ROOT.parent/'_lib'))
-from chapterkit import Chapter, mat, beam, flag, mountain, bevelbox, hiproof
+from chapterkit import Chapter, mat, beam, flag, mountain, bevelbox, hiproof, cone, frustum, lantern, brazier
 P=dict(stone=mat('#a9b0b8'), limestone=mat('#d9d4c7'), stoneLight=mat('#c1c4c8'), stoneDark=mat('#909aa8'),
     pavement=mat('#8e9bab'), pavementAlt=mat('#99a5b2'), pavementWarm=mat('#a6abb1'), joint=mat('#68788c'),
     snow=mat('#eef0f3'), snowShade=mat('#cdd9e7'), snowBlue=mat('#bccddd'), slate=mat('#425870'), slateLight=mat('#566d83'),
     iron=mat('#344455',.5,.55), ironEdge=mat('#66778a',.45,.45), timber=mat('#6c4e3d'), timberLight=mat('#977354'), timberDark=mat('#4d3b33'),
     canvas=mat('#b8af99'), canvasLight=mat('#cec3a8'), canvasShade=mat('#8f938f'), rope=mat('#8d816c'),
     blue=mat('#365578'), blueLight=mat('#4a698d'), gold=mat('#bda06b',.62,.42), ice=mat('#8bb8cc',.12,.34), iceLight=mat('#c0dce5',.08,.28),
-    window=mat('#45617e',.1,.36), windowLight=mat('#7b9ab2',.1,.4), amber=mat('#d8a66c',.15,.58,.08), distant=mat('#9baac1'), winterNeedle=mat('#526773'), winterNeedleLight=mat('#6d828b'))
+    window=mat('#45617e',.1,.36), windowLight=mat('#7b9ab2',.1,.4), amber=mat('#d8a66c',.15,.58,.08), distant=mat('#9baac1'), winterNeedle=mat('#526773'), winterNeedleLight=mat('#6d828b'),
+    windowGlow=mat('#ffbf73',0,1,2.3), lampGlass=mat('#ffd9a0',0,1,3.0), flame=mat('#ff9a3c',0,1,3.2), flameCore=mat('#ffe6a0',0,1,4.5),
+    coal=mat('#c2461e',0,.9,1.6), cityStone=mat('#8c93a6'), cityRoof=mat('#4c5a78'), dome=mat('#c9a35c',.6,.4), domeBlue=mat('#3f5f93',.3,.5),
+    fireSky=mat('#ff8a48',0,1,1.4))
 c=Chapter(ROOT,'frostcourt','FROSTCOURT 永冬庭院',60,48,'snowcourt',P); D=c.detail
 c.box('court_floor',[0,-.3,0],[60,.6,48],'snow','floor')
 for x in (-30,30): c.box('boundary_x_'+str(x),[x,2.5,0],[.6,5,48],'limestone','structure')
@@ -39,6 +42,14 @@ for side in (-1,1):
     c.anchor('cover_park_'+str(side),'cover',[side*10,0,16],height=1.5)
     c.anchor('cover_fountain_'+str(side),'cover',[side*4.2,0,0],height=1.7)
 c.anchor('objective_fountain','objective',[0,0,5],radius=2)
+# 2026-10-28 collision audit: these visible solids used to be walk-through art.
+# The palace portico (columns/piers up to 1.4 m proud of the east wall), the two
+# garden urns and the south-wall piers now have matching authoritative boxes.
+c.box('palace_portico',[28.975,2.65,0],[1.45,5.3,13.4],'limestone','structure')
+for x in (-20,20): c.box(f'garden_urn_{x}',[x,.7,21],[1.8,1.4,1.8],'limestone','prop')
+for x in range(-27,28,6): c.box(f'south_wall_pier_{x}',[x,1.5,23.63],[.8,3,.74],'stone','structure')
+# West-wall window bays: sills and reveals stand 0.6 m proud of the wall face.
+for z in (-18,-12,12,18): c.box(f'west_window_bay_{z}',[-29.4,2.75,z],[.62,2.9,2.4],'stone','structure')
 c.route('covered_arcade',[[-27.5,0,-2],[-27.5,0,-18],[-25.5,0,-18],[-18,1.3,-18],[18,1.3,-18],[25.5,0,-18],[27.5,0,-18],[27.5,0,-2]])
 c.route('park_loop',[[-27.5,0,2],[-27.5,0,10],[-20,0,18],[0,0,18],[20,0,18],[27.5,0,10],[27.5,0,2]])
 c.route('fountain_breach',[[-22,0,-8],[-15,0,-10],[-6,0,-8],[6,0,-8],[20,0,-8],[22,0,0],[22,0,8],[7,0,9],[0,0,7],[-7,0,9],[-20,0,8],[-22,0,0],[-22,0,-8]])
@@ -142,10 +153,12 @@ for i in range(12):
     a=math.tau*i/12
     beam(D,'gold',(28.47,11.56+.72*math.cos(a),.72*math.sin(a)),(28.47,11.56+.94*math.cos(a),.94*math.sin(a)),.027,4)
 # Recessed windows read as layered glass, deep reveal, sash and carved lintel at eye height.
+LIT=[]
 def window_face(x,y,z,sign=1,width=1.8,height=2.35,lit=False):
     D.cbox('stoneDark',[x,y,z],[.08,height+.44,width+.45])
     D.cbox('iron',[x-sign*.055,y,z],[.055,height+.10,width+.1])
-    D.cbox('amber' if lit else 'window',[x-sign*.09,y,z],[.025,height,width])
+    D.cbox('windowGlow' if lit else 'window',[x-sign*.09,y,z],[.025,height,width])
+    if lit and y<4: LIT.append((x-sign*.6,z,width))
     # Desaturated sky reflected in upper panes, no false hole through collision wall.
     D.cbox('windowLight',[x-sign*.11,y+height*.23,z-width*.24],[.015,height*.42,width*.44])
     for zz in (z-width/2-.16,z+width/2+.16): D.cbox('limestone',[x-sign*.20,y,zz],[.24,height+.6,.22])
@@ -155,9 +168,10 @@ def window_face(x,y,z,sign=1,width=1.8,height=2.35,lit=False):
     D.cbox('stone',[x-sign*.28,y-height/2-.34,z],[.5,.10,width+.87])
     D.cbox('snow',[x-sign*.25,y+height/2+.35,z],[.4,.09,width+.72])
 for z in (-16,-11,11,16):
-    for y in (3,8): window_face(30.45,y,z,1)
+    # Warm occupied rooms behind the facade: lamplight against the cold court.
+    for y in (3,8): window_face(30.45,y,z,1,lit=(y==3)!=(abs(z)==11))
     for y in (3,8): window_face(37.56,y,z,-1,lit=(z==11 and y==3))
-for z in (-4.6,0,4.6): window_face(28.99,7.7,z,1,1.6,2.1)
+for z in (-4.6,0,4.6): window_face(28.99,7.7,z,1,1.6,2.1,lit=z==0)
 # Double portal in a shadowed surround; actual filled panels preserve the boundary solidity.
 D.cbox('stoneDark',[28.99,2.2,0],[.06,4.4,4.85])
 for z in (-1.1,1.1):
@@ -190,7 +204,7 @@ for z in (-6.2,6.2):
 # Small wall lanterns use glass/metal geometry and restrained warm material, no fake scene lights.
 for z in (-7.3,7.3):
     beam(D,'iron',(29.1,3.9,z),(28.55,3.9,z),.045,6)
-    bevelbox(D,'amber',[28.48,3.55,z],[.3,.55,.3],.04)
+    bevelbox(D,'lampGlass',[28.48,3.55,z],[.3,.55,.3],.04)
     for zz in (z-.16,z+.16): D.cbox('iron',[28.48,3.55,zz],[.35,.035,.035])
     D.prism('iron',(28.48,0,z),.26,.08,n=4,y0=3.9,rot=math.pi/4)
 # West entry: open iron grille over a dark recess, squat dressed piers and crown cornices.
@@ -205,7 +219,7 @@ for z in [i*.45 for i in range(-13,14)]:
     D.cbox('ironEdge',[-29.63,2.7,z],[.06,4.9,.045])
     if int(z/.45)%3==0: beam(D,'gold',(-29.62,5.1,z),(-29.62,5.45,z),.07,4)
 for y in (1.1,3.6,4.8): D.cbox('gold',[-29.60,y,0],[.045,.04,11.8])
-for z in (-18,-12,12,18): window_face(-29.64,2.75,z,-1,1.5,2)
+for z in (-18,-12,12,18): window_face(-29.64,2.75,z,-1,1.5,2,lit=z in (-12,18))
 # Arcade has complete curved soffits, explicit capitals and shadowed coffers.
 snow_hip(-20.7,20.7,-23,-13,6.06,7.6,82)
 for x in (-13.5,-4.5,4.5,13.5):
@@ -332,7 +346,7 @@ for x in (-18,18): flag(D,'blue',(x,6.3,-21.8),-1 if x<0 else 1,.9)
 # Park lamps are small decorative crowns on existing solid gateposts, not new blockers.
 for x in (-4,4):
     z=14
-    bevelbox(D,'amber',[x,2.54,z],[.40,.47,.40],.035)
+    bevelbox(D,'lampGlass',[x,2.54,z],[.40,.47,.40],.035)
     for xx in (x-.23,x+.23):
         for zz in (z-.23,z+.23): beam(D,'iron',(xx,2.27,zz),(xx,2.83,zz),.025,5)
     D.cbox('iron',[x,2.27,z],[.55,.08,.55]);D.cbox('iron',[x,2.83,z],[.58,.09,.58])
@@ -364,8 +378,101 @@ for i,x in enumerate((-26,-15,-4,8,21)):
         beam(D,'timberDark',b,(b[0]+side*.7,b[1]+1.1,b[2]-.4),.032,5)
         beam(D,'snow',(a[0],a[1]+.06,a[2]),(b[0],b[1]+.06,b[2]),.045,5)
 for i in range(10): mountain(D,'distant',-100+i*23,-95,25,12+(i*7%13))
+# ---------------------------------------------------------------- 2026-10-28 light & winter dressing
+# Warm lamplight against blue snow (SAKURA's lantern contrast, in a winter key), icicles
+# and drifts for texture, and a burning city on the northern horizon for depth and story.
+GLOWS,POOLS,EMBERS,SMOKE=[],[],[],[]
+for z in (-7.3,7.3):
+    GLOWS.append([28.48,3.55,z,1.5,'#ffc27a',.25]); POOLS.append([28.3,0,z,2.6,'#ffb066',.45])
+for x in (-4,4):
+    GLOWS.append([x,2.54,14,1.6,'#ffc27a',.2]); POOLS.append([x,0,14.9,2.8,'#ffb066',.45])
+for x,z,w in LIT:
+    POOLS.append([round(x,2),0,z,1.8,'#ffb36a',.35])
+# Lanterns hung under the arcade between piers, above head height on the terrace.
+for x in (-13.5,-4.5,4.5,13.5):
+    beam(D,'iron',(x,5.55,-18),(x,4.95,-18),.018,4)
+    lx,ly,lz=lantern(D,x,4.55,-18,1.1)
+    GLOWS.append([lx,ly,lz,1.4,'#ffc27a',.25]); POOLS.append([x,1.3,-18,2.6,'#ffb066',.5])
+# Warming braziers on the spawn screens' coping (unreachable 3.4 m tops).
+for side in (-1,1):
+    for zz in (-3.6,3.6):
+        fx,fy,fz=brazier(D,side*24,3.42,zz,.8,legs=False)
+        GLOWS.append([fx,round(fy+.08,2),fz,1.7,'#ffa34d',.8]); EMBERS.append([fx,fy,fz,.3])
+        POOLS.append([side*24-side*1.6,0,zz,2.4,'#ff9b4a',.35])
+# Icicles along every eave the player sees: arcade roof edges and the palace cornice.
+for z in (-22.75,-13.25):
+    for i in range(80):
+        x=-20+i*.5+rng.uniform(-.15,.15); L=rng.uniform(.18,.62)
+        cone(D,'iceLight' if i%3 else 'ice',(x,6.02,z),.045+L*.05,-L,4,rng.uniform(0,1))
+for i in range(70):
+    z=-19.5+i*.56+rng.uniform(-.1,.1)
+    if abs(z)<7.6: continue
+    L=rng.uniform(.2,.7); cone(D,'iceLight' if i%2 else 'ice',(29.92,10.9,z),.05+L*.05,-L,4,rng.uniform(0,1))
+for z in [i*.5-7.4 for i in range(30)]:
+    L=rng.uniform(.15,.5); cone(D,'iceLight',(28.62,10.48,z),.04+L*.05,-L,4,rng.uniform(0,1))
+# Wind-packed drifts at the feet of walls, piers and screens (thin, below the body band).
+for x in range(-28,29,3):
+    D.blob('snow',(x+rng.uniform(-.6,.6),.02,-23.25),rng.uniform(1,1.8),.12)
+for z in range(-20,21,3):
+    if abs(z)<9: continue
+    D.blob('snow',(-29.25,.02,z+rng.uniform(-.6,.6)),rng.uniform(.9,1.5),.14)
+for x in (-18,-9,0,9,18):
+    for z in (-21.5,-14.5): D.blob('snowShade',(x,1.32,z),.7,.1)
+for side in (-1,1):
+    for zz in (-5,5): D.blob('snow',(side*24-side*.5,.02,zz),.9,.16)
+# Sled and boot tracks pressed into the southern park snow.
+for k,(z0,dz) in enumerate([(17.2,.3),(18.8,-.25)]):
+    for i in range(40):
+        x0=-24+i*1.2; x1=x0+1.15
+        for off in (-.45,.45):
+            ribbon(D,'snowBlue',(x0,.017,z0+off+dz*math.sin(i*.3)),(x1,.017,z0+off+dz*math.sin((i+1)*.3)),.09)
+# Stacked muskets in tripods against the arcade terrace front (inside the terrace face band).
+# Burning city on the northern horizon: onion domes, a tall bell tower, walls and smoke.
+CZ=-118
+def city_block(x,z,w,d,h):
+    D.cbox('cityStone',[x,h/2-4,z],[w,h+8,d])
+    hiproof(D,'cityRoof',x-w/2,x+w/2,z-d/2,z+d/2,h-4,h-4+min(w,d)*.45)
+def onion(x,z,r,y,gold=True):
+    frustum(D,'cityStone',(x,y-4,z),r*.75,r*.7,4+r*1.2,10)
+    yy=y+r*1.2
+    D.blob('dome' if gold else 'domeBlue',(x,yy+r*.55,z),r*1.05,1.05)
+    cone(D,'dome' if gold else 'domeBlue',(x,yy+r*1.3,z),r*.45,r*1.1,8)
+    beam(D,'gold',(x,yy+r*2.3,z),(x,yy+r*2.3+1.6,z),.08,4)
+rr=random.Random(1812)
+for i in range(26):
+    x=-110+i*9+rr.uniform(-2,2); z=CZ+rr.uniform(-12,10); w=rr.uniform(6,11); d=rr.uniform(5,9); h=rr.uniform(12,20)
+    city_block(x,z,w,d,h)
+D.cbox('cityStone',[-10,4,CZ+14],[150,16,2.5])
+for i in range(16): cone(D,'cityRoof',(-82+i*10,14,CZ+14),1.9,5,4,math.pi/4); frustum(D,'cityStone',(-82+i*10,-4,CZ+14),1.9,1.8,18,4)
+for x,z,r,y,g in [(-20,CZ-6,5,30,True),(-31,CZ-2,3.4,25,False),(-9,CZ-1,3.4,25,True),(-25,CZ+3,2.6,21,True),(-14,CZ+4,2.6,21,False),(40,CZ-4,4,26,False),(49,CZ,2.8,22,True),(-70,CZ-2,3.4,23,True)]:
+    onion(x,z,r,y,g)
+# Bell tower (a tall stepped octagon), the skyline's vertical accent.
+TIERS=[(5,22),(4.1,14),(3.2,12),(2.4,9)]
+for k,(r,h) in enumerate(TIERS):
+    frustum(D,'cityStone' if k%2==0 else 'limestone',(12,-4+sum(hh for _,hh in TIERS[:k]),CZ-8),r,r*.92,h,8)
+D.blob('dome',(12,54.6,CZ-8),2.6,1.1); cone(D,'dome',(12,56.8,CZ-8),1,3,8)
+# The fire: glowing low cloud bank, rising smoke and a scatter of burning windows.
+for i in range(9):
+    x=-90+i*20+rr.uniform(-5,5); z=CZ-4+rr.uniform(-6,6)
+    D.blob('fireSky',(x,16,z),rr.uniform(8,12),.5)
+    GLOWS.append([round(x,1),24,round(z,1),30,'#ff7a35',.5])
+    SMOKE.append([round(x,1),24,round(z,1),2.6,'#6c6670'])
+for i in range(30):
+    x=-105+rr.uniform(0,170); z=CZ+rr.uniform(-10,10)
+    D.cbox('windowGlow',[x,rr.uniform(6,16),z+4.6],[1.1,1.5,.2])
+c.data['presentation'].update(glows=GLOWS,pools=POOLS,embers=EMBERS,smoke=SMOKE,
+    field=dict(kind='glitter',count=220,color='#eaf4ff',size=.06,min=[-28,.3,-22],max=[28,6,22]))
 c.data['designNotes']=['Snow has no friction/visibility gameplay modifier.','North arcade and open south park are deliberately different bypasses.','Fictional ceremonial architecture; no named historical battle claim.','R4 material and sculptural pass preserves every authoritative collision, route, anchor and spawn.']
 def crafted(m,o):
+    if o['id']=='palace_portico':
+        # The portico art is in the detail batch; a core hidden inside the south pier.
+        m.cbox('limestone',[28.78,2.35,2.6],[.4,4.5,.38]); return True
+    if o['id'].startswith('garden_urn_'):
+        x=o['position'][0]; m.cbox('limestone',[x,.7,21],[.5,1.1,.5]); return True
+    if o['id'].startswith('west_window_bay_'):
+        z=o['position'][2]; m.cbox('stoneDark',[-29.66,2.75,z],[.06,2.3,1.9]); return True
+    if o['id'].startswith('south_wall_pier_'):
+        x=o['position'][0]; m.cbox('stone',[x,1.5,23.63],[.7,2.9,.66]); return True
     if o['id']=='fountain_plinth':
         # Stepped octagonal section: a shadowed waist and rolled rim, not a solid cube.
         def contour(w,yy):

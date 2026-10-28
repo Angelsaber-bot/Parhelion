@@ -132,3 +132,84 @@ def hiproof(m, material, x0,x1,z0,z1,eave,ridge):
         m.quad(material,(x0,eave,z1),(x0,eave,z0),ra,rb)
         m.tri(material,(x0,eave,z0),(x1,eave,z0),ra); m.tri(material,(x1,eave,z1),(x0,eave,z1),rb)
     return ra,rb
+
+
+# ---------------------------------------------------------------- light-dressing props
+# Shared by the three chapter maps (2026-10-28 polish). Each returns the flame/lamp
+# centre so the map can register the matching runtime glow in presentation.glows.
+
+def cone(m, material, base, r, h, n=7, rot=0.0):
+    """Closed upright cone (flame tongues, tent roofs, spires)."""
+    x, y, z = base
+    pts = [(x + r * math.cos(rot + math.tau * i / n), y, z + r * math.sin(rot + math.tau * i / n)) for i in range(n)]
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        m.tri(material, b, a, (x, y + h, z))
+        m.tri(material, (x, y, z), a, b)
+
+
+def frustum(m, material, base, r0, r1, h, n=8):
+    """Tapered closed n-gon (bowls, tower bodies, posts)."""
+    x, y, z = base
+    lo = [(x + r0 * math.cos(math.tau * i / n), y, z + r0 * math.sin(math.tau * i / n)) for i in range(n)]
+    hi = [(x + r1 * math.cos(math.tau * i / n), y + h, z + r1 * math.sin(math.tau * i / n)) for i in range(n)]
+    for i in range(n):
+        j = (i + 1) % n
+        m.quad(material, lo[j], lo[i], hi[i], hi[j])
+        m.tri(material, (x, y + h, z), hi[j], hi[i])
+        m.tri(material, (x, y, z), lo[i], lo[j])
+
+
+def flame(m, x, y, z, s=1.0, outer='flame', inner='flameCore'):
+    """Three leaning tongues around a bright core; emissive, so bloom does the glow."""
+    for k, (dx, dz, h) in enumerate([(.06, 0, .62), (-.05, .05, .5), (0, -.06, .44)]):
+        cone(m, outer, (x + dx * s, y, z + dz * s), .14 * s, h * s, 5, k * .7)
+    cone(m, inner, (x, y, z), .08 * s, .36 * s, 5)
+    return (x, y + .28 * s, z)
+
+
+def brazier(m, x, y, z, s=1.0, legs=True):
+    """Iron fire basket with coals and flame. y is the surface it stands on."""
+    top = y + (.62 if legs else .12) * s
+    if legs:
+        for i in range(3):
+            a = math.tau * i / 3
+            beam(m, 'iron', (x + math.cos(a) * .26 * s, y, z + math.sin(a) * .26 * s), (x + math.cos(a) * .17 * s, top, z + math.sin(a) * .17 * s), .025 * s, 4)
+    frustum(m, 'iron', (x, top - .02 * s, z), .14 * s, .3 * s, .22 * s, 8)
+    for i in range(8):
+        a = math.tau * (i + .5) / 8
+        beam(m, 'iron', (x + math.cos(a) * .3 * s, top + .2 * s, z + math.sin(a) * .3 * s), (x + math.cos(a) * .36 * s, top + .34 * s, z + math.sin(a) * .36 * s), .018 * s, 3)
+    m.blob('coal', (x, top + .2 * s, z), .24 * s, .35)
+    return flame(m, x, top + .22 * s, z, s)
+
+
+def torch(m, x, y, z, s=1.0):
+    """Short pole torch with a pitch-wrapped head."""
+    beam(m, 'timber', (x, y, z), (x, y + .75 * s, z), .04 * s, 5)
+    frustum(m, 'iron', (x, y + .7 * s, z), .05 * s, .09 * s, .14 * s, 6)
+    m.blob('coal', (x, y + .86 * s, z), .08 * s, .6)
+    return flame(m, x, y + .84 * s, z, .7 * s)
+
+
+def lantern(m, x, y, z, s=1.0, glass='lampGlass', frame='iron'):
+    """Hanging/standing four-pane lantern; returns the light centre."""
+    m.cbox(frame, [x, y + .02 * s, z], [.26 * s, .04 * s, .26 * s])
+    m.cbox(glass, [x, y + .2 * s, z], [.2 * s, .32 * s, .2 * s])
+    for dx in (-.11, .11):
+        for dz in (-.11, .11):
+            m.cbox(frame, [x + dx * s, y + .2 * s, z + dz * s], [.03 * s, .34 * s, .03 * s])
+    cone(m, frame, (x, y + .37 * s, z), .18 * s, .16 * s, 4, math.pi / 4)
+    return (x, y + .2 * s, z)
+
+
+def tent(m, x, y, z, w, d, h, cloth='canvas', shade='canvasShade', pole='timber'):
+    """A-frame ridge tent along x with a dark open front."""
+    a, b = (x - w / 2, y, z - d / 2), (x + w / 2, y, z - d / 2)
+    c, e = (x + w / 2, y, z + d / 2), (x - w / 2, y, z + d / 2)
+    r0, r1 = (x - w / 2, y + h, z), (x + w / 2, y + h, z)
+    m.quad(cloth, a, r0, r1, b); m.quad(cloth, c, r1, r0, e)
+    m.quad(cloth, b, r1, r0, a); m.quad(cloth, e, r0, r1, c)
+    m.tri(shade, a, e, r0); m.tri(shade, c, b, r1)
+    m.tri('grain', (x - w / 2 - .01, y, z - d * .22), (x - w / 2 - .01, y, z + d * .22), (x - w / 2 - .01, y + h * .7, z))
+    beam(m, pole, (x - w / 2 - .1, y, z), (x - w / 2 - .1, y + h + .35, z), .04, 4)
+    beam(m, pole, (x + w / 2 + .1, y, z), (x + w / 2 + .1, y + h + .35, z), .04, 4)

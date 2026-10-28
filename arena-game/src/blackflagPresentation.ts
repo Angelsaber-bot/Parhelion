@@ -11,6 +11,9 @@ export const BLACKFLAG_ATMOSPHERE: Atmosphere = {
   sun: { color: 0xffe2b4, intensity: 2.95, pos: [-32, 39, 24] },
   sky: { horizon: 0xe3dfca, mid: 0x7ba8bb, top: 0x366d95, sun: 0xffedca, cloudLit: 0xf8ead6, cloudShade: 0x97adbf, night: 0 },
   particles: 'none', bloom: 0.12, bloomThreshold: 1.95,
+  // Three ignores per-material envMapIntensity under scene.environment; at full
+  // strength the room fill erased the rigging and sail shadows on the deck.
+  environment: 0.5,
 };
 
 const SHIP_SHADOW_MATERIALS = new Set([

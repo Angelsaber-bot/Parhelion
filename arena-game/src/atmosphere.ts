@@ -12,6 +12,10 @@ export interface Atmosphere {
   particles: 'none' | 'petals' | 'motes' | 'embers' | 'snow';
   bloom: number; // UnrealBloom strength (0 = off)
   bloomThreshold: number; // linear luminance that starts to glow; daylight must stay above lit sand/plaster
+  /** scene.environmentIntensity for PBR maps (default 1). Three ignores a material's own
+   * envMapIntensity when lighting comes from scene.environment, so this is the real knob:
+   * the room environment's diffuse fill otherwise washes out every sun shadow. */
+  environment?: number;
 }
 
 export const ATMOSPHERES: Record<string, Atmosphere> = {
@@ -21,17 +25,21 @@ export const ATMOSPHERES: Record<string, Atmosphere> = {
     sky: { horizon: 0xe0ded0, mid: 0x82b5ce, top: 0x467eaa, sun: 0xffedca, cloudLit: 0xf8ead6, cloudShade: 0xa1b2c7, night: 0 },
     particles: 'none', bloom: 0.18, bloomThreshold: 1.8,
   },
+  // FROSTCOURT: low winter sun from the west rakes the palace facade and throws long
+  // blue shadows across the snow; amber windows and lamps carry the bloom.
   snowcourt: {
-    background: 0xb8c5d6, fog: [0xc0cbd9, 80, 220], exposure: 0.94, hemi: [0xdce6f4, 0x798397, 1.65],
-    sun: { color: 0xf3e8d4, intensity: 2.0, pos: [-24, 30, 18] },
-    sky: { horizon: 0xe6e5e3, mid: 0xbbcbdc, top: 0x859fbd, sun: 0xfff3df, cloudLit: 0xeef0f2, cloudShade: 0xb0bfd1, night: 0 },
-    particles: 'snow', bloom: 0.08, bloomThreshold: 2.2,
+    background: 0xc8c8d8, fog: [0xc6cada, 62, 240], exposure: 0.98, hemi: [0xa4bbe0, 0x56607c, 1.15],
+    sun: { color: 0xffd0a0, intensity: 3.1, pos: [-40, 15, 13] },
+    sky: { horizon: 0xffd6b4, mid: 0xb9c2dc, top: 0x4f6898, sun: 0xfff2da, cloudLit: 0xffe7d4, cloudShade: 0x98a5c4, night: 0.08 },
+    particles: 'snow', bloom: 0.42, bloomThreshold: 1.12, environment: 0.38,
   },
+  // CAM LANN: amber evening after the last battle. A low sun gives every ruin and
+  // timber frame a long readable shadow; braziers and torches glow under bloom.
   oathfield: {
-    background: 0xb5c6bf, fog: [0xb5c5b4, 70, 220], exposure: 1.0, hemi: [0xd8e6ec, 0x637654, 1.6],
-    sun: { color: 0xffddb0, intensity: 2.6, pos: [-35, 22, 20] },
-    sky: { horizon: 0xe6cfab, mid: 0x9dbdcc, top: 0x57859f, sun: 0xffedc6, cloudLit: 0xf7e5c8, cloudShade: 0xa3afc4, night: 0.06 },
-    particles: 'motes', bloom: 0.16, bloomThreshold: 1.8,
+    background: 0xd9b58e, fog: [0xd6b38f, 58, 195], exposure: 1.0, hemi: [0xb8c7d8, 0x5e4a35, 1.15],
+    sun: { color: 0xffb46c, intensity: 3.2, pos: [-40, 30, 22] },
+    sky: { horizon: 0xffc27e, mid: 0xdca383, top: 0x3e5f8c, sun: 0xfff0c2, cloudLit: 0xffcf98, cloudShade: 0x8e7c8e, night: 0.08 },
+    particles: 'motes', bloom: 0.5, bloomThreshold: 1.15, environment: 0.45,
   },
   day: {
     background: 0xbfdcf2, fog: [0xc4e2f6, 70, 220], exposure: 1.05, hemi: [0xd6ecff, 0x6a7088, 1.8],

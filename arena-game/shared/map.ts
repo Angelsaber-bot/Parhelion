@@ -37,8 +37,23 @@ export interface MapData {
   anchors: MapAnchor[];
   routes: { id: string; name: string; points: Vec3[] }[];
   player: { radius: number; height: number; eyeHeight: number; walkSpeed: number; stepHeight: number };
-  /** Optional lighting mood for the client (see src/atmosphere.ts). */
-  presentation?: { preset?: string };
+  /** Optional lighting mood for the client (see src/atmosphere.ts and src/chapterEffects.ts). */
+  presentation?: MapPresentation;
+}
+
+/** Client-only light dressing; never read by collision, bots or the server rules. */
+export interface MapPresentation {
+  preset?: string;
+  /** Flame/lamp halos: x, y, z, world size, colour, flicker 0..1. */
+  glows?: [number, number, number, number, string, number?][];
+  /** Light thrown on the ground: x, y, z, radius, colour, strength. */
+  pools?: [number, number, number, number, string, number?][];
+  /** Fires that shed rising embers: x, y, z, spread radius. */
+  embers?: [number, number, number, number][];
+  /** Slow smoke columns (usually background): x, y, z, scale, colour. */
+  smoke?: [number, number, number, number, string?][];
+  /** One drifting ambient field inside a box. */
+  field?: { kind: 'fireflies' | 'glitter' | 'pollen'; count: number; color: string; size: number; min: Vec3; max: Vec3 };
 }
 
 /** Collision solids only, with precomputed extents. */

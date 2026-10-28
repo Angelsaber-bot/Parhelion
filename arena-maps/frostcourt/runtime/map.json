@@ -23,7 +23,422 @@
     ]
   },
   "presentation": {
-    "preset": "snowcourt"
+    "preset": "snowcourt",
+    "glows": [
+      [
+        28.48,
+        3.55,
+        -7.3,
+        1.5,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        28.48,
+        3.55,
+        7.3,
+        1.5,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        -4,
+        2.54,
+        14,
+        1.6,
+        "#ffc27a",
+        0.2
+      ],
+      [
+        4,
+        2.54,
+        14,
+        1.6,
+        "#ffc27a",
+        0.2
+      ],
+      [
+        -13.5,
+        4.77,
+        -18,
+        1.4,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        -4.5,
+        4.77,
+        -18,
+        1.4,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        4.5,
+        4.77,
+        -18,
+        1.4,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        13.5,
+        4.77,
+        -18,
+        1.4,
+        "#ffc27a",
+        0.25
+      ],
+      [
+        -24,
+        4.0,
+        -3.6,
+        1.7,
+        "#ffa34d",
+        0.8
+      ],
+      [
+        -24,
+        4.0,
+        3.6,
+        1.7,
+        "#ffa34d",
+        0.8
+      ],
+      [
+        24,
+        4.0,
+        -3.6,
+        1.7,
+        "#ffa34d",
+        0.8
+      ],
+      [
+        24,
+        4.0,
+        3.6,
+        1.7,
+        "#ffa34d",
+        0.8
+      ],
+      [
+        -86.6,
+        24,
+        -127.8,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        -73.0,
+        24,
+        -116.6,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        -48.1,
+        24,
+        -117.4,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        -25.8,
+        24,
+        -123.6,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        -12.2,
+        24,
+        -116.3,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        13.3,
+        24,
+        -117.1,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        29.0,
+        24,
+        -118.9,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        52.0,
+        24,
+        -119.7,
+        30,
+        "#ff7a35",
+        0.5
+      ],
+      [
+        67.4,
+        24,
+        -127.3,
+        30,
+        "#ff7a35",
+        0.5
+      ]
+    ],
+    "pools": [
+      [
+        28.3,
+        0,
+        -7.3,
+        2.6,
+        "#ffb066",
+        0.45
+      ],
+      [
+        28.3,
+        0,
+        7.3,
+        2.6,
+        "#ffb066",
+        0.45
+      ],
+      [
+        -4,
+        0,
+        14.9,
+        2.8,
+        "#ffb066",
+        0.45
+      ],
+      [
+        4,
+        0,
+        14.9,
+        2.8,
+        "#ffb066",
+        0.45
+      ],
+      [
+        29.85,
+        0,
+        -16,
+        1.8,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        38.16,
+        0,
+        11,
+        1.8,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        29.85,
+        0,
+        16,
+        1.8,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        -29.04,
+        0,
+        -12,
+        1.8,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        -29.04,
+        0,
+        18,
+        1.8,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        -13.5,
+        1.3,
+        -18,
+        2.6,
+        "#ffb066",
+        0.5
+      ],
+      [
+        -4.5,
+        1.3,
+        -18,
+        2.6,
+        "#ffb066",
+        0.5
+      ],
+      [
+        4.5,
+        1.3,
+        -18,
+        2.6,
+        "#ffb066",
+        0.5
+      ],
+      [
+        13.5,
+        1.3,
+        -18,
+        2.6,
+        "#ffb066",
+        0.5
+      ],
+      [
+        -22.4,
+        0,
+        -3.6,
+        2.4,
+        "#ff9b4a",
+        0.35
+      ],
+      [
+        -22.4,
+        0,
+        3.6,
+        2.4,
+        "#ff9b4a",
+        0.35
+      ],
+      [
+        22.4,
+        0,
+        -3.6,
+        2.4,
+        "#ff9b4a",
+        0.35
+      ],
+      [
+        22.4,
+        0,
+        3.6,
+        2.4,
+        "#ff9b4a",
+        0.35
+      ]
+    ],
+    "embers": [
+      [
+        -24,
+        3.9160000000000004,
+        -3.6,
+        0.3
+      ],
+      [
+        -24,
+        3.9160000000000004,
+        3.6,
+        0.3
+      ],
+      [
+        24,
+        3.9160000000000004,
+        -3.6,
+        0.3
+      ],
+      [
+        24,
+        3.9160000000000004,
+        3.6,
+        0.3
+      ]
+    ],
+    "smoke": [
+      [
+        -86.6,
+        24,
+        -127.8,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        -73.0,
+        24,
+        -116.6,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        -48.1,
+        24,
+        -117.4,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        -25.8,
+        24,
+        -123.6,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        -12.2,
+        24,
+        -116.3,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        13.3,
+        24,
+        -117.1,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        29.0,
+        24,
+        -118.9,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        52.0,
+        24,
+        -119.7,
+        2.6,
+        "#6c6670"
+      ],
+      [
+        67.4,
+        24,
+        -127.3,
+        2.6,
+        "#6c6670"
+      ]
+    ],
+    "field": {
+      "kind": "glitter",
+      "count": 220,
+      "color": "#eaf4ff",
+      "size": 0.06,
+      "min": [
+        -28,
+        0.3,
+        -22
+      ],
+      "max": [
+        28,
+        6,
+        22
+      ]
+    }
   },
   "player": {
     "radius": 0.32,
@@ -80,7 +495,17 @@
     "amber": "#d8a66c",
     "distant": "#9baac1",
     "winterNeedle": "#526773",
-    "winterNeedleLight": "#6d828b"
+    "winterNeedleLight": "#6d828b",
+    "windowGlow": "#ffbf73",
+    "lampGlass": "#ffd9a0",
+    "flame": "#ff9a3c",
+    "flameCore": "#ffe6a0",
+    "coal": "#c2461e",
+    "cityStone": "#8c93a6",
+    "cityRoof": "#4c5a78",
+    "dome": "#c9a35c",
+    "domeBlue": "#3f5f93",
+    "fireSky": "#ff8a48"
   },
   "objects": [
     {
@@ -613,6 +1038,295 @@
       "material": "limestone",
       "collision": true,
       "role": "cover"
+    },
+    {
+      "id": "palace_portico",
+      "type": "box",
+      "position": [
+        28.975,
+        2.65,
+        0
+      ],
+      "size": [
+        1.45,
+        5.3,
+        13.4
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "garden_urn_-20",
+      "type": "box",
+      "position": [
+        -20,
+        0.7,
+        21
+      ],
+      "size": [
+        1.8,
+        1.4,
+        1.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "prop"
+    },
+    {
+      "id": "garden_urn_20",
+      "type": "box",
+      "position": [
+        20,
+        0.7,
+        21
+      ],
+      "size": [
+        1.8,
+        1.4,
+        1.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "prop"
+    },
+    {
+      "id": "south_wall_pier_-27",
+      "type": "box",
+      "position": [
+        -27,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_-21",
+      "type": "box",
+      "position": [
+        -21,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_-15",
+      "type": "box",
+      "position": [
+        -15,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_-9",
+      "type": "box",
+      "position": [
+        -9,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_-3",
+      "type": "box",
+      "position": [
+        -3,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_3",
+      "type": "box",
+      "position": [
+        3,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_9",
+      "type": "box",
+      "position": [
+        9,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_15",
+      "type": "box",
+      "position": [
+        15,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_21",
+      "type": "box",
+      "position": [
+        21,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "south_wall_pier_27",
+      "type": "box",
+      "position": [
+        27,
+        1.5,
+        23.63
+      ],
+      "size": [
+        0.8,
+        3,
+        0.74
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_window_bay_-18",
+      "type": "box",
+      "position": [
+        -29.4,
+        2.75,
+        -18
+      ],
+      "size": [
+        0.62,
+        2.9,
+        2.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_window_bay_-12",
+      "type": "box",
+      "position": [
+        -29.4,
+        2.75,
+        -12
+      ],
+      "size": [
+        0.62,
+        2.9,
+        2.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_window_bay_12",
+      "type": "box",
+      "position": [
+        -29.4,
+        2.75,
+        12
+      ],
+      "size": [
+        0.62,
+        2.9,
+        2.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "west_window_bay_18",
+      "type": "box",
+      "position": [
+        -29.4,
+        2.75,
+        18
+      ],
+      "size": [
+        0.62,
+        2.9,
+        2.4
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
     }
   ],
   "anchors": [

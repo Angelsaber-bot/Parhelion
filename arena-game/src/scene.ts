@@ -11,7 +11,7 @@ import frostcourtGlb from '../../arena-maps/frostcourt/assets/frostcourt_visual.
 import camlannGlb from '../../arena-maps/camlann/assets/camlann_visual.glb?url';
 import asterOverlayGlb from '../../arena-maps/aster/assets/aster_overlay.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
-import type { Vec3 } from '../shared/map.ts';
+import type { MapPresentation, Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
@@ -25,6 +25,7 @@ import { CRAFTED_CHAPTERS, toChapterMaterial } from './chapterMaterial.ts';
 import { attachGunArt, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
+import { ChapterEffects } from './chapterEffects.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
@@ -60,6 +61,8 @@ export class ArenaScene {
   private outline: OutlinePass | null = null;
   private particles: Particles | null = null;
   private blackflagEffects: BlackflagEffects | null = null;
+  private chapterEffects: ChapterEffects | null = null;
+  private bufferSize = new THREE.Vector2();
   private atmo: Atmosphere = atmosphereFor('day');
 
   constructor(canvas: HTMLCanvasElement, private readonly quality: 'high' | 'low' = 'high') {
@@ -127,6 +130,7 @@ export class ArenaScene {
     (s.fog as THREE.Fog).near = a.fog[1];
     (s.fog as THREE.Fog).far = a.fog[2];
     this.renderer.toneMappingExposure = a.exposure;
+    s.environmentIntensity = a.environment ?? 1;
     this.hemi.color.set(a.hemi[0]);
     this.hemi.groundColor.set(a.hemi[1]);
     this.hemi.intensity = a.hemi[2];
@@ -147,7 +151,7 @@ export class ArenaScene {
   }
 
   /** Show a map's art (loaded once per map, then cached); resolves when it is on screen. */
-  async loadMap(id: string, preset?: string): Promise<void> {
+  async loadMap(id: string, preset?: string, presentation?: MapPresentation): Promise<void> {
     this.wantMap = id;
     this.setAtmosphere(id === 'blackflag' ? BLACKFLAG_ATMOSPHERE : atmosphereFor(preset));
     let p = this.maps.get(id);
@@ -176,6 +180,10 @@ export class ArenaScene {
     this.blackflagEffects?.dispose();
     this.blackflagEffects = id === 'blackflag' ? new BlackflagEffects(this.sparkTex, this.quality) : null;
     if (this.blackflagEffects) this.scene.add(this.blackflagEffects.root);
+    this.chapterEffects?.dispose();
+    this.chapterEffects = presentation && (presentation.glows || presentation.pools || presentation.embers || presentation.smoke || presentation.field)
+      ? new ChapterEffects(presentation, this.sparkTex, this.quality) : null;
+    if (this.chapterEffects) this.scene.add(this.chapterEffects.root);
     if (this.shownMap) this.scene.remove(this.shownMap);
     this.scene.add(root);
     this.shownMap = root;
@@ -386,11 +394,13 @@ export class ArenaScene {
     this.viewmodel.update(dt);
     this.particles?.update(dt, this.camera.position);
     this.blackflagEffects?.update(dt);
+    this.chapterEffects?.update(dt);
   }
 
   render(showViewmodel: boolean) {
     const r = this.renderer;
     r.clear();
+    this.chapterEffects?.sync(this.camera, r.getDrawingBufferSize(this.bufferSize).y, this.scene.fog as THREE.Fog);
     if (this.composer) this.composer.render();
     else r.render(this.scene, this.camera);
     if (showViewmodel) {
