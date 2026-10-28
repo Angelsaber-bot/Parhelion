@@ -77,16 +77,21 @@ export class WorldMap {
     // area labels
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
+    // Skip any label whose box would overlap one already drawn, so dense hubs stay readable.
+    const boxes: Array<[number, number, number, number]> = [];
     for (const a of this.layout.areas) {
-      const x = tx(a.c[0]), y = tz(a.c[1]);
-      ctx.font = `700 ${opts.full ? 26 : 18}px system-ui, sans-serif`;
-      ctx.lineWidth = 4; ctx.strokeStyle = '#1f2a44aa'; ctx.fillStyle = '#fff';
-      const label = localizeText(a.name);
-      ctx.strokeText(label, x, y - (opts.full ? 22 : 0)); ctx.fillText(label, x, y - (opts.full ? 22 : 0));
+      const x = tx(a.c[0]), y = tz(a.c[1]) - (opts.full ? 22 : 0);
+      ctx.font = `700 ${opts.full ? 23 : 18}px system-ui, sans-serif`;
+      const label = localizeText(a.name), w = ctx.measureText(label).width + 6, h = opts.full ? 26 : 20;
+      const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
+      if (boxes.some((o) => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) continue;
+      boxes.push(box);
+      ctx.lineWidth = 5; ctx.strokeStyle = '#141c30dd'; ctx.fillStyle = '#fff';
+      ctx.strokeText(label, x, y); ctx.fillText(label, x, y);
     }
     // live monsters (bosses larger)
     for (const e of opts.enemies ?? []) {
-      ctx.beginPath(); ctx.arc(tx(e.p.x), tz(e.p.z), e.boss ? (opts.full ? 9 : 7) : (opts.full ? 4 : 3.5), 0, Math.PI * 2);
+      ctx.beginPath(); ctx.arc(tx(e.p.x), tz(e.p.z), e.boss ? (opts.full ? 9 : 6) : 3, 0, Math.PI * 2);
       ctx.fillStyle = '#ff3b4e'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#2a0b10'; ctx.stroke();
     }
     // markers
