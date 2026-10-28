@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 54, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 120, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -72,17 +72,41 @@ export const WILDERNESS_ZONES = [
   { x: 900, z: 130, r: 20, kind: 'crystal' as const },
   { x: -220, z: -840, r: 20, kind: 'crystal' as const },
   { x: 260, z: 860, r: 20, kind: 'shade' as const },
+  // Gap fill (measured >130 m from any spawn on the real map); `pack` zones seed a group of 5.
+  { x: -870, z: 290, r: 14, kind: 'shade' as const, pack: 5 },
+  { x: -420, z: 350, r: 14, kind: 'crystal' as const },
+  { x: 930, z: -280, r: 14, kind: 'shade' as const, pack: 5 },
+  { x: 270, z: -1000, r: 14, kind: 'crystal' as const, pack: 5 },
+  { x: 0, z: -220, r: 14, kind: 'shade' as const, pack: 5 },
+  { x: -90, z: 380, r: 14, kind: 'crystal' as const },
+  { x: 540, z: 200, r: 14, kind: 'shade' as const },
+  { x: -300, z: 1010, r: 14, kind: 'crystal' as const, pack: 5 },
+  { x: -900, z: 50, r: 14, kind: 'shade' as const },
+  { x: -630, z: 230, r: 14, kind: 'crystal' as const },
+  { x: -510, z: -340, r: 14, kind: 'shade' as const },
+  { x: 240, z: 380, r: 14, kind: 'crystal' as const },
+  { x: -60, z: -1000, r: 14, kind: 'shade' as const },
+  { x: 510, z: -280, r: 14, kind: 'crystal' as const },
+  { x: 300, z: -700, r: 14, kind: 'shade' as const },
+  { x: -300, z: -430, r: 14, kind: 'crystal' as const },
+  { x: 420, z: -70, r: 14, kind: 'shade' as const },
+  { x: -840, z: -280, r: 14, kind: 'crystal' as const },
+  { x: -300, z: 800, r: 14, kind: 'shade' as const },
+  { x: 720, z: -280, r: 14, kind: 'crystal' as const },
+  { x: -120, z: -70, r: 14, kind: 'shade' as const },
+  { x: -360, z: 170, r: 14, kind: 'crystal' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;
   const random = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 4294967296; };
   const points: SpawnPoint[] = [];
   // Each zone seeds a pair: the original spawn plus a packmate (>= 9 m apart, same safe placement rules).
-  for (const [index, zone] of WILDERNESS_ZONES.entries()) for (const suffix of ['', 'b']) {
+  for (const [index, zone] of WILDERNESS_ZONES.entries()) for (const suffix of ['', 'b', 'c', 'd', 'e'].slice(0, (zone as { pack?: number }).pack ?? 2)) {
     for (let attempt = 0; attempt < 32; attempt++) {
       const a = random() * Math.PI * 2, r = Math.sqrt(random()) * zone.r;
       const p = place(zone.x + Math.cos(a) * r, zone.z + Math.sin(a) * r);
-      if (!p || points.some(s => distanceXZ(s.p, p) < (suffix ? 9 : 18))) continue;
+      const gap = suffix ? ((zone as { pack?: number }).pack ? 4 : 9) : 18;
+      if (!p || points.some(s => distanceXZ(s.p, p) < gap)) continue;
       points.push({ id: `wild_${index}${suffix}`, kind: zone.kind, p });
       break;
     }

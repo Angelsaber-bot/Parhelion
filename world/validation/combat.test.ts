@@ -14,11 +14,12 @@ const advance = (s: WorldCombatState, seconds: number, p: Point3, terrain = grou
 test('wilderness placement is seeded, bounded, and rejects unsafe candidates', () => {
   const place = (x: number, z: number) => ({ x, y: 2, z });
   const a = makeWildernessSpawns(537, place), b = makeWildernessSpawns(537, place);
-  assert.deepEqual(a, b); assert.equal(a.length, COMBAT.wildernessCap);
+  const perZone = WILDERNESS_ZONES.reduce((n, z) => n + ((z as { pack?: number }).pack ?? 2), 0);
+  assert.deepEqual(a, b); assert.equal(a.length, Math.min(COMBAT.wildernessCap, perZone));
   assert.notDeepEqual(a, makeWildernessSpawns(538, place));
   let calls = 0;
   assert.equal(makeWildernessSpawns(537, () => { calls++; return null; }).length, 0);
-  assert.equal(calls, WILDERNESS_ZONES.length * 2 * 32, 'no unbounded spawn retries (two per zone)');
+  assert.equal(calls, perZone * 32, 'no unbounded spawn retries (pair or pack per zone)');
 });
 
 test('shots are rate limited, nearest-enemy hits respect supplied occlusion and dead enemies cannot be hit', () => {

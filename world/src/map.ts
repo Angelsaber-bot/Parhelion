@@ -54,7 +54,7 @@ export class WorldMap {
   px(x: number) { return ((x - (this.x0 ?? -this.half)) / (this.half * 2)) * this.size; }
   pz(z: number) { const hz = this.halfZ ?? this.half; return ((z - (this.z0 ?? -hz)) / (hz * 2)) * (this.sizeZ ?? this.size); }
 
-  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null }) {
+  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null; enemies?: ReadonlyArray<{ p: { x: number; z: number }; boss: boolean }> }) {
     const W = ctx.canvas.width;
     ctx.save();
     ctx.clearRect(0, 0, W, W);
@@ -83,6 +83,11 @@ export class WorldMap {
       ctx.lineWidth = 4; ctx.strokeStyle = '#1f2a44aa'; ctx.fillStyle = '#fff';
       const label = localizeText(a.name);
       ctx.strokeText(label, x, y - (opts.full ? 22 : 0)); ctx.fillText(label, x, y - (opts.full ? 22 : 0));
+    }
+    // live monsters (bosses larger)
+    for (const e of opts.enemies ?? []) {
+      ctx.beginPath(); ctx.arc(tx(e.p.x), tz(e.p.z), e.boss ? (opts.full ? 9 : 7) : (opts.full ? 4 : 3.5), 0, Math.PI * 2);
+      ctx.fillStyle = '#ff3b4e'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#2a0b10'; ctx.stroke();
     }
     // markers
     for (const m of this.layout.markers) {
