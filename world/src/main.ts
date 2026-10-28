@@ -464,6 +464,25 @@ const servantEnvironment = () => {
   if (!servantEnv) { const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(renderer); servantEnv = pmrem.fromScene(room).texture; room.dispose(); pmrem.dispose(); }
   return servantEnv;
 };
+// Servant studio reflections follow the scene: daylight keeps the authored strength, dusk/storm/night dim it
+// so the hemisphere and sun (already tinted by twilight) dominate, like the player model.
+const servantBase = new WeakMap<THREE.Material, number>();
+function matchServantLighting() {
+  const lum = (c: THREE.Color) => .2126 * c.r + .7152 * c.g + .0722 * c.b;
+  const light = lum(sun.color) * sun.intensity + lum(hemisphere.color) * hemisphere.intensity * .6;
+  // Valley daytime values from the light setup above, so starting in a dusk region cannot shift the baseline.
+  const daylight = lum(new THREE.Color('#fff0d2')) * 2.7 + lum(new THREE.Color('#d6ecff')) * 1.15 * .6;
+  const k = THREE.MathUtils.clamp(light / daylight, .25, 1.1);
+  const roots = [servant.root, ...eraActors.map((e) => e.actor?.root)];
+  for (const root of roots) root?.traverse((o) => {
+    const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
+    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+      const std = m as THREE.MeshStandardMaterial; if (!std.envMap) continue;
+      if (!servantBase.has(m)) servantBase.set(m, std.envMapIntensity);
+      std.envMapIntensity = servantBase.get(m)! * k * k; // squared: reflections fade faster than direct light
+    }
+  });
+}
 const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
 const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
 function servantStatus() {
@@ -877,6 +896,7 @@ function frame(now: number) {
   renderContract();
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
+  matchServantLighting();
   updateCold(dt);
   sun.position.copy(eye).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(eye);
