@@ -95,3 +95,22 @@ Close-up inspection: [fountain](previews/03-fountain.jpg), [wagon](previews/04-w
 - **Collision:** the palace portico (columns up to 1.4 m proud of the east wall),
   both garden urns, ten south-wall piers and the four west window bays now have
   matching colliders; `validation/layout-baseline.json` records the new layout.
+
+## 2026-10-28 long-range rework
+
+max wanted each map to have its own playstyle. FROSTCOURT is now the long-range map
+(mirrored in x):
+
+- **Frozen canal** across the court (z 6 to 9.5, 0.9 m deep) with three arched
+  bridges (centre and x = ±13.5) carrying low parapets and lamp posts. The canal is a
+  trench to crawl along; each stretch has stone steps out (outer ones to the spawn
+  side, inner ones to the north bank).
+- **Garden terraces** (sniper balconies) at the south corners, 2.4 m high with a
+  balustrade facing the arcade 35 m away; stairs from the park. The urns stand on them.
+- **Arcade terrace** balustrades in the outer bays make the north a firing line;
+  new front steps in the middle bay.
+- **Snow drifts** (1.1 m, crouch cover) in the open court; the east wagon moved off
+  the canal line.
+
+New pieces are batched (`BATCH_court`). Layout baseline and the node-count check in
+`validation/validate_art.py` were updated for the new layout.

@@ -16,7 +16,23 @@ P=dict(stone=mat('#a9b0b8'), limestone=mat('#d9d4c7'), stoneLight=mat('#c1c4c8')
     coal=mat('#c2461e',0,.9,1.6), cityStone=mat('#8c93a6'), cityRoof=mat('#4c5a78'), dome=mat('#c9a35c',.6,.4), domeBlue=mat('#3f5f93',.3,.5),
     fireSky=mat('#ff8a48',0,1,1.4))
 c=Chapter(ROOT,'frostcourt','FROSTCOURT 永冬庭院',60,48,'snowcourt',P); D=c.detail
-c.box('court_floor',[0,-.3,0],[60,.6,48],'snow','floor')
+# 2026-10-28 long-range rework (max: each map its own style). FROSTCOURT is the
+# long-range map: a frozen canal trench across the court, raised garden terraces
+# with balustrades on the south (sniper balconies facing the arcade), a balustraded
+# arcade terrace on the north and low snow drifts for crouch cover in between.
+# The court floor is split around the canal; everything is mirrored in x.
+def Bc(id,x0,x1,y0,y1,z0,z1,material,role='cover',art=None):
+    o=dict(id=id,type='box',position=[round((x0+x1)/2,3),round((y0+y1)/2,3),round((z0+z1)/2,3)],size=[round(x1-x0,3),round(y1-y0,3),round(z1-z0,3)],
+        material=material,collision=True,role=role,batch='court')
+    c.objects.append(o); COURT_ART[id]=art or {}
+    return o
+COURT_ART={}
+CANAL=(6,9.5)
+c.box('court_floor',[0,-.6,-9],[60,1.2,30],'snow','floor')
+c.box('court_floor_south',[0,-.6,16.75],[60,1.2,14.5],'snow','floor')
+for side in (-1,1):
+    c.box(f'court_floor_end_{side}',[side*27,-.6,7.75],[6,1.2,3.5],'snow','floor')
+c.box('canal_ice',[0,-1.2,7.75],[48,.6,3.5],'ice','floor')
 for x in (-30,30): c.box('boundary_x_'+str(x),[x,2.5,0],[.6,5,48],'limestone','structure')
 for z in (-24,24): c.box('boundary_z_'+str(z),[0,2.5 if z<0 else 1.4,z],[60,5 if z<0 else 2.8,.6],'limestone','structure')
 for side,team in [(-1,'west'),(1,'east')]:
@@ -35,10 +51,10 @@ c.anchor('objective_arcade','objective',[0,1.3,-18],radius=2)
 c.box('fountain_plinth',[0,.85,0],[6,1.7,6],'limestone')
 c.box('fountain_column',[0,2.7,0],[1.8,3.7,1.8],'stone','structure')
 for side in (-1,1):
-    c.box('supply_wagon_'+str(side),[side*13,1.3,side*5],[4,2.6,2.6],'timber')
+    c.box('supply_wagon_'+str(side),[side*13,1.3,side*2.4],[4,2.6,2.6],'timber')
     c.box('park_low_wall_'+str(side),[side*10,.75,14],[8,1.5,.7],'stone')
     c.box('park_gatepost_'+str(side),[side*4,1.1,14],[1.2,2.2,1.2],'limestone')
-    c.anchor('cover_wagon_'+str(side),'cover',[side*13,0,side*8],height=2.6)
+    c.anchor('cover_wagon_'+str(side),'cover',[side*13,0,side*5],height=2.6)
     c.anchor('cover_park_'+str(side),'cover',[side*10,0,16],height=1.5)
     c.anchor('cover_fountain_'+str(side),'cover',[side*4.2,0,0],height=1.7)
 c.anchor('objective_fountain','objective',[0,0,5],radius=2)
@@ -46,14 +62,58 @@ c.anchor('objective_fountain','objective',[0,0,5],radius=2)
 # The palace portico (columns/piers up to 1.4 m proud of the east wall), the two
 # garden urns and the south-wall piers now have matching authoritative boxes.
 c.box('palace_portico',[28.975,2.65,0],[1.45,5.3,13.4],'limestone','structure')
-for x in (-20,20): c.box(f'garden_urn_{x}',[x,.7,21],[1.8,1.4,1.8],'limestone','prop')
+for x in (-20,20): c.box(f'garden_urn_{x}',[x,3.1,22.8],[1.8,1.4,1.8],'limestone','prop')
 for x in range(-27,28,6): c.box(f'south_wall_pier_{x}',[x,1.5,23.63],[.8,3,.74],'stone','structure')
 # West-wall window bays: sills and reveals stand 0.6 m proud of the wall face.
 for z in (-18,-12,12,18): c.box(f'west_window_bay_{z}',[-29.4,2.75,z],[.62,2.9,2.4],'stone','structure')
+for side in (-1,1):
+    sx=lambda x:side*x
+    def X(x0,x1): return (min(sx(x0),sx(x1)),max(sx(x0),sx(x1)))
+    # Bridges over the canal: centre (once) and one per side, with low parapets.
+    xa,xb=X(12,15)
+    Bc(f'bridge_{side}',xa,xb,-.9,0,6,9.5,'stone','floor',dict(kind='bridge'))
+    for x0,x1 in (X(12,12.3),X(14.7,15)):
+        Bc(f'bridge_parapet_{side}_{int(abs(x0)*10)}',x0,x1,0,.9,6,9.5,'limestone','cover',dict(kind='parapet',axis='z'))
+    # Each canal stretch has one stair down; its other end is a bridge abutment.
+    x0,x1=X(21,24)
+    c.objects.append(dict(id=f'canal_steps_outer_{side}',type='ramp',position=[round((x0+x1)/2,3),-.9,7.75],size=[3,.9,3.5],
+        material='stone',collision=True,role='ramp',axis='x',lowAt=-side,batch='court')); COURT_ART[f'canal_steps_outer_{side}']=dict(kind='steps')
+    # The inner stretch climbs out to the north bank (its ends are bridge abutments).
+    x0,x1=X(4,6)
+    c.objects.append(dict(id=f'canal_steps_inner_{side}',type='ramp',position=[round((x0+x1)/2,3),-.9,7.25],size=[2,.9,2.5],
+        material='stone',collision=True,role='ramp',axis='z',lowAt=1,batch='court')); COURT_ART[f'canal_steps_inner_{side}']=dict(kind='steps')
+    # Garden terrace (sniper balcony): 2.4 m, balustrade toward the court, stair from the park.
+    xa,xb=X(14.6,23.4)
+    Bc(f'garden_terrace_{side}',xa,xb,0,2.4,17.5,23.7,'limestone','floor',dict(kind='terrace'))
+    for x0,x1 in (X(14.6,19.2),X(20.2,23.4)):
+        Bc(f'terrace_balustrade_{side}_{int(abs(x0)*10)}',x0,x1,2.4,3.4,17.5,17.9,'limestone','cover',dict(kind='balustrade',axis='x'))
+    c.objects.append(dict(id=f'terrace_stair_{side}',type='ramp',position=[side*11.6,0,20.5],size=[6,2.4,2],material='limestone',collision=True,role='ramp',axis='x',lowAt=-side,batch='court'))
+    COURT_ART[f'terrace_stair_{side}']=dict(kind='steps')
+    # Arcade balustrades in the outer bays turn the terrace into a firing line.
+    xa,xb=X(9.4,17.6)
+    Bc(f'arcade_balustrade_{side}',xa,xb,1.3,2.3,-14.9,-14.1,'limestone','cover',dict(kind='balustrade',axis='x'))
+    # Snow drifts: crouch-height cover in the open court.
+    xa,xb=X(17.6,18.4); Bc(f'drift_east_{side}',xa,xb,0,1.1,-6.5,-2.5,'snow','cover',dict(kind='drift',axis='z'))
+    xa,xb=X(5.5,9.5); Bc(f'drift_canal_{side}',xa,xb,0,1.1,4.2,4.8,'snow','cover',dict(kind='drift',axis='x'))
+    xa,xb=X(18,22); Bc(f'drift_park_{side}',xa,xb,0,1.1,11.6,12.2,'snow','cover',dict(kind='drift',axis='x'))
+    c.anchor(f'cover_terrace_{side}','cover',[side*19.7,2.4,18.4],height=1)
+    c.anchor(f'cover_canal_{side}','cover',[side*8,-.9,8.9],height=.9)
+    c.anchor(f'cover_drift_{side}','cover',[side*7.5,0,3.8],height=1.1)
+    c.anchor(f'cover_arcade_rail_{side}','cover',[side*13.5,1.3,-15.5],height=1)
+Bc('bridge_centre',-2,2,-.9,0,6,9.5,'stone','floor',dict(kind='bridge'))
+for x0,x1 in ((-2,-1.7),(1.7,2)):
+    Bc(f'bridge_centre_parapet_{int(x0*10)}',x0,x1,0,.9,6,9.5,'limestone','cover',dict(kind='parapet',axis='z'))
+c.ramp('arcade_front_steps',[0,0,-12.7],[6,1.3,2.6],'z',1,'pavement'); c.objects[-1]['batch']='court'; COURT_ART['arcade_front_steps']=dict(kind='steps')
+c.anchor('objective_bridge','objective',[0,0,7.75],radius=2)
+for bx_ in (-13.5,0,13.5):
+    for dx in (-1.85,1.85):
+        x=bx_+dx; Bc(f'bridge_lamp_{int(x*10)}',x-.15,x+.15,0,3.2,5.45,5.75,'iron','structure',dict(kind='lamppost'))
 c.route('covered_arcade',[[-27.5,0,-2],[-27.5,0,-18],[-25.5,0,-18],[-18,1.3,-18],[18,1.3,-18],[25.5,0,-18],[27.5,0,-18],[27.5,0,-2]])
-c.route('park_loop',[[-27.5,0,2],[-27.5,0,10],[-20,0,18],[0,0,18],[20,0,18],[27.5,0,10],[27.5,0,2]])
-c.route('fountain_breach',[[-22,0,-8],[-15,0,-10],[-6,0,-8],[6,0,-8],[20,0,-8],[22,0,0],[22,0,8],[7,0,9],[0,0,7],[-7,0,9],[-20,0,8],[-22,0,0],[-22,0,-8]])
-c.route('arcade_to_park',[[4.5,1.3,-18],[19.5,1.3,-18],[26,0,-18],[26,0,-8],[20,0,-8],[20,0,9],[17,0,18]])
+c.route('park_loop',[[-27.5,0,2],[-27.5,0,4],[-26.5,0,7.75],[-26,0,12],[-20,0,15],[-12,0,16.5],[0,0,16.5],[12,0,16.5],[20,0,15],[26,0,12],[26.5,0,7.75],[27.5,0,4],[27.5,0,2]])
+c.route('fountain_breach',[[-22,0,-8],[-15,0,-10],[-6,0,-8],[6,0,-8],[20,0,-8],[22,0,0],[22,0,4.4],[13.5,0,5.2],[13.5,0,10.5],[0,0,11],[-13.5,0,10.5],[-13.5,0,5.2],[-22,0,4.4],[-22,0,0],[-22,0,-8]])
+c.route('arcade_to_terrace',[[4.5,1.3,-18],[19.5,1.3,-18],[26,0,-18],[26,0,-8],[20,0,-8],[20,0,0],[13.5,0,5.2],[13.5,0,10.5],[15.5,0,11],[15,0,16.5],[8,0,20.5],[15.2,2.4,20.5],[19.7,2.4,19]])
+c.route('canal_trench',[[-26.5,0,7.75],[-22.5,-.45,7.75],[-16,-.9,7.75]])
+c.route('front_steps',[[0,0,-9],[1.5,0,-11],[1.5,1.3,-15.6],[-6,1.3,-17]])
 # Local sculptural helpers: all small craft stays in one material-batched detail mesh.
 rng=random.Random(1764)
 def ribbon(m,material,a,b,width=.025):
@@ -119,6 +179,7 @@ def snow_hip(x0,x1,z0,z1,eave,ridge,seed):
 for x in range(-26,27,2):
     for z in range(-10,11,2):
         if abs(x)<4 and abs(z)<4: continue
+        if 5<z<11: continue
         material=rng.choices(['pavement','pavementAlt','pavementWarm'],[8,3,1])[0]
         D.cbox(material,[x,.012,z],[1.97,.022,1.97])
         if rng.random()<.11:
@@ -336,8 +397,8 @@ def wagon(m,o):
 for x in range(-27,28,6):
     bevelbox(D,'stone',[x,1.5,23.63],[.8,3,.7],.06);D.cbox('stoneLight',[x,2.92,23.63],[1.0,.17,.9]);D.blob('snow',(x,3.08,23.63),.63,.10)
 for x in (-20,20):
-    lathe(D,'limestone',x,21,[(.64,.12),(.64,.30),(.45,.45),(.4,.65),(.74,.9),(.82,1.2),(.88,1.3),(.66,1.4)],16)
-    D.blob('snow',(x,1.43,21),.73,.10)
+    lathe(D,'limestone',x,22.8,[(.64,2.52),(.64,2.70),(.45,2.85),(.4,3.05),(.74,3.3),(.82,3.6),(.88,3.7),(.66,3.8)],16)
+    D.blob('snow',(x,3.83,22.8),.73,.10)
 for i in range(24):
     x=-27+i*2.3;z=22.4+(i%3)*.2;D.blob('snow',(x,.03,z),1.5,.055)
 for x in (-29,29):
@@ -460,15 +521,105 @@ for i in range(9):
 for i in range(30):
     x=-105+rr.uniform(0,170); z=CZ+rr.uniform(-10,10)
     D.cbox('windowGlow',[x,rr.uniform(6,16),z+4.6],[1.1,1.5,.2])
+for bx_ in (-13.5,0,13.5):
+    for dx in (-1.85,1.85):
+        GLOWS.append([bx_+dx,2.85,5.6,1.5,'#ffc27a',.25]); POOLS.append([bx_+dx,0,5.2,2.4,'#ffb066',.4])
+    POOLS.append([bx_,-.9,7.75,2.2,'#ffb066',.25])
+# Canal: dressed stone embankments, coping, cracked blue ice, snow banked in the corners.
+for zf,sg in ((6,1),(9.5,-1)):
+    for i in range(48):
+        xa=-24+i; xb=xa+1
+        if any(a0<=xa+.5<=a1 for a0,a1 in ((-15,-12),(-2,2),(12,15))): continue
+        D.quad('stone' if i%3 else 'stoneDark',(xa,-.9,zf+sg*.004),(xb,-.9,zf+sg*.004),(xb,-.02,zf+sg*.004),(xa,-.02,zf+sg*.004))
+        D.cbox('stoneLight',[xa+.5,.02,zf-sg*.2],[.98,.04,.4])
+for i in range(70):
+    x=rng.uniform(-23.5,23.5)
+    if any(a0-.2<=x<=a1+.2 for a0,a1 in ((-15,-12),(-2,2),(12,15))): continue
+    z=rng.uniform(6.3,9.2); a_=rng.uniform(0,math.pi); L=rng.uniform(.4,1.4)
+    ribbon(D,'iceLight',(x,-.895,z),(x+L*math.cos(a_),-.895,max(6.1,min(9.4,z+L*math.sin(a_)))),.02)
+for x in (-24,-15,-12,-2,2,12,15,24):
+    for zz in (6.25,9.25): D.blob('snow',(x+(.3 if x in (-24,-12,2,15) else -.3),-.9,zz),.55,.25)
+# Snow lying on the terraces and along the balustrade feet.
+for side in (-1,1):
+    for i in range(7):
+        D.blob('snow',(side*(16.6+i*1.05),2.4,23.3),.6,.12)
 c.data['presentation'].update(glows=GLOWS,pools=POOLS,embers=EMBERS,smoke=SMOKE,
     field=dict(kind='glitter',count=220,color='#eaf4ff',size=.06,min=[-28,.3,-22],max=[28,6,22]))
 c.data['designNotes']=['Snow has no friction/visibility gameplay modifier.','North arcade and open south park are deliberately different bypasses.','Fictional ceremonial architecture; no named historical battle claim.','R4 material and sculptural pass preserves every authoritative collision, route, anchor and spawn.']
+def court_art(m,o,a):
+    (x,y,z),(w,h,d)=o['position'],o['size']; k=a.get('kind')
+    x0,x1,z0,z1=x-w/2,x+w/2,z-d/2,z+d/2; y0,y1=(y,y+h) if o['type']=='ramp' else (y-h/2,y+h/2)
+    box=lambda mat,a0,a1,b0,b1,c0,c1: m.box(mat,[a0,b0,c0],[a1,b1,c1])
+    if k=='steps':
+        ax=o['axis']; low=o['lowAt']; L=w if ax=='x' else d; n=max(2,round(h/.2))
+        lo_end=(x if ax=='x' else z)+(L/2 if low>0 else -L/2); sg=-1 if low>0 else 1
+        for i in range(n):
+            a0,a1=sorted((lo_end+sg*L*i/n,lo_end+sg*L*(i+1)/n)); top=y+(i+.5)*h/n
+            mat='stoneLight' if i%2 else o['material']
+            if ax=='x': box(mat,a0,a1,y,top,z0,z1)
+            else: box(mat,x0,x1,y,top,a0,a1)
+            if ax=='x': box('snow',a0,min(a1,a0+.12),top-.002,top,z0+.15,z1-.15)
+            else: box('snow',x0+.15,x1-.15,top-.002,top,a0,min(a1,a0+.12))
+        return True
+    if k=='bridge':
+        # Body set back 2 cm; each canal-facing face is drawn as a shadowed arch in a
+        # stone spandrel, so the abutment reads as a bridge rather than a block.
+        box('stoneDark',x0+.02,x1-.02,y0,y1-.08,z0,z1); box('pavement',x0,x1,y1-.08,y1,z0,z1)
+        top=y1-.08
+        for fx,sg in ((x0,-1),(x1,1)):
+            pts=[(z+1.4*math.cos(math.pi*i/10),y0+.55*math.sin(math.pi*i/10)) for i in range(11)]
+            Q=(lambda *p: m.quad('stone',*p)) if sg>0 else (lambda a_,b_,c_,d_: m.quad('stone',d_,c_,b_,a_))
+            for (za,ya),(zb,yb) in zip(pts,pts[1:]):
+                Q((fx,ya,za),(fx,yb,zb),(fx,top,zb),(fx,top,za))
+            for za,zb in ((z0,z-1.4),(z+1.4,z1)):
+                Q((fx,y0,zb),(fx,y0,za),(fx,top,za),(fx,top,zb))
+        return True
+    if k in ('parapet','balustrade'):
+        along_x=a['axis']=='x'
+        box('stoneLight',x0,x1,y0,y0+.16,z0,z1)
+        if along_x: box('limestone',x0+.06,x1-.06,y0+.16,y1-.14,z0+.05,z1-.05)
+        else: box('limestone',x0+.05,x1-.05,y0+.16,y1-.14,z0+.06,z1-.06)
+        box('stoneLight',x0,x1,y1-.14,y1,z0,z1)
+        L=(x1-x0) if along_x else (z1-z0); n=max(1,int(L/.85))
+        for j in range(n+1):
+            t=(x0 if along_x else z0)+min(L-.16,max(0,j*L/n-.08))
+            if along_x: box('stoneLight',t,t+.16,y0+.16,y1-.14,z0+.02,z1-.02)
+            else: box('stoneLight',x0+.02,x1-.02,y0+.16,y1-.14,t,t+.16)
+        if along_x: box('snow',x0+.05,x1-.05,y1-.002,y1,z0+.03,z1-.03)
+        else: box('snow',x0+.03,x1-.03,y1-.002,y1,z0+.05,z1-.05)
+        return True
+    if k=='terrace':
+        box('stone',x0+.04,x1-.04,y0,y1-.3,z0+.04,z1-.04)
+        for row in range(int((y1-.3-y0)/.52)):
+            yy=y0+row*.52
+            box('limestone' if row%2 else 'stoneLight',x0,x1,yy+.02,yy+.5,z0,z1)
+        box('stoneLight',x0,x1,y1-.3,y1-.06,z0,z1); box('pavement',x0,x1,y1-.06,y1,z0,z1)
+        return True
+    if k=='drift':
+        along_x=a['axis']=='x'; n=10; L=(x1-x0) if along_x else (z1-z0); W=(z1-z0) if along_x else (x1-x0)
+        def P(t,u,v):  # t along, u across -1..1 at height v
+            return (x0+t,v,(z0+z1)/2+u*W/2) if along_x else ((x0+x1)/2+u*W/2,v,z0+t)
+        prof=[(-1,0),(-.92,.45),(-.65,.85),(-.25,1),(.3,.96),(.7,.7),(.95,.3),(1,0)]
+        for j in range(n):
+            ta,tb=L*j/n,L*(j+1)/n
+            sa=math.sin(math.pi*(j/n))**.35; sb=math.sin(math.pi*((j+1)/n))**.35
+            for (ua,va),(ub,vb) in zip(prof,prof[1:]):
+                q=[P(ta,ua,y0+va*h*sa),P(tb,ua,y0+va*h*sb),P(tb,ub,y0+vb*h*sb),P(ta,ub,y0+vb*h*sa)]
+                m.quad('snow' if va+vb>.9 else 'snowShade',*(q if along_x else q[::-1]))
+        return True
+    if k=='lamppost':
+        frustum(m,'iron',(x,y0,z),.15,.08,.3,6)
+        beam(m,'iron',(x,y0+.3,z),(x,y1-.55,z),.05,6)
+        lantern(m,x,y1-.55,z,1.0)
+        return True
+    return False
 def crafted(m,o):
+    if o['id'] in COURT_ART and COURT_ART[o['id']]: return court_art(m,o,COURT_ART[o['id']])
     if o['id']=='palace_portico':
         # The portico art is in the detail batch; a core hidden inside the south pier.
         m.cbox('limestone',[28.78,2.35,2.6],[.4,4.5,.38]); return True
     if o['id'].startswith('garden_urn_'):
-        x=o['position'][0]; m.cbox('limestone',[x,.7,21],[.5,1.1,.5]); return True
+        x=o['position'][0]; m.cbox('limestone',[x,3.1,22.8],[.5,1.1,.5]); return True
     if o['id'].startswith('west_window_bay_'):
         z=o['position'][2]; m.cbox('stoneDark',[-29.66,2.75,z],[.06,2.3,1.9]); return True
     if o['id'].startswith('south_wall_pier_'):

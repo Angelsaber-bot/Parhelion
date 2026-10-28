@@ -1,11 +1,11 @@
 {
-  "description": "Authoritative layout baseline. R2 layout, plus 2026-10-28 collision-audit colliders (palace portico, garden urns, south-wall piers, west window bays) that match art which was previously walk-through.",
+  "description": "Authoritative layout baseline. R2 layout + 2026-10-28 collision-audit colliders, then the 2026-10-28 long-range rework: frozen canal with three bridges, south garden terraces, arcade balustrades and front steps, snow drifts (batched as BATCH_court).",
   "sha256": {
     "bounds": "dc43401db41e8d698615919e51243c9f55dc57a4570e984a35950696cf7afae8",
     "player": "fce63ccef683482130e695eae044b50771a2a750342482ef9a5683bc0a2290ab",
-    "objects": "d4f81003d32933b396ae212047b71fff1d150e09748f68eafeda6f9c176d340a",
-    "anchors": "380ad735b86e5555a3b370d312038697133437ab31f3651988f1ccf37fca26fe",
-    "routes": "a4d40a16b0fc3b196053e736e3ad4f7147d86b3377de41f6328c0efbe003e9c6",
-    "collisionGLB": "f34044b376aa4ab5764b17731446e1b50950f31895f1ef4145055d1bb85756fc"
+    "objects": "1d535980d4f75b94a1af05578e587cd4c76557db73b941b2db61e736e4ec8f75",
+    "anchors": "35be2587ec916a94a99401ffd6c92fa92d33656d0ffe2d5b59262cac432d3d76",
+    "routes": "f97984c54a6cba65e6422fd9005d827d32a626c0e1fb9efaaf548ba47b78e4e1",
+    "collisionGLB": "3ad63e97d05617f7851167a5e45d060048d86993e9bd813ebcced21eeb915858"
   }
 }
