@@ -930,7 +930,7 @@ function frame(now: number) {
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
   const enemies = [...combat.state.enemies, ...combat.state.bosses].filter((e) => e.mode !== 'dead' && e.hp > 0).map((e) => ({ p: e.p, boss: e.kind === 'king' }));
   map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt, enemies });
-  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, enemies });
+  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt }); // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;
   shafts.update(camera, twilight.direction);
