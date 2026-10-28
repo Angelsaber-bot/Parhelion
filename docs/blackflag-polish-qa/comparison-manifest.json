@@ -1,0 +1,138 @@
+[
+  {
+    "view": "overview",
+    "output": "docs/blackflag-polish-qa/comparison-overview.jpg",
+    "sha256": "a17e5a0ddaf13f9136cf3f915090271da71697ed191370ecefc1c8a0b1a23520",
+    "before": {
+      "map": "blackflag",
+      "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+      "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+      "sourceStillMatches": true,
+      "view": "overview",
+      "camera": [
+        58.88,
+        46.08,
+        31.28
+      ],
+      "target": [
+        0.0,
+        0,
+        0.0
+      ],
+      "renderer": "Blender Cycles CPU",
+      "samples": 64,
+      "lighting": "neutral",
+      "eyeHeight": null,
+      "orthographicScale": 88.32,
+      "resolution": [
+        1296,
+        864
+      ],
+      "lensMm": 25,
+      "atmosphereReference": null,
+      "output": "docs/blackflag-polish-qa/before/blackflag-overview.png",
+      "imageSha256": "48471e60d38e491376b6de2b0c4244b5790957fe0cb81310e604c868f36f309d",
+      "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced."
+    },
+    "after": {
+      "map": "blackflag",
+      "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+      "sha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+      "sourceStillMatches": true,
+      "view": "overview",
+      "camera": [
+        58.88,
+        46.08,
+        31.28
+      ],
+      "target": [
+        0.0,
+        0,
+        0.0
+      ],
+      "renderer": "Blender Cycles CPU",
+      "samples": 64,
+      "lighting": "neutral",
+      "eyeHeight": null,
+      "orthographicScale": 88.32,
+      "resolution": [
+        1296,
+        864
+      ],
+      "lensMm": 25,
+      "atmosphereReference": null,
+      "output": "docs/blackflag-polish-qa/after/blackflag-overview.png",
+      "imageSha256": "9a17fcee1c4e026d7de7e272851823ad680c20043b0e670bb915f8e4fb71c49a",
+      "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced."
+    },
+    "composition": "No retouching or relighting; original rendered PNGs retained separately. Side-by-side labels and JPEG encoding only."
+  },
+  {
+    "view": "lane",
+    "output": "docs/blackflag-polish-qa/comparison-lane.jpg",
+    "sha256": "cc296d4b34e96654ccfa57596d358c088b0c9e33d390e084b76c042b73f7d9d0",
+    "before": {
+      "map": "blackflag",
+      "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+      "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+      "sourceStillMatches": true,
+      "view": "lane",
+      "camera": [
+        -17,
+        2.1,
+        11
+      ],
+      "target": [
+        7,
+        2,
+        -4
+      ],
+      "renderer": "Blender Cycles CPU",
+      "samples": 64,
+      "lighting": "neutral",
+      "eyeHeight": 1.7,
+      "orthographicScale": null,
+      "resolution": [
+        1296,
+        864
+      ],
+      "lensMm": 25,
+      "atmosphereReference": null,
+      "output": "docs/blackflag-polish-qa/before/blackflag-lane.png",
+      "imageSha256": "6cd74c66b463be576dc654d96ab7c64b147e40291937758ae54ed1238f0f41d7",
+      "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced."
+    },
+    "after": {
+      "map": "blackflag",
+      "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+      "sha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+      "sourceStillMatches": true,
+      "view": "lane",
+      "camera": [
+        -17,
+        2.1,
+        11
+      ],
+      "target": [
+        7,
+        2,
+        -4
+      ],
+      "renderer": "Blender Cycles CPU",
+      "samples": 64,
+      "lighting": "neutral",
+      "eyeHeight": 1.7,
+      "orthographicScale": null,
+      "resolution": [
+        1296,
+        864
+      ],
+      "lensMm": 25,
+      "atmosphereReference": null,
+      "output": "docs/blackflag-polish-qa/after/blackflag-lane.png",
+      "imageSha256": "b1463dd07504461c869609aa1bf3ac3118fda90b64a7fc4eec375f64baddc256",
+      "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced."
+    },
+    "composition": "No retouching or relighting; original rendered PNGs retained separately. Side-by-side labels and JPEG encoding only."
+  }
+]

@@ -1,0 +1,87 @@
+{
+  "byteDeterministic": true,
+  "sourceSha256": "007c2eb67821d8360fb1d712e0d1e96c2df2d606d9ff0b26a6edf26cbb17a3cc",
+  "images": [
+    {
+      "name": "blackflag_sail_basecolor.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "bytes": 40803,
+      "sha256": "f222157aae04ea311549c5062c0b702a69266f23b8004926a845c9fa780f5753"
+    },
+    {
+      "name": "brass_orm.png",
+      "size": [
+        128,
+        128
+      ],
+      "mode": "RGB",
+      "bytes": 1152,
+      "sha256": "437aad8ed951846eaeffea412043fffbeb61ae0ca946d4d6f88861c5080881ab"
+    },
+    {
+      "name": "canvas_basecolor.png",
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "bytes": 12422,
+      "sha256": "0fc4c361c68990405b74c6ce227f831f1d4ac03701b47075ab0759cfedac32c0"
+    },
+    {
+      "name": "canvas_orm.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB",
+      "bytes": 835,
+      "sha256": "dcfc74f9db2b8f8c3c69939827a42a52de7d7eced8999832df7cd4de477650d6"
+    },
+    {
+      "name": "iron_orm.png",
+      "size": [
+        128,
+        128
+      ],
+      "mode": "RGB",
+      "bytes": 1124,
+      "sha256": "ae52db3a7bba94623005421caecf256a001a84e29bc1e136f4c60c16dfdbce61"
+    },
+    {
+      "name": "metal_orm.png",
+      "size": [
+        128,
+        128
+      ],
+      "mode": "RGB",
+      "bytes": 1135,
+      "sha256": "299c06abaf1930b119e9fe72ea2238b239bd1a6f7b79c60f63ffa6b42584fec2"
+    },
+    {
+      "name": "oak_basecolor.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "bytes": 42026,
+      "sha256": "1c943b1fc1878883a61f11fd059f71bdd074fdc6229a1e588bcf5525810b6f23"
+    },
+    {
+      "name": "oak_orm.png",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGB",
+      "bytes": 2331,
+      "sha256": "6b99e62cd6c134a66fe6b3017695e09dc9520f432c5125c71976ce85f48d8a52"
+    }
+  ],
+  "bytesEmbeddedWithoutLegacyMetal": 100693
+}

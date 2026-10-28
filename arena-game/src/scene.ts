@@ -27,6 +27,7 @@ import { CRAFTED_CHAPTERS, toChapterMaterial } from './chapterMaterial.ts';
 import { attachGunArt, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
+import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -60,9 +61,10 @@ export class ArenaScene {
   private bloom: UnrealBloomPass | null = null;
   private outline: OutlinePass | null = null;
   private particles: Particles | null = null;
+  private blackflagEffects: BlackflagEffects | null = null;
   private atmo: Atmosphere = atmosphereFor('day');
 
-  constructor(canvas: HTMLCanvasElement, quality: 'high' | 'low' = 'high') {
+  constructor(canvas: HTMLCanvasElement, private readonly quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -149,7 +151,7 @@ export class ArenaScene {
   /** Show a map's art (loaded once per map, then cached); resolves when it is on screen. */
   async loadMap(id: string, preset?: string): Promise<void> {
     this.wantMap = id;
-    this.setAtmosphere(atmosphereFor(preset));
+    this.setAtmosphere(id === 'blackflag' ? BLACKFLAG_ATMOSPHERE : atmosphereFor(preset));
     let p = this.maps.get(id);
     if (!p) {
       const urls = [MAP_GLB[id] ?? asterGlb, ...(MAP_OVERLAY[id] ? [MAP_OVERLAY[id]] : [])];
@@ -164,7 +166,7 @@ export class ArenaScene {
           const convert = CRAFTED_CHAPTERS.has(id) ? toChapterMaterial : toCel;
           m.material = Array.isArray(m.material) ? m.material.map(convert) : convert(m.material);
           m.receiveShadow = true;
-          m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
+          m.castShadow = id === 'blackflag' ? blackflagCastsShadow(m) : !decorative && role !== 'floor' && role !== 'wayfinding';
         });
         return group;
       });
@@ -173,6 +175,9 @@ export class ArenaScene {
     }
     const root = await p;
     if (this.wantMap !== id || this.shownMap === root) return; // a later pick won
+    this.blackflagEffects?.dispose();
+    this.blackflagEffects = id === 'blackflag' ? new BlackflagEffects(this.sparkTex, this.quality) : null;
+    if (this.blackflagEffects) this.scene.add(this.blackflagEffects.root);
     if (this.shownMap) this.scene.remove(this.shownMap);
     this.scene.add(root);
     this.shownMap = root;
@@ -382,6 +387,7 @@ export class ArenaScene {
     this.muzzleLight.intensity = this.flashT > 0 ? this.muzzleLight.intensity * 0.6 : 0;
     this.viewmodel.update(dt);
     this.particles?.update(dt, this.camera.position);
+    this.blackflagEffects?.update(dt);
   }
 
   render(showViewmodel: boolean) {

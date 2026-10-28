@@ -1,0 +1,20 @@
+{
+  "deterministic": true,
+  "checks": 11,
+  "failed": [],
+  "sha256": {
+    "assets/blackflag_collision.glb": "cf9471555c918843b43065bb751d2a616c780e94bb2cda908ca7f310d18ff6e8",
+    "assets/blackflag_visual.glb": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+    "assets/materials/blackflag_sail_basecolor.png": "f222157aae04ea311549c5062c0b702a69266f23b8004926a845c9fa780f5753",
+    "assets/materials/brass_orm.png": "437aad8ed951846eaeffea412043fffbeb61ae0ca946d4d6f88861c5080881ab",
+    "assets/materials/canvas_basecolor.png": "0fc4c361c68990405b74c6ce227f831f1d4ac03701b47075ab0759cfedac32c0",
+    "assets/materials/canvas_orm.png": "dcfc74f9db2b8f8c3c69939827a42a52de7d7eced8999832df7cd4de477650d6",
+    "assets/materials/iron_orm.png": "ae52db3a7bba94623005421caecf256a001a84e29bc1e136f4c60c16dfdbce61",
+    "assets/materials/metal_orm.png": "299c06abaf1930b119e9fe72ea2238b239bd1a6f7b79c60f63ffa6b42584fec2",
+    "assets/materials/oak_basecolor.png": "1c943b1fc1878883a61f11fd059f71bdd074fdc6229a1e588bcf5525810b6f23",
+    "assets/materials/oak_orm.png": "6b99e62cd6c134a66fe6b3017695e09dc9520f432c5125c71976ce85f48d8a52",
+    "runtime/map.json": "e95329f0f7fd4af421234960c9616ede35fdf9a9debaf52689fdf7810ac0e668"
+  },
+  "visualBytes": 3507008,
+  "notes": "Independent clean temp-tree rebuild twice; all11 generated outputs match final source tree. Runtime map and collision bytes remain exactly frozen published baseline."
+}

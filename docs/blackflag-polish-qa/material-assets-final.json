@@ -1,0 +1,87 @@
+{
+  "scope": "offline asset structure and resource cost, not GPU/browser performance",
+  "results": [
+    {
+      "map": "blackflag",
+      "sha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+      "visualBytes": 3507008,
+      "triangles": 49879,
+      "primitives": 141,
+      "texturedPrimitives": 130,
+      "channels": {
+        "baseColorTexture": 101,
+        "metallicRoughnessTexture": 130,
+        "occlusionTexture": 130
+      },
+      "images": [
+        {
+          "name": "oak_basecolor.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "format": "PNG",
+          "encodedBytes": 42026
+        },
+        {
+          "name": "oak_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 2331
+        },
+        {
+          "name": "iron_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 1124
+        },
+        {
+          "name": "brass_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 1152
+        },
+        {
+          "name": "canvas_basecolor.png",
+          "size": [
+            512,
+            512
+          ],
+          "format": "PNG",
+          "encodedBytes": 12422
+        },
+        {
+          "name": "canvas_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 835
+        },
+        {
+          "name": "blackflag_sail_basecolor.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "format": "PNG",
+          "encodedBytes": 40803
+        }
+      ],
+      "embeddedImageBytes": 100693,
+      "rgbaTextureBytes": 10092544,
+      "rgbaWithMipEstimateBytes": 13456726
+    }
+  ],
+  "failures": []
+}

@@ -1,12 +1,19 @@
 [
   {
     "map": "blackflag",
-    "source": "docs/quick-arena-qa/after",
-    "manifest": "docs/quick-arena-qa/after/render-manifest.json",
+    "source": "docs/blackflag-polish-qa/after",
+    "manifest": "docs/blackflag-polish-qa/after/render-manifest.json",
     "renderer": "Blender Cycles CPU (actual GLB, neutral; not runtime screenshot)",
-    "assetSha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "assetSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
     "thumbnail": "arena-game/src/assets/maps/blackflag.webp",
-    "thumbnailView": "overview"
+    "thumbnailView": "overview",
+    "imageSha256": "9a17fcee1c4e026d7de7e272851823ad680c20043b0e670bb915f8e4fb71c49a",
+    "thumbnailSha256": "5253441957b64d50a25fd800a609933a73416e26438e53632f1bf58a38bba641",
+    "thumbnailSize": [
+      640,
+      427
+    ],
+    "thumbnailDerivation": "LANCZOS fit from actual1296x864 neutral Blender64-sample overview; WebP quality90"
   },
   {
     "map": "frostcourt",

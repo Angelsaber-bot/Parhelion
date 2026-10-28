@@ -1,0 +1,12 @@
+{
+  "source": "docs/blackflag-polish-qa/after/blackflag-overview.png",
+  "sourceSha256": "9a17fcee1c4e026d7de7e272851823ad680c20043b0e670bb915f8e4fb71c49a",
+  "assetSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+  "output": "arena-game/src/assets/maps/blackflag.webp",
+  "sha256": "5253441957b64d50a25fd800a609933a73416e26438e53632f1bf58a38bba641",
+  "width": 640,
+  "height": 427,
+  "format": "WEBP",
+  "quality": 90,
+  "encodedBytes": 30908
+}

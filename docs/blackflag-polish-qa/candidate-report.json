@@ -1,0 +1,204 @@
+{
+  "baselineLabel": "published 24b0f13 (parent-specified frozen source tree)",
+  "protectedFilesChecked": 702,
+  "failures": [],
+  "changedNonDocsFiles": [
+    "arena-game/src/assets/maps/blackflag.webp",
+    "arena-game/src/blackflagPresentation.ts",
+    "arena-game/src/scene.ts",
+    "arena-game/test/blackflag-presentation.test.ts",
+    "arena-maps/blackflag/README.md",
+    "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "arena-maps/blackflag/assets/materials/blackflag_sail_basecolor.png",
+    "arena-maps/blackflag/assets/materials/brass_orm.png",
+    "arena-maps/blackflag/assets/materials/canvas_basecolor.png",
+    "arena-maps/blackflag/assets/materials/canvas_orm.png",
+    "arena-maps/blackflag/assets/materials/iron_orm.png",
+    "arena-maps/blackflag/assets/materials/metal_orm.png",
+    "arena-maps/blackflag/assets/materials/oak_basecolor.png",
+    "arena-maps/blackflag/assets/materials/oak_orm.png",
+    "arena-maps/blackflag/previews/01-overview.jpg",
+    "arena-maps/blackflag/previews/02-lane.jpg",
+    "arena-maps/blackflag/previews/blackflag-lane.png",
+    "arena-maps/blackflag/previews/blackflag-overview.png",
+    "arena-maps/blackflag/previews/render-manifest.json",
+    "arena-maps/blackflag/source/build.py",
+    "arena-maps/blackflag/source/surfaces.py",
+    "arena-maps/blackflag/validation/art_report.json",
+    "arena-maps/blackflag/validation/check_art.py",
+    "arena-maps/blackflag/validation/glb_report.json",
+    "arena-maps/blackflag/validation/rebuild_report.json",
+    "arena-maps/chapter-preview-sources.json"
+  ],
+  "visualSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+  "visualBytes": 3507008,
+  "triangles": 49879,
+  "nodes": 39,
+  "materialPrimitives": 141,
+  "baselineMaterialPrimitives": 126,
+  "primitiveBudget": {
+    "previousCap": 128,
+    "approvedLocalCap": 160,
+    "rationale": "Explicit selective-shadow groups and richer ship craft; parent approved documented local budget. No GPU/FPS improvement claim."
+  },
+  "materials": 22,
+  "embeddedLights": 0,
+  "textures": [
+    {
+      "name": "oak_basecolor.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "encodedBytes": 42026,
+      "sha256": "1c943b1fc1878883a61f11fd059f71bdd074fdc6229a1e588bcf5525810b6f23",
+      "pixelExtrema": [
+        [
+          111,
+          252
+        ],
+        [
+          117,
+          248
+        ],
+        [
+          113,
+          241
+        ]
+      ]
+    },
+    {
+      "name": "oak_orm.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGB",
+      "encodedBytes": 2331,
+      "sha256": "6b99e62cd6c134a66fe6b3017695e09dc9520f432c5125c71976ce85f48d8a52",
+      "pixelExtrema": [
+        [
+          255,
+          255
+        ],
+        [
+          191,
+          244
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "iron_orm.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGB",
+      "encodedBytes": 1124,
+      "sha256": "ae52db3a7bba94623005421caecf256a001a84e29bc1e136f4c60c16dfdbce61",
+      "pixelExtrema": [
+        [
+          255,
+          255
+        ],
+        [
+          213,
+          239
+        ],
+        [
+          217,
+          229
+        ]
+      ]
+    },
+    {
+      "name": "brass_orm.png",
+      "width": 128,
+      "height": 128,
+      "mode": "RGB",
+      "encodedBytes": 1152,
+      "sha256": "437aad8ed951846eaeffea412043fffbeb61ae0ca946d4d6f88861c5080881ab",
+      "pixelExtrema": [
+        [
+          255,
+          255
+        ],
+        [
+          156,
+          182
+        ],
+        [
+          225,
+          237
+        ]
+      ]
+    },
+    {
+      "name": "canvas_basecolor.png",
+      "width": 512,
+      "height": 512,
+      "mode": "RGB",
+      "encodedBytes": 12422,
+      "sha256": "0fc4c361c68990405b74c6ce227f831f1d4ac03701b47075ab0759cfedac32c0",
+      "pixelExtrema": [
+        [
+          205,
+          252
+        ],
+        [
+          198,
+          247
+        ],
+        [
+          177,
+          229
+        ]
+      ]
+    },
+    {
+      "name": "canvas_orm.png",
+      "width": 256,
+      "height": 256,
+      "mode": "RGB",
+      "encodedBytes": 835,
+      "sha256": "dcfc74f9db2b8f8c3c69939827a42a52de7d7eced8999832df7cd4de477650d6",
+      "pixelExtrema": [
+        [
+          255,
+          255
+        ],
+        [
+          238,
+          249
+        ],
+        [
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "name": "blackflag_sail_basecolor.png",
+      "width": 1024,
+      "height": 1024,
+      "mode": "RGB",
+      "encodedBytes": 40803,
+      "sha256": "f222157aae04ea311549c5062c0b702a69266f23b8004926a845c9fa780f5753",
+      "pixelExtrema": [
+        [
+          30,
+          233
+        ],
+        [
+          44,
+          221
+        ],
+        [
+          55,
+          184
+        ]
+      ]
+    }
+  ],
+  "encodedTextureBytes": 100693,
+  "limits": "Independent structural and identity QA only. No browser/WebGL compilation, gameplay capture, live networking, GPU FPS or PvP balance claim."
+}

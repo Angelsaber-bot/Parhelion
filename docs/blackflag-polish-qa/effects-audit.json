@@ -1,0 +1,110 @@
+{
+  "scope": "CPU resource identity, bounded positions and disposal across 120,000 total update calls, not WebGL/FPS or a JS heap benchmark",
+  "results": [
+    {
+      "quality": "high",
+      "updates": 60000,
+      "pointDraws": 2,
+      "points": 144,
+      "positionBufferBytes": 1728,
+      "geometryDisposals": 2,
+      "materialDisposals": 2,
+      "sharedTextureDisposals": 0,
+      "ranges": [
+        {
+          "name": "BLACKFLAG_sea_glints",
+          "x": [
+            -70.73526000976562,
+            71.78173828125
+          ],
+          "y": [
+            -5.985000133514404,
+            -5.934999942779541
+          ],
+          "z": [
+            -83.18394470214844,
+            83.1886215209961
+          ]
+        },
+        {
+          "name": "BLACKFLAG_upper_sun_motes",
+          "x": [
+            -23.606687545776367,
+            24.47834014892578
+          ],
+          "y": [
+            6.860467910766602,
+            18.125171661376953
+          ],
+          "z": [
+            -12.740713119506836,
+            14.371747016906738
+          ]
+        }
+      ]
+    },
+    {
+      "quality": "low",
+      "updates": 60000,
+      "pointDraws": 1,
+      "points": 32,
+      "positionBufferBytes": 384,
+      "geometryDisposals": 1,
+      "materialDisposals": 1,
+      "sharedTextureDisposals": 0,
+      "ranges": [
+        {
+          "name": "BLACKFLAG_sea_glints",
+          "x": [
+            -65.9380874633789,
+            71.78173828125
+          ],
+          "y": [
+            -5.985000133514404,
+            -5.934999942779541
+          ],
+          "z": [
+            -76.59683227539062,
+            83.1886215209961
+          ]
+        }
+      ]
+    }
+  ],
+  "atmosphere": {
+    "background": 10599881,
+    "fog": [
+      12111317,
+      78,
+      230
+    ],
+    "exposure": 1,
+    "hemi": [
+      13099499,
+      6449017,
+      1.45
+    ],
+    "sun": {
+      "color": 16769716,
+      "intensity": 2.95,
+      "pos": [
+        -32,
+        39,
+        24
+      ]
+    },
+    "sky": {
+      "horizon": 14933962,
+      "mid": 8104123,
+      "top": 3566997,
+      "sun": 16772554,
+      "cloudLit": 16313046,
+      "cloudShade": 9940415,
+      "night": 0
+    },
+    "particles": "none",
+    "bloom": 0.12,
+    "bloomThreshold": 1.95
+  },
+  "explicitUpdateObjectCreation": false
+}

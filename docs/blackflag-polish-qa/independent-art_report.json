@@ -1,0 +1,78 @@
+{
+  "checks": 446,
+  "failed": [],
+  "physicsHash": "48c6ec6560269764fb0837aeeabd4358be958a3d816d0952b961fc36a9eb3fd6",
+  "collisionSha256": "cf9471555c918843b43065bb751d2a616c780e94bb2cda908ca7f310d18ff6e8",
+  "visualSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+  "triangles": 49879,
+  "bytes": 3507008,
+  "authoredMaterialPrimitives": 141,
+  "embeddedLights": 0,
+  "textures": [
+    {
+      "name": "oak_basecolor.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 42026,
+      "sha256": "1c943b1fc1878883a61f11fd059f71bdd074fdc6229a1e588bcf5525810b6f23"
+    },
+    {
+      "name": "oak_orm.png",
+      "size": [
+        256,
+        256
+      ],
+      "bytes": 2331,
+      "sha256": "6b99e62cd6c134a66fe6b3017695e09dc9520f432c5125c71976ce85f48d8a52"
+    },
+    {
+      "name": "iron_orm.png",
+      "size": [
+        128,
+        128
+      ],
+      "bytes": 1124,
+      "sha256": "ae52db3a7bba94623005421caecf256a001a84e29bc1e136f4c60c16dfdbce61"
+    },
+    {
+      "name": "brass_orm.png",
+      "size": [
+        128,
+        128
+      ],
+      "bytes": 1152,
+      "sha256": "437aad8ed951846eaeffea412043fffbeb61ae0ca946d4d6f88861c5080881ab"
+    },
+    {
+      "name": "canvas_basecolor.png",
+      "size": [
+        512,
+        512
+      ],
+      "bytes": 12422,
+      "sha256": "0fc4c361c68990405b74c6ce227f831f1d4ac03701b47075ab0759cfedac32c0"
+    },
+    {
+      "name": "canvas_orm.png",
+      "size": [
+        256,
+        256
+      ],
+      "bytes": 835,
+      "sha256": "dcfc74f9db2b8f8c3c69939827a42a52de7d7eced8999832df7cd4de477650d6"
+    },
+    {
+      "name": "blackflag_sail_basecolor.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "bytes": 40803,
+      "sha256": "f222157aae04ea311549c5062c0b702a69266f23b8004926a845c9fa780f5753"
+    }
+  ],
+  "source": "Original project-authored surfaces.py raster paintings. No external textures.",
+  "limits": "Offline structural/material QA. Not browser frame rate, screenshot parity or human PvP balance."
+}

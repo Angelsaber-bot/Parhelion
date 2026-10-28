@@ -2,7 +2,7 @@
   {
     "map": "blackflag",
     "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
-    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
     "sourceStillMatches": true,
     "view": "overview",
     "camera": [
@@ -16,19 +16,25 @@
       0.0
     ],
     "renderer": "Blender Cycles CPU",
-    "samples": 32,
+    "samples": 64,
     "lighting": "neutral",
     "eyeHeight": null,
+    "orthographicScale": 88.32,
+    "resolution": [
+      1296,
+      864
+    ],
+    "lensMm": 25,
     "atmosphereReference": null,
     "output": "arena-maps/blackflag/previews/blackflag-overview.png",
-    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
-    "imageSha256": "45761d20fa275bfd6015353a709ec57938e636e1a5aa0c019e1ec0ebbf9c5e26",
-    "artRevision": "2026-10-28-arena-cover-boundaries"
+    "imageSha256": "9a17fcee1c4e026d7de7e272851823ad680c20043b0e670bb915f8e4fb71c49a",
+    "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced.",
+    "artRevision": "2026-10-28-blackflag-polish"
   },
   {
     "map": "blackflag",
     "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
-    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
     "sourceStillMatches": true,
     "view": "lane",
     "camera": [
@@ -42,13 +48,19 @@
       -4
     ],
     "renderer": "Blender Cycles CPU",
-    "samples": 32,
+    "samples": 64,
     "lighting": "neutral",
     "eyeHeight": 1.7,
+    "orthographicScale": null,
+    "resolution": [
+      1296,
+      864
+    ],
+    "lensMm": 25,
     "atmosphereReference": null,
     "output": "arena-maps/blackflag/previews/blackflag-lane.png",
-    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
-    "imageSha256": "2fc98a730bf65b68bc3ca5242d4f365978ab3bbca37ae2e3da9e4cd21a5e049f",
-    "artRevision": "2026-10-28-arena-cover-boundaries"
+    "imageSha256": "b1463dd07504461c869609aa1bf3ac3118fda90b64a7fc4eec375f64baddc256",
+    "limitations": "Neutral offline actual-GLB geometry/material inspection only. Not browser/gameplay/FPS evidence. Runtime Three.js PBR hook, selective shadow policy, sky, fog, fill light, particles and postprocessing are not reproduced.",
+    "artRevision": "2026-10-28-blackflag-polish"
   }
 ]

@@ -1,0 +1,11 @@
+{
+  "scope": "Static Arena production artifact identity and relative asset routing; not HTTP/browser validation",
+  "failures": [],
+  "indexReferences": 3,
+  "assetReferences": 25,
+  "builtFiles": 27,
+  "sourceVisualSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+  "builtVisualAssets": [
+    "arena-game/dist/assets/blackflag_visual-D2XAXTKK.glb"
+  ]
+}

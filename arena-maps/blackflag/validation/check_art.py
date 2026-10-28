@@ -35,8 +35,18 @@ for me in g['meshes']:
         if g['materials'][p['material']]['name']=='blackSail':check(min(vals)>=0 and max(vals)<=1,'heraldic sail uses dedicated unwrapped 0–1 UVs')
 triangles=sum(g['accessors'][p['indices']]['count']//3 for me in g['meshes'] for p in me['primitives'])
 primitives=sum(len(me['primitives']) for me in g['meshes'])
-check(triangles<50000,'under 50k triangles');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=128,'at most 128 authored material primitives including eight new solid cover/rail meshes')
+check(triangles<50000,'under 50k triangles');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=160,'at most 160 material primitives: precise sail/gallery shadow groups and modeled period craft; no FPS claim')
 check(not g.get('extensions',{}).get('KHR_lights_punctual'),'no embedded lights')
+shadow_nodes={n['name']:n.get('extras',{}) for n in g['nodes'] if n['name'].startswith('DETAIL_')}
+check(shadow_nodes.get('DETAIL_ship_sails',{}).get('castShadow') is True,'upper ship sails explicitly cast shadows')
+check(shadow_nodes.get('DETAIL_ship_gallery',{}).get('castShadow') is True,'stern gallery explicitly casts shadows')
+check(shadow_nodes.get('DETAIL_chapter_craft',{}).get('castShadow') is False,'sea and distant background never enter decorative shadow pass')
+for me in g['meshes']:
+    for p in me['primitives']:
+        a=g['accessors'][p['attributes']['NORMAL']];v=g['bufferViews'][a['bufferView']]
+        ns=struct.unpack_from('<'+'f'*a['count']*3,blob,v.get('byteOffset',0)+a.get('byteOffset',0))
+        check(all(math.isfinite(x) for x in ns),'finite indexed smooth-spar normals')
+        check(all(abs(sum(n*n for n in ns[i:i+3])-1)<1e-4 for i in range(0,len(ns),3)),'unit normals on indexed smooth-spar geometry')
 check(all(m.get('alphaMode','OPAQUE')=='OPAQUE' for m in g['materials']),'no alpha sorting / extra transparency passes')
 report=dict(checks=checks,failed=fails,physicsHash=physics,collisionSha256=collision,visualSha256=hashlib.sha256(b).hexdigest(),triangles=triangles,bytes=len(b),authoredMaterialPrimitives=primitives,embeddedLights=0,textures=textures,source='Original project-authored surfaces.py raster paintings. No external textures.',limits='Offline structural/material QA. Not browser frame rate, screenshot parity or human PvP balance.')
 (ROOT/'validation/art_report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report,indent=2));sys.exit(bool(fails))

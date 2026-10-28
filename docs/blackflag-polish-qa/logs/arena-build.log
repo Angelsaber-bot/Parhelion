@@ -1,0 +1,44 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 build
+> npm run typecheck && vite build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p worker
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 124 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                    5.47 kB │ gzip:   2.18 kB
+dist/assets/neon-Cf2lSjvg.webp                     7.13 kB
+dist/assets/sakura-G3mgRN18.webp                   8.06 kB
+dist/assets/zenith-CbVhqEfB.webp                   8.64 kB
+dist/assets/aster-Brq7EkD4.webp                   15.48 kB
+dist/assets/frostcourt-bsZx3rpz.webp              22.29 kB
+dist/assets/camlann-BW6JIKtz.webp                 30.33 kB
+dist/assets/blackflag-BdLqaH5S.webp               30.90 kB
+dist/assets/06_Refract_Blade-DLNuQ6Xb.glb        836.08 kB
+dist/assets/zenith_visual-C8mgHwzL.glb         1,130.72 kB
+dist/assets/neon_visual-LwczJXfS.glb           1,310.38 kB
+dist/assets/07_Meteor_Polearm-CibxundI.glb     1,501.72 kB
+dist/assets/sakura_visual-CTHghL2_.glb         1,627.75 kB
+dist/assets/02_Firefly_SMG-A6fwOKXE.glb        1,707.91 kB
+dist/assets/03_Afterglow_Shotgun-D1O-SiIS.glb  1,842.68 kB
+dist/assets/08_Faultline_Hammer-DqY0mhcF.glb   1,893.47 kB
+dist/assets/aster_overlay-CNHhga1Y.glb         2,018.74 kB
+dist/assets/04_Meridian_DMR-ybTxkShj.glb       2,275.47 kB
+dist/assets/01_Dawn_AR-CFfUgGHN.glb            2,553.62 kB
+dist/assets/05_Longnight_Sniper-CmRzREkS.glb   2,653.96 kB
+dist/assets/frostcourt_visual-Cni2kF6M.glb     2,957.84 kB
+dist/assets/blackflag_visual-D2XAXTKK.glb      3,507.00 kB
+dist/assets/camlann_visual-D2qGVyhI.glb        4,853.32 kB
+dist/assets/station_visual-CrbuLmzN.glb        5,326.46 kB
+dist/assets/index-CYNMyI6v.css                    18.68 kB │ gzip:   5.08 kB
+dist/assets/armory-DaTIvaI7.js                    24.14 kB │ gzip:   6.72 kB
+dist/assets/index-Bp4V9KGM.js                  1,083.18 kB │ gzip: 303.98 kB
+
+✓ built in 376ms

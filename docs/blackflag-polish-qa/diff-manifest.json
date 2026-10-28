@@ -1,0 +1,188 @@
+{
+  "baselineLabel": "published 24b0f13 (parent-specified frozen source tree)",
+  "scope": "Non-doc source/resource changes only; docs evidence listed separately",
+  "files": [
+    {
+      "path": "arena-game/src/assets/maps/blackflag.webp",
+      "status": "modified",
+      "baselineSha256": "22a1a48b2d01c4d6a65800b14d5454213943ce47c08a99e5dcf147e93a6bb0a5",
+      "candidateSha256": "5253441957b64d50a25fd800a609933a73416e26438e53632f1bf58a38bba641",
+      "bytes": 30908
+    },
+    {
+      "path": "arena-game/src/blackflagPresentation.ts",
+      "status": "new",
+      "baselineSha256": null,
+      "candidateSha256": "ce89e39e9829e8875aae8563d8d2afd6a123d2f7114af20058587bd58f10df61",
+      "bytes": 7006
+    },
+    {
+      "path": "arena-game/src/scene.ts",
+      "status": "modified",
+      "baselineSha256": "f2b58047d7d7759fe2ddec2930b479c5f2eb59c050cf01c9309383034611be01",
+      "candidateSha256": "98309277c355d4b755666bc5ee41f2560bd5a02d747eafaaa6012be57fe139ef",
+      "bytes": 38007
+    },
+    {
+      "path": "arena-game/test/blackflag-presentation.test.ts",
+      "status": "new",
+      "baselineSha256": null,
+      "candidateSha256": "21df97640ce3587afdd35b105a28ad8575104e4b35da341d705574b60f19a3fc",
+      "bytes": 12886
+    },
+    {
+      "path": "arena-maps/blackflag/README.md",
+      "status": "modified",
+      "baselineSha256": "474d77653ecf565c39082a1b3b5a84b8529f3fd4aba9f860a291d750fefeabe7",
+      "candidateSha256": "acb24f8a81bf563d8cb3c2451f194026f7f7181c5b24062a7e4d32f05961d7e4",
+      "bytes": 7707
+    },
+    {
+      "path": "arena-maps/blackflag/assets/blackflag_visual.glb",
+      "status": "modified",
+      "baselineSha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+      "candidateSha256": "1dd80d4a1c1abc7ea549688d3b339d0c02fe1d46b9c9b4c5d5a28b8f8021aa05",
+      "bytes": 3507008
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/blackflag_sail_basecolor.png",
+      "status": "modified",
+      "baselineSha256": "1beb11e4e640e43144e6d4e15dbf21da35ca79c088fecd1a8c41fb3c4182089f",
+      "candidateSha256": "f222157aae04ea311549c5062c0b702a69266f23b8004926a845c9fa780f5753",
+      "bytes": 40803
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/brass_orm.png",
+      "status": "new",
+      "baselineSha256": null,
+      "candidateSha256": "437aad8ed951846eaeffea412043fffbeb61ae0ca946d4d6f88861c5080881ab",
+      "bytes": 1152
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/canvas_basecolor.png",
+      "status": "modified",
+      "baselineSha256": "e7eea522818069ae9f7ecac1d7b0ba88d56cd7e7521fa036c9798f3933f7a1c3",
+      "candidateSha256": "0fc4c361c68990405b74c6ce227f831f1d4ac03701b47075ab0759cfedac32c0",
+      "bytes": 12422
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/canvas_orm.png",
+      "status": "modified",
+      "baselineSha256": "59a4a498cfc7d8d361facd872632304558d48aacd022fb4204eb48770888369d",
+      "candidateSha256": "dcfc74f9db2b8f8c3c69939827a42a52de7d7eced8999832df7cd4de477650d6",
+      "bytes": 835
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/iron_orm.png",
+      "status": "new",
+      "baselineSha256": null,
+      "candidateSha256": "ae52db3a7bba94623005421caecf256a001a84e29bc1e136f4c60c16dfdbce61",
+      "bytes": 1124
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/metal_orm.png",
+      "status": "modified",
+      "baselineSha256": "a914b29274fce5fd392640019913d2f8c04d73535455df3f37fe67b63452923e",
+      "candidateSha256": "299c06abaf1930b119e9fe72ea2238b239bd1a6f7b79c60f63ffa6b42584fec2",
+      "bytes": 1135
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/oak_basecolor.png",
+      "status": "modified",
+      "baselineSha256": "2f8fb07f96afdfe505d4cebca231d987d5751c5ca644f912eae67ae0d036def5",
+      "candidateSha256": "1c943b1fc1878883a61f11fd059f71bdd074fdc6229a1e588bcf5525810b6f23",
+      "bytes": 42026
+    },
+    {
+      "path": "arena-maps/blackflag/assets/materials/oak_orm.png",
+      "status": "modified",
+      "baselineSha256": "0772ca4107806ea8c7efb7651c9eefde3cdb3fe773762dae85f6f4b576b4a6fa",
+      "candidateSha256": "6b99e62cd6c134a66fe6b3017695e09dc9520f432c5125c71976ce85f48d8a52",
+      "bytes": 2331
+    },
+    {
+      "path": "arena-maps/blackflag/previews/01-overview.jpg",
+      "status": "modified",
+      "baselineSha256": "df6c39a3b7b265e79c2d61c08d8d343549f5939e0fc5f5cb8244766cc94e5ce6",
+      "candidateSha256": "7029515f06653e5fbd06bde5af5a2e7eff6f2bb89a23161745bb90bf6730c756",
+      "bytes": 164380
+    },
+    {
+      "path": "arena-maps/blackflag/previews/02-lane.jpg",
+      "status": "modified",
+      "baselineSha256": "ab56329550cae8d099f857e07da965a24263ecc984d4ad62ad82c22c2d72ad1b",
+      "candidateSha256": "758fcba440c2470f103ed7cdf6cc874311417407a471feb1ab728a201f87cf83",
+      "bytes": 190918
+    },
+    {
+      "path": "arena-maps/blackflag/previews/blackflag-lane.png",
+      "status": "modified",
+      "baselineSha256": "2fc98a730bf65b68bc3ca5242d4f365978ab3bbca37ae2e3da9e4cd21a5e049f",
+      "candidateSha256": "b1463dd07504461c869609aa1bf3ac3118fda90b64a7fc4eec375f64baddc256",
+      "bytes": 1803882
+    },
+    {
+      "path": "arena-maps/blackflag/previews/blackflag-overview.png",
+      "status": "modified",
+      "baselineSha256": "45761d20fa275bfd6015353a709ec57938e636e1a5aa0c019e1ec0ebbf9c5e26",
+      "candidateSha256": "9a17fcee1c4e026d7de7e272851823ad680c20043b0e670bb915f8e4fb71c49a",
+      "bytes": 1773061
+    },
+    {
+      "path": "arena-maps/blackflag/previews/render-manifest.json",
+      "status": "modified",
+      "baselineSha256": "e4852ec10ca4c824a2b4dc57bd2c210133d3dc93eed4c686409a45610669c392",
+      "candidateSha256": "357347f29777eda8e32fba4ab6d3703a33ae17cea2a013ea698fae2d4fc727eb",
+      "bytes": 2057
+    },
+    {
+      "path": "arena-maps/blackflag/source/build.py",
+      "status": "modified",
+      "baselineSha256": "6319195b2f98ddc1f58f15a2a881e1e7b91a224f15bf9319acf25c9a0dc9a913",
+      "candidateSha256": "737fb00de65253cac90038d7a8dfa31b981d0a10233355d03cb4aadbc33b7bf7",
+      "bytes": 41748
+    },
+    {
+      "path": "arena-maps/blackflag/source/surfaces.py",
+      "status": "modified",
+      "baselineSha256": "5d98b9e5c9b97fde0ca950af00a0597d685040eca90e02644e4cd909c79a3f4f",
+      "candidateSha256": "007c2eb67821d8360fb1d712e0d1e96c2df2d606d9ff0b26a6edf26cbb17a3cc",
+      "bytes": 11986
+    },
+    {
+      "path": "arena-maps/blackflag/validation/art_report.json",
+      "status": "modified",
+      "baselineSha256": "afdcf690b6a7f1e049c0ed035984c12c1913c645d73af099733c434902f9e8f5",
+      "candidateSha256": "83502c4b598a9d53db1fb70b34033b51bb33d508d9effef212b644c2c6b330dc",
+      "bytes": 2038
+    },
+    {
+      "path": "arena-maps/blackflag/validation/check_art.py",
+      "status": "modified",
+      "baselineSha256": "944d0886a46424ba1de06e425f8707d9e38d222632ee54198561df1e8a4d2863",
+      "candidateSha256": "67078259627179318255473928e9c3e3d49f78d985d66ae31375f82efe07cd2e",
+      "bytes": 4430
+    },
+    {
+      "path": "arena-maps/blackflag/validation/glb_report.json",
+      "status": "modified",
+      "baselineSha256": "bc669b5e6a6c6556a67be6d154eec4c6201414ef05b477926f6fbef150f81fd5",
+      "candidateSha256": "9fafb6356c58266ca9b0a5cf71b0f7c83c2c78c29a81cf4af963df37b7cc7cc0",
+      "bytes": 242
+    },
+    {
+      "path": "arena-maps/blackflag/validation/rebuild_report.json",
+      "status": "modified",
+      "baselineSha256": "cb2137628df26acac365f0e6504bca1b8af56280b301705b801a61f9dd4efd0b",
+      "candidateSha256": "41db6c7b0fd33d759fba4fbd32ebb9a0342336c51c194e07dfec6f7b90b61090",
+      "bytes": 1457
+    },
+    {
+      "path": "arena-maps/chapter-preview-sources.json",
+      "status": "modified",
+      "baselineSha256": "00e00668555b479ade5e596bee8f8c5b8dd94695742be82167a07c19ee461af7",
+      "candidateSha256": "b9084cb166a09f0cd4c4242154ebcb15eaa3ff84d62dbc3f86221810825b3d76",
+      "bytes": 1601
+    }
+  ]
+}

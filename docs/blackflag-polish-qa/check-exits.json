@@ -1,0 +1,14 @@
+{
+  "arena-tests": {
+    "exitCode": 0,
+    "seconds": 8.52
+  },
+  "arena-typecheck": {
+    "exitCode": 0,
+    "seconds": 0.79
+  },
+  "arena-build": {
+    "exitCode": 0,
+    "seconds": 1.57
+  }
+}
