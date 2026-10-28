@@ -2,8 +2,8 @@
 
 Arthur chapter arena: **64 × 48 m** early-medieval-inspired fictional battlefield.
 Low fractured stone courses, exposed timber hall frames, worn turf/soil, a broken
-palisade and one torn banner replace later Gothic/castle imagery. Three offset
-cover islands make a loose figure-eight, with a broad central breach and a 1.2 m
+palisade and one torn banner replace later Gothic/castle imagery. Three original ruins plus western baggage, central fallen-timber and southern
+stone-outwork cover islands make a loose figure-eight, with a broad central breach and a 1.2 m
 hall foundation reached from both sides by 5 m ramps.
 
 ## Editable source / rebuild
@@ -45,3 +45,18 @@ PvP balance and target-device performance still need playtesting.
 
 Previews are actual exported GLB renders with Blender CPU Cycles, **not browser
 screenshots**. See `../../docs/ARENA_CHAPTER_QA.md` for final evidence and limits.
+
+## 2026-10-28 Arena density and perimeter repair
+
+Added three deliberately placed fighting islands (baggage breastwork, fallen hall
+timbers and dry-stone outwork) with matching solid collision and additional bot
+cover anchors. Existing spawn/objective positions and four route polylines are
+unchanged. Continuous 1.4m timber crest protection sits on the 2.8m perimeter
+banks, at the authored ±32m/±24m edges; shared simulation bounds also prevent
+jumping/dashing outside. No new textures or lights.
+
+Final visual export: 42,283 triangles; 4,853,328 bytes including 886,333 embedded
+texture bytes (3,966,995 geometry/JSON bytes, below the established 4MB budget).
+GLB structural/proxy checks: 820 passed. All 65 focused map/chapter checks passed,
+including both-way real movement, spawn occlusion, anchor connectivity and bots.
+Fresh preview evidence is recorded separately by the independent QA pass.

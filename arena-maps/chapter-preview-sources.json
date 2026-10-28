@@ -1,10 +1,10 @@
 [
   {
     "map": "blackflag",
-    "source": "docs/chapter-qa/renders-art1",
-    "manifest": "docs/chapter-qa/renders-art1/render-manifest.json",
+    "source": "docs/quick-arena-qa/after",
+    "manifest": "docs/quick-arena-qa/after/render-manifest.json",
     "renderer": "Blender Cycles CPU (actual GLB, neutral; not runtime screenshot)",
-    "assetSha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "assetSha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
     "thumbnail": "arena-game/src/assets/maps/blackflag.webp",
     "thumbnailView": "overview"
   },
@@ -19,10 +19,10 @@
   },
   {
     "map": "camlann",
-    "source": "docs/chapter-qa/renders-art3",
-    "manifest": "docs/chapter-qa/renders-art3/render-manifest.json",
+    "source": "docs/quick-arena-qa/after",
+    "manifest": "docs/quick-arena-qa/after/render-manifest.json",
     "renderer": "Blender Cycles CPU (actual GLB, neutral; not runtime screenshot)",
-    "assetSha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "assetSha256": "1ca45a8097ab86a6c06a77514ab3e9de78e3a613cecc9117249553c29757d563",
     "thumbnail": "arena-game/src/assets/maps/camlann.webp",
     "thumbnailView": "overview"
   }

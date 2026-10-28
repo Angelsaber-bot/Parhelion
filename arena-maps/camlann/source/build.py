@@ -25,6 +25,9 @@ c.box('battlefield_floor',[0,-.4,0],[64,.8,48],'turf','floor')
 # Boundaries read as low earth/stone banks, not four complete castle facades.
 for x in (-32,32): c.box('earthbank_x_'+str(x),[x,1.4,0],[1,2.8,48],'earth','structure')
 for z in (-24,24): c.box('earthbank_z_'+str(z),[0,1.4,z],[64,2.8,1],'earth','structure')
+# Timber breastwork sits on the actual bank crest, not inside a fighting lane.
+for x in (-32,32): c.box('crest_palisade_x_'+str(x),[x,3.5,0],[.5,1.4,48],'timber','structure')
+for z in (-24,24): c.box('crest_palisade_z_'+str(z),[0,3.5,z],[64,1.4,.5],'timber','structure')
 for side in (-1,1):
     # The visible inner earth slopes are real ramp collision, leaving the route loop flat.
     c.ramp('turf_berm_x_'+str(side),[side*30.5,0,0],[2,2.8,46],'x',-side,'turf')
@@ -56,6 +59,16 @@ c.box('southern_bank',[-4,.7,15],[12,1.4,4],'earth')
 c.box('palisade_stump',[3,1.2,17],[1.1,2.4,7],'timber')
 c.box('fallen_cart',[17,.75,-4],[3.6,1.5,2.4],'timber')
 c.box('rubble_west',[-18,.7,-4],[3.5,1.4,2.5],'stoneShade')
+# Three deliberate fighting islands, outside the existing broad route network.
+# An abandoned baggage breastwork on the western flank, a collapsed hall beam
+# beside the central breach, and a dry-stone outwork on the open southern field.
+c.box('baggage_breastwork',[-21, .95,9],[4.5,1.9,2.2],'timber')
+c.box('baggage_return',[-22.5,.7,11],[1.5,1.4,1.8],'timber')
+c.box('fallen_hall_beams',[7.5,.85,-2.7],[4,1.7,2],'timber')
+c.box('south_outwork',[15,.85,15],[5,1.7,1.2],'stone')
+c.box('south_outwork_return',[17,1.1,16.5],[1,2.2,3],'stoneShade')
+for name,pos,h in [('baggage',[-21,0,6.7],1.9),('fallen_beams',[7.5,0,-.6],1.7),('outwork',[14,0,12.7],1.7)]:
+    c.anchor('cover_'+name,'cover',pos,height=h)
 for name,p,h in [('west_wall',[-6.5,0,-.4],2.2),('east_wall',[7.5,0,6.5],2.7),('earthwork',[-4,0,11.7],1.4),('cart',[17,0,-1.8],1.5),('hall',[4,1.2,-17],2.2)]:
     c.anchor('cover_'+name,'cover',p,height=h)
 c.anchor('objective_breach','objective',[0,0,4],radius=2)
@@ -67,7 +80,7 @@ c.route('figure_eight',[[-15,0,-7],[-15,0,9],[-13,0,10],[0,0,9],[0,0,3],[0,0,-6]
 shaped=[]
 for o in c.objects:
     w,h,d=o['size']; x,y,z=o['position']; along=w>d; span=w if along else d
-    if o['type']=='box' and o['material'] in ('stone','stoneShade') and span>=5:
+    if o['type']=='box' and o['material'] in ('stone','stoneShade') and span>=5 and not o['id'].startswith('south_outwork'):
         count=round(span/1.35)
         for i in range(count):
             sh=h-[.02,.24,.09,.41,.17,.3][(i+len(o['id']))%6]
@@ -256,6 +269,38 @@ def rough_stone(m,material,p,s,r):
         m.tri(material,(x,y+h*.48,z),high[j],high[(j+1)%8])
         m.tri(material,(x,y-h*.48,z),low[(j+1)%8],low[j])
 def crafted(m,o):
+    if o['id'].startswith('south_outwork'):
+        # Low-cost authored masonry: closed mortar core, offset stone courses,
+        # kept in the source object's exact authoritative footprint.
+        x,y,z=o['position'];w,h,d=o['size']; along=w>d; span=w if along else d
+        m.cbox('stoneShade',[x,y,z],[w*.96,h*.98,d*.96])
+        rows=3; cols=max(2,round(span/.9))
+        for row in range(rows):
+            for j in range(cols):
+                t=(j+.5)*span/cols-span/2; yy=y-h/2+(row+.5)*h/rows
+                p=[x+t,yy,z] if along else [x,yy,z+t]
+                sz=[span/cols-.025,h/rows-.025,d] if along else [w,h/rows-.025,span/cols-.025]
+                m.cbox(('stone','stoneLight','stoneShade')[(j+row)%3],p,sz)
+        return True
+    if o['id'].startswith('crest_palisade_'):
+        # Solid weathered planks have no misleading shoot-through slits.
+        bevelbox(m,'timber',o['position'],o['size'],.045)
+        return True
+    if o['id'] in ('baggage_breastwork','baggage_return','fallen_hall_beams'):
+        x,y,z=o['position']; w,h,d=o['size']; bottom=y-h/2
+        bevelbox(m,'grain',o['position'],o['size'],.09)
+        for j in range(4):
+            yy=bottom+(j+.5)*h/4
+            for zz in (z-d/2+.035,z+d/2-.035):
+                m.cbox('timber',[x,yy,zz],[w-.06,h/4-.025,.065])
+        for xx in (x-w*.34,x+w*.34):
+            m.cbox('iron',[xx,y,z],[.09,h-.03,d-.01])
+        # Blue shield faces and old iron bosses stay within the same solid cover.
+        if o['id']=='baggage_breastwork':
+            for xx in (x-.95,x+.95):
+                m.cbox('cloth',[xx,y,z-d/2+.008],[.7,1.3,.012])
+                m.cbox('gold',[xx,y,z-d/2+.005],[.08,1.15,.008])
+        return True
     if o['id']=='battlefield_floor':
         m.cbox('earth',o['position'],o['size'],top_mat='battlefield')
         # One painted atlas; no world tiling on this particular authored floor.

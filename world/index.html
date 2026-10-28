@@ -21,7 +21,7 @@
     #objective .done { color: #3a9a64; text-decoration: line-through; }
     #objective .cur { font-weight: 700; }
     #minimap { right: 18px; top: 18px; width: 190px; height: 190px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 16px #0003; overflow: hidden; background: #cde; }
-    #bigmap { inset: 0; display: none; align-items: center; justify-content: center; background: #0009; pointer-events: auto; }
+    #bigmap { z-index: 6; inset: 0; display: none; align-items: center; justify-content: center; background: #0009; pointer-events: auto; }
     #bigmap.open { display: flex; }
     #bigmap canvas { width: min(88vh, 92vw); height: min(88vh, 92vw); border-radius: 14px; box-shadow: 0 8px 40px #0006; }
     #area { left: 50%; top: 16%; transform: translateX(-50%); text-align: center; opacity: 0; transition: opacity .6s; color: #fff; text-shadow: 0 2px 8px #0008; }

@@ -122,6 +122,74 @@
       "role": "structure"
     },
     {
+      "id": "raised_bulwark_-27_-17",
+      "type": "box",
+      "position": [
+        -27,
+        3,
+        -17
+      ],
+      "size": [
+        10,
+        2.4,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "raised_bulwark_-27_17",
+      "type": "box",
+      "position": [
+        -27,
+        3,
+        17
+      ],
+      "size": [
+        10,
+        2.4,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "raised_bulwark_27_-17",
+      "type": "box",
+      "position": [
+        27,
+        3,
+        -17
+      ],
+      "size": [
+        10,
+        2.4,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "raised_bulwark_27_17",
+      "type": "box",
+      "position": [
+        27,
+        3,
+        17
+      ],
+      "size": [
+        10,
+        2.4,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
       "id": "end_bulwark_-32",
       "type": "box",
       "position": [
@@ -553,6 +621,74 @@
       "material": "timber",
       "collision": true,
       "role": "cover"
+    },
+    {
+      "id": "cargo_crate_fore",
+      "type": "box",
+      "position": [
+        -8.5,
+        0.9,
+        -1.1
+      ],
+      "size": [
+        3,
+        1.8,
+        2.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "cargo_crate_aft",
+      "type": "box",
+      "position": [
+        9,
+        0.95,
+        2
+      ],
+      "size": [
+        3.4,
+        1.9,
+        2.5
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_breastwork_3",
+      "type": "box",
+      "position": [
+        3,
+        0.9,
+        -14.8
+      ],
+      "size": [
+        6,
+        1.8,
+        0.9
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_breastwork_-3",
+      "type": "box",
+      "position": [
+        -3,
+        0.9,
+        14.8
+      ],
+      "size": [
+        6,
+        1.8,
+        0.9
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
     }
   ],
   "anchors": [
@@ -619,6 +755,36 @@
         0
       ],
       "height": 3.7
+    },
+    {
+      "id": "cover_added_fore",
+      "kind": "cover",
+      "position": [
+        -8.5,
+        0,
+        -3.6
+      ],
+      "height": 1.8
+    },
+    {
+      "id": "cover_added_aft",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        4.5
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_added_port_battery",
+      "kind": "cover",
+      "position": [
+        6.8,
+        0,
+        -13
+      ],
+      "height": 1.8
     },
     {
       "id": "cover_cargo_bow",

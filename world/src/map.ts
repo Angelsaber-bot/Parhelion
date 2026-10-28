@@ -4,6 +4,7 @@ import { localizeText } from '../../shared-client/i18n';
 import type { Layout } from './types';
 import type { WorldGrid } from './grid';
 import { GATES } from './regions';
+import { FULL_MAP_COLORS, fullMapPresentation, projectFullMapTarget } from './fullMapPresentation';
 import { collectMinimapLandmarks, minimapArea, MINIMAP_COLORS, MINIMAP_VIEW_RADIUS, projectMinimapTarget, selectMinimapLandmarks, type MapBox, type MinimapLandmark } from './minimapMarkers';
 
 export class WorldMap {
@@ -78,44 +79,39 @@ export class WorldMap {
     const tz = (z: number) => (this.pz(z) - oz) * scale;
     ctx.drawImage(this.base, -ox * scale, -oz * scale, this.size * scale, (this.sizeZ ?? this.size) * scale);
 
+    const fullUnit = opts.full ? W / (ctx.canvas.clientWidth || W) : 1;
     const target = opts.target ? { x: tx(opts.target[0]), y: tz(opts.target[1]) } : null;
     const miniTarget = target && !opts.full ? projectMinimapTarget(target, W) : null;
+    const fullTarget = target && opts.full ? projectFullMapTarget(target, W, fullUnit) : null;
 
-    // The full map retains its complete exploration information. The small map
-    // intentionally never reads ordinary interaction/discovery/spawn/enemy markers.
+    // Both map modes are navigation views; ordinary interactions, discoveries,
+    // spawn points and enemy dots never participate in presentation selection.
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     if (opts.full) {
-      // Skip any label whose box would overlap one already drawn, so dense hubs stay readable.
-      const boxes: Array<[number, number, number, number]> = [];
-      for (const a of this.layout.areas) {
-        const x = tx(a.c[0]), y = tz(a.c[1]) - 22;
-        ctx.font = '700 23px system-ui, sans-serif';
-        const label = localizeText(a.name), w = (ctx.measureText?.(label).width ?? label.length * 23) + 6, h = 26;
-        const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
-        if (boxes.some((o) => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) continue;
-        boxes.push(box);
-        ctx.lineWidth = 5; ctx.strokeStyle = '#141c30dd'; ctx.fillStyle = '#fff';
-        ctx.strokeText(label, x, y); ctx.fillText(label, x, y);
+      const presentation = fullMapPresentation(this.layout, ([x, z]) => ({ x: tx(x), y: tz(z) }), W,
+        ctx.canvas.clientWidth || W, { x: tx(player.x), y: tz(player.z) }, fullTarget, opts.done,
+        (text, size) => { ctx.font = `700 ${size}px system-ui, sans-serif`; return ctx.measureText?.(text).width ?? text.length * size; });
+      for (const label of presentation.labels) {
+        ctx.font = `${label.region ? 700 : 600} ${label.size}px system-ui, sans-serif`;
+        ctx.lineWidth = 4 * fullUnit; ctx.strokeStyle = FULL_MAP_COLORS.outline;
+        ctx.fillStyle = label.region ? FULL_MAP_COLORS.label : FULL_MAP_COLORS.landmark;
+        ctx.strokeText(label.text, label.x, label.y); ctx.fillText(label.text, label.x, label.y);
       }
-      // live monsters (bosses larger)
-      for (const e of opts.enemies ?? []) {
-        ctx.beginPath(); ctx.arc(tx(e.p.x), tz(e.p.z), e.boss ? 9 : 3, 0, Math.PI * 2);
-        ctx.fillStyle = '#ff3b4e'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#2a0b10'; ctx.stroke();
-      }
-      // markers
-      for (const m of this.layout.markers) {
-        const x = tx(m.p[0]), y = tz(m.p[2]);
-        let color = '';
-        if (m.type === 'interact') color = opts.done.has(m.id) ? '#7ad18a' : '#ffb547';
-        else if (m.type === 'discovery') color = opts.found.has(m.id) ? '#c9a2ff' : '#ffffff55';
-        else if (m.type === 'spawn') color = '#5fe7f2';
-        else if (m.type === 'enemy') color = '#ff5d6c';
-        else continue;
+      for (const point of presentation.landmarks) {
+        const { x, y } = point, u = fullUnit;
         ctx.beginPath();
-        ctx.arc(x, y, m.type === 'interact' ? 9 : 5, 0, Math.PI * 2);
-        ctx.fillStyle = color; ctx.fill();
-        ctx.lineWidth = 2; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
+        if (point.kind === 'entrance') {
+          ctx.moveTo(x - 5 * u, y + 6 * u); ctx.lineTo(x - 5 * u, y - 6 * u);
+          ctx.lineTo(x + 5 * u, y - 6 * u); ctx.lineTo(x + 5 * u, y + 6 * u);
+          // A closed crossbar follows the existing seam unlock condition only.
+          if (point.locked) { ctx.moveTo(x - 5 * u, y + u); ctx.lineTo(x + 5 * u, y + u); }
+        } else {
+          ctx.moveTo(x, y - 6 * u); ctx.lineTo(x + 5 * u, y - 3 * u); ctx.lineTo(x + 5 * u, y + 3 * u);
+          ctx.lineTo(x, y + 6 * u); ctx.lineTo(x - 5 * u, y + 3 * u); ctx.lineTo(x - 5 * u, y - 3 * u); ctx.closePath();
+        }
+        ctx.lineWidth = 5 * u; ctx.strokeStyle = FULL_MAP_COLORS.outline; ctx.stroke();
+        ctx.lineWidth = 1.8 * u; ctx.strokeStyle = point.locked ? FULL_MAP_COLORS.locked : FULL_MAP_COLORS.landmark; ctx.stroke();
       }
     } else {
       const area = minimapArea(this.layout.areas, player.x, player.z);
@@ -151,21 +147,22 @@ export class WorldMap {
     }
     // quest guide target: pulsing gold diamond
     if (target) {
-      const { x: gx, y: gy } = miniTarget ?? target;
+      const { x: gx, y: gy } = fullTarget ?? miniTarget ?? target;
       // Leave a gold outline visible around the player when arriving at the target.
-      const nearPlayer = !opts.full && Math.hypot(gx - W / 2, gy - W / 2) < 24;
-      const r = (opts.full ? 13 : nearPlayer ? 20 : 10) * (1 + 0.15 * Math.sin(performance.now() / 220));
+      const nearPlayer = opts.full ? Math.hypot(gx - tx(player.x), gy - tz(player.z)) < 20 * fullUnit : Math.hypot(gx - W / 2, gy - W / 2) < 24;
+      const r = (opts.full ? (nearPlayer ? 17 : 10) * fullUnit : nearPlayer ? 20 : 10) * (1 + 0.15 * Math.sin(performance.now() / 220));
       ctx.beginPath();
       ctx.moveTo(gx, gy - r); ctx.lineTo(gx + r * 0.75, gy); ctx.lineTo(gx, gy + r); ctx.lineTo(gx - r * 0.75, gy); ctx.closePath();
-      ctx.fillStyle = '#ffd76a'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
+      ctx.fillStyle = '#ffd76a'; ctx.fill(); ctx.lineWidth = opts.full ? 2 * fullUnit : 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
     }
     // player arrow
     const x = tx(player.x), y = tz(player.z);
     ctx.translate(x, y);
     ctx.rotate(-yaw);
     ctx.beginPath();
-    ctx.moveTo(0, -14); ctx.lineTo(9, 10); ctx.lineTo(0, 5); ctx.lineTo(-9, 10); ctx.closePath();
-    ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
+    const arrow = opts.full ? .75 * fullUnit : 1;
+    ctx.moveTo(0, -14 * arrow); ctx.lineTo(9 * arrow, 10 * arrow); ctx.lineTo(0, 5 * arrow); ctx.lineTo(-9 * arrow, 10 * arrow); ctx.closePath();
+    ctx.fillStyle = '#fff'; ctx.fill(); ctx.lineWidth = opts.full ? 2 * fullUnit : 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
     ctx.restore();
   }
 }

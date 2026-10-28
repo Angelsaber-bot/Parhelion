@@ -1,7 +1,7 @@
 // Walkable grid + A* over the arena collision model, for bots.
 // Nodes are (cell, surface) pairs so the gallery deck and the floor beneath it are separate.
 
-import { blockedAt, topAt, type ArenaMap } from './map.ts';
+import { blockedAt, insideMovementBounds, topAt, type ArenaMap } from './map.ts';
 
 export interface NavNode { id: number; x: number; y: number; z: number; links: number[]; costs: number[] }
 
@@ -26,6 +26,7 @@ export class NavGrid {
     for (let i = 0; i < this.nx; i++) {
       for (let k = 0; k < this.nz; k++) {
         const x = this.x0 + i * CELL, z = this.z0 + k * CELL;
+        if (!insideMovementBounds(map, x, z)) continue;
         const ids: number[] = [];
         for (const y of this.surfaces(x, z)) {
           if (blockedAt(map, x, z, y)) continue;

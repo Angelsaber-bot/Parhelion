@@ -1,0 +1,451 @@
+{
+  "baseline": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+  "miniCases": 240,
+  "invarianceCases": 72,
+  "projectionCases": 72,
+  "method": "Independent production WorldMap command recorder, not browser/WebGL test; approximate deterministic font widths",
+  "summary": [
+    {
+      "language": "zh",
+      "width": 1200,
+      "target": null,
+      "labels": [
+        {
+          "text": "落日王国",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "黑帆尽头",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "永冬之城",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "业火京都",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日谷",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日观测所",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "圣剑湖",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "拿骚港",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "大军营地",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "鸭川三条大桥",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#fff"
+      ],
+      "pathCount": 20
+    },
+    {
+      "language": "zh",
+      "width": 1200,
+      "target": [
+        3,
+        159
+      ],
+      "labels": [
+        {
+          "text": "落日王国",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "黑帆尽头",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "永冬之城",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "业火京都",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日谷",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日观测所",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "圣剑湖",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "拿骚港",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "大军营地",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "鸭川三条大桥",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#ffd76a",
+        "#fff"
+      ],
+      "pathCount": 22
+    },
+    {
+      "language": "zh",
+      "width": 1200,
+      "target": [
+        0,
+        -150.5
+      ],
+      "labels": [
+        {
+          "text": "落日王国",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "黑帆尽头",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "永冬之城",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "业火京都",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日谷",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "幻日观测所",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "圣剑湖",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "拿骚港",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "大军营地",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "鸭川三条大桥",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#ffd76a",
+        "#fff"
+      ],
+      "pathCount": 22
+    },
+    {
+      "language": "en",
+      "width": 1200,
+      "target": null,
+      "labels": [
+        {
+          "text": "Sunset Kingdom",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Black Sail's End",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Everwinter City",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Kyoto Ablaze",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Valley",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Observatory",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Lake of the Sword",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Nassau Port",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Grande Armée Bivouac",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Sanjō Bridge on the Kamo",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#fff"
+      ],
+      "pathCount": 20
+    },
+    {
+      "language": "en",
+      "width": 1200,
+      "target": [
+        3,
+        159
+      ],
+      "labels": [
+        {
+          "text": "Sunset Kingdom",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Black Sail's End",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Everwinter City",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Kyoto Ablaze",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Valley",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Observatory",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Lake of the Sword",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Nassau Port",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Grande Armée Bivouac",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Sanjō Bridge on the Kamo",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#ffd76a",
+        "#fff"
+      ],
+      "pathCount": 22
+    },
+    {
+      "language": "en",
+      "width": 1200,
+      "target": [
+        0,
+        -150.5
+      ],
+      "labels": [
+        {
+          "text": "Sunset Kingdom",
+          "x": 199.99999999999997,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Black Sail's End",
+          "x": 1000,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Everwinter City",
+          "x": 600,
+          "y": 69.44444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Kyoto Ablaze",
+          "x": 600,
+          "y": 869.4444444444445,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Valley",
+          "x": 600,
+          "y": 469.4444444444444,
+          "font": "700 18px system-ui, sans-serif"
+        },
+        {
+          "text": "Parhelion Observatory",
+          "x": 537.7777777777777,
+          "y": 760.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Lake of the Sword",
+          "x": 222.22222222222217,
+          "y": 636.2222222222222,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Nassau Port",
+          "x": 938.8888888888888,
+          "y": 700.6666666666666,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Grande Armée Bivouac",
+          "x": 522.2222222222222,
+          "y": 327.3333333333333,
+          "font": "600 13.68px system-ui, sans-serif"
+        },
+        {
+          "text": "Sanjō Bridge on the Kamo",
+          "x": 661.1111111111111,
+          "y": 982.3333333333334,
+          "font": "600 13.68px system-ui, sans-serif"
+        }
+      ],
+      "colors": [
+        "#ffd76a",
+        "#fff"
+      ],
+      "pathCount": 22
+    }
+  ]
+}

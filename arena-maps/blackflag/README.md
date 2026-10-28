@@ -51,16 +51,23 @@ cd arena-game && npx vitest run test/maps.test.ts test/chapter-qa.test.ts
 
 | Item | Verified value |
 |---|---:|
-| Visual triangles | 41,612 |
-| Visual GLB | 3,804,560 bytes |
-| Visual nodes / material primitives | 29 / 94 |
+| Visual triangles | 42,940 |
+| Visual GLB | 3,933,468 bytes |
+| Visual nodes / material primitives | 37 / 126 |
 | Embedded images / lights | 6 / 0 |
-| Shared GLB checks | 318 passed |
-| Additional art/UV/physics checks | 113 passed |
+| Shared GLB checks | 422 passed |
+| Additional art/UV/physics checks | 145 passed |
 | Rebuild | byte-deterministic, including textures |
 
-The proxy GLB is **byte-identical to R2**. Gameplay objects, anchors, routes, bounds
-and player parameters are unchanged; only palette/art-pipeline metadata was added.
+The 2026-10-28 density repair intentionally adds two staggered middeck cargo
+islands, paired broadside cannon breastworks and four raised-deck side bulwarks.
+New cover has matching solid collision; existing routes, spawns, objectives,
+bounds and player parameters are preserved. The raised side protection reaches
+4.2m (1.8m above the end decks) at the true ±17m edge; shared simulation bounds
+prevent jump/dash escape. New three cover anchors are reachable by bots.
+The art checker now pins this authorized layout and collision hash, not R2.
+The material-primitive ceiling is explicitly 128 (126 used), reflecting the eight
+added solid meshes; the original 50k triangle and 4MB total GLB budgets remain.
 All `VIS_` gameplay geometry remains inside the matching collision proxy. Cargo
 barrels have closed rack infill: dark gaps are recesses, not suggested shoot-through
 holes. Decorative rigging/canvas/hull/sea/background do not claim physics. Small
@@ -78,3 +85,7 @@ and asset SHA256. JPG previews were refreshed from those same verified renders.
 Static art and collision checks are not human PvP balance or real-device GPU/FPS
 measurements. Browser capture remained unavailable in this environment; no sandbox
 bypass, deployment, push, desktop access or external publication was performed.
+
+The final density-repair export passes 422 shared GLB checks and 145 authored-art
+checks. All 65 focused maps/chapter tests pass with the new layout, including
+bidirectional routes, spawn LOS, connected anchors and completed bot matches.

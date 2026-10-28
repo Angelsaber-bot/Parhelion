@@ -12,9 +12,9 @@ def check(ok,message):
     if not ok:fails.append(message)
 keys=['objects','anchors','routes','bounds','player']
 physics=hashlib.sha256(json.dumps({k:data[k] for k in keys},sort_keys=True,separators=(',',':')).encode()).hexdigest()
-check(physics=='7ec4413591a58d5fa9639f9178a070ea2991e585df8ea86a00ab2551bd81bcb2','R2 gameplay objects/anchors/routes/bounds/player are unchanged')
+check(physics=='48c6ec6560269764fb0837aeeabd4358be958a3d816d0952b961fc36a9eb3fd6','Approved 2026-10-28 cover/perimeter layout is unchanged')
 collision=hashlib.sha256((ROOT/'assets/blackflag_collision.glb').read_bytes()).hexdigest()
-check(collision=='6821311bc3758f520a52decd29e6617b6bf4b72af65f2b8c4435b1e3b6c2f13e','R2 collision GLB is byte-identical')
+check(collision=='cf9471555c918843b43065bb751d2a616c780e94bb2cda908ca7f310d18ff6e8','Cover/perimeter collision GLB matches approved layout')
 textures=[]
 for im in g.get('images',[]):
     v=g['bufferViews'][im['bufferView']];raw=blob[v.get('byteOffset',0):v.get('byteOffset',0)+v['byteLength']]
@@ -35,7 +35,7 @@ for me in g['meshes']:
         if g['materials'][p['material']]['name']=='blackSail':check(min(vals)>=0 and max(vals)<=1,'heraldic sail uses dedicated unwrapped 0–1 UVs')
 triangles=sum(g['accessors'][p['indices']]['count']//3 for me in g['meshes'] for p in me['primitives'])
 primitives=sum(len(me['primitives']) for me in g['meshes'])
-check(triangles<50000,'under 50k triangles');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<100,'under 100 authored material primitives')
+check(triangles<50000,'under 50k triangles');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=128,'at most 128 authored material primitives including eight new solid cover/rail meshes')
 check(not g.get('extensions',{}).get('KHR_lights_punctual'),'no embedded lights')
 check(all(m.get('alphaMode','OPAQUE')=='OPAQUE' for m in g['materials']),'no alpha sorting / extra transparency passes')
 report=dict(checks=checks,failed=fails,physicsHash=physics,collisionSha256=collision,visualSha256=hashlib.sha256(b).hexdigest(),triangles=triangles,bytes=len(b),authoredMaterialPrimitives=primitives,embeddedLights=0,textures=textures,source='Original project-authored surfaces.py raster paintings. No external textures.',limits='Offline structural/material QA. Not browser frame rate, screenshot parity or human PvP balance.')

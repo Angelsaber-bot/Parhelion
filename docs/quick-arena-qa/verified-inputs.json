@@ -1,0 +1,22 @@
+{
+  "arena-game/shared/map.ts": "33ccdc042d9666acd76d225f5bd080a50f82bf0d041dbac4d1c17b00161613d7",
+  "arena-game/shared/sim.ts": "46299607772d71b4022103bfaba744b98a189b4c189147fb408380be86a024ae",
+  "arena-game/shared/nav.ts": "725050ec2296f09249ca221785ceaccab9c205a23d1bd8c3b8b1ffe8c4065fd7",
+  "arena-game/test/arena-boundary.test.ts": "df9773482bbd47db8419bfd3ae51efaa11b0d2c0920f79ea9f232f6e565c90dd",
+  "arena-game/test/arena-boundary-repro.ts": "b05a0768d37804cdce2733593189e4b7d48cb827d991a803791c3e1cc5c96e15",
+  "arena-maps/camlann/runtime/map.json": "d93ec048626247ff9f2f5aadc6bb2eb05a0d1d765a4fe7e7d80e2be11f2c98f2",
+  "arena-maps/camlann/assets/camlann_visual.glb": "1ca45a8097ab86a6c06a77514ab3e9de78e3a613cecc9117249553c29757d563",
+  "arena-maps/camlann/assets/camlann_collision.glb": "424110c38553adbf218bffcc26e100e89a22898119debe0d71bcc3c2cb5df897",
+  "arena-maps/camlann/source/build.py": "6089505b53dbd3c67a05290037866eea6c0887c434078a3dfcac91200b690e24",
+  "arena-maps/blackflag/runtime/map.json": "e95329f0f7fd4af421234960c9616ede35fdf9a9debaf52689fdf7810ac0e668",
+  "arena-maps/blackflag/assets/blackflag_visual.glb": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+  "arena-maps/blackflag/assets/blackflag_collision.glb": "cf9471555c918843b43065bb751d2a616c780e94bb2cda908ca7f310d18ff6e8",
+  "arena-maps/blackflag/source/build.py": "6319195b2f98ddc1f58f15a2a881e1e7b91a224f15bf9319acf25c9a0dc9a913",
+  "world/src/map.ts": "17e165c12deb07026f578e7ef36d987accbb3ab1512f3d4803a45eb3df7a3b5d",
+  "world/src/fullMapPresentation.ts": "f3bf0eadc0b3d685082255a02f5de412c1c9062914f99e8010f1b6201ea7be2a",
+  "world/index.html": "b8ec566359a47320c0b530c306b88e201e8b9f75cf39e811434af883ee7d6927",
+  "world/validation/full-map-qa.test.ts": "6967b3d91a80490cb38e3b780b94914b48c8ba722983553089d2eeb466e0dfe1",
+  "world/validation/minimap-markers.test.ts": "75ed58218cc1faae57df4bc9773988fb01e8c67e714a5319c6ec481460201413",
+  "arena-game/src/assets/maps/camlann.webp": "106803f7996b5591c696e6f8b31900ff12ad6dba8e49e13970a94085ab5c555a",
+  "arena-game/src/assets/maps/blackflag.webp": "22a1a48b2d01c4d6a65800b14d5454213943ce47c08a99e5dcf147e93a6bb0a5"
+}

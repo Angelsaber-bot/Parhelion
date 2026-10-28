@@ -1,0 +1,107 @@
+{
+  "method": "Real WorldMap.draw commands replayed to SVG and rasterized with sharp; not browser/WebGL validation",
+  "baselineCommit": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+  "currentFiles": [
+    "world/src/map.ts",
+    "world/src/fullMapPresentation.ts",
+    "world/index.html"
+  ],
+  "sourceSha256": {
+    "world/src/map.ts": "17e165c12deb07026f578e7ef36d987accbb3ab1512f3d4803a45eb3df7a3b5d",
+    "world/src/fullMapPresentation.ts": "f3bf0eadc0b3d685082255a02f5de412c1c9062914f99e8010f1b6201ea7be2a",
+    "world/validation/full-map-qa.test.ts": "6967b3d91a80490cb38e3b780b94914b48c8ba722983553089d2eeb466e0dfe1",
+    "world/validation/full-map/render-preview.ts": "852b83bbfa29fb94e7015f46ada7f00248482c368deefc7a6fd404e38c2207fa"
+  },
+  "terrain": "Unchanged real merged WorldGrid from all five shipped GLBs",
+  "scenes": [
+    {
+      "id": "initial-quest",
+      "title": "新开局 · 当前任务 / Initial quest",
+      "player": [
+        3,
+        159
+      ],
+      "target": [
+        -118,
+        229.6
+      ],
+      "width": 720,
+      "language": "zh",
+      "unlocked": false
+    },
+    {
+      "id": "compact",
+      "title": "320 CSS px · 1200 backing",
+      "player": [
+        3,
+        159
+      ],
+      "target": [
+        -118,
+        229.6
+      ],
+      "width": 320,
+      "language": "en",
+      "unlocked": false
+    },
+    {
+      "id": "arrived",
+      "title": "Unlocked / arrived at quest",
+      "player": [
+        360,
+        30
+      ],
+      "target": [
+        360,
+        30
+      ],
+      "width": 720,
+      "language": "en",
+      "unlocked": true
+    }
+  ],
+  "counts": [
+    {
+      "scene": "initial-quest",
+      "version": "before",
+      "textDraws": 35,
+      "filledPaths": 144
+    },
+    {
+      "scene": "initial-quest",
+      "version": "after",
+      "textDraws": 9,
+      "filledPaths": 2
+    },
+    {
+      "scene": "compact",
+      "version": "before",
+      "textDraws": 31,
+      "filledPaths": 144
+    },
+    {
+      "scene": "compact",
+      "version": "after",
+      "textDraws": 9,
+      "filledPaths": 2
+    },
+    {
+      "scene": "arrived",
+      "version": "before",
+      "textDraws": 31,
+      "filledPaths": 144
+    },
+    {
+      "scene": "arrived",
+      "version": "after",
+      "textDraws": 11,
+      "filledPaths": 2
+    }
+  ],
+  "caveats": [
+    "Deterministic approximate text metrics; browser glyph metrics can differ",
+    "No synthetic enemy input; includes actual authored static markers",
+    "Pulse frozen at performance.now() = 0",
+    "HUD stacking is source-checked, not browser-validated"
+  ]
+}

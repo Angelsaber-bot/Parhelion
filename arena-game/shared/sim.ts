@@ -4,7 +4,7 @@
 // event and handled by Match on the server.
 
 import { CHARACTERS, CROUCH, DASH, DT, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
-import { blockedAt, ceilingAt, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
+import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
 export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
 
@@ -154,10 +154,14 @@ function slide(m: ArenaMap, p: PlayerState, dx: number, dz: number): void {
   const sx = dx / n, sz = dz / n;
   for (let i = 0; i < n; i++) {
     if (sx !== 0) {
-      if (canSlideTo(m, p, p.x + sx, p.z)) { p.x += sx; snapToStep(m, p); } else p.vx = 0;
+      const x = Math.max(m.movementBounds.minX, Math.min(m.movementBounds.maxX, p.x + sx));
+      if (x !== p.x + sx) p.vx = 0;
+      if (canSlideTo(m, p, x, p.z)) { p.x = x; snapToStep(m, p); } else p.vx = 0;
     }
     if (sz !== 0) {
-      if (canSlideTo(m, p, p.x, p.z + sz)) { p.z += sz; snapToStep(m, p); } else p.vz = 0;
+      const z = Math.max(m.movementBounds.minZ, Math.min(m.movementBounds.maxZ, p.z + sz));
+      if (z !== p.z + sz) p.vz = 0;
+      if (canSlideTo(m, p, p.x, z)) { p.z = z; snapToStep(m, p); } else p.vz = 0;
     }
   }
 }
@@ -236,6 +240,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
   }
 
   recover(m, p, height);
+  constrainToBounds(m, p);
   slide(m, p, p.vx * DT, p.vz * DT);
 
   if (p.dashT === 0 || p.vy > 0) p.vy -= MOVE.gravity * DT;
@@ -254,6 +259,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
   }
   p.y = ny;
   recover(m, p, height);
+  constrainToBounds(m, p);
 
   // --- abilities ---
   if (pressed & BTN.SHIELD && p.shieldCd === 0) {

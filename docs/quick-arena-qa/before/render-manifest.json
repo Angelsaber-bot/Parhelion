@@ -1,0 +1,118 @@
+[
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/before/camlann-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "baselineCommit": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+    "reusedHistoricalRender": true,
+    "sourceManifest": "docs/chapter-qa/renders-art3/render-manifest.json",
+    "originalImage": "docs/chapter-qa/renders-art3/camlann-overview.png",
+    "imageSha256": "b7a712950800861eb54e6bdfb54ea55d286e9507375223688907bf576f3724f9"
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -16,
+      1.7,
+      11
+    ],
+    "target": [
+      5,
+      2,
+      -5
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/before/camlann-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "baselineCommit": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+    "reusedHistoricalRender": true,
+    "sourceManifest": "docs/chapter-qa/renders-art3/render-manifest.json",
+    "originalImage": "docs/chapter-qa/renders-art3/camlann-lane.png",
+    "imageSha256": "d7b26060a9fd73657af00fb425a90a3cd545b235b0fdf3e4eca8d9e0aa475a3c"
+  },
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      31.28
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/before/blackflag-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "baselineCommit": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+    "reusedHistoricalRender": true,
+    "sourceManifest": "docs/chapter-qa/renders-art1/render-manifest.json",
+    "originalImage": "docs/chapter-qa/renders-art1/blackflag-overview.png",
+    "imageSha256": "0635196267847769facc34d529c7d7548eab7f193d662530ef9c1017551e4241"
+  },
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -17,
+      2.1,
+      11
+    ],
+    "target": [
+      7,
+      2,
+      -4
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/before/blackflag-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "baselineCommit": "5c90ffa421b33163f8248db55c15e9ebf7ead428",
+    "reusedHistoricalRender": true,
+    "sourceManifest": "docs/chapter-qa/renders-art1/render-manifest.json",
+    "originalImage": "docs/chapter-qa/renders-art1/blackflag-lane.png",
+    "imageSha256": "32efb779e80efef71af7ffb9868f2b2ec4616e073de0451435e0f493388dbf9c"
+  }
+]

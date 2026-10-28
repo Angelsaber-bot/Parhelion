@@ -158,6 +158,74 @@
       "role": "structure"
     },
     {
+      "id": "crest_palisade_x_-32",
+      "type": "box",
+      "position": [
+        -32,
+        3.5,
+        0
+      ],
+      "size": [
+        0.5,
+        1.4,
+        48
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "crest_palisade_x_32",
+      "type": "box",
+      "position": [
+        32,
+        3.5,
+        0
+      ],
+      "size": [
+        0.5,
+        1.4,
+        48
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "crest_palisade_z_-24",
+      "type": "box",
+      "position": [
+        0,
+        3.5,
+        -24
+      ],
+      "size": [
+        64,
+        1.4,
+        0.5
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "crest_palisade_z_24",
+      "type": "box",
+      "position": [
+        0,
+        3.5,
+        24
+      ],
+      "size": [
+        64,
+        1.4,
+        0.5
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
       "id": "turf_berm_x_-1",
       "type": "ramp",
       "position": [
@@ -1239,6 +1307,91 @@
       "material": "stoneShade",
       "collision": true,
       "role": "cover"
+    },
+    {
+      "id": "baggage_breastwork",
+      "type": "box",
+      "position": [
+        -21,
+        0.95,
+        9
+      ],
+      "size": [
+        4.5,
+        1.9,
+        2.2
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "baggage_return",
+      "type": "box",
+      "position": [
+        -22.5,
+        0.7,
+        11
+      ],
+      "size": [
+        1.5,
+        1.4,
+        1.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "fallen_hall_beams",
+      "type": "box",
+      "position": [
+        7.5,
+        0.85,
+        -2.7
+      ],
+      "size": [
+        4,
+        1.7,
+        2
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "south_outwork",
+      "type": "box",
+      "position": [
+        15,
+        0.85,
+        15
+      ],
+      "size": [
+        5,
+        1.7,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "south_outwork_return",
+      "type": "box",
+      "position": [
+        17,
+        1.1,
+        16.5
+      ],
+      "size": [
+        1,
+        2.2,
+        3
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
     }
   ],
   "anchors": [
@@ -1315,6 +1468,36 @@
         -15
       ],
       "radius": 2
+    },
+    {
+      "id": "cover_baggage",
+      "kind": "cover",
+      "position": [
+        -21,
+        0,
+        6.7
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_fallen_beams",
+      "kind": "cover",
+      "position": [
+        7.5,
+        0,
+        -0.6
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_outwork",
+      "kind": "cover",
+      "position": [
+        14,
+        0,
+        12.7
+      ],
+      "height": 1.7
     },
     {
       "id": "cover_west_wall",

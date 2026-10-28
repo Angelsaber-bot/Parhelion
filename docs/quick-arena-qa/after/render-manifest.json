@@ -1,0 +1,98 @@
+[
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      31.28
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/after/blackflag-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -17,
+      2.1,
+      11
+    ],
+    "target": [
+      7,
+      2,
+      -4
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/after/blackflag-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "1ca45a8097ab86a6c06a77514ab3e9de78e3a613cecc9117249553c29757d563",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/after/camlann-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "1ca45a8097ab86a6c06a77514ab3e9de78e3a613cecc9117249553c29757d563",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -16,
+      1.7,
+      11
+    ],
+    "target": [
+      5,
+      2,
+      -5
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/quick-arena-qa/after/camlann-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  }
+]

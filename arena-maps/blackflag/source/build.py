@@ -17,6 +17,9 @@ c=Chapter(ROOT,'blackflag','BLACKFLAG 黑帆战舰',64,34,'seabreeze',P); D=c.de
 # A broad 64 x 34m game-scaled deck: no obligatory gangplanks or jump gaps.
 c.box('main_deck',[0,-.45,0],[64,.9,34],'deck','floor')
 for z in (-17,17): c.box('bulwark_'+str(z),[0,.9,z],[64,1.8,.5],'tar','structure')
+# Raised decks need their own continuous 1.8m side protection.
+for x in (-27,27):
+    for z in (-17,17): c.box(f'raised_bulwark_{x}_{z}',[x,3,z],[10,2.4,.5],'tar','structure')
 for x in (-32,32): c.box('end_bulwark_'+str(x),[x,2,0],[.5,4,34],'tar','structure')
 for sign,tag,team in [(-1,'bow','west'),(1,'stern','east')]:
     c.box(tag+'_deck',[sign*27,1.2,0],[10,2.4,33.5],'timber','floor')
@@ -36,6 +39,14 @@ c.box('cargo_bow',[-9,1.4,4],[4,2.8,3],'canvas')
 c.box('cargo_stern',[10,1.5,-4],[4,3,3],'timber')
 for x,z in [(-11,-13),(9,13),(-3,13),(3,-13)]:
     c.box(f'gun_{x}_{z}',[x,.65,z],[3.4,1.3,1.8],'timber')
+# Staggered middeck packing islands break up empty exposed approaches without
+# narrowing the two 5m-wide broadside loops or blocking cross-deck connections.
+c.box('cargo_crate_fore',[-8.5,.9,-1.1],[3,1.8,2.6],'timber')
+c.box('cargo_crate_aft',[9,.95,2],[3.4,1.9,2.5],'timber')
+for x,z in [(3,-14.8),(-3,14.8)]:
+    c.box(f'gun_breastwork_{x}',[x,.9,z],[6,1.8,.9],'timber')
+for name,pos,h in [('fore',[-8.5,0,-3.6],1.8),('aft',[9,0,4.5],1.9),('port_battery',[6.8,0,-13],1.8)]:
+    c.anchor('cover_added_'+name,'cover',pos,height=h)
 for n,p in [('cargo_bow',[-11.8,0,4]),('cargo_stern',[12.8,0,-4]),('hatch_n',[0,0,-4]),('hatch_s',[0,0,4])]: c.anchor('cover_'+n,'cover',p,height=1.4)
 c.anchor('objective_deck','objective',[4.8,0,0],radius=2)
 c.route('port_loop',[[-28,2.4,-2],[-28,2.4,-10],[-23,2.4,-10],[-15,0,-10],[15,0,-10],[23,2.4,-10],[28,2.4,-10],[28,2.4,-2]])
@@ -284,6 +295,23 @@ c.data['designNotes']=['Game-scaled fictional ship; not a historical reconstruct
 
 def crafted(m,o):
     x,y,z=o['position'];w,h,d=o['size'];id=o['id'];bottom=y-h/2
+    if id.startswith('cargo_crate_') or id.startswith('gun_breastwork_'):
+        # Closed plank backing, recessed seams and iron lashings match solid collision.
+        bevelbox(m,'woodDark',o['position'],o['size'],.075)
+        for j in range(4):
+            yy=bottom+(j+.5)*h/4
+            for zz in (z-d/2+.035,z+d/2-.035):
+                m.cbox('plank' if j%2 else 'timber',[x,yy,zz],[w-.06,h/4-.025,.065])
+        for xx in (x-w*.34,x+w*.34):
+            m.cbox('iron',[xx,y,z],[.1,h-.025,d-.015])
+        m.cbox('woodLight',[x,bottom+h-.045,z],[w-.1,.08,d-.1])
+        return True
+    if id.startswith('raised_bulwark_'):
+        bevelbox(m,'tar',o['position'],o['size'],.04)
+        m.cbox('woodLight',[x,bottom+h-.06,z],[w-.02,.12,d-.01])
+        for dx in (-4,-2,0,2,4):
+            m.cbox('timber',[x+dx,y,z-((1 if z>0 else -1)*.21)],[.16,h-.12,.06])
+        return True
     if id=='main_deck':
         # Crisp shaped edges, uninterrupted flush walking plane.
         bevelbox(m,'deck',o['position'],o['size'],.09);return True

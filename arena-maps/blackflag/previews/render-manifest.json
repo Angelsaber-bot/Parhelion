@@ -2,7 +2,8 @@
   {
     "map": "blackflag",
     "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
-    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sourceStillMatches": true,
     "view": "overview",
     "camera": [
       58.88,
@@ -16,20 +17,23 @@
     ],
     "renderer": "Blender Cycles CPU",
     "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
     "output": "arena-maps/blackflag/previews/blackflag-overview.png",
-    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS.",
-    "artRevision": "R4-crafted-materials-final",
-    "imageSha256": "654e012c3a90d61e520f99448e6ea492aac2268aeb76060e5378a043d4576ec0",
-    "comparedBenchmark": "Unchanged SAKURA source, previews and neutral QA renders; no browser/FPS claim"
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "imageSha256": "45761d20fa275bfd6015353a709ec57938e636e1a5aa0c019e1ec0ebbf9c5e26",
+    "artRevision": "2026-10-28-arena-cover-boundaries"
   },
   {
     "map": "blackflag",
     "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
-    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sha256": "e72df2656cc7133b104fd5ba9a549cfd34ac0a52055d802fb030ab40d2965100",
+    "sourceStillMatches": true,
     "view": "lane",
     "camera": [
       -17,
-      2.0,
+      2.1,
       11
     ],
     "target": [
@@ -39,10 +43,12 @@
     ],
     "renderer": "Blender Cycles CPU",
     "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
     "output": "arena-maps/blackflag/previews/blackflag-lane.png",
-    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS.",
-    "artRevision": "R4-crafted-materials-final",
-    "imageSha256": "f92e2ba600e96c333c1a4ca93be16989e8384896a4544f73f950e507acdfb5ff",
-    "comparedBenchmark": "Unchanged SAKURA source, previews and neutral QA renders; no browser/FPS claim"
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly.",
+    "imageSha256": "2fc98a730bf65b68bc3ca5242d4f365978ab3bbca37ae2e3da9e4cd21a5e049f",
+    "artRevision": "2026-10-28-arena-cover-boundaries"
   }
 ]

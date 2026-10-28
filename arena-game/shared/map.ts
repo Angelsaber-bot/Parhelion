@@ -62,6 +62,8 @@ export interface ArenaMap {
   height: number;
   eye: number;
   step: number;
+  /** Horizontal capsule-centre limits, inset from the supported/authored map edge. */
+  movementBounds: { minX: number; maxX: number; minZ: number; maxZ: number };
 }
 
 export function buildMap(data: MapData): ArenaMap {
@@ -86,10 +88,30 @@ export function buildMap(data: MapData): ArenaMap {
     });
   }
   const p = data.player;
-  return { data, solids, radius: p.radius, height: p.height, eye: p.eyeHeight, step: p.stepHeight };
+  // Leave one solver epsilon inside the floor edge so position quantization cannot move
+  // the capsule outside it. This is horizontal only: ramps, decks and jumps keep their Y.
+  const inset = p.radius + EPS;
+  const movementBounds = { minX: data.bounds.min[0] + inset, maxX: data.bounds.max[0] - inset,
+    minZ: data.bounds.min[2] + inset, maxZ: data.bounds.max[2] - inset };
+  return { data, solids, radius: p.radius, height: p.height, eye: p.eyeHeight, step: p.stepHeight, movementBounds };
 }
 
 const EPS = 0.001;
+
+/** The same playable footprint is used by movement, spawn validation and bot navigation. */
+export function insideMovementBounds(m: ArenaMap, x: number, z: number): boolean {
+  const b = m.movementBounds;
+  return x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ;
+}
+
+/** Last-resort horizontal edge correction; never teleport to a spawn or change vertical tiers. */
+export function constrainToBounds(m: ArenaMap, p: { x: number; z: number; vx: number; vz: number }): void {
+  const b = m.movementBounds;
+  p.x = Math.max(b.minX, Math.min(b.maxX, p.x));
+  p.z = Math.max(b.minZ, Math.min(b.maxZ, p.z));
+  if ((p.x <= b.minX && p.vx < 0) || (p.x >= b.maxX && p.vx > 0)) p.vx = 0;
+  if ((p.z <= b.minZ && p.vz < 0) || (p.z >= b.maxZ && p.vz > 0)) p.vz = 0;
+}
 
 export function topAt(s: Solid, x: number, z: number): number {
   if (!s.ramp) return s.maxY;

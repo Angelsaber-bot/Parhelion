@@ -1,0 +1,17 @@
+{
+  "baseline": false,
+  "cases": 208,
+  "escapes": 0,
+  "byMap": {
+    "camlann": {
+      "cases": 112,
+      "escapes": 0
+    },
+    "blackflag": {
+      "cases": 96,
+      "escapes": 0
+    }
+  },
+  "findings": [],
+  "method": "Independent real shared simulation; 360 ticks per perimeter scenario, no browser claim"
+}

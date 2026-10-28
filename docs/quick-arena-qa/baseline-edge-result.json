@@ -1,0 +1,1242 @@
+{
+  "baseline": true,
+  "cases": 208,
+  "escapes": 72,
+  "byMap": {
+    "camlann": {
+      "cases": 112,
+      "escapes": 56
+    },
+    "blackflag": {
+      "cases": 96,
+      "escapes": 16
+    }
+  },
+  "findings": [
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        -21.6
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": -21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        -21.6
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": -21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.8,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        -19.200000000000003
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": -19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.8,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        -19.200000000000003
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": -19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.4,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        -9.600000000000001
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": -9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": -0.4,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        -9.600000000000001
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": -9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        0
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": 0
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        0
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": 0
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.4,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        9.600000000000001
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": 9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.4,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        9.600000000000001
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": 9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.8,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        19.200000000000003
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": 19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.8,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        19.200000000000003
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": 19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        -30,
+        0.7,
+        21.6
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -32.02294921875,
+        "y": 3.317626953125,
+        "z": 21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "west",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        -30,
+        0.7,
+        21.6
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -32.02978515625,
+        "y": 3.305419921875,
+        "z": 21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        -21.6
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": -21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        -21.6
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": -21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.8,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        -19.200000000000003
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": -19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.8,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        -19.200000000000003
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": -19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.4,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        -9.600000000000001
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": -9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": -0.4,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        -9.600000000000001
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": -9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        0
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": 0
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        0
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": 0
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.4,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        9.600000000000001
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": 9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.4,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        9.600000000000001
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": 9.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.8,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        19.200000000000003
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": 19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.8,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        19.200000000000003
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": 19.199951171875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        30,
+        0.7,
+        21.6
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 32.02294921875,
+        "y": 3.317626953125,
+        "z": 21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "east",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        30,
+        0.7,
+        21.6
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 32.02978515625,
+        "y": 3.305419921875,
+        "z": 21.60009765625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        -28.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -28.800048828125,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        -28.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -28.800048828125,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.8,
+      "mode": "jump",
+      "start": [
+        -25.6,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -25.60009765625,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.8,
+      "mode": "jump-dash",
+      "start": [
+        -25.6,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -25.60009765625,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.4,
+      "mode": "jump",
+      "start": [
+        -12.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -12.800048828125,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": -0.4,
+      "mode": "jump-dash",
+      "start": [
+        -12.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -12.800048828125,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0,
+      "mode": "jump",
+      "start": [
+        0,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 0,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0,
+      "mode": "jump-dash",
+      "start": [
+        0,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 0,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.4,
+      "mode": "jump",
+      "start": [
+        12.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 12.800048828125,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.4,
+      "mode": "jump-dash",
+      "start": [
+        12.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 12.800048828125,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.8,
+      "mode": "jump",
+      "start": [
+        25.6,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 25.60009765625,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.8,
+      "mode": "jump-dash",
+      "start": [
+        25.6,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 25.60009765625,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        28.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 28.800048828125,
+        "y": 3.317626953125,
+        "z": -24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        28.8,
+        0.7,
+        -22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 28.800048828125,
+        "y": 3.305419921875,
+        "z": -24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        -28.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -28.800048828125,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        -28.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -28.800048828125,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.8,
+      "mode": "jump",
+      "start": [
+        -25.6,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -25.60009765625,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.8,
+      "mode": "jump-dash",
+      "start": [
+        -25.6,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -25.60009765625,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.4,
+      "mode": "jump",
+      "start": [
+        -12.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": -12.800048828125,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": -0.4,
+      "mode": "jump-dash",
+      "start": [
+        -12.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": -12.800048828125,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0,
+      "mode": "jump",
+      "start": [
+        0,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 0,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0,
+      "mode": "jump-dash",
+      "start": [
+        0,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 0,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.4,
+      "mode": "jump",
+      "start": [
+        12.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 12.800048828125,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.4,
+      "mode": "jump-dash",
+      "start": [
+        12.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 12.800048828125,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.8,
+      "mode": "jump",
+      "start": [
+        25.6,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 25.60009765625,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.8,
+      "mode": "jump-dash",
+      "start": [
+        25.6,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 25.60009765625,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        28.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 66,
+        "x": 28.800048828125,
+        "y": 3.317626953125,
+        "z": 24.02294921875
+      }
+    },
+    {
+      "id": "camlann",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        28.8,
+        0.7,
+        22
+      ],
+      "escaped": {
+        "tick": 67,
+        "x": 28.800048828125,
+        "y": 3.305419921875,
+        "z": 24.02978515625
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "walk",
+      "start": [
+        -28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": -28.800048828125,
+        "y": 2.35009765625,
+        "z": -17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        -28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": -28.800048828125,
+        "y": 3.379638671875,
+        "z": -17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "dash",
+      "start": [
+        -28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": -28.800048828125,
+        "y": 2.39990234375,
+        "z": -17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        -28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": -28.800048828125,
+        "y": 3.04638671875,
+        "z": -17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "walk",
+      "start": [
+        28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": 28.800048828125,
+        "y": 2.35009765625,
+        "z": -17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": 28.800048828125,
+        "y": 3.379638671875,
+        "z": -17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "dash",
+      "start": [
+        28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": 28.800048828125,
+        "y": 2.39990234375,
+        "z": -17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "north",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        28.8,
+        2.4,
+        -15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": 28.800048828125,
+        "y": 3.04638671875,
+        "z": -17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "walk",
+      "start": [
+        -28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": -28.800048828125,
+        "y": 2.35009765625,
+        "z": 17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "jump",
+      "start": [
+        -28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": -28.800048828125,
+        "y": 3.379638671875,
+        "z": 17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "dash",
+      "start": [
+        -28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": -28.800048828125,
+        "y": 2.39990234375,
+        "z": 17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": -0.9,
+      "mode": "jump-dash",
+      "start": [
+        -28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": -28.800048828125,
+        "y": 3.04638671875,
+        "z": 17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "walk",
+      "start": [
+        28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": 28.800048828125,
+        "y": 2.35009765625,
+        "z": 17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "jump",
+      "start": [
+        28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 24,
+        "x": 28.800048828125,
+        "y": 3.379638671875,
+        "z": 17.080078125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "dash",
+      "start": [
+        28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": 28.800048828125,
+        "y": 2.39990234375,
+        "z": 17.267578125
+      }
+    },
+    {
+      "id": "blackflag",
+      "edge": "south",
+      "fraction": 0.9,
+      "mode": "jump-dash",
+      "start": [
+        28.8,
+        2.4,
+        15
+      ],
+      "escaped": {
+        "tick": 8,
+        "x": 28.800048828125,
+        "y": 3.04638671875,
+        "z": 17.267578125
+      }
+    }
+  ],
+  "method": "Independent real shared simulation; 360 ticks per perimeter scenario, no browser claim"
+}

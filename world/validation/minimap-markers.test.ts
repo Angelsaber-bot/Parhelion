@@ -123,12 +123,11 @@ test('current target wins over the contextual area label', () => {
   assert.equal(drawn.fills[0].color, MINIMAP_COLORS.target);
 });
 
-test('full map retains all original exploration marker types, completion colours and world positions', () => {
+test('full map also removes ordinary dots and preserves in-bounds quest projection', () => {
   const drawn = canvas();
   map().draw(drawn.ctx, new THREE.Vector3(), 0, { ...options, full: true, target: [300, 300] });
-  assert.deepEqual(drawn.fills.map((p) => p.color), ['#ff3b4e', '#ff3b4e', '#ffb547', '#7ad18a', '#ffffff55', '#c9a2ff', '#5fe7f2', '#ff5d6c', '#ffd76a', '#fff']);
-  assert.deepEqual(drawn.fills.slice(0, 8).map((p) => p.path[0][3]), [3, 9, 9, 9, 5, 5, 5, 5]);
-  assert.ok(Math.abs(drawn.fills[8].path[0][1] - (190 + 300 * 380 / 720)) < 1e-8, 'full-map target is not edge clamped');
+  assert.deepEqual(drawn.fills.map((p) => p.color), ['#ffd76a', '#fff']);
+  assert.ok(Math.abs(drawn.fills[0].path[0][1] - (190 + 300 * 380 / 720)) < 1e-8);
 });
 
 test('all five real layouts keep point budgets at every destination and chapter entrance', () => {
