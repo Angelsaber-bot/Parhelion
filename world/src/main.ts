@@ -1,3 +1,5 @@
+import { AdaptiveResolution, targetDpr } from './renderQuality';
+import { readResolutionMode, attachRenderSettings } from './renderSettings';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
@@ -12,7 +14,7 @@ import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
-import { buildCharacter, CharacterAnimator } from './character';
+import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './skinnedCharacter';
 import { attachExplorerRifle } from './weaponArt';
 import { ShoulderAim, shoulderArmLength } from './aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
@@ -20,7 +22,7 @@ import '../../shared-client/settings.css';
 import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { BOSSES } from './combat';
 import { WorldGrid } from './grid';
-import { chunkMesh, DistanceCuller } from './chunk';
+import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
 import { KingdomTwilight } from './twilight';
 import { FirstContract, SERVANTS, servantByContract, type ServantId } from './contracts';
@@ -61,10 +63,12 @@ async function boot() {
 
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: params.has('shot') });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 disposeRenderer = () => renderer.dispose();
-const maxDpr = Math.min(devicePixelRatio, highQ ? 2 : lowQ ? 1 : 1.25);
-let dpr = maxDpr;
+let resolution = readResolutionMode(params);
+let observedDeviceDpr = devicePixelRatio;
+const adaptiveResolution = new AdaptiveResolution();
+let dpr = targetDpr(devicePixelRatio, resolution, lowQ);
 renderer.setPixelRatio(dpr);
 renderer.setSize(innerWidth, innerHeight);
 renderer.shadowMap.enabled = true;
@@ -93,7 +97,7 @@ scene.add(caveLight);
 
 // post: MSAA → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
 const composer = params.has('nopost') ? null : new EffectComposer(renderer, new THREE.WebGLRenderTarget(
-  innerWidth * dpr, innerHeight * dpr, { samples: highQ ? 4 : lowQ ? 0 : 2, type: THREE.HalfFloatType }));
+  innerWidth, innerHeight, { samples: highQ ? 4 : lowQ ? 0 : 2, type: THREE.HalfFloatType }));
 const shafts = makeSunShafts();
 if (composer) {
   composer.addPass(new RenderPass(scene, camera));
@@ -106,9 +110,20 @@ if (composer) {
   composer.addPass(new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.22, 0.45, 0.97));
   if (!lowQ) composer.addPass(shafts.pass);
   composer.addPass(new OutputPass());
+  // Explicit targets are interpreted as CSS dimensions by EffectComposer.
+  composer.setSize(innerWidth, innerHeight);
+}
+renderer.info.autoReset = false; // count the whole frame, including shadows and post passes
+function applyResolution() {
+  renderer.setPixelRatio(dpr);
+  composer?.setPixelRatio(dpr);
 }
 
 addEventListener('resize', () => {
+  observedDeviceDpr = devicePixelRatio;
+  dpr = targetDpr(devicePixelRatio, resolution, lowQ);
+  adaptiveResolution.reset();
+  applyResolution();
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
@@ -187,12 +202,15 @@ for (const m of artMeshes) {
   }
   if (m.userData.showWhen || m.userData.hideWhen) stateful.push(m);
   if (m.userData.bob) bobbers.push(m);
-  const special = m.name === 'Water' || m.name.startsWith('TGT_') || m.userData.spin || m.userData.showWhen || m.userData.hideWhen || m.userData.bob || m.userData.dynamic;
+  const special = !isStaticArtEligible(m);
   const tris = (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3;
   const pieces = !special && tris > 4000 ? chunkMesh(m, 64) : [m];
   for (const c of pieces) {
     if (m.userData.outline && !params.has('noline')) addOutline(c);
     if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9);
+    // Static art transforms do not change; shader foliage sway remains fully active.
+    // Never freeze stateful, spinning, bobbing, target or other dynamic gameplay art.
+    if (!special) freezeStaticArt(c);
   }
 }
 
@@ -421,13 +439,13 @@ const spawnAt = (areaId?: string) => {
 spawnAt(params.get('spawn') ?? undefined);
 
 // explorer character + third-person shoulder camera
-const charMat = toonMaterial(Object.assign(new THREE.MeshStandardMaterial({ vertexColors: true }), { name: 'M_Toon' }));
-const rig = buildCharacter(charMat);
-rig.meshes.forEach((m) => { m.receiveShadow = true; if (!params.has('noline')) addOutline(m, 0.012); });
+setLoading('加载精修角色…');
+const rig = await loadSkinnedCharacter({ outlines: !params.has('noline') });
 scene.add(rig.root);
 const rifle = attachExplorerRifle(rig, renderer);
-addEventListener('pagehide', (e) => { if (!e.persisted) rifle.dispose(); });
-const anim = new CharacterAnimator(rig);
+try { await rifle.ready; } catch (error) { rifle.dispose(); rig.dispose(); throw error; }
+addEventListener('pagehide', (e) => { if (!e.persisted) { rifle.dispose(); rig.dispose(); } });
+const anim = new SkinnedCharacterAnimator(rig);
 anim.facing = player.yaw + Math.PI;
 const thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
 let camDist = 3.6;
@@ -694,6 +712,9 @@ function shoot() {
   const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
+  // An input-event shot can precede RAF or follow stationary free-look. Match the actual camera
+  // ray synchronously (heading AND pitch), not stale locomotion facing or a back-slung gun.
+  anim.prepareShot(look);
   ray.set(origin, look); ray.far = 150;
   // Target meshes have matching dynamic colliders for movement/LOS, but a
   // target hit must not be reclassified as a wall during the muzzle check.
@@ -810,6 +831,11 @@ function checkDiscoveries() {
   }
 }
 
+attachRenderSettings(resolution, quality, (mode) => {
+  resolution = mode; adaptiveResolution.reset();
+  dpr = targetDpr(devicePixelRatio, resolution, lowQ); applyResolution();
+});
+
 // ───────────── loop ─────────────
 const mini = $<HTMLCanvasElement>('minimap').getContext('2d')!;
 const big = ($('bigmap').querySelector('canvas') as HTMLCanvasElement).getContext('2d')!;
@@ -817,7 +843,7 @@ const stats = $('stats');
 const eye = new THREE.Vector3();
 let last = performance.now(), acc = 0, frames = 0, fpsT = 0, fps = 0;
 const STEP = 1 / 120;
-let lastRegion = '', dynT = 0, dynFrames = 0;
+let lastRegion = '';
 
 // screenshot / fixed-camera mode: ?cam=x,y,z,yawDeg,pitchDeg&clean
 const camParam = params.get('cam')?.split(',').map(Number);
@@ -829,7 +855,14 @@ camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 function frame(now: number) {
-  const dt = Math.min(0.1, (now - last) / 1000);
+  // Some browsers change DPR on monitor moves without a CSS resize event.
+  if (observedDeviceDpr !== devicePixelRatio) {
+    observedDeviceDpr = devicePixelRatio;
+    adaptiveResolution.reset();
+    dpr = targetDpr(devicePixelRatio, resolution, lowQ); applyResolution();
+  }
+  const frameSeconds = (now - last) / 1000;
+  const dt = Math.min(0.1, frameSeconds);
   last = now;
   acc += dt;
   if (!gameplayActive()) { keys.clear(); aim.clear(); }
@@ -861,7 +894,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, aim: ads, pitch: player.pitch });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, aim: ads, pitch: player.pitch, firing: down('fire'), lookYaw: player.yaw + Math.PI });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -917,14 +950,9 @@ function frame(now: number) {
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }
   culler.update(eye, lowQ ? 0.7 : 1);
-  // dynamic resolution: trade pixels for frame rate, recover when there is headroom
-  dynT += dt; dynFrames++;
-  if (dynT > 1 && composer && !params.has('shot')) {
-    const f = dynFrames / dynT;
-    const next = f < 48 ? Math.max(0.6, dpr - 0.1) : f > 58 ? Math.min(maxDpr, dpr + 0.05) : dpr;
-    if (Math.abs(next - dpr) > 0.01) { dpr = next; renderer.setPixelRatio(dpr); composer.setPixelRatio(dpr); }
-    dynT = 0; dynFrames = 0;
-  }
+  const nextDpr = adaptiveResolution.sample(frameSeconds, dpr, targetDpr(devicePixelRatio, resolution, lowQ),
+    resolution === 'adaptive' && !params.has('shot') && document.visibilityState === 'visible' && document.hasFocus());
+  if (nextDpr !== dpr) { dpr = nextDpr; applyResolution(); }
   const tgt = guideOn ? guideTarget() : null;
   updateGuide(tgt, now);
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
@@ -936,11 +964,12 @@ function frame(now: number) {
   shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
   ambient?.update(camera.position);
+  renderer.info.reset();
   if (composer) composer.render(); else renderer.render(scene, camera);
-  frames++; fpsT += dt;
+  frames++; fpsT += frameSeconds;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
   const info = renderer.info.render;
-  stats.textContent = bilingual(`${fps} 帧/秒 · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
+  stats.textContent = bilingual(`${fps} 帧/秒 · ${dpr.toFixed(2)}× DPR · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${dpr.toFixed(2)}× DPR · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
     `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? bilingual(' · 飞行', ' · fly') : ''}${player.gliding ? bilingual(' · 滑翔', ' · glide') : ''}${player.swimming ? bilingual(' · 游泳', ' · swim') : ''}`;
   requestAnimationFrame(frame);
 }

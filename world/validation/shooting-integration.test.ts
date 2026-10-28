@@ -5,9 +5,11 @@ import { readFileSync } from 'node:fs';
 import { transformSync } from 'esbuild';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
+import { playerFixture } from './player-fixture.ts';
+import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
 
 /** Execute the production shoot function, including shoulder-to-muzzle occlusion and quest bookkeeping. */
-function setup({ wall = false, enemy = false, enabled = true } = {}) {
+function setup({ wall = false, enemy = false, enabled = true, playerArt = undefined as Awaited<ReturnType<typeof playerFixture>> | undefined, animator = undefined as SkinnedCharacterAnimator | undefined } = {}) {
   const source = readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
   const section = source.slice(source.indexOf('function shoot()'),source.indexOf('// ───────────── interaction'));
   assert.ok(section.length > 500);
@@ -25,8 +27,8 @@ function setup({ wall = false, enemy = false, enabled = true } = {}) {
     damageEnemy: (id: string) => damage.push(id),
     shot: (start: THREE.Vector3,end: THREE.Vector3,hit: boolean) => shots.push({start:start.clone(),end:end.clone(),hit}),
   };
-  const context=vm.createContext({THREE,gameplayActive:()=>true,player:{flying:false,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
-    targets:[target],rig:{root,joints:{Gun:gun}},rifle:{muzzleWorld:()=>gun.localToWorld(new THREE.Vector3(0,0,-.68))},done,toast(){},save(){saves++;},applyWorldState(){},$(){return {classList:{add(){},remove(){}}};},setTimeout(){}});
+  const context=vm.createContext({THREE,gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
+    targets:[target],rig:playerArt?.rig ?? {root,joints:{Gun:gun}},rifle:playerArt?.rifle ?? {muzzleWorld:()=>gun.localToWorld(new THREE.Vector3(0,0,-.68))},anim:animator ?? {prepareShot(){}},done,toast(){},save(){saves++;},applyWorldState(){},$(){return {classList:{add(){},remove(){}}};},setTimeout(){}});
   vm.runInContext(transformSync(section+'\nglobalThis.shoot = shoot;',{loader:'ts',format:'cjs'}).code,context);
   return {shoot:()=>context.shoot(),shots,damage,done,saves:()=>saves};
 }
@@ -43,4 +45,19 @@ test('solid wall blocks both camera targeting and the actual muzzle-to-target sh
 });
 test('shot cadence blocks all damage, quest mutation and visuals together', () => {
   const s=setup({enabled:false});s.shoot();assert.equal(s.shots.length,0);assert.equal(s.damage.length,0);assert.equal(s.done.size,0);
+});
+
+test('immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF', async () => {
+  const playerArt = await playerFixture(), animator = new SkinnedCharacterAnimator(playerArt.rig);
+  playerArt.rig.root.position.set(0, 0, 2);
+  for (let i = 0; i < 180; i++) animator.update(1/60, {speed:8,onGround:false,swimming:false,gliding:true,vy:-2,moveYaw:0});
+  const slungMuzzle = playerArt.rifle.muzzleWorld();
+  const s = setup({playerArt,animator});
+  s.shoot(); // Same synchronous shoot() used by the production press('fire') path; no frame step.
+  const heldMuzzle = playerArt.rifle.muzzleWorld();
+  assert.ok(heldMuzzle.distanceTo(slungMuzzle) > .3);
+  assert.equal(s.shots.length,1); assert.ok(s.shots[0].start.distanceTo(heldMuzzle) < 1e-6);
+  for (const [side,key] of [['R','grip'],['L','support']] as const)
+    assert.ok(playerArt.rig.handSockets[side].getWorldPosition(new THREE.Vector3()).distanceTo(playerArt.rig.joints.Gun.localToWorld(playerArt.rig.gunAnchors[key].clone())) < .002);
+  playerArt.dispose();
 });

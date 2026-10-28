@@ -1,0 +1,379 @@
+{
+  "method": "Actual Blender evaluated armature deformation; same named bone poses, every exported mesh vertex compared in world space. Not a browser/GPU performance test.",
+  "frozen_sha256": "ea211c2e34b980fb8ec372346a1e4d22279171543d861b7102c062ebdfdc05d5",
+  "rebuilt_sha256": "9bb1e2b6c55b1b024d8ec06b2eed3d7b6c2126b548c7c2ef0d870227a1bcd68e",
+  "poses": {
+    "bind": {
+      "Authored_Male_Brows": {
+        "vertices": 150,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_00_bare_hands_warm_skin": {
+        "vertices": 1580,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_01_matte_black_harness_leather": {
+        "vertices": 670,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_02_brushed_old-gold_fittings": {
+        "vertices": 144,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_03_cool-gray_seam_piping": {
+        "vertices": 984,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_04_porcelain-white_tailored_twill": {
+        "vertices": 6474,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_05_soft_dark_shoe_leather": {
+        "vertices": 2882,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+        "vertices": 130,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_07_charcoal_trouser_wool": {
+        "vertices": 3527,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Eye_Back": {
+        "vertices": 50,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Hair_Underlayer_Continuous_Fitted": {
+        "vertices": 2544,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Head_Skin_Editable": {
+        "vertices": 21282,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Icosphere": {
+        "vertices": 42,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Iris": {
+        "vertices": 122,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Lid_Lines": {
+        "vertices": 260,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Mouth_Interior": {
+        "vertices": 384,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Ritsuka_Hair_Editable_CC0_Adaptation": {
+        "vertices": 7775,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Sclera": {
+        "vertices": 74,
+        "max_evaluated_position_error_m": 0.0
+      }
+    },
+    "neutral": {
+      "Authored_Male_Brows": {
+        "vertices": 150,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_00_bare_hands_warm_skin": {
+        "vertices": 1580,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_01_matte_black_harness_leather": {
+        "vertices": 670,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_02_brushed_old-gold_fittings": {
+        "vertices": 144,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_03_cool-gray_seam_piping": {
+        "vertices": 984,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_04_porcelain-white_tailored_twill": {
+        "vertices": 6474,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_05_soft_dark_shoe_leather": {
+        "vertices": 2882,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+        "vertices": 130,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_07_charcoal_trouser_wool": {
+        "vertices": 3527,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Eye_Back": {
+        "vertices": 50,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Hair_Underlayer_Continuous_Fitted": {
+        "vertices": 2544,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Head_Skin_Editable": {
+        "vertices": 21282,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Icosphere": {
+        "vertices": 42,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Iris": {
+        "vertices": 122,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Lid_Lines": {
+        "vertices": 260,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Mouth_Interior": {
+        "vertices": 384,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Ritsuka_Hair_Editable_CC0_Adaptation": {
+        "vertices": 7775,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Sclera": {
+        "vertices": 74,
+        "max_evaluated_position_error_m": 0.0
+      }
+    },
+    "run": {
+      "Authored_Male_Brows": {
+        "vertices": 150,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_00_bare_hands_warm_skin": {
+        "vertices": 1580,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_01_matte_black_harness_leather": {
+        "vertices": 670,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_02_brushed_old-gold_fittings": {
+        "vertices": 144,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_03_cool-gray_seam_piping": {
+        "vertices": 984,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_04_porcelain-white_tailored_twill": {
+        "vertices": 6474,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_05_soft_dark_shoe_leather": {
+        "vertices": 2882,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+        "vertices": 130,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_07_charcoal_trouser_wool": {
+        "vertices": 3527,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Eye_Back": {
+        "vertices": 50,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Hair_Underlayer_Continuous_Fitted": {
+        "vertices": 2544,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Head_Skin_Editable": {
+        "vertices": 21282,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Icosphere": {
+        "vertices": 42,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Iris": {
+        "vertices": 122,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Lid_Lines": {
+        "vertices": 260,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Mouth_Interior": {
+        "vertices": 384,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Ritsuka_Hair_Editable_CC0_Adaptation": {
+        "vertices": 7775,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Sclera": {
+        "vertices": 74,
+        "max_evaluated_position_error_m": 0.0
+      }
+    },
+    "swim": {
+      "Authored_Male_Brows": {
+        "vertices": 150,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_00_bare_hands_warm_skin": {
+        "vertices": 1580,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_01_matte_black_harness_leather": {
+        "vertices": 670,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_02_brushed_old-gold_fittings": {
+        "vertices": 144,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_03_cool-gray_seam_piping": {
+        "vertices": 984,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_04_porcelain-white_tailored_twill": {
+        "vertices": 6474,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_05_soft_dark_shoe_leather": {
+        "vertices": 2882,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+        "vertices": 130,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_07_charcoal_trouser_wool": {
+        "vertices": 3527,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Eye_Back": {
+        "vertices": 50,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Hair_Underlayer_Continuous_Fitted": {
+        "vertices": 2544,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Head_Skin_Editable": {
+        "vertices": 21282,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Icosphere": {
+        "vertices": 42,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Iris": {
+        "vertices": 122,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Lid_Lines": {
+        "vertices": 260,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Mouth_Interior": {
+        "vertices": 384,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Ritsuka_Hair_Editable_CC0_Adaptation": {
+        "vertices": 7775,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Sclera": {
+        "vertices": 74,
+        "max_evaluated_position_error_m": 0.0
+      }
+    },
+    "glide": {
+      "Authored_Male_Brows": {
+        "vertices": 150,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_00_bare_hands_warm_skin": {
+        "vertices": 1580,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_01_matte_black_harness_leather": {
+        "vertices": 670,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_02_brushed_old-gold_fittings": {
+        "vertices": 144,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_03_cool-gray_seam_piping": {
+        "vertices": 984,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_04_porcelain-white_tailored_twill": {
+        "vertices": 6474,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_05_soft_dark_shoe_leather": {
+        "vertices": 2882,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+        "vertices": 130,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "BodyBatch_07_charcoal_trouser_wool": {
+        "vertices": 3527,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Eye_Back": {
+        "vertices": 50,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Hair_Underlayer_Continuous_Fitted": {
+        "vertices": 2544,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Head_Skin_Editable": {
+        "vertices": 21282,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Icosphere": {
+        "vertices": 42,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Iris": {
+        "vertices": 122,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Lid_Lines": {
+        "vertices": 260,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Mouth_Interior": {
+        "vertices": 384,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Ritsuka_Hair_Editable_CC0_Adaptation": {
+        "vertices": 7775,
+        "max_evaluated_position_error_m": 0.0
+      },
+      "Sclera": {
+        "vertices": 74,
+        "max_evaluated_position_error_m": 0.0
+      }
+    }
+  },
+  "max_error_m": 0,
+  "passed_tolerance_1um": true
+}

@@ -1,0 +1,38 @@
+{
+  "source/head/approved_evaluated_weights.json": {
+    "bytes": 2740123,
+    "sha256": "7ab2b33914bacbea490b1365c5834c57cfb58ea4dc5f963b8b181e671d33549d"
+  },
+  "source/head/approved_head_art.glb": {
+    "bytes": 2005040,
+    "sha256": "9c549ab70055f5139070936bd95f2782a89c5b5fa04fec6f0ebee8c28a4b7a72"
+  },
+  "source/head/approved_head_design.blend": {
+    "bytes": 11087976,
+    "sha256": "56caf98c9b1291c637c2fbbe1aaa4448735fb321276f520063109d2aeb5fd729"
+  },
+  "source/head/approved_head_portable.blend": {
+    "bytes": 2051740,
+    "sha256": "8adc428b4ccc10d921acba71f6a86c6bb633cbb272be075ae2d370083203a1f7"
+  },
+  "source/head/source_vertex_correspondence.json": {
+    "bytes": 472011,
+    "sha256": "f606cde27bd5075e6aa8c0276ae9ed62a02804b1f121e53526aa3131247cf922"
+  },
+  "source/vrm/Base_Male.vrm": {
+    "bytes": 17914788,
+    "sha256": "ab9af434a229283c192546486f9e6eb9cd855bf7d8d45b5037ac211938cb903c"
+  },
+  "source/vrm/HairSample_Male.vrm": {
+    "bytes": 18947896,
+    "sha256": "4af2194f90ba846f3b13c00b50b14262419062d2171d17de922bcce2f89979c7"
+  },
+  "source/vrm/base_male-metadata.json": {
+    "bytes": 926,
+    "sha256": "12536b15ac744120f972fad9ac94b0736ebb971dc780fcd0da41ed84d3285e21"
+  },
+  "source/vrm/hairsample_male-metadata.json": {
+    "bytes": 932,
+    "sha256": "5bf56d2bb234020610b6ff03d09a15864982967e0a0c23c6a465582aa9fcfed3"
+  }
+}

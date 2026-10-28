@@ -1,0 +1,110 @@
+{
+  "source_body_objects": 42,
+  "head_objects_preserved": 9,
+  "pose_tests": {
+    "bind": {
+      "Ritsuka \u2022 bare hands warm skin": {
+        "triangles": 2302,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 matte black harness leather": {
+        "triangles": 1324,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 brushed old-gold fittings": {
+        "triangles": 216,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 cool-gray seam piping": {
+        "triangles": 1848,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 porcelain-white tailored twill": {
+        "triangles": 12188,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 soft dark shoe leather": {
+        "triangles": 5568,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Ritsuka \u2022 anatomical right dorsal command seal": {
+        "triangles": 124,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 charcoal trouser wool": {
+        "triangles": 6600,
+        "max_deformed_position_difference_m": 0.0
+      }
+    },
+    "run": {
+      "Ritsuka \u2022 bare hands warm skin": {
+        "triangles": 2302,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 matte black harness leather": {
+        "triangles": 1324,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 brushed old-gold fittings": {
+        "triangles": 216,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 cool-gray seam piping": {
+        "triangles": 1848,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 porcelain-white tailored twill": {
+        "triangles": 12188,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 soft dark shoe leather": {
+        "triangles": 5568,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Ritsuka \u2022 anatomical right dorsal command seal": {
+        "triangles": 124,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 charcoal trouser wool": {
+        "triangles": 6600,
+        "max_deformed_position_difference_m": 0.0
+      }
+    },
+    "glide": {
+      "Ritsuka \u2022 bare hands warm skin": {
+        "triangles": 2302,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 matte black harness leather": {
+        "triangles": 1324,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 brushed old-gold fittings": {
+        "triangles": 216,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 cool-gray seam piping": {
+        "triangles": 1848,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 porcelain-white tailored twill": {
+        "triangles": 12188,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 soft dark shoe leather": {
+        "triangles": 5568,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Ritsuka \u2022 anatomical right dorsal command seal": {
+        "triangles": 124,
+        "max_deformed_position_difference_m": 0.0
+      },
+      "Chaldea \u2022 charcoal trouser wool": {
+        "triangles": 6600,
+        "max_deformed_position_difference_m": 0.0
+      }
+    }
+  },
+  "batched_body_objects": 8,
+  "all_pose_tests_passed": true
+}

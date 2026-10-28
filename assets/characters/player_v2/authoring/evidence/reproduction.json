@@ -1,0 +1,90 @@
+{
+  "blender_version_tested": "4.3.2",
+  "frozen_glb_sha256": "ea211c2e34b980fb8ec372346a1e4d22279171543d861b7102c062ebdfdc05d5",
+  "rebuilt_glb_sha256": "9bb1e2b6c55b1b024d8ec06b2eed3d7b6c2126b548c7c2ef0d870227a1bcd68e",
+  "frozen_bytes": 3687484,
+  "rebuilt_bytes": 3687484,
+  "bitwise_equal": false,
+  "gltf_json_exactly_equal": true,
+  "all_non_joint_buffers_byte_identical": true,
+  "all_vertex_bone_weight_maps_exactly_equal": true,
+  "semantic_reproduction_passed": true,
+  "equivalent_joint_slot_permutations": [
+    {
+      "node_names": [
+        "Head_Skin_Editable"
+      ],
+      "attribute_vertex": 11355,
+      "frozen_joint_slots": [
+        5,
+        6,
+        33,
+        9
+      ],
+      "rebuilt_joint_slots": [
+        5,
+        6,
+        9,
+        33
+      ],
+      "weights": [
+        0.7518384456634521,
+        0.24078050255775452,
+        0.0036905636079609394,
+        0.0036905636079609394
+      ],
+      "bone_weight_map_identical": true
+    },
+    {
+      "node_names": [
+        "Head_Skin_Editable"
+      ],
+      "attribute_vertex": 20128,
+      "frozen_joint_slots": [
+        5,
+        6,
+        33,
+        9
+      ],
+      "rebuilt_joint_slots": [
+        5,
+        6,
+        9,
+        33
+      ],
+      "weights": [
+        0.7999864816665649,
+        0.17061956226825714,
+        0.014696993865072727,
+        0.014696993865072727
+      ],
+      "bone_weight_map_identical": true
+    },
+    {
+      "node_names": [
+        "Head_Skin_Editable"
+      ],
+      "attribute_vertex": 20131,
+      "frozen_joint_slots": [
+        5,
+        6,
+        33,
+        9
+      ],
+      "rebuilt_joint_slots": [
+        5,
+        6,
+        9,
+        33
+      ],
+      "weights": [
+        0.8240604996681213,
+        0.13553912937641144,
+        0.02020021341741085,
+        0.02020021341741085
+      ],
+      "bone_weight_map_identical": true
+    }
+  ],
+  "source_contract": "Only bundled source files and repo-relative/explicit paths; no network or private scratch input dependency."
+}

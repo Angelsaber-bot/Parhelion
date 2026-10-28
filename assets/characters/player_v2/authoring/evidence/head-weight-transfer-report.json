@@ -1,0 +1,78 @@
+{
+  "source": "HairSample_Male original indexed weights",
+  "parts": {
+    "Authored_Male_Brows": {
+      "cage_vertices": 150,
+      "exact_correspondence": 0,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 150
+    },
+    "Eye_Back": {
+      "cage_vertices": 50,
+      "exact_correspondence": 50,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 50
+    },
+    "Hair_Underlayer_Continuous_Fitted": {
+      "cage_vertices": 2501,
+      "exact_correspondence": 0,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 2501
+    },
+    "Head_Skin_Editable": {
+      "cage_vertices": 966,
+      "exact_correspondence": 966,
+      "multiple_candidates": 124,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 16085
+    },
+    "Iris": {
+      "cage_vertices": 122,
+      "exact_correspondence": 122,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 122
+    },
+    "Lid_Lines": {
+      "cage_vertices": 260,
+      "exact_correspondence": 260,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 260
+    },
+    "Mouth_Interior": {
+      "cage_vertices": 384,
+      "exact_correspondence": 384,
+      "multiple_candidates": 154,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 384
+    },
+    "Ritsuka_Hair_Editable_CC0_Adaptation": {
+      "cage_vertices": 7775,
+      "exact_correspondence": 0,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 7775
+    },
+    "Sclera": {
+      "cage_vertices": 74,
+      "exact_correspondence": 74,
+      "multiple_candidates": 0,
+      "incompatible_candidates": 0,
+      "policy": "Source candidate weights identical within 1e-5; averaged. New brows/underlayer and all hair use Head=1.",
+      "evaluated_vertices": 74
+    }
+  },
+  "expression_state": "Neutral only. No original 54 expression recovery claimed."
+}

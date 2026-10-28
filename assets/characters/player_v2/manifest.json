@@ -1,0 +1,311 @@
+{
+  "status": "Art source frozen for final runtime QA; root accepts tiny extreme-closeup seal corner discontinuities as nonblocking",
+  "source_orientation": "meters, glTF Y-up, faces -Z; NO mirror or extra Y rotation",
+  "bones": 75,
+  "source_bones": 67,
+  "cloth_bones": 8,
+  "hand_dorsal_source_blender": [
+    0,
+    0,
+    1
+  ],
+  "hand_palm_source_blender": [
+    0,
+    0,
+    -1
+  ],
+  "original_54_expressions_recovered": false,
+  "expression_policy": "neutral only",
+  "head_policy": "Exact approved geometry + UVs/maps/materials, source correspondence-derived weight recovery; hair rigid to Head",
+  "meshes": {
+    "BodyBatch_00_bare_hands_warm_skin": {
+      "vertices": 1186,
+      "triangles": 2302,
+      "material": "Ritsuka \u2022 bare hands warm skin"
+    },
+    "BodyBatch_01_matte_black_harness_leather": {
+      "vertices": 670,
+      "triangles": 1324,
+      "material": "Chaldea \u2022 matte black harness leather"
+    },
+    "BodyBatch_02_brushed_old-gold_fittings": {
+      "vertices": 144,
+      "triangles": 216,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "BodyBatch_03_cool-gray_seam_piping": {
+      "vertices": 984,
+      "triangles": 1848,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "BodyBatch_04_porcelain-white_tailored_twill": {
+      "vertices": 6274,
+      "triangles": 12188,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "BodyBatch_05_soft_dark_shoe_leather": {
+      "vertices": 2882,
+      "triangles": 5568,
+      "material": "Chaldea \u2022 soft dark shoe leather"
+    },
+    "BodyBatch_06_anatomical_right_dorsal_command_seal": {
+      "vertices": 130,
+      "triangles": 124,
+      "material": "Ritsuka \u2022 anatomical right dorsal command seal"
+    },
+    "BodyBatch_07_charcoal_trouser_wool": {
+      "vertices": 3335,
+      "triangles": 6600,
+      "material": "Chaldea \u2022 charcoal trouser wool"
+    },
+    "Ritsuka_Hair_Editable_CC0_Adaptation": {
+      "vertices": 7775,
+      "triangles": 9196,
+      "material": "Ritsuka_Hair_Brown"
+    },
+    "Iris": {
+      "vertices": 122,
+      "triangles": 192,
+      "material": "Ritsuka_Iris_BlueCyan"
+    },
+    "Authored_Male_Brows": {
+      "vertices": 150,
+      "triangles": 192,
+      "material": "Ritsuka warm dark-brown brows"
+    },
+    "Hair_Underlayer_Continuous_Fitted": {
+      "vertices": 2501,
+      "triangles": 4782,
+      "material": "Ritsuka_Hair_Underlayer"
+    },
+    "Eye_Back": {
+      "vertices": 50,
+      "triangles": 64,
+      "material": "Ritsuka eye backing"
+    },
+    "Sclera": {
+      "vertices": 74,
+      "triangles": 96,
+      "material": "Ritsuka sclera"
+    },
+    "Head_Skin_Editable": {
+      "vertices": 16085,
+      "triangles": 31728,
+      "material": "Ritsuka_Skin_Atlas"
+    },
+    "Lid_Lines": {
+      "vertices": 260,
+      "triangles": 384,
+      "material": "Ritsuka_Lid_Line"
+    },
+    "Mouth_Interior": {
+      "vertices": 384,
+      "triangles": 496,
+      "material": "Ritsuka closed mouth cavity"
+    }
+  },
+  "glb_bytes": 3687484,
+  "sha256": "ea211c2e34b980fb8ec372346a1e4d22279171543d861b7102c062ebdfdc05d5",
+  "materials": [
+    "Ritsuka warm dark-brown brows",
+    "Ritsuka \u2022 bare hands warm skin",
+    "Chaldea \u2022 matte black harness leather",
+    "Chaldea \u2022 brushed old-gold fittings",
+    "Chaldea \u2022 cool-gray seam piping",
+    "Chaldea \u2022 porcelain-white tailored twill",
+    "Ritsuka eye backing",
+    "Ritsuka_Hair_Underlayer",
+    "Ritsuka_Skin_Atlas",
+    "Ritsuka_Iris_BlueCyan",
+    "Ritsuka_Lid_Line",
+    "Chaldea \u2022 soft dark shoe leather",
+    "Ritsuka closed mouth cavity",
+    "Ritsuka \u2022 anatomical right dorsal command seal",
+    "Ritsuka_Hair_Brown",
+    "Ritsuka sclera",
+    "Chaldea \u2022 charcoal trouser wool"
+  ],
+  "triangles": 77300,
+  "vertices": 43006,
+  "source_part_inventory": {
+    "Bare_Articulated_Hands": {
+      "vertices": 1186,
+      "material": "Ritsuka \u2022 bare hands warm skin"
+    },
+    "Belt_Leather_Keeper_-1": {
+      "vertices": 8,
+      "material": "Chaldea \u2022 matte black harness leather"
+    },
+    "Belt_Leather_Keeper_1": {
+      "vertices": 8,
+      "material": "Chaldea \u2022 matte black harness leather"
+    },
+    "Buckle_Pin": {
+      "vertices": 16,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Central_Fastening_-1": {
+      "vertices": 144,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Central_Fastening_1": {
+      "vertices": 144,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Collar_Left_Overlapping_Lapel": {
+      "vertices": 8,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "Collar_Rear_Stand": {
+      "vertices": 100,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "Collar_Right_Under_Lapel": {
+      "vertices": 8,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "Cuff_Gray_Edge_L": {
+      "vertices": 125,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Cuff_Gray_Edge_R": {
+      "vertices": 125,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Cuff_L": {
+      "vertices": 144,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "Cuff_R": {
+      "vertices": 144,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "Gold_Buckle": {
+      "vertices": 40,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Low_Soft_Leather_Shoe_L": {
+      "vertices": 1441,
+      "material": "Chaldea \u2022 soft dark shoe leather"
+    },
+    "Low_Soft_Leather_Shoe_R": {
+      "vertices": 1441,
+      "material": "Chaldea \u2022 soft dark shoe leather"
+    },
+    "Right_Dorsal_Command_Seal_0": {
+      "vertices": 50,
+      "material": "Ritsuka \u2022 anatomical right dorsal command seal"
+    },
+    "Right_Dorsal_Command_Seal_1": {
+      "vertices": 40,
+      "material": "Ritsuka \u2022 anatomical right dorsal command seal"
+    },
+    "Right_Dorsal_Command_Seal_2": {
+      "vertices": 40,
+      "material": "Ritsuka \u2022 anatomical right dorsal command seal"
+    },
+    "Shoulder_Seam_-1": {
+      "vertices": 15,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Shoulder_Seam_1": {
+      "vertices": 15,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Throat_Embroidery": {
+      "vertices": 20,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Throat_Embroidery.001": {
+      "vertices": 20,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Throat_Tab": {
+      "vertices": 10,
+      "material": "Chaldea \u2022 matte black harness leather"
+    },
+    "Triangular_Chest_Fitting_-1": {
+      "vertices": 24,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Triangular_Chest_Fitting_1": {
+      "vertices": 24,
+      "material": "Chaldea \u2022 brushed old-gold fittings"
+    },
+    "Trousers_Continuous_Tailored": {
+      "vertices": 3335,
+      "material": "Chaldea \u2022 charcoal trouser wool"
+    },
+    "Uniform_Continuous_Torso_Sleeves": {
+      "vertices": 4646,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "UniformBack_L_Closure_Stitch": {
+      "vertices": 36,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformBack_L_Fabric": {
+      "vertices": 306,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "UniformBack_L_Hem_Stitch": {
+      "vertices": 68,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformBack_R_Closure_Stitch": {
+      "vertices": 36,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformBack_R_Fabric": {
+      "vertices": 306,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "UniformBack_R_Hem_Stitch": {
+      "vertices": 68,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformFront_L_Closure_Stitch": {
+      "vertices": 36,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformFront_L_Fabric": {
+      "vertices": 306,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "UniformFront_L_Hem_Stitch": {
+      "vertices": 68,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformFront_R_Closure_Stitch": {
+      "vertices": 36,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "UniformFront_R_Fabric": {
+      "vertices": 306,
+      "material": "Chaldea \u2022 porcelain-white tailored twill"
+    },
+    "UniformFront_R_Hem_Stitch": {
+      "vertices": 68,
+      "material": "Chaldea \u2022 cool-gray seam piping"
+    },
+    "Upper_Chest_Harness": {
+      "vertices": 132,
+      "material": "Chaldea \u2022 matte black harness leather"
+    },
+    "Waist_Belt_Continuous": {
+      "vertices": 512,
+      "material": "Chaldea \u2022 matte black harness leather"
+    }
+  },
+  "render_meshes": 17,
+  "render_primitives": 17,
+  "render_materials": 17,
+  "batch_pose_parity_report": "material-batch-pose-parity.json",
+  "editable_master": "02_chaldea_skinned_master.blend",
+  "packed_export_master": "03_chaldea_game_export.blend",
+  "known_closeup_limitations": [
+    "A few sub-millimeter corner discontinuities on the surface-conforming right-hand seal at extreme close range; no claim of flawless close-up art."
+  ],
+  "rebuild": "authoring/REBUILD.md",
+  "reproduction_policy": "Semantic reconstruction verified: all glTF JSON/non-joint binary buffers exact; bone-weight maps exact; equivalent equal-weight joint-slot permutations can alter file SHA."
+}

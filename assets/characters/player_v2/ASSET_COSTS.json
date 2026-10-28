@@ -1,0 +1,55 @@
+{
+  "glb_bytes": 3687484,
+  "sha256": "ea211c2e34b980fb8ec372346a1e4d22279171543d861b7102c062ebdfdc05d5",
+  "meshes": 17,
+  "materials": 17,
+  "primitives": 17,
+  "skins": 1,
+  "joints": 75,
+  "triangles": 77300,
+  "attribute_vertices": 49032,
+  "images": [
+    {
+      "name": "Ritsuka_Hair_Underlayer",
+      "encoded_bytes": 59584,
+      "width": 512,
+      "height": 512,
+      "rgba8_bytes_without_mips": 1048576,
+      "sha256": "6caaa196b379833b568aa524849136e7796bc8707b6576161e870107168b86f6"
+    },
+    {
+      "name": "Ritsuka_Skin_Atlas",
+      "encoded_bytes": 176485,
+      "width": 2048,
+      "height": 1024,
+      "rgba8_bytes_without_mips": 8388608,
+      "sha256": "3a3eebd97b2ff15aeea16aabae815ed2b6a174360360e911c7a2cbcafdbc45ab"
+    },
+    {
+      "name": "Ritsuka_Iris_BlueCyan",
+      "encoded_bytes": 89498,
+      "width": 1024,
+      "height": 512,
+      "rgba8_bytes_without_mips": 2097152,
+      "sha256": "456430c63ce3e9534d04f487352bc9adb71a4aa094058e6ffaa0ba775a638148"
+    },
+    {
+      "name": "Ritsuka_Lid_Line",
+      "encoded_bytes": 7730,
+      "width": 1024,
+      "height": 256,
+      "rgba8_bytes_without_mips": 1048576,
+      "sha256": "930f28f0ec630839188042d0357a87d303f9947f539d8eaa2c315d95dbbd9913"
+    },
+    {
+      "name": "Ritsuka_Hair_Brown",
+      "encoded_bytes": 164017,
+      "width": 1024,
+      "height": 1024,
+      "rgba8_bytes_without_mips": 4194304,
+      "sha256": "f0a52fa268adad3a1d33e866bdd1d8054998e1caa253231a7e44dc86971668e0"
+    }
+  ],
+  "texture_rgba8_bytes_without_mips": 16777216,
+  "texture_encoded_bytes": 497314
+}

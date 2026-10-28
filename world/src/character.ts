@@ -1,8 +1,11 @@
-// Basic explorer character for World exploration: an anime-proportioned, procedurally built
+// ARCHIVED SEGMENTED BASELINE: retained for explicit regression fixtures only.
+// The default game imports skinnedCharacter.ts; this is NOT an automatic load-failure fallback.
+// Compatible explorer rig. Authored Fujimaru-inspired surfaces replace the legacy
 // placeholder (toon + outline, ~1.7 m) with a simple procedural rig for idle / walk / run / jump / swim.
 // It is meant to be replaced by a Blender model that keeps the same joint names
 // (Hips, Spine, Head, Arm_L/R + Forearm_L/R, Thigh_L/R + Shin_L/R).
 import * as THREE from 'three';
+import { installAuthoredPlayer, deformUniformCloth } from './playerMesh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 export const PALETTE = {
@@ -57,7 +60,11 @@ export interface CharacterRig {
   root: THREE.Group;
   joints: Record<string, THREE.Object3D>;
   meshes: THREE.Mesh[];
-  /** Rifle pose (Spine space): held in both hands at the low ready, or slung across the back. */
+  /**
+ * Authored male protagonist surfaces on the original compatible procedural animation rig.
+ * Model source: assets/characters/player/build_player.py. Geometry is indexed and quantized.
+ * Joint and weapon anchor conventions are intentionally preserved for TPS gameplay.
+ */
   gunHold: { p: THREE.Vector3; q: THREE.Quaternion };
   gunSling: { p: THREE.Vector3; q: THREE.Quaternion };
   gunHands: { right: THREE.Vector3; left: THREE.Vector3 };
@@ -130,98 +137,18 @@ export function buildCharacter(material: THREE.Material): CharacterRig {
   const root = new THREE.Group();
   root.name = 'Explorer';
   const hips = joint('Hips', root, 0, 0.92, 0);
-  part('Pelvis', hips, [
-    [cyl(0.15, 0.17, 0.2), P.pants, T(0, -0.02, 0, 1, 1, 0.8)],
-    [cyl(0.175, 0.175, 0.06, 14), P.inner, T(0, 0.08, 0, 1, 1, 0.82)], // belt
-    [box(), P.gold, T(0, 0.08, 0.14, 0.07, 0.05, 0.02)], // buckle
-    [box(), P.metal, T(0.19, -0.02, 0.02, 0.06, 0.16, 0.1)], // holster
-  ]);
-  // coat tails (two flaps behind and at the sides)
-  const tails = joint('CoatTails', hips, 0, 0.06, 0);
-  part('CoatTail', tails, [
-    [box(), P.coat, T(-0.09, -0.24, -0.12, 0.15, 0.42, 0.03, 0.14)],
-    [box(), P.coat, T(0.09, -0.24, -0.12, 0.15, 0.42, 0.03, 0.14)],
-    [box(), P.trim, T(0, -0.45, -0.15, 0.34, 0.03, 0.035, 0.14)],
-  ]);
-
   const spine = joint('Spine', hips, 0, 0.1, 0);
-  part('Torso', spine, [
-    [cyl(0.2, 0.155, 0.46, 12), P.coat, T(0, 0.22, 0, 1, 1, 0.72)],
-    [cyl(0.1, 0.13, 0.42, 8), P.inner, T(0, 0.23, 0.035, 1, 1, 0.75)], // inner shirt showing at the open front
-    [box(), P.trim, T(-0.07, 0.22, 0.13, 0.025, 0.44, 0.02, 0, 0, -0.08)],
-    [box(), P.trim, T(0.07, 0.22, 0.13, 0.025, 0.44, 0.02, 0, 0, 0.08)],
-    [sphere(1), P.coat, T(-0.2, 0.43, 0, 0.09, 0.07, 0.09)], // shoulder pads
-    [sphere(1), P.coat, T(0.2, 0.43, 0, 0.09, 0.07, 0.09)],
-    [box(), P.pack, T(0, 0.26, -0.17, 0.26, 0.3, 0.12)], // backpack
-    [box(), P.trim, T(0, 0.33, -0.235, 0.2, 0.04, 0.02)],
-    [cyl(0.105, 0.11, 0.08, 12), P.scarf, T(0, 0.47, 0.0)], // scarf ring
-  ]);
-  const scarf = joint('ScarfTail', spine, 0.06, 0.46, -0.1);
-  part('Scarf', scarf, [
-    [box(), P.scarf, T(0, -0.14, -0.02, 0.07, 0.3, 0.02, 0.35)],
-    [box(), P.trim, T(0, -0.29, -0.07, 0.07, 0.03, 0.022, 0.35)],
-  ]);
-
   const head = joint('Head', spine, 0, 0.56, 0.01);
-  part('HeadMesh', head, [
-    [cyl(0.04, 0.045, 0.08, 8), P.skin, T(0, -0.04, 0)], // neck
-    [sphere(2), P.skin, T(0, 0.11, 0.0, 0.135, 0.15, 0.135)],
-    [sphere(1), P.skin, T(0, 0.04, 0.05, 0.08, 0.06, 0.07)], // jaw/chin
-    // eyes: large anime eyes with iris + highlight
-    [sphere(1), P.eye, T(-0.05, 0.1, 0.118, 0.032, 0.045, 0.012)],
-    [sphere(1), P.eye, T(0.05, 0.1, 0.118, 0.032, 0.045, 0.012)],
-    [sphere(1), P.iris, T(-0.05, 0.092, 0.125, 0.022, 0.028, 0.008)],
-    [sphere(1), P.iris, T(0.05, 0.092, 0.125, 0.022, 0.028, 0.008)],
-    [sphere(0), '#ffffff', T(-0.042, 0.112, 0.131, 0.009, 0.011, 0.004)],
-    [sphere(0), '#ffffff', T(0.058, 0.112, 0.131, 0.009, 0.011, 0.004)],
-    [sphere(0), P.blush, T(-0.075, 0.055, 0.105, 0.022, 0.01, 0.006)],
-    [sphere(0), P.blush, T(0.075, 0.055, 0.105, 0.022, 0.01, 0.006)],
-    [box(), '#c9776b', T(0, 0.035, 0.13, 0.025, 0.006, 0.004)], // mouth
-  ]);
-  // hair: cap + bangs + side locks + ponytail, white with cyan tips
-  const hairPieces: Piece[] = [
-    [sphere(2), P.hair, T(0, 0.15, -0.012, 0.152, 0.15, 0.155)],
-    [sphere(1), P.hair, T(0, 0.12, -0.06, 0.15, 0.13, 0.13)],
-  ];
-  const bangs: [number, number, number][] = [[-0.09, -0.35, 0.3], [-0.045, -0.15, 0.1], [0.0, 0.0, 0.0], [0.05, 0.15, -0.1], [0.095, 0.35, -0.3]];
-  for (const [x, rz, ry] of bangs) {
-    hairPieces.push([cone(0.042, 0.15, 5), P.hair, T(x, 0.19, 0.115, 1, 1, 0.6, Math.PI - 0.35, ry, rz)]);
-  }
-  for (const s of [-1, 1]) {
-    hairPieces.push([cone(0.04, 0.24, 5), P.hair, T(0.125 * s, 0.05, 0.03, 1, 1, 0.7, Math.PI + 0.1, 0, -0.12 * s)]);
-    hairPieces.push([cone(0.018, 0.06, 5), P.hairTip, T(0.135 * s, -0.08, 0.035, 1, 1, 0.7, Math.PI + 0.1, 0, -0.12 * s)]);
-  }
-  part('Hair', head, hairPieces);
-  const tail = joint('Ponytail', head, 0, 0.2, -0.13);
-  part('PonytailMesh', tail, [
-    [sphere(1), P.trim, T(0, 0, 0, 0.035, 0.035, 0.035)], // hair tie
-    [cone(0.07, 0.42, 6), P.hair, T(0, -0.2, -0.05, 1, 1, 0.8, Math.PI + 0.25)],
-    [cone(0.028, 0.1, 6), P.hairTip, T(0, -0.42, -0.1, 1, 1, 0.8, Math.PI + 0.25)],
-  ]);
-  // ahoge (antenna strand), because anime
-  part('Ahoge', head, [[cone(0.012, 0.11, 4), P.hair, T(0.01, 0.31, 0.02, 1, 1, 1, -0.5, 0, 0.3)]]);
-
+  // Keep secondary-motion contracts even where the male uniform has no scarf or ponytail.
+  joint('CoatTails', hips, 0, 0.06, 0);
+  joint('ScarfTail', spine, 0.06, 0.46, -0.1);
+  joint('Ponytail', head, 0, 0.2, -0.13);
   for (const s of [-1, 1]) {
     const side = s < 0 ? 'L' : 'R';
     const arm = joint(`Arm_${side}`, spine, 0.235 * s, 0.42, 0);
-    part(`UpperArm_${side}`, arm, [
-      [cyl(0.055, 0.048, 0.27, 8), P.coat, T(0, -0.13, 0)],
-      [cyl(0.058, 0.058, 0.03, 8), P.trim, T(0, -0.25, 0)],
-    ]);
-    const fore = joint(`Forearm_${side}`, arm, 0, -0.27, 0);
-    part(`Forearm_${side}Mesh`, fore, [
-      [cyl(0.047, 0.04, 0.24, 8), P.inner, T(0, -0.12, 0)],
-      [sphere(1), P.glove, T(0, -0.28, 0.01, 0.045, 0.055, 0.04)],
-    ]);
+    joint(`Forearm_${side}`, arm, 0, -0.27, 0);
     const thigh = joint(`Thigh_${side}`, hips, 0.09 * s, -0.06, 0);
-    part(`ThighMesh_${side}`, thigh, [[cyl(0.078, 0.06, 0.42, 9), P.pants, T(0, -0.21, 0)]]);
-    const shin = joint(`Shin_${side}`, thigh, 0, -0.42, 0);
-    part(`ShinMesh_${side}`, shin, [
-      [cyl(0.058, 0.05, 0.36, 9), P.pants, T(0, -0.18, 0)],
-      [cyl(0.065, 0.06, 0.2, 9), P.boots, T(0, -0.32, 0)],
-      [box(), P.boots, T(0, -0.42, 0.04, 0.11, 0.07, 0.22)],
-      [box(), P.trim, T(0, -0.25, 0.0, 0.135, 0.025, 0.135)],
-    ]);
+    joint(`Shin_${side}`, thigh, 0, -0.42, 0);
   }
   // wind glider (Genshin-style wings), folded away unless gliding
   const glider = joint('Glider', spine, 0, 0.36, -0.24);
@@ -256,10 +183,11 @@ export function buildCharacter(material: THREE.Material): CharacterRig {
   holdQ.multiply(new THREE.Quaternion().setFromUnitVectors(axis.clone().normalize(), new THREE.Vector3(0, 0, -1)));
   const gunHold = { p: handR.clone().sub(GRIP.clone().multiplyScalar(GUN.scale).applyQuaternion(holdQ)), q: holdQ };
   const gunSling = {
-    p: new THREE.Vector3(0.02, 0.26, -0.27),
+    p: new THREE.Vector3(0.02, 0.26, -0.19),
     q: gunBasis(new THREE.Vector3(-0.55, 0.84, 0), new THREE.Vector3(0, 0, -1)),
   };
   gun.position.copy(gunHold.p); gun.quaternion.copy(gunHold.q);
+  installAuthoredPlayer(joints, meshes, material);
   return { root, joints, meshes, gunHold, gunSling, gunHands: { right: handR, left: handL }, gunAnchors: { grip: GRIP.clone().multiplyScalar(GUN.scale), support: HANDGUARD.clone().multiplyScalar(GUN.scale) } };
 }
 
@@ -332,7 +260,8 @@ export class CharacterAnimator {
     J.Ponytail.rotation.x = 0.25 + run * 0.6 + Math.sin(this.phase * 2) * 0.12 * move + this.air * Math.sign(-s.vy) * 0.3 + Math.sin(this.t * 1.7) * 0.05;
     J.Ponytail.rotation.z = Math.sin(this.phase) * 0.15 * move;
     J.ScarfTail.rotation.x = 0.2 + run * 0.9 + Math.sin(this.t * 6) * 0.08 * (0.3 + run);
-    J.CoatTails.rotation.x = run * 0.6 + this.air * 0.4 + Math.abs(sw) * 0.1 * move;
+    // Short uniform panels: small cloth motion, never flip the entire waist shell upward.
+    J.CoatTails.rotation.x = run * 0.08 + this.air * 0.06 + Math.abs(sw) * 0.025 * move;
 
     // gliding: wings unfold, arms up holding the frame, body tilts forward, legs trail
     this.glide = THREE.MathUtils.damp(this.glide, s.gliding ? 1 : 0, 9, dt);
@@ -352,10 +281,11 @@ export class CharacterAnimator {
       J.Head.rotation.x = lerp(J.Head.rotation.x, -0.45, g);
       J.Ponytail.rotation.x = lerp(J.Ponytail.rotation.x, 1.3 + flutter * 3, g);
       J.ScarfTail.rotation.x = lerp(J.ScarfTail.rotation.x, 1.35 + flutter * 4, g);
-      J.CoatTails.rotation.x = lerp(J.CoatTails.rotation.x, 1.1 + flutter * 2, g);
+      J.CoatTails.rotation.x = lerp(J.CoatTails.rotation.x, 0.12 + flutter * 0.3, g);
       if (J.Glider) J.Glider.rotation.z = Math.sin(this.t * 1.3) * 0.05;
     }
     applyRifleAim(this.rig, s.aim ?? 0, s.pitch ?? 0);
+    deformUniformCloth(this.rig.joints, this.rig.meshes);
   }
 }
 

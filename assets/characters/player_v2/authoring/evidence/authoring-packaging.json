@@ -1,0 +1,32 @@
+{
+  "approved_head_portable.blend": {
+    "before": {
+      "objects": 13,
+      "meshes": 9,
+      "materials": 21,
+      "images": 16
+    },
+    "after": {
+      "objects": 13,
+      "meshes": 9,
+      "materials": 9,
+      "images": 6
+    },
+    "bytes": 2051740
+  },
+  "Chaldea_Editable_Master.blend": {
+    "before": {
+      "objects": 52,
+      "meshes": 51,
+      "materials": 32,
+      "images": 20
+    },
+    "after": {
+      "objects": 52,
+      "meshes": 51,
+      "materials": 17,
+      "images": 5
+    },
+    "bytes": 2754638
+  }
+}

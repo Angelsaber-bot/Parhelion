@@ -1,0 +1,15 @@
+{
+  "version": "",
+  "author": "VRoid\u30d7\u30ed\u30b8\u30a7\u30af\u30c8",
+  "contactInformation": "",
+  "reference": "",
+  "title": "Base_Male",
+  "texture": 24,
+  "allowedUserName": "Everyone",
+  "violentUssageName": "Allow",
+  "sexualUssageName": "Allow",
+  "commercialUssageName": "Allow",
+  "otherPermissionUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow",
+  "licenseName": "CC0",
+  "otherLicenseUrl": "https://hub.vroid.com/license?allowed_to_use_user=everyone&characterization_allowed_user=everyone&corporate_commercial_use=allow&credit=unnecessary&modification=allow&personal_commercial_use=profit&redistribution=allow&sexual_expression=allow&version=1&violent_expression=allow"
+}

@@ -49,13 +49,34 @@ export class DistanceCuller {
     mesh.updateWorldMatrix(true, false);
     const s = (mesh.geometry as THREE.BufferGeometry).boundingSphere!;
     const c = s.center.clone().applyMatrix4(mesh.matrixWorld);
-    this.items.push({ mesh, c, r: s.radius, max, outline: mesh.children.find((o) => o.name.endsWith('__outline')) ?? null });
+    this.items.push({ mesh, c, r: s.radius * mesh.matrixWorld.getMaxScaleOnAxis(), max, outline: mesh.children.find((o) => o.name.endsWith('__outline')) ?? null });
   }
   update(eye: THREE.Vector3, scale = 1) {
     for (const it of this.items) {
-      const d = it.c.distanceTo(eye) - it.r;
-      it.mesh.visible = d < it.max * scale;
-      if (it.outline) it.outline.visible = d < this.outlineDist * scale;
+      const d2 = it.c.distanceToSquared(eye);
+      // Equivalent sphere/range test without one square root per chunk per frame.
+      it.mesh.visible = d2 < (it.max * scale + it.r) ** 2;
+      if (it.outline) it.outline.visible = d2 < (this.outlineDist * scale + it.r) ** 2;
     }
   }
+}
+
+/** A nested dynamic ancestor/descendant must never be baked into immutable world transforms. */
+export function isStaticArtEligible(root: THREE.Object3D): boolean {
+  const dynamic = (object: THREE.Object3D) => object.name === 'Water' || object.name.startsWith('TGT_') ||
+    ['spin', 'bob', 'dynamic', 'showWhen', 'hideWhen', 'opensWhen'].some(key => !!object.userData[key]);
+  for (let ancestor: THREE.Object3D | null = root; ancestor; ancestor = ancestor.parent) if (dynamic(ancestor)) return false;
+  let eligible = true;
+  root.traverse(object => { if (dynamic(object)) eligible = false; });
+  return eligible;
+}
+
+/** Only for immutable map art, after region/pivot transforms are final.
+ * World transforms stay fixed even while the scene root updates lights/actors. */
+export function freezeStaticArt(root: THREE.Object3D) {
+  root.updateWorldMatrix(true, true);
+  root.traverse((object) => {
+    object.matrixAutoUpdate = false;
+    object.matrixWorldAutoUpdate = false;
+  });
 }

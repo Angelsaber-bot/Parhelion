@@ -1,0 +1,133 @@
+{
+  "method": "Actual skinned mesh triangle positions; BVH broad phase, finite Moller-Trumbore segment/triangle test. Coplanar overlaps and physical cloth collision simulation NOT established.",
+  "sweeps": [
+    {
+      "source_thigh_degrees": 0,
+      "front_base_degrees": 0,
+      "front_tip_degrees": 0,
+      "back_base_degrees": 0,
+      "panels": {
+        "UniformFront_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformFront_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        }
+      }
+    },
+    {
+      "source_thigh_degrees": 35,
+      "front_base_degrees": 26,
+      "front_tip_degrees": -6,
+      "back_base_degrees": -24,
+      "panels": {
+        "UniformFront_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformFront_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        }
+      }
+    },
+    {
+      "source_thigh_degrees": 45,
+      "front_base_degrees": 34,
+      "front_tip_degrees": -6,
+      "back_base_degrees": -30,
+      "panels": {
+        "UniformFront_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformFront_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        }
+      }
+    },
+    {
+      "source_thigh_degrees": 60,
+      "front_base_degrees": 47,
+      "front_tip_degrees": -6,
+      "back_base_degrees": -40,
+      "panels": {
+        "UniformFront_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformFront_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_R_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        },
+        "UniformBack_L_Fabric": {
+          "bvh_candidates": 0,
+          "exact_noncoplanar_edge_triangle_crossings": 0,
+          "examples": [],
+          "crossing_cloth_bounds": []
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "triangles": 45541,
+  "vertices": 25356,
+  "bodyMeshCount": 12,
+  "gpuDrawCallsMeasured": false,
+  "materialCount": 1,
+  "generatedJsonBytes": 771098,
+  "glbBytes": 1176064,
+  "glbSha256": "6f3d5bb4fed9c7e1772ee2558b9d8ab73b06011ac95776dbb7e05b24f7b37f89",
+  "parts": [
+    {
+      "joint": "Head",
+      "vertices": 13754,
+      "triangles": 26275
+    },
+    {
+      "joint": "Spine",
+      "vertices": 1507,
+      "triangles": 2866
+    },
+    {
+      "joint": "Hips",
+      "vertices": 2636,
+      "triangles": 2068
+    },
+    {
+      "joint": "CoatTails",
+      "vertices": 864,
+      "triangles": 1720
+    },
+    {
+      "joint": "Arm_L",
+      "vertices": 385,
+      "triangles": 752
+    },
+    {
+      "joint": "Forearm_L",
+      "vertices": 1465,
+      "triangles": 2754
+    },
+    {
+      "joint": "Thigh_L",
+      "vertices": 357,
+      "triangles": 696
+    },
+    {
+      "joint": "Shin_L",
+      "vertices": 1063,
+      "triangles": 2064
+    },
+    {
+      "joint": "Arm_R",
+      "vertices": 385,
+      "triangles": 752
+    },
+    {
+      "joint": "Forearm_R",
+      "vertices": 1520,
+      "triangles": 2834
+    },
+    {
+      "joint": "Thigh_R",
+      "vertices": 357,
+      "triangles": 696
+    },
+    {
+      "joint": "Shin_R",
+      "vertices": 1063,
+      "triangles": 2064
+    }
+  ]
+}

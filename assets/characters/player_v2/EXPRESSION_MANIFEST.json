@@ -1,0 +1,19 @@
+{
+  "runtime_policy": "neutral_only",
+  "recovered_expression_targets": [],
+  "authored_expression_targets": [],
+  "omitted_source_targets": 54,
+  "source_morphs_preserved_in_immutable_original_vrm": true,
+  "art_shape_keys_are_expressions": false,
+  "neutral_approved_geometry_preserved": true,
+  "eye_bone_weights_preserved": true,
+  "blink_verified": false,
+  "mouth_shapes_verified": false,
+  "notes": [
+    "Approved head art has a clean static neutral face, with formal Head/Neck/eye skinning reconstructed from audited source correspondences.",
+    "The 124 ambiguous head cage vertices and 154 ambiguous mouth vertices have compatible original source weight sets, reconciled by averaging identical weights within 1e-5.",
+    "Subdivision propagates cage weights to the approved evaluated head without changing approved vertex positions, UVs or textures.",
+    "No automatic recovery of 54 original expressions is claimed. Source expression data remains in the untouched private source VRMs/import blend.",
+    "Hair and newly authored brows/underlayer use the Head bone. Hair secondary bones are not included in the 75-bone runtime skeleton."
+  ]
+}
