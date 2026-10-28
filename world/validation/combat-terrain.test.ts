@@ -31,12 +31,12 @@ const layout = mergeLayouts(parts), query = makeCombatTerrain(colliders, layout)
 const spawns = makeWildernessSpawns(layout.world.seed ^ 537, query.safeSpawn);
 
 test('actual five-region map admits bounded dry, clear wilderness encounters away from quest hubs', () => {
-  assert.equal(spawns.length, 27, `expected 27 accepted seeded wilderness locations: ${JSON.stringify(spawns)}`);
-  assert.equal(spawns.filter(s => s.p.x < -360).length, 3);
-  assert.equal(spawns.filter(s => s.p.x > 360).length, 5);
-  assert.equal(spawns.filter(s => s.p.z < -360).length, 6);
-  assert.equal(spawns.filter(s => s.p.z > 360).length, 6);
-  assert.equal(spawns.filter(s => s.p.x >= -360 && s.p.x <= 360 && s.p.z >= -360 && s.p.z <= 360).length, 7);
+  assert.equal(spawns.length, 54, `expected 54 accepted seeded wilderness locations: ${JSON.stringify(spawns)}`);
+  assert.equal(spawns.filter(s => s.p.x < -360).length, 6);
+  assert.equal(spawns.filter(s => s.p.x > 360).length, 10);
+  assert.equal(spawns.filter(s => s.p.z < -360).length, 12);
+  assert.equal(spawns.filter(s => s.p.z > 360).length, 12);
+  assert.equal(spawns.filter(s => s.p.x >= -360 && s.p.x <= 360 && s.p.z >= -360 && s.p.z <= 360).length, 14);
   for (const s of spawns) {
     assert.ok(query.clear(s.p), `${s.id} has capsule clearance`);
     assert.ok(s.p.y > layout.world.waterLevel + 0.45, `${s.id} is on dry ground`);

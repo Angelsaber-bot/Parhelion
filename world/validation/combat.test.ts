@@ -18,7 +18,7 @@ test('wilderness placement is seeded, bounded, and rejects unsafe candidates', (
   assert.notDeepEqual(a, makeWildernessSpawns(538, place));
   let calls = 0;
   assert.equal(makeWildernessSpawns(537, () => { calls++; return null; }).length, 0);
-  assert.equal(calls, WILDERNESS_ZONES.length * 32, 'no unbounded spawn retries');
+  assert.equal(calls, WILDERNESS_ZONES.length * 2 * 32, 'no unbounded spawn retries (two per zone)');
 });
 
 test('shots are rate limited, nearest-enemy hits respect supplied occlusion and dead enemies cannot be hit', () => {

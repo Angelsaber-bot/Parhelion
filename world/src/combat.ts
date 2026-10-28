@@ -20,7 +20,7 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 27, activeRange: 82, hideRange: 120, aggroRange: 20,
+  wildernessCap: 54, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
@@ -77,12 +77,13 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
   let state = seed >>> 0;
   const random = () => { state = (Math.imul(state, 1664525) + 1013904223) >>> 0; return state / 4294967296; };
   const points: SpawnPoint[] = [];
-  for (const [index, zone] of WILDERNESS_ZONES.entries()) {
+  // Each zone seeds a pair: the original spawn plus a packmate (>= 9 m apart, same safe placement rules).
+  for (const [index, zone] of WILDERNESS_ZONES.entries()) for (const suffix of ['', 'b']) {
     for (let attempt = 0; attempt < 32; attempt++) {
       const a = random() * Math.PI * 2, r = Math.sqrt(random()) * zone.r;
       const p = place(zone.x + Math.cos(a) * r, zone.z + Math.sin(a) * r);
-      if (!p || points.some(s => distanceXZ(s.p, p) < 18)) continue;
-      points.push({ id: `wild_${index}`, kind: zone.kind, p });
+      if (!p || points.some(s => distanceXZ(s.p, p) < (suffix ? 9 : 18))) continue;
+      points.push({ id: `wild_${index}${suffix}`, kind: zone.kind, p });
       break;
     }
   }
