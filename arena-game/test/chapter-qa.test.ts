@@ -1,6 +1,6 @@
 // Independent QA: transport-free checks do not claim actual sockets or Cloudflare-host validation.
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_MAP, CHAPTER_MAPS as MAPS, getMap, mapIdOf } from '../shared/arenaMap.ts';
+import { DEFAULT_MAP, MAPS, getMap, mapIdOf } from '../shared/arenaMap.ts';
 import { RoomCore } from '../shared/room.ts';
 import { Match } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
@@ -15,7 +15,6 @@ it('the active chapter selector has exactly five unique maps and the three new b
   expect(ids).toHaveLength(5);
   expect(new Set(ids).size).toBe(5);
   expect(ids).toEqual(['aster', 'camlann', 'blackflag', 'frostcourt', 'sakura']);
-  expect(ids).not.toContain('neon');
 });
 
 it('active menu names and blurbs have complete English translations without changing stable IDs', () => {

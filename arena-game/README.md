@@ -1,12 +1,11 @@
 # Parhelion · Arena game (Alpha)
 
-可以打的 Arena：1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。大厅依次提供五章地图：ASTER 研究站、CAM LANN 誓约荒原（亚瑟王）、BLACKFLAG 黑帆战舰（黑胡子）、FROSTCOURT 永冬庭院（拿破仑）、SAKURA 樱庭（本能寺章节沿用）。ASTER 与 SAKURA 的地图、视觉资源、氛围未改动。经典 ZENITH、NEON 文件与 URL/房间 ID 兼容保留，只有主菜单不再显示；直接使用旧 URL 时仍可开局。
+可以打的 Arena：1v1 / 1v2 / 2v2 对战，服务器权威，单机可对 bot。大厅依次提供五章地图：ASTER 研究站、CAM LANN 誓约荒原（亚瑟王）、BLACKFLAG 黑帆战舰（黑胡子）、FROSTCOURT 永冬庭院（拿破仑）、SAKURA 樱庭（本能寺章节沿用）。未知或已删除的地图 ID 会回到 ASTER。
 
 地图和美术**不在这里**：直接读取各地图目录的 `runtime/map.json`（碰撞与锚点）和视觉 GLB，不复制、不修改：
 
 - ASTER：`../arena/runtime/map.json` + `../arena/assets/station_visual.glb`
-- ZENITH / SAKURA / NEON：`../arena-maps/<id>/runtime/map.json` + `../arena-maps/<id>/assets/<id>_visual.glb`（生成脚本在各自 `source/`，共享工具在 `../arena-maps/_lib/`）
-- CAM LANN / BLACKFLAG / FROSTCOURT：同一格式与路径，对应 ID 为 `camlann` / `blackflag` / `frostcourt`。可编辑 Python 源 `source/build.py` 一次生成布局、视觉与碰撞代理；不是仅渲染的场景外壳。
+- SAKURA / CAM LANN / BLACKFLAG / FROSTCOURT：`../arena-maps/<id>/runtime/map.json` + `../arena-maps/<id>/assets/<id>_visual.glb`，ID 为 `sakura` / `camlann` / `blackflag` / `frostcourt`（共享工具在 `../arena-maps/_lib/`）。可编辑 Python 源 `source/build.py` 一次生成布局、视觉与碰撞代理；不是仅渲染的场景外壳。
 
 每张图可在 `map.json` 的 `presentation.preset` 里选氛围（`src/atmosphere.ts`：day / noon / dusk / night），控制天空、太阳、雾、曝光、辉光和环境粒子。
 
@@ -86,12 +85,12 @@ test/     vitest
 - 默认按住 C 下蹲：碰撞高度 1.2m、眼高 1.05m、移动速度为站立的55%；头/身体命中体随姿态缩小。头顶空间不足保持蹲下，离开后才能起身；蹲下不保留冲刺高速。
 - 大厅、暂停页或默认 O 打开设置，分别保存本模式按键、普通/开镜灵敏度、反转Y。改键检查冲突，可明确交换，Esc 保留取消/关闭；可恢复默认。
 - 大厅展示8件模型，一次只载入一件。全部八件都能在对应槽选择作战；战斗只载入当前装备；同款几何共享、实例材质/动画独立，切换和退出会释放资源。
-- **规则版本3：** 自选配装、近战与下蹲输入及快照需要本次客户端、Colyseus服务端、Cloudflare Worker保持一致。旧版本会明确报不兼容，不会悄悄退化成站立判定。公网发布需要成套更新；见 `../docs/DEPLOYMENT_HANDOFF.md`。
+- **规则版本3：** 自选配装、近战与下蹲输入及快照需要本次客户端、Colyseus服务端、Cloudflare Worker保持一致。旧版本会明确报不兼容，不会悄悄退化成站立判定。公网发布需要成套更新；见 `../docs/release/DEPLOYMENT_HANDOFF.md`。
 
-完整基线、覆盖与未完成的浏览器/Worker实机检查见 [WEAPON_INTEGRATION.md](../docs/WEAPON_INTEGRATION.md)。
+完整基线、覆盖与未完成的浏览器/Worker实机检查见 [WEAPON_INTEGRATION.md](../docs/combat/WEAPON_INTEGRATION.md)。
 
-当前双枪＋近战、E/右键和原型参数说明：[LOADOUT_CONTROLS_V3.md](../docs/LOADOUT_CONTROLS_V3.md)。
+当前双枪＋近战、E/右键和原型参数说明：[LOADOUT_CONTROLS_V3.md](../docs/combat/LOADOUT_CONTROLS_V3.md)。
 
 ### 出生与复活无敌
 
-初生、每次复活及每局正式开战均享有完整 2.5 秒（150 个服务器 tick）保护，开火不会取消。所有武器 / Bot 均不能降低受保护玩家或其部署盾的 HP。原 3 秒死亡等待不变。左下角显示中英保护倒计时；离线、Colyseus 和 Worker 共用权威规则。快照采用 v3 可选附加字段，公网必须同时部署更新后的 Worker 和客户端。详见 [ARENA_SPAWN_PROTECTION.md](../docs/ARENA_SPAWN_PROTECTION.md)。
+初生、每次复活及每局正式开战均享有完整 2.5 秒（150 个服务器 tick）保护，开火不会取消。所有武器 / Bot 均不能降低受保护玩家或其部署盾的 HP。原 3 秒死亡等待不变。左下角显示中英保护倒计时；离线、Colyseus 和 Worker 共用权威规则。快照采用 v3 可选附加字段，公网必须同时部署更新后的 Worker 和客户端。详见 [ARENA_SPAWN_PROTECTION.md](../docs/arena/ARENA_SPAWN_PROTECTION.md)。

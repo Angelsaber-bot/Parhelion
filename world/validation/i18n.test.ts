@@ -47,7 +47,7 @@ test('all current World region names, quests, markers and discovery notes have E
 });
 test('current Arena, World and captured Home templates have English text and accessibility coverage', () => {
   setLanguage('en');
-  for (const path of ['../../arena-game/index.html', '../index.html', '../../site/reference-home.html']) {
+  for (const path of ['../../arena-game/index.html', '../index.html', '../../site/web/index.html']) {
     const html = readFileSync(new URL(path, import.meta.url), 'utf8').replace(/<(script|style)\b[^>]*>[\s\S]*?<\/\1>/gi, '');
     const values = [...html.matchAll(/>([^<>]+)</g)].map(m => m[1].trim());
     values.push(...[...html.matchAll(/(?:aria-label|title|alt|placeholder)="([^"]*)"/g)].map(m => m[1]));

@@ -1,6 +1,6 @@
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
 import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
-import { getMap, MAPS, CHAPTER_MAPS, mapIdOf } from '../shared/arenaMap.ts';
+import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, WEAPONS, weaponIndex, type TeamLayout } from '../shared/content.ts';
 import { DEFAULT_PORT, PUBLIC_SERVER, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './audio.ts';
@@ -13,14 +13,12 @@ import { LoadoutStore, loadoutCards, sanitizedSkins, displayWeaponName } from '.
 import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
-import zenithThumb from './assets/maps/zenith.webp';
 import sakuraThumb from './assets/maps/sakura.webp';
-import neonThumb from './assets/maps/neon.webp';
 import blackflagThumb from './assets/maps/blackflag.webp';
 import frostcourtThumb from './assets/maps/frostcourt.webp';
 import camlannThumb from './assets/maps/camlann.webp';
 
-const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb, sakura: sakuraThumb, neon: neonThumb, blackflag: blackflagThumb, frostcourt: frostcourtThumb, camlann: camlannThumb };
+const MAP_THUMBS: Record<string, string> = { aster: asterThumb, sakura: sakuraThumb, blackflag: blackflagThumb, frostcourt: frostcourtThumb, camlann: camlannThumb };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
@@ -100,11 +98,8 @@ function renderChars() {
   $('chars').querySelectorAll<HTMLButtonElement>('.char').forEach((b) => b.onclick = () => { char = Number(b.dataset.i); renderChars(); });
 }
 function renderMaps() {
-  // Legacy URLs/saved rooms stay compatible, but never displace a chapter from the five-map menu.
-  const selectedLegacy = MAPS.find((m) => m.id === mapId && m.chapter === undefined);
-  const choices = selectedLegacy ? [...CHAPTER_MAPS, selectedLegacy] : CHAPTER_MAPS;
-  $('maps').innerHTML = choices.map((m) =>
-    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${localizeText(m.name)}</b><span>${m.chapter ? bilingual(`第 ${m.chapter} 章`, `Chapter ${m.chapter}`) : bilingual('经典地图 · 兼容保留', 'Legacy map · retained')} · ${localizeText(m.blurb)}</span></button>`).join('');
+  $('maps').innerHTML = MAPS.map((m) =>
+    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${localizeText(m.name)}</b><span>${bilingual(`第 ${m.chapter} 章`, `Chapter ${m.chapter}`)} · ${localizeText(m.blurb)}</span></button>`).join('');
   $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
   $('title').textContent = localizeText(MAPS.find((m) => m.id === mapId)!.name);
 }
@@ -194,7 +189,7 @@ $('play').onclick = async () => {
     (window as unknown as { session: unknown }).session = session;
     controls.lock();
   } catch (e) {
-    showError(() => mode === 'online' ? bilingual(`连接失败：${localizeText((e as Error).message)}。确认服务器地址正确（本地需先 npm run server）。`, `Connection failed: ${localizeText((e as Error).message)}. Check the server address (local play needs npm run server).`) : String(e));
+    showError(() => mode === 'online' ? bilingual(`连接失败：${localizeText((e as Error).message)}。请检查服务器地址。`, `Connection failed: ${localizeText((e as Error).message)}. Check the server address.`) : String(e));
   } finally {
     starting = false; $<HTMLButtonElement>('play').disabled = false;
     $('loading').classList.add('hidden');

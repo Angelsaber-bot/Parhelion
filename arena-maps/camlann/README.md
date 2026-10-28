@@ -44,7 +44,7 @@ reconstruction. No rideable terrain system or new combat rules are added. Human
 PvP balance and target-device performance still need playtesting.
 
 Previews are actual exported GLB renders with Blender CPU Cycles, **not browser
-screenshots**. See `../../docs/ARENA_CHAPTER_QA.md` for final evidence and limits.
+screenshots**. See `../../docs/arena/ARENA_CHAPTER_QA.md` for final evidence and limits.
 
 ## 2026-10-28 Arena density and perimeter repair
 

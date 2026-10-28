@@ -4,7 +4,7 @@ import { Bot, BOT_SKILL } from '../../shared/bot.ts';
 import { TICK_HZ } from '../../shared/content.ts';
 import { Match } from '../../shared/match.ts';
 import { Bot as OldBot, BOT_SKILL as OLD } from './botBaseline.ts';
-for (const map of ['aster', 'zenith']) for (const lvl of ['easy', 'normal', 'hard'] as const) {
+for (const map of ['aster', 'sakura']) for (const lvl of ['easy', 'normal', 'hard'] as const) {
   let a = 0, b = 0;
   for (let i = 0; i < 8; i++) {
     const m = new Match(getMap(map), '1v1');

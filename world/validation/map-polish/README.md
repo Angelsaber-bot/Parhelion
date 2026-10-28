@@ -56,4 +56,4 @@ Sandboxed Chromium failed before opening a page (`socket() EPERM` in
 Blender verifies the exported shapes/attachments and palette, **not runtime toon
 lighting, animation, WebGL correctness, browser interaction or performance**.
 
-Visual evidence and metrics: [World micro-detail report](../../../docs/WORLD_MICRO_DETAIL_PASS.md).
+Visual evidence and metrics: [World micro-detail report](../../../docs/world/WORLD_MICRO_DETAIL_PASS.md).

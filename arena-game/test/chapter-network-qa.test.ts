@@ -4,7 +4,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Client, type Room } from '@colyseus/sdk';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
-import { CHAPTER_MAPS } from '../shared/arenaMap.ts';
+import { MAPS } from '../shared/arenaMap.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
 import { joinOnline, type Session } from '../src/session.ts';
@@ -22,7 +22,7 @@ function next<T>(room:Room,type:string,predicate:(value:T)=>boolean=()=>true):Pr
 it('all five chapters pair only with their own map and acknowledge authoritative input over real sockets',async()=>{
   const rooms:Room[]=[],ids=new Set<string>(),client=new Client(`ws://127.0.0.1:${port}`);
   try{
-    for(const info of CHAPTER_MAPS){
+    for(const info of MAPS){
       const options={rulesVersion:RULES_VERSION,map:info.id,layout:'1v1',char:0,skins:[],bots:false};
       const a=await client.joinOrCreate('arena',{...options,team:'A',name:'QA A'});rooms.push(a);
       const welcomeA=await next<{map:string;rulesVersion:number}>(a,'welcome');
@@ -71,7 +71,7 @@ function jsonMessage<T>(ws:WebSocket,type:string):Promise<T>{
 it('all five chapter IDs and inputs cross actual Worker-style JSON sockets using RoomCore (not hosted Cloudflare)',async()=>{
   const sockets:WebSocket[]=[];
   try{
-    for(const info of CHAPTER_MAPS){
+    for(const info of MAPS){
       const open=(team:string)=>new WebSocket(`ws://127.0.0.1:${port+1000}/arena?o=${encodeURIComponent(JSON.stringify({rulesVersion:RULES_VERSION,map:info.id,layout:'1v1',team,name:'JSON QA',char:0,skins:[]}))}`);
       const a=open('A');sockets.push(a);const wa=await jsonMessage<{id:string;map:string;rulesVersion:number}>(a,'welcome');
       expect(wa.map).toBe(info.id);expect(wa.rulesVersion).toBe(RULES_VERSION);

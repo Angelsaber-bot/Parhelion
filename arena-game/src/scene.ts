@@ -5,9 +5,7 @@ import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import asterGlb from '../../arena/assets/station_visual.glb?url';
-import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
-import neonGlb from '../../arena-maps/neon/assets/neon_visual.glb?url';
 import blackflagGlb from '../../arena-maps/blackflag/assets/blackflag_visual.glb?url';
 import frostcourtGlb from '../../arena-maps/frostcourt/assets/frostcourt_visual.glb?url';
 import camlannGlb from '../../arena-maps/camlann/assets/camlann_visual.glb?url';
@@ -29,7 +27,7 @@ import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
 const MAP_OVERLAY: Record<string, string> = { aster: asterOverlayGlb };
 

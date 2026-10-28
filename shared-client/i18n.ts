@@ -42,14 +42,10 @@ const phrasePattern = new RegExp(phrases.map(([zh]) => escapeRegex(zh)).join('|'
 const SOURCE_LABELS: Record<string, readonly [string, string]> = {
   '领取 Lumen AR 与弹药': ['领取突击步枪 AR 与弹药', 'Collect an AR and ammunition'],
   '领取 Lumen AR 与弹药，去靶场试试手感': ['领取突击步枪 AR 与弹药，去靶场试试手感', 'AR and ammunition collected. Try them at the firing range.'],
-  '三把枪，两个技能，一次反杀': ['两把枪，一件近战，两种技能', 'Two guns. One melee weapon. Two abilities.'],
   Dawn: ['曙光', 'Dawn'], Ember: ['余烬', 'Ember'], Sakura: ['樱花', 'Sakura'], Graphite: ['石墨', 'Graphite'], Aurora: ['极光', 'Aurora'], Solar: ['日耀', 'Solar'],
   'Lumen AR': ['突击步枪 AR', 'Assault Rifle AR'], 'Corona SG': ['霰弹枪', 'Shotgun'], 'Halo DMR': ['精确射手步枪 DMR', 'Marksman Rifle DMR'],
   'PARHELION / CONTROLS': ['PARHELION / 操作设置', 'PARHELION / CONTROLS'],
   'PARHELION / WAYFARER ARMORY': ['PARHELION / 旅人武装', 'PARHELION / WAYFARER ARMORY'],
-  '01 · CHOOSE YOUR BATTLEFIELD': ['01 · 选择战场', '01 · CHOOSE YOUR BATTLEFIELD'],
-  '02 · LOADOUT': ['02 · 出战配装', '02 · LOADOUT'], '03 · OR SLOW DOWN': ['03 · 或者，放慢脚步', '03 · OR SLOW DOWN'],
-  'PARHELION · PLAY LOCAL. WANDER FURTHER.': ['PARHELION · 此刻交锋，继续远行。', 'PARHELION · PLAY LOCAL. WANDER FURTHER.'],
 };
 /** Translate authored content only. User names, server URLs, input values and network IDs must not pass here. */
 export function localizeText(source: string): string {

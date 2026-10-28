@@ -88,21 +88,21 @@ describe('ArenaRoom', () => {
     const url = `ws://127.0.0.1:${PORT}`;
     const welcome = (r: { onMessage: (t: string, cb: (m: { map: string }) => void) => void }) =>
       new Promise<string>((res) => r.onMessage('welcome', (m) => res(m.map)));
-    const z = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'Z', char: 0, skins: [], map: 'zenith' });
+    const z = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'Z', char: 0, skins: [], map: 'sakura' });
     const zMap = welcome(z);
     const a = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'S', char: 0, skins: [], map: 'aster' });
     const aMap = welcome(a);
     z.onMessage('snap', () => {}); a.onMessage('snap', () => {});
     expect(a.roomId).not.toBe(z.roomId);
-    expect(await zMap).toBe('zenith');
+    expect(await zMap).toBe('sakura');
     expect(await aMap).toBe('aster');
-    const z2 = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'auto', name: 'Z2', char: 1, skins: [], map: 'zenith' });
+    const z2 = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'auto', name: 'Z2', char: 1, skins: [], map: 'sakura' });
     z2.onMessage('snap', () => {}); z2.onMessage('welcome', () => {});
     expect(z2.roomId).toBe(z.roomId);
     await Promise.all([z.leave(), a.leave(), z2.leave()]);
   });
   it('crouch bit reaches authoritative Colyseus snapshot; release stands again', async () => {
-    const session = await joinOnline(`ws://127.0.0.1:${PORT}`, { layout: '1v1', team: 'A', name: 'Crouch', char: 0, skins: [], map: 'neon' });
+    const session = await joinOnline(`ws://127.0.0.1:${PORT}`, { layout: '1v1', team: 'A', name: 'Crouch', char: 0, skins: [], map: 'blackflag' });
     const observed = snapshots(); session.onSnapshot = observed.receive;
     session.send([{ seq: 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 }]);
     const crouched = await observed.waitFor((s) => s.players.some((p) => p.id === session.id && p.lastSeq === 1), 'acknowledged crouch input');

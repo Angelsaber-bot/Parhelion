@@ -45,7 +45,7 @@
   <div id="pause" class="overlay hidden">
     <div class="card small">
       <h2>已暂停</h2>
-      <p class="muted" id="pausenote">单机对局已完全暂停；联机对局在服务器上仍会继续。</p>
+      <p class="muted onlineOnly" id="pausenote">联机对局仍在继续。</p>
       <button id="resume" class="primary">继续</button>
       <button id="settings-pause" type="button">操作设置</button>
       <button id="leave">退出到大厅</button>
@@ -66,17 +66,15 @@
   <div id="lobby" class="overlay">
     <div class="card lobby">
       <section class="lobby-main">
-        <div class="eyebrow">PARHELION · ARENA ALPHA</div>
+        <div class="eyebrow">ARENA</div>
         <h1 id="title">ASTER 研究站</h1>
-        <p class="tagline">选好战场和角色，冲刺、开盾、拿下高台。</p>
         <h4>战场</h4>
         <div id="maps" class="maps"></div>
         <h4>角色</h4>
         <div id="chars" class="chars"></div>
-        <h4>出战配装 · 两把枪 ＋ 一件近战</h4>
+        <h4>出战配装</h4>
         <div id="loadout" class="loadout" aria-label="出战配装"></div>
-        <p id="loadout-status" class="muted" role="status" aria-live="polite">两把枪必须不同。5 把枪和 3 件近战均可装备。</p>
-        <p class="muted prototype-note">Alpha 原型数值：武器已有不同定位，尚未经过竞技平衡验证。近战有前摇和恢复，受距离、朝向与墙体遮挡限制。</p>
+        <p id="loadout-status" class="muted" role="status" aria-live="polite"></p>
       </section>
       <section class="lobby-side">
         <div class="tabs">
@@ -91,13 +89,12 @@
           <label class="onlineOnly">服务器<input id="server" /></label>
           <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
         </div>
-        <h4>当前配装外观</h4>
+        <h4>外观</h4>
         <div id="skins" class="grid skins"></div>
-        <button id="armory" type="button">旅人武装 · 查看 8 件可用装备</button>
-        <button id="settings-lobby" type="button">按键与灵敏度设置</button>
-        <p class="muted">配装在大厅选择，下一局生效。单机与联机使用相同的装备和伤害规则。</p>
+        <button id="armory" type="button">旅人武装</button>
+        <button id="settings-lobby" type="button">操作设置</button>
         <div id="error" class="error hidden"></div>
-        <button id="play" class="primary"><span>开始战斗</span><small>进入竞技场</small></button>
+        <button id="play" class="primary"><span>开始战斗</span></button>
         <p id="control-hints" class="muted keys">读取操作设置…</p>
       </section>
     </div>

@@ -115,12 +115,12 @@ describe('lobby and combat equipment presentation', () => {
     expect(sanitizedSkins([NaN, -1, 9, 1, .5])).toEqual(WEAPONS.map(() => 0));
     expect(sanitizedSkins({ 0: 1 })).toEqual(WEAPONS.map(() => 0));
   });
-  it('ships three HUD slots, an accessible loadout panel, prototype disclosure, and submits selection through shared JoinOptions', () => {
+  it('ships three HUD slots, an accessible loadout panel, and submits selection through shared JoinOptions', () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
     const armory = readFileSync(new URL('../src/armory.ts', import.meta.url), 'utf8');
     expect((html.match(/class="wslot"/g) ?? []).length).toBe(3);
-    expect(html).toContain('aria-label="出战配装"'); expect(html).toContain('尚未经过竞技平衡验证');
+    expect(html).toContain('aria-label="出战配装"');
     expect(main).toContain('loadout: loadoutStore.value'); expect(main).toContain('if (starting) return');
     expect(main).toContain("settings.label(action)");
     expect(armory).not.toContain('仅模型展示'); expect(armory).not.toContain('不能装备作战');

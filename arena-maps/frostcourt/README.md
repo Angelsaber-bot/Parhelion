@@ -75,7 +75,7 @@ collision. Snow never changes friction or buries movement edges.
 Both offline/online RoomCore use the same `frostcourt` registry and `snowcourt`
 preset. The northern arcade remains 1.3 m high with two ramps; the southern bypass
 remains open. Playability/LOS/nav/network checks are independently maintained in
-`../../docs/ARENA_CHAPTER_QA.md`. Human PvP balance and device performance remain
+`../../docs/arena/ARENA_CHAPTER_QA.md`. Human PvP balance and device performance remain
 open. Chromium browser inspection is blocked by the sandbox socket restriction;
 Blender CPU Cycles previews are **actual exported GLB renders**, not in-game
 screenshots, browser acceptance or GPU benchmarks. Final image manifests record

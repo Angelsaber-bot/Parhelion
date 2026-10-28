@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Parhelion · 幻日谷 World Alpha</title>
+  <title>Parhelion · World</title>
   <style>
     :root { --ink: #1f2a44; --paper: rgba(255, 255, 255, 0.82); --accent: #ffb547; --cyan: #5fe7f2; }
     * { box-sizing: border-box; }
@@ -41,7 +41,9 @@
     #prompt { left: 50%; top: 58%; transform: translateX(-50%); color: #fff; font-size: 14px; text-shadow: 0 1px 4px #000a; }
     #help { left: 18px; bottom: 74px; background: var(--paper); border-radius: 12px; padding: 10px 14px; font-size: 12px; line-height: 1.7; }
     #help { white-space: pre-line; max-width: min(760px, 70vw); }
-    #settings-open { top: 16px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff; border: 1px solid #87a9b1; color: #24404f; cursor: pointer; }
+    /* menu buttons stack left of the minimap (servant button: src/servant.css) */
+    html body > .parhelion-language { top: 106px; left: auto; right: 222px; }
+    #settings-open { top: 18px; right: 222px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff; border: 1px solid #87a9b1; color: #24404f; cursor: pointer; }
     #settings-open.hidden { display: none; }
     #help b { display: inline-block; min-width: 54px; }
     #movement-mode { left: 18px; bottom: 160px; background: var(--paper); padding: 7px 12px; border-radius: 8px; font-size: 12px; }
@@ -58,7 +60,7 @@
 </head>
 <body>
   <canvas id="view"></canvas>
-  <button id="settings-open" type="button" class="hud">按键与灵敏度设置</button>
+  <button id="settings-open" type="button" class="hud">操作设置</button>
   <div id="crosshair" class="hud"></div>
   <div id="objective" class="hud"></div>
   <canvas id="minimap" class="hud" width="380" height="380"></canvas>
@@ -70,7 +72,7 @@
   <div id="movement-mode" class="hud" role="status"></div>
   <div id="help" class="hud">读取操作设置…</div>
   <div id="stats" class="hud"></div>
-  <div id="start" class="hud"><h1>幻日谷 · 落日王国 · 黑帆尽头 · 永冬之城 · 业火京都</h1><p>Parhelion · World Alpha 白盒</p><p id="loading">加载中…</p><button id="shot-mode" type="button" title="截图模式 · 单击画面恢复界面">隐藏界面（截图）</button></div>
+  <div id="start" class="hud"><h1 data-i18n-ignore>PARHELION</h1><p>WORLD</p><p id="loading">加载中…</p><button id="shot-mode" type="button" title="单击画面恢复界面">截图模式</button></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

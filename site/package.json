@@ -1,0 +1,13 @@
+{
+  "name": "parhelion-site",
+  "private": true,
+  "type": "module",
+  "description": "Parhelion website: homepage, build of Arena + World into one static site, and the one-port local launcher.",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "node scripts/launch.mjs",
+    "test": "node --test test/*.test.mjs",
+    "test:backend": "node scripts/verify-backend.mjs"
+  }
+}

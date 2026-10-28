@@ -88,46 +88,6 @@ for (const info of MAPS) {
   });
 }
 
-describe('map zenith specifics', () => {
-  const m = getMap('zenith');
-  const spawns = m.data.anchors.filter((a) => a.kind === 'spawn');
-  it('is point-symmetric', () => {
-    const solids = m.solids.map((s) => [s.minX, s.maxX, s.minY, s.maxY, s.minZ, s.maxZ].map((v) => Math.round(v * 1000)).join());
-    for (const s of m.solids) {
-      const mirrored = [-s.maxX, -s.minX, s.minY, s.maxY, -s.maxZ, -s.minZ].map((v) => Math.round(v * 1000)).join();
-      expect(solids, s.id).toContain(mirrored);
-    }
-  });
-  it('towers cannot see the enemy spawn; the pit cannot see either spawn', () => {
-    let rays = 0;
-    for (const deck of m.solids.filter((s) => s.id.startsWith('tower'))) {
-      const enemy = spawns.filter((a) => a.team === (deck.id.endsWith('_a') ? 'east' : 'west'));
-      for (let x = deck.minX + 0.4; x <= deck.maxX - 0.4; x += 0.5) for (let z = deck.minZ + 0.4; z <= deck.maxZ - 0.4; z += 0.5) {
-        if (blockedAt(m, x, z, deck.maxY)) continue;
-        for (const a of enemy) {
-          rays++;
-          expect(lineOfSight(m, [x, deck.maxY + m.eye, z], [a.position[0], a.position[1] + 1.0, a.position[2]]), `${deck.id} ${x},${z} -> ${a.id}`).toBe(false);
-        }
-      }
-    }
-    expect(rays).toBeGreaterThan(200);
-    for (let x = -12; x <= 12; x += 1) for (const z of [-8, -4, 4, 8]) for (const a of spawns) {
-      if (blockedAt(m, x, z, 0)) continue;
-      expect(lineOfSight(m, [x, m.eye, z], [a.position[0], a.position[1] + 1.0, a.position[2]]), `pit ${x},${z} -> ${a.id}`).toBe(false);
-    }
-  });
-  it('has three walkable tiers (pit, terrace ring, high ground)', () => {
-    const nav = new NavGrid(m);
-    const tiers = new Set(nav.nodes.map((n) => Math.round(n.y)));
-    for (const y of [0, 2, 4]) expect(tiers.has(y), `tier ${y}`).toBe(true);
-    const share = (y: number) => nav.nodes.filter((n) => Math.abs(n.y - y) < 0.05).length / nav.nodes.length;
-    expect(share(0)).toBeLessThan(0.4); // most of the map is raised, unlike ASTER's flat floor
-  });
-  it('the two towers have no clear sightline between their centres (gnomon)', () => {
-    expect(lineOfSight(m, [-8, 4 + m.eye, -18.5], [8, 4 + m.eye, 18.5])).toBe(false);
-  });
-});
-
 describe('map sakura specifics', () => {
   const m = getMap('sakura');
   it('is mirror-symmetric across x = 0', () => {
@@ -145,25 +105,5 @@ describe('map sakura specifics', () => {
   it('the sando is the long lane: 30 m+ sightlines exist there and nowhere through the hall', () => {
     expect(lineOfSight(m, [-20, m.eye, -17], [20, m.eye, -17])).toBe(true);
     expect(lineOfSight(m, [-20, m.eye, 0], [20, m.eye, 0])).toBe(false);
-  });
-});
-
-describe('map neon specifics', () => {
-  const m = getMap('neon');
-  const nav = new NavGrid(m);
-  it('spawns are in opposite corners and the gantry deck is reachable from both', () => {
-    const sp = m.data.anchors.filter((a) => a.kind === 'spawn');
-    for (const a of sp) expect(Math.abs(a.position[0]) > 20 && Math.abs(a.position[2]) > 20, a.id).toBe(true);
-    const deck = nav.nearest(0, 5.2, 0)!;
-    expect(deck.y).toBeCloseTo(5.2, 1);
-    for (const a of sp) expect(nav.path(nav.nearest(a.position[0], 0, a.position[2])!, deck), a.id).not.toBeNull();
-  });
-  it('is a maze: no clear ground sightline across the yard through the centre', () => {
-    for (const [a, b] of [[[-20, 0, 0], [20, 0, 0]], [[0, 0, -20], [0, 0, 20]], [[-18, 0, 18], [18, 0, -18]]] as Vec3[][]) {
-      expect(lineOfSight(m, [a[0], m.eye, a[2]], [b[0], m.eye, b[2]])).toBe(false);
-    }
-  });
-  it('anyone right under the deck is hidden from the deck', () => {
-    expect(lineOfSight(m, [0, 5.2 + m.eye, 0], [0, 1.1, 0])).toBe(false);
   });
 });

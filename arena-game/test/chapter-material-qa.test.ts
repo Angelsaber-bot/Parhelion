@@ -52,7 +52,7 @@ it('non-PBR materials retain their original authored shader rather than being re
 
 it('crafted chapter rendering is explicitly scoped and excludes every protected/legacy map',()=>{
   expect([...CRAFTED_CHAPTERS].sort()).toEqual(['blackflag','camlann','frostcourt']);
-  for(const id of ['aster','sakura','zenith','neon'])expect(CRAFTED_CHAPTERS.has(id)).toBe(false);
+  for(const id of ['aster','sakura'])expect(CRAFTED_CHAPTERS.has(id)).toBe(false);
   const scene=readFileSync(new URL('../src/scene.ts',import.meta.url),'utf8');
   expect(scene).toMatch(/CRAFTED_CHAPTERS\.has\(id\)\s*\?\s*toChapterMaterial\s*:\s*toCel/);
 });

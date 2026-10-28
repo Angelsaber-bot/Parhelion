@@ -156,7 +156,7 @@ world.name = 'World';
 for (const p of parts) world.add(p.root);
 scene.add(world);
 world.updateMatrixWorld(true);
-document.title = 'Parhelion · World Alpha';
+document.title = 'Parhelion · World';
 for (const l of layout.lights ?? []) {
   const pl = new THREE.PointLight(l.color, l.intensity, l.distance, 1.6);
   pl.position.set(...l.p);
@@ -638,10 +638,9 @@ const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
   const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
-  const teleports = [1,2,3,4,5,6,7].map((n) => k(`teleport${n}`)).join('/');
   $('help').textContent = bilingual(
-    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('objectives')} 任务栏 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标\n${k('fly')} 自由飞行调试（随镜头俯仰升降） · ${k('collision')} 碰撞体 · ${teleports} 调试传送 · ${k('reset')} 重置进度`,
-    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\n${k('fly')} Free-flight test (camera pitch controls altitude) · ${k('collision')} Colliders · ${teleports} Debug teleport · ${k('reset')} Reset progress`);
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('objectives')} 任务栏 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse`);
 
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();

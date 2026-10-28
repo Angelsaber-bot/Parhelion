@@ -1,0 +1,11 @@
+# Local-only folders on max's Mac
+/_local/
+/Parhelion-Website/
+.claude/
+.wrangler/
+.DS_Store
+*.log
+
+# Website build output and launcher state
+/site/dist/
+/site/.parhelion-launch*

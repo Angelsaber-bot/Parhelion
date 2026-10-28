@@ -1,4 +1,4 @@
-#servant-open { top: 68px; right: 16px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff9e8; border: 1px solid #b29c69; color: #3a3548; cursor: pointer; }
+#servant-open { top: 62px; right: 222px; pointer-events: auto; z-index: 5; padding: 10px 16px; border-radius: 9px; background: #fff9e8; border: 1px solid #b29c69; color: #3a3548; cursor: pointer; }
 #servant-open[hidden] { display: none !important; }
 #servant-settings { width: min(480px, calc(100vw - 28px)); max-height: calc(100vh - 32px); overflow: auto; border: 1px solid #b6a987; border-radius: 16px; padding: 22px; background: #f9f5eb; color: #27364e; box-shadow: 0 16px 70px #0006; font: 14px/1.6 system-ui, sans-serif; }
 #servant-settings::backdrop { background: #10203899; }

@@ -1,7 +1,0 @@
-/* Scoped to the language control; existing site layout and visual assets remain untouched. */
-.parhelion-language { display: inline-flex; align-items: center; gap: 8px; color: inherit; font: 12px/1.4 system-ui,sans-serif; white-space: nowrap; pointer-events: auto; }
-.parhelion-language select { min-width: 85px; padding: 7px 10px; color: #eaf3f5; border: 1px solid #7295a5; background: #15283b; border-radius: 8px; font: inherit; cursor: pointer; }
-.parhelion-language select:focus-visible { outline: 2px solid #ffc66d; outline-offset: 2px; }
-@media (max-width: 640px) { .parhelion-language > span { display: none; } }
-
-.parhelion-language[hidden] { display: none !important; }
