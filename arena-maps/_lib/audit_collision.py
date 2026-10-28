@@ -102,6 +102,7 @@ vn = {n['name']: n for n in g['nodes']}
 invisible = []
 for o in m['objects']:
     if not o['collision'] or o['role'] == 'floor': continue
+    if o.get('batch'): continue  # chapterkit verified this object's own art before batching
     n = vn.get('VIS_' + o['id'])
     tris = 0
     if n and 'mesh' in n:

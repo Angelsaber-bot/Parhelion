@@ -77,3 +77,30 @@ Fresh preview evidence is recorded separately by the independent QA pass.
   reachable tops have real colliders. `python3 arena-maps/_lib/audit_collision.py
   arena-maps/camlann camlann` reports no ghost art in the body band.
 - 69,320 triangles / 7.37 MB GLB (chapter budget raised to 110k / 9MB geometry).
+
+## 2026-10-28 rebuild: the ruined town
+
+max: players got stuck in the corners, the map was too empty and looked generated;
+CAMLANN should be buildings and ruins. The layout is new and point-symmetric
+((x, z) -> (-x, -z)); each side has:
+
+- **Great hall** (NW / SE): roofless 5 m stone walls, a timber loft along the
+  square-facing wall reached by a stair, three high windows from the loft over the
+  square, two ground doors, a west door to spawn and an east door plus a vaultable
+  breach to the north lane. Flagstone floor, hearth fire, table cover, banners.
+- **Watch tower**: 2.4 m plinth with broken parapets, climbed by a stepped rubble
+  slope from the square. The only high ground per side.
+- **Market square** round the sword in the stone: stall with canopy, cart, well.
+- **Cottage lanes**: four half-timbered houses (two roofed, one half-roofed, one
+  fallen in) with doors on two sides and shoot-through windows.
+- **Chapel** against the bank (arched door, west breach, lancets, glass over the
+  altar), a **barn** in the spawn court and a burned house with its chimney.
+
+Close quarters in the lanes and the hall, mid range across the square. The old inner
+turf berm ramps are gone: their overlap left 0.5 m pits in all four corners that
+nobody could walk or jump out of. `arena-game/test/stuck.test.ts` now scans every
+map for such traps.
+
+Town pieces carry `batch: "town"`: `chapterkit.save` checks each piece's art stays
+inside its own collider, then merges them into one `BATCH_town` node (one draw per
+material). 313 solids; 84,600 triangles / 8.26 MB GLB; ~95 draw calls in view.

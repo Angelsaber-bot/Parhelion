@@ -13,9 +13,9 @@ def check(ok,message):
 keys=['objects','anchors','routes','bounds','player']
 physics=hashlib.sha256(json.dumps({k:data[k] for k in keys},sort_keys=True,separators=(',',':')).encode()).hexdigest()
 # 2026-10-28 polish: approved layout + one slim stern_helm collider (the wheel used to be walk-through).
-check(physics=='a69f2b6c386be87ab52df2d2ea6f0145b9999d659692e582776e2125b8087754','Approved 2026-10-28 cover/perimeter layout (+stern helm collider) is unchanged')
+check(physics=='57bac675282476463d96219fbc3f0012b6ff23187fc33c6026492b2473d3a706','Approved 2026-10-28 cover/perimeter layout (+stern helm collider, gun slot closed) is unchanged')
 collision=hashlib.sha256((ROOT/'assets/blackflag_collision.glb').read_bytes()).hexdigest()
-check(collision=='3b7164a0d35386160113eac68212fda82f268b06d2a8e6b418205fd5ff6a91b7','Cover/perimeter collision GLB matches approved layout')
+check(collision=='e4d3c7e9fd1c41fbcb30f932900cb4ced32261630b97c842adfe9c6b243a93cd','Cover/perimeter collision GLB matches approved layout')
 textures=[]
 for im in g.get('images',[]):
     v=g['bufferViews'][im['bufferView']];raw=blob[v.get('byteOffset',0):v.get('byteOffset',0)+v['byteLength']]

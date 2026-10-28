@@ -111,7 +111,9 @@ for x,z in [(-11,-13),(9,13),(-3,13),(3,-13)]:
 # narrowing the two 5m-wide broadside loops or blocking cross-deck connections.
 c.box('cargo_crate_fore',[-8.5,.9,-1.1],[3,1.8,2.6],'timber')
 c.box('cargo_crate_aft',[9,.95,2],[3.4,1.9,2.5],'timber')
-for x,z in [(3,-14.8),(-3,14.8)]:
+# 2026-10-28 stuck scan: at z=+-14.8 the breastwork left a 0.45 m slot behind the gun.
+# Stepping off the gun dropped players into it with no way out; it now backs the gun.
+for x,z in [(3,-14.35),(-3,14.35)]:
     c.box(f'gun_breastwork_{x}',[x,.9,z],[6,1.8,.9],'timber')
 for name,pos,h in [('fore',[-8.5,0,-3.6],1.8),('aft',[9,0,4.5],1.9),('port_battery',[6.8,0,-13],1.8)]:
     c.anchor('cover_added_'+name,'cover',pos,height=h)

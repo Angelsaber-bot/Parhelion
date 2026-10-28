@@ -36,23 +36,61 @@ class Chapter:
             self.data['artPipeline'] = dict(embeddedMaterialTextures=True, projection='world-metre planar per face', channels=['baseColor','occlusionRoughnessMetallic','normal'])
         self.data.update(palette={k:v[0] for k,v in self.palette.items()}, objects=self.objects, anchors=self.anchors, routes=self.routes)
         (self.root/'runtime/map.json').write_text(json.dumps(self.data, indent=2, ensure_ascii=False)+'\n')
-        nodes, cols = [], []
+        nodes, cols, batches = [], [], {}
         for o in self.objects:
             v, c = Mesh(), Mesh()
             custom = render_object and render_object(v, o)
             if o['type'] == 'ramp':
-                v.wedge(o['material'], o); c.wedge('collision', o)
+                if not custom: v.wedge(o['material'], o)
+                c.wedge('collision', o)
             else:
                 if not custom: v.cbox(o['material'], o['position'], o['size'])
                 c.cbox('collision', o['position'], o['size'])
             if decorate_object: decorate_object(self.detail, o)
-            nodes.append(('VIS_'+o['id'], v, dict(source_id=o['id'], role=o['role'], collision=o['collision'], decorative=False)))
+            if o.get('batch'):
+                # Batched source objects (2026-10-28 CAMLANN town): same per-object art rule
+                # as a VIS_ node, enforced here, then merged so a town of walls costs one
+                # draw per material instead of one per wall piece.
+                lo, hi = mesh_bounds(v)
+                (bx0, by0, bz0), (bx1, by1, bz1) = object_box(o)
+                assert lo[0] >= bx0 - 1e-4 and lo[1] >= by0 - 1e-4 and lo[2] >= bz0 - 1e-4 and \
+                    hi[0] <= bx1 + 1e-4 and hi[1] <= by1 + 1e-4 and hi[2] <= bz1 + 1e-4, f'{o["id"]} art outside its box {lo} {hi}'
+                b = batches.setdefault(o['batch'], (Mesh(), []))
+                merge(b[0], v); b[1].append(o['id'])
+            else:
+                nodes.append(('VIS_'+o['id'], v, dict(source_id=o['id'], role=o['role'], collision=o['collision'], decorative=False)))
             if o['collision']: cols.append(('COL_'+o['id'], c, dict(source_id=o['id'], role=o['role'], collision=True, decorative=False)))
+        for name, (mesh, ids) in batches.items():
+            nodes.append(('BATCH_'+name, mesh, dict(role='structure', collision=False, decorative=False, batched=ids)))
         nodes.append(('DETAIL_chapter_craft', self.detail, dict(role='detail_batch', collision=False, decorative=True)))
         mats={**self.palette, 'collision':('#adbbce', 0, 1, 0, 1)}
         vis=write_glb(self.root/f'assets/{self.id}_visual.glb', nodes, list(self.palette), mats, textures=self.textures)
         col=write_glb(self.root/f'assets/{self.id}_collision.glb', cols, ['collision'], mats)
         print(json.dumps(dict(id=self.id, visual=vis, collision=col)))
+
+
+def object_box(o):
+    (x, y, z), (w, h, d) = o['position'], o['size']
+    y0 = y if o['type'] == 'ramp' else y - h / 2
+    return (x - w / 2, y0, z - d / 2), (x + w / 2, y0 + h, z + d / 2)
+
+
+def mesh_bounds(m):
+    lo, hi = [1e9] * 3, [-1e9] * 3
+    for P, _, _ in m.prims.values():
+        for j in range(0, len(P), 3):
+            for i in range(3):
+                lo[i] = min(lo[i], P[j + i]); hi[i] = max(hi[i], P[j + i])
+    return lo, hi
+
+
+def merge(dst, src):
+    """Append every triangle of src to dst (same materials, UVs kept)."""
+    for mat_, (P, N, I) in src.prims.items():
+        dP, dN, dI = dst.tri_list(mat_)
+        base = len(dP) // 3
+        dP.extend(P); dN.extend(N); dI.extend(i + base for i in I)
+        if mat_ in src.uvs: dst.uvs.setdefault(mat_, []).extend(src.uvs[mat_])
 
 
 def mat(hex, metal=0, rough=.9, emit=0):

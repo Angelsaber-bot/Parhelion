@@ -50,8 +50,15 @@ vn = {n['name']: n for n in vis['nodes']}; cn = {n['name']: n for n in col['node
 tris = sum(vis['accessors'][p['indices']]['count'] // 3 for me in vis['meshes'] for p in me['primitives'])
 for o in m['objects']:
     lo, hi = obj_box(o)
-    n = vn.get('VIS_' + o['id'])
-    check(n is not None, f'missing VIS_{o["id"]}')
+    if o.get('batch'):
+        # Per-object bounds were enforced by chapterkit before merging; here the batch
+        # must exist, list the object, and stay inside the union of its members' boxes.
+        n = vn.get('BATCH_' + o['batch'])
+        check(n is not None and o['id'] in n['extras'].get('batched', []), f'{o["id"]} missing from BATCH_{o["batch"]}')
+        n = None
+    else:
+        n = vn.get('VIS_' + o['id'])
+        check(n is not None, f'missing VIS_{o["id"]}')
     if n:
         a, b = node_bounds(vis, n)
         check(all(a[i] >= lo[i] - 1e-4 and b[i] <= hi[i] + 1e-4 for i in range(3)), f'VIS_{o["id"]} outside its box {a} {b} vs {lo} {hi}')
@@ -62,6 +69,14 @@ for o in m['objects']:
         if c:
             a, b = node_bounds(col, c)
             check(all(abs(a[i] - lo[i]) < 1e-4 and abs(b[i] - hi[i]) < 1e-4 for i in range(3)), f'COL_{o["id"]} bounds {a} {b} vs {lo} {hi}')
+for name, n in vn.items():
+    if not name.startswith('BATCH_'): continue
+    members = [o for o in m['objects'] if o.get('batch') == name[6:]]
+    boxes = [obj_box(o) for o in members]
+    ulo = [min(b[0][i] for b in boxes) for i in range(3)]; uhi = [max(b[1][i] for b in boxes) for i in range(3)]
+    a, b = node_bounds(vis, n)
+    check(all(a[i] >= ulo[i] - 1e-4 and b[i] <= uhi[i] + 1e-4 for i in range(3)), f'{name} outside its members')
+    check(n['extras'].get('decorative') is False and sorted(n['extras'].get('batched', [])) == sorted(o['id'] for o in members), f'{name} extras')
 check(len(cn) == sum(o['collision'] for o in m['objects']), 'collision node count')
 for g in (vis, col):
     check(all('uri' not in b for b in g['buffers']), 'no external buffers')
