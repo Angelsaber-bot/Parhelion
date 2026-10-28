@@ -82,7 +82,7 @@ export class WorldMap {
     for (const a of this.layout.areas) {
       const x = tx(a.c[0]), y = tz(a.c[1]) - (opts.full ? 22 : 0);
       ctx.font = `700 ${opts.full ? 23 : 18}px system-ui, sans-serif`;
-      const label = localizeText(a.name), w = ctx.measureText(label).width + 6, h = opts.full ? 26 : 20;
+      const label = localizeText(a.name), w = (ctx.measureText?.(label).width ?? label.length * (opts.full ? 23 : 18)) + 6, h = opts.full ? 26 : 20;
       const box: [number, number, number, number] = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
       if (boxes.some((o) => box[0] < o[2] && box[2] > o[0] && box[1] < o[3] && box[3] > o[1])) continue;
       boxes.push(box);
