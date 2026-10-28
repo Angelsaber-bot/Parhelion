@@ -1,0 +1,14 @@
+{
+  "deterministic": true,
+  "sha256": {
+    "runtime/map.json": "abf0aabac0334f13fcb562e41d0036d9615e744754c07ef49eb7cc79909cb62a",
+    "assets/blackflag_visual.glb": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "assets/blackflag_collision.glb": "6821311bc3758f520a52decd29e6617b6bf4b72af65f2b8c4435b1e3b6c2f13e",
+    "assets/materials/blackflag_sail_basecolor.png": "1beb11e4e640e43144e6d4e15dbf21da35ca79c088fecd1a8c41fb3c4182089f",
+    "assets/materials/canvas_basecolor.png": "e7eea522818069ae9f7ecac1d7b0ba88d56cd7e7521fa036c9798f3933f7a1c3",
+    "assets/materials/canvas_orm.png": "59a4a498cfc7d8d361facd872632304558d48aacd022fb4204eb48770888369d",
+    "assets/materials/metal_orm.png": "a914b29274fce5fd392640019913d2f8c04d73535455df3f37fe67b63452923e",
+    "assets/materials/oak_basecolor.png": "2f8fb07f96afdfe505d4cebca231d987d5751c5ca644f912eae67ae0d036def5",
+    "assets/materials/oak_orm.png": "0772ca4107806ea8c7efb7651c9eefde3cdb3fe773762dae85f6f4b576b4a6fa"
+  }
+}

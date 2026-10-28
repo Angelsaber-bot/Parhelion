@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { mountedChargeClip } from './mountedChargeMotion';
+import { musashiLocomotionClip } from './musashiLocomotion';
 
 export type Axis = readonly [number, number, number];
 export interface KitEvent { at: number; kind: 'fire' | 'hit'; socket?: string; }
@@ -88,7 +90,15 @@ export class CharacterKit {
     if (definition.visualOffset) this.model.position.add(new THREE.Vector3(...definition.visualOffset));
     this.root.name = `CharacterKit:${definition.id}`; this.root.add(this.model);
     this.mixer = new THREE.AnimationMixer(this.model);
-    for (const [state, clip] of Object.entries(definition.clips)) this.actions.set(state, this.mixer.clipAction(gltf.animations.find(c => c.name === clip.name)!));
+    for (const [state, clip] of Object.entries(definition.clips)) {
+      let animation = gltf.animations.find(c => c.name === clip.name)!;
+      if (definition.id === 'musashi') animation = musashiLocomotionClip(animation, this.model, state);
+      const run = definition.clips.run, contact = clip.events?.find(event => event.kind === 'hit')?.at;
+      if (definition.mount && state === 'attack' && run?.nominalSpeed && contact !== undefined && contact < clip.duration) {
+        animation = mountedChargeClip(animation, gltf.animations.find(c => c.name === run.name)!, run.nominalSpeed, contact);
+      }
+      this.actions.set(state, this.mixer.clipAction(animation));
+    }
     const transition = options.transitionSeconds ?? .18;
     this.transition = Number.isFinite(transition) ? THREE.MathUtils.clamp(transition, 0, .5) : .18;
     this.model.traverse(object => {

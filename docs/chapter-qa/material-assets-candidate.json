@@ -1,0 +1,462 @@
+{
+  "scope": "offline asset structure and resource cost, not GPU/browser performance",
+  "results": [
+    {
+      "map": "blackflag",
+      "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+      "visualBytes": 3804560,
+      "triangles": 41612,
+      "primitives": 94,
+      "texturedPrimitives": 85,
+      "channels": {
+        "baseColorTexture": 62,
+        "metallicRoughnessTexture": 85,
+        "occlusionTexture": 85
+      },
+      "images": [
+        {
+          "name": "oak_basecolor.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "format": "PNG",
+          "encodedBytes": 45758
+        },
+        {
+          "name": "oak_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 12322
+        },
+        {
+          "name": "metal_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 12326
+        },
+        {
+          "name": "canvas_basecolor.png",
+          "size": [
+            512,
+            512
+          ],
+          "format": "PNG",
+          "encodedBytes": 4599
+        },
+        {
+          "name": "canvas_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 11958
+        },
+        {
+          "name": "blackflag_sail_basecolor.png",
+          "size": [
+            1024,
+            1024
+          ],
+          "format": "PNG",
+          "encodedBytes": 18467
+        }
+      ],
+      "embeddedImageBytes": 105430,
+      "rgbaTextureBytes": 10223616,
+      "rgbaWithMipEstimateBytes": 13631488
+    },
+    {
+      "map": "frostcourt",
+      "sha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+      "visualBytes": 2957840,
+      "triangles": 34562,
+      "primitives": 79,
+      "texturedPrimitives": 54,
+      "channels": {
+        "baseColorTexture": 54,
+        "metallicRoughnessTexture": 54,
+        "occlusionTexture": 54,
+        "normalTexture": 54
+      },
+      "images": [
+        {
+          "name": "stone_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 5073
+        },
+        {
+          "name": "stone_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 8734
+        },
+        {
+          "name": "stone_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 16011
+        },
+        {
+          "name": "paving_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 6449
+        },
+        {
+          "name": "paving_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 8714
+        },
+        {
+          "name": "paving_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 16201
+        },
+        {
+          "name": "snow_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 3662
+        },
+        {
+          "name": "snow_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 8685
+        },
+        {
+          "name": "snow_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 15834
+        },
+        {
+          "name": "slate_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 4926
+        },
+        {
+          "name": "slate_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 7938
+        },
+        {
+          "name": "slate_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 13454
+        },
+        {
+          "name": "wood_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 7905
+        },
+        {
+          "name": "wood_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 9181
+        },
+        {
+          "name": "wood_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 17309
+        },
+        {
+          "name": "canvas_basecolor.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 2653
+        },
+        {
+          "name": "canvas_orm.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 4084
+        },
+        {
+          "name": "canvas_normal.png",
+          "size": [
+            128,
+            128
+          ],
+          "format": "PNG",
+          "encodedBytes": 3469
+        }
+      ],
+      "embeddedImageBytes": 160282,
+      "rgbaTextureBytes": 1179648,
+      "rgbaWithMipEstimateBytes": 1572864
+    },
+    {
+      "map": "camlann",
+      "sha256": "dabc812b3e422b157e5a7753a17c4e28937b90578225a7be4705f0ef0ceb20e5",
+      "visualBytes": 4762224,
+      "triangles": 41263,
+      "primitives": 195,
+      "texturedPrimitives": 187,
+      "channels": {
+        "baseColorTexture": 187,
+        "metallicRoughnessTexture": 186,
+        "occlusionTexture": 186,
+        "normalTexture": 186
+      },
+      "images": [
+        {
+          "name": "turf_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 34362
+        },
+        {
+          "name": "turf_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 8823
+        },
+        {
+          "name": "turf_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 96733
+        },
+        {
+          "name": "earth_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 33291
+        },
+        {
+          "name": "earth_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 8420
+        },
+        {
+          "name": "earth_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 114605
+        },
+        {
+          "name": "fieldstone_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 43590
+        },
+        {
+          "name": "fieldstone_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 34564
+        },
+        {
+          "name": "fieldstone_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 104651
+        },
+        {
+          "name": "oak_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 68915
+        },
+        {
+          "name": "oak_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 26562
+        },
+        {
+          "name": "oak_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 108204
+        },
+        {
+          "name": "linen_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 4059
+        },
+        {
+          "name": "linen_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 11162
+        },
+        {
+          "name": "linen_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 1987
+        },
+        {
+          "name": "iron_basecolor.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 41560
+        },
+        {
+          "name": "iron_orm.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 31066
+        },
+        {
+          "name": "iron_normal.png",
+          "size": [
+            256,
+            256
+          ],
+          "format": "PNG",
+          "encodedBytes": 21833
+        },
+        {
+          "name": "battlefield_ground.png",
+          "size": [
+            512,
+            384
+          ],
+          "format": "PNG",
+          "encodedBytes": 91946
+        }
+      ],
+      "embeddedImageBytes": 886333,
+      "rgbaTextureBytes": 5505024,
+      "rgbaWithMipEstimateBytes": 7340032
+    },
+    {
+      "map": "sakura",
+      "sha256": "83f504ce7db5b0242979b2bb76a817ef7d39e22479b1c57344fd7be9a7f52ee3",
+      "visualBytes": 1627752,
+      "triangles": 20810,
+      "primitives": 119,
+      "texturedPrimitives": 0,
+      "channels": {},
+      "images": [],
+      "embeddedImageBytes": 0,
+      "rgbaTextureBytes": 0,
+      "rgbaWithMipEstimateBytes": 0
+    }
+  ],
+  "failures": []
+}

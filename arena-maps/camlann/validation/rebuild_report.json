@@ -1,0 +1,27 @@
+{
+  "deterministic": true,
+  "sha256": {
+    "runtime/map.json": "f8a898f41b8b7c0146d7f104d054de9430745847f67257ddcbd39068043aea94",
+    "assets/camlann_visual.glb": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "assets/camlann_collision.glb": "91fb1cbd0b4317949225663f3668aa37a8bb82dc782c5c9677e996dad732e122",
+    "assets/materials/battlefield_ground.png": "206f011ad97a30f06e27897cf955421c16a527ba1ad720bdd3cd1be30e934604",
+    "assets/materials/earth_basecolor.png": "38ded5bfeb9eac9fae18fc65708c0209be8903d4f8a39c864a8a9cc1d3c5d095",
+    "assets/materials/earth_normal.png": "d4247f899c78b6c73d59ff0ac24c95244688c3c635a42cbc1a68cfeb0f5a2603",
+    "assets/materials/earth_orm.png": "b1100bd5974076da95a5b7c6a466c65efb685a4cc43d8dfb3f5e7d0512820f47",
+    "assets/materials/fieldstone_basecolor.png": "f5e07adb0004dcb3e99f7470bb86332511a107c4b642f8cac9dc22863bf72906",
+    "assets/materials/fieldstone_normal.png": "58c83d5bb127709631dd8d1325c691ca4d6b28fd7a18c62961529ec43d80d974",
+    "assets/materials/fieldstone_orm.png": "8029d52f5384801d2533f8df428646c2f8800849c5158dbc10f049f5c3229e75",
+    "assets/materials/iron_basecolor.png": "4bb28777b2d1261d9adc87668973076417c9404797aac5aaa8c114647af782b2",
+    "assets/materials/iron_normal.png": "58b9b40ec19e6efe0528a664cec5115d87fdfb97eca0eb387472a19582fa19c1",
+    "assets/materials/iron_orm.png": "509b8e17a88b8b917336918ba411d1603bfc4a0cbb60d1e280dc38e0232e5463",
+    "assets/materials/linen_basecolor.png": "31e4fff31f8847609cf1a116e62eaffb3f0a422b1c6d79cb31079edfbed4f67e",
+    "assets/materials/linen_normal.png": "59122c63928153e323bcacc92172aaa06e7cd7f0f31e182e48bbb4af9731c927",
+    "assets/materials/linen_orm.png": "d746ace3cf887428e2e3892d3b463f57034a3143dc9437e07886819531e21232",
+    "assets/materials/oak_basecolor.png": "f0767df6bedb34538952a2541bea8bc41a7d02ede93f55da52af3e736d87ad42",
+    "assets/materials/oak_normal.png": "63de4e9497c74908edf8761b4a2938fa5d7db4af491ddf8b5084aa874ab0902f",
+    "assets/materials/oak_orm.png": "3f36115a5f46747b9cd99aca88291c331395beed40960315eda8d2d2919800a5",
+    "assets/materials/turf_basecolor.png": "9e9f9d8a420477e9445ac15b7f854edcea8df6ddcd7d9277bdfc4cf3c48f4599",
+    "assets/materials/turf_normal.png": "c25529f87edc06d99fae0f6e847df2f606a1b2ec22049c91ce378c7c06e0a3a7",
+    "assets/materials/turf_orm.png": "09e955e61abac7d34471f42898f8cb26b9a77609bc3ae69685160e2a9564c0b2"
+  }
+}

@@ -1,5 +1,11 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['CAM LANN 誓约荒原', 'CAM LANN Oathfield'],
+  ['BLACKFLAG 黑帆战舰', 'BLACKFLAG Battle Galleon'],
+  ['FROSTCOURT 永冬庭院', 'FROSTCOURT Winter Courtyard'],
+  ['64×48 · 亚瑟王 · 低矮石垒、破损木厅与草土战场 · 双坡道遗址', '64×48 · Arthur · Low stone ruins, broken timber hall and turf battlefield · Two-ramp foundation'],
+  ['64×34 · 黑胡子 · 木甲板、风帆与升高艉楼 · 双舷环线', '64×34 · Blackbeard · Timber deck, sails and raised stern · Two broadside loops'],
+  ['60×48 · 拿破仑 · 飘雪石庭、冰封喷泉与单侧拱廊', '60×48 · Napoleon · Snowy stone court, frozen fountain and one-sided arcade'],
   ["2026 现代总部：720 米的幻日谷里有幻日观测所、枪械工坊和三道靶场，还有召唤大厅。重启幻日塔后，西、北、东、南四处时层断面会打开，分别通往落日王国、永冬之城、黑帆尽头和业火京都，一路走过去就到，不用传送。", "2026 modern HQ: the 720 m Parhelion Valley holds the Parhelion Observatory, the Armory, three firing ranges and the Summoning Hall. Restart the Parhelion Tower and four time seams open to the west, north, east and south, leading to the Sunset Kingdom, Everwinter City, Black Sail's End and Kyoto Ablaze. Just walk there; no teleporting."],
   ["换弹 ·", "Reload ·"],
   ['岚山·渡月桥', 'Arashiyama · Timber Crossing'],

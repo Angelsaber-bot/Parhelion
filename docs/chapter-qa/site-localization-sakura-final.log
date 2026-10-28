@@ -1,0 +1,10 @@
+✔ homepage patch preserves live HTML/assets, makes a backup, and is idempotent (235.174244ms)
+✔ homepage patch refuses incompatible pages and existing different locale artifacts (147.912638ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 484.334433

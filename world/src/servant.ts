@@ -147,23 +147,28 @@ export class ContractServant {
     }
     if (!this.disposed && this.activeOutfit === this.appearance.outfit) this.state = 'ready';
   }
-  /** Idle rest pose: arms hang clear of the armour and the sword rests point-down; weighted by Idle only. */
+  /** Idle and walking share the accepted relaxed pose; the original attack and run remain authored. */
   private bones = new Map<string, THREE.Object3D>();
   private bladeLocal?: THREE.Vector3;
   private readonly relax = new THREE.Quaternion();
   private tick(dt: number) {
     this.mixer?.update(dt);
-    const weight = this.clips.get('idle')?.getEffectiveWeight() ?? 0;
+    const idle = this.clips.get('idle'), walk = this.clips.get('walk');
+    // Disabled actions can retain their stored weight after a fade, so count only live actions.
+    const idleWeight = idle?.enabled ? idle.getEffectiveWeight() : 0;
+    const walkWeight = walk?.enabled ? walk.getEffectiveWeight() : 0;
+    const weight = Math.min(1, idleWeight + walkWeight);
     if (weight <= 0 || !this.bones.size) return;
+    const swing = walk ? Math.sin(walk.time / walk.getClip().duration * Math.PI * 2) * .10 * walkWeight : 0;
     const q = this.root.getWorldQuaternion(new THREE.Quaternion());
     const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q), right = new THREE.Vector3(-1, 0, 0).applyQuaternion(q), down = new THREE.Vector3(0, -1, 0);
     const dir = (...parts: Array<[THREE.Vector3, number]>) => parts.reduce((v, [d, k]) => v.addScaledVector(d, k), new THREE.Vector3()).normalize();
-    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .5], [fwd, .08]), weight);
-    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .5], [right, .3]), weight);
+    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .5], [fwd, .08 + swing]), weight);
+    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .5 + swing], [right, .3]), weight);
     // Blade flares outward more than the armoured skirt so the sword never sinks into it.
     this.aim('RightHand', null, dir([down, .85], [fwd, .2], [right, .55]), weight);
-    this.aim('LeftArm', 'LeftForeArm', dir([down, 1], [right, -.32], [fwd, .04]), weight);
-    this.aim('LeftForeArm', 'LeftHand', dir([down, 1], [right, -.18], [fwd, .22]), weight);
+    this.aim('LeftArm', 'LeftForeArm', dir([down, 1], [right, -.32], [fwd, .04 - swing]), weight);
+    this.aim('LeftForeArm', 'LeftHand', dir([down, 1], [right, -.18], [fwd, .22 - swing]), weight);
   }
   /** World-space swing of a bone so its direction (to `child`, or the sword blade) meets `target`. */
   private aim(name: string, child: string | null, target: THREE.Vector3, weight: number) {

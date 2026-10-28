@@ -1,0 +1,855 @@
+{
+  "mapId": "blackflag",
+  "name": "BLACKFLAG 黑帆战舰",
+  "version": "1.0.0",
+  "mode": "arena",
+  "units": "metres",
+  "upAxis": "Y",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "bounds": {
+    "min": [
+      -32.0,
+      0,
+      -17.0
+    ],
+    "max": [
+      32.0,
+      12,
+      17.0
+    ]
+  },
+  "presentation": {
+    "preset": "seabreeze"
+  },
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "designNotes": [
+    "Game-scaled fictional ship; not a historical reconstruction.",
+    "Both raised end decks have two 5m ramps.",
+    "Ropes and sail cloth are decorative; solid masts and cargo are authoritative collision."
+  ],
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "projection": "world-metre planar per face",
+    "channels": [
+      "baseColor",
+      "occlusionRoughnessMetallic",
+      "normal"
+    ]
+  },
+  "palette": {
+    "timber": "#9b623a",
+    "deck": "#c29662",
+    "plank": "#ad7c4d",
+    "grain": "#805738",
+    "tar": "#303a43",
+    "iron": "#505d63",
+    "brass": "#d5ae65",
+    "canvas": "#e7d8b6",
+    "canvasShade": "#c2ad8a",
+    "teal": "#4c9b9c",
+    "red": "#b95d4e",
+    "sea": "#397c89",
+    "foam": "#81bdc4",
+    "glass": "#8fc4be",
+    "distant": "#697e9b",
+    "blackSail": "#ffffff",
+    "woodLight": "#be925a",
+    "woodDark": "#654229",
+    "lamp": "#ffe2a0",
+    "deepSea": "#285b70",
+    "farRock": "#6c97a4"
+  },
+  "objects": [
+    {
+      "id": "main_deck",
+      "type": "box",
+      "position": [
+        0,
+        -0.45,
+        0
+      ],
+      "size": [
+        64,
+        0.9,
+        34
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "bulwark_-17",
+      "type": "box",
+      "position": [
+        0,
+        0.9,
+        -17
+      ],
+      "size": [
+        64,
+        1.8,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "bulwark_17",
+      "type": "box",
+      "position": [
+        0,
+        0.9,
+        17
+      ],
+      "size": [
+        64,
+        1.8,
+        0.5
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "end_bulwark_-32",
+      "type": "box",
+      "position": [
+        -32,
+        2,
+        0
+      ],
+      "size": [
+        0.5,
+        4,
+        34
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "end_bulwark_32",
+      "type": "box",
+      "position": [
+        32,
+        2,
+        0
+      ],
+      "size": [
+        0.5,
+        4,
+        34
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "bow_deck",
+      "type": "box",
+      "position": [
+        -27,
+        1.2,
+        0
+      ],
+      "size": [
+        10,
+        2.4,
+        33.5
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "bow_screen",
+      "type": "box",
+      "position": [
+        -24,
+        4.25,
+        0
+      ],
+      "size": [
+        0.7,
+        3.7,
+        10
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "bow_ramp_-10",
+      "type": "ramp",
+      "position": [
+        -19,
+        0,
+        -10
+      ],
+      "size": [
+        6,
+        2.4,
+        5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "bow_ramp_10",
+      "type": "ramp",
+      "position": [
+        -19,
+        0,
+        10
+      ],
+      "size": [
+        6,
+        2.4,
+        5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "bow_gun_-14",
+      "type": "box",
+      "position": [
+        -26,
+        3.05,
+        -14
+      ],
+      "size": [
+        3.2,
+        1.3,
+        1.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "bow_gun_14",
+      "type": "box",
+      "position": [
+        -26,
+        3.05,
+        14
+      ],
+      "size": [
+        3.2,
+        1.3,
+        1.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "bow_team_mark",
+      "type": "box",
+      "position": [
+        -30,
+        2.425,
+        0
+      ],
+      "size": [
+        1.2,
+        0.05,
+        4
+      ],
+      "material": "teal",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "stern_deck",
+      "type": "box",
+      "position": [
+        27,
+        1.2,
+        0
+      ],
+      "size": [
+        10,
+        2.4,
+        33.5
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "stern_screen",
+      "type": "box",
+      "position": [
+        24,
+        4.25,
+        0
+      ],
+      "size": [
+        0.7,
+        3.7,
+        10
+      ],
+      "material": "tar",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "stern_ramp_-10",
+      "type": "ramp",
+      "position": [
+        19,
+        0,
+        -10
+      ],
+      "size": [
+        6,
+        2.4,
+        5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "stern_ramp_10",
+      "type": "ramp",
+      "position": [
+        19,
+        0,
+        10
+      ],
+      "size": [
+        6,
+        2.4,
+        5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "stern_gun_-14",
+      "type": "box",
+      "position": [
+        26,
+        3.05,
+        -14
+      ],
+      "size": [
+        3.2,
+        1.3,
+        1.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stern_gun_14",
+      "type": "box",
+      "position": [
+        26,
+        3.05,
+        14
+      ],
+      "size": [
+        3.2,
+        1.3,
+        1.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "stern_team_mark",
+      "type": "box",
+      "position": [
+        30,
+        2.425,
+        0
+      ],
+      "size": [
+        1.2,
+        0.05,
+        4
+      ],
+      "material": "red",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "hatch_coaming",
+      "type": "box",
+      "position": [
+        0,
+        0.7,
+        0
+      ],
+      "size": [
+        7,
+        1.4,
+        6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "main_mast",
+      "type": "box",
+      "position": [
+        0,
+        8,
+        0
+      ],
+      "size": [
+        0.9,
+        16,
+        0.9
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "fore_mast",
+      "type": "box",
+      "position": [
+        -13,
+        6,
+        -2
+      ],
+      "size": [
+        0.7,
+        12,
+        0.7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "cargo_bow",
+      "type": "box",
+      "position": [
+        -9,
+        1.4,
+        4
+      ],
+      "size": [
+        4,
+        2.8,
+        3
+      ],
+      "material": "canvas",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "cargo_stern",
+      "type": "box",
+      "position": [
+        10,
+        1.5,
+        -4
+      ],
+      "size": [
+        4,
+        3,
+        3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_-11_-13",
+      "type": "box",
+      "position": [
+        -11,
+        0.65,
+        -13
+      ],
+      "size": [
+        3.4,
+        1.3,
+        1.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_9_13",
+      "type": "box",
+      "position": [
+        9,
+        0.65,
+        13
+      ],
+      "size": [
+        3.4,
+        1.3,
+        1.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_-3_13",
+      "type": "box",
+      "position": [
+        -3,
+        0.65,
+        13
+      ],
+      "size": [
+        3.4,
+        1.3,
+        1.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "gun_3_-13",
+      "type": "box",
+      "position": [
+        3,
+        0.65,
+        -13
+      ],
+      "size": [
+        3.4,
+        1.3,
+        1.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_0",
+      "kind": "spawn",
+      "position": [
+        -28,
+        2.4,
+        -2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_1",
+      "kind": "spawn",
+      "position": [
+        -28,
+        2.4,
+        2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "cover_bow",
+      "kind": "cover",
+      "position": [
+        -26,
+        2.4,
+        0
+      ],
+      "height": 3.7
+    },
+    {
+      "id": "spawn_east_0",
+      "kind": "spawn",
+      "position": [
+        28,
+        2.4,
+        -2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "spawn",
+      "position": [
+        28,
+        2.4,
+        2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_stern",
+      "kind": "cover",
+      "position": [
+        26,
+        2.4,
+        0
+      ],
+      "height": 3.7
+    },
+    {
+      "id": "cover_cargo_bow",
+      "kind": "cover",
+      "position": [
+        -11.8,
+        0,
+        4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_cargo_stern",
+      "kind": "cover",
+      "position": [
+        12.8,
+        0,
+        -4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_hatch_n",
+      "kind": "cover",
+      "position": [
+        0,
+        0,
+        -4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_hatch_s",
+      "kind": "cover",
+      "position": [
+        0,
+        0,
+        4
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "objective_deck",
+      "kind": "objective",
+      "position": [
+        4.8,
+        0,
+        0
+      ],
+      "radius": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "port_loop",
+      "name": "port loop",
+      "points": [
+        [
+          -28,
+          2.4,
+          -2
+        ],
+        [
+          -28,
+          2.4,
+          -10
+        ],
+        [
+          -23,
+          2.4,
+          -10
+        ],
+        [
+          -15,
+          0,
+          -10
+        ],
+        [
+          15,
+          0,
+          -10
+        ],
+        [
+          23,
+          2.4,
+          -10
+        ],
+        [
+          28,
+          2.4,
+          -10
+        ],
+        [
+          28,
+          2.4,
+          -2
+        ]
+      ]
+    },
+    {
+      "id": "starboard_loop",
+      "name": "starboard loop",
+      "points": [
+        [
+          -28,
+          2.4,
+          2
+        ],
+        [
+          -28,
+          2.4,
+          10
+        ],
+        [
+          -23,
+          2.4,
+          10
+        ],
+        [
+          -15,
+          0,
+          10
+        ],
+        [
+          15,
+          0,
+          10
+        ],
+        [
+          23,
+          2.4,
+          10
+        ],
+        [
+          28,
+          2.4,
+          10
+        ],
+        [
+          28,
+          2.4,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "deck_breach",
+      "name": "deck breach",
+      "points": [
+        [
+          -15,
+          0,
+          -10
+        ],
+        [
+          -7,
+          0,
+          -8
+        ],
+        [
+          -5,
+          0,
+          -4
+        ],
+        [
+          5,
+          0,
+          -4
+        ],
+        [
+          6,
+          0,
+          5
+        ],
+        [
+          15,
+          0,
+          8
+        ],
+        [
+          15,
+          0,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "cross_deck",
+      "name": "cross deck",
+      "points": [
+        [
+          -15,
+          0,
+          -10
+        ],
+        [
+          -15,
+          0,
+          10
+        ],
+        [
+          -5,
+          0,
+          10
+        ],
+        [
+          -5,
+          0,
+          4
+        ],
+        [
+          5,
+          0,
+          4
+        ],
+        [
+          5,
+          0,
+          10
+        ],
+        [
+          15,
+          0,
+          10
+        ],
+        [
+          15,
+          0,
+          -10
+        ]
+      ]
+    }
+  ]
+}

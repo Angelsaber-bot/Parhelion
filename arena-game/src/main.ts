@@ -1,6 +1,6 @@
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
 import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
-import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
+import { getMap, MAPS, CHAPTER_MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, WEAPONS, weaponIndex, type TeamLayout } from '../shared/content.ts';
 import { DEFAULT_PORT, PUBLIC_SERVER, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './audio.ts';
@@ -16,8 +16,11 @@ import asterThumb from './assets/maps/aster.webp';
 import zenithThumb from './assets/maps/zenith.webp';
 import sakuraThumb from './assets/maps/sakura.webp';
 import neonThumb from './assets/maps/neon.webp';
+import blackflagThumb from './assets/maps/blackflag.webp';
+import frostcourtThumb from './assets/maps/frostcourt.webp';
+import camlannThumb from './assets/maps/camlann.webp';
 
-const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb, sakura: sakuraThumb, neon: neonThumb };
+const MAP_THUMBS: Record<string, string> = { aster: asterThumb, zenith: zenithThumb, sakura: sakuraThumb, neon: neonThumb, blackflag: blackflagThumb, frostcourt: frostcourtThumb, camlann: camlannThumb };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
@@ -97,8 +100,11 @@ function renderChars() {
   $('chars').querySelectorAll<HTMLButtonElement>('.char').forEach((b) => b.onclick = () => { char = Number(b.dataset.i); renderChars(); });
 }
 function renderMaps() {
-  $('maps').innerHTML = MAPS.map((m) =>
-    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${localizeText(m.name)}</b><span>${localizeText(m.blurb)}</span></button>`).join('');
+  // Legacy URLs/saved rooms stay compatible, but never displace a chapter from the five-map menu.
+  const selectedLegacy = MAPS.find((m) => m.id === mapId && m.chapter === undefined);
+  const choices = selectedLegacy ? [...CHAPTER_MAPS, selectedLegacy] : CHAPTER_MAPS;
+  $('maps').innerHTML = choices.map((m) =>
+    `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${localizeText(m.name)}</b><span>${m.chapter ? bilingual(`第 ${m.chapter} 章`, `Chapter ${m.chapter}`) : bilingual('经典地图 · 兼容保留', 'Legacy map · retained')} · ${localizeText(m.blurb)}</span></button>`).join('');
   $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
   $('title').textContent = localizeText(MAPS.find((m) => m.id === mapId)!.name);
 }

@@ -60,6 +60,15 @@ export class Player {
 
   constructor(public colliders: Collider[], public waterLevel: number) {}
 
+  /** Full new-game placement, unlike an ordinary teleport/defeat respawn. */
+  restartAt(x: number, y: number, z: number, yaw = 0) {
+    this.flying = false;
+    this.pitch = 0;
+    this.jumpHeld = false;
+    this.inUpdraft = false;
+    this.teleport(x, y, z, yaw);
+  }
+
   teleport(x: number, y: number, z: number, yaw?: number) {
     this.pos.set(x, y, z);
     this.vel.set(0, 0, 0);
@@ -129,6 +138,9 @@ export class Player {
     this.pos.addScaledVector(wish, speed * dt);
     this.pos.addScaledVector(this.vel, dt);
     this.collide();
+    // Landing is authoritative in this step: do not leave the canopy/ADS in glide mode
+    // until the next physics step (which can be a different rendered frame).
+    if (this.onGround) this.gliding = false;
     // Horizontal velocity only comes from slope slides / landings. Kill it on the ground and
     // bleed it off in the air or water, otherwise it carries over and the player keeps gliding.
     if (this.onGround) { this.vel.x = 0; this.vel.z = 0; }

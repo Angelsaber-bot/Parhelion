@@ -85,14 +85,17 @@ describe('authoritative crouch', () => {
     match.addPlayer('b', { name: 'b', team: 'B', char: 0, skins: [], bot: false });
     const a = match.player('a')!, b = match.player('b')!;
     Object.assign(a, { x: 0, y: 0, z: 10, weapon: 2, loadout: ['halo', 'lumen', 'blade'] }); Object.assign(b, { x: 0, y: 0, z: 0 });
-    match.phase = 'live'; match.phaseT = 10000; match.step();
+    match.phase = 'live'; match.phaseT = 10000;
+    // Stance rewind is tested after spawn immunity, with relative history ticks.
+    for (let i = 0; i < 150; i++) match.step();
+    const base = match.tick; match.step();
     b.crouched = true; match.step(); // tick 2: below standing head ray
     b.crouched = false; match.step();
-    match.queueInputs('a', [input(1, { buttons: BTN.FIRE, weapon: 0, view: 2 })]); match.step();
+    match.queueInputs('a', [input(1, { buttons: BTN.FIRE, weapon: 0, view: base + 2 })]); match.step();
     expect(b.hp).toBe(150);
     b.crouched = true; match.step();
     a.fireCd = 0; a.prevButtons = 0;
-    match.queueInputs('a', [input(2, { buttons: BTN.FIRE, weapon: 0, view: 3 })]); match.step();
+    match.queueInputs('a', [input(2, { buttons: BTN.FIRE, weapon: 0, view: base + 3 })]); match.step();
     expect(b.hp).toBeLessThan(150); // tick 3 was standing, despite current crouch
     b.alive = false; match.slots.get('b')!.respawn = 1; match.step();
     expect(b.alive).toBe(true); expect(b.crouched).toBe(false); expect(b.prevButtons).toBe(0);

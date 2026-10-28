@@ -1,0 +1,61 @@
+{
+  "method": "Real WorldMap.draw command capture, SVG replay and sharp rasterization; not browser/WebGL validation",
+  "baselineCommit": "a3096254ef0fff455a29932bc5fef2e57fa49f44",
+  "currentFiles": [
+    "world/src/map.ts",
+    "world/src/minimapMarkers.ts"
+  ],
+  "sourceSha256": {
+    "world/src/map.ts": "7cd631f6c00ac9deb50229911eab331f9a2b75a982df085f63d5c03ce5e50de8",
+    "world/src/minimapMarkers.ts": "2a231b16055c8e7caa83ffd1141feae58450c0e150b5ff78d42b73a2e0c2d30c",
+    "world/validation/minimap-markers.test.ts": "1790ace2fdb62c5ab5237fd8887bcf3517cb928d87ecd3b1aa86c5c486d867a9",
+    "world/validation/regression.test.ts": "8d842817a26095d90848682224389701296040d6bdd62d78d87d987be4aee4fb",
+    "world/validation/minimap/render-preview.ts": "24567ff46aaf146e991b35fd68dece8e28d130a69f9223970ef76978c8cac8c5"
+  },
+  "terrain": "Real merged WorldGrid from all five shipped GLBs",
+  "scenes": [
+    {
+      "id": "hub",
+      "title": "总部密集区域 / Dense headquarters",
+      "player": [
+        -112,
+        246
+      ],
+      "target": [
+        -65,
+        250
+      ]
+    },
+    {
+      "id": "entrance",
+      "title": "章节入口 / Chapter entrance",
+      "player": [
+        325,
+        30
+      ],
+      "target": [
+        455,
+        45
+      ]
+    },
+    {
+      "id": "distant-target",
+      "title": "远处任务保留方向 / Distant quest bearing",
+      "player": [
+        3,
+        159
+      ],
+      "target": [
+        0,
+        -150.5
+      ]
+    }
+  ],
+  "fullMapRegression": "Before/after full-map SVG commands exactly equal in all three scene fixtures",
+  "caveats": [
+    "Approximate deterministic text metrics; font rasterization can differ from browser",
+    "16 synthetic live enemies per scene for density stress, not claimed gameplay positions",
+    "Pulse frozen at performance.now() = 0",
+    "Circle and border reproduce existing CSS"
+  ]
+}

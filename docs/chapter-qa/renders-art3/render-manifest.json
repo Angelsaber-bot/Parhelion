@@ -1,0 +1,98 @@
+[
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art3/camlann-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -16,
+      1.7,
+      11
+    ],
+    "target": [
+      5,
+      2,
+      -5
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art3/camlann-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "hero",
+    "camera": [
+      0,
+      1.7,
+      9
+    ],
+    "target": [
+      0,
+      3,
+      -15
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art3/camlann-hero.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "sourceStillMatches": true,
+    "view": "sword",
+    "camera": [
+      -23,
+      1.7,
+      2
+    ],
+    "target": [
+      -18,
+      2,
+      -4
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art3/camlann-sword.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  }
+]

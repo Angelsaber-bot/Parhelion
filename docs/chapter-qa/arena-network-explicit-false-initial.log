@@ -1,0 +1,51 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 test
+> vitest run --run test/chapter-network-qa.test.ts
+
+
+ RUN  v5.0.5 /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game
+
+stdout | test/chapter-network-qa.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+ ❯ test/chapter-network-qa.test.ts (1 test | 1 failed) 86ms
+   × all five chapters pair only with their own map and acknowledge authoritative input over real sockets 76ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/chapter-network-qa.test.ts > all five chapters pair only with their own map and acknowledge authoritative input over real sockets
+AssertionError: expected 'px8XY1KFi' to be 'AlNQkMbPp' // Object.is equality
+
+Expected: "AlNQkMbPp"
+Received: "px8XY1KFi"
+
+ ❯ test/chapter-network-qa.test.ts:31:112
+     29|       expect(ids.has(a.roomId)).toBe(false);ids.add(a.roomId);
+     30|       const b=await client.joinOrCreate('arena',{...options,team:'B',n…
+     31|       const welcomeB=await next<{map:string}>(b,'welcome');expect(welc…
+       |                                                                                                                ^
+     32|       b.onMessage('snap',()=>{});
+     33|       const acknowledged=next<Snapshot>(a,'snap',s=>s.players.some(p=>…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  08:16:36
+   Duration  646ms (import 49%, transform 27%, tests 21%, worker 3%)
+

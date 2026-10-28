@@ -31,6 +31,13 @@ export function addGateCraft(b:Batch,x:number,y:number,z:number,ry:number,w:numb
     }
     f.box(0,y+top-.30,v,w*.94,.20,.25,'#a54330');
     f.box(0,y+top-2.35,v,w*.94,.16,.28,'#e2ca9c');
+    // Dark, low-poly kugikakushi nail covers sit on the beam/post joints. They
+    // articulate existing joinery rather than adding ornaments in the opening.
+    for(const u of [-w*.38,-w*.25,w*.25,w*.38]){
+      const at=f.point(u,y+top-2.35,v+side*.16);
+      b.add(CYL8,'#4b4034',T(...at,ry,.105,.035,.105,Math.PI/2),false);
+      b.add(CYL8,'#b19357',T(...f.point(u,y+top-2.35,v+side*.183),ry,.032,.016,.032,Math.PI/2),false);
+    }
     // High gallery: deep shadow behind the open balustrade, pale plaster upper register.
     f.box(0,y+top-1.40,v-.04*side,w*.85,1.4,.06,'#79422f');
     for(let k=0;k<7;k++) f.box(-w*.37+k*w*.123,y+top-1.3,v+.06*side,.11,1.60,.11,'#d6ad77');

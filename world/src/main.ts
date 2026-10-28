@@ -34,6 +34,7 @@ import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './servantAppearance';
 import { createServantPanel } from './servantPanel';
 import { WorldCombat } from './combatView';
+import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
 import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
@@ -255,18 +256,10 @@ const map = new WorldMap(grid, layout);
 const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.region === regionAt(x, z).id)!.objective;
 
 // ───────────── progress (local, per browser) ─────────────
-const SAVE_KEY = 'parhelion.world.progress.v2';
-const done = new Set<string>();
-const found = new Set<string>();
-// v1 saves were per region; fold them in once (marker ids are unique across regions except spawns)
-for (const key of [SAVE_KEY, 'parhelion.world_alpha.progress.v1', 'parhelion.world_coast.progress.v1']) {
-  try {
-    const s = JSON.parse(localStorage.getItem(key) ?? '{}');
-    (s.done ?? []).forEach((x: string) => done.add(x));
-    (s.found ?? []).forEach((x: string) => found.add(x));
-  } catch { /* storage unavailable */ }
-}
-const save = () => { try { localStorage.setItem(SAVE_KEY, JSON.stringify({ done: [...done], found: [...found] })); } catch { /* ignore */ } };
+const progressStorage = (() => { try { return localStorage; } catch { return undefined; } })();
+const worldProgress = new WorldProgress(progressStorage);
+const { done, found } = worldProgress;
+const save = () => worldProgress.save();
 
 const haloMat = (byName('Tower_Halo')?.material as THREE.MeshBasicMaterial | undefined);
 function applyWorldState() {
@@ -428,7 +421,10 @@ function updateCold(dt: number) {
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
 player.updrafts = layout.updrafts ?? [];
-const spawn = markers.get(startRegion === 'alpha' ? 'spawn_p1' : `${startRegion}_spawn_p1`) ?? markers.get('spawn_p1')!;
+const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
+// URL starts are intentional debug entry points only. Reset always returns to the authored Alpha
+// camp, and subsequent defeat respawns in this session must not jump back to the old debug chapter.
+let spawn = markers.get(startRegion === 'alpha' ? INITIAL_SPAWN_ID : `${startRegion}_spawn_p1`) ?? initialSpawn;
 const spawnAt = (areaId?: string) => {
   const a = layout.areas.find((x) => x.id === areaId);
   if (!a) return player.teleport(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
@@ -441,17 +437,20 @@ spawnAt(params.get('spawn') ?? undefined);
 // explorer character + third-person shoulder camera
 setLoading('加载精修角色…');
 const rig = await loadSkinnedCharacter({ outlines: !params.has('noline') });
+// Hide the parent before asynchronous weapon art attaches: neither loading nor a late model can
+// grant ownership or flash an unearned gun on a clean start.
+rig.joints.Gun.visible = worldProgress.armed;
 scene.add(rig.root);
 const rifle = attachExplorerRifle(rig, renderer);
 try { await rifle.ready; } catch (error) { rifle.dispose(); rig.dispose(); throw error; }
 addEventListener('pagehide', (e) => { if (!e.persisted) { rifle.dispose(); rig.dispose(); } });
 const anim = new SkinnedCharacterAnimator(rig);
-anim.facing = player.yaw + Math.PI;
-const thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
+anim.reset(worldProgress.armed, player.yaw + Math.PI);
+let thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
 let camDist = 3.6;
 const prevPos = player.pos.clone();
 
-const contractStorage = (() => { try { return localStorage; } catch { return undefined; } })();
+const contractStorage = progressStorage;
 const contract = new FirstContract(done, contractStorage);
 const servantAppearance = new ServantAppearance(contractStorage);
 const servant = new ContractServant({ scene, renderer, marker: markers.get('saber_contract')!, contract, appearance: servantAppearance, colliders,
@@ -464,7 +463,7 @@ const servant = new ContractServant({ scene, renderer, marker: markers.get('sabe
 // lifecycle, and do not invent new classes or damage rules.
 // Once contracted and chosen as the companion, the same actor follows the player (KitCompanion).
 const companion = (range: number, damage: number) => new KitCompanion({ colliders, range, damage,
-  target: (position, r) => { const hit = combat.allyTarget(position, r); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  target: (position, r, targetId) => { const hit = combat.allyTarget(position, r, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   engage: () => { const hit = combat.allyEngage(15); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
@@ -565,7 +564,37 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
   for (const entry of eraActors) entry.actor?.dispose();
 } });
 function resetProgress() {
-  done.clear(); found.clear(); contract.reset(); combat.reset(); save(); applyWorldState();
+  clearInput();
+  const saved = worldProgress.reset();
+  // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
+  // and the hash; replaceState changes no page and adds no browser-history entry.
+  clearStartOverrides(params);
+  const url = new URL(location.href); clearStartOverrides(url.searchParams);
+  try { history.replaceState(history.state, '', url.href); } catch { /* Restricted embedding may prohibit URL writes. */ }
+  contract.reset(); combat.reset();
+  spawn = initialSpawn;
+  player.restartAt(initialSpawn.p[0], initialSpawn.p[1] + 1, initialSpawn.p[2], 0);
+  prevPos.copy(player.pos); rig.root.position.copy(player.pos);
+  anim.reset(worldProgress.armed, player.yaw + Math.PI);
+  inspectServant = false; thirdPerson = true; rig.root.visible = true;
+  servant.update(0, player.pos, anim.facing - Math.PI, false, true);
+  for (const entry of eraActors) {
+    entry.follow.release(entry.actor);
+    if (entry.actor) {
+      const marker = markers.get(entry.markerId)!;
+      entry.actor.root.position.fromArray(marker.p); entry.actor.root.rotation.y = Math.PI;
+      entry.actor.root.visible = false;
+    }
+  }
+  cold.warmth = 100; cold.frozen = false; cold.warned = false;
+  coldHud.hidden = true; frost.style.opacity = '0';
+  acc = 0; camDist = 3.6; currentArea = ''; lastRegion = 'alpha';
+  camera.fov = baseFov; camera.updateProjectionMatrix();
+  $('crosshair').classList.remove('aiming', 'hit');
+  $('movement-mode').textContent = ''; $('prompt').textContent = '';
+  applyWorldState(); renderContract();
+  toast(saved ? bilingual('进度已重置 · 已空手返回初始营地', 'Progress reset · Returned unarmed to the starting camp')
+    : bilingual('已空手返回初始营地；浏览器无法保存重置，刷新可能恢复旧进度', 'Returned unarmed to the starting camp; reset could not be saved, so reloading may restore old progress'));
 }
 const keys = new Set<string>();
 const aim = new ShoulderAim();
@@ -675,7 +704,7 @@ function press(binding: string, repeat = false) {
     if (next) { const n = servantName(next); toast(bilingual(`切换从者：${n.zh}`, `Servant switched: ${n.en}`)); }
     else toast(bilingual('缔结第二份契约后才能切换从者', 'Contract a second servant to switch'));
   }
-  if (action === 'reset' && !down('sprint')) { resetProgress(); toast('进度已重置'); }
+  if (action === 'reset' && !down('sprint')) resetProgress();
   if (action.startsWith('teleport')) {
     clearInput(); const n = Number(action.slice('teleport'.length));
     const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x, player.pos.z).id);
@@ -708,7 +737,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast,
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const ray = new THREE.Raycaster();
 function shoot() {
-  if (!gameplayActive() || player.flying || !combat.canShoot()) return;
+  if (!worldProgress.armed || !gameplayActive() || player.flying || !combat.canShoot()) return;
   const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
@@ -781,12 +810,17 @@ function interact() {
     return;
   }
   done.add(m.id);
+  if (m.id === ARMORY_MARKER) {
+    // An old held trigger/ADS must not silently activate when the weapon is first collected.
+    clearInput();
+    anim.update(0, { speed: 0, onGround: player.onGround, swimming: player.swimming, vy: player.vel.y,
+      moveYaw: null, gliding: player.gliding, armed: worldProgress.armed, aim: 0, firing: false, pitch: player.pitch });
+  }
   if (servantByContract(m.id)) contract.recruit(m.id);
   save(); applyWorldState();
   const msg: Record<string, string> = {
     tower_console: '幻日塔重启！光环点亮了整个山谷，四处时层断面同时显现',
     hq_terminal: '调查员身份已登记：世界地图与历史档案已开放',
-    armory_rack: '领取 Lumen AR 与弹药，去靶场试试手感',
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
     seam_east: '东部山口：海风里混着 1718 年的火药味',
@@ -819,7 +853,8 @@ function interact() {
     const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
-  toast(msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
+  toast(m.id === ARMORY_MARKER ? bilingual('已领取曙光 AR 与弹药，去靶场试试手感', 'Dawn AR and ammunition acquired · Try the firing range')
+    : msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
 }
 function checkDiscoveries() {
   for (const m of layout.markers) {
@@ -875,7 +910,7 @@ function frame(now: number) {
   if (cold.frozen) { input.x *= 0.55; input.z *= 0.55; input.sprint = false; }
   while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
 
-  const canAim = gameplayActive() && !player.swimming && !player.gliding && !player.flying;
+  const canAim = worldProgress.armed && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
   const ads = aim.step(dt, canAim);
   $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
@@ -894,7 +929,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, aim: ads, pitch: player.pitch, firing: down('fire'), lookYaw: player.yaw + Math.PI });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, armed: worldProgress.armed, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire'), lookYaw: player.yaw + Math.PI });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -956,8 +991,7 @@ function frame(now: number) {
   const tgt = guideOn ? guideTarget() : null;
   updateGuide(tgt, now);
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
-  const enemies = [...combat.state.enemies, ...combat.state.bosses].filter((e) => e.mode !== 'dead' && e.hp > 0).map((e) => ({ p: e.p, boss: e.kind === 'king' }));
-  map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt, enemies });
+  map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
   if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt }); // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;

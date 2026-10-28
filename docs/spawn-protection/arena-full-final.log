@@ -1,0 +1,229 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 test
+> vitest run --reporter=dot
+
+
+ RUN  v5.0.5 /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game
+
+··············stdout | test/chapter-network-qa.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+stdout | test/server.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+stdout | test/session-rematch.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+stdout | test/spawn-protection-network.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'welcome'.
+
+···stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'welcome'.
+
+····················································································stderr | test/weapon-art.test.ts > load failure retains the usable fallback and its muzzle
+Weapon art unavailable; procedural fallback retained. Error: 404
+    at WeaponArtPool.load (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/test/weapon-art.test.ts:84:72)
+    at /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/src/weaponArt.ts:45:53
+    at /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/test/weapon-art.test.ts:85:53
+
+····································································································································stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'welcome'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+stderr | test/server.test.ts > ArenaRoom > 1v1: two clients get teams, snapshots, and a team-full rejection
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+·stderr | test/server.test.ts > ArenaRoom > bot fill: a lone human gets bots in the other slots
+@colyseus/sdk: onMessage() not registered for type 'welcome'.
+
+·stderr | test/server.test.ts > ArenaRoom > map choice: players on different maps get different rooms, each told its map
+@colyseus/sdk: onMessage() not registered for type 'snap'.
+
+·stderr | test/server.test.ts > ArenaRoom > new server rejects an old client without crouch rules version
+Error: 竞技场客户端与服务器版本不匹配；请使用同一版本。当前装备与近战规则需要版本 3 客户端和服务器。
+    at assertRulesVersion (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/shared/protocol.ts:11:40)
+    at ArenaRoom.onAuth (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/server/ArenaRoom.ts:31:5)
+    at ArenaRoom._onJoin (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Room.mjs:1105:39)
+    at connectClientToRoom (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Transport.mjs:132:24)
+    at WebSocketServer.onConnection (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:192:13)
+    at WebSocketServer.emit (node:events:514:28)
+    at file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:120
+    at WebSocketServer.completeUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:450:5)
+    at WebSocketServer.handleUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:356:10)
+    at completeUpgrade (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:70)
+
+stderr | test/server.test.ts > ArenaRoom > real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs
+Room connection was closed unexpectedly (4002): 
+
+stderr | test/server.test.ts > ArenaRoom > real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs
+Error: 装备无效：请选择两把不同的枪械和一件近战武器。
+    at validateLoadout (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/shared/content.ts:75:30)
+    at ArenaRoom.onAuth (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/server/ArenaRoom.ts:32:5)
+    at ArenaRoom._onJoin (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Room.mjs:1105:39)
+    at connectClientToRoom (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Transport.mjs:132:24)
+    at WebSocketServer.onConnection (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:192:13)
+    at WebSocketServer.emit (node:events:514:28)
+    at file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:120
+    at WebSocketServer.completeUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:450:5)
+    at WebSocketServer.handleUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:356:10)
+    at completeUpgrade (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:70)
+
+stderr | test/server.test.ts > ArenaRoom > real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs
+Room connection was closed unexpectedly (4002): 
+
+stderr | test/server.test.ts > ArenaRoom > real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs
+Error: 竞技场客户端与服务器版本不匹配；请使用同一版本。当前装备与近战规则需要版本 3 客户端和服务器。
+    at assertRulesVersion (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/shared/protocol.ts:11:40)
+    at ArenaRoom.onAuth (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/server/ArenaRoom.ts:31:5)
+    at ArenaRoom._onJoin (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Room.mjs:1105:39)
+    at connectClientToRoom (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/core/build/Transport.mjs:132:24)
+    at WebSocketServer.onConnection (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:192:13)
+    at WebSocketServer.emit (node:events:514:28)
+    at file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:120
+    at WebSocketServer.completeUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:450:5)
+    at WebSocketServer.handleUpgrade (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/ws/lib/websocket-server.js:356:10)
+    at completeUpgrade (file:///workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game/node_modules/@colyseus/ws-transport/build/WebSocketTransport.mjs:123:70)
+
+stderr | test/server.test.ts > ArenaRoom > real Colyseus validates loadouts and broadcasts selected catalog IDs for slot inputs
+Room connection was closed unexpectedly (4002): 
+
+···stdout | test/server.test.ts > ArenaRoom > new client rejects an old server welcome before prediction begins
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+····································
+
+ Test Files  19 passed (19)
+      Tests  275 passed (275)
+   Start at  09:55:44
+   Duration  9.77s (tests 87%, import 10%, transform 3%)
+
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice

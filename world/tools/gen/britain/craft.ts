@@ -296,6 +296,14 @@ export function gateCraft(c:KingdomCraft,x:number,y:number,z:number,a:number) {
     f.mesh([bx-.55,8.7,depth+.64,bx+.55,8.7,depth+.64,bx+.55,5.2,depth+.64,bx,4.7,depth+.64,bx-.55,5.2,depth+.64],[0,1,2,0,2,3,0,3,4],'Wool',s<0?C.blue:C.wine);
     f.ring(bx,7.1,depth+.68,.28,.055,'Bronze',C.bronze,true,16);
     f.beam([bx-.25,6.4,depth+.69],[bx+.25,6.4,depth+.69],.045,'Bronze',C.bronze);
+    // A real hanging crossbar, two eyelets and a narrow woven hem finish these
+    // two royal standards only. Keep the original heraldry and gateway opening.
+    f.box(bx,8.77,depth+.64,1.32,.075,.075,'Iron',C.iron);
+    for(const edge of [-1,1]){
+      f.ring(bx+edge*.43,8.67,depth+.675,.065,.014,'Bronze',C.bronze,true,8);
+      f.box(bx+edge*.48,6.94,depth+.665,.04,3.2,.018,'Wool',C.straw);
+      f.beam([bx+edge*.48,5.25,depth+.668],[bx,4.82,depth+.668],.04,'Wool',C.straw,.018);
+    }
   }
 }
 

@@ -1,0 +1,26 @@
+[
+  {
+    "map": "blackflag",
+    "source": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "built": "arena-game/dist/assets/blackflag_visual-hQYrb5S9.glb",
+    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "previewSource": "docs/chapter-qa/renders-art1",
+    "previewMatchesBuilt": true
+  },
+  {
+    "map": "frostcourt",
+    "source": "arena-maps/frostcourt/assets/frostcourt_visual.glb",
+    "built": "arena-game/dist/assets/frostcourt_visual-Cni2kF6M.glb",
+    "sha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "previewSource": "docs/chapter-qa/renders-art2-frostcourt",
+    "previewMatchesBuilt": true
+  },
+  {
+    "map": "camlann",
+    "source": "arena-maps/camlann/assets/camlann_visual.glb",
+    "built": "arena-game/dist/assets/camlann_visual-CZbaKovL.glb",
+    "sha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+    "previewSource": "docs/chapter-qa/renders-art3",
+    "previewMatchesBuilt": true
+  }
+]

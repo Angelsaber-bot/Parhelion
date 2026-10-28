@@ -1,0 +1,13 @@
+✔ alpha: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (198.423374ms)
+✔ britain: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (208.123252ms)
+✔ blacksail: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (155.689797ms)
+✔ winter: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (176.939965ms)
+✔ kyoto: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (368.601829ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1476.04047

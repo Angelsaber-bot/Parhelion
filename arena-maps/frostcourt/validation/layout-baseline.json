@@ -1,0 +1,11 @@
+{
+  "description": "R2 authoritative layout baseline captured before R4 art-only refinement.",
+  "sha256": {
+    "bounds": "dc43401db41e8d698615919e51243c9f55dc57a4570e984a35950696cf7afae8",
+    "player": "fce63ccef683482130e695eae044b50771a2a750342482ef9a5683bc0a2290ab",
+    "objects": "2b417c51e82b91131947671e0be273b689d9cece47387ab10e25e7836850db7a",
+    "anchors": "380ad735b86e5555a3b370d312038697133437ab31f3651988f1ccf37fca26fe",
+    "routes": "a4d40a16b0fc3b196053e736e3ad4f7147d86b3377de41f6328c0efbe003e9c6",
+    "collisionGLB": "7262cb8ca8267bded060ee745d57536b640ccbc39b85b4feac0e2f3bdbe8e70f"
+  }
+}

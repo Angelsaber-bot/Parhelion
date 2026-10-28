@@ -1,0 +1,22 @@
+[
+  {
+    "map": "sakura",
+    "asset": "arena-maps/sakura/assets/sakura_visual.glb",
+    "sha256": "83f504ce7db5b0242979b2bb76a817ef7d39e22479b1c57344fd7be9a7f52ee3",
+    "view": "lane",
+    "camera": [
+      -12,
+      1.7,
+      17.5
+    ],
+    "target": [
+      6,
+      2,
+      14
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "output": "docs/chapter-qa/sakura-neutral/sakura-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS."
+  }
+]

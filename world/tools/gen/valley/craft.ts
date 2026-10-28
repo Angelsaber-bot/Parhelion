@@ -227,6 +227,21 @@ function campCraft():Piece[]{
     a.add('Brass',new THREE.TorusGeometry(.62,.08,6,24),C.brass,m.clone().multiply(T(s*1.55,-.6,6.72)));
   }
   a.add('Metal',BOX,C.metal,m.clone().multiply(T(0,-1.2,-5.73,0,4.0,.16,.12)));
+  // Two flush service hatches sit BETWEEN the existing hull ribs. Their dark
+  // rebates, captive fasteners and orange release tabs read at walking distance;
+  // all fittings stay attached to the hull, not in the camp's walking space.
+  for(const side of [-1,1]){
+    const panel=(s:Surface,x:number,yy:number,z:number,w:number,h:number,d:number,c:string)=>a.add(s,BOX,c,m.clone().multiply(T(side*x,yy,z,0,w,h,d)));
+    // The bevel expands the actual flat hull side to x=±2.64 (not ±2.5).
+    panel('Metal',2.658,-.25,1.0,.045,1.65,1.64,C.dark);
+    panel('Ceramic',2.690,-.25,1.0,.025,1.48,1.46,C.edge);
+    for(const yy of [-.87,.37])for(const zz of [.39,1.61])
+      a.add('Metal',new THREE.CylinderGeometry(.045,.045,.025,6),C.metal,m.clone().multiply(T(side*2.713,yy,zz,0,1,1,1,0,Math.PI/2)));
+    for(const zz of [.58,1.42]){
+      panel('Metal',2.715,-.25,zz,.025,.32,.14,C.dark);
+      panel('Ceramic',2.738,-.25,zz,.035,.15,.10,C.orange);
+    }
+  }
   // Field shelters follow the original prism's above-ground envelope exactly:
   // 4.2 m along X, lean-to roof from z=-1.1/y=3.005 to z=2.2/y=1.1.
   // The collision's buried lower triangle stays unchanged, but no floating

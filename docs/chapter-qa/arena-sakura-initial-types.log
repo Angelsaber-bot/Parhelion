@@ -1,0 +1,7 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 typecheck
+> tsc --noEmit && tsc --noEmit -p worker
+
+test/chapter-material-qa.test.ts(110,36): error TS18046: 'tex.image' is of type 'unknown'.
+test/chapter-material-qa.test.ts(110,79): error TS18046: 'tex.image' is of type 'unknown'.

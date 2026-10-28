@@ -27,7 +27,8 @@ export interface Session {
 }
 
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
-  opts = { ...opts, rulesVersion: RULES_VERSION };
+  // An absent false filter matches rooms of either bot policy; always send a boolean.
+  opts = { ...opts, rulesVersion: RULES_VERSION, bots: opts.bots === true };
   if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
   const room = await client.joinOrCreate(ROOM_NAME, opts);

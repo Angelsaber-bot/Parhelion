@@ -110,7 +110,7 @@ describe('match', () => {
     const match = new Match(m, '1v1');
     match.addPlayer('a', { name: 'a', team: 'A', char: 0, skins: [], bot: false });
     match.addPlayer('b', { name: 'b', team: 'B', char: 0, skins: [], bot: false });
-    for (let i = 0; i < 200; i++) match.step(); // countdown -> live
+    for (let i = 0; i < 350; i++) match.step(); // countdown -> live -> spawn protection expired
     expect(match.phase).toBe('live');
     const a = match.player('a')!, b = match.player('b')!;
     Object.assign(a, { x: 0, y: 0, z: 20 });

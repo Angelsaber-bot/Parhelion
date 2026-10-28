@@ -1,0 +1,68 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 test
+> vitest run --run test/chapter-network-qa.test.ts
+
+
+ RUN  v5.0.5 /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game
+
+stdout | test/chapter-network-qa.test.ts
+
+   ___      _                                   ___   _  ___  
+  / __\___ | |_   _ ___  ___ _   _ ___  __   __/ _ \ / |( _ ) 
+ / /  / _ \| | | | / __|/ _ \ | | / __| \ \ / / | | || |/ _ \ 
+/ /__| (_) | | |_| \__ \  __/ |_| \__ \  \ V /| |_| || | (_) |
+\____/\___/|_|\__, |___/\___|\__,_|___/   \_/  \___(_)_|\___/ 
+              |___/                                           
+
+             · Multiplayer Framework for Node.js ·
+
+💖 Consider becoming a Sponsor on GitHub → https://github.com/sponsors/endel
+🌟 Give us a star on GitHub → https://github.com/colyseus/colyseus
+☁️  Deploy and scale your project on Colyseus Cloud → https://cloud.colyseus.io
+
+
+ ❯ test/chapter-network-qa.test.ts (4 tests | 2 failed) 369ms
+   × Colyseus retains the explicit bots=false matchmaking filter when chapter clients pair 24ms
+   × Colyseus retains the explicit bots=true matchmaking filter when chapter clients pair 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/chapter-network-qa.test.ts > Colyseus retains the explicit bots=false matchmaking filter when chapter clients pair
+AssertionError: expected 'vH9IUESi5' to be 'm7CDOdAWE' // Object.is equality
+
+Expected: "m7CDOdAWE"
+Received: "vH9IUESi5"
+
+ ❯ test/chapter-network-qa.test.ts:91:22
+     89|     const a=await client.joinOrCreate('arena',{...options,team:'A',nam…
+     90|     const b=await client.joinOrCreate('arena',{...options,team:'B',nam…
+     91|     expect(b.roomId).toBe(a.roomId);
+       |                      ^
+     92|   }finally{await Promise.all(rooms.map(room=>room.leave()));}
+     93| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/chapter-network-qa.test.ts > Colyseus retains the explicit bots=true matchmaking filter when chapter clients pair
+AssertionError: expected 'g729AMeTC' to be 'DuOcXTuD3' // Object.is equality
+
+Expected: "DuOcXTuD3"
+Received: "g729AMeTC"
+
+ ❯ test/chapter-network-qa.test.ts:91:22
+     89|     const a=await client.joinOrCreate('arena',{...options,team:'A',nam…
+     90|     const b=await client.joinOrCreate('arena',{...options,team:'B',nam…
+     91|     expect(b.roomId).toBe(a.roomId);
+       |                      ^
+     92|   }finally{await Promise.all(rooms.map(room=>room.leave()));}
+     93| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 passed (4)
+   Start at  08:28:04
+   Duration  846ms (tests 56%, import 32%, transform 11%, worker 1%)
+

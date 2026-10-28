@@ -1,0 +1,3 @@
+{"mapId": "blackflag", "version": "1.0.0", "checks": 318, "failed": [], "visualNodes": 29, "visualTriangles": 41612, "visualBytes": 3804560, "embeddedTextureBytes": 105430, "collisionNodes": 26, "collisionBytes": 35312}
+{"mapId": "frostcourt", "version": "1.0.0", "checks": 283, "failed": [], "visualNodes": 32, "visualTriangles": 34562, "visualBytes": 2957840, "embeddedTextureBytes": 160282, "collisionNodes": 29, "collisionBytes": 40728}
+{"mapId": "camlann", "version": "1.0.0", "checks": 735, "failed": [], "visualNodes": 69, "visualTriangles": 41015, "visualBytes": 4735596, "embeddedTextureBytes": 886333, "collisionNodes": 66, "collisionBytes": 94176}

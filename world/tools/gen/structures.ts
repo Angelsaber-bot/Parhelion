@@ -6,6 +6,7 @@ import {
   type Marker, type V2,
 } from './layout.js';
 import { mulberry32, range } from './rng.js';
+import { buildSeamBarrier, SEAM_BARRIERS } from './valley/seam-barrier.js';
 import { buildValleyCraft, decorateValleyRuinDoor, decorateValleyWaterfall, decorateValleyFallsRock } from './valley/craft.js';
 
 export const PAL = {
@@ -570,10 +571,8 @@ export function buildStructures(heightAt: HeightAt) {
       b.box(sxw, sy + 2.8, szw, 0.2, 0.18, 1.3, PAL.gold, 0, false); // crossguard
       b.box(sxw, sy + 2.9, szw, 0.16, 0.7, 0.16, '#2c3f8f', 0, false); // grip
       seam('west', cx, cz, y, Math.PI / 2, '#ffb36b', '西部时层断面 · 落日王国', '约 537 年 · 不列颠：永恒黄昏');
-      // the gorge runs on into 落日王国; this invisible gate holds until the summoning circle is stable
-      const gate = new Batch('Seam_west_Gate');
-      gate.addCol(BOX, T(cx - 24.5, y + 30, cz, 0, 1, 80, 40)); // across the link at x = -334
-      pieces.push({ name: 'Seam_west_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
+      // The locked field now follows the visible pylon barrier, not empty ground 24 m behind it.
+      pieces.push(buildSeamBarrier(SEAM_BARRIERS.find(s => s.id === 'west')!, heightAt));
     }
     // north → 永冬之城 (1812): the frozen bay, ice spikes and two frost-bound field guns
     {
@@ -602,9 +601,7 @@ export function buildStructures(heightAt: HeightAt) {
       pieces.push({ name: 'Ice_Bay', material: 'M_Toon', batch: ice, outline: true });
       seam('north', SEAM_N.c[0], SEAM_N.c[1], top, 0, '#bfe9ff', '北方冰海断面 · 永冬之城', '1812 年 · 俄罗斯：不会结束的冬天');
       // like the other seams, the way on holds until the summoning circle is stable
-      const gate = new Batch('Seam_north_Gate');
-      gate.addCol(BOX, T(SEAM_N.c[0], top + 30, SEAM_N.c[1] - 24, 0, 100, 80, 1)); // across the link at z = -342
-      pieces.push({ name: 'Seam_north_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
+      pieces.push(buildSeamBarrier(SEAM_BARRIERS.find(s => s.id === 'north')!, heightAt));
     }
     // east → 黑帆尽头 (1718): a mast with a black sail at the pass
     {
@@ -617,9 +614,7 @@ export function buildStructures(heightAt: HeightAt) {
       }
       seam('east', cx, cz, y, -Math.PI / 2, '#7fb0ff', '东部山口断面 · 黑帆尽头', '1718 年 · 加勒比海：海盗黄金时代的最后一年');
       // like the west seam, the pass road into 黑帆尽头 holds until the summoning circle is stable
-      const gate = new Batch('Seam_east_Gate');
-      gate.addCol(BOX, T(cx + 24.5, y + 30, cz, 0, 1, 80, 40)); // across the link at x = 342
-      pieces.push({ name: 'Seam_east_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
+      pieces.push(buildSeamBarrier(SEAM_BARRIERS.find(s => s.id === 'east')!, heightAt));
     }
     // south → 业火京都 (1582): a great vermilion torii, stone foxes and the first of a thousand gates
     {
@@ -645,9 +640,7 @@ export function buildStructures(heightAt: HeightAt) {
       }
       seam('south', cx, cz, y, Math.PI, '#ff6a3d', '南方鸟居断面 · 业火京都', '1582 年 · 京都：本能寺之变的那一夜');
       // like the other seams, the torii road holds until the summoning circle is stable
-      const gate = new Batch('Seam_south_Gate');
-      gate.addCol(BOX, T(cx, y + 30, cz + 24, 0, 100, 80, 1)); // across the link at z = 342
-      pieces.push({ name: 'Seam_south_Gate', material: 'M_Toon', batch: gate, dynamic: true, userData: { opensWhen: ['summon_circle'] } });
+      pieces.push(buildSeamBarrier(SEAM_BARRIERS.find(s => s.id === 'south')!, heightAt));
     }
     pieces.push({ name: 'Seams', material: 'M_Toon', batch: b, outline: true });
   }

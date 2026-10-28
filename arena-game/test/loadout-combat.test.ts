@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARENA_MAP } from '../shared/arenaMap.ts';
 import { BOT_SKILL, Bot } from '../shared/bot.ts';
-import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, WEAPONS, botLoadout, isLoadout, loadoutWeapon, validateLoadout, weaponIndex, type Loadout, type MeleeId } from '../shared/content.ts';
+import { DEFAULT_LOADOUT, SPAWN_PROTECTION_TICKS, GUN_IDS, MELEE_IDS, WEAPONS, botLoadout, isLoadout, loadoutWeapon, validateLoadout, weaponIndex, type Loadout, type MeleeId } from '../shared/content.ts';
 import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, sanitize, type PlayerInfo } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
@@ -21,6 +21,8 @@ function arena(melee: MeleeId = 'blade', map = flat) {
   const m = new Match(map, '1v2');
   m.addPlayer('a', info('A', ['lumen', 'corona', melee])); m.addPlayer('b', info('B'));
   m.phase = 'live'; m.phaseT = 100000;
+  // These weapon/contact tests begin after the new spawn-protection window.
+  for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
   const p = m.player('a')!; p.weaponSlot = 2; p.weapon = weaponIndex(melee);
   Object.assign(p, { x: 0, y: 0, z: 0 }); Object.assign(m.player('b')!, { x: 0, y: 0, z: -2 });
   m.snapshot(); return m;
@@ -87,6 +89,7 @@ describe('all five firearms use shared real ammunition, shots, hits and reload',
     const m = new Match(flat, '1v1'); const other = id === 'lumen' ? 'corona' : 'lumen';
     m.addPlayer('a', info('A', [id, other, 'blade'])); m.addPlayer('b', info('B'));
     m.phase = 'live'; m.phaseT = 10000;
+    for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
     const a = m.player('a')!, b = m.player('b')!, wi = weaponIndex(id), w = WEAPONS[wi];
     Object.assign(b, { z: -5 }); m.queueInputs('a', [input(1, { buttons: BTN.FIRE })]); m.step();
     expect(a.ammo[wi]).toBe(w.mag - 1); expect(b.hp).toBeLessThan(150);
@@ -147,7 +150,7 @@ describe('fair authoritative melee', () => {
     attack(m); expect(m.player('b')!.hp).toBe(150); expect(m.shields[0].hp).toBe(210);
   });
   it('a swing contacts at most one enemy, never a teammate', () => {
-    const m = arena('hammer'); m.addPlayer('c', info('B')); Object.assign(m.player('c')!, { x: .4, y: 0, z: -2.1 });
+    const m = arena('hammer'); m.addPlayer('c', info('B')); for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step(); Object.assign(m.player('c')!, { x: .4, y: 0, z: -2.1 });
     attack(m); expect([m.player('b')!.hp, m.player('c')!.hp].filter((hp) => hp < 150)).toHaveLength(1);
   });
   it('switching out and back cancels the hit and never resets attack cooldown', () => {
@@ -200,6 +203,7 @@ describe('shared host, bot and transport contract', () => {
     m.addPlayer('a', { ...info('A', ['firefly', 'longnight', id]), bot: true }); m.addPlayer('b', info('B'));
     Object.assign(m.player('a')!, { x: 0, y: 0, z: 20, yaw: 0 });
     m.phase = 'live'; m.phaseT = 10000;
+    for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
     const bot = new Bot(2, BOT_SKILL.hard); let struck = false;
     for (let i = 0; i < 180 && !struck; i++) {
       const a = m.player('a')!, b = m.player('b')!;

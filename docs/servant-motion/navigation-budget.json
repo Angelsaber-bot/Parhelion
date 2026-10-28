@@ -1,0 +1,59 @@
+{
+  "note": "Actual five-region merged static BVH + enabled dynamic colliders; runtime mounted actor. CPU timing is environment-specific, not WebGL FPS.",
+  "colliders": 26,
+  "frames": 600,
+  "hits": 2,
+  "coldFirstFrame": {
+    "phase": "follow",
+    "queries": 360,
+    "boxQueries": 71,
+    "ms": 29.842353000000003
+  },
+  "position": [
+    94.56969843082496,
+    12.004840850830078,
+    -924.8897716007143
+  ],
+  "byPhase": {
+    "follow": {
+      "frames": 3,
+      "meanRayQueries": 245,
+      "maxRayQueries": 360,
+      "meanBodyQueries": 48,
+      "maxBodyQueries": 71,
+      "meanMs": 12.52333833333311,
+      "p95Ms": 29.842353000000003,
+      "maxMs": 29.842353000000003
+    },
+    "approach": {
+      "frames": 316,
+      "meanRayQueries": 20.854430379746834,
+      "maxRayQueries": 135,
+      "meanBodyQueries": 3.5063291139240507,
+      "maxBodyQueries": 26,
+      "meanMs": 0.4625185822784531,
+      "p95Ms": 4.176131000000169,
+      "maxMs": 12.987998999999036
+    },
+    "charge": {
+      "frames": 197,
+      "meanRayQueries": 15,
+      "maxRayQueries": 15,
+      "meanBodyQueries": 2,
+      "maxBodyQueries": 2,
+      "meanMs": 0.3296969593908945,
+      "p95Ms": 0.4761160000016389,
+      "maxMs": 12.537725999998656
+    },
+    "recover": {
+      "frames": 84,
+      "meanRayQueries": 0,
+      "maxRayQueries": 0,
+      "meanBodyQueries": 0,
+      "maxBodyQueries": 0,
+      "meanMs": 0.0973215238095907,
+      "p95Ms": 0.12444700000014564,
+      "maxMs": 4.207647999999608
+    }
+  }
+}

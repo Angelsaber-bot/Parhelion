@@ -236,6 +236,17 @@ export function pierCraft(b: Batch,x: number,y: number,z0: number,z1: number) {
   for(const z of [z1-4,z1-17]) {
     const p=k.point(-1.8,.10,z);
     for(let j=0;j<3;j++) b.add(new THREE.TorusGeometry(.32+j*.075,.035,5,14),C.rope,T(p.x,p.y+j*.045,p.z,0,1,1,1,Math.PI/2),false);
+    if(z!==z1-17)continue;
+    // Low mooring cleat with a belayed tail, rather than an unexplained loose
+    // stack of rings. Three fittings total, inset at the existing pier edge;
+    // staying below the 4k-triangle chunk threshold avoids splitting the
+    // original iron batch into eleven extra chunks. Centre lanes stay open.
+    k.box(-1.8,.028,z-1.0,.46,.05,.6,C.iron);
+    k.box(-1.8,.13,z-1.0,.12,.2,.17,C.iron);
+    k.box(-1.8,.23,z-1.0,.14,.09,.67,C.iron);
+    for(const xx of [-1.96,-1.64])for(const zz of [z-1.19,z-.81])k.cyl(xx,.063,zz,.035,.025,C.iron);
+    b.add(new THREE.TorusGeometry(.145,.032,5,12),C.rope,T(p.x,y+.14,z-1,0,1,1,1,Math.PI/2),false);
+    k.beam([-1.8,.14,z-.84],[-1.8,.11,z-.44],.055,C.rope);
   }
 }
 

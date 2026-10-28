@@ -1,0 +1,134 @@
+"""Small editable authoring helpers for the three chapter arenas.
+
+Uses the repository's glbkit, not Blender; all dimensions are metres. Collision and
+visual source objects are emitted together, then hand-authored detail is batched.
+"""
+from pathlib import Path
+import json, math
+from glbkit import Mesh, write_glb
+
+
+class Chapter:
+    def __init__(self, root, id, name, width, depth, preset, palette):
+        self.root, self.id = Path(root), id
+        self.objects, self.anchors, self.routes = [], [], []
+        self.palette = palette
+        self.textures = {}
+        self.data = dict(mapId=id, name=name, version='1.0.0', mode='arena', units='metres', upAxis='Y',
+            supportedTeamLayouts=['1v1', '1v2', '2v2'], bounds=dict(min=[-width/2, 0, -depth/2], max=[width/2, 12, depth/2]),
+            presentation=dict(preset=preset), player=dict(radius=.32, height=1.8, eyeHeight=1.65, walkSpeed=4.2, stepHeight=.28))
+        self.detail = Mesh()
+
+    def box(self, id, p, s, mat, role='cover', collision=True):
+        self.objects.append(dict(id=id, type='box', position=p, size=s, material=mat, collision=collision, role=role))
+
+    def ramp(self, id, p, s, axis, low, mat):
+        self.objects.append(dict(id=id, type='ramp', position=p, size=s, material=mat, collision=True, role='ramp', axis=axis, lowAt=low))
+
+    def anchor(self, id, kind, p, **kw):
+        self.anchors.append(dict(id=id, kind=kind, position=p, **kw))
+
+    def route(self, id, points):
+        self.routes.append(dict(id=id, name=id.replace('_', ' '), points=points))
+
+    def save(self, decorate_object=None, render_object=None):
+        if self.textures:
+            self.data['artPipeline'] = dict(embeddedMaterialTextures=True, projection='world-metre planar per face', channels=['baseColor','occlusionRoughnessMetallic','normal'])
+        self.data.update(palette={k:v[0] for k,v in self.palette.items()}, objects=self.objects, anchors=self.anchors, routes=self.routes)
+        (self.root/'runtime/map.json').write_text(json.dumps(self.data, indent=2, ensure_ascii=False)+'\n')
+        nodes, cols = [], []
+        for o in self.objects:
+            v, c = Mesh(), Mesh()
+            custom = render_object and render_object(v, o)
+            if o['type'] == 'ramp':
+                v.wedge(o['material'], o); c.wedge('collision', o)
+            else:
+                if not custom: v.cbox(o['material'], o['position'], o['size'])
+                c.cbox('collision', o['position'], o['size'])
+            if decorate_object: decorate_object(self.detail, o)
+            nodes.append(('VIS_'+o['id'], v, dict(source_id=o['id'], role=o['role'], collision=o['collision'], decorative=False)))
+            if o['collision']: cols.append(('COL_'+o['id'], c, dict(source_id=o['id'], role=o['role'], collision=True, decorative=False)))
+        nodes.append(('DETAIL_chapter_craft', self.detail, dict(role='detail_batch', collision=False, decorative=True)))
+        mats={**self.palette, 'collision':('#adbbce', 0, 1, 0, 1)}
+        vis=write_glb(self.root/f'assets/{self.id}_visual.glb', nodes, list(self.palette), mats, textures=self.textures)
+        col=write_glb(self.root/f'assets/{self.id}_collision.glb', cols, ['collision'], mats)
+        print(json.dumps(dict(id=self.id, visual=vis, collision=col)))
+
+
+def mat(hex, metal=0, rough=.9, emit=0):
+    return (hex, metal, rough, emit, 1)
+
+
+def beam(m, material, a, b, radius, sides=6):
+    """A tapered-free cylinder along an arbitrary vector (spars, ropes, cannon)."""
+    v=[b[i]-a[i] for i in range(3)]; length=math.sqrt(sum(x*x for x in v)); v=[x/length for x in v]
+    up=[0,1,0] if abs(v[1]) < .95 else [1,0,0]
+    u=[v[1]*up[2]-v[2]*up[1],v[2]*up[0]-v[0]*up[2],v[0]*up[1]-v[1]*up[0]]
+    l=math.sqrt(sum(x*x for x in u)); u=[x/l for x in u]
+    w=[v[1]*u[2]-v[2]*u[1],v[2]*u[0]-v[0]*u[2],v[0]*u[1]-v[1]*u[0]]
+    def p(base,j):
+        t=math.tau*j/sides
+        return [base[i]+radius*(u[i]*math.cos(t)+w[i]*math.sin(t)) for i in range(3)]
+    for j in range(sides):
+        m.quad(material,p(a,j),p(a,j+1),p(b,j+1),p(b,j))
+        m.tri(material,a,p(a,j+1),p(a,j)); m.tri(material,b,p(b,j),p(b,j+1))
+
+
+def ring(m, material, x, y, z, radius, width, n=32):
+    for i in range(n):
+        a,b=math.tau*i/n,math.tau*(i+1)/n
+        m.quad(material,(x+radius*math.cos(a),y,z+radius*math.sin(a)),(x+(radius+width)*math.cos(a),y,z+(radius+width)*math.sin(a)),
+            (x+(radius+width)*math.cos(b),y,z+(radius+width)*math.sin(b)),(x+radius*math.cos(b),y,z+radius*math.sin(b)))
+
+
+def flag(m, material, pole, direction=1, scale=1):
+    x,y,z=pole
+    beam(m,'timber',(x,y-3*scale,z),(x,y+.2*scale,z),.06*scale)
+    m.quad(material,(x,y,z),(x+direction*1.5*scale,y-.12*scale,z+.16*scale),(x+direction*1.3*scale,y-.9*scale,z+.2*scale),(x,y-1.05*scale,z))
+
+
+def mountain(m, material, x, z, w, h):
+    m.tri(material,(x-w,-6,z),(x+w,-6,z),(x,h,z-8))
+    m.tri(material,(x+w,-6,z),(x,-6,z-20),(x,h,z-8))
+
+
+def box_edges(m, material, p, s, width=.06):
+    x,y,z=p; w,h,d=s
+    # Offset external bands beyond the base faces: exact coplanar tops produce black
+    # z-fighting in both the CPU reference renderer and real-time depth buffers.
+    for xx in (x-w/2+width/2-.012,x+w/2-width/2+.012):
+        for zz in (z-d/2+width/2-.012,z+d/2-width/2+.012):
+            m.cbox(material,[xx,y,zz],[width,h+.015,width])
+    for yy in (y-h/2+width/2-.012,y+h/2-width/2+.012):
+        m.cbox(material,[x,yy,z],[w+.03,width,d+.03])
+
+
+def bevelbox(m, material, p, s, bevel=.12, top_material=None):
+    """Eight-corner horizontal section and bevelled top/bottom; never exceeds proxy."""
+    x,y,z=p; w,h,d=s; b=min(bevel,w*.16,h*.16,d*.16)
+    def contour(inset,yy):
+        x0,x1=x-w/2+inset,x+w/2-inset; z0,z1=z-d/2+inset,z+d/2-inset
+        c=max(.005,b-inset/2)
+        return [(x0+c,yy,z0),(x1-c,yy,z0),(x1,yy,z0+c),(x1,yy,z1-c),
+                (x1-c,yy,z1),(x0+c,yy,z1),(x0,yy,z1-c),(x0,yy,z0+c)]
+    rings=[contour(b*.6,y-h/2),contour(0,y-h/2+b),contour(0,y+h/2-b),contour(b*.6,y+h/2)]
+    for a,bb in zip(rings,rings[1:]):
+        for j in range(8): m.quad(material,a[j],a[(j+1)%8],bb[(j+1)%8],bb[j])
+    for j in range(8):
+        m.tri(material,(x,y-h/2,z),rings[0][(j+1)%8],rings[0][j])
+        m.tri(top_material or material,(x,y+h/2,z),rings[-1][j],rings[-1][(j+1)%8])
+
+
+def hiproof(m, material, x0,x1,z0,z1,eave,ridge):
+    """Four clear roof planes; ridge runs along the longer footprint dimension."""
+    if x1-x0 >= z1-z0:
+        ra=(x0+(z1-z0)*.35,ridge,(z0+z1)/2); rb=(x1-(z1-z0)*.35,ridge,(z0+z1)/2)
+        m.quad(material,(x0,eave,z0),(x1,eave,z0),rb,ra)
+        m.quad(material,(x1,eave,z1),(x0,eave,z1),ra,rb)
+        m.tri(material,(x0,eave,z1),(x0,eave,z0),ra); m.tri(material,(x1,eave,z0),(x1,eave,z1),rb)
+    else:
+        ra=((x0+x1)/2,ridge,z0+(x1-x0)*.35); rb=((x0+x1)/2,ridge,z1-(x1-x0)*.35)
+        m.quad(material,(x1,eave,z0),(x1,eave,z1),rb,ra)
+        m.quad(material,(x0,eave,z1),(x0,eave,z0),ra,rb)
+        m.tri(material,(x0,eave,z0),(x1,eave,z0),ra); m.tri(material,(x1,eave,z1),(x0,eave,z1),rb)
+    return ra,rb

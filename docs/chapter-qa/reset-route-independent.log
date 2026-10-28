@@ -1,0 +1,32 @@
+✔ camp → observatory terminal → armory rack → range line (69.387196ms)
+✔ plaza → summoning circle (19.585988ms)
+✔ tower → northern ice seam (walks onto the ice, does not swim) (69.658384ms)
+✔ outpost → western seam, forest → eastern seam (35.858324ms)
+✔ clean startup is unarmed at authored Alpha spawn; no gameplay method writes preferences (132.522266ms)
+✔ current save is authoritative, reset survives reload without old quests/equipment/contracts reappearing (0.942718ms)
+✔ legacy migration occurs only once; empty current and stale slot fields never grant a gun (0.454183ms)
+✔ reset preserves custom controls, sensitivity, locale, graphics, HUD and appearance preferences byte-for-byte (11.612289ms)
+✔ unavailable persistence still resets live state without deleting unrelated storage (0.374473ms)
+✔ production reset clears dirty gameplay immediately, resets URL start overrides, and survives reload at Alpha (172.016963ms)
+✔ existing tutorial grants the gun before gun-required objectives and clears a previously held trigger (57.202455ms)
+✔ late weapon-art attachment cannot reveal or equip an unowned gun (42.486174ms)
+✔ production world-state application re-locks quest gates and restores targets after clearing progress (14.393711ms)
+✔ production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS (542.259392ms)
+✔ held fire tracks view between eligible shots, rather than reverting to locomotion/low-ready on cooldown frames (287.961728ms)
+✔ World production shooting preserves quest targets and always renders a visible shot (113.923607ms)
+✔ closer enemy receives damage instead of completing the target behind it (7.843679ms)
+✔ solid wall blocks both camera targeting and the actual muzzle-to-target shot (9.987927ms)
+✔ shot cadence blocks all damage, quest mutation and visuals together (5.293774ms)
+✔ unarmed input cannot damage enemies, complete gun-required objectives or render shots (14.898335ms)
+✔ immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF (176.288294ms)
+✔ all seven real-world teleport destinations settle on collision or water (256.760626ms)
+✔ actual camp spawn settles and normal walking changes position without falling through (17.723703ms)
+✔ full new-game placement clears airborne state and settles on the actual original camp floor (12.379684ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1334.111864

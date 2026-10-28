@@ -1,0 +1,10 @@
+✔ full-map draw commands exactly preserve committed baseline across languages, aspect ratios and quest/completion states (74.735884ms)
+ℹ 36 full-map canvas command streams exactly match the preserved a309625 source; not a browser screenshot.
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 502.800449

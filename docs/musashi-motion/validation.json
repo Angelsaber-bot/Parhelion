@@ -1,0 +1,59 @@
+{
+  "verification": "Three.js actual GLB CPU skinning + actual WorldCombat with minimal DOM; not WebGL",
+  "tests": {
+    "passed": 20,
+    "failed": 0
+  },
+  "geometry": {
+    "idle": {
+      "minBlade": 0.3442697393935623,
+      "minFoot": -5.177678889975976e-07,
+      "maxArm": -0.9809934087861444,
+      "minClear": 0.05048669189012488
+    },
+    "walk": {
+      "minBlade": 0.2941536127693505,
+      "minFoot": -0.0005088531042878523,
+      "maxArm": -0.9650336606031609,
+      "minClear": 0.050840317607493475
+    },
+    "run": {
+      "minBlade": 0.2627597114902709,
+      "minFoot": -0.0018788807184814632,
+      "maxArm": -0.9435957280990482,
+      "minClear": 0.03862415967030271
+    }
+  },
+  "transitions": {
+    "maxStep": 0.04659877565499198,
+    "minTransitionBlade": 0.13790960443117029
+  },
+  "samples": {
+    "gait_per_cycle": 120,
+    "body_triangle_intersection_phases_per_state": 12,
+    "transition_hz": 120,
+    "repeated_cycles": 10
+  },
+  "hashes": {
+    "world/src/characters/musashiLocomotion.ts": "436ce5e7bdc295ddecd6603a2e136661f7b6f7ab92b9e231d76acf3a9232b4b7",
+    "world/src/characters/characterKit.ts": "00305b7aa67f153db3e73989eb5c7807dca39c7a688ddc786b218acd5ace3a61",
+    "assets/characters/musashi/Musashi_Runtime.glb.gz": "1ba70b4de720c63f820e25cb264cf7663d4bb208e6a9ee0a48c485ba17900ead",
+    "docs/musashi-motion/musashi-after-attack-19.png": "a09b2512ff9e1dc60646b417d87c3636e67ab16c071923868361b584e0291176",
+    "docs/musashi-motion/musashi-after-attack-33.png": "cdc56294315205d43e513ae71cb26e8348a724039afcddf7822a540b3ce30fea",
+    "docs/musashi-motion/musashi-after-idle-23.png": "b9a0d79b1c819b9d9c873f06d700d1e3119584ca1bc8e948e189e68a1534098f",
+    "docs/musashi-motion/musashi-after-run-5.png": "e8cf06a904776ddf26ba3dd5c94764fd2f32e47fe433a778d81773fa169d9dbb",
+    "docs/musashi-motion/musashi-after-walk-12.png": "c68eb62616150cd473f6e26851791b15d9aa3f4c30a3a4f77f95d2f3529f2702",
+    "docs/musashi-motion/musashi-after-walk-4.png": "457e234e615d2477a10ab3dc7a8e4cf050add9b3578cfb0693898dab62f7f9ab",
+    "docs/musashi-motion/musashi-before-walk-4.png": "beedef80ab2a4809682a4a1363062a42c6a0bf5460f1b20b33cabc71287f61c2",
+    "docs/musashi-motion/musashi-walk-cycle.gif": "e3d988b678c6c1c02d296dfb586b6fbb6cedc28dec5ef3ed6f52abfbcd4eb1c2",
+    "docs/musashi-motion/musashi-walk-cycle-sheet.jpg": "83734a69dc5f9c3b18d7de5c02b54a43f661986c4d88cb43f5e258470e671255"
+  },
+  "walkCycle": {
+    "frames": 16,
+    "camera": "fixed",
+    "source": "actual runtime CPU skinning",
+    "renderer": "Blender CPU / original GLB materials",
+    "nominalClipDurationSeconds": 1.0666666666666667,
+    "gifPreviewDurationSeconds": 1.07
+  }
+}

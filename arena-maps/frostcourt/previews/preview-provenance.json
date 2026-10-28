@@ -1,0 +1,42 @@
+[
+  {
+    "preview": "previews/01-overview.jpg",
+    "source": "validation/renders-r4/frostcourt-overview.png",
+    "sourceSha256": "1960aeac70864b4c332cb7711869682873ec4afaf68fe530e22d76d6c64fb77d",
+    "visualGlbSha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "renderer": "Blender CPU Cycles",
+    "notBrowserScreenshot": true
+  },
+  {
+    "preview": "previews/02-lane.jpg",
+    "source": "validation/renders-r4/frostcourt-lane.png",
+    "sourceSha256": "7b71702093f96eff47ada283824f9344d182b1309cd7bb638161c0c4eab0ace1",
+    "visualGlbSha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "renderer": "Blender CPU Cycles",
+    "notBrowserScreenshot": true
+  },
+  {
+    "preview": "previews/03-fountain.jpg",
+    "source": "validation/renders-r4/frostcourt-fountain.png",
+    "sourceSha256": "f8885c5d3b2c6ae8fdc1a9e6c9bed7cd3246252a5eacd7a5916d1b6777986c38",
+    "visualGlbSha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "renderer": "Blender CPU Cycles",
+    "notBrowserScreenshot": true
+  },
+  {
+    "preview": "previews/04-wagon.jpg",
+    "source": "validation/renders-r4/frostcourt-wagon.png",
+    "sourceSha256": "739e84269f1c7fa56fe5186d5a57e2be88b46fffa4e7f3fdb356f586e74f5295",
+    "visualGlbSha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "renderer": "Blender CPU Cycles",
+    "notBrowserScreenshot": true
+  },
+  {
+    "preview": "previews/05-arcade.jpg",
+    "source": "validation/renders-r4/frostcourt-arcade.png",
+    "sourceSha256": "7299124962431719c50eec82d8c3600d4af6287219327dd3744c453a8c7a8d89",
+    "visualGlbSha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "renderer": "Blender CPU Cycles",
+    "notBrowserScreenshot": true
+  }
+]

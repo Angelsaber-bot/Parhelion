@@ -1,0 +1,14 @@
+{
+  "filesChecked": 247,
+  "addedSinceRunStart": [],
+  "removedSinceRunStart": [],
+  "changedDuringRun": [],
+  "postRunDocumentationChanges": [
+    "validation/map-polish/README.md"
+  ],
+  "note": "Immediate end-of-run check found no changes. Later README and offline Blender vertex-color evidence correction do not affect tests/build/runtime/assets.",
+  "postRunOfflineEvidenceHelperChanges": [
+    "validation/seam-barrier/render.py"
+  ],
+  "postRunRuntimeAssetOrTestChanges": []
+}

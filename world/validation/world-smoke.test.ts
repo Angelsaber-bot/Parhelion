@@ -52,3 +52,18 @@ test('actual camp spawn settles and normal walking changes position without fall
   assert.ok(p.pos.z < z - 1);
   assert.ok(p.pos.y > 15, 'camp plateau floor should remain under the player');
 });
+
+test('full new-game placement clears airborne state and settles on the actual original camp floor', () => {
+  const spawn = layout.markers.find(m => m.id === 'spawn_p1')!;
+  const p = new Player(colliders, layout.world.waterLevel);
+  p.teleport(700, 90, -700, 2); p.flying = true; p.pitch = 1.2;
+  p.gliding = true; p.inUpdraft = true; p.vel.set(4, -20, 3);
+  p.restartAt(spawn.p[0], spawn.p[1] + 1, spawn.p[2]);
+  assert.equal(p.flying, false); assert.equal(p.gliding, false); assert.equal(p.inUpdraft, false);
+  assert.equal(p.pitch, 0); assert.equal(p.yaw, 0); assert.deepEqual(p.vel.toArray(), [0, 0, 0]);
+  for (let i = 0; i < 240; i++) p.step(1 / 120, idle);
+  assert.equal(p.onGround, true); assert.equal(p.swimming, false);
+  const floor = bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(spawn.p[0], spawn.p[1] + 1, spawn.p[2]), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)!;
+  assert.ok(Math.abs(p.pos.y - floor.point.y) < .02, `actual camp platform height ${p.pos.y}, collision ${floor.point.y}`);
+  assert.ok(Math.hypot(p.pos.x - spawn.p[0], p.pos.z - spawn.p[2]) < .001);
+});

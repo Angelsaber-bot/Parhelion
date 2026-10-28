@@ -7,6 +7,7 @@ import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, WEAPONS, weaponIndex, type Loadout
 import { displayWeaponName, LOADOUT_KEY, LoadoutStore, loadoutCards, sanitizedSkins, weaponHud, weaponStats } from '../src/loadout.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
 import { readFileSync } from 'node:fs';
+import { setLanguage } from '../../shared-client/i18n.ts';
 
 function storage() {
   const values = new Map<string, string>();
@@ -145,10 +146,10 @@ it('updates the real HUD using new player state without overwriting remapped key
   slots.forEach((el, i) => { el.querySelector('kbd').textContent = ['P', '鼠标侧键 1', '3'][i]; });
   const nodes = new Map<string, Element>();
   const el = (id: string) => { if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id)!; };
-  vi.stubGlobal('document', { getElementById: el });
+  vi.stubGlobal('document', { getElementById: el, documentElement: { lang: 'zh-CN' } });
   try {
     const hud = new Hud(), p = newPlayer('self', 'A', 0, ['longnight', 'firefly', 'hammer']); p.alive = true;
-    const self = { ...p, name: 'Player', skins: [], bot: false, kills: 0, deaths: 0, respawn: 0 };
+    const self = { ...p, name: 'Player', skins: [], bot: false, kills: 0, deaths: 0, respawn: 0, spawnProtectedUntilTick: 150 };
     const snap: Snapshot = { rulesVersion: RULES_VERSION, tick: 0, layout: '1v1', phase: 'live', phaseT: 60, score: { A: 0, B: 0 }, players: [self], shields: [], events: [] };
     for (const slot of [0, 1, 2, 0, 2]) {
       p.weaponSlot = slot; p.weapon = weaponIndex(p.loadout[slot]);
@@ -158,6 +159,19 @@ it('updates the real HUD using new player state without overwriting remapped key
       expect(el('wname').textContent).toBe(displayWeaponName(WEAPONS[p.weapon].id));
       expect(el('weapon').classList.contains('melee')).toBe(slot === 2);
     }
+    expect(el('spawn-protection').textContent).toBe('◇ 出生无敌 · 2.5s');
+    expect(el('spawn-protection').classList.contains('hidden')).toBe(false);
+    snap.tick = 149; hud.update(1 / 60, p, snap, p.id, false, 'local');
+    expect(el('spawn-protection').textContent).toBe('◇ 出生无敌 · 0.1s');
+    setLanguage('en'); hud.update(1 / 60, p, snap, p.id, false, 'local');
+    expect(el('spawn-protection').textContent).toBe('◇ Spawn protected · 0.1s');
+    setLanguage('zh'); snap.tick = 150; hud.update(1 / 60, p, snap, p.id, false, 'local');
+    expect(el('spawn-protection').classList.contains('hidden')).toBe(true);
+    expect(el('spawn-protection').textContent).toBe('');
+    self.spawnProtectedUntilTick = 300; self.alive = false;
+    hud.update(1 / 60, p, snap, p.id, false, 'local'); expect(el('spawn-protection').classList.contains('hidden')).toBe(true);
+    self.alive = true; hud.update(1 / 60, p, snap, p.id, false, 'local');
+    expect(el('spawn-protection').textContent).toBe('◇ 出生无敌 · 2.5s');
     p.meleeWindup = 30; p.fireCd = 72; hud.update(1 / 60, p, snap, p.id, false, 'local');
     expect(el('ammo').textContent).toBe('蓄势'); expect(el('mag').textContent).toContain('0.5s');
     expect(slots[0].attributes.get('aria-label')).toContain('P · 狙击步枪');
@@ -169,5 +183,6 @@ it('updates the real HUD using new player state without overwriting remapped key
     expect(el('ammo').textContent).toBe('—'); expect(el('wname').textContent).toBe('');
     expect(el('scoreboard').innerHTML).toBe(''); expect(el('scoreboard').classList.contains('hidden')).toBe(true);
     expect(el('banner').textContent).toBe(''); expect(el('banner').classList.contains('hidden')).toBe(true);
-  } finally { vi.unstubAllGlobals(); }
+    expect(el('spawn-protection').textContent).toBe(''); expect(el('spawn-protection').classList.contains('hidden')).toBe(true);
+  } finally { setLanguage('zh'); vi.unstubAllGlobals(); }
 });

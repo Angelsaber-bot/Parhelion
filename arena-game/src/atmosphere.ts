@@ -15,6 +15,24 @@ export interface Atmosphere {
 }
 
 export const ATMOSPHERES: Record<string, Atmosphere> = {
+  seabreeze: {
+    background: 0x9cbbc8, fog: [0xaac8d2, 90, 240], exposure: 1.0, hemi: [0xcbe1e8, 0x69656b, 1.7],
+    sun: { color: 0xffe5bd, intensity: 2.7, pos: [-28, 36, 18] },
+    sky: { horizon: 0xe0ded0, mid: 0x82b5ce, top: 0x467eaa, sun: 0xffedca, cloudLit: 0xf8ead6, cloudShade: 0xa1b2c7, night: 0 },
+    particles: 'none', bloom: 0.18, bloomThreshold: 1.8,
+  },
+  snowcourt: {
+    background: 0xb8c5d6, fog: [0xc0cbd9, 80, 220], exposure: 0.94, hemi: [0xdce6f4, 0x798397, 1.65],
+    sun: { color: 0xf3e8d4, intensity: 2.0, pos: [-24, 30, 18] },
+    sky: { horizon: 0xe6e5e3, mid: 0xbbcbdc, top: 0x859fbd, sun: 0xfff3df, cloudLit: 0xeef0f2, cloudShade: 0xb0bfd1, night: 0 },
+    particles: 'snow', bloom: 0.08, bloomThreshold: 2.2,
+  },
+  oathfield: {
+    background: 0xb5c6bf, fog: [0xb5c5b4, 70, 220], exposure: 1.0, hemi: [0xd8e6ec, 0x637654, 1.6],
+    sun: { color: 0xffddb0, intensity: 2.6, pos: [-35, 22, 20] },
+    sky: { horizon: 0xe6cfab, mid: 0x9dbdcc, top: 0x57859f, sun: 0xffedc6, cloudLit: 0xf7e5c8, cloudShade: 0xa3afc4, night: 0.06 },
+    particles: 'motes', bloom: 0.16, bloomThreshold: 1.8,
+  },
   day: {
     background: 0xbfdcf2, fog: [0xc4e2f6, 70, 220], exposure: 1.05, hemi: [0xd6ecff, 0x6a7088, 1.8],
     sun: { color: 0xffe7c8, intensity: 3.0, pos: [-22, 35, 18] },

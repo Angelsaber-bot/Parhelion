@@ -1,0 +1,116 @@
+{
+  "scope": "Actual runtime player/Dawn GLBs; CPU pose/contact metrics, not browser/FPS or grounded live-play validation",
+  "glider": [
+    {
+      "hz": 30,
+      "state": "air-toggle",
+      "canopyHidden": 0.36666666666666664,
+      "rifleContact": 0.3333333333333333,
+      "maxHandTravel": 0.13440167238581693
+    },
+    {
+      "hz": 30,
+      "state": "landing",
+      "canopyHidden": 0.36666666666666664,
+      "rifleContact": 0.3333333333333333,
+      "maxHandTravel": 0.13440167238581693
+    },
+    {
+      "hz": 60,
+      "state": "air-toggle",
+      "canopyHidden": 0.35,
+      "rifleContact": 0.31666666666666665,
+      "maxHandTravel": 0.06758714898094972
+    },
+    {
+      "hz": 60,
+      "state": "landing",
+      "canopyHidden": 0.35,
+      "rifleContact": 0.31666666666666665,
+      "maxHandTravel": 0.06758714898094972
+    },
+    {
+      "hz": 120,
+      "state": "air-toggle",
+      "canopyHidden": 0.3416666666666667,
+      "rifleContact": 0.31666666666666665,
+      "maxHandTravel": 0.03385570459558724
+    },
+    {
+      "hz": 120,
+      "state": "landing",
+      "canopyHidden": 0.3416666666666667,
+      "rifleContact": 0.31666666666666665,
+      "maxHandTravel": 0.03385570459558724
+    }
+  ],
+  "unarmedGlider": [
+    {
+      "hz": 30,
+      "state": "unarmed-landing",
+      "maxHandTravel": 0.11663997850494728
+    },
+    {
+      "hz": 60,
+      "state": "unarmed-landing",
+      "maxHandTravel": 0.058870621481782764
+    },
+    {
+      "hz": 120,
+      "state": "unarmed-landing",
+      "maxHandTravel": 0.029484736766804312
+    }
+  ],
+  "carry": [
+    {
+      "hz": 30,
+      "speed": 5.5,
+      "leftSwing": 0.23527775098921205,
+      "minMuzzleY": 0.5804204220314295
+    },
+    {
+      "hz": 30,
+      "speed": 9,
+      "leftSwing": 0.23576010213710036,
+      "minMuzzleY": 0.573929570419123
+    },
+    {
+      "hz": 60,
+      "speed": 5.5,
+      "leftSwing": 0.23519256601406016,
+      "minMuzzleY": 0.580454736707211
+    },
+    {
+      "hz": 60,
+      "speed": 9,
+      "leftSwing": 0.2356043168248211,
+      "minMuzzleY": 0.5735437529394367
+    },
+    {
+      "hz": 120,
+      "speed": 5.5,
+      "leftSwing": 0.2354518545561297,
+      "minMuzzleY": 0.5803884195736577
+    },
+    {
+      "hz": 120,
+      "speed": 9,
+      "leftSwing": 0.23580665044127605,
+      "minMuzzleY": 0.573816788054282
+    }
+  ],
+  "transitions": [
+    {
+      "hz": 30,
+      "maxTravel": 0.13644789827241494
+    },
+    {
+      "hz": 60,
+      "maxTravel": 0.07097513242340386
+    },
+    {
+      "hz": 120,
+      "maxTravel": 0.03691935744072566
+    }
+  ]
+}

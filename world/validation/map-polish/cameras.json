@@ -1,0 +1,72 @@
+[
+  {
+    "name": "alpha-hatch",
+    "region": "alpha",
+    "eye": [
+      31.89972846309191,
+      24.782739344596926,
+      173.7429208386144
+    ],
+    "target": [
+      23.80584675675028,
+      21.66783806827928,
+      173.60665285799175
+    ]
+  },
+  {
+    "name": "britain-standard",
+    "region": "britain",
+    "eye": [
+      -134,
+      43,
+      -129
+    ],
+    "target": [
+      -140,
+      41,
+      -150
+    ]
+  },
+  {
+    "name": "blacksail-cleat",
+    "region": "blacksail",
+    "eye": [
+      -165,
+      7.9,
+      247
+    ],
+    "target": [
+      -171.8,
+      3.55,
+      244
+    ]
+  },
+  {
+    "name": "winter-curtains",
+    "region": "winter",
+    "eye": [
+      -170,
+      10.1,
+      146
+    ],
+    "target": [
+      -176,
+      9.7,
+      136.7
+    ]
+  },
+  {
+    "name": "kyoto-joinery",
+    "region": "kyoto",
+    "eye": [
+      48,
+      9.5,
+      -230
+    ],
+    "target": [
+      43,
+      8.7,
+      -239
+    ]
+  }
+]

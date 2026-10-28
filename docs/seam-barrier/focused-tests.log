@@ -1,0 +1,35 @@
+✔ alpha: actual exported geometry has finite attributes and valid indices within transfer and triangle budgets (153.191764ms)
+✔ alpha: exact baseline collision preserved except explicitly realigned Alpha seam gates (517.774558ms)
+✔ britain: actual exported geometry has finite attributes and valid indices within transfer and triangle budgets (238.849705ms)
+✔ britain: exact baseline collision preserved except explicitly realigned Alpha seam gates (362.955973ms)
+✔ alpha: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (462.986828ms)
+✔ britain: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (721.169995ms)
+✔ blacksail: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (476.677894ms)
+✔ winter: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (602.197522ms)
+✔ kyoto: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (1090.622141ms)
+✔ west: actual field and collider occupy the same pylon plane/returns, preserve unlock and old vertical envelope (10.322813ms)
+✔ west: actual boundary + visible returns have no end-run path, and no old remote wall remains (306.567018ms)
+✔ west: actual Player is blocked before/unblocked after summon, and reset relocks every segment (30.120113ms)
+✔ west: radius-aware jump/glide/updraft attempts cannot slip around either end, return joints, or above the pylon cap (182.136454ms)
+✔ north: actual field and collider occupy the same pylon plane/returns, preserve unlock and old vertical envelope (5.235282ms)
+✔ north: actual boundary + visible returns have no end-run path, and no old remote wall remains (167.452909ms)
+✔ north: actual Player is blocked before/unblocked after summon, and reset relocks every segment (22.103578ms)
+✔ north: radius-aware jump/glide/updraft attempts cannot slip around either end, return joints, or above the pylon cap (142.020241ms)
+✔ east: actual field and collider occupy the same pylon plane/returns, preserve unlock and old vertical envelope (5.050654ms)
+✔ east: actual boundary + visible returns have no end-run path, and no old remote wall remains (217.525114ms)
+✔ east: actual Player is blocked before/unblocked after summon, and reset relocks every segment (11.581184ms)
+✔ east: radius-aware jump/glide/updraft attempts cannot slip around either end, return joints, or above the pylon cap (187.39363ms)
+✔ south: actual field and collider occupy the same pylon plane/returns, preserve unlock and old vertical envelope (3.333061ms)
+✔ south: actual boundary + visible returns have no end-run path, and no old remote wall remains (181.32606ms)
+✔ south: actual Player is blocked before/unblocked after summon, and reset relocks every segment (13.011391ms)
+✔ south: radius-aware jump/glide/updraft attempts cannot slip around either end, return joints, or above the pylon cap (174.865641ms)
+✔ unchanged global links/boundaries close return endpoints, and reset spawn stays on the free camp side (18.971037ms)
+✔ V debug noclip remains explicit, not a newly imposed progression lock (1.496891ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3870.391226

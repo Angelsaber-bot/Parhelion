@@ -10,6 +10,8 @@ type Side = 'R' | 'L';
 export interface PlayerAnimationState {
   speed: number; onGround: boolean; swimming: boolean; vy: number; moveYaw: number | null;
   flying?: boolean; gliding?: boolean; aim?: number; pitch?: number; firing?: boolean;
+  /** Progression ownership, not a load-state flag; omitted preserves equipped callers. */
+  armed?: boolean;
   /** World-space view heading (+Z forward), used only while firing; never changes the camera. */
   lookYaw?: number;
 }
@@ -42,6 +44,9 @@ const gunPalm: Record<Side, THREE.Quaternion> = {
   L: basis(V(1, 0, -.15), V(0, -1, 0)),
 };
 const gliderPalm = basis(V(0, 1, 0), V(0, 0, -1));
+// Opening keeps its gentle damping; closing has a finite, interruptible travel budget.
+// Share it with rifle recovery so hands finish transferring before the frame disappears.
+const GLIDER_STOW_SECONDS = .34;
 
 export async function loadSkinnedCharacter(options: { outlines?: boolean; load?: (url: string) => Promise<{ scene: THREE.Group }> } = {}) {
   const gltf = await (options.load ?? (url => new GLTFLoader().loadAsync(url)))(PLAYER_V2_URL);
@@ -143,7 +148,7 @@ function aimLink(bone: THREE.Bone, child: THREE.Bone, direction: THREE.Vector3) 
 }
 
 /** Actual elbow/wrist positions and bind axes; no .27/.28 metre or local −Y assumptions. */
-export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion) {
+export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion, relaxed = 0) {
   const upper = rig.joints[`Arm_${side}`] as THREE.Bone, lower = rig.joints[`Forearm_${side}`] as THREE.Bone, hand = rig.joints[`Hand_${side}`] as THREE.Bone;
   const socket = rig.handSockets[side];
   const handQ = palmOrientation.clone().multiply(socket.quaternion.clone().invert());
@@ -154,7 +159,8 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
   const delta = target.clone().sub(shoulder), requestedDistance = delta.length();
   const distance = THREE.MathUtils.clamp(requestedDistance, Math.abs(length1 - length2) + .0001, length1 + length2 - .0001);
   const axis = delta.normalize();
-  const pole = V(side === 'R' ? -.65 : .65, -.8, -.14).applyQuaternion(rig.root.getWorldQuaternion(Q()));
+  const sign = side === 'R' ? -1 : 1;
+  const pole = V(sign * .65, -.8, -.14).lerp(V(sign * .10, -.8, .35), relaxed).applyQuaternion(rig.root.getWorldQuaternion(Q()));
   pole.addScaledVector(axis, -pole.dot(axis));
   if (pole.lengthSq() < 1e-8) pole.copy(V(0, 0, -1).applyQuaternion(rig.root.getWorldQuaternion(Q()))).addScaledVector(axis, -axis.z);
   pole.normalize();
@@ -170,9 +176,15 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
 
 export class SkinnedCharacterAnimator {
   facing = 0;
-  private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0;
+  private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private carry = 0; private strideSpeed = 0;
   private lastState: PlayerAnimationState = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null };
   constructor(public rig: SkinnedCharacterRig) {}
+  /** Full new-game/reset boundary, not a normal equipment/locomotion transition. */
+  reset(armed = true, facing = 0) {
+    this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.carry = this.strideSpeed = 0;
+    this.ready = armed ? 1 : 0; this.facing = facing;
+    this.update(0, { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null, armed });
+  }
   /** Match the actual targeting camera, even when input fires before RAF or after free-look. */
   prepareShot(look: THREE.Vector3) {
     if (!look.toArray().every(Number.isFinite) || look.lengthSq() < 1e-12) return;
@@ -186,15 +198,20 @@ export class SkinnedCharacterAnimator {
     this.lastState = { ...state };
     dt = Number.isFinite(dt) ? THREE.MathUtils.clamp(dt, 0, .1) : 0;
     const rig = this.rig, J = rig.joints;
+    const armed = state.armed !== false, firing = armed && !!state.firing;
+    J.Gun.visible = armed;
     const speed = Number.isFinite(state.speed) ? Math.max(0, state.speed) : 0;
-    const ads = THREE.MathUtils.clamp(state.aim ?? 0, 0, 1), pitch = THREE.MathUtils.clamp(state.pitch ?? 0, -1.5, 1.5);
+    // Filter visual gait only; starts/stops must not jerk the shoulders/held weapon while
+    // the actual player controller keeps its existing immediate movement response.
+    this.strideSpeed = THREE.MathUtils.damp(this.strideSpeed, speed, 10, dt);
+    const ads = armed ? THREE.MathUtils.clamp(state.aim ?? 0, 0, 1) : 0, pitch = THREE.MathUtils.clamp(state.pitch ?? 0, -1.5, 1.5);
     // Shot presentation is independent of ADS input/FOV. Raise immediately for an eligible shot,
     // then ease back to low ready / the glider without inventing a firing cooldown or camera change.
-    this.fireAim = state.firing ? 1 : THREE.MathUtils.damp(this.fireAim, 0, 8, dt);
+    this.fireAim = !armed ? 0 : firing ? 1 : THREE.MathUtils.damp(this.fireAim, 0, 8, dt);
     const aim = Math.max(ads, this.fireAim);
     const extreme = THREE.MathUtils.smoothstep(Math.abs(pitch), .65, 1.30);
     const previousFacing = this.facing;
-    if (state.firing && Number.isFinite(state.lookYaw)) {
+    if (firing && Number.isFinite(state.lookYaw)) {
       // dt=0 must still align an input-event shot. A 12*dt movement lerp would leave it sideways.
       this.facing += Math.atan2(Math.sin(state.lookYaw! - this.facing), Math.cos(state.lookYaw! - this.facing));
     } else if (state.moveYaw !== null && Number.isFinite(state.moveYaw)) {
@@ -202,16 +219,26 @@ export class SkinnedCharacterAnimator {
       this.facing += delta * Math.min(1, dt * 12);
     }
     rig.root.rotation.y = this.facing;
-    this.time += dt; this.phase += dt * (4 + speed * 1.25);
+    this.time += dt; this.phase += dt * (4 + this.strideSpeed * 1.25);
     this.air = THREE.MathUtils.damp(this.air, state.onGround || state.swimming ? 0 : 1, 10, dt);
-    this.glide = THREE.MathUtils.damp(this.glide, state.gliding ? 1 : 0, state.gliding ? 7 : 4, dt);
-    const needsRifle = !state.swimming && !state.gliding || ads > .001 || !!state.firing;
+    const stowing = !state.gliding && this.glide > 0;
+    this.glide = state.gliding ? THREE.MathUtils.damp(this.glide, 1, 7, dt)
+      : Math.max(0, this.glide - dt / GLIDER_STOW_SECONDS);
+    const needsRifle = armed && (!state.swimming && !state.gliding || ads > .001 || firing);
     // Existing gameplay permits firing while swimming/gliding. The first shot cannot wait for an
     // invented draw cooldown or come from a back-slung rifle: immediate contact pose on fire.
-    this.ready = state.firing ? 1 : THREE.MathUtils.damp(this.ready, needsRifle ? 1 : 0, 3.5, dt);
+    this.ready = !armed ? 0 : firing ? 1 : stowing && needsRifle
+      ? Math.min(1, this.ready + dt / GLIDER_STOW_SECONDS)
+      : THREE.MathUtils.damp(this.ready, needsRifle ? 1 : 0, 3.5, dt);
     const turnRate = dt > 0 ? (this.facing - previousFacing) / dt : 0;
     this.bank = THREE.MathUtils.damp(this.bank, state.gliding ? THREE.MathUtils.clamp(-turnRate * .045, -.12, .12) : 0, 5, dt);
-    const g = this.glide, r = this.ready, run = THREE.MathUtils.clamp(speed / 9, 0, 1), move = THREE.MathUtils.clamp(speed / 2, 0, 1), swing = Math.sin(this.phase);
+    const g = this.glide, r = this.ready, run = THREE.MathUtils.clamp(this.strideSpeed / 9, 0, 1), move = THREE.MathUtils.clamp(this.strideSpeed / 2, 0, 1), swing = Math.sin(this.phase);
+    const carryTarget = state.onGround && !state.swimming && !state.gliding ? THREE.MathUtils.clamp(speed / 2, 0, 1) * (1 - aim) : 0;
+    this.carry = aim >= .999 ? 0 : THREE.MathUtils.damp(this.carry, carryTarget, 6, dt);
+    // Ordinary travel is a one-handed muzzle-down carry, not a shouldered combat stance.
+    // ADS blends back to two hands; firing takes ownership immediately, including
+    // prepareShot's dt=0 input-event path. Neither changes camera or combat timing.
+    const carry = this.carry * (1 - g);
     for (const [bone, rest] of rig.rest) { bone.position.copy(rest.p); bone.quaternion.copy(rest.q); bone.scale.copy(rest.s); }
     const rotation = (name: string, x: number, y = 0, z = 0) => applyLocalDelta(rig, J[name] as THREE.Bone, Q().setFromEuler(new THREE.Euler(x, y, z)));
     const hip = J.Hips as THREE.Bone, hipRest = rig.rest.get(hip)!;
@@ -225,8 +252,8 @@ export class SkinnedCharacterAnimator {
     rotation('Chest', bodyLean * .35);
     rotation('UpperChest', bodyLean * .40);
     // A small real clavicle protraction keeps the support arm reachable at steep cross-body aim.
-    rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r);
-    rotation('Shoulder_R', 0, .05 * r);
+    rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r * (1 - carry));
+    rotation('Shoulder_R', 0, .05 * r * (1 - carry));
     // Camera may look almost vertically; a human neck must not inherit that entire rotation.
     rotation('Neck', -bodyLean * .30 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim);
     rotation('Head', -bodyLean * .55 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim));
@@ -261,9 +288,13 @@ export class SkinnedCharacterAnimator {
     rig.root.updateMatrixWorld(true);
     const qReady = rig.gunHold.q;
     const qAim = Q().setFromEuler(new THREE.Euler(pitch, Math.PI, 0, 'YXZ'));
-    const gunQ = qReady.clone().slerp(qAim, aim);
+    // Cant the receiver away from the sleeve and point the barrel outside the leading knee.
+    const qCarry = Q().setFromEuler(new THREE.Euler(-1.08 + swing * .025, Math.PI - .40, -.65, 'YXZ'));
+    const gunQ = qReady.clone().slerp(qCarry, carry).slerp(qAim, aim);
     const shoulderY = (J.Arm_R.getWorldPosition(V()).y + J.Arm_L.getWorldPosition(V()).y) / 2 - rig.root.position.y;
     const readyGrip = V(-.21, shoulderY - .13, .06);
+    const carryGrip = V(-.30 + Math.cos(this.phase) * .006, shoulderY - .44 + Math.cos(this.phase * 2) * .006, .15 + swing * .018);
+    readyGrip.lerp(carryGrip, carry);
     // At steep angles the stock/barrel rotates past the face. Move the complete gun outside the
     // head silhouette, not through it; camera range, barrel direction and rifle size stay intact.
     const aimGrip = V(-.21 - .025 * extreme, shoulderY - .10 + Math.max(0, -Math.sin(pitch)) * .12, .10 + .04 * extreme);
@@ -278,23 +309,30 @@ export class SkinnedCharacterAnimator {
     const handGunWeight = THREE.MathUtils.smoothstep(r, .20, .95);
     for (const [side, sign] of [['R', -1], ['L', 1]] as const) {
       const freePoint = V(sign * .25, .99, .04);
+      if (side === 'L' || !armed) {
+        const stride = this.phase + (side === 'R' ? Math.PI : 0);
+        freePoint.lerp(V(sign * .27, shoulderY - .49 + Math.cos(stride) * .012 * move, .035 + Math.sin(stride) * .12 * move), armed ? carry : 1);
+      }
       if (state.swimming) freePoint.set(sign * (.22 + Math.cos(this.time * 3.3 + sign) * .10), shoulderY - .20 + Math.sin(this.time * 3.3 + sign) * .10, .24 + Math.cos(this.time * 3.3 + sign) * .16);
       const palmPoint = rig.root.localToWorld(freePoint);
       const freePalm = state.swimming ? basis(V(sign * .15, -.12, 1), V(0, 1, .12)) : basis(V(0, -1, 0), V(sign, 0, 0));
       const handQ = rootQ.clone().multiply(freePalm);
       // While the frame is still deployed, transfer directly between its real grips and the
       // forward held-rifle pose. Never chase the gun through its back-sling path with a hand.
-      const glideContact = g > .02 ? 1 : g / .02;
+      // Water/unarmed travel has no rifle to receive the hands. Release across the close, not
+      // holding the frame until its final few pixels and snapping to the swim stroke.
+      const glideContact = stowing && (state.swimming || !armed) ? THREE.MathUtils.smoothstep(g, 0, 1) : g > .02 ? 1 : g / .02;
       palmPoint.lerp(rig.glider.grips[side].getWorldPosition(V()), glideContact);
       handQ.slerp(gliderWorldQ.clone().multiply(gliderPalm), glideContact);
       const anchor = side === 'R' ? rig.gunAnchors.grip : rig.gunAnchors.support;
       const heldAnchor = anchor.clone().applyQuaternion(gunQ).add(holdPosition);
-      palmPoint.lerp(rig.root.localToWorld(heldAnchor), handGunWeight);
-      handQ.slerp(heldGunWorldQ.clone().multiply(gunPalm[side]), handGunWeight);
-      solvePlayerArm(rig, side, palmPoint, handQ);
-      this.poseFingers(side, handGunWeight, glideContact * (1 - handGunWeight));
+      const contact = handGunWeight * (side === 'L' ? 1 - carry : 1);
+      palmPoint.lerp(rig.root.localToWorld(heldAnchor), contact);
+      handQ.slerp(heldGunWorldQ.clone().multiply(gunPalm[side]), contact);
+      solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g);
+      this.poseFingers(side, contact, glideContact * (1 - contact));
     }
-    rig.diagnostics.mode = r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : 'transition';
+    rig.diagnostics.mode = r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
     rig.root.updateMatrixWorld(true);
     rig.skeletons.forEach(s => s.update());
   }

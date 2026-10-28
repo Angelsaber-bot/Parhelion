@@ -1,0 +1,47 @@
+{
+  "scope": "Actual production animator and real player/Dawn GLBs; CPU pose/contact metrics, not browser/FPS",
+  "rows": [
+    {
+      "hz": 30,
+      "state": "air-toggle",
+      "canopyHidden": 1.0666666666666667,
+      "rifleContact": 0.7666666666666667,
+      "maxHandTravel": 0.08099468141135024
+    },
+    {
+      "hz": 30,
+      "state": "landing",
+      "canopyHidden": 1.0666666666666667,
+      "rifleContact": 0.7666666666666667,
+      "maxHandTravel": 0.08099468141135024
+    },
+    {
+      "hz": 60,
+      "state": "air-toggle",
+      "canopyHidden": 1.05,
+      "rifleContact": 0.75,
+      "maxHandTravel": 0.040875570358003675
+    },
+    {
+      "hz": 60,
+      "state": "landing",
+      "canopyHidden": 1.05,
+      "rifleContact": 0.75,
+      "maxHandTravel": 0.040875570358003675
+    },
+    {
+      "hz": 120,
+      "state": "air-toggle",
+      "canopyHidden": 1.05,
+      "rifleContact": 0.7416666666666667,
+      "maxHandTravel": 0.02047995159152915
+    },
+    {
+      "hz": 120,
+      "state": "landing",
+      "canopyHidden": 1.05,
+      "rifleContact": 0.7416666666666667,
+      "maxHandTravel": 0.02047995159152915
+    }
+  ]
+}

@@ -1,7 +1,9 @@
 """Shared glTF toolkit for Parhelion Arena map art (pure Python 3, no Blender, no packages).
 
-Mesh collects triangles per material; write_glb(path, nodes, materials, MATS) writes a static GLB
-with factor-only PBR materials, the subset arena-game loads and converts to its cel shader.
+Mesh collects triangles per material; write_glb(path, nodes, materials, MATS) writes a static GLB.
+The default remains byte-compatible factor-only PBR for existing maps. New chapters can pass
+`textures={material: {baseColor: Path, orm: Path, normal: Path, scale: float}}` to embed original
+surface channels with repeatable metre-projected UVs; no external image URIs are written.
 MATS maps a material name to (sRGB hex, metallic, roughness, emissive, alpha): emissive <= 1 is a
 soft self-lit lift, > 1 uses KHR_materials_emissive_strength; alpha < 1 blends.
 """
@@ -16,6 +18,16 @@ def lin(h):
 class Mesh:
     def __init__(self):
         self.prims = {}  # material -> [positions, normals, indices]
+        # Optional export channel; legacy factor-only GLBs do not emit it. Coordinates
+        # are projected in world metres per face, so independently authored batches
+        # share the same surface scale without texture stretching on large walls.
+        self.uvs = {}
+
+    def surface_uv(self, mat, points, normal):
+        axis = max(range(3), key=lambda i: abs(normal[i]))
+        uv = self.uvs.setdefault(mat, [])
+        for p in points:
+            uv.extend((p[2], p[1]) if axis == 0 else (p[0], p[2]) if axis == 1 else (p[0], p[1]))
 
     def tri_list(self, mat):
         return self.prims.setdefault(mat, [[], [], []])
@@ -30,6 +42,7 @@ class Mesh:
         base = len(P) // 3
         for p in (a, b, c, d):
             P.extend(p); N.extend(n)
+        self.surface_uv(mat, (a, b, c, d), n)
         I.extend([base, base + 1, base + 2, base, base + 2, base + 3])
 
     def tri(self, mat, a, b, c):
@@ -40,6 +53,7 @@ class Mesh:
         base = len(P) // 3
         for p in (a, b, c):
             P.extend(p); N.extend([x / L for x in n])
+        self.surface_uv(mat, (a, b, c), n)
         I.extend([base, base + 1, base + 2])
 
     def box(self, mat, lo, hi, skip_bottom=False, top_mat=None):
@@ -108,10 +122,37 @@ class Mesh:
 
 
 # ---------------------------------------------------------------- glTF writer
-def write_glb(path, node_list, materials_used, MATS, generator='Parhelion arena-maps glbkit'):
+def write_glb(path, node_list, materials_used, MATS, generator='Parhelion arena-maps glbkit', textures=None):
     mat_index = {n: i for i, n in enumerate(materials_used)}
     gl = dict(asset=dict(version='2.0', generator=generator), scene=0, scenes=[dict(nodes=[])],
               nodes=[], meshes=[], materials=[], accessors=[], bufferViews=[], buffers=[])
+    textures = textures or {}
+    blob = bytearray()
+
+    def view(raw, target=None):
+        while len(blob) % 4:
+            blob.append(0)
+        v = dict(buffer=0, byteOffset=len(blob), byteLength=len(raw))
+        if target is not None:
+            v['target'] = target
+        gl['bufferViews'].append(v)
+        blob.extend(raw)
+        return len(gl['bufferViews']) - 1
+
+    image_cache = {}
+    def texture_index(source):
+        from pathlib import Path
+        source = Path(source)
+        key = str(source.resolve())
+        if key in image_cache:
+            return image_cache[key]
+        gl.setdefault('samplers', [dict(magFilter=9729, minFilter=9987, wrapS=10497, wrapT=10497)])
+        images = gl.setdefault('images', [])
+        images.append(dict(name=source.name, bufferView=view(source.read_bytes()), mimeType='image/jpeg' if source.suffix.lower() in ('.jpg', '.jpeg') else 'image/png'))
+        texs = gl.setdefault('textures', [])
+        texs.append(dict(sampler=0, source=len(images)-1))
+        image_cache[key] = len(texs)-1
+        return len(texs)-1
     ext = set()
     for n in materials_used:
         hx, metal, rough, emit, alpha = MATS[n]
@@ -123,17 +164,18 @@ def write_glb(path, node_list, materials_used, MATS, generator='Parhelion arena-
                 m['extensions'] = dict(KHR_materials_emissive_strength=dict(emissiveStrength=emit)); ext.add('KHR_materials_emissive_strength')
         if alpha < 1:
             m['alphaMode'] = 'BLEND'
+        spec = textures.get(n, {})
+        if spec.get('baseColor'):
+            m['pbrMetallicRoughness']['baseColorTexture'] = dict(index=texture_index(spec['baseColor']))
+        if spec.get('orm'):
+            idx = texture_index(spec['orm'])
+            m['pbrMetallicRoughness']['metallicRoughnessTexture'] = dict(index=idx)
+            m['occlusionTexture'] = dict(index=idx, strength=spec.get('occlusionStrength', .45))
+        if spec.get('normal'):
+            m['normalTexture'] = dict(index=texture_index(spec['normal']), scale=spec.get('normalScale', .45))
         gl['materials'].append(m)
     if ext:
         gl['extensionsUsed'] = sorted(ext)
-    blob = bytearray()
-
-    def view(raw, target):
-        while len(blob) % 4:
-            blob.append(0)
-        gl['bufferViews'].append(dict(buffer=0, byteOffset=len(blob), byteLength=len(raw), target=target))
-        blob.extend(raw)
-        return len(gl['bufferViews']) - 1
     tris = 0
     for name, mesh, extras in node_list:
         prims = []
@@ -152,7 +194,18 @@ def write_glb(path, node_list, materials_used, MATS, generator='Parhelion arena-
             gl['accessors'] += [dict(bufferView=view(pos, 34962), componentType=5126, count=nv, type='VEC3', min=mn, max=mx),
                                 dict(bufferView=view(nor, 34962), componentType=5126, count=nv, type='VEC3'),
                                 dict(bufferView=view(idx, 34963), componentType=5125, count=len(I), type='SCALAR')]
-            prims.append(dict(attributes=dict(POSITION=a0, NORMAL=a0 + 1), indices=a0 + 2, material=mat_index[mat]))
+            attrs = dict(POSITION=a0, NORMAL=a0 + 1)
+            if mat in textures:
+                uv = mesh.uvs.get(mat, [])
+                if len(uv) != nv * 2:
+                    raise ValueError(f'{name}/{mat}: texture coordinates missing ({len(uv)} for {nv} vertices)')
+                scale = textures[mat].get('scale', 1)
+                raw_uv = struct.pack(f'<{len(uv)}f', *[v * scale for v in uv])
+                attrs['TEXCOORD_0'] = len(gl['accessors'])
+                gl['accessors'].append(dict(bufferView=view(raw_uv, 34962), componentType=5126, count=nv, type='VEC2'))
+                # glTF occlusion uses TEXCOORD_0 by default; sharing the same UV set
+                # keeps Blender, GLTFLoader and the runtime channels aligned.
+            prims.append(dict(attributes=attrs, indices=a0 + 2, material=mat_index[mat]))
             tris += len(I) // 3
         if not prims:
             continue

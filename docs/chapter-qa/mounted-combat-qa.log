@@ -1,0 +1,13 @@
+✔ mounted charge reaches real WorldCombat damage and removes exactly 16 boss HP once at contact (50.230661ms)
+✔ WorldCombat revalidates LOS during a mounted charge and blocks real HP loss (19.864526ms)
+✔ horse standing footprint rejects a wall behind its center, not only ahead of its nose (2.193498ms)
+✔ a horse cannot turn its rear/flank into a narrow side wall (1.797052ms)
+✔ rider-height overhang blocks the whole mounted actor (0.569677ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 489.923466

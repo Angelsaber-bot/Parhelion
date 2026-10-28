@@ -8,6 +8,9 @@ import asterGlb from '../../arena/assets/station_visual.glb?url';
 import zenithGlb from '../../arena-maps/zenith/assets/zenith_visual.glb?url';
 import sakuraGlb from '../../arena-maps/sakura/assets/sakura_visual.glb?url';
 import neonGlb from '../../arena-maps/neon/assets/neon_visual.glb?url';
+import blackflagGlb from '../../arena-maps/blackflag/assets/blackflag_visual.glb?url';
+import frostcourtGlb from '../../arena-maps/frostcourt/assets/frostcourt_visual.glb?url';
+import camlannGlb from '../../arena-maps/camlann/assets/camlann_visual.glb?url';
 import asterOverlayGlb from '../../arena-maps/aster/assets/aster_overlay.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../shared/content.ts';
 import type { Vec3 } from '../shared/map.ts';
@@ -20,11 +23,12 @@ import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { buildFighter, FighterAnimator } from './fighter.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
+import { CRAFTED_CHAPTERS, toChapterMaterial } from './chapterMaterial.ts';
 import { attachGunArt, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, zenith: zenithGlb, sakura: sakuraGlb, neon: neonGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
 const MAP_OVERLAY: Record<string, string> = { aster: asterOverlayGlb };
 
@@ -157,7 +161,8 @@ export class ArenaScene {
           if (!m.isMesh) return;
           const decorative = m.userData.decorative === true;
           const role = m.userData.role as string | undefined;
-          m.material = Array.isArray(m.material) ? m.material.map(toCel) : toCel(m.material);
+          const convert = CRAFTED_CHAPTERS.has(id) ? toChapterMaterial : toCel;
+          m.material = Array.isArray(m.material) ? m.material.map(convert) : convert(m.material);
           m.receiveShadow = true;
           m.castShadow = !decorative && role !== 'floor' && role !== 'wayfinding';
         });

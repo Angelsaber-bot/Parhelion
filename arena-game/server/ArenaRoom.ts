@@ -17,7 +17,8 @@ export class ArenaRoom extends Room {
   onCreate(options: Partial<JoinOptions>) {
     const core = this.core = new RoomCore(options);
     this.maxClients = core.capacity;
-    this.setMetadata({ layout: core.layout, map: core.mapId });
+    // Colyseus 0.18 replaces metadata; keep every declared matchmaking filter.
+    this.setMetadata({ layout: core.layout, map: core.mapId, bots: core.fillBots });
     this.onMessage('rematch', () => core.rematch());
     this.onMessage('input', (client: Client, inputs: unknown) => core.input(client.sessionId, inputs));
     this.setSimulationInterval(() => {

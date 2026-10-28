@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterKit, KitEventResult } from './characters/characterKit';
 import type { Collider } from './player';
+import { MountedCharge } from './mountedCharge';
 
 type Target = { id: string; position: THREE.Vector3 } | null;
 export interface KitCompanionOptions {
@@ -9,7 +10,7 @@ export interface KitCompanionOptions {
   range: number;
   /** Damage per authored hit/fire event. */
   damage: number;
-  target: (position: THREE.Vector3, range: number) => Target;
+  target: (position: THREE.Vector3, range: number, targetId?: string) => Target;
   strike: (position: THREE.Vector3, range: number, damage: number, targetId: string) => Target;
   /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
   engage?: (player: THREE.Vector3) => Target;
@@ -25,10 +26,13 @@ export class KitCompanion {
   private attackTarget: string | null = null;
   private readonly ray = new THREE.Ray();
   private readonly down = new THREE.Vector3(0, -1, 0);
+  private mounted?: MountedCharge;
   constructor(private options: KitCompanionOptions) {}
-  get attacking() { return this.attackTarget !== null; }
+  get attacking() { return this.mounted?.attacking ?? this.attackTarget !== null; }
+  get mountedPhase() { return this.mounted?.phase; }
   /** Wire as the kit's onEvent. */
   onEvent(actor: CharacterKit, event: KitEventResult) {
+    if (actor.definition.mount) { this.mounted?.onEvent(actor, event); return; }
     if (event.state !== 'attack' || !this.attackTarget) return;
     const { range, damage } = this.options;
     // Ranged shots need a little slack beyond acquisition range if the target stepped back.
@@ -36,12 +40,17 @@ export class KitCompanion {
   }
   /** The servant stopped following (recalled, switched, defeated, swimming…). */
   release(actor?: CharacterKit) {
+    this.mounted?.release(actor);
     this.activeLast = false; this.attackTarget = null;
     if (actor && actor.state === 'attack') actor.play(actor.definition.defaultState);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number, paused: boolean) {
     if (paused) return;
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
+    if (actor.definition.mount) {
+      this.mounted ??= new MountedCharge(this.options);
+      this.mounted.update(actor, dt, player, yaw); return;
+    }
     const root = actor.root;
     // Opposite side from Saber's slot so a quick switch never stacks them visually.
     const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw) * 2.4 - Math.sin(yaw) * .8, 0, Math.sin(yaw) * 2.4 - Math.cos(yaw) * .8));

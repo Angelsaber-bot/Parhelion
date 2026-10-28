@@ -1,0 +1,595 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-world@0.1.0 test
+> node --import tsx --test validation/*.test.ts
+
+✔ World remains TPS: shoulder aim shortens arm, never substitutes an FPS camera (1.57584ms)
+✔ shoulder ADS interpolates both ways and clears on blocked gameplay (0.475104ms)
+✔ Arashiyama: composed geometry stays finite and in the reserved western district (308.567402ms)
+✔ Arashiyama: city approach, timber bridge and south riverfront are walkable without jumps (133.211661ms)
+✔ Arashiyama: bamboo lane has clear continuous circulation back to the river (73.224768ms)
+✔ Arashiyama: bridge clears the river and all discoveries can stand on dry surfaces (0.895015ms)
+✔ Arashiyama: exported GLB retains dry routes through full-map vegetation and quantized collisions (1462.277618ms)
+✔ Black Sail eight Nassau building families have distinct actual geometry, not recolors or relocation (129.671267ms)
+✔ Black Sail ship craft is deterministic, finite and collision-free (223.541571ms)
+✔ Black Sail equal-size port hull families vary their actual curved bilges and rigging (232.847308ms)
+✔ Black Sail preserves exact complete world, markers, objective, routes, areas and updraft gameplay contract (2.150534ms)
+✔ Everblacksail exported geometry is finite and stays under the 2 million ART triangle / 12.4 MB transfer budgets (313.175179ms)
+✔ Everblacksail collision meshes preserve exact baseline ordered triangle positions and gameplay extras (495.962465ms)
+✔ Black Sail W4 bow deck has a single visible top surface, not overlapping rectangle/diamond faces (33.573288ms)
+✔ Black Sail lighthouse gallery joins its central disk without coplanar black overlap (866.359564ms)
+✔ Black Sail flagship bow approach has no opaque high hull wall above the original deck route (11.809186ms)
+✔ Black Sail sky wreck full-height mast colliders remain visibly represented by stripped spars (22.811958ms)
+✔ BlackSail surface profiles opt in by exact name and preserve other regions (2.678557ms)
+✔ each BlackSail surface has distinct shader cache, bounded draw detail, and preserved colors (19.495678ms)
+prune: Removed types... Accessor (12)
+✔ actual compressed GLB exporter roundtrips all BlackSail PBR profiles and runtime toon identity (112.262952ms)
+✔ Three runtime provides WebGL2 derivatives and fragment view matrix for BlackSail toon code (1.211923ms)
+✔ BlackSail export exact weld remains art-only, after existing quantization, without second reorder (0.396486ms)
+✔ existing water, target and ghost-emissive paths are not overridden (0.842446ms)
+✔ production BlackSail GLB assigns every claimed profile to real ART triangles (535.580136ms)
+✔ production ship fittings and sails use their physical identities, with ghost-beam exception (94.561738ms)
+✔ production BlackSail beam portable GLB declares alpha blend without changing runtime intent (2.121419ms)
+✔ compressed beam fixture preserves BlackSail-only portable alpha and other-region opt-out (14.295834ms)
+✔ maritime visual replacements are finite, material-separated, collider-free, and bounded (321.631635ms)
+✔ wreck and intact ship are geometrically distinct, not recolors (47.452406ms)
+✔ reef yawl and half-sunk ribbed merchantman add no fake collision decks (26.875853ms)
+✔ forefoot rise tapers to zero at deck: bow shell never becomes a tall wall (19.109401ms)
+✔ wreck primary spars remain visible to the original full-height gliding collider tops (10.174969ms)
+✔ blacksail: the east pass gate holds until the summoning circle is stable (589.705714ms)
+✔ blacksail: walk from the valley through the pass trail down to Nassau (86.196812ms)
+✔ blacksail: every teleport destination and the spawn settle (60.837568ms)
+✔ blacksail: Nassau — the tavern, the shipyard chart piece and a pier gangway onto a moored ship (70.618354ms)
+✔ blacksail: the downs windmill holds the second chart piece (22.017305ms)
+✔ blacksail: fort road → gate → gun deck; the battery has a clear shot at every ghost boat (52.424252ms)
+✔ blacksail: the vortex updrafts lift the player from wreck to wreck up to the compass shard (50.742825ms)
+✔ blacksail: the sandbar reaches Skull Reef dry, the X and the half-sunk wreck (90.734739ms)
+✔ blacksail: the lighthouse spiral ramp reaches the cold lamp gallery (1.766937ms)
+✔ blacksail: the ghost bridge carries the player from the dock across the fleet to the sea core (347.437426ms)
+✔ britain craft: all eight equal-sized town fronts have different authored geometry, not only tint (65.618392ms)
+✔ britain craft: all landmark detail is finite visual-only geometry across ten real surface families (303.269934ms)
+✔ britain craft: circular wall fix removes only old visual top faces (0.481785ms)
+✔ britain craft: copings meet at shared annular endpoints without overlapping rectangular top slabs (6.909388ms)
+✔ britain craft: keep disk and annular landing share edges instead of overlapping top faces (17.370439ms)
+✔ britain craft: batching retains eight distinct houses while consolidating static physical materials (27.143942ms)
+✔ britain craft: round hall lancet glazing is outside the original thick wall, not buried on its centreline (22.172227ms)
+✔ britain: the west seam gate holds until the summoning circle is stable (560.131269ms)
+✔ britain: walk from the valley seam through the gorge to the Lake of the Sword (61.297102ms)
+✔ britain: every teleport destination and the spawn settle (66.417152ms)
+✔ britain: the causeway reaches the sword on the islet without swimming (22.490976ms)
+✔ britain: forest road → knights camp gate → war table shard (50.727688ms)
+✔ britain: lake road climbs to the Camelot gate, through the town to the round table (78.15149ms)
+✔ britain: the keep spiral ramp reaches the shard at the top (0.736347ms)
+✔ britain: lake → Camlann → the sun core mound (46.975459ms)
+✔ all three requested kits are present and remain opt-in rather than auto-spawned (19.119216ms)
+✔ blackbeard: actual final GLB has valid geometry/skins, zero-based clips, grounded feet and declared sockets (6605.684383ms)
+✔ blackbeard: actual loop endpoints and Idle/Walk/Run/Attack crossfades stay finite and in-place (576.768414ms)
+✔ musashi: actual final GLB has valid geometry/skins, zero-based clips, grounded feet and declared sockets (3111.642596ms)
+✔ musashi: actual loop endpoints and Idle/Walk/Run/Attack crossfades stay finite and in-place (365.906452ms)
+✔ napoleonMounted: actual final GLB has valid geometry/skins, zero-based clips, grounded feet and declared sockets (5734.427381ms)
+✔ napoleonMounted: actual loop endpoints and Idle/Walk/Run/Attack crossfades stay finite and in-place (516.227799ms)
+✔ blackbeard: exported muzzle +Z follows the actual skinned barrel, not Blender source -Y (206.67977ms)
+✔ napoleonMounted: one clock keeps the rider seat and sword aligned throughout every mounted clip (325.821532ms)
+✔ every released gzip sidecar restores the exact GLB, not a stale prior geometry (503.557534ms)
+✔ published default asset hashes match the curated release manifest (201.786779ms)
+✔ Blackbeard optional tricorn: explicit optional variant preserves the same runtime clip/socket contract (596.124409ms)
+✔ Musashi optional LOD1: explicit optional variant preserves the same runtime clip/socket contract (286.689364ms)
+✔ mapped one-shot events fire once at the authored pose, then return to Idle (8.877247ms)
+✔ repeated requests do not restart an attack; explicit restart produces a new event sequence (1.254787ms)
+✔ pause and zero playback freeze clock; changing state cancels outstanding hits (0.740153ms)
+✔ gait rate uses declared speed and bounds invalid inputs without changing root position (0.582346ms)
+✔ scaled Attack fires at scaled wall time while sampling its authored clip instant (2.120688ms)
+✔ event callbacks can dispose or change state without leaking stale later events (1.091281ms)
+✔ resources dispose once while caller-owned environment stays alive; no resurrection (0.951902ms)
+✔ invalid clips, sockets and looping hit events reject rather than silently playing the wrong clip (1.226745ms)
+✔ transport is byte-exact for raw/already-decoded/gzip GLB and rejects corrupt headers (25.883437ms)
+✔ HTTP failure and abort do not create an actor or mutate gameplay state (2.34799ms)
+✔ event callbacks can pause or change the current clip rate without corrupting its clock (0.929207ms)
+✔ actual five-region map admits bounded dry, clear wilderness encounters away from quest hubs (72.839899ms)
+✔ actual closed west-seam gate blocks combat rays and disabled gate does not (0.632581ms)
+✔ target colliders can be excluded from the muzzle wall query without opening terrain (0.373301ms)
+✔ actual boss arena home is above valid dry ground and open toward the Sun Core approach (5.065487ms)
+✔ boss begins threatening from the actual Sun Core interaction approach without phasing through the mound (1.945556ms)
+✔ combat visual pools are capped, reset releases shots/tells, and dispose is repeat-safe (57.267349ms)
+✔ ally assist is player-proximity, range, LOS and cooldown limited (19.458988ms)
+✔ HUD source keeps health in the bottom-left corner and gives the narrow boss layout priority over the contract card (1.074525ms)
+✔ servant anticipation is read-only and contact revalidates the chosen enemy, range, LOS and pause (6.595556ms)
+✔ wilderness placement is seeded, bounded, and rejects unsafe candidates (12.159973ms)
+✔ shots are rate limited, nearest-enemy hits respect supplied occlusion and dead enemies cannot be hit (9.71092ms)
+✔ wilderness aggro requires line of sight, leashes and only respawns away from the player (3.734991ms)
+✔ boss is gated, damageable only during its encounter, and transitions once at half HP (1.33729ms)
+✔ boss tells lock impact location, allow dodging, and cannot damage through a wall (0.581133ms)
+✔ leaving boss arena resets its full health; pause/debug flight does not tick combat (0.279931ms)
+✔ player defeat ends encounter, recovery emits one respawn and keeps cleared-save compatibility (1.772585ms)
+✔ invalid damage, time, ray and oversized spawn input are bounded (0.71769ms)
+✔ each era boss has its own core requirements and cleared state; only one fight runs at a time (0.770569ms)
+✔ first contract is unavailable before recruitment, then summoned and recall persists (1.404372ms)
+✔ legacy quest saves recruit Saber; clearing progress cannot preserve an active companion (0.24603ms)
+✔ corrupt and denied storage remain playable without granting a missing quest (0.325609ms)
+✔ second contract can be switched to, cycled and persisted; only one companion follows (1.027485ms)
+✔ era actor lifecycle uses frame dt, pauses offscreen actors, backs off failures, and guards disposal races (8.884839ms)
+✔ full-map draw commands exactly preserve committed baseline across languages, aspect ratios and quest/completion states (123.154655ms)
+ℹ 36 full-map canvas command streams exactly match the preserved a309625 source; not a browser screenshot.
+✔ landing cancels gliding in the collision step, not on a later physics/render tick (5.641793ms)
+✔ jump is still a press-edge glide toggle; release, held input, water, flight and updraft retain their rules (0.980564ms)
+✔ real-rig retraction is bounded at 30/60/120 Hz, with fast canopy hide and rifle recovery (1141.049444ms)
+ℹ {"hz":30,"state":"air-toggle","canopyHidden":0.36666666666666664,"rifleContact":0.3333333333333333,"maxHandTravel":0.13440167238581693}
+ℹ {"hz":30,"state":"landing","canopyHidden":0.36666666666666664,"rifleContact":0.3333333333333333,"maxHandTravel":0.13440167238581693}
+ℹ {"hz":60,"state":"air-toggle","canopyHidden":0.35,"rifleContact":0.31666666666666665,"maxHandTravel":0.06758714898094972}
+ℹ {"hz":60,"state":"landing","canopyHidden":0.35,"rifleContact":0.31666666666666665,"maxHandTravel":0.06758714898094972}
+ℹ {"hz":120,"state":"air-toggle","canopyHidden":0.3416666666666667,"rifleContact":0.31666666666666665,"maxHandTravel":0.03385570459558724}
+ℹ {"hz":120,"state":"landing","canopyHidden":0.3416666666666667,"rifleContact":0.31666666666666665,"maxHandTravel":0.03385570459558724}
+✔ partial deploy/stow reversals, swimming and fire/ADS interruptions never leave a hidden or scaled-open glider (534.445417ms)
+✔ unarmed landing releases handles throughout the close instead of snapping after the canopy hides (319.357687ms)
+ℹ {"hz":30,"state":"unarmed-landing","maxHandTravel":0.11663997850494728}
+ℹ {"hz":60,"state":"unarmed-landing","maxHandTravel":0.058870621481782764}
+ℹ {"hz":120,"state":"unarmed-landing","maxHandTravel":0.029484736766804312}
+✔ camp → observatory terminal → armory rack → range line (111.644539ms)
+✔ plaza → summoning circle (24.952158ms)
+✔ tower → northern ice seam (walks onto the ice, does not swim) (65.340223ms)
+✔ outpost → western seam, forest → eastern seam (43.956561ms)
+✔ language selection persists, tolerates broken storage, and notifies once per change (1.436841ms)
+✔ typed dictionary has paired entries, interpolation never leaks raw keys, and source fallback is safe (1.727718ms)
+✔ all current World region names, quests, markers and discovery notes have English coverage (5.545128ms)
+✔ current Arena, World and captured Home templates have English text and accessibility coverage (1.448708ms)
+✔ all input actions and binding labels translate without changing stored input values (1.741879ms)
+✔ explicit DOM localization restores source text and never rewrites usernames or input values (1.207876ms)
+✔ legacy control migrations, recovery notices and English-source catalog labels are localized (1.818655ms)
+✔ unlocked keys cannot move, interact or reset progress (184.626552ms)
+✔ locked controls work and unlock/blur/hidden clear keys (37.071769ms)
+✔ map opening clears controls and blocks gameplay, closing restores control (20.675106ms)
+✔ flight has no interaction/rise alias; modified shortcuts and repeats do not trigger actions (5.786851ms)
+✔ pointer-lock rejection is handled and the entry prompt remains retryable (24.141028ms)
+✔ unlock closes the modal map and repeated map keys do not toggle twice (8.677888ms)
+✔ right-button shoulder aim releases on mouseup, blur, visibility, unlock and map open (13.277423ms)
+✔ World custom bindings drive real input, shooting, sensitivity and hints (11.742716ms)
+✔ World settings hotkey/menu clears movement and aim, blocks gameplay and never relocks on close (16.719769ms)
+✔ World E and RMB are OR aliases; release one keeps shoulder aim while the other is held (61.989079ms)
+✔ World alias rebind/menu/blur clear both keys and stale repeats never restore movement or aim (60.59578ms)
+✔ manual flight vertical controls are absent; Space stays jump/glide and F only interacts (4.494328ms)
+✔ World both Shift aliases stay active until both release, and defeat blocks gameplay actions (14.819942ms)
+✔ World summon hotkey is rebindable, suppressed by maps/settings, and repeats do not retrigger (4.408238ms)
+✔ alpha: full world layout, every marker, objective and route remain identical after final two-region art pass (3.031418ms)
+✔ britain: full world layout, every marker, objective and route remain identical after final two-region art pass (0.599241ms)
+✔ blacksail: full world layout, every marker, objective and route remain identical after final two-region art pass (0.625581ms)
+✔ winter: full world layout, every marker, objective and route remain identical after final two-region art pass (0.676498ms)
+✔ kyoto: full world layout, every marker, objective and route remain identical after final two-region art pass (0.901636ms)
+✔ alpha: actual exported geometry has finite attributes and valid indices within transfer and triangle budgets (247.109206ms)
+✖ alpha: exact ordered baseline collision triangle streams, transforms, meshes and extras preserved (653.824536ms)
+✔ britain: actual exported geometry has finite attributes and valid indices within transfer and triangle budgets (253.430411ms)
+✔ britain: exact ordered baseline collision triangle streams, transforms, meshes and extras preserved (434.941422ms)
+✔ Britain material names are exact opt-ins, not prefix matches or global changes (1.989481ms)
+✔ Britain shaders preserve authored state and use bounded filtered surface detail (14.153505ms)
+✔ Britain compressed exporter fixture preserves PBR, vertex color and toon identity (108.787432ms)
+✔ production Britain GLB actually assigns every profile to nonempty ART (553.383753ms)
+✔ Valley material names are exact opt-ins, not prefix matches or global changes (0.735877ms)
+✔ Valley shaders preserve authored state and use bounded filtered surface detail (2.728493ms)
+✔ Valley compressed exporter fixture preserves PBR, vertex color and toon identity (21.83553ms)
+✔ production Valley GLB actually assigns every profile to nonempty ART (223.963421ms)
+✔ five-region crafted ART weld preserves one original reorder and excludes all collision primitives (0.542125ms)
+✔ new region profiles preserve all previous surface dispatch keys and story-material paths (0.888365ms)
+✔ Britain actual keep summit has no coincident upward faces across center/annular landing join (1285.158695ms)
+✔ Kyoto machiya trades have eight genuinely different deterministic geometric frontages (74.120865ms)
+✔ Kyoto city compounds have distinct market, courtyard, shrine and workshop geometry (50.094821ms)
+✔ Kyoto roof craft contains curved multi-level eaves and no duplicate collision shell (6.44497ms)
+✔ Kyoto refinement preserves world identity, quest IDs and objective unlock contracts (2.349913ms)
+✔ Kyoto refinement preserves established area teleports and all six quest routes (0.302044ms)
+✔ Kyoto exported art has real architectural layers and separate landmark surface profiles (1.186484ms)
+✔ Kyoto exported art remains finite, bounded, and below explicit review asset budgets (169.34544ms)
+✔ Kyoto exported Kinkaku hillside bamboo posts meet the terrain, not a floating balcony (21.608369ms)
+✔ Kyoto exported Kinkaku balcony is connected on all four sides and has no remote gold rails (1.78871ms)
+✔ Kyoto exported Kiyomizu upper gables have opaque infill under both curved roof ends (1.445784ms)
+✔ Kyoto surface profiles opt in by exact name and preserve other regions (2.525006ms)
+✔ each Kyoto surface has distinct shader cache, bounded draw detail, and preserved colors (13.277713ms)
+✔ actual compressed GLB exporter roundtrips all Kyoto PBR profiles and runtime toon identity (76.799803ms)
+✔ Three runtime provides WebGL2 derivatives and fragment view matrix for Kyoto toon code (0.620163ms)
+✔ kyoto: the southern torii seam gate holds until the summoning circle is stable (554.097846ms)
+✔ kyoto: walk from the valley through the thousand torii, down into the city and on to the Sanjō bridge (38.595511ms)
+✔ kyoto: every teleport destination and the spawn settle (66.370741ms)
+✔ kyoto: Musashi waits on the Sanjō bridge, and the bridge crosses the Kamo dry (16.381371ms)
+✔ kyoto: the turtle stones cross the Kamo without swimming (29.603841ms)
+✔ kyoto: Sanjō avenue leads to Honnō-ji's gate, over the moat and to the core in the courtyard (38.056609ms)
+✔ kyoto: the stepping stones cross the pond to the Golden Pavilion (72.020877ms)
+✔ kyoto: up Sannenzaka through the Niōmon to the Kiyomizu stage (32.367185ms)
+✔ kyoto: the Akechi banners are in sight from the camp; the shard waits inside the curtain (35.507448ms)
+✔ committed layout loads without changing data (7.286317ms)
+✔ HTTP error is rejected before parsing its response body (0.818781ms)
+✔ malformed JSON and invalid layout roots fail with useful errors (3.234443ms)
+✔ invalid positions, duplicate marker IDs and missing prerequisites are rejected (3.989869ms)
+✔ bootstrap rejection disposes renderer and exposes a single functional retry button (224.033571ms)
+✖ alpha: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (218.30628ms)
+✔ britain: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (977.938714ms)
+✔ blacksail: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (669.17214ms)
+✔ winter: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (832.948283ms)
+✔ kyoto: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (1398.710109ms)
+✔ key-point sources are only existing travel coordinates and loaded chapter entrances (2.109632ms)
+✔ dense hubs have a hard three-landmark cap, stable order, and spatial de-duplication (4.129368ms)
+✔ player, active quest and label exclusion zones take priority over secondary landmarks (0.30562ms)
+✔ nearby quest positions remain exact; offscreen objectives keep their bearing inside the circle (0.465881ms)
+✔ context label is the nearest containing area, not a crowd of point labels (0.282885ms)
+✔ real minimap renderer removes every ordinary marker and live monster, including bosses (0.927043ms)
+✔ actual renderer keeps current target gold and one player, with a monochrome bounded hub (0.696076ms)
+✔ changing, clearing and arriving at the quest target has no stale edge marker or landmark exclusion (0.443647ms)
+✔ current target wins over the contextual area label (0.31255ms)
+✔ full map retains all original exploration marker types, completion colours and world positions (0.49857ms)
+✔ all five real layouts keep point budgets at every destination and chapter entrance (14.566022ms)
+✔ mounted servant stages, advances through one authored hit, brakes, recovers and charges again after cooldown (54.593764ms)
+✔ target death or replacement before contact never redirects the committed hit to another enemy (13.851867ms)
+✔ pause freezes locomotion and animation; recall cancels contact without a post-resume backlog (5.72578ms)
+✔ a blocked enemy is not charged through walls; disabled colliders allow the next attempt (25.478338ms)
+✔ a wall appearing during charge cancels the pending hit before horse penetration (5.507962ms)
+✔ unsupported ground and narrow edges cannot be crossed by a horse-sized footprint (9.101664ms)
+✔ fast fleeing targets can evade a committed straight charge; no homing or retarget damage (11.939792ms)
+✔ death during approach drops the target and an unreachable staging slot does not run against a wall (14.641254ms)
+✔ mounted charge reaches real WorldCombat damage and removes exactly 16 boss HP once at contact (61.497335ms)
+✔ WorldCombat revalidates LOS during a mounted charge and blocks real HP loss (35.476701ms)
+✔ horse standing footprint rejects a wall behind its center, not only ahead of its nose (2.727741ms)
+✔ a horse cannot turn its rear/flank into a narrow side wall (2.623775ms)
+✔ rider-height overhang blocks the whole mounted actor (0.648425ms)
+✔ Musashi real two-contact animation preserves 9 HP damage, reach, authored contact times and existing global ally cooldown (632.310714ms)
+✔ Musashi pause, release and loss of target prevent late real HP loss (377.852066ms)
+MUSASHI_GEOMETRY {"idle":{"minBlade":0.3442697393935623,"minFoot":-5.177678889975976e-7,"maxArm":-0.9809934087861444,"minClear":0.05048669189012488},"walk":{"minBlade":0.2941536127693505,"minFoot":-0.0005088531042878523,"maxArm":-0.9650336606031609,"minClear":0.050840317607493475},"run":{"minBlade":0.2627597114902709,"minFoot":-0.0018788807184814632,"maxArm":-0.9435957280990482,"minClear":0.03862415967030271}}
+✔ Musashi: actual gait lowers both arms, counter-swings to the feet, keeps blades above ground/outside cloth and preserves soles (15694.304735ms)
+✔ Musashi: source clips, lower-body channels, socket bindings, grip/finger pose and original two-hit attack are unchanged (256.793569ms)
+MUSASHI_TRANSITION {"maxStep":0.04659877565499198,"minTransitionBlade":0.13790960443117029}
+✔ Musashi: all idle/walk/run/attack blends and rapid interruptions stay continuous, finite, and leave authored event times intact (2159.480704ms)
+✔ Musashi: ten repeated gait cycles return to the same pose without accumulating torso/wrist corrections (291.433577ms)
+✔ short tunic deformation uses immutable rest data, resets, remains finite and stays inside culling sphere (91.063278ms)
+✔ run-idle-swim-idle returns tunic to rest without stale deformed vertices (109.081109ms)
+✔ authored Blender GLB and quantized runtime agree on every joint triangle count (2.209592ms)
+✔ short uniform deformation is reversible, finite and never accumulates previous frame offsets (84.241471ms)
+✔ walk/run carry is lowered, right-hand attached and left arm swings; ADS/fire reclaim both palms at 30/60/120 Hz (1139.440199ms)
+ℹ {"hz":30,"speed":5.5,"leftSwing":0.23527775098921205,"minMuzzleY":0.5804204220314295}
+ℹ {"hz":30,"speed":9,"leftSwing":0.23576010213710036,"minMuzzleY":0.573929570419123}
+ℹ {"hz":60,"speed":5.5,"leftSwing":0.23519256601406016,"minMuzzleY":0.580454736707211}
+ℹ {"hz":60,"speed":9,"leftSwing":0.2356043168248211,"minMuzzleY":0.5735437529394367}
+ℹ {"hz":120,"speed":5.5,"leftSwing":0.2354518545561297,"minMuzzleY":0.5803884195736577}
+ℹ {"hz":120,"speed":9,"leftSwing":0.23580665044127605,"minMuzzleY":0.573816788054282}
+✔ rapid movement/ADS release and glider interruptions settle without drift or invalid transforms (785.264112ms)
+ℹ {"hz":30,"maxTravel":0.13644789827241494}
+ℹ {"hz":60,"maxTravel":0.07097513242340386}
+ℹ {"hz":120,"maxTravel":0.03691935744072566}
+✔ actual lowered Dawn triangles clear trousers, shoes and uniform throughout walk/run strides (1787.487713ms)
+✔ unarmed startup/reset hides the rifle immediately, clears old firing/glide state and preserves free-arm movement (262.254911ms)
+✔ player rig preserves animation joints, synchronous geometry and finite attributes (75.144274ms)
+✔ player locomotion, swimming, glide and shoulder aim do not freeze or generate invalid transforms (118.000881ms)
+✔ fully raised rifle hands meet actual grip and handguard within 2 mm at supported pitches (64.062801ms)
+✔ equipped production AR fits both wrists at everyday ADS pitches, not only fallback gun (119.961855ms)
+✔ authored mesh indices and quantized normals stay valid after decoding (32.917858ms)
+✔ default player is a real skeleton with anatomical laterality and preserved UV1/alpha materials (137.143422ms)
+✔ actual Dawn AR palm sockets meet grip/support over full TPS pitch range (932.130719ms)
+✔ glider actual visible handle contacts, smooth return, and immediate airborne firing ownership (198.280309ms)
+✔ animation changes GPU bone matrices, never CPU position/normal buffers; outlines share skin and morphs (235.760504ms)
+✔ default load/weapon failure is explicit, never installs rejected segmented or invisible shooting fallback (52.608811ms)
+✔ ordinary glide deploy, production ADS release and landing have bounded hand travel (273.81429ms)
+✔ right index reaches the actual trigger-guard region rather than dangling below the pistol grip (106.248507ms)
+✔ real skinned head and actual Dawn surfaces do not cross at former intermediate/extreme ADS failures (978.912295ms)
+✔ clean startup is unarmed at authored Alpha spawn; no gameplay method writes preferences (182.928327ms)
+✔ current save is authoritative, reset survives reload without old quests/equipment/contracts reappearing (7.262124ms)
+✔ legacy migration occurs only once; empty current and stale slot fields never grant a gun (0.810519ms)
+✔ reset preserves custom controls, sensitivity, locale, graphics, HUD and appearance preferences byte-for-byte (14.144312ms)
+✔ unavailable persistence still resets live state without deleting unrelated storage (0.499151ms)
+✔ production reset clears dirty gameplay immediately, resets URL start overrides, and survives reload at Alpha (242.501603ms)
+✔ existing tutorial grants the gun before gun-required objectives and clears a previously held trigger (76.779542ms)
+✔ late weapon-art attachment cannot reveal or equip an unowned gun (47.670897ms)
+✔ production world-state application re-locks quest gates and restores targets after clearing progress (6.356567ms)
+✔ teleport clears stale floor and water contacts, preventing an air jump (2.763264ms)
+✔ floor collision remains stable and supports a normal jump (21.0766ms)
+✔ minimap applies its own north/south origin to the player and retained quest target (27.103542ms)
+✔ leaving flight cannot reuse a stale grounded jump (0.401403ms)
+✔ full map keeps both axes aligned to the map rather than the player (0.586422ms)
+✔ normal diagonal walking is not faster than straight walking (0.260472ms)
+✔ debug free-flight follows full camera pitch and does not use obsolete vertical input (1.067635ms)
+✔ debug flight normalizes diagonals and camera-pitched backward reverses altitude (0.267973ms)
+✔ removing manual flight controls preserves jump, glide toggles, water jump and updraft lift (0.769116ms)
+✔ fixed balanced is default; native crisp is explicit; low and invalid DPR are safe (1.166734ms)
+✔ adaptive opt-in, native 1× floor and sustained headroom recovery (0.509095ms)
+✔ actual EffectComposer CSS sizes stay single-DPR initially, on DPR change and resize (3.023756ms)
+✔ static art skips recomposition and preserves nested transformed matrices (1.951174ms)
+✔ squared culling matches original sphere test and respects world scaling (6.755107ms)
+✔ resolution URL wins over saved mode; malformed and inaccessible storage are safe (1.912496ms)
+✔ main counts all render passes once and screenshot mode disables automatic resolution changes (0.757088ms)
+✔ both resize and monitor DPR change refresh renderer and composer without scene mutation (0.503177ms)
+✔ accepted armor GLB retains full geometry, finite normalized skinning and four real clips (1623.516083ms)
+✔ accepted civilian GLB retains full geometry, finite normalized skinning and four real clips (542.896009ms)
+✔ World outfit modal is reversible, bilingual and isolated from gameplay/contract progress (6.269947ms)
+✔ outfit controls have bounded viewport CSS and opening clears input without changing Arena settings (0.839072ms)
+✔ armor: actual Artoria walking arms match relaxed idle, crossfades stay finite, authored attack remains unmodified (2178.133593ms)
+✔ civilian: actual Artoria walking arms match relaxed idle, crossfades stay finite, authored attack remains unmodified (1421.869667ms)
+✔ actual Napoleon charge retains synchronized saddle/seat, animated gallop and original sword contact (779.586954ms)
+✔ appearance defaults to accepted armor; invalid/corrupt/denied storage cannot affect contract saves (1.510261ms)
+✔ lake NPC lazy loads once, contract follows, recall hides, pause prevents target acquisition (6.97084ms)
+✔ Idle/Walk/Run crossfades follow actual movement and teleport rematerializes without traversing walls (4.182759ms)
+✔ Attack anticipates, contacts once at the clip phase, recovers fully and can replay (1.761478ms)
+✔ pause freezes the attack; recall, traversal suppression and quest reset cancel pending contact (2.564186ms)
+✔ serialized outfit loading is latest-wins; stale candidates and old resources are disposed exactly once (1.723471ms)
+✔ latest selection queues behind a stale initial load and late completion after disposal cannot resurrect it (8.539029ms)
+✔ bad outfit retains the last good model and recall state; no auto-retry loop; explicit retry recovers (2.126588ms)
+✔ missing mandatory clips fail safely before replacing the accepted outfit (1.505573ms)
+✔ lossless runtime transport accepts gzip or an already HTTP-decoded GLB and rejects corruption (27.663979ms)
+✔ production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS (699.376718ms)
+✔ held fire tracks view between eligible shots, rather than reverting to locomotion/low-ready on cooldown frames (347.246489ms)
+✔ World production shooting preserves quest targets and always renders a visible shot (154.921774ms)
+✔ closer enemy receives damage instead of completing the target behind it (10.913038ms)
+✔ solid wall blocks both camera targeting and the actual muzzle-to-target shot (22.728814ms)
+✔ shot cadence blocks all damage, quest mutation and visuals together (5.338326ms)
+✔ unarmed input cannot damage enemies, complete gun-required objectives or render shots (18.959462ms)
+✔ immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF (248.153783ms)
+✔ immutable art excludes spin on self (5.861863ms)
+✔ immutable art excludes spin on parent (0.497538ms)
+✔ immutable art excludes spin on descendant (0.359109ms)
+✔ immutable art excludes bob on self (0.38628ms)
+✔ immutable art excludes bob on parent (0.301463ms)
+✔ immutable art excludes bob on descendant (0.341604ms)
+✔ immutable art excludes dynamic on self (0.328434ms)
+✔ immutable art excludes dynamic on parent (0.292069ms)
+✔ immutable art excludes dynamic on descendant (0.297327ms)
+✔ immutable art excludes showWhen on self (0.369616ms)
+✔ immutable art excludes showWhen on parent (0.190446ms)
+✔ immutable art excludes showWhen on descendant (0.216596ms)
+✔ immutable art excludes hideWhen on self (0.163075ms)
+✔ immutable art excludes hideWhen on parent (0.133931ms)
+✔ immutable art excludes hideWhen on descendant (0.162915ms)
+✔ immutable art excludes opensWhen on self (0.136875ms)
+✔ immutable art excludes opensWhen on parent (0.118468ms)
+✔ immutable art excludes opensWhen on descendant (0.188383ms)
+✔ immutable art excludes TGT_training on self (0.217056ms)
+✔ immutable art excludes TGT_training on parent (0.115594ms)
+✔ immutable art excludes TGT_training on descendant (0.095103ms)
+✔ immutable art excludes Water on self (0.096495ms)
+✔ immutable art excludes Water on parent (0.254343ms)
+✔ immutable art excludes Water on descendant (0.167992ms)
+✔ freezing static art leaves actor siblings and visibility controls functional (1.871755ms)
+✔ twilight is bounded to the western region and victory restores a warmer dawn (1.195217ms)
+✔ twilight reuses lights and does not mutate the global daytime sun or lose visibility (12.287746ms)
+✔ Valley independent instrument architecture is finite, deterministic, and ART only (232.053055ms)
+✔ Valley uses all seven authored physical surfaces on nonempty geometry (0.737679ms)
+✔ Valley landmarks use separate functional silhouettes rather than cloned historic facades (460.276482ms)
+✔ Valley craft contains no exact duplicate coplanar geometry submissions (29.957483ms)
+✔ Valley carved shrine door relief stays ART-only in the existing dynamic door batch (2.500639ms)
+✔ Valley waterfall has a connected broad curtain, depth ripple and west-facing normals (14.349765ms)
+✔ Valley waterfall rock shell is finite and ART-only (6.279842ms)
+✔ Valley waterfall shell leaves the original western cave entry visually open (2.12184ms)
+World rifle art unavailable; explicitly constructed legacy rifle retained. Error: offline
+    at <anonymous> (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/world/validation/weapon-art.test.ts:43:73)
+    at attachExplorerRifle (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/world/src/weaponArt.ts:30:17)
+    at TestContext.<anonymous> (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/world/validation/weapon-art.test.ts:43:17)
+    at Test.runInAsyncScope (node:async_hooks:227:14)
+    at Test.run (node:internal/test_runner/test:1402:25)
+    at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+    at Test.postRun (node:internal/test_runner/test:1542:19)
+    at Test.run (node:internal/test_runner/test:1467:12)
+    at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+✔ actual World AR replaces fallback, preserves two-hand anchors, and points with TPS aim (127.902278ms)
+✔ World model failure leaves its original character rifle available (52.733422ms)
+✔ Everwinter five house families have genuinely distinct geometry, not only colors or placements (64.920351ms)
+✔ Everwinter eight onion variants have different actual rib/shoulder/twist geometry (101.520876ms)
+✔ Everwinter refined fieldworks are finite visual-only deterministic geometry (511.69373ms)
+✔ Everwinter production cold drains in the snowfield, freezes once, and all exported fires restore warmth (234.389154ms)
+✔ Everwinter beacon warmth requires its actual quest flag; pause/flying stop drain and the winter core ends cold (16.986314ms)
+✔ Everwinter refinement preserves world identity, quest IDs and objective unlock contracts (3.06578ms)
+✔ Everwinter refinement preserves established area teleports and all six quest routes (2.826009ms)
+✔ Everwinter exported geometry is finite and stays under the 2 million ART triangle / 12.4 MB transfer budgets (488.708761ms)
+✔ Everwinter collision meshes preserve exact baseline ordered triangle positions and gameplay extras (536.463059ms)
+✔ soldier cloth keeps the original tent ridge orientation and upper silhouette (15.37017ms)
+✔ broken trestle remains visibly broken across the original missing spans (96.984522ms)
+✔ imperial entrance remains visibly clear for the unchanged walk-in quest route (7.382641ms)
+✔ additive rest stations do not introduce quest markers, heat, emissions or collision (7.720163ms)
+✔ frozen marcher poses contain genuinely different geometry, not just recoloring (14.606641ms)
+✔ Everwinter actual gate lintels have no overlapping coplanar pier faces or black self-shadow panels (3.06592ms)
+✔ Everwinter Ivan belfries have actual open arcades flanked by supporting masonry (0.902396ms)
+✔ Everwinter St Basil export has eight surrounding dome volumes and a higher central tent tower (3.789187ms)
+✔ Everwinter upper scaffold landing has a single visible deck surface, not overlapping black panels (0.451058ms)
+✔ Winter surface profiles opt in by exact name and preserve other regions (8.052978ms)
+✔ each Winter surface has distinct shader cache, bounded draw detail, and preserved colors (9.884576ms)
+✔ actual compressed GLB exporter roundtrips all Winter PBR profiles and runtime toon identity (107.527484ms)
+✔ Three runtime provides WebGL2 derivatives and fragment view matrix for Winter toon code (0.905962ms)
+✔ winter export exact weld remains art-only, after existing quantization, without second reorder (0.298018ms)
+✔ existing water, frost-target and emissive paths are not overridden (0.81867ms)
+✔ production Everwinter GLB actually assigns cloth, iron and eagle gold to their physical profiles (557.971827ms)
+✔ winter: the northern ice seam gate holds until the summoning circle is stable (717.272259ms)
+✔ winter: walk from the valley along the frozen channel to the Berezina crossing and on to the bivouac (37.13244ms)
+✔ winter: every teleport destination and the spawn settle (31.788436ms)
+✔ winter: the upstream pontoon bridge carries the player across the river (the downstream one is broken) (9.122055ms)
+✔ winter: Napoleon waits inside the emperor's tent (5.471146ms)
+✔ winter: the bivouac road leads to all three beacons and the cairn of eagles (122.531914ms)
+✔ winter: the Smolensk road climbs to Moscow, the Kremlin south gate and Red Square (47.391565ms)
+✔ winter: through the Kremlin gate and up the bell tower scaffold to the Bell shard (48.690079ms)
+✔ winter: the frost seals are in sight from the river; the ice wall falls once they break, opening the cavern (758.193266ms)
+✔ walking east through the pass crosses from 幻日谷 onto the 黑帆尽头 pass trail (44.212887ms)
+✔ boundary walls still close the world outside the pass (24.425555ms)
+✔ all seven real-world teleport destinations settle on collision or water (226.21025ms)
+✔ actual camp spawn settles and normal walking changes position without falling through (13.04852ms)
+✔ full new-game placement clears airborne state and settles on the actual original camp floor (11.755095ms)
+ℹ tests 366
+ℹ suites 0
+ℹ pass 364
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 25933.636076
+
+✖ failing tests:
+
+test at validation/kingdom-valley-export.test.ts:1:1457
+✖ alpha: exact ordered baseline collision triangle streams, transforms, meshes and extras preserved (653.824536ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      {
+        extras: {
+          name: 'COL_Terrain'
+        },
+  ...
+        name: 'COL_Seam_west_Gate',
+  +     orderedPositionHash: '79bccb5302409d0ae088e0c3dd23f5019fb0fbb3b51e5f833771a0adb6eeee16',
+  +     triangles: 60,
+  -     orderedPositionHash: 'f2e480ac2235f2e173e626e8b34485d0a3f2cbf1c5e93c913754b825acd3d876',
+  -     triangles: 12,
+        worldMatrix: [
+          1,
+          0,
+          0,
+          0,
+  ...
+        name: 'COL_Seam_north_Gate',
+  +     orderedPositionHash: '459a079e49fb233dfc416b0c889d7ec726d059a59dcd9eec449e638d24657903',
+  +     triangles: 60,
+  -     orderedPositionHash: 'aab868a7f0891e38926876f7ac14cb878bce7de4cbbd27e3e63fee86922972db',
+  -     triangles: 12,
+        worldMatrix: [
+          1,
+          0,
+          0,
+          0,
+  ...
+        name: 'COL_Seam_east_Gate',
+  +     orderedPositionHash: '23d05605dec43a7ff1b56412db5ed72d62b2ec1fa16176223dfb883464a002d8',
+  +     triangles: 60,
+  -     orderedPositionHash: '912527756279935eda2f03d8641aa5b87faccc2f3c1f9640edf68d1e45a9241f',
+  -     triangles: 12,
+        worldMatrix: [
+          1,
+          0,
+          0,
+          0,
+  ...
+        name: 'COL_Seam_south_Gate',
+  +     orderedPositionHash: 'a1e6d4470923aa22d0dd00cca4d75aa95642b6f3c972e8de937dee058c595e09',
+  +     triangles: 60,
+  -     orderedPositionHash: 'baf9072a7dc69793480f9054d117300b4e699b010467a2fdd0aecb5e6a81f535',
+  -     triangles: 12,
+        worldMatrix: [
+          1,
+          0,
+          0,
+          0,
+  
+      at TestContext.<anonymous> (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/world/validation/kingdom-valley-export.test.ts:24:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: [ { name: 'COL_Terrain', triangles: 259168, orderedPositionHash: '9616fa49aeb625b4263aa4196c6c2d60598c95ee92fed49cd272effb6cdcfb54', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Ruin_Door', triangles: 12, orderedPositionHash: '71cc4aac9654a499e2251234553faee0fe12280d3371d1114a0894d7c6dd4798', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_1', triangles: 64, orderedPositionHash: '199a65123ea366a6b537c720351fedfed053c42b2f1bc3650410e49984aa1789', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_2', triangles: 64, orderedPositionHash: '8e34b800e08a264f2a9c831a910badc71247e71a9a0d652b84d38ac3b874e169', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_3', triangles: 64, orderedPositionHash: '843a71e47e29c1ffba28818a0562214ee9dd0f8479616f62c02bbcb5219a3510', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_1', triangles: 64, orderedPositionHash: 'ecda2a549fee9dce8802832e66627d8913615b372768df387c825ce5f3a017bf', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_2', triangles: 64, orderedPositionHash: '23b7237e4822fa8e343ebe95b2405a8dbb9448bbfe9191acc4e5925ab0b391c3', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_3', triangles: 64, orderedPositionHash: '757d6ee61da880da836a86a7eed54caf255bbf958c2da61a0d945c5d8feaa2e2', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_west_Gate', triangles: 60, orderedPositionHash: '79bccb5302409d0ae088e0c3dd23f5019fb0fbb3b51e5f833771a0adb6eeee16', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_north_Gate', triangles: 60, orderedPositionHash: '459a079e49fb233dfc416b0c889d7ec726d059a59dcd9eec449e638d24657903', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_east_Gate', triangles: 60, orderedPositionHash: '23d05605dec43a7ff1b56412db5ed72d62b2ec1fa16176223dfb883464a002d8', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_south_Gate', triangles: 60, orderedPositionHash: 'a1e6d4470923aa22d0dd00cca4d75aa95642b6f3c972e8de937dee058c595e09', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Props', triangles: 25882, orderedPositionHash: '75c50762289141f58a71c86b4cdd19bb605be3eba50e15001e8a118c46bb6101', worldMatrix: [Array], extras: [Object] } ],
+    expected: [ { name: 'COL_Terrain', triangles: 259168, orderedPositionHash: '9616fa49aeb625b4263aa4196c6c2d60598c95ee92fed49cd272effb6cdcfb54', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Ruin_Door', triangles: 12, orderedPositionHash: '71cc4aac9654a499e2251234553faee0fe12280d3371d1114a0894d7c6dd4798', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_1', triangles: 64, orderedPositionHash: '199a65123ea366a6b537c720351fedfed053c42b2f1bc3650410e49984aa1789', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_2', triangles: 64, orderedPositionHash: '8e34b800e08a264f2a9c831a910badc71247e71a9a0d652b84d38ac3b874e169', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_ruin_target_3', triangles: 64, orderedPositionHash: '843a71e47e29c1ffba28818a0562214ee9dd0f8479616f62c02bbcb5219a3510', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_1', triangles: 64, orderedPositionHash: 'ecda2a549fee9dce8802832e66627d8913615b372768df387c825ce5f3a017bf', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_2', triangles: 64, orderedPositionHash: '23b7237e4822fa8e343ebe95b2405a8dbb9448bbfe9191acc4e5925ab0b391c3', worldMatrix: [Array], extras: [Object] }, { name: 'COL_TGT_range_target_3', triangles: 64, orderedPositionHash: '757d6ee61da880da836a86a7eed54caf255bbf958c2da61a0d945c5d8feaa2e2', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_west_Gate', triangles: 12, orderedPositionHash: 'f2e480ac2235f2e173e626e8b34485d0a3f2cbf1c5e93c913754b825acd3d876', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_north_Gate', triangles: 12, orderedPositionHash: 'aab868a7f0891e38926876f7ac14cb878bce7de4cbbd27e3e63fee86922972db', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_east_Gate', triangles: 12, orderedPositionHash: '912527756279935eda2f03d8641aa5b87faccc2f3c1f9640edf68d1e45a9241f', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Seam_south_Gate', triangles: 12, orderedPositionHash: 'baf9072a7dc69793480f9054d117300b4e699b010467a2fdd0aecb5e6a81f535', worldMatrix: [Array], extras: [Object] }, { name: 'COL_Props', triangles: 25882, orderedPositionHash: '75c50762289141f58a71c86b4cdd19bb605be3eba50e15001e8a118c46bb6101', worldMatrix: [Array], extras: [Object] } ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+
+test at validation/map-polish.test.ts:1:1030
+✖ alpha: bounded detail whitelist preserves exact gameplay and all unrelated GLB content (218.30628ms)
+  AssertionError [ERR_ASSERTION]: no added, removed or reordered scene nodes
+  + actual - expected
+  ... Skipped lines
+  
+    [
+      'world_alpha_sundog_valley',
+      'ART',
+      'Terrain',
+      'Water',
+  ...
+      'Seam_west_Veil',
+  +   'Seam_west_Gate',
+      'Ice_Bay',
+      'Seam_north_Veil',
+  +   'Seam_north_Gate',
+      'Seam_east_Veil',
+  +   'Seam_east_Gate',
+      'Seam_south_Veil',
+  +   'Seam_south_Gate',
+      'Seams',
+      'Valley_HQ_Optical_Stone',
+      'Valley_HQ_Optical_Glass',
+      'Valley_HQ_Optical_Metal',
+      'Valley_HQ_Optical_Ceramic',
+  
+      at TestContext.<anonymous> (/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/world/validation/map-polish.test.ts:26:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: [
+      'world_alpha_sundog_valley',          'ART',                                'Terrain',
+      'Water',                              'Glow_Props',                         'Camp',
+      'Station',                            'Ruin',                               'Ruin_Door',
+      'TGT_ruin_target_1',                  'TGT_ruin_target_2',                  'TGT_ruin_target_3',
+      'Tower',                              'Tower_Halo',                         'Cave',
+      'Waterfall',                          'Island',                             'Crossings',
+      'Lamps',                              'TGT_range_target_1',                 'TGT_range_target_2',
+      'TGT_range_target_3',                 'Summon_Beam',                        'Campus',
+      'Seam_west_Veil',                     'Seam_west_Gate',                     'Ice_Bay',
+      'Seam_north_Veil',                    'Seam_north_Gate',                    'Seam_east_Veil',
+      'Seam_east_Gate',                     'Seam_south_Veil',                    'Seam_south_Gate',
+      'Seams',                              'Valley_HQ_Optical_Stone',            'Valley_HQ_Optical_Glass',
+      'Valley_HQ_Optical_Metal',            'Valley_HQ_Optical_Ceramic',          'Valley_HQ_Optical_Brass',
+      'Valley_HQ_Optical_Timber',           'Valley_Armory_Fabrication_Ceramic',  'Valley_Armory_Fabrication_Glass',
+      'Valley_Armory_Fabrication_Metal',    'Valley_Armory_Fabrication_Brass',    'Valley_Armory_Fabrication_Canvas',
+      'Valley_Summon_Interferometer_Metal', 'Valley_Summon_Interferometer_Brass', 'Valley_Summon_Interferometer_Ceramic',
+      'Valley_Tower_Calibration_Metal',     'Valley_Tower_Calibration_Glass',     'Valley_Tower_Calibration_Ceramic',
+      'Valley_Tower_Calibration_Brass',     'Valley_Landing_Fieldkit_Ceramic',    'Valley_Landing_Fieldkit_Metal',
+      'Valley_Landing_Fieldkit_Glass',      'Valley_Landing_Fieldkit_Brass',      'Valley_Landing_Fieldkit_Canvas',
+      'Valley_Station_Retrofit_Glass',      'Valley_Station_Retrofit_Metal',      'Valley_Station_Retrofit_Ceramic',
+      'Valley_Station_Retrofit_Stone',      'Valley_Station_Retrofit_Brass',      'Valley_Station_Retrofit_Timber',
+      'Valley_Ruin_Resonator_Stone',        'Valley_Ruin_Resonator_Metal',        'Valley_Ruin_Resonator_Brass',
+      'Valley_Exploration_Detail_Stone',    'Valley_Exploration_Detail_Metal',    'Valley_Exploration_Detail_Brass',
+      'Valley_Exploration_Detail_Ceramic',  'Valley_Ford_Hydrology_Timber',       'Valley_Ford_Hydrology_Metal',
+      'Valley_Ford_Hydrology_Brass',        'Valley_Ford_Hydrology_Ceramic',      'Valley_Ford_Hydrology_Glass',
+      'Trees_Trunks',                       'Trees_Leaves',                       'Rocks',
+      'Bushes',                             'COLLISION',                          'COL_Terrain',
+      'COL_Ruin_Door',                      'COL_TGT_ruin_target_1',              'COL_TGT_ruin_target_2',
+      'COL_TGT_ruin_target_3',              'COL_TGT_range_target_1',             'COL_TGT_range_target_2',
+      'COL_TGT_range_target_3',             'COL_Seam_west_Gate',                 'COL_Seam_north_Gate',
+      'COL_Seam_east_Gate',                 'COL_Seam_south_Gate',                'COL_Props',
+      'MARKERS',                            'MK_spawn_spawn_p1',                  'MK_spawn_spawn_p2',
+      'MK_poi_camp_terminal',               'MK_cover_station_cover_0',           'MK_cover_station_cover_1',
+      'MK_cover_station_cover_2',
+      ... 51 more items
+    ],
+    expected: [
+      'world_alpha_sundog_valley',          'ART',                                  'Terrain',
+      'Water',                              'Glow_Props',                           'Camp',
+      'Station',                            'Ruin',                                 'Ruin_Door',
+      'TGT_ruin_target_1',                  'TGT_ruin_target_2',                    'TGT_ruin_target_3',
+      'Tower',                              'Tower_Halo',                           'Cave',
+      'Waterfall',                          'Island',                               'Crossings',
+      'Lamps',                              'TGT_range_target_1',                   'TGT_range_target_2',
+      'TGT_range_target_3',                 'Summon_Beam',                          'Campus',
+      'Seam_west_Veil',                     'Ice_Bay',                              'Seam_north_Veil',
+      'Seam_east_Veil',                     'Seam_south_Veil',                      'Seams',
+      'Valley_HQ_Optical_Stone',            'Valley_HQ_Optical_Glass',              'Valley_HQ_Optical_Metal',
+      'Valley_HQ_Optical_Ceramic',          'Valley_HQ_Optical_Brass',              'Valley_HQ_Optical_Timber',
+      'Valley_Armory_Fabrication_Ceramic',  'Valley_Armory_Fabrication_Glass',      'Valley_Armory_Fabrication_Metal',
+      'Valley_Armory_Fabrication_Brass',    'Valley_Armory_Fabrication_Canvas',     'Valley_Summon_Interferometer_Metal',
+      'Valley_Summon_Interferometer_Brass', 'Valley_Summon_Interferometer_Ceramic', 'Valley_Tower_Calibration_Metal',
+      'Valley_Tower_Calibration_Glass',     'Valley_Tower_Calibration_Ceramic',     'Valley_Tower_Calibration_Brass',
+      'Valley_Landing_Fieldkit_Ceramic',    'Valley_Landing_Fieldkit_Metal',        'Valley_Landing_Fieldkit_Glass',
+      'Valley_Landing_Fieldkit_Brass',      'Valley_Landing_Fieldkit_Canvas',       'Valley_Station_Retrofit_Glass',
+      'Valley_Station_Retrofit_Metal',      'Valley_Station_Retrofit_Ceramic',      'Valley_Station_Retrofit_Stone',
+      'Valley_Station_Retrofit_Brass',      'Valley_Station_Retrofit_Timber',       'Valley_Ruin_Resonator_Stone',
+      'Valley_Ruin_Resonator_Metal',        'Valley_Ruin_Resonator_Brass',          'Valley_Exploration_Detail_Stone',
+      'Valley_Exploration_Detail_Metal',    'Valley_Exploration_Detail_Brass',      'Valley_Exploration_Detail_Ceramic',
+      'Valley_Ford_Hydrology_Timber',       'Valley_Ford_Hydrology_Metal',          'Valley_Ford_Hydrology_Brass',
+      'Valley_Ford_Hydrology_Ceramic',      'Valley_Ford_Hydrology_Glass',          'Trees_Trunks',
+      'Trees_Leaves',                       'Rocks',                                'Bushes',
+      'COLLISION',                          'COL_Terrain',                          'COL_Ruin_Door',
+      'COL_TGT_ruin_target_1',              'COL_TGT_ruin_target_2',                'COL_TGT_ruin_target_3',
+      'COL_TGT_range_target_1',             'COL_TGT_range_target_2',               'COL_TGT_range_target_3',
+      'COL_Seam_west_Gate',                 'COL_Seam_north_Gate',                  'COL_Seam_east_Gate',
+      'COL_Seam_south_Gate',                'COL_Props',                            'MARKERS',
+      'MK_spawn_spawn_p1',                  'MK_spawn_spawn_p2',                    'MK_poi_camp_terminal',
+      'MK_cover_station_cover_0',           'MK_cover_station_cover_1',             'MK_cover_station_cover_2',
+      'MK_cover_station_cover_3',           'MK_cover_station_cover_4',             'MK_cover_station_cover_5',
+      'MK_cover_station_cover_6',
+      ... 47 more items
+    ],
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+npm notice
+npm notice New major version of npm available! 11.9.0 -> 12.2.1
+npm notice Changelog: https://github.com/npm/cli/releases/tag/v12.2.1
+npm notice To update run: npm install -g npm@12.2.1
+npm notice

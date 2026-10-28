@@ -1,0 +1,144 @@
+[
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "030b8a967790c043b18e747d48a6934224cbe52e8f21528c39ac3dcc2581deed",
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/camlann-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "camlann",
+    "asset": "arena-maps/camlann/assets/camlann_visual.glb",
+    "sha256": "030b8a967790c043b18e747d48a6934224cbe52e8f21528c39ac3dcc2581deed",
+    "view": "lane",
+    "camera": [
+      -16,
+      1.7,
+      11
+    ],
+    "target": [
+      5,
+      2,
+      -5
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/camlann-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      58.88,
+      46.08,
+      31.28
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/blackflag-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "blackflag",
+    "asset": "arena-maps/blackflag/assets/blackflag_visual.glb",
+    "sha256": "755887aa8b05cc41681b6bbe0c722d680934f65b36ea5b58c52df364c3fe6572",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -17,
+      2.1,
+      11
+    ],
+    "target": [
+      7,
+      2,
+      -4
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/blackflag-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "frostcourt",
+    "asset": "arena-maps/frostcourt/assets/frostcourt_visual.glb",
+    "sha256": "8bb88d82d8108c112a583476d583c16e388140b9fd95d1995101c08b0eef4c09",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      55.2,
+      43.199999999999996,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/frostcourt-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "frostcourt",
+    "asset": "arena-maps/frostcourt/assets/frostcourt_visual.glb",
+    "sha256": "8bb88d82d8108c112a583476d583c16e388140b9fd95d1995101c08b0eef4c09",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -17,
+      1.7,
+      11
+    ],
+    "target": [
+      3,
+      2,
+      -3
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art1/frostcourt-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  }
+]

@@ -19,8 +19,15 @@ for(const region of ['alpha','britain']) {
   });
   assert.ok(triangles<2_000_000,`${triangles} ART triangles`);assert.ok(bytes.length<12_400_000,`${bytes.length} bytes`);
  });
- test(`${region}: exact ordered baseline collision triangle streams, transforms, meshes and extras preserved`,async()=>{
+ test(`${region}: exact baseline collision preserved except explicitly realigned Alpha seam gates`,async()=>{
   const baseline=JSON.parse(readFileSync(new URL(`./kingdom-valley/${region}-baseline-collision.json`,import.meta.url),'utf8'));
-  assert.deepEqual(await collisionSnapshot(path),baseline);
+  const now=await collisionSnapshot(path);
+  const allowed=region==='alpha'?['west','north','east','south'].map(id=>`COL_Seam_${id}_Gate`):[];
+  assert.deepEqual(now.filter(n=>!allowed.includes(n.name)),baseline.filter(n=>!allowed.includes(n.name)));
+  for(const name of allowed){
+    const before=baseline.find(n=>n.name===name),after=now.find(n=>n.name===name);
+    assert.deepEqual(after.extras,before.extras,'unchanged summon-circle unlock');
+    assert.equal(after.triangles,60,'three realigned field panels, independently tested against ART/player');
+  }
  });
 }

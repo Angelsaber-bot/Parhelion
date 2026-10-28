@@ -1,0 +1,1606 @@
+{
+  "mapId": "camlann",
+  "name": "CAM LANN 誓约荒原",
+  "version": "1.0.0",
+  "mode": "arena",
+  "units": "metres",
+  "upAxis": "Y",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "bounds": {
+    "min": [
+      -32.0,
+      0,
+      -24.0
+    ],
+    "max": [
+      32.0,
+      12,
+      24.0
+    ]
+  },
+  "presentation": {
+    "preset": "oathfield"
+  },
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "designNotes": [
+    "Early-medieval-inspired fictional battlefield, not a dated reconstruction.",
+    "Three offset cover islands with a broad central breach and two foundation ramps.",
+    "Rubble chips and distant turf are decorative; no scattered micro-colliders."
+  ],
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "projection": "world-metre planar per face",
+    "channels": [
+      "baseColor",
+      "occlusionRoughnessMetallic",
+      "normal"
+    ]
+  },
+  "palette": {
+    "turf": "#9caf78",
+    "moss": "#6f8d5e",
+    "earth": "#947a59",
+    "path": "#c5af87",
+    "stone": "#bdc6b9",
+    "stoneShade": "#9aaba5",
+    "stoneLight": "#d1d3bd",
+    "timber": "#a37f50",
+    "grain": "#555043",
+    "cloth": "#425f88",
+    "gold": "#d5b36c",
+    "iron": "#68767b",
+    "heather": "#b9a8c1",
+    "distant": "#9baeb8",
+    "thatch": "#bca46b",
+    "thatchShade": "#8f8159",
+    "leaf": "#92aa68",
+    "leafLight": "#b9be78",
+    "bark": "#645947",
+    "flower": "#e6cf98",
+    "hill": "#91a68e",
+    "distantFar": "#bac5cb",
+    "battlefield": "#ffffff"
+  },
+  "objects": [
+    {
+      "id": "battlefield_floor",
+      "type": "box",
+      "position": [
+        0,
+        -0.4,
+        0
+      ],
+      "size": [
+        64,
+        0.8,
+        48
+      ],
+      "material": "turf",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "earthbank_x_-32",
+      "type": "box",
+      "position": [
+        -32,
+        1.4,
+        0
+      ],
+      "size": [
+        1,
+        2.8,
+        48
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "earthbank_x_32",
+      "type": "box",
+      "position": [
+        32,
+        1.4,
+        0
+      ],
+      "size": [
+        1,
+        2.8,
+        48
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "earthbank_z_-24",
+      "type": "box",
+      "position": [
+        0,
+        1.4,
+        -24
+      ],
+      "size": [
+        64,
+        2.8,
+        1
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "earthbank_z_24",
+      "type": "box",
+      "position": [
+        0,
+        1.4,
+        24
+      ],
+      "size": [
+        64,
+        2.8,
+        1
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "turf_berm_x_-1",
+      "type": "ramp",
+      "position": [
+        -30.5,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2.8,
+        46
+      ],
+      "material": "turf",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "turf_berm_z_-1",
+      "type": "ramp",
+      "position": [
+        0,
+        0,
+        -22.5
+      ],
+      "size": [
+        61,
+        2.8,
+        2
+      ],
+      "material": "turf",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1
+    },
+    {
+      "id": "turf_berm_x_1",
+      "type": "ramp",
+      "position": [
+        30.5,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        2.8,
+        46
+      ],
+      "material": "turf",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "turf_berm_z_1",
+      "type": "ramp",
+      "position": [
+        0,
+        0,
+        22.5
+      ],
+      "size": [
+        61,
+        2.8,
+        2
+      ],
+      "material": "turf",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_0",
+      "type": "box",
+      "position": [
+        -24,
+        1.715,
+        -17.85
+      ],
+      "size": [
+        0.9,
+        3.43,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_1",
+      "type": "box",
+      "position": [
+        -24,
+        1.6500000000000001,
+        -16.55
+      ],
+      "size": [
+        0.9,
+        3.3000000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_2",
+      "type": "box",
+      "position": [
+        -24,
+        1.79,
+        -15.25
+      ],
+      "size": [
+        0.9,
+        3.58,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_3",
+      "type": "box",
+      "position": [
+        -24,
+        1.6800000000000002,
+        -13.95
+      ],
+      "size": [
+        0.9,
+        3.3600000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_4",
+      "type": "box",
+      "position": [
+        -24,
+        1.7550000000000001,
+        -12.65
+      ],
+      "size": [
+        0.9,
+        3.5100000000000002,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_5",
+      "type": "box",
+      "position": [
+        -24,
+        1.595,
+        -11.35
+      ],
+      "size": [
+        0.9,
+        3.19,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_6",
+      "type": "box",
+      "position": [
+        -24,
+        1.715,
+        -10.05
+      ],
+      "size": [
+        0.9,
+        3.43,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_7",
+      "type": "box",
+      "position": [
+        -24,
+        1.6500000000000001,
+        -8.75
+      ],
+      "size": [
+        0.9,
+        3.3000000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_8",
+      "type": "box",
+      "position": [
+        -24,
+        1.79,
+        -7.449999999999999
+      ],
+      "size": [
+        0.9,
+        3.58,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_west_fragment_9",
+      "type": "box",
+      "position": [
+        -24,
+        1.6800000000000002,
+        -6.15
+      ],
+      "size": [
+        0.9,
+        3.3600000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_cloth_west",
+      "type": "box",
+      "position": [
+        -30,
+        0.02,
+        -12
+      ],
+      "size": [
+        1.3,
+        0.04,
+        3.5
+      ],
+      "material": "cloth",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_0",
+      "type": "box",
+      "position": [
+        24,
+        1.715,
+        6.15
+      ],
+      "size": [
+        0.9,
+        3.43,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_1",
+      "type": "box",
+      "position": [
+        24,
+        1.6500000000000001,
+        7.449999999999999
+      ],
+      "size": [
+        0.9,
+        3.3000000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_2",
+      "type": "box",
+      "position": [
+        24,
+        1.79,
+        8.75
+      ],
+      "size": [
+        0.9,
+        3.58,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_3",
+      "type": "box",
+      "position": [
+        24,
+        1.6800000000000002,
+        10.05
+      ],
+      "size": [
+        0.9,
+        3.3600000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_4",
+      "type": "box",
+      "position": [
+        24,
+        1.7550000000000001,
+        11.350000000000001
+      ],
+      "size": [
+        0.9,
+        3.5100000000000002,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_5",
+      "type": "box",
+      "position": [
+        24,
+        1.595,
+        12.649999999999999
+      ],
+      "size": [
+        0.9,
+        3.19,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_6",
+      "type": "box",
+      "position": [
+        24,
+        1.715,
+        13.95
+      ],
+      "size": [
+        0.9,
+        3.43,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_7",
+      "type": "box",
+      "position": [
+        24,
+        1.6500000000000001,
+        15.25
+      ],
+      "size": [
+        0.9,
+        3.3000000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_8",
+      "type": "box",
+      "position": [
+        24,
+        1.79,
+        16.55
+      ],
+      "size": [
+        0.9,
+        3.58,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_broken_wall_east_fragment_9",
+      "type": "box",
+      "position": [
+        24,
+        1.6800000000000002,
+        17.85
+      ],
+      "size": [
+        0.9,
+        3.3600000000000003,
+        1.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_cloth_east",
+      "type": "box",
+      "position": [
+        30,
+        0.02,
+        12
+      ],
+      "size": [
+        1.3,
+        0.04,
+        3.5
+      ],
+      "material": "gold",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "hall_foundation",
+      "type": "box",
+      "position": [
+        0,
+        0.6,
+        -15
+      ],
+      "size": [
+        18,
+        1.2,
+        9
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "foundation_ramp_-1",
+      "type": "ramp",
+      "position": [
+        -12,
+        0,
+        -15
+      ],
+      "size": [
+        6,
+        1.2,
+        5
+      ],
+      "material": "path",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "foundation_ramp_1",
+      "type": "ramp",
+      "position": [
+        12,
+        0,
+        -15
+      ],
+      "size": [
+        6,
+        1.2,
+        5
+      ],
+      "material": "path",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "hall_backwall_-6_fragment_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        1.865,
+        -19
+      ],
+      "size": [
+        1.5,
+        1.33,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_backwall_-6_fragment_1",
+      "type": "box",
+      "position": [
+        -6.75,
+        1.7999999999999998,
+        -19
+      ],
+      "size": [
+        1.5,
+        1.2,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_backwall_-6_fragment_2",
+      "type": "box",
+      "position": [
+        -5.25,
+        1.94,
+        -19
+      ],
+      "size": [
+        1.5,
+        1.48,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_backwall_-6_fragment_3",
+      "type": "box",
+      "position": [
+        -3.75,
+        1.83,
+        -19
+      ],
+      "size": [
+        1.5,
+        1.26,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_backwall_4.5",
+      "type": "box",
+      "position": [
+        4.5,
+        2.3,
+        -19
+      ],
+      "size": [
+        3,
+        2.2,
+        1
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_west_stump",
+      "type": "box",
+      "position": [
+        -8.5,
+        2.2,
+        -17.6
+      ],
+      "size": [
+        1,
+        2,
+        3.3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_east_stump",
+      "type": "box",
+      "position": [
+        8.5,
+        1.95,
+        -12.5
+      ],
+      "size": [
+        1,
+        1.5,
+        3
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "hall_frame_post_-6",
+      "type": "box",
+      "position": [
+        -6,
+        3.05,
+        -11.5
+      ],
+      "size": [
+        0.34,
+        3.7,
+        0.34
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "hall_frame_post_4",
+      "type": "box",
+      "position": [
+        4,
+        3.05,
+        -11.5
+      ],
+      "size": [
+        0.34,
+        3.7,
+        0.34
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "ruin_west_wall_fragment_0",
+      "type": "box",
+      "position": [
+        -10.357142857142858,
+        1.0550000000000002,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        2.1100000000000003,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_1",
+      "type": "box",
+      "position": [
+        -9.071428571428571,
+        0.8950000000000001,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        1.7900000000000003,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_2",
+      "type": "box",
+      "position": [
+        -7.785714285714286,
+        1.0150000000000001,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        2.0300000000000002,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_3",
+      "type": "box",
+      "position": [
+        -6.5,
+        0.9500000000000001,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        1.9000000000000001,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_4",
+      "type": "box",
+      "position": [
+        -5.214285714285714,
+        1.09,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        2.18,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_5",
+      "type": "box",
+      "position": [
+        -3.928571428571429,
+        0.9800000000000001,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        1.9600000000000002,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_wall_fragment_6",
+      "type": "box",
+      "position": [
+        -2.6428571428571423,
+        1.0550000000000002,
+        1
+      ],
+      "size": [
+        1.2857142857142858,
+        2.1100000000000003,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_return_fragment_0",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.7150000000000001,
+        2.125
+      ],
+      "size": [
+        1,
+        1.4300000000000002,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_return_fragment_1",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.65,
+        3.375
+      ],
+      "size": [
+        1,
+        1.3,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_return_fragment_2",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.79,
+        4.625
+      ],
+      "size": [
+        1,
+        1.58,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_west_return_fragment_3",
+      "type": "box",
+      "position": [
+        -10.5,
+        0.68,
+        5.875
+      ],
+      "size": [
+        1,
+        1.36,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_0",
+      "type": "box",
+      "position": [
+        4.166666666666666,
+        1.3050000000000002,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.6100000000000003,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_1",
+      "type": "box",
+      "position": [
+        5.5,
+        1.145,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.29,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_2",
+      "type": "box",
+      "position": [
+        6.833333333333334,
+        1.2650000000000001,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.5300000000000002,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_3",
+      "type": "box",
+      "position": [
+        8.166666666666668,
+        1.2000000000000002,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.4000000000000004,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_4",
+      "type": "box",
+      "position": [
+        9.5,
+        1.34,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.68,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_wall_fragment_5",
+      "type": "box",
+      "position": [
+        10.833333333333332,
+        1.23,
+        5
+      ],
+      "size": [
+        1.3333333333333333,
+        2.46,
+        1.2
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_return_fragment_0",
+      "type": "box",
+      "position": [
+        11,
+        0.915,
+        0.125
+      ],
+      "size": [
+        1,
+        1.83,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_return_fragment_1",
+      "type": "box",
+      "position": [
+        11,
+        0.85,
+        1.375
+      ],
+      "size": [
+        1,
+        1.7,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_return_fragment_2",
+      "type": "box",
+      "position": [
+        11,
+        0.99,
+        2.625
+      ],
+      "size": [
+        1,
+        1.98,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "ruin_east_return_fragment_3",
+      "type": "box",
+      "position": [
+        11,
+        0.88,
+        3.875
+      ],
+      "size": [
+        1,
+        1.76,
+        1.25
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "southern_bank",
+      "type": "box",
+      "position": [
+        -4,
+        0.7,
+        15
+      ],
+      "size": [
+        12,
+        1.4,
+        4
+      ],
+      "material": "earth",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "palisade_stump",
+      "type": "box",
+      "position": [
+        3,
+        1.2,
+        17
+      ],
+      "size": [
+        1.1,
+        2.4,
+        7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "fallen_cart",
+      "type": "box",
+      "position": [
+        17,
+        0.75,
+        -4
+      ],
+      "size": [
+        3.6,
+        1.5,
+        2.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "rubble_west",
+      "type": "box",
+      "position": [
+        -18,
+        0.7,
+        -4
+      ],
+      "size": [
+        3.5,
+        1.4,
+        2.5
+      ],
+      "material": "stoneShade",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_0",
+      "kind": "spawn",
+      "position": [
+        -28,
+        0,
+        -11
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_1",
+      "kind": "spawn",
+      "position": [
+        -28,
+        0,
+        -15
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "cover_spawn_west",
+      "kind": "cover",
+      "position": [
+        -26,
+        0,
+        -12
+      ],
+      "height": 3.6
+    },
+    {
+      "id": "spawn_east_0",
+      "kind": "spawn",
+      "position": [
+        28,
+        0,
+        11
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "spawn",
+      "position": [
+        28,
+        0,
+        15
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_spawn_east",
+      "kind": "cover",
+      "position": [
+        26,
+        0,
+        12
+      ],
+      "height": 3.6
+    },
+    {
+      "id": "objective_hall",
+      "kind": "objective",
+      "position": [
+        0,
+        1.2,
+        -15
+      ],
+      "radius": 2
+    },
+    {
+      "id": "cover_west_wall",
+      "kind": "cover",
+      "position": [
+        -6.5,
+        0,
+        -0.4
+      ],
+      "height": 2.2
+    },
+    {
+      "id": "cover_east_wall",
+      "kind": "cover",
+      "position": [
+        7.5,
+        0,
+        6.5
+      ],
+      "height": 2.7
+    },
+    {
+      "id": "cover_earthwork",
+      "kind": "cover",
+      "position": [
+        -4,
+        0,
+        11.7
+      ],
+      "height": 1.4
+    },
+    {
+      "id": "cover_cart",
+      "kind": "cover",
+      "position": [
+        17,
+        0,
+        -1.8
+      ],
+      "height": 1.5
+    },
+    {
+      "id": "cover_hall",
+      "kind": "cover",
+      "position": [
+        4,
+        1.2,
+        -17
+      ],
+      "height": 2.2
+    },
+    {
+      "id": "objective_breach",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        4
+      ],
+      "radius": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "north_foundation",
+      "name": "north foundation",
+      "points": [
+        [
+          -28,
+          0,
+          -11
+        ],
+        [
+          -28,
+          0,
+          -21
+        ],
+        [
+          -20,
+          0,
+          -21
+        ],
+        [
+          -17,
+          0,
+          -15
+        ],
+        [
+          -8,
+          1.2,
+          -15
+        ],
+        [
+          8,
+          1.2,
+          -15
+        ],
+        [
+          17,
+          0,
+          -15
+        ],
+        [
+          21,
+          0,
+          -12
+        ],
+        [
+          21,
+          0,
+          3
+        ],
+        [
+          28,
+          0,
+          3
+        ],
+        [
+          28,
+          0,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "south_flank",
+      "name": "south flank",
+      "points": [
+        [
+          -28,
+          0,
+          -11
+        ],
+        [
+          -28,
+          0,
+          -3
+        ],
+        [
+          -20,
+          0,
+          -1
+        ],
+        [
+          -15,
+          0,
+          10
+        ],
+        [
+          -15,
+          0,
+          20
+        ],
+        [
+          0,
+          0,
+          21
+        ],
+        [
+          20,
+          0,
+          21
+        ],
+        [
+          28,
+          0,
+          21
+        ],
+        [
+          28,
+          0,
+          15
+        ]
+      ]
+    },
+    {
+      "id": "central_breach",
+      "name": "central breach",
+      "points": [
+        [
+          -20,
+          0,
+          -1
+        ],
+        [
+          -22,
+          0,
+          -1
+        ],
+        [
+          -22,
+          0,
+          -7
+        ],
+        [
+          -15,
+          0,
+          -7
+        ],
+        [
+          0,
+          0,
+          -6
+        ],
+        [
+          0,
+          0,
+          3
+        ],
+        [
+          0,
+          0,
+          9
+        ],
+        [
+          16,
+          0,
+          10
+        ],
+        [
+          20,
+          0,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "figure_eight",
+      "name": "figure eight",
+      "points": [
+        [
+          -15,
+          0,
+          -7
+        ],
+        [
+          -15,
+          0,
+          9
+        ],
+        [
+          -13,
+          0,
+          10
+        ],
+        [
+          0,
+          0,
+          9
+        ],
+        [
+          0,
+          0,
+          3
+        ],
+        [
+          0,
+          0,
+          -6
+        ],
+        [
+          14,
+          0,
+          -8
+        ],
+        [
+          21,
+          0,
+          -8
+        ],
+        [
+          21,
+          0,
+          10
+        ],
+        [
+          16,
+          0,
+          10
+        ],
+        [
+          13,
+          0,
+          9
+        ]
+      ]
+    }
+  ]
+}

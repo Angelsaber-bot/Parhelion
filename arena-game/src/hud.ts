@@ -37,6 +37,7 @@ export class Hud {
     $('limit').textContent = ''; $('ping').textContent = ''; $('ammo').textContent = '—';
     $('mag').textContent = ''; $('wname').textContent = ''; $('hptext').textContent = '—';
     $('hpfill').style.width = '0%';
+    $('spawn-protection').textContent = ''; $('spawn-protection').classList.add('hidden');
     $('wslots').querySelectorAll<HTMLElement>('.wslot').forEach((slot) => slot.classList.remove('on'));
     this.aim(0, false);
     this.feedRows.forEach((row) => row.element.remove()); this.feedRows = [];
@@ -59,6 +60,15 @@ export class Hud {
     this.hurtT = Math.max(0, this.hurtT - dt);
     $('hitmarker').style.opacity = String(Math.min(1, this.hitT * 6));
     $('hurt').style.opacity = String(Math.min(0.8, this.hurtT * 2));
+    // Never infer protection from locally predicted inputs or wall-clock elapsed time.
+    const protection = $('spawn-protection');
+    const protectedSelf = snap?.players.find((p) => p.id === myId);
+    const protectionTicks = snap && protectedSelf?.alive && snap.phase !== 'ended'
+      ? Math.max(0, (protectedSelf.spawnProtectedUntilTick ?? 0) - snap.tick) : 0;
+    protection.classList.toggle('hidden', protectionTicks <= 0);
+    const protectionSeconds = (Math.ceil(protectionTicks * 10 / TICK_HZ) / 10).toFixed(1);
+    protection.textContent = protectionTicks > 0
+      ? bilingual(`◇ 出生无敌 · ${protectionSeconds}s`, `◇ Spawn protected · ${protectionSeconds}s`) : '';
     if (!snap) return;
 
     const limit = SCORE_LIMIT[snap.layout];

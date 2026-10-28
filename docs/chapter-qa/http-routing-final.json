@@ -1,0 +1,22 @@
+{
+  "kind": "local-one-origin-game-mounts",
+  "results": [
+    {
+      "mount": "/arena/",
+      "entrypointBytesMatch": true,
+      "filesAvailableOverHTTP": 27
+    },
+    {
+      "mount": "/world/",
+      "entrypointBytesMatch": true,
+      "filesAvailableOverHTTP": 21
+    }
+  ],
+  "failures": [],
+  "notVerified": [
+    "current production homepage/build source",
+    "browser runtime/WebGL",
+    "deployed Cloudflare Worker",
+    "GPU performance"
+  ]
+}

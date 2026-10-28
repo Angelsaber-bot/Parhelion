@@ -29,7 +29,7 @@ function actualBarrel(rig:Awaited<ReturnType<typeof playerFixture>>['rig']) {
   return()=>art.localToWorld(centers[1].clone()).sub(art.localToWorld(centers[0].clone())).normalize();
 }
 
-async function setup(state:{swimming?:boolean;gliding?:boolean}={}) {
+async function setup(state:{swimming?:boolean;gliding?:boolean;moving?:boolean}={}) {
   const f=await playerFixture(),{rig,rifle}=f,anim=new SkinnedCharacterAnimator(rig),barrel=actualBarrel(rig);
   const player={flying:false,pos:new THREE.Vector3(2,.7,-3),vel:new THREE.Vector3(),onGround:!state.swimming&&!state.gliding,swimming:!!state.swimming,gliding:!!state.gliding,pitch:0,yaw:Math.PI};
   rig.root.position.copy(player.pos);
@@ -37,7 +37,7 @@ async function setup(state:{swimming?:boolean;gliding?:boolean}={}) {
   const keys=new Set<string>(),aim={value:0,held:false};
   const shots:{start:THREE.Vector3;end:THREE.Vector3}[]=[],queryDirections:THREE.Vector3[]=[];
   let eligible=true;
-  const c=vm.createContext({THREE,gameplayActive:()=>true,locked:true,settings:{action:()=> 'fire'},settingsPanel:{open:false},document:{visibilityState:'visible',hasFocus:()=>true},keys,aim,down:(action:string)=>action==='fire'&&keys.has('Mouse0'),player,anim,rig,camera,ray:new THREE.Raycaster(),targets:[],dt:1/60,hs:0,ads:0,wx:0,wz:0,
+  const c=vm.createContext({THREE,worldProgress:{armed:true},gameplayActive:()=>true,locked:true,settings:{action:()=> 'fire'},settingsPanel:{open:false},document:{visibilityState:'visible',hasFocus:()=>true},keys,aim,down:(action:string)=>action==='fire'&&keys.has('Mouse0'),player,anim,rig,camera,ray:new THREE.Raycaster(),targets:[],dt:1/60,hs:state.moving?9:0,ads:0,wx:0,wz:0,
     combat:{defeated:false,canShoot:()=>eligible,geometry:{cast:()=>null},raycast:()=>null,shot:(start:THREE.Vector3,end:THREE.Vector3)=>shots.push({start:start.clone(),end:end.clone()})},
     rifle:{muzzleWorld:()=>{queryDirections.push(barrel());return rifle.muzzleWorld();}},done:new Set(),toast(){},save(){},applyWorldState(){},$(){return{classList:{add(){},remove(){}}}},setTimeout(){}});
   vm.runInContext(source,c);
@@ -53,7 +53,7 @@ function assertContact(f:Awaited<ReturnType<typeof setup>>) {
 }
 
 test('production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS',async()=>{
-  for(const state of [{},{gliding:true},{swimming:true}]) {
+  for(const state of [{},{moving:true},{gliding:true},{swimming:true}]) {
     const f=await setup(state);
     for(const yawOffset of [-Math.PI/2,Math.PI/2,Math.PI,-Math.PI])for(const pitch of [-1.5,0,.75,1.5]) {
       f.keys.clear();f.anim.facing=0;

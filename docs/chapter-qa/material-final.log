@@ -1,0 +1,14 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> parhelion-arena-game@0.1.0 test
+> vitest run --run test/chapter-material-qa.test.ts
+
+
+ RUN  v5.0.5 /workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/arena-game
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  08:39:57
+   Duration  259ms (import 42%, transform 41%, tests 11%, worker 5%)
+

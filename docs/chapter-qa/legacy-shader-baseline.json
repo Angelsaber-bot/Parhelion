@@ -1,0 +1,10 @@
+{
+  "baselineCommit": "a3096254ef0fff455a29932bc5fef2e57fa49f44",
+  "threeRevision": "186",
+  "sourceSha256": "ddd4b08d74318d91771941279ab8cf1e333f1b03d0edd8f937112a2e3e85cf68",
+  "vertexSha256": "3008bfc9cb31b5d67df7705349b382fe8a3b10cf0fc6e9ea18353e2e8fa96f31",
+  "fragmentSha256": "0a30989d8f2b2c1164051f0320248244fa80f375de06d0c33e05216a1f6715df",
+  "expandedVertexSha256": "aa7691e1030a5abcfd6f0e5095bc932e43e4df4118961fb41690ebe8b268c6bf",
+  "expandedFragmentSha256": "1083aaabfed3a95652ceb33509775e3d48383fcb3bc8445397407c05e48c72f0",
+  "cacheKey": "cel-0.22"
+}

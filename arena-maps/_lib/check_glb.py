@@ -4,7 +4,8 @@ Usage: python3 _lib/check_glb.py <map dir> <asset prefix>   e.g. sakura sakura
 - every map object has a VIS_ node; every collision object has a COL_ node
 - each COL_ node's bounds equal the object's collision box exactly
 - each VIS_ node stays inside its object's box (art never sticks out of what you collide with)
-- materials are factor-only (no textures, no external URIs); budget for triangles and size
+- legacy/proxy materials are factor-only; opted-in new chapter textures must be embedded with UVs
+- budget: 60k triangles, 4MB geometry/JSON, plus <=1MB embedded authored surface textures
 """
 from pathlib import Path
 import json, struct, sys
@@ -63,11 +64,30 @@ for o in m['objects']:
             check(all(abs(a[i] - lo[i]) < 1e-4 and abs(b[i] - hi[i]) < 1e-4 for i in range(3)), f'COL_{o["id"]} bounds {a} {b} vs {lo} {hi}')
 check(len(cn) == sum(o['collision'] for o in m['objects']), 'collision node count')
 for g in (vis, col):
-    check('images' not in g and 'textures' not in g and all('uri' not in b for b in g['buffers']), 'no textures or external buffers')
+    check(all('uri' not in b for b in g['buffers']), 'no external buffers')
+    textured = bool(m.get('artPipeline', {}).get('embeddedMaterialTextures')) and g is vis
+    if textured:
+        for im in g.get('images', []):
+            check('uri' not in im and im.get('mimeType') in ('image/png','image/jpeg') and isinstance(im.get('bufferView'), int) and 0 <= im['bufferView'] < len(g['bufferViews']), 'texture image is embedded')
+        for me in g['meshes']:
+            for p in me['primitives']:
+                material = g['materials'][p['material']]
+                pbr = material.get('pbrMetallicRoughness', {})
+                if any(k in pbr for k in ('baseColorTexture','metallicRoughnessTexture')) or 'normalTexture' in material:
+                    check('TEXCOORD_0' in p['attributes'], 'textured primitive has UVs')
+                    if 'TEXCOORD_0' in p['attributes']:
+                        check(g['accessors'][p['attributes']['TEXCOORD_0']]['count'] == g['accessors'][p['attributes']['POSITION']]['count'], 'UV vertex count matches')
+    else:
+        check('images' not in g and 'textures' not in g, 'legacy/proxy remains factor-only')
 check(all(n['extras'].get('decorative') for n in vis['nodes'] if n['name'].startswith('DETAIL_')), 'detail batches are decorative')
-check(tris < 60000 and vis_bytes < 4_000_000, f'budget: {tris} triangles, {vis_bytes} bytes')
+texture_bytes = sum(vis['bufferViews'][im['bufferView']]['byteLength'] for im in vis.get('images', []) if 'bufferView' in im)
+# Keep the established geometry budget. New chapters may add <=1MB of embedded
+# authored 256px surface channels; do not silently count those as mesh inflation.
+check(tris < 60000 and vis_bytes - texture_bytes < 4_000_000 and texture_bytes < 1_000_000,
+      f'budget: {tris} triangles, {vis_bytes - texture_bytes} geometry/json bytes, {texture_bytes} texture bytes')
 report = dict(mapId=m['mapId'], version=m['version'], checks=checks, failed=fails, visualNodes=len(vis['nodes']),
-              visualTriangles=tris, visualBytes=vis_bytes, collisionNodes=len(col['nodes']), collisionBytes=col_bytes)
+              visualTriangles=tris, visualBytes=vis_bytes, embeddedTextureBytes=texture_bytes,
+              collisionNodes=len(col['nodes']), collisionBytes=col_bytes)
 (ROOT / 'validation/glb_report.json').write_text(json.dumps(report, indent=2) + '\n')
 print(json.dumps(report))
 sys.exit(1 if fails else 0)

@@ -1,0 +1,965 @@
+{
+  "mapId": "frostcourt",
+  "name": "FROSTCOURT 永冬庭院",
+  "version": "1.0.0",
+  "mode": "arena",
+  "units": "metres",
+  "upAxis": "Y",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "bounds": {
+    "min": [
+      -30.0,
+      0,
+      -24.0
+    ],
+    "max": [
+      30.0,
+      12,
+      24.0
+    ]
+  },
+  "presentation": {
+    "preset": "snowcourt"
+  },
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "designNotes": [
+    "Snow has no friction/visibility gameplay modifier.",
+    "North arcade and open south park are deliberately different bypasses.",
+    "Fictional ceremonial architecture; no named historical battle claim.",
+    "R4 material and sculptural pass preserves every authoritative collision, route, anchor and spawn."
+  ],
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "projection": "world-metre planar per face",
+    "channels": [
+      "baseColor",
+      "occlusionRoughnessMetallic",
+      "normal"
+    ]
+  },
+  "palette": {
+    "stone": "#a9b0b8",
+    "limestone": "#d9d4c7",
+    "stoneLight": "#c1c4c8",
+    "stoneDark": "#909aa8",
+    "pavement": "#8e9bab",
+    "pavementAlt": "#99a5b2",
+    "pavementWarm": "#a6abb1",
+    "joint": "#68788c",
+    "snow": "#eef0f3",
+    "snowShade": "#cdd9e7",
+    "snowBlue": "#bccddd",
+    "slate": "#425870",
+    "slateLight": "#566d83",
+    "iron": "#344455",
+    "ironEdge": "#66778a",
+    "timber": "#6c4e3d",
+    "timberLight": "#977354",
+    "timberDark": "#4d3b33",
+    "canvas": "#b8af99",
+    "canvasLight": "#cec3a8",
+    "canvasShade": "#8f938f",
+    "rope": "#8d816c",
+    "blue": "#365578",
+    "blueLight": "#4a698d",
+    "gold": "#bda06b",
+    "ice": "#8bb8cc",
+    "iceLight": "#c0dce5",
+    "window": "#45617e",
+    "windowLight": "#7b9ab2",
+    "amber": "#d8a66c",
+    "distant": "#9baac1",
+    "winterNeedle": "#526773",
+    "winterNeedleLight": "#6d828b"
+  },
+  "objects": [
+    {
+      "id": "court_floor",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        60,
+        0.6,
+        48
+      ],
+      "material": "snow",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "boundary_x_-30",
+      "type": "box",
+      "position": [
+        -30,
+        2.5,
+        0
+      ],
+      "size": [
+        0.6,
+        5,
+        48
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "boundary_x_30",
+      "type": "box",
+      "position": [
+        30,
+        2.5,
+        0
+      ],
+      "size": [
+        0.6,
+        5,
+        48
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "boundary_z_-24",
+      "type": "box",
+      "position": [
+        0,
+        2.5,
+        -24
+      ],
+      "size": [
+        60,
+        5,
+        0.6
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "boundary_z_24",
+      "type": "box",
+      "position": [
+        0,
+        1.4,
+        24
+      ],
+      "size": [
+        60,
+        2.8,
+        0.6
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_screen_west",
+      "type": "box",
+      "position": [
+        -24,
+        1.7,
+        0
+      ],
+      "size": [
+        0.65,
+        3.4,
+        10
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_mark_west",
+      "type": "box",
+      "position": [
+        -28,
+        0.025,
+        0
+      ],
+      "size": [
+        1.4,
+        0.05,
+        5
+      ],
+      "material": "blue",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_screen_east",
+      "type": "box",
+      "position": [
+        24,
+        1.7,
+        0
+      ],
+      "size": [
+        0.65,
+        3.4,
+        10
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "spawn_mark_east",
+      "type": "box",
+      "position": [
+        28,
+        0.025,
+        0
+      ],
+      "size": [
+        1.4,
+        0.05,
+        5
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "arcade_terrace",
+      "type": "box",
+      "position": [
+        0,
+        0.65,
+        -18
+      ],
+      "size": [
+        38,
+        1.3,
+        8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "terrace_ramp_-1",
+      "type": "ramp",
+      "position": [
+        -22,
+        0,
+        -18
+      ],
+      "size": [
+        6,
+        1.3,
+        5
+      ],
+      "material": "pavement",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1
+    },
+    {
+      "id": "terrace_ramp_1",
+      "type": "ramp",
+      "position": [
+        22,
+        0,
+        -18
+      ],
+      "size": [
+        6,
+        1.3,
+        5
+      ],
+      "material": "pavement",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1
+    },
+    {
+      "id": "arcade_roof",
+      "type": "box",
+      "position": [
+        0,
+        5.8,
+        -18
+      ],
+      "size": [
+        40,
+        0.5,
+        9
+      ],
+      "material": "slate",
+      "collision": true,
+      "role": "roof"
+    },
+    {
+      "id": "arcade_pier_-18_-21.5",
+      "type": "box",
+      "position": [
+        -18,
+        3.45,
+        -21.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_-18_-14.5",
+      "type": "box",
+      "position": [
+        -18,
+        3.45,
+        -14.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_-9_-21.5",
+      "type": "box",
+      "position": [
+        -9,
+        3.45,
+        -21.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_-9_-14.5",
+      "type": "box",
+      "position": [
+        -9,
+        3.45,
+        -14.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_0_-21.5",
+      "type": "box",
+      "position": [
+        0,
+        3.45,
+        -21.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_0_-14.5",
+      "type": "box",
+      "position": [
+        0,
+        3.45,
+        -14.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_9_-21.5",
+      "type": "box",
+      "position": [
+        9,
+        3.45,
+        -21.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_9_-14.5",
+      "type": "box",
+      "position": [
+        9,
+        3.45,
+        -14.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_18_-21.5",
+      "type": "box",
+      "position": [
+        18,
+        3.45,
+        -21.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "arcade_pier_18_-14.5",
+      "type": "box",
+      "position": [
+        18,
+        3.45,
+        -14.5
+      ],
+      "size": [
+        0.8,
+        4.3,
+        0.8
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "fountain_plinth",
+      "type": "box",
+      "position": [
+        0,
+        0.85,
+        0
+      ],
+      "size": [
+        6,
+        1.7,
+        6
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "fountain_column",
+      "type": "box",
+      "position": [
+        0,
+        2.7,
+        0
+      ],
+      "size": [
+        1.8,
+        3.7,
+        1.8
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "supply_wagon_-1",
+      "type": "box",
+      "position": [
+        -13,
+        1.3,
+        -5
+      ],
+      "size": [
+        4,
+        2.6,
+        2.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "park_low_wall_-1",
+      "type": "box",
+      "position": [
+        -10,
+        0.75,
+        14
+      ],
+      "size": [
+        8,
+        1.5,
+        0.7
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "park_gatepost_-1",
+      "type": "box",
+      "position": [
+        -4,
+        1.1,
+        14
+      ],
+      "size": [
+        1.2,
+        2.2,
+        1.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "supply_wagon_1",
+      "type": "box",
+      "position": [
+        13,
+        1.3,
+        5
+      ],
+      "size": [
+        4,
+        2.6,
+        2.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "park_low_wall_1",
+      "type": "box",
+      "position": [
+        10,
+        0.75,
+        14
+      ],
+      "size": [
+        8,
+        1.5,
+        0.7
+      ],
+      "material": "stone",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "park_gatepost_1",
+      "type": "box",
+      "position": [
+        4,
+        1.1,
+        14
+      ],
+      "size": [
+        1.2,
+        2.2,
+        1.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_0",
+      "kind": "spawn",
+      "position": [
+        -27.5,
+        0,
+        -2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_1",
+      "kind": "spawn",
+      "position": [
+        -27.5,
+        0,
+        2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "cover_screen_west",
+      "kind": "cover",
+      "position": [
+        -26,
+        0,
+        0
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "spawn_east_0",
+      "kind": "spawn",
+      "position": [
+        27.5,
+        0,
+        -2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "spawn",
+      "position": [
+        27.5,
+        0,
+        2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_screen_east",
+      "kind": "cover",
+      "position": [
+        26,
+        0,
+        0
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "objective_arcade",
+      "kind": "objective",
+      "position": [
+        0,
+        1.3,
+        -18
+      ],
+      "radius": 2
+    },
+    {
+      "id": "cover_wagon_-1",
+      "kind": "cover",
+      "position": [
+        -13,
+        0,
+        -8
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_park_-1",
+      "kind": "cover",
+      "position": [
+        -10,
+        0,
+        16
+      ],
+      "height": 1.5
+    },
+    {
+      "id": "cover_fountain_-1",
+      "kind": "cover",
+      "position": [
+        -4.2,
+        0,
+        0
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_wagon_1",
+      "kind": "cover",
+      "position": [
+        13,
+        0,
+        8
+      ],
+      "height": 2.6
+    },
+    {
+      "id": "cover_park_1",
+      "kind": "cover",
+      "position": [
+        10,
+        0,
+        16
+      ],
+      "height": 1.5
+    },
+    {
+      "id": "cover_fountain_1",
+      "kind": "cover",
+      "position": [
+        4.2,
+        0,
+        0
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "objective_fountain",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        5
+      ],
+      "radius": 2
+    }
+  ],
+  "routes": [
+    {
+      "id": "covered_arcade",
+      "name": "covered arcade",
+      "points": [
+        [
+          -27.5,
+          0,
+          -2
+        ],
+        [
+          -27.5,
+          0,
+          -18
+        ],
+        [
+          -25.5,
+          0,
+          -18
+        ],
+        [
+          -18,
+          1.3,
+          -18
+        ],
+        [
+          18,
+          1.3,
+          -18
+        ],
+        [
+          25.5,
+          0,
+          -18
+        ],
+        [
+          27.5,
+          0,
+          -18
+        ],
+        [
+          27.5,
+          0,
+          -2
+        ]
+      ]
+    },
+    {
+      "id": "park_loop",
+      "name": "park loop",
+      "points": [
+        [
+          -27.5,
+          0,
+          2
+        ],
+        [
+          -27.5,
+          0,
+          10
+        ],
+        [
+          -20,
+          0,
+          18
+        ],
+        [
+          0,
+          0,
+          18
+        ],
+        [
+          20,
+          0,
+          18
+        ],
+        [
+          27.5,
+          0,
+          10
+        ],
+        [
+          27.5,
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "fountain_breach",
+      "name": "fountain breach",
+      "points": [
+        [
+          -22,
+          0,
+          -8
+        ],
+        [
+          -15,
+          0,
+          -10
+        ],
+        [
+          -6,
+          0,
+          -8
+        ],
+        [
+          6,
+          0,
+          -8
+        ],
+        [
+          20,
+          0,
+          -8
+        ],
+        [
+          22,
+          0,
+          0
+        ],
+        [
+          22,
+          0,
+          8
+        ],
+        [
+          7,
+          0,
+          9
+        ],
+        [
+          0,
+          0,
+          7
+        ],
+        [
+          -7,
+          0,
+          9
+        ],
+        [
+          -20,
+          0,
+          8
+        ],
+        [
+          -22,
+          0,
+          0
+        ],
+        [
+          -22,
+          0,
+          -8
+        ]
+      ]
+    },
+    {
+      "id": "arcade_to_park",
+      "name": "arcade to park",
+      "points": [
+        [
+          4.5,
+          1.3,
+          -18
+        ],
+        [
+          19.5,
+          1.3,
+          -18
+        ],
+        [
+          26,
+          0,
+          -18
+        ],
+        [
+          26,
+          0,
+          -8
+        ],
+        [
+          20,
+          0,
+          -8
+        ],
+        [
+          20,
+          0,
+          9
+        ],
+        [
+          17,
+          0,
+          18
+        ]
+      ]
+    }
+  ]
+}

@@ -155,11 +155,22 @@ export function imperialPavilion(b: Batch, tx: number, y: number, tz: number, w:
       beam(b, p(s * (w / 2 + 2.2), 0, zz + (zz ? Math.sign(zz) : 1) * 0.8), p(s * (w / 2 + 2.2), 0.38, zz + (zz ? Math.sign(zz) : 1) * 0.8), 0.06, C.dark);
     }
     panel(b, [p(s * 2, 0, d / 2 + 0.09), p(s * 2, eave, d / 2 + 0.09), p(s * 2.9, eave, d / 2 + 0.1), p(s * 3.2, 0.5, d / 2 + 0.1)], '#ded6c1');
+    // Front curtain tieback lies on the existing canvas, never across the
+    // four-metre entrance. Small pendant ends make the open flaps feel fastened.
+    beam(b,p(s*2.06,1.8,d/2+.14),p(s*3.06,1.8,d/2+.14),.034,C.seam);
+    beam(b,p(s*2.77,1.8,d/2+.14),p(s*2.83,1.34,d/2+.16),.025,C.rope);
+    surface(b,C.rope).add(CYL,C.rope,T(...p(s*2.83,1.28,d/2+.16),0,.055,.14,.055),false);
   }
   surface(b, C.blue).add(BOX, C.blue, T(...p(0, eave / 2, -d / 2), 0, w, eave, 0.16), false);
   for (const zz of [-d / 2, d / 2]) panel(b, [p(-w / 2, eave, zz), p(0, ridge, zz), p(w / 2, eave, zz)], '#ded6c1');
   for (let k = -2; k <= 2; k++) surface(b, '#d6c9a8').add(BOX, '#d6c9a8', T(...p(k * 2.2, eave / 2, -d / 2 - 0.09), 0, 0.3, eave - 0.15, 0.025), false);
   beam(b, p(-w / 2, eave, d / 2 + 0.11), p(w / 2, eave, d / 2 + 0.11), 0.07, C.gold);
+  // A short sewn valance is attached below the front eave, above all headroom.
+  // The twelve broad points echo the pavilion's existing blue/linen stripes.
+  for(let k=0;k<12;k++){
+    const a=-w/2+k*w/12,c=a+w/12,mid=(a+c)/2;
+    panel(b,[p(a,eave-.025,d/2+.14),p(c,eave-.025,d/2+.14),p(c,eave-.19,d/2+.14),p(mid,eave-.34,d/2+.15),p(a,eave-.19,d/2+.14)],k%2?C.blue:C.canvas);
+  }
   // Keep map-table footprint identical to its original collision box.
   for (const xx of [-1.5, 1.5]) for (const zz of [-2.2, -0.8]) beam(b, p(xx, 0, zz), p(xx, 0.85, zz), 0.1, C.dark, true);
   b.add(BOX, C.wood, T(...p(0, 0.85, -1.5), 0, 3.6, 0.1, 1.8), false);

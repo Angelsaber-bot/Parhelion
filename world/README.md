@@ -75,6 +75,8 @@ npm run build        # 类型检查 + 打包到 dist/
 | G | 任务指引开/关（屏幕路标 + 光柱 + 地图标记，跨区域会先指向东侧山口） |
 | R | 重置进度 |
 
+正常新开局／重置会空手回到初始营地，在枪械工坊的武器架领取曙光 AR 后才可射击与肩射。重置任务与装备但保留语言、按键、灵敏度和画质等个人设置；战败复活不清空进度。详见 [重置行为与验证](../docs/WORLD_PROGRESS_RESET.md)。
+
 URL 参数（截图/调试）：`?region=blacksail`（黑帆尽头）、`?region=winter`（永冬之城）、`?region=kyoto`（业火京都）、`?region=britain`（落日王国）、`?q=low`（低画质）、`?spawn=station`、`?cam=x,y,z,yaw,pitch`、`?clean`（隐藏 HUD）、`?lit`（点亮光环）、`?nofog`。
 
 ## World 02：黑帆尽头（Black Sail's End，1718）

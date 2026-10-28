@@ -1,0 +1,22 @@
+[
+  {
+    "region": "alpha",
+    "committedBaselineVerified": "8db7385bff231dfe22588c52108284d2f7c55b11a605b2067452f49508f5f3e7"
+  },
+  {
+    "region": "britain",
+    "committedBaselineVerified": "c4f1d2a95d182a179fba26b189ea755abfb8867013144310757c8d36cb3aba8d"
+  },
+  {
+    "region": "blacksail",
+    "committedBaselineVerified": "4bacb5d599d8d4367b366c54ad43379245f6faf4c82504d43f77f813a701c1d4"
+  },
+  {
+    "region": "winter",
+    "committedBaselineVerified": "62692beb46f8405165cbe163ac3e8a02bd5b2be4bbe0aae1179760c94a933b28"
+  },
+  {
+    "region": "kyoto",
+    "committedBaselineVerified": "e7a6009921b89872ba97c2e1d8a1db719ee099b1c099bdd7a4a039c63a4f730b"
+  }
+]

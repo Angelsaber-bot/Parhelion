@@ -1,0 +1,62 @@
+[
+  {
+    "region": "alpha",
+    "beforeBytes": 3788892,
+    "afterBytes": 3792476,
+    "byteDelta": 3584,
+    "beforeTriangles": 507692,
+    "afterTriangles": 508028,
+    "triangleDelta": 336,
+    "primitives": 73,
+    "beforeSha256": "8db7385bff231dfe22588c52108284d2f7c55b11a605b2067452f49508f5f3e7",
+    "afterSha256": "5ac90ab9d48928f8fd7a9bb41403020bc459ba6cc8e216f6aa0633fce88e4298"
+  },
+  {
+    "region": "britain",
+    "beforeBytes": 6131368,
+    "afterBytes": 6134280,
+    "byteDelta": 2912,
+    "beforeTriangles": 804999,
+    "afterTriangles": 805375,
+    "triangleDelta": 376,
+    "primitives": 33,
+    "beforeSha256": "c4f1d2a95d182a179fba26b189ea755abfb8867013144310757c8d36cb3aba8d",
+    "afterSha256": "670f9e375029c0dbf90faa31b4cebf03f60b768077e24d7222fa888caf17aef9"
+  },
+  {
+    "region": "blacksail",
+    "beforeBytes": 4753832,
+    "afterBytes": 4760516,
+    "byteDelta": 6684,
+    "beforeTriangles": 630018,
+    "afterTriangles": 631002,
+    "triangleDelta": 984,
+    "primitives": 94,
+    "beforeSha256": "4bacb5d599d8d4367b366c54ad43379245f6faf4c82504d43f77f813a701c1d4",
+    "afterSha256": "1a9bc4b360464f0783917c6ed6ec98e63c955a4f9ef9874fbc9766e6787faf35"
+  },
+  {
+    "region": "winter",
+    "beforeBytes": 6536424,
+    "afterBytes": 6540268,
+    "byteDelta": 3844,
+    "beforeTriangles": 720348,
+    "afterTriangles": 720732,
+    "triangleDelta": 384,
+    "primitives": 59,
+    "beforeSha256": "62692beb46f8405165cbe163ac3e8a02bd5b2be4bbe0aae1179760c94a933b28",
+    "afterSha256": "4a2f6a648db9a80b11c9a354e6df4358f54129b17d447b4fff4601dbc53d2752"
+  },
+  {
+    "region": "kyoto",
+    "beforeBytes": 12319412,
+    "afterBytes": 12330884,
+    "byteDelta": 11472,
+    "beforeTriangles": 1368094,
+    "afterTriangles": 1369630,
+    "triangleDelta": 1536,
+    "primitives": 38,
+    "beforeSha256": "e7a6009921b89872ba97c2e1d8a1db719ee099b1c099bdd7a4a039c63a4f730b",
+    "afterSha256": "5ad89bd7266c9ad616e6db85d17be229d7689f285abb30c95320952af82df873"
+  }
+]

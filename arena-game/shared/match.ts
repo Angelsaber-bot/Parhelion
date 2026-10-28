@@ -4,7 +4,7 @@
 
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
-  SHIELD, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
+  SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
 } from './content.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
@@ -55,6 +55,8 @@ export interface PlayerSnap extends PlayerState {
   kills: number;
   deaths: number;
   respawn: number;
+  /** Exclusive authoritative expiry; additive field, absent on older v3 snapshots. */
+  spawnProtectedUntilTick?: number;
 }
 
 export interface Snapshot {
@@ -78,6 +80,7 @@ interface Slot {
   kills: number;
   deaths: number;
   respawn: number;
+  spawnProtectedUntilTick: number;
   meleeReadyTick: number;
   melee: { weapon: number; impactTick: number; yaw: number; pitch: number } | null;
 }
@@ -130,7 +133,7 @@ export class Match {
     const slot: Slot = {
       state: newPlayer(id, info.team, char, loadout),
       info: { ...info, char, skins, loadout },
-      queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0, meleeReadyTick: 0, melee: null,
+      queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0, spawnProtectedUntilTick: 0, meleeReadyTick: 0, melee: null,
     };
     this.slots.set(id, slot);
     this.spawn(slot);
@@ -280,6 +283,7 @@ export class Match {
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0,
     });
+    slot.spawnProtectedUntilTick = this.tick + SPAWN_PROTECTION_TICKS;
     slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
     this.events.push({ t: 'spawn', id: p.id });
   }
@@ -358,8 +362,7 @@ export class Match {
       if (!target) continue;
       const dmg = w.damage * falloff(w, best);
       if (target.kind === 'shield') {
-        target.sh.hp -= dmg;
-        if (target.sh.hp <= 0) this.events.push({ t: 'shieldBreak', sid: target.sh.id });
+        this.damageShield(target.sh, dmg);
       } else {
         const acc = damage.get(target.id) ?? { dmg: 0, head: false };
         acc.dmg += dmg * (target.head ? w.headMul : 1);
@@ -421,16 +424,27 @@ export class Match {
     this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
     if (this.phase === 'ended') return;
     if (shield) {
-      shield.hp -= w.damage;
-      if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
+      this.damageShield(shield, w.damage);
     } else if (victim) this.damage(slot, victim, w.damage, false, attack.weapon);
+  }
+
+  private spawnProtected(id: string): boolean {
+    const slot = this.slots.get(id);
+    return !!slot?.state.alive && this.tick < slot.spawnProtectedUntilTick;
+  }
+
+  private damageShield(shield: Shield, dmg: number): void {
+    // The same authoritative clock protects both the player and their deployed shield.
+    if (this.spawnProtected(shield.owner)) return;
+    shield.hp -= dmg;
+    if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
   private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
     // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
-    if (!v || !v.state.alive || dmg <= 0) return;
+    if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
     v.state.hp = Math.max(0, v.state.hp - dmg);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
@@ -455,7 +469,7 @@ export class Match {
     for (const s of this.slots.values()) {
       players.push({
         ...clonePlayer(s.state), name: s.info.name, skins: s.info.skins, bot: s.info.bot,
-        kills: s.kills, deaths: s.deaths, respawn: s.respawn,
+        kills: s.kills, deaths: s.deaths, respawn: s.respawn, spawnProtectedUntilTick: s.spawnProtectedUntilTick,
       });
     }
     const events = this.events;

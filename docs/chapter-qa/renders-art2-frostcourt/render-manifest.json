@@ -1,0 +1,50 @@
+[
+  {
+    "map": "frostcourt",
+    "asset": "arena-maps/frostcourt/assets/frostcourt_visual.glb",
+    "sha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "sourceStillMatches": true,
+    "view": "overview",
+    "camera": [
+      55.2,
+      43.199999999999996,
+      44.160000000000004
+    ],
+    "target": [
+      0.0,
+      0,
+      0.0
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": null,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art2-frostcourt/frostcourt-overview.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  },
+  {
+    "map": "frostcourt",
+    "asset": "arena-maps/frostcourt/assets/frostcourt_visual.glb",
+    "sha256": "b53e5944613dde564c0200fce7e5acc6ab2947b47ba1004ee45524a0cdac69a9",
+    "sourceStillMatches": true,
+    "view": "lane",
+    "camera": [
+      -17,
+      1.7,
+      11
+    ],
+    "target": [
+      3,
+      2,
+      -3
+    ],
+    "renderer": "Blender Cycles CPU",
+    "samples": 32,
+    "lighting": "neutral",
+    "eyeHeight": 1.7,
+    "atmosphereReference": null,
+    "output": "docs/chapter-qa/renders-art2-frostcourt/frostcourt-lane.png",
+    "limitations": "Offline GLB inspection only. Not browser/gameplay proof or GPU FPS. Runtime-informed option approximates source sun/ambient/exposure; Three PBR/cel hook, particles, sky, fog, postprocessing and shadows are not reproduced exactly."
+  }
+]

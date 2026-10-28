@@ -1,0 +1,339 @@
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender').
+08:08:28 | INFO: Data are loaded, start creating Blender stuff
+08:08:28 | INFO: Blender create Mesh node VIS_court_floor
+08:08:28 | INFO: Blender create Mesh node VIS_boundary_x_-30
+08:08:28 | INFO: Blender create Mesh node VIS_boundary_x_30
+08:08:28 | INFO: Blender create Mesh node VIS_boundary_z_-24
+08:08:28 | INFO: Blender create Mesh node VIS_boundary_z_24
+08:08:28 | INFO: Blender create Mesh node VIS_spawn_screen_west
+08:08:28 | INFO: Blender create Mesh node VIS_spawn_mark_west
+08:08:28 | INFO: Blender create Mesh node VIS_spawn_screen_east
+08:08:28 | INFO: Blender create Mesh node VIS_spawn_mark_east
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_terrace
+08:08:28 | INFO: Blender create Mesh node VIS_terrace_ramp_-1
+08:08:28 | INFO: Blender create Mesh node VIS_terrace_ramp_1
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_roof
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_-18_-21.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_-18_-14.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_-9_-21.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_-9_-14.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_0_-21.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_0_-14.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_9_-21.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_9_-14.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_18_-21.5
+08:08:28 | INFO: Blender create Mesh node VIS_arcade_pier_18_-14.5
+08:08:28 | INFO: Blender create Mesh node VIS_fountain_plinth
+08:08:28 | INFO: Blender create Mesh node VIS_fountain_column
+08:08:28 | INFO: Blender create Mesh node VIS_supply_wagon_-1
+08:08:28 | INFO: Blender create Mesh node VIS_park_low_wall_-1
+08:08:28 | INFO: Blender create Mesh node VIS_park_gatepost_-1
+08:08:28 | INFO: Blender create Mesh node VIS_supply_wagon_1
+08:08:28 | INFO: Blender create Mesh node VIS_park_low_wall_1
+08:08:28 | INFO: Blender create Mesh node VIS_park_gatepost_1
+08:08:28 | INFO: Blender create Mesh node DETAIL_chapter_craft
+08:08:28 | INFO: glTF import finished in 0.05s
+Blender 4.3.2
+Fra:1 Mem:14.89M (Peak 14.89M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_court_floor
+Fra:1 Mem:14.89M (Peak 14.89M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_boundary_x_30
+Fra:1 Mem:16.90M (Peak 16.90M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:17.05M (Peak 17.05M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_boundary_z_-24
+Fra:1 Mem:17.06M (Peak 17.06M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_screen_west
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_mark_west
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_screen_east
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_terrace
+Fra:1 Mem:17.22M (Peak 17.22M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_terrace_ramp_-1
+Fra:1 Mem:17.21M (Peak 17.22M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_terrace_ramp_1
+Fra:1 Mem:17.21M (Peak 17.22M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_roof
+Fra:1 Mem:17.22M (Peak 17.22M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-18_-21.5
+Fra:1 Mem:17.21M (Peak 17.22M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-9_-21.5
+Fra:1 Mem:17.23M (Peak 17.23M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-9_-14.5
+Fra:1 Mem:17.22M (Peak 17.23M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_0_-14.5
+Fra:1 Mem:17.23M (Peak 17.23M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_9_-21.5
+Fra:1 Mem:17.24M (Peak 17.24M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_9_-14.5
+Fra:1 Mem:17.32M (Peak 17.32M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_18_-21.5
+Fra:1 Mem:17.32M (Peak 17.32M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_18_-14.5
+Fra:1 Mem:19.66M (Peak 19.66M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fountain_plinth
+Fra:1 Mem:19.66M (Peak 19.66M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fountain_column
+Fra:1 Mem:19.66M (Peak 19.66M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_supply_wagon_-1
+Fra:1 Mem:19.67M (Peak 19.67M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_low_wall_-1
+Fra:1 Mem:19.66M (Peak 19.67M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_gatepost_-1
+Fra:1 Mem:19.67M (Peak 19.67M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_supply_wagon_1
+Fra:1 Mem:19.68M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_low_wall_1
+Fra:1 Mem:19.67M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_gatepost_1
+Fra:1 Mem:18.10M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:16.41M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:16.41M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:16.41M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:16.41M (Peak 19.68M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:16.50M (Peak 19.68M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:16.51M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:16.51M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:16.51M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:16.51M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:16.61M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:16.85M (Peak 19.68M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:16.84M (Peak 19.68M) | Time:00:00.01 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:16.84M (Peak 19.68M) | Time:00:00.01 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:16.84M (Peak 19.68M) | Time:00:00.01 | Mem:0.45M, Peak:0.45M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:16.84M (Peak 19.68M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:16.84M (Peak 19.68M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:17.58M (Peak 19.68M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.44M, Peak:1.52M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:17.59M (Peak 19.68M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:38.70M (Peak 38.70M) | Time:00:00.24 | Remaining:00:07.06 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:48.07M (Peak 66.82M) | Time:00:05.69 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:48.07M (Peak 66.82M) | Time:00:05.69 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders/frostcourt-overview.png'
+Time: 00:05.77 (Saving: 00:00.06)
+
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_court_floor
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_boundary_x_30
+Fra:1 Mem:17.09M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_boundary_z_-24
+Fra:1 Mem:17.09M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_boundary_z_24
+Fra:1 Mem:17.09M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_screen_west
+Fra:1 Mem:17.09M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_mark_west
+Fra:1 Mem:17.08M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_mark_east
+Fra:1 Mem:17.09M (Peak 17.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:17.11M (Peak 17.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_terrace
+Fra:1 Mem:17.11M (Peak 17.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_terrace_ramp_-1
+Fra:1 Mem:17.12M (Peak 17.12M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_terrace_ramp_1
+Fra:1 Mem:17.12M (Peak 17.12M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_roof
+Fra:1 Mem:17.14M (Peak 17.14M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-18_-21.5
+Fra:1 Mem:17.18M (Peak 17.18M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-9_-21.5
+Fra:1 Mem:17.19M (Peak 17.19M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_-9_-14.5
+Fra:1 Mem:17.20M (Peak 17.20M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_0_-21.5
+Fra:1 Mem:17.20M (Peak 17.20M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_0_-14.5
+Fra:1 Mem:17.20M (Peak 17.20M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_9_-21.5
+Fra:1 Mem:17.34M (Peak 17.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_9_-14.5
+Fra:1 Mem:17.34M (Peak 17.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_18_-21.5
+Fra:1 Mem:17.34M (Peak 17.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_arcade_pier_18_-14.5
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fountain_plinth
+Fra:1 Mem:17.33M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_supply_wagon_-1
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_low_wall_-1
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_gatepost_-1
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_supply_wagon_1
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_low_wall_1
+Fra:1 Mem:17.35M (Peak 17.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_park_gatepost_1
+Fra:1 Mem:18.10M (Peak 19.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:16.41M (Peak 19.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:16.41M (Peak 19.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:16.41M (Peak 19.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:16.41M (Peak 19.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:16.50M (Peak 19.70M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:16.51M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:16.51M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:16.51M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:16.51M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:16.61M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:16.85M (Peak 19.70M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:16.84M (Peak 19.70M) | Time:00:00.00 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:16.84M (Peak 19.70M) | Time:00:00.00 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:16.84M (Peak 19.70M) | Time:00:00.00 | Mem:0.45M, Peak:0.45M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:16.84M (Peak 19.70M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:16.84M (Peak 19.70M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:0.70M, Peak:0.90M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.44M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.52M, Peak:1.52M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.44M, Peak:1.52M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:17.59M (Peak 19.70M) | Time:00:00.01 | Mem:1.53M, Peak:1.53M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:38.70M (Peak 38.70M) | Time:00:00.35 | Remaining:00:10.72 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:48.08M (Peak 66.83M) | Time:00:10.29 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:48.08M (Peak 66.83M) | Time:00:10.29 | Mem:22.62M, Peak:22.62M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders/frostcourt-lane.png'
+Time: 00:10.36 (Saving: 00:00.06)
+
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender').
+08:08:44 | INFO: Data are loaded, start creating Blender stuff
+08:08:44 | INFO: Blender create Mesh node VIS_battlefield_floor
+08:08:44 | INFO: Blender create Mesh node VIS_earthbank_x_-32
+08:08:44 | INFO: Blender create Mesh node VIS_earthbank_x_32
+08:08:44 | INFO: Blender create Mesh node VIS_earthbank_z_-24
+08:08:44 | INFO: Blender create Mesh node VIS_earthbank_z_24
+08:08:44 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west
+08:08:44 | INFO: Blender create Mesh node VIS_spawn_cloth_west
+08:08:44 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east
+08:08:44 | INFO: Blender create Mesh node VIS_spawn_cloth_east
+08:08:44 | INFO: Blender create Mesh node VIS_hall_foundation
+08:08:44 | INFO: Blender create Mesh node VIS_foundation_ramp_-1
+08:08:44 | INFO: Blender create Mesh node VIS_foundation_ramp_1
+08:08:44 | INFO: Blender create Mesh node VIS_hall_backwall_-6
+08:08:44 | INFO: Blender create Mesh node VIS_hall_backwall_4.5
+08:08:44 | INFO: Blender create Mesh node VIS_hall_west_stump
+08:08:44 | INFO: Blender create Mesh node VIS_hall_east_stump
+08:08:44 | INFO: Blender create Mesh node VIS_hall_frame_post_-6
+08:08:44 | INFO: Blender create Mesh node VIS_hall_frame_post_4
+08:08:44 | INFO: Blender create Mesh node VIS_ruin_west_wall
+08:08:44 | INFO: Blender create Mesh node VIS_ruin_west_return
+08:08:44 | INFO: Blender create Mesh node VIS_ruin_east_wall
+08:08:44 | INFO: Blender create Mesh node VIS_ruin_east_return
+08:08:44 | INFO: Blender create Mesh node VIS_southern_bank
+08:08:44 | INFO: Blender create Mesh node VIS_palisade_stump
+08:08:44 | INFO: Blender create Mesh node VIS_fallen_cart
+08:08:44 | INFO: Blender create Mesh node VIS_rubble_west
+08:08:44 | INFO: Blender create Mesh node DETAIL_chapter_craft
+08:08:44 | INFO: glTF import finished in 0.05s
+Fra:1 Mem:16.83M (Peak 16.83M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_battlefield_floor
+Fra:1 Mem:16.83M (Peak 16.83M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_-32
+Fra:1 Mem:16.84M (Peak 16.84M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:16.84M (Peak 16.84M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:16.85M (Peak 16.85M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_24
+Fra:1 Mem:16.85M (Peak 16.85M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west
+Fra:1 Mem:16.86M (Peak 16.86M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:16.85M (Peak 16.86M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east
+Fra:1 Mem:16.86M (Peak 16.86M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:16.88M (Peak 16.88M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:16.89M (Peak 16.89M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:16.89M (Peak 16.89M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:16.89M (Peak 16.89M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6
+Fra:1 Mem:16.90M (Peak 16.90M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:16.90M (Peak 16.90M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:16.94M (Peak 16.94M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_-6
+Fra:1 Mem:16.95M (Peak 16.95M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:16.95M (Peak 16.95M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall
+Fra:1 Mem:16.95M (Peak 16.95M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return
+Fra:1 Mem:16.96M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall
+Fra:1 Mem:16.95M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return
+Fra:1 Mem:16.95M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:16.95M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:16.96M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:16.95M (Peak 16.96M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:18.40M (Peak 21.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:16.91M (Peak 21.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:16.91M (Peak 21.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:16.91M (Peak 21.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:16.91M (Peak 21.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:17.00M (Peak 21.08M) | Time:00:00.01 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:17.01M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:17.01M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:17.01M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:17.01M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:17.14M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:17.45M (Peak 21.08M) | Time:00:00.01 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:17.44M (Peak 21.08M) | Time:00:00.01 | Mem:0.32M, Peak:0.32M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:17.44M (Peak 21.08M) | Time:00:00.01 | Mem:0.32M, Peak:0.32M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:17.44M (Peak 21.08M) | Time:00:00.01 | Mem:0.58M, Peak:0.58M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:17.44M (Peak 21.08M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:17.44M (Peak 21.08M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.84M, Peak:1.92M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:18.41M (Peak 21.08M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:39.52M (Peak 39.52M) | Time:00:00.21 | Remaining:00:06.23 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:48.90M (Peak 67.65M) | Time:00:05.11 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:48.90M (Peak 67.65M) | Time:00:05.11 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders/camlann-overview.png'
+Time: 00:05.18 (Saving: 00:00.06)
+
+Fra:1 Mem:17.06M (Peak 17.06M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_battlefield_floor
+Fra:1 Mem:17.07M (Peak 17.07M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:17.08M (Peak 17.08M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:17.11M (Peak 17.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:17.10M (Peak 17.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west
+Fra:1 Mem:17.15M (Peak 17.15M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_west
+Fra:1 Mem:17.15M (Peak 17.15M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:17.17M (Peak 17.17M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:17.15M (Peak 17.17M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:17.16M (Peak 17.17M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:17.24M (Peak 17.24M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6
+Fra:1 Mem:17.24M (Peak 17.24M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:17.25M (Peak 17.25M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_west_stump
+Fra:1 Mem:17.24M (Peak 17.25M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:17.25M (Peak 17.25M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:17.25M (Peak 17.25M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall
+Fra:1 Mem:17.44M (Peak 17.44M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return
+Fra:1 Mem:17.45M (Peak 17.45M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall
+Fra:1 Mem:17.44M (Peak 17.45M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return
+Fra:1 Mem:17.45M (Peak 17.45M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:17.45M (Peak 17.45M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:17.45M (Peak 17.45M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:17.46M (Peak 17.46M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:16.91M (Peak 21.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:16.91M (Peak 21.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:16.91M (Peak 21.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:16.91M (Peak 21.11M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:17.00M (Peak 21.11M) | Time:00:00.00 | Mem:0.01M, Peak:0.01M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:17.01M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:17.01M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:17.01M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:17.01M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:17.14M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:17.45M (Peak 21.11M) | Time:00:00.00 | Mem:0.02M, Peak:0.02M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:17.44M (Peak 21.11M) | Time:00:00.00 | Mem:0.32M, Peak:0.32M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:17.44M (Peak 21.11M) | Time:00:00.00 | Mem:0.32M, Peak:0.32M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:17.44M (Peak 21.11M) | Time:00:00.00 | Mem:0.58M, Peak:0.58M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:17.44M (Peak 21.11M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:17.44M (Peak 21.11M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:0.88M, Peak:1.14M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.84M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.92M, Peak:1.92M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.84M, Peak:1.92M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:18.41M (Peak 21.11M) | Time:00:00.01 | Mem:1.93M, Peak:1.93M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:39.52M (Peak 39.52M) | Time:00:00.27 | Remaining:00:08.28 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:48.90M (Peak 67.65M) | Time:00:07.21 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:48.90M (Peak 67.65M) | Time:00:07.21 | Mem:23.02M, Peak:23.02M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders/camlann-lane.png'
+Time: 00:07.27 (Saving: 00:00.06)
+
+
+Blender quit

@@ -21,6 +21,8 @@ export const MATCH_TICKS = 5 * 60 * TICK_HZ;
 export const COUNTDOWN_TICKS = 3 * TICK_HZ;
 export const END_TICKS = 6 * TICK_HZ;
 export const RESPAWN_TICKS = 3 * TICK_HZ;
+/** Full protection after every spawn; firing never cancels it. Separate from death delay. */
+export const SPAWN_PROTECTION_TICKS = 2.5 * TICK_HZ;
 
 export const MOVE = {
   gravity: 18,

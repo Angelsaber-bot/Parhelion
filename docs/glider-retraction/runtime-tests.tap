@@ -1,0 +1,232 @@
+TAP version 13
+# Subtest: landing cancels gliding in the collision step, not on a later physics/render tick
+ok 1 - landing cancels gliding in the collision step, not on a later physics/render tick
+  ---
+  duration_ms: 4.97956
+  type: 'test'
+  ...
+# Subtest: jump is still a press-edge glide toggle; release, held input, water, flight and updraft retain their rules
+ok 2 - jump is still a press-edge glide toggle; release, held input, water, flight and updraft retain their rules
+  ---
+  duration_ms: 1.004902
+  type: 'test'
+  ...
+# Subtest: real-rig retraction is bounded at 30/60/120 Hz, with fast canopy hide and rifle recovery
+ok 3 - real-rig retraction is bounded at 30/60/120 Hz, with fast canopy hide and rifle recovery
+  ---
+  duration_ms: 715.855662
+  type: 'test'
+  ...
+# {"hz":30,"state":"air-toggle","canopyHidden":0.36666666666666664,"rifleContact":0.3333333333333333,"maxHandTravel":0.13440167238581693}
+# {"hz":30,"state":"landing","canopyHidden":0.36666666666666664,"rifleContact":0.3333333333333333,"maxHandTravel":0.13440167238581693}
+# {"hz":60,"state":"air-toggle","canopyHidden":0.35,"rifleContact":0.31666666666666665,"maxHandTravel":0.06758714898094972}
+# {"hz":60,"state":"landing","canopyHidden":0.35,"rifleContact":0.31666666666666665,"maxHandTravel":0.06758714898094972}
+# {"hz":120,"state":"air-toggle","canopyHidden":0.3416666666666667,"rifleContact":0.31666666666666665,"maxHandTravel":0.03385570459558724}
+# {"hz":120,"state":"landing","canopyHidden":0.3416666666666667,"rifleContact":0.31666666666666665,"maxHandTravel":0.03385570459558724}
+# Subtest: partial deploy/stow reversals, swimming and fire/ADS interruptions never leave a hidden or scaled-open glider
+ok 4 - partial deploy/stow reversals, swimming and fire/ADS interruptions never leave a hidden or scaled-open glider
+  ---
+  duration_ms: 460.133308
+  type: 'test'
+  ...
+# Subtest: unarmed landing releases handles throughout the close instead of snapping after the canopy hides
+ok 5 - unarmed landing releases handles throughout the close instead of snapping after the canopy hides
+  ---
+  duration_ms: 211.787083
+  type: 'test'
+  ...
+# {"hz":30,"state":"unarmed-landing","maxHandTravel":0.11663997850494728}
+# {"hz":60,"state":"unarmed-landing","maxHandTravel":0.058870621481782764}
+# {"hz":120,"state":"unarmed-landing","maxHandTravel":0.029484736766804312}
+# Subtest: walk/run carry is lowered, right-hand attached and left arm swings; ADS/fire reclaim both palms at 30/60/120 Hz
+ok 6 - walk/run carry is lowered, right-hand attached and left arm swings; ADS/fire reclaim both palms at 30/60/120 Hz
+  ---
+  duration_ms: 876.250973
+  type: 'test'
+  ...
+# {"hz":30,"speed":5.5,"leftSwing":0.23527775098921205,"minMuzzleY":0.5804204220314295}
+# {"hz":30,"speed":9,"leftSwing":0.23576010213710036,"minMuzzleY":0.573929570419123}
+# {"hz":60,"speed":5.5,"leftSwing":0.23519256601406016,"minMuzzleY":0.580454736707211}
+# {"hz":60,"speed":9,"leftSwing":0.2356043168248211,"minMuzzleY":0.5735437529394367}
+# {"hz":120,"speed":5.5,"leftSwing":0.2354518545561297,"minMuzzleY":0.5803884195736577}
+# {"hz":120,"speed":9,"leftSwing":0.23580665044127605,"minMuzzleY":0.573816788054282}
+# Subtest: rapid movement/ADS release and glider interruptions settle without drift or invalid transforms
+ok 7 - rapid movement/ADS release and glider interruptions settle without drift or invalid transforms
+  ---
+  duration_ms: 605.77366
+  type: 'test'
+  ...
+# {"hz":30,"maxTravel":0.13644789827241494}
+# {"hz":60,"maxTravel":0.07097513242340386}
+# {"hz":120,"maxTravel":0.03691935744072566}
+# Subtest: actual lowered Dawn triangles clear trousers, shoes and uniform throughout walk/run strides
+ok 8 - actual lowered Dawn triangles clear trousers, shoes and uniform throughout walk/run strides
+  ---
+  duration_ms: 1183.022688
+  type: 'test'
+  ...
+# Subtest: unarmed startup/reset hides the rifle immediately, clears old firing/glide state and preserves free-arm movement
+ok 9 - unarmed startup/reset hides the rifle immediately, clears old firing/glide state and preserves free-arm movement
+  ---
+  duration_ms: 217.050477
+  type: 'test'
+  ...
+# Subtest: default player is a real skeleton with anatomical laterality and preserved UV1/alpha materials
+ok 10 - default player is a real skeleton with anatomical laterality and preserved UV1/alpha materials
+  ---
+  duration_ms: 133.563576
+  type: 'test'
+  ...
+# Subtest: actual Dawn AR palm sockets meet grip/support over full TPS pitch range
+ok 11 - actual Dawn AR palm sockets meet grip/support over full TPS pitch range
+  ---
+  duration_ms: 724.688044
+  type: 'test'
+  ...
+# Subtest: glider actual visible handle contacts, smooth return, and immediate airborne firing ownership
+ok 12 - glider actual visible handle contacts, smooth return, and immediate airborne firing ownership
+  ---
+  duration_ms: 137.368061
+  type: 'test'
+  ...
+# Subtest: animation changes GPU bone matrices, never CPU position/normal buffers; outlines share skin and morphs
+ok 13 - animation changes GPU bone matrices, never CPU position/normal buffers; outlines share skin and morphs
+  ---
+  duration_ms: 128.578543
+  type: 'test'
+  ...
+# Subtest: default load/weapon failure is explicit, never installs rejected segmented or invisible shooting fallback
+ok 14 - default load/weapon failure is explicit, never installs rejected segmented or invisible shooting fallback
+  ---
+  duration_ms: 28.676027
+  type: 'test'
+  ...
+# Subtest: ordinary glide deploy, production ADS release and landing have bounded hand travel
+ok 15 - ordinary glide deploy, production ADS release and landing have bounded hand travel
+  ---
+  duration_ms: 155.462485
+  type: 'test'
+  ...
+# Subtest: right index reaches the actual trigger-guard region rather than dangling below the pistol grip
+ok 16 - right index reaches the actual trigger-guard region rather than dangling below the pistol grip
+  ---
+  duration_ms: 89.634575
+  type: 'test'
+  ...
+# Subtest: real skinned head and actual Dawn surfaces do not cross at former intermediate/extreme ADS failures
+ok 17 - real skinned head and actual Dawn surfaces do not cross at former intermediate/extreme ADS failures
+  ---
+  duration_ms: 698.082157
+  type: 'test'
+  ...
+# Subtest: teleport clears stale floor and water contacts, preventing an air jump
+ok 18 - teleport clears stale floor and water contacts, preventing an air jump
+  ---
+  duration_ms: 1.823061
+  type: 'test'
+  ...
+# Subtest: floor collision remains stable and supports a normal jump
+ok 19 - floor collision remains stable and supports a normal jump
+  ---
+  duration_ms: 24.791455
+  type: 'test'
+  ...
+# Subtest: minimap applies its own north/south origin to the player and retained quest target
+ok 20 - minimap applies its own north/south origin to the player and retained quest target
+  ---
+  duration_ms: 30.293821
+  type: 'test'
+  ...
+# Subtest: leaving flight cannot reuse a stale grounded jump
+ok 21 - leaving flight cannot reuse a stale grounded jump
+  ---
+  duration_ms: 0.484108
+  type: 'test'
+  ...
+# Subtest: full map keeps both axes aligned to the map rather than the player
+ok 22 - full map keeps both axes aligned to the map rather than the player
+  ---
+  duration_ms: 0.520843
+  type: 'test'
+  ...
+# Subtest: normal diagonal walking is not faster than straight walking
+ok 23 - normal diagonal walking is not faster than straight walking
+  ---
+  duration_ms: 0.238609
+  type: 'test'
+  ...
+# Subtest: debug free-flight follows full camera pitch and does not use obsolete vertical input
+ok 24 - debug free-flight follows full camera pitch and does not use obsolete vertical input
+  ---
+  duration_ms: 0.652842
+  type: 'test'
+  ...
+# Subtest: debug flight normalizes diagonals and camera-pitched backward reverses altitude
+ok 25 - debug flight normalizes diagonals and camera-pitched backward reverses altitude
+  ---
+  duration_ms: 0.266661
+  type: 'test'
+  ...
+# Subtest: removing manual flight controls preserves jump, glide toggles, water jump and updraft lift
+ok 26 - removing manual flight controls preserves jump, glide toggles, water jump and updraft lift
+  ---
+  duration_ms: 1.238653
+  type: 'test'
+  ...
+# Subtest: production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS
+ok 27 - production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS
+  ---
+  duration_ms: 552.828215
+  type: 'test'
+  ...
+# Subtest: held fire tracks view between eligible shots, rather than reverting to locomotion/low-ready on cooldown frames
+ok 28 - held fire tracks view between eligible shots, rather than reverting to locomotion/low-ready on cooldown frames
+  ---
+  duration_ms: 296.950853
+  type: 'test'
+  ...
+# Subtest: World production shooting preserves quest targets and always renders a visible shot
+ok 29 - World production shooting preserves quest targets and always renders a visible shot
+  ---
+  duration_ms: 123.430109
+  type: 'test'
+  ...
+# Subtest: closer enemy receives damage instead of completing the target behind it
+ok 30 - closer enemy receives damage instead of completing the target behind it
+  ---
+  duration_ms: 9.13558
+  type: 'test'
+  ...
+# Subtest: solid wall blocks both camera targeting and the actual muzzle-to-target shot
+ok 31 - solid wall blocks both camera targeting and the actual muzzle-to-target shot
+  ---
+  duration_ms: 12.614641
+  type: 'test'
+  ...
+# Subtest: shot cadence blocks all damage, quest mutation and visuals together
+ok 32 - shot cadence blocks all damage, quest mutation and visuals together
+  ---
+  duration_ms: 10.399952
+  type: 'test'
+  ...
+# Subtest: unarmed input cannot damage enemies, complete gun-required objectives or render shots
+ok 33 - unarmed input cannot damage enemies, complete gun-required objectives or render shots
+  ---
+  duration_ms: 10.303736
+  type: 'test'
+  ...
+# Subtest: immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF
+ok 34 - immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF
+  ---
+  duration_ms: 194.153343
+  type: 'test'
+  ...
+1..34
+# tests 34
+# suites 0
+# pass 34
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 3354.498936

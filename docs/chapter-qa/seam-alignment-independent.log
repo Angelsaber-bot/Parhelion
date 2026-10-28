@@ -1,0 +1,12 @@
+✔ west actual visible field and collision meet at original pylon plane, not old remote airwall (6.381114ms)
+✔ east actual visible field and collision meet at original pylon plane, not old remote airwall (1.215628ms)
+✔ north actual visible field and collision meet at original pylon plane, not old remote airwall (1.579069ms)
+✔ south actual visible field and collision meet at original pylon plane, not old remote airwall (1.116338ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 798.185201

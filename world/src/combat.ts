@@ -163,6 +163,7 @@ export class WorldCombatState {
   /** `cleared` applies to every boss, or pass a per-boss list (same order as the constructor). */
   resetAll(cleared: boolean | boolean[] = false) {
     this.bossStarted = false;
+    this.current = 0; this.quietFor = 0;
     this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.hurtCooldown = 0;
     for (const e of this.enemies) this.resetEnemy(e);
     this.bosses.forEach((b, i) => {
@@ -173,6 +174,7 @@ export class WorldCombatState {
   }
   private resetEnemy(e: Enemy) {
     e.p = clone(e.home); e.hp = e.maxHp; e.mode = 'idle'; e.timer = 0; e.active = false;
+    e.target = clone(e.home); e.attack = 'sweep';
     e.phase = 1; e.attackCount = 0; e.hitTime = 0;
   }
   resetBoss() {

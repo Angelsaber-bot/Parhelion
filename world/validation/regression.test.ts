@@ -24,17 +24,18 @@ test('floor collision remains stable and supports a normal jump', () => {
   assert.ok(p.pos.y > 0 && p.vel.y > 0);
 });
 
-test('minimap applies its own north/south origin to arrows, labels and markers', async () => {
+test('minimap applies its own north/south origin to the player and retained quest target', async () => {
   const { WorldMap } = await import('../src/map.ts');
   const map = Object.create(WorldMap.prototype) as InstanceType<typeof WorldMap>;
-  Object.assign(map, { half: 240, size: 241, base: {}, layout: { areas: [{ name: 'camp', c: [5, 165] }], markers: [{ type: 'spawn', p: [5, 0, 165] }] } });
-  const translated: number[][] = [], labels: number[][] = [], markers: number[][] = [];
-  const ctx = { canvas: { width: 380 }, save() {}, restore() {}, clearRect() {}, drawImage() {}, strokeText(_s: string, x: number, y: number) { labels.push([x,y]); }, fillText() {}, beginPath() {}, arc(x: number, y: number) { markers.push([x,y]); }, fill() {}, stroke() {}, translate(x: number,y: number) { translated.push([x,y]); }, rotate() {}, moveTo() {}, lineTo() {}, closePath() {} };
-  map.draw(ctx as unknown as CanvasRenderingContext2D, new THREE.Vector3(3, 21, 159), 0, { full: false, done: new Set(), found: new Set() });
+  Object.assign(map, { half: 240, size: 241, base: {}, layout: { areas: [], markers: [{ type: 'spawn', p: [5, 0, 165] }] } });
+  const translated: number[][] = [], points: number[][] = [], markers: number[][] = [];
+  const ctx = { canvas: { width: 380 }, save() {}, restore() {}, clearRect() {}, drawImage() {}, beginPath() {}, arc(x: number, y: number) { markers.push([x,y]); }, fill() {}, stroke() {}, translate(x: number,y: number) { translated.push([x,y]); }, rotate() {}, moveTo(x: number, y: number) { points.push([x,y]); }, lineTo(x: number, y: number) { points.push([x,y]); }, closePath() {} };
+  map.draw(ctx as unknown as CanvasRenderingContext2D, new THREE.Vector3(3, 21, 159), 0, { full: false, done: new Set(), found: new Set(), target: [5, 165] });
   assert.ok(Math.abs(translated[0][0] - 190) < 1e-6);
   assert.ok(Math.abs(translated[0][1] - 190) < 1e-6, `arrow y=${translated[0][1]}, expected 190`);
-  assert.ok(Math.abs(labels[0][1] - (190 + 6 * 380 / 140)) < 1e-6);
-  assert.deepEqual(markers[0], labels[0]);
+  assert.ok(Math.abs(points[0][0] - (190 + 2 * 380 / 140)) < 1e-6);
+  assert.ok(Math.abs(points[1][1] - (190 + 6 * 380 / 140)) < 1e-6);
+  assert.equal(markers.length, 0, 'ordinary spawn dots are intentionally no longer drawn');
 });
 
 test('leaving flight cannot reuse a stale grounded jump', () => {

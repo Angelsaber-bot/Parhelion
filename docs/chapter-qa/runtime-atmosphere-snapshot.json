@@ -1,0 +1,283 @@
+{
+  "seabreeze": {
+    "background": 10271688,
+    "fog": [
+      11192530,
+      90,
+      240
+    ],
+    "exposure": 1,
+    "hemi": [
+      13361640,
+      6907243,
+      1.7
+    ],
+    "sun": {
+      "color": 16770493,
+      "intensity": 2.7,
+      "pos": [
+        -28,
+        36,
+        18
+      ]
+    },
+    "sky": {
+      "horizon": 14737104,
+      "mid": 8566222,
+      "top": 4619946,
+      "sun": 16772554,
+      "cloudLit": 16313046,
+      "cloudShade": 10597063,
+      "night": 0
+    },
+    "particles": "none",
+    "bloom": 0.18,
+    "bloomThreshold": 1.8
+  },
+  "snowcourt": {
+    "background": 12109270,
+    "fog": [
+      12635097,
+      80,
+      220
+    ],
+    "exposure": 0.94,
+    "hemi": [
+      14477044,
+      7963543,
+      1.65
+    ],
+    "sun": {
+      "color": 15984852,
+      "intensity": 2,
+      "pos": [
+        -24,
+        30,
+        18
+      ]
+    },
+    "sky": {
+      "horizon": 15132131,
+      "mid": 12307420,
+      "top": 8757181,
+      "sun": 16774111,
+      "cloudLit": 15659250,
+      "cloudShade": 11583441,
+      "night": 0
+    },
+    "particles": "snow",
+    "bloom": 0.08,
+    "bloomThreshold": 2.2
+  },
+  "oathfield": {
+    "background": 11846845,
+    "fog": [
+      12306879,
+      85,
+      230
+    ],
+    "exposure": 1,
+    "hemi": [
+      14083295,
+      7567207,
+      1.65
+    ],
+    "sun": {
+      "color": 16179896,
+      "intensity": 2.55,
+      "pos": [
+        -35,
+        24,
+        20
+      ]
+    },
+    "sky": {
+      "horizon": 14868169,
+      "mid": 10534597,
+      "top": 6851751,
+      "sun": 16772550,
+      "cloudLit": 15656399,
+      "cloudShade": 11188414,
+      "night": 0
+    },
+    "particles": "none",
+    "bloom": 0.12,
+    "bloomThreshold": 1.9
+  },
+  "day": {
+    "background": 12573938,
+    "fog": [
+      12903158,
+      70,
+      220
+    ],
+    "exposure": 1.05,
+    "hemi": [
+      14085375,
+      6975624,
+      1.8
+    ],
+    "sun": {
+      "color": 16771016,
+      "intensity": 3,
+      "pos": [
+        -22,
+        35,
+        18
+      ]
+    },
+    "sky": {
+      "horizon": 15922687,
+      "mid": 8242421,
+      "top": 2847707,
+      "sun": 16775129,
+      "cloudLit": 16776439,
+      "cloudShade": 12108523,
+      "night": 0
+    },
+    "particles": "none",
+    "bloom": 0.35,
+    "bloomThreshold": 1.7
+  },
+  "noon": {
+    "background": 13100795,
+    "fog": [
+      13823227,
+      80,
+      240
+    ],
+    "exposure": 0.98,
+    "hemi": [
+      14873343,
+      8157836,
+      1.7
+    ],
+    "sun": {
+      "color": 16773330,
+      "intensity": 3.2,
+      "pos": [
+        -14,
+        42,
+        22
+      ]
+    },
+    "sky": {
+      "horizon": 16120063,
+      "mid": 9227767,
+      "top": 3112934,
+      "sun": 16775129,
+      "cloudLit": 16777215,
+      "cloudShade": 12766190,
+      "night": 0
+    },
+    "particles": "motes",
+    "bloom": 0.35,
+    "bloomThreshold": 1.7
+  },
+  "dusk": {
+    "background": 15905932,
+    "fog": [
+      15775890,
+      45,
+      170
+    ],
+    "exposure": 1,
+    "hemi": [
+      16763304,
+      5982830,
+      1.5
+    ],
+    "sun": {
+      "color": 16753259,
+      "intensity": 3.3,
+      "pos": [
+        -46,
+        13,
+        10
+      ]
+    },
+    "sky": {
+      "horizon": 16762255,
+      "mid": 15895200,
+      "top": 5917598,
+      "sun": 16769192,
+      "cloudLit": 16765616,
+      "cloudShade": 10255016,
+      "night": 0.15
+    },
+    "particles": "petals",
+    "bloom": 0.55,
+    "bloomThreshold": 1.15
+  },
+  "aurora": {
+    "background": 1848406,
+    "fog": [
+      2902638,
+      55,
+      210
+    ],
+    "exposure": 1.12,
+    "hemi": [
+      10471679,
+      3817318,
+      1.6
+    ],
+    "sun": {
+      "color": 12572415,
+      "intensity": 2.1,
+      "pos": [
+        -30,
+        18,
+        26
+      ]
+    },
+    "sky": {
+      "horizon": 6262719,
+      "mid": 2047860,
+      "top": 660531,
+      "sun": 14216447,
+      "cloudLit": 3954048,
+      "cloudShade": 1845836,
+      "night": 0.85,
+      "aurora": 1.8
+    },
+    "particles": "snow",
+    "bloom": 0.75,
+    "bloomThreshold": 0.95
+  },
+  "night": {
+    "background": 857136,
+    "fog": [
+      1317948,
+      30,
+      140
+    ],
+    "exposure": 1.15,
+    "hemi": [
+      7241686,
+      1709360,
+      1.1
+    ],
+    "sun": {
+      "color": 10466047,
+      "intensity": 1.2,
+      "pos": [
+        24,
+        40,
+        -16
+      ]
+    },
+    "sky": {
+      "horizon": 2830187,
+      "mid": 1449293,
+      "top": 461602,
+      "sun": 14213887,
+      "cloudLit": 3949692,
+      "cloudShade": 1645628,
+      "night": 1
+    },
+    "particles": "embers",
+    "bloom": 0.95,
+    "bloomThreshold": 0.7
+  }
+}

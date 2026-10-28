@@ -1,0 +1,587 @@
+Extensions: writing cache failed ([Errno 30] Read-only file system: '/home/agent/.config/blender').
+09:06:04 | INFO: Data are loaded, start creating Blender stuff
+09:06:04 | INFO: Blender create Mesh node VIS_battlefield_floor
+09:06:04 | INFO: Blender create Mesh node VIS_earthbank_x_-32
+09:06:04 | INFO: Blender create Mesh node VIS_earthbank_x_32
+09:06:04 | INFO: Blender create Mesh node VIS_earthbank_z_-24
+09:06:04 | INFO: Blender create Mesh node VIS_earthbank_z_24
+09:06:04 | INFO: Blender create Mesh node VIS_turf_berm_x_-1
+09:06:04 | INFO: Blender create Mesh node VIS_turf_berm_z_-1
+09:06:04 | INFO: Blender create Mesh node VIS_turf_berm_x_1
+09:06:04 | INFO: Blender create Mesh node VIS_turf_berm_z_1
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_4
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_5
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_6
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_7
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_8
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_west_fragment_9
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_cloth_west
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_4
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_5
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_6
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_7
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_8
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_broken_wall_east_fragment_9
+09:06:04 | INFO: Blender create Mesh node VIS_spawn_cloth_east
+09:06:04 | INFO: Blender create Mesh node VIS_hall_foundation
+09:06:04 | INFO: Blender create Mesh node VIS_foundation_ramp_-1
+09:06:04 | INFO: Blender create Mesh node VIS_foundation_ramp_1
+09:06:04 | INFO: Blender create Mesh node VIS_hall_backwall_-6_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_hall_backwall_-6_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_hall_backwall_-6_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_hall_backwall_-6_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_hall_backwall_4.5
+09:06:04 | INFO: Blender create Mesh node VIS_hall_west_stump
+09:06:04 | INFO: Blender create Mesh node VIS_hall_east_stump
+09:06:04 | INFO: Blender create Mesh node VIS_hall_frame_post_-6
+09:06:04 | INFO: Blender create Mesh node VIS_hall_frame_post_4
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_4
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_5
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_wall_fragment_6
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_return_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_return_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_return_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_west_return_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_4
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_wall_fragment_5
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_return_fragment_0
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_return_fragment_1
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_return_fragment_2
+09:06:04 | INFO: Blender create Mesh node VIS_ruin_east_return_fragment_3
+09:06:04 | INFO: Blender create Mesh node VIS_southern_bank
+09:06:04 | INFO: Blender create Mesh node VIS_palisade_stump
+09:06:04 | INFO: Blender create Mesh node VIS_fallen_cart
+09:06:04 | INFO: Blender create Mesh node VIS_rubble_west
+09:06:04 | INFO: Blender create Mesh node DETAIL_chapter_craft
+09:06:04 | INFO: glTF import finished in 0.20s
+Blender 4.3.2
+Fra:1 Mem:29.61M (Peak 29.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_battlefield_floor
+Fra:1 Mem:29.61M (Peak 29.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:31.63M (Peak 31.63M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:31.77M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:31.76M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_24
+Fra:1 Mem:31.77M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_-1
+Fra:1 Mem:31.77M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_-1
+Fra:1 Mem:31.77M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_1
+Fra:1 Mem:31.77M (Peak 31.77M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_1
+Fra:1 Mem:32.04M (Peak 32.04M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_0
+Fra:1 Mem:32.05M (Peak 32.05M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_1
+Fra:1 Mem:32.09M (Peak 32.09M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_2
+Fra:1 Mem:38.36M (Peak 38.49M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_3
+Fra:1 Mem:38.33M (Peak 38.49M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_4
+Fra:1 Mem:38.67M (Peak 38.67M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_5
+Fra:1 Mem:38.76M (Peak 38.76M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_6
+Fra:1 Mem:38.87M (Peak 38.87M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_7
+Fra:1 Mem:39.51M (Peak 39.51M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_8
+Fra:1 Mem:39.60M (Peak 39.60M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_9
+Fra:1 Mem:40.10M (Peak 40.10M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_west
+Fra:1 Mem:40.10M (Peak 40.10M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_0
+Fra:1 Mem:40.64M (Peak 40.64M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_1
+Fra:1 Mem:40.80M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_2
+Fra:1 Mem:35.45M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_3
+Fra:1 Mem:36.60M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_4
+Fra:1 Mem:36.58M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_5
+Fra:1 Mem:37.37M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_6
+Fra:1 Mem:37.29M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_7
+Fra:1 Mem:37.29M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_8
+Fra:1 Mem:37.71M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_9
+Fra:1 Mem:40.22M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:40.27M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:40.19M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:40.25M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:40.70M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_0
+Fra:1 Mem:40.70M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_1
+Fra:1 Mem:40.73M (Peak 40.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_2
+Fra:1 Mem:41.08M (Peak 41.08M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_3
+Fra:1 Mem:41.00M (Peak 41.08M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:41.03M (Peak 41.08M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_west_stump
+Fra:1 Mem:41.52M (Peak 41.52M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:40.95M (Peak 41.52M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_-6
+Fra:1 Mem:40.96M (Peak 41.52M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:40.83M (Peak 41.52M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_0
+Fra:1 Mem:41.52M (Peak 41.52M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_1
+Fra:1 Mem:41.70M (Peak 41.70M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_2
+Fra:1 Mem:41.64M (Peak 41.70M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_3
+Fra:1 Mem:42.45M (Peak 42.45M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_4
+Fra:1 Mem:42.71M (Peak 42.71M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_5
+Fra:1 Mem:42.79M (Peak 42.79M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_6
+Fra:1 Mem:42.90M (Peak 42.90M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_0
+Fra:1 Mem:42.91M (Peak 42.91M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_1
+Fra:1 Mem:42.97M (Peak 42.97M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_2
+Fra:1 Mem:43.07M (Peak 43.07M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_3
+Fra:1 Mem:43.14M (Peak 43.14M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_0
+Fra:1 Mem:43.26M (Peak 43.26M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_1
+Fra:1 Mem:43.24M (Peak 43.26M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_2
+Fra:1 Mem:43.24M (Peak 43.26M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_3
+Fra:1 Mem:43.57M (Peak 43.57M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_4
+Fra:1 Mem:43.68M (Peak 43.68M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_5
+Fra:1 Mem:43.81M (Peak 43.81M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_0
+Fra:1 Mem:44.00M (Peak 44.00M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_1
+Fra:1 Mem:44.06M (Peak 44.06M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_2
+Fra:1 Mem:44.14M (Peak 44.14M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_3
+Fra:1 Mem:44.24M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:44.19M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:44.20M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:44.20M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:41.64M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:41.37M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading iron_normal.png
+Fra:1 Mem:41.37M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_basecolor.png
+Fra:1 Mem:41.37M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_orm.png
+Fra:1 Mem:41.37M (Peak 44.24M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_normal.png
+Fra:1 Mem:42.89M (Peak 44.24M) | Time:00:00.03 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Images | Loading iron_orm.png
+Fra:1 Mem:42.64M (Peak 44.24M) | Time:00:00.03 | Mem:0.50M, Peak:0.50M | Scene, ViewLayer | Updating Images | Loading battlefield_ground.png
+Fra:1 Mem:43.38M (Peak 44.24M) | Time:00:00.03 | Mem:0.75M, Peak:0.75M | Scene, ViewLayer | Updating Images | Loading turf_basecolor.png
+Fra:1 Mem:43.63M (Peak 44.24M) | Time:00:00.03 | Mem:1.00M, Peak:1.00M | Scene, ViewLayer | Updating Images | Loading turf_orm.png
+Fra:1 Mem:43.88M (Peak 44.24M) | Time:00:00.03 | Mem:1.25M, Peak:1.25M | Scene, ViewLayer | Updating Images | Loading iron_basecolor.png
+Fra:1 Mem:44.13M (Peak 44.24M) | Time:00:00.03 | Mem:1.50M, Peak:1.50M | Scene, ViewLayer | Updating Images | Loading turf_normal.png
+Fra:1 Mem:44.38M (Peak 44.38M) | Time:00:00.03 | Mem:1.75M, Peak:1.75M | Scene, ViewLayer | Updating Images | Loading fieldstone_basecolor.png
+Fra:1 Mem:44.63M (Peak 44.63M) | Time:00:00.03 | Mem:2.00M, Peak:2.00M | Scene, ViewLayer | Updating Images | Loading oak_normal.png
+Fra:1 Mem:46.39M (Peak 46.39M) | Time:00:00.03 | Mem:2.25M, Peak:2.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_orm.png
+Fra:1 Mem:46.64M (Peak 46.64M) | Time:00:00.03 | Mem:2.50M, Peak:2.50M | Scene, ViewLayer | Updating Images | Loading fieldstone_normal.png
+Fra:1 Mem:45.38M (Peak 46.64M) | Time:00:00.03 | Mem:3.25M, Peak:3.25M | Scene, ViewLayer | Updating Images | Loading linen_basecolor.png
+Fra:1 Mem:45.63M (Peak 46.64M) | Time:00:00.03 | Mem:3.50M, Peak:3.50M | Scene, ViewLayer | Updating Images | Loading oak_orm.png
+Fra:1 Mem:46.39M (Peak 46.64M) | Time:00:00.03 | Mem:3.75M, Peak:3.75M | Scene, ViewLayer | Updating Images | Loading linen_orm.png
+Fra:1 Mem:46.13M (Peak 46.64M) | Time:00:00.03 | Mem:4.00M, Peak:4.00M | Scene, ViewLayer | Updating Images | Loading linen_normal.png
+Fra:1 Mem:46.38M (Peak 46.64M) | Time:00:00.03 | Mem:4.25M, Peak:4.25M | Scene, ViewLayer | Updating Images | Loading oak_basecolor.png
+Fra:1 Mem:42.52M (Peak 46.64M) | Time:00:00.04 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:42.52M (Peak 46.64M) | Time:00:00.04 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:42.52M (Peak 46.64M) | Time:00:00.04 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:42.52M (Peak 46.64M) | Time:00:00.04 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:42.62M (Peak 46.64M) | Time:00:00.04 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.04 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.04 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.04 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.04 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:43.27M (Peak 46.64M) | Time:00:00.04 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:47.36M (Peak 47.36M) | Time:00:00.04 | Mem:5.30M, Peak:5.30M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.04 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.04 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.04 | Mem:10.61M, Peak:10.61M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.05 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.05 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.08M, Peak:16.16M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.05 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:72.55M (Peak 72.55M) | Time:00:00.52 | Remaining:00:14.50 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:14.57 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:14.57 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders-art3/camlann-overview.png'
+Time: 00:14.66 (Saving: 00:00.09)
+
+Fra:1 Mem:32.71M (Peak 32.71M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_battlefield_floor
+Fra:1 Mem:32.72M (Peak 32.72M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_-32
+Fra:1 Mem:32.72M (Peak 32.72M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:32.74M (Peak 32.74M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:32.73M (Peak 32.74M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_24
+Fra:1 Mem:32.74M (Peak 32.74M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:32.74M (Peak 32.74M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_-1
+Fra:1 Mem:32.77M (Peak 32.77M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_1
+Fra:1 Mem:32.78M (Peak 32.78M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_1
+Fra:1 Mem:32.79M (Peak 32.79M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_0
+Fra:1 Mem:32.80M (Peak 32.80M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_1
+Fra:1 Mem:32.83M (Peak 32.83M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_2
+Fra:1 Mem:39.10M (Peak 39.34M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_3
+Fra:1 Mem:39.08M (Peak 39.34M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_4
+Fra:1 Mem:39.19M (Peak 39.34M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_5
+Fra:1 Mem:39.61M (Peak 39.61M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_6
+Fra:1 Mem:39.70M (Peak 39.70M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_7
+Fra:1 Mem:39.94M (Peak 39.94M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_8
+Fra:1 Mem:40.91M (Peak 40.91M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_9
+Fra:1 Mem:40.92M (Peak 40.92M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_west
+Fra:1 Mem:41.14M (Peak 41.14M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_0
+Fra:1 Mem:41.46M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_1
+Fra:1 Mem:35.82M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_2
+Fra:1 Mem:37.15M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_3
+Fra:1 Mem:37.58M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_4
+Fra:1 Mem:39.88M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_5
+Fra:1 Mem:40.07M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_6
+Fra:1 Mem:39.97M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_7
+Fra:1 Mem:40.41M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_8
+Fra:1 Mem:40.51M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_9
+Fra:1 Mem:40.41M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:40.55M (Peak 41.46M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:40.58M (Peak 41.46M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:40.63M (Peak 41.46M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:40.74M (Peak 41.46M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_0
+Fra:1 Mem:40.53M (Peak 41.46M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_1
+Fra:1 Mem:41.84M (Peak 41.84M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_2
+Fra:1 Mem:41.95M (Peak 41.95M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_3
+Fra:1 Mem:42.18M (Peak 42.18M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:42.16M (Peak 42.18M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_west_stump
+Fra:1 Mem:42.47M (Peak 42.47M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:42.62M (Peak 42.62M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_-6
+Fra:1 Mem:42.62M (Peak 42.62M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:42.63M (Peak 42.63M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_0
+Fra:1 Mem:42.72M (Peak 42.72M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_1
+Fra:1 Mem:42.80M (Peak 42.80M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_2
+Fra:1 Mem:42.88M (Peak 42.88M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_3
+Fra:1 Mem:43.03M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_4
+Fra:1 Mem:43.01M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_5
+Fra:1 Mem:42.89M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_6
+Fra:1 Mem:42.97M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_0
+Fra:1 Mem:42.97M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_1
+Fra:1 Mem:41.16M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_2
+Fra:1 Mem:41.15M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_3
+Fra:1 Mem:41.38M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_0
+Fra:1 Mem:40.78M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_1
+Fra:1 Mem:41.08M (Peak 43.03M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_2
+Fra:1 Mem:41.17M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:41.09M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_4
+Fra:1 Mem:41.09M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:41.16M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:41.16M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_5
+Fra:1 Mem:41.19M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:41.32M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_3
+Fra:1 Mem:41.33M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_0
+Fra:1 Mem:41.44M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_1
+Fra:1 Mem:41.47M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_2
+Fra:1 Mem:41.64M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:41.37M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading iron_normal.png
+Fra:1 Mem:41.37M (Peak 43.03M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_basecolor.png
+Fra:1 Mem:41.88M (Peak 43.03M) | Time:00:00.04 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Images | Loading iron_orm.png
+Fra:1 Mem:42.13M (Peak 43.03M) | Time:00:00.04 | Mem:0.50M, Peak:0.50M | Scene, ViewLayer | Updating Images | Loading earth_orm.png
+Fra:1 Mem:42.38M (Peak 43.03M) | Time:00:00.04 | Mem:0.75M, Peak:0.75M | Scene, ViewLayer | Updating Images | Loading iron_basecolor.png
+Fra:1 Mem:42.63M (Peak 43.03M) | Time:00:00.04 | Mem:1.00M, Peak:1.00M | Scene, ViewLayer | Updating Images | Loading earth_normal.png
+Fra:1 Mem:42.88M (Peak 43.03M) | Time:00:00.04 | Mem:1.25M, Peak:1.25M | Scene, ViewLayer | Updating Images | Loading oak_normal.png
+Fra:1 Mem:43.13M (Peak 43.13M) | Time:00:00.04 | Mem:1.25M, Peak:1.25M | Scene, ViewLayer | Updating Images | Loading turf_basecolor.png
+Fra:1 Mem:44.13M (Peak 44.13M) | Time:00:00.04 | Mem:1.50M, Peak:1.50M | Scene, ViewLayer | Updating Images | Loading turf_orm.png
+Fra:1 Mem:44.38M (Peak 44.38M) | Time:00:00.04 | Mem:1.75M, Peak:1.75M | Scene, ViewLayer | Updating Images | Loading oak_orm.png
+Fra:1 Mem:44.63M (Peak 44.63M) | Time:00:00.04 | Mem:2.00M, Peak:2.00M | Scene, ViewLayer | Updating Images | Loading turf_normal.png
+Fra:1 Mem:44.88M (Peak 44.88M) | Time:00:00.04 | Mem:2.25M, Peak:2.25M | Scene, ViewLayer | Updating Images | Loading oak_basecolor.png
+Fra:1 Mem:45.13M (Peak 46.64M) | Time:00:00.04 | Mem:3.00M, Peak:3.00M | Scene, ViewLayer | Updating Images | Loading fieldstone_basecolor.png
+Fra:1 Mem:45.38M (Peak 46.64M) | Time:00:00.04 | Mem:3.25M, Peak:3.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_orm.png
+Fra:1 Mem:45.63M (Peak 46.64M) | Time:00:00.04 | Mem:3.50M, Peak:3.50M | Scene, ViewLayer | Updating Images | Loading linen_normal.png
+Fra:1 Mem:45.88M (Peak 46.64M) | Time:00:00.04 | Mem:3.75M, Peak:3.75M | Scene, ViewLayer | Updating Images | Loading linen_orm.png
+Fra:1 Mem:46.13M (Peak 46.64M) | Time:00:00.04 | Mem:4.00M, Peak:4.00M | Scene, ViewLayer | Updating Images | Loading linen_basecolor.png
+Fra:1 Mem:46.38M (Peak 46.64M) | Time:00:00.04 | Mem:4.25M, Peak:4.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_normal.png
+Fra:1 Mem:42.52M (Peak 46.64M) | Time:00:00.06 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:42.53M (Peak 46.64M) | Time:00:00.06 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:42.53M (Peak 46.64M) | Time:00:00.06 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:42.53M (Peak 46.64M) | Time:00:00.06 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:42.63M (Peak 46.64M) | Time:00:00.06 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.06 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.06 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.06 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:42.64M (Peak 46.64M) | Time:00:00.06 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:43.27M (Peak 46.64M) | Time:00:00.06 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:47.36M (Peak 47.36M) | Time:00:00.06 | Mem:5.30M, Peak:5.30M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.06 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.06 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.06 | Mem:10.61M, Peak:10.61M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.08 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.08 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.08 | Mem:16.08M, Peak:16.16M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.08 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:72.56M (Peak 72.56M) | Time:00:00.52 | Remaining:00:13.62 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:10.03 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:10.03 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders-art3/camlann-lane.png'
+Time: 00:10.10 (Saving: 00:00.06)
+
+Fra:1 Mem:32.70M (Peak 32.70M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_-32
+Fra:1 Mem:32.71M (Peak 32.71M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:32.72M (Peak 32.72M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_-1
+Fra:1 Mem:32.72M (Peak 32.72M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:32.73M (Peak 32.73M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_-1
+Fra:1 Mem:32.74M (Peak 32.74M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_1
+Fra:1 Mem:32.73M (Peak 32.74M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_1
+Fra:1 Mem:32.74M (Peak 32.74M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_0
+Fra:1 Mem:32.75M (Peak 32.75M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_1
+Fra:1 Mem:32.78M (Peak 32.78M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:32.80M (Peak 32.80M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_2
+Fra:1 Mem:38.99M (Peak 39.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_3
+Fra:1 Mem:38.96M (Peak 39.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_4
+Fra:1 Mem:39.00M (Peak 39.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_5
+Fra:1 Mem:39.61M (Peak 39.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_6
+Fra:1 Mem:39.60M (Peak 39.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_7
+Fra:1 Mem:39.58M (Peak 39.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_8
+Fra:1 Mem:39.58M (Peak 39.61M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_9
+Fra:1 Mem:40.34M (Peak 40.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_west
+Fra:1 Mem:40.32M (Peak 40.34M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_0
+Fra:1 Mem:40.35M (Peak 40.35M) | Time:00:00.00 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_1
+Fra:1 Mem:41.13M (Peak 41.13M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_2
+Fra:1 Mem:41.11M (Peak 41.13M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_3
+Fra:1 Mem:41.16M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_4
+Fra:1 Mem:36.36M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_5
+Fra:1 Mem:37.02M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_6
+Fra:1 Mem:37.09M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_7
+Fra:1 Mem:37.10M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_8
+Fra:1 Mem:38.44M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_9
+Fra:1 Mem:38.29M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:38.43M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:39.41M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:39.42M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:39.47M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_0
+Fra:1 Mem:38.98M (Peak 41.16M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_1
+Fra:1 Mem:41.27M (Peak 41.27M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_2
+Fra:1 Mem:41.25M (Peak 41.27M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_3
+Fra:1 Mem:41.47M (Peak 41.47M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:41.45M (Peak 41.47M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_west_stump
+Fra:1 Mem:41.73M (Peak 41.73M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:41.84M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_-6
+Fra:1 Mem:41.80M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:41.80M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_0
+Fra:1 Mem:41.80M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_1
+Fra:1 Mem:41.05M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_2
+Fra:1 Mem:41.63M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_3
+Fra:1 Mem:41.78M (Peak 41.84M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_4
+Fra:1 Mem:42.68M (Peak 42.68M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_5
+Fra:1 Mem:42.97M (Peak 42.97M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_6
+Fra:1 Mem:42.91M (Peak 42.97M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_0
+Fra:1 Mem:43.09M (Peak 43.09M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_1
+Fra:1 Mem:43.14M (Peak 43.14M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_2
+Fra:1 Mem:43.23M (Peak 43.23M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_3
+Fra:1 Mem:43.21M (Peak 43.23M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_0
+Fra:1 Mem:43.40M (Peak 43.40M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_1
+Fra:1 Mem:43.47M (Peak 43.47M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_2
+Fra:1 Mem:43.62M (Peak 43.62M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_3
+Fra:1 Mem:43.67M (Peak 43.67M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_4
+Fra:1 Mem:43.76M (Peak 43.76M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_5
+Fra:1 Mem:44.01M (Peak 44.01M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_0
+Fra:1 Mem:44.00M (Peak 44.01M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_1
+Fra:1 Mem:43.97M (Peak 44.01M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_2
+Fra:1 Mem:43.99M (Peak 44.01M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_3
+Fra:1 Mem:44.31M (Peak 44.31M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:44.32M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:44.32M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:44.27M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:41.64M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:41.37M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading iron_normal.png
+Fra:1 Mem:41.37M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_basecolor.png
+Fra:1 Mem:41.37M (Peak 44.32M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_normal.png
+Fra:1 Mem:42.89M (Peak 44.32M) | Time:00:00.02 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Images | Loading iron_orm.png
+Fra:1 Mem:42.64M (Peak 44.32M) | Time:00:00.02 | Mem:0.50M, Peak:0.50M | Scene, ViewLayer | Updating Images | Loading battlefield_ground.png
+Fra:1 Mem:43.39M (Peak 44.32M) | Time:00:00.02 | Mem:0.75M, Peak:0.75M | Scene, ViewLayer | Updating Images | Loading turf_basecolor.png
+Fra:1 Mem:43.64M (Peak 44.32M) | Time:00:00.02 | Mem:1.00M, Peak:1.00M | Scene, ViewLayer | Updating Images | Loading iron_basecolor.png
+Fra:1 Mem:44.39M (Peak 44.39M) | Time:00:00.02 | Mem:1.25M, Peak:1.25M | Scene, ViewLayer | Updating Images | Loading turf_orm.png
+Fra:1 Mem:44.14M (Peak 44.39M) | Time:00:00.02 | Mem:1.50M, Peak:1.50M | Scene, ViewLayer | Updating Images | Loading turf_normal.png
+Fra:1 Mem:44.39M (Peak 44.39M) | Time:00:00.02 | Mem:1.75M, Peak:1.75M | Scene, ViewLayer | Updating Images | Loading oak_normal.png
+Fra:1 Mem:44.64M (Peak 44.64M) | Time:00:00.02 | Mem:2.00M, Peak:2.00M | Scene, ViewLayer | Updating Images | Loading fieldstone_basecolor.png
+Fra:1 Mem:44.89M (Peak 46.40M) | Time:00:00.02 | Mem:2.75M, Peak:2.75M | Scene, ViewLayer | Updating Images | Loading fieldstone_orm.png
+Fra:1 Mem:45.64M (Peak 46.40M) | Time:00:00.02 | Mem:3.00M, Peak:3.00M | Scene, ViewLayer | Updating Images | Loading oak_orm.png
+Fra:1 Mem:45.39M (Peak 46.40M) | Time:00:00.02 | Mem:3.25M, Peak:3.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_normal.png
+Fra:1 Mem:45.64M (Peak 46.40M) | Time:00:00.02 | Mem:3.50M, Peak:3.50M | Scene, ViewLayer | Updating Images | Loading linen_basecolor.png
+Fra:1 Mem:45.89M (Peak 46.40M) | Time:00:00.02 | Mem:3.75M, Peak:3.75M | Scene, ViewLayer | Updating Images | Loading oak_basecolor.png
+Fra:1 Mem:46.14M (Peak 46.40M) | Time:00:00.02 | Mem:4.00M, Peak:4.00M | Scene, ViewLayer | Updating Images | Loading linen_orm.png
+Fra:1 Mem:46.39M (Peak 46.40M) | Time:00:00.02 | Mem:4.25M, Peak:4.25M | Scene, ViewLayer | Updating Images | Loading linen_normal.png
+Fra:1 Mem:42.53M (Peak 46.40M) | Time:00:00.03 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:42.53M (Peak 46.40M) | Time:00:00.03 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:42.53M (Peak 46.40M) | Time:00:00.03 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:42.53M (Peak 46.40M) | Time:00:00.03 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:42.63M (Peak 46.40M) | Time:00:00.03 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:42.64M (Peak 46.40M) | Time:00:00.03 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:42.64M (Peak 46.40M) | Time:00:00.03 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:42.64M (Peak 46.40M) | Time:00:00.03 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:42.64M (Peak 46.40M) | Time:00:00.03 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:43.27M (Peak 46.40M) | Time:00:00.03 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:47.36M (Peak 47.36M) | Time:00:00.03 | Mem:5.30M, Peak:5.30M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.03 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.03 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.03 | Mem:10.61M, Peak:10.61M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.03 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.03 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.04 | Mem:16.08M, Peak:16.16M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.04 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:72.56M (Peak 72.56M) | Time:00:00.40 | Remaining:00:11.30 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:11.42 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:11.42 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders-art3/camlann-hero.png'
+Time: 00:11.55 (Saving: 00:00.13)
+
+Fra:1 Mem:32.72M (Peak 32.72M) | Time:00:00.01 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | DETAIL_chapter_craft
+Fra:1 Mem:39.42M (Peak 39.42M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_battlefield_floor
+Fra:1 Mem:39.42M (Peak 39.42M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_-32
+Fra:1 Mem:39.42M (Peak 39.42M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_x_32
+Fra:1 Mem:39.42M (Peak 39.42M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_-24
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_earthbank_z_24
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_-1
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_-1
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_x_1
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_turf_berm_z_1
+Fra:1 Mem:39.43M (Peak 39.43M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_0
+Fra:1 Mem:39.68M (Peak 39.68M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_1
+Fra:1 Mem:39.72M (Peak 39.72M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_2
+Fra:1 Mem:40.11M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_3
+Fra:1 Mem:35.64M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_4
+Fra:1 Mem:36.06M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_5
+Fra:1 Mem:36.17M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_6
+Fra:1 Mem:36.36M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_7
+Fra:1 Mem:36.36M (Peak 40.11M) | Time:00:00.02 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_8
+Fra:1 Mem:36.71M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_west_fragment_9
+Fra:1 Mem:36.77M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_west
+Fra:1 Mem:36.83M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_0
+Fra:1 Mem:36.93M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_1
+Fra:1 Mem:37.14M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_2
+Fra:1 Mem:38.76M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_4
+Fra:1 Mem:38.76M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_5
+Fra:1 Mem:39.10M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_6
+Fra:1 Mem:39.28M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_7
+Fra:1 Mem:39.28M (Peak 40.11M) | Time:00:00.03 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_8
+Fra:1 Mem:39.74M (Peak 40.11M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_broken_wall_east_fragment_9
+Fra:1 Mem:40.35M (Peak 40.35M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_spawn_cloth_east
+Fra:1 Mem:40.35M (Peak 40.35M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_foundation
+Fra:1 Mem:41.83M (Peak 41.83M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_-1
+Fra:1 Mem:41.83M (Peak 41.83M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_foundation_ramp_1
+Fra:1 Mem:41.83M (Peak 41.83M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_0
+Fra:1 Mem:41.74M (Peak 41.83M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_1
+Fra:1 Mem:41.81M (Peak 41.83M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_2
+Fra:1 Mem:41.93M (Peak 41.93M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_-6_fragment_3
+Fra:1 Mem:41.91M (Peak 41.93M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_backwall_4.5
+Fra:1 Mem:41.92M (Peak 41.93M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_west_stump
+Fra:1 Mem:42.14M (Peak 42.14M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_east_stump
+Fra:1 Mem:42.16M (Peak 42.16M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_-6
+Fra:1 Mem:42.15M (Peak 42.16M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_hall_frame_post_4
+Fra:1 Mem:42.16M (Peak 42.16M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_0
+Fra:1 Mem:42.15M (Peak 42.16M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_1
+Fra:1 Mem:42.41M (Peak 42.41M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_2
+Fra:1 Mem:42.40M (Peak 42.41M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_3
+Fra:1 Mem:42.57M (Peak 42.57M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_4
+Fra:1 Mem:42.66M (Peak 42.66M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_5
+Fra:1 Mem:42.74M (Peak 42.74M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_wall_fragment_6
+Fra:1 Mem:42.82M (Peak 42.82M) | Time:00:00.04 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_0
+Fra:1 Mem:42.88M (Peak 42.88M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_1
+Fra:1 Mem:42.93M (Peak 42.93M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_2
+Fra:1 Mem:42.95M (Peak 42.95M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_west_return_fragment_3
+Fra:1 Mem:42.93M (Peak 42.95M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_0
+Fra:1 Mem:43.24M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_1
+Fra:1 Mem:41.59M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_2
+Fra:1 Mem:41.52M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_3
+Fra:1 Mem:41.85M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_4
+Fra:1 Mem:41.72M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_wall_fragment_5
+Fra:1 Mem:41.74M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_0
+Fra:1 Mem:42.02M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_1
+Fra:1 Mem:42.10M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_2
+Fra:1 Mem:42.19M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_ruin_east_return_fragment_3
+Fra:1 Mem:42.30M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_southern_bank
+Fra:1 Mem:42.22M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_palisade_stump
+Fra:1 Mem:42.22M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_fallen_cart
+Fra:1 Mem:42.23M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Synchronizing object | VIS_rubble_west
+Fra:1 Mem:41.64M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Initializing
+Fra:1 Mem:41.37M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading iron_normal.png
+Fra:1 Mem:41.62M (Peak 43.24M) | Time:00:00.05 | Mem:0.00M, Peak:0.00M | Scene, ViewLayer | Updating Images | Loading earth_basecolor.png
+Fra:1 Mem:41.88M (Peak 43.24M) | Time:00:00.05 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Images | Loading iron_orm.png
+Fra:1 Mem:42.14M (Peak 43.24M) | Time:00:00.06 | Mem:0.25M, Peak:0.25M | Scene, ViewLayer | Updating Images | Loading earth_orm.png
+Fra:1 Mem:42.39M (Peak 43.24M) | Time:00:00.06 | Mem:0.50M, Peak:0.50M | Scene, ViewLayer | Updating Images | Loading iron_basecolor.png
+Fra:1 Mem:43.14M (Peak 43.24M) | Time:00:00.06 | Mem:0.75M, Peak:0.75M | Scene, ViewLayer | Updating Images | Loading earth_normal.png
+Fra:1 Mem:42.89M (Peak 43.24M) | Time:00:00.06 | Mem:1.00M, Peak:1.00M | Scene, ViewLayer | Updating Images | Loading battlefield_ground.png
+Fra:1 Mem:43.64M (Peak 43.64M) | Time:00:00.06 | Mem:1.25M, Peak:1.25M | Scene, ViewLayer | Updating Images | Loading oak_normal.png
+Fra:1 Mem:43.89M (Peak 43.89M) | Time:00:00.06 | Mem:1.50M, Peak:1.50M | Scene, ViewLayer | Updating Images | Loading turf_basecolor.png
+Fra:1 Mem:43.88M (Peak 43.89M) | Time:00:00.06 | Mem:1.75M, Peak:1.75M | Scene, ViewLayer | Updating Images | Loading oak_orm.png
+Fra:1 Mem:45.64M (Peak 45.64M) | Time:00:00.06 | Mem:1.75M, Peak:1.75M | Scene, ViewLayer | Updating Images | Loading turf_orm.png
+Fra:1 Mem:46.15M (Peak 46.15M) | Time:00:00.06 | Mem:2.00M, Peak:2.00M | Scene, ViewLayer | Updating Images | Loading turf_normal.png
+Fra:1 Mem:46.40M (Peak 46.40M) | Time:00:00.06 | Mem:2.25M, Peak:2.25M | Scene, ViewLayer | Updating Images | Loading oak_basecolor.png
+Fra:1 Mem:46.65M (Peak 46.65M) | Time:00:00.06 | Mem:2.50M, Peak:2.50M | Scene, ViewLayer | Updating Images | Loading fieldstone_basecolor.png
+Fra:1 Mem:45.39M (Peak 46.65M) | Time:00:00.07 | Mem:3.25M, Peak:3.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_orm.png
+Fra:1 Mem:45.64M (Peak 46.65M) | Time:00:00.07 | Mem:3.50M, Peak:3.50M | Scene, ViewLayer | Updating Images | Loading linen_normal.png
+Fra:1 Mem:46.40M (Peak 46.65M) | Time:00:00.07 | Mem:3.75M, Peak:3.75M | Scene, ViewLayer | Updating Images | Loading linen_orm.png
+Fra:1 Mem:46.65M (Peak 46.65M) | Time:00:00.07 | Mem:4.00M, Peak:4.00M | Scene, ViewLayer | Updating Images | Loading linen_basecolor.png
+Fra:1 Mem:46.90M (Peak 46.90M) | Time:00:00.07 | Mem:4.25M, Peak:4.25M | Scene, ViewLayer | Updating Images | Loading fieldstone_normal.png
+Fra:1 Mem:42.53M (Peak 46.90M) | Time:00:00.09 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Waiting for render to start
+Fra:1 Mem:42.53M (Peak 46.90M) | Time:00:00.09 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Loading render kernels (may take a few minutes the first time)
+Fra:1 Mem:42.53M (Peak 46.90M) | Time:00:00.09 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Scene
+Fra:1 Mem:42.53M (Peak 46.90M) | Time:00:00.09 | Mem:5.25M, Peak:5.25M | Scene, ViewLayer | Updating Shaders
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Procedurals
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Background
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Camera
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Meshes Flags
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects
+Fra:1 Mem:42.63M (Peak 46.90M) | Time:00:00.09 | Mem:5.27M, Peak:5.27M | Scene, ViewLayer | Updating Objects | Copying Transformations to device
+Fra:1 Mem:42.64M (Peak 46.90M) | Time:00:00.09 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Objects | Applying Static Transformations
+Fra:1 Mem:42.64M (Peak 46.90M) | Time:00:00.09 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems
+Fra:1 Mem:42.64M (Peak 46.90M) | Time:00:00.09 | Mem:5.28M, Peak:5.28M | Scene, ViewLayer | Updating Particle Systems | Copying Particles to device
+Fra:1 Mem:42.64M (Peak 46.90M) | Time:00:00.09 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Meshes
+Fra:1 Mem:43.27M (Peak 46.90M) | Time:00:00.09 | Mem:5.29M, Peak:5.29M | Scene, ViewLayer | Updating Mesh | Computing attributes
+Fra:1 Mem:47.36M (Peak 47.36M) | Time:00:00.09 | Mem:5.30M, Peak:5.30M | Scene, ViewLayer | Updating Mesh | Copying Attributes to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.10 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.10 | Mem:9.36M, Peak:9.36M | Scene, ViewLayer | Updating Scene BVH | Building BVH
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.10 | Mem:10.61M, Peak:10.61M | Scene, ViewLayer | Updating Scene BVH | Building BVH 0%
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.11 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Scene BVH | Copying BVH to device
+Fra:1 Mem:47.34M (Peak 47.36M) | Time:00:00.11 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Computing normals
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:11.97M, Peak:13.22M | Scene, ViewLayer | Updating Mesh | Copying Mesh to device
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Objects Flags
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Primitive Offsets
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Images
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Camera Volume
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.07M, Peak:16.07M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Lights | Computing tree
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Integrator
+Fra:1 Mem:51.44M (Peak 51.44M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Film
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.12 | Mem:16.08M, Peak:16.16M | Scene, ViewLayer | Updating Lookup Tables
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Baking
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Updating Device | Writing constant memory
+Fra:1 Mem:51.45M (Peak 51.45M) | Time:00:00.12 | Mem:16.16M, Peak:16.16M | Scene, ViewLayer | Sample 0/32
+Fra:1 Mem:72.56M (Peak 72.56M) | Time:00:00.92 | Remaining:00:24.90 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 1/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:12.19 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Sample 32/32
+Fra:1 Mem:81.93M (Peak 100.68M) | Time:00:12.19 | Mem:37.27M, Peak:37.27M | Scene, ViewLayer | Finished
+Saved: '/workspace/scratch/218192752ff4/parhelion-arena-refinement-20261028/docs/chapter-qa/renders-art3/camlann-sword.png'
+Time: 00:12.26 (Saving: 00:00.06)
+
+
+Blender quit

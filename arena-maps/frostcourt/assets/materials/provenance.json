@@ -1,0 +1,30 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis; no external imagery, scans, textures or AI image inputs.",
+  "authoringScript": "source/make_materials.py",
+  "seedBase": 1764,
+  "size": [
+    128,
+    128
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "files": {
+    "canvas_basecolor.png": "7c46c5656a951828fdd2bef0b9fc8c7284756117c8d30f7c0d837ae5f4afec4b",
+    "canvas_normal.png": "cbf4a24e53cf6362d5e790b917ce6f343c9ff8cb68344d0dfb122dd98a603e90",
+    "canvas_orm.png": "3d75759a6782eb339a92fa6e0b57799ab17398fb0124df267ccce54b9ade8cfc",
+    "paving_basecolor.png": "4758cc19e2b019efb427ba6b0a883e62775f2e72d2a698f084c703f8b3647432",
+    "paving_normal.png": "8e403f8962d26a204dc3b9065b5beea2550e9328603d1a6461ca816d57b5a6c3",
+    "paving_orm.png": "204b4800d580e2f31b11260d7ca43a4f77c4e0b95d9449865e37e9a818625e4f",
+    "slate_basecolor.png": "4f4ae5d88411d4f993aacf8dd7ff47d7fecce59cdc2aa971adde38cbbfdc82db",
+    "slate_normal.png": "7442068d99e207a29d24b4418d157d16bf82cc41ccac181c4a99c03202d38323",
+    "slate_orm.png": "8a83fed679a74ea8407ee748e374e4dabc1a8e06f08388b3e083f284fe519883",
+    "snow_basecolor.png": "46a3eddabc767613c15fea18fe05e7a547104ea3058353f4dc5dac4a37d2d88d",
+    "snow_normal.png": "d25115028744965ac34e4a6efe6c4d006cd8c04a42b0005c39b63302f201354c",
+    "snow_orm.png": "8129cd6cb19a914aaa65d8cba615b26143bbdd7452fcef6327d14e333d5bfbec",
+    "stone_basecolor.png": "2b632fa6351cb3f55de7be2f0b302c96769cb410da2c9bc47faf9c78662aa35b",
+    "stone_normal.png": "0f5f2cf95891d4f3cb38574afa99e3551438918a4adde481522b081b47f225f3",
+    "stone_orm.png": "4f8249780fcf153b374fd0bf55cc8b8a8acc88bfce0139850b8b7a34057a28e5",
+    "wood_basecolor.png": "f0d9570f7ffcb91bf7feca045709118d4dffef02969d250603e89130a8efbcfd",
+    "wood_normal.png": "81ede023baedce3a489753561c2d51ff93f562dbcf798db5433c4cd70adbee17",
+    "wood_orm.png": "37ba181f3da42b272bd40e8cd28819f5c0f2ad83933081651f44678c4bb76197"
+  }
+}

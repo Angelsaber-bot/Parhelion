@@ -1,0 +1,24 @@
+{
+  "kind": "static-artifact-routing",
+  "results": [
+    {
+      "app": "world",
+      "relativeIndexAssetLinks": 2,
+      "assetReferences": 10,
+      "builtFiles": 21
+    },
+    {
+      "app": "arena-game",
+      "relativeIndexAssetLinks": 3,
+      "assetReferences": 25,
+      "builtFiles": 27
+    }
+  ],
+  "failures": [],
+  "notVerified": [
+    "current production homepage",
+    "HTTP transport",
+    "browser runtime",
+    "GPU performance"
+  ]
+}

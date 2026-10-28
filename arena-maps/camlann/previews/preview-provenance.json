@@ -1,0 +1,11 @@
+{
+  "sourceManifest": "docs/chapter-qa/renders-art3/render-manifest.json",
+  "assetSha256": "dc539d1b11c86cf32baad21fa5c0c0eb0d59171e57d0d998442a504574f38626",
+  "views": [
+    "overview",
+    "lane",
+    "hero",
+    "sword"
+  ],
+  "limitations": "Actual exported GLB CPU renders. Not browser/Three rendering, gameplay or GPU FPS evidence."
+}
