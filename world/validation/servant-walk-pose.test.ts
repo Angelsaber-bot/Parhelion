@@ -22,14 +22,14 @@ for(const outfit of ['armor','civilian'] as const)test(`${outfit}: actual Artori
   function direction(a:string,b:string){servant.root.updateWorldMatrix(true,true);return bone(b).getWorldPosition(new THREE.Vector3()).sub(bone(a).getWorldPosition(new THREE.Vector3())).normalize();}
   for(let i=0;i<20;i++)servant.update(.05,p,0,true,false);
   const idleRight=direction('RightArm','RightForeArm'),idleLeft=direction('LeftArm','LeftForeArm');
-  const armSamples:THREE.Vector3[]=[];
+  const armSamples:THREE.Vector3[]=[],localArms:THREE.Quaternion[]=[];
   // Sustain a real 1 m/s walk, rather than directly invoking private pose methods.
   for(let i=0;i<100;i++){p.x+=.05;servant.update(.05,p,0,true,false);if(servant.animation==='Walk'&&i>30){
-    const right=direction('RightArm','RightForeArm'),left=direction('LeftArm','LeftForeArm');armSamples.push(right);
+    const right=direction('RightArm','RightForeArm'),left=direction('LeftArm','LeftForeArm');armSamples.push(right);localArms.push(bone('RightArm').quaternion.clone());
     assert.ok(right.y<-.85&&left.y<-.9,`arms must hang below shoulders: ${right.y},${left.y}`);
     assert.ok(Math.abs(right.y-idleRight.y)<.05&&Math.abs(left.y-idleLeft.y)<.05);
   }}
-  assert.ok(armSamples.length>40);assert.ok(armSamples.some(a=>a.distanceTo(armSamples[0])>.025),'subtle natural arm swing, not a rigid pose');
+  assert.ok(armSamples.length>40);assert.ok(localArms.every(q=>q.clone().normalize().angleTo(localArms[0].clone().normalize())<.015),'walking retains published Idle arm breathing, not a new arm swing');
   for(let i=0;i<30;i++)servant.update(.05,p,0,true,false);assert.equal(servant.animation,'Idle');
   enemy=true;for(let i=0;i<8;i++)servant.update(.05,p,0,true,false);assert.equal(servant.animation,'Attack');
   // After the crossfade, no relaxed-arm modifier may affect the authored sword attack.

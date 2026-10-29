@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CharacterKit, KitEventResult } from './characters/characterKit';
 import type { Collider } from './player';
 import { MountedCharge } from './mountedCharge';
+import { CompanionMotion, COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
 
 type Target = { id: string; position: THREE.Vector3 } | null;
 export interface KitCompanionOptions {
@@ -23,6 +24,8 @@ export interface KitCompanionOptions {
  */
 export class KitCompanion {
   private activeLast = false;
+  private motion = new CompanionMotion();
+  private attackYaw = 0;
   private attackTarget: string | null = null;
   private readonly ray = new THREE.Ray();
   private readonly down = new THREE.Vector3(0, -1, 0);
@@ -41,7 +44,7 @@ export class KitCompanion {
   /** The servant stopped following (recalled, switched, defeated, swimming…). */
   release(actor?: CharacterKit) {
     this.mounted?.release(actor);
-    this.activeLast = false; this.attackTarget = null;
+    this.activeLast = false; this.attackTarget = null; this.motion.reset();
     if (actor && actor.state === 'attack') actor.play(actor.definition.defaultState);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number, paused: boolean) {
@@ -61,28 +64,26 @@ export class KitCompanion {
     if (ground !== null) destination.y = ground;
     if (!this.activeLast || root.position.distanceTo(player) > 24) {
       root.position.copy(ground !== null && this.visiblePath(player, destination) ? destination : player);
-      this.release(actor);
+      root.rotation.y = yaw; this.release(actor);
     }
     this.activeLast = true;
-    if (actor.state === 'attack') { actor.update(dt); if (actor.state !== 'attack') this.attackTarget = null; return; }
+    if (actor.state === 'attack') { turnCompanion(root, this.attackYaw, dt); actor.update(dt); if (actor.state !== 'attack') this.attackTarget = null; return; }
     this.attackTarget = null;
+    const frameYaw = root.rotation.y;
     let speed = 0;
-    const distance = root.position.distanceTo(destination);
-    if (distance > .6 && ground !== null && this.visiblePath(root.position, destination)) {
-      const delta = destination.clone().sub(root.position);
-      speed = Math.min(6, (distance - .25) * 3);
-      root.position.addScaledVector(delta, Math.min(1, dt * speed / distance));
-      root.rotation.y = Math.atan2(delta.x, delta.z);
-    }
+    if (ground !== null && this.visiblePath(root.position, destination)) {
+      speed = this.motion.step(root, destination, dt, Math.min(6, (actor.definition.clips.run?.nominalSpeed ?? 2) * COMPANION_MOTION.maxRate));
+    } else this.motion.reset();
     const target = this.options.target(root.position, this.options.range);
     if (target && actor.definition.clips.attack) {
       this.attackTarget = target.id;
-      root.rotation.y = Math.atan2(target.position.x - root.position.x, target.position.z - root.position.z);
+      this.attackYaw = Math.atan2(target.position.x - root.position.x, target.position.z - root.position.z);
+      this.motion.reset(); root.rotation.y = frameYaw; turnCompanion(root, this.attackYaw, dt);
       actor.play('attack', { restart: true });
     } else {
-      const running = speed > (actor.state === 'run' ? 2.2 : 2.6);
+      const running = companionGait(speed, actor.definition.clips.walk?.nominalSpeed ?? .75, actor.state === 'run') === 'run';
       if (speed < .1) actor.play('idle');
-      else actor.play(running ? 'run' : 'walk', { rate: THREE.MathUtils.clamp(speed / (actor.definition.clips[running ? 'run' : 'walk'].nominalSpeed ?? 1), .65, 1.8) });
+      else actor.play(running ? 'run' : 'walk', { speed });
     }
     actor.update(dt);
   }

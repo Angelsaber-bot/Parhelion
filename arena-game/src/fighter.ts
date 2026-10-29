@@ -1,4 +1,5 @@
 import { meleeMotion } from './meleeArt.ts';
+import { motionBlend, motionDt } from './characterMotion.ts';
 // Anime-proportioned Arena fighters, built procedurally (same approach as the World explorer:
 // merged vertex-coloured parts on a small joint rig, drawn with the cel shader). Two designs:
 //   Aster  white long coat, pale-blue long hair with an ahoge, floating parhelion halo
@@ -203,8 +204,20 @@ export class FighterAnimator {
   private t = 0;
   private air = 0;
   private crouch = 0;
+  private landing = 0;
+  private wasGrounded = true;
+  private lastVy = 0;
 
   constructor(private rig: FighterRig) {}
+
+  reset(crouched = false, grounded = true) {
+    this.phase = this.t = this.landing = this.lastVy = 0;
+    this.crouch = crouched ? 1 : 0;
+    this.air = grounded ? 0 : 1;
+    this.wasGrounded = grounded;
+    this.update(0, 0, 0, crouched, grounded);
+    this.melee(0, 0);
+  }
 
   melee(windup: number, strike: number, weapon = 5) {
     const J = this.rig.joints, motion = meleeMotion(weapon, windup, strike, false);
@@ -218,36 +231,53 @@ export class FighterAnimator {
     J.Forearm_L.rotation.x = .7 - pitch * (twoHanded ? .2 : .04);
   }
 
-  update(dt: number, speed: number, vy: number, crouched = false) {
+  update(dt: number, speed: number, vy: number, crouched = false, grounded = true, forward = speed, strafe = 0) {
+    dt = motionDt(dt);
     const J = this.rig.joints;
-    this.crouch += ((crouched ? 1 : 0) - this.crouch) * Math.min(1, dt * 15);
+    this.crouch += ((crouched ? 1 : 0) - this.crouch) * motionBlend(dt, 15);
     const crouch = this.crouch;
     this.t += dt;
-    const airborne = Math.abs(vy) > 0.6 ? 1 : 0;
-    this.air += (airborne - this.air) * Math.min(1, dt * 10);
+    // Grounding comes from the snapshot, not vertical speed: apexes remain airborne and
+    // walking up ramps remains walking. This filter changes only the visible blend.
+    if (grounded && !this.wasGrounded) this.landing = Math.min(1, .25 + Math.abs(this.lastVy) / 12);
+    this.wasGrounded = grounded;
+    this.lastVy = vy;
+    this.landing *= Math.exp(-dt * 12);
+    this.air += ((grounded ? 0 : 1) - this.air) * motionBlend(dt, 13);
     const run = Math.min(1, speed / 5.5), move = Math.min(1, speed / 1.5);
-    this.phase += dt * (5 + speed * 1.6);
+    const ground = 1 - this.air, weight = move * ground;
+    const along = speed > .001 ? forward / speed : 0;
+    const across = speed > .001 ? strafe / speed : 0;
+    // Stride phase follows travel instead of ticking at idle. Shorter crouched/backward steps.
+    this.phase = (this.phase + dt * speed * (1.85 + crouch * .8) * ground) % (Math.PI * 2);
     const sw = Math.sin(this.phase);
-    const amp = (0.4 + run * 0.45) * move * (1 - crouch * 0.65);
+    const amp = (.4 + run * .4) * weight * (1 - crouch * .65);
+    const rise = Math.max(0, Math.min(1, vy / 6));
     for (const [side, sgn] of [['L', 1], ['R', -1]] as const) {
-      const knee = Math.max(0, Math.sin(this.phase + (sgn > 0 ? 0 : Math.PI) + 0.9));
-      J[`Thigh_${side}`].rotation.x = ph(sw, sgn) * amp - this.air * 0.6 + crouch * 1.15;
-      J[`Shin_${side}`].rotation.x = -(knee * (0.3 + run * 0.9) * move + this.air * 1.0) - crouch * 2.3;
+      const step = sw * sgn;
+      const knee = Math.max(0, Math.sin(this.phase + (sgn > 0 ? 0 : Math.PI) + .9));
+      J[`Thigh_${side}`].rotation.set(
+        step * amp * along * (along < 0 ? .72 : 1) + this.air * (.18 + rise * .25) + crouch * 1.15 + this.landing * .08,
+        0,
+        // Leave a small outward stance so lateral steps never cross through the other foot.
+        step * amp * across * .17 - sgn * Math.abs(across) * weight * .105,
+      );
+      J[`Shin_${side}`].rotation.x = -(knee * (.3 + run * .8) * weight + this.air * (.45 + rise * .55)) - crouch * 2.3 - this.landing * .16;
     }
-    const breathe = Math.sin(this.t * 2.2) * 0.012 * (1 - move);
-    J.Hips.position.y = 0.9 + Math.abs(Math.cos(this.phase)) * 0.05 * move - run * 0.03 + breathe - crouch * 0.5;
-    J.Spine.rotation.x = -run * 0.15 - crouch * 0.12;
-    J.Spine.rotation.y = sw * 0.12 * move;
-    J.Hips.rotation.y = -sw * 0.08 * move;
-    this.rig.aim.position.y = 1.35 + (J.Hips.position.y - 0.9) - crouch * .16;
-    if (J.Halo) J.Halo.position.y = 0.42 + Math.sin(this.t * 2) * 0.02;
+    const breathe = Math.sin(this.t * 2.2) * .008 * (1 - move) * ground;
+    const travelTwist = Math.atan2(strafe, Math.abs(forward) + .2) * .26 * weight;
+    J.Hips.position.y = .9 + Math.abs(Math.cos(this.phase)) * .035 * weight - run * .02 * ground + breathe - crouch * .5 - this.landing * .035;
+    J.Spine.rotation.x = -run * along * .12 * ground - crouch * .12;
+    J.Spine.rotation.y = sw * .1 * weight - travelTwist * .55;
+    J.Hips.rotation.y = travelTwist - sw * .07 * weight;
+    J.Hips.rotation.z = -across * run * .035 * ground;
+    this.rig.aim.position.y = 1.35 + (J.Hips.position.y - .9) - crouch * .16;
+    if (J.Halo) J.Halo.position.y = .42 + Math.sin(this.t * 2) * .02;
     for (const s of ['L', 'R']) {
       if (J[`Tail_${s}`]) {
-        J[`Tail_${s}`].rotation.x = 0.2 + run * 0.6 + Math.sin(this.phase * 2) * 0.1 * move + Math.sin(this.t * 1.7) * 0.05;
-        J[`Tail_${s}`].rotation.z = Math.sin(this.phase) * 0.15 * move * (s === 'L' ? 1 : -1);
+        J[`Tail_${s}`].rotation.x = .2 + run * .45 + Math.sin(this.phase * 2) * .08 * weight + Math.sin(this.t * 1.7) * .05;
+        J[`Tail_${s}`].rotation.z = Math.sin(this.phase) * .12 * weight * (s === 'L' ? 1 : -1);
       }
     }
   }
 }
-
-const ph = (sw: number, sgn: number) => sw * sgn;

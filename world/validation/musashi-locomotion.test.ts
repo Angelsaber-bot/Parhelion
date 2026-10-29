@@ -18,15 +18,16 @@ test('Musashi: actual gait lowers both arms, counter-swings to the feet, keeps b
   const {actor}=await fixture(),geo=musashiGeometry(actor);const report:any={};
   actor.mixer.update(0);geo.sync();const attachments=geo.blades.flatMap(mesh=>Array.from({length:8},(_,n)=>{const i=Math.floor(n*mesh.geometry.attributes.position.count/8),hand=mesh.skeleton.bones[mesh.geometry.attributes.skinIndex.getX(i)];return{mesh,i,hand,local:hand.worldToLocal(mesh.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(mesh.matrixWorld))};}));
   for(const state of ['idle','walk','run']as const){
-    actor.play(state);advance(actor,.3);let minBlade=Infinity,minFoot=Infinity,maxArm=-Infinity,minClear=Infinity;const arms:number[]=[],legs:number[]=[];
+    actor.play(state);advance(actor,.3);let minBlade=Infinity,minFoot=Infinity,maxArm=-Infinity,minClear=Infinity;const arms:number[]=[],legs:number[]=[],elbows:number[]=[];
     for(let f=0;f<120;f++){
       actor.update(definition.clips[state].duration/120);const ground=geo.ground();for(const {mesh,i,hand,local}of attachments){const p=hand.worldToLocal(mesh.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(mesh.matrixWorld));assert.ok(p.distanceTo(local)<1e-6,'both actual blades remain rigidly bound to their original hands');}minBlade=Math.min(minBlade,ground.bladeMin);minFoot=Math.min(minFoot,ground.footMin);
-      for(const side of ['Left','Right']){const upper=direction(actor,`${side}Arm`,`${side}ForeArm`),lower=direction(actor,`${side}ForeArm`,`${side}Hand`);maxArm=Math.max(maxArm,upper.y);assert.ok(upper.y<-.93,'upper arms no longer held sideways');assert.ok(upper.angleTo(lower)<.6,'relaxed elbow bend, not a locked guard');}
+      for(const side of ['Left','Right']){const upper=direction(actor,`${side}Arm`,`${side}ForeArm`),lower=direction(actor,`${side}ForeArm`,`${side}Hand`);if(side==='Left')elbows.push(upper.angleTo(lower));maxArm=Math.max(maxArm,upper.y);assert.ok(upper.y<-.93,'upper arms no longer held sideways');assert.ok(upper.angleTo(lower)<.6,'relaxed elbow bend, not a locked guard');}
       arms.push(pos(actor,'LeftHand').z);legs.push(pos(actor,'LeftFoot').z);
       if(f%10===0){const c=geo.clearance();assert.equal(c.intersects,false,`${state}@${f}: blade intersects torso/cloth/legs`);minClear=Math.min(minClear,c.distance);}
     }
     assert.ok(minBlade>.20,`${state} full blades clear ground: ${minBlade}`);assert.ok(minFoot>-.02,`${state} feet penetrate ground: ${minFoot}`);assert.ok(minClear>.008,`${state} blade/cloth clearance ${minClear}`);
     if(state!=='idle'){
+      assert.ok(Math.max(...elbows)-Math.min(...elbows)>(state==='walk'?.13:.17),'forearm trails the shoulder with changing elbow flex, not a rigid low pendulum');
       const mean=(v:number[])=>v.reduce((a,b)=>a+b,0)/v.length,ma=mean(arms),ml=mean(legs),cov=arms.reduce((a,x,i)=>a+(x-ma)*(legs[i]-ml),0),den=Math.sqrt(arms.reduce((a,x)=>a+(x-ma)**2,0)*legs.reduce((a,x)=>a+(x-ml)**2,0));
       assert.ok(cov/den<-.7,`hands counter-swing rather than move in phase with the same-side foot: ${state} correlation ${cov/den}`);assert.ok(Math.max(...arms)-Math.min(...arms)>.07,'natural gait is not a frozen low pose');
     }

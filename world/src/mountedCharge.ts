@@ -3,6 +3,7 @@ import type { CharacterKit, KitEventResult } from './characters/characterKit';
 import { MOUNTED_CHARGE as MOTION, mountedChargeDistance } from './characters/mountedChargeMotion';
 import type { KitCompanionOptions } from './kitCompanion';
 import type { Collider } from './player';
+import { companionGait } from './characters/companionMotion';
 
 type Target = NonNullable<ReturnType<KitCompanionOptions['target']>>;
 type ChargePlan = { target: Target; direction: THREE.Vector3; start: THREE.Vector3; end: THREE.Vector3 };
@@ -108,7 +109,7 @@ export class MountedCharge {
         return;
       }
     }
-    const running = speed > (actor.state === 'run' ? 1.7 : 2);
+    const running = companionGait(speed, actor.definition.clips.walk?.nominalSpeed ?? .7, actor.state === 'run') === 'run';
     if (speed < .05) actor.play('idle'); else actor.play(running ? 'run' : 'walk', { speed });
     actor.update(dt);
   }

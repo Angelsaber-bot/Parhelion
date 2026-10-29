@@ -56,8 +56,9 @@ test('lake NPC lazy loads once, contract follows, recall hides, pause prevents t
 test('Idle/Walk/Run crossfades follow actual movement and teleport rematerializes without traversing walls', async () => {
   const f=fixture(new Set(['saber_contract']));await f.servant.ensureLoaded();
   f.servant.update(.05,new THREE.Vector3(),0,true,false);assert.equal(f.servant.animation,'Idle');
-  f.servant.update(.05,new THREE.Vector3(.7,0,0),0,true,false);assert.equal(f.servant.animation,'Walk');
-  f.servant.update(.05,new THREE.Vector3(7,0,0),0,true,false);assert.equal(f.servant.animation,'Run');
+  // Turning/accelerating into a new follow direction is bounded, not a one-frame snap.
+  advance(f,.25,new THREE.Vector3(.7,0,0));assert.equal(f.servant.animation,'Walk');
+  advance(f,.15,new THREE.Vector3(7,0,0));assert.equal(f.servant.animation,'Run');
   advance(f,3,new THREE.Vector3(7,0,0));assert.equal(f.servant.animation,'Idle');
   f.servant.update(.05,new THREE.Vector3(500,0,0),0,true,false);
   assert.ok(f.servant.root.position.distanceTo(new THREE.Vector3(500,0,0))<4);

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountedChargeClip } from './mountedChargeMotion';
 import { musashiLocomotionClip } from './musashiLocomotion';
+import { ActionBlend } from './actionBlend';
 
 export type Axis = readonly [number, number, number];
 export interface KitEvent { at: number; kind: 'fire' | 'hit'; socket?: string; }
@@ -63,6 +64,7 @@ export class CharacterKit {
   readonly mixer: THREE.AnimationMixer;
   private actions = new Map<string, THREE.AnimationAction>();
   private currentState = '';
+  private blend = new ActionBlend();
   private elapsed = 0;
   private rate = 1;
   private emitted = new Set<number>();
@@ -123,18 +125,29 @@ export class CharacterKit {
     const nextRate = THREE.MathUtils.clamp(rate, 0, 3), rateChanged = this.rate !== nextRate;
     this.rate = nextRate;
     next.setEffectiveTimeScale(this.rate);
+    if (['walk', 'run'].includes(state)) for (const gait of ['walk', 'run']) {
+      const action = this.actions.get(gait), clip = this.definition.clips[gait];
+      if (action && clip) action.setEffectiveTimeScale(this.rate * clip.duration / contract.duration);
+    }
     if (this.currentState === state && !options.restart) {
       // An event callback may pause/change this same action. Stop the old frame's
       // event integration before it divides by the newly zero/changed rate.
       if (rateChanged) this.generation++;
       return true;
     }
-    const previous = this.actions.get(this.currentState);
-    this.currentState = state; this.elapsed = 0; this.emitted.clear(); this.generation++;
-    next.reset().setEffectiveTimeScale(this.rate).setEffectiveWeight(1)
-      .setLoop(contract.loop ? THREE.LoopRepeat : THREE.LoopOnce, contract.loop ? Infinity : 1).play();
-    next.clampWhenFinished = !contract.loop;
-    if (previous && previous !== next) previous.crossFadeTo(next, this.transition, false);
+    const previous = this.actions.get(this.currentState), previousContract = this.definition.clips[this.currentState];
+    const gaitChange = !options.restart && ['walk', 'run'].includes(state) && ['walk', 'run'].includes(this.currentState);
+    const phase = gaitChange && previous && previousContract ? previous.time / previousContract.duration : 0;
+    // A stop/start can re-enter a gait while it is still visible in an unfinished fade.
+    // Keep that action's time too; resetting a 70%-weighted arm/leg pose causes a pop.
+    const startTime = gaitChange ? phase * contract.duration : !options.restart && contract.loop && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0 ? next.time : 0;
+    this.currentState = state; this.elapsed = startTime; this.emitted.clear(); this.generation++;
+    this.blend.start(next, previous === next ? 0 : this.transition, () => {
+      next.reset().setEffectiveTimeScale(this.rate).setLoop(contract.loop ? THREE.LoopRepeat : THREE.LoopOnce, contract.loop ? Infinity : 1).play();
+      next.time = this.elapsed; next.clampWhenFinished = !contract.loop;
+    });
+    // Keep the fading gait's contact phase synchronized, not two feet cycling at unrelated rates.
+    if (gaitChange && previous && previousContract) previous.setEffectiveTimeScale(this.rate * previousContract.duration / contract.duration);
     return true;
   }
   socketTransform(semantic: string) {
@@ -156,24 +169,24 @@ export class CharacterKit {
     const state = this.currentState, contract = this.definition.clips[state], generation = this.generation;
     if (contract.loop) {
       this.elapsed = (this.elapsed + dt * this.rate) % contract.duration;
-      this.mixer.update(dt); return;
+      this.blend.update(this.mixer, dt); return;
     }
     const end = Math.min(contract.duration, this.elapsed + dt * this.rate);
     let cursor = this.elapsed;
     const events = (contract.events ?? []).map((event,index) => ({event,index})).sort((a,b) => a.event.at-b.event.at);
     for (const {event,index} of events) {
       if (this.emitted.has(index) || event.at < cursor || event.at > end) continue;
-      this.mixer.update((event.at-cursor)/this.rate); cursor = event.at;
+      this.blend.update(this.mixer, (event.at-cursor)/this.rate); cursor = event.at;
       this.elapsed = cursor; this.emitted.add(index);
       this.options.onEvent?.({ ...event, character: this.definition.id, state, clip: contract.name, transform: event.socket ? this.socketTransform(event.socket) : undefined });
       if (this.disposed || generation !== this.generation) return;
     }
-    this.mixer.update((end-cursor)/this.rate); this.elapsed = end;
+    this.blend.update(this.mixer, (end-cursor)/this.rate); this.elapsed = end;
     if (end >= contract.duration) this.play(this.definition.defaultState);
   }
   dispose() {
     if (this.disposed) return;
-    this.disposed = true; this.generation++; this.emitted.clear(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model);
+    this.disposed = true; this.blend.clear(); this.generation++; this.emitted.clear(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model);
     this.root.removeFromParent(); this.model.removeFromParent(); this.actions.clear(); disposeCharacterObject(this.model, this.options.environment);
   }
 }

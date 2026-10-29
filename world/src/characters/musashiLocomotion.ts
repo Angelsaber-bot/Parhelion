@@ -3,7 +3,7 @@ import * as THREE from 'three';
 const PREFIX = 'mixamorig';
 const UP = new THREE.Vector3(0, 1, 0), FORWARD = new THREE.Vector3(0, 0, 1);
 const SIDES = [['Left', 1], ['Right', -1]] as const;
-const CHANNELS = ['Spine', 'Spine1', 'Spine2', 'Neck', ...SIDES.flatMap(([side]) => [`${side}Arm`, `${side}ForeArm`, `${side}Hand`])];
+const CHANNELS = ['Spine', 'Spine1', 'Spine2', 'Neck', ...SIDES.flatMap(([side]) => [`${side}Shoulder`, `${side}Arm`, `${side}ForeArm`, `${side}Hand`])];
 
 /**
  * Musashi's delivered gait pins both hands in a raised guard. Bake just the upper-body
@@ -49,7 +49,7 @@ export function musashiLocomotionClip(source: THREE.AnimationClip, model: THREE.
     delta.setFromUnitVectors(direction, target.normalize());
     worldRotation(name, delta.multiply(rest));
   }
-  const motion = state === 'run' ? 1 : state === 'walk' ? .58 : 0;
+  const motion = state === 'run' ? 1 : state === 'walk' ? .75 : 0;
   for (let frame = 0; frame <= samples; frame++) {
     const time = source.duration * frame / samples, phase = 2 * Math.PI * frame / samples;
     mixer.setTime(time);
@@ -72,16 +72,25 @@ export function musashiLocomotionClip(source: THREE.AnimationClip, model: THREE.
     }
     for (const [side, sign] of SIDES) {
       // Foot contact starts with the same-side leg forward: arms counter-swing.
-      const swing = -sign * Math.cos(phase), follow = -sign * Math.cos(phase - .24);
-      // Upper arms hang close to vertical; elbows remain softly bent rather than locked.
-      pointBone(`${side}Arm`, new THREE.Vector3(sign * .19, -1, -.055 + motion * .24 * swing));
-      pointBone(`${side}ForeArm`, new THREE.Vector3(sign * .075, -1, .25 + motion * .21 * follow));
+      const swing = -sign * Math.cos(phase), follow = -sign * Math.cos(phase - .48);
+      // Let the clavicle follow the chest, then the elbow trail the shoulder. The old
+      // near-identical arm/forearm waves made the whole arm move like a rigid pendulum.
+      const shoulder = bones.get(`${side}Shoulder`)!;
+      shoulder.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(
+        .004 * breath, -sign * .018 * motion * swing, sign * .012 * motion * swing))).normalize();
+      shoulder.updateWorldMatrix(false, true);
+      const upper = new THREE.Vector3(sign * .18, -1, -.045 + motion * .29 * swing);
+      const lower = new THREE.Vector3(sign * .075, -1, .25 + motion * (.22 * follow + .08 * (1 + swing)));
+      // Arms remain close to the body; elbow flex changes over the stride instead of
+      // locking the wrists to a constant bend. Fingers and hand-bound katana are intact.
+      pointBone(`${side}Arm`, upper);
+      pointBone(`${side}ForeArm`, lower);
       // The blade's authored rest-world direction is +Z. Align it to a low trailing
       // carry; wrist roll aligns the metacarpals with the forearm without changing grip.
-      const blade = new THREE.Vector3(sign * .23, -.50 + motion * .065 * follow, -.84).normalize();
+      const blade = new THREE.Vector3(sign * .23, -.50 + motion * .075 * follow, -.84).normalize();
       const handQ = new THREE.Quaternion().setFromUnitVectors(FORWARD, blade).multiply(restWorld.get(`${side}Hand`)!);
       const finger = UP.clone().applyQuaternion(handQ).projectOnPlane(blade).normalize();
-      const forearm = new THREE.Vector3(sign * .075, -1, .25 + motion * .21 * follow).projectOnPlane(blade).normalize();
+      const forearm = lower.clone().projectOnPlane(blade).normalize();
       const angle = Math.atan2(blade.dot(finger.clone().cross(forearm)), THREE.MathUtils.clamp(finger.dot(forearm), -1, 1));
       handQ.premultiply(new THREE.Quaternion().setFromAxisAngle(blade, angle));
       worldRotation(`${side}Hand`, handQ);

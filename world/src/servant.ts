@@ -6,6 +6,9 @@ import { FirstContract } from './contracts';
 import { ServantAppearance, type ServantOutfit } from './servantAppearance';
 import type { Collider } from './player';
 import type { Marker } from './types';
+import { ActionBlend } from './characters/actionBlend';
+import { SaberIdleCarry } from './characters/saberLocomotion';
+import { CompanionMotion, COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
 
 // Only accepted, project-authored outfits; the rejected v1 model is never requested.
 export const SERVANT_MODELS: Record<ServantOutfit, string> = {
@@ -29,8 +32,8 @@ export async function loadServantGltf(url: string): Promise<GLTF> {
   return new GLTFLoader().parseAsync(await decodeServantModel(await response.arrayBuffer()), '');
 }
 export const SERVANT_CLIPS = ['Idle', 'Walk', 'Run', 'Attack'] as const;
-// Authored runtime_revision1 timing (30fps); movement above capped gait speed can still slide.
-export const SERVANT_MOTION = { walkSpeed: .7476, runSpeed: 1.9983, maxRate: 1.8, followSpeed: 6, attackContact: 5 / 9 } as const;
+// Authored runtime_revision1 timing (30fps); movement and gait share the same speed budget.
+export const SERVANT_MOTION = { walkSpeed: .7476, runSpeed: 1.9983, maxRate: COMPANION_MOTION.maxRate, followSpeed: 6, attackContact: 5 / 9 } as const;
 export const outfitLabel = (outfit: ServantOutfit) => outfit === 'armor' ? bilingual('誓约战甲', 'Oath armor') : bilingual('旅途便服', 'Travel clothes');
 type Target = { id: string; position: THREE.Vector3 } | null;
 export interface ServantOptions {
@@ -52,6 +55,10 @@ export class ContractServant {
   private mixer?: THREE.AnimationMixer;
   private clips = new Map<string, THREE.AnimationAction>();
   private current?: THREE.AnimationAction;
+  private blend = new ActionBlend();
+  private idleCarry?: SaberIdleCarry;
+  private motion = new CompanionMotion();
+  private attackYaw = 0;
   private attackTime = 0;
   private attackDuration = 1.2;
   private attackTarget: string | null = null;
@@ -122,18 +129,14 @@ export class ContractServant {
           }
         });
         const mixer = new THREE.AnimationMixer(candidate.scene);
-        const clips = new Map(candidate.animations.map(clip => [clip.name.toLowerCase(), mixer.clipAction(clip)]));
+        const idle = candidate.animations.find(clip => clip.name === 'Idle')!;
+        const idleCarry = new SaberIdleCarry(candidate.scene, mixer, idle);
+        const clips = new Map(candidate.animations.map(clip => [clip.name.toLowerCase(), mixer.clipAction(idleCarry.locomotionClip(clip))]));
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
-        const bone = (n: string) => candidate!.scene.getObjectByName(`mixamorig${n}`) ?? candidate!.scene.getObjectByName(`mixamorig:${n}`);
-        this.bones = new Map((['RightArm', 'RightForeArm', 'RightHand', 'LeftArm', 'LeftForeArm', 'LeftHand'] as const).flatMap((n) => { const b = bone(n); return b ? [[n, b] as [string, THREE.Object3D]] : []; }));
-        this.mixer = mixer; this.clips = clips;
+        this.mixer = mixer; this.clips = clips; this.idleCarry = idleCarry;
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
         this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
-        // The authored Idle holds the blade vertical: record its axis in hand space once.
-        this.bladeLocal = undefined; this.mixer.update(0); this.root.updateWorldMatrix(true, true);
-        const hand = this.bones.get('RightHand');
-        if (hand) this.bladeLocal = new THREE.Vector3(0, 1, 0).applyQuaternion(this.root.getWorldQuaternion(new THREE.Quaternion())).applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()).invert());
         candidate = undefined;
       } catch (error) {
         if (candidate) disposeObject(candidate.scene, this.environment?.texture);
@@ -147,53 +150,35 @@ export class ContractServant {
     }
     if (!this.disposed && this.activeOutfit === this.appearance.outfit) this.state = 'ready';
   }
-  /** Idle and walking share the accepted relaxed pose; the original attack and run remain authored. */
-  private bones = new Map<string, THREE.Object3D>();
-  private bladeLocal?: THREE.Vector3;
-  private readonly relax = new THREE.Quaternion();
   private tick(dt: number) {
-    this.mixer?.update(dt);
-    const idle = this.clips.get('idle'), walk = this.clips.get('walk');
-    // Disabled actions can retain their stored weight after a fade, so count only live actions.
-    const idleWeight = idle?.enabled ? idle.getEffectiveWeight() : 0;
-    const walkWeight = walk?.enabled ? walk.getEffectiveWeight() : 0;
-    const weight = Math.min(1, idleWeight + walkWeight);
-    if (weight <= 0 || !this.bones.size) return;
-    const swing = walk ? Math.sin(walk.time / walk.getClip().duration * Math.PI * 2) * .10 * walkWeight : 0;
-    const q = this.root.getWorldQuaternion(new THREE.Quaternion());
-    const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(q), right = new THREE.Vector3(-1, 0, 0).applyQuaternion(q), down = new THREE.Vector3(0, -1, 0);
-    const dir = (...parts: Array<[THREE.Vector3, number]>) => parts.reduce((v, [d, k]) => v.addScaledVector(d, k), new THREE.Vector3()).normalize();
-    this.aim('RightArm', 'RightForeArm', dir([down, 1], [right, .5], [fwd, .08 + swing]), weight);
-    this.aim('RightForeArm', 'RightHand', dir([down, .8], [fwd, .5 + swing], [right, .3]), weight);
-    // Blade flares outward more than the armoured skirt so the sword never sinks into it.
-    this.aim('RightHand', null, dir([down, .85], [fwd, .2], [right, .55]), weight);
-    this.aim('LeftArm', 'LeftForeArm', dir([down, 1], [right, -.32], [fwd, .04 - swing]), weight);
-    this.aim('LeftForeArm', 'LeftHand', dir([down, 1], [right, -.18], [fwd, .22 - swing]), weight);
-  }
-  /** World-space swing of a bone so its direction (to `child`, or the sword blade) meets `target`. */
-  private aim(name: string, child: string | null, target: THREE.Vector3, weight: number) {
-    const bone = this.bones.get(name), end = child ? this.bones.get(child) : undefined;
-    if (!bone?.parent || (child && !end) || (!child && !this.bladeLocal)) return;
-    bone.updateWorldMatrix(true, true);
-    const world = bone.getWorldQuaternion(new THREE.Quaternion());
-    const from = end ? end.getWorldPosition(new THREE.Vector3()).sub(bone.getWorldPosition(new THREE.Vector3())).normalize() : this.bladeLocal!.clone().applyQuaternion(world);
-    const swing = this.relax.setFromUnitVectors(from, target);
-    swing.slerp(new THREE.Quaternion(), 1 - weight);
-    const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
-    bone.quaternion.premultiply(parent.clone().invert().multiply(swing).multiply(parent));
-    bone.updateWorldMatrix(false, true);
+    if (this.mixer) {
+      this.blend.update(this.mixer, dt);
+      this.idleCarry?.updateWeight(this.clips.get('idle'), this.clips.get('walk'));
+      // Apply the just-updated normalized weight without advancing either clock twice.
+      this.mixer.update(0);
+    }
   }
   private play(name: string, restart = false, rate = 1) {
     const next = this.clips.get(name);
     if (!next) return;
+    if (['walk', 'run'].includes(name)) for (const gait of ['walk', 'run']) {
+      const action = this.clips.get(gait);
+      if (action) action.setEffectiveTimeScale(rate * action.getClip().duration / next.getClip().duration);
+    }
     if (next === this.current && !restart) { next.setEffectiveTimeScale(rate); return; }
-    next.reset().setEffectiveTimeScale(rate).setEffectiveWeight(1)
-      .setLoop(name === 'attack' ? THREE.LoopOnce : THREE.LoopRepeat, name === 'attack' ? 1 : Infinity).play();
-    next.clampWhenFinished = name === 'attack';
-    if (this.current && this.current !== next) this.current.crossFadeTo(next,.18,false);
+    const previous = this.current;
+    const gaitChange = !restart && ['Walk', 'Run'].includes(previous?.getClip().name ?? '') && ['walk', 'run'].includes(name);
+    const phase = gaitChange && previous ? previous.time / previous.getClip().duration : 0;
+    const startTime = gaitChange ? phase * next.getClip().duration : !restart && name !== 'attack' && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0 ? next.time : 0;
+    this.blend.start(next, previous === next ? 0 : .18, () => {
+      next.reset().setEffectiveTimeScale(rate)
+        .setLoop(name === 'attack' ? THREE.LoopOnce : THREE.LoopRepeat, name === 'attack' ? 1 : Infinity).play();
+      next.time = startTime; next.clampWhenFinished = name === 'attack';
+    });
+    if (gaitChange && previous) previous.setEffectiveTimeScale(rate * previous.getClip().duration / next.getClip().duration);
     this.current = next;
   }
-  private cancelAttack() { this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  private cancelAttack() { this.motion.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
   private floor(x: number,z: number,baseY: number) {
     this.ray.origin.set(x,baseY+1.1,z); this.ray.direction.copy(this.down);
     let best = Infinity;
@@ -232,33 +217,32 @@ export class ContractServant {
     if (ground !== null) destination.y = ground;
     if (!this.activeLast || this.root.position.distanceTo(player) > 24) {
       this.root.position.copy(ground !== null && this.visiblePath(player,destination) ? destination : player);
-      this.cancelAttack();
+      this.root.rotation.y = yaw; this.cancelAttack();
     }
     this.activeLast = true;
     if (this.attackTime > 0) { this.advanceAttack(dt); return; }
+    const frameYaw = this.root.rotation.y;
     let speed = 0;
-    const distance = this.root.position.distanceTo(destination);
-    if (distance > .6 && ground !== null && this.visiblePath(this.root.position,destination)) {
-      const delta = destination.clone().sub(this.root.position);
-      speed = Math.min(SERVANT_MOTION.followSpeed, (distance - .25) * 3);
-      this.root.position.addScaledVector(delta,Math.min(1,dt*speed/distance));
-      this.root.rotation.y = Math.atan2(delta.x,delta.z);
-    }
+    if (ground !== null && this.visiblePath(this.root.position,destination)) {
+      speed = this.motion.step(this.root, destination, dt, Math.min(SERVANT_MOTION.followSpeed, SERVANT_MOTION.runSpeed * SERVANT_MOTION.maxRate));
+    } else this.motion.reset();
     if (this.model) {
       const target = this.options.target(this.root.position);
       if (target) {
         this.attackTime = this.attackDuration; this.attackTarget = target.id; this.contactPending = true;
-        this.root.rotation.y = Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
+        this.attackYaw = Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
+        this.motion.reset(); this.root.rotation.y = frameYaw;
         this.play('attack',true);
       } else {
-        const running = speed > (this.animation === 'Run' ? 2.2 : 2.6);
+        const running = companionGait(speed, SERVANT_MOTION.walkSpeed, this.animation === 'Run') === 'run';
         this.play(speed < .1 ? 'idle' : running ? 'run' : 'walk', false,
-          speed < .1 ? 1 : THREE.MathUtils.clamp(speed / (running ? SERVANT_MOTION.runSpeed : SERVANT_MOTION.walkSpeed), .65, SERVANT_MOTION.maxRate));
+          speed < .1 ? 1 : THREE.MathUtils.clamp(speed / (running ? SERVANT_MOTION.runSpeed : SERVANT_MOTION.walkSpeed), 0, SERVANT_MOTION.maxRate));
       }
     }
     if (this.attackTime > 0) this.advanceAttack(dt); else this.tick(dt);
   }
   private advanceAttack(dt: number) {
+    turnCompanion(this.root, this.attackYaw, dt);
     this.attackTime = Math.max(0, this.attackTime - dt);
     if (this.contactPending && this.attackTime <= this.attackDuration * (1 - SERVANT_MOTION.attackContact)) {
       this.contactPending = false;
@@ -268,13 +252,13 @@ export class ContractServant {
     if (this.attackTime <= 0) this.cancelAttack();
   }
   private clearModel() {
-    this.cancelAttack(); this.current = undefined;
+    this.cancelAttack(); this.current = undefined; this.blend.clear();
     this.mixer?.stopAllAction();
     if (this.model) {
       this.mixer?.uncacheRoot(this.model); this.model.removeFromParent();
       disposeObject(this.model, this.environment?.texture);
     }
-    this.clips.clear(); this.mixer = undefined; this.model = undefined;
+    this.clips.clear(); this.mixer = undefined; this.model = undefined; this.idleCarry = undefined;
   }
   dispose() {
     if (this.disposed) return;

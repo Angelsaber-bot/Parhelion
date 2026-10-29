@@ -19,6 +19,7 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
 import { buildFighter, FighterAnimator } from './fighter.ts';
+import { AvatarMotion, ViewmodelStride, motionDt } from './characterMotion.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 import { CRAFTED_CHAPTERS, toChapterMaterial } from './chapterMaterial.ts';
@@ -280,13 +281,15 @@ export class ArenaScene {
       this.avatars.set(p.id, a);
       this.scene.add(a.root);
     }
+    if (a.root.visible !== p.alive) a.resetMotion(p.crouched, p.grounded);
     a.root.visible = p.alive;
     a.setAlly(ally);
     const now = performance.now() / 1000;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
-    a.animate(pos, Math.min(0.1, now - this.lastAnim), p.crouched, p.meleeWindup);
+    const facing = p.meleeWindup > 0 ? p.meleeYaw : yaw;
+    a.animate(pos, now - this.lastAnim, p.crouched, p.meleeWindup, p.grounded, facing);
     a.root.position.set(pos[0], pos[1], pos[2]);
-    a.root.rotation.y = p.meleeWindup > 0 ? p.meleeYaw : yaw;
+    a.root.rotation.y = facing;
     a.aim.rotation.x = p.meleeWindup > 0 ? p.meleePitch : pitch;
     a.setHp(p.hp / CHARACTERS[p.char].hp, p.name);
   }
@@ -506,7 +509,9 @@ export class Viewmodel {
   meleeWindup = 0;
   private weapon = 0;
   private swap = 0;
-  private bob = 0;
+  private stride = new ViewmodelStride();
+  private aimPosition = new THREE.Vector3();
+  private flashPosition = new THREE.Vector3();
   private sway = [0, 0];
   private shells: { m: THREE.Mesh; v: THREE.Vector3; spin: THREE.Vector3; life: number }[] = [];
   private shellGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.028, 6);
@@ -539,7 +544,7 @@ export class Viewmodel {
   resetMotion() {
     for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
     this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.meleeWindup = 0;
-    this.kick = 0; this.bob = 0; this.sway = [0, 0]; this.reloading = 0; this.moving = 0;
+    this.kick = 0; this.swap = 0; this.stride.reset(); this.sway = [0, 0]; this.reloading = 0; this.moving = 0;
   }
 
   clear() {
@@ -589,20 +594,20 @@ export class Viewmodel {
     // fast snap back, then a softer settle: reads as a punchy shot rather than a slide
     this.kick = Math.max(0, this.kick - dt * (this.kick > 0.4 * this.kickMax ? 14 : 6) * this.kickMax);
     this.swap = Math.max(0, this.swap - dt * 5);
-    this.bob += dt * (4 + this.moving * 5);
+    this.stride.update(dt, this.moving);
     const k = 1 - Math.exp(-dt * 10);
     this.sway[0] -= this.sway[0] * k;
     this.sway[1] -= this.sway[1] * k;
-    const bobY = Math.sin(this.bob * 2) * 0.006 * this.moving, bobX = Math.cos(this.bob) * 0.008 * this.moving;
+    const bobY = Math.sin(this.stride.phase * 2) * 0.006 * this.stride.weight, bobX = Math.cos(this.stride.phase) * 0.008 * this.stride.weight;
     const rel = Math.sin(this.reloading * Math.PI);
     const kick = this.kick;
     this.gun.position.set(0.17 + bobX - this.sway[0], -0.16 + bobY - this.swap * 0.2 - rel * 0.1 + this.sway[1] * 0.6 + kick * 0.012, -0.4 + kick * 0.06);
     this.gun.rotation.set(kick * 0.16 + rel * 0.6, 0.04 + this.sway[0] * 1.5, rel * 0.4 - kick * 0.03 + this.sway[0] * 0.8);
     // At full ADS the authored optic axis runs through the centre of the view camera.
     if (this.presentation) {
-      const sight = this.presentation.sight.clone().multiplyScalar(0.72);
-      const aimPosition = new THREE.Vector3(-sight.x, -sight.y, -0.34 - sight.z);
-      this.gun.position.lerp(aimPosition, this.aim);
+      const sight = this.presentation.sight;
+      this.aimPosition.set(-sight.x * .72, -sight.y * .72, -.34 - sight.z * .72);
+      this.gun.position.lerp(this.aimPosition, this.aim);
       this.gun.rotation.x *= 1 - this.aim; this.gun.rotation.y *= 1 - this.aim; this.gun.rotation.z *= 1 - this.aim;
       this.presentation.animate(kick, this.reloading);
     }
@@ -619,7 +624,7 @@ export class Viewmodel {
       sh.m.rotation.x += sh.spin.x * dt; sh.m.rotation.y += sh.spin.y * dt; sh.m.rotation.z += sh.spin.z * dt;
       if (sh.life <= 0) { this.root.remove(sh.m); this.shells.splice(i, 1); }
     }
-    if (this.muzzle) this.flash.position.copy(this.muzzle.getWorldPosition(new THREE.Vector3()));
+    if (this.muzzle) this.flash.position.copy(this.root.worldToLocal(this.muzzle.getWorldPosition(this.flashPosition)));
   }
 }
 
@@ -638,9 +643,7 @@ class Avatar {
   private plateCtx: CanvasRenderingContext2D;
   private plateKey = '';
   private anim: FighterAnimator;
-  private last: Vec3 | null = null;
-  private speed = 0;
-  private vy = 0;
+  private motion = new AvatarMotion();
   private weapon = 0;
   private meleeHit = 0;
 
@@ -679,16 +682,17 @@ class Avatar {
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
   strike() { this.meleeHit = 1; }
 
-  resetMotion() { this.meleeHit = 0; this.last = null; this.speed = this.vy = 0; }
+  resetMotion(crouched = false, grounded = true) {
+    this.meleeHit = 0;
+    this.motion.reset();
+    this.anim.reset(crouched, grounded);
+  }
 
-  animate(pos: Vec3, dt: number, crouched = false, meleeWindup = 0) {
-    if (this.last && dt > 0) {
-      const v = Math.hypot(pos[0] - this.last[0], pos[2] - this.last[2]) / dt;
-      this.speed += (Math.min(v, 12) - this.speed) * Math.min(1, dt * 10);
-      this.vy += ((pos[1] - this.last[1]) / dt - this.vy) * Math.min(1, dt * 10);
-    }
-    this.last = [pos[0], pos[1], pos[2]];
-    this.anim.update(dt, this.speed, this.vy, crouched);
+  animate(pos: Vec3, dt: number, crouched = false, meleeWindup = 0, grounded = true, yaw = 0) {
+    const motion = this.motion.sample(pos, yaw, dt);
+    if (motion.discontinuity) { this.meleeHit = 0; this.anim.reset(crouched, grounded); }
+    dt = motionDt(dt);
+    this.anim.update(dt, motion.speed, motion.vy, crouched, grounded, motion.forward, motion.strafe);
     this.plate.position.y = crouched ? 1.7 : 2.25;
     if (this.gun && WEAPONS[this.weapon].kind === 'melee') {
       const windup = meleeWindupProgress(meleeWindup, WEAPONS[this.weapon].windup ?? 1);
