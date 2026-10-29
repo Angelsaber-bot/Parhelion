@@ -89,16 +89,19 @@ P=dict(timber=mat('#9b623a'), deck=mat('#c29662'), plank=mat('#ad7c4d'), grain=m
 c=ShipChapter(ROOT,'blackflag','BLACKFLAG 黑帆战舰',64,34,'seabreeze',P); D=c.detail
 c.sails=Mesh();c.gallery=Mesh()
 # A broad 64 x 34m game-scaled deck: no obligatory gangplanks or jump gaps.
-c.box('main_deck',[0,-.45,0],[64,.9,34],'deck','floor')
+# 2026-10-29 max: "下层稍微高一点，别太卡头". The gun deck floor sits G below the old
+# deck line, so the headroom under the upper deck (underside 2.1 m) is 2.8 m.
+G=-.7
+c.box('main_deck',[0,G-.45,0],[64,.9,34],'deck','floor')
 # 2026-10-29: the side walls rise to 4.2 m so they enclose both the gun deck and the
 # upper deck (1.8 m above it), like the raised decks' bulwarks.
 for z in (-17,17): c.box('bulwark_'+str(z),[0,2.1,z],[64,4.2,.5],'tar','structure')
 # Raised decks need their own continuous 1.8m side protection.
 for x in (-27,27):
     for z in (-17,17): c.box(f'raised_bulwark_{x}_{z}',[x,3,z],[10,2.4,.5],'tar','structure')
-for x in (-32,32): c.box('end_bulwark_'+str(x),[x,2,0],[.5,4,34],'tar','structure')
+for x in (-32,32): c.box('end_bulwark_'+str(x),[x,(G+4)/2,0],[.5,4-G,34],'tar','structure')
 for sign,tag,team in [(-1,'bow','west'),(1,'stern','east')]:
-    c.box(tag+'_deck',[sign*27,1.2,0],[10,2.4,33.5],'timber','floor')
+    c.box(tag+'_deck',[sign*27,(G+2.4)/2,0],[10,2.4-G,33.5],'timber','floor')
     c.box(tag+'_screen',[sign*24,4.25,0],[.7,3.7,10],'tar','structure')
     for i,z in enumerate((-2,2)):
         c.anchor(f'spawn_{team}_{i}','spawn',[sign*28,2.4,z],yaw=-sign*1.5708,team=team)
@@ -127,16 +130,19 @@ for x,z in [(3,-14.35),(-3,14.35)]:
 # from above). BLACKFLAG is now a real two-storey ship: a solid upper deck at the
 # quarterdeck height (2.4 m) covers the whole waist, and the gun deck below is
 # enclosed, reached only by two stairwells (point-symmetric) and from nowhere else.
-UPPER=[(-22,-13,-16.75,16.75),(-13,-7,-16.75,2.6),(-13,-7,5,16.75),(-7,7,-16.75,16.75),(7,13,-16.75,-5),(7,13,-2.6,16.75),(13,22,-16.75,16.75)]
+# Four stairwells (two per side, point-symmetric) cut the deck at x = +-(7..13).
+UPPER=[(-22,-13,-16.75,16.75),(-13,-7,-16.75,-12),(-13,-7,-9.6,2.6),(-13,-7,5,16.75),(-7,7,-16.75,16.75),
+       (7,13,-16.75,-5),(7,13,-2.6,9.6),(7,13,12,16.75),(13,22,-16.75,16.75)]
 for k,(x0,x1,z0,z1) in enumerate(UPPER):
     c.box(f'upper_deck_{k}',[(x0+x1)/2,2.25,(z0+z1)/2],[x1-x0,.3,z1-z0],'deck','floor')
 for sg in (-1,1):
-    # Stair down: high end at the upper deck edge, low end on the gun deck.
-    c.ramp(f'stair_{sg}',[sg*-10,0,sg*3.8],[6,2.4,2.4],'x',sg,'deck')
-    # Coamings round each stairwell are waist-high cover on the upper deck.
-    for zz in (2.45,5.15):
-        c.box(f'stair_coaming_{sg}_{int(zz*100)}',[sg*-10,2.85,sg*zz],[6,.9,.3],'timber','cover')
-    c.box(f'stair_coaming_end_{sg}',[sg*-7.15,2.85,sg*3.8],[.3,.9,2.4],'timber','cover')
+    # Stairs down: high end at the upper deck edge, low end on the gun deck.
+    for tag,zc,(za,zb) in [('',3.8,(2.45,5.15)),('_far',-10.8,(-12.15,-9.45))]:
+        c.ramp(f'stair{tag}_{sg}',[sg*-10,G,sg*zc],[6,2.4-G,2.4],'x',sg,'deck')
+        # Coamings round each stairwell are waist-high cover on the upper deck.
+        for zz in (za,zb):
+            c.box(f'stair_coaming{tag}_{sg}_{int(abs(zz)*100)}',[sg*-10,2.85,sg*zz],[6,.9,.3],'timber','cover')
+        c.box(f'stair_coaming_end{tag}_{sg}',[sg*-7.15,2.85,sg*zc],[.3,.9,2.4],'timber','cover')
     # Upper-deck cover: the ship's boat on its chocks, deck cargo and water casks.
     c.box(f'ship_boat_{sg}',[0,2.95,sg*-9],[6,1.1,2.2],'woodLight','cover')
     c.box(f'deck_cargo_{sg}',[sg*-16,3.1,sg*-8],[2.6,1.4,1.8],'timber','cover')
@@ -150,11 +156,26 @@ for name,pos,h in [('fore',[-8.5,0,-3.6],1.8),('aft',[9,0,4.5],1.9),('port_batte
     c.anchor('cover_added_'+name,'cover',pos,height=h)
 for n,p in [('hatch_n',[0,0,-4]),('hatch_s',[0,0,4])]: c.anchor('cover_'+n,'cover',p,height=1.4)
 c.anchor('objective_deck','objective',[4.8,0,0],radius=2)
-c.route('upper_port',[[-28,2.4,-2],[-28,2.4,-10],[-23,2.4,-12],[21,2.4,-12],[28,2.4,-10],[28,2.4,-2]])
-c.route('upper_starboard',[[-28,2.4,2],[-28,2.4,10],[-23,2.4,12],[21,2.4,12],[28,2.4,10],[28,2.4,2]])
+c.route('upper_port',[[-28,2.4,-2],[-28,2.4,-10],[-23,2.4,-13.5],[21,2.4,-13.5],[28,2.4,-10],[28,2.4,-2]])
+c.route('upper_starboard',[[-28,2.4,2],[-28,2.4,10],[-23,2.4,13.5],[21,2.4,13.5],[28,2.4,10],[28,2.4,2]])
 c.route('down_and_through',[[-20,2.4,3.8],[-13.5,2.4,3.8],[-7.6,0,3.8],[-5,0,8],[0,0,10],[5.5,0,6],[5.5,0,-3.8],[7.6,0,-3.8],[13.5,2.4,-3.8],[20,2.4,-3.8]])
-c.route('deck_breach',[[-15,0,-10],[-7,0,-8],[-5,0,-4],[5,0,-4],[6,0,5],[15,0,8],[15,0,10]])
-c.route('cross_deck',[[-15,0,-10],[-15,0,10],[-5,0,10],[-5,0,4],[5,0,4],[5,0,10],[15,0,10],[15,0,-10]])
+c.route('far_stairs',[[-20,2.4,-10.8],[-13.5,2.4,-10.8],[-7.6,0,-10.8],[-5,0,-8],[5,0,8],[7.6,0,10.8],[13.5,2.4,10.8],[20,2.4,10.8]])
+c.route('deck_breach',[[-15,0,-8],[-7,0,-7.5],[-5,0,-4],[5,0,-4],[6,0,5],[15,0,8],[15,0,10]])
+c.route('cross_deck',[[-15,0,-10],[-15,0,10],[-5,0,10],[-5,0,4],[5,0,4],[5,0,8],[15,0,8],[15,0,-8]])
+# Lower everything that stood on the old deck line inside the waist. Pieces that pass
+# up through the upper deck (masts, side walls) are lengthened instead of moved.
+for o in c.objects:
+    if o['type']!='box' or abs(o['position'][0])>=22: continue
+    y,h=o['position'][1],o['size'][1]
+    if abs(y-h/2)>.01: continue
+    if y+h/2>2.4: o['position'][1]=round((G+y+h/2)/2,4); o['size'][1]=round(y+h/2-G,4)
+    else: o['position'][1]=round(y+G,4)
+for a in c.anchors:
+    if a['position'][1]==0: a['position'][1]=G
+for r in c.routes:
+    for pt in r['points']:
+        if pt[1]==0: pt[1]=G
+c.data['bounds']['min'][1]=G
 # Shared texture exporter embeds original paintings and per-face UVs; no URI fetches.
 tex=painted_surfaces()
 for name in ('timber','deck','plank','grain','tar','woodLight','woodDark'):
@@ -743,6 +764,14 @@ for x,z,side in [(0,0,1),(0,0,-1),(-13,-2,1),(-13,-2,-1)]:
 # 2026-10-29 two-deck dressing: upper rail cap and stanchions, ceiling beams over the
 # gun deck (above head height) and small lamps hung from them.
 D=c.detail
+def gundeck_y(y):
+    # Below 1.3 m the old waist dressing drops rigidly with the floor; 1.3-2.1 m stretches
+    # up to the deck underside so nothing detaches from the ceiling.
+    return y+G if y<=1.3 else 1.3+G+(y-1.3)*(2.1-1.3-G)/.8 if y<=2.1 else y
+for P,_,_ in D.prims.values():
+    for j in range(0,len(P),3):
+        if abs(P[j])<22.05 and abs(P[j+2])<16.8 and -.05<=P[j+1]<=2.1: P[j+1]=gundeck_y(P[j+1])
+LANTERNS[:]=[(x,gundeck_y(y) if abs(x)<22.05 and abs(z)<16.8 and -.05<=y<=2.1 else y,z,s) for x,y,z,s in LANTERNS]
 for zs in (-1,1):
     D.cbox('woodLight',[0,4.25,zs*17],[44,.1,.66])
     for x in range(-21,22,3):
@@ -750,9 +779,9 @@ for zs in (-1,1):
 for x in range(-21,22,3):
     if -13<=x<=-7 or 7<=x<=13: continue
     D.cbox('woodDark',[x,2.03,0],[.22,.14,33.4])
-for x,z in [(-16,-6),(-16,6),(-4,-12),(-4,12),(4,-12),(4,12),(16,-6),(16,6),(-10,-10),(10,10)]:
-    lantern(D,x,1.77,z,.34)
+for x,z in [(-16,-6),(-16,6),(-4,-12),(-4,12),(4,-12),(4,12),(16,-6),(16,6),(-10,-7.4),(10,7.4)]:
+    lantern(D,x,1.66,z,.34)
 c.data['presentation'].update(
     glows=[[round(x,3),round(y,3),round(z,3),round(1.7*s,2),'#ffd08a',.3] for x,y,z,s in LANTERNS],
-    pools=[[round(x,3),2.4 if (abs(x)>22 or y>2.5) else 1.43 if abs(x)<3.5 and abs(z)<3 else 0,round(z,3),2.2,'#ffb36a',.35] for x,y,z,s in LANTERNS if y<6])
+    pools=[[round(x,3),2.4 if (abs(x)>22 or y>2.5) else 1.43+G if abs(x)<3.5 and abs(z)<3 else G,round(z,3),2.2,'#ffb36a',.35] for x,y,z,s in LANTERNS if y<6])
 c.save(render_object=crafted)

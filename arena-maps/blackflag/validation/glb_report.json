@@ -1,12 +1,12 @@
 {
   "mapId": "blackflag",
   "version": "1.0.0",
-  "checks": 237,
+  "checks": 267,
   "failed": [],
   "visualNodes": 5,
-  "visualTriangles": 51361,
-  "visualBytes": 3567160,
+  "visualTriangles": 52189,
+  "visualBytes": 3633628,
   "embeddedTextureBytes": 100693,
-  "collisionNodes": 50,
-  "collisionBytes": 70140
+  "collisionNodes": 60,
+  "collisionBytes": 84180
 }

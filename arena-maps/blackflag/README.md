@@ -158,3 +158,10 @@ is shaded. New anchors and routes: `upper_port`, `upper_starboard`, `down_and_th
 casts shadow and includes the upper deck, and `BATCH_floor`, which is shadowless. The overview drops from 182 to 48 draw
 calls with identical pixels. Each object's art is still asserted inside its box before merging.
 The primitive cap is now 60.
+
+2026-10-29 (later): max asked for more ways down and more headroom below. The gun deck floor
+now sits at `G = -0.7`, giving 2.8 m clear under the upper deck. The bounds min y follows it.
+Waist pieces that stood on the old deck line drop by G; masts and side walls lengthen instead.
+Waist dressing is remapped with `gundeck_y`: it moves rigidly below 1.3 m and stretches up to
+the deck underside. There are now four stairwells, with new `stair_far_±1` at z = ∓10.8, and a
+new `far_stairs` route.
