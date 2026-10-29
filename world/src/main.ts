@@ -849,10 +849,11 @@ function interactSettlementNpc() {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
-  if (done.has(m.id)) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
-  const missing = (m.requires ?? []).filter((r) => !done.has(r));
+  const bossCore = BOSSES.some((b) => b.core === m.id);
+  if (done.has(m.id) && !bossCore) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
+  const missing = done.has(m.id) && bossCore ? [] : (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(bilingual(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`, `${localizeText(m.label)}: requires ${missing.map((r) => localizeText(markers.get(r)?.label ?? '尚未完成的任务')).join(', ')}`));
-  if (BOSSES.some((b) => b.core === m.id)) {
+  if (bossCore) {
     if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
   }
@@ -1031,7 +1032,8 @@ function frame(now: number) {
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   $('prompt').textContent = npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
-    !gameplayActive() ? '' : !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${localizeText(it.label)}` :
+    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || BOSSES.some(b => b.core === it.id)) ?
+      `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : localizeText(it.label)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;

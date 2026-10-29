@@ -5,12 +5,15 @@ import { bilingual } from '../../shared-client/i18n';
 import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, type Enemy, type Point3 } from './combat';
 import './combat.css';
 import { makeCombatTerrain } from './combatTerrain';
+import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
+import { MINIBOSSES, makeMinibossSpawns } from './minibosses';
+import { enemyAttackRadius } from './combat';
 
 export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { root: THREE.Group; body: THREE.Group; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; flash: THREE.Mesh; lastMode?: Enemy['mode']; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 type Line = [string, string];
@@ -64,11 +67,13 @@ export class WorldCombat {
   readonly state: WorldCombatState;
   private readonly bossDefs: typeof BOSSES;
   readonly geometry;
+  private readonly enemyAssets = new EnemyVisuals();
   private readonly visuals = new Map<string, EnemyVisual>();
   private readonly shots: ShotVisual[] = [];
   private readonly sparks: Spark[] = [];
   private readonly shared: THREE.BufferGeometry[] = [];
   private readonly materials: THREE.Material[] = [];
+  private readonly textures: THREE.Texture[] = [];
   private readonly hud = document.createElement('div');
   private readonly bossHud = document.createElement('div');
   private readonly impact = document.createElement('div');
@@ -95,7 +100,9 @@ export class WorldCombat {
       const marker = options.layout.markers.find(m => m.id === b.id)!;
       return { id: b.id, kind: 'king' as const, p: { x: marker.p[0], y: marker.p[1] + 0.05, z: marker.p[2] }, requires: b.requires, cleared: options.done.has(b.core) };
     });
-    this.state = new WorldCombatState(makeWildernessSpawns(options.layout.world.seed ^ 537, this.geometry.safeSpawn), bosses);
+    const wilderness = makeWildernessSpawns(options.layout.world.seed ^ 537, this.geometry.safeSpawn);
+    const minis = makeMinibossSpawns(this.geometry.safeSpawn, wilderness);
+    this.state = new WorldCombatState([...minis, ...wilderness], bosses);
     for (const enemy of this.state.enemies) this.visuals.set(enemy.id, this.makeEnemy(enemy));
     options.scene.add(this.effectGroup);
     this.hud.id = 'world-vitals'; this.hud.className = 'combat-hud';
@@ -108,6 +115,7 @@ export class WorldCombat {
     document.body.append(this.hud, this.bossHud, this.impact, this.hurt, this.defeat);
     this.renderHud();
   }
+  get visualDiagnostics() { return { ...this.enemyAssets.diagnostics, budget: ENEMY_VISUAL_BUDGET }; }
   get defeated() { return this.state.defeated; }
   get bossStarted() { return this.state.bossStarted; }
   /** Start the boss guarding this core (default: the first era's sun core). */
@@ -122,7 +130,7 @@ export class WorldCombat {
     this.shots.length = 0;
     for (const spark of this.sparks) spark.mesh.removeFromParent();
     this.sparks.length = 0;
-    for (const v of this.visuals.values()) { v.root.visible = false; v.tell.visible = false; }
+    for (const [id, v] of this.visuals) { this.enemyAssets.release(id); v.lastMode = undefined; v.root.visible = false; v.tell.visible = false; }
     this.impact.textContent = ''; this.hurt.style.opacity = '0';
     document.getElementById('crosshair')?.classList.remove('hit');
     this.renderHud();
@@ -175,24 +183,37 @@ export class WorldCombat {
     this.allyCooldown = Math.max(0, this.allyCooldown - (active ? dt : 0));
     while (this.acc >= 0.05) { this.state.step(0.05, player, active, this.geometry.terrain); this.acc -= 0.05; }
     this.events();
+    const detailed = new Set(this.state.enemies.filter(e => e.active && e.mode !== 'dead' && this.visuals.get(e.id)?.model)
+      .sort((a, b) => distanceXZ(a.p, player) - distanceXZ(b.p, player)).slice(0, ENEMY_VISUAL_BUDGET).map(e => e.id));
     for (const e of this.state.enemies) {
       const v = this.visuals.get(e.id)!;
-      v.root.visible = e.active && e.mode !== 'dead';
+      const distance = distanceXZ(e.p, player);
+      v.root.visible = e.active && e.mode !== 'dead' && (e.kind === 'king' || distance <= COMBAT.activeRange);
+      const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
-      if (!v.root.visible) { v.tell.visible = false; continue; }
+      if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
+      if (e.attack === 'shot' && e.mode === 'recover' && v.lastMode === 'windup') {
+        const direction = new THREE.Vector3(e.target.x - e.p.x, 0, e.target.z - e.p.z).normalize();
+        const muzzle = new THREE.Vector3(e.p.x, e.p.y + 1.2, e.p.z).addScaledVector(direction, 0.55);
+        this.shot(muzzle, new THREE.Vector3(e.target.x, e.target.y + 1, e.target.z), false);
+      }
+      v.lastMode = e.mode;
+      v.updateLabel?.();
       const moving = e.mode === 'chase';
-      v.body.position.y = 0.06 * Math.sin(this.time * (moving ? 10 : 3));
-      v.body.rotation.z = moving ? Math.sin(this.time * 9) * 0.04 : 0;
-      v.body.rotation.y = Math.atan2(player.x - e.p.x, player.z - e.p.z);
+      v.body.position.y = skinned ? 0 : 0.06 * Math.sin(this.time * (moving ? 10 : 3));
+      v.body.rotation.z = !skinned && moving ? Math.sin(this.time * 9) * 0.04 : 0;
+      const facing = e.attack === 'shot' && (e.mode === 'windup' || e.mode === 'recover') ? e.target : player;
+      v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
+      v.flash.visible = skinned && e.hitTime > 0;
       v.material.emissiveIntensity = e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;
       v.bar.visible = e.hp < e.maxHp || e.mode !== 'idle';
       if (camera) v.bar.quaternion.copy(camera.quaternion);
       const ratio = e.hp / e.maxHp; v.fill.scale.x = ratio; v.fill.position.x = -(1 - ratio) * (e.kind === 'king' ? 1.5 : 0.8) / 2;
       v.tell.visible = e.mode === 'windup';
       if (v.tell.visible) {
-        const center = e.attack === 'burst' ? e.target : e.p;
-        const radius = e.kind === 'king' ? e.attack === 'burst' ? e.phase === 2 ? 6.2 : 4.8 : 5.5 : 2.4;
+        const center = e.attack !== 'sweep' ? e.target : e.p;
+        const radius = enemyAttackRadius(e);
         v.tell.position.set(center.x, center.y + 0.13, center.z); v.tell.scale.setScalar(radius);
         (v.tell.material as THREE.MeshBasicMaterial).opacity = 0.3 + 0.2 * (0.5 + 0.5 * Math.sin(this.time * 18));
       }
@@ -222,9 +243,9 @@ export class WorldCombat {
       else if (event.type === 'bossReset') this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
       else if (event.type === 'phase') this.options.toast(bilingual(...bossText(this.state.boss.id).phase));
       else if (event.type === 'victory') {
-        const def = this.bossDefs.find(b => b.id === this.state.boss.id)!;
-        this.options.done.add(def.reward); this.options.onVictory(def.core);
-        this.options.toast(bilingual(...bossText(def.id).victory));
+        const def = this.bossDefs.find(b => b.id === event.id)!;
+        if (event.firstClear) { this.options.done.add(def.reward); this.options.onVictory(def.core); }
+        this.options.toast(event.firstClear ? bilingual(...bossText(def.id).victory) : bilingual('再次挑战成功 · 纪念奖励已领取', 'Rematch won · Keepsake already earned'));
       } else if (event.type === 'revive') this.options.onPlayerDefeated();
     }
   }
@@ -244,21 +265,41 @@ export class WorldCombat {
   }
   private makeEnemy(e: Enemy): EnemyVisual {
     const king = e.kind === 'king', crystal = e.kind === 'crystal';
-    const root = new THREE.Group(), body = new THREE.Group(); root.add(body); root.name = e.id;
-    const [kBody, kGlow, kLight] = bossText(e.id).colors;
+    const root = new THREE.Group(), body = new THREE.Group(), fallback = new THREE.Group(); root.add(body); body.add(fallback); root.name = e.id;
+    const model = enemyModel(e);
+    const [kBody, kGlow, kLight] = (e.miniboss ? MINIBOSSES.find(m => m.id === e.miniboss)?.colors : undefined) ?? bossText(e.id).colors;
     const material = new THREE.MeshStandardMaterial({ color: king ? kBody : crystal ? '#49859b' : '#52637d', metalness: 0.35, roughness: 0.5, emissive: king ? kGlow : crystal ? '#63e4ed' : '#ac96fb', emissiveIntensity: 0.12 });
     const glow = new THREE.MeshBasicMaterial({ color: king ? kLight : crystal ? '#9dffff' : '#b9a6ff', toneMapped: false });
+    if (model) { material.color.set(model === 'musketeer' || model === 'officer' ? '#3b594a' : model === 'samurai' || model === 'ashigaru' ? '#5b3434' : model === 'sunward_guard' ? '#8a8171' : '#62544a'); material.emissive.set('#000000'); }
     this.materials.push(material, glow);
+    const flashGeo = new THREE.IcosahedronGeometry(0.6, 1), flashMat = new THREE.MeshBasicMaterial({ color: '#fff0c6', transparent: true, opacity: 0.4, wireframe: true, depthWrite: false });
+    this.shared.push(flashGeo); this.materials.push(flashMat);
+    const flash = new THREE.Mesh(flashGeo, flashMat); flash.position.y = 1.05; flash.visible = false; body.add(flash);
     const mesh = (g: THREE.BufferGeometry, m: THREE.Material, p: [number, number, number], scale?: [number, number, number]) => {
       this.shared.push(g); const o = new THREE.Mesh(g, m); o.position.set(...p); if (scale) o.scale.set(...scale);
-      o.castShadow = true; o.receiveShadow = true; body.add(o); return o;
+      o.castShadow = true; o.receiveShadow = true; fallback.add(o); return o;
     };
+    if (model) {
+      // Low-cost regional silhouettes also serve as network-failure fallbacks. Never purple blobs.
+      mesh(new THREE.BoxGeometry(0.5, 0.68, 0.3), material, [0, 1.13, 0]);
+      mesh(new THREE.SphereGeometry(0.19, 6, 4), material, [0, 1.68, 0]);
+      for (const side of [-1, 1]) {
+        mesh(new THREE.BoxGeometry(0.17, 0.8, 0.21), material, [side * 0.15, 0.4, 0]);
+        mesh(new THREE.BoxGeometry(0.14, 0.65, 0.16), material, [side * 0.33, 1.15, 0]);
+      }
+      if (model === 'ashigaru' || model === 'samurai') mesh(new THREE.ConeGeometry(0.34, 0.2, 8), material, [0, 1.9, 0]);
+      if (model === 'musketeer' || model === 'officer') mesh(new THREE.CylinderGeometry(0.2, 0.21, 0.3, 6), material, [0, 1.94, 0]);
+      if (model === 'sunward_guard') mesh(new THREE.BoxGeometry(0.45, 0.65, 0.08), material, [-0.4, 1.1, 0.2]);
+      const weaponSide = model === 'deck_raider' ? -1 : 1;
+      mesh(new THREE.BoxGeometry(0.055, model === 'ashigaru' ? 2.2 : 0.85, 0.055), material, [weaponSide * 0.42, 1.12, 0.15]);
+    } else {
     mesh(new THREE.IcosahedronGeometry(king ? 1.1 : 0.62, 1), material, [0, king ? 1.7 : 1.0, 0], [1, 1.2, 0.65]);
     mesh(new THREE.IcosahedronGeometry(king ? 0.48 : 0.28, 1), material, [0, king ? 3.0 : 1.7, 0]);
     mesh(new THREE.OctahedronGeometry(king ? 0.38 : 0.2), glow, [0, king ? 1.85 : 1.1, king ? 0.66 : 0.4]);
     for (const side of [-1, 1]) {
       mesh(new THREE.ConeGeometry(king ? 0.42 : 0.25, king ? 1.2 : 0.65, 5), material, [side * (king ? 1.0 : 0.58), king ? 1.7 : 0.95, 0]);
       mesh(new THREE.BoxGeometry(king ? 0.4 : 0.22, king ? 0.85 : 0.5, king ? 0.42 : 0.27), material, [side * (king ? 0.46 : 0.24), king ? 0.45 : 0.28, 0]);
+    }
     }
     let sword: THREE.Mesh | undefined;
     if (king) {
@@ -269,21 +310,48 @@ export class WorldCombat {
     const bar = new THREE.Group(); bar.position.y = king ? 4.1 : 2.25; root.add(bar);
     const width = king ? 1.5 : 0.8;
     const barGeo = new THREE.PlaneGeometry(width, 0.09), backMat = new THREE.MeshBasicMaterial({ color: '#171c29', depthTest: false });
-    const fillMat = new THREE.MeshBasicMaterial({ color: '#ffb26f', depthTest: false });
+    const fillMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffd36a' : '#ffb26f', depthTest: false });
     this.shared.push(barGeo); this.materials.push(backMat, fillMat);
     const back = new THREE.Mesh(barGeo, backMat), fill = new THREE.Mesh(barGeo, fillMat); fill.position.z = 0.005; bar.add(back, fill);
-    const tellGeo = new THREE.CircleGeometry(1, 40), tellMat = new THREE.MeshBasicMaterial({ color: '#ff4939', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
+    const tellGeo = new THREE.CircleGeometry(1, 40), tellMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffb82f' : '#ff4939', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
     this.shared.push(tellGeo); this.materials.push(tellMat);
     const tell = new THREE.Mesh(tellGeo, tellMat); tell.rotation.x = -Math.PI / 2; tell.visible = false;
     this.options.scene.add(root, tell); root.visible = false;
-    return { root, body, sword, bar, fill, tell, material };
+    let updateLabel: (() => void) | undefined;
+    if (e.miniboss) {
+      const emblemGeo = new THREE.OctahedronGeometry(0.12), emblemMat = new THREE.MeshBasicMaterial({ color: '#ffd36a', toneMapped: false });
+      this.shared.push(emblemGeo); this.materials.push(emblemMat);
+      const emblem = new THREE.Mesh(emblemGeo, emblemMat); emblem.position.y = 2.55; root.add(emblem);
+      const name = MINIBOSSES.find(m => m.id === e.miniboss)?.name;
+      root.userData.minibossName = name;
+      if (name) {
+        const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          let labelText = '';
+          updateLabel = () => {
+          const next = bilingual(...name); if (next === labelText) return; labelText = next;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.font = 'bold 28px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.lineWidth = 5; ctx.strokeStyle = '#16151c'; ctx.strokeText(bilingual(...name), 256, 32);
+          ctx.fillStyle = '#ffdf8b'; ctx.fillText(next, 256, 32);
+          texture.needsUpdate = true;
+          };
+          const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.push(texture); updateLabel();
+          const labelMat = new THREE.SpriteMaterial({ map: texture, depthWrite: false }); this.materials.push(labelMat);
+          const label = new THREE.Sprite(labelMat); label.position.y = 2.9; label.scale.set(3, 0.375, 1); root.add(label);
+        }
+      }
+    }
+    return { root, body, fallback, model, flash, updateLabel, sword, bar, fill, tell, material };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
     if (this.disposed) return; this.disposed = true;
     for (const v of this.visuals.values()) { v.root.removeFromParent(); v.tell.removeFromParent(); }
     for (const s of this.shots) this.removeShot(s);
-    this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
+    this.enemyAssets.dispose();
+    this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.defeat]) el.remove();
   }

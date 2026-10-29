@@ -1,0 +1,9 @@
+# Regional World enemies
+
+Standalone asset pack dated 2026-10-29, integrated for World only. Six original GLBs and six LOD1 GLBs; source authoring/delivery manifest lives in the separately delivered enemy-model pack. Native metres, +Y up, +Z forward, feet at ground. Do not apply the player's Y-pi facing correction or static region quantization to these skins.
+
+Runtime in `src/enemyVisuals.ts` lazily loads each URL once per world (including failed requests), clones skeletons while sharing geometry/materials/textures, owns cached resource disposal, and releases independent skeletons/mixers. Closest 24 visible regional enemies receive skinned models; farther/failed/loading instances keep inexpensive regional human silhouettes, never invisible damage sources. LOD1 switches beyond 23m, switches back below 18m, shadows only within 18m. Active range remains the simulation's 82m. Native heights retained, including tall spear/hat; no change to hit spheres. Chapter bosses and valley enemies retain original silhouettes.
+
+Animation mapping: Idle; Walk (not airborne Run); Attack_Windup during simulation windup and Attack during recovery. Clips are demonstration choreography time-fitted to simulation states, NOT contact-driven gameplay damage. Winter musketeers map Aim and FirePreview to actual locked-target ranged attacks; their target/tell/tracer are simulation-backed. Pirate blade is held on the left. Missing clips safely fall back to Idle; unsupported Death isn't played because the simulation immediately hides dead enemies. Do not claim these are polished final combat animations.
+
+Minibosses stay human scale, with gold tells, health bars, overhead diamond and language-responsive names. Hit feedback uses a per-instance short wireframe flash without mutating shared clothing materials.

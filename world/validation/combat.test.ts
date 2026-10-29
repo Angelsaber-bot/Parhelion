@@ -52,7 +52,7 @@ test('boss is gated, damageable only during its encounter, and transitions once 
   s.hitEnemy('boss', 1); assert.equal(s.drainEvents().filter(e => e.type === 'phase').length, 0);
   s.hitEnemy('boss', 10000); assert.equal(s.bossCleared, true); assert.equal(s.bossStarted, false);
   assert.equal(s.drainEvents().filter(e => e.type === 'victory').length, 1);
-  assert.equal(s.beginBoss(ready), false, 'victory cannot be farmed');
+  assert.equal(s.beginBoss(ready), true, 'cleared bosses can be challenged again');
 });
 
 test('boss tells lock impact location, allow dodging, and cannot damage through a wall', () => {
@@ -81,7 +81,7 @@ test('player defeat ends encounter, recovery emits one respawn and keeps cleared
   const events = s.drainEvents(); assert.equal(events.filter(e => e.type === 'death').length, 1);
   assert.equal(events.filter(e => e.type === 'revive').length, 1); assert.equal(s.hp, 100);
   const old = new WorldCombatState([], boss, true);
-  assert.equal(old.bossCleared, true); assert.equal(old.beginBoss(ready), false);
+  assert.equal(old.bossCleared, true); assert.equal(old.beginBoss(ready), true);
   old.resetAll(false); assert.equal(old.beginBoss(ready), true);
 });
 

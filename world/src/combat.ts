@@ -1,18 +1,21 @@
+import { minibossProfile } from './minibosses';
+import { regionAt } from './regions';
 /** Small, local World encounter simulation. No networking/Arena rules are changed. */
 export interface Point3 { x: number; y: number; z: number }
 export type EnemyKind = 'shade' | 'crystal' | 'king';
 export type EnemyMode = 'idle' | 'chase' | 'windup' | 'recover' | 'dead';
-export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3 }
+export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string }
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
-  active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst'; target: Point3;
+  active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot'; target: Point3;
   attackCount: number; hitTime: number;
 }
 export type CombatEvent =
   | { type: 'hit'; id: string; damage: number }
   | { type: 'kill'; id: string }
   | { type: 'hurt'; damage: number }
-  | { type: 'bossStart' | 'bossReset' | 'phase' | 'victory' | 'death' | 'revive' };
+  | { type: 'victory'; id: string; firstClear: boolean }
+  | { type: 'bossStart' | 'bossReset' | 'phase' | 'death' | 'revive' };
 export interface CombatTerrain {
   /** Grounded position or null when water, steep, blocked or outside the arena. */
   walk(from: Point3, x: number, z: number): Point3 | null;
@@ -115,9 +118,29 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
 }
 
 function makeEnemy(s: SpawnPoint): Enemy {
-  const maxHp = s.kind === 'king' ? COMBAT.bossHp : s.kind === 'crystal' ? 88 : 66;
+  const maxHp = s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
     active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, hitTime: 0 };
+}
+
+/** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
+export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'>): boolean {
+  if (e.kind === 'king' || e.miniboss || regionAt(e.home.x, e.home.z).id !== 'winter') return false;
+  return [...e.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 0) % 3 !== 0;
+}
+/** Shared by simulation and renderer: telegraphs must show the actual damage footprint. */
+export function enemyAttackRadius(e: Enemy): number {
+  if (e.attack === 'shot') return 1.4;
+  if (e.kind === 'king') return e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5;
+  return minibossProfile(e)?.radius ?? 2.4;
+}
+
+/** Timings are shared with animation playback; each slash in a pair has its own full tell. */
+export function enemyAttackTiming(e: Enemy): { windup: number; recovery: number } {
+  if (e.kind === 'king') return { windup: e.phase === 2 ? 1 : 1.4, recovery: e.phase === 2 ? .65 : 1 };
+  const elite = minibossProfile(e);
+  if (elite) return { windup: elite.windup, recovery: elite.paired && e.attackCount % 2 === 1 ? .55 : elite.recovery };
+  return e.attack === 'shot' ? { windup: 1.2, recovery: 2 } : { windup: .65, recovery: 1 };
 }
 
 export class WorldCombatState {
@@ -151,12 +174,13 @@ export class WorldCombatState {
   /** Start a boss fight (the first boss when no id is given) once its requirements are done. */
   beginBoss(done: ReadonlySet<string>, id?: string) {
     const i = id === undefined ? 0 : this.bosses.findIndex(b => b.id === id);
-    if (i < 0 || this.bossStarted) return false;
+    if (i < 0 || i >= this.bosses.length || this.bossStarted || this.defeated) return false;
+    if (!this.cleared[i] && !this.requires[i].every(r => done.has(r))) return false;
     this.current = i;
-    if (this.bossCleared || this.defeated || !this.requires[i].every(r => done.has(r))) return false;
     this.resetEnemy(this.boss);
     this.boss.active = true; this.boss.mode = 'chase'; this.boss.timer = 1.4;
     this.bossStarted = true; this.hp = COMBAT.playerHp; this.quietFor = 0;
+    this.shotCooldown = 0; this.hurtCooldown = 0;
     this.events.push({ type: 'bossStart' });
     return true;
   }
@@ -193,9 +217,13 @@ export class WorldCombatState {
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt });
     if (e.hp <= 0) {
-      e.mode = 'dead'; e.timer = COMBAT.respawn; e.active = false;
+      e.mode = 'dead'; e.timer = e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       this.events.push({ type: 'kill', id });
-      if (e === this.boss) { this.bossStarted = false; this.cleared[this.current] = true; this.events.push({ type: 'victory' }); }
+      if (e === this.boss) {
+        const firstClear = !this.cleared[this.current];
+        this.bossStarted = false; this.cleared[this.current] = true;
+        this.events.push({ type: 'victory', id: e.id, firstClear });
+      }
     } else {
       if (e.mode === 'idle') e.mode = 'chase';
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
@@ -269,23 +297,30 @@ export class WorldCombatState {
       e.timer -= dt;
       if (e.mode === 'windup') {
         if (e.timer <= 0) {
-          const radius = e === this.boss ? (e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5) : 2.4;
-          const center = e.attack === 'burst' ? e.target : e.p;
-          if (distanceXZ(center, player) < radius && Math.abs(player.y - center.y) < 2.6 && sees) this.hurt(e === this.boss ? e.phase === 2 ? 32 : 25 : 12);
-          e.mode = 'recover'; e.timer = e === this.boss ? e.phase === 2 ? 0.65 : 1.0 : 1.0;
+          const radius = enemyAttackRadius(e);
+          const center = e.attack !== 'sweep' ? e.target : e.p;
+          if (distanceXZ(center, player) < radius && Math.abs(player.y - center.y) < 2.6 && sees) this.hurt(e === this.boss ? e.phase === 2 ? 32 : 25 : minibossProfile(e)?.damage ?? (e.attack === 'shot' ? 14 : 12));
+          e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery;
         }
         continue;
       }
       if (e.mode === 'recover') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = 0.25; } continue; }
-      const isBoss = e === this.boss;
-      if (sees && e.timer <= 0 && (dist < (isBoss ? 6 : 2) || isBoss && dist < 40 && e.attackCount % 2 === 0)) {
-        e.attack = isBoss && dist >= 6 ? 'burst' : 'sweep';
+      const isBoss = e === this.boss, elite = minibossProfile(e);
+      // Muskets aim at a locked point rather than tracking the player through a dodge.
+      if (isMusketeer(e) && sees && dist < 24 && e.timer <= 0) {
+        e.attack = 'shot'; e.target = clone(player); e.attackCount++;
+        e.mode = 'windup'; e.timer = 1.2;
+        continue;
+      }
+      const meleeRange = isBoss ? 6 : elite?.range ?? 2;
+      if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40 && e.attackCount % 2 === 0)) {
+        e.attack = elite?.attack ?? (isBoss && dist >= meleeRange ? 'burst' : 'sweep');
         e.target = clone(player); e.attackCount++;
-        e.mode = 'windup'; e.timer = isBoss ? e.phase === 2 ? 1.0 : 1.4 : 0.65;
+        e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
         continue;
       }
       if (dist > 1.7 && (sees || isBoss && heightOk)) {
-        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : 3.2;
+        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite?.speed ?? 3.2;
         const step = Math.min(speed * dt, dist - 1.7);
         const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x);
         // A few local alternatives let the king skirt ruined pillars; never phase through them.

@@ -6,6 +6,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/glb.ts';
 import { REGIONS, mergeLayouts, boundaryWalls } from '../src/regions.ts';
+import { makeMinibossSpawns, MINIBOSSES } from '../src/minibosses.ts';
 import { makeCombatTerrain } from '../src/combatTerrain.ts';
 import { makeWildernessSpawns, WorldCombatState, BOSS_REQUIREMENTS } from '../src/combat.ts';
 import type { Collider } from '../src/player.ts';
@@ -91,4 +92,14 @@ test('boss begins threatening from the actual Sun Core interaction approach with
   s.beginBoss(new Set(BOSS_REQUIREMENTS));
   for (let i = 0; i < 400 && s.boss.attackCount === 0; i++) s.step(0.05, player, true, query.terrain);
   assert.ok(s.boss.attackCount > 0, `boss must acquire the actual interact position; stopped at ${JSON.stringify(s.boss.p)}`);
+});
+
+test('actual map admits exactly one sparse elite per region using unchanged settlement and quest exclusions', () => {
+  const elites = makeMinibossSpawns(query.safeSpawn, spawns);
+  assert.equal(elites.length, MINIBOSSES.length, `missing elite: ${JSON.stringify(elites)}`);
+  for (const e of elites) {
+    assert.ok(query.safeSpawn(e.p.x, e.p.z));
+    assert.ok(spawns.every(s => Math.hypot(s.p.x - e.p.x, s.p.z - e.p.z) >= 16));
+    assert.ok(query.clear(e.p));
+  }
 });
