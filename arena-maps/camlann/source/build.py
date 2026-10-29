@@ -143,32 +143,34 @@ B('ruin_chimney',-13.6,-12.6,0,4.6,-10.3,-9.3,'stone','structure',art=dict(kind=
 wall('ruin_house_w','z',-9.8,-5,-18,-17.5,2.4,crown=(0,.6,1.1,.3))
 A('cover_ruin','cover',[-15.5,0,-9.2],height=1.2)
 
-# Cottage lanes: four houses with real doors and windows; two roofed, one half-roofed,
-# one fallen in. A door in every wall, so every house is a thoroughfare.
+# Cottage lanes: four whole houses, roofed, with real doors (2026-10-29: max saw the half roof,
+# low ruined wall tops and the fallen-in cottage as missing pieces). A door in every wall.
 wall('c1_n','x',-22,-17,6,6.5,2.4,holes=[(-20.2,-18.8,0,2)],material='plaster',lintel='timber')
 wall('c1_s','x',-22,-17,9.5,10,2.4,holes=[(-20.7,-19.3,0,2)],material='plaster',lintel='timber')
 wall('c1_w','z',6.5,9.5,-22,-21.5,2.4,holes=[(7.3,8.7,0,2)],material='plaster',lintel='timber')
 wall('c1_e','z',6.5,9.5,-17.5,-17,2.4,holes=[(7,8.4,0,2)],material='plaster',lintel='timber')
 B('c1_roof',-22.35,-16.65,2.4,4.3,5.65,10.35,'thatch','structure',art=dict(kind='roof'))
 B('c1_crate',-18.3,-17.5,0,.8,8.7,9.5,'timber',art=dict(kind='crate'))
-wall('c2_n','x',-14,-9,8,8.5,2.4,holes=[(-12.6,-11.2,0,2)],crown=(0,0,.6),material='plaster',lintel='timber')
-wall('c2_s','x',-14,-9,11.5,12,2.4,holes=[(-12,-10.6,0,2)],crown=(0,.9),material='plaster',lintel='timber')
+wall('c2_n','x',-14,-9,8,8.5,2.4,holes=[(-12.6,-11.2,0,2)],material='plaster',lintel='timber')
+wall('c2_s','x',-14,-9,11.5,12,2.4,holes=[(-12,-10.6,0,2)],material='plaster',lintel='timber')
 wall('c2_w','z',8.5,11.5,-14,-13.5,2.4,holes=[(9.3,10.7,0,2)],material='plaster',lintel='timber')
-wall('c2_e','z',8.5,11.5,-9.5,-9,2.4,holes=[(9.3,10.7,0,2)],crown=(.5,1.1),material='plaster',lintel='timber')
-B('c2_roof',-14.35,-11.5,2.4,3.8,7.65,12.35,'thatch','structure',art=dict(kind='halfroof'))
+wall('c2_e','z',8.5,11.5,-9.5,-9,2.4,holes=[(9.3,10.7,0,2)],material='plaster',lintel='timber')
+B('c2_roof',-14.35,-8.65,2.4,4.3,7.65,12.35,'thatch','structure',art=dict(kind='roof'))
 wall('c3_n','x',-21,-15,15,15.5,2.4,holes=[(-18.7,-17.3,0,2)],material='plaster',lintel='timber')
 wall('c3_s','x',-21,-15,19.5,20,2.4,holes=[(-19.7,-18.3,0,2)],material='plaster',lintel='timber')
 wall('c3_w','z',15.5,19.5,-21,-20.5,2.4,holes=[(16.7,18.1,0,2)],material='plaster',lintel='timber')
 wall('c3_e','z',15.5,19.5,-15.5,-15,2.4,holes=[(17.8,19.2,0,2)],material='plaster',lintel='timber')
 B('c3_roof',-21.35,-14.65,2.4,4.4,14.65,20.35,'thatch','structure',art=dict(kind='roof'))
 B('c3_crates',-16.4,-15.6,0,1.5,15.7,16.5,'timber',art=dict(kind='crate'))
-wall('c4_w','z',17,21,-11,-10.5,2.4,crown=(0,.5,1.1),material='plaster')
-wall('c4_s','x',-10.5,-7,20.5,21,1.8,crown=(0,.6,.9),material='plaster')
-B('c4_rubble',-9.6,-7.4,0,.7,17.6,18.8,'charred',art=dict(kind='rubble'))
+wall('c4_n','x',-11,-7,17,17.5,2.4,holes=[(-9.7,-8.3,0,2)],material='plaster',lintel='timber')
+wall('c4_s','x',-11,-7,20.5,21,2.4,holes=[(-9.7,-8.3,0,2)],material='plaster',lintel='timber')
+wall('c4_w','z',17.5,20.5,-11,-10.5,2.4,holes=[(18.3,19.7,0,2)],material='plaster',lintel='timber')
+wall('c4_e','z',17.5,20.5,-7.5,-7,2.4,holes=[(18.3,19.7,0,2)],material='plaster',lintel='timber')
+B('c4_roof',-11.35,-6.65,2.4,4.2,16.65,21.35,'thatch','structure',art=dict(kind='roof'))
 A('cover_c1','cover',[-19.5,0,8],height=2.4)
 A('cover_c2','cover',[-11.5,0,10],height=2.4)
 A('cover_c3','cover',[-18,0,17.5],height=2.4)
-A('cover_c4','cover',[-8.5,0,19.6],height=.7)
+A('cover_c4','cover',[-9,0,19],height=2.4)
 
 # Ruined chapel against the south bank: arched door, a breach on the west side,
 # an east door and a lancet window, two broken pilasters in the north corners and the altar.
@@ -610,11 +612,7 @@ for s in (1,-1):
     SMOKE.append([X(-13.1),4.8,Z(-9.8),.25,'#6e655d'])
     # Cottage interiors: lanterns under the roofs (intact houses are dark inside).
     hang_lantern(X(-19.5),1.95,Z(8)); hang_lantern(X(-18),1.95,Z(17.5)); hang_lantern(X(-12.8),1.95,Z(10))
-    # Collapsed cottage still smoulders.
-    EMBERS.append([X(-8.5),.75,Z(18.2),.7]); POOLS.append([X(-8.5),.7,Z(18.2),2.2,'#ff7a32',.6]); GLOWS.append([X(-8.5),.95,Z(18.2),1.6,'#ff7a32',.9])
-    SMOKE.append([X(-8.5),1.5,Z(18.2),.3,'#5f5650'])
-    for j in range(5):
-        beam(D,'charred',(X(-10.3),.22,Z(17.3+j*.7)),(X(-7.2+j*.2),.08,Z(17.1+j*.8)),.07,5)
+    hang_lantern(X(-9),1.95,Z(19))
     # Chapel: candles on the altar, a bell gable over the door, a fallen bell.
     for j in range(3):
         cx=-3+j*.5

@@ -81,7 +81,9 @@ export class NavGrid {
   nearest(x: number, y: number, z: number): NavNode | null {
     const ci = Math.round((x - this.x0) / CELL), ck = Math.round((z - this.z0) / CELL);
     let best: NavNode | null = null, bestD = Infinity;
-    for (let r = 0; r <= 6 && !best; r++) {
+    // Keep widening while a closer node could still exist: the first ring may hold only a roof
+    // above the player (a bot pressed against a cottage wall), which no path reaches.
+    for (let r = 0; r <= 6 && (r - 1) * CELL < bestD; r++) {
       for (let i = ci - r; i <= ci + r; i++) {
         for (let k = ck - r; k <= ck + r; k++) {
           for (const id of this.cells.get(i * this.nz + k) ?? []) {

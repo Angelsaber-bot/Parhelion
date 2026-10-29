@@ -1,12 +1,12 @@
 {
   "mapId": "camlann",
   "version": "1.0.0",
-  "checks": 1084,
+  "checks": 1130,
   "failed": [],
   "visualNodes": 20,
-  "visualTriangles": 84096,
-  "visualBytes": 8224728,
+  "visualTriangles": 85844,
+  "visualBytes": 8384780,
   "embeddedTextureBytes": 900219,
-  "collisionNodes": 299,
-  "collisionBytes": 422188
+  "collisionNodes": 315,
+  "collisionBytes": 444692
 }

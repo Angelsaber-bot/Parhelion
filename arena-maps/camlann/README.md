@@ -112,3 +112,11 @@ has a door in all four walls, so each house is a thoroughfare (the new `through_
 route walks c1 and c2). The chapel gets an east door. Its two pilasters move into the
 north corners: the west one used to stand right behind the west breach. `build.py` now
 asserts that 1.2 m on both sides of every door and breach is free of collision boxes.
+
+2026-10-29 (later): max said several houses were missing pieces. The half roof on c2, the
+crumbled wall tops of c2, and the fallen-in c4 read as broken models. All four cottages
+are now whole, with full-height plaster walls, full thatched roofs and a door in every wall.
+c4 is a 4 × 4 m house with a lantern. The stone hall, chapel and burned house stay ruins on
+purpose. Bot fix in `shared/nav.ts`: `nearest()` used to return a roof node when a bot stood
+against a cottage wall. That node had no path, and the bot stood still for the rest of the
+match. It now keeps searching outward while a closer node could still exist.
