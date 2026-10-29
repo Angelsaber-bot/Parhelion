@@ -1,12 +1,12 @@
 {
-  "checks": 449,
+  "checks": 515,
   "failed": [],
-  "physicsHash": "57bac675282476463d96219fbc3f0012b6ff23187fc33c6026492b2473d3a706",
-  "collisionSha256": "e4d3c7e9fd1c41fbcb30f932900cb4ced32261630b97c842adfe9c6b243a93cd",
-  "visualSha256": "567e05ffb9f226ee029c2ae3285e2ad203b14a51659be2f84c052a4617cd9af7",
-  "triangles": 50531,
-  "bytes": 3558864,
-  "authoredMaterialPrimitives": 142,
+  "physicsHash": "cbe959c843156c493687ac2c4787858ddaace0af3131414ca3dc99ef3e5fafee",
+  "collisionSha256": "87e9e0ab99adc4093a12f886c86518c46c49412bb2cc78ebc45873ae3d4e31ce",
+  "visualSha256": "fd5173f3fedb8a48a2e5f744cec49af79be046432ba926b9b222508db3461f96",
+  "triangles": 53251,
+  "bytes": 3781492,
+  "authoredMaterialPrimitives": 164,
   "embeddedLights": 0,
   "textures": [
     {

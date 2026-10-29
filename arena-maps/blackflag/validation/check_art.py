@@ -13,9 +13,9 @@ def check(ok,message):
 keys=['objects','anchors','routes','bounds','player']
 physics=hashlib.sha256(json.dumps({k:data[k] for k in keys},sort_keys=True,separators=(',',':')).encode()).hexdigest()
 # 2026-10-28 polish: approved layout + one slim stern_helm collider (the wheel used to be walk-through).
-check(physics=='57bac675282476463d96219fbc3f0012b6ff23187fc33c6026492b2473d3a706','Approved 2026-10-28 cover/perimeter layout (+stern helm collider, gun slot closed) is unchanged')
+check(physics=='cbe959c843156c493687ac2c4787858ddaace0af3131414ca3dc99ef3e5fafee','Approved 2026-10-28 layout (+helm collider, gun slot closed, gangways and crossings) is unchanged')
 collision=hashlib.sha256((ROOT/'assets/blackflag_collision.glb').read_bytes()).hexdigest()
-check(collision=='e4d3c7e9fd1c41fbcb30f932900cb4ced32261630b97c842adfe9c6b243a93cd','Cover/perimeter collision GLB matches approved layout')
+check(collision=='87e9e0ab99adc4093a12f886c86518c46c49412bb2cc78ebc45873ae3d4e31ce','Cover/perimeter collision GLB matches approved layout')
 textures=[]
 for im in g.get('images',[]):
     v=g['bufferViews'][im['bufferView']];raw=blob[v.get('byteOffset',0):v.get('byteOffset',0)+v['byteLength']]
@@ -36,7 +36,7 @@ for me in g['meshes']:
         if g['materials'][p['material']]['name']=='blackSail':check(min(vals)>=0 and max(vals)<=1,'heraldic sail uses dedicated unwrapped 0–1 UVs')
 triangles=sum(g['accessors'][p['indices']]['count']//3 for me in g['meshes'] for p in me['primitives'])
 primitives=sum(len(me['primitives']) for me in g['meshes'])
-check(triangles<60000,'under 60k triangles (2026-10-28: +mast lanterns)');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=160,'at most 160 material primitives: precise sail/gallery shadow groups and modeled period craft; no FPS claim')
+check(triangles<60000,'under 60k triangles (2026-10-28: +mast lanterns)');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=180,'at most 180 material primitives (2026-10-28: +gangways): precise sail/gallery shadow groups and modeled period craft; no FPS claim')
 check(not g.get('extensions',{}).get('KHR_lights_punctual'),'no embedded lights')
 shadow_nodes={n['name']:n.get('extras',{}) for n in g['nodes'] if n['name'].startswith('DETAIL_')}
 check(shadow_nodes.get('DETAIL_ship_sails',{}).get('castShadow') is True,'upper ship sails explicitly cast shadows')

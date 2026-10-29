@@ -115,6 +115,17 @@ c.box('cargo_crate_aft',[9,.95,2],[3.4,1.9,2.5],'timber')
 # Stepping off the gun dropped players into it with no way out; it now backs the gun.
 for x,z in [(3,-14.35),(-3,14.35)]:
     c.box(f'gun_breastwork_{x}',[x,.9,z],[6,1.8,.9],'timber')
+# 2026-10-28 multi-level rework (max: each map its own style). BLACKFLAG becomes the
+# vertical map: side gangways at quarterdeck height (2.4 m) join bow and stern decks
+# along both rails, and two crossing gangways span the waist. The waist guns now sit
+# in a covered battery under the gangways; fights run on three tiers.
+for zs in (-1,1):
+    c.box(f'gangway_{zs}',[0,2.25,zs*15.5],[44,.3,2.5],'deck','floor')
+    c.box(f'gangway_rail_{zs}',[0,2.9,zs*16.6],[44,1,.3],'tar','cover')
+    c.anchor(f'cover_gangway_{zs}','cover',[-zs*10,2.4,zs*15.4],height=1)
+for xs in (-1,1):
+    c.box(f'crossing_gangway_{xs}',[xs*5.5,2.25,0],[2.2,.3,28.5],'deck','floor')
+c.anchor('objective_crossing','objective',[5.5,2.4,6],radius=1.5)
 for name,pos,h in [('fore',[-8.5,0,-3.6],1.8),('aft',[9,0,4.5],1.9),('port_battery',[6.8,0,-13],1.8)]:
     c.anchor('cover_added_'+name,'cover',pos,height=h)
 for n,p in [('cargo_bow',[-11.8,0,4]),('cargo_stern',[12.8,0,-4]),('hatch_n',[0,0,-4]),('hatch_s',[0,0,4])]: c.anchor('cover_'+n,'cover',p,height=1.4)
@@ -122,6 +133,8 @@ c.anchor('objective_deck','objective',[4.8,0,0],radius=2)
 c.route('port_loop',[[-28,2.4,-2],[-28,2.4,-10],[-23,2.4,-10],[-15,0,-10],[15,0,-10],[23,2.4,-10],[28,2.4,-10],[28,2.4,-2]])
 c.route('starboard_loop',[[-28,2.4,2],[-28,2.4,10],[-23,2.4,10],[-15,0,10],[15,0,10],[23,2.4,10],[28,2.4,10],[28,2.4,2]])
 c.route('deck_breach',[[-15,0,-10],[-7,0,-8],[-5,0,-4],[5,0,-4],[6,0,5],[15,0,8],[15,0,10]])
+c.route('upper_ring',[[-28,2.4,-10],[-23,2.4,-12],[-21.5,2.4,-15.4],[21.5,2.4,-15.4],[23,2.4,-12],[28,2.4,-10]])
+c.route('crossing',[[-21.5,2.4,15.4],[-5.5,2.4,15.4],[-5.5,2.4,-15.4],[5.5,2.4,-15.4],[5.5,2.4,15.4],[21.5,2.4,15.4]])
 c.route('cross_deck',[[-15,0,-10],[-15,0,10],[-5,0,10],[-5,0,4],[5,0,4],[5,0,10],[15,0,10],[15,0,-10]])
 # Shared texture exporter embeds original paintings and per-face UVs; no URI fetches.
 tex=painted_surfaces()
@@ -326,10 +339,11 @@ for x,z,h,w in [(0,0,16,22),(-13,-2,12,16)]:
     for side in (-1,1):
         # Tensioned standing rigging / shrouds anchored only at the rail, never across a route.
         for off in (0,.65,1.3):
-            beam(D,'canvasShade',(x+off,h-1,z),(x+3+off,.95,side*16.95),.035,5)
+            # 2026-10-28: shrouds land on the gangway rail cap so none crosses the walkway.
+            beam(D,'canvasShade',(x+off,h-1,z),(x+3+off,3.42,side*16.6),.035,5)
         for step in range(3,13):
             t=step/14
-            yy=(h-1)*(1-t)+.95*t;zz=z*(1-t)+side*16.95*t
+            yy=(h-1)*(1-t)+3.42*t;zz=z*(1-t)+side*16.6*t
             beam(D,'grain',(x+3*t,yy,zz),(x+1.3+3*t,yy,zz),.019,4)
     beam(D,'canvasShade',(x,h-.7,z-w/2),(x+2.2,3.2,z-w*.62),.034,5)
     beam(D,'canvasShade',(x,h-.7,z+w/2),(x+2.2,3.2,z+w*.62),.034,5)
@@ -554,6 +568,25 @@ def crafted(m,o):
             for zz in (z-d/2+.02,z+d/2-.02):
                 for yy in (bottom+.2,bottom+h-.2):beam(m,'iron',(xx,yy,zz-.009),(xx,yy,zz+.009),.035,6)
         return True
+    if id.startswith('gangway_rail_'):
+        bevelbox(m,'tar',o['position'],o['size'],.04)
+        m.cbox('woodLight',[x,bottom+h-.06,z],[w-.02,.12,d-.01])
+        for k in range(int(w/2)):
+            m.cbox('timber',[x-w/2+1+k*2,y,z],[.16,h-.12,d+.0])
+        return True
+    if id.startswith('gangway_') or id.startswith('crossing_gangway_'):
+        # Plank walk on a dark stringer frame; planks run along the walkway.
+        along_x=w>d; L=w if along_x else d; W=d if along_x else w
+        m.cbox('woodDark',[x,y-.04,z],[w,h-.08,d])
+        n=max(3,int(W/.24))
+        for j in range(n):
+            t=-W/2+(j+.5)*W/n
+            if along_x: m.cbox('deck' if j%3 else 'plank',[x,y+h/2-.04,z+t],[w,.08,W/n-.02])
+            else: m.cbox('deck' if j%3 else 'plank',[x+t,y+h/2-.04,z],[W/n-.02,.08,d])
+        for t in (-W/2+.06,W/2-.06):
+            if along_x: m.cbox('timber',[x,y-.02,z+t],[w,h-.04,.12])
+            else: m.cbox('timber',[x+t,y-.02,z],[.12,h-.04,d])
+        return True
     if id.startswith('raised_bulwark_'):
         bevelbox(m,'tar',o['position'],o['size'],.04)
         m.cbox('woodLight',[x,bottom+h-.06,z],[w-.02,.12,d-.01])
@@ -687,6 +720,14 @@ def crafted(m,o):
 for x,z,side in [(0,0,1),(0,0,-1),(-13,-2,1),(-13,-2,-1)]:
     beam(D,'brass',(x,4.9,z+side*.4),(x,4.9,z+side*.95),.03,4)
     lantern(D,x,4.25,z+side*.95,.55)
+# Gangway knees and rail lanterns (2026-10-28 multi-level rework).
+D=c.detail
+for zs in (-1,1):
+    for x in range(-20,21,3):
+        beam(D,'woodDark',(x,1.78,zs*16.72),(x,2.09,zs*16.15),.06,4)
+for x in (-16,-5.5,5.5,16):
+    for zs in (-1,1):
+        lantern(D,x,3.4,zs*16.6,.6)
 c.data['presentation'].update(
     glows=[[round(x,3),round(y,3),round(z,3),round(1.7*s,2),'#ffd08a',.3] for x,y,z,s in LANTERNS],
     pools=[[round(x,3),2.4 if abs(x)>22 else 1.43 if abs(x)<3.5 else 0,round(z,3),2.2,'#ffb36a',.35] for x,y,z,s in LANTERNS if y<6])

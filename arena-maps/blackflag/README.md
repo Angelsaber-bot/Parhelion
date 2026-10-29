@@ -140,3 +140,14 @@ height, and every lantern carries a runtime halo and a deck light pool. The ship
 atmosphere dims the room environment to 0.5 so rigging and sail shadows read on
 the deck. The helmsman's wheel was walk-through; `stern_helm` is a slim collider
 matching its disc (approved hashes in `validation/check_art.py` updated for it).
+
+## 2026-10-28 multi-level rework
+
+max wanted each map to have its own playstyle; BLACKFLAG is now the vertical map.
+Side gangways at quarterdeck height (2.4 m, with a 1 m rail) join the bow and stern
+decks along both sides, and two crossing gangways (x = ±5.5) span the waist. Fights
+run on three tiers: the raised decks and gangway ring, the open waist, and the
+covered battery under the gangways where the guns sit. The main and fore shrouds now
+land on the gangway rail cap so no rope crosses the walkway. New cover/objective
+anchors and `upper_ring` / `crossing` routes; check_art hashes and the primitive cap
+(180) updated.
