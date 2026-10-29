@@ -1,0 +1,432 @@
+[
+  {
+    "id": "alpha",
+    "name": [
+      "从者生活馆",
+      "Companion Residence"
+    ],
+    "meshes": 54,
+    "vertices": 26941,
+    "triangles": 17270,
+    "materials": 39,
+    "solids": 8,
+    "footprint": [
+      34,
+      30
+    ],
+    "entry": [
+      0,
+      14.5
+    ],
+    "npcs": [
+      {
+        "id": "alpha_steward",
+        "role": [
+          "生活馆管事",
+          "Residence Steward"
+        ],
+        "position": [
+          3.2,
+          0.02,
+          1.5
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "这里是从者们的生活馆。餐桌和休息区已经备好，随时可以进来歇一会儿。",
+            "This residence is for our companions. The dining hall and rest rooms are ready; come in whenever you need a quiet moment."
+          ],
+          [
+            "两侧是休息房间，后方书架收着各个时代留下的旅行笔记。",
+            "Rest rooms are on either side. The shelves at the back hold travel notes from many eras."
+          ]
+        ]
+      },
+      {
+        "id": "alpha_archivist",
+        "role": [
+          "驻地记录员",
+          "Residence Archivist"
+        ],
+        "position": [
+          -3.2,
+          0.02,
+          -4.2
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "每位同行者都有自己的故事。旅途结束后，不妨来这里听听他们的见闻。",
+            "Every companion has a story. After a journey, this is a place to exchange what you have seen."
+          ]
+        ]
+      }
+    ],
+    "bounds": {
+      "min": [
+        -17,
+        -0.4000000059604645,
+        -14.5
+      ],
+      "max": [
+        17,
+        9.279999732971191,
+        14.5
+      ]
+    }
+  },
+  {
+    "id": "britain",
+    "name": [
+      "王城匠作庭院",
+      "Royal Craft Court"
+    ],
+    "meshes": 76,
+    "vertices": 30794,
+    "triangles": 22515,
+    "materials": 55,
+    "solids": 22,
+    "footprint": [
+      38,
+      36
+    ],
+    "entry": [
+      0,
+      17.5
+    ],
+    "npcs": [
+      {
+        "id": "britain_smith",
+        "role": [
+          "王城铁匠",
+          "Royal Smith"
+        ],
+        "position": [
+          -7.5,
+          0.02,
+          2.8
+        ],
+        "yaw": 0.4,
+        "lines": [
+          [
+            "铁器也会疲惫。这里打磨刀锋、修补铠甲，但不会改变你现在的装备。",
+            "Even iron grows tired. We tend blades and armor here; your current equipment will not be changed."
+          ],
+          [
+            "炉边的水桶用来淬火，墙上的旧剑则属于再也没有归来的骑士。",
+            "The water barrel is for quenching. The old swords on the wall belonged to knights who never returned."
+          ]
+        ]
+      },
+      {
+        "id": "britain_stable_keeper",
+        "role": [
+          "马厩看守",
+          "Stable Keeper"
+        ],
+        "position": [
+          7.2,
+          0.02,
+          8.8
+        ],
+        "yaw": -0.4,
+        "lines": [
+          [
+            "马厩的西侧留着宽走道。草料和清水已备好，长途赶路后应该让坐骑休息。",
+            "The west aisle is kept clear. Fodder and fresh water are ready; mounts deserve rest after a long ride."
+          ]
+        ]
+      },
+      {
+        "id": "britain_abbey_keeper",
+        "role": [
+          "修院守望者",
+          "Abbey Keeper"
+        ],
+        "position": [
+          0,
+          0.02,
+          -9.1
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "修院的屋顶早已坍塌，晚钟却仍有人记得。请从中间的通道慢慢走进去。",
+            "The abbey roof fell long ago, but someone still remembers its evening bell. The central aisle is open."
+          ]
+        ]
+      }
+    ],
+    "bounds": {
+      "min": [
+        -18.5,
+        -0.4399999976158142,
+        -17.5
+      ],
+      "max": [
+        18.5,
+        7.840000152587891,
+        17.5
+      ]
+    }
+  },
+  {
+    "id": "blacksail",
+    "name": [
+      "潮印海关所",
+      "Tidemark Customs House"
+    ],
+    "meshes": 43,
+    "vertices": 32177,
+    "triangles": 27450,
+    "materials": 18,
+    "solids": 9,
+    "footprint": [
+      26,
+      36
+    ],
+    "entry": [
+      0,
+      13
+    ],
+    "npcs": [
+      {
+        "id": "customs_clerk",
+        "role": [
+          "港务书记官",
+          "Harbor Clerk"
+        ],
+        "position": [
+          -6.1,
+          0,
+          -3.1
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "这里登记每一批进港货物。账本上的空白，有时比墨迹更重要。",
+            "Every inbound cargo is recorded here. A blank ledger line can matter more than the ink."
+          ],
+          [
+            "正门通向查验厅，东侧是封存库房。后巷还连着一条货运通道。",
+            "The front opens into the inspection hall. The bonded room is east, with a cargo passage behind it."
+          ]
+        ]
+      },
+      {
+        "id": "customs_inspector",
+        "role": [
+          "验货员",
+          "Cargo Inspector"
+        ],
+        "position": [
+          6.8,
+          0,
+          1.9
+        ],
+        "yaw": -0.45,
+        "lines": [
+          [
+            "红蜡封条还在，箱子就没有被开过。至少规矩上是这么说的。",
+            "An intact red seal means a crate has not been opened. That is the rule, anyway."
+          ],
+          [
+            "走中间这条通道，别踩到秤盘和货绳。",
+            "Keep to the middle passage and mind the scales and cargo ropes."
+          ]
+        ]
+      },
+      {
+        "id": "customs_runner",
+        "role": [
+          "港口信使",
+          "Dock Runner"
+        ],
+        "position": [
+          7.7,
+          0,
+          -14.4
+        ],
+        "yaw": 3.141592653589793,
+        "lines": [
+          [
+            "前门查账，后巷传话。海上的消息总比船先到。",
+            "Accounts go through the front, messages through the lane. News from the sea arrives before the ships."
+          ]
+        ]
+      }
+    ],
+    "bounds": {
+      "min": [
+        -12.5,
+        -0.4000000059604645,
+        -17
+      ],
+      "max": [
+        12.5,
+        8.159722328186035,
+        14
+      ]
+    }
+  },
+  {
+    "id": "winter",
+    "name": [
+      "雪路救护驿站",
+      "Snowroad Aid and Supply Post"
+    ],
+    "meshes": 32,
+    "vertices": 27158,
+    "triangles": 17860,
+    "materials": 15,
+    "solids": 8,
+    "footprint": [
+      35,
+      31
+    ],
+    "entry": [
+      0,
+      15.5
+    ],
+    "npcs": [
+      {
+        "id": "winter_surgeon",
+        "role": [
+          "随军医师",
+          "Field Surgeon"
+        ],
+        "position": [
+          -7.9,
+          0,
+          0.6
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "炉边还有位置。先暖一暖，雪路上的伤要慢慢处理。",
+            "There is space by the stove. Warm up first; injuries from the snow road take patience."
+          ],
+          [
+            "左边是休息的铺位，补给在对面的棚屋里。",
+            "The resting cots are inside. Supplies are kept in the house across the yard."
+          ]
+        ]
+      },
+      {
+        "id": "winter_quartermaster",
+        "role": [
+          "驿站补给员",
+          "Post Quartermaster"
+        ],
+        "position": [
+          9,
+          0,
+          -1.1
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "雪橇上的毯子刚运到。穿过院子时给搬运的人留条路。",
+            "The sled has just brought blankets. Keep the courtyard passage open for the porters."
+          ],
+          [
+            "这间驿站连接城外与雪原。记住两盏门灯，风大时别走散。",
+            "This post links the city outskirts and the snowfield. Remember the two gate lanterns when the wind rises."
+          ]
+        ]
+      }
+    ],
+    "bounds": {
+      "min": [
+        -17.174999237060547,
+        -0.4000000059604645,
+        -15.175000190734863
+      ],
+      "max": [
+        17.174999237060547,
+        6.925000190734863,
+        15.175000190734863
+      ]
+    }
+  },
+  {
+    "id": "kyoto",
+    "name": [
+      "刀匠与旅籠小路",
+      "Swordsmith and Wayfarer Lane"
+    ],
+    "meshes": 36,
+    "vertices": 60837,
+    "triangles": 27908,
+    "materials": 17,
+    "solids": 8,
+    "footprint": [
+      35,
+      31
+    ],
+    "entry": [
+      0,
+      15.5
+    ],
+    "npcs": [
+      {
+        "id": "kyoto_swordsmith",
+        "role": [
+          "刀匠",
+          "Swordsmith"
+        ],
+        "position": [
+          -8.8,
+          0,
+          -1.9
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "炉火要慢，磨刀要稳。沿旁边的巷道走，就是旅籠的院子。",
+            "Keep the forge steady and the whetstone slow. The lane leads to the inn courtyard."
+          ],
+          [
+            "我修的是旅人的兵器，不是让这座城再多一场火。",
+            "I mend travelers’ weapons. This city needs no more fire."
+          ]
+        ]
+      },
+      {
+        "id": "kyoto_innkeeper",
+        "role": [
+          "旅籠老板",
+          "Innkeeper"
+        ],
+        "position": [
+          11.8,
+          0,
+          0.6
+        ],
+        "yaw": 0,
+        "lines": [
+          [
+            "里面留了两间铺席。先在灯下歇歇，后院的路也通着。",
+            "Two sleeping alcoves are ready. Rest by the lantern; the rear garden is open."
+          ],
+          [
+            "锻刀的声音是隔壁师傅。夜里也有人守着这条小路。",
+            "The hammering comes from our neighbor. Someone still watches over this lane at night."
+          ]
+        ]
+      }
+    ],
+    "bounds": {
+      "min": [
+        -17.110000610351562,
+        -0.4000000059604645,
+        -15.109999656677246
+      ],
+      "max": [
+        17.174999237060547,
+        6.519999980926514,
+        15.109999656677246
+      ]
+    }
+  }
+]

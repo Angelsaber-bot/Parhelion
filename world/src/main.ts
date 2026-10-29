@@ -1,3 +1,10 @@
+import { buildAlphaSettlement } from './settlements/alpha';
+import { buildBritainSettlement } from './settlements/britain';
+import { buildBlackSailSettlement } from './settlements/blacksail';
+import { buildWinterSettlement } from './settlements/winter';
+import { buildKyotoSettlement } from './settlements/kyoto';
+import { installSettlements } from './settlements/core';
+import { createSettlementNpcs } from './settlements/npcs';
 import { AdaptiveResolution, targetDpr } from './renderQuality';
 import { readResolutionMode, attachRenderSettings } from './renderSettings';
 import * as THREE from 'three';
@@ -220,6 +227,7 @@ const colliders: Collider[] = [];
 const gates: { name: string; opensWhen: string[] }[] = [];
 const solids: { name: string; solidWhen: string[] }[] = []; // e.g. the ghost bridge: walkable once it appears
 const staticGeos: THREE.BufferGeometry[] = [boundaryWalls()];
+const existingPropGeos: THREE.BufferGeometry[] = [];
 const debugCol = new THREE.Group();
 const debugMat = new THREE.MeshBasicMaterial({ color: '#ff3d7f', wireframe: true, transparent: true, opacity: 0.35 });
 for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
@@ -230,16 +238,36 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
   if (m.geometry.index) g.setIndex(m.geometry.index.clone());
   g.applyMatrix4(m.matrixWorld);
   if (g.index) g = g.toNonIndexed();
+  if (m.name !== 'COL_Terrain') existingPropGeos.push(g);
   if (m.userData.dynamic) colliders.push({ name: m.name, bvh: new MeshBVH(g), enabled: true });
   else staticGeos.push(g);
   if (Array.isArray(m.userData.opensWhen)) gates.push({ name: m.userData.art as string, opensWhen: m.userData.opensWhen as string[] });
   if (Array.isArray(m.userData.solidWhen)) solids.push({ name: m.userData.art as string, solidWhen: m.userData.solidWhen as string[] });
 });
+// Supplemental chapter buildings share the same authoritative collision BVH as the world.
+const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
+const existingPropGeo = mergeGeometries(existingPropGeos);
+const settlementBlockers = new MeshBVH(existingPropGeo);
+const settlements = installSettlements([
+  buildAlphaSettlement(), buildBritainSettlement(), buildBlackSailSettlement(), buildWinterSettlement(), buildKyotoSettlement(),
+], { grid, blockers: settlementBlockers, layout });
+world.add(settlements.root);
+settlements.root.traverse((o) => {
+  if (o instanceof THREE.Mesh) o.material = toonMaterial(o.material as THREE.Material);
+});
+freezeStaticArt(settlements.root);
+staticGeos.push(...settlements.collisionGeometries);
+const settlementNpcs = createSettlementNpcs(settlements.npcs);
+scene.add(settlementNpcs.group);
+// One contextual place per chapter, never one marker per NPC or furniture item.
+for (const p of settlements.placements) layout.areas.push({
+  id: `${p.id}_living_hub`, name: p.name[0], nameEn: p.name[1], c: [p.position[0],p.position[2]],
+  r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: [p.entry[0],p.entry[2]+8], region:p.id,
+});
 const staticGeo = mergeGeometries(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 
-const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
 const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, staticBVH, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68 }) : null;
 if (grass) scene.add(grass.mesh);
@@ -689,7 +717,7 @@ function press(binding: string, repeat = false) {
   if (action === 'guide') toggleGuide();
   if (action === 'help') togglePanel('help');
   if (action === 'objectives') togglePanel('objective');
-  if (action === 'interact' && !player.flying) interact();
+  if (action === 'interact' && !player.flying && !interactSettlementNpc()) interact();
   if (action === 'summon') {
     if (contract.toggle()) { const n = servantName(contract.selected); toast(contract.companionSummoned ? bilingual(`${n.zh} 已召唤`, `${n.en} summoned`) : bilingual(`${n.zh} 已收回`, `${n.en} recalled`)); }
     else toast(bilingual('先前往圣剑湖缔结第一份契约', 'Form your first contract at Sword Lake'));
@@ -797,6 +825,26 @@ function nearestInteract(): Marker | null {
     if (d < (m.radius ?? 3) && d < bd) { bd = d; best = m; }
   }
   return best;
+}
+function nearbySettlementNpc() {
+  const npc = settlementNpcs.nearest(player.pos);
+  if (!npc) return null;
+  const from = player.pos.clone().add(new THREE.Vector3(0,1.2,0));
+  const to = new THREE.Vector3(...npc.position).add(new THREE.Vector3(0,1.2,0));
+  const delta = to.sub(from), distance = delta.length();
+  if (distance > .05 && combat.geometry.cast(from, delta, Math.max(0,distance-.25))) return null;
+  return npc;
+}
+function interactSettlementNpc() {
+  const m = nearestInteract();
+  const npc = nearbySettlementNpc();
+  // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
+  if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+    const line = settlementNpcs.interact(npc.id);
+    if (line) toast(bilingual(`${npc.role[0]}：${line[0]}`, `${npc.role[1]}: ${line[1]}`));
+    return true;
+  }
+  return false;
 }
 function interact() {
   const m = nearestInteract();
@@ -961,6 +1009,8 @@ function frame(now: number) {
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
   renderContract();
+  settlements.update(player.pos);
+  settlementNpcs.update(gameplayActive() ? dt : 0, player.pos);
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -978,7 +1028,10 @@ function frame(now: number) {
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
-  $('prompt').textContent = !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${localizeText(it.label)}` :
+  const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
+  const npcPrompt = nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
+  $('prompt').textContent = npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
+    !gameplayActive() ? '' : !player.flying && it && !done.has(it.id) ? `[${settings.label('interact')}] ${localizeText(it.label)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;

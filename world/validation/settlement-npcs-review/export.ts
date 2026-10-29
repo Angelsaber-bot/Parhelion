@@ -1,0 +1,13 @@
+import * as THREE from 'three';
+import fs from 'node:fs';
+import path from 'node:path';
+import {createSettlementNpcs} from '../../src/settlements/npcs';
+import type {PlacedNpcSocket} from '../../src/settlements/types';
+const out=process.argv[2]??'validation-output/settlement-npcs';fs.mkdirSync(out,{recursive:true});
+const regions=['alpha','britain','blacksail','winter','kyoto'] as const;
+const roles:[string,string][]=[['驻地管家','Residence steward'],['铁匠','Blacksmith'],['港务员','Harbor clerk'],['军医','Medic'],['旅籠老板','Innkeeper']];
+const sockets:PlacedNpcSocket[]=regions.map((region,i)=>({id:region,region,role:roles[i],position:[(i-2)*1.3,0,0],lines:[['欢迎。','Welcome.']]}));
+const system=createSettlementNpcs(sockets);system.update(.016,new THREE.Vector3(0,1,3));system.group.updateMatrixWorld(true);
+const meshes:any[]=[];
+system.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;const p=o.geometry.getAttribute('position'),c=o.geometry.getAttribute('color'),v=new THREE.Vector3(),positions:number[]=[],colors:number[]=[];for(let i=0;i<p.count;i++){v.fromBufferAttribute(p,i).applyMatrix4(o.matrixWorld);positions.push(v.x,v.y,v.z);colors.push(c.getX(i),c.getY(i),c.getZ(i),1);}meshes.push({name:o.name,positions,colors,indices:Array.from(o.geometry.index!.array)});});
+fs.writeFileSync(path.join(out,'residents.json'),JSON.stringify({meshes}));console.log(JSON.stringify({triangles:system.group.children.map(o=>[o.name,o.userData.triangles]),meshes:meshes.length}));

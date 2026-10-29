@@ -1,0 +1,199 @@
+{
+  "baseCommit": "06852c65060e6edab68bb1aaed5662106e667ceb",
+  "scope": "Cloud source patch and offline review only; not published/deployed",
+  "files": [
+    {
+      "path": "docs/settlements-20261029/README.md",
+      "bytes": 4288,
+      "sha256": "7f952608f8335b864e135aeaa14c7c1c5959b0eb845ea2412edc8cc00d006f52"
+    },
+    {
+      "path": "docs/settlements-20261029/VERIFICATION.md",
+      "bytes": 1377,
+      "sha256": "6045f1b8eee1791ca5851eb0b0aed2b14c35cfc16a0d9042dde655c3299babe7"
+    },
+    {
+      "path": "docs/settlements-20261029/geometry-audit.json",
+      "bytes": 10176,
+      "sha256": "4759389869b30b1669af2b81593de55001891fea7bfc4fb23a7ce2bb8b3799ba"
+    },
+    {
+      "path": "docs/settlements-20261029/placement-audit.json",
+      "bytes": 10361,
+      "sha256": "e849500d358bf3636b34bc85e503d15786a5781c40f31f6e83f6c443f58df0f6"
+    },
+    {
+      "path": "docs/settlements-20261029/review/Parhelion-five-chapter-hubs-review.jpg",
+      "bytes": 501862,
+      "sha256": "b18876d61a4811da68fd099bc22597545f72dfb5afe919ad306764bf7ef68c5b"
+    },
+    {
+      "path": "docs/settlements-20261029/review/alpha-interior.jpg",
+      "bytes": 350184,
+      "sha256": "91baea8caa373f6600f58f22725a39c665e0f3ae1ac78cf49f7ec24e2647987a"
+    },
+    {
+      "path": "docs/settlements-20261029/review/alpha.jpg",
+      "bytes": 114192,
+      "sha256": "a51a67f74324cd4f879b26cce2e9a323e5c48d84425b58b8a48ace6055022ab1"
+    },
+    {
+      "path": "docs/settlements-20261029/review/blacksail-interior.jpg",
+      "bytes": 380051,
+      "sha256": "d7e94fa84908652f54150b59d9fd5c5b82ad54a7abb93b642c9b6009dba13bc9"
+    },
+    {
+      "path": "docs/settlements-20261029/review/blacksail.jpg",
+      "bytes": 98834,
+      "sha256": "bddafc6390b6a94951bdbd9495e4d5cd11ce0973471f7126f2357437e6b7acb7"
+    },
+    {
+      "path": "docs/settlements-20261029/review/britain-interior.jpg",
+      "bytes": 306500,
+      "sha256": "7c83db73921f99e3329d418fb2619b7cee73207299f904e604276f78cab04f7c"
+    },
+    {
+      "path": "docs/settlements-20261029/review/britain.jpg",
+      "bytes": 98880,
+      "sha256": "3ab658f964d47daec6743182836344c379350d02cc080000f1726945f7859d43"
+    },
+    {
+      "path": "docs/settlements-20261029/review/kyoto-interior.jpg",
+      "bytes": 362694,
+      "sha256": "2e5380b1778f131c8158228f372005773bbb0321f86abc7b2b97265d14ceaf38"
+    },
+    {
+      "path": "docs/settlements-20261029/review/kyoto.jpg",
+      "bytes": 115827,
+      "sha256": "dbcff68f87869fe148bb057e2e545483da87d843c3e568e128bc35c71a16bd15"
+    },
+    {
+      "path": "docs/settlements-20261029/review/residents-review.jpg",
+      "bytes": 131009,
+      "sha256": "f4d355885f1e5fee13ae6bee73b47c651b275718c065abd2689ab488de96bc54"
+    },
+    {
+      "path": "docs/settlements-20261029/review/winter-interior.jpg",
+      "bytes": 383937,
+      "sha256": "edd1e60b4faac728fb5f67f8bd0e92444222b292ce558de1cd71835d66ebfa0a"
+    },
+    {
+      "path": "docs/settlements-20261029/review/winter.jpg",
+      "bytes": 103354,
+      "sha256": "db1e9c6fd9b586c6e3cbb3c459e6b5bad6dad73f6c1042e170cefe5e7b75231b"
+    },
+    {
+      "path": "world/src/combatTerrain.ts",
+      "bytes": 3222,
+      "sha256": "d3ef632c47ab372e8de1f425e18ce0ed04013282c53220b252762c264674e4ff",
+      "baseSha256": "6142ff49c9d14eb3826fb2885b039318a2b75a4153a7adcc4a2c54c4eb0af342"
+    },
+    {
+      "path": "world/src/main.ts",
+      "bytes": 67593,
+      "sha256": "c9d31534b05a411ccc00b4e4e065e3930dce49d933565081ca7794cc7b1dab0c",
+      "baseSha256": "1a97862f605f479c3e9dbf166c68c1a70b2cd5ac658bb03733daeeb3da6c5aec"
+    },
+    {
+      "path": "world/src/settlements/alpha.ts",
+      "bytes": 9099,
+      "sha256": "cc4d75842bd9fbffce7ea2431f2ae74bdc4d20ebce467d73a13b6127b9b1ec42"
+    },
+    {
+      "path": "world/src/settlements/blacksail.ts",
+      "bytes": 18479,
+      "sha256": "e14392d555e75af210a6010d0ce7219f4c8900bac895d1d25df34db0b0d94de1"
+    },
+    {
+      "path": "world/src/settlements/britain.ts",
+      "bytes": 11075,
+      "sha256": "6dd24aa704db7c2c8cace1c2d38377cc6880aeccbf9f14e270e4c719cafdc048"
+    },
+    {
+      "path": "world/src/settlements/core.ts",
+      "bytes": 8690,
+      "sha256": "b52d45295f4f86eac90d2ad0408e459c54cc0fa8a9252797705ee1fb5044477f"
+    },
+    {
+      "path": "world/src/settlements/kyoto.ts",
+      "bytes": 8733,
+      "sha256": "2f8efe7fad4fee3b9afd63ab904475254b5be77dc5f9a3e11bf4fe1f54cadd7f"
+    },
+    {
+      "path": "world/src/settlements/kyotoWinterArt.ts",
+      "bytes": 3889,
+      "sha256": "6ba1d19eea39c84c0c7459705747c082bd995d8c473c490d71b55a921f061612"
+    },
+    {
+      "path": "world/src/settlements/npcs.ts",
+      "bytes": 11346,
+      "sha256": "ee0f1c8f6d63f5a73b7319c7fdc7aff070344c8c9c7d6e357d8512d413e367dc"
+    },
+    {
+      "path": "world/src/settlements/types.ts",
+      "bytes": 1001,
+      "sha256": "fbbd4a78e17a24432680e477ab8e119fa715f925574bf3f9f83783df04edcbb5"
+    },
+    {
+      "path": "world/src/settlements/valleyBritainArt.ts",
+      "bytes": 6136,
+      "sha256": "127977516228b348e72bd65e678aa27d41e83752edd1b135358e9b9db5903c86"
+    },
+    {
+      "path": "world/src/settlements/winter.ts",
+      "bytes": 8337,
+      "sha256": "34bf839b4399a7fe2ba33169684bf675462500b3b1b830487958e14f54d3c9b2"
+    },
+    {
+      "path": "world/validation/input.test.ts",
+      "bytes": 13543,
+      "sha256": "dece7320696a38f98301283100f0b41e26dfe8c53b705b011927b7070dce6629",
+      "baseSha256": "4dd85061fd6b7bfc40f3c2a4ca564d17898677259e255fe9aaf9e1c6da23f297"
+    },
+    {
+      "path": "world/validation/settlement-interaction.test.ts",
+      "bytes": 2930,
+      "sha256": "6da959c0e9c7e5e0af2c14e7a91073d1e26149a4a9c1f07d6832873664ab8da0"
+    },
+    {
+      "path": "world/validation/settlement-npcs-review/export.ts",
+      "bytes": 1513,
+      "sha256": "55132922e9196ad821b4e2f6d481b0583140aa28dc052336ad9789d0906d99c0"
+    },
+    {
+      "path": "world/validation/settlement-npcs-review/render.py",
+      "bytes": 2529,
+      "sha256": "739d50e48773acdf5504d4bbc359564be9ac69d3acfb4e1878a0cc552a1ba65a"
+    },
+    {
+      "path": "world/validation/settlement-npcs.test.ts",
+      "bytes": 3359,
+      "sha256": "cb7ec771955c74c779e06ae7485249149587e130f48652a0fc1cfcd7afa8b8f0"
+    },
+    {
+      "path": "world/validation/settlements-review/assemble-review.py",
+      "bytes": 1415,
+      "sha256": "e641fb900f14773bb7ca5430ceb933eed4e03af8ffdb915e973de5f4ef84a8fc"
+    },
+    {
+      "path": "world/validation/settlements-review/audit-placement.ts",
+      "bytes": 3666,
+      "sha256": "7d4d5d4f4f01ccb1ae1c127bf761bcac6e1ee73f0680124a5c35b9ffccf1e7f6"
+    },
+    {
+      "path": "world/validation/settlements-review/export-review.ts",
+      "bytes": 3449,
+      "sha256": "874df23b9cc07be49917186688b3fc32c3b5e1f05e7a84a75f80bf6aa8edc1f1"
+    },
+    {
+      "path": "world/validation/settlements-review/render-review.py",
+      "bytes": 4928,
+      "sha256": "a30f2f5ddf03ddcca0e480005554d7bbfbb2da91d6d7ade6c54b92becd4d27b7"
+    },
+    {
+      "path": "world/validation/settlements-review.test.ts",
+      "bytes": 3850,
+      "sha256": "bd269e3852e930ff0da6335e376201d7f4d8d61dac6451bbe71f5c00e51366f4"
+    }
+  ]
+}

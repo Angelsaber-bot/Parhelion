@@ -25,7 +25,7 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout) {
   };
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
   const safeSpawn = (x: number, z: number): Point3 | null => {
-    if (layout.areas.some(a => hubs.has(a.id) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
+    if (layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
     if (layout.markers.some(m => ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
