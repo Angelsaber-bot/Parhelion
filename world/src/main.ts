@@ -4,11 +4,11 @@ import { buildBlackSailSettlement } from './settlements/blacksail';
 import { buildWinterSettlement } from './settlements/winter';
 import { buildKyotoSettlement } from './settlements/kyoto';
 import { installSettlements } from './settlements/core';
+import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
 import { AdaptiveResolution, targetDpr } from './renderQuality';
 import { readResolutionMode, attachRenderSettings } from './renderSettings';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -246,7 +246,7 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
 });
 // Supplemental chapter buildings share the same authoritative collision BVH as the world.
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
-const existingPropGeo = mergeGeometries(existingPropGeos);
+const existingPropGeo = mergeParts(existingPropGeos);
 const settlementBlockers = new MeshBVH(existingPropGeo);
 const settlements = installSettlements([
   buildAlphaSettlement(), buildBritainSettlement(), buildBlackSailSettlement(), buildWinterSettlement(), buildKyotoSettlement(),
@@ -264,7 +264,7 @@ for (const p of settlements.placements) layout.areas.push({
   id: `${p.id}_living_hub`, name: p.name[0], nameEn: p.name[1], c: [p.position[0],p.position[2]],
   r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: [p.entry[0],p.entry[2]+8], region:p.id,
 });
-const staticGeo = mergeGeometries(staticGeos);
+const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 
@@ -1075,6 +1075,7 @@ const ground = (x: number, z: number) =>
 
 void boot().catch((error: unknown) => {
   bootFailed = true;
+  console.error('World boot failed', error);
   disposeRenderer();
   const message = error instanceof Error ? error.message : String(error);
   setLoading(`地图加载失败：${message}。请检查网络后重试。`);

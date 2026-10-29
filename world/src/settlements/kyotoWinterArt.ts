@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeParts } from './merge';
 
 /** Small material-batched architectural kit. Collidable and decorative faces never share a batch. */
 export class KyotoWinterArt {
@@ -52,7 +52,7 @@ export class KyotoWinterArt {
   }
   finish() {
     for(const [key,bin] of this.bins) {
-      const geometry=mergeGeometries(bin.parts,false); if(!geometry) throw new Error(`Cannot merge ${key}`);
+      const geometry=mergeParts(bin.parts,false);
       const mesh=new THREE.Mesh(geometry,bin.material); mesh.name=`${this.root.name}_${bin.solid?'solid':'detail'}_${this.root.children.length}`;
       mesh.userData.solid=bin.solid; mesh.castShadow=true; mesh.receiveShadow=true; this.root.add(mesh);
       for(const g of bin.parts)g.dispose();

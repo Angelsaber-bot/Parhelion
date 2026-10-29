@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeParts } from './merge';
 
 /** Small authored architectural kit. Repeated pieces share geometry/materials and are batched. */
 export class SettlementArt {
@@ -93,7 +93,7 @@ export class SettlementArt {
     }
     const group = new THREE.Group(); group.name = name;
     for (const {geo, mat, solid} of buckets.values()) {
-      const geometry = mergeGeometries(geo, false)!;
+      const geometry = mergeParts(geo, false);
       for (const g of geo) g.dispose();
       const m = new THREE.Mesh(geometry, mat); m.name = `${name}_${solid ? 'structure' : 'craft'}_${group.children.length}`;
       m.userData.solid = solid; m.castShadow = true; m.receiveShadow = true; group.add(m);

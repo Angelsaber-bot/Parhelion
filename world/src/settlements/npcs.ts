@@ -1,6 +1,6 @@
 /** Lightweight, authored residents: articulated joint batches, no pathfinding or save mutations. */
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { mergeParts } from './merge';
 import type { Localized, PlacedNpcSocket, RegionId } from './types';
 export const SETTLEMENT_NPC_LIMITS = Object.freeze({ interaction: 2.8, vertical: 2.4, animate: 24, visible: 90 });
 type Part = { g: THREE.BufferGeometry; c: number; p?: [number,number,number]; s?: [number,number,number]; r?: [number,number,number] };
@@ -20,7 +20,7 @@ function taper(top:number,bottom:number,height:number){return new THREE.Cylinder
 function batch(parent:THREE.Group,name:string,parts:Part[],material:THREE.Material){
  const matrix=new THREE.Matrix4(),q=new THREE.Quaternion();
  const geometries=parts.map(part=>{const g=part.g.clone();q.setFromEuler(new THREE.Euler(...(part.r??[0,0,0])));matrix.compose(new THREE.Vector3(...(part.p??[0,0,0])),q,new THREE.Vector3(...(part.s??[1,1,1])));g.applyMatrix4(matrix);const color=new THREE.Color(part.c),colors=new Float32Array(g.getAttribute('position').count*3);for(let i=0;i<colors.length;i+=3){colors[i]=color.r;colors[i+1]=color.g;colors[i+2]=color.b;}g.setAttribute('color',new THREE.BufferAttribute(colors,3));return g;});
- const geometry=mergeGeometries(geometries,false);for(const g of geometries)g.dispose();if(!geometry)throw new Error(`Cannot assemble resident ${name}`);const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
+ const geometry=mergeParts(geometries,false);for(const g of geometries)g.dispose();const mesh=new THREE.Mesh(geometry,material);mesh.name=name;mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
 }
 function resident(socket:PlacedNpcSocket,material:THREE.Material){
  const root=new THREE.Group();root.name=`Resident_${socket.id}`;root.position.set(...socket.position);root.rotation.y=socket.yaw??0;root.userData.settlementNpc=true;root.userData.region=socket.region;

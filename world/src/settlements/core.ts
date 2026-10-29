@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeParts } from './merge';
 import type { WorldGrid } from '../grid';
 import type { Layout } from '../types';
 import { REGIONS } from '../regions';
@@ -98,7 +98,7 @@ export function batchSettlementVisuals(group: THREE.Group) {
   });
   group.clear();
   if(lights.length)group.add(...lights);
-  for(const [material,geos] of batches){const merged=mergeGeometries(geos);const mesh=new THREE.Mesh(merged,material);mesh.name=`Settlement_${material.name||material.type}`;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);for(const g of geos)g.dispose();}
+  for(const [material,geos] of batches){const merged=mergeParts(geos);const mesh=new THREE.Mesh(merged,material);mesh.name=`Settlement_${material.name||material.type}`;mesh.castShadow=true;mesh.receiveShadow=true;group.add(mesh);for(const g of geos)g.dispose();}
 }
 
 export function installSettlements(kits: SettlementKit[], ctx: PlacementContext) {

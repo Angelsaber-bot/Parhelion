@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { mergeParts } from './merge';
 import type { SettlementKit } from './types';
 
 /** A walk-through customs house, rather than a second tavern or shipyard.
@@ -301,7 +301,7 @@ export function buildBlackSailSettlement(): SettlementKit {
   // Finish in <40 draw calls, with collision kept separate from visual-only trim.
   for (const [key, geos] of batches) {
     const [mat, solidity] = key.split(':') as [Mat, string];
-    const geo = mergeGeometries(geos, false)!;
+    const geo = mergeParts(geos, false);
     const mesh = new THREE.Mesh(geo, mats[mat]);
     mesh.name = `Customs_${mat}_${solidity}`;
     mesh.castShadow = true; mesh.receiveShadow = true;
