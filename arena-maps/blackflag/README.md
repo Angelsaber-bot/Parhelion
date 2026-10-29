@@ -141,13 +141,15 @@ atmosphere dims the room environment to 0.5 so rigging and sail shadows read on
 the deck. The helmsman's wheel was walk-through; `stern_helm` is a slim collider
 matching its disc (approved hashes in `validation/check_art.py` updated for it).
 
-## 2026-10-28 multi-level rework
+## 2026-10-29 two-deck ship
 
-max wanted each map to have its own playstyle; BLACKFLAG is now the vertical map.
-Side gangways at quarterdeck height (2.4 m, with a 1 m rail) join the bow and stern
-decks along both sides, and two crossing gangways (x = ±5.5) span the waist. Fights
-run on three tiers: the raised decks and gangway ring, the open waist, and the
-covered battery under the gangways where the guns sit. The main and fore shrouds now
-land on the gangway rail cap so no rope crosses the walkway. New cover/objective
-anchors and `upper_ring` / `crossing` routes; check_art hashes and the primitive cap
-(180) updated.
+The 2026-10-28 gangways did nothing: anyone on them shot straight down into the open
+waist. max asked for a real two-storey ship. The gangways, bow/stern ramps and raised
+cargo are gone. A closed upper deck (`upper_deck_0..6`, 2.1-2.4 m) now covers the whole
+gun deck, and the only openings are two stairwells (`stair_±1`, x = ±(7..13)) ringed by
+waist-high coamings. The upper deck is long open sightlines with the ship's boat, deck
+cargo and water casks as cover. The gun deck below is close quarters among the guns,
+hatches and casks, out of sight from above. The bulwarks rise to 4.2 m with a cap rail,
+and the shrouds land on that rail. The upper-deck nodes set `castShadow` so the gun deck
+is shaded. New anchors and routes: `upper_port`, `upper_starboard`, `down_and_through`,
+`deck_breach`, `cross_deck`. The check_art hashes were updated.
