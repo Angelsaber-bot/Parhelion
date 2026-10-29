@@ -35,7 +35,7 @@ c.textures={name:dict(surfaces[family],scale=scale) for name,family,scale in [
     ('cloth','linen',1.1),('canvas','linen',1.1),('iron','iron',.8)]}
 
 # ---------------------------------------------------------------- authoring helpers
-MIRROR=[]; ART={}
+MIRROR=[]; ART={}; DOORS=[]
 def r3(v): return round(v,3)
 def B(id,x0,x1,y0,y1,z0,z1,material,role='cover',mirror=True,batch='town',art=None,collision=True):
     """Box by extents. West-side pieces are mirrored to the east at the end (point symmetry)."""
@@ -60,6 +60,7 @@ def wall(id,axis,a0,a1,c0,c1,h,holes=(),crown=(0,),material='stone',lintel='ston
         else: B(f'{id}_{k}',c0,c1,y0,y1,s0,s1,material,'structure',art=art)
     k=0; cur=a0; spans=[]
     for h0,h1,sill,head in sorted(holes):
+        if sill==0: DOORS.append((id,axis,h0,h1,c0,c1))
         if h0>cur+.01: spans.append(('solid',cur,h0,0,0))
         spans.append(('hole',h0,h1,sill,head)); cur=h1
     if cur<a1-.01: spans.append(('solid',cur,a1,0,0))
@@ -143,21 +144,21 @@ wall('ruin_house_w','z',-9.8,-5,-18,-17.5,2.4,crown=(0,.6,1.1,.3))
 A('cover_ruin','cover',[-15.5,0,-9.2],height=1.2)
 
 # Cottage lanes: four houses with real doors and windows; two roofed, one half-roofed,
-# one fallen in. Doors on two sides so no house is a dead end.
+# one fallen in. A door in every wall, so every house is a thoroughfare.
 wall('c1_n','x',-22,-17,6,6.5,2.4,holes=[(-20.2,-18.8,0,2)],material='plaster',lintel='timber')
-wall('c1_s','x',-22,-17,9.5,10,2.4,holes=[(-20.6,-19.4,1,1.9)],material='plaster',lintel='timber')
-wall('c1_w','z',6.5,9.5,-22,-21.5,2.4,holes=[(7.4,8.6,1,1.9)],material='plaster',lintel='timber')
-wall('c1_e','z',6.5,9.5,-17.5,-17,2.4,holes=[(7.4,8.8,0,2)],material='plaster',lintel='timber')
+wall('c1_s','x',-22,-17,9.5,10,2.4,holes=[(-20.7,-19.3,0,2)],material='plaster',lintel='timber')
+wall('c1_w','z',6.5,9.5,-22,-21.5,2.4,holes=[(7.3,8.7,0,2)],material='plaster',lintel='timber')
+wall('c1_e','z',6.5,9.5,-17.5,-17,2.4,holes=[(7,8.4,0,2)],material='plaster',lintel='timber')
 B('c1_roof',-22.35,-16.65,2.4,4.3,5.65,10.35,'thatch','structure',art=dict(kind='roof'))
-B('c1_crate',-21.4,-20.6,0,.8,8.6,9.4,'timber',art=dict(kind='crate'))
-wall('c2_n','x',-14,-9,8,8.5,2.4,holes=[(-12.5,-11.3,1,1.9)],crown=(0,0,.6),material='plaster',lintel='timber')
+B('c1_crate',-18.3,-17.5,0,.8,8.7,9.5,'timber',art=dict(kind='crate'))
+wall('c2_n','x',-14,-9,8,8.5,2.4,holes=[(-12.6,-11.2,0,2)],crown=(0,0,.6),material='plaster',lintel='timber')
 wall('c2_s','x',-14,-9,11.5,12,2.4,holes=[(-12,-10.6,0,2)],crown=(0,.9),material='plaster',lintel='timber')
 wall('c2_w','z',8.5,11.5,-14,-13.5,2.4,holes=[(9.3,10.7,0,2)],material='plaster',lintel='timber')
-wall('c2_e','z',8.5,11.5,-9.5,-9,2.4,holes=[(9.4,10.6,1,1.9)],crown=(.5,1.1),material='plaster',lintel='timber')
+wall('c2_e','z',8.5,11.5,-9.5,-9,2.4,holes=[(9.3,10.7,0,2)],crown=(.5,1.1),material='plaster',lintel='timber')
 B('c2_roof',-14.35,-11.5,2.4,3.8,7.65,12.35,'thatch','structure',art=dict(kind='halfroof'))
 wall('c3_n','x',-21,-15,15,15.5,2.4,holes=[(-18.7,-17.3,0,2)],material='plaster',lintel='timber')
-wall('c3_s','x',-21,-15,19.5,20,2.4,holes=[(-19.6,-18.4,1,1.9)],material='plaster',lintel='timber')
-wall('c3_w','z',15.5,19.5,-21,-20.5,2.4,holes=[(16.8,18,1,1.9)],material='plaster',lintel='timber')
+wall('c3_s','x',-21,-15,19.5,20,2.4,holes=[(-19.7,-18.3,0,2)],material='plaster',lintel='timber')
+wall('c3_w','z',15.5,19.5,-21,-20.5,2.4,holes=[(16.7,18.1,0,2)],material='plaster',lintel='timber')
 wall('c3_e','z',15.5,19.5,-15.5,-15,2.4,holes=[(17.8,19.2,0,2)],material='plaster',lintel='timber')
 B('c3_roof',-21.35,-14.65,2.4,4.4,14.65,20.35,'thatch','structure',art=dict(kind='roof'))
 B('c3_crates',-16.4,-15.6,0,1.5,15.7,16.5,'timber',art=dict(kind='crate'))
@@ -170,15 +171,15 @@ A('cover_c3','cover',[-18,0,17.5],height=2.4)
 A('cover_c4','cover',[-8.5,0,19.6],height=.7)
 
 # Ruined chapel against the south bank: arched door, a breach on the west side,
-# lancet windows to the east, two broken pilasters and the altar.
+# an east door and a lancet window, two broken pilasters in the north corners and the altar.
 wall('chapel_n','x',-5,0,16,16.6,4.6,holes=[(-3.2,-1.8,0,3)],crown=(.6,0,.8))
 wall('chapel_w','z',16.6,23.5,-5,-4.4,3.6,holes=[(18.4,19.9,0,99),(21,22,1.4,2.8)],crown=(0,.9,.3))
-wall('chapel_e','z',16.6,23.5,-.6,0,3.4,holes=[(18,18.8,1.2,2.6),(20.6,21.4,1.2,2.6)],crown=(.2,0,.7))
+wall('chapel_e','z',16.6,23.5,-.6,0,3.4,holes=[(17.7,19.1,0,2.6),(20.6,21.4,1.2,2.6)],crown=(.2,0,.7))
 wall('chapel_apse','x',-4.4,-.6,23,23.5,4.2,crown=(0,.5))
 B('chapel_altar',-3.3,-1.7,0,1,22,23,'stoneLight',art=dict(kind='altar'))
-B('chapel_column_a',-4.4,-3.8,0,1.6,19,19.6,'stone',art=dict(kind='column'))
-B('chapel_column_b',-1.2,-.6,0,2.8,19,19.6,'stone',art=dict(kind='column'))
-A('cover_chapel','cover',[-2.5,0,20.6],height=2.8)
+B('chapel_column_a',-4.4,-3.8,0,1.6,16.6,17.2,'stone',art=dict(kind='column'))
+B('chapel_column_b',-1.2,-.6,0,2.8,16.6,17.2,'stone',art=dict(kind='column'))
+A('cover_chapel','cover',[-2.5,0,21.6],height=1)
 
 # Barn in the spawn court's south corner: an open timber shed with hay.
 B('barn_back',-29,-28.6,0,2.6,14,20,'timber','structure',art=dict(kind='planks',axis='z'))
@@ -202,11 +203,28 @@ for o in MIRROR:
 for o in c.objects:
     if o['id']=='spawn_cloth_e': o['material']='gold'
 
+# No pillar, prop or furniture may stand in a doorway: keep 1.2 m clear on both sides.
+def door_clear():
+    bad=[]
+    for wid,axis,h0,h1,c0,c1 in DOORS:
+        for side in (-1,1):
+            z0,z1=(c0-1.2,c0) if side<0 else (c1,c1+1.2)
+            for o in c.objects:
+                if not o['collision'] or o['type']!='box' or o['role']=='floor' or o['id'].startswith(wid+'_'): continue
+                (px,py,pz),(sx,sy,sz)=o['position'],o['size']
+                if py-sy/2>1.8 or py+sy/2<.3: continue
+                lo,hi=(px-sx/2,px+sx/2),(pz-sz/2,pz+sz/2)
+                if axis=='z': lo,hi=hi,lo
+                if lo[0]<h1-.01 and lo[1]>h0+.01 and hi[0]<z1-.01 and hi[1]>z0+.01: bad.append((wid,o['id']))
+    assert not bad,f'doorways blocked: {bad}'
+door_clear()
+
 # Routes run spawn to spawn; each is point-symmetric so both directions mirror.
 c.route('north_hall',[[-28.5,0,-9],[-28,0,-19],[-21.5,0,-19],[-19,0,-19],[-13,0,-19.3],[-7.4,0,-18.6],[-5.4,0,-18.6],[-4.5,0,-15.2],[1.6,0,-15.2],
     [5.5,0,-15.2],[13,0,-14],[23,0,-13],[27,0,-3],[28.5,0,5]])
 c.route('market',[[-28.5,0,-5],[-26,0,2],[-18,0,3],[-8,0,1],[0,0,2.5],[8,0,-1],[18,0,-3],[26,0,-2],[28.5,0,5]])
 c.route('cottage_lanes',[[-28.5,0,-5],[-26,0,4],[-19.5,0,12.5],[-13,0,14.5],[-7.5,0,14.6],[-2,0,15.2],[0,0,15.2],[4.5,0,13],[14,0,12.5],[21.5,0,12.5],[22.5,0,16],[27,0,15],[28.5,0,9]])
+c.route('through_houses',[[-28.5,0,-5],[-26,0,4],[-24,0,7.9],[-19.5,0,7.9],[-15.5,0,7.9],[-15.5,0,10],[-11.5,0,10],[-7,0,10],[-4,0,8],[0,0,2.5],[8,0,-1],[18,0,-3],[26,0,-2],[28.5,0,5]])
 c.route('tower_climb',[[-8,0,1],[-3,0,-3],[-1,0,-4.5],[-1,2.4,-10.5],[-1,2.4,-12.2]])
 c.route('loft_climb',[[-9.5,0,-12],[-9.5,0,-15.8],[-7.1,0,-17.35],[-12.3,2.6,-17.35],[-12.3,2.6,-15.8],[-17,2.6,-15.8]])
 

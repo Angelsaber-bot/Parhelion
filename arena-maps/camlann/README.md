@@ -104,3 +104,11 @@ map for such traps.
 Town pieces carry `batch: "town"`: `chapterkit.save` checks each piece's art stays
 inside its own collider, then merges them into one `BATCH_town` node (one draw per
 material). 313 solids; 84,600 triangles / 8.26 MB GLB; ~95 draw calls in view.
+
+## 2026-10-29 doors
+
+max asked for more doors and no pillars blocking them. Every intact cottage (c1-c3) now
+has a door in all four walls, so each house is a thoroughfare (the new `through_houses`
+route walks c1 and c2). The chapel gets an east door. Its two pilasters move into the
+north corners: the west one used to stand right behind the west breach. `build.py` now
+asserts that 1.2 m on both sides of every door and breach is free of collision boxes.
