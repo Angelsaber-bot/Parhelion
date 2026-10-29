@@ -165,3 +165,16 @@ Waist pieces that stood on the old deck line drop by G; masts and side walls len
 Waist dressing is remapped with `gundeck_y`: it moves rigidly below 1.3 m and stretches up to
 the deck underside. There are now four stairwells, with new `stair_far_±1` at z = ∓10.8, and a
 new `far_stairs` route.
+
+2026-10-29 (third pass): max reported the stairs were too long and the openings were all in
+the middle, and asked for drop-down gaps and one more spawn per team.
+- Per side there are now two 5 m stairs (`STAIRS`), one near the end deck and one by the
+  side wall, plus two open drop hatches (`DROPS`) with a dark rim and no stairs. All of them
+  are point-symmetric.
+- The deck is cut generically around `HOLES`.
+- Each team has a third spawn on the gun deck at the far end (`spawn_<team>_2`), screened
+  by `spawn_bulkhead_±1`.
+- `G` is now -0.75 so that a standing player's quantized y is exactly the floor.
+- The routes are `end_stairs` and `side_stairs`.
+- Shaking on the lower deck in online play comes from a Worker still running an older
+  map.json, so redeploy the Worker together with Pages.

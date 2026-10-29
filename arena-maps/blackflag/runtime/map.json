@@ -13,7 +13,7 @@
   "bounds": {
     "min": [
       -32.0,
-      -0.7,
+      -0.75,
       -17.0
     ],
     "max": [
@@ -114,9 +114,9 @@
         0.3
       ],
       [
-        -16,
+        -17,
         1.803,
-        6,
+        2.5,
         0.58,
         "#ffd08a",
         0.3
@@ -124,7 +124,7 @@
       [
         -4,
         1.803,
-        -12,
+        -11,
         0.58,
         "#ffd08a",
         0.3
@@ -140,7 +140,7 @@
       [
         4,
         1.803,
-        -12,
+        11,
         0.58,
         "#ffd08a",
         0.3
@@ -148,15 +148,7 @@
       [
         4,
         1.803,
-        12,
-        0.58,
-        "#ffd08a",
-        0.3
-      ],
-      [
-        16,
-        1.803,
-        -6,
+        -12,
         0.58,
         "#ffd08a",
         0.3
@@ -165,6 +157,14 @@
         16,
         1.803,
         6,
+        0.58,
+        "#ffd08a",
+        0.3
+      ],
+      [
+        17,
+        1.803,
+        -2.5,
         0.58,
         "#ffd08a",
         0.3
@@ -181,6 +181,22 @@
         10,
         1.803,
         7.4,
+        0.58,
+        "#ffd08a",
+        0.3
+      ],
+      [
+        -6,
+        1.803,
+        1.5,
+        0.58,
+        "#ffd08a",
+        0.3
+      ],
+      [
+        6,
+        1.803,
+        -1.5,
         0.58,
         "#ffd08a",
         0.3
@@ -253,31 +269,31 @@
       ],
       [
         -16,
-        -0.7,
+        -0.75,
         -6,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
-        -16,
-        -0.7,
-        6,
+        -17,
+        -0.75,
+        2.5,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
         -4,
-        -0.7,
-        -12,
+        -0.75,
+        -11,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
         -4,
-        -0.7,
+        -0.75,
         12,
         2.2,
         "#ffb36a",
@@ -285,39 +301,39 @@
       ],
       [
         4,
-        -0.7,
-        -12,
+        -0.75,
+        11,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
         4,
-        -0.7,
-        12,
+        -0.75,
+        -12,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
         16,
-        -0.7,
-        -6,
-        2.2,
-        "#ffb36a",
-        0.35
-      ],
-      [
-        16,
-        -0.7,
+        -0.75,
         6,
+        2.2,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        17,
+        -0.75,
+        -2.5,
         2.2,
         "#ffb36a",
         0.35
       ],
       [
         -10,
-        -0.7,
+        -0.75,
         -7.4,
         2.2,
         "#ffb36a",
@@ -325,8 +341,24 @@
       ],
       [
         10,
-        -0.7,
+        -0.75,
         7.4,
+        2.2,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        -6,
+        -0.75,
+        1.5,
+        2.2,
+        "#ffb36a",
+        0.35
+      ],
+      [
+        6,
+        -0.75,
+        -1.5,
         2.2,
         "#ffb36a",
         0.35
@@ -383,7 +415,7 @@
       "type": "box",
       "position": [
         0,
-        -1.15,
+        -1.2,
         0
       ],
       "size": [
@@ -401,12 +433,12 @@
       "type": "box",
       "position": [
         0,
-        1.75,
+        1.725,
         -17
       ],
       "size": [
         64,
-        4.9,
+        4.95,
         0.5
       ],
       "material": "tar",
@@ -419,12 +451,12 @@
       "type": "box",
       "position": [
         0,
-        1.75,
+        1.725,
         17
       ],
       "size": [
         64,
-        4.9,
+        4.95,
         0.5
       ],
       "material": "tar",
@@ -509,12 +541,12 @@
       "type": "box",
       "position": [
         -32,
-        1.65,
+        1.625,
         0
       ],
       "size": [
         0.5,
-        4.7,
+        4.75,
         34
       ],
       "material": "tar",
@@ -527,12 +559,12 @@
       "type": "box",
       "position": [
         32,
-        1.65,
+        1.625,
         0
       ],
       "size": [
         0.5,
-        4.7,
+        4.75,
         34
       ],
       "material": "tar",
@@ -545,12 +577,12 @@
       "type": "box",
       "position": [
         -27,
-        0.85,
+        0.825,
         0
       ],
       "size": [
         10,
-        3.0999999999999996,
+        3.15,
         33.5
       ],
       "material": "timber",
@@ -635,12 +667,12 @@
       "type": "box",
       "position": [
         27,
-        0.85,
+        0.825,
         0
       ],
       "size": [
         10,
-        3.0999999999999996,
+        3.15,
         33.5
       ],
       "material": "timber",
@@ -725,7 +757,7 @@
       "type": "box",
       "position": [
         0,
-        0.0,
+        -0.05,
         0
       ],
       "size": [
@@ -761,12 +793,12 @@
       "type": "box",
       "position": [
         0,
-        7.65,
+        7.625,
         0
       ],
       "size": [
         0.9,
-        16.7,
+        16.75,
         0.9
       ],
       "material": "timber",
@@ -779,12 +811,12 @@
       "type": "box",
       "position": [
         -13,
-        5.65,
+        5.625,
         -2
       ],
       "size": [
         0.7,
-        12.7,
+        12.75,
         0.7
       ],
       "material": "timber",
@@ -797,7 +829,7 @@
       "type": "box",
       "position": [
         -11,
-        -0.05,
+        -0.1,
         -13
       ],
       "size": [
@@ -815,7 +847,7 @@
       "type": "box",
       "position": [
         9,
-        -0.05,
+        -0.1,
         13
       ],
       "size": [
@@ -833,7 +865,7 @@
       "type": "box",
       "position": [
         -3,
-        -0.05,
+        -0.1,
         13
       ],
       "size": [
@@ -851,7 +883,7 @@
       "type": "box",
       "position": [
         3,
-        -0.05,
+        -0.1,
         -13
       ],
       "size": [
@@ -869,7 +901,7 @@
       "type": "box",
       "position": [
         -8.5,
-        0.2,
+        0.15,
         -1.1
       ],
       "size": [
@@ -887,7 +919,7 @@
       "type": "box",
       "position": [
         9,
-        0.25,
+        0.2,
         2
       ],
       "size": [
@@ -905,7 +937,7 @@
       "type": "box",
       "position": [
         3,
-        0.2,
+        0.15,
         -14.35
       ],
       "size": [
@@ -923,7 +955,7 @@
       "type": "box",
       "position": [
         -3,
-        0.2,
+        0.15,
         14.35
       ],
       "size": [
@@ -940,12 +972,12 @@
       "id": "upper_deck_0",
       "type": "box",
       "position": [
-        -17.5,
+        -21.0,
         2.25,
         0.0
       ],
       "size": [
-        9,
+        2,
         0.3,
         33.5
       ],
@@ -958,14 +990,14 @@
       "id": "upper_deck_1",
       "type": "box",
       "position": [
-        -10.0,
+        -18.0,
         2.25,
-        -14.375
+        -5.475
       ],
       "size": [
-        6,
+        4,
         0.3,
-        4.75
+        22.55
       ],
       "material": "deck",
       "collision": true,
@@ -976,14 +1008,14 @@
       "id": "upper_deck_2",
       "type": "box",
       "position": [
-        -10.0,
+        -18.0,
         2.25,
-        -3.5
+        12.475
       ],
       "size": [
-        6,
+        4,
         0.3,
-        12.2
+        8.55
       ],
       "material": "deck",
       "collision": true,
@@ -994,14 +1026,14 @@
       "id": "upper_deck_3",
       "type": "box",
       "position": [
-        -10.0,
+        -15.5,
         2.25,
-        10.875
+        -10.375
       ],
       "size": [
-        6,
+        1,
         0.3,
-        11.75
+        12.75
       ],
       "material": "deck",
       "collision": true,
@@ -1012,14 +1044,14 @@
       "id": "upper_deck_4",
       "type": "box",
       "position": [
-        0.0,
+        -15.5,
         2.25,
-        0.0
+        2.0999999999999996
       ],
       "size": [
-        14,
+        1,
         0.3,
-        33.5
+        7.4
       ],
       "material": "deck",
       "collision": true,
@@ -1030,14 +1062,14 @@
       "id": "upper_deck_5",
       "type": "box",
       "position": [
-        10.0,
+        -15.5,
         2.25,
-        -10.875
+        12.475
       ],
       "size": [
-        6,
+        1,
         0.3,
-        11.75
+        8.55
       ],
       "material": "deck",
       "collision": true,
@@ -1048,14 +1080,14 @@
       "id": "upper_deck_6",
       "type": "box",
       "position": [
-        10.0,
+        -14.3,
         2.25,
-        3.5
+        -10.375
       ],
       "size": [
-        6,
+        1.4000000000000004,
         0.3,
-        12.2
+        12.75
       ],
       "material": "deck",
       "collision": true,
@@ -1066,14 +1098,14 @@
       "id": "upper_deck_7",
       "type": "box",
       "position": [
-        10.0,
+        -14.3,
         2.25,
-        14.375
+        7.575
       ],
       "size": [
-        6,
+        1.4000000000000004,
         0.3,
-        4.75
+        18.35
       ],
       "material": "deck",
       "collision": true,
@@ -1084,12 +1116,12 @@
       "id": "upper_deck_8",
       "type": "box",
       "position": [
-        17.5,
+        -12.8,
         2.25,
         0.0
       ],
       "size": [
-        9,
+        1.5999999999999996,
         0.3,
         33.5
       ],
@@ -1099,17 +1131,377 @@
       "batch": "ship"
     },
     {
-      "id": "stair_-1",
-      "type": "ramp",
+      "id": "upper_deck_9",
+      "type": "box",
       "position": [
-        10,
-        -0.7,
-        -3.8
+        -10.8,
+        2.25,
+        -3.875
       ],
       "size": [
-        6,
-        3.0999999999999996,
-        2.4
+        2.4000000000000004,
+        0.3,
+        25.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_10",
+      "type": "box",
+      "position": [
+        -10.8,
+        2.25,
+        14.075
+      ],
+      "size": [
+        2.4000000000000004,
+        0.3,
+        5.35
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_11",
+      "type": "box",
+      "position": [
+        -8.3,
+        2.25,
+        0.0
+      ],
+      "size": [
+        2.5999999999999996,
+        0.3,
+        33.5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_12",
+      "type": "box",
+      "position": [
+        -4.5,
+        2.25,
+        -16.075
+      ],
+      "size": [
+        5,
+        0.3,
+        1.3499999999999996
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_13",
+      "type": "box",
+      "position": [
+        -4.5,
+        2.25,
+        1.875
+      ],
+      "size": [
+        5,
+        0.3,
+        29.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_14",
+      "type": "box",
+      "position": [
+        0.0,
+        2.25,
+        0.0
+      ],
+      "size": [
+        4,
+        0.3,
+        33.5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_15",
+      "type": "box",
+      "position": [
+        4.5,
+        2.25,
+        -1.875
+      ],
+      "size": [
+        5,
+        0.3,
+        29.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_16",
+      "type": "box",
+      "position": [
+        4.5,
+        2.25,
+        16.075
+      ],
+      "size": [
+        5,
+        0.3,
+        1.3499999999999996
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_17",
+      "type": "box",
+      "position": [
+        8.3,
+        2.25,
+        0.0
+      ],
+      "size": [
+        2.5999999999999996,
+        0.3,
+        33.5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_18",
+      "type": "box",
+      "position": [
+        10.8,
+        2.25,
+        -14.075
+      ],
+      "size": [
+        2.4000000000000004,
+        0.3,
+        5.35
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_19",
+      "type": "box",
+      "position": [
+        10.8,
+        2.25,
+        3.875
+      ],
+      "size": [
+        2.4000000000000004,
+        0.3,
+        25.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_20",
+      "type": "box",
+      "position": [
+        12.8,
+        2.25,
+        0.0
+      ],
+      "size": [
+        1.5999999999999996,
+        0.3,
+        33.5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_21",
+      "type": "box",
+      "position": [
+        14.3,
+        2.25,
+        -7.575
+      ],
+      "size": [
+        1.4000000000000004,
+        0.3,
+        18.35
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_22",
+      "type": "box",
+      "position": [
+        14.3,
+        2.25,
+        10.375
+      ],
+      "size": [
+        1.4000000000000004,
+        0.3,
+        12.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_23",
+      "type": "box",
+      "position": [
+        15.5,
+        2.25,
+        -12.475
+      ],
+      "size": [
+        1,
+        0.3,
+        8.55
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_24",
+      "type": "box",
+      "position": [
+        15.5,
+        2.25,
+        -2.0999999999999996
+      ],
+      "size": [
+        1,
+        0.3,
+        7.4
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_25",
+      "type": "box",
+      "position": [
+        15.5,
+        2.25,
+        10.375
+      ],
+      "size": [
+        1,
+        0.3,
+        12.75
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_26",
+      "type": "box",
+      "position": [
+        18.0,
+        2.25,
+        -12.475
+      ],
+      "size": [
+        4,
+        0.3,
+        8.55
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_27",
+      "type": "box",
+      "position": [
+        18.0,
+        2.25,
+        5.475
+      ],
+      "size": [
+        4,
+        0.3,
+        22.55
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "upper_deck_28",
+      "type": "box",
+      "position": [
+        21.0,
+        2.25,
+        0.0
+      ],
+      "size": [
+        2,
+        0.3,
+        33.5
+      ],
+      "material": "deck",
+      "collision": true,
+      "role": "floor",
+      "batch": "ship"
+    },
+    {
+      "id": "stair_0_-1",
+      "type": "ramp",
+      "position": [
+        17.5,
+        -0.75,
+        -7.0
+      ],
+      "size": [
+        5,
+        3.15,
+        2.3999999999999995
       ],
       "material": "deck",
       "collision": true,
@@ -1119,15 +1511,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_-1_245",
+      "id": "stair_coaming_0_-1_a",
       "type": "box",
       "position": [
-        10,
+        17.5,
         2.85,
-        -2.45
+        -8.35
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1137,15 +1529,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_-1_515",
+      "id": "stair_coaming_0_-1_b",
       "type": "box",
       "position": [
-        10,
+        17.5,
         2.85,
-        -5.15
+        -5.6499999999999995
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1155,17 +1547,17 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_end_-1",
+      "id": "stair_coaming_end_0_-1",
       "type": "box",
       "position": [
-        7.15,
+        14.85,
         2.85,
-        -3.8
+        -7.0
       ],
       "size": [
         0.3,
         0.9,
-        2.4
+        2.9999999999999996
       ],
       "material": "timber",
       "collision": true,
@@ -1173,17 +1565,17 @@
       "batch": "ship"
     },
     {
-      "id": "stair_far_-1",
+      "id": "stair_1_-1",
       "type": "ramp",
       "position": [
-        10,
-        -0.7,
-        10.8
+        4.5,
+        -0.75,
+        14.2
       ],
       "size": [
-        6,
-        3.0999999999999996,
-        2.4
+        5,
+        3.15,
+        2.4000000000000004
       ],
       "material": "deck",
       "collision": true,
@@ -1193,15 +1585,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_far_-1_1215",
+      "id": "stair_coaming_1_-1_a",
       "type": "box",
       "position": [
-        10,
+        4.5,
         2.85,
-        12.15
+        12.85
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1211,15 +1603,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_far_-1_944",
+      "id": "stair_coaming_1_-1_b",
       "type": "box",
       "position": [
-        10,
+        4.5,
         2.85,
-        9.45
+        15.55
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1229,22 +1621,58 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_end_far_-1",
+      "id": "stair_coaming_end_1_-1",
       "type": "box",
       "position": [
-        7.15,
+        1.85,
         2.85,
-        10.8
+        14.2
       ],
       "size": [
         0.3,
         0.9,
-        2.4
+        3.0000000000000004
       ],
       "material": "timber",
       "collision": true,
       "role": "cover",
       "batch": "ship"
+    },
+    {
+      "id": "spawn_bulkhead_-1",
+      "type": "box",
+      "position": [
+        18.4,
+        0.675,
+        13.125
+      ],
+      "size": [
+        0.4,
+        2.85,
+        7.25
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure",
+      "batch": "ship"
+    },
+    {
+      "id": "lower_team_mark_-1",
+      "type": "box",
+      "position": [
+        20,
+        -0.725,
+        12.5
+      ],
+      "size": [
+        1.2,
+        0.05,
+        2.4
+      ],
+      "material": "red",
+      "collision": false,
+      "role": "wayfinding",
+      "batch": "floor"
     },
     {
       "id": "ship_boat_-1",
@@ -1286,9 +1714,9 @@
       "id": "water_casks_-1",
       "type": "box",
       "position": [
-        17,
+        12,
         3.0,
-        -9
+        -14.8
       ],
       "size": [
         1.8,
@@ -1301,17 +1729,17 @@
       "batch": "ship"
     },
     {
-      "id": "stair_1",
+      "id": "stair_0_1",
       "type": "ramp",
       "position": [
-        -10,
-        -0.7,
-        3.8
+        -17.5,
+        -0.75,
+        7.0
       ],
       "size": [
-        6,
-        3.0999999999999996,
-        2.4
+        5,
+        3.15,
+        2.3999999999999995
       ],
       "material": "deck",
       "collision": true,
@@ -1321,15 +1749,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_1_245",
+      "id": "stair_coaming_0_1_a",
       "type": "box",
       "position": [
-        -10,
+        -17.5,
         2.85,
-        2.45
+        5.6499999999999995
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1339,15 +1767,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_1_515",
+      "id": "stair_coaming_0_1_b",
       "type": "box",
       "position": [
-        -10,
+        -17.5,
         2.85,
-        5.15
+        8.35
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1357,17 +1785,17 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_end_1",
+      "id": "stair_coaming_end_0_1",
       "type": "box",
       "position": [
-        -7.15,
+        -14.85,
         2.85,
-        3.8
+        7.0
       ],
       "size": [
         0.3,
         0.9,
-        2.4
+        2.9999999999999996
       ],
       "material": "timber",
       "collision": true,
@@ -1375,17 +1803,17 @@
       "batch": "ship"
     },
     {
-      "id": "stair_far_1",
+      "id": "stair_1_1",
       "type": "ramp",
       "position": [
-        -10,
-        -0.7,
-        -10.8
+        -4.5,
+        -0.75,
+        -14.2
       ],
       "size": [
-        6,
-        3.0999999999999996,
-        2.4
+        5,
+        3.15,
+        2.4000000000000004
       ],
       "material": "deck",
       "collision": true,
@@ -1395,15 +1823,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_far_1_1215",
+      "id": "stair_coaming_1_1_a",
       "type": "box",
       "position": [
-        -10,
+        -4.5,
         2.85,
-        -12.15
+        -15.55
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1413,15 +1841,15 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_far_1_944",
+      "id": "stair_coaming_1_1_b",
       "type": "box",
       "position": [
-        -10,
+        -4.5,
         2.85,
-        -9.45
+        -12.85
       ],
       "size": [
-        6,
+        5,
         0.9,
         0.3
       ],
@@ -1431,22 +1859,58 @@
       "batch": "ship"
     },
     {
-      "id": "stair_coaming_end_far_1",
+      "id": "stair_coaming_end_1_1",
       "type": "box",
       "position": [
-        -7.15,
+        -1.85,
         2.85,
-        -10.8
+        -14.2
       ],
       "size": [
         0.3,
         0.9,
-        2.4
+        3.0000000000000004
       ],
       "material": "timber",
       "collision": true,
       "role": "cover",
       "batch": "ship"
+    },
+    {
+      "id": "spawn_bulkhead_1",
+      "type": "box",
+      "position": [
+        -18.4,
+        0.675,
+        -13.125
+      ],
+      "size": [
+        0.4,
+        2.85,
+        7.25
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "structure",
+      "batch": "ship"
+    },
+    {
+      "id": "lower_team_mark_1",
+      "type": "box",
+      "position": [
+        -20,
+        -0.725,
+        -12.5
+      ],
+      "size": [
+        1.2,
+        0.05,
+        2.4
+      ],
+      "material": "teal",
+      "collision": false,
+      "role": "wayfinding",
+      "batch": "floor"
     },
     {
       "id": "ship_boat_1",
@@ -1488,9 +1952,9 @@
       "id": "water_casks_1",
       "type": "box",
       "position": [
-        -17,
+        -12,
         3.0,
-        9
+        14.8
       ],
       "size": [
         1.8,
@@ -1569,6 +2033,17 @@
       "height": 3.7
     },
     {
+      "id": "spawn_east_2",
+      "kind": "spawn",
+      "position": [
+        20,
+        -0.75,
+        12.5
+      ],
+      "yaw": 0,
+      "team": "east"
+    },
+    {
       "id": "cover_boat_-1",
       "kind": "cover",
       "position": [
@@ -1592,9 +2067,9 @@
       "id": "cover_stairwell_-1",
       "kind": "cover",
       "position": [
-        10,
+        17.5,
         2.4,
-        -6
+        -4.6
       ],
       "height": 0.9
     },
@@ -1603,10 +2078,21 @@
       "kind": "cover",
       "position": [
         10,
-        -0.7,
+        -0.75,
         6
       ],
       "height": 1.8
+    },
+    {
+      "id": "spawn_west_2",
+      "kind": "spawn",
+      "position": [
+        -20,
+        -0.75,
+        -12.5
+      ],
+      "yaw": 3.1416,
+      "team": "west"
     },
     {
       "id": "cover_boat_1",
@@ -1632,9 +2118,9 @@
       "id": "cover_stairwell_1",
       "kind": "cover",
       "position": [
-        -10,
+        -17.5,
         2.4,
-        6
+        4.6
       ],
       "height": 0.9
     },
@@ -1643,7 +2129,7 @@
       "kind": "cover",
       "position": [
         -10,
-        -0.7,
+        -0.75,
         -6
       ],
       "height": 1.8
@@ -1663,7 +2149,7 @@
       "kind": "cover",
       "position": [
         -8.5,
-        -0.7,
+        -0.75,
         -3.6
       ],
       "height": 1.8
@@ -1673,7 +2159,7 @@
       "kind": "cover",
       "position": [
         9,
-        -0.7,
+        -0.75,
         4.5
       ],
       "height": 1.9
@@ -1683,7 +2169,7 @@
       "kind": "cover",
       "position": [
         6.8,
-        -0.7,
+        -0.75,
         -13
       ],
       "height": 1.8
@@ -1693,7 +2179,7 @@
       "kind": "cover",
       "position": [
         0,
-        -0.7,
+        -0.75,
         -4
       ],
       "height": 1.4
@@ -1703,7 +2189,7 @@
       "kind": "cover",
       "position": [
         0,
-        -0.7,
+        -0.75,
         4
       ],
       "height": 1.4
@@ -1713,7 +2199,7 @@
       "kind": "objective",
       "position": [
         4.8,
-        -0.7,
+        -0.75,
         0
       ],
       "radius": 2
@@ -1737,12 +2223,12 @@
         [
           -23,
           2.4,
-          -13.5
+          -12
         ],
         [
           21,
           2.4,
-          -13.5
+          -12
         ],
         [
           28,
@@ -1773,12 +2259,12 @@
         [
           -23,
           2.4,
-          13.5
+          12
         ],
         [
           21,
           2.4,
-          13.5
+          12
         ],
         [
           28,
@@ -1793,104 +2279,109 @@
       ]
     },
     {
-      "id": "down_and_through",
-      "name": "down and through",
+      "id": "end_stairs",
+      "name": "end stairs",
       "points": [
         [
-          -20,
+          -24,
           2.4,
-          3.8
+          7
         ],
         [
-          -13.5,
+          -21,
           2.4,
-          3.8
+          7
         ],
         [
-          -7.6,
-          -0.7,
-          3.8
+          -14.3,
+          -0.75,
+          7
         ],
         [
-          -5,
-          -0.7,
-          8
+          -6,
+          -0.75,
+          7.5
         ],
         [
-          0,
-          -0.7,
-          10
+          12,
+          -0.75,
+          7.5
         ],
         [
-          5.5,
-          -0.7,
-          6
+          12,
+          -0.75,
+          -7
         ],
         [
-          5.5,
-          -0.7,
-          -3.8
+          14.3,
+          -0.75,
+          -7
         ],
         [
-          7.6,
-          -0.7,
-          -3.8
-        ],
-        [
-          13.5,
+          21,
           2.4,
-          -3.8
+          -7
         ],
         [
-          20,
+          24,
           2.4,
-          -3.8
+          -7
         ]
       ]
     },
     {
-      "id": "far_stairs",
-      "name": "far stairs",
+      "id": "side_stairs",
+      "name": "side stairs",
       "points": [
         [
-          -20,
+          -12,
           2.4,
-          -10.8
+          -12
         ],
         [
-          -13.5,
+          -8,
           2.4,
-          -10.8
+          -14.2
         ],
         [
-          -7.6,
-          -0.7,
-          -10.8
+          -1.5,
+          -0.75,
+          -14.2
+        ],
+        [
+          -1.5,
+          -0.75,
+          -11
         ],
         [
           -5,
-          -0.7,
-          -8
+          -0.75,
+          -11
         ],
         [
-          5,
-          -0.7,
-          8
+          -5,
+          -0.75,
+          11
         ],
         [
-          7.6,
-          -0.7,
-          10.8
+          1.5,
+          -0.75,
+          11
         ],
         [
-          13.5,
+          1.5,
+          -0.75,
+          14.2
+        ],
+        [
+          8,
           2.4,
-          10.8
+          14.2
         ],
         [
-          20,
+          12,
           2.4,
-          10.8
+          12
         ]
       ]
     },
@@ -1900,37 +2391,37 @@
       "points": [
         [
           -15,
-          -0.7,
+          -0.75,
           -8
         ],
         [
           -7,
-          -0.7,
+          -0.75,
           -7.5
         ],
         [
           -5,
-          -0.7,
+          -0.75,
           -4
         ],
         [
           5,
-          -0.7,
+          -0.75,
           -4
         ],
         [
           6,
-          -0.7,
+          -0.75,
           5
         ],
         [
           15,
-          -0.7,
+          -0.75,
           8
         ],
         [
           15,
-          -0.7,
+          -0.75,
           10
         ]
       ]
@@ -1941,42 +2432,42 @@
       "points": [
         [
           -15,
-          -0.7,
+          -0.75,
           -10
         ],
         [
           -15,
-          -0.7,
+          -0.75,
           10
         ],
         [
           -5,
-          -0.7,
+          -0.75,
           10
         ],
         [
           -5,
-          -0.7,
+          -0.75,
           4
         ],
         [
           5,
-          -0.7,
+          -0.75,
           4
         ],
         [
           5,
-          -0.7,
+          -0.75,
           8
         ],
         [
           15,
-          -0.7,
+          -0.75,
           8
         ],
         [
           15,
-          -0.7,
+          -0.75,
           -8
         ]
       ]
