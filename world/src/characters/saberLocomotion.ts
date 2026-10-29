@@ -5,10 +5,10 @@ const RELAXED = ['RightArm', 'RightForeArm', 'RightHand', 'LeftArm', 'LeftForeAr
 /**
  * Preserve the published 61c52ed stationary carry, not the raw GLB's raised guard.
  * Idle retains its original breathing and the published five arm/blade aim targets.
- * Walk uses the same independently timed upper-body LOCAL curves: no new arm swing,
+ * Walk and Run use the same independently timed upper-body LOCAL curves: no new arm swing,
  * wrist roll, sword lift, trailing carry, or outfit-specific clearance adjustment.
  * Only the authored hips, legs and lower garment locomotion tracks keep moving.
- * Ordinary mixer tracks keep transitions reversible; Run and Attack remain untouched.
+ * Ordinary mixer tracks keep transitions reversible; Attack remains untouched.
  */
 export function publishedSaberIdleClip(model: THREE.Object3D, idle: THREE.AnimationClip) {
   const source = idle;
@@ -70,8 +70,8 @@ export function publishedSaberIdleClip(model: THREE.Object3D, idle: THREE.Animat
 
 /**
  * Split only locomotion: the same upper Idle action runs on its natural 2.4 s clock
- * while legs/root keep their own Idle/Walk clocks and walking speed. Its weight is
- * exactly the sum of the locomotion weights, so authored Run/Attack blend normally.
+ * while legs/root keep their own Idle/Walk/Run clocks and walking speed. Its weight is
+ * exactly the sum of the locomotion weights, so authored Attack blends normally.
  */
 export class SaberIdleCarry {
   readonly action?: THREE.AnimationAction;
@@ -86,12 +86,12 @@ export class SaberIdleCarry {
   }
   private isUpper(track: THREE.KeyframeTrack) { return this.upper.has(track.name.slice(0, track.name.lastIndexOf('.'))); }
   locomotionClip(source: THREE.AnimationClip) {
-    if (!this.action || !['Idle', 'Walk'].includes(source.name)) return source;
+    if (!this.action || !['Idle', 'Walk', 'Run'].includes(source.name)) return source;
     return new THREE.AnimationClip(source.name, source.duration, source.tracks.filter(track => !this.isUpper(track)).map(track => track.clone()));
   }
-  updateWeight(idle?: THREE.AnimationAction, walk?: THREE.AnimationAction) {
+  updateWeight(idle?: THREE.AnimationAction, walk?: THREE.AnimationAction, run?: THREE.AnimationAction) {
     if (!this.action) return;
     const weight = (action?: THREE.AnimationAction) => action?.enabled && action.isScheduled() ? action.getEffectiveWeight() : 0;
-    this.action.setEffectiveWeight(Math.min(1, weight(idle) + weight(walk)));
+    this.action.setEffectiveWeight(Math.min(1, weight(idle) + weight(walk) + weight(run)));
   }
 }

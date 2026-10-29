@@ -153,7 +153,7 @@ export class ContractServant {
   private tick(dt: number) {
     if (this.mixer) {
       this.blend.update(this.mixer, dt);
-      this.idleCarry?.updateWeight(this.clips.get('idle'), this.clips.get('walk'));
+      this.idleCarry?.updateWeight(this.clips.get('idle'), this.clips.get('walk'), this.clips.get('run'));
       // Apply the just-updated normalized weight without advancing either clock twice.
       this.mixer.update(0);
     }

@@ -19,17 +19,17 @@ for(const outfit of ['armor','civilian'] as const){
   assert.notEqual(restored,idle);assert.equal(restored.duration,idle.duration);assert.equal(restored.tracks.length,idle.tracks.length);
   for(const original of idle.tracks){if(!relaxed.test(original.name)){const restoredTrack=restored.tracks.find(t=>t.name===original.name)!;assert.deepEqual(restoredTrack.times,original.times,original.name);assert.deepEqual(restoredTrack.values,original.values,original.name);}}
   const upper=new Set(Object.keys(published.outfits[outfit].reference));
-  for(const originalClip of [idle,walk]){const clip=carry.locomotionClip(originalClip);assert.equal(clip.name,originalClip.name);assert.equal(clip.duration,originalClip.duration);
+  for(const originalClip of [idle,walk,gltf.animations.find(c=>c.name==='Run')!]){const clip=carry.locomotionClip(originalClip);assert.equal(clip.name,originalClip.name);assert.equal(clip.duration,originalClip.duration);
    for(const original of originalClip.tracks){const baked=clip.tracks.find(t=>t.name===original.name);if(upper.has(original.name.slice(0,original.name.lastIndexOf('.')))){assert.equal(baked,undefined,'locomotion must not fight the shared original Idle upper pose');}else{assert.ok(baked);assert.deepEqual(baked.times,original.times,original.name);assert.deepEqual(baked.values,original.values,original.name);}}
   }
   assert.equal(JSON.stringify(gltf.animations.map(c=>c.toJSON())),source,'source assets/clips are not modified');const after:any[]=[];gltf.scene.traverse(o=>after.push([o.uuid,...o.position.toArray(),...o.quaternion.toArray(),...o.scale.toArray()]));assert.deepEqual(after,transforms,'baking never poses the live model');
-  for(const name of ['Run','Attack']){const original=gltf.animations.find(c=>c.name===name)!;assert.equal(carry.locomotionClip(original),original);}
+  for(const name of ['Attack']){const original=gltf.animations.find(c=>c.name===name)!;assert.equal(carry.locomotionClip(original),original);}
   const unknown=new SaberIdleCarry(new THREE.Group(),new THREE.AnimationMixer(new THREE.Group()),idle);assert.equal(unknown.action,undefined);assert.equal(unknown.locomotionClip(walk),walk);
   mixer.stopAllAction();
  });
- test(`${outfit}: Idle and Walk retain all 55 published upper local quaternions and grip on the original independent 2.4-second clock`,async()=>{
+ test(`${outfit}: Idle, Walk and Run retain all 55 published upper local quaternions and grip on the original independent 2.4-second clock`,async()=>{
   const baseline=published.outfits[outfit];let maxSigned=0,maxAngle=0;
-  for(const [state,rate] of [['idle',1],['walk',.65],['walk',1.8]] as const){
+  for(const [state,rate] of [['idle',1],['walk',.65],['walk',1.8],['run',1],['run',3]] as const){
    const {gltf}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS[outfit]))),appearance=new ServantAppearance();appearance.select(outfit);
    const actor=new ContractServant({scene:new THREE.Scene(),marker:{id:'test',type:'interact',label:'test',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),appearance,colliders:[],load:async()=>gltf,target:()=>null,strike:()=>null});await actor.ensureLoaded();
    const runtime=actor as any;runtime.play(state,false,rate);runtime.tick(.25);runtime.clips.get(state).time=0;runtime.idleCarry.action.time=0;runtime.tick(0);
@@ -44,7 +44,7 @@ for(const outfit of ['armor','civilian'] as const){
     }
     legRange=Math.max(legRange,startLeg.angleTo(gltf.scene.getObjectByName('mixamorigLeftUpLeg')!.quaternion));
    }
-   if(state==='walk')assert.ok(legRange>.35,'authored leg locomotion continues while upper pose follows Idle');
+   if(state==='walk'||state==='run')assert.ok(legRange>.35,'authored leg locomotion continues while upper pose follows Idle');
    assert.equal(runtime.idleCarry.action.getEffectiveTimeScale(),1,'walking speed cannot accelerate breathing');actor.dispose();
   }
   console.log(`${outfit}: published reference max signed quaternion component error=${maxSigned}; normalized angle error=${maxAngle} rad`);
