@@ -114,3 +114,6 @@ max wanted each map to have its own playstyle. FROSTCOURT is now the long-range 
 
 New pieces are batched (`BATCH_court`). Layout baseline and the node-count check in
 `validation/validate_art.py` were updated for the new layout.
+
+2026-10-29 frame rate: all remaining non-floor solids join `BATCH_court`, which takes the visual GLB
+from 54 nodes to 10 (123 to 68 draw calls in the overview). The objects baseline hash and node check are updated.

@@ -6,7 +6,7 @@ import sys, math, json
 from surfaces import painted_surfaces
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT.parent/'_lib'))
-from chapterkit import Chapter, mat, ring, flag, box_edges, bevelbox, hiproof
+from chapterkit import Chapter, mat, ring, flag, box_edges, bevelbox, hiproof, mesh_bounds, object_box, merge
 from glbkit import Mesh, write_glb
 
 
@@ -54,20 +54,26 @@ class ShipChapter(Chapter):
         # dark mizzen textile live in the self-contained GLB material table only.
         runtime_palette={k:v[0] for k,v in self.palette.items() if k!='tarCloth'}
         runtime_palette.update(iron='#505d63',brass='#d5ae65')
+        # 2026-10-29 frame rate: one node per object cost ~160 draws. Static ship pieces now
+        # merge per material into two batches: everything that casts shadow (cover, hull,
+        # the upper deck over the gun deck) and the shadowless floors.
+        for o in self.objects:
+            o['batch']='floor' if o['role'] in ('floor','wayfinding') and not o['id'].startswith('upper_deck_') else 'ship'
         self.data.update(palette=runtime_palette,objects=self.objects,anchors=self.anchors,routes=self.routes)
         (self.root/'runtime/map.json').write_text(json.dumps(self.data,indent=2,ensure_ascii=False)+'\n')
-        nodes=[];cols=[]
+        nodes=[];cols=[];batches={}
         for o in self.objects:
             visual=Mesh();collision=Mesh();custom=render_object and render_object(visual,o)
             if o['type']=='ramp':visual.wedge(o['material'],o);collision.wedge('collision',o)
             else:
                 if not custom:visual.cbox(o['material'],o['position'],o['size'])
                 collision.cbox('collision',o['position'],o['size'])
-            extra=dict(source_id=o['id'],role=o['role'],collision=o['collision'],decorative=False)
-            # The upper deck is a floor that must still shade the gun deck below it.
-            if o['id'].startswith('upper_deck_'):extra['castShadow']=True
-            nodes.append(('VIS_'+o['id'],visual,extra))
+            lo,hi=mesh_bounds(visual);b0,b1=object_box(o)
+            assert all(lo[i]>=b0[i]-1e-4 and hi[i]<=b1[i]+1e-4 for i in range(3)),f'{o["id"]} art outside its box {lo} {hi}'
+            b=batches.setdefault(o['batch'],(Mesh(),[]));merge(b[0],visual);b[1].append(o['id'])
             if o['collision']:cols.append(('COL_'+o['id'],collision,dict(source_id=o['id'],role=o['role'],collision=True,decorative=False)))
+        for name,(mesh,ids) in batches.items():
+            nodes.append(('BATCH_'+name,mesh,dict(role='structure',collision=False,decorative=False,batched=ids,castShadow=name=='ship')))
         for name,mesh,shadow in [('chapter_craft',self.detail,False),('ship_sails',self.sails,True),('ship_gallery',self.gallery,True)]:
             nodes.append(('DETAIL_'+name,mesh,dict(role='detail_batch',collision=False,decorative=True,castShadow=shadow)))
         mats={**self.palette,'collision':('#adbbce',0,1,0,1)}

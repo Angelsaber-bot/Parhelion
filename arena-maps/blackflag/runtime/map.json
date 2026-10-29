@@ -393,7 +393,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "floor"
     },
     {
       "id": "bulwark_-17",
@@ -410,7 +411,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "bulwark_17",
@@ -427,7 +429,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "raised_bulwark_-27_-17",
@@ -444,7 +447,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "raised_bulwark_-27_17",
@@ -461,7 +465,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "raised_bulwark_27_-17",
@@ -478,7 +483,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "raised_bulwark_27_17",
@@ -495,7 +501,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "end_bulwark_-32",
@@ -512,7 +519,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "end_bulwark_32",
@@ -529,7 +537,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "bow_deck",
@@ -546,7 +555,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "floor"
     },
     {
       "id": "bow_screen",
@@ -563,7 +573,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "bow_gun_-14",
@@ -580,7 +591,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "bow_gun_14",
@@ -597,7 +609,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "bow_team_mark",
@@ -614,7 +627,8 @@
       ],
       "material": "teal",
       "collision": false,
-      "role": "wayfinding"
+      "role": "wayfinding",
+      "batch": "floor"
     },
     {
       "id": "stern_deck",
@@ -631,7 +645,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "floor"
     },
     {
       "id": "stern_screen",
@@ -648,7 +663,8 @@
       ],
       "material": "tar",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "stern_gun_-14",
@@ -665,7 +681,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stern_gun_14",
@@ -682,7 +699,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stern_team_mark",
@@ -699,7 +717,8 @@
       ],
       "material": "red",
       "collision": false,
-      "role": "wayfinding"
+      "role": "wayfinding",
+      "batch": "floor"
     },
     {
       "id": "hatch_coaming",
@@ -716,7 +735,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stern_helm",
@@ -733,7 +753,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "prop"
+      "role": "prop",
+      "batch": "ship"
     },
     {
       "id": "main_mast",
@@ -750,7 +771,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "fore_mast",
@@ -767,7 +789,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "ship"
     },
     {
       "id": "gun_-11_-13",
@@ -784,7 +807,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "gun_9_13",
@@ -801,7 +825,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "gun_-3_13",
@@ -818,7 +843,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "gun_3_-13",
@@ -835,7 +861,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "cargo_crate_fore",
@@ -852,7 +879,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "cargo_crate_aft",
@@ -869,7 +897,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "gun_breastwork_3",
@@ -886,7 +915,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "gun_breastwork_-3",
@@ -903,7 +933,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_0",
@@ -920,7 +951,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_1",
@@ -937,7 +969,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_2",
@@ -954,7 +987,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_3",
@@ -971,7 +1005,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_4",
@@ -988,7 +1023,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_5",
@@ -1005,7 +1041,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "upper_deck_6",
@@ -1022,7 +1059,8 @@
       ],
       "material": "deck",
       "collision": true,
-      "role": "floor"
+      "role": "floor",
+      "batch": "ship"
     },
     {
       "id": "stair_-1",
@@ -1041,7 +1079,8 @@
       "collision": true,
       "role": "ramp",
       "axis": "x",
-      "lowAt": -1
+      "lowAt": -1,
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_-1_245",
@@ -1058,7 +1097,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_-1_515",
@@ -1075,7 +1115,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_end_-1",
@@ -1092,7 +1133,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "ship_boat_-1",
@@ -1109,7 +1151,8 @@
       ],
       "material": "woodLight",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "deck_cargo_-1",
@@ -1126,7 +1169,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "water_casks_-1",
@@ -1143,7 +1187,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stair_1",
@@ -1162,7 +1207,8 @@
       "collision": true,
       "role": "ramp",
       "axis": "x",
-      "lowAt": 1
+      "lowAt": 1,
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_1_245",
@@ -1179,7 +1225,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_1_515",
@@ -1196,7 +1243,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "stair_coaming_end_1",
@@ -1213,7 +1261,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "ship_boat_1",
@@ -1230,7 +1279,8 @@
       ],
       "material": "woodLight",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "deck_cargo_1",
@@ -1247,7 +1297,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     },
     {
       "id": "water_casks_1",
@@ -1264,7 +1315,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "ship"
     }
   ],
   "anchors": [

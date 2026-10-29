@@ -153,3 +153,8 @@ hatches and casks, out of sight from above. The bulwarks rise to 4.2 m with a ca
 and the shrouds land on that rail. The upper-deck nodes set `castShadow` so the gun deck
 is shaded. New anchors and routes: `upper_port`, `upper_starboard`, `down_and_through`,
 `deck_breach`, `cross_deck`. The check_art hashes were updated.
+
+2026-10-29 frame rate: `ShipChapter.save` merges the per-object VIS nodes into `BATCH_ship`, which
+casts shadow and includes the upper deck, and `BATCH_floor`, which is shadowless. The overview drops from 182 to 48 draw
+calls with identical pixels. Each object's art is still asserted inside its box before merging.
+The primitive cap is now 60.

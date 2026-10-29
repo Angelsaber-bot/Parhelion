@@ -728,7 +728,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "boundary_x_30",
@@ -745,7 +746,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "boundary_z_-24",
@@ -762,7 +764,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "boundary_z_24",
@@ -779,7 +782,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "spawn_screen_west",
@@ -796,7 +800,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "spawn_mark_west",
@@ -830,7 +835,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "spawn_mark_east",
@@ -883,7 +889,8 @@
       "collision": true,
       "role": "ramp",
       "axis": "x",
-      "lowAt": -1
+      "lowAt": -1,
+      "batch": "court"
     },
     {
       "id": "terrace_ramp_1",
@@ -902,7 +909,8 @@
       "collision": true,
       "role": "ramp",
       "axis": "x",
-      "lowAt": 1
+      "lowAt": 1,
+      "batch": "court"
     },
     {
       "id": "arcade_roof",
@@ -919,7 +927,8 @@
       ],
       "material": "slate",
       "collision": true,
-      "role": "roof"
+      "role": "roof",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_-18_-21.5",
@@ -936,7 +945,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_-18_-14.5",
@@ -953,7 +963,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_-9_-21.5",
@@ -970,7 +981,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_-9_-14.5",
@@ -987,7 +999,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_0_-21.5",
@@ -1004,7 +1017,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_0_-14.5",
@@ -1021,7 +1035,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_9_-21.5",
@@ -1038,7 +1053,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_9_-14.5",
@@ -1055,7 +1071,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_18_-21.5",
@@ -1072,7 +1089,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "arcade_pier_18_-14.5",
@@ -1089,7 +1107,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "fountain_plinth",
@@ -1106,7 +1125,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "fountain_column",
@@ -1123,7 +1143,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "supply_wagon_-1",
@@ -1140,7 +1161,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "park_low_wall_-1",
@@ -1157,7 +1179,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "park_gatepost_-1",
@@ -1174,7 +1197,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "supply_wagon_1",
@@ -1191,7 +1215,8 @@
       ],
       "material": "timber",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "park_low_wall_1",
@@ -1208,7 +1233,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "park_gatepost_1",
@@ -1225,7 +1251,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "cover"
+      "role": "cover",
+      "batch": "court"
     },
     {
       "id": "palace_portico",
@@ -1242,7 +1269,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "garden_urn_-20",
@@ -1259,7 +1287,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "prop"
+      "role": "prop",
+      "batch": "court"
     },
     {
       "id": "garden_urn_20",
@@ -1276,7 +1305,8 @@
       ],
       "material": "limestone",
       "collision": true,
-      "role": "prop"
+      "role": "prop",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_-27",
@@ -1293,7 +1323,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_-21",
@@ -1310,7 +1341,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_-15",
@@ -1327,7 +1359,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_-9",
@@ -1344,7 +1377,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_-3",
@@ -1361,7 +1395,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_3",
@@ -1378,7 +1413,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_9",
@@ -1395,7 +1431,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_15",
@@ -1412,7 +1449,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_21",
@@ -1429,7 +1467,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "south_wall_pier_27",
@@ -1446,7 +1485,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "west_window_bay_-18",
@@ -1463,7 +1503,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "west_window_bay_-12",
@@ -1480,7 +1521,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "west_window_bay_12",
@@ -1497,7 +1539,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "west_window_bay_18",
@@ -1514,7 +1557,8 @@
       ],
       "material": "stone",
       "collision": true,
-      "role": "structure"
+      "role": "structure",
+      "batch": "court"
     },
     {
       "id": "bridge_-1",

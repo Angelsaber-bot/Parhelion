@@ -13,7 +13,7 @@ def check(ok,message):
 keys=['objects','anchors','routes','bounds','player']
 physics=hashlib.sha256(json.dumps({k:data[k] for k in keys},sort_keys=True,separators=(',',':')).encode()).hexdigest()
 # 2026-10-28 polish: approved layout + one slim stern_helm collider (the wheel used to be walk-through).
-check(physics=='94ea8f5c53406e39d93a9eeda1e57f12172711339ce4ce66beb6187f2ac7afd2','Approved 2026-10-29 two-deck layout (closed upper deck over the gun deck, two stairwells) is unchanged')
+check(physics=='293976200a9972abcc928a6a419fd05a481e98e1bd0eb63500f02bbf379d0daa','Approved 2026-10-29 two-deck layout (closed upper deck over the gun deck, two stairwells) is unchanged')
 collision=hashlib.sha256((ROOT/'assets/blackflag_collision.glb').read_bytes()).hexdigest()
 check(collision=='70afe8eeea83259a291bea37bb63e19d21df6fa5d66ea2693d6b0059ba660310','Cover/perimeter collision GLB matches approved layout')
 textures=[]
@@ -36,7 +36,7 @@ for me in g['meshes']:
         if g['materials'][p['material']]['name']=='blackSail':check(min(vals)>=0 and max(vals)<=1,'heraldic sail uses dedicated unwrapped 0–1 UVs')
 triangles=sum(g['accessors'][p['indices']]['count']//3 for me in g['meshes'] for p in me['primitives'])
 primitives=sum(len(me['primitives']) for me in g['meshes'])
-check(triangles<60000,'under 60k triangles (2026-10-28: +mast lanterns)');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=180,'at most 180 material primitives (2026-10-28: +gangways): precise sail/gallery shadow groups and modeled period craft; no FPS claim')
+check(triangles<60000,'under 60k triangles (2026-10-28: +mast lanterns)');check(len(b)<4_000_000,'under 4MB total GLB');check(primitives<=60,'at most 60 material primitives (2026-10-29: ship pieces batched per material)')
 check(not g.get('extensions',{}).get('KHR_lights_punctual'),'no embedded lights')
 shadow_nodes={n['name']:n.get('extras',{}) for n in g['nodes'] if n['name'].startswith('DETAIL_')}
 check(shadow_nodes.get('DETAIL_ship_sails',{}).get('castShadow') is True,'upper ship sails explicitly cast shadows')

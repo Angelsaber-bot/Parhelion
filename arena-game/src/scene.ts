@@ -64,11 +64,21 @@ export class ArenaScene {
   private blackflagEffects: BlackflagEffects | null = null;
   private chapterEffects: ChapterEffects | null = null;
   private bufferSize = new THREE.Vector2();
+  // Adaptive resolution: drop the pixel ratio when frames run long, creep back when there is headroom.
+  private basePixelRatio = 1;
+  private renderScale = 1;
+  private frameMs = 1000 / 60;
+  private lastFrame = 0;
+  private nextAdapt = 0;
+  private fastChecks = 0;
+  private raiseWait = 8;
+  private lastRaise = -Infinity;
   private atmo: Atmosphere = atmosphereFor('day');
 
   constructor(canvas: HTMLCanvasElement, private readonly quality: 'high' | 'low' = 'high') {
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
-    r.setPixelRatio(Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1));
+    this.basePixelRatio = Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1);
+    r.setPixelRatio(this.basePixelRatio);
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
     r.toneMappingExposure = 1.05;
@@ -400,8 +410,33 @@ export class ArenaScene {
     this.chapterEffects?.update(dt);
   }
 
+  /** Hold ~60 fps: under ~50 fps shrink the drawing buffer (to 0.55 of base, never under 0.75 px/pt);
+   * after several smooth seconds grow it back. A grow that drops again waits twice as long next time. */
+  private adaptResolution() {
+    const now = performance.now(), dt = now - this.lastFrame;
+    this.lastFrame = now;
+    if (dt > 0 && dt < 100 && !document.hidden) this.frameMs += (dt - this.frameMs) * 0.05; // skip load hitches
+    if (now < this.nextAdapt) return;
+    this.nextAdapt = now + 1000;
+    const min = Math.min(1, Math.max(0.55, 0.75 / this.basePixelRatio));
+    let s = this.renderScale;
+    if (this.frameMs > 20 && s > min) {
+      s = Math.max(min, s - 0.15);
+      if (now - this.lastRaise < 5000) this.raiseWait = Math.min(64, this.raiseWait * 2);
+      this.fastChecks = 0;
+    } else if (this.frameMs < 17.5 && s < 1) {
+      if (++this.fastChecks >= this.raiseWait) { s = Math.min(1, s + 0.1); this.fastChecks = 0; this.lastRaise = now; }
+    } else this.fastChecks = 0;
+    if (s === this.renderScale) return;
+    this.renderScale = s;
+    this.renderer.setPixelRatio(this.basePixelRatio * s);
+    this.frameMs = 1000 / 60;
+    this.resize();
+  }
+
   render(showViewmodel: boolean) {
     const r = this.renderer;
+    this.adaptResolution();
     r.clear();
     this.chapterEffects?.sync(this.camera, r.getDrawingBufferSize(this.bufferSize).y, this.scene.fog as THREE.Fog);
     if (this.composer) this.composer.render();

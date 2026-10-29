@@ -113,6 +113,52 @@ export function buildMap(data: MapData): ArenaMap {
 
 const EPS = 0.001;
 
+// ---------- broad phase: a uniform XZ grid over the solids ----------
+// Every query below used to scan all solids; CAM LANN has ~300. Candidates are visited in
+// their original index order, so every result is identical to the full scan.
+const CELL = 2;
+interface Grid { ox: number; oz: number; nx: number; nz: number; cells: number[][]; mark: Uint32Array; stamp: number; buf: number[] }
+const grids = new WeakMap<ArenaMap, Grid | null>();
+
+function gridOf(m: ArenaMap): Grid | null {
+  let g = grids.get(m);
+  if (g !== undefined) return g;
+  g = null;
+  if (m.solids.length >= 24) {
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity;
+    for (const s of m.solids) { x0 = Math.min(x0, s.minX); x1 = Math.max(x1, s.maxX); z0 = Math.min(z0, s.minZ); z1 = Math.max(z1, s.maxZ); }
+    const ox = x0 - 1, oz = z0 - 1, nx = Math.ceil((x1 + 1 - ox) / CELL), nz = Math.ceil((z1 + 1 - oz) / CELL);
+    const cells: number[][] = Array.from({ length: nx * nz }, () => []);
+    m.solids.forEach((s, i) => {
+      const a = Math.floor((s.minX - 0.01 - ox) / CELL), b = Math.floor((s.maxX + 0.01 - ox) / CELL);
+      const c = Math.floor((s.minZ - 0.01 - oz) / CELL), d = Math.floor((s.maxZ + 0.01 - oz) / CELL);
+      for (let cz = c; cz <= d; cz++) for (let cx = a; cx <= b; cx++) cells[cz * nx + cx].push(i);
+    });
+    g = { ox, oz, nx, nz, cells, mark: new Uint32Array(m.solids.length), stamp: 0, buf: [] };
+  }
+  grids.set(m, g);
+  return g;
+}
+
+/** Test hook: force the full scan so the grid can be checked against it. */
+export function disableGrid(m: ArenaMap): void { grids.set(m, null); }
+
+/** Indices of solids whose cells touch the square (x±r, z±r), ascending; null = scan everything. */
+function near(m: ArenaMap, x: number, z: number, r: number): number[] | null {
+  const g = gridOf(m);
+  if (!g) return null;
+  const out = g.buf; out.length = 0;
+  const a = Math.max(0, Math.floor((x - r - g.ox) / CELL)), b = Math.min(g.nx - 1, Math.floor((x + r - g.ox) / CELL));
+  const c = Math.max(0, Math.floor((z - r - g.oz) / CELL)), d = Math.min(g.nz - 1, Math.floor((z + r - g.oz) / CELL));
+  if (a > b || c > d) return out;
+  if (a === b && c === d) { for (const i of g.cells[c * g.nx + a]) out.push(i); return out; }
+  const stamp = ++g.stamp;
+  for (let cz = c; cz <= d; cz++) for (let cx = a; cx <= b; cx++) for (const i of g.cells[cz * g.nx + cx]) {
+    if (g.mark[i] !== stamp) { g.mark[i] = stamp; out.push(i); }
+  }
+  return out.sort((p, q) => p - q);
+}
+
 /** The same playable footprint is used by movement, spawn validation and bot navigation. */
 export function insideMovementBounds(m: ArenaMap, x: number, z: number): boolean {
   const b = m.movementBounds;
@@ -147,7 +193,10 @@ function overlaps(s: Solid, x: number, z: number, r: number): boolean {
 /** Highest standable surface under (x,z) that is reachable from height y (within step height). */
 export function groundAt(m: ArenaMap, x: number, z: number, y: number): number {
   let g = -100;
-  for (const s of m.solids) {
+  const ids = near(m, x, z, EPS * 2);
+  const n = ids ? ids.length : m.solids.length;
+  for (let k = 0; k < n; k++) {
+    const s = m.solids[ids ? ids[k] : k];
     if (!inside(s, x, z)) continue;
     const t = topAt(s, x, z);
     if (t <= y + m.step + EPS && t > g) g = t;
@@ -157,7 +206,10 @@ export function groundAt(m: ArenaMap, x: number, z: number, y: number): number {
 
 /** Solid whose side would intersect the player's footprint at (x,z) standing at y, if any. */
 export function blockedAt(m: ArenaMap, x: number, z: number, y: number, height = m.height): Solid | null {
-  for (const s of m.solids) {
+  const ids = near(m, x, z, m.radius);
+  const n = ids ? ids.length : m.solids.length;
+  for (let k = 0; k < n; k++) {
+    const s = m.solids[ids ? ids[k] : k];
     if (!overlaps(s, x, z, m.radius)) continue;
     const qx = Math.max(s.minX, Math.min(x, s.maxX));
     const qz = Math.max(s.minZ, Math.min(z, s.maxZ));
@@ -169,7 +221,10 @@ export function blockedAt(m: ArenaMap, x: number, z: number, y: number, height =
 /** Lowest solid underside above the player's head, for jump ceilings. */
 export function ceilingAt(m: ArenaMap, x: number, z: number, y: number, height = m.height): number {
   let c = Infinity;
-  for (const s of m.solids) {
+  const ids = near(m, x, z, m.radius);
+  const n = ids ? ids.length : m.solids.length;
+  for (let k = 0; k < n; k++) {
+    const s = m.solids[ids ? ids[k] : k];
     if (!overlaps(s, x, z, m.radius)) continue;
     if (s.minY >= y + height - 0.05 && s.minY < c) c = s.minY;
   }
@@ -178,6 +233,15 @@ export function ceilingAt(m: ArenaMap, x: number, z: number, y: number, height =
 
 /** Push the footprint out of any solid side it already overlaps (e.g. after falling beside a ramp). */
 export function recover(m: ArenaMap, p: { x: number; y: number; z: number }, height = m.height): void {
+  // Nearly always nothing overlaps: confirm that from the grid, else run the exact full passes.
+  const ids = near(m, p.x, p.z, m.radius);
+  if (ids && !ids.some((i) => {
+    const s = m.solids[i];
+    if (!overlaps(s, p.x, p.z, m.radius)) return false;
+    const qx = Math.max(s.minX, Math.min(p.x, s.maxX));
+    const qz = Math.max(s.minZ, Math.min(p.z, s.maxZ));
+    return !(topAt(s, qx, qz) <= p.y + m.step + EPS || s.minY >= p.y + height - 0.02);
+  })) return;
   for (let pass = 0; pass < 8; pass++) {
     let changed = false;
     for (const s of m.solids) {
@@ -211,9 +275,44 @@ export function recover(m: ArenaMap, p: { x: number; y: number; z: number }, hei
 export function raycastMap(m: ArenaMap, o: Vec3, d: Vec3, maxDist: number): number {
   let best = maxDist;
   let hit = false;
-  for (const s of m.solids) {
-    const t = raySolid(s, o, d, best);
-    if (t < best) { best = t; hit = true; }
+  const g = gridOf(m);
+  if (!g) {
+    for (const s of m.solids) {
+      const t = raySolid(s, o, d, best);
+      if (t < best) { best = t; hit = true; }
+    }
+    return hit ? best : Infinity;
+  }
+  // Walk the XZ cells the ray crosses (2D DDA), stopping once the next cell starts beyond the
+  // nearest hit so far. A minimum distance does not depend on visiting order.
+  let t0 = 0, t1 = maxDist;
+  const lim: [number, number, number, number][] = [[o[0], d[0], g.ox, g.ox + g.nx * CELL], [o[2], d[2], g.oz, g.oz + g.nz * CELL]];
+  for (const [p, v, lo, hi] of lim) {
+    if (Math.abs(v) < 1e-12) { if (p < lo || p > hi) return Infinity; continue; }
+    let a = (lo - p) / v, b = (hi - p) / v;
+    if (a > b) [a, b] = [b, a];
+    if (a > t0) t0 = a;
+    if (b < t1) t1 = b;
+  }
+  if (t0 > t1) return Infinity;
+  const clampCell = (v: number, n: number) => Math.max(0, Math.min(n - 1, Math.floor(v)));
+  let cx = clampCell((o[0] + d[0] * t0 - g.ox) / CELL, g.nx), cz = clampCell((o[2] + d[2] * t0 - g.oz) / CELL, g.nz);
+  const sx = d[0] > 0 ? 1 : -1, sz = d[2] > 0 ? 1 : -1;
+  const ddx = Math.abs(d[0]) < 1e-12 ? Infinity : CELL / Math.abs(d[0]), ddz = Math.abs(d[2]) < 1e-12 ? Infinity : CELL / Math.abs(d[2]);
+  let tx = ddx === Infinity ? Infinity : (g.ox + (cx + (sx > 0 ? 1 : 0)) * CELL - o[0]) / d[0];
+  let tz = ddz === Infinity ? Infinity : (g.oz + (cz + (sz > 0 ? 1 : 0)) * CELL - o[2]) / d[2];
+  const stamp = ++g.stamp;
+  for (;;) {
+    for (const i of g.cells[cz * g.nx + cx]) {
+      if (g.mark[i] === stamp) continue;
+      g.mark[i] = stamp;
+      const t = raySolid(m.solids[i], o, d, best);
+      if (t < best) { best = t; hit = true; }
+    }
+    const next = Math.min(tx, tz);
+    if (next >= best || next > t1) break;
+    if (tx < tz) { cx += sx; tx += ddx; if (cx < 0 || cx >= g.nx) break; }
+    else { cz += sz; tz += ddz; if (cz < 0 || cz >= g.nz) break; }
   }
   return hit ? best : Infinity;
 }

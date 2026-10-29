@@ -652,4 +652,8 @@ for group,names,scale in [
 ]:
     for name in names:
         c.textures[name]=dict(baseColor=texroot/f'{group}_basecolor.png',orm=texroot/f'{group}_orm.png',normal=texroot/f'{group}_normal.png',scale=scale,normalScale=.28 if group=='snow' else .4)
+# 2026-10-29 frame rate: every remaining solid piece joins the court batch (one draw per
+# material). Floors and wayfinding stay separate nodes so they keep out of the shadow pass.
+for o in c.objects:
+    if not o.get('batch') and o['role'] not in ('floor','wayfinding'): o['batch']='court'
 c.save(render_object=crafted)
