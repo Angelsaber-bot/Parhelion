@@ -1,0 +1,77 @@
+# Every push to main: test, then deploy the Arena Worker (parhelion-arena) and then the public site
+# (Cloudflare Pages project parhelion-game). Only these two Cloudflare projects are touched.
+# Needs repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; without them it tests only.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore: ['**.md', 'docs/**', '**.command']
+  workflow_dispatch:
+
+# One deploy at a time; a newer push waits and then deploys the newest main.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      ARENA_URL: wss://parhelion-arena.lejiazhang-us.workers.dev/arena
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            arena-game/package-lock.json
+            world/package-lock.json
+
+      - name: Install
+        run: |
+          npm ci --prefix arena-game --no-audit --no-fund
+          npm ci --prefix world --no-audit --no-fund
+
+      - name: Test Arena (rules, server, Worker protocol)
+        run: npm test --prefix arena-game
+      - name: Test site
+        run: npm test --prefix site
+      - name: Test World (reported, does not block deploy)
+        continue-on-error: true
+        run: npm test --prefix world
+
+      - name: Build site (typechecks Arena + World)
+        run: npm run build --prefix site
+      - name: Check the build points at the public Arena server
+        run: grep -rqF "$ARENA_URL" site/dist/public/arena
+
+      - name: Check Cloudflare secrets
+        id: secrets
+        run: |
+          if [ -n "$CLOUDFLARE_API_TOKEN" ] && [ -n "$CLOUDFLARE_ACCOUNT_ID" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID not set; tested and built but not deployed."; fi
+
+      # Worker first: a rules change must be live on the server before clients that expect it.
+      - name: Deploy Arena Worker
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: arena-game
+        run: npm run worker:deploy
+      - name: Smoke test public Arena server
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: arena-game
+        run: npx tsx test/worker-smoke.ts "$ARENA_URL"
+
+      - name: Deploy site to Cloudflare Pages
+        if: steps.secrets.outputs.ok == 'true'
+        working-directory: arena-game
+        run: >
+          npx wrangler pages deploy ../site/dist/public --project-name parhelion-game --branch main
+          --commit-hash "$GITHUB_SHA" --commit-message "$(git log -1 --format=%s | cut -c1-200)" --commit-dirty=true
