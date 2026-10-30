@@ -114,3 +114,81 @@ test('real delivered GLBs run skill montages with their original attack events a
     f.follow.release(f.actor); f.actor.dispose();
   }
 });
+
+test('Q/X remapping keeps exact authored event clocks across fine/coarse frames and bounded spikes',()=>{
+ for(const id of ['blackbeard','musashi'] as const)for(const slot of ['skill','ultimate'] as const){
+  const contacts=id==='blackbeard'?(slot==='skill'?1:3):(slot==='skill'?2:3),runs:number[][]=[];
+  for(const dt of [1/120,.1,10]){
+   const f=kitFixture(id),r=recorder(contacts),times:number[]=[],clipTimes:number[]=[];let now=0;
+   r.command.slot=slot;const record=r.command.onContact;r.command.onContact=(...args)=>{times.push(now);clipTimes.push(f.actor.clipTime);record(...args);};
+   f.follow.startSkillPose(f.actor,r.command,f.player,0);
+   for(let i=0;i<900&&!r.ended.length;i++){now+=Math.min(.1,dt);f.tick(dt);}
+   assert.deepEqual(r.ended,[true],`${id}/${slot}/${dt}`);assert.equal(r.hits.length,contacts);assert.equal(f.ordinary(),0);
+   const authored=CHARACTER_KITS[id].clips.attack.events.map(e=>e.at);
+   clipTimes.forEach((t,i)=>assert.ok(Math.abs(t-authored[i%authored.length])<1e-8,'never moves authored contact time'));
+   runs.push(times);f.actor.dispose();
+  }
+  for(const times of runs.slice(1))times.forEach((t,i)=>assert.ok(Math.abs(t-runs[0][i])<=.101,`${id}/${slot} frame partition shifted event ${i}`));
+ }
+});
+
+test('Q/X cancellation inside a real contact callback cannot deliver later contacts or ordinary damage',()=>{
+ for(const slot of ['skill','ultimate'] as const){
+  const f=kitFixture('musashi'),r=recorder(slot==='skill'?2:3);r.command.slot=slot;
+  const record=r.command.onContact;r.command.onContact=(...args)=>{record(...args);f.follow.release(f.actor);};
+  f.follow.startSkillPose(f.actor,r.command,f.player,0);for(let i=0;i<40&&!r.ended.length;i++)f.tick(.1);
+  assert.equal(r.hits.length,1);assert.deepEqual(r.ended,[false]);assert.equal(f.ordinary(),0);assert.equal(f.actor.state,'idle');f.actor.dispose();
+ }
+});
+
+test('real GLB Q/X holds are distinct poses while contact socket transforms remain authored and unchanged',async()=>{
+ for(const id of ['blackbeard','musashi'] as const){
+  const definition=CHARACTER_KITS[id],{gltf}=await readCharacter(fileURLToPath(new URL(definition.assetUrl)));
+  const source=gltf.animations.find(c=>c.name===definition.clips.attack.name)!,snapshot=source.tracks.map(t=>Array.from(t.values));
+  // Reuse the loaded asset only within one actor; each run returns to the same origin/yaw.
+  const f=kitFixture(id,gltf),samples:number[][]=[],contacts:THREE.Vector3[][]=[];
+  for(const slot of [undefined,'skill','ultimate'] as const){
+   f.follow.release(f.actor);const r=recorder(id==='musashi'?2:1);r.command.slot=slot;f.actor.root.rotation.y=0;
+   f.follow.startSkillPose(f.actor,r.command,f.player,0);
+   for(let i=0;i<90;i++)f.tick(1/120);
+   f.actor.root.updateMatrixWorld(true);const positions:number[]=[];
+   f.actor.model.traverse(o=>{if(o instanceof THREE.Bone)positions.push(...o.getWorldPosition(new THREE.Vector3()).toArray());});samples.push(positions);
+   for(let i=0;i<700&&!r.ended.length;i++)f.tick(1/120);
+   assert.deepEqual(r.ended,[true]);contacts.push(r.hits.map(h=>h.position));
+  }
+  assert.ok(samples[0].length>30);assert.ok(samples[0].some((n,i)=>Math.abs(n-samples[1][i])>.03),`${id} Q differs from ordinary pose`);
+  assert.ok(samples[1].some((n,i)=>Math.abs(n-samples[2][i])>.03),`${id} Q differs from X pose`);
+  for(const run of contacts.slice(1))run.forEach((p,i)=>assert.ok(p.distanceTo(contacts[0][i])<1e-4,`${id} authored socket changed`));
+  assert.deepEqual(source.tracks.map(t=>Array.from(t.values)),snapshot);f.actor.dispose();
+ }
+});
+
+test('real Saber X holds the raised sword pose, Q releases sooner, and leash cancellation cannot revive a hit',async()=>{
+ const {SERVANT_MODELS}=await import('../src/servant.ts');
+ const {gltf}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS.armor))),source=gltf.animations.find(c=>c.name==='Attack')!,tracks=source.tracks.map(t=>Array.from(t.values));
+ const contract=new FirstContract(new Set(['saber_contract']));let normal=0;
+ const servant=new ContractServant({scene:new THREE.Scene(),contract,colliders:[floor()],marker:{id:'saber_contract',type:'interact',label:'Saber',p:[0,0,0]},target:()=>null,strike:()=>{normal++;return null;},load:async()=>gltf});
+ await servant.ensureLoaded();const hands:number[]=[],hitHands:THREE.Vector3[]=[];
+ for(const slot of [undefined,'skill','ultimate'] as const){
+  const r=recorder(1);r.command.slot=slot;servant.root.rotation.y=0;
+  const record=r.command.onContact;r.command.onContact=(...args)=>{servant.root.updateMatrixWorld(true);hitHands.push(gltf.scene.getObjectByName('mixamorigRightHand')!.getWorldPosition(new THREE.Vector3()));record(...args);};
+  assert.equal(servant.startSkillPose(r.command),true);
+  for(let i=0;i<55;i++)servant.update(1/120,new THREE.Vector3(),0,true,false);
+  servant.root.updateMatrixWorld(true);hands.push(gltf.scene.getObjectByName('mixamorigRightHand')!.getWorldPosition(new THREE.Vector3()).y);
+  for(let i=0;i<300&&!r.ended.length;i++)servant.update(1/120,new THREE.Vector3(),0,true,false);
+  assert.deepEqual(r.ended,[true]);assert.equal(r.hits.length,1);
+ }
+ assert.ok(hands[2]>hands[1]+.2,'X visibly holds sword arm above already-released Q');
+ for(const hand of hitHands.slice(1))assert.ok(hand.distanceTo(hitHands[0])<1e-4,'same real contact pose');
+ assert.deepEqual(source.tracks.map(t=>Array.from(t.values)),tracks);assert.equal(normal,0);
+ const cancel=recorder(1);cancel.command.slot='ultimate';servant.startSkillPose(cancel.command);servant.update(.1,new THREE.Vector3(),0,true,false);
+ servant.update(.1,new THREE.Vector3(30,0,0),0,true,false);assert.deepEqual(cancel.ended,[false]);
+ for(let i=0;i<30;i++)servant.update(.1,new THREE.Vector3(),0,true,false);assert.equal(cancel.hits.length,0);servant.dispose();
+});
+
+test('cancelled mounted skill recovers in place instead of pretending to be newly summoned',()=>{
+ const f=kitFixture('napoleonMounted'),r=recorder(1);assert.equal(f.follow.startSkillPose(f.actor,r.command,f.player,0),true);
+ for(let i=0;i<100&&f.follow.mountedPhase!=='charge';i++)f.tick();assert.equal(f.follow.mountedPhase,'charge');
+ const at=f.actor.root.position.clone();f.follow.cancelSkillPose(f.actor);assert.deepEqual(r.ended,[false]);
+ for(let i=0;i<3;i++)f.tick();assert.ok(at.distanceTo(f.actor.root.position)<1e-8);assert.equal(r.hits.length,0);f.actor.dispose();
+});

@@ -6,10 +6,15 @@ import type { Point3, CombatTerrain } from './combat';
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
   const cast = (origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
+    // A zero direction degenerates BVH slab traversal into an expensive full
+    // search. Empty/invalid segments cannot produce a meaningful ray hit.
+    const lengthSq = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
+    if (![origin.x, origin.y, origin.z, direction.x, direction.y, direction.z].every(Number.isFinite)
+      || !Number.isFinite(lengthSq) || lengthSq <= 0 || Number.isNaN(max) || max <= 0) return null;
     const ray = new THREE.Ray(new THREE.Vector3(origin.x, origin.y, origin.z), new THREE.Vector3(direction.x, direction.y, direction.z).normalize());
     let best: ReturnType<Collider['bvh']['raycastFirst']> = null;
     for (const c of colliders) if (c.enabled && !ignore?.(c)) {
-      const hit = c.bvh.raycastFirst(ray, THREE.DoubleSide);
+      const hit = c.bvh.raycastFirst(ray, THREE.DoubleSide, 0, max);
       if (hit && hit.distance < max && (!best || hit.distance < best.distance)) best = hit;
     }
     return best;
@@ -52,8 +57,12 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
       return p;
     },
     lineOfSight(from, to) {
+      if (![from.x, from.y, from.z, to.x, to.y, to.z].every(Number.isFinite)) return false;
       const d = new THREE.Vector3(to.x - from.x, to.y - from.y, to.z - from.z);
-      return !cast(from, d, Math.max(0, d.length() - 0.05));
+      const length = d.length();
+      if (!Number.isFinite(length)) return false;
+      if (length === 0) return true; // Same point: no path segment to obstruct.
+      return !cast(from, d, Math.max(0, length - 0.05));
     },
   };
   return { cast, ground, safeSpawn, clear, terrain };

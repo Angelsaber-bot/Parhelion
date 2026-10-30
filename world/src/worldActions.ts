@@ -4,13 +4,11 @@ import { SkillPresentation } from './skillPresentation';
 import { PlayerMelee, PlayerEvade } from './playerMelee';
 import type { ServantId } from './contracts';
 import type { Point3, HitContext } from './combat';
-import type { StrikeRequest, StrikeResult, StrikeOriginGeometry } from './combatActions';
+import type { StrikeRequest, StrikeResult } from './combatActions';
+import type { ResolvedSkillAim } from './skillAim';
+import type { SkillPoseCommand } from './skillPose';
 import { bilingual } from '../../shared-client/i18n';
-export interface ActionPoseCommand {
- direction: Point3; contacts: number;
- onContact(position: Point3, direction: Point3, socket?: string, geometry?: StrikeOriginGeometry): void;
- onFinish(completed: boolean): void;
-}
+export interface ActionPoseCommand extends SkillPoseCommand {}
 export interface WorldActionContext {
  enabled: boolean; clockRunning?: boolean; grounded: boolean; armed: boolean; bladeReady: boolean; bladeFailed?: boolean;
  position: Point3; yaw: number; moveX: number; moveZ: number; identity: ServantId | null;
@@ -27,6 +25,9 @@ export interface WorldActionOptions {
  bladeDirection?():Point3;
  bladeOrigin?():Point3;
  cue?(kind:'melee'|'skill'|'evade'):void;
+ resolveAim?(identity:ServantId,slot:SkillSlot):ResolvedSkillAim|null;
+ contactPoint?(id:string):Point3|null;
+ skillEvent?(event:SkillEvent):void;
  onCast?(event: Extract<SkillEvent,{type:'cast'}>):void;
 }
 /** Browser integration boundary. All damage still goes through live combat LOS/range validation. */
@@ -63,15 +64,18 @@ export class WorldActions {
    const slot=action as SkillSlot;
    if(this.skills.cooldown(slot)>0){this.options.toast(bilingual('技能正在冷却。','Ability is cooling down.'));return true;}
    if(slot==='ultimate'&&this.skills.energy<100){this.options.toast(bilingual('命中敌人积蓄能量，满格后释放终结技。','Hit enemies to build energy; unleash your ultimate at full charge.'));return true;}
-   const direction={x:-Math.sin(c.yaw),y:0,z:-Math.cos(c.yaw)};
+   const fallback:ResolvedSkillAim={origin:c.position,direction:{x:-Math.sin(c.yaw),y:0,z:-Math.cos(c.yaw)}};
+   const aim=c.identity&&this.options.resolveAim?this.options.resolveAim(c.identity,slot):fallback;
+   if(!aim){this.options.toast(bilingual('从者暂时无法瞄准，请让其靠近后重试。','Your companion cannot aim yet. Bring them closer and retry.'));return true;}
+   const direction=aim.direction;
    let token:number|null=null;
    if(c.identity){
-     const started=this.options.startPose(c.identity,{direction,contacts:this.skills.definition(slot).pulses.length,
+     const started=this.options.startPose(c.identity,{direction,slot,targetId:aim.targetId,targetPoint:aim.targetPoint,contacts:this.skills.definition(slot).pulses.length,
        onContact:(position,forward,_socket,geometry)=>{if(token!==null)this.skills.contact(token,position,forward,geometry);},
        onFinish:(completed)=>{if(token!==null)this.skills.finishPresentation(token,completed);}});
      if(!started){this.options.toast(bilingual('让从者靠近并面向目标；骑兵还需要安全的冲锋路线。','Bring your companion nearby and face a target; cavalry also needs a safe charge route.'));return true;}
    }
-   if(!this.skills.activate(slot,{enabled:true,origin:c.position,direction})) {this.options.cancelPoses();return true;}
+   if(!this.skills.activate(slot,{enabled:true,origin:aim.origin,direction})) {this.options.cancelPoses();return true;}
    if(c.identity)token=this.skills.bindPresentation();
    this.options.toast(bilingual(this.skills.definition(slot).name,this.skills.definition(slot).nameEn));
    this.flush();return true;
@@ -98,9 +102,11 @@ export class WorldActions {
    const c=this.options.context();
    if(!c.enabled||!c.grounded||this.skills.selected!==c.identity){this.cancel();return;}
    for(const event of this.skills.drainEvents()){
-     if(event.type==='cast'){this.options.cue?.('skill');this.options.onCast?.(event);}
-     if(event.type==='strike')this.options.strike(event,event.slot==='ultimate'?'ultimate':'skill');
+     if(event.type==='cast'){if(!this.options.skillEvent)this.options.cue?.('skill');this.options.onCast?.(event);}
+     this.options.skillEvent?.(event);
+     const result=event.type==='strike'?this.options.strike(event,event.slot==='ultimate'?'ultimate':'skill'):null;
      this.effects.show(event,this.options.reducedEffects());
+     if(event.type==='strike'&&result)for(const hit of result.hits){const point=this.options.contactPoint?.(hit.id);if(hit.damage>0&&point)this.effects.hit(event,point,this.options.reducedEffects());}
    }
  }
  recordDamage(hit:{id:string;damage:number;source:HitContext['source'];eligible:boolean}){

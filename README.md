@@ -63,3 +63,5 @@ cd site && npm run build      # 构建 Arena + World + 首页 → site/dist
 ### World gameplay polish
 
 See [the latest World interaction, combat-readability and craft polish](docs/world/WORLD_POLISH_20261030.md) for player-visible changes, offline model comparisons, validation evidence and remaining GPU/FPS limits. Existing saves are supported; a progress reset is not required.
+
+See [companion combat/following and enemy-state repairs](docs/world/COMPANION_RELIABILITY_20261030.md) for the next World reliability iteration and its validation limits.

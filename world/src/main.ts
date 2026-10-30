@@ -12,6 +12,8 @@ import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide
 import { optionalPinExpired, type OptionalPin } from './optionalNavigation';
 import { createEraStoryScene } from './eraStoryScenes';
 import { WorldActions } from './worldActions';
+import { resolveServantSkillAim } from './skillAim';
+import { CONTRACT_SKILLS } from './contractSkills';
 import { FortCannon, FORT_CANNON } from './fortCannon';
 import { createTraversalRepairs } from './traversalRepairs';
 import { createActionHud } from './actionHud';
@@ -582,25 +584,29 @@ let thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screensho
 let camDist = 3.6;
 const prevPos = player.pos.clone();
 
+let companionRegroupUntil = 0;
+const noteCompanionRejoin = () => { companionRegroupUntil = performance.now() + 2000; hudRevision++; };
 const contractStorage = progressStorage;
 const contract = new FirstContract(done, contractStorage);
 const servantAppearance = new ServantAppearance(contractStorage);
-const servant = new ContractServant({ scene, renderer, marker: markers.get('saber_contract')!, contract, appearance: servantAppearance, colliders,
-  target: (position) => { const hit = combat.allyTarget(position); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+const servant = new ContractServant({ scene, renderer, marker: markers.get('saber_contract')!, contract, appearance: servantAppearance, colliders, onRejoin: noteCompanionRejoin,
+  target: (position, targetId?: string) => { const hit = combat.allyTarget(position, 3.5, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  track: (position, targetId) => { const hit = combat.allyTrack(position, 3.5, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
   strike: (position, targetId) => { const hit = combat.allyStrike(position, 3.5, 14, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
-  engage: () => { const hit = combat.allyEngage(15); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 // Era servants are visual/animation actors attached to their existing quest
 // markers. They lazy-load only near the marker, share the normal scene
 // lifecycle, and do not invent new classes or damage rules.
 // Once contracted and chosen as the companion, the same actor follows the player (KitCompanion).
-const companion = (range: number, damage: number) => new KitCompanion({ colliders, range, damage,
-  target: (position, r, targetId) => { const hit = combat.allyTarget(position, r, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
-  strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
-  engage: () => { const hit = combat.allyEngage(15); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+const companion = (range: number, damage: number, kind: 'melee' | 'ranged' = 'melee') => new KitCompanion({ colliders, range, damage, onRejoin: noteCompanionRejoin,
+  target: (position, r, targetId) => { const hit = combat.allyTarget(position, r, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  track: (position, r, targetId) => { const hit = combat.allyTrack(position, r, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  strike: (position, r, dmg, targetId) => { const hit = combat.allyStrike(position, r, dmg, targetId, kind); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
+  engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x,hit.p.y,hit.p.z) } : null; },
 });
 const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof CHARACTER_KITS; follow: KitCompanion; actor?: CharacterKit; loading?: Promise<void>; error?: unknown; retryAt: number; failures: number }> = [
-  { markerId: 'blackbeard_meet', servant: 'blackbeard', kit: 'blackbeard', follow: companion(12, 12), retryAt: 0, failures: 0 },
+  { markerId: 'blackbeard_meet', servant: 'blackbeard', kit: 'blackbeard', follow: companion(12, 12, 'ranged'), retryAt: 0, failures: 0 },
   { markerId: 'napoleon_meet', servant: 'napoleon', kit: 'napoleonMounted', follow: companion(4.5, 16), retryAt: 0, failures: 0 },
   { markerId: 'musashi_meet', servant: 'musashi', kit: 'musashi', follow: companion(3.5, 9), retryAt: 0, failures: 0 },
 ];
@@ -686,7 +692,8 @@ function renderContract() {
   const multi = contract.roster.length > 1 ? bilingual(`\n[${settings.label('switchServant')}] 切换从者（${contract.roster.length} 位已缔约）`, `\n[${settings.label('switchServant')}] Switch servant (${contract.roster.length} contracted)`) : '';
   const hint = contract.anyRecruited ? bilingual(`[${settings.label('summon')}] 召唤／收回 · 协助攻击`, `[${settings.label('summon')}] Summon / recall · Assists in combat`) + multi
     : bilingual('前往圣剑湖，与第一位契约从者会面', 'Visit Sword Lake to meet your first contracted servant');
-  const next = `${state}\n${hint}`;
+  const regroup = contract.companionSummoned && performance.now() < companionRegroupUntil ? bilingual('\n已安全归队', '\nSafely regrouped') : '';
+  const next = `${state}${regroup}\n${hint}`;
   if (contractCard.textContent !== next) contractCard.textContent = next;
   contractCard.style.whiteSpace = 'pre-line';
 }
@@ -703,7 +710,7 @@ function resetProgress() {
   clearStartOverrides(params);
   const url = new URL(location.href); clearStartOverrides(url.searchParams);
   try { history.replaceState(history.state, '', url.href); } catch { /* Restricted embedding may prohibit URL writes. */ }
-  actions?.reset(); fortCannon.reset(); contract.reset(); combat.reset();
+  companionRegroupUntil = 0; actions?.reset(); fortCannon.reset(); contract.reset(); combat.reset();
   spawn = initialSpawn;
   player.restartAt(initialSpawn.p[0], initialSpawn.p[1] + 1, initialSpawn.p[2], 0);
   prevPos.copy(player.pos); rig.root.position.copy(player.pos);
@@ -896,7 +903,14 @@ actions = new WorldActions({ scene,
     identity: contract.companionSummoned ? contract.selected : null }),
   strike: (strike, source) => combat.applyStrike(strike, source),
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
-  cue: kind => audio[kind](), onCast: event => actionHud.announce(event),
+  cue: kind => audio[kind](), skillEvent: event => audio.skillEvent(event), onCast: event => actionHud.announce(event),
+  contactPoint: id => { const enemy = combat.state.enemies.find(e => e.id === id); return enemy ? { ...enemy.p } : null; },
+  resolveAim: (identity, slot) => {
+    const root = identity === 'saber' ? servant.root : eraActors.find(e => e.servant === identity)?.actor?.root;
+    if (!root?.visible || root.position.distanceTo(player.pos) >= 16) return null;
+    const range = Math.max(...CONTRACT_SKILLS[identity][slot].pulses.map(pulse => pulse.range));
+    return resolveServantSkillAim({ player: player.pos, caster: root.position, viewOrigin: camera.position, viewDirection: camera.getWorldDirection(new THREE.Vector3()), range, enemies: combat.state.enemies, terrain: combat.geometry.terrain });
+  },
   startPose: (identity, command) => {
     if (identity === 'saber') return servant.root.visible && servant.root.position.distanceTo(player.pos) < 16 && servant.startSkillPose(command);
     const entry = eraActors.find(e => e.servant === identity);

@@ -1,3 +1,4 @@
+import { skillAnimationProfile, skillAnimationSample } from './skillAnimationProfile';
 import * as THREE from 'three';
 import { validSkillPose, type SkillPoseCommand } from './skillPose';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -8,8 +9,9 @@ import { ServantAppearance, type ServantOutfit } from './servantAppearance';
 import type { Collider } from './player';
 import type { Marker } from './types';
 import { ActionBlend } from './characters/actionBlend';
+import { CompanionNavigation } from './companionNavigation';
 import { SaberIdleCarry } from './characters/saberLocomotion';
-import { CompanionMotion, COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
+import { COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
 
 // Only accepted, project-authored outfits; the rejected v1 model is never requested.
 export const SERVANT_MODELS: Record<ServantOutfit, string> = {
@@ -40,10 +42,12 @@ type Target = { id: string; position: THREE.Vector3 } | null;
 export interface ServantOptions {
   scene: THREE.Scene; renderer?: THREE.WebGLRenderer; marker: Marker; contract: FirstContract;
   appearance?: ServantAppearance; colliders: Collider[];
-  target: (position: THREE.Vector3) => Target;
+  target: (position: THREE.Vector3, targetId?: string) => Target;
+  track?: (position: THREE.Vector3, targetId: string) => Target;
+  onRejoin?: () => void;
   strike: (position: THREE.Vector3, targetId: string) => Target;
   /** Enemy to go after (lock-on radius around the player); null keeps the follow slot. */
-  engage?: (player: THREE.Vector3) => Target;
+  engage?: (player: THREE.Vector3, from?: THREE.Vector3) => Target;
   load?: (url: string) => Promise<GLTF>;
 }
 
@@ -58,21 +62,24 @@ export class ContractServant {
   private current?: THREE.AnimationAction;
   private blend = new ActionBlend();
   private idleCarry?: SaberIdleCarry;
-  private motion = new CompanionMotion();
+  private navigation: CompanionNavigation;
+  private separatedFor = 0;
+  private pursuing = false;
+  private rejoinRetry = 0;
+  private readonly rejoinPlayer = new THREE.Vector3(Infinity,0,Infinity);
   private attackYaw = 0;
   private attackTime = 0;
   private attackDuration = 1.2;
   private attackTarget: string | null = null;
   private contactPending = false;
-  private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; clipElapsed: number; emitted: boolean; started: boolean };
+  private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; clipElapsed: number; motionTime: number; cycle: number; emitted: boolean; started: boolean };
   private activeLast = false;
   private disposed = false;
   private model?: THREE.Object3D;
   private environment?: THREE.WebGLRenderTarget;
   private loadTask?: Promise<void>;
-  private readonly ray = new THREE.Ray();
-  private readonly down = new THREE.Vector3(0,-1,0);
   constructor(private options: ServantOptions) {
+    this.navigation = new CompanionNavigation(options.colliders);
     this.appearance = options.appearance ?? new ServantAppearance();
     this.root.name = 'ArtoriaContractServant';
     this.root.position.fromArray(options.marker.p).add(new THREE.Vector3(1.5,0,0));
@@ -180,12 +187,12 @@ export class ContractServant {
     if (gaitChange && previous) previous.setEffectiveTimeScale(rate * previous.getClip().duration / next.getClip().duration);
     this.current = next;
   }
-  private cancelAttack() { this.cancelSkillPose(); this.motion.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  private cancelAttack() { this.cancelSkillPose(); this.navigation.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
   startSkillPose(command: SkillPoseCommand): boolean {
     if (!validSkillPose(command) || this.disposed || this.state !== 'ready' || !this.root.visible || !this.options.contract.summoned || !this.clips.has('attack')) return false;
     this.cancelAttack(); this.activeLast = true;
     this.attackYaw = Math.atan2(command.direction.x, command.direction.z);
-    this.skillPose = { command, contacts: 0, elapsed: 0, clipElapsed: 0, emitted: false, started: false };
+    this.skillPose = { command, contacts: 0, elapsed: 0, clipElapsed: 0, motionTime: 0, cycle: 0, emitted: false, started: false };
     this.play('idle'); return true;
   }
   cancelSkillPose() {
@@ -204,36 +211,27 @@ export class ContractServant {
       pose.started = true; this.play('attack', true);
     }
     const contact = this.attackDuration * SERVANT_MOTION.attackContact;
-    const next = Math.min(this.attackDuration, pose.clipElapsed + dt);
-    if (!pose.emitted && next >= contact) {
-      this.tick(Math.max(0, contact - pose.clipElapsed));
-      pose.emitted = true; pose.contacts++;
-      pose.command.onContact(this.root.position, { x: Math.sin(this.attackYaw), y: 0, z: Math.cos(this.attackYaw) }, 'sword', { losOffset: 1, casterFeetY: this.root.position.y });
-      if (this.skillPose !== pose) return;
-      this.tick(next - contact);
-    } else this.tick(next - pose.clipElapsed);
-    pose.clipElapsed = next;
-    if (next >= this.attackDuration) {
-      if (pose.contacts >= pose.command.contacts) { this.skillPose = undefined; this.play('idle'); pose.command.onFinish(true); }
-      else { pose.clipElapsed = 0; pose.emitted = false; this.play('attack', true); }
+    pose.motionTime += dt;
+    // A frame may finish a clip and enter the next one. Preserve its remaining time;
+    // contacts still come only from crossing the original clip's contact instant.
+    for(let cycle=0;cycle<4 && this.skillPose===pose;cycle++) {
+      const sample=skillAnimationSample(skillAnimationProfile('saber',pose.command.slot,pose.cycle),pose.motionTime,this.attackDuration,contact);
+      const next=sample.clipTime;
+      if (!pose.emitted && next + 1e-9 >= contact) {
+        this.tick(Math.max(0, contact - pose.clipElapsed));
+        pose.emitted = true; pose.contacts++;
+        pose.command.onContact(this.root.position, { x: Math.sin(this.attackYaw), y: 0, z: Math.cos(this.attackYaw) }, 'sword', { losOffset: 1, casterFeetY: this.root.position.y });
+        if (this.skillPose !== pose) return;
+        this.tick(Math.max(0,next - contact));
+      } else this.tick(Math.max(0,next - pose.clipElapsed));
+      pose.clipElapsed = next;
+      if (pose.motionTime + 1e-9 < sample.duration) return;
+      if (pose.contacts >= pose.command.contacts) { this.skillPose = undefined; this.play('idle'); pose.command.onFinish(true); return; }
+      pose.motionTime=Math.max(0,pose.motionTime-sample.duration);pose.cycle++;
+      pose.clipElapsed = 0; pose.emitted = false; this.play('attack', true);
     }
   }
-  private floor(x: number,z: number,baseY: number) {
-    this.ray.origin.set(x,baseY+1.1,z); this.ray.direction.copy(this.down);
-    let best = Infinity;
-    for (const c of this.options.colliders) if (c.enabled) {
-      const hit = c.bvh.raycastFirst(this.ray,THREE.DoubleSide);
-      if (hit && hit.distance < best && hit.distance < 3 && Math.abs(hit.face?.normal.y ?? 0) > .7) best = hit.distance;
-    }
-    return best < Infinity ? baseY + 1.1 - best : null;
-  }
-  private visiblePath(from: THREE.Vector3,to: THREE.Vector3) {
-    this.ray.origin.copy(from).add(new THREE.Vector3(0,.8,0));
-    this.ray.direction.copy(to).sub(from); const distance = this.ray.direction.length();
-    if (!distance) return true;
-    this.ray.direction.divideScalar(distance);
-    return !this.options.colliders.some(c => c.enabled && (c.bvh.raycastFirst(this.ray,THREE.DoubleSide)?.distance ?? Infinity) < distance);
-  }
+
   update(dt: number,player: THREE.Vector3,yaw: number,enabled: boolean,paused: boolean) {
     if (this.disposed) return;
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
@@ -243,53 +241,78 @@ export class ContractServant {
     const following = contract.summoned && enabled;
     this.root.visible = contract.recruited ? following : atLake;
     if (!following) {
-      this.activeLast = false; this.cancelAttack();
+      this.activeLast = false; this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity); this.cancelAttack();
       if (!contract.recruited) { this.root.position.fromArray(marker.p).add(new THREE.Vector3(1.5,0,0)); this.root.rotation.y = Math.PI; }
       if (!paused && this.root.visible) this.tick(dt);
       return;
     }
-    if (paused) { this.cancelSkillPose(); return; }
-    if (this.skillPose && this.root.position.distanceTo(player) <= 24) { this.advanceSkillPose(dt); return; }
-    const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4 - Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4 - Math.cos(yaw)*.8));
-    const prey = this.options.engage?.(player);
-    if (prey) destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1.4));
-    const ground = this.floor(destination.x,destination.z,player.y);
-    if (ground !== null) destination.y = ground;
-    if (!this.activeLast || this.root.position.distanceTo(player) > 24) {
-      this.root.position.copy(ground !== null && this.visiblePath(player,destination) ? destination : player);
-      this.root.rotation.y = yaw; this.cancelAttack();
+    if (paused) { this.cancelAttack(); return; }
+    if (this.skillPose) {
+      if(this.root.position.distanceTo(player)>24)this.cancelSkillPose();
+      else { this.advanceSkillPose(dt); return; }
     }
-    this.activeLast = true;
-    if (this.attackTime > 0) { this.advanceAttack(dt); return; }
-    const frameYaw = this.root.rotation.y;
-    let speed = 0;
-    if (ground !== null && this.visiblePath(this.root.position,destination)) {
-      speed = this.motion.step(this.root, destination, dt, Math.min(SERVANT_MOTION.followSpeed, SERVANT_MOTION.runSpeed * SERVANT_MOTION.maxRate));
-    } else this.motion.reset();
-    if (this.model) {
-      const target = this.options.target(this.root.position);
-      if (target) {
-        this.attackTime = this.attackDuration; this.attackTarget = target.id; this.contactPending = true;
-        this.attackYaw = Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
-        this.motion.reset(); this.root.rotation.y = frameYaw;
-        this.play('attack',true);
+    this.rejoinRetry=Math.max(0,this.rejoinRetry-dt);
+    if(this.rejoinPlayer.distanceToSquared(player)>4){this.rejoinRetry=0;this.rejoinPlayer.copy(player);}
+    const separation=this.root.position.distanceTo(player);
+    // Preserve the authored <=3x gait. Pure following regroups before the 16m skill-command limit;
+    // committed pursuit keeps its 24m leash, and never teleports to the enemy.
+    const inCombat=(this.attackTime>0) || this.pursuing;
+    this.separatedFor=separation>(inCombat?24:14)?this.separatedFor+dt:0;
+    const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || separation>12 && this.navigation.stuckSeconds>2);
+    if((!this.activeLast || rejoin) && this.rejoinRetry<=0) {
+      const safe=this.navigation.safeReturn(player,yaw);
+      if(safe){this.root.position.copy(safe);this.root.rotation.y=yaw;this.cancelAttack();this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
+      else this.rejoinRetry=.25;
+    }
+    this.activeLast=true;
+    if(separation>24 && this.attackTime>0)this.cancelAttack();
+    if(this.attackTime>0){this.advanceAttack(dt);return;}
+    const destination=player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
+    const prey=this.options.engage?.(player,this.root.position);
+    this.pursuing=!!prey;
+    if(prey && separation<24)destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1));
+    const frameYaw=this.root.rotation.y;
+    const speed=this.navigation.step(this.root,destination,dt,Math.min(SERVANT_MOTION.followSpeed,SERVANT_MOTION.runSpeed*SERVANT_MOTION.maxRate));
+    if(this.model) {
+      const target=this.options.target(this.root.position);
+      if(target && Math.hypot(target.position.x-this.root.position.x,target.position.z-this.root.position.z)<1.75) {
+        this.attackYaw=Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
+        this.navigation.reset();this.root.rotation.y=frameYaw;
+        const remaining=turnCompanion(this.root,this.attackYaw,dt);
+        if(Math.abs(remaining)<.12){this.attackTime=this.attackDuration;this.attackTarget=target.id;this.contactPending=true;this.play('attack',true);}
+        else this.play('idle');
       } else {
-        const running = companionGait(speed, SERVANT_MOTION.walkSpeed, this.animation === 'Run') === 'run';
-        this.play(speed < .1 ? 'idle' : running ? 'run' : 'walk', false,
-          speed < .1 ? 1 : THREE.MathUtils.clamp(speed / (running ? SERVANT_MOTION.runSpeed : SERVANT_MOTION.walkSpeed), 0, SERVANT_MOTION.maxRate));
+        const running=companionGait(speed,SERVANT_MOTION.walkSpeed,this.animation==='Run')==='run';
+        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(speed/(running?SERVANT_MOTION.runSpeed:SERVANT_MOTION.walkSpeed),0,SERVANT_MOTION.maxRate));
       }
     }
-    if (this.attackTime > 0) this.advanceAttack(dt); else this.tick(dt);
+    if(this.attackTime>0)this.advanceAttack(dt);else this.tick(dt);
+  }
+  private observeAttack():Target {
+    if(!this.attackTarget)return null;
+    const target=this.options.track?.(this.root.position,this.attackTarget) ?? (!this.options.track?this.options.target(this.root.position,this.attackTarget):null);
+    return target?.id===this.attackTarget?target:null;
   }
   private advanceAttack(dt: number) {
-    turnCompanion(this.root, this.attackYaw, dt);
-    this.attackTime = Math.max(0, this.attackTime - dt);
-    if (this.contactPending && this.attackTime <= this.attackDuration * (1 - SERVANT_MOTION.attackContact)) {
-      this.contactPending = false;
-      if (this.attackTarget) this.options.strike(this.root.position, this.attackTarget);
+    const contactAt=this.attackDuration*SERVANT_MOTION.attackContact;
+    if(this.attackDuration-this.attackTime<contactAt-.12) {
+      const target=this.observeAttack();
+      if(!target){this.cancelAttack();return;}
+      this.attackYaw=Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
+    }
+    if(this.attackTime<this.attackDuration)turnCompanion(this.root,this.attackYaw,dt);
+    this.attackTime=Math.max(0,this.attackTime-dt);
+    if(this.contactPending && this.attackTime<=this.attackDuration-contactAt) {
+      this.contactPending=false;
+      const target=this.observeAttack();
+      if(target && this.attackTarget) {
+        const dx=target.position.x-this.root.position.x,dz=target.position.z-this.root.position.z,distance=Math.hypot(dx,dz);
+        const facing=distance<.05 || (dx*Math.sin(this.root.rotation.y)+dz*Math.cos(this.root.rotation.y))/distance>=.7;
+        if(distance<=2.6 && facing)this.options.strike(this.root.position,this.attackTarget);
+      }
     }
     this.tick(dt);
-    if (this.attackTime <= 0) this.cancelAttack();
+    if(this.attackTime<=0)this.cancelAttack();
   }
   private clearModel() {
     this.cancelAttack(); this.current = undefined; this.blend.clear();

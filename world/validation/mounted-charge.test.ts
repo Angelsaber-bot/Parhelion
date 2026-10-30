@@ -51,6 +51,19 @@ test('pause freezes locomotion and animation; recall cancels contact without a p
   for(let i=0;i<30;i++)f.tick();assert.equal(f.attempts.length,0);f.actor.dispose();
 });
 
+test('paused ordinary charge resumes the same authored contact exactly once',()=>{
+  const f=fixture();f.until(()=>f.follow.mountedPhase==='charge');f.tick();
+  const time=f.actor.clipTime,at=f.actor.root.position.clone();
+  for(let i=0;i<20;i++)f.tick(.1,true);
+  assert.equal(f.actor.clipTime,time);assert.equal(f.actor.state,'attack');
+  assert.equal(f.follow.mountedPhase,'charge');assert.ok(at.distanceTo(f.actor.root.position)<1e-8);
+  assert.equal(f.attempts.length,0);
+  f.until(()=>f.attempts.length===1);assert.equal(f.attempts[0].hit,true);
+  f.until(()=>f.follow.mountedPhase==='recover');assert.equal(f.attempts.length,1);
+  for(let i=0;i<4;i++)f.tick(.1,true);
+  assert.equal(f.attempts.length,1);f.actor.dispose();
+});
+
 test('a blocked enemy is not charged through walls; disabled colliders allow the next attempt',()=>{
   const obstacle=wall(0,3,30),f=fixture([obstacle]);for(let i=0;i<160;i++)f.tick();
   assert.equal(f.attempts.length,0);assert.ok(f.actor.root.position.z<3-MOUNTED_CHARGE.halfLength);
@@ -79,4 +92,21 @@ test('death during approach drops the target and an unreachable staging slot doe
   const obstacle=wall(0,3,30),blocked=fixture([obstacle]);
   for(let i=0;i<100;i++)blocked.tick();
   assert.equal(blocked.follow.mountedPhase,'follow');assert.equal(blocked.actor.state,'idle');assert.equal(blocked.attempts.length,0);blocked.actor.dispose();
+});
+
+test('horse regroup uses a supported centreline on narrow bridges, never the player point as an unsafe fallback',()=>{
+ for(const width of [1.4,.9]) {
+  const f=fixture();f.enemy=null;f.colliders[0].bvh=new MeshBVH(new THREE.PlaneGeometry(width,40).rotateX(-Math.PI/2));
+  f.actor.root.position.set(8,0,0);const before=f.actor.root.position.clone();f.tick();
+  if(width>1.2){assert.ok(Math.abs(f.actor.root.position.x)<1e-7);assert.ok(Math.abs(f.actor.root.position.z)>=3.1);}
+  else assert.ok(f.actor.root.position.equals(before),'do not materialise a horse without four-foot support');
+  f.actor.dispose();
+ }
+});
+test('failed horse rejoin retries are bounded rather than scanning six slots every frame',()=>{
+ const f=fixture();f.enemy=null;f.colliders[0].enabled=false;f.tick();
+ const mounted=(f.follow as any).mounted,original=mounted.safeFollowSlot.bind(mounted);let attempts=0;
+ mounted.safeFollowSlot=(...args:any[])=>{attempts++;return original(...args);};
+ for(let i=0;i<120;i++)f.tick(1/60);
+ assert.ok(attempts>=6&&attempts<=9,`bounded retry count ${attempts}`);assert.equal(f.attempts.length,0);f.actor.dispose();
 });

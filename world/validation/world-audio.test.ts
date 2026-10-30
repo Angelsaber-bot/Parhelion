@@ -66,3 +66,14 @@ test('foreground loss stops voices via module listeners and dispose removes thos
  try{const context=new Context(),audio=new WorldAudio({createContext:()=>context as unknown as AudioContext,gesture:()=>false,storage:null});audio.unlock(trusted);audio.setActive(true);audio.shot();assert.equal(audio.activeVoices,2);handlers.get('blur')!();assert.equal(audio.activeVoices,0);assert.equal(context.state,'suspended');audio.dispose();assert.equal(handlers.size,0);}
  finally{if(oldWindow)Object.defineProperty(globalThis,'window',oldWindow);else Reflect.deleteProperty(globalThis,'window');if(oldDocument)Object.defineProperty(globalThis,'document',oldDocument);else Reflect.deleteProperty(globalThis,'document');}
 });
+
+test('servant cast/release cues stay inside the shared voice budget and mute cancels them',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);const signatures=new Set<string>();
+ for(const identity of ['saber','blackbeard','napoleon','musashi'] as const)for(const slot of ['skill','ultimate'] as const){
+  const common={identity,slot,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1}};
+  f.audio.skillEvent({...common,type:'cast',duration:1});assert.equal(f.audio.activeVoices,1);for(const node of f.context.sources)node.end();
+  const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',range:10,halfWidth:2,damage:30,maxTargets:2,pulse:0,at:.2});assert.equal(f.audio.activeVoices,2);
+  signatures.add(JSON.stringify(f.context.sources.slice(start).map(n=>[n.type,n.frequency.value])));for(const node of f.context.sources)node.end();
+ }
+ assert.ok(signatures.size>=6);for(let i=0;i<100;i++)f.audio.skill();assert.equal(f.audio.activeVoices,WORLD_AUDIO_VOICES);f.audio.setMuted(true);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+});

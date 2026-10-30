@@ -1,0 +1,519 @@
+{
+  "navigationPreSafety": {
+    "scope": "targeted real-world collider queries, not whole frame or FPS",
+    "colliders": 32,
+    "points": 300,
+    "queriesPerBatch": 3600,
+    "samples": {
+      "before": [
+        {
+          "ms": 304.83081800000036,
+          "raycasts": 459764
+        },
+        {
+          "ms": 301.77335700000003,
+          "raycasts": 459764
+        },
+        {
+          "ms": 246.10218300000088,
+          "raycasts": 459764
+        },
+        {
+          "ms": 296.0793510000003,
+          "raycasts": 459764
+        },
+        {
+          "ms": 286.00527200000033,
+          "raycasts": 459764
+        },
+        {
+          "ms": 295.6355309999999,
+          "raycasts": 459764
+        },
+        {
+          "ms": 251.49402599999848,
+          "raycasts": 459764
+        },
+        {
+          "ms": 308.53526299999976,
+          "raycasts": 459764
+        }
+      ],
+      "after": [
+        {
+          "ms": 76.92208700000083,
+          "raycasts": 14924
+        },
+        {
+          "ms": 75.33052700000007,
+          "raycasts": 14924
+        },
+        {
+          "ms": 43.091434999998455,
+          "raycasts": 14924
+        },
+        {
+          "ms": 49.73649399999886,
+          "raycasts": 14924
+        },
+        {
+          "ms": 61.74341900000036,
+          "raycasts": 14924
+        },
+        {
+          "ms": 47.187841999999364,
+          "raycasts": 14924
+        },
+        {
+          "ms": 80.9275630000011,
+          "raycasts": 14924
+        },
+        {
+          "ms": 74.01762400000007,
+          "raycasts": 14924
+        }
+      ]
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "mountedBefore": {
+    "rafMs": 111232.76200100014,
+    "rafCalls": 2053,
+    "costs": {
+      "player.step": {
+        "calls": 4106,
+        "ms": 296.84198299976197
+      },
+      "combat.simulate": {
+        "calls": 4106,
+        "ms": 80.67642500008515
+      },
+      "anim.update": {
+        "calls": 2053,
+        "ms": 1318.3468180000782
+      },
+      "combat.present": {
+        "calls": 2053,
+        "ms": 1305.2362949999697
+      },
+      "servant.update": {
+        "calls": 2053,
+        "ms": 78.81994599995596
+      },
+      "renderer.render": {
+        "calls": 2053,
+        "ms": 4029.3091420000037
+      }
+    },
+    "mounted": {
+      "update": {
+        "calls": 2042,
+        "ms": 99636.89406700002
+      },
+      "safeFollowSlot": {
+        "calls": 2,
+        "ms": 3.265867000000071
+      },
+      "ground": {
+        "calls": 6319,
+        "ms": 263.9782110003471
+      },
+      "floor": {
+        "calls": 31591,
+        "ms": 238.43654200010678
+      },
+      "bodyClear": {
+        "calls": 5110,
+        "ms": 208.63424899997517
+      },
+      "path": {
+        "calls": 1280,
+        "ms": 261.18032100000346
+      },
+      "makePlan": {
+        "calls": 9,
+        "ms": 13.267448999980843
+      },
+      "move": {
+        "calls": 1163,
+        "ms": 209.6401539998078
+      },
+      "turn": {
+        "calls": 1158,
+        "ms": 206.15811000000576
+      }
+    }
+  },
+  "mountedAfterZeroRay": {
+    "rafMs": 8226.601196999996,
+    "rafCalls": 2053,
+    "costs": {
+      "player.step": {
+        "calls": 4106,
+        "ms": 217.5285650000078
+      },
+      "combat.simulate": {
+        "calls": 4106,
+        "ms": 54.89042900003187
+      },
+      "anim.update": {
+        "calls": 2053,
+        "ms": 1125.4787600000636
+      },
+      "combat.present": {
+        "calls": 2053,
+        "ms": 928.96847599998
+      },
+      "servant.update": {
+        "calls": 2053,
+        "ms": 51.194300000013754
+      },
+      "renderer.render": {
+        "calls": 2053,
+        "ms": 2598.514543000001
+      }
+    },
+    "mounted": {
+      "update": {
+        "calls": 2042,
+        "ms": 681.6608859999869
+      },
+      "safeFollowSlot": {
+        "calls": 2,
+        "ms": 2.8398790000028384
+      },
+      "ground": {
+        "calls": 6315,
+        "ms": 208.93879299995024
+      },
+      "floor": {
+        "calls": 31571,
+        "ms": 193.05483199991068
+      },
+      "bodyClear": {
+        "calls": 5107,
+        "ms": 100.24431200006984
+      },
+      "path": {
+        "calls": 1279,
+        "ms": 189.35371599998143
+      },
+      "makePlan": {
+        "calls": 9,
+        "ms": 13.44677899999806
+      },
+      "move": {
+        "calls": 1177,
+        "ms": 144.0678840000419
+      },
+      "turn": {
+        "calls": 1157,
+        "ms": 96.2763159999704
+      }
+    }
+  },
+  "zeroLos": {
+    "center": [
+      -940,
+      4.558267593383789,
+      202
+    ],
+    "a": [
+      -940,
+      4.984449179697006,
+      209
+    ],
+    "cases": [
+      {
+        "name": "zero",
+        "result": true,
+        "iterations": 10,
+        "ms": 555.3020749999996,
+        "stats": {
+          "static.raycastFirst": {
+            "calls": 10,
+            "ms": 551.3296639999953
+          },
+          "COL_Ruin_Door.raycastFirst": {
+            "calls": 10,
+            "ms": 0.22773200000119687
+          },
+          "COL_TGT_ruin_target_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.05288999999902444
+          },
+          "COL_TGT_ruin_target_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.02957600000081584
+          },
+          "COL_TGT_ruin_target_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.02018099999622791
+          },
+          "COL_TGT_range_target_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.1465669999979582
+          },
+          "COL_TGT_range_target_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.2367980000017269
+          },
+          "COL_TGT_range_target_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.11252100000638166
+          },
+          "COL_Seam_west_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.03624400000080641
+          },
+          "COL_Seam_north_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.06237599999985832
+          },
+          "COL_Seam_east_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.022451999995610095
+          },
+          "COL_Seam_south_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.11246100000244041
+          },
+          "COL_TGT_camp_dummy_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.021230000000286964
+          },
+          "COL_TGT_camp_dummy_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.021293000001605833
+          },
+          "COL_TGT_camp_dummy_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.03023600000597071
+          },
+          "COL_TGT_ghost_boat_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.04545900000084657
+          },
+          "COL_TGT_ghost_boat_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.019840999999360065
+          },
+          "COL_TGT_ghost_boat_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.03073700000095414
+          },
+          "COL_Ice_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.04900600000109989
+          },
+          "COL_TGT_frost_seal_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.03658499999983178
+          },
+          "COL_TGT_frost_seal_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.026141000000279746
+          },
+          "COL_TGT_frost_seal_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.037888000000748434
+          },
+          "COL_TGT_kikyo_banner_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.2690350000048056
+          },
+          "COL_TGT_kikyo_banner_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.22428900000159047
+          },
+          "COL_TGT_kikyo_banner_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.2977969999974448
+          },
+          "EraStation_britain.raycastFirst": {
+            "calls": 10,
+            "ms": 0.034633000004760106
+          },
+          "EraStation_blacksail.raycastFirst": {
+            "calls": 10,
+            "ms": 0.021041000003606314
+          },
+          "EraStation_winter.raycastFirst": {
+            "calls": 10,
+            "ms": 0.0799200000037672
+          },
+          "EraStation_kyoto.raycastFirst": {
+            "calls": 10,
+            "ms": 0.0839769999984128
+          },
+          "VALLEY_MaintenanceFrame.raycastFirst": {
+            "calls": 10,
+            "ms": 0.22018100000059349
+          },
+          "VALLEY_MaintenanceGate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.05700499999875319
+          }
+        }
+      },
+      {
+        "name": "offset",
+        "result": true,
+        "iterations": 10,
+        "ms": 1.6432540000005247,
+        "stats": {
+          "static.raycastFirst": {
+            "calls": 10,
+            "ms": 0.7218970000012632
+          },
+          "COL_Ruin_Door.raycastFirst": {
+            "calls": 10,
+            "ms": 0.014564000000973465
+          },
+          "COL_TGT_ruin_target_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.0064010000041889725
+          },
+          "COL_TGT_ruin_target_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.008874999999534339
+          },
+          "COL_TGT_ruin_target_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.030167999997502193
+          },
+          "COL_TGT_range_target_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.006699999998090789
+          },
+          "COL_TGT_range_target_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005948000001808396
+          },
+          "COL_TGT_range_target_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.068502999996781
+          },
+          "COL_Seam_west_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005390000002080342
+          },
+          "COL_Seam_north_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.00539799999933166
+          },
+          "COL_Seam_east_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.00478800000200863
+          },
+          "COL_Seam_south_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005408000000898028
+          },
+          "COL_TGT_camp_dummy_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.004908000000796164
+          },
+          "COL_TGT_camp_dummy_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.004586999995808583
+          },
+          "COL_TGT_camp_dummy_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.008872999997038278
+          },
+          "COL_TGT_ghost_boat_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.057115999994493905
+          },
+          "COL_TGT_ghost_boat_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.006288999997195788
+          },
+          "COL_TGT_ghost_boat_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005779000002803514
+          },
+          "COL_Ice_Gate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.006239000002096873
+          },
+          "COL_TGT_frost_seal_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.0056880000011005905
+          },
+          "COL_TGT_frost_seal_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005406999998740503
+          },
+          "COL_TGT_frost_seal_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.011166000002049259
+          },
+          "COL_TGT_kikyo_banner_1.raycastFirst": {
+            "calls": 10,
+            "ms": 0.006408999995983322
+          },
+          "COL_TGT_kikyo_banner_2.raycastFirst": {
+            "calls": 10,
+            "ms": 0.004997000001822016
+          },
+          "COL_TGT_kikyo_banner_3.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005357999998523155
+          },
+          "EraStation_britain.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005746999995608348
+          },
+          "EraStation_blacksail.raycastFirst": {
+            "calls": 10,
+            "ms": 0.0052380000033736
+          },
+          "EraStation_winter.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005757000002631685
+          },
+          "EraStation_kyoto.raycastFirst": {
+            "calls": 10,
+            "ms": 0.005734999998821877
+          },
+          "VALLEY_MaintenanceFrame.raycastFirst": {
+            "calls": 10,
+            "ms": 0.00540500000170141
+          },
+          "VALLEY_MaintenanceGate.raycastFirst": {
+            "calls": 10,
+            "ms": 0.03830700000071374
+          }
+        }
+      }
+    ],
+    "errors": []
+  },
+  "boundedCast": {
+    "scope": "finite far versus prior guarded cast; targeted real-world queries, not FPS",
+    "comparisons": 400,
+    "queriesPerBatch": 1200,
+    "samples": {
+      "before": [
+        14.160243000000264,
+        13.70046899999943,
+        13.419684999999845,
+        12.420548999999482,
+        12.95857100000012,
+        12.624095999999554
+      ],
+      "after": [
+        16.327320000000327,
+        10.846165999999357,
+        11.197805000000699,
+        11.183332999999948,
+        10.948849000000337,
+        10.68704500000058
+      ]
+    },
+    "errors": []
+  }
+}

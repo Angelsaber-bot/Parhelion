@@ -119,3 +119,47 @@ test('re-entering a still-visible gait during stop/start retains its clock inste
   assert.ok(Math.abs(actor.clipTime - phase) < 1e-8);
   assert.ok(point.position.distanceTo(position) < 1e-8, 'weighted gait pose is continuous at re-entry'); actor.dispose();
 });
+
+test('sprinting and sharp player turns keep a foot companion recoverable with supported, non-attacking regroup',()=>{
+ const {actor}=kitFixture(),player=new THREE.Vector3(),colliders=floor();let rejoins=0,contacts=0;
+ const follow=new KitCompanion({colliders,range:3.5,damage:9,target:()=>null,strike:()=>{contacts++;return null;},onRejoin:()=>rejoins++});
+ follow.update(actor,1/60,player,0,false);
+ let largestGap=0;
+ for(let i=0;i<900;i++) {
+  const yaw=i<450?0:Math.PI/2;
+  if(i<720){player.x+=i<450?0:9/60;player.z+=i<450?9/60:0;}
+  const before=actor.root.position.clone(),count=rejoins;
+  follow.update(actor,1/60,player,yaw,false);
+  largestGap=Math.max(largestGap,actor.root.position.distanceTo(player));
+  if(rejoins===count)assert.ok(actor.root.position.distanceTo(before)<=.10001,'walking never exceeds authored stride budget');
+  else {assert.ok(actor.root.position.distanceTo(player)<4);assert.ok(Math.abs(actor.root.position.y)<1e-7);assert.notEqual(actor.state,'attack');}
+ }
+ assert.ok(rejoins>0,'a 9m/s player can outpace the 6m/s rig, so explicit safe regroup is exercised');
+ assert.ok(largestGap<33,`no indefinitely abandoned follower: ${largestGap}`);
+ assert.ok(actor.root.position.distanceTo(player)<4);assert.equal(contacts,0);actor.dispose();
+});
+
+test('failed safe-regroup placement backs off, but a clearly moved player gets a fresh collision check',()=>{
+ const {actor}=kitFixture(),player=new THREE.Vector3(100,0,0);
+ const follow=new KitCompanion({colliders:[],range:3.5,damage:9,target:()=>null,strike:()=>null});
+ const nav=(follow as any).navigation, original=nav.safeReturn.bind(nav);let checks=0;
+ nav.safeReturn=(...args:any[])=>{checks++;return original(...args);};
+ for(let i=0;i<120;i++)follow.update(actor,1/60,player,0,false);
+ assert.ok(checks>=4&&checks<=8,`failed placement must not run every frame: ${checks}`);
+ assert.ok(actor.root.position.distanceTo(player)>90,'missing floor never becomes a cached successful placement');
+ while((follow as any).rejoinRetry<.2)follow.update(actor,1/60,player,0,false);
+ const before=checks;player.x+=3;follow.update(actor,1/60,player,0,false);
+ assert.equal(checks,before+1,'meaningful movement invalidates failure backoff');
+ follow.release(actor);assert.equal((follow as any).rejoinRetry,0);actor.dispose();
+});
+
+test('committed ordinary attacks track their one target without rescanning engagement candidates every frame',()=>{
+ const {actor}=kitFixture(),player=new THREE.Vector3(),enemy={id:'enemy',position:new THREE.Vector3(0,0,3)};
+ let engagements=0,observations=0,hits=0;
+ const follow=new KitCompanion({colliders:floor(),range:3.5,damage:9,target:()=>enemy,track:()=>{observations++;return enemy;},engage:()=>{engagements++;return enemy;},strike:()=>{hits++;return enemy;}});
+ for(let i=0;i<300&&actor.state!=='attack';i++)follow.update(actor,1/60,player,0,false);
+ assert.equal(actor.state,'attack');const count=engagements;
+ while(actor.state==='attack') {enemy.position.x+=.001;follow.update(actor,1/60,player,0,false);assert.equal(engagements,count);}
+ assert.ok(observations>0); // Event wiring is owned by production CharacterKit fixtures, not this motion-only rig.
+ follow.release(actor);actor.dispose();
+});

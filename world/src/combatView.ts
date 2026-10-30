@@ -23,7 +23,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -222,32 +222,40 @@ export class WorldCombat {
     }
     this.events(); return result;
   }
-  /** Read-only anticipation target. Contact revalidates this exact enemy below. */
-  allyTarget(position: Point3, range = 3.5, targetId?: string): { id: string; p: Point3 } | null {
-    if (!this.playable || this.state.defeated || this.allyCooldown > 0 || distanceXZ(position, this.player) > 25) return null;
-    let enemy: Enemy | undefined, nearest = Math.min(5, range);
+  /** Read-only live observation. Tracking never consumes or waits for ally attack cooldown. */
+  allyTrack(position: Point3, range = 3.5, targetId?: string, kind: 'melee' | 'ranged' = 'melee'): { id: string; p: Point3 } | null {
+    if (!this.playable || this.state.defeated || (!Number.isFinite(position.x)||!Number.isFinite(position.y)||!Number.isFinite(position.z)) || !Number.isFinite(range) || range <= 0 || distanceXZ(position, this.player) > 25) return null;
+    let enemy: Enemy | undefined, nearest = Math.min(kind === 'ranged' ? 14 : 5, range);
+    const from = { x: position.x, y: position.y + 1, z: position.z };
     for (const candidate of this.state.enemies) {
       if (targetId && candidate.id !== targetId || !candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - position.y) >= 3) continue;
       const distance = distanceXZ(candidate.p, position);
-      if (distance < nearest) { nearest = distance; enemy = candidate; }
+      if (distance >= nearest || !this.geometry.terrain.lineOfSight(from, { x: candidate.p.x, y: candidate.p.y + 1, z: candidate.p.z })) continue;
+      nearest = distance; enemy = candidate;
     }
-    if (!enemy || !this.geometry.terrain.lineOfSight({ ...position, y: position.y + 1 }, { ...enemy.p, y: enemy.p.y + 1 })) return null;
-    return { id: enemy.id, p: { ...enemy.p } };
+    return enemy ? { id: enemy.id, p: { ...enemy.p } } : null;
   }
-  /** Servant lock-on: nearest live enemy within `radius` of the player (hit reach is still allyTarget's). */
-  allyEngage(radius = 15): { id: string; p: Point3 } | null {
-    if (!this.playable || this.state.defeated) return null;
-    let enemy: Enemy | undefined, nearest = radius;
+  /** Acquisition may wait for the shared damage throttle; observation during windup must not. */
+  allyTarget(position: Point3, range = 3.5, targetId?: string, kind: 'melee' | 'ranged' = 'melee'): { id: string; p: Point3 } | null {
+    return this.allyCooldown > 0 ? null : this.allyTrack(position, range, targetId, kind);
+  }
+  /** Choose a reachable-height, visible enemy near the PLAYER, observing from the actual companion. */
+  allyEngage(radius = 15, from: Point3 = this.player): { id: string; p: Point3 } | null {
+    if (!this.playable || this.state.defeated || (!Number.isFinite(from.x)||!Number.isFinite(from.y)||!Number.isFinite(from.z)) || !Number.isFinite(radius) || radius <= 0 || distanceXZ(from,this.player)>25) return null;
+    let enemy: Enemy | undefined, nearest = Math.min(20,radius);
+    const sight = { x: from.x, y: from.y+1, z: from.z };
     for (const candidate of this.state.enemies) {
-      if (!candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - this.player.y) >= 6) continue;
+      if (!candidate.active || candidate.mode === 'dead' || candidate.pacified || Math.abs(candidate.p.y - from.y) >= 3 || Math.abs(candidate.p.y-this.player.y)>=3) continue;
       const distance = distanceXZ(candidate.p, this.player);
-      if (distance < nearest) { nearest = distance; enemy = candidate; }
+      if (distance >= nearest || !this.geometry.terrain.lineOfSight(sight,{x:candidate.p.x,y:candidate.p.y+1,z:candidate.p.z})) continue;
+      nearest=distance;enemy=candidate;
     }
     return enemy ? { id: enemy.id, p: { ...enemy.p } } : null;
   }
   /** Animation contact only: range/LOS/liveness/cooldown are checked again after wind-up. */
-  allyStrike(position: Point3, range = 3.5, damage = 14, targetId?: string): { id: string; p: Point3 } | null {
-    const target = this.allyTarget(position, range, targetId);
+  allyStrike(position: Point3, range = 3.5, damage = 14, targetId?: string, kind: 'melee' | 'ranged' = 'melee'): { id: string; p: Point3 } | null {
+    if(!Number.isFinite(damage) || damage<=0)return null;
+    const target = this.allyTarget(position, range, targetId, kind);
     if (!target) return null;
     this.allyCooldown = 1.1;
     this.damageEnemy(target.id, Math.min(18, Math.max(0, damage)), { source: 'servant', origin: position });
@@ -321,6 +329,7 @@ export class WorldCombat {
       v.lastMode = e.mode;
       v.updateLabel?.();
       v.applyPacified?.(e.pacified);
+      if (v.peaceMarker) v.peaceMarker.visible = e.pacified && distance < 24;
       if (v.roleLabel) v.roleLabel.visible = !e.pacified && distance < 24 && (e.mode !== 'idle' || distance < 12);
       const moving = e.mode === 'chase';
       v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup');
@@ -335,8 +344,9 @@ export class WorldCombat {
       // No new draw calls, body shells, lights or flashing: reuse the existing health bar.
       (v.fill.material as THREE.MeshBasicMaterial).color.set(e.pacified ? '#78949a' : punishCue ? '#79efdc' : interrupted ? '#d3ac77' : e.miniboss ? '#ffd36a' : '#ffb26f');
       v.bar.scale.y = punishCue ? 1.65 : 1;
-      v.bar.visible = e.pacified || e.hp < e.maxHp || e.mode !== 'idle';
-      if (camera) v.bar.quaternion.copy(camera.quaternion);
+      // A health bar promises a currently damageable opponent, never a dormant prop.
+      v.bar.visible = active && e.active && !e.pacified && !this.state.defeated && (e.hp < e.maxHp || e.mode !== 'idle');
+      if (camera) { v.bar.quaternion.copy(camera.quaternion); v.peaceMarker?.quaternion.copy(camera.quaternion); }
       const ratio = e.hp / e.maxHp; v.fill.scale.x = ratio; v.fill.position.x = -(1 - ratio) * (e.kind === 'king' ? 1.5 : 0.8) / 2;
       v.tell.visible = e.mode === 'windup';
       if (v.tell.visible) {
@@ -421,7 +431,7 @@ export class WorldCombat {
     const nearestPunish = playable && nearest && !nearest.pacified && isMeleePunishWindow(nearest);
     nearestHint.className = nearestPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
     const nearestElite = nearest?.miniboss ? MINIBOSSES.find(m => m.id === nearest.miniboss) : undefined;
-    nearestHint.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('中继已接管 · 机械哨卫休眠', 'Relay restored · Sentinel dormant') : bilingual('旧誓试炼已完成 · 护路者停战', 'Oath trial complete · Road wardens stand down')) : nearest && nearest.kind !== 'king' ? `${nearestElite ? bilingual(...nearestElite.name) : bilingual(...ENEMY_ROLES[nearest.role].name)} · ${counterHint(nearest,playable)}` : '';
+    nearestHint.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('中继已接管 · 哨卫休眠 · 无需攻击', 'Relay restored · Sentinel dormant · Non-hostile') : bilingual('旧誓试炼已完成 · 护路者停战 · 无需攻击', 'Oath trial complete · Road wardens stand down · Non-hostile')) : nearest && nearest.kind !== 'king' ? `${nearestElite ? bilingual(...nearestElite.name) : bilingual(...ENEMY_ROLES[nearest.role].name)} · ${counterHint(nearest,playable)}` : '';
     const b = this.state.boss, bossHint = this.bossHud.querySelector('small')!;
     const bossPunish = playable && b.active && !b.pacified && isMeleePunishWindow(b);
     bossHint.className = bossPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
@@ -478,8 +488,8 @@ export class WorldCombat {
     const sword = undefined;
     const bar = new THREE.Group(); bar.position.y = king ? 4.1 : 2.25; root.add(bar);
     const width = king ? 1.5 : 0.8;
-    const barGeo = new THREE.PlaneGeometry(width, 0.09), backMat = new THREE.MeshBasicMaterial({ color: '#171c29', depthTest: false });
-    const fillMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffd36a' : '#ffb26f', depthTest: false });
+    const barGeo = new THREE.PlaneGeometry(width, 0.09), backMat = new THREE.MeshBasicMaterial({ color: '#171c29', depthTest: true });
+    const fillMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffd36a' : '#ffb26f', depthTest: true });
     this.shared.push(barGeo); this.materials.push(backMat, fillMat);
     const back = new THREE.Mesh(barGeo, backMat), fill = new THREE.Mesh(barGeo, fillMat); fill.position.z = 0.005; bar.add(back, fill);
     const tellGeo = new THREE.CircleGeometry(1, 40), tellMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffb82f' : '#ff4939', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
@@ -534,6 +544,17 @@ export class WorldCombat {
       }
       if (cached) { roleLabel = new THREE.Sprite(cached.material); roleLabel.position.y = 2.55; roleLabel.scale.set(2.6, .325, 1); roleLabel.updateMatrix(); roleLabel.matrixAutoUpdate=false; root.add(roleLabel); updateLabel = cached.update; }
     }
+    // Peaceful story sentinels use a mint pause emblem, never an enemy HP bar.
+    // Geometry remains legible even if canvas/text creation is unavailable.
+    let peaceMarker: THREE.Group | undefined;
+    if (['wild_48', 'wild_48b', 'wild_56', 'wild_56b'].includes(e.id)) {
+      peaceMarker = new THREE.Group(); peaceMarker.name = 'Standing_Down_Not_Attackable';
+      peaceMarker.position.y = 2.45; peaceMarker.visible = false; root.add(peaceMarker);
+      const signMaterial = new THREE.MeshBasicMaterial({ color: '#9dd8ce', side: THREE.DoubleSide });
+      const signGeometry = new THREE.BoxGeometry(.06, .22, .06);
+      this.materials.push(signMaterial); this.shared.push(signGeometry);
+      for (const x of [-.065, .065]) { const mark = new THREE.Mesh(signGeometry, signMaterial); mark.position.x = x; peaceMarker.add(mark); }
+    }
     let applyPacified: EnemyVisual['applyPacified'];
     if (e.id === 'wild_48' || e.id === 'wild_48b') {
       const unique = new Set<THREE.MeshStandardMaterial>();
@@ -545,7 +566,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material, roleLabel, applyPacified };
+    return { root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {

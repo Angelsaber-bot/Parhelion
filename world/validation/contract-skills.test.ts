@@ -56,7 +56,7 @@ test('presentation reuses pool/geometry/materials, reduced flash, idempotent dis
   const geometry = new Set(), materials = new Set();
   fx.root.traverse(o => { if (o instanceof THREE.Mesh) { geometry.add(o.geometry); materials.add(o.material); } });
   for (let i = 0; i < 100; i++) fx.show(e, true);
-  assert.equal(fx.root.children.length, 18); assert.equal(geometry.size, 2); assert.equal(materials.size, 18);
+  assert.equal(fx.root.children.length, 18); assert.equal(geometry.size, 10); assert.equal(materials.size, 18);
   fx.root.traverse(o => { if (o instanceof THREE.Mesh) assert.ok(o.material.opacity <= .12); });
   fx.update(.1, false); assert.ok(fx.root.children.every(o => !o.visible)); fx.dispose(); fx.dispose(); assert.equal(scene.children.length, 0);
 });

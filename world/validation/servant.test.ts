@@ -25,7 +25,7 @@ function fixture(done = new Set<string>(), customLoad?: (url:string)=>Promise<GL
   let loads=0, targets=0, attacks=0, enemy: {id:string;position:THREE.Vector3}|null=null;
   const servant = new ContractServant({scene,marker,contract,colliders:[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2))}],
     load: async (url) => { loads++; return customLoad ? customLoad(url) : asset.gltf; },
-    target:()=>{ targets++; return enemy; }, strike: (_p,id) => { assert.equal(id,'enemy'); attacks++; return enemy; }});
+    engage:()=>enemy, track:()=>enemy, target:()=>{ targets++; return enemy; }, strike: (_p,id) => { assert.equal(id,'enemy'); attacks++; return enemy; }});
   return {scene,contract,servant,asset,loads:()=>loads,targets:()=>targets,attacks:()=>attacks,setEnemy:(on:boolean)=>{enemy=on?{id:'enemy',position:new THREE.Vector3(2,0,2)}:null;}};
 }
 function advance(f:ReturnType<typeof fixture>,seconds:number,p=new THREE.Vector3()) { for(let t=0;t<seconds-1e-8;t+=.05) f.servant.update(.05,p,0,true,false); }
@@ -60,18 +60,24 @@ test('Idle/Walk/Run crossfades follow actual movement and teleport rematerialize
   advance(f,.25,new THREE.Vector3(.7,0,0));assert.equal(f.servant.animation,'Walk');
   advance(f,.15,new THREE.Vector3(7,0,0));assert.equal(f.servant.animation,'Run');
   advance(f,3,new THREE.Vector3(7,0,0));assert.equal(f.servant.animation,'Idle');
-  f.servant.update(.05,new THREE.Vector3(500,0,0),0,true,false);
-  assert.ok(f.servant.root.position.distanceTo(new THREE.Vector3(500,0,0))<4);
+  f.servant.update(.05,new THREE.Vector3(70,0,0),0,true,false);
+  assert.ok(f.servant.root.position.distanceTo(new THREE.Vector3(70,0,0))>4,'separation first attempts walking, not an unconditional instant warp');
+  advance(f,1.3,new THREE.Vector3(70,0,0));
+  assert.ok(f.servant.root.position.distanceTo(new THREE.Vector3(70,0,0))<4,'supported safe anchor allows deliberate regroup');
+  advance(f,2,new THREE.Vector3(500,0,0));
+  assert.ok(f.servant.root.position.distanceTo(new THREE.Vector3(500,0,0))>100,'no ground means no unsafe teleport');
   f.servant.dispose();
 });
 test('Attack anticipates, contacts once at the clip phase, recovers fully and can replay', async () => {
   const f=fixture(new Set(['saber_contract']));await f.servant.ensureLoaded();f.setEnemy(true);
-  advance(f,.4);assert.equal(f.servant.animation,'Attack');assert.equal(f.attacks(),0,'no damage during anticipation');
-  advance(f,.3);assert.equal(f.attacks(),1);assert.equal(f.servant.animation,'Attack');
+  const approach=()=>{for(let i=0;i<200&&f.servant.animation!=='Attack';i++)advance(f,.05);assert.equal(f.servant.animation,'Attack');};
+  approach();assert.equal(f.attacks(),0,'must first approach and turn, never damage during anticipation');
+  advance(f,.55);assert.equal(f.attacks(),0,'authored contact has not arrived');
+  advance(f,.1);assert.equal(f.attacks(),1);assert.equal(f.servant.animation,'Attack');
   f.setEnemy(false);advance(f,.7);assert.equal(f.attacks(),1);assert.equal(f.servant.animation,'Idle');
-  f.setEnemy(true);advance(f,.7);assert.equal(f.attacks(),2);f.servant.dispose();
+  f.setEnemy(true);approach();advance(f,.7);assert.equal(f.attacks(),2);f.servant.dispose();
 });
-test('pause freezes the attack; recall, traversal suppression and quest reset cancel pending contact', async () => {
+test('pause cancels the attack; recall, traversal suppression and quest reset cancel pending contact', async () => {
   for(const interruption of ['recall','flight','reset'] as const) {
     const done=new Set(['saber_contract']),f=fixture(done);await f.servant.ensureLoaded();f.setEnemy(true);
     advance(f,.2);f.servant.update(.1,new THREE.Vector3(),0,true,true);assert.equal(f.attacks(),0);

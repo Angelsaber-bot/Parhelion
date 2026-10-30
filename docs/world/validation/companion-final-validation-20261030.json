@@ -1,0 +1,48 @@
+{
+  "baseCommit": "6dd4a2051397316cd0ebfa385756815435de3ada",
+  "verifiedAtUtc": "2026-10-30T14:37:35Z",
+  "nodeVersions": [
+    "22.22.2",
+    "24.22.1"
+  ],
+  "localBuildId": "5ace347113244c216edba491e9e62f981b8eb2ece37fe4e23990e0ed4cc14862",
+  "sourceManifest": {
+    "file": "companion-source-manifest-20261030.sha256",
+    "files": 989,
+    "sha256": "dc87595adf23a07f1d662e3211db594c51516e5417f14f345daa59e7a221049c",
+    "unchangedDuringFinalRun": true
+  },
+  "results": {
+    "world-node22": {
+      "exitCode": 0,
+      "logSha256": "5e58f97476cec8158964fe9bbd589941051af71e3e7219d7b63aeddce7f451ed",
+      "passed": 931
+    },
+    "world-node24": {
+      "exitCode": 0,
+      "logSha256": "1e68a0b3fd9889f0ee7ec49580fec6feadc54effb919aa1898b924b511fcf2df",
+      "passed": 931
+    },
+    "arena-node22": {
+      "exitCode": 0,
+      "logSha256": "9577f62f4593e516a13b97800758cb212ca598054c7de0c505b6a75b5d8873e4",
+      "passed": 322
+    },
+    "site-build-node22": {
+      "exitCode": 0,
+      "logSha256": "c64e302ac8473dbd2ea01c883031dcebda1802ec44e1eed7fa2a692c365d0cd5"
+    },
+    "site-test-node22": {
+      "exitCode": 0,
+      "logSha256": "b90acfbf53106a5ba16f0de6094df5cfc77c152e6b2d3335961cff4f2abd8667",
+      "passed": 13
+    }
+  },
+  "limitations": [
+    "Explicit no-GPU production DOM, real GLBs and BVHs; no device FPS acceptance.",
+    "Skill contact scenarios use synthetic recruitment and placement; ultimate tests explicitly initialize energy to isolate damage.",
+    "20-second sprint test includes four safe regroup placements, not continuous running faster than the player.",
+    "Skill poses retime existing authored clips; they are not newly hand-authored animation assets.",
+    "Public push and deployment were not yet performed at this verification snapshot."
+  ]
+}

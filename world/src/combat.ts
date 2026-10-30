@@ -433,7 +433,15 @@ export class WorldCombatState {
       const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x < -213 && player.z < 870;
       const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26 : COMBAT.aggroRange;
       if (e.mode === 'idle') { if (dist < aggroRange && sees) e.mode = 'chase'; else continue; }
-      if (e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash)) { this.resetEnemy(e); continue; }
+      if (e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash)) {
+        // Returning to the patrol boundary is not a respawn. Previously every ranged
+        // hit from 35–82 m was erased on the next AI tick, with a one-tick immunity
+        // window as well. Keep damage/eligibility until real despawn or death.
+        Object.assign(e.p, e.home); Object.assign(e.target, e.home);
+        e.mode = 'idle'; e.timer = 0;
+        e.active = distanceXZ(e.p, player) < COMBAT.activeRange;
+        continue;
+      }
       threatened = true;
       e.timer -= dt;
       if (e.mode === 'windup') {

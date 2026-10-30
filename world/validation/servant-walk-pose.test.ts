@@ -13,10 +13,10 @@ import { mountedChargeDistance } from '../src/characters/mountedChargeMotion.ts'
 
 for(const outfit of ['armor','civilian'] as const)test(`${outfit}: actual Artoria walking arms match relaxed idle, crossfades stay finite, authored attack remains unmodified`,async()=>{
   const {gltf}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS[outfit])));
-  const appearance=new ServantAppearance();appearance.select(outfit);let enemy=false;
+  const appearance=new ServantAppearance();appearance.select(outfit);let enemy=false;const enemyPosition=new THREE.Vector3();
   const servant=new ContractServant({scene:new THREE.Scene(),marker:{id:'test',type:'interact',label:'test',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),appearance,
     colliders:[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2))}],load:async()=>gltf,
-    target:()=>enemy?{id:'enemy',position:new THREE.Vector3(0,0,2)}:null,strike:()=>null});
+    target:()=>enemy?{id:'enemy',position:enemyPosition}:null,strike:()=>null});
   await servant.ensureLoaded();const p=new THREE.Vector3();
   const bone=(n:string)=>gltf.scene.getObjectByName(`mixamorig${n}`)??gltf.scene.getObjectByName(`mixamorig:${n}`)!;
   function direction(a:string,b:string){servant.root.updateWorldMatrix(true,true);return bone(b).getWorldPosition(new THREE.Vector3()).sub(bone(a).getWorldPosition(new THREE.Vector3())).normalize();}
@@ -31,7 +31,14 @@ for(const outfit of ['armor','civilian'] as const)test(`${outfit}: actual Artori
   }}
   assert.ok(armSamples.length>40);assert.ok(localArms.every(q=>q.clone().normalize().angleTo(localArms[0].clone().normalize())<.015),'walking retains published Idle arm breathing, not a new arm swing');
   for(let i=0;i<30;i++)servant.update(.05,p,0,true,false);assert.equal(servant.animation,'Idle');
-  enemy=true;for(let i=0;i<8;i++)servant.update(.05,p,0,true,false);assert.equal(servant.animation,'Attack');
+  // The walk moved both player and companion away from the world origin. Place
+  // a supported, reachable melee target near the current actor, then allow its
+  // real facing gate rather than relying on the old unlimited target callback.
+  enemyPosition.copy(servant.root.position).add(new THREE.Vector3(0,0,1.2));enemy=true;
+  for(let i=0;i<60&&servant.animation!=='Attack';i++)servant.update(.05,p,0,true,false);
+  assert.equal(servant.animation,'Attack','nearby target starts after natural turning');
+  // The first attack update already advanced .05s; seven more sample exactly .4s.
+  for(let i=0;i<7;i++)servant.update(.05,p,0,true,false);assert.equal(servant.animation,'Attack');
   // After the crossfade, no relaxed-arm modifier may affect the authored sword attack.
   const actual=bone('RightArm').quaternion.clone();
   const {gltf:reference}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS[outfit])));

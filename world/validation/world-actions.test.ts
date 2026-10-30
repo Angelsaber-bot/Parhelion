@@ -106,3 +106,21 @@ test('normal exploration advances cooldowns while disallowing attacks; menu paus
   f.context.enabled=true;f.context.grounded=true;f.context.clockRunning=true;f.actions.update(.1);assert.ok(f.actions.skills.cooldown('skill')<exploring);
  }finally{f.actions.dispose();}
 });
+
+test('resolved companion aim owns cast origin and command target; only real positive contacts request hit feedback',()=>{
+ const c:WorldActionContext={enabled:true,grounded:true,armed:true,bladeReady:true,position:{x:0,y:0,z:7},yaw:0,moveX:0,moveZ:0,identity:'saber'};
+ let command:ActionPoseCommand|undefined,feedback=0;const casts:any[]=[];
+ const origin={x:0,y:0,z:-3},direction={x:0,y:0,z:1};
+ const actions=new WorldActions({scene:new THREE.Scene(),context:()=>c,resolveAim:()=>({origin,direction,targetId:'enemy',targetPoint:{x:0,y:0,z:0}}),
+  strike:request=>({damage:request.damage,hits:[{id:'enemy',damage:request.damage}],kills:[]}),contactPoint:()=>({x:0,y:0,z:0}),
+  defense(){},startPose:(_id,value)=>{command=value;return true;},cancelPoses(){},toast(){},reducedEffects:()=>false,onCast:event=>casts.push(event)});
+ const original=actions.effects.hit.bind(actions.effects);actions.effects.hit=(...args)=>{feedback++;original(...args);};
+ try{actions.press('skill');assert.equal(command?.slot,'skill');assert.equal(command?.targetId,'enemy');assert.deepEqual(casts[0].origin,origin);assert.deepEqual(casts[0].direction,direction);
+  assert.equal(feedback,0,'casting alone is not a hit');command!.onContact(origin,direction,undefined,{losOffset:1,casterFeetY:0});actions.flush();assert.equal(feedback,1);
+  command!.onContact(origin,direction);actions.flush();assert.equal(feedback,1,'duplicate contact cannot create another hit cue');
+ }finally{actions.dispose();}
+});
+test('unavailable companion aim rejects before animation, cooldown or energy spending',()=>{
+ const f=fixture();f.context.identity='saber';(f.actions as any).options.resolveAim=()=>null;
+ try{f.actions.press('skill');assert.equal(f.poses(),0);assert.equal(f.actions.skills.cooldown('skill'),0);assert.equal(f.actions.skills.casting,false);assert.equal(f.strikes.length,0);}finally{f.actions.dispose();}
+});

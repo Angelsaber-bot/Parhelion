@@ -20,6 +20,9 @@ export class MountedCharge {
   private planCheck = 0;
   private stalled = 0;
   private emitted = false;
+  private separatedFor = 0;
+  private returnRetry = 0;
+  private followStuckFor = 0;
   private readonly ray = new THREE.Ray();
   private readonly bounds = new WeakMap<Collider['bvh'], THREE.Box3>();
   private readonly body = new THREE.Box3(new THREE.Vector3(-MOTION.radius, .42, -MOTION.halfLength), new THREE.Vector3(MOTION.radius, 3.4, MOTION.halfLength));
@@ -31,17 +34,27 @@ export class MountedCharge {
   startSkillPose(actor: CharacterKit, command: SkillPoseCommand, player: THREE.Vector3, _yaw: number): boolean {
     if (!validSkillPose(command) || command.contacts !== 1) return false;
     const attack = actor.definition.clips.attack, contact = attack?.events?.find(e => e.kind === 'hit')?.at;
-    const target = this.options.engage?.(player) ?? this.options.target(actor.root.position, this.options.range);
+    const target = command.targetId && command.targetPoint
+      ? { id: command.targetId, position: new THREE.Vector3(command.targetPoint.x, command.targetPoint.y, command.targetPoint.z) }
+      : this.options.engage?.(player, actor.root.position) ?? this.options.target(actor.root.position, this.options.range);
     if (!attack || contact === undefined || !target || target.position.distanceTo(player) > 16 || Math.abs(target.position.y - actor.root.position.y) > 1.5 || !this.resolve(target)) return false;
     const toTarget = target.position.clone().sub(actor.root.position).setY(0).normalize();
     const direction = new THREE.Vector3(command.direction.x, 0, command.direction.z).normalize();
     if (toTarget.dot(direction) < .25) return false;
-    const plan = this.makePlan(actor, target, player, attack.duration, contact);
+    // The skill corridor starts at the real horse root. Keep the target ahead at
+    // the authored contact despite the .16m staging tolerance, rather than
+    // reporting a completed swing after the horse has already passed its target.
+    const plan = this.makePlan(actor, target, player, attack.duration, contact, .35);
     if (!plan) return false;
     this.release(actor); this.active = true; this.plan = plan; this.phase = 'approach';
     this.skillPose = { command, elapsed: 0 }; return true;
   }
-  cancelSkillPose(actor?: CharacterKit) { if (this.skillPose) this.release(actor); }
+  cancelSkillPose(actor?: CharacterKit) {
+    if(!this.skillPose)return;
+    this.finishSkillPose(false);this.plan=undefined;this.phase='recover';
+    this.cooldown=Math.max(this.cooldown,.35);this.emitted=false;this.stalled=0;
+    if(actor?.state==='attack')actor.play('idle');
+  }
   private finishSkillPose(completed: boolean) {
     const pose = this.skillPose; this.skillPose = undefined; pose?.command.onFinish(completed);
   }
@@ -63,17 +76,22 @@ export class MountedCharge {
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number) {
     if (this.skillPose) {
       this.skillPose.elapsed += dt;
-      if (this.skillPose.elapsed > 7.5 || !this.plan || (!this.emitted && !this.resolve(this.plan.target))) { this.release(actor); return; }
+      if (this.skillPose.elapsed > 7.5 || !this.plan || (!this.emitted && !this.resolve(this.plan.target))) { this.cancelSkillPose(actor); return; }
     }
     const root = actor.root, attack = actor.definition.clips.attack;
     const contact = attack?.events?.find(event => event.kind === 'hit')?.at;
     if (!attack || contact === undefined) { actor.play('idle'); actor.update(dt); return; }
-    if (!this.active || root.position.distanceTo(player) > 24) {
-      this.release(actor);
-      const slot = this.followSlot(player, yaw), floor = this.ground(slot, player.y, yaw);
-      // Rematerialise at the player only as the existing recall/leash safety, never at an enemy.
-      root.position.copy(floor !== null && this.path(player, slot, yaw) ? slot.setY(floor) : player);
-      root.rotation.y = yaw; this.active = true;
+    this.returnRetry = Math.max(0,this.returnRetry-dt);
+    const separation=root.position.distanceTo(player), leash=this.plan||this.skillPose?24:14;
+    this.separatedFor=separation>leash?this.separatedFor+dt:0;
+    if (!this.active || this.separatedFor > (this.plan || this.skillPose ? .75 : .5) || this.followStuckFor>2) {
+      if(this.returnRetry>0){actor.play('idle');actor.update(dt);return;}
+      const slot=this.safeFollowSlot(player,yaw), wasActive=this.active;
+      this.release(actor);this.returnRetry=.25;
+      if(!slot){actor.play('idle');actor.update(dt);return;}
+      root.position.copy(slot);root.rotation.y=yaw;this.active=true;
+      this.separatedFor=this.followStuckFor=0;
+      if(wasActive)this.options.onRejoin?.();
     }
     this.cooldown = Math.max(0, this.cooldown - dt);
     this.planCheck = Math.max(0, this.planCheck - dt);
@@ -102,7 +120,7 @@ export class MountedCharge {
       if (this.cooldown <= 0) this.phase = 'follow';
       return;
     }
-    let prey = this.plan ? this.resolve(this.plan.target) : this.options.engage?.(player) ?? this.options.target(root.position, this.options.range);
+    let prey = this.plan ? this.resolve(this.plan.target) : this.options.engage?.(player, root.position) ?? this.options.target(root.position, this.options.range);
     if (prey && (prey.position.distanceTo(player) > 16 || Math.abs(prey.position.y - root.position.y) > 1.5)) prey = null;
     if (!prey) { this.plan = undefined; this.phase = 'follow'; }
     if (prey && !this.plan && this.cooldown <= 0) {
@@ -122,7 +140,8 @@ export class MountedCharge {
       }
     }
     const destination = this.plan?.start ?? this.followSlot(player, yaw);
-    const speed = this.move(actor, destination, dt);
+    const speed = this.move(actor, destination, dt, this.plan ? 4.4 : Math.min(6.2,(actor.definition.clips.run?.nominalSpeed ?? 2.1)*3));
+    this.followStuckFor=!this.plan&&speed===0&&root.position.distanceTo(destination)>1?this.followStuckFor+dt:0;
     // A new obstruction may invalidate a previously reachable staging slot. Wait rather than
     // play a running pose against it, then drop the plan and let the next bounded retry replan.
     if (this.plan && speed === 0 && root.position.distanceTo(destination) > .2) this.stalled += dt;
@@ -143,7 +162,7 @@ export class MountedCharge {
     actor.update(dt);
   }
   private resolve(target: Target) {
-    const live = this.options.target(target.position, this.options.range, target.id);
+    const live = (this.options.track ?? this.options.target)(target.position, this.options.range, target.id);
     return live?.id === target.id ? live : null;
   }
   private recover(actor: CharacterKit) {
@@ -153,13 +172,23 @@ export class MountedCharge {
   private followSlot(player: THREE.Vector3, yaw: number) {
     return player.clone().add(new THREE.Vector3(-Math.cos(yaw) * 3.2 - Math.sin(yaw), 0, Math.sin(yaw) * 3.2 - Math.cos(yaw)));
   }
-  private makePlan(actor: CharacterKit, target: Target, player: THREE.Vector3, duration: number, contact: number): ChargePlan | undefined {
+  /** Rejoin only a supported horse-sized slot on the player's visible side.
+   * No fallback to the player's point when a horse cannot fit there. */
+  private safeFollowSlot(player:THREE.Vector3,yaw:number):THREE.Vector3|null {
+    for(const [offset,back] of [[3.2,-1],[-3.2,-1],[2.4,-1],[-2.4,-1],[4.2,-1],[-4.2,-1],[0,3.2],[0,-3.2]]) {
+      const slot=player.clone().add(new THREE.Vector3(-Math.cos(yaw)*offset+Math.sin(yaw)*back,0,Math.sin(yaw)*offset+Math.cos(yaw)*back));
+      const y=this.ground(slot,player.y,yaw);if(y===null)continue;slot.y=y;
+      if(this.bodyClear(slot,yaw)&&this.path(player,slot,yaw))return slot;
+    }
+    return null;
+  }
+  private makePlan(actor: CharacterKit, target: Target, player: THREE.Vector3, duration: number, contact: number, contactLead = 0): ChargePlan | undefined {
     const direction = target.position.clone().sub(actor.root.position).setY(0);
     if (direction.lengthSq() < .01) direction.set(Math.sin(actor.root.rotation.y), 0, Math.cos(actor.root.rotation.y));
     direction.normalize();
     const side = new THREE.Vector3(direction.z, 0, -direction.x);
     for (const sign of [1, -1]) {
-      const start = target.position.clone().addScaledVector(direction, -mountedChargeDistance(contact, duration, contact)).addScaledVector(side, sign * MOTION.sideClearance);
+      const start = target.position.clone().addScaledVector(direction, -(mountedChargeDistance(contact, duration, contact) + contactLead)).addScaledVector(side, sign * MOTION.sideClearance);
       const end = start.clone().addScaledVector(direction, mountedChargeDistance(duration, duration, contact));
       const heading = Math.atan2(direction.x, direction.z);
       const approach = start.clone().sub(actor.root.position), approachYaw = Math.atan2(approach.x, approach.z);
@@ -179,13 +208,13 @@ export class MountedCharge {
     }
     root.rotation.y += turn; return angle;
   }
-  private move(actor: CharacterKit, destination: THREE.Vector3, dt: number) {
+  private move(actor: CharacterKit, destination: THREE.Vector3, dt: number, maxSpeed=4.4) {
     const root = actor.root, delta = destination.clone().sub(root.position).setY(0), distance = delta.length();
     if (distance < .16 || dt <= 0) return 0;
     const heading = Math.atan2(delta.x, delta.z), turn = this.turn(root, heading, dt);
     // Turn in place first rather than sliding the entire horse sideways during a sharp reversal.
     if (Math.abs(turn) > .3) return 0;
-    const speed = Math.min(4.4, distance * 3), next = root.position.clone().addScaledVector(delta, Math.min(1, speed * dt / distance));
+    const speed = Math.min(maxSpeed, distance * 3), next = root.position.clone().addScaledVector(delta, Math.min(1, speed * dt / distance));
     if (!this.path(root.position, next, root.rotation.y)) return 0;
     const y = this.ground(next, root.position.y, root.rotation.y);
     if (y === null) return 0;
@@ -196,7 +225,7 @@ export class MountedCharge {
     let best = Infinity;
     for (const collider of this.options.colliders) if (collider.enabled) {
       if (!this.ray.intersectsBox(this.colliderBounds(collider))) continue;
-      const hit = collider.bvh.raycastFirst(this.ray, THREE.DoubleSide);
+      const hit = collider.bvh.raycastFirst(this.ray, THREE.DoubleSide, 0, 1.8);
       if (hit && hit.distance < best && hit.distance < 1.8 && Math.abs(hit.face?.normal.y ?? 0) > .72) best = hit.distance;
     }
     return best < Infinity ? baseY + .9 - best : null;

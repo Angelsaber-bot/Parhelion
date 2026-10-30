@@ -1,3 +1,4 @@
+import type { SkillEvent } from './contractSkills';
 /** Short, original synthesized World cues. No microphone, assets, music or audio timers.
  * Call unlock(nativeInputEvent) from a user gesture, and setActive(gameplayActive)
  * from the integration. A failed/blocked audio device must never interrupt gameplay.
@@ -119,6 +120,22 @@ export class WorldAudio {
   hurt(){this.voice('noise',.11,380,.13);this.voice('sine',.13,165,.10,.6);}
   kill(){this.voice('triangle',.16,660,.065,1.5);this.voice('sine',.2,1320,.035,1.1);}
   skill(){this.voice('triangle',.22,330,.075,2);this.voice('noise',.16,1600,.06);}
+  /** Cast anticipation and authored release cues; never implies that a target was hit. */
+  skillEvent(event: SkillEvent) {
+    if(event.type==='guard')return;
+    const ultimate=event.slot==='ultimate';
+    if(event.type==='cast') {
+      const pitch=event.identity==='napoleon'?130:event.identity==='blackbeard'?210:event.identity==='musashi'?490:330;
+      this.voice('triangle',ultimate?.44:.24,pitch,.045,ultimate?1.8:1.35);return;
+    }
+    switch(event.identity){
+      case 'saber': this.voice('noise',ultimate?.38:.23,1100,.10);this.voice('triangle',.24,ultimate?220:440,.055,2.2);break;
+      case 'blackbeard': this.voice('noise',ultimate?.24:.12,ultimate?550:2100,.16);this.voice('sine',.22,ultimate?90:165,.12,.45);break;
+      case 'napoleon': this.voice('noise',.26,420,.11);this.voice('triangle',ultimate?.34:.22,ultimate?85:125,.10,.55);break;
+      case 'musashi': this.voice('noise',.12,1900+event.pulse*450,.095);this.voice('triangle',.13,520+event.pulse*130,.045,1.65);break;
+      default:this.skill();
+    }
+  }
   evade(){this.voice('noise',.17,2600,.085);}
   interaction(){this.voice('sine',.12,520,.055,1.5);}
   private releaseContext(){this.stopVoices();for(const node of [this.master,this.compressor])try{node?.disconnect();}catch{/* best effort */}try{if(this.context&&this.context.state!=='closed')void this.context.close().catch(()=>{});}catch{/* unavailable */}this.context=null;this.master=null;this.compressor=null;this.noise=null;}

@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import type { SkillEvent } from './contractSkills';
+import { skillContains, type SkillStrike, type SkillEvent } from './contractSkills';
 import type { Point3 } from './combat';
 const COLORS: Record<string, number> = { player: 0x91d6cf, melee: 0xb5e2dd, saber: 0xf2d18c, blackbeard: 0xf3ad78, napoleon: 0x83b7e1, musashi: 0xcca4e0 };
 export interface SkillVisualOptions { style?: 'melee'; origin?: Point3; bladeDirection?: Point3 }
-interface Effect { root: THREE.Group; bar: THREE.Mesh; ring: THREE.Mesh; material: THREE.MeshBasicMaterial; age: number; life: number; range: number; charge: boolean; cast: boolean; peak: number; style: string; width: number }
+interface Effect { root: THREE.Group; bar: THREE.Mesh; ring: THREE.Mesh; material: THREE.MeshBasicMaterial; age: number; life: number; range: number; charge: boolean; cast: boolean; peak: number; style: string; width: number; motif: THREE.Mesh; contact: boolean }
 /** Two shared, open silhouettes. Vertex alpha feathers both edges and the pointed ends.
  * The second strand is in the same geometry/draw, never a second transparent layer mesh. */
 function ribbonGeometry(kind:'arc'|'lance') {
@@ -31,12 +31,46 @@ function ribbonGeometry(kind:'arc'|'lance') {
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));geometry.setIndex(indices);geometry.computeBoundingSphere();return geometry;
 }
-/** Fixed pool: 18 draws, 2 shared geometries (~6.9KiB), no lights/maps/post effects.
- * show() only resets transforms/material values; activation allocates no GPU resources. */
+/** Normalized X/Z corridors: all alpha-bearing vertices stay inside the damage footprint.
+ * Only thin strokes, never filled rectangles, additive blending, lights or flashing planes. */
+function corridorGeometry(identity: string, ultimate: boolean) {
+  const positions:number[]=[],colors:number[]=[],indices:number[]=[];
+  const stroke=(point:(t:number)=>[number,number,number],width=.055,vertical=false)=>{
+    const base=positions.length/3,steps=12;
+    for(let i=0;i<=steps;i++)for(let j=0;j<3;j++){
+      const t=i/steps,[x,y,z]=point(t),edge=(j-1)*width*Math.sin(Math.PI*t);
+      positions.push(Math.max(-1,Math.min(1,x+(vertical?0:edge))),y+(vertical?edge:0),Math.max(.001,Math.min(.999,z)));
+      colors.push(1,.94,1,j===1?Math.pow(Math.sin(Math.PI*t),.4):0);
+    }
+    for(let i=0;i<steps;i++)for(let j=0;j<2;j++){const a=base+i*3+j,b=a+3;indices.push(a,b,a+1,b,b+1,a+1);}
+  };
+  if(identity==='saber') {
+    // Sword-wave crests run along the complete adjudicated corridor at release, not after damage.
+    for(const side of[-1,1])stroke(t=>[side*Math.sin(Math.PI*t)*.82,Math.sin(Math.PI*t)*(ultimate?1.05:.55),t]);
+    if(ultimate)stroke(t=>[0,Math.sin(Math.PI*t)*1.5,t],.065);
+  } else if(identity==='blackbeard') {
+    stroke(t=>[0,0,t],ultimate?.07:.05);
+    stroke(t=>[0,0,t],ultimate?.11:.085,true);
+    if(ultimate)for(const side of[-1,1])stroke(t=>[side*.70,Math.sin(Math.PI*t)*.16,t],.025);
+    else for(const side of[-1,1])stroke(t=>[side*.20*(1-t),.06*Math.sin(Math.PI*t),t*.30],.025);
+  } else if(identity==='napoleon') {
+    for(const side of[-1,1])stroke(t=>[side*(.9-.5*t),0,t]);
+    for(const offset of ultimate?[.08,.34,.60]:[.20])for(const side of[-1,1])stroke(t=>[side*.50*(1-t),.03,offset+t*.28]);
+  } else {
+    // Alternating cutting planes, contained in the same broad close-range corridor.
+    stroke(t=>[-.92+1.84*t,Math.sin(Math.PI*t)*.55,.08+.84*t],.065);
+    stroke(t=>[.92-1.84*t,Math.sin(Math.PI*t)*.55,.08+.84*t],.065);
+    if(ultimate)stroke(t=>[Math.sin(t*Math.PI*2)*.8,.15,.06+.88*t],.025);
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));g.setIndex(indices);g.computeBoundingSphere();return g;
+}
+/** Fixed 18-slot pool; one visible draw per slot, shared immutable geometries.
+ * Activation only changes transforms/materials; no GPU resources or timers allocated. */
 export class SkillPresentation {
   readonly root = new THREE.Group();
   private readonly barGeometry = ribbonGeometry('lance');
   private readonly ringGeometry = ribbonGeometry('arc');
+  private readonly motifs = Object.fromEntries(['saber','blackbeard','napoleon','musashi'].flatMap(id => [false,true].map(ultimate => [`${id}-${ultimate?'ultimate':'skill'}`,corridorGeometry(id,ultimate)])));
   private readonly effects: Effect[] = [];
   private readonly blade = new THREE.Vector3();
   private readonly tangent = new THREE.Vector3();
@@ -52,20 +86,26 @@ export class SkillPresentation {
       material.name=`SkillRibbonPool_${i}`;
       const root = new THREE.Group(), bar = new THREE.Mesh(this.barGeometry, material), ring = new THREE.Mesh(this.ringGeometry, material);
       bar.name='SkillNeedleAndFeathers';ring.name='SkillTaperedDoubleArc';
+      // One reusable mesh per slot. Switching its immutable shared geometry is cheap;
+      // keeping eight hidden Mesh siblings would still incur matrix/tree traversal cost.
+      const geometries=Object.values(this.motifs),motif=new THREE.Mesh(geometries[i%geometries.length],material);
+      motif.visible=false;root.add(motif);
       root.add(bar, ring); root.visible = false; this.root.add(root);
-      this.effects.push({ root, bar, ring, material, age: 0, life: 0, range: 0, charge: false, cast: false, peak: 0, style: 'player', width: 1 });
+      this.effects.push({ root, bar, ring, material, age: 0, life: 0, range: 0, charge: false, cast: false, peak: 0, style: 'player', width: 1, motif, contact: false });
     }
     scene.add(this.root);
   }
   show(event: SkillEvent, reducedFlash = false, visual:SkillVisualOptions = {}) {
     if (this.disposed || event.type === 'guard') return;
     if(![event.origin.x,event.origin.y,event.origin.z,event.direction.x,event.direction.z].every(Number.isFinite))return;
+    if(Math.hypot(event.direction.x,event.direction.z)<.001)return;
     if(event.type==='strike'&&(!Number.isFinite(event.range)||event.range<=0||event.range>40||!Number.isFinite(event.halfWidth)||event.halfWidth<=0||event.halfWidth>15))return;
     if(event.type==='cast'&&(!Number.isFinite(event.duration)||event.duration<=0))return;
     const effect = this.effects[this.cursor++ % this.effects.length];
+    effect.contact=false;effect.motif.visible=false;
     effect.age = 0; effect.cast = event.type === 'cast'; effect.charge = event.identity === 'napoleon' && !effect.cast;
     effect.style = visual.style ?? event.identity ?? 'player';
-    effect.life = effect.style==='melee'?.16:event.type==='cast'?Math.max(.08,Math.min(event.duration,.65)):effect.style==='blackbeard'?.22:effect.style==='musashi'?.28:.52;
+    effect.life = effect.style==='melee'?.16:event.type==='cast'?Math.max(.08,Math.min(event.duration,1.6)):effect.style==='blackbeard'?.22:effect.style==='musashi'?.28:.52;
     effect.range = event.type === 'strike' ? event.range : 1;effect.width=event.type==='strike'?event.halfWidth:1;
     const visualOrigin=visual.origin&&[visual.origin.x,visual.origin.y,visual.origin.z].every(Number.isFinite)?visual.origin:undefined;
     const p=visualOrigin??event.origin,feet=Number.isFinite(event.casterFeetY)?event.casterFeetY!:event.origin.y;
@@ -98,7 +138,25 @@ export class SkillPresentation {
         effect.bar.scale.set(effect.width*2,2.1,1);
       }else effect.ring.scale.setScalar(.7);
     }
+    if(!effect.cast && event.type==='strike' && effect.style!=='melee' && event.identity){
+      const motif=effect.motif;motif.geometry=this.motifs[`${event.identity}-${event.slot}`];motif.name=`SkillCorridor_${event.identity}-${event.slot}`;
+      effect.bar.visible=effect.ring.visible=false;motif.visible=true;
+      motif.scale.set(effect.width,1,effect.range);
+      // Pulse handedness mirrors only the symmetric footprint, never the hit direction.
+      if(event.identity==='musashi'&&event.pulse%2)motif.scale.x*=-1;
+      motif.rotation.set(0,0,0);motif.position.set(0,0,0);
+    }
     effect.root.visible=true;
+  }
+  /** Only combat-confirmed HP-loss positions belong here; a release is not a hit. */
+  hit(event: SkillStrike, point: Point3, reducedFlash = false) {
+    if(this.disposed || !skillContains(event, point))return;
+    const effect=this.effects[this.cursor++ % this.effects.length];
+    effect.motif.visible=false;
+    effect.contact=true;effect.cast=false;effect.charge=false;effect.style='contact';effect.age=0;effect.life=.18;
+    effect.root.position.set(point.x,point.y+.8,point.z);effect.root.rotation.set(0,Math.atan2(event.direction.x,event.direction.z),0);
+    effect.ring.visible=false;effect.bar.visible=true;effect.bar.position.set(0,0,0);effect.bar.rotation.set(0,0,Math.PI/4);effect.bar.scale.set(.6,.55,.6);
+    effect.material.color.setHex(COLORS[event.identity??'player']);effect.peak=effect.material.opacity=reducedFlash?.07:.24;effect.root.visible=true;
   }
   update(dt: number, enabled = true, reducedFlash = false) {
     if (!enabled) { this.clear(); return; }
@@ -110,7 +168,11 @@ export class SkillPresentation {
       if (progress >= 1) { effect.root.visible = false; continue; }
       effect.peak=Math.min(effect.peak,reducedFlash?.09:.30);
       effect.material.opacity = effect.peak*Math.pow(1-progress,1.3);
-      if(effect.cast)continue;
+      if(effect.cast){
+        // Quiet inward gathering, no expanding flash; pose timing owns the actual release.
+        effect.ring.scale.multiplyScalar(1-Math.min(dt,.25)*.35);continue;
+      }
+      if(effect.contact)continue;
       if(effect.charge)effect.bar.position.z=effect.range*progress;
       if(effect.style==='saber')effect.ring.position.z=effect.range*progress;
       if(effect.style==='musashi')effect.ring.position.z=.30+Math.min(1.3,effect.range*.2)*progress;
@@ -121,7 +183,7 @@ export class SkillPresentation {
   dispose() {
     if (this.disposed) return;
     this.disposed = true; this.clear(); this.root.removeFromParent();
-    this.barGeometry.dispose(); this.ringGeometry.dispose();
+    this.barGeometry.dispose(); this.ringGeometry.dispose(); for(const geometry of Object.values(this.motifs))geometry.dispose();
     for (const effect of this.effects) effect.material.dispose();
   }
 }

@@ -39,8 +39,9 @@ function inventory(root: THREE.Object3D, allowStationCraft = false) {
 }
 test('skill effects retain fixed scene and GPU-resource identities after 1000 repeated activations', () => {
   const scene = new THREE.Scene(), effects = new SkillPresentation(scene), baseline = inventory(effects.root);
-  assert.equal(baseline.geometries.size, 2); assert.equal(baseline.materials.size, 18);
-  assert.equal(baseline.lights, 0); assert.ok(baseline.bytes <= 8192, `${baseline.bytes} geometry bytes`);
+  assert.equal([...baseline.objects].filter(o=>o instanceof THREE.Mesh).length,54,'three prebuilt meshes per slot, not ten hidden siblings');
+  assert.equal(baseline.geometries.size, 10); assert.equal(baseline.materials.size, 18);
+  assert.equal(baseline.lights, 0); assert.ok(baseline.bytes <= 48*1024, `${baseline.bytes} geometry bytes`);
   const identities = ['saber','blackbeard','napoleon','musashi',null] as const;
   for (let i=0; i<1000; i++) {
     const event: SkillEvent = { type:'strike', identity: identities[i%identities.length], slot:'skill', origin:{x:0,y:1,z:0}, direction:{x:0,y:0,z:1}, at:.2, range:12, halfWidth:2, damage:30, maxTargets:3, pulse:0 };
@@ -48,7 +49,7 @@ test('skill effects retain fixed scene and GPU-resource identities after 1000 re
     effects.update(1/120);
     if (i%100===0) {
       const current=inventory(effects.root);
-      assert.deepEqual(current.objects,baseline.objects); assert.deepEqual(current.geometries,baseline.geometries); assert.deepEqual(current.materials,baseline.materials);
+      assert.deepEqual(current.objects,baseline.objects); assert.ok([...current.geometries].every(g=>baseline.geometries.has(g)),'active mesh references only prebuilt geometry identities'); assert.deepEqual(current.materials,baseline.materials);
       assert.ok(current.visibleMeshes<=18); assert.equal(current.lights,0);
     }
   }

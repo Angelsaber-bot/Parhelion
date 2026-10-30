@@ -22,6 +22,7 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
   const audioCalls:Record<string,number>={};
   const snapshot=async(name:string)=>{if(process.env.WORLD_UI_REVIEW_DIR){await mkdir(process.env.WORLD_UI_REVIEW_DIR,{recursive:true});await writeFile(resolve(process.env.WORLD_UI_REVIEW_DIR,`${name}.html`),await harness.snapshot(name));}};
   for(const kind of ['shot','cannon','melee','contact','hurt','kill','skill','evade','interaction','unlock']){const original=world.audio[kind].bind(world.audio);world.audio[kind]=(...args:unknown[])=>{audioCalls[kind]=(audioCalls[kind]??0)+1;return original(...args);};}
+  const originalSkillEvent=world.audio.skillEvent.bind(world.audio);world.audio.skillEvent=(event:{type:string})=>{const key=`skill-${event.type}`;audioCalls[key]=(audioCalls[key]??0)+1;return originalSkillEvent(event);};
   await t.test('actual settings controls persist volume/mute without synthetic autoplay',async()=>{
     const volume=window.document.getElementById('world-audio-volume') as HTMLInputElement;volume.value='.2';volume.dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal(world.audio.volume,.2);
     const mute=window.document.getElementById('world-audio-muted') as HTMLInputElement;mute.checked=true;mute.dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(world.audio.muted,true);
@@ -71,8 +72,8 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
     }
     world.player.onGround=true;frame();const shots=audioCalls.shot??0;fire();window.document.body.dispatchEvent(new window.MouseEvent('mouseup',{button:0,bubbles:true}));assert.equal(audioCalls.shot,shots+1);
     world.player.onGround=true;const melee=audioCalls.melee??0;key('KeyB');release('KeyB');assert.equal(audioCalls.melee,melee+1);assert.equal(world.actions.melee.active,true);
-    key('KeyM');key('KeyM');world.player.onGround=true;const skills=audioCalls.skill??0;key('KeyQ');release('KeyQ');assert.equal(audioCalls.skill,skills+1);
-    key('KeyQ');release('KeyQ');assert.equal(audioCalls.skill,skills+1,'cooldown/repeated action has no new cast cue');
+    key('KeyM');key('KeyM');world.player.onGround=true;const skills=audioCalls['skill-cast']??0;key('KeyQ');release('KeyQ');assert.equal(audioCalls['skill-cast'],skills+1);
+    key('KeyQ');release('KeyQ');assert.equal(audioCalls['skill-cast'],skills+1,'cooldown/repeated action has no new cast cue');
     key('KeyM');key('KeyM');world.player.onGround=true;const evades=audioCalls.evade??0;key('KeyZ');release('KeyZ');assert.equal(audioCalls.evade,evades+1);
     key('KeyM');const hiddenShots=audioCalls.shot;fire();frame();assert.equal(audioCalls.shot,hiddenShots);key('KeyM');
   });
