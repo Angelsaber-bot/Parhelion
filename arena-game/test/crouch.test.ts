@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CROUCH, WEAPONS } from '../shared/content.ts';
+import { CROUCH, MELEE_MOVE, WEAPONS, loadoutWeapon } from '../shared/content.ts';
 import { buildMap, blockedAt, type MapData } from '../shared/map.ts';
 import { applyInput, BTN, clonePlayer, newPlayer, playerEye, playerHeight, type Input } from '../shared/sim.ts';
 import { rayPlayer } from '../shared/hit.ts';
@@ -29,6 +29,19 @@ describe('authoritative crouch', () => {
     expect(shot?.type === 'fire' && shot.origin[1]).toBe(1.05);
     expect(crouched.ammo[0]).toBe(WEAPONS[0].mag - 1);
   });
+  it('holding a melee weapon moves faster than a gun, standing and crouched', () => {
+    const gun = player(), melee = player(), meleeCrouch = player(), gunCrouch = player();
+    for (const p of [melee, meleeCrouch]) { p.weapon = loadoutWeapon(p.loadout, 2); p.weaponSlot = 2; }
+    expect(WEAPONS[melee.weapon].kind).toBe('melee');
+    for (let seq = 1; seq <= 60; seq++) {
+      applyInput(flat, gun, input(seq, { mz: 1 })); applyInput(flat, melee, input(seq, { mz: 1, weapon: 2 }));
+      applyInput(flat, gunCrouch, input(seq, { mz: 1, buttons: BTN.CROUCH })); applyInput(flat, meleeCrouch, input(seq, { mz: 1, weapon: 2, buttons: BTN.CROUCH }));
+    }
+    expect(melee.weapon).toBe(loadoutWeapon(melee.loadout, 2));
+    expect(melee.z / gun.z).toBeCloseTo(MELEE_MOVE.speedMultiplier, 2);
+    expect(meleeCrouch.z / gunCrouch.z).toBeCloseTo(MELEE_MOVE.speedMultiplier, 2);
+  });
+
   it('fits under low roofs, cannot stand into them, and stands when the full footprint clears', () => {
     const p = player(0, 3.5);
     for (let i = 1; i <= 120; i++) applyInput(map, p, input(i, { mz: 1 }));

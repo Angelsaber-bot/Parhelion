@@ -1,5 +1,5 @@
 import { bilingual, localizeText } from '../../shared-client/i18n.ts';
-import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, TICK_HZ, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type WeaponDef, type WeaponId } from '../shared/content.ts';
+import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, MELEE_MOVE, TICK_HZ, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type WeaponDef, type WeaponId } from '../shared/content.ts';
 
 export interface LoadoutStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export const LOADOUT_KEY = 'parhelion-loadout-v1';
@@ -61,8 +61,8 @@ export function weaponRole(id: string) { return ROLES[id] ? bilingual(...ROLES[i
 export function weaponStats(w: WeaponDef): string {
   if ((MELEE_IDS as readonly string[]).includes(w.id)) {
     return bilingual(
-      `伤害 ${w.damage} · 距离 ${w.range}m · 前摇 ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s`,
-      `Damage ${w.damage} · Range ${w.range}m · Windup ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · Interval ${(w.interval / TICK_HZ).toFixed(2)}s`);
+      `伤害 ${w.damage} · 距离 ${w.range}m · 移速 +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · 前摇 ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s`,
+      `Damage ${w.damage} · Range ${w.range}m · Move +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · Windup ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · Interval ${(w.interval / TICK_HZ).toFixed(2)}s`);
   }
   const damage = w.pellets > 1 ? `${w.damage} × ${w.pellets}` : String(w.damage);
   return bilingual(`伤害 ${damage} · 弹匣 ${w.mag} · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s · 装填 ${(w.reload / TICK_HZ).toFixed(1)}s`,

@@ -3,7 +3,7 @@
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { CHARACTERS, CROUCH, DASH, DT, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
+import { CHARACTERS, CROUCH, DASH, DT, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
 export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
@@ -195,7 +195,8 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
   if (p.crouched) p.dashT = 0;
   const height = playerHeight(m, p);
   const char = CHARACTERS[p.char];
-  const speed = char.speed * (p.crouched ? CROUCH.speedMultiplier : 1);
+  const speed = char.speed * (p.crouched ? CROUCH.speedMultiplier : 1)
+    * (WEAPONS[p.weapon]?.kind === 'melee' ? MELEE_MOVE.speedMultiplier : 1);
   let mx = Math.max(-1, Math.min(1, inp.mx)), mz = Math.max(-1, Math.min(1, inp.mz));
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
