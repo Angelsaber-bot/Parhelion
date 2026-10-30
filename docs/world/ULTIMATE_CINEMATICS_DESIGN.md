@@ -173,3 +173,25 @@ blender -b -t 6 --python validation/characters/render-ultimate-stages.py -- \
 剑尖实测位于`WeaponSocket_R`的局部+Y约1.647；`sword_royal_enamel`只是剑格装饰，不能作为完整剑尖。Saber身体构图使用头/脚解剖标记而非含长剑的全模型包围盒；近景可裁剑尖，不能遮住脸。新增剑尖驱动聚光/轨迹、接触通知后的视觉剑波、接触阴影与远近背景层。
 
 `validation/characters/export-ultimate-sequence.ts`以60Hz连续更新场景并按12fps输出约63帧，避免将8点轨迹历史错误拉长到低帧率时间跨度。离线序列复用真实`skillAnimationSample`时间映射注入单次接触通知，但仍非完整生产游戏模拟或GPU录像。当前Blender构建不支持OpenImageDenoise，因此使用16 samples CPU渲染、不声称已降噪；像素质量、透明与雾效果不能等同浏览器。新增插画cut-in是原创建模参考之外的单独生成素材，来源见对应assets/cinematics说明；离线UI合成须明确标注，不冒称浏览器截图。
+
+## 三位时代从者的独立表演迭代
+
+`eraUltimatePerformance.ts`只操作私有舞台克隆，Saber的既有表演模块保持不变。黑胡子以真实`Blackbeard_Muzzle`局部+Z定向火枪，从高举号令转为前指；自由手下令与三次真实contact通知驱动的枪械后坐分别采样。武藏左右刀分别使用两个真实手部attachment的局部+Z，实测右刀尖约(0,.075,1.285)、左刀尖约(0,.075,1.125)；右斩、左斩、双刀交叉使用不同手腕轨迹，首次右斩期间左刀已开始预备第二击，适配约0.187秒的前两次contact间隔。拿破仑以白马骑乘模型表现，左手IK依附缰绳，右手领剑与接触后斩落；私有horse-only `H_*`骨骼轨道复用MountedRun步态，骑手Root/Hips保持鞍上基线，不将旧MountedAttack当作全部新动作，也不声称重新手工制作马匹步态。
+
+此轮新增的是克隆专用IK姿态/过渡、镜头、美术与武器锚点联动，原世界角色、HP、命中和移动逻辑不由表演模块改写。新二维插画与本项目角色模型混合使用，非FGO原图、影片或商业音轨。
+
+离线复现（每次一个身份，先`--keyframes`检查握持和构图，再移除该选项渲染完整序列）：
+
+```bash
+cd world
+node --import tsx validation/characters/export-era-ultimate-sequence.ts \
+  validation/output/era/exports --identity=blackbeard --keyframes
+ULTIMATE_WIDTH=640 ULTIMATE_HEIGHT=360 ULTIMATE_REUSE_MATERIALS=1 \
+  blender -b -t 2 --python validation/characters/render-ultimate-stages.py -- \
+  validation/output/era/exports validation/output/era/renders
+python3 validation/characters/compose-era-preview.py \
+  validation/output/era/exports validation/output/era/renders \
+  validation/output/era/composite blackbeard
+```
+
+身份也可选`napoleon`或`musashi`。导出器以60Hz推进、12fps取样，使用真实profile时间映射与各资产作者标注的contact构造离线通知序列；它不是完整游戏模拟。UI合成按照导演时钟重建，不是浏览器录屏。保留每帧源码hash和接触时间；任何中途源码更新均须在最终序列重新导出，不能用旧图冒充新版本。CPU/透明/雾/光照与浏览器渲染仍有差异，不以该证据宣称商用品质或GPU性能已验收。

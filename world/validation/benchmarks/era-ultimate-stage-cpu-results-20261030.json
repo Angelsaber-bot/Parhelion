@@ -1,0 +1,145 @@
+{
+  "node": "v24.22.1",
+  "cpuOnly": true,
+  "note": "Same loaded model,12 begin/end cycles; includes cold first call per identity in one process. First cast then313 presentation updates at60Hz including matrix propagation; source stays loaded, no gameplay/render/shader work. Mesh counts are object/triangle budgets, NOT measured GPU draws. Generic benchmark strike schedule is presentation-only. Timings vary with ordinary machine load, JIT and garbage collection; no FPS inference.",
+  "sourceHashes": {
+    "ultimateStage": "f7e7f09c1a4857e0304d913dbcd430488c48d4e68a66b4600146168b36b390da",
+    "saberStageArt": "949aaaa80c6ddca220b0bae34e999655715dbe28efc8266412f251dd14b98f06",
+    "ultimatePerformance": "64b23abd62f3b95e0655c72f44910c3932d6d64228d967c23b3e1ca4089c74e3",
+    "eraStageArt": "8393dbb608d15115260cea8a88400dfb3070442b3cd63f6fb916db6f4343be12",
+    "mountedStageArt": "665a7375cd5f6aa031b4c967122c920f6aa24fce14436a8f47e05d9d0116f8e3",
+    "musashiStageArt": "18f2e4d3d59b31a3bca5a19bf1f9fbfd4bea292793d5949b1dcc9d6ce779f172",
+    "eraBladeTrace": "12d65beda35f209d392f92f34c99c9e20867e97070fb5a77df417bda13ffe958",
+    "eraUltimatePerformance": "604a2216e79d009d70f866d8737ed654b70f9c306bf00b6d20804f966d096f37"
+  },
+  "rows": [
+    {
+      "identity": "saber",
+      "firstBeginMs": 38.73659200000009,
+      "repeatMedianBeginMs": 5.051242000000002,
+      "samplesMs": [
+        38.73659200000009,
+        6.493207999999981,
+        8.219633000000044,
+        4.5263499999999794,
+        11.252205000000004,
+        4.9891130000000885,
+        4.575954000000024,
+        4.812662000000046,
+        6.273506999999995,
+        5.048758000000021,
+        5.051242000000002,
+        5.585058000000004
+      ],
+      "boundsCalls": 0,
+      "boundsSamplesMs": [],
+      "firstUpdateMs": 1.8855149999999412,
+      "medianUpdateMs": 0.20877499999994598,
+      "maxUpdateMs": 3.1023010000000113,
+      "updateSamples": 313,
+      "budget": {
+        "geometries": 45,
+        "materials": 22,
+        "actors": 1,
+        "stageOnlyMeshObjects": 57,
+        "stageOnlyTriangleInstances": 7052
+      }
+    },
+    {
+      "identity": "blackbeard",
+      "firstBeginMs": 46.55085299999996,
+      "repeatMedianBeginMs": 22.178807000000006,
+      "samplesMs": [
+        46.55085299999996,
+        27.16213700000003,
+        24.38511500000004,
+        23.524226,
+        20.235995000000003,
+        22.178807000000006,
+        23.049039999999877,
+        13.822456999999986,
+        21.781496999999945,
+        34.941524999999956,
+        17.690054000000146,
+        16.41884499999992
+      ],
+      "boundsCalls": 0,
+      "boundsSamplesMs": [],
+      "firstUpdateMs": 0.9241939999999431,
+      "medianUpdateMs": 0.1751639999999952,
+      "maxUpdateMs": 2.085205999999971,
+      "updateSamples": 313,
+      "budget": {
+        "geometries": 75,
+        "materials": 29,
+        "actors": 1,
+        "stageOnlyMeshObjects": 188,
+        "stageOnlyTriangleInstances": 28597
+      }
+    },
+    {
+      "identity": "napoleon",
+      "firstBeginMs": 8.222811999999976,
+      "repeatMedianBeginMs": 3.470166000000063,
+      "samplesMs": [
+        8.222811999999976,
+        4.187638999999763,
+        4.821655000000192,
+        3.470166000000063,
+        5.42006900000024,
+        3.6565080000000307,
+        3.137753999999859,
+        3.2095330000001923,
+        3.35865799999965,
+        3.308372999999847,
+        3.5192299999998795,
+        2.9431009999998423
+      ],
+      "boundsCalls": 0,
+      "boundsSamplesMs": [],
+      "firstUpdateMs": 0.4290769999997792,
+      "medianUpdateMs": 0.22456899999997404,
+      "maxUpdateMs": 1.1961750000000393,
+      "updateSamples": 313,
+      "budget": {
+        "geometries": 48,
+        "materials": 17,
+        "actors": 1,
+        "stageOnlyMeshObjects": 80,
+        "stageOnlyTriangleInstances": 6018
+      }
+    },
+    {
+      "identity": "musashi",
+      "firstBeginMs": 7.329330000000027,
+      "repeatMedianBeginMs": 2.6564290000001165,
+      "samplesMs": [
+        7.329330000000027,
+        3.3458080000000336,
+        2.6564290000001165,
+        2.6015159999997195,
+        2.254211000000396,
+        2.4468830000000708,
+        2.490287999999964,
+        2.8321850000002087,
+        2.984915000000001,
+        4.9932550000003175,
+        2.819314000000304,
+        2.490237999999863
+      ],
+      "boundsCalls": 0,
+      "boundsSamplesMs": [],
+      "firstUpdateMs": 0.3455109999999877,
+      "medianUpdateMs": 0.1548530000000028,
+      "maxUpdateMs": 4.506810999999743,
+      "updateSamples": 313,
+      "budget": {
+        "geometries": 46,
+        "materials": 20,
+        "actors": 1,
+        "stageOnlyMeshObjects": 67,
+        "stageOnlyTriangleInstances": 4370
+      }
+    }
+  ]
+}

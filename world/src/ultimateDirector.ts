@@ -55,22 +55,29 @@ export class UltimateClock {
   abort(): void { this.identity = null; this.elapsed = this.phaseTime = this.pulse = this.strikeCount = 0; }
 }
 
+export type UltimateCutInIdentity = 'saber' | 'blackbeard' | 'napoleon' | 'musashi';
+const cutInIdentities: readonly UltimateCutInIdentity[] = ['saber', 'blackbeard', 'napoleon', 'musashi'];
 export interface UltimateDirectorOptions {
   document?: Document; storage?: ModeStorage | null; reducedMotion?: boolean;
   onRelease?: () => void; onEnd?: () => void;
   /** Optional original artwork; missing/failed art leaves the 3D stage unobstructed. */
   saberCutInUrl?: string;
+  cutInUrls?: Partial<Record<UltimateCutInIdentity, string>>;
   reducedEffects?: () => boolean;
 }
 /** Clock-driven only: no CSS/wall-clock animation can advance behind a suspended tab. */
-export function saberCutInPresentation(frame: UltimateFrame | null, reducedMotion = false) {
+export function ultimateCutInPresentation(frame: UltimateFrame | null, reducedMotion = false) {
   const hidden = { visible: false, reveal: 0, exit: 0, reduced: reducedMotion };
-  if (!frame || frame.identity !== 'saber' || (frame.phase !== 'intro' && frame.phase !== 'charge')) return hidden;
+  if (!frame || !cutInIdentities.includes((frame.identity === 'napoleonMounted' ? 'napoleon' : frame.identity) as UltimateCutInIdentity) || (frame.phase !== 'intro' && frame.phase !== 'charge')) return hidden;
   const reduced = reducedMotion || frame.reduced, t = frame.elapsed;
   const start = frame.reduced ? .05 : .08, end = frame.reduced ? .20 : 1.08;
   if (t < start || t >= end) return { ...hidden, reduced };
   if (reduced) return { visible: true, reveal: 1, exit: 0, reduced };
   return { visible: true, reveal: Math.min(1, (t - start) / .16), exit: Math.max(0, (t - .82) / .26), reduced };
+}
+
+export function saberCutInPresentation(frame: UltimateFrame | null, reducedMotion = false) {
+  return ultimateCutInPresentation(frame?.identity === 'saber' ? frame : null, reducedMotion);
 }
 
 /** DOM shell around the deterministic clock. Main retains the one accepted cast. */
@@ -85,6 +92,7 @@ export class UltimateDirector {
   private previousFocus: HTMLElement | null = null; private removeLocale: () => void;
   private hadBodyClass = false;
   private cutIn: HTMLDivElement | null = null; private cutInImage: HTMLImageElement | null = null;
+  private cutInAssets = new Map<string, { image: HTMLImageElement; ready: boolean }>();
   private cutInReady = false; private cutInEligible = false; private prefersReducedMotion = false;
   constructor(private options: UltimateDirectorOptions = {}) {
     this.doc = options.document ?? document;
@@ -100,15 +108,23 @@ export class UltimateDirector {
     this.title = this.doc.createElement('h2'); this.title.className = 'ultimate-title';
     this.caption = this.doc.createElement('p'); this.caption.className = 'ultimate-caption';
     this.skipButton = this.doc.createElement('button'); this.skipButton.type = 'button'; this.skipButton.className = 'ultimate-skip';
-    if (options.saberCutInUrl) {
-      this.cutIn = this.doc.createElement('div'); this.cutIn.className = 'ultimate-saber-cutin'; this.cutIn.hidden = true;
+    const cutInUrls = { ...options.cutInUrls, saber: options.cutInUrls?.saber ?? options.saberCutInUrl };
+    if (cutInIdentities.some(identity => !!cutInUrls[identity])) {
+      this.cutIn = this.doc.createElement('div'); this.cutIn.className = 'ultimate-cutin ultimate-saber-cutin'; this.cutIn.hidden = true;
       this.cutIn.setAttribute('aria-hidden', 'true');
-      this.cutInImage = this.doc.createElement('img'); this.cutInImage.alt = ''; this.cutInImage.draggable = false;
-      this.cutInImage.decoding = 'async';
-      this.cutInImage.onload = () => { if (!this.disposed) this.cutInReady = true; };
-      this.cutInImage.onerror = () => { this.cutInReady = false; if (this.cutIn) this.cutIn.hidden = true; this.overlay.classList.remove('ultimate-has-cutin'); };
-      this.cutInImage.src = options.saberCutInUrl;
-      this.cutIn.append(this.cutInImage); this.overlay.append(this.cutIn);
+      for (const identity of cutInIdentities) {
+        const url = cutInUrls[identity]; if (!url) continue;
+        const image = this.doc.createElement('img'); image.alt = ''; image.draggable = false; image.hidden = true;
+        image.decoding = 'async'; image.dataset.identity = identity;
+        const asset = { image, ready: false }; this.cutInAssets.set(identity, asset);
+        image.onload = () => { if (!this.disposed) { asset.ready = true; if (this.cutInImage === image) this.cutInReady = true; } };
+        image.onerror = () => {
+          asset.ready = false;
+          if (this.cutInImage === image) { this.cutInReady = false; if (this.cutIn) this.cutIn.hidden = true; this.overlay.classList.remove('ultimate-has-cutin'); }
+        };
+        image.src = url; this.cutIn.append(image);
+      }
+      this.overlay.append(this.cutIn);
     }
     this.skipButton.onclick = () => this.skip(); this.overlay.append(this.title, this.caption, this.skipButton); this.doc.body.append(this.overlay);
     this.settingsControl = this.doc.createElement('div'); this.settingsControl.className = 'settings-sliders ultimate-settings';
@@ -146,6 +162,11 @@ export class UltimateDirector {
   }
   begin(identity: string): boolean {
     if (this.disposed || !this.clock.begin(identity, this.selected)) return false;
+    const key = identity === 'napoleonMounted' ? 'napoleon' : identity;
+    const asset = this.cutInAssets.get(key);
+    this.cutInImage = asset?.image ?? null; this.cutInReady = asset?.ready ?? false;
+    for (const { image } of this.cutInAssets.values()) image.hidden = image !== this.cutInImage;
+    if (this.cutIn) { this.cutIn.dataset.identity = key; this.cutIn.className = `ultimate-cutin ultimate-${key}-cutin`; }
     this.cutInEligible = this.cutInReady;
     this.released = false; this.previousFocus = this.doc.activeElement as HTMLElement | null;
     this.hadBodyClass = this.doc.body.classList.contains('ultimate-showing');
@@ -173,16 +194,34 @@ export class UltimateDirector {
   }
   private syncCutIn(): void {
     if (!this.cutIn) return;
-    const state = saberCutInPresentation(this.frame, this.prefersReducedMotion || !!this.options.reducedEffects?.());
+    const state = ultimateCutInPresentation(this.frame, this.prefersReducedMotion || !!this.options.reducedEffects?.());
     this.cutIn.hidden = !this.showing || !this.cutInEligible || !this.cutInReady || !state.visible;
     if (this.cutIn.hidden) { this.overlay.classList.remove('ultimate-has-cutin'); return; }
     this.overlay.classList.add('ultimate-has-cutin');
     this.cutIn.dataset.reduced = String(state.reduced);
-    // A sharp diagonal reveal followed by a brief hold; exit wipes away, never flashes white.
-    const right = state.reveal * 112, left = state.exit * 112;
-    this.cutIn.style.clipPath = `polygon(${left}% 0, ${right}% 0, ${right - 12}% 100%, ${left - 12}% 100%)`;
-    this.cutIn.style.transform = state.reduced ? 'none' : `translateX(${(1 - state.reveal) * 4 - state.exit * 3}%)`;
+    const identity = this.cutIn.dataset.identity;
+    const reveal = state.reveal, exit = state.exit;
+    this.cutIn.style.transform = 'none';
+    if (state.reduced) { this.cutIn.style.clipPath = 'none'; return; }
+    if (identity === 'blackbeard') {
+      // A horizontal powder-smoke opening, then a broadside wipe to the right.
+      this.cutIn.style.clipPath = `inset(${(1 - reveal) * 50}% 0 ${(1 - reveal) * 50}% ${exit * 100}%)`;
+    } else if (identity === 'napoleon') {
+      // Banner-like center opening with a restrained forward move; no lateral crop on hold.
+      this.cutIn.style.clipPath = `inset(${exit * 100}% ${(1 - reveal) * 50}% 0 ${(1 - reveal) * 50}%)`;
+      this.cutIn.style.transform = `scale(${1.04 - reveal * .04})`;
+    } else if (identity === 'musashi') {
+      // Two intersecting diagonal apertures widen into the intact illustration.
+      const w = Math.max(0, reveal * (1 - exit)) * 50;
+      this.cutIn.style.clipPath = `polygon(0 0, ${w}% 0, 50% ${50-w}%, ${100-w}% 0, 100% 0, 100% ${w}%, ${50+w}% 50%, 100% ${100-w}%, 100% 100%, ${100-w}% 100%, 50% ${50+w}%, ${w}% 100%, 0 100%, 0 ${100-w}%, ${50-w}% 50%, 0 ${w}%)`;
+    } else {
+      // Preserve the approved Saber diagonal reveal and wipe exactly.
+      const right = reveal * 112, left = exit * 112;
+      this.cutIn.style.clipPath = `polygon(${left}% 0, ${right}% 0, ${right - 12}% 100%, ${left - 12}% 100%)`;
+      this.cutIn.style.transform = `translateX(${(1 - reveal) * 4 - exit * 3}%)`;
+    }
   }
+
   private renderLocale(): void {
     const identity = this.frame?.identity ?? 'player';
     const key = identity === 'napoleonMounted' ? 'napoleon' : identity;
@@ -199,7 +238,8 @@ export class UltimateDirector {
     if (this.disposed) return;
     this.disposed = true; this.abort(); this.removeLocale();
     for (const type of this.events) this.doc.defaultView?.removeEventListener(type, this.capture, true);
-    if (this.cutInImage) { this.cutInImage.onload = null; this.cutInImage.onerror = null; this.cutInImage.removeAttribute('src'); }
+    for (const { image } of this.cutInAssets.values()) { image.onload = null; image.onerror = null; image.removeAttribute('src'); }
+    this.cutInAssets.clear();
     this.cutInReady = this.cutInEligible = false; this.cutIn = null; this.cutInImage = null;
     this.skipButton.onclick = null; this.select.onchange = null; this.overlay.remove(); this.settingsControl.remove();
   }

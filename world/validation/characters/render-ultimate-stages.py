@@ -83,7 +83,7 @@ for filename in sorted(os.listdir(source)):
         obj=bpy.data.objects.new(data.name,data);scene.collection.objects.link(obj);obj.location=convert(light['position']);obj.rotation_euler=(-obj.location).to_track_quat('-Z','Y').to_euler()
     data=bpy.data.cameras.new('Exact stage camera');camera=bpy.data.objects.new('Exact stage camera',data);scene.collection.objects.link(camera);scene.camera=camera
     spec=manifest['camera'];camera.location=convert(spec['position']);camera.rotation_euler=convert(spec['direction']).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.sensor_fit='HORIZONTAL';data.angle=2*math.atan(math.tan(math.radians(spec['fov'])/2)*spec['aspect']);data.clip_start=spec['near'];data.clip_end=spec['far']
-    scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=max(16,int(os.environ.get("ULTIMATE_SAMPLES","16")));scene.cycles.use_denoising=False;scene.render.threads_mode='FIXED';scene.render.threads=2
+    scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=max(16,int(os.environ.get("ULTIMATE_SAMPLES","16")));scene.cycles.use_denoising=False;scene.cycles.transparent_max_bounces=64;scene.render.threads_mode='FIXED';scene.render.threads=2
     scene.render.resolution_x=int(os.environ.get("ULTIMATE_WIDTH","1280"));scene.render.resolution_y=int(os.environ.get("ULTIMATE_HEIGHT","720"));scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.filepath=os.path.join(out,manifest['id']+'.png')
     scene.view_settings.view_transform='Standard';bpy.ops.render.render(write_still=True)

@@ -140,9 +140,31 @@ export class WorldAudio {
           this.voice('triangle',.58,880,.045,1.5,.012);
         }else{this.voice('noise',.23,1100,.10);this.voice('triangle',.24,440,.055,2.2);}
         break;
-      case 'blackbeard': this.voice('noise',ultimate?.24:.12,ultimate?550:2100,.16);this.voice('sine',.22,ultimate?90:165,.12,.45);break;
-      case 'napoleon': this.voice('noise',.26,420,.11);this.voice('triangle',ultimate?.34:.22,ultimate?85:125,.10,.55);break;
-      case 'musashi': this.voice('noise',.12,1900+event.pulse*450,.095);this.voice('triangle',.13,520+event.pulse*130,.045,1.65);break;
+      case 'blackbeard':
+        if(ultimate){
+          // Three original broadside layers per real cannon contact: powder, body, hull ring.
+          this.voice('noise',.22,650+event.pulse*80,.17);
+          this.voice('sine',.32,92-event.pulse*6,.14,.42);
+          this.voice('triangle',.20,230,.035,.7);
+        }else{this.voice('noise',.12,2100,.16);this.voice('sine',.22,165,.12,.45);}
+        break;
+      case 'napoleon':
+        if(ultimate){
+          // Mounted sword impact, not artillery: steel air, hoof weight, rising blade resonance.
+          this.voice('noise',.18,980,.11);
+          this.voice('sine',.24,135,.13,.55);
+          this.voice('triangle',.42,620,.045,1.7);
+        }else{this.voice('noise',.26,420,.11);this.voice('triangle',.22,125,.10,.55);}
+        break;
+      case 'musashi':
+        if(ultimate){
+          // Alternating steel sweeps; only the authored third contact earns the heavier end cut.
+          const final=event.pulse===2;
+          this.voice('noise',.11,2600+event.pulse*450,.10);
+          this.voice('triangle',.18,680+event.pulse*170,.06,event.pulse%2?.72:1.9);
+          this.voice('sine',final?.24:.14,final?160:210,final?.11:.045,.6);
+        }else{this.voice('noise',.12,1900+event.pulse*450,.095);this.voice('triangle',.13,520+event.pulse*130,.045,1.65);}
+        break;
       default:this.skill();
     }
   }

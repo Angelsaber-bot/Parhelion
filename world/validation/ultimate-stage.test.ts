@@ -112,7 +112,7 @@ test('energy uses bounded RGBA feathered sheets rather than opaque capped cylind
         assert.equal(material.vertexColors, true); assert.equal(material.forceSinglePass, true); assert.equal(material.transparent, true); assert.equal(material.depthWrite, false);
       }
     });
-    assert.ok(ribbons >= 1); assert.ok(triangles < 25000, 'stage geometry budget excluding production actor'); stage.dispose();
+    assert.ok(ribbons >= 1); assert.ok(triangles < (identity === 'blackbeard' ? 30000 : 25000), 'stage geometry budget excluding production actor (seven hero cannon overlays bounded at 30k)'); stage.dispose();
   }
 });
 test('all stage-owned ship and ribbon resources dispose exactly once across repeated begin/end', () => {

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ContractSkills, type SkillSlot, type SkillEvent } from './contractSkills';
 import { SkillPresentation } from './skillPresentation';
 import { PlayerMelee, PlayerEvade } from './playerMelee';
-import type { ServantId } from './contracts';
+import { SERVANTS, type ServantId } from './contracts';
 import type { Point3, HitContext } from './combat';
 import type { StrikeRequest, StrikeResult } from './combatActions';
 import type { ResolvedSkillAim } from './skillAim';
@@ -67,12 +67,15 @@ export class WorldActions {
    const fallback:ResolvedSkillAim={origin:c.position,direction:{x:-Math.sin(c.yaw),y:0,z:-Math.cos(c.yaw)}};
    const aim=c.identity&&this.options.resolveAim?this.options.resolveAim(c.identity,slot):fallback;
    if(!aim){this.options.toast(bilingual('从者暂时无法瞄准，请让其靠近后重试。','Your companion cannot aim yet. Bring them closer and retry.'));return true;}
-   // Saber has a paid, single-contact beam. A finite free-aim fallback is not a
-   // target: previously it played the entire cinematic and consumed 100 energy
-   // even when range, floor height or LOS made every hostile unreachable.
-   // Resolve before actor startup/payment; contacts still use live combat LOS.
-   if(c.identity==='saber'&&slot==='ultimate'&&(!aim.targetId||!aim.targetPoint)){
-     this.options.toast(bilingual('Saber 尚未锁定可命中的敌人：瞄准同层、无遮挡且距她18米内的敌人。能量未消耗。','Saber has no reachable target. Aim at an unobstructed enemy on her level within 18m of her. Energy was not spent.'));return true;
+   // Stationary paid ultimates need a reachable hostile, not the finite free-aim
+   // fallback. MountedCharge is different: startPose validates a live target and
+   // a horse-sized approach BEFORE payment, so a safe approach may close range.
+   if(c.identity&&c.identity!=='napoleon'&&slot==='ultimate'&&(!aim.targetId||!aim.targetPoint)){
+     const servant=SERVANTS.find(value=>value.id===c.identity)!;
+     const range=Math.max(...this.skills.definition(slot).pulses.map(pulse=>pulse.range));
+     this.options.toast(c.identity==='saber'
+       ? bilingual('Saber 尚未锁定可命中的敌人：瞄准同层、无遮挡且距她18米内的敌人。能量未消耗。','Saber has no reachable target. Aim at an unobstructed enemy on her level within 18m of her. Energy was not spent.')
+       : bilingual(`${servant.name} 尚未锁定可命中的敌人：瞄准同层、无遮挡且距从者${range}米内的敌人。能量未消耗。`,`${servant.nameEn} has no reachable target. Aim at an unobstructed enemy on the same level within ${range}m of the companion. Energy was not spent.`));return true;
    }
    const direction=aim.direction;
    let token:number|null=null;
@@ -80,7 +83,7 @@ export class WorldActions {
      const started=this.options.startPose(c.identity,{direction,slot,targetId:aim.targetId,targetPoint:aim.targetPoint,contacts:this.skills.definition(slot).pulses.length,
        onContact:(position,forward,_socket,geometry)=>{if(token!==null)this.skills.contact(token,position,forward,geometry);},
        onFinish:(completed)=>{if(token!==null)this.skills.finishPresentation(token,completed);}});
-     if(!started){this.options.toast(bilingual('让从者靠近并面向目标；骑兵还需要安全的冲锋路线。','Bring your companion nearby and face a target; cavalry also needs a safe charge route.'));return true;}
+     if(!started){this.options.toast(c.identity==='napoleon'?bilingual('拿破仑尚未找到可安全冲锋的敌人：靠近目标并清空马匹路线。能量未消耗。','Napoleon has no safe charge target. Move closer and clear a horse-sized approach. Energy was not spent.'):bilingual('让从者靠近并面向目标；骑兵还需要安全的冲锋路线。','Bring your companion nearby and face a target; cavalry also needs a safe charge route.'));return true;}
    }
    if(!this.skills.activate(slot,{enabled:true,origin:aim.origin,direction})) {this.options.cancelPoses();return true;}
    if(c.identity)token=this.skills.bindPresentation();

@@ -72,7 +72,7 @@ test('servant cast/release cues stay inside the shared voice budget and mute can
  for(const identity of ['saber','blackbeard','napoleon','musashi'] as const)for(const slot of ['skill','ultimate'] as const){
   const common={identity,slot,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1}};
   f.audio.skillEvent({...common,type:'cast',duration:1});assert.equal(f.audio.activeVoices,1);for(const node of f.context.sources)node.end();
-  const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',range:10,halfWidth:2,damage:30,maxTargets:2,pulse:0,at:.2});assert.equal(f.audio.activeVoices,identity==='saber'&&slot==='ultimate'?3:2);
+  const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',range:10,halfWidth:2,damage:30,maxTargets:2,pulse:0,at:.2});assert.equal(f.audio.activeVoices,slot==='ultimate'?3:2);
   signatures.add(JSON.stringify(f.context.sources.slice(start).map(n=>[n.type,n.frequency.value])));for(const node of f.context.sources)node.end();
  }
  assert.ok(signatures.size>=6);for(let i=0;i<100;i++)f.audio.skill();assert.equal(f.audio.activeVoices,WORLD_AUDIO_VOICES);f.audio.setMuted(true);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
@@ -99,5 +99,35 @@ test('Saber layering never exceeds sixteen sources and mute, blur, zero volume a
   if(stop==='mute')f.audio.setMuted(true);else if(stop==='blur'){f.hide();f.audio.setActive(false);}else if(stop==='volume')f.audio.setVolume(0);else f.audio.dispose();
   assert.equal(f.audio.activeVoices,0);assert.ok(f.context.sources.every(n=>n.onended===null&&n.stops===2));
   f.audio.skillEvent(event);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+ }
+});
+
+test('era ultimate contacts have distinct bounded three-layer cues, with no extra fourth Musashi release',()=>{
+ const signatures=new Set<string>();
+ for(const identity of ['blackbeard','napoleon','musashi'] as const){
+  const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+  const common={identity,slot:'ultimate' as const,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1}};
+  f.audio.skillEvent({...common,type:'cast',duration:1.6});assert.equal(f.audio.activeVoices,1);for(const source of f.context.sources)source.end();
+  const count=identity==='napoleon'?1:3,first=f.context.sources.length;
+  for(let pulse=0;pulse<count;pulse++){
+    const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',pulse,range:20,halfWidth:2,damage:48,maxTargets:3,at:.5});
+    const layers=f.context.sources.slice(start);assert.equal(layers.length,3);assert.equal(f.audio.activeVoices,3);
+    signatures.add(JSON.stringify(layers.map(n=>[n.type,n.frequency.value,n.stopTimes[0]])));
+    assert.ok(layers.every(n=>n.started&&n.stopTimes[0]!<=.43));for(const source of layers)source.end();assert.equal(f.audio.activeVoices,0);
+  }
+  assert.equal(f.context.sources.length-first,count*3,'sources are created only per received contact');
+  const before=f.context.sources.length;f.audio.skillEvent({type:'guard',duration:1,multiplier:.5});assert.equal(f.context.sources.length,before);
+  for(let i=0;i<100;i++)f.audio.skillEvent({...common,type:'strike',pulse:0,range:20,halfWidth:2,damage:48,maxTargets:3,at:.5});assert.equal(f.audio.activeVoices,16);
+  f.audio.setActive(false);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+ }
+ assert.ok(signatures.size>=6,'identity and alternating authored contacts have distinct synthesis signatures');
+});
+test('era ordinary skill sound signatures remain unchanged',()=>{
+ const expected={blackbeard:{filter:2100,type:'sine',pitch:165,slide:.45,ends:[.13,.23]},napoleon:{filter:420,type:'triangle',pitch:125,slide:.55,ends:[.27,.23]},musashi:{filter:1900,type:'triangle',pitch:520,slide:1.65,ends:[.13,.14]}};
+ for(const identity of ['blackbeard','napoleon','musashi'] as const){
+  const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+  f.audio.skillEvent({identity,slot:'skill',type:'strike',origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1},pulse:0,range:10,halfWidth:2,damage:30,maxTargets:2,at:.2});
+  const e=expected[identity];assert.equal(f.audio.activeVoices,2);assert.equal(f.context.sources[1].type,e.type);assert.equal(f.context.sources[1].frequency.events[0].value,e.pitch);assert.equal(f.context.sources[1].frequency.value,e.pitch*e.slide);
+  assert.ok(f.context.nodes.some(n=>n.type==='bandpass'&&n.frequency.value===e.filter));f.context.sources.forEach((n,i)=>assert.ok(Math.abs(n.stopTimes[0]!-e.ends[i])<1e-9));f.audio.dispose();
  }
 });

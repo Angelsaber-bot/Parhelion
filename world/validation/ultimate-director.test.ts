@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { UltimateClock, UltimateDirector, ULTIMATE_MODE_KEY, saberCutInPresentation, type UltimateMode } from '../src/ultimateDirector';
@@ -150,4 +151,44 @@ test('Short uses static brief cut-in, Off never shows, explicit reduced Full avo
   d.setMode('off');d.begin('saber');advance(d,.1);assert.equal(card.hidden,true);d.abort();f.close();
   const r=fixture({saberCutInUrl:'/original-saber.webp',reducedMotion:true});r.director.overlay.querySelector('img')!.dispatchEvent(new r.dom.window.Event('load'));
   r.director.setMode('full');r.director.begin('saber');advance(r.director,.16);assert.equal(r.director.overlay.querySelector<HTMLElement>('.ultimate-saber-cutin')!.style.transform,'none');r.close();
+});
+
+test('identity URL map preloads once, preserves Saber fallback and isolates failed assets', () => {
+  const f=fixture({saberCutInUrl:'/saber-legacy.webp',cutInUrls:{blackbeard:'/bb.webp',napoleon:'/np.webp',musashi:'/ms.webp'}}),d=f.director;
+  const images=Array.from(d.overlay.querySelectorAll('img'));assert.equal(images.length,4);
+  assert.equal(images[0].getAttribute('src'),'/saber-legacy.webp');
+  for(const image of images)image.dispatchEvent(new f.dom.window.Event('load'));
+  for(const identity of ['blackbeard','napoleonMounted','musashi','saber']) {
+    d.begin(identity);advance(d,.4);const card=d.overlay.querySelector<HTMLElement>('.ultimate-cutin')!;
+    assert.equal(card.hidden,false);assert.equal(images.filter(i=>!i.hidden).length,1);
+    assert.equal(images.find(i=>!i.hidden)!.dataset.identity,identity==='napoleonMounted'?'napoleon':identity);
+    const other=images.find(i=>i.dataset.identity==='blackbeard')!;
+    if(identity==='musashi'){other.dispatchEvent(new f.dom.window.Event('error'));assert.equal(card.hidden,false,'foreign asset error cannot hide active identity');}
+    d.abort();assert.equal(card.hidden,true);
+  }
+  d.begin('blackbeard');advance(d,.4);assert.equal(d.overlay.querySelector<HTMLElement>('.ultimate-cutin')!.hidden,true);d.abort();
+  d.dispose();for(const image of images){assert.equal(image.onload,null);assert.equal(image.onerror,null);assert.equal(image.hasAttribute('src'),false);}f.close();
+  const override=fixture({saberCutInUrl:'/legacy.webp',cutInUrls:{saber:'/new.webp'}});assert.equal(override.director.overlay.querySelector('img')!.getAttribute('src'),'/new.webp');override.close();
+});
+test('three new identities have distinct clock-driven reveals with pause, Short, Off and Skip safety', () => {
+  const clips=new Set<string>();
+  for(const identity of ['blackbeard','napoleon','musashi'] as const){
+    let clicks=0;const f=fixture({cutInUrls:{[identity]:`/${identity}.webp`}}),d=f.director;
+    d.overlay.querySelector('img')!.dispatchEvent(new f.dom.window.Event('load'));
+    const card=d.overlay.querySelector<HTMLElement>('.ultimate-cutin')!;f.dom.window.document.addEventListener('click',()=>clicks++);
+    d.begin(identity);advance(d,.16);assert.equal(card.hidden,false);clips.add(card.style.clipPath);
+    const style=card.getAttribute('style');d.tick(90,true);assert.equal(card.getAttribute('style'),style);
+    advance(d,.94);assert.equal(card.hidden,true,'art ends before actual skill release');d.abort();
+    d.setMode('short');d.begin(identity);advance(d,.08);assert.equal(card.hidden,false);assert.equal(card.style.transform,'none');assert.equal(card.style.clipPath,'none');
+    d.overlay.querySelector('button')!.click();assert.equal(card.hidden,true);assert.equal(clicks,0);assert.equal(d.releasing,true);d.complete();
+    d.setMode('off');d.begin(identity);advance(d,.1);assert.equal(card.hidden,true);assert.equal(d.releasing,true);d.complete();f.close();
+  }
+  assert.equal(clips.size,3,'horizontal broadside, centered banner and crossed blades are not one generic reveal');
+});
+
+test('cut-in stylesheet retains full viewport containment rather than a floating picture card',()=>{
+  const css=readFileSync(new URL('../src/ultimateDirector.css',import.meta.url),'utf8');
+  const outer=css.match(/\.ultimate-cutin \{([^}]+)\}/)![1],image=css.match(/\.ultimate-cutin img \{([^}]+)\}/)![1];
+  assert.match(outer,/inset: 0/);assert.match(outer,/width: 100%/);assert.match(outer,/height: 100%/);assert.match(image,/object-fit: contain/);
+  assert.doesNotMatch(outer,/width: min|aspect-ratio|top: \d+%/);
 });

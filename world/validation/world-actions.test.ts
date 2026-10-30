@@ -134,3 +134,16 @@ test('Saber ultimate requires a reachable target before starting pose or chargin
  options.resolveAim=()=>({...aim,targetId:'reachable',targetPoint:{x:2,y:1,z:0}});
  f.actions.press('ultimate');assert.equal(f.poses(),1);assert.equal(f.actions.skills.casting,true);assert.equal(f.actions.skills.energy,0);assert.equal(f.actions.skills.cooldown('ultimate'),28);f.actions.dispose();
 });
+
+test('stationary companion ultimates reject missing targets with identity-specific range feedback',()=>{
+ for(const [identity,range] of [['blackbeard',25],['musashi',7]] as const){
+  const f=fixture();f.context.identity=identity;const aim={origin:{...f.context.position},direction:{x:0,y:0,z:-1}};
+  (f.actions as any).options.resolveAim=()=>aim;(f.actions.skills as any).energyValue=100;
+  f.actions.press('ultimate');assert.equal(f.poses(),0);assert.equal(f.actions.skills.energy,100);assert.equal(f.actions.skills.cooldown('ultimate'),0);assert.equal(f.actions.skills.casting,false);assert.ok(f.messages.at(-1)?.includes(String(range)));
+  f.actions.press('skill');assert.equal(f.poses(),1,'ordinary skill free-aim behavior remains unchanged');assert.equal(f.actions.skills.casting,true);f.actions.dispose();
+ }
+});
+test('Napoleon still validates charge actor startup before paying an ultimate',()=>{
+ const f=fixture();f.context.identity='napoleon';(f.actions.skills as any).energyValue=100;f.setCanPose(false);
+ f.actions.press('ultimate');assert.equal(f.poses(),1,'mounted startup owns safe approach validation');assert.equal(f.actions.skills.energy,100);assert.equal(f.actions.skills.cooldown('ultimate'),0);assert.equal(f.actions.skills.casting,false);f.actions.dispose();
+});

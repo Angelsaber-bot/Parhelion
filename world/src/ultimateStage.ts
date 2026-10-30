@@ -1,4 +1,8 @@
 import * as THREE from 'three';
+import { MountedStageArt } from './mountedStageArt';
+import { MusashiStageArt } from './musashiStageArt';
+import { BlackbeardStageArt } from './eraStageArt';
+import { createEraUltimatePerformance } from './eraUltimatePerformance';
 import { createUltimatePerformance, type UltimatePerformanceFrame } from './ultimatePerformance';
 import { SaberStageArt } from './saberStageArt';
 import { ultimateEnergyGeometry } from './ultimateEnergy';
@@ -28,6 +32,8 @@ export class UltimateStage {
   private beams: THREE.Mesh[] = []; private rings: THREE.Mesh[] = []; private streaks: THREE.Mesh[] = [];
   private performance?: ReturnType<typeof createUltimatePerformance>;
   private performanceFrame: UltimatePerformanceFrame = { phase: 'intro', progress: 0, elapsed: 0, strikeCount: 0, reduced: false };
+  private eraPerformance?: ReturnType<typeof createEraUltimatePerformance>;
+  private blackbeardArt?: BlackbeardStageArt; private mountedArt?: MountedStageArt; private musashiArt?: MusashiStageArt; private mountedTravel = 0; private mountedReleaseAt = -1; private mountedReleaseOrigin = 0;
   private saberArt?: SaberStageArt;
   private ship?: THREE.Group; private identity = ''; private reduced = false; private active = false; private lastElapsed = 0;
   private baseCameraPosition = new THREE.Vector3(); private narrowWeight = 0;
@@ -53,7 +59,7 @@ export class UltimateStage {
     this.clone.updateMatrixWorld(true);
     let framing = this.framing.get(options.sourceRoot);
     if (!framing) {
-      const head = this.identity === 'saber' ? this.clone.getObjectByName('mixamorigHeadTop_End') : undefined;
+      const head = (this.identity === 'saber' || this.identity === 'musashi') ? this.clone.getObjectByName('mixamorigHeadTop_End') : undefined;
       const left = this.clone.getObjectByName('mixamorigLeftToe_End'), right = this.clone.getObjectByName('mixamorigRightToe_End');
       if (head && left && right) {
         // Intentionally frame the BODY, not the raised weapon. This also avoids a first-cast full skin scan.
@@ -61,6 +67,14 @@ export class UltimateStage {
         const footY = Math.min(left.getWorldPosition(new THREE.Vector3()).y, right.getWorldPosition(new THREE.Vector3()).y);
         const span = Math.max(.1, headY - footY), floor = footY - span * .018, top = headY + span * .025;
         const scale = 2.8 / (top - floor); framing = { scale, offsetY: -floor * scale };
+      } else if (this.identity === 'blackbeard' && this.clone.getObjectByName('Head') && this.clone.getObjectByName('ToeL') && this.clone.getObjectByName('ToeR')) {
+        const headY = this.clone.getObjectByName('Head')!.getWorldPosition(new THREE.Vector3()).y;
+        const floor = Math.min(this.clone.getObjectByName('ToeL')!.getWorldPosition(new THREE.Vector3()).y, this.clone.getObjectByName('ToeR')!.getWorldPosition(new THREE.Vector3()).y) - .025;
+        const scale = 2.8 / Math.max(.1, headY + .23 - floor); framing = { scale, offsetY: -floor * scale };
+      } else if (this.identity === 'napoleon' && this.clone.getObjectByName('Head') && this.clone.getObjectByName('H_ForeHoof_L')) {
+        const headY = this.clone.getObjectByName('Head')!.getWorldPosition(new THREE.Vector3()).y;
+        let floor = Infinity; for (const name of ['H_ForeHoof_L','H_ForeHoof_R','H_HindHoof_L','H_HindHoof_R']) { const hoof=this.clone.getObjectByName(name); if(hoof)floor=Math.min(floor,hoof.getWorldPosition(new THREE.Vector3()).y); }
+        floor -= .035; const scale=3.2/Math.max(.1,headY+.23-floor);framing={scale,offsetY:-floor*scale};
       } else {
         const bounds = new THREE.Box3().setFromObject(this.clone), extent = bounds.getSize(new THREE.Vector3());
         const scale = Number.isFinite(extent.y) && extent.y > .01 ? 2.8 / extent.y : 1;
@@ -70,6 +84,7 @@ export class UltimateStage {
     }
     this.actor.scale.setScalar(framing.scale); this.actor.position.y = framing.offsetY;
     this.performance = createUltimatePerformance(this.identity, this.clone);
+    this.eraPerformance = createEraUltimatePerformance(this.identity, this.clone, options.clips);
     if (options.clips?.length) {
       this.mixer = new THREE.AnimationMixer(this.clone);
       this.idleAction = this.mixer.clipAction(options.clips.find(c => /idle|stand/i.test(c.name)) ?? options.clips[0]); this.idleAction.play();
@@ -94,7 +109,7 @@ export class UltimateStage {
       const angle = i * 2.39996, radius = 4 + i % 7;
       streak.position.set(Math.cos(angle) * radius, .3 + i % 9, -12 + i % 5); this.streaks.push(streak);
     }
-    const count = this.identity === 'saber' ? 0 : this.identity === 'blackbeard' ? 7 : this.identity === 'musashi' ? 2 : 1;
+    const count = ['saber','blackbeard','napoleon','musashi'].includes(this.identity) ? 0 : 1;
     const energyMaterials = (this.identity === 'blackbeard' ? [0xffd0a1] : [colors[2], colors[1]]).map(color => {
       const material = this.material(color, this.reduced ? .55 : .9); material.vertexColors = true; material.toneMapped = false; return material;
     });
@@ -110,31 +125,27 @@ export class UltimateStage {
       if (this.identity === 'blackbeard') { beam.rotation.x = Math.PI / 2; beam.rotation.z = .2; }
       beam.visible = false; this.beams.push(beam);
     }
-    if (this.identity === 'blackbeard') this.buildShip(colors[1]);
+    if (this.identity === 'blackbeard') {
+      this.buildShip(colors[1]); this.blackbeardArt = new BlackbeardStageArt(this.actor, this.clone, this.ship!, {
+        mesh: (geometry, material, parent) => this.mesh(geometry, material, parent), material: (color, opacity) => this.material(color, opacity),
+      }); this.effects.add(this.blackbeardArt.root);
+    }
     if (this.identity === 'saber') {
       this.saberArt = new SaberStageArt(this.actor, this.clone, {
         mesh: (geometry, material, parent) => this.mesh(geometry, material, parent),
         material: (color, opacity) => this.material(color, opacity),
       }); this.effects.add(this.saberArt.root);
     }
-    if (this.identity === 'musashi') {
-      const ink = this.material(0x342b35, .85);
-      const circle = this.mesh(new THREE.TorusGeometry(3.8, .13, 5, 72, Math.PI * 1.85), ink); circle.position.set(0, 2.6, -6); circle.rotation.z = .2;
-    }
-    if (this.identity === 'napoleon') {
-      const pillarMat = this.material(0xc3bb9b, .55);
-      for (const x of [-7, 7]) for (let i = 0; i < 5; i++) {
-        const pillar = this.mesh(new THREE.BoxGeometry(.35, 8, .35), pillarMat); pillar.position.set(x, 4, -i * 6);
-        const banner = this.mesh(new THREE.PlaneGeometry(1.6, 3), i % 2 ? accent : glow); banner.position.set(x + (x < 0 ? .8 : -.8), 5.5, -i * 6);
-      }
-    }
+    const eraOwner = { mesh: (geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D) => this.mesh(geometry, material, parent), material: (color: number, opacity: number) => this.material(color, opacity) };
+    if (this.identity === 'musashi') { this.musashiArt=new MusashiStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.musashiArt.root); }
+    if (this.identity === 'napoleon') { this.mountedArt=new MountedStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.mountedArt.root); }
     this.active = true; this.update({ elapsed: 0, phase: 'intro', progress: 0, pulse: 0 });
   }
   private material(color: number, opacity: number) {
     const mat = new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, depthWrite: opacity >= 1, side: THREE.DoubleSide, forceSinglePass: true }); this.materials.add(mat); return mat;
   }
   private mesh(geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D = this.effects) {
-    this.geometries.add(geometry); const mesh = new THREE.Mesh(geometry, material); parent.add(mesh); return mesh;
+    this.geometries.add(geometry); this.materials.add(material); const mesh = new THREE.Mesh(geometry, material); parent.add(mesh); return mesh;
   }
   private buildShip(_color: number) {
     this.ship = new THREE.Group(); this.ship.name = 'Original broadside silhouette'; this.effects.add(this.ship);
@@ -148,7 +159,7 @@ export class UltimateStage {
       const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .85, metalness: /Iron|Brass/.test(piece.name) ? .3 : 0, side: THREE.DoubleSide });
       this.materials.add(material); const mesh = this.mesh(merged.vis, material, this.ship); mesh.name = piece.name;
     }
-    this.ship.scale.setScalar(.26); this.ship.rotation.y = .92; this.ship.position.set(0, -.7, -12);
+    this.ship.scale.setScalar(.30); this.ship.rotation.y = 1.10; this.ship.position.set(2, 0, -9);
   }
   update(frame: UltimateStageFrame) {
     if (!this.active) return;
@@ -173,7 +184,7 @@ export class UltimateStage {
           pose.position.copy(copy.position); pose.quaternion.copy(copy.quaternion); pose.scale.copy(copy.scale);
         }
       } else this.releaseBlendElapsed = Math.min(.14, this.releaseBlendElapsed + dt);
-      const blend = this.identity === 'saber' && this.performance?.anchors.socket ? 1 : clamp(this.releaseBlendElapsed / .14);
+      const blend = (this.identity === 'saber' && this.performance?.anchors.socket) || (['blackbeard','napoleon','musashi'].includes(this.identity) && this.eraPerformance?.anchors.socket) ? 1 : clamp(this.releaseBlendElapsed / .14);
       // Local visual poses only. The live caster/contact clock is never delayed or mutated.
       for (let i = 1; i < this.pairs.length; i++) {
         const [source, copy] = this.pairs[i];
@@ -189,7 +200,7 @@ export class UltimateStage {
       this.chargeAction.time = this.chargeAction.getClip().duration * .3 * p; this.mixer?.update(0);
     } else this.mixer?.update(dt);
     const pf = this.performanceFrame; pf.phase = frame.phase; pf.elapsed = elapsed; pf.progress = p; pf.strikeCount = frame.strikeCount; pf.reduced = this.reduced;
-    this.performance?.update(pf);
+    this.performance?.update(pf); this.eraPerformance?.update(pf);
     const mounted = this.identity === 'napoleon', close = frame.phase === 'intro';
     const distance = close ? THREE.MathUtils.lerp(mounted ? 3.4 : 2.4, mounted ? 3.9 : 2.9, p) : frame.phase === 'charge' ? THREE.MathUtils.lerp(4.3, 8, p) : mounted ? 7.2 : this.identity === 'saber' ? 7.35 : 7;
     const orbit = this.reduced ? .1 : close ? -.36 + p * .16 : release ? .35 - p * .5 : this.identity === 'blackbeard' ? -.35 + p * .7 : this.identity === 'musashi' ? -.2 + p * .5 : .12;
@@ -210,9 +221,47 @@ export class UltimateStage {
       }
       this.camera.lookAt(this.aim);
     }
+    this.actor.visible = true;
+    if (this.identity === 'blackbeard') {
+      if (close) { this.camera.position.set(-.45,2.45,2.8);this.aim.set(0,2.3,.05);this.camera.fov=34; }
+      else if (frame.phase==='charge') { this.camera.position.set(this.reduced?-.4:-.5-p*1.2,2.1,5.8+p*.6);this.aim.set(.5,1.45,0);this.camera.fov=38; }
+      else { this.camera.position.set(this.reduced?.4:1.4-p*.7,2.15,6.5);this.aim.set(.4,1.4,.2);this.camera.fov=38; }
+      if (!this.reduced && this.ship && (frame.strikeCount ?? 0) >= 2 && (release || (outro && p < .65))) {
+        // Cut onto the real cannon row: barrel/flash/smoke dominate, not a distant hero inspection.
+        this.actor.visible = false; this.ship.updateMatrixWorld(true); const third = (frame.strikeCount ?? 0) >= 3;
+        this.camera.position.set(-7.9,3.3,third ? .6 : -5.4).applyMatrix4(this.ship.matrixWorld);
+        this.aim.set(-5.8,2.8,third ? 9.2 : 4.2).applyMatrix4(this.ship.matrixWorld); this.camera.fov=56;
+      }
+      this.camera.lookAt(this.aim);
+    }
+    if (this.identity === 'napoleon') {
+      if (close) { this.camera.position.set(-.7,3.0,4.1);this.aim.set(0,2.55,.25);this.camera.fov=34; }
+      else if (frame.phase==='charge') { this.camera.position.set(this.reduced?1.1:-3.2-p*.3,2.5,6.3);this.aim.set(0,1.6,.1);this.camera.fov=38; }
+      else { this.camera.position.set(this.reduced?1.1:-5.8,2.7,5.1);this.aim.set(.15,1.65,.35);this.camera.fov=38; }
+      this.camera.lookAt(this.aim);
+    }
+    if (this.identity === 'musashi') {
+      if (close) { this.camera.position.set(.45,2.55,2.8);this.aim.set(0,2.4,.08);this.camera.fov=34; }
+      else if (frame.phase==='charge') { this.camera.position.set(this.reduced?.3:1.5-p*.8,2.0,6.1);this.aim.set(.25,1.5,0);this.camera.fov=38; }
+      else { const strikes=frame.strikeCount??0;this.camera.position.set(this.reduced?.3:strikes>=3?.2:strikes===2?-.8:1.5,2.0,strikes>=3?7.1:6.1);this.aim.set(0,1.5,.05);this.camera.fov=38; }
+      this.camera.lookAt(this.aim);
+    }
+    if (mounted) {
+      if (close) { this.mountedTravel = 0; this.mountedReleaseAt = -1; }
+      else if (frame.phase === 'charge') { this.mountedTravel = -.45 * p * p * (3 - 2 * p); this.mountedReleaseAt = -1; }
+      else if (release) {
+        // Presentation distance is independent of the combat profile's progress denominator.
+        // Capture the actual preceding position, including Short/skip entry, without teleporting.
+        if (this.mountedReleaseAt < 0) { this.mountedReleaseAt = elapsed; this.mountedReleaseOrigin = this.mountedTravel; }
+        const age = Math.max(0, elapsed - this.mountedReleaseAt);
+        const target = this.mountedReleaseOrigin + Math.min(this.reduced ? .45 : 3.6, age * (this.reduced ? .5 : 3.6));
+        this.mountedTravel = Math.max(this.mountedTravel, target); // Mid-cast Reduced never rewinds the horse.
+      }
+      this.actor.position.z = this.mountedTravel;
+      this.camera.position.z += this.mountedTravel; this.aim.z += this.mountedTravel;
+    } else this.actor.position.z = 0;
     this.baseCameraPosition.copy(this.camera.position);
     this.narrowWeight = close ? 0 : frame.phase === 'charge' ? p : 1; this.setAspect(this.camera.aspect);
-    this.actor.position.z = mounted && release ? -1 + p * 2 : 0;
     for (let i = 0; i < this.rings.length; i++) {
       const ring = this.rings[i]; ring.rotation.z = elapsed * (i % 2 ? -.2 : .2); ring.scale.setScalar(release ? 1 + p * 3 : .9 + p * .15);
     }
@@ -230,14 +279,14 @@ export class UltimateStage {
       if (this.identity === 'musashi') { beam.rotation.z = (i ? -1 : 1) * (.5 + p * .8); beam.position.x = (i ? -1 : 1) * .65; }
       if (this.identity === 'napoleon') { beam.rotation.z = -.65 - p * .8; beam.position.y = 1.6; }
     }
-    if (this.ship) this.ship.position.x = this.reduced ? 0 : Math.sin(elapsed * .4) * .3;
-    this.actor.updateMatrixWorld(true); this.saberArt?.update(frame, this.camera, this.reduced); this.previousPhase = frame.phase;
+
+    this.actor.updateMatrixWorld(true); this.saberArt?.update(frame, this.camera, this.reduced); this.blackbeardArt?.update(frame, this.camera, this.reduced); this.mountedArt?.update(frame,this.camera,this.reduced); this.musashiArt?.update(frame,this.camera,this.reduced); this.previousPhase = frame.phase;
   }
   /** Actor-only portrait protection; background/energy may intentionally leave the frame. */
   setAspect(aspect: number) {
     this.camera.aspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
     const portrait = THREE.MathUtils.clamp((1 - this.camera.aspect) / (1 - 9 / 16), 0, 1);
-    const factor = 1 + portrait * this.narrowWeight * (this.identity === 'musashi' ? .35 : this.identity === 'saber' ? .40 : .12);
+    const factor = 1 + portrait * this.narrowWeight * (this.identity === 'musashi' ? .58 : this.identity === 'napoleon' ? .30 : this.identity === 'saber' ? .40 : this.identity === 'blackbeard' ? .38 : .12);
     this.camera.position.copy(this.baseCameraPosition).sub(this.aim).multiplyScalar(factor).add(this.aim);
     this.camera.lookAt(this.aim); this.camera.updateProjectionMatrix(); this.camera.updateMatrixWorld(true);
   }
@@ -256,7 +305,7 @@ export class UltimateStage {
     }
   }
   end() {
-    this.active = false; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
+    this.active = false; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
     // SkeletonUtils skeletons are private; source geometry/materials/textures are never disposed.
     const skeletons = new Set<THREE.Skeleton>(); this.clone?.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); }); skeletons.forEach(s => s.dispose());
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
