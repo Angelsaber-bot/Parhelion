@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { CharacterKit, KitEventResult } from './characters/characterKit';
 import type { Collider } from './player';
+import { validSkillPose, type SkillPoseCommand } from './skillPose';
 import { MountedCharge } from './mountedCharge';
 import { CompanionMotion, COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
 
@@ -30,31 +31,77 @@ export class KitCompanion {
   private readonly ray = new THREE.Ray();
   private readonly down = new THREE.Vector3(0, -1, 0);
   private mounted?: MountedCharge;
+  private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; started: boolean };
   constructor(private options: KitCompanionOptions) {}
-  get attacking() { return this.mounted?.attacking ?? this.attackTarget !== null; }
+  get attacking() { if (this.skillPose) return true; return this.mounted?.attacking ?? this.attackTarget !== null; }
   get mountedPhase() { return this.mounted?.phase; }
   /** Wire as the kit's onEvent. */
   onEvent(actor: CharacterKit, event: KitEventResult) {
     if (actor.definition.mount) { this.mounted?.onEvent(actor, event); return; }
+    const pose = this.skillPose;
+    if (pose) {
+      if (event.state !== 'attack' || pose.contacts >= pose.command.contacts) return;
+      pose.contacts++;
+      pose.command.onContact(event.transform?.position ?? actor.root.position, { x: Math.sin(this.attackYaw), y: 0, z: Math.cos(this.attackYaw) }, event.socket, { losOffset: event.transform ? 0 : 1, casterFeetY: actor.root.position.y });
+      return;
+    }
     if (event.state !== 'attack' || !this.attackTarget) return;
     const { range, damage } = this.options;
     // Ranged shots need a little slack beyond acquisition range if the target stepped back.
     this.options.strike(actor.root.position, range + (event.kind === 'fire' ? 2 : 1), damage, this.attackTarget);
   }
+  /** Starts only a loaded live actor; no ordinary ally damage can leak from its skill montage. */
+  startSkillPose(actor: CharacterKit, command: SkillPoseCommand, player: THREE.Vector3, yaw: number): boolean {
+    if (!validSkillPose(command) || !actor.root.visible || actor.root.position.distanceTo(player) > 24 || !actor.definition.clips.attack?.events?.length) return false;
+    if (actor.definition.mount) {
+      this.mounted ??= new MountedCharge(this.options);
+      return this.mounted.startSkillPose(actor, command, player, yaw);
+    }
+    this.release(actor);
+    this.activeLast = true;
+    this.attackYaw = Math.atan2(command.direction.x, command.direction.z);
+    this.skillPose = { command, contacts: 0, elapsed: 0, started: false };
+    actor.play(actor.definition.defaultState);
+    return true;
+  }
+  cancelSkillPose(actor?: CharacterKit) {
+    const pose = this.skillPose; this.skillPose = undefined;
+    if (pose) { if (actor) actor.play(actor.definition.defaultState); pose.command.onFinish(false); }
+    this.mounted?.cancelSkillPose(actor);
+  }
   /** The servant stopped following (recalled, switched, defeated, swimming…). */
   release(actor?: CharacterKit) {
+    this.cancelSkillPose(actor);
     this.mounted?.release(actor);
     this.activeLast = false; this.attackTarget = null; this.motion.reset();
     if (actor && actor.state === 'attack') actor.play(actor.definition.defaultState);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number, paused: boolean) {
-    if (paused) return;
+    if (paused) { this.cancelSkillPose(actor); return; }
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     if (actor.definition.mount) {
       this.mounted ??= new MountedCharge(this.options);
       this.mounted.update(actor, dt, player, yaw); return;
     }
     const root = actor.root;
+    const pose = this.skillPose;
+    if (pose) {
+      pose.elapsed += dt;
+      if (pose.elapsed > 7.5 || root.position.distanceTo(player) > 24) { this.cancelSkillPose(actor); return; }
+      turnCompanion(root, this.attackYaw, dt);
+      if (!pose.started) {
+        const angle = Math.atan2(Math.sin(this.attackYaw - root.rotation.y), Math.cos(this.attackYaw - root.rotation.y));
+        if (Math.abs(angle) > .08) { actor.update(dt); return; }
+        pose.started = true; actor.play('attack', { restart: true });
+      }
+      actor.update(dt);
+      if (this.skillPose !== pose) return;
+      if (actor.state !== 'attack') {
+        if (pose.contacts >= pose.command.contacts) { this.skillPose = undefined; pose.command.onFinish(true); }
+        else actor.play('attack', { restart: true });
+      }
+      return;
+    }
     // Opposite side from Saber's slot so a quick switch never stacks them visually.
     const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw) * 2.4 - Math.sin(yaw) * .8, 0, Math.sin(yaw) * 2.4 - Math.cos(yaw) * .8));
     const prey = this.options.engage?.(player);

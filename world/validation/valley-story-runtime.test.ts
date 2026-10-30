@@ -1,3 +1,7 @@
+import { SettingsStore } from '../../shared-client/settings.ts';
+import { WorldAudio } from '../src/worldAudio';
+import * as campaignClosure from '../src/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -7,14 +11,15 @@ import * as THREE from 'three';
 import {VALLEY_STORY,getValleyStoryState,getValleyStoryGuide,interactValleyStory} from '../src/valleyStory.ts';
 import {createValleyStoryScene} from '../src/valleyStoryScene.ts';
 import {WorldProgress,ARMORY_MARKER} from '../src/progress.ts';
+import * as eraStory from '../src/eraStories.ts';
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-const slice=(a:string,b:string)=>source.slice(source.indexOf(a),source.indexOf(b));
+const slice=(a:string,b:string)=>{const start=source.indexOf(a);assert.ok(start>=0,`Missing source anchor ${a}`);const end=source.indexOf(b,start);assert.ok(end>start,`Missing source terminator ${b}`);return source.slice(start,end);};
 function fixture(){
  const data=new Map<string,string>(), storage={getItem:(k:string)=>data.get(k)??null,setItem:(k:string,v:string)=>{data.set(k,v);}},progress=new WorldProgress(storage);
  const scene=createValleyStoryScene({id:'alpha',name:['测试','Test'],position:[0,0,0],entry:[0,0,15],footprint:[34,30],groundRange:0});
  const hq={id:'hq_terminal',type:'interact',p:[30,0,0],label:'HQ'},layout={markers:[hq,...scene.markers]},player={pos:new THREE.Vector3(0,0,0)};
  let region='alpha';let npc:any={id:VALLEY_STORY.npc,position:[0,0,1],role:['记录员','Archivist']},blocked=false,saves=0;
- const context=vm.createContext({THREE,VALLEY_STORY,ARMORY_MARKER,getValleyStoryState,getValleyStoryGuide,interactValleyStory,done:progress.done,player,layout,markers:new Map(layout.markers.map(m=>[m.id,m])),valleyStoryScene:scene,
+ const context=vm.createContext({settings:new SettingsStore('world',{getItem:()=>null,setItem(){}}),speakDialogue(){},narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(),...eraStory,eraOptionalIds:new Set(Object.values(eraStory.ERA_OPTIONALS).map(x=>x.id)),found:progress.found,THREE,VALLEY_STORY,ARMORY_MARKER,getValleyStoryState,getValleyStoryGuide,interactValleyStory,done:progress.done,player,layout,markers:new Map(layout.markers.map(m=>[m.id,m])),valleyStoryScene:scene,
  settlementNpcs:{nearest:()=>npc,getPosition:()=>npc.position,gesture(){},requestRelocation(){},interact:()=>['普通','Generic']},combat:{geometry:{cast:()=>blocked?{distance:.2}:null}},BOSSES:[],servantByContract:()=>false,regionAt:()=>({id:region}),toast(){},bilingual:(a:string,b:string)=>b,localizeText:(s:string)=>s,save:()=>{saves++;return progress.save();}});
  const code='let appliedValleyStory="";'+slice('function applyValleyStory()','addEventListener(\'pagehide\'')+slice('function valleyGuide()','function interactionLabel(')+slice('function nearestInteract()','function checkDiscoveries()')+'\nfunction applyWorldState(){applyValleyStory();}\nglobalThis.api={applyValleyStory,interactSettlementNpc,interact,nearestInteract,valleyGuide};';
  vm.runInContext(transformSync(code,{loader:'ts'}).code,context);

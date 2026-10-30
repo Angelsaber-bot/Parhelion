@@ -107,3 +107,12 @@ test('asset failure is cached and late successful load after disposal releases t
   let disposals=0;geometries.forEach(g=>g.addEventListener('dispose',()=>disposals++));success(gltf);
   assert.equal(disposals,geometries.size);assert.equal(visuals.activeMixers,0);assert.equal(parent.children.length,0);assert.equal(internals.cache.size,0);assert.equal(internals.pending.size,0);
 });
+
+test('explicit roles choose matching native weapon kits without changing regional elite identities', () => {
+  const e = { id: 'role-check', kind: 'shade' as const, home: { x: 0, y: 0, z: 720 } };
+  assert.equal(enemyModel({ ...e, role: 'lancer' }), 'ashigaru', 'actual Yari spear belongs to thrust role');
+  assert.equal(enemyModel({ ...e, role: 'duelist' }), 'samurai', 'paired blade attacks use actual Samurai weapon');
+  assert.equal(enemyModel({ ...e, role: 'breaker' }), 'samurai');
+  assert.equal(enemyModel({ ...e, home: { x: 0, y: 0, z: -720 }, role: 'musketeer' }), 'musketeer', 'authored role overrides ID hash and remains ranged');
+  assert.equal(enemyModel({ ...e, role: 'lancer', miniboss: 'elite_ember_samurai' }), 'samurai');
+});

@@ -16,10 +16,12 @@
     #crosshair::after { top: 10px; left: 3px; height: 2px; width: 16px; }
     #crosshair.aiming { transform: scale(.6); filter: drop-shadow(0 0 3px #63ffe4); }
     #crosshair.hit::before, #crosshair.hit::after { background: var(--accent); }
-    #objective { left: 18px; top: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; min-width: 260px; font-size: 13px; line-height: 1.6; box-shadow: 0 4px 16px #0002; }
+    #objective { left: 18px; top: 18px; background: var(--paper); border-radius: 12px; padding: 10px 14px; min-width: 260px; max-width: min(390px, 42vw); font-size: 13px; line-height: 1.6; box-shadow: 0 4px 16px #0002; }
     #objective h3 { margin: 0 0 4px; font-size: 14px; letter-spacing: 1px; }
     #objective .done { color: #3a9a64; text-decoration: line-through; }
-    #objective .cur { font-weight: 700; }
+    #objective .cur { font-weight: 700; border-left: 3px solid #d68d31; padding-left: 8px; }
+    #objective .done { font-size: 11px; opacity: .65; }
+    #objective .chapter-clear { color: #317a61; font-weight: 700; margin-top: 6px; }
     #minimap { right: 18px; top: 18px; width: 190px; height: 190px; border-radius: 50%; border: 3px solid #fff; box-shadow: 0 4px 16px #0003; overflow: hidden; background: #cde; }
     #bigmap { z-index: 6; inset: 0; display: none; align-items: center; justify-content: center; background: #0009; pointer-events: auto; }
     #bigmap.open { display: flex; }

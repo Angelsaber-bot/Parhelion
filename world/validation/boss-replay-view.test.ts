@@ -1,4 +1,8 @@
+import { WorldAudio } from '../src/worldAudio';
+import * as campaignClosure from '../src/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
 import {VALLEY_STORY} from '../src/valleyStory.ts';
+import {ERA_OPTIONALS} from '../src/eraStories.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
@@ -64,7 +68,7 @@ test('production interact function routes completed cores to challenge but still
   const interaction=source.slice(source.indexOf('function interact()'),source.indexOf('function checkDiscoveries()'));
   const calls:string[]=[],toasts:string[]=[],done=new Set<string>();
   const marker={id:'sun_core',label:'Core',requires:['required']};
-  const context=vm.createContext({VALLEY_STORY,nearestInteract:()=>marker,BOSSES,done,markers:new Map(),combat:{beginBoss:(id:string)=>{calls.push(id);return true;}},toast:(s:string)=>toasts.push(s),bilingual:(zh:string)=>zh,localizeText:(s:string)=>s});
+  const context=vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(),eraOptionalIds:new Set(Object.values(ERA_OPTIONALS).map(x=>x.id)),VALLEY_STORY,nearestInteract:()=>marker,BOSSES,done,markers:new Map(),combat:{beginBoss:(id:string)=>{calls.push(id);return true;}},toast:(s:string)=>toasts.push(s),bilingual:(zh:string)=>zh,localizeText:(s:string)=>s});
   vm.runInContext(transformSync(interaction,{loader:'ts',format:'cjs'}).code,context);
   vm.runInContext('interact()',context);assert.equal(calls.length,0,'first-clear prerequisite retained');
   done.add('sun_core');vm.runInContext('interact()',context);vm.runInContext('interact()',context);

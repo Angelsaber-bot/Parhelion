@@ -1,0 +1,7 @@
+/** Offline geometry review export. No browser / WebGL acceptance is implied. */
+import * as THREE from 'three';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {createEraStoryScene} from '../src/eraStoryScenes';
+import type {EraId} from '../src/eraStories';
+const out=process.argv[2]??'/tmp/era-scenes-review';await mkdir(out,{recursive:true});
+for(const id of['britain','blacksail','winter','kyoto'] as EraId[]){const s=createEraStoryScene({id,name:[id,id],position:[0,0,0],entry:[0,0,0],footprint:[35,35],groundRange:0});s.applyState({routeReady:true,complete:true,discovered:true});s.group.position.set(0,0,0);const meshes:any[]=[];s.group.updateMatrixWorld(true);s.group.traverse(o=>{if(!(o instanceof THREE.Mesh))return;const g=o.geometry,m=o.material as THREE.MeshStandardMaterial;meshes.push({name:o.name,position:Array.from(g.attributes.position.array),index:g.index?Array.from(g.index.array):null,color:m.color.toArray(),vertexColor:Array.from(g.attributes.color.array),emissive:m.emissive.toArray(),intensity:m.emissiveIntensity,roughness:m.roughness,metalness:m.metalness});});await writeFile(`${out}/${id}.json`,JSON.stringify(meshes));s.dispose();}

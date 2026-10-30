@@ -1,3 +1,6 @@
+import { WorldAudio } from '../src/worldAudio';
+import * as campaignClosure from '../src/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
@@ -8,6 +11,7 @@ import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, ARMORY_M
 import { FirstContract, CONTRACT_STORAGE_KEY, servantByContract } from '../src/contracts.ts';
 import { Player } from '../src/player.ts';
 import { VALLEY_STORY } from '../src/valleyStory.ts';
+import * as eraStory from '../src/eraStories.ts';
 import { WorldCombatState, COMBAT } from '../src/combat.ts';
 import { KitCompanion } from '../src/kitCompanion.ts';
 import { ShoulderAim } from '../src/aim.ts';
@@ -38,7 +42,7 @@ test('clean startup is unarmed at authored Alpha spawn; no gameplay method write
   const storage = new MemoryStorage(), progress = new WorldProgress(storage);
   assert.equal(progress.equippedWeapon, null); assert.equal(progress.armed, false);
   assert.equal(progress.done.size, 0); assert.equal(progress.found.size, 0); assert.equal(storage.values.size, 0);
-  const c = vm.createContext({ Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: 'alpha', params: new URLSearchParams() });
+  const c = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: 'alpha', params: new URLSearchParams() });
   run(c, startup + '\nglobalThis.start = { player, initialSpawn };');
   const spawn = markers.get(INITIAL_SPAWN_ID)!;
   assert.equal(c.start.initialSpawn, spawn);
@@ -126,7 +130,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   let historyWrites = 0, servantCanceled = false;
   const elements = new Map<string, any>();
   const $ = (id: string) => { if (!elements.has(id)) elements.set(id, { textContent: 'stale', classList: { remove() {} } }); return elements.get(id); };
-  const c = vm.createContext({ Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
+  const c = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
     worldProgress, contract, combat: { reset: () => combatState.resetAll(false) }, rig, anim,
     prevPos: new THREE.Vector3(900, 30, 30), inspectServant: true, thirdPerson: false,
     servant: { update(dt: number, p: THREE.Vector3, yaw: number, enabled: boolean, paused: boolean) { servantCanceled = dt === 0 && !enabled && paused; } },
@@ -147,7 +151,8 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   assert.deepEqual(p.pos.toArray(), [initial.p[0], initial.p[1] + 1, initial.p[2]]); assert.deepEqual(p.vel.toArray(), [0, 0, 0]);
   assert.equal(p.yaw, 0); assert.equal(p.pitch, 0); assert.equal(p.flying, false); assert.equal(p.gliding, false); assert.equal(p.inUpdraft, false); assert.equal((p as any).jumpHeld, false);
   assert.equal(rig.joints.Gun.visible, false); assert.equal(rig.glider.root.visible, false); assert.equal(rig.root.visible, true);
-  assert.equal(keys.size, 0); assert.equal(aim.held, false); assert.equal(aim.value, 0);
+  assert.equal(keys.size, 0); assert.equal(aim.held, false);
+  assert.equal(aim.value, 0);
   assert.equal(worldProgress.armed, false); assert.equal(worldProgress.done.size, 0); assert.equal(worldProgress.found.size, 0);
   assert.equal(contract.selected, null); assert.equal(contract.companionSummoned, false); assert.equal(servantCanceled, true);
   assert.equal(actor.state, 'idle'); assert.equal(actor.root.visible, false); assert.deepEqual(actor.root.position.toArray(), marker.p);
@@ -159,7 +164,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   const url = new URL(location.href);
   for (const key of ['region', 'spawn', 'cam', 'lit']) assert.equal(url.searchParams.has(key), false);
   assert.equal(url.searchParams.get('q'), 'low'); assert.equal(url.searchParams.get('fov'), '82'); assert.equal(url.searchParams.has('clean'), true); assert.equal(url.hash, '#keep-me');
-  const reload = vm.createContext({ Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: url.searchParams.get('region') ?? 'alpha', params: url.searchParams });
+  const reload = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: url.searchParams.get('region') ?? 'alpha', params: url.searchParams });
   run(reload, startup + '\nglobalThis.position = player.pos;');
   assert.deepEqual(reload.position.toArray(), p.pos.toArray()); assert.equal(new WorldProgress(storage).armed, false);
   // Defeat respawn is not full reset: it keeps subsequently acquired equipment/progress.
@@ -182,14 +187,16 @@ test('existing tutorial grants the gun before gun-required objectives and clears
   const keys = new Set(['Mouse0', 'Mouse2']), aim = new ShoulderAim(); aim.held = true;
   anim.reset(false, Math.PI);
   const player = new Player([], 1); player.teleport(...armory.p);
-  const context = vm.createContext({ nearestInteract: () => armory, markers, ARMORY_MARKER, BOSSES: [], done: worldProgress.done, worldProgress, servantByContract,
+  let equipmentMessage = '';
+  const context = vm.createContext({settings: new SettingsStore('world', new MemoryStorage()), speakDialogue(line: [string,string]) { equipmentMessage = line[0]; }, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, eraOptionalIds: new Set(Object.values(eraStory.ERA_OPTIONALS).map(x => x.id)), nearestInteract: () => armory, markers, ARMORY_MARKER, BOSSES: [], done: worldProgress.done, worldProgress, servantByContract,
     VALLEY_STORY, player, anim, clearInput() { keys.clear(); aim.clear(); }, save: () => worldProgress.save(), applyWorldState() {}, toast() {}, bilingual: (zh: string) => zh, localizeText: (text: string) => text });
   run(context, interaction + '\ninteract();');
   assert.equal(worldProgress.armed, true); assert.equal(worldProgress.equippedWeapon, 'dawn_ar'); assert.equal(fixture.rig.joints.Gun.visible, true);
   assert.equal(keys.size, 0); assert.equal(aim.held, false);
+  assert.match(equipmentMessage, /8发/); assert.match(equipmentMessage, /近战连击/);
   // Execute the production ADS permission expression, not a copied predicate.
   const canAim = source.split('\n').find(line => line.trimStart().startsWith('const canAim ='))!;
-  const adsContext = vm.createContext({ worldProgress, player, gameplayActive: () => true });
+  const adsContext = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), worldProgress, player, gameplayActive: () => true });
   run(adsContext, `{ ${canAim} globalThis.canAimNow = canAim; }`); assert.equal(adsContext.canAimNow, true);
   worldProgress.reset(); run(adsContext, `{ ${canAim} globalThis.canAimNow = canAim; }`); assert.equal(adsContext.canAimNow, false);
   fixture.dispose();
@@ -218,11 +225,12 @@ test('production world-state application re-locks quest gates and restores targe
   const colliders = new Map([['COL_TGT_range_target_1', { enabled: true }], ['COL_Seam_west_Gate', { enabled: true }], ['COL_GhostBridge', { enabled: false }]]);
   const shown = { visible: false, userData: { showWhen: ['tower_console'] } };
   const hidden = { visible: true, userData: { hideWhen: 'tower_console' } };
-  const c = vm.createContext({ applyValleyStory() {}, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
+  let syncCalls=0;
+  const c = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, combat:{syncWorldProgress(value:Set<string>){assert.equal(value,done);syncCalls++;}}, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, hudRevision: 0, layout: { markers: [], objectives: [] }, eraStoryScenes: [], getLanguage: () => 'zh', applyValleyStory() {}, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
   const apply = source.slice(source.indexOf('function applyWorldState()'), source.indexOf('// ───────────── quest guide'));
   run(c, apply + '\napplyWorldState();');
   assert.equal(art.visible, false); assert.equal(colliders.get('COL_Seam_west_Gate')!.enabled, false); assert.equal(target.visible, false);
-  worldProgress.reset(); run(c, 'applyWorldState();');
+  worldProgress.reset(); run(c, 'applyWorldState();'); assert.equal(syncCalls,2);
   assert.equal(art.visible, true); assert.equal(colliders.get('COL_Seam_west_Gate')!.enabled, true);
   assert.equal(target.visible, true); assert.equal(colliders.get('COL_TGT_range_target_1')!.enabled, true);
   assert.equal(colliders.get('COL_GhostBridge')!.enabled, false); assert.equal(shown.visible, false); assert.equal(hidden.visible, true);

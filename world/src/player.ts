@@ -80,7 +80,7 @@ export class Player {
   }
 
   /** input: x = strafe (+right), z = forward (+fwd) */
-  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean }) {
+  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean; evade?: { x: number; z: number; strength?: number } }) {
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(input.z).add(right.multiplyScalar(input.x));
@@ -135,7 +135,11 @@ export class Player {
       if (lift > 0) this.vel.y = Math.max(this.vel.y, 4);
     }
 
-    this.pos.addScaledVector(wish, speed * dt);
+    if (input.evade && !this.swimming && !this.gliding && this.onGround &&
+      Number.isFinite(input.evade.x) && Number.isFinite(input.evade.z)) {
+      const magnitude = Math.hypot(input.evade.x, input.evade.z);
+      if (magnitude > .001) this.pos.addScaledVector(new THREE.Vector3(input.evade.x / magnitude, 0, input.evade.z / magnitude), 13 * dt * THREE.MathUtils.clamp(input.evade.strength ?? 1, 0, 1));
+    } else this.pos.addScaledVector(wish, speed * dt);
     this.pos.addScaledVector(this.vel, dt);
     this.collide();
     // Landing is authoritative in this step: do not leave the canopy/ADS in glide mode

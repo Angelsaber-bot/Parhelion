@@ -8,6 +8,21 @@ import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
 import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './valleyStory';
 import { createValleyStoryScene } from './valleyStoryScene';
+import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './eraStories';
+import { createEraStoryScene } from './eraStoryScenes';
+import { WorldActions } from './worldActions';
+import { FortCannon, FORT_CANNON } from './fortCannon';
+import { createTraversalRepairs } from './traversalRepairs';
+import { createActionHud } from './actionHud';
+import { WorldAudio } from './worldAudio';
+import { worldBootFailure } from './bootFailure';
+import { createTravelPanel } from './travelPanel';
+import { createNarrativePanel } from './narrativePanel';
+import { createSafeTravelStops, discoverTravelStops, isTravelStopDiscovered, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from './safeTravel';
+import { CAMPAIGN_CLOSURE, getCampaignClosureGuide, interactCampaignClosure, getCampaignResidentReaction } from './campaignClosure';
+import { attachExplorerBlade } from './playerBladeArt';
+import { FrameWorkBudget } from './frameWorkBudget';
+import './actions.css';
 import { AdaptiveResolution, targetDpr } from './renderQuality';
 import { readResolutionMode, attachRenderSettings } from './renderSettings';
 import * as THREE from 'three';
@@ -45,7 +60,7 @@ import { ServantAppearance } from './servantAppearance';
 import { createServantPanel } from './servantPanel';
 import { WorldCombat } from './combatView';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
-import { bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
+import { getLanguage, bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
 const requestedFov = Number(params.get('fov'));
@@ -267,6 +282,9 @@ for (const p of settlements.placements) layout.areas.push({
   id: `${p.id}_living_hub`, name: p.name[0], nameEn: p.name[1], c: [p.position[0],p.position[2]],
   r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: [p.entry[0],p.entry[2]+8], region:p.id,
 });
+const traversalRepairs = createTraversalRepairs(); scene.add(traversalRepairs.root); freezeStaticArt(traversalRepairs.root);
+staticGeos.push(...traversalRepairs.collisionGeometries);
+addEventListener('pagehide', event => { if (!event.persisted) traversalRepairs.dispose(); });
 const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
@@ -291,6 +309,22 @@ const progressStorage = (() => { try { return localStorage; } catch { return und
 const worldProgress = new WorldProgress(progressStorage);
 const { done, found } = worldProgress;
 const save = () => worldProgress.save();
+let actions: WorldActions | undefined;
+const fortCannon = new FortCannon();
+const audio = new WorldAudio();
+const travelStops = createSafeTravelStops(settlements.placements);
+let hudRevision = 0;
+let travelOpenState = false;
+let narrative: ReturnType<typeof createNarrativePanel> | undefined;
+let optionalPin: { p: [number,number,number]; label: [string,string]; region: string; targetId?: string } | null = null;
+const mapBudget = new FrameWorkBudget(30), hudBudget = new FrameWorkBudget(10), statsBudget = new FrameWorkBudget(4);
+const eraStoryScenes = settlements.placements.filter(p => isEraId(p.id)).map(p => ({ ...createEraStoryScene(p), region: p.id }));
+const eraOptionalIds = new Set(Object.values(ERA_OPTIONALS).map(x => x.id));
+for (const site of eraStoryScenes) {
+  scene.add(site.group); freezeStaticArt(site.group); colliders.push(...site.colliders);
+  for (const marker of site.markers) { layout.markers.push(marker); markers.set(marker.id, marker); }
+}
+addEventListener('pagehide', event => { if (!event.persisted) for (const site of eraStoryScenes) site.dispose(); });
 const alphaResidence = settlements.placements.find(p => p.id === 'alpha');
 const valleyStoryScene = alphaResidence ? createValleyStoryScene(alphaResidence) : null;
 if (valleyStoryScene) {
@@ -316,11 +350,18 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const optional = Object.values(ERA_OPTIONALS).find(x => x.id === marker.id);
+  if (optional) return bilingual(...optional.label);
   return marker.id === VALLEY_STORY.discovery ? bilingual('检修侧门面板', 'Maintenance entrance panel') : localizeText(marker.label);
 }
 
 const haloMat = (byName('Tower_Halo')?.material as THREE.MeshBasicMaterial | undefined);
 function applyWorldState() {
+  hudRevision++;
+  applyEraMarkerRequirements(layout.markers, done);
+  combat.syncWorldProgress(done);
+  for (const entry of layout.objectives) if (isEraId(entry.region)) entry.objective = getEraObjective(entry.region, done, getLanguage() === 'zh' ? 0 : 1);
+  for (const site of eraStoryScenes) { if (isEraId(site.region)) { const state = getEraStoryState(site.region, done); site.applyState({ ...state, complete: state.complete || (site.region === 'britain' && state.knightDefeated) }); } }
   applyValleyStory();
   for (const t of targets) {
     const id = t.userData.target as string;
@@ -334,11 +375,11 @@ function applyWorldState() {
     const art = byName(g.name); if (art) art.visible = !open;
     const c = collider(`COL_${g.name}`); if (c) c.enabled = !open;
   }
-  for (const g of solids) { const c = collider(`COL_${g.name}`); if (c) c.enabled = g.solidWhen.every((x) => done.has(x)); }
+  for (const g of solids) { const c = collider(`COL_${g.name}`); if (c) c.enabled = (getEraPieceRequirements(g.name, done) ?? g.solidWhen).every((x) => done.has(x)); }
   if (haloMat) haloMat.color.setScalar(done.has('tower_console') ? 1 : 0.32);
   for (const m of stateful) {
-    const sw = m.userData.showWhen as string | string[] | undefined;
-    const show = sw ? [sw].flat().every((x) => done.has(x)) : true;
+    const sw = getEraPieceRequirements(m.name, done) ?? m.userData.showWhen as string | string[] | undefined;
+    const show = sw ? (Array.isArray(sw) ? sw : [sw]).every((x: string) => done.has(x)) : true;
     const hide = m.userData.hideWhen ? done.has(m.userData.hideWhen as string) : false;
     m.visible = show && !hide;
   }
@@ -373,6 +414,14 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
   const intro = valleyGuide();
   if (intro) return { p: intro.p, label: bilingual(...intro.text) };
+  const closing = getCampaignClosureGuide(here, done);
+  if (closing) { const marker = markers.get(closing.targetId); if (marker) return { p: marker.p, label: bilingual(...closing.text) }; }
+  if (optionalPin) {
+    if (optionalPin.region !== here || (optionalPin.targetId && (done.has(optionalPin.targetId) || found.has(optionalPin.targetId))) || Math.hypot(player.pos.x - optionalPin.p[0], player.pos.z - optionalPin.p[2]) < 6) optionalPin = null;
+    else return { p: optionalPin.p, label: bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`, `Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`) };
+  }
+  const eraGuide = isEraId(here) ? getEraStoryGuide(here, done) : null;
+  if (eraGuide) { const marker = markers.get(eraGuide.targetId); if (marker) return { p: marker.p, label: bilingual(...eraGuide.text) }; }
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
   for (const o of order)
     for (const s of o.objective.steps) {
@@ -424,6 +473,13 @@ function renderObjective() {
     $('objective').append(title, goal);
     return;
   }
+  const region = regionAt(player.pos.x, player.pos.z).id;
+  if (isEraId(region) && getEraStoryState(region, done).stage === 'complete') {
+    const title = document.createElement('h3'); title.textContent = bilingual(...ERA_STORIES[region].title);
+    const complete = document.createElement('div'); complete.className = 'chapter-clear'; complete.textContent = bilingual('✓ 本章异常已解除', '✓ Chapter anomaly resolved');
+    const note = document.createElement('div'); note.textContent = bilingual(...ERA_STORIES[region].completeText);
+    $('objective').replaceChildren(title, complete, note); return;
+  }
   const objective = objectiveFor(player.pos.x, player.pos.z);
   const steps = objective.steps;
   let current = false;
@@ -434,7 +490,7 @@ function renderObjective() {
     const extra = s.done.length > 1 && !ok ? ` (${s.done.filter((x) => done.has(x)).length}/${s.done.length})` : '';
     return `<div class="${cls}">${ok ? '✓' : '◇'} ${localizeText(s.text)}${extra}</div>`;
   });
-  const disc = layout.markers.filter((m) => m.type === 'discovery');
+  const disc = layout.markers.filter((m) => m.type === 'discovery' && regionAt(m.p[0], m.p[2]).id === region);
   $('objective').innerHTML =
     `<h3>${localizeText(objective.name)}</h3>${rows.join('')}` +
     `<div style="margin-top:6px;opacity:.75">${localizeText('隐藏发现')} ${disc.filter((d) => found.has(d.id)).length}/${disc.length}</div>`;
@@ -462,7 +518,9 @@ function showArea(a: Layout['areas'][number]) {
 
 // ───────────── cold (永冬之城): warmth drains away from fires until the winter core is lit ─────────────
 const warmSpots = layout.markers.filter((m) => /(^|_)warm_/.test(m.id));
-const cold = { warmth: 100, frozen: false, warned: false };
+const shelterStove = markers.get(ERA_OPTIONALS.winter.id);
+if (shelterStove) warmSpots.push({ ...shelterStove, radius: 8, requires: [shelterStove.id] });
+const cold = { warmth: 100, frozen: false, warned: false, reserve: 0 };
 const coldHud = document.createElement('div');
 coldHud.id = 'world-cold'; coldHud.className = 'combat-hud'; coldHud.hidden = true;
 Object.assign(coldHud.style, { bottom: '172px', left: '18px', width: 'min(220px, 38vw)', fontSize: '12px' });
@@ -475,13 +533,14 @@ function updateCold(dt: number) {
   const nearFire = warmSpots.some((m) => (m.requires ?? []).every((r) => done.has(r)) &&
     Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]) < (m.radius ?? 6));
   if (!inWinter || player.flying || !gameplayActive()) cold.warmth = Math.min(100, cold.warmth + dt * (inWinter ? 0 : 40));
+  else if (cold.reserve > 0) { cold.reserve = Math.max(0, cold.reserve - dt); if (nearFire) cold.warmth = Math.min(100, cold.warmth + dt * 30); }
   else cold.warmth = nearFire ? Math.min(100, cold.warmth + dt * 30) : Math.max(0, cold.warmth - dt * 2);
   cold.frozen = inWinter && cold.warmth <= 0;
   if (cold.frozen && !cold.warned) toast(bilingual('冻僵了：走不快也跑不动，快去火堆边取暖', 'Frozen stiff: you can barely move. Find a fire to warm up'));
   cold.warned = cold.frozen || (cold.warned && cold.warmth < 30);
   coldHud.hidden = !inWinter;
   if (inWinter) {
-    coldHud.querySelector('span')!.textContent = `${bilingual('体温', 'Warmth')} ${Math.ceil(cold.warmth)}%${nearFire ? bilingual(' · 正在取暖', ' · warming up') : ''}`;
+    coldHud.querySelector('span')!.textContent = `${bilingual('体温', 'Warmth')} ${Math.ceil(cold.warmth)}%${nearFire ? bilingual(' · 正在取暖', ' · warming up') : cold.reserve > 0 ? bilingual(` · 余温 ${Math.ceil(cold.reserve)}秒`, ` · Stored warmth ${Math.ceil(cold.reserve)}s`) : ''}`;
     (coldHud.querySelector('.combat-fill') as HTMLElement).style.width = `${cold.warmth}%`;
   }
   frost.style.opacity = inWinter ? `${Math.max(0, 1 - cold.warmth / 40) * 0.85}` : '0';
@@ -495,6 +554,7 @@ const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
 // camp, and subsequent defeat respawns in this session must not jump back to the old debug chapter.
 let spawn = markers.get(startRegion === 'alpha' ? INITIAL_SPAWN_ID : `${startRegion}_spawn_p1`) ?? initialSpawn;
 const spawnAt = (areaId?: string) => {
+  actions?.cancel(); fortCannon.cancel(); hudRevision++;
   const a = layout.areas.find((x) => x.id === areaId);
   if (!a) return player.teleport(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
   const y = staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(a.tp[0], 300, a.tp[1]), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 40;
@@ -512,7 +572,9 @@ rig.joints.Gun.visible = worldProgress.armed;
 scene.add(rig.root);
 const rifle = attachExplorerRifle(rig, renderer);
 try { await rifle.ready; } catch (error) { rifle.dispose(); rig.dispose(); throw error; }
-addEventListener('pagehide', (e) => { if (!e.persisted) { rifle.dispose(); rig.dispose(); } });
+addEventListener('pagehide', (e) => { if (!e.persisted) { blade.dispose(); rifle.dispose(); rig.dispose(); } });
+const blade = attachExplorerBlade(rig);
+void blade.ready.catch(error => console.warn('Melee art unavailable', error));
 const anim = new SkinnedCharacterAnimator(rig);
 anim.reset(worldProgress.armed, player.yaw + Math.PI);
 let thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
@@ -640,7 +702,7 @@ function resetProgress() {
   clearStartOverrides(params);
   const url = new URL(location.href); clearStartOverrides(url.searchParams);
   try { history.replaceState(history.state, '', url.href); } catch { /* Restricted embedding may prohibit URL writes. */ }
-  contract.reset(); combat.reset();
+  actions?.reset(); fortCannon.reset(); contract.reset(); combat.reset();
   spawn = initialSpawn;
   player.restartAt(initialSpawn.p[0], initialSpawn.p[1] + 1, initialSpawn.p[2], 0);
   prevPos.copy(player.pos); rig.root.position.copy(player.pos);
@@ -655,7 +717,7 @@ function resetProgress() {
       entry.actor.root.visible = false;
     }
   }
-  cold.warmth = 100; cold.frozen = false; cold.warned = false;
+  cold.warmth = 100; cold.frozen = false; cold.warned = false; cold.reserve = 0; optionalPin = null;
   coldHud.hidden = true; frost.style.opacity = '0';
   acc = 0; camDist = 3.6; currentArea = ''; lastRegion = 'alpha';
   camera.fov = baseFov; camera.updateProjectionMatrix();
@@ -681,7 +743,7 @@ for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addE
   if (type === 'pointerdown') swallowClick = true;
   document.body.classList.remove('shot-mode');
 }, true);
-const clearInput = () => { keys.clear(); aim.clear(); };
+const clearInput = () => { keys.clear(); aim.clear(); narrative?.hide(); actions?.cancel(); fortCannon.cancel(); hudRevision++; };
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
   onClose() { clearInput(); },
@@ -702,14 +764,14 @@ if (typeof document.querySelector === 'function') {
   document.querySelector('#world-settings .settings-sliders')?.after(group);
   localizeDom(group);
 }
-const gameplayActive = () => locked && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const gameplayActive = () => locked && !inspectServant && !travelOpenState && !narrative?.open && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
   const moves = `${k('forward')}/${k('left')}/${k('back')}/${k('right')}`;
   $('help').textContent = bilingual(
-    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('objectives')} 任务栏 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标`,
-    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse`);
+    `${moves} 移动 · ${k('sprint')} 奔跑 · ${k('jump')} 跳／空中滑翔\n${k('fire')} 射击 · ${k('aim')} 按住肩射瞄准 · ${k('interact')} 互动\n${k('melee')} 近战 · ${k('evade')} 闪避 · ${k('skill')} 战技 · ${k('ultimate')} 终结技 · ${k('travel')} 据点旅行\n${k('summon')} 召唤／收回从者 · ${k('switchServant')} 切换从者 · ${k('inspectServant')} 查看从者模型 · ${k('map')} 大地图 · ${k('guide')} 任务指引 · ${k('objectives')} 任务栏 · ${k('help')} 帮助 · ${k('settings')} 设置 · Esc 释放鼠标`,
+    `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('melee')} Melee · ${k('evade')} Evade · ${k('skill')} Skill · ${k('ultimate')} Ultimate · ${k('travel')} Safe travel\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse`);
 
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
@@ -720,7 +782,8 @@ const lockError = () => {
   start.classList.remove('hidden');
 };
 setLoading('点击进入（ESC 释放鼠标）');
-start.addEventListener('click', async () => {
+start.addEventListener('click', async (e) => {
+  audio.unlock(e);
   if (settingsPanel.open) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
@@ -740,39 +803,53 @@ document.addEventListener('mousemove', (e) => {
   player.yaw -= e.movementX * sensitivity;
   player.pitch = THREE.MathUtils.clamp(player.pitch - e.movementY * sensitivity * (settings.value.invertY ? -1 : 1), -1.5, 1.5);
 });
+function requestProgressReset() {
+  clearInput();
+  if (document.pointerLockElement) document.exitPointerLock();
+  let accepted = false;
+  try { accepted = window.confirm(bilingual('确定开始新游戏吗？这会清除大世界任务、契约和发现，并空手回到初始营地。按键、语言和画质设置保留。', 'Start a new game? This clears World quests, contracts and discoveries, returning you unarmed to the starting camp. Controls, language and graphics settings are kept.')); } catch { /* An unavailable confirmation never destroys progress. */ }
+  if (accepted) resetProgress();
+}
 function press(binding: string, repeat = false) {
   const action = settings.action(binding);
   if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
+  if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.hide(); hudRevision++; } return; }
+  if (action === 'travel') { if (!repeat) travelPanel.show(); return; }
   if (action === 'settings') { if (!repeat) settingsPanel.show(); return; }
   if (action === 'map') {
     if (!repeat) { clearInput(); $('bigmap').classList.toggle('open'); }
     return;
   }
+  if (action === 'inspectServant') {
+    if (repeat || combat.defeated || $('bigmap').classList.contains('open')) return;
+    clearInput();
+    inspectServant = !inspectServant && !!servantRoot()?.visible;
+    toast(inspectServant ? bilingual(`查看从者模型 · 再按 ${settings.label('inspectServant')} 返回`, `Servant model view · Press ${settings.label('inspectServant')} to return`) : bilingual('已返回游戏视角', 'Back to gameplay view'));
+    return;
+  }
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
+  if (actions?.press(action)) return;
   keys.add(binding);
   if (action === 'aim') aim.held = true;
   if (action === 'fire') shoot();
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
+  if (action === 'mainRoute') { optionalPin = null; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
   if (action === 'help') togglePanel('help');
   if (action === 'objectives') togglePanel('objective');
-  if (action === 'interact' && !player.flying && !interactSettlementNpc()) interact();
+  if (action === 'interact' && !player.flying && !player.gliding && !player.swimming && player.onGround && !interactSettlementNpc()) interact();
   if (action === 'summon') {
     if (contract.toggle()) { const n = servantName(contract.selected); toast(contract.companionSummoned ? bilingual(`${n.zh} 已召唤`, `${n.en} summoned`) : bilingual(`${n.zh} 已收回`, `${n.en} recalled`)); }
     else toast(bilingual('先前往圣剑湖缔结第一份契约', 'Form your first contract at Sword Lake'));
-  }
-  if (action === 'inspectServant') {
-    inspectServant = !inspectServant && !!servantRoot()?.visible;
-    toast(inspectServant ? bilingual(`查看从者模型 · 再按 ${settings.label('inspectServant')} 返回`, `Servant model view · Press ${settings.label('inspectServant')} to return`) : bilingual('已返回游戏视角', 'Back to gameplay view'));
   }
   if (action === 'switchServant') {
     const next = contract.cycle();
     if (next) { const n = servantName(next); toast(bilingual(`切换从者：${n.zh}`, `Servant switched: ${n.en}`)); }
     else toast(bilingual('缔结第二份契约后才能切换从者', 'Contract a second servant to switch'));
   }
-  if (action === 'reset' && !down('sprint')) resetProgress();
+  if (action === 'reset' && !down('sprint')) requestProgressReset();
   if (action.startsWith('teleport')) {
     clearInput(); const n = Number(action.slice('teleport'.length));
     const here = layout.areas.filter((a) => a.region === regionAt(player.pos.x, player.pos.z).id);
@@ -781,6 +858,7 @@ function press(binding: string, repeat = false) {
 }
 function release(binding: string) { keys.delete(binding); if (settings.action(binding) === 'aim') aim.held = down('aim'); }
 addEventListener('keydown', (e) => {
+  audio.unlock(e);
   if (e.metaKey || e.ctrlKey || e.altKey) { clearInput(); return; }
   if (!settingsPanel.open && locked && settings.action(e.code)) e.preventDefault();
   press(e.code, e.repeat);
@@ -790,7 +868,7 @@ addEventListener('blur', clearInput);
 document.addEventListener('visibilitychange', clearInput);
 addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('auxclick', (e) => { if (locked || settingsPanel.open) e.preventDefault(); });
-addEventListener('mousedown', (e) => { if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
+addEventListener('mousedown', (e) => { audio.unlock(e); if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
 addEventListener('mouseup', (e) => release(`Mouse${e.button}`));
 addEventListener('wheel', (e) => {
   if (!gameplayActive()) return;
@@ -800,12 +878,108 @@ addEventListener('wheel', (e) => {
 // ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
 const combat = new WorldCombat({ scene, colliders, layout, done, toast, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
+  onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
+  onHurt() { audio.hurt(); },
+  onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { save(); applyWorldState(); } },
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let reducedOverride: boolean | null = null;
+try { const stored=localStorage.getItem('parhelion-world-reduced-effects'); if(stored==='1'||stored==='0')reducedOverride=stored==='1'; } catch { /* use system preference */ }
+const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
+actions = new WorldActions({ scene,
+  context: () => ({ enabled: gameplayActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
+    grounded: player.onGround, armed: worldProgress.armed, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
+    moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
+    identity: contract.companionSummoned ? contract.selected : null }),
+  strike: (strike, source) => combat.applyStrike(strike, source),
+  defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
+  cue: kind => audio[kind](), onCast: event => actionHud.announce(event),
+  startPose: (identity, command) => {
+    if (identity === 'saber') return servant.root.visible && servant.root.position.distanceTo(player.pos) < 16 && servant.startSkillPose(command);
+    const entry = eraActors.find(e => e.servant === identity);
+    return !!entry?.actor?.root.visible && entry.actor.root.position.distanceTo(player.pos) < 16 && entry.follow.startSkillPose(entry.actor, command, player.pos, player.yaw);
+  },
+  cancelPoses: () => { servant.cancelSkillPose(); for (const entry of eraActors) entry.follow.cancelSkillPose(entry.actor); },
+});
+narrative = createNarrativePanel(() => settings.label('interact'));
+function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
+  clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
+}
+const actionHud = createActionHud(action => settings.label(action));
+const audioGroup=document.createElement('div');audioGroup.className='settings-sliders';
+const volumeLabel=document.createElement('label'),volumeText=document.createElement('span'),volume=document.createElement('input');
+volume.type='range';volume.min='0';volume.max='1';volume.step='.05';volume.value=String(audio.volume);volume.id='world-audio-volume';volumeLabel.append(volumeText,volume);
+const muteLabel=document.createElement('label'),muteText=document.createElement('span'),mute=document.createElement('input');mute.type='checkbox';mute.checked=audio.muted;mute.id='world-audio-muted';muteLabel.append(muteText,mute);
+const fxLabel=document.createElement('label'),fxText=document.createElement('span'),fxToggle=document.createElement('input');fxToggle.type='checkbox';fxToggle.id='world-reduced-effects';fxToggle.checked=reducedEffects();fxLabel.append(fxText,fxToggle);
+fxToggle.onchange=()=>{reducedOverride=fxToggle.checked;try{localStorage.setItem('parhelion-world-reduced-effects',reducedOverride?'1':'0');}catch{/* session preference only */}};
+const renderAudioSettings=()=>{fxText.textContent=bilingual('降低技能闪光','Reduce ability flashes');volumeText.textContent=bilingual('战斗音效音量','Combat sound volume');muteText.textContent=bilingual('静音音效','Mute sound effects');};
+volume.oninput=()=>audio.setVolume(Number(volume.value));mute.onchange=()=>audio.setMuted(mute.checked);
+audioGroup.append(volumeLabel,muteLabel,fxLabel);document.querySelector('#world-settings .settings-sliders')?.after(audioGroup);renderAudioSettings();onLanguageChange(renderAudioSettings);
+addEventListener('pagehide', event => { if (!event.persisted) { actions?.dispose(); actionHud.dispose(); } });
+function travelContext(): TravelContext {
+  const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
+  return { sessionReady: true, defeated: combat.defeated, combatActive: combat.bossStarted, threatened, quietSeconds: combat.state.quietFor,
+    flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
+    mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+}
+function executeSafeTravel(id: string) {
+  const plan = planSafeTravel(id, travelStops, done, found, travelContext());
+  if (!plan.ok) { toast(bilingual(...TRAVEL_BLOCK_TEXT[plan.reason])); return false; }
+  const [x, y, z] = plan.position, landing = combat.geometry.ground(x,z,y+2);
+  if (!landing || Math.abs(landing.point.y-y)>1 || !combat.geometry.clear(landing.point,.38,1.8)) { toast(bilingual('据点落点暂不可用，已取消传送。','The arrival point is not clear; travel canceled.')); return false; }
+  clearInput(); optionalPin = null;
+  player.teleport(x,landing.point.y+.25,z,plan.yaw); prevPos.copy(player.pos); rig.root.position.copy(player.pos);
+  anim.reset(worldProgress.armed,player.yaw+Math.PI); camDist=3.6; acc=0; inspectServant=false;
+  spawn={id,type:'spawn',p:[x,landing.point.y,z],label:'营地'};
+  hudRevision++; toast(bilingual('已抵达安全据点，进度与当前生命保留。','Arrived at a safe settlement. Progress and current health retained.'));
+  return true;
+}
+const travelPanel = createTravelPanel({
+  entries: () => travelStops.map(stop => { const reason=getTravelBlock(stop.id,travelStops,done,found,travelContext()); return {id:stop.id,name:stop.name,discovered:isTravelStopDiscovered(stop,done,found),blocked:reason?TRAVEL_BLOCK_TEXT[reason]:null}; }),
+  travel: executeSafeTravel,
+  onOpen: () => {
+    const context=travelContext();
+    if(context.mounted||context.actionActive){toast(bilingual(...TRAVEL_BLOCK_TEXT.busy));return false;}
+    travelOpenState=true;clearInput();if(document.pointerLockElement)document.exitPointerLock();return true;
+  },
+  onClose: () => { travelOpenState=false;clearInput(); },
+});
+const travelOpen=document.createElement('button'); travelOpen.type='button';travelOpen.id='world-travel-open';
+const renderTravelButton=()=>{travelOpen.textContent=bilingual(`安全据点旅行 · ${settings.label('travel')}`,`Safe settlement travel · ${settings.label('travel')}`);};
+renderTravelButton();onLanguageChange(()=>{renderTravelButton();travelPanel.refresh();});
+travelOpen.addEventListener('click',event=>{event.stopPropagation();travelPanel.show();}); start.append(travelOpen);
+addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose();narrative?.dispose();travelPanel.dispose();travelOpen.remove();}});
 const ray = new THREE.Raycaster();
+function shootCannon() {
+  if (!gameplayActive() || player.flying || combat.defeated || !fortCannon.mounted || fortCannon.reload > 0) return;
+  const origin = camera.position.clone(), look = camera.getWorldDirection(new THREE.Vector3());
+  const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
+  ray.set(origin, look); ray.far = FORT_CANNON.range;
+  const wall = combat.geometry.cast(origin, look, FORT_CANNON.range, targetCollider);
+  const target = ray.intersectObjects(targets.filter(t => t.visible), false)[0];
+  const validTarget = target && target.distance <= (wall?.distance ?? Infinity) + .04 ? target : undefined;
+  const enemy = combat.raycast(origin, look, Math.min(wall?.distance ?? FORT_CANNON.range, validTarget?.distance ?? Infinity));
+  const point = enemy ? new THREE.Vector3(enemy.point.x, enemy.point.y, enemy.point.z)
+    : validTarget ? validTarget.point.clone() : wall ? wall.point.clone() : origin.clone().addScaledVector(look, FORT_CANNON.range - 10);
+  if (!fortCannon.canAim(point)) return;
+  const muzzle = new THREE.Vector3(FORT_CANNON.muzzle.x, FORT_CANNON.muzzle.y, FORT_CANNON.muzzle.z);
+  const path = point.clone().sub(muzzle), blocked = combat.geometry.cast(muzzle, path, Math.max(0,path.length()-.15), targetCollider);
+  if (!fortCannon.fire(point)) return;
+  if (blocked) point.copy(blocked.point);
+  else if (enemy) combat.damageEnemy(enemy.id, 110, { source: 'skill', origin: muzzle });
+  else if (validTarget) {
+    const id = validTarget.object.userData.target as string;
+    const required = validTarget.object.userData.needs as string | undefined;
+    if (id && (!required || done.has(required))) { done.add(id); save(); applyWorldState(); const reaction = getEraProgressReaction(id, done); if (reaction) toast(bilingual(...reaction)); }
+  }
+  combat.shot(muzzle, point, !!(blocked || enemy || validTarget)); audio.cannon();
+  hudRevision++;
+}
 function shoot() {
-  if (!worldProgress.armed || !gameplayActive() || player.flying || !combat.canShoot()) return;
+  if (fortCannon.mounted) { shootCannon(); return; }
+  if (!worldProgress.armed || !gameplayActive() || inspectServant || player.flying || actions?.melee.active || (actions?.skills.casting && actions.skills.selected === null) || actions?.evade.active || !combat.canShoot()) return;
   const targetCollider = (c: Collider) => c.name.startsWith('COL_TGT_');
   const origin = camera.position.clone();
   const look = camera.getWorldDirection(new THREE.Vector3());
@@ -835,6 +1009,8 @@ function shoot() {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
   } else if (enemy) {
     combat.damageEnemy(enemy.id);
+  } else if (questHit && questHit.object.userData.needs === FORT_CANNON.marker) {
+    toast(bilingual(`幽灵艇需要要塞炮：到炮位按 ${settings.label('interact')} 操作，再开火。`, 'Ghost boats need the fort cannon: interact at the station, then fire.'));
   } else if (questHit && questHit.object.userData.needs && !done.has(questHit.object.userData.needs as string)) {
     toast(bilingual('子弹打不了那么远 · 先去装填要塞大炮', 'Bullets cannot reach that far · Load the fort cannon first'));
   } else if (questHit && questHit.object.userData.nearWorld &&
@@ -852,9 +1028,10 @@ function shoot() {
     else if (group === 'ghost_boat') toast(n === 3 ? '幽灵小艇全部击沉：火药库里亮起了海之碎片' : `炮击命中 幽灵小艇 ${n}/3`);
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
+    const reaction = getEraProgressReaction(id, done); if (reaction) toast(bilingual(...reaction));
     $('crosshair').classList.add('hit'); setTimeout(() => $('crosshair').classList.remove('hit'),140);
   }
-  combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething);
+  combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething); audio.shot();
 }
 
 // ───────────── interaction / discovery ─────────────
@@ -863,7 +1040,7 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && d < bd && (m.id !== VALLEY_STORY.discovery || canReachValleyPanel(m))) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && d < bd && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
 }
@@ -886,29 +1063,58 @@ function interactSettlementNpc() {
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
   if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
-    if (handleValleyInteraction(npc.id)) return true;
+    const closing = getCampaignResidentReaction(npc.id, done); if (closing) { speakDialogue(closing, npc.role); return true; }
+    if (handleValleyInteraction(npc.id,npc.role) || handleEraInteraction(npc.id,npc.role)) return true;
     const line = settlementNpcs.interact(npc.id);
-    if (line) toast(bilingual(`${npc.role[0]}：${line[0]}`, `${npc.role[1]}: ${line[1]}`));
+    if (line) speakDialogue(line, npc.role);
     return true;
   }
   return false;
 }
-function handleValleyInteraction(id: string) {
+function handleValleyInteraction(id: string, speaker: [string,string] = ['现场记录','Field notes']) {
   const result = interactValleyStory(id, done); if (!result.handled) return false;
   if (id === VALLEY_STORY.npc) settlementNpcs.gesture(id);
   let saved = true;
   if (result.changed) { saved = save(); applyWorldState(); }
-  if (result.dialogue) toast(bilingual(...result.dialogue) + (saved ? '' : bilingual('（本次进度暂未保存。）', ' (Progress could not be saved.)')));
+  if (result.dialogue) speakDialogue([result.dialogue[0]+(saved?'':'（本次进度暂未保存。）'),result.dialogue[1]+(saved?'':' (Progress could not be saved.)')],speaker);
+  return true;
+}
+function handleEraInteraction(id: string, speaker: [string,string] = ['现场记录','Field notes']) {
+  const result = interactEraStory(id, done, found); if (!result.handled) return false;
+  let changed = result.changed;
+  if (result.reward) {
+    const reward = result.reward;
+    if (reward.kind === 'warmth') { cold.reserve = reward.seconds; cold.warmth = Math.max(cold.warmth, 70); }
+    else if (reward.kind === 'quiet-route') optionalPin = { p: reward.position, label: reward.label, region: reward.region };
+    else if (reward.kind === 'clue') { const marker = markers.get(reward.targetId); if (marker) optionalPin = { p: marker.p, label: reward.label, region: reward.region, targetId: marker.id }; }
+    else if (reward.kind === 'trial') {
+      combat.startOptionalTrial(reward.enemyId);
+      const knight = combat.state.enemies.find(e => e.id === reward.enemyId);
+      if (knight) optionalPin = { p: [knight.home.x,knight.home.y,knight.home.z], label: reward.label, region: reward.region };
+    }
+    hudRevision++;
+  }
+  const saved = !changed || save();
+  if (changed) applyWorldState();
+  if (result.dialogue) speakDialogue([result.dialogue[0]+(saved?'':'（本次进度暂未保存。）'),result.dialogue[1]+(saved?'':' (Progress could not be saved.)')],speaker);
   return true;
 }
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  const closing = interactCampaignClosure(m.id, done);
+  if (closing.handled) { if(closing.changed){save();applyWorldState();} if(closing.dialogue)speakDialogue(closing.dialogue,['观测记录','Observation record']); return; }
+  audio.interaction();
   if (m.id === VALLEY_STORY.discovery) {
     // The physical panel must be reachable, not usable through a wall or a closed gate.
     if (!canReachValleyPanel(m)) return;
     handleValleyInteraction(m.id); return;
   }
+  if (m.id === FORT_CANNON.marker && done.has(m.id)) {
+    const mounted = fortCannon.toggle(player.pos, true); actions?.cancel();
+    toast(mounted ? bilingual(`已操作要塞炮 · ${settings.label('fire')} 开火，${settings.label('interact')} 离开；装填1.3秒。`, `Fort cannon mounted · ${settings.label('fire')} fires, ${settings.label('interact')} leaves; 1.3s reload.`) : bilingual('已离开炮位。', 'Cannon released.')); return;
+  }
+  if (eraOptionalIds.has(m.id)) { if (canReachValleyPanel(m)) handleEraInteraction(m.id); return; }
   const bossCore = BOSSES.some((b) => b.core === m.id);
   if (done.has(m.id) && !bossCore) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
   const missing = done.has(m.id) && bossCore ? [] : (m.requires ?? []).filter((r) => !done.has(r));
@@ -918,6 +1124,7 @@ function interact() {
     return;
   }
   done.add(m.id);
+  if (m.id === FORT_CANNON.marker) { actions?.cancel(); fortCannon.toggle(player.pos, true); }
   if (m.id === ARMORY_MARKER) {
     // An old held trigger/ADS must not silently activate when the weapon is first collected.
     clearInput();
@@ -934,7 +1141,7 @@ function interact() {
     seam_east: '东部山口：海风里混着 1718 年的火药味',
     seam_south: '南方鸟居：鸟居那头的京都正在燃烧，1582 年的那一夜',
     blackbeard_meet: '「哈！又一个被冷灯招来的旱鸭子。」黑胡子答应：点亮海之核，就跟你签约',
-    fort_cannon: '大炮装填完毕：站在炮位上，射击海面上的幽灵小艇',
+    fort_cannon: bilingual(`大炮已装填：${settings.label('fire')} 炮击幽灵艇，1.3秒装填；${settings.label('interact')} 离开炮位。`, `Cannon loaded: ${settings.label('fire')} fires at ghost boats, 1.3s reload; ${settings.label('interact')} leaves.`),
     sea_core: '海之核重新燃起，冷灯熄灭了。风暴正在散去……',
     napoleon_meet: '「你也是被这场冬天困住的人吗？」拿破仑答应：点亮冬之核，就和你签约',
     winter_core: '冬之核重新燃起。雪停了，莫斯科上空第一次看见太阳……',
@@ -949,6 +1156,8 @@ function interact() {
     temple_altar: '星辉祭坛亮起，一道光柱直冲云霄',
     lighthouse_lamp: '守望灯塔重新点亮，光束扫过整片海岸',
   };
+  const eraReaction = getEraProgressReaction(m.id, done);
+  if (eraReaction) return toast(bilingual(...eraReaction));
   if (m.id.startsWith('hall_brazier_')) {
     const n = [1, 2, 3].filter((k) => done.has(`hall_brazier_${k}`)).length;
     return toast(n === 3 ? '三个火盆都燃起来了：圆桌中央浮现出王之碎片' : `火盆点燃 ${n}/3`);
@@ -961,6 +1170,10 @@ function interact() {
     const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
+  if (m.id === ARMORY_MARKER) return speakDialogue([
+    `步枪与短刃已领取。连射8发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。`,
+    `Rifle and blade acquired. Eight continuous shots trigger a short automatic vent; resting the trigger also cools the rifle.\n${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. The range is just ahead.`,
+  ], ['领取装备','Equipment acquired']);
   if (m.id === VALLEY_STORY.terminal) return toast(bilingual('观测终端已接通，生活馆门廊的导引灯亮了。回去看看记录员吧。', 'The Observatory terminal is online. The residence path lights are on; check back with the archivist.'));
   toast(m.id === ARMORY_MARKER ? bilingual('已领取曙光 AR 与弹药，去靶场试试手感', 'Dawn AR and ammunition acquired · Try the firing range')
     : msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
@@ -1010,14 +1223,26 @@ function frame(now: number) {
   last = now;
   acc += dt;
   if (!gameplayActive()) { keys.clear(); aim.clear(); }
+  audio.setActive(gameplayActive() || (!!narrative?.open && locked && document.visibilityState === 'visible' && document.hasFocus()));
+  fortCannon.update(dt, player.pos, gameplayActive() && !combat.defeated && !player.flying);
   const input = {
     x: combat.defeated ? 0 : Number(down('right')) - Number(down('left')),
     z: combat.defeated ? 0 : Number(down('forward')) - Number(down('back')),
     jump: !combat.defeated && down('jump'),
     sprint: !combat.defeated && down('sprint'),
+    evade: undefined as {x:number;z:number;strength:number}|undefined,
   };
   if (cold.frozen) { input.x *= 0.55; input.z *= 0.55; input.sprint = false; }
-  while (acc >= STEP) { player.step(STEP, input); acc -= STEP; }
+  while (acc + 1e-9 >= STEP) {
+    const active = gameplayActive() && !player.flying && !combat.defeated;
+    if (combat.defeated) { input.x = input.z = 0; input.jump = input.sprint = false; }
+    input.evade = active && actions?.evade.active ? { x: actions.evade.x, z: actions.evade.z, strength: Math.min(actions.evade.remaining, STEP) / STEP } : undefined;
+    combat.setDefense({ guard: active && actions?.skills.guarding ? .55 : 1, invulnerable: !!(active && actions && actions.evade.remaining > .10) });
+    player.step(STEP, input);
+    combat.simulate(STEP, player.pos, gameplayActive() && !player.flying);
+    actions?.update(STEP);
+    acc = Math.max(0, acc - STEP);
+  }
 
   const canAim = worldProgress.armed && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
@@ -1038,7 +1263,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, armed: worldProgress.armed, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire'), lookYaw: player.yaw + Math.PI });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, armed: worldProgress.armed, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw } : undefined });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -1066,15 +1291,17 @@ function frame(now: number) {
     camera.position.copy(focus).add(new THREE.Vector3(Math.sin(angle) * (big ? 5.5 : 3.6), .35, Math.cos(angle) * (big ? 5.5 : 3.6)));
     camera.lookAt(focus);
   } else inspectServant = false;
-  combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
+  combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
   const elite = gameplayActive() && !combat.defeated && !combat.bossStarted ? nearbyElite(combat.state.enemies, player.pos) : null;
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
-  renderContract();
+  actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
+  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); }
   settlements.update(player.pos);
-  settlementNpcs.update(gameplayActive() ? dt : 0, player.pos);
+  for (const site of eraStoryScenes) site.updateVisibility(player.pos);
+  settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -1088,14 +1315,15 @@ function frame(now: number) {
 
 
   checkDiscoveries();
+  if (gameplayActive() && discoverTravelStops(travelStops,player.pos.toArray(),travelContext(),found).length) { save(); hudRevision++; toast(bilingual(`已登记安全据点 · ${settings.label('travel')} 打开快速旅行。`,`Safe settlement registered · ${settings.label('travel')} opens fast travel.`)); }
   const area = layout.areas.find((a) => Math.hypot(player.pos.x - a.c[0], player.pos.z - a.c[1]) < a.r);
   if (area && area.id !== currentArea) showArea(area);
   currentArea = area?.id ?? '';
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
-  const npcPrompt = nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
-  $('prompt').textContent = npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
-    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || BOSSES.some(b => b.core === it.id)) ?
+  const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
+  $('prompt').textContent = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
+    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
@@ -1108,8 +1336,10 @@ function frame(now: number) {
   const tgt = guideOn ? guideTarget() : null;
   updateGuide(tgt, now);
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
-  map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
-  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt }); // big map stays readable: no monster dots
+  if (mapBudget.due(now, { active: true, revision: hudRevision })) {
+    map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
+    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt });
+  } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;
   shafts.update(camera, twilight.direction);
@@ -1120,12 +1350,12 @@ function frame(now: number) {
   frames++; fpsT += frameSeconds;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
   const info = renderer.info.render;
-  stats.textContent = bilingual(`${fps} 帧/秒 · ${dpr.toFixed(2)}× DPR · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${dpr.toFixed(2)}× DPR · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
+  if (statsBudget.due(now, { active: true, revision: hudRevision })) stats.textContent = bilingual(`${fps} 帧/秒 · ${dpr.toFixed(2)}× DPR · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${dpr.toFixed(2)}× DPR · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
     `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? bilingual(' · 飞行', ' · fly') : ''}${player.gliding ? bilingual(' · 滑翔', ' · glide') : ''}${player.swimming ? bilingual(' · 游泳', ' · swim') : ''}`;
   requestAnimationFrame(frame);
 }
 refreshWorldLocale = () => {
-  renderObjective(); renderControlHints(); renderContract();
+  hudRevision++; applyWorldState(); renderControlHints(); renderContract();
   const area = layout.areas.find((a) => a.id === currentArea);
   if (area) { $('area').querySelector('.zh')!.textContent = localizeText(area.name); $('area').querySelector('.en')!.textContent = bilingual(area.nameEn.toUpperCase(), 'PARHELION WORLD'); }
   // Transient combat/toast messages expire rather than retain a previous language.
@@ -1135,7 +1365,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {
@@ -1143,7 +1373,10 @@ void boot().catch((error: unknown) => {
   console.error('World boot failed', error);
   disposeRenderer();
   const message = error instanceof Error ? error.message : String(error);
-  setLoading(`地图加载失败：${message}。请检查网络后重试。`);
+  const failure = worldBootFailure(message);
+  setLoading(bilingual(...failure));
+  onLanguageChange(() => setLoading(bilingual(...failure)));
+  $('help').textContent = ''; $('settings-open').hidden = true; $('shot-mode').hidden = true;
   $('start').classList.remove('hidden');
   const retry = document.createElement('button');
   retry.id = 'retry';

@@ -37,7 +37,15 @@
 | 永冬之城 | 1812 | `/world/?region=winter` |
 | 业火京都 | 1582 | `/world/?region=kyoto` |
 
+## World 玩法迭代
+
+新增分章节主线与探索互动、敌人职责、近战连击/闪避、从者战技与终结技、安全据点旅行。
+默认新增按键：B 近战、Z 闪避、Q 战技、X 终结技、N 据点旅行、P 返回主线指引；自定义绑定优先保留。
+详见 [World 操作与玩法说明](docs/world/WORLD_EXPANSION_GUIDE_20261030.md)。
+
 ## 构建与运行（Node 22+）
+
+完整 World DOM 验证使用 Node 22.22.2+（22 LTS）或 24.15.0+（24 LTS）；GitHub Actions 跟随最新 Node 22。
 
 ```sh
 npm ci --prefix arena-game
@@ -46,7 +54,8 @@ cd site && npm run build      # 构建 Arena + World + 首页 → site/dist
 ```
 
 - 本机：双击 `启动 Parhelion.command`（http://127.0.0.1:4173/），`停止 Parhelion.command` 停止。
-- 公网：双击 `部署到公网.command`（发布 `site/dist/public` 到 Cloudflare Pages `parhelion-game`）；联机服务器用 `部署Arena服务器.command`。两者都需要本机已登录 wrangler。
+- 常规发布：推送 main 后由 GitHub Actions 依次测试、部署 Worker、冒烟测试和发布 Pages。World 回归测试失败也会阻止发布。
+- 手动公网发布：双击 `部署到公网.command`（发布 `site/dist/public` 到 Cloudflare Pages `parhelion-game`）；联机服务器用 `部署Arena服务器.command`。两者都需要本机已登录 wrangler。
 - 测试：`npm test --prefix arena-game`、`npm test --prefix world`、`npm test --prefix site`。
 
 部署细节与注意事项见 [发布交接](docs/release/DEPLOYMENT_HANDOFF.md)。

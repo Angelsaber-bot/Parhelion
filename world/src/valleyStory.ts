@@ -58,8 +58,8 @@ export function getValleyStoryGuide(done: ReadonlySet<string>): ValleyStoryGuide
     case 'report': return {
       title: ['灯已亮起', 'The Lights Are On'],
       text: getValleyStoryState(done).shortcutOpen
-        ? ['穿过已打开的侧门，看看灯亮后的庭院，再与记录员交谈。', 'Use the opened side entrance, see the relit court, and speak with the archivist.']
-        : ['看看灯亮后的生活馆庭院，与驻地记录员交谈。', 'See the relit residence court and speak with the archivist.'],
+        ? ['穿过侧门返回生活馆庭院，与记录员交谈。', 'Return through the side entrance to the residence court and speak with the archivist.']
+        : ['返回生活馆庭院，与驻地记录员交谈。', 'Return to the residence court and speak with the archivist.'],
       targetId: VALLEY_STORY.npc, targetKind: 'npc',
     };
     case 'complete': return null;
@@ -87,18 +87,18 @@ export function interactValleyStory(id: string, done: Set<string>): ValleyStoryI
     if (before.powered) {
       add(VALLEY_STORY.met); add(VALLEY_STORY.resolved);
       dialogue = !done.has('armory_rack')
-        ? ['亮了。以后从外面回来，看到这排灯，就知道这里还有人在等你。工坊备着装备，出发前去拿上；外面的路可不都这么安稳。', 'There they are. When you return, these lights will tell you someone is still waiting here. Pick up your equipment at the armory before heading out; not every road is this quiet.']
-        : ['检修侧门的灯已经亮着。这里会替你留一盏灯，继续你的旅程吧。', 'The maintenance entrance lights are on. We will keep a light on here; carry on with your journey.'];
+        ? ['亮了。以后夜里回来，认这排灯就行。工坊给你备了装备，走之前记得拿；外面的路可没这么平。', 'There they are. Follow those lights when you return after dark. Your equipment is at the armory; collect it before you leave. The roads outside are rougher than this one.']
+        : ['侧门的灯亮着呢。放心走，这边有人守。', 'The side-entrance lights are on. Go on; someone will keep watch here.'];
     } else if (before.legacyAdvanced) {
       // Preserve out-of-order advanced saves too. Never invent terminal completion or equipment.
-      dialogue = ['观测所的终端仍能接通检修侧门的路灯。你已经走得很远，不必为这件事停下；路过时再看看就好。', 'The Observatory terminal can still power the maintenance entrance lights. You have already come a long way; check it when you next pass through.'];
+      dialogue = ['侧门那排灯，还得从观测所的终端接电。你若正好路过，替我看看；别特意折返。', 'The side-entrance lights still need power from the Observatory terminal. Check it if you pass that way; do not turn back just for me.'];
     } else if (!done.has(VALLEY_STORY.met)) {
       add(VALLEY_STORY.met);
       dialogue = before.discovered
         ? ['你已经把侧门打开了？比我利索。再帮个忙，去观测所接通终端吧。天黑后回来的人，总找不着这扇门。', 'You opened the side entrance yourself? Faster than me. Could you reconnect the Observatory terminal too? People returning after dark keep missing this door.']
         : ['门闩老卡住，别硬挤。我替你把检修侧门打开了。能帮我去观测所接通终端吗？天黑后回来的人，总找不着这扇门。', 'The latch keeps sticking. Do not squeeze through; I have opened the maintenance entrance for you. Could you reconnect the Observatory terminal? People returning after dark keep missing this door.'];
     } else {
-      dialogue = ['侧门已经开着，你可以直接通行。检修灯的供电终端在观测所，不用另找零件；灯亮后，这扇侧门也不再黑着了。', 'The side entrance is open for you. The maintenance-light terminal is at the Observatory; no spare parts are needed. It will light this side entrance.'];
+      dialogue = ['侧门开着，直接过吧。线路还好，去观测所接通终端就行。夜里回来的人，就差这点光。', 'The side entrance is open; go through. The wiring is sound. Just reconnect the Observatory terminal. That little light will help people find their way home.'];
     }
   } else if (id === VALLEY_STORY.discovery) {
     add(VALLEY_STORY.discovery);

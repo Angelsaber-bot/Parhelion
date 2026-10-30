@@ -1,5 +1,7 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['安全据点旅行','Safe settlement travel'], ['返回主线指引','Track main story'], ['战技','Skill'], ['终结技','Ultimate'], ['近战连击','Melee combo'], ['闪避','Evade'],
+
   ['CAM LANN 誓约荒原', 'CAM LANN Oathfield'],
   ['BLACKFLAG 黑帆战舰', 'BLACKFLAG Battle Galleon'],
   ['FROSTCOURT 永冬庭院', 'FROSTCOURT Winter Courtyard'],

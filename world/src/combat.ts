@@ -1,18 +1,22 @@
+import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
+import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
+import { ERA_BOSS_REQUIREMENTS } from './eraStories';
 import { minibossProfile } from './minibosses';
-import { regionAt } from './regions';
+import { ENEMY_ROLES, selectEnemyRole, type EnemyRole } from './enemyRoles';
 /** Small, local World encounter simulation. No networking/Arena rules are changed. */
 export interface Point3 { x: number; y: number; z: number }
 export type EnemyKind = 'shade' | 'crystal' | 'king';
-export type EnemyMode = 'idle' | 'chase' | 'windup' | 'recover' | 'dead';
-export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string }
+export type EnemyMode = 'idle' | 'chase' | 'windup' | 'recover' | 'stagger' | 'pacified' | 'dead';
+export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string; role?: EnemyRole; encounter?: 'akechi' }
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
-  active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot'; target: Point3;
-  attackCount: number; hitTime: number;
+  active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
+  attackCount: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean;
 }
 export type CombatEvent =
-  | { type: 'hit'; id: string; damage: number }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean }
   | { type: 'kill'; id: string }
+  | { type: 'stagger'; id: string }
   | { type: 'hurt'; damage: number }
   | { type: 'victory'; id: string; firstClear: boolean }
   | { type: 'bossStart' | 'bossReset' | 'phase' | 'death' | 'revive' };
@@ -22,19 +26,19 @@ export interface CombatTerrain {
   lineOfSight(from: Point3, to: Point3): boolean;
 }
 export const COMBAT = {
-  playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
+  playerHp: 100, shotDamage: 16, shotInterval: 0.14, shotRange: 150, shotBurst: 8, shotVent: 1.1, meleePunish: 2,
   wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 35, bossLeash: 68, bossHp: 1800,
 } as const;
-export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
+export const BOSS_REQUIREMENTS = ERA_BOSS_REQUIREMENTS.sun_core;
 export const BOSS_REWARD = 'reward_sunset_oath';
 /** One sun-core boss per era: the marker it stands on, the core that starts it, what it needs and grants. */
 export interface BossDef { id: string; core: string; requires: readonly string[]; reward: string }
 export const BOSSES: BossDef[] = [
   { id: 'boss_vacant_king', core: 'sun_core', requires: BOSS_REQUIREMENTS, reward: BOSS_REWARD },
-  { id: 'boss_drowned_admiral', core: 'sea_core', requires: ['shard_powder', 'shard_compass', 'shard_treasure'], reward: 'reward_black_sail' },
-  { id: 'boss_winter_warden', core: 'winter_core', requires: ['shard_eagle', 'shard_bell', 'shard_frost'], reward: 'reward_last_eagle' },
-  { id: 'boss_hellfire_lord', core: 'fire_core', requires: ['shard_kinkaku', 'shard_kiyomizu', 'shard_kikyo'], reward: 'reward_two_heavens' },
+  { id: 'boss_drowned_admiral', core: 'sea_core', requires: ERA_BOSS_REQUIREMENTS.sea_core, reward: 'reward_black_sail' },
+  { id: 'boss_winter_warden', core: 'winter_core', requires: ERA_BOSS_REQUIREMENTS.winter_core, reward: 'reward_last_eagle' },
+  { id: 'boss_hellfire_lord', core: 'fire_core', requires: ERA_BOSS_REQUIREMENTS.fire_core, reward: 'reward_two_heavens' },
 ];
 export interface BossSpawn extends SpawnPoint { requires?: readonly string[]; cleared?: boolean }
 export const distanceXZ = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
@@ -137,27 +141,53 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
 function makeEnemy(s: SpawnPoint): Enemy {
   const maxHp = s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
-    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, hitTime: 0 };
+    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
 }
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
-export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'>): boolean {
-  if (e.kind === 'king' || e.miniboss || regionAt(e.home.x, e.home.z).id !== 'winter') return false;
-  return [...e.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 0) % 3 !== 0;
+export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'> & { role?: EnemyRole }): boolean {
+  return e.kind !== 'king' && !e.miniboss && (e.role ?? selectEnemyRole(e)) === 'musketeer';
 }
 /** Shared by simulation and renderer: telegraphs must show the actual damage footprint. */
 export function enemyAttackRadius(e: Enemy): number {
   if (e.attack === 'shot') return 1.4;
+  if (e.attack === 'thrust') return e.kind === 'king' ? 1.2 : ENEMY_ROLES[e.role].radius;
   if (e.kind === 'king') return e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5;
-  return minibossProfile(e)?.radius ?? 2.4;
+  return minibossProfile(e)?.radius ?? ENEMY_ROLES[e.role].radius;
+}
+
+const ELITE_PAIRED_TIMING = { windup: 1, recovery: .55 } as const;
+const DUELIST_FIRST_TIMING = { windup: .85, recovery: .45 } as const;
+const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
+const ENEMY_TURNS = [0] as const;
+export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3 }
+
+/** Thrust tells and impact share a forward rectangle, never a tracking/homing hit. */
+export function enemyThrustLength(e: Enemy): number { return e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1; }
+export function enemyAttackContains(e: Enemy, player: Point3): boolean {
+  if (e.attack !== 'thrust') {
+    const center = e.attack === 'sweep' ? e.p : e.target;
+    return distanceXZ(center, player) < enemyAttackRadius(e) && Math.abs(player.y - center.y) < 2.6;
+  }
+  const dx = e.target.x - e.p.x, dz = e.target.z - e.p.z, length = Math.hypot(dx, dz);
+  const ux = length > .001 ? dx / length : 0, uz = length > .001 ? dz / length : 1;
+  const px = player.x - e.p.x, pz = player.z - e.p.z;
+  const along = px * ux + pz * uz, across = px * uz - pz * ux;
+  return along >= 0 && along < enemyThrustLength(e) && Math.abs(across) < enemyAttackRadius(e) && Math.abs(player.y - e.p.y) < 2.6;
+}
+/** Rifle still interacts with distant quest targets; only enemy damage falls off. */
+export function rangedDamageMultiplier(distance: number): number {
+  if (!Number.isFinite(distance)) return .45;
+  return Math.max(.45, 1 - Math.min(1, Math.max(0, (distance - 18) / 47)) * .55);
 }
 
 /** Timings are shared with animation playback; each slash in a pair has its own full tell. */
 export function enemyAttackTiming(e: Enemy): { windup: number; recovery: number } {
-  if (e.kind === 'king') return { windup: e.phase === 2 ? 1 : 1.4, recovery: e.phase === 2 ? .65 : 1 };
+  if (e.kind === 'king') return bossAttackTiming(e);
   const elite = minibossProfile(e);
-  if (elite) return { windup: elite.windup, recovery: elite.paired && e.attackCount % 2 === 1 ? .55 : elite.recovery };
-  return e.attack === 'shot' ? { windup: 1.2, recovery: 2 } : { windup: .65, recovery: 1 };
+  if (elite) return elite.paired && e.attackCount % 2 === 1 ? ELITE_PAIRED_TIMING : elite;
+  const role = ENEMY_ROLES[e.role];
+  return role.paired && e.attackCount % 2 === 1 ? DUELIST_FIRST_TIMING : role;
 }
 
 export class WorldCombatState {
@@ -171,9 +201,24 @@ export class WorldCombatState {
   defeatedFor = 0;
   bossStarted = false;
   shotCooldown = 0;
+  gunHeat = 0;
+  gunVent = 0;
+  private gunIdleFor = 0;
   hurtCooldown = 0;
   quietFor = 0;
+  private guardMultiplier = 1;
+  private invulnerable = false;
+  private trialPending = false;
+  private trialReplay = false;
+  private readonly knight: Enemy | undefined;
+  private relayPacified = false;
+  private roadPacified = false;
+  private readonly roadEnemies: Enemy[];
+  private readonly relayEnemies: Enemy[];
+  quietKyotoRoute = false;
   private readonly events: CombatEvent[] = [];
+  private readonly sightFrom: Point3 = { x: 0, y: 0, z: 0 };
+  private readonly sightTo: Point3 = { x: 0, y: 0, z: 0 };
   constructor(spawns: SpawnPoint[], boss: BossSpawn | BossSpawn[], cleared = false) {
     const list = [boss].flat();
     this.enemies = spawns.slice(0, COMBAT.wildernessCap).map(makeEnemy);
@@ -181,6 +226,9 @@ export class WorldCombatState {
     this.requires = list.map(b => b.requires ?? BOSS_REQUIREMENTS);
     this.cleared = list.map(b => b.cleared ?? cleared);
     this.enemies.push(...this.bosses);
+    this.knight = this.enemies.find(e => e.id === KNIGHT_TRIAL_ID);
+    this.roadEnemies = this.enemies.filter(e => e.id === 'wild_56' || e.id === 'wild_56b');
+    this.relayEnemies = this.enemies.filter(e => e.id === 'wild_48' || e.id === 'wild_48b');
     this.bosses.forEach((b, i) => { if (this.cleared[i]) { b.hp = 0; b.mode = 'dead'; } });
   }
   get boss() { return this.bosses[this.current]; }
@@ -188,6 +236,11 @@ export class WorldCombatState {
   isCleared(id: string) { const i = this.bosses.findIndex(b => b.id === id); return i >= 0 && this.cleared[i]; }
   drainEvents() { return this.events.splice(0); }
   get defeated() { return this.defeatedFor > 0; }
+  setBossRequirements(id: string, requirements: readonly string[]) {
+    const index = this.bosses.findIndex(b => b.id === id);
+    if (index < 0 || this.bossStarted) return false;
+    this.requires[index] = requirements; return true;
+  }
   /** Start a boss fight (the first boss when no id is given) once its requirements are done. */
   beginBoss(done: ReadonlySet<string>, id?: string) {
     const i = id === undefined ? 0 : this.bosses.findIndex(b => b.id === id);
@@ -197,16 +250,16 @@ export class WorldCombatState {
     this.resetEnemy(this.boss);
     this.boss.active = true; this.boss.mode = 'chase'; this.boss.timer = 1.4;
     this.bossStarted = true; this.hp = COMBAT.playerHp; this.quietFor = 0;
-    this.shotCooldown = 0; this.hurtCooldown = 0;
+    this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
     this.events.push({ type: 'bossStart' });
     return true;
   }
   /** `cleared` applies to every boss, or pass a per-boss list (same order as the constructor). */
   resetAll(cleared: boolean | boolean[] = false) {
-    this.bossStarted = false;
-    this.current = 0; this.quietFor = 0;
-    this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.hurtCooldown = 0;
-    for (const e of this.enemies) this.resetEnemy(e);
+    this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
+    this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
+    this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
+    for (const e of this.enemies) { e.pacified = false; this.resetEnemy(e); }
     this.bosses.forEach((b, i) => {
       this.cleared[i] = Array.isArray(cleared) ? !!cleared[i] : cleared;
       if (this.cleared[i]) { b.hp = 0; b.mode = 'dead'; }
@@ -214,27 +267,66 @@ export class WorldCombatState {
     this.events.length = 0;
   }
   private resetEnemy(e: Enemy) {
-    e.p = clone(e.home); e.hp = e.maxHp; e.mode = 'idle'; e.timer = 0; e.active = false;
-    e.target = clone(e.home); e.attack = 'sweep';
-    e.phase = 1; e.attackCount = 0; e.hitTime = 0;
+    Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
+    Object.assign(e.target, e.home); e.attack = 'sweep';
+    e.phase = 1; e.attackCount = 0; e.hitTime = 0; e.staggerCooldown = 0;
   }
   resetBoss() {
     if (!this.bossStarted) return;
     this.bossStarted = false; this.resetEnemy(this.boss); this.events.push({ type: 'bossReset' });
   }
+  syncWorldFlags(done: ReadonlySet<string>) {
+    this.quietKyotoRoute = done.has('kyoto_lantern_route');
+    if (done.has(KNIGHT_TRIAL_CLEAR) && !this.trialReplay && this.knight?.mode !== 'dead') this.retireOptionalTrial();
+    const safeRoad = done.has(KNIGHT_TRIAL_CLEAR);
+    if (safeRoad !== this.roadPacified) {
+      this.roadPacified = safeRoad;
+      for (const enemy of this.roadEnemies) { enemy.pacified = safeRoad; enemy.hp = enemy.maxHp; enemy.mode = safeRoad ? 'pacified' : 'idle'; enemy.timer = 0; }
+    }
+    const pacified = done.has('relay_b');
+    if (pacified === this.relayPacified) return;
+    this.relayPacified = pacified;
+    for (const enemy of this.relayEnemies) {
+      enemy.pacified = pacified;
+      // A repaired relay can restore a damaged shell peacefully; no kill/damage/reward event.
+      enemy.hp = enemy.maxHp; enemy.mode = pacified ? 'pacified' : 'idle'; enemy.timer = 0;
+    }
+  }
+  retireOptionalTrial() {
+    const enemy = this.knight;
+    if (!enemy) return false;
+    enemy.hp = 0; enemy.mode = 'dead'; enemy.active = false; enemy.timer = Infinity; return true;
+  }
+  startOptionalTrial(id: string): boolean {
+    const enemy = this.enemies.find(e => e.id === id && e.miniboss === KNIGHT_TRIAL_ID);
+    if (id !== KNIGHT_TRIAL_ID || !enemy || this.bossStarted || this.defeated || this.trialPending || !['idle', 'dead'].includes(enemy.mode)) return false;
+    this.trialPending = true; this.trialReplay = true; return true;
+  }
+  recoverAtSettlement(amount: number): boolean {
+    if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return false;
+    this.hp = Math.min(COMBAT.playerHp, this.hp + Math.min(25, amount)); return true;
+  }
   canShoot() {
-    if (this.defeated || this.shotCooldown > 0) return false;
-    this.shotCooldown = COMBAT.shotInterval;
+    if (this.defeated || this.shotCooldown > 1e-9 || this.gunVent > 1e-9) return false;
+    // Carry a small render-frame overrun during held fire, never bank free shots after idle/vent.
+    this.shotCooldown = this.gunHeat === 0 || this.gunIdleFor > COMBAT.shotInterval * 2 ? COMBAT.shotInterval : Math.max(1e-6, this.shotCooldown + COMBAT.shotInterval);
+    this.gunIdleFor = 0;
+    this.gunHeat++;
+    if (this.gunHeat >= COMBAT.shotBurst) this.gunVent = COMBAT.shotVent;
     return true;
   }
-  hitEnemy(id: string, damage: number = COMBAT.shotDamage) {
+  hitEnemy(id: string, damage: number = COMBAT.shotDamage, context?: HitContext) {
     const e = this.enemies.find(e => e.id === id);
-    if (!e || !e.active || e.mode === 'dead' || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
-    const dealt = Math.min(e.hp, damage);
+    if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
+    // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
+    const melee = context?.source === 'melee';
+    const punish = melee && e.mode === 'recover' && e.staggerCooldown <= 0;
+    const dealt = Math.min(e.hp, Math.round(damage * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish });
     if (e.hp <= 0) {
-      e.mode = 'dead'; e.timer = e.miniboss ? 120 : COMBAT.respawn; e.active = false;
+      e.mode = 'dead'; e.timer = e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
+      if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
       this.events.push({ type: 'kill', id });
       if (e === this.boss) {
         const firstClear = !this.cleared[this.current];
@@ -242,6 +334,10 @@ export class WorldCombatState {
         this.events.push({ type: 'victory', id: e.id, firstClear });
       }
     } else {
+      if (melee && !e.miniboss && e.kind !== 'king' && e.mode === 'windup' && e.staggerCooldown <= 0) {
+        e.mode = 'stagger'; e.timer = .9; e.staggerCooldown = 4;
+        this.events.push({ type: 'stagger', id });
+      }
       if (e.mode === 'idle') e.mode = 'chase';
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
         e.phase = 2; e.mode = 'recover'; e.timer = 1.2;
@@ -257,7 +353,7 @@ export class WorldCombatState {
     if (!length || !Number.isFinite(length)) return best;
     const d = { x: direction.x / length, y: direction.y / length, z: direction.z / length };
     for (const e of this.enemies) {
-      if (!e.active || e.mode === 'dead') continue;
+      if (!e.active || e.mode === 'dead' || e.pacified) continue;
       const radius = e.kind === 'king' ? 1.45 : 0.8;
       const center = { x: e.p.x, y: e.p.y + (e.kind === 'king' ? 1.8 : 1.05), z: e.p.z };
       const x = origin.x - center.x, y = origin.y - center.y, z = origin.z - center.z;
@@ -270,20 +366,31 @@ export class WorldCombatState {
     }
     return best;
   }
+  /** Supplied by the active player action each frame; pause/reset must clear defense. */
+  setDefense(defense: { guard: number; invulnerable: boolean }) {
+    this.guardMultiplier = Number.isFinite(defense.guard) ? Math.min(1, Math.max(.55, defense.guard)) : 1;
+    this.invulnerable = defense.invulnerable === true && !this.defeated;
+  }
   private hurt(amount: number) {
-    if (this.hurtCooldown > 0 || this.defeated) return;
+    if (this.hurtCooldown > 0 || this.defeated || this.invulnerable) return;
+    amount = Math.min(this.hp, Math.round(amount * this.guardMultiplier * 100) / 100);
     this.hp = Math.max(0, this.hp - amount); this.hurtCooldown = 0.45; this.quietFor = 0;
     this.events.push({ type: 'hurt', damage: amount });
     if (!this.hp) {
-      this.defeatedFor = 2.5; this.resetBoss();
+      this.defeatedFor = 2.5; this.setDefense({ guard: 1, invulnerable: false }); this.resetBoss();
       for (const e of this.enemies) if (!this.bosses.includes(e) && e.mode !== 'dead') this.resetEnemy(e);
       this.events.push({ type: 'death' });
     }
   }
   step(dt: number, player: Point3, active: boolean, terrain: CombatTerrain) {
-    if (!active || !Number.isFinite(dt) || dt <= 0) return;
+    if (!active) { this.setDefense({ guard: 1, invulnerable: false }); return; }
+    if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.1);
-    this.shotCooldown = Math.max(0, this.shotCooldown - dt);
+    this.shotCooldown = Math.max(-COMBAT.shotInterval, this.shotCooldown - dt);
+    this.gunIdleFor += dt;
+    this.gunVent = Math.max(0, this.gunVent - dt);
+    if (this.gunVent <= 1e-9) this.gunVent = 0;
+    if (!this.gunVent && this.gunIdleFor + 1e-9 >= COMBAT.shotVent) this.gunHeat = 0;
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
     if (this.defeated) {
       this.defeatedFor = Math.max(0, this.defeatedFor - dt);
@@ -291,9 +398,17 @@ export class WorldCombatState {
       return;
     }
     if (this.bossStarted && (distanceXZ(player, this.boss.home) > COMBAT.bossLeash || Math.abs(player.y - this.boss.home.y) > 24)) this.resetBoss();
+    if (this.trialPending) {
+      const trial = this.knight;
+      const distance = trial ? distanceXZ(trial.home, player) : Infinity;
+      if (trial && distance >= 8 && distance <= 28 && !this.bossStarted) { this.resetEnemy(trial); this.trialPending = false; }
+    }
+    const knight = this.knight;
+    const dueling = !!knight && knight.mode !== 'idle' && knight.mode !== 'dead' && distanceXZ(player, knight.home) < 25;
     let threatened = false;
     for (const e of this.enemies) {
       e.hitTime = Math.max(0, e.hitTime - dt);
+      e.staggerCooldown = Math.max(0, e.staggerCooldown - dt);
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
@@ -303,45 +418,43 @@ export class WorldCombatState {
       }
       if (dist > COMBAT.hideRange) { this.resetEnemy(e); continue; }
       e.active = dist < COMBAT.activeRange;
-      if (!e.active) continue;
+      if (!e.active || e.pacified) continue;
       const heightOk = Math.abs(player.y - e.p.y) < (e === this.boss ? 8 : 3);
-      const from = { x: e.p.x, y: e.p.y + 1.2, z: e.p.z };
-      const to = { x: player.x, y: player.y + 1, z: player.z };
+      const from = this.sightFrom, to = this.sightTo;
+      from.x = e.p.x; from.y = e.p.y + 1.2; from.z = e.p.z;
+      to.x = player.x; to.y = player.y + 1; to.z = player.z;
       const sees = heightOk && terrain.lineOfSight(from, to);
-      if (e.mode === 'idle') { if (dist < COMBAT.aggroRange && sees) e.mode = 'chase'; else continue; }
+      // The nearby road pair yield the named duel; they do not pile onto its long tells.
+      if (dueling && (e.id === 'wild_56' || e.id === 'wild_56b')) { e.mode = 'idle'; e.timer = 0; continue; }
+      const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x < -213 && player.z < 870;
+      const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26 : COMBAT.aggroRange;
+      if (e.mode === 'idle') { if (dist < aggroRange && sees) e.mode = 'chase'; else continue; }
       if (e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash)) { this.resetEnemy(e); continue; }
       threatened = true;
       e.timer -= dt;
       if (e.mode === 'windup') {
         if (e.timer <= 0) {
-          const radius = enemyAttackRadius(e);
-          const center = e.attack !== 'sweep' ? e.target : e.p;
-          if (distanceXZ(center, player) < radius && Math.abs(player.y - center.y) < 2.6 && sees) this.hurt(e === this.boss ? e.phase === 2 ? 32 : 25 : minibossProfile(e)?.damage ?? (e.attack === 'shot' ? 14 : 12));
+          if (enemyAttackContains(e, player) && sees) this.hurt(e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
           e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery;
         }
         continue;
       }
-      if (e.mode === 'recover') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = 0.25; } continue; }
+      if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = 0.25; } continue; }
       const isBoss = e === this.boss, elite = minibossProfile(e);
-      // Muskets aim at a locked point rather than tracking the player through a dodge.
-      if (isMusketeer(e) && sees && dist < 24 && e.timer <= 0) {
-        e.attack = 'shot'; e.target = clone(player); e.attackCount++;
-        e.mode = 'windup'; e.timer = 1.2;
-        continue;
-      }
-      const meleeRange = isBoss ? 6 : elite?.range ?? 2;
-      if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40 && e.attackCount % 2 === 0)) {
-        e.attack = elite?.attack ?? (isBoss && dist >= meleeRange ? 'burst' : 'sweep');
-        e.target = clone(player); e.attackCount++;
+      const role = ENEMY_ROLES[e.role];
+      const meleeRange = isBoss ? 6 : elite?.range ?? role.range;
+      if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40)) {
+        e.attack = elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
+        Object.assign(e.target, player); e.attackCount++;
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
         continue;
       }
       if (dist > 1.7 && (sees || isBoss && heightOk)) {
-        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite?.speed ?? 3.2;
+        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite?.speed ?? role.speed;
         const step = Math.min(speed * dt, dist - 1.7);
         const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x);
         // A few local alternatives let the king skirt ruined pillars; never phase through them.
-        for (const turn of isBoss ? [0, 0.8, -0.8, 1.3, -1.3] : [0]) {
+        for (const turn of isBoss ? BOSS_TURNS : ENEMY_TURNS) {
           const p = terrain.walk(e.p, e.p.x + Math.cos(angle + turn) * step, e.p.z + Math.sin(angle + turn) * step);
           if (p) { e.p = p; break; }
         }

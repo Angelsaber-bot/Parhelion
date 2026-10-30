@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { VisibleEnemyRoot } from '../src/visibleEnemyRoot.ts';
 import * as THREE from 'three';
 import type { Layout } from '../src/types.ts';
 
@@ -124,4 +125,169 @@ test('hit feedback stays at the impact point as tiny camera-facing streaks, neve
   internals.sparkMat.addEventListener('dispose', () => materialDisposals++);
   combat.dispose(); combat.dispose();
   assert.equal(geometryDisposals, 1); assert.equal(materialDisposals, 1);
+});
+
+test('thrust visual corners match the simulation rectangle for every facing', async () => {
+  const { enemyAttackContains, enemyThrustLength, enemyAttackRadius } = await import('../src/combat.ts');
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(['saber_contract', 'shard_camp', 'shard_tower', 'shard_table']), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  combat.beginBoss();
+  const e = combat.state.boss, v = (combat as any).visuals.get(e.id);
+  e.mode = 'windup'; e.attack = 'thrust'; e.timer = 1;
+  for (const [x, z] of [[1, 0], [0, 1], [-1, 0], [0, -1], [.6, .8]]) {
+    e.target.x = e.p.x + x * 5; e.target.z = e.p.z + z * 5;
+    combat.update(.001, e.p, true);
+    assert.equal(v.tell.geometry.type, 'PlaneGeometry');
+    assert.equal(v.tell.scale.x, enemyAttackRadius(e)); assert.equal(v.tell.scale.y, enemyThrustLength(e));
+    v.tell.updateMatrixWorld(true);
+    for (const [localX, localY] of [[.9, .4], [-.9, -.4]]) {
+      const point = v.tell.localToWorld(new THREE.Vector3(localX, localY, 0)); point.y = e.p.y;
+      assert.equal(enemyAttackContains(e, point), true, `inside rendered tell ${x},${z}`);
+    }
+    const outside = v.tell.localToWorld(new THREE.Vector3(1.1, 0, 0)); outside.y = e.p.y;
+    assert.equal(enemyAttackContains(e, outside), false, 'outside tell does not hit');
+  }
+  e.attack = 'sweep'; combat.update(.001, e.p, true); assert.equal(v.tell.geometry.type, 'CircleGeometry');
+  combat.dispose();
+});
+
+test('contact API reports actual capped damage, source and kills but never inactive or admin energy', () => {
+  const damage: any[] = [], kills: string[] = [];
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(['saber_contract', 'shard_camp', 'shard_tower', 'shard_table']), toast() {}, onVictory() {}, onPlayerDefeated() {}, onDamage: hit => damage.push(hit), onKill: id => kills.push(id) });
+  combat.beginBoss(); combat.update(.001, { x: 0, y: 2, z: -2 }, true);
+  const e = combat.state.boss;
+  combat.state.hitEnemy(e.id, 1); combat.update(.001, e.p, true);
+  assert.equal(damage.length, 0, 'raw simulation/admin damage never charges skills');
+  const strike = { origin: { x: 0, y: 2, z: -2 }, direction: { x: 0, y: 0, z: 1 }, range: 3, halfWidth: 1, damage: 30, maxTargets: 1 };
+  const hit = combat.applyStrike(strike, 'melee');
+  assert.equal(hit.damage, 30); assert.equal(damage[0].source, 'melee'); assert.equal(damage[0].eligible, true);
+  combat.update(.001, e.p, false); assert.equal(combat.applyStrike(strike, 'melee').damage, 0, 'paused contact canceled');
+  combat.update(.001, e.p, true); e.hp = 7;
+  const killed = combat.applyStrike(strike, 'ultimate');
+  assert.equal(killed.damage, 7); assert.deepEqual(killed.kills, [e.id]); assert.deepEqual(kills, [e.id]);
+  assert.equal(damage.at(-1).damage, 7); assert.equal(damage.at(-1).source, 'ultimate');
+  assert.equal(combat.applyStrike(strike, 'melee').damage, 0, 'dead targets cannot farm energy');
+  combat.dispose();
+});
+
+test('actual hurt callback fires once per resolved impact, never for guarded immunity or per-frame HUD', () => {
+  const hurt: number[] = [];
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(['saber_contract', 'shard_camp', 'shard_tower', 'shard_table']), toast() {}, onVictory() {}, onPlayerDefeated() {}, onHurt: damage => hurt.push(damage) });
+  combat.beginBoss(); const e = combat.state.boss;
+  e.mode = 'windup'; e.attack = 'sweep'; e.timer = .01;
+  combat.setDefense({ guard: .55, invulnerable: false }); combat.update(.05, e.p, true);
+  assert.deepEqual(hurt, [13.75]);
+  combat.update(.01, e.p, true); assert.equal(hurt.length, 1);
+  e.mode = 'windup'; e.timer = .01; combat.state.hurtCooldown = 0;
+  combat.setDefense({ guard: 1, invulnerable: true }); combat.update(.05, e.p, true);
+  assert.equal(hurt.length, 1, 'evaded hit produces no hurt sound callback');
+  combat.dispose();
+});
+
+test('120Hz facade calls retain20Hz AI and leave all presentation work to one render pass', () => {
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(['saber_contract', 'shard_camp', 'shard_tower', 'shard_table']), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  combat.beginBoss();
+  let steps = 0, los = 0, assetUpdates = 0;
+  const originalStep = combat.state.step.bind(combat.state);
+  combat.state.step = (...args) => { steps++; originalStep(...args); };
+  combat.geometry.terrain.lineOfSight = () => { los++; return true; };
+  combat.geometry.terrain.walk = (_p, x, z) => ({ x, y: 2, z });
+  const internal = combat as any, originalAssets = internal.enemyAssets.update.bind(internal.enemyAssets);
+  internal.enemyAssets.update = (...args: unknown[]) => { assetUpdates++; return originalAssets(...args); };
+  const player = { x: 12, y: 2, z: 0 };
+  for (let i = 0; i < 120; i++) combat.simulate(1 / 120, player, true);
+  assert.equal(steps, 20); assert.equal(los, 20); assert.equal(assetUpdates, 0, 'no model/LOD updates in physics loop');
+  combat.present(1 / 60, player, true); assert.equal(steps, 20, 'present never advances combat'); assert.ok(assetUpdates > 0);
+  for (let i = 0; i < 120; i++) combat.simulate(1 / 120, player, false);
+  assert.equal(steps, 20, 'paused simulation performs no AI or terrain queries');
+  combat.dispose();
+});
+
+// CPU matrix correctness audit; not a GPU/FPS claim.
+function assertFreshSubtree(root: THREE.Object3D) {
+  root.traverse(node => {
+    const expected = node.parent ? new THREE.Matrix4().multiplyMatrices(node.parent.matrixWorld, node.matrix) : node.matrix;
+    assert.deepEqual(node.matrixWorld.elements, expected.elements, `${node.name || node.type}: first visible frame refreshes descendants`);
+  });
+}
+test('production hidden enemy roots skip traversal but first visible render refreshes moved fallback; explicit world queries remain valid', () => {
+  const scene = new THREE.Scene();
+  const combat = new WorldCombat({ scene, colliders: [], layout, done: new Set(), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  const e = combat.state.boss;
+  combat.state.bossStarted = true;
+  const v = (combat as any).visuals.get(e.id);
+  assert.ok(v.root instanceof VisibleEnemyRoot);
+  combat.present(0, e.p, false); scene.updateMatrixWorld(true);
+  assert.equal(v.root.visible, true); assertFreshSubtree(v.root);
+  const old = v.body.matrixWorld.clone();
+  let childVisits = 0;
+  const original = v.body.updateMatrixWorld;
+  v.body.updateMatrixWorld = function(force?: boolean) { childVisits++; original.call(this, force); };
+  e.p.x += 7; e.p.y += 2; e.p.z -= 3;
+  combat.present(0, {x:e.p.x + 1000,y:e.p.y,z:e.p.z}, false);
+  v.body.rotation.y = .7;
+  scene.position.set(3,4,5); scene.updateMatrixWorld(true);
+  assert.equal(v.root.visible, false); assert.equal(childVisits, 0);
+  assert.deepEqual(v.body.matrixWorld.elements, old.elements, 'hidden descendants intentionally keep stale matrices');
+  const queried = v.root.getWorldPosition(new THREE.Vector3());
+  assert.deepEqual(queried.toArray(), [e.p.x + 3,e.p.y + 4,e.p.z + 5]);
+  combat.present(0, e.p, false); scene.updateMatrixWorld();
+  assert.equal(v.root.visible, true); assert.ok(childVisits > 0); assertFreshSubtree(v.root);
+  assert.deepEqual(v.root.position.toArray(), [e.p.x,e.p.y,e.p.z]);
+  combat.dispose(); assert.equal(scene.children.length, 0);
+});
+test('production hidden roots allow late real GLB attachment, death release, revival and reset without stale first-frame bones', async () => {
+  const { parseLocalGlb } = await import('./player-fixture.ts');
+  const scene = new THREE.Scene();
+  const combat = new WorldCombat({ scene, colliders: [], layout, done: new Set(['saber_contract','hall_brazier_1']), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  const e = combat.state.boss, internal = combat as any, v = internal.visuals.get(e.id), assets = internal.enemyAssets;
+  assert.ok(v.root instanceof VisibleEnemyRoot);
+  let loaded: ((gltf: unknown) => void) | undefined;
+  assets.loader.load = (_url: string, callback: (gltf: unknown) => void) => { loaded = callback; };
+  assert.equal(combat.beginBoss(), true);
+  combat.present(0,e.p,false); scene.updateMatrixWorld(true);
+  assert.ok(loaded, 'visible root requests model');
+  combat.present(0,{x:1000,y:0,z:1000},false); scene.updateMatrixWorld(true);
+  assert.equal(v.root.visible,false); assert.equal(assets.instances.size,0);
+  const gltf = await parseLocalGlb(new URL('../public/assets/enemies/sunward_guard.glb',import.meta.url));
+  loaded!(gltf);
+  assert.equal(assets.instances.size,0,'late callback only caches template while hidden');
+  e.p.x += 4;
+  combat.present(0,e.p,false); scene.updateMatrixWorld();
+  let instance = assets.instances.get(e.id);
+  assert.ok(instance); assert.equal(instance.root.parent,v.body); assertFreshSubtree(v.root);
+  let skins = 0;
+  instance.root.traverse((node: THREE.Object3D) => { if(node instanceof THREE.SkinnedMesh) { skins++; node.skeleton.update(); assert.ok(Array.from(node.skeleton.boneMatrices).every(Number.isFinite)); } });
+  assert.ok(skins > 0,'real loaded rig validated');
+  const releasedRoot = instance.root;
+  e.mode = 'dead'; e.hp = 0;
+  combat.present(0,e.p,false); scene.updateMatrixWorld();
+  assert.equal(v.root.visible,false); assert.equal(assets.instances.size,0); assert.equal(releasedRoot.parent,null);
+  e.mode = 'idle'; e.hp = e.maxHp; e.p.z += 8;
+  combat.present(0,e.p,false); scene.updateMatrixWorld();
+  instance = assets.instances.get(e.id);
+  assert.ok(instance); assert.notEqual(instance.root,releasedRoot); assertFreshSubtree(v.root);
+  combat.reset(); scene.updateMatrixWorld();
+  assert.equal(v.root.visible,false); assert.equal(assets.instances.size,0);
+  combat.dispose(); combat.dispose(); assert.equal(scene.children.length,0);
+});
+
+
+test('visibility traversal override is confined to enemy visual containers, not source rigs, physics or effects', () => {
+  const source = readFileSync(new URL('../src/combatView.ts', import.meta.url), 'utf8');
+  assert.equal((source.match(/new VisibleEnemyRoot\(/g) ?? []).length, 1);
+  assert.match(source.slice(source.indexOf('private makeEnemy')), /const root = new VisibleEnemyRoot\(\), body = new THREE.Group\(\), fallback = new THREE.Group\(\)/);
+  for (const name of readdirSync(new URL('../src/', import.meta.url))) {
+    if (!name.endsWith('.ts') || ['combatView.ts','visibleEnemyRoot.ts'].includes(name)) continue;
+    assert.doesNotMatch(readFileSync(new URL(`../src/${name}`, import.meta.url),'utf8'), /VisibleEnemyRoot/, `${name} must not share render-only enemy traversal policy`);
+  }
+  const root = new VisibleEnemyRoot();
+  assert.equal(root.matrixAutoUpdate, true);
+  assert.equal(root.updateWorldMatrix, THREE.Group.prototype.updateWorldMatrix);
+  const scene = new THREE.Scene();
+  const combat = new WorldCombat({ scene, colliders: [], layout, done: new Set(), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  const internal = combat as any;
+  const roots = new Set([...internal.visuals.values()].map((v: any) => v.root));
+  scene.traverse(node => { assert.equal(node instanceof VisibleEnemyRoot, roots.has(node)); });
+  assert.equal(internal.effectGroup instanceof VisibleEnemyRoot, false);
+  combat.dispose();
 });

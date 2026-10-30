@@ -1,0 +1,622 @@
+[
+  {
+    "name": "pack2-stationary-gun",
+    "strategy": "stationary-gun",
+    "terminal": "victory",
+    "seconds": 2.42,
+    "damageTaken": 0,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 29.04,
+    "hits": {
+      "ranged": 132
+    },
+    "attacks": 0
+  },
+  {
+    "name": "pack2-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "victory",
+    "seconds": 2.42,
+    "damageTaken": 0,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 29.04,
+    "hits": {
+      "ranged": 132
+    },
+    "attacks": 0
+  },
+  {
+    "name": "pack2-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 2.42,
+    "damageTaken": 0,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 29.04,
+    "hits": {
+      "ranged": 132
+    },
+    "attacks": 0
+  },
+  {
+    "name": "pack2-melee-spam",
+    "strategy": "melee-spam",
+    "terminal": "victory",
+    "seconds": 2.65,
+    "damageTaken": 20,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 27.84,
+    "hits": {
+      "melee": 132
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack2-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "victory",
+    "seconds": 2.57,
+    "damageTaken": 20,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 25.32,
+    "hits": {
+      "melee": 132
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack2-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 2.4,
+    "damageTaken": 20,
+    "damageDealt": 132,
+    "kills": 2,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 25.32,
+    "hits": {
+      "melee": 132
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack4-stationary-gun",
+    "strategy": "stationary-gun",
+    "terminal": "victory",
+    "seconds": 4.82,
+    "damageTaken": 16,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 58.08,
+    "hits": {
+      "ranged": 264
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack4-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "victory",
+    "seconds": 4.82,
+    "damageTaken": 0,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 58.08,
+    "hits": {
+      "ranged": 264
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack4-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 4.82,
+    "damageTaken": 0,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 58.08,
+    "hits": {
+      "ranged": 264
+    },
+    "attacks": 2
+  },
+  {
+    "name": "pack4-melee-spam",
+    "strategy": "melee-spam",
+    "terminal": "victory",
+    "seconds": 6.47,
+    "damageTaken": 33,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 55.68,
+    "hits": {
+      "melee": 264
+    },
+    "attacks": 6
+  },
+  {
+    "name": "pack4-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "victory",
+    "seconds": 5.68,
+    "damageTaken": 50,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 50.64,
+    "hits": {
+      "melee": 264
+    },
+    "attacks": 6
+  },
+  {
+    "name": "pack4-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 5.97,
+    "damageTaken": 20,
+    "damageDealt": 264,
+    "kills": 4,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 51.96,
+    "hits": {
+      "melee": 264
+    },
+    "attacks": 6
+  },
+  {
+    "name": "king-stationary-gun",
+    "strategy": "stationary-gun",
+    "terminal": "death",
+    "seconds": 12.1,
+    "damageTaken": 100,
+    "damageDealt": 768,
+    "kills": 0,
+    "phase2At": null,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 768
+    },
+    "attacks": 4
+  },
+  {
+    "name": "king-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "death",
+    "seconds": 24.55,
+    "damageTaken": 100,
+    "damageDealt": 1514.83,
+    "kills": 0,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1514.83
+    },
+    "attacks": 9
+  },
+  {
+    "name": "king-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1800.0000000000005
+    },
+    "attacks": 11
+  },
+  {
+    "name": "king-melee-spam",
+    "strategy": "melee-spam",
+    "terminal": "death",
+    "seconds": 12.75,
+    "damageTaken": 100,
+    "damageDealt": 1086,
+    "kills": 0,
+    "phase2At": 10.275,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1086
+    },
+    "attacks": 4
+  },
+  {
+    "name": "king-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "victory",
+    "seconds": 93.02,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 31.808333333333334,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 35
+  },
+  {
+    "name": "king-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 31.13,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 18.675,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 11
+  },
+  {
+    "name": "king-mixed-saber",
+    "strategy": "mixed",
+    "terminal": "victory",
+    "seconds": 25.07,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 11.058333333333334,
+    "firstUltimateAt": 9.2,
+    "ultimates": 1,
+    "skillCasts": 4,
+    "energy": 100,
+    "hits": {
+      "ranged": 1524,
+      "skill": 138,
+      "ultimate": 138
+    },
+    "attacks": 10
+  },
+  {
+    "name": "king-mixed-blackbeard",
+    "strategy": "mixed",
+    "terminal": "victory",
+    "seconds": 24.57,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 11.508333333333333,
+    "firstUltimateAt": 9.4,
+    "ultimates": 1,
+    "skillCasts": 4,
+    "energy": 100,
+    "hits": {
+      "ranged": 1496.77,
+      "skill": 159.2299999999998,
+      "ultimate": 144
+    },
+    "attacks": 9
+  },
+  {
+    "name": "king-mixed-napoleon",
+    "strategy": "mixed",
+    "terminal": "victory",
+    "seconds": 24.42,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 10.825,
+    "firstUltimateAt": 8.666666666666666,
+    "ultimates": 1,
+    "skillCasts": 3,
+    "energy": 100,
+    "hits": {
+      "ranged": 1477,
+      "skill": 168,
+      "ultimate": 155
+    },
+    "attacks": 10
+  },
+  {
+    "name": "king-mixed-musashi",
+    "strategy": "mixed",
+    "terminal": "victory",
+    "seconds": 26.47,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 11.208333333333334,
+    "firstUltimateAt": 8.666666666666666,
+    "ultimates": 1,
+    "skillCasts": 4,
+    "energy": 100,
+    "hits": {
+      "ranged": 1588,
+      "skill": 56,
+      "ultimate": 156
+    },
+    "attacks": 10
+  },
+  {
+    "name": "boss_drowned_admiral-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1799.9999999999995
+    },
+    "attacks": 9
+  },
+  {
+    "name": "boss_drowned_admiral-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1800.0000000000005
+    },
+    "attacks": 9
+  },
+  {
+    "name": "boss_drowned_admiral-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "victory",
+    "seconds": 73.42,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 34.708333333333336,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 23
+  },
+  {
+    "name": "boss_drowned_admiral-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 35.13,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 20.375,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 11
+  },
+  {
+    "name": "boss_winter_warden-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1799.9999999999995
+    },
+    "attacks": 9
+  },
+  {
+    "name": "boss_winter_warden-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1799.9999999999989
+    },
+    "attacks": 9
+  },
+  {
+    "name": "boss_winter_warden-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "death",
+    "seconds": 27,
+    "damageTaken": 100,
+    "damageDealt": 1108,
+    "kills": 0,
+    "phase2At": 21.391666666666666,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1108
+    },
+    "attacks": 8
+  },
+  {
+    "name": "boss_winter_warden-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 32.67,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 17.608333333333334,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 10
+  },
+  {
+    "name": "boss_hellfire_lord-kite-gun",
+    "strategy": "kite-gun",
+    "terminal": "death",
+    "seconds": 26.45,
+    "damageTaken": 100,
+    "damageDealt": 1642.66,
+    "kills": 0,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1642.6599999999999
+    },
+    "attacks": 8
+  },
+  {
+    "name": "boss_hellfire_lord-dodge-gun",
+    "strategy": "dodge-gun",
+    "terminal": "victory",
+    "seconds": 29.72,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 14.858333333333333,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "ranged": 1799.9999999999995
+    },
+    "attacks": 9
+  },
+  {
+    "name": "boss_hellfire_lord-melee-punish",
+    "strategy": "melee-punish",
+    "terminal": "death",
+    "seconds": 32.3,
+    "damageTaken": 100,
+    "damageDealt": 1142,
+    "kills": 0,
+    "phase2At": 25.391666666666666,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1142
+    },
+    "attacks": 12
+  },
+  {
+    "name": "boss_hellfire_lord-melee-evade",
+    "strategy": "melee-evade",
+    "terminal": "victory",
+    "seconds": 29,
+    "damageTaken": 0,
+    "damageDealt": 1800,
+    "kills": 1,
+    "phase2At": 16.075,
+    "firstUltimateAt": null,
+    "ultimates": 0,
+    "skillCasts": 0,
+    "energy": 100,
+    "hits": {
+      "melee": 1800
+    },
+    "attacks": 11
+  }
+]

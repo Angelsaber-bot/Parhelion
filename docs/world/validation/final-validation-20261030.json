@@ -1,0 +1,73 @@
+{
+  "completedAtUTC": "2026-10-30T06:05:00Z",
+  "sourceManifestSHA256": "c5078e2d2f0e54cccb804356938d1c861e00d26e0cb230debe1a05b91bb31d30",
+  "sourceManifestPath": "/tmp/world-release-final-source-manifest.txt",
+  "sourceManifestFiles": 745,
+  "sourceManifestScope": "Runtime, assets, validation tests, package/lock files, build scripts, app HTML/config and workflow files; excludes release documentation edited separately.",
+  "sourceManifestUnchangedAfterTestsAndBuild": true,
+  "buildId": "5a8cc65202a5",
+  "checks": [
+    {
+      "name": "World full suite",
+      "node": "22.22.2",
+      "passed": 754,
+      "failed": 0,
+      "log": "/tmp/world-release-node22-esm-full.log"
+    },
+    {
+      "name": "World full suite",
+      "node": "24.22.1",
+      "passed": 754,
+      "failed": 0,
+      "log": "/tmp/world-release-node24-esm-full.log"
+    },
+    {
+      "name": "Arena full suite",
+      "node": "22.22.2",
+      "passed": 322,
+      "failed": 0,
+      "log": "/tmp/world-release-arena-node22-esm-full.log"
+    },
+    {
+      "name": "Arena full suite",
+      "node": "24.22.1",
+      "passed": 322,
+      "failed": 0,
+      "log": "/tmp/world-release-arena-node24-esm-full.log"
+    },
+    {
+      "name": "Complete site build including Arena and World typechecks",
+      "node": "22.22.2",
+      "exitCode": 0,
+      "log": "/tmp/world-release-site-node22-build.log"
+    },
+    {
+      "name": "Site tests after build",
+      "node": "22.22.2",
+      "passed": 13,
+      "failed": 0,
+      "log": "/tmp/world-release-site-node22-test.log"
+    },
+    {
+      "name": "Source manifest verification",
+      "exitCode": 0,
+      "log": "/tmp/world-release-final-source-check.log"
+    },
+    {
+      "name": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "compatibilityFix": "shared-client/package.json explicitly declares type:module; keeps locale singleton shared across extensionless/.ts/.js imports on Node22+tsx without weakening old assertions.",
+  "warnings": [
+    "Existing large minified chunk advisory",
+    "Cloud environment experimental proxy warning"
+  ],
+  "notEstablished": [
+    "Target-device FPS",
+    "WebGL visual acceptance",
+    "Browser-rendered UI visual acceptance"
+  ],
+  "publishedOrPushed": false,
+  "sourceManifestRepositoryPath": "docs/world/validation/final-source-manifest-20261030.sha256"
+}

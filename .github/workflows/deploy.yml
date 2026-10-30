@@ -42,9 +42,8 @@ jobs:
 
       - name: Test Arena (rules, server, Worker protocol)
         run: npm test --prefix arena-game
-      - name: Test World (reported, does not block deploy)
-        continue-on-error: true
-        run: npm test --prefix world
+      - name: Test World (required gameplay regression gate)
+        run: npm run test:ci --prefix world
 
       - name: Build site (typechecks Arena + World)
         run: npm run build --prefix site

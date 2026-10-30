@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { validSkillPose, type SkillPoseCommand } from './skillPose';
 import type { CharacterKit, KitEventResult } from './characters/characterKit';
 import { MOUNTED_CHARGE as MOTION, mountedChargeDistance } from './characters/mountedChargeMotion';
 import type { KitCompanionOptions } from './kitCompanion';
@@ -13,6 +14,7 @@ export type MountedPhase = 'follow' | 'approach' | 'charge' | 'recover';
 export class MountedCharge {
   phase: MountedPhase = 'follow';
   private active = false;
+  private skillPose?: { command: SkillPoseCommand; elapsed: number };
   private plan?: ChargePlan;
   private cooldown = 0;
   private planCheck = 0;
@@ -25,17 +27,44 @@ export class MountedCharge {
   private readonly worldBody = new THREE.Box3();
   constructor(private options: KitCompanionOptions) {}
   get attacking() { return this.phase === 'charge'; }
+  /** Validate a full horse-sized approach before the caller spends any skill resources. */
+  startSkillPose(actor: CharacterKit, command: SkillPoseCommand, player: THREE.Vector3, _yaw: number): boolean {
+    if (!validSkillPose(command) || command.contacts !== 1) return false;
+    const attack = actor.definition.clips.attack, contact = attack?.events?.find(e => e.kind === 'hit')?.at;
+    const target = this.options.engage?.(player) ?? this.options.target(actor.root.position, this.options.range);
+    if (!attack || contact === undefined || !target || target.position.distanceTo(player) > 16 || Math.abs(target.position.y - actor.root.position.y) > 1.5 || !this.resolve(target)) return false;
+    const toTarget = target.position.clone().sub(actor.root.position).setY(0).normalize();
+    const direction = new THREE.Vector3(command.direction.x, 0, command.direction.z).normalize();
+    if (toTarget.dot(direction) < .25) return false;
+    const plan = this.makePlan(actor, target, player, attack.duration, contact);
+    if (!plan) return false;
+    this.release(actor); this.active = true; this.plan = plan; this.phase = 'approach';
+    this.skillPose = { command, elapsed: 0 }; return true;
+  }
+  cancelSkillPose(actor?: CharacterKit) { if (this.skillPose) this.release(actor); }
+  private finishSkillPose(completed: boolean) {
+    const pose = this.skillPose; this.skillPose = undefined; pose?.command.onFinish(completed);
+  }
   release(actor?: CharacterKit) {
+    this.finishSkillPose(false);
     this.active = false; this.plan = undefined; this.phase = 'follow'; this.cooldown = 0; this.emitted = false; this.planCheck = 0; this.stalled = 0;
     if (actor?.state === 'attack') actor.play('idle');
   }
   onEvent(actor: CharacterKit, event: KitEventResult) {
     if (this.phase !== 'charge' || !this.plan || this.emitted || event.state !== 'attack' || event.kind !== 'hit') return;
     this.emitted = true;
+    if (this.skillPose) {
+      this.skillPose.command.onContact(actor.root.position, this.plan.direction, event.socket, { losOffset: 1, casterFeetY: actor.root.position.y });
+      return;
+    }
     // The actual combat callback still rechecks this exact live target, range, LOS and ally cooldown.
     this.options.strike(actor.root.position, MOTION.hitRange, this.options.damage, this.plan.target.id);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number) {
+    if (this.skillPose) {
+      this.skillPose.elapsed += dt;
+      if (this.skillPose.elapsed > 7.5 || !this.plan || (!this.emitted && !this.resolve(this.plan.target))) { this.release(actor); return; }
+    }
     const root = actor.root, attack = actor.definition.clips.attack;
     const contact = attack?.events?.find(event => event.kind === 'hit')?.at;
     if (!attack || contact === undefined) { actor.play('idle'); actor.update(dt); return; }
@@ -118,6 +147,7 @@ export class MountedCharge {
     return live?.id === target.id ? live : null;
   }
   private recover(actor: CharacterKit) {
+    this.finishSkillPose(this.emitted);
     this.phase = 'recover'; this.plan = undefined; this.cooldown = MOTION.recovery; actor.play('idle');
   }
   private followSlot(player: THREE.Vector3, yaw: number) {

@@ -1,3 +1,7 @@
+import { WorldAudio } from '../src/worldAudio';
+import * as campaignClosure from '../src/campaignClosure';
+import { getEraProgressReaction } from '../src/eraStories';
+import { FortCannon, FORT_CANNON } from '../src/fortCannon';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import vm from 'node:vm';
@@ -9,7 +13,7 @@ import { playerFixture } from './player-fixture.ts';
 import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
 
 /** Execute the production shoot function, including shoulder-to-muzzle occlusion and quest bookkeeping. */
-function setup({ wall = false, enemy = false, enabled = true, armed = true, playerArt = undefined as Awaited<ReturnType<typeof playerFixture>> | undefined, animator = undefined as SkinnedCharacterAnimator | undefined } = {}) {
+function setup({ wall = false, enemy = false, enabled = true, armed = true, cannonTarget = false, playerArt = undefined as Awaited<ReturnType<typeof playerFixture>> | undefined, animator = undefined as SkinnedCharacterAnimator | undefined } = {}) {
   const source = readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
   const section = source.slice(source.indexOf('function shoot()'),source.indexOf('// ───────────── interaction'));
   assert.ok(section.length > 500);
@@ -17,9 +21,10 @@ function setup({ wall = false, enemy = false, enabled = true, armed = true, play
   const gun = new THREE.Group(), root = new THREE.Group(); root.add(gun); gun.position.set(0,1.3,2); root.updateMatrixWorld(true);
   const target = new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),new THREE.MeshBasicMaterial());
   target.position.set(0,1.3,-5); target.userData.target = 'range_target_1'; target.updateMatrixWorld(true);
+  if(cannonTarget) Object.assign(target.userData,{needs:FORT_CANNON.marker,nearWorld:[0,2],nearR:8});
   const geometry = wall ? new MeshBVH(new THREE.PlaneGeometry(20,20)) : null;
   const shots: { start: THREE.Vector3; end: THREE.Vector3; hit: boolean }[] = [], damage: string[] = [];
-  const done = new Set<string>(); let saves=0;
+  const done = new Set<string>(cannonTarget?[FORT_CANNON.marker]:[]); let saves=0;
   const combat = {
     canShoot: () => enabled,
     geometry: { cast(origin: THREE.Vector3,direction: THREE.Vector3,max: number) { const hit = geometry?.raycastFirst(new THREE.Ray(origin,direction.clone().normalize()),THREE.DoubleSide); return hit && hit.distance < max ? hit : null; } },
@@ -27,7 +32,7 @@ function setup({ wall = false, enemy = false, enabled = true, armed = true, play
     damageEnemy: (id: string) => damage.push(id),
     shot: (start: THREE.Vector3,end: THREE.Vector3,hit: boolean) => shots.push({start:start.clone(),end:end.clone(),hit}),
   };
-  const context=vm.createContext({THREE,worldProgress:{armed},gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
+  const context=vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,THREE,getEraProgressReaction,settings:{label:()=> 'F'},bilingual:(zh:string)=>zh,FORT_CANNON,fortCannon:new FortCannon(),actions:undefined,inspectServant:false,worldProgress:{armed},gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
     targets:[target],rig:playerArt?.rig ?? {root,joints:{Gun:gun}},rifle:playerArt?.rifle ?? {muzzleWorld:()=>gun.localToWorld(new THREE.Vector3(0,0,-.68))},anim:animator ?? {prepareShot(){}},done,toast(){},save(){saves++;},applyWorldState(){},$(){return {classList:{add(){},remove(){}}};},setTimeout(){}});
   vm.runInContext(transformSync(section+'\nglobalThis.shoot = shoot;',{loader:'ts',format:'cjs'}).code,context);
   return {shoot:()=>context.shoot(),shots,damage,done,saves:()=>saves};
@@ -68,4 +73,8 @@ test('immediate input-event shoot prepares actual held weapon before muzzle quer
   for (const [side,key] of [['R','grip'],['L','support']] as const)
     assert.ok(playerArt.rig.handSockets[side].getWorldPosition(new THREE.Vector3()).distanceTo(playerArt.rig.joints.Gun.localToWorld(playerArt.rig.gunAnchors[key].clone())) < .002);
   playerArt.dispose();
+});
+
+test('rifle cannot bypass the mounted cannon even after loading and while standing on its firing deck',()=>{
+ const s=setup({cannonTarget:true});s.shoot();assert.equal(s.done.has('range_target_1'),false);assert.equal(s.done.has(FORT_CANNON.marker),true);assert.equal(s.saves(),0);assert.equal(s.damage.length,0);
 });

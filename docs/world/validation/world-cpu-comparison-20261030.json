@@ -1,0 +1,2257 @@
+{
+  "matrix-candidates.json": {
+    "node": "v24.22.1",
+    "kind": "isolated forced subtree matrix update, NOT total frame or FPS",
+    "results": [
+      {
+        "name": "four_static_stations",
+        "roots": 4,
+        "nodes": 32,
+        "normalMedianMs": 0.001720200333333196,
+        "frozenMedianMs": 0.0003032690000000002,
+        "samples": {
+          "normal": [
+            0.0015998823333335773,
+            0.0015999456666665234,
+            0.0016003229999999652,
+            0.0016158533333330827,
+            0.001715749999999995,
+            0.001720200333333196,
+            0.0018357876666665713,
+            0.0019572510000001177,
+            0.0022206083333333785,
+            0.002853690000000218
+          ],
+          "frozen": [
+            0.00029592433333315663,
+            0.00029635833333334935,
+            0.00029656533333339516,
+            0.00029822766666651055,
+            0.0003009653333335033,
+            0.0003032690000000002,
+            0.00045559599999978674,
+            0.0004872346666664574,
+            0.0005937113333332794,
+            0.0006202720000001136
+          ]
+        }
+      },
+      {
+        "name": "traversal_apron",
+        "roots": 1,
+        "nodes": 2,
+        "normalMedianMs": 0.0001317886666668831,
+        "frozenMedianMs": 4.0769333333325144e-05,
+        "samples": {
+          "normal": [
+            0.0001021133333333637,
+            0.00010296133333334486,
+            0.0001031883333331886,
+            0.00011496966666648707,
+            0.00011856866666645753,
+            0.0001317886666668831,
+            0.00014541299999988648,
+            0.00015966533333327485,
+            0.00017744900000009995,
+            0.00017975600000014918
+          ],
+          "frozen": [
+            2.892100000008213e-05,
+            2.8940999999880053e-05,
+            2.912800000012794e-05,
+            2.923166666672235e-05,
+            3.035333333324767e-05,
+            4.0769333333325144e-05,
+            7.285833333329113e-05,
+            7.289833333319014e-05,
+            7.51353333331887e-05,
+            9.838766666659163e-05
+          ]
+        }
+      },
+      {
+        "name": "enemy_role_labels_local_only",
+        "roots": 145,
+        "nodes": 145,
+        "normalMedianMs": 0.015187563000000107,
+        "frozenMedianMs": 0.00992312099999981,
+        "samples": {
+          "normal": [
+            0.014707013666666777,
+            0.014813234333333336,
+            0.014818772000000232,
+            0.014866587666666722,
+            0.015027252666666754,
+            0.015187563000000107,
+            0.015354491666666642,
+            0.015436460999999933,
+            0.01647745699999996,
+            0.021696752333333583
+          ],
+          "frozen": [
+            0.009646547000000283,
+            0.009749692666666608,
+            0.009750243666666696,
+            0.009794790333333367,
+            0.009819614,
+            0.00992312099999981,
+            0.010237018333333254,
+            0.01029612033333342,
+            0.010305384333333374,
+            0.014390627999999803
+          ]
+        }
+      },
+      {
+        "name": "inactive_skill_pool",
+        "roots": 1,
+        "nodes": 55,
+        "normalMedianMs": 0.005314819666666759,
+        "frozenMedianMs": 0.001393198666666649,
+        "samples": {
+          "normal": [
+            0.00499282533333341,
+            0.00514439666666658,
+            0.005162931333333291,
+            0.005224570666666598,
+            0.005289257666666648,
+            0.005314819666666759,
+            0.005346717666666639,
+            0.005449121666666543,
+            0.005473120999999992,
+            0.005923885333333298
+          ],
+          "frozen": [
+            0.0013230063333333722,
+            0.0013272563333333286,
+            0.001347760333333402,
+            0.0013496830000000652,
+            0.0013799349999999322,
+            0.001393198666666649,
+            0.0013972213333333153,
+            0.0014197716666667474,
+            0.00142069966666683,
+            0.0015853843333331194
+          ]
+        }
+      }
+    ],
+    "errors": [],
+    "warnings": []
+  },
+  "current-no-render-3.json": {
+    "label": "current",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.065113000000565,
+        "p95Ms": 1.578975999999784,
+        "meanMs": 1.134421686666677,
+        "blockMedianMs": 1.161164566666715,
+        "blockP95Ms": 1.271921116666681,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.2621289999997316,
+        "p95Ms": 2.0666909999999916,
+        "meanMs": 1.378202479999971,
+        "blockMedianMs": 1.3834280000000188,
+        "blockP95Ms": 1.7137285000000095,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 1.109759999999369,
+        "p95Ms": 1.6287310000006983,
+        "meanMs": 1.182572446666633,
+        "blockMedianMs": 1.2022900666667737,
+        "blockP95Ms": 1.278744650000014,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1075707904,
+      "heapTotal": 256905216,
+      "heapUsed": 117621864,
+      "external": 560134692,
+      "arrayBuffers": 525408934
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-no-render-3.json": {
+    "label": "baseline",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.097052000000076,
+        "p95Ms": 1.9606960000000981,
+        "meanMs": 1.231205314999996,
+        "blockMedianMs": 1.2575015166667072,
+        "blockP95Ms": 1.4797725666666641,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.1512340000008408,
+        "p95Ms": 1.8400949999995646,
+        "meanMs": 1.2557542916667035,
+        "blockMedianMs": 1.3004432333334384,
+        "blockP95Ms": 1.539112316666736,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 0.9570130000010977,
+        "p95Ms": 1.5726549999999406,
+        "meanMs": 1.0782269099999697,
+        "blockMedianMs": 1.0098109000000781,
+        "blockP95Ms": 1.3384497333334062,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1157033984,
+      "heapTotal": 257912832,
+      "heapUsed": 115605408,
+      "external": 558748896,
+      "arrayBuffers": 539081439
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-no-render-2.json": {
+    "label": "baseline",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.04866199999924,
+        "p95Ms": 1.701998000000458,
+        "meanMs": 1.1431603183333239,
+        "blockMedianMs": 1.0768695666667403,
+        "blockP95Ms": 1.4993508333333465,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.0980820000004314,
+        "p95Ms": 1.7683310000002166,
+        "meanMs": 1.20831211333333,
+        "blockMedianMs": 1.2000054499999957,
+        "blockP95Ms": 1.4237125499999517,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 0.9983799999990879,
+        "p95Ms": 1.6782949999997072,
+        "meanMs": 1.1101527216666516,
+        "blockMedianMs": 1.0692524499999307,
+        "blockP95Ms": 1.4310461500000504,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1142099968,
+      "heapTotal": 253456384,
+      "heapUsed": 115482024,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-no-render-2.json": {
+    "label": "current",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.0925139999999374,
+        "p95Ms": 1.6414500000000771,
+        "meanMs": 1.162011476666662,
+        "blockMedianMs": 1.1472816333332958,
+        "blockP95Ms": 1.3124634500000107,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.1115829999998823,
+        "p95Ms": 1.9356530000004568,
+        "meanMs": 1.2274316650000008,
+        "blockMedianMs": 1.1198908166667327,
+        "blockP95Ms": 1.8276620833333255,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 1.0409170000002632,
+        "p95Ms": 1.5060240000002523,
+        "meanMs": 1.1234229833332816,
+        "blockMedianMs": 1.078924500000024,
+        "blockP95Ms": 1.3956952333332993,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1148411904,
+      "heapTotal": 257167360,
+      "heapUsed": 118059784,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-no-render-1.json": {
+    "label": "current",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.0888969999996334,
+        "p95Ms": 1.7721400000000358,
+        "meanMs": 1.1968449166666535,
+        "blockMedianMs": 1.2132618999999978,
+        "blockP95Ms": 1.3689652166666595,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.2418480000014824,
+        "p95Ms": 2.201509999999871,
+        "meanMs": 1.3692989466666767,
+        "blockMedianMs": 1.3904865333333873,
+        "blockP95Ms": 1.7091180833333661,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 1.1175709999988612,
+        "p95Ms": 1.6594249999998283,
+        "meanMs": 1.1940273900000313,
+        "blockMedianMs": 1.2135805333332428,
+        "blockP95Ms": 1.2775488333331244,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1159450624,
+      "heapTotal": 255070208,
+      "heapUsed": 117513872,
+      "external": 560134692,
+      "arrayBuffers": 525408934
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-no-render-1.json": {
+    "label": "baseline",
+    "rendererTraversal": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.0660309999993842,
+        "p95Ms": 1.6540039999999863,
+        "meanMs": 1.1395457149999901,
+        "blockMedianMs": 1.150999749999907,
+        "blockP95Ms": 1.2694449666666665,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 1.0554450000008728,
+        "p95Ms": 1.5812339999993128,
+        "meanMs": 1.135736969999992,
+        "blockMedianMs": 1.1127597499998652,
+        "blockP95Ms": 1.2418542166666158,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 1.0356449999999313,
+        "p95Ms": 1.6379700000015873,
+        "meanMs": 1.1358106483333237,
+        "blockMedianMs": 1.1961487166666909,
+        "blockP95Ms": 1.2619732000000417,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1194647552,
+      "heapTotal": 255815680,
+      "heapUsed": 115675968,
+      "external": 558748896,
+      "arrayBuffers": 524023146
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-profile.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.6418909999993048,
+        "p95Ms": 5.111515999999938,
+        "meanMs": 3.75373294833333,
+        "blockMedianMs": 3.7363922666666136,
+        "blockP95Ms": 4.225803216666706,
+        "profile": {
+          "player.step": {
+            "ms": 45.83810500002983,
+            "calls": 1200
+          },
+          "combat.simulate": {
+            "ms": 7.738490000014281,
+            "calls": 1200
+          },
+          "actions.flush": {
+            "ms": 7.762906000022667,
+            "calls": 1800
+          },
+          "actions.update": {
+            "ms": 12.480268000004799,
+            "calls": 1200
+          },
+          "anim.update": {
+            "ms": 234.59518599998137,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 162.95062900000084,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 4.847752000006949,
+            "calls": 600
+          },
+          "actions.present": {
+            "ms": 3.070438999991893,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1367.9028870000084,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.8315070000007836,
+        "p95Ms": 5.509203999999954,
+        "meanMs": 3.986598294999967,
+        "blockMedianMs": 4.139235049999934,
+        "blockP95Ms": 4.525396999999915,
+        "profile": {
+          "player.step": {
+            "ms": 52.60829499997271,
+            "calls": 1200
+          },
+          "combat.simulate": {
+            "ms": 26.620863999982248,
+            "calls": 1200
+          },
+          "actions.flush": {
+            "ms": 7.473291000031168,
+            "calls": 1800
+          },
+          "actions.update": {
+            "ms": 11.63703799999712,
+            "calls": 1200
+          },
+          "anim.update": {
+            "ms": 229.01020800000515,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 194.82842700000583,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 4.201048000026276,
+            "calls": 600
+          },
+          "actions.present": {
+            "ms": 2.873765000014828,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1401.3914189999996,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.770727999999508,
+        "p95Ms": 5.830945999998221,
+        "meanMs": 4.05821514166663,
+        "blockMedianMs": 3.882199000000067,
+        "blockP95Ms": 5.282297616666589,
+        "profile": {
+          "player.step": {
+            "ms": 55.30709699996078,
+            "calls": 1200
+          },
+          "combat.simulate": {
+            "ms": 21.34073200000421,
+            "calls": 1200
+          },
+          "actions.flush": {
+            "ms": 7.460215000037351,
+            "calls": 1800
+          },
+          "actions.update": {
+            "ms": 11.035991000011563,
+            "calls": 1200
+          },
+          "anim.update": {
+            "ms": 230.5861869999626,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 214.12355600003684,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 4.341690000026574,
+            "calls": 600
+          },
+          "actions.present": {
+            "ms": 2.6176980000200274,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1467.1049639999965,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1098199040,
+      "heapTotal": 257167360,
+      "heapUsed": 117710256,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-profile.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.0582049999993615,
+        "p95Ms": 5.01093100000071,
+        "meanMs": 3.288394381666679,
+        "blockMedianMs": 3.2788312333333125,
+        "blockP95Ms": 4.11412938333339,
+        "profile": {
+          "player.step": {
+            "ms": 41.81220400002985,
+            "calls": 1200
+          },
+          "anim.update": {
+            "ms": 222.25078799997573,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 152.79031999997096,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 5.431686999982048,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1142.7182510000093,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.83503699999892,
+        "p95Ms": 6.235630999999557,
+        "meanMs": 4.047910021666643,
+        "blockMedianMs": 3.9471740000001168,
+        "blockP95Ms": 5.118418033333395,
+        "profile": {
+          "player.step": {
+            "ms": 45.62139899999238,
+            "calls": 1201
+          },
+          "anim.update": {
+            "ms": 225.85376300002645,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 209.80640799996945,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 5.570362999993449,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1431.194300999994,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.409687000001213,
+        "p95Ms": 5.3792799999991985,
+        "meanMs": 3.634261765000016,
+        "blockMedianMs": 3.7546256833333547,
+        "blockP95Ms": 4.184520983333277,
+        "profile": {
+          "player.step": {
+            "ms": 48.62136000004648,
+            "calls": 1200
+          },
+          "anim.update": {
+            "ms": 209.20480700002008,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 203.05837400002565,
+            "calls": 600
+          },
+          "servant.update": {
+            "ms": 4.682163000017681,
+            "calls": 600
+          },
+          "renderer.render": {
+            "ms": 1289.6062469999833,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1175494656,
+      "heapTotal": 255553536,
+      "heapUsed": 115586328,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-5.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.6552990000000136,
+        "p95Ms": 5.73928000000069,
+        "meanMs": 3.869112088333319,
+        "blockMedianMs": 3.811618683333336,
+        "blockP95Ms": 5.024596283333312,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.601156999999148,
+        "p95Ms": 5.428851999999097,
+        "meanMs": 3.814843638333353,
+        "blockMedianMs": 3.7603523333332607,
+        "blockP95Ms": 4.426136983333375,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.597279999999955,
+        "p95Ms": 5.809579999999187,
+        "meanMs": 3.886432518333365,
+        "blockMedianMs": 3.885493416666638,
+        "blockP95Ms": 4.651085149999926,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1137168384,
+      "heapTotal": 257167360,
+      "heapUsed": 117980728,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-5.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.380779999999504,
+        "p95Ms": 4.939390999999887,
+        "meanMs": 3.5013520983333395,
+        "blockMedianMs": 3.520887200000076,
+        "blockP95Ms": 3.98563446666667,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.4009099999984755,
+        "p95Ms": 5.2620460000016465,
+        "meanMs": 3.5603202816666637,
+        "blockMedianMs": 3.638874599999993,
+        "blockP95Ms": 4.042700883333509,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.1654490000000806,
+        "p95Ms": 5.013209000000643,
+        "meanMs": 3.3846769433333397,
+        "blockMedianMs": 3.34600419999997,
+        "blockP95Ms": 4.022696383333429,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1173917696,
+      "heapTotal": 255029248,
+      "heapUsed": 115471464,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-4.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.3258089999999356,
+        "p95Ms": 6.158824000000095,
+        "meanMs": 3.7169872500000154,
+        "blockMedianMs": 3.35601785000008,
+        "blockP95Ms": 5.60006886666691,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 4.0889790000001085,
+        "p95Ms": 6.592711999999665,
+        "meanMs": 4.277655078333331,
+        "blockMedianMs": 4.3342315833333185,
+        "blockP95Ms": 4.978838650000065,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.589042999999947,
+        "p95Ms": 5.646152000001166,
+        "meanMs": 3.804382873333358,
+        "blockMedianMs": 3.7981015166666414,
+        "blockP95Ms": 4.335363149999861,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1037275136,
+      "heapTotal": 254242816,
+      "heapUsed": 115257192,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-4.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 4.293537000001379,
+        "p95Ms": 7.0896950000005745,
+        "meanMs": 4.615622250000003,
+        "blockMedianMs": 4.788378866666699,
+        "blockP95Ms": 5.495251500000055,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 4.24902000000111,
+        "p95Ms": 6.230835000000297,
+        "meanMs": 4.46341445500005,
+        "blockMedianMs": 4.477870900000046,
+        "blockP95Ms": 5.073718283333467,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 4.908750999999029,
+        "p95Ms": 7.079677999998239,
+        "meanMs": 4.980499286666591,
+        "blockMedianMs": 5.184044683333135,
+        "blockP95Ms": 5.518153766666486,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1104670720,
+      "heapTotal": 256905216,
+      "heapUsed": 117569832,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-3.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.9757300000001123,
+        "p95Ms": 4.615244999999959,
+        "meanMs": 3.1869439649999687,
+        "blockMedianMs": 3.2978803499998928,
+        "blockP95Ms": 3.708203033333363,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.7291220000006433,
+        "p95Ms": 5.920513999999457,
+        "meanMs": 4.05494566333334,
+        "blockMedianMs": 4.11448893333342,
+        "blockP95Ms": 5.454893249999896,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 4.148058000000674,
+        "p95Ms": 7.337489999999889,
+        "meanMs": 4.52903930500003,
+        "blockMedianMs": 4.257224716666648,
+        "blockP95Ms": 5.650670716666719,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1170960384,
+      "heapTotal": 256643072,
+      "heapUsed": 117620600,
+      "external": 560134692,
+      "arrayBuffers": 525408934
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-3.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.727716999999757,
+        "p95Ms": 4.065727000000152,
+        "meanMs": 2.858972758333327,
+        "blockMedianMs": 2.8558180499998342,
+        "blockP95Ms": 3.2142067999999653,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.1835039999987202,
+        "p95Ms": 5.3410700000004,
+        "meanMs": 3.4837947600000674,
+        "blockMedianMs": 3.5883268666667694,
+        "blockP95Ms": 4.494961183333392,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 2.7611090000009426,
+        "p95Ms": 5.492488999998386,
+        "meanMs": 3.2142240999999165,
+        "blockMedianMs": 2.871141699999862,
+        "blockP95Ms": 6.08277118333314,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1055830016,
+      "heapTotal": 254767104,
+      "heapUsed": 115238552,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-2.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.1001020000003336,
+        "p95Ms": 5.201555999999982,
+        "meanMs": 3.341253563333336,
+        "blockMedianMs": 3.454086399999975,
+        "blockP95Ms": 3.6788933166666387,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.267695000000458,
+        "p95Ms": 5.123408000001291,
+        "meanMs": 3.466929311666645,
+        "blockMedianMs": 3.485367466666624,
+        "blockP95Ms": 3.9907210833333315,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.312337999999727,
+        "p95Ms": 6.38143300000047,
+        "meanMs": 3.6875407233333104,
+        "blockMedianMs": 3.7076218166665966,
+        "blockP95Ms": 5.124256866666746,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1175146496,
+      "heapTotal": 254767104,
+      "heapUsed": 115279888,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-2.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.390396000000692,
+        "p95Ms": 5.184563000000708,
+        "meanMs": 3.584323324999967,
+        "blockMedianMs": 3.6053291166667045,
+        "blockP95Ms": 4.023476599999989,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.570130000000063,
+        "p95Ms": 5.228673999999955,
+        "meanMs": 3.7621562766666163,
+        "blockMedianMs": 3.730454216666688,
+        "blockP95Ms": 4.292599516666602,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.5118619999993825,
+        "p95Ms": 5.358400000000984,
+        "meanMs": 3.7207181266666796,
+        "blockMedianMs": 3.618784950000069,
+        "blockP95Ms": 4.310518449999927,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1177600000,
+      "heapTotal": 257953792,
+      "heapUsed": 117586600,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "current-1.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.422944999999345,
+        "p95Ms": 5.5272600000007515,
+        "meanMs": 3.6603252750000093,
+        "blockMedianMs": 3.706450633333331,
+        "blockP95Ms": 4.007354633333367,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 4.1041929999992135,
+        "p95Ms": 6.50171600000067,
+        "meanMs": 4.352582683333297,
+        "blockMedianMs": 4.385927916666485,
+        "blockP95Ms": 5.432637733333347,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.9411870000003546,
+        "p95Ms": 6.580208999999741,
+        "meanMs": 4.264647419999907,
+        "blockMedianMs": 4.140028516666462,
+        "blockP95Ms": 5.695379583333336,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1139187712,
+      "heapTotal": 256643072,
+      "heapUsed": 117853616,
+      "external": 560134692,
+      "arrayBuffers": 540467235
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "baseline-1.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.100539000000026,
+        "p95Ms": 5.391515000001164,
+        "meanMs": 3.382867930000052,
+        "blockMedianMs": 3.5595384833333203,
+        "blockP95Ms": 4.210215333333341,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.7029980000006617,
+        "p95Ms": 5.703327000001082,
+        "meanMs": 3.9572240666666434,
+        "blockMedianMs": 3.9919910833333536,
+        "blockP95Ms": 4.910000333333301,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.4852589999991324,
+        "p95Ms": 5.983248000000458,
+        "meanMs": 3.798172549999993,
+        "blockMedianMs": 3.9579975833334475,
+        "blockP95Ms": 4.764216283333311,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1128226816,
+      "heapTotal": 253456384,
+      "heapUsed": 115642568,
+      "external": 558748896,
+      "arrayBuffers": 524023146
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "source": {
+    "baseline": "350f5640c722f1013e4f598c669c558c529dc6eb",
+    "currentSnapshotUTC": "2026-10-30T05:15:40Z",
+    "trackedDiffSHA256": "3db6564973e9e931e20e16d93a7b7e458a32f4e8d7e7e0ebc501e676893dac33",
+    "fullSourceManifestSHA256": "a50a3adbb68519deca0b62ea8b1923ab9533e0cc20a647e60007c2ce1abf51b4",
+    "limits": "NON-GPU; no FPS, browser visual acceptance or GPU memory inference. No-render diagnostics excluded from primary comparison."
+  },
+  "baseline-tree-profile.json": {
+    "label": "baseline",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.8690929999993386,
+        "p95Ms": 4.719460000000254,
+        "meanMs": 3.1178374800000195,
+        "blockMedianMs": 3.1230125833333506,
+        "blockP95Ms": 4.026409450000044,
+        "profile": {
+          "renderer.render": {
+            "ms": 1106.9065289999944,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 413.18003699999554,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 218.95247000001564,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 137.32844700002806,
+            "calls": 600
+          },
+          "tree.24.Explorer": {
+            "ms": 81.87940800001797,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 40.038623999990705,
+            "calls": 1200
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 29.139611000011428,
+            "calls": 600
+          },
+          "tree.26.elite_valley_sentinel": {
+            "ms": 11.548849000007067,
+            "calls": 600
+          },
+          "tree.36.wild_0": {
+            "ms": 11.344993999981853,
+            "calls": 600
+          },
+          "tree.268.wild_51b": {
+            "ms": 10.948643000028824,
+            "calls": 600
+          },
+          "tree.258.wild_49": {
+            "ms": 10.936098000028323,
+            "calls": 600
+          },
+          "tree.260.wild_49b": {
+            "ms": 10.876955000005182,
+            "calls": 600
+          },
+          "tree.42.wild_1b": {
+            "ms": 10.818240999996306,
+            "calls": 600
+          },
+          "tree.80.wild_11": {
+            "ms": 10.774753000007877,
+            "calls": 600
+          },
+          "tree.270.wild_52": {
+            "ms": 10.77117599999292,
+            "calls": 600
+          },
+          "tree.276.wild_53b": {
+            "ms": 10.761338999989675,
+            "calls": 600
+          },
+          "tree.262.wild_50": {
+            "ms": 10.562797000023238,
+            "calls": 600
+          },
+          "tree.82.wild_11b": {
+            "ms": 10.50959499997498,
+            "calls": 600
+          },
+          "tree.264.wild_50b": {
+            "ms": 10.41774099997565,
+            "calls": 600
+          },
+          "tree.124.wild_22": {
+            "ms": 10.40074800000275,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.460998999998992,
+        "p95Ms": 5.2872930000012275,
+        "meanMs": 3.684311836666696,
+        "blockMedianMs": 3.5369231999999706,
+        "blockP95Ms": 4.379289133333562,
+        "profile": {
+          "renderer.render": {
+            "ms": 1303.9819349999962,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 496.5874029999977,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 217.62902399999984,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 188.66416999999637,
+            "calls": 600
+          },
+          "tree.24.Explorer": {
+            "ms": 87.0486000000692,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 45.52752299996973,
+            "calls": 1201
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 30.853292999996484,
+            "calls": 600
+          },
+          "tree.260.wild_49b": {
+            "ms": 13.723801999982243,
+            "calls": 600
+          },
+          "tree.36.wild_0": {
+            "ms": 12.750915999971767,
+            "calls": 600
+          },
+          "tree.254.wild_48": {
+            "ms": 12.750560999986192,
+            "calls": 600
+          },
+          "tree.26.elite_valley_sentinel": {
+            "ms": 12.734183000018675,
+            "calls": 600
+          },
+          "tree.44.wild_2": {
+            "ms": 12.696971000021222,
+            "calls": 600
+          },
+          "tree.262.wild_50": {
+            "ms": 12.512261999972907,
+            "calls": 600
+          },
+          "tree.270.wild_52": {
+            "ms": 12.501237000016772,
+            "calls": 600
+          },
+          "tree.276.wild_53b": {
+            "ms": 12.386917000001631,
+            "calls": 600
+          },
+          "tree.82.wild_11b": {
+            "ms": 12.378727000001163,
+            "calls": 600
+          },
+          "tree.40.wild_1": {
+            "ms": 12.270160000020041,
+            "calls": 600
+          },
+          "tree.258.wild_49": {
+            "ms": 12.240067999995517,
+            "calls": 600
+          },
+          "tree.256.wild_48b": {
+            "ms": 12.17055399999299,
+            "calls": 600
+          },
+          "tree.46.wild_2b": {
+            "ms": 12.110585000024003,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.418424999999843,
+        "p95Ms": 5.70785000000069,
+        "meanMs": 3.663994589999987,
+        "blockMedianMs": 3.506102750000112,
+        "blockP95Ms": 4.454479066666681,
+        "profile": {
+          "renderer.render": {
+            "ms": 1317.1133550000031,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 491.48135200001525,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 221.70271600000342,
+            "calls": 600
+          },
+          "combat.update": {
+            "ms": 204.29131000000052,
+            "calls": 600
+          },
+          "tree.24.Explorer": {
+            "ms": 87.53798300003473,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 47.09169799997653,
+            "calls": 1200
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 32.2086080000372,
+            "calls": 600
+          },
+          "tree.268.wild_51b": {
+            "ms": 13.65632000003825,
+            "calls": 600
+          },
+          "tree.260.wild_49b": {
+            "ms": 12.848101000001407,
+            "calls": 600
+          },
+          "tree.276.wild_53b": {
+            "ms": 12.612102999990384,
+            "calls": 600
+          },
+          "tree.26.elite_valley_sentinel": {
+            "ms": 12.611993999988044,
+            "calls": 600
+          },
+          "tree.46.wild_2b": {
+            "ms": 12.60881100001643,
+            "calls": 600
+          },
+          "tree.36.wild_0": {
+            "ms": 12.517647999986366,
+            "calls": 600
+          },
+          "tree.44.wild_2": {
+            "ms": 12.460167999995974,
+            "calls": 600
+          },
+          "tree.42.wild_1b": {
+            "ms": 12.427154000037262,
+            "calls": 600
+          },
+          "tree.186.wild_32e": {
+            "ms": 12.26532399999087,
+            "calls": 600
+          },
+          "tree.132.wild_24": {
+            "ms": 12.242739999981495,
+            "calls": 600
+          },
+          "tree.266.wild_51": {
+            "ms": 12.239716999993107,
+            "calls": 600
+          },
+          "tree.262.wild_50": {
+            "ms": 12.226874000019961,
+            "calls": 600
+          },
+          "tree.38.wild_0b": {
+            "ms": 12.199591999995391,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1065758720,
+      "heapTotal": 255815680,
+      "heapUsed": 115349584,
+      "external": 558748896,
+      "arrayBuffers": 524023138
+    },
+    "resources": {
+      "objects": 10782,
+      "meshes": 9310,
+      "lights": 20,
+      "geometries": 5109,
+      "materials": 1263,
+      "uniqueGeometryBackingBytes": 408675576,
+      "uniqueGeometryTriangles": 7919887
+    },
+    "errors": [],
+    "warnings": [],
+    "profileFilteredToLargest20MethodsPerScenario": true
+  },
+  "current-tree-profile.json": {
+    "label": "current",
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 3.310489999999845,
+        "p95Ms": 5.13762399999996,
+        "meanMs": 3.537595376666653,
+        "blockMedianMs": 3.4982550000000328,
+        "blockP95Ms": 4.4780667833333005,
+        "profile": {
+          "renderer.render": {
+            "ms": 1234.7942670000102,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 458.177974000012,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 246.96400699997594,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 160.83181900003092,
+            "calls": 600
+          },
+          "tree.29.Explorer": {
+            "ms": 91.47686700000486,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 45.69297499996446,
+            "calls": 1200
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 28.787708000005296,
+            "calls": 600
+          },
+          "tree.31.elite_valley_sentinel": {
+            "ms": 12.864036000026317,
+            "calls": 600
+          },
+          "tree.269.wild_50b": {
+            "ms": 12.364040000010391,
+            "calls": 600
+          },
+          "actions.update": {
+            "ms": 12.3019630000299,
+            "calls": 1200
+          },
+          "tree.43.wild_0b": {
+            "ms": 12.274480999993102,
+            "calls": 600
+          },
+          "tree.135.wild_23b": {
+            "ms": 11.875865000019985,
+            "calls": 600
+          },
+          "tree.139.wild_24b": {
+            "ms": 11.773277999976017,
+            "calls": 600
+          },
+          "tree.183.wild_32": {
+            "ms": 11.562599000004411,
+            "calls": 600
+          },
+          "tree.277.wild_52b": {
+            "ms": 11.508396999977776,
+            "calls": 600
+          },
+          "tree.185.wild_32b": {
+            "ms": 11.355497999991712,
+            "calls": 600
+          },
+          "tree.281.wild_53b": {
+            "ms": 11.343234999987544,
+            "calls": 600
+          },
+          "tree.51.wild_2b": {
+            "ms": 11.307897000017874,
+            "calls": 600
+          },
+          "tree.45.wild_1": {
+            "ms": 11.118506999998317,
+            "calls": 600
+          },
+          "tree.85.wild_11": {
+            "ms": 11.069877999983873,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 4.309567999998762,
+        "p95Ms": 7.1572829999986425,
+        "meanMs": 4.680680921666693,
+        "blockMedianMs": 4.4391580000000435,
+        "blockP95Ms": 6.474652133333287,
+        "profile": {
+          "renderer.render": {
+            "ms": 1635.5928439999952,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 644.394175999967,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 271.58584500000325,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 223.62348800001018,
+            "calls": 600
+          },
+          "tree.29.Explorer": {
+            "ms": 100.76848700003575,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 54.50077300000703,
+            "calls": 1200
+          },
+          "actions.update": {
+            "ms": 40.1961870000232,
+            "calls": 1200
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 40.129830999980186,
+            "calls": 600
+          },
+          "actions.flush": {
+            "ms": 35.59252400001424,
+            "calls": 1800
+          },
+          "combat.simulate": {
+            "ms": 27.8077999999623,
+            "calls": 1200
+          },
+          "tree.31.elite_valley_sentinel": {
+            "ms": 16.112051999974938,
+            "calls": 600
+          },
+          "tree.137.wild_24": {
+            "ms": 15.15859100000489,
+            "calls": 600
+          },
+          "tree.85.wild_11": {
+            "ms": 15.152840999995533,
+            "calls": 600
+          },
+          "tree.139.wild_24b": {
+            "ms": 15.019992999994429,
+            "calls": 600
+          },
+          "tree.269.wild_50b": {
+            "ms": 14.854134999985035,
+            "calls": 600
+          },
+          "tree.183.wild_32": {
+            "ms": 14.392595999992409,
+            "calls": 600
+          },
+          "tree.43.wild_0b": {
+            "ms": 14.28205799999705,
+            "calls": 600
+          },
+          "tree.277.wild_52b": {
+            "ms": 14.255297999983668,
+            "calls": 600
+          },
+          "tree.275.wild_52": {
+            "ms": 14.17638599998827,
+            "calls": 600
+          },
+          "tree.187.wild_32c": {
+            "ms": 14.002266999981657,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 3.300680000000284,
+        "p95Ms": 5.288361000000805,
+        "meanMs": 3.557364750000003,
+        "blockMedianMs": 3.5993869999999335,
+        "blockP95Ms": 3.9772731666666914,
+        "profile": {
+          "renderer.render": {
+            "ms": 1239.8654679999381,
+            "calls": 600
+          },
+          "tree.5.World": {
+            "ms": 459.09563899998284,
+            "calls": 600
+          },
+          "anim.update": {
+            "ms": 229.59232299999894,
+            "calls": 600
+          },
+          "combat.present": {
+            "ms": 197.17869099997006,
+            "calls": 600
+          },
+          "tree.29.Explorer": {
+            "ms": 89.47754499996518,
+            "calls": 3000
+          },
+          "player.step": {
+            "ms": 49.611358999951335,
+            "calls": 1200
+          },
+          "tree.19.SettlementResidents": {
+            "ms": 26.442583000012746,
+            "calls": 600
+          },
+          "combat.simulate": {
+            "ms": 20.023420999992595,
+            "calls": 1200
+          },
+          "actions.update": {
+            "ms": 15.606195999987904,
+            "calls": 1200
+          },
+          "tree.279.wild_53": {
+            "ms": 13.60851199998433,
+            "calls": 600
+          },
+          "tree.31.elite_valley_sentinel": {
+            "ms": 12.745770000010452,
+            "calls": 600
+          },
+          "tree.51.wild_2b": {
+            "ms": 11.4581249999992,
+            "calls": 600
+          },
+          "tree.45.wild_1": {
+            "ms": 11.208807999973942,
+            "calls": 600
+          },
+          "tree.47.wild_1b": {
+            "ms": 11.204508999979225,
+            "calls": 600
+          },
+          "tree.43.wild_0b": {
+            "ms": 11.204061000022193,
+            "calls": 600
+          },
+          "tree.269.wild_50b": {
+            "ms": 11.084483999982695,
+            "calls": 600
+          },
+          "tree.139.wild_24b": {
+            "ms": 11.01595200000338,
+            "calls": 600
+          },
+          "tree.277.wild_52b": {
+            "ms": 10.946243000009417,
+            "calls": 600
+          },
+          "tree.185.wild_32b": {
+            "ms": 10.809959000000163,
+            "calls": 600
+          },
+          "tree.41.wild_0": {
+            "ms": 10.778673000048002,
+            "calls": 600
+          }
+        },
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1103798272,
+      "heapTotal": 256118784,
+      "heapUsed": 118040784,
+      "external": 560134692,
+      "arrayBuffers": 525408942
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409918412,
+      "uniqueGeometryTriangles": 7941301
+    },
+    "errors": [],
+    "warnings": [],
+    "profileFilteredToLargest20MethodsPerScenario": true
+  }
+}

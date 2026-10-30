@@ -1,3 +1,6 @@
+import { WorldAudio } from '../src/worldAudio';
+import * as campaignClosure from '../src/campaignClosure';
+import { FortCannon, FORT_CANNON } from '../src/fortCannon';
 // Execute the production event-registration section, not a duplicate input model.
 // Browser graphics/pointer-lock UX is covered separately by browser.mjs.
 import assert from 'node:assert/strict';
@@ -34,7 +37,7 @@ function setup() {
     open: false, show() { if (this.open) return; this.open = true; hooks.onOpen(); }, close() { this.open = false; hooks.onClose(); },
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
-  const context = vm.createContext({ combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -46,6 +49,22 @@ test('unlocked keys cannot move, interact or reset progress', () => {
   assert.equal(s.context.state.keys.size, 0);
   assert.equal(s.actions(), 0);
   assert.equal(s.context.done.has('relay_b'), true);
+});
+
+test('servant inspection clears held input, blocks gameplay and remains dismissible without repeating', () => {
+  const s=setup();s.lock();
+  const inspect=s.context.state.settings.bindingsFor('inspectServant')[0];
+  s.target.emit('keydown',{code:'KeyW'});s.target.emit('mousedown',{button:2});
+  s.target.emit('keydown',{code:inspect});
+  assert.equal(s.context.inspectServant,true);assert.equal(s.context.state.keys.size,0);assert.equal(s.context.state.aim.held,false);
+  s.target.emit('keydown',{code:'KeyW'});s.target.emit('keydown',{code:'KeyF'});s.target.emit('mousedown',{button:0});
+  assert.equal(s.context.state.keys.size,0);assert.equal(s.actions(),0);assert.equal(s.shots(),0);
+  s.target.emit('keydown',{code:inspect,repeat:true});assert.equal(s.context.inspectServant,true);
+  s.target.emit('keydown',{code:inspect});assert.equal(s.context.inspectServant,false);
+  s.target.emit('keydown',{code:'KeyW'});assert.equal(s.context.state.keys.has('KeyW'),true);
+  s.target.emit('keydown',{code:'KeyM'});s.target.emit('keydown',{code:inspect});assert.equal(s.context.inspectServant,false);
+  s.target.emit('keydown',{code:'KeyM'});s.context.combat.defeated=true;
+  s.target.emit('keydown',{code:inspect});assert.equal(s.context.inspectServant,false);
 });
 test('locked controls work and unlock/blur/hidden clear keys', () => {
   const s = setup(); s.lock();
@@ -120,11 +139,11 @@ test('right-button shoulder aim releases on mouseup, blur, visibility, unlock an
 
 test('World custom bindings drive real input, shooting, sensitivity and hints', () => {
   const s = setup(); s.lock(); const store = s.context.state.settings;
-  store.bind('fire', 'KeyP'); store.bind('forward', 'Mouse3');
-  s.target.emit('keydown', { code: 'KeyP' }); assert.equal(s.shots(), 1);
+  assert.equal(store.bind('fire', 'KeyK'), null); store.bind('forward', 'Mouse3');
+  s.target.emit('keydown', { code: 'KeyK' }); assert.equal(s.shots(), 1);
   s.target.emit('mousedown', { button: 3 }); assert.equal(s.context.state.down('forward'), true);
   store.update({ sensitivity: 2, adsSensitivity: .3, invertY: true });
-  assert.equal(s.context.state.keys.size, 0); assert.match(s.$('help').textContent, /P 射击/);
+  assert.equal(s.context.state.keys.size, 0); assert.match(s.$('help').textContent, /K 射击/);
   s.document.emit('mousemove', { movementX: 10, movementY: 10 });
   assert.equal(s.context.player.yaw, -.044000000000000004); assert.equal(s.context.player.pitch, .044000000000000004);
 });
@@ -168,7 +187,7 @@ test('World alias rebind/menu/blur clear both keys and stale repeats never resto
 test('manual flight vertical controls are absent; Space stays jump/glide and F only interacts', () => {
   const s = setup(); s.lock(); const settings = s.context.state.settings;
   assert.equal(settings.value.bindings.ascend, undefined); assert.equal(settings.value.bindings.descend, undefined);
-  assert.equal(settings.action('Space'), 'jump'); assert.equal(settings.action('KeyQ'), undefined); assert.equal(settings.action('ControlLeft'), undefined);
+  assert.equal(settings.action('Space'), 'jump'); assert.equal(settings.action('KeyQ'), 'skill'); assert.equal(settings.action('ControlLeft'), undefined);
   assert.doesNotMatch(s.$('help').textContent, /飞行上升|飞行下降|互动／飞行/);
   s.target.emit('keydown', { code: 'KeyF' }); assert.equal(s.actions(), 1);
   s.target.emit('keydown', { code: 'KeyV' }); assert.equal(s.context.player.flying, true);
@@ -192,9 +211,9 @@ test('World summon hotkey is rebindable, suppressed by maps/settings, and repeat
   const s=setup(); s.lock(); let calls=0;
   s.context.contract.toggle=()=>{calls++;return true;}; s.context.contract.summoned=true;
   s.target.emit('keydown',{code:'KeyT'}); s.target.emit('keydown',{code:'KeyT',repeat:true}); assert.equal(calls,1);
-  s.context.state.settings.bind('summon','KeyP');
+  assert.equal(s.context.state.settings.bind('summon','KeyK'),null);
   s.target.emit('keydown',{code:'KeyT'}); assert.equal(calls,1);
-  s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
-  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
-  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyO'}); s.target.emit('keydown',{code:'KeyP'}); assert.equal(calls,2);
+  s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
+  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
+  s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyO'}); s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
 });

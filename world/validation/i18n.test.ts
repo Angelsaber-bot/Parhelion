@@ -107,3 +107,21 @@ test('legacy control migrations, recovery notices and English-source catalog lab
   setLanguage('zh'); assert.equal(localizeText('Dawn'), '曙光'); assert.equal(localizeText('Lumen AR'), '突击步枪 AR');
   setLanguage('en'); assert.equal(localizeText('Dawn'), 'Dawn');
 });
+
+
+test('shared-client explicit and extensionless imports retain one locale singleton', async () => {
+  // Node 22 + tsx can split an unscoped TS module into preparse and ordinary CJS
+  // cache entries. The shared package must explicitly be ESM, like both clients.
+  const explicit = await import('../../shared-client/i18n.ts');
+  const emitted = await import('../../shared-client/i18n.js');
+  const settings = await import('../../shared-client/settings.ts');
+  assert.equal(explicit.getLanguage, getLanguage);
+  assert.equal(emitted.getLanguage, getLanguage);
+  assert.equal(settings.bindingLabel, bindingLabel);
+  setLanguage('en');
+  assert.equal(explicit.getLanguage(), 'en');
+  assert.equal(settings.bindingLabel(''), 'Unassigned');
+  explicit.setLanguage('zh');
+  assert.equal(getLanguage(), 'zh');
+  assert.equal(bindingLabel(''), '未设置');
+});

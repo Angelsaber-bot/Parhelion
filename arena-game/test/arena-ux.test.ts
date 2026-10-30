@@ -37,8 +37,8 @@ for (const mode of ['arena', 'world'] as const) describe(`${mode} both Shift ali
     const store = new SettingsStore(mode, disk);
     expect(store.action('ShiftRight')).toBe('fire'); expect(store.bindingsFor(action)).toEqual(['ShiftLeft']); expect(store.notices.join(' ')).toContain('按键冲突');
     disk.values.delete(store.key);
-    disk.values.set(`parhelion-input-${mode}-v2`, JSON.stringify({ ...defaults, version: 2, bindings: { ...defaults.bindings, [action]: 'KeyP' }, secondaryBindings: { ...defaults.secondaryBindings, [action]: '' } }));
-    expect(new SettingsStore(mode, disk).bindingsFor(action)).toEqual(['KeyP']);
+    disk.values.set(`parhelion-input-${mode}-v2`, JSON.stringify({ ...defaults, version: 2, bindings: { ...defaults.bindings, [action]: 'KeyK' }, secondaryBindings: { ...defaults.secondaryBindings, [action]: '' } }));
+    expect(new SettingsStore(mode, disk).bindingsFor(action)).toEqual(['KeyK']);
   });
   it('right Shift is a real rebindable secondary slot and cannot be silently stolen', () => {
     const store = new SettingsStore(mode, storage());

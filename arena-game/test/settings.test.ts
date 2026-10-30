@@ -4,9 +4,10 @@ function storage() { const values = new Map<string,string>(); return { values, g
 for (const mode of ['arena', 'world'] as const) describe(`${mode} settings`, () => {
   it('round-trips bindings, independent normal/ADS sensitivity and invert Y', () => {
     const disk = storage(), a = new SettingsStore(mode, disk);
-    expect(a.bind('fire', 'KeyP')).toBeNull(); a.update({ sensitivity: 1.8, adsSensitivity: .4, invertY: true });
+    expect(a.action('KeyK')).toBeUndefined();
+    expect(a.bind('fire', 'KeyK')).toBeNull(); a.update({ sensitivity: 1.8, adsSensitivity: .4, invertY: true });
     const b = new SettingsStore(mode, disk);
-    expect(b.value).toEqual(a.value); expect(b.action('KeyP')).toBe('fire'); expect(b.label('fire')).toBe('P');
+    expect(b.value).toEqual(a.value); expect(b.action('KeyK')).toBe('fire'); expect(b.label('fire')).toBe('K');
   });
   it('conflicts require an explicit swap; reserved keys cannot steal Escape/system shortcuts', () => {
     const store = new SettingsStore(mode, storage()), before = structuredClone(store.value);
@@ -93,4 +94,31 @@ for (const mode of ['arena', 'world'] as const) describe(`${mode} alternate bind
     expect(store.notices.join(' ')).toMatch(/按键冲突/);
     if (mode === 'world') expect(store.value.bindings.interact).toBe('Mouse4');
   });
+});
+
+for (const slot of ['primary', 'secondary'] as const) it(`old World v3 custom P ${slot} survives the new main-route default and round-trips`, () => {
+  const disk = storage(), old = defaultSettings('world');
+  // Faithful pre-expansion v3 record: these new actions did not exist yet.
+  for (const action of ['travel', 'mainRoute', 'skill', 'ultimate', 'melee', 'evade']) {
+    delete old.bindings[action]; delete old.secondaryBindings[action];
+  }
+  const action = 'sprint'; // Later than mainRoute in the current action list.
+  (slot === 'primary' ? old.bindings : old.secondaryBindings)[action] = 'KeyP';
+  old.sensitivity = 1.75; old.adsSensitivity = .4; old.invertY = true;
+  const raw = JSON.stringify(old);
+  disk.values.set('parhelion-input-world-v3', raw);
+  const store = new SettingsStore('world', disk);
+  expect(store.action('KeyP')).toBe(action);
+  expect(store.bindingsFor(action)).toEqual(slot === 'primary' ? ['KeyP', 'ShiftRight'] : ['ShiftLeft', 'KeyP']);
+  expect(store.value.bindings.mainRoute).not.toBe('KeyP');
+  expect(validBinding(store.value.bindings.mainRoute)).toBe(true);
+  expect(store.action(store.value.bindings.mainRoute)).toBe('mainRoute');
+  expect(store.notices.join(' ')).toContain('按键冲突');
+  expect(store.value.sensitivity).toBe(1.75); expect(store.value.adsSensitivity).toBe(.4); expect(store.value.invertY).toBe(true);
+  expect(disk.values.get(store.key)).toBe(raw); // Reading v3 does not overwrite the user's record.
+  expect(new SettingsStore('world', disk).value).toEqual(store.value);
+  store.update({ sensitivity: 2 }); // A subsequent normal save persists the repaired new default.
+  const reloaded = new SettingsStore('world', disk);
+  expect(reloaded.value).toEqual(store.value); expect(reloaded.action('KeyP')).toBe(action);
+  expect(reloaded.notices).toEqual([]);
 });

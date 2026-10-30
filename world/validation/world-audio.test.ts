@@ -1,0 +1,68 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { WorldAudio, WORLD_AUDIO_KEY, WORLD_AUDIO_VOICES } from '../src/worldAudio';
+
+class Parameter {value=0;setValueAtTime(value:number){this.value=value;}exponentialRampToValueAtTime(value:number){this.value=value;}cancelScheduledValues(){}}
+class Node {
+  gain=new Parameter();frequency=new Parameter();Q=new Parameter();threshold=new Parameter();knee=new Parameter();ratio=new Parameter();attack=new Parameter();release=new Parameter();
+  onended:(()=>void)|null=null;buffer:unknown;type='';disconnections=0;started=false;stops=0;
+  connect(node:Node){return node;}disconnect(){this.disconnections++;}start(){this.started=true;}stop(){this.stops++;}end(){this.onended?.();}
+}
+class Context {
+  currentTime=0;sampleRate=48000;state='running';destination=new Node();nodes:Node[]=[];sources:Node[]=[];buffers=0;resumes=0;suspends=0;closes=0;
+  node(){const node=new Node();this.nodes.push(node);return node;}
+  createGain(){return this.node();}createDynamicsCompressor(){return this.node();}createBiquadFilter(){return this.node();}
+  createBufferSource(){const n=this.node();this.sources.push(n);return n;}createOscillator(){const n=this.node();this.sources.push(n);return n;}
+  createBuffer(_channels:number,length:number){this.buffers++;return{getChannelData:()=>new Float32Array(length)};}
+  async resume(){this.resumes++;this.state='running';}async suspend(){this.suspends++;this.state='suspended';}async close(){this.closes++;this.state='closed';}
+}
+const trusted={isTrusted:true};
+function fixture(){const context=new Context();let calls=0,foreground=true;const audio=new WorldAudio({createContext:()=>{calls++;return context as unknown as AudioContext;},foreground:()=>foreground,gesture:()=>false,storage:null,listen:false});return{audio,context,calls:()=>calls,hide:()=>{foreground=false;}};}
+
+test('no context or playback before a foreground user gesture; missing AudioContext is safe',()=>{
+ const f=fixture();f.audio.setActive(true);f.audio.shot();f.audio.unlock();f.audio.unlock({isTrusted:false});assert.equal(f.calls(),0);
+ f.hide();f.audio.unlock(trusted);assert.equal(f.calls(),0);f.audio.dispose();
+ const absent=new WorldAudio({foreground:()=>true,gesture:()=>false,createContext:()=>null,listen:false});assert.doesNotThrow(()=>{absent.unlock(trusted);absent.setActive(true);absent.shot();absent.dispose();});
+ const browserAbsent=new WorldAudio({foreground:()=>true,gesture:()=>false,listen:false});assert.doesNotThrow(()=>{browserAbsent.unlock(trusted);browserAbsent.cannon();browserAbsent.dispose();});
+});
+test('strict source budget drops excess layers, reuses noise and disconnects every ended node',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+ for(let i=0;i<1000;i++)f.audio.shot();assert.equal(f.audio.activeVoices,WORLD_AUDIO_VOICES);assert.equal(f.context.sources.length,WORLD_AUDIO_VOICES);assert.equal(f.context.buffers,1);
+ const voices=f.context.nodes.slice(2);for(const source of f.context.sources)source.end();assert.equal(f.audio.activeVoices,0);assert.ok(voices.every(n=>n.disconnections===1));
+ f.audio.cannon();assert.equal(f.audio.activeVoices,2);assert.equal(f.context.buffers,1);f.audio.dispose();assert.ok(f.context.nodes.every(n=>n.disconnections===1));
+});
+test('menu mute cancels tails and requires another gesture to resume the suspended device',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);f.audio.skill();assert.equal(f.audio.activeVoices,2);
+ f.audio.setActive(false);assert.equal(f.audio.activeVoices,0);assert.equal(f.context.suspends,1);
+ f.audio.setActive(true);f.audio.shot();assert.equal(f.audio.activeVoices,0);assert.equal(f.context.resumes,0);
+ f.audio.unlock(trusted);f.audio.shot();assert.equal(f.audio.activeVoices,2);assert.equal(f.context.resumes,1);
+ f.audio.setMuted(true);assert.equal(f.audio.activeVoices,0);f.audio.shot();assert.equal(f.audio.activeVoices,0);
+ f.audio.setMuted(false);f.audio.setVolume(0);f.audio.cannon();assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+});
+test('volume/mute persist safely with low defaults, validation and denied storage',()=>{
+ const map=new Map<string,string>(),storage={getItem:(key:string)=>map.get(key)??null,setItem:(key:string,value:string)=>{map.set(key,value);}};
+ const a=new WorldAudio({storage,listen:false});assert.equal(a.volume,.35);assert.equal(a.muted,false);a.setVolume(.6);a.setMuted(true);
+ const b=new WorldAudio({storage,listen:false});assert.equal(b.volume,.6);assert.equal(b.muted,true);b.setVolume(99);assert.equal(b.volume,1);b.setVolume(NaN);assert.equal(b.volume,1);
+ assert.deepEqual(JSON.parse(map.get(WORLD_AUDIO_KEY)!),{volume:1,muted:true});
+ const denied=new WorldAudio({storage:{getItem(){throw new Error('denied');},setItem(){throw new Error('denied');}},listen:false});assert.equal(denied.volume,.35);assert.doesNotThrow(()=>denied.setVolume(.2));assert.equal(denied.saved,false);assert.equal(denied.volume,.2);
+ map.set(WORLD_AUDIO_KEY,'{"volume":"loud","muted":"yes"}');const invalid=new WorldAudio({storage,listen:false});assert.equal(invalid.volume,.35);assert.equal(invalid.muted,false);
+ for(const audio of[a,b,denied,invalid])audio.dispose();
+});
+test('all cues are bounded transients; repeated dispose or later calls cannot recreate resources',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+ for(const name of ['shot','cannon','melee','contact','hurt','kill','skill','evade','interaction'] as const){f.audio[name]();for(const node of f.context.sources)node.end();assert.equal(f.audio.activeVoices,0);}
+ assert.ok(f.context.sources.every(node=>node.started&&node.stops===1));f.audio.shot();f.audio.dispose();f.audio.dispose();
+ const nodes=f.context.nodes.length;f.audio.unlock(trusted);f.audio.setActive(true);f.audio.shot();assert.equal(f.context.nodes.length,nodes);assert.equal(f.context.closes,1);assert.equal(f.calls(),1);
+});
+test('creation/start/resume failures are swallowed without leaving tracked voices',async()=>{
+ const a=new WorldAudio({foreground:()=>true,createContext:()=>{throw new Error('device');},listen:false});assert.doesNotThrow(()=>a.unlock(trusted));a.dispose();
+ const f=fixture();f.context.createOscillator=()=>{throw new Error('node allocation');};f.audio.unlock(trusted);f.audio.setActive(true);assert.doesNotThrow(()=>f.audio.interaction());assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+ const g=fixture();g.context.state='suspended';g.context.resume=async()=>{throw new Error('autoplay denied');};g.audio.unlock(trusted);await Promise.resolve();g.audio.setActive(true);g.audio.shot();assert.equal(g.audio.activeVoices,0);g.audio.dispose();
+});
+test('foreground loss stops voices via module listeners and dispose removes those listeners',()=>{
+ const oldWindow=Object.getOwnPropertyDescriptor(globalThis,'window'),oldDocument=Object.getOwnPropertyDescriptor(globalThis,'document');
+ const handlers=new Map<string,()=>void>();const target={addEventListener:(name:string,fn:()=>void)=>handlers.set(name,fn),removeEventListener:(name:string)=>handlers.delete(name)};
+ Object.defineProperty(globalThis,'window',{value:target,configurable:true});Object.defineProperty(globalThis,'document',{value:{...target,visibilityState:'visible',hasFocus:()=>true},configurable:true});
+ try{const context=new Context(),audio=new WorldAudio({createContext:()=>context as unknown as AudioContext,gesture:()=>false,storage:null});audio.unlock(trusted);audio.setActive(true);audio.shot();assert.equal(audio.activeVoices,2);handlers.get('blur')!();assert.equal(audio.activeVoices,0);assert.equal(context.state,'suspended');audio.dispose();assert.equal(handlers.size,0);}
+ finally{if(oldWindow)Object.defineProperty(globalThis,'window',oldWindow);else Reflect.deleteProperty(globalThis,'window');if(oldDocument)Object.defineProperty(globalThis,'document',oldDocument);else Reflect.deleteProperty(globalThis,'document');}
+});

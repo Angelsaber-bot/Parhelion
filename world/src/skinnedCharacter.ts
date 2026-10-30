@@ -15,6 +15,8 @@ export interface PlayerAnimationState {
   armed?: boolean;
   /** World-space view heading (+Z forward), used only while firing; never changes the camera. */
   lookYaw?: number;
+  /** Contact-timed melee overlay, root owns combat and input. */
+  melee?: { phase: number; combo: number; yaw: number };
 }
 interface RestBone { p: THREE.Vector3; q: THREE.Quaternion; s: THREE.Vector3; rootQ: THREE.Quaternion; rootP: THREE.Vector3; }
 export interface SkinnedCharacterRig {
@@ -149,7 +151,7 @@ function aimLink(bone: THREE.Bone, child: THREE.Bone, direction: THREE.Vector3) 
 }
 
 /** Actual elbow/wrist positions and bind axes; no .27/.28 metre or local −Y assumptions. */
-export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion, relaxed = 0, neutralWrist = 0, gripAlignment = 0) {
+export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion, relaxed = 0, neutralWrist = 0, gripAlignment = 0, bladeDirection?: THREE.Vector3) {
   const upper = rig.joints[`Arm_${side}`] as THREE.Bone, lower = rig.joints[`Forearm_${side}`] as THREE.Bone, hand = rig.joints[`Hand_${side}`] as THREE.Bone;
   const socket = rig.handSockets[side];
   const handRest = rig.rest.get(hand)!, lowerRest = rig.rest.get(lower)!;
@@ -201,9 +203,14 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
     solve();
     if (neutralWrist > 0) {
       const distal = reachable.clone().sub(elbow).normalize();
-      const dorsal = freeDorsal.clone().addScaledVector(distal, -freeDorsal.dot(distal)).normalize();
-      // Four degrees of relaxed palmar flexion, not the former 32–44 degree kink.
-      const relaxedAxis = distal.clone().multiplyScalar(Math.cos(.07)).addScaledVector(dorsal, -Math.sin(.07));
+      const dorsal = bladeDirection
+        ? bladeDirection.clone().cross(distal).normalize()
+        : freeDorsal.clone().addScaledVector(distal, -freeDorsal.dot(distal)).normalize();
+      // Free hands use 4° palmar flexion; sword grip uses 11.5° controlled ulnar
+      // deviation. Neither inherits the former 32–44° wrist kink.
+      const relaxedAxis = bladeDirection
+        ? distal.clone().multiplyScalar(Math.cos(.20)).addScaledVector(distal.clone().cross(dorsal).normalize(), -Math.sin(.20))
+        : distal.clone().multiplyScalar(Math.cos(.07)).addScaledVector(dorsal, -Math.sin(.07));
       resolvedPalm.copy(originalPalm).slerp(basis(relaxedAxis, dorsal), neutralWrist);
     }
   }
@@ -241,12 +248,14 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
 export class SkinnedCharacterAnimator {
   facing = 0;
   private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0;
+  private meleePose: PlayerAnimationState['melee'];
+  private meleeRelease = 0;
   private lastState: PlayerAnimationState = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null };
   constructor(public rig: SkinnedCharacterRig) {}
   /** Full new-game/reset boundary, not a normal equipment/locomotion transition. */
   reset(armed = true, facing = 0) {
     this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.adsPose = this.carry = this.strideSpeed = 0;
-    this.ready = armed ? 1 : 0; this.facing = facing;
+    this.ready = armed ? 1 : 0; this.facing = facing; this.meleePose = undefined; this.meleeRelease = 0;
     this.update(0, { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null, armed });
   }
   /** Match the actual targeting camera, even when input fires before RAF or after free-look. */
@@ -255,14 +264,26 @@ export class SkinnedCharacterAnimator {
     const direction = look.clone().normalize();
     const pitch = Math.asin(THREE.MathUtils.clamp(direction.y, -1, 1));
     const lookYaw = Math.atan2(direction.x, direction.z);
-    this.update(0, { ...this.lastState, pitch, lookYaw, firing: true });
+    this.update(0, { ...this.lastState, melee: undefined, pitch, lookYaw, firing: true });
   }
   update(dt: number, state: PlayerAnimationState) {
     if (this.rig.diagnostics.disposed) return;
     this.lastState = { ...state };
     dt = Number.isFinite(dt) ? THREE.MathUtils.clamp(dt, 0, .1) : 0;
     const rig = this.rig, J = rig.joints;
-    const armed = state.armed !== false, firing = armed && !!state.firing;
+    const armed = state.armed !== false, firing = armed && !!state.firing && !state.melee;
+    if (state.melee) { this.meleePose = { ...state.melee }; this.meleeRelease = state.melee.combo > 0 ? 1 : THREE.MathUtils.clamp(state.melee.phase / .18, 0, 1); }
+    else { this.meleeRelease = Math.max(0, this.meleeRelease - dt / .18); }
+    // A real shot / glider / swim immediately owns its original pose. Ordinary recovery
+    // transfers back over 180ms, instead of popping the hands back to the rifle.
+    if (firing || state.gliding || state.swimming) this.meleeRelease = 0;
+    const meleePose = state.melee ?? (this.meleeRelease > 0 ? this.meleePose : undefined);
+    const meleePhase = meleePose ? THREE.MathUtils.clamp(meleePose.phase, 0, 1) : 0;
+    const meleeCut = meleePose?.combo ?? 0;
+    // Keep the grip through queued beat boundaries: cut 0 ends where cut 1 starts.
+    const meleeWeight = meleePose ? state.melee ? meleeCut > 0 ? 1 : Math.min(1, meleePhase / .18) : this.meleeRelease : 0;
+    const meleeStroke = THREE.MathUtils.smoothstep(meleePhase, meleeCut === 2 ? .20 : .18, meleeCut === 2 ? .52 : .55);
+    rig.root.userData.meleeGripReady = meleeWeight > .98;
     J.Gun.visible = armed;
     const speed = Number.isFinite(state.speed) ? Math.max(0, state.speed) : 0;
     // Filter visual gait only; starts/stops must not jerk the shoulders/held weapon while
@@ -280,7 +301,9 @@ export class SkinnedCharacterAnimator {
     const aim = Math.max(this.adsPose, this.fireAim);
     const extreme = THREE.MathUtils.smoothstep(Math.abs(pitch), .65, 1.30);
     const previousFacing = this.facing;
-    if (firing && Number.isFinite(state.lookYaw)) {
+    if (state.melee && Number.isFinite(state.melee.yaw)) {
+      this.facing = state.melee.yaw;
+    } else if (firing && Number.isFinite(state.lookYaw)) {
       // dt=0 must still align an input-event shot. A 12*dt movement lerp would leave it sideways.
       this.facing += Math.atan2(Math.sin(state.lookYaw! - this.facing), Math.cos(state.lookYaw! - this.facing));
     } else if (state.moveYaw !== null && Number.isFinite(state.moveYaw)) {
@@ -314,20 +337,31 @@ export class SkinnedCharacterAnimator {
     const rotation = (name: string, x: number, y = 0, z = 0) => applyLocalDelta(rig, J[name] as THREE.Bone, Q().setFromEuler(new THREE.Euler(x, y, z)));
     const hip = J.Hips as THREE.Bone, hipRest = rig.rest.get(hip)!;
     const hipOffset = V(0, (-.045 + Math.cos(this.phase * 2) * .008) * move * (1 - this.air) * (1 - g) + Math.sin(this.time * 2.2) * .004 * (1 - move) - (state.swimming ? .45 : 0), 0);
+    // The pelvis loads over planted feet; no root/controller translation and no altered
+    // foot targets. Existing leg IK supplies real knee flexion instead of sliding shoes.
+    const meleeGround = meleeWeight * (1 - this.air) * (1 - g) * (state.swimming ? 0 : 1) * (1 - move * .3);
+    const heavy = meleeCut === 2;
+    const heavyBlend = heavy ? THREE.MathUtils.smoothstep(meleePhase, 0, .18) : 0;
+    const load = Math.sin(Math.PI * THREE.MathUtils.clamp(meleePhase / .82, 0, 1));
+    hipOffset.y -= meleeGround * (.035 + heavyBlend * .02 + load * (.04 + heavyBlend * .025));
+    hipOffset.x += meleeGround * (meleeStroke - .5) * (.06 - heavyBlend * .035) * (meleeCut === 1 ? -1 : 1);
+    hipOffset.z += meleeGround * (.015 + Math.sin(meleeStroke * Math.PI) * (heavy ? .035 : .02));
+    const meleeTwist = meleeGround * (meleeStroke - .5) * (.62 - heavyBlend * .38) * (meleeCut === 1 ? -1 : 1);
+    const meleeLean = meleeGround * (heavy ? THREE.MathUtils.lerp(.065, -.06 + meleeStroke * .30, heavyBlend) : .065 + Math.sin(meleeStroke * Math.PI) * .055);
     const parentRestQ = hip.parent ? hip.parent.getWorldQuaternion(Q()) : Q();
     const rootQ = rig.root.getWorldQuaternion(Q());
     hip.position.copy(hipRest.p).add(hipOffset.applyQuaternion(rootQ).applyQuaternion(parentRestQ.invert()));
     const bodyLean = (run * .15 * (1 - aim) * (1 - g)) + (state.swimming ? .65 : 0) + g * .17;
-    rotation('Hips', 0, -swing * .035 * move * (1 - aim) * (1 - g), this.bank * .25);
-    rotation('Spine', bodyLean * .25, swing * .025 * move * (1 - aim));
-    rotation('Chest', bodyLean * .35);
-    rotation('UpperChest', bodyLean * .40);
+    rotation('Hips', meleeLean * .2, -swing * .035 * move * (1 - aim) * (1 - g) + meleeTwist * .35, this.bank * .25);
+    rotation('Spine', bodyLean * .25 + meleeLean * .25, swing * .025 * move * (1 - aim) + meleeTwist * .2);
+    rotation('Chest', bodyLean * .35 + meleeLean * .35, meleeTwist * .5);
+    rotation('UpperChest', bodyLean * .40 + meleeLean * .2, meleeTwist * .15);
     // A small real clavicle protraction keeps the support arm reachable at steep cross-body aim.
     rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (armed ? carry : 1 - g));
     rotation('Shoulder_R', 0, .05 * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (!armed ? 1 - g : 0));
     // Camera may look almost vertically; a human neck must not inherit that entire rotation.
-    rotation('Neck', -bodyLean * .30 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim);
-    rotation('Head', -bodyLean * .55 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim));
+    rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim);
+    rotation('Head', -bodyLean * .55 - meleeLean * .4 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim));
     const thighAngles: Record<Side, number> = { R: 0, L: 0 };
     for (const [side, sign] of [['L', 1], ['R', -1]] as const) {
       const phase = this.phase + (side === 'L' ? 0 : Math.PI);
@@ -390,6 +424,8 @@ export class SkinnedCharacterAnimator {
     const mountWeight = THREE.MathUtils.smoothstep(r, .05, .50);
     J.Gun.position.lerpVectors(rig.gunSling.p, holdPosition, mountWeight);
     J.Gun.quaternion.slerpQuaternions(rig.gunSling.q, gunQ, mountWeight);
+    J.Gun.position.lerp(rig.gunSling.p, meleeWeight);
+    J.Gun.quaternion.slerp(rig.gunSling.q, meleeWeight);
     rig.root.updateMatrixWorld(true);
     const heldGunWorldQ = rootQ.clone().multiply(gunQ), gliderWorldQ = J.Glider.getWorldQuaternion(Q());
     const handGunWeight = THREE.MathUtils.smoothstep(r, .20, .95);
@@ -404,9 +440,19 @@ export class SkinnedCharacterAnimator {
           .035 + armSwing * (.12 + .055 * run) * move), armed ? carry : 1);
       }
       if (state.swimming) freePoint.set(sign * (.22 + Math.cos(this.time * 3.3 + sign) * .10), shoulderY - .20 + Math.sin(this.time * 3.3 + sign) * .10, .24 + Math.cos(this.time * 3.3 + sign) * .16);
+      if (meleeWeight > 0) {
+        // Targets remain inside measured arm reach; IK preserves anatomical elbow poles.
+        const cut = meleeStroke;
+        const bladePoint = side === 'R'
+          ? V(meleeCut === 1 ? -.04 - cut * .31 : -.35 + cut * .31,
+              shoulderY - .39 + (meleeCut === 2 ? .02 * (1 - heavyBlend) + .64 * Math.sin(Math.min(1, meleePhase / .20) * Math.PI / 2) * Math.pow(1 - cut, 1.4) : .02), .23 + Math.sin(cut * Math.PI) * .035 + (heavy ? cut * .07 : 0))
+          : V(.26 + Math.sin(cut * Math.PI) * .025, shoulderY - .24 + (heavy ? .10 * heavyBlend * (1 - cut) : 0), .18);
+        freePoint.lerp(bladePoint, meleeWeight);
+      }
       const palmPoint = rig.root.localToWorld(freePoint);
       const freePalm = state.swimming ? basis(V(sign * .15, -.12, 1), V(0, 1, .12))
         : basis(V(0, -1, 0), V(sign, 0, 0));
+      if (side === 'R' && meleeWeight > 0) freePalm.slerp(basis(V(.12,-.8,.35), V(-1,0,.15)), meleeWeight);
       const handQ = rootQ.clone().multiply(freePalm);
       // While the frame is still deployed, transfer directly between its real grips and the
       // forward held-rifle pose. Never chase the gun through its back-sling path with a hand.
@@ -417,20 +463,27 @@ export class SkinnedCharacterAnimator {
       handQ.slerp(gliderWorldQ.clone().multiply(gliderPalm), glideContact);
       const anchor = side === 'R' ? rig.gunAnchors.grip : rig.gunAnchors.support;
       const heldAnchor = anchor.clone().applyQuaternion(gunQ).add(holdPosition);
-      const contact = handGunWeight * (side === 'L' ? 1 - carry : 1);
+      const contact = handGunWeight * (side === 'L' ? 1 - carry : 1) * (1 - meleeWeight);
       palmPoint.lerp(rig.root.localToWorld(heldAnchor), contact);
       handQ.slerp(heldGunWorldQ.clone().multiply(gunPalm[side]), contact);
       // Finish neutral alignment near release. Re-solving a half-contacted palm
       // against its own blended forearm creates an unstable orientation feedback loop.
-      const neutralWrist = state.swimming ? 0 : THREE.MathUtils.smoothstep((1 - glideContact) * (1 - contact), .75, 1);
-      solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact);
-      this.poseFingers(side, contact, glideContact * (1 - contact));
+      const neutralWrist = meleeWeight > 0 ? meleeWeight : state.swimming ? 0 : THREE.MathUtils.smoothstep((1 - glideContact) * (1 - contact), .75, 1);
+      // A sword grip must roll around the forearm, not inherit the free-hand dorsal
+      // axis (which pointed the old blade almost vertically into the ground).
+      const cutArc = THREE.MathUtils.smoothstep(meleePhase, meleeCut === 2 ? .20 : .18, meleeCut === 2 ? .58 : .60);
+      const slashAngle = (cutArc - .5) * 2.25 * (meleeCut === 1 ? -1 : 1);
+      const bladeDirection = side === 'R' && meleeWeight > 0
+        ? (meleeCut === 2 ? V(Math.sin(slashAngle) * (1 - heavyBlend * .4), .12 + heavyBlend * .23, Math.cos(slashAngle)) : V(Math.sin(slashAngle), .12, Math.cos(slashAngle))).normalize().applyQuaternion(rootQ)
+        : undefined;
+      solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact, bladeDirection);
+      this.poseFingers(side, Math.max(contact, side === 'R' ? meleeWeight : 0), glideContact * (1 - contact), side === 'R' ? meleeWeight : 0);
     }
-    rig.diagnostics.mode = r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
+    rig.diagnostics.mode = meleeWeight > .5 ? 'melee' : r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
     rig.root.updateMatrixWorld(true);
     rig.skeletons.forEach(s => s.update());
   }
-  private poseFingers(side: Side, rifle: number, glide: number) {
+  private poseFingers(side: Side, rifle: number, glide: number, melee = 0) {
     const rig = this.rig;
     const hand = rig.joints[`Hand_${side}`] as THREE.Bone;
     const handRest = rig.rest.get(hand)!;
@@ -443,7 +496,8 @@ export class SkinnedCharacterAnimator {
       const base = [.12, .18, .12][segment - 1];
       const gun = finger === 'Thumb' ? [.50, .75, .55][segment - 1] : side === 'R' && finger === 'Index' ? [.32, .60, .40][segment - 1] : [.72, 1.05, .68][segment - 1];
       const hang = finger === 'Thumb' ? [.60, .85, .60][segment - 1] : [.82, 1.15, .72][segment - 1];
-      const angle = base + (gun - base) * rifle + (hang - base) * glide;
+      const sword = finger === 'Thumb' ? [.50, .75, .55][segment - 1] : [.72, 1.05, .68][segment - 1];
+      const angle = base + (gun - base) * rifle + (hang - base) * glide + (sword - gun) * melee;
       const axis = curlAxis.clone().applyQuaternion(rest.rootQ.clone().invert());
       bone.quaternion.copy(rest.q).multiply(Q().setFromAxisAngle(axis, angle));
       if (finger === 'Thumb' && segment === 1) {

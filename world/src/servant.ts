@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { validSkillPose, type SkillPoseCommand } from './skillPose';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { bilingual } from '../../shared-client/i18n';
@@ -63,6 +64,7 @@ export class ContractServant {
   private attackDuration = 1.2;
   private attackTarget: string | null = null;
   private contactPending = false;
+  private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; clipElapsed: number; emitted: boolean; started: boolean };
   private activeLast = false;
   private disposed = false;
   private model?: THREE.Object3D;
@@ -178,7 +180,44 @@ export class ContractServant {
     if (gaitChange && previous) previous.setEffectiveTimeScale(rate * previous.getClip().duration / next.getClip().duration);
     this.current = next;
   }
-  private cancelAttack() { this.motion.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  private cancelAttack() { this.cancelSkillPose(); this.motion.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  startSkillPose(command: SkillPoseCommand): boolean {
+    if (!validSkillPose(command) || this.disposed || this.state !== 'ready' || !this.root.visible || !this.options.contract.summoned || !this.clips.has('attack')) return false;
+    this.cancelAttack(); this.activeLast = true;
+    this.attackYaw = Math.atan2(command.direction.x, command.direction.z);
+    this.skillPose = { command, contacts: 0, elapsed: 0, clipElapsed: 0, emitted: false, started: false };
+    this.play('idle'); return true;
+  }
+  cancelSkillPose() {
+    const pose = this.skillPose; this.skillPose = undefined;
+    if (pose) { this.play('idle'); pose.command.onFinish(false); }
+  }
+  private advanceSkillPose(dt: number) {
+    const pose = this.skillPose;
+    if (!pose) return;
+    pose.elapsed += dt;
+    if (pose.elapsed > 7.5) { this.cancelSkillPose(); return; }
+    turnCompanion(this.root, this.attackYaw, dt);
+    if (!pose.started) {
+      const angle = Math.atan2(Math.sin(this.attackYaw - this.root.rotation.y), Math.cos(this.attackYaw - this.root.rotation.y));
+      if (Math.abs(angle) > .08) { this.tick(dt); return; }
+      pose.started = true; this.play('attack', true);
+    }
+    const contact = this.attackDuration * SERVANT_MOTION.attackContact;
+    const next = Math.min(this.attackDuration, pose.clipElapsed + dt);
+    if (!pose.emitted && next >= contact) {
+      this.tick(Math.max(0, contact - pose.clipElapsed));
+      pose.emitted = true; pose.contacts++;
+      pose.command.onContact(this.root.position, { x: Math.sin(this.attackYaw), y: 0, z: Math.cos(this.attackYaw) }, 'sword', { losOffset: 1, casterFeetY: this.root.position.y });
+      if (this.skillPose !== pose) return;
+      this.tick(next - contact);
+    } else this.tick(next - pose.clipElapsed);
+    pose.clipElapsed = next;
+    if (next >= this.attackDuration) {
+      if (pose.contacts >= pose.command.contacts) { this.skillPose = undefined; this.play('idle'); pose.command.onFinish(true); }
+      else { pose.clipElapsed = 0; pose.emitted = false; this.play('attack', true); }
+    }
+  }
   private floor(x: number,z: number,baseY: number) {
     this.ray.origin.set(x,baseY+1.1,z); this.ray.direction.copy(this.down);
     let best = Infinity;
@@ -209,7 +248,8 @@ export class ContractServant {
       if (!paused && this.root.visible) this.tick(dt);
       return;
     }
-    if (paused) return;
+    if (paused) { this.cancelSkillPose(); return; }
+    if (this.skillPose && this.root.position.distanceTo(player) <= 24) { this.advanceSkillPose(dt); return; }
     const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4 - Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4 - Math.cos(yaw)*.8));
     const prey = this.options.engage?.(player);
     if (prey) destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1.4));
