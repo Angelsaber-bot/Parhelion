@@ -17,10 +17,13 @@ export class PlayerMelee {
   get yaw() { return this.heading; }
   get phase() { return this.active ? Math.min(1, this.elapsed / MELEE_BEATS[this.beat].duration) : 0; }
   get cooldown() { return this.recovery; }
+  /** Presentation reads the same input window as press(), never a guessed animation fraction. */
+  get comboWindowOpen() { return this.active && this.beat < 2 && this.elapsed >= MELEE_BEATS[this.beat].queueAt && !this.queued; }
+  get nextCutQueued() { return this.active && this.queued; }
   press(yaw: number) {
     if (!Number.isFinite(yaw)) return false;
     if (this.active) {
-      if (this.beat >= 2 || this.elapsed < MELEE_BEATS[this.beat].queueAt) return false;
+      if (this.queued || this.beat >= 2 || this.elapsed < MELEE_BEATS[this.beat].queueAt) return false;
       this.queued = true; return true;
     }
     if (this.recovery > 0) return false;

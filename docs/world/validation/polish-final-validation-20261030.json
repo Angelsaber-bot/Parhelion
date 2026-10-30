@@ -1,0 +1,76 @@
+{
+  "baseCommit": "b3a230c62d8271f4c04baebb6e2a8f55c1e050de",
+  "runtimeFreezeUtc": "2026-10-30T12:35:40Z",
+  "validationCompletedUtc": "2026-10-30T12:42:14Z",
+  "nodeVersions": [
+    "22.22.2",
+    "24.22.1"
+  ],
+  "buildId": "6a86a5948b45b63b1fe52be5a2ecc483c5969497c407eecee79a70761fe16089",
+  "results": {
+    "world-node22": {
+      "exitCode": 0,
+      "logSha256": "02228ccaa51ec006eddd8404e96b19d50703f71db870c38880ce3251f669d3ad",
+      "passed": 856
+    },
+    "world-node24": {
+      "exitCode": 0,
+      "logSha256": "2564286497ffcc9cf00437f52c8713f4b8cf7ebaed86dbac05ec9e4861327192",
+      "passed": 856
+    },
+    "arena-node22": {
+      "exitCode": 0,
+      "logSha256": "f7596a2c432b88e65934896740f9ab1ef69872d25edf51f277835f74aa189e09",
+      "passed": 322
+    },
+    "site-build-node22": {
+      "exitCode": 0,
+      "logSha256": "c3835565c480f0c57cd06e57cf3539de2cb79800568aa608d9a4fdb018c21fd2"
+    },
+    "site-test-node22": {
+      "exitCode": 0,
+      "logSha256": "e74cf842fcc159c906379a6950e4e9b0f0276fe85f8d6c848ae50ffb6050a0b2",
+      "passed": 13
+    }
+  },
+  "diffCheck": "passed",
+  "sourceManifest": {
+    "file": "polish-source-manifest-20261030.sha256",
+    "files": 976,
+    "sha256": "a5b2452f3fe3abd875cd2f5aeee15304f5fc2e0f33b59c23d496edfc18bb2cc6",
+    "unchangedRuntimeAndTestsDuringValidation": true,
+    "documentationOnlyRefresh": "Root README gained a link to this report while tests ran; the final manifest includes that documentation update."
+  },
+  "scope": [
+    "World incremental gameplay, interaction and station-art polish",
+    "No changes to five-region framework or Arena runtime"
+  ],
+  "limitations": [
+    "DOM, physics and state validation use an explicitly non-GPU renderer adapter.",
+    "Chapter automation uses test positioning and decisive damage; it is not a human playthrough.",
+    "Offline Blender renders verify source geometry/materials, not browser presentation or FPS.",
+    "Cloud browser GPU acceptance and current Mac FPS remain unverified.",
+    "This is an incremental tested revision, not a completed top-tier commercial open-world game."
+  ],
+  "publication": "Not yet pushed at validation time; publication follows the scheduled report.",
+  "readOnlyFollowupChecks": {
+    "builtSiteManifest": {
+      "files": 75,
+      "hashMismatches": 0
+    },
+    "crossRegionResourceSoak": {
+      "loops": 5,
+      "regions": 5,
+      "errors": 0,
+      "lateRejections": 0,
+      "stableAfterWarmup": true,
+      "file": "polish-cross-region-soak-20261030.json",
+      "limitations": "Source identity counts with no-GPU renderer; not GPU memory or FPS."
+    },
+    "wholeIterationCpuScreen": {
+      "file": "polish-integration-cpu/README.md",
+      "samplesPerVersion": 2,
+      "conclusion": "No consistent large CPU regression; Kyoto p95 slightly worse, variance retained. Not an FPS measurement."
+    }
+  }
+}

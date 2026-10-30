@@ -212,10 +212,62 @@ export function applyEraMarkerRequirements(markers: Marker[], done: ReadonlySet<
 export function getEraPieceRequirements(name: string, done: ReadonlySet<string>): readonly string[] | undefined {
   return name === 'Ghost_Bridge' || name === 'COL_Ghost_Bridge' ? getEraBossRequirements('sea_core', done) : undefined;
 }
+/** Existing saved repair flags drive both scene changes and personal recollections.
+ * Reading dialogue never completes a task or gives a repeat reward. */
+function residentConsequence(id: string, done: ReadonlySet<string>): Localized | null {
+  if (id === 'britain_smith' && done.has('britain_memorial')) return done.has(ERA_KNIGHT_DEFEATED)
+    ? ['碑上的名字清楚了，路上的守卫也收了剑。你替这些旧剑找回了一点体面。', 'The names are clear and the road wardens have lowered their swords. You restored a little dignity to these old blades.']
+    : ['铭牌擦亮了。碑前那场试炼还在等你；不必急着接剑，先看他怎么收势。', 'The memorial is clean. Its trial still waits; watch how the knight recovers before you meet his blade.'];
+  if (id === 'britain_stable_keeper' && done.has(ERA_KNIGHT_DEFEATED)) return [
+    '路上的守卫肯收剑了。再去碑前试剑也好，走自己的路也好，没人拦你。',
+    'The road wardens have lowered their swords. Return to the memorial for another bout, or take your own road.',
+  ];
+  if (id === 'britain_abbey_keeper' && done.has('hall_brazier_1')) return ['hall_brazier_2', 'hall_brazier_3'].every(flag => done.has(flag)) ? [
+    '三盏火都亮了，空席也有了暖意。你没有只替誓言留灯，也替后来的人留了灯。',
+    'All three hearths are lit; even the empty seats feel warm. You left light not just for an oath, but for those yet to return.',
+  ] : [
+    '誓火已经接住湖上的约定。剩下两盏愿点就点，不必为了我们耽搁脚步。',
+    'The oath hearth answers the lake pact. Tend the other two if you wish; do not delay your journey for us.',
+  ];
+  if (id === 'customs_runner' && done.has('blacksail_harbor_signal')) return done.has('shard_treasure')
+    ? ['宝箱已经找到，海图不必再添记号了。归航灯还亮着，这次它引的是活人。', 'You found the chest; the chart needs no more marks. The return signal still burns. This time it guides the living.']
+    : ['归航灯替我照清了浅滩。我把你还没找过的地方重新标好，想去就沿海图走。', 'The signal lights the shoals. I have marked your next unsearched place again; follow the chart when you wish.'];
+  if (id === 'customs_clerk' && ['ghost_boat_1', 'ghost_boat_2', 'ghost_boat_3'].every(flag => done.has(flag))) return [
+    '三艘空艇的账划掉了，不必再往炮里塞弹药。黑胡子的海路消息总算没错。',
+    'All three empty boats are crossed off. No need to feed the cannon again; Blackbeard knew their route after all.',
+  ];
+  if (id === 'customs_inspector' && done.has('blacksail_harbor_signal')) return [
+    '归航灯亮了。看清灯色再进港；炮位留给幽灵艇，别朝那盏暖灯开火。',
+    'The return signal is lit. Read its color before entering port; save the cannon for ghost boats, not that warm light.',
+  ];
+  if (id === 'winter_surgeon' && done.has('winter_shelter_stove')) return [
+    '炉子修好了。去炉边暖透再走，余温只有三十秒；隔着这段路聊天可暖不了手。',
+    'The stove is ready. Warm up there before leaving; the warmth lasts thirty seconds. Talking over here will not warm your hands.',
+  ];
+  if (id === 'winter_quartermaster' && ['beacon_1', 'beacon_2', 'beacon_3'].every(flag => done.has(flag))) return [
+    '三处烽火都认得出来了。回程沿着火走，别为了抄近道把最后一点暖意丢在雪里。',
+    'All three beacons are clear. Follow the fires on your return; a shortcut is no bargain if you lose your warmth in the snow.',
+  ];
+  if (id === 'kyoto_innkeeper' && done.has('kyoto_lantern_route')) return bannersResolved(done)
+    ? ['旗阵已不再挡路，灯笼就留给归来的客人。南门向西的路还在，先喝杯茶也无妨。', 'The banner line no longer bars the way. Leave the lanterns for returning guests. The road west from the south gate remains; tea can come first.']
+    : ['灯笼已亮，我再替你指出那处高地：南门出去向西。走矮坡，不必撞进军阵。', 'The lanterns are lit. I will mark the ledge again: south gate, then west along the low slope. No need to enter the encampment.'];
+  if (id === 'kyoto_swordsmith' && ['kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3'].every(flag => done.has(flag))) return [
+    '三面旗都断了，传令的人没了凭据。刀还在鞘里的人，就让他留着吧。',
+    'All three banners are broken; the messengers have lost their signals. Let those with sheathed blades keep them there.',
+  ];
+  return null;
+}
+const bannersResolved = (done: ReadonlySet<string>) => coreCleared('kyoto', done) || ['kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3'].every(flag => done.has(flag));
+
 export function getEraResidentDialogue(id: string, done: ReadonlySet<string>): Localized | null {
   const region = ERA_IDS.find(r => ERA_RESIDENTS[r].includes(id));
   if (!region) return null;
   const state = getEraStoryState(region, done), def = ERA_STORIES[region];
+  const consequence = residentConsequence(id, done);
+  if (consequence) {
+    const next = getEraStoryGuide(region, done);
+    return next ? [consequence[0] + '\n' + next.text[0], consequence[1] + '\n' + next.text[1]] : consequence;
+  }
   if (state.stage === 'complete') return def.completeText;
   if (state.stage === 'return') return def.returnText;
   if (state.routeReady) return def.challenge;
@@ -239,11 +291,21 @@ export function interactEraStory(id: string, done: Set<string>, found?: Set<stri
       '失誓骑士的试炼已经通过，碑旁升起了护路标记。还想再试剑，就向碑前致意。',
       'The Oathless Knight’s trial is won; the road-keeper mark stands beside the stone. Salute the memorial if you wish to cross blades again.',
     ];
+    if (region === 'blacksail' && done.has('shard_treasure')) dialogue = [
+      '归航灯照着海图。宝箱已经找到，信使把笔收了起来：“这趟没有漏下的记号了。”',
+      'The return signal lights the chart. The chest is found; the runner puts away the pencil. “No marks left on this voyage.”',
+    ];
+    if (region === 'kyoto' && bannersResolved(done)) dialogue = [
+      '旗阵已不再挡路，灯笼仍照着南门向西的小路。老板留了热茶，等走散的人慢慢回来。',
+      'The banner line no longer bars the way. The lanterns light the road west from the south gate. The innkeeper keeps tea for returning guests.',
+    ];
     if (found && !found.has(id)) { found.add(id); changed = true; }
   } else {
     const met = `era_${region}_met`;
     if (!done.has(met)) { done.add(met); changed = true; }
     dialogue = getEraResidentDialogue(id, done)!;
+    // Recover a lost optional pin, but never grant repairs, remote warmth or trials.
+    if (id === 'customs_runner' || id === 'kyoto_innkeeper') reward = getEraOptionalReward(region, done);
   }
   return { handled: true, changed, dialogue, reward, state: getEraStoryState(region, done) };
 }
@@ -252,11 +314,14 @@ export function getEraOptionalReward(region: EraId, done: ReadonlySet<string>): 
   switch (region) {
     case 'britain': return { kind: 'trial', region, enemyId: 'elite_oath_knight', label: ['失誓骑士 · 看破横扫后反击', 'Oathless Knight · Dodge the sweep, punish recovery'] };
     case 'blacksail': {
+      if (done.has('shard_treasure')) return null; // legacy treasure completion is authoritative
       const targetId = ['map_piece_1', 'map_piece_2', 'map_piece_3', 'shard_treasure'].find(id => !done.has(id));
-      return targetId ? { kind: 'clue', region, targetId, label: ['可选 · 信使的藏宝线索', 'Optional · The runner’s treasure clue'] } : null;
+      return targetId ? { kind: 'clue', region, targetId, label: ['信使的藏宝线索', 'The runner’s treasure clue'] } : null;
     }
     case 'winter': return { kind: 'warmth', region, seconds: 30 };
-    case 'kyoto': return { kind: 'quiet-route', region, position: [...KYOTO_QUIET_LEDGE], label: ['可选 · 桔梗旗安静射击高地', 'Optional · Quiet bellflower firing ledge'] };
+    case 'kyoto':
+      if (bannersResolved(done)) return null;
+      return { kind: 'quiet-route', region, position: [...KYOTO_QUIET_LEDGE], label: ['桔梗旗安静射击高地', 'Quiet bellflower firing ledge'] };
   }
 }
 

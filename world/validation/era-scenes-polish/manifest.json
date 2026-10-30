@@ -1,0 +1,162 @@
+{
+  "sourceSha256": "e81ceeb16dc500515cea6e70553021e2a697318c0e068baf8f3199e845a2cba4",
+  "baselineSource": "b3a230c62d8271f4c04baebb6e2a8f55c1e050de:world/src/eraStoryScenes.ts",
+  "renderer": "Blender Cycles CPU",
+  "samples": 32,
+  "denoising": false,
+  "resolution": [
+    720,
+    820
+  ],
+  "camera": [
+    5,
+    -8,
+    5
+  ],
+  "target": [
+    0,
+    0,
+    1.85
+  ],
+  "orthographicScale": 5.1,
+  "lighting": "identical neutral sky + soft area light",
+  "sourceChannels": [
+    "positions",
+    "indices",
+    "normals",
+    "UVs",
+    "vertex colors",
+    "base color",
+    "emissive",
+    "roughness",
+    "metalness",
+    "actual RGBA surface map pixels"
+  ],
+  "limitations": "Offline geometry/material inspection only. Runtime camera, surrounding maps, Three.js lighting/tone-mapping, cast-shadow policy, movement/combat, browser GPU and FPS are not reproduced or verified. Blender may print an irrelevant read-only extensions-cache warning after successful PNG writes.",
+  "records": [
+    {
+      "region": "britain",
+      "state": "complete",
+      "version": "before",
+      "geometryJsonSha256": "7e6a3922f1971e8605198b1ebb5c3a378c73b0f680c8c73a1e04f924ad14386a",
+      "imageSha256": "c0c6365808bafa46c3ca770b85275249be35e78c7674c85cb71ea17a23fea965",
+      "triangles": 1436,
+      "draws": 7,
+      "textureBaseBytes": 0
+    },
+    {
+      "region": "blacksail",
+      "state": "complete",
+      "version": "before",
+      "geometryJsonSha256": "7ab10e977571a77e6da40e7b4df6938ded6f6a7115c3910ec67de005caf6a45c",
+      "imageSha256": "336f1855981b648d0a8e34b96377953c4dc897026f1bb7b0c8bb1f31c0654aa2",
+      "triangles": 1360,
+      "draws": 7,
+      "textureBaseBytes": 0
+    },
+    {
+      "region": "winter",
+      "state": "complete",
+      "version": "before",
+      "geometryJsonSha256": "fc743f6c38f7e1c39cb542e74144a1ea7b9ac4ca9398e0fee4ecd84a1d007bc7",
+      "imageSha256": "96afdfb5f1d630bceb11aaae3a033041327735df37bff32f9e38d0b5537c6d17",
+      "triangles": 876,
+      "draws": 7,
+      "textureBaseBytes": 0
+    },
+    {
+      "region": "kyoto",
+      "state": "complete",
+      "version": "before",
+      "geometryJsonSha256": "7ff8dde870ac2fbe4d756c80758dc7bf2759fbced83c3b72cc8e8ef90e55b774",
+      "imageSha256": "8531b7797e35e7b8f1fdef0d4ee0670c65d1fd2e351d1a0be04d9187ef1045bd",
+      "triangles": 1808,
+      "draws": 7,
+      "textureBaseBytes": 0
+    },
+    {
+      "region": "britain",
+      "state": "complete",
+      "version": "after",
+      "geometryJsonSha256": "ac78ac70dcfcc3755b83ae2a880363142d13ed2941c80ff983a269c387cd2551",
+      "imageSha256": "04db748e002be4c2a5824e4bb6bd9c6109ba379d1f74e569b344c6bf32ccadf0",
+      "triangles": 1684,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "blacksail",
+      "state": "complete",
+      "version": "after",
+      "geometryJsonSha256": "ffbb2c622756adb038d11c24b6dd93573f79f1480be756252a8fdf804513e25b",
+      "imageSha256": "b62d351553e4a18e47014472880ff7ae250bc02e5f567fa4f0f23c61106fab7f",
+      "triangles": 1704,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "winter",
+      "state": "complete",
+      "version": "after",
+      "geometryJsonSha256": "91d0352272c1e7d4581d7a4591ce876ee4ff22cc2ec4b7f0b534e9a434cfca05",
+      "imageSha256": "69b90d6620a074e80e53f9c2d779df2565551f77ff6645e592c29c8ceee58ad3",
+      "triangles": 1184,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "kyoto",
+      "state": "complete",
+      "version": "after",
+      "geometryJsonSha256": "2add1b9be16015e2c1bc677d6ef2a12d1835774eca07099d4a0bbc01f0b6f6cc",
+      "imageSha256": "becd4964e292094b70e28cc8082111de8dd614131eff2f4c06553b3744e125ac",
+      "triangles": 2068,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "britain",
+      "state": "dormant",
+      "version": "inactive",
+      "geometryJsonSha256": "904588dc921e9be638c3c127eebc624131ed592676b9a86d3351282b63d7b258",
+      "imageSha256": "19e1b4babf0f8f5c10a490fd494b923ae391fc12b44e992398dc11075f149ef4",
+      "triangles": 1684,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "blacksail",
+      "state": "dormant",
+      "version": "inactive",
+      "geometryJsonSha256": "35c114612fd6c92277558e521cbb5ae56a829094f27a49cb0d43b913fdb6203c",
+      "imageSha256": "f3c7e9a12f368bec680ab54a72e58a8864fad46d6976c200ee11d8fc45ae57f4",
+      "triangles": 1704,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "winter",
+      "state": "dormant",
+      "version": "inactive",
+      "geometryJsonSha256": "dd680dc60e091f22e46b8366428ef6d8ee9234c7cdb192ad6cdf30cfe75c1c33",
+      "imageSha256": "68371cb33aff5d39ea75d6cd7738c9ee06a7c7c1e8ad9f4601f4062978361eca",
+      "triangles": 1184,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    },
+    {
+      "region": "kyoto",
+      "state": "dormant",
+      "version": "inactive",
+      "geometryJsonSha256": "606e0f5cce31b791c474f98169b491ab2ddb4bef15270f0074cdcf7c609bf4ff",
+      "imageSha256": "083f915f175e5dd73579dd0838f8e827c63dc34392bbd5970f833ab7a18d8bfe",
+      "triangles": 2068,
+      "draws": 7,
+      "textureBaseBytes": 81920
+    }
+  ],
+  "contactSheets": {
+    "stations-before-after.png": "f45198558a2e86832b72f8ed9a7e4f08a511abc393843e70db39f53484da5980",
+    "stations-state-readability.png": "89b5e00a7436d5bb0b3fd721024b5458902d4dc95292a31d640da97086c50dbf"
+  }
+}

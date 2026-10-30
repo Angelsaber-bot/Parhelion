@@ -20,9 +20,14 @@ export function bossAttackTiming(e: Enemy): Timing {
 }
 export function chooseBossAttack(e: Enemy, distance: number): Enemy['attack'] {
   if (e.id === 'boss_drowned_admiral' && distance >= 6 && e.attackCount % 3 === 2) return 'shot';
+  // An 8m thrust remains a real mid-range threat, not a melee-only animation.
+  // Keep a .5m reach margin: targets beyond it receive the existing distant tell instead.
+  // Selection happens before attackCount increments; the next beat keeps its full windup.
+  if (distance <= 7.5) {
+    if (e.id === 'boss_winter_warden' && e.attackCount % 2 === 1) return 'thrust';
+    if (e.id === 'boss_hellfire_lord' && e.attackCount % 3 === 2) return 'thrust';
+  }
   if (distance >= 6) return 'burst';
-  if (e.id === 'boss_winter_warden' && e.attackCount % 2 === 1) return 'thrust';
-  if (e.id === 'boss_hellfire_lord' && e.attackCount % 3 === 2) return 'thrust';
   return 'sweep';
 }
 export function bossAttackDamage(e: Enemy): number {

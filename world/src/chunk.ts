@@ -71,12 +71,62 @@ export function isStaticArtEligible(root: THREE.Object3D): boolean {
   return eligible;
 }
 
+interface FrozenTraversal {
+  root: THREE.Object3D;
+  original: THREE.Object3D['updateMatrixWorld'];
+  nodes: THREE.Object3D[];
+}
+// Weak ownership does not retain disposed scenes. Every descendant watches topology
+// changes so a late dynamic child at any depth falls back to normal traversal.
+const frozenOwners = new WeakMap<THREE.Object3D, FrozenTraversal>();
+function restoreFrozenTraversal(state: FrozenTraversal) {
+  if (state.root.updateMatrixWorld === updateFrozenMatrixWorld) state.root.updateMatrixWorld = state.original;
+  state.root.removeEventListener('removed', frozenTopologyChanged);
+  for (const node of state.nodes) if (frozenOwners.get(node) === state) {
+    node.removeEventListener('childadded', frozenTopologyChanged);
+    node.removeEventListener('childremoved', frozenTopologyChanged);
+    frozenOwners.delete(node);
+  }
+}
+function frozenTopologyChanged(event: { target?: THREE.Object3D | null }) {
+  const state = event.target && frozenOwners.get(event.target);
+  if (state) restoreFrozenTraversal(state);
+}
+function updateFrozenMatrixWorld(this: THREE.Object3D, force?: boolean) {
+  const state = frozenOwners.get(this);
+  // A caller may have saved/wrapped the fast method before topology invalidation.
+  // Its stale reference must still behave like ordinary Three traversal.
+  if (!state) { THREE.Object3D.prototype.updateMatrixWorld.call(this, force); return; }
+  // Explicitly thawing the root also opts back into Three's original behavior.
+  if (this.matrixAutoUpdate || this.matrixWorldAutoUpdate || this.matrixWorldNeedsUpdate) {
+    restoreFrozenTraversal(state); state.original.call(this, force);
+  }
+  // All existing descendant matrices are immutable world-space snapshots. Visibility,
+  // materials and geometry remain live; explicit updateWorldMatrix is untouched.
+}
+
 /** Only for immutable map art, after region/pivot transforms are final.
  * World transforms stay fixed even while the scene root updates lights/actors. */
 export function freezeStaticArt(root: THREE.Object3D) {
+  const previous = frozenOwners.get(root);
+  if (previous) restoreFrozenTraversal(previous);
   root.updateWorldMatrix(true, true);
+  const nodes: THREE.Object3D[] = [];
   root.traverse((object) => {
+    const owner = frozenOwners.get(object);
+    if (owner) restoreFrozenTraversal(owner);
     object.matrixAutoUpdate = false;
     object.matrixWorldAutoUpdate = false;
+    nodes.push(object);
   });
+  // Never suppress a custom matrix callback (for example a moving actor subclass).
+  if (nodes.some(node => node.updateMatrixWorld !== THREE.Object3D.prototype.updateMatrixWorld)) return;
+  const state: FrozenTraversal = { root, original: root.updateMatrixWorld, nodes };
+  for (const node of nodes) {
+    frozenOwners.set(node, state);
+    node.addEventListener('childadded', frozenTopologyChanged);
+    node.addEventListener('childremoved', frozenTopologyChanged);
+  }
+  root.addEventListener('removed', frozenTopologyChanged);
+  root.updateMatrixWorld = updateFrozenMatrixWorld;
 }

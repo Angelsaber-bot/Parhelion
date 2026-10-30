@@ -61,10 +61,8 @@ export function interactCampaignClosure(id: string, done: Set<string>): { handle
   if (id !== CAMPAIGN_CLOSURE.terminal || !done.has(CAMPAIGN_CLOSURE.terminal) || state.stage === 'journey') {
     return { handled: false, changed: false, dialogue: null, state };
   }
-  if (state.stage === 'recorded') return { handled: true, changed: false, dialogue: [
-    '四时层的记录已收存。书页压平了，灯还亮着。下一页也给同行的人留着位置；等你想好了，再出发。',
-    'The four-era record is safe. The pages lie flat; the light stays on. The next page has room for anyone who travels with you. Set out when you are ready.',
-  ], state };
+  // Re-reading includes later saved deeds without another reward or progress write.
+  if (state.stage === 'recorded') return { handled: true, changed: false, dialogue: getCampaignClosingText(done), state };
   done.add(CAMPAIGN_CLOSURE.recorded);
   return { handled: true, changed: true, dialogue: getCampaignClosingText(done), state: getCampaignClosureState(done) };
 }

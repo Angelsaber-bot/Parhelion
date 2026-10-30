@@ -85,3 +85,23 @@ test('Valley opening preserves agency, truthful equipment advice and a direct re
   const guide = getValleyStoryGuide(new Set([VALLEY_STORY.terminal, VALLEY_STORY.met]))!;
   assert.equal(guide.targetId, VALLEY_STORY.npc); assert.match(guide.text[0], /返回.*庭院.*记录员/);
 });
+
+test('earned resident memories and exhausted optional routes fit the bilingual reading budget at every stage', () => {
+  for (const region of ERA_IDS) {
+    const chapter = ERA_STORIES[region];
+    const deedVariants = [
+      [ERA_OPTIONALS[region].id],
+      [ERA_OPTIONALS[region].id, 'era_britain_knight_defeated'],
+      [ERA_OPTIONALS[region].id, 'shard_treasure'],
+    ];
+    const stageVariants = [[], chapter.beats.flatMap(beat => [...beat.flags]), [chapter.core], [chapter.contract, chapter.core]];
+    for (const deeds of deedVariants) for (const stage of stageVariants) {
+      const done = new Set([...deeds, ...stage]);
+      for (const id of [...ERA_RESIDENTS[region], ERA_OPTIONALS[region].id]) {
+        const text = interactEraStory(id, done).dialogue!;
+        readable(text);
+        for (const line of text) assert.doesNotMatch(line, meta);
+      }
+    }
+  }
+});

@@ -21,3 +21,7 @@ body.clean .combat-hud, body.clean #world-hurt { display: none !important; }
   #world-vitals { width: min(180px, 38vw); }
   #contract-card { display: none; }
 }
+/* Recovery is a stable colour/weight cue, never a flashing screen or a damage-area marker. */
+.combat-counter { line-height: 1.35; }
+.combat-counter--punish { color: #a1f8e8; font-weight: 750; }
+#world-vitals .combat-counter { display: block; margin-top: 4px; }

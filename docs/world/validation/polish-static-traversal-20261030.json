@@ -1,0 +1,529 @@
+{
+  "candidate-1.json": {
+    "label": "candidate",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.5975610000004963,
+        "p95Ms": 5.405280000000857,
+        "meanMs": 3.056801955000022,
+        "blockMedianMs": 3.046368683333367,
+        "blockP95Ms": 3.9738013000000745,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 2.29650699999911,
+        "p95Ms": 4.158762999999453,
+        "meanMs": 2.480089366666674,
+        "blockMedianMs": 2.6236666333334444,
+        "blockP95Ms": 2.9760435833334364,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 2.019678999999087,
+        "p95Ms": 4.4224549999999,
+        "meanMs": 2.346276688333334,
+        "blockMedianMs": 2.233364900000136,
+        "blockP95Ms": 3.172182049999962,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1118314496,
+      "heapTotal": 259444736,
+      "heapUsed": 121845816,
+      "external": 560582684,
+      "arrayBuffers": 540328462
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "control-2.json": {
+    "label": "control",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 5.7190819999996165,
+        "p95Ms": 9.0014259999989,
+        "meanMs": 6.034664669999996,
+        "blockMedianMs": 6.051646816666714,
+        "blockP95Ms": 7.5140207166667095,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 4.3175760000012815,
+        "p95Ms": 8.277861999999004,
+        "meanMs": 4.771806196666703,
+        "blockMedianMs": 4.89429346666675,
+        "blockP95Ms": 6.732365416666683,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 2.9449639999984356,
+        "p95Ms": 7.784389000000374,
+        "meanMs": 3.709799645000057,
+        "blockMedianMs": 3.5871443999997914,
+        "blockP95Ms": 6.911717833333447,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1099890688,
+      "heapTotal": 257732608,
+      "heapUsed": 118074944,
+      "external": 560582684,
+      "arrayBuffers": 540328462
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "control-3.json": {
+    "label": "control",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 4.013566999999966,
+        "p95Ms": 6.027286000000458,
+        "meanMs": 4.029919208333298,
+        "blockMedianMs": 3.996051449999929,
+        "blockP95Ms": 4.954532116666724,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 3.743370000000141,
+        "p95Ms": 5.763859999999113,
+        "meanMs": 3.8838313066667007,
+        "blockMedianMs": 3.9402923833331442,
+        "blockP95Ms": 5.058377700000074,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 5.129032000000734,
+        "p95Ms": 6.708113999999114,
+        "meanMs": 5.153369939999975,
+        "blockMedianMs": 5.225527350000145,
+        "blockP95Ms": 6.753306583333294,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1107836928,
+      "heapTotal": 255897600,
+      "heapUsed": 117833888,
+      "external": 560582684,
+      "arrayBuffers": 540915227
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "candidate-2.json": {
+    "label": "candidate",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 1.848931000000448,
+        "p95Ms": 3.5509189999993396,
+        "meanMs": 2.076533078333329,
+        "blockMedianMs": 2.1387733833334095,
+        "blockP95Ms": 2.330005616666737,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 2.065097999999125,
+        "p95Ms": 4.9420179999997345,
+        "meanMs": 2.5548292650000137,
+        "blockMedianMs": 2.2474232000000183,
+        "blockP95Ms": 4.365157433333327,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 1.8914150000000518,
+        "p95Ms": 5.040747999999439,
+        "meanMs": 2.5315099666667025,
+        "blockMedianMs": 2.286501599999944,
+        "blockP95Ms": 3.965174050000072,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1100115968,
+      "heapTotal": 260493312,
+      "heapUsed": 121839088,
+      "external": 560582684,
+      "arrayBuffers": 540915227
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "same-scene-micro.json": {
+    "kind": "CPU-only actual guarded immutable-root traversal versus original Three traversal, same frozen scene and heap; no GPU/FPS evidence",
+    "roots": 3054,
+    "staticNodes": 5121,
+    "normal": 0.6343430828571426,
+    "skip": 0.4254995142857141,
+    "samples": {
+      "normal": [
+        0.6377312199999974,
+        0.587948645714288,
+        0.6349098514285756,
+        0.5973214199999971,
+        0.646022419999998,
+        0.6343430828571426,
+        0.6309139657142857,
+        0.6430895314285694,
+        0.6050162657142885
+      ],
+      "skip": [
+        0.4352150971428585,
+        0.37166339999999765,
+        0.4254995142857141,
+        0.35803718571428494,
+        0.3892258600000007,
+        0.4315377028571415,
+        0.45694705714285583,
+        0.396410459999996,
+        0.4331853628571428
+      ]
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "control-1.json": {
+    "label": "control",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.565613000000667,
+        "p95Ms": 7.261231999998927,
+        "meanMs": 3.2516824066666654,
+        "blockMedianMs": 2.7353844666666496,
+        "blockP95Ms": 6.852701316666662,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 2.7728059999990364,
+        "p95Ms": 6.277256999997917,
+        "meanMs": 3.228817098333287,
+        "blockMedianMs": 3.407047799999903,
+        "blockP95Ms": 4.451265233333318,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 2.4240700000009383,
+        "p95Ms": 6.406972999997379,
+        "meanMs": 3.0435245966667512,
+        "blockMedianMs": 2.783267416666543,
+        "blockP95Ms": 6.0119161333333375,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1140850688,
+      "heapTotal": 256421888,
+      "heapUsed": 117896016,
+      "external": 560582684,
+      "arrayBuffers": 540328462
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "candidate-3.json": {
+    "label": "candidate",
+    "rendererTraversal": true,
+    "sourceNodesDetached": false,
+    "hiddenEnemiesSkipped": false,
+    "node": "v24.22.1",
+    "warmupFrames": 180,
+    "sampledFrames": 600,
+    "frameDt": 0.016666666666666666,
+    "results": [
+      {
+        "name": "valley_hq",
+        "position": [
+          -118,
+          15.444952964782715,
+          229.6
+        ],
+        "medianMs": 2.955309999999372,
+        "p95Ms": 6.866342999999688,
+        "meanMs": 3.5018706399999915,
+        "blockMedianMs": 3.3355699333332876,
+        "blockP95Ms": 5.153519683333343,
+        "profile": {},
+        "activeEnemies": 0
+      },
+      {
+        "name": "winter_pack",
+        "position": [
+          -120,
+          5.204876866141618,
+          -680
+        ],
+        "medianMs": 2.5542640000003303,
+        "p95Ms": 4.8842120000008435,
+        "meanMs": 2.816139268333345,
+        "blockMedianMs": 2.752960500000093,
+        "blockP95Ms": 3.2512649833333853,
+        "profile": {},
+        "activeEnemies": 2
+      },
+      {
+        "name": "kyoto_node",
+        "position": [
+          100,
+          3.997627019882202,
+          560
+        ],
+        "medianMs": 2.0200179999992542,
+        "p95Ms": 5.098463000000265,
+        "meanMs": 2.4731041283333766,
+        "blockMedianMs": 2.5265582499999253,
+        "blockP95Ms": 2.9846967166666825,
+        "profile": {},
+        "activeEnemies": 3
+      }
+    ],
+    "memory": {
+      "rss": 1147969536,
+      "heapTotal": 260231168,
+      "heapUsed": 121583656,
+      "external": 560582684,
+      "arrayBuffers": 540328462
+    },
+    "resources": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410038724,
+      "uniqueGeometryTriangles": 7942417
+    },
+    "errors": [],
+    "warnings": []
+  },
+  "scope": {
+    "kind": "CPU-only guarded immutable-tree traversal",
+    "controlChunkSHA256": "9708a6498380e7f9b1d1e71051518860c6cc6734536732d0e5045f20da1394ab",
+    "candidateChunkSHA256": "3d97725071bfbc9b42adbf27fe942fb214117ba98552e964a7bf9dae1cc24665",
+    "mainIdenticalBetweenControlAndCandidate": true,
+    "onlyRuntimeFileDifference": "world/src/chunk.ts",
+    "frameProxyWarnings": "Shared cloud load was variable; the first Valley pair slightly regressed. Do not present the aggregate difference as stable FPS or frame benefit. Prefer same-scene micro evidence.",
+    "heapTradeoffMiB": 3.76,
+    "finalRuntimeChunkSHA256": "0fea533abd7f08950f26bf4e024ccc8b59b66d77355b67d96b951e1bf89cce04",
+    "finalChange": "Cold-path safety: saved/wrapped fast method invoked after invalidation falls back to original Three traversal; hot owned-tree path unchanged. Final same-scene measurement includes this change; full-frame A/B retains its original candidate hash."
+  },
+  "same-scene-micro-final.json": {
+    "kind": "CPU-only actual guarded immutable-root traversal versus original Three traversal, same frozen scene and heap; no GPU/FPS evidence",
+    "roots": 3054,
+    "staticNodes": 5121,
+    "normal": 0.5671036628571424,
+    "skip": 0.4054773342857152,
+    "samples": {
+      "normal": [
+        0.5671036628571424,
+        0.6017878199999983,
+        0.5867740914285708,
+        0.6001727942857127,
+        0.6244227057142832,
+        0.5596390685714245,
+        0.5476877142857172,
+        0.5508137228571441,
+        0.5440259514285728
+      ],
+      "skip": [
+        0.4372134857142841,
+        0.4114060314285728,
+        0.408986111428572,
+        0.45826853428571795,
+        0.3913577971428562,
+        0.39582001714285847,
+        0.3858695571428585,
+        0.4054773342857152,
+        0.3747428457142866
+      ]
+    },
+    "errors": [],
+    "warnings": []
+  }
+}

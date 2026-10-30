@@ -59,4 +59,4 @@ colliders.unshift({ name: 'static', enabled: true, bvh: new MeshBVH(mergeParts(g
 const q = makeCombatTerrain(colliders, layout, (x, z) => grid.sampleHeight(x, z));
 const spawns = makeWildernessSpawns(layout.world.seed ^ 537, q.safeSpawn);
 const minis = makeMinibossSpawns(q.safeSpawn, spawns);
-export { layout, grid, q, spawns, minis };
+export { layout, grid, q, spawns, minis, colliders };

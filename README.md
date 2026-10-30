@@ -59,3 +59,7 @@ cd site && npm run build      # 构建 Arena + World + 首页 → site/dist
 - 测试：`npm test --prefix arena-game`、`npm test --prefix world`、`npm test --prefix site`。
 
 部署细节与注意事项见 [发布交接](docs/release/DEPLOYMENT_HANDOFF.md)。
+
+### World gameplay polish
+
+See [the latest World interaction, combat-readability and craft polish](docs/world/WORLD_POLISH_20261030.md) for player-visible changes, offline model comparisons, validation evidence and remaining GPU/FPS limits. Existing saves are supported; a progress reset is not required.

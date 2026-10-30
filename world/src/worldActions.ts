@@ -12,7 +12,7 @@ export interface ActionPoseCommand {
  onFinish(completed: boolean): void;
 }
 export interface WorldActionContext {
- enabled: boolean; grounded: boolean; armed: boolean; bladeReady: boolean; bladeFailed?: boolean;
+ enabled: boolean; clockRunning?: boolean; grounded: boolean; armed: boolean; bladeReady: boolean; bladeFailed?: boolean;
  position: Point3; yaw: number; moveX: number; moveZ: number; identity: ServantId | null;
 }
 export interface WorldActionOptions {
@@ -37,6 +37,7 @@ export class WorldActions {
  readonly effects: SkillPresentation;
  private disposed = false;
  constructor(private options:WorldActionOptions){this.effects=new SkillPresentation(options.scene);}
+ get actionContext(){const c=this.options.context();return {enabled:c.enabled,grounded:c.grounded,armed:c.armed,bladeReady:c.bladeReady,bladeFailed:!!c.bladeFailed};}
  get equipmentReady(){return this.options.context().armed;}
  get meleeAvailable(){const c=this.options.context();return c.armed&&c.bladeReady;}
  press(action:string):boolean {
@@ -80,7 +81,7 @@ export class WorldActions {
    const c=this.options.context();
    const enabled=c.enabled&&c.grounded;
    if(this.skills.selected!==c.identity){this.options.cancelPoses();this.skills.setIdentity(c.identity);}
-   if(!enabled){this.cancel(); if(c.enabled){this.skills.update(dt,true);this.melee.update(dt,true);this.evade.update(dt,true);} this.effects.update(dt,false);return;}
+   if(!enabled){this.cancel(); if(c.clockRunning ?? c.enabled){this.skills.update(dt,true);this.melee.update(dt,true);this.evade.update(dt,true);} this.effects.update(dt,false);return;}
    this.skills.update(dt,true);this.evade.update(dt,true);
    const contact=this.melee.update(dt,true);
    if(contact){

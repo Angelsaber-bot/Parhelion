@@ -13,3 +13,6 @@
  #world-cold{bottom:120px!important}
 }
 body.world-dialogue-open #help,body.world-dialogue-open #world-action-bar{visibility:hidden}
+/* Readable readiness and the real combo input window, without strobing or extra VFX. */
+.world-action.unavailable{border-color:#71859055}.world-action.unavailable b{color:#b7bdc2}.world-action.action-ready{border-color:#b9d9d58c}.world-action.chain-open{border-color:#f3d58b;background:#364444ed}.world-action.chain-open small{color:#ffe6a5}.world-action small{min-height:1.3em;overflow-wrap:anywhere}.world-energy.energy-full .world-energy-fill{background:#f1da96}
+.world-action b,.world-action small{min-width:0;overflow-wrap:anywhere}.world-action b{line-height:1.2}

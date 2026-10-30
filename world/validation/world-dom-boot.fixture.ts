@@ -22,18 +22,50 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string> } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
   const dom=new JSDOM(html,{url:'http://world.test/?nopost&q=low',pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
+  // Test-only pre-boot snapshots exercise the real migration path, not post-boot flag injection.
+  for (const [key, value] of Object.entries(options.initialStorage ?? {})) window.localStorage.setItem(key, value);
   const errors:unknown[][]=[],warnings:unknown[][]=[],frames:FrameRequestCallback[]=[];
   let simulatedNow=0;
   if(options.deterministic){
     Object.defineProperty(window.performance,'now',{value:()=>simulatedNow});
     let seed=0x12345678;window.Math.random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
   }
+  const assetTasks=new Set<Promise<unknown>>(),assetWaiters=new Set<()=>void>();
+  const assetChanged=()=>{for(const resolve of assetWaiters)resolve();assetWaiters.clear();};
+  const trackAsset=<T>(promise:Promise<T>):Promise<T>=>{const task=promise.finally(()=>{assetTasks.delete(task);assetChanged();});assetTasks.add(task);assetChanged();return task;};
   const manager=THREE.DefaultLoadingManager,start=manager.itemStart.bind(manager),end=manager.itemEnd.bind(manager);let pendingLoads=0;
-  manager.itemStart=(url:string)=>{pendingLoads++;start(url);};manager.itemEnd=(url:string)=>{pendingLoads--;end(url);};
+  manager.itemStart=(url:string)=>{pendingLoads++;start(url);assetChanged();};manager.itemEnd=(url:string)=>{pendingLoads--;end(url);assetChanged();};
+  // Character kits fetch/decode before entering LoadingManager. Track those
+  // real promise chains too, including gzip Response reads and GLTF parsing.
+  const responseMethods=new Map<string,Function>();
+  for(const name of ['arrayBuffer','blob','json','text'] as const){const original=Response.prototype[name];responseMethods.set(name,original);(Response.prototype as any)[name]=function(...args:unknown[]){return trackAsset(Reflect.apply(original,this,args));};}
+  const loaderPrototypes=[...new Set([require('three/examples/jsm/loaders/GLTFLoader.js').GLTFLoader.prototype,require('three/addons/loaders/GLTFLoader.js').GLTFLoader.prototype])];
+  const parseMethods=loaderPrototypes.map(prototype=>({prototype,parseAsync:prototype.parseAsync,parse:prototype.parse}));
+  for(const {prototype,parseAsync,parse} of parseMethods){
+    prototype.parseAsync=function(...args:unknown[]){return trackAsset(Reflect.apply(parseAsync,this,args));};
+    // GLTFLoader.load/loadAsync call callback-based parse directly (e.g. blade art).
+    prototype.parse=function(data:unknown,path:string,onLoad:(asset:unknown)=>void,onError?:(error:unknown)=>void){
+      let complete!:()=>void,fail!:(error:unknown)=>void;
+      void trackAsset(new Promise<void>((resolve,reject)=>{complete=resolve;fail=reject;})).catch(()=>{});
+      try{return parse.call(this,data,path,(asset:unknown)=>{try{onLoad(asset);complete();}catch(error){fail(error);throw error;}},(error:unknown)=>{try{onError?.(error);}finally{fail(error);}});}catch(error){fail(error);throw error;}
+    };
+  }
+  const settleAssets=async()=>{
+    let timeout:ReturnType<typeof setTimeout>|undefined;
+    const deadline=new Promise<never>((_,reject)=>{timeout=setTimeout(()=>reject(new Error(`Asset tasks did not settle: ${assetTasks.size} promises, ${pendingLoads} manager loads`)),10000);});
+    try{
+      // Let already-queued callers attach the next tracked stage before checking quiescence.
+      await Promise.resolve();
+      while(assetTasks.size||pendingLoads>0){
+        const progress=assetTasks.size?Promise.allSettled([...assetTasks]):new Promise<void>(resolve=>assetWaiters.add(resolve));
+        await Promise.race([progress,deadline]);await Promise.resolve();
+      }
+    }finally{clearTimeout(timeout);assetWaiters.clear();}
+  };
   window.console.error=(...args:unknown[])=>errors.push(args);window.console.warn=(...args:unknown[])=>warnings.push(args);
   window.addEventListener('error',event=>errors.push([event.error??event.message]));
   const globals=new Map<string,PropertyDescriptor|undefined>();
@@ -41,7 +73,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   const placeholderBitmap=async()=>({width:1,height:1,close(){}});
   class BrowserRequest extends NativeRequest {constructor(input:RequestInfo|URL,init?:RequestInit){super(typeof input==='string'?new URL(input,'http://world.test/').href:input,init);}}
   const inject=(key:string,value:unknown)=>{globals.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,writable:true,configurable:true});};
-  const fetchAsset:typeof fetch=async(input)=>{
+  const fetchAsset:typeof fetch=(input)=>trackAsset((async()=>{
     const raw=typeof input==='string'?input:input instanceof URL?input.href:input.url;
     const url=new URL(raw,'http://world.test/');let path:string;
     if(url.protocol==='blob:')return nativeFetch(url);
@@ -50,7 +82,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
     else throw new Error(`No external asset access in boot smoke: ${url.href}`);
     if(!path.startsWith(resolve(world,'..')+'/'))throw new Error(`Asset outside repository: ${path}`);
     const bytes=await readFile(path);return new Response(bytes,{status:200,headers:{'Content-Length':String(bytes.length),'Content-Type':path.endsWith('.json')?'application/json':'application/octet-stream'}});
-  };
+  })());
   for(const [key,value]of Object.entries({window,document:window.document,self:window,navigator:window.navigator,ProgressEvent:window.ProgressEvent,fetch:fetchAsset,Request:BrowserRequest,createImageBitmap:placeholderBitmap}))inject(key,value);
   Object.defineProperty(window.document,'hasFocus',{value:()=>true});
   Object.defineProperty(window.document,'pointerLockElement',{value:null,writable:true,configurable:true});
@@ -70,20 +102,26 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   // just as they do in the browser; otherwise mergeGeometries rejects equal formats.
   Object.assign(window,{Float32Array,Float64Array,Uint8Array,Uint8ClampedArray,Uint16Array,Uint32Array,Int8Array,Int16Array,Int32Array,ArrayBuffer,DataView,
     URL,Blob,DecompressionStream,createImageBitmap:placeholderBitmap,fetch:fetchAsset,Request,Response,TextDecoder,TextEncoder,require:(id:string)=>id==='three'?{...THREE,WebGLRenderer:NoGpuRenderer,PMREMGenerator:NoGpuPMREM}:require(id)});
-  let closed=false;
-  const close=async()=>{if(closed)return;closed=true;window.dispatchEvent(new window.PageTransitionEvent('pagehide',{persisted:false}));const deadline=Date.now()+10000;while(pendingLoads>0&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));await new Promise(r=>setTimeout(r,20));dom.window.close();manager.itemStart=start;manager.itemEnd=end;for(const[key,value]of globals){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}};
+  let closing:Promise<void>|undefined;
+  const close=()=>closing??=(async()=>{
+      window.dispatchEvent(new window.PageTransitionEvent('pagehide',{persisted:false}));
+      // On timeout reject the test while retaining its environment: restoring
+      // globals beneath still-running parsers would hide the cause with late errors.
+      await settleAssets();
+      dom.window.close();manager.itemStart=start;manager.itemEnd=end;
+      for(const [name,method]of responseMethods)(Response.prototype as any)[name]=method;
+      for(const {prototype,parseAsync,parse}of parseMethods){prototype.parseAsync=parseAsync;prototype.parse=parse;}
+      for(const[key,value]of globals){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}
+  })();
   try{
     const bundle=await build({entryPoints:[resolve(world,'src/main.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['three','three/*','three-mesh-bvh'],loader:{'.css':'empty'},plugins:[{name:'real-module-urls',setup(plugin){plugin.onLoad({filter:/\.ts$/},async args=>({contents:(await readFile(args.path,'utf8')).replaceAll('import.meta.url',JSON.stringify(pathToFileURL(args.path).href)),loader:'ts'}));}}]});
     window.eval(bundle.outputFiles[0].text);
     const deadline=Date.now()+60000;
     while(!(window as any).__world?.ready&&!errors.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));
     if(!(window as any).__world?.ready)throw new Error(`Production boot did not become ready: ${errors.map(args=>args.map(String).join(' ')).join('\n')||'60 second timeout'}`);
-    // `ready` intentionally does not block play on optional blade/enemy art. Give
-    // those real asynchronous file loads their event-loop turns before action QA.
-    const assetDeadline=Date.now()+10000;while(pendingLoads>0&&Date.now()<assetDeadline)await new Promise(r=>setTimeout(r,10));
-    if(pendingLoads>0)throw new Error(`Optional asset loads did not settle: ${pendingLoads}`);
-    await new Promise(r=>setTimeout(r,20));
-    return{window,world:(window as any).__world,errors,warnings,
+    // `ready` does not block optional art; tests explicitly settle its real task chain.
+    await settleAssets();
+    return{window,world:(window as any).__world,errors,warnings,settleAssets,
       async snapshot(title:string){
         const clone=window.document.documentElement.cloneNode(true) as HTMLElement;
         clone.querySelectorAll('script,link').forEach(node=>node.remove());

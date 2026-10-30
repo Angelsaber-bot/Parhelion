@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type { Collider } from './player';
 import type { Layout } from './types';
 import { bilingual } from '../../shared-client/i18n';
-import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, type Enemy, type Point3, type HitContext } from './combat';
+import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, isMeleePunishWindow, type Enemy, type Point3, type HitContext } from './combat';
 import './combat.css';
 import { makeCombatTerrain } from './combatTerrain';
 import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
@@ -41,11 +41,11 @@ function makeImpactStreaks(): THREE.BufferGeometry {
   return geometry;
 }
 type Line = [string, string];
-/** Per-boss names and battle lines (zh, en); attack names follow the boss's sweep / burst. */
+/** Per-boss names and battle lines (zh, en); guidance follows actual attack geometry, not a fictional weak point. */
 const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: Line; victory: Line; burst: Line; sweep: Line; colors: [string, string, string] }> = {
   boss_vacant_king: {
     name: ['空位之王', 'THE VACANT KING'],
-    start: ['空位之王苏醒：离开红色预警圈，射击核心！', 'The Vacant King awakens: leave the red tells and fire at its core!'],
+    start: ['空位之王苏醒：看清预警，避招后近身反击！', 'The Vacant King awakens: read the tells, evade, then punish up close!'],
     reset: ['战斗重置：回到落日之核可再次挑战', 'Encounter reset: return to the Sun Core to retry.'],
     phase: ['第二阶段 · 余烬暴怒：攻击加速，预警仍可闪避', 'Phase II · Ember Fury: faster attacks, still dodgeable.'],
     victory: ['空位之王已击败 · 获得「落日誓约」纪念徽记', 'Vacant King defeated · Sunset Oath keepsake earned'],
@@ -55,17 +55,17 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   },
   boss_drowned_admiral: {
     name: ['亡航提督', 'THE DROWNED ADMIRAL'],
-    start: ['亡航提督从甲板下爬起：离开红色预警圈，射击它胸前的冷灯！', 'The Drowned Admiral rises from below deck: leave the red tells and shoot its cold lamp!'],
+    start: ['亡航提督迎战：躲开落点与横斩，装填时近身反击！', 'The Drowned Admiral engages: evade impacts and sweeps; punish the reload up close!'],
     reset: ['战斗重置：回到海之核可再次挑战', 'Encounter reset: return to the Sea Core to retry.'],
     phase: ['第二阶段 · 怒潮：舷炮齐射更快，预警仍可闪避', 'Phase II · Raging Tide: faster broadsides, still dodgeable.'],
     victory: ['亡航提督已击败 · 获得「黑帆」纪念徽记', 'Drowned Admiral defeated · Black Sail keepsake earned'],
     burst: ['舷炮齐射：离开红圈！', 'Broadside: leave the red circle!'],
-    sweep: ['锚链横扫：拉开距离！', 'Anchor sweep: move away!'],
+    sweep: ['甲板横斩：退出近身圆圈！', 'Deck sweep: leave the close-range circle!'],
     colors: ['#24404a', '#5fe0c0', '#a8fff0'],
   },
   boss_winter_warden: {
     name: ['执冬者', 'THE WINTER WARDEN'],
-    start: ['执冬者从红场的冰雾里站起：离开红色预警圈，射击它的冰心！', 'The Winter Warden rises from the frost on Red Square: leave the red tells and shoot its ice heart!'],
+    start: ['执冬者迎战：横移避开直刺，离开冰霜落点，再近身反击！', 'The Winter Warden engages: sidestep thrusts, leave frost impacts, then punish up close!'],
     reset: ['战斗重置：回到冬之核可再次挑战', 'Encounter reset: return to the Winter Core to retry.'],
     phase: ['第二阶段 · 暴风雪：攻势更快，预警仍可闪避', 'Phase II · Blizzard: faster attacks, still dodgeable.'],
     victory: ['执冬者已击败 · 获得「最后的鹰」纪念徽记', 'Winter Warden defeated · Last Eagle keepsake earned'],
@@ -75,7 +75,7 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   },
   boss_hellfire_lord: {
     name: ['业火之主', 'THE LORD OF HELLFIRE'],
-    start: ['业火之主从本能寺的火海里走出：离开红色预警圈，射击它胸口的火核！', 'The Lord of Hellfire walks out of the blaze at Honnō-ji: leave the red tells and shoot the fire core in its chest!'],
+    start: ['业火之主迎战：留意连续横斩与直刺，抓住收招破绽！', 'The Lord of Hellfire engages: watch for chained sweeps and thrusts; punish the recovery!'],
     reset: ['战斗重置：回到京之核可再次挑战', 'Encounter reset: return to the Kyoto Core to retry.'],
     phase: ['第二阶段 · 天魔焚城：攻势更快，预警仍可闪避', 'Phase II · Demon Fire: faster attacks, still dodgeable.'],
     victory: ['业火之主已击败 · 获得「二天」纪念徽记', 'Lord of Hellfire defeated · Two Heavens keepsake earned'],
@@ -85,6 +85,24 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   },
 };
 const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
+/** Only nearby HUD text is generated; visual cues reuse each enemy's existing health bar. */
+function counterHint(e: Enemy, playable: boolean): string {
+  if (!playable) return bilingual('战斗暂停', 'Combat paused');
+  if (e.mode === 'dead') return bilingual('已击败', 'Defeated');
+  if (e.pacified) return bilingual('已停战', 'Standing down');
+  if (!e.active) return bilingual('接近敌人开始交战', 'Move closer to engage');
+  if (isMeleePunishWindow(e)) return `${bilingual('破绽 · 近战', 'PUNISH · MELEE')} ×${COMBAT.meleePunish} · ${Math.max(0,e.timer).toFixed(1)}s`;
+  if (e.mode === 'stagger') return bilingual('已打断 · 普通伤害', 'INTERRUPTED · Normal damage');
+  if (e.mode === 'recover') return bilingual('收招中 · 普通伤害', 'Recovering · Normal damage');
+  if (e.mode === 'windup') {
+    if (e.attack === 'thrust') return bilingual('锁定直刺：横移离开长条！', 'Locked thrust: sidestep the lane!');
+    if (e.attack === 'shot') return bilingual('锁定射击：离开小圈或找掩体！', 'Locked shot: leave the small circle or take cover!');
+    if (e.kind === 'king') return bilingual(...bossText(e.id)[e.attack === 'burst' ? 'burst' : 'sweep']);
+    return e.attack === 'burst' ? bilingual('落点已锁定：离开红圈！', 'Impact locked: leave the red circle!') : bilingual('近身横扫：退出圆圈！', 'Close sweep: leave the circle!');
+  }
+  return e.kind === 'king' ? bilingual('看预警 · 躲招后反击 · 离场重置', 'Read tells · Evade, then counter · Leaving resets') : bilingual(...ENEMY_ROLES[e.role].counter);
+}
+
 
 /** Bounded renderer/facade around the local simulation. All combat resources are disposed on exit. */
 export class WorldCombat {
@@ -115,6 +133,7 @@ export class WorldCombat {
   private acc = 0;
   private time = 0;
   private impactFor = 0;
+  private hitMarkerFor = 0;
   private hurtFor = 0;
   private allyCooldown = 0;
   private disposed = false;
@@ -167,7 +186,7 @@ export class WorldCombat {
     this.sparks.length = 0;
     for (const [id, v] of this.visuals) { this.enemyAssets.release(id); v.lastMode = undefined; v.root.visible = false; v.tell.visible = false; }
     this.impact.textContent = ''; this.hurt.style.opacity = '0';
-    document.getElementById('crosshair')?.classList.remove('hit');
+    this.clearHitMarker();
     this.renderHud();
   }
   syncWorldProgress(done: ReadonlySet<string>) { this.state.syncWorldFlags(done); }
@@ -176,6 +195,16 @@ export class WorldCombat {
   startOptionalTrial(enemyId: string) { return this.state.startOptionalTrial(enemyId); }
   recoverAtSettlement(amount: number) { const healed = this.state.recoverAtSettlement(amount); if (healed) this.renderHud(); return healed; }
   canShoot() { return this.playable && this.state.canShoot(); }
+  /** One bounded marker clock for enemy and quest hits; multi-target attacks allocate no timers. */
+  flashHitMarker(duration = .13) {
+    if (this.disposed || !this.playable || this.state.defeated || !Number.isFinite(duration) || duration <= 0) return;
+    if (this.hitMarkerFor <= 0) document.getElementById('crosshair')?.classList.add('hit');
+    this.hitMarkerFor = Math.max(this.hitMarkerFor, Math.min(.2, duration));
+  }
+  private clearHitMarker() {
+    this.hitMarkerFor = 0;
+    document.getElementById('crosshair')?.classList.remove('hit');
+  }
   raycast(origin: Point3, direction: Point3, maxDistance: number) { return this.state.raycast(origin, direction, maxDistance); }
   damageEnemy(id: string, amount: number = COMBAT.shotDamage, context: HitContext = { source: 'ranged', origin: this.player }) { const hit = this.state.hitEnemy(id, amount, context); this.events(); return hit; }
   setDefense(defense: { guard: number; invulnerable: boolean }) { this.state.setDefense(defense); }
@@ -244,7 +273,11 @@ export class WorldCombat {
     if (this.disposed) return;
     this.player.x = player.x; this.player.y = player.y; this.player.z = player.z; this.playable = active;
     this.allyCooldown = Math.max(0, this.allyCooldown - (active && Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0));
-    if (!active) { this.state.setDefense({ guard: 1, invulnerable: false }); return; }
+    if (!active) {
+      this.state.setDefense({ guard: 1, invulnerable: false });
+      if (this.hitMarkerFor > 0) this.clearHitMarker();
+      return;
+    }
     if (!Number.isFinite(dt) || dt <= 0) return;
     // Called at120Hz, but retain20Hz AI/terrain budget. Boundary samples use this fixed step's defense/player.
     this.acc += Math.min(.1, dt);
@@ -259,6 +292,12 @@ export class WorldCombat {
     this.state.syncWorldFlags(this.options.done);
     this.player.x = player.x; this.player.y = player.y; this.player.z = player.z; this.playable = active;
     if (!active) this.state.setDefense({ guard: 1, invulnerable: false });
+    // Age the previous marker before draining new contact events so a new hit gets its full window.
+    if (!active || this.state.defeated) { if (this.hitMarkerFor > 0) this.clearHitMarker(); }
+    else if (this.hitMarkerFor > 0 && Number.isFinite(dt) && dt > 0) {
+      this.hitMarkerFor = Math.max(0,this.hitMarkerFor-dt);
+      if (this.hitMarkerFor <= 1e-9) this.clearHitMarker();
+    }
     this.time += active ? dt : 0;
     this.enemyAssets.tick(dt);
     this.events();
@@ -291,7 +330,11 @@ export class WorldCombat {
       v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
       v.material.emissiveIntensity = e.pacified ? 0 : e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;
-      (v.fill.material as THREE.MeshBasicMaterial).color.set(e.pacified ? '#78949a' : e.miniboss ? '#ffd36a' : '#ffb26f');
+      const punishCue = active && !this.state.defeated && e.active && !e.pacified && isMeleePunishWindow(e);
+      const interrupted = active && e.mode === 'stagger';
+      // No new draw calls, body shells, lights or flashing: reuse the existing health bar.
+      (v.fill.material as THREE.MeshBasicMaterial).color.set(e.pacified ? '#78949a' : punishCue ? '#79efdc' : interrupted ? '#d3ac77' : e.miniboss ? '#ffd36a' : '#ffb26f');
+      v.bar.scale.y = punishCue ? 1.65 : 1;
       v.bar.visible = e.pacified || e.hp < e.maxHp || e.mode !== 'idle';
       if (camera) v.bar.quaternion.copy(camera.quaternion);
       const ratio = e.hp / e.maxHp; v.fill.scale.x = ratio; v.fill.position.x = -(1 - ratio) * (e.kind === 'king' ? 1.5 : 0.8) / 2;
@@ -342,9 +385,8 @@ export class WorldCombat {
     for (const event of this.state.drainEvents()) {
       if (event.type === 'hit') {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
-        this.impact.textContent = `${event.punish ? bilingual('破绽 ', 'PUNISH ') : ''}−${event.damage}`; this.impactFor = 0.35;
-        document.getElementById('crosshair')?.classList.add('hit');
-        window.setTimeout(() => document.getElementById('crosshair')?.classList.remove('hit'), 130);
+        this.impact.textContent = `${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
+        this.flashHitMarker();
       } else if (event.type === 'kill') {
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
@@ -374,10 +416,16 @@ export class WorldCombat {
       const distance = distanceXZ(enemy.p, this.player);
       if (enemy.active && enemy.mode !== 'idle' && enemy.mode !== 'dead' && distance < closest) { nearest = enemy; closest = distance; }
     }
-    this.hud.querySelector('small')!.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('中继已接管 · 机械哨卫休眠', 'Relay restored · Sentinel dormant') : bilingual('旧誓试炼已完成 · 护路者停战', 'Oath trial complete · Road wardens stand down')) : nearest && !nearest.miniboss && nearest.kind !== 'king' ? `${bilingual(...ENEMY_ROLES[nearest.role].name)} · ${bilingual(...ENEMY_ROLES[nearest.role].counter)}` : '';
-    const b = this.state.boss;
-    if (b) this.bossHud.querySelector('small')!.textContent = `${bilingual('阶段', 'Phase')} ${b.phase} · ${Math.ceil(b.hp)} / ${b.maxHp} · ` +
-      (b.mode === 'windup' ? b.attack === 'shot' ? bilingual('冷灯炮击：侧移或找掩体！', 'Cold-lamp shot: sidestep or take cover!') : b.attack === 'thrust' ? bilingual('直线突刺：横向躲开！', 'Thrust: sidestep!') : b.attack === 'burst' ? bilingual(...text.burst) : bilingual(...text.sweep) : bilingual('射击核心 · 离开战场将重置', 'Fire at the core · Leaving resets the encounter'));
+    const nearestHint = this.hud.querySelector('small')!;
+    const playable = this.playable && !this.state.defeated;
+    const nearestPunish = playable && nearest && !nearest.pacified && isMeleePunishWindow(nearest);
+    nearestHint.className = nearestPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
+    const nearestElite = nearest?.miniboss ? MINIBOSSES.find(m => m.id === nearest.miniboss) : undefined;
+    nearestHint.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('中继已接管 · 机械哨卫休眠', 'Relay restored · Sentinel dormant') : bilingual('旧誓试炼已完成 · 护路者停战', 'Oath trial complete · Road wardens stand down')) : nearest && nearest.kind !== 'king' ? `${nearestElite ? bilingual(...nearestElite.name) : bilingual(...ENEMY_ROLES[nearest.role].name)} · ${counterHint(nearest,playable)}` : '';
+    const b = this.state.boss, bossHint = this.bossHud.querySelector('small')!;
+    const bossPunish = playable && b.active && !b.pacified && isMeleePunishWindow(b);
+    bossHint.className = bossPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
+    if (b) bossHint.textContent = `${bilingual('阶段', 'Phase')} ${b.phase} · ${Math.ceil(b.hp)} / ${b.maxHp} · ${counterHint(b,playable)}`;
     this.defeat.hidden = !this.state.defeated;
     this.defeat.textContent = bilingual('你倒下了\n即将回到安全地点 · 进度保留', 'You have fallen\nReturning to safety · Progress is kept');
   }
@@ -502,6 +550,7 @@ export class WorldCombat {
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
     if (this.disposed) return; this.disposed = true;
+    this.clearHitMarker();
     for (const v of this.visuals.values()) { v.root.traverse(o => { if (o instanceof THREE.InstancedMesh) o.dispose(); }); v.root.removeFromParent(); v.tell.removeFromParent(); }
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();

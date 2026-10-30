@@ -24,9 +24,10 @@ function setup({ wall = false, enemy = false, enabled = true, armed = true, cann
   if(cannonTarget) Object.assign(target.userData,{needs:FORT_CANNON.marker,nearWorld:[0,2],nearR:8});
   const geometry = wall ? new MeshBVH(new THREE.PlaneGeometry(20,20)) : null;
   const shots: { start: THREE.Vector3; end: THREE.Vector3; hit: boolean }[] = [], damage: string[] = [];
-  const done = new Set<string>(cannonTarget?[FORT_CANNON.marker]:[]); let saves=0;
+  const done = new Set<string>(cannonTarget?[FORT_CANNON.marker]:[]); let saves=0;const markers:number[]=[];
   const combat = {
     canShoot: () => enabled,
+    flashHitMarker: (duration:number) => markers.push(duration),
     geometry: { cast(origin: THREE.Vector3,direction: THREE.Vector3,max: number) { const hit = geometry?.raycastFirst(new THREE.Ray(origin,direction.clone().normalize()),THREE.DoubleSide); return hit && hit.distance < max ? hit : null; } },
     raycast: (_origin: THREE.Vector3,_direction: THREE.Vector3,max: number) => enemy && 6 < max ? {id:'wild_0',distance:6,point:{x:0,y:1.3,z:-1}} : null,
     damageEnemy: (id: string) => damage.push(id),
@@ -35,10 +36,10 @@ function setup({ wall = false, enemy = false, enabled = true, armed = true, cann
   const context=vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,THREE,getEraProgressReaction,settings:{label:()=> 'F'},bilingual:(zh:string)=>zh,FORT_CANNON,fortCannon:new FortCannon(),actions:undefined,inspectServant:false,worldProgress:{armed},gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
     targets:[target],rig:playerArt?.rig ?? {root,joints:{Gun:gun}},rifle:playerArt?.rifle ?? {muzzleWorld:()=>gun.localToWorld(new THREE.Vector3(0,0,-.68))},anim:animator ?? {prepareShot(){}},done,toast(){},save(){saves++;},applyWorldState(){},$(){return {classList:{add(){},remove(){}}};},setTimeout(){}});
   vm.runInContext(transformSync(section+'\nglobalThis.shoot = shoot;',{loader:'ts',format:'cjs'}).code,context);
-  return {shoot:()=>context.shoot(),shots,damage,done,saves:()=>saves};
+  return {shoot:()=>context.shoot(),shots,damage,done,markers,saves:()=>saves};
 }
 test('World production shooting preserves quest targets and always renders a visible shot', () => {
-  const s=setup(); s.shoot(); assert.equal(s.done.has('range_target_1'),true); assert.equal(s.saves(),1);
+  const s=setup(); s.shoot(); assert.equal(s.done.has('range_target_1'),true); assert.equal(s.saves(),1);assert.deepEqual(s.markers,[.14]);
   assert.equal(s.shots.length,1); assert.equal(s.shots[0].hit,true); assert.ok(s.shots[0].end.z < -4);
 });
 test('closer enemy receives damage instead of completing the target behind it', () => {

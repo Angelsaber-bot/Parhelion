@@ -18,3 +18,9 @@ test('pause cancels hidden attacks, invalid dt never advances, cooldown cannot r
 test('evade snapshots unit direction, is bounded and cancels without resetting cooldown',()=>{
  const e=new PlayerEvade();assert.equal(e.start(3,4),true);assert.equal(e.start(0,1),false);assert.equal(Math.hypot(e.x,e.z),1);e.update(.1,false);assert.equal(e.active,false);assert.ok(e.cooldown>1);for(let i=0;i<15;i++)e.update(.1,true);assert.equal(e.start(0,0),false);assert.equal(e.start(0,1),true);e.reset();assert.equal(e.cooldown,0);
 });
+test('one late input queues exactly once, repeat taps cannot replay the swing cue',()=>{
+ const m=new PlayerMelee();m.press(0);m.update(.1,true);m.update(.1,true);m.update(.05,true);
+ assert.equal(m.comboWindowOpen,true);assert.equal(m.press(0),true);assert.equal(m.nextCutQueued,true);assert.equal(m.comboWindowOpen,false);
+ for(let i=0;i<20;i++)assert.equal(m.press(0),false);
+ m.update(.1,true);m.update(.1,true);m.update(.1,true);assert.equal(m.combo,1);assert.equal(m.nextCutQueued,false);
+});

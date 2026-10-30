@@ -1,0 +1,119 @@
+{
+  "scope": "Whole iteration, no GPU; frozen expansion source tree versus final polish using final polish harness",
+  "order": [
+    "expansion-1",
+    "polish-1",
+    "polish-2",
+    "expansion-2"
+  ],
+  "node": "v24.22.1",
+  "warmupFramesPerLocation": 180,
+  "sampledFramesPerLocation": 600,
+  "frameDt": 0.016666666666666666,
+  "injections": false,
+  "locations": [
+    {
+      "name": "valley_hq",
+      "expansion": {
+        "medianMs": 2.981355499999154,
+        "p95Ms": 6.049727500000699,
+        "meanMs": 3.37161081166666
+      },
+      "polish": {
+        "medianMs": 2.1908275000005233,
+        "p95Ms": 4.759509500000604,
+        "meanMs": 2.539590872500024
+      }
+    },
+    {
+      "name": "winter_pack",
+      "expansion": {
+        "medianMs": 3.647692499999721,
+        "p95Ms": 7.260107000000062,
+        "meanMs": 4.017288928333338
+      },
+      "polish": {
+        "medianMs": 2.763647499999024,
+        "p95Ms": 7.1649010000001,
+        "meanMs": 3.402914668333336
+      }
+    },
+    {
+      "name": "kyoto_node",
+      "expansion": {
+        "medianMs": 2.7260509999987335,
+        "p95Ms": 5.760723999998845,
+        "meanMs": 3.1885341958333386
+      },
+      "polish": {
+        "medianMs": 2.427935499999876,
+        "p95Ms": 6.027649499999825,
+        "meanMs": 2.9366731591666726
+      }
+    }
+  ],
+  "rawSha256": {
+    "expansion-1.json": "af7916ac158096437b5ddbe27e5c240af2729c6b23814f4b3fe40d48bfb241e1",
+    "polish-2.json": "c43183f225a642b860004bc615e4f2b2344baa88695d5b124c0e5d8d0991f365",
+    "polish-1.json": "2631681de15c145ad2dea421f76ecda319361207686814b8c3ee2650adf66892",
+    "expansion-2.json": "503f116899f6f08b173f00114773dc9597f5cbaba78b531b56706b430027a86c"
+  },
+  "memoryMedianBytes": {
+    "expansion": {
+      "rss": 1098209280.0,
+      "heapTotal": 255602688.0,
+      "heapUsed": 117664456.0,
+      "external": 560464536.0,
+      "arrayBuffers": 532974546.0
+    },
+    "polish": {
+      "rss": 1119232000.0,
+      "heapTotal": 260362240.0,
+      "heapUsed": 121677040.0,
+      "external": 560613468.0,
+      "arrayBuffers": 540652628.5
+    }
+  },
+  "resources": {
+    "expansion": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 409919360,
+      "uniqueGeometryTriangles": 7941333
+    },
+    "polish": {
+      "objects": 11030,
+      "meshes": 9384,
+      "lights": 20,
+      "geometries": 5149,
+      "materials": 1318,
+      "uniqueGeometryBackingBytes": 410069508,
+      "uniqueGeometryTriangles": 7942493
+    }
+  },
+  "errorsWarnings": {
+    "expansion": [
+      {
+        "errors": [],
+        "warnings": []
+      },
+      {
+        "errors": [],
+        "warnings": []
+      }
+    ],
+    "polish": [
+      {
+        "errors": [],
+        "warnings": []
+      },
+      {
+        "errors": [],
+        "warnings": []
+      }
+    ]
+  }
+}

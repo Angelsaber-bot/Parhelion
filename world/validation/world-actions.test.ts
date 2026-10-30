@@ -95,3 +95,14 @@ test('authored weapon-contact metadata reaches combat unchanged, without lifting
   assert.deepEqual(f.context.position, { x: 2, y: 1, z: 3 }, 'actor/player position is not moved to satisfy a hit');
   f.actions.dispose();
 });
+
+test('normal exploration advances cooldowns while disallowing attacks; menu pause does not',()=>{
+ const f=fixture();try{
+  f.actions.press('skill');const before=f.actions.skills.cooldown('skill');
+  f.context.enabled=false;f.context.clockRunning=true;f.context.grounded=false;
+  f.actions.update(.1);assert.ok(f.actions.skills.cooldown('skill')<before);assert.equal(f.actions.skills.casting,false);assert.equal(f.strikes.length,0);
+  f.actions.press('skill');f.actions.press('melee');assert.equal(f.actions.skills.casting,false);assert.equal(f.actions.melee.active,false);
+  const exploring=f.actions.skills.cooldown('skill');f.context.clockRunning=false;f.actions.update(.1);assert.equal(f.actions.skills.cooldown('skill'),exploring);
+  f.context.enabled=true;f.context.grounded=true;f.context.clockRunning=true;f.actions.update(.1);assert.ok(f.actions.skills.cooldown('skill')<exploring);
+ }finally{f.actions.dispose();}
+});

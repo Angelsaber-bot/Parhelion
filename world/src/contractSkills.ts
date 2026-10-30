@@ -1,5 +1,5 @@
 import type { Point3 } from './combat';
-import type { StrikeOriginGeometry } from './combatActions';
+import { strikeContains, type StrikeOriginGeometry } from './combatActions';
 import type { ServantId } from './contracts';
 
 export type SkillSlot = 'skill' | 'ultimate';
@@ -44,13 +44,7 @@ const finitePoint = (p: Point3) => Number.isFinite(p.x) && Number.isFinite(p.y) 
 
 /** A directional ground corridor. The combat adapter must additionally check live HP and LOS. */
 export function skillContains(strike: SkillStrike, point: Point3): boolean {
-  if (!finitePoint(point) || (strike.losOffset !== undefined && strike.losOffset !== 0 && strike.losOffset !== 1) ||
-    (strike.casterFeetY !== undefined && !Number.isFinite(strike.casterFeetY)) ||
-    (strike.losOffset === 0 && strike.casterFeetY === undefined)) return false;
-  const dx = point.x - strike.origin.x, dz = point.z - strike.origin.z;
-  const forward = dx * strike.direction.x + dz * strike.direction.z;
-  const side = dx * strike.direction.z - dz * strike.direction.x;
-  return forward >= 0 && forward <= strike.range && Math.abs(side) <= strike.halfWidth && Math.abs(point.y - (strike.casterFeetY ?? strike.origin.y)) <= 2.6;
+  return strikeContains(strike, point);
 }
 
 /** Input-independent deterministic clock. Pausing cancels uncommitted pulses, never refunds costs. */

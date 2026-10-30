@@ -77,3 +77,28 @@ test('closing record never claims unperformed optional restorations; each earned
   }
   assert.match(getCampaignClosingText(new Set([...done, ERA_KNIGHT_DEFEATED]))[1], /trial is recorded/);
 });
+
+test('re-reading the archive reflects later saved detours without extra rewards or flags', async () => {
+  const { ERA_OPTIONALS, interactEraStory } = await import('../src/eraStories');
+  const { WorldProgress } = await import('../src/progress');
+  const map = new Map<string, string>();
+  const storage = { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => { map.set(key, value); } };
+  const progress = new WorldProgress(storage);
+  [C.terminal, ...cores].forEach(flag => progress.done.add(flag));
+  const first = act(C.terminal, progress.done);
+  assert.equal(first.changed, true);
+  assert.doesNotMatch(first.dialogue![1], /harbor return signal still guides/);
+  interactEraStory(ERA_OPTIONALS.blacksail.id, progress.done, progress.found);
+  progress.save();
+  const restored = new WorldProgress(storage), before = [...restored.done];
+  for (let repeat = 0; repeat < 10; repeat++) {
+    const reply = act(C.terminal, restored.done);
+    assert.equal(reply.changed, false);
+    assert.match(reply.dialogue![1], /harbor return signal still guides/);
+    assert.doesNotMatch(reply.dialogue![1], /post stove you lit/);
+    assert.deepEqual([...restored.done], before);
+  }
+  assert.equal(guide('alpha', restored.done), null);
+  restored.reset();
+  assert.equal(act(C.terminal, restored.done).handled, false);
+});

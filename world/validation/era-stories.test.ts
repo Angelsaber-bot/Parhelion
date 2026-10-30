@@ -85,10 +85,12 @@ for (const region of ERA_IDS) {
     assert.deepEqual([...done], [`era_${region}_met`]);
     const before = getEraResidentDialogue(def.npc, done);
     ERA_BOSS_REQUIREMENTS[def.core].forEach(id => done.add(id));
-    assert.deepEqual(getEraResidentDialogue(def.npc, done), def.challenge);
+    const challengeReply = getEraResidentDialogue(def.npc, done)!;
+    for (const lang of [0, 1] as const) assert.ok(challengeReply[lang].endsWith(def.challenge[lang]), 'resident keeps the concrete current goal after personal reaction');
     assert.notDeepEqual(before, def.challenge);
     done.add(def.core); done.add(def.contract);
-    assert.deepEqual(getEraResidentDialogue(def.npc, done), def.completeText);
+    if (region === 'blacksail') assert.match(getEraResidentDialogue(def.npc, done)![1], /three empty boats are crossed off/);
+    else assert.deepEqual(getEraResidentDialogue(def.npc, done), def.completeText);
     assert.equal(state(region, done).legacyComplete, false);
   });
   test(`${region}: requirements and guide targets exist in unchanged generated layout`, () => {
@@ -215,4 +217,81 @@ test('story uses bounded existing progress flags and reset clears visible option
   const empty = new WorldProgress(backing);
   assert.equal(empty.done.size, 0); assert.equal(empty.found.size, 0);
   for (const region of ERA_IDS) assert.equal(state(region, empty.done).discovered, false);
+});
+
+test('repaired navigation can be requested from the right resident without repairing or collecting anything', () => {
+  for (const [region, resident, other] of [['blacksail', 'customs_runner', 'customs_inspector'], ['kyoto', 'kyoto_innkeeper', 'kyoto_swordsmith']] as const) {
+    const done = new Set<string>();
+    assert.equal(act(resident, done).reward, null, 'conversation alone cannot earn the station reward');
+    assert.equal(done.has(ERA_OPTIONALS[region].id), false);
+    act(ERA_OPTIONALS[region].id, done);
+    const before = [...done];
+    const reply = act(resident, done);
+    assert.deepEqual(reply.reward, getEraOptionalReward(region, done));
+    assert.equal(reply.changed, false);
+    assert.deepEqual([...done], before);
+    assert.equal(act(other, done).reward, null, 'another resident cannot issue unrelated navigation');
+    for (let repeat = 0; repeat < 20; repeat++) assert.equal(act(resident, done).changed, false);
+  }
+});
+
+test('completed and legacy treasure never send players back for missing old map fragments', () => {
+  const done = new Set(['blacksail_harbor_signal', 'shard_treasure']);
+  for (const id of ['customs_runner', 'blacksail_harbor_signal']) {
+    const reply = act(id, done);
+    assert.equal(reply.reward, null);
+    assert.match(reply.dialogue![0], /宝箱已经找到/);
+    assert.match(reply.dialogue![1], /(?:The chest is found|You found the chest)/);
+  }
+  for (const flag of ['map_piece_1', 'map_piece_2', 'map_piece_3']) assert.equal(done.has(flag), false);
+});
+
+test('Kyoto stops reissuing a completed firing route for exact banner or legacy core completion', () => {
+  for (const flags of [['kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3'], ['fire_core'], ['musashi_contract']]) {
+    const done = new Set(['kyoto_lantern_route', ...flags]);
+    for (const id of ['kyoto_innkeeper', 'kyoto_lantern_route']) {
+      const reply = act(id, done);
+      assert.equal(reply.reward, null);
+      assert.match(reply.dialogue![1], /no longer bars/);
+      assert.doesNotMatch(reply.dialogue![1], /mark the ledge again/);
+    }
+    assert.equal(done.has('kikyo_banner_1'), flags.includes('kikyo_banner_1'), 'legacy state does not fabricate banner destruction');
+  }
+  const incomplete = new Set(['kyoto_lantern_route', 'kikyo_banner_1', 'kikyo_banner_2']);
+  assert.equal(act('kyoto_innkeeper', incomplete).reward?.kind, 'quiet-route');
+});
+
+test('repair memories remain distinct, truthful and read-only across reload and reset', async () => {
+  const { WorldProgress } = await import('../src/progress');
+  const map = new Map<string, string>();
+  const storage = { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => { map.set(key, value); } };
+  const progress = new WorldProgress(storage);
+  for (const region of ERA_IDS) act(ERA_OPTIONALS[region].id, progress.done, progress.found);
+  progress.done.add(ERA_KNIGHT_DEFEATED); progress.save();
+  const restored = new WorldProgress(storage);
+  const cases = [
+    ['britain_smith', /road wardens have lowered/],
+    ['customs_runner', /marked your next unsearched place/],
+    ['winter_surgeon', /Warm up there.*thirty seconds/],
+    ['kyoto_innkeeper', /mark the ledge again/],
+  ] as const;
+  for (const [id, expected] of cases) assert.match(getEraResidentDialogue(id, restored.done)![1], expected);
+  const before = [...restored.done];
+  assert.equal(act('winter_surgeon', restored.done).reward, null, 'no remote stove benefit');
+  assert.equal(act('britain_smith', restored.done).reward, null, 'no trial initiation from smith');
+  assert.deepEqual([...restored.done].filter(id => !id.endsWith('_met')), before);
+  restored.reset();
+  for (const [id, earned] of cases) assert.doesNotMatch(getEraResidentDialogue(id, restored.done)![1], earned);
+});
+
+test('abbey keeper distinguishes the earned optional hearth restoration from the single required oath', () => {
+  const done = new Set(['hall_brazier_1']);
+  assert.match(getEraResidentDialogue('britain_abbey_keeper', done)![1], /other two if you wish/);
+  done.add('hall_brazier_2');
+  assert.doesNotMatch(getEraResidentDialogue('britain_abbey_keeper', done)![1], /All three hearths/);
+  done.add('hall_brazier_3');
+  assert.match(getEraResidentDialogue('britain_abbey_keeper', done)![1], /All three hearths are lit/);
+  const before = [...done];
+  assert.equal(state('britain', done).complete, false);
+  assert.deepEqual([...done], before);
 });

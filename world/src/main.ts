@@ -9,6 +9,7 @@ import { createSettlementNpcs } from './settlements/npcs';
 import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './valleyStory';
 import { createValleyStoryScene } from './valleyStoryScene';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './eraStories';
+import { optionalPinExpired, type OptionalPin } from './optionalNavigation';
 import { createEraStoryScene } from './eraStoryScenes';
 import { WorldActions } from './worldActions';
 import { FortCannon, FORT_CANNON } from './fortCannon';
@@ -316,7 +317,7 @@ const travelStops = createSafeTravelStops(settlements.placements);
 let hudRevision = 0;
 let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
-let optionalPin: { p: [number,number,number]; label: [string,string]; region: string; targetId?: string } | null = null;
+let optionalPin: OptionalPin | null = null;
 const mapBudget = new FrameWorkBudget(30), hudBudget = new FrameWorkBudget(10), statsBudget = new FrameWorkBudget(4);
 const eraStoryScenes = settlements.placements.filter(p => isEraId(p.id)).map(p => ({ ...createEraStoryScene(p), region: p.id }));
 const eraOptionalIds = new Set(Object.values(ERA_OPTIONALS).map(x => x.id));
@@ -417,7 +418,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   const closing = getCampaignClosureGuide(here, done);
   if (closing) { const marker = markers.get(closing.targetId); if (marker) return { p: marker.p, label: bilingual(...closing.text) }; }
   if (optionalPin) {
-    if (optionalPin.region !== here || (optionalPin.targetId && (done.has(optionalPin.targetId) || found.has(optionalPin.targetId))) || Math.hypot(player.pos.x - optionalPin.p[0], player.pos.z - optionalPin.p[2]) < 6) optionalPin = null;
+    if (optionalPinExpired(optionalPin, here, player.pos, done, found)) optionalPin = null;
     else return { p: optionalPin.p, label: bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`, `Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`) };
   }
   const eraGuide = isEraId(here) ? getEraStoryGuide(here, done) : null;
@@ -791,7 +792,7 @@ document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
   locked = document.pointerLockElement === canvas;
   clearInput();
-  if (!locked) $('bigmap').classList.remove('open');
+  if (!locked) { inspectServant = false; $('bigmap').classList.remove('open'); }
   else setLoading('点击进入（ESC 释放鼠标）');
   start.classList.toggle('hidden', locked);
   $('settings-open').classList.toggle('hidden', locked);
@@ -813,7 +814,7 @@ function requestProgressReset() {
 function press(binding: string, repeat = false) {
   const action = settings.action(binding);
   if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
-  if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.hide(); hudRevision++; } return; }
+  if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.advance(); hudRevision++; } return; }
   if (action === 'travel') { if (!repeat) travelPanel.show(); return; }
   if (action === 'settings') { if (!repeat) settingsPanel.show(); return; }
   if (action === 'map') {
@@ -829,7 +830,7 @@ function press(binding: string, repeat = false) {
   }
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
-  if (actions?.press(action)) return;
+  if (actions?.press(action)) { hudRevision++; return; }
   keys.add(binding);
   if (action === 'aim') aim.held = true;
   if (action === 'fire') shoot();
@@ -880,7 +881,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast, groundHe
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { audio.hurt(); },
-  onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { save(); applyWorldState(); } },
+  onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
@@ -889,7 +890,7 @@ let reducedOverride: boolean | null = null;
 try { const stored=localStorage.getItem('parhelion-world-reduced-effects'); if(stored==='1'||stored==='0')reducedOverride=stored==='1'; } catch { /* use system preference */ }
 const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 actions = new WorldActions({ scene,
-  context: () => ({ enabled: gameplayActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
+  context: () => ({ clockRunning: gameplayActive() && !combat.defeated, enabled: gameplayActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
     grounded: player.onGround, armed: worldProgress.armed, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.companionSummoned ? contract.selected : null }),
@@ -1029,7 +1030,7 @@ function shoot() {
     else toast(n === 3 ? '机关解除：神龛之门打开了' : `机关靶命中 ${n}/3`);
     save(); applyWorldState();
     const reaction = getEraProgressReaction(id, done); if (reaction) toast(bilingual(...reaction));
-    $('crosshair').classList.add('hit'); setTimeout(() => $('crosshair').classList.remove('hit'),140);
+    combat.flashHitMarker(.14);
   }
   combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething); audio.shot();
 }
@@ -1085,12 +1086,12 @@ function handleEraInteraction(id: string, speaker: [string,string] = ['现场记
   if (result.reward) {
     const reward = result.reward;
     if (reward.kind === 'warmth') { cold.reserve = reward.seconds; cold.warmth = Math.max(cold.warmth, 70); }
-    else if (reward.kind === 'quiet-route') optionalPin = { p: reward.position, label: reward.label, region: reward.region };
-    else if (reward.kind === 'clue') { const marker = markers.get(reward.targetId); if (marker) optionalPin = { p: marker.p, label: reward.label, region: reward.region, targetId: marker.id }; }
+    else if (reward.kind === 'quiet-route') optionalPin = { kind: 'quiet-route', p: reward.position, label: reward.label, region: reward.region };
+    else if (reward.kind === 'clue') { const marker = markers.get(reward.targetId); if (marker) optionalPin = { kind: 'clue', p: marker.p, label: reward.label, region: reward.region, targetId: marker.id }; }
     else if (reward.kind === 'trial') {
       combat.startOptionalTrial(reward.enemyId);
       const knight = combat.state.enemies.find(e => e.id === reward.enemyId);
-      if (knight) optionalPin = { p: [knight.home.x,knight.home.y,knight.home.z], label: reward.label, region: reward.region };
+      if (knight) optionalPin = { kind: 'trial', p: [knight.home.x,knight.home.y,knight.home.z], label: reward.label, region: reward.region };
     }
     hudRevision++;
   }

@@ -175,6 +175,10 @@ export function enemyAttackContains(e: Enemy, player: Point3): boolean {
   const along = px * ux + pz * uz, across = px * uz - pz * ux;
   return along >= 0 && along < enemyThrustLength(e) && Math.abs(across) < enemyAttackRadius(e) && Math.abs(player.y - e.p.y) < 2.6;
 }
+/** Shared damage/readability rule. Forced interruption never masquerades as an earned punish. */
+export function isMeleePunishWindow(e: Pick<Enemy, 'mode' | 'staggerCooldown'>): boolean {
+  return e.mode === 'recover' && e.staggerCooldown <= 0;
+}
 /** Rifle still interacts with distant quest targets; only enemy damage falls off. */
 export function rangedDamageMultiplier(distance: number): number {
   if (!Number.isFinite(distance)) return .45;
@@ -320,7 +324,7 @@ export class WorldCombatState {
     if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
     // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
     const melee = context?.source === 'melee';
-    const punish = melee && e.mode === 'recover' && e.staggerCooldown <= 0;
+    const punish = melee && isMeleePunishWindow(e);
     const dealt = Math.min(e.hp, Math.round(damage * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish });
