@@ -1,11 +1,14 @@
 #!/bin/bash
 # Keeps this Mac's Parhelion clone on the latest GitHub main and rebuilds the local one-click site.
-# Run by the launchd agent com.parhelion.sync (installed by 安装自动同步.command). Silent: no sound, no windows.
+# Run by the launchd agent com.parhelion.sync (installed by 安装自动同步.command) from a copy in
+# ~/Library/Application Support/Parhelion, because macOS blocks background jobs from running scripts on the Desktop.
+# Usage: sync.sh <repo path>. Silent: no sound, no windows.
 # Never overwrites local work: skips when tracked files are modified, the branch is not main, or main has diverged.
 # Untracked folders such as _local/ are never touched.
 set -u
 export PATH="${PATH:-/usr/bin:/bin}:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
-REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
+REPO="${1:-$(cd "$(dirname "$0")/../../.." && pwd)}"
+SELF="$(cd "$(dirname "$0")" && pwd)/$(basename "$0")"
 LOG="$HOME/Library/Logs/Parhelion-sync.log"
 LOCK="${TMPDIR:-/tmp}/parhelion-sync.lock"
 mkdir -p "$(dirname "$LOG")"
@@ -24,6 +27,10 @@ LOCAL="$(git rev-parse HEAD)"; REMOTE="$(git rev-parse origin/main)"
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then log "有未提交的本地修改，跳过本次同步"; exit 0; fi
 git merge --ff-only --quiet origin/main 2>>"$LOG" || { log "本地有未推送的提交，无法快进，跳过"; exit 0; }
 log "已同步到 $(git log -1 --format='%h %s')"
+# Keep the installed copy current (write a new file, then rename, so the running copy is not rewritten mid-read).
+if [ "$SELF" != "$REPO/site/scripts/mac/sync.sh" ] && ! cmp -s "$REPO/site/scripts/mac/sync.sh" "$SELF"; then
+  cp "$REPO/site/scripts/mac/sync.sh" "$SELF.new" && chmod +x "$SELF.new" && mv "$SELF.new" "$SELF"
+fi
 
 # Reinstall dependencies only when a lockfile changed, then rebuild site/dist for 启动 Parhelion.command.
 for app in arena-game world; do
