@@ -26,8 +26,8 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ARENA_URL: wss://parhelion-arena.lejiazhang-us.workers.dev/arena
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
@@ -42,14 +42,14 @@ jobs:
 
       - name: Test Arena (rules, server, Worker protocol)
         run: npm test --prefix arena-game
-      - name: Test site
-        run: npm test --prefix site
       - name: Test World (reported, does not block deploy)
         continue-on-error: true
         run: npm test --prefix world
 
       - name: Build site (typechecks Arena + World)
         run: npm run build --prefix site
+      - name: Test site (needs the build)
+        run: npm test --prefix site
       - name: Check the build points at the public Arena server
         run: grep -rqF "$ARENA_URL" site/dist/public/arena
 
