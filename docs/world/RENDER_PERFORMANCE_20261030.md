@@ -1,3 +1,5 @@
+> Historical report: this experimental performance pass is withdrawn by the conservative recovery candidate. Reproduce its code from commit a11f349; see RENDER_REGRESSION_RECOVERY_20261030.md for current scope.
+
 # World rendering and performance pass — 2026-10-30
 
 Base: `a5b3290f6be719867bdf847be8faa0a29d7982fe`.

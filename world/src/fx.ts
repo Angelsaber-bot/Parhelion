@@ -82,22 +82,11 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
         vec2 wxz = lo + mod(aRand.xy * uSize - lo, uSize);
         vec2 tuv = ((wxz - uOrigin) / uSpan) * ((uN - 1.0) / uN) + 0.5 / uN;
         vec4 cm = texture2D(tC, tuv);
+        float h = texture2D(tH, tuv).r;
         float dist = length(wxz - uCam.xz);
         float fade = 1.0 - smoothstep(uSize * 0.22, uSize * 0.48, dist);
         float keep = step(aRand.w, cm.a * fade);
-        // Masked/faded blades used to collapse into degenerate triangles, but
-        // still paid for height sampling and every wind/trigonometry operation.
-        // All vertices share aRand/tuv: rejecting the entire blade is coherent.
-        if (keep < 0.5) {
-          vUv = uv; vCol = cm.rgb;
-          gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
-          #ifdef USE_FOG
-            vFogDepth = 0.0;
-          #endif
-          return;
-        }
-        float h = texture2D(tH, tuv).r;
-        float sc = mix(0.55, 1.25, fract(aRand.z * 7.13));
+        float sc = mix(0.55, 1.25, fract(aRand.z * 7.13)) * keep;
         float ang = aRand.z * 6.2831;
         vec3 p = position * vec3(sc, sc * mix(0.8, 1.35, fract(aRand.w * 13.7)), sc);
         p.xz = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * p.xz;
@@ -160,18 +149,14 @@ export function makeSunShafts() {
         gl_FragColor = vec4(base.rgb + vec3(1.0, 0.9, 0.72) * acc / 32.0 * strength * fall, base.a);
       }`,
   });
-  const v = new THREE.Vector3(), direction = new THREE.Vector3();
+  const v = new THREE.Vector3();
   /** Call every frame before rendering. */
   const update = (camera: THREE.PerspectiveCamera, sunDir: THREE.Vector3) => {
     v.copy(camera.position).addScaledVector(sunDir, 1000).project(camera);
-    const facing = camera.getWorldDirection(direction).dot(sunDir);
+    const facing = camera.getWorldDirection(new THREE.Vector3()).dot(sunDir);
     pass.uniforms.sunUv.value.set(v.x * 0.5 + 0.5, v.y * 0.5 + 0.5);
     pass.uniforms.aspect.value = camera.aspect;
-    const strength = THREE.MathUtils.smoothstep(facing, 0.1, 0.6) * 1.1;
-    pass.uniforms.strength.value = strength;
-    // Same threshold as the shader's exact copy branch. Skipping this pass
-    // avoids a full-screen render-target read/write when rays contribute zero.
-    pass.enabled = strength > 0.001;
+    pass.uniforms.strength.value = THREE.MathUtils.smoothstep(facing, 0.1, 0.6) * 1.1;
   };
   return { pass, update };
 }

@@ -15,7 +15,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { enemy: Enemy; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; distance?: number; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -85,9 +85,6 @@ export class WorldCombat {
   readonly geometry;
   private readonly enemyAssets = new EnemyVisuals();
   private readonly visuals = new Map<string, EnemyVisual>();
-  private readonly detailedCandidates: EnemyVisual[] = [];
-  private readonly detailed = new Set<EnemyVisual>();
-  private readonly presentationOrder: Enemy[] = [];
   private readonly shots: ShotVisual[] = [];
   private readonly sparks: Spark[] = [];
   private readonly shared: THREE.BufferGeometry[] = [];
@@ -207,27 +204,15 @@ export class WorldCombat {
     while (this.acc >= 0.05) { this.state.step(0.05, player, active, this.geometry.terrain); this.acc -= 0.05; }
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
-    const candidates = this.detailedCandidates, detailed = this.detailed;
-    candidates.length = 0; detailed.clear();
+    const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
+      (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
+    const detailed = new Set(this.state.enemies.filter(e => visible(e) && this.visuals.get(e.id)?.model)
+      .sort((a, b) => distanceXZ(a.p, player) - distanceXZ(b.p, player)).slice(0, ENEMY_VISUAL_BUDGET).map(e => e.id));
     for (const e of this.state.enemies) {
       const v = this.visuals.get(e.id)!;
-      v.distance = distanceXZ(e.p, player);
-      v.root.visible = e.mode !== 'dead' && v.distance <= COMBAT.activeRange &&
-        (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
-      if (v.root.visible && v.model) candidates.push(v);
-    }
-    candidates.sort((a, b) => a.distance! - b.distance!);
-    for (let i = 0; i < Math.min(candidates.length, ENEMY_VISUAL_BUDGET); i++) detailed.add(candidates[i]);
-    // Release outgoing slots before acquiring incoming ones, independent of enemy array order.
-    const order = this.presentationOrder; order.length = 0;
-    for (const v of detailed) order.push(v.enemy); // Closest missing rigs consume the bounded clone quota first.
-    for (const e of this.state.enemies) if (!detailed.has(this.visuals.get(e.id)!)) {
-      this.enemyAssets.release(e.id); order.push(e);
-    }
-    for (const e of order) {
-      const v = this.visuals.get(e.id)!;
-      const distance = v.distance!;
-      const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(v)) : false;
+      const distance = distanceXZ(e.p, player);
+      v.root.visible = visible(e);
+      const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
       if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
       if (e.attack === 'shot' && e.mode === 'recover' && v.lastMode === 'windup') {
@@ -392,7 +377,7 @@ export class WorldCombat {
         }
       }
     }
-    return { enemy: e, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material };
+    return { root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
