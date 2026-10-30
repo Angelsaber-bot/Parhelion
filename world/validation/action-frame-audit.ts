@@ -37,7 +37,8 @@ export function auditEvadeFrame(fps: number) {
     combatAcc += dt;
     while (combatAcc >= .05) { if (defense.invulnerable) combatProtectedTicks++; state.step(.05, player.pos, true, { walk: () => null, lineOfSight: () => true }); combatAcc -= .05; }
   }};
-  const context = vm.createContext({ now: 0, last: 0, acc: 0, STEP, actions, player, combat,
+  // This audit isolates ordinary evade frames; cinematic lifecycle has its own production harness.
+  const context = vm.createContext({ frameUltimate: () => false, deferredCombatToast: null, now: 0, last: 0, acc: 0, STEP, actions, player, combat,
     gameplayActive: () => true, down: () => false, cold: { frozen: false }, camera: {},
     keys: { clear() {} }, aim: { clear() {} }, audio: { setActive() {} }, fortCannon: { update() {} },
     locked: true, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },

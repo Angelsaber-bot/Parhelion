@@ -27,7 +27,8 @@ function fixture() {
     geometry: { ground: (_x: number, _z: number, _ceiling: number): {point:THREE.Vector3}|null => ({ point: new THREE.Vector3(100,10,15) }), clear: (_p: THREE.Vector3, _r: number, _h: number) => true },
   };
   const stops = travel.createSafeTravelStops([{ id:'britain', name:['据点','Stop'], position:[100,10,0], entry:[100,10,15], footprint:[30,30], groundRange:0 }]);
-  const context = vm.createContext({ ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
+  // Existing travel assertions exercise the ordinary (non-cinematic) action gates.
+  const context = vm.createContext({ ultimateDirector: undefined, ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
     optionalPin:{sentinel:true}, hudRevision:0, camDist:3.6, acc:1, inspectServant:false, travelOpenState:false,
     createTravelPanel:(options:unknown)=>options, document:{pointerLockElement:{},exitPointerLock(){}},
     spawn:{id:'old_spawn'}, prevPos:new THREE.Vector3(), rig:{root:{position:new THREE.Vector3()}}, worldProgress:{armed:true},

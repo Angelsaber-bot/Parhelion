@@ -130,7 +130,8 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   let historyWrites = 0, servantCanceled = false;
   const elements = new Map<string, any>();
   const $ = (id: string) => { if (!elements.has(id)) elements.set(id, { textContent: 'stale', classList: { remove() {} } }); return elements.get(id); };
-  const c = vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
+  // No active cinematic in this reset fixture; exercise all pre-existing dirty gameplay state.
+  const c = vm.createContext({abortUltimate() {}, deferredCombatToast: null, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
     worldProgress, contract, combat: { reset: () => combatState.resetAll(false) }, rig, anim,
     prevPos: new THREE.Vector3(900, 30, 30), inspectServant: true, thirdPerson: false,
     servant: { update(dt: number, p: THREE.Vector3, yaw: number, enabled: boolean, paused: boolean) { servantCanceled = dt === 0 && !enabled && paused; } },

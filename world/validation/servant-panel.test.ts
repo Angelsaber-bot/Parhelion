@@ -46,6 +46,6 @@ test('outfit controls have bounded viewport CSS and opening clears input without
   assert.match(css,/#servant-open\[hidden\][^}]*display:\s*none/);
   assert.match(css,/width:\s*min\(480px,\s*calc\(100vw - 28px\)\)/);assert.match(css,/max-height:.*100vh/);assert.match(css,/overflow:\s*auto/);
   const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-  assert.match(source,/createServantPanel\(servant, contract, \(\) => \{ clearInput\(\); if \(document.pointerLockElement\) document.exitPointerLock\(\); \}\)/);
+  assert.match(source,/createServantPanel\(servant, contract, \(\) => \{ abortUltimate\(\); clearInput\(\); if \(document.pointerLockElement\) document.exitPointerLock\(\); \}\)/);
   assert.doesNotMatch(readFileSync(new URL('../src/servantPanel.ts',import.meta.url),'utf8'),/SettingsStore|skinStore|from ['"][^'"]*arena-game/);
 });

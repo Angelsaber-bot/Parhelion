@@ -150,6 +150,7 @@ export class CharacterKit {
     if (gaitChange && previous && previousContract) previous.setEffectiveTimeScale(this.rate * previousContract.duration / contract.duration);
     return true;
   }
+  get presentationClips(): readonly THREE.AnimationClip[] { return [...this.actions.values()].map(action => action.getClip()); }
   socketTransform(semantic: string) {
     const contract = this.definition.sockets[semantic];
     if (!contract || this.disposed) return undefined;

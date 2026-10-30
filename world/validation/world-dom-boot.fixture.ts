@@ -14,10 +14,19 @@ import * as THREE from 'three';
 const require=createRequire(import.meta.url);
 class NoGpuRenderer {
   domElement:HTMLCanvasElement;shadowMap={enabled:false,type:0};info={autoReset:true,render:{calls:0,triangles:0},reset(){}};
-  toneMapping=0;toneMappingExposure=1;private ratio=1;private size=new THREE.Vector2();
+  toneMapping=0;toneMappingExposure=1;autoClear=true;private ratio=1;private size=new THREE.Vector2();
+  private target:unknown=null;private viewport=new THREE.Vector4();private scissor=new THREE.Vector4();private scissorTest=false;private clearColor=new THREE.Color();private clearAlpha=1;
   constructor(options:{canvas:HTMLCanvasElement}){this.domElement=options.canvas;}
   setPixelRatio(value:number){this.ratio=value;}getPixelRatio(){return this.ratio;}
-  setSize(x:number,y:number){this.size.set(x,y);}getSize(out:THREE.Vector2){return out.copy(this.size);}
+  setSize(x:number,y:number){this.size.set(x,y);this.viewport.set(0,0,x,y);this.scissor.copy(this.viewport);}getSize(out:THREE.Vector2){return out.copy(this.size);}
+  getRenderTarget(){return this.target;}setRenderTarget(value:unknown){this.target=value;}
+  getViewport(out:THREE.Vector4){return out.copy(this.viewport);}
+  setViewport(x:number|THREE.Vector4,y?:number,w?:number,h?:number){if(typeof x==='number')this.viewport.set(x,y!,w!,h!);else this.viewport.copy(x);}
+  getScissor(out:THREE.Vector4){return out.copy(this.scissor);}
+  setScissor(x:number|THREE.Vector4,y?:number,w?:number,h?:number){if(typeof x==='number')this.scissor.set(x,y!,w!,h!);else this.scissor.copy(x);}
+  getScissorTest(){return this.scissorTest;}setScissorTest(value:boolean){this.scissorTest=value;}
+  getClearColor(out:THREE.Color){return out.copy(this.clearColor);}getClearAlpha(){return this.clearAlpha;}
+  setClearColor(value:THREE.ColorRepresentation,alpha?:number){this.clearColor.set(value);if(alpha!==undefined)this.clearAlpha=alpha;}
   render(scene:THREE.Scene,camera:THREE.Camera){scene.updateMatrixWorld();camera.updateMatrixWorld();}
   dispose(){}
 }
@@ -84,7 +93,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
     const bytes=await readFile(path);return new Response(bytes,{status:200,headers:{'Content-Length':String(bytes.length),'Content-Type':path.endsWith('.json')?'application/json':'application/octet-stream'}});
   })());
   for(const [key,value]of Object.entries({window,document:window.document,self:window,navigator:window.navigator,ProgressEvent:window.ProgressEvent,fetch:fetchAsset,Request:BrowserRequest,createImageBitmap:placeholderBitmap}))inject(key,value);
-  Object.defineProperty(window.document,'hasFocus',{value:()=>true});
+  Object.defineProperty(window.document,'hasFocus',{value:()=>true,configurable:true});
   Object.defineProperty(window.document,'pointerLockElement',{value:null,writable:true,configurable:true});
   window.HTMLCanvasElement.prototype.requestPointerLock=function(){Object.defineProperty(window.document,'pointerLockElement',{value:this,writable:true,configurable:true});window.document.dispatchEvent(new window.Event('pointerlockchange'));return Promise.resolve();};
   window.document.exitPointerLock=()=>{Object.defineProperty(window.document,'pointerLockElement',{value:null,writable:true,configurable:true});window.document.dispatchEvent(new window.Event('pointerlockchange'));};
@@ -130,7 +139,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
           const copy=clone.querySelector<HTMLInputElement>(`#${input.id}`);if(!copy)continue;copy.setAttribute('value',input.value);if(input.checked)copy.setAttribute('checked','');else copy.removeAttribute('checked');
         }
         const head=clone.querySelector('head')!;
-        const css=await Promise.all(['src/actions.css','src/combat.css','src/servant.css','../shared-client/settings.css'].map(path=>readFile(resolve(world,path),'utf8')));
+        const css=await Promise.all(['src/actions.css','src/combat.css','src/servant.css','src/ultimateDirector.css','../shared-client/settings.css'].map(path=>readFile(resolve(world,path),'utf8')));
         const style=window.document.createElement('style');style.textContent=css.join('\n')+'\n#view{background:linear-gradient(145deg,#27343a,#39453b 50%,#1c2937)}.qa-placeholder{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);color:#d3dfda70;text-align:center;pointer-events:none;font:14px system-ui;z-index:0}.qa-label{position:fixed;bottom:3px;left:8px;z-index:99999;font:10px system-ui;color:#eef3ee;background:#111c;padding:2px 5px;pointer-events:none}';head.append(style);
         const csp=window.document.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content="default-src 'none'; style-src 'unsafe-inline'; img-src data:";head.append(csp);
         const notice=window.document.createElement('div');notice.className='qa-label';notice.textContent=`${title} · Synthetic QA progress · DOM/CSS only, no WebGL render`;clone.querySelector('body')!.append(notice);

@@ -1,0 +1,17 @@
+/* Scope visibility only; leave every saved/user-selected HUD display value untouched. */
+body.ultimate-showing .hud,
+body.ultimate-showing .combat-hud,
+body.ultimate-showing #world-hurt,
+body.ultimate-showing #world-cold { visibility: hidden !important; }
+.ultimate-overlay { position: fixed; inset: 0; z-index: 2000; pointer-events: auto; color: #f5f6ff; background: linear-gradient(0deg,rgba(2,7,18,.83),transparent 28%,transparent 80%,rgba(2,7,18,.5)); font-family: system-ui,sans-serif; }
+.ultimate-overlay[hidden] { display: none !important; }
+.ultimate-title { position: absolute; left: max(6vw,20px); bottom: max(13vh,85px); margin: 0; max-width: 82vw; font-size: clamp(25px,5vw,64px); letter-spacing: .12em; text-shadow: 0 2px 14px #000; line-height: 1.2; }
+.ultimate-caption { position: absolute; left: max(6vw,20px); bottom: max(8vh,52px); color: #b9d9ef; font-size: clamp(10px,1.6vw,15px); letter-spacing: .2em; }
+.ultimate-skip { position: absolute; top: max(24px,env(safe-area-inset-top)); right: max(24px,env(safe-area-inset-right)); min-height: 44px; padding: 10px 16px; border: 1px solid #b3c5d8; border-radius: 4px; background: #071323e6; color: #fff; font: inherit; cursor: pointer; }
+.ultimate-skip:hover,.ultimate-skip:focus-visible { outline: 2px solid #d6eeff; outline-offset: 3px; background: #19384d; }
+.ultimate-settings select { max-width: 100%; }
+@media (prefers-reduced-motion: reduce) { .ultimate-overlay * { animation: none !important; transition: none !important; } }
+
+/* Title is a brief supporting card, never the action itself. */
+.ultimate-overlay:not([data-phase="intro"]) .ultimate-title,
+.ultimate-overlay:not([data-phase="intro"]) .ultimate-caption { visibility: hidden; }

@@ -13,7 +13,10 @@ import { optionalPinExpired, type OptionalPin } from './optionalNavigation';
 import { createEraStoryScene } from './eraStoryScenes';
 import { WorldActions } from './worldActions';
 import { resolveServantSkillAim } from './skillAim';
-import { CONTRACT_SKILLS } from './contractSkills';
+import { CONTRACT_SKILLS, type SkillEvent } from './contractSkills';
+import { UltimateDirector } from './ultimateDirector';
+import { UltimateStage } from './ultimateStage';
+import './ultimateDirector.css';
 import { FortCannon, FORT_CANNON } from './fortCannon';
 import { createTraversalRepairs } from './traversalRepairs';
 import { createActionHud } from './actionHud';
@@ -319,6 +322,9 @@ const travelStops = createSafeTravelStops(settlements.placements);
 let hudRevision = 0;
 let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
+let ultimateDirector: UltimateDirector | undefined;
+let ultimateStage: UltimateStage | undefined;
+let ultimateSource: { identity: ServantId | null; root: THREE.Object3D } | null = null;
 let optionalPin: OptionalPin | null = null;
 const mapBudget = new FrameWorkBudget(30), hudBudget = new FrameWorkBudget(10), statsBudget = new FrameWorkBudget(4);
 const eraStoryScenes = settlements.placements.filter(p => isEraId(p.id)).map(p => ({ ...createEraStoryScene(p), region: p.id }));
@@ -499,6 +505,11 @@ function renderObjective() {
     `<div style="margin-top:6px;opacity:.75">${localizeText('隐藏发现')} ${disc.filter((d) => found.has(d.id)).length}/${disc.length}</div>`;
 }
 
+let deferredCombatToast: string | null = null;
+function combatToast(text: string) {
+  if (ultimateDirector?.showing) { deferredCombatToast = text; return; }
+  deferredCombatToast = null; toast(text);
+}
 let toastTimer = 0;
 function toast(text: string) {
   const el = $('toast');
@@ -680,7 +691,7 @@ function updateEraActors(dt: number) {
     entry.actor.update(dt, !nearby || !gameplayActive());
   }
 }
-const servantPanel = createServantPanel(servant, contract, () => { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
+const servantPanel = createServantPanel(servant, contract, () => { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
 const contractCard = document.createElement('div');
 contractCard.id = 'contract-card'; contractCard.className = 'hud';
 Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px', padding: '12px', borderRadius: '12px',
@@ -703,7 +714,7 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
   for (const entry of eraActors) entry.actor?.dispose();
 } });
 function resetProgress() {
-  clearInput();
+  abortUltimate(); clearInput(); deferredCombatToast = null;
   const saved = worldProgress.reset();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
@@ -751,9 +762,9 @@ for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addE
   if (type === 'pointerdown') swallowClick = true;
   document.body.classList.remove('shot-mode');
 }, true);
-const clearInput = () => { keys.clear(); aim.clear(); narrative?.hide(); actions?.cancel(); fortCannon.cancel(); hudRevision++; };
+const clearInput = () => { keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
 const settingsPanel = createSettingsPanel(settings, {
-  onOpen() { clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
+  onOpen() { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
   onClose() { clearInput(); },
 });
 $('settings-open').addEventListener('click', (e) => { e.stopPropagation(); settingsPanel.show(); });
@@ -772,7 +783,7 @@ if (typeof document.querySelector === 'function') {
   document.querySelector('#world-settings .settings-sliders')?.after(group);
   localizeDom(group);
 }
-const gameplayActive = () => locked && !inspectServant && !travelOpenState && !narrative?.open && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const gameplayActive = () => !ultimateDirector?.active && locked && !inspectServant && !travelOpenState && !narrative?.open && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
@@ -884,7 +895,7 @@ addEventListener('wheel', (e) => {
 }, { passive: false });
 
 // ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
-const combat = new WorldCombat({ scene, colliders, layout, done, toast, groundHeight: (x, z) => grid.sampleHeight(x, z),
+const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { audio.hurt(); },
@@ -896,14 +907,16 @@ const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let reducedOverride: boolean | null = null;
 try { const stored=localStorage.getItem('parhelion-world-reduced-effects'); if(stored==='1'||stored==='0')reducedOverride=stored==='1'; } catch { /* use system preference */ }
 const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
+const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
 actions = new WorldActions({ scene,
-  context: () => ({ clockRunning: gameplayActive() && !combat.defeated, enabled: gameplayActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
+  context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
     grounded: player.onGround, armed: worldProgress.armed, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.companionSummoned ? contract.selected : null }),
   strike: (strike, source) => combat.applyStrike(strike, source),
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
-  cue: kind => audio[kind](), skillEvent: event => audio.skillEvent(event), onCast: event => actionHud.announce(event),
+  cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
+  onCast: event => { actionHud.announce(event); beginUltimate(event); },
   contactPoint: id => { const enemy = combat.state.enemies.find(e => e.id === id); return enemy ? { ...enemy.p } : null; },
   resolveAim: (identity, slot) => {
     const root = identity === 'saber' ? servant.root : eraActors.find(e => e.servant === identity)?.actor?.root;
@@ -918,6 +931,60 @@ actions = new WorldActions({ scene,
   },
   cancelPoses: () => { servant.cancelSkillPose(); for (const entry of eraActors) entry.follow.cancelSkillPose(entry.actor); },
 });
+ultimateStage = new UltimateStage();
+ultimateDirector = new UltimateDirector({ onEnd: () => { ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
+document.querySelector('#world-settings .settings-sliders')?.after(ultimateDirector.settingsControl);
+function presentationModel(identity: ServantId | null): THREE.Object3D | null {
+  return identity === null ? rig.model : identity === 'saber' ? servant.presentationModel : eraActors.find(entry => entry.servant === identity)?.actor?.model ?? null;
+}
+function beginUltimate(event: Extract<SkillEvent, { type: 'cast' }>) {
+  if (event.slot !== 'ultimate' || !ultimateDirector || !ultimateStage || ultimateDirector.active) return;
+  const model = presentationModel(event.identity); if (!model) return;
+  keys.clear(); aim.clear();
+  ultimateSource = { identity: event.identity, root: model };
+  if (!ultimateDirector.begin(event.identity ?? 'player')) { ultimateSource = null; return; }
+  const clips = event.identity === 'saber' ? servant.presentationClips : event.identity ? eraActors.find(entry => entry.servant === event.identity)?.actor?.presentationClips : [];
+  if (ultimateDirector.showing) {
+    try { ultimateStage.begin({ identity: event.identity ?? 'player', sourceRoot: model, clips, reducedEffects: reducedEffects() || ultimateDirector.frame?.reduced }); }
+    catch (error) { ultimateStage.end(); ultimateDirector.skip(); console.warn('Ultimate stage unavailable; continuing the original cast without close-up.', error); }
+  }
+  hudRevision++;
+}
+function abortUltimate() { ultimateDirector?.abort(); ultimateStage?.end(); ultimateSource = null; actions?.cancel(); }
+/** Presentation never owns damage. Only the original accepted action and actor
+ * advance here; all other world clocks stay frozen in Full, Short and Off. */
+function frameUltimate(dt: number): boolean {
+  if (!ultimateDirector?.active || !ultimateStage || !ultimateSource || !actions) return false;
+  const identity = contract.companionSummoned ? contract.selected : null;
+  if (combat.defeated || identity !== ultimateSource.identity || presentationModel(identity) !== ultimateSource.root) { abortUltimate(); return false; }
+  const suspended = document.visibilityState !== 'visible' || !document.hasFocus() || settingsPanel.open || servantPanel.open;
+  keys.clear(); aim.clear(); acc = 0; prevPos.copy(player.pos);
+  audio.setActive(!suspended);
+  ultimateDirector.tick(dt, suspended);
+  if (!suspended && ultimateDirector.releasing) {
+    // Establish the facade's playable context without advancing enemy AI/HP clocks.
+    combat.present(0, player.pos, true, camera);
+    let remaining = Math.max(0, Math.min(.1, dt));
+    while (remaining > 1e-9 && actions.skills.casting && ultimateDirector.releasing) {
+      const step = Math.min(STEP, remaining); remaining -= step;
+      actions.update(step);
+      if (identity === 'saber') servant.update(step, player.pos, player.yaw, true, false);
+      else if (identity) { const entry = eraActors.find(value => value.servant === identity); if (entry?.actor) entry.follow.update(entry.actor, step, player.pos, anim.facing - Math.PI, false); }
+      actions.flush();
+    }
+    actions.present(dt);
+    if (!actions.skills.casting) ultimateDirector.complete();
+  }
+  const state = ultimateDirector.frame;
+  if (state && ultimateSource && ultimateDirector.showing && ultimateStage.isActive) {
+    ultimateStage.update({ ...state, reduced: state.reduced || reducedEffects(), sourceRoot: ultimateSource.root });
+    try { ultimateStage.render(renderer, innerWidth / Math.max(1, innerHeight)); }
+    catch (error) { ultimateStage.end(); ultimateDirector.skip(); console.warn('Ultimate renderer failed; continuing the cast in the world.', error); renderer.render(scene, camera); }
+  } else { combat.present(0, player.pos, !suspended, camera); renderer.render(scene, camera); }
+  actionHud.update(actions, !ultimateDirector.showing); renderContract();
+  return true;
+}
+addEventListener('pagehide', event => { if (!event.persisted) { abortUltimate(); ultimateDirector?.dispose(); ultimateStage?.dispose(); } });
 narrative = createNarrativePanel(() => settings.label('interact'));
 function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
   clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
@@ -940,6 +1007,7 @@ function travelContext(): TravelContext {
     mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
+  if (ultimateDirector?.active) { toast(bilingual('终结技释放期间不能旅行。', 'Travel is unavailable during an ultimate.')); return false; }
   const plan = planSafeTravel(id, travelStops, done, found, travelContext());
   if (!plan.ok) { toast(bilingual(...TRAVEL_BLOCK_TEXT[plan.reason])); return false; }
   const [x, y, z] = plan.position, landing = combat.geometry.ground(x,z,y+2);
@@ -1236,6 +1304,8 @@ function frame(now: number) {
   const frameSeconds = (now - last) / 1000;
   const dt = Math.min(0.1, frameSeconds);
   last = now;
+  if (frameUltimate(dt)) { requestAnimationFrame(frame); return; }
+  if (deferredCombatToast && gameplayActive()) { const message = deferredCombatToast; deferredCombatToast = null; toast(message); }
   acc += dt;
   if (!gameplayActive()) { keys.clear(); aim.clear(); }
   audio.setActive(gameplayActive() || (!!narrative?.open && locked && document.visibilityState === 'visible' && document.hasFocus()));
@@ -1380,7 +1450,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

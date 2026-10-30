@@ -31,7 +31,10 @@ test('NON-GPU sixty production UI interruption cycles retain bounded nodes/liste
     for (let i = 0; i < 40; i++) { world.actions.skills.update(.25, true); world.actions.skills.recordDamage({ id: 'synthetic-earned-hit', damage: 100, eligible: true, source: 'weapon' }); }
     assert.equal(world.actions.skills.energy, 100); key('KeyX'); assert.equal(world.actions.skills.energy, 0);
     const paidCooldown = world.actions.skills.cooldown('ultimate'); assert.ok(paidCooldown > 20);
-    key('KeyM'); key('KeyM'); assert.equal(world.actions.skills.casting, false);
+    // An external settings interruption cancels the owned cinematic safely;
+    // ordinary map keys are deliberately captured during the ultimate now.
+    world.settingsPanel.show(); assert.equal(world.ultimateDirector.active, false); assert.equal(world.actions.skills.casting, false);
+    settingsClose.click(); await enter();
     // Finish actual lazy assets requested by the warm-up, then let presentation
     // attach their cached models before treating scene-node identity as a baseline.
     await h.settleAssets(); frame(); await h.settleAssets(); frame();

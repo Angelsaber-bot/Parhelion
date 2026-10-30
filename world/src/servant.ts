@@ -188,6 +188,8 @@ export class ContractServant {
     this.current = next;
   }
   private cancelAttack() { this.cancelSkillPose(); this.navigation.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  get presentationModel(): THREE.Object3D | null { return this.state === 'ready' ? this.model ?? null : null; }
+  get presentationClips(): readonly THREE.AnimationClip[] { return [...this.clips.values()].map(action => action.getClip()); }
   startSkillPose(command: SkillPoseCommand): boolean {
     if (!validSkillPose(command) || this.disposed || this.state !== 'ready' || !this.root.visible || !this.options.contract.summoned || !this.clips.has('attack')) return false;
     this.cancelAttack(); this.activeLast = true;
