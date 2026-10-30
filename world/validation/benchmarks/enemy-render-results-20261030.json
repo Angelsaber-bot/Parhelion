@@ -1,0 +1,13 @@
+{
+  "baseline": "a5b3290",
+  "measurement": "Node CPU only; not browser, WebGL, GPU frame time, or FPS",
+  "workload": "Identical real ashigaru GLB, 24 stationary live enemies, 16 articulated guardians; stable-frame medians of 7 batches x 200 frames after warmup; cold clone median of 30 first-frame samples after 5 warmups. Same process/tool environment, separately executed baseline and modified modules.",
+  "results": [
+    {"name":"cold crowd first frame actual GLB clone burst", "baselineMs":4.831431, "modifiedMs":0.651051, "baselineClones":24, "modifiedClones":2, "eventualDetailedPopulation":24},
+    {"name":"24 real GLB active updates", "baselineMs":0.10763332, "modifiedMs":0.07621299},
+    {"name":"24 real GLB paused updates", "baselineMs":0.10125279, "modifiedMs":0.00201278},
+    {"name":"16 guardians active updates", "baselineMs":0.14048664, "modifiedMs":0.088419935},
+    {"name":"16 guardians paused updates", "baselineMs":0.133464895, "modifiedMs":0.000608515}
+  ],
+  "limitations": "Clone burst reduction defers ordinary detailed rigs across up to 12 frames; regional fallback remains visible throughout. Total clone work is not eliminated. Chapter bosses bypass the ordinary frame quota. Environment/JIT variance exists; do not treat these microbenchmarks as end-to-end performance acceptance. No enemy counts, animation clips, geometry quality, textures, or shadow distance reduced."
+}

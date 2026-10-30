@@ -15,9 +15,23 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; flash: THREE.Mesh; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { enemy: Enemy; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; distance?: number; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
+/** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
+function makeImpactStreaks(): THREE.BufferGeometry {
+  const vertices: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = i * Math.PI / 3, x = Math.cos(angle), y = Math.sin(angle);
+    const tip = i % 2 ? 0.105 : 0.14, inner = 0.022, halfWidth = 0.009;
+    vertices.push(x * inner - y * halfWidth, y * inner + x * halfWidth, 0,
+      x * tip, y * tip, 0, x * inner + y * halfWidth, y * inner - x * halfWidth, 0);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 0.141);
+  return geometry;
+}
 type Line = [string, string];
 /** Per-boss names and battle lines (zh, en); attack names follow the boss's sweep / burst. */
 const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: Line; victory: Line; burst: Line; sweep: Line; colors: [string, string, string] }> = {
@@ -71,6 +85,9 @@ export class WorldCombat {
   readonly geometry;
   private readonly enemyAssets = new EnemyVisuals();
   private readonly visuals = new Map<string, EnemyVisual>();
+  private readonly detailedCandidates: EnemyVisual[] = [];
+  private readonly detailed = new Set<EnemyVisual>();
+  private readonly presentationOrder: Enemy[] = [];
   private readonly shots: ShotVisual[] = [];
   private readonly sparks: Spark[] = [];
   private readonly shared: THREE.BufferGeometry[] = [];
@@ -82,8 +99,10 @@ export class WorldCombat {
   private readonly hurt = document.createElement('div');
   private readonly defeat = document.createElement('div');
   private readonly effectGroup = new THREE.Group();
+  private readonly effectFacing = new THREE.Quaternion();
   private readonly boltGeo = new THREE.SphereGeometry(0.075, 6, 4);
-  private readonly sparkGeo = new THREE.IcosahedronGeometry(0.16, 0);
+  private readonly sparkGeo = makeImpactStreaks();
+  private readonly sparkMat = new THREE.MeshBasicMaterial({ color: '#fff0b8', transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, depthWrite: false, toneMapped: false });
   private readonly boltMat = new THREE.MeshBasicMaterial({ color: '#fff2ad', toneMapped: false });
   private readonly lineMat = new THREE.LineBasicMaterial({ color: '#ffd486', transparent: true, opacity: 0.7, toneMapped: false });
   private acc = 0;
@@ -162,21 +181,21 @@ export class WorldCombat {
     if (!target) return null;
     this.allyCooldown = 1.1;
     this.damageEnemy(target.id, Math.min(18, Math.max(0, damage)));
-    this.spark(new THREE.Vector3(target.p.x, target.p.y + 1.3, target.p.z), 0.24);
+    this.spark(new THREE.Vector3(target.p.x, target.p.y + 1.3, target.p.z), 0.16);
     return target;
   }
   shot(muzzle: THREE.Vector3, endpoint: THREE.Vector3, didHit: boolean) {
     while (this.shots.length >= 18) this.removeShot(this.shots.shift()!);
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([muzzle, endpoint]), this.lineMat);
-    const bolt = new THREE.Mesh(this.boltGeo, this.boltMat);
-    const flash = new THREE.Mesh(this.sparkGeo, this.boltMat); flash.position.copy(muzzle); flash.scale.set(0.8, 0.8, 1.8);
+    const bolt = new THREE.Mesh(this.boltGeo, this.boltMat); bolt.position.copy(muzzle);
+    const flash = new THREE.Mesh(this.sparkGeo, this.sparkMat); flash.position.copy(muzzle); flash.scale.setScalar(0.8);
     this.effectGroup.add(line, bolt, flash);
     this.shots.push({ line, bolt, flash, from: muzzle.clone(), to: endpoint.clone(), age: 0, duration: Math.max(0.06, muzzle.distanceTo(endpoint) / 320) });
-    if (didHit) this.spark(endpoint, 0.22);
+    if (didHit) this.spark(endpoint, 0.14);
   }
   private spark(point: THREE.Vector3, duration: number) {
     if (this.sparks.length >= 20) { const old = this.sparks.shift()!; old.mesh.removeFromParent(); }
-    const mesh = new THREE.Mesh(this.sparkGeo, this.boltMat); mesh.position.copy(point);
+    const mesh = new THREE.Mesh(this.sparkGeo, this.sparkMat); mesh.position.copy(point);
     this.effectGroup.add(mesh); this.sparks.push({ mesh, left: duration, full: duration });
   }
   update(dt: number, player: Point3, active: boolean, camera?: THREE.Camera) {
@@ -188,15 +207,27 @@ export class WorldCombat {
     while (this.acc >= 0.05) { this.state.step(0.05, player, active, this.geometry.terrain); this.acc -= 0.05; }
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
-    const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
-      (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
-    const detailed = new Set(this.state.enemies.filter(e => visible(e) && this.visuals.get(e.id)?.model)
-      .sort((a, b) => distanceXZ(a.p, player) - distanceXZ(b.p, player)).slice(0, ENEMY_VISUAL_BUDGET).map(e => e.id));
+    const candidates = this.detailedCandidates, detailed = this.detailed;
+    candidates.length = 0; detailed.clear();
     for (const e of this.state.enemies) {
       const v = this.visuals.get(e.id)!;
-      const distance = distanceXZ(e.p, player);
-      v.root.visible = visible(e);
-      const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
+      v.distance = distanceXZ(e.p, player);
+      v.root.visible = e.mode !== 'dead' && v.distance <= COMBAT.activeRange &&
+        (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
+      if (v.root.visible && v.model) candidates.push(v);
+    }
+    candidates.sort((a, b) => a.distance! - b.distance!);
+    for (let i = 0; i < Math.min(candidates.length, ENEMY_VISUAL_BUDGET); i++) detailed.add(candidates[i]);
+    // Release outgoing slots before acquiring incoming ones, independent of enemy array order.
+    const order = this.presentationOrder; order.length = 0;
+    for (const v of detailed) order.push(v.enemy); // Closest missing rigs consume the bounded clone quota first.
+    for (const e of this.state.enemies) if (!detailed.has(this.visuals.get(e.id)!)) {
+      this.enemyAssets.release(e.id); order.push(e);
+    }
+    for (const e of order) {
+      const v = this.visuals.get(e.id)!;
+      const distance = v.distance!;
+      const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(v)) : false;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
       if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
       if (e.attack === 'shot' && e.mode === 'recover' && v.lastMode === 'windup') {
@@ -213,7 +244,6 @@ export class WorldCombat {
       const facing = e.attack === 'shot' && (e.mode === 'windup' || e.mode === 'recover') ? e.target : player;
       v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
-      v.flash.visible = skinned && e.hitTime > 0;
       v.material.emissiveIntensity = e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;
       v.bar.visible = e.hp < e.maxHp || e.mode !== 'idle';
       if (camera) v.bar.quaternion.copy(camera.quaternion);
@@ -226,14 +256,18 @@ export class WorldCombat {
         (v.tell.material as THREE.MeshBasicMaterial).opacity = 0.3 + 0.2 * (0.5 + 0.5 * Math.sin(this.time * 18));
       }
     }
+    if (camera) camera.getWorldQuaternion(this.effectFacing);
     for (let i = this.shots.length - 1; i >= 0; i--) {
       const s = this.shots[i]; s.age += dt;
       s.bolt.position.lerpVectors(s.from, s.to, Math.min(1, s.age / s.duration));
+      if (camera) s.flash.quaternion.copy(this.effectFacing);
       s.flash.visible = s.age < 0.045; s.line.visible = s.age < 0.075;
       if (s.age > s.duration + 0.035) { this.removeShot(s); this.shots.splice(i, 1); }
     }
     for (let i = this.sparks.length - 1; i >= 0; i--) {
-      const s = this.sparks[i]; s.left -= dt; s.mesh.scale.setScalar(0.5 + 3 * (1 - s.left / s.full));
+      const s = this.sparks[i]; s.left -= dt; // Shrink away over a short lifetime without changing shared materials.
+      s.mesh.scale.setScalar(Math.max(0, s.left / s.full));
+      if (camera) s.mesh.quaternion.copy(this.effectFacing);
       if (s.left <= 0) { s.mesh.removeFromParent(); this.sparks.splice(i, 1); }
     }
     this.impactFor = Math.max(0, this.impactFor - dt); if (!this.impactFor) this.impact.textContent = '';
@@ -284,9 +318,6 @@ export class WorldCombat {
     const glow = new THREE.MeshBasicMaterial({ color: king ? kLight : crystal ? '#9dffff' : '#a1ffe7', toneMapped: false });
     if (model) { material.color.set(model === 'musketeer' || model === 'officer' ? '#3b594a' : model === 'samurai' || model === 'ashigaru' ? '#5b3434' : model === 'sunward_guard' ? '#8a8171' : '#62544a'); material.emissive.set('#000000'); }
     this.materials.push(material, glow);
-    const flashGeo = new THREE.IcosahedronGeometry(0.6, 1), flashMat = new THREE.MeshBasicMaterial({ color: '#fff0c6', transparent: true, opacity: 0.4, wireframe: true, depthWrite: false });
-    this.shared.push(flashGeo); this.materials.push(flashMat);
-    const flash = new THREE.Mesh(flashGeo, flashMat); flash.position.y = 1.05; flash.visible = false; body.add(flash);
     const mesh = (g: THREE.BufferGeometry, m: THREE.Material, p: [number, number, number], scale?: [number, number, number]) => {
       this.shared.push(g); const o = new THREE.Mesh(g, m); o.position.set(...p); if (scale) o.scale.set(...scale);
       o.castShadow = true; o.receiveShadow = true; fallback.add(o); return o;
@@ -361,7 +392,7 @@ export class WorldCombat {
         }
       }
     }
-    return { root, body, fallback, model, flash, updateLabel, updateCreature, sword, bar, fill, tell, material };
+    return { enemy: e, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
@@ -370,7 +401,7 @@ export class WorldCombat {
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
-    this.boltGeo.dispose(); this.sparkGeo.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
+    this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.defeat]) el.remove();
   }
 }

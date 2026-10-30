@@ -88,3 +88,40 @@ test('servant anticipation is read-only and contact revalidates the chosen enemy
   combat.update(.01,p,true);assert.ok(combat.allyStrike(p,3.5,14,target.id));assert.equal(combat.state.boss.hp,hp-14);
   combat.dispose();
 });
+
+test('hit feedback stays at the impact point as tiny camera-facing streaks, never an enemy shell', () => {
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  const internals = combat as any;
+  const muzzle = new THREE.Vector3(1, 3, 4), impact = new THREE.Vector3(7, 5, -9);
+  const camera = new THREE.PerspectiveCamera(); camera.rotation.set(.2, .8, -.1);
+  combat.shot(muzzle, impact, true);
+  const spark = internals.sparks[0], shot = internals.shots[0];
+  assert.ok(spark.mesh.position.equals(impact), 'use raycast endpoint, not enemy center');
+  assert.ok(shot.bolt.position.equals(muzzle), 'tracer begins at muzzle even before first update');
+  assert.equal(spark.mesh.geometry.type, 'BufferGeometry');
+  assert.ok(spark.mesh.geometry.boundingSphere.radius <= .141, 'streak diameter bounded below .3m');
+  assert.equal(spark.mesh.material.wireframe, false);
+  assert.equal(spark.mesh.material.depthWrite, false);
+  for (const visual of internals.visuals.values()) {
+    assert.equal('flash' in visual, false, 'no body-attached hit flash');
+    visual.body.traverse((o: THREE.Object3D) => {
+      if (o instanceof THREE.Mesh) assert.notEqual(o.geometry.type, 'IcosahedronGeometry');
+    });
+  }
+  const opacity = spark.mesh.material.opacity;
+  combat.update(.07, { x: 0, y: 2, z: 0 }, false, camera);
+  assert.ok(spark.mesh.position.equals(impact));
+  assert.ok(spark.mesh.quaternion.angleTo(camera.quaternion) < 1e-6);
+  assert.ok(spark.mesh.scale.x > 0 && spark.mesh.scale.x <= 1, 'never expands to obscure body');
+  assert.equal(spark.mesh.material.opacity, opacity, 'lifetime does not mutate shared material');
+  assert.equal(shot.flash.visible, false, 'muzzle flash expires within 45ms');
+  combat.shot(muzzle, impact, false);
+  assert.equal(internals.sparks.length, 1, 'miss does not spawn impact feedback');
+  combat.update(.1, { x: 0, y: 2, z: 0 }, false, camera);
+  assert.equal(internals.sparks.length, 0, 'hit streak expires within 140ms');
+  let geometryDisposals = 0, materialDisposals = 0;
+  internals.sparkGeo.addEventListener('dispose', () => geometryDisposals++);
+  internals.sparkMat.addEventListener('dispose', () => materialDisposals++);
+  combat.dispose(); combat.dispose();
+  assert.equal(geometryDisposals, 1); assert.equal(materialDisposals, 1);
+});

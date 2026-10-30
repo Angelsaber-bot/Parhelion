@@ -1,0 +1,42 @@
+{
+  "kind": "Node CPU culling-only benchmark. Not browser, GPU or FPS evidence.",
+  "fixture": "All five production GLBs, production region offsets/chunk size/draw ranges, unchanged art, 1200 camera samples; 9 alternating rounds of 4800 updates after warmup.",
+  "visibilityEquivalenceSamples": 1200,
+  "inventory": {
+    "alpha": 464,
+    "britain": 734,
+    "blacksail": 482,
+    "winter": 642,
+    "kyoto": 721
+  },
+  "totalChunks": 3043,
+  "beforeMs": {
+    "median": 0.040607279375,
+    "samples": [
+      0.03745046395833337,
+      0.03758280937499999,
+      0.04079734020833333,
+      0.04181066770833335,
+      0.040607279375,
+      0.040487072916666686,
+      0.04457596833333336,
+      0.04136463020833332,
+      0.03850733354166664
+    ]
+  },
+  "afterMs": {
+    "median": 0.009531024791666596,
+    "samples": [
+      0.009300996458333278,
+      0.009166816874999976,
+      0.009847571249999968,
+      0.009926961875000018,
+      0.009621655208333284,
+      0.009060919374999988,
+      0.01004976145833344,
+      0.00940438166666657,
+      0.009531024791666596
+    ]
+  },
+  "medianReductionPercent": 76.52877775029074
+}

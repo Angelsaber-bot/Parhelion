@@ -217,7 +217,7 @@ test('production world-state application re-locks quest gates and restores targe
   const colliders = new Map([['COL_TGT_range_target_1', { enabled: true }], ['COL_Seam_west_Gate', { enabled: true }], ['COL_GhostBridge', { enabled: false }]]);
   const shown = { visible: false, userData: { showWhen: ['tower_console'] } };
   const hidden = { visible: true, userData: { hideWhen: 'tower_console' } };
-  const c = vm.createContext({ done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
+  const c = vm.createContext({ uiRevision: 0, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
   const apply = source.slice(source.indexOf('function applyWorldState()'), source.indexOf('// ───────────── quest guide'));
   run(c, apply + '\napplyWorldState();');
   assert.equal(art.visible, false); assert.equal(colliders.get('COL_Seam_west_Gate')!.enabled, false); assert.equal(target.visible, false);

@@ -41,23 +41,113 @@ export function chunkMesh(mesh: THREE.Mesh, cell: number): THREE.Mesh[] {
   return out;
 }
 
-/** Hides chunks (and their outlines) past a per-mesh draw distance. */
+interface CullItem {
+  mesh: THREE.Mesh; c: THREE.Vector3; r: number; max: number; outline: THREE.Object3D | null;
+}
+interface CullNode {
+  x0: number; y0: number; z0: number; x1: number; y1: number; z1: number;
+  minRange: number; maxRange: number; minRadius: number; maxRadius: number;
+  visible: boolean | null;
+  children: [CullNode, CullNode] | null;
+  items: CullItem[] | null;
+}
+
+/** Build once after immutable map chunks have their final world transforms. */
+function cullTree(items: CullItem[], outline: boolean, outlineDist: number): CullNode | null {
+  if (!items.length) return null;
+  const node: CullNode = {
+    x0: Infinity, y0: Infinity, z0: Infinity, x1: -Infinity, y1: -Infinity, z1: -Infinity,
+    minRange: Infinity, maxRange: 0, minRadius: Infinity, maxRadius: 0,
+    visible: null, children: null, items: null,
+  };
+  for (const item of items) {
+    node.x0 = Math.min(node.x0, item.c.x); node.x1 = Math.max(node.x1, item.c.x);
+    node.y0 = Math.min(node.y0, item.c.y); node.y1 = Math.max(node.y1, item.c.y);
+    node.z0 = Math.min(node.z0, item.c.z); node.z1 = Math.max(node.z1, item.c.z);
+    const range = outline ? outlineDist : item.max;
+    node.minRange = Math.min(node.minRange, range); node.maxRange = Math.max(node.maxRange, range);
+    node.minRadius = Math.min(node.minRadius, item.r); node.maxRadius = Math.max(node.maxRadius, item.r);
+  }
+  if (items.length <= 16) node.items = items;
+  else {
+    const axis = node.x1 - node.x0 >= node.z1 - node.z0 ? 'x' : 'z';
+    items.sort((a, b) => a.c[axis] - b.c[axis]);
+    const mid = items.length >> 1;
+    node.children = [cullTree(items.slice(0, mid), outline, outlineDist)!, cullTree(items.slice(mid), outline, outlineDist)!];
+  }
+  return node;
+}
+
+function setCullNode(node: CullNode, visible: boolean, outline: boolean): void {
+  // Far regions remain untouched until the eye/range reaches them again.
+  if (node.visible === visible) return;
+  node.visible = visible;
+  if (node.children) {
+    setCullNode(node.children[0], visible, outline); setCullNode(node.children[1], visible, outline);
+  } else for (const item of node.items!) (outline ? item.outline! : item.mesh).visible = visible;
+}
+
+function updateCullNode(node: CullNode, eye: THREE.Vector3, scale: number, outline: boolean, outlineDist: number): void {
+  const dx = Math.max(node.x0 - eye.x, 0, eye.x - node.x1);
+  const dy = Math.max(node.y0 - eye.y, 0, eye.y - node.y1);
+  const dz = Math.max(node.z0 - eye.z, 0, eye.z - node.z1);
+  const farRange = node.maxRange * scale + node.maxRadius;
+  if (dx * dx + dy * dy + dz * dz >= farRange * farRange) {
+    setCullNode(node, false, outline); return;
+  }
+  const fx = Math.max(Math.abs(eye.x - node.x0), Math.abs(eye.x - node.x1));
+  const fy = Math.max(Math.abs(eye.y - node.y0), Math.abs(eye.y - node.y1));
+  const fz = Math.max(Math.abs(eye.z - node.z0), Math.abs(eye.z - node.z1));
+  const nearRange = node.minRange * scale + node.minRadius;
+  if (fx * fx + fy * fy + fz * fz < nearRange * nearRange) {
+    setCullNode(node, true, outline); return;
+  }
+  node.visible = null;
+  if (node.children) {
+    updateCullNode(node.children[0], eye, scale, outline, outlineDist);
+    updateCullNode(node.children[1], eye, scale, outline, outlineDist);
+  } else for (const item of node.items!) {
+    const range = (outline ? outlineDist : item.max) * scale + item.r;
+    (outline ? item.outline! : item.mesh).visible = item.c.distanceToSquared(eye) < range * range;
+  }
+}
+
+/** Exact sphere/range culling of immutable chunks and outlines, with a spatial broad phase.
+ * Only boundary leaves need per-mesh checks; unchanged distant regions cost no visibility writes.
+ * The culler owns these visibility flags (stateful gameplay objects must not be registered).
+ */
 export class DistanceCuller {
-  items: { mesh: THREE.Mesh; c: THREE.Vector3; r: number; max: number; outline: THREE.Object3D | null }[] = [];
+  items: CullItem[] = [];
+  private drawTrees: CullNode[] = [];
+  private outlineTree: CullNode | null = null;
+  private dirty = true;
+  private builtOutlineDist = NaN;
   constructor(public outlineDist = 150) {}
   add(mesh: THREE.Mesh, max: number) {
     mesh.updateWorldMatrix(true, false);
-    const s = (mesh.geometry as THREE.BufferGeometry).boundingSphere!;
+    if (!mesh.geometry.boundingSphere) mesh.geometry.computeBoundingSphere();
+    const s = mesh.geometry.boundingSphere!;
     const c = s.center.clone().applyMatrix4(mesh.matrixWorld);
     this.items.push({ mesh, c, r: s.radius * mesh.matrixWorld.getMaxScaleOnAxis(), max, outline: mesh.children.find((o) => o.name.endsWith('__outline')) ?? null });
+    this.dirty = true;
   }
   update(eye: THREE.Vector3, scale = 1) {
-    for (const it of this.items) {
-      const d2 = it.c.distanceToSquared(eye);
-      // Equivalent sphere/range test without one square root per chunk per frame.
-      it.mesh.visible = d2 < (it.max * scale + it.r) ** 2;
-      if (it.outline) it.outline.visible = d2 < (this.outlineDist * scale + it.r) ** 2;
+    if (this.dirty || this.builtOutlineDist !== this.outlineDist) {
+      // Keep always-drawn landmarks separate: a huge landmark range must not
+      // prevent the broad phase from rejecting nearby-detail trees/rocks.
+      const ranges = new Map<number, CullItem[]>();
+      for (const item of this.items) {
+        let group = ranges.get(item.max);
+        if (!group) ranges.set(item.max, group = []);
+        group.push(item);
+      }
+      this.drawTrees = Array.from(ranges.values(), group => cullTree(group, false, this.outlineDist)!);
+      this.outlineTree = cullTree(this.items.filter(item => item.outline), true, this.outlineDist);
+      this.builtOutlineDist = this.outlineDist;
+      this.dirty = false;
     }
+    for (const tree of this.drawTrees) updateCullNode(tree, eye, scale, false, this.outlineDist);
+    if (this.outlineTree) updateCullNode(this.outlineTree, eye, scale, true, this.outlineDist);
   }
 }
 

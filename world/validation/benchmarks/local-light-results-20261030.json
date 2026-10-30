@@ -1,0 +1,10 @@
+{
+  "scope": "Node CPU helper overhead only; no browser/GPU/FPS claim",
+  "authoredLights": 14,
+  "fixedPointLightTerms": 8,
+  "fewerPointLightTermsPercent": 42.85714285714286,
+  "sampleCount": 140000,
+  "combinedSelectorAndShadowMsPerUpdateMedian": 0.0018956489500000031,
+  "min": 0.00166452855,
+  "max": 0.0027054185000000017
+}

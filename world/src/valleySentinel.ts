@@ -62,11 +62,27 @@ export function makeValleySentinel(geometries: THREE.BufferGeometry[], materials
     mesh.name='Guardian_Plate_Batch';mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;
     root.add(mesh);batches.set(key,{source,mesh});
   }
-  const inverse=new THREE.Matrix4(),matrix=new THREE.Matrix4();
-  const sync = () => { root.updateWorldMatrix(true,true);inverse.copy(root.matrixWorld).invert();for(const {source,mesh} of batches.values()) { source.forEach((p,i)=>mesh.setMatrixAt(i,matrix.multiplyMatrices(inverse,p.matrixWorld)));mesh.instanceMatrix.needsUpdate=true; } };
+  // Batch transforms are root-local: never walk/update the world/scene ancestry per creature.
+  for (const part of parts) { part.updateMatrix(); part.matrixAutoUpdate = false; }
+  const matrix=new THREE.Matrix4();
+  const sync = () => {
+    head.updateMatrix(); tail.updateMatrix();
+    for (const leg of legs) leg.updateMatrix();
+    for(const {source,mesh} of batches.values()) {
+      for(let i=0;i<source.length;i++) {
+        const p=source[i]; matrix.copy(p.matrix);
+        if(p.parent !== root) matrix.premultiply(p.parent!.matrix);
+        mesh.setMatrixAt(i,matrix);
+      }
+      mesh.instanceMatrix.needsUpdate=true;
+    }
+  };
   sync();
+  let lastTime = NaN, lastMoving = false, lastAttacking = false;
   return { root, update(time: number, moving: boolean, attacking: boolean) {
-    for(const [i,leg] of legs.entries()) leg.rotation.x=moving ? Math.sin(time*8+(i===0||i===3?0:Math.PI))*.25 : 0;
+    if(time === lastTime && moving === lastMoving && attacking === lastAttacking) return;
+    lastTime=time;lastMoving=moving;lastAttacking=attacking;
+    for(let i=0;i<legs.length;i++) { const leg=legs[i]; leg.rotation.x=moving ? Math.sin(time*8+(i===0||i===3?0:Math.PI))*.25 : 0; }
     head.rotation.x=attacking ? -.15 : Math.sin(time*1.5)*.025;
     tail.rotation.y=Math.sin(time*2)*.12;
     sync();

@@ -7,7 +7,12 @@ import { installSettlements } from './settlements/core';
 import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
 import { AdaptiveResolution, targetDpr } from './renderQuality';
+import { MapRefreshPolicy, ReflectionMaterialCache, FrameMetrics, setTextIfChanged } from './frameScheduling';
 import { readResolutionMode, attachRenderSettings } from './renderSettings';
+import { StabilizedSunShadow, LocalPointLightPool } from './renderLighting';
+import { warmupShaders } from './shaderWarmup';
+import { WorldMaterialCache } from './worldMaterialCache';
+import { BootWorkBudget } from './bootScheduling';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -16,7 +21,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts, makeAmbientParticles } from './fx';
-import { toonMaterial, addOutline, makeSky, timeUniform } from './look';
+import { addOutline, makeSky, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
@@ -59,19 +64,24 @@ let bootFailed = false;
 let disposeRenderer = () => {};
 const languageToggle = createLanguageToggle();
 let refreshWorldLocale = () => {};
+let uiRevision = 0;
 let loadingSource = '加载中…';
 const setLoading = (source: string) => { loadingSource = source; $('loading').textContent = localizeText(source); };
 localizeDom(document.body);
 onLanguageChange(() => {
+  uiRevision++;
   localizeDom(document.body);
   $('loading').textContent = localizeText(loadingSource);
   refreshWorldLocale();
 });
 
 async function boot() {
+const bootBudget = new BootWorkBudget();
 
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
+let readyToEnter = false;
+let skipMetricFrame = true;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 disposeRenderer = () => renderer.dispose();
 let resolution = readResolutionMode(params);
@@ -100,9 +110,7 @@ sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 const twilight = new KingdomTwilight(sky, sun, hemisphere, scene);
-const caveLight = new THREE.PointLight('#7ff6ff', 60, 26, 1.6); // hidden cave glow
-caveLight.position.set(182, 6, -60);
-scene.add(caveLight);
+const stabilizedShadow = new StabilizedSunShadow();
 
 // post: MSAA → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
 const composer = params.has('nopost') ? null : new EffectComposer(renderer, new THREE.WebGLRenderTarget(
@@ -129,6 +137,7 @@ function applyResolution() {
 }
 
 addEventListener('resize', () => {
+  uiRevision++;
   observedDeviceDpr = devicePixelRatio;
   dpr = targetDpr(devicePixelRatio, resolution, lowQ);
   adaptiveResolution.reset();
@@ -155,6 +164,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
   }
   bakeQuantized(gltf.scene);
+  await bootBudget.checkpoint();
   gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
   return { def, layout: lay, root: gltf.scene };
 }));
@@ -165,11 +175,12 @@ for (const p of parts) world.add(p.root);
 scene.add(world);
 world.updateMatrixWorld(true);
 document.title = 'Parhelion · World';
-for (const l of layout.lights ?? []) {
-  const pl = new THREE.PointLight(l.color, l.intensity, l.distance, 1.6);
-  pl.position.set(...l.p);
-  scene.add(pl);
-}
+// Fixed shader-light count, preserving nearby authored illumination without all five regions' lights per pixel.
+const localLights = new LocalPointLightPool([
+  ...(layout.lights ?? []),
+  { p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26 },
+]);
+scene.add(localLights.root);
 
 const byName = (n: string) => world.getObjectByName(n) as THREE.Mesh | undefined;
 const targets: THREE.Mesh[] = [];
@@ -186,12 +197,16 @@ const waters = artMeshes.filter((m) => m.name === 'Water');
 const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geometry.computeBoundingSphere(), a.geometry.boundingSphere!)).radius >=
   (b.geometry.boundingSphere ?? (b.geometry.computeBoundingSphere(), b.geometry.boundingSphere!)).radius ? a : b));
 for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
+setLoading(bilingual('整理地图材质与模型…', 'Preparing map materials and meshes…'));
+await bootBudget.checkpoint(true);
 const culler = new DistanceCuller(lowQ ? 90 : 160);
+const worldMaterials = new WorldMaterialCache();
 const DRAW_DIST: Record<string, number> = { Bushes: 180, Trees_Leaves: 380, Trees_Trunks: 260, Rocks: 320, Lamps: 240, Glow_Props: 500, Terrain: 760 };
 for (const m of artMeshes) {
   if (m.name === 'Water' && m !== waterMesh) continue;
   if (m.name === 'Terrain') terrains.push(m);
-  m.material = toonMaterial(m.material as THREE.Material);
+  const special = !isStaticArtEligible(m);
+  m.material = worldMaterials.convert(m.material as THREE.Material, !special);
   m.receiveShadow = true;
   m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && (m.material as THREE.Material).name !== 'M_Beam';
   if ((m.material as THREE.Material).name === 'M_Beam') m.receiveShadow = false;
@@ -211,7 +226,6 @@ for (const m of artMeshes) {
   }
   if (m.userData.showWhen || m.userData.hideWhen) stateful.push(m);
   if (m.userData.bob) bobbers.push(m);
-  const special = !isStaticArtEligible(m);
   const tris = (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3;
   const pieces = !special && tris > 4000 ? chunkMesh(m, 64) : [m];
   for (const c of pieces) {
@@ -221,8 +235,11 @@ for (const m of artMeshes) {
     // Never freeze stateful, spinning, bobbing, target or other dynamic gameplay art.
     if (!special) freezeStaticArt(c);
   }
+  await bootBudget.checkpoint();
 }
 
+setLoading(bilingual('准备地形与碰撞…', 'Preparing terrain and collision…'));
+await bootBudget.checkpoint(true);
 // colliders: everything static merged into one BVH; dynamic pieces (door, targets) keep their own
 const colliders: Collider[] = [];
 const gates: { name: string; opensWhen: string[] }[] = [];
@@ -249,12 +266,14 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 const existingPropGeo = mergeParts(existingPropGeos);
 const settlementBlockers = new MeshBVH(existingPropGeo);
-const settlements = installSettlements([
-  buildAlphaSettlement(), buildBritainSettlement(), buildBlackSailSettlement(), buildWinterSettlement(), buildKyotoSettlement(),
-], { grid, blockers: settlementBlockers, layout });
+const settlementKits = [];
+for (const build of [buildAlphaSettlement, buildBritainSettlement, buildBlackSailSettlement, buildWinterSettlement, buildKyotoSettlement]) {
+  settlementKits.push(build()); await bootBudget.checkpoint();
+}
+const settlements = installSettlements(settlementKits, { grid, blockers: settlementBlockers, layout });
 world.add(settlements.root);
 settlements.root.traverse((o) => {
-  if (o instanceof THREE.Mesh) o.material = toonMaterial(o.material as THREE.Material);
+  if (o instanceof THREE.Mesh) o.material = worldMaterials.convert(o.material as THREE.Material, isStaticArtEligible(o));
 });
 freezeStaticArt(settlements.root);
 staticGeos.push(...settlements.collisionGeometries);
@@ -266,6 +285,7 @@ for (const p of settlements.placements) layout.areas.push({
   r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: [p.entry[0],p.entry[2]+8], region:p.id,
 });
 const staticGeo = mergeParts(staticGeos);
+await bootBudget.checkpoint(true);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 
@@ -288,10 +308,11 @@ const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.r
 const progressStorage = (() => { try { return localStorage; } catch { return undefined; } })();
 const worldProgress = new WorldProgress(progressStorage);
 const { done, found } = worldProgress;
-const save = () => worldProgress.save();
+const save = () => { worldProgress.save(); uiRevision++; };
 
 const haloMat = (byName('Tower_Halo')?.material as THREE.MeshBasicMaterial | undefined);
 function applyWorldState() {
+  uiRevision++;
   for (const t of targets) {
     const id = t.userData.target as string;
     const hit = done.has(id);
@@ -333,6 +354,7 @@ function togglePanel(id: HudPanel, hidden = $(id).style.display !== 'none') {
   if (box) box.checked = !hidden;
 }
 function toggleGuide() {
+  uiRevision++;
   guideOn = !guideOn;
   try { localStorage.setItem('parhelion.guide', guideOn ? 'on' : 'off'); } catch { /* ignore */ }
   toast(guideOn ? '任务指引 开' : '任务指引 关');
@@ -512,22 +534,14 @@ const servantEnvironment = () => {
 };
 // Servant studio reflections follow the scene: daylight keeps the authored strength, dusk/storm/night dim it
 // so the hemisphere and sun (already tinted by twilight) dominate, like the player model.
-const servantBase = new WeakMap<THREE.Material, number>();
+const reflectionMaterials = new ReflectionMaterialCache();
+const luminance = (c: THREE.Color) => .2126 * c.r + .7152 * c.g + .0722 * c.b;
+const daylightLuminance = luminance(new THREE.Color('#fff0d2')) * 2.7 + luminance(new THREE.Color('#d6ecff')) * 1.15 * .6;
 function matchServantLighting() {
-  const lum = (c: THREE.Color) => .2126 * c.r + .7152 * c.g + .0722 * c.b;
-  const light = lum(sun.color) * sun.intensity + lum(hemisphere.color) * hemisphere.intensity * .6;
-  // Valley daytime values from the light setup above, so starting in a dusk region cannot shift the baseline.
-  const daylight = lum(new THREE.Color('#fff0d2')) * 2.7 + lum(new THREE.Color('#d6ecff')) * 1.15 * .6;
-  const k = THREE.MathUtils.clamp(light / daylight, .25, 1.1);
-  const roots = [servant.root, ...eraActors.map((e) => e.actor?.root)];
-  for (const root of roots) root?.traverse((o) => {
-    const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
-    for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
-      const std = m as THREE.MeshStandardMaterial; if (!std.envMap) continue;
-      if (!servantBase.has(m)) servantBase.set(m, std.envMapIntensity);
-      std.envMapIntensity = servantBase.get(m)! * k * k; // squared: reflections fade faster than direct light
-    }
-  });
+  const light = luminance(sun.color) * sun.intensity + luminance(hemisphere.color) * hemisphere.intensity * .6;
+  const k = THREE.MathUtils.clamp(light / daylightLuminance, .25, 1.1);
+  reflectionMaterials.update(servant.root, k * k);
+  for (const entry of eraActors) if (entry.actor) reflectionMaterials.update(entry.actor.root, k * k);
 }
 const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
 const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
@@ -541,7 +555,7 @@ function updateEraActors(dt: number) {
   for (const entry of eraActors) {
     const marker = markers.get(entry.markerId);
     if (!marker) continue;
-    const nearMarker = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
+    const nearMarker = Math.hypot(player.pos.x - marker.p[0], player.pos.y - marker.p[1], player.pos.z - marker.p[2]) < 110;
     const following = contract.isFollowing(entry.servant) && companionEnabled();
     const nearby = nearMarker || following;
     if (nearby && !entry.actor && !entry.loading && now >= entry.retryAt) {
@@ -585,7 +599,7 @@ function renderContract() {
     : bilingual('前往圣剑湖，与第一位契约从者会面', 'Visit Sword Lake to meet your first contracted servant');
   const next = `${state}\n${hint}`;
   if (contractCard.textContent !== next) contractCard.textContent = next;
-  contractCard.style.whiteSpace = 'pre-line';
+  if (contractCard.style.whiteSpace !== 'pre-line') contractCard.style.whiteSpace = 'pre-line';
 }
 addEventListener('pagehide', (event) => { if (!event.persisted) {
   eraActorsDisposed = true;
@@ -679,9 +693,9 @@ const lockError = () => {
   setLoading('无法锁定鼠标，请再次点击进入（或检查浏览器权限）');
   start.classList.remove('hidden');
 };
-setLoading('点击进入（ESC 释放鼠标）');
+setLoading(bilingual('准备场景与光影…', 'Preparing scene and lighting…'));
 start.addEventListener('click', async () => {
-  if (settingsPanel.open) return;
+  if (!readyToEnter || settingsPanel.open) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
 document.addEventListener('pointerlockerror', lockError);
@@ -747,7 +761,7 @@ addEventListener('keydown', (e) => {
 });
 addEventListener('keyup', (e) => release(e.code));
 addEventListener('blur', clearInput);
-document.addEventListener('visibilitychange', clearInput);
+document.addEventListener('visibilitychange', () => { clearInput(); skipMetricFrame = true; });
 addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('auxclick', (e) => { if (locked || settingsPanel.open) e.preventDefault(); });
 addEventListener('mousedown', (e) => { if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
@@ -925,6 +939,12 @@ const mini = $<HTMLCanvasElement>('minimap').getContext('2d')!;
 const big = ($('bigmap').querySelector('canvas') as HTMLCanvasElement).getContext('2d')!;
 const stats = $('stats');
 const eye = new THREE.Vector3();
+const cameraLook = new THREE.Vector3(), cameraPivot = new THREE.Vector3(), cameraOrigin = new THREE.Vector3();
+const cameraSide = new THREE.Vector3(), cameraBack = new THREE.Vector3(), cameraSideDirection = new THREE.Vector3();
+const cameraRay = new THREE.Ray(), cameraUp = new THREE.Vector3(0, 1, 0);
+const miniRefresh = new MapRefreshPolicy(), bigRefresh = new MapRefreshPolicy();
+const frameMetrics = new FrameMetrics();
+let statsAt = -Infinity;
 let last = performance.now(), acc = 0, frames = 0, fpsT = 0, fps = 0;
 const STEP = 1 / 120;
 let lastRegion = '';
@@ -939,6 +959,7 @@ camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 function frame(now: number) {
+  const frameStart = performance.now();
   // Some browsers change DPR on monitor moves without a CSS resize event.
   if (observedDeviceDpr !== devicePixelRatio) {
     observedDeviceDpr = devicePixelRatio;
@@ -962,10 +983,10 @@ function frame(now: number) {
   const canAim = worldProgress.armed && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
   const ads = aim.step(dt, canAim);
-  $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
+  setTextIfChanged($('movement-mode'), player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
     : player.swimming ? bilingual(`游泳 · ${settings.label('jump')} 出水`, `Swimming · ${settings.label('jump')} Leave water`)
     : player.gliding ? bilingual(`滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`, `Gliding · ${settings.label('jump')} Fold glider · Updrafts provide lift`)
-    : '';
+    : '');
   const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
   $('crosshair').classList.toggle('aiming', ads > 0.7);
@@ -981,18 +1002,18 @@ function frame(now: number) {
   anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, armed: worldProgress.armed, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire'), lookYaw: player.yaw + Math.PI });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
-    const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
-    const pivot = new THREE.Vector3(player.pos.x + rx * 0.45, player.pos.y + 1.55, player.pos.z + rz * 0.45);
+    const look = cameraLook.set(0, 0, -1).applyEuler(camera.rotation);
+    const pivot = cameraPivot.set(player.pos.x + rx * 0.45, player.pos.y + 1.55, player.pos.z + rz * 0.45);
     // keep the pivot under any ceiling (gallery floors, arches) so the arm never starts inside geometry
-    const up = staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(player.pos.x, player.pos.y + 1.0, player.pos.z), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
+    const up = staticBVH.raycastFirst(cameraRay.set(cameraOrigin.set(player.pos.x, player.pos.y + 1.0, player.pos.z), cameraUp), THREE.DoubleSide);
     if (up && up.distance < 0.85) pivot.y = Math.max(player.pos.y + 0.9, up.point.y - 0.3);
     // The shoulder offset itself must not start on the other side of a nearby wall.
-    const origin = new THREE.Vector3(player.pos.x, pivot.y, player.pos.z);
-    const side = pivot.clone().sub(origin), sideLength = side.length();
-    const sideHit = staticBVH.raycastFirst(new THREE.Ray(origin, side.clone().normalize()), THREE.DoubleSide);
+    const origin = cameraOrigin.set(player.pos.x, pivot.y, player.pos.z);
+    const side = cameraSide.copy(pivot).sub(origin), sideLength = side.length();
+    const sideHit = staticBVH.raycastFirst(cameraRay.set(origin, cameraSideDirection.copy(side).normalize()), THREE.DoubleSide);
     if (sideHit && sideHit.distance < sideLength + 0.15) pivot.copy(origin).addScaledVector(side.normalize(), Math.max(0, sideHit.distance - 0.15));
-    const back = look.clone().negate();
-    const hit = staticBVH.raycastFirst(new THREE.Ray(pivot, back), THREE.DoubleSide);
+    const back = cameraBack.copy(look).negate();
+    const hit = staticBVH.raycastFirst(cameraRay.set(pivot, back), THREE.DoubleSide);
     const want = shoulderArmLength(ads, player.gliding, hit?.distance);
     camDist = want < camDist ? want : THREE.MathUtils.damp(camDist, want, 6, dt);
     camera.position.copy(pivot).addScaledVector(back, camDist);
@@ -1008,7 +1029,7 @@ function frame(now: number) {
   } else inspectServant = false;
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
   const elite = gameplayActive() && !combat.defeated && !combat.bossStarted ? nearbyElite(combat.state.enemies, player.pos) : null;
-  $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
+  setTextIfChanged($('elite-hint'), elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '');
   if (down('fire')) shoot();
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
@@ -1019,8 +1040,8 @@ function frame(now: number) {
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
   updateCold(dt);
-  sun.position.copy(eye).addScaledVector(twilight.direction, 200);
-  sun.target.position.copy(eye);
+  stabilizedShadow.update(sun, eye, twilight.direction);
+  localLights.update(camera);
 
   if (haloMat && done.has('tower_console')) haloMat.color.setScalar(0.85 + Math.sin(now / 400) * 0.15);
   for (const m of spinners) m.rotation.y += (m.userData.spin as number) * dt;
@@ -1034,10 +1055,10 @@ function frame(now: number) {
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
-  $('prompt').textContent = npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
+  setTextIfChanged($('prompt'), npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
     !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : localizeText(it.label)}` :
-    player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
+    player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '');
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }
@@ -1048,8 +1069,13 @@ function frame(now: number) {
   const tgt = guideOn ? guideTarget() : null;
   updateGuide(tgt, now);
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
-  map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
-  if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt }); // big map stays readable: no monster dots
+  const mapRevision = `${uiRevision}:${done.size}:${found.size}:${mt?.[0]}:${mt?.[1]}`;
+  const miniVisible = $('minimap').style.display !== 'none' && !document.body.classList.contains('clean');
+  if (miniRefresh.shouldDraw(now, player.pos.x, player.pos.z, player.yaw, mapRevision, miniVisible, !!mt))
+    map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
+  const bigVisible = $('bigmap').classList.contains('open');
+  if (bigRefresh.shouldDraw(now, player.pos.x, player.pos.z, player.yaw, mapRevision, bigVisible, !!mt))
+    map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt }); // no monster dots
 
   timeUniform.value = now / 1000;
   shafts.update(camera, twilight.direction);
@@ -1059,9 +1085,16 @@ function frame(now: number) {
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += frameSeconds;
   if (fpsT > 0.5) { fps = Math.round(frames / fpsT); frames = 0; fpsT = 0; }
+  frameMetrics.record(frameSeconds, performance.now() - frameStart, document.visibilityState === 'visible' && !skipMetricFrame);
+  skipMetricFrame = false;
+  if (now - statsAt >= 250) {
+  statsAt = now;
   const info = renderer.info.render;
+  const timings = frameMetrics.summary();
   stats.textContent = bilingual(`${fps} 帧/秒 · ${dpr.toFixed(2)}× DPR · ${info.calls} 绘制 · ${Math.round(info.triangles / 1000)}k 三角形\n`, `${fps} fps · ${dpr.toFixed(2)}× DPR · ${info.calls} draws · ${Math.round(info.triangles / 1000)}k tris\n`) +
     `x ${player.pos.x.toFixed(1)}  y ${player.pos.y.toFixed(1)}  z ${player.pos.z.toFixed(1)}${player.flying ? bilingual(' · 飞行', ' · fly') : ''}${player.gliding ? bilingual(' · 滑翔', ' · glide') : ''}${player.swimming ? bilingual(' · 游泳', ' · swim') : ''}`;
+  stats.textContent += bilingual(`\n帧时间 P95 ${timings.p95FrameMs.toFixed(1)} ms · 主线程 ${timings.meanMainThreadMs.toFixed(1)} ms`, `\nFrame P95 ${timings.p95FrameMs.toFixed(1)} ms · Main thread ${timings.meanMainThreadMs.toFixed(1)} ms`);
+  }
   requestAnimationFrame(frame);
 }
 refreshWorldLocale = () => {
@@ -1071,11 +1104,21 @@ refreshWorldLocale = () => {
   // Transient combat/toast messages expire rather than retain a previous language.
   $('toast').classList.remove('show');
 };
+// Prepare the static culling tree and supported parallel shaders before accepting play input.
+player.eyePos(eye); camera.position.copy(eye); camera.rotation.set(player.pitch, player.yaw, 0, 'YXZ');
+culler.update(eye, lowQ ? .7 : 1); localLights.update(camera);
+stabilizedShadow.update(sun, eye, twilight.direction);
+setLoading(bilingual('准备光影着色器…', 'Preparing lighting shaders…'));
+await new Promise<void>(resolve => setTimeout(resolve, 0));
+const shaderWarmup = await warmupShaders(renderer.extensions.has('KHR_parallel_shader_compile'), () => renderer.compileAsync(scene, camera));
+if (shaderWarmup === 'failed' || shaderWarmup === 'timed-out') console.warn(`Shader preparation ${shaderWarmup}; continuing with normal rendering.`);
+readyToEnter = true; last = performance.now();
+setLoading('点击进入（ESC 释放鼠标）');
 requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, performance: () => ({ ...frameMetrics.summary(), shaderWarmup, bootYields: bootBudget.yields, pointLights: localLights.lights.length, nearbyLightOverflow: localLights.nearbyOverflow }), ready: true };
 }
 
 void boot().catch((error: unknown) => {

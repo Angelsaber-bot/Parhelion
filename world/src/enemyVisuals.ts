@@ -6,6 +6,7 @@ import { enemyAttackTiming, isMusketeer, type Enemy, type EnemyMode } from './co
 
 export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sunward_guard' | 'deck_raider';
 export const ENEMY_VISUAL_BUDGET = 24;
+export const ENEMY_CLONES_PER_FRAME = 2;
 /** Stable appearance: moving across an era seam must never change an enemy's uniform. */
 export function enemyModel(e: Pick<Enemy, 'id' | 'home' | 'kind'> & { miniboss?: string }): EnemyModel | null {
   if (e.kind === 'king') return ({ boss_vacant_king: 'sunward_guard', boss_drowned_admiral: 'deck_raider', boss_winter_warden: 'officer', boss_hellfire_lord: 'samurai' } as Record<string, EnemyModel>)[e.id] ?? 'sunward_guard';
@@ -35,7 +36,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; meshes: THREE.Mesh[]; clips: Map<string, THREE.AnimationClip>; names: string[]; shadow: boolean; mode?: EnemyMode; attackCount?: number; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -46,6 +47,7 @@ export class EnemyVisuals {
   private disposed = false;
   private retries = new Map<string, { attempts: number; after: number }>();
   private now = 0;
+  private clonesRemaining = ENEMY_VISUAL_BUDGET;
   get activeMixers() { return this.instances.size; }
   get diagnostics() { return { activeMixers: this.instances.size, loaded: [...this.cache.values()].filter(Boolean).length, failed: [...this.cache.values()].filter(v => !v).length, pending: this.pending.size, exhausted: [...this.retries.values()].filter(v => v.attempts >= 3).length }; }
   private request(key: string) {
@@ -73,11 +75,11 @@ export class EnemyVisuals {
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
-    instance.root.traverse(o => { if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose(); });
+    for (const mesh of instance.meshes) if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.dispose();
     instance.root.removeFromParent(); this.instances.delete(id);
   }
   /** Advance wall-clock loading backoff once per frame, not once per enemy. */
-  tick(dt: number) { this.now += Math.max(0, Math.min(dt, 1)); }
+  tick(dt: number) { this.now += Math.max(0, Math.min(dt, 1)); this.clonesRemaining = ENEMY_CLONES_PER_FRAME; }
   update(e: Enemy, model: EnemyModel, parent: THREE.Group, fallback: THREE.Group, dt: number, distance: number, allowed: boolean) {
     if (this.disposed) return false;
     if (!allowed || e.mode === 'dead') { this.release(e.id); fallback.visible = true; return false; }
@@ -88,27 +90,34 @@ export class EnemyVisuals {
     this.request(key);
     const gltf = this.cache.get(key);
     let instance = prior;
-    if (gltf && instance?.key !== key && (instance || this.instances.size < ENEMY_VISUAL_BUDGET)) {
+    if (gltf && instance?.key !== key && (instance || this.instances.size < ENEMY_VISUAL_BUDGET) && (this.clonesRemaining > 0 || e.kind === 'king')) {
+      if (e.kind !== 'king') this.clonesRemaining--;
       this.release(e.id);
       const root = clone(gltf.scene);
+      const meshes: THREE.Mesh[] = [];
       root.traverse(o => {
         if (!(o instanceof THREE.Mesh)) return;
-        o.receiveShadow = true;
+        meshes.push(o); o.receiveShadow = true; o.castShadow = distance < 18;
         // Bounds are rig-dependent; the 82m root cull and 24-instance cap bound this work.
         if (o instanceof THREE.SkinnedMesh) o.frustumCulled = false;
       });
       parent.add(root);
-      instance = { root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '' };
+      instance = { root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', meshes, clips: new Map(gltf.animations.map(c => [c.name, c])), names: gltf.animations.map(c => c.name), shadow: distance < 18 };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
     if (!instance) return false;
-    instance.root.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = distance < 18; });
-    const name = enemyClip(model, e.mode, instance.gltf.animations.map(c => c.name));
-    const state = `${e.mode}:${e.attackCount}:${name}`;
-    if (state !== instance.state) {
-      instance.state = state;
-      const clip = instance.gltf.animations.find(c => c.name === name);
+    const shadow = distance < 18;
+    if (shadow !== instance.shadow) {
+      instance.shadow = shadow;
+      for (const mesh of instance.meshes) mesh.castShadow = shadow;
+    }
+    const changed = instance.mode !== e.mode || instance.attackCount !== e.attackCount;
+    if (changed) {
+      instance.mode = e.mode; instance.attackCount = e.attackCount;
+      const name = enemyClip(model, e.mode, instance.names);
+      instance.state = `${e.mode}:${e.attackCount}:${name}`;
+      const clip = name ? instance.clips.get(name) : undefined;
       if (clip) {
         const action = instance.mixer.clipAction(clip);
         if (action !== instance.action) instance.action?.fadeOut(0.12);
@@ -127,7 +136,8 @@ export class EnemyVisuals {
         instance.action = action;
       }
     }
-    instance.mixer.update(Math.min(dt, 0.1));
+    // A changed pose must be sampled even at dt=0; unchanged paused frames need no mixer work.
+    if (dt > 0 || changed) instance.mixer.update(Math.min(dt, 0.1));
     return true;
   }
   dispose() {

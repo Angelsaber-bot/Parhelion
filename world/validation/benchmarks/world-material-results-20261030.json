@@ -1,0 +1,79 @@
+{
+  "scope": "Actual ART meshes (one retained water), five settlement kits before placement foundations; source-identity allocations only",
+  "rows": [
+    {
+      "name": "alpha",
+      "meshes": 77,
+      "beforeMaterials": 77,
+      "afterMaterials": 30,
+      "cachedReuse": 47
+    },
+    {
+      "name": "britain",
+      "meshes": 32,
+      "beforeMaterials": 32,
+      "afterMaterials": 27,
+      "cachedReuse": 5
+    },
+    {
+      "name": "blacksail",
+      "meshes": 93,
+      "beforeMaterials": 93,
+      "afterMaterials": 36,
+      "cachedReuse": 57
+    },
+    {
+      "name": "winter",
+      "meshes": 58,
+      "beforeMaterials": 58,
+      "afterMaterials": 30,
+      "cachedReuse": 28
+    },
+    {
+      "name": "kyoto",
+      "meshes": 37,
+      "beforeMaterials": 37,
+      "afterMaterials": 22,
+      "cachedReuse": 15
+    },
+    {
+      "name": "alpha settlement kit",
+      "meshes": 42,
+      "beforeMaterials": 42,
+      "afterMaterials": 38,
+      "cachedReuse": 4
+    },
+    {
+      "name": "britain settlement kit",
+      "meshes": 58,
+      "beforeMaterials": 58,
+      "afterMaterials": 54,
+      "cachedReuse": 4
+    },
+    {
+      "name": "blacksail settlement kit",
+      "meshes": 25,
+      "beforeMaterials": 25,
+      "afterMaterials": 17,
+      "cachedReuse": 8
+    },
+    {
+      "name": "winter settlement kit",
+      "meshes": 20,
+      "beforeMaterials": 20,
+      "afterMaterials": 14,
+      "cachedReuse": 6
+    },
+    {
+      "name": "kyoto settlement kit",
+      "meshes": 24,
+      "beforeMaterials": 24,
+      "afterMaterials": 16,
+      "cachedReuse": 8
+    }
+  ],
+  "beforeMaterials": 466,
+  "afterMaterials": 284,
+  "avoidedMaterialInstances": 182,
+  "reductionPercent": 39.05579399141631
+}
