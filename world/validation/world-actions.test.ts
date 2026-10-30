@@ -124,3 +124,13 @@ test('unavailable companion aim rejects before animation, cooldown or energy spe
  const f=fixture();f.context.identity='saber';(f.actions as any).options.resolveAim=()=>null;
  try{f.actions.press('skill');assert.equal(f.poses(),0);assert.equal(f.actions.skills.cooldown('skill'),0);assert.equal(f.actions.skills.casting,false);assert.equal(f.strikes.length,0);}finally{f.actions.dispose();}
 });
+
+test('Saber ultimate requires a reachable target before starting pose or charging cost',()=>{
+ const f=fixture();f.context.identity='saber';
+ const options=(f.actions as any).options;
+ const aim={origin:{...f.context.position},direction:{x:0,y:0,z:-1}};
+ options.resolveAim=()=>aim;(f.actions.skills as any).energyValue=100;
+ f.actions.press('ultimate');assert.equal(f.poses(),0);assert.equal(f.actions.skills.casting,false);assert.equal(f.actions.skills.energy,100);assert.equal(f.actions.skills.cooldown('ultimate'),0);assert.ok(f.messages.length>0);
+ options.resolveAim=()=>({...aim,targetId:'reachable',targetPoint:{x:2,y:1,z:0}});
+ f.actions.press('ultimate');assert.equal(f.poses(),1);assert.equal(f.actions.skills.casting,true);assert.equal(f.actions.skills.energy,0);assert.equal(f.actions.skills.cooldown('ultimate'),28);f.actions.dispose();
+});

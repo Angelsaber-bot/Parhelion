@@ -4,7 +4,7 @@ import { CONTRACT_SKILLS } from './contractSkills';
 export type UltimateMode = 'full' | 'short' | 'off';
 export type UltimatePhase = 'intro' | 'charge' | 'release' | 'outro';
 export interface UltimateFrame {
-  identity: string; phase: UltimatePhase; progress: number; elapsed: number; pulse: number; reduced: boolean;
+  identity: string; phase: UltimatePhase; progress: number; elapsed: number; pulse: number; strikeCount: number; reduced: boolean;
 }
 export const ULTIMATE_MODE_KEY = 'parhelion-world-ultimate-mode-v1';
 type ModeStorage = Pick<Storage, 'getItem' | 'setItem'>;
@@ -15,14 +15,14 @@ export class UltimateClock {
   private identity: string | null = null;
   private presentation: UltimateMode = 'full';
   private phase: UltimatePhase = 'intro';
-  private elapsed = 0; private phaseTime = 0; private pulse = 0; private outroTime = .45;
+  private elapsed = 0; private phaseTime = 0; private pulse = 0; private strikeCount = 0; private outroTime = .45;
   get active() { return this.identity !== null; }
   get showing() { return this.active && this.presentation !== 'off'; }
   get releasing() { return this.active && this.phase === 'release'; }
   get frame(): UltimateFrame | null {
     if (this.identity === null) return null;
     const duration = this.phase === 'intro' ? this.intro : this.phase === 'charge' ? this.charge : this.phase === 'outro' ? this.outro : 2.9;
-    return { identity: this.identity, phase: this.phase, progress: Math.min(1, this.phaseTime / duration), elapsed: this.elapsed, pulse: this.pulse, reduced: this.presentation !== 'full' };
+    return { identity: this.identity, phase: this.phase, progress: Math.min(1, this.phaseTime / duration), elapsed: this.elapsed, pulse: this.pulse, strikeCount: this.strikeCount, reduced: this.presentation !== 'full' };
   }
   private get intro() { return this.presentation === 'full' ? .65 : .1; }
   private get charge() { return this.presentation === 'full' ? 1.9 : .15; }
@@ -30,7 +30,7 @@ export class UltimateClock {
   begin(identity: string, mode: UltimateMode): boolean {
     if (this.active) return false;
     this.identity = identity; this.presentation = mode; this.phase = mode === 'off' ? 'release' : 'intro';
-    this.elapsed = this.phaseTime = this.pulse = 0; return true;
+    this.elapsed = this.phaseTime = this.pulse = this.strikeCount = 0; return true;
   }
   tick(dt: number, suspended = false): void {
     if (!this.active || suspended || !Number.isFinite(dt) || dt <= 0) return;
@@ -40,7 +40,7 @@ export class UltimateClock {
     if (this.phase === 'charge' && this.phaseTime + 1e-9 >= this.charge) { this.phaseTime = 0; this.phase = 'release'; }
     if (this.phase === 'outro' && this.phaseTime + 1e-9 >= this.outro) this.abort();
   }
-  notifyStrike(): void { if (this.releasing) this.pulse = 1; }
+  notifyStrike(): void { if (this.releasing) { this.pulse = 1; this.strikeCount++; } }
   complete(): void {
     if (!this.releasing) return;
     if (!this.showing) this.abort();
@@ -52,13 +52,27 @@ export class UltimateClock {
     if (this.phase === 'outro') this.abort();
     else if (this.phase !== 'release') { this.phase = 'release'; this.phaseTime = 0; }
   }
-  abort(): void { this.identity = null; this.elapsed = this.phaseTime = this.pulse = 0; }
+  abort(): void { this.identity = null; this.elapsed = this.phaseTime = this.pulse = this.strikeCount = 0; }
 }
 
 export interface UltimateDirectorOptions {
   document?: Document; storage?: ModeStorage | null; reducedMotion?: boolean;
   onRelease?: () => void; onEnd?: () => void;
+  /** Optional original artwork; missing/failed art leaves the 3D stage unobstructed. */
+  saberCutInUrl?: string;
+  reducedEffects?: () => boolean;
 }
+/** Clock-driven only: no CSS/wall-clock animation can advance behind a suspended tab. */
+export function saberCutInPresentation(frame: UltimateFrame | null, reducedMotion = false) {
+  const hidden = { visible: false, reveal: 0, exit: 0, reduced: reducedMotion };
+  if (!frame || frame.identity !== 'saber' || (frame.phase !== 'intro' && frame.phase !== 'charge')) return hidden;
+  const reduced = reducedMotion || frame.reduced, t = frame.elapsed;
+  const start = frame.reduced ? .05 : .08, end = frame.reduced ? .20 : 1.08;
+  if (t < start || t >= end) return { ...hidden, reduced };
+  if (reduced) return { visible: true, reveal: 1, exit: 0, reduced };
+  return { visible: true, reveal: Math.min(1, (t - start) / .16), exit: Math.max(0, (t - .82) / .26), reduced };
+}
+
 /** DOM shell around the deterministic clock. Main retains the one accepted cast. */
 export class UltimateDirector {
   readonly settingsControl: HTMLDivElement;
@@ -70,12 +84,15 @@ export class UltimateDirector {
   private select: HTMLSelectElement; private settingsTitle: HTMLSpanElement; private note: HTMLParagraphElement;
   private previousFocus: HTMLElement | null = null; private removeLocale: () => void;
   private hadBodyClass = false;
+  private cutIn: HTMLDivElement | null = null; private cutInImage: HTMLImageElement | null = null;
+  private cutInReady = false; private cutInEligible = false; private prefersReducedMotion = false;
   constructor(private options: UltimateDirectorOptions = {}) {
     this.doc = options.document ?? document;
     this.storage = options.storage ?? null;
     if (options.storage === undefined) { try { this.storage = this.doc.defaultView?.localStorage ?? null; } catch { /* denied storage */ } }
     let reduced = options.reducedMotion ?? false;
     if (options.reducedMotion === undefined) { try { reduced = !!this.doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches; } catch { /* no matchMedia */ } }
+    this.prefersReducedMotion = reduced;
     this.selected = reduced ? 'short' : 'full';
     try { const saved = this.storage?.getItem(ULTIMATE_MODE_KEY); if (isMode(saved)) this.selected = saved; } catch { /* session default */ }
     this.overlay = this.doc.createElement('div'); this.overlay.className = 'ultimate-overlay'; this.overlay.hidden = true;
@@ -83,6 +100,16 @@ export class UltimateDirector {
     this.title = this.doc.createElement('h2'); this.title.className = 'ultimate-title';
     this.caption = this.doc.createElement('p'); this.caption.className = 'ultimate-caption';
     this.skipButton = this.doc.createElement('button'); this.skipButton.type = 'button'; this.skipButton.className = 'ultimate-skip';
+    if (options.saberCutInUrl) {
+      this.cutIn = this.doc.createElement('div'); this.cutIn.className = 'ultimate-saber-cutin'; this.cutIn.hidden = true;
+      this.cutIn.setAttribute('aria-hidden', 'true');
+      this.cutInImage = this.doc.createElement('img'); this.cutInImage.alt = ''; this.cutInImage.draggable = false;
+      this.cutInImage.decoding = 'async';
+      this.cutInImage.onload = () => { if (!this.disposed) this.cutInReady = true; };
+      this.cutInImage.onerror = () => { this.cutInReady = false; if (this.cutIn) this.cutIn.hidden = true; this.overlay.classList.remove('ultimate-has-cutin'); };
+      this.cutInImage.src = options.saberCutInUrl;
+      this.cutIn.append(this.cutInImage); this.overlay.append(this.cutIn);
+    }
     this.skipButton.onclick = () => this.skip(); this.overlay.append(this.title, this.caption, this.skipButton); this.doc.body.append(this.overlay);
     this.settingsControl = this.doc.createElement('div'); this.settingsControl.className = 'settings-sliders ultimate-settings';
     const label = this.doc.createElement('label'); this.settingsTitle = this.doc.createElement('span'); this.select = this.doc.createElement('select');
@@ -119,6 +146,7 @@ export class UltimateDirector {
   }
   begin(identity: string): boolean {
     if (this.disposed || !this.clock.begin(identity, this.selected)) return false;
+    this.cutInEligible = this.cutInReady;
     this.released = false; this.previousFocus = this.doc.activeElement as HTMLElement | null;
     this.hadBodyClass = this.doc.body.classList.contains('ultimate-showing');
     this.renderLocale(); this.sync(true); if (this.showing) this.skipButton.focus({ preventScroll: true }); return true;
@@ -131,6 +159,7 @@ export class UltimateDirector {
   private sync(wasActive: boolean): void {
     if (!wasActive && !this.active) return;
     this.overlay.hidden = !this.showing;
+    this.syncCutIn();
     const phase = this.frame?.phase ?? 'idle';
     if (this.overlay.dataset.phase !== phase) this.overlay.dataset.phase = phase;
     if (this.showing) this.doc.body.classList.add('ultimate-showing');
@@ -141,6 +170,18 @@ export class UltimateDirector {
       if (focus?.isConnected && typeof focus.focus === 'function') focus.focus({ preventScroll: true });
       this.options.onEnd?.();
     }
+  }
+  private syncCutIn(): void {
+    if (!this.cutIn) return;
+    const state = saberCutInPresentation(this.frame, this.prefersReducedMotion || !!this.options.reducedEffects?.());
+    this.cutIn.hidden = !this.showing || !this.cutInEligible || !this.cutInReady || !state.visible;
+    if (this.cutIn.hidden) { this.overlay.classList.remove('ultimate-has-cutin'); return; }
+    this.overlay.classList.add('ultimate-has-cutin');
+    this.cutIn.dataset.reduced = String(state.reduced);
+    // A sharp diagonal reveal followed by a brief hold; exit wipes away, never flashes white.
+    const right = state.reveal * 112, left = state.exit * 112;
+    this.cutIn.style.clipPath = `polygon(${left}% 0, ${right}% 0, ${right - 12}% 100%, ${left - 12}% 100%)`;
+    this.cutIn.style.transform = state.reduced ? 'none' : `translateX(${(1 - state.reveal) * 4 - state.exit * 3}%)`;
   }
   private renderLocale(): void {
     const identity = this.frame?.identity ?? 'player';
@@ -158,6 +199,8 @@ export class UltimateDirector {
     if (this.disposed) return;
     this.disposed = true; this.abort(); this.removeLocale();
     for (const type of this.events) this.doc.defaultView?.removeEventListener(type, this.capture, true);
+    if (this.cutInImage) { this.cutInImage.onload = null; this.cutInImage.onerror = null; this.cutInImage.removeAttribute('src'); }
+    this.cutInReady = this.cutInEligible = false; this.cutIn = null; this.cutInImage = null;
     this.skipButton.onclick = null; this.select.onchange = null; this.overlay.remove(); this.settingsControl.remove();
   }
 }

@@ -1,10 +1,12 @@
 import * as THREE from 'three';
+import { createUltimatePerformance, type UltimatePerformanceFrame } from './ultimatePerformance';
+import { SaberStageArt } from './saberStageArt';
 import { ultimateEnergyGeometry } from './ultimateEnergy';
 import { buildMaritimeShip } from '../tools/gen/blacksail/ships';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 export type UltimateStagePhase = 'intro' | 'charge' | 'release' | 'outro';
 export interface UltimateStageBegin { identity: string; sourceRoot: THREE.Object3D; clips?: readonly THREE.AnimationClip[]; reducedEffects?: boolean; }
-export interface UltimateStageFrame { elapsed: number; phase: UltimateStagePhase; progress: number; pulse: number; sourceRoot?: THREE.Object3D; reduced?: boolean; }
+export interface UltimateStageFrame { elapsed: number; phase: UltimateStagePhase; progress: number; pulse: number; sourceRoot?: THREE.Object3D; reduced?: boolean; strikeCount?: number; }
 const palettes: Record<string, [number, number, number]> = {
   saber: [0x061d36, 0x81e8ff, 0xffdf85], blackbeard: [0x07141e, 0xf5ac52, 0x6ec1d3],
   napoleon: [0x233248, 0xffe5a1, 0xf5f7ff], musashi: [0xc5bcbc, 0xb6284d, 0x2678af],
@@ -24,6 +26,9 @@ export class UltimateStage {
   private mixer?: THREE.AnimationMixer; private idleAction?: THREE.AnimationAction; private chargeAction?: THREE.AnimationAction; private charging = false;
   private geometries = new Set<THREE.BufferGeometry>(); private materials = new Set<THREE.Material>();
   private beams: THREE.Mesh[] = []; private rings: THREE.Mesh[] = []; private streaks: THREE.Mesh[] = [];
+  private performance?: ReturnType<typeof createUltimatePerformance>;
+  private performanceFrame: UltimatePerformanceFrame = { phase: 'intro', progress: 0, elapsed: 0, strikeCount: 0, reduced: false };
+  private saberArt?: SaberStageArt;
   private ship?: THREE.Group; private identity = ''; private reduced = false; private active = false; private lastElapsed = 0;
   private baseCameraPosition = new THREE.Vector3(); private narrowWeight = 0;
   private aim = new THREE.Vector3(); private viewport = new THREE.Vector4(); private scissor = new THREE.Vector4();
@@ -48,12 +53,23 @@ export class UltimateStage {
     this.clone.updateMatrixWorld(true);
     let framing = this.framing.get(options.sourceRoot);
     if (!framing) {
-      const bounds = new THREE.Box3().setFromObject(this.clone), extent = bounds.getSize(new THREE.Vector3());
-      const scale = Number.isFinite(extent.y) && extent.y > .01 ? 2.8 / extent.y : 1;
-      framing = { scale, offsetY: Number.isFinite(bounds.min.y) ? -bounds.min.y * scale : 0 };
+      const head = this.identity === 'saber' ? this.clone.getObjectByName('mixamorigHeadTop_End') : undefined;
+      const left = this.clone.getObjectByName('mixamorigLeftToe_End'), right = this.clone.getObjectByName('mixamorigRightToe_End');
+      if (head && left && right) {
+        // Intentionally frame the BODY, not the raised weapon. This also avoids a first-cast full skin scan.
+        const headY = head.getWorldPosition(new THREE.Vector3()).y;
+        const footY = Math.min(left.getWorldPosition(new THREE.Vector3()).y, right.getWorldPosition(new THREE.Vector3()).y);
+        const span = Math.max(.1, headY - footY), floor = footY - span * .018, top = headY + span * .025;
+        const scale = 2.8 / (top - floor); framing = { scale, offsetY: -floor * scale };
+      } else {
+        const bounds = new THREE.Box3().setFromObject(this.clone), extent = bounds.getSize(new THREE.Vector3());
+        const scale = Number.isFinite(extent.y) && extent.y > .01 ? 2.8 / extent.y : 1;
+        framing = { scale, offsetY: Number.isFinite(bounds.min.y) ? -bounds.min.y * scale : 0 };
+      }
       this.framing.set(options.sourceRoot, framing);
     }
     this.actor.scale.setScalar(framing.scale); this.actor.position.y = framing.offsetY;
+    this.performance = createUltimatePerformance(this.identity, this.clone);
     if (options.clips?.length) {
       this.mixer = new THREE.AnimationMixer(this.clone);
       this.idleAction = this.mixer.clipAction(options.clips.find(c => /idle|stand/i.test(c.name)) ?? options.clips[0]); this.idleAction.play();
@@ -78,7 +94,7 @@ export class UltimateStage {
       const angle = i * 2.39996, radius = 4 + i % 7;
       streak.position.set(Math.cos(angle) * radius, .3 + i % 9, -12 + i % 5); this.streaks.push(streak);
     }
-    const count = this.identity === 'blackbeard' ? 7 : this.identity === 'musashi' ? 2 : 1;
+    const count = this.identity === 'saber' ? 0 : this.identity === 'blackbeard' ? 7 : this.identity === 'musashi' ? 2 : 1;
     const energyMaterials = (this.identity === 'blackbeard' ? [0xffd0a1] : [colors[2], colors[1]]).map(color => {
       const material = this.material(color, this.reduced ? .55 : .9); material.vertexColors = true; material.toneMapped = false; return material;
     });
@@ -96,11 +112,10 @@ export class UltimateStage {
     }
     if (this.identity === 'blackbeard') this.buildShip(colors[1]);
     if (this.identity === 'saber') {
-      const halo = this.mesh(new THREE.TorusGeometry(3.3, .06, 6, 96), accent); halo.position.set(0, 3.2, -7);
-      for (let i = 0; i < 12; i++) {
-        const ray = this.mesh(new THREE.BoxGeometry(.025, 1.3, .025), glow), angle = i * Math.PI / 6;
-        ray.position.set(Math.sin(angle) * 4.3, 3.2 + Math.cos(angle) * 4.3, -7); ray.rotation.z = -angle;
-      }
+      this.saberArt = new SaberStageArt(this.actor, this.clone, {
+        mesh: (geometry, material, parent) => this.mesh(geometry, material, parent),
+        material: (color, opacity) => this.material(color, opacity),
+      }); this.effects.add(this.saberArt.root);
     }
     if (this.identity === 'musashi') {
       const ink = this.material(0x342b35, .85);
@@ -158,7 +173,7 @@ export class UltimateStage {
           pose.position.copy(copy.position); pose.quaternion.copy(copy.quaternion); pose.scale.copy(copy.scale);
         }
       } else this.releaseBlendElapsed = Math.min(.14, this.releaseBlendElapsed + dt);
-      const blend = clamp(this.releaseBlendElapsed / .14);
+      const blend = this.identity === 'saber' && this.performance?.anchors.socket ? 1 : clamp(this.releaseBlendElapsed / .14);
       // Local visual poses only. The live caster/contact clock is never delayed or mutated.
       for (let i = 1; i < this.pairs.length; i++) {
         const [source, copy] = this.pairs[i];
@@ -173,12 +188,29 @@ export class UltimateStage {
       // Independent wind-up sample only; actual release always follows the live caster.
       this.chargeAction.time = this.chargeAction.getClip().duration * .3 * p; this.mixer?.update(0);
     } else this.mixer?.update(dt);
+    const pf = this.performanceFrame; pf.phase = frame.phase; pf.elapsed = elapsed; pf.progress = p; pf.strikeCount = frame.strikeCount; pf.reduced = this.reduced;
+    this.performance?.update(pf);
     const mounted = this.identity === 'napoleon', close = frame.phase === 'intro';
     const distance = close ? THREE.MathUtils.lerp(mounted ? 3.4 : 2.4, mounted ? 3.9 : 2.9, p) : frame.phase === 'charge' ? THREE.MathUtils.lerp(4.3, 8, p) : mounted ? 7.2 : this.identity === 'saber' ? 7.35 : 7;
     const orbit = this.reduced ? .1 : close ? -.36 + p * .16 : release ? .35 - p * .5 : this.identity === 'blackbeard' ? -.35 + p * .7 : this.identity === 'musashi' ? -.2 + p * .5 : .12;
     this.camera.position.set(Math.sin(orbit) * distance, close ? 2.35 : 2.7 + (mounted ? .6 : 0), Math.cos(orbit) * distance);
     this.aim.set(0, close ? 2.05 : 1.45, release ? -1.3 : 0); this.camera.lookAt(this.aim);
-    this.camera.fov = close ? 32 : 42; this.baseCameraPosition.copy(this.camera.position);
+    this.camera.fov = close ? 32 : 42;
+    if (this.identity === 'saber') {
+      // A close portrait, a low-angle gathering shot and a wider contact composition.
+      // Reduced mode keeps the same readable endpoints without orbit or contact jolts.
+      if (close) {
+        this.camera.position.set(-.55, 2.60, 2.70 - p * .12); this.aim.set(0, 2.45, .02); this.camera.fov = 33;
+      } else if (frame.phase === 'charge') {
+        this.camera.position.set(this.reduced ? .4 : .65 + p * .4, 1.95 + p * .2, 6.4 - p * .35);
+        this.aim.set(.4, 1.55 + p * .18, 0); this.camera.fov = 38;
+      } else {
+        this.camera.position.set(this.reduced ? .4 : 1.25 - p * .55, 2.10, 6.3);
+        this.aim.set(.30, 1.53, .1); this.camera.fov = 38;
+      }
+      this.camera.lookAt(this.aim);
+    }
+    this.baseCameraPosition.copy(this.camera.position);
     this.narrowWeight = close ? 0 : frame.phase === 'charge' ? p : 1; this.setAspect(this.camera.aspect);
     this.actor.position.z = mounted && release ? -1 + p * 2 : 0;
     for (let i = 0; i < this.rings.length; i++) {
@@ -199,13 +231,13 @@ export class UltimateStage {
       if (this.identity === 'napoleon') { beam.rotation.z = -.65 - p * .8; beam.position.y = 1.6; }
     }
     if (this.ship) this.ship.position.x = this.reduced ? 0 : Math.sin(elapsed * .4) * .3;
-    this.actor.updateMatrixWorld(true); this.previousPhase = frame.phase;
+    this.actor.updateMatrixWorld(true); this.saberArt?.update(frame, this.camera, this.reduced); this.previousPhase = frame.phase;
   }
   /** Actor-only portrait protection; background/energy may intentionally leave the frame. */
   setAspect(aspect: number) {
     this.camera.aspect = Number.isFinite(aspect) && aspect > 0 ? aspect : 1;
     const portrait = THREE.MathUtils.clamp((1 - this.camera.aspect) / (1 - 9 / 16), 0, 1);
-    const factor = 1 + portrait * this.narrowWeight * (this.identity === 'musashi' ? .35 : .12);
+    const factor = 1 + portrait * this.narrowWeight * (this.identity === 'musashi' ? .35 : this.identity === 'saber' ? .40 : .12);
     this.camera.position.copy(this.baseCameraPosition).sub(this.aim).multiplyScalar(factor).add(this.aim);
     this.camera.lookAt(this.aim); this.camera.updateProjectionMatrix(); this.camera.updateMatrixWorld(true);
   }
@@ -224,7 +256,7 @@ export class UltimateStage {
     }
   }
   end() {
-    this.active = false; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
+    this.active = false; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
     // SkeletonUtils skeletons are private; source geometry/materials/textures are never disposed.
     const skeletons = new Set<THREE.Skeleton>(); this.clone?.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); }); skeletons.forEach(s => s.dispose());
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());

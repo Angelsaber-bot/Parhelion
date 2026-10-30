@@ -67,6 +67,13 @@ export class WorldActions {
    const fallback:ResolvedSkillAim={origin:c.position,direction:{x:-Math.sin(c.yaw),y:0,z:-Math.cos(c.yaw)}};
    const aim=c.identity&&this.options.resolveAim?this.options.resolveAim(c.identity,slot):fallback;
    if(!aim){this.options.toast(bilingual('从者暂时无法瞄准，请让其靠近后重试。','Your companion cannot aim yet. Bring them closer and retry.'));return true;}
+   // Saber has a paid, single-contact beam. A finite free-aim fallback is not a
+   // target: previously it played the entire cinematic and consumed 100 energy
+   // even when range, floor height or LOS made every hostile unreachable.
+   // Resolve before actor startup/payment; contacts still use live combat LOS.
+   if(c.identity==='saber'&&slot==='ultimate'&&(!aim.targetId||!aim.targetPoint)){
+     this.options.toast(bilingual('Saber 尚未锁定可命中的敌人：瞄准同层、无遮挡且距她18米内的敌人。能量未消耗。','Saber has no reachable target. Aim at an unobstructed enemy on her level within 18m of her. Energy was not spent.'));return true;
+   }
    const direction=aim.direction;
    let token:number|null=null;
    if(c.identity){

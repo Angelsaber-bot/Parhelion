@@ -165,3 +165,11 @@ blender -b -t 6 --python validation/characters/render-ultimate-stages.py -- \
 ```
 
 导出器记录stage、energy、ship、导出器及渲染器的源码SHA256，便于将图像与实际实现绑定。已审查的8张1280×720离线定格使用stage SHA256 `4375006ca0f61b258e07b1ce3d9118e65e5ed355b8464066323beabed1f6b46d`；人物/武器主要轮廓可读，未见新的严重角色裁切，结论仅限这些抽样视角。所有此类图像必须标明 **OFFLINE CPU / NOT BROWSER GPU**。离线图不替代完整浏览器演出验收。
+
+## Saber 专项表现迭代（2026-10-30）
+
+本次仅修改Saber专属舞台表现，其余三从者保持此前版本。`ultimatePerformance.ts`为私有舞台克隆新增root-space双骨IK表演：胸前双手持剑、眉上蓄势、接收真实strikeCount后0.14秒双手向前下方斩落、斩后缓收。躯干分段反扭与头部counterturn以真实骨架父坐标转换，不盲转全局Euler；左手目标依附实际握柄。原游戏角色姿态、行走、武器contact和HP逻辑不由该模块修改。此版本不再将原Attack右手动作直接当作Saber释放表现。
+
+剑尖实测位于`WeaponSocket_R`的局部+Y约1.647；`sword_royal_enamel`只是剑格装饰，不能作为完整剑尖。Saber身体构图使用头/脚解剖标记而非含长剑的全模型包围盒；近景可裁剑尖，不能遮住脸。新增剑尖驱动聚光/轨迹、接触通知后的视觉剑波、接触阴影与远近背景层。
+
+`validation/characters/export-ultimate-sequence.ts`以60Hz连续更新场景并按12fps输出约63帧，避免将8点轨迹历史错误拉长到低帧率时间跨度。离线序列复用真实`skillAnimationSample`时间映射注入单次接触通知，但仍非完整生产游戏模拟或GPU录像。当前Blender构建不支持OpenImageDenoise，因此使用16 samples CPU渲染、不声称已降噪；像素质量、透明与雾效果不能等同浏览器。新增插画cut-in是原创建模参考之外的单独生成素材，来源见对应assets/cinematics说明；离线UI合成须明确标注，不冒称浏览器截图。

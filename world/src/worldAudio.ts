@@ -92,7 +92,7 @@ export class WorldAudio {
   private persist(){try{if(!this.storage){this.saved=false;return;}this.storage.setItem(WORLD_AUDIO_KEY,JSON.stringify({volume:this.volumeValue,muted:this.mutedValue}));this.saved=true;}catch{this.saved=false;}}
   private applyGain(){try{if(this.master&&this.context){this.master.gain.cancelScheduledValues(this.context.currentTime);this.master.gain.setValueAtTime(this.active&&!this.mutedValue&&this.foreground()?this.volumeValue:0,this.context.currentTime);}}catch{/* no gameplay dependency */}}
   private playable(){return !this.disposed&&this.active&&!this.mutedValue&&this.volumeValue>0&&this.foreground()&&this.context?.state==='running';}
-  private voice(kind:'noise'|OscillatorType,duration:number,frequency:number,gain:number,slide=1) {
+  private voice(kind:'noise'|OscillatorType,duration:number,frequency:number,gain:number,slide=1,attack=.004) {
     if(!this.playable()||this.voices.size>=WORLD_AUDIO_VOICES)return;
     const context=this.context!,nodes:AudioNode[]=[];let source:AudioScheduledSourceNode|undefined,voice:Voice|undefined;
     try {
@@ -105,7 +105,7 @@ export class WorldAudio {
         oscillator.frequency.setValueAtTime(frequency,now);oscillator.frequency.exponentialRampToValueAtTime(Math.max(35,frequency*slide),now+duration);
       }
       const envelope=context.createGain();nodes[nodes.length-1].connect(envelope);nodes.push(envelope);
-      envelope.gain.setValueAtTime(.0001,now);envelope.gain.exponentialRampToValueAtTime(gain,now+.004);envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
+      envelope.gain.setValueAtTime(.0001,now);envelope.gain.exponentialRampToValueAtTime(gain,now+Math.min(duration*.8,Math.max(.004,attack)));envelope.gain.exponentialRampToValueAtTime(.0001,now+duration);
       envelope.connect(this.master!);
       let ended=false;
       voice={source,nodes,clean:()=>{if(ended)return;ended=true;source!.onended=null;for(const node of nodes)try{node.disconnect();}catch{/* already disconnected */}this.voices.delete(voice!);}};
@@ -125,11 +125,21 @@ export class WorldAudio {
     if(event.type==='guard')return;
     const ultimate=event.slot==='ultimate';
     if(event.type==='cast') {
+      // Original sword charge: one bounded rising harmonic, not a looping music bed.
+      if(ultimate&&event.identity==='saber'){this.voice('triangle',.60,260,.065,2.8,.38);return;}
       const pitch=event.identity==='napoleon'?130:event.identity==='blackbeard'?210:event.identity==='musashi'?490:330;
       this.voice('triangle',ultimate?.44:.24,pitch,.045,ultimate?1.8:1.35);return;
     }
     switch(event.identity){
-      case 'saber': this.voice('noise',ultimate?.38:.23,1100,.10);this.voice('triangle',.24,ultimate?220:440,.055,2.2);break;
+      case 'saber':
+        if(ultimate){
+          // Only an authored strike releases this three-layer cue. Air/weight/ring
+          // have distinct envelopes; all share the same strict 16-source budget.
+          this.voice('noise',.18,1450,.14);
+          this.voice('sine',.28,110,.18,.4);
+          this.voice('triangle',.58,880,.045,1.5,.012);
+        }else{this.voice('noise',.23,1100,.10);this.voice('triangle',.24,440,.055,2.2);}
+        break;
       case 'blackbeard': this.voice('noise',ultimate?.24:.12,ultimate?550:2100,.16);this.voice('sine',.22,ultimate?90:165,.12,.45);break;
       case 'napoleon': this.voice('noise',.26,420,.11);this.voice('triangle',ultimate?.34:.22,ultimate?85:125,.10,.55);break;
       case 'musashi': this.voice('noise',.12,1900+event.pulse*450,.095);this.voice('triangle',.13,520+event.pulse*130,.045,1.65);break;

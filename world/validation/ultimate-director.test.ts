@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { UltimateClock, UltimateDirector, ULTIMATE_MODE_KEY, type UltimateMode } from '../src/ultimateDirector';
+import { UltimateClock, UltimateDirector, ULTIMATE_MODE_KEY, saberCutInPresentation, type UltimateMode } from '../src/ultimateDirector';
 import { setLanguage } from '../../shared-client/i18n';
 function advance(clock: { tick(dt: number): void }, seconds: number) { for (let i = 0; i < Math.round(seconds * 100); i++) clock.tick(.01); }
 function fixture(options: ConstructorParameters<typeof UltimateDirector>[0] = {}) {
@@ -107,4 +107,47 @@ test('modified mouse inputs cannot reach remapped settings and abort a paid cast
   }
   d.skip(); assert.equal(releases,1); assert.equal(d.active,true); d.complete(); assert.equal(d.active,false);
   f.dom.window.removeEventListener('mousedown',openSettings); f.close();
+});
+
+test('strikeCount records only real release notifications, survives skip, resets next cast', () => {
+  const clock=new UltimateClock(); clock.begin('saber','full'); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,0);
+  advance(clock,2.55); assert.equal(clock.frame?.strikeCount,0); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,1); assert.equal(clock.frame?.pulse,1);
+  advance(clock,.5); assert.equal(clock.frame?.strikeCount,1); assert.equal(clock.frame?.pulse,0);
+  clock.skip(); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,2); clock.tick(100,true); assert.equal(clock.frame?.strikeCount,2);
+  clock.complete(); assert.equal(clock.frame,null); clock.begin('musashi','off'); assert.equal(clock.frame?.strikeCount,0);
+  clock.notifyStrike(); clock.notifyStrike(); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,3); clock.abort(); clock.begin('saber','full'); assert.equal(clock.frame?.strikeCount,0);
+});
+test('Saber cut-in has clock-only reveal, hold and disappearance; other identities never show', () => {
+  const clock=new UltimateClock(); clock.begin('saber','full');
+  assert.equal(saberCutInPresentation(clock.frame).visible,false); advance(clock,.16);
+  const reveal=saberCutInPresentation(clock.frame); assert.equal(reveal.visible,true); assert.ok(reveal.reveal>0&&reveal.reveal<1);
+  clock.tick(99,true); assert.deepEqual(saberCutInPresentation(clock.frame),reveal);
+  advance(clock,.34); assert.equal(saberCutInPresentation(clock.frame).reveal,1); assert.equal(saberCutInPresentation(clock.frame).exit,0);
+  advance(clock,.45); assert.ok(saberCutInPresentation(clock.frame).exit>0); advance(clock,.15); assert.equal(saberCutInPresentation(clock.frame).visible,false);
+  advance(clock,1.45); assert.equal(clock.releasing,true); assert.equal(saberCutInPresentation(clock.frame).visible,false);
+  for(const identity of ['player','blackbeard','napoleon','musashi']){clock.abort();clock.begin(identity,'full');advance(clock,.5);assert.equal(saberCutInPresentation(clock.frame).visible,false);}
+});
+test('optional cut-in loading failures and late loads leave the stage unobstructed', () => {
+  const absent=fixture(); assert.equal(absent.director.overlay.querySelector('img'),null); absent.close();
+  const f=fixture({saberCutInUrl:'/original-saber.webp'}),d=f.director;
+  const image=d.overlay.querySelector('img')!,card=image.parentElement!; d.begin('saber'); advance(d,.3); assert.equal(card.hidden,true);
+  image.dispatchEvent(new f.dom.window.Event('load')); advance(d,.1); assert.equal(card.hidden,true,'late load waits for next cast');
+  d.abort();d.begin('saber');advance(d,.3);assert.equal(card.hidden,false);
+  image.dispatchEvent(new f.dom.window.Event('error'));assert.equal(card.hidden,true); d.abort();d.begin('saber');advance(d,.3);assert.equal(card.hidden,true);f.close();
+});
+test('cut-in pauses, skip removes it without click leak, and dispose clears image callbacks', () => {
+  let clicks=0;const f=fixture({saberCutInUrl:'/original-saber.webp'}),d=f.director;
+  const image=d.overlay.querySelector('img')!,card=image.parentElement!;image.dispatchEvent(new f.dom.window.Event('load'));
+  f.dom.window.document.addEventListener('click',()=>clicks++); d.begin('saber'); advance(d,.16); assert.equal(card.hidden,false);
+  const style=card.getAttribute('style');d.tick(99,true);assert.equal(card.getAttribute('style'),style);
+  d.overlay.querySelector('button')!.click();assert.equal(card.hidden,true);assert.equal(clicks,0);assert.equal(d.releasing,true);assert.equal(d.active,true);
+  d.complete();d.dispose();assert.equal(image.onload,null);assert.equal(image.onerror,null);assert.equal(image.hasAttribute('src'),false);f.close();
+});
+test('Short uses static brief cut-in, Off never shows, explicit reduced Full avoids movement', () => {
+  const f=fixture({saberCutInUrl:'/original-saber.webp'}),d=f.director;
+  const image=d.overlay.querySelector('img')!,card=image.parentElement!;image.dispatchEvent(new f.dom.window.Event('load'));
+  d.setMode('short');d.begin('saber');advance(d,.08);assert.equal(card.hidden,false);assert.equal(card.style.transform,'none');advance(d,.13);assert.equal(card.hidden,true);d.abort();
+  d.setMode('off');d.begin('saber');advance(d,.1);assert.equal(card.hidden,true);d.abort();f.close();
+  const r=fixture({saberCutInUrl:'/original-saber.webp',reducedMotion:true});r.director.overlay.querySelector('img')!.dispatchEvent(new r.dom.window.Event('load'));
+  r.director.setMode('full');r.director.begin('saber');advance(r.director,.16);assert.equal(r.director.overlay.querySelector<HTMLElement>('.ultimate-saber-cutin')!.style.transform,'none');r.close();
 });

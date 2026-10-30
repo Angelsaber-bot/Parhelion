@@ -932,7 +932,7 @@ actions = new WorldActions({ scene,
   cancelPoses: () => { servant.cancelSkillPose(); for (const entry of eraActors) entry.follow.cancelSkillPose(entry.actor); },
 });
 ultimateStage = new UltimateStage();
-ultimateDirector = new UltimateDirector({ onEnd: () => { ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
+ultimateDirector = new UltimateDirector({ saberCutInUrl: new URL('../assets/cinematics/saber-cut-in-v2.webp', import.meta.url).href, reducedEffects, onEnd: () => { ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
 document.querySelector('#world-settings .settings-sliders')?.after(ultimateDirector.settingsControl);
 function presentationModel(identity: ServantId | null): THREE.Object3D | null {
   return identity === null ? rig.model : identity === 'saber' ? servant.presentationModel : eraActors.find(entry => entry.servant === identity)?.actor?.model ?? null;

@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { WorldAudio, WORLD_AUDIO_KEY, WORLD_AUDIO_VOICES } from '../src/worldAudio';
 
-class Parameter {value=0;setValueAtTime(value:number){this.value=value;}exponentialRampToValueAtTime(value:number){this.value=value;}cancelScheduledValues(){}}
+class Parameter {value=0;events:{kind:string,value:number,time:number}[]=[];setValueAtTime(value:number,time=0){this.value=value;this.events.push({kind:'set',value,time});}exponentialRampToValueAtTime(value:number,time=0){this.value=value;this.events.push({kind:'ramp',value,time});}cancelScheduledValues(){}}
 class Node {
   gain=new Parameter();frequency=new Parameter();Q=new Parameter();threshold=new Parameter();knee=new Parameter();ratio=new Parameter();attack=new Parameter();release=new Parameter();
-  onended:(()=>void)|null=null;buffer:unknown;type='';disconnections=0;started=false;stops=0;
-  connect(node:Node){return node;}disconnect(){this.disconnections++;}start(){this.started=true;}stop(){this.stops++;}end(){this.onended?.();}
+  onended:(()=>void)|null=null;buffer:unknown;type='';disconnections=0;started=false;stops=0;stopTimes:(number|undefined)[]=[];
+  connect(node:Node){return node;}disconnect(){this.disconnections++;}start(){this.started=true;}stop(time?:number){this.stops++;this.stopTimes.push(time);}end(){this.onended?.();}
 }
 class Context {
   currentTime=0;sampleRate=48000;state='running';destination=new Node();nodes:Node[]=[];sources:Node[]=[];buffers=0;resumes=0;suspends=0;closes=0;
@@ -72,8 +72,32 @@ test('servant cast/release cues stay inside the shared voice budget and mute can
  for(const identity of ['saber','blackbeard','napoleon','musashi'] as const)for(const slot of ['skill','ultimate'] as const){
   const common={identity,slot,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1}};
   f.audio.skillEvent({...common,type:'cast',duration:1});assert.equal(f.audio.activeVoices,1);for(const node of f.context.sources)node.end();
-  const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',range:10,halfWidth:2,damage:30,maxTargets:2,pulse:0,at:.2});assert.equal(f.audio.activeVoices,2);
+  const start=f.context.sources.length;f.audio.skillEvent({...common,type:'strike',range:10,halfWidth:2,damage:30,maxTargets:2,pulse:0,at:.2});assert.equal(f.audio.activeVoices,identity==='saber'&&slot==='ultimate'?3:2);
   signatures.add(JSON.stringify(f.context.sources.slice(start).map(n=>[n.type,n.frequency.value])));for(const node of f.context.sources)node.end();
  }
  assert.ok(signatures.size>=6);for(let i=0;i<100;i++)f.audio.skill();assert.equal(f.audio.activeVoices,WORLD_AUDIO_VOICES);f.audio.setMuted(true);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+});
+
+test('Saber ultimate has a bounded slow-attack swell and exactly three authored release layers',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+ const common={identity:'saber' as const,slot:'ultimate' as const,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1}};
+ f.audio.skillEvent({...common,type:'cast',duration:1.4});assert.equal(f.audio.activeVoices,1);
+ const charge=f.context.sources[0];assert.equal(charge.type,'triangle');assert.equal(charge.frequency.events[0].value,260);assert.equal(charge.frequency.value,728);
+ assert.deepEqual(charge.stopTimes,[.61]);
+ const envelope=f.context.nodes.find(n=>n.gain.events.some(e=>e.kind==='ramp'&&e.value===.065));assert.ok(envelope);assert.equal(envelope.gain.events[1].time,.38);
+ charge.end();const start=f.context.sources.length;
+ f.audio.skillEvent({...common,type:'strike',range:18,halfWidth:2.4,damage:138,maxTargets:4,pulse:0,at:.7});
+ assert.equal(f.audio.activeVoices,3);const layers=f.context.sources.slice(start);assert.equal(layers.length,3);assert.deepEqual(layers.map(n=>n.type),['','sine','triangle']);
+ layers.forEach((n,i)=>assert.ok(Math.abs(n.stopTimes[0]!-[.19,.29,.59][i])<1e-9));assert.equal(layers[1].frequency.value,44);assert.equal(layers[2].frequency.value,1320);
+ for(const node of layers)node.end();assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+});
+test('Saber layering never exceeds sixteen sources and mute, blur, zero volume and disposal stop every tail',()=>{
+ const event={identity:'saber' as const,slot:'ultimate' as const,type:'strike' as const,origin:{x:0,y:0,z:0},direction:{x:0,y:0,z:1},range:18,halfWidth:2.4,damage:138,maxTargets:4,pulse:0,at:.7};
+ for(const stop of ['mute','blur','volume','dispose']){
+  const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+  for(let i=0;i<100;i++)f.audio.skillEvent(event);assert.equal(f.audio.activeVoices,16);assert.equal(f.context.sources.length,16);assert.equal(f.context.buffers,1);
+  if(stop==='mute')f.audio.setMuted(true);else if(stop==='blur'){f.hide();f.audio.setActive(false);}else if(stop==='volume')f.audio.setVolume(0);else f.audio.dispose();
+  assert.equal(f.audio.activeVoices,0);assert.ok(f.context.sources.every(n=>n.onended===null&&n.stops===2));
+  f.audio.skillEvent(event);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+ }
 });

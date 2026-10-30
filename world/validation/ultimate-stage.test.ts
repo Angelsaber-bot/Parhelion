@@ -183,3 +183,49 @@ test('charge-to-release blends from the last clone pose then matches the moving 
   assert.deepEqual(copy.position, f.bone.position); assert.deepEqual(copy.quaternion.toArray(), f.bone.quaternion.toArray()); assert.deepEqual(stage.resourceCounts, counts);
   assert.equal(f.bone.position.y, .8); stage.end(); stage.update({ elapsed: 2, phase: 'release', progress: 1, pulse: 0 }); assert.equal(stage.isActive, false);
 });
+test('Saber gathering follows its measured sword socket; release effects require a real strike edge', () => {
+  const f = fixture(), socket = new THREE.Object3D(); socket.name = 'WeaponSocket_R'; socket.position.set(.2, 1.2, .1); f.source.add(socket);
+  const stage = new UltimateStage(); stage.begin({ identity: 'saber', sourceRoot: f.source });
+  stage.update({ elapsed: 1, phase: 'charge', progress: .7, pulse: 0, strikeCount: 0 });
+  const gather = stage.scene.getObjectByName('Saber sword-linked gathering') as THREE.Mesh;
+  const clonedSocket = stage.scene.getObjectByName('WeaponSocket_R')!;
+  const grip = clonedSocket.getWorldPosition(new THREE.Vector3()), tip = clonedSocket.localToWorld(new THREE.Vector3(0, 1.647, 0));
+  assert.ok(Math.abs(gather.position.distanceTo(grip.clone().add(tip).multiplyScalar(.5)) - .025) < 1e-8, 'sword midpoint plus exact anti-occlusion offset');
+  const wave = stage.scene.getObjectByName('Saber contact-driven sword wave')!;
+  stage.update({ elapsed: 2, phase: 'release', progress: .4, pulse: 1, strikeCount: 0 }); assert.equal(wave.visible, false, 'no timer/pulse invents contact when explicit count is zero');
+  stage.update({ elapsed: 2.05, phase: 'release', progress: .45, pulse: 1, strikeCount: 1 }); assert.equal(wave.visible, false, 'visual wave waits for the blade to follow through, without delaying damage');
+  stage.update({ elapsed: 2.15, phase: 'release', progress: .5, pulse: .8, strikeCount: 1 });
+  stage.update({ elapsed: 2.2, phase: 'release', progress: .55, pulse: .6, strikeCount: 1 }); assert.equal(wave.visible, true);
+  const first = wave.position.clone(), counts = stage.resourceCounts;
+  stage.update({ elapsed: 2.25, phase: 'release', progress: .6, pulse: .5, strikeCount: 1 }); assert.ok(wave.position.distanceTo(first) > .1);
+  assert.deepEqual(stage.resourceCounts, counts); assert.deepEqual(socket.position.toArray(), [.2, 1.2, .1]);
+  assert.ok(stage.scene.getObjectByName('Saber contact shadow')); stage.end(); assert.equal(stage.scene.children.length, 0);
+});
+test('Saber local impact fades and reduced mode omits the motion trail', () => {
+  const stage = new UltimateStage(); stage.begin({ identity: 'saber', sourceRoot: fixture().source, reducedEffects: true });
+  stage.update({ elapsed: 2, phase: 'release', progress: .2, pulse: 1, strikeCount: 1 });
+  assert.equal(stage.scene.getObjectByName('Saber sampled blade motion trail')!.visible, false);
+  for (let i = 1; i <= 9; i++) stage.update({ elapsed: 2 + i * .1, phase: 'release', progress: .8, pulse: 0, strikeCount: 1 });
+  assert.equal(stage.scene.getObjectByName('Saber contact-driven sword wave')!.visible, false);
+  assert.equal(stage.scene.getObjectByName('Saber local impact glint')!.visible, false); stage.dispose();
+});
+test('Saber anatomical framing excludes raised weapon bounds and avoids skinning scan', () => {
+  const f = fixture(); f.mesh.scale.y = 30;
+  for (const [name, y] of [['mixamorigHeadTop_End', 2], ['mixamorigLeftToe_End', 0], ['mixamorigRightToe_End', 0]] as const) { const node = new THREE.Object3D(); node.name = name; node.position.y = y; f.source.add(node); }
+  const original = THREE.Box3.prototype.setFromObject; let scans = 0;
+  THREE.Box3.prototype.setFromObject = function(object, precise) { scans++; return original.call(this, object, precise); };
+  const stage = new UltimateStage();
+  try { stage.begin({ identity: 'saber', sourceRoot: f.source }); assert.equal(scans, 0); const actor = stage.scene.children.find(o => o instanceof THREE.Group)!; assert.ok(actor.scale.y > 1 && actor.scale.y < 2); }
+  finally { THREE.Box3.prototype.setFromObject = original; stage.dispose(); }
+});
+test('Saber contact wave survives immediate release-to-outro and expires without retriggering', () => {
+  const stage = new UltimateStage(); stage.begin({ identity: 'saber', sourceRoot: fixture().source });
+  stage.update({ elapsed: 2, phase: 'release', progress: .8, pulse: 1, strikeCount: 1 });
+  stage.update({ elapsed: 2.08, phase: 'outro', progress: .1, pulse: .5, strikeCount: 1 });
+  stage.update({ elapsed: 2.16, phase: 'outro', progress: .2, pulse: .2, strikeCount: 1 });
+  const wave = stage.scene.getObjectByName('Saber contact-driven sword wave')!;
+  assert.equal(wave.visible, true, 'visual impact is not cut by authoritative cast completion');
+  assert.equal(stage.scene.getObjectByName('Saber sampled blade motion trail')!.visible, true);
+  for (let i = 1; i <= 8; i++) stage.update({ elapsed: 2.16 + i * .1, phase: 'outro', progress: .8, pulse: 1, strikeCount: 2 });
+  assert.equal(wave.visible, false, 'outro never triggers a new contact even if fed a changed count'); stage.dispose();
+});

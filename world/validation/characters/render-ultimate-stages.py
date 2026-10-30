@@ -5,19 +5,34 @@ from mathutils import Vector
 args=sys.argv[sys.argv.index('--')+1:]
 source,out=args[:2]
 os.makedirs(out,exist_ok=True)
+reuse=os.environ.get('ULTIMATE_REUSE_MATERIALS')=='1'
+material_cache={}
+if reuse:bpy.ops.wm.read_factory_settings(use_empty=True)
 for filename in sorted(os.listdir(source)):
     if not filename.endswith('.json'): continue
     if len(args)>2 and not filename.startswith(args[2]):continue
     manifest=json.load(open(os.path.join(source,filename)))
-    bpy.ops.wm.read_factory_settings(use_empty=True)
+    if os.environ.get('ULTIMATE_SKIP_EXISTING')=='1' and os.path.isfile(os.path.join(out,manifest['id']+'.png')):continue
+    if not reuse:bpy.ops.wm.read_factory_settings(use_empty=True)
+    else:
+        for obj in list(bpy.data.objects):bpy.data.objects.remove(obj,do_unlink=True)
+        for mesh in list(bpy.data.meshes):
+            if mesh.users==0:bpy.data.meshes.remove(mesh)
+        for mat in list(bpy.data.materials):
+            if mat.users==0:bpy.data.materials.remove(mat)
     asset=manifest['asset']
     if not os.path.isfile(asset):
         decoded=os.path.join(source,os.path.basename(asset))
         if not os.path.isfile(decoded):
             with gzip.open(asset+'.gz','rb') as zipped, open(decoded,'wb') as raw:raw.write(zipped.read())
         asset=decoded
-    bpy.ops.import_scene.gltf(filepath=asset)
-    materials={m.name:m for m in bpy.data.materials}
+    if reuse and asset in material_cache:materials=material_cache[asset]
+    else:
+        bpy.ops.import_scene.gltf(filepath=asset)
+        materials={m.name:m for m in bpy.data.materials}
+        if reuse:
+            material_cache[asset]=materials
+            for mat in materials.values():mat.use_fake_user=True
     for obj in list(bpy.data.objects): bpy.data.objects.remove(obj,do_unlink=True)
     objects=[]
     for entry in manifest['meshes']:
@@ -68,8 +83,8 @@ for filename in sorted(os.listdir(source)):
         obj=bpy.data.objects.new(data.name,data);scene.collection.objects.link(obj);obj.location=convert(light['position']);obj.rotation_euler=(-obj.location).to_track_quat('-Z','Y').to_euler()
     data=bpy.data.cameras.new('Exact stage camera');camera=bpy.data.objects.new('Exact stage camera',data);scene.collection.objects.link(camera);scene.camera=camera
     spec=manifest['camera'];camera.location=convert(spec['position']);camera.rotation_euler=convert(spec['direction']).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.sensor_fit='HORIZONTAL';data.angle=2*math.atan(math.tan(math.radians(spec['fov'])/2)*spec['aspect']);data.clip_start=spec['near'];data.clip_end=spec['far']
-    scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=16;scene.cycles.use_denoising=False
-    scene.render.resolution_x=1280;scene.render.resolution_y=720;scene.render.resolution_percentage=100
+    scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=max(16,int(os.environ.get("ULTIMATE_SAMPLES","16")));scene.cycles.use_denoising=False;scene.render.threads_mode='FIXED';scene.render.threads=2
+    scene.render.resolution_x=int(os.environ.get("ULTIMATE_WIDTH","1280"));scene.render.resolution_y=int(os.environ.get("ULTIMATE_HEIGHT","720"));scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.filepath=os.path.join(out,manifest['id']+'.png')
     scene.view_settings.view_transform='Standard';bpy.ops.render.render(write_still=True)
     print('POSE_RENDERED',manifest['id'],flush=True)

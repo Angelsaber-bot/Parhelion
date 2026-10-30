@@ -7,6 +7,8 @@ import { CHARACTER_KITS } from '../src/characters/catalog';
 import type { ServantId } from '../src/contracts';
 import { MELEE_BEATS } from '../src/playerMelee';
 import { PLAYER } from '../src/player';
+import { resolveServantSkillAim } from '../src/skillAim';
+import { CONTRACT_SKILLS } from '../src/contractSkills';
 export type Strategy = 'stationary-gun' | 'kite-gun' | 'dodge-gun' | 'melee-punish' | 'melee-spam' | 'melee-evade' | 'mixed';
 export interface Scenario { name: string; boss?: string; pack?: number; strategy: Strategy; identity?: ServantId; seconds?: number; companionGun?: boolean }
 export interface Result { name: string; strategy: Strategy; terminal: string; seconds: number; damageTaken: number; damageDealt: number; kills: number; phase2At: number | null; firstUltimateAt: number | null; ultimates: number; skillCasts: number; energy: number; hits: Record<string, number>; attacks: number }
@@ -28,6 +30,16 @@ export function runScenario(config: Scenario): Result {
     }
   };
   const actions = new WorldActions({ scene: new THREE.Scene(), context: () => context, reducedEffects: () => true, toast() {}, defense: value => state.setDefense(value),
+    // This flat-arena harness places its simulated companion at context.position.
+    // Use production live-hostile/range/height/LOS targeting, not an always-valid
+    // target token: Saber now rejects a free-aim fallback before payment.
+    resolveAim(identity, slot) {
+      return resolveServantSkillAim({ player: context.position, caster: context.position,
+        viewOrigin: { ...context.position, y: context.position.y + 1.7 },
+        viewDirection: { x: -Math.sin(context.yaw), y: 0, z: -Math.cos(context.yaw) },
+        range: Math.max(...CONTRACT_SKILLS[identity][slot].pulses.map(pulse => pulse.range)),
+        enemies: state.enemies, terrain });
+    },
     cancelPoses() { const previous = pose; pose = undefined; previous?.command.onFinish(false); },
     startPose(identity, command) {
       const clip = identity === 'saber' ? { duration: 1.2, events: [{ at: 1.2 * 5 / 9 }] } : CHARACTER_KITS[identity === 'napoleon' ? 'napoleonMounted' : identity].clips.attack;
