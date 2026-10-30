@@ -39,6 +39,20 @@ export class WorldGrid {
     }
   }
 
+  /** Terrain-only bilinear sample: unlike a collision ray, this cannot hit a house roof. */
+  sampleHeight(x: number, z: number): number | null {
+    if (!Number.isFinite(x) || !Number.isFinite(z)) return null;
+    const fx = (x - this.x0) / this.cell, fz = (z - this.z0) / this.cell;
+    if (fx < 0 || fz < 0 || fx > this.nx - 1 || fz > this.nz - 1 || this.nx < 2 || this.nz < 2) return null;
+    const ix = Math.min(Math.floor(fx), this.nx - 2), iz = Math.min(Math.floor(fz), this.nz - 2);
+    const tx = fx - ix, tz = fz - iz, i = iz * this.nx + ix;
+    const height = THREE.MathUtils.lerp(
+      THREE.MathUtils.lerp(this.h[i], this.h[i + 1], tx),
+      THREE.MathUtils.lerp(this.h[i + this.nx], this.h[i + this.nx + 1], tx), tz,
+    );
+    return Number.isFinite(height) ? height : null;
+  }
+
   heightTexture() {
     const tex = new THREE.DataTexture(this.h, this.nx, this.nz, THREE.RedFormat, THREE.FloatType);
     tex.magFilter = tex.minFilter = THREE.LinearFilter;

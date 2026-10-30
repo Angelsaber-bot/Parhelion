@@ -4,7 +4,7 @@ import type { Layout } from './types';
 import type { Point3, CombatTerrain } from './combat';
 
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
-export function makeCombatTerrain(colliders: Collider[], layout: Layout) {
+export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
   const cast = (origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
     const ray = new THREE.Ray(new THREE.Vector3(origin.x, origin.y, origin.z), new THREE.Vector3(direction.x, direction.y, direction.z).normalize());
     let best: ReturnType<Collider['bvh']['raycastFirst']> = null;
@@ -29,6 +29,12 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout) {
     if (layout.markers.some(m => ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
+    // A downward all-collider ray finds flat roofs before terrain. Their clearance can look
+    // valid while enemies are stranded above the route. Raised roads up to 1.5 m remain valid.
+    if (groundHeight) {
+      const terrainY = groundHeight(x, z);
+      if (terrainY === null || !Number.isFinite(terrainY) || g.point.y - terrainY > 1.5) return null;
+    }
     const p = { x, y: g.point.y + 0.04, z };
     for (const [dx, dz] of [[-1.5, 0], [1.5, 0], [0, -1.5], [0, 1.5]]) {
       const foot = ground(x + dx, z + dz, p.y + 2);

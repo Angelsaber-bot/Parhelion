@@ -8,7 +8,7 @@ export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sun
 export const ENEMY_VISUAL_BUDGET = 24;
 /** Stable appearance: moving across an era seam must never change an enemy's uniform. */
 export function enemyModel(e: Pick<Enemy, 'id' | 'home' | 'kind'> & { miniboss?: string }): EnemyModel | null {
-  if (e.kind === 'king') return null;
+  if (e.kind === 'king') return ({ boss_vacant_king: 'sunward_guard', boss_drowned_admiral: 'deck_raider', boss_winter_warden: 'officer', boss_hellfire_lord: 'samurai' } as Record<string, EnemyModel>)[e.id] ?? 'sunward_guard';
   const region = regionAt(e.home.x, e.home.z).id;
   const variant = [...e.id].reduce((n, c) => (n * 31 + c.charCodeAt(0)) >>> 0, 0) % 3;
   if (region === 'kyoto') return e.miniboss || variant === 0 ? 'samurai' : 'ashigaru';
@@ -37,33 +37,50 @@ function disposeTemplate(gltf: GLTF) {
 }
 interface Instance { root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
- * Requests are lazy, cached (including failures), nonblocking, and safe after world disposal. */
+ * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
   private loader = new GLTFLoader();
   private cache = new Map<string, GLTF | null>();
   private pending = new Set<string>();
   private instances = new Map<string, Instance>();
   private disposed = false;
+  private retries = new Map<string, { attempts: number; after: number }>();
+  private now = 0;
   get activeMixers() { return this.instances.size; }
-  get diagnostics() { return { activeMixers: this.instances.size, loaded: [...this.cache.values()].filter(Boolean).length, failed: [...this.cache.values()].filter(v => !v).length, pending: this.pending.size }; }
+  get diagnostics() { return { activeMixers: this.instances.size, loaded: [...this.cache.values()].filter(Boolean).length, failed: [...this.cache.values()].filter(v => !v).length, pending: this.pending.size, exhausted: [...this.retries.values()].filter(v => v.attempts >= 3).length }; }
   private request(key: string) {
-    if (this.cache.has(key) || this.pending.has(key) || this.disposed) return;
+    if (this.cache.get(key) || this.pending.has(key) || this.disposed) return;
+    const retry = this.retries.get(key);
+    if (retry && (retry.attempts >= 3 || this.now < retry.after)) return;
     this.pending.add(key);
-    this.loader.load(`${import.meta.env?.BASE_URL ?? '/'}assets/enemies/${key}.glb`, gltf => {
+    const fail = () => {
       this.pending.delete(key);
-      if (this.disposed) { disposeTemplate(gltf); return; }
-      this.cache.set(key, gltf);
-    }, undefined, () => { this.pending.delete(key); if (!this.disposed) this.cache.set(key, null); });
+      if (!this.disposed) {
+        this.cache.set(key, null);
+        const attempts = (this.retries.get(key)?.attempts ?? 0) + 1;
+        this.retries.set(key, { attempts, after: this.now + (attempts === 1 ? 5 : 15) });
+      }
+    };
+    try {
+      this.loader.load(`${import.meta.env?.BASE_URL ?? '/'}assets/enemies/${key}.glb`, gltf => {
+        this.pending.delete(key);
+        if (this.disposed) { disposeTemplate(gltf); return; }
+        this.cache.set(key, gltf); this.retries.delete(key);
+      }, undefined, fail);
+    } catch { fail(); } // Malformed base URLs must not abort the world's frame loop.
   }
+
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
     instance.root.traverse(o => { if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
   }
+  /** Advance wall-clock loading backoff once per frame, not once per enemy. */
+  tick(dt: number) { this.now += Math.max(0, Math.min(dt, 1)); }
   update(e: Enemy, model: EnemyModel, parent: THREE.Group, fallback: THREE.Group, dt: number, distance: number, allowed: boolean) {
     if (this.disposed) return false;
-    if (!allowed || !e.active || e.mode === 'dead') { this.release(e.id); fallback.visible = true; return false; }
+    if (!allowed || e.mode === 'dead') { this.release(e.id); fallback.visible = true; return false; }
     const prior = this.instances.get(e.id);
     // Hysteresis prevents clone churn at the LOD boundary.
     const lod = distance > (prior?.key.endsWith('_lod1') ? 18 : 23);
@@ -101,7 +118,11 @@ export class EnemyVisuals {
         // Fit preview to simulation state duration; late loading seeks to remaining timer.
         const timing = enemyAttackTiming(e);
         const duration = e.mode === 'windup' ? timing.windup : e.mode === 'recover' ? timing.recovery : clip.duration;
-        action.setEffectiveTimeScale(clip.duration / duration).setEffectiveWeight(1).fadeIn(0.12).play();
+        action.setEffectiveTimeScale(clip.duration / duration).setEffectiveWeight(1).play();
+        // A model first loaded while scouting/paused must sample its pose immediately;
+        // a zero-time fade would otherwise leave the bind pose visible until combat resumes.
+        if (instance.action && instance.action !== action) action.fadeIn(0.12);
+        else action.stopFading();
         if (once) action.time = Math.max(0, duration - e.timer) / duration * clip.duration;
         instance.action = action;
       }
@@ -113,6 +134,6 @@ export class EnemyVisuals {
     if (this.disposed) return; this.disposed = true;
     for (const id of this.instances.keys()) this.release(id);
     for (const gltf of this.cache.values()) if (gltf) disposeTemplate(gltf);
-    this.cache.clear();
+    this.cache.clear(); this.retries.clear(); this.pending.clear();
   }
 }

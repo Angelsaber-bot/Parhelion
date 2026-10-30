@@ -108,3 +108,13 @@ test('each era boss has its own core requirements and cleared state; only one fi
   s.resetAll([true, false]);
   assert.equal(s.isCleared('boss'), true); assert.equal(s.isCleared('admiral'), false);
 });
+
+
+test('wilderness replenishes after 35 seconds only away from the player', () => {
+  const s = make(), p = { x: 20, y: 0, z: 5 };
+  advance(s, .1, p); s.hitEnemy('wild', 1000);
+  advance(s, 36, p); assert.equal(s.enemies[0].mode, 'dead', 'never materialize a respawn beside player');
+  advance(s, .1, { x: 80, y: 0, z: 0 });
+  assert.equal(s.enemies[0].hp, s.enemies[0].maxHp);
+  assert.equal(COMBAT.respawn, 35); assert.equal(COMBAT.wildernessCap, 160);
+});

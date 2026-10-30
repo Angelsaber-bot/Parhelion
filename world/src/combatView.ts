@@ -8,12 +8,14 @@ import { makeCombatTerrain } from './combatTerrain';
 import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
 import { MINIBOSSES, makeMinibossSpawns } from './minibosses';
 import { enemyAttackRadius } from './combat';
+import { makeValleySentinel } from './valleySentinel';
 
 export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
+  groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; flash: THREE.Mesh; lastMode?: Enemy['mode']; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; flash: THREE.Mesh; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 type Line = [string, string];
@@ -92,8 +94,9 @@ export class WorldCombat {
   private disposed = false;
   private player = { x: 0, y: 0, z: 0 };
   private playable = false;
+  private warnedAssetFailure = false;
   constructor(private readonly options: WorldCombatOptions) {
-    this.geometry = makeCombatTerrain(options.colliders, options.layout);
+    this.geometry = makeCombatTerrain(options.colliders, options.layout, options.groundHeight);
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
     const bosses = this.bossDefs.map(b => {
@@ -179,16 +182,20 @@ export class WorldCombat {
   update(dt: number, player: Point3, active: boolean, camera?: THREE.Camera) {
     if (this.disposed) return;
     this.player = { ...player }; this.playable = active;
-    this.time += dt; this.acc += active ? dt : 0;
+    this.time += active ? dt : 0; this.acc += active ? dt : 0;
+    this.enemyAssets.tick(dt);
     this.allyCooldown = Math.max(0, this.allyCooldown - (active ? dt : 0));
     while (this.acc >= 0.05) { this.state.step(0.05, player, active, this.geometry.terrain); this.acc -= 0.05; }
     this.events();
-    const detailed = new Set(this.state.enemies.filter(e => e.active && e.mode !== 'dead' && this.visuals.get(e.id)?.model)
+    // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
+    const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
+      (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
+    const detailed = new Set(this.state.enemies.filter(e => visible(e) && this.visuals.get(e.id)?.model)
       .sort((a, b) => distanceXZ(a.p, player) - distanceXZ(b.p, player)).slice(0, ENEMY_VISUAL_BUDGET).map(e => e.id));
     for (const e of this.state.enemies) {
       const v = this.visuals.get(e.id)!;
       const distance = distanceXZ(e.p, player);
-      v.root.visible = e.active && e.mode !== 'dead' && (e.kind === 'king' || distance <= COMBAT.activeRange);
+      v.root.visible = visible(e);
       const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
       if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
@@ -200,8 +207,9 @@ export class WorldCombat {
       v.lastMode = e.mode;
       v.updateLabel?.();
       const moving = e.mode === 'chase';
-      v.body.position.y = skinned ? 0 : 0.06 * Math.sin(this.time * (moving ? 10 : 3));
-      v.body.rotation.z = !skinned && moving ? Math.sin(this.time * 9) * 0.04 : 0;
+      v.updateCreature?.(this.time, moving, e.mode === 'windup');
+      v.body.position.y = skinned || v.updateCreature ? 0 : 0.025 * Math.sin(this.time * (moving ? 10 : 3));
+      v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
       const facing = e.attack === 'shot' && (e.mode === 'windup' || e.mode === 'recover') ? e.target : player;
       v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
@@ -230,6 +238,10 @@ export class WorldCombat {
     }
     this.impactFor = Math.max(0, this.impactFor - dt); if (!this.impactFor) this.impact.textContent = '';
     this.hurtFor = Math.max(0, this.hurtFor - dt); this.hurt.style.opacity = `${Math.min(0.7, this.hurtFor * 2)}`;
+    if (!this.warnedAssetFailure && this.enemyAssets.diagnostics.exhausted > 0) {
+      this.warnedAssetFailure = true;
+      this.options.toast(bilingual('精细敌人模型加载失败，暂用简化模型；刷新页面可重试', 'Detailed enemy model failed to load; simplified model shown. Reload to retry.'));
+    }
     this.renderHud();
   }
   private events() {
@@ -268,8 +280,8 @@ export class WorldCombat {
     const root = new THREE.Group(), body = new THREE.Group(), fallback = new THREE.Group(); root.add(body); body.add(fallback); root.name = e.id;
     const model = enemyModel(e);
     const [kBody, kGlow, kLight] = (e.miniboss ? MINIBOSSES.find(m => m.id === e.miniboss)?.colors : undefined) ?? bossText(e.id).colors;
-    const material = new THREE.MeshStandardMaterial({ color: king ? kBody : crystal ? '#49859b' : '#52637d', metalness: 0.35, roughness: 0.5, emissive: king ? kGlow : crystal ? '#63e4ed' : '#ac96fb', emissiveIntensity: 0.12 });
-    const glow = new THREE.MeshBasicMaterial({ color: king ? kLight : crystal ? '#9dffff' : '#b9a6ff', toneMapped: false });
+    const material = new THREE.MeshStandardMaterial({ color: king ? kBody : crystal ? '#49859b' : '#52637d', metalness: 0.35, roughness: 0.5, emissive: king ? kGlow : crystal ? '#63e4ed' : '#2f8f83', emissiveIntensity: 0.12 });
+    const glow = new THREE.MeshBasicMaterial({ color: king ? kLight : crystal ? '#9dffff' : '#a1ffe7', toneMapped: false });
     if (model) { material.color.set(model === 'musketeer' || model === 'officer' ? '#3b594a' : model === 'samurai' || model === 'ashigaru' ? '#5b3434' : model === 'sunward_guard' ? '#8a8171' : '#62544a'); material.emissive.set('#000000'); }
     this.materials.push(material, glow);
     const flashGeo = new THREE.IcosahedronGeometry(0.6, 1), flashMat = new THREE.MeshBasicMaterial({ color: '#fff0c6', transparent: true, opacity: 0.4, wireframe: true, depthWrite: false });
@@ -293,20 +305,26 @@ export class WorldCombat {
       const weaponSide = model === 'deck_raider' ? -1 : 1;
       mesh(new THREE.BoxGeometry(0.055, model === 'ashigaru' ? 2.2 : 0.85, 0.055), material, [weaponSide * 0.42, 1.12, 0.15]);
     } else {
-    mesh(new THREE.IcosahedronGeometry(king ? 1.1 : 0.62, 1), material, [0, king ? 1.7 : 1.0, 0], [1, 1.2, 0.65]);
-    mesh(new THREE.IcosahedronGeometry(king ? 0.48 : 0.28, 1), material, [0, king ? 3.0 : 1.7, 0]);
-    mesh(new THREE.OctahedronGeometry(king ? 0.38 : 0.2), glow, [0, king ? 1.85 : 1.1, king ? 0.66 : 0.4]);
-    for (const side of [-1, 1]) {
-      mesh(new THREE.ConeGeometry(king ? 0.42 : 0.25, king ? 1.2 : 0.65, 5), material, [side * (king ? 1.0 : 0.58), king ? 1.7 : 0.95, 0]);
-      mesh(new THREE.BoxGeometry(king ? 0.4 : 0.22, king ? 0.85 : 0.5, king ? 0.42 : 0.27), material, [side * (king ? 0.46 : 0.24), king ? 0.45 : 0.28, 0]);
+      const creature = makeValleySentinel(this.shared, this.materials, !!e.miniboss);
+      fallback.add(creature.root);
+      fallback.userData.updateCreature = creature.update;
     }
-    }
-    let sword: THREE.Mesh | undefined;
+    const updateCreature = fallback.userData.updateCreature as EnemyVisual['updateCreature'];
+    // Region-specific champions replace every old procedural purple chapter boss.
+    // Scale keeps the authored human champion near the existing king hit sphere/height.
     if (king) {
-      mesh(new THREE.CylinderGeometry(0.54, 0.48, 0.24, 7), glow, [0, 3.38, 0]);
-      for (let i = 0; i < 5; i++) { const a = i / 5 * Math.PI * 2; mesh(new THREE.ConeGeometry(0.1, 0.45, 4), glow, [Math.cos(a) * 0.43, 3.62, Math.sin(a) * 0.43]); }
-      sword = mesh(new THREE.BoxGeometry(0.2, 2.6, 0.12).translate(0, 0.9, 0), glow, [1.35, 1.2, 0.45]);
+      body.scale.setScalar(1.8);
+      const crown = new THREE.Group(); crown.name = 'Champion_Gold_Crest'; crown.position.y = 2;
+      const ringGeo = new THREE.TorusGeometry(.25,.025,4,12); this.shared.push(ringGeo);
+      const ring = new THREE.Mesh(ringGeo,glow);ring.rotation.x=Math.PI/2;crown.add(ring);
+      for(let i=0;i<5;i++) {
+        const toothGeo=new THREE.ConeGeometry(.045,.18,4);this.shared.push(toothGeo);
+        const tooth=new THREE.Mesh(toothGeo,glow),a=i/5*Math.PI*2;
+        tooth.position.set(Math.cos(a)*.25,.08,Math.sin(a)*.25);crown.add(tooth);
+      }
+      body.add(crown);
     }
+    const sword = undefined;
     const bar = new THREE.Group(); bar.position.y = king ? 4.1 : 2.25; root.add(bar);
     const width = king ? 1.5 : 0.8;
     const barGeo = new THREE.PlaneGeometry(width, 0.09), backMat = new THREE.MeshBasicMaterial({ color: '#171c29', depthTest: false });
@@ -343,12 +361,12 @@ export class WorldCombat {
         }
       }
     }
-    return { root, body, fallback, model, flash, updateLabel, sword, bar, fill, tell, material };
+    return { root, body, fallback, model, flash, updateLabel, updateCreature, sword, bar, fill, tell, material };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
     if (this.disposed) return; this.disposed = true;
-    for (const v of this.visuals.values()) { v.root.removeFromParent(); v.tell.removeFromParent(); }
+    for (const v of this.visuals.values()) { v.root.traverse(o => { if (o instanceof THREE.InstancedMesh) o.dispose(); }); v.root.removeFromParent(); v.tell.removeFromParent(); }
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());

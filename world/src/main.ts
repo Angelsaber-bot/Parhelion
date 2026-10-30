@@ -28,6 +28,7 @@ import { SettingsStore, createSettingsPanel } from '../../shared-client/settings
 import '../../shared-client/settings.css';
 import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
 import { BOSSES } from './combat';
+import { nearbyElite } from './eliteNavigation';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './chunk';
 import { regionLoader, bakeQuantized } from './glb';
@@ -757,7 +758,7 @@ addEventListener('wheel', (e) => {
 }, { passive: false });
 
 // ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
-const combat = new WorldCombat({ scene, colliders, layout, done, toast,
+const combat = new WorldCombat({ scene, colliders, layout, done, toast, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
@@ -1006,6 +1007,8 @@ function frame(now: number) {
     camera.lookAt(focus);
   } else inspectServant = false;
   combat.update(dt, player.pos, gameplayActive() && !player.flying, camera);
+  const elite = gameplayActive() && !combat.defeated && !combat.bossStarted ? nearbyElite(combat.state.enemies, player.pos) : null;
+  $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);

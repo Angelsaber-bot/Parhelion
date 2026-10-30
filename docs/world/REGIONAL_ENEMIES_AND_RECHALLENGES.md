@@ -7,8 +7,8 @@ servant models and existing map geometry are unchanged.
 
 Enemy appearance is fixed from its home region, not its current position. Kyoto uses
 samurai and spear ashigaru; Winter uses Napoleonic Russian musketeers and officers;
-Britain uses shield knights; Black Sail uses pirate raiders. Valley retains its original
-fantasy creatures. Blender-authored high and LOD1 GLBs are stored in
+Britain uses shield knights; Black Sail uses pirate raiders. Valley uses articulated white/teal mechanical Prism Hounds instead of the old purple
+humanoids. Chapter bosses use larger region-specific champions with a gold crest. Blender-authored high and LOD1 GLBs are stored in
 `world/public/assets/enemies/`. Sources were delivered separately in the four regional
 asset ZIPs; no downloaded third-party character mesh is introduced here.
 
@@ -53,3 +53,25 @@ visual acceptance test. A blocked browser launch must never be reported as a pas
 
 This development round does not itself publish to GitHub, synchronize a desktop or
 deploy a public website.
+
+## Visibility and encounter-density follow-up
+
+- Ordinary spawn count on the complete map including settlements: 113 -> 145, plus
+  five optional elites. Sixteen route-side pairs fill measured exploration gaps.
+- Cap 160 logical wilderness enemies; detailed animated models remain capped at 24.
+- Ordinary respawn 35 seconds, still only when the player is more than 30 m away;
+  elites retain the longer 120-second respawn. Safe camps, hubs and quest areas remain excluded.
+- All five elites are placed within 12 m of authored exploration paths. A single
+  nearby direction/distance hint uses the actual alive elite position within 150 m.
+  It does not add ordinary-enemy dots to either map.
+- Terrain-only height sampling rejects rooftops more than 1.5 m above terrain.
+  Three new Kyoto roof candidates are repicked onto walkable ground.
+- Display visibility no longer depends on whether AI has previously activated.
+  Paused/free-flight viewing can reveal enemies without ticking combat or damaging
+  the player. Dead/dormant chapter bosses remain hidden.
+- Transient asset failures retry with bounded backoff rather than permanently
+  locking the session into fallback art. Exhaustion is reported once, without spam.
+
+Validation uses real map geometry, settlements, exported character assets and scene
+objects. Offline art preview is not a browser screenshot. Browser/GPU/FPS acceptance
+remains outstanding; no deployment is implied by this cloud-only change.

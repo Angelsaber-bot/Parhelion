@@ -53,6 +53,9 @@
     #start p { margin: 0; opacity: .9; }
     #start.hidden { display: none; }
     #movement-mode:empty { display: none; }
+    #elite-hint { right: 18px; top: 218px; max-width: min(260px, 42vw); padding: 7px 10px; border-radius: 8px; background: #18232cdd; color: #f0dbae; font-size: 12px; line-height: 1.45; }
+    #elite-hint:empty { display: none; }
+    @media (max-width: 760px) { #elite-hint { top: auto; bottom: 48px; max-width: 40vw; font-size: 11px; } }
     #shot-mode { margin-top: 14px; padding: 8px 16px; border: 1px solid #fff8; border-radius: 8px; background: #0006; color: #fff; font: inherit; cursor: pointer; }
     body.shot-mode > :not(#view) { visibility: hidden !important; }
     body.clean .hud { display: none !important; }
@@ -68,6 +71,7 @@
   <div id="area" class="hud"><div class="zh"></div><div class="en"></div></div>
   <div id="toast" class="hud"></div>
   <div id="prompt" class="hud"></div>
+  <div id="elite-hint" class="hud"></div>
   <div id="guide" class="hud"><div class="arrow"></div><div class="gem"></div><div class="dist"></div><div class="label"></div></div>
   <div id="movement-mode" class="hud" role="status"></div>
   <div id="help" class="hud">读取操作设置…</div>

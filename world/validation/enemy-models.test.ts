@@ -40,12 +40,12 @@ for(const model of models) for(const suffix of ['', '_lod1']) test(`${model}${su
   mixer.stopAllAction();mixer.uncacheRoot(a);for(const root of [a,b,gltf.scene])for(const m of meshes(root))m.skeleton.dispose();
 });
 
-test('enemy appearance is deterministic by authored home, boss remains bespoke',()=>{
+test('enemy appearance is deterministic by authored home and bosses use regional champions',()=>{
   const mk=(x:number,z:number)=>({id:'sample',home:{x,y:0,z},kind:'shade' as const});
   assert.ok(['samurai','ashigaru'].includes(enemyModel(mk(0,720))!));
   assert.ok(['musketeer','officer'].includes(enemyModel(mk(0,-720))!));
   assert.equal(enemyModel(mk(-720,0)),'sunward_guard');assert.equal(enemyModel(mk(720,0)),'deck_raider');
-  assert.equal(enemyModel({...mk(720,0),kind:'king'}),null);
+  assert.equal(enemyModel({...mk(720,0),id:'boss_drowned_admiral',kind:'king'}),'deck_raider');
   assert.equal(enemyModel({...mk(0,720),miniboss:'captain'}),'samurai');
 });
 

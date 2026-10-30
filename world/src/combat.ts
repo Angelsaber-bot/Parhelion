@@ -23,8 +23,8 @@ export interface CombatTerrain {
 }
 export const COMBAT = {
   playerHp: 100, shotDamage: 22, shotInterval: 0.14, shotRange: 150,
-  wildernessCap: 120, activeRange: 82, hideRange: 120, aggroRange: 20,
-  leash: 35, respawn: 45, bossLeash: 68, bossHp: 1800,
+  wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
+  leash: 35, respawn: 35, bossLeash: 68, bossHp: 1800,
 } as const;
 export const BOSS_REQUIREMENTS = ['saber_contract', 'shard_camp', 'shard_tower', 'shard_table'] as const;
 export const BOSS_REWARD = 'reward_sunset_oath';
@@ -98,6 +98,23 @@ export const WILDERNESS_ZONES = [
   { x: 720, z: -280, r: 14, kind: 'crystal' as const },
   { x: -120, z: -70, r: 14, kind: 'shade' as const },
   { x: -360, z: 170, r: 14, kind: 'crystal' as const },
+  // Route-side pairs fill measured 98–169 m visibility gaps, without entering protected hubs.
+  { x: -270, z: -40, r: 12, kind: 'shade' as const },
+  { x: -41, z: 192, r: 12, kind: 'shade' as const },
+  { x: 45, z: -77, r: 12, kind: 'shade' as const },
+  { x: -67, z: 62, r: 12, kind: 'shade' as const },
+  { x: -764, z: 129, r: 12, kind: 'shade' as const },
+  { x: -855, z: -92, r: 12, kind: 'shade' as const },
+  { x: -634, z: 8, r: 12, kind: 'shade' as const },
+  { x: 552, z: 42, r: 12, kind: 'shade' as const },
+  { x: 673, z: 167, r: 12, kind: 'shade' as const },
+  { x: 860, z: -132, r: 12, kind: 'shade' as const },
+  { x: 221, z: -615, r: 12, kind: 'shade' as const },
+  { x: -214, z: -628, r: 12, kind: 'shade' as const },
+  { x: -4, z: -859, r: 12, kind: 'shade' as const },
+  { x: 7, z: 703, r: 12, kind: 'shade' as const },
+  { x: -299, z: 616, r: 12, kind: 'shade' as const },
+  { x: 7, z: 823, r: 12, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;
