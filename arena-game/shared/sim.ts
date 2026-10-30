@@ -6,7 +6,8 @@
 import { CHARACTERS, CROUCH, DASH, DT, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
-export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
+/** CHEAT is max's test key (U): every press takes 50 HP from each enemy, resolved by the server. */
+export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, CHEAT: 64 } as const;
 
 export interface Input {
   seq: number;
@@ -52,6 +53,7 @@ export type SimEvent =
   | { type: 'meleeStrike'; weapon: number; origin: Vec3; dir: Vec3 }
   | { type: 'shield'; x: number; y: number; z: number; yaw: number }
   | { type: 'dash' }
+  | { type: 'cheat' }
   | { type: 'reload' }
   | { type: 'jump' }
   | { type: 'land' };
@@ -191,6 +193,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   p.pitch = Math.max(-1.45, Math.min(1.45, inp.pitch));
   const pressed = inp.buttons & ~p.prevButtons;
   p.prevButtons = inp.buttons;
+  if (pressed & BTN.CHEAT && p.alive) events.push({ type: 'cheat' });
 
   if (p.fireCd > 0) p.fireCd--;
   if (p.dashCd > 0) p.dashCd--;

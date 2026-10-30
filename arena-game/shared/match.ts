@@ -307,6 +307,7 @@ export class Match {
       }
       // Predicted timing is useful locally; authoritative impacts are fixed-step scheduled above.
       case 'meleeStrike': break;
+      case 'cheat': this.cheatDamage(id, 50); break;
       case 'shield':
         this.shields.push({
           id: this.nextShield, team: slot.state.team, owner: id,
@@ -471,7 +472,7 @@ export class Match {
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
-  /** Test cheat (offline only, the client never sends it online): every living enemy loses `amount` HP. */
+  /** max's test key (U, online and offline, no cooldown): every living enemy loses `amount` HP. */
   cheatDamage(attackerId: string, amount = 50): void {
     const from = this.slots.get(attackerId);
     if (!from || !from.state.alive) return;
@@ -536,7 +537,7 @@ export function sanitize(raw: unknown): Input | null {
     mx: Math.round(num(r.mx, -1, 1) ?? 0),
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
-    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 63,
+    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 127,
     weapon: typeof r.weapon === 'number' && Number.isInteger(r.weapon) && r.weapon >= 0 && r.weapon < 3 ? r.weapon : -1,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };

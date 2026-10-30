@@ -69,6 +69,8 @@ export class Controls {
   get locked() { return !this.blocked && (this.force || document.pointerLockElement === this.canvas); }
   get adsSensitivity() { return this.settings.value.adsSensitivity; }
   clearAim() { for (const binding of this.settings.bindingsFor('aim')) this.keys.delete(binding); this.aimHeld = false; this.lookScale = 1; }
+  /** One-shot button for the next input sample (fixed keys outside the rebinding table). */
+  pulse(bit: number) { if (this.locked) this.latched |= bit; }
   clearAll() { this.keys.clear(); this.latched = 0; this.scoreboard = false; this.clearAim(); }
   lock() { if (!this.blocked) void this.canvas.requestPointerLock(); }
   sample(): { mx: number; mz: number; buttons: number } {

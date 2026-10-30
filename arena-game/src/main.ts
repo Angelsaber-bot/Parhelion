@@ -1,3 +1,4 @@
+import { BTN } from '../shared/sim.ts';
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
 import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
@@ -68,11 +69,9 @@ $('endscores').onclick = () => { resultsBoard.toggle(); renderResultsBoard(); };
 $('scoreboard').addEventListener('click', (event) => {
   if ((event.target as Element).closest('[data-close-scores]')) { resultsBoard.close(); renderResultsBoard(); $('endscores').focus(); }
 });
-// Test key (offline vs bots only): U takes 50 HP from every enemy. Online servers never see it.
+// max's test key: U takes 50 HP from every enemy, online and offline, resolved by the server.
 addEventListener('keydown', (event) => {
-  if (event.code !== 'KeyU' || event.repeat || !game || !controls.locked) return;
-  const session = (window as unknown as { session?: { id: string; match?: { cheatDamage(id: string, amount: number): void } } }).session;
-  session?.match?.cheatDamage(session.id, 50);
+  if (event.code === 'KeyU' && !event.repeat && game && !event.metaKey && !event.ctrlKey && !event.altKey) controls.pulse(BTN.CHEAT);
 });
 addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement | null;

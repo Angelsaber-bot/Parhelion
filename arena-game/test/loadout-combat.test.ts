@@ -78,9 +78,9 @@ describe('validated two-gun one-melee loadouts', () => {
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
-  it('version 6 refuses a version 5 client before adding any player', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(6);
-    expect(() => core.join('old', { rulesVersion: 5 })).toThrow(/版本/); expect(core.match.slots.size).toBe(0);
+  it('version 7 refuses a version 6 client before adding any player', () => {
+    const core = new RoomCore({}); expect(RULES_VERSION).toBe(7);
+    expect(() => core.join('old', { rulesVersion: 6 })).toThrow(/版本/); expect(core.match.slots.size).toBe(0);
   });
 });
 
@@ -173,7 +173,12 @@ describe('fair authoritative melee', () => {
     expect(crouched.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
     const far = arena('polearm'); Object.assign(far.player('b')!, { z: -7.5 }); attack(far); expect(far.player('b')!.hp).toBe(150);
   });
-  it('offline U test key takes exactly 50 HP from every living enemy and credits the presser', () => {
+  it('U is an input bit: each press (not hold) costs every enemy 50 HP through the server', () => {
+    const m = arena(); command(m, BTN.CHEAT); expect(m.player('b')!.hp).toBe(100);
+    command(m, BTN.CHEAT); expect(m.player('b')!.hp).toBe(100); // held, not a new press
+    command(m); command(m, BTN.CHEAT); expect(m.player('b')!.hp).toBe(50);
+  });
+  it('U test key takes exactly 50 HP from every living enemy and credits the presser', () => {
     const m = arena(); m.addPlayer('c', info('B')); for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
     m.cheatDamage('a', 50); expect([m.player('b')!.hp, m.player('c')!.hp]).toEqual([100, 100]);
     m.cheatDamage('a', 50); m.cheatDamage('a', 50);
