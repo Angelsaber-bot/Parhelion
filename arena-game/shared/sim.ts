@@ -173,7 +173,17 @@ function snapToStep(m: ArenaMap, p: PlayerState): void {
   if (g > p.y - 0.3 && p.grounded) { p.y = g; p.vy = 0; }
 }
 
-export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] {
+/** Positions of living enemies, used only to stop a melee lunge at contact instead of passing through. */
+export type Foe = { x: number; y: number; z: number };
+function lungeBlocked(p: PlayerState, fx: number, fz: number, foes: readonly Foe[]): boolean {
+  const stop = Math.min(1.6, WEAPONS[p.weapon].range * .55);
+  return foes.some((f) => {
+    const dx = f.x - p.x, dz = f.z - p.z;
+    return Math.abs(f.y - p.y) < 2 && Math.hypot(dx, dz) < stop && dx * fx + dz * fz > -.2;
+  });
+}
+
+export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readonly Foe[] = []): SimEvent[] {
   const events: SimEvent[] = [];
   if (inp.seq <= p.lastSeq) return events;
   p.lastSeq = inp.seq;
@@ -221,6 +231,10 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     p.vz = p.dashZ * DASH.speed;
     if (p.vy < 0) p.vy = 0; // dashes stay level in the air
     if (p.dashT === 0) { p.vx = wishX; p.vz = wishZ; }
+  } else if (p.meleeWindup > 0 && WEAPONS[p.weapon]?.lunge && !p.crouched && !lungeBlocked(p, fx, fz, foes)) {
+    // Melee lunge: committed forward drive along the current view, so turning steers it.
+    const lunge = WEAPONS[p.weapon].lunge!;
+    p.vx = fx * lunge + wishX * .3; p.vz = fz * lunge + wishZ * .3;
   } else if (p.grounded) {
     p.vx = wishX; p.vz = wishZ;
   } else {
@@ -284,7 +298,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input): SimEvent[] 
     p.reload = 0;
     if (p.meleeWindup > 0) {
       if (--p.meleeWindup === 0) events.push({ type: 'meleeStrike', weapon: p.weapon,
-        origin: [p.x, p.y + playerEye(m, p), p.z], dir: aimDir(p.meleeYaw, p.meleePitch) });
+        origin: [p.x, p.y + playerEye(m, p), p.z], dir: aimDir(p.yaw, p.pitch) });
     } else if (pressed & BTN.FIRE && p.fireCd === 0) {
       p.fireCd = w.interval; p.meleeWindup = w.windup!;
       p.meleeYaw = p.yaw; p.meleePitch = p.pitch;

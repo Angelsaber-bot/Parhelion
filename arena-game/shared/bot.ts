@@ -11,7 +11,9 @@
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, WEAPONS, falloff, loadoutWeapon } from './content.ts';
+import { CHARACTERS, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+/** Melee reach including most of the windup lunge. */
+const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
 import { playerHitbox } from './hit.ts';
 import { lineOfSight, type Vec3 } from './map.ts';
 import type { Controller, Match } from './match.ts';
@@ -172,7 +174,7 @@ export class Bot implements Controller {
         if (score > bestWeaponScore) { bestWeaponScore = score; wantSlot = slot; }
       }
       const melee = WEAPONS[loadoutWeapon(me.loadout, 2)];
-      if (target && range < melee.range * .88 && (me.fireCd === 0 || me.weaponSlot === 2)) wantSlot = 2;
+      if (target && range < meleeReach(melee) * .88 && (me.fireCd === 0 || me.weaponSlot === 2)) wantSlot = 2;
     }
     const want = loadoutWeapon(me.loadout, wantSlot);
     inp.weapon = wantSlot;
@@ -286,7 +288,7 @@ export class Bot implements Controller {
     // --- trigger: bursts for automatics, uneven follow-ups for semi-autos ---
     const w = WEAPONS[me.weapon];
     const onTarget = Math.abs(errYaw) < this.skill.fireCone + 0.4 / Math.max(bestD, 1);
-    if (target && this.seenFor > reaction && onTarget && (w.kind === 'gun' || bestD <= w.range)) {
+    if (target && this.seenFor > reaction && onTarget && (w.kind === 'gun' || bestD <= meleeReach(w))) {
       if (w.auto) {
         if (this.pauseT > 0) this.pauseT--;
         else {

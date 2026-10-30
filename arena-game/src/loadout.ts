@@ -53,16 +53,17 @@ const ROLES: Record<string, [string, string]> = {
   halo: ['半自动精确射击，适合中远距离', 'Precise semi-automatic fire for medium to long range'],
   firefly: ['高射速短程压制，远距离伤害较低', 'Rapid close-range fire with lower damage at distance'],
   longnight: ['慢速高伤狙击，强倍率瞄准，失手恢复慢', 'Slow, powerful sniper with high magnification and long recovery'],
-  blade: ['短程快速斩击，伤害较低', 'Quick short-range slash with lower damage'],
-  polearm: ['伸距较长的窄弧刺击，需要准确朝向', 'Long-reach narrow thrust; precise aim matters'],
+  blade: ['快速突进斩，挥砍时转向也能砍中', 'Fast lunging slash; turning mid-swing still connects'],
+  polearm: ['最远的突刺，需要准确朝向', 'Longest thrust; precise aim matters'],
   hammer: ['高伤宽弧重击，前摇和恢复较长', 'Heavy wide-arc hit with a long windup and recovery'],
 };
 export function weaponRole(id: string) { return ROLES[id] ? bilingual(...ROLES[id]) : ''; }
+const lunge = (w: WeaponDef) => ((w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ).toFixed(1);
 export function weaponStats(w: WeaponDef): string {
   if ((MELEE_IDS as readonly string[]).includes(w.id)) {
     return bilingual(
-      `伤害 ${w.damage} · 距离 ${w.range}m · 移速 +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · 前摇 ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s`,
-      `Damage ${w.damage} · Range ${w.range}m · Move +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · Windup ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · Interval ${(w.interval / TICK_HZ).toFixed(2)}s`);
+      `伤害 ${w.damage} · 距离 ${w.range}m · 突进 ${lunge(w)}m · 移速 +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · 受枪伤 -${Math.round((1 - MELEE_MOVE.gunDamageTaken) * 100)}% · 前摇 ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s`,
+      `Damage ${w.damage} · Range ${w.range}m · Lunge ${lunge(w)}m · Move +${Math.round((MELEE_MOVE.speedMultiplier - 1) * 100)}% · Gun damage taken -${Math.round((1 - MELEE_MOVE.gunDamageTaken) * 100)}% · Windup ${((w.windup ?? 0) / TICK_HZ).toFixed(2)}s · Interval ${(w.interval / TICK_HZ).toFixed(2)}s`);
   }
   const damage = w.pellets > 1 ? `${w.damage} × ${w.pellets}` : String(w.damage);
   return bilingual(`伤害 ${damage} · 弹匣 ${w.mag} · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s · 装填 ${(w.reload / TICK_HZ).toFixed(1)}s`,

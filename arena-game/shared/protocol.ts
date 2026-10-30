@@ -4,9 +4,9 @@ import type { Snapshot } from './match.ts';
 import type { Input } from './sim.ts';
 
 export const ROOM_NAME = 'arena';
-/** v3 adds validated two-gun/one-melee loadouts, slot input, and authoritative melee windup; v4 adds the melee move-speed bonus; v5 widens melee contact and spear reach. */
-export const RULES_VERSION = 5;
-export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。当前装备与近战规则需要版本 5 客户端和服务器。';
+/** v3 adds validated two-gun/one-melee loadouts, slot input, and authoritative melee windup; v4 adds the melee move-speed bonus; v5 widens melee contact and spear reach; v6 adds melee lunge, turn-swept hits and gun resistance. */
+export const RULES_VERSION = 6;
+export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。当前装备与近战规则需要版本 6 客户端和服务器。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
 }

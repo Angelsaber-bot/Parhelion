@@ -34,7 +34,13 @@ export const MOVE = {
 export const DASH = { speed: 17, ticks: 9, cooldown: Math.round(3.5 * TICK_HZ) }; // ~2.6 m burst
 
 /** Holding a melee weapon (any kind) moves faster; applies to players and bots alike in the shared sim. */
-export const MELEE_MOVE = { speedMultiplier: 1.2 };
+export const MELEE_MOVE = {
+  speedMultiplier: 1.2,
+  /** Gunfire against someone holding a melee weapon deals this fraction (melee must survive the approach). */
+  gunDamageTaken: 0.75,
+  /** Ticks after impact during which the swing still connects with whatever the attacker turns onto. */
+  activeTicks: 5,
+};
 
 export const SHIELD = {
   hp: 300,
@@ -93,6 +99,8 @@ export interface WeaponDef {
   /** Melee start-to-impact ticks and 3D half-angle; heading is locked at attack start. */
   windup?: number;
   arc?: number;
+  /** Melee forward lunge (m/s) along the current view during the windup; steerable by turning. */
+  lunge?: number;
   name: string;
   auto: boolean;
   interval: number; // ticks between shots
@@ -152,21 +160,21 @@ export const WEAPONS: WeaponDef[] = [
     skins: [{ id: 'longnight', name: '长夜', body: 0x334459, accent: 0x92bcff }],
   },
   {
-    id: 'blade', kind: 'melee', name: 'Refraction Blade · 折光刃', auto: false, interval: 36, windup: 12, arc: 0.62,
-    damage: 48, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 2.3, falloffEnd: 2.3, falloffMin: 1,
-    mag: 0, reload: 0, range: 2.3,
+    id: 'blade', kind: 'melee', name: 'Refraction Blade · 折光刃', auto: false, interval: 36, windup: 12, arc: 0.8, lunge: 10,
+    damage: 55, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 3, falloffEnd: 3, falloffMin: 1,
+    mag: 0, reload: 0, range: 3,
     skins: [{ id: 'refraction', name: '折光', body: 0xe6eff4, accent: 0x8ddfe7 }],
   },
   {
-    id: 'polearm', kind: 'melee', name: 'Meteor Polearm · 流星', auto: false, interval: 54, windup: 18, arc: 0.5,
-    damage: 64, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 4.2, falloffEnd: 4.2, falloffMin: 1,
-    mag: 0, reload: 0, range: 4.2,
+    id: 'polearm', kind: 'melee', name: 'Meteor Polearm · 流星', auto: false, interval: 54, windup: 18, arc: 0.5, lunge: 8,
+    damage: 70, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 4.5, falloffEnd: 4.5, falloffMin: 1,
+    mag: 0, reload: 0, range: 4.5,
     skins: [{ id: 'meteor', name: '流星', body: 0xe5e7f1, accent: 0xa6a0ff }],
   },
   {
-    id: 'hammer', kind: 'melee', name: 'Fault Hammer · 断层', auto: false, interval: 72, windup: 30, arc: 0.78,
-    damage: 90, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 2.5, falloffEnd: 2.5, falloffMin: 1,
-    mag: 0, reload: 0, range: 2.5,
+    id: 'hammer', kind: 'melee', name: 'Fault Hammer · 断层', auto: false, interval: 72, windup: 30, arc: 0.85, lunge: 5,
+    damage: 100, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 2.9, falloffEnd: 2.9, falloffMin: 1,
+    mag: 0, reload: 0, range: 2.9,
     skins: [{ id: 'fault', name: '断层', body: 0x455365, accent: 0xf3b767 }],
   },
 ];

@@ -105,7 +105,8 @@ export class Game {
       const before = this.me;
       const next = clonePlayer(mine);
       this.pending = this.pending.filter((i) => i.seq > mine.lastSeq);
-      for (const i of this.pending) applyInput(this.map, next, i);
+      const foes = this.foes(next);
+      for (const i of this.pending) applyInput(this.map, next, i, foes);
       if (before && before.alive && next.alive) {
         const dx = before.x - next.x, dy = before.y - next.y, dz = before.z - next.z;
         if (Math.hypot(dx, dy, dz) < 2) {
@@ -281,10 +282,15 @@ export class Game {
       weapon: c.weapon,
       view: Math.round(this.renderTick * 100) / 100,
     };
-    if (this.me) for (const e of applyInput(this.map, this.me, inp)) this.onLocal(e);
+    if (this.me) for (const e of applyInput(this.map, this.me, inp, this.foes(this.me))) this.onLocal(e);
     this.pending.push(inp);
     if (this.pending.length > 240) this.pending.shift();
     this.outbox.push(inp);
+  }
+
+  /** Latest authoritative enemy positions, so a predicted melee lunge stops where the server's does. */
+  private foes(me: PlayerState) {
+    return this.latest?.players.filter((p) => p.alive && p.team !== me.team) ?? [];
   }
 
   private onLocal(e: SimEvent) {

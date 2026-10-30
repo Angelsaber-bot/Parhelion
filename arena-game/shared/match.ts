@@ -4,7 +4,7 @@
 
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
-  SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
+  MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
 } from './content.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
@@ -82,7 +82,8 @@ interface Slot {
   respawn: number;
   spawnProtectedUntilTick: number;
   meleeReadyTick: number;
-  melee: { weapon: number; impactTick: number; yaw: number; pitch: number } | null;
+  /** yaw/pitch track the last checked heading so the hit sweeps every turn made since. */
+  melee: { weapon: number; impactTick: number; yaw: number; pitch: number; struck?: boolean } | null;
 }
 
 type HistoricalPose = [number, number, number, boolean, boolean]; // x, y, z, alive, crouched
@@ -177,7 +178,7 @@ export class Match {
       while (slot.credits >= 1 && slot.queue.length) {
         const inp = slot.queue.shift()!;
         slot.credits--;
-        const events = applyInput(this.map, slot.state, inp);
+        const events = applyInput(this.map, slot.state, inp, this.foesOf(slot.state));
         // A swap cancels the armed hit immediately, even if a catch-up batch swaps back.
         if (slot.melee && slot.melee.weapon !== slot.state.weapon) slot.melee = null;
         for (const ev of events) this.handle(slot, ev);
@@ -192,8 +193,9 @@ export class Match {
       p.meleeWindup = slot.melee ? Math.max(0, slot.melee.impactTick - this.tick) : 0;
       p.fireCd = Math.max(p.fireCd, slot.meleeReadyTick - this.tick);
       if (slot.melee && slot.melee.impactTick <= this.tick) {
-        const attack = slot.melee; slot.melee = null;
-        this.resolveMelee(slot, attack);
+        // A short active window: whatever the attacker turns onto still gets hit, at most once.
+        const attack = slot.melee;
+        if (this.resolveMelee(slot, attack) || this.tick >= attack.impactTick + MELEE_MOVE.activeTicks) slot.melee = null;
       }
     }
 
@@ -375,63 +377,86 @@ export class Match {
     for (const [vid, { dmg, head }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon);
   }
 
-  /** One current-time contact in a fixed 3D arc. Walls and hostile shields block every candidate. */
-  private resolveMelee(slot: Slot, attack: NonNullable<Slot['melee']>): void {
+  /** One current-time contact in a 3D arc swept from the last checked heading to the current one.
+   *  Walls and hostile shields block every candidate. Returns true once something is struck. */
+  private resolveMelee(slot: Slot, attack: NonNullable<Slot['melee']>): boolean {
     const p = slot.state, w = WEAPONS[attack.weapon];
     const origin: Vec3 = [p.x, p.y + playerEye(this.map, p), p.z];
-    const aim = aimDir(attack.yaw, attack.pitch);
+    let turn = p.yaw - attack.yaw;
+    turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+    const steps = Math.min(12, Math.ceil(Math.max(Math.abs(turn), Math.abs(p.pitch - attack.pitch)) / .3));
+    const aims: Vec3[] = [];
+    for (let i = steps; i >= 0; i--) {
+      const k = steps ? i / steps : 1; // current heading first, then back along the turn
+      aims.push(aimDir(attack.yaw + turn * k, attack.pitch + (p.pitch - attack.pitch) * k));
+    }
+    attack.yaw = p.yaw; attack.pitch = p.pitch;
     let nearest = w.range, victim: string | null = null, shield: Shield | null = null;
-    let end = origin.map((v, i) => v + aim[i] * w.range) as Vec3;
-    // Only one victim per swing; distance to the contacted hit volume, not its centre.
-    for (const [id, other] of this.slots) {
-      const target = other.state;
-      if (!target.alive || target.team === p.team || id === p.id) continue;
-      const h = playerHitbox(target.crouched);
-      // Sample the whole standing/crouched body, so a level swing still connects with a target
-      // whose chest sits below the eye line at close range.
-      const points: Vec3[] = [
-        [target.x, target.y + h.headY, target.z],
-        [target.x, target.y + h.bodyTop - .1, target.z],
-        [target.x, target.y + (h.bodyBottom + h.bodyTop) * .5, target.z],
-        [target.x, target.y + h.bodyBottom + .1, target.z],
-      ];
-      for (const point of points) {
-        const delta = point.map((v, i) => v - origin[i]) as Vec3;
-        const length = Math.hypot(...delta);
-        if (length < 1e-6) continue;
-        const dir = delta.map((v) => v / length) as Vec3;
-        // The arc is measured to the edge of the body, not only its centre line.
-        const reach = w.arc! + Math.atan2(h.bodyRadius, length);
-        if (dir.reduce((dot, v, i) => dot + v * aim[i], 0) < Math.cos(Math.min(reach, Math.PI / 2))) continue;
-        const hit = rayPlayer(origin, dir, target.x, target.y, target.z, target.crouched);
-        if (!hit || hit.t > nearest || hit.t > w.range) continue;
-        if (raycastMap(this.map, origin, dir, hit.t + .001) <= hit.t + .001) continue;
-        let blocked: Shield | null = null, distance = hit.t;
-        for (const sh of this.shields) {
-          if (sh.team === p.team || sh.hp <= 0) continue;
-          const t = rayShield(origin, dir, sh.x, sh.y, sh.z, sh.yaw);
-          if (t < distance) { distance = t; blocked = sh; }
-        }
-        if (distance < nearest) {
-          nearest = distance; victim = blocked ? null : id; shield = blocked;
-          end = origin.map((v, i) => v + dir[i] * distance) as Vec3;
+    let end = origin.map((v, i) => v + aims[0][i] * w.range) as Vec3;
+    for (const aim of aims) {
+      // Only one victim per swing; distance to the contacted hit volume, not its centre.
+      for (const [id, other] of this.slots) {
+        const target = other.state;
+        if (!target.alive || target.team === p.team || id === p.id) continue;
+        const h = playerHitbox(target.crouched);
+        // Sample the whole standing/crouched body, so a level swing still connects with a target
+        // whose chest sits below the eye line at close range.
+        const points: Vec3[] = [
+          [target.x, target.y + h.headY, target.z],
+          [target.x, target.y + h.bodyTop - .1, target.z],
+          [target.x, target.y + (h.bodyBottom + h.bodyTop) * .5, target.z],
+          [target.x, target.y + h.bodyBottom + .1, target.z],
+        ];
+        for (const point of points) {
+          const delta = point.map((v, i) => v - origin[i]) as Vec3;
+          const length = Math.hypot(...delta);
+          if (length < 1e-6) continue;
+          const dir = delta.map((v) => v / length) as Vec3;
+          // The arc is measured to the edge of the body, not only its centre line.
+          const reach = w.arc! + Math.atan2(h.bodyRadius, length);
+          if (dir.reduce((dot, v, i) => dot + v * aim[i], 0) < Math.cos(Math.min(reach, Math.PI / 2))) continue;
+          const hit = rayPlayer(origin, dir, target.x, target.y, target.z, target.crouched);
+          if (!hit || hit.t > nearest || hit.t > w.range) continue;
+          if (raycastMap(this.map, origin, dir, hit.t + .001) <= hit.t + .001) continue;
+          let blocked: Shield | null = null, distance = hit.t;
+          for (const sh of this.shields) {
+            if (sh.team === p.team || sh.hp <= 0) continue;
+            const t = rayShield(origin, dir, sh.x, sh.y, sh.z, sh.yaw);
+            if (t < distance) { distance = t; blocked = sh; }
+          }
+          if (distance < nearest) {
+            nearest = distance; victim = blocked ? null : id; shield = blocked;
+            end = origin.map((v, i) => v + dir[i] * distance) as Vec3;
+          }
         }
       }
-    }
-    // A directly aimed shield can also be struck without a player behind it.
-    for (const sh of this.shields) {
-      if (sh.team === p.team || sh.hp <= 0) continue;
-      const t = rayShield(origin, aim, sh.x, sh.y, sh.z, sh.yaw);
-      if (t < nearest && raycastMap(this.map, origin, aim, t + .001) > t + .001) {
-        nearest = t; victim = null; shield = sh;
-        end = origin.map((v, i) => v + aim[i] * t) as Vec3;
+      // A directly aimed shield can also be struck without a player behind it.
+      for (const sh of this.shields) {
+        if (sh.team === p.team || sh.hp <= 0) continue;
+        const t = rayShield(origin, aim, sh.x, sh.y, sh.z, sh.yaw);
+        if (t < nearest && raycastMap(this.map, origin, aim, t + .001) > t + .001) {
+          nearest = t; victim = null; shield = sh;
+          end = origin.map((v, i) => v + aim[i] * t) as Vec3;
+        }
       }
+      if (victim || shield) break; // the most recent heading that connects wins
     }
-    this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
-    if (this.phase === 'ended') return;
+    // The swing is shown once at impact; a later contact inside the active window only adds the hit.
+    if (!attack.struck) this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
+    attack.struck = true;
+    if (this.phase === 'ended') return !!(victim || shield);
     if (shield) {
       this.damageShield(shield, w.damage);
-    } else if (victim) this.damage(slot, victim, w.damage, false, attack.weapon);
+      return true;
+    }
+    if (victim) { this.damage(slot, victim, w.damage, false, attack.weapon); return true; }
+    return false;
+  }
+
+  private foesOf(p: PlayerState): PlayerState[] {
+    const out: PlayerState[] = [];
+    for (const other of this.slots.values()) if (other.state.alive && other.state.team !== p.team) out.push(other.state);
+    return out;
   }
 
   private spawnProtected(id: string): boolean {
@@ -451,6 +476,7 @@ export class Match {
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
+    if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
     v.state.hp = Math.max(0, v.state.hp - dmg);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
