@@ -173,6 +173,12 @@ describe('fair authoritative melee', () => {
     expect(crouched.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
     const far = arena('polearm'); Object.assign(far.player('b')!, { z: -7.5 }); attack(far); expect(far.player('b')!.hp).toBe(150);
   });
+  it('offline U test key takes exactly 50 HP from every living enemy and credits the presser', () => {
+    const m = arena(); m.addPlayer('c', info('B')); for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
+    m.cheatDamage('a', 50); expect([m.player('b')!.hp, m.player('c')!.hp]).toEqual([100, 100]);
+    m.cheatDamage('a', 50); m.cheatDamage('a', 50);
+    expect(m.player('b')!.alive).toBe(false); expect(m.slots.get('a')!.kills).toBe(2); expect(m.player('a')!.hp).toBe(150);
+  });
   it('map walls block all melee, including a target inside the broad hammer arc', () => {
     const wall = buildMap({ ...data, objects: [...data.objects, { id: 'wall', type: 'box', position: [0, 1.5, -1], size: [5, 3, .15], material: '', collision: true, role: 'wall' }] });
     for (const id of MELEE_IDS) { const m = arena(id, wall); attack(m); expect(m.player('b')!.hp).toBe(150); }

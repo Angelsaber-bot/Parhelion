@@ -471,12 +471,20 @@ export class Match {
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
-  private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
+  /** Test cheat (offline only, the client never sends it online): every living enemy loses `amount` HP. */
+  cheatDamage(attackerId: string, amount = 50): void {
+    const from = this.slots.get(attackerId);
+    if (!from || !from.state.alive) return;
+    for (const [id, other] of this.slots)
+      if (other.state.alive && other.state.team !== from.state.team) this.damage(from, id, amount, false, from.state.weapon, true);
+  }
+
+  private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number, exact = false): void {
     // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
-    if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
+    if (!exact && WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
     v.state.hp = Math.max(0, v.state.hp - dmg);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;

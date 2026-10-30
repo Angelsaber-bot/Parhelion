@@ -68,6 +68,12 @@ $('endscores').onclick = () => { resultsBoard.toggle(); renderResultsBoard(); };
 $('scoreboard').addEventListener('click', (event) => {
   if ((event.target as Element).closest('[data-close-scores]')) { resultsBoard.close(); renderResultsBoard(); $('endscores').focus(); }
 });
+// Test key (offline vs bots only): U takes 50 HP from every enemy. Online servers never see it.
+addEventListener('keydown', (event) => {
+  if (event.code !== 'KeyU' || event.repeat || !game || !controls.locked) return;
+  const session = (window as unknown as { session?: { id: string; match?: { cheatDamage(id: string, amount: number): void } } }).session;
+  session?.match?.cheatDamage(session.id, 50);
+});
 addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement | null;
   const editing = !!target && (['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName) || target.isContentEditable);
