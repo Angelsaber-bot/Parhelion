@@ -6,6 +6,8 @@ import { buildKyotoSettlement } from './settlements/kyoto';
 import { installSettlements } from './settlements/core';
 import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
+import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './valleyStory';
+import { createValleyStoryScene } from './valleyStoryScene';
 import { AdaptiveResolution, targetDpr } from './renderQuality';
 import { readResolutionMode, attachRenderSettings } from './renderSettings';
 import * as THREE from 'three';
@@ -289,9 +291,37 @@ const progressStorage = (() => { try { return localStorage; } catch { return und
 const worldProgress = new WorldProgress(progressStorage);
 const { done, found } = worldProgress;
 const save = () => worldProgress.save();
+const alphaResidence = settlements.placements.find(p => p.id === 'alpha');
+const valleyStoryScene = alphaResidence ? createValleyStoryScene(alphaResidence) : null;
+if (valleyStoryScene) {
+  scene.add(valleyStoryScene.group); colliders.push(...valleyStoryScene.colliders);
+  for (const marker of valleyStoryScene.markers) { layout.markers.push(marker); markers.set(marker.id, marker); }
+}
+let appliedValleyStory = '';
+function applyValleyStory() {
+  if (!valleyStoryScene) return;
+  const state = getValleyStoryState(done);
+  valleyStoryScene.applyState({ powered: state.powered, shortcutOpen: state.shortcutOpen, resolved: state.stage === 'complete', discovered: state.discovered });
+  const signature = `${state.stage}:${state.powered}:${state.discovered}`;
+  if (signature !== appliedValleyStory) {
+    appliedValleyStory = signature;
+    settlementNpcs.requestRelocation(VALLEY_STORY.npc, state.stage === 'complete' ? valleyStoryScene.archivistReturn : valleyStoryScene.archivistInitial);
+  }
+}
+addEventListener('pagehide', event => { if (!event.persisted) valleyStoryScene?.dispose(); });
+function valleyGuide() {
+  if (!valleyStoryScene || regionAt(player.pos.x, player.pos.z).id !== 'alpha') return null;
+  const guide = getValleyStoryGuide(done); if (!guide) return null;
+  const point = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
+  return point ? { ...guide, p: point } : null;
+}
+function interactionLabel(marker: Marker) {
+  return marker.id === VALLEY_STORY.discovery ? bilingual('检修侧门面板', 'Maintenance entrance panel') : localizeText(marker.label);
+}
 
 const haloMat = (byName('Tower_Halo')?.material as THREE.MeshBasicMaterial | undefined);
 function applyWorldState() {
+  applyValleyStory();
   for (const t of targets) {
     const id = t.userData.target as string;
     const hit = done.has(id);
@@ -341,6 +371,8 @@ function toggleGuide() {
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
+  const intro = valleyGuide();
+  if (intro) return { p: intro.p, label: bilingual(...intro.text) };
   const order = [...layout.objectives].sort((a, b) => (a.region === here ? -1 : 0) - (b.region === here ? -1 : 0));
   for (const o of order)
     for (const s of o.objective.steps) {
@@ -384,6 +416,14 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
 }
 
 function renderObjective() {
+  const intro = valleyGuide();
+  if (intro) {
+    $('objective').replaceChildren();
+    const title = document.createElement('h3'); title.textContent = bilingual(...intro.title);
+    const goal = document.createElement('div'); goal.className = 'cur'; goal.textContent = `◇ ${bilingual(...intro.text)}`;
+    $('objective').append(title, goal);
+    return;
+  }
   const objective = objectiveFor(player.pos.x, player.pos.z);
   const steps = objective.steps;
   let current = false;
@@ -823,9 +863,14 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && d < bd) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && d < bd && (m.id !== VALLEY_STORY.discovery || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
+}
+function canReachValleyPanel(marker: Marker) {
+  const from = player.pos.clone().add(new THREE.Vector3(0, 1.2, 0));
+  const direction = new THREE.Vector3(...marker.p).sub(from), distance = direction.length();
+  return distance <= .05 || !combat.geometry.cast(from, direction, Math.max(0, distance - .08));
 }
 function nearbySettlementNpc() {
   const npc = settlementNpcs.nearest(player.pos);
@@ -841,15 +886,29 @@ function interactSettlementNpc() {
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
   if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+    if (handleValleyInteraction(npc.id)) return true;
     const line = settlementNpcs.interact(npc.id);
     if (line) toast(bilingual(`${npc.role[0]}：${line[0]}`, `${npc.role[1]}: ${line[1]}`));
     return true;
   }
   return false;
 }
+function handleValleyInteraction(id: string) {
+  const result = interactValleyStory(id, done); if (!result.handled) return false;
+  if (id === VALLEY_STORY.npc) settlementNpcs.gesture(id);
+  let saved = true;
+  if (result.changed) { saved = save(); applyWorldState(); }
+  if (result.dialogue) toast(bilingual(...result.dialogue) + (saved ? '' : bilingual('（本次进度暂未保存。）', ' (Progress could not be saved.)')));
+  return true;
+}
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (m.id === VALLEY_STORY.discovery) {
+    // The physical panel must be reachable, not usable through a wall or a closed gate.
+    if (!canReachValleyPanel(m)) return;
+    handleValleyInteraction(m.id); return;
+  }
   const bossCore = BOSSES.some((b) => b.core === m.id);
   if (done.has(m.id) && !bossCore) return toast(bilingual(`${m.label}：已启动`, `${localizeText(m.label)}: activated`));
   const missing = done.has(m.id) && bossCore ? [] : (m.requires ?? []).filter((r) => !done.has(r));
@@ -902,6 +961,7 @@ function interact() {
     const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
+  if (m.id === VALLEY_STORY.terminal) return toast(bilingual('观测终端已接通，生活馆门廊的导引灯亮了。回去看看记录员吧。', 'The Observatory terminal is online. The residence path lights are on; check back with the archivist.'));
   toast(m.id === ARMORY_MARKER ? bilingual('已领取曙光 AR 与弹药，去靶场试试手感', 'Dawn AR and ammunition acquired · Try the firing range')
     : msg[m.id] ?? (m.id.startsWith('shard_') ? `获得 ${m.label}` : `${m.label} 已启动`));
 }
@@ -1036,7 +1096,7 @@ function frame(now: number) {
   const npcPrompt = nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   $('prompt').textContent = npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
     !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || BOSSES.some(b => b.core === it.id)) ?
-      `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : localizeText(it.label)}` :
+      `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
@@ -1075,7 +1135,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

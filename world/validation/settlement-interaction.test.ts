@@ -2,14 +2,16 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
+import {transformSync} from 'esbuild';
+import {interactValleyStory, VALLEY_STORY} from '../src/valleyStory.ts';
 import * as THREE from 'three';
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function nearbySettlementNpc()'),source.indexOf('function interact()'));
 function fixture(blocked=false,questDistance:number|null=null){
  const npc={id:'test_clerk',position:[0,0,2],role:['书记官','Clerk']},spoken:string[]=[],done=new Set(['tutorial']);
- const context=vm.createContext({THREE,player:{pos:new THREE.Vector3()},settlementNpcs:{nearest:()=>npc,interact:()=>['货物已经登记。','The cargo is registered.']},
+ const context=vm.createContext({THREE,interactValleyStory,VALLEY_STORY,player:{pos:new THREE.Vector3()},settlementNpcs:{nearest:()=>npc,interact:()=>['货物已经登记。','The cargo is registered.']},
   combat:{geometry:{cast:()=>blocked?{distance:.5}:null}},nearestInteract:()=>questDistance===null?null:{p:[0,0,questDistance]},toast:(s:string)=>spoken.push(s),bilingual:(zh:string,en:string)=>en,done});
- vm.runInContext(code+'\nglobalThis.tryInteraction=interactSettlementNpc;',context);
+ vm.runInContext(transformSync(code+'\nglobalThis.tryInteraction=interactSettlementNpc;', {loader:'ts'}).code,context);
  return {context,spoken,done};
 }
 test('resident dialog follows actual runtime route and does not change progress',()=>{const f=fixture();assert.equal(f.context.tryInteraction(),true);assert.equal(f.spoken[0],'Clerk: The cargo is registered.');assert.deepEqual([...f.done],['tutorial']);});

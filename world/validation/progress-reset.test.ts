@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides, type ProgressStorage } from '../src/progress.ts';
 import { FirstContract, CONTRACT_STORAGE_KEY, servantByContract } from '../src/contracts.ts';
 import { Player } from '../src/player.ts';
+import { VALLEY_STORY } from '../src/valleyStory.ts';
 import { WorldCombatState, COMBAT } from '../src/combat.ts';
 import { KitCompanion } from '../src/kitCompanion.ts';
 import { ShoulderAim } from '../src/aim.ts';
@@ -182,7 +183,7 @@ test('existing tutorial grants the gun before gun-required objectives and clears
   anim.reset(false, Math.PI);
   const player = new Player([], 1); player.teleport(...armory.p);
   const context = vm.createContext({ nearestInteract: () => armory, markers, ARMORY_MARKER, BOSSES: [], done: worldProgress.done, worldProgress, servantByContract,
-    player, anim, clearInput() { keys.clear(); aim.clear(); }, save: () => worldProgress.save(), applyWorldState() {}, toast() {}, bilingual: (zh: string) => zh, localizeText: (text: string) => text });
+    VALLEY_STORY, player, anim, clearInput() { keys.clear(); aim.clear(); }, save: () => worldProgress.save(), applyWorldState() {}, toast() {}, bilingual: (zh: string) => zh, localizeText: (text: string) => text });
   run(context, interaction + '\ninteract();');
   assert.equal(worldProgress.armed, true); assert.equal(worldProgress.equippedWeapon, 'dawn_ar'); assert.equal(fixture.rig.joints.Gun.visible, true);
   assert.equal(keys.size, 0); assert.equal(aim.held, false);
@@ -217,7 +218,7 @@ test('production world-state application re-locks quest gates and restores targe
   const colliders = new Map([['COL_TGT_range_target_1', { enabled: true }], ['COL_Seam_west_Gate', { enabled: true }], ['COL_GhostBridge', { enabled: false }]]);
   const shown = { visible: false, userData: { showWhen: ['tower_console'] } };
   const hidden = { visible: true, userData: { hideWhen: 'tower_console' } };
-  const c = vm.createContext({ done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
+  const c = vm.createContext({ applyValleyStory() {}, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
   const apply = source.slice(source.indexOf('function applyWorldState()'), source.indexOf('// ───────────── quest guide'));
   run(c, apply + '\napplyWorldState();');
   assert.equal(art.visible, false); assert.equal(colliders.get('COL_Seam_west_Gate')!.enabled, false); assert.equal(target.visible, false);
