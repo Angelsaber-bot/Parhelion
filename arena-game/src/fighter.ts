@@ -225,10 +225,11 @@ export class FighterAnimator {
     // The support hand follows the same continuous preparation/impact/recovery curve.
     // Spear and hammer remain two-handed; the sword keeps its off-hand clear.
     const twoHanded = weapon === 6 || weapon === 7;
-    J.Arm_R.rotation.set(1.15 - pitch * .65, yaw * .45, -.12 + roll * .35);
-    J.Forearm_R.rotation.x = .45 - pitch * .18;
-    J.Arm_L.rotation.set(1.25 - pitch * (twoHanded ? .5 : .1), yaw * (twoHanded ? .32 : -.15), .62 + roll * (twoHanded ? .25 : -.15));
-    J.Forearm_L.rotation.x = .7 - pitch * (twoHanded ? .2 : .04);
+    // Raised weapon (+pitch) lifts the arms; the shoulders turn with the swing direction.
+    J.Arm_R.rotation.set(1.15 + pitch * .6, yaw * .45, -.12 + roll * .35);
+    J.Forearm_R.rotation.x = .45 + Math.max(0, pitch) * .25;
+    J.Arm_L.rotation.set(1.25 + pitch * (twoHanded ? .5 : .1), yaw * (twoHanded ? .32 : -.15), .62 + roll * (twoHanded ? .25 : -.15));
+    J.Forearm_L.rotation.x = .7 + Math.max(0, pitch) * (twoHanded ? .25 : .04);
   }
 
   update(dt: number, speed: number, vy: number, crouched = false, grounded = true, forward = speed, strafe = 0) {

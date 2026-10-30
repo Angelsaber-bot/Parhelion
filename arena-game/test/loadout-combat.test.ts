@@ -78,9 +78,9 @@ describe('validated two-gun one-melee loadouts', () => {
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
-  it('version 4 refuses a version 3 client before adding any player', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(4);
-    expect(() => core.join('old', { rulesVersion: 3 })).toThrow(/版本/); expect(core.match.slots.size).toBe(0);
+  it('version 5 refuses a version 4 client before adding any player', () => {
+    const core = new RoomCore({}); expect(RULES_VERSION).toBe(5);
+    expect(() => core.join('old', { rulesVersion: 4 })).toThrow(/版本/); expect(core.match.slots.size).toBe(0);
   });
 });
 
@@ -140,6 +140,15 @@ describe('fair authoritative melee', () => {
     }
     const m = arena(); command(m, BTN.FIRE, { view: 0 }); Object.assign(m.player('b')!, { z: -10 });
     for (let i = 0; i < 12; i++) command(m, 0, { view: 0 }); expect(m.player('b')!.hp).toBe(150);
+  });
+  it('a level swing reaches close targets below the eye line, and the spear reaches 4 m', () => {
+    for (const [id, pos] of [['blade', { x: 0, y: 0, z: -1 }], ['hammer', { x: .5, y: 0, z: -1.2 }], ['polearm', { x: 0, y: 0, z: -1.2 }], ['polearm', { x: .6, y: 0, z: -3.9 }]] as const) {
+      const m = arena(id); Object.assign(m.player('b')!, pos); attack(m);
+      expect(m.player('b')!.hp, `${id} at ${JSON.stringify(pos)}`).toBe(150 - WEAPONS[weaponIndex(id)].damage);
+    }
+    const crouched = arena('blade'); Object.assign(crouched.player('b')!, { z: -1.2, crouched: true }); attack(crouched);
+    expect(crouched.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
+    const far = arena('polearm'); Object.assign(far.player('b')!, { z: -4.8 }); attack(far); expect(far.player('b')!.hp).toBe(150);
   });
   it('map walls block all melee, including a target inside the broad hammer arc', () => {
     const wall = buildMap({ ...data, objects: [...data.objects, { id: 'wall', type: 'box', position: [0, 1.5, -1], size: [5, 3, .15], material: '', collision: true, role: 'wall' }] });

@@ -24,6 +24,7 @@ export class Game {
   private seq = 0;
   private snaps: Snapshot[] = [];
   private latest: Snapshot | null = null;
+  private meleeContact: Vec3 | null = null; // server contact point of my latest swing
   private latestAt = 0;
   private renderTick = 0;
   private acc = 0;
@@ -142,7 +143,8 @@ export class Game {
         break;
       }
       case 'meleeStrike': {
-        if (e.id !== myId) {
+        if (e.id === myId) this.meleeContact = e.to;
+        else {
           this.scene.meleeStrike(e.id);
           const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
           if (d < 28) sfx.melee(e.w, false, d);
@@ -152,11 +154,22 @@ export class Game {
       case 'hit': {
         if (e.shooter === myId) {
           this.hud.hit(e.head, false);
-          sfx.hit(e.head);
           const v = this.remotes.find((r) => r.snap.id === e.victim);
+          const weapon = this.names.get(myId)?.weapon ?? 0;
+          if (WEAPONS[weapon]?.kind === 'melee') {
+            // Contact weight: hit-stop on the blade, camera jolt, impact sparks and a body-blow sound.
+            sfx.meleeHit(weapon); this.feel.melee(weapon, true);
+            this.scene.viewmodel.contact(weapon === 7 ? .13 : weapon === 6 ? .09 : .075);
+            const at = this.meleeContact ?? (v ? [v.pos[0], v.pos[1] + 1.1, v.pos[2]] as Vec3 : null);
+            if (at) this.scene.meleeImpact(at, weapon);
+          } else sfx.hit(e.head);
           if (v) this.scene.damageNumber([v.pos[0], v.pos[1] + (e.head ? 2.0 : 1.6), v.pos[2]], e.dmg, e.head, false);
         }
-        if (e.victim === myId) { this.hud.hurt(); sfx.hurt(); this.feel.hurt(e.dmg); }
+        if (e.victim === myId) {
+          const melee = WEAPONS[this.names.get(e.shooter)?.weapon ?? 0]?.kind === 'melee';
+          this.hud.hurt(); sfx.hurt(); this.feel.hurt(e.dmg, melee);
+          if (melee) sfx.meleeHit(this.names.get(e.shooter)!.weapon);
+        }
         break;
       }
       case 'kill': {
@@ -302,7 +315,7 @@ export class Game {
         break;
       }
       case 'meleeStart': sfx.melee(e.weapon, true); break;
-      case 'meleeStrike': this.scene.viewmodel.strike(); sfx.melee(e.weapon, false); break;
+      case 'meleeStrike': this.scene.viewmodel.strike(); sfx.melee(e.weapon, false); this.feel.melee(e.weapon, false); this.meleeContact = null; break;
       case 'dash': sfx.dash(); break;
       case 'reload': sfx.reload(); break;
     }

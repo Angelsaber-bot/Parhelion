@@ -53,7 +53,23 @@ export class Feel {
     this.aimDebt += k * f.aimReturn;
   }
 
-  hurt(amount: number) {
+  /** Melee weight: a small lean into each swing, a hard jolt only when the server confirms contact. */
+  melee(weapon: number, contact: boolean) {
+    const heavy = weapon === 7 ? 1.8 : weapon === 6 ? 1.15 : 1;
+    if (!contact) {
+      this.roll += (weapon === 5 ? -.028 : 0) * heavy;
+      this.pitch += weapon === 7 ? -.035 : -.012;
+      this.fov += weapon === 6 ? 2.2 : 1.2;
+      return;
+    }
+    this.shakeAmp = Math.min(0.07, this.shakeAmp + .018 * heavy);
+    this.pitch += .02 * heavy;
+    this.roll += (weapon === 5 ? .035 : (Math.random() - .5) * .03) * heavy;
+    this.fov -= 2.5 * heavy; // brief zoom-in punch on contact
+  }
+
+  hurt(amount: number, melee = false) {
+    if (melee) { this.shakeAmp = Math.min(0.07, this.shakeAmp + .03); this.yaw += (Math.random() - .5) * .05; }
     this.shakeAmp = Math.min(0.06, this.shakeAmp + 0.004 * amount / 10);
     this.roll += (Math.random() - 0.5) * 0.03;
   }

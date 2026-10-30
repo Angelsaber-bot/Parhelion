@@ -125,6 +125,16 @@ export const sfx = {
     if (windup) { tone(weapon === 7 ? 170 : 320, .16, gain * .45, 'triangle', 1.25); }
     else { noise(weapon === 7 ? .22 : .12, weapon === 7 ? 700 : 2200, gain, .6); }
   },
+  /** Melee contact: the swing sound alone reads as a miss, this is what a connected hit sounds like. */
+  meleeHit(weapon: number) {
+    if (weapon === 7) { // hammer: deep body blow, crunch, low boom tail
+      tone(68, .32, .7, 'sine', .45); noise(.08, 900, .65, .8); noise(.3, 260, .55, .7, { send: .35 }, 'lowpass');
+    } else if (weapon === 6) { // spear: sharp punch-through
+      tone(150, .14, .5, 'sine', .5); noise(.05, 3200, .5, 1.2); tone(1250, .1, .1, 'triangle', .6);
+    } else { // sword: bright cut with a short ring
+      noise(.07, 4600, .55, 1); tone(110, .12, .45, 'sine', .5); tone(1700, .18, .12, 'triangle', .75, { send: .3 });
+    }
+  },
   impact(dist: number) { noise(0.05, 2400, Math.max(0.05, 0.22 - dist / 200), 2, { lowpass: 5000 }); },
   hit(head: boolean) {
     if (head) { tone(1900, 0.16, 0.22, 'sine'); tone(2850, 0.12, 0.1, 'sine'); noise(0.02, 6000, 0.2, 1); }

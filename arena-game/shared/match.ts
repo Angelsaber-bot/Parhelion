@@ -387,16 +387,22 @@ export class Match {
       const target = other.state;
       if (!target.alive || target.team === p.team || id === p.id) continue;
       const h = playerHitbox(target.crouched);
+      // Sample the whole standing/crouched body, so a level swing still connects with a target
+      // whose chest sits below the eye line at close range.
       const points: Vec3[] = [
         [target.x, target.y + h.headY, target.z],
+        [target.x, target.y + h.bodyTop - .1, target.z],
         [target.x, target.y + (h.bodyBottom + h.bodyTop) * .5, target.z],
+        [target.x, target.y + h.bodyBottom + .1, target.z],
       ];
       for (const point of points) {
         const delta = point.map((v, i) => v - origin[i]) as Vec3;
         const length = Math.hypot(...delta);
         if (length < 1e-6) continue;
         const dir = delta.map((v) => v / length) as Vec3;
-        if (dir.reduce((dot, v, i) => dot + v * aim[i], 0) < Math.cos(w.arc!)) continue;
+        // The arc is measured to the edge of the body, not only its centre line.
+        const reach = w.arc! + Math.atan2(h.bodyRadius, length);
+        if (dir.reduce((dot, v, i) => dot + v * aim[i], 0) < Math.cos(Math.min(reach, Math.PI / 2))) continue;
         const hit = rayPlayer(origin, dir, target.x, target.y, target.z, target.crouched);
         if (!hit || hit.t > nearest || hit.t > w.range) continue;
         if (raycastMap(this.map, origin, dir, hit.t + .001) <= hit.t + .001) continue;

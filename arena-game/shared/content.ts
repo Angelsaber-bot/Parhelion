@@ -34,7 +34,7 @@ export const MOVE = {
 export const DASH = { speed: 17, ticks: 9, cooldown: Math.round(3.5 * TICK_HZ) }; // ~2.6 m burst
 
 /** Holding a melee weapon (any kind) moves faster; applies to players and bots alike in the shared sim. */
-export const MELEE_MOVE = { speedMultiplier: 1.15 };
+export const MELEE_MOVE = { speedMultiplier: 1.2 };
 
 export const SHIELD = {
   hp: 300,
@@ -158,9 +158,9 @@ export const WEAPONS: WeaponDef[] = [
     skins: [{ id: 'refraction', name: '折光', body: 0xe6eff4, accent: 0x8ddfe7 }],
   },
   {
-    id: 'polearm', kind: 'melee', name: 'Meteor Polearm · 流星', auto: false, interval: 54, windup: 20, arc: 0.38,
-    damage: 64, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 3.3, falloffEnd: 3.3, falloffMin: 1,
-    mag: 0, reload: 0, range: 3.3,
+    id: 'polearm', kind: 'melee', name: 'Meteor Polearm · 流星', auto: false, interval: 54, windup: 18, arc: 0.5,
+    damage: 64, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 4.2, falloffEnd: 4.2, falloffMin: 1,
+    mag: 0, reload: 0, range: 4.2,
     skins: [{ id: 'meteor', name: '流星', body: 0xe5e7f1, accent: 0xa6a0ff }],
   },
   {

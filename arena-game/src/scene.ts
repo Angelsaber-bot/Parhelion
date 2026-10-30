@@ -251,6 +251,15 @@ export class ArenaScene {
     }
   }
 
+  /** Melee contact: a white flash, a ring of weapon-coloured sparks and heavier debris for the hammer. */
+  meleeImpact(at: Vec3, weapon: number) {
+    const color = weapon === 7 ? 0xffb35a : weapon === 6 ? 0xb6aaff : 0x9cf0ff, heavy = weapon === 7;
+    this.burst(at, 0xffffff, heavy ? 1.3 : .9, .1, 0);
+    this.burst(at, color, heavy ? 1.6 : 1.1, .2, 0);
+    for (let i = 0; i < (heavy ? 12 : 8); i++) this.burst(at, color, .12, .32, heavy ? 4.5 : 5.5);
+    for (let i = 0; i < (heavy ? 6 : 3); i++) this.burst(at, 0xfff1c8, .08, .4, 3);
+  }
+
   private burst(at: Vec3, color: number, size: number, life: number, speed: number) {
     const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.sparkTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     s.position.set(...at);
@@ -541,6 +550,7 @@ export class Viewmodel {
   private kick = 0;
   private kickMax = 1;
   private meleeHit = 0;
+  private hitStop = 0;
   meleeWindup = 0;
   private weapon = 0;
   private swap = 0;
@@ -578,7 +588,7 @@ export class Viewmodel {
 
   resetMotion() {
     for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
-    this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.meleeWindup = 0;
+    this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.hitStop = 0; this.meleeWindup = 0;
     this.kick = 0; this.swap = 0; this.stride.reset(); this.sway = [0, 0]; this.reloading = 0; this.moving = 0;
   }
 
@@ -591,7 +601,9 @@ export class Viewmodel {
 
   muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
-  strike() { this.meleeHit = 1; }
+  strike() { this.meleeHit = 1; this.hitStop = 0; }
+  /** Confirmed melee contact: hold the follow-through pose for a few frames (cosmetic only). */
+  contact(seconds: number) { if (this.meleeHit > 0) this.hitStop = seconds; }
 
   fire() {
     const w = this.weapon;
@@ -648,7 +660,8 @@ export class Viewmodel {
     }
     if (WEAPONS[this.weapon].kind === 'melee') {
       poseMelee(this.gun, this.weapon, meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit, true);
-      this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
+      if (this.hitStop > 0) this.hitStop = Math.max(0, this.hitStop - dt);
+      else this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
     }
     this.gun.visible = !(isScopedWeapon(this.weapon) && this.aim > 0.92); // scopes have an unobstructed magnified view
     for (let i = this.shells.length - 1; i >= 0; i--) {
