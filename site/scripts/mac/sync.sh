@@ -20,7 +20,8 @@ trap 'rmdir "$LOCK"' EXIT
 if [ -f "$LOG" ] && [ "$(wc -c < "$LOG")" -gt 1000000 ]; then tail -n 2000 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"; fi
 cd "$REPO" || { log "无法进入 $REPO（如提示 Operation not permitted，需要允许访问桌面文件夹）"; exit 1; }
 
-[ "$(git rev-parse --abbrev-ref HEAD 2>/dev/null)" = main ] || { log "当前不在 main 分支，跳过"; exit 0; }
+BRANCH="$(git rev-parse --abbrev-ref HEAD 2>&1)" || { log "无法读取仓库（macOS 权限？）：$BRANCH"; exit 1; }
+[ "$BRANCH" = main ] || { log "当前在 $BRANCH 分支，不是 main，跳过"; exit 0; }
 git fetch --quiet origin main 2>>"$LOG" || { log "git fetch 失败（网络？）"; exit 0; }
 LOCAL="$(git rev-parse HEAD)"; REMOTE="$(git rev-parse origin/main)"
 [ "$LOCAL" = "$REMOTE" ] && exit 0

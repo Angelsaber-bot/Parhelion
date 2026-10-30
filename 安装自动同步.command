@@ -38,7 +38,7 @@ echo "如果 macOS 询问“bash 想访问桌面文件夹”，请点“允许�
 sleep 8
 NEW="$(tail -n +"$((BEFORE + 1))" "$LOG" 2>/dev/null)"
 echo; echo "这次运行的日志："; printf '%s\n' "${NEW:-（没有新日志：已经是最新，无需同步）}"
-if printf '%s' "$NEW" | grep -q -e "Operation not permitted" -e "无法进入"; then
+if printf '%s' "$NEW" | grep -q -e "Operation not permitted" -e "无法进入" -e "无法读取仓库"; then
   echo
   echo "macOS 还没允许后台程序访问桌面。刚刚打开了「完全磁盘访问权限」设置："
   echo "  1. 点左下角 +，按 Command+Shift+G，输入 /bin/bash 回车，选中 bash 添加并打开开关"
