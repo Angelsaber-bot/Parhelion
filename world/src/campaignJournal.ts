@@ -16,6 +16,7 @@ export interface CampaignJournalOptions {
   onOpen(): boolean | void;
   onClose?(): void;
   pin(region: RegionId): boolean | void;
+  trackingBlocked?(region: RegionId): Localized | null;
   restoreMain(): void;
 }
 /** Read-only field journal. Only the explicit track button changes the caller's
@@ -81,8 +82,11 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
         chosen.textContent = bilingual(`你的安排：${choice.label[0]}`, `Your plan: ${choice.label[1]}`); article.append(chosen);
       }
       const track = document.createElement('button'); track.type = 'button'; track.dataset.campaignRegion = def.region;
-      track.disabled = !guide; track.textContent = state.completed && !guide ? bilingual('已落实', 'Resolved') : bilingual('追踪这段纪事', 'Track this chronicle');
-      track.addEventListener('click', () => { if (!disposed && !root.hidden && options.pin(def.region) !== false) hide(); });
+      const blocked = options.trackingBlocked?.(def.region);
+      track.disabled = !guide || !!blocked;
+      if (blocked && guide) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
+      track.disabled = !guide || !!blocked; track.textContent = state.completed && !guide ? bilingual('已落实', 'Resolved') : bilingual('追踪这段纪事', 'Track this chronicle');
+      track.addEventListener('click', () => { if (!disposed && !root.hidden && !options.trackingBlocked?.(def.region) && options.pin(def.region) !== false) hide(); });
       article.append(track); list.append(article);
     }
     const dispatch = getCampaignDispatchState(options.done());
@@ -93,7 +97,9 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
       article.append(heading, note);
       if (dispatch === 'ready') {
         const track = document.createElement('button'); track.type = 'button'; track.textContent = bilingual('追踪归路发信板', 'Track the return dispatch');
-        track.onclick = () => { if (!disposed && !root.hidden && options.pin('alpha') !== false) hide(); }; article.append(track);
+        const blocked = options.trackingBlocked?.('alpha'); track.disabled = !!blocked;
+        if (blocked) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
+        track.onclick = () => { if (!disposed && !root.hidden && !options.trackingBlocked?.('alpha') && options.pin('alpha') !== false) hide(); }; article.append(track);
       }
       list.append(article);
     }

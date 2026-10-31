@@ -36,6 +36,7 @@ export function createNarrativePanel(interactLabel: () => string) {
   text.setAttribute('aria-live', 'polite');
   text.style.maxHeight = 'min(42vh, 320px)'; text.style.overflowY = 'hidden';
   const options = document.createElement('div'); options.id = 'world-dialogue-choices'; options.setAttribute('role', 'group'); options.hidden = true;
+  options.style.pointerEvents = 'auto'; options.style.maxHeight = '30vh'; options.style.overflowY = 'auto';
   root.append(title, text, options, hint); document.body.append(root);
   let pages: Localized[] = [], page = 0, disposed = false;
   let choices: NarrativeChoice[] = [], selected = -1, onChoose: ((id: string) => void) | null = null;
@@ -44,6 +45,7 @@ export function createNarrativePanel(interactLabel: () => string) {
   const choicePage = () => choices.length > 0 && page === pages.length - 1 && !moreText();
   const renderChoices = () => {
     options.hidden = !choicePage(); options.replaceChildren();
+    options.setAttribute('aria-label', bilingual('选择你的行动', 'Choose your action'));
     if (options.hidden) return;
     choices.forEach((choice, index) => {
       const button = document.createElement('button'); button.type = 'button';
