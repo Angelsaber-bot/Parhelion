@@ -108,7 +108,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   // documented state/events only; browser focus/inert/permission behavior is untested.
   window.HTMLDialogElement.prototype.showModal=function(){this.open=true;this.querySelector<HTMLElement>('button')?.focus();};
   window.HTMLDialogElement.prototype.close=function(){if(!this.open)return;this.open=false;this.dispatchEvent(new window.Event('close'));};
-  window.HTMLCanvasElement.prototype.getContext=function(type:string){
+  window.HTMLCanvasElement.prototype.getContext=function(this:HTMLCanvasElement,type:string){
     if(type!=='2d')throw new Error('The non-GPU harness must not create a graphics context');
     const canvas=this;return new Proxy({canvas,createImageData:(w:number,h:number)=>({width:w,height:h,data:new Uint8ClampedArray(w*h*4)}),measureText:(text:string)=>({width:text.length*8}),createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}})}, {get:(target,key)=>key in target?Reflect.get(target,key):()=>{}});
   } as typeof window.HTMLCanvasElement.prototype.getContext;

@@ -21,7 +21,7 @@ test('unavailable legacy source has truthful localized recovery copy and explici
       const original = buttons.find(button => /无损原始|lossless original/.test(button.textContent!))!;
       assert.equal(original.hidden, true, 'unread original bytes cannot be offered as a download');
       assert.match(panel.root.textContent!, language === 'zh' ? /重新载入可重试读取/ : /reloading to retry the reads/);
-      dom.window.confirm = message => { confirms++; assert.match(String(message), language === 'zh' ? /可能不包含其中的任务/ : /may omit their quests/); return false; };
+      dom.window.confirm = (message?: string) => { confirms++; assert.match(String(message), language === 'zh' ? /可能不包含其中的任务/ : /may omit their quests/); return false; };
       buttons.find(button => /用本次进度替换|Replace with session/.test(button.textContent!))!.click();
       assert.equal(writes, 0); assert.ok(progress.done.has('sea_core')); assert.equal(progress.saveBlocked, true);
     }

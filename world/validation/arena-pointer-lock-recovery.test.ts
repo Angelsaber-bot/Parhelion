@@ -16,7 +16,7 @@ const mocks: Record<string, string> = {
 const bundle = build({ entryPoints: [resolve(root, 'src/main.ts')], bundle: true, write: false, format: 'iife', platform: 'browser', loader: { '.webp': 'dataurl', '.css': 'empty' }, plugins: [{ name: 'boundaries', setup(b) { b.onResolve({ filter: /\.\/(scene|game|session|audio|armory)\.ts$/ }, a => ({ path: a.path.slice(2), namespace: 'boundary' })); b.onLoad({ filter: /.*/, namespace: 'boundary' }, a => ({ contents: mocks[a.path], loader: 'js' })); } }] });
 for (const mode of ['offline', 'online']) for (const failure of ['reject', 'throw', 'event-only']) test(`${mode} pointer-lock ${failure} offers explicit retry without a duplicate session`, async () => {
   const dom = new JSDOM(readFileSync(resolve(root, 'index.html'), 'utf8'), { url: 'https://arena.test/', pretendToBeVisual: true, runScripts: 'outside-only' }), w = dom.window, d = w.document;
-  const errors: unknown[] = []; dom.virtualConsole.on('jsdomError', error => errors.push(error));
+  const errors: unknown[] = []; dom.virtualConsole.on('jsdomError', (error: unknown) => errors.push(error));
   const qa = { games: 0, joins: 0, closes: 0, pauses: [] as boolean[], session(online: boolean) { this.joins++; return { online, close: () => { this.closes++; } }; } }; (w as any).__qa = qa;
   w.requestAnimationFrame = () => 1; (w as any).matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
   (w as any).fetch = () => { throw new Error('network forbidden'); }; (w as any).WebSocket = class { constructor() { throw new Error('network forbidden'); } };
