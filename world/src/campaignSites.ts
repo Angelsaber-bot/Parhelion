@@ -27,7 +27,7 @@ type Layer = 'body' | 'metal' | 'glow' | 'briefed' | 'choiceA' | 'choiceB' | 're
 const cube = new THREE.BoxGeometry(1, 1, 1);
 const cylinder = new THREE.CylinderGeometry(1, 1, 1, 10);
 /** Colours are per vertex, allowing richly differentiated props without a material per colour. */
-class SiteArt {
+export class SiteArt {
   readonly root = new THREE.Group();
   readonly solids: THREE.BufferGeometry[] = [];
   readonly layers = new Map<Layer, THREE.Mesh>();
