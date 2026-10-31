@@ -88,5 +88,5 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   });
   root.append(title, status, retry, backup, restore, original, originalHelp, file, result); document.body.append(warning);
   const unsubscribe = progress.subscribe(render), locale = onLanguageChange(render); render();
-  return { root, dispose() { if (disposed) return; disposed = true; readGeneration++; unsubscribe(); locale(); root.remove(); warning.remove(); } };
+  return { root, cancelPendingRead() { if (disposed) return; readGeneration++; restore.disabled = false; file.value = ''; }, dispose() { if (disposed) return; disposed = true; readGeneration++; unsubscribe(); locale(); root.remove(); warning.remove(); } };
 }

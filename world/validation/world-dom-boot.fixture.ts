@@ -31,7 +31,7 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
   const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
@@ -82,6 +82,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   const placeholderBitmap=async()=>({width:1,height:1,close(){}});
   class BrowserRequest extends NativeRequest {constructor(input:RequestInfo|URL,init?:RequestInit){super(typeof input==='string'?new URL(input,'http://world.test/').href:input,init);}}
   const inject=(key:string,value:unknown)=>{globals.set(key,Object.getOwnPropertyDescriptor(globalThis,key));Object.defineProperty(globalThis,key,{value,writable:true,configurable:true});};
+  let bootContextInjected = false;
   const fetchAsset:typeof fetch=(input)=>trackAsset((async()=>{
     const raw=typeof input==='string'?input:input instanceof URL?input.href:input.url;
     const url=new URL(raw,'http://world.test/');let path:string;
@@ -90,6 +91,12 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
     else if(url.origin==='http://world.test')path=resolve(world,'public',url.pathname.replace(/^\//,''));
     else throw new Error(`No external asset access in boot smoke: ${url.href}`);
     if(!path.startsWith(resolve(world,'..')+'/'))throw new Error(`Asset outside repository: ${path}`);
+    if (options.contextLossDuringBoot && !bootContextInjected) {
+      bootContextInjected = true;
+      const canvas = window.document.getElementById('view')!;
+      canvas.dispatchEvent(new window.Event('webglcontextlost', { cancelable: true }));
+      setTimeout(() => canvas.dispatchEvent(new window.Event('webglcontextrestored')), 0);
+    }
     const bytes=await readFile(path);return new Response(bytes,{status:200,headers:{'Content-Length':String(bytes.length),'Content-Type':path.endsWith('.json')?'application/json':'application/octet-stream'}});
   })());
   for(const [key,value]of Object.entries({window,document:window.document,self:window,navigator:window.navigator,ProgressEvent:window.ProgressEvent,fetch:fetchAsset,Request:BrowserRequest,createImageBitmap:placeholderBitmap}))inject(key,value);

@@ -78,6 +78,7 @@ import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './servantAppearance';
 import { createServantPanel } from './servantPanel';
 import { WorldCombat } from './combatView';
+import { WorldGraphicsRecovery } from './graphicsRecovery';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
 import { createProgressPanel } from './progressPanel';
 import { WeaponFinishStore } from './weaponFinishes';
@@ -94,16 +95,26 @@ const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'a
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-let bootFailed = false;
+let bootFailed = false, worldExited = false;
+let graphicsRecovery: WorldGraphicsRecovery | undefined;
+let suspendForGraphics = () => {};
+addEventListener('pagehide', event => { if (!event.persisted) { worldExited = true; graphicsRecovery?.dispose(); if (document.pointerLockElement) document.exitPointerLock(); } });
 let disposeRenderer = () => {};
 const languageToggle = createLanguageToggle();
 let refreshWorldLocale = () => {};
 let loadingSource = '加载中…';
-const setLoading = (source: string) => { loadingSource = source; $('loading').textContent = localizeText(source); };
+const renderLoading = () => {
+  $('loading').textContent = !bootFailed && graphicsRecovery?.state === 'lost'
+    ? bilingual('图形上下文暂时不可用，世界已暂停。等待浏览器恢复；任务存档不会被清空。', 'Graphics context unavailable. World simulation is paused while the browser attempts recovery; quest saves are not cleared.')
+    : !bootFailed && graphicsRecovery?.state === 'awaiting-resume'
+      ? bilingual('浏览器已报告图形上下文恢复。点击重新进入；关闭其他窗口后再继续。', 'The browser reports graphics restoration. Close other panels, then click to resume.')
+      : localizeText(loadingSource);
+};
+const setLoading = (source: string) => { loadingSource = source; renderLoading(); };
 localizeDom(document.body);
 onLanguageChange(() => {
   localizeDom(document.body);
-  $('loading').textContent = localizeText(loadingSource);
+  renderLoading();
   refreshWorldLocale();
 });
 
@@ -113,6 +124,10 @@ async function boot() {
 const canvas = $<HTMLCanvasElement>('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 disposeRenderer = () => renderer.dispose();
+graphicsRecovery = new WorldGraphicsRecovery(canvas, () => suspendForGraphics(), () => {
+  if (worldExited || bootFailed) return;
+  renderLoading(); $('start').classList.remove('hidden');
+});
 let resolution = readResolutionMode(params);
 let observedDeviceDpr = devicePixelRatio;
 const adaptiveResolution = new AdaptiveResolution();
@@ -160,12 +175,13 @@ if (composer) {
 }
 renderer.info.autoReset = false; // count the whole frame, including shadows and post passes
 function applyResolution() {
+  if (graphicsRecovery?.blocked || worldExited || bootFailed) return;
   renderer.setPixelRatio(dpr);
   composer?.setPixelRatio(dpr);
 }
 
 addEventListener('resize', () => {
-  if (bootFailed) return;
+  if (bootFailed || worldExited || graphicsRecovery?.blocked) return;
   observedDeviceDpr = devicePixelRatio;
   dpr = targetDpr(devicePixelRatio, resolution, lowQ);
   adaptiveResolution.reset();
@@ -195,6 +211,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
   gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
   return { def, layout: lay, root: gltf.scene };
 }));
+if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
 const layout = mergeLayouts(parts);
 const world = new THREE.Group();
 world.name = 'World';
@@ -663,12 +680,14 @@ spawnAt(params.get('spawn') ?? undefined);
 // explorer character + third-person shoulder camera
 setLoading('加载精修角色…');
 const rig = await loadSkinnedCharacter({ outlines: !params.has('noline') });
+if (worldExited || !(await graphicsRecovery.whenContextAvailable())) { rig.dispose(); return; }
 // Hide the parent before asynchronous weapon art attaches: neither loading nor a late model can
 // grant ownership or flash an unearned gun on a clean start.
 rig.joints.Gun.visible = worldProgress.armed;
 scene.add(rig.root);
 const rifle = attachExplorerRifle(rig, renderer);
 try { await rifle.ready; } catch (error) { rifle.dispose(); rig.dispose(); throw error; }
+if (worldExited || !(await graphicsRecovery.whenContextAvailable())) { rifle.dispose(); rig.dispose(); return; }
 addEventListener('pagehide', (e) => { if (!e.persisted) { blade.dispose(); rifle.dispose(); rig.dispose(); } });
 const blade = attachExplorerBlade(rig);
 function applyWeaponFinish() {
@@ -872,7 +891,7 @@ if (typeof document.querySelector === 'function') {
   document.querySelector('#world-settings .settings-sliders')?.after(group);
   localizeDom(group);
 }
-const gameplayActive = () => !ultimateDirector?.active && locked && !inspectServant && !travelOpenState && !campaignJournalOpen && !narrative?.open && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
+const gameplayActive = () => !bootFailed && !worldExited && !graphicsRecovery?.blocked && !ultimateDirector?.active && locked && !inspectServant && !travelOpenState && !campaignJournalOpen && !narrative?.open && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus() && !$('bigmap').classList.contains('open');
 const down = (action: string) => settings.isDown(keys, action);
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
@@ -884,21 +903,22 @@ function renderControlHints() {
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
 const lockError = () => {
-  if (bootFailed || locked) return;
+  if (bootFailed || worldExited || graphicsRecovery?.blocked || locked) return;
   clearInput();
   setLoading('无法锁定鼠标，请再次点击进入（或检查浏览器权限）');
   start.classList.remove('hidden');
 };
 setLoading('点击进入（ESC 释放鼠标）');
 start.addEventListener('click', async (e) => {
-  if (bootFailed) return;
+  if (bootFailed || worldExited || graphicsRecovery?.state === 'lost' || graphicsRecovery?.state === 'disposed') return;
   audio.unlock(e);
-  if (settingsPanel.open || travelOpenState || campaignJournalOpen || narrative?.open || ultimateDirector?.active) return;
+  if (settingsPanel.open || servantPanel.open || travelOpenState || campaignJournalOpen || narrative?.open || ultimateDirector?.active) return;
+  if (graphicsRecovery?.resume()) dispatchEvent(new Event('resize'));
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
 document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
-  if (bootFailed) {
+  if (bootFailed || worldExited || graphicsRecovery?.blocked) {
     locked = false; clearInput();
     if (document.pointerLockElement === canvas) document.exitPointerLock();
     return;
@@ -925,7 +945,7 @@ function requestProgressReset() {
   if (accepted) resetProgress();
 }
 function press(binding: string, repeat = false) {
-  if (bootFailed) return;
+  if (bootFailed || worldExited || graphicsRecovery?.blocked) return;
   const action = settings.action(binding);
   if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
   if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.advance(); hudRevision++; } return; }
@@ -1099,6 +1119,7 @@ function frameUltimate(dt: number): boolean {
 addEventListener('pagehide', event => { if (!event.persisted) { abortUltimate(); ultimateDirector?.dispose(); ultimateStage?.dispose(); } });
 narrative = createNarrativePanel(() => settings.label('interact'));
 function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
+  if (graphicsRecovery?.blocked || bootFailed || worldExited) return;
   clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
 }
 const actionHud = createActionHud(action => settings.label(action));
@@ -1120,11 +1141,12 @@ audioGroup.append(volumeLabel,muteLabel,fxLabel);document.querySelector('#world-
 addEventListener('pagehide', event => { if (!event.persisted) { actions?.dispose(); actionHud.dispose(); } });
 function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
-  return { sessionReady: true, defeated: combat.defeated, combatActive: combat.bossStarted, threatened, quietSeconds: combat.state.quietFor,
+  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted, threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
     mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
+  if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
   if (campaignJournalOpen) return false;
   if (ultimateDirector?.active) { toast(bilingual('终结技释放期间不能旅行。', 'Travel is unavailable during an ultimate.')); return false; }
   const plan = planSafeTravel(id, travelStops, done, found, travelContext());
@@ -1212,7 +1234,7 @@ falseDawnRuntime = createFalseDawnRuntime({
   done,
   reachable: id => {
     const marker = markers.get(id);
-    return !!marker && falseDawnMarkerIds.has(id) && locked && !settingsPanel.open && !travelOpenState && !campaignJournalOpen && !ultimateDirector?.active && document.visibilityState === 'visible' && document.hasFocus() && !combat.defeated && !player.flying && !player.swimming && !player.gliding && player.onGround && player.pos.distanceTo(new THREE.Vector3(...marker.p)) < (marker.radius ?? 3) && canReachValleyPanel(marker);
+    return !bootFailed && !worldExited && !graphicsRecovery?.blocked && !!marker && falseDawnMarkerIds.has(id) && locked && !settingsPanel.open && !travelOpenState && !campaignJournalOpen && !ultimateDirector?.active && document.visibilityState === 'visible' && document.hasFocus() && !combat.defeated && !player.flying && !player.swimming && !player.gliding && player.onGround && player.pos.distanceTo(new THREE.Vector3(...marker.p)) < (marker.radius ?? 3) && canReachValleyPanel(marker);
   },
   activeEncounter: () => combat.storyEncounter?.id ?? null,
   startEncounter: id => {
@@ -1223,7 +1245,7 @@ falseDawnRuntime = createFalseDawnRuntime({
   },
   cancelEncounter: () => { combat.cancelStoryEncounter(); }, save, applyState: applyWorldState,
   dialogue: (line, speaker) => speakDialogue(falseDawnLine(line), speaker),
-  choices: (line, speaker, choices, select) => { clearInput(); audio.interaction(); hudRevision++; narrative!.showChoices(falseDawnLine(line), speaker, choices, select); },
+  choices: (line, speaker, choices, select) => { if (graphicsRecovery?.blocked || bootFailed || worldExited) return; clearInput(); audio.interaction(); hudRevision++; narrative!.showChoices(falseDawnLine(line), speaker, choices, select); },
   toast: line => toast(bilingual(...line)), physicalFeedback: () => audio.interaction(),
 });
 addEventListener('pagehide', event => { if (!event.persisted) falseDawnRuntime?.dispose(); });
@@ -1388,7 +1410,7 @@ function presentCampaignInteraction(result: CampaignEpisodeInteraction, origin: 
   if (!result.handled) return false;
   const saved = !result.changed || save();
   if (result.changed) applyWorldState();
-  if (!result.dialogue) return true;
+  if (!result.dialogue || graphicsRecovery?.blocked || bootFailed || worldExited) return true;
   const line: [string, string] = [result.dialogue[0] + (saved ? '' : '（本次进度暂未保存。）'), result.dialogue[1] + (saved ? '' : ' (Progress could not be saved.)')];
   const speaker: [string, string] = result.speaker ?? ['现场记录', 'Field notes'];
   if (result.choices?.length && result.state) {
@@ -1522,6 +1544,8 @@ camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 function frame(now: number) {
+  if (worldExited || bootFailed) return;
+  if (graphicsRecovery?.blocked) { last = now; acc = 0; requestAnimationFrame(frame); return; }
   // Some browsers change DPR on monitor moves without a CSS resize event.
   if (observedDeviceDpr !== devicePixelRatio) {
     observedDeviceDpr = devicePixelRatio;
@@ -1687,15 +1711,24 @@ refreshWorldLocale = () => {
   // Transient combat/toast messages expire rather than retain a previous language.
   $('toast').classList.remove('show');
 };
+suspendForGraphics = () => {
+  abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); progressPanel.cancelPendingRead();
+  // Preserve pause-menu intent, but invalidate detached pre-loss controls.
+  travelPanel.refresh(); campaignJournal?.refresh(); audio.setActive(false);
+  if (document.pointerLockElement) document.exitPointerLock();
+  renderLoading(); start.classList.remove('hidden');
+};
+if (graphicsRecovery?.blocked) suspendForGraphics();
 requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {
-  bootFailed = true;
+  if (worldExited) { disposeRenderer(); return; }
+  bootFailed = true; graphicsRecovery?.dispose();
   console.error('World boot failed', error);
   disposeRenderer();
   const message = error instanceof Error ? error.message : String(error);

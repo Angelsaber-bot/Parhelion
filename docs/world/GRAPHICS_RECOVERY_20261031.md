@@ -1,0 +1,12 @@
+# World graphics interruption safety
+
+World now suspends simulation and rendering on `webglcontextlost`, clears held inputs and requests the browser's ordinary restoration attempt. A restoration event only changes the notice: the player must deliberately click Enter after closing any open pause panel. No automatic combat resume or accumulated-time catch-up occurs. Settings, travel and journal pause intent is retained; refreshed controls invalidate obsolete callbacks. Pending progress-file reads are canceled, not silently applied later.
+
+An active cinematic is canceled through the existing action/director policy. Energy already spent remains spent. Contacts already committed remain committed; canceled future contacts and cinematic completion cannot replay after recovery. Enemy windups and live actor state remain paused rather than reset or awarded. Quest saves are not cleared. If an accepted synchronous save completes at the interruption boundary, that write is retained; its interrupted dialogue is not reopened.
+
+Boot waits for the browser's restoration report at asynchronous resource boundaries. A failed boot cannot be revived by a later context event. Final page exit removes recovery listeners and resolves pending waits; BFCache pagehide does not destroy this state. Global effects-quality Apply still reloads; this is not a new live renderer/settings replacement system.
+
+## Validation and limits
+Seven focused tests cover duplicate events, explicit resume, held input clearing, pause/settings/journal intent, pending local restore cancellation, final exit, asynchronous boot, late boot failure, real enemy windup suspension, a paid native Saber cinematic before contact and during its outro after real contact, and a synchronous autosave-boundary fault injection. The cinematic test uses explicit entry placement and charge fixtures, not a balance playthrough. GPU rendering is mocked. Expected JSDOM navigation-not-implemented diagnostics are asserted only for the existing settings reload action.
+
+**Actual device context restoration, PMREM/postprocessing visual fidelity, GPU resources and frame rate are unverified.** Browser restoration reports are not proof that the final image is correct. This change prevents simulation/input corruption while the device is unavailable; it does not promise seamless graphics recovery, refund attacks, abort asset downloads or alter Arena's network simulation.

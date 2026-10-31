@@ -23,6 +23,8 @@ test('a late initialization failure cannot enter pointer lock or invoke partial 
     assert.equal(d.pointerLockElement, null, 'Late pointer lock is immediately released');
     d.dispatchEvent(new h.window.Event('pointerlockerror'));
     assert.equal(h.window.localStorage.getItem('parhelion.world.progress.v2'), '{"done":["preserved"],"found":[]}');
+    d.getElementById('view')!.dispatchEvent(new h.window.Event('webglcontextlost', { cancelable: true }));
+    d.getElementById('view')!.dispatchEvent(new h.window.Event('webglcontextrestored'));
     assert.equal(h.errors.length, 1); assert.equal(d.getElementById('loading')!.textContent, original);
     assert.equal((d.getElementById('start') as HTMLElement).classList.contains('hidden'), false);
   } finally { await h.close(); }
