@@ -1,0 +1,61 @@
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import { JSDOM } from 'jsdom';
+import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/progress';
+import { createProgressPanel } from '../src/progressPanel';
+import { setLanguage } from '../../shared-client/i18n';
+
+function fixture() {
+  const previous = new Map(['window', 'document'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
+  const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://example.test/' });
+  Object.defineProperty(globalThis, 'window', { configurable: true, value: dom.window });
+  Object.defineProperty(globalThis, 'document', { configurable: true, value: dom.window.document });
+  const progress = new WorldProgress(dom.window.localStorage); progress.done.add('existing'); progress.save();
+  let restored = 0, confirmations = 0, accept = false;
+  dom.window.confirm = () => { confirmations++; return accept; };
+  const panel = createProgressPanel(progress, () => restored++); dom.window.document.body.append(panel.root);
+  const file = panel.root.querySelector('input')!;
+  return { dom, progress, panel, get restored() { return restored; }, get confirmations() { return confirmations; }, accept() { accept = true; },
+    async select(raw: string, size = raw.length) {
+      Object.defineProperty(file, 'files', { configurable: true, value: [{ size, text: async () => raw }] });
+      file.dispatchEvent(new dom.window.Event('change')); await new Promise(resolve => setTimeout(resolve, 0));
+    },
+    close() { panel.dispose(); setLanguage('zh'); dom.window.close(); for (const [key, value] of previous) { if (value) Object.defineProperty(globalThis, key, value); else Reflect.deleteProperty(globalThis, key); } },
+  };
+}
+test('restore requires a validated local file and explicit confirmation, then persists before reloading', async () => {
+  const f = fixture();
+  try {
+    await f.select('{bad'); assert.equal(f.confirmations, 0); assert.equal(f.restored, 0);
+    await f.select('{"done":[],"found":[]}', 300000); assert.equal(f.confirmations, 0);
+    await f.select('{"done":["episode_restored"],"found":[]}');
+    assert.equal(f.confirmations, 1); assert.equal(f.restored, 0); assert.deepEqual([...f.progress.done], ['existing']);
+    f.accept(); await f.select('{"done":["episode_restored"],"found":[]}');
+    assert.equal(f.restored, 1); assert.deepEqual([...f.progress.done], ['episode_restored']);
+    assert.deepEqual(JSON.parse(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY)!).done, ['episode_restored']);
+  } finally { f.close(); }
+});
+test('storage warnings refresh with locale and successful retry, and disposal unsubscribes presentation', () => {
+  const f = fixture();
+  try {
+    // Model unavailable storage without replacing the actual progress observer.
+    Object.defineProperty(f.dom.window.Storage.prototype, 'setItem', { configurable: true, value() { throw new Error('quota'); } });
+    assert.equal(f.progress.save(), false);
+    const warning = f.dom.window.document.getElementById('world-save-warning')!;
+    assert.equal(warning.hidden, false); setLanguage('en'); assert.match(warning.textContent!, /not saved/);
+    f.panel.dispose(); f.panel.dispose(); assert.equal(warning.isConnected, false); assert.equal(f.panel.root.isConnected, false);
+    f.progress.save(); setLanguage('zh'); assert.equal(f.dom.window.document.body.children.length, 0);
+  } finally { f.close(); }
+});
+test('a file read finishing after page disposal cannot confirm or replace progress', async () => {
+  const f = fixture();
+  try {
+    let finish!: (value: string) => void;
+    const pending = new Promise<string>(resolve => { finish = resolve; });
+    const file = f.panel.root.querySelector('input')!;
+    Object.defineProperty(file, 'files', { value: [{ size: 30, text: () => pending }] });
+    file.dispatchEvent(new f.dom.window.Event('change')); f.panel.dispose();
+    finish('{"done":[],"found":[]}'); await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(f.confirmations, 0); assert.equal(f.restored, 0); assert.deepEqual([...f.progress.done], ['existing']);
+  } finally { f.close(); }
+});

@@ -66,6 +66,7 @@ import { ServantAppearance } from './servantAppearance';
 import { createServantPanel } from './servantPanel';
 import { WorldCombat } from './combatView';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
+import { createProgressPanel } from './progressPanel';
 import { getLanguage, bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
@@ -996,6 +997,9 @@ function speakDialogue(line: [string,string], speaker: [string,string] = ['äº¤è°
   clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
 }
 const actionHud = createActionHud(action => settings.label(action));
+const progressPanel = createProgressPanel(worldProgress, () => { abortUltimate(); clearInput(); location.reload(); });
+document.querySelector('#world-settings .settings-sliders')?.after(progressPanel.root);
+addEventListener('pagehide', event => { if (!event.persisted) progressPanel.dispose(); });
 const audioGroup=document.createElement('div');audioGroup.className='settings-sliders';
 const volumeLabel=document.createElement('label'),volumeText=document.createElement('span'),volume=document.createElement('input');
 volume.type='range';volume.min='0';volume.max='1';volume.step='.05';volume.value=String(audio.volume);volume.id='world-audio-volume';volumeLabel.append(volumeText,volume);
