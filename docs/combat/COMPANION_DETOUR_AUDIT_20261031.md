@@ -2,7 +2,7 @@
 
 ## Status and evidence boundary
 
-**Isolated validation candidate; production navigation is unchanged at this checkpoint.** Root authorized this investigation and candidate, not automatic integration. Existing attack ranges, hit clocks, LOS, target ownership, player movement and colliders are unchanged. Entry teleport/direct catalog admission in the actual-main runner are labeled setup; all grounding, summon/dodge inputs, enemy AI and companion contacts afterward are real. The dodge policy reads accepted tell clocks, so these are mechanics probes, not human-reaction or full story playthrough evidence. No hostile HP, player HP, charge, grounded flag or companion position is written.
+**Initial proof checkpoint `cd1349a` was validation-only.** Root subsequently approved the narrow production implementation described below; the rejected pursuit-memory experiment remains validation-only. Existing attack ranges, hit clocks, LOS, target ownership, player movement and colliders are unchanged. Entry teleport/direct catalog admission in the actual-main runner are labeled setup; all grounding, summon/dodge inputs, enemy AI and companion contacts afterward are real. The dodge policy reads accepted tell clocks, so these are mechanics probes, not human-reaction or full story playthrough evidence. No hostile HP, player HP, charge, grounded flag or companion position is written.
 
 Baseline navigation blob: `557f4dc58c495380ad05845e4bed4df6adcf85f1`. The exact historical reference is `validation/fixtures/companion-navigation-pre-detour.ts`; only its header/import paths differ. Keeping that reference prevents future fixed-versus-fixed comparisons.
 
@@ -72,3 +72,10 @@ A paired actual-main control waits until **24.183333 s**, after the wider normal
 - Both end at player 59 HP and use the same original attack damage/clock. The replacement itself resets only navigator transient state in both arms of this validation comparison; production integration would not dynamically replace the controller.
 
 Files: `winter-late-baseline-reset-diagnostic-wide-reposition.json` and `winter-late-detour-diagnostic-wide-reposition.json` in the engagement artifacts directory. Reproduce with `audit-companion-engagement.ts winter --diagnose --wide-reposition --late-baseline-reset|--late-detour --seconds=60` before production integration.
+
+
+## Approved production implementation
+
+Root approved the matching `src/companionNavigation.ts` change at 08:27 UTC. It adds only the physical failure records, bounded expiry, short local reach and reset cleanup described above. No servant, target, attack, art, Arena or main wiring is changed. The same nine-case contract now runs independently against the isolated candidate and production, with the frozen historical controller as baseline. Together with existing navigation/query tests, 27 cases pass; World typecheck passes. Independent actual-main no-wrapper replay is the next acceptance check.
+
+The engagement runner defaults to current production with no navigator replacement. `--historical-navigation` explicitly installs the frozen baseline for diagnostic comparison; `--detour` explicitly installs the isolated candidate. These modes are labeled in output, rather than silently comparing two fixed controllers.

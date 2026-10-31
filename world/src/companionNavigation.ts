@@ -11,6 +11,12 @@ const STRAIGHT = [1] as const, RIGHT_FIRST = [1,-1] as const, LEFT_FIRST = [-1,1
  * Ground and body-width checks remain authoritative; steering never edits colliders.
  */
 export class CompanionNavigation {
+  // Short-lived physical failure memory, not target memory. Only actual step
+  // rollback activates the smaller local detour; original collision checks remain.
+  private failedDirections: Array<{heading:number;left:number}> = [];
+  private rejectedDirections = 0;
+  private maximumFailedDirections = 0;
+  get detourDiagnostics(){return{rejectedDirections:this.rejectedDirections,maximumFailedDirections:this.maximumFailedDirections,active:this.failedDirections.length,cap:9,expiry:.4,maxPlanCandidates:9};}
   private readonly ray = new THREE.Ray();
   // Collider BVHs are immutable world-space geometry, as in MountedCharge.
   // Key by BVH (not collider) so replacement BVHs get fresh bounds. enabled is
@@ -41,7 +47,7 @@ export class CompanionNavigation {
   private blockedFor = 0;
   get stuckSeconds() { return this.blockedFor; }
   constructor(private readonly colliders: Collider[]) {}
-  reset() { this.motion.reset(); this.planFor=0; this.side=0; this.blockedFor=0; }
+  reset() { this.failedDirections.length=0; this.motion.reset(); this.planFor=0; this.side=0; this.blockedFor=0; }
   private hit(max:number) {
     this.prepareSegment(max);
     for(const collider of this.colliders) if(collider.enabled && this.overlapsSegment(collider)) {
@@ -125,16 +131,19 @@ export class CompanionNavigation {
   step(root:THREE.Object3D,destination:THREE.Vector3,dt:number,maxSpeed:number):number {
     if(!Number.isFinite(dt)||dt<=0)return 0;
     dt=Math.min(.1,dt);this.planFor-=dt;
+    for(const failed of this.failedDirections)failed.left-=dt;
+    for(let i=this.failedDirections.length-1;i>=0;i--)if(this.failedDirections[i].left<=0)this.failedDirections.splice(i,1);
     const distance=Math.hypot(destination.x-root.position.x,destination.z-root.position.z);
     if(distance<.255){this.motion.reset();this.blockedFor=0;return 0;}
     if(this.planFor<=0 || Math.hypot(destination.x-this.goal.x,destination.z-this.goal.z)>1) {
       this.goal.copy(destination);this.planFor=.12;
-      const angle=Math.atan2(destination.z-root.position.z,destination.x-root.position.x),reach=Math.min(3,distance);
+      const angle=Math.atan2(destination.z-root.position.z,destination.x-root.position.x),reach=Math.min(this.failedDirections.length ? .65 : 3,distance);
       let found=false;
       for(const turn of TURNS) {
         const signs=turn===0?STRAIGHT:this.side<0?LEFT_FIRST:RIGHT_FIRST;
         for(const sign of signs) {
           const heading=angle+turn*sign;
+          if(this.failedDirections.some(failed=>Math.abs(Math.atan2(Math.sin(heading-failed.heading),Math.cos(heading-failed.heading)))<.28))continue;
           this.candidate.set(root.position.x+Math.cos(heading)*reach,root.position.y,root.position.z+Math.sin(heading)*reach);
           if(this.path(root.position,this.candidate)) {
             this.waypoint.copy(this.candidate);this.side=turn===0?0:sign;found=true;break;
@@ -150,7 +159,11 @@ export class CompanionNavigation {
     if(moved>1e-7) {
       // Revalidate even inside the plan interval: a quest gate can close between render frames.
       const y=this.floor(root.position.x,root.position.z,this.before.y);
-      if(y===null || !this.path(this.before,root.position)){root.position.copy(this.before);this.motion.reset();this.planFor=0;this.blockedFor+=dt;return 0;}
+      if(y===null || !this.path(this.before,root.position)){
+        const heading=Math.atan2(root.position.z-this.before.z,root.position.x-this.before.x),existing=this.failedDirections.find(failed=>Math.abs(Math.atan2(Math.sin(heading-failed.heading),Math.cos(heading-failed.heading)))<.28);
+        if(existing)existing.left=.4;else{if(this.failedDirections.length>=9)this.failedDirections.shift();this.failedDirections.push({heading,left:.4});}
+        this.rejectedDirections++;this.maximumFailedDirections=Math.max(this.maximumFailedDirections,this.failedDirections.length);
+        root.position.copy(this.before);this.motion.reset();this.planFor=0;this.blockedFor+=dt;return 0;}
       root.position.y=y;this.blockedFor=0;
       return moved/dt;
     }
