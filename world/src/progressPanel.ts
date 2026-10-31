@@ -31,16 +31,16 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable';
     warning.textContent = bilingual('任务尚未保存 · 设置中可重试或下载备份', 'Quest progress is not saved · Retry or back up in Settings');
   };
-  retry.addEventListener('click', event => { event.stopPropagation(); progress.save(); });
+  retry.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; progress.save(); });
   backup.addEventListener('click', event => {
-    event.stopPropagation();
+    event.stopPropagation(); if (disposed) return;
     const url = URL.createObjectURL(new Blob([progress.exportSnapshot()], { type: 'application/json' }));
     const link = document.createElement('a'); link.href = url; link.download = 'parhelion-world-progress.json';
     document.body.append(link); link.click(); link.remove();
     // Keep the object URL alive through navigation dispatch, then release it.
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   });
-  restore.addEventListener('click', event => { event.stopPropagation(); file.value = ''; file.click(); });
+  restore.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; file.value = ''; file.click(); });
   file.addEventListener('change', async () => {
     const generation = ++readGeneration;
     const selected = file.files?.[0]; if (!selected || disposed) { if (!disposed) restore.disabled = false; return; }

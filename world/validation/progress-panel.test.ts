@@ -72,3 +72,18 @@ test('a newer file selection supersedes an older asynchronous read instead of re
     assert.equal(f.confirmations, 1); assert.equal(f.restored, 1); assert.deepEqual([...f.progress.done], ['newest']);
   } finally { f.close(); }
 });
+
+test('retained controls cannot save, download or reopen a picker after disposal', () => {
+  const f = fixture(); const originalUrl = URL.createObjectURL;
+  try {
+    const buttons = [...f.panel.root.querySelectorAll('button')];
+    const file = f.panel.root.querySelector('input')!;
+    let saves = 0, downloads = 0, pickers = 0;
+    f.progress.save = () => { saves++; return true; };
+    URL.createObjectURL = () => { downloads++; return 'blob:test'; };
+    file.click = () => { pickers++; };
+    f.panel.dispose();
+    for (const button of buttons) button.click();
+    assert.deepEqual({ saves, downloads, pickers }, { saves: 0, downloads: 0, pickers: 0 });
+  } finally { URL.createObjectURL = originalUrl; f.close(); }
+});
