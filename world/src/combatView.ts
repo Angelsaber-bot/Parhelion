@@ -321,11 +321,6 @@ export class WorldCombat {
       const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
       if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
-      if (e.attack === 'shot' && e.mode === 'recover' && v.lastMode === 'windup') {
-        const direction = new THREE.Vector3(e.target.x - e.p.x, 0, e.target.z - e.p.z).normalize();
-        const muzzle = new THREE.Vector3(e.p.x, e.p.y + 1.2, e.p.z).addScaledVector(direction, 0.55);
-        this.shot(muzzle, new THREE.Vector3(e.target.x, e.target.y + 1, e.target.z), false);
-      }
       v.lastMode = e.mode;
       v.updateLabel?.();
       v.applyPacified?.(e.pacified);
@@ -393,7 +388,15 @@ export class WorldCombat {
   }
   private events() {
     for (const event of this.state.drainEvents()) {
-      if (event.type === 'hit') {
+      if (event.type === 'attackContact') {
+        // A phase break/reset can enter recover without firing. Only simulation contact
+        // may emit a tracer, including when presentation skipped an intermediate state.
+        if (event.attack === 'shot' && this.playable && !this.state.defeated) {
+          const direction = new THREE.Vector3(event.target.x - event.origin.x, 0, event.target.z - event.origin.z).normalize();
+          const muzzle = new THREE.Vector3(event.origin.x, event.origin.y + 1.2, event.origin.z).addScaledVector(direction, .55);
+          this.shot(muzzle, new THREE.Vector3(event.target.x, event.target.y + 1, event.target.z), false);
+        }
+      } else if (event.type === 'hit') {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         this.impact.textContent = `${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();

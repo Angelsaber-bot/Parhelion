@@ -3,7 +3,9 @@ import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
 import { regionAt } from './regions';
-import { enemyAttackTiming, isMusketeer, type Enemy, type EnemyMode } from './combat';
+import { createEnemyAttackActing } from './enemyAttackActing';
+import { enemyAttackPose } from './enemyAttackPresentation';
+import { isMusketeer, type Enemy, type EnemyMode } from './combat';
 
 export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sunward_guard' | 'deck_raider';
 export const ENEMY_VISUAL_BUDGET = 24;
@@ -37,7 +39,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -100,36 +102,40 @@ export class EnemyVisuals {
         if (o instanceof THREE.SkinnedMesh) o.frustumCulled = false;
       });
       parent.add(root);
-      instance = { root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '' };
+      instance = { root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
     if (!instance) return false;
     instance.root.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = distance < 18; });
-    const name = enemyClip(model, e.mode, instance.gltf.animations.map(c => c.name));
-    const state = `${e.mode}:${e.attackCount}:${name}`;
-    if (state !== instance.state) {
+    instance.acting.restore();
+    const pose = enemyAttackPose(e, model);
+    const clip = instance.gltf.animations.find(c => c.name === pose.clip)
+      ?? instance.gltf.animations.find(c => c.name === 'Idle') ?? instance.gltf.animations[0];
+    const state = `${e.mode}:${e.attackCount}:${clip?.name}`;
+    if (clip && state !== instance.state) {
       instance.state = state;
-      const clip = instance.gltf.animations.find(c => c.name === name);
-      if (clip) {
-        const action = instance.mixer.clipAction(clip);
-        if (action !== instance.action) instance.action?.fadeOut(0.12);
-        const once = e.mode === 'windup' || e.mode === 'recover';
-        action.reset().setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
-        action.clampWhenFinished = once;
-        // Fit preview to simulation state duration; late loading seeks to remaining timer.
-        const timing = enemyAttackTiming(e);
-        const duration = e.mode === 'windup' ? timing.windup : e.mode === 'recover' ? timing.recovery : clip.duration;
-        action.setEffectiveTimeScale(clip.duration / duration).setEffectiveWeight(1).play();
-        // A model first loaded while scouting/paused must sample its pose immediately;
-        // a zero-time fade would otherwise leave the bind pose visible until combat resumes.
-        if (instance.action && instance.action !== action) action.fadeIn(0.12);
-        else action.stopFading();
-        if (once) action.time = Math.max(0, duration - e.timer) / duration * clip.duration;
-        instance.action = action;
-      }
+      const action = instance.mixer.clipAction(clip);
+      const priorAction = instance.action;
+      // Deterministic contact poses must not cross-fade with a stale windup pose.
+      // Free locomotion retains its soft transition; native assets remain immutable.
+      if (pose.sample !== undefined) instance.mixer.stopAllAction();
+      else if (action !== priorAction) priorAction?.fadeOut(.12);
+      action.reset().setLoop(pose.sample !== undefined ? THREE.LoopOnce : THREE.LoopRepeat, pose.sample !== undefined ? 1 : Infinity);
+      action.clampWhenFinished = pose.sample !== undefined;
+      action.setEffectiveTimeScale(1).setEffectiveWeight(1).play();
+      if (pose.sample === undefined && priorAction && action !== priorAction) action.fadeIn(.12);
+      else action.stopFading();
+      instance.action = action;
     }
-    instance.mixer.update(Math.min(dt, 0.1));
+    if (instance.action && pose.sample !== undefined) {
+      // Sample the simulation clock exactly, including first load / LOD swap / pause.
+      // Render dt must not run an attack ahead of its real contact or restart it.
+      instance.action.paused = true;
+      instance.action.time = clip.duration * pose.sample;
+    } else if (instance.action) instance.action.paused = false;
+    instance.mixer.update(Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0);
+    instance.acting.update(e);
     return true;
   }
   dispose() {

@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { EnemyVisuals, ENEMY_VISUAL_BUDGET, enemyClip, enemyModel, type EnemyModel } from '../src/enemyVisuals.ts';
+import { enemyAttackPose } from '../src/enemyAttackPresentation.ts';
 import { WorldCombatState, enemyAttackTiming } from '../src/combat.ts';
 import { parseLocalGlb } from './player-fixture.ts';
 const models: EnemyModel[] = ['samurai','ashigaru','musketeer','officer','sunward_guard','deck_raider'];
@@ -62,7 +63,7 @@ test('real-GLB visual lifecycle stays capped, releases paused/dead instances, sh
   state.enemies[0].mode='windup';state.enemies[0].timer=.4;
   visuals.update(state.enemies[0],'ashigaru',parents[0],fallbacks[0],.01,5,true);
   const windupTime=playing.action.time;
-  assert.equal(playing.action.getEffectiveTimeScale(),playing.action.getClip().duration/enemyAttackTiming(state.enemies[0]).windup,'pose windup uses the same timing as actual contact simulation');
+  assert.equal(playing.action.time,playing.action.getClip().duration*enemyAttackPose(state.enemies[0],'ashigaru').sample!,'absolute pose uses simulation timer without render-delta drift');
   visuals.update(state.enemies[0],'ashigaru',parents[0],fallbacks[0],.01,5,true);
   assert.ok(playing.action.time>=windupTime,'unchanged windup cannot reset to initial seek');
 

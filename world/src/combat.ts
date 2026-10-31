@@ -1,3 +1,4 @@
+import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
 import { ERA_BOSS_REQUIREMENTS } from './eraStories';
@@ -11,9 +12,10 @@ export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?:
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
-  attackCount: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean;
+  attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean;
 }
 export type CombatEvent =
+  | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'stagger'; id: string }
@@ -141,7 +143,7 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
 function makeEnemy(s: SpawnPoint): Enemy {
   const maxHp = s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
-    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
+    active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
 }
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
@@ -159,7 +161,6 @@ export function enemyAttackRadius(e: Enemy): number {
 const ELITE_PAIRED_TIMING = { windup: 1, recovery: .55 } as const;
 const DUELIST_FIRST_TIMING = { windup: .85, recovery: .45 } as const;
 const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
-const ENEMY_TURNS = [0] as const;
 export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3 }
 
 /** Thrust tells and impact share a forward rectangle, never a tracking/homing hit. */
@@ -273,7 +274,7 @@ export class WorldCombatState {
   private resetEnemy(e: Enemy) {
     Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
     Object.assign(e.target, e.home); e.attack = 'sweep';
-    e.phase = 1; e.attackCount = 0; e.hitTime = 0; e.staggerCooldown = 0;
+    e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0;
   }
   resetBoss() {
     if (!this.bossStarted) return;
@@ -344,7 +345,7 @@ export class WorldCombatState {
       }
       if (e.mode === 'idle') e.mode = 'chase';
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
-        e.phase = 2; e.mode = 'recover'; e.timer = 1.2;
+        e.phase = 2; e.contactSequence = 0; e.mode = 'recover'; e.timer = 1.2;
         this.events.push({ type: 'phase' });
       }
     }
@@ -446,29 +447,38 @@ export class WorldCombatState {
       e.timer -= dt;
       if (e.mode === 'windup') {
         if (e.timer <= 0) {
+          // Presentation consumes an actual contact, never guesses one from a mode transition.
+          // Snapshots stay locked even if another simulation tick moves or resets the actor.
+          e.contactSequence = e.attackCount;
+          this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e) });
           if (enemyAttackContains(e, player) && sees) this.hurt(e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
+          // hurt() can reset every actor on defeat. Never overwrite that terminal reset
+          // or let later actors acquire the defeated player within this same tick.
+          if (this.defeated) return;
           e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery;
         }
         continue;
       }
-      if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = 0.25; } continue; }
+      if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = enemyRangedSpacing(e) ? ENEMY_TACTICS.rangedReset : .25; } continue; }
       const isBoss = e === this.boss, elite = minibossProfile(e);
       const role = ENEMY_ROLES[e.role];
       const meleeRange = isBoss ? 6 : elite?.range ?? role.range;
-      if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40)) {
+      if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40) && hasEnemyPressureSlot(e, this.enemies, player)) {
         e.attack = elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
         Object.assign(e.target, player); e.attackCount++;
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
         continue;
       }
-      if (dist > 1.7 && (sees || isBoss && heightOk)) {
+      const spacing = enemyRangedSpacing(e);
+      const retreat = spacing > 0 && dist < spacing && e.timer > 0;
+      if ((dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
         const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite?.speed ?? role.speed;
-        const step = Math.min(speed * dt, dist - 1.7);
-        const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x);
+        const step = Math.min(speed * dt, retreat ? spacing - dist : Math.max(0, dist - 1.7));
+        const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x) + (retreat ? Math.PI : 0);
         // A few local alternatives let the king skirt ruined pillars; never phase through them.
-        for (const turn of isBoss ? BOSS_TURNS : ENEMY_TURNS) {
+        for (const turn of isBoss ? BOSS_TURNS : enemyWalkTurns(e)) {
           const p = terrain.walk(e.p, e.p.x + Math.cos(angle + turn) * step, e.p.z + Math.sin(angle + turn) * step);
-          if (p) { e.p = p; break; }
+          if (p && (isBoss || distanceXZ(p, e.home) <= COMBAT.leash)) { e.p = p; break; }
         }
       }
     }
