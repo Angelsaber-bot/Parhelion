@@ -13,11 +13,11 @@ const head=()=>execFileSync('git',['-C',world,'rev-parse','HEAD'],{encoding:'utf
 const sha=async(p:string)=>createHash('sha256').update(await readFile(p)).digest('hex');
 const sourcePaths=['src/characters/characterKit.ts','src/characters/actionBlend.ts','src/characters/catalog.ts','src/characters/musashiLocomotion.ts','src/characters/mountedChargeMotion.ts','src/captainCavalryClip.ts'];
 const source=async()=>Object.fromEntries(await Promise.all(sourcePaths.map(async p=>[p,await sha(resolve(world,p))])));
-const report:any={headBefore:head(),sourceBefore:await source(),scope:'CPU native CharacterKit; in-place state transitions. Nominal-root foot speeds are synthetic straight +Z motion, not actual controller stance proof. Bone positions are not sole mesh clearance.',actors:[]};
+const report:any={headBefore:head(),sourceBefore:await source(),scope:'CPU native CharacterKit; in-place state transitions. Nominal-root foot speeds are synthetic straight +Z motion, not actual controller stance proof. Bone positions are not sole mesh clearance.',units:{position:'metres/second',rotation:'radians/second',acceleration:'metres/second²',minFootBoneY:'metres'},actors:[]};
 for(const id of ['musashi','blackbeard','napoleonMounted']){
  const definition=CHARACTER_KITS[id],loaded=await readCharacter(fileURLToPath(new URL(definition.assetUrl)));
  const events:any[]=[];let frame=0;const actor=new CharacterKit(loaded.gltf,definition,{onEvent:(event:any)=>events.push({frame,at:event.at,state:event.state,socket:event.socket,position:event.transform?.position.toArray()})});
- const names=id==='musashi'?['mixamorigHips','mixamorigLeftFoot','mixamorigRightFoot','mixamorigLeftHand','mixamorigRightHand','Attachment_LeftHand_Katana','Attachment_RightHand_Katana']:id==='blackbeard'?['Hips','FootL','FootR','HandL','HandR','Blackbeard_Muzzle']:['H_ForeHoof_L','H_ForeHoof_R','H_HindHoof_L','H_HindHoof_R','RiderSeatAnchor','SaddleSocket','SaberTip','SaberSocket','Head'];
+ const names=id==='musashi'?['mixamorigHips','mixamorigLeftFoot','mixamorigRightFoot','mixamorigLeftHand','mixamorigRightHand','Attachment_LeftHand_Katana','Attachment_RightHand_Katana']:id==='blackbeard'?['Hips','FootL','FootR','UpperArmL','ForearmL','HandL','UpperArmR','ForearmR','HandR','Blackbeard_Muzzle']:['H_ForeHoof_L','H_ForeHoof_R','H_HindHoof_L','H_HindHoof_R','RiderSeatAnchor','SaddleSocket','SaberTip','SaberSocket','Head','UpperArmR','ForearmR','HandR'];
  const nodes=names.map(name=>({name,node:actor.model.getObjectByName(name)}));
  const missing=nodes.filter(v=>!v.node).map(v=>v.name);const valid=nodes.filter(v=>v.node);
  const sample=()=>{actor.root.updateWorldMatrix(true,true);return valid.map(({node}:any)=>({p:node.getWorldPosition(new THREE.Vector3()),q:node.getWorldQuaternion(new THREE.Quaternion()).normalize()}));};
@@ -28,7 +28,7 @@ for(const id of ['musashi','blackbeard','napoleonMounted']){
    actor.play(from,{restart:true});for(let i=0;i<Math.ceil(.45*hz);i++)actor.update(dt);
    let prev=sample(),prevV=prev.map(()=>new THREE.Vector3());
    actor.play(to,{restart:true});events.length=0;
-   const worst:any={position:{value:0},rotation:{value:0},acceleration:{value:0}};let minFootY=Infinity,maxSeatGap=0,finite=true;
+   const contactWindows:any[]=[];const worst:any={position:{value:0},rotation:{value:0},acceleration:{value:0}};let minFootY=Infinity,maxSeatGap=0,finite=true;
    const frames=Math.ceil((definition.clips[to].duration+.5)*hz);
    for(frame=0;frame<frames;frame++){
     actor.update(dt);const now=sample();
@@ -40,9 +40,10 @@ for(const id of ['musashi','blackbeard','napoleonMounted']){
      prevV[i]=velocity;
     }
     if(id==='napoleonMounted'){const a=valid.findIndex(v=>v.name==='RiderSeatAnchor'),b=valid.findIndex(v=>v.name==='SaddleSocket');if(a>=0&&b>=0)maxSeatGap=Math.max(maxSeatGap,now[a].p.distanceTo(now[b].p));}
+    if(to==='attack'&&(definition.clips.attack.events??[]).some((e:any)=>Math.abs(actor.clipTime-e.at)<.07))contactWindows.push({time:(frame+1)*dt,clipTime:actor.clipTime,nodes:valid.map((v,i)=>({name:v.name,p:now[i].p.toArray(),q:now[i].q.toArray()}))});
     prev=now;
    }
-   result.scenarios.push({hz,from,to,frames,finite,minFootBoneY:minFootY,maxSeatGap,worst,events:[...events],finalState:actor.state});
+   result.scenarios.push({hz,from,to,explicitRestart:true,sameStateForcedRestart:from===to,frames,finite,minFootBoneY:minFootY,maxSeatGap,worst,contactWindows,events:[...events],finalState:actor.state});
   }
   // Steady native gait: approximate low-foot band, not a planted-foot contact label.
   for(const state of ['walk','run']){
