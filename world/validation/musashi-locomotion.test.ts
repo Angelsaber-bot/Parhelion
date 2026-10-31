@@ -36,12 +36,12 @@ test('Musashi: actual gait lowers both arms, counter-swings to the feet, keeps b
   console.log('MUSASHI_GEOMETRY',JSON.stringify(report));actor.dispose();
 });
 
-test('Musashi: source clips, lower-body channels, socket bindings, grip/finger pose and original two-hit attack are unchanged',async()=>{
+test('Musashi: source clips, lower-body channels, socket bindings, grip/finger pose and two-hit contact poses are unchanged',async()=>{
   const {actor,gltf}=await fixture();
   for(const state of ['idle','walk','run']as const){const source=gltf.animations.find(c=>c.name===definition.clips[state].name)!,original=JSON.stringify(source.toJSON()),relaxed=musashiLocomotionClip(source,gltf.scene,state);assert.equal(JSON.stringify(source.toJSON()),original);
     for(const track of source.tracks.filter(t=>/Hips|UpLeg|Leg|Foot|Toe|Hand(?:Thumb|Index|Middle|Ring|Pinky)/.test(t.name))){const copy=relaxed.tracks.find(t=>t.name===track.name)!;assert.deepEqual(copy.values,track.values);assert.deepEqual(copy.times,track.times);}
   }
-  const attack=gltf.animations.find(c=>c.name==='Attack')!;assert.equal(musashiLocomotionClip(attack,gltf.scene,'attack'),attack);
+  const attack=gltf.animations.find(c=>c.name==='Attack')!;const performed=musashiLocomotionClip(attack,gltf.scene,'attack');assert.notEqual(performed,attack);assert.equal(performed.duration,attack.duration);
   const localSockets=Object.values(definition.sockets).map(s=>{const o=actor.model.getObjectByName(s.node)!;return {o,p:o.position.clone(),q:o.quaternion.clone(),parent:o.parent};});
   actor.play('walk');advance(actor,.5);actor.play('attack');advance(actor,19/30);
   const reference=gltf.scene.clone(true),mixer=new THREE.AnimationMixer(reference);mixer.clipAction(attack).play();

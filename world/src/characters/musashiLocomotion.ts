@@ -9,10 +9,12 @@ const CHANNELS = ['Spine', 'Spine1', 'Spine2', 'Neck', ...SIDES.flatMap(([side])
  * Musashi's delivered gait pins both hands in a raised guard. Bake just the upper-body
  * channels into relaxed, alternating low carries. This remains one ordinary mixer action,
  * so crossfades (including interrupted transitions) cannot leave a live IK correction on
- * Attack. The original attack, fingers/grips, foot contacts, hips and assets are untouched.
+ * Attack. Locomotion fingers/grips, foot contacts, hips and assets are untouched.
+ * Ordinary attack has a separately baked, contact-preserving performance below.
  * Both katana trail outside the legs, angled back rather than pointing through the floor.
  */
-export function musashiLocomotionClip(source: THREE.AnimationClip, model: THREE.Object3D, state: string) {
+export function musashiLocomotionClip(source: THREE.AnimationClip, model: THREE.Object3D, state: string): THREE.AnimationClip {
+  if (state === 'attack') return musashiExpressionClip(musashiAttackClip(source, model), model, state);
   if (!['idle', 'walk', 'run'].includes(state)) return source;
   // No meshes, materials, geometries, skeletons or GPU resources are cloned for baking.
   function hierarchy(object: THREE.Object3D): THREE.Object3D {
@@ -106,5 +108,49 @@ export function musashiLocomotionClip(source: THREE.AnimationClip, model: THREE.
     const rotations = values.get(name)!; rotations.splice(rotations.length - 4, 4, ...rotations.slice(0, 4));
     tracks.push(new THREE.QuaternionKeyframeTrack(`${PREFIX}${name}.quaternion`, times, rotations));
   }
-  return new THREE.AnimationClip(source.name, source.duration, tracks);
+  return musashiExpressionClip(new THREE.AnimationClip(source.name, source.duration, tracks), model, state);
+}
+
+
+/** Two distinct load/cut/recovery phrases, with quiet low-carry bookends.
+ * Contact poses and clock times remain exact; this cannot authorize damage.
+ * Source asset, fingers/socket locals and all lower-body contact positions survive. */
+function musashiAttackClip(source:THREE.AnimationClip,model:THREE.Object3D):THREE.AnimationClip{
+ if(Math.abs(source.duration-1.6)>1e-4)return source;
+ const low=musashiLocomotionClip(source,model,'idle');if(low===source)return source;
+ const smooth=(x:number)=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
+ const knots=[[0,0],[.24,.12],[.42,.29],[19/30,19/30],[.78,.82],[.95,.94],[33/30,33/30],[1.24,1.34],[1.6,1.6]];
+ const remap=(time:number)=>{for(let i=1;i<knots.length;i++){const[a,x]=knots[i-1],[b,y]=knots[i];if(time<=b)return x+(y-x)*(time-a)/(b-a);}return source.duration;};
+ const samples=96,times=Array.from({length:samples+1},(_,i)=>source.duration*i/samples),a=new THREE.Quaternion(),b=new THREE.Quaternion();
+ const replaced=new Set(CHANNELS.map(n=>`${PREFIX}${n}.quaternion`));
+ const tracks=source.tracks.map(track=>{
+  const interpolation=(track as THREE.KeyframeTrack&{createInterpolant():THREE.Interpolant}).createInterpolant(),size=track.getValueSize(),values:number[]=[];
+  const quietTrack=low.tracks.find(t=>t.name===track.name),quiet=replaced.has(track.name)&&quietTrack?(quietTrack as THREE.KeyframeTrack&{createInterpolant():THREE.Interpolant}).createInterpolant():undefined;
+  for(const time of times){
+   const sample=Array.from(interpolation.evaluate(remap(time)));
+   const weight=(1-smooth(time/.26))+smooth((time-1.25)/.35);
+   if(quiet&&weight>0){a.fromArray(sample);b.fromArray(quiet.evaluate(time));a.slerp(b,Math.min(1,weight)).normalize();values.push(...a.toArray());}else values.push(...sample.slice(0,size));
+  }
+  const copy=track.clone();copy.times=new Float32Array(times);copy.values=new Float32Array(values);return copy;
+ });
+ return new THREE.AnimationClip(source.name,source.duration,tracks);
+}
+
+/** Native facial morphs only: one calm idle blink and a restrained combat focus.
+ * Every state owns both channels so interruption/crossfade cannot leave a stare. */
+function musashiExpressionClip(source:THREE.AnimationClip,model:THREE.Object3D,state:string):THREE.AnimationClip{
+ const tracks=[...source.tracks],duration=source.duration;
+ model.traverse(object=>{
+  const mesh=object as THREE.Mesh,dict=mesh.morphTargetDictionary;if(!dict||!mesh.morphTargetInfluences)return;
+  for(const name of['Blink','Angry']){
+   const index=dict[name];if(index===undefined)continue;
+   const times=Array.from({length:Math.ceil(duration*60)+1},(_,i)=>duration*i/Math.ceil(duration*60));
+   const values=times.map(time=>{
+    if(name==='Blink'){if(state!=='idle')return 0;const u=Math.abs(time-duration*.78)/.115;return u<1?.92*Math.pow(Math.cos(u*Math.PI/2),2):0;}
+    return state==='attack'?.20*Math.sin(Math.PI*time/duration)**2:state==='run'?.07:state==='walk'?.025:0;
+   });
+   tracks.push(new THREE.NumberKeyframeTrack(`${mesh.name}.morphTargetInfluences[${index}]`,times,values));
+  }
+ });
+ return new THREE.AnimationClip(source.name,source.duration,tracks);
 }
