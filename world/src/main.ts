@@ -165,6 +165,7 @@ function applyResolution() {
 }
 
 addEventListener('resize', () => {
+  if (bootFailed) return;
   observedDeviceDpr = devicePixelRatio;
   dpr = targetDpr(devicePixelRatio, resolution, lowQ);
   adaptiveResolution.reset();
@@ -882,19 +883,25 @@ function renderControlHints() {
 }
 settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
 const lockError = () => {
-  if (locked) return;
+  if (bootFailed || locked) return;
   clearInput();
   setLoading('无法锁定鼠标，请再次点击进入（或检查浏览器权限）');
   start.classList.remove('hidden');
 };
 setLoading('点击进入（ESC 释放鼠标）');
 start.addEventListener('click', async (e) => {
+  if (bootFailed) return;
   audio.unlock(e);
   if (settingsPanel.open || travelOpenState || campaignJournalOpen || narrative?.open || ultimateDirector?.active) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
 document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
+  if (bootFailed) {
+    locked = false; clearInput();
+    if (document.pointerLockElement === canvas) document.exitPointerLock();
+    return;
+  }
   locked = document.pointerLockElement === canvas;
   clearInput();
   if (!locked) { inspectServant = false; $('bigmap').classList.remove('open'); }
@@ -917,6 +924,7 @@ function requestProgressReset() {
   if (accepted) resetProgress();
 }
 function press(binding: string, repeat = false) {
+  if (bootFailed) return;
   const action = settings.action(binding);
   if (!action || !locked || settingsPanel.open || document.visibilityState !== 'visible' || !document.hasFocus()) return;
   if (action === 'interact' && narrative?.open) { if (!repeat) { narrative.advance(); hudRevision++; } return; }
