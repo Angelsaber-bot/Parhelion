@@ -1,0 +1,104 @@
+{
+  "inputSha256": "a516c5530338b5207e545d9cac8b0a9a7f6130bddab6e4cb6bb55ebef63327f9",
+  "outputSha256": "8a7213975e5e71819f02037a2d311573fb5832bfbfedd0f3a5eea6d276e66213",
+  "gzipSha256": "65170515f2ebcd43f758153fc92e8cbeaacbc878880183d98cf6adb91a96f954",
+  "oldBinaryPrefixExact": true,
+  "unchanged": [
+    "nodes",
+    "skins",
+    "animations",
+    "materials",
+    "images",
+    "textures",
+    "scenes"
+  ],
+  "changedPrimitives": [
+    [
+      3,
+      0
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      7,
+      0
+    ],
+    [
+      8,
+      0
+    ],
+    [
+      12,
+      0
+    ],
+    [
+      13,
+      0
+    ]
+  ],
+  "rows": [
+    {
+      "mesh": 3,
+      "name": "Carmine red piping",
+      "beforeTriangles": 13216,
+      "afterTriangles": 13216,
+      "trimFollowVertices": 956
+    },
+    {
+      "mesh": 4,
+      "name": "Hair \u2022 pale rose directional strand finish",
+      "beforeTriangles": 8355,
+      "afterTriangles": 8555,
+      "gatheredReliefLocks": 0,
+      "reconnectedRootVertices": 0,
+      "reconnectedLocks": 0,
+      "addedCurvedEdgeVertices": 100,
+      "maxNewEdgeDisplacement": 0.0015
+    },
+    {
+      "mesh": 6,
+      "name": "Katana \u2022 folded polished steel",
+      "beforeTriangles": 4084,
+      "afterTriangles": 1280
+    },
+    {
+      "mesh": 7,
+      "name": "Katana \u2022 honed silver edge",
+      "beforeTriangles": 464,
+      "afterTriangles": 1024
+    },
+    {
+      "mesh": 8,
+      "name": "Kimono \u2022 deep violet blue silk",
+      "beforeTriangles": 15637,
+      "afterTriangles": 15637,
+      "tailoringClearanceVertices": 1277,
+      "maxOutwardOffset": 0.0022
+    },
+    {
+      "mesh": 12,
+      "name": "Rose hair strand shadow",
+      "beforeTriangles": 13826,
+      "afterTriangles": 13826,
+      "rootEtchingFollowVertices": 1000
+    },
+    {
+      "mesh": 13,
+      "name": "Warm porcelain rose hair",
+      "beforeTriangles": 25344,
+      "afterTriangles": 26130,
+      "gatheredReliefLocks": 0,
+      "reconnectedRootVertices": 1485,
+      "reconnectedLocks": 17,
+      "addedCurvedEdgeVertices": 408,
+      "maxNewEdgeDisplacement": 0.0015
+    }
+  ],
+  "byteDelta": 2085592
+}

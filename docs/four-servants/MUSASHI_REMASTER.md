@@ -11,4 +11,4 @@ The established face, blue-violet costume, rose-white swept hair and two differe
 
 ## Asset refinement and final preview
 
-New native blade/hair geometry and fresh same-camera offline evidence are in progress as a separate checkpoint. Do not call the first motion checkpoint a newly built model, and do not use older preview videos as evidence for it.
+Final v5 native geometry is under `assets/characters/musashi/remaster_v2`: rebuilt two-blade cross sections, selective hair curvature and embedded original fringe roots, plus demonstrated silk skin-poke clearance with matching piping. Existing face/costume/hair design is retained. See its manifest and README for precise scope, provenance and byte/triangle budgets. Five native model/motion contract tests pass. New same-camera front/side and blade macro CPU renders are in the sibling `parhelion-four-servants-evidence/musashi` evidence directory; these are fresh offline previews, not GPU footage. Runtime input QA is independently owned.

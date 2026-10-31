@@ -1,0 +1,28 @@
+{
+  "version": "2026-10-31-v5",
+  "design": "Existing Musashi face, costume, hairstyle and two-katana identity retained",
+  "files": {
+    "Musashi_Runtime.glb.gz": {
+      "bytes": 7853221,
+      "sha256": "65170515f2ebcd43f758153fc92e8cbeaacbc878880183d98cf6adb91a96f954"
+    },
+    "Musashi_Runtime_LOD1.glb.gz": {
+      "bytes": 5440194,
+      "sha256": "683178b290cbc1872b8d6fcaf2bb91ac9facec24dc59e5ea028f61c90be8832c"
+    },
+    "Musashi_Runtime_LOD1.glb": {
+      "bytes": 9092916,
+      "sha256": "a1483693d30b4441385f0d396d6930dc967073eb3091e587c3e35bd2db7f5c18"
+    },
+    "Musashi_Runtime.glb": {
+      "bytes": 14497360,
+      "sha256": "8a7213975e5e71819f02037a2d311573fb5832bfbfedd0f3a5eea6d276e66213"
+    }
+  },
+  "runtimeTriangles": 203994,
+  "runtimeMeshCount": 15,
+  "runtimeMaterialCount": 15,
+  "bones": 65,
+  "provenance": "../reference/PROVENANCE.md",
+  "baseCreatorTerms": "../reference/BASE-CREATOR-TERMS.txt"
+}

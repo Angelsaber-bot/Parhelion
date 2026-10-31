@@ -1,0 +1,89 @@
+{
+  "inputSha256": "1d970bc560ad09f3c1f7354ab8ced6c2447fcc01972ddc7e7538bc323cfb3196",
+  "outputSha256": "a1483693d30b4441385f0d396d6930dc967073eb3091e587c3e35bd2db7f5c18",
+  "gzipSha256": "683178b290cbc1872b8d6fcaf2bb91ac9facec24dc59e5ea028f61c90be8832c",
+  "oldBinaryPrefixExact": true,
+  "unchanged": [
+    "nodes",
+    "skins",
+    "animations",
+    "materials",
+    "images",
+    "textures",
+    "scenes"
+  ],
+  "changedPrimitives": [
+    [
+      4,
+      0
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      7,
+      0
+    ],
+    [
+      11,
+      0
+    ],
+    [
+      12,
+      0
+    ]
+  ],
+  "rows": [
+    {
+      "mesh": 4,
+      "name": "Carmine red piping",
+      "beforeTriangles": 4008,
+      "afterTriangles": 4008,
+      "trimFollowVertices": 502
+    },
+    {
+      "mesh": 5,
+      "name": "Katana \u2022 folded polished steel",
+      "beforeTriangles": 468,
+      "afterTriangles": 800
+    },
+    {
+      "mesh": 6,
+      "name": "Katana \u2022 honed silver edge",
+      "beforeTriangles": 1754,
+      "afterTriangles": 640
+    },
+    {
+      "mesh": 7,
+      "name": "Kimono \u2022 deep violet blue silk",
+      "beforeTriangles": 6571,
+      "afterTriangles": 6571,
+      "tailoringClearanceVertices": 853,
+      "maxOutwardOffset": 0.0022
+    },
+    {
+      "mesh": 11,
+      "name": "Rose hair strand shadow",
+      "beforeTriangles": 5458,
+      "afterTriangles": 5458,
+      "rootEtchingFollowVertices": 218
+    },
+    {
+      "mesh": 12,
+      "name": "Warm porcelain rose hair",
+      "beforeTriangles": 10929,
+      "afterTriangles": 15458,
+      "gatheredReliefLocks": 0,
+      "reconnectedRootVertices": 185,
+      "reconnectedLocks": 7,
+      "addedCurvedEdgeVertices": 2316,
+      "maxNewEdgeDisplacement": 0.0015
+    }
+  ],
+  "byteDelta": 1008360
+}
