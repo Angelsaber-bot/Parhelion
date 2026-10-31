@@ -17,6 +17,7 @@ export class EraCinematicRemake{
  get expressionChannels(){return{morphMeshes:this.morphs.length,geometryChannels:this.poses.length};}
  constructor(private actor:THREE.Group,private clone:THREE.Object3D,private identity:string,_owner:EraArtOwner){
   this.root.name=`${identity}: real 3D expressions and cinematic lighting`;
+  if(identity==='musashi')this.fill.intensity=.35;
   this.head=clone.getObjectByName(identity==='musashi'?'mixamorigHead':'Head');this.root.add(this.key,this.fill);
   clone.traverse(object=>{
    const mesh=object as THREE.Mesh;if(!mesh.isMesh)return;
@@ -59,7 +60,7 @@ export class EraCinematicRemake{
   this.actor.updateWorldMatrix(true,true);this.clone.getWorldScale(this.scale);
   if(this.head)this.head.getWorldPosition(this.headPosition);else this.headPosition.copy(this.actor.position).add(new THREE.Vector3(0,2.4,0));
   this.headPosition.y+=Math.abs(this.scale.y)*.10;
-  this.fill.position.copy(this.headPosition).add(new THREE.Vector3(-1.5,.5,2));this.key.position.copy(this.headPosition).add(new THREE.Vector3(1,.3,1.8));this.key.intensity=releasing?(reduced?.6:2.2)*contact:frame.phase==='charge'?.25+p*.5:.1;
+  this.fill.position.copy(this.headPosition).add(new THREE.Vector3(-1.5,.5,2));this.key.position.copy(this.headPosition).add(new THREE.Vector3(1,.3,1.8));this.key.intensity=releasing?(reduced?.6:this.identity==='musashi'?.9:2.2)*contact:frame.phase==='charge'?(this.identity==='musashi'?.15+p*.25:.25+p*.5):.1;
   // Keep the established genuine 3D cannon insert, including its hidden actor.
   if(!this.actor.visible||!this.head){this.currentShot=this.head?'broadside':'fallback';camera.getWorldDirection(this.aim).multiplyScalar(6).add(camera.position);return;}
   const center=this.actor.position,head=this.headPosition;

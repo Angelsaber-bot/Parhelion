@@ -1,3 +1,4 @@
+import { ultimateReadability } from './ultimateReadability';
 import { MusashiWindupCamera } from './musashiWindupCamera';
 import { CaptainCavalryCamera } from './captainCavalryCamera';
 import * as THREE from 'three';
@@ -58,9 +59,9 @@ export class UltimateStage {
     this.end(); this.identity = options.identity.toLowerCase().replace('napoleonmounted', 'napoleon'); this.reduced = !!options.reducedEffects;
     const colors = palettes[this.identity] ?? palettes.saber;
     this.scene.background = new THREE.Color(colors[0]); this.scene.fog = new THREE.Fog(colors[0], 20, 70);
-    this.scene.add(new THREE.HemisphereLight(0xe6f3ff, colors[0], this.identity === 'saber' ? 1.6 : 2.8));
-    const key = new THREE.DirectionalLight(0xfff4df, this.identity === 'saber' ? 2.4 : 3.5); key.position.set(-3, 6, 5); this.scene.add(key);
-    const rim = new THREE.DirectionalLight(colors[1], this.identity === 'saber' ? 1.5 : 3); rim.position.set(3, 3, -4); this.scene.add(rim);
+    this.scene.add(new THREE.HemisphereLight(0xe6f3ff, colors[0], ultimateReadability(this.identity).hemisphere));
+    const key = new THREE.DirectionalLight(0xfff4df, ultimateReadability(this.identity).key); key.position.set(-3, 6, 5); this.scene.add(key);
+    const rim = new THREE.DirectionalLight(colors[1], ultimateReadability(this.identity).rim); rim.position.set(3, 3, -4); this.scene.add(rim);
     this.actor = new THREE.Group(); this.effects = new THREE.Group(); this.scene.add(this.actor, this.effects);
     this.sourceRoot = options.sourceRoot; this.clone = cloneSkeleton(options.sourceRoot); this.clone.position.set(0, 0, 0); this.clone.quaternion.identity(); this.clone.visible = true; this.actor.add(this.clone);
     const originals: THREE.Object3D[] = [], copies: THREE.Object3D[] = [];
@@ -336,12 +337,12 @@ export class UltimateStage {
         }
         const h=Math.min(720,this.size.y),w=Math.round(this.size.x*h/Math.max(1,this.size.y));
         if(w!==this.bloomWidth||h!==this.bloomHeight){this.bloomComposer.setSize(w,h);this.bloomWidth=w;this.bloomHeight=h;}
-        // Readable default Saber lighting, independent of reduced-effects preference.
+        // Identity-local readable default lighting, independent of reduced-effects preference.
         // Reapply all fields on every cast so another identity never inherits them.
         if(this.bloomPass){
-          this.bloomPass.strength=this.identity==='saber'?.28:.75;
-          this.bloomPass.radius=this.identity==='saber'?.30:.48;
-          this.bloomPass.threshold=this.identity==='saber'?.90:.72;
+          this.bloomPass.strength=ultimateReadability(this.identity).bloomStrength;
+          this.bloomPass.radius=ultimateReadability(this.identity).bloomRadius;
+          this.bloomPass.threshold=ultimateReadability(this.identity).bloomThreshold;
         }
         this.bloomComposer.render(0);
         } catch {
