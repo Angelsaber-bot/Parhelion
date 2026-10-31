@@ -33,3 +33,23 @@ jump/water/updraft/glide exclusion and repeated distance. Evidence is external
 `qa/evade-main-cadence-independent.{json,log}` and
 `qa/evade-support-independent-candidate.log`. Production acceptance must repeat
 these invariants through the final Player path rather than only the wrapper.
+
+## Production verification after approval
+
+Root-approved production checkpoint0120fd9 was independently exercised with
+**no recovery wrapper installed**. All six flat/slope ×30/60/120Hz actual-main
+runs traveled3.120000m and exactly matched every recorded remaining/cooldown/
+invulnerability/contact-state sample from the prior proven candidate. Numeric
+reference fixture `validation/fixtures/evade-support-proven-main-traces.json`
+contains only sanitized synthetic traces and the historical Player blob hash.
+The production runner defaults to this comparison and writes a separate
+`qa/evade-main-cadence-independent-production.json`; historical evidence is not
+overwritten. `--capture-historical-wrapper` is only for an appropriate old source.
+
+`validation/evade-support-independent.test.ts` now runs in ordinary World CI and
+compares production Player directly to the frozen pre-support Player for ordinary
+dry/water movement at all three rates. Every sample remains exactly equal, with
+zero support passes/capsule retries off-evade. Historical wrapper disposal checks
+remain separate. The source runtime helper reports individual BVH raycasts
+separately from one support-ray pass; one pass may query multiple enabled BVHs.
+No CPU timing or GPU improvement is inferred from these functional results.
