@@ -122,7 +122,16 @@ export function interactFalseDawn(id: string, done: Set<string>, context: FalseD
   const known = [FALSE_DAWN.recorder, FALSE_DAWN.harbor, FALSE_DAWN.winter, FALSE_DAWN.array, ...FALSE_DAWN.emitters] as readonly string[];
   if (!known.includes(id)) return response(done, { handled: false });
   const state = getFalseDawnState(done);
-  if (state.completed) return response(done, { dialogue: getFalseDawnEnding(done) });
+  if (state.completed) {
+    if (id === FALSE_DAWN.array) return response(done, { dialogue: getFalseDawnEnding(done) });
+    if ((FALSE_DAWN.emitters as readonly string[]).includes(id)) return response(done, { toast: state.ending === 'repurpose'
+      ? ['复制发射器已关闭；保留下来的是有人值守的频道。', 'The copying emitter is disabled. The remaining channel has a person on watch.']
+      : ['复制发射器已封存，不必再次操作。', 'The copying emitter is sealed; no further operation is needed.'] });
+    if (id === FALSE_DAWN.recorder) return response(done, { dialogue: ['记录器不再抢先作答。想重读这次调查的记录，可以查看旁边的阵列台。', 'The recorder no longer answers first. Reread the investigation record at the nearby array console.'] });
+    const chosen = id === FALSE_DAWN.harbor ? state.route === 'harbor' : state.route === 'winter';
+    return response(done, { toast: chosen ? ['这段回传节拍已经比对过，调查记录仍在谷地阵列台。', 'This return cadence is already compared. The investigation record remains at the Valley array.']
+      : ['你循另一条线索结束了调查；这处未选路线不会被记为已完成遭遇。', 'You resolved the investigation through the other lead; this unchosen route is not recorded as a cleared encounter.'] });
+  }
   const emitter = (FALSE_DAWN.emitters as readonly string[]).indexOf(id);
   if (emitter >= 0) {
     if (done.has(FALSE_DAWN.anchors[emitter])) return response(done, { toast: ['这处发射器已经关闭。', 'This emitter is already disabled.'] });
@@ -137,7 +146,7 @@ export function interactFalseDawn(id: string, done: Set<string>, context: FalseD
   }
   if (context.activeEncounter) return response(done, { toast: ['讯号正在接通。先应对现场威胁；发射器可在战斗中操作。', 'The signal is active. Deal with the threat; emitter switches remain usable during combat.'] });
   if (state.stage === 'locked' || state.stage === 'equipment') return response(done, { dialogue: getFalseDawnGuide(done)!.text });
-  if (state.stage === 'route' && id === FALSE_DAWN.recorder) return response(done, { dialogue: ROUTE, choices: CHOOSE_ROUTE });
+  if (state.stage === 'route' && id === FALSE_DAWN.recorder) return response(done, { dialogue: getFalseDawnRouteBriefing(done), choices: CHOOSE_ROUTE });
   if ((state.stage === 'harbor-key' && id === FALSE_DAWN.harbor) || (state.stage === 'winter-key' && id === FALSE_DAWN.winter)) return response(done, {
     dialogue: state.stage === 'harbor-key' ? ['潮汐记录里，一段回声每次分毫不差；另一段在浪声后停顿，才有人回答。哪个节拍值得带回去？', 'One tide record repeats without the slightest change. Another pauses after the surf before someone replies. Which cadence should you take back?']
       : ['两轮接通后，记录出现两种节拍：整齐得没有呼吸的重复，以及被换气和风声打断、却仍能回应的来声。', 'After both connections, the log holds two rhythms: a repetition too regular to breathe, and a reply interrupted by breath and wind.'],
@@ -200,13 +209,29 @@ export function recordFalseDawnEncounterVictory(id: string, done: Set<string>): 
   return response(done, { changed: true, toast: getFalseDawnGuide(done)?.text ?? ['伪晓源头已安静。', 'The source of False Dawn is quiet.'] });
 }
 export function getFalseDawnEnding(done: ReadonlySet<string>): Localized {
-  return done.has(FALSE_DAWN.rescued) ? [
+  const ending: Localized = done.has(FALSE_DAWN.rescued) ? [
     '复制回路被拆除，发射器只剩一道稳定的暖光。岚没有让它替任何人答话，只把守频值班表挂在控制台旁。\n“有人在吗？”频道里又响起这句话。这一次，回答晚了一拍——是岚亲口说的：“在。慢慢说。”\n伪晓回声结束。道路和原来的约定都还在；不是每一声呼唤都该追，但每个真正等待的人，都值得有个回答。',
     'The copying circuit is removed. One steady warm light remains. Lan does not let it answer for anyone; a watch rota hangs beside the console.\n“Is anybody there?” asks the channel again. This time the answer is a beat late—Lan speaking in person: “Yes. Take your time.”\nFalse Dawn is over. The roads and earlier promises remain. Not every call should be followed, but someone truly waiting deserves an answer.',
   ] : [
     '复制回路的接头被封进匣子，三座发射器都熄灭了。岚把地点记进巡查册，没有把机器的沉默写成所有人的沉默。\n生活馆的守频器仍亮着。以后有人求援，回答来自守在那里的一个人，而不是一段借来的声音。\n伪晓回声结束。道路和原来的约定都还在；这一次，你没有把另一个人的等待交给回声。',
     'The copying circuit is sealed in its case and all three emitters go dark. Lan marks the place for inspection without mistaking the machine’s silence for everyone’s silence.\nThe residence receiver remains lit. When someone calls for help, an actual person on watch will answer—not a borrowed voice.\nFalse Dawn is over. The roads and earlier promises remain. This time, you did not entrust another person’s waiting to an echo.',
   ];
+  const route = getFalseDawnState(done).route;
+  if (route) {
+    const memory: Localized = route === 'harbor'
+      ? ['你从潮汐台带回的那一拍等待，留在了归路记录里：真实的回应不必完美重复。', 'The waiting beat you recovered at the tide station remains in the record: a genuine answer need not repeat perfectly.']
+      : ['你在两轮雪原接通之间守住的那段停顿，留在了归路记录里：活人的回应，需要喘息的时间。', 'The pause you held between the snowfield connections remains in the record: a living answer needs time to breathe.'];
+    return [`${ending[0]}\n${memory[0]}`, `${ending[1]}\n${memory[1]}`];
+  }
+  return ending;
+}
+
+/** Earlier optional work changes recollection, never encounter admission or rewards. */
+export function getFalseDawnRouteBriefing(done: ReadonlySet<string>): Localized {
+  const lines: Localized[] = [ROUTE];
+  if (done.has('campaign_blacksail_worked')) lines.push(['岚翻到你与玛拉核对过的货单：“没有口粮的船，和从不等待回答的声音。我们已经见过一次这样的矛盾。”', 'Lan opens the manifest you checked with Mara. “Boats without rations, voices that never wait for an answer. We have seen this kind of contradiction before.”']);
+  if (done.has('campaign_winter_worked')) lines.push(['你替米哈伊固定担架时留下的绑带标记，让雪原记录里的停顿有了分量：行路的人，需要彼此等一等。', 'The strap marks from your work with Mikhail give weight to the pauses in the snowfield log: people on a road need time to wait for one another.']);
+  return [lines.map(line => line[0]).join('\n'), lines.map(line => line[1]).join('\n')];
 }
 
 /** Original adaptation dialogue, not quotations. Caller must establish that the

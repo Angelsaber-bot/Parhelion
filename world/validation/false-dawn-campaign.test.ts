@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FALSE_DAWN as F, FALSE_DAWN_ENCOUNTERS, chooseFalseDawn as choose, confirmFalseDawnEncounterStart as confirm, falseDawnEncounterFlags as flags, getExpectedFalseDawnEncounter as expected, getFalseDawnEncounterOrigin as origin, getFalseDawnGuide as guide, getFalseDawnState as state, interactFalseDawn as interact, recordFalseDawnEncounterVictory as victory, getFalseDawnEnding, getFalseDawnCompanionReaction, type FalseDawnEncounterId } from '../src/falseDawnCampaign';
+import { FALSE_DAWN as F, FALSE_DAWN_ENCOUNTERS, chooseFalseDawn as choose, confirmFalseDawnEncounterStart as confirm, falseDawnEncounterFlags as flags, getExpectedFalseDawnEncounter as expected, getFalseDawnEncounterOrigin as origin, getFalseDawnGuide as guide, getFalseDawnState as state, interactFalseDawn as interact, recordFalseDawnEncounterVictory as victory, getFalseDawnEnding, getFalseDawnCompanionReaction, getFalseDawnRouteBriefing, getFalseDawnMarkerLabel, type FalseDawnEncounterId } from '../src/falseDawnCampaign';
 import { WorldProgress } from '../src/progress';
 import { getEraBossRequirements, ERA_IDS, ERA_STORIES } from '../src/eraStories';
 function ready() { return new Set([F.receiver,'armory_rack']); }
@@ -81,4 +81,19 @@ test('deterministic hostile event-order fuzz never writes original progress or b
  assert.ok(!(done.has(F.routeHarbor)&&done.has(F.routeWinter)));assert.ok(!(done.has(F.rescued)&&done.has(F.sealed)));assert.ok([...done].every(flag=>flag==='armory_rack'||flag===F.receiver||flag.startsWith('false_dawn_')));
  if(done.has(F.complete)){assert.ok(done.has(flags('false_dawn_warden').cleared));assert.ok(F.anchors.every(flag=>done.has(flag)));assert.ok(done.has(flags('false_dawn_array').cleared));assert.ok(done.has(F.harborKey)||done.has(F.winterKey));}
  }}
+});
+
+
+test('earlier resident work is acknowledged only when earned and endings remember the actual chosen route',()=>{
+ const base=getFalseDawnRouteBriefing(new Set())[1];assert.ok(!base.includes('manifest you checked'));assert.ok(!base.includes('your work with Mikhail'));
+ const harbor=getFalseDawnRouteBriefing(new Set(['campaign_blacksail_worked']))[1];assert.ok(harbor.includes('manifest you checked'));assert.ok(!harbor.includes('your work with Mikhail'));
+ const winter=getFalseDawnRouteBriefing(new Set(['campaign_winter_worked']))[1];assert.ok(winter.includes('your work with Mikhail'));assert.ok(!winter.includes('manifest you checked'));
+ const h=getFalseDawnEnding(new Set([F.complete,F.rescued,F.routeHarbor]))[1],w=getFalseDawnEnding(new Set([F.complete,F.rescued,F.routeWinter]))[1];assert.ok(h.includes('tide station'));assert.ok(!h.includes('snowfield connections'));assert.ok(w.includes('snowfield connections'));assert.notEqual(h,w);
+ for(const id of[F.recorder,F.harbor,F.winter,F.array,...F.emitters]){const label=getFalseDawnMarkerLabel(id)!;assert.ok(label[0].length<20);assert.ok(label[1].length<45);assert.equal(label[0].includes('\n'),false);label[0]='mutated';assert.notEqual(getFalseDawnMarkerLabel(id)![0],'mutated');}assert.equal(getFalseDawnMarkerLabel('__proto__'),null);
+});
+
+test('completed emitters and remote stations never spam the full ending or fabricate unchosen victories',()=>{
+ const done=new Set([F.complete,F.rescued,F.routeHarbor]);const before=[...done];
+ for(const id of[...F.emitters,F.harbor,F.winter]){const result=interact(id,done);assert.equal(result.dialogue,null);assert.ok(result.toast);assert.equal(result.changed,false);assert.equal(result.encounter,null);}
+ assert.match(interact(F.winter,done).toast![1],/unchosen route/);assert.ok(interact(F.array,done).dialogue?.[1].includes('False Dawn is over'));assert.deepEqual([...done],before);
 });
