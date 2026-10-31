@@ -24,3 +24,12 @@ Numeric material/light diagnostics cannot establish white-pixel area, bloom, ton
 ## Resource policy
 
 Only bounded JSON/log output (less than 3 MiB per process), one actual-main boot at a time under the existing global weight-four lock and memory precheck. Root explicitly approved a QA-only 2 GiB free-disk threshold; renderer gate remains unchanged. Stop below reserve; do not delete old deliverables or evidence. No new FPS or CPU speedup claim.
+
+## Narrow Musashi readability checkpoint
+
+Runtime bytes measured during the genuine-input candidate run match committed `65bcf51a6bd48973e2aa638333ed379f05d3aabd` across all 177 captured source/asset files. HEAD advanced by commit-only operations during the run; this is explicitly byte-equivalent candidate evidence, not a claim that the whole checkout was immutable.
+
+- Q delivers actual 27 + 29 HP loss. Its full event objects, directions, callback times, energy and remaining cooldown exactly match the retained 6be Q baseline. The first added combination runner incorrectly returned after Q and exhausted its authored enemy list; that harness failure is preserved separately, not attributed to the game.
+- Corrected Q→X flow completes. The same natural target has only 10 HP after Q, so X causes **10 actual HP loss**, while retaining three real strike requests. No refill or injected damage. Paid energy 100→0; player/camera positions and real mouse/movement input restore.
+- Source/light observations alone are not image acceptance. Independent inspection of the owner's four same-exposure CPU pairs finds less face/chest glint and a much fainter central white line, with both blades retained. In the fixed central rectangle, max-channel ≥245 pixel counts at frames 067/076 fall 255→18 / 402→33. This is encoded preview RGB, not photometry, face segmentation or WebGL bloom equivalence.
+- Foot and camera continuity candidates are **not** accepted by this readability result. The original charge camera jump and simultaneous flat-foot outro slide remain separate open items.
