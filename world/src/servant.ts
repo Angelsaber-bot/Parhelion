@@ -10,6 +10,9 @@ import type { Collider } from './player';
 import type { Marker } from './types';
 import { ActionBlend } from './characters/actionBlend';
 import { CompanionNavigation } from './companionNavigation';
+import { saberRunRate } from './characters/saberStride';
+import { SaberStrideRuntime } from './characters/saberStrideRuntime';
+import { SaberGroundedLocomotion } from './characters/saberGroundedLocomotion';
 import { SaberIdleCarry } from './characters/saberLocomotion';
 import { COMPANION_MOTION, companionGait, turnCompanion } from './characters/companionMotion';
 
@@ -60,7 +63,11 @@ export class ContractServant {
   private mixer?: THREE.AnimationMixer;
   private clips = new Map<string, THREE.AnimationAction>();
   private current?: THREE.AnimationAction;
-  private blend = new ActionBlend();
+  private blend = new ActionBlend('smoothstep');
+  private stride?:SaberStrideRuntime;
+  private strideSpeed=-1;
+  private grounding?: SaberGroundedLocomotion;
+  private groundingActive = false;
   private idleCarry?: SaberIdleCarry;
   private navigation: CompanionNavigation;
   private separatedFor = 0;
@@ -144,6 +151,8 @@ export class ContractServant {
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
         this.mixer = mixer; this.clips = clips; this.idleCarry = idleCarry;
+        this.stride=new SaberStrideRuntime(candidate.scene,this.root);
+        this.grounding = new SaberGroundedLocomotion(candidate.scene, this.root, outfit, this.options.colliders);
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
         this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
         candidate = undefined;
@@ -161,12 +170,22 @@ export class ContractServant {
   }
   private tick(dt: number) {
     if (this.mixer) {
+      this.grounding?.restore();
+      const locomotion = ['Idle', 'Walk', 'Run'].includes(this.animation ?? '');
+      if (!locomotion && this.groundingActive) this.grounding?.reset();
+      this.groundingActive = locomotion;
+      if (this.stride) this.stride.support = locomotion ? this.grounding : undefined;
+      this.stride?.restore();
       this.blend.update(this.mixer, dt);
       this.idleCarry?.updateWeight(this.clips.get('idle'), this.clips.get('walk'), this.clips.get('run'));
       // Apply the just-updated normalized weight without advancing either clock twice.
       this.mixer.update(0);
+      this.stride?.apply(this.clips.get('run'),dt,this.strideSpeed);
+      if (locomotion && (this.stride?.diagnostics.weight ?? 0) < .001) this.grounding?.applyBase(dt);
     }
   }
+  get strideDiagnostics(){return this.stride?.diagnostics;}
+  get groundDiagnostics() { return this.grounding ? { contact: this.grounding.diagnostics, patch: this.grounding.patch.diagnostics } : undefined; }
   private play(name: string, restart = false, rate = 1) {
     const next = this.clips.get(name);
     if (!next) return;
@@ -178,7 +197,11 @@ export class ContractServant {
     const previous = this.current;
     const gaitChange = !restart && ['Walk', 'Run'].includes(previous?.getClip().name ?? '') && ['walk', 'run'].includes(name);
     const phase = gaitChange && previous ? previous.time / previous.getClip().duration : 0;
-    const startTime = gaitChange ? phase * next.getClip().duration : !restart && name !== 'attack' && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0 ? next.time : 0;
+    // An interrupted Walk/Run fade can return to an action which is still visible.
+    // Preserve that action's live phase; rephasing a 30%-weighted clip instantly
+    // teleports its feet even though ActionBlend correctly preserves its weight.
+    const alreadyVisible = !restart && name !== 'attack' && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0;
+    const startTime = alreadyVisible ? next.time : gaitChange ? phase * next.getClip().duration : 0;
     this.blend.start(next, previous === next ? 0 : .18, () => {
       next.reset().setEffectiveTimeScale(rate)
         .setLoop(name === 'attack' ? THREE.LoopOnce : THREE.LoopRepeat, name === 'attack' ? 1 : Infinity).play();
@@ -285,7 +308,8 @@ export class ContractServant {
         else this.play('idle');
       } else {
         const running=companionGait(speed,SERVANT_MOTION.walkSpeed,this.animation==='Run')==='run';
-        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(speed/(running?SERVANT_MOTION.runSpeed:SERVANT_MOTION.walkSpeed),0,SERVANT_MOTION.maxRate));
+        this.strideSpeed=speed;
+        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(running?saberRunRate(speed,this.clips.get('run')!.getClip().duration):speed/SERVANT_MOTION.walkSpeed,0,SERVANT_MOTION.maxRate));
       }
     }
     if(this.attackTime>0)this.advanceAttack(dt);else this.tick(dt);
@@ -317,6 +341,9 @@ export class ContractServant {
     if(this.attackTime<=0)this.cancelAttack();
   }
   private clearModel() {
+    this.grounding?.restore();
+    this.stride?.clear();this.stride=undefined;this.strideSpeed=-1;
+    this.grounding = undefined; this.groundingActive = false;
     this.cancelAttack(); this.current = undefined; this.blend.clear();
     this.mixer?.stopAllAction();
     if (this.model) {

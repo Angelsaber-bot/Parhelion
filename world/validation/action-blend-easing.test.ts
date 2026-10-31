@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{ActionBlend}from'../src/characters/actionBlend.ts';
+for(const easing of ['linear','smoothstep']as const)test(`${easing} preserves action clocks, normalized interruption and exact fade endpoint`,()=>{
+ const root=new THREE.Object3D(),mixer=new THREE.AnimationMixer(root),a=mixer.clipAction(new THREE.AnimationClip('A',1,[new THREE.NumberKeyframeTrack('.position[x]',[0,1],[0,1])])),b=mixer.clipAction(new THREE.AnimationClip('B',1,[new THREE.NumberKeyframeTrack('.position[x]',[0,1],[1,0])])),blend=easing==='linear'?new ActionBlend():new ActionBlend(easing);
+ blend.start(a,0,()=>a.play());blend.update(mixer,.1);blend.start(b,.2,()=>b.play());blend.update(mixer,.05);assert.ok(Math.abs(a.time-.15)<1e-12);assert.equal(b.time,.05);assert.ok(Math.abs(b.getEffectiveWeight()-(easing==='linear'?.25:.15625))<1e-12);assert.equal(a.getEffectiveWeight()+b.getEffectiveWeight(),1);
+ const weight=b.getEffectiveWeight(),time=a.time;blend.start(a,.2,()=>a.play());blend.update(mixer,0);assert.equal(b.getEffectiveWeight(),weight);assert.equal(a.time,time);blend.update(mixer,.2);assert.equal(a.getEffectiveWeight(),1);assert.equal(b.isScheduled(),false);
+});

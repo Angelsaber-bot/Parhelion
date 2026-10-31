@@ -2,6 +2,7 @@ import type * as THREE from 'three';
 
 /** Normalized action weights, including when a previous crossfade is interrupted. */
 export class ActionBlend {
+  constructor(private readonly easing: 'linear' | 'smoothstep' = 'linear') {}
   private weights = new Map<THREE.AnimationAction, number>();
   private target?: THREE.AnimationAction;
   private elapsed = 0;
@@ -30,7 +31,8 @@ export class ActionBlend {
   update(mixer: THREE.AnimationMixer, dt: number) {
     if (this.duration > 0 && this.target) {
       this.elapsed = Math.min(this.duration, this.elapsed + dt);
-      const blend = this.elapsed / this.duration;
+      const t = this.elapsed / this.duration;
+      const blend = this.easing === 'smoothstep' ? t * t * (3 - 2 * t) : t;
       for (const [action, weight] of this.weights) action.setEffectiveWeight(weight + ((action === this.target ? 1 : 0) - weight) * blend);
       if (blend === 1) {
         for (const action of this.weights.keys()) if (action !== this.target) action.stop();

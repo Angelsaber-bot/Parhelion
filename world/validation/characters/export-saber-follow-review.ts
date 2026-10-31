@@ -25,8 +25,10 @@ for(const outfit of (process.argv.includes('--armor-only')?['armor']:['armor','c
  actor.root.position.set(0,0,0);actor.root.rotation.set(0,0,0);const rows:any[]=[];
  const point=new THREE.Vector3();const bone=(name:string)=>gltf.scene.getObjectByName(`mixamorig${name}`)!;
  function pos(name:string){return bone(name).getWorldPosition(new THREE.Vector3());}
- for(let frame=0;frame<=0;frame++){
-  if(frame)internal.tick(action.getClip().duration/120);
+ // Capture a full actual gait cycle, not the former accidental single-frame loop.
+ const playbackRate=Math.max(.001,action.getEffectiveTimeScale());
+ for(let frame=0;frame<=120;frame++){
+  if(frame)internal.tick(action.getClip().duration/(120*playbackRate));
   actor.root.updateWorldMatrix(true,true);const row:any={phase:frame/120,hip:pos('Hips').toArray()};
   for(const side of ['Left','Right']){const shoulder=pos(`${side}Arm`),elbow=pos(`${side}ForeArm`),hand=pos(`${side}Hand`),upper=elbow.clone().sub(shoulder).normalize(),lower=hand.clone().sub(elbow).normalize();
    row[side]={hand:hand.toArray(),shoulderPitch:Math.atan2(upper.z,-upper.y),shoulderAbduction:Math.atan2(Math.abs(upper.x),-upper.y),elbowBend:upper.angleTo(lower),handBelowShoulder:shoulder.y-hand.y,foot:pos(`${side}Foot`).toArray(),knee:pos(`${side}Leg`).toArray(),thighPitch:Math.atan2(pos(`${side}Leg`).sub(pos(`${side}UpLeg`)).z,-pos(`${side}Leg`).sub(pos(`${side}UpLeg`)).y)};
@@ -45,7 +47,7 @@ for(const outfit of (process.argv.includes('--armor-only')?['armor']:['armor','c
   row.bounds=bounds;await writeFile(path.join(out,`${id}.json`),JSON.stringify({id,phase:frame/120,label:`Saber ${outfit} ${label}: actual follow at player 5.5 m/s, Run`,framing:{center:[0,.95,0],size:2.2},asset:asset.replace(/\.gz$/,''),meshes}));
  }
  const range=(values:number[])=>Math.max(...values)-Math.min(...values);
- summaries[outfit]={state,duration:action.getClip().duration,hipVerticalRange:range(rows.map(r=>r.hip[1])),sides:Object.fromEntries(['Left','Right'].map(side=>[side,{handForeAftRange:range(rows.map(r=>r[side].hand[2])),shoulderPitchRange:range(rows.map(r=>r[side].shoulderPitch)),maxAbduction:Math.max(...rows.map(r=>r[side].shoulderAbduction)),elbowBendRange:range(rows.map(r=>r[side].elbowBend)),minElbowBend:Math.min(...rows.map(r=>r[side].elbowBend)),maxElbowBend:Math.max(...rows.map(r=>r[side].elbowBend)),footForeAftRange:range(rows.map(r=>r[side].foot[2]))}])),samples:rows};
+ summaries[outfit]={state,duration:action.getClip().duration/playbackRate,clipDuration:action.getClip().duration,playbackRate,hipVerticalRange:range(rows.map(r=>r.hip[1])),sides:Object.fromEntries(['Left','Right'].map(side=>[side,{handForeAftRange:range(rows.map(r=>r[side].hand[2])),shoulderPitchRange:range(rows.map(r=>r[side].shoulderPitch)),maxAbduction:Math.max(...rows.map(r=>r[side].shoulderAbduction)),elbowBendRange:range(rows.map(r=>r[side].elbowBend)),minElbowBend:Math.min(...rows.map(r=>r[side].elbowBend)),maxElbowBend:Math.max(...rows.map(r=>r[side].elbowBend)),footForeAftRange:range(rows.map(r=>r[side].foot[2]))}])),samples:rows};
  actor.dispose();console.log(outfit,JSON.stringify({...summaries[outfit],samples:undefined}));
 }
 await writeFile(path.join(out,`metrics-${label}.json`),JSON.stringify(summaries,null,2));
