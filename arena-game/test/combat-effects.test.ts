@@ -91,3 +91,19 @@ it('unavailable damage-label canvas is a cosmetic failure, never an exception in
   try { expect(() => effects.damageNumber([0, 1, 0], 16, false, false)).not.toThrow(); expect(effects.inventory.allocated.numbers).toBe(0); }
   finally { effects.dispose(); glow.dispose(); }
 });
+
+it('actual scene muzzle flash keeps the 60 Hz baseline and equal elapsed brightness at 30/60/144 Hz', () => {
+  const intensities: number[] = [];
+  for (const hz of [30, 60, 144]) {
+    const f = fixture(), light = new THREE.PointLight();
+    const state = Object.assign(Object.create(ArenaScene.prototype), { combatEffects: f.effects, flashT: 0, muzzleLight: light, viewmodel: { update() {} }, particles: null, blackflagEffects: null, chapterEffects: null }) as ArenaScene;
+    try {
+      state.muzzleFlash([1, 2, 3]); expect(light.position.toArray()).toEqual([1, 2, 3]); expect(light.intensity).toBe(9);
+      let elapsed = 0;
+      while (elapsed < .05 - 1e-12) { const dt = Math.min(1 / hz, .05 - elapsed); state.update(dt); elapsed += dt; }
+      intensities.push(light.intensity); expect(light.intensity).toBeCloseTo(9 * .6 ** 3, 12);
+      state.update(.01); expect(light.intensity).toBe(0);
+    } finally { f.close(); light.dispose(); }
+  }
+  expect(Math.max(...intensities) - Math.min(...intensities)).toBeLessThan(1e-12);
+});

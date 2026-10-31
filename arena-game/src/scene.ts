@@ -364,8 +364,10 @@ export class ArenaScene {
 
   update(dt: number) {
     this.combatEffects.update(dt);
-    this.flashT -= dt;
-    this.muzzleLight.intensity = this.flashT > 0 ? this.muzzleLight.intensity * 0.6 : 0;
+    const flashDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
+    this.flashT = Math.max(0, this.flashT - flashDt);
+    // Preserve the original 60 Hz falloff, rather than dimming once per frame.
+    this.muzzleLight.intensity = this.flashT > 1e-9 ? this.muzzleLight.intensity * Math.pow(.6, flashDt * 60) : 0;
     this.viewmodel.update(dt);
     this.particles?.update(dt, this.camera.position);
     this.blackflagEffects?.update(dt);

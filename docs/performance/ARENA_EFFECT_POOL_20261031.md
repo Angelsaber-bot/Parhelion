@@ -24,3 +24,5 @@ Round/disconnect `clearCombatEffects` removes active effects and retains bounded
 ## Validation
 
 Focused tests exercise the actual Arena scene delegation, 100 normal bursts, 1,000-event saturation in both qualities, long pauses, repeated rounds, texture independence, glyph painting, stale geometry bounds and idempotent teardown. Existing Arena rules/network tests run separately. No browser/WebGL or device-FPS improvement is claimed from these CPU tests.
+
+A separate follow-up makes the existing 60 ms muzzle light's decay time-based: the original multiplier of 0.6 at 60 Hz is preserved, while equal elapsed times at 30/60/144 Hz now produce equal brightness (tested to 1e-12). Duration, source position, starting intensity and event ownership are unchanged; this corrects refresh-rate-dependent presentation rather than adding lighting work.
