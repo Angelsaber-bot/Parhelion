@@ -31,7 +31,7 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean; reloadMode?: 'noop' | 'throw' } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
   const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
@@ -130,7 +130,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
       for(const[key,value]of globals){if(value)Object.defineProperty(globalThis,key,value);else Reflect.deleteProperty(globalThis,key);}
   })();
   try{
-    const bundle=await build({entryPoints:[resolve(world,'src/main.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['three','three/*','three-mesh-bvh'],loader:{'.css':'empty'},plugins:[{name:'real-module-urls',setup(plugin){plugin.onLoad({filter:/\.ts$/},async args=>({contents:(await readFile(args.path,'utf8')).replaceAll('import.meta.url',JSON.stringify(pathToFileURL(args.path).href)).replace(options.faultAfterInputRegistration && args.path === resolve(world,'src/main.ts') ? 'const combat = new WorldCombat(' : '__unused_fixture_fault_anchor__', "throw new Error('Injected late initialization failure');\nconst combat = new WorldCombat("),loader:'ts'}));}}]});
+    const bundle=await build({entryPoints:[resolve(world,'src/main.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['three','three/*','three-mesh-bvh'],loader:{'.css':'empty'},plugins:[{name:'real-module-urls',setup(plugin){plugin.onLoad({filter:/\.ts$/},async args=>({contents:(await readFile(args.path,'utf8')).replaceAll('import.meta.url',JSON.stringify(pathToFileURL(args.path).href)).replaceAll(options.reloadMode && args.path === resolve(world,'src/main.ts') ? 'location.reload()' : '__unused_fixture_reload__', options.reloadMode === 'throw' ? '(() => { throw new Error("Injected navigation failure"); })()' : '(() => {})()').replace(options.faultAfterInputRegistration && args.path === resolve(world,'src/main.ts') ? 'const combat = new WorldCombat(' : '__unused_fixture_fault_anchor__', "throw new Error('Injected late initialization failure');\nconst combat = new WorldCombat("),loader:'ts'}));}}]});
     window.eval(bundle.outputFiles[0].text);
     const deadline=Date.now()+60000;
     while(!(window as any).__world?.ready&&!errors.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));

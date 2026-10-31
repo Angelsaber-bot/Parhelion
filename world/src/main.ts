@@ -1132,7 +1132,33 @@ const actionHud = createActionHud(action => settings.label(action));
 weaponFinishControl = createWeaponFinishControl(weaponFinishStore, done, () => applyWeaponFinish());
 document.querySelector('#world-settings .settings-sliders')?.after(weaponFinishControl.root);
 addEventListener('pagehide', event => { if (!event.persisted) weaponFinishControl?.dispose(); });
-const progressPanel = createProgressPanel(worldProgress, () => { abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); combat.cancelStoryEncounter(); location.reload(); });
+let importedReloadPending = false;
+function reloadImportedProgress() {
+  if (importedReloadPending) return;
+  importedReloadPending = true;
+  // Storage is already committed. The old scene must never resume against the
+  // replacement flags if browser navigation is blocked, canceled or throws.
+  graphicsRecovery?.dispose();
+  abortUltimate(); clearInput(); falseDawnRuntime?.dispose(); combat.cancelStoryEncounter();
+  travelPanel.hide(); campaignJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
+  audio.setActive(false);
+  if (document.pointerLockElement) document.exitPointerLock();
+  const retry = document.createElement('button'); retry.id = 'world-reload-import'; retry.type = 'button';
+  const renderPending = () => {
+    setLoading(bilingual('备份已保存。当前世界已停止，等待重新载入；若仍停留在此页，请点击重新载入。', 'Backup saved. This World session has stopped and is waiting to reload. If this page remains open, click Reload.'));
+    retry.textContent = bilingual('重新载入已保存的世界', 'Reload saved World');
+  };
+  // Locale changes must not project replacement flags into the retired scene.
+  refreshWorldLocale = renderPending;
+  const unsubscribe = onLanguageChange(renderPending);
+  addEventListener('pagehide', event => { if (!event.persisted) unsubscribe(); });
+  const navigate = () => { if (worldExited) return; try { location.reload(); } catch { renderPending(); } };
+  retry.addEventListener('click', event => { event.stopPropagation(); navigate(); });
+  $('help').textContent = ''; $('settings-open').hidden = true;
+  start.classList.remove('hidden'); start.append(retry); languageToggle.hidden = false;
+  renderPending(); navigate();
+}
+const progressPanel = createProgressPanel(worldProgress, reloadImportedProgress);
 document.querySelector('#world-settings .settings-sliders')?.after(progressPanel.root);
 addEventListener('pagehide', event => { if (!event.persisted) progressPanel.dispose(); });
 const audioGroup=document.createElement('div');audioGroup.className='settings-sliders';
