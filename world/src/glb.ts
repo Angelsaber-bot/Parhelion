@@ -9,7 +9,7 @@ export function regionLoader() {
 }
 
 /**
- * Undo quantization: expand every mesh's attributes back to float and fold the node's dequantization
+ * Bake transformed attributes to float while retaining normalized byte colors, and fold dequantization
  * transform into the geometry, so meshes are in region space with identity transforms again
  * (chunking, pivots and the terrain grid all expect that).
  */
@@ -28,6 +28,11 @@ export function bakeQuantized(root: THREE.Object3D) {
     if (!m.isMesh) return;
     const g = m.geometry as THREE.BufferGeometry;
     for (const [name, attr] of Object.entries(g.attributes) as [string, THREE.BufferAttribute][]) {
+      // Color is not transformed by applyMatrix4. Keep authored normalized byte
+      // storage (including its interleaved stride) rather than tripling it.
+      const interleaved = attr as unknown as THREE.InterleavedBufferAttribute;
+      const storage = interleaved.isInterleavedBufferAttribute ? interleaved.data.array : attr.array;
+      if (name === 'color' && attr.normalized && storage instanceof Uint8Array) continue;
       if (attr.array instanceof Float32Array && !attr.normalized) continue;
       const out = new Float32Array(attr.count * attr.itemSize);
       for (let i = 0; i < attr.count; i++) for (let c = 0; c < attr.itemSize; c++) out[i * attr.itemSize + c] = attr.getComponent(i, c);
