@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {Player} from '../src/player';import {installGroundActionSupportCandidate} from './combat-review/ground-action-support-candidate';
+import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {Player} from './fixtures/player-pre-general-support';import {installGroundActionSupportCandidate} from './combat-review/ground-action-support-candidate';
 const idle={x:0,z:0,jump:false,sprint:false},collider=(g:THREE.BufferGeometry)=>({name:'fixture',enabled:true,bvh:new MeshBVH(g)}),state=(p:Player)=>({p:p.pos.toArray(),v:p.vel.toArray(),ground:p.onGround,swim:p.swimming,glide:p.gliding,updraft:p.inUpdraft});
 function settle(p:Player){for(let i=0;i<120;i++)p.step(1/120,idle);assert.ok(p.onGround);}
 for(const angle of[0,3,6,12])test(`general candidate walks ${angle}degree slope without changing horizontal distance`,()=>{
