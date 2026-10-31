@@ -27,3 +27,29 @@ At five standard landscape views, candidate material groups/triangles remain unc
 Camera/player transforms match exactly apart from approximately2e-15m rounding at Winter. Frustum candidates exclude hidden ancestry/layers but do not simulate occlusion, shadow maps, shader execution or postprocessing. These are **not actual WebGL draw calls, GPU memory, FPS, or device performance claims**. Added content raises some visible geometry costs even as source metadata release and material/color reuse reduce retained resources.
 
 Evidence: sibling `parhelion-eight-hour-evidence/qa/checkpoint-0158c2d/` inventory/comparison JSON and logs. Independent before-hash verification covers all1,460tracked files /613,389,344bytes with zero drift. Full aggregate and after-hash status are maintained separately by integration QA.
+
+## 07:43 checkpoint 82e89d3: cue budget and corrected native boundary
+
+Frozen `82e89d334b73bb88b90cca07465855692e2cc5a4` adds exactly three
+objects/meshes/geometries/materials and **55,296 bytes** of unique geometry backing
+stores versus frozen0158c2d in every paired landscape sample. These are the fixed
+Warden contact-cue slots; lights remain14. HQ loaded graph is now10,663objects,
+9,414meshes,5,165geometries,1,149materials,282,699,394geometry bytes.
+
+**Correction to the interpretation of earlier native frustum counts:** the
+headless GLTF constructor mismatch also skipped the intended
+`SkinnedMesh.frustumCulled=false` assignment before6d3551b. The structural census
+already counted those meshes, so totals remain comparable. But corrected native
+enemies now contribute additional single-pass candidates even with identical
+cameras: BlackSail+8/+16groups (22,652/45,304triangles), Winter+10/+20
+(41,284/82,568), Kyoto+2/+2 (86,617each), landscape16:9/9:16 respectively.
+All changed roots are native enemies; this is **not new geometry or evidence of
+a browser performance regression**. The prior browser singleton was expected to
+apply this culling policy already. Earlier raw headless frustum figures must not
+be treated as accurate native-browser draw counts, nor do corrected ones prove
+GPU execution. Static resource/memory/source-equivalence proofs are unaffected.
+
+Evidence: `qa/checkpoint-82e89d3/{runtime-scene,resource-comparison}.json`.
+The82e89d3 full World aggregate was **not green** (1,370/1,399); its29 failures
+include legacy VM fixture wiring and a real missing Arena translation, tracked
+separately by integration. This inventory is not milestone acceptance.
