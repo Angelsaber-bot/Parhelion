@@ -33,3 +33,13 @@ test('every authored start/transition interaction disc stays over two metres fro
 });
 
 test('Winter relay warmth is a visible passive source, not an interaction or reward',()=>{const scene=createFalseDawnSites();const warm=scene.markers.find(m=>m.id==='false_dawn_warm_repeater')!;assert.equal(warm.type,'poi');assert.equal(warm.radius,4);assert.match(warm.id,/(^|_)warm_/);assert.equal(warm.requires,undefined);const winter=scene.sites.find(s=>s.region==='winter')!;assert.ok(winter.art.layers.get('glow'));scene.dispose();});
+
+test('completion never claims the unchosen remote route was resolved',()=>{
+ const fields=createFalseDawnSites();
+ const resolved=(region:string)=>fields.sites.find(s=>s.region===region)!.root.children.find(o=>o.name.includes('resolved'));
+ fields.applyState({stage:'complete',anchors:[true,true,true],ending:'repurpose',route:'harbor'});
+ assert.equal(resolved('alpha')?.visible,true);assert.equal(resolved('blacksail')?.visible,true);assert.equal(resolved('winter')?.visible,false);
+ fields.applyState({stage:'complete',anchors:[true,true,true],ending:'repurpose',route:'winter'});
+ assert.equal(resolved('blacksail')?.visible,false);assert.equal(resolved('winter')?.visible,true);
+ fields.dispose();
+});

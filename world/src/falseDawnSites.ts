@@ -10,7 +10,7 @@ import type { RegionId } from './settlements/types';
 import {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_FIELD_ACTOR_OFFSETS,type FalseDawnFieldId} from './falseDawnSitesData';
 export {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS} from './falseDawnSitesData';
 type V3=[number,number,number];
-export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonly stage:FalseDawnStage;readonly ending?:'repurpose'|'seal'|null;}
+export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonly stage:FalseDawnStage;readonly ending?:'repurpose'|'seal'|null;readonly route?:'harbor'|'winter'|null;}
 export const FALSE_DAWN_SITE_LIMITS=Object.freeze({visible:180,trianglesPerField:6000,meshesPerField:8,materialsPerField:3});
 const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
  alpha:[FALSE_DAWN_CENTERS.alpha,...FALSE_DAWN_ANCHORS],
@@ -134,10 +134,10 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
  }
  for(const id of['alpha','blacksail','winter']as const)sites.push(build(id));
  let stateKey='';
- function applyState(state:FalseDawnSiteState){if(disposed)return;const key=`${state.stage}:${state.ending??''}:${state.anchors.map(Boolean).join(',')}`;if(key===stateKey)return;stateKey=key;
+ function applyState(state:FalseDawnSiteState){if(disposed)return;const key=`${state.stage}:${state.route??''}:${state.ending??''}:${state.anchors.map(Boolean).join(',')}`;if(key===stateKey)return;stateKey=key;
   const alpha=sites[0];for(let i=0;i<3;i++){const mesh=alpha.art.layers.get((['briefed','choiceA','choiceB']as const)[i]);if(mesh)mesh.visible=!!state.anchors[i]&&!(state.stage==='complete'&&state.ending==='seal');}
   const resolved=state.stage==='complete'&&state.ending==='repurpose';
-  for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved;s.art.materials.glow.emissiveIntensity=s.region==='winter'?.8:resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
+  for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved&&(s.region==='alpha'||s.region===(state.route==='harbor'?'blacksail':state.route));s.art.materials.glow.emissiveIntensity=s.region==='winter'?.8:resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
  }
  applyState({anchors:[false,false,false],stage:'locked'});
  return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,
