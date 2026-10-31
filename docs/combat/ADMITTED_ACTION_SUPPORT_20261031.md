@@ -1,5 +1,7 @@
 # Ground-required action continuity — 2026-10-31
 
+> Historical checkpoint: the action-only ownership flag described below was superseded by approved general physical support continuity in `4f56d26` and two-argument main integration `962eee0`. The original measurements and scope decisions are retained as historical evidence, not the current production contract. See [General ground continuity review](GENERAL_GROUND_CONTINUITY_REVIEW_20261031.md) for the live predicate, ordinary admission improvements, exclusions, costs and shoreline caveat.
+
 ## Reproduced failure, not a visual-only airborne metric
 
 The production Alpha exit runs from XZ `(-45,-98.8)` to `(-52,-85)`. At its real grounded start Y3.8492087461, normal forward+melee or forward+Q is admitted. The first120Hz physics step ends at `(-45.0207339063,3.8476809683,-98.7591245847)`, only **1.552239mm** above actual walkable floor Y3.8461287290, normalY.99829863 (~3.3°). `Player.collide` loses contact and `WorldActions.update` cancels the admitted action before its first pulse.

@@ -1,6 +1,6 @@
 # Admitted dodge support audit — 2026-10-31
 
-**Status: narrow production implementation approved after isolated proof. WorldActions/evade clocks remain unchanged; independent committed-production verification follows the source checkpoint.**
+> Historical checkpoint: the narrow evade-only eligibility described below was superseded by approved general physical support continuity in `4f56d26`. The same bounded geometric helper remains, but support is no longer exclusive to an active evade. Original evidence is retained; WorldActions/evade clocks remain unchanged. See [General ground continuity review](GENERAL_GROUND_CONTINUITY_REVIEW_20261031.md) for the current production contract and subsequent no-wrapper verification.
 
 ## Reproduced production behavior
 
