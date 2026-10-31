@@ -32,3 +32,24 @@ folder. `musashi/baseline-full-x` contains the complete old 223-frame/30 fps
 cycle; `musashi/candidate-full-x` is the new complete-cycle review target.
 CPU previews use original native geometry/materials but do not reproduce
 WebGL bloom, additive blending, fog or GPU performance.
+
+## Completed review evidence (2026-10-31 17:37 UTC)
+
+The new `candidate-full-x/preview.mp4` completed all 223 rendered frames at
+30 fps (7.433 seconds), including three strikes and the complete outro. SHA-256:
+`c4aa6168f074134144d5255c07db7a4838ccdde83af5a9619ef22823078efcde`.
+The complete old-cycle comparison hash is
+`e8dd0ec0fa62833d0ce33588f54eac877ba3f359ca7e6e824c4b958c77cb2707`.
+The complete 12 fps contact sheet and every-frame recovery sheet are decoded
+from these rendered frames, not interpolated substitutes. Review sees successive
+blade withdrawal and foot recovery, rather than a prolonged wide-arm finish.
+At 360x202 / 4 samples, these previews cannot establish millimetre skin clearance
+or real WebGL bloom appearance.
+
+Independent actual-input Q→X passed with 179 recorded source/asset hashes
+unchanged. Q authority values match baseline; X retains three requests, normal
+100→0 payment, all phases and exact camera/player/control recovery. Actual
+charge crossing movement is 1.35418→0.192985 m, with same-charge maximum
+0.221813 m. Both outro foot bones now have 64.5 mm vertical excursion after
+stage scale; this is bone travel, not a claim of zero sole sliding. Root visual
+acceptance and final aggregate remain integration responsibilities.
