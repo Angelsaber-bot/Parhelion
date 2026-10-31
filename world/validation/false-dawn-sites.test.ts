@@ -86,3 +86,17 @@ test('near structural shadow prototype has hysteresis and a hard two-caster cap'
 test('default and explicit low-quality shadow setting retain zero casters nearby',()=>{
  for(const options of[{}, {nearStructureShadows:false}]){const fields=createFalseDawnSites(undefined,options);for(const s of fields.sites){fields.update({x:s.origin[0],z:s.origin[2]});fields.root.traverse(o=>{if(o instanceof THREE.Mesh)assert.equal(o.castShadow,false);});}fields.dispose();}
 });
+
+test('retry/save projection lights only accepted grounding circuits, not unaccepted emitters',()=>{
+ const fields=createFalseDawnSites(),alpha=fields.sites[0],layers=['briefed','choiceA','choiceB']as const,materials=new Set(Object.values(alpha.art.materials));
+ for(const anchors of[[true,false,false],[true,true,false],[true,false,false],[false,false,false]]){fields.applyState({stage:'array',anchors});layers.forEach((layer,i)=>{const mesh=alpha.art.layers.get(layer)!;assert.equal(mesh.visible,anchors[i]);assert.equal(mesh.material,alpha.art.materials.glow);assert.equal(mesh.castShadow,false);});assert.ok(alpha.art.materials.glow.emissiveIntensity>0);}
+ assert.equal(materials.size,3);assert.notEqual(alpha.art.layers.get('metal')!.material,alpha.art.materials.glow,'outer emitter structures stay neutral');
+ fields.applyState({stage:'complete',anchors:[true,true,true],ending:'seal'});layers.forEach(layer=>assert.equal(alpha.art.layers.get(layer)!.visible,false));assert.equal(alpha.art.materials.glow.emissiveIntensity,0);fields.dispose();
+});
+
+test('supported shadow toggles are idempotent and never rebuild or enable unsplit ground',()=>{
+ const low=createFalseDawnSites();assert.equal(low.structureShadowsSupported,false);assert.equal(low.setStructureShadowsEnabled(true),false);assert.equal(low.structureShadowsEnabled,false);assert.equal(low.setStructureShadowsEnabled(false),true);low.dispose();
+ const fields=createFalseDawnSites(undefined,{nearStructureShadows:true}),site=fields.sites[0],geometries=fields.sites.flatMap(s=>s.root.children.map(m=>(m as THREE.Mesh).geometry)),colliders=[...fields.collisionGeometries],markers=JSON.stringify(fields.markers);fields.update({x:site.origin[0],z:site.origin[2]});
+ for(let i=0;i<50;i++){assert.equal(fields.setStructureShadowsEnabled(false),true);assert.equal(fields.setStructureShadowsEnabled(false),true);fields.root.traverse(o=>{if(o instanceof THREE.Mesh)assert.equal(o.castShadow,false);});assert.equal(fields.setStructureShadowsEnabled(true),true);fields.update({x:site.origin[0],z:site.origin[2]});assert.equal(site.root.children.filter(o=>(o as THREE.Mesh).castShadow).length,2);assert.equal(site.art.layers.get('ground')!.castShadow,false);}
+ assert.deepEqual(fields.sites.flatMap(s=>s.root.children.map(m=>(m as THREE.Mesh).geometry)),geometries);assert.deepEqual(fields.collisionGeometries,colliders);assert.equal(JSON.stringify(fields.markers),markers);fields.dispose();assert.equal(fields.setStructureShadowsEnabled(true),false);assert.equal(fields.structureShadowsEnabled,false);
+});

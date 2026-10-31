@@ -176,3 +176,18 @@ objects, rather than a renderer-only override. Same-camera off/on frames are in
 This still does not reproduce Three's PCF resolution/bias/toon shader or establish GPU
 performance. Splitting the thin ground explicitly avoids pretending the Cycles review
 can certify sub-4 cm PCF shadow behavior.
+
+The guarded option also exposes `structureShadowsSupported`, an enabled getter and
+idempotent `setStructureShadowsEnabled(boolean)`. Disabling immediately clears field
+casters; enabling a supported split build takes effect at the next near-player update.
+An unsplit default/low build rejects enable rather than casting thin ground or silently
+recreating geometry. Fifty disable/enable cycles retain all geometry, collision and
+marker identities; disposal rejects subsequent toggles. Main's quality Apply/reload
+flow is unchanged.
+
+Accepted anchor **grounding confirmation circuits** now reuse the existing emissive
+material. Outer emitter structures stay neutral, so the cue does not suggest the
+transmitter was powered up. Partial saved/retried anchors illuminate independently;
+unaccepted anchors stay neutral, seal hides all circuits, repurpose retains warmth.
+No material, draw, lamp, collision or timer was added. State-render review is queued
+under the shared admission budget in `environment/grounding-circuits/`.

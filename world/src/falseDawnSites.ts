@@ -21,7 +21,7 @@ const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
 function approximateGround(region:FalseDawnFieldId,x:number,z:number){let value=0,weight=0;for(const p of FALLBACK[region]){const d=Math.hypot(x-p[0],z-p[2]);if(d<.01)return p[1];const w=1/(d*d);value+=p[1]*w;weight+=w;}return value/weight;}
 export interface FalseDawnSiteOptions {readonly nearStructureShadows?:boolean;}
 export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|null,options:FalseDawnSiteOptions={}){
- const nearStructureShadows=options.nearStructureShadows===true,groundLayer=nearStructureShadows?'ground':'body';let shadowSite:FalseDawnFieldId|null=null;
+ const nearStructureShadows=options.nearStructureShadows===true,groundLayer=nearStructureShadows?'ground':'body';let shadowSite:FalseDawnFieldId|null=null,structureShadowsEnabled=nearStructureShadows;
  const root=new THREE.Group();root.name='False_Dawn_Action_Fields';const markers:Marker[]=[],collisionGeometries:THREE.BufferGeometry[]=[],sites:ReturnType<typeof build>[]=[];let disposed=false;
  function ground(region:FalseDawnFieldId,x:number,z:number){if(!groundHeight)return approximateGround(region,x,z);const h=groundHeight(x,z);if(h===null||!Number.isFinite(h))throw new Error(`False Dawn terrain unavailable at ${region}:${x},${z}`);return h;}
  function build(region:FalseDawnFieldId){
@@ -197,7 +197,11 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   }
   // Central lanes deliberately stay free; these are audited against final combined collision.
   for(const [x,z]of FALSE_DAWN_FIELD_ACTOR_OFFSETS[region])spawnPoints.push([origin[0]+x,ground(region,origin[0]+x,origin[2]+z)+.04,origin[2]+z]);
-  art.finish(region as RegionId);art.root.name=`FalseDawn_${region}`;art.root.position.set(...origin);
+  art.finish(region as RegionId);
+  // Accepted anchors illuminate only their grounded confirmation circuit, never the emitter body.
+  // Reuse the existing array glow material; no lamp, resource, timer or extra batch is introduced.
+  if(region==='alpha')for(const layer of['briefed','choiceA','choiceB']as const){const cue=art.layers.get(layer);if(cue)cue.material=art.materials.glow;}
+  art.root.name=`FalseDawn_${region}`;art.root.position.set(...origin);
   for(const g of art.solids)g.translate(...origin);collisionGeometries.push(...art.solids);markers.push(...sockets);root.add(art.root);
   return{region,root:art.root,origin,markers:sockets,spawnPoints,foundationSupports,art};
  }
@@ -209,10 +213,13 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved&&(s.region==='alpha'||s.region===(state.route==='harbor'?'blacksail':state.route));s.art.materials.glow.emissiveIntensity=s.region==='winter'?.8:resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
  }
  applyState({anchors:[false,false,false],stage:'locked'});
- return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,
+ return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,structureShadowsSupported:nearStructureShadows,
+  get structureShadowsEnabled(){return !disposed&&structureShadowsEnabled;},
+  /** A non-split low-quality build cannot enable casting without rebuilding thin ground. */
+  setStructureShadowsEnabled(enabled:boolean){if(disposed||enabled&&!nearStructureShadows)return false;structureShadowsEnabled=enabled;if(!enabled){shadowSite=null;for(const s of sites)for(const layer of['body','metal']as const){const mesh=s.art.layers.get(layer);if(mesh)mesh.castShadow=false;}}return true;},
   update(player:Pick<THREE.Vector3,'x'|'z'>){if(disposed)return;
    const distance2=(s:typeof sites[number])=>(player.x-s.origin[0])**2+(player.z-s.origin[2])**2;
-   if(!nearStructureShadows||!Number.isFinite(player.x)||!Number.isFinite(player.z))shadowSite=null;
+   if(!structureShadowsEnabled||!Number.isFinite(player.x)||!Number.isFinite(player.z))shadowSite=null;
    else{const retained=sites.find(s=>s.region===shadowSite);if(!retained||distance2(retained)>FALSE_DAWN_SITE_LIMITS.shadowExit**2)shadowSite=null;
     if(!shadowSite){let nearest=FALSE_DAWN_SITE_LIMITS.shadowEnter**2;for(const s of sites){const d=distance2(s);if(d<nearest){nearest=d;shadowSite=s.region;}}}}
    for(const s of sites){s.root.visible=distance2(s)<FALSE_DAWN_SITE_LIMITS.visible**2;for(const layer of['body','metal']as const){const mesh=s.art.layers.get(layer);if(mesh)mesh.castShadow=s.root.visible&&s.region===shadowSite;}}
