@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { EnemyVisuals, type EnemyModel } from '../../src/enemyVisuals.ts';
 import { WorldCombatState, enemyAttackTiming } from '../../src/combat.ts';
+import { ENEMY_WEAPON_HAND, measureEnemyWeaponAxis } from '../../src/enemyAttackActing.ts';
 import { enemyAttackPose } from '../../src/enemyAttackPresentation.ts';
 import { parseLocalGlb } from '../player-fixture.ts';
 const out = path.resolve(process.argv[2] ?? '../artifacts/enemy-contact-sequence');
@@ -13,16 +14,31 @@ await mkdir(out, { recursive: true });
 for (const model of models) {
   const url = new URL(`../../public/assets/enemies/${model}.glb`, import.meta.url), asset = fileURLToPath(url);
   const gltf = await parseLocalGlb(url), visuals = new EnemyVisuals(); (visuals as any).cache.set(model, gltf);
-  const enemy = new WorldCombatState([{ id: model, kind: 'shade', p: { x: 0, y: 0, z: 0 }, role: model === 'ashigaru' ? 'lancer' : model === 'musketeer' ? 'musketeer' : 'duelist' }], []).enemies[0];
+  const enemy = new WorldCombatState([{ id: model, kind: 'shade', p: { x: 0, y: 0, z: 0 }, role: model === 'ashigaru' ? 'lancer' : model === 'musketeer' ? 'musketeer' : model === 'sunward_guard' || model === 'officer' ? 'breaker' : 'duelist' }], []).enemies[0];
   enemy.active = true; enemy.attackCount = 1; enemy.contactSequence = 1;
   const parent = new THREE.Group(), fallback = new THREE.Group(), timing = enemyAttackTiming(enemy);
-  const stages = [
+  const sequence = Number(process.argv.find(value => value.startsWith('--frames='))?.slice(9) ?? 0);
+  const stages: readonly (readonly [string, 'windup'|'recover', number])[] = sequence > 1 ? Array.from({length:sequence},(_,index) => {
+    const elapsed=(timing.windup+timing.recovery)*index/(sequence-1);
+    return [`frame-${String(index).padStart(3,'0')}`,elapsed<timing.windup?'windup':'recover',elapsed<timing.windup?timing.windup-elapsed:timing.windup+timing.recovery-elapsed] as const;
+  }) : [
     ['00-ready', 'windup', timing.windup], ['01-held', 'windup', .22], ['02-launch', 'windup', .10],
     ['03-contact', 'recover', timing.recovery], ['04-follow', 'recover', timing.recovery - .12], ['05-settle', 'recover', 0],
   ] as const;
   for (const [label, mode, timer] of stages) {
     enemy.mode = mode; enemy.timer = timer;
     visuals.update(enemy, model, parent, fallback, 0, 5, true); parent.updateWorldMatrix(true, true);
+    const instance = (visuals as any).instances.get(enemy.id), actor = instance.root as THREE.Object3D;
+    const feet = ['footR','footL'].map(name => actor.getObjectByName(name)!);
+    const footPos = feet.map(foot => foot.getWorldPosition(new THREE.Vector3()));
+    const pelvisPos = actor.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3());
+    const side = ENEMY_WEAPON_HAND[model as keyof typeof ENEMY_WEAPON_HAND], measured = side ? measureEnemyWeaponAxis(gltf.scene,side) : undefined;
+    const bladeDirection = measured ? measured.axis.clone().applyQuaternion(actor.getObjectByName(`hand${side}`)!.getWorldQuaternion(new THREE.Quaternion())).toArray() : null;
+    instance.acting.restore(); actor.updateWorldMatrix(true,true);
+    const drift = feet.map((foot,index) => foot.getWorldPosition(new THREE.Vector3()).distanceTo(footPos[index]));
+    const pelvisShift = pelvisPos.clone().sub(actor.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3())).toArray();
+    instance.acting.update(enemy); parent.updateWorldMatrix(true,true);
+    const metrics = {footDrift:drift,pelvisShift,bladeDirection};
     const id = `${model}-${label}`, meshes: any[] = [], point = new THREE.Vector3();
     parent.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return; const mesh = object;
@@ -38,7 +54,7 @@ for (const model of models) {
       meshes.push({ name: mesh.name, file, count, indices: indices.length, groups: mesh.geometry.groups, materials: [mesh.material].flat().map(m => m.name), data });
     });
     for (const mesh of meshes) { await writeFile(path.join(out, mesh.file), mesh.data); delete mesh.data; }
-    await writeFile(path.join(out, `${id}.json`), JSON.stringify({ id, asset, label, state: { mode, timer }, pose: enemyAttackPose(enemy, model), framing: { center: [0, 1.1, .3], size: model === 'ashigaru' ? 3.7 : 3.2 }, meshes }));
+    await writeFile(path.join(out, `${id}.json`), JSON.stringify({ id, asset, label, metrics, state: { mode, timer }, pose: enemyAttackPose(enemy, model), framing: { center: [0, 1.1, .3], size: model === 'ashigaru' ? 3.7 : 3.2 }, meshes }));
   }
   visuals.dispose(); console.log(`exported ${model}: 6 actual runtime poses`);
 }

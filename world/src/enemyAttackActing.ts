@@ -38,24 +38,52 @@ export function measureEnemyWeaponAxis(template: THREE.Object3D, side: string): 
   const result = { axis: hand.worldToLocal(tip).normalize(), reach }; cache.set(side, result); return result;
 }
 
-/** Clone-only, upper-body acting. The native clip is sampled first every frame;
- * no accumulation, root translation, foot displacement, hitbox or game-clock change.
- * Missing/foreign rigs gracefully retain their native clip.
+export interface EnemySwordStyle {
+  readonly name: 'diagonal-cut' | 'heavy-cleave' | 'deck-slash' | 'officer-lunge';
+  readonly preparation: readonly [number, number, number];
+  readonly contact: readonly [number, number, number];
+  readonly follow: readonly [number, number, number];
+  readonly prepareBlade: readonly [number, number, number];
+  readonly contactBlade: readonly [number, number, number];
+  readonly followBlade: readonly [number, number, number];
+  readonly turn: number; readonly counterTurn: number; readonly load: number; readonly drive: number;
+}
+/** Coordinates mirror around the actual weapon hand, rather than mirror a whole rig
+ * (which would swap uniforms/weapons). Different preparation silhouettes share the
+ * same authoritative timing and footprint; these are not four new damage profiles.
+ */
+export const ENEMY_SWORD_STYLES: Readonly<Record<SwordModel, EnemySwordStyle>> = {
+  samurai: { name: 'diagonal-cut', preparation: [.33,1.50,.08], contact: [.18,1.22,.43], follow: [-.12,1.07,.36], prepareBlade: [.35,.92,-.18], contactBlade: [-.12,-.18,1], followBlade: [-.95,-.28,.42], turn: .32, counterTurn: -.32, load: .055, drive: .06 },
+  sunward_guard: { name: 'heavy-cleave', preparation: [.22,1.62,.06], contact: [.18,1.19,.42], follow: [.12,.98,.43], prepareBlade: [.08,.98,-.1], contactBlade: [-.02,-.25,1], followBlade: [.03,-.75,.66], turn: .12, counterTurn: -.08, load: .085, drive: .07 },
+  deck_raider: { name: 'deck-slash', preparation: [.50,1.24,-.04], contact: [.16,1.16,.46], follow: [-.23,1.08,.34], prepareBlade: [.95,.20,.05], contactBlade: [-.25,.05,1], followBlade: [-1,-.13,.12], turn: .42, counterTurn: -.40, load: .045, drive: .04 },
+  officer: { name: 'officer-lunge', preparation: [.30,1.20,.10], contact: [.15,1.28,.50], follow: [.20,1.16,.38], prepareBlade: [.25,.50,.82], contactBlade: [-.02,.02,1], followBlade: [.15,-.25,.95], turn: .15, counterTurn: -.18, load: .035, drive: .085 },
+};
+
+/** Clone-only body acting. Native clips are sampled first every frame. Both native
+ * feet are solved back to their pre-overlay world targets while the pelvis carries
+ * a small load/weight shift; the scene root and game capsule never translate.
+ * Missing/foreign rigs gracefully retain their native clips.
  */
 export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Object3D, model: EnemyPoseModel) {
-  if (!isSword(model)) return { restore() {}, update(_e: Enemy) {} };
-  const side = ENEMY_WEAPON_HAND[model], sign = side === 'R' ? -1 : 1;
-  const upper = root.getObjectByName(`upper_arm${side}`), lower = root.getObjectByName(`forearm${side}`), hand = root.getObjectByName(`hand${side}`);
-  const spine = root.getObjectByName('spine'), chest = root.getObjectByName('chest');
+  const noop = { restore() {}, update(_e: Enemy) {} };
+  if (!isSword(model)) return noop;
+  const side = ENEMY_WEAPON_HAND[model], sign = side === 'R' ? -1 : 1, style = ENEMY_SWORD_STYLES[model];
+  const chain = (names: readonly string[]) => names.map(name => root.getObjectByName(name));
+  const armed = chain([`upper_arm${side}`, `forearm${side}`, `hand${side}`]);
+  const otherSide = side === 'R' ? 'L' : 'R', free = chain([`upper_arm${otherSide}`, `forearm${otherSide}`, `hand${otherSide}`]);
+  const legs = ['R', 'L'].map(side => chain([`thigh${side}`, `shin${side}`, `foot${side}`]));
+  const spine = root.getObjectByName('spine'), chest = root.getObjectByName('chest'), pelvis = root.getObjectByName('pelvis');
   const weapon = measureEnemyWeaponAxis(template, side);
-  if (!upper || !lower || !hand || !spine || !chest || !weapon) return { restore() {}, update(_e: Enemy) {} };
-  const affected = [upper, lower, hand, spine, chest];
-  const native = affected.map(bone => bone.quaternion.clone());
+  if (!spine || !chest || !pelvis || !weapon || [...armed, ...free, ...legs.flat()].some(bone => !bone)) return noop;
+  const upper = armed[0]!, lower = armed[1]!, hand = armed[2]!;
+  const affected = [...armed, ...free, ...legs.flat(), spine, chest, pelvis] as THREE.Object3D[];
+  const native = affected.map(bone => ({ q: bone.quaternion.clone(), p: bone.position.clone() }));
   let applied = false;
-  const vectors = Array.from({ length: 48 }, () => new THREE.Vector3()), quaternions = Array.from({ length: 24 }, () => new THREE.Quaternion());
+  const vectors = Array.from({ length: 128 }, () => new THREE.Vector3()), quaternions = Array.from({ length: 80 }, () => new THREE.Quaternion());
   let vi = 0, qi = 0;
   const v = (x = 0, y = 0, z = 0) => vectors[vi++].set(x, y, z), q = () => quaternions[qi++].identity();
   const copy = (value: THREE.Vector3) => v().copy(value);
+  const point = (value: readonly [number, number, number]) => v(sign * value[0], value[1], value[2]);
   const world = (value: THREE.Vector3) => root.localToWorld(value);
   const axis = (value: THREE.Vector3) => value.transformDirection(root.matrixWorld);
   const setWorld = (bone: THREE.Object3D, rotation: THREE.Quaternion) => {
@@ -65,46 +93,59 @@ export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Ob
     const origin = bone.getWorldPosition(v()), from = child.getWorldPosition(v()).sub(origin).normalize(), to = copy(target).sub(origin).normalize();
     setWorld(bone, q().setFromUnitVectors(from, to).multiply(bone.getWorldQuaternion(q())));
   };
+  const solve = (chain: readonly THREE.Object3D[], target: THREE.Vector3, poleLocal: THREE.Vector3, endRotation: THREE.Quaternion) => {
+    const [upper, lower, end] = chain, a = upper.getWorldPosition(v()), b = lower.getWorldPosition(v()), c = end.getWorldPosition(v());
+    const l1 = a.distanceTo(b), l2 = b.distanceTo(c), delta = copy(target).sub(a), distance = THREE.MathUtils.clamp(delta.length(), Math.abs(l1 - l2) + .0001, l1 + l2 - .0001), direction = delta.normalize();
+    const along = (l1*l1-l2*l2+distance*distance)/(2*distance), height = Math.sqrt(Math.max(0,l1*l1-along*along));
+    const pole = axis(poleLocal); pole.addScaledVector(direction, -pole.dot(direction)).normalize();
+    aim(upper, lower, copy(a).addScaledVector(direction, along).addScaledVector(pole, height));
+    aim(lower, end, copy(a).addScaledVector(direction, distance)); setWorld(end, endRotation);
+  };
   return {
     restore() {
-      // AnimationMixer may skip unchanged property writes. Undo our last overlay
-      // before sampling, even on a paused/identical frame, to prevent pose accumulation.
+      // AnimationMixer may skip unchanged writes; remove our prior overlay BEFORE
+      // sampling even on identical/paused frames, or transforms would accumulate.
       if (!applied) return;
-      affected.forEach((bone, i) => bone.quaternion.copy(native[i])); applied = false;
+      affected.forEach((bone, i) => { bone.quaternion.copy(native[i].q); bone.position.copy(native[i].p); }); applied = false;
       root.updateWorldMatrix(true, true);
     },
     update(e: Enemy) {
-    if (e.mode !== 'windup' && !(e.mode === 'recover' && e.contactSequence === e.attackCount && e.attackCount > 0)) return;
-    // Burst/shot remains its native command/fire pose; do not pretend a sword cut fired a rifle.
-    if (e.attack === 'shot' || e.attack === 'burst') return;
-    vi = qi = 0;
-    const timing = enemyAttackTiming(e), windup = e.mode === 'windup';
-    const remaining = Math.max(0, e.timer), elapsed = windup ? timing.windup - remaining : timing.recovery - remaining;
-    const stroke = windup ? smooth(1 - remaining / .2) : 1;
-    const follow = windup ? 0 : smooth(elapsed / Math.min(.2, timing.recovery * .4));
-    const release = windup ? 0 : smooth((elapsed - Math.min(.2, timing.recovery * .4)) / Math.max(.1, timing.recovery - Math.min(.2, timing.recovery * .4)));
-    const weight = (windup ? smooth(elapsed / .22) : 1) * (1 - release);
-    if (weight <= 0) return;
-    affected.forEach((bone, i) => native[i].copy(bone.quaternion)); applied = true;
-    root.updateWorldMatrix(true, true);
-    // Build a recognizable shoulder/chest preparation, commit and open recovery.
-    const yaw = (sign * .22 * (1 - stroke) - sign * .18 * follow) * weight;
-    for (const [bone, share] of [[spine, .35], [chest, .65]] as const) {
-      const rotation = q().setFromAxisAngle(axis(v(0, 1, 0)), yaw * share).multiply(bone.getWorldQuaternion(q()));
-      setWorld(bone, rotation);
-    }
-    const targetLocal = v(sign * .34, 1.43, .13).lerp(v(sign * .17, 1.22, .44), stroke).lerp(v(-sign * .12, 1.09, .38), follow);
-    const currentHand = hand.getWorldPosition(v()), target = currentHand.lerp(world(targetLocal), weight);
-    const desired = axis(v(sign * .34, .90, -.15).lerp(v(-sign * .12, -.18, 1), stroke).lerp(v(-sign * .85, -.32, .48), follow).normalize());
-    const originalHand = hand.getWorldQuaternion(q());
-    const originalBlade = copy(weapon.axis).applyQuaternion(originalHand).normalize();
-    const targetRotation = q().setFromUnitVectors(originalBlade, desired).multiply(originalHand);
-    const handRotation = q().copy(originalHand).slerp(targetRotation, weight);
-    const a = upper.getWorldPosition(v()), b = lower.getWorldPosition(v()), c = hand.getWorldPosition(v());
-    const l1 = a.distanceTo(b), l2 = b.distanceTo(c), delta = copy(target).sub(a), distance = THREE.MathUtils.clamp(delta.length(), Math.abs(l1 - l2) + .0001, l1 + l2 - .0001), direction = delta.normalize();
-    const along = (l1 * l1 - l2 * l2 + distance * distance) / (2 * distance), height = Math.sqrt(Math.max(0, l1 * l1 - along * along));
-    const pole = axis(v(sign, -.5, -.15)); pole.addScaledVector(direction, -pole.dot(direction)).normalize();
-    aim(upper, lower, copy(a).addScaledVector(direction, along).addScaledVector(pole, height));
-    aim(lower, hand, copy(a).addScaledVector(direction, distance)); setWorld(hand, handRotation);
-  } };
+      if (e.mode !== 'windup' && !(e.mode === 'recover' && e.contactSequence === e.attackCount && e.attackCount > 0)) return;
+      if (e.attack === 'shot' || e.attack === 'burst') return;
+      vi = qi = 0;
+      const timing = enemyAttackTiming(e), windup = e.mode === 'windup';
+      const remaining = Math.max(0,e.timer), elapsed = windup ? timing.windup-remaining : timing.recovery-remaining;
+      const stroke = windup ? smooth(1-remaining/.2) : 1;
+      const followDuration = Math.min(.2,timing.recovery*.4), follow = windup ? 0 : smooth(elapsed/followDuration);
+      const release = windup ? 0 : smooth((elapsed-followDuration)/Math.max(.1,timing.recovery-followDuration));
+      const weight = (windup ? smooth(elapsed/.22) : 1)*(1-release);
+      if (weight <= 0) return;
+      affected.forEach((bone,i) => { native[i].q.copy(bone.quaternion); native[i].p.copy(bone.position); }); applied = true;
+      root.updateWorldMatrix(true,true);
+      const footTargets = legs.map(chain => chain[2]!.getWorldPosition(v())), footRotations = legs.map(chain => chain[2]!.getWorldQuaternion(q()));
+      const pelvisPoint = root.worldToLocal(pelvis.getWorldPosition(v()));
+      pelvisPoint.y -= style.load*(1-.3*stroke)*weight;
+      pelvisPoint.z += (-.035*(1-stroke)+style.drive*stroke)*weight;
+      pelvis.position.copy(pelvis.parent!.worldToLocal(world(pelvisPoint))); pelvis.updateWorldMatrix(false,true);
+      legs.forEach((chain,i) => solve(chain as THREE.Object3D[],footTargets[i],v(0,0,1),footRotations[i]));
+      const yaw = sign*(style.turn*(1-stroke)+style.counterTurn*follow)*weight;
+      const lean = (-.045*(1-stroke)+.13*stroke)*weight;
+      for (const [bone,share] of [[spine,.35],[chest,.65]] as const) {
+        const rotation = q().setFromAxisAngle(axis(v(0,1,0)),yaw*share).multiply(bone.getWorldQuaternion(q()));
+        rotation.premultiply(q().setFromAxisAngle(axis(v(1,0,0)),lean*share)); setWorld(bone,rotation);
+      }
+      const targetLocal = point(style.preparation).lerp(point(style.contact),stroke).lerp(point(style.follow),follow);
+      const target = hand.getWorldPosition(v()).lerp(world(targetLocal),weight);
+      const desired = axis(point(style.prepareBlade).lerp(point(style.contactBlade),stroke).lerp(point(style.followBlade),follow).normalize());
+      const originalHand = hand.getWorldQuaternion(q()), originalBlade = copy(weapon.axis).applyQuaternion(originalHand).normalize();
+      const targetRotation = q().setFromUnitVectors(originalBlade,desired).multiply(originalHand), handRotation = q().copy(originalHand).slerp(targetRotation,weight);
+      solve([upper,lower,hand],target,v(sign,-.5,-.15),handRotation);
+      // The free arm counterbalances the cut/lunge instead of hanging in bind pose.
+      // Its native wrist orientation is preserved, including the pirate's holstered pistol grip.
+      const freeHand = free[2]!, freeRotation = freeHand.getWorldQuaternion(q());
+      const freeLocal = model === 'officer' ? v(-sign*.32,1.04,-.15) : v(-sign*.37,1.12,.02).lerp(v(-sign*.32,1.20,.13),stroke).lerp(v(-sign*.30,1.18,.12),follow);
+      const freeTarget = freeHand.getWorldPosition(v()).lerp(world(freeLocal),weight);
+      solve(free as THREE.Object3D[],freeTarget,v(-sign*.5,-1,.15),freeRotation);
+    },
+  };
 }
