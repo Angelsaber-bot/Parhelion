@@ -1718,6 +1718,7 @@ suspendForGraphics = () => {
   travelPanel.refresh(); campaignJournal?.refresh(); audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   renderLoading(); start.classList.remove('hidden');
+  $('settings-open').classList.remove('hidden'); languageToggle.hidden = false;
 };
 if (graphicsRecovery?.blocked) suspendForGraphics();
 requestAnimationFrame(frame);

@@ -21,6 +21,7 @@ test('actual World suspends on context loss, rejects stale resume, and requires 
     await start(); frame(60); key('KeyW'); frame(4);
     const saved = h.window.localStorage.getItem('parhelion.world.progress.v2');
     event('webglcontextlost'); assert.equal(w.graphicsRecovery.state, 'lost'); assert.equal(d.pointerLockElement, null);
+    assert.equal(d.getElementById('settings-open')!.classList.contains('hidden'), false, 'Recovery exposes the actual pause/settings control');
     const frozen = snapshot(), renderCount = renders;
     event('webglcontextlost'); frame(20, 500);
     assert.equal(snapshot(), frozen); assert.equal(renders, renderCount);
@@ -30,7 +31,7 @@ test('actual World suspends on context loss, rejects stale resume, and requires 
     assert.equal(w.graphicsRecovery.state, 'awaiting-resume'); assert.equal(snapshot(), frozen); assert.equal(renders, renderCount);
     // A lock request begun before loss cannot silently resume after restoration.
     await canvas.requestPointerLock(); assert.equal(d.pointerLockElement, null);
-    w.settingsPanel.show(); await start(); assert.equal(w.graphicsRecovery.state, 'awaiting-resume');
+    (d.getElementById('settings-open') as HTMLElement).click(); assert.equal(w.settingsPanel.open, true); await start(); assert.equal(w.graphicsRecovery.state, 'awaiting-resume');
     const resolution = d.getElementById('world-resolution') as HTMLSelectElement;
     resolution.value = 'adaptive'; resolution.dispatchEvent(new h.window.Event('change', { bubbles: true }));
     assert.equal(w.graphicsRecovery.state, 'awaiting-resume'); assert.equal(renders, renderCount);
