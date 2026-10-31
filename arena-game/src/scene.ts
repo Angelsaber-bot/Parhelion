@@ -27,6 +27,7 @@ import { attachGunArt, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
 import { ChapterEffects } from './chapterEffects.ts';
+import { ArenaCombatEffects } from './combatEffects.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
@@ -43,9 +44,7 @@ export class ArenaScene {
   private vmCamera = new THREE.PerspectiveCamera(58, 1, 0.01, 10);
   private avatars = new Map<string, Avatar>();
   private shields = new Map<number, THREE.Group>();
-  private tracers: { line: THREE.Line; life: number; max: number }[] = [];
-  private sparks: { s: THREE.Sprite; life: number; max: number; grow: number; vel?: THREE.Vector3 }[] = [];
-  private numbers: { s: THREE.Sprite; life: number; vy: number }[] = [];
+  private combatEffects: ArenaCombatEffects;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
   private flashT = 0;
   private baseFov = 78;
@@ -76,6 +75,7 @@ export class ArenaScene {
   private atmo: Atmosphere = atmosphereFor('day');
 
   constructor(canvas: HTMLCanvasElement, private readonly quality: 'high' | 'low' = 'high') {
+    this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     this.basePixelRatio = Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1);
     r.setPixelRatio(this.basePixelRatio);
@@ -261,34 +261,17 @@ export class ArenaScene {
   }
 
   private burst(at: Vec3, color: number, size: number, life: number, speed: number) {
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.sparkTex, color, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-    s.position.set(...at);
-    s.scale.setScalar(size * 0.4);
-    this.scene.add(s);
-    const vel = speed ? new THREE.Vector3(Math.random() - 0.5, Math.random() * 0.8 + 0.2, Math.random() - 0.5).normalize().multiplyScalar(speed) : undefined;
-    this.sparks.push({ s, life, max: life, grow: size * (speed ? 0.2 : 2.4), vel });
+    this.combatEffects.burst(at, color, size, life, speed);
   }
 
-  /** Floating damage number over a hit player (anime-shooter style). */
+  /** Floating damage labels reuse one private canvas texture per bounded slot. */
   damageNumber(at: Vec3, dmg: number, head: boolean, kill: boolean) {
-    const c = document.createElement('canvas');
-    c.width = 128; c.height = 64;
-    const g = c.getContext('2d')!;
-    g.font = `900 ${head || kill ? 46 : 38}px sans-serif`;
-    g.textAlign = 'center';
-    g.lineWidth = 6;
-    g.strokeStyle = '#1a1030';
-    g.fillStyle = kill ? '#ff5d7a' : head ? '#ffd34d' : '#ffffff';
-    const txt = String(Math.round(dmg));
-    g.strokeText(txt, 64, 48);
-    g.fillText(txt, 64, 48);
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
-    s.position.set(at[0] + (Math.random() - 0.5) * 0.5, at[1], at[2] + (Math.random() - 0.5) * 0.5);
-    s.scale.set(0.9, 0.45, 1);
-    s.renderOrder = 20;
-    this.scene.add(s);
-    this.numbers.push({ s, life: 0.8, vy: 1.6 });
+    this.combatEffects.damageNumber(at, dmg, head, kill);
   }
+
+  get combatEffectInventory() { return this.combatEffects.inventory; }
+  /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
+  disposeCombatEffects() { this.combatEffects.dispose(); }
 
   // ---------- players ----------
 
@@ -362,10 +345,7 @@ export class ArenaScene {
 
   /** Round boundaries clear transient effects without reloading maps or equipped models. */
   clearCombatEffects() {
-    for (const { line } of this.tracers) { this.scene.remove(line); line.geometry.dispose(); (line.material as THREE.Material).dispose(); }
-    for (const { s } of this.sparks) { this.scene.remove(s); s.material.dispose(); }
-    for (const { s } of this.numbers) { this.scene.remove(s); s.material.map?.dispose(); s.material.dispose(); }
-    this.tracers = []; this.sparks = []; this.numbers = [];
+    this.combatEffects.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
@@ -374,11 +354,7 @@ export class ArenaScene {
   // ---------- effects ----------
 
   tracer(from: Vec3, to: Vec3, color: number, width = 1) {
-    const geo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...from), new THREE.Vector3(...to)]);
-    const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9 * width, blending: THREE.AdditiveBlending, depthWrite: false });
-    const line = new THREE.Line(geo, mat);
-    this.scene.add(line);
-    this.tracers.push({ line, life: 0.09, max: 0.09 });
+    this.combatEffects.tracer(from, to, color, width);
     this.spark(to, color);
   }
 
@@ -387,30 +363,7 @@ export class ArenaScene {
   }
 
   update(dt: number) {
-    for (let i = this.tracers.length - 1; i >= 0; i--) {
-      const t = this.tracers[i];
-      t.life -= dt;
-      (t.line.material as THREE.LineBasicMaterial).opacity = Math.max(0, t.life / t.max) * 0.9;
-      if (t.life <= 0) { this.scene.remove(t.line); t.line.geometry.dispose(); (t.line.material as THREE.Material).dispose(); this.tracers.splice(i, 1); }
-    }
-    for (let i = this.sparks.length - 1; i >= 0; i--) {
-      const s = this.sparks[i];
-      s.life -= dt;
-      if (s.vel) { s.vel.y -= 9 * dt; s.s.position.addScaledVector(s.vel, dt); }
-      s.s.scale.setScalar(Math.max(0.01, s.s.scale.x + s.grow * dt));
-      s.s.material.opacity = Math.max(0, s.life / s.max);
-      if (s.life <= 0) { this.scene.remove(s.s); s.s.material.dispose(); this.sparks.splice(i, 1); }
-    }
-    for (let i = this.numbers.length - 1; i >= 0; i--) {
-      const n = this.numbers[i];
-      n.life -= dt;
-      n.vy -= 3 * dt;
-      n.s.position.y += n.vy * dt;
-      n.s.material.opacity = Math.min(1, n.life / 0.3);
-      const pop = 1 + Math.max(0, n.life - 0.65) * 4;
-      n.s.scale.set(0.9 * pop, 0.45 * pop, 1);
-      if (n.life <= 0) { this.scene.remove(n.s); n.s.material.map?.dispose(); n.s.material.dispose(); this.numbers.splice(i, 1); }
-    }
+    this.combatEffects.update(dt);
     this.flashT -= dt;
     this.muzzleLight.intensity = this.flashT > 0 ? this.muzzleLight.intensity * 0.6 : 0;
     this.viewmodel.update(dt);
