@@ -12,7 +12,7 @@ export class RuntimePoseExporter {
   private staticIdentity(mesh:THREE.Mesh){
     const geometry=mesh.geometry,signature:unknown[]=[geometry,geometry.attributes.position.count];
     for(const attribute of [geometry.attributes.uv,geometry.attributes.uv1,geometry.attributes.color,geometry.index]){
-      signature.push(attribute,attribute?.count,attribute?.itemSize,attribute&&('version'in attribute?attribute.version:attribute.data.version));
+      signature.push(attribute,attribute?.count,attribute?.itemSize,attribute?.normalized,attribute&&('array'in attribute?attribute.array:attribute.data.array),attribute&&('version'in attribute?attribute.version:attribute.data.version),attribute&&('data'in attribute?attribute.data.stride:undefined),attribute&&('offset'in attribute?attribute.offset:undefined));
     }
     const previous=this.shared.get(mesh);
     if(previous&&signature.every((value,i)=>value===previous.signature[i]))return{id:previous.id,first:false};
