@@ -77,3 +77,23 @@ recovery and does not override `winter_core`. Its fire stays visibly lit after t
 array-seal ending. The actual Player reaches a resting point inside the warmth radius;
 all prior field/cover/actor routes still pass. Total field markers are now eight:
 seven interactions and this one passive warmth source. Winter geometry is 870 triangles.
+
+### Observatory composition review
+
+The Valley array now uses the observatory's ivory, blue-grey metal and aged brass
+language: a broken calibration arch frames the receiver, a terrain-conforming stone
+ring defines the clearing, and buried conduit strips connect the three anchors to
+the console. Receiver I has a vertical ring; relay II a horizontal dish; transmitter
+III a tall fork. A fallen housing provides a peripheral ruin accent. The center and
+all interaction/spawn lanes remain open. Conduits and paving are visual only;
+columns, plinths and housing have fixed collision. State changes never move them.
+
+The actual shipped map crop and runtime meshes were exported by
+`validation/environment-eight-hour/export-fields.ts`, then rendered with
+`render-fields.py` using CPU Cycles and offline sun/sky lighting. Same-camera review
+is stored outside the repository in `environment/false-dawn/renders/alpha-*.png`
+(before) and `environment/false-dawn-v3/renders/alpha-*.png` (after), under the sibling
+evidence directory. Views include approach, detail and a ground + 1.65 m battle eye.
+Winter's visible warmth is reviewed in `environment/false-dawn-v2/renders/winter-*.png`.
+These are actual geometry reviews, not runtime GPU screenshots or FPS evidence.
+The revised Valley remains seven batches with no additional lights or materials.

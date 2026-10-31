@@ -36,6 +36,26 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   }
   if(region==='alpha'){
    const metal='#566b76',light='#c3d0cf',brass='#c1a06b',ink='#344c59';
+   // Buried calibration paving follows the real slope, never a floating combat platform.
+   function groundBand(points:[number,number][],width:number,color:string,layer:'body'|'glow'|'briefed'|'choiceA'|'choiceB'='body',lift=.025){
+    for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(!length)continue;const sx=-dz/length*width/2,sz=dx/length*width/2,ps=[[a[0]+sx,a[1]+sz],[a[0]-sx,a[1]-sz],[b[0]-sx,b[1]-sz],[b[0]+sx,b[1]+sz]];
+     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(ps.flatMap(([x,z])=>[x,y(x,z)+lift,z]),3));g.setIndex([0,2,1,0,3,2]);g.computeVertexNormals();art.add(g,color,[0,0,0],[1,1,1],false,layer);g.dispose();
+    }
+   }
+   function groundDisc(x:number,z:number,radius:number,color:string){const g=new THREE.CircleGeometry(radius,8).rotateX(-Math.PI/2).translate(x,0,z),p=g.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,y(p.getX(i),p.getZ(i))+.022);g.computeVertexNormals();art.add(g,color,[0,0,0]);g.dispose();}
+   for(let i=0;i<32;i++){if(i%8===0)continue;const a=(i+.035)*Math.PI/16,b=(i+.965)*Math.PI/16;groundBand([[Math.cos(a)*5.3,Math.sin(a)*5.3],[Math.cos(b)*5.3,Math.sin(b)*5.3]],1.1,['#a3b0a9','#aab5ad','#98aaa3'][i%3],'body',.035);groundBand([[Math.cos(a)*4.94,Math.sin(a)*4.94],[Math.cos(b)*4.94,Math.sin(b)*4.94]],.045,brass,'body',.044);}
+   for(const [a,b]of [[[6.9,6],[4.5,3.8]],[[4.5,3.8],[3.7,3]],[[3.3,2.6],[2.1,1.6]]]as[[number,number],[number,number]][])groundBand([a,b],1.45,'#9aaba6');
+   // An observatory calibration arch, broken at the crown, frames the field from its road approach.
+   const az=-7.9,ax=-5.9,ah=y(ax,az);
+   for(const x of[-8.1,-3.7]){const h=y(x,az);art.box([x,h+.18,az],[1.1,.36,1.1],light,true);art.box([x,h+1.65,az],[.38,3.3,.48],ink,true);art.box([x,h+1.65,az+.26],[.11,2.9,.035],brass);art.box([x,h+3.36,az],[.72,.18,.72],light);}
+   const arch=new THREE.TorusGeometry(2.05,.12,6,26,Math.PI*1.63);art.add(arch,brass,[ax,ah+3.15,az],[1,1,1],false,'metal',[0,0,-.23]);arch.dispose();
+   art.beam([-8.1,ah+3.3,az],[-7.2,ah+4.65,az],.11,ink);art.beam([-3.7,ah+3.3,az],[-4.45,ah+4.4,az],.11,ink);
+   for(const side of[-1,1])art.box([ax+side*1.15,ah+3.05,az],[.62,1.15,.11],light,false,'body',[0,0,side*-.24]);
+   art.box([ax,ah+.58,az],[1.8,1.16,.65],metal,true);art.ring([ax,ah+1.25,az+.34],.35,.045,brass);
+   // One fallen housing provides an asymmetric ruin accent, outside every interaction/spawn lane.
+   const fh=y(-7.8,2);art.box([-7.8,fh+.34,2],[1.7,.65,1.3],metal,true,'body',[0,.22,.12]);
+   for(let i=0;i<4;i++)art.box([-8.35+i*.35,fh+.72,2],[.08,.09,1.1],light,false,'body',[0,.22,.12]);
+
    // The recorder has a broken transport handle, reel spools and a grounded cable clamp.
    const rx=7,rz=7,ry=y(rx,rz);
    art.box([rx,ry+.42,rz],[1.65,.84,.95],metal,true);
@@ -53,14 +73,22 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
    marker('false_dawn_array_console','启动伪黎明阵列',cx,cz+1.2);
    FALSE_DAWN_ANCHORS.forEach((point,i)=>{
     const x=point[0]-origin[0],z=point[2]-origin[2],h=y(x,z),layer=(['briefed','choiceA','choiceB']as const)[i];
-    art.cyl([x,h+.16,z],.8,.32,metal,true,'body');art.cyl([x,h+.63,z],.30,.78,ink,true,'metal');
-    art.cyl([x,h+1.08,z],.52,.12,brass,false,'metal');
-    // Distinct orientation and Roman plates survive color-vision differences.
-    art.ring([x,h+1.52,z],.52,.065,light,'metal',[i===1?Math.PI/2:0,i===2?Math.PI/2:0,0]);
-    art.box([x,h+.69,z+.32],[.54,.34,.08],metal);
-    for(let j=0;j<=i;j++)art.box([x+(j-i/2)*.13,h+.7,z+.37],[.04,.23,.025],'#d8c58e');
-    art.ring([x,h+1.52,z],.43,.07,'#cae3ac',layer,[i===1?Math.PI/2:0,i===2?Math.PI/2:0,0]);
+    groundDisc(x,z,1.12,'#a0b0a9');
+    art.cyl([x,h+.16,z],.8,.32,metal,true,'body');art.cyl([x,h+.85,z],.30,1.2,ink,true,'metal');
+    art.cyl([x,h+1.48,z],.52,.12,brass,false,'metal');
+    // Receiver I / horizontal relay II / forked transmitter III have distinct silhouettes.
+    const ringY=i===1?1.78:i===2?2.22:2.04,radius=i===1?.80:.69,rotation:V3=[i===1?Math.PI/2:0,i===2?Math.PI/2:0,0];
+    art.ring([x,h+ringY,z],radius,.075,light,'metal',rotation);
+    if(i===0)for(const side of[-1,1])art.beam([x+side*.3,h+1.4,z],[x+side*.62,h+2.1,z],.075,brass);
+    if(i===1){art.cyl([x,h+2.07,z],.055,.8,brass,false,'metal');for(const side of[-1,1])art.beam([x+side*.25,h+1.42,z],[x+side*.72,h+1.78,z],.075,metal);}
+    if(i===2)for(const side of[-1,1]){art.box([x+side*.44,h+2,z],[.09,2.4,.12],brass);art.box([x+side*.44,h+3.22,z],[.16,.18,.2],light);}
+    art.box([x,h+.91,z+.32],[.60,.47,.08],metal);
+    for(let j=0;j<=i;j++)art.box([x+(j-i/2)*.14,h+.92,z+.37],[.045,.31,.025],'#d8c58e');
+    art.ring([x,h+ringY,z],radius-.12,.07,'#cae3ac',layer,rotation);
     art.box([x,h+.23,z+.77],[.45,.08,.06],'#cae3ac',false,layer);
+    // Shallow conduits visibly explain the array without catching the player's feet.
+    const conduit:[number,number][]=[];const target:[number,number]=[7,0];for(let k=0;k<=10;k++)conduit.push([x+(target[0]-x)*k/10,z+(target[1]-z)*k/10]);
+    groundBand(conduit,.13,ink,'body',.036);groundBand(conduit,.035,'#c3d9ae',layer,.043);
     marker(`false_dawn_emitter_${i+1}`,['接收锚 · I','中继锚 · II','发信锚 · III'][i],x,z+(z>0?-1.35:1.35));
    });
    art.box([cx,cy+.65,cz+.435],[.65,.12,.025],'#d2e5b6',false,'resolved');
