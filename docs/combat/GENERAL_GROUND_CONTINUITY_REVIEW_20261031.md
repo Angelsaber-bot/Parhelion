@@ -65,10 +65,30 @@ final X is identical, with no sustained speed increase. Do not claim exact
 water trajectory parity or introduce an arbitrary water-margin workaround.
 The actual eleven dry routes remain exact horizontally.
 
+## Quiet paired CPU evidence
+
+`measure-general-ground-support.ts` ran under the shared exclusive weight-4 gate
+at 09:16:49–09:17:02 UTC after aggregate termination. Sixty measured trials per
+case after six warmups, 72 fixed-120-Hz component steps each, alternate pair
+order; setup, settling and diagnostic reads are outside timed steps. Each arm
+has 4,320 measured samples. The candidate still includes its validation wrapper.
+
+| Case | Baseline median / p95 ms | Candidate median / p95 ms | Candidate observed max ms |
+|---|---:|---:|---:|
+| Actual Alpha downhill | .034 / .089 | .077 / .164 | 2.677 |
+| Synthetic flat control | .035 / .083 | .035 / .067 | .901 |
+| Actual field + 64 noncontacting annular BVHs | .101 / .176 | .222 / .394 | 7.482 |
+
+All downhill candidate steps in this window recover; flat has zero queries.
+Maximum individual BVH casts are 31 actual / 95 dense, one support pass and one
+capsule retry. Dense geometry does not alter either body's trajectory, asserted
+exactly. The 7.482 ms tail is retained, not explained away or presented as a
+worst-case guarantee. These are CPU component timings, not a device frame budget,
+GPU/FPS measurement or whole-world runtime. General recovery adds measurable work
+on every affected ordinary walking step; it is not free.
+
 ## Pending before recommendation
 
-- Quiet paired actual-world and bounded dense-collider CPU measurements via
-  `measure-general-ground-support.ts`; no timing claims during aggregate tests.
 - Independent held-key/repeat/cooldown check and parent review.
 - Explicit parent acceptance before any production generalization.
 
