@@ -27,6 +27,14 @@ for region in ['alpha','blacksail','winter']:
     n.inputs['Emission Color'].default_value=tuple(m['emissive'])+(1,);n.inputs['Emission Strength'].default_value=m['emissiveIntensity']
     if m.get('vertexColors'):
      attr=mat.node_tree.nodes.new('ShaderNodeVertexColor');attr.layer_name='RuntimeColor';multiply=mat.node_tree.nodes.new('ShaderNodeMixRGB');multiply.blend_type='MULTIPLY';multiply.inputs[0].default_value=1;multiply.inputs[2].default_value=tuple(m['color'])+(1,);mat.node_tree.links.new(attr.outputs['Color'],multiply.inputs[1]);mat.node_tree.links.new(multiply.outputs['Color'],n.inputs['Base Color'])
+    # Three FrontSide/BackSide controls primary visibility. Cycles otherwise exposes
+    # backfaces when a spring-arm camera enters foliage; preserve other ray behavior.
+    if m.get('side',2)!=2:
+     geometry=mat.node_tree.nodes.new('ShaderNodeNewGeometry');pathnode=mat.node_tree.nodes.new('ShaderNodeLightPath');facing=geometry.outputs['Backfacing']
+     if m['side']==1:
+      invert=mat.node_tree.nodes.new('ShaderNodeMath');invert.operation='SUBTRACT';invert.inputs[0].default_value=1;mat.node_tree.links.new(facing,invert.inputs[1]);facing=invert.outputs[0]
+     factor=mat.node_tree.nodes.new('ShaderNodeMath');factor.operation='MULTIPLY';mat.node_tree.links.new(facing,factor.inputs[0]);mat.node_tree.links.new(pathnode.outputs['Is Camera Ray'],factor.inputs[1])
+     transparent=mat.node_tree.nodes.new('ShaderNodeBsdfTransparent');mix=mat.node_tree.nodes.new('ShaderNodeMixShader');mat.node_tree.links.new(factor.outputs[0],mix.inputs[0]);mat.node_tree.links.new(n.outputs['BSDF'],mix.inputs[1]);mat.node_tree.links.new(transparent.outputs[0],mix.inputs[2]);mat.node_tree.links.new(mix.outputs[0],mat.node_tree.nodes.get('Material Output').inputs['Surface'])
     material_cache[key]=mat
    mesh.materials.append(material_cache[key])
   for group in entry['groups']:
@@ -43,7 +51,18 @@ for region in ['alpha','blacksail','winter']:
  data=bpy.data.lights.new('Sun','SUN');data.energy=2.2;data.angle=.15;sun=bpy.data.objects.new('Sun',data);scene.collection.objects.link(sun);sun.rotation_euler=(.6,-.4,-.5)
  data=bpy.data.cameras.new('Camera');cam=bpy.data.objects.new('Camera',data);scene.collection.objects.link(cam);scene.camera=cam
  scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=24;scene.cycles.use_denoising=False;scene.render.resolution_x=1280;scene.render.resolution_y=900;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX'
- for label,pos,target,lens in [('context',(42,-48,37),(0,0,2),42),('approach',(manifest['approachCamera'][0],-manifest['approachCamera'][2],manifest['approachCamera'][1]),(0,0,1.3),38),('detail',(16,-17,10),(0,0,1),40),('battle',(manifest.get('battleCamera',[3,1.65,5])[0],-manifest.get('battleCamera',[3,1.65,5])[2],manifest.get('battleCamera',[3,1.65,5])[1]),(-1,3,1.5),30)]:
+ if manifest.get('cameras'):
+  coord=lambda p:(p[0],-p[2],p[1])
+  shots=[(c['label'],coord(c['position']),coord(c['target']),None) for c in manifest['cameras']]
+  scene.render.resolution_x=1280;scene.render.resolution_y=720
+  if manifest.get('directionalLights'):
+   light=manifest['directionalLights'][0];sun.data.color=light['color'];sun.data.energy=light['intensity'];sun.location=coord(light['position']);sun.rotation_euler=(Vector(coord(light['target']))-sun.location).to_track_quat('-Z','Y').to_euler()
+ else:
+  shots=[('context',(42,-48,37),(0,0,2),42),('approach',(manifest['approachCamera'][0],-manifest['approachCamera'][2],manifest['approachCamera'][1]),(0,0,1.3),38),('detail',(16,-17,10),(0,0,1),40),('battle',(manifest.get('battleCamera',[3,1.65,5])[0],-manifest.get('battleCamera',[3,1.65,5])[2],manifest.get('battleCamera',[3,1.65,5])[1]),(-1,3,1.5),30)]
+ for label,pos,target,lens in shots:
   if views and label not in views:continue
-  cam.location=pos;target=Vector(target);cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.lens=lens
+  cam.location=pos;target=Vector(target);cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP'
+  if lens is not None:data.lens=lens
+  else:
+   source_camera=next(c for c in manifest['cameras'] if c['label']==label);data.sensor_fit='VERTICAL';data.sensor_height=32;data.lens=32/(2*math.tan(math.radians(source_camera['fov'])/2))
   scene.render.filepath=os.path.join(out,region+'-'+label+'.png');bpy.ops.render.render(write_still=True);print('FIELD_RENDERED',region,label,flush=True)

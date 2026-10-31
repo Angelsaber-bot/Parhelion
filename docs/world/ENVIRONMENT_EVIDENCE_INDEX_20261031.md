@@ -30,6 +30,7 @@ review. `studio` and renderer-only `candidate` modes are explicitly named altern
 | Final spatially separated briefing residents | `campaign-side-residents/renders/{region}-campaign.png` | Current except BlackSail +0.8m correction in harbor-frontage-fixed; studio lighting |
 | Five resident silhouettes | `campaign-residents-v4/residents.png` | Before final minor lid/mouth/page refinement |
 | Final Ada face and bounded note-check | `resident-acting-v2/{rest,read}/ada.png` | Actual runtime poses at 0/5.12 seconds; not a motion video |
+| Actual main TPS field cameras, low/normal | `native-field-final/{low,med}/renders/{region}-{entry,console,exit}.png` | Production cameras/material scalars/caster flags and FrontSide primary rays; no actors/HUD/GPU shader parity |
 | Partial accepted anchor circuits | `grounding-circuits/{000,100,111}/renders/alpha-detail.png` | Reviewed 06:32 UTC: none / I only / all accepted; default factory shadows off |
 
 The first `candidate/` export mistakenly overwrote base color with vertex color on
@@ -88,3 +89,11 @@ python ../../parhelion-eight-hour-evidence/render_budget.py --weight 1 \
 Omit `--near-shadows` for the default/low shadow capability. `--anchors=000|100|111`
 selects exact independently saved confirmation circuits; it is not a gameplay shortcut.
 Always use the shared admission wrapper, do not launch Blender outside its budget.
+
+## Native camera refinement
+
+See `FIELD_NATIVE_CAMERA_REVIEW_20261031.md` for the production-main low/normal
+18-pose metadata comparison, interaction LOS, hero-to-instrument ray checks, and
+explicit distinction between camera-to-target and shoulder-offset crosshair rays.
+Early native-field-review/exit frames are retained but superseded by native-field-final
+for visibility acceptance: the earlier CPU shader exposed foliage backfaces.
