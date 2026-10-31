@@ -1,0 +1,29 @@
+/** Fresh native-model CPU pose/temporal review. No image synthesis or old footage. */
+import * as THREE from 'three';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';import{createHash}from'node:crypto';import{fileURLToPath}from'node:url';import path from'node:path';
+import {readCharacter}from'../characters/inspect';import{RuntimePoseExporter}from'../characters/export-runtime-pose';import{CharacterKit}from'../../src/characters/characterKit';import{CHARACTER_KITS}from'../../src/characters/catalog';
+import{createMusashiUltimatePerformance}from'../../src/musashiUltimatePerformance';import{createEraUltimatePerformance as beforePerformance}from'./baseline-era-performance';import{musashiLocomotionClip as beforeLocomotion}from'./baseline-musashi-locomotion';
+import{musashiGeometry}from'../characters/musashi-motion-metrics';import{skillAnimationProfile,skillAnimationSample}from'../../src/skillAnimationProfile';import type{UltimatePerformanceFrame}from'../../src/ultimatePerformance';
+const out=process.argv[2];if(!out)throw Error('output required');const mode=process.argv.includes('--before')?'before':'after',asset=process.argv.find(a=>a.startsWith('--asset='))?.slice(8)??fileURLToPath(CHARACTER_KITS.musashi.assetUrl),definition=CHARACTER_KITS.musashi;
+await mkdir(out,{recursive:true});const hashes:Record<string,string>={};for(const f of[asset,fileURLToPath(new URL('../../src/musashiUltimatePerformance.ts',import.meta.url)),fileURLToPath(new URL('../../src/characters/musashiLocomotion.ts',import.meta.url))])hashes[f]=createHash('sha256').update(await readFile(f)).digest('hex');
+const {gltf}=await readCharacter(asset);if(mode==='before')gltf.animations=gltf.animations.map(c=>beforeLocomotion(c,gltf.scene,Object.entries(definition.clips).find(([,v])=>v.name===c.name)?.[0]??''));
+const actor=new CharacterKit(gltf,mode==='before'?{...definition,id:'musashi-before'}:definition,{transitionSeconds:0}),geo=musashiGeometry(actor),exporter=new RuntimePoseExporter(out);
+const meta={asset:asset.replace(/\.gz$/,''),framing:{center:[0,1.02,.12],size:2.55},groundY:0,view:'front',reviewYaw:-.18,sourceHashes:hashes,label:`Musashi ${mode}: native CPU pose offline preview, not GPU`};
+const metrics:unknown[]=[];
+if(process.argv.includes('--ordinary-temporal')){let frame=0;for(const[state,duration]of [['idle',.8],['walk',.8],['run',.8],['attack',1.6],['idle',.6]]as const){actor.play(state,{restart:true});for(let tick=0;tick<Math.round(duration*30);tick++){actor.update(1/30);await exporter.frame(`motion-${String(frame++).padStart(3,'0')}`,actor.root,{...meta,state,time:tick/30,fps:30});}}}
+for(const[state,t]of [['idle',.6],['walk',.35],['run',.28],['attack',.16],['attack',.44],['attack',19/30],['attack',.90],['attack',33/30],['attack',1.48]]as const){actor.play(state,{restart:true});for(let time=0;time<t-1e-8;){const dt=Math.min(1/120,t-time);actor.update(dt);time+=dt;}geo.sync();const id=`ordinary-${state}-${Math.round(t*120).toString().padStart(3,'0')}`;metrics.push({id,...geo.ground(),clearance:geo.clearance()});await exporter.frame(id,actor.root,{...meta,state,time:t});}
+actor.play('idle',{restart:true});actor.mixer.update(0);const snapshot:THREE.Object3D[]=[];actor.model.traverse(o=>snapshot.push(o));const base=snapshot.map(o=>({o,p:o.position.clone(),q:o.quaternion.clone(),s:o.scale.clone()}));
+const perf=mode==='before'?beforePerformance('musashi',actor.model,gltf.animations):createMusashiUltimatePerformance(actor.model,gltf.animations);
+const planned:number[]=[];let total=0;for(let cycle=0;planned.length<3;cycle++){const p=skillAnimationProfile('musashi','ultimate',cycle),duration=skillAnimationSample(p,0,1.6,19/30).duration;for(const contact of[19/30,33/30]){if(planned.length>=3)break;let lo=0,hi=duration;for(let i=0;i<35;i++){const mid=(lo+hi)/2;if(skillAnimationSample(p,mid,1.6,19/30).clipTime<contact)lo=mid;else hi=mid;}planned.push(total+hi);}total+=duration;}
+const release=5.0,end=release+total,outro=.85,selected=new Set([54,138,...planned.map(t=>Math.round((release+t)*60)),Math.round((end+.5)*60)]);const temporal=process.argv.includes('--temporal');
+let previous:THREE.Vector3[]|undefined,maxHandStep=0,minBlade=Infinity,minFoot=Infinity,intersections=0;
+for(let tick=0;tick<=Math.ceil((end+outro)*60);tick++){
+ const t=tick/60,phase=t<1.2?'intro':t<release?'charge':t<end?'release':'outro',start=phase==='intro'?0:phase==='charge'?1.2:phase==='release'?release:end,span=phase==='intro'?1.2:phase==='charge'?release-1.2:phase==='release'?total:outro;
+ const frame:UltimatePerformanceFrame={phase,elapsed:t,progress:THREE.MathUtils.clamp((t-start)/span,0,1),strikeCount:planned.filter(h=>t-release>=h).length};perf.update(frame);geo.sync();
+ const hands=['Right','Left'].map(s=>actor.model.getObjectByName('mixamorig'+s+'Hand')!.getWorldPosition(new THREE.Vector3()));if(previous)for(let i=0;i<2;i++)maxHandStep=Math.max(maxHandStep,hands[i].distanceTo(previous[i]));previous=hands;
+ if(tick%6===0){const g=geo.ground();minBlade=Math.min(minBlade,g.bladeMin);minFoot=Math.min(minFoot,g.footMin);}
+ if(selected.has(tick)){const clearance=geo.clearance();if(clearance.intersects)intersections++;metrics.push({id:`ultimate-${tick}`,frame,clearance,...geo.ground()});}
+ if(selected.has(tick)||(temporal&&tick%2===0))await exporter.frame(`ultimate-${tick.toString().padStart(3,'0')}`,actor.root,{...meta,frame});
+}
+perf.reset();const resetError=Math.max(...base.map(({o,p,q,s})=>Math.max(o.position.distanceTo(p),o.quaternion.clone().normalize().angleTo(q.clone().normalize()),o.scale.distanceTo(s))));perf.dispose();actor.dispose();
+await writeFile(path.join(out,'report.json'),JSON.stringify({mode,hashes,planned,release,end,maxHandStep,minBlade,minFoot,intersections,resetError,metrics},null,2));console.log(JSON.stringify({mode,maxHandStep,minBlade,minFoot,intersections,resetError}));
