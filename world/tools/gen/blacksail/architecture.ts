@@ -191,6 +191,17 @@ export function portHouse(b: Batch,x: number,y: number,z: number,a: number,w: nu
   sign(k,w*.5-.55,2.9,front+.35,i);
 }
 
+/** Tavern-only inward timber lining. The existing hip shell has outward faces only.
+ * No COL, no new material, no skylight: source roof is continuous beneath its solid chimney. */
+export function tavernRoofUnderside(x: number, y: number, z: number, w: number, d: number): Batch {
+  const b = new Batch('Nassau_Tavern_Timber_Underside', 'M_BlackSailTimber');
+  const k = new Craft(b, x, y, z), W = w / 2 + .48, D = d / 2 + .52;
+  const R = Math.max(.65, W - D * .65), eave = 5.12 - .04, ridge = eave + 2.35;
+  k.mesh([-W,eave,-D, W,eave,-D, W,eave,D, -W,eave,D, -R,ridge,0, R,ridge,0],
+    [0,5,4, 0,1,5, 1,2,5, 2,4,5, 2,3,4, 3,0,4], C.timber);
+  return b;
+}
+
 export function tavernCraft(b: Batch,x: number,y: number,z: number,w: number,d: number) {
   const k=new Craft(b,x,y,z);
   roof(k,w,d,5.12,2.35,C.red,'hip');

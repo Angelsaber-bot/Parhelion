@@ -5,9 +5,11 @@ from mathutils import Vector
 arguments=sys.argv[sys.argv.index('--')+1:];source,out=arguments[:2];views=arguments[2].split(',') if len(arguments)>2 else None;regions=arguments[3].split(',') if len(arguments)>3 else None
 shadow_mode=arguments[4] if len(arguments)>4 else 'runtime'
 assert shadow_mode in ['runtime','candidate','studio']
-print('SHADOW_REVIEW_MODE',shadow_mode,flush=True)
+ambient_mode=arguments[5] if len(arguments)>5 else 'studio'
+assert ambient_mode in ['studio','unoccluded-hemi-diagnostic']
+print('SHADOW_REVIEW_MODE',shadow_mode,'AMBIENT_REVIEW_MODE',ambient_mode,flush=True)
 os.makedirs(out,exist_ok=True)
-for region in ['alpha','blacksail','winter']:
+for region in ['alpha','britain','blacksail','winter','kyoto']:
  if regions and region not in regions:continue
  if not os.path.exists(os.path.join(source,region+'.json')):continue
  manifest=json.load(open(os.path.join(source,region+'.json')))
@@ -27,6 +29,22 @@ for region in ['alpha','blacksail','winter']:
     n.inputs['Emission Color'].default_value=tuple(m['emissive'])+(1,);n.inputs['Emission Strength'].default_value=m['emissiveIntensity']
     if m.get('vertexColors'):
      attr=mat.node_tree.nodes.new('ShaderNodeVertexColor');attr.layer_name='RuntimeColor';multiply=mat.node_tree.nodes.new('ShaderNodeMixRGB');multiply.blend_type='MULTIPLY';multiply.inputs[0].default_value=1;multiply.inputs[2].default_value=tuple(m['color'])+(1,);mat.node_tree.links.new(attr.outputs['Color'],multiply.inputs[1]);mat.node_tree.links.new(multiply.outputs['Color'],n.inputs['Base Color'])
+    surface=n.outputs['BSDF']
+    if ambient_mode=='unoccluded-hemi-diagnostic':
+     # A bounded diagnostic of Three's unoccluded hemisphere term, not GPU parity.
+     # Keep it camera-only so emissive ambient does not create invented bounce lights.
+     if not manifest.get('hemisphereLights'):raise ValueError('Export actual hemisphere metadata first')
+     for hemi in manifest['hemisphereLights']:
+      geom=mat.node_tree.nodes.new('ShaderNodeNewGeometry');dot=mat.node_tree.nodes.new('ShaderNodeVectorMath');dot.operation='DOT_PRODUCT';dot.inputs[1].default_value=(hemi['direction'][0],-hemi['direction'][2],hemi['direction'][1]);mat.node_tree.links.new(geom.outputs['Normal'],dot.inputs[0])
+      weight=mat.node_tree.nodes.new('ShaderNodeMath');weight.operation='MULTIPLY_ADD';weight.inputs[1].default_value=.5;weight.inputs[2].default_value=.5;mat.node_tree.links.new(dot.outputs['Value'],weight.inputs[0])
+      hue=mat.node_tree.nodes.new('ShaderNodeMixRGB');hue.inputs[1].default_value=tuple(hemi['groundColor'])+(1,);hue.inputs[2].default_value=tuple(hemi['color'])+(1,);mat.node_tree.links.new(weight.outputs[0],hue.inputs[0])
+      product=mat.node_tree.nodes.new('ShaderNodeMixRGB');product.blend_type='MULTIPLY';product.inputs[0].default_value=1;mat.node_tree.links.new(hue.outputs[0],product.inputs[1])
+      if m.get('vertexColors'):mat.node_tree.links.new(multiply.outputs[0],product.inputs[2])
+      else:product.inputs[2].default_value=tuple(m['color'])+(1,)
+      lightpath=mat.node_tree.nodes.new('ShaderNodeLightPath');strength=mat.node_tree.nodes.new('ShaderNodeMath');strength.operation='MULTIPLY';strength.inputs[1].default_value=hemi['intensity']/math.pi;mat.node_tree.links.new(lightpath.outputs['Is Camera Ray'],strength.inputs[0])
+      ambient=mat.node_tree.nodes.new('ShaderNodeVectorMath');ambient.operation='SCALE';mat.node_tree.links.new(product.outputs[0],ambient.inputs[0]);mat.node_tree.links.new(strength.outputs[0],ambient.inputs['Scale'])
+      emission=mat.node_tree.nodes.new('ShaderNodeMixRGB');emission.blend_type='ADD';emission.inputs[0].default_value=1;emission.inputs[1].default_value=tuple(v*m['emissiveIntensity'] for v in m['emissive'])+(1,);mat.node_tree.links.new(ambient.outputs[0],emission.inputs[2]);mat.node_tree.links.new(emission.outputs[0],n.inputs['Emission Color']);n.inputs['Emission Strength'].default_value=1
+     mat.node_tree.links.new(surface,mat.node_tree.nodes.get('Material Output').inputs['Surface'])
     # Three FrontSide/BackSide controls primary visibility. Cycles otherwise exposes
     # backfaces when a spring-arm camera enters foliage; preserve other ray behavior.
     if m.get('side',2)!=2:
@@ -34,7 +52,7 @@ for region in ['alpha','blacksail','winter']:
      if m['side']==1:
       invert=mat.node_tree.nodes.new('ShaderNodeMath');invert.operation='SUBTRACT';invert.inputs[0].default_value=1;mat.node_tree.links.new(facing,invert.inputs[1]);facing=invert.outputs[0]
      factor=mat.node_tree.nodes.new('ShaderNodeMath');factor.operation='MULTIPLY';mat.node_tree.links.new(facing,factor.inputs[0]);mat.node_tree.links.new(pathnode.outputs['Is Camera Ray'],factor.inputs[1])
-     transparent=mat.node_tree.nodes.new('ShaderNodeBsdfTransparent');mix=mat.node_tree.nodes.new('ShaderNodeMixShader');mat.node_tree.links.new(factor.outputs[0],mix.inputs[0]);mat.node_tree.links.new(n.outputs['BSDF'],mix.inputs[1]);mat.node_tree.links.new(transparent.outputs[0],mix.inputs[2]);mat.node_tree.links.new(mix.outputs[0],mat.node_tree.nodes.get('Material Output').inputs['Surface'])
+     transparent=mat.node_tree.nodes.new('ShaderNodeBsdfTransparent');mix=mat.node_tree.nodes.new('ShaderNodeMixShader');mat.node_tree.links.new(factor.outputs[0],mix.inputs[0]);mat.node_tree.links.new(surface,mix.inputs[1]);mat.node_tree.links.new(transparent.outputs[0],mix.inputs[2]);mat.node_tree.links.new(mix.outputs[0],mat.node_tree.nodes.get('Material Output').inputs['Surface'])
     material_cache[key]=mat
    mesh.materials.append(material_cache[key])
   for group in entry['groups']:
@@ -45,12 +63,14 @@ for region in ['alpha','blacksail','winter']:
    if 'runtimeCastShadow' not in entry:raise ValueError('Re-export geometry with runtime shadow metadata before property-faithful review')
    obj.visible_shadow=entry['runtimeCastShadow'] or (shadow_mode=='candidate' and entry.get('candidateFieldCaster',False))
  scene=bpy.context.scene;scene.world=bpy.data.worlds.new('Review sky');scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs['Color'].default_value=(.32,.4,.55,1);scene.world.node_tree.nodes['Background'].inputs['Strength'].default_value=.6
+ if ambient_mode=='unoccluded-hemi-diagnostic':
+  pathnode=scene.world.node_tree.nodes.new('ShaderNodeLightPath');strength=scene.world.node_tree.nodes.new('ShaderNodeMath');strength.operation='MULTIPLY';strength.inputs[1].default_value=.6;scene.world.node_tree.links.new(pathnode.outputs['Is Camera Ray'],strength.inputs[0]);scene.world.node_tree.links.new(strength.outputs[0],scene.world.node_tree.nodes['Background'].inputs['Strength'])
  for l in manifest.get('lights',[]):
   ld=bpy.data.lights.new('Authored practical','POINT');ld.energy=l['intensity']*10;ld.color=l['color'];lo=bpy.data.objects.new('Authored practical',ld);scene.collection.objects.link(lo);lo.location=(l['position'][0],-l['position'][2],l['position'][1])
 
  data=bpy.data.lights.new('Sun','SUN');data.energy=2.2;data.angle=.15;sun=bpy.data.objects.new('Sun',data);scene.collection.objects.link(sun);sun.rotation_euler=(.6,-.4,-.5)
  data=bpy.data.cameras.new('Camera');cam=bpy.data.objects.new('Camera',data);scene.collection.objects.link(cam);scene.camera=cam
- scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=24;scene.cycles.use_denoising=False;scene.render.resolution_x=1280;scene.render.resolution_y=900;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX'
+ scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=32 if ambient_mode=='unoccluded-hemi-diagnostic' else 24;scene.cycles.use_denoising=False;scene.render.resolution_x=1280;scene.render.resolution_y=900;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX'
  if manifest.get('cameras'):
   coord=lambda p:(p[0],-p[2],p[1])
   shots=[(c['label'],coord(c['position']),coord(c['target']),None) for c in manifest['cameras']]

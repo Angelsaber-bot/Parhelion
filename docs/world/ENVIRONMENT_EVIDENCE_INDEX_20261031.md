@@ -97,3 +97,11 @@ See `FIELD_NATIVE_CAMERA_REVIEW_20261031.md` for the production-main low/normal
 explicit distinction between camera-to-target and shoulder-offset crosshair rays.
 Early native-field-review/exit frames are retained but superseded by native-field-final
 for visibility acceptance: the earlier CPU shader exposed foliage backfaces.
+
+## Original landmark review
+
+`ORIGINAL_LANDMARK_REVIEW_20261031.md` records five old authored entrances/interiors,
+native low/normal camera/material checks, 28 ordinary-input route legs, intentional
+Honnoji charred palette, and CPU hemisphere/crop limitations. The only reproduced
+art defect is the tavern's missing underside; the separately audited six-triangle
+candidate is documented in `TAVERN_UNDERSIDE_REPAIR_20261031.md`.

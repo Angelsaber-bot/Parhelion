@@ -10,7 +10,7 @@ import {
   SANDBAR, HALF_WRECK, WRECK_SPIT, LIGHTHOUSE, FLEET, PATHS,
 } from './layout.js';
 import { coastD } from './terrain.js';
-import { architectureBatches, portHouse, tavernCraft, pierCraft, millCraft, lighthouseCraft, fortWallCraft, fortCraft, reefCraft, marketCraft, gateCraft, lighthouseGallery } from './architecture.js';
+import { architectureBatches, portHouse, tavernCraft, tavernRoofUnderside, pierCraft, millCraft, lighthouseCraft, fortWallCraft, fortCraft, reefCraft, marketCraft, gateCraft, lighthouseGallery } from './architecture.js';
 import { buildMaritimeShip, buildSmallCraft, buildHalfWreckHull, buildShipyardFrame } from './ships.js';
 
 type HeightAt = (x: number, z: number) => number;
@@ -243,6 +243,8 @@ export function buildBlacksail(heightAt: HeightAt) {
       for (const s of [-1, 1]) b.add(BOX, C.woodDark, T(tx + s * (w / 2), y + h / 2, tz + d / 2, 0, 0.3, h, 0.3), false);
       b.addCol(ROOF, T(tx, y + h + 1.6, tz, Math.PI / 2, 3.2, w + 1.4, (d + 2) / 1.732, 0, Math.PI / 2));
       tavernCraft(art,tx,y,tz,w,d);
+      const lining = tavernRoofUnderside(tx,y,tz,w,d);
+      pieces.push({ name: lining.name, material: lining.material, batch: lining, outline: false });
       b.box(tx, y, tz - d / 2 + 2.2, w - 4, 1.1, 1.0, C.woodDark); // counter
       for (let k = 0; k < 5; k++) barrel(b, tx - w / 2 + 2 + k * 1.1, tz - d / 2 + 1.0, y + 1.1, false);
       for (const [dx, dz] of [[-4, 1.5], [3.5, 2]]) {
