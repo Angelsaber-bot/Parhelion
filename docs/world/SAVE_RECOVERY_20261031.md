@@ -15,3 +15,31 @@ Explicit New Game retains its existing immediate gameplay-reset semantics. It au
 ## Evidence
 
 29 focused persistence/panel/reset tests pass, including repeated blocked autosaves, exact original download, canceled replacement, quota failure, successful repair, changed-tab prompt rejection before and during confirmation, disposed controls, existing reset/armory/gate behavior. World typecheck passes. Browser reload itself is not established by JSDOM; actual-main import tests explicitly observe the accepted write/cancellation and expected navigation boundary.
+
+## Incomplete legacy reads and accepted-import navigation (09:03 follow-up)
+
+When v2 is absent, an exception reading either legacy region now prevents an
+automatic partial migration. Readable sibling flags remain available in memory,
+but neither legacy record is deleted and no new authoritative v2 is written.
+Reloading can retry all reads; export current session progress before leaving if
+you have played since the failed read. A successful later read migrates both
+regions; quota failure still preserves both originals. Explicit confirmed reset
+or replacement retains its existing authority. The UI distinguishes unavailable
+original bytes from malformed bytes that can actually be downloaded, and warns
+that replacing with a partial session may omit unread quests.
+
+A successful backup import commits storage before changing live flag sets. The
+old World session is now terminal while waiting for reload: input, rendering,
+simulation and quest confirmations cannot resume against its old scene. A
+truthful saved/waiting message and explicit Reload button remain if navigation
+does not occur. Navigation exceptions do not change successful storage into an
+"invalid backup" result. Context-restored events cannot revive this retired
+session; normal final-page-exit resource cleanup is still idempotent.
+
+Evidence includes both legacy-read orderings, exact original bytes, successful
+reread, quota and rejected-replacement tests; actual-main no-op/throwing reload,
+failed-write non-retirement, delayed old file reads, repeated controls, context
+events and final disposal. Independent reproduction changed post-import movement
+from 2.75 m to zero under an intentionally unavailable-navigation boundary.
+This does not assert that ordinary supported browsers routinely fail to reload.
+All stored data used for these checks was synthetic cloud-test data.
