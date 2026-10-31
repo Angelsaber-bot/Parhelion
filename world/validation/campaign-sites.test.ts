@@ -24,7 +24,7 @@ const choices={alpha:['broadcast','listen'],britain:['names','seats'],blacksail:
 for(const region of Object.keys(builders)as RegionId[]){
  test(`campaign ${region}: bounded material-batched geometry, no lights/textures/shadow cost`,()=>{
   const site=buildCampaignSite(region);let triangles=0,meshes=0;const materials=new Set<THREE.Material>();
-  site.root.traverse(o=>{assert.ok(!(o instanceof THREE.Light));if(!(o instanceof THREE.Mesh))return;meshes++;assert.equal(o.castShadow,false);triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;const m=o.material as THREE.MeshStandardMaterial;materials.add(m);assert.equal(m.map,null);for(const a of Object.values(o.geometry.attributes))for(const v of a.array)assert.ok(Number.isFinite(v));});
+  site.root.traverse(o=>{assert.ok(!(o instanceof THREE.Light));if(!(o instanceof THREE.Mesh))return;meshes++;assert.equal(o.castShadow,false);triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;const m=o.material as THREE.MeshStandardMaterial;materials.add(m);assert.equal(m.map,null);for(const a of Object.values((o.geometry as THREE.BufferGeometry).attributes))for(const v of a.array)assert.ok(Number.isFinite(v));});
   assert.ok(triangles<CAMPAIGN_SITE_LIMITS.triangles,`${triangles} triangles`);assert.ok(meshes<=CAMPAIGN_SITE_LIMITS.meshes);assert.ok(materials.size<=CAMPAIGN_SITE_LIMITS.materials);
   const kit=builders[region]();site.root.position.set(...CAMPAIGN_SITE_LOCAL[region]);site.root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(site.root);
   assert.ok(b.min.x>=-kit.footprint[0]/2&&b.max.x<=kit.footprint[0]/2,'within original X footprint');assert.ok(b.min.z>=-kit.footprint[1]/2&&b.max.z<=kit.footprint[1]/2,'within original Z footprint');

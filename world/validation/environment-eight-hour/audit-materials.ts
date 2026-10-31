@@ -9,7 +9,7 @@ for(const def of REGIONS){
  const bytes=await readFile(`public/assets/${def.file}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.position.set(def.offset[0],0,def.offset[1]);gltf.scene.updateMatrixWorld(true);
  const rows:any[]=[],errors:string[]=[],materials=new Set<THREE.Material>();let meshCount=0,triangles=0;
  gltf.scene.getObjectByName('ART')!.traverse(o=>{
-  if(!(o instanceof THREE.Mesh))return;meshCount++;const g=o.geometry,p=g.attributes.position,n=g.attributes.normal,ix=g.index,c=g.attributes.color,slots=Array.isArray(o.material)?o.material:[o.material],count=ix?.count??p.count;triangles+=count/3;
+  if(!(o instanceof THREE.Mesh))return;meshCount++;const g:THREE.BufferGeometry=o.geometry,p=g.attributes.position,n=g.attributes.normal,ix=g.index,c=g.attributes.color,slots=Array.isArray(o.material)?o.material:[o.material],count=ix?.count??p.count;triangles+=count/3;
   if(!n)errors.push(`${o.name}: missing normals`);if(!slots.length)errors.push(`${o.name}: no material slots`);
   for(const a of Object.values(g.attributes))for(let i=0;i<a.array.length;i++)if(!Number.isFinite(a.array[i])){errors.push(`${o.name}: non-finite attribute`);break;}
   const groups=g.groups.length?g.groups:[{start:0,count,materialIndex:0}];
