@@ -32,3 +32,29 @@ test('remapped wheel Interact reads dialogue and confirms only an explicit choic
   assert.deepEqual(h.errors,[]);
  }finally{await h.close();}
 });
+
+test('pointer release dismisses remapped choices without committing and permits intentional resume',async()=>{
+ const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,d=h.window.document;let commits=0;
+ try{
+  const start=d.getElementById('start') as HTMLElement;
+  for(const binding of ['Digit1','ArrowDown','Mouse3','WheelUp']){
+   start.click();await Promise.resolve();
+   assert.equal(w.settings.bind('interact',binding,true),null);
+   w.narrative.showChoices(['选择','Choose'],['测试','Test'],[{id:'one',label:['一','One']}],()=>commits++);
+   w.narrative.selectChoice(0);
+   const stale=d.querySelector<HTMLButtonElement>('#world-dialogue-choices button')!;
+   // Escape belongs to native pointer lock. Exercise its resulting production
+   // event; jsdom does not implement the browser's Escape or focus behavior.
+   d.exitPointerLock();assert.equal(w.narrative.open,false);stale.click();assert.equal(commits,0);
+   assert.equal(start.classList.contains('hidden'),false);
+   start.click();await Promise.resolve();assert.equal(d.pointerLockElement,d.getElementById('view'));
+   w.narrative.show(['继续','Continue']);
+   if(binding==='WheelUp')d.body.dispatchEvent(new h.window.WheelEvent('wheel',{deltaY:-120,bubbles:true,cancelable:true}));
+   else if(binding==='Mouse3')d.body.dispatchEvent(new h.window.MouseEvent('mousedown',{button:3,bubbles:true,cancelable:true}));
+   else d.body.dispatchEvent(new h.window.KeyboardEvent('keydown',{code:binding,bubbles:true,cancelable:true}));
+   assert.equal(w.narrative.open,false,`${binding}: dialogue can resume after release`);
+   d.exitPointerLock();
+  }
+  assert.deepEqual(h.errors,[]);
+ }finally{await h.close();}
+});
