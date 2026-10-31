@@ -57,3 +57,22 @@ test('four native sword styles have distinct preparations and follow-through sil
  assert.ok(ENEMY_SWORD_STYLES.deck_raider.turn > ENEMY_SWORD_STYLES.officer.turn);
  assert.ok(ENEMY_SWORD_STYLES.officer.drive > ENEMY_SWORD_STYLES.deck_raider.drive);
 });
+
+test('Echo Warden thrust and discharge have distinct contact silhouettes, planted feet and no independent paused clock',async()=>{
+ const model='sunward_guard',gltf=await parseLocalGlb(new URL('../public/assets/enemies/sunward_guard.glb',import.meta.url)),visuals=new EnemyVisuals();(visuals as any).cache.set(model,gltf);
+ const e=new WorldCombatState([{id:'warden',kind:'crystal',p:{x:0,y:0,z:0},role:'breaker',storyPattern:'echo-warden'}],[]).enemies[0];e.active=true;e.attackCount=e.contactSequence=1;
+ const parent=new THREE.Group(),fallback=new THREE.Group(),measurement=measureEnemyWeaponAxis(gltf.scene,'R')!;const signatures:string[]=[],directions:Record<string,THREE.Vector3>={};
+ for(const attack of ['sweep','thrust','burst'] as const){
+  e.attack=attack;const timing=enemyAttackTiming(e);e.mode='recover';e.timer=timing.recovery;visuals.update(e,model,parent,fallback,0,5,true);parent.updateMatrixWorld(true);
+  const instance=(visuals as any).instances.get(e.id),root=instance.root as THREE.Object3D,feet=['footR','footL'].map(name=>root.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()));
+  const hand=root.getObjectByName('handR')!;directions[attack]=measurement.axis.clone().applyQuaternion(hand.getWorldQuaternion(new THREE.Quaternion()));
+  const bones:THREE.Bone[]=[];root.traverse(o=>{if(o instanceof THREE.Bone)bones.push(o);});const pose=()=>bones.flatMap(b=>[...b.position.toArray(),...b.quaternion.toArray()]);const before=pose();signatures.push(JSON.stringify(before));
+  for(let i=0;i<25;i++)visuals.update(e,model,parent,fallback,0,5,true);assert.ok(pose().every((n,i)=>Math.abs(n-before[i])<1e-7));
+  if(attack==='burst'){
+   const centers=['indigo','walnut'].map(material=>{const sum=new THREE.Vector3();let count=0;root.traverse(o=>{if(!(o instanceof THREE.SkinnedMesh)||![o.material].flat().some(m=>m.name.includes(material)))return;const bi=o.skeleton.bones.findIndex(b=>b.name==='forearmL'),si=o.geometry.attributes.skinIndex,sw=o.geometry.attributes.skinWeight;o.skeleton.update();for(let i=0;i<si.count;i++)if([0,1,2,3].some(k=>si.getComponent(i,k)===bi&&sw.getComponent(i,k)>.8)){sum.add(o.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(o.matrixWorld));count++;}});return sum.divideScalar(count);});
+   assert.ok(centers[0].z>centers[1].z+.01,'actual forearm-weighted shield blue face points toward the threat, not wooden back');
+  }
+  instance.acting.restore();root.updateWorldMatrix(true,true);for(const [i,name]of ['footR','footL'].entries())assert.ok(root.getObjectByName(name)!.getWorldPosition(new THREE.Vector3()).distanceTo(feet[i])<.000002);
+ }
+ assert.equal(new Set(signatures).size,3);assert.ok(directions.thrust.z>.99,'thrust extends horizontally into locked corridor');assert.ok(directions.burst.y<-.95,'discharge braces with blade lowered, not a fake melee cut');visuals.dispose();
+});

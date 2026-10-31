@@ -23,3 +23,11 @@ Four native sword styles now have different shoulder/weapon preparation and foll
 Same-camera six-phase before/after images are in ignored `artifacts/enemy-contact-acting-v2-renders/` and `artifacts/enemy-contact-body-final-renders/`. The extra officer side sequence is in `artifacts/enemy-contact-body-final-side/`. The side contact image confirms the blade/weapon arm lie forward of the chest; the earlier frontal overlap was projection, not established clipping. This remains CPU-skinned/offline material evidence, not a GPU or full live-play acceptance.
 
 Measured sampled foot-target drift was below 0.00000047 m. At contact, profile-specific pelvis transfer is 4–8.5 cm forward and 2.45–5.95 cm downward. Native geometry, weapon attachment, limb lengths and source-rig transforms remain unchanged. Tests assert exact repeated paused poses, planted feet, actual weight transfer, source template immutability, forward held-blade contact and four distinct preparation profiles. The temporal exporter records these metrics beside each rendered pose and can export an evenly sampled sequence with `--frames=N`.
+
+## Story-only Warden gestures
+
+The new Warden now distinguishes its three existing authoritative shapes in its body acting: the ordinary guard's heavy cleave for the sweep, a horizontal forward point for the thrust, and a lowered blade plus raised shield brace for the signal discharge. No tell, contact, damage or recovery timing changes. All use the same planted-foot solve and exact paused simulation sample.
+
+Actual-image review caught an important native-rig detail: the guard's shield is weighted to **forearmL**, not handL. A guessed wrist correction could not turn its wooden back away from the threat. The corrected overlay measures the immutable template's indigo-face versus wooden-back centroid and twists only around the actual elbow–wrist axis, restoring wrist orientation afterward. A geometry-level test verifies that the actual blue shield surface faces forward while soles remain fixed; repeated paused sampling stays identical. Ordinary guards and all other kits keep their existing poses.
+
+Same-camera preparation/contact/recovery sheet: `artifacts/warden-distinct-v4-renders/warden-three-attacks-keyframes.jpg`. These are six simulation-clock keyframes per action, not a continuous browser recording or GPU/FPS measurement.

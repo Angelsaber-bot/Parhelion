@@ -59,6 +59,28 @@ export const ENEMY_SWORD_STYLES: Readonly<Record<SwordModel, EnemySwordStyle>> =
   officer: { name: 'officer-lunge', preparation: [.30,1.20,.10], contact: [.15,1.28,.50], follow: [.20,1.16,.38], prepareBlade: [.25,.50,.82], contactBlade: [-.02,.02,1], followBlade: [.15,-.25,.95], turn: .15, counterTurn: -.18, load: .035, drive: .085 },
 };
 
+/** New story-only gestures. The ordinary guard keeps its authored heavy cleave.
+ * A forward thrust and shield-braced signal discharge must not share a cut silhouette. */
+export const ECHO_WARDEN_ACTING: Readonly<Record<'thrust'|'burst',EnemySwordStyle>> = {
+ thrust:{...ENEMY_SWORD_STYLES.sunward_guard,preparation:[.28,1.20,.02],contact:[.15,1.23,.52],follow:[.22,1.14,.34],prepareBlade:[.18,.15,.97],contactBlade:[0,0,1],followBlade:[.15,-.2,.97],turn:.23,counterTurn:-.12,load:.055,drive:.085},
+ burst:{...ENEMY_SWORD_STYLES.sunward_guard,preparation:[.28,1.18,.03],contact:[.32,1.03,.14],follow:[.31,1.04,.10],prepareBlade:[.2,-.95,.1],contactBlade:[.15,-.98,.10],followBlade:[.15,-.98,.10],turn:.04,counterTurn:0,load:.06,drive:.015},
+};
+
+const shieldNormals=new WeakMap<THREE.Object3D,THREE.Vector3|null>();
+/** The native guard's shield is weighted to forearmL, NOT handL. Measure its
+ * blue-face versus wooden-back centroid in bind space, then twist only around the real elbow→wrist axis. */
+function shieldFrontAxis(template:THREE.Object3D):THREE.Vector3|null{
+ if(shieldNormals.has(template))return shieldNormals.get(template)!;
+ const bone=template.getObjectByName('forearmL');if(!bone)return null;template.updateWorldMatrix(true,true);
+ const front=new THREE.Vector3(),back=new THREE.Vector3();let frontCount=0,backCount=0;
+ template.traverse(o=>{if(!(o instanceof THREE.SkinnedMesh))return;const names=[o.material].flat().map(m=>m.name),isFront=names.includes('03 • indigo wool'),isBack=names.includes('07 • walnut pistol stock');if(!isFront&&!isBack)return;
+  const skin=o.geometry.attributes.skinIndex,weights=o.geometry.attributes.skinWeight,bi=o.skeleton.bones.indexOf(bone as THREE.Bone),point=new THREE.Vector3();o.skeleton.update();
+  for(let i=0;i<skin.count;i++){let held=false;for(let k=0;k<4;k++)if(skin.getComponent(i,k)===bi&&weights.getComponent(i,k)>.8)held=true;if(!held)continue;o.getVertexPosition(i,point).applyMatrix4(o.matrixWorld);if(isFront){front.add(point);frontCount++;}else{back.add(point);backCount++;}}
+ });
+ const normal=frontCount&&backCount?front.divideScalar(frontCount).sub(back.divideScalar(backCount)):new THREE.Vector3();
+ const result=normal.lengthSq()>1e-8?normal.normalize().applyQuaternion(bone.getWorldQuaternion(new THREE.Quaternion()).invert()):null;shieldNormals.set(template,result);return result;
+}
+
 /** Clone-only body acting. Native clips are sampled first every frame. Both native
  * feet are solved back to their pre-overlay world targets while the pelvis carries
  * a small load/weight shift; the scene root and game capsule never translate.
@@ -67,7 +89,7 @@ export const ENEMY_SWORD_STYLES: Readonly<Record<SwordModel, EnemySwordStyle>> =
 export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Object3D, model: EnemyPoseModel) {
   const noop = { restore() {}, update(_e: Enemy) {} };
   if (!isSword(model)) return noop;
-  const side = ENEMY_WEAPON_HAND[model], sign = side === 'R' ? -1 : 1, style = ENEMY_SWORD_STYLES[model];
+  const side = ENEMY_WEAPON_HAND[model], sign = side === 'R' ? -1 : 1, baseStyle = ENEMY_SWORD_STYLES[model];
   const chain = (names: readonly string[]) => names.map(name => root.getObjectByName(name));
   const armed = chain([`upper_arm${side}`, `forearm${side}`, `hand${side}`]);
   const otherSide = side === 'R' ? 'L' : 'R', free = chain([`upper_arm${otherSide}`, `forearm${otherSide}`, `hand${otherSide}`]);
@@ -76,6 +98,7 @@ export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Ob
   const weapon = measureEnemyWeaponAxis(template, side);
   if (!spine || !chest || !pelvis || !weapon || [...armed, ...free, ...legs.flat()].some(bone => !bone)) return noop;
   const upper = armed[0]!, lower = armed[1]!, hand = armed[2]!;
+  const shieldAxis=model==='sunward_guard'?shieldFrontAxis(template):null;
   const affected = [...armed, ...free, ...legs.flat(), spine, chest, pelvis] as THREE.Object3D[];
   const native = affected.map(bone => ({ q: bone.quaternion.clone(), p: bone.position.clone() }));
   let applied = false;
@@ -111,7 +134,9 @@ export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Ob
     },
     update(e: Enemy) {
       if (e.mode !== 'windup' && !(e.mode === 'recover' && e.contactSequence === e.attackCount && e.attackCount > 0)) return;
-      if (e.attack === 'shot' || e.attack === 'burst') return;
+      const warden=e.storyPattern==='echo-warden'&&model==='sunward_guard',burst=warden&&e.attack==='burst';
+      if (e.attack === 'shot' || (e.attack === 'burst'&&!warden)) return;
+      const style=warden&&(e.attack==='thrust'||e.attack==='burst')?ECHO_WARDEN_ACTING[e.attack]:baseStyle;
       vi = qi = 0;
       const timing = enemyAttackTiming(e), windup = e.mode === 'windup';
       const remaining = Math.max(0,e.timer), elapsed = windup ? timing.windup-remaining : timing.recovery-remaining;
@@ -129,7 +154,7 @@ export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Ob
       pelvis.position.copy(pelvis.parent!.worldToLocal(world(pelvisPoint))); pelvis.updateWorldMatrix(false,true);
       legs.forEach((chain,i) => solve(chain as THREE.Object3D[],footTargets[i],v(0,0,1),footRotations[i]));
       const yaw = sign*(style.turn*(1-stroke)+style.counterTurn*follow)*weight;
-      const lean = (-.045*(1-stroke)+.13*stroke)*weight;
+      const lean = (burst?-.035:(-.045*(1-stroke)+.13*stroke))*weight;
       for (const [bone,share] of [[spine,.35],[chest,.65]] as const) {
         const rotation = q().setFromAxisAngle(axis(v(0,1,0)),yaw*share).multiply(bone.getWorldQuaternion(q()));
         rotation.premultiply(q().setFromAxisAngle(axis(v(1,0,0)),lean*share)); setWorld(bone,rotation);
@@ -143,9 +168,14 @@ export function createEnemyAttackActing(root: THREE.Object3D, template: THREE.Ob
       // The free arm counterbalances the cut/lunge instead of hanging in bind pose.
       // Its native wrist orientation is preserved, including the pirate's holstered pistol grip.
       const freeHand = free[2]!, freeRotation = freeHand.getWorldQuaternion(q());
-      const freeLocal = model === 'officer' ? v(-sign*.32,1.04,-.15) : v(-sign*.37,1.12,.02).lerp(v(-sign*.32,1.20,.13),stroke).lerp(v(-sign*.30,1.18,.12),follow);
+      const freeLocal = burst ? v(-sign*.24,1.42,.34) : model === 'officer' ? v(-sign*.32,1.04,-.15) : v(-sign*.37,1.12,.02).lerp(v(-sign*.32,1.20,.13),stroke).lerp(v(-sign*.30,1.18,.12),follow);
       const freeTarget = freeHand.getWorldPosition(v()).lerp(world(freeLocal),weight);
       solve(free as THREE.Object3D[],freeTarget,v(-sign*.5,-1,.15),freeRotation);
+      if(burst&&shieldAxis){
+        const elbow=free[1]!,rotation=elbow.getWorldQuaternion(q()),along=freeHand.getWorldPosition(v()).sub(elbow.getWorldPosition(v())).normalize();
+        const front=copy(shieldAxis).applyQuaternion(rotation).projectOnPlane(along).normalize(),wanted=axis(v(0,0,1)).projectOnPlane(along).normalize();
+        if(front.lengthSq()>.1&&wanted.lengthSq()>.1){const angle=Math.atan2(along.dot(copy(front).cross(wanted)),front.dot(wanted));rotation.premultiply(q().setFromAxisAngle(along,angle*weight));setWorld(elbow,rotation);setWorld(freeHand,freeRotation);}
+      }
     },
   };
 }

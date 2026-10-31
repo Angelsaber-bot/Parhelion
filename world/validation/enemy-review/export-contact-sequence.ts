@@ -17,6 +17,7 @@ for (const model of models) {
   const gltf = await parseLocalGlb(url), visuals = new EnemyVisuals(); (visuals as any).cache.set(model, gltf);
   const enemy = new WorldCombatState([{ id: model, kind: 'shade', p: { x: 0, y: 0, z: 0 }, role: model === 'ashigaru' ? 'lancer' : model === 'musketeer' ? 'musketeer' : model === 'sunward_guard' || model === 'officer' ? 'breaker' : 'duelist' }], []).enemies[0];
   if(warden){enemy.storyPattern='echo-warden';enemy.maxHp=enemy.hp=264;enemy.phase=process.argv.includes('--phase2')?2:1;}
+  const selectedAttack=process.argv.find(value=>value.startsWith('--attack='))?.slice(9);if(selectedAttack&&['sweep','thrust','burst','shot'].includes(selectedAttack))enemy.attack=selectedAttack as typeof enemy.attack;
   enemy.active = true; enemy.attackCount = 1; enemy.contactSequence = 1;
   const parent = new THREE.Group(), fallback = new THREE.Group(), timing = enemyAttackTiming(enemy);
   const sequence = Number(process.argv.find(value => value.startsWith('--frames='))?.slice(9) ?? 0);
@@ -41,7 +42,7 @@ for (const model of models) {
     const pelvisShift = pelvisPos.clone().sub(actor.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3())).toArray();
     instance.acting.update(enemy); parent.updateWorldMatrix(true,true);
     const metrics = {footDrift:drift,pelvisShift,bladeDirection};
-    const id = `${warden?'echo-warden-phase'+enemy.phase:model}-${label}`, meshes: any[] = [], extraMaterials: Record<string,unknown>={}, point = new THREE.Vector3();
+    const id = `${warden?'echo-warden-phase'+enemy.phase+(selectedAttack?'-'+selectedAttack:''):model}-${label}`, meshes: any[] = [], extraMaterials: Record<string,unknown>={}, point = new THREE.Vector3();
     parent.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return; const mesh = object;
       if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.update();
