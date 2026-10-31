@@ -104,7 +104,7 @@
       </section>
     </div>
   </div>
-  <div id="loading" class="overlay hidden"><div class="card small"><p>加载地图…</p></div></div>
+  <div id="loading" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="loading-status"><div class="card small" data-no-i18n><p id="loading-status" role="status">加载地图…</p><p id="loading-note" class="muted"></p><button id="cancel-start" type="button">取消并返回大厅</button></div></div>
   <script type="module" src="./src/main.ts"></script>
 </body>
 </html>

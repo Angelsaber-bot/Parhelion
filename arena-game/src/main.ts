@@ -12,7 +12,7 @@ import { Game } from './game.ts';
 import { Hud } from './hud.ts';
 import { LoadoutStore, loadoutCards, sanitizedSkins, displayWeaponName } from './loadout.ts';
 import { ArenaScene } from './scene.ts';
-import { joinOnline, startOffline } from './session.ts';
+import { joinOnline, startOffline, type Session } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
 import sakuraThumb from './assets/maps/sakura.webp';
 import blackflagThumb from './assets/maps/blackflag.webp';
@@ -47,7 +47,7 @@ const settingsPanel = createSettingsPanel(settings, {
   },
   onClose() { controls.blocked = false; controls.clearAll(); },
 });
-controls.onSettings = () => settingsPanel.show();
+controls.onSettings = () => { if (!starting) settingsPanel.show(); };
 $('settings-lobby').onclick = () => settingsPanel.show();
 $('settings-pause').onclick = () => settingsPanel.show();
 function renderControlHints() {
@@ -104,12 +104,24 @@ function renderMaps() {
   $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
   $('title').textContent = localizeText(MAPS.find((m) => m.id === mapId)!.name);
 }
+let starting = false;
 let mapReady: Promise<void>;
+let mapGeneration = 0;
+let mapState: 'pending' | 'ready' | 'failed' = 'pending';
+let suppressMapError = false;
+let pageExited = false;
 function pickMap(id: string) {
+  if (pageExited || starting) return;
+  const generation = ++mapGeneration; mapState = 'pending'; suppressMapError = false;
+  showError('');
   mapId = mapIdOf(id);
   renderMaps();
   mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
-  mapReady.catch((e) => showError(() => bilingual(`地图加载失败：${localizeText((e as Error).message)}`, `Map failed to load: ${localizeText((e as Error).message)}`)));
+  mapReady.then(() => { if (generation === mapGeneration) mapState = 'ready'; }, (e) => {
+    if (generation !== mapGeneration) return;
+    mapState = 'failed';
+    if (!starting && !pageExited && !suppressMapError) showError(() => bilingual(`地图加载失败：${localizeText(String(e?.message ?? e))}。可点击开始重试，或另选地图。`, `Map failed to load: ${localizeText(String(e?.message ?? e))}. Press Start to retry, or choose another map.`));
+  });
 }
 function renderSkins() {
   $('skins').innerHTML = loadoutStore.value.map((id) => {
@@ -139,6 +151,7 @@ function renderMatchBriefing() {
 for (const id of ['layout', 'team', 'bots']) $(id).addEventListener('change', renderMatchBriefing);
 
 function setMode(m: typeof mode) {
+  if (starting || game || pageExited) return;
   mode = m;
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.classList.toggle('on', t.dataset.mode === m));
   document.body.classList.toggle('online', m === 'online');
@@ -163,32 +176,63 @@ function showError(message: string | (() => string)) {
   $('error').classList.toggle('hidden', !text);
 }
 
-let starting = false;
+type StartPhase = 'map' | 'join' | 'game';
+let attemptGeneration = 0;
+let activeStart: { id: number; phase: StartPhase; mode: typeof mode } | null = null;
+function renderStartupStatus() {
+  const phase = activeStart?.phase;
+  $('loading-status').textContent = phase === 'join' ? bilingual('正在连接服务器…', 'Connecting to server…')
+    : phase === 'game' ? bilingual('正在准备对局…', 'Preparing match…') : bilingual('加载地图…', 'Loading map…');
+  $('cancel-start').textContent = bilingual('取消并返回大厅', 'Cancel and return to lobby');
+  $('loading-note').textContent = bilingual('取消会停止本次进入；已发出的资源或连接请求可能稍后结束。', 'Cancel stops this entry attempt; pending asset or connection requests may finish later.');
+}
+function restoreStartUi() {
+  starting = false; $('lobby').inert = false;
+  controls.blocked = settingsPanel.open; controls.clearAll();
+  $<HTMLButtonElement>('play').disabled = false; $('loading').classList.add('hidden');
+}
+function cancelStart() {
+  if (!activeStart) return;
+  ++attemptGeneration; activeStart = null; suppressMapError = true;
+  restoreStartUi(); $('play').focus();
+}
+$('cancel-start').onclick = cancelStart;
+addEventListener('keydown', event => { if (starting && event.code === 'Escape') { event.preventDefault(); cancelStart(); } });
+addEventListener('pagehide', event => { cancelStart(); if (!event.persisted) pageExited = true; });
 $('play').onclick = async () => {
-  if (starting) return;
-  starting = true; $<HTMLButtonElement>('play').disabled = true;
-  sfx.unlock();
-  showError('');
+  if (starting || game || pageExited || settingsPanel.open) return;
+  // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
+  if (mapState === 'failed') pickMap(mapId);
+  const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode };
+  activeStart = attempt; starting = true; $('lobby').inert = true;
+  controls.blocked = true; controls.clearAll();
+  $<HTMLButtonElement>('play').disabled = true;
+  showError(''); renderStartupStatus(); $('loading').classList.remove('hidden'); $('cancel-start').focus();
   const opts: JoinOptions = {
     layout: $<HTMLSelectElement>('layout').value as TeamLayout,
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
     name: $<HTMLInputElement>('name').value.trim() || 'Player',
-    char, skins: skins.slice(), loadout: loadoutStore.value,
-    map: mapId,
-    // only sent when on: the matchmaker can't filter on a false value
+    char, skins: skins.slice(), loadout: loadoutStore.value, map: mapId,
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();
+  const difficulty = $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard';
+  const current = () => activeStart?.id === attempt.id && !pageExited;
+  let ownedSession: Session | null = null;
+  const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
   try { localStorage.setItem('arena-lobby', JSON.stringify({ name: opts.name, layout: opts.layout, char, skins, server, map: mapId })); } catch { /* private mode */ }
-  $('loading').classList.remove('hidden');
   try {
+    sfx.unlock();
     await mapReady;
-    const session = mode === 'online'
-      ? await joinOnline(server, opts)
-      : startOffline(opts, $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard');
-    $('lobby').classList.add('hidden');
-    hud.show(true);
+    if (!current()) return;
+    attempt.phase = 'join'; renderStartupStatus();
+    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : startOffline(opts, difficulty);
+    if (!current()) { closeOwned(); return; }
+    attempt.phase = 'game'; renderStartupStatus();
+    const session = ownedSession;
     game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason));
+    ownedSession = null; // Game now owns exactly one session.
+    $('lobby').classList.add('hidden'); hud.show(true);
     game.onEnded = (title) => {
       rematchRequested = false; resultsBoard.setEnded(true); renderResultsBoard();
       endTitleSource = title; $('endtitle').textContent = localizeText(endTitleSource);
@@ -199,12 +243,21 @@ $('play').onclick = async () => {
     game.onRestart = () => { rematchRequested = false; resultsBoard.setEnded(false); renderResultsBoard(); $('endcard').classList.add('hidden'); controls.lock(); };
     (window as unknown as { game: unknown; session: unknown }).game = game;
     (window as unknown as { session: unknown }).session = session;
-    controls.lock();
+
+    controls.blocked = false; controls.lock();
   } catch (e) {
-    showError(() => mode === 'online' ? bilingual(`连接失败：${localizeText((e as Error).message)}。请检查服务器地址。`, `Connection failed: ${localizeText((e as Error).message)}. Check the server address.`) : String(e));
+    closeOwned();
+    if (!current()) return;
+    if (game) { game.stop(); game = null; }
+    $('lobby').classList.remove('hidden'); hud.show(false);
+    const message = String((e as Error)?.message ?? e), phase = attempt.phase;
+    showError(() => phase === 'map'
+      ? bilingual(`地图加载失败：${localizeText(message)}。可点击开始重试，或另选地图。`, `Map failed to load: ${localizeText(message)}. Press Start to retry, or choose another map.`)
+      : phase === 'join' && attempt.mode === 'online'
+        ? bilingual(`连接失败：${localizeText(message)}。请检查服务器地址，或自行选择单机模式。`, `Connection failed: ${localizeText(message)}. Check the server address, or choose Offline yourself.`)
+        : bilingual(`无法开始对局：${localizeText(message)}。请在大厅重试。`, `Could not start the match: ${localizeText(message)}. Retry from the lobby.`));
   } finally {
-    starting = false; $<HTMLButtonElement>('play').disabled = false;
-    $('loading').classList.add('hidden');
+    if (current()) { activeStart = null; restoreStartUi(); }
   }
 };
 
@@ -234,7 +287,7 @@ const languageToggle = createLanguageToggle();
 document.addEventListener('pointerlockchange', () => { languageToggle.hidden = !!document.pointerLockElement; });
 localizeDom(document.body);
 onLanguageChange(() => {
-  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing();
+  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing(); renderStartupStatus();
   if (loadoutStore.notice) $('loadout-status').textContent = localizeText(loadoutStore.notice);
   $('endtitle').textContent = localizeText(endTitleSource);
   $('error').textContent = errorSource();
