@@ -9,7 +9,7 @@ import {JSDOM} from 'jsdom';
 const root=resolve('../arena-game');
 const mocks:Record<string,string>={
  'scene.ts':`export class ArenaScene { loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
- 'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()} }`,
+ 'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()}setPaused(){} }`,
  'session.ts':`export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(){}`,
 };

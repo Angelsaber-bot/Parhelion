@@ -37,6 +37,13 @@ let game: Game | null = null;
 let endTitleSource = '';
 let rematchRequested = false;
 let errorSource: () => string = () => '';
+let pointerLockFailed = false;
+const pointerLockNote = document.createElement('p'); pointerLockNote.id = 'pointer-lock-note'; pointerLockNote.className = 'muted'; pointerLockNote.hidden = true; pointerLockNote.setAttribute('role', 'status');
+$('resume').before(pointerLockNote);
+function renderPointerLockNote() {
+  pointerLockNote.hidden = !pointerLockFailed;
+  pointerLockNote.textContent = pointerLockFailed ? bilingual('浏览器未锁定鼠标。点击继续重试，或返回大厅。', 'Mouse capture was not granted. Click Continue to retry, or return to the lobby.') : '';
+}
 const resultsBoard = new ResultsBoard();
 let mode: 'offline' | 'online' = params.get('mode') === 'online' ? 'online' : 'offline';
 const settingsPanel = createSettingsPanel(settings, {
@@ -250,7 +257,7 @@ $('play').onclick = async () => {
     (window as unknown as { game: unknown; session: unknown }).game = game;
     (window as unknown as { session: unknown }).session = session;
 
-    controls.blocked = false; controls.lock();
+    controls.blocked = false; controls.onLockChange(controls.locked); controls.lock();
   } catch (e) {
     closeOwned();
     if (!current()) return;
@@ -268,6 +275,7 @@ $('play').onclick = async () => {
 };
 
 function backToLobby(reason: string) {
+  pointerLockFailed = false; renderPointerLockNote();
   game = null; rematchRequested = false; resultsBoard.setEnded(false); renderResultsBoard();
   hud.show(false);
   $('pause').classList.add('hidden');
@@ -278,12 +286,17 @@ function backToLobby(reason: string) {
 }
 
 controls.onLockChange = (locked) => {
-  if (!game || game.ended) return;
+  if (!game || game.ended || pageExited) return;
+  if (locked) { pointerLockFailed = false; renderPointerLockNote(); }
   $('pause').classList.toggle('hidden', locked);
   // offline: Esc freezes everything (bots, bullets, clock, effects); online the server keeps going
   game.setPaused(!locked && !game.online);
 };
-$('resume').onclick = () => controls.lock();
+controls.onLockError = () => {
+  if (!game || game.ended || pageExited || settingsPanel.open) return;
+  pointerLockFailed = true; renderPointerLockNote(); controls.onLockChange(false);
+};
+$('resume').onclick = () => { if (game && !game.ended && !pageExited && !settingsPanel.open) controls.lock(); };
 canvas.addEventListener('click', () => { if (game && !game.ended && !controls.locked && !settingsPanel.open) controls.lock(); });
 $('rematch').onclick = () => { if (game?.rematch()) { rematchRequested = true; renderResultsBoard(); } };
 $('endleave').onclick = () => game?.stop();
@@ -293,7 +306,7 @@ const languageToggle = createLanguageToggle();
 document.addEventListener('pointerlockchange', () => { languageToggle.hidden = !!document.pointerLockElement; });
 localizeDom(document.body);
 onLanguageChange(() => {
-  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing(); renderStartupStatus();
+  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing(); renderStartupStatus(); renderPointerLockNote();
   if (loadoutStore.notice) $('loadout-status').textContent = localizeText(loadoutStore.notice);
   $('endtitle').textContent = localizeText(endTitleSource);
   $('error').textContent = errorSource();

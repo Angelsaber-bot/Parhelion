@@ -16,6 +16,9 @@ export class Controls {
   private keys = new Set<string>();
   private latched = 0;
   onLockChange: (locked: boolean) => void = () => {};
+  onLockError: () => void = () => {};
+  private lockRequest = 0;
+  private failedLockRequest = -1;
   onSettings: () => void = () => {};
   constructor(private canvas: HTMLCanvasElement, readonly settings = new SettingsStore('arena')) {
     settings.subscribe(() => this.clearAll());
@@ -28,6 +31,7 @@ export class Controls {
     addEventListener('blur', () => this.clearAll());
     document.addEventListener('visibilitychange', () => this.clearAll());
     document.addEventListener('pointerlockchange', () => { this.clearAll(); this.onLockChange(this.locked); });
+    document.addEventListener('pointerlockerror', () => this.lockFailed(this.lockRequest));
     canvas.addEventListener('mousedown', (e) => { if (this.locked) { e.preventDefault(); this.press(`Mouse${e.button}`); } });
     addEventListener('mouseup', (e) => this.release(`Mouse${e.button}`));
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -70,7 +74,20 @@ export class Controls {
   get adsSensitivity() { return this.settings.value.adsSensitivity; }
   clearAim() { for (const binding of this.settings.bindingsFor('aim')) this.keys.delete(binding); this.aimHeld = false; this.lookScale = 1; }
   clearAll() { this.keys.clear(); this.latched = 0; this.scoreboard = false; this.clearAim(); }
-  lock() { if (!this.blocked) void this.canvas.requestPointerLock(); }
+  private lockFailed(request: number) {
+    if (request !== this.lockRequest || this.failedLockRequest === request || this.blocked || this.locked) return;
+    this.failedLockRequest = request; this.clearAll(); this.onLockError();
+  }
+  lock() {
+    if (this.blocked) return;
+    const request = ++this.lockRequest;
+    try {
+      // Browsers may return void or a rejecting Promise. Both failure channels
+      // are cosmetic admission failures, never unhandled gameplay exceptions.
+      const result = this.canvas.requestPointerLock();
+      if (result && typeof result.catch === 'function') void result.catch(() => this.lockFailed(request));
+    } catch { this.lockFailed(request); }
+  }
   sample(): { mx: number; mz: number; buttons: number } {
     if (this.blocked) { this.clearAll(); return { mx: 0, mz: 0, buttons: 0 }; }
     const down = (action: string) => this.settings.isDown(this.keys, action);
