@@ -152,7 +152,7 @@ function aimLink(bone: THREE.Bone, child: THREE.Bone, direction: THREE.Vector3) 
 }
 
 /** Actual elbow/wrist positions and bind axes; no .27/.28 metre or local −Y assumptions. */
-export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion, relaxed = 0, neutralWrist = 0, gripAlignment = 0, bladeDirection?: THREE.Vector3) {
+export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: THREE.Vector3, palmOrientation: THREE.Quaternion, relaxed = 0, neutralWrist = 0, gripAlignment = 0, bladeDirection?: THREE.Vector3, riflePole = 0) {
   const upper = rig.joints[`Arm_${side}`] as THREE.Bone, lower = rig.joints[`Forearm_${side}`] as THREE.Bone, hand = rig.joints[`Hand_${side}`] as THREE.Bone;
   const socket = rig.handSockets[side];
   const handRest = rig.rest.get(hand)!, lowerRest = rig.rest.get(lower)!;
@@ -192,6 +192,9 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
         pole.applyAxisAngle(axis, Math.sin(turn) * .65 * gripAlignment * (1 - relaxed));
       }
     }
+    // ADS may settle the right elbow below the stock without moving either
+    // endpoint. Default zero preserves free hands, melee and all other callers.
+    if (side === 'R' && riflePole !== 0) pole.applyAxisAngle(axis, sign * riflePole * gripAlignment * (1 - relaxed));
     const along = (length1 * length1 - length2 * length2 + distance * distance) / (2 * distance);
     const height = Math.sqrt(Math.max(0, length1 * length1 - along * along));
     elbow = shoulder.clone().addScaledVector(axis, along).addScaledVector(pole, height);
@@ -506,7 +509,10 @@ export class SkinnedCharacterAnimator {
       const bladeDirection = side === 'R' && meleeWeight > 0
         ? (meleeCut === 2 ? V(Math.sin(slashAngle) * (1 - heavyBlend * .4), .12 + heavyBlend * .23, Math.cos(slashAngle)) : V(Math.sin(slashAngle), .12, Math.cos(slashAngle))).normalize().applyQuaternion(rootQ)
         : undefined;
-      solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact, bladeDirection);
+      // Use the already-damped ADS state, not immediate fireAim: hip-fire must
+      // not acquire a new elbow pop. Downward pitch retains its authored pole.
+      const riflePole = -THREE.MathUtils.smoothstep(this.adsPose, 0, .8) * THREE.MathUtils.smoothstep(pitch, -.5, 0);
+      solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact, bladeDirection, riflePole);
       this.poseFingers(side, Math.max(contact, side === 'R' ? meleeWeight : 0), glideContact * (1 - contact), side === 'R' ? meleeWeight : 0);
     }
     rig.diagnostics.mode = meleeWeight > .5 ? 'melee' : r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
