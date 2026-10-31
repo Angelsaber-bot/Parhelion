@@ -1,0 +1,4 @@
+import {resolve} from 'node:path';import {pathToFileURL} from 'node:url';import {execFileSync} from 'node:child_process';import type {CharacterKit} from '../../src/characters/characterKit';
+/** Historical comparisons require an explicit, unchanged 6be checkout. Never
+ * silently compare the repaired constructor against itself after promotion. */
+export async function historicalKit():Promise<typeof CharacterKit>{const root=process.env.CAPTAIN_BASELINE_WORLD;if(!root)throw Error('Set CAPTAIN_BASELINE_WORLD to the read-only 6be World checkout for historical comparisons');const hash=execFileSync('git',['-C',root,'rev-parse','HEAD'],{encoding:'utf8'}).trim();if(hash!=='6be0f8e4edd0aeb474bfc0f367dd377ff7897fa8')throw Error('Expected exact 6be historical source, got '+hash);execFileSync('git',['-C',root,'diff','--quiet']);return(await import(pathToFileURL(resolve(root,'src/characters/characterKit.ts')).href)).CharacterKit;}

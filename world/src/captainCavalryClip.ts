@@ -1,10 +1,11 @@
 import * as THREE from 'three';
+import {refineCaptainCavalryContinuity} from './captainCavalryContinuity';
 const clamp=THREE.MathUtils.clamp;
 const BODY=['Hips','Spine','Chest','Neck','Head','ClavicleL','ClavicleR','UpperArmL','ForearmL','HandL','UpperArmR','ForearmR','HandR','ThighL','ShinL','FootL','ThighR','ShinR','FootR','H_Neck','H_Head'];
 /** One ordinary mixer clip: contact-time native socket, duration, root/horse gait
  * and event ownership are unchanged. Bake only recognized private pose channels. */
 export function remasterCaptainCavalryClip(source:THREE.AnimationClip,model:THREE.Object3D,state:string,identity:string):THREE.AnimationClip {
- if((model.getObjectByName('CaptainCavalry remaster tailoring')??model.getObjectByName('CaptainCavalry_remaster_tailoring'))?.userData.captainCavalryClipRevision===2)return source;
+ if((model.getObjectByName('CaptainCavalry remaster tailoring')??model.getObjectByName('CaptainCavalry_remaster_tailoring'))?.userData.captainCavalryClipRevision===2)return refineCaptainCavalryContinuity(source,state,identity);
  const mounted=identity==='napoleon'||identity==='napoleonMounted';
  if(identity!=='blackbeard'&&!mounted||!['idle','walk','run','attack','melee'].includes(state))return source;
  const hierarchy=(o:THREE.Object3D):THREE.Object3D=>{const c=new THREE.Object3D();c.name=o.name;c.position.copy(o.position);c.quaternion.copy(o.quaternion);c.scale.copy(o.scale);for(const n of o.children)if(!(n as THREE.Mesh).isMesh)c.add(hierarchy(n));return c;};
