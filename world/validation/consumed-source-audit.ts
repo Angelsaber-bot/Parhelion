@@ -13,7 +13,7 @@ try{
  }else{
  const buffers=new Set<ArrayBufferLike>(),geometries=new Set<THREE.BufferGeometry>();let objects=0,meshes=0;
  for(const {node}of sources.handles)node.traverse(o=>{objects++;if((o as THREE.Mesh).isMesh){meshes++;geometries.add((o as THREE.Mesh).geometry);}});
- for(const g of geometries){for(const a of Object.values(g.attributes)){const attr=a as THREE.BufferAttribute|THREE.InterleavedBufferAttribute;buffers.add(('array'in attr?attr.array:attr.data.array).buffer);}if(g.index)buffers.add(g.index.array.buffer);}
+ for(const g of geometries){for(const a of Object.values(g.attributes)){const attr=a as THREE.BufferAttribute|THREE.InterleavedBufferAttribute;buffers.add(('isInterleavedBufferAttribute'in attr?attr.data.array:attr.array).buffer);}if(g.index)buffers.add(g.index.array.buffer);}
  const samples:{attached:number[];detached:number[]}={attached:[],detached:[]};
  for(let repeat=0;repeat<9;repeat++)for(const detached of repeat%2?[true,false]:[false,true]){
   if(detached)sources.detach();else sources.restore();

@@ -8,7 +8,7 @@ test('NON-GPU failed chronicle save stays in memory, retry persists, rejected/fa
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true,initialStorage:{[KEY]:initial,[preference]:'{"version":1,"finish":"signal"}','parhelion-world-resolution-v1':'crisp'}});
  const {world:w,window}=h,d=window.document,doneIdentity=w.done,foundIdentity=w.found;
  const original=window.Storage.prototype.setItem;let quota=true,confirmations=0,accept=false;
- window.Storage.prototype.setItem=function(key,value){if(key===KEY&&quota)throw new Error('QA quota');return original.call(this,key,value);};
+ window.Storage.prototype.setItem=function(this:Storage,key:string,value:string){if(key===KEY&&quota)throw new Error('QA quota');return original.call(this,key,value);};
  window.confirm=()=>{confirmations++;return accept;};
  const key=(code:string)=>{d.body.dispatchEvent(new window.KeyboardEvent('keydown',{code,bubbles:true}));d.body.dispatchEvent(new window.KeyboardEvent('keyup',{code,bubbles:true}));};
  const select=async(raw:string|Promise<string>,size=100)=>{Object.defineProperty(file,'files',{configurable:true,value:[{size,text:()=>Promise.resolve(raw)}]});file.dispatchEvent(new window.Event('change'));await new Promise(r=>setTimeout(r,0));};

@@ -12,7 +12,7 @@ test('NON-GPU five legacy-save chronicles require deliberate work/branch choices
  const legacy=['hq_terminal','armory_rack','relay_a','relay_b','sun_core','sea_core','winter_core','fire_core',...CAMPAIGN_REGIONS.flatMap(r=>CAMPAIGN_EPISODES[r].evidence)];
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{[LEGACY_WORLD_PROGRESS_KEYS[0]]:JSON.stringify({done:legacy,found:['old_discovery']})}});
  const {world:w,window}=h,d=window.document;let writes=0;let staleChoice:HTMLButtonElement|undefined;
- const originalSet=window.Storage.prototype.setItem;window.Storage.prototype.setItem=function(k,v){if(k===WORLD_PROGRESS_KEY)writes++;return originalSet.call(this,k,v);};
+ const originalSet=window.Storage.prototype.setItem;window.Storage.prototype.setItem=function(this:Storage,k:string,v:string){if(k===WORLD_PROGRESS_KEY)writes++;return originalSet.call(this,k,v);};
  const key=(code:string)=>{d.body.dispatchEvent(new window.KeyboardEvent('keydown',{code,bubbles:true}));d.body.dispatchEvent(new window.KeyboardEvent('keyup',{code,bubbles:true}));};
  const enter=async()=>{if(!d.pointerLockElement){(d.getElementById('start')as HTMLElement).click();await Promise.resolve();}};
  const dialog=d.getElementById('world-dialogue')!,options=d.getElementById('world-dialogue-choices')!;
