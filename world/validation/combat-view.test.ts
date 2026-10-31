@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { registerHooks } from 'node:module';
 import { readFileSync, readdirSync } from 'node:fs';
 import { VisibleEnemyRoot } from '../src/visibleEnemyRoot.ts';
+import { ENEMY_CONTACT_EFFECT_BUDGET } from '../src/enemyContactEffects.ts';
 import * as THREE from 'three';
 import type { Layout } from '../src/types.ts';
 
@@ -31,16 +32,26 @@ test('combat visual pools are capped, reset releases shots/tells, and dispose is
   const scene = new THREE.Scene(), done = new Set<string>();
   const combat = new WorldCombat({ scene, colliders: [], layout, done, toast() {}, onVictory() {}, onPlayerDefeated() {} });
   const internals = combat as any;
+  // The accepted Warden cue pool is persistent, unlike transient shots/sparks.
+  // Count it separately so adding three fixed slots cannot hide a transient leak.
+  const contactSlots = [...internals.effectGroup.children] as THREE.Mesh[];
+  assert.equal(contactSlots.length, ENEMY_CONTACT_EFFECT_BUDGET.slots);
+  assert.ok(contactSlots.every(slot => slot.name.startsWith('echo-warden-contact-') && !slot.visible));
+  assert.equal(internals.contactEffects.diagnostics.bytes, ENEMY_CONTACT_EFFECT_BUDGET.slots * ENEMY_CONTACT_EFFECT_BUDGET.vertices * 12);
   const from = new THREE.Vector3(0, 3, 0), end = new THREE.Vector3(0, 3, -20);
   for (let i = 0; i < 100; i++) combat.shot(from, end, true);
   assert.equal(internals.shots.length, 18); assert.equal(internals.sparks.length, 20);
-  assert.ok(internals.effectGroup.children.length <= 18 * 3 + 20);
+  assert.ok(internals.effectGroup.children.filter((child: THREE.Object3D) => !contactSlots.includes(child as THREE.Mesh)).length <= 18 * 3 + 20);
+  assert.ok(contactSlots.every(slot => internals.effectGroup.children.includes(slot)));
+  assert.ok(internals.effectGroup.children.length <= 18 * 3 + 20 + ENEMY_CONTACT_EFFECT_BUDGET.slots);
   combat.update(0.01, { x: 0, y: 2, z: 0 }, true);
   assert.equal(combat.canShoot(), true); assert.equal(combat.canShoot(), false);
   internals.allyCooldown = 1; internals.acc = 0.02; internals.hurtFor = 0.3;
   combat.reset();
   assert.equal(internals.shots.length, 0); assert.equal(internals.sparks.length, 0);
-  assert.equal(internals.effectGroup.children.length, 0); assert.equal(internals.allyCooldown, 0); assert.equal(internals.acc, 0);
+  assert.deepEqual(internals.effectGroup.children, contactSlots);
+  assert.ok(contactSlots.every(slot => !slot.visible)); assert.equal(internals.contactEffects.diagnostics.active, 0);
+  assert.equal(internals.allyCooldown, 0); assert.equal(internals.acc, 0);
   assert.equal(internals.hurt.style.opacity, '0');
   for (const visual of internals.visuals.values()) { assert.equal(visual.root.visible, false); assert.equal(visual.tell.visible, false); }
   combat.dispose(); combat.dispose();
