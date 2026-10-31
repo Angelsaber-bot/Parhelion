@@ -31,10 +31,10 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string> } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high' } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
-  const dom=new JSDOM(html,{url:'http://world.test/?nopost&q=low',pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
+  const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
   // Test-only pre-boot snapshots exercise the real migration path, not post-boot flag injection.
   for (const [key, value] of Object.entries(options.initialStorage ?? {})) window.localStorage.setItem(key, value);
   const errors:unknown[][]=[],warnings:unknown[][]=[],frames:FrameRequestCallback[]=[];
@@ -130,7 +130,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
     if(!(window as any).__world?.ready)throw new Error(`Production boot did not become ready: ${errors.map(args=>args.map(String).join(' ')).join('\n')||'60 second timeout'}`);
     // `ready` does not block optional art; tests explicitly settle its real task chain.
     await settleAssets();
-    return{window,world:(window as any).__world,errors,warnings,settleAssets,
+    return{window,world:(window as any).__world,errors,warnings,settleAssets,virtualConsole:dom.virtualConsole,
       async snapshot(title:string){
         const clone=window.document.documentElement.cloneNode(true) as HTMLElement;
         clone.querySelectorAll('script,link').forEach(node=>node.remove());
