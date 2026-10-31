@@ -111,7 +111,11 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
   for(const chain of OPTIONAL_CHAINS){
    // A collected reward is authoritative even if an old save lacks its setup flags.
    const complete=done.has(chain.flags[chain.flags.length-1]);const id=chain.flags.find(id=>!done.has(id));
-   add(`side:${chain.id}`,chain.region,'side',chain.title,complete,id?guide(chain.title,instruction(id),id,done,context):null);
+   // Preserve authored approach hints for a genuine single-step destination
+   // (e.g. the Golden Pavilion stepping stones). Do not repeat already-finished
+   // multi-step instructions or copy obsolete main-story prerequisite chains.
+   const approach=objectives.get(chain.region)?.steps.find(step=>step.done.length===1&&step.done[0]===id);
+   add(`side:${chain.id}`,chain.region,'side',chain.title,complete,id?guide(chain.title,approach?pair(approach.text):instruction(id),id,done,context):null);
   }
   const closure=getCampaignClosureState(done),closureTitle:Localized=['可选收束 · 灯火相连','Optional Epilogue · Lights Connected'];
   const missingEra=ERA_IDS.find(region=>!isEraCoreCleared(ERA_STORIES[region].core,done));

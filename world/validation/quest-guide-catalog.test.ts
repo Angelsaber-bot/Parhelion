@@ -15,7 +15,7 @@ test('catalog covers five real main chapters, authored optional chains and every
  assert.equal(entries.filter(e=>e.category==='main').length,5);
  assert.equal(entries.filter(e=>e.category==='discovery').length,layout.markers.filter(m=>m.type==='discovery').length);
  assert.equal(new Set(entries.map(e=>e.id)).size,entries.length);
- for(const entry of entries){assert.ok(entry.guide,entry.id);const guide=entry.guide!;assert.ok(guide.position.every(Number.isFinite));assert.ok(guide.text[0]);assert.ok(guide.text[1]);assert.doesNotMatch(guide.targetLabel[1],/[\u3400-\u9fff]/,entry.id);}
+ for(const entry of entries){assert.ok(entry.guide,entry.id);const guide=entry.guide!;assert.ok(guide.position.every(Number.isFinite));assert.ok(guide.text[0]);assert.ok(guide.text[1]);assert.doesNotMatch(guide.text[1],/[\u3400-\u9fff]/,entry.id);assert.doesNotMatch(guide.targetLabel[1],/[\u3400-\u9fff]/,entry.id);}
  assert.deepEqual([...done],[]);assert.deepEqual([...found],[]);
 });
 test('Alpha main follows actual archivist then original steps, and reacts to same-size changed saves',()=>{
@@ -40,6 +40,8 @@ test('cannon boats route to actual cannon unless mounted and optional prerequisi
  assert.equal(catalog.resolve('side:winter-frost',new Set(),new Set())?.targetId,'armory_rack');
  const frost=new Set(['armory_rack','frost_seal_1','frost_seal_2']);assert.equal(catalog.resolve('side:winter-frost',frost,new Set())?.targetId,'frost_seal_3');frost.add('frost_seal_3');assert.equal(catalog.resolve('side:winter-frost',frost,new Set())?.targetId,'shard_frost');
  assert.equal(catalog.resolve('side:sea-treasure',new Set(['shard_treasure']),new Set()),null,'legacy reward is not revoked by missing setup flags');
+ assert.match(catalog.resolve('side:kyoto-gold',new Set(),new Set())!.text[0],/石头/);
+ assert.doesNotMatch(catalog.resolve('side:kyoto-gold',new Set(),new Set())!.text[1],/[\u3400-\u9fff]/);
 });
 test('discovery uses found, trial uses true victory, epilogue follows unresolved eras rather than pretending ready',()=>{
  const id=layout.markers.find(m=>m.type==='discovery')!.id;
