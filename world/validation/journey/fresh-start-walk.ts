@@ -10,8 +10,8 @@ import { bootWorldWithoutGpu } from '../world-dom-boot.fixture';
 
 const h = await bootWorldWithoutGpu({ deterministic: true });
 const w = h.world, document = h.window.document;
-let now = 0;
-const step = () => h.frame(now += 1000 / 60);
+let now = 0, swimmingFrames = 0;
+const step = () => { h.frame(now += 1000 / 60); if (w.player.swimming) swimmingFrames++; };
 const key = (code: string, type = 'keydown') => document.body.dispatchEvent(
   new h.window.KeyboardEvent(type, { code, bubbles: true }));
 const press = (code = 'KeyF') => { key(code); key(code, 'keyup'); };
@@ -86,9 +86,10 @@ try {
   }
   assert.ok(w.done.has('campaign_alpha_worked'));
   // Leave through the front court, pass outside the HQ wall, then use Valley
-  // road waypoints. The central low crossing legitimately uses swimming.
+  // road waypoints and the original elevated West Ford bridge (no new geometry).
   const road = [[-166, 232], [-145, 232], [-145, 198], [-124, 190], [-124, 170],
-    [-108, 120], [-96, 82], [-44, 14], [-44, -20], [-36, -60], [-35, -92]];
+    [-108, 120], [-81.712, 83.348], [-95, 61], [-108.288, 38.652],
+    [-110, 25], [-100, 0], [-80, -30], [-60, -60], [-52, -85]];
   for (const [x, z] of road) walk(x, z);
   const recorder = marker('false_dawn_recorder');
   walk(recorder.p[0], recorder.p[2], 180); settle(); press();
@@ -99,8 +100,9 @@ try {
   assert.equal(fight.defeated, false); assert.equal(fight.remaining, null);
   assert.ok(w.done.has('false_dawn_courier_cleared'));
   assert.equal(w.done.has('summon_circle'), false, 'No original seam unlock was invented');
+  assert.equal(swimmingFrames, 0, 'The original West Ford bridge supplies a dry route');
   assert.deepEqual(h.errors, []); assert.deepEqual(h.warnings, []);
   console.log('COURIER', JSON.stringify(fight));
   console.log('FINAL', JSON.stringify({ pos: w.player.pos.toArray(), done: [...w.done], seconds: now / 1000,
-    hp: w.combat.state.hp, energy: w.actions.skills.energy, errors: h.errors }));
+    hp: w.combat.state.hp, energy: w.actions.skills.energy, swimmingFrames, errors: h.errors }));
 } finally { await h.close(); }
