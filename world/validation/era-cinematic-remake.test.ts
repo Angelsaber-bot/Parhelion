@@ -10,11 +10,12 @@ const owner={mesh(g:THREE.BufferGeometry,m:THREE.Material,p:THREE.Object3D){cons
 for(const identity of ['blackbeard','napoleon','musashi'] as const)test(`${identity} has actual private 3D expression channels, finite camera and idempotent cleanup`,async()=>{
  const kit=CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity];
  const{gltf}=await readCharacter(fileURLToPath(kit.assetUrl)),source=gltf.scene,copy=clone(source),actor=new THREE.Group();actor.add(copy);
+ const sourceHat=source.getObjectByName('Blackbeard remaster tricorn')??source.getObjectByName('Blackbeard_remaster_tricorn');
  const before=JSON.stringify(source.toJSON()),materials=new Map<THREE.Mesh,THREE.Material|THREE.Material[]>(),geometries=new Map<THREE.Mesh,THREE.BufferGeometry>();
  copy.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){materials.set(m,m.material);geometries.set(m,m.geometry);}});
  const art=new EraCinematicRemake(actor,copy,identity,owner),camera=new THREE.PerspectiveCamera();
  assert.ok(art.expressionChannels.morphMeshes+art.expressionChannels.geometryChannels>0);
- if(identity==='blackbeard'){const hat=copy.getObjectByName('Blackbeard cinematic-only optimized tricorn') as THREE.SkinnedMesh;assert.ok(hat?.isSkinnedMesh);assert.equal(hat.geometry.index!.count/3,2681);assert.equal(source.getObjectByName(hat.name),undefined);}
+ if(identity==='blackbeard'){const hat=copy.getObjectByName('Blackbeard remaster tricorn')??copy.getObjectByName('Blackbeard_remaster_tricorn');assert.ok(hat);let triangles=0,skins=0;hat.traverse(o=>{const m=o as THREE.SkinnedMesh;if(m.isSkinnedMesh){skins++;triangles+=(m.geometry.index?.count??m.geometry.attributes.position.count)/3;}});assert.ok(skins>0);assert.equal(triangles,2681);if(sourceHat)assert.notEqual(hat,sourceHat);else assert.equal(source.getObjectByName(hat.name),undefined);}
  const shots=new Set<string>();
  for(const phase of ['intro','charge','release','outro'] as const)for(let i=0;i<=10;i++){
   art.update({phase,elapsed:['intro','charge','release','outro'].indexOf(phase)*3+i*.1,progress:i/10,pulse:.3,strikeCount:phase==='release'?Math.floor(i/4)+1:0},camera,i===9);
@@ -22,7 +23,7 @@ for(const identity of ['blackbeard','napoleon','musashi'] as const)test(`${ident
   copy.traverse(o=>{const mesh=o as THREE.Mesh;if(mesh.isMesh){const p=mesh.geometry.attributes.position;for(let j=0;j<p.count;j++)assert.ok(Number.isFinite(p.getX(j)+p.getY(j)+p.getZ(j)));}});
  }
  assert.ok(shots.size>=3);assert.equal(JSON.stringify(source.toJSON()),before,'original materials and geometry remain untouched');
- art.dispose();art.dispose();assert.equal(copy.getObjectByName('Blackbeard cinematic-only optimized tricorn'),undefined);for(const[m,value]of materials)assert.equal(m.material,value);for(const[m,value]of geometries)assert.equal(m.geometry,value);
+ art.dispose();art.dispose();assert.equal(!!(copy.getObjectByName('Blackbeard remaster tricorn')??copy.getObjectByName('Blackbeard_remaster_tricorn')),!!sourceHat);for(const[m,value]of materials)assert.equal(m.material,value);for(const[m,value]of geometries)assert.equal(m.geometry,value);
 });
 test('unknown head supports a finite fallback without model assets',()=>{const actor=new THREE.Group(),copy=new THREE.Group();actor.add(copy);const art=new EraCinematicRemake(actor,copy,'blackbeard',owner),camera=new THREE.PerspectiveCamera();art.update({phase:'intro',elapsed:0,progress:0,pulse:0},camera,false);assert.ok(camera.position.toArray().every(Number.isFinite));art.update({phase:'charge',elapsed:NaN,progress:NaN,pulse:0},camera,false);art.dispose();});
 

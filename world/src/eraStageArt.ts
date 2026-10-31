@@ -11,7 +11,7 @@ interface Salvo { age: number; enabled: boolean[]; flashes: THREE.Mesh[]; smoke:
 export class BlackbeardStageArt {
   readonly root = new THREE.Group();
   private muzzle?: THREE.Object3D; private feet: THREE.Object3D[];
-  private shadow: THREE.Mesh; private pistolFlash: THREE.Mesh;
+  private shadow: THREE.Mesh; private pistolFlash: THREE.Mesh;private pennant?:THREE.Mesh;private signalSmoke:THREE.Mesh[]=[];private signalOrigin=new THREE.Vector3();
   private barrels:THREE.Group[]=[];private salvos: Salvo[] = []; private count = 0; private lastTime = 0; private pistolAge = 10;
   private lanterns: THREE.PointLight[] = []; private cannonLight = new THREE.PointLight(0xffa047,0,18,2); private sea?: THREE.Mesh;
   private baseShip = new THREE.Vector3(); private direction = new THREE.Vector3(); private point = new THREE.Vector3();
@@ -31,7 +31,7 @@ export class BlackbeardStageArt {
     const flashGeometry=radialGeometry(1),flashMaterial=owner.material(0xffe5ac,.9);flashMaterial.vertexColors=true;flashMaterial.toneMapped=false;
     this.pistolFlash=owner.mesh(flashGeometry,flashMaterial,this.root);this.pistolFlash.name='Blackbeard actual muzzle signal';this.pistolFlash.visible=false;
     // Stage-owned close-shot barrels overlay the distant map LOD without changing that asset.
-    const tubeGeometry=new THREE.CylinderGeometry(.22,.28,1.15,16,1,true),ringGeometry=new THREE.TorusGeometry(1,.12,4,12),boreGeometry=new THREE.CircleGeometry(.195,20),carriageGeometry=new THREE.BoxGeometry(1,1,1);
+    const tubeGeometry=new THREE.CylinderGeometry(.22,.28,1.15,12,1,true),ringGeometry=new THREE.TorusGeometry(1,.12,3,10),boreGeometry=new THREE.CircleGeometry(.195,16),carriageGeometry=new THREE.BoxGeometry(1,1,1);
     const iron=new THREE.MeshStandardMaterial({color:0x45535b,roughness:.42,metalness:.7,side:THREE.DoubleSide});
     const rim=new THREE.MeshStandardMaterial({color:0x938978,roughness:.34,metalness:.65});
     const timber=new THREE.MeshStandardMaterial({color:0x523a29,roughness:.9});const bore=owner.material(0x020406,1);
@@ -56,6 +56,14 @@ export class BlackbeardStageArt {
       this.salvos.push(salvo);
     }
     this.buildQuarterdeck(owner);
+    // Original dimensional command pennant and rigging, not a portrait overlay.
+    const pole=owner.mesh(new THREE.CylinderGeometry(.028,.04,3.1,8),wood,this.root);pole.position.set(-2.5,1.5,-2.5);pole.name='Blackbeard command pennant mast';
+    const flagGeometry=new THREE.PlaneGeometry(1.35,.9,8,6);flagGeometry.translate(.675,-.45,0);const fp=flagGeometry.attributes.position;for(let i=0;i<fp.count;i++){const x=fp.getX(i),y=fp.getY(i);if(x>1.1)fp.setX(i,x-.18*(1-Math.abs(y+.45)/.45));}
+    this.pennant=owner.mesh(flagGeometry,new THREE.MeshStandardMaterial({color:0x17242c,roughness:.92,side:THREE.DoubleSide}),this.root);this.pennant.position.set(-2.47,2.9,-2.49);this.pennant.name='Blackbeard modeled command pennant';
+    const badge=owner.mesh(new THREE.TorusGeometry(.16,.014,6,24),brass,this.root);badge.position.set(-1.9,2.45,-2.46);badge.name='Blackbeard original compass badge';
+    for(const side of[-1,1]){const path=new THREE.CatmullRomCurve3([new THREE.Vector3(-2.5,3,-2.5),new THREE.Vector3(side*2.8,1.8,-3.1),new THREE.Vector3(side*3.25,.75,-3.5)]);owner.mesh(new THREE.TubeGeometry(path,12,.012,4,false),seams,this.root);}
+    const smokeMat=owner.material(0xb5b5a5,.25);smokeMat.vertexColors=true;for(let i=0;i<3;i++){const puff=owner.mesh(radialGeometry(1),smokeMat,this.root);puff.name='Blackbeard actual flintlock smoke '+i;puff.visible=false;this.signalSmoke.push(puff);}
+
   }
   private buildQuarterdeck(owner:EraArtOwner){
     // Real modeled depth for changing camera angles: merged timber, fittings and ropes.
@@ -106,8 +114,10 @@ export class BlackbeardStageArt {
         salvo.origins[i].set(-6.625,2.68,-8.4+i*(42*.43/6)).applyMatrix4(this.ship.matrixWorld);
         salvo.enabled[i]=next>=3||next===1&&(i>=2&&i<=4)||next===2&&(i<2||i>4);
       }
-      if(next===1)this.pistolAge=0;
+      if(next===1){this.pistolAge=0;this.actor.updateMatrixWorld(true);if(this.muzzle)this.muzzle.getWorldPosition(this.signalOrigin);}
     }
+    if(this.pennant){const p=this.pennant.geometry.attributes.position;for(let i=0;i<p.count;i++){const x=p.getX(i),y=p.getY(i);p.setZ(i,reduced?0:Math.sin(x*5+y*2+elapsed*4)*.07*(x/1.35));}p.needsUpdate=true;this.pennant.geometry.computeVertexNormals();}
+    for(let i=0;i<this.signalSmoke.length;i++){const puff=this.signalSmoke[i],age=this.pistolAge-i*.045;puff.visible=age>=0&&age<.65&&(!reduced||i===0);puff.position.copy(this.signalOrigin);puff.position.y+=Math.max(0,age)*.32;puff.position.x+=Math.sin(i*2)*Math.max(0,age)*.16;puff.position.z+=Math.max(0,age)*.35;puff.quaternion.copy(camera.quaternion);puff.scale.setScalar(.08+Math.max(0,age)*.35);}
     let recoil=0;for(const salvo of this.salvos)if(salvo.age<.3)recoil=Math.max(recoil,Math.sin(salvo.age/.3*Math.PI));
     this.cannonLight.intensity=reduced?0:recoil*18;
     for(let i=0;i<this.lanterns.length;i++)this.lanterns[i].intensity=1.8+(reduced?0:Math.sin(elapsed*7+i)*.12);
@@ -132,7 +142,7 @@ export class BlackbeardStageArt {
     }
   }
   private faceAxis(mesh:THREE.Mesh,axis:THREE.Vector3,camera:THREE.Camera){this.target.copy(camera.position).sub(mesh.position).normalize();this.xAxis.crossVectors(axis,this.target).normalize();if(this.xAxis.lengthSq()<.01)this.xAxis.set(1,0,0);this.normal.crossVectors(this.xAxis,axis).normalize();this.basis.makeBasis(this.xAxis,axis,this.normal);mesh.quaternion.setFromRotationMatrix(this.basis);}
-  dispose(){this.root.clear();this.muzzle=undefined;this.feet=[];this.salvos=[];this.barrels=[];this.lanterns=[];this.sea=undefined;}
+  dispose(){this.root.clear();this.muzzle=undefined;this.feet=[];this.salvos=[];this.barrels=[];this.lanterns=[];this.sea=undefined;this.pennant=undefined;this.signalSmoke=[];}
 }
 
 function softTracerGeometry() {

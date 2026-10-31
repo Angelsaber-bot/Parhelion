@@ -3,6 +3,8 @@ import data from './cinematicTricornData.json';
 
 /** Stage-only reuse of the project's authored optional tricorn. No gameplay equip. */
 export function attachCinematicTricorn(root: THREE.Object3D): () => void {
+  // Runtime tailoring is cloned into the stage; never stack a second hat.
+  if ((root.getObjectByName('Blackbeard remaster tricorn')||root.getObjectByName('Blackbeard_remaster_tricorn'))) return () => {};
   let source: THREE.SkinnedMesh | undefined;
   root.traverse(object => {
     const candidate = object as THREE.SkinnedMesh;
@@ -28,8 +30,8 @@ export function attachCinematicTricorn(root: THREE.Object3D): () => void {
     roughness: spec.roughness, metalness: spec.metalness, side: THREE.DoubleSide,
   }));
   const hat = new THREE.SkinnedMesh(geometry, materials);
-  hat.name = 'Blackbeard cinematic-only optimized tricorn';
-  hat.userData.cinematicOnly = true;
+  hat.name = 'Blackbeard remaster tricorn';
+  hat.userData.captainCavalryRemaster = true;
   hat.userData.sourceAsset = data.source;
   hat.frustumCulled = false;
   // The stage version seats the brim35mm lower into the hair mass after the

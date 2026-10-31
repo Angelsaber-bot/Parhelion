@@ -7,6 +7,7 @@ export class MountedStageArt {
  readonly root=new THREE.Group();private blade:EraBladeTrace;private hooves:THREE.Object3D[];private shadows:THREE.Mesh[]=[];
  private snow:THREE.Mesh[]=[];private origins:THREE.Vector3[]=[];private flags:THREE.Group[]=[];private count=0;private fired=-100;
  private chargeLight=new THREE.PointLight(0xffe6b0,0,14,2); private clothMeshes:THREE.Mesh[]=[];
+ private hoofFloor:number[]=[];private hoofLast:number[]=[];private hoofDown:boolean[]=[];private puffAges=new Float32Array(16).fill(10);private prints:THREE.Mesh[]=[];private slot=0;private lastTime=0;
  private point=new THREE.Vector3();private impact:THREE.Mesh;private material:THREE.MeshBasicMaterial;
  constructor(private actor:THREE.Group,clone:THREE.Object3D,owner:EraArtOwner){
   this.root.name='Napoleon: white horse snow charge';
@@ -16,6 +17,8 @@ export class MountedStageArt {
   for(let i=0;i<4;i++){const shadow=owner.mesh(shadowGeometry,shadowMaterial,this.root);shadow.rotation.x=-Math.PI/2;shadow.position.y=.012;shadow.name='Napoleon hoof contact '+i;this.shadows.push(shadow);}
   const powderGeometry=radialGeometry(.35),powderMaterial=owner.material(0xd1e4ed,.3);powderMaterial.vertexColors=true;
   for(let i=0;i<16;i++){const particle=owner.mesh(powderGeometry,powderMaterial,this.root);particle.name='Napoleon hoof snow '+i;this.snow.push(particle);this.origins.push(new THREE.Vector3());}
+  actor.updateWorldMatrix(true,true);this.hooves.forEach(hoof=>{const y=hoof.getWorldPosition(new THREE.Vector3()).y;this.hoofFloor.push(y);this.hoofLast.push(y);this.hoofDown.push(true);});
+  const printMaterial=owner.material(0x456171,.24);printMaterial.vertexColors=true;for(let i=0;i<8;i++){const mark=owner.mesh(radialGeometry(1),printMaterial,this.root);mark.name='Napoleon grounded hoofprint '+i;mark.rotation.x=-Math.PI/2;mark.scale.set(.10,.17,1);mark.visible=false;this.prints.push(mark);}
   this.material=owner.material(0xf4dfac,.65);this.material.vertexColors=true;this.impact=owner.mesh(radialGeometry(1),this.material,this.root);this.impact.name='Napoleon ground impact';this.impact.rotation.x=-Math.PI/2;this.impact.visible=false;
   // Swallow-tail cloth with original gold wing mark, not rectangular light pillars.
   const cloth=new THREE.MeshStandardMaterial({color:0x671f32,roughness:.9,side:THREE.DoubleSide}),gold=owner.material(0xc7a055,.9),pole=owner.material(0x5c6570,1);
@@ -65,10 +68,19 @@ export class MountedStageArt {
   this.chargeLight.position.set(this.actor.position.x,2.3,this.actor.position.z+.8);this.chargeLight.intensity=reduced?0:Math.max(0,1-(frame.elapsed-this.fired)/.45)*9;
   this.actor.updateMatrixWorld(true);this.blade.update(frame,camera,reduced);
   for(let i=0;i<this.shadows.length;i++){const hoof=this.hooves[i];if(hoof)hoof.getWorldPosition(this.point);else this.point.set((i%2?1:-1)*.4,0,i<2?.8:-.8);this.shadows[i].position.x=this.point.x;this.shadows[i].position.z=this.point.z;}
-  const moving=frame.phase==='charge'||frame.phase==='release';
-  for(let i=0;i<this.snow.length;i++){const p=this.snow[i];p.visible=moving&&(!reduced||i%4===0);const t=(frame.elapsed*(reduced?.7:1.8)+i/4)%1,hoof=this.shadows[i%4];p.position.set(hoof.position.x+Math.sin(i*2.4)*t*.4,.04+t*.18,hoof.position.z-t*(reduced?.6:1.5));p.quaternion.copy(camera.quaternion);p.scale.setScalar(.15+t*.7);}
+  const moving=frame.phase==='charge'||frame.phase==='release',dt=Math.max(0,Math.min(.1,frame.elapsed-this.lastTime));this.lastTime=frame.elapsed;
+  // Snow comes from measured descending hoof contact, not a constant floating
+  // particle fountain. Snapshot each impact so powder stays on the road as the
+  // white horse travels onward. This is private visual state, never gameplay.
+  for(let i=0;i<this.hooves.length;i++){
+   this.hooves[i].getWorldPosition(this.point);const down=this.point.y<=this.hoofFloor[i]+.045,descending=this.point.y<this.hoofLast[i]-.0001;
+   if(moving&&down&&!this.hoofDown[i]&&descending){const slot=this.slot++%this.snow.length;this.puffAges[slot]=0;this.origins[slot].set(this.point.x,.015,this.point.z);const mark=this.prints[slot%this.prints.length];mark.position.copy(this.origins[slot]);mark.visible=!reduced;}
+   this.hoofDown[i]=down;this.hoofLast[i]=this.point.y;
+  }
+  for(let i=0;i<this.snow.length;i++){this.puffAges[i]+=dt;const age=this.puffAges[i],p=this.snow[i];p.visible=age<.55&&(!reduced||i%4===0);p.position.copy(this.origins[i]);p.position.x+=Math.sin(i*2.4)*age*.25;p.position.y+=age*.28;p.position.z-=age*.45;p.quaternion.copy(camera.quaternion);p.scale.setScalar((.10+age*.8)*(1-age/.65));}
+  for(const mark of this.prints)if(reduced||frame.phase==='intro')mark.visible=false;
   const age=frame.elapsed-this.fired;this.impact.visible=(frame.phase==='release'||frame.phase==='outro')&&age>=0&&age<.55;this.impact.position.set(this.actor.position.x,.006,this.actor.position.z+.6);this.impact.scale.setScalar(.3+Math.max(0,age)*(reduced?2:4));this.material.opacity=Math.max(0,1-age/.55)*(reduced?.3:.65);
   for(let i=0;i<this.flags.length;i++){this.flags[i].rotation.z=reduced?0:Math.sin(frame.elapsed*1.2+i)*.018;const geometry=this.clothMeshes[i].geometry,p=geometry.attributes.position;for(let v=0;v<p.count;v++){const x=p.getX(v),y=p.getY(v);p.setZ(v,(reduced?0:.055*Math.sin(x*4+y*3+frame.elapsed*4+i*.7))*(x/1.3));}p.needsUpdate=true;geometry.computeVertexNormals();}
  }
- dispose(){this.blade.dispose();this.root.clear();this.hooves=[];this.shadows=[];this.snow=[];this.origins=[];this.flags=[];this.clothMeshes=[];}
+ dispose(){this.blade.dispose();this.root.clear();this.hooves=[];this.shadows=[];this.snow=[];this.origins=[];this.flags=[];this.clothMeshes=[];this.prints=[];this.hoofFloor=[];this.hoofLast=[];this.hoofDown=[];}
 }
