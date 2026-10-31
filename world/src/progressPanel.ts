@@ -39,6 +39,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     result.textContent = resultText ? bilingual(...resultText) : '';
     title.textContent = bilingual('任务存档', 'Quest save'); status.textContent = bilingual(...STATUS[progress.persistence]);
     if (progress.saveBlocked) status.textContent = bilingual('原存档需要检查并已受保护，可读取的当前进度已保留，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；自动保存不会覆盖原数据。', 'Original save needs review and is protected; readable current progress is retained, but this session is not saved. Download original/session data or explicitly confirm replacement. Autosave will not overwrite the original.');
+    if (progress.saveBlocked && progress.exportUnreadableSnapshot() === null) status.textContent = bilingual('部分原存档暂时无法读取，原记录未被覆盖。已读取的进度仅保留在本页；请先下载本次进度备份，重新载入可重试读取。只有明确确认后才会替换原记录。', 'Some original save records could not be read and have not been overwritten. Readable progress is kept only in this page. Back up this session before reloading to retry the reads; replacement requires explicit confirmation.');
     retry.textContent = progress.saveBlocked ? bilingual('用本次进度替换…', 'Replace with session progress…') : bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
     restore.textContent = bilingual('从备份恢复…', 'Restore a backup…');
     original.textContent = bilingual('下载无损原始记录', 'Download lossless original'); original.hidden = progress.exportUnreadableSnapshot() === null;
@@ -58,7 +59,10 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     // A repair prompt for corrupt bytes must not silently adopt a newer tab's save.
     const originalRaw = progress.exportUnreadableSnapshot();
     if (originalRaw !== null && expected.raw !== originalRaw) { failedReplacement(); return; }
-    if (!window.confirm(bilingual('用本次页面进度替换原存档并重新载入？建议先下载原始数据与本次进度。个人设置保留。', 'Replace the original save with this session and reload? Download the original and session progress first if needed. Personal settings are kept.')) || disposed) return;
+    const confirmation: [string, string] = originalRaw === null
+      ? ['部分原存档尚未读取，本次进度可能不包含其中的任务。仍要用本次进度替换并重新载入吗？建议先备份本次进度，或取消后重新载入以重试读取。个人设置保留。', 'Some original records have not been read; this session may omit their quests. Replace with this session and reload anyway? Back up this session first, or cancel and reload to retry reading. Personal settings are kept.']
+      : ['用本次页面进度替换原存档并重新载入？建议先下载原始数据与本次进度。个人设置保留。', 'Replace the original save with this session and reload? Download the original and session progress first if needed. Personal settings are kept.'];
+    if (!window.confirm(bilingual(...confirmation)) || disposed) return;
     if (progress.restoreSnapshot(progress.exportSnapshot(), expected) === 'restored') onRestored();
     else failedReplacement();
   });
