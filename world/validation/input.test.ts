@@ -38,7 +38,7 @@ function setup() {
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
   // Ordinary input fixture: no owned cinematic or presentation resources.
-  const context = vm.createContext({ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -63,6 +63,16 @@ test('dialogue choice navigation never steals a custom Interact binding or sends
   assert.equal(s.context.state.settings.bind('interact', 'Digit1', true), null);
   s.target.emit('keydown', { code: 'Digit1' }); assert.equal(confirmed, 1); assert.equal(selected, 0);
   assert.equal(s.context.state.keys.size, 0); assert.equal(s.actions(), 0); assert.equal(s.shots(), 0);
+});
+
+test('a queued background start click cannot acquire pointer lock behind a newer modal', async () => {
+  const s = setup(); let requests = 0;
+  s.canvas.requestPointerLock = () => { requests++; return Promise.resolve(); };
+  for (const overlay of ['travelOpenState', 'campaignJournalOpen']) {
+    s.context[overlay] = true; s.$('start').emit('click'); await Promise.resolve(); assert.equal(requests, 0, overlay); s.context[overlay] = false;
+  }
+  s.context.narrative = { open: true }; s.$('start').emit('click'); await Promise.resolve(); assert.equal(requests, 0);
+  s.context.narrative = undefined; s.$('start').emit('click'); await Promise.resolve(); assert.equal(requests, 1);
 });
 
 test('servant inspection clears held input, blocks gameplay and remains dismissible without repeating', () => {

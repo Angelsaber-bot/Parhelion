@@ -25,3 +25,13 @@ Focused unit/DOM/capsule tests are run during development; aggregate milestone t
 CPU scene exports, Blender previews and no-GPU production-DOM tests are **not** screenshots of a verified browser/WebGL playthrough. They cannot establish GPU rendering, actual frame rate, browser pointer-lock permissions or real-device performance. Arena rules, offline/LAN choices, controls and existing progress remain protected by regression suites.
 
 All commits are local. No push, public deployment, credentials, purchases or user-computer work is part of this checkpoint.
+
+## Second playable slice: False Dawn
+
+The pause journal now includes an explicitly tracked continuation. Its lead appears after the Alpha receiver's physical work and requires the original armory equipment. The player investigates a recorder, chooses a harbor interception or two-wave Winter defense, returns for three ordered physical array switches, confronts the Echo Warden, then deliberately chooses an ending. This does not unlock original era seams or replace the original story guide.
+
+Encounter admission uses the player's current physical position and playable state. At most three transient actors are active; only the authoritative director's real victory callback advances encounter flags. Leaving, death, reset and reload do not invent victories. Partial physical array work persists, while unfinished fights must be restarted. The Winter field has a visible ordinary warming brazier, not invisible cold immunity or free health/energy.
+
+Narrative choices revalidate range, line of sight, focus and current quest state. Accepted switches give an immediate sound/toast and scene change without pausing or canceling held movement/attack inputs. Optional companion reactions require the actual summoned nearby companion. Remote guidance rechecks closed seams after each story transition rather than pointing through a locked route.
+
+The actual-main DOM progression tests cover both branches, retry, partial switch persistence, held movement, authoritative victory and save rehydration. Their injected encounter damage verifies integration only; it is **not** a balanced end-to-end combat playthrough. Separate combat timing/fairness tests and physical site-route tests cover their narrower claims. The first frozen checkpoint `2633e8f3245e209b35738213eac4c6aec7067a31` passed 1,227 World tests, 325 Arena tests, 13 site tests, typecheck and the unified build with unchanged tracked source hashes. Later work requires its own frozen regression checkpoint.

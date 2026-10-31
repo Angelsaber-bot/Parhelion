@@ -4,6 +4,10 @@ import * as campaignEpisodes from '../src/campaignEpisodes';
 export const campaignSourceContext = {
   ...campaignEpisodes,
   campaignMarkerIds: new Set<string>(),
+  falseDawnMarkerIds: new Set<string>(),
+  falseDawnRuntime: undefined,
+  falseDawnTracked: false,
   applyCampaignState() {},
   applyWeaponFinish() {},
+  applyFalseDawnState() {},
 };

@@ -8,6 +8,11 @@ import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
 import { createCampaignSites } from './campaignSites';
 import { createSettlementApproaches } from './settlementApproaches';
+import { createFalseDawnSites } from './falseDawnSites';
+import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction } from './falseDawnCampaign';
+import { createFalseDawnRuntime } from './falseDawnRuntime';
+import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './falseDawnEncounterCatalog';
+import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './trackedStoryNavigation';
 import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './campaignEpisodes';
 import { createCampaignJournal } from './campaignJournal';
 import type { RegionId } from './settlements/types';
@@ -297,6 +302,11 @@ world.add(campaignSites.root); freezeStaticArt(campaignSites.root);
 staticGeos.push(...campaignSites.collisionGeometries);
 layout.markers.push(...campaignSites.markers);
 const campaignMarkerIds = new Set(campaignSites.markers.map(marker => marker.id));
+const falseDawnSites = createFalseDawnSites((x, z) => grid.sampleHeight(x, z));
+world.add(falseDawnSites.root); freezeStaticArt(falseDawnSites.root);
+staticGeos.push(...falseDawnSites.collisionGeometries); layout.markers.push(...falseDawnSites.markers);
+const falseDawnMarkerIds = new Set(falseDawnSites.markers.map(marker => marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) falseDawnSites.dispose(); });
 const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs]);
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -349,6 +359,8 @@ let optionalPin: OptionalPin | null = null;
 let campaignTrackedRegion: RegionId | null = null;
 let campaignJournalOpen = false;
 let campaignJournal: ReturnType<typeof createCampaignJournal> | undefined;
+let falseDawnRuntime: ReturnType<typeof createFalseDawnRuntime> | undefined;
+let falseDawnTracked = false;
 const mapBudget = new FrameWorkBudget(30), hudBudget = new FrameWorkBudget(10), statsBudget = new FrameWorkBudget(4);
 const eraStoryScenes = settlements.placements.filter(p => isEraId(p.id)).map(p => ({ ...createEraStoryScene(p), region: p.id }));
 const eraOptionalIds = new Set(Object.values(ERA_OPTIONALS).map(x => x.id));
@@ -382,6 +394,7 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const arcLabel = getFalseDawnMarkerLabel(marker.id); if (arcLabel) return bilingual(...arcLabel);
   const episode = Object.values(CAMPAIGN_EPISODES).find(value => value.work === marker.id || value.decision === marker.id);
   if (episode) return bilingual(...(episode.work === marker.id ? episode.workLabel : episode.decisionLabel));
   const optional = Object.values(ERA_OPTIONALS).find(x => x.id === marker.id);
@@ -396,6 +409,7 @@ function applyCampaignState() {
     campaignSites.applyState(region, { stage: state.visualStage, choice: state.choice ?? undefined });
   }
 }
+function applyFalseDawnState() { falseDawnSites.applyState(getFalseDawnState(done)); }
 function applyWorldState() {
   hudRevision++;
   applyEraMarkerRequirements(layout.markers, done);
@@ -404,6 +418,7 @@ function applyWorldState() {
   for (const site of eraStoryScenes) { if (isEraId(site.region)) { const state = getEraStoryState(site.region, done); site.applyState({ ...state, complete: state.complete || (site.region === 'britain' && state.knightDefeated) }); } }
   applyValleyStory();
   applyCampaignState();
+  applyFalseDawnState();
   applyWeaponFinish();
   for (const t of targets) {
     const id = t.userData.target as string;
@@ -454,18 +469,22 @@ function toggleGuide() {
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
+  if (falseDawnTracked) {
+    const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
+    if (!guide) falseDawnTracked = false;
+    else {
+      const label = bilingual(`伪晓回声 · ${settings.label('mainRoute')}返回原主线`, `False Dawn · ${settings.label('mainRoute')} for original story`);
+      const local = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
+      const p = resolveTrackedStoryPoint(here, guide.region, done, local); if (p) return { p, label };
+    }
+  }
   if (campaignTrackedRegion) {
     const guide = getCampaignEpisodeGuide(campaignTrackedRegion, done);
     if (!guide) campaignTrackedRegion = null;
     else {
       const label = bilingual(`可选纪事：${CAMPAIGN_EPISODES[campaignTrackedRegion].speaker[0]} · ${settings.label('mainRoute')}返回主线`, `Chronicle: ${CAMPAIGN_EPISODES[campaignTrackedRegion].speaker[1]} · ${settings.label('mainRoute')} for story`);
-      if (here !== campaignTrackedRegion) {
-        const gate = here === 'alpha' ? GATES[campaignTrackedRegion] : GATES[here];
-        if (gate) return { p: gate.p, label };
-      } else {
-        const p = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
-        if (p) return { p, label };
-      }
+      const local = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
+      const p = resolveTrackedStoryPoint(here, campaignTrackedRegion, done, local); if (p) return { p, label };
     }
   }
   const intro = valleyGuide();
@@ -768,7 +787,7 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
 function resetProgress() {
   abortUltimate(); clearInput(); deferredCombatToast = null;
   const saved = worldProgress.reset();
-  campaignTrackedRegion = null;
+  campaignTrackedRegion = null; falseDawnTracked = false; falseDawnRuntime?.invalidate();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
   clearStartOverrides(params);
@@ -856,7 +875,7 @@ const lockError = () => {
 setLoading('点击进入（ESC 释放鼠标）');
 start.addEventListener('click', async (e) => {
   audio.unlock(e);
-  if (settingsPanel.open) return;
+  if (settingsPanel.open || travelOpenState || campaignJournalOpen || narrative?.open || ultimateDirector?.active) return;
   try { await canvas.requestPointerLock(); } catch { lockError(); }
 });
 document.addEventListener('pointerlockerror', lockError);
@@ -908,7 +927,7 @@ function press(binding: string, repeat = false) {
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
-  if (action === 'mainRoute') { optionalPin = null; campaignTrackedRegion = null; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
+  if (action === 'mainRoute') { optionalPin = null; campaignTrackedRegion = null; falseDawnTracked = false; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
   if (action === 'help') togglePanel('help');
   if (action === 'objectives') togglePanel('objective');
   if (action === 'interact' && !player.flying && !player.gliding && !player.swimming && player.onGround && !interactSettlementNpc()) interact();
@@ -961,6 +980,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { audio.hurt(); },
   onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
+  onStoryEncounterVictory(id) { falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
@@ -1060,7 +1080,7 @@ const actionHud = createActionHud(action => settings.label(action));
 weaponFinishControl = createWeaponFinishControl(weaponFinishStore, done, () => applyWeaponFinish());
 document.querySelector('#world-settings .settings-sliders')?.after(weaponFinishControl.root);
 addEventListener('pagehide', event => { if (!event.persisted) weaponFinishControl?.dispose(); });
-const progressPanel = createProgressPanel(worldProgress, () => { abortUltimate(); clearInput(); location.reload(); });
+const progressPanel = createProgressPanel(worldProgress, () => { abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); location.reload(); });
 document.querySelector('#world-settings .settings-sliders')?.after(progressPanel.root);
 addEventListener('pagehide', event => { if (!event.persisted) progressPanel.dispose(); });
 const audioGroup=document.createElement('div');audioGroup.className='settings-sliders';
@@ -1109,7 +1129,7 @@ const renderTravelButton=()=>{travelOpen.textContent=bilingual(`安全据点旅�
 renderTravelButton();onLanguageChange(()=>{renderTravelButton();travelPanel.refresh();});
 travelOpen.addEventListener('click',event=>{event.stopPropagation();travelPanel.show();}); start.append(travelOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose();narrative?.dispose();travelPanel.dispose();travelOpen.remove();}});
-const campaignTrackingBlocked = (region: RegionId): [string, string] | null => region !== regionAt(player.pos.x, player.pos.z).id && !done.has('summon_circle')
+const campaignTrackingBlocked = (region: RegionId): [string, string] | null => trackedStoryRouteBlocked(regionAt(player.pos.x, player.pos.z).id, region, done)
   ? ['先沿主线稳定召唤阵，开启通往其他年代的道路。', 'Stabilize the summoning circle on the main route to open roads to other eras.'] : null;
 campaignJournal = createCampaignJournal({
   done: () => done,
@@ -1119,14 +1139,43 @@ campaignJournal = createCampaignJournal({
   },
   onClose: () => { campaignJournalOpen = false; clearInput(); },
   trackingBlocked: campaignTrackingBlocked,
-  pin: region => { if (campaignTrackingBlocked(region) || !getCampaignEpisodeGuide(region, done)) return false; campaignTrackedRegion = region; optionalPin = null; guideOn = true; hudRevision++; return true; },
-  restoreMain: () => { campaignTrackedRegion = null; optionalPin = null; guideOn = true; hudRevision++; },
+  pin: region => { if (campaignTrackingBlocked(region) || !getCampaignEpisodeGuide(region, done)) return false; campaignTrackedRegion = region; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; return true; },
+  arcTrackingBlocked: () => { const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null }); return guide ? campaignTrackingBlocked(guide.region) : null; },
+  pinArc: () => { const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null }); if (!guide || campaignTrackingBlocked(guide.region)) return false; falseDawnTracked = true; campaignTrackedRegion = null; optionalPin = null; guideOn = true; hudRevision++; return true; },
+  restoreMain: () => { campaignTrackedRegion = null; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; },
 });
 const journalOpen = document.createElement('button'); journalOpen.type = 'button'; journalOpen.id = 'world-campaign-journal-open';
-const renderJournalButton = () => { journalOpen.textContent = bilingual('归路纪事 · 现场故事与进度', 'Way Home Chronicles · Stories and progress'); };
+const renderJournalButton = () => { journalOpen.textContent = bilingual('主线续篇与归路纪事 · 故事进度', 'Continuation & chronicles · Story progress'); };
 renderJournalButton(); const unsubscribeJournalButton = onLanguageChange(renderJournalButton);
 journalOpen.addEventListener('click', event => { event.stopPropagation(); campaignJournal?.show(); }); start.append(journalOpen);
 addEventListener('pagehide', event => { if (!event.persisted) { campaignJournal?.dispose(); journalOpen.remove(); unsubscribeJournalButton(); } });
+const falseDawnLine = (line: [string, string]): [string, string] => {
+  const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
+  const blocked = guide ? campaignTrackingBlocked(guide.region) : null;
+  if (blocked) line = [`${line[0]}\n${blocked[0]}`, `${line[1]}\n${blocked[1]}`];
+  const root = contract.companionSummoned ? servantRoot() : undefined;
+  const reaction = root?.visible && root.position.distanceTo(player.pos) <= 16 ? getFalseDawnCompanionReaction(contract.selected, done) : null;
+  return reaction ? [`${line[0]}\n${reaction.speaker[0]}：${reaction.line[0]}`, `${line[1]}\n${reaction.speaker[1]}: ${reaction.line[1]}`] : line;
+};
+falseDawnRuntime = createFalseDawnRuntime({
+  done,
+  reachable: id => {
+    const marker = markers.get(id);
+    return !!marker && falseDawnMarkerIds.has(id) && locked && !settingsPanel.open && !travelOpenState && !campaignJournalOpen && !ultimateDirector?.active && document.visibilityState === 'visible' && document.hasFocus() && !combat.defeated && !player.flying && !player.swimming && !player.gliding && player.onGround && player.pos.distanceTo(new THREE.Vector3(...marker.p)) < (marker.radius ?? 3) && canReachValleyPanel(marker);
+  },
+  activeEncounter: () => combat.storyEncounter?.id ?? null,
+  startEncounter: id => {
+    const spec = getFalseDawnEncounterSpec(id); if (!spec) return { ok: false, reason: FALSE_DAWN_START_HINTS.invalid };
+    const playable = gameplayActive() && !combat.defeated && player.onGround && !player.flying && !player.swimming && !player.gliding && !fortCannon.mounted && !actions?.skills.casting && !actions?.melee.active && !actions?.evade.active;
+    const result = combat.startStoryEncounter(spec, { position: player.pos, playable });
+    return { ok: result.ok, reason: FALSE_DAWN_START_HINTS[result.reason] };
+  },
+  cancelEncounter: () => { combat.cancelStoryEncounter(); }, save, applyState: applyWorldState,
+  dialogue: (line, speaker) => speakDialogue(falseDawnLine(line), speaker),
+  choices: (line, speaker, choices, select) => { clearInput(); audio.interaction(); hudRevision++; narrative!.showChoices(falseDawnLine(line), speaker, choices, select); },
+  toast: line => toast(bilingual(...line)), physicalFeedback: () => audio.interaction(),
+});
+addEventListener('pagehide', event => { if (!event.persisted) falseDawnRuntime?.dispose(); });
 const ray = new THREE.Raycaster();
 function shootCannon() {
   if (!gameplayActive() || player.flying || combat.defeated || !fortCannon.mounted || fortCannon.reload > 0) return;
@@ -1216,7 +1265,7 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && d < bd && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && d < bd && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
 }
@@ -1310,6 +1359,7 @@ function handleCampaignInteraction(id: string) {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (falseDawnMarkerIds.has(m.id)) { falseDawnRuntime?.interact(m.id); return; }
   if (campaignMarkerIds.has(m.id)) { if (canReachValleyPanel(m)) handleCampaignInteraction(m.id); return; }
   const closing = interactCampaignClosure(m.id, done);
   if (closing.handled) { if(closing.changed){save();applyWorldState();} if(closing.dialogue)speakDialogue(closing.dialogue,['观测记录','Observation record']); return; }
@@ -1513,6 +1563,7 @@ function frame(now: number) {
   settlements.update(player.pos);
   settlementApproaches.update(player.pos);
   campaignSites.update(player.pos);
+  falseDawnSites.update(player.pos);
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   sky.position.copy(eye);
@@ -1579,7 +1630,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { renderer, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

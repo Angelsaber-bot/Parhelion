@@ -43,7 +43,7 @@ test('clean startup is unarmed at authored Alpha spawn; no gameplay method write
   const storage = new MemoryStorage(), progress = new WorldProgress(storage);
   assert.equal(progress.equippedWeapon, null); assert.equal(progress.armed, false);
   assert.equal(progress.done.size, 0); assert.equal(progress.found.size, 0); assert.equal(storage.values.size, 0);
-  const c = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: 'alpha', params: new URLSearchParams() });
+  const c = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: 'alpha', params: new URLSearchParams() });
   run(c, startup + '\nglobalThis.start = { player, initialSpawn };');
   const spawn = markers.get(INITIAL_SPAWN_ID)!;
   assert.equal(c.start.initialSpawn, spawn);
@@ -132,7 +132,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   const elements = new Map<string, any>();
   const $ = (id: string) => { if (!elements.has(id)) elements.set(id, { textContent: 'stale', classList: { remove() {} } }); return elements.get(id); };
   // No active cinematic in this reset fixture; exercise all pre-existing dirty gameplay state.
-  const c = vm.createContext({...campaignSourceContext,abortUltimate() {}, deferredCombatToast: null, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
+  const c = vm.createContext({...campaignSourceContext,abortUltimate() {}, deferredCombatToast: null, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
     worldProgress, contract, combat: { reset: () => combatState.resetAll(false) }, rig, anim,
     prevPos: new THREE.Vector3(900, 30, 30), inspectServant: true, thirdPerson: false,
     servant: { update(dt: number, p: THREE.Vector3, yaw: number, enabled: boolean, paused: boolean) { servantCanceled = dt === 0 && !enabled && paused; } },
@@ -166,7 +166,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   const url = new URL(location.href);
   for (const key of ['region', 'spawn', 'cam', 'lit']) assert.equal(url.searchParams.has(key), false);
   assert.equal(url.searchParams.get('q'), 'low'); assert.equal(url.searchParams.get('fov'), '82'); assert.equal(url.searchParams.has('clean'), true); assert.equal(url.hash, '#keep-me');
-  const reload = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: url.searchParams.get('region') ?? 'alpha', params: url.searchParams });
+  const reload = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, colliders: [], layout: alpha, markers, INITIAL_SPAWN_ID, startRegion: url.searchParams.get('region') ?? 'alpha', params: url.searchParams });
   run(reload, startup + '\nglobalThis.position = player.pos;');
   assert.deepEqual(reload.position.toArray(), p.pos.toArray()); assert.equal(new WorldProgress(storage).armed, false);
   // Defeat respawn is not full reset: it keeps subsequently acquired equipment/progress.
@@ -190,7 +190,7 @@ test('existing tutorial grants the gun before gun-required objectives and clears
   anim.reset(false, Math.PI);
   const player = new Player([], 1); player.teleport(...armory.p);
   let equipmentMessage = '';
-  const context = vm.createContext({...campaignSourceContext,settings: new SettingsStore('world', new MemoryStorage()), speakDialogue(line: [string,string]) { equipmentMessage = line[0]; }, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, eraOptionalIds: new Set(Object.values(eraStory.ERA_OPTIONALS).map(x => x.id)), nearestInteract: () => armory, markers, ARMORY_MARKER, BOSSES: [], done: worldProgress.done, worldProgress, servantByContract,
+  const context = vm.createContext({...campaignSourceContext,settings: new SettingsStore('world', new MemoryStorage()), speakDialogue(line: [string,string]) { equipmentMessage = line[0]; }, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, eraOptionalIds: new Set(Object.values(eraStory.ERA_OPTIONALS).map(x => x.id)), nearestInteract: () => armory, markers, ARMORY_MARKER, BOSSES: [], done: worldProgress.done, worldProgress, servantByContract,
     VALLEY_STORY, player, anim, clearInput() { keys.clear(); aim.clear(); }, save: () => worldProgress.save(), applyWorldState() {}, toast() {}, bilingual: (zh: string) => zh, localizeText: (text: string) => text });
   run(context, interaction + '\ninteract();');
   assert.equal(worldProgress.armed, true); assert.equal(worldProgress.equippedWeapon, 'dawn_ar'); assert.equal(fixture.rig.joints.Gun.visible, true);
@@ -198,7 +198,7 @@ test('existing tutorial grants the gun before gun-required objectives and clears
   assert.match(equipmentMessage, /8发/); assert.match(equipmentMessage, /近战连击/);
   // Execute the production ADS permission expression, not a copied predicate.
   const canAim = source.split('\n').find(line => line.trimStart().startsWith('const canAim ='))!;
-  const adsContext = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(), worldProgress, player, gameplayActive: () => true });
+  const adsContext = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), worldProgress, player, gameplayActive: () => true });
   run(adsContext, `{ ${canAim} globalThis.canAimNow = canAim; }`); assert.equal(adsContext.canAimNow, true);
   worldProgress.reset(); run(adsContext, `{ ${canAim} globalThis.canAimNow = canAim; }`); assert.equal(adsContext.canAimNow, false);
   fixture.dispose();
@@ -228,7 +228,7 @@ test('production world-state application re-locks quest gates and restores targe
   const shown = { visible: false, userData: { showWhen: ['tower_console'] } };
   const hidden = { visible: true, userData: { hideWhen: 'tower_console' } };
   let syncCalls=0;
-  const c = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, combat:{syncWorldProgress(value:Set<string>){assert.equal(value,done);syncCalls++;}}, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, hudRevision: 0, layout: { markers: [], objectives: [] }, eraStoryScenes: [], getLanguage: () => 'zh', applyValleyStory() {}, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
+  const c = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, combat:{syncWorldProgress(value:Set<string>){assert.equal(value,done);syncCalls++;}}, FORT_CANNON, fortCannon: new FortCannon(), ...eraStory, hudRevision: 0, layout: { markers: [], objectives: [] }, eraStoryScenes: [], getLanguage: () => 'zh', applyValleyStory() {}, done, targets: [target], gates: [gate], solids: [solid], stateful: [shown, hidden], haloMat: { color: new THREE.Color() }, collider: (name: string) => colliders.get(name), byName: () => art, renderObjective() {} });
   const apply = source.slice(source.indexOf('function applyWorldState()'), source.indexOf('// ───────────── quest guide'));
   run(c, apply + '\napplyWorldState();');
   assert.equal(art.visible, false); assert.equal(colliders.get('COL_Seam_west_Gate')!.enabled, false); assert.equal(target.visible, false);

@@ -14,7 +14,7 @@ const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function nearbySettlementNpc()'),source.indexOf('function interact()'));
 function fixture(blocked=false,questDistance:number|null=null){
  const npc={id:'test_clerk',position:[0,0,2],role:['书记官','Clerk']},spoken:string[]=[],done=new Set(['tutorial']);
- const context=vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null, FORT_CANNON, fortCannon: new FortCannon(),THREE,interactEraStory,found:new Set<string>(),interactValleyStory,VALLEY_STORY,player:{pos:new THREE.Vector3()},settlementNpcs:{nearest:()=>npc,interact:()=>['货物已经登记。','The cargo is registered.']},
+ const context=vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(),THREE,interactEraStory,found:new Set<string>(),interactValleyStory,VALLEY_STORY,player:{pos:new THREE.Vector3()},settlementNpcs:{nearest:()=>npc,interact:()=>['货物已经登记。','The cargo is registered.']},
   combat:{geometry:{cast:()=>blocked?{distance:.5}:null}},nearestInteract:()=>questDistance===null?null:{p:[0,0,questDistance]},speakDialogue:(line:[string,string],name:[string,string])=>spoken.push(`${name[1]}: ${line[1]}`),toast:(s:string)=>spoken.push(s),bilingual:(zh:string,en:string)=>en,done});
  vm.runInContext(transformSync(code+'\nglobalThis.tryInteraction=interactSettlementNpc;', {loader:'ts'}).code,context);
  return {context,spoken,done};
