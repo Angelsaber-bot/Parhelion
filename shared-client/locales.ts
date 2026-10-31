@@ -58,6 +58,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['已移除手动飞行升降，跳跃、滑翔和上升气流保留。自定义按键已保留。', 'Separate flight altitude keys were removed; jump, glide, and updrafts remain. Custom bindings are preserved.'],
   ['已暂停', 'Paused'], ['单机对局已完全暂停；联机对局在服务器上仍会继续。', 'Offline matches are fully paused. Online matches continue on the server.'],
   ['继续', 'Resume'], ['退出到大厅', 'Leave for lobby'], ['胜利', 'Victory'], ['再来一局', 'Play again'], ['返回大厅', 'Back to lobby'],
+  ['取消并返回大厅', 'Cancel and return to lobby'],
   ['读取计分板按键…', 'Loading scoreboard controls…'],
   ['战场', 'Battlefield'], ['角色', 'Fighter'], ['出战配装', 'Loadout'],
   ['单机 vs Bot', 'Offline vs Bot'], ['联机', 'Online'], ['名字', 'Name'], ['对局', 'Match'], ['队伍', 'Team'],
