@@ -47,12 +47,12 @@ have zero extra queries; harbor peek has 62 recoveries not visible as airborne
 at render cadence. Each affected step remains capped at one floor pass and one
 capsule retry. A floor pass is not a single BVH query.
 
-`general-ground-continuity-candidate.test.ts`: 16 component cases cover
+`general-ground-continuity-candidate.test.ts`: 17 component cases cover
 0/3/6/12-degree slopes, 30/60/120 Hz, true jump/glide/air teleport, ledge fall,
 swimming, updraft/nonwalkable slope, disabled floor, step, corner and low roof. A separate 5/9/12/25 mm step-down matrix recovers only the two sub-centimetre cases; 12/25 mm gaps reject without a capsule retry.
 Flat obstacle controls preserve complete baseline states. Deep retry rollback,
 thin-edge, collision-barrier and exception contracts remain those of the
-unchanged production support helper.
+unchanged production support helper. A 9 mm airborne teleport remains airborne on its first step with zero recovery queries; only later natural capsule contact may land.
 
 ### Explicit shoreline tradeoff
 
@@ -72,6 +72,6 @@ The actual eleven dry routes remain exact horizontally.
 - Independent held-key/repeat/cooldown check and parent review.
 - Explicit parent acceptance before any production generalization.
 
-Raw evidence remains under repository `artifacts/general-ground/`,
+Route replay accepts `--output=PATH` and refuses to overwrite an existing evidence file. Raw evidence remains under repository `artifacts/general-ground/`,
 `artifacts/downhill-actions/` and `artifacts/general-ground-*.log`; these are
 cloud CPU/DOM/component evidence, not GPU/FPS or human-playtest claims.
