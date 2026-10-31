@@ -35,14 +35,16 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
   const old=before.regions[region],now=await snapshot(assets,region);
   assert.equal(before.baselineCommit,'a3096254ef0fff455a29932bc5fef2e57fa49f44');
   if (region === 'alpha') {
-    // Approved copy-only correction: Relay B never required killing the outpost.
-    // Reverse exactly these two strings, then require the untouched historical
+    // Approved copy-only corrections: Relay B needs no kill gate; the tower
+    // describes its proven original west-side staged climb, not a new ramp.
+    // Reverse exactly these three strings, then require the untouched historical
     // byte hash. Coordinates, conditions, formatting and all other text stay exact.
     const raw=readFileSync(`${assets}/world_alpha.layout.json`,'utf8');
     assert.equal(raw.split('进入废弃前哨站并启动中继器 B').length-1,1);
     assert.equal(raw.split('进入据点后启动').length-1,1);
-    const historical=raw.replace('进入废弃前哨站并启动中继器 B','清除废弃前哨站并启动中继器 B').replace('进入据点后启动','清除据点后启动');
-    assert.equal(createHash('sha256').update(historical).digest('hex'),old.layoutSha256,'only two approved copy strings differ from complete historical layout bytes');
+    assert.equal(raw.split('从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。').length-1,1);
+    const historical=raw.replace('进入废弃前哨站并启动中继器 B','清除废弃前哨站并启动中继器 B').replace('进入据点后启动','清除据点后启动').replace('从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。','前往幻日塔，启动控制台');
+    assert.equal(createHash('sha256').update(historical).digest('hex'),old.layoutSha256,'only three approved copy strings differ from complete historical layout bytes');
   } else assert.equal(now.layoutSha256,old.layoutSha256,'complete layout bytes: quests, gates, navigation, spawns and lighting');
   assert.deepEqual(now.materials,old.materials,'existing surface/alpha/material identities');
   const added = region === 'alpha' ? seamNames : region === 'blacksail' ? [tavernLining] : [];

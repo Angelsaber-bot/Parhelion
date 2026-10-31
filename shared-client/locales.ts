@@ -88,7 +88,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['在枪械工坊领取装备', 'Collect your equipment at the armory'], ['在靶场击中 3 个练习靶', 'Hit all 3 practice targets at the firing range'],
   ['在回声森林遗迹击中 3 个机关靶，打开神龛', 'Hit 3 mechanism targets in Echo Forest to open the shrine'],
   ['启动中继器 A（森林遗迹）', 'Activate Relay A in the forest ruins'], ['进入废弃前哨站并启动中继器 B', 'Enter the abandoned outpost and activate Relay B'],
-  ['前往幻日塔，启动控制台', 'Go to Parhelion Tower and activate its console'], ['调查三处时层断面（西 / 北 / 东）', 'Investigate the three era seams (west / north / east)'],
+  ['从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。', 'Approach Parhelion Tower from the west trail: run-jump, deploy the glider, land on the outer ledge, then jump to the deck and go around the pillar to activate the console.'], ['调查三处时层断面（西 / 北 / 东）', 'Investigate the three era seams (west / north / east)'],
   ['回到召唤大厅，稳定召唤阵', 'Return to the Summoning Hall and stabilize the circle'],
   ['在圣剑湖拔出湖中之剑，与 Saber 缔结契约', 'Draw the sword at the lake and form a contract with Saber'],
   ['骑士营地试炼：击倒 3 个木人，取得碎片·誓约', "Complete the Knights' Camp trial: defeat 3 dummies and collect the Oath Shard"],
