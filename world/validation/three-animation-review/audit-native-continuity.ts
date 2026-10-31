@@ -11,8 +11,8 @@ const {CHARACTER_KITS}=await import(pathToFileURL(resolve(world,'src/characters/
 const {readCharacter}=await import(pathToFileURL(resolve(world,'validation/characters/inspect.ts')).href);
 const head=()=>execFileSync('git',['-C',world,'rev-parse','HEAD'],{encoding:'utf8'}).trim();
 const sha=async(p:string)=>createHash('sha256').update(await readFile(p)).digest('hex');
-const sourcePaths=['src/characters/characterKit.ts','src/characters/actionBlend.ts','src/characters/catalog.ts','src/characters/musashiLocomotion.ts','src/characters/mountedChargeMotion.ts','src/captainCavalryClip.ts'];
-const source=async()=>Object.fromEntries(await Promise.all(sourcePaths.map(async p=>[p,await sha(resolve(world,p))])));
+const sourcePaths=['src/characters/characterKit.ts','src/characters/actionBlend.ts','src/characters/catalog.ts','src/characters/musashiLocomotion.ts','src/characters/mountedChargeMotion.ts','src/captainCavalryClip.ts','src/captainCavalryContinuity.ts'];
+const source=async()=>Object.fromEntries(await Promise.all(sourcePaths.map(async p=>[p,await sha(resolve(world,p)).catch(()=>null)])));
 const report:any={headBefore:head(),sourceBefore:await source(),scope:'CPU native CharacterKit; in-place state transitions. Nominal-root foot speeds are synthetic straight +Z motion, not actual controller stance proof. Bone positions are not sole mesh clearance.',units:{position:'metres/second',rotation:'radians/second',acceleration:'metres/second²',minFootBoneY:'metres'},actors:[]};
 for(const id of ['musashi','blackbeard','napoleonMounted']){
  const definition=CHARACTER_KITS[id],loaded=await readCharacter(fileURLToPath(new URL(definition.assetUrl)));
