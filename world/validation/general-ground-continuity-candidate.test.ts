@@ -33,3 +33,7 @@ for(const hz of[30,60,120])test(`general walking support at ${hz}Hz preserves ho
  const g=new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2).rotateZ(Math.PI/30),colliders=[collider(g)],a=new Player(colliders,-20),b=new Player(colliders,-20),c=installGroundActionSupportCandidate(b,()=>false,'general');
  try{a.teleport(0,.04,0);b.teleport(0,.04,0);settle(a);settle(b);let grounded=0;for(let i=0;i<hz*4;i++){a.step(1/hz,{...idle,x:-1});b.step(1/hz,{...idle,x:-1});assert.equal(b.pos.x,a.pos.x);assert.equal(b.pos.z,a.pos.z);grounded+=Number(b.onGround);}assert.equal(grounded,hz*4);assert.ok(c.diagnostics.maxSupportPassesPerStep<=1&&c.diagnostics.maxCapsuleRetriesPerStep<=1);}finally{c.dispose();g.dispose();}
 });
+test('step-down support respects the unchanged 1cm gap instead of introducing ledge grace',()=>{
+ for(const drop of[.005,.009,.012,.025]){const geometries=[new THREE.BoxGeometry(4,.2,10).translate(-2,-.1,0),new THREE.BoxGeometry(20,.2,10).translate(10,-.1-drop,0)],colliders=geometries.map(collider),p=new Player(colliders,-20),c=installGroundActionSupportCandidate(p,()=>false,'general');
+  try{p.teleport(-.5,.04,0);settle(p);for(let i=0;i<60;i++)p.step(1/120,{...idle,x:1});if(drop<.01)assert.ok(c.diagnostics.recovered>0);else{assert.equal(c.diagnostics.recovered,0);assert.ok(c.diagnostics.rejected>0);assert.equal(c.diagnostics.capsuleRetries,0);}assert.ok(c.diagnostics.maxSupportPassesPerStep<=1&&c.diagnostics.maxCapsuleRetriesPerStep<=1);}finally{c.dispose();geometries.forEach(g=>g.dispose());}}
+});

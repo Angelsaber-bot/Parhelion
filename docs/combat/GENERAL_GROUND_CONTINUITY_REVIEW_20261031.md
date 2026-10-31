@@ -34,7 +34,7 @@ These are empty-lane contact emissions, not claimed enemy kills.
 `audit-general-ground-routes.ts` compares eleven representative normal-keyboard
 routes (Alpha exit/uphill/peek, harbor exit/peek, Winter exit/peek/slope, Britain,
 Kyoto and HQ). Both runs contain 2,884 fixed physics records: every XZ coordinate,
-route duration, final position and HP match. Maximum transient Y difference is
+route duration, final position and HP match. The executable preserved-output comparator is `compare-general-ground-routes.ts`. Maximum transient Y difference is
 3.973312 mm. Alpha exit airborne render frames decrease 111 to zero. This is
 not universal slope snapping: Britain 38, Kyoto four and HQ four airborne frames
 remain unchanged. Strict 1 cm support rejects those gaps. Synthetic 12-degree
@@ -47,9 +47,9 @@ have zero extra queries; harbor peek has 62 recoveries not visible as airborne
 at render cadence. Each affected step remains capped at one floor pass and one
 capsule retry. A floor pass is not a single BVH query.
 
-`general-ground-continuity-candidate.test.ts`: 15 component cases cover
+`general-ground-continuity-candidate.test.ts`: 16 component cases cover
 0/3/6/12-degree slopes, 30/60/120 Hz, true jump/glide/air teleport, ledge fall,
-swimming, updraft/nonwalkable slope, disabled floor, step, corner and low roof.
+swimming, updraft/nonwalkable slope, disabled floor, step, corner and low roof. A separate 5/9/12/25 mm step-down matrix recovers only the two sub-centimetre cases; 12/25 mm gaps reject without a capsule retry.
 Flat obstacle controls preserve complete baseline states. Deep retry rollback,
 thin-edge, collision-barrier and exception contracts remain those of the
 unchanged production support helper.
