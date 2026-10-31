@@ -96,6 +96,8 @@ const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('
 const lowQ = quality === 'low', highQ = quality === 'high';
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let bootFailed = false, worldExited = false;
+let frameClockInvalid = true;
+const invalidateFrameClock = () => { frameClockInvalid = true; };
 let graphicsRecovery: WorldGraphicsRecovery | undefined;
 let suspendForGraphics = () => {};
 addEventListener('pagehide', event => { if (!event.persisted) { worldExited = true; graphicsRecovery?.dispose(); if (document.pointerLockElement) document.exitPointerLock(); } });
@@ -125,6 +127,7 @@ const canvas = $<HTMLCanvasElement>('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 disposeRenderer = () => renderer.dispose();
 graphicsRecovery = new WorldGraphicsRecovery(canvas, () => suspendForGraphics(), () => {
+  invalidateFrameClock();
   if (worldExited || bootFailed) return;
   renderLoading(); $('start').classList.remove('hidden');
 });
@@ -918,6 +921,7 @@ start.addEventListener('click', async (e) => {
 });
 document.addEventListener('pointerlockerror', lockError);
 document.addEventListener('pointerlockchange', () => {
+  invalidateFrameClock();
   if (bootFailed || worldExited || graphicsRecovery?.blocked) {
     locked = false; clearInput();
     if (document.pointerLockElement === canvas) document.exitPointerLock();
@@ -1007,8 +1011,9 @@ addEventListener('keydown', (e) => {
   press(e.code, e.repeat);
 });
 addEventListener('keyup', (e) => release(e.code));
-addEventListener('blur', clearInput);
-document.addEventListener('visibilitychange', clearInput);
+addEventListener('blur', () => { invalidateFrameClock(); clearInput(); });
+addEventListener('focus', invalidateFrameClock);
+document.addEventListener('visibilitychange', () => { invalidateFrameClock(); clearInput(); });
 addEventListener('contextmenu', (e) => e.preventDefault());
 addEventListener('auxclick', (e) => { if (locked || settingsPanel.open) e.preventDefault(); });
 addEventListener('mousedown', (e) => { audio.unlock(e); if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
@@ -1553,7 +1558,9 @@ function frame(now: number) {
     adaptiveResolution.reset();
     dpr = targetDpr(devicePixelRatio, resolution, lowQ); applyResolution();
   }
-  const frameSeconds = (now - last) / 1000;
+  // Paused wall time is not visible simulation time, even if RAF never ran while hidden.
+  const frameSeconds = frameClockInvalid ? 0 : (now - last) / 1000;
+  if (frameClockInvalid) { acc = 0; frameClockInvalid = false; }
   const dt = Math.min(0.1, frameSeconds);
   last = now;
   if (frameUltimate(dt)) { requestAnimationFrame(frame); return; }
