@@ -56,3 +56,22 @@ The exact historical Player is preserved as `validation/fixtures/player-pre-evad
 The first real production three-contact probe preserves HP100 with the intended100ms side-evade timing; the two circular contacts still contain the player geometrically, but original invulnerability is active. There are no airborne-cancel observations. The paired production flat/slope/ledge/jump controls reproduce the candidate results exactly.
 
 Query counts are explicit: one support **pass** is not one BVH call. In the current three-contact field probe,26support passes performed780individual BVH raycasts over30enabled colliders, followed by26capsule retries/recoveries. The slope-plus-control probe used17passes/511BVHraycasts/16capsule retries; the ledge was rejected before retry. Each affected step is capped at one pass and one retry; no pass occurs during unaffected/non-evade steps. No CPU timing was claimed during concurrent aggregate validation.
+
+## Independent production and CPU handoff (08:05 UTC)
+
+Production source checkpoint `0120fd9` and independent QA `a5be893` reproduce all six flat/slope × 30/60/120 Hz actual-main traces without installing the candidate wrapper. Every evade remaining/cooldown/invulnerability/grounded sample matches the preserved candidate reference, and distance is exactly 3.12 m. Ordinary movement is compared against the frozen historical Player, not another fixed instance.
+
+`validation/combat-review/measure-evade-support.ts` runs production `Player.step` against actual world BVHs. Setup, real settling and diagnostic reads are outside the timer. A separate dense control adds 64 synthetic annular colliders whose bounds surround the route but whose geometry never contacts it; its final trajectory exactly equals the actual-field case. The shared weight-4 admission gate reserved both short CPU runs after other rendering/aggregate jobs finished. These are component CPU samples, **not full-frame performance, GPU FPS, WCET or device guarantees**.
+
+| Quiet run / case | Ordinary step median / p95 (ms) | Support-affected step median / p95 / max (ms) |
+|---|---:|---:|
+| 60 trials, actual slope | .036 / .082 | .083 / .183 / 6.383 |
+| 60 trials, dense +64 | .101 / .172 | .227 / .389 / 1.420 |
+| 180 trials, instrumented actual slope | .034 / .051 | .077 / .107 / .844 |
+| 180 trials, instrumented dense +64 | .099 / .131 | .224 / .293 / 2.843 |
+
+Both runs have six untimed warmup trials per case. Instrumented helper time includes its capsule retry: actual median/p95 .043/.062 ms, dense .122/.167 ms. Capsule retry alone is .034/.050 ms actual and .100/.131 ms dense. The earlier 6.383 ms total-step outlier is retained; its cause was not measured, so it is not attributed to GC or excluded. Observed maxima are not upper bounds.
+
+Current collider list is 32 entries, 31 enabled; dense is 96 entries, 95 enabled. Each affected step makes at most one downward pass (31 or 95 individual BVH raycasts) and one existing capsule retry. Flat controls make zero support queries. The measured ray-pass marginal median is approximately .009 ms actual / .023 ms dense; the existing capsule retry dominates. No new cache/bounds-filter optimization was added for that small potential saving. Root accepted retaining the proven narrow implementation.
+
+Raw numeric reports: `artifacts/enemy-performance/evade-support-cpu.json` and `evade-support-cpu-instrumented.json`; gate/timing logs `artifacts/evade-support-cpu*.log`. Reproduce from `world/` with `node --import tsx validation/combat-review/measure-evade-support.ts [--instrument]`, under a quiet shared admission window.
