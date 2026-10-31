@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldProgress, WORLD_PROGRESS_KEY, parseProgressBackup, type ProgressStorage } from '../src/progress';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, parseProgressBackup, type ProgressStorage } from '../src/progress';
 
 function storage() {
   const values = new Map<string, string>();
@@ -49,4 +49,34 @@ test('backup validation rejects oversized or malformed values, deduplicates vali
 test('presentation observer exceptions cannot turn a committed save into a failed gameplay action', () => {
   const progress = new WorldProgress(storage()); progress.subscribe(() => { throw new Error('UI failure'); });
   assert.equal(progress.save(), true); assert.equal(progress.persistence, 'saved');
+});
+
+test('unrecognized current snapshots stay invalid and never revive legacy progress', () => {
+  for (const raw of ['null', 'true', '42', '[]', '{}', '{"done":"not-flags","found":null}']) {
+    const memory = storage(); memory.setItem(WORLD_PROGRESS_KEY, raw);
+    memory.setItem(LEGACY_WORLD_PROGRESS_KEYS[0], '{"done":["armory_rack"],"found":[]}');
+    const progress = new WorldProgress(memory);
+    assert.equal(progress.persistence, 'invalid'); assert.equal(progress.armed, false);
+    assert.equal(memory.getItem(WORLD_PROGRESS_KEY), raw);
+  }
+});
+test('malformed legacy-only slots are not silently replaced by an empty migration', () => {
+  for (const raw of ['{broken', 'null', '{}']) {
+    const memory = storage(); memory.setItem(LEGACY_WORLD_PROGRESS_KEYS[0], raw);
+    const progress = new WorldProgress({ ...memory, removeItem(key) { memory.values.delete(key); } });
+    assert.equal(progress.persistence, 'invalid'); assert.equal(memory.getItem(WORLD_PROGRESS_KEY), null);
+    assert.equal(memory.getItem(LEGACY_WORLD_PROGRESS_KEYS[0]), raw);
+  }
+  const memory = storage(); memory.setItem(LEGACY_WORLD_PROGRESS_KEYS[0], '{"done":["armory_rack",4,null]}');
+  const migrated = new WorldProgress(memory); assert.equal(migrated.armed, true); assert.equal(migrated.persistence, 'saved');
+});
+
+test('a valid legacy region can migrate without deleting an unreadable sibling record', () => {
+  const memory = storage(), bad = LEGACY_WORLD_PROGRESS_KEYS[0], good = LEGACY_WORLD_PROGRESS_KEYS[1];
+  memory.setItem(bad, '{broken'); memory.setItem(good, '{"done":["sea_core"],"found":[]}');
+  const progress = new WorldProgress({ ...memory, removeItem(key) { memory.values.delete(key); } });
+  assert.ok(progress.done.has('sea_core')); assert.equal(memory.getItem(bad), '{broken'); assert.equal(memory.getItem(good), null);
+  progress.save(); assert.equal(memory.getItem(bad), '{broken');
+  new WorldProgress({ ...memory, removeItem(key) { memory.values.delete(key); } }).save(); assert.equal(memory.getItem(bad), '{broken', 'ordinary saves after reload preserve malformed recovery evidence');
+  progress.reset(); assert.equal(memory.getItem(bad), null, 'explicit new game may remove superseded recovery records');
 });

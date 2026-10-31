@@ -26,6 +26,12 @@ export function parseProgressBackup(raw: string): ProgressSnapshot | null {
   } catch { return null; }
 }
 
+function hasProgressArrays(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return Array.isArray(record.done) || Array.isArray(record.found);
+}
+
 function flags(raw: unknown): string[] {
   return Array.isArray(raw) ? raw.filter((id): id is string => typeof id === 'string' && id.length > 0) : [];
 }
@@ -35,6 +41,7 @@ export class WorldProgress {
   readonly done = new Set<string>();
   readonly found = new Set<string>();
   private listeners = new Set<() => void>();
+  private unreadableLegacy = new Set<string>();
   persistence: ProgressPersistenceState = 'ready';
   constructor(private storage?: ProgressStorage) {
     if (!storage) { this.persistence = 'unavailable'; return; }
@@ -43,16 +50,23 @@ export class WorldProgress {
     if (current !== null) {
       // Even an empty reset snapshot is authoritative. Never merge old v1 quests back into it.
       if (!this.read(current)) this.persistence = 'invalid';
+      // Current progress remains authoritative; inspect only the shape of old
+      // records so a later ordinary save will not erase malformed evidence.
+      for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
+        try { const raw = storage.getItem(key); if (raw !== null && !hasProgressArrays(JSON.parse(raw))) this.unreadableLegacy.add(key); }
+        catch { this.unreadableLegacy.add(key); }
+      }
       return;
     }
-    let migrated = false;
+    let migrated = false, malformedLegacy = false;
     for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
       try {
         const raw = storage?.getItem(key);
-        if (raw != null) { this.read(raw); migrated = true; }
+        if (raw != null) { if (this.read(raw)) migrated = true; else { malformedLegacy = true; this.unreadableLegacy.add(key); } }
       } catch { /* Other legacy regions can still be recovered. */ }
     }
     if (migrated) this.save();
+    else if (malformedLegacy) this.persistence = 'invalid';
   }
   get equippedWeapon(): 'dawn_ar' | null { return this.done.has(ARMORY_MARKER) ? 'dawn_ar' : null; }
   get armed() { return this.equippedWeapon !== null; }
@@ -80,6 +94,9 @@ export class WorldProgress {
   private read(raw: string) {
     try {
       const value = JSON.parse(raw);
+      // Historical saves may contain mixed flag values or only one array, but
+      // primitives/unrelated objects are not evidence of an empty new game.
+      if (!hasProgressArrays(value)) return false;
       for (const id of flags(value?.done)) this.done.add(id);
       for (const id of flags(value?.found)) this.found.add(id);
       return true;
@@ -93,9 +110,12 @@ export class WorldProgress {
     // Remove only superseded progress, and only after the authoritative replacement was written.
     // Keeping a legacy key when removeItem is unavailable is safe: current always wins on reload.
     for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
+      // A malformed legacy record was not migrated: retain its original bytes
+      // rather than deleting possible recovery evidence on an ordinary save.
+      if (this.unreadableLegacy.has(key)) continue;
       try { this.storage.removeItem?.(key); } catch { /* Current snapshot remains authoritative. */ }
     }
     this.report('saved'); return true;
   }
-  reset(): boolean { this.done.clear(); this.found.clear(); return this.save(); }
+  reset(): boolean { this.done.clear(); this.found.clear(); this.unreadableLegacy.clear(); return this.save(); }
 }
