@@ -1,4 +1,5 @@
 import { limitRifleElbowPole } from './playerRiflePose';
+import type { PlayerTerrainSupport } from './playerTerrainSupport';
 /** Formal deform rig. The game owns feet position/yaw; the asset owns bind pose, UVs and anatomy. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -274,9 +275,10 @@ export class SkinnedCharacterAnimator {
   private meleePose: PlayerAnimationState['melee'];
   private meleeRelease = 0;
   private lastState: PlayerAnimationState = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null };
-  constructor(public rig: SkinnedCharacterRig) {}
+  constructor(public rig: SkinnedCharacterRig, public terrainSupport?: PlayerTerrainSupport) {}
   /** Full new-game/reset boundary, not a normal equipment/locomotion transition. */
   reset(armed = true, facing = 0) {
+    this.terrainSupport?.reset();
     this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.adsPose = this.carry = this.strideSpeed = 0;
     this.inertia.reset();this.jumpLead=1;
     this.ready = armed ? 1 : 0; this.facing = facing; this.meleePose = undefined; this.meleeRelease = 0;
@@ -421,13 +423,16 @@ export class SkinnedCharacterAnimator {
     // Airborne/jump/glider poses still own the legs as the grounded weight fades out.
     // A confirmed support contact owns the feet immediately: easing an airborne leg
     // beneath a landing-compressed pelvis would put the soles through the floor.
+    this.terrainSupport?.begin(dt, state, Boolean(meleePose));
     const groundWeight = state.swimming ? 0 : state.onGround ? 1 : (1 - this.air) * (1 - g);
     for (const side of ['L', 'R'] as const) {
       const foot = J[`Foot_${side}`] as THREE.Bone;
       const sample = samplePlayerFoot(this.phase + (side === 'R' ? Math.PI : 0), this.strideSpeed);
       const target = rig.rest.get(foot)!.rootP.clone();
       target.z += sample.z * move; target.y += sample.y * move;
+      this.terrainSupport?.prepare(side, target, sample.y * move, sample.swing * move, sample.contact);
       posePlayerGroundLeg(rig, side, target, groundWeight, sample.swing * move);
+      this.terrainSupport?.finish(side);
       // Cloth follows the solved thigh, not the superseded airborne sinusoid.
       const thigh = J[`Thigh_${side}`].getWorldPosition(V()), knee = J[`Shin_${side}`].getWorldPosition(V());
       const direction = knee.sub(thigh).applyQuaternion(rootQ.clone().invert());
