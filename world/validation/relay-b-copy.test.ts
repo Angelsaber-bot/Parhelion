@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {JSDOM} from 'jsdom';
 import {localizeText,setLanguage} from '../../shared-client/i18n';
 
 test('Relay B objective and marker describe activation, not a nonexistent kill prerequisite, in both languages',()=>{
@@ -21,9 +22,22 @@ test('tower objective describes the verified staged west approach in both langua
  const layout=JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json',import.meta.url),'utf8'));
  const step=layout.objective.steps.find((s:any)=>s.id==='tower');
  assert.deepEqual(step.done,['tower_console']);
- assert.equal(step.text,'从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。');
+ assert.equal(step.text,'从西侧跑跳，空中再按跳跃展翼；外缘落稳后跳上平台，绕柱启动控制台。');
  assert.ok(readFileSync(new URL('../tools/build-world.ts',import.meta.url),'utf8').includes(step.text));
  try{setLanguage('zh');assert.equal(localizeText(step.text),step.text);setLanguage('en');
- assert.equal(localizeText(step.text),'Approach Parhelion Tower from the west trail: run-jump, deploy the glider, land on the outer ledge, then jump to the deck and go around the pillar to activate the console.');
+ assert.equal(localizeText(step.text),'Run-jump from the west trail and press Jump again to glide. Land on the outer ledge, jump to the deck, then go around the pillar to the console.');
  }finally{setLanguage('zh')}
+});
+
+test('tower instruction uses wrappable objective rows rather than a no-wrap world label',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const dom=new JSDOM(html);
+ try{const panel=dom.window.document.getElementById('objective')!;
+ const row=dom.window.document.createElement('div');row.className='cur';panel.append(row);
+ const style=dom.window.getComputedStyle(row),container=dom.window.getComputedStyle(panel);
+ assert.notEqual(style.whiteSpace,'nowrap');assert.notEqual(style.whiteSpace,'pre');
+ assert.notEqual(container.whiteSpace,'nowrap');assert.notEqual(container.overflow,'hidden');
+ assert.notEqual(style.textOverflow,'ellipsis');
+ // DOM/CSS wrapping contract only; jsdom does not prove browser line layout.
+ }finally{dom.window.close()}
 });

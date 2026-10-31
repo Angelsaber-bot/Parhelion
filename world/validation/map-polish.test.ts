@@ -42,8 +42,8 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
     const raw=readFileSync(`${assets}/world_alpha.layout.json`,'utf8');
     assert.equal(raw.split('进入废弃前哨站并启动中继器 B').length-1,1);
     assert.equal(raw.split('进入据点后启动').length-1,1);
-    assert.equal(raw.split('从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。').length-1,1);
-    const historical=raw.replace('进入废弃前哨站并启动中继器 B','清除废弃前哨站并启动中继器 B').replace('进入据点后启动','清除据点后启动').replace('从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。','前往幻日塔，启动控制台');
+    assert.equal(raw.split('从西侧跑跳，空中再按跳跃展翼；外缘落稳后跳上平台，绕柱启动控制台。').length-1,1);
+    const historical=raw.replace('进入废弃前哨站并启动中继器 B','清除废弃前哨站并启动中继器 B').replace('进入据点后启动','清除据点后启动').replace('从西侧跑跳，空中再按跳跃展翼；外缘落稳后跳上平台，绕柱启动控制台。','前往幻日塔，启动控制台');
     assert.equal(createHash('sha256').update(historical).digest('hex'),old.layoutSha256,'only three approved copy strings differ from complete historical layout bytes');
   } else assert.equal(now.layoutSha256,old.layoutSha256,'complete layout bytes: quests, gates, navigation, spawns and lighting');
   assert.deepEqual(now.materials,old.materials,'existing surface/alpha/material identities');

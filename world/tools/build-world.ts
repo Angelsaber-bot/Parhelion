@@ -32,7 +32,7 @@ const layout = {
       { id: 'ruin_targets', text: '在回声森林遗迹击中 3 个机关靶，打开神龛', done: ['ruin_target_1', 'ruin_target_2', 'ruin_target_3'] },
       { id: 'relay_a', text: '启动中继器 A（森林遗迹）', done: ['relay_a'] },
       { id: 'relay_b', text: '进入废弃前哨站并启动中继器 B', done: ['relay_b'] },
-      { id: 'tower', text: '从西侧山道接近幻日塔：跑跳后展开滑翔翼，外缘落稳再跳上平台，绕柱启动控制台。', done: ['tower_console'] },
+      { id: 'tower', text: '从西侧跑跳，空中再按跳跃展翼；外缘落稳后跳上平台，绕柱启动控制台。', done: ['tower_console'] },
       { id: 'seams', text: '调查四处时层断面（西 / 北 / 东 / 南）', done: ['seam_west', 'seam_north', 'seam_east', 'seam_south'] },
       { id: 'summon', text: '回到召唤大厅，稳定召唤阵', done: ['summon_circle'] },
     ],
