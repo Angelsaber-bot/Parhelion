@@ -12,7 +12,9 @@ const published = JSON.parse(await readFile(new URL('./characters/fixtures/saber
 const relaxed = /mixamorig:?(?:RightArm|RightForeArm|RightHand|LeftArm|LeftForeArm)\.quaternion$/;
 for(const outfit of ['armor','civilian'] as const){
  test(`${outfit}: published carry layer preserves assets, all lower-body tracks and authored combat`,async()=>{
-  const {gltf,sha256}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS[outfit]))),idle=gltf.animations.find(c=>c.name==='Idle')!,walk=gltf.animations.find(c=>c.name==='Walk')!;
+  // Pin the published historical fixture; runtime tests below still load the current revision.
+  const historicalAsset=new URL(`../../assets/characters/artoria_refined/runtime_revision1/${outfit}/artoria_${outfit}.glb.gz`,import.meta.url);
+  const {gltf,sha256}=await readCharacter(fileURLToPath(historicalAsset)),idle=gltf.animations.find(c=>c.name==='Idle')!,walk=gltf.animations.find(c=>c.name==='Walk')!;
   assert.equal(sha256,published.outfits[outfit].assetSha256,'reference is bound to the actual published asset');
   const source=JSON.stringify(gltf.animations.map(c=>c.toJSON())),transforms:any[]=[];gltf.scene.traverse(o=>transforms.push([o.uuid,...o.position.toArray(),...o.quaternion.toArray(),...o.scale.toArray()]));
   const restored=publishedSaberIdleClip(gltf.scene,idle),mixer=new THREE.AnimationMixer(gltf.scene),carry=new SaberIdleCarry(gltf.scene,mixer,idle);
