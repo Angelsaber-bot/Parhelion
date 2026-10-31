@@ -67,7 +67,8 @@ export class SaberCinematicRemake {
   // Synthetic fixtures retain generic stage framing. Actual actors use measured head/socket.
   if(!this.head||!this.socket)return;
   this.head.getWorldPosition(this.eye);this.eye.y+=.075;this.eye.z+=.025;
-  if(reduced){camera.position.set(.6,2.1,6.4);this.aim.set(0,1.55,0);camera.fov=38;}
+  // Fixed reduced-mode wide shot must also contain the fully raised native blade.
+  if(reduced){camera.position.set(.6,2.1,8.5);this.aim.set(0,1.55,0);camera.fov=38;}
   else if(intro){
    // Establish entire figure briefly, then cut to the eyes and blade for a held expression.
    if(p<.27){camera.position.set(1.2,1.65,6.1-p*.5);this.aim.set(0,1.5,0);camera.fov=38;}

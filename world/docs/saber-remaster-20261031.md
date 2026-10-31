@@ -48,3 +48,7 @@ Revision2b is an early material/proportion preview; revision2c has rejected bloc
 From `world/`, use `node --import tsx validation/characters/export-saber-remaster.ts OUTPUT final --idle --frames=0` (both outfits), or `--attack --armor-only --frames=0,10,20,30,40,50,60,70,80,90,100,110,119`.
 `render-saber-remaster.py` consumes those CPU-skinned manifests with original GLB materials. The final attack review uses one fixed framing center `[0,1.15,0]`, size `2.7` for every frame; original raw exports remain retained.
 `audit-saber-remaster.ts OUTPUT.json` measures both revisions' native full silver blades. `audit-saber-remaster-body.ts OUTPUT_DIR final --revision=2 --full-sword --runtime-times` repeats the full native-body follow audit. `audit-saber-remaster-terrain.ts` retains actual World/Player/companion route construction and explicit revision selection; no experimental arm correction remains.
+
+## Reduced-mode framing correction
+
+Independent actual-main projection found a real raised-sword crop in the old fixed reduced camera (NDC y≈1.28 at late charge/early release). The Saber-only fixed camera is pulled back from z=6.4 to8.5; FOV, aim, normal-mode cameras, animation and damage are unchanged. A 42-pose native drawn-blade projection regression passes with |NDC x/y|<.99. Independent actual-main repeat remains separately reported by QA, not inferred from the unit result.

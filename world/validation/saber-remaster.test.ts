@@ -21,3 +21,16 @@ test('Saber new private-stage load keeps native planted feet finite and source c
  for(let i=0;i<=60;i++){perf.update({phase:'charge',progress:i/60,elapsed:3+i*4.4/60,strikeCount:0});for(let k=0;k<2;k++)maxDrift=Math.max(maxDrift,feet[k].getWorldPosition(new THREE.Vector3()).distanceTo(planted[k]));maxLoad=Math.max(maxLoad,start.y-hips.getWorldPosition(new THREE.Vector3()).y);}
  assert.ok(maxLoad>.03&&maxLoad<.04,`positive bounded weight load ${maxLoad}`);assert.ok(maxDrift<1e-5,`planted foot drift ${maxDrift}`);root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));perf.dispose();
 });
+
+import {SaberCinematicRemake} from '../src/saberCinematicRemake';
+test('Saber reduced fixed camera contains the actual raised blade throughout charge and pre-contact release',async()=>{
+ const {gltf}=await readCharacter(asset('armor',2)),root=gltf.scene,actor=new THREE.Group();actor.add(root);
+ const mixer=new THREE.AnimationMixer(root);mixer.clipAction(gltf.animations.find(c=>c.name==='Idle')!).play();mixer.update(0);root.updateMatrixWorld(true);
+ const owner={mesh(g:THREE.BufferGeometry,m:THREE.Material,p:THREE.Object3D){const mesh=new THREE.Mesh(g,m);p.add(mesh);return mesh;},material(c:number,o:number){return new THREE.MeshBasicMaterial({color:c,opacity:o,transparent:true});}};
+ const cinema=new SaberCinematicRemake(actor,root,owner),performance=createUltimatePerformance('saber',root),camera=new THREE.PerspectiveCamera(38,16/9,.1,100),point=new THREE.Vector3();let samples=0,maxY=0;
+ for(const phase of ['charge','release']as const)for(let i=0;i<=20;i++){
+  const progress=phase==='release'?i/100:i/20,frame={phase,progress,elapsed:phase==='charge'?3+4.4*progress:7.4+2.9*progress,strikeCount:0,pulse:0};performance.update(frame);cinema.update(frame,camera,true);actor.updateMatrixWorld(true);
+  root.traverse(o=>{const mesh=o as THREE.SkinnedMesh;if(!mesh.isSkinnedMesh||!/brushed_silver|silver_bevel/.test(mesh.name))return;mesh.skeleton.update();const index=mesh.geometry.index;const ids=new Set<number>();for(let j=0;j<(index?.count??mesh.geometry.attributes.position.count);j++)ids.add(index?index.getX(j):j);for(const id of ids){mesh.getVertexPosition(id,point).applyMatrix4(mesh.matrixWorld).project(camera);maxY=Math.max(maxY,point.y);assert.ok(Math.abs(point.x)<.99&&Math.abs(point.y)<.99,`${phase} ${progress} drawn blade NDC ${point.toArray()}`);samples++;}});
+ }
+ assert.ok(samples>1000);assert.ok(maxY>.3,'positive native raised-blade projection');cinema.dispose();performance.dispose();
+});
