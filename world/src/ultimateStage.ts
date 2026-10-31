@@ -65,6 +65,15 @@ export class UltimateStage {
     });
     this.pairs = originals.map((o, i) => [o, copies[i]]);
     this.releasePose = copies.map(o => ({ position: o.position.clone(), quaternion: o.quaternion.clone(), scale: o.scale.clone() }));
+    if (options.clips?.length) {
+      this.mixer = new THREE.AnimationMixer(this.clone);
+      this.idleAction = this.mixer.clipAction(options.clips.find(c => /idle|stand/i.test(c.name)) ?? options.clips[0]); this.idleAction.play();
+      // Canonicalize only the PRIVATE clone before framing and pose calibration.
+      // A cast during running/attack must not freeze a lifted foot into the stage.
+      this.mixer.update(0);
+      const attack = options.clips.find(c => /attack/i.test(c.name));
+      if (attack) { this.chargeAction = this.mixer.clipAction(attack); this.chargeAction.setLoop(THREE.LoopOnce, 1); this.chargeAction.clampWhenFinished = true; }
+    }
     this.clone.updateMatrixWorld(true);
     let framing = this.framing.get(options.sourceRoot);
     if (!framing) {
@@ -94,12 +103,6 @@ export class UltimateStage {
     this.actor.scale.setScalar(framing.scale); this.actor.position.y = framing.offsetY;
     this.performance = createUltimatePerformance(this.identity, this.clone);
     this.eraPerformance = createEraUltimatePerformance(this.identity, this.clone, options.clips);
-    if (options.clips?.length) {
-      this.mixer = new THREE.AnimationMixer(this.clone);
-      this.idleAction = this.mixer.clipAction(options.clips.find(c => /idle|stand/i.test(c.name)) ?? options.clips[0]); this.idleAction.play();
-      const attack = options.clips.find(c => /attack/i.test(c.name));
-      if (attack) { this.chargeAction = this.mixer.clipAction(attack); this.chargeAction.setLoop(THREE.LoopOnce, 1); this.chargeAction.clampWhenFinished = true; }
-    }
     const glow = this.material(colors[1], .6), accent = this.material(colors[2], .8);
     const ground = this.mesh(new THREE.CircleGeometry(42, 64), this.material(colors[0], 1)); ground.rotation.x = -Math.PI / 2; ground.position.y = -.04;
     // Distinct floor language: no shared concentric arena circles.

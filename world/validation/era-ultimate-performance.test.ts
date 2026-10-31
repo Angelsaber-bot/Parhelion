@@ -25,3 +25,19 @@ test('mounted aftermath raises saber outboard while left rein contact remains st
  for(let i=0;i<=60;i++){p.update({phase:'outro',elapsed:3.4+i/60,progress:i/60,strikeCount:1});assert.ok(hand.getWorldPosition(new T.Vector3()).distanceTo(rein.getWorldPosition(new T.Vector3()))<.08);}
  const after=tip.getWorldPosition(new T.Vector3()).sub(grip.getWorldPosition(new T.Vector3())).normalize();assert.ok(after.y>before.y+.5);assert.ok(after.x<-.2);p.dispose();
 });
+
+test('Musashi stage calibration does not capture a running foot or live attack lean as its rest pose',async t=>{
+ const {CharacterKit}=await import('../src/characters/characterKit.ts');const {UltimateStage}=await import('../src/ultimateStage.ts');
+ const {gltf}=await readCharacter(fileURLToPath(CHARACTER_KITS.musashi.assetUrl)),actor=new CharacterKit(gltf,CHARACTER_KITS.musashi,{transitionSeconds:0});
+ const result:T.Vector3[][]=[];
+ for(const state of ['idle','run','attack']){
+  actor.play(state,{restart:true});actor.update(.23);actor.root.updateMatrixWorld(true);
+  const before=new Map<T.Object3D,{p:T.Vector3;q:T.Quaternion}>();actor.root.traverse(o=>before.set(o,{p:o.position.clone(),q:o.quaternion.clone()}));
+  const stage=new UltimateStage();stage.begin({identity:'musashi',sourceRoot:actor.root,clips:actor.presentationClips});stage.update({phase:'intro',elapsed:.3,progress:.25,pulse:0,strikeCount:0,sourceRoot:actor.root});
+  const copy=(stage as any).clone as T.Object3D;result.push(['mixamorigHips','mixamorigLeftFoot','mixamorigRightFoot'].map(n=>copy.getObjectByName(n)!.getWorldPosition(new T.Vector3())));
+  for(const[o,saved]of before){assert.ok(o.position.equals(saved.p));assert.ok(o.quaternion.equals(saved.q));}
+  stage.dispose();
+ }
+ let maxDelta=0;for(const positions of result.slice(1))positions.forEach((p,i)=>maxDelta=Math.max(maxDelta,p.distanceTo(result[0][i])));
+ t.diagnostic(JSON.stringify({maxStageStartPoseDelta:maxDelta}));assert.ok(maxDelta<1e-6);actor.dispose();
+});
