@@ -14,12 +14,12 @@ test('main preserves admitted melee and skill contact over a tiny downhill suppo
   const key = (action: string, down: boolean) => d.body.dispatchEvent(new h.window.KeyboardEvent(down ? 'keydown' : 'keyup', {
     code: w.settings.bindingsFor(action)[0], bubbles: true, cancelable: true,
   }));
-  const contacts: string[] = [], calls: { admitted: boolean; active: boolean }[] = [];
+  const contacts: string[] = [], calls: { admitted: boolean; active: boolean; guardOnly: boolean }[] = [];
   const strike = w.actions.options.strike;
   w.actions.options.strike = (...args: any[]) => { contacts.push(args[1]); return strike(...args); };
   const step = w.player.step.bind(w.player);
   w.player.step = (...args: any[]) => {
-    calls.push({ admitted: args[2] === true, active: !!(w.actions.melee.active || w.actions.skills.casting || w.actions.skills.guarding) });
+    calls.push({ admitted: args[2] === true, active: !!(w.actions.melee.active || w.actions.skills.casting || w.actions.skills.guarding), guardOnly: !!(w.actions.skills.guarding && !w.actions.skills.casting && !w.actions.melee.active) });
     return step(...args);
   };
   try {
@@ -45,6 +45,7 @@ test('main preserves admitted melee and skill contact over a tiny downhill suppo
       assert.ok(calls.some(call => call.admitted), 'main supplies admitted ownership');
       assert.ok(calls.every(call => !call.admitted || call.active), 'no support without owned action');
       assert.ok(calls.some(call => !call.active && !call.admitted), 'finished action releases ownership');
+      if (action === 'skill') assert.ok(calls.some(call => call.guardOnly && call.admitted), 'existing guard-only tail retains ownership without extending its clock');
     }
     assert.deepEqual(h.errors, []);
   } finally { key('forward', false); await h.close(); }
