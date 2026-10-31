@@ -150,3 +150,18 @@ Actual runtime-builder CPU context frames: `environment/campaign-side-residents/
 The bridge approach is diagonal, not the direct bearing from `(-96,82)` toward the lake. From `(-96,90)`, approach `(-81.712,83.348)`, follow the authored deck through `(-95,61)` to `(-108.288,38.652)`, then use the west-bank route `(-110,25)→(-100,0)→(-80,-30)→(-60,-60)→(-52,-85)→array`. Narrative can accurately name West Ford and the west bank; no new bridge, water immunity or altered controller is necessary.
 
 At 07:02 UTC independent QA reported actual-main dry-route acceptance: the winter/seal journey with `--walk-links --dry-alpha` reached both Winter and Alpha consoles through keyboard locomotion with zero swimming frames, preserved normal travel HP semantics, completed real combat/emitters and persisted the ending (130.42 simulated seconds, final HP90). This closes the route verification gap; the original bridge requires no repair.
+
+### Player-height frontage review and harbor correction (07:12 UTC)
+
+Added a CPU review mode using the actual Player eye height (1.62m), main vertical FOV (75°), and physically tested local frontage at site Z+3. It is still studio-lit geometry evidence, not a WebGL screenshot; the front-facing frames intentionally show task surfaces, not the side-standing residents.
+
+All five player-height frames were inspected, with independent QA agreeing that four sites read cleanly while BlackSail's original veranda pillar masked the left manifest/seal. Preserved the original pillar and entire customs building. Shifted only the small campaign workspace 0.8m to the right (local origin X6.8→7.6), retaining its table/marker/board relationship. Stable IDs, progress, geometry counts and relative work-state props are unchanged; derived world-space marker/NPC/collision positions move with the workspace.
+
+An explicit eye→manifest-edge ray fails on the old placement and passes on the corrected placement from both old and newly centered frontage. All 17 campaign tests pass, including old/new NPC/task routes, original room destinations, resident-body clearance, natural prompt stances and the five new player-frontage walking destinations. Typecheck passes. The corrected context image also shows the resident remains on the existing paved apron with no visible furnishing overlap.
+
+Same-world-camera before/after:
+- Before: `environment/campaign-player-frontage/blacksail-player-frontage.png`
+- After: `environment/harbor-frontage-fixed/renders/blacksail-player-frontage.png`
+- Current context: `environment/harbor-frontage-fixed/renders/blacksail-campaign.png`
+
+The after player frame uses `render-review.py ... player -.8` to hold the camera at the identical world-local position and direction despite moving the workspace. No original architecture, global collision/controller, quest target radius or automatic targeting behavior was changed.

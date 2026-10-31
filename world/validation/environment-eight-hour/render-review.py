@@ -5,6 +5,7 @@ from mathutils import Vector
 args=sys.argv[sys.argv.index('--')+1:]
 source,out=args[:2]
 views=set(args[2].split(',')) if len(args)>2 else {'overview','interior','campaign'}
+player_shift_x=float(args[3]) if len(args)>3 else 0
 os.makedirs(out,exist_ok=True)
 for region in ['alpha','britain','blacksail','winter','kyoto']:
  if not os.path.exists(os.path.join(source,region+'.json')):continue
@@ -52,3 +53,11 @@ for region in ['alpha','britain','blacksail','winter','kyoto']:
   cam.location=(pos[0],-pos[2],pos[1]);target=Vector((aim[0],-aim[2],aim[1]));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.lens=36
   fill_data.energy=170;fill.location=cam.location+Vector((0,0,1));fill.rotation_euler=(target-fill.location).to_track_quat('-Z','Y').to_euler()
   scene.render.filepath=os.path.join(out,region+'-campaign.png');bpy.ops.render.render(write_still=True);print('CAMPAIGN_RENDERED',region,flush=True)
+
+ if manifest.get('campaignOrigin') and 'player' in views:
+  # Actual Player.eye=1.62 and main vertical FOV=75, inside the tested courtyard frontage.
+  x,y,z=manifest['campaignOrigin'];x+=player_shift_x;cam.location=(x,-(z+3),y+1.62);target=Vector((x,-(z-.3),y+1.3));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
+  data.type='PERSP';data.sensor_fit='VERTICAL';data.sensor_height=32;data.lens=32/(2*math.tan(math.radians(75)/2))
+  scene.render.resolution_x=1280;scene.render.resolution_y=720
+  fill_data.energy=170;fill.location=cam.location+Vector((0,0,1));fill.rotation_euler=(target-fill.location).to_track_quat('-Z','Y').to_euler()
+  scene.render.filepath=os.path.join(out,region+'-player-frontage.png');bpy.ops.render.render(write_still=True);print('PLAYER_FRONTAGE_RENDERED',region,flush=True)

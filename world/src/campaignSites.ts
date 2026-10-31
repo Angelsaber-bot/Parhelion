@@ -13,7 +13,7 @@ export interface CampaignSiteState { readonly stage: 0 | 1 | 2 | 3; readonly cho
 export type CampaignSiteStates = Readonly<Partial<Record<RegionId, CampaignSiteState>>>;
 export const CAMPAIGN_SITE_LIMITS = Object.freeze({ visible: 150, triangles: 5000, meshes: 12, materials: 4 });
 export const CAMPAIGN_SITE_LOCAL: Readonly<Record<RegionId, V3>> = Object.freeze({
-  alpha: [-7, 0, 5.2], britain: [-10.5, 0, 11.6], blacksail: [6.8, 0, 8],
+  alpha: [-7, 0, 5.2], britain: [-10.5, 0, 11.6], blacksail: [7.6, 0, 8],
   winter: [-9.2, 0, 11.4], kyoto: [10.5, 0, 10.2],
 });
 const META: Record<RegionId, { name: Localized; role: Localized; npc: string; work: Localized; decision: Localized; choices: [string, string] }> = {

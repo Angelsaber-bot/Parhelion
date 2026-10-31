@@ -25,7 +25,9 @@ review. `studio` and renderer-only `candidate` modes are explicitly named altern
 | Crafted Valley structure | `false-dawn-v7/renders/alpha-battle.png` | Studio shadowing; not final runtime caster policy |
 | Safe split-ground shadow gain | `field-shadow-split/{off,on}/{alpha,blacksail}-battle.png` | Actual factory flag exports; thin ground never casts in on |
 | Remote relay instrument/approach readability | `false-dawn-remote-v7/renders/{blacksail,winter}-battle.png` | Default factory caster flags off; normal main now enables guarded structural casting |
-| Final spatially separated briefing residents | `campaign-side-residents/renders/{region}-campaign.png` | Current five workspace positions; actual builder geometry with studio lighting |
+| Player-height task readability | `campaign-player-frontage/{region}-player-frontage.png` | Actual1.62m eye/75°vertical FOV; studio lighting; BlackSail before correction |
+| Harbor manifest visibility correction | `harbor-frontage-fixed/renders/blacksail-player-frontage.png` | Same world camera as previous row; pillar preserved |
+| Final spatially separated briefing residents | `campaign-side-residents/renders/{region}-campaign.png` | Current except BlackSail +0.8m correction in harbor-frontage-fixed; studio lighting |
 | Five resident silhouettes | `campaign-residents-v4/residents.png` | Before final minor lid/mouth/page refinement |
 | Final Ada face and bounded note-check | `resident-acting-v2/{rest,read}/ada.png` | Actual runtime poses at 0/5.12 seconds; not a motion video |
 | Partial accepted anchor circuits | `grounding-circuits/{000,100,111}/renders/alpha-detail.png` | Reviewed 06:32 UTC: none / I only / all accepted; default factory shadows off |

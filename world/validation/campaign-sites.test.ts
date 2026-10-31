@@ -44,7 +44,7 @@ for(const region of Object.keys(builders)as RegionId[]){
   const campaign=createCampaignSites([p]),old=region==='alpha'?createValleyStoryScene(p):createEraStoryScene(p),geos:THREE.BufferGeometry[]=[];
   kit.group.traverse(o=>{if(!(o instanceof THREE.Mesh)||!o.userData.solid)return;let g=o.geometry.clone().applyMatrix4(o.matrixWorld);if(g.index)g=g.toNonIndexed();geos.push(new THREE.BufferGeometry().setAttribute('position',g.attributes.position.clone()));g.dispose();});geos.push(...campaign.collisionGeometries);
   const bvh=new MeshBVH(mergeParts(geos)),colliders=[{name:'combined',enabled:true,bvh},...old.colliders];
-  const targets=[...(interiorTargets[region]??[]).map(([id,x,z])=>({id,p:[x,0,z]})),...campaign.markers.map(m=>({id:m.id,p:m.p})),...campaign.npcs.map(n=>({id:n.id,p:n.position})),...kit.npcs.map(n=>({id:n.id,p:n.position})),...old.markers.map(m=>({id:m.id,p:m.p}))];
+  const targets=[{id:'campaign_player_frontage',p:[CAMPAIGN_SITE_LOCAL[region][0],0,CAMPAIGN_SITE_LOCAL[region][2]+3]},...(interiorTargets[region]??[]).map(([id,x,z])=>({id,p:[x,0,z]})),...campaign.markers.map(m=>({id:m.id,p:m.p})),...campaign.npcs.map(n=>({id:n.id,p:n.position})),...kit.npcs.map(n=>({id:n.id,p:n.position})),...old.markers.map(m=>({id:m.id,p:m.p}))];
   if(region==='alpha'){
    const origin=CAMPAIGN_SITE_LOCAL.alpha,npc=campaign.npcs[0];
    for(const [name,x,z,expected]of [['east_receiver',-.35,1.65,'campaign_alpha_work'],['east_dispatch',2.35,1.65,'campaign_alpha_decision'],['west_keeper',-3.9,2.2,npc.id]]as const){
@@ -67,6 +67,12 @@ for(const region of Object.keys(builders)as RegionId[]){
    assert.ok(d<feet.distanceTo(new THREE.Vector3(...npc.position)),`${marker.id}: resident should not steal station prompt`);
    const eye=feet.clone().add(new THREE.Vector3(0,1.2,0)),delta=new THREE.Vector3(...marker.p).sub(eye),distance=delta.length();delta.normalize();
    assert.ok(!colliders.some(c=>c.enabled&&c.bvh.raycastFirst(new THREE.Ray(eye,delta),THREE.DoubleSide,0,distance-.08)),`${marker.id}: unobstructed natural stance`);
+  }
+  if(region==='blacksail'){
+   const origin=CAMPAIGN_SITE_LOCAL.blacksail;for(const shift of[0,-.8]){const eye=new THREE.Vector3(origin[0]+shift,1.62,origin[2]+3);
+   // Read the left seal/manifest edge, not just the floating interaction marker in front of it.
+   const target=new THREE.Vector3(origin[0]-1.7,1.05,origin[2]-.6),delta=target.clone().sub(eye),distance=delta.length();delta.normalize();
+   assert.ok(!colliders.some(c=>c.enabled&&c.bvh.raycastFirst(new THREE.Ray(eye,delta),THREE.DoubleSide,0,distance-.08)),'harbor manifest is not masked by the original veranda pillar');}
   }
   // Conservative body-clearance flood-fill; the final route is walked through actual Player physics.
   const cell=.5,minX=-kit.footprint[0]/2+1,maxX=kit.footprint[0]/2-1,minZ=-kit.footprint[1]/2+1,maxZ=kit.footprint[1]/2;
