@@ -112,3 +112,11 @@ candidate is documented in `TAVERN_UNDERSIDE_REPAIR_20261031.md`.
 projection/reset identity and bounds checks, and explicit limits. The selected
 handoff gallery is `environment/final-preview-selected/index.html`: five existing
 accepted offline images with unchanged-byte/source manifest, not live screenshots.
+
+## Native era servant coverage
+
+`ERA_SERVANT_VISUAL_REVIEW_20261031.md`: Musashi/Blackbeard/Napoleon actual-main
+idle, follow, ordinary contact and ultimate-return snapshots; native attachments,
+materials, roots and resumed idle checked. Final grounded CPU frames are under
+`environment/era-servant-grounded/`; explicit setup/meter and offline-camera limits
+are documented. No model/motion change was needed.
