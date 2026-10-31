@@ -121,3 +121,38 @@ not overwritten, and the counted second replay supplies the complete comparison.
 Route replay accepts `--output=PATH` and refuses to overwrite an existing evidence file. Raw evidence remains under repository `artifacts/general-ground/`,
 `artifacts/downhill-actions/` and `artifacts/general-ground-*.log`; these are
 cloud CPU/DOM/component evidence, not GPU/FPS or human-playtest claims.
+
+## Post-integration real-command combat regression
+
+The bounded follow-on uses committed general Player `4f56d26` and main
+`962eee0`, with real input, native contact callbacks and production collisions.
+`run-story-input.ts --natural-entry` now settles entry placement through actual
+physics, without the historical single grounded-state fixture assignment;
+`--world-root` permits the identical driver against a retained frozen checkout,
+and `--output` preserves old evidence. No hostile HP, charge or clocks are written.
+Travel/dialogue are still skipped by explicit entry teleport/catalog admission;
+this is not a full narrative journey or human playtest.
+
+- Winter companion: 23.75 s, ten native contacts, player HP59, no root jumps.
+  All samples, acquisition calls, attack records, hit callbacks, dodge requests,
+  detour diagnostics and maximum stuck time exactly match the prior independent
+  production record (0.183333 s maximum stuck).
+- Warden delayed reactive rifle (0.8 s, console): 4.95 s, HP84, 20 shots / 17 hits.
+- Warden wrong-direction backstep (0.8 s, close): 4.80 s, HP82, 19 shots / 17 hits.
+- Warden normal melee approach (0.8 s, west): 4.733333 s, HP100. Eight genuine
+  contacts include three honest misses and five damaging contacts totaling264.
+  Requests/ranges/directions, exact contact times/results, 67 support recoveries,
+  energy, actor/player samples and victory match the latest frozen narrow body.
+
+All three Warden cases match frozen **dbff949** exactly in player/enemy samples,
+shot-cast records, HP/damage/energy and one-time victory. This is a code snapshot,
+not a claim its unrelated visual aggregate was green. An initial comparison to
+hours-old Warden logs showed small timing differences; the same current driver
+on the latest frozen narrow snapshot removed those differences, so they are not
+attributed to the general support patch. No combat mechanics were changed.
+
+Executable comparison: `validation/combat-review/compare-general-combat.ts`.
+Evidence: `artifacts/general-ground-combat-comparison.json` and its referenced
+per-case JSONs. The original dodge-duration/invulnerability contracts remain
+separately covered by live component and main cadence tests; these runs do not
+invent a new invulnerability duration or alter reach/LOS.
