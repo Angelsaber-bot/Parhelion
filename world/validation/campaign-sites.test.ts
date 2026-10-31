@@ -14,6 +14,12 @@ import { mergeParts } from '../src/settlements/merge.ts';
 import { Player } from '../src/player.ts';
 import type { RegionId, SettlementPlacement } from '../src/settlements/types.ts';
 const builders={alpha:buildAlphaSettlement,britain:buildBritainSettlement,blacksail:buildBlackSailSettlement,winter:buildWinterSettlement,kyoto:buildKyotoSettlement};
+// Explicit single-storey door, sleeping-wing, workshop and stable circulation.
+const interiorTargets:Partial<Record<RegionId,[string,number,number][]>>={
+ alpha:[['residence_door',0,-.6],['central_hall',0,-3],['west_sleeping_aisle',-6.5,-11.8],['east_sleeping_aisle',6.5,-11.8],['rear_dining_aisle',3.8,-11.5]],
+ britain:[['forge_door',-10,6],['forge_rear_aisle',-10,-6.8],['forge_work_aisle',-8,-3],['stable_front_aisle',7,7],['stable_rear_aisle',7,-6.5],['abbey_nave',0,-12]],
+ kyoto:[['inn_door',8,4.7],['inn_central_room',8,0],['west_sleeping_aisle',6,-7],['east_sleeping_aisle',10,-7],['smith_entry',-10,3.5],['smith_work_aisle',-9,-5]]
+};
 const choices={alpha:['broadcast','listen'],britain:['names','seats'],blacksail:['families','supplies'],winter:['shelter','convoy'],kyoto:['records','refuge']};
 for(const region of Object.keys(builders)as RegionId[]){
  test(`campaign ${region}: bounded material-batched geometry, no lights/textures/shadow cost`,()=>{
@@ -38,7 +44,17 @@ for(const region of Object.keys(builders)as RegionId[]){
   const campaign=createCampaignSites([p]),old=region==='alpha'?createValleyStoryScene(p):createEraStoryScene(p),geos:THREE.BufferGeometry[]=[];
   kit.group.traverse(o=>{if(!(o instanceof THREE.Mesh)||!o.userData.solid)return;let g=o.geometry.clone().applyMatrix4(o.matrixWorld);if(g.index)g=g.toNonIndexed();geos.push(new THREE.BufferGeometry().setAttribute('position',g.attributes.position.clone()));g.dispose();});geos.push(...campaign.collisionGeometries);
   const bvh=new MeshBVH(mergeParts(geos)),colliders=[{name:'combined',enabled:true,bvh},...old.colliders];
-  const targets=[...campaign.markers.map(m=>({id:m.id,p:m.p})),...campaign.npcs.map(n=>({id:n.id,p:n.position})),...kit.npcs.map(n=>({id:n.id,p:n.position})),...old.markers.map(m=>({id:m.id,p:m.p}))];
+  const targets=[...(interiorTargets[region]??[]).map(([id,x,z])=>({id,p:[x,0,z]})),...campaign.markers.map(m=>({id:m.id,p:m.p})),...campaign.npcs.map(n=>({id:n.id,p:n.position})),...kit.npcs.map(n=>({id:n.id,p:n.position})),...old.markers.map(m=>({id:m.id,p:m.p}))];
+  if(region==='alpha'){
+   const origin=CAMPAIGN_SITE_LOCAL.alpha,npc=campaign.npcs[0];
+   for(const [name,x,z,expected]of [['east_receiver',-.35,1.65,'campaign_alpha_work'],['east_dispatch',2.35,1.65,'campaign_alpha_decision'],['west_keeper',-3.6,2.2,npc.id]]as const){
+    const feet=new THREE.Vector3(origin[0]+x,0,origin[2]+z),eye=feet.clone().add(new THREE.Vector3(0,1.2,0));
+    const candidates=[...campaign.markers.map(m=>({id:m.id,p:m.p,r:m.radius!})),{id:npc.id,p:npc.position,r:2.8}].filter(t=>feet.distanceTo(new THREE.Vector3(...t.p))<t.r).sort((a,b)=>feet.distanceToSquared(new THREE.Vector3(...a.p))-feet.distanceToSquared(new THREE.Vector3(...b.p)));
+    assert.equal(candidates[0]?.id,expected,`${name}: natural standing point selects intended interaction`);
+    const aim=new THREE.Vector3(...candidates[0].p);if(expected===npc.id)aim.y+=1.2;const direction=aim.sub(eye),distance=direction.length();direction.normalize();
+    assert.ok(!colliders.some(c=>c.enabled&&c.bvh.raycastFirst(new THREE.Ray(eye,direction),THREE.DoubleSide,0,distance-.25)),`${name}: visible line of interaction`);
+   }
+  }
   // Conservative body-clearance flood-fill; the final route is walked through actual Player physics.
   const cell=.5,minX=-kit.footprint[0]/2+1,maxX=kit.footprint[0]/2-1,minZ=-kit.footprint[1]/2+1,maxZ=kit.footprint[1]/2;
   const nx=Math.ceil((maxX-minX)/cell)+1,nz=Math.ceil((maxZ-minZ)/cell)+1,blocked=new Uint8Array(nx*nz),point=new THREE.Vector3();
