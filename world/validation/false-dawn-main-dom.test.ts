@@ -26,7 +26,14 @@ test('NON-GPU actual main runs both False Dawn routes with deliberate starts, ph
   };
   const start = (marker: string, id: string) => {
     inspect(marker); choose(`start:${id}`); assert.equal(w.combat.storyEncounter?.id, id, `director accepted ${id}: ${document.getElementById('toast')?.textContent}`);
-    assert.equal(w.narrative.open, false, 'accepted combat start never pauses in dialogue'); frame(2);
+    assert.equal(w.narrative.open, false, 'accepted combat start never pauses in dialogue'); frame(8);
+    const tracked = document.getElementById('world-tracked-story'); assert.ok(tracked); assert.match(tracked.textContent!, new RegExp(String(w.combat.storyEncounter.remaining)));
+    assert.ok(document.getElementById('objective')!.children.length > 1, 'original main objectives remain alongside tracked story');
+  };
+  const pinArc = async () => {
+    (document.getElementById('world-campaign-journal-open') as HTMLButtonElement).click();
+    document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!.click(); await enter(); frame(8);
+    assert.ok(document.getElementById('world-tracked-story'), 'only explicit pin presents tracked objective');
   };
   const defeatActors = () => {
     const actors = w.combat.state.enemies.filter((enemy: any) => enemy.storyEncounter);
@@ -38,11 +45,16 @@ test('NON-GPU actual main runs both False Dawn routes with deliberate starts, ph
     for (const route of ['harbor', 'winter'] as const) await t.test(route, async () => {
       document.exitPointerLock(); w.worldProgress.reset(); w.falseDawnRuntime.invalidate();
       for (const flag of ['armory_rack', 'summon_circle', FALSE_DAWN.receiver]) w.done.add(flag);
-      w.combat.reset(); w.worldProgress.save(); await enter();
+      w.combat.reset(); w.worldProgress.save(); await enter(); frame(8);
+      assert.equal(document.getElementById('world-tracked-story'), null, 'new session never auto-pins');
+      await pinArc();
+      assert.equal(w.settings.bind('mainRoute', 'KeyL', true), null); key('KeyL'); frame(8);
+      assert.equal(document.getElementById('world-tracked-story'), null, 'custom original-route binding clears tracked block');
+      await pinArc(); assert.match(document.getElementById('world-tracked-story')!.textContent!, /L/);
       start(FALSE_DAWN.recorder, 'false_dawn_courier');
       if (route === 'harbor') {
         // Actual cancellation is not victory and requires a new deliberate start.
-        w.combat.cancelStoryEncounter(); assert.equal(getFalseDawnState(w.done).stage, 'courier');
+        w.combat.cancelStoryEncounter(); frame(8); assert.equal(getFalseDawnState(w.done).stage, 'courier'); assert.ok(document.getElementById('world-tracked-story'));
         assert.equal(w.done.has(falseDawnEncounterFlags('false_dawn_courier').cleared), false);
         start(FALSE_DAWN.recorder, 'false_dawn_courier');
       }
@@ -73,7 +85,7 @@ test('NON-GPU actual main runs both False Dawn routes with deliberate starts, ph
       defeatActors(); assert.equal(getFalseDawnState(w.done).stage, 'warden');
       start(FALSE_DAWN.array, 'false_dawn_warden'); defeatActors(); assert.equal(getFalseDawnState(w.done).stage, 'ending');
       inspect(FALSE_DAWN.array); choose(route === 'harbor' ? 'ending_repurpose' : 'ending_seal'); close();
-      assert.equal(getFalseDawnState(w.done).stage, 'complete');
+      assert.equal(getFalseDawnState(w.done).stage, 'complete'); frame(8); assert.equal(document.getElementById('world-tracked-story'), null, 'completed continuation removes active objective');
       const reloaded = new WorldProgress(window.localStorage); assert.equal(getFalseDawnState(reloaded.done).ending, route === 'harbor' ? 'repurpose' : 'seal');
       assert.ok(window.localStorage.getItem(WORLD_PROGRESS_KEY)); assert.ok(w.done.has('summon_circle')); assert.equal(w.done.has('sun_core'), false);
       assert.ok(w.falseDawnSites.sites.every((site: any) => site.root.userData.falseDawnStage === 'complete'));

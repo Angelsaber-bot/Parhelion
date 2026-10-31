@@ -9,12 +9,13 @@ import { createSettlementNpcs } from './settlements/npcs';
 import { createCampaignSites } from './campaignSites';
 import { createSettlementApproaches } from './settlementApproaches';
 import { createFalseDawnSites } from './falseDawnSites';
-import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction } from './falseDawnCampaign';
+import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction, getFalseDawnObjective } from './falseDawnCampaign';
 import { createFalseDawnRuntime } from './falseDawnRuntime';
 import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './falseDawnEncounterCatalog';
 import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './trackedStoryNavigation';
-import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './campaignEpisodes';
+import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './campaignEpisodes';
 import { createCampaignJournal } from './campaignJournal';
+import { createTrackedStoryHud } from './trackedStoryHud';
 import type { RegionId } from './settlements/types';
 import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './valleyStory';
 import { createValleyStoryScene } from './valleyStoryScene';
@@ -364,6 +365,7 @@ let campaignJournalOpen = false;
 let campaignJournal: ReturnType<typeof createCampaignJournal> | undefined;
 let falseDawnRuntime: ReturnType<typeof createFalseDawnRuntime> | undefined;
 let falseDawnTracked = false;
+let trackedStoryHud: ReturnType<typeof createTrackedStoryHud> | undefined;
 const mapBudget = new FrameWorkBudget(30), hudBudget = new FrameWorkBudget(10), statsBudget = new FrameWorkBudget(4);
 const eraStoryScenes = settlements.placements.filter(p => isEraId(p.id)).map(p => ({ ...createEraStoryScene(p), region: p.id }));
 const eraOptionalIds = new Set(Object.values(ERA_OPTIONALS).map(x => x.id));
@@ -542,7 +544,8 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
   el.style.top = `${(-sy * 0.5 + 0.5) * innerHeight}px`;
 }
 
-function renderObjective() {
+function renderObjective() { renderMainObjective(); updateTrackedStoryHud(); }
+function renderMainObjective() {
   const intro = valleyGuide();
   if (intro) {
     $('objective').replaceChildren();
@@ -1152,6 +1155,32 @@ const renderJournalButton = () => { journalOpen.textContent = bilingual('主线�
 renderJournalButton(); const unsubscribeJournalButton = onLanguageChange(renderJournalButton);
 journalOpen.addEventListener('click', event => { event.stopPropagation(); campaignJournal?.show(); }); start.append(journalOpen);
 addEventListener('pagehide', event => { if (!event.persisted) { campaignJournal?.dispose(); journalOpen.remove(); unsubscribeJournalButton(); } });
+trackedStoryHud = createTrackedStoryHud($('objective'));
+function updateTrackedStoryHud() {
+  if (!trackedStoryHud) return;
+  const active = combat.storyEncounter;
+  const returnHint = bilingual(`${settings.label('mainRoute')} · 返回原主线指引`, `${settings.label('mainRoute')} · Restore original story guide`);
+  if (falseDawnTracked) {
+    const objective = getFalseDawnObjective(done, active?.id ?? null);
+    const guide = getFalseDawnGuide(done, { activeEncounter: active?.id ?? null });
+    if (objective && guide) {
+      const blocked = campaignTrackingBlocked(guide.region);
+      trackedStoryHud.update({ title: bilingual(...objective.title), instruction: bilingual(...(blocked ?? objective.line)), returnHint,
+        status: !blocked && active ? bilingual(`现场威胁剩余 ${active.remaining}`, `${active.remaining} threats remain`) : undefined });
+      return;
+    }
+  }
+  if (campaignTrackedRegion) {
+    const objective = getCampaignEpisodeObjective(campaignTrackedRegion, done);
+    if (objective) {
+      const blocked = campaignTrackingBlocked(campaignTrackedRegion);
+      trackedStoryHud.update({ title: bilingual(...objective.title), instruction: bilingual(...(blocked ?? objective.line)), returnHint });
+      return;
+    }
+  }
+  trackedStoryHud.update(null);
+}
+addEventListener('pagehide', event => { if (!event.persisted) trackedStoryHud?.dispose(); });
 const falseDawnLine = (line: [string, string]): [string, string] => {
   const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
   const blocked = guide ? campaignTrackingBlocked(guide.region) : null;
@@ -1562,7 +1591,7 @@ function frame(now: number) {
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
-  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); }
+  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); }
   settlements.update(player.pos);
   settlementApproaches.update(player.pos);
   campaignSites.update(player.pos);
