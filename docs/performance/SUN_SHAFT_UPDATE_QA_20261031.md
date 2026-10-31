@@ -1,7 +1,7 @@
 # Sun-shaft update cleanup and rejected pass elision
 
 ## Accepted narrow change
-`makeSunShafts` reuses one direction vector for `camera.getWorldDirection` instead of allocating one each update. Uniform math, NaN behavior, pass enablement and the entire shader remain unchanged. The production unit regression checks 33 camera/aspect/facing cases plus NaN and verifies a single target identity. Integration separately gates updates when the immutable low-quality/no-post configuration never installs this pass.
+`makeSunShafts` reuses one direction vector for `camera.getWorldDirection` instead of allocating one each update. Uniform math, NaN behavior, pass enablement and the entire shader remain unchanged. The production unit regression checks 33 camera/aspect/facing cases plus NaN and verifies a single target identity. A separate lead-owned follow-on will gate updates when the immutable low-quality/no-post configuration never installs this pass; that main-loop change is not part of this checkpoint.
 
 This is allocation/unused-update cleanup, **not a measured FPS improvement**.
 
