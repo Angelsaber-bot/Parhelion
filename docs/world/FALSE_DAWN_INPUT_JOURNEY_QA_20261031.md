@@ -18,3 +18,11 @@ Both runs start with zero energy and end at100 through normal earned charge. The
 - No direct replacement of combat rules to make this policy win. Native weapons/collision, companion, cooldowns, HP and resources remain production-owned.
 
 Evidence lives in sibling `parhelion-eight-hour-evidence/qa/journey/{harbor-repurpose,winter-seal}.json` and `qa/journey-{harbor,winter}.log`. Earlier pure transaction matrices used injected damage and remain separately labeled; these runs close the dialogue-to-real-combat-to-physical-emitter-to-ending gap, not the entire world traversal gap.
+
+## Full settlement links (follow-up)
+Pass `--walk-links` to remove both settlement→field entry shortcuts. Remote XZ waypoints are copied from the environment owner's merged-map actual-Player route audit (`environment/hub-field-walks/audit.json`); Alpha uses the separately proven fresh-start road and ordinary-swimming crossing. The copied fixture is `journey-review/hub-field-waypoints.json`. These waypoint sources guide an independent actual-main keyboard walk; the test does not call `Player.step` directly, teleport after arrival, force grounded, or grant health.
+
+- Harbor/repurpose: 188.02 simulated seconds, 53 shots, damage586ranged+40skill+122companion, finalHP94.5.
+- Winter/seal: 142.92 simulated seconds, 52 shots, damage644ranged+88skill+126companion, finalHP90. Winter second wave reaches HP68; production quiet-time regeneration subsequently recovers health during the long return route. `CombatState` implements that recovery, not the driver.
+- Exactly **one initial recorder-positioning setup** remains in this explicit legacy-save fixture. All subsequent field approaches, emitter paths and console returns are physical movement; inter-region jumps use legitimate production fast travel. The separate empty-save fresh-start journey proves spawn→receiver/armory→courier, but the two runs are not misrepresented as one continuous fresh-save completion.
+- Fast-travel callbacks are checked not to change HP. Evidence filenames add `-walk-links`; earlier shortcut-based reports remain preserved separately.
