@@ -42,6 +42,16 @@ for (const mode of ['offline', 'online']) for (const failure of ['reject', 'thro
     rejectLate(new Error('obsolete request rejection')); d.dispatchEvent(new w.Event('pointerlockerror')); await flush();
     assert.equal(controls.locked, true); assert.equal(d.getElementById('pause')!.classList.contains('hidden'), true); assert.equal(d.getElementById('pointer-lock-note')!.hidden, true);
     assert.equal(qa.games, 1); assert.equal(qa.joins, 1); assert.equal(qa.pauses.at(-1), false); assert.equal(controls.sample().buttons, 0);
+    if (mode === 'offline' && failure === 'reject') {
+      d.exitPointerLock();
+      let grantLate!: () => void;
+      w.HTMLCanvasElement.prototype.requestPointerLock = function() { const canvas = this; return new Promise<void>(resolve => { grantLate = () => { Object.defineProperty(d, 'pointerLockElement', { configurable: true, value: canvas }); d.dispatchEvent(new w.Event('pointerlockchange')); resolve(); }; }); };
+      (d.getElementById('resume') as HTMLElement).click();
+      (d.getElementById('leave') as HTMLElement).click();
+      grantLate(); await flush();
+      assert.equal(d.pointerLockElement, null, 'late browser grant after Leave must not capture the lobby');
+      assert.equal(d.getElementById('lobby')!.classList.contains('hidden'), false);
+    }
     w.dispatchEvent(new w.PageTransitionEvent('pagehide', { persisted: false })); assert.equal(qa.closes, 1); assert.deepEqual(errors, []);
   } finally { dom.window.close(); }
 });

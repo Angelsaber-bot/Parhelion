@@ -286,7 +286,12 @@ function backToLobby(reason: string) {
 }
 
 controls.onLockChange = (locked) => {
-  if (!game || game.ended || pageExited) return;
+  if (!game || game.ended || pageExited || settingsPanel.open) {
+    // A browser can grant an earlier request after Leave or a modal opens.
+    // Physical capture must not outlive the gameplay session that requested it.
+    if (document.pointerLockElement === canvas) document.exitPointerLock();
+    return;
+  }
   if (locked) { pointerLockFailed = false; renderPointerLockNote(); }
   $('pause').classList.toggle('hidden', locked);
   // offline: Esc freezes everything (bots, bullets, clock, effects); online the server keeps going
