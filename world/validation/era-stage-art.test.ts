@@ -23,8 +23,8 @@ test('Blackbeard muzzle glint samples clone socket and reduced salvos use fewer 
 test('Blackbeard second and third strikes use actual low cannon-row shots; reduced mode stays stable',()=>{
  for(const reducedEffects of[false,true]){const stage=new UltimateStage();stage.begin({identity:'blackbeard',sourceRoot:source(),reducedEffects});stage.update({elapsed:3,phase:'release',progress:.5,pulse:1,strikeCount:2});
  const ship=stage.scene.getObjectByName('Original broadside silhouette')!;ship.updateMatrixWorld(true);const port=ship.localToWorld(new THREE.Vector3(-6.32,2.68,-5.39));
- assert.equal(stage.camera.fov,reducedEffects?38:56);assert.equal(stage.camera.position.distanceTo(port)<2,!reducedEffects);
- stage.update({elapsed:3.1,phase:'outro',progress:.8,pulse:0,strikeCount:3});assert.equal(stage.camera.fov,38);stage.dispose();}
+ assert.equal(stage.camera.fov,reducedEffects?41:56);assert.equal(stage.camera.position.distanceTo(port)<2,!reducedEffects);
+ stage.update({elapsed:3.1,phase:'outro',progress:.8,pulse:0,strikeCount:3});assert.equal(stage.camera.fov,41);const recovered=stage.camera.position.clone();stage.update({elapsed:3.1,phase:'outro',progress:.8,pulse:0,strikeCount:3});assert.ok(recovered.distanceTo(stage.camera.position)<1e-10,'same-frame new recovery camera is stable');stage.dispose();}
 });
 test('hero cannon bores are recessed behind open rounded lips and retain bounded shared resources',()=>{
  const stage=new UltimateStage();stage.begin({identity:'blackbeard',sourceRoot:source()});

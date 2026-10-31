@@ -31,7 +31,7 @@ export class BlackbeardStageArt {
     const flashGeometry=radialGeometry(1),flashMaterial=owner.material(0xffe5ac,.9);flashMaterial.vertexColors=true;flashMaterial.toneMapped=false;
     this.pistolFlash=owner.mesh(flashGeometry,flashMaterial,this.root);this.pistolFlash.name='Blackbeard actual muzzle signal';this.pistolFlash.visible=false;
     // Stage-owned close-shot barrels overlay the distant map LOD without changing that asset.
-    const tubeGeometry=new THREE.CylinderGeometry(.22,.28,1.15,12,1,true),ringGeometry=new THREE.TorusGeometry(1,.12,3,10),boreGeometry=new THREE.CircleGeometry(.195,16),carriageGeometry=new THREE.BoxGeometry(1,1,1);
+    const tubeGeometry=new THREE.CylinderGeometry(.22,.28,1.15,16,1,true),ringGeometry=new THREE.TorusGeometry(1,.12,3,10),boreGeometry=new THREE.CircleGeometry(.195,16),carriageGeometry=new THREE.BoxGeometry(1,1,1);
     const iron=new THREE.MeshStandardMaterial({color:0x45535b,roughness:.42,metalness:.7,side:THREE.DoubleSide});
     const rim=new THREE.MeshStandardMaterial({color:0x938978,roughness:.34,metalness:.65});
     const timber=new THREE.MeshStandardMaterial({color:0x523a29,roughness:.9});const bore=owner.material(0x020406,1);
