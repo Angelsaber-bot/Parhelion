@@ -105,3 +105,10 @@ native low/normal camera/material checks, 28 ordinary-input route legs, intentio
 Honnoji charred palette, and CPU hemisphere/crop limitations. The only reproduced
 art defect is the tavern's missing underside; the separately audited six-triangle
 candidate is documented in `TAVERN_UNDERSIDE_REPAIR_20261031.md`.
+
+## Branch consistency and selected previews
+
+`BRANCH_SCENE_CONSISTENCY_20261031.md` records four fresh low/normal branch boots,
+projection/reset identity and bounds checks, and explicit limits. The selected
+handoff gallery is `environment/final-preview-selected/index.html`: five existing
+accepted offline images with unchanged-byte/source manifest, not live screenshots.
