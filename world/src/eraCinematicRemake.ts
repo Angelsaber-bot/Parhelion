@@ -83,7 +83,14 @@ export class EraCinematicRemake{
    else{this.currentShot=frame.phase==='outro'?'snow aftermath':'cavalry cut';this.aim.set(center.x-.2,1.75,center.z+.3);camera.position.set(center.x-(reduced?4.8:5.3-p*.8),2.1,center.z+4.7);camera.fov=42;}
   }else{
    if(frame.phase==='intro'||frame.phase==='charge'&&p<.3){this.currentShot='swordswoman focus';this.aim.copy(head).add(new THREE.Vector3(0,-.01,.04));camera.position.copy(head).add(new THREE.Vector3(.4,.04,1.55));camera.fov=32;}
-   else if(frame.phase==='charge'){this.currentShot='dual blade windup';const w=ease((p-.3)/.7);this.aim.copy(head).lerp(new THREE.Vector3(center.x,1.55,center.z),w);camera.position.set(center.x+1.1+w*.5,head.y-w*.7,center.z+2.6+w*3.8);camera.fov=35+w*5;}
+   else if(frame.phase==='charge'){
+    this.currentShot='dual blade windup';const w=ease((p-.3)/.7),entry=ease((p-.3)/.12);
+    const windupAim=new THREE.Vector3().copy(head).lerp(new THREE.Vector3(center.x,1.55,center.z),w);
+    this.aim.copy(head).add(new THREE.Vector3(0,-.01,.04)).lerp(windupAim,entry);
+    const windupPosition=new THREE.Vector3(center.x+1.1+w*.5,head.y-w*.7,center.z+2.6+w*3.8);
+    camera.position.copy(head).add(new THREE.Vector3(.4,.04,1.55)).lerp(windupPosition,entry);
+    camera.fov=THREE.MathUtils.lerp(32,35+w*5,entry);
+   }
    else{this.currentShot=count>=3?'cross finishing cut':count===2?'left blade cut':'right blade cut';this.aim.set(center.x,1.55,center.z+.12);camera.position.set(center.x+(count>=3?.15:count===2?-1.55:1.55),2,center.z+(count>=3?7:6.2));camera.fov=40;if(frame.phase==='outro'){this.currentShot='dual blade recovery';camera.position.x=center.x+.45;camera.position.z=center.z+5.8;}}
   }
   if(!reduced&&releasing&&age<.18){camera.position.x+=Math.sin(age*91)*contact*.025;camera.position.y+=Math.sin(age*71)*contact*.018;}
