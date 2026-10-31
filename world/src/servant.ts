@@ -19,8 +19,8 @@ import { COMPANION_MOTION, companionGait, turnCompanion } from './characters/com
 
 // Only accepted, project-authored outfits; the rejected v1 model is never requested.
 export const SERVANT_MODELS: Record<ServantOutfit, string> = {
-  armor: new URL('../../assets/characters/artoria_refined/runtime_revision1/armor/artoria_armor.glb.gz', import.meta.url).href,
-  civilian: new URL('../../assets/characters/artoria_refined/runtime_revision1/civilian/artoria_civilian.glb.gz', import.meta.url).href,
+  armor: new URL('../../assets/characters/artoria_refined/runtime_revision2/armor/artoria_armor.glb.gz', import.meta.url).href,
+  civilian: new URL('../../assets/characters/artoria_refined/runtime_revision2/civilian/artoria_civilian.glb.gz', import.meta.url).href,
 };
 /** Lossless transport only. Some hosts already decode Content-Encoding: gzip. */
 export async function decodeServantModel(bytes: ArrayBuffer): Promise<ArrayBuffer> {
