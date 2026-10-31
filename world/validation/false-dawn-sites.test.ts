@@ -43,3 +43,17 @@ test('completion never claims the unchosen remote route was resolved',()=>{
  assert.equal(resolved('blacksail')?.visible,false);assert.equal(resolved('winter')?.visible,true);
  fields.dispose();
 });
+
+test('Valley foundations extend beneath low-side terrain instead of floating on slopes',()=>{
+ const fields=createFalseDawnSites((x,z)=>3+x*.08+z*.03),alpha=fields.sites[0];assert.equal(alpha.foundationSupports.length,8);
+ for(const support of alpha.foundationSupports){assert.ok(support.bottom<support.groundMin-.075,`Unsupported footing at ${support.x},${support.z}`);assert.ok(support.top>support.groundMin);}
+ const widths=[[1.3,1.3],[1.3,1.3],[2.12,1.1],[1.85,1.12],[1.5,1.05]];alpha.foundationSupports.slice(0,5).forEach((s,i)=>{for(const dx of[-widths[i][0]/2,widths[i][0]/2])for(const dz of[-widths[i][1]/2,widths[i][1]/2]){const actual=3+(alpha.origin[0]+s.x+dx)*.08+(alpha.origin[2]+s.z+dz)*.03-alpha.origin[1];assert.ok(s.bottom<actual-.075);}});
+ fields.dispose();
+});
+
+test('settled service court is front-facing from the player side without enabling double-sided materials',()=>{
+ const fields=createFalseDawnSites(()=>3),alpha=fields.sites[0];fields.root.updateMatrixWorld(true);
+ const ray=new THREE.Raycaster(new THREE.Vector3(alpha.origin[0]+2,10,alpha.origin[2]+1),new THREE.Vector3(0,-1,0));
+ const hits=ray.intersectObject(alpha.root,true);assert.ok(hits.some(h=>Math.abs(h.point.y-3.018)<.005),'upward-facing service court tile must render from above');
+ alpha.root.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])assert.equal(m.side,THREE.FrontSide);});fields.dispose();
+});

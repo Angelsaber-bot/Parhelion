@@ -97,3 +97,26 @@ evidence directory. Views include approach, detail and a ground + 1.65 m battle 
 Winter's visible warmth is reviewed in `environment/false-dawn-v2/renders/winter-*.png`.
 These are actual geometry reviews, not runtime GPU screenshots or FPS evidence.
 The revised Valley remains seven batches with no additional lights or materials.
+
+### Crafted relay and slope-supported foundations
+
+A second art pass adds chamfered cut-stone base courses, profiled column capitals,
+recessed enamel/metal faces, restrained brass joints/fasteners, bracketed instrument
+panels with inset cells, recorder ventilation and bolted emitter braces. The clearing
+is a broken, terrain-set service court rather than instruments scattered on grass.
+Gaps deliberately expose the original terrain; decorative paving is not collision.
+
+Independent pixel QA noticed a possible dark gap under a column on its low slope
+edge. Eight important foundations now extend below the lowest sampled footprint
+corner (or octagonal rim), with tops unchanged. A synthetic slope regression tests
+independent corner heights, and a FrontSide ray test verifies that service-court
+surfaces face the player rather than relying on Blender's double-sided appearance.
+All actual production-map actor/interaction/road routes, feet clearance and LOS still
+pass after the physical foundation changes.
+
+Valley is now **7,180 triangles / 947,760 render-geometry bytes / seven batches**.
+The per-field triangle guard is 9,000, deliberately increased for crafted forms,
+not a new light/material/draw-call allowance. Remote fields are unchanged. Compare
+player-height `environment/false-dawn-v3/renders/alpha-battle.png` with
+`environment/false-dawn-v7/renders/alpha-battle.png`; matching detail views accompany
+them. Runtime GPU lighting/FPS remain outside these CPU geometry reviews.
