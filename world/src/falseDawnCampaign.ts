@@ -182,7 +182,7 @@ export function chooseFalseDawn(origin: string, choiceId: string, done: Set<stri
 }
 /** Invoke only after the combat director has accepted ALL safe actor placements. */
 export function confirmFalseDawnEncounterStart(id: string, done: Set<string>): FalseDawnInteraction {
-  if (getExpectedFalseDawnEncounter(done) !== id) return response(done, { handled: false });
+  if (!FALSE_DAWN_ENCOUNTERS.includes(id as FalseDawnEncounterId) || getExpectedFalseDawnEncounter(done) !== id) return response(done, { handled: false });
   const encounter = id as FalseDawnEncounterId, flag = falseDawnEncounterFlags(encounter).started;
   let changed = false;
   const add = (flag: string) => { if (!done.has(flag)) { done.add(flag); changed = true; } };
@@ -193,7 +193,7 @@ export function confirmFalseDawnEncounterStart(id: string, done: Set<string>): F
 }
 /** Actual director victory only, never a proximity/interaction or kill-count guess. */
 export function recordFalseDawnEncounterVictory(id: string, done: Set<string>): FalseDawnInteraction {
-  if (getExpectedFalseDawnEncounter(done) !== id || !done.has(falseDawnEncounterFlags(id as FalseDawnEncounterId).started)) return response(done, { handled: false });
+  if (!FALSE_DAWN_ENCOUNTERS.includes(id as FalseDawnEncounterId) || getExpectedFalseDawnEncounter(done) !== id || !done.has(falseDawnEncounterFlags(id as FalseDawnEncounterId).started)) return response(done, { handled: false });
   const flag = falseDawnEncounterFlags(id as FalseDawnEncounterId).cleared;
   if (done.has(flag)) return response(done, { handled: true });
   done.add(flag);
@@ -255,4 +255,19 @@ export function getFalseDawnCompanionReaction(id: string | null | undefined, don
     },
   };
   return { speaker: names[id], line: lines[id][beat] };
+}
+
+const MARKER_LABELS: Readonly<Record<string, Localized>> = {
+  [FALSE_DAWN.recorder]: ['检查旧收讯器', 'Inspect the old receiver'],
+  [FALSE_DAWN.harbor]: ['操作潮汐截讯台', 'Operate the tide interceptor'],
+  [FALSE_DAWN.winter]: ['操作雪原转发台', 'Operate the snowfield repeater'],
+  [FALSE_DAWN.array]: ['操作回声阵列', 'Operate the echo array'],
+  [FALSE_DAWN.emitters[0]]: ['I · 收讯发射器', 'I · Receive emitter'],
+  [FALSE_DAWN.emitters[1]]: ['II · 转发发射器', 'II · Relay emitter'],
+  [FALSE_DAWN.emitters[2]]: ['III · 播送发射器', 'III · Transmit emitter'],
+};
+/** Small interaction prompt labels; never reuse a multi-paragraph guide here. */
+export function getFalseDawnMarkerLabel(id: string): Localized | null {
+  const label = Object.hasOwn(MARKER_LABELS, id) ? MARKER_LABELS[id] : null;
+  return label ? [...label] : null;
 }

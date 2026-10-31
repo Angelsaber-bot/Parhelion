@@ -82,3 +82,10 @@ test('choice group explicitly overrides inherited noninteractive HUD CSS and pro
  try{panel.showChoices(['选择','Choose'],['人','Person'],options,()=>{});const group=f.document.getElementById('world-dialogue-choices')!;assert.equal(group.style.pointerEvents,'auto');assert.equal(group.style.overflowY,'auto');assert.equal(group.style.maxHeight,'30vh');assert.match(f.document.getElementById('world-dialogue-hint')!.textContent!,/Digit1/);setLanguage('en');assert.equal(group.getAttribute('aria-label'),'Choose your action');}
  finally{panel.dispose();f.close();}
 });
+
+test('choice dialogs bound text and container height, reveal keyboard selection and reset scroll on replacement',()=>{
+ const f=fixture(),panel=createNarrativePanel(()=> 'F');let scrolled=0;
+ const old=f.dom.window.HTMLElement.prototype.scrollIntoView;f.dom.window.HTMLElement.prototype.scrollIntoView=function(){scrolled++;};
+ try{panel.showChoices(['选择','Choose'],['人','Person'],options,()=>{});const root=f.document.getElementById('world-dialogue')!,text=f.document.getElementById('world-dialogue-text')!;assert.equal(root.style.maxHeight,'84vh');assert.equal(root.style.overflowY,'auto');assert.equal(text.style.maxHeight,'min(30vh, 220px)');panel.selectChoice(1);assert.equal(scrolled,1);root.scrollTop=120;panel.show(['短句','Short line']);assert.equal(root.scrollTop,0);assert.equal(text.style.maxHeight,'min(42vh, 320px)');root.scrollTop=120;panel.hide();assert.equal(root.scrollTop,0);}
+ finally{f.dom.window.HTMLElement.prototype.scrollIntoView=old;panel.dispose();f.close();}
+});

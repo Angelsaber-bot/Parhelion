@@ -70,3 +70,15 @@ test('companion comments are finite original voices, contextual, bilingual and d
  const snapshots=[ready(),toArray('harbor'),toArray('winter'),new Set([F.complete,F.rescued]),new Set([F.complete,F.sealed])];
  for(const snapshot of snapshots){const before=[...snapshot],voices=[];for(const id of['saber','blackbeard','napoleon','musashi']){const reaction=getFalseDawnCompanionReaction(id,snapshot)!;assert.ok(reaction.speaker[0]);assert.ok(reaction.line[0]);assert.ok(reaction.line[1]);voices.push(reaction.line[1]);}assert.equal(new Set(voices).size,4);assert.deepEqual([...snapshot],before);}
 });
+
+test('runtime null and nonstring event IDs cannot match an idle null expected encounter',()=>{
+ const done=new Set<string>();for(const invalid of[null,undefined,0,{},[],false]){assert.equal(confirm(invalid as never,done).handled,false);assert.equal(victory(invalid as never,done).handled,false);}assert.equal(done.size,0);
+});
+test('deterministic hostile event-order fuzz never writes original progress or both branches',()=>{
+ let seed=0x151a;const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed;};
+ const ids=[F.recorder,F.harbor,F.winter,F.array,...F.emitters,'unknown'];const choices=['route_harbor','route_winter','key_perfect','key_living','ending_repurpose','ending_seal','later','unknown',...FALSE_DAWN_ENCOUNTERS.map(id=>`start:${id}`)];
+ for(let run=0;run<30;run++){const done=ready();for(let step=0;step<300;step++){const id=ids[random()%ids.length],event=FALSE_DAWN_ENCOUNTERS[random()%FALSE_DAWN_ENCOUNTERS.length];switch(random()%5){case 0:interact(id,done,{activeEncounter:random()%2?'false_dawn_array':null});break;case 1:choose(id,choices[random()%choices.length],done);break;case 2:confirm(event,done);break;case 3:victory(event,done);break;default:guide(done);state(done);}
+ assert.ok(!(done.has(F.routeHarbor)&&done.has(F.routeWinter)));assert.ok(!(done.has(F.rescued)&&done.has(F.sealed)));assert.ok([...done].every(flag=>flag==='armory_rack'||flag===F.receiver||flag.startsWith('false_dawn_')));
+ if(done.has(F.complete)){assert.ok(done.has(flags('false_dawn_warden').cleared));assert.ok(F.anchors.every(flag=>done.has(flag)));assert.ok(done.has(flags('false_dawn_array').cleared));assert.ok(done.has(F.harborKey)||done.has(F.winterKey));}
+ }}
+});

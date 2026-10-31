@@ -28,6 +28,7 @@ export interface NarrativeChoice { id: string; label: Localized; }
 export function createNarrativePanel(interactLabel: () => string) {
   const root = document.createElement('section');
   root.id = 'world-dialogue'; root.className = 'hud'; root.hidden = true;
+  root.style.maxHeight = '84vh'; root.style.overflowY = 'auto';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-labelledby', 'world-dialogue-title');
   root.setAttribute('aria-describedby', 'world-dialogue-text world-dialogue-hint');
@@ -36,7 +37,7 @@ export function createNarrativePanel(interactLabel: () => string) {
   text.setAttribute('aria-live', 'polite');
   text.style.maxHeight = 'min(42vh, 320px)'; text.style.overflowY = 'hidden';
   const options = document.createElement('div'); options.id = 'world-dialogue-choices'; options.setAttribute('role', 'group'); options.hidden = true;
-  options.style.pointerEvents = 'auto'; options.style.maxHeight = '30vh'; options.style.overflowY = 'auto';
+  options.style.position = 'relative'; options.style.pointerEvents = 'auto'; options.style.maxHeight = '30vh'; options.style.overflowY = 'auto';
   root.append(title, text, options, hint); document.body.append(root);
   let pages: Localized[] = [], page = 0, disposed = false;
   let choices: NarrativeChoice[] = [], selected = -1, onChoose: ((id: string) => void) | null = null;
@@ -56,6 +57,9 @@ export function createNarrativePanel(interactLabel: () => string) {
       button.addEventListener('click', () => { if (!disposed && !root.hidden && button.isConnected && options.contains(button) && choicePage()) { selected = index; confirmChoice(); } });
       options.append(button);
     });
+    // Keep keyboard selections visible even in short landscape windows.
+    const selectedButton = options.children[selected] as HTMLElement | undefined;
+    selectedButton?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
   };
   const confirmChoice = () => {
     if (!choicePage() || selected < 0 || !choices[selected] || !onChoose) return;
@@ -80,14 +84,14 @@ export function createNarrativePanel(interactLabel: () => string) {
     if (disposed || !pages.length) return;
     root.setAttribute('aria-label', bilingual('对话', 'Dialogue'));
     title.textContent = bilingual(...speaker); text.textContent = bilingual(...pages[page]);
-    text.scrollTop = 0; renderHint();
+    text.scrollTop = 0; root.scrollTop = 0; renderHint();
   };
   const unsubscribe = onLanguageChange(render);
   const viewport = document.defaultView;
   const resized = () => { if (!disposed && !root.hidden) renderHint(); };
   viewport?.addEventListener('resize', resized);
   const hide = () => {
-    root.hidden = true; pages = []; page = 0; text.textContent = ''; text.scrollTop = 0;
+    root.hidden = true; pages = []; page = 0; text.textContent = ''; text.scrollTop = 0; root.scrollTop = 0;
     choices = []; selected = -1; onChoose = null; options.hidden = true; options.replaceChildren();
     document.body.classList.remove('world-dialogue-open');
   };
@@ -95,7 +99,7 @@ export function createNarrativePanel(interactLabel: () => string) {
     get open() { return !disposed && !root.hidden; },
     show(line: Localized, name: Localized = ['交谈', 'Conversation']) {
       if (disposed) return;
-      choices = []; selected = -1; onChoose = null;
+      choices = []; selected = -1; onChoose = null; text.style.maxHeight = 'min(42vh, 320px)';
       pages = paginateDialogue(line); page = 0; speaker = [...name];
       root.hidden = false; document.body.classList.add('world-dialogue-open'); render();
     },
@@ -105,6 +109,7 @@ export function createNarrativePanel(interactLabel: () => string) {
       choices = items.filter(item => { if (!item.id || ids.has(item.id)) return false; ids.add(item.id); return true; })
         .slice(0, 9).map(item => ({ id: item.id, label: [...item.label] }));
       selected = -1; onChoose = choices.length ? callback : null;
+      text.style.maxHeight = choices.length ? 'min(30vh, 220px)' : 'min(42vh, 320px)';
       pages = paginateDialogue(line); page = 0; speaker = [...name];
       root.hidden = false; document.body.classList.add('world-dialogue-open'); render();
     },
