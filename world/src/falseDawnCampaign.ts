@@ -66,7 +66,7 @@ export function getFalseDawnGuide(done: ReadonlySet<string>, context: FalseDawnC
     case 'return': return at(['带着回传节拍返回幻日谷旧收讯阵，主动接通阵列，逼出复制求援声的源头。', 'Return to the Valley array with the return cadence. Deliberately energize it to expose the source copying distress calls.'], FALSE_DAWN.array);
     case 'array': return !cleared('false_dawn_array', done) && context.activeEncounter !== 'false_dawn_array'
       ? at(['在阵列台重新接通防卫战。已关闭的发射器会保留；未击败的守卫需要重新应对。', 'Restart the defense at the array console. Disabled emitters remain disabled; unfinished defenders must be faced again.'], FALSE_DAWN.array)
-      : at(state.nextAnchor === null ? ['三处发射器已关闭，击败阵列守卫后回到控制台。', 'All three emitters are disabled. Defeat the array guards, then return to the console.'] : ['迎战时依次关闭 I 收讯、II 转发、III 播送发射器。操作不会暂停战斗；先读清敌人的预警。', 'During the battle, disable I Receive, II Relay, then III Transmit. These actions do not pause combat; read the enemy tells first.'], state.nextAnchor === null ? FALSE_DAWN.array : FALSE_DAWN.emitters[state.nextAnchor]);
+      : at(state.nextAnchor === null ? ['三处发射器已关闭，击败阵列守卫后回到控制台。', 'All three emitters are disabled. Defeat the array guards, then return to the console.'] : cleared('false_dawn_array', done) ? ['阵列守卫已被击败。依次关闭剩余的 I 收讯、II 转发、III 播送发射器，再回到控制台。', 'The array guards are defeated. Disable the remaining emitters in order: I Receive, II Relay, III Transmit. Then return to the console.'] : ['迎战时依次关闭 I 收讯、II 转发、III 播送发射器。操作不会暂停战斗；先读清敌人的预警。', 'During the battle, disable I Receive, II Relay, then III Transmit. These actions do not pause combat; read the enemy tells first.'], state.nextAnchor === null ? FALSE_DAWN.array : FALSE_DAWN.emitters[state.nextAnchor]);
     case 'warden': return at(['回到阵列控制台，挑战回声守门者。关闭的发射器已不再替它遮掩；分清直线突刺与大范围重击，等恢复时再反击。', 'Return to the console to face the Echo Warden. The disabled emitters no longer conceal it. Distinguish its locked thrust from its heavy sweep, then punish the recovery.'], FALSE_DAWN.array);
     case 'ending': return at(['源头已被击败。回到阵列台，决定保留一个真正的求援频道，还是封存复制讯号的装置。', 'The source is defeated. At the array console, choose a genuine rescue channel or seal the signal-copying device.'], FALSE_DAWN.array);
     case 'complete': return null;
@@ -140,8 +140,8 @@ export function interactFalseDawn(id: string, done: Set<string>, context: FalseD
     if (state.nextAnchor !== emitter) return response(done, { toast: ['先断收讯，再断转发，最后断播送：按 I、II、III 的顺序。', 'Cut Receive, then Relay, then Transmit: follow I, II, III.'] });
     done.add(FALSE_DAWN.anchors[emitter]);
     return response(done, { changed: true, toast: [
-      `发射器 ${emitter + 1}/3 已关闭${emitter === 2 ? '。守住阵列，别让未击败的守卫逼近。' : '。继续沿下一处标记移动。'}`,
-      `Emitter ${emitter + 1}/3 disabled.${emitter === 2 ? ' Hold the array against any remaining guards.' : ' Move toward the next marked station.'}`,
+      `发射器 ${emitter + 1}/3 已关闭${emitter === 2 ? cleared('false_dawn_array', done) ? '。返回阵列台，准备引出守门者。' : '。守住阵列，别让未击败的守卫逼近。' : '。继续沿下一处标记移动。'}`,
+      `Emitter ${emitter + 1}/3 disabled.${emitter === 2 ? cleared('false_dawn_array', done) ? ' Return to the array console to prepare for the Warden.' : ' Hold the array against any remaining guards.' : ' Move toward the next marked station.'}`,
     ] });
   }
   if (context.activeEncounter) return response(done, { toast: ['讯号正在接通。先应对现场威胁；发射器可在战斗中操作。', 'The signal is active. Deal with the threat; emitter switches remain usable during combat.'] });

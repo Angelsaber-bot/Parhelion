@@ -97,3 +97,9 @@ test('completed emitters and remote stations never spam the full ending or fabri
  for(const id of[...F.emitters,F.harbor,F.winter]){const result=interact(id,done);assert.equal(result.dialogue,null);assert.ok(result.toast);assert.equal(result.changed,false);assert.equal(result.encounter,null);}
  assert.match(interact(F.winter,done).toast![1],/unchosen route/);assert.ok(interact(F.array,done).dialogue?.[1].includes('False Dawn is over'));assert.deepEqual([...done],before);
 });
+
+ test('post-defense switch cleanup gives the next actual task without inventing surviving guards',()=>{
+ const done=toArray('harbor');clear(done,'false_dawn_array');assert.match(guide(done)!.text[1],/guards are defeated/);
+ for(const id of F.emitters.slice(0,2))interact(id,done);
+ const final=interact(F.emitters[2],done);assert.equal(final.dialogue,null);assert.match(final.toast![1],/Return to the array console/);assert.doesNotMatch(final.toast![1],/remaining guards/);assert.equal(state(done).stage,'warden');
+ });
