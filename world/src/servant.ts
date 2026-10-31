@@ -211,6 +211,7 @@ export class ContractServant {
     this.current = next;
   }
   private cancelAttack() { this.cancelSkillPose(); this.navigation.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
+  get engagedTargetId(): string | null { return this.attackTarget; }
   get presentationModel(): THREE.Object3D | null { return this.state === 'ready' ? this.model ?? null : null; }
   get presentationClips(): readonly THREE.AnimationClip[] { return [...this.clips.values()].map(action => action.getClip()); }
   startSkillPose(command: SkillPoseCommand): boolean {
@@ -229,6 +230,13 @@ export class ContractServant {
     if (!pose) return;
     pose.elapsed += dt;
     if (pose.elapsed > 7.5) { this.cancelSkillPose(); return; }
+    if (pose.command.slot === 'skill' && pose.command.trackTarget) {
+      const target = pose.command.trackTarget();
+      if (target && [target.x,target.y,target.z].every(Number.isFinite)) {
+        const dx=target.x-this.root.position.x,dz=target.z-this.root.position.z;
+        if(Math.hypot(dx,dz)>.001)this.attackYaw=Math.atan2(dx,dz);
+      }
+    }
     turnCompanion(this.root, this.attackYaw, dt);
     if (!pose.started) {
       const angle = Math.atan2(Math.sin(this.attackYaw - this.root.rotation.y), Math.cos(this.attackYaw - this.root.rotation.y));
@@ -245,7 +253,8 @@ export class ContractServant {
       if (!pose.emitted && next + 1e-9 >= contact) {
         this.tick(Math.max(0, contact - pose.clipElapsed));
         pose.emitted = true; pose.contacts++;
-        pose.command.onContact(this.root.position, { x: Math.sin(this.attackYaw), y: 0, z: Math.cos(this.attackYaw) }, 'sword', { losOffset: 1, casterFeetY: this.root.position.y });
+        const contactYaw = pose.command.slot === 'skill' && pose.command.trackTarget ? this.root.rotation.y : this.attackYaw;
+        pose.command.onContact(this.root.position, { x: Math.sin(contactYaw), y: 0, z: Math.cos(contactYaw) }, 'sword', { losOffset: 1, casterFeetY: this.root.position.y });
         if (this.skillPose !== pose) return;
         this.tick(Math.max(0,next - contact));
       } else this.tick(Math.max(0,next - pose.clipElapsed));

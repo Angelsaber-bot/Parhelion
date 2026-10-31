@@ -192,3 +192,12 @@ test('cancelled mounted skill recovers in place instead of pretending to be newl
  const at=f.actor.root.position.clone();f.follow.cancelSkillPose(f.actor);assert.deepEqual(r.ended,[false]);
  for(let i=0;i<3;i++)f.tick();assert.ok(at.distanceTo(f.actor.root.position)<1e-8);assert.equal(r.hits.length,0);f.actor.dispose();
 });
+
+test('Saber Q tracks a moving admitted target with bounded real-root turn and contact heading agreement',async()=>{
+ const contract=new FirstContract(new Set(['saber_contract']));let target={x:0,y:0,z:7},contacts=0,finished=false;
+ const servant=new ContractServant({scene:new THREE.Scene(),contract,colliders:[floor()],marker:{id:'saber_contract',type:'interact',label:'Saber',p:[0,0,0]},target:()=>null,strike:()=>null,load:async()=>({scene:new THREE.Group(),animations:SERVANT_CLIPS.map(name=>new THREE.AnimationClip(name,name==='Attack'?1.2:1,[]))}as GLTF)});
+ await servant.ensureLoaded();servant.root.position.set(0,0,0);servant.root.rotation.y=0;
+ assert.equal(servant.startSkillPose({slot:'skill',direction:{x:0,y:0,z:1},targetId:'chosen',trackTarget:()=>target,contacts:1,onContact:(_p,d)=>{contacts++;assert.ok(Math.abs(d.x-Math.sin(servant.root.rotation.y))<1e-12);assert.ok(Math.abs(d.z-Math.cos(servant.root.rotation.y))<1e-12);assert.ok(d.x>.9);},onFinish:ok=>{finished=ok;}}),true);
+ for(let i=0;i<240&&!finished;i++){if(i===10)target={x:7,y:0,z:0};const before=servant.root.rotation.y;servant.update(1/120,new THREE.Vector3(),0,true,false);assert.ok(Math.abs(servant.root.rotation.y-before)<=8/120+1e-9);}
+ assert.equal(contacts,1);assert.equal(finished,true);servant.dispose();
+});

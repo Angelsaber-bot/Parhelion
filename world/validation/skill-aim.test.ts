@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {WorldCombatState} from '../src/combat';
-import {resolveServantSkillAim} from '../src/skillAim';
+import {resolveServantSkillAim,trackServantSkillTarget} from '../src/skillAim';
 import {collectStrikeTargets} from '../src/combatActions';
 const p=(x:number,z:number,y=0)=>({x,y,z});
 const clear={lineOfSight:()=>true,walk:(_f:any,x:number,z:number)=>p(x,z)};
@@ -30,4 +30,26 @@ test('visible aim-nearest target is selected independently of array order; camer
  const s=fixture(),args={player:p(0,7),caster:p(1,4),viewOrigin:p(0,10,2),viewDirection:p(0,-1),range:11,enemies:s.enemies,terrain:clear};
  assert.equal(resolveServantSkillAim(args)?.targetId,'target');assert.equal(resolveServantSkillAim({...args,enemies:[...s.enemies].reverse()})?.targetId,'target');
  assert.equal(resolveServantSkillAim({...args,terrain:{lineOfSight:(from)=>from.y!==2}})?.targetId,undefined);
+});
+
+test('Saber Q nearby assist selects side/back target, but never steals a valid manual aim',()=>{
+ const s=fixture(),args={player:p(0,7),caster:p(0,4),viewOrigin:p(0,10,2),viewDirection:p(0,1),range:11,enemies:s.enemies,terrain:clear};
+ assert.equal(resolveServantSkillAim(args)?.targetId,undefined);
+ assert.equal(resolveServantSkillAim({...args,assistNearby:true})?.targetId,'target');
+ assert.equal(resolveServantSkillAim({...args,assistNearby:true,preferredTargetId:'side'})?.targetId,'side');
+ assert.equal(resolveServantSkillAim({...args,viewDirection:p(0,-1),assistNearby:true,preferredTargetId:'side'})?.targetId,'target');
+ assert.equal(resolveServantSkillAim({...args,assistNearby:true,terrain:{lineOfSight:()=>false}})?.targetId,undefined);
+});
+test('Q tracking follows only selected live reachable target and fails closed across geometry/lifecycle',()=>{
+ const s=fixture(),caster=p(0,4);
+ assert.deepEqual(trackServantSkillTarget(caster,'target',11,s.enemies,clear),p(0,0));
+ s.enemies[0].p.x=2;
+ assert.deepEqual(trackServantSkillTarget(caster,'target',11,s.enemies,clear),p(2,0));
+ assert.equal(trackServantSkillTarget(caster,'target',11,s.enemies,{lineOfSight:()=>false}),null);
+ for(const reason of ['height','range','dead','pacified']){
+  const f=fixture(),e=f.enemies[0];
+  if(reason==='height')e.p.y=4;if(reason==='range')e.p.z=30;if(reason==='dead')e.hp=0;if(reason==='pacified')e.pacified=true;
+  assert.equal(trackServantSkillTarget(caster,'target',11,f.enemies,clear),null,reason);
+ }
+ assert.equal(trackServantSkillTarget(caster,'missing',11,s.enemies,clear),null);
 });

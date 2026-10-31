@@ -6,6 +6,8 @@ export interface SkillPoseCommand {
   slot?: 'skill' | 'ultimate';
   targetId?: string;
   targetPoint?: Point3;
+  /** Position of the already selected target; null never switches target. */
+  trackTarget?: () => Point3 | null;
   contacts: number;
   onContact: (position: Point3, direction: Point3, socket?: string, geometry?: StrikeOriginGeometry) => void;
   onFinish: (completed: boolean) => void;

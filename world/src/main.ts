@@ -23,7 +23,7 @@ import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide
 import { optionalPinExpired, type OptionalPin } from './optionalNavigation';
 import { createEraStoryScene } from './eraStoryScenes';
 import { WorldActions } from './worldActions';
-import { resolveServantSkillAim } from './skillAim';
+import { resolveServantSkillAim, trackServantSkillTarget } from './skillAim';
 import { CONTRACT_SKILLS, type SkillEvent } from './contractSkills';
 import { UltimateDirector } from './ultimateDirector';
 import { UltimateStage } from './ultimateStage';
@@ -1055,10 +1055,12 @@ actions = new WorldActions({ scene,
     const root = identity === 'saber' ? servant.root : eraActors.find(e => e.servant === identity)?.actor?.root;
     if (!root?.visible || root.position.distanceTo(player.pos) >= 16) return null;
     const range = Math.max(...CONTRACT_SKILLS[identity][slot].pulses.map(pulse => pulse.range));
-    return resolveServantSkillAim({ player: player.pos, caster: root.position, viewOrigin: camera.position, viewDirection: camera.getWorldDirection(new THREE.Vector3()), range, enemies: combat.state.enemies, terrain: combat.geometry.terrain });
+    return resolveServantSkillAim({ player: player.pos, caster: root.position, viewOrigin: camera.position, viewDirection: camera.getWorldDirection(new THREE.Vector3()), range, assistNearby: identity === 'saber' && slot === 'skill', preferredTargetId: identity === 'saber' ? servant.engagedTargetId : undefined, enemies: combat.state.enemies, terrain: combat.geometry.terrain });
   },
   startPose: (identity, command) => {
-    if (identity === 'saber') return servant.root.visible && servant.root.position.distanceTo(player.pos) < 16 && servant.startSkillPose(command);
+    if (identity === 'saber') return servant.root.visible && servant.root.position.distanceTo(player.pos) < 16 && servant.startSkillPose({ ...command,
+      trackTarget: command.slot === 'skill' && command.targetId ? () => trackServantSkillTarget(servant.root.position, command.targetId!, Math.max(...CONTRACT_SKILLS.saber.skill.pulses.map(pulse => pulse.range)), combat.state.enemies, combat.geometry.terrain) : undefined,
+    });
     const entry = eraActors.find(e => e.servant === identity);
     return !!entry?.actor?.root.visible && entry.actor.root.position.distanceTo(player.pos) < 16 && entry.follow.startSkillPose(entry.actor, command, player.pos, player.yaw);
   },
