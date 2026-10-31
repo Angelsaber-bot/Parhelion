@@ -21,7 +21,12 @@ Five independent boundary tests cover holds, pause/invalid delta, cancellation,
 legacy default blending. An isolated actual-main adapter reduced observed foot
 speeds, but residual motion remains; it is not a no-pop or GPU-performance claim.
 
-This source is a production candidate, not final acceptance. Continuous paired
-visuals and no-adapter actual Q/X regressions remain required. Guarantees apply
+The no-adapter production Musashi Q replay also preserves all observed authority
+fields exactly. Its local-foot speed peaks change from 7.607/9.132 to
+5.440/7.190 m/s. These are measured bone diagnostics, not a claim of zero sliding.
+
+This source remains a production candidate, not final integrated acceptance.
+Paired entry-only CPU visual review and the other actors' Q/X regressions plus
+full aggregate checks remain required. Guarantees apply
 to the tested current profiles; a hypothetical earlier event during the fade
 would need a new socket-pose audit rather than an assumed invariant.
