@@ -37,3 +37,17 @@ Historical pre-action Player reference: git blob `8c12ffc9d2ca47e97328d470154a93
 ## Evidence preservation
 
 Historical actual-main baseline JSONs remain `artifacts/downhill-actions/*-production-diagnosis.json`. New default runs write `*-current-production.json`; `--output=PATH` supports independent destinations. Candidate modes have separate filenames. No-wrapper production main validation must follow main wiring before claiming end-to-end closure.
+
+## Production closure
+
+API `b21719a` (Player blob `765ba51b6ca9324b77e0bf7a5d2f58ada2ae0226`) plus coordinator `86758f0` now execute the approved ownership predicate in real main. Lead test `66ba6c0` positively observes the existing guard-only tail; independent API transition tests are `dc1ae1d`. The main test failed with zero contacts before wiring and passes with exactly one real melee/Q contact afterward.
+
+Own full **no-wrapper** production replay:
+
+- Downhill melee: unchanged3/6 input admissions, all3 admitted contacts, zero cancellations;60 support passes/1,800 individual BVH raycasts/60 capsule retries.
+- Downhill Q: one admitted pulse, zero cancellations, original guard tail;78 passes/2,340 BVH raycasts/78 retries. The pre-update ownership lasts78 steps while the post-update guard observation has77 true samples, exactly as on flat ground; this is not an extension.
+- Flat controls: original contacts and zero support queries.
+- Ledge controls: one rejected support pass, no capsule retry, admitted action canceled as before. Jump controls: zero recovery queries and normal cancellation.
+- No-action downhill/flat/ledge/jump: all2,160 physics records exactly match the preserved historical baseline, with zero support queries in every case.
+
+Current evidence is `artifacts/downhill-actions/{melee,skill,none}-current-production.json` and matching logs. The diagnostic script now treats the legacy `evadeSupport` counter as shared admitted-action support, asserting zero only when no action owns it. General walking continuity remains a separate validation-only contrast.
