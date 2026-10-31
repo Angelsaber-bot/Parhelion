@@ -56,18 +56,35 @@ export function createMusashiUltimatePerformance(root:THREE.Object3D,clips:reado
   // The torso loads before the cut; impact is a brief compression, then a
   // controlled exhale rather than a permanent forward lunge.
   const impact=lastStrike?Math.sin(Math.min(1,age/.07)*Math.PI/2)*Math.exp(-Math.max(0,age-.07)*9):0;
-  pelvis.position.y-=.065*stance+.025*impact*(1-settle);
+  pelvis.position.y-=.065*stance; // Preserve authored rig-space stance travel (the imported rig is Z-up).
   pelvis.position.x+=(lastStrike===2?-.028:.028)*impact*(1-settle);
-  pelvis.position.z+=.022*impact*(1-settle);root.updateWorldMatrix(true,true);
+  root.updateWorldMatrix(true,true);
+  // Explicit alternating placement/recovery: the support shoe stays fixed.
+  // Targets remain inside the anatomical leg reach; never stretch a bone or move root.
+  const targets=legs.map((_chain,side)=>{
+   const moving=frame.reduced?0:frame.phase==='intro'?smooth((frame.progress-(side===0?.04:.52))/.42):frame.phase==='outro'?smooth((frame.progress-(side===1?.02:.52))/.44):0;
+   const step=frame.reduced?0:frame.phase==='intro'?moving:frame.phase==='outro'?1-moving:1;
+   const target=cv(footStarts[side]);target.x+=(side===0?1:-1)*.105*step;target.z+=(side===0?-.10:.18)*step;
+   if(!frame.reduced&&(frame.phase==='intro'||frame.phase==='outro'))target.y+=(frame.phase==='intro'?.035:.04)*Math.sin(Math.PI*moving);
+   return world(target);
+  });
+  let lower=0;
   for(let side=0;side<2;side++){
-   const target=cv(footStarts[side]),step=frame.phase==='intro'?smooth((frame.progress-(side===0?0:.28))/.65):1-settle;
-   target.x+=(side===0?1:-1)*.105*step;target.z+=(side===0?-.10:.18)*step;
-   if(frame.phase==='intro')target.y+=.035*Math.sin(Math.PI*step);
-   plantLeg(legs[side],world(target));
+   const chain=legs[side],hip=chain[0].getWorldPosition(v()),knee=chain[1].getWorldPosition(v()),ankle=chain[2].getWorldPosition(v()),reach=hip.distanceTo(knee)+knee.distanceTo(ankle)-1e-5,target=targets[side];
+   const horizontal=(hip.x-target.x)**2+(hip.z-target.z)**2;
+   lower=Math.max(lower,hip.y-target.y-Math.sqrt(Math.max(0,reach*reach-horizontal)));
   }
+  if(lower>0){
+   const bounded=Math.min(lower,.04*root.getWorldScale(v()).y),parent=pelvis.parent!;
+   const a=parent.worldToLocal(v(0,0,0)),b=parent.worldToLocal(v(0,-bounded,0));pelvis.position.add(b.sub(a));root.updateWorldMatrix(true,true);
+  }
+  // Compression follows the support correction, so reach calibration cannot swallow the strike's weight.
+  const compression=.022*impact*(1-settle)*root.getWorldScale(v()).y;
+  if(compression>0){const parent=pelvis.parent!,a=parent.worldToLocal(v(0,0,0)),b=parent.worldToLocal(v(0,-compression,0));pelvis.position.add(b.sub(a));root.updateWorldMatrix(true,true);}
+  for(let side=0;side<2;side++)plantLeg(legs[side],targets[side]);
   let rw=v(-.30,1.37,.16),lw=v(.28,1.02,.23),rd=v(-.55,.68,.47),ld=v(.75,.05,.65);
   let yaw=-.28;
-  const sweep=lastStrike?smooth((age+.09)/.20):0,recover=smooth((age-.17)/.24);
+  const sweep=lastStrike?smooth((age+.09)/.20):0;
   if(frame.phase==='intro'){
    const ready=smooth((frame.progress-.18)/.72);rw.lerp(v(-.30,.96,.14),1-ready);rd.lerp(v(-.35,-.28,.88),1-ready);lw.lerp(v(.30,.94,.14),1-ready);ld.lerp(v(.4,-.25,.88),1-ready);yaw*=ready;
   } else if(frame.phase==='charge'){
@@ -80,15 +97,23 @@ export function createMusashiUltimatePerformance(root:THREE.Object3D,clips:reado
    lw.lerp(v(-.16,1.03,.35),anticipation*.42525);ld.lerp(v(-.8,-.3,.52),anticipation*.42525);
    yaw=THREE.MathUtils.lerp(-.08,.25,sweep)-.14*anticipation;
   } else if(lastStrike===2){
-   rw.set(.16,1.03,.34).lerp(v(-.29,1.40,.18),recover);rd.set(.75,-.32,.59).lerp(v(-.65,.60,.46),recover);
+   const rightReady=smooth((age-.08)/.17),leftReady=smooth((age-.24)/.18);
+   rw.set(.16,1.03,.34).lerp(v(-.29,1.40,.18),rightReady);rd.set(.75,-.32,.59).lerp(v(-.65,.60,.46),rightReady);
    lw.set(.29,1.42,.14).lerp(v(-.16,1.03,.35),sweep);ld.set(.50,.75,.43).lerp(v(-.8,-.3,.52),sweep);
-   lw.lerp(v(.29,1.39,.20),recover);ld.lerp(v(.65,.60,.46),recover);
+   lw.lerp(v(.29,1.39,.20),leftReady);ld.lerp(v(.65,.60,.46),leftReady);
    rw.lerp(v(.14,1.04,.36),anticipation*.42525);lw.lerp(v(-.14,1.04,.43),anticipation*.42525);
    rd.lerp(v(.72,-.27,.64),anticipation*.42525);ld.lerp(v(-.72,-.27,.64),anticipation*.42525);
    yaw=THREE.MathUtils.lerp(.11,-.28,sweep)+.12*anticipation;
   } else {
    rw.set(-.29,1.40,.18).lerp(v(.14,1.04,.36),sweep);lw.set(.29,1.39,.20).lerp(v(-.14,1.04,.43),sweep);
    rd.set(-.65,.60,.46).lerp(v(.72,-.27,.64),sweep);ld.set(.65,.60,.46).lerp(v(-.72,-.27,.64),sweep);yaw=THREE.MathUtils.lerp(-.16,.08,sweep);
+   // The crossing is separated in depth after (never at) the native contact instant.
+   const separation=.055*Math.sin(Math.PI*smooth(age/.08));rw.z-=separation;lw.z+=separation;rw.y-=separation;lw.y+=separation;rd.y-=separation*2.2;ld.y+=separation*2.2;
+   // Withdraw one blade before the other crosses the centre: no frozen horizontal finishing tableau.
+   const rightReturn=smooth((age-.12)/.18),leftReturn=smooth((age-.22)/.16);
+   rw.lerp(v(-.28,.98,.25),rightReturn);rd.lerp(v(-.48,-.32,.82),rightReturn);
+   lw.lerp(v(.28,.96,.24),leftReturn);ld.lerp(v(.48,-.32,.82),leftReturn);
+   yaw=THREE.MathUtils.lerp(yaw,-.06,leftReturn);
   }
   // End with separated blades below the sightline; preserve the last cut until
   // the real outro starts, and restore the captured pose on reset/dispose.

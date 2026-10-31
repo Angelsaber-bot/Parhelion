@@ -9,8 +9,8 @@ export class MusashiWindupCamera {
   update(frame: EraArtFrame, camera: THREE.PerspectiveCamera, reduced: boolean, baseAim: THREE.Vector3): THREE.Vector3 {
     this.aim.copy(baseAim);
     const p = frame.progress;
-    if (reduced || frame.phase !== 'charge' || !Number.isFinite(p) || p <= .3 || p >= .9) return this.aim;
-    const weight = ease((p - .3) / .13) * (1 - ease((p - .65) / .23));
+    if (reduced || frame.phase !== 'charge' || !Number.isFinite(p) || p <= .22 || p >= .9) return this.aim;
+    const weight = ease((p - .22) / .21) * (1 - ease((p - .65) / .23));
     const center = this.actor.position;
     this.target.set(center.x, 1.55, center.z + .05); this.aim.lerp(this.target, weight);
     this.target.set(center.x + 1.6, 2, center.z + 7.8); camera.position.lerp(this.target, weight);
