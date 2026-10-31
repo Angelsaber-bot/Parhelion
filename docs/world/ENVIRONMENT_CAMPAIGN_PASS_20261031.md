@@ -112,3 +112,14 @@ are in `environment/resident-acting-v2/{rest,read}/ada.png`, under sibling evide
 The bounded head-down/note-lift is runtime pose geometry under offline studio lighting;
 two stills do not claim runtime frame pacing or a full motion capture. Final campaign
 residents span 5,972–7,008 triangles. Eight NPC tests pass.
+
+### Hard-roof collision consistency
+
+An upward ray reproduced missing collision on the visible Alpha kiosk roof. Alpha's
+hard canopy, Britain's oak/slate shelter and Kyoto's tile veranda now use their actual
+roof panel/ridge geometry as fixed collision (14 small boxes, 168 collision triangles;
+render geometry unchanged). Soft canvas/sail shelters retain their existing behavior.
+A real Player capsule jumping from a test-only raised standing pad cannot pass through
+these three roofs and lands normally. All five original/new interaction routes and
+all five actual production-map road→ramp→hub walks pass again; see
+`environment/roof-approach-regression.log`. No progress-dependent collider is added.

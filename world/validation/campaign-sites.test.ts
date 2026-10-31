@@ -62,3 +62,12 @@ test('campaign site placement preserves offsets and distance culling',()=>{
  const scene=createCampaignSites([p]);assert.deepEqual(scene.sites[0].origin,[93,20,-94.8]);assert.equal(scene.markers.length,2);assert.equal(scene.npcs.length,1);
  scene.update({x:93,z:-94.8});assert.equal(scene.sites[0].root.visible,true);scene.update({x:1000,z:1000});assert.equal(scene.sites[0].root.visible,false);scene.dispose();
 });
+
+test('hard kiosk, oath shelter and tile veranda roofs stop an upward player capsule',()=>{
+ for(const region of['alpha','britain','kyoto']as const){const site=buildCampaignSite(region),floor=new THREE.BoxGeometry(12,.2,12).translate(0,-.1,0),pad=new THREE.BoxGeometry(.8,.1,.8).translate(0,.65,.7),merged=mergeParts([floor,pad,...site.collisionGeometries],false),bvh=new MeshBVH(merged),player=new Player([{name:'roof-proof',bvh,enabled:true}],-100);
+  const ceiling=bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(0,1.9,.7),new THREE.Vector3(0,1,0)),THREE.DoubleSide);assert.ok(ceiling,`${region} visually hard roof has no collider`);assert.ok(ceiling.point.y>2.5&&ceiling.point.y<3.7);
+  player.teleport(0,.74,.7);for(let i=0;i<60;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});assert.equal(player.onGround,true);let highest=0;
+  for(let i=0;i<180;i++){player.step(1/120,{x:0,z:0,jump:i===0,sprint:false});highest=Math.max(highest,player.pos.y+1.75);}assert.ok(highest<=ceiling.point.y+.035,`${region}: head ${highest} penetrates roof ${ceiling.point.y}`);assert.equal(player.onGround,true);
+  merged.dispose();floor.dispose();pad.dispose();site.dispose();
+ }
+});

@@ -90,7 +90,7 @@ function alpha(a: SiteArt) {
   const blue='#3e5d75',ivory='#e2e5d9',brass='#baa16c',ink='#465b63';
   // Open-sided observatory instrument kiosk: a curved roof and receiver rack, not a house clone.
   for(const x of[-2.35,2.35]){a.box([x,1.55,-.95],[.15,3.1,.15],blue,true);a.box([x,.15,-.95],[.3,.3,.3],ivory,true);}
-  for(let i=0;i<6;i++){const z=-1.35+i*.47;const y=3.2+.28*Math.sin(i*Math.PI/5);a.box([0,y,z],[5.15,.12,.49],ivory,false,'body',[-.13*Math.cos(i*Math.PI/5),0,0]);}
+  for(let i=0;i<6;i++){const z=-1.35+i*.47;const y=3.2+.28*Math.sin(i*Math.PI/5);a.box([0,y,z],[5.15,.12,.49],ivory,true,'body',[-.13*Math.cos(i*Math.PI/5),0,0]);}
   for(const x of[-2.5,2.5])a.beam([x,3.2,-1.5],[x,3.2,1.3],.08,brass);
   a.box([-1, .91,-.65],[2.1,.18,1.15],blue,true);
   for(const x of[-1.8,-.2])a.box([x,.42,-.65],[.13,.84,.8],ivory,true);
@@ -116,8 +116,8 @@ function britain(a: SiteArt) {
   const wood='#70523c',dark='#4f4436',linen='#d9c29a',blue='#647d99',stone='#b8ab91';
   // A witness shelter framed by carved oak, with an open front and a hand-laid oath desk.
   for(const x of[-2.2,2.2]){a.box([x,1.45,-1.2],[.2,2.9,.2],wood,true);a.box([x,.22,-1.2],[.42,.44,.42],stone,true);}
-  for(const side of[-1,1]){a.box([side*1.15,3.15,-.25],[2.43,.12,3.5],blue,false,'body',[0,0,-side*.23]);a.beam([0,3.43,1.45],[side*2.35,2.88,1.45],.1,linen);}
-  a.box([0,3.48,-.25],[.16,.18,3.7],dark);
+  for(const side of[-1,1]){a.box([side*1.15,3.15,-.25],[2.43,.12,3.5],blue,true,'body',[0,0,-side*.23]);a.beam([0,3.43,1.45],[side*2.35,2.88,1.45],.1,linen);}
+  a.box([0,3.48,-.25],[.16,.18,3.7],dark,true);
   for(const x of[-2.2,2.2])a.beam([x,2.1,-1.2],[x*.65,2.92,-1.2],.12,wood);
   a.box([-1.05,.85,-.55],[1.85,.19,1.05],wood,true);
   for(const x of[-1.7,-.4])a.box([x,.4,-.55],[.16,.8,.8],dark,true);
@@ -186,8 +186,8 @@ function kyoto(a: SiteArt) {
   const timber='#855d40',dark='#554239',paper='#f0dfbb',indigo='#525e82',tile='#647483';
   // A narrow paper-preservation veranda; slatted side screen and a folded tile eave.
   for(const x of[-2.2,2.2])a.box([x,1.4,-1.2],[.14,2.8,.14],timber,true);
-  for(const side of[-1,1]){a.box([0,2.95,-.3+side*.85],[5,.12,1.85],tile,false,'body',[side*.17,0,0]);a.box([0,2.84,-.3+side*1.75],[5.1,.13,.3],tile,false,'body',[-side*.12,0,0]);}
-  a.box([0,3.17,-.3],[5.15,.16,.23],dark);
+  for(const side of[-1,1]){a.box([0,2.95,-.3+side*.85],[5,.12,1.85],tile,true,'body',[side*.17,0,0]);a.box([0,2.84,-.3+side*1.75],[5.1,.13,.3],tile,true,'body',[-side*.12,0,0]);}
+  a.box([0,3.17,-.3],[5.15,.16,.23],dark,true);
   for(let x=-2;x<=2;x+=.5)a.box([x,3.29,-.3],[.4,.14,.3],'#89939a');
   for(let x=-2;x<=2;x+=.4)a.box([x,1.8,-1.2],[.055,1.6,.06],timber);
   a.box([0,1.78,-1.24],[4.2,1.45,.035],paper);
