@@ -51,15 +51,15 @@ test('Musashi monumental crossing is third-contact-only and decays through outro
  stage.update({elapsed:2.75,phase:'outro',progress:.2,pulse:0,strikeCount:3});assert.equal(visible(stage,/Musashi third central cut/).length,1);
  stage.update({elapsed:3.3,phase:'outro',progress:1,pulse:1,strikeCount:4});assert.equal(visible(stage,/Musashi third/).length,0);assert.deepEqual(stage.resourceCounts,counts);stage.dispose();
 });
-test('Musashi finisher uses narrow additive pointed blades without covering the face, and reduced mode is softer',()=>{
+test('Musashi default readability uses narrow alpha pointed blades without additive wash, and reduced mode is softer',()=>{
  const measurements=[];
  for(const reducedEffects of[false,true]){const stage=new UltimateStage();stage.begin({identity:'musashi',sourceRoot:source(),reducedEffects});stage.update({elapsed:3,phase:'release',progress:.8,pulse:1,strikeCount:3});
  const blade=stage.scene.getObjectByName('Musashi third red crossing') as THREE.Mesh<THREE.BufferGeometry,THREE.MeshBasicMaterial>;
  const color=blade.geometry.attributes.color;assert.equal(color.itemSize,4);assert.equal(color.getW(12*7+3),1);assert.equal(color.getW(12*7),0);
  blade.geometry.computeBoundingBox();const width=blade.geometry.boundingBox!.getSize(new THREE.Vector3()).x*blade.scale.x;
- assert.equal(blade.material.blending,THREE.AdditiveBlending);assert.equal(blade.material.depthWrite,false);
+ assert.equal(blade.material.blending,THREE.NormalBlending);assert.equal(blade.material.depthWrite,false);
  measurements.push({width,opacity:blade.material.opacity});stage.dispose();}
- assert.ok(measurements[0].width>.3&&measurements[0].width<.4);assert.ok(measurements[1].width<.10);assert.ok(measurements[1].width<measurements[0].width/3);assert.equal(measurements[1].opacity,.24);assert.ok(measurements[1].opacity<measurements[0].opacity/2);
+ assert.ok(measurements[0].width>.3&&measurements[0].width<.4);assert.ok(measurements[1].width<.10);assert.ok(measurements[1].width<measurements[0].width/3);assert.equal(measurements[0].opacity,.38);assert.equal(measurements[1].opacity,.18);assert.ok(measurements[1].opacity<measurements[0].opacity/2);
 });
 test('short mounted release travels visibly by elapsed time and camera/aim track the exact displacement',()=>{
  for(const reducedEffects of [false,true]){const root=source(),stage=new UltimateStage();stage.begin({identity:'napoleon',sourceRoot:root,reducedEffects});
