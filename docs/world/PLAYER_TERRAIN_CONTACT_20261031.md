@@ -38,3 +38,11 @@ node --import tsx validation/characters/inspect-player-sole-bind.ts /workspace/p
 The optional audit `--candidate` adapter is for walking export only; it does not establish lifecycle forwarding. The independent default-production lifecycle runner is the stronger reset/shot proof. Freeze or select an explicitly old `--world-root` for baseline comparisons; current main now attaches support by default.
 
 Evidence remains in sibling `parhelion-eight-hour-evidence/animation/`: `player-support-v9-{30,60,120}hz.json`, `player-support-v9-rate-summary.json`, `player-support-v9-quiet-profile.json`, `player-support-v9-ankle-envelope.json`, `player-support-v9-{start,travel,stop,settle,rest,step}-consecutive.jpg`, and `player-support-production-full-family.log`. Independent reports are under `qa/player-support-main-production*` and the companion QA document. Earlier v8/prototype outputs remain historical, not the final ankle-motion proof.
+
+## Committed-source closure
+
+Source `d9da884`, real main hook `2b0dc44`, and independent lifecycle evidence `c59950e` are durable. A post-commit default-main replay (no adapter) measured 559 dense Winter/Britain/Kyoto frames: root, upper, gun and contact states exactly match the approved v9 sequence, with **zero difference in every recorded sole minimum** and positive production support. Reports: `animation/player-support-production-committed.json` and `player-support-production-committed-parity.json`.
+
+An additional 681 matched sprint and 180-degree turn frames preserve root/upper/gun/contact exactly. Grounded minima improve to +0.14–0.67 mm; excluded airborne overlaps remain exactly baseline, including the roughly −138 mm turning/airborne overlap. This residual is not a new grounded support claim. See `player-support-v9-sprint-turn-pair-summary.json`.
+
+The full-rate matched offline video is `animation/player-support-winter-v9-before-after.mp4`: baseline left, v9 right; 161 frames at 60 fps, 960×480. Consecutive stills were inspected; encoding a full-rate video is not itself a claim of independent animated playback review. The first two diagnostic frames remain terrain-occluded.

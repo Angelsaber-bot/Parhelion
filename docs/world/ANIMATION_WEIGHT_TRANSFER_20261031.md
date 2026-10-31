@@ -23,3 +23,11 @@ The baseline comparison for this checkpoint comes from the original checkout HEA
 
 ## Stage start-pose isolation follow-up
 The private stage now evaluates its idle action before measuring framing or caching performance rest transforms. Previously, starting Musashi's ultimate while running/attacking could capture the lifted foot and shifted hips: an actual-asset comparison measured a 0.41885 m maximum intro-joint deviation between idle/run/attack entry. The corrected comparison is 0 m, with every source transform unchanged. Twenty-five focused era-performance and stage lifecycle tests pass. This changes only clone initialization, not release timing, contacts, energy or skip behavior.
+
+## Final accepted follow-ons
+
+- Saber stride, skirt reaction and cached real-terrain support: source `8450f53`, with unsupported/partial-rig fallback corrections `ebdc432` and `0f874b0`. See [grounded stride evidence](SABER_GROUNDED_STRIDE_20261031.md). The accepted downward sword carry is retained; separate clearance experiments were rejected and inherited blade-floor clipping remains.
+- Native rifle ADS elbow compromise: wrist-safe correction `694570e`. See [ADS elbow audit](PLAYER_ADS_ELBOW_20261031.md). The larger earlier pole change failed the existing anatomical wrist gate and is superseded, despite exact hand/gun endpoints. Original wrist constraints remain; residual stock contacts are disclosed.
+- Native player lower-leg terrain presentation: source `d9da884`, main attachment `2b0dc44`, independent input QA `c59950e`. See [terrain contact evidence](PLAYER_TERRAIN_CONTACT_20261031.md). This is visual-only, with unchanged controller/root/hips/upper/gun and explicit airborne/melee fallbacks.
+
+Earlier preliminary stride notes are preserved as `animation/early-saber-stride-doc-notes-preserved.patch` in the sibling evidence directory. Final accepted-source reports above supersede those pre-terrain candidate metrics. Historical player renders before the UV1 atlas exporter correction are not final material proof; the corrected renderer affects evidence, not runtime appearance.
