@@ -7,12 +7,13 @@ const smooth=(x:number)=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
 export function createUltimatePerformance(identity:string,root:THREE.Object3D):UltimatePerformance{
  const names=['Hips','Spine','Spine1','Spine2','Head','RightArm','RightForeArm','RightHand','LeftArm','LeftForeArm','LeftHand','LeftFoot','RightFoot'];
  const bones=Object.fromEntries(names.map(n=>[n,root.getObjectByName('mixamorig'+n)]));
+ for(const n of ['LeftUpLeg','LeftLeg','RightUpLeg','RightLeg'])bones[n]=root.getObjectByName('mixamorig'+n);
  const socket=root.getObjectByName('WeaponSocket_R');
  const anchors={socket,head:bones.Head,leftFoot:bones.LeftFoot,rightFoot:bones.RightFoot};
  if(identity!=='saber'||!socket||names.some(n=>!bones[n]))return{anchors,update(){},reset(){},dispose(){}};
  const base=new Map<THREE.Object3D,{q:THREE.Quaternion;p:THREE.Vector3}>();
- for(const name of ['Hips','Spine','Spine1','Spine2','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand']){const b=bones[name]!;base.set(b,{q:b.quaternion.clone(),p:b.position.clone()});}
- const vectors=Array.from({length:128},()=>new THREE.Vector3()),quaternions=Array.from({length:96},()=>new THREE.Quaternion());let vi=0,qi=0;
+ for(const name of ['Hips','Spine','Spine1','Spine2','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot']){const b=bones[name];if(!b)continue;base.set(b,{q:b.quaternion.clone(),p:b.position.clone()});}
+ const vectors=Array.from({length:192},()=>new THREE.Vector3()),quaternions=Array.from({length:128},()=>new THREE.Quaternion());let vi=0,qi=0;
  const nv=(x=0,y=0,z=0)=>vectors[vi++].set(x,y,z),nq=()=>quaternions[qi++].identity(),cv=(p:THREE.Vector3)=>nv().copy(p),cq=(q:THREE.Quaternion)=>nq().copy(q);
  let strikeStart=-1,lastStrike=0,disposed=false;
  const basis=new THREE.Matrix4();
@@ -46,6 +47,20 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
   const q=bones.RightHand!.getWorldQuaternion(nq());
   q.multiply(nq().setFromAxisAngle(nv(0,1,0),Math.PI));setWorldQ(bones.LeftHand!,q);
  };
+ const grounded=['Left','Right'].every(side=>bones[side+'UpLeg']&&bones[side+'Leg']);
+ const footRest=grounded?(['Left','Right']as const).map(side=>({side,p:root.worldToLocal(bones[side+'Foot']!.getWorldPosition(new THREE.Vector3())),q:root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(bones[side+'Foot']!.getWorldQuaternion(new THREE.Quaternion()))})):[];
+ // Private-stage weight loading: finite two-link legs hold authored feet, never the live actor.
+ const loadWeight=(amount:number)=>{
+  if(!grounded||amount<=0)return;
+  const hips=bones.Hips!,p=root.worldToLocal(hips.getWorldPosition(nv()));p.y-=amount;hips.position.copy(hips.parent!.worldToLocal(root.localToWorld(p)));hips.updateWorldMatrix(false,true);
+  for(const rest of footRest){
+   const upper=bones[rest.side+'UpLeg']!,lower=bones[rest.side+'Leg']!,foot=bones[rest.side+'Foot']!,a=upper.getWorldPosition(nv()),b=lower.getWorldPosition(nv()),c=foot.getWorldPosition(nv()),target=world(rest.p);
+   const l1=a.distanceTo(b),l2=b.distanceTo(c),axis=cv(target).sub(a),distance=THREE.MathUtils.clamp(axis.length(),Math.abs(l1-l2)+.0001,l1+l2-.0001);axis.normalize();
+   const along=(l1*l1-l2*l2+distance*distance)/(2*distance),height=Math.sqrt(Math.max(0,l1*l1-along*along));
+   const pole=worldAxis(nv(rest.side==='Left'?.035:-.035,0,1));pole.addScaledVector(axis,-pole.dot(axis)).normalize();const knee=cv(a).addScaledVector(axis,along).addScaledVector(pole,height);
+   aim(upper,lower,knee);aim(lower,foot,target);setWorldQ(foot,root.getWorldQuaternion(nq()).multiply(cq(rest.q)));
+  }
+ };
  const restore=()=>{for(const [b,p]of base){b.quaternion.copy(p.q);b.position.copy(p.p);}root.updateWorldMatrix(true,true);};
  return{anchors,update(frame){
   if(disposed||!Number.isFinite(frame.elapsed))return;
@@ -53,13 +68,14 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
   if(frame.phase==='intro'||frame.phase==='charge'){
    restore();const charge=frame.phase==='charge';const t=smooth(charge?Math.max(0,(p-.40)/.60):p);
    const start=charge?v([-.18,1.19,.24]):v([-.30,1.12,.19]);
-   const end=charge?v([-.08,1.65,-.10]):v([-.18,1.19,.24]);
+   const end=charge?v([-.08,1.74,-.08]):v([-.18,1.19,.24]);
    const wrist=start.lerp(end,t);
    // Distributed chest wind-up, with quiet head counterturn, no global limb Euler rotations.
-   for(const [name,angle]of [['Spine',-.035],['Spine1',-.07],['Spine2',-.10],['Head',.10]] as const){
+   for(const [name,angle]of [['Spine',-.045],['Spine1',-.085],['Spine2',-.12],['Head',.12]] as const){
     const b=bones[name]!,axis=worldAxis(nv(0,1,0));
     const parentQ=b.parent!.getWorldQuaternion(nq());axis.applyQuaternion(parentQ.invert());b.quaternion.premultiply(nq().setFromAxisAngle(axis,(charge?t:0)*angle));b.updateWorldMatrix(false,true);
    }
+   loadWeight(charge?.035*t:.008*smooth(p));
    arm('Right',world(wrist));
    const direction=charge?v([-.25,.96,.12]).lerp(v([-.09,.98,-.16]),t):v([-.25,.96,.12]);orientSword(direction.normalize());supportGrip();
   }else{
@@ -70,11 +86,12 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
    // notification. This is presentation only: no source pose or damage mutation.
    const sweep=age<0?0:smooth(age/.17),settle=age<.17?0:smooth((age-.17)/.52);
    restore();
-   const twist=THREE.MathUtils.lerp(-.205,.14,sweep)*(1-settle*.35);
+   const twist=THREE.MathUtils.lerp(-.25,.18,sweep)*(1-settle*.35);
    for(const [name,weight]of [['Spine',.17],['Spine1',.34],['Spine2',.49],['Head',-.35]] as const){
     const b=bones[name]!,axis=worldAxis(nv(0,1,0));axis.applyQuaternion(b.parent!.getWorldQuaternion(nq()).invert());b.quaternion.premultiply(nq().setFromAxisAngle(axis,twist*weight));b.updateWorldMatrix(false,true);
    }
-   const wrist=v([-.08,1.65,-.10]).lerp(v([-.08,.93,.43]),sweep).lerp(v([-.15,1.10,.25]),settle*.3);
+   const wrist=v([-.08,1.74,-.08]).lerp(v([-.08,.93,.43]),sweep).lerp(v([-.15,1.10,.25]),settle*.3);
+   loadWeight(.035*(1-sweep)+.018*Math.sin(Math.PI*settle));
    arm('Right',world(wrist));
    const direction=v([-.09,.98,-.16]).lerp(v([.04,-.24,.97]),sweep).normalize();orientSword(direction);supportGrip();
   }

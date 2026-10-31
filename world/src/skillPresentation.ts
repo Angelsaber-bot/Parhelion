@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { skillContains, type SkillStrike, type SkillEvent } from './contractSkills';
 import type { Point3 } from './combat';
-const COLORS: Record<string, number> = { player: 0x91d6cf, melee: 0xb5e2dd, saber: 0xf2d18c, blackbeard: 0xf3ad78, napoleon: 0x83b7e1, musashi: 0xcca4e0 };
+const COLORS: Record<string, number> = { player: 0x91d6cf, melee: 0xb5e2dd, saber: 0xdbb36b, blackbeard: 0xf3ad78, napoleon: 0x83b7e1, musashi: 0xcca4e0 };
 export interface SkillVisualOptions { style?: 'melee'; origin?: Point3; bladeDirection?: Point3 }
 interface Effect { root: THREE.Group; bar: THREE.Mesh; ring: THREE.Mesh; material: THREE.MeshBasicMaterial; age: number; life: number; range: number; charge: boolean; cast: boolean; peak: number; style: string; width: number; motif: THREE.Mesh; contact: boolean }
 /** Two shared, open silhouettes. Vertex alpha feathers both edges and the pointed ends.
@@ -129,7 +129,7 @@ export class SkillPresentation {
     effect.root.position.set(p.x,effect.cast||effect.charge?feet+.07:effect.style==='player'?feet+.08:sourceY,p.z);
     effect.root.rotation.set(0,Math.atan2(event.direction.x,event.direction.z),0);
     effect.material.color.setHex(COLORS[effect.style]);
-    effect.peak=effect.material.opacity=reducedFlash?.09:effect.cast?.16:effect.style==='melee'?.25:.30;
+    effect.peak=effect.material.opacity=reducedFlash?.09:effect.style==='saber'?(effect.cast?.10:.18):effect.cast?.16:effect.style==='melee'?.25:.30;
     effect.ring.visible=effect.cast||['saber','musashi','player','melee'].includes(effect.style);effect.bar.visible=!effect.ring.visible;
     effect.ring.position.set(0,0,0);effect.ring.rotation.set(Math.PI/2,0,0);effect.ring.scale.setScalar(event.slot==='ultimate'?.95:.65);
     effect.bar.position.set(0,0,0);effect.bar.rotation.set(Math.PI/2,0,0);effect.bar.scale.set(1,1,1);
@@ -172,7 +172,7 @@ export class SkillPresentation {
     effect.contact=true;effect.cast=false;effect.charge=false;effect.style='contact';effect.age=0;effect.life=.18;
     effect.root.position.set(point.x,point.y+.8,point.z);effect.root.rotation.set(0,Math.atan2(event.direction.x,event.direction.z),0);
     effect.ring.visible=false;effect.bar.visible=true;effect.bar.position.set(0,0,0);effect.bar.geometry=this.contactGeometry;effect.bar.name='ConfirmedContactSplinters';effect.bar.rotation.set(0,0,Math.PI/4);effect.bar.scale.setScalar(.72);
-    effect.material.color.setHex(COLORS[event.identity??'player']);effect.peak=effect.material.opacity=reducedFlash?.07:.24;effect.root.visible=true;
+    effect.material.color.setHex(COLORS[event.identity??'player']);effect.peak=effect.material.opacity=reducedFlash?.07:event.identity==='saber'?.14:.24;effect.root.visible=true;
   }
   update(dt: number, enabled = true, reducedFlash = false) {
     if (!enabled) { this.clear(); return; }
