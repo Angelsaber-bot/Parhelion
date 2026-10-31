@@ -2,6 +2,7 @@
  * Known route/target coordinates and bounded aim are operator knowledge, not human play evidence.
  * No gameplay state grants; observation wrappers forward original damage/event callbacks unchanged. */
 import assert from 'node:assert/strict';
+import {installSkillEntryVisualCandidate} from '../three-animation-review/skill-entry-visual-candidate';
 import {createContinuityObserver} from '../three-animation-review/continuity-observer';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
@@ -19,7 +20,7 @@ assert.ok(parsed.done.includes('summon_circle'));
 for(const flag of ['saber_contract','blackbeard_contract','napoleon_contract','musashi_contract'])if(!parsed.done.includes(flag))parsed.done.push(flag);
 const legacyRaw=JSON.stringify(parsed),legacyFixtureSha256=createHash('sha256').update(legacyRaw).digest('hex');
 const sourceBefore=sourceEvidence(worldRoot);
-const h=await bootWorldWithoutGpu({worldRoot,deterministic:true,initialStorage:{'parhelion.world.progress.v2':legacyRaw,'parhelion-world-reduced-effects':process.env.QA_REDUCED==='1'?'1':'0'}}),w=h.world,win=h.window,d=win.document;
+const h=await bootWorldWithoutGpu({worldRoot,deterministic:true,exposeEraActors:process.env.QA_SKILL_ENTRY_CANDIDATE==='1',initialStorage:{'parhelion.world.progress.v2':legacyRaw,'parhelion-world-reduced-effects':process.env.QA_REDUCED==='1'?'1':'0'}}),w=h.world,win=h.window,d=win.document;
 let now=0,error:unknown,castResult:any,qResult:any;const stageSamples:any[]=[];const projectedPhases=new Set<string>();
 const actorRoot=()=>identity==='saber'?w.servant.root:w.scene.children.find((o:any)=>o.name===`CharacterKit:${identity==='napoleon'?'napoleonMounted':identity}`);
 const pose=(root:any)=>{assert.ok(root);let bones=0,meshes=0,skinned=0;const rows:any[]=[],meshNames:string[]=[];root.traverse((o:any)=>{if(o.isBone){bones++;rows.push([o.name,...o.position.toArray(),...o.quaternion.toArray()]);}if(o.isMesh){meshNames.push(o.name);meshes++;if(o.isSkinnedMesh)skinned++;}});return{bones,meshes,meshNames,skinned,hash:createHash('sha256').update(JSON.stringify(rows)).digest('hex')};};const events:any[]=[],hits:any[]=[],skillEvents:any[]=[];
@@ -43,9 +44,12 @@ async function castAt(target:any){
  if(process.env.QA_EXPECT_SABER_R2==='1'){assert.ok(native.meshNames.includes('Saber_R3_Crown_Strands'),'new native bound crown hair loaded');assert.ok(native.meshNames.includes('Saber_R3_Layered_Breast_Keel'),'new layered armor loaded');assert.equal(actorRoot().getObjectByName('WeaponSocket_R')?.userData.saberBladeTip,1.412,'new blade calibration loaded');}
  if(process.env.QA_Q_BEFORE_X==='1'&&!qResult){
   if(identity==='musashi'){for(let i=0;i<360;i++){const range=Math.hypot(target.p.x-actorRoot().position.x,target.p.z-actorRoot().position.z);orient(target.p.x,target.p.z,target.p.y+1);key('KeyW',range>3.8);step();if(range<=3.8&&w.player.onGround)break;}key('KeyW',false);}
-  const beforeHp=target.hp,beforeEnergy=w.actions.skills.energy,startHits=hits.length,startEvents=skillEvents.length;followObservation=true;action('skill');note('skill-input',{target:target.id,beforeHp,beforeEnergy,casting:w.actions.skills.casting});
-  for(let i=0;i<240;i++){step();if(i>90&&!w.actions.skills.casting)break;}followObservation=false;
-  const actual=hits.slice(startHits).filter((e:any)=>e.source==='skill');qResult={target:target.id,beforeHp,afterHp:target.hp,beforeEnergy,afterEnergy:w.actions.skills.energy,events:skillEvents.slice(startEvents),hits:actual,cooldown:w.actions.skills.cooldown('skill')};assert.ok(actual.some((e:any)=>e.id===target.id&&e.damage>0),'Normal Q actual hostile HP contact');assert.equal(w.actions.skills.casting,false);note('skill-completed',qResult);if(target.hp<=0)return;
+  const beforeHp=target.hp,beforeEnergy=w.actions.skills.energy,startHits=hits.length,startEvents=skillEvents.length;followObservation=true;
+  const dtSamples=new Set<number>();let uninstall=()=>{};
+  if(process.env.QA_SKILL_ENTRY_CANDIDATE==='1'){const entry=w.__qaEraActors.find((e:any)=>e.servant===identity);assert.ok(entry?.actor&&entry.actor.root===actorRoot(),'candidate wraps actual selected native kit');const original=entry.follow.update.bind(entry.follow);let hostDt=0;entry.follow.update=(actor:any,dt:number,...args:any[])=>{hostDt=dt;dtSamples.add(dt);return original(actor,dt,...args);};const restoreVisual=installSkillEntryVisualCandidate(entry.actor,()=>hostDt);uninstall=()=>{restoreVisual();entry.follow.update=original;};}
+  action('skill');note('skill-input',{target:target.id,beforeHp,beforeEnergy,casting:w.actions.skills.casting});
+  try{for(let i=0;i<240;i++){step();if(i>90&&!w.actions.skills.casting)break;}}finally{uninstall();followObservation=false;}
+  const actual=hits.slice(startHits).filter((e:any)=>e.source==='skill');qResult={visualCandidate:process.env.QA_SKILL_ENTRY_CANDIDATE==='1',observedFollowDts:[...dtSamples],candidateUninstalled:true,target:target.id,beforeHp,afterHp:target.hp,beforeEnergy,afterEnergy:w.actions.skills.energy,events:skillEvents.slice(startEvents),hits:actual,cooldown:w.actions.skills.cooldown('skill')};assert.ok(actual.some((e:any)=>e.id===target.id&&e.damage>0),'Normal Q actual hostile HP contact');assert.equal(w.actions.skills.casting,false);note('skill-completed',qResult);if(target.hp<=0)return;
  }
  const hpBefore=target.hp,energyBefore=w.actions.skills.energy,playerBefore=w.player.pos.clone(),cameraBefore=w.camera.position.clone(),yawBefore=w.player.yaw,hitStart=hits.length,eventStart=skillEvents.length;
  action('ultimate');note('ultimate-input',{target:target.id,hpBefore,accepted:w.ultimateDirector.active,toast:d.getElementById('toast')?.textContent});
