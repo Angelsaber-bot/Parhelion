@@ -1,7 +1,8 @@
+import { arenaLimitLabel } from './matchBriefing.ts';
 import { bilingual, getLanguage, localizeText } from '../../shared-client/i18n.ts';
 // DOM HUD. Reads state, never changes it.
 
-import { CHARACTERS, DASH, SCORE_LIMIT, SHIELD, TICK_HZ, WEAPONS, type Team } from '../shared/content.ts';
+import { CHARACTERS, DASH, SHIELD, TICK_HZ, WEAPONS, type Team } from '../shared/content.ts';
 import type { PlayerSnap, Snapshot } from '../shared/match.ts';
 import type { PlayerState } from '../shared/sim.ts';
 import { displayWeaponName, weaponHud } from './loadout.ts';
@@ -71,7 +72,6 @@ export class Hud {
       ? bilingual(`◇ 出生无敌 · ${protectionSeconds}s`, `◇ Spawn protected · ${protectionSeconds}s`) : '';
     if (!snap) return;
 
-    const limit = SCORE_LIMIT[snap.layout];
     $('scoreA').textContent = String(snap.score.A);
     $('scoreB').textContent = String(snap.score.B);
     const secs = Math.ceil(snap.phaseT / TICK_HZ);
@@ -79,7 +79,7 @@ export class Hud {
       snap.phase === 'live' ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` :
       snap.phase === 'countdown' ? bilingual(`开始倒计时 ${secs}`, `Starting in ${secs}`) :
       snap.phase === 'ended' ? bilingual('本局结束', 'Match over') : bilingual('等待对手…', 'Waiting for opponent…');
-    $('limit').textContent = bilingual(`${snap.layout} · 先到 ${limit} 杀`, `${snap.layout} · First to ${limit} kills`);
+    $('limit').textContent = arenaLimitLabel(snap.layout);
     $('ping').textContent = ping;
 
     const self = snap.players.find((p) => p.id === myId);

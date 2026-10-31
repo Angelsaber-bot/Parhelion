@@ -44,7 +44,7 @@
 
   <div id="pause" class="overlay hidden">
     <div class="card small">
-      <h2>已暂停</h2>
+      <h2 id="pause-title" data-no-i18n>已暂停</h2>
       <p class="muted onlineOnly" id="pausenote">联机对局仍在继续。</p>
       <button id="resume" class="primary">继续</button>
       <button id="settings-pause" type="button">操作设置</button>
@@ -88,6 +88,11 @@
           <label class="offlineOnly">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
           <label class="onlineOnly">服务器<input id="server" /></label>
           <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
+        </div>
+        <div id="match-briefing" data-no-i18n>
+          <p id="match-rules" class="muted"></p>
+          <p id="match-teams" class="muted"></p>
+          <p id="match-connection" class="muted"></p>
         </div>
         <h4>外观</h4>
         <div id="skins" class="grid skins"></div>

@@ -1,3 +1,4 @@
+import { arenaMatchBriefing, arenaControlHints, arenaPauseLabel } from './matchBriefing.ts';
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
 import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
@@ -49,9 +50,7 @@ $('settings-lobby').onclick = () => settingsPanel.show();
 $('settings-pause').onclick = () => settingsPanel.show();
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
-  $('control-hints').textContent = bilingual(
-    `${k('forward')}/${k('left')}/${k('back')}/${k('right')} 移动 · ${k('fire')} 射击 / 近战 · ${k('aim')} 按住瞄准 · ${k('jump')} 跳 · ${k('dash')} 冲刺 · ${k('shield')} 护盾 · ${k('reload')} 换弹 · ${k('crouch')} 按住下蹲 · ${k('weapon1')}/${k('weapon2')}/${k('weapon3')} 切换配装 · ${k('prevWeapon')}/${k('nextWeapon')} 循环切换 · ${k('scoreboard')} 计分板 · ${k('settings')} 设置 · Esc 暂停`,
-    `${k('forward')}/${k('left')}/${k('back')}/${k('right')} Move · ${k('fire')} Shoot / melee · ${k('aim')} Hold aim · ${k('jump')} Jump · ${k('dash')} Dash · ${k('shield')} Shield · ${k('reload')} Reload · ${k('crouch')} Hold crouch · ${k('weapon1')}/${k('weapon2')}/${k('weapon3')} Equipment slots · ${k('prevWeapon')}/${k('nextWeapon')} Cycle · ${k('scoreboard')} Scoreboard · ${k('settings')} Settings · Esc Pause`);
+  $('control-hints').textContent = arenaControlHints(k, mode);
   $('dash').querySelector('kbd')!.textContent = k('dash'); $('shield').querySelector('kbd')!.textContent = k('shield');
   $('wslots').querySelectorAll('kbd').forEach((el, i) => el.textContent = k(`weapon${i + 1}`));
   $('loadout').querySelectorAll<HTMLElement>('[data-slot-key]').forEach((el) => el.textContent = k(`weapon${Number(el.dataset.slotKey) + 1}`));
@@ -90,7 +89,7 @@ $<HTMLInputElement>('name').value = saved.name ?? 'Max';
 const localHost = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)|\.local$/.test(location.hostname) || !location.hostname;
 const savedServer = location.protocol === 'https:' && String(saved.server ?? '').startsWith('ws://') ? undefined : saved.server;
 $<HTMLInputElement>('server').value = params.get('server') ?? savedServer ?? (localHost ? `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}` : PUBLIC_SERVER);
-if (saved.layout) $<HTMLSelectElement>('layout').value = saved.layout;
+if (['1v1', '1v2', '2v2'].includes(saved.layout)) $<HTMLSelectElement>('layout').value = saved.layout;
 
 function renderChars() {
   $('chars').innerHTML = CHARACTERS.map((c, i) =>
@@ -127,11 +126,22 @@ function renderLoadout() {
   });
 }
 
+function renderMatchBriefing() {
+  const briefing = arenaMatchBriefing({ layout: $<HTMLSelectElement>('layout').value as TeamLayout,
+    team: $<HTMLSelectElement>('team').value as 'A' | 'B' | 'auto', mode, bots: $<HTMLInputElement>('bots').checked });
+  $('match-rules').textContent = briefing.rules;
+  $('match-teams').textContent = briefing.teams;
+  $('match-connection').textContent = briefing.connection;
+  $('pause-title').textContent = arenaPauseLabel(mode);
+}
+for (const id of ['layout', 'team', 'bots']) $(id).addEventListener('change', renderMatchBriefing);
+
 function setMode(m: typeof mode) {
   mode = m;
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.classList.toggle('on', t.dataset.mode === m));
   document.body.classList.toggle('online', m === 'online');
   if (m === 'offline' && $<HTMLSelectElement>('team').value === 'auto') $<HTMLSelectElement>('team').value = 'A';
+  renderMatchBriefing(); renderControlHints();
 }
 document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.onclick = () => setMode(t.dataset.mode as typeof mode));
 $('armory').onclick = async () => {
@@ -222,7 +232,7 @@ const languageToggle = createLanguageToggle();
 document.addEventListener('pointerlockchange', () => { languageToggle.hidden = !!document.pointerLockElement; });
 localizeDom(document.body);
 onLanguageChange(() => {
-  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard();
+  renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing();
   if (loadoutStore.notice) $('loadout-status').textContent = localizeText(loadoutStore.notice);
   $('endtitle').textContent = localizeText(endTitleSource);
   $('error').textContent = errorSource();
