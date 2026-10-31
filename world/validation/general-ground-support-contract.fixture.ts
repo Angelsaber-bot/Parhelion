@@ -44,4 +44,9 @@ test('a near-floor airborne teleport cannot manufacture prior-grounded provenanc
  try{p.teleport(0,.009,0);assert.equal(p.onGround,false);p.step(1/120,idle);assert.equal(p.onGround,false);assert.ok(p.pos.y>0&&p.pos.y<.01);assert.equal(c.diagnostics.supportPasses,0);for(let i=0;i<10;i++)p.step(1/120,idle);assert.ok(p.onGround,'natural capsule contact may land normally');assert.equal(c.diagnostics.supportPasses,0);}finally{c.dispose();g.dispose();}
 });
 
+for(const kind of['wall','corner']as const)test(`gentle downhill ${kind} retains collision barrier during positive support recovery`,()=>{
+ const geometries=[new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2).rotateZ(-.05),new THREE.BoxGeometry(.1,4,10).translate(1,2,0),...(kind==='corner'?[new THREE.BoxGeometry(10,4,.1).translate(0,2,-1)]:[])],colliders=geometries.map(collider),a=new HistoricalPlayer(colliders,-20),b=new Player(colliders,-20),c=install(b);
+ try{a.teleport(0,.04,0);b.teleport(0,.04,0);settle(a);settle(b);for(let i=0;i<480;i++){const input={...idle,x:1,z:kind==='corner'?1:0};a.step(1/120,input);b.step(1/120,input);assert.ok(Math.hypot(a.pos.x-b.pos.x,a.pos.z-b.pos.z)<1e-12,'only machine-level wall projection roundoff');assert.ok(b.pos.x<=.60000001);if(kind==='corner')assert.ok(b.pos.z>=-.60000001);}assert.ok(c.diagnostics.recovered>0);}finally{c.dispose();geometries.forEach(g=>g.dispose());}
+});
+
 }
