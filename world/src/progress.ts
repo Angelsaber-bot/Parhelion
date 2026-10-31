@@ -66,9 +66,15 @@ export class WorldProgress {
       try {
         const raw = storage?.getItem(key);
         if (raw != null) { if (this.read(raw)) migrated = true; else { malformedLegacy = true; this.unreadableLegacy.add(key); } }
-      } catch { /* Other legacy regions can still be recovered. */ }
+      } catch {
+        // An unread sibling may contain valid progress. Do not create a partial
+        // authoritative v2 snapshot or delete either legacy record. Keep flags
+        // recovered from readable siblings in memory; reload retries migration.
+        this.unreadableLegacy.add(key); this.initialReadFailed = true;
+      }
     }
-    if (migrated) this.save();
+    if (this.initialReadFailed) this.persistence = 'unavailable';
+    else if (migrated) this.save();
     else if (malformedLegacy) this.persistence = 'invalid';
   }
   /** Ordinary autosave cannot replace unreadable or never-read current data. */
