@@ -12,6 +12,6 @@ test('isolated support candidate leaves non-evade movement exactly unchanged and
  }}finally{geometry.dispose();}
 });
 
-test('production Player preserves all ordinary movement samples against historical pre-support Player',()=>{
+test('production Player preserves flat-floor dry/water samples against historical pre-support Player',()=>{
  const geometry=new THREE.BoxGeometry(200,.2,200).translate(0,-.1,0),colliders=[{name:'historical-flat-control',enabled:true,bvh:new MeshBVH(geometry)}];try{for(const hz of [30,60,120])for(const water of [-100,2]){const baseline=new HistoricalPlayer(colliders,water),production=new Player(colliders,water);baseline.teleport(0,.1,0);production.teleport(0,.1,0);for(let i=0;i<hz*8;i++){const input={x:i%100<50?1:-1,z:.5,sprint:i%150<75,jump:i%90===0};baseline.yaw=production.yaw=Math.sin(i/hz)*.5;baseline.step(1/hz,input);production.step(1/hz,input);assert.deepEqual(snapshot(production),snapshot(baseline),`${hz}Hz water=${water} step=${i}`);}assert.equal((production as any).evadeSupport.diagnostics.supportPasses,0);assert.equal((production as any).evadeSupport.diagnostics.capsuleRetries,0);}}finally{geometry.dispose();}
 });
