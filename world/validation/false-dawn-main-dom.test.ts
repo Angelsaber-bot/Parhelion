@@ -8,7 +8,10 @@ import { WORLD_PROGRESS_KEY, WorldProgress } from '../src/progress';
 
 test('NON-GPU actual main runs both False Dawn routes with deliberate starts, physical emitters, real victory delivery and persistent endings', async t => {
   const h = await bootWorldWithoutGpu({ deterministic: true }); const { world: w, window } = h, document = window.document;
-  let now = 0;
+  let now = 0, shots = 0;
+  const originalShot = w.combat.shot.bind(w.combat);
+  w.combat.shot = (...args: any[]) => { shots++; return originalShot(...args); };
+  const mouse = (type: string, button: number) => window.dispatchEvent(new window.MouseEvent(type, { button, bubbles: true, cancelable: true }));
   const frame = (n = 1) => { for (let i = 0; i < n; i++) h.frame(now += 1000 / 60); };
   const key = (code: string) => { for (const type of ['keydown', 'keyup']) document.body.dispatchEvent(new window.KeyboardEvent(type, { code, bubbles: true, cancelable: true })); };
   const enter = async () => { if (!document.pointerLockElement) { (document.getElementById('start') as HTMLElement).click(); await Promise.resolve(); } };
@@ -68,10 +71,10 @@ test('NON-GPU actual main runs both False Dawn routes with deliberate starts, ph
       at(FALSE_DAWN.emitters[1]); key('KeyF'); assert.equal(w.done.has(FALSE_DAWN.anchors[1]), false);
       for (const [index, marker] of FALSE_DAWN.emitters.entries()) {
         at(marker);
-        if (index === 0) { w.player.yaw = 0; document.body.dispatchEvent(new window.KeyboardEvent('keydown', { code: 'KeyS', bubbles: true })); }
+        if (index === 0) { w.player.yaw = 0; mouse('mousedown', 2); mouse('mousedown', 0); document.body.dispatchEvent(new window.KeyboardEvent('keydown', { code: 'KeyS', bubbles: true })); }
         key('KeyF'); assert.equal(w.done.has(FALSE_DAWN.anchors[index]), true); assert.equal(w.narrative.open, false, 'physical switch is non-pausing');
         if (index === 0) {
-          const before = w.player.pos.clone(); frame(5); key('KeyS');
+          const before = w.player.pos.clone(), shotsBefore = shots; assert.equal(w.aim.held, true, 'switch preserves held shoulder aim'); frame(24); key('KeyS'); mouse('mouseup', 0); mouse('mouseup', 2); assert.ok(shots > shotsBefore, 'held fire continues to use production shooting after switch');
           assert.ok(Math.hypot(w.player.pos.x - before.x, w.player.pos.z - before.z) > .01, 'accepted physical switch must not clear a held movement input');
           if (route === 'winter') {
             const oldIds = w.combat.state.enemies.filter((enemy: any) => enemy.storyEncounter).map((enemy: any) => enemy.id);
