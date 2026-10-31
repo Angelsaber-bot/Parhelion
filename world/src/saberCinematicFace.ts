@@ -31,7 +31,7 @@ export function createSaberCinematicFace(root: THREE.Object3D) {
     if (!mesh.isMesh) return;
     const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
     const ribbon = materials.some(m => m.name === 'shirt') && /shirt/i.test(mesh.name);
-    const hair = materials.some(m => m.name === 'hair') && /hair/i.test(mesh.name);
+    const hair = materials.some(m => m.name === 'hair' || m.name === 'R3 | sculpted warm gold hair edges') && (/hair/i.test(mesh.name) || mesh.name === 'Saber_R3_Crown_Strands');
     if (!hair && !ribbon) return;
     const original = mesh.geometry, geometry = original.clone();
     const position = geometry.getAttribute('position') as THREE.BufferAttribute;

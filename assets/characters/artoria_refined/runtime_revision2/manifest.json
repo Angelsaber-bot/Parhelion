@@ -1,0 +1,32 @@
+[
+  {
+    "outfit": "armor",
+    "path": "assets/characters/artoria_refined/runtime_revision2/armor/artoria_armor.glb.gz",
+    "sourceSHA256": "02159c29aa1f2c9a9770b4550a8f4cef3ebe381f80ce684515fe52d3e3fcefdb",
+    "sha256": "64cc8b1766565e356ad01c3a0c18a063d2bb3880b622739e7f1f31d38ad37e28",
+    "bytes": 25942960,
+    "rawBytes": 45982904,
+    "rawSHA256": "8ce48d4dc30e07f2f805839fd42be7e1b27ad74e21a9700ffbc25bcf36efbcfe",
+    "shortenedBladeVertices": 282,
+    "newCrownVertices": 1350,
+    "newCrownTriangles": 2592,
+    "attackRotationSamples": 111,
+    "clipDurationsUnchanged": true,
+    "status": "model freeze candidate accepted; final integrated QA pending"
+  },
+  {
+    "outfit": "civilian",
+    "path": "assets/characters/artoria_refined/runtime_revision2/civilian/artoria_civilian.glb.gz",
+    "sourceSHA256": "ef9fc83324df555bf71693e2f6ad3103f28978582c5daf90a2ee1664360a9d5c",
+    "sha256": "7c7a75ed7fe2b9df400be1a47f1ab1b33e741ddb07819ac227f66d961e2cdb3f",
+    "bytes": 13773379,
+    "rawBytes": 19031224,
+    "rawSHA256": "965b3eec40e7ba777343bd906b1e98788cf8092e81ffc06915241639708df9fe",
+    "shortenedBladeVertices": 282,
+    "newCrownVertices": 1350,
+    "newCrownTriangles": 2592,
+    "attackRotationSamples": 111,
+    "clipDurationsUnchanged": true,
+    "status": "model freeze candidate accepted; final integrated QA pending"
+  }
+]
