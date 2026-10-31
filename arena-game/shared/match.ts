@@ -307,7 +307,6 @@ export class Match {
       }
       // Predicted timing is useful locally; authoritative impacts are fixed-step scheduled above.
       case 'meleeStrike': break;
-      case 'cheat': this.cheatDamage(id, 50); break;
       case 'shield':
         this.shields.push({
           id: this.nextShield, team: slot.state.team, owner: id,
@@ -472,20 +471,12 @@ export class Match {
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
-  /** max's test key (U, online and offline, no cooldown): every living enemy loses `amount` HP. */
-  cheatDamage(attackerId: string, amount = 50): void {
-    const from = this.slots.get(attackerId);
-    if (!from || !from.state.alive) return;
-    for (const [id, other] of this.slots)
-      if (other.state.alive && other.state.team !== from.state.team) this.damage(from, id, amount, false, from.state.weapon, true);
-  }
-
-  private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number, exact = false): void {
+  private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
     // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
-    if (!exact && WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
+    if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
     v.state.hp = Math.max(0, v.state.hp - dmg);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
@@ -537,7 +528,7 @@ export function sanitize(raw: unknown): Input | null {
     mx: Math.round(num(r.mx, -1, 1) ?? 0),
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
-    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 127,
+    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 63,
     weapon: typeof r.weapon === 'number' && Number.isInteger(r.weapon) && r.weapon >= 0 && r.weapon < 3 ? r.weapon : -1,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };

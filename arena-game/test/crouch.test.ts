@@ -113,9 +113,9 @@ describe('authoritative crouch', () => {
     b.alive = false; match.slots.get('b')!.respawn = 1; match.step();
     expect(b.alive).toBe(true); expect(b.crouched).toBe(false); expect(b.prevButtons).toBe(0);
   });
-  it('sanitizer preserves only supported seven bits, including crouch and the test key', () => {
+  it('sanitizer preserves only supported six bits, including crouch', () => {
     expect(sanitize(input(1, { buttons: BTN.CROUCH }))?.buttons).toBe(32);
-    expect(sanitize(input(1, { buttons: 255 }))?.buttons).toBe(127);
+    expect(sanitize(input(1, { buttons: 127 }))?.buttons).toBe(63);
     expect(sanitize({ ...input(1), buttons: NaN })?.buttons).toBe(0);
   });
 });

@@ -1,4 +1,3 @@
-import { BTN } from '../shared/sim.ts';
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
 import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
@@ -68,10 +67,6 @@ function renderResultsBoard() {
 $('endscores').onclick = () => { resultsBoard.toggle(); renderResultsBoard(); };
 $('scoreboard').addEventListener('click', (event) => {
   if ((event.target as Element).closest('[data-close-scores]')) { resultsBoard.close(); renderResultsBoard(); $('endscores').focus(); }
-});
-// max's test key: U takes 50 HP from every enemy, online and offline, resolved by the server.
-addEventListener('keydown', (event) => {
-  if (event.code === 'KeyU' && !event.repeat && game && !event.metaKey && !event.ctrlKey && !event.altKey) controls.pulse(BTN.CHEAT);
 });
 addEventListener('keydown', (event) => {
   const target = event.target as HTMLElement | null;
