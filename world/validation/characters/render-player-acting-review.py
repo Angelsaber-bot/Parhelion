@@ -1,7 +1,7 @@
 """Render CPU-skinned runtime snapshots with the original GLB materials (offline pose QA only)."""
 import bpy, json, sys, os, math, gzip
 import numpy as np
-from mathutils import Vector
+from mathutils import Vector, Quaternion
 args=sys.argv[sys.argv.index('--')+1:]
 source,out=args[:2]
 os.makedirs(out,exist_ok=True)
@@ -13,6 +13,9 @@ for filename in sorted(os.listdir(source)):
     if len(args)>2 and not filename.startswith(tuple(args[2].split(','))):continue
     manifest=json.load(open(os.path.join(source,filename)))
     if 'meshes' not in manifest or 'asset' not in manifest:continue
+    view_filter=os.environ.get('ACTING_VIEW_FILTER')
+    if view_filter=='actual' and not manifest.get('actualCamera'):continue
+    if view_filter=='diagnostic' and manifest.get('actualCamera'):continue
     asset=manifest['asset']
     if not os.path.isfile(asset):
         decoded=os.path.join(source,os.path.basename(asset))
@@ -64,6 +67,16 @@ for filename in sorted(os.listdir(source)):
         for color_name in color_names:
             attribute=mesh.color_attributes.new(name=color_name or 'Color',type='FLOAT_COLOR',domain='POINT');attribute.data.foreach_set('color',colors)
         obj=bpy.data.objects.new(entry['name'],mesh);bpy.context.collection.objects.link(obj);objects.append(obj)
+    # Optional measured intersection segments: review overlays only, never character geometry.
+    if manifest.get('contactSegments'):
+        contact_mat=bpy.data.materials.new('QA measured surface crossings');contact_mat.diffuse_color=(1,.025,.01,1)
+        contact_mat.use_nodes=True;contact_bsdf=contact_mat.node_tree.nodes.get('Principled BSDF')
+        contact_bsdf.inputs['Base Color'].default_value=(1,.025,.01,1);contact_bsdf.inputs['Emission Color'].default_value=(1,.025,.01,1);contact_bsdf.inputs['Emission Strength'].default_value=2
+        for i,segment in enumerate(manifest['contactSegments']):
+            curve=bpy.data.curves.new('Measured crossing '+str(i),'CURVE');curve.dimensions='3D';curve.bevel_depth=.0025;curve.bevel_resolution=2
+            spline=curve.splines.new('POLY');spline.points.add(1)
+            for point,value in zip(spline.points,segment):point.co=(value[0],-value[2],value[1],1)
+            line=bpy.data.objects.new('Measured crossing '+str(i),curve);bpy.context.collection.objects.link(line);curve.materials.append(contact_mat)
     all_points=[o.matrix_world @ Vector(corner) for o in objects for corner in o.bound_box]
     lo=Vector(tuple(min(v[i] for v in all_points) for i in range(3)));hi=Vector(tuple(max(v[i] for v in all_points) for i in range(3)))
     center=(lo+hi)/2;size=max(hi.x-lo.x,hi.y-lo.y,hi.z-lo.z)
@@ -102,8 +115,24 @@ for filename in sorted(os.listdir(source)):
         yaw=float(manifest['reviewYaw']);assert math.isfinite(yaw)
         x,y,z=offset;offset=(x*math.cos(yaw)-y*math.sin(yaw),x*math.sin(yaw)+y*math.cos(yaw),z)
     camera.location=center+Vector(offset);camera.rotation_euler=(center-camera.location).to_track_quat('-Z','Y').to_euler();data.type='ORTHO';data.ortho_scale=size*1.32
+    actual_camera=manifest.get('actualCamera')
+    if actual_camera:
+        px,py,pz=actual_camera['position'];qx,qy,qz,qw=actual_camera['quaternion']
+        camera.location=(px,-pz,py);camera.rotation_mode='QUATERNION'
+        camera.rotation_quaternion=Quaternion((1,0,0),math.pi/2) @ Quaternion((qw,qx,qy,qz))
+        data.type='PERSP';data.sensor_fit='VERTICAL';data.sensor_height=32
+        data.lens=16/math.tan(math.radians(actual_camera['fov'])/2);data.clip_start=.01;data.clip_end=2000
     scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=8;scene.cycles.use_denoising=False
-    scene.render.resolution_x=int(os.environ.get('ACTING_SIZE','480'));scene.render.resolution_y=scene.render.resolution_x;scene.render.resolution_percentage=100
+    scene.render.resolution_x=int(os.environ.get('ACTING_SIZE','480'));scene.render.resolution_y=round(scene.render.resolution_x/actual_camera['aspect']) if actual_camera else scene.render.resolution_x;scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.filepath=os.path.join(out,manifest['id']+'.png')
+    if actual_camera and actual_camera.get('projectionPoints'):
+        from bpy_extras.object_utils import world_to_camera_view
+        bpy.context.view_layer.update();proof=[]
+        for sample in actual_camera['projectionPoints']:
+            px,py,pz=sample['world'];projected=world_to_camera_view(scene,camera,Vector((px,-pz,py)))
+            error=max(abs(projected.x*2-1-sample['ndc'][0]),abs(projected.y*2-1-sample['ndc'][1]))
+            proof.append({'world':sample['world'],'xyError':error})
+        if max(row['xyError'] for row in proof)>1e-4:raise RuntimeError('Actual-camera projection mismatch: '+str(proof))
+        json.dump({'scope':'Three actual camera versus Blender projection XY only','samples':proof},open(os.path.join(out,manifest['id']+'-camera-proof.json'),'w'))
     scene.view_settings.view_transform='AgX';bpy.ops.render.render(write_still=True)
     print('POSE_RENDERED',manifest['id'],flush=True)

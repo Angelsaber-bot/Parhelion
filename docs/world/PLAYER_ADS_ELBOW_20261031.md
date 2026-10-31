@@ -44,3 +44,13 @@ Sibling evidence `animation/player-ads-temporal-before-after.mp4`: 181 same-cloc
 Player face-atlas UV1 export and static mesh-identity caching were independently corrected in the offline tools. Earlier dark-face previews are superseded material evidence, not a runtime skin defect. Accepted Saber and current player temporal payload layouts were independently audited.
 
 The separate Saber sword-floor candidate was rejected; the approved relaxed carry remains unchanged. Its inherited terrain/blade clipping is not claimed fixed by this ADS pass or the accepted lower-body grounding work.
+
+## Corrected runtime follow-through
+
+The wrist-capped source passed the full existing player/character family plus independent boundary matrix (98/98), not only new positive tests. Actual-main 660-frame ordinary-input replay covers aim/pitch, jump, sprint/turn, hip-fire, pointer unlock/resume and confirmed reset: player path, gun matrix, muzzle and all non-right-arm locals exactly match the frozen pre-ADS reference; palm difference <=3.70e-14 m. This run is CPU-adapter functional evidence, not a browser-render/FPS claim.
+
+Corrected consecutive evidence: `player-ads-wrist-cap-entry-consecutive.jpg`, `player-ads-wrist-cap-pitch-return-consecutive.jpg`, and `player-ads-wrist-cap-release-consecutive.jpg` (48 matched times, fixed isotropic crop). Independent sampled review found gradual entry/return with no obvious elbow flip; tiny residual contacts are measured separately. The historical uncapped video is not substituted for these corrected poses.
+
+Reproduction tools in `world/validation/characters/`: `export-player-ads-focused.ts`, `export-player-ads-temporal.ts` (`--baseline` selects the durable fixture), `player-ads-main-input.ts` (explicit world root/output/reference paths), and `profile-player-ads.ts`. Run CPU timing only in a coordinated quiet window; renderer uses the shared admission gate.
+
+The offline exporter can explicitly omit the GPU-extruded player outline via `omitPlayerShaderOutlines:true`; manifests record omitted names and the limitation, while native body/weapon vertices remain exact. This is required for actual-main CPU snapshots because the shader-created outline material has no GLB counterpart. Optional `actualCamera` imports the real perspective transform/FOV/aspect and checks provided world-point XY projections against Three (tested error <3.45e-6 NDC); neutral terrain/lighting and omitted outlines still make this an offline QA reconstruction, not a captured game frame. Default studio manifests are unchanged.
