@@ -1,4 +1,5 @@
 import { bilingual, onLanguageChange } from '../../shared-client/i18n';
+import { encodeOriginalProgressText } from './progressRecovery';
 import { WorldProgress, parseProgressBackup, type ProgressPersistenceState } from './progress';
 
 const STATUS: Record<ProgressPersistenceState, [string, string]> = {
@@ -22,9 +23,10 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   const warning = document.createElement('aside'); warning.id = 'world-save-warning'; warning.hidden = true; warning.setAttribute('role', 'status');
   Object.assign(warning.style, { position: 'fixed', left: '50%', bottom: '18px', transform: 'translateX(-50%)', maxWidth: 'min(520px, 85vw)', padding: '10px 14px', borderRadius: '10px', background: '#362b19ed', color: '#ffe3a5', fontSize: '12px', zIndex: '6', pointerEvents: 'none' });
   const original = document.createElement('button'); original.type = 'button';
+  const originalHelp = document.createElement('p'); originalHelp.className = 'settings-note';
   let disposed = false, readGeneration = 0;
-  const download = (raw: string, name: string) => {
-    const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+  const download = (raw: string | Uint8Array<ArrayBuffer>, name: string, type = 'application/json') => {
+    const url = URL.createObjectURL(new Blob([raw], { type }));
     const link = document.createElement('a'); link.href = url; link.download = name;
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -36,7 +38,9 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     if (progress.saveBlocked) status.textContent = bilingual('原存档已受保护，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；普通自动保存不会覆盖原数据。', 'Original save protected; this session is not saved. Download the original and session progress, or explicitly confirm replacement. Autosave will not overwrite the original.');
     retry.textContent = progress.saveBlocked ? bilingual('用本次进度替换…', 'Replace with session progress…') : bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
     restore.textContent = bilingual('从备份恢复…', 'Restore a backup…');
-    original.textContent = bilingual('下载无法读取的原始存档', 'Download unreadable original save'); original.hidden = progress.exportUnreadableSnapshot() === null;
+    original.textContent = bilingual('下载无损原始记录', 'Download lossless original'); original.hidden = progress.exportUnreadableSnapshot() === null;
+    originalHelp.hidden = original.hidden;
+    originalHelp.textContent = bilingual('以 UTF-16LE（.utf16le）保留原始文本数据，供排查或修复；不是可直接导入的进度备份，不会修改当前记录。', 'Preserves the original text data as UTF-16LE (.utf16le) for diagnosis or repair. Not a directly importable progress backup; the current record is unchanged.');
     retry.hidden = progress.persistence === 'ready' || progress.persistence === 'saved';
     warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable' && progress.persistence !== 'invalid';
     warning.textContent = progress.saveBlocked ? bilingual('原存档受保护 · 本次进度尚未保存 · 请到设置备份或恢复', 'Original save protected · Session not saved · Back up or restore in Settings') : progress.persistence === 'invalid'
@@ -58,7 +62,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   backup.addEventListener('click', event => { event.stopPropagation(); if (!disposed) download(progress.exportSnapshot(), 'parhelion-world-progress.json'); });
   original.addEventListener('click', event => {
     event.stopPropagation(); if (disposed) return;
-    const raw = progress.exportUnreadableSnapshot(); if (raw !== null) download(raw, 'parhelion-world-unreadable-original.json');
+    const raw = progress.exportUnreadableSnapshot(); if (raw !== null) download(encodeOriginalProgressText(raw), 'parhelion-world-unreadable-original.utf16le', 'application/octet-stream');
   });
   restore.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; file.value = ''; file.click(); });
   file.addEventListener('change', async () => {
@@ -82,7 +86,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
       if (!disposed && generation === readGeneration) result.textContent = bilingual('无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.');
     } finally { if (!disposed && generation === readGeneration) restore.disabled = false; }
   });
-  root.append(title, status, retry, backup, restore, original, file, result); document.body.append(warning);
+  root.append(title, status, retry, backup, restore, original, originalHelp, file, result); document.body.append(warning);
   const unsubscribe = progress.subscribe(render), locale = onLanguageChange(render); render();
   return { root, dispose() { if (disposed) return; disposed = true; readGeneration++; unsubscribe(); locale(); root.remove(); warning.remove(); } };
 }

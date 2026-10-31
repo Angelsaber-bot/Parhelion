@@ -101,7 +101,7 @@ test('unreadable-save status is visible before the user opens settings', () => {
 
 
 test('protected current-save repair is explicit, quota-safe and retains an inert exact original download', async () => {
-  const raw = '<script>not executable</script>{broken'; const f = fixture(raw);
+  const raw = '<script>not executable</script>{broken' + String.fromCharCode(0xd800, 65, 0xdc00); const f = fixture(raw);
   const oldCreate = URL.createObjectURL, oldRevoke = URL.revokeObjectURL;
   try {
     setLanguage('en');
@@ -113,7 +113,11 @@ test('protected current-save repair is explicit, quota-safe and retains an inert
     URL.createObjectURL = value => { blob = value as Blob; return 'blob:original'; };
     URL.revokeObjectURL = () => {};
     f.dom.window.HTMLAnchorElement.prototype.click = () => {};
-    original.click(); assert.equal(await blob!.text(), raw);
+    original.click();
+    const bytes = await blob!.arrayBuffer(), view = new DataView(bytes);
+    assert.equal(bytes.byteLength, raw.length * 2);
+    assert.equal(Array.from({ length: raw.length }, (_, i) => String.fromCharCode(view.getUint16(i * 2, true))).join(''), raw);
+    assert.match(f.panel.root.textContent!, /Not a directly importable/);
     repair.click(); assert.equal(f.confirmations, 1); assert.equal(f.restored, 0);
     assert.equal(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY), raw);
     f.accept();
