@@ -57,7 +57,8 @@ export function getFalseDawnGuide(done: ReadonlySet<string>, context: FalseDawnC
   switch (state.stage) {
     case 'locked': return at(['先帮助岚修好守频接收机。后续线索不要求完成全部五处纪事。', 'First help Lan repair the watch receiver. The new lead does not require completing all five chronicles.'], done.has('campaign_alpha_met') ? 'campaign_alpha_work' : 'alpha_signal_keeper', 'alpha', done.has('campaign_alpha_met') ? 'marker' : 'npc');
     case 'equipment': return at(['线索指向野外的旧收讯阵。先领取原主线的武器；不要空手追踪。', 'The lead points to an abandoned field receiver. Collect your main-story equipment before following it.'], 'armory_rack');
-    case 'lead': case 'courier': return at(['沿幻日谷道路找到旧收讯阵，检查倒放的求援录音，截住携带它的回声信使。', 'Find the abandoned receiver off the Valley road, inspect the reversed distress call, and intercept its echo courier.'], FALSE_DAWN.recorder);
+    case 'lead': return at(['从西岸渡口的桥过河，再沿西岸向北找旧收讯阵。避开低洼水道的捷径，在记录器旁站定后接通调查。', 'Cross the bridge at West Ford, then follow the west bank north to the old receiver. Avoid the low-water shortcut; stand beside the recorder before connecting the trace.'], FALSE_DAWN.recorder);
+    case 'courier': return at(['旧收讯阵的追踪尚未结束。应对回声信使；若已离开或失败，回到记录器重新接通。', 'The receiver trace is unfinished. Intercept the Echo Courier; if you left or were defeated, reconnect at the recorder.'], FALSE_DAWN.recorder);
     case 'route': return at(['信使留下两条中继记录。回到收讯器，选择港口截讯或雪原守台。两条路任选其一。', 'The courier leaves two relay records. Choose harbor interception or snowfield defense at the receiver. Either route is enough.'], FALSE_DAWN.recorder);
     case 'harbor': return at(['到黑帆的废弃潮汐台截断伪讯号。使用掩体对付远程守卫，不能拿暖港灯当目标。', 'Intercept the false signal at the abandoned tide station in Black Sail. Use cover against ranged guards; the harbor’s warm light is not a target.'], FALSE_DAWN.harbor, 'blacksail');
     case 'harbor-key': return at(['检查已夺回的潮汐台，从真实延迟而非完美重复中辨认回传节拍。', 'Inspect the recovered tide station. Find the return timing in real delay, not perfect repetition.'], FALSE_DAWN.harbor, 'blacksail');
@@ -311,7 +312,7 @@ export function getFalseDawnObjective(done: ReadonlySet<string>, activeEncounter
   switch (state.stage) {
     case 'locked': return at(['与岚交谈，完成接收机的两步检修。', 'Speak with Lan and complete the receiver’s two repair steps.']);
     case 'equipment': return at(['先到原主线军械架领取武器。', 'Collect your equipment from the original armory rack first.']);
-    case 'lead': return at(['检查谷地旧收讯器，自主接通追踪。', 'Inspect the old Valley receiver; connect the trace when ready.']);
+    case 'lead': return at(['经西岸渡口的桥过河，沿西岸向北找旧收讯器。', 'Cross West Ford bridge; follow the west bank north to the old receiver.']);
     case 'courier': return at(activeEncounter === 'false_dawn_courier'
       ? ['截住回声信使；先读预警，再反击。', 'Intercept the Echo Courier. Read its attack tell, then counter.']
       : ['返回旧收讯器，重新接通尚未完成的追踪。', 'Return to the old receiver to restart the unfinished interception.']);

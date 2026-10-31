@@ -103,3 +103,8 @@ test('completed emitters and remote stations never spam the full ending or fabri
  for(const id of F.emitters.slice(0,2))interact(id,done);
  const final=interact(F.emitters[2],done);assert.equal(final.dialogue,null);assert.match(final.toast![1],/Return to the array console/);assert.doesNotMatch(final.toast![1],/remaining guards/);assert.equal(state(done).stage,'warden');
  });
+
+test('fresh continuation directions name the verified dry West Ford crossing without changing its objective',()=>{
+ const done=ready();assert.equal(guide(done)!.targetId,F.recorder);assert.match(guide(done)!.text[0],/西岸渡口的桥/);assert.match(guide(done)!.text[1],/West Ford/);assert.match(guide(done)!.text[1],/west bank north/);
+ start(done,'false_dawn_courier');assert.doesNotMatch(guide(done)!.text[1],/Cross the bridge/,'a retry already at the field does not send the player back over the bridge');
+});
