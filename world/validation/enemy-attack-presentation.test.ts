@@ -43,7 +43,7 @@ for (const model of Object.keys(ENEMY_CONTACT_SAMPLE) as EnemyPoseModel[]) {
       const instance = internals.instances.get(e.id), pose = enemyAttackPose(e, model);
       assert.equal(instance.action.time, instance.action.getClip().duration * pose.sample!, 'render delta cannot advance contact clock');
       parent.updateMatrixWorld(true);
-      parent.traverse(o => { if (o instanceof THREE.SkinnedMesh) { o.skeleton.update(); assert.ok([...o.skeleton.boneMatrices].every(Number.isFinite)); } });
+      parent.traverse(o => { if (o instanceof THREE.SkinnedMesh) { o.skeleton.update(); const matrices=o.skeleton.boneMatrices; assert.ok(matrices); assert.ok([...matrices].every(Number.isFinite)); } });
     }
     visuals.update(e, model, parent, fallback, 0, 35, true);
     const instance = internals.instances.get(e.id);
