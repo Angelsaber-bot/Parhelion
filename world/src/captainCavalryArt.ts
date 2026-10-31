@@ -27,10 +27,10 @@ export function attachCaptainCavalryArt(model:THREE.Object3D,identity:string):()
  const edge:THREE.BufferGeometry[]=[];
  const trim=(points:THREE.Vector3[],radius=.006)=>edge.push(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),Math.max(8,points.length*3),radius,5,false));
  if(!mounted){
-  const back=(u:number,v:number)=>new THREE.Vector3((u-.5)*(.60+.035*v),1.58-.79*v,-.15-.065*v-.018*Math.cos(u*Math.PI*8)*v+.13*Math.pow(Math.abs(u-.5)*2,3)*(1-.3*v));
+  const back=(u:number,v:number)=>new THREE.Vector3((u-.5)*(.50+.135*v),1.58-.79*v,-.205-.01*v-.018*Math.cos(u*Math.PI*8)*v+.055*Math.pow(Math.abs(u-.5)*2,3)*(1-.3*v));
   bind(panel(14,12,back),cloth,'CaptainCavalry remaster tailoring',torsoWeight);
   for(const side of[-1,1]){
-   const shoulder=(u:number,v:number)=>new THREE.Vector3(side*(.15+.14*u),1.575+.027*Math.sin(v*Math.PI),-.135+.245*v);bind(panel(8,4,shoulder),cloth,`Captain joined shoulder tailoring ${side}`,torsoWeight);
+   const shoulder=(u:number,v:number)=>new THREE.Vector3(side*(.15+.14*u),1.575+.027*Math.sin(v*Math.PI),-.185+.295*v);bind(panel(8,4,shoulder),cloth,`Captain joined shoulder tailoring ${side}`,torsoWeight);
    const front=(u:number,v:number)=>new THREE.Vector3(side*(.16+u*.10+.07*v),1.56-.57*v,.085+.045*Math.sin(v*Math.PI)+.014*u);
    bind(panel(12,3,front),lining,`Captain open coat facing ${side}`,torsoWeight);
    trim(Array.from({length:13},(_,i)=>front(0,i/12)));
@@ -38,7 +38,7 @@ export function attachCaptainCavalryArt(model:THREE.Object3D,identity:string):()
   }
   trim(Array.from({length:13},(_,i)=>back(i/12,1)));
  }else{
-  const cape=(u:number,v:number)=>new THREE.Vector3((u-.5)*(.64+.10*v)+.02*v,2.31-.66*v,-.135-.075*v-.035*Math.sin(v*Math.PI)-.018*Math.cos(u*Math.PI*8)*v+.075*Math.pow(Math.abs(u-.5)*2,3)*(1-v*.25));
+  const cape=(u:number,v:number)=>new THREE.Vector3((u-.5)*(.64+.10*v)+.02*v,2.31-.66*v+.14*Math.pow(v,4)*(1-Math.pow(Math.abs(u-.5)*2,2)),-.22-.025*v-.03*Math.sin(v*Math.PI)-.018*Math.cos(u*Math.PI*8)*v+.04*Math.pow(Math.abs(u-.5)*2,3)*(1-v*.25));
   bind(panel(18,16,cape),cloth,'CaptainCavalry remaster tailoring',torsoWeight);
   const inset=(u:number,v:number)=>cape(u,v).add(new THREE.Vector3(0,0,.009));bind(panel(18,16,inset),lining,'Cavalry mantle warm lining',torsoWeight);
   for(const side of[0,1])trim(Array.from({length:19},(_,i)=>cape(side,i/18)));

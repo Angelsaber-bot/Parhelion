@@ -25,6 +25,9 @@ mounted=identity=='napoleon';prefix='Mounted' if mounted else ''
 shots=[('idle-front','Idle',.5,'front'),('idle-side','Idle',.5,'side'),('run','Run',.2,'front'),('attack-prepare','Attack',.26,'front'),('attack-contact','Attack',23/30 if mounted else 17/30,'front'),('attack-recovery','Attack',1.15,'front')]
 if "--quick" in args:shots=[shots[0],shots[1],shots[4]]
 if "--model-only" in args:shots=shots[:2]
+if "--cloth-review" in args:shots=[('run-back-early','Run',.12,'back'),('run-back-late','Run',.52,'back'),('attack-back-load','Attack',.26,'back'),('attack-side-contact','Attack',23/30 if mounted else 17/30,'side'),('attack-back-recover','Attack',1.15,'back'),('run-side','Run',.42,'side')]
+selection=next((a.split('=',1)[1].split(',') for a in args if a.startswith('--shots=')),None)
+if selection:shots=[shot for shot in shots if shot[0] in selection]
 manifest=[]
 for label,clip,time,view in shots:
  for rig in rigs:
@@ -33,7 +36,7 @@ for label,clip,time,view in shots:
   if action:
    rig.animation_data_create();rig.animation_data.action=action
  scene.frame_set(1+int(time*30),subframe=(time*30)%1)
- target=Vector((0,0,1.55 if mounted else 1.08));camera.location=(6,-.3,2.5) if view=='side' else (3.5,-7,3.0 if mounted else 2.5)
+ target=Vector((0,0,1.55 if mounted else 1.08));camera.location=(6,-.3,2.5) if view=='side' else ((3.2,6,3.0 if mounted else 2.5) if view=='back' else (3.5,-7,3.0 if mounted else 2.5))
  camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.ortho_scale=4.15 if mounted else 2.75
  path=os.path.join(out,f'{identity}-{variant}-{label}.png');scene.render.filepath=path;bpy.ops.render.render(write_still=True)
  manifest.append({'file':path,'clip':prefix+clip,'seconds':time,'camera':list(camera.location),'target':list(target),'ortho_scale':camera.data.ortho_scale})
