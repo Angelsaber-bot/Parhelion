@@ -1,3 +1,4 @@
+import { getFalseDawnGuide, getFalseDawnState } from './falseDawnCampaign';
 import { bilingual, onLanguageChange } from '../../shared-client/i18n';
 import type { Localized, RegionId } from './settlements/types';
 import { getCampaignDispatchState, getCampaignDispatchGuide, getCampaignEpisodeJournal, type CampaignEpisodeStage } from './campaignEpisodes';
@@ -18,6 +19,8 @@ export interface CampaignJournalOptions {
   pin(region: RegionId): boolean | void;
   trackingBlocked?(region: RegionId): Localized | null;
   restoreMain(): void;
+  pinArc?(): boolean | void;
+  arcTrackingBlocked?(): Localized | null;
 }
 /** Read-only field journal. Only the explicit track button changes the caller's
  * pin. Reading never starts, completes or chooses an episode from afar.
@@ -57,12 +60,31 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
     if (disposed) return;
     const focused = document.activeElement as HTMLElement | null;
     const focusRegion = focused && list.contains(focused) ? focused.dataset.campaignRegion : undefined;
+    const focusArc = focused?.dataset.falseDawnTrack !== undefined;
+    const focusDispatch = focused?.dataset.campaignDispatchTrack !== undefined;
     const entries = getCampaignEpisodeJournal(options.done());
     title.textContent = bilingual('归路纪事', 'Chronicles of the Way Home');
     intro.textContent = bilingual('五处灯火，五个留下守候的人。这些现场故事伴随主线发生，不会锁住原来的道路；已完成主线也能回来亲手安排。', 'Five lights, five people keeping watch. These field stories accompany the main campaign without locking its roads. You can undertake them even after finishing the main story.');
     summary.textContent = bilingual(`已落实 ${entries.filter(entry => entry.state.completed).length}/5 · 追踪只设置路标；安排必须到现场确认。`, `Resolved ${entries.filter(entry => entry.state.completed).length}/5 · Tracking only sets a waypoint; decisions must be made at the site.`);
     main.textContent = bilingual('返回主线指引', 'Restore main-story guidance'); close.textContent = bilingual('返回', 'Back');
     list.replaceChildren();
+    if (options.pinArc) {
+      const arc = getFalseDawnState(options.done()), arcGuide = getFalseDawnGuide(options.done());
+      const article = document.createElement('article'); article.dataset.falseDawnEntry = '';
+      const heading = document.createElement('h3'), premise = document.createElement('p'), status = document.createElement('p');
+      heading.textContent = bilingual('主线续篇 · 伪晓回声', 'Campaign Continuation · False Dawn');
+      premise.textContent = bilingual('一段求援声在你开口之前作答。追踪信使，选择海港截讯或雪原守台，再回到谷地切断伪讯号。', 'A distress call answers before you speak. Trace its courier, choose harbor interception or snowfield defense, then return to the Valley to cut the false signal.');
+      status.className = 'campaign-status';
+      status.textContent = arc.completed ? bilingual('续篇已完成 · 原来的道路和约定不变。', 'Continuation complete · Earlier roads and promises remain unchanged.') : arc.stage === 'locked' ? bilingual('先修好岚的接收机即可发现线索；不要求完成全部五处纪事。', 'Repair Lan’s receiver to discover the lead; all five chronicles are not required.') : bilingual(...arcGuide!.text);
+      article.append(heading, premise, status);
+      if (arc.route) { const route = document.createElement('p'); route.className = 'campaign-choice'; route.textContent = arc.route === 'harbor' ? bilingual('你的路线：港口截讯', 'Your route: Harbor interception') : bilingual('你的路线：雪原守台', 'Your route: Snowfield defense'); article.append(route); }
+      const track = document.createElement('button'); track.type = 'button'; track.dataset.falseDawnTrack = '';
+      const blocked = options.arcTrackingBlocked?.(); track.disabled = !arcGuide || !!blocked;
+      track.textContent = arc.completed ? bilingual('已完成', 'Complete') : bilingual('追踪伪晓线索', 'Track the False Dawn lead');
+      if (blocked && arcGuide) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
+      track.onclick = () => { if (!disposed && !root.hidden && !options.arcTrackingBlocked?.() && options.pinArc?.() !== false) hide(); };
+      article.append(track); list.append(article);
+    }
     for (const { definition: def, state, guide } of entries) {
       const article = document.createElement('article'); article.dataset.campaignEntry = def.region;
       const heading = document.createElement('h3'), status = document.createElement('p'), body = document.createElement('p');
@@ -83,7 +105,6 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
       }
       const track = document.createElement('button'); track.type = 'button'; track.dataset.campaignRegion = def.region;
       const blocked = options.trackingBlocked?.(def.region);
-      track.disabled = !guide || !!blocked;
       if (blocked && guide) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
       track.disabled = !guide || !!blocked; track.textContent = state.completed && !guide ? bilingual('已落实', 'Resolved') : bilingual('追踪这段纪事', 'Track this chronicle');
       track.addEventListener('click', () => { if (!disposed && !root.hidden && !options.trackingBlocked?.(def.region) && options.pin(def.region) !== false) hide(); });
@@ -96,14 +117,17 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
       note.textContent = dispatch === 'ready' ? bilingual(...getCampaignDispatchGuide(options.done())!.text) : bilingual('五处归路记录已归档。可在幻日谷发信板重读，不会重复奖励。', 'The five return records are filed. Reread them at the Valley dispatch board; there is no repeat reward.');
       article.append(heading, note);
       if (dispatch === 'ready') {
-        const track = document.createElement('button'); track.type = 'button'; track.textContent = bilingual('追踪归路发信板', 'Track the return dispatch');
+        const track = document.createElement('button'); track.type = 'button'; track.dataset.campaignDispatchTrack = ''; track.textContent = bilingual('追踪归路发信板', 'Track the return dispatch');
         const blocked = options.trackingBlocked?.('alpha'); track.disabled = !!blocked;
         if (blocked) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
         track.onclick = () => { if (!disposed && !root.hidden && !options.trackingBlocked?.('alpha') && options.pin('alpha') !== false) hide(); }; article.append(track);
       }
       list.append(article);
     }
-    if (focusRegion) {
+    if (focusArc || focusDispatch) {
+      const next = list.querySelector<HTMLButtonElement>(focusArc ? '[data-false-dawn-track]' : '[data-campaign-dispatch-track]');
+      (next && !next.disabled ? next : close).focus();
+    } else if (focusRegion) {
       const next = Array.from(list.querySelectorAll<HTMLButtonElement>('button')).find(button => button.dataset.campaignRegion === focusRegion && !button.disabled);
       (next ?? close).focus();
     }

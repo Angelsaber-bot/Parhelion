@@ -69,3 +69,16 @@ test('unified final dispatch is explicit, branch-reflective, legacy-safe and one
  const before=[...done];assert.equal(choose('alpha',ending,done).changed,false);assert.equal(interact(D.alpha.decision,done).changed,false);assert.deepEqual([...done],before);
  }
 });
+
+test('arc journal tracking is explicit, route-gated, read-only and retains keyboard focus on language change',()=>{
+ const f=fixture(),done=new Set<string>();let pinned=0,blocked=true;
+ const panel=createCampaignJournal({done:()=>done,onOpen(){},pin(){},restoreMain(){},pinArc(){pinned++;},arcTrackingBlocked:()=>blocked?['先稳定召唤阵','Stabilize the summoning circle first']:null});
+ try{panel.show();assert.equal(f.document.querySelectorAll('[data-false-dawn-entry]').length,1);const before=[...done];let button=f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!;assert.equal(button.disabled,true);button.click();assert.equal(pinned,0);assert.equal(panel.open,true);
+ blocked=false;panel.refresh();button=f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!;button.focus();setLanguage('en');assert.ok((f.document.activeElement as HTMLElement).hasAttribute('data-false-dawn-track'));assert.deepEqual([...done],before);f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!.click();assert.equal(pinned,1);assert.equal(panel.open,false);assert.deepEqual([...done],before);
+ }finally{panel.dispose();f.close();}
+});
+test('choice group explicitly overrides inherited noninteractive HUD CSS and provides bounded overflow',()=>{
+ const f=fixture(),panel=createNarrativePanel(()=> 'Digit1');
+ try{panel.showChoices(['选择','Choose'],['人','Person'],options,()=>{});const group=f.document.getElementById('world-dialogue-choices')!;assert.equal(group.style.pointerEvents,'auto');assert.equal(group.style.overflowY,'auto');assert.equal(group.style.maxHeight,'30vh');assert.match(f.document.getElementById('world-dialogue-hint')!.textContent!,/Digit1/);setLanguage('en');assert.equal(group.getAttribute('aria-label'),'Choose your action');}
+ finally{panel.dispose();f.close();}
+});
