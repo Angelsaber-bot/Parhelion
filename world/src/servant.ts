@@ -340,7 +340,7 @@ function disposeObject(root: THREE.Object3D, sharedEnvironment?: THREE.Texture) 
     for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(m);
   });
   for (const material of materials) {
-    for (const v of Object.values(material)) if (v instanceof THREE.Texture && v !== sharedEnvironment) textures.add(v);
+    for (const v of Object.values(material)) if ((v as THREE.Texture | undefined)?.isTexture && v !== sharedEnvironment) textures.add(v as THREE.Texture);
     material.dispose();
   }
   const images = new Set<{ close(): void }>();

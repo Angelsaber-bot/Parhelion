@@ -199,7 +199,7 @@ export function disposeCharacterObject(root: THREE.Object3D, sharedEnvironment?:
     for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) materials.add(material);
   });
   for (const material of materials) {
-    for (const value of Object.values(material)) if (value instanceof THREE.Texture && value !== sharedEnvironment) textures.add(value);
+    for (const value of Object.values(material)) if ((value as THREE.Texture | undefined)?.isTexture && value !== sharedEnvironment) textures.add(value as THREE.Texture);
     material.dispose();
   }
   const bitmaps = new Set<{ close(): void }>();
