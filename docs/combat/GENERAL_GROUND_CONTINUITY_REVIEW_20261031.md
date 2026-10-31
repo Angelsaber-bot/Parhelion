@@ -1,13 +1,14 @@
 # General physical support continuity — isolated review
 
 Status: **minimal production implementation approved at 09:22 UTC; no-wrapper
-main replay pending**. Source `4f56d26` supersedes the narrow admitted-action-only
+main replay verified at 09:27 UTC**. Source `4f56d26` supersedes the narrow admitted-action-only
 closure (`b21719a`, `86758f0`, `66ba6c0`, `c8b91c9`). That earlier fix left three
 of six moving downhill melee requests rejected while apparently standing on
 the floor; the broader physical correction deliberately improves ordinary
 grounded action admission without changing WorldActions admission rules.
 Player blob: `eba079e26a2e07c5b9211950b53122a46614d573`. The helper is unchanged
-except its scope comment. Main returns to the original two-argument step call.
+except its scope comment. Main `962eee0` returns to the original two-argument step call. Independent live
+held/cadence verification is `cc35fa5`.
 
 ## Alternatives
 
@@ -50,7 +51,7 @@ have zero extra queries; harbor peek has 62 recoveries not visible as airborne
 at render cadence. Each affected step remains capped at one floor pass and one
 capsule retry. A floor pass is not a single BVH query.
 
-`general-ground-continuity-candidate.test.ts`: 17 component cases cover
+`general-ground-continuity-candidate.test.ts`: 19 component cases cover
 0/3/6/12-degree slopes, 30/60/120 Hz, true jump/glide/air teleport, ledge fall,
 swimming, updraft/nonwalkable slope, disabled floor, step, corner and low roof. A separate 5/9/12/25 mm step-down matrix recovers only the two sub-centimetre cases; 12/25 mm gaps reject without a capsule retry.
 Flat obstacle controls preserve complete baseline states. Deep retry rollback,
@@ -95,10 +96,27 @@ on every affected ordinary walking step; it is not free.
 - Independent isolated held-key matrix passed: eight actual-main cases, 240
   action snapshots each, exact phase/cooldown/cast/guard/energy/dt, one contact
   despite browser repeat events, HP100. Parent approved the minimal source patch.
-- 49 targeted checks pass, including 17 live no-wrapper geometry/boundary cases,
-  17 frozen candidate cases, live melee/Q clocks and original evade contracts.
-- Full no-wrapper actual-main route/admission/held-key replay remains pending;
-  do not describe isolated candidate evidence as already verified integration.
+- 53 targeted checks pass, including 19 live no-wrapper geometry/boundary cases,
+  19 frozen candidate cases, live melee/Q clocks and original evade contracts.
+- No-wrapper actual-main route replay matches the isolated candidate in **all
+  2,884 complete physics records and all 11 result objects including query
+  counts**. Versus the old narrow baseline, XZ/yaw/swim/glide/updraft records and
+  route duration/end/HP remain exact; vertical differences are intentional.
+- Normal downhill tap policy now admits six of six melee requests and emits six
+  contacts, no cancellations; Q admits/emits once. Flat controls are unchanged.
+  The first real ledge/jump action still cancels: ledge has one rejected support
+  pass with zero retry; jump has zero queries. Subsequent melee requests after
+  natural landing remain ordinary actions, not preserved airborne strikes.
+- Independent no-wrapper held-key and 30/120 Hz cadence checks preserve exact
+  original phase/cooldown/guard/energy/contact snapshots, including six guard-only
+  physics steps and exactly two Player.step arguments. No browser-repeat attack.
+- 22 additional legacy/frozen/support checks pass. Historical narrow zero-query
+  proofs explicitly use frozen Player source, not the now-general production.
+
+Production replay files are `artifacts/general-ground/routes-production-counted-4f56d26.json`,
+`production-paired-comparison.json`, and `artifacts/downhill-actions/{melee,skill,none}-general-production-4f56d26.json`.
+The first route replay omitted live query diagnostics; it is retained separately,
+not overwritten, and the counted second replay supplies the complete comparison.
 
 Route replay accepts `--output=PATH` and refuses to overwrite an existing evidence file. Raw evidence remains under repository `artifacts/general-ground/`,
 `artifacts/downhill-actions/` and `artifacts/general-ground-*.log`; these are

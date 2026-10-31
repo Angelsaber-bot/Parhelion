@@ -1,4 +1,5 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {Player} from '../src/player';import {installGroundActionSupportCandidate} from './combat-review/ground-action-support-candidate';
+/** Historical narrow action-only candidate against frozen pre-general Player. */
+import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {Player} from './fixtures/player-pre-general-support';import {installGroundActionSupportCandidate} from './combat-review/ground-action-support-candidate';
 const snapshot=(p:Player)=>({p:p.pos.toArray(),v:p.vel.toArray(),ground:p.onGround,swim:p.swimming,glide:p.gliding,updraft:p.inUpdraft});
 for(const hz of[30,60,120])for(const water of[-10,2])test(`inactive-action candidate preserves ordinary state exactly at${hz}Hz/water${water}`,()=>{
  const geometry=new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2).rotateZ(.05),colliders=[{name:'slope',enabled:true,bvh:new MeshBVH(geometry)}],a=new Player(colliders,water),b=new Player(colliders,water),candidate=installGroundActionSupportCandidate(b,()=>false,'actions');
