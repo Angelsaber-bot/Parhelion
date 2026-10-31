@@ -19,10 +19,12 @@ for filename in sorted(os.listdir(source)):
         if not os.path.isfile(decoded):
             with gzip.open(asset+'.gz','rb') as zipped, open(decoded,'wb') as raw:raw.write(zipped.read())
         asset=decoded
-    if asset != loaded_asset:
+    asset_key=(asset,tuple(manifest.get('extraAssets',[])))
+    if asset_key != loaded_asset:
         bpy.ops.import_scene.gltf(filepath=asset)
+        for extra_asset in manifest.get('extraAssets',[]): bpy.ops.import_scene.gltf(filepath=extra_asset)
         materials={m.name:m for m in bpy.data.materials}
-        loaded_asset=asset
+        loaded_asset=asset_key
     for obj in list(bpy.data.objects): bpy.data.objects.remove(obj,do_unlink=True)
     for collection in (bpy.data.meshes,bpy.data.armatures,bpy.data.cameras,bpy.data.lights,bpy.data.worlds):
         for block in list(collection):
@@ -55,6 +57,9 @@ for filename in sorted(os.listdir(source)):
         mesh.polygons.foreach_set('material_index',material_indices);mesh.update(calc_edges=True)
         layer=mesh.uv_layers.new(name='UVMap')
         layer.data.foreach_set('uv',uv[faces.reshape(-1)].reshape(-1))
+        if 'uv1File' in entry:
+            uv1=np.fromfile(os.path.join(source,entry['uv1File']),dtype='<f4').reshape((-1,2));uv1[:,1]=1-uv1[:,1]
+            layer1=mesh.uv_layers.new(name='UVMap.001');layer1.data.foreach_set('uv',uv1[faces.reshape(-1)].reshape(-1))
         color_names={node.layer_name for material in mesh.materials if material.use_nodes for node in material.node_tree.nodes if node.type=='VERTEX_COLOR'}
         for color_name in color_names:
             attribute=mesh.color_attributes.new(name=color_name or 'Color',type='FLOAT_COLOR',domain='POINT');attribute.data.foreach_set('color',colors)
@@ -90,7 +95,7 @@ for filename in sorted(os.listdir(source)):
         obj.rotation_euler=(center-obj.location).to_track_quat('-Z','Y').to_euler()
     data=bpy.data.cameras.new('QA camera');camera=bpy.data.objects.new('QA camera',data);scene.collection.objects.link(camera);scene.camera=camera
     # Front three-quarter view shows both lowered arms and the white horse's stride/weapon.
-    view=manifest.get('view','front');offset=(size*1.7,-size*.08,size*.13) if view=='side' else (size*.40,-size*1.65,size*.20)
+    view=manifest.get('view','front');offset=(-size*1.7,-size*.08,size*.13) if view=='right' else (size*1.7,-size*.08,size*.13) if view=='side' else (size*.40,-size*1.65,size*.20)
     camera.location=center+Vector(offset);camera.rotation_euler=(center-camera.location).to_track_quat('-Z','Y').to_euler();data.type='ORTHO';data.ortho_scale=size*1.32
     scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=8;scene.cycles.use_denoising=False
     scene.render.resolution_x=int(os.environ.get('ACTING_SIZE','480'));scene.render.resolution_y=scene.render.resolution_x;scene.render.resolution_percentage=100
