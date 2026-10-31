@@ -997,8 +997,13 @@ addEventListener('wheel', (e) => {
   e.preventDefault(); const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp'; press(binding); release(binding);
 }, { passive: false });
 
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let reducedOverride: boolean | null = null;
+try { const stored=localStorage.getItem('parhelion-world-reduced-effects'); if(stored==='1'||stored==='0')reducedOverride=stored==='1'; } catch { /* use system preference */ }
+const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
+
 // ───────────── shooting (hitscan + visible bounded projectiles) ─────────────
-const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, groundHeight: (x, z) => grid.sampleHeight(x, z),
+const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, reducedEffects, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { audio.hurt(); },
@@ -1007,10 +1012,6 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
-const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
-let reducedOverride: boolean | null = null;
-try { const stored=localStorage.getItem('parhelion-world-reduced-effects'); if(stored==='1'||stored==='0')reducedOverride=stored==='1'; } catch { /* use system preference */ }
-const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
 actions = new WorldActions({ scene,
   context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !player.flying && !player.swimming && !player.gliding,
