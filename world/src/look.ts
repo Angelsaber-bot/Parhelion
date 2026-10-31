@@ -147,7 +147,18 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
       return Object.assign(new THREE.MeshBasicMaterial({ vertexColors: true, color: new THREE.Color(0.32, 0.32, 0.36) }), { name });
     default: {
       const kind: Kind = name === 'M_Terrain' ? 'terrain' : name === 'M_Foliage' ? 'foliage' : 'default';
-      const m = new THREE.MeshToonMaterial({ vertexColors: s.vertexColors, color: s.color, gradientMap: toonGradient() });
+      // Stylisation changes the lighting model, not authored visibility or practical glow.
+      // Texture references stay shared/externally owned; no image or texture is cloned here.
+      const m = new THREE.MeshToonMaterial({
+        vertexColors: s.vertexColors, color: s.color, gradientMap: toonGradient(),
+        map: s.map ?? null, alphaMap: s.alphaMap ?? null,
+        emissive: s.emissive ?? 0x000000, emissiveMap: s.emissiveMap ?? null,
+        emissiveIntensity: s.emissiveIntensity ?? 1,
+        side: s.side, transparent: s.transparent, opacity: s.opacity, alphaTest: s.alphaTest,
+        depthTest: s.depthTest, depthWrite: s.depthWrite,
+        polygonOffset: s.polygonOffset, polygonOffsetFactor: s.polygonOffsetFactor,
+        polygonOffsetUnits: s.polygonOffsetUnits,
+      });
       return Object.assign(celify(m, kind), { name });
     }
   }
