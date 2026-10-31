@@ -60,7 +60,12 @@ function closeText() {
   assert.equal(w.narrative.open, false, 'Dialogue closes through ordinary Interact');
 }
 function visit(id: string, position: number[], expectedFlag: string) {
-  walk(position[0], position[2]); settle(); press();
+  walk(position[0], position[2],120,id==='summon_circle'?.2:1); settle();
+  const prompt=document.getElementById('prompt')?.textContent??'';
+  assert.ok(prompt.includes(`[${w.settings.label('interact')}]`),`Actual eligible prompt before ${id}: ${prompt}`);
+  const target=w.layout.markers.find((m:any)=>m.id===id);
+  if(target)assert.ok(Math.hypot(...target.p.map((v:number,i:number)=>v-w.player.pos.getComponent(i)))<(target.radius??3),`Authored radius before ${id}`);
+  console.log('ELIGIBLE_PROMPT',id,prompt);press();
   console.log('INTERACTION', id, JSON.stringify({ pos: w.player.pos.toArray(), done: [...w.done] }));
   closeText(); assert.ok(w.done.has(expectedFlag), `Physical interaction completed ${expectedFlag}`);
 }
@@ -77,6 +82,12 @@ function jumpToward(x:number,z:number){
  try{walk(x,z,120,.7);}finally{key('KeyW','keyup');key('Space','keyup');}
 }
 function climbOriginalTower(){
+ if(process.argv.includes('--walking-ramp')){
+  // Explicit later-product variant: preserve the original staged climb below.
+  for(const[x,z]of[[-29,-159.5],[-13,-159.5],[-9,-162],[-8,-154],[-2,-154],[-2,-149]])walk(x,z,120,.2);
+  settle();press();assert.ok(w.done.has('tower_console'),'real F after earned relays and optional walking ramp');closeText();
+  console.log('TOWER_WALKING_ACCESS',JSON.stringify({p:w.player.pos.toArray(),ground:w.player.onGround}));return;
+ }
  walk(-30,-162,120,.12);settle();
  for(let i=0;i<180&&orient(0,-162)>.001;i++)step();
  key('ShiftLeft');key('KeyW');let launch=false;
@@ -162,6 +173,14 @@ try {
   for(const [x,z]of [[-3,-154],[-10,-154],[-22,-154],[-22,-180],[0,-190],[8,-212],[0,-244],[0,-250]])walk(x,z);
   walk(0,-252.2,120,.1);for(let i=0;i<120&&!w.player.swimming;i++)step();console.log('ICE_LUNGE',JSON.stringify({p:w.player.pos.toArray(),swim:w.player.swimming,ground:w.player.onGround}));assert.ok(w.player.swimming,'ordinary water state before real ice-lip lunge');jumpToward(0,-260);walk(0,-292);visit('seam_north',marker('seam_north').p,'seam_north');
   console.log('ORIGINAL_GATE_REACHED',JSON.stringify({gate:'seam_north',done:[...w.done],hp:w.combat.state.hp,swimmingFrames}));
+  for(const [x,z]of [[0,-292],[0,-260],[0,-244],[0,-238],[-40,-210],[-70,-146],[-124,-118],[-156,-86],[-184,-90],[-184,-36],[-230,-34],[-280,-30]])walk(x,z);
+  visit('seam_west',marker('seam_west').p,'seam_west');
+  for(const [x,z]of [[-280,-30],[-230,-34],[-184,-36],[-184,-14],[-140,-14],[-124,22],[-108.288,38.652],[-95,61],[-81.712,83.348],[-60,92],[-22,118],[2,142],[16,144],[48,118],[86,80],[110,50],[132,40],[170,32],[210,30],[260,30]])walk(x,z);
+  visit('seam_east',marker('seam_east').p,'seam_east');
+  for(const [x,z]of [[260,30],[210,30],[170,32],[132,40],[110,50],[86,80],[48,118],[16,144],[16,182],[16,222],[40,250],[40,290]])walk(x,z);
+  visit('seam_south',marker('seam_south').p,'seam_south');
+  for(const [x,z]of [[40,290],[40,250],[70,200],[86,120],[86,80],[48,118],[16,144],[2,142],[-22,118],[-60,92],[-60,120],[-62,182],[-90,212],[-118,246],[-130,256],[-150,256]])walk(x,z);
+  visit('summon_circle',[-163,10.8,256],'summon_circle');
   console.log('FINAL', JSON.stringify({ pos: w.player.pos.toArray(), done: [...w.done], seconds: now / 1000,
     hp: w.combat.state.hp, energy: w.actions.skills.energy, swimmingFrames, errors: h.errors }));
-} finally { if(process.argv[3])writeFileSync(process.argv[3],JSON.stringify({sourceRoot:process.argv[2],scope:'Fresh empty-storage normal-input continuation; authored waypoints/answers, no state grants. Exact synthetic earned storage retained for diagnosis.',seconds:now/1000,swimmingFrames,position:w.player.pos.toArray(),hp:w.combat.state.hp,energy:w.actions.skills.energy,done:[...w.done],found:[...w.found],saved:h.window.localStorage.getItem('parhelion.world.progress.v2'),errors:h.errors},null,2));await h.close(); }
+} finally { if(process.argv[3])writeFileSync(process.argv[3],JSON.stringify({sourceRoot:process.argv[2],towerVariant:process.argv.includes('--walking-ramp')?'approved walking ramp':'original staged jump/glider',scope:'Fresh empty-storage normal-input continuation; authored waypoints/answers, no state grants. Exact synthetic earned storage retained for diagnosis.',seconds:now/1000,swimmingFrames,position:w.player.pos.toArray(),hp:w.combat.state.hp,energy:w.actions.skills.energy,done:[...w.done],found:[...w.found],saved:h.window.localStorage.getItem('parhelion.world.progress.v2'),errors:h.errors},null,2));await h.close(); }

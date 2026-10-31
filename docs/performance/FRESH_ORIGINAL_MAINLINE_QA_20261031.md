@@ -43,3 +43,46 @@ through `attempt8` logs/earned synthetic save summaries and matching driver
 snapshots; `qa/tower-input{,-runup,-glider,-staged}-e7b660e` diagnostics. Failures
 are retained and classified, not overwritten. Attempt8 is the successful scope
 above; earlier attempts do not establish completion.
+
+## Remaining-seam continuation (in progress)
+
+Attempt9 subsequently earned all four original seams with HP100. Its return
+shortcut approached the original campus plateau's steep southern face and was
+correctly blocked. Attempt10 instead used the source-authored eastern/northern
+approach and reached the summon rotunda with all prerequisites. The operator
+then incorrectly tried to walk within1m of the marker at the center of a solid
+pedestal, rather than press F from the real4m interaction radius. The run stopped
+at1.73m without pressing F. These are retained waypoint failures, not claims of
+product progression failure. A corrected east-frontage interaction replay is
+underway; summon completion is not inferred from proximity alone.
+
+
+## Completed original gate chain
+
+Attempt12 now passes the uninterrupted original-world route from empty storage
+through **all four seams and real summon-circle activation**. It records the
+actual eligible `[F]` prompt and authored3D radius before endpoint interactions.
+The summon frontage uses (-163,256) with0.2m arrival tolerance: feet stop at
+(-162.8275,10.2519,255.9998), safely within4m of the elevated marker. Attempt11's
+loose1m arrival had stopped just outside the actual3D radius; that failed input
+is preserved, not rewritten as completion.
+
+Final exact-e7 result:981.516667 simulated seconds, HP100, earned energy14.52,
+753 swimming frames,25 earned flags and zero runtime errors. No teleport,
+forced ground, progress/resource grants or injected damage. This establishes
+original mainline unlock coexistence with the new receiver/courier/harbor lead,
+not yet a full fresh optional ending. Evidence: `qa/fresh-mainline-e7b660e-attempt12`
+JSON/log and `qa/fresh-mainline-attempt12-driver.ts`; exact earned save bytes are
+retained in the JSON for explicit normal save/reload continuation.
+
+## Separate optional-ramp regression
+
+The immutable later source12e5158 adds walking access; it is not used in the
+successful original proof. Its independently repeated fresh route fails before
+Relay B: the new solid ramp wedge blocks the old side crossing from(10,-142)
+toward(-18,-160), stopping at(-18,26.0091,-157.35). Environment confirmed the new
+wedge occupies this formerly traversable space. This is a genuine added-geometry
+regression, not an operator center-target error, and was reported before
+acceptance. Do not reroute around it and claim old-route parity. Frozen source
+before/after:1,660 files,614,494,820 bytes, zero drift. Evidence:
+`qa/fresh-mainline-ramp-12e5158.{json,log}` and `qa/checkpoint-tower-12e5158`.
