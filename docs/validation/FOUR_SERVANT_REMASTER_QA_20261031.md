@@ -40,3 +40,11 @@ The 14-case Q matrix additionally passes camera-target priority over a closer si
 Actor resource and disposal checks now positively observe BFCache preservation and exactly-once geometry/material disposal on repeated final pagehide. Frozen f6 totals after all four actors load: 103 geometries, 98 materials, 28 textures, 1,872,132 triangles and 67,030,576 bytes of attached geometry backing stores. A mutable captain-presentation iteration measured 114 geometries, 115 materials, 28 textures, 1,880,941 triangles and 67,449,862 backing bytes; Saber/Musashi asset URLs were still baseline. This is **not** the final remaster budget. Source manifests and both logs are retained in `qa/*resource*`.
 
 These counters cover attached actor graphs, not hidden original geometries retained by reversible sculpt adapters, process heap, decoded image memory, GPU VRAM or FPS. They expose added presentation cost rather than asserting a performance improvement.
+
+## New captain assets: first positive input and camera defect
+
+With catalog `5b2d289`, actual-input Blackbeard and Napoleon both pass native X damage, paid charge, private clone/pose activity, ended casting and exact camera/player restoration plus resumed mouse/movement. Their new physical tailoring is asserted positively, and Napoleon's horse crest is also required. These are shared-source iteration results, not the final frozen gate.
+
+`QA_NATIVE_PROJECTION=1` adds a full posed-vertex audit of visible native clone meshes at selected charge/release frames for both 16:9 and 9:16, restoring the original camera aspect afterward. This is numerical clipping evidence, not occlusion/shader/GPU rendering or exhaustive temporal coverage. The independent audit caught Napoleon's raised sword clipping at a normal-aspect charge frame (20 vertices, maximum NDC Y 1.024594). The failed frame report is retained; owner fix `31373bf` must be rerun before visual acceptance. Blackbeard's selected charge/release frames had no out-of-viewport vertices.
+
+`QA_REDUCED=1` boots the ordinary saved reduced-effects preference; it does not directly mutate the stage. Source manifests now record compressed and decompressed GLB bytes. Captain asset decoded sizes rise from 18,285,480 to 19,161,552 bytes and mounted cavalry from 28,670,192 to 29,748,904 bytes. These are file-payload costs, not total runtime memory.
