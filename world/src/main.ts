@@ -225,10 +225,19 @@ const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geom
 for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
 const culler = new DistanceCuller(lowQ ? 90 : 160);
 const DRAW_DIST: Record<string, number> = { Bushes: 180, Trees_Leaves: 380, Trees_Trunks: 260, Rocks: 320, Lamps: 240, Glow_Props: 500, Terrain: 760 };
+// Reuse conversion only for the same immutable authored source material.
+// Stateful, translucent and named interactive surfaces keep private materials.
+const staticMaterialCache = new WeakMap<THREE.Material, THREE.Material>();
 for (const m of artMeshes) {
   if (m.name === 'Water' && m !== waterMesh) continue;
   if (m.name === 'Terrain') terrains.push(m);
-  m.material = toonMaterial(m.material as THREE.Material);
+  const sourceMaterial = m.material as THREE.Material;
+  const shareMaterial = isStaticArtEligible(m) && !/halo|gate|door|core|beam|target|water/i.test(m.name)
+    && !Array.isArray(m.material) && !sourceMaterial.transparent && sourceMaterial.opacity === 1
+    && sourceMaterial.blending === THREE.NormalBlending && !/Water|Beam|Halo|Target|Emissive/.test(sourceMaterial.name);
+  const cachedMaterial = shareMaterial ? staticMaterialCache.get(sourceMaterial) : undefined;
+  m.material = cachedMaterial ?? toonMaterial(sourceMaterial);
+  if (shareMaterial && !cachedMaterial) staticMaterialCache.set(sourceMaterial, m.material);
   m.receiveShadow = true;
   m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && (m.material as THREE.Material).name !== 'M_Beam';
   if ((m.material as THREE.Material).name === 'M_Beam') m.receiveShadow = false;
