@@ -54,20 +54,25 @@ export function createEraUltimatePerformance(identity:string,root:THREE.Object3D
    // A planted, asymmetric combat stance under the dual-blade sequence. The
    // private hips carry the weight while analytic leg chains retain ground contact.
    const stance=frame.phase==='intro'?smooth(frame.progress):frame.phase==='outro'?1-smooth(frame.progress):1;
-   const lunge=strikeAt<0?0:smooth(age/.22);
+   const settle=frame.phase==='outro'?smooth(frame.progress):0;
+   const lunge=(strikeAt<0?0:smooth(age/.22))*(1-settle);
    if(pelvis&&legs.every(chain=>chain.every(Boolean))){
     pelvis.position.y-=.025*stance+.025*lunge;pelvis.position.z+=.045*lunge;root.updateWorldMatrix(true,true);
     for(let side=0;side<2;side++){const target=cv(footStarts[side]);target.x+=(side===0?1:-1)*.035*stance;target.z+=(side===0?-.06:.12)*stance+(side===0?0:.06)*lunge;plantLeg(legs[side] as THREE.Object3D[],world(target));}
    }
    const prep=frame.phase==='intro'?smooth(frame.progress):1;
    const sweep=strikeAt<0?0:smooth(age/.17),recover=smooth((age-.18)/.25);
-   torso(lastStrike===1?THREE.MathUtils.lerp(-.28,.25,sweep):lastStrike===2?THREE.MathUtils.lerp(.25,-.28,sweep):lastStrike>=3?THREE.MathUtils.lerp(-.28,.08,sweep):-.28,0);
+   torso((lastStrike===1?THREE.MathUtils.lerp(-.28,.25,sweep):lastStrike===2?THREE.MathUtils.lerp(.25,-.28,sweep):lastStrike>=3?THREE.MathUtils.lerp(-.28,.08,sweep):-.28)*(1-settle),0);
    let rw=v(-.25,1.37,.16),lw=v(.28,1.02,.23),rd=v(-.55,.68,.47),ld=v(.75,.05,.65);
    if(frame.phase==='charge'){const flourish=Math.sin(Math.PI*smooth(frame.progress));rw.x-=.065*flourish;rw.y+=.10*flourish;lw.y+=.16*flourish;lw.z+=.045*flourish;rd.x-=.12*flourish;ld.y+=.22*flourish;}
    if(lastStrike===1){rw.lerp(v(.16,1.03,.31),sweep);rd.lerp(v(.75,-.32,.59),sweep);lw.lerp(v(.25,1.42,.13),sweep);ld.lerp(v(.50,.75,.43),sweep);}
    else if(lastStrike===2){rw.set(.16,1.03,.31).lerp(v(-.26,1.38,.18),recover);rd.set(.75,-.32,.59).lerp(v(-.65,.6,.46),recover);lw.set(.25,1.42,.13).lerp(v(-.16,1.03,.32),sweep);ld.set(.50,.75,.43).lerp(v(-.8,-.3,.52),sweep);lw.lerp(v(.27,1.38,.16),recover);ld.lerp(v(.65,.6,.46),recover);}
    else if(lastStrike>=3){rw.set(-.26,1.38,.18).lerp(v(.12,1.05,.33),sweep);lw.set(.27,1.38,.16).lerp(v(-.12,1.05,.39),sweep);rd.set(-.65,.6,.46).lerp(v(.72,-.27,.64),sweep);ld.set(.65,.6,.46).lerp(v(-.72,-.27,.64),sweep);}
    if(frame.phase==='intro'){rw.lerp(v(-.29,1.05,.20),1-prep);rd.lerp(v(-.7,.15,.7),1-prep);}
+   // The finishing cross releases into an open low guard, not a frozen end pose.
+   // Only the private stage actor recovers; contact counters and source clips are untouched.
+   rw.lerp(v(-.29,1.04,.20),settle);lw.lerp(v(.29,1.02,.21),settle);
+   rd.lerp(v(-.7,.10,.7),settle);ld.lerp(v(.7,.10,.7),settle);
    arm(r,world(rw),-1);orient(r,socket,rd.normalize());arm(l,world(lw),1);orient(l,leftSocket,ld.normalize());
    root.updateWorldMatrix(true,true);return;
   }
@@ -80,13 +85,13 @@ export function createEraUltimatePerformance(identity:string,root:THREE.Object3D
     riderSeat[0].position.z+=Math.sin(frame.elapsed*2*Math.PI/.8+1.1)*.009*suspension;
     root.updateWorldMatrix(true,true);
    }
-   const t=frame.phase==='intro'?smooth(frame.progress):1,sweep=strikeAt<0?0:smooth(age/.18);
-   torso(THREE.MathUtils.lerp(-.1,.18,sweep),.16*t);
+   const t=frame.phase==='intro'?smooth(frame.progress):1,sweep=strikeAt<0?0:smooth(age/.18),settle=frame.phase==='outro'?smooth(frame.progress):0;
+   torso(THREE.MathUtils.lerp(-.1,.18,sweep)*(1-settle),.16*t-.055*settle);
    // Rider keeps the left rein, right sword leads the charge then makes one clear cut.
-   const rw=v(-.40,2.21,.35).lerp(v(-.48,2.40,.33),t).lerp(v(-.58,2.10,.40),sweep);
+   const rw=v(-.40,2.21,.35).lerp(v(-.48,2.40,.33),t).lerp(v(-.58,2.10,.40),sweep).lerp(v(-.48,2.24,.35),settle);
    arm(r,world(rw),-1);
    const tip=get('SaberTip')!;const blade=cv(tip.position).sub(socket.position).normalize();
-   const desired=axis(v(-.15,.72,.68).lerp(v(-.90,-.35,-.20),sweep).normalize());
+   const desired=axis(v(-.15,.72,.68).lerp(v(-.90,-.35,-.20),sweep).lerp(v(-.35,.75,.55),settle).normalize());
    const current=cv(blade).applyQuaternion(r[2].getWorldQuaternion(q())).normalize();setWorld(r[2],q().setFromUnitVectors(current,desired).multiply(r[2].getWorldQuaternion(q())));
    const rein=get('H_ReinGrip');if(rein)arm(l,rein.getWorldPosition(v()),1);
    root.updateWorldMatrix(true,true);return;

@@ -32,3 +32,20 @@ test('mounted reveal keeps whole rider head inside widescreen throughout charge'
  for(let i=0;i<=60;i++){art.update({phase:'charge',elapsed:1.2+i*3.8/60,progress:i/60,pulse:0,strikeCount:0},camera,false);for(const x of [-.18,.18])for(const y of [-.1,.3])for(const z of [-.18,.18]){const corner=head.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(x,y,z)).project(camera);assert.ok(Math.abs(corner.x)<.9&&Math.abs(corner.y)<.9,`rider head clipped at charge ${i}/60: ${corner.toArray()}`);}}
  art.dispose();
 });
+
+test('reduced effects use a steady wide shot across every phase and contact, independent of head bob',async()=>{
+ for(const identity of ['blackbeard','napoleon','musashi'] as const){
+  const kit=CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity],{gltf}=await readCharacter(fileURLToPath(kit.assetUrl));
+  const copy=clone(gltf.scene),actor=new THREE.Group();actor.add(copy);
+  const art=new EraCinematicRemake(actor,copy,identity,owner),camera=new THREE.PerspectiveCamera(40,16/9,.01,100);
+  let previous:THREE.Vector3|undefined,quaternion:THREE.Quaternion|undefined;
+  for(const phase of ['intro','charge','release','outro'] as const)for(let i=0;i<=12;i++){
+   const head=copy.getObjectByName(identity==='musashi'?'mixamorigHead':'Head')!;head.position.y+=.0005;
+   art.update({phase,elapsed:['intro','charge','release','outro'].indexOf(phase)*3+i/12,progress:i/12,pulse:i%2,strikeCount:phase==='release'?Math.floor(i/4)+1:0},camera,true);
+   assert.equal(art.shot,'reduced steady wide');
+   if(previous){assert.ok(camera.position.distanceTo(previous)<1e-12);assert.ok(camera.quaternion.angleTo(quaternion!)<1e-7);}
+   previous=camera.position.clone();quaternion=camera.quaternion.clone();assert.equal(camera.fov,40);
+  }
+  art.dispose();
+ }
+});

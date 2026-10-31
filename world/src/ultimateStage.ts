@@ -276,7 +276,7 @@ export class UltimateStage {
     this.eraCinema?.update(frame,this.camera,this.reduced);if(this.eraCinema && (this.clone?.getObjectByName('Head') || this.clone?.getObjectByName('mixamorigHead')))this.aim.copy(this.eraCinema.aim);
     if(this.saberCinema && this.clone?.getObjectByName('mixamorigHead')) this.aim.copy(this.saberCinema.aim);
     this.baseCameraPosition.copy(this.camera.position);
-    this.narrowWeight = close ? 0 : frame.phase === 'charge' ? p : 1; this.setAspect(this.camera.aspect);
+    this.narrowWeight = this.reduced ? 1 : close ? 0 : frame.phase === 'charge' ? p : 1; this.setAspect(this.camera.aspect);
     for (let i = 0; i < this.rings.length; i++) {
       const ring = this.rings[i]; ring.rotation.z = elapsed * (i % 2 ? -.2 : .2); ring.scale.setScalar(release ? 1 + p * 3 : .9 + p * .15);
     }

@@ -63,6 +63,15 @@ export class EraCinematicRemake{
   // Keep the established genuine 3D cannon insert, including its hidden actor.
   if(!this.actor.visible||!this.head){this.currentShot=this.head?'broadside':'fallback';camera.getWorldDirection(this.aim).multiplyScalar(6).add(camera.position);return;}
   const center=this.actor.position,head=this.headPosition;
+  if(reduced){
+   // Reduced effects means a stable shot, not merely dimmer flashes. Track only
+   // the actor's slow stage translation, never head bob, pulse counters or cuts.
+   this.currentShot='reduced steady wide';
+   const mounted=this.identity==='napoleon';
+   this.aim.set(center.x,mounted?1.75:1.5,center.z+(mounted?.25:.05));
+   camera.position.set(center.x+(mounted?-3.2:.6),mounted?2.35:2.1,center.z+(mounted?6.5:6.6));
+   camera.fov=40;camera.lookAt(this.aim);camera.updateProjectionMatrix();camera.updateMatrixWorld(true);return;
+  }
   if(this.identity==='blackbeard'){
    if(frame.phase==='intro'){this.currentShot='captain portrait';this.aim.copy(head).add(new THREE.Vector3(0,.095,.04));camera.position.copy(head).add(new THREE.Vector3(-.45+p*.22,.10,1.95-p*.12));camera.fov=35;}
    else if(frame.phase==='charge'){this.currentShot=p<.48?'flintlock command':'quarterdeck reveal';const w=ease((p-.3)/.7);this.aim.copy(head).lerp(new THREE.Vector3(center.x,1.5,center.z),w);camera.position.set(center.x-1-w*1.5,head.y-.05-w*.35,center.z+2.8+w*3.2);camera.fov=36+w*7;}

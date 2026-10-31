@@ -31,6 +31,21 @@ function ribbonGeometry(kind:'arc'|'lance') {
   }
   const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));geometry.setIndex(indices);geometry.computeBoundingSphere();return geometry;
 }
+/** Four tapered contact splinters in two crossing planes. A compact local burst,
+ * not a screen flash or fake traveling projectile. 656 bytes, shared by the pool. */
+function contactGeometry() {
+  const positions:number[]=[],colors:number[]=[],indices:number[]=[];
+  for(let ray=0;ray<4;ray++){
+    const angle=ray*Math.PI/2+.17,dx=Math.cos(angle),dy=Math.sin(angle),cross=ray%2===1;
+    const base=positions.length/3,length=.22+(ray%3)*.055;
+    for(const [r,width,alpha] of [[.045,0,0],[length*.55,-.022,0],[length+.045,0,0],[length*.55,.022,0],[length*.55,0,1]]){
+      const x=dx*r-dy*width,y=dy*r+dx*width;
+      positions.push(cross?x*.6:x,y,cross?x*.8:0);colors.push(1,.95,.82,alpha);
+    }
+    for(let edge=0;edge<4;edge++)indices.push(base+4,base+edge,base+(edge+1)%4);
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));g.setIndex(indices);g.computeBoundingSphere();return g;
+}
 /** Normalized X/Z corridors: all alpha-bearing vertices stay inside the damage footprint.
  * Only thin strokes, never filled rectangles, additive blending, lights or flashing planes. */
 function corridorGeometry(identity: string, ultimate: boolean) {
@@ -70,6 +85,7 @@ export class SkillPresentation {
   readonly root = new THREE.Group();
   private readonly barGeometry = ribbonGeometry('lance');
   private readonly ringGeometry = ribbonGeometry('arc');
+  private readonly contactGeometry = contactGeometry();
   private readonly motifs = Object.fromEntries(['saber','blackbeard','napoleon','musashi'].flatMap(id => [false,true].map(ultimate => [`${id}-${ultimate?'ultimate':'skill'}`,corridorGeometry(id,ultimate)])));
   private readonly effects: Effect[] = [];
   private readonly blade = new THREE.Vector3();
@@ -102,7 +118,7 @@ export class SkillPresentation {
     if(event.type==='strike'&&(!Number.isFinite(event.range)||event.range<=0||event.range>40||!Number.isFinite(event.halfWidth)||event.halfWidth<=0||event.halfWidth>15))return;
     if(event.type==='cast'&&(!Number.isFinite(event.duration)||event.duration<=0))return;
     const effect = this.effects[this.cursor++ % this.effects.length];
-    effect.contact=false;effect.motif.visible=false;
+    effect.contact=false;effect.motif.visible=false;effect.bar.geometry=this.barGeometry;effect.bar.name='SkillNeedleAndFeathers';
     effect.age = 0; effect.cast = event.type === 'cast'; effect.charge = event.identity === 'napoleon' && !effect.cast;
     effect.style = visual.style ?? event.identity ?? 'player';
     effect.life = effect.style==='melee'?.16:event.type==='cast'?Math.max(.08,Math.min(event.duration,1.6)):effect.style==='blackbeard'?.22:effect.style==='musashi'?.28:.52;
@@ -155,7 +171,7 @@ export class SkillPresentation {
     effect.motif.visible=false;
     effect.contact=true;effect.cast=false;effect.charge=false;effect.style='contact';effect.age=0;effect.life=.18;
     effect.root.position.set(point.x,point.y+.8,point.z);effect.root.rotation.set(0,Math.atan2(event.direction.x,event.direction.z),0);
-    effect.ring.visible=false;effect.bar.visible=true;effect.bar.position.set(0,0,0);effect.bar.rotation.set(0,0,Math.PI/4);effect.bar.scale.set(.6,.55,.6);
+    effect.ring.visible=false;effect.bar.visible=true;effect.bar.position.set(0,0,0);effect.bar.geometry=this.contactGeometry;effect.bar.name='ConfirmedContactSplinters';effect.bar.rotation.set(0,0,Math.PI/4);effect.bar.scale.setScalar(.72);
     effect.material.color.setHex(COLORS[event.identity??'player']);effect.peak=effect.material.opacity=reducedFlash?.07:.24;effect.root.visible=true;
   }
   update(dt: number, enabled = true, reducedFlash = false) {
@@ -172,7 +188,11 @@ export class SkillPresentation {
         // Quiet inward gathering, no expanding flash; pose timing owns the actual release.
         effect.ring.scale.multiplyScalar(1-Math.min(dt,.25)*.35);continue;
       }
-      if(effect.contact)continue;
+      if(effect.contact){
+        // Fast separation followed by a quiet decaying tail. Local motion only.
+        effect.bar.scale.setScalar(.72+.34*(1-Math.pow(1-progress,3)));
+        effect.bar.position.y=.035*progress;continue;
+      }
       if(effect.charge)effect.bar.position.z=effect.range*progress;
       if(effect.style==='saber')effect.ring.position.z=effect.range*progress;
       if(effect.style==='musashi')effect.ring.position.z=.30+Math.min(1.3,effect.range*.2)*progress;
@@ -183,7 +203,7 @@ export class SkillPresentation {
   dispose() {
     if (this.disposed) return;
     this.disposed = true; this.clear(); this.root.removeFromParent();
-    this.barGeometry.dispose(); this.ringGeometry.dispose(); for(const geometry of Object.values(this.motifs))geometry.dispose();
+    this.barGeometry.dispose(); this.ringGeometry.dispose(); this.contactGeometry.dispose(); for(const geometry of Object.values(this.motifs))geometry.dispose();
     for (const effect of this.effects) effect.material.dispose();
   }
 }

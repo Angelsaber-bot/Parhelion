@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { addPlayerOutline, disposePlayerObject, preservePlayerMaterial, wantsPlayerOutline } from './playerMaterials';
 import { makePlayerGlider, type GliderEquipment } from './playerEquipment';
+import { PlayerInertia } from './playerInertia';
 import { advancePlayerStride, playerStride, samplePlayerFoot, posePlayerGroundLeg } from './playerLocomotion';
 
 export const PLAYER_V2_URL = new URL('../../assets/characters/player_v2/player_v2.glb', import.meta.url).href;
@@ -248,6 +249,9 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
 export class SkinnedCharacterAnimator {
   facing = 0;
   private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0;
+  private jumpLead = 1;
+  private readonly inertia = new PlayerInertia();
+  private readonly inertiaInput = { onGround: true, swimming: false, gliding: false, flying: false, vy: 0, speed: 0, turnRate: 0, turnDecay: 12, lockedUpperBody: false };
   private meleePose: PlayerAnimationState['melee'];
   private meleeRelease = 0;
   private lastState: PlayerAnimationState = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null };
@@ -255,6 +259,7 @@ export class SkinnedCharacterAnimator {
   /** Full new-game/reset boundary, not a normal equipment/locomotion transition. */
   reset(armed = true, facing = 0) {
     this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.adsPose = this.carry = this.strideSpeed = 0;
+    this.inertia.reset();this.jumpLead=1;
     this.ready = armed ? 1 : 0; this.facing = facing; this.meleePose = undefined; this.meleeRelease = 0;
     this.update(0, { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null, armed });
   }
@@ -314,6 +319,7 @@ export class SkinnedCharacterAnimator {
     this.time += dt;
     // No hidden idle treadmill: stop the stride phase as visual speed settles.
     this.phase += stride.phase;
+    if(state.onGround&&!state.swimming)this.jumpLead=Math.cos(this.phase)>=0?1:-1;
     this.air = THREE.MathUtils.damp(this.air, state.onGround || state.swimming ? 0 : 1, 10, dt);
     const stowing = !state.gliding && this.glide > 0;
     this.glide = state.gliding ? THREE.MathUtils.damp(this.glide, 1, 7, dt)
@@ -325,6 +331,10 @@ export class SkinnedCharacterAnimator {
       ? Math.min(1, this.ready + dt / GLIDER_STOW_SECONDS)
       : THREE.MathUtils.damp(this.ready, needsRifle ? 1 : 0, 3.5, dt);
     const turnRate = dt > 0 ? (this.facing - previousFacing) / dt : 0;
+    const inertiaInput=this.inertiaInput;inertiaInput.onGround=state.onGround;inertiaInput.swimming=state.swimming;
+    inertiaInput.gliding=!!state.gliding;inertiaInput.flying=!!state.flying;inertiaInput.vy=state.vy;
+    inertiaInput.speed=speed;inertiaInput.turnRate=turnRate;inertiaInput.lockedUpperBody=firing || ads > .001 || meleeWeight > 0;
+    const weightTransfer = this.inertia.update(dt, inertiaInput);
     this.bank = THREE.MathUtils.damp(this.bank, state.gliding ? THREE.MathUtils.clamp(-turnRate * .045, -.12, .12) : 0, 5, dt);
     const g = this.glide, r = this.ready, run = THREE.MathUtils.clamp(this.strideSpeed / 9, 0, 1), move = THREE.MathUtils.clamp(this.strideSpeed / 2, 0, 1), swing = Math.sin(this.phase);
     const carryTarget = state.onGround && !state.swimming && !state.gliding ? THREE.MathUtils.clamp(speed / 2, 0, 1) * (1 - aim) : 0;
@@ -343,6 +353,9 @@ export class SkinnedCharacterAnimator {
     const heavy = meleeCut === 2;
     const heavyBlend = heavy ? THREE.MathUtils.smoothstep(meleePhase, 0, .18) : 0;
     const load = Math.sin(Math.PI * THREE.MathUtils.clamp(meleePhase / .82, 0, 1));
+    // The support legs absorb a measured landing; root/capsule height is untouched.
+    hipOffset.y -= weightTransfer.compression * (1 - g) * (1 - meleeWeight);
+    hipOffset.x += weightTransfer.turn * .16 * (1 - this.air);
     hipOffset.y -= meleeGround * (.035 + heavyBlend * .02 + load * (.04 + heavyBlend * .025));
     hipOffset.x += meleeGround * (meleeStroke - .5) * (.06 - heavyBlend * .035) * (meleeCut === 1 ? -1 : 1);
     hipOffset.z += meleeGround * (.015 + Math.sin(meleeStroke * Math.PI) * (heavy ? .035 : .02));
@@ -351,35 +364,45 @@ export class SkinnedCharacterAnimator {
     const parentRestQ = hip.parent ? hip.parent.getWorldQuaternion(Q()) : Q();
     const rootQ = rig.root.getWorldQuaternion(Q());
     hip.position.copy(hipRest.p).add(hipOffset.applyQuaternion(rootQ).applyQuaternion(parentRestQ.invert()));
-    const bodyLean = (run * .15 * (1 - aim) * (1 - g)) + (state.swimming ? .65 : 0) + g * .17;
-    rotation('Hips', meleeLean * .2, -swing * .035 * move * (1 - aim) * (1 - g) + meleeTwist * .35, this.bank * .25);
-    rotation('Spine', bodyLean * .25 + meleeLean * .25, swing * .025 * move * (1 - aim) + meleeTwist * .2);
-    rotation('Chest', bodyLean * .35 + meleeLean * .35, meleeTwist * .5);
+    const bodyLean = (run * .15 * (1 - aim) * (1 - g)) + (state.swimming ? .65 : 0) + g * .17
+      + (weightTransfer.compression * 1.3 + (weightTransfer.descent * .035 + weightTransfer.gather * .06) * this.air) * (1 - aim) * (1 - g);
+    rotation('Hips', meleeLean * .2, -swing * .035 * move * (1 - aim) * (1 - g) + meleeTwist * .35, this.bank * .25 - weightTransfer.turn * .35);
+    rotation('Spine', bodyLean * .25 + meleeLean * .25, swing * .025 * move * (1 - aim) + meleeTwist * .2, -weightTransfer.turn * .3);
+    rotation('Chest', bodyLean * .35 + meleeLean * .35, meleeTwist * .5, -weightTransfer.turn * .35);
     rotation('UpperChest', bodyLean * .40 + meleeLean * .2, meleeTwist * .15);
     // A small real clavicle protraction keeps the support arm reachable at steep cross-body aim.
     rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (armed ? carry : 1 - g));
     rotation('Shoulder_R', 0, .05 * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (!armed ? 1 - g : 0));
     // Camera may look almost vertically; a human neck must not inherit that entire rotation.
     rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim);
-    rotation('Head', -bodyLean * .55 - meleeLean * .4 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim));
+    rotation('Head', -bodyLean * .55 - meleeLean * .4 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim), 0, weightTransfer.turn * .55);
     const thighAngles: Record<Side, number> = { R: 0, L: 0 };
     for (const [side, sign] of [['L', 1], ['R', -1]] as const) {
       const phase = this.phase + (side === 'L' ? 0 : Math.PI);
-      let thigh = -Math.sin(phase) * (.32 + run * .45) * move - this.air * .38;
-      let knee = Math.max(0, Math.sin(phase + .9)) * (.25 + run * .8) * move + this.air * .65;
+      // Supported gait owns the alternating foot cycle. Once airborne, continuing
+      // that treadmill causes bicycle legs; gather the takeoff-leading knee instead,
+      // then extend toward contact according to measured vertical velocity.
+      const airBlend=state.flying?0:this.air,leading=sign===this.jumpLead;
+      const airThigh=-.16-weightTransfer.gather*(leading?.46:.20)+weightTransfer.descent*.07;
+      const airKnee=.38+weightTransfer.gather*(leading?.66:.34)-weightTransfer.descent*.14;
+      let thigh=THREE.MathUtils.lerp(-Math.sin(phase)*(.32+run*.45)*move,airThigh,airBlend);
+      let knee=THREE.MathUtils.lerp(Math.max(0,Math.sin(phase+.9))*(.25+run*.8)*move,airKnee,airBlend);
+      if(state.flying){thigh-=this.air*.38;knee+=this.air*.65;}
       if (state.swimming) { thigh = Math.sin(this.time * 4 + sign) * .28; knee = .30 + Math.sin(this.time * 4 + sign + .5) * .15; }
       thigh = THREE.MathUtils.lerp(thigh, .23 + Math.sin(this.time * 2.5 + sign) * .025, g);
       knee = THREE.MathUtils.lerp(knee, .43 + Math.sin(this.time * 2.5 + sign) * .025, g);
       thighAngles[side] = thigh;
       rotation(`Thigh_${side}`, thigh, 0, sign * .025 * g);
       rotation(`Shin_${side}`, knee);
-      rotation(`Foot_${side}`, -.10 * g - knee * .13);
+      rotation(`Foot_${side}`, -.10 * g - knee * .13 + airBlend * (weightTransfer.ascent * (leading?.18:.25) - weightTransfer.descent*.04));
       rotation(`Toe_${side}`, -.035 * g);
     }
     rig.root.updateMatrixWorld(true);
     // Solve planted feet from the imported limb lengths rather than assuming generic bones.
     // Airborne/jump/glider poses still own the legs as the grounded weight fades out.
-    const groundWeight = (1 - this.air) * (1 - g) * (state.swimming ? 0 : 1);
+    // A confirmed support contact owns the feet immediately: easing an airborne leg
+    // beneath a landing-compressed pelvis would put the soles through the floor.
+    const groundWeight = state.swimming ? 0 : state.onGround ? 1 : (1 - this.air) * (1 - g);
     for (const side of ['L', 'R'] as const) {
       const foot = J[`Foot_${side}`] as THREE.Bone;
       const sample = samplePlayerFoot(this.phase + (side === 'R' ? Math.PI : 0), this.strideSpeed);
@@ -438,6 +461,13 @@ export class SkinnedCharacterAnimator {
         const armSwing = -Math.cos(stride + Math.PI * (.5 - playerStride(this.strideSpeed).stance) - .18);
         freePoint.lerp(V(sign * (.25 + .01 * run), shoulderY - .485 + run * .04 + Math.max(0, armSwing) * .025 * move,
           .035 + armSwing * (.12 + .055 * run) * move), armed ? carry : 1);
+      }
+      if (!state.swimming && !state.flying) {
+        const airAct = this.air * (1 - g) * (1 - aim) * (1 - meleeWeight);
+        // Free arms balance the jump; equipment-contact IK still owns held hands.
+        freePoint.y += airAct * (.19 * weightTransfer.gather + .04 * weightTransfer.descent);
+        freePoint.z += airAct * (.17 * weightTransfer.gather - .025 * weightTransfer.descent);
+        freePoint.x += sign * airAct * .025 * weightTransfer.descent;
       }
       if (state.swimming) freePoint.set(sign * (.22 + Math.cos(this.time * 3.3 + sign) * .10), shoulderY - .20 + Math.sin(this.time * 3.3 + sign) * .10, .24 + Math.cos(this.time * 3.3 + sign) * .16);
       if (meleeWeight > 0) {
