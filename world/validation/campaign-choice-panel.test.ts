@@ -99,3 +99,12 @@ test('detached chronicle/arc/dispatch controls cannot alter tracking or close a 
  f.document.querySelector<HTMLButtonElement>('[data-campaign-dispatch-track]')!.click();assert.equal(pins,1);assert.equal(panel.open,false);
  }finally{panel.dispose();f.close();}
 });
+test('focused dialogue choice survives locale refresh and follows explicit keyboard selection without committing',()=>{
+ const f=fixture(),panel=createNarrativePanel(()=> 'Mouse4');let commits=0;
+ try{panel.showChoices(['决定','Decide'],['人','Person'],options,()=>commits++);
+ f.document.querySelector<HTMLButtonElement>('[data-choice="one"]')!.focus();setLanguage('en');
+ assert.equal((f.document.activeElement as HTMLElement).dataset.choice,'one','translation keeps focus inside the current dialogue');
+ panel.moveChoice(-1);assert.equal((f.document.activeElement as HTMLElement).dataset.choice,'two','focused option follows explicit selection');
+ assert.equal(commits,0);panel.advance();assert.equal(commits,1);
+ }finally{panel.dispose();f.close();}
+});

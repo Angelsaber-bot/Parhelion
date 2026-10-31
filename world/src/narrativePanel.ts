@@ -27,7 +27,7 @@ export interface NarrativeChoice { id: string; label: Localized; }
 
 export function createNarrativePanel(interactLabel: () => string) {
   const root = document.createElement('section');
-  root.id = 'world-dialogue'; root.className = 'hud'; root.hidden = true;
+  root.id = 'world-dialogue'; root.className = 'hud'; root.hidden = true; root.tabIndex = -1;
   root.style.maxHeight = '84vh'; root.style.overflowY = 'auto';
   root.setAttribute('role', 'dialog');
   root.setAttribute('aria-labelledby', 'world-dialogue-title');
@@ -45,9 +45,12 @@ export function createNarrativePanel(interactLabel: () => string) {
   const moreText = () => text.clientHeight > 0 && text.scrollTop + text.clientHeight < text.scrollHeight - 1;
   const choicePage = () => choices.length > 0 && page === pages.length - 1 && !moreText();
   const renderChoices = () => {
+    const focused = document.activeElement as HTMLElement | null;
+    const ownedFocus = !!focused && options.contains(focused);
+    const focusedId = ownedFocus ? focused?.dataset.choice : undefined;
     options.hidden = !choicePage(); options.replaceChildren();
     options.setAttribute('aria-label', bilingual('选择你的行动', 'Choose your action'));
-    if (options.hidden) return;
+    if (options.hidden) { if (ownedFocus) root.focus({ preventScroll: true }); return; }
     choices.forEach((choice, index) => {
       const button = document.createElement('button'); button.type = 'button';
       button.textContent = `${index + 1}. ${bilingual(...choice.label)}`;
@@ -60,6 +63,11 @@ export function createNarrativePanel(interactLabel: () => string) {
     // Keep keyboard selections visible even in short landscape windows.
     const selectedButton = options.children[selected] as HTMLElement | undefined;
     selectedButton?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    // Do not seize focus from gameplay; only repair focus we owned before rebuilding.
+    if (ownedFocus) {
+      const previous = Array.from(options.children).find(child => (child as HTMLElement).dataset.choice === focusedId) as HTMLElement | undefined;
+      (selectedButton ?? previous ?? root).focus({ preventScroll: true });
+    }
   };
   const confirmChoice = () => {
     if (!choicePage() || selected < 0 || !choices[selected] || !onChoose) return;
