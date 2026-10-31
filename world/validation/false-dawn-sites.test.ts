@@ -27,3 +27,7 @@ test('False Dawn ground sampling is per prop, fails clearly for invalid terrain,
  for(const s of scene.sites)for(const m of s.markers)assert.ok(Math.abs(m.p[1]-(10+m.p[0]*.001+m.p[2]*.001+.9))<1e-9);
  scene.update({x:-52,z:-100});assert.equal(scene.sites[0].root.visible,true);assert.equal(scene.sites[1].root.visible,false);scene.update({x:3000,z:3000});assert.ok(scene.sites.every(s=>!s.root.visible));scene.dispose();
 });
+
+test('every authored start/transition interaction disc stays over two metres from actor sockets',()=>{
+ const scene=createFalseDawnSites();for(const s of scene.sites)for(const m of s.markers)for(const spawn of s.spawnPoints){const distance=Math.hypot(m.p[0]-spawn[0],m.p[2]-spawn[2]);assert.ok(distance>(m.radius??2.4)+2.05,`${s.region}:${m.id} actor only ${distance}m from marker center`);}scene.dispose();
+});

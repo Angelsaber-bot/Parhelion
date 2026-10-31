@@ -33,7 +33,8 @@ no choice moves cover or changes traversability. Sealing darkens the completed a
 repurposing leaves a warm channel. No new point lights, textures, shadows or effects pool.
 
 Pure `falseDawnSitesData.ts` exports audited centers, anchor positions and three actor
-XZ offsets: (-2,2), (2,2), (0,5). It has no Three.js/runtime imports. The scene factory
+XZ offsets. Blacksail/Winter use (-2,2), (2,2), (0,5); Valley uses
+(-2.5,-0.8), (2.5,-0.8), (0,0.8), avoiding the third-emitter transition. It has no Three.js/runtime imports. The scene factory
 returns final grounded `sites[].spawnPoints`. Authored actors should use the director's
 ground/clear/LOS checks, not weaken global `safeSpawn` protections: new interaction
 markers intentionally keep random wilderness spawns away from these stations.
@@ -53,3 +54,13 @@ markers intentionally keep random wilderness spawns away from these stations.
 - Evidence outside repo: `../parhelion-eight-hour-evidence/environment/false-dawn-audit/`.
   `candidates.json` is the placement research; `geometry-routes.json` is the final
   collider/route report. Render review remains pending at this checkpoint.
+
+### Interaction-disc spawn margin
+
+The first offset audit checked feet and LOS but not every standing point inside the
+interaction radius. Valley's third actor could overlap a player finishing emitter III.
+The per-field offset record now corrects that. An analytic full-disc check requires
+**every actor** to be farther than `marker.radius + 2.05 m` from **every marker** in its
+field, covering initial starts and auto-wave transitions. Revised nine sockets pass
+actual collision/ground/LOS/Player route tests again. The combat catalog must consume
+`FALSE_DAWN_FIELD_ACTOR_OFFSETS[field]`, not the legacy default-offset array.

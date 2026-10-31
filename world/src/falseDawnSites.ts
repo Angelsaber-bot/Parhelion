@@ -5,11 +5,12 @@
 import * as THREE from 'three';
 import { SiteArt } from './campaignSites';
 import type { Marker } from './types';
+import type {FalseDawnStage} from './falseDawnCampaign';
 import type { RegionId } from './settlements/types';
-import {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_ACTOR_OFFSETS,type FalseDawnFieldId} from './falseDawnSitesData';
+import {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_FIELD_ACTOR_OFFSETS,type FalseDawnFieldId} from './falseDawnSitesData';
 export {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS} from './falseDawnSitesData';
 type V3=[number,number,number];
-export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonly stage:string|number;readonly ending?:string|null;}
+export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonly stage:FalseDawnStage;readonly ending?:'repurpose'|'seal'|null;}
 export const FALSE_DAWN_SITE_LIMITS=Object.freeze({visible:180,trianglesPerField:6000,meshesPerField:8,materialsPerField:3});
 const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
  alpha:[FALSE_DAWN_CENTERS.alpha,...FALSE_DAWN_ANCHORS],
@@ -90,7 +91,7 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
    marker('false_dawn_winter_console','守住雪原中继',x+.1,z+1.4);cover(-6,3,'snow');cover(6,3,'snow');
   }
   // Central lanes deliberately stay free; these are audited against final combined collision.
-  for(const [x,z]of FALSE_DAWN_ACTOR_OFFSETS)spawnPoints.push([origin[0]+x,ground(region,origin[0]+x,origin[2]+z)+.04,origin[2]+z]);
+  for(const [x,z]of FALSE_DAWN_FIELD_ACTOR_OFFSETS[region])spawnPoints.push([origin[0]+x,ground(region,origin[0]+x,origin[2]+z)+.04,origin[2]+z]);
   art.finish(region as RegionId);art.root.name=`FalseDawn_${region}`;art.root.position.set(...origin);
   for(const g of art.solids)g.translate(...origin);collisionGeometries.push(...art.solids);markers.push(...sockets);root.add(art.root);
   return{region,root:art.root,origin,markers:sockets,spawnPoints,art};
@@ -102,7 +103,7 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   const resolved=state.stage==='complete'&&state.ending==='repurpose';
   for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved;s.art.materials.glow.emissiveIntensity=resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
  }
- applyState({anchors:[false,false,false],stage:'dormant'});
+ applyState({anchors:[false,false,false],stage:'locked'});
  return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,
   update(player:Pick<THREE.Vector3,'x'|'z'>){if(disposed)return;for(const s of sites){const dx=player.x-s.origin[0],dz=player.z-s.origin[2];s.root.visible=dx*dx+dz*dz<FALSE_DAWN_SITE_LIMITS.visible**2;}},
   dispose(){if(disposed)return;disposed=true;for(const s of sites){s.root.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});for(const g of s.art.solids)g.dispose();Object.values(s.art.materials).forEach(m=>m.dispose());s.root.clear();}root.removeFromParent();root.clear();},
