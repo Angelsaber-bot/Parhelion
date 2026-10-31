@@ -25,6 +25,8 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const params = new URLSearchParams(location.search);
 const canvas = $<HTMLCanvasElement>('view');
 const scene = new ArenaScene(canvas, params.has('low') ? 'low' : 'high');
+// Preserve reusable effects in the back/forward cache; release only on final page exit.
+addEventListener('pagehide', (event) => { if (!event.persisted) scene.disposeCombatEffects(); });
 const settings = new SettingsStore('arena');
 const loadoutStore = new LoadoutStore();
 const controls = new Controls(canvas, settings);
