@@ -31,3 +31,23 @@ Pass `--walk-links` to remove both settlement→field entry shortcuts. Remote XZ
 `--walk-links --dry-alpha` uses the original West Ford bridge center (-95,61), then the western bank northward to the field. The fixture copies the environment owner's independently Player-tested `alpha-crossing/audit.json` waypoints, including elevated bridge approaches; it does not substitute terrain-only height for the actual bridge collider.
 
 Independent actual-main Winter/seal replay passes in130.42 simulated seconds with **zero swimming frames** on both settlement links, all five genuine-input encounters, three physical emitter interactions and persisted ending. FinalHP90; 53 shots. Fast travel at HP84.5 preserves that value immediately; subsequent production quiet-time regeneration is allowed. Only the initial recorder setup remains. Report: `qa/journey/winter-seal-walk-links-dry-alpha.json`, log `qa/journey-winter-dry-alpha.log`. Damage-source totals count observed normal hits throughout the journey, not exclusively the story roster. Older swimming and shortcut reports remain preserved and honestly labeled.
+
+## Five chronicle workstations: genuine local movement
+
+`validation/journey-review/run-five-workstations.ts` separately closes the gap
+between the transaction-only chapter test and geometry-only approach tests.
+Using explicit legacy mainline evidence and **one labeled entry placement per
+region**, the synthetic operator walks normally to the resident, work socket,
+decision socket and back to report. All five regions completed with real
+keyboard/F choices and naturally settled physics; no `onGround` writes, quest
+flag injections or hostile damage calls. This verifies natural NPC/workstation
+arbitration at current side positions and the shifted BlackSail workspace.
+
+The run observed the selected second-branch mesh visible, first-branch mesh
+hidden, and completion mesh visible in all five sites. A separate fresh actual
+main boot from the saved bytes restored all five branch/completion states and
+those exact visibility properties. It used 16.37 simulated seconds for the local
+segments (not dialogue reading or human completion time). No inter-region walk,
+new-player prerequisite acquisition or GPU pixel verification is claimed.
+Evidence: `qa/journey/five-workstations.json` and
+`qa/journey-five-workstations.log` in the sibling evidence directory.
