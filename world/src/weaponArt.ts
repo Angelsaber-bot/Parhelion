@@ -1,5 +1,7 @@
 // World loads only its equipped AR; the full collection remains in Arena's on-demand gallery.
 import * as THREE from 'three';
+import { createWeaponFinishMaterials } from './weaponFinishMaterials';
+import { weaponFinish, type WeaponFinishId } from './weaponFinishes';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import registry from '../../assets/weapons/registry.json';
@@ -23,6 +25,7 @@ export function attachExplorerRifle(rig: WeaponMountRig, renderer?: THREE.WebGLR
   let stopped = false, loaded: THREE.Group | null = null;
   let visual: THREE.Group | null = null;
   let environment: THREE.WebGLRenderTarget | null = null;
+  let finish: ReturnType<typeof createWeaponFinishMaterials> | undefined, selectedFinish: WeaponFinishId = 'original';
   const gun = rig.joints.Gun, fallback = gun.getObjectByName('Rifle') as THREE.Mesh | undefined;
   // Keep projectile/muzzle flashes on the actual barrel after the authored art is fitted to both hands.
   const muzzle = new THREE.Vector3(0, 0.005, -0.455).multiplyScalar(1.1);
@@ -64,8 +67,10 @@ export function attachExplorerRifle(rig: WeaponMountRig, renderer?: THREE.WebGLR
     // Fallback body material belongs to the whole character; only its own geometry/outline material go.
     fallback?.geometry.dispose();
     fallback?.children.forEach((o) => { const m = o as THREE.Mesh; if (m.isMesh) for (const mat of Array.isArray(m.material) ? m.material : [m.material]) mat.dispose(); });
+    finish = createWeaponFinishMaterials(loaded); finish.apply(selectedFinish);
     gun.userData.artState = 'ready';
   }).catch((error: unknown) => {
+    finish?.dispose(); finish = undefined;
     environment?.dispose(); environment = null;
     visual?.removeFromParent(); visual = null;
     if (loaded) { dispose(loaded); loaded = null; }
@@ -76,6 +81,8 @@ export function attachExplorerRifle(rig: WeaponMountRig, renderer?: THREE.WebGLR
     if (!stopped) { gun.userData.artState = 'fallback'; console.warn('World rifle art unavailable; explicitly constructed legacy rifle retained.', error); }
   });
   return { ready,
+    setFinish(value: unknown) { const definition = weaponFinish(value); if (stopped || !definition) return false; selectedFinish = definition.id; finish?.apply(selectedFinish); return true; },
+    get finish() { return selectedFinish; },
     muzzleWorld(out = new THREE.Vector3()) { gun.updateWorldMatrix(true, false); return gun.localToWorld(out.copy(muzzle)); },
-    dispose() { if (stopped) return; stopped = true; environment?.dispose(); visual?.removeFromParent(); visual = null; if (loaded) { loaded.removeFromParent(); dispose(loaded); loaded = null; } } };
+    dispose() { if (stopped) return; stopped = true; finish?.dispose(); finish = undefined; environment?.dispose(); visual?.removeFromParent(); visual = null; if (loaded) { loaded.removeFromParent(); dispose(loaded); loaded = null; } } };
 }
