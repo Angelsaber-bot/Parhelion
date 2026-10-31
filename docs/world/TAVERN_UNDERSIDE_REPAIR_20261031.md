@@ -28,7 +28,7 @@ child reference and updated buffer length recovers original JSON exactly. Origin
 - Candidate GLB SHA256: `99ac7a70792b95d381123df44f03bea47863620234f612b7a587b9869dd86d00`
 - Original BIN SHA256: `2973f0a1ad46e5ff9e094139527f37d05598f76c4b9d09099fd8b838f51ce2af`
 
-Candidate actual-main upward art rays now hit the lining in all four samples;
+Shipped low/normal actual-main upward art rays hit the lining in all four samples;
 downward roof/physical rays remain exact. All 28 original landmark entry/exit walk
 legs pass without forced grounding. Paired native TPS approach/interior CPU frames
 show the ceiling closing while keeping beams, lamps and doorway; see lighting and
@@ -56,3 +56,9 @@ source geometry and original rays; `tavern-roof-candidate/` contains the candida
 strict patch/source proofs, runtime material metadata, route results and paired
 `med/renders/blacksail-{approach,interior}.png`. Root and independent QA reviewed both pairs; root approved the narrow patch. The
 shipped GLB now matches the candidate hash above. No broad regeneration was used.
+
+`validation/tavern-underside.test.ts` runs automatically in World CI: it checks the
+complete original BIN prefix hash (including all collider bytes), single ART-only
+lining, reused FrontSide material intent, six inward faces and four upward ray hits.
+This cheap fixture does not boot main or regenerate assets. Future intentional
+asset rebuilds must explicitly re-audit this pinned preservation contract.

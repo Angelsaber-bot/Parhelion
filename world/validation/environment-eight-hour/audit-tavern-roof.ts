@@ -5,14 +5,15 @@ import { mkdir,writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { bootWorldWithoutGpu } from '../world-dom-boot.fixture';
 const out=process.argv[2];if(!out)throw Error('OUTPUT_DIR');
-const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_REVIEW_ROOT,deterministic:true,effectsQuality:'med'}),w=h.world;
+const quality=process.argv.includes('--low')?'low':'med';
+const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_REVIEW_ROOT,deterministic:true,effectsQuality:quality}),w=h.world;
 try{
  (h.window.document.getElementById('start')as HTMLElement).click();await Promise.resolve();
  w.player.teleport(592,3.5,130);for(let i=0;i<60;i++)h.frame(i*1000/60);
  w.scene.updateMatrixWorld(true);
  const meshes:THREE.Object3D[]=[];w.scene.getObjectByName('World').traverseVisible((o:any)=>{if(o.isMesh&&!o.name.endsWith('__outline'))meshes.push(o);});
  const lining=w.scene.getObjectByName('Nassau_Tavern_Timber_Underside');
- const liningMetadata=lining?{materialSide:lining.material.side,materialReused:meshes.some((m:any)=>m!==lining&&m.name.startsWith('Nassau_Craft_Timber')&&m.material===lining.material),triangles:lining.geometry.attributes.position.count/3,castShadow:lining.castShadow}:null;
+ const liningMetadata=lining?{quality,materialSide:lining.material.side,materialReused:meshes.some((m:any)=>m!==lining&&m.name.startsWith('Nassau_Craft_Timber')&&m.material===lining.material),triangles:lining.geometry.attributes.position.count/3,castShadow:lining.castShadow}:null;
  const results=[];
  for(const x of[590.5,593.5])for(const z of[126,130]){
   const p=new THREE.Vector3(x,5,z),up=new THREE.Vector3(0,1,0),down=up.clone().negate();
