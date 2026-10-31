@@ -58,6 +58,7 @@ import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
 import { loadLayout } from './load';
 import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './skinnedCharacter';
+import { PlayerTerrainSupport } from './playerTerrainSupport';
 import { attachExplorerRifle } from './weaponArt';
 import { ShoulderAim, shoulderArmLength } from './aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
@@ -699,7 +700,7 @@ function applyWeaponFinish() {
 }
 applyWeaponFinish();
 void blade.ready.catch(error => console.warn('Melee art unavailable', error));
-const anim = new SkinnedCharacterAnimator(rig);
+const anim = new SkinnedCharacterAnimator(rig, new PlayerTerrainSupport(rig, colliders));
 anim.reset(worldProgress.armed, player.yaw + Math.PI);
 let thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
 let camDist = 3.6;
