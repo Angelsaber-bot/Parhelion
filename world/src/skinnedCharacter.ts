@@ -1,3 +1,4 @@
+import { limitRifleElbowPole } from './playerRiflePose';
 /** Formal deform rig. The game owns feet position/yaw; the asset owns bind pose, UVs and anatomy. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -135,6 +136,10 @@ export function buildSkinnedCharacter(model: THREE.Group, options: { outlines?: 
   return rig;
 }
 
+// Synchronous solver scratch: the wrist safety correction adds no per-frame allocations.
+const rifleDistalScratch = new THREE.Vector3(), rifleTurnScratch = new THREE.Vector3();
+const rifleRestInverseScratch = new THREE.Quaternion();
+
 function applyLocalDelta(rig: SkinnedCharacterRig, bone: THREE.Bone, delta: THREE.Quaternion) {
   const rest = rig.rest.get(bone)!;
   // Express an anatomical/model-space delta in this imported bone's actual bind basis.
@@ -194,9 +199,20 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
     }
     // ADS may settle the right elbow below the stock without moving either
     // endpoint. Default zero preserves free hands, melee and all other callers.
-    if (side === 'R' && riflePole !== 0) pole.applyAxisAngle(axis, sign * riflePole * gripAlignment * (1 - relaxed));
     const along = (length1 * length1 - length2 * length2 + distance * distance) / (2 * distance);
     const height = Math.sqrt(Math.max(0, length1 * length1 - along * along));
+    if (side === 'R' && riflePole !== 0) {
+      const middle = rig.rest.get(rig.bones.J_Bip_R_Middle1);
+      if (middle) {
+        const distal = rifleDistalScratch.copy(middle.rootP).sub(handRest.rootP);
+        const anatomicalLength = distal.lengthSq();
+        distal.normalize().applyQuaternion(rifleRestInverseScratch.copy(handRest.rootQ).invert()).applyQuaternion(handQ);
+        const requested = sign * riflePole * gripAlignment * (1 - relaxed);
+        const angle = anatomicalLength > 1e-12 ? limitRifleElbowPole(requested, (distance - along) * distal.dot(axis),
+          distal.dot(pole), distal.dot(rifleTurnScratch.crossVectors(axis, pole)), height, length2) : 0;
+        if (angle !== 0) pole.applyAxisAngle(axis, angle);
+      }
+    }
     elbow = shoulder.clone().addScaledVector(axis, along).addScaledVector(pole, height);
     reachable = shoulder.clone().addScaledVector(axis, distance);
   };
