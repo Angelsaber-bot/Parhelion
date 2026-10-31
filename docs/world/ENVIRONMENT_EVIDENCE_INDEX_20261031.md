@@ -120,3 +120,9 @@ idle, follow, ordinary contact and ultimate-return snapshots; native attachments
 materials, roots and resumed idle checked. Final grounded CPU frames are under
 `environment/era-servant-grounded/`; explicit setup/meter and offline-camera limits
 are documented. No model/motion change was needed.
+
+## Construction reference cleanup
+
+`SITEART_CONSTRUCTION_RETENTION_20261031.md`: eight-builder final-buffer parity and
+zero retained construction bins after finish; 2.275 MiB of disjoint CPU backing
+stores no longer retained by these arrays. This is not a measured heap/FPS claim.

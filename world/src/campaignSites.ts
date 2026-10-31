@@ -83,6 +83,9 @@ export class SiteArt {
       const mesh=new THREE.Mesh(geometry,material);mesh.name=`Campaign_${region}_${layer}`;
       mesh.castShadow=false;mesh.receiveShadow=true;mesh.userData.campaignLayer=layer;this.root.add(mesh);this.layers.set(layer,mesh);
     }
+    // Merged render buffers and cloned collider positions own their data. Disposed
+    // construction geometries otherwise retain CPU attributes through these arrays.
+    this.bins.clear();
   }
 }
 
