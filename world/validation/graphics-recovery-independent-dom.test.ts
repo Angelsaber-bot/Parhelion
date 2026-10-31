@@ -20,11 +20,12 @@ test('repeated graphics recovery preserves live contact buffers and actor timers
   for(let cycle=0;cycle<3;cycle++){
    assert.equal(emit('webglcontextlost').defaultPrevented,true);assert.equal(w.graphicsRecovery.state,'lost');const frozen=snapshot(),before=renders;
    h.window.dispatchEvent(new h.window.PageTransitionEvent('pagehide',{persisted:true}));h.window.dispatchEvent(new h.window.PageTransitionEvent('pageshow',{persisted:true}));
-   d.body.dispatchEvent(new h.window.KeyboardEvent('keydown',{code:custom,bubbles:true}));frame(8,10000);assert.equal(snapshot(),frozen);assert.equal(renders,before);assert.equal(disposed,0);
-   emit('webglcontextrestored');assert.equal(w.graphicsRecovery.state,'awaiting-resume');frame(4,10000);assert.equal(snapshot(),frozen);assert.equal(renders,before);
-   await canvas.requestPointerLock();assert.equal(d.pointerLockElement,null);assert.equal(snapshot(),frozen);await start();assert.equal(w.graphicsRecovery.state,'available');assert.equal(d.pointerLockElement,canvas);frame();assert.equal(actor.hp,JSON.parse(frozen).actor[1],'held key while unavailable cannot fire on resume');
+   d.body.dispatchEvent(new h.window.KeyboardEvent('keydown',{code:custom,bubbles:true}));if(cycle===2)now+=80000;else frame(8,10000);assert.equal(snapshot(),frozen);assert.equal(renders,before);assert.equal(disposed,0);
+   emit('webglcontextrestored');assert.equal(w.graphicsRecovery.state,'awaiting-resume');if(cycle===2)now+=40000;else frame(4,10000);assert.equal(snapshot(),frozen);assert.equal(renders,before);
+   await canvas.requestPointerLock();assert.equal(d.pointerLockElement,null);assert.equal(snapshot(),frozen);await start();assert.equal(w.graphicsRecovery.state,'available');assert.equal(d.pointerLockElement,canvas);frame();assert.equal(snapshot(),frozen,'first resumed frame consumes zero hidden time even if no RAF occurred during loss');assert.equal(actor.hp,JSON.parse(frozen).actor[1],'held key while unavailable cannot fire on resume');
    for(let i=0;i<3;i++){assert.equal(slots[i].mesh,resources[i].mesh);assert.equal(slots[i].mesh.geometry,resources[i].geometry);assert.equal(slots[i].mesh.material,resources[i].material);assert.equal(slots[i].mesh.geometry.attributes.position.array,resources[i].array);}assert.equal(cue.diagnostics.bytes,55296);assert.equal(disposed,0);
   }
+  const active=slots.find((s:any)=>s.mesh.visible),age=active.age;frame();assert.ok(active.age>age,'ordinary visible time advances after the discarded resume frame');
   assert.equal(w.settings.value.bindings.fire,custom);w.combat.cancelStoryEncounter();assert.equal(cue.diagnostics.active,0);assert.equal(w.done.has('false_dawn_warden_cleared'),false);
   h.window.dispatchEvent(new h.window.PageTransitionEvent('pagehide',{persisted:false}));assert.equal(disposed,6);emit('webglcontextrestored');assert.equal(w.graphicsRecovery.state,'disposed');assert.deepEqual(h.errors,[]);
  }finally{await h.close();}
