@@ -28,8 +28,10 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     retry.textContent = bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
     restore.textContent = bilingual('从备份恢复…', 'Restore a backup…');
     retry.hidden = progress.persistence === 'ready' || progress.persistence === 'saved';
-    warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable';
-    warning.textContent = bilingual('任务尚未保存 · 设置中可重试或下载备份', 'Quest progress is not saved · Retry or back up in Settings');
+    warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable' && progress.persistence !== 'invalid';
+    warning.textContent = progress.persistence === 'invalid'
+      ? bilingual('已有存档无法读取 · 请先到设置检查或恢复备份', 'Existing save unreadable · Check Settings or restore a backup before continuing')
+      : bilingual('任务尚未保存 · 设置中可重试或下载备份', 'Quest progress is not saved · Retry or back up in Settings');
   };
   retry.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; progress.save(); });
   backup.addEventListener('click', event => {

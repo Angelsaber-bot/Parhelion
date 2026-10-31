@@ -87,3 +87,13 @@ test('retained controls cannot save, download or reopen a picker after disposal'
     assert.deepEqual({ saves, downloads, pickers }, { saves: 0, downloads: 0, pickers: 0 });
   } finally { URL.createObjectURL = originalUrl; f.close(); }
 });
+
+test('unreadable-save status is visible before the user opens settings', () => {
+  const f = fixture();
+  try {
+    f.progress.persistence = 'invalid'; setLanguage('en');
+    const warning = f.dom.window.document.getElementById('world-save-warning')!;
+    assert.equal(warning.hidden, false); assert.match(warning.textContent!, /Existing save unreadable/);
+    f.progress.save(); assert.equal(warning.hidden, true);
+  } finally { f.close(); }
+});
