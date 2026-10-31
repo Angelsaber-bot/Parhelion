@@ -56,9 +56,12 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
     if (!progress.saveBlocked) { progress.save(); return; }
     const expected = progress.captureStoredSnapshot();
     if (!expected) { failedReplacement(); return; }
-    // A repair prompt for corrupt bytes must not silently adopt a newer tab's save.
+    // Repair from old/partial memory must not silently adopt a newer tab's save.
     const originalRaw = progress.exportUnreadableSnapshot();
-    if (originalRaw !== null && expected.raw !== originalRaw) { failedReplacement(); return; }
+    if (!progress.repairSnapshotMatchesOriginal(expected)) {
+      setResult(['原存档已被另一页面改动，未替换。请先备份本次进度，再重新载入并检查当前存档。', 'Another page changed the original save; nothing was replaced. Back up this session, then reload and review the current save.']);
+      return;
+    }
     const confirmation: [string, string] = originalRaw === null
       ? ['部分原存档尚未读取，本次进度可能不包含其中的任务。仍要用本次进度替换并重新载入吗？建议先备份本次进度，或取消后重新载入以重试读取。个人设置保留。', 'Some original records have not been read; this session may omit their quests. Replace with this session and reload anyway? Back up this session first, or cancel and reload to retry reading. Personal settings are kept.']
       : ['用本次页面进度替换原存档并重新载入？建议先下载原始数据与本次进度。个人设置保留。', 'Replace the original save with this session and reload? Download the original and session progress first if needed. Personal settings are kept.'];

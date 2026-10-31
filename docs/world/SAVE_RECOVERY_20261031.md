@@ -43,3 +43,17 @@ events and final disposal. Independent reproduction changed post-import movement
 from 2.75 m to zero under an intentionally unavailable-navigation boundary.
 This does not assert that ordinary supported browsers routinely fail to reload.
 All stored data used for these checks was synthetic cloud-test data.
+
+### Known-absent current-slot repair guard
+
+If the initial v2 read succeeded with no record but legacy migration was incomplete,
+that absence is retained as the session-repair baseline. A later value written by
+another tab is rejected before the partial-session replacement prompt; the UI asks
+for a session backup, reload and review. A change during confirmation is still
+rejected by the existing compare-before-write guard. This is not atomic cross-tab
+CAS. An initial v2 read exception remains unknown, not falsely treated as absent.
+Deliberate backup import and explicit reset retain their separate authority.
+
+Regression cases cover pre-prompt/during-confirm changes, unchanged-null repair,
+read failure, quota failure, byte-identical legacy preservation and intentional
+import/reset. The original pre-fix prompt failure is retained in cloud evidence.

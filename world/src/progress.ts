@@ -44,12 +44,14 @@ export class WorldProgress {
   private unreadableLegacy = new Set<string>();
   private unreadableCurrent: string | null = null;
   private initialReadFailed = false;
+  private initialCurrentSnapshot: { raw: string | null } | null = null;
   private replacementAuthorized = false;
   persistence: ProgressPersistenceState = 'ready';
   constructor(private storage?: ProgressStorage) {
     if (!storage) { this.persistence = 'unavailable'; return; }
     let current: string | null;
     try { current = storage.getItem(WORLD_PROGRESS_KEY); } catch { this.initialReadFailed = true; this.persistence = 'unavailable'; return; }
+    this.initialCurrentSnapshot = { raw: current };
     if (current !== null) {
       // Even an empty reset snapshot is authoritative. Never merge old v1 quests back into it.
       if (!this.read(current, true)) { this.unreadableCurrent = current; this.persistence = 'invalid'; }
@@ -95,6 +97,12 @@ export class WorldProgress {
   captureStoredSnapshot(): { raw: string | null } | null {
     try { return this.storage ? { raw: this.storage.getItem(WORLD_PROGRESS_KEY) } : null; }
     catch { this.report('unavailable'); return null; }
+  }
+  /** Session repair must not adopt a newer tab's record as its baseline. A
+   * successfully read null is meaningful; a failed initial read remains unknown.
+   * Deliberate backup import/reset use their separate explicit authority. */
+  repairSnapshotMatchesOriginal(snapshot: { raw: string | null }): boolean {
+    return !this.saveBlocked || this.initialCurrentSnapshot === null || snapshot.raw === this.initialCurrentSnapshot.raw;
   }
   restoreSnapshot(raw: string, expected?: { raw: string | null }): 'restored' | 'invalid' | 'unavailable' | 'conflict' {
     const snapshot = parseProgressBackup(raw);
