@@ -1608,7 +1608,7 @@ function frame(now: number) {
     if (combat.defeated) { input.x = input.z = 0; input.jump = input.sprint = false; }
     input.evade = active && actions?.evade.active ? { x: actions.evade.x, z: actions.evade.z, strength: Math.min(actions.evade.remaining, STEP) / STEP } : undefined;
     combat.setDefense({ guard: active && actions?.skills.guarding ? .55 : 1, invulnerable: !!(active && actions && actions.evade.remaining > .10) });
-    player.step(STEP, input, !!(active && actions && (actions.melee.active || actions.skills.casting || actions.skills.guarding)));
+    player.step(STEP, input);
     combat.simulate(STEP, player.pos, gameplayActive() && !player.flying);
     actions?.update(STEP);
     acc = Math.max(0, acc - STEP);

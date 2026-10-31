@@ -31,7 +31,7 @@ export function auditEvadeFrame(fps: number) {
     startPose: () => false, cancelPoses() {}, toast() {}, reducedEffects: () => true,
   });
   const step = player.step.bind(player);
-  player.step = (dt, input, admittedGroundAction) => { if (input.evade) evadeSeconds += dt * (input.evade.strength ?? 1); if (defense.invulnerable) iframeSeconds += dt; step(dt, input, admittedGroundAction); };
+  player.step = (dt, input) => { if (input.evade) evadeSeconds += dt * (input.evade.strength ?? 1); if (defense.invulnerable) iframeSeconds += dt; step(dt, input); };
   const applyDefense = (value: { guard: number; invulnerable: boolean }) => { defense = value; state.setDefense(value); };
   const combat = { setDefense: applyDefense, simulate(dt: number) { combatAcc += dt; while (combatAcc + 1e-9 >= .05) { if (defense.invulnerable) combatProtectedTicks++; state.step(.05, player.pos, true, { walk: () => null, lineOfSight: () => true }); combatAcc = Math.max(0, combatAcc - .05); } }, get defeated() { return state.defeated; }, update(dt: number) {
     combatAcc += dt;
