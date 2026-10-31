@@ -110,10 +110,14 @@ export class KitCompanion {
       for(let cycle=0;cycle<4 && this.skillPose===pose;cycle++) {
         const sample=skillAnimationSample(skillAnimationProfile(actor.definition.id,pose.command.slot,pose.cycle),pose.motionTime,attack.duration,contact);
         let remaining=Math.max(0,sample.clipTime-actor.clipTime);
+        const clipAdvance=remaining;
+        // Allocate actual elapsed time across a possible clip-cycle boundary.
+        const visualAdvance=Math.max(0,Math.min(dt,pose.motionTime)-Math.max(0,pose.motionTime-sample.duration));
+        if(clipAdvance<=1e-9 && visualAdvance>0)actor.update(0,false,visualAdvance);
         // CharacterKit samples each exact authored socket event; bounded slices avoid
         // its tab-resume cap swallowing a fast release. No events are generated here.
         while(remaining>1e-9 && actor.state==='attack') {
-          const slice=Math.min(.1,remaining);actor.update(slice);remaining-=slice;
+          const slice=Math.min(.1,remaining);actor.update(slice,false,visualAdvance*slice/clipAdvance);remaining-=slice;
           if(this.skillPose!==pose)return;
         }
         if(pose.motionTime+1e-9<sample.duration)return;

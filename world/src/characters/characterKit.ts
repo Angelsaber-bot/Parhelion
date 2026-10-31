@@ -168,26 +168,30 @@ export class CharacterKit {
       up: contract.up ? new THREE.Vector3(...contract.up).transformDirection(object.matrixWorld) : undefined,
     };
   }
-  update(dt: number, paused = false) {
-    if (this.disposed || paused || !Number.isFinite(dt) || dt <= 0 || this.rate === 0) return;
+  update(dt: number, paused = false, presentationDt?: number) {
+    if (this.disposed || paused || !Number.isFinite(dt) || dt < 0 || this.rate === 0) return;
+    const fadingGait = this.blend.isFadingFrom(this.actions.get('walk')) || this.blend.isFadingFrom(this.actions.get('run'));
+    const visualDt = !fadingGait || presentationDt === undefined || !Number.isFinite(presentationDt) ? Math.min(dt, .25) : Math.min(.25, Math.max(0, presentationDt));
+    if (dt === 0) { if (presentationDt !== undefined && visualDt > 0) this.blend.update(this.mixer, 0, visualDt); return; }
     // Do not deliver a backlog of attacks after a suspended tab resumes.
     dt = Math.min(dt, .25);
+    const visualRatio = visualDt / dt;
     const state = this.currentState, contract = this.definition.clips[state], generation = this.generation;
     if (contract.loop) {
       this.elapsed = (this.elapsed + dt * this.rate) % contract.duration;
-      this.blend.update(this.mixer, dt); return;
+      this.blend.update(this.mixer, dt, visualDt); return;
     }
     const end = Math.min(contract.duration, this.elapsed + dt * this.rate);
     let cursor = this.elapsed;
     const events = (contract.events ?? []).map((event,index) => ({event,index})).sort((a,b) => a.event.at-b.event.at);
     for (const {event,index} of events) {
       if (this.emitted.has(index) || event.at < cursor || event.at > end) continue;
-      this.blend.update(this.mixer, (event.at-cursor)/this.rate); cursor = event.at;
+      this.blend.update(this.mixer, (event.at-cursor)/this.rate, ((event.at-cursor)/this.rate) * visualRatio); cursor = event.at;
       this.elapsed = cursor; this.emitted.add(index);
       this.options.onEvent?.({ ...event, character: this.definition.id, state, clip: contract.name, transform: event.socket ? this.socketTransform(event.socket) : undefined });
       if (this.disposed || generation !== this.generation) return;
     }
-    this.blend.update(this.mixer, (end-cursor)/this.rate); this.elapsed = end;
+    this.blend.update(this.mixer, (end-cursor)/this.rate, ((end-cursor)/this.rate) * visualRatio); this.elapsed = end;
     if (end >= contract.duration) this.play(this.definition.defaultState);
   }
   dispose() {

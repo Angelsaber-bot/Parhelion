@@ -28,9 +28,10 @@ export class ActionBlend {
     }
     this.target = next; this.elapsed = 0;
   }
-  update(mixer: THREE.AnimationMixer, dt: number) {
+  isFadingFrom(action?: THREE.AnimationAction) { return !!action && this.duration > 0 && action !== this.target && (this.weights.get(action) ?? 0) > 0; }
+  update(mixer: THREE.AnimationMixer, dt: number, presentationDt = dt) {
     if (this.duration > 0 && this.target) {
-      this.elapsed = Math.min(this.duration, this.elapsed + dt);
+      this.elapsed = Math.min(this.duration, this.elapsed + presentationDt);
       const t = this.elapsed / this.duration;
       const blend = this.easing === 'smoothstep' ? t * t * (3 - 2 * t) : t;
       for (const [action, weight] of this.weights) action.setEffectiveWeight(weight + ((action === this.target ? 1 : 0) - weight) * blend);
@@ -39,7 +40,16 @@ export class ActionBlend {
         this.weights = new Map([[this.target, 1]]); this.duration = 0;
       }
     }
-    mixer.update(dt);
+    if (presentationDt === dt || this.weights.size <= 1) { mixer.update(dt); return; }
+    // Skill clip retiming must not also accelerate the outgoing gait. Keep the
+    // target action on its authoritative clip clock; only fading actions use
+    // elapsed presentation time. The default path above is unchanged.
+    const step = dt > 0 ? dt : presentationDt;
+    if (step <= 0) return;
+    const rates = [...this.weights.keys()].map(action => ({ action, rate: action.timeScale }));
+    for (const { action, rate } of rates) action.setEffectiveTimeScale(rate * (action === this.target ? dt / step : presentationDt / step));
+    try { mixer.update(step); }
+    finally { for (const { action, rate } of rates) action.setEffectiveTimeScale(rate); }
   }
   clear() { this.weights.clear(); this.target = undefined; this.duration = 0; }
 }
