@@ -127,5 +127,5 @@ are documented. No model/motion change was needed.
 zero retained construction bins after finish; 2.275 MiB of disjoint CPU backing
 stores no longer retained by these arrays. This is not a measured heap/FPS claim.
 
-## Optional tower west walking access
-See [TOWER_WEST_WALKING_ACCESS_20261031.md](TOWER_WEST_WALKING_ACCESS_20261031.md). Exact append-only 264 ART / 24 COL triangle walking route, original jump/glide/perch route preserved; explicitly not a global softlock repair. Paired native TPS CPU previews and controlled-but-intermittently-airborne descent traces under `environment/tower-access-v2*`; independent fresh earned-route replay tracked separately.
+## Rejected optional tower walking-access experiment
+See [TOWER_WEST_WALKING_ACCESS_20261031.md](TOWER_WEST_WALKING_ACCESS_20261031.md). The 264 ART / 24 COL triangle prototype was rejected after fresh-input QA found a new side obstruction on the old pre-RelayB ridge corridor. Original Alpha restored exactly; original jump/glide/perch route remains valid. Paired CPU previews and failed/passing diagnostic traces retained under `environment/tower-access-v2*` and `tower-access-v3*`; no shipped walking ramp.

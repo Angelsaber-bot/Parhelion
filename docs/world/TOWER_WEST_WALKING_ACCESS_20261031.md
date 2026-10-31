@@ -1,6 +1,14 @@
-# Optional west tower walking access — 2026-10-31
+# Rejected optional tower walking-access experiment — 2026-10-31
 
-## Scope and reason
+## Final decision: rejected and production addition reverted
+
+Fresh earned-input QA on `12e5158` found the solid ramp side blocked an existing pre-RelayB ridge crossing: (30,-126) → (10,-142) → (-18,-160) stopped at approximately (-18,26.009,-157.35). Original `e7b660e` passes the same inputs. A simple isolated southwest relocation also obstructed the actual contour-following route at approximately (-18,25.256,-149.35). Neither is a valid old-route-preserving improvement.
+
+Root rejected the optional feature rather than accepting a complex underpass, changing physics, or silently rerouting the QA path. Production generator wiring and exact-append allowances were removed; Alpha GLB restored byte-for-byte to SHA-256 `1fb8d6823f2afcbdd11586d92013df4250243505a956c49db98fb14624f2e850`. All original map assertions and the approved Relay B copy normalization remain. The isolated, explicitly rejected helper/tools and raw evidence remain reproducible; there is **no shipped stone walking ramp**. The cheap `tower-access.test.ts` now asserts complete original geometry identity and unchanged relay prerequisites, not acceptance of the prototype.
+
+Original legitimate jump → glider → natural perch → grounded jump remains the valid route, proven in the fresh original progression run. The following sections are historical candidate measurements, **not accepted product claims**. Full failed fresh trace: `qa/fresh-mainline-ramp-12e5158.*`; isolated relocation trace: `environment/tower-access-v3-component.log`.
+
+## Historical candidate scope and reason
 
 The original tower **is reachable**: QA reproduced grounded jump → glider → natural north-west perch landing → second grounded jump, including a fresh earned-progression run without teleport/ground/HP/flag writes (`f13e7e1`, original `e7b660e` fixture). Earlier 72 radial single-jump component trials only established that those simpler approaches failed; they did not prove a global softlock.
 
@@ -36,4 +44,4 @@ Sibling evidence root: `parhelion-eight-hour-evidence/environment/`.
 
 `validation/tower-access.test.ts` pins the original BIN and recovered JSON, exact source/asset geometry, upward-facing walk surfaces, triangle counts, north-perch separation and tower relay prerequisites. `map-polish.test.ts` permits only exact named ART/COL nodes and exact additional budget, retaining every old node/material/layout/collider assertion and prior Relay B copy normalization. No baseline regeneration.
 
-Focused 38 tests and configured World typecheck pass. Final fresh earned-route replay using the new walking access is owned by independent QA and remains a separate acceptance step; do not relabel older original-route evidence as ramp evidence.
+Focused 38 tests and configured World typecheck pass. That fresh earned-route replay subsequently FAILED original corridor preservation, causing rejection and exact production reversion as recorded above.

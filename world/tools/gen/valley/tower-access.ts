@@ -1,4 +1,5 @@
-/** Optional west walking approach; original jump/glide/perch route and tower gates remain intact. */
+/** REJECTED isolated prototype, never wire into production: solid sides obstruct the
+ * original pre-RelayB ridge corridor. Retained only to reproduce diagnostic evidence. */
 import * as THREE from 'three';
 import {Batch,T,BOX} from '../geo.js';
 export const TOWER_ACCESS={name:'Tower_West_Access',x0:-26,x1:-15.5,landingEnd:-13,z:-159.5,width:3.6,deck:30.5,baseY:23.945749171617024}as const;
