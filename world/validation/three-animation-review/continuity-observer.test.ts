@@ -1,0 +1,6 @@
+import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {createContinuityObserver} from './continuity-observer';
+test('continuity observer excludes hidden ancestor poses and records actual phase-boundary camera movement',()=>{
+ const scene=new THREE.Scene(),parent=new THREE.Group(),clone=new THREE.Group(),foot=new THREE.Bone();foot.name='FootL';clone.add(foot);parent.add(clone);scene.add(parent);const camera=new THREE.PerspectiveCamera();scene.add(camera);
+ const w={ultimateStage:{clone,camera,scene},ultimateDirector:{active:true,frame:{phase:'charge',progress:.9,strikeCount:0}},camera};const o=createContinuityObserver('blackbeard');o.observe(w,1,clone);parent.visible=false;foot.position.x=100;o.observe(w,1+1/60,clone);parent.visible=true;foot.position.x=0;o.observe(w,1+2/60,clone);
+ w.ultimateDirector.frame.phase='release';camera.position.x=1;o.observe(w,1+3/60,clone);const r=o.report();assert.equal(r.rows[1].visible,false);assert.equal(r.summaries['private-stage:charge'].maxNodeSpeed.value,0);assert.ok(Math.abs(r.summaries['private-stage:release'].maxCameraSpeed.value-60)<1e-8);assert.equal(r.summaries['private-stage:release'].maxCameraSpeed.previousPhase,'charge');
+});

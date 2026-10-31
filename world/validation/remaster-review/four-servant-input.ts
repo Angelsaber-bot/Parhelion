@@ -2,6 +2,7 @@
  * Known route/target coordinates and bounded aim are operator knowledge, not human play evidence.
  * No gameplay state grants; observation wrappers forward original damage/event callbacks unchanged. */
 import assert from 'node:assert/strict';
+import {createContinuityObserver} from '../three-animation-review/continuity-observer';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
@@ -22,7 +23,8 @@ const h=await bootWorldWithoutGpu({worldRoot,deterministic:true,initialStorage:{
 let now=0,error:unknown,castResult:any;const stageSamples:any[]=[];const projectedPhases=new Set<string>();
 const actorRoot=()=>identity==='saber'?w.servant.root:w.scene.children.find((o:any)=>o.name===`CharacterKit:${identity==='napoleon'?'napoleonMounted':identity}`);
 const pose=(root:any)=>{assert.ok(root);let bones=0,meshes=0,skinned=0;const rows:any[]=[],meshNames:string[]=[];root.traverse((o:any)=>{if(o.isBone){bones++;rows.push([o.name,...o.position.toArray(),...o.quaternion.toArray()]);}if(o.isMesh){meshNames.push(o.name);meshes++;if(o.isSkinnedMesh)skinned++;}});return{bones,meshes,meshNames,skinned,hash:createHash('sha256').update(JSON.stringify(rows)).digest('hex')};};const events:any[]=[],hits:any[]=[],skillEvents:any[]=[];
-const step=()=>{h.frame(now+=1000/60);assert.equal(w.combat.defeated,false,'Defeat is a real test stop');};
+const continuity=process.env.QA_CONTINUITY==='1'?createContinuityObserver(identity):undefined;let followObservation=false;
+const step=()=>{h.frame(now+=1000/60);if(continuity&&(followObservation||w.ultimateDirector.active))continuity.observe(w,now/1000,actorRoot());assert.equal(w.combat.defeated,false,'Defeat is a real test stop');};
 const key=(code:string,down:boolean)=>d.body.dispatchEvent(new win.KeyboardEvent(down?'keydown':'keyup',{code,bubbles:true,cancelable:true}));
 const tap=(code:string)=>{key(code,true);key(code,false);};const action=(name:string)=>tap(w.settings.bindingsFor(name)[0]);
 const fire=(down:boolean)=>win.dispatchEvent(new win.MouseEvent(down?'mousedown':'mouseup',{button:0,bubbles:true,cancelable:true}));
@@ -59,8 +61,9 @@ async function fight(id:string){const target=w.combat.state.enemies.find((e:any)
 try{
  assert.deepEqual([...w.done].sort(),[...parsed.done].sort());(d.getElementById('start')as HTMLElement).click();await Promise.resolve();step();await h.settleAssets();settle();assert.equal(w.actions.skills.energy,0);note('normal-spawn',{source:worldRoot,savedHash});
  for(let i=0;i<4&&w.contract.selected!==identity;i++){action('switchServant');step();await h.settleAssets();}assert.equal(w.contract.selected,identity);
+ if(continuity){if(!w.contract.companionSummoned)action('summon');await h.settleAssets();followObservation=true;for(const[x,z]of[[2,142],[8,142],[8,136],[2,136],[2,142]])walk(x,z);settle(120);followObservation=false;}
  if(w.contract.companionSummoned)action('summon');assert.equal(w.contract.companionSummoned,false);
  for(const[x,z]of[[2,142],[-22,118],[-60,92],[-81.712,83.348],[-95,61],[-108.288,38.652],[-110,25],[-140,-14],[-184,-14],[-184,-36],[-230,-34],[-280,-30],[-320,-30],[-360,-30],[-420,-30],[-480,-24],[-540,-8],[-610,12],[-640,20]])walk(x,z);
  for(const id of ['wild_56b','wild_56','wild_3b','wild_3','wild_4','wild_4b','wild_5b','wild_5']){await fight(id);if(castResult)break;}
  assert.ok(castResult,'Bounded ordinary roster supplies earned charge and a valid target');assert.deepEqual(h.errors,[]);assert.deepEqual(h.warnings,[]);
-}catch(e){error=e;console.error(e);}finally{fire(false);for(const k of['KeyW','KeyS','KeyD'])key(k,false);writeFileSync(output,JSON.stringify({scope:'Explicit synthetic legacy save adds four contract flags before boot. Normal spawn and physical walking; normal Y/T, rifle damage earns all charge, normal X. No post-boot position/ground/HP/energy/damage/flag writes. CPU synthetic operator, not four-person recruitment or GPU/FPS evidence.',worldRoot,reducedEffects:process.env.QA_REDUCED==='1',sourceBefore,sourceAfter:sourceEvidence(worldRoot),sourceCommit,sourceStatus,sourceDiffSha256,identity,inputReport,savedHash,legacyFixtureSha256,stageSamples,events,hits,skillEvents,castResult,seconds:now/1000,hp:w.combat.state.hp,energy:w.actions.skills.energy,saved:win.localStorage.getItem('parhelion.world.progress.v2'),error:error?String(error):null,errors:h.errors,warnings:h.warnings},null,2),{flag:'wx'});await h.close();}if(error)process.exitCode=1;
+}catch(e){error=e;console.error(e);}finally{fire(false);for(const k of['KeyW','KeyS','KeyD'])key(k,false);writeFileSync(output,JSON.stringify({scope:'Explicit synthetic legacy save adds four contract flags before boot. Normal spawn and physical walking; normal Y/T, rifle damage earns all charge, normal X. No post-boot position/ground/HP/energy/damage/flag writes. CPU synthetic operator, not four-person recruitment or GPU/FPS evidence.',worldRoot,reducedEffects:process.env.QA_REDUCED==='1',sourceBefore,sourceAfter:sourceEvidence(worldRoot),sourceCommit,sourceStatus,sourceDiffSha256,identity,inputReport,savedHash,legacyFixtureSha256,continuity:continuity?.report(),stageSamples,events,hits,skillEvents,castResult,seconds:now/1000,hp:w.combat.state.hp,energy:w.actions.skills.energy,saved:win.localStorage.getItem('parhelion.world.progress.v2'),error:error?String(error):null,errors:h.errors,warnings:h.warnings},null,2),{flag:'wx'});await h.close();}if(error)process.exitCode=1;
