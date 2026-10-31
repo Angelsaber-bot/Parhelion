@@ -12,7 +12,7 @@ export class IdleTurnCandidate {
  reset(){this.restore();this.initialized=false;this.phase=0;this.weight=0;this.lastGroup=-1;}
  apply(dt:number,state:string){
   if(!Number.isFinite(dt)||dt<=0||dt>.1)return;this.root.updateWorldMatrix(true,true);const p=this.root.getWorldPosition(new T.Vector3()),q=this.root.getWorldQuaternion(new T.Quaternion());
-  const active=this.initialized&&state==='idle'&&p.distanceTo(this.previousP)<.003&&q.angleTo(this.previousQ)<.3;const turn=active?q.angleTo(this.previousQ)/dt:0;
+  const upright=new T.Vector3(0,1,0).applyQuaternion(q).y>1-1e-8;const active=upright&&this.initialized&&state==='idle'&&p.distanceTo(this.previousP)<.003&&q.angleTo(this.previousQ)<.3;const turn=active?q.angleTo(this.previousQ)/dt:0;
   if(!active){this.weight=0;this.phase=0;this.lastGroup=-1;}
   const turning=turn>.12;this.weight=T.MathUtils.clamp(this.weight+(turning?dt/.07:-dt/.18),0,1);
   this.chains.forEach((c,i)=>{this.native[i].copy(c[c.length-1].getWorldPosition(new T.Vector3()));if(!this.initialized||!active||this.weight===0)this.anchors[i].copy(this.native[i]);});
