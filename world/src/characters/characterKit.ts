@@ -1,3 +1,4 @@
+import { MountedIdleTurn } from '../mountedIdleTurn';
 import { attachCaptainCavalryArt } from '../captainCavalryArt';
 import { remasterCaptainCavalryClip } from '../captainCavalryClip';
 import * as THREE from 'three';
@@ -72,6 +73,7 @@ export class CharacterKit {
   private emitted = new Set<number>();
   private generation = 0;
   private disposed = false;
+  private readonly idleTurn?: MountedIdleTurn;
   private disposeRemasterArt: () => void = () => {};
   private readonly transition: number;
   constructor(gltf: GLTF, readonly definition: CharacterKitDefinition, private options: CharacterKitOptions = {}) {
@@ -115,6 +117,7 @@ export class CharacterKit {
         if (options.environment && (material as THREE.MeshStandardMaterial).isMeshStandardMaterial) { (material as THREE.MeshStandardMaterial).envMap = options.environment; (material as THREE.MeshStandardMaterial).envMapIntensity = .75; }
       }
     });
+    if (definition.id === 'napoleonMounted') this.idleTurn = new MountedIdleTurn(this.root, this.model);
     this.play(definition.defaultState);
   }
   get state() { return this.currentState; }
@@ -124,6 +127,7 @@ export class CharacterKit {
     if (this.disposed) return false;
     const contract = this.definition.clips[state], next = this.actions.get(state);
     if (!contract || !next) return false;
+    if (state !== 'idle') this.idleTurn?.reset();
     let rate = options.rate ?? 1;
     if (options.speed !== undefined && contract.nominalSpeed) rate = Math.abs(options.speed) / contract.nominalSpeed;
     if (!Number.isFinite(rate)) rate = 1;
@@ -170,16 +174,18 @@ export class CharacterKit {
   }
   update(dt: number, paused = false, presentationDt?: number) {
     if (this.disposed || paused || !Number.isFinite(dt) || dt < 0 || this.rate === 0) return;
-    const fadingGait = this.blend.isFadingFrom(this.actions.get('walk')) || this.blend.isFadingFrom(this.actions.get('run'));
+    const fadingGait = presentationDt !== undefined && (this.blend.isFadingFrom(this.actions.get('walk')) || this.blend.isFadingFrom(this.actions.get('run')));
     const visualDt = !fadingGait || presentationDt === undefined || !Number.isFinite(presentationDt) ? Math.min(dt, .25) : Math.min(.25, Math.max(0, presentationDt));
     if (dt === 0) { if (presentationDt !== undefined && visualDt > 0) this.blend.update(this.mixer, 0, visualDt); return; }
+    // Restore native legs before sampling clips or exact authored socket events.
+    this.idleTurn?.restore();
     // Do not deliver a backlog of attacks after a suspended tab resumes.
     dt = Math.min(dt, .25);
     const visualRatio = visualDt / dt;
     const state = this.currentState, contract = this.definition.clips[state], generation = this.generation;
     if (contract.loop) {
       this.elapsed = (this.elapsed + dt * this.rate) % contract.duration;
-      this.blend.update(this.mixer, dt, visualDt); return;
+      this.blend.update(this.mixer, dt, visualDt); this.idleTurn?.apply(dt, this.currentState); return;
     }
     const end = Math.min(contract.duration, this.elapsed + dt * this.rate);
     let cursor = this.elapsed;
@@ -193,10 +199,11 @@ export class CharacterKit {
     }
     this.blend.update(this.mixer, (end-cursor)/this.rate, ((end-cursor)/this.rate) * visualRatio); this.elapsed = end;
     if (end >= contract.duration) this.play(this.definition.defaultState);
+    this.idleTurn?.apply(dt, this.currentState);
   }
   dispose() {
     if (this.disposed) return;
-    this.disposed = true; this.blend.clear(); this.generation++; this.emitted.clear(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model);
+    this.disposed = true; this.idleTurn?.dispose(); this.blend.clear(); this.generation++; this.emitted.clear(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model);
     this.root.removeFromParent(); this.model.removeFromParent(); this.actions.clear(); this.disposeRemasterArt(); disposeCharacterObject(this.model, this.options.environment);
   }
 }
