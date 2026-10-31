@@ -2,7 +2,9 @@
  * normal initial keydown/browser-repeat inputs, no clock/HP/ground writes. */
 import assert from 'node:assert/strict';import * as THREE from 'three';import{MeshBVH}from'three-mesh-bvh';import{writeFileSync,readFileSync}from'node:fs';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{installGroundActionSupportCandidate}from'./ground-action-support-candidate';
 const live=process.argv[4]==='--live-general',reference=live?JSON.parse(readFileSync(process.argv[5],'utf8')):null;
-const worldRoot=process.argv[2],out=process.argv[3],h=await bootWorldWithoutGpu({worldRoot,deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),{world:w,window}=h,d=window.document;let now=0,record=false;const traces:any[]=[],rows:any[]=[],contacts:string[]=[];
+const worldRoot=process.argv[2],out=process.argv[3];
+if(!live)assert.match(readFileSync(`${worldRoot}/src/player.ts`,'utf8'),/admittedGroundAction = false/,'isolated wrapper requires historical scoped-support product, not already-general production');
+const h=await bootWorldWithoutGpu({worldRoot,deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),{world:w,window}=h,d=window.document;let now=0,record=false;const traces:any[]=[],rows:any[]=[],contacts:string[]=[];
 const frame=()=>h.frame(now+=1000/60),key=(action:string,down:boolean,repeat=false)=>d.body.dispatchEvent(new window.KeyboardEvent(down?'keydown':'keyup',{code:w.settings.bindingsFor(action)[0],repeat,bubbles:true,cancelable:true}));
 const originalUpdate=w.actions.update.bind(w.actions);w.actions.update=(...args:any[])=>{const result=originalUpdate(...args);if(record)traces.push({dt:args[0],melee:w.actions.melee.active,phase:w.actions.melee.phase,meleeCooldown:w.actions.melee.cooldown,casting:w.actions.skills.casting,guarding:w.actions.skills.guarding,skillCooldown:w.actions.skills.cooldown('skill'),energy:w.actions.skills.energy});return result;};
 const originalStrike=w.actions.options.strike;w.actions.options.strike=(...args:any[])=>{if(record)contacts.push(args[1]);return originalStrike(...args);};
