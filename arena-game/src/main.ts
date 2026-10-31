@@ -198,7 +198,10 @@ function cancelStart() {
 }
 $('cancel-start').onclick = cancelStart;
 addEventListener('keydown', event => { if (starting && event.code === 'Escape') { event.preventDefault(); cancelStart(); } });
-addEventListener('pagehide', event => { cancelStart(); if (!event.persisted) pageExited = true; });
+addEventListener('pagehide', event => {
+  cancelStart();
+  if (!event.persisted) { pageExited = true; game?.stop(); game = null; }
+});
 $('play').onclick = async () => {
   if (starting || game || pageExited || settingsPanel.open) return;
   // A deliberate new Start retries a rejected asset load; an unresolved load is reused.

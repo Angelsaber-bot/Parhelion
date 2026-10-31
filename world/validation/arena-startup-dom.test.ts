@@ -81,3 +81,9 @@ test('choosing a fresh map clears the old map failure rather than retaining a mi
  h.qa.maps[0].task.reject(Error('old asset'));await h.flush();assert.ok(!h.d.getElementById('error')!.classList.contains('hidden'));
  h.click('[data-id="blackflag"]');h.qa.maps[1].task.resolve();await h.flush();assert.ok(h.d.getElementById('error')!.classList.contains('hidden'));
 }finally{h.dom.window.close()}});
+test('final page exit stops an already active session once, while BFCache retains it',async()=>{const h=await boot();try{
+ h.qa.maps[0].task.resolve();await h.flush();h.click('#play');await h.flush();assert.equal(h.qa.games,1);
+ h.w.dispatchEvent(new h.w.PageTransitionEvent('pagehide',{persisted:true}));assert.equal(h.qa.closed,0);
+ h.w.dispatchEvent(new h.w.PageTransitionEvent('pagehide',{persisted:false}));assert.equal(h.qa.closed,1);
+ h.w.dispatchEvent(new h.w.PageTransitionEvent('pagehide',{persisted:false}));assert.equal(h.qa.closed,1);
+}finally{h.dom.window.close()}});
