@@ -1668,7 +1668,7 @@ function frame(now: number) {
 
   timeUniform.value = now / 1000;
   localLights.update(camera.position, dt);
-  shafts.update(camera, twilight.direction);
+  if (composer && !lowQ) shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
   ambient?.update(camera.position);
   renderer.info.reset();
