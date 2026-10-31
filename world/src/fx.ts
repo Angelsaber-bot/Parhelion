@@ -149,11 +149,11 @@ export function makeSunShafts() {
         gl_FragColor = vec4(base.rgb + vec3(1.0, 0.9, 0.72) * acc / 32.0 * strength * fall, base.a);
       }`,
   });
-  const v = new THREE.Vector3();
+  const v = new THREE.Vector3(), direction = new THREE.Vector3();
   /** Call every frame before rendering. */
   const update = (camera: THREE.PerspectiveCamera, sunDir: THREE.Vector3) => {
     v.copy(camera.position).addScaledVector(sunDir, 1000).project(camera);
-    const facing = camera.getWorldDirection(new THREE.Vector3()).dot(sunDir);
+    const facing = camera.getWorldDirection(direction).dot(sunDir);
     pass.uniforms.sunUv.value.set(v.x * 0.5 + 0.5, v.y * 0.5 + 0.5);
     pass.uniforms.aspect.value = camera.aspect;
     pass.uniforms.strength.value = THREE.MathUtils.smoothstep(facing, 0.1, 0.6) * 1.1;
