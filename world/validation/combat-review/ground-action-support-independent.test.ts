@@ -1,6 +1,6 @@
-/** Candidate-only eligibility transitions; no production import/attachment. */
+/** Historical candidate-only eligibility transitions on frozen pre-general Player. */
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH}from'three-mesh-bvh';
-import {Player}from'../../src/player';import {installGroundActionSupportCandidate}from'./ground-action-support-candidate';
+import {Player}from'../fixtures/player-pre-general-support';import {installGroundActionSupportCandidate}from'./ground-action-support-candidate';
 test('admitted-action support stops immediately when ownership ends, and never follows teleport into air',()=>{
  const geometry=new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2).rotateZ(.05),colliders=[{name:'slope',enabled:true,bvh:new MeshBVH(geometry)}],p=new Player(colliders,-10);let active=true;
  const c=installGroundActionSupportCandidate(p,()=>active,'actions'),idle={x:0,z:0,jump:false,sprint:false},walk={...idle,x:-1};
