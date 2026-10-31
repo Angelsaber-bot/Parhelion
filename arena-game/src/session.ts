@@ -75,21 +75,31 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
     outbox = [];
   };
   return new Promise((resolve, reject) => {
-    let s: Session | null = null;
-    const timeout = setTimeout(() => { reject(new Error('timeout')); ws.close(); }, 10000);
+    let s: Session | null = null, joinFailed = false;
+    const failJoin = (error: unknown) => {
+      if (s || joinFailed) return;
+      joinFailed = true; clearTimeout(timeout); clearQueued();
+      // The caller no longer owns this socket after rejection. A delayed peer
+      // close or welcome must not create an unreachable live Session.
+      ws.onmessage = null; ws.onerror = null; ws.onclose = null;
+      try { if (ws.readyState === WebSocket.CONNECTING || ws.readyState === WebSocket.OPEN) ws.close(); } catch { /* rejected join remains terminal */ }
+      reject(error);
+    };
+    const timeout = setTimeout(() => failJoin(new Error('timeout')), 10000);
     ws.onmessage = (ev) => {
+      if (joinFailed) return;
       let msg: { t: string; d: unknown };
       try { msg = JSON.parse(ev.data as string); } catch { return; }
       if (msg.t === 'snap') {
         const snap = msg.d as Snapshot;
         try { assertRulesVersion(snap.rulesVersion); }
-        catch (error) { clearTimeout(timeout); if (s) s.onClose((error as Error).message); else reject(error); ws.close(); return; }
+        catch (error) { if (s) { s.onClose((error as Error).message); ws.close(); } else failJoin(error); return; }
         s?.onSnapshot(snap);
       }
       else if (msg.t === 'welcome' && !s) {
         clearTimeout(timeout);
         try { assertRulesVersion((msg.d as { rulesVersion?: number }).rulesVersion); }
-        catch (error) { reject(error); ws.close(); return; }
+        catch (error) { failJoin(error); return; }
         s = {
           id: (msg.d as { id: string }).id,
           online: true,
@@ -107,13 +117,13 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
           setPaused: () => {},
         };
         resolve(s);
-      } else if (msg.t === 'error' && !s) { clearTimeout(timeout); reject(new Error(String(msg.d))); }
+      } else if (msg.t === 'error' && !s) failJoin(new Error(String(msg.d)));
     };
-    ws.onerror = () => { if (!s) { clearTimeout(timeout); reject(new Error('无法连接服务器')); } };
+    ws.onerror = () => { if (!s) failJoin(new Error('无法连接服务器')); };
     ws.onclose = (ev) => {
       clearQueued();
       if (s) s.onClose(`disconnected (${ev.code})`);
-      else { clearTimeout(timeout); reject(new Error(`连接被关闭 (${ev.code})`)); }
+      else failJoin(new Error(`连接被关闭 (${ev.code})`));
     };
   });
 }
