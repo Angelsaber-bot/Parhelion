@@ -105,3 +105,10 @@ Pause/resume evidence preserves bones/root exactly. A first resumed zero-time
 frame may recompute cached height queries without advancing pose; diagnostic work
 counters are not animation clocks. Recall freezes hidden actor updates, resummon
 remains finite, and the actual outfit panel replaces the retired model/support.
+
+### Unsupported-rig fallback
+
+Aggregate regression testing also exercises a Group with valid clips but no leg
+rig. Such unsupported models retain the original `speed / nominalStrideSpeed`
+playback rate; selecting the new cadence without its matching procedural stride
+would be incorrect. Both shipped outfits positively assert supported-rig selection.

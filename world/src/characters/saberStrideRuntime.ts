@@ -38,6 +38,7 @@ export class SaberStrideRuntime {
     this.panelRest=this.panels.map(b=>({q:b.quaternion.clone(),worldQ:root.getWorldQuaternion(new THREE.Quaternion()).invert().multiply(b.getWorldQuaternion(new THREE.Quaternion()))}));
     this.edited=[...this.chains.flat(),...this.toes,...this.panels];this.original=this.edited.map(b=>b.quaternion.clone());
   }
+  get supported(){return this.chains.length===2;}
   restore(){if(this.modified){this.edited.forEach((b,i)=>b.quaternion.copy(this.original[i]));this.modified=false;}}
   clear(){this.support?.reset();this.restore();this.anchored[0]=this.anchored[1]=false;this.initialized=false;this.released.fill(false);this.releaseTime.fill(0);this.swingTime.fill(0);this.calibrated=false;this.diagnostics.weight=0;this.diagnostics.planted.fill(false);}
   private v(){return this.vectors[this.vi++].set(0,0,0);}

@@ -17,7 +17,7 @@ for (const outfit of ['armor', 'civilian'] as const) for (const hz of [30, 60, 1
   for (let i = 0; i < position.count; i++) position.setY(i, .15 * position.getZ(i));
   const collider = { name: 'slope', enabled: true, bvh: new MeshBVH(geometry) };
   const actor = new ContractServant({ scene: new THREE.Scene(), marker: { id: 'test', type: 'interact', label: 'test', p: [0, 0, 0] }, contract: new FirstContract(new Set(['saber_contract'])), appearance, colliders: [collider], load: async () => gltf, target: () => null, strike: () => null });
-  await actor.ensureLoaded(); const internal = actor as any, grounded = internal.grounding as SaberGroundedLocomotion; assert.ok(grounded instanceof SaberGroundedLocomotion, 'test the actual runtime attachment');
+  await actor.ensureLoaded(); const internal = actor as any, grounded = internal.grounding as SaberGroundedLocomotion; assert.ok(grounded instanceof SaberGroundedLocomotion, 'test the actual runtime attachment'); assert.equal(internal.stride.supported, true, 'native outfits take the supported cadence path');
   internal.play('run', false, saberRunRate(5.5, internal.clips.get('run').getClip().duration)); internal.strideSpeed = 5.5;
   const feet = ['Left', 'Right'].map(side => gltf.scene.getObjectByName('mixamorig' + side + 'Foot')!), previous = feet.map(() => new THREE.Vector3()), previousContact = [false, false], point = new THREE.Vector3();
   let min = Infinity, drift = 0, contacts = 0;

@@ -309,7 +309,7 @@ export class ContractServant {
       } else {
         const running=companionGait(speed,SERVANT_MOTION.walkSpeed,this.animation==='Run')==='run';
         this.strideSpeed=speed;
-        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(running?saberRunRate(speed,this.clips.get('run')!.getClip().duration):speed/SERVANT_MOTION.walkSpeed,0,SERVANT_MOTION.maxRate));
+        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(running&&this.stride?.supported?saberRunRate(speed,this.clips.get('run')!.getClip().duration):speed/(running?SERVANT_MOTION.runSpeed:SERVANT_MOTION.walkSpeed),0,SERVANT_MOTION.maxRate));
       }
     }
     if(this.attackTime>0)this.advanceAttack(dt);else this.tick(dt);
