@@ -1,10 +1,13 @@
 # General physical support continuity — isolated review
 
-Status: **validation-only, not accepted into production**. Production remains the
-already-admitted evade/melee/skill support closure (`b21719a`, `86758f0`,
-`66ba6c0`, `c8b91c9`). This is an independent comparison requested after that fix
-left three of six moving downhill melee requests rejected while apparently
-standing on the floor.
+Status: **minimal production implementation approved at 09:22 UTC; no-wrapper
+main replay pending**. Source `4f56d26` supersedes the narrow admitted-action-only
+closure (`b21719a`, `86758f0`, `66ba6c0`, `c8b91c9`). That earlier fix left three
+of six moving downhill melee requests rejected while apparently standing on
+the floor; the broader physical correction deliberately improves ordinary
+grounded action admission without changing WorldActions admission rules.
+Player blob: `eba079e26a2e07c5b9211950b53122a46614d573`. The helper is unchanged
+except its scope comment. Main returns to the original two-argument step call.
 
 ## Alternatives
 
@@ -87,10 +90,15 @@ worst-case guarantee. These are CPU component timings, not a device frame budget
 GPU/FPS measurement or whole-world runtime. General recovery adds measurable work
 on every affected ordinary walking step; it is not free.
 
-## Pending before recommendation
+## Acceptance and production verification
 
-- Independent held-key/repeat/cooldown check and parent review.
-- Explicit parent acceptance before any production generalization.
+- Independent isolated held-key matrix passed: eight actual-main cases, 240
+  action snapshots each, exact phase/cooldown/cast/guard/energy/dt, one contact
+  despite browser repeat events, HP100. Parent approved the minimal source patch.
+- 49 targeted checks pass, including 17 live no-wrapper geometry/boundary cases,
+  17 frozen candidate cases, live melee/Q clocks and original evade contracts.
+- Full no-wrapper actual-main route/admission/held-key replay remains pending;
+  do not describe isolated candidate evidence as already verified integration.
 
 Route replay accepts `--output=PATH` and refuses to overwrite an existing evidence file. Raw evidence remains under repository `artifacts/general-ground/`,
 `artifacts/downhill-actions/` and `artifacts/general-ground-*.log`; these are
