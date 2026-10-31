@@ -27,7 +27,7 @@ test('NON-GPU journal is read-only, route-gated and clears movement; custom Digi
   const alpha=journal.querySelector<HTMLButtonElement>('[data-campaign-region="alpha"]')!;assert.equal(alpha.disabled,false);alpha.focus();
   const language=d.querySelector<HTMLSelectElement>('#world-settings .parhelion-language select')!;language.value='en';language.dispatchEvent(new window.Event('change',{bubbles:true}));
   assert.equal((d.activeElement as HTMLElement).dataset.campaignRegion,'alpha');assert.deepEqual([...w.done].sort(),before);
-  const close=journal.querySelector<HTMLButtonElement>('[data-journal-action="close"]')!;close.focus();key('Tab','Tab');assert.equal((d.activeElement as HTMLElement).dataset.campaignRegion,'alpha');
+  const close=journal.querySelector<HTMLButtonElement>('[data-journal-action="close"]')!;close.focus();key('Tab','Tab');assert.equal(d.activeElement,journal.querySelector('button:not([disabled])'),'Tab wraps to the first available journal action, including continuation tracking');
   journal.querySelector<HTMLButtonElement>('[data-campaign-region="alpha"]')!.click();assert.equal(w.campaignJournal.open,false);assert.deepEqual([...w.done].sort(),before);
   await enter();const stopped=w.player.pos.clone();for(let i=0;i<10;i++)frame();assert.equal(w.player.pos.x,stopped.x);assert.equal(w.player.pos.z,stopped.z,'journal closure does not revive held W');
   assert.equal(w.settings.bind('interact','Digit1',true),null);
