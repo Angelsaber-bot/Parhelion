@@ -125,7 +125,13 @@ for wid in ('wall_west', 'wall_east', 'wall_north', 'wall_south'):
         D.box('woodDark', (cx - .16, 0, cz - .16), (cx + .16, 3.2, cz + .16))
 for i in range(22):
     a = i / 22 * 6.283
-    sakura_tree(D, math.cos(a) * (X + 5 + rnd() * 4), math.sin(a) * (Z + 5 + rnd() * 4), 1.1 + rnd() * .5)
+    # Exact legacy-byte patch/rebuild caveat: validation/relocate_edge_tree.py.
+    # Preserve random draw order and every other tree. This southeast trunk was
+    # inside the playable corner despite being noncolliding background scenery.
+    tx, tz, scale = math.cos(a) * (X + 5 + rnd() * 4), math.sin(a) * (Z + 5 + rnd() * 4), 1.1 + rnd() * .5
+    if i == 3:
+        tz += 3.0  # trunk/branches now clear the existing south boundary; no gameplay collider
+    sakura_tree(D, tx, tz, scale)
 
 # torii: red pillars (collision) carry the nuki and the black-topped kasagi, gold plaque
 torii_x = sorted({o['position'][0] for o in data['objects'] if o['id'].startswith('torii_')})

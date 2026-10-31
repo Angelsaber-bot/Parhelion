@@ -1,0 +1,174 @@
+{
+  "patch": {
+    "inputSha256": "83f504ce7db5b0242979b2bb76a817ef7d39e22479b1c57344fd7be9a7f52ee3",
+    "outputSha256": "660be7c841744125caf23f306960553fb1fdadb6b03b6260c7fa00531b324d48",
+    "changedBinaryBytes": 802,
+    "allowedPositionByteCount": 3208,
+    "vertexRanges": [
+      {
+        "material": "blossom",
+        "accessor": 321,
+        "firstVertex": 1152,
+        "endVertex": 1536,
+        "vertices": 384,
+        "delta": [
+          0,
+          0,
+          3.0
+        ],
+        "beforeBounds": [
+          [
+            24.10468864440918,
+            3.623093366622925,
+            17.8751163482666
+          ],
+          [
+            29.10907554626465,
+            7.332539081573486,
+            24.722795486450195
+          ]
+        ]
+      },
+      {
+        "material": "blossom2",
+        "accessor": 324,
+        "firstVertex": 864,
+        "endVertex": 1152,
+        "vertices": 288,
+        "delta": [
+          0,
+          0,
+          3.0
+        ],
+        "beforeBounds": [
+          [
+            23.633867263793945,
+            3.8515963554382324,
+            17.656253814697266
+          ],
+          [
+            29.19512367248535,
+            8.107060432434082,
+            23.485164642333984
+          ]
+        ]
+      },
+      {
+        "material": "trunk",
+        "accessor": 327,
+        "firstVertex": 390,
+        "endVertex": 520,
+        "vertices": 130,
+        "delta": [
+          0,
+          0,
+          3.0
+        ],
+        "beforeBounds": [
+          [
+            26.336122512817383,
+            -0.20000000298023224,
+            20.21783447265625
+          ],
+          [
+            27.655874252319336,
+            5.320116996765137,
+            20.94397735595703
+          ]
+        ]
+      }
+    ],
+    "boundsChanges": [],
+    "allUnrelatedBinaryBytesExact": true,
+    "allUnrelatedJsonExact": true,
+    "normalIndexMaterialTransformBytesExact": true
+  },
+  "runtime": {
+    "beforeSha256": "83f504ce7db5b0242979b2bb76a817ef7d39e22479b1c57344fd7be9a7f52ee3",
+    "afterSha256": "660be7c841744125caf23f306960553fb1fdadb6b03b6260c7fa00531b324d48",
+    "eyeHeight": 1.65,
+    "from": [
+      25.3,
+      1.65,
+      20.58090591430664
+    ],
+    "to": [
+      28.1,
+      1.65,
+      20.58090591430664
+    ],
+    "beforeHits": [
+      {
+        "node": "DETAIL_batch_18",
+        "distance": 1.036122512817382,
+        "point": [
+          26.336122512817383,
+          1.65,
+          20.58090591430664
+        ],
+        "material": "trunk"
+      },
+      {
+        "node": "DETAIL_batch_18",
+        "distance": 1.744059753417968,
+        "point": [
+          27.04405975341797,
+          1.65,
+          20.58090591430664
+        ],
+        "material": "trunk"
+      },
+      {
+        "node": "DETAIL_batch_18",
+        "distance": 1.744059753417968,
+        "point": [
+          27.04405975341797,
+          1.65,
+          20.58090591430664
+        ],
+        "material": "trunk"
+      }
+    ],
+    "afterHits": [],
+    "normalMovement": {
+      "frames": 32,
+      "arrival": [
+        28.073486328125,
+        0,
+        20.580810546875
+      ],
+      "passed": true
+    },
+    "unchangedSpawnCoverVisualSightlines": 112,
+    "allTrunkAndBranchBounds": {
+      "min": [
+        26.336122512817383,
+        -0.20000000298023224,
+        23.21783447265625
+      ],
+      "max": [
+        27.655874252319336,
+        5.320116996765137,
+        23.94397735595703
+      ]
+    },
+    "boundaryZ": 22,
+    "collisionSha256": "55995f6e3cb72d2ac841bfef59a7ce431cea366eb2eb8170de6265266e994ef3",
+    "runtimeMapSha256": "d82627b60ec2b5a323e176879313967e95a92fca60641b19da4dfe4dc469b2c5"
+  },
+  "sourceRebuildDifference": [
+    {
+      "mesh": "DETAIL_batch",
+      "material": "mountain2",
+      "semantic": "NORMAL",
+      "maxAbsoluteDifference": 7.757065526972819e-17,
+      "changedComponents": 6
+    }
+  ],
+  "sourceSha256": "5f05f6afb5e30bb1445ea7384ea65b0196d9489c6fed4393b892d105d6545b59",
+  "explicitHistoricalException": [
+    "arena-maps/sakura/assets/sakura_visual.glb",
+    "arena-maps/sakura/source/build_glb.py"
+  ],
+  "historicalBaselinePreserved": true
+}
