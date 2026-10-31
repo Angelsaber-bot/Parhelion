@@ -54,3 +54,9 @@ frame caches are avoided because workspace capacity is bounded.
 Final delivery: exact tested commit, incremental source bundle against the base,
 resource/provenance manifest, per-character acceptance table and small representative
 new previews. Public deployment and user-device work require new authorization.
+
+## Added user requirements (14:17–14:21 UTC)
+
+- Saber Q: manual aimed valid hostile wins; otherwise current engaged target then nearest valid nearby hostile. Select once at cast, follow only that target with bounded actual-root turning, and use the actor's actual contact direction for damage. Lost/dead/occluded/out-of-range targets do not cause a midcast target switch. Existing damage, cooldown, geometry and admission remain authoritative.
+- Other quest guidance: narrative owner supplies read-only prerequisite-aware catalog and explicit-pin journal. Existing continuation/chronicle journal remains intact. No progression flags, gates or automatic quest takeover.
+- Each character's acceptance sheet must separately name new/preserved model details, idle/walk/run, ordinary attack/Q, ultimate, and recovery. Preserved appearance is not described as newly authored geometry.
