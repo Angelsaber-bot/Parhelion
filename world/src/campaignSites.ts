@@ -215,9 +215,10 @@ export function buildCampaignSite(region: RegionId) {
   const local=CAMPAIGN_SITE_LOCAL[region];
   const half = region==='winter'?1.15:1.35;
   const interactions:[V3,V3]=[[-half,.9,1.65],[half,.9,1.65]];
-  // Keep the receiver keeper beside the kiosk, not between both task sockets.
-  // The former central stance intercepted natural east-side receiver approaches.
-  const npc:PlacedNpcSocket={id:metadata.npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:region==='alpha'?[-3.6,.02,1.2]:[0,.02,1.2],yaw:region==='alpha'?.55:0,lines:[CAMPAIGN_EPISODES[region].brief]};
+  // Residents stand beside their workspaces, never between both task sockets.
+  // Keep >=2.5m horizontal separation so briefing→station approaches resolve naturally.
+  const residentSide=region==='blacksail'||region==='kyoto'?1:-1;
+  const npc:PlacedNpcSocket={id:metadata.npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:[residentSide*3.9,.02,1.2],yaw:-residentSide*.55,lines:[CAMPAIGN_EPISODES[region].brief]};
   let stateKey='',disposed=false;
   function applyState(state:CampaignSiteState){
     if(disposed)return;const key=`${state.stage}:${state.choice??''}`;if(key===stateKey)return;stateKey=key;

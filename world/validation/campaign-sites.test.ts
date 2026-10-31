@@ -47,13 +47,26 @@ for(const region of Object.keys(builders)as RegionId[]){
   const targets=[...(interiorTargets[region]??[]).map(([id,x,z])=>({id,p:[x,0,z]})),...campaign.markers.map(m=>({id:m.id,p:m.p})),...campaign.npcs.map(n=>({id:n.id,p:n.position})),...kit.npcs.map(n=>({id:n.id,p:n.position})),...old.markers.map(m=>({id:m.id,p:m.p}))];
   if(region==='alpha'){
    const origin=CAMPAIGN_SITE_LOCAL.alpha,npc=campaign.npcs[0];
-   for(const [name,x,z,expected]of [['east_receiver',-.35,1.65,'campaign_alpha_work'],['east_dispatch',2.35,1.65,'campaign_alpha_decision'],['west_keeper',-3.6,2.2,npc.id]]as const){
+   for(const [name,x,z,expected]of [['east_receiver',-.35,1.65,'campaign_alpha_work'],['east_dispatch',2.35,1.65,'campaign_alpha_decision'],['west_keeper',-3.9,2.2,npc.id]]as const){
     const feet=new THREE.Vector3(origin[0]+x,0,origin[2]+z),eye=feet.clone().add(new THREE.Vector3(0,1.2,0));
     const candidates=[...campaign.markers.map(m=>({id:m.id,p:m.p,r:m.radius!})),{id:npc.id,p:npc.position,r:2.8}].filter(t=>feet.distanceTo(new THREE.Vector3(...t.p))<t.r).sort((a,b)=>feet.distanceToSquared(new THREE.Vector3(...a.p))-feet.distanceToSquared(new THREE.Vector3(...b.p)));
     assert.equal(candidates[0]?.id,expected,`${name}: natural standing point selects intended interaction`);
     const aim=new THREE.Vector3(...candidates[0].p);if(expected===npc.id)aim.y+=1.2;const direction=aim.sub(eye),distance=direction.length();direction.normalize();
     assert.ok(!colliders.some(c=>c.enabled&&c.bvh.raycastFirst(new THREE.Ray(eye,direction),THREE.DoubleSide,0,distance-.25)),`${name}: visible line of interaction`);
    }
+  }
+  for(const npc of campaign.npcs){
+   for(const height of [.4,.9,1.45]){const point=new THREE.Vector3(npc.position[0],height,npc.position[2]);assert.ok(colliders.every(c=>!c.enabled||(c.bvh.closestPointToPoint(point)?.distance??Infinity)>.34),`${npc.id}: resident body clear of authored furnishings`);}
+   assert.ok(kit.npcs.every(n=>Math.hypot(n.position[0]-npc.position[0],n.position[2]-npc.position[2])>1.2),`${npc.id}: does not overlap original resident`);
+  }
+  // Natural stop one metre short of either station after approaching from its resident.
+  for(const marker of campaign.markers){
+   const npc=campaign.npcs[0],dx=npc.position[0]-marker.p[0],dz=npc.position[2]-marker.p[2],length=Math.hypot(dx,dz),feet=new THREE.Vector3(marker.p[0]+dx/length,0,marker.p[2]+dz/length);
+   assert.ok(length>2.5,`${region}: separate resident and station working areas`);
+   const d=feet.distanceTo(new THREE.Vector3(...marker.p));assert.ok(d<marker.radius!);
+   assert.ok(d<feet.distanceTo(new THREE.Vector3(...npc.position)),`${marker.id}: resident should not steal station prompt`);
+   const eye=feet.clone().add(new THREE.Vector3(0,1.2,0)),delta=new THREE.Vector3(...marker.p).sub(eye),distance=delta.length();delta.normalize();
+   assert.ok(!colliders.some(c=>c.enabled&&c.bvh.raycastFirst(new THREE.Ray(eye,delta),THREE.DoubleSide,0,distance-.08)),`${marker.id}: unobstructed natural stance`);
   }
   // Conservative body-clearance flood-fill; the final route is walked through actual Player physics.
   const cell=.5,minX=-kit.footprint[0]/2+1,maxX=kit.footprint[0]/2-1,minZ=-kit.footprint[1]/2+1,maxZ=kit.footprint[1]/2;

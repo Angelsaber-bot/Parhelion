@@ -2,7 +2,9 @@
 import bpy, json, sys, os, math
 import numpy as np
 from mathutils import Vector
-source,out=sys.argv[sys.argv.index('--')+1:][:2]
+args=sys.argv[sys.argv.index('--')+1:]
+source,out=args[:2]
+views=set(args[2].split(',')) if len(args)>2 else {'overview','interior','campaign'}
 os.makedirs(out,exist_ok=True)
 for region in ['alpha','britain','blacksail','winter','kyoto']:
  if not os.path.exists(os.path.join(source,region+'.json')):continue
@@ -37,13 +39,15 @@ for region in ['alpha','britain','blacksail','winter','kyoto']:
  bpy.ops.mesh.primitive_plane_add(size=span*4,location=(0,0,manifest['bounds']['min'][1]-.2));ground=bpy.context.object;mat=bpy.data.materials.new('Review ground');mat.diffuse_color=(.22,.26,.23,1);ground.data.materials.append(mat)
  data=bpy.data.cameras.new('Camera');cam=bpy.data.objects.new('Camera',data);scene.collection.objects.link(cam);scene.camera=cam;data.type='ORTHO';data.ortho_scale=span*1.35
  cam.location=(span*.8,-span*.9,span*.72);cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler()
- scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=24;scene.cycles.use_denoising=False;scene.render.resolution_x=1100;scene.render.resolution_y=850;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX';scene.render.filepath=os.path.join(out,region+'.png');bpy.ops.render.render(write_still=True);print('SETTLEMENT_RENDERED',region,flush=True)
+ scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=24;scene.cycles.use_denoising=False;scene.render.resolution_x=1100;scene.render.resolution_y=850;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG';scene.view_settings.view_transform='AgX';scene.render.filepath=os.path.join(out,region+'.png')
+ if 'overview' in views:bpy.ops.render.render(write_still=True);print('SETTLEMENT_RENDERED',region,flush=True)
 
  inside={'alpha':((0,1.7,-2.5),(0,1.4,-10)),'britain':((-10,1.7,4.5),(-10,1.4,-6)),'blacksail':((0,1.7,6),(-4,1.4,-5)),'winter':((-8,1.7,2),(-8,1.4,-6)),'kyoto':((8,1.7,2),(5,1.2,-6))}
- pos,aim=inside[region];cam.location=(pos[0],-pos[2],pos[1]);target=Vector((aim[0],-aim[2],aim[1]));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.lens=22;fill_data=bpy.data.lights.new('Offline review fill','AREA');fill_data.energy=500;fill_data.size=4;fill=bpy.data.objects.new('Offline review fill',fill_data);scene.collection.objects.link(fill);fill.location=cam.location+Vector((0,0,1));fill.rotation_euler=(target-fill.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=os.path.join(out,region+'-interior.png');bpy.ops.render.render(write_still=True);print('INTERIOR_RENDERED',region,flush=True)
+ pos,aim=inside[region];cam.location=(pos[0],-pos[2],pos[1]);target=Vector((aim[0],-aim[2],aim[1]));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.lens=22;fill_data=bpy.data.lights.new('Offline review fill','AREA');fill_data.energy=500;fill_data.size=4;fill=bpy.data.objects.new('Offline review fill',fill_data);scene.collection.objects.link(fill);fill.location=cam.location+Vector((0,0,1));fill.rotation_euler=(target-fill.location).to_track_quat('-Z','Y').to_euler();scene.render.filepath=os.path.join(out,region+'-interior.png')
+ if 'interior' in views:bpy.ops.render.render(write_still=True);print('INTERIOR_RENDERED',region,flush=True)
 
  # Third view: actual new campaign workspace, with its authored resident and surrounding hub.
- if manifest.get('campaignOrigin'):
+ if manifest.get('campaignOrigin') and 'campaign' in views:
   x,y,z=manifest['campaignOrigin'];pos=(x+5.5,3.2,z+8);aim=(x,1.5,z-.3)
   cam.location=(pos[0],-pos[2],pos[1]);target=Vector((aim[0],-aim[2],aim[1]));cam.rotation_euler=(target-cam.location).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.lens=36
   fill_data.energy=170;fill.location=cam.location+Vector((0,0,1));fill.rotation_euler=(target-fill.location).to_track_quat('-Z','Y').to_euler()
