@@ -59,8 +59,8 @@ export function createSettlementApproaches(placements:readonly SettlementPlaceme
   // Thin irregular stepping stones sit on the sampled terrain; no deceptive bridge surfaces.
   for(let i=1;i<route.points.length;i++){
    const a=route.points[i-1],b=route.points[i],dx=b[0]-a[0],dz=b[2]-a[2],angle=Math.atan2(dx,dz);
-   for(const fraction of[.25,.75]){const x=THREE.MathUtils.lerp(a[0],b[0],fraction),z=THREE.MathUtils.lerp(a[2],b[2],fraction),y=settlementHeight(ctx.grid,x,z);
-    const g=new THREE.CylinderGeometry(.72,.75,.035,5,1).rotateY(angle+(i%3)*.14).scale(1,1,.56).translate(x,y+.018,z);add(g,palette[i%4===0?1:0]);
+   for(const fraction of[.25,.75]){const x=THREE.MathUtils.lerp(a[0],b[0],fraction),z=THREE.MathUtils.lerp(a[2],b[2],fraction);
+    const g=new THREE.CylinderGeometry(.72,.75,.035,5,1).rotateY(angle+(i%3)*.14).scale(1,1,.56).translate(x,0,z);const positions=g.attributes.position;for(let vertex=0;vertex<positions.count;vertex++)positions.setY(vertex,settlementHeight(ctx.grid,positions.getX(vertex),positions.getZ(vertex))+.018+positions.getY(vertex));g.computeVertexNormals();add(g,palette[i%4===0?1:0]);
    }
   }
   // A pair of low shoulder stones marks the junction; all pieces are visual-only and ankle high.
