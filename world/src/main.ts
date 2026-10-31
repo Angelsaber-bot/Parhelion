@@ -527,7 +527,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
     const local: [number,number,number] = quest.targetKind==='npc' ? settlementNpcs.getPosition(quest.targetId) ?? quest.position : enemy ? [enemy.p.x,enemy.p.y,enemy.p.z] : quest.position;
     const p=resolveTrackedStoryPoint(here,quest.region,done,local);
-    if(p)return {p,label:bilingual(...quest.title)};
+    if(p)return {p,label:bilingual(...quest.targetLabel)};
   }
   if (falseDawnTracked) {
     const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });

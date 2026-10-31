@@ -1,9 +1,13 @@
+import { createMusashiUltimatePerformance } from './musashiUltimatePerformance';
+import { createCaptainCavalryPerformance } from './captainCavalryPerformance';
 import * as THREE from 'three';
 import type { UltimatePerformance, UltimatePerformanceFrame } from './ultimatePerformance';
 const smooth=(x:number)=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
 /** Original presentation-only performances. The caller MUST pass a private clone.
  * Contact counters are notifications, never a damage/event source. */
 export function createEraUltimatePerformance(identity:string,root:THREE.Object3D,clips:readonly THREE.AnimationClip[]=[]):UltimatePerformance {
+ if(identity==='musashi')return createMusashiUltimatePerformance(root,clips);
+ if(['blackbeard','napoleon','napoleonMounted'].includes(identity))return createCaptainCavalryPerformance(identity,root,clips);
  const mounted=identity==='napoleon'||identity==='napoleonMounted',mix=identity==='musashi';
  const get=(n:string)=>root.getObjectByName(n);
  const head=get(mix?'mixamorigHead':'Head'),leftFoot=get(mounted?'H_ForeHoof_L':mix?'mixamorigLeftToe_End':'FootL'),rightFoot=get(mounted?'H_ForeHoof_R':mix?'mixamorigRightToe_End':'FootR');

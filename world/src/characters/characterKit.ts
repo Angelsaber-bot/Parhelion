@@ -1,3 +1,5 @@
+import { attachCaptainCavalryArt } from '../captainCavalryArt';
+import { remasterCaptainCavalryClip } from '../captainCavalryClip';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountedChargeClip } from './mountedChargeMotion';
@@ -70,6 +72,7 @@ export class CharacterKit {
   private emitted = new Set<number>();
   private generation = 0;
   private disposed = false;
+  private disposeRemasterArt: () => void = () => {};
   private readonly transition: number;
   constructor(gltf: GLTF, readonly definition: CharacterKitDefinition, private options: CharacterKitOptions = {}) {
     if (!definition.clips[definition.defaultState]) throw new Error('Character default state is missing');
@@ -91,14 +94,16 @@ export class CharacterKit {
     this.model = gltf.scene;
     if (definition.visualOffset) this.model.position.add(new THREE.Vector3(...definition.visualOffset));
     this.root.name = `CharacterKit:${definition.id}`; this.root.add(this.model);
+    this.disposeRemasterArt = attachCaptainCavalryArt(this.model, definition.id);
     this.mixer = new THREE.AnimationMixer(this.model);
     for (const [state, clip] of Object.entries(definition.clips)) {
       let animation = gltf.animations.find(c => c.name === clip.name)!;
       if (definition.id === 'musashi') animation = musashiLocomotionClip(animation, this.model, state);
       const run = definition.clips.run, contact = clip.events?.find(event => event.kind === 'hit')?.at;
-      if (definition.mount && state === 'attack' && run?.nominalSpeed && contact !== undefined && contact < clip.duration) {
+      if (definition.mount && (this.model.getObjectByName('CaptainCavalry remaster tailoring') ?? this.model.getObjectByName('CaptainCavalry_remaster_tailoring'))?.userData.captainCavalryClipRevision !== 2 && state === 'attack' && run?.nominalSpeed && contact !== undefined && contact < clip.duration) {
         animation = mountedChargeClip(animation, gltf.animations.find(c => c.name === run.name)!, run.nominalSpeed, contact);
       }
+      animation = remasterCaptainCavalryClip(animation, this.model, state, definition.id);
       this.actions.set(state, this.mixer.clipAction(animation));
     }
     const transition = options.transitionSeconds ?? .18;
@@ -188,7 +193,7 @@ export class CharacterKit {
   dispose() {
     if (this.disposed) return;
     this.disposed = true; this.blend.clear(); this.generation++; this.emitted.clear(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model);
-    this.root.removeFromParent(); this.model.removeFromParent(); this.actions.clear(); disposeCharacterObject(this.model, this.options.environment);
+    this.root.removeFromParent(); this.model.removeFromParent(); this.actions.clear(); this.disposeRemasterArt(); disposeCharacterObject(this.model, this.options.environment);
   }
 }
 export function disposeCharacterObject(root: THREE.Object3D, sharedEnvironment?: THREE.Texture) {
