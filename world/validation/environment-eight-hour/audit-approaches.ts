@@ -1,0 +1,24 @@
+/** Actual shipped map collision/terrain placement audit. */
+import * as THREE from 'three';import {createSettlementApproaches} from '../../src/settlementApproaches.ts';import {createCampaignSites} from '../../src/campaignSites.ts';import {createEraStoryScene} from '../../src/eraStoryScenes.ts';import {createValleyStoryScene} from '../../src/valleyStoryScene.ts';import{readFile,writeFile,mkdir}from'node:fs/promises';import{MeshBVH}from'three-mesh-bvh';import{mergeGeometries}from'three/examples/jsm/utils/BufferGeometryUtils.js';import{regionLoader,bakeQuantized}from'../../src/glb.ts';import{WorldGrid}from'../../src/grid.ts';import{REGIONS,GRID,mergeLayouts}from'../../src/regions.ts';import{installSettlements,findSettlementPlacement}from'../../src/settlements/core.ts';import{Player}from'../../src/player.ts';import type{SettlementKit}from'../../src/settlements/types.ts';
+const terrains:THREE.Mesh[]=[],blockers:THREE.BufferGeometry[]=[],allCollision:THREE.BufferGeometry[]=[],parts=[];
+for(const def of REGIONS){const bytes=await readFile(`public/assets/${def.file}.glb`);const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.position.set(def.offset[0],0,def.offset[1]);gltf.scene.updateMatrixWorld(true);const layout=JSON.parse(await readFile(`public/assets/${def.file}.layout.json`,'utf8'));parts.push({def,layout});gltf.scene.getObjectByName('ART')!.traverse(o=>{if((o as THREE.Mesh).isMesh&&o.name==='Terrain')terrains.push(o as THREE.Mesh);});gltf.scene.getObjectByName('COLLISION')!.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh)return;let g=new THREE.BufferGeometry().setAttribute('position',m.geometry.attributes.position.clone());if(m.geometry.index)g.setIndex(m.geometry.index.clone());g.applyMatrix4(m.matrixWorld);if(g.index)g=g.toNonIndexed();allCollision.push(g);if(m.name!=='COL_Terrain')blockers.push(g);});console.log('LOADED',def.id,blockers.length);}
+const grid=new WorldGrid(terrains,GRID.x0,GRID.z0,GRID.span,GRID.cell,'#4f8fa8',GRID.spanZ),layout=mergeLayouts(parts),bvh=new MeshBVH(mergeGeometries(blockers)),ctx={grid,layout,blockers:bvh};
+const names=[['alpha','buildAlphaSettlement'],['britain','buildBritainSettlement'],['blacksail','buildBlackSailSettlement'],['winter','buildWinterSettlement'],['kyoto','buildKyotoSettlement']];const kits:SettlementKit[]=[];
+for(const[id,build]of names){let kit:SettlementKit;try{const module=await import(`../../src/settlements/${id}.ts`);kit=module[build]();}catch(e){if(!process.argv.includes('--stub'))throw e;kit={id:id as any,name:[id,id],footprint:[40,36],entry:[0,18],npcs:[],group:new THREE.Group()};}kits.push(kit);try{console.log('PLACED',JSON.stringify(findSettlementPlacement(kit,ctx)));}catch(e){console.error('PLACEMENT_FAILED',id,String(e));}}
+const settlements=installSettlements(kits,ctx),approaches=createSettlementApproaches(settlements.placements,ctx),campaign=createCampaignSites(settlements.placements);
+const physics=new MeshBVH(mergeGeometries([...allCollision,...settlements.collisionGeometries,...campaign.collisionGeometries]));
+const colliders=[{name:'audit',bvh:physics,enabled:true}];
+for(const p of settlements.placements){const story=p.id==='alpha'?createValleyStoryScene(p):createEraStoryScene(p);colliders.push(...story.colliders);}
+const results=[];
+for(const route of approaches.routes){
+ if(!route.points.length){console.log('NO_ROUTE',route.region,route.reason);results.push({...route,passed:false});continue;}
+ const last=route.points.at(-1)!,player=new Player(colliders,layout.world.waterLevel);player.teleport(last[0],last[1]+.2,last[2]);for(let i=0;i<60;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});
+ const p=settlements.placements.find(p=>p.id===route.region)!;const waypoints=[...route.points].reverse().map(p=>[p[0],p[2]]);waypoints.push([p.entry[0],p.entry[2]-2]);
+ let passed=true,failedAt=null;
+ for(const[x,z]of waypoints){let reached=false;for(let i=0;i<720;i++){if(Math.hypot(player.pos.x-x,player.pos.z-z)<.4){reached=true;break;}player.yaw=Math.atan2(-(x-player.pos.x),-(z-player.pos.z));player.step(1/120,{x:0,z:1,jump:false,sprint:false});}if(!reached){passed=false;failedAt={target:[x,z],position:player.pos.toArray()};break;}}
+ const mesh=approaches.root.getObjectByName(`Approach_${route.region}`)as THREE.Mesh;
+ const triangles=mesh?(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3:0;
+ results.push({...route,passed,failedAt,triangles});console.log('APPROACH',JSON.stringify({id:route.region,length:route.length,passed,failedAt,triangles}));
+}
+await mkdir('../../parhelion-eight-hour-evidence/environment/approaches',{recursive:true});await writeFile('../../parhelion-eight-hour-evidence/environment/approaches/audit.json',JSON.stringify({results,placements:settlements.placements},null,2));
+if(results.some(r=>!r.passed))process.exitCode=1;
