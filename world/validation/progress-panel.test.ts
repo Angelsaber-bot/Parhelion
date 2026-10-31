@@ -59,3 +59,16 @@ test('a file read finishing after page disposal cannot confirm or replace progre
     assert.equal(f.confirmations, 0); assert.equal(f.restored, 0); assert.deepEqual([...f.progress.done], ['existing']);
   } finally { f.close(); }
 });
+test('a newer file selection supersedes an older asynchronous read instead of restoring stale progress', async () => {
+  const f = fixture();
+  try {
+    let finish!: (value: string) => void;
+    const pending = new Promise<string>(resolve => { finish = resolve; });
+    const file = f.panel.root.querySelector('input')!;
+    Object.defineProperty(file, 'files', { configurable: true, value: [{ size: 30, text: () => pending }] });
+    file.dispatchEvent(new f.dom.window.Event('change')); f.accept();
+    await f.select('{"done":["newest"],"found":[]}');
+    finish('{"done":["stale"],"found":[]}'); await new Promise(resolve => setTimeout(resolve, 0));
+    assert.equal(f.confirmations, 1); assert.equal(f.restored, 1); assert.deepEqual([...f.progress.done], ['newest']);
+  } finally { f.close(); }
+});

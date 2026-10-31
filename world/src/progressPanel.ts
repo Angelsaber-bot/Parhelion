@@ -21,7 +21,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   result.className = 'settings-note'; result.setAttribute('role', 'status');
   const warning = document.createElement('aside'); warning.id = 'world-save-warning'; warning.hidden = true; warning.setAttribute('role', 'status');
   Object.assign(warning.style, { position: 'fixed', left: '50%', bottom: '18px', transform: 'translateX(-50%)', maxWidth: 'min(520px, 85vw)', padding: '10px 14px', borderRadius: '10px', background: '#362b19ed', color: '#ffe3a5', fontSize: '12px', zIndex: '6', pointerEvents: 'none' });
-  let disposed = false;
+  let disposed = false, readGeneration = 0;
   const render = () => {
     if (disposed) return;
     title.textContent = bilingual('任务存档', 'Quest save'); status.textContent = bilingual(...STATUS[progress.persistence]);
@@ -42,22 +42,23 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   });
   restore.addEventListener('click', event => { event.stopPropagation(); file.value = ''; file.click(); });
   file.addEventListener('change', async () => {
-    const selected = file.files?.[0]; if (!selected || disposed) return;
+    const generation = ++readGeneration;
+    const selected = file.files?.[0]; if (!selected || disposed) { if (!disposed) restore.disabled = false; return; }
     result.textContent = ''; restore.disabled = true;
     try {
       if (selected.size > 262144) throw new Error('invalid');
-      const raw = await selected.text(); if (disposed) return;
+      const raw = await selected.text(); if (disposed || generation !== readGeneration) return;
       if (!parseProgressBackup(raw)) throw new Error('invalid');
       const accepted = window.confirm(bilingual('用这个备份替换当前任务进度并重新载入世界？按键、语言、画质和外观偏好将保留。建议先下载当前进度备份。', 'Replace current quest progress with this backup and reload the world? Controls, language, graphics and cosmetic preferences are kept. Download your current progress first if needed.'));
-      if (!accepted || disposed) return;
+      if (!accepted || disposed || generation !== readGeneration) return;
       const outcome = progress.restoreSnapshot(raw);
       if (outcome === 'restored') onRestored();
       else result.textContent = bilingual('恢复未写入，当前任务进度保持不变。', 'Restore was not written; current quest progress is unchanged.');
     } catch {
-      if (!disposed) result.textContent = bilingual('无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.');
-    } finally { if (!disposed) restore.disabled = false; }
+      if (!disposed && generation === readGeneration) result.textContent = bilingual('无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.');
+    } finally { if (!disposed && generation === readGeneration) restore.disabled = false; }
   });
   root.append(title, status, retry, backup, restore, file, result); document.body.append(warning);
   const unsubscribe = progress.subscribe(render), locale = onLanguageChange(render); render();
-  return { root, dispose() { if (disposed) return; disposed = true; unsubscribe(); locale(); root.remove(); warning.remove(); } };
+  return { root, dispose() { if (disposed) return; disposed = true; readGeneration++; unsubscribe(); locale(); root.remove(); warning.remove(); } };
 }

@@ -8,7 +8,7 @@ import {transformSync} from 'esbuild';
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const press=source.slice(source.indexOf('function press('),source.indexOf('function release('));
 function setup(overrides:Record<string,unknown>={}){
- let npc=0,marker=0;const state={narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,actions:undefined,inspectServant:false,locked:true,settings:{action:()=> 'interact'},settingsPanel:{open:false},document:{visibilityState:'visible',hasFocus:()=>true},gameplayActive:()=>true,combat:{defeated:false},player:{flying:false,gliding:false,swimming:false,onGround:true},keys:new Set(),interactSettlementNpc:()=>{npc++;return false;},interact:()=>marker++,...overrides};
+ let npc=0,marker=0;const state={narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,actions:undefined,inspectServant:false,locked:true,settings:{action:()=> 'interact'},settingsPanel:{open:false},document:{visibilityState:'visible',hasFocus:()=>true},gameplayActive:()=>true,combat:{defeated:false},player:{flying:false,gliding:false,swimming:false,onGround:true},keys:new Set(),interactSettlementNpc:()=>{npc++;return false;},interact:()=>marker++,...overrides};
  const c=vm.createContext(state);vm.runInContext(transformSync(press+'\nglobalThis.invoke=press;',{loader:'ts'}).code,c);return{invoke:(repeat=false)=>c.invoke('KeyF',repeat),counts:()=>[npc,marker]};
 }
 test('production interaction input only reaches story behind active, focused, non-flight gameplay guards',()=>{

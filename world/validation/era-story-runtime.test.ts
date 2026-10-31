@@ -1,3 +1,4 @@
+import { campaignSourceContext } from './campaign-source-context';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -20,7 +21,7 @@ function fixture() {
   const ice = { name: 'Ice_Gate', visible: true };
   const colliders = new Map([['COL_Ghost_Bridge', { enabled: false }], ['COL_Ice_Gate', { enabled: true }]]);
   const stateSnapshots = new Map<string, story.EraStoryState>();
-  const context = vm.createContext({
+  const context = vm.createContext({...campaignSourceContext,
     ...story, done, layout, hudRevision: 0, targets: [], combat: { syncWorldProgress() {} },
     eraStoryScenes: story.ERA_IDS.map(region => ({ region, applyState: (state: story.EraStoryState) => stateSnapshots.set(region, state) })),
     applyValleyStory() {}, getLanguage: () => 'en', haloMat: null,
