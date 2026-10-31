@@ -1,3 +1,5 @@
+import { createQuestGuideCatalog, type QuestEntry, type QuestGuide } from './questGuideCatalog';
+import { createQuestJournal } from './questJournal';
 import { buildAlphaSettlement } from './settlements/alpha';
 import { buildBritainSettlement } from './settlements/britain';
 import { buildBlackSailSettlement } from './settlements/blacksail';
@@ -392,6 +394,20 @@ let ultimateDirector: UltimateDirector | undefined;
 let ultimateStage: UltimateStage | undefined;
 let ultimateSource: { identity: ServantId | null; root: THREE.Object3D } | null = null;
 let optionalPin: OptionalPin | null = null;
+let questTrackedId: string | null = null;
+let questJournal: ReturnType<typeof createQuestJournal> | undefined;
+let questCatalog: ReturnType<typeof createQuestGuideCatalog> | undefined;
+let questCacheKey = '', questEntries: QuestEntry[] = [];
+function currentQuestEntries(): QuestEntry[] {
+  if(!questCatalog)return [];
+  const key=`${hudRevision}:${done.size}:${found.size}:${fortCannon.mounted}`;
+  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{mounted:fortCannon.mounted});}
+  return questEntries;
+}
+function trackedQuest(): QuestGuide | null {
+  if(!questTrackedId)return null;
+  return currentQuestEntries().find(entry=>entry.id===questTrackedId)?.guide ?? null;
+}
 let campaignTrackedRegion: RegionId | null = null;
 let campaignJournalOpen = false;
 let campaignJournal: ReturnType<typeof createCampaignJournal> | undefined;
@@ -506,6 +522,13 @@ function toggleGuide() {
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
+  const quest=trackedQuest();
+  if(quest){
+    const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
+    const local: [number,number,number] = quest.targetKind==='npc' ? settlementNpcs.getPosition(quest.targetId) ?? quest.position : enemy ? [enemy.p.x,enemy.p.y,enemy.p.z] : quest.position;
+    const p=resolveTrackedStoryPoint(here,quest.region,done,local);
+    if(p)return {p,label:bilingual(...quest.title)};
+  }
   if (falseDawnTracked) {
     const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
     if (!guide) falseDawnTracked = false;
@@ -827,7 +850,7 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
 function resetProgress() {
   abortUltimate(); clearInput(); deferredCombatToast = null;
   const saved = worldProgress.reset();
-  campaignTrackedRegion = null; falseDawnTracked = false; falseDawnRuntime?.invalidate();
+  campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
   clearStartOverrides(params);
@@ -976,7 +999,7 @@ function press(binding: string, repeat = false) {
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
-  if (action === 'mainRoute') { optionalPin = null; campaignTrackedRegion = null; falseDawnTracked = false; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
+  if (action === 'mainRoute') { questTrackedId = null; optionalPin = null; campaignTrackedRegion = null; falseDawnTracked = false; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
   if (action === 'help') togglePanel('help');
   if (action === 'objectives') togglePanel('objective');
   if (action === 'interact' && !player.flying && !player.gliding && !player.swimming && player.onGround && !interactSettlementNpc()) interact();
@@ -1143,7 +1166,7 @@ function reloadImportedProgress() {
   // replacement flags if browser navigation is blocked, canceled or throws.
   graphicsRecovery?.dispose();
   abortUltimate(); clearInput(); falseDawnRuntime?.dispose(); combat.cancelStoryEncounter();
-  travelPanel.hide(); campaignJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
+  travelPanel.hide(); campaignJournal?.hide(); questJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
   audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   const retry = document.createElement('button'); retry.id = 'world-reload-import'; retry.type = 'button';
@@ -1216,26 +1239,50 @@ const campaignTrackingBlocked = (region: RegionId): [string, string] | null => t
 campaignJournal = createCampaignJournal({
   done: () => done,
   onOpen: () => {
-    if (travelOpenState || settingsPanel.open || servantPanel.open || ultimateDirector?.active || fortCannon.mounted || actions?.skills.casting || actions?.melee.active || actions?.evade.active) return false;
+    if (bootFailed || worldExited || graphicsRecovery?.blocked || campaignJournalOpen || travelOpenState || settingsPanel.open || servantPanel.open || ultimateDirector?.active || fortCannon.mounted || actions?.skills.casting || actions?.melee.active || actions?.evade.active) return false;
     campaignJournalOpen = true; clearInput(); if (document.pointerLockElement) document.exitPointerLock(); return true;
   },
   onClose: () => { campaignJournalOpen = false; clearInput(); },
   trackingBlocked: campaignTrackingBlocked,
-  pin: region => { if (campaignTrackingBlocked(region) || !getCampaignEpisodeGuide(region, done)) return false; campaignTrackedRegion = region; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; return true; },
+  pin: region => { if (campaignTrackingBlocked(region) || !getCampaignEpisodeGuide(region, done)) return false; questTrackedId = null; campaignTrackedRegion = region; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; return true; },
   arcTrackingBlocked: () => { const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null }); return guide ? campaignTrackingBlocked(guide.region) : null; },
-  pinArc: () => { const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null }); if (!guide || campaignTrackingBlocked(guide.region)) return false; falseDawnTracked = true; campaignTrackedRegion = null; optionalPin = null; guideOn = true; hudRevision++; return true; },
-  restoreMain: () => { campaignTrackedRegion = null; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; },
+  pinArc: () => { const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null }); if (!guide || campaignTrackingBlocked(guide.region)) return false; questTrackedId = null; falseDawnTracked = true; campaignTrackedRegion = null; optionalPin = null; guideOn = true; hudRevision++; return true; },
+  restoreMain: () => { questTrackedId = null; campaignTrackedRegion = null; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; },
 });
 const journalOpen = document.createElement('button'); journalOpen.type = 'button'; journalOpen.id = 'world-campaign-journal-open';
 const renderJournalButton = () => { journalOpen.textContent = bilingual('主线续篇与归路纪事 · 故事进度', 'Continuation & chronicles · Story progress'); };
 renderJournalButton(); const unsubscribeJournalButton = onLanguageChange(renderJournalButton);
 journalOpen.addEventListener('click', event => { event.stopPropagation(); campaignJournal?.show(); }); start.append(journalOpen);
 addEventListener('pagehide', event => { if (!event.persisted) { campaignJournal?.dispose(); journalOpen.remove(); unsubscribeJournalButton(); } });
+questCatalog = createQuestGuideCatalog({
+  markers: [...markers.values()], objectives: layout.objectives,
+  npcs: [...settlements.npcs,...campaignSites.npcs],
+  enemies: combat.state.enemies.filter(enemy=>enemy.id==='elite_oath_knight').map(enemy=>({id:enemy.id,region:'britain' as const,position:[enemy.home.x,enemy.home.y,enemy.home.z] as [number,number,number],label:['失誓骑士','Oathless Knight'] as [string,string]})),
+});
+questJournal = createQuestJournal({
+  entries: currentQuestEntries, currentRegion:()=>regionAt(player.pos.x,player.pos.z).id, position:()=>[player.pos.x,player.pos.y,player.pos.z],
+  trackingBlocked: guide=>campaignTrackingBlocked(guide.region),
+  onOpen:()=>{
+    if(bootFailed||worldExited||graphicsRecovery?.blocked||campaignJournalOpen||travelOpenState||settingsPanel.open||servantPanel.open||narrative?.open||ultimateDirector?.active||fortCannon.mounted||actions?.skills.casting||actions?.melee.active||actions?.evade.active)return false;
+    campaignJournalOpen=true;clearInput();if(document.pointerLockElement)document.exitPointerLock();return true;
+  },
+  onClose:()=>{campaignJournalOpen=false;clearInput();},
+  pin:id=>{const guide=currentQuestEntries().find(entry=>entry.id===id)?.guide;if(!guide||campaignTrackingBlocked(guide.region))return false;questTrackedId=id;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;return true;},
+  restoreMain:()=>{questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;},
+  openChronicles:()=>campaignJournal?.show(),
+});
+const questOpen=document.createElement('button');questOpen.type='button';questOpen.id='world-quest-journal-open';
+const renderQuestButton=()=>{questOpen.textContent=bilingual('任务指引 · 主线、支线与探索','Quest guide · Main, side & exploration');};
+renderQuestButton();const unsubscribeQuestButton=onLanguageChange(renderQuestButton);
+questOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show();});start.append(questOpen);
+addEventListener('pagehide',event=>{if(!event.persisted){questJournal?.dispose();questOpen.remove();unsubscribeQuestButton();}});
 trackedStoryHud = createTrackedStoryHud($('objective'));
 function updateTrackedStoryHud() {
   if (!trackedStoryHud) return;
   const active = combat.storyEncounter;
   const returnHint = bilingual(`${settings.label('mainRoute')} · 返回原主线指引`, `${settings.label('mainRoute')} · Restore original story guide`);
+  const quest=trackedQuest();
+  if(quest){trackedStoryHud.update({title:bilingual(...quest.title),instruction:bilingual(...(campaignTrackingBlocked(quest.region)??quest.text)),returnHint});return;}
   if (falseDawnTracked) {
     const objective = getFalseDawnObjective(done, active?.id ?? null);
     const guide = getFalseDawnGuide(done, { activeEncounter: active?.id ?? null });
@@ -1751,7 +1798,7 @@ refreshWorldLocale = () => {
 suspendForGraphics = () => {
   abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); progressPanel.cancelPendingRead();
   // Preserve pause-menu intent, but invalidate detached pre-loss controls.
-  travelPanel.refresh(); campaignJournal?.refresh(); audio.setActive(false);
+  travelPanel.refresh(); campaignJournal?.refresh(); questJournal?.refresh(); audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   renderLoading(); start.classList.remove('hidden');
   $('settings-open').classList.remove('hidden'); languageToggle.hidden = false;

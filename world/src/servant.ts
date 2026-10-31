@@ -1,3 +1,4 @@
+import { createSaberLiveExpression } from './saberLiveExpression';
 import { skillAnimationProfile, skillAnimationSample } from './skillAnimationProfile';
 import * as THREE from 'three';
 import { validSkillPose, type SkillPoseCommand } from './skillPose';
@@ -78,11 +79,13 @@ export class ContractServant {
   private attackTime = 0;
   private attackDuration = 1.2;
   private attackTarget: string | null = null;
+  private pursuitTargetId: string | null = null;
   private contactPending = false;
   private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; clipElapsed: number; motionTime: number; cycle: number; emitted: boolean; started: boolean };
   private activeLast = false;
   private disposed = false;
   private model?: THREE.Object3D;
+  private liveExpression?: ReturnType<typeof createSaberLiveExpression>;
   private environment?: THREE.WebGLRenderTarget;
   private loadTask?: Promise<void>;
   constructor(private options: ServantOptions) {
@@ -150,6 +153,7 @@ export class ContractServant {
         const clips = new Map(candidate.animations.map(clip => [clip.name.toLowerCase(), mixer.clipAction(idleCarry.locomotionClip(clip))]));
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
+        this.liveExpression = createSaberLiveExpression(this.model);
         this.mixer = mixer; this.clips = clips; this.idleCarry = idleCarry;
         this.stride=new SaberStrideRuntime(candidate.scene,this.root);
         this.grounding = new SaberGroundedLocomotion(candidate.scene, this.root, outfit, this.options.colliders);
@@ -182,6 +186,7 @@ export class ContractServant {
       this.mixer.update(0);
       this.stride?.apply(this.clips.get('run'),dt,this.strideSpeed);
       if (locomotion && (this.stride?.diagnostics.weight ?? 0) < .001) this.grounding?.applyBase(dt);
+      this.liveExpression?.update(dt, (this.animation ?? 'idle').toLowerCase(), this.root.visible);
     }
   }
   get strideDiagnostics(){return this.stride?.diagnostics;}
@@ -210,8 +215,8 @@ export class ContractServant {
     if (gaitChange && previous) previous.setEffectiveTimeScale(rate * previous.getClip().duration / next.getClip().duration);
     this.current = next;
   }
-  private cancelAttack() { this.cancelSkillPose(); this.navigation.reset(); this.attackTime = 0; this.attackTarget = null; this.contactPending = false; this.play('idle'); }
-  get engagedTargetId(): string | null { return this.attackTarget; }
+  private cancelAttack() { this.cancelSkillPose(); this.navigation.reset(); this.attackTime = 0; this.attackTarget = null; this.pursuitTargetId = null; this.contactPending = false; this.play('idle'); }
+  get engagedTargetId(): string | null { return this.attackTarget ?? this.pursuitTargetId; }
   get presentationModel(): THREE.Object3D | null { return this.state === 'ready' ? this.model ?? null : null; }
   get presentationClips(): readonly THREE.AnimationClip[] { return [...this.clips.values()].map(action => action.getClip()); }
   startSkillPose(command: SkillPoseCommand): boolean {
@@ -303,7 +308,7 @@ export class ContractServant {
     if(this.attackTime>0){this.advanceAttack(dt);return;}
     const destination=player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
     const prey=this.options.engage?.(player,this.root.position);
-    this.pursuing=!!prey;
+    this.pursuing=!!prey; this.pursuitTargetId=prey?.id ?? null;
     if(prey && separation<24)destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1));
     const frameYaw=this.root.rotation.y;
     const speed=this.navigation.step(this.root,destination,dt,Math.min(SERVANT_MOTION.followSpeed,SERVANT_MOTION.runSpeed*SERVANT_MOTION.maxRate));
@@ -350,6 +355,7 @@ export class ContractServant {
     if(this.attackTime<=0)this.cancelAttack();
   }
   private clearModel() {
+    this.liveExpression?.dispose(); this.liveExpression = undefined;
     this.grounding?.restore();
     this.stride?.clear();this.stride=undefined;this.strideSpeed=-1;
     this.grounding = undefined; this.groundingActive = false;
