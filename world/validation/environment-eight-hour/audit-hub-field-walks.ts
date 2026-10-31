@@ -20,12 +20,13 @@ console.log('TRAVEL',JSON.stringify(travel));
 for(const region of ['alpha','blacksail','winter'] as const){
  const placement=settlements.placements.find(p=>p.id===region)!,site=fields.sites.find(s=>s.region===region)!,marker=site.markers.find(m=>m.id===(region==='alpha'?'false_dawn_array_console':`false_dawn_${region==='blacksail'?'harbor':'winter'}_console`))!;
  if(region==='alpha'){
-  // Valley has an original water crossing: do not label ordinary swimming as grounded walking.
-  const waypoints=[[-166,232],[-145,232],[-145,198],[-124,190],[-124,170],[-108,120],[-96,82],[-44,14],[-44,-20],[-36,-60],[-35,-92],[marker.p[0],marker.p[2]]];
+  // Use the original West Ford bridge; a terrain-only planner misses its elevated deck.
+  const direction=new THREE.Vector2(-22,-37).normalize(),bridge=[-26,-22,-18,-14,-8,0,8,14,18,22,26].map(s=>[-95+direction.x*s,61+direction.y*s]);
+  const waypoints=[[-166,232],[-145,232],[-145,198],[-124,190],[-124,170],[-108,120],[-96,90],...bridge,[-110,25],[-100,0],[-80,-30],[-60,-60],[-52,-85],[marker.p[0],marker.p[2]]];
   const player=new Player(colliders,layout.world.waterLevel),foot=q.ground(placement.entry[0],placement.entry[2]+8,300)!;player.teleport(placement.entry[0],foot.point.y+.5,placement.entry[2]+8);for(let i=0;i<180;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});
   let passed=true,failure=null,swimmingFrames=0,frames=0;
   for(const [x,z]of waypoints){let arrived=false;for(let i=0;i<18000;i++){if(Math.hypot(x-player.pos.x,z-player.pos.z)<.5){arrived=true;break;}player.yaw=Math.atan2(-(x-player.pos.x),-(z-player.pos.z));player.step(1/120,{x:0,z:1,jump:false,sprint:false});frames++;if(player.swimming)swimmingFrames++;}if(!arrived){passed=false;failure={at:player.pos.toArray(),target:[x,z]};break;}}
-  const row={region,passed,mode:'ordinary walking and original swimming',failure,frames,swimmingFrames,waypoints,arrival:player.pos.toArray()};results.push(row);console.log('HUB_FIELD_WALK',JSON.stringify(row));continue;
+  const row={region,passed:passed&&swimmingFrames===0,mode:'ordinary walking via original West Ford bridge',failure,frames,swimmingFrames,waypoints,arrival:player.pos.toArray()};results.push(row);console.log('HUB_FIELD_WALK',JSON.stringify(row));continue;
  }
  const startX=placement.entry[0],startZ=placement.entry[2]+8,targetX=marker.p[0],targetZ=marker.p[2],step=2,margin=180;
  const x0=Math.floor((Math.min(startX,targetX)-margin)/step)*step,z0=Math.floor((Math.min(startZ,targetZ)-margin)/step)*step,nx=Math.ceil((Math.max(startX,targetX)+margin-x0)/step)+1,nz=Math.ceil((Math.max(startZ,targetZ)+margin-z0)/step)+1;
