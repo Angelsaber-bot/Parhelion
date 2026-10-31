@@ -174,7 +174,7 @@ export function buildStructures(heightAt: HeightAt) {
     b.box(-140, y + 1.4, -28, 1.1, 1.1, 1.1, PAL.crate, 0.6); // stacked crate
     pieces.push({ name: 'Station', material: 'M_Toon', batch: b, outline: true });
 
-    mk({ id: 'relay_b', type: 'interact', label: '中继器 B（前哨站）', p: [-148, y, -58], radius: 3, note: '清除据点后启动' });
+    mk({ id: 'relay_b', type: 'interact', label: '中继器 B（前哨站）', p: [-148, y, -58], radius: 3, note: '进入据点后启动' });
     mk({ id: 'station_gate_s', type: 'poi', label: '正门', p: [-140, y, z1 + 2] });
     mk({ id: 'station_breach_e', type: 'poi', label: '东侧破墙（侧翼入口）', p: [x1 + 3, y, -54] });
     mk({ id: 'station_door_n', type: 'poi', label: '北侧后门（撤离路线）', p: [-156, y, z0 - 2] });
