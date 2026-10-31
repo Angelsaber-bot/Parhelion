@@ -1,7 +1,7 @@
 """Actual six-batch resident geometry; offline studio light, not runtime GPU evidence."""
 import bpy,json,sys,os
 from mathutils import Vector
-source,out=sys.argv[sys.argv.index('--')+1:][:2]
+args=sys.argv[sys.argv.index('--')+1:];source,out=args[:2];requested=args[2].split(',') if len(args)>2 else ['residents','faces']
 os.makedirs(out,exist_ok=True)
 bpy.ops.wm.read_factory_settings(use_empty=True)
 mat=bpy.data.materials.new('Runtime vertex palette');mat.use_nodes=True
@@ -16,5 +16,7 @@ for name,pos,power,size in [('Key',(-3,-5,6),650,5),('Fill',(4,-2,3),220,4)]:
 bpy.ops.mesh.primitive_plane_add(size=200);floor=bpy.context.object;fm=bpy.data.materials.new('Neutral studio floor');fm.diffuse_color=(.12,.15,.18,1);floor.data.materials.append(fm)
 data=bpy.data.cameras.new('Review camera');cam=bpy.data.objects.new('Review camera',data);scene.collection.objects.link(cam);scene.camera=cam;data.type='ORTHO'
 scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=24;scene.cycles.use_denoising=False;scene.render.resolution_x=1500;scene.render.resolution_y=650;scene.render.resolution_percentage=100;scene.render.image_settings.file_format='PNG'
-for label,pos,aim,scale in [('residents',(2,-10,3.1),(0,0,.95),7.4),('faces',(0,-10,2),(0,0,1.52),6.6)]:
+for label,pos,aim,scale in [('residents',(2,-10,3.1),(0,0,.95),7.4),('faces',(0,-10,2),(0,0,1.52),6.6),('ada',(-.6,-4,1.9),(-1.3,0,1.1),1.45)]:
+ if label not in requested:continue
+ scene.render.resolution_x=800 if label=='ada' else 1500;scene.render.resolution_y=1000 if label=='ada' else 650
  cam.location=pos;cam.rotation_euler=(Vector(aim)-cam.location).to_track_quat('-Z','Y').to_euler();data.ortho_scale=scale;scene.render.filepath=os.path.join(out,label+'.png');bpy.ops.render.render(write_still=True)

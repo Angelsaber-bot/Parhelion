@@ -158,7 +158,7 @@ normal-quality, near-field casting remains a separate integration/art decision.
 option; omitted/false retains the existing zero-caster contract and seven Valley
 batches. Only the enabled version splits 1,012 thin ground triangles into an eighth
 batch sharing the body material. Ground, glow, anchor cues and completion plaques
-never cast. One selected field may cast body + metal: at most two casters globally.
+never cast. One selected field may cast body + metal: at most two additional False Dawn casters globally.
 Selection enters within 70 m and remains until 85 m, preventing boundary thrashing.
 Invalid positions and disposal disable casting. No new lights or collision behavior.
 The normal-quality integration decision is separate; low quality must pass false.

@@ -98,3 +98,17 @@ Final profile geometry is reviewed in sibling evidence
 `environment/campaign-residents-v4/residents.png` and `faces.png` using the committed
 `render-residents.py` CPU tool. This is geometry/offline-lighting evidence, not a
 runtime animation or GPU capture. Campaign actors range from 5,884 to 7,008 triangles.
+
+### Close-range acting evidence
+
+A close portrait review exposed the original mouth line intersecting the face surface;
+it is now in front of the skin and protected by a front-ray regression. Campaign eyes
+are relaxed further (Ada's elder profile is narrower), and held witness/archive pages
+now have ruled entries and seals rather than a blank face. Actor batches stay at six.
+
+The exporter can simulate an explicit 0–60 second timestamp using the actual idle
+update and records head/arm rotations. Same-camera Ada poses at rest and 5.12 seconds
+are in `environment/resident-acting-v2/{rest,read}/ada.png`, under sibling evidence.
+The bounded head-down/note-lift is runtime pose geometry under offline studio lighting;
+two stills do not claim runtime frame pacing or a full motion capture. Final campaign
+residents span 5,972–7,008 triangles. Eight NPC tests pass.

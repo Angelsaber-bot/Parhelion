@@ -44,3 +44,8 @@ test('campaign work idles stay bounded, preserve rigid props and freeze outside 
  const rotations=system.group.children.map(p=>p.getObjectByName('ResidentHead')!.rotation.toArray());for(let i=0;i<120;i++)system.update(1/60,new THREE.Vector3(0,0,50));system.group.children.forEach((p,i)=>assert.deepEqual(p.getObjectByName('ResidentHead')!.rotation.toArray(),rotations[i]));
  for(const[m,g]of geometry)assert.equal(m.geometry,g);system.dispose();
 });
+
+test('resident mouth line sits in front of the face instead of being buried inside it',()=>{
+ const system=createSettlementNpcs([{...npc('britain_oath_witness'),role:['见证人','Witness']}]),person=system.group.children[0],head=person.getObjectByName('ResidentHead')!;system.group.updateMatrixWorld(true);
+ const origin=head.localToWorld(new THREE.Vector3(0,-.101,.5)),direction=new THREE.Vector3(0,0,-1).transformDirection(head.matrixWorld),ray=new THREE.Raycaster(origin,direction),hit=ray.intersectObject(head,true)[0];assert.ok(hit);assert.ok(head.worldToLocal(hit.point.clone()).z>.109,'lip geometry must be visible from the front');system.dispose();
+});
