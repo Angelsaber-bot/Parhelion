@@ -150,18 +150,22 @@ visibility and fails clearly on old manifests without metadata; `studio` is expl
 Same-camera evidence: `environment/field-shadow-review/off/alpha-battle.png` versus
 `on/alpha-battle.png`. This tests the visual value of those flags under Cycles lighting,
 not PCF shadow-map resolution, WebGL material parity, frame rate or GPU cost. Enabling
-normal-quality, near-field casting remains a separate integration/art decision.
+normal-quality, near-field casting was reviewed separately; guarded integration is now
+described below.
 
-### Isolated near-structure shadow prototype (default off)
+### Guarded normal-quality structural shadows (factory default remains off)
 
-`createFalseDawnSites(ground, {nearStructureShadows:true})` is an explicit experimental
-option; omitted/false retains the existing zero-caster contract and seven Valley
+`createFalseDawnSites(ground, {nearStructureShadows:true})` is an explicit capability
+option. Main now passes `nearStructureShadows: !lowQ`; omitted/false retains the existing zero-caster contract and seven Valley
 batches. Only the enabled version splits 1,012 thin ground triangles into an eighth
 batch sharing the body material. Ground, glow, anchor cues and completion plaques
 never cast. One selected field may cast body + metal: at most two additional False Dawn casters globally.
 Selection enters within 70 m and remains until 85 m, preventing boundary thrashing.
 Invalid positions and disposal disable casting. No new lights or collision behavior.
-The normal-quality integration decision is separate; low quality must pass false.
+Low-quality boot passes false and retains seven Valley batches / zero field casters.
+Normal-quality boot uses eight Valley batches / at most two field casters. Turning
+shadows off on an already-supported normal build keeps its eighth noncasting ground
+batch; it does not reconstruct quest objects to recover that one draw.
 
 Measured candidate caster triangles: Valley 5,328; harbor 2,412; winter 2,540.
 Tests compare every visual triangle (position/normal/color) and every collider/marker
@@ -191,3 +195,9 @@ transmitter was powered up. Partial saved/retried anchors illuminate independent
 unaccepted anchors stay neutral, seal hides all circuits, repurpose retains warmth.
 No material, draw, lamp, collision or timer was added. State-render review is queued
 under the shared admission budget in `environment/grounding-circuits/`.
+
+Actual-main `field-shadows-main-dom.test.ts` passes all three low/normal scenarios,
+including 40 supported disable/enable/state cycles with unchanged resource, collider,
+marker and saved-progress identities. The independent field-shadow test also checks
+cap/hysteresis/ground exclusion. This is runtime object/counter evidence, not a GPU
+shadow timing or PCF visual certification; the offline-render limitations still apply.

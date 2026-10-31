@@ -24,7 +24,7 @@ review. `studio` and renderer-only `candidate` modes are explicitly named altern
 | Valley before crafted forms | `false-dawn-v3/renders/alpha-battle.png` | Same camera as subsequent Valley review |
 | Crafted Valley structure | `false-dawn-v7/renders/alpha-battle.png` | Studio shadowing; not final runtime caster policy |
 | Safe split-ground shadow gain | `field-shadow-split/{off,on}/{alpha,blacksail}-battle.png` | Actual factory flag exports; thin ground never casts in on |
-| Remote relay instrument/approach readability | `false-dawn-remote-v7/renders/{blacksail,winter}-battle.png` | Default factory caster flags off |
+| Remote relay instrument/approach readability | `false-dawn-remote-v7/renders/{blacksail,winter}-battle.png` | Default factory caster flags off; normal main now enables guarded structural casting |
 | Five resident silhouettes | `campaign-residents-v4/residents.png` | Before final minor lid/mouth/page refinement |
 | Final Ada face and bounded note-check | `resident-acting-v2/{rest,read}/ada.png` | Actual runtime poses at 0/5.12 seconds; not a motion video |
 | Partial accepted anchor circuits | `grounding-circuits/{000,100,111}/renders/alpha-detail.png` | Pending admission/render review at index creation; default factory shadows off |
@@ -51,6 +51,15 @@ QA's verified manifests; do not remove final images or active renderer inputs.
   supported idempotent toggles and default/low-quality exclusion.
 - `world/validation/settlement-npcs.test.ts`: bounded six-batch actors, near-only acting,
   finite/invalid-delta handling, 900-frame work/gesture check and visible lip regression.
+
+## Integrated shadow quality contract
+
+Main enables the guarded capability only outside low quality. Low boot has seven
+Valley batches / zero field casters; normal has eight / at most two, with 70/85 m
+hysteresis. The eighth batch is thin noncasting ground sharing the body material.
+Supported live internal toggles retain objects/collision/progress; global quality
+Apply/reload remains unchanged. Actual-main low/normal tests verify 40 toggle/state
+cycles, but do not establish GPU frame cost or PCF visual parity.
 
 ## Reproducing a field review
 
