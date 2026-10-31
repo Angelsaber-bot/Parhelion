@@ -3,6 +3,7 @@
 // shared deterministic applyInput(step, state) rules; the capsule/collider setup here is meant to carry over.
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
+import { EvadeGroundSupport } from './evadeGroundSupport';
 
 export interface Collider { name: string; bvh: MeshBVH; enabled: boolean }
 /** Vertical wind column: lifts a gliding player from y0 up to about y1. */
@@ -44,6 +45,8 @@ export class Player {
   inUpdraft = false;
   updrafts: Updraft[] = [];
   private jumpHeld = false;
+  private readonly evadeSupport = new EvadeGroundSupport();
+  private readonly resolveSupportCollision = () => this.collide();
   private _flying = false;
   get flying() { return this._flying; }
   set flying(value: boolean) {
@@ -81,6 +84,10 @@ export class Player {
 
   /** input: x = strafe (+right), z = forward (+fwd) */
   step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean; evade?: { x: number; z: number; strength?: number } }) {
+    // Capture admission BEFORE motion. This never permits a new airborne evade
+    // or modifies ordinary walking/jump/glide contact behavior.
+    const recoverEvadeSupport = Number.isFinite(dt) && dt > 0 && dt <= .1 && this.onGround && !input.jump && !this.flying
+      && !!input.evade && Number.isFinite(input.evade.x) && Number.isFinite(input.evade.z) && Math.hypot(input.evade.x,input.evade.z) > .001;
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(input.z).add(right.multiplyScalar(input.x));
@@ -142,6 +149,7 @@ export class Player {
     } else this.pos.addScaledVector(wish, speed * dt);
     this.pos.addScaledVector(this.vel, dt);
     this.collide();
+    if (recoverEvadeSupport && !this.onGround) this.evadeSupport.tryRecover(this, this.colliders, this.resolveSupportCollision);
     // Landing is authoritative in this step: do not leave the canopy/ADS in glide mode
     // until the next physics step (which can be a different rendered frame).
     if (this.onGround) this.gliding = false;

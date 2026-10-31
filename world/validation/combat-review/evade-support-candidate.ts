@@ -6,7 +6,8 @@
  */
 import * as THREE from 'three';import type {Player} from '../../src/player';
 export const EVADE_SUPPORT_DROP=.01;
-export function installEvadeSupportCandidate(player:Player){
+type SupportPlayer=Pick<Player,'pos'|'vel'|'onGround'|'swimming'|'gliding'|'inUpdraft'|'flying'|'colliders'|'step'>;
+export function installEvadeSupportCandidate(player:SupportPlayer){
  const body=player as unknown as Pick<Player,'pos'|'vel'|'onGround'|'swimming'|'gliding'|'inUpdraft'|'flying'|'colliders'>&{collide():void},originalStep=player.step,originalCollide=body.collide,stepDescriptor=Object.getOwnPropertyDescriptor(player,'step'),collisionDescriptor=Object.getOwnPropertyDescriptor(player,'collide');
  const position=new THREE.Vector3(),velocity=new THREE.Vector3(),ray=new THREE.Ray(),walkable=Math.cos(50*Math.PI/180);let eligible=false,steps=0,primaryQueries=0,supportQueries=0,supportRejected=0,extraQueries=0,recovered=0,rolledBack=0,maxObservedExtraQueriesPerStep=0,maxObservedSupportQueriesPerStep=0,disposed=false;
  player.step=function(dt,input){

@@ -1,6 +1,6 @@
-# Admitted dodge support audit — validation candidate, 2026-10-31
+# Admitted dodge support audit — 2026-10-31
 
-**Status: isolated validation wrapper only. Production Player/WorldActions are unchanged.**
+**Status: narrow production implementation approved after isolated proof. WorldActions/evade clocks remain unchanged; independent committed-production verification follows the source checkpoint.**
 
 ## Reproduced production behavior
 
@@ -15,7 +15,7 @@ Exact failing stance: `(-54.3037204157,3.9185068459,-105.2040747411)`, facing th
 
 ## Controls
 
-`probe-evade-support.ts` pairs production terrain with explicitly synthetic flat/ledge controls (one temporary collider at height20). It uses actual main keyboard/physics, never forced grounding.
+The historical checkpoint3d66e31 `probe-evade-support.ts` pairs production terrain with explicitly synthetic flat/ledge controls (one temporary collider at height20). It uses actual main keyboard/physics, never forced grounding.
 
 | Case | Baseline | Isolated candidate |
 |---|---|---|
@@ -45,3 +45,14 @@ The source is World-only. Arena, network authority and remote inputs are untouch
 Own candidate tests cover30/60/120Hz component steps, exact3.12m distance/original evade clocks, ten downhill evades totaling31.2m without accumulated boost, thin ledges, solid corners, low ceilings, jump/water/updraft/glide exclusion and a60°nonwalkable slope. Independent QA additionally compares ordinary movement/sprint/jump in dry/water cases at30/60/120Hz for eight seconds each: every position/velocity/contact-state snapshot matches baseline, with zero support queries.
 
 Actual-main30/60/120Hz render cadence tests use the normal120Hz fixed simulation and are reported separately. A proposed production implementation must reproduce the wrapper's results and pass independent action/contact timing review before integration. This audit does not authorize a general coyote window or a broader terrain step-down change.
+
+
+## Narrow production implementation
+
+`src/player.ts` captures prior-grounded valid evade admission before motion, then calls `EvadeGroundSupport` only if the normal capsule solve lost contact. The helper implements the proven≤1cm support predicate and existing capsule retry, including rollback on exceptions. It changes no action timing, cooldown, airborne admission, ordinary movement, Arena or network code. Current main probes install **no wrapper** and write separate `*-production.json` artifacts; historical baseline files are retained.
+
+The exact historical Player is preserved as `validation/fixtures/player-pre-evade-support.ts` (header excluded from comparison): git blob`1149bd93b7be7a8813ebb61126bccb0323b86a1a`, SHA256`7e45f052a7c3e31fdfa052bb076a7edd400744ec06e3e9ccfb0df9ff6551f4ce`. This prevents an already-fixed Player from being compared to itself. A shared seven-case geometry contract runs against historical+candidate and actual production. Six additional production-versus-historical ordinary movement cases compare every state for8seconds at30/60/120Hz in dry/water conditions; all match exactly with zero support queries. Exception rollback is also tested.
+
+The first real production three-contact probe preserves HP100 with the intended100ms side-evade timing; the two circular contacts still contain the player geometrically, but original invulnerability is active. There are no airborne-cancel observations. The paired production flat/slope/ledge/jump controls reproduce the candidate results exactly.
+
+Query counts are explicit: one support **pass** is not one BVH call. In the current three-contact field probe,26support passes performed780individual BVH raycasts over30enabled colliders, followed by26capsule retries/recoveries. The slope-plus-control probe used17passes/511BVHraycasts/16capsule retries; the ledge was rejected before retry. Each affected step is capped at one pass and one retry; no pass occurs during unaffected/non-evade steps. No CPU timing was claimed during concurrent aggregate validation.
