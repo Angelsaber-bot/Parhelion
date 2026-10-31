@@ -21,7 +21,7 @@ import vm from 'node:vm';
 import {transformSync} from 'esbuild';
 test('production distant knight defeat clears only the current trial guide, including rematches',()=>{
  const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
- const start=source.indexOf('  onKill(id) {'),end=source.indexOf('  onPlayerDefeated()',start);
+ const start=source.indexOf('  onKill(id) {'),end=source.indexOf('\n  on',start+1);
  const body=source.slice(start,end).trim().replace(/^onKill\(/,'function onKill(').replace(/,$/,'');
  assert.ok(body.includes('optionalPin'));
  const context=vm.createContext({optionalPin:{...pin,kind:'trial',region:'britain'},hudRevision:0,audio:{kill(){}},save(){},applyWorldState(){}});
