@@ -17,7 +17,7 @@ export const CHARACTER_KITS = {
   },
   musashi: {
     id: 'musashi', defaultState: 'idle', rootMotion: 'in-place',
-    assetUrl: new URL('../../../assets/characters/musashi/Musashi_Runtime.glb.gz', import.meta.url).href,
+    assetUrl: new URL('../../../assets/characters/musashi/remaster_v2/Musashi_Runtime.glb.gz', import.meta.url).href,
     clips: {
       idle: { name: 'Idle', duration: 3, loop: true },
       walk: { name: 'Walk', duration: 32 / 30, loop: true, nominalSpeed: .7488 },
