@@ -54,3 +54,19 @@ The corrected cavalry camera passes independent normal and reduced actual-input 
 Saber revision 2 normal X positively loads `Saber_R3_Crown_Strands`, `Saber_R3_Layered_Breast_Keel` and the 1.412 blade calibration. Damage and recovery pass with identical runtime/asset hashes before/after. Mid-charge and pre-hit release are intentional facial close-ups: Face/hair/crown remain entirely within both aspects, while lower body/sword cropping is recorded, not falsely classified as a full-body framing defect. Late charge includes the whole actor/sword. Numerical framing cannot prove effects do not obscure the face.
 
 The projection helper now filters actual index/drawRange/material-group references (including a positive undrawn-vertex regression), rather than treating unused attribute vertices as rendered geometry. Earlier all-attribute reports remain conservative diagnostics and are retained unchanged. The current driver also asserts actual stage reduced-state, records phase progress, samples post-contact release, and rejects Y/T source swapping/refunds during the paid cast.
+
+## All new model resource/outfit gate (15:02 UTC)
+
+With final captain garments `375eaea`, Saber revision 2 and Musashi v5 loaded, the independent main test passes 12 warm roster cycles plus rapid switching, actual outfit UI armor→civilian→armor with positive different geometry and exact returned armor signature, recall/legacy save reload, BFCache preservation and exactly-once final disposal of all 237 attached geometry/material resources. The initial added outfit assertion mistakenly referenced an unexposed debug field; it was replaced with the actual DOM dialog's `open` property. The failed fixture log remains intact.
+
+| Actor | Geometries | Materials | Textures | Triangles | Attached backing bytes |
+|---|---:|---:|---:|---:|---:|
+| Saber armor |32|31|6|917,370|29,562,424|
+| Blackbeard |39|36|7|407,633|17,477,712|
+| Napoleon/horse |35|34|10|353,188|13,446,316|
+| Musashi |15|15|7|203,994|7,440,942|
+| Total |121|116|28|1,882,185|67,927,394|
+
+Versus identically counted f6 actor graphs: **+18 geometries, +18 materials, unchanged 28 textures/262 bones, +10,053 triangles and +896,818 backing bytes**. Saber civilian separately loads 77,648 triangles and 3,263,884 backing bytes. This is an added-content budget, not an FPS/VRAM/process-memory claim.
+
+One earlier Musashi input process was reported `Killed` by the shell before X and produced no final JSON; cause was not established. It is inconclusive, not a passing run or a product assertion failure. Log and a small process-result receipt are retained. Subsequent runs use exclusive render-gate admission, and ordinary checkpoints record numeric RSS/heap/external/ArrayBuffer counters only (no raw heap/environment dumps).
