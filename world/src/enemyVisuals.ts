@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {createEchoWardenVisual} from './echoWardenVisual';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -40,7 +41,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -77,6 +78,7 @@ export class EnemyVisuals {
 
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
+    instance.insignia?.dispose();
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
     instance.root.traverse(o => { if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
@@ -103,7 +105,7 @@ export class EnemyVisuals {
         if (o instanceof THREE.SkinnedMesh) o.frustumCulled = false;
       });
       parent.add(root);
-      instance = { root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
+      instance = { insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
@@ -137,6 +139,7 @@ export class EnemyVisuals {
     } else if (instance.action) instance.action.paused = false;
     instance.mixer.update(Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0);
     instance.acting.update(e);
+    instance.insignia?.update(e);
     return true;
   }
   dispose() {

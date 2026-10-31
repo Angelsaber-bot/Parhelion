@@ -23,3 +23,9 @@ Both phases of all three attacks allow a 5.5 m/s walking dodge after a 0.3 s rea
 ## Verification
 
 179 focused combat/boss/enemy/story tests passed, including actual-main DOM execution of both False Dawn routes. Dedicated ownership tests repeat 30 start/cancel/retry cycles, reject stale IDs, and complete an asynchronous old-model load after cancellation and same-encounter restart. These are deterministic/CPU/DOM checks, not a browser render or balanced full real-time playthrough. Root integration owns the final aggregate check and main narrative flow.
+
+## Echo Warden identity (05:55 UTC)
+
+The new Warden alone receives three back-mounted signal vanes attached to the native chest rig. They are decorative, not targetable weak points: no collision meshes, point lights, stats, native material changes or independent animation clocks. Half-health stance break opens their silhouette and switches cyan inlay to amber; an active tell adds a small constant emissive edge. Ordinary guards retain their original appearance.
+
+Budget: six opaque meshes, 72 added triangles, two shared BoxGeometries (1,680 attribute/index bytes) and two private materials, released synchronously and once on death, cancel, LOD replacement or world disposal. Pure paused-repeat, original-resource identity and exact disposal tests pass. Actual runtime CPU snapshots are `artifacts/warden-visual-v2-renders/echo-warden-phase{1,2}-*.png`; first floating-looking placement was lowered to the shoulder/back before acceptance. These are offline CPU images, not browser/GPU evidence.

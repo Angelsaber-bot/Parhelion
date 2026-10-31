@@ -8,6 +8,7 @@ import { WorldCombatState, enemyAttackTiming } from '../../src/combat.ts';
 import { ENEMY_WEAPON_HAND, measureEnemyWeaponAxis } from '../../src/enemyAttackActing.ts';
 import { enemyAttackPose } from '../../src/enemyAttackPresentation.ts';
 import { parseLocalGlb } from '../player-fixture.ts';
+const warden=process.argv.includes('--warden');
 const out = path.resolve(process.argv[2] ?? '../artifacts/enemy-contact-sequence');
 const models = (process.argv[3]?.split(',') ?? ['ashigaru','samurai','officer','sunward_guard','deck_raider','musketeer']) as EnemyModel[];
 await mkdir(out, { recursive: true });
@@ -15,6 +16,7 @@ for (const model of models) {
   const url = new URL(`../../public/assets/enemies/${model}.glb`, import.meta.url), asset = fileURLToPath(url);
   const gltf = await parseLocalGlb(url), visuals = new EnemyVisuals(); (visuals as any).cache.set(model, gltf);
   const enemy = new WorldCombatState([{ id: model, kind: 'shade', p: { x: 0, y: 0, z: 0 }, role: model === 'ashigaru' ? 'lancer' : model === 'musketeer' ? 'musketeer' : model === 'sunward_guard' || model === 'officer' ? 'breaker' : 'duelist' }], []).enemies[0];
+  if(warden){enemy.storyPattern='echo-warden';enemy.maxHp=enemy.hp=264;enemy.phase=process.argv.includes('--phase2')?2:1;}
   enemy.active = true; enemy.attackCount = 1; enemy.contactSequence = 1;
   const parent = new THREE.Group(), fallback = new THREE.Group(), timing = enemyAttackTiming(enemy);
   const sequence = Number(process.argv.find(value => value.startsWith('--frames='))?.slice(9) ?? 0);
@@ -39,10 +41,11 @@ for (const model of models) {
     const pelvisShift = pelvisPos.clone().sub(actor.getObjectByName('pelvis')!.getWorldPosition(new THREE.Vector3())).toArray();
     instance.acting.update(enemy); parent.updateWorldMatrix(true,true);
     const metrics = {footDrift:drift,pelvisShift,bladeDirection};
-    const id = `${model}-${label}`, meshes: any[] = [], point = new THREE.Vector3();
+    const id = `${warden?'echo-warden-phase'+enemy.phase:model}-${label}`, meshes: any[] = [], extraMaterials: Record<string,unknown>={}, point = new THREE.Vector3();
     parent.traverse(object => {
       if (!(object instanceof THREE.Mesh)) return; const mesh = object;
       if (mesh instanceof THREE.SkinnedMesh) mesh.skeleton.update();
+      for(const material of [mesh.material].flat()){if(material.name.startsWith('EchoWarden')&&material instanceof THREE.MeshStandardMaterial)extraMaterials[material.name]={color:material.color.toArray(),emissive:material.emissive.toArray(),emissiveIntensity:material.emissiveIntensity,metalness:material.metalness,roughness:material.roughness};}
       const count = mesh.geometry.attributes.position.count, positions = new Float32Array(count * 3), uvs = new Float32Array(count * 2), colors = new Float32Array(count * 4);
       for (let i = 0; i < count; i++) {
         mesh.getVertexPosition(i, point).applyMatrix4(mesh.matrixWorld); positions.set(point.toArray(), i * 3);
@@ -54,7 +57,7 @@ for (const model of models) {
       meshes.push({ name: mesh.name, file, count, indices: indices.length, groups: mesh.geometry.groups, materials: [mesh.material].flat().map(m => m.name), data });
     });
     for (const mesh of meshes) { await writeFile(path.join(out, mesh.file), mesh.data); delete mesh.data; }
-    await writeFile(path.join(out, `${id}.json`), JSON.stringify({ id, asset, label, metrics, state: { mode, timer }, pose: enemyAttackPose(enemy, model), framing: { center: [0, 1.1, .3], size: model === 'ashigaru' ? 3.7 : 3.2 }, meshes }));
+    await writeFile(path.join(out, `${id}.json`), JSON.stringify({ id, asset, label, metrics, extraMaterials, state: { mode, timer }, pose: enemyAttackPose(enemy, model), framing: { center: [0, 1.1, .3], size: model === 'ashigaru' ? 3.7 : 3.2 }, meshes }));
   }
   visuals.dispose(); console.log(`exported ${model}: 6 actual runtime poses`);
 }

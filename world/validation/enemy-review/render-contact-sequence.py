@@ -19,6 +19,8 @@ for filename in sorted(os.listdir(source)):
     bpy.ops.import_scene.gltf(filepath=asset)
     materials={m.name:m for m in bpy.data.materials}
     for obj in list(bpy.data.objects): bpy.data.objects.remove(obj,do_unlink=True)
+    for name,item in manifest.get('extraMaterials',{}).items():
+        material=bpy.data.materials.new(name);material.use_nodes=True;node=material.node_tree.nodes.get('Principled BSDF');node.inputs['Base Color'].default_value=tuple(item['color'])+(1,);node.inputs['Metallic'].default_value=item['metalness'];node.inputs['Roughness'].default_value=item['roughness'];node.inputs['Emission Color'].default_value=tuple(item['emissive'])+(1,);node.inputs['Emission Strength'].default_value=item['emissiveIntensity'];materials[name]=material
     objects=[]
     for entry in manifest['meshes']:
         raw=open(os.path.join(source,entry['file']),'rb').read();n=entry['count'];indices=entry['indices']
