@@ -7,7 +7,8 @@ interface Body {
   swimming: boolean; gliding: boolean; inUpdraft: boolean; flying: boolean;
 }
 /** Tiny geometric contact recovery, NOT airborne/coyote permission. Player calls
- * only after a prior-grounded admitted evade loses contact in this physics step.
+ * only after a prior-grounded admitted evade/melee/skill loses contact in this
+ * physics step. The legacy class name is retained for existing diagnostics.
  * At most one downward ray pass and one existing capsule solve. Saved vectors
  * are reused; no mesh/resource/gameplay-clock allocation or timer alteration.
  */
