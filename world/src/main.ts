@@ -321,6 +321,9 @@ addEventListener('pagehide', event => { if (!event.persisted) traversalRepairs.d
 const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
+// Merged BVHs own copied buffers. Release construction-only arrays without
+// disposing source geometry that other authored systems may still reference.
+staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
