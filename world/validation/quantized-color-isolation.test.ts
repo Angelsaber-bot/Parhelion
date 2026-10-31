@@ -28,3 +28,12 @@ test('quantized shared mesh clones isolate authored colors and transforms',()=>{
   ac.setX(0,1);assert.equal(bc.getX(0),0,'one transformed mesh cannot recolor another');
  }
 });
+
+test('terrain grid consumes normalized packed colors through accessors without mutating source',async()=>{
+ const {WorldGrid}=await import('../src/grid');
+ const source=new Uint8Array([0,128,255,19,255,64,0,23,1,2,3,29,64,128,192,31]);
+ const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,2,1,0,0,2,2,2,3,2],3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute([0,1,0,0,1,0,0,1,0,0,1,0],3));geometry.setAttribute('color',new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(source,4),3,0,true));
+ const expanded=geometry.clone(),floats=new Float32Array(12),color=geometry.attributes.color;for(let i=0;i<4;i++)for(let c=0;c<3;c++)floats[i*3+c]=color.getComponent(i,c);expanded.setAttribute('color',new THREE.BufferAttribute(floats,3));
+ const before=source.slice(),packedGrid=new WorldGrid([new THREE.Mesh(geometry)],0,0,2,2),floatGrid=new WorldGrid([new THREE.Mesh(expanded)],0,0,2,2);
+ assert.deepEqual(packedGrid.col,floatGrid.col);assert.deepEqual(packedGrid.h,floatGrid.h);assert.deepEqual(packedGrid.ny,floatGrid.ny);assert.deepEqual(source,before);
+});
