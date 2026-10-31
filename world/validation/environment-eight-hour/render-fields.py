@@ -3,6 +3,9 @@ import bpy, json, sys, os, math
 import numpy as np
 from mathutils import Vector
 arguments=sys.argv[sys.argv.index('--')+1:];source,out=arguments[:2];views=arguments[2].split(',') if len(arguments)>2 else None;regions=arguments[3].split(',') if len(arguments)>3 else None
+shadow_mode=arguments[4] if len(arguments)>4 else 'runtime'
+assert shadow_mode in ['runtime','candidate','studio']
+print('SHADOW_REVIEW_MODE',shadow_mode,flush=True)
 os.makedirs(out,exist_ok=True)
 for region in ['alpha','blacksail','winter']:
  if regions and region not in regions:continue
@@ -30,6 +33,9 @@ for region in ['alpha','blacksail','winter']:
    for poly in mesh.polygons[group['start']//3:(group['start']+group['count'])//3]:poly.material_index=group['materialIndex']
   layer=mesh.color_attributes.new(name='RuntimeColor',type='FLOAT_COLOR',domain='POINT');rgba=np.ones((len(colors),4));rgba[:,:3]=colors;layer.data.foreach_set('color',rgba.reshape(-1).tolist())
   obj=bpy.data.objects.new(entry['name'],mesh);bpy.context.collection.objects.link(obj)
+  if shadow_mode!='studio':
+   if 'runtimeCastShadow' not in entry:raise ValueError('Re-export geometry with runtime shadow metadata before property-faithful review')
+   obj.visible_shadow=entry['runtimeCastShadow'] or (shadow_mode=='candidate' and entry.get('candidateFieldCaster',False))
  scene=bpy.context.scene;scene.world=bpy.data.worlds.new('Review sky');scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs['Color'].default_value=(.32,.4,.55,1);scene.world.node_tree.nodes['Background'].inputs['Strength'].default_value=.6
  for l in manifest.get('lights',[]):
   ld=bpy.data.lights.new('Authored practical','POINT');ld.energy=l['intensity']*10;ld.color=l['color'];lo=bpy.data.objects.new('Authored practical',ld);scene.collection.objects.link(lo);lo.location=(l['position'][0],-l['position'][2],l['position'][1])

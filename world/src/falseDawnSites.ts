@@ -26,16 +26,6 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   const art=new SiteArt(),origin=FALSE_DAWN_CENTERS[region],sockets:Marker[]=[],spawnPoints:V3[]=[],foundationSupports:{x:number;z:number;bottom:number;groundMin:number;top:number}[]=[];
   const y=(x:number,z:number)=>ground(region,origin[0]+x,origin[2]+z)-origin[1];
   const marker=(id:string,label:string,x:number,z:number)=>{const m:Marker={id,type:'interact',label,p:[origin[0]+x,ground(region,origin[0]+x,origin[2]+z)+.9,origin[2]+z],radius:2.4};sockets.push(m);return m;};
-  function cover(x:number,z:number,kind:'cargo'|'snow'){
-   const h=y(x,z),wood=kind==='cargo'?'#796249':'#87949c',trim=kind==='cargo'?'#455b60':'#d9e2e4';
-   art.box([x,h+.7,z],[2.6,1.4,1.4],wood,true);
-   for(const dx of[-1.15,1.15])art.box([x+dx,h+.7,z],[.13,1.46,1.5],trim);
-   for(const dy of[.15,1.25])art.box([x,h+dy,z+.73],[2.7,.1,.08],trim);
-   if(kind==='cargo'){art.beam([x-1.1,h+.22,z+.78],[x+1.1,h+1.18,z+.78],.09,'#c0a77c');art.paper(x,h+1.425,z,.55,.4);}
-   else{art.box([x,h+1.45,z],[2.85,.16,1.65],'#e8edef');for(const dx of[-1.1,1.1])art.box([x+dx,h+.55,z+.83],[.34,1.1,.18],'#b5c5ce');}
-  }
-  if(region==='alpha'){
-   const metal='#566b76',light='#c3d0cf',brass='#c1a06b',ink='#344c59';
    // Cut-stone and enamel housings use real chamfers, sharing the existing batches.
    function chamfer(p:V3,size:V3,color:string,solid=false,rotation:V3=[0,0,0]){
     const [w,h,d]=size,b=Math.min(.075,w*.12,h*.12,d*.12),shape=new THREE.Shape();
@@ -46,6 +36,19 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
     const bottom=Math.min(...[-1,1].flatMap(sx=>[-1,1].map(sz=>y(p[0]+sx*size[0]/2,p[2]+sz*size[2]/2))))-.10,top=p[1]+size[1]/2;
     chamfer([p[0],(top+bottom)/2,p[2]],[size[0],top-bottom,size[2]],color,true);foundationSupports.push({x:p[0],z:p[2],bottom,groundMin:bottom+.10,top});
    }
+  function cover(x:number,z:number,kind:'cargo'|'snow'){
+   const h=y(x,z),wood=kind==='cargo'?'#796249':'#87949c',trim=kind==='cargo'?'#455b60':'#d9e2e4';
+   footing([x,h+.7,z],[2.6,1.4,1.4],wood);
+   for(const dx of[-1.15,1.15])art.box([x+dx,h+.7,z],[.13,1.46,1.5],trim);
+   for(const dy of[.15,1.25])art.box([x,h+dy,z+.73],[2.7,.1,.08],trim);
+   // Slatted shipment containers, with structural bands and a readable lower plinth.
+   for(let i=0;i<6;i++){const yy=h+.19+i*.20;art.box([x,yy,z+.713],[2.45,.018,.027],kind==='cargo'?'#514b3e':'#697b87');for(const side of[-1,1])art.box([x+side*1.312,yy,z],[.025,.018,1.34],kind==='cargo'?'#a48a63':'#a4b5bd');}
+   for(const side of[-1,1]){art.box([x+side*.63,h+.72,z+.74],[.075,1.32,.045],trim);art.box([x+side*.63,h+1.415,z],[.075,.045,1.38],trim);for(const yy of[.23,1.17])art.cyl([x+side*.63,h+yy,z+.77],.035,.025,kind==='cargo'?'#c6b180':'#d8e2df',false,'metal',[Math.PI/2,0,0]);}
+   if(kind==='cargo'){art.beam([x-1.1,h+.22,z+.78],[x+1.1,h+1.18,z+.78],.09,'#c0a77c');art.paper(x,h+1.425,z,.55,.4);}
+   else{art.box([x,h+1.45,z],[2.85,.16,1.65],'#e8edef');for(const dx of[-1.1,1.1])art.box([x+dx,h+.55,z+.83],[.34,1.1,.18],'#b5c5ce');}
+  }
+  if(region==='alpha'){
+   const metal='#566b76',light='#c3d0cf',brass='#c1a06b',ink='#344c59';
    // Buried calibration paving follows the real slope, never a floating combat platform.
    function groundBand(points:[number,number][],width:number,color:string,layer:'body'|'glow'|'briefed'|'choiceA'|'choiceB'='body',lift=.025){
     for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(!length)continue;const sx=-dz/length*width/2,sz=dx/length*width/2,ps=[[a[0]+sx,a[1]+sz],[a[0]-sx,a[1]-sz],[b[0]-sx,b[1]-sz],[b[0]+sx,b[1]+sz]];
@@ -135,24 +138,51 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
    for(const s of[-1,1]){art.beam([x+s*1.5,h,z-.3],[x+s*.9,h+1.2,z-.65],.16,wood,true);art.beam([x+s*.9,h+1.2,z-.65],[x+s*.5,h+2.35,z-.95],.12,wood);}
    art.box([x,h+.86,z],[2.2,.15,1.2],wood,true);
    for(const xx of[-.85,.85])art.box([x+xx,h+.38,z],[.15,.76,.9],iron,true);
-   art.box([x,h+1.2,z-.1],[1.2,.55,.5],iron,true);art.ring([x,h+1.22,z+.17],.19,.035,brass);
+   art.box([x,h+1.2,z-.1],[1.2,.55,.5],iron,true);
    art.cyl([x+1.15,h+2,z-.8],.065,4,wood,true);art.beam([x+.55,h+3.5,z-.8],[x+1.75,h+3.5,z-.8],.065,wood);
    art.lantern(x+1.15,h+2.92,z-.8,iron);
    for(const xx of[.78,1.52])art.box([x+xx,h+2.95,z-.83],[.27,.54,.055],'#7f9487');
    art.paper(x-.7,h+.97,z,.65,.75);
-   art.box([x,h+1.23,z+.17],[.22,.12,.035],'#dae3ad',false,'resolved');
+   // Salvaged sail shelter keeps the receiver dry; legs stay behind the clear front socket.
+   for(const side of[-1,1]){const px=x+side*2.7,pz=z-.9,ph=y(px,pz);art.cyl([px,ph+1.55,pz],.085,3.1,wood,true);for(const yy of[.3,2.5])art.cyl([px,ph+yy,pz],.105,.10,brass,false,'metal');art.beam([px,ph+2.45,pz],[px,h+2.68,pz+.55],.08,wood);}
+   art.beam([x-2.8,h+3,z-.9],[x+2.8,h+3,z-.9],.16,wood);for(const side of[-1,1])art.beam([x+side*2.7,h+2.35,z-.9],[x+side*1.95,h+3,z-.9],.10,wood);
+   for(let strip=0;strip<5;strip++){
+    const xx=x-2.8+strip*1.12;art.box([xx+.56,h+2.77,z+.05],[1.125,.045,2.06],strip%2?'#b7b29a':'#c6c0a7',false,'body',[.21,0,0]);art.beam([xx,h+3,z-.9],[xx,h+2.56,z+1.05],.025,'#7b7968');
+   }
+   chamfer([x,h+1.2,z-.1],[1.25,.58,.54],iron);art.box([x,h+1.22,z+.19],[.88,.35,.03],'#293e46');art.ring([x-.22,h+1.22,z+.22],.13,.03,brass);
+   for(let i=0;i<3;i++)art.box([x+.18+i*.10,h+1.22,z+.23],[.035,.19,.025],'#9cac9e');
+   for(const side of[-1,1]){art.box([x+side*.63,h+1.2,z-.1],[.025,.40,.055],brass);art.beam([x+side*1.05,h+.8,z+.45],[x+side*.8,h+.25,z+.45],.08,wood);}
+   for(const xx of[-.7,.65]){art.cyl([x+xx,h+.99,z+.35],.15,.07,'#bba677',false,'metal');art.cyl([x+xx,h+1.03,z+.35],.095,.035,wood);}
+
+   art.box([x+.40,h+1.43,z+.25],[.22,.08,.025],'#dae3ad',false,'resolved');
    marker('false_dawn_harbor_console','截断港口回声',x,z+1.2);cover(-6,3,'cargo');cover(6,3,'cargo');
   }else{
    const x=-4,z=-5,h=y(x,z),wood='#7b6d5c',cloth='#cfc8b1',blue='#637e92';
    // Triangular relay wind shelter: no sealed walls or roofed combat box.
    for(const s of[-1,1]){art.beam([x+s*1.8,h,z-1],[x,h+3.3,z-1],.13,wood,true);art.beam([x+s*1.8,h,z+1],[x,h+3.3,z+1],.13,wood,true);}
    art.beam([x,h+3.3,z-1.2],[x,h+3.3,z+1.2],.14,wood,true);
-   art.box([x-1,h+1.7,z],[3.8,.06,2.5],cloth,false,'body',[0,0,-1.04]);
+   for(let strip=0;strip<4;strip++){
+    const zs=[z-1.24+strip*.62,z-1.24+(strip+1)*.62],positions:number[]=[],indices:number[]=[];
+    for(let i=0;i<=4;i++)for(const zz of zs){const u=i/4;positions.push(x-u*1.84,h+3.3*(1-u)-Math.sin(u*Math.PI)*.13,zz);}
+    for(let i=0;i<4;i++){const a=i*2;indices.push(a,a+1,a+3,a,a+3,a+2,a,a+3,a+1,a,a+2,a+3);}
+    const clothGeo=new THREE.BufferGeometry();clothGeo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));clothGeo.setIndex(indices);const clothFaces=clothGeo.toNonIndexed();clothFaces.computeVertexNormals();art.add(clothFaces,strip%2?'#c6c0aa':cloth,[0,0,0]);clothFaces.dispose();clothGeo.dispose();
+    art.beam([x,h+3.32,zs[0]],[x-1.84,h+.02,zs[0]],.025,'#a19b87');
+   }
+   for(const zz of[z-1,z+1]){for(const xx of[x-1.8,x+1.8]){const gy=y(xx,zz);art.cyl([xx,gy+.12,zz],.12,.35,'#68767a');}art.beam([x-1.8,h+.15,zz],[x-2.45,y(x-2.45,zz)+.08,zz],.028,'#9b8b6c');}
+
    for(const yoff of[.35,.75,1.15])art.box([x,h+yoff,z-1.05],[2.9,.26,.12],wood,true);
    art.box([x,h+.65,z],[1.5,1.3,.65],blue,true);art.ring([x,h+1.1,z+.35],.25,.045,'#c5b58b');
    art.box([x,h+.5,z+.34],[.65,.24,.03],'#c7d6d8');
+   chamfer([x,h+.1,z],[1.68,.20,.82],'#536c7c');
+   art.box([x,h+1.12,z+.375],[.8,.56,.035],'#364d5c');art.ring([x,h+1.1,z+.405],.25,.045,'#c5b58b');
+   for(const xx of[-.55,.55]){art.box([x+xx,h+.7,z+.35],[.045,.94,.035],'#a6b5b7');for(let i=0;i<4;i++)art.box([x+xx*1.38,h+.35+i*.15,z],[.025,.04,.45],'#3d5461');}
+   for(const dx of[-.23,0,.23])art.cyl([x+dx,h+.5,z+.39],.045,.03,'#b9ae86',false,'metal',[Math.PI/2,0,0]);
+   // Supply sled behind the relay: runners and lashed bedroll, not a new loot container.
+   const sz=z-2.4,sy=y(x,sz);for(const dx of[-.55,.55]){art.beam([x+dx,sy+.12,sz-.8],[x+dx,sy+.12,sz+.8],.12,wood);art.beam([x+dx,sy+.12,sz+.8],[x+dx,sy+.4,sz+1],.12,wood);}
+   for(const zz of[-.65,0,.65])art.box([x,sy+.26,sz+zz],[1.3,.15,.18],'#998675');art.cyl([x,sy+.57,sz],.27,1.13,'#8c9a99',false,'body',[0,0,Math.PI/2]);for(const dx of[-.38,.38])art.box([x+dx,sy+.59,sz],[.07,.55,.56],'#6b665a');
+
    art.cyl([x+.65,h+1.55,z-.7],.055,3.1,wood,true);art.ring([x+.65,h+2.9,z-.7],.32,.04,blue);
-   art.box([x,h+.5,z+.38],[.54,.07,.025],'#d3dfac',false,'resolved');
+   art.box([x,h+.78,z+.40],[.54,.07,.025],'#d3dfac',false,'resolved');
    marker('false_dawn_winter_console','守住雪原中继',x+.1,z+1.4);cover(-6,3,'snow');cover(6,3,'snow');
    // A genuine tactical rest point uses the existing cold system, not a healing reward.
    const bx=-7.2,bz=-4.6,bh=y(bx,bz);

@@ -120,3 +120,34 @@ not a new light/material/draw-call allowance. Remote fields are unchanged. Compa
 player-height `environment/false-dawn-v3/renders/alpha-battle.png` with
 `environment/false-dawn-v7/renders/alpha-battle.png`; matching detail views accompany
 them. Runtime GPU lighting/FPS remain outside these CPU geometry reviews.
+
+### Remote relay craft pass
+
+Harbor now has a braced salvage-sail shelter, banded/slatted shipment containers,
+receiver grille/dials and cable spools. Snow relay canvas follows sewn, gently sagged
+panels instead of one rigid tilted board; its supply sled carries a lashed bedroll.
+The two established cover volumes keep their positions and heights, with base depth
+extended below the low-side terrain. No new markers, actors, loot or mandatory gates.
+
+Production walking caught an initial harbor awning support in the old ship-rib
+approach's swept path. Supports were moved outside that route, not made intangible;
+all three road approaches, seven interactions, nine actor sockets and the warm rest
+pass again. Batches remain four per remote field, three shared materials, no lights.
+Harbor: 2,436 triangles / 321,552 render bytes. Winter: 2,622 / 346,104.
+Current-property shadow review frames: `environment/false-dawn-remote-v7/renders/`
+contains player-height harbor/winter views. Completion indicators are tested by a
+front-face ray so new instrument trim cannot hide them.
+
+### Shadow review caveat and explicit comparison
+
+Earlier Cycles frames used studio shadowing on all exported objects. The runtime
+SiteArt contract remains `castShadow=false`, so those frames must not be described
+as matching runtime illumination. The exporter now records actual field flags and
+main's original-map caster policy. The renderer defaults to `runtime` shadow-ray
+visibility and fails clearly on old manifests without metadata; `studio` is explicit.
+`candidate` enables only the field's static body/metal batches for comparison.
+
+Same-camera evidence: `environment/field-shadow-review/off/alpha-battle.png` versus
+`on/alpha-battle.png`. This tests the visual value of those flags under Cycles lighting,
+not PCF shadow-map resolution, WebGL material parity, frame rate or GPU cost. Enabling
+normal-quality, near-field casting remains a separate integration/art decision.

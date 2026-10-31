@@ -5,7 +5,7 @@ test('False Dawn coordinate data has no runtime renderer dependency',()=>{const 
 test('False Dawn props fit audited footprints and strict material/mesh/triangle budgets',()=>{
  const scene=createFalseDawnSites();assert.equal(scene.sites.length,3);assert.equal(scene.markers.length,8);assert.equal(new Set(scene.markers.map(m=>m.id)).size,8);assert.equal(scene.markers.filter(m=>m.type==='interact').length,7);
  for(const s of scene.sites){let triangles=0,meshes=0;const materials=new Set<THREE.Material>();s.root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(s.root);assert.ok(b.min.x>=s.origin[0]-9&&b.max.x<=s.origin[0]+9);assert.ok(b.min.z>=s.origin[2]-9&&b.max.z<=s.origin[2]+9);
-  s.root.traverse(o=>{assert.ok(!(o instanceof THREE.Light));if(!(o instanceof THREE.Mesh))return;meshes++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;assert.equal(o.castShadow,false);materials.add(o.material as THREE.Material);assert.equal((o.material as THREE.MeshStandardMaterial).map,null);for(const a of Object.values(o.geometry.attributes))for(const v of a.array)assert.ok(Number.isFinite(v));});
+  s.root.traverse(o=>{assert.ok(!(o instanceof THREE.Light));if(!(o instanceof THREE.Mesh))return;meshes++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;assert.equal(o.castShadow,false);materials.add(o.material as THREE.Material);assert.equal((o.material as THREE.MeshStandardMaterial).map,null);for(const a of Object.values(o.geometry.attributes))for(const v of a.array)assert.ok(Number.isFinite(v));const normals=o.geometry.attributes.normal;for(let i=0;i<normals.count;i++)assert.ok(Math.hypot(normals.getX(i),normals.getY(i),normals.getZ(i))>.8,'opposing canvas sides must not cancel their normals');});
   assert.ok(meshes<=FALSE_DAWN_SITE_LIMITS.meshesPerField);assert.ok(triangles<FALSE_DAWN_SITE_LIMITS.trianglesPerField);assert.ok(materials.size<=FALSE_DAWN_SITE_LIMITS.materialsPerField);assert.equal(s.spawnPoints.length,3);
  }scene.dispose();
 });
@@ -56,4 +56,11 @@ test('settled service court is front-facing from the player side without enablin
  const ray=new THREE.Raycaster(new THREE.Vector3(alpha.origin[0]+2,10,alpha.origin[2]+1),new THREE.Vector3(0,-1,0));
  const hits=ray.intersectObject(alpha.root,true);assert.ok(hits.some(h=>Math.abs(h.point.y-3.018)<.005),'upward-facing service court tile must render from above');
  alpha.root.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])assert.equal(m.side,THREE.FrontSide);});fields.dispose();
+});
+
+test('remote completion indicators remain in front of instrument face detailing',()=>{
+ const fields=createFalseDawnSites(()=>3);fields.root.updateMatrixWorld(true);
+ for(const [region,route]of[['blacksail','harbor'],['winter','winter']]as const){fields.applyState({stage:'complete',anchors:[true,true,true],ending:'repurpose',route});const site=fields.sites.find(s=>s.region===region)!,indicator=site.art.layers.get('resolved')!,center=new THREE.Box3().setFromObject(indicator).getCenter(new THREE.Vector3());
+  const ray=new THREE.Raycaster(center.clone().add(new THREE.Vector3(0,0,1)),new THREE.Vector3(0,0,-1),0,1.1),hits=ray.intersectObject(site.root,true);assert.equal(hits[0]?.object,indicator,`${region} completion cue hidden behind new housing`);
+ }fields.dispose();
 });
