@@ -79,3 +79,22 @@ Actual runtime geometry triangles per added resident: 6,182 / 6,242 / 5,826 / 6,
 5,666. `settlement-npcs.test.ts` checks six batches each, unique occupation geometry,
 human scale and finite matrices after 600 updates. Actual mesh review is
 `environment/campaign-residents/residents.png` in the sibling evidence directory.
+
+### Resident profile and acting refinement
+
+Residents now have narrower eye openings/highlights, less protruding necks and
+profiled belt/robe bands. Campaign hair silhouettes use rounded locks rather than
+identical pointed fringes; Ada retains silver hair and a tied-back bun, without the
+initial beard that contradicted her narrative identity. Her mantle is a draped
+collar instead of two round shoulder pads. Work props remain parented to the arm.
+
+Readers occasionally glance down and lift their notes slightly; keepers make small
+head-first scanning motions. Work attention eases out when the player approaches.
+Dialogue gestures are reduced for the five campaign residents to avoid rigid-arm
+waving. All motion still stops outside 24 m, geometry is never rebuilt during
+updates, and actors remain six batches sharing one material. Seven resident tests
+include a 900-frame bounded-work/gesture check, resource identity and far freeze.
+Final profile geometry is reviewed in sibling evidence
+`environment/campaign-residents-v4/residents.png` and `faces.png` using the committed
+`render-residents.py` CPU tool. This is geometry/offline-lighting evidence, not a
+runtime animation or GPU capture. Campaign actors range from 5,884 to 7,008 triangles.

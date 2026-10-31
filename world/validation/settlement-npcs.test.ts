@@ -35,3 +35,12 @@ test('campaign residents have distinct work silhouettes within the existing six-
  residents.group.updateMatrixWorld(true);for(const person of residents.group.children){const bounds=new THREE.Box3().setFromObject(person);assert.ok(bounds.max.y-bounds.min.y<2,'human-scaled work clothing');person.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));}
  residents.dispose();
 });
+
+test('campaign work idles stay bounded, preserve rigid props and freeze outside animation range',()=>{
+ const sockets=CAMPAIGN_REGIONS.map(region=>({id:CAMPAIGN_EPISODES[region].npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:[0,0,0]as[number,number,number],lines:[CAMPAIGN_EPISODES[region].brief]}));
+ const system=createSettlementNpcs(sockets),geometry=new Map<THREE.Mesh,THREE.BufferGeometry>();system.group.traverse(o=>{if(o instanceof THREE.Mesh)geometry.set(o,o.geometry);});
+ let reading=false;for(let i=0;i<900;i++){if(i===200)for(const s of sockets)system.gesture(s.id);system.update(1/60,new THREE.Vector3(0,0,9));for(const p of system.group.children){const head=p.getObjectByName('ResidentHead')!;assert.ok(Math.abs(head.rotation.y)<=.11);assert.ok(Math.abs(head.rotation.x)<=.14);if(head.rotation.x>.08)reading=true;assert.ok(Math.abs(p.getObjectByName('ResidentArmRight')!.rotation.x)<.5);}}
+ assert.ok(reading,'authored readers occasionally glance down at held notes');
+ const rotations=system.group.children.map(p=>p.getObjectByName('ResidentHead')!.rotation.toArray());for(let i=0;i<120;i++)system.update(1/60,new THREE.Vector3(0,0,50));system.group.children.forEach((p,i)=>assert.deepEqual(p.getObjectByName('ResidentHead')!.rotation.toArray(),rotations[i]));
+ for(const[m,g]of geometry)assert.equal(m.geometry,g);system.dispose();
+});
