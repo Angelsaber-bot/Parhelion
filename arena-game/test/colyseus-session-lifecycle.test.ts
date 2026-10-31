@@ -13,7 +13,7 @@ it('LAN drop is terminal and deliberate Leave cannot retain unsupported SDK retr
   const http = createServer(), server = new Server({ transport: new WebSocketTransport({ server: http }), greet: false });
   server.define('arena', TrackedRoom);
   const original = Client.prototype.joinOrCreate;
-  Client.prototype.joinOrCreate = async function(...args: any[]) { const room = await original.apply(this, args as any); sdkRoom = room; return room; } as any;
+  Client.prototype.joinOrCreate = async function(this: Client, ...args: any[]) { const room = await original.apply(this, args as any); sdkRoom = room; return room; } as any;
   const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
   const until = async (predicate: () => boolean) => { const end = Date.now() + 2500; while (!predicate() && Date.now() < end) await wait(10); expect(predicate()).toBe(true); };
   const sessions: Session[] = [];
