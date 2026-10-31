@@ -72,3 +72,9 @@ test('tracked chronicle evidence follows real prerequisites rather than locked c
  }
  const done=new Set(R.map(r=>flags(r).complete));assert.ok(objective('alpha',done)?.line[1].includes('dispatch board'));
 });
+
+test('resident choices stay in character instead of reciting save, gate or inventory rules',()=>{
+ for(const r of R){const d=D[r];for(const line of[d.brief,d.working,d.worked,d.question,d.complete,...d.choices.flatMap(choice=>[choice.response,choice.ending])]){
+ assert.doesNotMatch(line[0],/不会重置|自动解锁|通关条件|消耗你的体温|主线任务/);assert.doesNotMatch(line[1],/save schema|reset your|unlock condition|main.story|consumes your warmth/i);
+ }}
+});
