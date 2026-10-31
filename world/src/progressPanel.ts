@@ -21,26 +21,44 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   result.className = 'settings-note'; result.setAttribute('role', 'status');
   const warning = document.createElement('aside'); warning.id = 'world-save-warning'; warning.hidden = true; warning.setAttribute('role', 'status');
   Object.assign(warning.style, { position: 'fixed', left: '50%', bottom: '18px', transform: 'translateX(-50%)', maxWidth: 'min(520px, 85vw)', padding: '10px 14px', borderRadius: '10px', background: '#362b19ed', color: '#ffe3a5', fontSize: '12px', zIndex: '6', pointerEvents: 'none' });
+  const original = document.createElement('button'); original.type = 'button';
   let disposed = false, readGeneration = 0;
+  const download = (raw: string, name: string) => {
+    const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+    const link = document.createElement('a'); link.href = url; link.download = name;
+    document.body.append(link); link.click(); link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  const failedReplacement = () => { result.textContent = bilingual('未替换存档：存储不可用或存档已被另一页面改动。原数据与本次进度保持不变。', 'Save not replaced: storage failed or another tab changed it. Stored data and session progress are unchanged.'); };
   const render = () => {
     if (disposed) return;
     title.textContent = bilingual('任务存档', 'Quest save'); status.textContent = bilingual(...STATUS[progress.persistence]);
-    retry.textContent = bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
+    if (progress.saveBlocked) status.textContent = bilingual('原存档已受保护，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；普通自动保存不会覆盖原数据。', 'Original save protected; this session is not saved. Download the original and session progress, or explicitly confirm replacement. Autosave will not overwrite the original.');
+    retry.textContent = progress.saveBlocked ? bilingual('用本次进度替换…', 'Replace with session progress…') : bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
     restore.textContent = bilingual('从备份恢复…', 'Restore a backup…');
+    original.textContent = bilingual('下载无法读取的原始存档', 'Download unreadable original save'); original.hidden = progress.exportUnreadableSnapshot() === null;
     retry.hidden = progress.persistence === 'ready' || progress.persistence === 'saved';
     warning.hidden = progress.persistence !== 'failed' && progress.persistence !== 'unavailable' && progress.persistence !== 'invalid';
-    warning.textContent = progress.persistence === 'invalid'
+    warning.textContent = progress.saveBlocked ? bilingual('原存档受保护 · 本次进度尚未保存 · 请到设置备份或恢复', 'Original save protected · Session not saved · Back up or restore in Settings') : progress.persistence === 'invalid'
       ? bilingual('已有存档无法读取 · 请先到设置检查或恢复备份', 'Existing save unreadable · Check Settings or restore a backup before continuing')
       : bilingual('任务尚未保存 · 设置中可重试或下载备份', 'Quest progress is not saved · Retry or back up in Settings');
   };
-  retry.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; progress.save(); });
-  backup.addEventListener('click', event => {
+  retry.addEventListener('click', event => {
     event.stopPropagation(); if (disposed) return;
-    const url = URL.createObjectURL(new Blob([progress.exportSnapshot()], { type: 'application/json' }));
-    const link = document.createElement('a'); link.href = url; link.download = 'parhelion-world-progress.json';
-    document.body.append(link); link.click(); link.remove();
-    // Keep the object URL alive through navigation dispatch, then release it.
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (!progress.saveBlocked) { progress.save(); return; }
+    const expected = progress.captureStoredSnapshot();
+    if (!expected) { failedReplacement(); return; }
+    // A repair prompt for corrupt bytes must not silently adopt a newer tab's save.
+    const originalRaw = progress.exportUnreadableSnapshot();
+    if (originalRaw !== null && expected.raw !== originalRaw) { failedReplacement(); return; }
+    if (!window.confirm(bilingual('用本次页面进度替换原存档并重新载入？建议先下载原始数据与本次进度。个人设置保留。', 'Replace the original save with this session and reload? Download the original and session progress first if needed. Personal settings are kept.')) || disposed) return;
+    if (progress.restoreSnapshot(progress.exportSnapshot(), expected) === 'restored') onRestored();
+    else failedReplacement();
+  });
+  backup.addEventListener('click', event => { event.stopPropagation(); if (!disposed) download(progress.exportSnapshot(), 'parhelion-world-progress.json'); });
+  original.addEventListener('click', event => {
+    event.stopPropagation(); if (disposed) return;
+    const raw = progress.exportUnreadableSnapshot(); if (raw !== null) download(raw, 'parhelion-world-unreadable-original.json');
   });
   restore.addEventListener('click', event => { event.stopPropagation(); if (disposed) return; file.value = ''; file.click(); });
   file.addEventListener('change', async () => {
@@ -51,16 +69,20 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
       if (selected.size > 262144) throw new Error('invalid');
       const raw = await selected.text(); if (disposed || generation !== readGeneration) return;
       if (!parseProgressBackup(raw)) throw new Error('invalid');
+      const expected = progress.captureStoredSnapshot();
+      if (!expected) { failedReplacement(); return; }
+      const originalRaw = progress.exportUnreadableSnapshot();
+      if (progress.saveBlocked && originalRaw !== null && expected.raw !== originalRaw) { failedReplacement(); return; }
       const accepted = window.confirm(bilingual('用这个备份替换当前任务进度并重新载入世界？按键、语言、画质和外观偏好将保留。建议先下载当前进度备份。', 'Replace current quest progress with this backup and reload the world? Controls, language, graphics and cosmetic preferences are kept. Download your current progress first if needed.'));
       if (!accepted || disposed || generation !== readGeneration) return;
-      const outcome = progress.restoreSnapshot(raw);
+      const outcome = progress.restoreSnapshot(raw, expected);
       if (outcome === 'restored') onRestored();
-      else result.textContent = bilingual('恢复未写入，当前任务进度保持不变。', 'Restore was not written; current quest progress is unchanged.');
+      else failedReplacement();
     } catch {
       if (!disposed && generation === readGeneration) result.textContent = bilingual('无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.');
     } finally { if (!disposed && generation === readGeneration) restore.disabled = false; }
   });
-  root.append(title, status, retry, backup, restore, file, result); document.body.append(warning);
+  root.append(title, status, retry, backup, restore, original, file, result); document.body.append(warning);
   const unsubscribe = progress.subscribe(render), locale = onLanguageChange(render); render();
   return { root, dispose() { if (disposed) return; disposed = true; readGeneration++; unsubscribe(); locale(); root.remove(); warning.remove(); } };
 }

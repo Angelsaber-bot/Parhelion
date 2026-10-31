@@ -16,9 +16,11 @@ test('save status distinguishes unavailable, malformed, failed and successful pe
   const states: string[] = []; const unsubscribe = progress.subscribe(() => states.push(progress.persistence));
   assert.equal(progress.save(), false); assert.equal(progress.done.has('episode_one'), true);
   assert.equal(memory.getItem(WORLD_PROGRESS_KEY), '{broken');
-  fails = false; assert.equal(progress.save(), true);
-  assert.deepEqual(states, ['failed', 'saved']);
-  unsubscribe(); progress.save(); assert.equal(states.length, 2);
+  assert.equal(progress.saveBlocked, true);
+  assert.equal(progress.restoreSnapshot(progress.exportSnapshot()), 'unavailable');
+  fails = false; assert.equal(progress.restoreSnapshot(progress.exportSnapshot()), 'restored');
+  assert.deepEqual(states, ['invalid', 'failed', 'saved']);
+  unsubscribe(); progress.save(); assert.equal(states.length, 3);
   assert.equal(new WorldProgress(memory).done.has('episode_one'), true);
 });
 test('download snapshot contains quest flags only, and round-trip restore preserves live set identity and preferences', () => {
@@ -79,4 +81,27 @@ test('a valid legacy region can migrate without deleting an unreadable sibling r
   progress.save(); assert.equal(memory.getItem(bad), '{broken');
   new WorldProgress({ ...memory, removeItem(key) { memory.values.delete(key); } }).save(); assert.equal(memory.getItem(bad), '{broken', 'ordinary saves after reload preserve malformed recovery evidence');
   progress.reset(); assert.equal(memory.getItem(bad), null, 'explicit new game may remove superseded recovery records');
+});
+
+test('ordinary autosaves never overwrite unreadable current bytes before explicit replacement', () => {
+  const memory = storage(), raw = '{important broken original'; memory.setItem(WORLD_PROGRESS_KEY, raw);
+  let writes = 0, blocked = false;
+  const adapter = { ...memory, setItem(key: string, value: string) { writes++; if (blocked) throw new Error('quota'); memory.setItem(key, value); } };
+  const progress = new WorldProgress(adapter); progress.done.add('new_session_work');
+  for (let i = 0; i < 20; i++) assert.equal(progress.save(), false);
+  assert.equal(writes, 0); assert.equal(memory.getItem(WORLD_PROGRESS_KEY), raw); assert.equal(progress.exportUnreadableSnapshot(), raw);
+  blocked = true; const currentSession = progress.exportSnapshot();
+  assert.equal(progress.restoreSnapshot(currentSession), 'unavailable'); assert.equal(progress.saveBlocked, true);
+  assert.equal(memory.getItem(WORLD_PROGRESS_KEY), raw); assert.ok(progress.done.has('new_session_work'));
+  blocked = false; assert.equal(progress.restoreSnapshot(currentSession), 'restored'); assert.equal(progress.saveBlocked, false);
+  assert.equal(progress.exportUnreadableSnapshot(), null); assert.ok(new WorldProgress(memory).done.has('new_session_work'));
+});
+test('explicit new game authorizes replacement retries, while failed initial reads block blind autosave', () => {
+  const memory = storage(); memory.setItem(WORLD_PROGRESS_KEY, '{broken'); let quota = true;
+  const adapter = { ...memory, setItem(key: string, value: string) { if (quota) throw new Error('quota'); memory.setItem(key, value); } };
+  const progress = new WorldProgress(adapter); assert.equal(progress.reset(), false); assert.equal(memory.getItem(WORLD_PROGRESS_KEY), '{broken');
+  quota = false; assert.equal(progress.save(), true); assert.deepEqual(JSON.parse(memory.getItem(WORLD_PROGRESS_KEY)!), { done: [], found: [] });
+  let writes = 0; const inaccessible = new WorldProgress({ getItem() { throw new Error('read denied'); }, setItem() { writes++; } });
+  assert.equal(inaccessible.save(), false); assert.equal(writes, 0); assert.equal(inaccessible.persistence, 'unavailable');
+  assert.equal(inaccessible.restoreSnapshot('{"done":[],"found":[]}'), 'restored'); assert.equal(writes, 1);
 });

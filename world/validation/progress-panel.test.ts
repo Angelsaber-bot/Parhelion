@@ -5,11 +5,12 @@ import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/progress';
 import { createProgressPanel } from '../src/progressPanel';
 import { setLanguage } from '../../shared-client/i18n';
 
-function fixture() {
+function fixture(initialRaw?: string) {
   const previous = new Map(['window', 'document'].map(key => [key, Object.getOwnPropertyDescriptor(globalThis, key)]));
   const dom = new JSDOM('<!doctype html><body></body>', { url: 'https://example.test/' });
   Object.defineProperty(globalThis, 'window', { configurable: true, value: dom.window });
   Object.defineProperty(globalThis, 'document', { configurable: true, value: dom.window.document });
+  if (initialRaw !== undefined) dom.window.localStorage.setItem(WORLD_PROGRESS_KEY, initialRaw);
   const progress = new WorldProgress(dom.window.localStorage); progress.done.add('existing'); progress.save();
   let restored = 0, confirmations = 0, accept = false;
   dom.window.confirm = () => { confirmations++; return accept; };
@@ -96,4 +97,48 @@ test('unreadable-save status is visible before the user opens settings', () => {
     assert.equal(warning.hidden, false); assert.match(warning.textContent!, /Existing save unreadable/);
     f.progress.save(); assert.equal(warning.hidden, true);
   } finally { f.close(); }
+});
+
+
+test('protected current-save repair is explicit, quota-safe and retains an inert exact original download', async () => {
+  const raw = '<script>not executable</script>{broken'; const f = fixture(raw);
+  const oldCreate = URL.createObjectURL, oldRevoke = URL.revokeObjectURL;
+  try {
+    setLanguage('en');
+    assert.equal(f.progress.saveBlocked, true);
+    assert.match(f.panel.root.textContent!, /session is not saved/);
+    assert.equal(f.panel.root.querySelector('script'), null);
+    const [repair,,, original] = [...f.panel.root.querySelectorAll('button')];
+    let blob: Blob | undefined;
+    URL.createObjectURL = value => { blob = value as Blob; return 'blob:original'; };
+    URL.revokeObjectURL = () => {};
+    f.dom.window.HTMLAnchorElement.prototype.click = () => {};
+    original.click(); assert.equal(await blob!.text(), raw);
+    repair.click(); assert.equal(f.confirmations, 1); assert.equal(f.restored, 0);
+    assert.equal(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY), raw);
+    f.accept();
+    const write = f.dom.window.Storage.prototype.setItem;
+    f.dom.window.Storage.prototype.setItem = () => { throw new Error('quota'); };
+    repair.click(); assert.equal(f.restored, 0); assert.equal(f.progress.saveBlocked, true);
+    assert.equal(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY), raw);
+    assert.deepEqual([...f.progress.done], ['existing']);
+    f.dom.window.Storage.prototype.setItem = write;
+    repair.click(); assert.equal(f.restored, 1); assert.equal(f.progress.saveBlocked, false);
+  } finally { URL.createObjectURL = oldCreate; URL.revokeObjectURL = oldRevoke; f.close(); }
+});
+test('a stale corrupt-save confirmation cannot overwrite a newer tab save', async () => {
+  for (const beforePrompt of [true, false]) {
+    const f = fixture('{broken');
+    try {
+      const newer = '{"done":["other_tab"],"found":[]}';
+      if (beforePrompt) f.dom.window.localStorage.setItem(WORLD_PROGRESS_KEY, newer);
+      else f.dom.window.confirm = () => { f.dom.window.localStorage.setItem(WORLD_PROGRESS_KEY, newer); return true; };
+      f.panel.root.querySelector('button')!.click();
+      assert.equal(f.restored, 0); assert.equal(f.progress.saveBlocked, true);
+      assert.equal(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY), newer);
+      assert.deepEqual([...f.progress.done], ['existing']);
+      assert.equal(f.progress.exportUnreadableSnapshot(), '{broken');
+      f.progress.save(); assert.equal(f.dom.window.localStorage.getItem(WORLD_PROGRESS_KEY), newer);
+    } finally { f.close(); }
+  }
 });

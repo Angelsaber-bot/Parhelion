@@ -42,14 +42,17 @@ export class WorldProgress {
   readonly found = new Set<string>();
   private listeners = new Set<() => void>();
   private unreadableLegacy = new Set<string>();
+  private unreadableCurrent: string | null = null;
+  private initialReadFailed = false;
+  private replacementAuthorized = false;
   persistence: ProgressPersistenceState = 'ready';
   constructor(private storage?: ProgressStorage) {
     if (!storage) { this.persistence = 'unavailable'; return; }
     let current: string | null;
-    try { current = storage.getItem(WORLD_PROGRESS_KEY); } catch { this.persistence = 'unavailable'; return; }
+    try { current = storage.getItem(WORLD_PROGRESS_KEY); } catch { this.initialReadFailed = true; this.persistence = 'unavailable'; return; }
     if (current !== null) {
       // Even an empty reset snapshot is authoritative. Never merge old v1 quests back into it.
-      if (!this.read(current)) this.persistence = 'invalid';
+      if (!this.read(current)) { this.unreadableCurrent = current; this.persistence = 'invalid'; }
       // Current progress remains authoritative; inspect only the shape of old
       // records so a later ordinary save will not erase malformed evidence.
       for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
@@ -68,6 +71,9 @@ export class WorldProgress {
     if (migrated) this.save();
     else if (malformedLegacy) this.persistence = 'invalid';
   }
+  /** Ordinary autosave cannot replace unreadable or never-read current data. */
+  get saveBlocked() { return !this.replacementAuthorized && (this.unreadableCurrent !== null || this.initialReadFailed); }
+  exportUnreadableSnapshot(): string | null { return this.unreadableCurrent; }
   get equippedWeapon(): 'dawn_ar' | null { return this.done.has(ARMORY_MARKER) ? 'dawn_ar' : null; }
   get armed() { return this.equippedWeapon !== null; }
   /** Observers never own or replace the live sets used by combat and quest systems. */
@@ -80,12 +86,23 @@ export class WorldProgress {
   exportSnapshot(): string { return JSON.stringify({ done: [...this.done], found: [...this.found] }); }
   /** Commit storage first: a failed restore never replaces the current session.
    * Runtime callers reload after success so all gates/actors use one snapshot. */
-  restoreSnapshot(raw: string): 'restored' | 'invalid' | 'unavailable' {
+  captureStoredSnapshot(): { raw: string | null } | null {
+    try { return this.storage ? { raw: this.storage.getItem(WORLD_PROGRESS_KEY) } : null; }
+    catch { this.report('unavailable'); return null; }
+  }
+  restoreSnapshot(raw: string, expected?: { raw: string | null }): 'restored' | 'invalid' | 'unavailable' | 'conflict' {
     const snapshot = parseProgressBackup(raw);
     if (!snapshot) return 'invalid';
     if (!this.storage) { this.report('unavailable'); return 'unavailable'; }
-    try { this.storage.setItem(WORLD_PROGRESS_KEY, JSON.stringify(snapshot)); }
+    try {
+      // Synchronous compare/write protects a stale confirmation from an already
+      // changed tab. localStorage has no cross-process atomic CAS transaction.
+      const guard = expected ?? (this.saveBlocked && this.unreadableCurrent !== null ? { raw: this.unreadableCurrent } : undefined);
+      if (guard && this.storage.getItem(WORLD_PROGRESS_KEY) !== guard.raw) { this.report('failed'); return 'conflict'; }
+      this.storage.setItem(WORLD_PROGRESS_KEY, JSON.stringify(snapshot));
+    }
     catch { this.report('failed'); return 'unavailable'; }
+    this.unreadableCurrent = null; this.initialReadFailed = false; this.replacementAuthorized = false;
     this.done.clear(); this.found.clear();
     for (const id of snapshot.done) this.done.add(id);
     for (const id of snapshot.found) this.found.add(id);
@@ -103,10 +120,12 @@ export class WorldProgress {
     } catch { return false; /* Invalid progress cannot restore inventory, location or arbitrary object fields. */ }
   }
   save(): boolean {
+    if (this.saveBlocked) { this.report(this.unreadableCurrent !== null ? 'invalid' : 'unavailable'); return false; }
     if (!this.storage) { this.report('unavailable'); return false; }
     try {
       this.storage.setItem(WORLD_PROGRESS_KEY, this.exportSnapshot());
     } catch { this.report('failed'); return false; }
+    this.unreadableCurrent = null; this.initialReadFailed = false; this.replacementAuthorized = false;
     // Remove only superseded progress, and only after the authoritative replacement was written.
     // Keeping a legacy key when removeItem is unavailable is safe: current always wins on reload.
     for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
@@ -117,5 +136,5 @@ export class WorldProgress {
     }
     this.report('saved'); return true;
   }
-  reset(): boolean { this.done.clear(); this.found.clear(); this.unreadableLegacy.clear(); return this.save(); }
+  reset(): boolean { this.done.clear(); this.found.clear(); this.unreadableLegacy.clear(); this.replacementAuthorized = true; return this.save(); }
 }
