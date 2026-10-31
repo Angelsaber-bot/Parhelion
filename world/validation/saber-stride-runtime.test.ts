@@ -43,3 +43,10 @@ test('interrupted run-idle-walk-run fade preserves a still-visible gait clock an
  const pose=()=>{const values:number[]=[];gltf.scene.traverse(o=>values.push(...o.quaternion.toArray()));return values;};a.tick(0);const before=pose();
  a.play('run',false,1.2);assert.equal(run.time,phase,'visible Run action must not be rephased from a newly started Walk');a.tick(0);const after=pose();assert.ok(Math.max(...after.map((v,i)=>Math.abs(v-before[i])))<1e-8,'clock-only re-entry must not pop geometry');actor.dispose();
 });
+test('one-leg or incomplete rig keeps authored playback and never partially applies procedural IK',async()=>{
+ const model=new THREE.Group(),upper=new THREE.Bone(),lower=new THREE.Bone(),foot=new THREE.Bone();upper.name='mixamorigLeftUpLeg';lower.name='mixamorigLeftLeg';foot.name='mixamorigLeftFoot';upper.add(lower);lower.add(foot);model.add(upper);lower.position.y=-.4;foot.position.y=-.4;
+ const gltf={scene:model,animations:['Idle','Walk','Run','Attack'].map(name=>new THREE.AnimationClip(name,1,[]))}as any;
+ const actor=new ContractServant({scene:new THREE.Scene(),marker:{id:'partial',type:'interact',label:'partial',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),colliders:[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2))}],load:async()=>gltf,target:()=>null,strike:()=>null});await actor.ensureLoaded();const a=actor as any;assert.equal(a.stride.supported,false);const before=[...upper.quaternion.toArray(),...lower.quaternion.toArray(),...foot.quaternion.toArray()],player=new THREE.Vector3();
+ for(let i=0;i<180;i++){player.z+=6/60;const p=actor.root.position.clone();actor.update(1/60,player,0,true,false);if(actor.animation==='Run')assert.ok(Math.abs(actor.root.position.distanceTo(p)*60-a.current.getEffectiveTimeScale()*1.9983)<1e-8);}
+ assert.deepEqual([...upper.quaternion.toArray(),...lower.quaternion.toArray(),...foot.quaternion.toArray()],before);assert.deepEqual(actor.strideDiagnostics!.planted,[false,false]);assert.equal(actor.groundDiagnostics!.patch.heightQueries,0);actor.dispose();
+});

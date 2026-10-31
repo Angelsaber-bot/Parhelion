@@ -46,7 +46,7 @@ export class SaberStrideRuntime {
   private setWorld(b:THREE.Object3D,q:THREE.Quaternion){b.quaternion.copy(b.parent!.getWorldQuaternion(this.q()).invert().multiply(q));b.updateWorldMatrix(false,true);}
   private aim(b:THREE.Object3D,child:THREE.Object3D,target:THREE.Vector3){const p=b.getWorldPosition(this.v()),from=child.getWorldPosition(this.v()).sub(p).normalize(),to=this.v().copy(target).sub(p).normalize();this.setWorld(b,this.q().setFromUnitVectors(from,to).multiply(b.getWorldQuaternion(this.q())));}
   apply(action:THREE.AnimationAction|undefined,dt:number,speed:number){
-    if(!action||!action.enabled||!action.isScheduled()||action.getClip().name!=='Run'||action.getEffectiveWeight()<.001||!this.chains.length){if(this.initialized)this.support?.reset();this.anchored[0]=this.anchored[1]=false;this.initialized=false;this.diagnostics.weight=0;this.diagnostics.planted.fill(false);this.releaseTime.fill(0);this.swingTime.fill(0);this.released.fill(false);this.calibrated=false;return;}
+    if(!action||!action.enabled||!action.isScheduled()||action.getClip().name!=='Run'||action.getEffectiveWeight()<.001||!this.supported){if(this.initialized)this.support?.reset();this.anchored[0]=this.anchored[1]=false;this.initialized=false;this.diagnostics.weight=0;this.diagnostics.planted.fill(false);this.releaseTime.fill(0);this.swingTime.fill(0);this.released.fill(false);this.calibrated=false;return;}
     this.diagnostics.weight=action.getEffectiveWeight();this.vi=this.qi=0;this.model.updateWorldMatrix(true,true);
     const rootP=this.root.getWorldPosition(this.v()),rootQ=this.root.getWorldQuaternion(this.q());
     const distance=this.initialized?rootP.distanceTo(this.previousRoot):0,angle=this.initialized?rootQ.angleTo(this.previousQ):0;
