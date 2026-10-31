@@ -5,6 +5,7 @@ import { createNarrativePanel, type NarrativeChoice } from '../src/narrativePane
 import { createCampaignJournal } from '../src/campaignJournal';
 import { setLanguage } from '../../shared-client/i18n';
 import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, getCampaignDispatchState, getCampaignDispatchText, chooseCampaignEpisode as choose, interactCampaignEpisode as interact, getCampaignEpisodeGuide as guide } from '../src/campaignEpisodes';
+const noCalls: readonly string[] = [];
 const options: NarrativeChoice[] = [{id:'one',label:['一','One']},{id:'two',label:['二','Two']}];
 function fixture() {
  const old = new Map(['document','getComputedStyle'].map(key=>[key,Object.getOwnPropertyDescriptor(globalThis,key)]));
@@ -16,7 +17,7 @@ function fixture() {
 test('choices never implicitly select; explicit selection survives language change and confirms exactly once',()=>{
  const f=fixture(),panel=createNarrativePanel(()=> 'F'),calls:string[]=[];
  try{panel.showChoices(['决定','Decide'],['人','Person'],options,id=>calls.push(id));
- assert.equal(panel.choosing,true);for(let i=0;i<5;i++)panel.advance();assert.deepEqual(calls,[]);assert.equal(panel.open,true);
+ assert.equal(panel.choosing,true);for(let i=0;i<5;i++)panel.advance();assert.deepEqual(calls,noCalls);assert.equal(panel.open,true);
  assert.equal(panel.selectChoice(-1),false);assert.equal(panel.selectChoice(NaN),false);assert.equal(panel.selectChoice(9),false);
  panel.selectChoice(1);setLanguage('en');const buttons=f.document.querySelectorAll<HTMLButtonElement>('#world-dialogue-choices button');
  assert.equal(buttons[1].getAttribute('aria-pressed'),'true');assert.match(buttons[1].textContent!,/Two/);panel.advance();panel.advance();assert.deepEqual(calls,['two']);assert.equal(panel.open,false);
@@ -27,10 +28,10 @@ test('pages must be read before selection, and dismissal/replacement/disposal in
  try{const line:[string,string]=['甲'.repeat(90)+'\n乙'.repeat(40),'A'.repeat(300)+'\nB'.repeat(40)];panel.showChoices(line,['人','Person'],options,id=>calls.push(id));
  assert.equal(panel.choosing,false);assert.equal(panel.selectChoice(0),false);for(let i=0;i<100&&!panel.choosing;i++)panel.advance();assert.equal(panel.choosing,true);
  panel.moveChoice(-1);assert.equal(f.document.querySelectorAll('#world-dialogue-choices button')[1].getAttribute('aria-pressed'),'true');
- const stale=f.document.querySelector<HTMLButtonElement>('#world-dialogue-choices button')!;panel.hide();stale.click();panel.advance();assert.deepEqual(calls,[]);
- panel.showChoices(['新','New'],['人','Person'],options,id=>calls.push(id));stale.click();assert.deepEqual(calls,[],'detached old controls cannot act on replacement dialog');
- panel.selectChoice(0);panel.show(['普通','Ordinary']);panel.advance();assert.deepEqual(calls,[]);
- panel.showChoices(['新','New'],['人','Person'],options,id=>calls.push(id));panel.selectChoice(0);panel.dispose();panel.advance();assert.deepEqual(calls,[]);
+ const stale=f.document.querySelector<HTMLButtonElement>('#world-dialogue-choices button')!;panel.hide();stale.click();panel.advance();assert.deepEqual(calls,noCalls);
+ panel.showChoices(['新','New'],['人','Person'],options,id=>calls.push(id));stale.click();assert.deepEqual(calls,noCalls,'detached old controls cannot act on replacement dialog');
+ panel.selectChoice(0);panel.show(['普通','Ordinary']);panel.advance();assert.deepEqual(calls,noCalls);
+ panel.showChoices(['新','New'],['人','Person'],options,id=>calls.push(id));panel.selectChoice(0);panel.dispose();panel.advance();assert.deepEqual(calls,noCalls);
  }finally{panel.dispose();f.close();}
 });
 test('callback can replace dialog; detached double clicks cannot confirm the newly opened dialog',()=>{
