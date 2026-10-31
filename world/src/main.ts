@@ -1080,6 +1080,7 @@ function travelContext(): TravelContext {
     mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
+  if (campaignJournalOpen) return false;
   if (ultimateDirector?.active) { toast(bilingual('终结技释放期间不能旅行。', 'Travel is unavailable during an ultimate.')); return false; }
   const plan = planSafeTravel(id, travelStops, done, found, travelContext());
   if (!plan.ok) { toast(bilingual(...TRAVEL_BLOCK_TEXT[plan.reason])); return false; }

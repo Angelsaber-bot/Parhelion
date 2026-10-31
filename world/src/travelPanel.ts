@@ -7,7 +7,7 @@ export function createTravelPanel(options:{ entries():TravelPanelEntry[]; travel
  root.setAttribute('aria-labelledby','world-travel-title');
  const card=document.createElement('div');card.className='travel-card';const title=document.createElement('h2'),note=document.createElement('p'),list=document.createElement('div'),close=document.createElement('button');
  title.id='world-travel-title';close.type='button';card.append(title,note,list,close);root.append(card);document.body.append(root);
- let returnFocus:HTMLElement|null=null;
+ let returnFocus:HTMLElement|null=null,disposed=false,generation=0;
  const focusable=(element:HTMLElement|null):element is HTMLElement=>{
   if(!element?.isConnected||element.closest('[hidden],[inert]')||element.matches(':disabled'))return false;
   if(!element.matches('button,input,select,textarea,a[href],[tabindex]'))return false;
@@ -17,7 +17,7 @@ export function createTravelPanel(options:{ entries():TravelPanelEntry[]; travel
  const hide=()=>{
   if(root.hidden)return;
   const ownedFocus=root.contains(document.activeElement)||document.activeElement===document.body;
-  root.hidden=true;options.onClose?.();
+  root.hidden=true;generation++;options.onClose?.();
   // A close hook may open another dialog or deliberately move focus. Never take it back.
   const current=document.activeElement,otherDialog=document.querySelector('dialog[open]');
   if(ownedFocus&&(!current||current===document.body||root.contains(current))&&!otherDialog){
@@ -27,9 +27,10 @@ export function createTravelPanel(options:{ entries():TravelPanelEntry[]; travel
   returnFocus=null;
  };
  close.onclick=hide;root.addEventListener('click',e=>{e.stopPropagation();if(e.target===root)hide();});
- const key=(e:KeyboardEvent)=>{if(root.hidden)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();hide();}else if(e.key==='Tab'){const buttons=Array.from(card.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));if(!buttons.length)return;const current=buttons.indexOf(document.activeElement as HTMLButtonElement);const next=e.shiftKey?(current<=0?buttons.length-1:current-1):(current+1)%buttons.length;e.preventDefault();buttons[next].focus();}else e.stopPropagation();};
+ const key=(e:KeyboardEvent)=>{if(disposed||root.hidden)return;if(e.key==='Escape'){e.preventDefault();e.stopImmediatePropagation();hide();}else if(e.key==='Tab'){const buttons=Array.from(card.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'));if(!buttons.length)return;const current=buttons.indexOf(document.activeElement as HTMLButtonElement);const next=e.shiftKey?(current<=0?buttons.length-1:current-1):(current+1)%buttons.length;e.preventDefault();buttons[next].focus();}else e.stopPropagation();};
  document.addEventListener('keydown',key,true);
  function render(){
+  if(disposed)return;const revision=++generation;
   const focused=document.activeElement as HTMLElement|null;
   const focusedStop=focused&&list.contains(focused)?focused.closest<HTMLButtonElement>('[data-travel-id]')?.dataset.travelId:undefined;
   title.textContent=bilingual('已发现的安全据点','Discovered safe settlements');
@@ -38,9 +39,9 @@ export function createTravelPanel(options:{ entries():TravelPanelEntry[]; travel
   for(const entry of options.entries()){
    const button=document.createElement('button');button.type='button';button.className='travel-stop';button.dataset.travelId=entry.id;
    const name=document.createElement('strong'),state=document.createElement('span');name.textContent=bilingual(...entry.name);state.textContent=entry.blocked?bilingual(...entry.blocked):bilingual('前往据点','Travel to settlement');button.append(name,state);button.disabled=!!entry.blocked;
-   button.onclick=()=>{if(options.travel(entry.id))hide();else render();};list.append(button);
+   button.onclick=()=>{if(disposed||root.hidden||revision!==generation||!button.isConnected||button.disabled)return;if(options.travel(entry.id))hide();else render();};list.append(button);
   }
   if(focusedStop){const replacement=Array.from(list.querySelectorAll<HTMLButtonElement>('button')).find(button=>button.dataset.travelId===focusedStop&&!button.disabled);(replacement??close).focus();}
  }
- return {get open(){return !root.hidden;},show(){if(!root.hidden)return;const opener=document.activeElement as HTMLElement|null;if(options.onOpen()===false)return;returnFocus=opener;render();root.hidden=false;close.focus();},hide,refresh(){if(!root.hidden)render();},dispose(){returnFocus=null;document.removeEventListener('keydown',key,true);root.remove();}};
+ return {get open(){return !disposed&&!root.hidden;},show(){if(disposed||!root.hidden)return;const opener=document.activeElement as HTMLElement|null;if(options.onOpen()===false)return;returnFocus=opener;render();root.hidden=false;close.focus();},hide,refresh(){if(!disposed&&!root.hidden)render();},dispose(){if(disposed)return;hide();disposed=true;generation++;returnFocus=null;document.removeEventListener('keydown',key,true);root.remove();}};
 }
