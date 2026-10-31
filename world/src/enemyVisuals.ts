@@ -1,3 +1,4 @@
+import { isEnemySkinnedMesh, isEnemyMesh, isEnemyTexture } from './enemyMeshTypes';
 import * as THREE from 'three';
 import {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle} from './enemyShotSocket';
 import {createEchoWardenVisual} from './echoWardenVisual';
@@ -32,13 +33,13 @@ export function enemyClip(model: EnemyModel, mode: EnemyMode, available: readonl
 function disposeTemplate(gltf: GLTF) {
   const geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), textures = new Set<THREE.Texture>();
   gltf.scene.traverse(o => {
-    if (!(o instanceof THREE.Mesh)) return;
+    if (!(isEnemyMesh(o))) return;
     geometries.add(o.geometry);
     for (const m of [o.material].flat()) {
       materials.add(m);
-      for (const v of Object.values(m)) if (v instanceof THREE.Texture) textures.add(v);
+      for (const v of Object.values(m)) if (isEnemyTexture(v)) textures.add(v);
     }
-    if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose();
+    if (isEnemySkinnedMesh(o)) o.skeleton.dispose();
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
@@ -81,7 +82,7 @@ export class EnemyVisuals {
     const instance = this.instances.get(id); if (!instance) return;
     instance.insignia?.dispose();
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
-    instance.root.traverse(o => { if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose(); });
+    instance.root.traverse(o => { if (isEnemySkinnedMesh(o)) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
   }
   contactMuzzle(id:string,origin:Point3,target:Point3):THREE.Vector3|null {
@@ -104,10 +105,10 @@ export class EnemyVisuals {
       this.release(e.id);
       const root = clone(gltf.scene);
       root.traverse(o => {
-        if (!(o instanceof THREE.Mesh)) return;
+        if (!(isEnemyMesh(o))) return;
         o.receiveShadow = true;
         // Bounds are rig-dependent; the 82m root cull and 24-instance cap bound this work.
-        if (o instanceof THREE.SkinnedMesh) o.frustumCulled = false;
+        if (isEnemySkinnedMesh(o)) o.frustumCulled = false;
       });
       // Prime immutable contact sockets in presentation, never in a fixed AI tick.
       if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
@@ -117,7 +118,7 @@ export class EnemyVisuals {
     }
     fallback.visible = !instance;
     if (!instance) return false;
-    instance.root.traverse(o => { if (o instanceof THREE.Mesh) o.castShadow = distance < 18; });
+    instance.root.traverse(o => { if (isEnemyMesh(o)) o.castShadow = distance < 18; });
     instance.acting.restore();
     const pose = enemyAttackPose(e, model);
     const clip = instance.gltf.animations.find(c => c.name === pose.clip)

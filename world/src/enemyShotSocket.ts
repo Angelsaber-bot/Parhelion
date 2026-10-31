@@ -1,3 +1,4 @@
+import { isEnemySkinnedMesh } from './enemyMeshTypes';
 import * as THREE from 'three';
 import type {GLTF} from 'three/addons/loaders/GLTFLoader.js';
 import {clone} from 'three/addons/utils/SkeletonUtils.js';
@@ -15,7 +16,7 @@ export function nativeMusketeerContactMuzzle(gltf:Pick<GLTF,'scene'|'animations'
   const action=mixer.clipAction(clip);action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;action.play();action.paused=true;action.time=0;mixer.update(0);root.updateWorldMatrix(true,true);
   const inverse=new THREE.Matrix4().copy(root.matrixWorld).invert();
   root.traverse(o=>{
-   if(!(o instanceof THREE.SkinnedMesh)||![o.material].flat().some(material=>material.name==='Blue black steel'))return;
+   if(!(isEnemySkinnedMesh(o))||![o.material].flat().some(material=>material.name==='Blue black steel'))return;
    const bone=o.skeleton.bones.findIndex(value=>value.name==='weapon_musket');if(bone<0)return;
    const indices=o.geometry.attributes.skinIndex,weights=o.geometry.attributes.skinWeight;o.skeleton.update();
    for(let i=0;i<indices.count;i++){
@@ -30,7 +31,7 @@ export function nativeMusketeerContactMuzzle(gltf:Pick<GLTF,'scene'|'animations'
   const result=Object.freeze({x:center.x,y:center.y,z:center.z});cache.set(gltf,result);return result;
  }finally{
   mixer.stopAllAction();mixer.uncacheRoot(root);
-  root.traverse(o=>{if(o instanceof THREE.SkinnedMesh)o.skeleton.dispose();});
+  root.traverse(o=>{if(isEnemySkinnedMesh(o))o.skeleton.dispose();});
   root.removeFromParent();
  }
 }

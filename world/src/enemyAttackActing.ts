@@ -1,3 +1,4 @@
+import { isEnemySkinnedMesh } from './enemyMeshTypes';
 import * as THREE from 'three';
 import { enemyAttackTiming, type Enemy } from './combat';
 import type { EnemyPoseModel } from './enemyAttackPresentation';
@@ -22,7 +23,7 @@ export function measureEnemyWeaponAxis(template: THREE.Object3D, side: string): 
   template.updateWorldMatrix(true, true);
   const origin = hand.getWorldPosition(new THREE.Vector3()), point = new THREE.Vector3(), tip = new THREE.Vector3(); let reach = 0;
   template.traverse(o => {
-    if (!(o instanceof THREE.SkinnedMesh)) return;
+    if (!(isEnemySkinnedMesh(o))) return;
     const index = o.skeleton.bones.indexOf(hand as THREE.Bone); if (index < 0) return;
     const indices = o.geometry.attributes.skinIndex, weights = o.geometry.attributes.skinWeight;
     o.skeleton.update();
@@ -73,7 +74,7 @@ function shieldFrontAxis(template:THREE.Object3D):THREE.Vector3|null{
  if(shieldNormals.has(template))return shieldNormals.get(template)!;
  const bone=template.getObjectByName('forearmL');if(!bone)return null;template.updateWorldMatrix(true,true);
  const front=new THREE.Vector3(),back=new THREE.Vector3();let frontCount=0,backCount=0;
- template.traverse(o=>{if(!(o instanceof THREE.SkinnedMesh))return;const names=[o.material].flat().map(m=>m.name),isFront=names.includes('03 • indigo wool'),isBack=names.includes('07 • walnut pistol stock');if(!isFront&&!isBack)return;
+ template.traverse(o=>{if(!(isEnemySkinnedMesh(o)))return;const names=[o.material].flat().map(m=>m.name),isFront=names.includes('03 • indigo wool'),isBack=names.includes('07 • walnut pistol stock');if(!isFront&&!isBack)return;
   const skin=o.geometry.attributes.skinIndex,weights=o.geometry.attributes.skinWeight,bi=o.skeleton.bones.indexOf(bone as THREE.Bone),point=new THREE.Vector3();o.skeleton.update();
   for(let i=0;i<skin.count;i++){let held=false;for(let k=0;k<4;k++)if(skin.getComponent(i,k)===bi&&weights.getComponent(i,k)>.8)held=true;if(!held)continue;o.getVertexPosition(i,point).applyMatrix4(o.matrixWorld);if(isFront){front.add(point);frontCount++;}else{back.add(point);backCount++;}}
  });
