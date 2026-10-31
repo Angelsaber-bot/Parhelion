@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle} from './enemyShotSocket';
 import {createEchoWardenVisual} from './echoWardenVisual';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
@@ -6,7 +7,7 @@ import { selectEnemyRole, type EnemyRole } from './enemyRoles';
 import { regionAt } from './regions';
 import { createEnemyAttackActing } from './enemyAttackActing';
 import { enemyAttackPose } from './enemyAttackPresentation';
-import { isMusketeer, type Enemy, type EnemyMode } from './combat';
+import { isMusketeer, type Enemy, type EnemyMode, type Point3 } from './combat';
 
 export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sunward_guard' | 'deck_raider';
 export const ENEMY_VISUAL_BUDGET = 24;
@@ -83,6 +84,10 @@ export class EnemyVisuals {
     instance.root.traverse(o => { if (o instanceof THREE.SkinnedMesh) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
   }
+  contactMuzzle(id:string,origin:Point3,target:Point3):THREE.Vector3|null {
+    const instance=this.instances.get(id);if(!instance||!instance.key.startsWith('musketeer'))return null;
+    const socket=nativeMusketeerContactMuzzle(instance.gltf);return socket?transformEnemyContactMuzzle(socket,origin,target):null;
+  }
   /** Advance wall-clock loading backoff once per frame, not once per enemy. */
   tick(dt: number) { this.now += Math.max(0, Math.min(dt, 1)); }
   update(e: Enemy, model: EnemyModel, parent: THREE.Group, fallback: THREE.Group, dt: number, distance: number, allowed: boolean) {
@@ -104,6 +109,8 @@ export class EnemyVisuals {
         // Bounds are rig-dependent; the 82m root cull and 24-instance cap bound this work.
         if (o instanceof THREE.SkinnedMesh) o.frustumCulled = false;
       });
+      // Prime immutable contact sockets in presentation, never in a fixed AI tick.
+      if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
       parent.add(root);
       instance = { insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);

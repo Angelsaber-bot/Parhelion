@@ -434,8 +434,15 @@ export class WorldCombat {
         // may emit a tracer, including when presentation skipped an intermediate state.
         if (event.attack === 'shot' && this.playable && !this.state.defeated) {
           const direction = new THREE.Vector3(event.target.x - event.origin.x, 0, event.target.z - event.origin.z).normalize();
-          const muzzle = new THREE.Vector3(event.origin.x, event.origin.y + 1.2, event.origin.z).addScaledVector(direction, .55);
-          this.shot(muzzle, new THREE.Vector3(event.target.x, event.target.y + 1, event.target.z), false);
+          const muzzle = this.enemyAssets.contactMuzzle(event.id,event.origin,event.target)
+            ?? new THREE.Vector3(event.origin.x, event.origin.y + 1.2, event.origin.z).addScaledVector(direction, .55);
+          const endpoint = new THREE.Vector3(event.target.x, event.target.y + 1, event.target.z);
+          const shoulder = new THREE.Vector3(event.origin.x,event.origin.y+1.2,event.origin.z),mount = muzzle.clone().sub(shoulder);
+          const mountBlock = this.geometry.cast(shoulder,mount,mount.length());
+          const path = endpoint.clone().sub(muzzle),surface = mountBlock ?? this.geometry.cast(muzzle,path,Math.max(0,path.length()-.04));
+          // Cover remains authoritative in the state; the visual ray must also
+          // stop at that actual obstruction instead of passing through a wall.
+          this.shot(mountBlock?shoulder:muzzle,surface?.point??endpoint,!!surface);
         }
       } else if (event.type === 'hit') {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });

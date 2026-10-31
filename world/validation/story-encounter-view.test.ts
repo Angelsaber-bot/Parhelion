@@ -71,3 +71,25 @@ test('cancel and same-encounter retry before native load resolves never resurrec
  assert.ok(combat.state.enemies.filter(e=>e.storyEncounter).every(e=>assets.instances.has(e.id)),'new generation uses valid shared template without old-root resurrection');
  combat.cancelStoryEncounter();combat.dispose();floor.dispose();
 });
+
+test('actual musket contact emits one tracer at measured barrel, never from a canceled or paused tell',async()=>{
+ const {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle}=await import('../src/enemyShotSocket.ts');
+ const {combat,floor}=fixture(),internals=combat as any,assets=internals.enemyAssets as any,gltf=await parseLocalGlb(new URL('../public/assets/enemies/musketeer.glb',import.meta.url));assets.cache.set('musketeer',gltf);
+ const single:StoryEncounterSpec={id:'false_dawn_muzzle_test',anchor:p(),actors:[{role:'musketeer',offset:[0,6]}]};assert.equal(combat.startStoryEncounter(single,{position:p(),playable:true}).ok,true);combat.present(0,p(),true);
+ const enemy=combat.state.enemies.find(e=>e.storyEncounter)!,shots:THREE.Vector3[]=[];const shot=combat.shot.bind(combat);combat.shot=(muzzle,point,hit)=>{shots.push(muzzle.clone());shot(muzzle,point,hit);};
+ for(let i=0;i<600&&enemy.mode!=='windup';i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(enemy.mode,'windup');const timer=enemy.timer;
+ for(let i=0;i<120;i++){combat.simulate(1/120,p(),false);combat.present(1/120,p(),false);}assert.equal(enemy.timer,timer);assert.equal(shots.length,0);
+ for(let i=0;i<600&&!shots.length;i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(shots.length,1);
+ const expected=transformEnemyContactMuzzle(nativeMusketeerContactMuzzle(gltf)!,enemy.p,enemy.target);assert.ok(shots[0].distanceTo(expected)<1e-8,'visual tracer starts at native barrel using the committed snapshot');
+ const before=shots.length;combat.cancelStoryEncounter();for(let i=0;i<120;i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(shots.length,before);combat.dispose();floor.dispose();
+});
+
+test('cover appearing after musket lock stops the visual tracer at the actual surface and never damages through it',async()=>{
+ const {combat,floor}=fixture(),internals=combat as any,gltf=await parseLocalGlb(new URL('../public/assets/enemies/musketeer.glb',import.meta.url));internals.enemyAssets.cache.set('musketeer',gltf);
+ const single:StoryEncounterSpec={id:'false_dawn_shot_cover',anchor:p(),actors:[{role:'musketeer',offset:[0,6]}]};assert.equal(combat.startStoryEncounter(single,{position:p(),playable:true}).ok,true);combat.present(0,p(),true);
+ const enemy=combat.state.enemies.find(e=>e.storyEncounter)!;for(let i=0;i<600&&enemy.mode!=='windup';i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(enemy.mode,'windup');
+ const wall=new THREE.BoxGeometry(5,4,.3).translate(0,2,3);internals.options.colliders.push({name:'contact-cover',enabled:true,bvh:new MeshBVH(wall)});
+ const shots:{from:THREE.Vector3,to:THREE.Vector3,surface:boolean}[]=[];const shot=combat.shot.bind(combat);combat.shot=(from,to,surface)=>{shots.push({from:from.clone(),to:to.clone(),surface});shot(from,to,surface);};const hp=combat.state.hp;
+ for(let i=0;i<600&&!shots.length;i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(shots.length,1);assert.equal(combat.state.hp,hp);assert.equal(shots[0].surface,true);assert.ok(Math.abs(shots[0].to.z-3.15)<.001);assert.ok(internals.sparks.some((spark:any)=>spark.mesh.position.distanceTo(shots[0].to)<1e-8));
+ combat.dispose();wall.dispose();floor.dispose();
+});
