@@ -48,3 +48,9 @@ node --import tsx --test validation/story-ultimate-contact-dom.test.ts
 ```
 
 The four companion cinematic ultimates retain reachable-target-before-payment admission. The original manually aimed directional **player** ultimate remains a paid intentional cast/miss, like other aimed attacks; this work does not add auto-targeting or refunds. Insufficient energy, duplicate activation, cancellation and damage ownership remain tested independently.
+
+## Input driver for combined journey QA
+
+`validation/combat-review/story-input-policy.ts` exports `createStoryInputPolicy(host, options)`. Host supplies `{world, window, nowSeconds: () => clockMs / 1000, step: () => normalFrame()}`; it owns the clock, story choices, real navigation, encounter launch and asset settling. `.tick()` only issues one frame's normal configured input events; `.run(maxSeconds)` repeatedly ticks/advances the supplied host; `.release()` releases only the bindings the policy held. Options are `reactionSeconds`, `strafe`, `mode: 'rifle' | 'melee'`, `useSkill`, and `useEarnedUltimate`. Use `strafe:false` when the journey harness owns navigation.
+
+The reusable helper contains no teleport, grounded assignment, encounter start/cancel, HP/charge assignment or direct damage call. It resolves the current binding map and inverted-Y sensitivity, releases during modal/cinematic/visibility pauses, and re-presses after normal play resumes. A production-main smoke test clears a real Warden with remapped fire/right bindings and inverted Y; all entry positioning/admission stays visibly outside the helper. Integrated narrative→combat→physical-emitter→ending results belong to the separate journey test, not this document's earlier field-entry chain.
