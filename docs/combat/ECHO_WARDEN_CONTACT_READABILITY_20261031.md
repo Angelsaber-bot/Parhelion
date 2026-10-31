@@ -42,6 +42,8 @@ Actual contact timestamps and HP are unchanged by the visual feature:
 
 Corrected detail frames: `artifacts/live-warden-signal-brand-renders/live-warden-{0091,0286,0496}.png`. The detail camera crops part of the footprint; use the supplementary `artifacts/live-warden-signal-wide-renders` frames for complete spatial review. Source snapshots and timestamps are under `artifacts/live-warden-signal-final-contact`.
 
+The completed temporal review is `artifacts/live-warden-final-review/actual-contact-review.mp4` (8.666667 s, approximately 1.12 MB) with `actual-contact-phases.jpg` and `review-index.json`. It contains all 67 exported samples, mostly 7.5 Hz plus the exact contact frames, with no interpolated motion. `assemble-live-sequence.py` uses a 1/60 input timebase and verifies every encoded presentation timestamp against the simulation metadata; this avoids the image demuxer's default 25 Hz rounding. The review includes a final 133 ms still hold. The full-field CPU batch took 469 s through the shared render gate, not a real-time performance measurement.
+
 These are offline Cycles CPU renders of actual mesh snapshots from a fixed review camera, **not WebGL screenshots, gameplay video or FPS evidence**. Native materials are imported; shader-only player outline extrusion and line primitives are explicitly omitted (mesh bolts/flashes are retained). `--contacts` exports only exact contact frames, not a continuous movie. The exporter honors geometry draw ranges, including pooled effects.
 
 A first three-contact observational sample cost approximately 5.8/5.9/3.7 ms CPU and prompted a targeted optimization, not a claim that rare spikes are free. `makeCombatTerrain.contactSurface` now computes a conservative XZ candidate set from **current** BVH bounds for each contact. The box contains the full origin→footprint ray segments and vertical ground rays; Y is unbounded. Casts still check current enabled state. No persistent bounds cache, density reduction or removal of local cover is involved.
@@ -63,7 +65,7 @@ Hard work/storage limits are 256 unique ground samples and at most 256 cover cas
 - `combat-contact-surface.test.ts`: full/scoped exact hit equality for thin/tall blockers, overlapping roofs, ground ceilings, moving/refitted gates and enabled-state toggles.
 - `enemy-contact-effects.test.ts`: exact footprint bounds, immutable snapshots, cover, ground conformity, reduced effects, duplicate suppression, fixed-capacity saturation, paused fade and idempotent disposal.
 - `story-encounter-view.test.ts`: actual AI windup/contact on a sidestep emits one signal without HP loss or hit confirmation; pause and cancel/death/reset cleanup.
-- `enemy-live-acting-dom.test.ts`: actual-main native axes and socket across loader constructor boundaries.
+- `enemy-live-acting-dom.test.ts`: actual-main native axes and socket across loader constructor boundaries; the emitted musket origin is additionally compared with the current rendered barrel-cap vertices (within 15 mm), not only a cached constant.
 - Existing contact lifecycle, all role timings, Warden phase/dodge/cover, director, normal-input and companion-ultimate compatibility regressions remain separate from this visual feature.
 
 Commands (from `world/`):

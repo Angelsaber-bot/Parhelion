@@ -22,6 +22,12 @@ test('actual-main Warden uses distinct real native blade axes at all three conta
   w.combat.cancelStoryEncounter();
   const musket={...spec,id:'false_dawn_native_socket_test',actors:[{role:'musketeer',offset:[-2.5,-.8]}]};assert.equal(w.combat.startStoryEncounter(musket,{position:w.player.pos,playable:true}).ok,true);frame();await h.settleAssets();frame();
   const gunner=w.combat.state.enemies.find((e:any)=>e.storyEncounter)!,instance=w.combat.enemyAssets.instances.get(gunner.id),socket=nativeMusketeerContactMuzzle(instance.gltf);assert.ok(socket);assert.ok(Math.abs(socket.z-1.1063)<.015);
+  for(let i=0;i<600&&!gunner.contactSequence;i++)frame();assert.equal(gunner.contactSequence,1);instance.root.updateWorldMatrix(true,true);
+  const inverse=instance.root.matrixWorld.clone().invert(),points:THREE.Vector3[]=[];
+  instance.root.traverse((object:any)=>{if(!object.isSkinnedMesh||![object.material].flat().some((material:any)=>material.name==='Blue black steel'))return;object.skeleton.update();const bone=object.skeleton.bones.findIndex((value:any)=>value.name==='weapon_musket'),indices=object.geometry.attributes.skinIndex,weights=object.geometry.attributes.skinWeight;
+   for(let i=0;i<indices.count;i++){let held=false;for(let k=0;k<4;k++)if(indices.getComponent(i,k)===bone&&weights.getComponent(i,k)>.8)held=true;if(held)points.push(object.getVertexPosition(i,new THREE.Vector3()).applyMatrix4(object.matrixWorld).applyMatrix4(inverse));}
+  });
+  const front=Math.max(...points.map(point=>point.z)),cap=points.filter(point=>point.z>front-.004),actualCap=cap.reduce((sum,point)=>sum.add(point),new THREE.Vector3()).multiplyScalar(1/cap.length).applyMatrix4(instance.root.matrixWorld),shot=w.combat.shots.at(-1);assert.ok(shot);assert.ok(actualCap.distanceTo(shot.from)<.015,'actual rendered barrel cap and emitted contact origin must coincide');
   assert.deepEqual(h.errors,[]);console.log('LIVE_NATIVE_CONTACT_AXES',JSON.stringify(axes));
  }finally{await h.close();}
 });
