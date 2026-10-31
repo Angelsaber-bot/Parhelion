@@ -28,9 +28,9 @@ test('failed bloom restores main target, falls back once and stops retrying that
  stage.dispose();
 });
 
-test('default Saber key/fill/rim are restrained without changing other servant lights',()=>{
+test('Saber and Musashi retain their approved local lights while other servants reset to standard',()=>{
  const stage=new UltimateStage(),source=new THREE.Group();source.add(new THREE.Mesh(new THREE.BoxGeometry(1,2,1),new THREE.MeshStandardMaterial()));
- for(const [identity,expected]of[['saber',[1.6,2.4,1.5]],['musashi',[2.8,3.5,3]],['saber',[1.6,2.4,1.5]]]as const){
+ for(const [identity,expected]of[['saber',[1.6,2.4,1.5]],['musashi',[1.6,2.4,1.5]],['blackbeard',[2.8,3.5,3]],['napoleon',[2.8,3.5,3]],['saber',[1.6,2.4,1.5]]]as const){
   stage.begin({identity,sourceRoot:source});
   const lights=stage.scene.children.filter((o):o is THREE.Light=>!!(o as THREE.Light).isLight);
   assert.deepEqual(lights.slice(0,3).map(light=>light.intensity),expected);
@@ -45,6 +45,6 @@ test('shared bloom composer reapplies identity settings across Saber and other c
  const internal=stage as unknown as {bloomRenderer:unknown;bloomPass:unknown;bloomComposer:unknown};
  const bloom={strength:0,radius:0,threshold:0,dispose(){}};let renders=0;
  internal.bloomRenderer=renderer;internal.bloomPass=bloom;internal.bloomComposer={passes:[],setSize(){},render(){renders++;},dispose(){}};
- for(const [identity,expected]of[['saber',[.28,.30,.90]],['blackbeard',[.75,.48,.72]],['saber',[.28,.30,.90]],['napoleon',[.75,.48,.72]]]as const){stage.begin({identity,sourceRoot:source});stage.render(renderer as unknown as THREE.WebGLRenderer,16/9);assert.deepEqual([bloom.strength,bloom.radius,bloom.threshold],expected);}
- assert.equal(renders,4);stage.dispose();
+ for(const [identity,expected]of[['saber',[.28,.30,.90]],['musashi',[.24,.28,.92]],['blackbeard',[.75,.48,.72]],['saber',[.28,.30,.90]],['napoleon',[.75,.48,.72]]]as const){stage.begin({identity,sourceRoot:source});stage.render(renderer as unknown as THREE.WebGLRenderer,16/9);assert.deepEqual([bloom.strength,bloom.radius,bloom.threshold],expected);}
+ assert.equal(renders,5);stage.dispose();
 });
