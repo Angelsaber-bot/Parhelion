@@ -1014,8 +1014,9 @@ addEventListener('auxclick', (e) => { if (locked || settingsPanel.open) e.preven
 addEventListener('mousedown', (e) => { audio.unlock(e); if (!settingsPanel.open && locked) { e.preventDefault(); press(`Mouse${e.button}`); } });
 addEventListener('mouseup', (e) => release(`Mouse${e.button}`));
 addEventListener('wheel', (e) => {
-  if (!gameplayActive()) return;
-  e.preventDefault(); const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp'; press(binding); release(binding);
+  const binding = e.deltaY > 0 ? 'WheelDown' : 'WheelUp';
+  if (!gameplayActive() && !(narrative?.open && settings.action(binding) === 'interact')) return;
+  e.preventDefault(); press(binding); release(binding);
 }, { passive: false });
 
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
