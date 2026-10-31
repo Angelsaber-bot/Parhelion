@@ -32,3 +32,11 @@ Frozen f6 actual-Q fixtures reproduce a genuine directional defect: front target
 Integrator's scoped Q fix `729e0a6` first passed all nine actual-main direction/LOS/fallback cases, and the subsequent 12-case lock-invalidation matrix passed: death, late cover and out-of-range retain the last heading and do not rotate to a newly activated off-axis enemy. Shared presentation files were still in development, so these are scoped functional checks, not final remaster acceptance. Multi-enemy priority and final frozen reruns remain required.
 
 Evidence is in the sibling `parhelion-four-servants-evidence/qa` directory, not copied from the earlier release's visual evidence. No runtime source is owned or changed by this QA lane.
+
+## Subsequent scoped checks (14:37 UTC, not final assets)
+
+The 14-case Q matrix additionally passes camera-target priority over a closer side enemy and engaged-target priority over a closer newly introduced enemy. The three invalidation cases retain the original target identity/last heading. Final frozen rerun remains required.
+
+Actor resource and disposal checks now positively observe BFCache preservation and exactly-once geometry/material disposal on repeated final pagehide. Frozen f6 totals after all four actors load: 103 geometries, 98 materials, 28 textures, 1,872,132 triangles and 67,030,576 bytes of attached geometry backing stores. A mutable captain-presentation iteration measured 114 geometries, 115 materials, 28 textures, 1,880,941 triangles and 67,449,862 backing bytes; Saber/Musashi asset URLs were still baseline. This is **not** the final remaster budget. Source manifests and both logs are retained in `qa/*resource*`.
+
+These counters cover attached actor graphs, not hidden original geometries retained by reversible sculpt adapters, process heap, decoded image memory, GPU VRAM or FPS. They expose added presentation cost rather than asserting a performance improvement.
