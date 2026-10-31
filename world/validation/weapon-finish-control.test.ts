@@ -16,7 +16,7 @@ test('real DOM finish control rejects locked programmatic selections, refreshes 
   select.value = 'ember'; select.dispatchEvent(new dom.window.Event('change')); assert.equal(store.preference, 'ember'); assert.deepEqual(applied, ['ember']);
   assert.deepEqual([...done], ['campaign_kyoto_complete']);
   done.clear(); control.refresh(); assert.equal(select.value, 'original'); assert.equal(store.preference, 'ember'); assert.match(control.root.querySelector('[role=status]')!.textContent!, /尚未解锁/);
-  setLanguage('en'); assert.match(control.root.textContent!, /Colors only/); assert.match(control.root.querySelector('[role=status]')!.textContent!, /has not earned/);
+  setLanguage('en'); assert.match(control.root.textContent!, /Surface colors\/patterns only/); assert.match(control.root.querySelector('[role=status]')!.textContent!, /has not earned/);
   done.add('campaign_kyoto_complete'); control.refresh(); assert.equal(select.value, 'ember'); assert.match(control.root.querySelector('[role=status]')!.textContent!, /not saved/);
   assert.match(control.root.querySelector('summary')!.textContent!, /How to earn/);
   control.dispose(); control.dispose(); assert.equal(document.body.children.length, 0);

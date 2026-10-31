@@ -26,7 +26,7 @@ export function attachExplorerBlade(rig: SkinnedCharacterRig, load = (path: stri
    // Source blade points +X and grip lies at x=-.43. The imported handle center is translated into the fitted palm offset.
    model.position.copy(REFRACT_GRIP).negate();anchor.add(model);root.add(anchor);
    model.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.castShadow=false;m.receiveShadow=true;}});
-   finish=createWeaponFinishMaterials(model);finish.apply(selectedFinish);
+   finish=createWeaponFinishMaterials(model,{patterns:false});finish.apply(selectedFinish);
    ready=true;root.userData.artState='ready';
  }).catch(error=>{if(!disposed)root.userData.artState='error';throw new Error(`Refract Blade failed to load: ${error instanceof Error?error.message:String(error)}`);});
  return { root, ready:task,

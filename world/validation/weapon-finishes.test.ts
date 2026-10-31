@@ -39,7 +39,9 @@ for (const file of ['01_Dawn_AR', '06_Refract_Blade']) test(`${file}: every fini
       const originals = [before[i].original].flat() as THREE.MeshStandardMaterial[], now = [mesh.material].flat() as THREE.MeshStandardMaterial[];
       for (let j = 0; j < now.length; j++) {
         assert.notEqual(now[j], originals[j]); assert.ok(originals[j].color.equals(before[i].colors[j]));
-        for (const field of ['roughness','metalness','opacity','transparent','depthWrite','emissiveIntensity','map','normalMap'] as const) assert.equal(now[j][field], originals[j][field], `${field} unchanged`);
+        if (!/^PH_(?:ivory|dark)(?:\.\d+)?$/.test(now[j].name) || finish.id === 'original') assert.equal(now[j].map, originals[j].map);
+        else assert.ok(now[j].map instanceof THREE.DataTexture, 'earned mark uses a private bounded albedo texture');
+        for (const field of ['roughness','metalness','opacity','transparent','depthWrite','emissiveIntensity','normalMap'] as const) assert.equal(now[j][field], originals[j][field], `${field} unchanged`);
       }
     }
     if (finish.id !== 'original') assert.ok(meshes.some((mesh, i) => [mesh.material].flat().some((m, j) => !(m as THREE.MeshStandardMaterial).color.equals(before[i].colors[j]))), 'both rifle and suffixed blade PH materials visibly recolor');
@@ -63,7 +65,7 @@ test('rifle and blade retain pre-load finish, support changes, and cancel late l
     assert.equal(art.setFinish('tide'), true); assert.equal(art.setFinish('unknown'), false);
     resolve(asset); await art.ready; assert.equal(art.finish, 'tide');
     let matched = 0; const originalMaterials = new Set<THREE.Material>();
-    asset.scene.traverse(o => { if (!(o instanceof THREE.Mesh)) return; for (const m of [o.material].flat()) { originalMaterials.add(m); if (/^PH_dark(?:\.\d+)?$/.test(m.name)) { matched++; assert.equal((m as THREE.MeshStandardMaterial).color.getHexString(), '194843'); } } });
+    asset.scene.traverse(o => { if (!(o instanceof THREE.Mesh)) return; for (const m of [o.material].flat()) { originalMaterials.add(m); if (/^PH_dark(?:\.\d+)?$/.test(m.name)) { matched++; if(kind==='rifle'){assert.ok((m as THREE.MeshStandardMaterial).map instanceof THREE.DataTexture);assert.equal((m as THREE.MeshStandardMaterial).map!.name,'JourneyFinish_tide_dark');}else{assert.equal((m as THREE.MeshStandardMaterial).map,null,'blade keeps clean regional palette without stretched pattern patches');assert.equal((m as THREE.MeshStandardMaterial).color.getHexString(),WEAPON_FINISHES.find(f=>f.id==='tide')!.colors!.dark.slice(1));} } } });
     assert.ok(matched > 0); assert.equal(art.setFinish('original'), true);
     let disposed = 0; originalMaterials.forEach(m => m.addEventListener('dispose', () => disposed++)); art.dispose(); art.dispose();
     assert.equal(disposed, originalMaterials.size, 'finish clone disposed exactly once'); assert.equal(art.setFinish('ember'), false);
@@ -75,4 +77,18 @@ test('rifle and blade retain pre-load finish, support changes, and cancel late l
     assert.equal(late.scene.parent, null, 'late asset cannot reattach after dispose');
   }
   rig.dispose();
+});
+
+test('five regional surface patterns are distinct, restrained, deterministic and constant-budget across repeated switching', async () => {
+ const {makeWeaponFinishPattern,weaponFinishPatternInk,WEAPON_FINISH_PATTERN_SIZE}=await import('../src/weaponFinishPatterns.ts');
+ const signatures=new Set<string>();
+ for(const id of ['signal','oath','tide','frost','ember'] as const){
+  const texture=makeWeaponFinishPattern(id),data=texture.image.data as Uint8Array;assert.equal(data.byteLength,128*128*4);assert.equal(texture.image.width,WEAPON_FINISH_PATTERN_SIZE);
+  const ink=Array.from({length:128*128},(_,index)=>weaponFinishPatternInk(id,(index%128+.5)/128,(Math.floor(index/128)+.5)/128)).filter(Boolean).length;assert.ok(ink>150&&ink<3500,'etched marks cover a restrained fraction of panels');
+  signatures.add(Buffer.from(data).toString('base64'));const second=makeWeaponFinishPattern(id);assert.deepEqual(second.image.data,data);texture.dispose();second.dispose();
+ }
+ assert.equal(signatures.size,5);
+ const gltf=await parseLocalGlb(new URL('../../assets/weapons/glb/01_Dawn_AR.glb',import.meta.url)),control=createWeaponFinishMaterials(gltf.scene),maps=new Set<THREE.Texture>();
+ for(let cycle=0;cycle<30;cycle++)for(const finish of WEAPON_FINISHES){control.apply(finish.id);gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of [o.material].flat()){const map=(m as THREE.MeshStandardMaterial).map;if(map)maps.add(map);}});}
+ assert.equal(maps.size,10,'two cached64KiB source patterns per earned finish, no per-selection allocation');let disposed=0;maps.forEach(map=>map.addEventListener('dispose',()=>disposed++));control.dispose();control.dispose();assert.equal(disposed,10);
 });

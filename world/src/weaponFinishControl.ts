@@ -25,7 +25,7 @@ export function createWeaponFinishControl(store: WeaponFinishStore, done: Readon
       options[i].title = bilingual(...finish.story);
     });
     const active = store.active(done); select.value = active;
-    note.textContent = bilingual('仅改变材质颜色，不改变伤害、射速、瞄准、握持、碰撞或武器槽位；可随时恢复原装。', 'Colors only: identical damage, fire rate, aim, grip, collision and weapon slots. Restore Original at any time.');
+    note.textContent = bilingual('仅改变表面颜色与纹样，不改变伤害、射速、瞄准、握持、碰撞或武器槽位；可随时恢复原装。', 'Surface colors/patterns only: identical damage, fire rate, aim, grip, collision and weapon slots. Restore Original at any time.');
     const changed = active !== store.preference;
     status.textContent = changed
       ? bilingual('此存档尚未解锁已保存的涂装，暂用原装；完成对应纪事后自动恢复。', 'This save has not earned the saved finish. Original is shown until its chronicle is completed.')
