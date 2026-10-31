@@ -58,9 +58,22 @@ markers intentionally keep random wilderness spawns away from these stations.
 ### Interaction-disc spawn margin
 
 The first offset audit checked feet and LOS but not every standing point inside the
-interaction radius. Valley's third actor could overlap a player finishing emitter III.
+interaction radius. Valley's third actor could overlap a player standing by emitter III (not currently a
+Warden admission origin, but an avoidable future transition hazard).
 The per-field offset record now corrects that. An analytic full-disc check requires
 **every actor** to be farther than `marker.radius + 2.05 m` from **every marker** in its
-field, covering initial starts and auto-wave transitions. Revised nine sockets pass
+field, conservatively covering all interaction standing positions. Warden starts still require an
+explicit array-console action; no automatic Warden spawn is claimed. Revised nine sockets pass
 actual collision/ground/LOS/Player route tests again. The combat catalog must consume
 `FALSE_DAWN_FIELD_ACTOR_OFFSETS[field]`, not the legacy default-offset array.
+
+### Winter tactical warmth
+
+The Winter console was about 189 m from the nearest existing warm source, making a
+fresh player's two-wave fight vulnerable to unavoidable freezing. A small grounded
+iron brazier now provides the existing cold system's ordinary 4 m warmth radius via
+`false_dawn_warm_repeater` (`poi`, not an interaction). It adds no HP, energy or cooldown
+recovery and does not override `winter_core`. Its fire stays visibly lit after the
+array-seal ending. The actual Player reaches a resting point inside the warmth radius;
+all prior field/cover/actor routes still pass. Total field markers are now eight:
+seven interactions and this one passive warmth source. Winter geometry is 870 triangles.

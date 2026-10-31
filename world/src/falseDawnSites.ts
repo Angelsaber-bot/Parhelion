@@ -89,6 +89,14 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
    art.cyl([x+.65,h+1.55,z-.7],.055,3.1,wood,true);art.ring([x+.65,h+2.9,z-.7],.32,.04,blue);
    art.box([x,h+.5,z+.38],[.54,.07,.025],'#d3dfac',false,'resolved');
    marker('false_dawn_winter_console','守住雪原中继',x+.1,z+1.4);cover(-6,3,'snow');cover(6,3,'snow');
+   // A genuine tactical rest point uses the existing cold system, not a healing reward.
+   const bx=-7.2,bz=-4.6,bh=y(bx,bz);
+   art.cyl([bx,bh+.38,bz],.42,.6,'#55636b',true,'metal');art.cyl([bx,bh+.71,bz],.49,.10,'#75858c',false,'metal');
+   art.cyl([bx,bh+.76,bz],.37,.08,'#dc9a55',false,'glow');
+   for(const dx of[-.2,0,.2]){const flame=new THREE.ConeGeometry(.12,.25+Math.abs(dx),5);art.add(flame,'#efbf72',[bx+dx,bh+.9,bz],[1,1,1],false,'glow');flame.dispose();}
+   for(const side of[-1,1])art.beam([bx+side*.3,bh+.2,bz-.2],[bx+side*.45,bh+.02,bz+.25],.065,'#55636b',true,'metal');
+   sockets.push({id:'false_dawn_warm_repeater',type:'poi',label:'中继火盆（取暖）',p:[origin[0]+bx,ground(region,origin[0]+bx,origin[2]+bz),origin[2]+bz],radius:4});
+
   }
   // Central lanes deliberately stay free; these are audited against final combined collision.
   for(const [x,z]of FALSE_DAWN_FIELD_ACTOR_OFFSETS[region])spawnPoints.push([origin[0]+x,ground(region,origin[0]+x,origin[2]+z)+.04,origin[2]+z]);
@@ -101,7 +109,7 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
  function applyState(state:FalseDawnSiteState){if(disposed)return;const key=`${state.stage}:${state.ending??''}:${state.anchors.map(Boolean).join(',')}`;if(key===stateKey)return;stateKey=key;
   const alpha=sites[0];for(let i=0;i<3;i++){const mesh=alpha.art.layers.get((['briefed','choiceA','choiceB']as const)[i]);if(mesh)mesh.visible=!!state.anchors[i]&&!(state.stage==='complete'&&state.ending==='seal');}
   const resolved=state.stage==='complete'&&state.ending==='repurpose';
-  for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved;s.art.materials.glow.emissiveIntensity=resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
+  for(const s of sites){const mesh=s.art.layers.get('resolved');if(mesh)mesh.visible=resolved;s.art.materials.glow.emissiveIntensity=s.region==='winter'?.8:resolved?.8:state.stage==='complete'?0:['array','warden','ending'].includes(String(state.stage))?.65:.1;s.root.userData.falseDawnStage=state.stage;}
  }
  applyState({anchors:[false,false,false],stage:'locked'});
  return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,

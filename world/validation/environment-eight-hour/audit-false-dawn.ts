@@ -14,7 +14,8 @@ const roads={alpha:[-23.2,-85.6],blacksail:[789.8777506112469,4.518337408312958]
 function walk(from:[number,number],target:[number,number]){const floor=q.ground(...from);if(!floor)return{passed:false,error:'No floor'};const p=new Player(colliders,layout.world.waterLevel);p.teleport(from[0],floor.point.y+.2,from[1]);for(let i=0;i<1200;i++){const dx=target[0]-p.pos.x,dz=target[1]-p.pos.z;if(Math.hypot(dx,dz)<.45)return{passed:true,arrival:p.pos.toArray()};p.yaw=Math.atan2(-dx,-dz);p.step(1/120,{x:0,z:1,jump:false,sprint:false});}return{passed:false,arrival:p.pos.toArray()};}
 for(const s of fields.sites){const routes=[];const center:[number,number]=[s.origin[0],s.origin[2]];
  routes.push({id:'road_to_field',...walk(roads[s.region]as[number,number],center)});
- for(const m of s.markers)routes.push({id:m.id,...walk(center,[m.p[0],m.p[2]])});
+ for(const m of s.markers.filter(m=>m.type==='interact'))routes.push({id:m.id,...walk(center,[m.p[0],m.p[2]])});
+ if(s.region==='winter'){const warm=s.markers.find(m=>m.id==='false_dawn_warm_repeater')!,rest:[number,number]=[s.origin[0]-4.5,s.origin[2]-2.4];routes.push({id:'reachable_warm_rest',...walk(center,rest)});if(Math.hypot(rest[0]-warm.p[0],rest[1]-warm.p[2])>=warm.radius!)throw new Error('Rest point outside warmth');}
  const actors=s.spawnPoints.map((p,index)=>{const foot=q.ground(p[0],p[2],p[1]+2),clear=q.clear({x:p[0],y:p[1],z:p[2]},.45,1.9),los=q.terrain.lineOfSight({x:p[0],y:p[1]+1,z:p[2]},{x:center[0],y:s.origin[1]+1,z:center[1]});return{index,p,clear,los,footError:foot?Math.abs(foot.point.y-p[1]):null,route:walk(center,[p[0],p[2]])};});
  const triangles=s.root.children.reduce((total,o)=>{const m=o as THREE.Mesh;return total+(m.geometry.index?.count??m.geometry.attributes.position.count)/3;},0);
  const passed=routes.every(r=>r.passed)&&actors.every(a=>a.clear&&a.los&&a.footError!==null&&a.footError<.2&&a.route.passed);
