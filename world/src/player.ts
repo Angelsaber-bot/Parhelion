@@ -83,13 +83,11 @@ export class Player {
   }
 
   /** input: x = strafe (+right), z = forward (+fwd) */
-  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean; evade?: { x: number; z: number; strength?: number } }, admittedGroundAction = false) {
-    // Only the World action coordinator supplies the optional already-admitted
-    // melee/skill bit. Default false preserves every ordinary movement caller;
-    // this never admits a new airborne action or changes an action clock.
+  step(dt: number, input: { x: number; z: number; jump: boolean; sprint: boolean; evade?: { x: number; z: number; strength?: number } }) {
+    // Preserve genuine physical contact across sub-centimetre downhill gaps.
+    // No airborne grace: only a body grounded before this non-jump step may
+    // retry the same capsule solve against real walkable support.
     const canRecoverGroundSupport = Number.isFinite(dt) && dt > 0 && dt <= .1 && this.onGround && !input.jump && !this.flying;
-    const recoverAdmittedSupport = canRecoverGroundSupport && admittedGroundAction === true;
-    const recoverEvadeSupport = canRecoverGroundSupport && !!input.evade && Number.isFinite(input.evade.x) && Number.isFinite(input.evade.z) && Math.hypot(input.evade.x,input.evade.z) > .001;
     const fwd = new THREE.Vector3(-Math.sin(this.yaw), 0, -Math.cos(this.yaw));
     const right = new THREE.Vector3(Math.cos(this.yaw), 0, -Math.sin(this.yaw));
     const wish = fwd.multiplyScalar(input.z).add(right.multiplyScalar(input.x));
@@ -151,7 +149,7 @@ export class Player {
     } else this.pos.addScaledVector(wish, speed * dt);
     this.pos.addScaledVector(this.vel, dt);
     this.collide();
-    if ((recoverEvadeSupport || recoverAdmittedSupport) && !this.onGround) this.evadeSupport.tryRecover(this, this.colliders, this.resolveSupportCollision);
+    if (canRecoverGroundSupport && !this.onGround) this.evadeSupport.tryRecover(this, this.colliders, this.resolveSupportCollision);
     // Landing is authoritative in this step: do not leave the canopy/ADS in glide mode
     // until the next physics step (which can be a different rendered frame).
     if (this.onGround) this.gliding = false;
