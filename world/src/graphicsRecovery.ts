@@ -22,10 +22,14 @@ export class WorldGraphicsRecovery {
     for (const resolve of this.waiters) resolve(true); this.waiters.clear();
     this.changed();
   };
-  whenContextAvailable(): Promise<boolean> {
-    if (this.current === 'disposed') return Promise.resolve(false);
-    if (this.current !== 'lost') return Promise.resolve(true);
-    return new Promise(resolve => this.waiters.add(resolve));
+  async whenContextAvailable(): Promise<boolean> {
+    // Restoration and a second loss can precede this continuation's microtask.
+    // Recheck ownership rather than handing boot a stale availability snapshot.
+    while (this.current === 'lost') {
+      const available = await new Promise<boolean>(resolve => this.waiters.add(resolve));
+      if (!available) return false;
+    }
+    return this.current !== 'disposed';
   }
   resume() {
     if (this.current !== 'awaiting-resume') return false;

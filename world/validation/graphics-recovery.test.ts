@@ -28,3 +28,12 @@ test('boot resource work waits for browser restoration and releases waiters on d
   canvas.dispatchEvent(new Event('webglcontextlost'));
   const canceled = recovery.whenContextAvailable(); recovery.dispose(); assert.equal(await canceled, false);
 });
+
+test('a second loss before the restored microtask cannot release waiting boot work', async () => {
+  const canvas=new EventTarget(),recovery=new WorldGraphicsRecovery(canvas,()=>{},()=>{});
+  canvas.dispatchEvent(new Event('webglcontextlost'));let released=false;
+  const waiting=recovery.whenContextAvailable().then(value=>{released=true;return value;});
+  canvas.dispatchEvent(new Event('webglcontextrestored'));canvas.dispatchEvent(new Event('webglcontextlost'));
+  await Promise.resolve();await Promise.resolve();assert.equal(released,false);
+  canvas.dispatchEvent(new Event('webglcontextrestored'));assert.equal(await waiting,true);recovery.dispose();
+});
