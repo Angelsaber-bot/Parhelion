@@ -39,7 +39,7 @@ export function createQuestJournal(options:QuestJournalOptions){
  };
  const render=()=>{
   if(disposed)return;const version=++generation;
-  const focused=document.activeElement as HTMLElement|null,focusId=focused?.dataset.questTrack;
+  const focused=document.activeElement as HTMLElement|null,focusId=!root.hidden&&focused&&root.contains(focused)?focused.dataset.questTrack:undefined;
   title.textContent=bilingual('任务指引 · 主线、支线与探索','Quest guidance · Story, side quests and discoveries');
   intro.textContent=bilingual('选择一个任务追踪下一步。距离是直线参考，不是自动寻路；到达路标不等于完成。居民纪事与伪晓续篇保留在故事进度中。','Choose one quest to track its next step. Distances are straight-line references, not pathfinding; reaching a marker does not complete a task. Resident chronicles and False Dawn remain in Story progress.');
   close.textContent=bilingual('返回','Back');main.textContent=bilingual('返回当前主线指引','Restore current main-story guidance');chronicles.textContent=bilingual('五居民纪事与伪晓续篇','Five resident chronicles and False Dawn');
@@ -78,7 +78,7 @@ export function createQuestJournal(options:QuestJournalOptions){
  const key=(event:KeyboardEvent)=>{
   if(disposed||root.hidden)return;
   if(event.key==='Escape'){event.preventDefault();event.stopImmediatePropagation();hide();return;}
-  if(event.key==='Tab'){
+  if(event.key==='Tab'&&!event.ctrlKey&&!event.metaKey&&!event.altKey){
    const controls=[...root.querySelectorAll<HTMLElement>('button,select,input')].filter(el=>!(el as HTMLButtonElement).disabled&&!el.closest('[hidden]'));
    const index=controls.indexOf(document.activeElement as HTMLElement),next=event.shiftKey?(index<=0?controls.length-1:index-1):(index<0||index===controls.length-1?0:index+1);
    event.preventDefault();event.stopPropagation();controls[next]?.focus();
