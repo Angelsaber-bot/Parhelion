@@ -52,16 +52,16 @@ test('production map/HUD/stat integration actually schedules less work and inval
   const hud=source.split('\n').find(line=>line.includes('if (hudBudget.due(now,'))!;
   const statsStart=source.indexOf('if (statsBudget.due(now,'),statsEnd=source.indexOf('requestAnimationFrame(frame)',statsStart);
   assert.ok(mapStart>0&&mapEnd>mapStart&&hud&&statsStart>0&&statsEnd>statsStart);
-  let miniDraws=0,bigDraws=0,hudDraws=0,statWrites=0,open=false;
+  let miniDraws=0,bigDraws=0,hudDraws=0,trackedDraws=0,statWrites=0,open=false;
   const stats={set textContent(_value:string){statWrites++;}};
   const context=vm.createContext({now:0,hudRevision:0,mapBudget:new FrameWorkBudget(30),hudBudget:new FrameWorkBudget(10),statsBudget:new FrameWorkBudget(4),
     map:{draw:(_canvas:unknown,_position:unknown,_yaw:unknown,options:{full:boolean})=>options.full?bigDraws++:miniDraws++},
     mini:{},big:{},player:{pos:{x:0,y:0,z:0},yaw:0},done:new Set(),found:new Set(),mt:null,
-    $:()=>({classList:{contains:()=>open}}),renderContract(){},actionHud:{update(){hudDraws++;}},actions:{},gameplayActive:()=>true,inspectServant:false,
+    $:()=>({classList:{contains:()=>open}}),renderContract(){},updateTrackedStoryHud(){trackedDraws++;},actionHud:{update(){hudDraws++;}},actions:{},gameplayActive:()=>true,inspectServant:false,
     stats,fps:120,dpr:1.25,info:{calls:0,triangles:0},bilingual:(zh:string)=>zh});
   vm.runInContext(transformSync(`globalThis.tick=()=>{${source.slice(mapStart,mapEnd)}\n${hud}\n${source.slice(statsStart,statsEnd)}}`,{loader:'ts'}).code,context);
   for(let i=0;i<120;i++){context.now=i*1000/120;context.tick();}
-  assert.equal(miniDraws,30);assert.equal(bigDraws,0);assert.equal(hudDraws,10);assert.equal(statWrites,4);
-  open=true;context.hudRevision++;context.now+=1;context.tick();assert.equal(bigDraws,1);assert.equal(hudDraws,11);assert.equal(statWrites,5);
+  assert.equal(miniDraws,30);assert.equal(bigDraws,0);assert.equal(hudDraws,10);assert.equal(trackedDraws,10);assert.equal(statWrites,4);
+  open=true;context.hudRevision++;context.now+=1;context.tick();assert.equal(bigDraws,1);assert.equal(hudDraws,11);assert.equal(trackedDraws,11);assert.equal(statWrites,5);
   context.hudRevision++;context.now+=1;context.tick();assert.equal(bigDraws,2,'locale/progress revision paints before the next period');
 });
