@@ -121,7 +121,10 @@ describe('lobby and combat equipment presentation', () => {
     const armory = readFileSync(new URL('../src/armory.ts', import.meta.url), 'utf8');
     expect((html.match(/class="wslot"/g) ?? []).length).toBe(3);
     expect(html).toContain('aria-label="出战配装"');
-    expect(main).toContain('loadout: loadoutStore.value'); expect(main).toContain('if (starting) return');
+    expect(main).toContain('loadout: loadoutStore.value');
+    // Actual pending/active-start coalescing and submitted selections are exercised
+    // through production main in world/validation/arena-startup-dom.test.ts.
+    // Do not require one spelling of the now-stronger startup admission guard.
     expect(main).toContain("settings.label(action)");
     expect(armory).not.toContain('仅模型展示'); expect(armory).not.toContain('不能装备作战');
   });

@@ -10,14 +10,14 @@ const root=resolve('../arena-game');
 const mocks:Record<string,string>={
  'scene.ts':`export class ArenaScene { loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
  'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()} }`,
- 'session.ts':`export function startOffline(opts){window.__qa.offline++;return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
+ 'session.ts':`export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(){}`,
 };
 const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/\.\/(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.slice(2),namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
 async function boot(){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
- const qa={maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,closed:0,throwGame:false,
+ const qa={maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
   loadMap(id:string){const task=deferred();this.maps.push({id,task});return task.promise},join(url:string,opts:any){const task=deferred();this.joins.push({url,opts,task});return task.promise},session(opts?:any){return{opts,close:()=>{qa.closed++}}}};
  (w as any).__qa=qa;w.requestAnimationFrame=()=>1;(w as any).matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  (w as any).fetch=()=>{throw Error('real network forbidden')};(w as any).WebSocket=class{constructor(){throw Error('real network forbidden')}};
@@ -87,3 +87,23 @@ test('final page exit stops an already active session once, while BFCache retain
  h.w.dispatchEvent(new h.w.PageTransitionEvent('pagehide',{persisted:false}));assert.equal(h.qa.closed,1);
  h.w.dispatchEvent(new h.w.PageTransitionEvent('pagehide',{persisted:false}));assert.equal(h.qa.closed,1);
 }finally{h.dom.window.close()}});
+
+for(const mode of['offline','online'])test(`production ${mode} startup snapshots actual selected loadout and options once`,async()=>{const h=await boot();try{
+ const change=(selector:string,value:string)=>{const el=h.d.querySelector<HTMLSelectElement>(selector)!;assert.ok(el);el.value=value;el.dispatchEvent(new h.w.Event('change',{bubbles:true}));};
+ assert.equal(h.d.querySelectorAll('#wslots .wslot').length,3);assert.ok(h.d.getElementById('loadout')!.getAttribute('aria-label'));
+ change('[data-slot="0"]','firefly');change('[data-slot="1"]','halo');change('[data-slot="2"]','hammer');
+ change('#layout','1v2');change('#team','B');(h.d.getElementById('name')as HTMLInputElement).value='Selected fighter';
+ h.click('[data-i="1"]');h.click('[data-id="blackflag"]');h.click(`[data-mode="${mode}"]`);
+ const server=h.d.getElementById('server')as HTMLInputElement;server.value='ws://192.168.1.44:2567';(h.d.getElementById('bots')as HTMLInputElement).checked=true;
+ for(const i of[3,2,7]){const select=h.d.querySelector<HTMLSelectElement>(`[data-w="${i}"]`)!;change(`[data-w="${i}"]`,select.options[select.options.length-1].value);}
+ const settings=(h.w as any).arena.controls.settings;assert.equal(settings.bind('weapon1','KeyI',true),null);assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
+ h.click('#play');h.click('#play');assert.equal(h.qa.offline+h.qa.joins.length,0,'asset readiness remains required');
+ // Simulate a queued stale edit while awaiting assets: the accepted request must own its snapshot.
+ change('[data-slot="0"]','lumen');(h.d.getElementById('name')as HTMLInputElement).value='Later edit';server.value='ws://later.invalid:2567';
+ h.qa.maps[1].task.resolve();await h.flush();
+ const requests=mode==='online'?h.qa.joins.map(j=>j.opts):h.qa.offlineInputs;assert.equal(requests.length,1);
+ const opts=requests[0];assert.deepEqual(Array.from(opts.loadout),['firefly','halo','hammer']);assert.equal(opts.map,'blackflag');assert.equal(opts.layout,'1v2');assert.equal(opts.team,'B');assert.equal(opts.char,1);assert.equal(opts.name,'Selected fighter');assert.equal(opts.bots,true);
+ assert.equal(opts.skins[2],1);for(const i of[3,7])assert.equal(opts.skins[i],0);assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
+ if(mode==='online'){assert.equal(h.qa.joins[0].url,'ws://192.168.1.44:2567');h.qa.joins[0].task.resolve(h.qa.session(opts));await h.flush();}
+ assert.equal(h.qa.games,1);h.click('#play');await h.flush();assert.equal(h.qa.offline+h.qa.joins.length,1,'active game rejects another start');
+ }finally{h.dom.window.close()}});
