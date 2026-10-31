@@ -23,6 +23,16 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
   const snapshot=async(name:string)=>{if(process.env.WORLD_UI_REVIEW_DIR){await mkdir(process.env.WORLD_UI_REVIEW_DIR,{recursive:true});await writeFile(resolve(process.env.WORLD_UI_REVIEW_DIR,`${name}.html`),await harness.snapshot(name));}};
   for(const kind of ['shot','cannon','melee','contact','hurt','kill','skill','evade','interaction','unlock']){const original=world.audio[kind].bind(world.audio);world.audio[kind]=(...args:unknown[])=>{audioCalls[kind]=(audioCalls[kind]??0)+1;return original(...args);};}
   const originalSkillEvent=world.audio.skillEvent.bind(world.audio);world.audio.skillEvent=(event:{type:string})=>{const key=`skill-${event.type}`;audioCalls[key]=(audioCalls[key]??0)+1;return originalSkillEvent(event);};
+  await t.test('existing help explains companion casts versus the intentionally aimed player ultimate in both locales',()=>{
+    const locale=window.document.querySelector<HTMLSelectElement>('#world-settings .parhelion-language select')!;
+    assert.ok(locale);const energy=world.actions.skills.energy,flags=[...world.done];
+    locale.value='en';locale.dispatchEvent(new window.Event('change',{bubbles:true}));
+    assert.match(window.document.getElementById('help')!.textContent!,/Summoned: skills\/ultimates come from your companion/);
+    assert.match(window.document.getElementById('help')!.textContent!,/Your ultimate follows your facing and can miss/);
+    locale.value='zh';locale.dispatchEvent(new window.Event('change',{bubbles:true}));
+    assert.match(window.document.getElementById('help')!.textContent!,/可能落空/);
+    assert.equal(world.actions.skills.energy,energy);assert.deepEqual([...world.done],flags);
+  });
   await t.test('actual settings controls persist volume/mute without synthetic autoplay',async()=>{
     const volume=window.document.getElementById('world-audio-volume') as HTMLInputElement;volume.value='.2';volume.dispatchEvent(new window.Event('input',{bubbles:true}));assert.equal(world.audio.volume,.2);
     const mute=window.document.getElementById('world-audio-muted') as HTMLInputElement;mute.checked=true;mute.dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(world.audio.muted,true);
