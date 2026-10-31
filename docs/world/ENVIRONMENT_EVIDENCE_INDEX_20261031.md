@@ -126,3 +126,6 @@ are documented. No model/motion change was needed.
 `SITEART_CONSTRUCTION_RETENTION_20261031.md`: eight-builder final-buffer parity and
 zero retained construction bins after finish; 2.275 MiB of disjoint CPU backing
 stores no longer retained by these arrays. This is not a measured heap/FPS claim.
+
+## Optional tower west walking access
+See [TOWER_WEST_WALKING_ACCESS_20261031.md](TOWER_WEST_WALKING_ACCESS_20261031.md). Exact append-only 264 ART / 24 COL triangle walking route, original jump/glide/perch route preserved; explicitly not a global softlock repair. Paired native TPS CPU previews and controlled-but-intermittently-airborne descent traces under `environment/tower-access-v2*`; independent fresh earned-route replay tracked separately.

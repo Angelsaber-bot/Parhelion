@@ -5,6 +5,7 @@ import {
   CAMPUS, PLAZA, HQ, ARMORY, SUMMON, SEAM_W, SEAM_N, SEAM_E, BAY_N, SEAM_S,
   type Marker, type V2,
 } from './layout.js';
+import { buildTowerAccess } from './valley/tower-access.js';
 import { mulberry32, range } from './rng.js';
 import { buildSeamBarrier, SEAM_BARRIERS } from './valley/seam-barrier.js';
 import { buildValleyCraft, decorateValleyRuinDoor, decorateValleyWaterfall, decorateValleyFallsRock } from './valley/craft.js';
@@ -648,6 +649,9 @@ export function buildStructures(heightAt: HeightAt) {
   // Independent 2026 observatory craftsmanship, all ART only, appended after
   // legacy batches so their exact ordered collision streams remain unchanged.
   pieces.push(...buildValleyCraft(heightAt));
+  // Optional walking access appended without changing legacy batches or markers.
+  const access = buildTowerAccess(heightAt);
+  pieces.push({ name: access.batch.name, material: access.batch.material, batch: access.batch, outline: false });
   // Boundary walls are built at runtime from the union of all regions (see src/regions.ts).
   return { pieces, markers };
 }

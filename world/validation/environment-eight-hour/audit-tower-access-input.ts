@@ -1,0 +1,17 @@
+/** Actual-main sampled locomotion on isolated candidate. Supported setup per segment;
+ * real W/mouse/RAF thereafter, no ground/velocity/health/progress writes. */
+import assert from'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import path from'node:path';import * as THREE from'three';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';
+const out=process.argv[2];assert(out);await mkdir(out,{recursive:true});const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_REVIEW_ROOT,deterministic:true,effectsQuality:'med'}),w=h.world,d=h.window.document;let now=0;const frame=()=>h.frame(now+=1000/60);const hold=(down:boolean)=>d.body.dispatchEvent(new h.window.KeyboardEvent(down?'keydown':'keyup',{code:'KeyW',bubbles:true}));const results:any[]=[];
+try{(d.getElementById('start')as HTMLElement).click();await Promise.resolve();
+ for(const[label,start,target]of [['ascent',[-29,-159.5],[-13,-159.5]],['descent',[-13,-159.5],[-29,-159.5]],['neighbor-descent',[-29,-159.5],[-42,-159.5]]]as const){
+  const ground=w.combat.geometry.ground(start[0],start[1],40);assert(ground);w.player.teleport(start[0],ground.point.y+.08,start[1]);for(let i=0;i<90;i++)frame();assert(w.player.onGround&&!w.player.swimming);const setup=w.player.pos.toArray(),hpBefore=w.combat.state.hp,trace:any[]=[];let reached=false,maxHorizontalSpeed=0,maxDownSpeed=0,airborne=0,cameraWallFrames=0;
+  for(let i=0;i<1800&&!w.combat.defeated;i++){
+   if(Math.hypot(w.player.pos.x-target[0],w.player.pos.z-target[1])<.24){reached=true;break;}
+   const yaw=Math.atan2(-(target[0]-w.player.pos.x),-(target[1]-w.player.pos.z)),delta=Math.atan2(Math.sin(w.player.yaw-yaw),Math.cos(w.player.yaw-yaw)),mouse=new h.window.MouseEvent('mousemove',{bubbles:true});Object.defineProperties(mouse,{movementX:{value:Math.max(-.07,Math.min(.07,delta))/(.0022*w.settings.value.sensitivity)},movementY:{value:w.player.pitch/(.0022*w.settings.value.sensitivity)}});d.dispatchEvent(mouse);hold(Math.abs(delta)<.35);const before=w.player.pos.clone();frame();const horizontal=Math.hypot(w.player.pos.x-before.x,w.player.pos.z-before.z)*60;maxHorizontalSpeed=Math.max(maxHorizontalSpeed,horizontal);maxDownSpeed=Math.max(maxDownSpeed,-w.player.vel.y);if(!w.player.onGround)airborne++;
+   const head=w.player.pos.clone().add(new THREE.Vector3(0,1.55,0)),cam=w.camera.getWorldPosition(new THREE.Vector3()),direction=cam.clone().sub(head),hit=w.combat.geometry.cast(head,direction,Math.max(0,direction.length()-.1));if(hit)cameraWallFrames++;
+   trace.push({frame:i,feet:w.player.pos.toArray(),ground:w.player.onGround,vy:w.player.vel.y,horizontalSpeed:horizontal,hp:w.combat.state.hp,camera:cam.toArray(),cameraWallHit:hit?hit.point.toArray():null});
+  }
+  hold(false);for(let i=0;i<60;i++)frame();const row={label,setup,target,reached,feet:w.player.pos.toArray(),onGround:w.player.onGround,airborneFrames60Hz:airborne,maxHorizontalSpeed,maxDownSpeed,cameraWallFrames,hpBefore,hpAfter:w.combat.state.hp,trace};results.push(row);console.log(JSON.stringify({...row,trace:undefined}));assert(reached&&w.player.onGround&&!w.player.swimming,'normal walking endpoint');assert(maxHorizontalSpeed<5.7,'no unintended walking speed gain');
+ }
+ assert.deepEqual(h.errors,[]);
+}finally{hold(false);await writeFile(path.join(out,'actual-input.json'),JSON.stringify({scope:'Explicit supported setup per segment, production input after setup; no HP/progress/ground/velocity writes',results},null,2)+'\n');await h.close();}

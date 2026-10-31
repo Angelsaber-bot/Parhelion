@@ -24,6 +24,10 @@ const approvedTavernNode = {translation:[0,0,0],rotation:[0,0,0,1],scale:[1,1,1]
     attributes:{POSITION:liningAttribute('7e44d810baff25cebddd0dc60c1d8f3e9e201a6f78e8a1152a767e966491aa85'),
       NORMAL:liningAttribute('320e8ff58ffe3362e068da8491839d8c319b287ff2fc772547b32959b9571c3d'),
       COLOR_0:liningAttribute('af573593472bbb7973531523b61fe7a1611c0cc5960e3facdfdd9b9de340a456')},indices:null,triangles:6}]};
+// Approved optional west walking access; old climb and every original collider remain.
+const towerAccess = "Tower_West_Access", towerAccessCol = "COL_Tower_West_Access";
+const approvedTowerArt = {"translation":[0,0,0],"rotation":[0,0,0,1],"scale":[1,1,1],"extras":{"outline":false,"dynamic":false},"children":[],"primitives":[{"material":"M_Toon","mode":4,"attributes":{"POSITION":{"type":"VEC3","componentType":5126,"normalized":false,"count":792,"sha256":"88a663e029ad2a2432cce64b4b3d9339bb8d515702311e9e3ea608cde33ca422"},"NORMAL":{"type":"VEC3","componentType":5126,"normalized":false,"count":792,"sha256":"dd7a8e93b213a48728c38ae1fb44017ac1175f4482474bc2039be91439318825"},"COLOR_0":{"type":"VEC3","componentType":5126,"normalized":false,"count":792,"sha256":"84cf1df37a2b727581d4fc8d1faf80a4219bda37b19d76a3a559bcee2c0da890"}},"indices":null,"triangles":264}]};
+const approvedTowerCol = {"translation":[0,0,0],"rotation":[0,0,0,1],"scale":[1,1,1],"extras":{},"children":[],"primitives":[{"material":"M_Collision","mode":4,"attributes":{"POSITION":{"type":"VEC3","componentType":5126,"normalized":false,"count":72,"sha256":"efa43399fbf148e1c885c64af516b4a745c69f2cd5a2408954f4ba4adcfcf123"}},"indices":null,"triangles":24}]};
 const edits:Record<string,{nodes:string[];triangles:number;bytes:number}>={
   alpha:{nodes:['Valley_Landing_Fieldkit_Ceramic','Valley_Landing_Fieldkit_Metal'],triangles:700,bytes:23000},
   britain:{nodes:['Britain_Physical_Wool','Britain_Physical_Bronze','Britain_Physical_Iron'],triangles:500,bytes:5000},
@@ -45,11 +49,18 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
     assert.equal(createHash('sha256').update(historical).digest('hex'),old.layoutSha256,'only two approved copy strings differ from complete historical layout bytes');
   } else assert.equal(now.layoutSha256,old.layoutSha256,'complete layout bytes: quests, gates, navigation, spawns and lighting');
   assert.deepEqual(now.materials,old.materials,'existing surface/alpha/material identities');
-  const added = region === 'alpha' ? seamNames : region === 'blacksail' ? [tavernLining] : [];
-  const appendTriangles = region === 'blacksail' ? 6 : 0, appendBytes = region === 'blacksail' ? 1412 : 0;
-  assert.deepEqual(Object.keys(now.nodes).filter(n=>!added.includes(n)),Object.keys(old.nodes),'only explicitly named seam fields or exact tavern lining may be added; no removal/reorder');
+  const added = region === 'alpha' ? [...seamNames,towerAccess] : region === 'blacksail' ? [tavernLining] : [];
+  const appendTriangles = region === 'alpha' ? 264 : region === 'blacksail' ? 6 : 0, appendBytes = region === 'alpha' ? 30468 : region === 'blacksail' ? 1412 : 0;
+  const addedNodes = region === 'alpha' ? [...added,towerAccessCol] : added;
+  assert.deepEqual(Object.keys(now.nodes).filter(n=>!addedNodes.includes(n)),Object.keys(old.nodes),'only explicitly named seam fields or exact tavern lining may be added; no removal/reorder');
   for(const [name,node] of Object.entries(now.nodes)){
-    if(region==='blacksail' && name===tavernLining) {
+    if(region==='alpha' && name===towerAccess) {
+      assert.deepEqual(node,approvedTowerArt,'exact optional walking ramp ART');
+    } else if(region==='alpha' && name===towerAccessCol) {
+      assert.deepEqual(node,approvedTowerCol,'exact 24-triangle append only; no old collider exemption');
+    } else if(region==='alpha' && name==='COLLISION') {
+      assert.deepEqual({...node,children:node.children.filter(n=>n!==towerAccessCol)},old.nodes[name]);
+    } else if(region==='blacksail' && name===tavernLining) {
       assert.deepEqual(node,approvedTavernNode,'only the approved six inward timber faces and exact static metadata');
     } else if(added.includes(name)) {
       assert.deepEqual(node.extras,{opensWhen:['summon_circle'],outline:false,dynamic:true});
