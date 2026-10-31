@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, chooseCampaignEpisode as choose, getCampaignEpisodeGuide as guide, getCampaignEpisodeJournal as journal, getCampaignEpisodeState as state, interactCampaignEpisode as interact } from '../src/campaignEpisodes';
+import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, chooseCampaignEpisode as choose, getCampaignEpisodeGuide as guide, getCampaignEpisodeJournal as journal, getCampaignEpisodeState as state, getCampaignEpisodeObjective as objective, interactCampaignEpisode as interact } from '../src/campaignEpisodes';
 import { CAMPAIGN_WORK_TASKS as TASKS } from '../src/campaignWorkTasks';
 import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/progress';
-import { getEraBossRequirements, ERA_STORIES, ERA_IDS } from '../src/eraStories';
+import { getEraBossRequirements, getEraStoryGuide, ERA_STORIES, ERA_IDS } from '../src/eraStories';
 import type { RegionId } from '../src/settlements/types';
 const correct = (r:RegionId,i:number) => TASKS[r][i].options.find(o=>o.correct)!.id;
 function work(r:RegionId,done:Set<string>) {
@@ -60,4 +60,15 @@ test('unknown input and forged choice flags are harmless; original boss gate req
  for(const r of R){done.add(`campaign_${r}_choice_invalid`);assert.equal(state(r,done).choice,null);assert.equal(choose(r,'work_2_invalid',done).changed,false);assert.equal(choose(r,'__proto__',done).changed,false);}
  assert.equal(interact('unrelated_marker',done).handled,false);for(const r of['__proto__','constructor','','bad'])assert.equal(choose(r,'broadcast',done).handled,false);
  assert.deepEqual(ERA_IDS.map(r=>getEraBossRequirements(ERA_STORIES[r].core,done)),baseline);
+});
+
+
+test('tracked chronicle evidence follows real prerequisites rather than locked cores, with old Alpha partial saves respected',()=>{
+ for(const r of R){const done=new Set<string>();work(r,done);choose(r,D[r].choices[0].id,done);
+ const check=()=>{const hud=objective(r,done)!;assert.ok(hud.line[0].length<=65);assert.ok(hud.line[1].length<=100,hud.line[1]);};check();
+ if(r!=='alpha'){for(const beat of ERA_STORIES[r].beats){assert.equal(guide(r,done)!.targetId,getEraStoryGuide(r,done)!.targetId);check();for(const flag of beat.flags){done.add(flag);check();}}}
+ else{assert.equal(guide(r,done)!.targetId,'armory_rack');done.add('armory_rack');assert.equal(guide(r,done)!.targetId,'ruin_target_1');for(const flag of['ruin_target_1','ruin_target_2','ruin_target_3'])done.add(flag);assert.equal(guide(r,done)!.targetId,'relay_a');done.add('relay_a');done.delete('armory_rack');assert.equal(guide(r,done)!.targetId,'relay_b','never sends old repaired-relay saves back to new introductory chores');check();}
+ D[r].evidence.forEach(id=>done.add(id));check();interact(D[r].npc,done);assert.equal(objective(r,done),null);
+ }
+ const done=new Set(R.map(r=>flags(r).complete));assert.ok(objective('alpha',done)?.line[1].includes('dispatch board'));
 });

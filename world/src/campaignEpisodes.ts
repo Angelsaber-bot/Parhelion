@@ -1,6 +1,6 @@
 import type { Localized, RegionId } from './settlements/types';
 import { CAMPAIGN_WORK_TASKS } from './campaignWorkTasks';
-import { isEraCoreCleared } from './eraStories';
+import { getEraStoryGuide, isEraCoreCleared } from './eraStories';
 
 /** Original resident stories for this fan-game; not claims about source canon.
  * The existing main campaign owns every core, contract and world gate. These
@@ -133,7 +133,20 @@ export function getCampaignEpisodeGuide(region: RegionId, done: ReadonlySet<stri
     case 'briefing': return { title: def.title, text: def.brief, targetId: def.npc, targetKind: 'npc' };
     case 'work': return { title: def.title, text: def.working, targetId: def.work, targetKind: 'marker' };
     case 'decision': return { title: def.title, text: def.question, targetId: def.decision, targetKind: 'marker' };
-    case 'follow-through': return { title: def.title, text: def.evidenceText, targetId: def.evidence.find(id => !done.has(id)) ?? def.evidenceTarget, targetKind: 'marker' };
+    case 'follow-through': {
+      if (region !== 'alpha') {
+        const next = getEraStoryGuide(region, done);
+        if (next) return { ...next, title: def.title };
+      }
+      // A tracked chronicle must not point through an unprepared shrine or
+      // hidden flagship bridge. Guide the existing prerequisite, never add one.
+      let targetId = def.evidence.find(id => !done.has(id)) ?? def.evidenceTarget;
+      if (region === 'alpha' && targetId === 'relay_a') {
+        const target = ['ruin_target_1', 'ruin_target_2', 'ruin_target_3'].find(id => !done.has(id));
+        if (target) targetId = done.has('armory_rack') ? target : 'armory_rack';
+      }
+      return { title: def.title, text: getCampaignEvidenceLine(targetId, done), targetId, targetKind: 'marker' };
+    }
     case 'report': return { title: def.title, text: def.report, targetId: def.npc, targetKind: 'npc' };
     case 'complete': return region === 'alpha' ? getCampaignDispatchGuide(done) : null;
   }
@@ -274,4 +287,44 @@ export function getCampaignDispatchText(done: ReadonlySet<string>): Localized {
     'Lan keeps the details in the residence record folder; the channel remains staffed. “Not everything needs a broadcast,” Lan says. “Some stories are worth telling when someone comes home.”',
   ]);
   return [lines.map(line => line[0]).join('\n'), lines.map(line => line[1]).join('\n')];
+}
+
+
+function getCampaignEvidenceLine(target: string, done: ReadonlySet<string>): Localized {
+  const fixed: Record<string, Localized> = {
+    hq_terminal: ['先启动观测所终端。', 'Activate the Observatory terminal first.'],
+    armory_rack: ['在工坊武器架领取原主线装备。', 'Collect your main-story equipment from the workshop rack.'],
+    relay_a: ['启动森林遗迹的中继器 A。', 'Activate Relay A in the forest ruins.'],
+    relay_b: ['启动废弃前哨站的中继器 B。', 'Activate Relay B at the abandoned outpost.'],
+    saber_contract: ['先到圣剑湖立下约定。', 'Make the pact at Sword Lake first.'],
+    hall_brazier_1: ['点燃圆桌大厅第一盏誓火。', 'Light the first oath hearth in the Round Table Hall.'],
+    sun_core: ['到卡姆兰击败空位之王。', 'Defeat the Vacant King at Camlann.'],
+    blackbeard_meet: ['先到拿骚酒馆找黑胡子。', 'Meet Blackbeard at Nassau tavern first.'],
+    fort_cannon: ['启动要塞炮，在炮位上瞄准。', 'Ready the fort cannon and aim from its firing station.'],
+    sea_core: ['登上旗舰，击败亡航提督。', 'Board the flagship and defeat the Drowned Admiral.'],
+    napoleon_meet: ['先在大军营地与拿破仑交谈。', 'Speak with Napoleon at the army camp first.'],
+    musashi_meet: ['先到三条大桥与武藏交谈。', 'Meet Musashi at Sanjō Bridge first.'],
+  };
+  if (Object.hasOwn(fixed, target)) return [...fixed[target]];
+  const count = (prefix: string) => [1,2,3].filter(index => done.has(`${prefix}_${index}`)).length;
+  if (/^range_target_[123]$/.test(target)) return [`练习靶 ${count('range_target')}/3：在靶场练习射击。`, `Practice targets ${count('range_target')}/3: train at the shooting range.`];
+  if (/^ruin_target_[123]$/.test(target)) return [`遗迹机关靶 ${count('ruin_target')}/3：先打开中继器 A 的通路。`, `Ruin targets ${count('ruin_target')}/3: open the route to Relay A.`];
+  if (/^ghost_boat_[123]$/.test(target)) return [`幽灵艇 ${count('ghost_boat')}/3：从要塞炮位开火。`, `Ghost boats ${count('ghost_boat')}/3: fire from the fort cannon.`];
+  if (/^beacon_[123]$/.test(target)) return [`暖路烽火 ${count('beacon')}/3：沿雪原点火。`, `Warm-route beacons ${count('beacon')}/3: light the snowfield route.`];
+  if (/^kikyo_banner_[123]$/.test(target)) return [`桔梗旗 ${count('kikyo_banner')}/3：射落军阵旗号。`, `Bellflower banners ${count('kikyo_banner')}/3: shoot down the army’s signals.`];
+  return ['沿原主线完成当前道路目标。', 'Follow the current objective on the original main route.'];
+}
+export function getCampaignEpisodeObjective(region: RegionId, done: ReadonlySet<string>): { title: Localized; line: Localized } | null {
+  const def = CAMPAIGN_EPISODES[region], state = getCampaignEpisodeState(region, done), guide = getCampaignEpisodeGuide(region, done);
+  if (!guide) return null;
+  let line: Localized;
+  switch (state.stage) {
+    case 'briefing': line = [`与${def.speaker[0]}交谈。`, `Speak with ${def.speaker[1]}.`]; break;
+    case 'work': line = [`${def.workLabel[0]} · 第${state.workProgress + 1}/2步。`, `${def.workLabel[1]} · Step ${state.workProgress + 1}/2.`]; break;
+    case 'decision': line = [`${def.decisionLabel[0]}，亲手确认安排。`, `${def.decisionLabel[1]}; confirm your plan at the site.`]; break;
+    case 'follow-through': line = getCampaignEvidenceLine(guide.targetId, done); break;
+    case 'report': line = [`返回${def.speaker[0]}身边交谈。`, `Return to ${def.speaker[1]} and speak.`]; break;
+    case 'complete': line = ['在谷地发信板留下五处归路记录。', 'File the five return records at the Valley dispatch board.']; break;
+  }
+  return { title: guide.title, line };
 }

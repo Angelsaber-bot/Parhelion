@@ -89,3 +89,13 @@ test('choice dialogs bound text and container height, reveal keyboard selection 
  try{panel.showChoices(['选择','Choose'],['人','Person'],options,()=>{});const root=f.document.getElementById('world-dialogue')!,text=f.document.getElementById('world-dialogue-text')!;assert.equal(root.style.maxHeight,'84vh');assert.equal(root.style.overflowY,'auto');assert.equal(text.style.maxHeight,'min(30vh, 220px)');panel.selectChoice(1);assert.equal(scrolled,1);root.scrollTop=120;panel.show(['短句','Short line']);assert.equal(root.scrollTop,0);assert.equal(text.style.maxHeight,'min(42vh, 320px)');root.scrollTop=120;panel.hide();assert.equal(root.scrollTop,0);}
  finally{f.dom.window.HTMLElement.prototype.scrollIntoView=old;panel.dispose();f.close();}
 });
+
+test('detached chronicle/arc/dispatch controls cannot alter tracking or close a replacement journal',()=>{
+ const f=fixture(),done=new Set<string>();for(const r of R){done.add(flags(r).complete);done.add(flags(r).choice(D[r].choices[0].id));}let pins=0,arcs=0;
+ const panel=createCampaignJournal({done:()=>done,onOpen(){},pin(){pins++;},restoreMain(){},pinArc(){arcs++;}});
+ try{panel.show();const oldArc=f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!,oldChronicle=f.document.querySelector<HTMLButtonElement>('[data-campaign-region="alpha"]')!,oldDispatch=f.document.querySelector<HTMLButtonElement>('[data-campaign-dispatch-track]')!;
+ setLanguage('en');for(const button of[oldArc,oldChronicle,oldDispatch])button.click();assert.equal(pins,0);assert.equal(arcs,0);assert.equal(panel.open,true);
+ const next=[...f.document.querySelectorAll<HTMLButtonElement>('[data-false-dawn-track],[data-campaign-region="alpha"],[data-campaign-dispatch-track]')];panel.hide();panel.show();for(const button of next)button.click();assert.equal(pins,0);assert.equal(arcs,0);assert.equal(panel.open,true);
+ f.document.querySelector<HTMLButtonElement>('[data-campaign-dispatch-track]')!.click();assert.equal(pins,1);assert.equal(panel.open,false);
+ }finally{panel.dispose();f.close();}
+});

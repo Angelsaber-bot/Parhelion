@@ -296,3 +296,51 @@ export function getFalseDawnMarkerLabel(id: string): Localized | null {
   const label = Object.hasOwn(MARKER_LABELS, id) ? MARKER_LABELS[id] : null;
   return label ? [...label] : null;
 }
+
+export interface FalseDawnObjective { title: Localized; line: Localized; }
+/** Compact, truthful HUD text for an explicitly tracked continuation only.
+ * Runtime may add its real remaining-actor count separately. No simulated count
+ * or time-to-completion is inferred from saved flags.
+ */
+export function getFalseDawnObjective(done: ReadonlySet<string>, activeEncounter?: string | null): FalseDawnObjective | null {
+  const state = getFalseDawnState(done);
+  const act = ['locked','equipment','lead','courier','route'].includes(state.stage) ? 1
+    : ['harbor','harbor-key','winter-one','winter-two','winter-key'].includes(state.stage) ? 2 : 3;
+  const title: Localized = [`伪晓回声 · 第${act}幕`, `False Dawn · Act ${act}`];
+  const at = (line: Localized): FalseDawnObjective => ({ title, line });
+  switch (state.stage) {
+    case 'locked': return at(['与岚交谈，完成接收机的两步检修。', 'Speak with Lan and complete the receiver’s two repair steps.']);
+    case 'equipment': return at(['先到原主线军械架领取武器。', 'Collect your equipment from the original armory rack first.']);
+    case 'lead': return at(['检查谷地旧收讯器，自主接通追踪。', 'Inspect the old Valley receiver; connect the trace when ready.']);
+    case 'courier': return at(activeEncounter === 'false_dawn_courier'
+      ? ['截住回声信使；先读预警，再反击。', 'Intercept the Echo Courier. Read its attack tell, then counter.']
+      : ['返回旧收讯器，重新接通尚未完成的追踪。', 'Return to the old receiver to restart the unfinished interception.']);
+    case 'route': return at(['在旧收讯器选择港口截讯或雪原守台。', 'At the receiver, choose harbor interception or snowfield defense.']);
+    case 'harbor': return at(activeEncounter === 'false_dawn_harbor'
+      ? ['借掩体击败潮汐台守卫，再检查控制台。', 'Use cover to defeat the tide-station guards, then inspect the console.']
+      : ['到港口潮汐台，自主接通截讯战。', 'Reach the harbor tide station and deliberately start the interception.']);
+    case 'harbor-key': return at(['核对潮汐记录，找出真正等待过的回传。', 'Compare the tide records; find the return that waited for an answer.']);
+    case 'winter-one': return at(activeEncounter === 'false_dawn_winter_1'
+      ? ['第1波：守住中继；需要时靠近火盆。', 'Wave 1: defend the repeater; use the brazier when you need warmth.']
+      : ['在雪原台旁取暖，再接通第1波。', 'Warm up beside the snowfield station, then connect wave 1.']);
+    case 'winter-two': return at(activeEncounter === 'false_dawn_winter_2'
+      ? ['第2波：避开突进与重击，守住中继。', 'Wave 2: evade advancing attacks and heavy strikes; hold the repeater.']
+      : ['第1波已完成；准备好后主动接通第2波。', 'Wave 1 is complete. Connect wave 2 only when ready.']);
+    case 'winter-key': return at(['读取雪原来声，辨认呼吸与停顿。', 'Read the snowfield return; identify breathing room and pauses.']);
+    case 'return': return at(['返回谷地阵列台，准备关闭三处发射器。', 'Return to the Valley array console; prepare to disable three emitters.']);
+    case 'array': {
+      const guardsCleared = cleared('false_dawn_array', done);
+      if (!guardsCleared && activeEncounter !== 'false_dawn_array') return at(['回阵列台重启守卫战；已关闭的开关保留。', 'Restart at the array console; disabled emitters remain saved.']);
+      if (state.nextAnchor === null) return at(['三处发射器已关闭；击败剩余守卫。', 'All three emitters are disabled. Defeat the remaining guards.']);
+      const names: readonly Localized[] = [['I 收讯','I Receive'],['II 转发','II Relay'],['III 播送','III Transmit']];
+      const name = names[state.nextAnchor];
+      return guardsCleared ? at([`守卫已击败；下一处关闭 ${name[0]}。`, `Guards defeated. Next disable ${name[1]}.`])
+        : at([`边迎战边依次关闭 I→II→III。下一处：${name[0]}。`, `Fight and disable I → II → III in order. Next: ${name[1]}.`]);
+    }
+    case 'warden': return at(activeEncounter === 'false_dawn_warden'
+      ? ['守门者：侧移躲突刺，退开重扫，抓住恢复。', 'Warden: sidestep the thrust, leave the sweep, then punish recovery.']
+      : ['回到阵列台，准备好后引出回声守门者。', 'Return to the array console; expose the Echo Warden when ready.']);
+    case 'ending': return at(['在阵列台决定保留求援频道，或封存复制回路。', 'At the console, choose a rescue channel or seal the copying circuit.']);
+    case 'complete': return null;
+  }
+}

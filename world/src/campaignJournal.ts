@@ -36,7 +36,8 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
   const main = document.createElement('button'), close = document.createElement('button'); main.type = close.type = 'button';
   main.dataset.journalAction = 'main'; close.dataset.journalAction = 'close';
   footer.append(main, close); card.append(title, intro, summary, list, footer); root.append(style, card); document.body.append(root);
-  let disposed = false, returnFocus: HTMLElement | null = null;
+  let disposed = false, returnFocus: HTMLElement | null = null, renderGeneration = 0;
+  const currentControl = (button: HTMLButtonElement, generation: number) => !disposed && !root.hidden && generation === renderGeneration && button.isConnected && list.contains(button);
   const focusable = (element: HTMLElement | null): element is HTMLElement => {
     if (!element?.isConnected || element.closest('[hidden],[inert]') || element.matches(':disabled')) return false;
     if (!element.matches('button,input,select,textarea,a[href],[tabindex]')) return false;
@@ -48,7 +49,7 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
   const hide = () => {
     if (root.hidden) return;
     const ownedFocus = root.contains(document.activeElement) || document.activeElement === document.body;
-    root.hidden = true; options.onClose?.();
+    root.hidden = true; renderGeneration++; options.onClose?.();
     const current = document.activeElement;
     if (ownedFocus && (!current || current === document.body || root.contains(current)) && !document.querySelector('dialog[open]')) {
       const target = focusable(returnFocus) ? returnFocus : document.getElementById('world-campaign-journal-open');
@@ -58,13 +59,14 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
   };
   function render() {
     if (disposed) return;
+    const generation = ++renderGeneration;
     const focused = document.activeElement as HTMLElement | null;
     const focusRegion = focused && list.contains(focused) ? focused.dataset.campaignRegion : undefined;
     const focusArc = focused?.dataset.falseDawnTrack !== undefined;
     const focusDispatch = focused?.dataset.campaignDispatchTrack !== undefined;
     const entries = getCampaignEpisodeJournal(options.done());
-    title.textContent = bilingual('归路纪事', 'Chronicles of the Way Home');
-    intro.textContent = bilingual('五处灯火，五个留下守候的人。这些现场故事伴随主线发生，不会锁住原来的道路；已完成主线也能回来亲手安排。', 'Five lights, five people keeping watch. These field stories accompany the main campaign without locking its roads. You can undertake them even after finishing the main story.');
+    title.textContent = options.pinArc ? bilingual('主线续篇与归路纪事', 'Campaign & Way Home Chronicles') : bilingual('归路纪事', 'Chronicles of the Way Home');
+    intro.textContent = options.pinArc ? bilingual('追踪伪晓讯号，或停下来认识五处守候的人。这里记录你的下一步；不会替你远程操作，也不会改写原来的道路。', 'Trace the False Dawn signal, or stop to meet the five people keeping watch. This journal records the next step; it cannot perform work remotely or rewrite the original roads.') : bilingual('五处灯火，五个留下守候的人。这些现场故事伴随主线发生，不会锁住原来的道路；已完成主线也能回来亲手安排。', 'Five lights, five people keeping watch. These field stories accompany the main campaign without locking its roads. You can undertake them even after finishing the main story.');
     summary.textContent = bilingual(`已落实 ${entries.filter(entry => entry.state.completed).length}/5 · 追踪只设置路标；安排必须到现场确认。`, `Resolved ${entries.filter(entry => entry.state.completed).length}/5 · Tracking only sets a waypoint; decisions must be made at the site.`);
     main.textContent = bilingual('返回主线指引', 'Restore main-story guidance'); close.textContent = bilingual('返回', 'Back');
     list.replaceChildren();
@@ -82,7 +84,7 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
       const blocked = options.arcTrackingBlocked?.(); track.disabled = !arcGuide || !!blocked;
       track.textContent = arc.completed ? bilingual('已完成', 'Complete') : bilingual('追踪伪晓线索', 'Track the False Dawn lead');
       if (blocked && arcGuide) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
-      track.onclick = () => { if (!disposed && !root.hidden && !options.arcTrackingBlocked?.() && options.pinArc?.() !== false) hide(); };
+      track.onclick = () => { if (currentControl(track, generation) && !options.arcTrackingBlocked?.() && options.pinArc?.() !== false) hide(); };
       article.append(track); list.append(article);
     }
     for (const { definition: def, state, guide } of entries) {
@@ -107,7 +109,7 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
       const blocked = options.trackingBlocked?.(def.region);
       if (blocked && guide) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
       track.disabled = !guide || !!blocked; track.textContent = state.completed && !guide ? bilingual('已落实', 'Resolved') : bilingual('追踪这段纪事', 'Track this chronicle');
-      track.addEventListener('click', () => { if (!disposed && !root.hidden && !options.trackingBlocked?.(def.region) && options.pin(def.region) !== false) hide(); });
+      track.addEventListener('click', () => { if (currentControl(track, generation) && !options.trackingBlocked?.(def.region) && options.pin(def.region) !== false) hide(); });
       article.append(track); list.append(article);
     }
     const dispatch = getCampaignDispatchState(options.done());
@@ -120,7 +122,7 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
         const track = document.createElement('button'); track.type = 'button'; track.dataset.campaignDispatchTrack = ''; track.textContent = bilingual('追踪归路发信板', 'Track the return dispatch');
         const blocked = options.trackingBlocked?.('alpha'); track.disabled = !!blocked;
         if (blocked) { const reason = document.createElement('p'); reason.className = 'campaign-status'; reason.textContent = bilingual(...blocked); article.append(reason); }
-        track.onclick = () => { if (!disposed && !root.hidden && !options.trackingBlocked?.('alpha') && options.pin('alpha') !== false) hide(); }; article.append(track);
+        track.onclick = () => { if (currentControl(track, generation) && !options.trackingBlocked?.('alpha') && options.pin('alpha') !== false) hide(); }; article.append(track);
       }
       list.append(article);
     }
