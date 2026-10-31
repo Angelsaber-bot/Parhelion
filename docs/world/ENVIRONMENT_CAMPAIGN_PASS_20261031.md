@@ -64,3 +64,18 @@ shader multiplies both, rather than accidentally whitening old vertex-colored pr
 Small procedural surface textures are not reproduced. Lighting is explicit offline
 studio lighting, including a review fill; these images are not WebGL captures or
 proof of runtime illumination/FPS. Original charred Kyoto art is untouched.
+
+## Resident silhouette refinement
+
+The five named campaign residents reuse the existing six articulated render batches
+and shared resident material. Their occupations now have authored costume/accessories:
+receiver headphones, witness mantle/book, oilskin cape/hand lantern, stretcher harness
+and blanket pack, and paper keeper's scrolls/satchel. No new actor count beyond the
+five agreed story sockets, no pathfinding or lights, and existing 24 m animation /
+90 m visibility ranges stay unchanged. New role poses are restrained and compatible
+with the fixed-arm resident rig; no fake elbow-reaching motion is claimed.
+
+Actual runtime geometry triangles per added resident: 6,182 / 6,242 / 5,826 / 6,230 /
+5,666. `settlement-npcs.test.ts` checks six batches each, unique occupation geometry,
+human scale and finite matrices after 600 updates. Actual mesh review is
+`environment/campaign-residents/residents.png` in the sibling evidence directory.

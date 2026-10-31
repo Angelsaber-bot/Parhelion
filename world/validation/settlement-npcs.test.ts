@@ -24,3 +24,14 @@ test('far residents are hidden and idle updates are finite for invalid delta',()
 test('invalid and duplicate resident sockets fail clearly before scene construction',()=>{
  assert.throws(()=>createSettlementNpcs([npc(),npc()]),/Duplicate/);assert.throws(()=>createSettlementNpcs([{...npc(),position:[NaN,0,0]}]),/Invalid/);
 });
+
+import {CAMPAIGN_EPISODES,CAMPAIGN_REGIONS} from '../src/campaignEpisodes';
+test('campaign residents have distinct work silhouettes within the existing six-batch actor budget',()=>{
+ const sockets=CAMPAIGN_REGIONS.map((region,i)=>({id:CAMPAIGN_EPISODES[region].npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:[i*2,0,0]as[number,number,number],lines:[CAMPAIGN_EPISODES[region].brief]}));
+ const residents=createSettlementNpcs(sockets);const signatures:number[]=[];
+ for(const person of residents.group.children){let meshes=0,triangles=0;person.traverse(o=>{if(o instanceof THREE.Mesh){meshes++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});assert.equal(meshes,6);assert.ok(triangles<14000);signatures.push(triangles);}
+ assert.equal(new Set(signatures).size,5,'each occupation has authored accessory geometry');
+ for(let i=0;i<600;i++)residents.update(1/60,new THREE.Vector3(4,0,3));
+ residents.group.updateMatrixWorld(true);for(const person of residents.group.children){const bounds=new THREE.Box3().setFromObject(person);assert.ok(bounds.max.y-bounds.min.y<2,'human-scaled work clothing');person.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));}
+ residents.dispose();
+});
