@@ -25,15 +25,18 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   const original = document.createElement('button'); original.type = 'button';
   const originalHelp = document.createElement('p'); originalHelp.className = 'settings-note';
   let disposed = false, readGeneration = 0;
+  let resultText: [string, string] | null = null;
+  const setResult = (line: [string, string] | null) => { resultText = line; result.textContent = line ? bilingual(...line) : ''; };
   const download = (raw: string | Uint8Array<ArrayBuffer>, name: string, type = 'application/json') => {
     const url = URL.createObjectURL(new Blob([raw], { type }));
     const link = document.createElement('a'); link.href = url; link.download = name;
     document.body.append(link); link.click(); link.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
-  const failedReplacement = () => { result.textContent = bilingual('未替换存档：存储不可用或存档已被另一页面改动。原数据与本次进度保持不变。', 'Save not replaced: storage failed or another tab changed it. Stored data and session progress are unchanged.'); };
+  const failedReplacement = () => setResult(['未替换存档：存储不可用或存档已被另一页面改动。原数据与本次进度保持不变。', 'Save not replaced: storage failed or another tab changed it. Stored data and session progress are unchanged.']);
   const render = () => {
     if (disposed) return;
+    result.textContent = resultText ? bilingual(...resultText) : '';
     title.textContent = bilingual('任务存档', 'Quest save'); status.textContent = bilingual(...STATUS[progress.persistence]);
     if (progress.saveBlocked) status.textContent = bilingual('原存档需要检查并已受保护，可读取的当前进度已保留，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；自动保存不会覆盖原数据。', 'Original save needs review and is protected; readable current progress is retained, but this session is not saved. Download original/session data or explicitly confirm replacement. Autosave will not overwrite the original.');
     retry.textContent = progress.saveBlocked ? bilingual('用本次进度替换…', 'Replace with session progress…') : bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
@@ -68,7 +71,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   file.addEventListener('change', async () => {
     const generation = ++readGeneration;
     const selected = file.files?.[0]; if (!selected || disposed) { if (!disposed) restore.disabled = false; return; }
-    result.textContent = ''; restore.disabled = true;
+    setResult(null); restore.disabled = true;
     try {
       if (selected.size > 262144) throw new Error('invalid');
       const raw = await selected.text(); if (disposed || generation !== readGeneration) return;
@@ -83,7 +86,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
       if (outcome === 'restored') onRestored();
       else failedReplacement();
     } catch {
-      if (!disposed && generation === readGeneration) result.textContent = bilingual('无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.');
+      if (!disposed && generation === readGeneration) setResult(['无法读取有效的进度备份，当前存档未改动。', 'This is not a readable progress backup. Your current save was not changed.']);
     } finally { if (!disposed && generation === readGeneration) restore.disabled = false; }
   });
   root.append(title, status, retry, backup, restore, original, originalHelp, file, result); document.body.append(warning);
