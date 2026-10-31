@@ -71,7 +71,7 @@ The actual eleven dry routes remain exact horizontally.
 at 09:16:49–09:17:02 UTC after aggregate termination. Sixty measured trials per
 case after six warmups, 72 fixed-120-Hz component steps each, alternate pair
 order; setup, settling and diagnostic reads are outside timed steps. Each arm
-has 4,320 measured samples. The candidate still includes its validation wrapper.
+has 4,320 measured samples. The candidate still includes its validation wrapper. Frozen baseline Player blob is `765ba51b6ca9324b77e0bf7a5d2f58ada2ae0226`; the harness now preserves it explicitly and reserves `--production` for a later no-wrapper replay, not evidence already obtained.
 
 | Case | Baseline median / p95 ms | Candidate median / p95 ms | Candidate observed max ms |
 |---|---:|---:|---:|
