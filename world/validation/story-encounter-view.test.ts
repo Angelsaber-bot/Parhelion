@@ -93,3 +93,19 @@ test('cover appearing after musket lock stops the visual tracer at the actual su
  for(let i=0;i<600&&!shots.length;i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(shots.length,1);assert.equal(combat.state.hp,hp);assert.equal(shots[0].surface,true);assert.ok(Math.abs(shots[0].to.z-3.15)<.001);assert.ok(internals.sparks.some((spark:any)=>spark.mesh.position.distanceTo(shots[0].to)<1e-8));
  combat.dispose();wall.dispose();floor.dispose();
 });
+
+test('Warden actual contact emits signal on a dodge without hit confirmation; pause/cancel/death/reset cannot leave it alive',()=>{
+ const {combat,floor}=fixture(),internals=combat as any;
+ const single:StoryEncounterSpec={id:'false_dawn_signal_test',anchor:p(),actors:[{role:'breaker',pattern:'echo-warden',offset:[0,6]}]};
+ for(const stop of ['cancel','death','reset']as const){
+  assert.equal(combat.startStoryEncounter(single,{position:p(),playable:true}).ok,true);const enemy=combat.state.enemies.find(e=>e.storyEncounter)!;
+  for(let i=0;i<600&&enemy.mode!=='windup';i++){combat.simulate(1/120,p(),true);combat.present(1/120,p(),true);}assert.equal(enemy.mode,'windup');const timer=enemy.timer;
+  for(let i=0;i<20;i++){combat.simulate(.05,p(),false);combat.present(.05,p(),false);}assert.equal(enemy.timer,timer);assert.equal(internals.contactEffects.diagnostics.active,0);
+  const hp=combat.state.hp;for(let i=0;i<600&&!enemy.contactSequence;i++){combat.simulate(1/120,p(4),true);combat.present(1/120,p(4),true);}
+  assert.equal(enemy.contactSequence,1);assert.equal(combat.state.hp,hp,'sidestep misses but contact energy remains honest');assert.equal(internals.contactEffects.diagnostics.active,1);assert.equal(internals.hitMarkerFor,0);
+  for(let i=0;i<10;i++)combat.present(0,p(4),true);assert.equal(internals.contactEffects.diagnostics.active,1);
+  if(stop==='cancel')combat.cancelStoryEncounter();else if(stop==='reset')combat.reset();else combat.damageEnemy(enemy.id,1000);
+  assert.equal(internals.contactEffects.diagnostics.active,0);assert.equal(combat.storyEncounter,null);
+ }
+ combat.dispose();floor.dispose();
+});

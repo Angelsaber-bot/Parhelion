@@ -5,7 +5,7 @@ import type { Point3, CombatTerrain } from './combat';
 
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
-  const cast = (origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
+  const castAgainst = (subset: readonly Collider[], origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
     // A zero direction degenerates BVH slab traversal into an expensive full
     // search. Empty/invalid segments cannot produce a meaningful ray hit.
     const lengthSq = direction.x * direction.x + direction.y * direction.y + direction.z * direction.z;
@@ -13,12 +13,13 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
       || !Number.isFinite(lengthSq) || lengthSq <= 0 || Number.isNaN(max) || max <= 0) return null;
     const ray = new THREE.Ray(new THREE.Vector3(origin.x, origin.y, origin.z), new THREE.Vector3(direction.x, direction.y, direction.z).normalize());
     let best: ReturnType<Collider['bvh']['raycastFirst']> = null;
-    for (const c of colliders) if (c.enabled && !ignore?.(c)) {
+    for (const c of subset) if (c.enabled && !ignore?.(c)) {
       const hit = c.bvh.raycastFirst(ray, THREE.DoubleSide, 0, max);
       if (hit && hit.distance < max && (!best || hit.distance < best.distance)) best = hit;
     }
     return best;
   };
+  const cast = (origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => castAgainst(colliders,origin,direction,max,ignore);
   const ground = (x: number, z: number, ceiling = 180) => cast({ x, y: ceiling, z }, { x: 0, y: -1, z: 0 }, ceiling + 20);
   const clear = (p: Point3, radius = 1.2, height = 2.6) => {
     if (cast({ x: p.x, y: p.y + 0.15, z: p.z }, { x: 0, y: 1, z: 0 }, height)) return false;
@@ -69,5 +70,14 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
       return !cast(from, d, Math.max(0, length - 0.05));
     },
   };
-  return { cast, ground, safeSpawn, safeStorySpawn, clear, terrain };
+  /** Conservative one-contact broadphase, not a persistent spatial cache. Current
+   * BVH bounds and enabled flags preserve dynamic gates/refits. Callers keep every
+   * query segment inside the supplied XZ box; Y is deliberately unrestricted. */
+  const contactSurface = (bounds: { minX:number; maxX:number; minZ:number; maxZ:number }) => {
+    const box = new THREE.Box3();
+    const subset = colliders.filter(c => { c.bvh.getBoundingBox(box); return box.max.x >= bounds.minX && box.min.x <= bounds.maxX && box.max.z >= bounds.minZ && box.min.z <= bounds.maxZ; });
+    const localCast = (origin:Point3,direction:Point3,max:number) => castAgainst(subset,origin,direction,max);
+    return { cast:localCast, ground:(x:number,z:number,ceiling=180)=>localCast({x,y:ceiling,z},{x:0,y:-1,z:0},ceiling+20), colliderCount:subset.length, totalColliders:colliders.length };
+  };
+  return { cast, ground, safeSpawn, safeStorySpawn, clear, terrain, contactSurface };
 }

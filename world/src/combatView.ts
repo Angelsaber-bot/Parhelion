@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { EnemyContactEffects } from './enemyContactEffects';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
 import type { Layout } from './types';
@@ -20,6 +21,7 @@ export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
   onDamage?: (hit: { id: string; damage: number; source: HitContext['source']; eligible: true }) => void;
   onKill?: (id: string) => void;
+  reducedEffects?: () => boolean;
   onStoryEncounterVictory?: (id: string) => void;
   onHurt?: (damage: number) => void;
   groundHeight?: (x: number, z: number) => number | null;
@@ -127,6 +129,7 @@ export class WorldCombat {
   private readonly hurt = document.createElement('div');
   private readonly defeat = document.createElement('div');
   private readonly effectGroup = new THREE.Group();
+  private readonly contactEffects: EnemyContactEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
   private readonly boltGeo = new THREE.SphereGeometry(0.075, 6, 4);
@@ -147,6 +150,7 @@ export class WorldCombat {
   constructor(private readonly options: WorldCombatOptions) {
     this.shared.push(this.thrustTellGeo);
     this.geometry = makeCombatTerrain(options.colliders, options.layout, options.groundHeight);
+    this.contactEffects = new EnemyContactEffects(this.effectGroup, this.geometry);
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
     const bosses = this.bossDefs.map(b => {
@@ -191,6 +195,7 @@ export class WorldCombat {
     } catch { this.cancelStoryEncounter(); return { ok: false, reason: 'unavailable' }; }
   }
   cancelStoryEncounter() {
+    this.contactEffects.clear();
     const id = this.storyDirector.cancel();
     this.state.clearStoryEnemies();
     for (const [actorId, resources] of this.storyResources) {
@@ -349,6 +354,8 @@ export class WorldCombat {
     }
     this.time += active ? dt : 0;
     this.enemyAssets.tick(dt);
+    if (this.state.defeated) this.contactEffects.clear();
+    this.contactEffects.update(dt, active);
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
     const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
@@ -430,6 +437,8 @@ export class WorldCombat {
   private events() {
     for (const event of this.state.drainEvents()) {
       if (event.type === 'attackContact') {
+        if (event.storyPattern === 'echo-warden' && this.playable && !this.state.defeated && this.state.enemies.some(e => e.id === event.id && e.mode !== 'dead'))
+          this.contactEffects.emit(event, this.options.reducedEffects?.() ?? false);
         // A phase break/reset can enter recover without firing. Only simulation contact
         // may emit a tracer, including when presentation skipped an intermediate state.
         if (event.attack === 'shot' && this.playable && !this.state.defeated) {
@@ -449,6 +458,7 @@ export class WorldCombat {
         this.impact.textContent = `${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
       } else if (event.type === 'kill') {
+        this.contactEffects.cancel(event.id);
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
       }
@@ -633,6 +643,7 @@ export class WorldCombat {
     for (const v of this.visuals.values()) { v.root.traverse(o => { if (o instanceof THREE.InstancedMesh) o.dispose(); }); v.root.removeFromParent(); v.tell.removeFromParent(); }
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
+    this.contactEffects.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.defeat]) el.remove();

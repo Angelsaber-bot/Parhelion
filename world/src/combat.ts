@@ -16,7 +16,7 @@ export interface Enemy extends SpawnPoint {
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean;
 }
 export type CombatEvent =
-  | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number }
+  | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'stagger' | 'storyPhase'; id: string }
@@ -466,7 +466,7 @@ export class WorldCombatState {
           // Presentation consumes an actual contact, never guesses one from a mode transition.
           // Snapshots stay locked even if another simulation tick moves or resets the actor.
           e.contactSequence = e.attackCount;
-          this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e) });
+          this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e), ...(e.storyPattern ? { storyPattern: e.storyPattern, ...(e.attack === 'thrust' ? { length: enemyThrustLength(e) } : {}) } : {}) });
           if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
