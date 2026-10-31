@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { ultimateReadability } from '../src/ultimateReadability';
 import { SkillPresentation } from '../src/skillPresentation';
-test('Musashi default profile is local; Saber and other profiles remain exact',()=>{
+test('Musashi and Napoleon X subdued profiles are local; Saber and other profiles remain exact',()=>{
  const old={hemisphere:2.8,key:3.5,rim:3,bloomStrength:.75,bloomRadius:.48,bloomThreshold:.72};
- for(const id of ['blackbeard','napoleon','unknown'])assert.deepEqual(ultimateReadability(id),old);
+ for(const id of ['blackbeard','unknown'])assert.deepEqual(ultimateReadability(id),old);
  assert.deepEqual(ultimateReadability('saber'),{hemisphere:1.6,key:2.4,rim:1.5,bloomStrength:.28,bloomRadius:.30,bloomThreshold:.90});
+ assert.deepEqual(ultimateReadability('napoleon'),{hemisphere:1,key:1.5,rim:.75,bloomStrength:.06,bloomRadius:.18,bloomThreshold:1.15});
+ assert.deepEqual(ultimateReadability('musashi'),{hemisphere:1.1,key:1.4,rim:.6,bloomStrength:.06,bloomRadius:.18,bloomThreshold:1.15});
  const m=ultimateReadability('musashi');assert.ok(m.key<old.key&&m.rim<old.rim&&m.hemisphere<old.hemisphere&&m.bloomStrength<old.bloomStrength&&m.bloomThreshold>old.bloomThreshold);
  assert.ok(Object.isFrozen(m));assert.equal(ultimateReadability('musashi'),m);
 });
@@ -28,8 +30,7 @@ test('Musashi cinematic fill/key caps hold through normal and reduced phases',as
    cinema.update({elapsed:i/60,phase,progress:i/60,pulse:1,strikeCount:phase==='release'?1:0},camera,reduced);
    cinema.root.traverse(o=>{if((o as THREE.PointLight).isPointLight)peak=Math.max(peak,(o as THREE.PointLight).intensity);});
   }
-  assert.ok(peak>0);assert.ok(peak<=(identity==='musashi'?.9:2.2));
-  if(identity!=='musashi'&&!reduced)assert.equal(peak,2.2);
+  assert.equal(peak,identity==='musashi'?(reduced?.22:.35):identity==='napoleon'?(reduced?.24:.45):(reduced?.75:2.2));
   cinema.dispose();
  }
 });
