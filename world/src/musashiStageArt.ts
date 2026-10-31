@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {radialGeometry} from './saberStageArt';
-import {EraBladeTrace} from './eraBladeTrace';
+import {EraBladeTrace, type EraBladeTraceReadability} from './eraBladeTrace';
+export const MUSASHI_BLADE_READABILITY: Readonly<EraBladeTraceReadability> = Object.freeze({trailOpacityScale:.56,edgeOpacityScale:.55,glintOpacityScale:.30,glintScale:.65,edgeWidthScale:.8});
 import type {EraArtFrame,EraArtOwner} from './eraStageArt';
 /** Red right blade, blue left blade, then a contact-authorized monumental crossing. */
 export class MusashiStageArt {
@@ -12,10 +13,10 @@ export class MusashiStageArt {
   this.root.name='Musashi: paper dojo and three crossing cuts';
   const floor=owner.mesh(new THREE.PlaneGeometry(40,45),owner.material(0xc9beb4,1),this.root);floor.rotation.x=-Math.PI/2;floor.position.set(0,-.032,-14);
   const shadowMaterial=owner.material(0x342630,.45);shadowMaterial.vertexColors=true;this.shadow=owner.mesh(radialGeometry(.85),shadowMaterial,this.root);this.shadow.name='Musashi contact shadow';this.shadow.rotation.x=-Math.PI/2;this.shadow.scale.y=.55;this.shadow.position.y=.006;
-  this.right=new EraBladeTrace('Musashi red right',clone.getObjectByName('Attachment_RightHand_Katana'),undefined,new THREE.Vector3(0,.075,1.285),this.root,owner,0xee466a);
-  this.left=new EraBladeTrace('Musashi blue left',clone.getObjectByName('Attachment_LeftHand_Katana'),undefined,new THREE.Vector3(0,.075,1.125),this.root,owner,0x3686d5);
+  this.right=new EraBladeTrace('Musashi red right',clone.getObjectByName('Attachment_RightHand_Katana'),undefined,new THREE.Vector3(0,.075,1.285),this.root,owner,0xee466a,MUSASHI_BLADE_READABILITY);
+  this.left=new EraBladeTrace('Musashi blue left',clone.getObjectByName('Attachment_LeftHand_Katana'),undefined,new THREE.Vector3(0,.075,1.125),this.root,owner,0x3686d5,MUSASHI_BLADE_READABILITY);
   const geometry=finisherBladeGeometry();
-  for(let i=0;i<2;i++){const material=owner.material(i?0x397fe0:0xd82d58,.8);material.vertexColors=true;material.toneMapped=false;material.blending=THREE.AdditiveBlending;material.depthWrite=false;const wave=owner.mesh(geometry,material,this.root);wave.name=i?'Musashi third blue crossing':'Musashi third red crossing';wave.visible=false;this.cross.push(wave);}
+  for(let i=0;i<2;i++){const material=owner.material(i?0x397fe0:0xd82d58,.8);material.vertexColors=true;material.toneMapped=false;material.blending=THREE.NormalBlending;material.depthWrite=false;const wave=owner.mesh(geometry,material,this.root);wave.name=i?'Musashi third blue crossing':'Musashi third red crossing';wave.visible=false;this.cross.push(wave);}
   const white=owner.material(0xf8e5ff,.75);white.vertexColors=true;white.toneMapped=false;this.centerCut=owner.mesh(geometry,white,this.root);this.centerCut.name='Musashi third central cut';this.centerCut.visible=false;
   const petalGeo=new THREE.PlaneGeometry(.055,.10),petalMaterials=[owner.material(0xb33858,.75),owner.material(0x517c9c,.65)];
   for(let i=0;i<18;i++){const petal=owner.mesh(petalGeo,petalMaterials[i%2],this.root);this.petals.push(petal);}
@@ -61,11 +62,11 @@ export class MusashiStageArt {
   this.actor.updateMatrixWorld(true);const next=frame.strikeCount??0;
   if(frame.phase==='release'&&next>this.count){if(next===1)this.right.trigger(frame.elapsed);else if(next===2)this.left.trigger(frame.elapsed);else if(next>=3){this.right.trigger(frame.elapsed);this.left.trigger(frame.elapsed);this.crossedAt=frame.elapsed;}this.count=next;}
   this.right.update(frame,camera,reduced);this.left.update(frame,camera,reduced);
-  this.leftLight.position.copy(this.left.tip);this.rightLight.position.copy(this.right.tip);const lightStrength=reduced?0:frame.phase==='release'?2+Math.min(1,Math.max(0,frame.pulse))*7:frame.phase==='charge'?1.2:0;this.leftLight.intensity=this.rightLight.intensity=lightStrength;
+  this.leftLight.position.copy(this.left.tip);this.rightLight.position.copy(this.right.tip);const lightStrength=reduced?0:frame.phase==='release'?.35+Math.min(1,Math.max(0,frame.pulse))*1.25:frame.phase==='charge'?.35:0;this.leftLight.intensity=this.rightLight.intensity=lightStrength;
   const age=frame.elapsed-this.crossedAt,visible=(frame.phase==='release'||frame.phase==='outro')&&age>=0&&age<.65;
   if(age>=0&&age<.10)this.center.copy(this.right.tip).add(this.left.tip).multiplyScalar(.5);
-  for(let i=0;i<2;i++){const cross=this.cross[i];cross.visible=visible;cross.position.copy(this.center);cross.position.z-=.72;cross.rotation.set(0,0,(i?-1:1)*(.65+Math.min(age,.2)*.35));cross.scale.set((reduced?.14:.48)*Math.max(0,1-age/.65),.88+Math.max(0,age)*.25,1);(cross.material as THREE.MeshBasicMaterial).opacity=Math.max(0,1-age/.65)*(reduced?.24:.68);}
-  this.centerCut.visible=visible&&age>.10;this.centerCut.position.copy(this.center);this.centerCut.position.z-=.25;this.centerCut.scale.set(reduced?.055:.14,.95,1);(this.centerCut.material as THREE.MeshBasicMaterial).opacity=Math.max(0,1-(age-.1)/.55)*(reduced?.25:1);
+  for(let i=0;i<2;i++){const cross=this.cross[i];cross.visible=visible;cross.position.copy(this.center);cross.position.z-=.72;cross.rotation.set(0,0,(i?-1:1)*(.65+Math.min(age,.2)*.35));cross.scale.set((reduced?.14:.48)*Math.max(0,1-age/.65),.88+Math.max(0,age)*.25,1);(cross.material as THREE.MeshBasicMaterial).opacity=Math.max(0,1-age/.65)*(reduced?.18:.38);}
+  this.centerCut.visible=visible&&age>.10;this.centerCut.position.copy(this.center);this.centerCut.position.z-=.25;this.centerCut.scale.set(reduced?.055:.14,.95,1);(this.centerCut.material as THREE.MeshBasicMaterial).opacity=Math.max(0,1-(age-.1)/.55)*(reduced?.12:.25);
   this.shadow.position.x=this.actor.position.x;this.shadow.position.z=this.actor.position.z;
   for(let i=0;i<this.petals.length;i++){const petal=this.petals[i];petal.visible=!reduced||i%3===0;const a=i*2.399,fall=(frame.elapsed*.28+i*.31)%4;petal.position.set(Math.cos(a)*(2+i%4),3.8-fall,-4+Math.sin(a)*3);petal.rotation.set(.15*Math.sin(a),0,a+(reduced?0:frame.elapsed*.35));}
  }
