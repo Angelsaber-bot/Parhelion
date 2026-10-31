@@ -108,3 +108,17 @@ test('focused dialogue choice survives locale refresh and follows explicit keybo
  assert.equal(commits,0);panel.advance();assert.equal(commits,1);
  }finally{panel.dispose();f.close();}
 });
+test('short-window reflow never confirms a choice before newly overflowed bilingual text is read',()=>{
+ const f=fixture(),panel=createNarrativePanel(()=> '滚轮下');let commits=0,height=100,content=340;
+ try{const text=f.document.getElementById('world-dialogue-text')!;
+ Object.defineProperties(text,{clientHeight:{configurable:true,get:()=>height},scrollHeight:{configurable:true,get:()=>content}});
+ const line:[string,string]=['请先读完这段记录。'.repeat(55),'Read this complete record before deciding. '.repeat(35)];
+ panel.showChoices(line,['人','Person'],options,()=>commits++);assert.equal(panel.choosing,false);assert.equal(panel.selectChoice(0),false);
+ for(let i=0;i<10&&!panel.choosing;i++)panel.advance();assert.equal(panel.choosing,true);panel.selectChoice(1);
+ height=45;content=480;f.dom.window.dispatchEvent(new f.dom.window.Event('resize'));
+ assert.equal(panel.choosing,false);panel.advance();assert.equal(commits,0);assert.equal(panel.open,true);
+ setLanguage('en');assert.equal(text.textContent,line[1]);assert.equal(text.scrollTop,0);
+ for(let i=0;i<30&&!panel.choosing;i++)panel.advance();assert.equal(commits,0);assert.equal(panel.choosing,true);
+ panel.advance();assert.equal(commits,1);
+ }finally{panel.dispose();f.close();}
+});
