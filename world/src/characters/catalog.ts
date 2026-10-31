@@ -4,7 +4,7 @@ import type { CharacterKitDefinition } from './characterKit';
 export const CHARACTER_KITS = {
   blackbeard: {
     id: 'blackbeard', defaultState: 'idle', rootMotion: 'in-place', visualOffset: [0, -.014, 0],
-    assetUrl: new URL('../../../assets/characters/blackbeard/blackbeard.glb.gz', import.meta.url).href,
+    assetUrl: new URL('../../../assets/characters/blackbeard/remaster_v2/Blackbeard_Captain_Remaster.glb.gz', import.meta.url).href,
     clips: {
       idle: { name: 'Idle', duration: 3, loop: true },
       walk: { name: 'Walk', duration: 32 / 30, loop: true, nominalSpeed: .65625 },
@@ -30,7 +30,7 @@ export const CHARACTER_KITS = {
   },
   napoleonMounted: {
     id: 'napoleonMounted', defaultState: 'idle', rootMotion: 'in-place', visualOffset: [0, -.010814, 0],
-    assetUrl: new URL('../../../assets/characters/napoleon/runtime/napoleon_mounted.glb.gz', import.meta.url).href,
+    assetUrl: new URL('../../../assets/characters/napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.glb.gz', import.meta.url).href,
     clips: {
       idle: { name: 'MountedIdle', duration: 3, loop: true },
       walk: { name: 'MountedWalk', duration: 32 / 30, loop: true, nominalSpeed: .703125 },
