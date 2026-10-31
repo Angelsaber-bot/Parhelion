@@ -15,10 +15,14 @@ test('fifty actual-main deliberate story retries leave bounded scene resources a
   w.player.teleport(x,g.point.y+.04,z);w.player.onGround=true;w.player.flying=w.player.swimming=w.player.gliding=false;
   let stable:ReturnType<typeof census>|undefined;const ids=new Set<string>();
   for(let cycle=0;cycle<51;cycle++){
-   key('KeyF');for(let page=0;w.narrative.open&&!w.narrative.choosing&&page<60;page++)key('KeyF');assert.ok(w.narrative.choosing);key('Digit1');key('KeyF');assert.equal(w.combat.storyEncounter?.id,'false_dawn_courier');frame();
+   key('KeyF');for(let page=0;w.narrative.open&&!w.narrative.choosing&&page<60;page++)key('KeyF');assert.ok(w.narrative.choosing,JSON.stringify({cycle,player:w.player.pos.toArray(),marker:m.p,distance:w.player.pos.distanceTo(new THREE.Vector3(...m.p)),dialogue:w.narrative.open,toast:d.getElementById('toast')?.textContent,ground:w.player.onGround}));key('Digit1');key('KeyF');assert.equal(w.combat.storyEncounter?.id,'false_dawn_courier');frame();
    const actors=w.combat.state.enemies.filter((e:any)=>e.storyEncounter);assert.ok(actors.length&&actors.length<=3);
    for(const actor of actors){assert.equal(ids.has(actor.id),false,'retry actor IDs cannot alias stale targets');ids.add(actor.id);}
    await h.settleAssets();frame();w.combat.cancelStoryEncounter();frame();await h.settleAssets();frame();
+   // Actual foundation collision can push the initial stand point off a shallow lip.
+   // Respect the production grounded-interaction precondition before another retry.
+   for(let settle=0;!w.player.onGround&&settle<120;settle++)frame();
+   assert.ok(w.player.onGround,'physical retry stance settles within two seconds');await h.settleAssets();
    assert.equal(w.combat.storyEncounter,null);assert.equal(w.combat.state.enemies.filter((e:any)=>e.storyEncounter).length,0);
    for(const actor of actors)assert.equal(w.scene.getObjectByName(actor.id),undefined);
    const count=census(w.scene);if(cycle===0)stable=count;else assert.deepEqual(count,stable,`scene resource retention after retry ${cycle}`);
