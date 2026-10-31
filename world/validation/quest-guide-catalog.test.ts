@@ -54,3 +54,11 @@ test('missing/cyclic prerequisites fail closed and unknown IDs never become dest
  const broken=createQuestGuideCatalog({markers:[{id:'hq_terminal',type:'interact',label:'终端',p:[0,0,0],requires:['hq_terminal']}],objectives:[{region:'alpha',objective:{id:'x',name:'x',steps:[{id:'x',text:'x',done:['hq_terminal']}]}}],npcs:[]});
  assert.equal(broken.resolve('main:alpha',new Set(['valley_story_met']),new Set()),null);assert.equal(broken.resolve('__proto__',new Set(),new Set()),null);
 });
+
+test('missing main layout and nonfinite target data are unavailable, never falsely completed',()=>{
+ const missing=createQuestGuideCatalog({markers:[],objectives:[],npcs:[]});
+ const state=missing.list(new Set(['armory_rack']),new Set()).find(e=>e.id==='main:alpha')!;
+ assert.equal(state.complete,false);assert.equal(state.guide,null);assert.ok(state.unavailable);
+ const invalid=createQuestGuideCatalog({markers:[{id:'secret',type:'discovery',label:'发现',p:[NaN,0,0]}],objectives:[],npcs:[]});
+ assert.equal(invalid.resolve('discovery:secret',new Set(),new Set()),null);
+});

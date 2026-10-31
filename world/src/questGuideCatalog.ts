@@ -58,9 +58,9 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const enemies=new Map((input.enemies??[]).map(n=>[n.id,n]));
  const objectives=new Map(input.objectives.map(o=>[o.region,o.objective]));
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
-  const npc=npcs.get(id);if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
-  const enemy=enemies.get(id);if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);return marker?{targetKind:'marker',region:regionAt(marker.p[0],marker.p[2]).id as RegionId,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
+  const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;return marker?{targetKind:'marker',region:regionAt(marker.p[0],marker.p[2]).id as RegionId,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -93,7 +93,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     const objective=objectives.get(region),title:Localized=['幻日谷 · 重启幻日塔','Parhelion Valley · Restart the tower'];
     const intro=getValleyStoryGuide(done),step=objective?.steps.find(s=>s.done.some(id=>!done.has(id)));
     const id=step?.done.find(id=>!done.has(id));
-    add('main:alpha',region,'main',title,!intro&&!step,intro?guide(title,intro.text,intro.targetId,done,context):id?guide(title,pair(step!.text),id,done,context):null);
+    add('main:alpha',region,'main',title,!!objective&&!intro&&!step,intro?guide(title,intro.text,intro.targetId,done,context):id?guide(title,pair(step!.text),id,done,context):null);
    }else{
     const next=getEraStoryGuide(region,done),title=ERA_STORIES[region].title;
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
