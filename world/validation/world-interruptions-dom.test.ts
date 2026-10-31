@@ -50,6 +50,11 @@ test('NON-GPU production modal interruptions return control rather than retainin
       assert.equal(world.actions.skills.activate('skill', { enabled: true, origin: world.player.pos, direction: { x: 1, y: 0, z: 0 } }), true);
       world.actions.skills.cancel();
       const start = world.actions.skills.cooldown('skill');
+      // The preceding blur deliberately invalidates the clock. Its first resumed
+      // frame owns zero simulation time; only the following frame can enter water.
+      const resumedPosition = world.player.pos.toArray(); frame();
+      assert.deepEqual(world.player.pos.toArray(), resumedPosition);
+      assert.equal(world.actions.skills.cooldown('skill'), start);
       // Water state comes from real production Player physics, not manually assigned flags.
       world.player.teleport(1100, world.player.waterLevel - 2, -400);
       frame(); assert.equal(world.player.swimming, true);
