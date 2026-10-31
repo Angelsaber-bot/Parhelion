@@ -10,7 +10,8 @@ import { isMusketeer, type Enemy, type EnemyMode } from './combat';
 export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sunward_guard' | 'deck_raider';
 export const ENEMY_VISUAL_BUDGET = 24;
 /** Stable appearance: moving across an era seam must never change an enemy's uniform. */
-export function enemyModel(e: Pick<Enemy, 'id' | 'home' | 'kind'> & { miniboss?: string; role?: EnemyRole }): EnemyModel | null {
+export function enemyModel(e: Pick<Enemy, 'id' | 'home' | 'kind'> & { miniboss?: string; role?: EnemyRole; appearance?: EnemyModel }): EnemyModel | null {
+  if (e.appearance) return e.appearance;
   if (e.kind === 'king') return ({ boss_vacant_king: 'sunward_guard', boss_drowned_admiral: 'deck_raider', boss_winter_warden: 'officer', boss_hellfire_lord: 'samurai' } as Record<string, EnemyModel>)[e.id] ?? 'sunward_guard';
   const region = regionAt(e.home.x, e.home.z).id;
   const role = e.role ?? selectEnemyRole(e);

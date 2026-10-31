@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
 import type { Layout } from './types';
 import { bilingual } from '../../shared-client/i18n';
@@ -19,6 +20,7 @@ export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
   onDamage?: (hit: { id: string; damage: number; source: HitContext['source']; eligible: true }) => void;
   onKill?: (id: string) => void;
+  onStoryEncounterVictory?: (id: string) => void;
   onHurt?: (damage: number) => void;
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
@@ -110,6 +112,8 @@ export class WorldCombat {
   private readonly bossDefs: typeof BOSSES;
   readonly geometry;
   private readonly enemyAssets = new EnemyVisuals();
+  private readonly storyDirector = new StoryEncounterDirector();
+  private readonly storyResources = new Map<string, { geometries: THREE.BufferGeometry[]; materials: THREE.Material[]; textures: THREE.Texture[] }>();
   private readonly visuals = new Map<string, EnemyVisual>();
   private readonly shots: ShotVisual[] = [];
   private readonly sparks: Spark[] = [];
@@ -166,16 +170,53 @@ export class WorldCombat {
     document.body.append(this.hud, this.bossHud, this.impact, this.hurt, this.defeat);
     this.renderHud();
   }
+  get storyEncounter() { return this.storyDirector.status; }
+  startStoryEncounter(spec: StoryEncounterSpec, admission?: { position: Point3; playable: boolean }): StoryEncounterStartResult {
+    if (this.disposed) return { ok: false, reason: 'unavailable' };
+    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: this.geometry.safeStorySpawn });
+    if (!result.ok) return result;
+    try {
+      for (const enemy of this.state.enemies.filter(actor => actor.storyEncounter)) {
+        const before = { geometries: this.shared.length, materials: this.materials.length, textures: this.textures.length };
+        try { const visual = this.makeEnemy(enemy); this.visuals.set(enemy.id, visual); } finally {
+        // Role-label cache is world-owned (at most six labels), not encounter-owned.
+        const labels = new Set([...this.roleLabels.values()].map(label => label.material));
+        const labelMaps = new Set([...labels].map(material => material.map));
+        this.storyResources.set(enemy.id, { geometries: this.shared.slice(before.geometries),
+          materials: this.materials.slice(before.materials).filter(material => !labels.has(material as THREE.SpriteMaterial)),
+          textures: this.textures.slice(before.textures).filter(texture => !labelMaps.has(texture)) });
+        }
+      }
+      return result;
+    } catch { this.cancelStoryEncounter(); return { ok: false, reason: 'unavailable' }; }
+  }
+  cancelStoryEncounter() {
+    const id = this.storyDirector.cancel();
+    this.state.clearStoryEnemies();
+    for (const [actorId, resources] of this.storyResources) {
+      this.enemyAssets.release(actorId);
+      const visual = this.visuals.get(actorId);
+      visual?.root.traverse(object => { if (object instanceof THREE.InstancedMesh) object.dispose(); });
+      visual?.root.removeFromParent(); visual?.tell.removeFromParent();
+      this.options.scene.getObjectByName(actorId)?.removeFromParent(); this.options.scene.getObjectByName(`${actorId}:tell`)?.removeFromParent(); this.visuals.delete(actorId);
+      for (const [owned, pool] of [[resources.geometries, this.shared], [resources.materials, this.materials], [resources.textures, this.textures]] as const) {
+        for (const resource of owned) { const index = (pool as { dispose(): void }[]).indexOf(resource); if (index >= 0) pool.splice(index, 1); resource.dispose(); }
+      }
+    }
+    this.storyResources.clear(); return id !== null;
+  }
   get visualDiagnostics() { return { ...this.enemyAssets.diagnostics, budget: ENEMY_VISUAL_BUDGET }; }
   get defeated() { return this.state.defeated; }
   get bossStarted() { return this.state.bossStarted; }
   /** Start the boss guarding this core (default: the first era's sun core). */
   beginBoss(core = 'sun_core') {
+    if (this.storyDirector.status) return false;
     const def = this.bossDefs.find(b => b.core === core);
     if (def) this.state.setBossRequirements(def.id, getEraBossRequirements(def.core, this.options.done) ?? def.requires);
     const began = !!def && this.state.beginBoss(this.options.done, def.id); this.events(); return began;
   }
   reset() {
+    this.cancelStoryEncounter();
     this.state.resetAll(this.bossDefs.map(b => isEraCoreCleared(b.core, this.options.done) ?? this.options.done.has(b.core)));
     this.state.syncWorldFlags(this.options.done);
     if (this.options.done.has(KNIGHT_TRIAL_CLEAR)) this.state.retireOptionalTrial();
@@ -404,6 +445,7 @@ export class WorldCombat {
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
       }
+      else if (event.type === 'storyPhase') { this.options.toast(bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!')); }
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
       else if (event.type === 'bossStart') this.options.toast(bilingual(...bossText(this.state.boss.id).start));
@@ -414,6 +456,11 @@ export class WorldCombat {
         if (event.firstClear) { this.options.done.add(def.reward); this.options.onVictory(def.core); }
         this.options.toast(event.firstClear ? bilingual(...bossText(def.id).victory) : bilingual('再次挑战成功 · 纪念奖励已领取', 'Rematch won · Keepsake already earned'));
       } else if (event.type === 'revive') this.options.onPlayerDefeated();
+    }
+    const outcome = this.storyDirector.observe({ state: this.state, player: this.player, playable: this.playable });
+    if (outcome) {
+      this.cancelStoryEncounter();
+      if (outcome.type === 'victory') this.options.onStoryEncounterVictory?.(outcome.id);
     }
   }
   private renderHud() {
@@ -497,18 +544,18 @@ export class WorldCombat {
     const back = new THREE.Mesh(barGeo, backMat), fill = new THREE.Mesh(barGeo, fillMat); fill.position.z = 0.005; bar.add(back, fill);
     const tellGeo = new THREE.CircleGeometry(1, 40), tellMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffb82f' : '#ff4939', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
     this.shared.push(tellGeo); this.materials.push(tellMat);
-    const tell = new THREE.Mesh(tellGeo, tellMat); tell.userData.circle = tellGeo; tell.rotation.x = -Math.PI / 2; tell.visible = false;
+    const tell = new THREE.Mesh(tellGeo, tellMat); tell.name = `${e.id}:tell`; tell.userData.circle = tellGeo; tell.rotation.x = -Math.PI / 2; tell.visible = false;
     this.options.scene.add(root, tell); root.visible = false;
     let updateLabel: (() => void) | undefined;
-    if (e.miniboss) {
+    if (e.miniboss || e.displayName) {
       const emblemGeo = new THREE.OctahedronGeometry(0.12), emblemMat = new THREE.MeshBasicMaterial({ color: '#ffd36a', toneMapped: false });
       this.shared.push(emblemGeo); this.materials.push(emblemMat);
       const emblem = new THREE.Mesh(emblemGeo, emblemMat); emblem.position.y = 2.55; root.add(emblem);
-      const name = MINIBOSSES.find(m => m.id === e.miniboss)?.name;
+      const name = e.displayName ?? MINIBOSSES.find(m => m.id === e.miniboss)?.name;
       root.userData.minibossName = name;
       if (name) {
         const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 64;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext?.('2d');
         if (ctx) {
           let labelText = '';
           updateLabel = () => {
@@ -526,7 +573,7 @@ export class WorldCombat {
       }
     }
     let roleLabel: THREE.Sprite | undefined;
-    if (!king && !e.miniboss) {
+    if (!king && !e.miniboss && !e.displayName) {
       let cached = this.roleLabels.get(e.role);
       if (!cached) {
         const canvas = document.createElement('canvas'); canvas.width = 512; canvas.height = 64;
@@ -575,6 +622,7 @@ export class WorldCombat {
   dispose() {
     if (this.disposed) return; this.disposed = true;
     this.clearHitMarker();
+    this.cancelStoryEncounter();
     for (const v of this.visuals.values()) { v.root.traverse(o => { if (o instanceof THREE.InstancedMesh) o.dispose(); }); v.root.removeFromParent(); v.tell.removeFromParent(); }
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();

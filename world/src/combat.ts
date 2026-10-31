@@ -1,3 +1,4 @@
+import { ECHO_WARDEN, chooseEchoWardenAttack, echoWardenTiming, echoWardenRadius, echoWardenDamage } from './echoWarden';
 import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
@@ -8,7 +9,7 @@ import { ENEMY_ROLES, selectEnemyRole, type EnemyRole } from './enemyRoles';
 export interface Point3 { x: number; y: number; z: number }
 export type EnemyKind = 'shade' | 'crystal' | 'king';
 export type EnemyMode = 'idle' | 'chase' | 'windup' | 'recover' | 'stagger' | 'pacified' | 'dead';
-export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string; role?: EnemyRole; encounter?: 'akechi' }
+export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string; role?: EnemyRole; encounter?: 'akechi'; storyEncounter?: string; storyPattern?: 'echo-warden'; displayName?: readonly [string,string]; appearance?: 'samurai'|'ashigaru'|'musketeer'|'officer'|'sunward_guard'|'deck_raider' }
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
@@ -18,7 +19,7 @@ export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean }
   | { type: 'kill'; id: string }
-  | { type: 'stagger'; id: string }
+  | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
   | { type: 'victory'; id: string; firstClear: boolean }
   | { type: 'bossStart' | 'bossReset' | 'phase' | 'death' | 'revive' };
@@ -141,7 +142,7 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
 }
 
 function makeEnemy(s: SpawnPoint): Enemy {
-  const maxHp = s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
+  const maxHp = s.storyPattern === 'echo-warden' ? ECHO_WARDEN.hp : s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
     active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
 }
@@ -152,6 +153,7 @@ export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'> 
 }
 /** Shared by simulation and renderer: telegraphs must show the actual damage footprint. */
 export function enemyAttackRadius(e: Enemy): number {
+  if (e.storyPattern === 'echo-warden') return echoWardenRadius(e);
   if (e.attack === 'shot') return 1.4;
   if (e.attack === 'thrust') return e.kind === 'king' ? 1.2 : ENEMY_ROLES[e.role].radius;
   if (e.kind === 'king') return e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5;
@@ -164,7 +166,7 @@ const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
 export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3 }
 
 /** Thrust tells and impact share a forward rectangle, never a tracking/homing hit. */
-export function enemyThrustLength(e: Enemy): number { return e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1; }
+export function enemyThrustLength(e: Enemy): number { return e.storyPattern === 'echo-warden' ? ECHO_WARDEN.thrustLength : e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1; }
 export function enemyAttackContains(e: Enemy, player: Point3): boolean {
   if (e.attack !== 'thrust') {
     const center = e.attack === 'sweep' ? e.p : e.target;
@@ -188,6 +190,7 @@ export function rangedDamageMultiplier(distance: number): number {
 
 /** Timings are shared with animation playback; each slash in a pair has its own full tell. */
 export function enemyAttackTiming(e: Enemy): { windup: number; recovery: number } {
+  if (e.storyPattern === 'echo-warden') return echoWardenTiming(e);
   if (e.kind === 'king') return bossAttackTiming(e);
   const elite = minibossProfile(e);
   if (elite) return elite.paired && e.attackCount % 2 === 1 ? ELITE_PAIRED_TIMING : elite;
@@ -236,6 +239,14 @@ export class WorldCombatState {
     this.relayEnemies = this.enemies.filter(e => e.id === 'wild_48' || e.id === 'wild_48b');
     this.bosses.forEach((b, i) => { if (this.cleared[i]) { b.hp = 0; b.mode = 'dead'; } });
   }
+  /** Story roster is transient, local and capped; normal wilderness IDs are untouched. */
+  replaceStoryEnemies(spawns: readonly SpawnPoint[]): Enemy[] {
+    if (spawns.length > 3 || spawns.some(spawn => !spawn.storyEncounter || spawn.kind === 'king' || !spawn.id.startsWith('story_'))) throw new Error('Invalid story enemy roster');
+    this.clearStoryEnemies();
+    const actors = spawns.map(spawn => { const actor = makeEnemy(spawn); actor.active = true; actor.mode = 'chase'; actor.timer = .35; return actor; });
+    this.enemies.push(...actors); return actors;
+  }
+  clearStoryEnemies() { for (let i = this.enemies.length-1; i >= 0; i--) if (this.enemies[i].storyEncounter) this.enemies.splice(i,1); }
   get boss() { return this.bosses[this.current]; }
   get bossCleared() { return this.cleared[this.current]; }
   isCleared(id: string) { const i = this.bosses.findIndex(b => b.id === id); return i >= 0 && this.cleared[i]; }
@@ -261,6 +272,7 @@ export class WorldCombatState {
   }
   /** `cleared` applies to every boss, or pass a per-boss list (same order as the constructor). */
   resetAll(cleared: boolean | boolean[] = false) {
+    this.clearStoryEnemies();
     this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
     this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
     this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
@@ -330,7 +342,7 @@ export class WorldCombatState {
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish });
     if (e.hp <= 0) {
-      e.mode = 'dead'; e.timer = e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
+      e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
       this.events.push({ type: 'kill', id });
       if (e === this.boss) {
@@ -344,6 +356,10 @@ export class WorldCombatState {
         this.events.push({ type: 'stagger', id });
       }
       if (e.mode === 'idle') e.mode = 'chase';
+      if (e.storyPattern === 'echo-warden' && e.phase === 1 && e.hp <= e.maxHp / 2) {
+        e.phase = 2; e.contactSequence = 0; e.staggerCooldown = 0; e.mode = 'recover'; e.timer = ECHO_WARDEN.stanceBreak;
+        this.events.push({ type: 'storyPhase', id: e.id });
+      }
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
         e.phase = 2; e.contactSequence = 0; e.mode = 'recover'; e.timer = 1.2;
         this.events.push({ type: 'phase' });
@@ -451,7 +467,7 @@ export class WorldCombatState {
           // Snapshots stay locked even if another simulation tick moves or resets the actor.
           e.contactSequence = e.attackCount;
           this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e) });
-          if (enemyAttackContains(e, player) && sees) this.hurt(e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
+          if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
           if (this.defeated) return;
@@ -462,9 +478,9 @@ export class WorldCombatState {
       if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = enemyRangedSpacing(e) ? ENEMY_TACTICS.rangedReset : .25; } continue; }
       const isBoss = e === this.boss, elite = minibossProfile(e);
       const role = ENEMY_ROLES[e.role];
-      const meleeRange = isBoss ? 6 : elite?.range ?? role.range;
+      const meleeRange = e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
       if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40) && hasEnemyPressureSlot(e, this.enemies, player)) {
-        e.attack = elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
+        e.attack = e.storyPattern === 'echo-warden' ? chooseEchoWardenAttack(e, dist) : elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
         Object.assign(e.target, player); e.attackCount++;
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
         continue;
