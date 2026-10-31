@@ -28,7 +28,7 @@ function fixture() {
   };
   const stops = travel.createSafeTravelStops([{ id:'britain', name:['据点','Stop'], position:[100,10,0], entry:[100,10,15], footprint:[30,30], groundRange:0 }]);
   // Existing travel assertions exercise the ordinary (non-cinematic) action gates.
-  const context = vm.createContext({ ultimateDirector: undefined, ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
+  const context = vm.createContext({bootFailed:false,worldExited:false,graphicsRecovery:undefined, ultimateDirector: undefined, ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
     optionalPin:{sentinel:true}, hudRevision:0, camDist:3.6, acc:1, inspectServant:false, travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined,
     createTravelPanel:(options:unknown)=>options, document:{pointerLockElement:{},exitPointerLock(){}},
     spawn:{id:'old_spawn'}, prevPos:new THREE.Vector3(), rig:{root:{position:new THREE.Vector3()}}, worldProgress:{armed:true},
@@ -101,4 +101,10 @@ test('production panel opening cannot cancel a cast or cannon first and thereby 
   const safe = fixture();
   assert.equal(safe.context.panelHooks.onOpen(),true);
   assert.equal(safe.context.travelOpenState,true); assert.equal(safe.clears(),1);
+});
+
+test('boot failure, final exit and graphics suspension reject retained travel commands before mutation',()=>{
+ for(const block of [{bootFailed:true},{worldExited:true},{graphicsRecovery:{blocked:true}}]){
+  const f=fixture();Object.assign(f.context,block);assert.equal(f.execute(),false);assert.equal(f.clears(),0);assert.equal(f.player.pos.x,0);assert.equal(f.context.spawn.id,'old_spawn');
+ }
 });

@@ -17,7 +17,7 @@ class Target {
 }
 function setup() {
   const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
-  const section = source.slice(source.indexOf('const keys ='), source.indexOf('// ───────────── shooting'));
+  const section = source.slice(source.indexOf('const keys ='), source.indexOf('const reducedMotion ='));
   assert.ok(section.length > 500, 'production input section located');
   const elements = new Map<string, any>();
   function $(id: string) {
@@ -38,7 +38,7 @@ function setup() {
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
   // Ordinary input fixture: no owned cinematic or presentation resources.
-  const context = vm.createContext({ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({bootFailed:false, worldExited:false, graphicsRecovery:undefined, servantPanel:{open:false}, invalidateFrameClock(){}, ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -240,4 +240,12 @@ test('World summon hotkey is rebindable, suppressed by maps/settings, and repeat
   s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
   s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
   s.target.emit('keydown',{code:'KeyM'}); s.target.emit('keydown',{code:'KeyO'}); s.target.emit('keydown',{code:'KeyK'}); assert.equal(calls,2);
+});
+
+test('explicit boot, exit and graphics dependencies reject input without masking ordinary input behavior',()=>{
+ for(const block of [{bootFailed:true},{worldExited:true},{graphicsRecovery:{blocked:true,state:'lost'}}]){
+  const s=setup();s.lock();Object.assign(s.context,block);
+  for(const code of ['KeyW','KeyF','Mouse0'])s.target.emit(code==='Mouse0'?'mousedown':'keydown',{code,button:0});
+  assert.equal(s.context.state.keys.size,0);assert.equal(s.actions(),0);assert.equal(s.shots(),0);
+ }
 });
