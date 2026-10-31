@@ -11,7 +11,7 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
  const anchors={socket,head:bones.Head,leftFoot:bones.LeftFoot,rightFoot:bones.RightFoot};
  if(identity!=='saber'||!socket||names.some(n=>!bones[n]))return{anchors,update(){},reset(){},dispose(){}};
  const base=new Map<THREE.Object3D,{q:THREE.Quaternion;p:THREE.Vector3}>();
- for(const name of ['Spine','Spine1','Spine2','Head']){const b=bones[name]!;base.set(b,{q:b.quaternion.clone(),p:b.position.clone()});}
+ for(const name of ['Hips','Spine','Spine1','Spine2','Head','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand']){const b=bones[name]!;base.set(b,{q:b.quaternion.clone(),p:b.position.clone()});}
  const vectors=Array.from({length:128},()=>new THREE.Vector3()),quaternions=Array.from({length:96},()=>new THREE.Quaternion());let vi=0,qi=0;
  const nv=(x=0,y=0,z=0)=>vectors[vi++].set(x,y,z),nq=()=>quaternions[qi++].identity(),cv=(p:THREE.Vector3)=>nv().copy(p),cq=(q:THREE.Quaternion)=>nq().copy(q);
  let strikeStart=-1,lastStrike=0,disposed=false;
@@ -51,9 +51,9 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
   if(disposed||!Number.isFinite(frame.elapsed))return;
   vi=qi=0;const p=THREE.MathUtils.clamp(frame.progress,0,1);root.updateWorldMatrix(true,true);
   if(frame.phase==='intro'||frame.phase==='charge'){
-   restore();const charge=frame.phase==='charge';const t=smooth(charge?p:frame.elapsed/.65);
+   restore();const charge=frame.phase==='charge';const t=smooth(charge?Math.max(0,(p-.40)/.60):p);
    const start=charge?v([-.18,1.19,.24]):v([-.30,1.12,.19]);
-   const end=charge?v([-.13,1.49,.20]):v([-.18,1.19,.24]);
+   const end=charge?v([-.08,1.65,-.10]):v([-.18,1.19,.24]);
    const wrist=start.lerp(end,t);
    // Distributed chest wind-up, with quiet head counterturn, no global limb Euler rotations.
    for(const [name,angle]of [['Spine',-.035],['Spine1',-.07],['Spine2',-.10],['Head',.10]] as const){
@@ -61,22 +61,22 @@ export function createUltimatePerformance(identity:string,root:THREE.Object3D):U
     const parentQ=b.parent!.getWorldQuaternion(nq());axis.applyQuaternion(parentQ.invert());b.quaternion.premultiply(nq().setFromAxisAngle(axis,(charge?t:0)*angle));b.updateWorldMatrix(false,true);
    }
    arm('Right',world(wrist));
-   const direction=charge?v([-.25,.96,.12]).lerp(v([-.15,.96,-.24]),t):v([-.25,.96,.12]);orientSword(direction.normalize());supportGrip();
+   const direction=charge?v([-.25,.96,.12]).lerp(v([-.09,.98,-.16]),t):v([-.25,.96,.12]);orientSword(direction.normalize());supportGrip();
   }else{
    const strikes=frame.strikeCount??0;
    if(strikes>lastStrike){strikeStart=frame.elapsed;lastStrike=strikes;}
    const age=strikeStart<0?-1:Math.max(0,frame.elapsed-strikeStart);
    // Original two-handed downward-forward stroke, driven by the accepted contact
    // notification. This is presentation only: no source pose or damage mutation.
-   const sweep=age<0?0:smooth(age/.14),settle=age<.14?0:smooth((age-.14)/.38);
+   const sweep=age<0?0:smooth(age/.17),settle=age<.17?0:smooth((age-.17)/.52);
    restore();
    const twist=THREE.MathUtils.lerp(-.205,.14,sweep)*(1-settle*.35);
    for(const [name,weight]of [['Spine',.17],['Spine1',.34],['Spine2',.49],['Head',-.35]] as const){
     const b=bones[name]!,axis=worldAxis(nv(0,1,0));axis.applyQuaternion(b.parent!.getWorldQuaternion(nq()).invert());b.quaternion.premultiply(nq().setFromAxisAngle(axis,twist*weight));b.updateWorldMatrix(false,true);
    }
-   const wrist=v([-.13,1.49,.20]).lerp(v([-.10,1.04,.30]),sweep).lerp(v([-.15,1.10,.25]),settle*.3);
+   const wrist=v([-.08,1.65,-.10]).lerp(v([-.08,.93,.43]),sweep).lerp(v([-.15,1.10,.25]),settle*.3);
    arm('Right',world(wrist));
-   const direction=v([-.15,.96,-.24]).lerp(v([.55,-.30,.78]),sweep).normalize();orientSword(direction);supportGrip();
+   const direction=v([-.09,.98,-.16]).lerp(v([.04,-.24,.97]),sweep).normalize();orientSword(direction);supportGrip();
   }
   root.updateWorldMatrix(true,true);
  },reset(){strikeStart=-1;lastStrike=0;},dispose(){disposed=true;base.clear();}};

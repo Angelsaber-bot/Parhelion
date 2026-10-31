@@ -17,7 +17,7 @@ test('NON-GPU Saber ultimate targets actual combat positions or rejects before p
  const aim=()=>{w.camera.lookAt(enemy.p.x,enemy.p.y+1,enemy.p.z);w.camera.updateMatrixWorld();};
  const ready=()=>{w.ultimateDirector.abort();w.actions.reset();w.contract.select('saber');w.player.teleport(center[0],floor(center[0],center[2]+7)+.05,center[2]+7);w.player.onGround=true;w.player.yaw=0;w.player.flying=w.player.swimming=w.player.gliding=false;Object.assign(enemy.p,{x:center[0],y:floor(center[0],center[2]),z:center[2]});Object.assign(enemy.home,enemy.p);enemy.hp=enemy.maxHp=500;enemy.mode='recover';enemy.timer=100;enemy.active=true;enemy.pacified=false;};
  const cast=(target:any=enemy)=>{w.actions.skills.energyValue=100;hits.length=0;const hp=target.hp;key();return hp;};
- const complete=()=>{for(let i=0;i<600&&w.ultimateDirector.active;i++)frame();assert.equal(w.ultimateDirector.active,false);assert.equal(w.actions.skills.casting,false);};
+ const complete=()=>{for(let i=0;i<1200&&w.ultimateDirector.active;i++)frame();assert.equal(w.ultimateDirector.active,false);assert.equal(w.actions.skills.casting,false);};
  try{
   w.done.add('armory_rack');w.contract.recruit();ready();(window.document.getElementById('start') as HTMLElement).click();await Promise.resolve();frame(2);await h.settleAssets();frame(30);
   for(const e of w.combat.state.enemies)if(e!==enemy&&e.kind!=='king'){e.mode='dead';e.timer=Infinity;e.hp=0;e.active=false;}

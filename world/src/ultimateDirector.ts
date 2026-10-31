@@ -24,8 +24,9 @@ export class UltimateClock {
     const duration = this.phase === 'intro' ? this.intro : this.phase === 'charge' ? this.charge : this.phase === 'outro' ? this.outro : 2.9;
     return { identity: this.identity, phase: this.phase, progress: Math.min(1, this.phaseTime / duration), elapsed: this.elapsed, pulse: this.pulse, strikeCount: this.strikeCount, reduced: this.presentation !== 'full' };
   }
-  private get intro() { return this.presentation === 'full' ? .65 : .1; }
-  private get charge() { return this.presentation === 'full' ? 1.9 : .15; }
+  private get era() { return ['blackbeard', 'napoleon', 'napoleonMounted', 'musashi'].includes(this.identity ?? ''); }
+  private get intro() { return this.presentation === 'full' ? (this.identity === 'saber' ? 3 : this.era ? 1.2 : .65) : .1; }
+  private get charge() { return this.presentation === 'full' ? (this.identity === 'saber' ? 4.4 : this.era ? 3.8 : 1.9) : .15; }
   private get outro() { return this.outroTime; }
   begin(identity: string, mode: UltimateMode): boolean {
     if (this.active) return false;
@@ -44,7 +45,7 @@ export class UltimateClock {
   complete(): void {
     if (!this.releasing) return;
     if (!this.showing) this.abort();
-    else { this.outroTime = this.presentation === 'full' ? Math.max(.45, 5.2 - this.elapsed) : .15; this.phase = 'outro'; this.phaseTime = 0; }
+    else { this.outroTime = this.presentation === 'full' ? (this.identity === 'saber' ? 2.4 : this.era ? .85 : Math.max(.45, 5.2 - this.elapsed)) : .15; this.phase = 'outro'; this.phaseTime = 0; }
   }
   skip(): void {
     if (!this.active) return;
@@ -62,6 +63,8 @@ export interface UltimateDirectorOptions {
   onRelease?: () => void; onEnd?: () => void;
   /** Optional original artwork; missing/failed art leaves the 3D stage unobstructed. */
   saberCutInUrl?: string;
+  /** Compatibility only; production defaults to uninterrupted real-time 3D. */
+  enableLegacyCutIns?: boolean;
   cutInUrls?: Partial<Record<UltimateCutInIdentity, string>>;
   reducedEffects?: () => boolean;
 }
@@ -109,7 +112,7 @@ export class UltimateDirector {
     this.caption = this.doc.createElement('p'); this.caption.className = 'ultimate-caption';
     this.skipButton = this.doc.createElement('button'); this.skipButton.type = 'button'; this.skipButton.className = 'ultimate-skip';
     const cutInUrls = { ...options.cutInUrls, saber: options.cutInUrls?.saber ?? options.saberCutInUrl };
-    if (cutInIdentities.some(identity => !!cutInUrls[identity])) {
+    if (options.enableLegacyCutIns === true && cutInIdentities.some(identity => !!cutInUrls[identity])) {
       this.cutIn = this.doc.createElement('div'); this.cutIn.className = 'ultimate-cutin ultimate-saber-cutin'; this.cutIn.hidden = true;
       this.cutIn.setAttribute('aria-hidden', 'true');
       for (const identity of cutInIdentities) {

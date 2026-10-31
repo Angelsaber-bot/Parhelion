@@ -937,7 +937,7 @@ ultimateDirector = new UltimateDirector({ cutInUrls: {
   blackbeard: new URL('../assets/cinematics/blackbeard-cut-in-v2.webp', import.meta.url).href,
   napoleon: new URL('../assets/cinematics/napoleon-cut-in-v2.webp', import.meta.url).href,
   musashi: new URL('../assets/cinematics/musashi-cut-in-v2.webp', import.meta.url).href,
-}, reducedEffects, onEnd: () => { ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
+}, reducedEffects, onEnd: () => { audio.cinematicFrame(null); ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
 document.querySelector('#world-settings .settings-sliders')?.after(ultimateDirector.settingsControl);
 function presentationModel(identity: ServantId | null): THREE.Object3D | null {
   return identity === null ? rig.model : identity === 'saber' ? servant.presentationModel : eraActors.find(entry => entry.servant === identity)?.actor?.model ?? null;
@@ -982,10 +982,11 @@ function frameUltimate(dt: number): boolean {
   }
   const state = ultimateDirector.frame;
   if (state && ultimateSource && ultimateDirector.showing && ultimateStage.isActive) {
+    audio.cinematicFrame(state);
     ultimateStage.update({ ...state, reduced: state.reduced || reducedEffects(), sourceRoot: ultimateSource.root });
     try { ultimateStage.render(renderer, innerWidth / Math.max(1, innerHeight)); }
     catch (error) { ultimateStage.end(); ultimateDirector.skip(); console.warn('Ultimate renderer failed; continuing the cast in the world.', error); renderer.render(scene, camera); }
-  } else { combat.present(0, player.pos, !suspended, camera); renderer.render(scene, camera); }
+  } else { audio.cinematicFrame(null); combat.present(0, player.pos, !suspended, camera); renderer.render(scene, camera); }
   actionHud.update(actions, !ultimateDirector.showing); renderContract();
   return true;
 }

@@ -67,7 +67,7 @@ test('NON-GPU companion contacts reduce actual HP, separately from command skill
    for(const slot of ['skill','ultimate'] as const) await t.test(`${slot} turns toward target even from its opposite side`,t=>{
     position(center[0],center[2]+7);frame(30);assert.equal(w.player.onGround,true,'player settles before skill input');resetTarget();root.position.set(center[0],floor(center[0],center[2]-3),center[2]-3);root.rotation.y=0;w.player.yaw=0;w.actions.reset();hits.length=0;poseTrace.length=0;
     if(slot==='ultimate')w.actions.skills.energyValue=100; // Explicit QA charge injection, not a claim about earning energy.
-    key(slot==='skill'?'KeyQ':'KeyX');assert.equal(w.actions.skills.casting,true,`accepted ${slot}`);frame(s.id==='napoleon'?600:300);
+    key(slot==='skill'?'KeyQ':'KeyX');assert.equal(w.actions.skills.casting,true,`accepted ${slot}`);frame(slot==='ultimate'?900:s.id==='napoleon'?600:300);
     t.diagnostic(`${s.id} ${slot} records=${JSON.stringify(hits)}; pose=${JSON.stringify(poseTrace)}; final actor=${root.position.toArray()}; target=${JSON.stringify(enemy.p)}`);
     if(s.id==='napoleon')for(const contact of poseTrace.filter(e=>e.type==='contact')){const forward=(enemy.p.x-contact.p.x)*contact.d.x+(enemy.p.z-contact.p.z)*contact.d.z;t.diagnostic(`cavalry ${slot} contact forward=${forward}`);assert.ok(forward>0,'authored mounted contact must occur before passing target');}
     assert.ok(hits.some(hit=>hit.id===enemy.id&&hit.source===slot&&hit.damage>0),`${s.id}: command must deal ${slot} HP damage independently of ordinary hits ${JSON.stringify(hits)}`);

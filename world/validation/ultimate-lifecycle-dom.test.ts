@@ -39,7 +39,7 @@ test('NON-GPU production ultimate lifecycle retains one paid cast and authored H
    }
    if(['visibility-pause','visibility-release','blur-intro','blur-release'].includes(mode)){
     const pureBlur=mode.startsWith('blur-'),descriptor=Object.getOwnPropertyDescriptor(window.document,'hasFocus')!;
-    if(mode.endsWith('release')){for(let i=0;i<500&&hits.length===0;i++)frame();assert.equal(hits.length,1,'pause between authored multihit contacts');}
+    if(mode.endsWith('release')){for(let i=0;i<1200&&hits.length===0;i++)frame();assert.equal(hits.length,1,'pause between authored multihit contacts');}
     const pausedHp=enemy.hp,before=JSON.stringify(w.ultimateDirector.frame),cd=w.actions.skills.cooldown('ultimate'),energy=w.actions.skills.energy;
     if(pureBlur)Object.defineProperty(window.document,'hasFocus',{value:()=>false,configurable:true});
     else{Object.defineProperty(window.document,'visibilityState',{value:'hidden',configurable:true});window.document.dispatchEvent(new window.Event('visibilitychange'));}
@@ -75,7 +75,7 @@ test('NON-GPU production ultimate lifecycle retains one paid cast and authored H
   for(const mode of ['full','off','skip'])await t.test(`generic player ${mode} exact 90 HP`,()=>{
    w.actions.reset();if(w.contract.companionSummoned)w.contract.toggle();position();resetTarget();frame(30);resetTarget();enemy.p.z=center[2]+4;enemy.p.y=floor(enemy.p.x,enemy.p.z);Object.assign(enemy.home,enemy.p);w.player.yaw=0;
    w.actions.reset();w.actions.skills.energyValue=100;activations=0;hits.length=0;w.ultimateDirector.setMode(mode==='off'?'off':'full');const hp=enemy.hp;key('KeyX','x');assert.equal(w.ultimateDirector.active,true);assert.equal(w.ultimateDirector.frame.identity,'player');if(mode==='skip')w.ultimateDirector.skip();
-   for(let i=0;i<500&&w.ultimateDirector.active;i++)frame();assert.equal(w.actions.skills.casting,false);assert.equal(w.ultimateDirector.active,false);assert.equal(activations,1);assert.equal(w.actions.skills.energy,0);assert.equal(hp-enemy.hp,90);assert.equal(hits.filter(hit=>hit.source==='ultimate'&&hit.id===enemy.id).reduce((n,hit)=>n+hit.damage,0),90);assert.equal(w.ultimateStage.scene.children.length,0);
+   for(let i=0;i<1200&&w.ultimateDirector.active;i++)frame();assert.equal(w.actions.skills.casting,false);assert.equal(w.ultimateDirector.active,false);assert.equal(activations,1);assert.equal(w.actions.skills.energy,0);assert.equal(hp-enemy.hp,90);assert.equal(hits.filter(hit=>hit.source==='ultimate'&&hit.id===enemy.id).reduce((n,hit)=>n+hit.damage,0),90);assert.equal(w.ultimateStage.scene.children.length,0);
   });
   await t.test('production preferences and locale persist across repeated casts',()=>{
    const select=window.document.querySelector('.ultimate-settings select') as HTMLSelectElement;select.value='short';select.dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(w.ultimateDirector.mode,'short');assert.equal(window.localStorage.getItem('parhelion-world-ultimate-mode-v1'),'short');
@@ -89,7 +89,7 @@ test('NON-GPU production ultimate lifecycle retains one paid cast and authored H
     for(const modifier of ['ctrlKey','metaKey','altKey']){window.document.body.dispatchEvent(new window.MouseEvent('mousedown',{button:4,[modifier]:true,bubbles:true,cancelable:true}));window.document.body.dispatchEvent(new window.MouseEvent('mouseup',{button:4,[modifier]:true,bubbles:true,cancelable:true}));assert.equal(w.settingsPanel.open,false,'modified remapped mouse cannot open settings through cinematic capture');assert.equal(w.actions.skills.casting,true);assert.equal(w.ultimateDirector.active,true);}
     assert.equal(w.settings.bind('settings',oldSettings),null);
     const pos=w.player.pos.toArray(),selected=w.contract.selected;for(const k of ['KeyR','Digit1','KeyY','KeyT'])key(k);
-    assert.equal(w.executeSafeTravel(w.travelStops[0].id),false);assert.deepEqual(w.player.pos.toArray(),pos);assert.equal(w.contract.selected,selected);assert.equal(w.actions.skills.casting,true);assert.equal(w.ultimateDirector.active,true);w.ultimateDirector.skip();for(let i=0;i<500&&w.ultimateDirector.active;i++)frame();
+    assert.equal(w.executeSafeTravel(w.travelStops[0].id),false);assert.deepEqual(w.player.pos.toArray(),pos);assert.equal(w.contract.selected,selected);assert.equal(w.actions.skills.casting,true);assert.equal(w.ultimateDirector.active,true);w.ultimateDirector.skip();for(let i=0;i<1200&&w.ultimateDirector.active;i++)frame();
    }else{
     const cd=w.actions.skills.cooldown('ultimate');
     if(interruption==='programmatic-switch'){w.contract.select('saber');frame();}else window.dispatchEvent(new window.PageTransitionEvent('pagehide',{persisted:false}));

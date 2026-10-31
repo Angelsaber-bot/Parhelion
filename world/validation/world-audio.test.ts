@@ -131,3 +131,11 @@ test('era ordinary skill sound signatures remain unchanged',()=>{
   assert.ok(f.context.nodes.some(n=>n.type==='bandpass'&&n.frequency.value===e.filter));f.context.sources.forEach((n,i)=>assert.ok(Math.abs(n.stopTimes[0]!-e.ends[i])<1e-9));f.audio.dispose();
  }
 });
+test('cinematic phase cues deduplicate and obey mute, skip reset and shared voice budget',()=>{
+ const f=fixture();f.audio.unlock(trusted);f.audio.setActive(true);
+ const frame={identity:'saber',phase:'charge',progress:.1};f.audio.cinematicFrame(frame);assert.equal(f.audio.activeVoices,1);
+ for(let i=0;i<100;i++)f.audio.cinematicFrame(frame);assert.equal(f.audio.activeVoices,1);
+ f.audio.cinematicFrame({...frame,progress:.6});assert.equal(f.audio.activeVoices,3);
+ f.audio.cinematicFrame({...frame,phase:'outro'});assert.equal(f.audio.activeVoices,4);
+ f.audio.cinematicFrame(null);f.audio.setMuted(true);assert.equal(f.audio.activeVoices,0);f.audio.cinematicFrame(frame);assert.equal(f.audio.activeVoices,0);f.audio.dispose();
+});

@@ -7,13 +7,13 @@ import { setLanguage } from '../../shared-client/i18n';
 function advance(clock: { tick(dt: number): void }, seconds: number) { for (let i = 0; i < Math.round(seconds * 100); i++) clock.tick(.01); }
 function fixture(options: ConstructorParameters<typeof UltimateDirector>[0] = {}) {
   const dom = new JSDOM('<body><button id="before">Before</button><div class="hud" style="display:none">Hidden HUD</div></body>', { url: 'https://example.com' });
-  const director = new UltimateDirector({ document: dom.window.document, storage: null, ...options });
+  const director = new UltimateDirector({ document: dom.window.document, storage: null, enableLegacyCutIns: true, ...options });
   return { dom, director, close() { director.dispose(); dom.window.close(); } };
 }
 test('pure full clock gates release, never auto-completes the real action, then bounded outro', () => {
   const clock = new UltimateClock(); assert.equal(clock.begin('saber', 'full'), true); assert.equal(clock.begin('musashi', 'off'), false);
-  advance(clock, .65); assert.equal(clock.frame?.phase, 'charge'); advance(clock, 1.9); assert.equal(clock.releasing, true);
-  advance(clock, 30); assert.equal(clock.releasing, true); clock.complete(); assert.equal(clock.frame?.phase, 'outro'); advance(clock, .45); assert.equal(clock.active, false);
+  advance(clock, 3); assert.equal(clock.frame?.phase, 'charge'); advance(clock, 4.4); assert.equal(clock.releasing, true);
+  advance(clock, 30); assert.equal(clock.releasing, true); clock.complete(); assert.equal(clock.frame?.phase, 'outro'); advance(clock, 2.4); assert.equal(clock.active, false);
 });
 test('short, off, skip all retain the original transaction until complete', () => {
   for (const mode of ['full', 'short', 'off'] as UltimateMode[]) {
@@ -63,14 +63,14 @@ test('mode storage defaults, denied storage, reduced motion, next-cast preferenc
   const saved = fixture({ reducedMotion:true, storage:{ getItem(key) { assert.equal(key,ULTIMATE_MODE_KEY); return 'full'; }, setItem() {} } }); assert.equal(saved.director.mode,'full'); saved.close();
 });
 test('pause freezes outro, abort is immediate, disconnected focus is safe', () => {
-  const f=fixture(); const d=f.director; d.begin('saber'); advance(d,2.55); advance(d,1.4); d.notifyStrike(); d.complete(); const frame=d.frame;
-  d.tick(10,true); assert.deepEqual(d.frame,frame); advance(d,1.25); assert.equal(d.active,false);
+  const f=fixture(); const d=f.director; d.begin('saber'); advance(d,7.4); advance(d,1.4); d.notifyStrike(); d.complete(); const frame=d.frame;
+  d.tick(10,true); assert.deepEqual(d.frame,frame); advance(d,2.4); assert.equal(d.active,false);
   const before=f.dom.window.document.querySelector<HTMLButtonElement>('#before')!; before.focus(); d.begin('saber'); before.remove(); d.abort(); assert.equal(d.active,false); assert.equal(d.showing,false); f.close();
 });
 
-test('full mode keeps the completed pose until nominal 5.2s without delaying or adding contacts', () => {
-  const clock=new UltimateClock(); clock.begin('saber','full'); advance(clock,2.55); assert.equal(clock.releasing,true);
-  advance(clock,1.4); clock.complete(); assert.equal(clock.frame?.phase,'outro'); advance(clock,1.24); assert.equal(clock.active,true); clock.tick(.01); assert.equal(clock.active,false);
+test('full mode keeps the completed pose until a 2.4s 3D aftermath without delaying or adding contacts', () => {
+  const clock=new UltimateClock(); clock.begin('saber','full'); advance(clock,7.4); assert.equal(clock.releasing,true);
+  advance(clock,1.4); clock.complete(); assert.equal(clock.frame?.phase,'outro'); advance(clock,2.39); assert.equal(clock.active,true); clock.tick(.01); assert.equal(clock.active,false);
 });
 
 test('code-only skip keys and repeated keydowns release the accepted cast exactly once', () => {
@@ -112,7 +112,7 @@ test('modified mouse inputs cannot reach remapped settings and abort a paid cast
 
 test('strikeCount records only real release notifications, survives skip, resets next cast', () => {
   const clock=new UltimateClock(); clock.begin('saber','full'); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,0);
-  advance(clock,2.55); assert.equal(clock.frame?.strikeCount,0); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,1); assert.equal(clock.frame?.pulse,1);
+  advance(clock,7.4); assert.equal(clock.frame?.strikeCount,0); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,1); assert.equal(clock.frame?.pulse,1);
   advance(clock,.5); assert.equal(clock.frame?.strikeCount,1); assert.equal(clock.frame?.pulse,0);
   clock.skip(); clock.notifyStrike(); assert.equal(clock.frame?.strikeCount,2); clock.tick(100,true); assert.equal(clock.frame?.strikeCount,2);
   clock.complete(); assert.equal(clock.frame,null); clock.begin('musashi','off'); assert.equal(clock.frame?.strikeCount,0);
@@ -125,7 +125,7 @@ test('Saber cut-in has clock-only reveal, hold and disappearance; other identiti
   clock.tick(99,true); assert.deepEqual(saberCutInPresentation(clock.frame),reveal);
   advance(clock,.34); assert.equal(saberCutInPresentation(clock.frame).reveal,1); assert.equal(saberCutInPresentation(clock.frame).exit,0);
   advance(clock,.45); assert.ok(saberCutInPresentation(clock.frame).exit>0); advance(clock,.15); assert.equal(saberCutInPresentation(clock.frame).visible,false);
-  advance(clock,1.45); assert.equal(clock.releasing,true); assert.equal(saberCutInPresentation(clock.frame).visible,false);
+  advance(clock,6.3); assert.equal(clock.releasing,true); assert.equal(saberCutInPresentation(clock.frame).visible,false);
   for(const identity of ['player','blackbeard','napoleon','musashi']){clock.abort();clock.begin(identity,'full');advance(clock,.5);assert.equal(saberCutInPresentation(clock.frame).visible,false);}
 });
 test('optional cut-in loading failures and late loads leave the stage unobstructed', () => {
@@ -191,4 +191,18 @@ test('cut-in stylesheet retains full viewport containment rather than a floating
   const outer=css.match(/\.ultimate-cutin \{([^}]+)\}/)![1],image=css.match(/\.ultimate-cutin img \{([^}]+)\}/)![1];
   assert.match(outer,/inset: 0/);assert.match(outer,/width: 100%/);assert.match(outer,/height: 100%/);assert.match(image,/object-fit: contain/);
   assert.doesNotMatch(outer,/width: min|aspect-ratio|top: \d+%/);
+});
+
+ test('production cinematic never creates or loads 2D cut-ins for any servant', () => {
+ const f=fixture({enableLegacyCutIns:false,cutInUrls:{saber:'/saber.webp',blackbeard:'/bb.webp',napoleon:'/np.webp',musashi:'/ms.webp'}});
+ assert.equal(f.director.overlay.querySelector('img'),null);
+ for(const id of ['saber','blackbeard','napoleonMounted','musashi']){f.director.begin(id);advance(f.director,.4);assert.equal(f.director.overlay.querySelector('.ultimate-cutin'),null);f.director.skip();f.director.complete();}
+ f.close();
+ });
+
+test('era full 3D clocks expose the new portrait and charge without altering short mode', () => {
+  for(const identity of ['blackbeard','napoleon','napoleonMounted','musashi']){
+    const clock=new UltimateClock();clock.begin(identity,'full');advance(clock,1.19);assert.equal(clock.frame?.phase,'intro');clock.tick(.01);assert.equal(clock.frame?.phase,'charge');advance(clock,3.79);assert.equal(clock.releasing,false);clock.tick(.01);assert.equal(clock.releasing,true);clock.complete();advance(clock,.84);assert.equal(clock.active,true);clock.tick(.01);assert.equal(clock.active,false);
+    clock.begin(identity,'short');advance(clock,.25);assert.equal(clock.releasing,true);clock.complete();advance(clock,.15);assert.equal(clock.active,false);
+  }
 });

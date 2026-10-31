@@ -10,6 +10,8 @@ material_cache={}
 if reuse:bpy.ops.wm.read_factory_settings(use_empty=True)
 for filename in sorted(os.listdir(source)):
     if not filename.endswith('.json'): continue
+    shard_count=int(os.environ.get('ULTIMATE_SHARDS','1'));shard_index=int(os.environ.get('ULTIMATE_SHARD','0'))
+    if sum(filename.encode()) % shard_count != shard_index:continue
     if len(args)>2 and not filename.startswith(args[2]):continue
     manifest=json.load(open(os.path.join(source,filename)))
     if os.environ.get('ULTIMATE_SKIP_EXISTING')=='1' and os.path.isfile(os.path.join(out,manifest['id']+'.png')):continue
@@ -60,7 +62,12 @@ for filename in sorted(os.listdir(source)):
                 vertex=nodes.new('ShaderNodeVertexColor');vertex.layer_name='StageRGBA'
                 multiply=nodes.new('ShaderNodeMixRGB');multiply.blend_type='MULTIPLY';multiply.inputs[0].default_value=1;multiply.inputs[2].default_value=(*spec['color'],1)
                 links.new(vertex.outputs['Color'],multiply.inputs[1]);links.new(multiply.outputs['Color'],color_input)
-            if spec['opacity']<1 or vertex:
+            if spec.get('additive',False):
+                trans=nodes.new('ShaderNodeBsdfTransparent');add=nodes.new('ShaderNodeAddShader');links.new(trans.outputs[0],add.inputs[0]);links.new(em.outputs[0],add.inputs[1]);links.new(add.outputs[0],output.inputs[0])
+                if 'Strength' in em.inputs:em.inputs['Strength'].default_value=spec['opacity']
+                if vertex and 'Strength' in em.inputs:
+                    alpha=nodes.new('ShaderNodeMath');alpha.operation='MULTIPLY';alpha.inputs[1].default_value=spec['opacity'];links.new(vertex.outputs['Alpha'],alpha.inputs[0]);links.new(alpha.outputs[0],em.inputs['Strength'])
+            elif spec['opacity']<1 or vertex:
                 trans=nodes.new('ShaderNodeBsdfTransparent');mix=nodes.new('ShaderNodeMixShader');mix.inputs[0].default_value=spec['opacity']
                 if vertex:
                     alpha=nodes.new('ShaderNodeMath');alpha.operation='MULTIPLY';alpha.inputs[1].default_value=spec['opacity'];links.new(vertex.outputs['Alpha'],alpha.inputs[0]);links.new(alpha.outputs[0],mix.inputs[0])
@@ -79,12 +86,24 @@ for filename in sorted(os.listdir(source)):
     def convert(xyz):return Vector((xyz[0],-xyz[2],xyz[1]))
     scene=bpy.context.scene;scene.world=bpy.data.worlds.new('Actual stage background');scene.world.use_nodes=True;scene.world.node_tree.nodes['Background'].inputs['Color'].default_value=(*manifest['background'],1);scene.world.node_tree.nodes['Background'].inputs['Strength'].default_value=1
     for i,light in enumerate(manifest['lights']):
-        data=bpy.data.lights.new('Stage directional '+str(i),'SUN');data.energy=light['intensity'];data.color=light['color'];data.angle=.08
+        kind=light.get('type','directional')
+        data=bpy.data.lights.new('Stage '+kind+' '+str(i),'POINT' if kind=='point' else 'SUN');data.color=light['color']
+        # Three point intensity is candela; Blender point power is total radiant flux.
+        data.energy=light['intensity']*4*math.pi if kind=='point' else light['intensity']*(.35 if kind=='hemisphere' else 1)
+        if kind=='point':data.shadow_soft_size=.12
+        else:data.angle=math.pi/2 if kind=='hemisphere' else .08
         obj=bpy.data.objects.new(data.name,data);scene.collection.objects.link(obj);obj.location=convert(light['position']);obj.rotation_euler=(-obj.location).to_track_quat('-Z','Y').to_euler()
+        if kind=='hemisphere':
+            fill=bpy.data.lights.new('Hemisphere ground approximation '+str(i),'SUN');fill.energy=light['intensity']*.15;fill.color=light['groundColor'];fill.angle=math.pi/2
+            ground=bpy.data.objects.new(fill.name,fill);scene.collection.objects.link(ground);ground.rotation_euler=(math.pi,0,0)
     data=bpy.data.cameras.new('Exact stage camera');camera=bpy.data.objects.new('Exact stage camera',data);scene.collection.objects.link(camera);scene.camera=camera
     spec=manifest['camera'];camera.location=convert(spec['position']);camera.rotation_euler=convert(spec['direction']).to_track_quat('-Z','Y').to_euler();data.type='PERSP';data.sensor_fit='HORIZONTAL';data.angle=2*math.atan(math.tan(math.radians(spec['fov'])/2)*spec['aspect']);data.clip_start=spec['near'];data.clip_end=spec['far']
     scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=max(16,int(os.environ.get("ULTIMATE_SAMPLES","16")));scene.cycles.use_denoising=False;scene.cycles.transparent_max_bounces=64;scene.render.threads_mode='FIXED';scene.render.threads=2
     scene.render.resolution_x=int(os.environ.get("ULTIMATE_WIDTH","1280"));scene.render.resolution_y=int(os.environ.get("ULTIMATE_HEIGHT","720"));scene.render.resolution_percentage=100
     scene.render.image_settings.file_format='PNG';scene.render.filepath=os.path.join(out,manifest['id']+'.png')
-    scene.view_settings.view_transform='Standard';bpy.ops.render.render(write_still=True)
+    scene.view_settings.view_transform='Standard'
+    # Approximation of actual runtime UnrealBloomPass; omitted unless explicitly enabled.
+    if os.environ.get('ULTIMATE_BLOOM','0')=='1':
+        scene.use_nodes=True;tree=scene.node_tree;tree.nodes.clear();layers=tree.nodes.new('CompositorNodeRLayers');glare=tree.nodes.new('CompositorNodeGlare');glare.glare_type='FOG_GLOW';glare.quality='MEDIUM';glare.threshold=.72;glare.size=6;glare.mix=-.45;output=tree.nodes.new('CompositorNodeComposite');tree.links.new(layers.outputs['Image'],glare.inputs['Image']);tree.links.new(glare.outputs['Image'],output.inputs['Image'])
+    bpy.ops.render.render(write_still=True)
     print('POSE_RENDERED',manifest['id'],flush=True)

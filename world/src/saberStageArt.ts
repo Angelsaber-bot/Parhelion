@@ -24,19 +24,19 @@ export class SaberStageArt {
     this.root.name = 'Saber: sacred shore, sword light and impact';
     this.socket = clone.getObjectByName('WeaponSocket_R') ?? clone.getObjectByName('mixamorigRightHand');
     actor.updateMatrixWorld(true); this.socket?.getWorldPosition(this.grip);
-    const groundLight = owner.material(0x385b70, .35); groundLight.vertexColors = true;
+    const groundLight = owner.material(0x735424, .24); groundLight.vertexColors = true;
     const pool = owner.mesh(radialGeometry(3.2), groundLight, this.root); pool.rotation.x = -Math.PI / 2; pool.scale.y = 1.5; pool.position.set(0, -.033, -.5);
     const shadowMat = owner.material(0x000509, .72); shadowMat.vertexColors = true;
     this.shadow = owner.mesh(radialGeometry(1), shadowMat, this.root); this.shadow.name = 'Saber contact shadow';
     this.shadow.rotation.x = -Math.PI / 2; this.shadow.scale.set(1.05, .55, 1); this.shadow.position.y = -.025;
     // A restrained horizon and layered side veils make scale and depth legible, not a generic ring arena.
     for (let i = 0; i < 3; i++) {
-      const mat = owner.material(i === 0 ? 0x598995 : 0x214454, .20); mat.vertexColors = true;
+      const mat = owner.material(i === 0 ? 0x967541 : 0x392b18, .12); mat.vertexColors = true;
       const strip = owner.mesh(softPanelGeometry(36, .45 + i * .3), mat, this.root);
       strip.position.set(0, .02 + i * .025, -5 - i * 6); strip.rotation.x = -Math.PI / 2;
     }
     for (const side of [-1, 1]) for (let i = 0; i < 3; i++) {
-      const mat = owner.material(i === 0 ? 0x95c5cf : 0x244455, .18); mat.vertexColors = true;
+      const mat = owner.material(i === 0 ? 0x967541 : 0x392b18, .045); mat.vertexColors = true;
       const curtain = owner.mesh(softPanelGeometry(.6 + i * .5, 10), mat, this.root);
       curtain.position.set(side * (3.8 + i * 2.3), 3.5, -3 - i * 5); curtain.rotation.z = side * -.18;
       this.curtains.push(curtain);

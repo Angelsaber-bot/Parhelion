@@ -21,6 +21,7 @@ export class WorldAudio {
   private compressor: DynamicsCompressorNode | null = null;
   private noise: AudioBuffer | null = null;
   private voices = new Set<Voice>();
+  private cinemaCue = '';
   private active = false;
   private disposed = false;
   private storage: Storage | null;
@@ -167,6 +168,18 @@ export class WorldAudio {
         break;
       default:this.skill();
     }
+  }
+  /** Frame-edge cues follow presentation phases, never wall-clock timers or damage. */
+  cinematicFrame(frame: {identity:string;phase:string;progress:number} | null) {
+    if(!frame){this.cinemaCue='';return;}
+    const part=frame.phase==='charge' && frame.progress>=.55 ? 'rise' : 'start';
+    const key=`${frame.identity}:${frame.phase}:${part}`;
+    if(key===this.cinemaCue)return;this.cinemaCue=key;
+    if(frame.phase==='charge'){
+      const pitch=frame.identity==='saber'?220:frame.identity==='musashi'?380:frame.identity==='blackbeard'?90:145;
+      this.voice('sine',part==='rise'?1.65:1.35,pitch,part==='rise'?.035:.022,part==='rise'?2.3:1.4,.6);
+      if(part==='rise')this.voice('triangle',1.1,pitch*2,.018,1.75,.4);
+    }else if(frame.phase==='outro')this.voice('sine',.9,frame.identity==='saber'?440:180,.018,.65,.08);
   }
   evade(){this.voice('noise',.17,2600,.085);}
   interaction(){this.voice('sine',.12,520,.055,1.5);}

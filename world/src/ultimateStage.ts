@@ -1,4 +1,11 @@
 import * as THREE from 'three';
+import { createSaberCinematicFace } from './saberCinematicFace';
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { EraCinematicRemake } from './eraCinematicRemake';
+import { SaberCinematicRemake } from './saberCinematicRemake';
 import { MountedStageArt } from './mountedStageArt';
 import { MusashiStageArt } from './musashiStageArt';
 import { BlackbeardStageArt } from './eraStageArt';
@@ -12,7 +19,7 @@ export type UltimateStagePhase = 'intro' | 'charge' | 'release' | 'outro';
 export interface UltimateStageBegin { identity: string; sourceRoot: THREE.Object3D; clips?: readonly THREE.AnimationClip[]; reducedEffects?: boolean; }
 export interface UltimateStageFrame { elapsed: number; phase: UltimateStagePhase; progress: number; pulse: number; sourceRoot?: THREE.Object3D; reduced?: boolean; strikeCount?: number; }
 const palettes: Record<string, [number, number, number]> = {
-  saber: [0x061d36, 0x81e8ff, 0xffdf85], blackbeard: [0x07141e, 0xf5ac52, 0x6ec1d3],
+  saber: [0x090e19, 0xffd47c, 0xffefbd], blackbeard: [0x07141e, 0xf5ac52, 0x6ec1d3],
   napoleon: [0x233248, 0xffe5a1, 0xf5f7ff], musashi: [0xc5bcbc, 0xb6284d, 0x2678af],
 };
 const clamp = (n: number) => THREE.MathUtils.clamp(Number.isFinite(n) ? n : 0, 0, 1);
@@ -34,7 +41,9 @@ export class UltimateStage {
   private performanceFrame: UltimatePerformanceFrame = { phase: 'intro', progress: 0, elapsed: 0, strikeCount: 0, reduced: false };
   private eraPerformance?: ReturnType<typeof createEraUltimatePerformance>;
   private blackbeardArt?: BlackbeardStageArt; private mountedArt?: MountedStageArt; private musashiArt?: MusashiStageArt; private mountedTravel = 0; private mountedReleaseAt = -1; private mountedReleaseOrigin = 0;
-  private saberArt?: SaberStageArt;
+  private eraCinema?: EraCinematicRemake;
+  private bloomFailed = new WeakSet<THREE.WebGLRenderer>(); private bloomComposer?: EffectComposer; private bloomPass?: UnrealBloomPass; private bloomRenderer?: THREE.WebGLRenderer; private bloomWidth=0;private bloomHeight=0;
+  private saberFace?: ReturnType<typeof createSaberCinematicFace>; private saberArt?: SaberStageArt; private saberCinema?: SaberCinematicRemake;
   private ship?: THREE.Group; private identity = ''; private reduced = false; private active = false; private lastElapsed = 0;
   private baseCameraPosition = new THREE.Vector3(); private narrowWeight = 0;
   private aim = new THREE.Vector3(); private viewport = new THREE.Vector4(); private scissor = new THREE.Vector4();
@@ -131,12 +140,15 @@ export class UltimateStage {
       }); this.effects.add(this.blackbeardArt.root);
     }
     if (this.identity === 'saber') {
+      this.saberFace = createSaberCinematicFace(this.clone);
       this.saberArt = new SaberStageArt(this.actor, this.clone, {
         mesh: (geometry, material, parent) => this.mesh(geometry, material, parent),
         material: (color, opacity) => this.material(color, opacity),
       }); this.effects.add(this.saberArt.root);
+      this.saberCinema = new SaberCinematicRemake(this.actor, this.clone, {mesh:(g,m,p)=>this.mesh(g,m,p),material:(c,o)=>this.material(c,o)});this.effects.add(this.saberCinema.root);
     }
     const eraOwner = { mesh: (geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D) => this.mesh(geometry, material, parent), material: (color: number, opacity: number) => this.material(color, opacity) };
+    if (['blackbeard','napoleon','musashi'].includes(this.identity)) {this.eraCinema=new EraCinematicRemake(this.actor,this.clone,this.identity,eraOwner);this.effects.add(this.eraCinema.root);}
     if (this.identity === 'musashi') { this.musashiArt=new MusashiStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.musashiArt.root); }
     if (this.identity === 'napoleon') { this.mountedArt=new MountedStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.mountedArt.root); }
     this.active = true; this.update({ elapsed: 0, phase: 'intro', progress: 0, pulse: 0 });
@@ -200,7 +212,7 @@ export class UltimateStage {
       this.chargeAction.time = this.chargeAction.getClip().duration * .3 * p; this.mixer?.update(0);
     } else this.mixer?.update(dt);
     const pf = this.performanceFrame; pf.phase = frame.phase; pf.elapsed = elapsed; pf.progress = p; pf.strikeCount = frame.strikeCount; pf.reduced = this.reduced;
-    this.performance?.update(pf); this.eraPerformance?.update(pf);
+    this.performance?.update(pf); this.eraPerformance?.update(pf); this.saberFace?.update(pf);
     const mounted = this.identity === 'napoleon', close = frame.phase === 'intro';
     const distance = close ? THREE.MathUtils.lerp(mounted ? 3.4 : 2.4, mounted ? 3.9 : 2.9, p) : frame.phase === 'charge' ? THREE.MathUtils.lerp(4.3, 8, p) : mounted ? 7.2 : this.identity === 'saber' ? 7.35 : 7;
     const orbit = this.reduced ? .1 : close ? -.36 + p * .16 : release ? .35 - p * .5 : this.identity === 'blackbeard' ? -.35 + p * .7 : this.identity === 'musashi' ? -.2 + p * .5 : .12;
@@ -260,6 +272,9 @@ export class UltimateStage {
       this.actor.position.z = this.mountedTravel;
       this.camera.position.z += this.mountedTravel; this.aim.z += this.mountedTravel;
     } else this.actor.position.z = 0;
+    this.saberCinema?.update(frame,this.camera,this.reduced);
+    this.eraCinema?.update(frame,this.camera,this.reduced);if(this.eraCinema && (this.clone?.getObjectByName('Head') || this.clone?.getObjectByName('mixamorigHead')))this.aim.copy(this.eraCinema.aim);
+    if(this.saberCinema && this.clone?.getObjectByName('mixamorigHead')) this.aim.copy(this.saberCinema.aim);
     this.baseCameraPosition.copy(this.camera.position);
     this.narrowWeight = close ? 0 : frame.phase === 'charge' ? p : 1; this.setAspect(this.camera.aspect);
     for (let i = 0; i < this.rings.length; i++) {
@@ -298,14 +313,34 @@ export class UltimateStage {
     try {
       this.setAspect(aspect);
       renderer.setRenderTarget(null); renderer.getSize(this.size); renderer.setViewport(0, 0, this.size.x, this.size.y);
-      renderer.setScissorTest(false); renderer.autoClear = true; renderer.render(this.scene, this.camera);
+      renderer.setScissorTest(false); renderer.autoClear = true;
+      // A bounded cinematic-only HDR glow pass. No postprocessing cost in normal play.
+      if (renderer instanceof THREE.WebGLRenderer && typeof renderer.clear === 'function' && typeof renderer.getContext === 'function' && typeof renderer.getDrawingBufferSize === 'function' && !this.bloomFailed.has(renderer) && !this.reduced) {
+        try {
+        if(!this.bloomComposer || this.bloomRenderer!==renderer){
+          this.bloomPass?.dispose();this.bloomComposer?.passes.forEach(p=>{if(p!==this.bloomPass)p.dispose();});this.bloomComposer?.dispose();
+          this.bloomWidth=this.bloomHeight=0;this.bloomRenderer=renderer;this.bloomComposer=new EffectComposer(renderer);this.bloomComposer.setPixelRatio(1);
+          this.bloomComposer.addPass(new RenderPass(this.scene,this.camera));
+          this.bloomPass=new UnrealBloomPass(new THREE.Vector2(640,360),.75,.48,.72);this.bloomComposer.addPass(this.bloomPass);this.bloomComposer.addPass(new OutputPass());
+        }
+        const h=Math.min(720,this.size.y),w=Math.round(this.size.x*h/Math.max(1,this.size.y));
+        if(w!==this.bloomWidth||h!==this.bloomHeight){this.bloomComposer.setSize(w,h);this.bloomWidth=w;this.bloomHeight=h;}
+        this.bloomComposer.render(0);
+        } catch {
+          // Weak GPU contexts retain the full 3D sequence without repeated allocation attempts.
+          this.bloomFailed.add(renderer);
+          try{this.bloomComposer?.passes.forEach(p=>p.dispose());this.bloomComposer?.dispose();}catch{/* best-effort GPU cleanup */}
+          this.bloomComposer=undefined;this.bloomPass=undefined;this.bloomRenderer=undefined;this.bloomWidth=this.bloomHeight=0;
+          renderer.setRenderTarget(null);renderer.setViewport(0,0,this.size.x,this.size.y);renderer.setScissorTest(false);renderer.autoClear=true;renderer.render(this.scene,this.camera);
+        }
+      } else renderer.render(this.scene, this.camera);
     } finally {
       renderer.setRenderTarget(target); renderer.setViewport(this.viewport); renderer.setScissor(this.scissor);
       renderer.setScissorTest(scissorTest); renderer.setClearColor(this.clearColor, alpha); renderer.autoClear = autoClear;
     }
   }
   end() {
-    this.active = false; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
+    this.active = false; this.eraCinema?.dispose();this.eraCinema=undefined; this.saberFace?.dispose();this.saberFace=undefined; this.saberCinema?.dispose();this.saberCinema=undefined; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
     // SkeletonUtils skeletons are private; source geometry/materials/textures are never disposed.
     const skeletons = new Set<THREE.Skeleton>(); this.clone?.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); }); skeletons.forEach(s => s.dispose());
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
@@ -313,5 +348,5 @@ export class UltimateStage {
     this.actor.clear(); this.effects.clear();
     this.sourceRoot = undefined; this.clone = undefined; this.ship = undefined; this.scene.clear(); this.lastElapsed = 0;
   }
-  dispose() { this.end(); this.framing = new WeakMap(); }
+  dispose() { this.end(); this.bloomComposer?.passes.forEach(p=>p.dispose());this.bloomComposer?.dispose();this.bloomComposer=undefined;this.bloomPass=undefined;this.bloomRenderer=undefined;this.bloomFailed=new WeakSet(); this.framing = new WeakMap(); }
 }
