@@ -3,11 +3,32 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 import { sourceNodeHandles } from './source-node-detach.fixture';
+import { readFileSync } from 'node:fs';
+import { REGIONS, mergeLayouts } from '../src/regions';
+import { makeWildernessSpawns } from '../src/combat';
+import { authorEncounters } from '../src/authoredEncounters';
+import { makeMinibossSpawns } from '../src/minibosses';
 
 test('detaching consumed source COLLISION/MARKERS preserves production capsule, gate, target and reset paths',async()=>{
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT});const {world:w,window}=h;
  try{
-  const sources=sourceNodeHandles(w.scene);assert.equal(sources.handles.filter(h=>h.node.name==='COLLISION').length,5);assert.equal(sources.handles.filter(h=>h.node.name==='MARKERS').length,5);
+  const sources=sourceNodeHandles(w.scene), receipt=w.consumedSourceReceipt;
+  const sourceRoots=sources.handles.length?sources.handles.map(h=>({name:h.node.name})):receipt?.roots;
+  assert.ok(sourceRoots,'production detach must expose a numeric receipt');
+  assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,5);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,5);
+  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.objects,255);}
+  // All original region-space JSON anchors must retain their authoritative world transform.
+  const expectedLayout=mergeLayouts(REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))})));
+  for(const marker of expectedLayout.markers){const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}
+  for(const area of expectedLayout.areas){const live=w.layout.areas.find((a:any)=>a.id===area.id);assert.ok(live,area.id);assert.deepEqual(Array.from(live.tp),area.tp,`teleport ${area.id}`);assert.deepEqual(Array.from(live.c),area.c,`area ${area.id}`);}
+  for(const region of REGIONS){const id=region.id==='alpha'?'spawn_p1':`${region.id}_spawn_p1`;assert.ok(w.layout.markers.find((m:any)=>m.id===id),`${region.id} spawn retained`);}
+  for(const boss of w.combat.state.bosses){const anchor=expectedLayout.markers.find(m=>m.id===boss.id)!;assert.ok(anchor,boss.id);assert.deepEqual({...boss.home},{x:anchor.p[0],y:anchor.p[1]+.05,z:anchor.p[2]},`boss world-space home ${boss.id}`);}
+  const wilderness=authorEncounters(makeWildernessSpawns(expectedLayout.world.seed^537,w.combat.geometry.safeSpawn),w.combat.geometry.safeSpawn);
+  const encounterSpawns=[...makeMinibossSpawns(w.combat.geometry.safeSpawn,wilderness),...wilderness];
+  for(const spawn of encounterSpawns){const enemy=w.combat.state.enemies.find((e:any)=>e.id===spawn.id);assert.ok(enemy,spawn.id);assert.deepEqual({...enemy.home},{...spawn.p},`captured BVH encounter home ${spawn.id}`);}
+  const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8'),afterDetach=main.slice(main.indexOf('const consumedSourceReceipt ='));
+  if(receipt){assert.doesNotMatch(afterDetach,/getObjectByName\(['"](?:COLLISION|MARKERS)['"]\)/,'no later original source-tree lookups');assert.doesNotMatch(afterDetach,/(?:marker|spawn|part|p\.root)\.getWorldPosition\(/,'anchors consume captured world-space data, not detached parent transforms');}
+  console.log('All-region captured anchors audited',JSON.stringify({markers:expectedLayout.markers.length,areas:expectedLayout.areas.length,bosses:w.combat.state.bosses.length,encounters:encounterSpawns.length,regions:REGIONS.map(r=>r.id)}));
   const sourceObjects=new Set<THREE.Object3D>(),sourceGeometry=new Set<THREE.BufferGeometry>();
   for(const {node}of sources.handles)node.traverse(o=>{sourceObjects.add(o);if((o as THREE.Mesh).isMesh)sourceGeometry.add((o as THREE.Mesh).geometry);});
   console.log('Consumed source inventory',sources.handles.map(({node})=>{let nodes=0;node.traverse(()=>nodes++);return{name:node.name,nodes};}));
@@ -50,7 +71,7 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
    assert.equal(w.colliders.find((c:any)=>c.name==='COL_Seam_west_Gate').enabled,true);assert.equal(targets.find(t=>t.userData.target==='kikyo_banner_1')!.visible,true);
    return{paths,hits,resetPosition:w.player.pos.toArray()};
   };
-  const attached=exercise();console.log('Attached actual route/target/reset result',JSON.stringify(attached));sources.detach();const detached=exercise();assert.deepEqual(detached,attached);
+  const attached=exercise();console.log(sources.handles.length?'Attached actual route/target/reset result':'Production detached route/target/reset result',JSON.stringify(attached));sources.detach();const detached=exercise();assert.deepEqual(detached,attached);
   assert.ok(w.colliders.length===colliders.length&&w.colliders.every((c:any,i:number)=>c===colliders[i]),'collider references unchanged');assert.ok(w.colliders.every((c:any,i:number)=>c.bvh.geometry===bvhGeometry[i]),'BVH geometry references unchanged');assert.equal(JSON.stringify(w.layout.markers),markers);
   const reachable=new Set<THREE.Object3D>();w.scene.traverse((o:THREE.Object3D)=>reachable.add(o));for(const mesh of art)assert.ok(reachable.has(mesh),`ART identity remains reachable: ${mesh.name}`);
   assert.equal(disposed,0);assert.equal(h.errors.length,0);sources.restore();
