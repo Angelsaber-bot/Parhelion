@@ -10,9 +10,9 @@ export function nativeStageProjection(stage:any){
  const point=new THREE.Vector3(),projected=new THREE.Vector3();
  try{for(const aspect of [16/9,9/16]){
   stage.setAspect(aspect);const camera=stage.camera;
-  const bounds=meshes.map(mesh=>{let outside=0,behind=0;const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];const count=mesh.geometry.attributes.position.count;
-   for(let i=0;i<count;i++){mesh.getVertexPosition(i,point);point.applyMatrix4(mesh.matrixWorld);projected.copy(point).project(camera);const a=projected.toArray();for(let j=0;j<3;j++){min[j]=Math.min(min[j],a[j]);max[j]=Math.max(max[j],a[j]);}if(Math.abs(a[0])>1||Math.abs(a[1])>1)outside++;if(a[2]<-1||a[2]>1)behind++;}
-   return{name:mesh.name,vertices:count,min,max,outside,behind};
+  const bounds=meshes.map(mesh=>{let outside=0,behind=0;const min=[Infinity,Infinity,Infinity],max=[-Infinity,-Infinity,-Infinity];const geometry=mesh.geometry,attributeCount=geometry.attributes.position.count,total=geometry.index?.count??attributeCount,drawStart=Math.max(0,geometry.drawRange.start),drawEnd=Math.min(total,drawStart+geometry.drawRange.count);const used=new Set<number>();const ranges=Array.isArray(mesh.material)?geometry.groups.filter((g:any)=>mesh.material[g.materialIndex]?.visible!==false).map((g:any)=>[Math.max(drawStart,g.start),Math.min(drawEnd,g.start+g.count)]):mesh.material.visible===false?[]:[[drawStart,drawEnd]];for(const [start,end]of ranges)for(let j=start;j<end;j++)used.add(geometry.index?geometry.index.getX(j):j);const count=used.size;
+   for(const i of used){mesh.getVertexPosition(i,point);point.applyMatrix4(mesh.matrixWorld);projected.copy(point).project(camera);const a=projected.toArray();for(let j=0;j<3;j++){min[j]=Math.min(min[j],a[j]);max[j]=Math.max(max[j],a[j]);}if(Math.abs(a[0])>1||Math.abs(a[1])>1)outside++;if(a[2]<-1||a[2]>1)behind++;}
+   return{name:mesh.name,vertices:count,attributeVertices:attributeCount,min,max,outside,behind};
   });rows.push({aspect,camera:camera.position.toArray(),meshes:bounds});
  }}finally{stage.setAspect(oldAspect);}
  return rows;
