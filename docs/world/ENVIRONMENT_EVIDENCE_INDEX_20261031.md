@@ -25,6 +25,7 @@ review. `studio` and renderer-only `candidate` modes are explicitly named altern
 | Crafted Valley structure | `false-dawn-v7/renders/alpha-battle.png` | Studio shadowing; not final runtime caster policy |
 | Safe split-ground shadow gain | `field-shadow-split/{off,on}/{alpha,blacksail}-battle.png` | Actual factory flag exports; thin ground never casts in on |
 | Remote relay instrument/approach readability | `false-dawn-remote-v7/renders/{blacksail,winter}-battle.png` | Default factory caster flags off; normal main now enables guarded structural casting |
+| Final spatially separated briefing residents | `campaign-side-residents/renders/{region}-campaign.png` | Current five workspace positions; actual builder geometry with studio lighting |
 | Five resident silhouettes | `campaign-residents-v4/residents.png` | Before final minor lid/mouth/page refinement |
 | Final Ada face and bounded note-check | `resident-acting-v2/{rest,read}/ada.png` | Actual runtime poses at 0/5.12 seconds; not a motion video |
 | Partial accepted anchor circuits | `grounding-circuits/{000,100,111}/renders/alpha-detail.png` | Reviewed 06:32 UTC: none / I only / all accepted; default factory shadows off |
@@ -36,6 +37,13 @@ QA's verified manifests; do not remove final images or active renderer inputs.
 
 ## Physical and lifecycle proof
 
+- `hub-field-walks/audit.json`: all three full hub-travel landing→field console routes,
+  using the original dry West Ford bridge in Alpha, plus all 47 travel arrivals.
+- `alpha-crossing/audit.json`: original bridge centerline and per-leg physical proof,
+  zero swimming/jumps; earlier unnecessary swim route retained in
+  `hub-field-walks/initial-swim-route-audit.json`.
+- `campaign-natural-stances.log`: five resident body clearances and all ten natural
+  briefing→station stopping positions retain intended nearest-distance/LOS targeting.
 - `approaches/audit.json`: five actual road→ramp→hub walks, no jumping.
 - `roof-approach-regression.log`: same production routes after hard-roof collision fix.
 - `false-dawn-audit/geometry-routes.json`: current three action-field approaches,
@@ -43,7 +51,8 @@ QA's verified manifests; do not remove final images or active renderer inputs.
 - `false-dawn-remote-v5-geometry.log`: physical remote revision audit. Later dial/cue
   material/indicator refinements did not alter collision.
 - `world/validation/campaign-sites.test.ts`: all old/new hub task sockets reachable,
-  bounded resources, immutable state collision, upward actual-Player roof contact.
+  17 explicit original interior/doorway destinations, bounded resources, immutable
+  state collision, upward actual-Player roof contact and natural interaction stances.
 - `world/validation/false-dawn-sites.test.ts`: interaction-disc spawn margins,
   per-prop terrain support, partial/reset cues, completion indicator front visibility,
   no winding reliance on double-sided rendering, fixed resource/collision identities,
