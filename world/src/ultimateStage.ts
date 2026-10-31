@@ -1,3 +1,4 @@
+import { MusashiWindupCamera } from './musashiWindupCamera';
 import { CaptainCavalryCamera } from './captainCavalryCamera';
 import * as THREE from 'three';
 import { createSaberCinematicFace } from './saberCinematicFace';
@@ -44,6 +45,7 @@ export class UltimateStage {
   private blackbeardArt?: BlackbeardStageArt; private mountedArt?: MountedStageArt; private musashiArt?: MusashiStageArt; private mountedTravel = 0; private mountedReleaseAt = -1; private mountedReleaseOrigin = 0;
   private eraCinema?: EraCinematicRemake;
   private captainCamera?: CaptainCavalryCamera;
+  private musashiCamera?: MusashiWindupCamera;
   private bloomFailed = new WeakSet<THREE.WebGLRenderer>(); private bloomComposer?: EffectComposer; private bloomPass?: UnrealBloomPass; private bloomRenderer?: THREE.WebGLRenderer; private bloomWidth=0;private bloomHeight=0;
   private saberFace?: ReturnType<typeof createSaberCinematicFace>; private saberArt?: SaberStageArt; private saberCinema?: SaberCinematicRemake;
   private ship?: THREE.Group; private identity = ''; private reduced = false; private active = false; private lastElapsed = 0;
@@ -153,6 +155,7 @@ export class UltimateStage {
       this.saberCinema = new SaberCinematicRemake(this.actor, this.clone, {mesh:(g,m,p)=>this.mesh(g,m,p),material:(c,o)=>this.material(c,o)});this.effects.add(this.saberCinema.root);
     }
     const eraOwner = { mesh: (geometry: THREE.BufferGeometry, material: THREE.Material, parent: THREE.Object3D) => this.mesh(geometry, material, parent), material: (color: number, opacity: number) => this.material(color, opacity) };
+    if (this.identity === 'musashi') this.musashiCamera = new MusashiWindupCamera(this.actor);
     if (['blackbeard','napoleon'].includes(this.identity)) this.captainCamera = new CaptainCavalryCamera(this.identity, this.actor, this.clone);
     if (['blackbeard','napoleon','musashi'].includes(this.identity)) {this.eraCinema=new EraCinematicRemake(this.actor,this.clone,this.identity,eraOwner);this.effects.add(this.eraCinema.root);}
     if (this.identity === 'musashi') { this.musashiArt=new MusashiStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.musashiArt.root); }
@@ -280,6 +283,7 @@ export class UltimateStage {
     } else this.actor.position.z = 0;
     this.saberCinema?.update(frame,this.camera,this.reduced);
     this.eraCinema?.update(frame,this.camera,this.reduced);if(this.eraCinema && (this.clone?.getObjectByName('Head') || this.clone?.getObjectByName('mixamorigHead')))this.aim.copy(this.eraCinema.aim);
+    if(this.musashiCamera)this.aim.copy(this.musashiCamera.update(frame,this.camera,this.reduced,this.aim));
     if(this.captainCamera)this.aim.copy(this.captainCamera.update(frame,this.camera,this.reduced));
     if(this.saberCinema && this.clone?.getObjectByName('mixamorigHead')) this.aim.copy(this.saberCinema.aim);
     this.baseCameraPosition.copy(this.camera.position);
@@ -354,7 +358,7 @@ export class UltimateStage {
     }
   }
   end() {
-    this.active = false; this.captainCamera=undefined; this.eraCinema?.dispose();this.eraCinema=undefined; this.saberFace?.dispose();this.saberFace=undefined; this.saberCinema?.dispose();this.saberCinema=undefined; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
+    this.active = false; this.musashiCamera=undefined; this.captainCamera=undefined; this.eraCinema?.dispose();this.eraCinema=undefined; this.saberFace?.dispose();this.saberFace=undefined; this.saberCinema?.dispose();this.saberCinema=undefined; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
     // SkeletonUtils skeletons are private; source geometry/materials/textures are never disposed.
     const skeletons = new Set<THREE.Skeleton>(); this.clone?.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); }); skeletons.forEach(s => s.dispose());
     this.geometries.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose());
