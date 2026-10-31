@@ -319,6 +319,7 @@ staticGeos.push(...falseDawnSites.collisionGeometries); layout.markers.push(...f
 const falseDawnMarkerIds = new Set(falseDawnSites.markers.map(marker => marker.id));
 addEventListener('pagehide', event => { if (!event.persisted) falseDawnSites.dispose(); });
 const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs]);
+addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
 // One contextual place per chapter, never one marker per NPC or furniture item.
