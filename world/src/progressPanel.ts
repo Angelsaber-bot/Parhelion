@@ -6,7 +6,7 @@ const STATUS: Record<ProgressPersistenceState, [string, string]> = {
   ready: ['任务与发现会自动保存在当前浏览器。', 'Quests and discoveries save automatically in this browser.'],
   saved: ['任务进度已保存到当前浏览器。', 'Quest progress is saved in this browser.'],
   unavailable: ['浏览器未开放本地存储。本次进度仅保留在当前页面；离开前可下载备份。', 'Local storage is unavailable. This session only keeps progress in memory; download a backup before leaving.'],
-  invalid: ['已有存档无法读取。未从旧版存档自动恢复，也未改动个人设置。', 'The existing save could not be read. No legacy progress was restored and personal settings were not changed.'],
+  invalid: ['已有存档无法完整读取。可读取的当前进度已保留，未从旧版存档自动恢复，也未改动个人设置。', 'The existing save could not be fully read. Readable current progress is retained; no legacy progress was restored or personal settings changed.'],
   failed: ['本次进度尚未保存，可能是存储空间不足。请重试或先下载进度备份，不要刷新页面。', 'Progress is not saved, possibly because storage is full. Retry or download a progress backup before reloading.'],
 };
 
@@ -35,7 +35,7 @@ export function createProgressPanel(progress: WorldProgress, onRestored: () => v
   const render = () => {
     if (disposed) return;
     title.textContent = bilingual('任务存档', 'Quest save'); status.textContent = bilingual(...STATUS[progress.persistence]);
-    if (progress.saveBlocked) status.textContent = bilingual('原存档已受保护，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；普通自动保存不会覆盖原数据。', 'Original save protected; this session is not saved. Download the original and session progress, or explicitly confirm replacement. Autosave will not overwrite the original.');
+    if (progress.saveBlocked) status.textContent = bilingual('原存档需要检查并已受保护，可读取的当前进度已保留，本次进度尚未保存。可下载原始数据及本次进度，或明确确认替换；自动保存不会覆盖原数据。', 'Original save needs review and is protected; readable current progress is retained, but this session is not saved. Download original/session data or explicitly confirm replacement. Autosave will not overwrite the original.');
     retry.textContent = progress.saveBlocked ? bilingual('用本次进度替换…', 'Replace with session progress…') : bilingual('重新保存', 'Retry save'); backup.textContent = bilingual('下载进度备份', 'Download progress backup');
     restore.textContent = bilingual('从备份恢复…', 'Restore a backup…');
     original.textContent = bilingual('下载无损原始记录', 'Download lossless original'); original.hidden = progress.exportUnreadableSnapshot() === null;

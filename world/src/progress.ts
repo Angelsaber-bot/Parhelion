@@ -52,7 +52,7 @@ export class WorldProgress {
     try { current = storage.getItem(WORLD_PROGRESS_KEY); } catch { this.initialReadFailed = true; this.persistence = 'unavailable'; return; }
     if (current !== null) {
       // Even an empty reset snapshot is authoritative. Never merge old v1 quests back into it.
-      if (!this.read(current)) { this.unreadableCurrent = current; this.persistence = 'invalid'; }
+      if (!this.read(current, true)) { this.unreadableCurrent = current; this.persistence = 'invalid'; }
       // Current progress remains authoritative; inspect only the shape of old
       // records so a later ordinary save will not erase malformed evidence.
       for (const key of LEGACY_WORLD_PROGRESS_KEYS) {
@@ -108,7 +108,7 @@ export class WorldProgress {
     for (const id of snapshot.found) this.found.add(id);
     this.report('saved'); return 'restored';
   }
-  private read(raw: string) {
+  private read(raw: string, protectPartialCurrent = false) {
     try {
       const value = JSON.parse(raw);
       // Historical saves may contain mixed flag values or only one array, but
@@ -116,6 +116,13 @@ export class WorldProgress {
       if (!hasProgressArrays(value)) return false;
       for (const id of flags(value?.done)) this.done.add(id);
       for (const id of flags(value?.found)) this.found.add(id);
+      // Current records may be partly recoverable. Keep useful flags in memory,
+      // but require explicit repair before normalizing away malformed known fields.
+      // Unknown flag strings, duplicates and newer extra fields remain compatible.
+      if (protectPartialCurrent) for (const key of ['done', 'found']) {
+        if (!(key in value)) continue;
+        if (!Array.isArray(value[key]) || value[key].some((id: unknown) => typeof id !== 'string' || id.length === 0)) return false;
+      }
       return true;
     } catch { return false; /* Invalid progress cannot restore inventory, location or arbitrary object fields. */ }
   }

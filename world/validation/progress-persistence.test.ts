@@ -105,3 +105,41 @@ test('explicit new game authorizes replacement retries, while failed initial rea
   assert.equal(inaccessible.save(), false); assert.equal(writes, 0); assert.equal(inaccessible.persistence, 'unavailable');
   assert.equal(inaccessible.restoreSnapshot('{"done":[],"found":[]}'), 'restored'); assert.equal(writes, 1);
 });
+
+
+test('partially malformed CURRENT records preserve readable flags and exact original until guarded repair', () => {
+  for (const value of [
+    { done: ['armory_rack', 42, null], found: ['future_discovery'] },
+    { done: ['armory_rack'], found: 'not-an-array' },
+    { done: ['armory_rack', ''], found: [] },
+  ]) {
+    const memory = storage(), raw = JSON.stringify(value); memory.setItem(WORLD_PROGRESS_KEY, raw);
+    memory.setItem(LEGACY_WORLD_PROGRESS_KEYS[0], '{"done":["legacy_should_not_return"],"found":[]}');
+    const progress = new WorldProgress(memory);
+    assert.equal(progress.armed, true); assert.equal(progress.done.has('legacy_should_not_return'), false);
+    assert.equal(progress.persistence, 'invalid'); assert.equal(progress.saveBlocked, true);
+    assert.equal(progress.save(), false); assert.equal(memory.getItem(WORLD_PROGRESS_KEY), raw);
+    assert.equal(progress.exportUnreadableSnapshot(), raw);
+    const expected = progress.captureStoredSnapshot()!;
+    memory.setItem(WORLD_PROGRESS_KEY, '{"done":["new_tab"],"found":[]}');
+    assert.equal(progress.restoreSnapshot(progress.exportSnapshot(), expected), 'conflict');
+    assert.equal(progress.armed, true); assert.match(memory.getItem(WORLD_PROGRESS_KEY)!, /new_tab/);
+    memory.setItem(WORLD_PROGRESS_KEY, raw);
+    assert.equal(progress.restoreSnapshot(progress.exportSnapshot(), expected), 'restored');
+    assert.equal(progress.saveBlocked, false); assert.equal(new WorldProgress(memory).armed, true);
+  }
+});
+test('forward-compatible CURRENT flags, duplicates, optional arrays and newer fields do not require repair', () => {
+  for (const value of [
+    { done: ['future_quest_2030', 'future_quest_2030'], found: ['新发现'], newer: { unsupported: true } },
+    { done: [], futureInventory: { arbitrary: ['data'] } },
+    { found: ['unknown_discovery'], version: 7 },
+  ]) {
+    const memory = storage(); memory.setItem(WORLD_PROGRESS_KEY, JSON.stringify(value));
+    const progress = new WorldProgress(memory);
+    assert.equal(progress.saveBlocked, false); assert.equal(progress.persistence, 'ready');
+    assert.equal(progress.exportUnreadableSnapshot(), null); assert.equal(progress.save(), true);
+    if ('done' in value && value.done?.length) assert.ok(progress.done.has('future_quest_2030'));
+    if ('found' in value) assert.ok(progress.found.has(value.found![0]));
+  }
+});

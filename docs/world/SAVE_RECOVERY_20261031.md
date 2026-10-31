@@ -4,7 +4,7 @@ The existing `parhelion.world.progress.v2` key and `{done, found}` schema remain
 
 ## Unreadable current data
 
-A malformed current-slot record is retained byte-for-byte. Ordinary gameplay/autosave attempts stay in memory and do not overwrite it or revive older region flags. The persistent warning explicitly says the session is not saved. If the initial storage read fails, blind autosave is also blocked.
+A malformed or partially malformed current-slot record is retained byte-for-byte. Recoverable valid current flags are still loaded; malformed known `done`/`found` entries or fields require explicit repair before normalization. Unknown flag strings, duplicates, missing optional arrays and newer extra fields are not classified as corruption. Permissive legacy migration is unchanged. Ordinary gameplay/autosave attempts stay in memory and do not overwrite it or revive older region flags. The persistent warning explicitly says the session is not saved. If the initial storage read fails, blind autosave is also blocked.
 
 Settings offers separate downloads of current session progress and the exact unreadable original. Original data is an explicitly labeled `.utf16le` diagnostic Blob download (two little-endian bytes per localStorage UTF-16 code unit, no BOM), never inserted as HTML. This preserves even lone surrogate code units that a normal Blob string-to-UTF-8 conversion would replace. It is not directly importable by the JSON backup picker; ordinary valid progress backup/restore remains JSON. Replacement requires explicit confirmation, either with a validated backup or this session's progress. Storage is written before live progress changes or a reload is requested. A quota/read failure preserves original data and current session sets.
 
@@ -14,4 +14,4 @@ Explicit New Game retains its existing immediate gameplay-reset semantics. It au
 
 ## Evidence
 
-27 focused persistence/panel/reset tests pass, including repeated blocked autosaves, exact original download, canceled replacement, quota failure, successful repair, changed-tab prompt rejection before and during confirmation, disposed controls, existing reset/armory/gate behavior. World typecheck passes. Browser reload itself is not established by JSDOM; actual-main import tests explicitly observe the accepted write/cancellation and expected navigation boundary.
+29 focused persistence/panel/reset tests pass, including repeated blocked autosaves, exact original download, canceled replacement, quota failure, successful repair, changed-tab prompt rejection before and during confirmation, disposed controls, existing reset/armory/gate behavior. World typecheck passes. Browser reload itself is not established by JSDOM; actual-main import tests explicitly observe the accepted write/cancellation and expected navigation boundary.
