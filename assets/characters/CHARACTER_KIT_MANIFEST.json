@@ -8,7 +8,7 @@
     "forward": "+Z",
     "units": "meters"
   },
-  "geometry_policy": "Full authored hero assets are default. Musashi LOD1 is explicit optional. Napoleon source curve sampling was reduced by its author before final freeze; no integration-side decimation.",
+  "geometry_policy": "Full authored hero assets are default. Musashi LOD1 is explicit optional. Napoleon source curve sampling was reduced by its author before final freeze; no integration-side decimation. Current remaster defaults and exact native counts are recorded in runtime; unchanged published f6 assets remain recorded in published_f6_runtime. Per-character remaster manifests describe authored refinements and retained topology/animation contracts.",
   "runtime_adapter": "world/src/characters/characterKit.ts",
   "animation_mapping": "world/src/characters/catalog.ts",
   "rights_scope": "Per-character provenance and creator terms apply. Base mesh licenses do not imply official Fate/FGO character clearance.",
@@ -17,22 +17,22 @@
       "id": "blackbeard",
       "directory": "blackbeard",
       "runtime": {
-        "raw_path": "assets/characters/blackbeard/blackbeard.glb",
-        "gzip_path": "assets/characters/blackbeard/blackbeard.glb.gz",
-        "raw_bytes": 18285480,
-        "gzip_bytes": 6923513,
-        "raw_sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
-        "gzip_sha256": "39ec618ecc5cfbe497ad53e65e309614c134fdd2ae099a92a4b499a83d901444",
-        "triangles": 402274,
-        "draw_primitives": 27,
-        "materials": 25,
+        "raw_path": "assets/characters/blackbeard/remaster_v2/Blackbeard_Captain_Remaster.glb",
+        "gzip_path": "assets/characters/blackbeard/remaster_v2/Blackbeard_Captain_Remaster.glb.gz",
+        "raw_bytes": 19161548,
+        "gzip_bytes": 7712511,
+        "raw_sha256": "ab5516f9792a5989d54afbf6fbce0a9e381bf9dcfe71d6e7d63d6bc12b4a41ab",
+        "gzip_sha256": "56234a1486b62860ae75c72cb4228a47fcc4a5f50684b848d6b839f5af6f67e0",
+        "triangles": 407633,
+        "draw_primitives": 39,
+        "materials": 36,
         "bones": 52,
         "embedded_images": 6,
         "clips": [
           {
             "name": "Attack",
             "start": 0,
-            "duration": 1.4
+            "duration": 1.399999976158142
           },
           {
             "name": "Idle",
@@ -42,17 +42,17 @@
           {
             "name": "Melee",
             "start": 0,
-            "duration": 1.4
+            "duration": 1.399999976158142
           },
           {
             "name": "Run",
             "start": 0,
-            "duration": 0.8
+            "duration": 0.800000011920929
           },
           {
             "name": "Walk",
             "start": 0,
-            "duration": 1.0666666666666667
+            "duration": 1.0666667222976685
           }
         ]
       },
@@ -105,23 +105,65 @@
             }
           ]
         }
-      ]
+      ],
+      "published_f6_runtime": {
+        "raw_path": "assets/characters/blackbeard/blackbeard.glb",
+        "gzip_path": "assets/characters/blackbeard/blackbeard.glb.gz",
+        "raw_bytes": 18285480,
+        "gzip_bytes": 6923513,
+        "raw_sha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
+        "gzip_sha256": "39ec618ecc5cfbe497ad53e65e309614c134fdd2ae099a92a4b499a83d901444",
+        "triangles": 402274,
+        "draw_primitives": 27,
+        "materials": 25,
+        "bones": 52,
+        "embedded_images": 6,
+        "clips": [
+          {
+            "name": "Attack",
+            "start": 0,
+            "duration": 1.4
+          },
+          {
+            "name": "Idle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "Melee",
+            "start": 0,
+            "duration": 1.4
+          },
+          {
+            "name": "Run",
+            "start": 0,
+            "duration": 0.8
+          },
+          {
+            "name": "Walk",
+            "start": 0,
+            "duration": 1.0666666666666667
+          }
+        ]
+      },
+      "remaster_manifest": "blackbeard/remaster_v2/manifest.json",
+      "remaster_provenance": "blackbeard/remaster_v2/README.md"
     },
     {
       "id": "musashi",
       "directory": "musashi",
       "runtime": {
-        "raw_path": "assets/characters/musashi/Musashi_Runtime.glb",
-        "gzip_path": "assets/characters/musashi/Musashi_Runtime.glb.gz",
-        "raw_bytes": 12411768,
-        "gzip_bytes": 6983422,
-        "raw_sha256": "a516c5530338b5207e545d9cac8b0a9a7f6130bddab6e4cb6bb55ebef63327f9",
-        "gzip_sha256": "1ba70b4de720c63f820e25cb264cf7663d4bb208e6a9ee0a48c485ba17900ead",
-        "triangles": 173648,
-        "draw_primitives": 13,
-        "materials": 13,
+        "raw_path": "assets/characters/musashi/remaster_v2/Musashi_Runtime.glb",
+        "gzip_path": "assets/characters/musashi/remaster_v2/Musashi_Runtime.glb.gz",
+        "raw_bytes": 14497360,
+        "gzip_bytes": 7853221,
+        "raw_sha256": "8a7213975e5e71819f02037a2d311573fb5832bfbfedd0f3a5eea6d276e66213",
+        "gzip_sha256": "65170515f2ebcd43f758153fc92e8cbeaacbc878880183d98cf6adb91a96f954",
+        "triangles": 203994,
+        "draw_primitives": 15,
+        "materials": 15,
         "bones": 65,
-        "embedded_images": 1,
+        "embedded_images": 6,
         "clips": [
           {
             "name": "Attack",
@@ -190,12 +232,92 @@
             }
           ]
         }
-      ]
+      ],
+      "published_f6_runtime": {
+        "raw_path": "assets/characters/musashi/Musashi_Runtime.glb",
+        "gzip_path": "assets/characters/musashi/Musashi_Runtime.glb.gz",
+        "raw_bytes": 12411768,
+        "gzip_bytes": 6983422,
+        "raw_sha256": "a516c5530338b5207e545d9cac8b0a9a7f6130bddab6e4cb6bb55ebef63327f9",
+        "gzip_sha256": "1ba70b4de720c63f820e25cb264cf7663d4bb208e6a9ee0a48c485ba17900ead",
+        "triangles": 173648,
+        "draw_primitives": 13,
+        "materials": 13,
+        "bones": 65,
+        "embedded_images": 1,
+        "clips": [
+          {
+            "name": "Attack",
+            "start": 0,
+            "duration": 1.6
+          },
+          {
+            "name": "Idle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "Run",
+            "start": 0,
+            "duration": 0.6666666666666666
+          },
+          {
+            "name": "Walk",
+            "start": 0,
+            "duration": 1.0666666666666667
+          }
+        ]
+      },
+      "remaster_manifest": "musashi/remaster_v2/manifest.json",
+      "remaster_provenance": "musashi/remaster_v2/README.md"
     },
     {
       "id": "napoleonMounted",
       "directory": "napoleon",
       "runtime": {
+        "raw_path": "assets/characters/napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.glb",
+        "gzip_path": "assets/characters/napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.glb.gz",
+        "raw_bytes": 29748900,
+        "gzip_bytes": 21763458,
+        "raw_sha256": "598cacfe5ee35f1c1ad5e6b35ff6b711ff8f8660d8f305efd2c05d2017bb9ec1",
+        "gzip_sha256": "6d1c1f648471e77978f24f5245ad5a375f352792e75411054576598e210d4797",
+        "triangles": 353188,
+        "draw_primitives": 35,
+        "materials": 34,
+        "bones": 76,
+        "embedded_images": 9,
+        "clips": [
+          {
+            "name": "MountedAttack",
+            "start": 0,
+            "duration": 1.399999976158142
+          },
+          {
+            "name": "MountedIdle",
+            "start": 0,
+            "duration": 3
+          },
+          {
+            "name": "MountedRun",
+            "start": 0,
+            "duration": 0.800000011920929
+          },
+          {
+            "name": "MountedWalk",
+            "start": 0,
+            "duration": 1.0666667222976685
+          }
+        ]
+      },
+      "author_manifest": "napoleon/asset-manifest.json",
+      "native": [
+        "napoleon/napoleon_mounted_editable.blend"
+      ],
+      "provenance": [
+        "napoleon/SOURCE_AND_LICENSE.md"
+      ],
+      "optional_runtime": [],
+      "published_f6_runtime": {
         "raw_path": "assets/characters/napoleon/runtime/napoleon_mounted.glb",
         "gzip_path": "assets/characters/napoleon/runtime/napoleon_mounted.glb.gz",
         "raw_bytes": 28670192,
@@ -230,14 +352,8 @@
           }
         ]
       },
-      "author_manifest": "napoleon/asset-manifest.json",
-      "native": [
-        "napoleon/napoleon_mounted_editable.blend"
-      ],
-      "provenance": [
-        "napoleon/SOURCE_AND_LICENSE.md"
-      ],
-      "optional_runtime": []
+      "remaster_manifest": "napoleon/remaster_v2/manifest.json",
+      "remaster_provenance": "napoleon/remaster_v2/README.md"
     }
   ],
   "files": [
@@ -926,5 +1042,7 @@
       "bytes": 21105256,
       "sha256": "f42fea01307b5fe8d7dbddb29a53a5b4ae516be1c89990482e5049c10ff201e1"
     }
-  ]
+  ],
+  "remaster_base_commit": "f6fa796fde6e6e54c27b9115f26700db182e765f",
+  "runtime_revision": "four-servants-remaster-20261031"
 }
