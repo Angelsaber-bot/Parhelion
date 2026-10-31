@@ -12,6 +12,8 @@ test('NON-GPU all earned finishes keep live geometry, muzzle, enemy ray hitbox, 
   await Promise.all([w.rifle.ready,w.blade.ready]);
   const meshes:THREE.Mesh[]=[];w.rig.root.traverse((o:THREE.Object3D)=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
   const baseline=meshes.map(m=>({geometry:m.geometry,positions:m.geometry.attributes.position.array.slice(),materials:[m.material].flat()}));
+  const coloredMaterials=[...new Set(meshes.flatMap(m=>[m.material].flat()))].filter((m:any)=>/^PH_(ivory|dark|copper|glow|amber)/.test(m.name))as THREE.MeshStandardMaterial[];assert.ok(coloredMaterials.length>0,'actual loaded weapon finish materials exist');const authored=coloredMaterials.map(m=>({material:m,color:m.color.getHex(),map:m.map}));
+  const weaponAppearance=[['rifle',w.rig.joints.Gun],['blade',w.blade.root]].map(([name,root]:any)=>{const materials=new Set<any>();root.traverse((o:any)=>{if(o.isMesh)for(const m of [o.material].flat())if(/^PH_(ivory|dark|copper|glow|amber)/.test(m.name))materials.add(m);});assert.ok(materials.size>0,`${name} loaded finish channels`);return{name,entries:[...materials].map(material=>({material,color:material.color.getHex(),map:material.map}))};});
   const originalMuzzle=w.rifle.muzzleWorld().toArray(),originalDone=[...w.done].sort(),colliders=[...w.colliders];
   const e=w.combat.state.enemies.find((e:any)=>e.id.startsWith('wild_')&&!e.miniboss)!;assert.ok(e);
   for(const enemy of w.combat.state.enemies)enemy.active=false;
@@ -21,6 +23,8 @@ test('NON-GPU all earned finishes keep live geometry, muzzle, enemy ray hitbox, 
   let reference:unknown;
   for(const finish of finishes){
    assert.equal(Array.from(select.options).find(o=>o.value===finish)!.disabled,false);select.value=finish;select.dispatchEvent(new window.Event('change',{bubbles:true}));
+   if(finish==='original')for(const x of authored){assert.equal(x.material.color.getHex(),x.color);assert.equal(x.material.map,x.map);}else assert.ok(authored.some(x=>x.material.color.getHex()!==x.color||x.material.map!==x.map),`${finish} changes actual loaded weapon appearance, not only the selected ID`);
+   if(finish!=='original')for(const weapon of weaponAppearance){assert.ok(weapon.entries.some(x=>x.material.color.getHex()!==x.color||x.material.map!==x.map),`${weapon.name} positively applies ${finish}`);if(weapon.name==='rifle')assert.ok(weapon.entries.some(x=>x.material.map?.isDataTexture&&x.material.map!==x.map),'rifle owns actual albedo pattern');else for(const x of weapon.entries)assert.equal(x.material.map,x.map,'blade intentionally remains pattern-free');}
    assert.equal(w.rifle.finish,finish);assert.equal(w.blade.finish,finish);assert.equal(w.weaponFinishStore.active(w.done),finish);
    assert.deepEqual([...w.done].sort(),originalDone);assert.deepEqual(w.rifle.muzzleWorld().toArray(),originalMuzzle);assert.deepEqual([...w.colliders],colliders);
    for(const [i,m]of meshes.entries()){assert.equal(m.geometry,baseline[i].geometry);assert.deepEqual(m.geometry.attributes.position.array,baseline[i].positions);assert.deepEqual([m.material].flat(),baseline[i].materials,'finish reuses fixed material identities');}
@@ -37,6 +41,7 @@ test('NON-GPU all earned finishes keep live geometry, muzzle, enemy ray hitbox, 
   select.value='ember';select.dispatchEvent(new window.Event('change',{bubbles:true}));
   (d.getElementById('start')as HTMLElement).click();await Promise.resolve();window.confirm=()=>true;
   d.body.dispatchEvent(new window.KeyboardEvent('keydown',{code:'KeyR',bubbles:true}));d.body.dispatchEvent(new window.KeyboardEvent('keyup',{code:'KeyR',bubbles:true}));
+  for(const x of authored){assert.equal(x.material.color.getHex(),x.color,'reset restores authored color');assert.equal(x.material.map,x.map,'reset restores original texture');}
   assert.equal(w.done.size,0);assert.equal(w.weaponFinishStore.preference,'ember');assert.equal(w.weaponFinishStore.active(w.done),'original');assert.equal(w.rifle.finish,'original');assert.equal(w.blade.finish,'original');
   assert.equal(Array.from(select.options).find(o=>o.value==='ember')!.disabled,true);select.value='ember';select.dispatchEvent(new window.Event('change',{bubbles:true}));assert.equal(w.rifle.finish,'original');assert.equal(w.done.size,0);
   assert.deepEqual(h.errors,[]);
