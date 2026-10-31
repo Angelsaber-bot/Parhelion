@@ -1,0 +1,17 @@
+/** Conservative read-only draw-group potential. No geometry or runtime mutation. */
+import*as THREE from'three';import{writeFileSync}from'node:fs';import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{isStaticArtEligible}from'../src/chunk';
+const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});
+try{const{world:w,window}=h;let now=0;(window.document.getElementById('start')as HTMLElement).click();await Promise.resolve();const samples=[];
+for(const[name,x,z]of[['hq',3,159],['kyoto_busy',100,560],['kyoto_south',60,950]]as const){w.player.teleport(x,w.ground(x,z)+.02,z);w.player.yaw=0;w.player.pitch=0;for(let i=0;i<60;i++){w.combat.state.hp=100;h.frame(now+=1000/60);}await h.settleAssets();w.camera.aspect=16/9;w.camera.updateProjectionMatrix();w.scene.updateMatrixWorld();w.camera.updateMatrixWorld();const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(w.camera.projectionMatrix,w.camera.matrixWorldInverse));
+ const cells=new Map<string,{bounds:THREE.Box3;meshes:THREE.Mesh[];triangles:number}>();let beforeGroups=0,beforeTriangles=0,eligible=0;
+ w.scene.getObjectByName('World').traverse((o:THREE.Object3D)=>{const m=o as THREE.Mesh;if(!m.isMesh||m.children.length||!isStaticArtEligible(m)||Array.isArray(m.material)||m.material.transparent||m.material.opacity!==1||m.material.blending!==THREE.NormalBlending||/outline|terrain|water|trees|bush|foliage|rock|lamp|glow|halo|gate|door|core|beam|target/i.test(m.name))return;let art=false;for(let p:THREE.Object3D|null=m;p;p=p.parent){if(!p.visible)return;if(p.name==='ART')art=true;}if(!art)return;
+  const e=m.matrixWorld.elements;if(e.slice(0,12).some((v:number,i:number)=>Math.abs(v-([0,5,10].includes(i)?1:0))>1e-6))return;
+  const bounds=new THREE.Box3().setFromBufferAttribute(m.geometry.attributes.position as THREE.BufferAttribute).applyMatrix4(m.matrixWorld),size=bounds.getSize(new THREE.Vector3());if(Math.max(size.x,size.y,size.z)>64.001)return;
+  const center=bounds.getCenter(new THREE.Vector3()),key=[m.material.uuid,Math.floor(center.x/64),Math.floor(center.z/64),m.castShadow,m.receiveShadow,m.layers.mask,m.renderOrder].join(':');const tri=(m.geometry.index?.count??m.geometry.attributes.position.count)/3;
+  const group=cells.get(key)??{bounds:new THREE.Box3(),meshes:[],triangles:0};group.bounds.union(bounds);group.meshes.push(m);group.triangles+=tri;cells.set(key,group);eligible++;if(frustum.intersectsObject(m)){beforeGroups++;beforeTriangles+=tri;}
+ });
+ let afterGroups=0,afterTriangles=0;for(const group of cells.values()){const visible=group.meshes.length===1?frustum.intersectsObject(group.meshes[0]):frustum.intersectsSphere(group.bounds.getBoundingSphere(new THREE.Sphere()));if(visible){afterGroups++;afterTriangles+=group.triangles;}}
+ samples.push({name,eligibleMeshes:eligible,possibleBatches:cells.size,beforeGroups,afterGroups,beforeTriangles,afterTriangles,mergedGroups:[...cells.values()].filter(g=>g.meshes.length>1).map(g=>({names:g.meshes.map(m=>m.name),triangles:g.triangles})).slice(0,30)});
+}
+writeFileSync(process.argv[2],JSON.stringify({scope:'Read-only64m-center-cell grouping estimate; translation-only, childless immutable opaque nonterrain/nonfoliage/nonrocks/nolights staticART. Same material/shadows/layers/renderOrder. Conservative unionbox sphere includes added frustum triangles. Not actualGPUdraws or implementation acceptance.',samples,errors:h.errors},null,2));console.log(samples.map(({mergedGroups,...s})=>s));
+}finally{await h.close();}
