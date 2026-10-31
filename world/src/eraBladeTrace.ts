@@ -6,6 +6,7 @@ export interface EraBladeTraceReadability {
  /** Multipliers default to one; only explicitly opted-in identities change. */
  readonly trailOpacityScale?: number; readonly edgeOpacityScale?: number;
  readonly glintOpacityScale?: number; readonly glintScale?: number; readonly edgeWidthScale?: number;
+ readonly toneMapped?: boolean; readonly glintColor?: number;
 }
 /** Time-bounded actual blade samples, not a detached pre-drawn arc. */
 export class EraBladeTrace {
@@ -17,11 +18,11 @@ export class EraBladeTrace {
  constructor(name:string,private socket:THREE.Object3D|undefined,private tipNode:THREE.Object3D|undefined,private localTip:THREE.Vector3,parent:THREE.Object3D,owner:EraArtOwner,color:number,private readonly readability:EraBladeTraceReadability={}){
   const geometry=new THREE.BufferGeometry(),indices:number[]=[];this.positions.setUsage(THREE.DynamicDrawUsage);this.colors.setUsage(THREE.DynamicDrawUsage);
   for(let i=0;i<9;i++)for(let j=0;j<2;j++){let a=i*3+j;indices.push(a,a+3,a+1,a+1,a+3,a+4);}geometry.setAttribute('position',this.positions);geometry.setAttribute('color',this.colors);geometry.setIndex(indices);
-  const material=owner.material(color,.75);material.vertexColors=true;material.toneMapped=false;
+  const material=owner.material(color,.75);material.vertexColors=true;material.toneMapped=this.readability.toneMapped??false;
   this.trail=owner.mesh(geometry,material,parent);this.trail.frustumCulled=false;this.trail.name=name+' sampled trail';this.trail.visible=false;
-  const edgeMaterial=owner.material(color,.72);edgeMaterial.vertexColors=true;edgeMaterial.toneMapped=false;
+  const edgeMaterial=owner.material(color,.72);edgeMaterial.vertexColors=true;edgeMaterial.toneMapped=this.readability.toneMapped??false;
   this.edge=owner.mesh(ultimateEnergyGeometry('lance'),edgeMaterial,parent);this.edge.name=name+' blade edge';
-  const glintMaterial=owner.material(0xfff2dc,.8);glintMaterial.vertexColors=true;glintMaterial.toneMapped=false;
+  const glintMaterial=owner.material(this.readability.glintColor??0xfff2dc,.8);glintMaterial.vertexColors=true;glintMaterial.toneMapped=this.readability.toneMapped??false;
   this.glint=owner.mesh(radialGeometry(.22),glintMaterial,parent);this.glint.name=name+' tip contact';this.glint.visible=false;
  }
  trigger(elapsed:number){this.fired=elapsed;}

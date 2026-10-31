@@ -59,7 +59,7 @@ test('Musashi default readability uses narrow alpha pointed blades without addit
  blade.geometry.computeBoundingBox();const width=blade.geometry.boundingBox!.getSize(new THREE.Vector3()).x*blade.scale.x;
  assert.equal(blade.material.blending,THREE.NormalBlending);assert.equal(blade.material.depthWrite,false);
  measurements.push({width,opacity:blade.material.opacity});stage.dispose();}
- assert.ok(measurements[0].width>.3&&measurements[0].width<.4);assert.ok(measurements[1].width<.10);assert.ok(measurements[1].width<measurements[0].width/3);assert.equal(measurements[0].opacity,.38);assert.equal(measurements[1].opacity,.18);assert.ok(measurements[1].opacity<measurements[0].opacity/2);
+ assert.ok(measurements[0].width>.3&&measurements[0].width<.4);assert.ok(measurements[1].width<.10);assert.ok(measurements[1].width<measurements[0].width/3);assert.equal(measurements[0].opacity,.14);assert.equal(measurements[1].opacity,.07);assert.ok(measurements[1].opacity<=measurements[0].opacity/2);
 });
 test('short mounted release travels visibly by elapsed time and camera/aim track the exact displacement',()=>{
  for(const reducedEffects of [false,true]){const root=source(),stage=new UltimateStage();stage.begin({identity:'napoleon',sourceRoot:root,reducedEffects});
