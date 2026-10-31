@@ -47,9 +47,9 @@ const settingsPanel = createSettingsPanel(settings, {
   },
   onClose() { controls.blocked = false; controls.clearAll(); },
 });
-controls.onSettings = () => { if (!starting) settingsPanel.show(); };
-$('settings-lobby').onclick = () => settingsPanel.show();
-$('settings-pause').onclick = () => settingsPanel.show();
+controls.onSettings = () => { if (!starting && !pageExited) settingsPanel.show(); };
+$('settings-lobby').onclick = () => { if (!starting && !game && !pageExited) settingsPanel.show(); };
+$('settings-pause').onclick = () => { if (game && !game.ended && !starting && !pageExited && !$('pause').classList.contains('hidden')) settingsPanel.show(); };
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
   $('control-hints').textContent = arenaControlHints(k, mode);
@@ -160,8 +160,11 @@ function setMode(m: typeof mode) {
 }
 document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.onclick = () => setMode(t.dataset.mode as typeof mode));
 $('armory').onclick = async () => {
-  try { (await import('./armory.ts')).openArmory(); }
-  catch (error) { showError(() => bilingual(`武器展示无法打开：${localizeText(String(error))}`, `Could not open the armory: ${localizeText(String(error))}`)); }
+  const generation = attemptGeneration;
+  const eligible = () => !starting && !game && !pageExited && generation === attemptGeneration;
+  if (!eligible()) return;
+  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory(); }
+  catch (error) { if (eligible()) showError(() => bilingual(`武器展示无法打开：${localizeText(String(error))}`, `Could not open the armory: ${localizeText(String(error))}`)); }
 };
 renderChars();
 renderLoadout();
