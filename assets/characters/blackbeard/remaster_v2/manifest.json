@@ -1,0 +1,56 @@
+{
+  "identity": "blackbeard",
+  "revision": 2,
+  "source": "characters/blackbeard/blackbeard.glb",
+  "sourceSha256": "92e766c67a066357d9f8414d67da2b950494c433abc2d578e7979f0021a8b34f",
+  "glbSha256": "86e120863ffd987e6d42968d412ce306f25a8c47459171926e22e5f19a29fdb5",
+  "gzipSha256": "8c9865d3d8271fd2286fe35dfb563dd26a64aa6a01f94f415fbdb570f5a59f51",
+  "bytes": 19161552,
+  "gzipBytes": 7713585,
+  "originalEmbeddedImageSha256": [
+    "e54e4806ad3967ab3bced74a893b58ffcc003bb367e39a3f596220275ab50a6a",
+    "3a45556fc412b0be8b318a746e3bc09cbcc538f47f45b7c382d0bf9c58589c27",
+    "71a279b6e0b15900c497f8859f7087c9bcb9d879b3c03d356d7d0f8cc230c144",
+    "0b1fc7eff1344a605c45df1e200faa3355e92b48e2258993331f1472f1a22324",
+    "977fb7ab84043ea8bd03f84fb704a73536e05489552a4c1463a7d491f9cd9cb3",
+    "e32a3a7f4cef7d81247d33432634e266f50afb523c70b724a13363f12692630c"
+  ],
+  "clips": [
+    {
+      "name": "Attack",
+      "duration": 1.399999976158142,
+      "tracks": 156
+    },
+    {
+      "name": "Idle",
+      "duration": 3,
+      "tracks": 156
+    },
+    {
+      "name": "Melee",
+      "duration": 1.399999976158142,
+      "tracks": 156
+    },
+    {
+      "name": "Run",
+      "duration": 0.800000011920929,
+      "tracks": 156
+    },
+    {
+      "name": "Walk",
+      "duration": 1.0666667222976685,
+      "tracks": 156
+    }
+  ],
+  "changes": [
+    "rest-mesh face/jaw/hair sculpt; white horse head refinement on cavalry",
+    "bone-bound model tailoring and identity-specific material finish",
+    "idle/walk/run/attack baked full-body acting, unchanged contact keys",
+    "original texture bytes, UVs, weights, weapon/socket names preserved"
+  ],
+  "limits": [
+    "original project-asset derivative, not independently licensed external asset",
+    "world authoritative timing/damage/charge/navigation untouched",
+    "new native .blend is not authored by this exporter; editable source is original GLB plus deterministic TypeScript sculpt and tailoring"
+  ]
+}

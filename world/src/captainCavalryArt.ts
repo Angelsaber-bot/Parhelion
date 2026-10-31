@@ -47,7 +47,17 @@ export function attachCaptainCavalryArt(model:THREE.Object3D,identity:string):()
   const crest:THREE.BufferGeometry[]=[];
   for(const side of[-1,1])for(let i=0;i<5;i++){const g=new THREE.SphereGeometry(1,8,5);g.scale(.025,.075-i*.006,.012);g.rotateZ(side*(-.50-i*.11));g.translate(side*(.035+i*.023),1.25+i*.012,.99-i*.008);crest.push(g);}
   const gem=new THREE.OctahedronGeometry(.047);gem.scale(.75,1.15,.35);gem.translate(0,1.225,1.005);crest.push(gem);
-  const flat=crest.map(g=>g.index?g.toNonIndexed():g);const merged=mergeGeometries(flat);for(const g of new Set([...crest,...flat]))g.dispose();if(merged)bind(merged,gold,'White horse cavalry breast crest',()=>['H_Chest','H_Chest',0]);
+  const flat=crest.map(g=>g.index?g.toNonIndexed():g);const merged=mergeGeometries(flat);for(const g of new Set([...crest,...flat]))g.dispose();if(merged){
+   bind(merged,gold,'White horse cavalry breast crest',()=>['H_Chest','H_Chest',0]);
+   // Fit the badge to the actual chest surface and borrow its blend weights;
+   // a rigid Chest-only badge floats when the neck/chest skin bends in gallop.
+   const body=model.getObjectByName('Horse_Body') as THREE.SkinnedMesh|undefined;
+   if(body?.isSkinnedMesh){const bp=body.geometry.attributes.position,bj=body.geometry.attributes.skinIndex,bw=body.geometry.attributes.skinWeight,p=merged.attributes.position,j=merged.attributes.skinIndex,w=merged.attributes.skinWeight;
+    for(let i=0;i<p.count;i++){let best=Infinity,index=-1;for(let k=0;k<bp.count;k++){if(bp.getZ(k)<.5)continue;const d=(bp.getX(k)-p.getX(i))**2+(bp.getY(k)-p.getY(i))**2;if(d<best){best=d;index=k;}}
+     if(index>=0){p.setZ(i,bp.getZ(index)+.013);for(let c=0;c<4;c++){const bone=body.skeleton.bones[bj.getComponent(index,c)];j.setComponent(i,c,skin.skeleton.bones.findIndex(b=>b.name===bone.name));w.setComponent(i,c,bw.getComponent(index,c));}}
+    }p.needsUpdate=true;merged.computeVertexNormals();
+   }
+  }
  }
  const border=mergeGeometries(edge);edge.forEach(g=>g.dispose());if(border)bind(border,gold,'Remaster dimensional garment piping',torsoWeight);
  let disposed=false;return()=>{if(disposed)return;disposed=true;hat();restoreSculpt();for(const mesh of added)mesh.removeFromParent();for(const g of geometries)g.dispose();for(const m of materials)m.dispose();};

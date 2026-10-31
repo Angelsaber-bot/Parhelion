@@ -1,0 +1,54 @@
+{
+  "identity": "napoleonMounted",
+  "revision": 2,
+  "source": "characters/napoleon/runtime/napoleon_mounted.glb",
+  "sourceSha256": "aad3f7d72e6c9b13511bd30c28d0227246f0d8448cb2ef851265f188078836b8",
+  "glbSha256": "92a15b2a9c591214d11bb7a5ddf630a676d04616de639a7f815bf0c06c4d2c63",
+  "gzipSha256": "e6f54b3dda1d9b78d9d32d3f981dff0a97b1d761c673464298421a2b6e7fde7b",
+  "bytes": 29748904,
+  "gzipBytes": 21760490,
+  "originalEmbeddedImageSha256": [
+    "4ef00b3747dc14c463641e4d81dc05902655f9572385cf42bf557b666a3af66b",
+    "0e4ac1965771113459bf02dc6c621f25b9a0af2516e93472f5c5a2c0d625a314",
+    "1040f907b621a1223fb797bf7940f99ca3a9089d545e195e5746c67554207303",
+    "595daca77d419f90524566af7323f9bce883bb7cc1b39f412fd9f7c0fd3dd610",
+    "886266268bee6204762eca8a72358b2bad5c54d679a10fe4dd920fa366e92fed",
+    "0f68f0e21a5a8c8236cee027557528e8ab5327f17e0db160b55437532a26b65e",
+    "cfc9c309f1a903118775ba93e9ca99b5ce1a6ffb90341140e22e47c855faffd2",
+    "a22281821483b6d9a1ed6e670a05d9db8eb7343727b82ad29d55bc5af7e53968",
+    "faba51d7268deb08384a89a80c739433189e5b40ddd2912dd4baf5677fd6b107"
+  ],
+  "clips": [
+    {
+      "name": "MountedAttack",
+      "duration": 1.399999976158142,
+      "tracks": 228
+    },
+    {
+      "name": "MountedIdle",
+      "duration": 3,
+      "tracks": 228
+    },
+    {
+      "name": "MountedRun",
+      "duration": 0.800000011920929,
+      "tracks": 228
+    },
+    {
+      "name": "MountedWalk",
+      "duration": 1.0666667222976685,
+      "tracks": 228
+    }
+  ],
+  "changes": [
+    "rest-mesh face/jaw/hair sculpt; white horse head refinement on cavalry",
+    "bone-bound model tailoring and identity-specific material finish",
+    "idle/walk/run/attack baked full-body acting, unchanged contact keys",
+    "original texture bytes, UVs, weights, weapon/socket names preserved"
+  ],
+  "limits": [
+    "original project-asset derivative, not independently licensed external asset",
+    "world authoritative timing/damage/charge/navigation untouched",
+    "new native .blend is not authored by this exporter; editable source is original GLB plus deterministic TypeScript sculpt and tailoring"
+  ]
+}

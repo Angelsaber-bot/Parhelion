@@ -2,7 +2,7 @@ import test from 'node:test';import assert from 'node:assert/strict';import * as
 import {readCharacter} from './characters/inspect';import {CHARACTER_KITS} from '../src/characters/catalog';
 import {remasterCaptainCavalryClip} from '../src/captainCavalryClip';import {attachCaptainCavalryArt} from '../src/captainCavalryArt';import {createCaptainCavalryPerformance} from '../src/captainCavalryPerformance';import {mountedChargeClip} from '../src/characters/mountedChargeMotion';
 for(const id of ['blackbeard','napoleonMounted'] as const)test(`${id}: remaster pose, true contact and resource ownership`,async t=>{
- const def=CHARACTER_KITS[id],{gltf}=await readCharacter(fileURLToPath(def.assetUrl));const model=gltf.scene,initial=new Map<THREE.Object3D,string>();model.traverse(o=>initial.set(o,JSON.stringify({p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()})));
+ const def=CHARACTER_KITS[id],{gltf}=await readCharacter(fileURLToPath(new URL(id==='blackbeard'?'../../assets/characters/blackbeard/blackbeard.glb':'../../assets/characters/napoleon/runtime/napoleon_mounted.glb',import.meta.url)));const model=gltf.scene,initial=new Map<THREE.Object3D,string>();model.traverse(o=>initial.set(o,JSON.stringify({p:o.position.toArray(),q:o.quaternion.toArray(),s:o.scale.toArray()})));
  const restore=()=>{for(const[o,data]of initial){const p=JSON.parse(data);o.position.fromArray(p.p);o.quaternion.fromArray(p.q);o.scale.fromArray(p.s);}};
  let geometryCount=0;model.traverse(o=>{if((o as THREE.Mesh).isMesh)geometryCount++;});
  await t.test('tailoring uses normalized original skeleton weights, bounded geometry, isolated idempotent disposal',()=>{

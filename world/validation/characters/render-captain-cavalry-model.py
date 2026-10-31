@@ -24,6 +24,7 @@ bpy.ops.object.camera_add();camera=bpy.context.object;scene.camera=camera;camera
 mounted=identity=='napoleon';prefix='Mounted' if mounted else ''
 shots=[('idle-front','Idle',.5,'front'),('idle-side','Idle',.5,'side'),('run','Run',.2,'front'),('attack-prepare','Attack',.26,'front'),('attack-contact','Attack',23/30 if mounted else 17/30,'front'),('attack-recovery','Attack',1.15,'front')]
 if "--quick" in args:shots=[shots[0],shots[1],shots[4]]
+if "--model-only" in args:shots=shots[:2]
 manifest=[]
 for label,clip,time,view in shots:
  for rig in rigs:
@@ -36,4 +37,4 @@ for label,clip,time,view in shots:
  camera.rotation_euler=(target-camera.location).to_track_quat('-Z','Y').to_euler();camera.data.ortho_scale=4.15 if mounted else 2.75
  path=os.path.join(out,f'{identity}-{variant}-{label}.png');scene.render.filepath=path;bpy.ops.render.render(write_still=True)
  manifest.append({'file':path,'clip':prefix+clip,'seconds':time,'camera':list(camera.location),'target':list(target),'ortho_scale':camera.data.ortho_scale})
-json.dump({'asset':asset,'identity':identity,'variant':variant,'cpu_only':True,'shots':manifest},open(os.path.join(out,f'{identity}-{variant}.json'),'w'),indent=2)
+json.dump({'asset':asset,'asset_sha256':__import__('hashlib').sha256(open(asset,'rb').read()).hexdigest(),'identity':identity,'variant':variant,'cpu_only':True,'shots':manifest},open(os.path.join(out,f'{identity}-{variant}.json'),'w'),indent=2)
