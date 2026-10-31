@@ -51,3 +51,10 @@ segments (not dialogue reading or human completion time). No inter-region walk,
 new-player prerequisite acquisition or GPU pixel verification is claimed.
 Evidence: `qa/journey/five-workstations.json` and
 `qa/journey-five-workstations.log` in the sibling evidence directory.
+
+A second independent run with `--first-branch` also completed all five natural
+local approaches and fresh-boot restoration. It asserts the inverse geometry
+state (choice A visible, B hidden, completion visible), rather than accepting a
+selected flag alone. Together these cover all ten chronicle outcomes through
+real local input, with the same explicitly limited entry/evidence setup.
+Evidence: `qa/journey/five-workstations-first-branch.json`.
