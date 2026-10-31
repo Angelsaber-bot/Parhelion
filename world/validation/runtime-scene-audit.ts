@@ -8,8 +8,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
-type Count = {objects:number;meshes:number;visibleMeshes:number;frustumMeshes:number;candidateMaterialGroups:number;candidateTriangles:number;skinnedMeshes:number;lights:number;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;buffers:Set<ArrayBufferLike>};
-const empty = ():Count=>({objects:0,meshes:0,visibleMeshes:0,frustumMeshes:0,candidateMaterialGroups:0,candidateTriangles:0,skinnedMeshes:0,lights:0,geometries:new Set(),materials:new Set(),buffers:new Set()});
+type Count = {objects:number;meshes:number;visibleMeshes:number;frustumMeshes:number;candidateMaterialGroups:number;candidateTriangles:number;skinnedMeshes:number;foreignConstructorMeshes:number;foreignConstructorSkinned:number;lights:number;visibleLights:number;visibleShadowCasters:number;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;buffers:Set<ArrayBufferLike>};
+const empty = ():Count=>({objects:0,meshes:0,visibleMeshes:0,frustumMeshes:0,candidateMaterialGroups:0,candidateTriangles:0,skinnedMeshes:0,foreignConstructorMeshes:0,foreignConstructorSkinned:0,lights:0,visibleLights:0,visibleShadowCasters:0,geometries:new Set(),materials:new Set(),buffers:new Set()});
 function inventory(scene:THREE.Scene,camera:THREE.Camera){
  scene.updateMatrixWorld();camera.updateMatrixWorld();
  const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));
@@ -19,10 +19,10 @@ function inventory(scene:THREE.Scene,camera:THREE.Camera){
   root.traverse(object=>{
    const mesh=object as THREE.Mesh;let visible=true;for(let p:THREE.Object3D|null=object;p;p=p.parent)visible&&=p.visible;
    for(const c of [count,total]){
-    c.objects++;if((object as THREE.Light).isLight)c.lights++;
-    if(!mesh.isMesh)continue;c.meshes++;if((mesh as THREE.SkinnedMesh).isSkinnedMesh)c.skinnedMeshes++;
+    c.objects++;if((object as THREE.Light).isLight){c.lights++;if(visible&&(object as THREE.Light).intensity>0)c.visibleLights++;}
+    if(!mesh.isMesh)continue;c.meshes++;if(!(mesh instanceof THREE.Mesh))c.foreignConstructorMeshes++;if((mesh as THREE.SkinnedMesh).isSkinnedMesh){c.skinnedMeshes++;if(!(mesh instanceof THREE.SkinnedMesh))c.foreignConstructorSkinned++;}
     c.geometries.add(mesh.geometry);for(const material of Array.isArray(mesh.material)?mesh.material:[mesh.material])c.materials.add(material);
-    if(!visible)continue;c.visibleMeshes++;
+    if(!visible)continue;c.visibleMeshes++;if(mesh.castShadow)c.visibleShadowCasters++;
     if(!object.layers.test(camera.layers)||(object.frustumCulled&&!frustum.intersectsObject(mesh)))continue;c.frustumMeshes++;
     const geometry=mesh.geometry,totalElements=geometry.index?.count??geometry.attributes.position?.count??0;
     const range=geometry.drawRange,instances=(mesh as THREE.InstancedMesh).isInstancedMesh?(mesh as THREE.InstancedMesh).count:1;
@@ -37,7 +37,9 @@ function inventory(scene:THREE.Scene,camera:THREE.Camera){
  };
  return{total:finish(total),groups:[...groups].map(([name,c])=>({name,...finish(c)})).sort((a,b)=>b.uniqueGeometryBackingBytes-a.uniqueGeometryBackingBytes)};
 }
-const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});
+const quality=process.env.WORLD_AUDIT_QUALITY??'low';if(!['low','med','high'].includes(quality))throw Error('Invalid audit quality');
+const reference=process.env.WORLD_AUDIT_REFERENCE_CAMERA?JSON.parse(readFileSync(process.env.WORLD_AUDIT_REFERENCE_CAMERA,'utf8')):null;
+const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true,effectsQuality:quality as 'low'|'med'|'high'});
 try{
  const {world,window}=h;let now=0;
  (window.document.getElementById('start') as HTMLElement).click();await Promise.resolve();
@@ -48,9 +50,9 @@ try{
   world.player.teleport(x,world.ground(x,z)+.02,z);world.player.yaw=0;world.player.pitch=0;
   for(let i=0;i<60;i++){world.combat.state.hp=100;h.frame(now+=1000/60);}
   await h.settleAssets();h.frame(now+=1000/60);
-  for(const aspect of [16/9,9/16]){world.camera.aspect=aspect;world.camera.updateProjectionMatrix();samples.push({name,aspect,player:world.player.pos.toArray(),camera:world.camera.position.toArray(),...inventory(world.scene,world.camera)});}
+  for(const aspect of [16/9,9/16]){world.camera.aspect=aspect;const ref=reference?.samples.find((v:any)=>v.name===name&&v.aspect===aspect);if(reference&&!ref)throw Error(`Missing reference camera ${name}/${aspect}`);if(ref){world.camera.position.fromArray(ref.camera);world.camera.quaternion.fromArray(ref.cameraQuaternion);world.camera.fov=ref.fov;}world.camera.updateProjectionMatrix();samples.push({name,aspect,nativeCoverage:world.combat.enemyAssets?.diagnostics??null,player:world.player.pos.toArray(),camera:world.camera.position.toArray(),cameraQuaternion:world.camera.quaternion.toArray(),fov:world.camera.fov,...inventory(world.scene,world.camera)});}
  }
  globalThis.gc?.();
- const report={scope:'NON-GPU production runtime, low effects + no post. Candidate groups approximate only a single camera scene pass; not WebGL draw calls, GPU allocation, pixel quality or FPS. Geometry buffers are unique JS backing stores, not VRAM. Per-root bytes share resources and must not be summed.',worldRoot:process.env.WORLD_SOURCE_QA_ROOT??'fixture-local default',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',cwd:process.env.WORLD_SOURCE_QA_ROOT}).trim(),dirty:execFileSync('git',['status','--short'],{encoding:'utf8',cwd:process.env.WORLD_SOURCE_QA_ROOT}),node:process.version,samples,memory:process.memoryUsage(),errors:h.errors,warnings:h.warnings.map(a=>a.map(String))};
+ const report={quality,shadowMapEnabled:world.renderer.shadowMap.enabled,referenceCamera:process.env.WORLD_AUDIT_REFERENCE_CAMERA??null,scope:'NON-GPU production runtime, stated effects quality + no post. Optional reference camera locks identical geometric views; player/HP positioning is diagnostic setup, not gameplay proof. Candidate groups approximate only a single camera scene pass; not WebGL draw calls, GPU allocation, pixel quality or FPS. Geometry buffers are unique JS backing stores, not VRAM. Per-root bytes share resources and must not be summed.',worldRoot:process.env.WORLD_SOURCE_QA_ROOT??'fixture-local default',commit:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8',cwd:process.env.WORLD_SOURCE_QA_ROOT}).trim(),dirty:execFileSync('git',['status','--short'],{encoding:'utf8',cwd:process.env.WORLD_SOURCE_QA_ROOT}),node:process.version,samples,memory:process.memoryUsage(),errors:h.errors,warnings:h.warnings.map(a=>a.map(String))};
  const json=JSON.stringify(report,null,2);if(process.argv[2])writeFileSync(process.argv[2],json);console.log(json);
 }finally{await h.close();}
