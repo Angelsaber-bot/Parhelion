@@ -71,3 +71,18 @@ unannounced raw geometry writes require explicit clear or version updates.
 CPU geometry/Blender temporal evidence remains separate from WebGL output.
 Known inherited blade/terrain intersections and dense-mesh submillimetre sole
 error are documented by the animation owner, not concealed by these tests.
+
+## Full-suite finding and product correction
+
+Frozen `276313d` was **not green**: World 1467/1468, with an unsupported/no-leg
+rig incorrectly receiving calibrated procedural cadence although it could not
+apply that stride. This was a genuine fallback gap, not an obsolete test.
+`ebdc432` preserves the original nominal cadence on unsupported rigs; `0f874b0`
+also guards partial rigs before procedural application. The original
+`companion-motion.test.ts` is byte-identical to the failed freeze
+(SHA-256 `99ae32238fb663fce0a237f1a340c35aa7cc874e53d8f6c24e71b478613307aa`).
+Independent rerun of that unchanged suite plus positive native input lifecycle:
+11/11 pass. Evidence: `qa/saber-fallback-original-independent-0f874b0.log`.
+The frozen failed log and independent before/after source manifests remain.
+A new exact-source full aggregate is still required; targeted passes do not
+retroactively turn the failed checkpoint green.
