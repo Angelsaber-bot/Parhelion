@@ -32,33 +32,44 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
   const room = await client.joinOrCreate(ROOM_NAME, opts);
+  // ArenaRoom removes disconnected players and has no allowReconnection path.
+  // Do not let the SDK silently retry a session that the server cannot restore.
+  room.reconnection.enabled = false;
+  let closed = false;
+  const closeRoom = () => {
+    if (closed) return;
+    closed = true; room.reconnection.enabled = false;
+    try { void room.leave().catch(() => {}); } catch { /* terminal local ownership */ }
+  };
   const s: Session = {
     id: room.sessionId,
     online: true,
     map: getMap(opts.map),
-    send: (inputs) => room.send('input', inputs),
+    send: (inputs) => { if (!closed) room.send('input', inputs); },
     onSnapshot: () => {},
     onClose: () => {},
-    close: () => { void room.leave(); },
-    rematch: () => room.send('rematch', true),
+    close: closeRoom,
+    rematch: () => { if (!closed) room.send('rematch', true); },
     setPaused: () => {},
   };
   room.onMessage('snap', (snap: Snapshot) => {
+    if (closed) return;
     try { assertRulesVersion(snap.rulesVersion); }
-    catch (error) { s.onClose((error as Error).message); void room.leave(); return; }
+    catch (error) { closeRoom(); s.onClose((error as Error).message); return; }
     s.onSnapshot(snap);
   });
   // Old servers accept unknown join fields but advertise no current rules version: fail before starting prediction.
   await new Promise<void>((resolve, reject) => {
-    const timeout = setTimeout(() => { void room.leave(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
+    const timeout = setTimeout(() => { closeRoom(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
     room.onMessage('welcome', (welcome: { rulesVersion?: number }) => {
+      if (closed) return;
       clearTimeout(timeout);
       try { assertRulesVersion(welcome.rulesVersion); resolve(); }
-      catch (error) { void room.leave(); reject(error); }
+      catch (error) { closeRoom(); reject(error); }
     });
     room.onLeave(() => { clearTimeout(timeout); reject(new Error('服务器在版本确认前断开连接')); });
   });
-  room.onLeave((code: number) => s.onClose(`disconnected (${code})`));
+  room.onLeave((code: number) => { if (closed) return; closed = true; s.onClose(`disconnected (${code})`); });
   return s;
 }
 
