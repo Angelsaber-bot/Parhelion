@@ -11,7 +11,7 @@ import {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_FIELD_ACTOR_OFFSETS,typ
 export {FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS} from './falseDawnSitesData';
 type V3=[number,number,number];
 export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonly stage:FalseDawnStage;readonly ending?:'repurpose'|'seal'|null;readonly route?:'harbor'|'winter'|null;}
-export const FALSE_DAWN_SITE_LIMITS=Object.freeze({visible:180,trianglesPerField:9000,meshesPerField:8,materialsPerField:3});
+export const FALSE_DAWN_SITE_LIMITS=Object.freeze({visible:180,shadowEnter:70,shadowExit:85,shadowCasters:2,trianglesPerField:9000,meshesPerField:8,materialsPerField:3});
 const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
  alpha:[FALSE_DAWN_CENTERS.alpha,...FALSE_DAWN_ANCHORS],
  blacksail:[FALSE_DAWN_CENTERS.blacksail,[787,13.13781148257476,27],[801,13.686946225015276,27],[794,13.330206333573897,39]],
@@ -19,7 +19,9 @@ const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
 };
 /** Offline previews can use audited samples; production always supplies the terrain grid. */
 function approximateGround(region:FalseDawnFieldId,x:number,z:number){let value=0,weight=0;for(const p of FALLBACK[region]){const d=Math.hypot(x-p[0],z-p[2]);if(d<.01)return p[1];const w=1/(d*d);value+=p[1]*w;weight+=w;}return value/weight;}
-export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|null){
+export interface FalseDawnSiteOptions {readonly nearStructureShadows?:boolean;}
+export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|null,options:FalseDawnSiteOptions={}){
+ const nearStructureShadows=options.nearStructureShadows===true,groundLayer=nearStructureShadows?'ground':'body';let shadowSite:FalseDawnFieldId|null=null;
  const root=new THREE.Group();root.name='False_Dawn_Action_Fields';const markers:Marker[]=[],collisionGeometries:THREE.BufferGeometry[]=[],sites:ReturnType<typeof build>[]=[];let disposed=false;
  function ground(region:FalseDawnFieldId,x:number,z:number){if(!groundHeight)return approximateGround(region,x,z);const h=groundHeight(x,z);if(h===null||!Number.isFinite(h))throw new Error(`False Dawn terrain unavailable at ${region}:${x},${z}`);return h;}
  function build(region:FalseDawnFieldId){
@@ -50,21 +52,21 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
   if(region==='alpha'){
    const metal='#566b76',light='#c3d0cf',brass='#c1a06b',ink='#344c59';
    // Buried calibration paving follows the real slope, never a floating combat platform.
-   function groundBand(points:[number,number][],width:number,color:string,layer:'body'|'glow'|'briefed'|'choiceA'|'choiceB'='body',lift=.025){
+   function groundBand(points:[number,number][],width:number,color:string,layer:'ground'|'glow'|'briefed'|'choiceA'|'choiceB'='ground',lift=.025){
     for(let i=1;i<points.length;i++){const a=points[i-1],b=points[i],dx=b[0]-a[0],dz=b[1]-a[1],length=Math.hypot(dx,dz);if(!length)continue;const sx=-dz/length*width/2,sz=dx/length*width/2,ps=[[a[0]+sx,a[1]+sz],[a[0]-sx,a[1]-sz],[b[0]-sx,b[1]-sz],[b[0]+sx,b[1]+sz]];
-     const g=new THREE.BufferGeometry();const top=ps.flatMap(([x,z])=>[x,y(x,z)+lift,z]);const bottom=ps.flatMap(([x,z])=>[x,y(x,z)-.08,z]);g.setAttribute('position',new THREE.Float32BufferAttribute([...top,...bottom],3));g.setIndex([0,2,1,0,3,2,0,1,5,0,5,4,1,2,6,1,6,5,2,3,7,2,7,6,3,0,4,3,4,7]);g.computeVertexNormals();art.add(g,color,[0,0,0],[1,1,1],false,layer);g.dispose();
+     const g=new THREE.BufferGeometry();const top=ps.flatMap(([x,z])=>[x,y(x,z)+lift,z]);const bottom=ps.flatMap(([x,z])=>[x,y(x,z)-.08,z]);g.setAttribute('position',new THREE.Float32BufferAttribute([...top,...bottom],3));g.setIndex([0,2,1,0,3,2,0,1,5,0,5,4,1,2,6,1,6,5,2,3,7,2,7,6,3,0,4,3,4,7]);g.computeVertexNormals();art.add(g,color,[0,0,0],[1,1,1],false,layer==='ground'?groundLayer:layer);g.dispose();
     }
    }
-   function groundDisc(x:number,z:number,radius:number,color:string){const g=new THREE.CircleGeometry(radius,8).rotateX(-Math.PI/2).translate(x,0,z),p=g.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,y(p.getX(i),p.getZ(i))+.022);g.computeVertexNormals();art.add(g,color,[0,0,0]);g.dispose();}
+   function groundDisc(x:number,z:number,radius:number,color:string){const g=new THREE.CircleGeometry(radius,8).rotateX(-Math.PI/2).translate(x,0,z),p=g.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,y(p.getX(i),p.getZ(i))+.022);g.computeVertexNormals();art.add(g,color,[0,0,0],[1,1,1],false,groundLayer);g.dispose();}
    // Broken service court: individually settled stone courses, not a hovering slab.
    // Gaps expose the existing grass; all vertices sample the original terrain.
    for(let ring=0;ring<3;ring++)for(let sector=0;sector<16;sector++){
     if((sector+ring*5)%11===0||(ring===2&&sector>9&&sector<13))continue;
     const a=(sector+.035)*Math.PI/8,b=(sector+.965)*Math.PI/8,r0=.5+ring*1.38,r1=r0+1.28;
     const ps:[[number,number],[number,number],[number,number],[number,number]]=[[Math.cos(a)*r0,Math.sin(a)*r0],[Math.cos(b)*r0,Math.sin(b)*r0],[Math.cos(b)*r1,Math.sin(b)*r1],[Math.cos(a)*r1,Math.sin(a)*r1]];
-    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(ps.flatMap(([x,z])=>[x,y(x,z)+.018,z]),3));g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();art.add(g,['#879b91','#94a49a','#8e9f94','#9ca99b'][(sector+ring*3)%4],[0,0,0]);g.dispose();
+    const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(ps.flatMap(([x,z])=>[x,y(x,z)+.018,z]),3));g.setIndex([0,1,2,0,2,3]);g.computeVertexNormals();art.add(g,['#879b91','#94a49a','#8e9f94','#9ca99b'][(sector+ring*3)%4],[0,0,0],[1,1,1],false,groundLayer);g.dispose();
    }
-   for(let i=0;i<32;i++){if(i%8===0)continue;const a=(i+.035)*Math.PI/16,b=(i+.965)*Math.PI/16;groundBand([[Math.cos(a)*5.3,Math.sin(a)*5.3],[Math.cos(b)*5.3,Math.sin(b)*5.3]],1.1,['#a3b0a9','#aab5ad','#98aaa3'][i%3],'body',.035);groundBand([[Math.cos(a)*4.94,Math.sin(a)*4.94],[Math.cos(b)*4.94,Math.sin(b)*4.94]],.045,brass,'body',.044);}
+   for(let i=0;i<32;i++){if(i%8===0)continue;const a=(i+.035)*Math.PI/16,b=(i+.965)*Math.PI/16;groundBand([[Math.cos(a)*5.3,Math.sin(a)*5.3],[Math.cos(b)*5.3,Math.sin(b)*5.3]],1.1,['#a3b0a9','#aab5ad','#98aaa3'][i%3],'ground',.035);groundBand([[Math.cos(a)*4.94,Math.sin(a)*4.94],[Math.cos(b)*4.94,Math.sin(b)*4.94]],.045,brass,'ground',.044);}
    for(const [a,b]of [[[6.9,6],[4.5,3.8]],[[4.5,3.8],[3.7,3]],[[3.3,2.6],[2.1,1.6]]]as[[number,number],[number,number]][])groundBand([a,b],1.45,'#9aaba6');
    // An observatory calibration arch, broken at the crown, frames the field from its road approach.
    const az=-7.9,ax=-5.9,ah=y(ax,az);
@@ -128,7 +130,7 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
     art.box([x,h+.23,z+.77],[.45,.08,.06],'#cae3ac',false,layer);
     // Shallow conduits visibly explain the array without catching the player's feet.
     const conduit:[number,number][]=[];const target:[number,number]=[7,0];for(let k=0;k<=10;k++)conduit.push([x+(target[0]-x)*k/10,z+(target[1]-z)*k/10]);
-    groundBand(conduit,.13,ink,'body',.036);groundBand(conduit,.035,'#c3d9ae',layer,.043);
+    groundBand(conduit,.13,ink,'ground',.036);groundBand(conduit,.035,'#c3d9ae',layer,.043);
     marker(`false_dawn_emitter_${i+1}`,['接收锚 · I','中继锚 · II','发信锚 · III'][i],x,z+(z>0?-1.35:1.35));
    });
    art.box([cx,cy+.65,cz+.435],[.65,.12,.025],'#d2e5b6',false,'resolved');
@@ -208,7 +210,13 @@ export function createFalseDawnSites(groundHeight?:(x:number,z:number)=>number|n
  }
  applyState({anchors:[false,false,false],stage:'locked'});
  return{root,sites,markers,collisionGeometries,centers:FALSE_DAWN_CENTERS,applyState,
-  update(player:Pick<THREE.Vector3,'x'|'z'>){if(disposed)return;for(const s of sites){const dx=player.x-s.origin[0],dz=player.z-s.origin[2];s.root.visible=dx*dx+dz*dz<FALSE_DAWN_SITE_LIMITS.visible**2;}},
-  dispose(){if(disposed)return;disposed=true;for(const s of sites){s.root.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});for(const g of s.art.solids)g.dispose();Object.values(s.art.materials).forEach(m=>m.dispose());s.root.clear();}root.removeFromParent();root.clear();},
+  update(player:Pick<THREE.Vector3,'x'|'z'>){if(disposed)return;
+   const distance2=(s:typeof sites[number])=>(player.x-s.origin[0])**2+(player.z-s.origin[2])**2;
+   if(!nearStructureShadows||!Number.isFinite(player.x)||!Number.isFinite(player.z))shadowSite=null;
+   else{const retained=sites.find(s=>s.region===shadowSite);if(!retained||distance2(retained)>FALSE_DAWN_SITE_LIMITS.shadowExit**2)shadowSite=null;
+    if(!shadowSite){let nearest=FALSE_DAWN_SITE_LIMITS.shadowEnter**2;for(const s of sites){const d=distance2(s);if(d<nearest){nearest=d;shadowSite=s.region;}}}}
+   for(const s of sites){s.root.visible=distance2(s)<FALSE_DAWN_SITE_LIMITS.visible**2;for(const layer of['body','metal']as const){const mesh=s.art.layers.get(layer);if(mesh)mesh.castShadow=s.root.visible&&s.region===shadowSite;}}
+  },
+  dispose(){if(disposed)return;disposed=true;for(const s of sites){s.root.traverse(o=>{if(o instanceof THREE.Mesh){o.castShadow=false;o.geometry.dispose();}});for(const g of s.art.solids)g.dispose();Object.values(s.art.materials).forEach(m=>m.dispose());s.root.clear();}root.removeFromParent();root.clear();},
  };
 }

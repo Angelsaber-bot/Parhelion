@@ -64,3 +64,25 @@ test('remote completion indicators remain in front of instrument face detailing'
   const ray=new THREE.Raycaster(center.clone().add(new THREE.Vector3(0,0,1)),new THREE.Vector3(0,0,-1),0,1.1),hits=ray.intersectObject(site.root,true);assert.equal(hits[0]?.object,indicator,`${region} completion cue hidden behind new housing`);
  }fields.dispose();
 });
+
+test('optional structural shadows preserve every visual triangle, collider and marker',()=>{
+ const off=createFalseDawnSites(),on=createFalseDawnSites(undefined,{nearStructureShadows:true});assert.deepEqual(on.markers,off.markers);assert.equal(off.sites[0].root.children.length,7);assert.equal(on.sites[0].root.children.length,8);
+ const triangles=(root:THREE.Group)=>{const rows:string[]=[];root.traverse(o=>{if(!(o instanceof THREE.Mesh))return;const g=o.geometry,ix=g.index,attrs=['position','normal','color'].map(n=>g.getAttribute(n));for(let t=0;t<(ix?.count??attrs[0].count);t+=3){const row:number[]=[];for(let j=0;j<3;j++){const i=ix?ix.getX(t+j):t+j;for(const a of attrs)row.push(a.getX(i),a.getY(i),a.getZ(i));}rows.push(row.join(','));}});return rows.sort();};
+ for(let i=0;i<3;i++)assert.deepEqual(triangles(on.sites[i].root),triangles(off.sites[i].root));
+ assert.equal(on.collisionGeometries.length,off.collisionGeometries.length);on.collisionGeometries.forEach((g,i)=>assert.deepEqual(g.attributes.position.array,off.collisionGeometries[i].attributes.position.array));
+ assert.equal(on.sites[0].art.layers.get('ground')!.material,on.sites[0].art.layers.get('body')!.material);off.dispose();on.dispose();
+});
+
+test('near structural shadow prototype has hysteresis and a hard two-caster cap',()=>{
+ const fields=createFalseDawnSites(undefined,{nearStructureShadows:true}),alpha=fields.sites[0];const casters=()=>{const ms:THREE.Mesh[]=[];fields.root.traverse(o=>{if(o instanceof THREE.Mesh&&o.castShadow)ms.push(o);});return ms;};
+ const at=(distance:number)=>fields.update({x:alpha.origin[0]+distance,z:alpha.origin[2]});
+ assert.equal(casters().length,0);at(69);assert.equal(casters().length,2);at(79);assert.equal(casters().length,2);at(86);assert.equal(casters().length,0);at(79);assert.equal(casters().length,0);at(69);assert.equal(casters().length,2);
+ const resources=fields.sites.flatMap(s=>s.root.children.map(o=>(o as THREE.Mesh).geometry));
+ for(let i=0;i<600;i++){const site=fields.sites[i%3];fields.update({x:site.origin[0],z:site.origin[2]});fields.applyState({stage:i%2?'complete':'locked',ending:i%3?'repurpose':'seal',route:i%2?'harbor':'winter',anchors:[!!(i%2),true,false]});assert.equal(casters().length,2);for(const mesh of casters())assert.ok(['body','metal'].includes(mesh.userData.campaignLayer));}
+ assert.deepEqual(fields.sites.flatMap(s=>s.root.children.map(o=>(o as THREE.Mesh).geometry)),resources);fields.update({x:NaN,z:0});assert.equal(casters().length,0);
+ at(0);const last=casters();fields.dispose();assert.ok(last.every(m=>!m.castShadow));fields.update({x:alpha.origin[0],z:alpha.origin[2]});assert.equal(casters().length,0);
+});
+
+test('default and explicit low-quality shadow setting retain zero casters nearby',()=>{
+ for(const options of[{}, {nearStructureShadows:false}]){const fields=createFalseDawnSites(undefined,options);for(const s of fields.sites){fields.update({x:s.origin[0],z:s.origin[2]});fields.root.traverse(o=>{if(o instanceof THREE.Mesh)assert.equal(o.castShadow,false);});}fields.dispose();}
+});

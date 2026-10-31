@@ -23,7 +23,7 @@ const META: Record<RegionId, { name: Localized; role: Localized; npc: string; wo
   winter: { name: ['暖路担架棚', 'Warmroad Stretcher Shelter'], role: ['雪路担架员', 'Snowroad Stretcher Bearer'], npc: 'winter_stretcher_bearer', work: ['整理救护担架', 'Prepare the casualty stretcher'], decision: ['检查暖路图', 'Inspect the warm-route board'], choices: ['shelter', 'convoy'] },
   kyoto: { name: ['纸灯避难廊', 'Paperlight Refuge'], role: ['护卷人', 'Paper Keeper'], npc: 'kyoto_paper_keeper', work: ['晾护浸水书册', 'Dry the soaked ledger'], decision: ['检查避难窗板', 'Inspect the shelter shutters'], choices: ['records', 'refuge'] },
 };
-type Layer = 'body' | 'metal' | 'glow' | 'briefed' | 'choiceA' | 'choiceB' | 'resolved';
+type Layer = 'ground' | 'body' | 'metal' | 'glow' | 'briefed' | 'choiceA' | 'choiceB' | 'resolved';
 const cube = new THREE.BoxGeometry(1, 1, 1);
 const cylinder = new THREE.CylinderGeometry(1, 1, 1, 10);
 /** Colours are per vertex, allowing richly differentiated props without a material per colour. */

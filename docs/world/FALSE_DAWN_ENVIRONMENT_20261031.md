@@ -151,3 +151,28 @@ Same-camera evidence: `environment/field-shadow-review/off/alpha-battle.png` ver
 `on/alpha-battle.png`. This tests the visual value of those flags under Cycles lighting,
 not PCF shadow-map resolution, WebGL material parity, frame rate or GPU cost. Enabling
 normal-quality, near-field casting remains a separate integration/art decision.
+
+### Isolated near-structure shadow prototype (default off)
+
+`createFalseDawnSites(ground, {nearStructureShadows:true})` is an explicit experimental
+option; omitted/false retains the existing zero-caster contract and seven Valley
+batches. Only the enabled version splits 1,012 thin ground triangles into an eighth
+batch sharing the body material. Ground, glow, anchor cues and completion plaques
+never cast. One selected field may cast body + metal: at most two casters globally.
+Selection enters within 70 m and remains until 85 m, preventing boundary thrashing.
+Invalid positions and disposal disable casting. No new lights or collision behavior.
+The normal-quality integration decision is separate; low quality must pass false.
+
+Measured candidate caster triangles: Valley 5,328; harbor 2,412; winter 2,540.
+Tests compare every visual triangle (position/normal/color) and every collider/marker
+against the default version, plus 600 state/field switches, hysteresis, invalid input,
+resource identities, default/explicit-off behavior and disposal. The split version
+adds no triangles or material resources, only one Valley main-pass batch.
+
+`export-fields.ts OUTPUT --near-shadows` uses the actual factory option and near-player
+update. Exported `fieldCasterCount` and `runtimeCastShadow` reflect the resulting
+objects, rather than a renderer-only override. Same-camera off/on frames are in
+`environment/field-shadow-split/{off,on}/`; both use the renderer's `runtime` flag mode.
+This still does not reproduce Three's PCF resolution/bias/toon shader or establish GPU
+performance. Splitting the thin ground explicitly avoids pretending the Cycles review
+can certify sub-4 cm PCF shadow behavior.
