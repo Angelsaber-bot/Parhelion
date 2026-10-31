@@ -15,7 +15,7 @@ const animator=new RuntimeAnimator(rig);animator.reset(false);
 const state={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0,armed:false};
 for(let i=0;i<60;i++)animator.update(1/60,state);
 async function dump(id:string,label:string){
- rig.root.updateWorldMatrix(true);rig.skeletons.forEach(s=>s.update());const meshes:object[]=[];
+ rig.root.updateWorldMatrix(true,true);rig.skeletons.forEach(s=>s.update());const meshes:object[]=[];
  for(const mesh of rig.meshes){
   if(!(mesh as THREE.SkinnedMesh).isSkinnedMesh||!mesh.visible)continue;
   const count=mesh.geometry.attributes.position.count,p=new Float32Array(count*3),uv=new Float32Array(count*2),color=new Float32Array(count*4),v=new THREE.Vector3();

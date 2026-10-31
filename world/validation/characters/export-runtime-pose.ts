@@ -12,7 +12,7 @@ export class RuntimePoseExporter {
   private staticIdentity(mesh:THREE.Mesh){
     const geometry=mesh.geometry,signature:unknown[]=[geometry,geometry.attributes.position.count];
     for(const attribute of [geometry.attributes.uv,geometry.attributes.uv1,geometry.attributes.color,geometry.index]){
-      signature.push(attribute,attribute?.count,attribute?.itemSize,attribute?.normalized,attribute&&('array'in attribute?attribute.array:attribute.data.array),attribute&&('version'in attribute?attribute.version:attribute.data.version),attribute&&('data'in attribute?attribute.data.stride:undefined),attribute&&('offset'in attribute?attribute.offset:undefined));
+      signature.push(attribute,attribute?.count,attribute?.itemSize,attribute?.normalized,attribute?.array,attribute&&('version'in attribute?attribute.version:attribute.data.version),attribute&&('data'in attribute?attribute.data.stride:undefined),attribute&&('offset'in attribute?attribute.offset:undefined));
     }
     const previous=this.shared.get(mesh);
     if(previous&&signature.every((value,i)=>value===previous.signature[i]))return{id:previous.id,first:false};
@@ -34,6 +34,6 @@ export class RuntimePoseExporter {
     for(const m of meshes){if(m.uv1Data){await writeFile(join(this.out,m.uv1File),m.uv1Data);delete m.uv1Data;}await writeFile(join(this.out,m.file),m.data);delete m.data;if(m.staticData){await writeFile(join(this.out,m.staticFile),m.staticData);delete m.staticData;}}
     const terrain:number[][]=[];
     if(colliders&&center){const box=new THREE.Box3(center.clone().add(new THREE.Vector3(-3,-1.5,-3)),center.clone().add(new THREE.Vector3(3,1.2,3))),normal=new THREE.Vector3();for(const c of colliders)if(c.enabled)c.bvh.shapecast({intersectsBounds:b=>b.intersectsBox(box),intersectsTriangle:t=>{t.getNormal(normal);if(Math.abs(normal.y)>.7)terrain.push([...t.a.toArray(),...t.b.toArray(),...t.c.toArray()]);return terrain.length>=4096;}});}
-    await writeFile(join(this.out,id+'.json'),JSON.stringify({id,...metadata,meshes,...(colliders?{terrainTriangles:terrain}:{}),limitations:['CPU-deformed runtime pose on actual collision triangles; offline render, not WebGL/game-camera/GPU performance','Neutral collision-surface QA material, not final world material']}));
+    await writeFile(join(this.out,id+'.json'),JSON.stringify({id,...metadata,meshes,...(colliders?{terrainTriangles:terrain}:{}),limitations:['CPU-deformed runtime pose; offline render, not WebGL/game-camera/GPU performance',colliders?'Actual collision triangles with neutral QA material, not final world material':'Studio QA framing/ground, not gameplay camera or terrain']}));
   }
 }
