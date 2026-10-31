@@ -193,8 +193,11 @@ Accepted anchor **grounding confirmation circuits** now reuse the existing emiss
 material. Outer emitter structures stay neutral, so the cue does not suggest the
 transmitter was powered up. Partial saved/retried anchors illuminate independently;
 unaccepted anchors stay neutral, seal hides all circuits, repurpose retains warmth.
-No material, draw, lamp, collision or timer was added. State-render review is queued
-under the shared admission budget in `environment/grounding-circuits/`.
+No material, draw, lamp, collision or timer was added. State-render review completed through the shared admission budget at 06:32 UTC in
+`environment/grounding-circuits/{000,100,111}/renders/alpha-detail.png`. Same-camera
+pixel review confirms none, only I, and all three accepted circuits respectively;
+outer emitter bodies remain neutral. These use default factory shadow flags off and
+CPU material emission, not a runtime bloom or normal-quality shadow claim.
 
 Actual-main `field-shadows-main-dom.test.ts` passes all three low/normal scenarios,
 including 40 supported disable/enable/state cycles with unchanged resource, collider,
