@@ -96,6 +96,11 @@ for filename in sorted(os.listdir(source)):
     data=bpy.data.cameras.new('QA camera');camera=bpy.data.objects.new('QA camera',data);scene.collection.objects.link(camera);scene.camera=camera
     # Front three-quarter view shows both lowered arms and the white horse's stride/weapon.
     view=manifest.get('view','front');offset=(-size*1.7,-size*.08,size*.13) if view=='right' else (size*1.7,-size*.08,size*.13) if view=='side' else (size*.40,-size*1.65,size*.20)
+    # Optional review framing only: rotate camera around the native actor's current yaw.
+    # The exported runtime vertices/pose/root are never rotated or rewritten.
+    if 'reviewYaw' in manifest:
+        yaw=float(manifest['reviewYaw']);assert math.isfinite(yaw)
+        x,y,z=offset;offset=(x*math.cos(yaw)-y*math.sin(yaw),x*math.sin(yaw)+y*math.cos(yaw),z)
     camera.location=center+Vector(offset);camera.rotation_euler=(center-camera.location).to_track_quat('-Z','Y').to_euler();data.type='ORTHO';data.ortho_scale=size*1.32
     scene.render.engine='CYCLES';scene.cycles.device='CPU';scene.cycles.samples=8;scene.cycles.use_denoising=False
     scene.render.resolution_x=int(os.environ.get('ACTING_SIZE','480'));scene.render.resolution_y=scene.render.resolution_x;scene.render.resolution_percentage=100
