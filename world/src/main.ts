@@ -1627,10 +1627,20 @@ function frame(now: number) {
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
-  $('prompt').textContent = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
+  let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
     !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
+
+  // Match the existing Interact admission, rather than advertising an action
+  // which a jump/glide/swim correctly cannot perform. No admission changes.
+  if (interactionPrompt && gameplayActive() && !fortCannon.mounted && !player.flying &&
+      (!player.onGround || player.gliding || player.swimming) && (npcPrompt || it)) {
+    interactionPrompt = bilingual('请在稳固地面站定后交互', 'Stand on solid ground to interact') + ' · ' +
+      (npcPrompt ? bilingual(...nearbyNpc.role) : interactionLabel(it!));
+  }
+  const prompt = $('prompt');
+  if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;
 
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }
