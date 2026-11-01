@@ -31,3 +31,11 @@ test('rejected modal admission stays closed and uses scrollable, wrapping small-
  const f=fixture();const panel=createQuestJournal({entries:()=>[entry()],pin(){},restoreMain(){},onOpen:()=>false,onClose:()=>assert.fail('not opened'),currentRegion:()=> 'alpha',position:()=>[0,0,0]});
  try{panel.show();assert.equal(panel.open,false);const root=f.d.getElementById('world-quest-journal')!;assert.equal(root.style.overflow,'auto');assert.equal(root.getAttribute('aria-modal'),'true');assert.equal(root.style.position,'fixed');}finally{panel.dispose();f.close()}
 });
+
+test('earned deployment stays explicitly trackable while ordinary completed quests stay hidden',()=>{
+ const f=fixture();let entries:QuestEntry[]=[{...entry('main:compact-relay'),complete:true,trackWhenComplete:true,trackLabel:['前往部署板','Go to deployment board']},{...entry('main:old'),complete:true}],pins:string[]=[];
+ const panel=createQuestJournal({entries:()=>entries,pin:id=>{pins.push(id)},restoreMain(){},onOpen(){},onClose(){},currentRegion:()=> 'alpha',position:()=>[0,0,0]});
+ try{panel.show();assert.deepEqual(pins,[]);assert.equal(f.d.querySelectorAll('[data-quest-track]').length,1);const button=f.d.querySelector<HTMLButtonElement>('[data-quest-track]')!;assert.equal(button.disabled,false);assert.equal(button.textContent,'前往部署板');
+ entries=[{...entries[0],trackWhenComplete:false}];button.click();assert.deepEqual(pins,[],'revoked service revalidated without refresh');entries=[{...entries[0],trackWhenComplete:true}];setLanguage('en');const current=f.d.querySelector<HTMLButtonElement>('[data-quest-track]')!;assert.equal(current.textContent,'Go to deployment board');current.click();assert.deepEqual(pins,['main:compact-relay']);assert.equal(panel.open,false);
+ }finally{panel.dispose();f.close()}
+});

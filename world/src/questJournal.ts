@@ -48,7 +48,7 @@ export function createQuestJournal(options:QuestJournalOptions){
   addOption(region,'all',['全部地区','All regions']);for(const[id,label]of Object.entries(QUEST_REGION_NAMES))addOption(region,id,label);region.value=regionFilter;
   category.replaceChildren();for(const[id,label]of Object.entries({all:['全部任务','All quests'],main:['主线','Main story'],side:['支线','Side quests'],discovery:['探索发现','Discoveries']}))addOption(category,id,label as Localized);category.value=categoryFilter;
   doneText.textContent=bilingual('显示已完成','Show completed');
-  list.replaceChildren();const entries=options.entries().filter(entry=>(regionFilter==='all'||entry.region===regionFilter)&&(categoryFilter==='all'||entry.category===categoryFilter)&&(showDone.checked||!entry.complete));
+  list.replaceChildren();const entries=options.entries().filter(entry=>(regionFilter==='all'||entry.region===regionFilter)&&(categoryFilter==='all'||entry.category===categoryFilter)&&(showDone.checked||!entry.complete||!!entry.trackWhenComplete));
   empty.hidden=entries.length>0;empty.textContent=bilingual('此筛选下没有未完成任务。可换地区、类型，或显示已完成。','No unfinished quests match these filters. Change the region/type or show completed quests.');
   const position=options.position(),here=options.currentRegion();
   for(const entry of entries){
@@ -66,8 +66,8 @@ export function createQuestJournal(options:QuestJournalOptions){
     if(guide.prerequisite){const note=document.createElement('p');note.textContent=bilingual(...guide.prerequisite);article.append(note);}
     if(blocked){const note=document.createElement('p');note.textContent=bilingual(...blocked);article.append(note);}
    }
-   track.disabled=entry.complete||!guide||!!blocked;track.textContent=entry.complete?bilingual('已完成','Complete'):blocked?bilingual('先完成通路前置','Complete passage prerequisites first'):bilingual('追踪下一步','Track next step');
-   track.onclick=()=>{if(!current(track,version))return;const latest=options.entries().find(item=>item.id===entry.id);if(!latest?.guide||latest.complete||options.trackingBlocked?.(latest.guide))return;if(options.pin(entry.id)!==false)hide();};
+   track.disabled=(entry.complete&&!entry.trackWhenComplete)||!guide||!!blocked;track.textContent=blocked?bilingual('先完成通路前置','Complete passage prerequisites first'):entry.trackLabel?bilingual(...entry.trackLabel):entry.complete?bilingual('已完成','Complete'):bilingual('追踪下一步','Track next step');
+   track.onclick=()=>{if(!current(track,version))return;const latest=options.entries().find(item=>item.id===entry.id);if(!latest?.guide||(latest.complete&&!latest.trackWhenComplete)||options.trackingBlocked?.(latest.guide))return;if(options.pin(entry.id)!==false)hide();};
    article.append(track);list.append(article);
   }
   if(focusId){const next=[...list.querySelectorAll<HTMLButtonElement>('[data-quest-track]')].find(button=>button.dataset.questTrack===focusId&&!button.disabled);(next??close).focus();}

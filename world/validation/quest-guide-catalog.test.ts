@@ -4,15 +4,17 @@ import {readFileSync} from 'node:fs';
 import {createQuestGuideCatalog} from '../src/questGuideCatalog';
 import {REGIONS,mergeLayouts} from '../src/regions';
 import {ERA_OPTIONALS,ERA_IDS,ERA_BOSS_REQUIREMENTS} from '../src/eraStories';
+import {COMPACT_RELAY} from '../src/compactRelayCampaign';
 import type {Marker} from '../src/types';
 const parts=REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))}));
 const layout=mergeLayouts(parts);
-const extra:Marker[]=[{id:'valley_route_note',type:'interact',label:'检修侧门手动锁扣',p:[-160,4,220]},...ERA_IDS.map(region=>({id:ERA_OPTIONALS[region].id,type:'interact' as const,label:ERA_OPTIONALS[region].label[0],p:[...REGIONS.find(r=>r.id===region)!.offset.slice(0,1),4,REGIONS.find(r=>r.id===region)!.offset[1]] as [number,number,number]}))];
+const extra:Marker[]=[...([COMPACT_RELAY.entry,COMPACT_RELAY.controller,COMPACT_RELAY.deployment].map((id,i)=>({id,type:'interact' as const,label:id,p:[-70+i,10,228] as [number,number,number]}))),{id:'valley_route_note',type:'interact',label:'检修侧门手动锁扣',p:[-160,4,220]},...ERA_IDS.map(region=>({id:ERA_OPTIONALS[region].id,type:'interact' as const,label:ERA_OPTIONALS[region].label[0],p:[...REGIONS.find(r=>r.id===region)!.offset.slice(0,1),4,REGIONS.find(r=>r.id===region)!.offset[1]] as [number,number,number]}))];
 const catalog=createQuestGuideCatalog({markers:[...layout.markers,...extra],objectives:layout.objectives,npcs:[{id:'alpha_archivist',region:'alpha',position:[-166,4,212]}],enemies:[{id:'elite_oath_knight',region:'britain',position:[-800,5,40],label:['失誓骑士','Oathless Knight']}]});
 
 test('catalog covers five real main chapters, authored optional chains and every discovery without mutating facts',()=>{
  const done=new Set<string>(),found=new Set<string>(),entries=catalog.list(done,found);
- assert.equal(entries.filter(e=>e.category==='main').length,5);
+ assert.equal(entries.filter(e=>e.category==='main').length,6);
+ for(const region of REGIONS)assert.ok(entries.find(e=>e.id===`main:${region.id}`));
  assert.equal(entries.filter(e=>e.category==='discovery').length,layout.markers.filter(m=>m.type==='discovery').length);
  assert.equal(new Set(entries.map(e=>e.id)).size,entries.length);
  for(const entry of entries){assert.ok(entry.guide,entry.id);const guide=entry.guide!;assert.ok(guide.position.every(Number.isFinite));assert.ok(guide.text[0]);assert.ok(guide.text[1]);assert.doesNotMatch(guide.text[1],/[\u3400-\u9fff]/,entry.id);assert.doesNotMatch(guide.targetLabel[1],/[\u3400-\u9fff]/,entry.id);}
@@ -63,4 +65,15 @@ test('missing main layout and nonfinite target data are unavailable, never false
  assert.equal(state.complete,false);assert.equal(state.guide,null);assert.ok(state.unavailable);
  const invalid=createQuestGuideCatalog({markers:[{id:'secret',type:'discovery',label:'发现',p:[NaN,0,0]}],objectives:[],npcs:[]});
  assert.equal(invalid.resolve('discovery:secret',new Set(),new Set()),null);
+});
+
+test('compact exercise guides actual equipment then field and retains earned deployment tracking',()=>{
+ const done=new Set(['relay_b']),found=new Set<string>();
+ assert.equal(catalog.resolve('main:compact-relay',done,found)?.targetId,'armory_rack');
+ done.add('armory_rack');assert.equal(catalog.resolve('main:compact-relay',done,found)?.targetId,COMPACT_RELAY.entry);
+ done.add(COMPACT_RELAY.complete);
+ const entry=catalog.list(done,found).find(e=>e.id==='main:compact-relay')!;
+ assert.equal(entry.complete,true);assert.equal(entry.trackWhenComplete,true);assert.equal(entry.guide?.targetId,COMPACT_RELAY.deployment);
+ assert.equal(catalog.resolve(entry.id,done,found,{compactRelay:{active:true}})?.targetId,COMPACT_RELAY.controller);
+ assert.deepEqual([...done],['relay_b','armory_rack',COMPACT_RELAY.complete]);assert.equal(found.size,0);
 });

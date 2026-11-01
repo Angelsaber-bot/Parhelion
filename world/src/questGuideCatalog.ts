@@ -5,6 +5,7 @@ import {regionAt} from './regions';
 import {ERA_IDS,ERA_STORIES,ERA_OPTIONALS,ERA_KNIGHT_DEFEATED,getEraStoryGuide,getEraBossRequirements,isEraCoreCleared} from './eraStories';
 import {getValleyStoryGuide,VALLEY_STORY} from './valleyStory';
 import {getCampaignClosureState,CAMPAIGN_CLOSURE} from './campaignClosure';
+import {COMPACT_RELAY,COMPACT_RELAY_TITLE,getCompactRelayGuide,getCompactRelayState,type CompactRelayContext} from './compactRelayCampaign';
 
 export type QuestCategory='main'|'side'|'discovery';
 export type QuestPoint=[number,number,number];
@@ -15,8 +16,10 @@ export interface QuestGuide {
 export interface QuestEntry {
  id:string; region:RegionId; category:QuestCategory; title:Localized;
  complete:boolean; guide:QuestGuide|null; unavailable?:Localized;
+ /** Only an actually earned permanent service may remain trackable after completion. */
+ trackWhenComplete?:boolean; trackLabel?:Localized;
 }
-export interface QuestGuideContext { mounted?:boolean; }
+export interface QuestGuideContext { mounted?:boolean; compactRelay?:CompactRelayContext; }
 export interface QuestCatalogInput {
  markers:readonly Marker[];
  objectives:readonly {region:string;objective:Layout['objective']}[];
@@ -29,6 +32,9 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ [COMPACT_RELAY.entry,['突破演练入口','Breach exercise entrance']],
+ [COMPACT_RELAY.controller,['训练联络控制柜','Training relay cabinet']],
+ [COMPACT_RELAY.deployment,['前沿部署板','Forward deployment board']],
  [VALLEY_STORY.npc,['驻地记录员','Residence Archivist']],
  [VALLEY_STORY.discovery,['检修侧门手动锁扣','Maintenance side-door latch']],
  ...ERA_IDS.map(region=>[ERA_OPTIONALS[region].id,ERA_OPTIONALS[region].label] as [string,Localized]),
@@ -99,6 +105,11 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }
+  const compact=getCompactRelayState(done,context.compactRelay),compactGuide=getCompactRelayGuide(done,context.compactRelay);
+  const compactTarget=guide(compactGuide.title,compactGuide.text,compactGuide.targetId,done,context);
+  entries.push({id:'main:compact-relay',region:'alpha',category:'main',title:COMPACT_RELAY_TITLE,complete:compact.complete,guide:compactTarget,
+   ...(compact.complete?{trackWhenComplete:true,trackLabel:compact.active?['追踪本场演练','Track this exercise'] as Localized:['前往部署板','Go to deployment board'] as Localized}:{}),
+   ...(!compactTarget?{unavailable}: {})});
   const valley=getValleyStoryGuide(done),valleyTitle:Localized=['生活馆记录员 · 留一盏灯','Residence Archivist · A Light to Return To'];
   add('side:valley-record','alpha','side',valleyTitle,!valley,valley?guide(valleyTitle,valley.text,valley.targetId,done,context):null);
   // The maintenance note is an interactable done flag, not a found discovery.
