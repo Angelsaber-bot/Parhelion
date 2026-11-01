@@ -1303,6 +1303,10 @@ const questOpen=document.createElement('button');questOpen.type='button';questOp
 const renderQuestButton=()=>{questOpen.textContent=bilingual('任务指引 · 主线、支线与探索','Quest guide · Main, side & exploration');};
 renderQuestButton();const unsubscribeQuestButton=onLanguageChange(renderQuestButton);
 questOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show();});start.append(questOpen);
+const relayTrackButton=document.createElement('button');relayTrackButton.type='button';relayTrackButton.id='world-compact-relay-track';
+const renderRelayTrackButton=()=>{relayTrackButton.textContent=bilingual('突破演练 / 前沿部署 · 追踪目标','Breach exercise / Forward deployment · Track objective');};renderRelayTrackButton();const unsubscribeRelayTrack=onLanguageChange(renderRelayTrackButton);
+relayTrackButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;questTrackedId='main:compact-relay';campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;toast(bilingual('已追踪突破演练或已开放的部署板。点击进入世界继续。','Exercise or earned deployment board tracked. Enter World to continue.'));};start.append(relayTrackButton);
+addEventListener('pagehide',event=>{if(!event.persisted){relayTrackButton.remove();unsubscribeRelayTrack();}});
 addEventListener('pagehide',event=>{if(!event.persisted){questJournal?.dispose();questOpen.remove();unsubscribeQuestButton();}});
 trackedStoryHud = createTrackedStoryHud($('objective'));
 function updateTrackedStoryHud() {
@@ -1607,6 +1611,8 @@ function interact() {
   done.add(m.id);
   if (m.id === FORT_CANNON.marker) { actions?.cancel(); fortCannon.toggle(player.pos, true); }
   if (m.id === ARMORY_MARKER) {
+    // Offer the compact combat loop immediately; the original route remains one key away.
+    questTrackedId='main:compact-relay'; campaignTrackedRegion=null; falseDawnTracked=false; optionalPin=null; guideOn=true;
     // An old held trigger/ADS must not silently activate when the weapon is first collected.
     clearInput();
     anim.update(0, { speed: 0, onGround: player.onGround, swimming: player.swimming, vy: player.vel.y,
@@ -1652,8 +1658,8 @@ function interact() {
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
   if (m.id === ARMORY_MARKER) return speakDialogue([
-    `步枪与短刃已领取。连射8发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。想直接实战，可从西门走约35米到北侧服务庭院的训练入口。`,
-    `Rifle and blade acquired. Eight continuous shots trigger a short automatic vent; resting the trigger also cools the rifle.\n${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. The range is just ahead. For immediate combat, leave by the west door and walk about 35 m to the service-yard training entrance.`,
+    `步枪与短刃已领取。连射8发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。想直接实战，可从西门走约35米到北侧服务庭院的训练入口。已为你追踪；按 ${settings.label('mainRoute')} 可返回原主线。`,
+    `Rifle and blade acquired. Eight continuous shots trigger a short automatic vent; resting the trigger also cools the rifle.\n${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. The range is just ahead. For immediate combat, leave by the west door and walk about 35 m to the service-yard training entrance. It is now tracked; ${settings.label('mainRoute')} restores the original story route.`,
   ], ['领取装备','Equipment acquired']);
   if (m.id === VALLEY_STORY.terminal) return toast(bilingual('观测终端已接通，生活馆门廊的导引灯亮了。回去看看记录员吧。', 'The Observatory terminal is online. The residence path lights are on; check back with the archivist.'));
   toast(m.id === ARMORY_MARKER ? bilingual('已领取曙光 AR 与弹药，去靶场试试手感', 'Dawn AR and ammunition acquired · Try the firing range')
