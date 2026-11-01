@@ -1374,6 +1374,7 @@ compactRelayRuntime = createCompactRelayRuntime({
     && Math.abs(player.pos.y-compactRelaySites.anchor[1]) <= 8,
   activeEncounter: () => combat.storyEncounter?.id ?? null,
   startEncounter: () => {
+    if(!settings.bindingsFor('interact').some(binding=>!binding.startsWith('Wheel')))return{ok:false,reason:['此演练需要持续按住交互键；请在设置中给交互绑定一个键盘键或鼠标按钮，滚轮无法保持按住。','This exercise requires holding Interact. Bind a keyboard key or mouse button in Settings; a wheel impulse cannot be held.'] as [string,string]};
     const spec = getCompactRelayEncounterSpec(compactRelaySites.anchor, compactRelaySites.enemySockets);
     const playable=gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&!fortCannon.mounted&&!actions?.skills.casting&&!actions?.melee.active&&!actions?.evade.active;
     const result=combat.startStoryEncounter(spec,{position:player.pos,playable});

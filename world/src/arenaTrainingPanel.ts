@@ -30,7 +30,7 @@ export function createArenaTrainingPanel(options: ArenaTrainingPanelOptions) {
   }
   function admit(event:MouseEvent){
     if(disposed||!root.open||!options.beforeLeave()){event.preventDefault();status.textContent=bilingual('当前进度未能保存或世界已经停止，未离开。请在设置中重试保存或导出备份。','Progress could not be saved or World has stopped. You have not left. Retry saving or export a backup in Settings.');return;}
-    status.textContent=bilingual('进度已保存。两种模式保持各自规则；世界现场留在此页。','Progress saved. Each mode keeps its own rules; World remains in this tab.');
+    status.textContent=event.currentTarget===fallback?bilingual('进度已保存，正在离开本次世界现场。','Progress saved; leaving this World session.'):bilingual('进度已保存。两种模式保持各自规则；世界现场留在此页。','Progress saved. Each mode keeps its own rules; World remains in this tab.');
   }
   launch.addEventListener('click',admit);fallback.addEventListener('click',admit);
   close.onclick=()=>root.close();root.addEventListener('close',()=>{if(previous?.isConnected)previous.focus();});
