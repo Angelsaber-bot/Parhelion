@@ -78,7 +78,11 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
     await enter();
     for(const id of ['hq_terminal','armory_rack']){
       const marker=world.layout.markers.find((m:{id:string})=>m.id===id);assert.ok(marker);world.player.teleport(...marker.p);world.player.onGround=true;key('KeyF');release('KeyF');assert.equal(world.done.has(id),true,id);
-      const panel=window.document.getElementById('world-dialogue') as HTMLElement;if(!panel.hidden){key('KeyF');release('KeyF');}
+      const panel=window.document.getElementById('world-dialogue') as HTMLElement;
+      // Equipment now also offers the nearby relay route. Read every production
+      // dialogue page through real input; never hide it to bypass the action gate.
+      for(let page=0;page<8&&!panel.hidden;page++){key('KeyF');release('KeyF');}
+      assert.equal(panel.hidden,true,'equipment explanation closes through bounded ordinary input');
     }
     world.player.onGround=true;frame();const shots=audioCalls.shot??0;fire();window.document.body.dispatchEvent(new window.MouseEvent('mouseup',{button:0,bubbles:true}));assert.equal(audioCalls.shot,shots+1);
     world.player.onGround=true;const melee=audioCalls.melee??0;key('KeyB');release('KeyB');assert.equal(audioCalls.melee,melee+1);assert.equal(world.actions.melee.active,true);
