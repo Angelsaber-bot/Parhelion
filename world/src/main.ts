@@ -1226,7 +1226,13 @@ function executeSafeTravel(id: string) {
   if (ultimateDirector?.active) { toast(bilingual('终结技释放期间不能旅行。', 'Travel is unavailable during an ultimate.')); return false; }
   const plan = planSafeTravel(id, travelStops, done, found, travelContext());
   if (!plan.ok) { toast(bilingual(...TRAVEL_BLOCK_TEXT[plan.reason])); return false; }
-  const [x, y, z] = plan.position, landing = combat.geometry.ground(x,z,y+2);
+  const [x, y, z] = plan.position;
+  // This newly earned deployment may target an unvisited outpost, unlike the
+  // original settlement stops. A moving patrol must not turn it into an ambush.
+  if (id === 'compact_relay_outpost' && combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-x,e.p.z-z)<28)) {
+    toast(bilingual('前哨落点附近仍有威胁，已取消部署。请稍后再试或选择步行。','The outpost arrival is threatened. Deployment canceled; retry later or approach on foot.')); return false;
+  }
+  const landing = combat.geometry.ground(x,z,y+2);
   if (!landing || Math.abs(landing.point.y-y)>1 || !combat.geometry.clear(landing.point,.38,1.8)) { toast(bilingual('据点落点暂不可用，已取消传送。','The arrival point is not clear; travel canceled.')); return false; }
   clearInput(); optionalPin = null;
   player.teleport(x,landing.point.y+.25,z,plan.yaw); prevPos.copy(player.pos); rig.root.position.copy(player.pos);
