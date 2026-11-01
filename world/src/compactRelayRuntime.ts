@@ -28,7 +28,7 @@ export function createCompactRelayRuntime(hooks: CompactRelayHooks) {
     const wasActive = active; active = false; cleared = false; revision++;
     channel.reset(hooks.damageRevision());
     if (cancel && wasActive && hooks.activeEncounter() === COMPACT_RELAY_ENCOUNTER) hooks.cancelEncounter();
-    if (wasActive) hooks.applyState();
+    if (wasActive && !disposed) hooks.applyState();
   }
   function sync() {
     if (!active || disposed) return;
@@ -101,6 +101,6 @@ export function createCompactRelayRuntime(hooks: CompactRelayHooks) {
     },
     interrupt() { channel.reset(hooks.damageRevision()); },
     invalidate() { stop(true); },
-    dispose() { if (disposed) return; stop(true); disposed = true; },
+    dispose() { if (disposed) return; disposed = true; stop(true); },
   };
 }
