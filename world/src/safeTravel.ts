@@ -11,6 +11,8 @@ export interface SafeTravelStop {
   position: [number, number, number];
   foundFlag: string;
   radius: number;
+  /** Story-earned field stops must not inherit a settlement's legacy discovery. */
+  requiredCompletionFlag?: string;
 }
 export function createSafeTravelStops(placements: readonly SettlementPlacement[]): SafeTravelStop[] {
   const seen = new Set<string>();
@@ -22,6 +24,7 @@ export function createSafeTravelStops(placements: readonly SettlementPlacement[]
 }
 /** No boss/core or whole-region discovery unlocks a settlement the player never visited. */
 export function isTravelStopDiscovered(stop: SafeTravelStop, done: ReadonlySet<string>, found: ReadonlySet<string>): boolean {
+  if (stop.requiredCompletionFlag) return done.has(stop.requiredCompletionFlag);
   if (found.has(stop.foundFlag)) return true;
   // These existing flags prove a physical conversation/interaction at this exact settlement.
   if (stop.region === 'alpha') return done.has(VALLEY_STORY.met) || done.has(VALLEY_STORY.resolved);
@@ -58,6 +61,9 @@ export function discoverTravelStops(stops: readonly SafeTravelStop[], position: 
   if (!context.sessionReady || context.defeated || context.flying || context.gliding || context.swimming || !context.onGround || position.length !== 3 || !position.every(Number.isFinite)) return [];
   const added: string[] = [];
   for (const stop of stops) {
+    // An authored reward is unlocked by its durable completion, never a fly-by,
+    // old settlement visit, or an imported discovery flag.
+    if (stop.requiredCompletionFlag) continue;
     if (found.has(stop.foundFlag) || Math.abs(position[1] - stop.position[1]) > 3) continue;
     if (Math.hypot(position[0] - stop.position[0], position[2] - stop.position[2]) <= stop.radius) {
       found.add(stop.foundFlag); added.push(stop.id);

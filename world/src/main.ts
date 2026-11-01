@@ -1,3 +1,8 @@
+import { createArenaTrainingPanel } from './arenaTrainingPanel';
+import { createCompactRelaySites } from './compactRelaySites';
+import { createCompactRelayRuntime } from './compactRelayRuntime';
+import { COMPACT_RELAY, getCompactRelayGuide } from './compactRelayCampaign';
+import { getCompactRelayEncounterSpec } from './compactRelayEncounter';
 import { createQuestGuideCatalog, type QuestEntry, type QuestGuide } from './questGuideCatalog';
 import { createQuestJournal } from './questJournal';
 import { buildAlphaSettlement } from './settlements/alpha';
@@ -341,6 +346,11 @@ world.add(falseDawnSites.root); freezeStaticArt(falseDawnSites.root);
 staticGeos.push(...falseDawnSites.collisionGeometries); layout.markers.push(...falseDawnSites.markers);
 const falseDawnMarkerIds = new Set(falseDawnSites.markers.map(marker => marker.id));
 addEventListener('pagehide', event => { if (!event.persisted) falseDawnSites.dispose(); });
+const compactRelaySites = createCompactRelaySites((x, z) => grid.sampleHeight(x, z));
+world.add(compactRelaySites.root); freezeStaticArt(compactRelaySites.root);
+staticGeos.push(...compactRelaySites.collisionGeometries); layout.markers.push(...compactRelaySites.markers);
+const compactRelayMarkerIds = new Set(compactRelaySites.markers.map(marker => marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) compactRelaySites.dispose(); });
 const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
@@ -387,6 +397,10 @@ let actions: WorldActions | undefined;
 const fortCannon = new FortCannon();
 const audio = new WorldAudio();
 const travelStops = createSafeTravelStops(settlements.placements);
+travelStops.push({ id: 'compact_relay_outpost', region: 'alpha', name: ['前沿部署 · 前哨站南门外', 'Forward deployment · Outpost south gate'], position: [...compactRelaySites.arrival], foundFlag: 'compact_relay_outpost', radius: 3, requiredCompletionFlag: 'compact_relay_complete' });
+let compactRelayRuntime: ReturnType<typeof createCompactRelayRuntime> | undefined;
+let relayDamageRevision = 0;
+const relayLastPosition = new THREE.Vector3();
 let hudRevision = 0;
 let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
@@ -400,8 +414,8 @@ let questCatalog: ReturnType<typeof createQuestGuideCatalog> | undefined;
 let questCacheKey = '', questEntries: QuestEntry[] = [];
 function currentQuestEntries(): QuestEntry[] {
   if(!questCatalog)return [];
-  const key=`${hudRevision}:${done.size}:${found.size}:${fortCannon.mounted}`;
-  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{mounted:fortCannon.mounted});}
+  const key=`${hudRevision}:${done.size}:${found.size}:${fortCannon.mounted}:${compactRelayRuntime?.active}:${Math.floor((compactRelayRuntime?.progress ?? 0)*30)}`;
+  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{mounted:fortCannon.mounted,compactRelay:{active:compactRelayRuntime?.active??false,progress:(compactRelayRuntime?.progress??0)*3}});}
   return questEntries;
 }
 function trackedQuest(): QuestGuide | null {
@@ -472,6 +486,7 @@ function applyWorldState() {
   applyValleyStory();
   applyCampaignState();
   applyFalseDawnState();
+  compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
   applyWeaponFinish();
   for (const t of targets) {
     const id = t.userData.target as string;
@@ -529,6 +544,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     const p=resolveTrackedStoryPoint(here,quest.region,done,local);
     if(p)return {p,label:bilingual(...quest.targetLabel)};
   }
+  if (compactRelayRuntime?.active) { const guide=getCompactRelayGuide(done,{active:true,progress:compactRelayRuntime.progress*3});const point=guide&&markers.get(guide.targetId)?.p;if(point)return{p:point,label:bilingual(...guide!.title)}; }
   if (falseDawnTracked) {
     const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
     if (!guide) falseDawnTracked = false;
@@ -850,7 +866,7 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
 function resetProgress() {
   abortUltimate(); clearInput(); deferredCombatToast = null;
   const saved = worldProgress.reset();
-  campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate();
+  campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
   clearStartOverrides(params);
@@ -897,7 +913,7 @@ for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addE
   if (type === 'pointerdown') swallowClick = true;
   document.body.classList.remove('shot-mode');
 }, true);
-const clearInput = () => { keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
+const clearInput = () => { compactRelayRuntime?.interrupt(); keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
   onClose() { clearInput(); },
@@ -992,6 +1008,7 @@ function press(binding: string, repeat = false) {
   }
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
+  if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) compactRelayRuntime?.interrupt();
   if (actions?.press(action)) { hudRevision++; return; }
   keys.add(binding);
   if (action === 'aim') aim.held = true;
@@ -1057,10 +1074,10 @@ const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, reducedEffects, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
-  onHurt() { audio.hurt(); },
+  onHurt() { relayDamageRevision++; audio.hurt(); },
   onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
-  onStoryEncounterVictory(id) { falseDawnRuntime?.victory(id); },
-  onPlayerDefeated() { spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
+  onStoryEncounterVictory(id) { if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
+  onPlayerDefeated() { compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
@@ -1165,8 +1182,8 @@ function reloadImportedProgress() {
   // Storage is already committed. The old scene must never resume against the
   // replacement flags if browser navigation is blocked, canceled or throws.
   graphicsRecovery?.dispose();
-  abortUltimate(); clearInput(); falseDawnRuntime?.dispose(); combat.cancelStoryEncounter();
-  travelPanel.hide(); campaignJournal?.hide(); questJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
+  abortUltimate(); clearInput(); falseDawnRuntime?.dispose(); compactRelayRuntime?.dispose(); combat.cancelStoryEncounter();
+  travelPanel.hide(); arenaTrainingPanel.hide(); campaignJournal?.hide(); questJournal?.hide(); settingsPanel.close(); progressPanel.dispose();
   audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   const retry = document.createElement('button'); retry.id = 'world-reload-import'; retry.type = 'button';
@@ -1199,7 +1216,7 @@ audioGroup.append(volumeLabel,muteLabel,fxLabel);document.querySelector('#world-
 addEventListener('pagehide', event => { if (!event.persisted) { actions?.dispose(); actionHud.dispose(); } });
 function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
-  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted, threatened, quietSeconds: combat.state.quietFor,
+  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active, threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
     mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
@@ -1229,6 +1246,17 @@ const travelPanel = createTravelPanel({
   },
   onClose: () => { travelOpenState=false;clearInput(); },
 });
+const arenaTrainingPanel=createArenaTrainingPanel({
+  worldKey:action=>settings.label(action),
+  arenaKey:action=>new SettingsStore('arena',{getItem:key=>progressStorage?.getItem(key)??null,setItem:()=>{}}).label(action),
+  canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active&&!compactRelayRuntime?.active,
+  beforeLeave:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&save(),
+});
+const arenaTrainingOpen=document.createElement('button');arenaTrainingOpen.type='button';arenaTrainingOpen.id='world-arena-training-open';
+const renderArenaTrainingButton=()=>{arenaTrainingOpen.textContent=bilingual('竞技训练 · 操作对照与离线 Arena','Arena practice · Controls and offline lobby');};renderArenaTrainingButton();
+const unsubscribeArenaTraining=onLanguageChange(renderArenaTrainingButton);
+arenaTrainingOpen.onclick=event=>{event.stopPropagation();arenaTrainingPanel.show();};start.append(arenaTrainingOpen);
+addEventListener('pagehide',event=>{if(!event.persisted){arenaTrainingPanel.dispose();arenaTrainingOpen.remove();unsubscribeArenaTraining();}});
 const travelOpen=document.createElement('button'); travelOpen.type='button';travelOpen.id='world-travel-open';
 const renderTravelButton=()=>{travelOpen.textContent=bilingual(`安全据点旅行 · ${settings.label('travel')}`,`Safe settlement travel · ${settings.label('travel')}`);};
 renderTravelButton();onLanguageChange(()=>{renderTravelButton();travelPanel.refresh();});
@@ -1330,7 +1358,44 @@ falseDawnRuntime = createFalseDawnRuntime({
   choices: (line, speaker, choices, select) => { if (graphicsRecovery?.blocked || bootFailed || worldExited) return; clearInput(); audio.interaction(); hudRevision++; narrative!.showChoices(falseDawnLine(line), speaker, choices, select); },
   toast: line => toast(bilingual(...line)), physicalFeedback: () => audio.interaction(),
 });
-addEventListener('pagehide', event => { if (!event.persisted) falseDawnRuntime?.dispose(); });
+addEventListener('pagehide', event => { if (!event.persisted) { falseDawnRuntime?.dispose(); compactRelayRuntime?.dispose(); } });
+function compactRelayReachable(id: string) {
+  const marker = markers.get(id);
+  return !bootFailed && !worldExited && !graphicsRecovery?.blocked && !!marker && compactRelayMarkerIds.has(id)
+    && locked && !settingsPanel.open && !travelOpenState && !campaignJournalOpen && !ultimateDirector?.active
+    && document.visibilityState === 'visible' && document.hasFocus() && !combat.defeated
+    && !player.flying && !player.swimming && !player.gliding && player.onGround
+    && player.pos.distanceTo(new THREE.Vector3(...marker.p)) < (marker.radius ?? 3) && canReachValleyPanel(marker);
+}
+compactRelayRuntime = createCompactRelayRuntime({
+  done, reachable: compactRelayReachable,
+  sessionValid: () => !bootFailed && !worldExited && !graphicsRecovery?.blocked && !combat.defeated
+    && Math.hypot(player.pos.x-compactRelaySites.anchor[0],player.pos.z-compactRelaySites.anchor[2]) <= 30
+    && Math.abs(player.pos.y-compactRelaySites.anchor[1]) <= 8,
+  activeEncounter: () => combat.storyEncounter?.id ?? null,
+  startEncounter: () => {
+    const spec = getCompactRelayEncounterSpec(compactRelaySites.anchor, compactRelaySites.enemySockets);
+    const playable=gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&!fortCannon.mounted&&!actions?.skills.casting&&!actions?.melee.active&&!actions?.evade.active;
+    const result=combat.startStoryEncounter(spec,{position:player.pos,playable});
+    relayLastPosition.copy(player.pos);
+    if(result.ok)spawn={id:'compact_relay_checkpoint',type:'spawn',p:[...compactRelaySites.entry],label:'庭院演练入口'};
+    return {ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};
+  },
+  cancelEncounter: () => { combat.cancelStoryEncounter(); }, save, applyState:applyWorldState,
+  toast:line=>toast(bilingual(...line)),damageRevision:()=>relayDamageRevision,
+  choices:(line,speaker,choices,select)=>{if(graphicsRecovery?.blocked||bootFailed||worldExited)return;clearInput();audio.interaction();narrative!.showChoices(line,speaker,choices,select);},
+  deploy:()=>executeSafeTravel('compact_relay_outpost'),
+});
+const relayChannelHud=document.createElement('div');relayChannelHud.id='compact-relay-channel';
+Object.assign(relayChannelHud.style,{position:'fixed',left:'50%',bottom:'18%',transform:'translateX(-50%)',maxWidth:'440px',padding:'10px 14px',border:'1px solid #8aa7b8',borderRadius:'6px',background:'#12252ee8',color:'#edf6fa',textAlign:'center',pointerEvents:'none',zIndex:'8'});
+const relayChannelText=document.createElement('div'),relayChannelBar=document.createElement('progress');relayChannelBar.max=3;relayChannelBar.value=0;relayChannelBar.style.width='100%';relayChannelHud.append(relayChannelText,relayChannelBar);relayChannelHud.hidden=true;document.body.append(relayChannelHud);
+function renderCompactRelayHud(){
+  const active=!!compactRelayRuntime?.active;relayChannelHud.hidden=!active||!gameplayActive();if(!active)return;
+  const seconds=(compactRelayRuntime?.progress??0)*3;
+  relayChannelText.textContent=seconds>0?bilingual(`接通 ${seconds.toFixed(1)} / 3.0 秒 · 保持站稳，停止攻击`,`Connecting ${seconds.toFixed(1)} / 3.0 s · Stand still; stop attacking`):bilingual(`借掩体突破 · 机柜旁按住 ${settings.label('interact')} 三秒 · 受伤/移动/攻击会打断`,`Use cover · Hold ${settings.label('interact')} at the cabinet for 3 s · Damage, movement or attacks interrupt`);
+  relayChannelBar.value=seconds;relayChannelBar.setAttribute('aria-label',bilingual('中继接通进度','Relay connection progress'));
+}
+addEventListener('pagehide',event=>{if(!event.persisted)relayChannelHud.remove();});
 const ray = new THREE.Raycaster();
 function shootCannon() {
   if (!gameplayActive() || player.flying || combat.defeated || !fortCannon.mounted || fortCannon.reload > 0) return;
@@ -1420,7 +1485,7 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && d < bd && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && d < bd && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
 }
@@ -1514,6 +1579,7 @@ function handleCampaignInteraction(id: string) {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (compactRelayMarkerIds.has(m.id)) { compactRelayRuntime?.interact(m.id); return; }
   if (falseDawnMarkerIds.has(m.id)) { falseDawnRuntime?.interact(m.id); return; }
   if (campaignMarkerIds.has(m.id)) { if (canReachValleyPanel(m)) handleCampaignInteraction(m.id); return; }
   const closing = interactCampaignClosure(m.id, done);
@@ -1585,8 +1651,8 @@ function interact() {
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
   if (m.id === ARMORY_MARKER) return speakDialogue([
-    `步枪与短刃已领取。连射8发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。`,
-    `Rifle and blade acquired. Eight continuous shots trigger a short automatic vent; resting the trigger also cools the rifle.\n${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. The range is just ahead.`,
+    `步枪与短刃已领取。连射8发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。想直接实战，可从西门走约35米到北侧服务庭院的训练入口。`,
+    `Rifle and blade acquired. Eight continuous shots trigger a short automatic vent; resting the trigger also cools the rifle.\n${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. The range is just ahead. For immediate combat, leave by the west door and walk about 35 m to the service-yard training entrance.`,
   ], ['领取装备','Equipment acquired']);
   if (m.id === VALLEY_STORY.terminal) return toast(bilingual('观测终端已接通，生活馆门廊的导引灯亮了。回去看看记录员吧。', 'The Observatory terminal is online. The residence path lights are on; check back with the archivist.'));
   toast(m.id === ARMORY_MARKER ? bilingual('已领取曙光 AR 与弹药，去靶场试试手感', 'Dawn AR and ammunition acquired · Try the firing range')
@@ -1712,17 +1778,22 @@ function frame(now: number) {
     camera.lookAt(focus);
   } else inspectServant = false;
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
+  // Drain authoritative hurt/victory events before deciding a channel completion.
+  compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
+  relayLastPosition.copy(player.pos);
+  compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
   const elite = gameplayActive() && !combat.defeated && !combat.bossStarted ? nearbyElite(combat.state.enemies, player.pos) : null;
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   updateEraActors(dt);
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
-  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); }
+  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); }
   settlements.update(player.pos);
   settlementApproaches.update(player.pos);
   campaignSites.update(player.pos);
   falseDawnSites.update(player.pos);
+  compactRelaySites.update(player.pos);
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   sky.position.copy(eye);
@@ -1796,9 +1867,9 @@ refreshWorldLocale = () => {
   $('toast').classList.remove('show');
 };
 suspendForGraphics = () => {
-  abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); progressPanel.cancelPendingRead();
+  abortUltimate(); clearInput(); falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate(); progressPanel.cancelPendingRead();
   // Preserve pause-menu intent, but invalidate detached pre-loss controls.
-  travelPanel.refresh(); campaignJournal?.refresh(); questJournal?.refresh(); audio.setActive(false);
+  travelPanel.refresh(); arenaTrainingPanel.hide(); campaignJournal?.refresh(); questJournal?.refresh(); audio.setActive(false);
   if (document.pointerLockElement) document.exitPointerLock();
   renderLoading(); start.classList.remove('hidden');
   $('settings-open').classList.remove('hidden'); languageToggle.hidden = false;
@@ -1808,7 +1879,7 @@ requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
-(window as any).__world = { renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

@@ -71,3 +71,18 @@ test('selection is rechecked at execution, does not mutate progress, and reset r
   done.clear(); found.clear();
   assert.equal(planSafeTravel('travel_britain', stops, done, found, safe).ok, false);
 });
+
+test('earned field stop never inherits old settlement visits or arbitrary found flags', () => {
+  const stop = { ...stops[2], id: 'return_signal_blacksail', foundFlag: 'return_signal_blacksail', requiredCompletionFlag: 'return_signal_complete' };
+  const legacy = new Set(['summon_circle', 'era_blacksail_met', ERA_OPTIONALS.blacksail.id]);
+  assert.equal(isTravelStopDiscovered(stop, legacy, new Set([stop.foundFlag])), false);
+  const found = new Set<string>();
+  assert.deepEqual(discoverTravelStops([stop], stop.position, safe, found), []);
+  assert.equal(getTravelBlock(stop.id, [stop], legacy, found, safe), 'undiscovered');
+  legacy.add('return_signal_complete');
+  assert.equal(isTravelStopDiscovered(stop, legacy, found), true);
+  assert.equal(getTravelBlock(stop.id, [stop], legacy, found, safe), null);
+  for (const change of [{ combatActive: true }, { threatened: true }, { quietSeconds: 4.99 }, { onGround: false }, { swimming: true }, { actionActive: true }]) {
+    assert.notEqual(getTravelBlock(stop.id, [stop], legacy, found, { ...safe, ...change }), null);
+  }
+});

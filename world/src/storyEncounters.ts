@@ -27,7 +27,7 @@ export interface StoryEncounterContext {
 }
 const finite = (p: Point3) => !!p && [p.x, p.y, p.z].every(Number.isFinite);
 const distance = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
-const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && /^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) && finite(spec.anchor)
+const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && (/^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) || spec.id === 'compact_relay_training') && finite(spec.anchor)
   && Array.isArray(spec.actors) && spec.actors.length > 0 && spec.actors.length <= STORY_ENCOUNTER_LIMITS.actors
   && spec.actors.every(actor => !!actor && Object.hasOwn(ENEMY_ROLES, actor.role) && Array.isArray(actor.offset) && actor.offset.length === 2
     && actor.offset.every(Number.isFinite) && Math.hypot(...actor.offset) <= STORY_ENCOUNTER_LIMITS.actorOffset
