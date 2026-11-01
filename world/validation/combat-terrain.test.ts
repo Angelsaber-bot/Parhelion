@@ -103,3 +103,18 @@ test('actual map admits exactly one sparse elite per region using unchanged sett
     assert.ok(query.clear(e.p));
   }
 });
+
+test('only reviewed compact yard sockets can opt into the authored armory hub', () => {
+  for (const [x,z] of [[-51,228],[-64,218]]) {
+    if (x === -51) {
+      assert.equal(query.safeSpawn(x,z),null,'random wilderness preserves hub exclusion');
+      assert.equal(query.safeStorySpawn(x,z),null,'ordinary story preserves hub exclusion');
+    }
+    assert.ok(query.safeCompactRelaySpawn(x,z),'authored socket remains grounded and clear');
+    assert.equal(query.safeCompactRelaySpawn(x+.01,z),null,'not a generic hub exemption');
+  }
+  assert.equal(query.safeCompactRelaySpawn(NaN,228),null);
+  assert.equal(query.safeCompactRelaySpawn(-60,226),null,'control stand is not an enemy socket');
+  const protectedLayout = {...layout,markers:[...layout.markers,{id:'old_quest_guard',type:'interact',p:[-51,10,228],radius:3}]} as Layout;
+  assert.equal(makeCombatTerrain(colliders,protectedLayout).safeCompactRelaySpawn(-51,228),null,'old quest marker protection remains');
+});

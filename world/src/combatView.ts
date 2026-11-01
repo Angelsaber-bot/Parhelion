@@ -7,6 +7,7 @@ import { bilingual } from '../../shared-client/i18n';
 import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, isMeleePunishWindow, type Enemy, type Point3, type HitContext } from './combat';
 import './combat.css';
 import { makeCombatTerrain } from './combatTerrain';
+import { COMPACT_RELAY_ENCOUNTER } from './compactRelayEncounter';
 import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
 import { MINIBOSSES, makeMinibossSpawns } from './minibosses';
 import { enemyAttackRadius, enemyThrustLength, enemyAttackTiming } from './combat';
@@ -177,7 +178,7 @@ export class WorldCombat {
   get storyEncounter() { return this.storyDirector.status; }
   startStoryEncounter(spec: StoryEncounterSpec, admission?: { position: Point3; playable: boolean }): StoryEncounterStartResult {
     if (this.disposed) return { ok: false, reason: 'unavailable' };
-    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: this.geometry.safeStorySpawn });
+    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: spec.id === COMPACT_RELAY_ENCOUNTER ? this.geometry.safeCompactRelaySpawn : this.geometry.safeStorySpawn });
     if (!result.ok) return result;
     try {
       for (const enemy of this.state.enemies.filter(actor => actor.storyEncounter)) {

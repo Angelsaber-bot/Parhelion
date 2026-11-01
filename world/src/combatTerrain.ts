@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { Collider } from './player';
 import type { Layout } from './types';
 import type { Point3, CombatTerrain } from './combat';
+import { COMPACT_RELAY_SITE } from './compactRelaySitesData';
 
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
@@ -30,8 +31,8 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     return true;
   };
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
-  const placeEnemy = (x: number, z: number, story = false): Point3 | null => {
-    if (layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
+  const placeEnemy = (x: number, z: number, story = false, authoredHub = false): Point3 | null => {
+    if (!authoredHub && layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
     if (layout.markers.some(m => !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
@@ -52,6 +53,11 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
   // Explicit authored encounter sockets may neighbor their own False Dawn markers.
   // Every terrain/hub/old-marker rule remains identical; random wilderness never gets this exception.
   const safeStorySpawn = (x: number, z: number) => placeEnemy(x,z,true);
+  // Only the two reviewed yard sockets may inhabit the armory hub. This is not
+  // a generic story exemption: old quest markers, terrain and clearance still apply.
+  const safeCompactRelaySpawn = (x: number, z: number) =>
+    COMPACT_RELAY_SITE.enemySockets.some(p => Math.abs(x-p[0]) < 1e-6 && Math.abs(z-p[2]) < 1e-6)
+      ? placeEnemy(x,z,true,true) : null;
   const terrain: CombatTerrain = {
     walk(from, x, z) {
       const g = ground(x, z, from.y + 1.1);
@@ -79,5 +85,5 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     const localCast = (origin:Point3,direction:Point3,max:number) => castAgainst(subset,origin,direction,max);
     return { cast:localCast, ground:(x:number,z:number,ceiling=180)=>localCast({x,y:ceiling,z},{x:0,y:-1,z:0},ceiling+20), colliderCount:subset.length, totalColliders:colliders.length };
   };
-  return { cast, ground, safeSpawn, safeStorySpawn, clear, terrain, contactSurface };
+  return { cast, ground, safeSpawn, safeStorySpawn, safeCompactRelaySpawn, clear, terrain, contactSurface };
 }
