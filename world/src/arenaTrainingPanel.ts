@@ -12,6 +12,7 @@ export function createArenaTrainingPanel(options: ArenaTrainingPanelOptions) {
   Object.assign(root.style, { maxWidth:'640px', width:'min(90vw,640px)', maxHeight:'85vh', overflow:'auto', border:'1px solid #8194a2', borderRadius:'10px', padding:'22px', background:'#182a36', color:'#edf4f7' });
   let disposed=false, previous:HTMLElement|null=null;
   const title=document.createElement('h2'),intro=document.createElement('p'),rows=document.createElement('div'),practice=document.createElement('ol'),warning=document.createElement('p'),fairness=document.createElement('p'),status=document.createElement('p'),links=document.createElement('div'),close=document.createElement('button');
+  title.id='world-arena-training-title';root.setAttribute('aria-labelledby',title.id);
   status.setAttribute('role','status');warning.style.color='#ffd69e';
   const launch=document.createElement('a');launch.href=ARENA_TRAINING_HREF;launch.target='_blank';launch.rel='noopener noreferrer';launch.id='arena-training-new-tab';
   const fallback=document.createElement('a');fallback.href=ARENA_TRAINING_HREF;fallback.id='arena-training-same-tab';fallback.style.display='block';fallback.style.marginTop='14px';
