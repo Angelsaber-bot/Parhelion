@@ -74,3 +74,21 @@ The approach route now explicitly leaves the armory via (-66,246),(-82,246),
 (-90,246), avoiding the original central workbench. The previous component
 approach started outside on the street and was never proof of a straight
 weapon-rack-to-street route.
+
+## Geometry preview
+
+Four bounded CPU images are retained externally under
+`compact-relay-visual/images/alpha-{context,entry,channel,high}.png`. The exporter
+loads original Alpha ART and the exact scene builder, crops around the yard,
+and preserves material-side primary visibility. Entry/channel/high cameras are
+authored standing-height diagnostics, not production TPS screenshots. The high
+view shows the deck firing over the flank cable housing, while the channel view
+looks toward the musketeer through the protective baffle. The context retains
+the original helipad and armory. No actor or fake combat action is composited.
+
+22 cropped batches / 19,872 triangles were exported; 640x360, 16 samples,
+CPU studio lighting. Original map caster flags use the established offline
+review heuristic and material scalars precede runtime look adaptation. These
+images therefore do not prove the actual GPU shader, gameplay framing, target
+readability with live actors, performance, or that the whole World map is now
+dense. Integrated input and tactical tests remain separate acceptance evidence.
