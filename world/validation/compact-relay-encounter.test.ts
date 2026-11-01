@@ -28,3 +28,15 @@ test('runtime sampled site height is used and malformed geometry fails closed',(
  const s=getCompactRelayEncounterSpec([-60,10.15,226],[[-51,10.2,228],[-64,10.1,218]]);assert.equal(s.anchor.y,10.15);assert.deepEqual(s.actors[0].offset,[9,2]);
  assert.throws(()=>getCompactRelayEncounterSpec([0,NaN,0],[]));assert.throws(()=>getCompactRelayEncounterSpec([0,1,2],[[0,1,2]]));
 });
+test('exact relay ID admits ordinary enemies; cancellation is not a kill and retry cannot alias targets',async()=>{
+ const {WorldCombatState}=await import('../src/combat');const {StoryEncounterDirector}=await import('../src/storyEncounters');
+ const state=new WorldCombatState([],[]),director=new StoryEncounterDirector(),spec=getCompactRelayEncounterSpec();
+ const [x,y,z]=COMPACT_RELAY_SITE.entry;
+ const context={state,player:{x,y,z},playable:true,place:(x:number,z:number)=>({x,y:spec.anchor.y,z})};
+ for(const id of ['compact_relay','compact_relay_training_extra','compact_relay_other'])assert.equal(director.start({...spec,id},context).reason,'invalid');
+ assert.equal(director.start(spec,context).ok,true);assert.deepEqual(state.enemies.map(e=>e.maxHp),[66,66]);
+ const first=state.enemies.map(e=>e.id);assert.equal(director.observe(context),null);
+ assert.equal(director.cancel(),spec.id);state.clearStoryEnemies();assert.equal(director.observe(context),null);
+ assert.equal(state.drainEvents().filter(e=>e.type==='kill').length,0);assert.equal(director.start(spec,context).ok,true);
+ assert.ok(state.enemies.every(e=>!first.includes(e.id)));assert.ok(state.enemies.every(e=>e.hp===e.maxHp));
+});
