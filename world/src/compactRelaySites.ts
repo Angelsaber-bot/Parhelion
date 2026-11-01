@@ -21,7 +21,7 @@ export function createCompactRelaySites(groundHeight:(x:number,z:number)=>number
   }else{
    art.box([c.x,top+.035,c.z],[c.width+.12,.07,c.depth+.08],trim);
    for(const x of[-.35,.35])art.box([c.x+x*c.width,base+c.height*.5,c.z+c.depth/2+.018],[.1,c.height*.8,.035],orange);
-   if(c.id==='north_cable_spool')for(const x of[-.7,.7])art.cyl([c.x+x,top+.07,c.z],.3,.08,ink,false,'metal');
+   if(c.id==='flank_cable_spool')for(const x of[-.7,.7])art.cyl([c.x+x,top+.07,c.z],.3,.08,ink,false,'metal');
   }
  }
  const p=COMPACT_RELAY_PLATFORM,x0=p.x-p.width/2,x1=p.x+p.width/2,base=ground(p.x,p.deckStart),top=base+p.rise;
@@ -44,8 +44,8 @@ export function createCompactRelaySites(groundHeight:(x:number,z:number)=>number
  for(let i=0;i<3;i++)art.box([anchor[0]+.02+i*.2,anchor[1]+1.1,anchor[2]-.88],[.12,.2,.018],orange,false,(['briefed','choiceA','choiceB']as const)[i]);
  art.box([deployment[0]+.33,deployment[1]+1.18,deployment[2]-.85],[.13,.13,.022],'#789b79',false,'resolved');
  art.finish('alpha');root.name='CompactRelay_ArmoryServiceYard';root.userData.scope='three covers and two-ramp maintenance deck; original helipad and buildings preserved';
- const markers:Marker[]=[{id:COMPACT_RELAY.entry,type:'interact',label:'军械庭院 · 巡卫实战演练',p:[entry[0],entry[1]+.9,entry[2]],radius:1},{id:COMPACT_RELAY.controller,type:'interact',label:'训练控制柜 · 持续接通',p:[anchor[0],anchor[1]+.9,anchor[2]],radius:1.65},{id:COMPACT_RELAY.deployment,type:'interact',label:'前沿部署板 · 废弃前哨站南门外',p:[deployment[0],deployment[1]+.9,deployment[2]],radius:1.65}];
- function applyState(state:CompactRelayVisualState){if(disposed)return;const progress=state.complete?1:Number.isFinite(state.progress)?THREE.MathUtils.clamp(state.progress,0,1):0;(['briefed','choiceA','choiceB']as const).forEach((key,i)=>{art.layers.get(key)!.visible=state.complete||(state.active&&progress>i/3);});art.layers.get('resolved')!.visible=state.complete;}
+ const markers:Marker[]=[{id:COMPACT_RELAY.entry,type:'interact',label:'军械庭院 · 巡卫实战演练',p:[entry[0],entry[1]+.9,entry[2]],radius:1.5},{id:COMPACT_RELAY.controller,type:'interact',label:'训练控制柜 · 持续接通',p:[anchor[0],anchor[1]+.9,anchor[2]],radius:1.65},{id:COMPACT_RELAY.deployment,type:'interact',label:'前沿部署板 · 废弃前哨站南门外',p:[deployment[0],deployment[1]+.9,deployment[2]],radius:1.65}];
+ function applyState(state:CompactRelayVisualState){if(disposed)return;const progress=state.active?(Number.isFinite(state.progress)?THREE.MathUtils.clamp(state.progress,0,1):0):state.complete?1:0;(['briefed','choiceA','choiceB']as const).forEach((key,i)=>{art.layers.get(key)!.visible=progress>i/3;});art.layers.get('resolved')!.visible=state.complete;}
  applyState({active:false,complete:false,progress:0});
  return{root,markers,collisionGeometries:art.solids,anchor,entry,arrival,channelStand,deployment,enemySockets,applyState,
  update(player:Pick<THREE.Vector3,'x'|'z'>){if(!disposed)root.visible=Math.hypot(player.x-anchor[0],player.z-anchor[2])<COMPACT_RELAY_ART_LIMITS.visible;},
