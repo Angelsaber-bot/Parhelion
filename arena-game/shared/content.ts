@@ -179,6 +179,14 @@ export const WEAPONS: WeaponDef[] = [
   },
 ];
 
+/** Append-only cosmetic catalog: existing saved indices retain their original finishes. */
+export const ARENA_SKIN_COLLECTIONS = [
+  { id: 'astral', name: '星穹棱镜 · Astral Prism', body: 0x18213e, accent: 0x83d9ff },
+  { id: 'sunforged', name: '赤金日冕 · Sunforged', body: 0xf0deba, accent: 0xffaa55 },
+  { id: 'petalglass', name: '樱华琉璃 · Petalglass', body: 0xe7e8f5, accent: 0xf29bc6 },
+] as const;
+for (const weapon of WEAPONS) for (const finish of ARENA_SKIN_COLLECTIONS) weapon.skins.push({ ...finish });
+
 export function falloff(w: WeaponDef, dist: number): number {
   if (dist <= w.falloffStart) return 1;
   if (dist >= w.falloffEnd) return w.falloffMin;

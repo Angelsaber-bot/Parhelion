@@ -1,0 +1,36 @@
+{
+  "date": "2026-11-02",
+  "scope": "Character scenes augment the existing rescue campaign; no wholesale story replacement",
+  "localFullScan": {
+    "tests": 1751,
+    "passed": 1745,
+    "failed": 6,
+    "note": "Scan began before legacy source adapters, append-only skin fixture expectations and static translation coverage were updated. All six failures were then fixed and their complete affected files rechecked."
+  },
+  "afterRepairs": {
+    "passed": 47,
+    "failed": 0,
+    "includes": [
+      "progress-reset",
+      "Arena startup snapshots",
+      "translation coverage",
+      "real NPC interaction",
+      "new character-story runtime",
+      "existing resident physical work"
+    ]
+  },
+  "additionalLegacySaveCheck": {
+    "tests": 22,
+    "passed": 22,
+    "failed": 0
+  },
+  "browser": {
+    "renderer": "Actual WebGL",
+    "url": "http://127.0.0.1:4178/?q=low&nopost&spawn=alpha_living_hub",
+    "entry": "Authored living-hub spawn for QA; walked around planter and radio props with real keys",
+    "dialogue": "Lan opening reached with F; stable paged text and choices inspected; collision-checked portrait framing shown",
+    "screenshot": "lan-dialogue.png"
+  },
+  "models": "assets/characters/residents_v2/manifest.json",
+  "releaseGate": "Final all-tests result is owned by the matching GitHub production workflow."
+}

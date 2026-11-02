@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WEAPONS } from '../shared/content.ts';
+import {updateFinishClock} from './weaponFinishes.ts';
 import { artPoint, combatArt, disposeTree, makeArtMount, weaponArtPool, type ArtInstance, type WeaponArtPool } from './weaponArt.ts';
 export interface GunPresentation {
   group: THREE.Group; muzzle: THREE.Object3D; sight: THREE.Vector3;
@@ -43,6 +44,7 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
   return {
     group, muzzle, sight, ready,
     animate(kick, reload) {
+      updateFinishClock(performance.now()/1000);
       if (!art) return;
       // Cosmetic only: preserve authored pivots, reset each pose, never alter fire timing/ammo.
       for (const [role, p] of poses) art.parts[role].position.copy(p);

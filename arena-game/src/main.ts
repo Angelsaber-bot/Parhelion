@@ -131,6 +131,7 @@ function pickMap(id: string) {
   });
 }
 function renderSkins() {
+  $('armory').textContent=bilingual('皮肤工坊','Skin workshop');
   $('skins').innerHTML = loadoutStore.value.map((id) => {
     const i = weaponIndex(id), w = WEAPONS[i];
     return `<label>${displayWeaponName(w.id)}<select data-w="${i}">${w.skins.map((s, j) => `<option value="${j}" ${skins[i] === j ? 'selected' : ''}>${localizeText(s.name)}</option>`).join('')}</select></label>`;
@@ -170,7 +171,7 @@ $('armory').onclick = async () => {
   const generation = attemptGeneration;
   const eligible = () => !starting && !game && !pageExited && generation === attemptGeneration;
   if (!eligible()) return;
-  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory(); }
+  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory({skins,equip:(weapon,skin)=>{skins[weapon]=skin;renderSkins();try{const prior=JSON.parse(localStorage.getItem('arena-lobby')??'{}');localStorage.setItem('arena-lobby',JSON.stringify({...prior,skins:[...skins]}));return{saved:true};}catch{return{saved:false};}}}); }
   catch (error) { if (eligible()) showError(() => bilingual(`武器展示无法打开：${localizeText(String(error))}`, `Could not open the armory: ${localizeText(String(error))}`)); }
 };
 renderChars();
@@ -213,7 +214,7 @@ addEventListener('pagehide', event => {
   if (!event.persisted) { pageExited = true; game?.stop(); game = null; }
 });
 $('play').onclick = async () => {
-  if (starting || game || pageExited || settingsPanel.open) return;
+  if (starting || game || pageExited || settingsPanel.open || (document.getElementById('armory-dialog') as HTMLDialogElement|null)?.open) return;
   // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
   if (mapState === 'failed') pickMap(mapId);
   const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode };
@@ -298,7 +299,7 @@ controls.onLockChange = (locked) => {
   game.setPaused(!locked && !game.online);
 };
 controls.onLockError = () => {
-  if (!game || game.ended || pageExited || settingsPanel.open) return;
+  if (!game || game.ended || pageExited || settingsPanel.open || (document.getElementById('armory-dialog') as HTMLDialogElement|null)?.open) return;
   pointerLockFailed = true; renderPointerLockNote(); controls.onLockChange(false);
 };
 $('resume').onclick = () => { if (game && !game.ended && !pageExited && !settingsPanel.open) controls.lock(); };

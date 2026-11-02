@@ -1,0 +1,17 @@
+import * as THREE from 'three';
+import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
+import {mkdir,writeFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {createHash} from 'node:crypto';
+import {createSettlementNpcs} from '../src/settlements/npcs';
+import {JOURNEY_CAST} from '../src/journeyDrama';
+import type {RegionId,PlacedNpcSocket} from '../src/settlements/types';
+(globalThis as any).FileReader??=class{result:unknown;onloadend?:()=>void;readAsArrayBuffer(blob:Blob){blob.arrayBuffer().then(b=>{this.result=b;this.onloadend?.();});}readAsDataURL(blob:Blob){blob.arrayBuffer().then(b=>{this.result=`data:${blob.type};base64,${Buffer.from(b).toString('base64')}`;this.onloadend?.();});}};
+const out=resolve('../assets/characters/residents_v2');await mkdir(out,{recursive:true});
+const sockets:PlacedNpcSocket[]=(Object.keys(JOURNEY_CAST) as RegionId[]).map((region,i)=>({id:JOURNEY_CAST[region].npc,region,role:JOURNEY_CAST[region].name,position:[(i-2)*1.25,0,0],lines:[JOURNEY_CAST[region].desire]}));
+const cast=createSettlementNpcs(sockets);cast.update(.016,new THREE.Vector3(0,0,8));cast.group.updateMatrixWorld(true);
+const scene=new THREE.Scene();scene.add(cast.group);
+const glb=await new GLTFExporter().parseAsync(scene,{binary:true,onlyVisible:false});if(!(glb instanceof ArrayBuffer))throw new Error('Expected binary GLB');
+await writeFile(resolve(out,'Main_Cast.glb'),Buffer.from(glb));
+const manifest={schema:1,source:'world/src/settlements/residentPortrait.ts + npcs.ts',authoring:'Original parametric geometry; runtime and export share the same constructors.',rig:'Six articulated rigid batches per character; head includes Speak and Resolve morphs. No full-body skeletal skinning claim.',glbSha256:createHash('sha256').update(Buffer.from(glb)).digest('hex'),characters:cast.group.children.map((p,i)=>({id:sockets[i].id,name:JOURNEY_CAST[sockets[i].region].name,triangles:p.userData.triangles,height:new THREE.Box3().setFromObject(p).getSize(new THREE.Vector3()).y}))};
+await writeFile(resolve(out,'manifest.json'),JSON.stringify(manifest,null,2)+'\n');console.log(JSON.stringify(manifest));cast.dispose();

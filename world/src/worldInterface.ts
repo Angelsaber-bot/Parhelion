@@ -50,7 +50,7 @@ export function installWorldInterface(options:InterfaceOptions){
    'world-quest-journal-open':['任务指引','Quests'],
    'world-travel-open':['据点旅行','Travel'],
    'settings-open':['设置','Settings'],
-   'world-adventure-continue':['五区新冒险','Five-region adventure'],
+   'world-adventure-continue':['主线 · 人物篇','Story · Character chapters'],
    'world-arena-training-open':['竞技训练','Arena practice'],
    'world-campaign-journal-open':['居民纪事与续篇','Chronicles & continuation'],
    'world-compact-relay-track':['突破演练','Breach exercise'],

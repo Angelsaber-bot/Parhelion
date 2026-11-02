@@ -95,7 +95,7 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  change('#layout','1v2');change('#team','B');(h.d.getElementById('name')as HTMLInputElement).value='Selected fighter';
  h.click('[data-i="1"]');h.click('[data-id="blackflag"]');h.click(`[data-mode="${mode}"]`);
  const server=h.d.getElementById('server')as HTMLInputElement;server.value='ws://192.168.1.44:2567';(h.d.getElementById('bots')as HTMLInputElement).checked=true;
- for(const i of[3,2,7]){const select=h.d.querySelector<HTMLSelectElement>(`[data-w="${i}"]`)!;change(`[data-w="${i}"]`,select.options[select.options.length-1].value);}
+ const skinSnapshot:Record<number,number>={};for(const i of[3,2,7]){const select=h.d.querySelector<HTMLSelectElement>(`[data-w="${i}"]`)!;skinSnapshot[i]=Number(select.options[select.options.length-1].value);change(`[data-w="${i}"]`,String(skinSnapshot[i]));}
  const settings=(h.w as any).arena.controls.settings;assert.equal(settings.bind('weapon1','KeyI',true),null);assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
  h.click('#play');h.click('#play');assert.equal(h.qa.offline+h.qa.joins.length,0,'asset readiness remains required');
  // Simulate a queued stale edit while awaiting assets: the accepted request must own its snapshot.
@@ -103,7 +103,7 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  h.qa.maps[1].task.resolve();await h.flush();
  const requests=mode==='online'?h.qa.joins.map(j=>j.opts):h.qa.offlineInputs;assert.equal(requests.length,1);
  const opts=requests[0];assert.deepEqual(Array.from(opts.loadout),['firefly','halo','hammer']);assert.equal(opts.map,'blackflag');assert.equal(opts.layout,'1v2');assert.equal(opts.team,'B');assert.equal(opts.char,1);assert.equal(opts.name,'Selected fighter');assert.equal(opts.bots,true);
- assert.equal(opts.skins[2],1);for(const i of[3,7])assert.equal(opts.skins[i],0);assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
+ for(const i of[3,2,7])assert.equal(opts.skins[i],skinSnapshot[i]); assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
  if(mode==='online'){assert.equal(h.qa.joins[0].url,'ws://192.168.1.44:2567');h.qa.joins[0].task.resolve(h.qa.session(opts));await h.flush();}
  assert.equal(h.qa.games,1);h.click('#play');await h.flush();assert.equal(h.qa.offline+h.qa.joins.length,1,'active game rejects another start');
  }finally{h.dom.window.close()}});

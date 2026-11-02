@@ -1,4 +1,5 @@
 import {installWorldInterface} from './worldInterface';
+import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './journeyDrama';
 import {createResidentEventRuntime,createResidentEventScene} from './residentEvents';
 import {RESIDENT_ACTIONS,getResidentWorkGuide} from './residentEventRules';
 import {makeCombatTerrain} from './combatTerrain';
@@ -614,7 +615,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     }
   }
   if(adventureActive(done)&&optionalPin){if(optionalPinExpired(optionalPin,here,player.pos,done,found))optionalPin=null;else return{p:optionalPin.p,label:bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`,`Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`)};}
-  const adventure=getCurrentAdventureGuide(here as RegionId,done);if(adventure){const marker=markers.get(adventure.targetId);const p=marker&&resolveTrackedStoryPoint(here,adventure.region,done,marker.p);if(p)return{p,label:bilingual(...adventure.text)};}
+  const adventure=getCurrentAdventureGuide(here as RegionId,done);if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
   if(adventureActive(done))return null;
   const intro = valleyGuide();
   if (intro) return { p: intro.p, label: bilingual(...intro.text) };
@@ -1393,7 +1394,7 @@ renderQuestButton();const unsubscribeQuestButton=onLanguageChange(renderQuestBut
 questOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show();});start.append(questOpen);
 const adventureButton=document.createElement('button');adventureButton.type='button';adventureButton.id='world-adventure-continue';
 const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续五区新冒险 · 保留已有存档','Continue the five-region adventure · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
-adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);save();questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('已启用五区冒险，进度已保留。','Five-region adventure enabled. Progress kept.'));};start.append(adventureButton);
+adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);save();questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('主线人物篇已启用，原有进度保留。进入世界后跟随岚的指引。','Character chapters enabled. Progress kept. Enter World and follow Lan’s lead.'));};start.append(adventureButton);
 addEventListener('pagehide',event=>{if(!event.persisted){adventureButton.remove();unsubscribeAdventureButton();}});
 const relayTrackButton=document.createElement('button');relayTrackButton.type='button';relayTrackButton.id='world-compact-relay-track';
 const renderRelayTrackButton=()=>{relayTrackButton.textContent=bilingual('突破演练 / 前沿部署 · 追踪目标','Breach exercise / Forward deployment · Track objective');};renderRelayTrackButton();const unsubscribeRelayTrack=onLanguageChange(renderRelayTrackButton);
@@ -1476,7 +1477,7 @@ cavalrySupport=new LocalCavalrySupport({done,player:player.pos,actor:()=>napoleo
  strike:(origin,direction)=>combat.applyStrike({origin,direction,range:4.8,halfWidth:1.7,damage:56,maxTargets:2},'skill').hits.length>0,
  toast:line=>toast(bilingual(...line)),save,changed:applyWorldState,
 });
-adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>combat.recoverAtSettlement(25),actions:adventureSites.actions,path:adventureSites.convoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
+adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>combat.recoverAtSettlement(25),actions:adventureSites.actions,path:adventureSites.convoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const result=combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming});return{ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};},
  encounter:()=>combat.storyEncounter?.id??null,cancel:()=>combat.cancelStoryEncounter(),toast:line=>toast(bilingual(...line)),
@@ -1700,6 +1701,16 @@ function presentCampaignInteraction(result: CampaignEpisodeInteraction, origin: 
   return true;
 }
 function handleCampaignInteraction(id: string) {
+  const scene=journeyScene(id,done);
+  if(scene){
+    settlementNpcs.gesture(id);clearInput();hudRevision++;audio.interaction();
+    narrative!.showChoices(scene.text,scene.speaker,scene.choices,choice=>{
+      if(!campaignInteractionReachable(id)){toast(bilingual('请回到人物身边再继续。','Return to the character to continue.'));return;}
+      if(choice==='personal'){presentCampaignInteraction(interactCampaignEpisode(id,done),id);return;}
+      if(confirmJourneyScene(scene,choice,done)){const saved=save();applyWorldState();if(scene.beat==='decision'&&done.has(ADVENTURE.ending))speakDialogue(journeyEnding(done),['旅途记录','Journey record']);else toast(saved?bilingual('旅途记录已更新。','Journey record updated.'):bilingual('记录尚未保存，请重试或备份。','Record not saved; retry or back up.'));}
+    });
+    return true;
+  }
   const residentRegion=(['alpha','britain','blacksail','winter','kyoto'] as const).find(region=>id===`campaign_${region}_work`);
   if(residentRegion&&adventureActive(done)){const field=getResidentWorkGuide(residentRegion,done);if(field){campaignTrackedRegion=residentRegion;questTrackedId=null;falseDawnTracked=false;guideOn=true;toast(bilingual(...field.text));return true;}}
   const result = interactCampaignEpisode(id, done);
@@ -1739,7 +1750,7 @@ function interact() {
     if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
   }
-  if(m.id===ARMORY_MARKER&&!done.has('summon_circle')&&!done.has('tower_console')&&!(['britain','blacksail','winter','kyoto'] as const).some(r=>done.has(`era_${r}_met`))){if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);}
+  if(m.id===ARMORY_MARKER&&!done.has('summon_circle')&&!done.has('tower_console')&&!(['britain','blacksail','winter','kyoto'] as const).some(r=>done.has(`era_${r}_met`))){if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);}
   done.add(m.id);
   if (m.id === FORT_CANNON.marker) { actions?.cancel(); fortCannon.toggle(player.pos, true); }
   if (m.id === ARMORY_MARKER) {
@@ -1824,6 +1835,7 @@ const eye = new THREE.Vector3();
 let last = performance.now(), acc = 0, frames = 0, fpsT = 0, fps = 0;
 const STEP = 1 / 120;
 let lastRegion = '';
+let conversationBlend=0;
 
 // screenshot / fixed-camera mode: ?cam=x,y,z,yawDeg,pitchDeg&clean
 const camParam = params.get('cam')?.split(',').map(Number);
@@ -1923,6 +1935,18 @@ function frame(now: number) {
     camera.position.copy(focus).add(new THREE.Vector3(Math.sin(angle) * (big ? 5.5 : 3.6), .35, Math.cos(angle) * (big ? 5.5 : 3.6)));
     camera.lookAt(focus);
   } else inspectServant = false;
+  // Character scenes get a readable, collision-checked portrait shot. Leaving
+  // dialogue restores the ordinary aim camera before gameplay can fire again.
+  const conversationNpc=dramaActive(done)&&narrative?.open&&locked&&!inspectServant?nearbySettlementNpc():null;
+  const conversationActor=conversationNpc?settlementNpcs.group.getObjectByName(`Resident_${conversationNpc.id}`):null;
+  if(conversationActor){
+    const focus=conversationActor.getObjectByName('ResidentHead')!.getWorldPosition(new THREE.Vector3());
+    const orientation=conversationActor.getWorldQuaternion(new THREE.Quaternion()),front=new THREE.Vector3(0,0,1).applyQuaternion(orientation),right=new THREE.Vector3(1,0,0).applyQuaternion(orientation);
+    const desired=focus.clone().addScaledVector(front,1.8).addScaledVector(right,.36);desired.y+=.035;
+    const direction=desired.clone().sub(focus),distance=direction.length(),hit=combat.geometry.cast(focus,direction.clone().normalize(),distance);
+    const allowed=hit?Math.max(0,hit.distance-.22):distance;
+    if(allowed>.8){rig.root.visible=false;desired.copy(focus).addScaledVector(direction.normalize(),Math.min(distance,allowed));conversationBlend=reducedEffects()?1:THREE.MathUtils.damp(conversationBlend,1,7,dt);camera.position.lerp(desired,conversationBlend);const target=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,focus,camera.up));camera.quaternion.slerp(target,conversationBlend);eye.copy(camera.position);}else conversationBlend=0;
+  }else conversationBlend=0;
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
@@ -1963,6 +1987,7 @@ function frame(now: number) {
   falseDawnSites.update(player.pos);
   compactRelaySites.update(player.pos);
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
+  settlementNpcs.setSpeaking(narrative?.open?nearbySettlementNpc()?.id??null:null);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));

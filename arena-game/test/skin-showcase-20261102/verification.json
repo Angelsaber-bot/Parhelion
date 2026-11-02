@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-02",
+  "themes": [
+    "astral",
+    "sunforged",
+    "petalglass"
+  ],
+  "weapons": 8,
+  "newFinishes": 24,
+  "browser": {
+    "url": "http://127.0.0.1:4180/?low",
+    "viewport": [
+      1280,
+      720
+    ],
+    "all24Loaded": true,
+    "shaderErrors": 0,
+    "equippedAndReloaded": [
+      "astral/lumen",
+      "petalglass/blade"
+    ],
+    "firstPersonVerified": true,
+    "firstPersonMode": "Existing ?test automation input fallback; actual WebGL and offline simulation",
+    "nativePointerLock": "Not claimed"
+  },
+  "arenaSuite": {
+    "passed": 361,
+    "failed": 0
+  },
+  "bounds": "All eight shipped GLBs tested for every new finish; authored anchors unchanged and decoration within 1 mm raw model tolerance",
+  "references": [
+    "https://playvalorant.com/en-gb/news/dev/breathing-life-into-elderflame/",
+    "https://www.counter-strike.net/workshop/workshopfinishes/"
+  ]
+}

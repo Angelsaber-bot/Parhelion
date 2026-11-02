@@ -1,4 +1,5 @@
 import {gateGuide} from './kingdomGate';
+import {JOURNEY_DRAMA,JOURNEY_CAST,JOURNEY_REGIONS,dramaActive,dramaReported,dramaDecision,dramaChapterReady} from './journeyDrama';
 import type { Localized, RegionId } from './settlements/types';
 export type AdventurePoint=[number,number,number];
 export const ADVENTURE={
@@ -12,13 +13,13 @@ export const ADVENTURE={
 export const adventureActive=(done:ReadonlySet<string>)=>done.has(ADVENTURE.started);
 export const adventureTravelOpen=(done:ReadonlySet<string>)=>done.has('summon_circle')||(adventureActive(done)&&done.has(ADVENTURE.online));
 export const adventureLegacy=(region:RegionId,done:ReadonlySet<string>)=>!adventureActive(done)&&(done.has({alpha:'tower_console',britain:'sun_core',blacksail:'sea_core',winter:'winter_core',kyoto:'fire_core'}[region])||(region!=='britain'&&region!=='alpha'&&done.has({blacksail:'blackbeard_contract',winter:'napoleon_contract',kyoto:'musashi_contract'}[region])));
-export interface AdventureGuide {title:Localized;text:Localized;targetId:string;region:RegionId;targetKind:'marker';}
+export interface AdventureGuide {title:Localized;text:Localized;targetId:string;region:RegionId;targetKind:'marker'|'npc';}
 const at=(region:RegionId,title:Localized,text:Localized,targetId:string):AdventureGuide=>({region,title,text,targetId,targetKind:'marker'});
 export function harborBridgeReady(done:ReadonlySet<string>){return done.has(ADVENTURE.harborSide)||['blackbeard_meet','fort_cannon','ghost_boat_1','ghost_boat_2','ghost_boat_3'].every(id=>done.has(id))||done.has('sea_core')||done.has('blackbeard_contract');}
 export function winterRouteReady(done:ReadonlySet<string>){return done.has('shard_bell')||['beacon_1','beacon_2','beacon_3'].every(id=>done.has(id));}
 export function adventureChapterComplete(region:RegionId,done:ReadonlySet<string>){
  if(adventureLegacy(region,done))return true;
- if(region==='britain')return done.has('sun_core');
+ if(region==='britain')return done.has('sun_core')&&(!dramaActive(done)||done.has('kingdom_gate_rescued'));
  if(region==='blacksail')return done.has(ADVENTURE.departed)&&done.has('blackbeard_contract');
  if(region==='winter')return done.has(ADVENTURE.arrived)&&done.has('napoleon_contract');
  if(region==='kyoto')return done.has(ADVENTURE.evidence)&&done.has('fire_core')&&done.has('musashi_contract');
@@ -27,6 +28,16 @@ export function adventureChapterComplete(region:RegionId,done:ReadonlySet<string
 /** Read-only projection. Local progress always wins over the recommended order. */
 export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):AdventureGuide|null {
  if(!adventureActive(done))return null;
+ if(dramaActive(done)){
+  const person=(r:RegionId,text:Localized):AdventureGuide=>({region:r,title:JOURNEY_CAST[r].chapter,text,targetId:JOURNEY_CAST[r].npc,targetKind:'npc'});
+  if(!done.has(JOURNEY_DRAMA.opening))return person('alpha',['到归航讯号亭与岚交谈，听一听仍在求救的声音。','Speak with Lan at the signal kiosk. Someone is still calling for help.']);
+  if(region!=='alpha'&&!done.has(JOURNEY_DRAMA.brief(region)))return person(region,['先与当地的守望者交谈，了解这段归路上还在等谁。','Speak with the local keeper and learn who is still waiting on this road.']);
+  if(region!=='alpha'&&dramaChapterReady(region,done)&&!done.has(JOURNEY_DRAMA.report(region)))return person(region,['回到守望者身边，亲口告诉他现场发生了什么。','Return to the keeper and tell them what actually happened.']);
+  if(region==='britain'&&done.has('sun_core')&&!done.has('kingdom_gate_rescued')){const gate=gateGuide(done);if(gate)return at(region,JOURNEY_CAST.britain.chapter,gate.text,gate.targetId);}
+  if(region==='alpha'&&dramaReported(done).length>=2&&!done.has(JOURNEY_DRAMA.confession))return person('alpha',['带着两地的回执回见岚，问清签名的来历。','Bring the receipts to Lan and ask about the signature.']);
+  if(region==='alpha'&&done.has('adventure_escaped')&&dramaReported(done).length===4&&!dramaDecision(done))return person('alpha',['与岚决定频道今后的值守方式，再到观测所写下结尾。','Decide the channel’s future with Lan, then record the ending at the Observatory.']);
+  if(region==='alpha'&&JOURNEY_REGIONS.every(r=>adventureChapterComplete(r,done))){const missing=JOURNEY_REGIONS.find(r=>!done.has(JOURNEY_DRAMA.report(r)));if(missing)return getAdventureGuide(missing,done);}
+ }
  if(region==='alpha'){
   if(done.has(ADVENTURE.ending))return null;
   const title:Localized=['让明天继续','Let Tomorrow Continue'];
@@ -55,7 +66,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  }
  if(region==='blacksail'){
   const title:Localized=['黑帆尽头 · 最后一次空航','Black Sail · The Last Empty Voyage'];
-  if(!done.has('blackbeard_meet'))return at(region,title,['到酒馆问清无法出港的原因。可以一直带着当前从者。','Ask at the tavern why the ship cannot depart. Keep your chosen companion.'],'blackbeard_meet');
+  if(!done.has('blackbeard_meet')&&!done.has('sea_core')&&!done.has('blackbeard_contract'))return at(region,title,['到酒馆问清无法出港的原因。可以一直带着当前从者。','Ask at the tavern why the ship cannot depart. Keep your chosen companion.'],'blackbeard_meet');
   if(!harborBridgeReady(done)&&done.has('fort_cannon')){const boat=[1,2,3].find(i=>!done.has(`ghost_boat_${i}`));if(boat)return at(region,title,['留在要塞炮位，击沉剩余的幽灵艇以开放登舰通路；不要游向目标。','Stay at the fort cannon and sink the remaining ghost boats to open boarding access; do not swim to the target.'],`ghost_boat_${boat}`);}
   if(!harborBridgeReady(done))return at(region,title,['选择准备：夺取要塞炮位并击沉三艘幽灵艇，或到灯塔石码头松开侧舷索具。两种行动都开放登舰通路。','Prepare either by destroying the three ghost boats from the fort, or releasing the side rigging at the lighthouse jetty. Either opens boarding access.'],'adventure_harbor_rigging');
   if(!done.has(ADVENTURE.records))return at(region,title,['登上旗舰，从两处甲板舱口进入船腹记录室，取回真实航次。开门和撤离仍需你亲自完成。','Board the flagship and recover the true voyage record in the below-deck records room, reached through either hatch. You must still leave the ship yourself.'],'adventure_harbor_records');
@@ -68,7 +79,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  }
  if(region==='winter'){
   const title:Localized=['永冬之城 · 让药车通过','Winter City · Make Way for the Medicine'];
-  if(!done.has('napoleon_meet'))return at(region,title,['在皇帝帐篷确认药车的撤离方向。','Confirm the medicine convoy’s route at the emperor’s tent.'],'napoleon_meet');
+  if(!done.has('napoleon_meet')&&!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['在皇帝帐篷确认药车的撤离方向。','Confirm the medicine convoy’s route at the emperor’s tent.'],'napoleon_meet');
   if(!winterRouteReady(done))return at(region,title,['选择准备：点亮三座烽火建立暖路，或登钟楼取得观察记录（钟声碎片）。两条准备路线任选其一。','Prepare either by lighting all three beacons, or climbing the bell tower for its observation record (Bell fragment).'],`beacon_${[1,2,3].find(i=>!done.has(`beacon_${i}`))??1}`);
   if(!done.has(ADVENTURE.road))return at(region,title,['清开大道拒马：射断两处金色支架，或沿侧翼靠近拆闩。完整道路开放后才能放行。','Clear the roadblock: shoot both gold braces, or approach from the flank and release the latch. Open the whole corridor before signaling.'],'adventure_winter_latch');
   if(!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['沿清出的道路到红场，解除执冬者的命令。','Follow the cleared road to Red Square and end the Winter Warden’s orders.'],'winter_core');
@@ -78,7 +89,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  }
  if(region==='kyoto'){
   const title:Localized=['业火京都 · 真假号令','Kyoto · Orders in the Fire'];
-  if(!done.has('musashi_meet'))return at(region,title,['在三条桥与武藏会面。观察火光与人群逃离方向的矛盾。','Meet Musashi at Sanjō Bridge. Compare the flames with the direction people flee.'],'musashi_meet');
+  if(!done.has('musashi_meet')&&!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,['在三条桥与武藏会面。观察火光与人群逃离方向的矛盾。','Meet Musashi at Sanjō Bridge. Compare the flames with the direction people flee.'],'musashi_meet');
   const banner=[1,2,3].find(i=>!done.has(`kikyo_banner_${i}`));
   if(banner)return at(region,title,[`处理第 ${banner} 面桔梗旗。正面可远射；旅籠高地提供侧向观察，水门开启后增加内巷进路。`,`Break banner ${banner}. Fire from range, observe from the inn ledge, or open the water gate for another approach.`],`kikyo_banner_${banner}`);
   if(!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,['三旗号令已断。可走正门，或打开东侧水门进寺，挑战业火之主。','Banner orders are broken. Take the main entrance or open the eastern water gate, then challenge the Hellfire Lord.'],'fire_core');
@@ -91,4 +102,4 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
 export function getAdventureEndingText():Localized{return ['你把最后一条覆盖命令从终端里撤下。屏幕没有再抢先写出答案。\n王城的封锁命令已经停止，商船驶离港口，药车停在渡口，京都保住了没有被火改写的记录。岚把电台留在有人值守的频道上。\n这次，观测所只写下今天。明天的那一页，留给真正走到那里的人。你仍然可以回访这些地方，与喜欢的从者继续同行。','You remove the last overriding command. This time, the screen does not answer before the question.\nThe kingdom’s blockade orders have ended, the merchant ship has left port, the medicine cart waits at the crossing, and Kyoto’s unaltered record survives. Lan keeps the radio on a channel with a person listening.\nThe Observatory records only today. Tomorrow’s page belongs to those who reach it. You may revisit these places and keep traveling with the companion you chose.'];}
 
 /** Single default selection for HUD and waypoint; an earned chapter never falls back to obsolete Valley chores. */
-export function getCurrentAdventureGuide(region:RegionId,done:ReadonlySet<string>){return getAdventureGuide(region,done)??getAdventureGuide('alpha',done);}
+export function getCurrentAdventureGuide(region:RegionId,done:ReadonlySet<string>){const guide=getAdventureGuide(region,done)??getAdventureGuide('alpha',done);return guide&&dramaActive(done)?{...guide,title:guide.region==='alpha'&&done.has(JOURNEY_DRAMA.opening)?(dramaReported(done).length===4?['终章 · 让明天继续','Finale · Let Tomorrow Continue'] as Localized:['幻日谷 · 回执上的签名','Valley · The Signature on the Receipt'] as Localized):JOURNEY_CAST[guide.region].chapter}:guide;}

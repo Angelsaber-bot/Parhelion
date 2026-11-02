@@ -1,4 +1,5 @@
 import {RelayChannel,type RelayChannelFrame} from './relayChannel';
+import {dramaActive,dramaReported,dramaDecision,JOURNEY_DRAMA} from './journeyDrama';
 import {ADVENTURE as A,adventureChapterComplete,adventureActive,winterRouteReady,type AdventurePoint,getAdventureEndingText} from './openWorldCampaign';
 import type {AdventureAction} from './adventureSites';
 import type {Localized} from './settlements/types';
@@ -16,9 +17,10 @@ export function cartCheckpoint(done:ReadonlySet<string>,length:number,prefix='ad
 export function createAdventureRuntime(h:AdventureHooks){
  let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,leg=cartCheckpoint(h.done,h.path.length),fraction=0,guardianPending=false,patrolCleared=false;
  const commit=(id:string)=>{if(h.done.has(id))return false;h.done.add(id);if(!h.save())h.toast(['进度尚未写入存档，请重试保存或备份。','Progress has not been saved; retry saving or make a backup.']);h.changed();return true;};
- const finalReady=()=>['britain','blacksail','winter','kyoto'].every(r=>adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',h.done));
+ const finalReady=()=>['britain','blacksail','winter','kyoto'].every(r=>adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',h.done))&&(!dramaActive(h.done)||(dramaReported(h.done).length===4&&h.done.has(JOURNEY_DRAMA.confession)));
  function blocked(action:AdventureAction):Localized|null{
   const id=action.id;
+  if(id==='adventure_tomorrow'&&dramaActive(h.done)&&!dramaDecision(h.done))return ['先与岚决定频道今后的值守方式。','Decide the channel’s future with Lan first.'];
   if(id==='adventure_harbor_records'&&h.done.has('adventure_harbor_alarm_disabled'))return null;
   if(id==='adventure_harbor_exit'&&(!h.done.has(A.records)||(!h.done.has('sea_core')&&!h.done.has('blackbeard_contract'))))return ['先取得真实记录并解除提督的命令，再确认离舰。','Recover the true record and end the Admiral’s orders before confirming disembarkation.'];
   if(id==='adventure_harbor_depart'&&!h.done.has(A.exited))return ['先带着记录离舰，再放行商船。','Disembark with the record before authorizing the merchant ship.'];

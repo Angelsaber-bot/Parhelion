@@ -106,3 +106,5 @@ body.world-dialogue-open :is(#objective,#minimap,#contract-card,#world-shortcuts
 #world-shortcuts{z-index:2;opacity:1;text-shadow:0 1px 2px #000,0 0 5px #0008}
 #world-shortcuts kbd{background:#10212c66}
 @media(max-width:760px){.world-action.cooling::after{top:12px;font-size:10px}}
+
+body.world-dialogue-open :is(#crosshair,#guide,#world-vitals,#world-boss,#prompt,#world-shortcuts,#elite-hint){visibility:hidden}

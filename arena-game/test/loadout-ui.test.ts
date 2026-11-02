@@ -112,7 +112,7 @@ describe('lobby and combat equipment presentation', () => {
   });
   it('preserves existing skin choices and safely extends the legacy three-weapon array', () => {
     expect(sanitizedSkins([1, 1, 1])).toEqual([1, 1, 1, 0, 0, 0, 0, 0]);
-    expect(sanitizedSkins([NaN, -1, 9, 1, .5])).toEqual(WEAPONS.map(() => 0));
+    expect(sanitizedSkins([NaN, -1, 9, WEAPONS[3].skins.length, .5])).toEqual(WEAPONS.map(() => 0));
     expect(sanitizedSkins({ 0: 1 })).toEqual(WEAPONS.map(() => 0));
   });
   it('ships three HUD slots, an accessible loadout panel, and submits selection through shared JoinOptions', () => {

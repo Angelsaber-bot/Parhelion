@@ -70,7 +70,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['速度', 'Speed'], ['（另一槽已选）', ' (selected in the other slot)'],
   ['请选择两把不同的枪和一件近战；本次无效选择未应用。', 'Choose two different guns and one melee weapon. The invalid selection was not applied.'],
   ['装备无效：请选择两把不同的枪械和一件近战武器。', 'Invalid loadout: choose two different guns and one melee weapon.'],
-  ['旅人武装', 'Wayfarer Armory'], ['关闭武器展示', 'Close armory'], ['模型选择', 'Model selection'], ['可装备作战', 'Available in combat'],
+  ['旅人武装', 'Wayfarer Armory'], ['皮肤工坊','Skin workshop'], ['皮肤主题','Finish collection'], ['装备皮肤','Equip finish'], ['关闭武器展示', 'Close armory'], ['模型选择', 'Model selection'], ['可装备作战', 'Available in combat'],
   ['可旋转的三维武器模型', 'Rotatable 3D weapon model'], ['重试加载', 'Retry loading'], ['正在加载所选模型…', 'Loading selected model…'],
   ['拖动旋转 · 滚轮缩放 · Esc 关闭。在大厅选择两把枪和一件近战；这里仅预览外观，不更改配装。数值是尚未完成竞技平衡验证的 Alpha 原型。', 'Drag to rotate · Scroll to zoom · Esc to close. Select two guns and one melee weapon in the lobby; this is a visual preview and does not change the loadout. All stats are Alpha prototypes, not competitively balanced.'],
   ['三角形 · 原始 PBR 材质 · 无骨骼动画', 'triangles · Original PBR materials · No skeletal animation'],

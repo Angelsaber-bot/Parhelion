@@ -1,5 +1,6 @@
 import {RESIDENT_ACTIONS} from './residentEventRules';
 import {ADVENTURE,adventureActive,getAdventureGuide} from './openWorldCampaign';
+import {dramaActive,JOURNEY_CAST} from './journeyDrama';
 import {ADVENTURE_ACTIONS} from './adventureSites';
 import { KINGDOM_GATE, gateGuide } from './kingdomGate';
 import type {Layout,Marker} from './types';
@@ -113,7 +114,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     const id=step?.done.find(id=>!done.has(id));
     add('main:alpha',region,'main',title,!!objective&&!intro&&!step,intro?guide(title,intro.text,intro.targetId,done,context):id?guide(title,pair(step!.text),id,done,context):null);
    }else{
-    const next=getEraStoryGuide(region,done),title=ERA_STORIES[region].title;
+    const next=dramaActive(done)?getAdventureGuide(region,done):getEraStoryGuide(region,done),title=dramaActive(done)?JOURNEY_CAST[region].chapter:ERA_STORIES[region].title;
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }

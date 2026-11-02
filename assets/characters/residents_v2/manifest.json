@@ -1,0 +1,54 @@
+{
+  "schema": 1,
+  "source": "world/src/settlements/residentPortrait.ts + npcs.ts",
+  "authoring": "Original parametric geometry; runtime and export share the same constructors.",
+  "rig": "Six articulated rigid batches per character; head includes Speak and Resolve morphs. No full-body skeletal skinning claim.",
+  "glbSha256": "50176cd905482132807c7f5b3773219deeff877bb40226ddcd22222c9d6a82dc",
+  "characters": [
+    {
+      "id": "alpha_signal_keeper",
+      "name": [
+        "岚",
+        "Lan"
+      ],
+      "triangles": 11644,
+      "height": 1.7732320732615319
+    },
+    {
+      "id": "britain_oath_witness",
+      "name": [
+        "艾妲",
+        "Ada"
+      ],
+      "triangles": 12020,
+      "height": 1.7459985476982933
+    },
+    {
+      "id": "blacksail_lamplighter",
+      "name": [
+        "玛拉",
+        "Mara"
+      ],
+      "triangles": 11980,
+      "height": 1.657651969279133
+    },
+    {
+      "id": "winter_stretcher_bearer",
+      "name": [
+        "米哈伊",
+        "Mikhail"
+      ],
+      "triangles": 11848,
+      "height": 1.7180451736386042
+    },
+    {
+      "id": "kyoto_paper_keeper",
+      "name": [
+        "澄",
+        "Sumi"
+      ],
+      "triangles": 11600,
+      "height": 1.6852830319495837
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import registry from '../../assets/weapons/registry.json';
+import {finishOf,finishMaterial,addFinishInlay} from './weaponFinishes.ts';
 export const WEAPON_ART = registry;
 export type ArtDef = typeof registry[number];
 // Explicit static URLs are fingerprinted by Vite; no download until acquire().
@@ -37,7 +38,7 @@ export class WeaponArtPool {
   private entries = new Map<string, Entry>();
   constructor(private load: (url: string) => Promise<THREE.Group> = async (url) => (await new GLTFLoader().loadAsync(url)).scene) {}
   get size() { return this.entries.size; }
-  acquire(def: ArtDef, colors?: { body: number; accent: number }): ArtHandle {
+  acquire(def: ArtDef, colors?: { id?:string; body: number; accent: number }): ArtHandle {
     let entry = this.entries.get(def.id);
     if (!entry) {
       entry = { refs: 0, promise: Promise.resolve(null as unknown as THREE.Group) };
@@ -53,10 +54,11 @@ export class WeaponArtPool {
     e.refs++;
     let released = false, instance: ArtInstance | undefined;
     const owned = new Set<THREE.Material>();
+    const inlays: {dispose():void}[]=[];
     const release = () => {
       if (released) return;
       released = true;
-      instance?.root.removeFromParent(); owned.forEach((m) => m.dispose());
+      instance?.root.removeFromParent();inlays.forEach(inlay=>inlay.dispose()); owned.forEach((m) => m.dispose());
       if (--e.refs === 0 && e.source) { disposeTree(e.source); if (this.entries.get(def.id) === e) this.entries.delete(def.id); }
     };
     const ready = e.promise.then((source) => {
@@ -66,12 +68,14 @@ export class WeaponArtPool {
       const material = (mat: THREE.Material) => {
         let m = cloned.get(mat);
         if (!m) {
-          m = mat.clone(); cloned.set(mat, m); owned.add(m);
+          m = mat.clone();
           const pbr = m as THREE.MeshStandardMaterial;
           if (colors && pbr.isMeshStandardMaterial) {
             if (/^PH_ivory(?:[._]?\d+)?$/.test(m.name)) pbr.color.setHex(colors.body);
             if (/^PH_glow(?:[._]?\d+)?$/.test(m.name)) { pbr.color.setHex(colors.accent); pbr.emissive.setHex(colors.accent); }
           }
+          const finish=finishOf(colors?.id);if(finish&&pbr.isMeshStandardMaterial){m=finishMaterial(pbr,finish);pbr.dispose();}
+          cloned.set(mat,m);owned.add(m);
         }
         return m;
       };
@@ -86,6 +90,7 @@ export class WeaponArtPool {
       if (!asset) { release(); throw new Error(`武器资产缺少 ${def.file}_ROOT`); }
       const parts: Record<string, THREE.Object3D> = {};
       for (const node of asset.children) if (node.name.startsWith(`${def.file}__`)) parts[node.name.slice(`${def.file}__`.length)] = node;
+      const finish=finishOf(colors?.id);if(finish&&parts.body){const inlay=addFinishInlay(parts.body,finish);if(inlay)inlays.push(inlay);}
       instance = { root, parts };
       return instance;
     });

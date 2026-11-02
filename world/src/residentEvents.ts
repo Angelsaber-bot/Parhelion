@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {SiteArt} from './campaignSites';
 import {RESIDENT_ACTIONS} from './residentEventRules';
+import {dramaActive,dramaDecision,JOURNEY_DRAMA} from './journeyDrama';
 import type {Marker} from './types';
 import type {Localized,RegionId} from './settlements/types';
 export interface ResidentEventHooks{done:Set<string>;reachable(id:string):boolean;save():void;changed():void;toast(line:Localized):void;}
@@ -47,7 +48,7 @@ export function createResidentEventScene(workMarkers:readonly Marker[],floor:(x:
  const choose=(x:number,z:number,y:number)=>{for(const[dx,dz]of[[0,0],[.8,0],[-.8,0],[0,.8],[0,-.8],[1.4,0],[-1.4,0],[0,1.4],[0,-1.4]]){const h=floor(x+dx,z+dz,y+2)??floor(x+dx,z+dz);if(h!==null&&clear(new THREE.Vector3(x+dx,h+.04,z+dz)))return new THREE.Vector3(x+dx,h,z+dz);}return new THREE.Vector3(x,y,z);};
  const materials={paper:new THREE.MeshStandardMaterial({color:'#dccda7',roughness:.95}),cloth:new THREE.MeshStandardMaterial({color:'#b4b6a1',roughness:1}),blue:new THREE.MeshStandardMaterial({color:'#496874',roughness:.7}),brass:new THREE.MeshStandardMaterial({color:'#b39d69',metalness:.5,roughness:.4}),ink:new THREE.MeshStandardMaterial({color:'#4b5047',roughness:.9}),green:new THREE.MeshBasicMaterial({color:'#9dc5a8'})};
  const movable=(parent:THREE.Object3D,name:string,size:[number,number,number],p:[number,number,number],material:THREE.Material)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),material);mesh.name=name;mesh.position.fromArray(p);parent.add(mesh);return mesh;};
- const dynamics=new Map<string,THREE.Mesh>();
+ const dynamics=new Map<string,THREE.Mesh>();let journeyLamps:THREE.InstancedMesh|undefined,journeyLampState='';
  for(const a of RESIDENT_ACTIONS){const origin=origins.get(a.region)!,p=a.world?choose(a.world[0],a.world[2],a.world[1]):choose(origin.x+a.offset![0],origin.z+a.offset![1],origin.y);points.set(a.id,p);markers.push({id:a.id,type:'interact',label:a.label[0],p:[p.x,p.y+.9,p.z],radius:1.7});}
  for(const a of RESIDENT_ACTIONS){
   const p=points.get(a.id)!,art=arts.get(a.region)!,prop=new THREE.Group();prop.name=a.id;prop.position.copy(p).add(new THREE.Vector3(.8,0,-.25));root.add(prop);props.set(a.id,prop);
@@ -60,7 +61,7 @@ export function createResidentEventScene(workMarkers:readonly Marker[],floor:(x:
    for(let i=0;i<6;i++)box(-.32+i*.045,1.04,.274,.015,.24,.012,'#46524d');
    art.ring([x+.23,y+1.07,z+.28],.12,.018,'#c0a56b');
    if(a.kind==='ground'){art.beam([x-.45,y+.9,z],[x-.7,y+.08,z+.12],.025,'#736338');box(-.7,.1,.12,.15,.2,.06,'#b9a06e');const clip=movable(prop,'GroundingClip',[.18,.07,.07],[-.47,.9,.16],materials.brass);dynamics.set('clip',clip);}
-   if(a.kind==='observe'){art.beam([x,y+1.3,z],[x,y+2.3,z],.035,'#b39c6f');art.beam([x-.4,y+2.2,z],[x+.4,y+2.2,z],.025,'#8a989b');}
+   if(a.kind==='observe'){art.beam([x,y+1.3,z],[x,y+2.3,z],.035,'#b39c6f');art.beam([x-.4,y+2.2,z],[x+.4,y+2.2,z],.025,'#8a989b');journeyLamps=new THREE.InstancedMesh(new THREE.BoxGeometry(.045,.065,.018),new THREE.MeshBasicMaterial({color:0xffffff}),5);journeyLamps.name='JourneyReceivingChannels';for(let i=0;i<5;i++){journeyLamps.setMatrixAt(i,new THREE.Matrix4().makeTranslation(-.29+i*.12,1.12,.282));journeyLamps.setColorAt(i,new THREE.Color('#53646a'));}prop.add(journeyLamps);}
    if(a.kind==='tune'){const knob=movable(prop,'DialPointer',[.025,.14,.045],[.23,1.07,.315],materials.ink);dynamics.set('dial',knob);for(let i=0;i<3;i++){const angle=(i-1)*.85;box(.23+Math.sin(angle)*.17,1.07+Math.cos(angle)*.17,.28,.025,.025,.025,'#4a514c');}}
   }else if(a.kind==='order'||a.kind==='stamp'){
    legTable(1.5,1);for(let i=0;i<3;i++){art.paper(x+(i-1)*.36,y+.82,z,.34,.65);}
@@ -104,6 +105,7 @@ export function createResidentEventScene(workMarkers:readonly Marker[],floor:(x:
   for(const prop of props.values())prop.visible=prop.position.distanceToSquared(position)<160*160;
   carried.visible=!!carrying;carried.position.copy(position).add(new THREE.Vector3(.3,1,-.35));carried.scale.y=carrying==='page'?.12:1;carried.material=carrying==='page'?materials.paper:materials.cloth;
   pulse.visible=(time%1.6<.15)||(time%1.6>.35&&time%1.6<.5);
+  if(journeyLamps){journeyLamps.visible=dramaActive(done);const state=regions.map(r=>done.has(r==='alpha'?JOURNEY_DRAMA.opening:JOURNEY_DRAMA.report(r))?'1':'0').join('')+dramaDecision(done);if(state!==journeyLampState){journeyLampState=state;for(let i=0;i<5;i++)journeyLamps.setColorAt(i,new THREE.Color(state[i]==='1'?(dramaDecision(done)==='watch'?'#e5be74':'#89d6cb'):'#53646a'));journeyLamps.instanceColor!.needsUpdate=true;}}
   dynamics.get('dial')!.rotation.z=-((done.has('campaign_alpha_worked')?1:dial)-1)*.85;dynamics.get('clip')!.position.y=done.has('campaign_alpha_work_step_1')?.15:.9;
   show('order',!done.has('campaign_britain_worked')&&!done.has('campaign_britain_work_step_1'));for(let i=0;i<3;i++)show(`stamp${i}`,done.has('campaign_britain_worked'));
   for(const a of RESIDENT_ACTIONS)if(a.fact&&dynamics.has(a.id))show(a.id,done.has(a.fact)||done.has(`campaign_${a.region}_worked`));
@@ -114,6 +116,6 @@ export function createResidentEventScene(workMarkers:readonly Marker[],floor:(x:
   for(let i=0;i<3;i++){show(`wet${i}`,i>=dried+(carrying==='page'?1:0));const page=dynamics.get(`page${i}`)!;page.visible=done.has('campaign_kyoto_worked')||done.has(`resident_kyoto_page_${i+1}`);page.rotation.z=done.has('campaign_kyoto_worked')?0:Math.sin(time*3+i)*.025;}
  }
  return{root,markers,props,origins,apply,carried,horseSpot:markers.find(m=>m.id==='resident_winter_horse')!.p,
-  dispose(){const geometries=new Set<THREE.BufferGeometry>(),mats=new Set<THREE.Material>();root.traverse(o=>{if(o instanceof THREE.Mesh){geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geometries.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());for(const art of arts.values()){Object.values(art.materials).forEach(m=>{if(!mats.has(m))m.dispose();});art.solids.forEach(g=>g.dispose());}root.removeFromParent();},
+  dispose(){const geometries=new Set<THREE.BufferGeometry>(),mats=new Set<THREE.Material>();root.traverse(o=>{if(o instanceof THREE.Mesh){if(o instanceof THREE.InstancedMesh)o.dispose();geometries.add(o.geometry);for(const m of Array.isArray(o.material)?o.material:[o.material])mats.add(m);}});geometries.forEach(g=>g.dispose());mats.forEach(m=>m.dispose());for(const art of arts.values()){Object.values(art.materials).forEach(m=>{if(!mats.has(m))m.dispose();});art.solids.forEach(g=>g.dispose());}root.removeFromParent();},
  };
 }
