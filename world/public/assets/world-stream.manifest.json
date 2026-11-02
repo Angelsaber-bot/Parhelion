@@ -1,0 +1,27 @@
+{
+  "alpha": {
+    "source": 3806384,
+    "core": 2099820,
+    "visual": 1960172
+  },
+  "britain": {
+    "source": 6134280,
+    "core": 2270136,
+    "visual": 4129976
+  },
+  "blacksail": {
+    "source": 4761928,
+    "core": 2054008,
+    "visual": 3010884
+  },
+  "winter": {
+    "source": 6540268,
+    "core": 2204616,
+    "visual": 4615648
+  },
+  "kyoto": {
+    "source": 12330884,
+    "core": 2315744,
+    "visual": 10320988
+  }
+}

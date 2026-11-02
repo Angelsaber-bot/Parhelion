@@ -31,10 +31,10 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean; reloadMode?: 'noop' | 'throw'; exposeEraActors?: boolean } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean; reloadMode?: 'noop' | 'throw'; exposeEraActors?: boolean; streaming?: boolean } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
-  const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
+  const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}${options.streaming?'':'&eager'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
   // Test-only pre-boot snapshots exercise the real migration path, not post-boot flag injection.
   for (const [key, value] of Object.entries(options.initialStorage ?? {})) window.localStorage.setItem(key, value);
   const errors:unknown[][]=[],warnings:unknown[][]=[],frames:FrameRequestCallback[]=[];

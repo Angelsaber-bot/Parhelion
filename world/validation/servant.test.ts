@@ -151,3 +151,12 @@ test('lossless runtime transport accepts gzip or an already HTTP-decoded GLB and
   try {globalThis.fetch=async()=>new Response('unavailable',{status:503});await assert.rejects(loadServantGltf('/local-test-only'),/HTTP 503/);}
   finally{globalThis.fetch=original;}
 });
+
+test('unselected distant Saber releases owned art after residency grace and reloads when selected again',async()=>{
+ const first=model(),second=model(),assets=[first,second],done=new Set(['saber_contract','blackbeard_contract']);
+ const f=fixture(done,async()=>assets.shift()!.gltf);await f.servant.ensureLoaded();
+ f.contract.select('blackbeard');(f.servant as any).lastNeeded=performance.now()-16000;
+ f.servant.update(.05,new THREE.Vector3(1000,0,0),0,true,false);
+ assert.equal(f.servant.presentationModel,null);assert.equal(f.servant.activeOutfit,undefined);assert.deepEqual(first.disposed,{geometry:1,material:1,texture:1});assert.equal(done.has('saber_contract'),true);
+ f.contract.select('saber');f.servant.update(.05,new THREE.Vector3(1000,0,0),0,true,false);await f.servant.ensureLoaded();assert.equal(f.loads(),2);assert.ok(f.servant.presentationModel);assert.equal(f.contract.selected,'saber');f.servant.dispose();assert.deepEqual(second.disposed,{geometry:1,material:1,texture:1});
+});

@@ -13,11 +13,12 @@ export interface RelayChannelFrame {
   damageRevision: number;
 }
 export class RelayChannel {
+  constructor(private readonly seconds = RELAY_CHANNEL_SECONDS) { if(!Number.isFinite(seconds)||seconds<=0)throw new Error('Invalid channel duration'); }
   private elapsed = 0;
   private releaseRequired = true;
   private finished = false;
   private damageRevision = 0;
-  get progress() { return this.elapsed / RELAY_CHANNEL_SECONDS; }
+  get progress() { return this.elapsed / this.seconds; }
   get requiresRelease() { return this.releaseRequired; }
   reset(damageRevision = 0) {
     this.elapsed = 0; this.releaseRequired = true; this.finished = false;
@@ -42,9 +43,9 @@ export class RelayChannel {
     }
     if (this.releaseRequired || !Number.isFinite(frame.dt) || frame.dt <= 0) return result();
     // Never turn a resumed/background frame into three seconds of free capture.
-    this.elapsed = Math.min(RELAY_CHANNEL_SECONDS, this.elapsed + Math.min(frame.dt, .05));
-    if (this.elapsed + 1e-9 >= RELAY_CHANNEL_SECONDS) {
-      this.elapsed = RELAY_CHANNEL_SECONDS; this.finished = true;
+    this.elapsed = Math.min(this.seconds, this.elapsed + Math.min(frame.dt, .05));
+    if (this.elapsed + 1e-9 >= this.seconds) {
+      this.elapsed = this.seconds; this.finished = true;
       return result(null, true);
     }
     return result();

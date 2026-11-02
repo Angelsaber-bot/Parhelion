@@ -1,3 +1,6 @@
+import {regionAt} from './regions';
+import {ADVENTURE,adventureActive,adventureChapterComplete} from './openWorldCampaign';
+import {WORLD_RIFLE,rifleDistanceMultiplier} from './worldBalance';
 import { ECHO_WARDEN, chooseEchoWardenAttack, echoWardenTiming, echoWardenRadius, echoWardenDamage } from './echoWarden';
 import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
@@ -29,7 +32,7 @@ export interface CombatTerrain {
   lineOfSight(from: Point3, to: Point3): boolean;
 }
 export const COMBAT = {
-  playerHp: 100, shotDamage: 16, shotInterval: 0.14, shotRange: 150, shotBurst: 8, shotVent: 1.1, meleePunish: 2,
+  playerHp: 100, shotDamage: WORLD_RIFLE.damage, shotInterval: WORLD_RIFLE.interval, shotRange: WORLD_RIFLE.enemyRange, shotBurst: WORLD_RIFLE.burst, shotVent: WORLD_RIFLE.vent, meleePunish: 2,
   wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 35, bossLeash: 68, bossHp: 1800,
 } as const;
@@ -184,8 +187,7 @@ export function isMeleePunishWindow(e: Pick<Enemy, 'mode' | 'staggerCooldown'>):
 }
 /** Rifle still interacts with distant quest targets; only enemy damage falls off. */
 export function rangedDamageMultiplier(distance: number): number {
-  if (!Number.isFinite(distance)) return .45;
-  return Math.max(.45, 1 - Math.min(1, Math.max(0, (distance - 18) / 47)) * .55);
+  return rifleDistanceMultiplier(distance);
 }
 
 /** Timings are shared with animation playback; each slash in a pair has its own full tell. */
@@ -221,6 +223,7 @@ export class WorldCombatState {
   private readonly knight: Enemy | undefined;
   private relayPacified = false;
   private roadPacified = false;
+  private peaceSignature='';
   private readonly roadEnemies: Enemy[];
   private readonly relayEnemies: Enemy[];
   quietKyotoRoute = false;
@@ -274,7 +277,7 @@ export class WorldCombatState {
   resetAll(cleared: boolean | boolean[] = false) {
     this.clearStoryEnemies();
     this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
-    this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
+    this.peaceSignature='';this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
     this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
     for (const e of this.enemies) { e.pacified = false; this.resetEnemy(e); }
     this.bosses.forEach((b, i) => {
@@ -293,6 +296,8 @@ export class WorldCombatState {
     this.bossStarted = false; this.resetEnemy(this.boss); this.events.push({ type: 'bossReset' });
   }
   syncWorldFlags(done: ReadonlySet<string>) {
+    const peace=['britain','blacksail','winter','kyoto'].filter(r=>adventureActive(done)&&adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',done));
+    const signature=peace.join(',');if(signature!==this.peaceSignature){this.peaceSignature=signature;for(const e of this.enemies){if(e.kind==='king'||e.miniboss||e.storyEncounter)continue;const peaceful=peace.includes(regionAt(e.home.x,e.home.z).id)||(done.has(KNIGHT_TRIAL_CLEAR)&&this.roadEnemies.includes(e))||(done.has('relay_b')&&this.relayEnemies.includes(e));if(e.pacified!==peaceful){e.pacified=peaceful;this.resetEnemy(e);}}}
     this.quietKyotoRoute = done.has('kyoto_lantern_route');
     if (done.has(KNIGHT_TRIAL_CLEAR) && !this.trialReplay && this.knight?.mode !== 'dead') this.retireOptionalTrial();
     const safeRoad = done.has(KNIGHT_TRIAL_CLEAR);
@@ -319,6 +324,12 @@ export class WorldCombatState {
     if (id !== KNIGHT_TRIAL_ID || !enemy || this.bossStarted || this.defeated || this.trialPending || !['idle', 'dead'].includes(enemy.mode)) return false;
     this.trialPending = true; this.trialReplay = true; return true;
   }
+  interruptEnemy(id:string,seconds=.8):boolean {
+    const enemy=this.enemies.find(e=>e.id===id);
+    if(!enemy||!enemy.active||enemy.hp<=0||enemy.pacified||enemy.mode!=='windup'||enemy.staggerCooldown>0||!Number.isFinite(seconds)||seconds<=0)return false;
+    enemy.mode='stagger';enemy.timer=Math.min(1,seconds);enemy.staggerCooldown=enemy.kind==='king'?10:5;enemy.contactSequence=0;
+    this.events.push({type:'stagger',id});return true;
+  }
   recoverAtSettlement(amount: number): boolean {
     if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return false;
     this.hp = Math.min(COMBAT.playerHp, this.hp + Math.min(25, amount)); return true;
@@ -335,10 +346,14 @@ export class WorldCombatState {
   hitEnemy(id: string, damage: number = COMBAT.shotDamage, context?: HitContext) {
     const e = this.enemies.find(e => e.id === id);
     if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
+    if(context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>WORLD_RIFLE.enemyRange)return false;
     // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
     const melee = context?.source === 'melee';
     const punish = melee && isMeleePunishWindow(e);
-    const dealt = Math.min(e.hp, Math.round(damage * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const ranged=context?.source==='ranged';
+    const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
+    const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
+    const dealt = Math.min(e.hp, Math.round(damage * opening * armor * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish });
     if (e.hp <= 0) {

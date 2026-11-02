@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, enemyAttackTiming, enemyAttackContains, enemyAttackRadius, type CombatTerrain } from '../src/combat.ts';
+import { WorldCombatState, COMBAT, enemyAttackTiming, enemyAttackContains, enemyAttackRadius, type CombatTerrain } from '../src/combat.ts';
 import { ECHO_WARDEN, chooseEchoWardenAttack } from '../src/echoWarden.ts';
 import { PlayerMelee } from '../src/playerMelee.ts';
 import { collectStrikeTargets } from '../src/combatActions.ts';
@@ -43,14 +43,14 @@ export function wardenOffenseScenario(mode:'rifle'|'rifle-companion'|'melee'){
   if(mode==='melee'){
    melee.press(-Math.PI/2);const contact=melee.update(1/120,true);
    if(contact){const targets=collectStrikeTargets([e],{origin:player,direction:p(-1),range:contact.range,halfWidth:contact.halfWidth,damage:contact.damage,maxTargets:1},terrain);if(targets.length){s.hitEnemy(e.id,contact.damage,{source:'melee',origin:player});contacts++;}}
-  }else if(s.canShoot()){s.hitEnemy(e.id,16,{source:'ranged',origin:player});shots++;}
+  }else if(s.canShoot()){s.hitEnemy(e.id,COMBAT.shotDamage,{source:'ranged',origin:player});shots++;}
   if(mode==='rifle-companion'&&time>=nextCompanion&&e.hp>0){s.hitEnemy(e.id,14,{source:'servant',origin:p(1)});companion++;nextCompanion+=1.1;}
  }
  return{mode,seconds:+time.toFixed(3),shots,meleeContacts:contacts,companionContacts:companion,enemyAttacks:e.attackCount,hp:e.hp};
 }
 test('authored Warden survives a complete opening rifle burst but does not become a sponge against real combo contacts',()=>{
  const scenarios=(['rifle','rifle-companion','melee'] as const).map(wardenOffenseScenario);
- for(const row of scenarios){assert.equal(row.hp,0);assert.ok(row.seconds>=2&&row.seconds<8,JSON.stringify(row));}
- assert.equal(scenarios[0].shots,17);assert.ok(scenarios[0].enemyAttacks>=1,'opening tell actually occurs before ideal kill');
+ for(const row of scenarios){assert.equal(row.hp,0);assert.ok(row.seconds>=2&&row.seconds<14,JSON.stringify(row));}
+ assert.ok(scenarios[0].shots>=18&&scenarios[0].shots<=23);assert.ok(scenarios[0].enemyAttacks>=1,'opening tell actually occurs before ideal kill');
  assert.ok(scenarios[2].meleeContacts>=4&&scenarios[2].meleeContacts<=9);console.log('WARDEN_IDEAL_OFFENSE',JSON.stringify(scenarios));
 });

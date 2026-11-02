@@ -13,11 +13,11 @@ for (const fps of AUDIT_FPS) test(`actual main frame at ${fps}FPS preserves exac
   assert.equal(result.combatProtectedTicks, 2, 'same20Hz impact samples at all display rates');
 });
 
-test('held fire preserves long-run cadence and8-round vent across27/30/60/120FPS', () => {
+test('held fire preserves long-run cadence and6-round vent across27/30/60/120FPS', () => {
   const runs = AUDIT_FPS.map(fps => auditHeatFrame(fps, 60));
   assert.equal(new Set(runs.map(r => r.shots)).size, 1, JSON.stringify(runs));
-  assert.ok(runs[0].shots >= 230 && runs[0].shots <= 234, 'roughly3.85 sustained rounds/s, not unlimited auto fire');
-  for (const run of runs) assert.ok(Math.abs(run.ventSeconds - 1.1) <= 1 / run.fps + 1e-9, JSON.stringify(run));
+  assert.ok(runs[0].shots >= 160 && runs[0].shots <= 164, 'roughly2.7 sustained rounds/s, not unlimited auto fire');
+  for (const run of runs) assert.ok(Math.abs(run.ventSeconds - 1.35) <= 1 / run.fps + 1e-9, JSON.stringify(run));
   const state = new WorldCombatState([], []);
   for (let i = 0; i < 100; i++) state.step(.05, { x: 0, y: 0, z: 0 }, true, { walk: () => null, lineOfSight: () => true });
   assert.equal(state.canShoot(), true); assert.equal(state.canShoot(), false, 'long idle never banks an immediate second shot');

@@ -1,3 +1,4 @@
+import {adventureTravelOpen} from '../src/openWorldCampaign';
 /** Actual compressed-asset / production Player / production state-loop checks. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -32,7 +33,7 @@ const progress = new WorldProgress();
 const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
 const stateLoop = main.slice(main.indexOf('  for (const g of gates) {'), main.indexOf('  for (const g of solids)'));
 assert.ok(stateLoop.includes('c.enabled = !open'), 'execute actual production gate loop');
-const apply = () => runInNewContext(stateLoop, { gates, done: progress.done,
+const apply = () => runInNewContext(stateLoop, { adventureTravelOpen,gates, done: progress.done,
   byName: (name: string) => mesh(name), collider: (name: string) => colliders.find(c => c.name === name) });
 const idle = { x: 0, z: 0, jump: false, sprint: false };
 function drive(p: Player, direction: THREE.Vector2, seconds = 1.4, jump = false) {

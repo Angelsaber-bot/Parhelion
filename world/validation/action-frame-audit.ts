@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player';
 import { WorldActions } from '../src/worldActions';
-import { WorldCombatState } from '../src/combat';
+import { WorldCombatState, COMBAT } from '../src/combat';
 
 export const AUDIT_FPS = [27, 30, 60, 120] as const;
 const STEP = 1 / 120;
@@ -42,7 +42,7 @@ export function auditEvadeFrame(fps: number) {
   const context = vm.createContext({ frameClockInvalid: false, frameUltimate: () => false, deferredCombatToast: null, now: 0, last: 0, acc: 0, STEP, actions, player, combat,
     gameplayActive: () => true, down: () => false, cold: { frozen: false }, camera: {},
     keys: { clear() {} }, aim: { clear() {} }, audio: { setActive() {} }, fortCannon: { update() {} },
-    locked: true, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },
+    locked: true, dragLook: false, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },
   });
   actions.press('evade');
   for (let f = 1; f <= fps; f++) { context.now = f / fps * 1000; productionTick.runInContext(context); }
@@ -57,7 +57,7 @@ export function auditHeatFrame(fps: number, seconds = 10) {
   for (let f = 0; f < fps * seconds; f++) {
     acc += 1 / fps;
     while (acc + 1e-9 >= .05) { state.step(.05, { x: 0, y: 0, z: 0 }, true, { walk: () => null, lineOfSight: () => true }); acc = Math.max(0, acc - .05); }
-    if (state.canShoot()) { shots++; if (shots === 8) firstVent = (f + 1) / fps; if (shots === 9) firstResume = (f + 1) / fps; }
+    if (state.canShoot()) { shots++; if (shots === COMBAT.shotBurst) firstVent = (f + 1) / fps; if (shots === COMBAT.shotBurst+1) firstResume = (f + 1) / fps; }
   }
   return { fps, shots, firstVent, firstResume, ventSeconds: firstResume - firstVent };
 }

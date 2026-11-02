@@ -155,7 +155,7 @@ export async function writeRegion(r: RegionOut) {
  * MeshoptDecoder and folds the dequantization back into the geometry (src/glb.ts), so every mesh node
  * must carry an identity transform here.
  */
-async function compress(glb: Uint8Array, exactWeld = false) {
+export async function compress(glb: Uint8Array, exactWeld = false) {
   await MeshoptEncoder.ready;
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder });
   const doc = await io.readBinary(glb);

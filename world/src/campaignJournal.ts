@@ -66,7 +66,7 @@ export function createCampaignJournal(options: CampaignJournalOptions) {
     const focusDispatch = focused?.dataset.campaignDispatchTrack !== undefined;
     const entries = getCampaignEpisodeJournal(options.done());
     title.textContent = options.pinArc ? bilingual('主线续篇与归路纪事', 'Campaign & Way Home Chronicles') : bilingual('归路纪事', 'Chronicles of the Way Home');
-    intro.textContent = options.pinArc ? bilingual('追踪伪晓讯号，或停下来认识五处守候的人。这里记录你的下一步；不会替你远程操作，也不会改写原来的道路。', 'Trace the False Dawn signal, or stop to meet the five people keeping watch. This journal records the next step; it cannot perform work remotely or rewrite the original roads.') : bilingual('五处灯火，五个留下守候的人。这些现场故事伴随主线发生，不会锁住原来的道路；已完成主线也能回来亲手安排。', 'Five lights, five people keeping watch. These field stories accompany the main campaign without locking its roads. You can undertake them even after finishing the main story.');
+    intro.textContent = bilingual('选择一段故事，查看下一步。', 'Choose a story to see the next step.');
     summary.textContent = bilingual(`已落实 ${entries.filter(entry => entry.state.completed).length}/5 · 追踪只设置路标；安排必须到现场确认。`, `Resolved ${entries.filter(entry => entry.state.completed).length}/5 · Tracking only sets a waypoint; decisions must be made at the site.`);
     main.textContent = bilingual('返回主线指引', 'Restore main-story guidance'); close.textContent = bilingual('返回', 'Back');
     list.replaceChildren();

@@ -49,6 +49,8 @@ export function createActionHud(label:(action:string)=>string){
   root.hidden=!visible;banner.hidden=!visible||performance.now()>bannerUntil;if(!visible)return;
   for(const item of rows){
    const state=actionPresentation(actions,item.id);set(item.key,label(item.id));set(item.name,state.name);set(item.value,state.status);
+   item.row.dataset.cooldown=state.cooldown>.001?`${(Math.ceil(state.cooldown*10)/10).toFixed(1)}s`:'';
+   item.row.setAttribute('aria-label',`${state.name} · ${label(item.id)} · ${state.status}`);item.row.title=`${state.name} · ${state.status}`;
    item.row.classList.toggle('cooling',state.cooldown>.001);item.row.classList.toggle('unavailable',!state.available);item.row.classList.toggle('chain-open',state.chaining);item.row.classList.toggle('action-ready',state.available);
   }
   const energy=Math.min(100,Math.max(0,Math.floor(actions.skills.energy)));

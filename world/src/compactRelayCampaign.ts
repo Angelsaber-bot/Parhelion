@@ -17,6 +17,7 @@ export function completeCompactRelay(done:Set<string>):boolean{
  done.add(COMPACT_RELAY.complete);return true;
 }
 export function getCompactRelayIntro(done:ReadonlySet<string>):Localized{
+ if(done.has('adventure_v2'))return ['求援讯号正在重复未来才会发生的呼叫。先接通服务庭院控制柜，恢复最低外联，再去核对现场。\n正街低墙与北侧维修路都能到达机柜。站稳按住交互键三秒；移动、受伤和攻击会中断。接通后，停战指令会终止这组巡卫的攻击，四条出谷道路会开放。','The receiver repeats a distress call before it happens. Restore the minimum uplink at the service-yard cabinet, then compare it with the world.\nUse front cover or the north maintenance flank. Stand still and hold Interact for three seconds; movement, damage and attacks interrupt. Connecting sends the patrol a ceasefire and opens the four roads out of the Valley.'];
  const reward=done.has(COMPACT_RELAY.complete)
   ?['部署权限已保留。这次可以换条路线重练，不会重复领奖。','Your deployment access is retained. Try the other approach; replay does not grant another reward.']
   :['首次完成就在现场开放部署板，可自愿前往旧前哨站门外；不会替你启动中继器 B。','Your first completion opens the deployment board here: optionally travel to the old outpost gate. It does not activate Relay B for you.'];

@@ -1,0 +1,49 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {ADVENTURE as A,getAdventureGuide,getCurrentAdventureGuide,adventureTravelOpen,harborBridgeReady,winterRouteReady,adventureChapterComplete} from '../src/openWorldCampaign';
+import {createAdventureRuntime} from '../src/adventureRuntime';
+import {ADVENTURE_ACTIONS} from '../src/adventureSites';
+import {getEraBossRequirements,getEraPieceRequirements} from '../src/eraStories';
+import {RelayChannel} from '../src/relayChannel';
+function setup(flags:string[]=[]){const done=new Set([A.started,'armory_rack',...flags]),actions=new Map(ADVENTURE_ACTIONS.map(a=>[a.id,a]));let saves=0,damage=0,near=true,encounter:string|null=null;
+ const runtime=createAdventureRuntime({done,actions,path:[[0,0,0],[2,0,0],[4,0,0]],reachable:()=>near,save:()=>{saves++;return true;},changed(){},toast(){},damage:()=>damage,supply:()=>true,encounter:()=>encounter,start:spec=>{encounter=spec.id;return{ok:true};},cancel(){encounter=null;},moveCart:()=>true});
+ const frame={dt:1/60,held:false,playable:true,inRange:true,grounded:true,moving:false,attacking:false};
+ const hold=(id:string)=>{runtime.interact(id);runtime.update(frame);for(let n=0;n<200;n++)runtime.update({...frame,held:true});runtime.update(frame);};
+ return{done,runtime,frame,hold,get saves(){return saves;},set damage(n:number){damage=n;},set near(b:boolean){near=b;}};
+}
+test('adventure: minimum uplink opens travel without forging old tower/seam/summon facts',()=>{
+ const h=setup();assert.equal(adventureTravelOpen(h.done),false);h.done.add(A.online);assert.ok(adventureTravelOpen(h.done));
+ assert.equal(getAdventureGuide('alpha',h.done)?.targetId,'saber_contract');for(const old of ['tower_console','summon_circle','relay_a','relay_b'])assert.equal(h.done.has(old),false);
+});
+test('adventure: harbor accepts both preparations, records before or after boss and requires true disembarkation',()=>{
+ const h=setup(['blackbeard_meet']);assert.equal(harborBridgeReady(h.done),false);h.hold('adventure_harbor_rigging');assert.ok(harborBridgeReady(h.done));assert.deepEqual(getEraPieceRequirements('Ghost_Bridge',h.done),[]);
+ h.runtime.interact('adventure_harbor_depart');assert.equal(h.done.has(A.departed),false);
+ h.done.add('sea_core');assert.equal(getAdventureGuide('blacksail',h.done)?.targetId,A.records);h.hold(A.records);assert.equal(getAdventureGuide('blacksail',h.done)?.targetId,'adventure_harbor_exit');
+ h.runtime.interact('adventure_harbor_exit');h.runtime.interact('adventure_harbor_depart');assert.equal(h.done.has(A.departed),false);for(let i=0;i<1801;i++)h.runtime.update(h.frame);assert.ok(h.done.has(A.departed));h.done.add('blackbeard_contract');assert.ok(adventureChapterComplete('blacksail',h.done));
+ const before=h.saves;h.runtime.interact('adventure_harbor_depart');assert.equal(h.saves,before);
+ const cannon=setup(['blackbeard_meet','fort_cannon','ghost_boat_1','ghost_boat_2','ghost_boat_3']);assert.ok(harborBridgeReady(cannon.done));assert.equal(cannon.done.has(A.harborSide),false);
+});
+test('adventure: winter route choice, two real braces, convoy checkpoints, pause and arrival authority',()=>{
+ const h=setup(['napoleon_meet','shard_bell','winter_core']);assert.ok(winterRouteReady(h.done));h.runtime.hit(A.brace1);assert.equal(h.done.has(A.road),false);h.runtime.hit(A.brace2);assert.ok(h.done.has(A.road));
+ h.runtime.interact('adventure_winter_arrival');assert.equal(h.done.has(A.arrived),false);h.runtime.interact('adventure_winter_convoy');
+ for(let i=0;i<400;i++)h.runtime.update({...h.frame,playable:false});assert.equal(h.runtime.cartProgress,0);
+ for(let i=0;i<400;i++)h.runtime.update(h.frame);assert.equal(h.runtime.cartProgress,1);assert.ok(h.done.has('adventure_cart_leg_2'));assert.equal(h.done.has(A.arrived),false);
+ h.runtime.interact('adventure_winter_arrival');h.done.add('napoleon_contract');assert.ok(adventureChapterComplete('winter',h.done));
+ h.runtime.reset();assert.equal(h.runtime.cartProgress,1);
+});
+test('adventure: Kyoto before companion and final journey checks preserve committed facts on cancellation',()=>{
+ const h=setup(['musashi_meet','kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']);assert.equal(getAdventureGuide('kyoto',h.done)?.targetId,'fire_core');assert.equal(h.done.has('saber_contract'),false);
+ h.hold(A.water);assert.ok(h.done.has(A.water));h.hold(A.evidence);assert.equal(h.done.has(A.evidence),false);h.done.add('fire_core');h.hold(A.evidence);assert.ok(h.done.has(A.evidence));
+ h.hold(A.emitters[0]);assert.equal(h.done.has(A.emitters[0]),false,'local repairs cannot bypass four region outcomes');
+ for(const f of ['sun_core','sea_core','blackbeard_contract',A.departed,'winter_core','napoleon_contract',A.arrived,'musashi_contract'])h.done.add(f);
+ for(const id of A.emitters)h.hold(id);assert.ok(A.emitters.every(id=>h.done.has(id)));
+ h.runtime.interact('adventure_tower');assert.equal(h.done.has(A.takeover),false);
+ h.runtime.interact('adventure_guardian');assert.ok(h.runtime.victory('adventure_guardian'));h.hold('adventure_tower');h.runtime.interact('adventure_exit');h.runtime.interact('adventure_tomorrow');assert.ok(h.done.has(A.ending));assert.equal(getAdventureGuide('alpha',h.done),null);
+});
+test('channel authored durations do not change with frame rate or allow hidden time',()=>{
+ for(const dt of[1/120,1/60,.05]){const c=new RelayChannel(2),frame={dt,held:false,active:true,playable:true,inRange:true,grounded:true,moving:false,attacking:false,damageRevision:0};c.update(frame);let seconds=0;while(c.progress<1&&seconds<3){c.update({...frame,held:true});seconds+=dt;}assert.ok(Math.abs(seconds-2)<.051);}
+});
+
+test('default guide advances after a local chapter and preparation tracks only remaining actions',()=>{const done=new Set([A.started,A.online,'armory_rack','saber_contract','sun_core']);assert.equal(getCurrentAdventureGuide('britain',done)?.targetId,'blackbeard_meet');done.add('napoleon_meet');done.add('beacon_1');assert.equal(getAdventureGuide('winter',done)?.targetId,'beacon_2');done.add('blackbeard_meet');done.add('fort_cannon');done.add('ghost_boat_1');assert.equal(getAdventureGuide('blacksail',done)?.targetId,'ghost_boat_2');});
+
+test('adventure respects contract-only legacy victories without requiring another first-clear boss',()=>{const harbor=setup(['blackbeard_meet','blackbeard_contract',A.records]);assert.equal(getAdventureGuide('blacksail',harbor.done)?.targetId,'adventure_harbor_exit');harbor.runtime.interact('adventure_harbor_exit');assert.ok(harbor.done.has(A.exited));const winter=setup(['napoleon_meet','napoleon_contract','shard_bell',A.road]);assert.equal(getAdventureGuide('winter',winter.done)?.targetId,'adventure_winter_convoy');const kyoto=setup(['musashi_meet','musashi_contract','kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']);assert.equal(getAdventureGuide('kyoto',kyoto.done)?.targetId,A.evidence);});

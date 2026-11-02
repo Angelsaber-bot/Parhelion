@@ -1,0 +1,84 @@
+{
+  "date": "2026-11-01T19:46:04.940216-06:00",
+  "scope": "World five-region adventure: records hold, local cavalry, differentiated resident work/leisure, finished passage/facility art, streaming and rifle balance",
+  "base_commit": "37e8143e3bda89969807bba40e3f28d8a161d8aa",
+  "source_snapshot": {
+    "sha256": "44240fab4eb1bc4c4c1d22099d68a276d6a85aa278fb73e155b6527c0a0a7f14",
+    "files": 191
+  },
+  "full_suite": {
+    "command": "npm run test:ci",
+    "cwd": "world",
+    "tests": 1745,
+    "passed": 1745,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "duration_ms": 711343.340125,
+    "log": "full-regression.log"
+  },
+  "followup_after_final_visual_compatibility": {
+    "command": "node --import tsx --test --test-concurrency=1 validation/remaining-content.test.ts validation/adventure-world.test.ts validation/quest-guide-catalog.test.ts validation/local-cavalry-ownership.test.ts",
+    "cwd": "world",
+    "tests": 16,
+    "passed": 16,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "duration_ms": 26158.671084,
+    "log": "handoff-regression.log"
+  },
+  "production_build": {
+    "command": "npm run build",
+    "cwd": "world",
+    "result": "passed (typecheck + production build)",
+    "log": "production-build.log",
+    "warning": "Vite reports the existing large application bundle; region/model payloads stream separately."
+  },
+  "diff_check": "passed",
+  "real_geometry_and_input": [
+    "Both ship hatches walk down and back up through carved shipped core collision",
+    "Every new interaction has grounded body clearance",
+    "Alarm guards spawn, breaker cancels pursuit, boss waits for resolution",
+    "Real F-key chains complete five different resident jobs",
+    "Actual turtle stones succeed and adjacent wading fails the dry-shoe challenge",
+    "Carried cloth/pages follow actual rig palms; weapons stay unavailable while carrying",
+    "Camera stays inside new hold bulkheads",
+    "Existing Napoleon model performs real mounted contact without changing the selected companion",
+    "Inactive local support never cancels ordinary companion skills; pause cannot refund the 24-second support cooldown",
+    "Horse actor and contract guide share the grazing location; current selected/recalled companion remains resident",
+    "Map art is downloaded, evicted/disposed and reloaded; failed loads retry and late cancellation cannot install",
+    "Legacy completed resident work projects all completed furnishings without requiring new flags"
+  ],
+  "map_bytes": {
+    "previous_all_maps": 33573744,
+    "permanent_core": 10944324,
+    "default_initial_core_plus_alpha_art": 12904496,
+    "initial_reduction_percent": 61.6,
+    "excludes": "characters, weapons, JavaScript, textures and UI",
+    "normal_visual_residency_limit": 2
+  },
+  "stream_asset_sha256": {
+    "world_alpha.core.glb": "f34931d118113ce050fa68adee0c8b6919da30705312680f9d2340b4570f43bb",
+    "world_blacksail.core.glb": "b6c924d5efc005e394a510951e704c0636315d643f239100454b5a82fb1e6eda",
+    "world_britain.core.glb": "94673eca1c9983e368ba144ea9cd6277ae683c4f894f2793a48d60e697ec52c6",
+    "world_kyoto.core.glb": "cfe6457f7ca557ac59db9bce123d2a97b879d59c203fa2e641ab00f7e0c93b8b",
+    "world_winter.core.glb": "b8bdffc33f4851f0a83cb181e5e0d21c3a69b1486da181264315e72307745127",
+    "world_alpha.visual.glb": "fe92554d08c2cf9f06c6bf6a878c5b2a888cd4e63fb3d9fd2b4883e404fadaca",
+    "world_blacksail.visual.glb": "bc76b1bd72350955c77325ae9055fb130575ffbc9bdab25e752252f9811c762a",
+    "world_britain.visual.glb": "f9a32eb868694b0a3ac64a8f68e55431b535d082c0fa69048e85cad3ddca2a51",
+    "world_kyoto.visual.glb": "8eea4f3a07e79f416ec9153201d36eee10a6b89cb03c6c2dcec1bca9307ce6ac",
+    "world_winter.visual.glb": "9784725f53a50c09487c2e2c876d6d2067dabd91792bb19ed34b1ccadcacca90"
+  },
+  "browser": {
+    "rendering": "Actual WebGL views inspected",
+    "controls": "Explicit drag mode entered after pointer-lock denial; real held W moved player from z=159.0 to z=149.1",
+    "screenshots": [
+      "records-hold.png",
+      "kyoto-passage.png"
+    ],
+    "native_pointer_lock": "Denied in automation; drag/arrow fallback verified",
+    "acceptance_limits": "No blind full-game player study, calibrated playtime or fixed-device long-run FPS claim."
+  },
+  "requested_remaining_implementation": "delivered; gameplay and persistent consequences are wired into production main, not separate mockups"
+}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { WorldCombatState, COMBAT, type CombatTerrain } from '../src/combat';
 const ground: CombatTerrain = { walk: (_p,x,z) => ({x,y:0,z}), lineOfSight: () => true };
-for (const distance of [36,50,65,81]) test(`ranged damage persists beyond pursuit leash at ${distance}m until real defeat`, () => {
+for (const distance of [36,50,65,69]) test(`ranged damage persists beyond pursuit leash at ${distance}m until real defeat`, () => {
   const s = new WorldCombatState([{id:'target',kind:'shade',p:{x:0,y:0,z:0}}],[]), e=s.enemies[0];
   const p={x:distance,y:0,z:0}, origin={...p,y:1.05}; s.step(.05,p,true,ground);
   let shots=0;
@@ -26,3 +26,5 @@ test('pursuit stays bounded, repeated boundary crossings retain damage, real des
   assert.equal(e.mode,'pacified');assert.equal(s.hitEnemy(e.id,500),false);assert.equal(s.hitEnemy('boss',500),false);
   assert.equal(s.beginBoss(new Set()),false);assert.equal(s.beginBoss(new Set(['gate'])),true);assert.equal(s.hitEnemy('boss',5),true);
 });
+
+test('rifle cannot damage or acquire enemies beyond its 70m combat range',()=>{const s=new WorldCombatState([{id:'target',kind:'shade',p:{x:0,y:0,z:0}}],[]);s.step(.05,{x:81,y:0,z:0},true,ground);assert.equal(s.raycast({x:81,y:1,z:0},{x:-1,y:0,z:0},COMBAT.shotRange),null);assert.equal(s.hitEnemy('target',12,{source:'ranged',origin:{x:81,y:0,z:0}}),false);});

@@ -13,7 +13,7 @@ test('NON-GPU production action HUD acknowledges action input on the next frame 
     world.done.add('armory_rack'); world.player.teleport(...stop.position);
     (document.getElementById('start') as HTMLElement).click(); await Promise.resolve();
     for (let i = 0; i < 40; i++) frame();
-    const language = document.querySelector<HTMLSelectElement>('body > .parhelion-language select')!;
+    const language = document.querySelector<HTMLSelectElement>('#start .parhelion-language select')!;
     language.value = 'en'; language.dispatchEvent(new window.Event('change', { bubbles: true })); frame();
     const row = (id: string) => document.querySelector<HTMLElement>(`#world-action-bar [data-action="${id}"]`)!;
     const status = (id: string) => row(id).querySelector('small')!.textContent!;

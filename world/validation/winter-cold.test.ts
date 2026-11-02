@@ -1,3 +1,4 @@
+import {adventureActive,ADVENTURE} from '../src/openWorldCampaign';
 /** Executes the actual production cold update, with exported warmth triggers and a minimal DOM fixture. */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,7 +10,7 @@ function setup(){
  const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8'),section=source.slice(source.indexOf('function updateCold('),source.indexOf('// ───────────── player / input'));
  assert.ok(section.length>900,'production cold updater located');
  const element=()=>({style:{},textContent:'',hidden:false,querySelector:()=>({style:{},textContent:''})});
- const c=vm.createContext({cold:{warmth:100,frozen:false,warned:false},coldHud:element(),frost:element(),warmSpots:layout.markers.filter((m:any)=>/(^|_)warm_/.test(m.id)),player:{pos:{x:0,y:12,z:0},flying:false},done:new Set(),region:'winter',active:true,warnings:0});
+ const c=vm.createContext({adventureActive,cold:{warmth:100,frozen:false,warned:false},coldHud:element(),frost:element(),warmSpots:layout.markers.filter((m:any)=>/(^|_)warm_/.test(m.id)),player:{pos:{x:0,y:12,z:0},flying:false},done:new Set(),region:'winter',active:true,warnings:0});
  Object.assign(c,{regionAt:()=>({id:c.region}),gameplayActive:()=>c.active,bilingual:(_zh:string,en:string)=>en,toast:()=>c.warnings++});
  vm.runInContext(transformSync(section+'\nglobalThis.update=updateCold;', {loader:'ts',format:'cjs'}).code,c);return c;
 }
@@ -23,3 +24,5 @@ test('Everwinter beacon warmth requires its actual quest flag; pause/flying stop
  c.done.add('beacon_1');c.update(1);assert.equal(c.cold.warmth,78);move(c,[0,12,0]);c.active=false;c.update(20);assert.equal(c.cold.warmth,78);
  c.active=true;c.player.flying=true;c.update(20);assert.equal(c.cold.warmth,78);c.player.flying=false;c.done.add('winter_core');c.update(1);assert.equal(c.cold.warmth,100);assert.equal(c.coldHud.hidden,true);assert.equal(c.frost.style.opacity,'0');
 });
+
+test('new adventure cold changes visibility without freezing traversal or sprinting',()=>{const c=setup();c.done.add(ADVENTURE.started);c.update(100);assert.equal(c.cold.warmth,0);assert.equal(c.cold.frozen,false);assert.equal(c.warnings,0);assert.ok(Number(c.frost.style.opacity)<=.25);});

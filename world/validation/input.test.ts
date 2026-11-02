@@ -14,7 +14,7 @@ import { transformSync } from 'esbuild';
 class Target {
   listeners = new Map<string, ((event: any) => unknown)[]>();
   addEventListener(type: string, fn: (event: any) => unknown) { this.listeners.set(type, [...this.listeners.get(type) ?? [], fn]); }
-  emit(type: string, event: Record<string, unknown> = {}) { for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() {}, stopPropagation() {}, repeat: false, shiftKey: false, ...event }); }
+  emit(type: string, event: Record<string, unknown> = {}) { const handler=(this as any)['on'+type];if(typeof handler==='function')handler({preventDefault(){},stopPropagation(){},...event});for (const fn of this.listeners.get(type) ?? []) fn({ preventDefault() {}, stopPropagation() {}, repeat: false, shiftKey: false, ...event }); }
 }
 function setup() {
   const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
@@ -24,14 +24,14 @@ function setup() {
   function $(id: string) {
     if (!elements.has(id)) {
       const classes = new Set<string>();
-      elements.set(id, Object.assign(new Target(), { textContent: '', style: {}, classList: {
+      elements.set(id, Object.assign(new Target(), { textContent: '', style: {}, append(...nodes:any[]){for(const node of nodes)if(node.id)elements.set(node.id,node);}, classList: {
         contains: (s: string) => classes.has(s), remove: (s: string) => classes.delete(s), add: (s: string) => classes.add(s),
         toggle: (s: string, force?: boolean) => { const on = force ?? !classes.has(s); on ? classes.add(s) : classes.delete(s); return on; }
       } }));
     }
     return elements.get(id);
   }
-  const document = Object.assign(new Target(), { pointerLockElement: null as unknown, visibilityState: 'visible', hasFocus: () => true });
+  const document = Object.assign(new Target(), {createElement:()=>Object.assign(new Target(),{textContent:'',hidden:false,style:{}}), pointerLockElement: null as unknown, visibilityState: 'visible', hasFocus: () => true });
   const target = new Target(), canvas = { requestPointerLock: () => Promise.resolve() };
   let actions = 0, shots = 0;
   const createSettingsPanel = (_store: unknown, hooks: { onOpen(): void; onClose(): void }) => ({
@@ -39,7 +39,7 @@ function setup() {
   });
   (document as any).exitPointerLock = () => { document.pointerLockElement = null; document.emit('pointerlockchange'); };
   // Ordinary input fixture: no owned cinematic or presentation resources.
-  const context = vm.createContext({...campaignSourceContext,bootFailed:false, worldExited:false, graphicsRecovery:undefined, servantPanel:{open:false}, invalidateFrameClock(){}, ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
+  const context = vm.createContext({...campaignSourceContext,onLanguageChange(){},bootFailed:false, worldExited:false, graphicsRecovery:undefined, servantPanel:{open:false}, invalidateFrameClock(){}, ultimateDirector: undefined, abortUltimate() {}, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, inspectServant: false, servantRoot: () => ({visible:true}), combat: { defeated: false }, contract: { toggle: () => false, cycle: () => null }, servantName: () => ({ zh: 'Saber', en: 'Saber' }), bilingual: (zh: string) => zh, localizeText: (text: string) => text, languageToggle: { hidden: false }, setLoading: (text: string) => { $('loading').textContent = text; }, resetProgress() {}, ShoulderAim, SettingsStore, createSettingsPanel, shoot() { shots++; }, $, document, canvas, addEventListener: target.addEventListener.bind(target), player: { pos:{x:0,z:0}, flying: false, gliding: false, swimming: false, onGround: true, yaw: 0, pitch: 0 }, THREE: { MathUtils: { clamp: (n: number, min: number, max: number) => Math.max(min, Math.min(n,max)) } }, debugCol: { visible: false }, toast() {}, interactSettlementNpc: () => false, interact() { actions++; }, save() {}, applyWorldState() {}, done: new Set(['relay_b']), found: new Set(['secret_cave']), layout: { areas: [] }, spawnAt() {} });
   vm.runInContext(transformSync(section + '\nglobalThis.state = {keys, aim, settings, settingsPanel, down, get locked(){return locked}};', { loader: 'ts', format: 'cjs' }).code, context);
   return { $, document, target, canvas, context, actions: () => actions, shots: () => shots, lock() { document.pointerLockElement = canvas; document.emit('pointerlockchange'); } };
 }
@@ -249,4 +249,14 @@ test('explicit boot, exit and graphics dependencies reject input without masking
   for(const code of ['KeyW','KeyF','Mouse0'])s.target.emit(code==='Mouse0'?'mousedown':'keydown',{code,button:0});
   assert.equal(s.context.state.keys.size,0);assert.equal(s.actions(),0);assert.equal(s.shots(),0);
  }
+});
+
+test('pointer-lock failure exposes explicit drag controls; right-drag looks, normal mouse motion does not, Escape pauses',async()=>{
+ const s=setup();s.canvas.requestPointerLock=()=>Promise.reject(new Error('Pointer lock denied'));
+ s.$('start').emit('click');await new Promise<void>(resolve=>setImmediate(resolve));assert.equal(s.$('world-drag-controls').hidden,false);
+ s.$('world-drag-controls').emit('click');assert.equal(s.context.state.locked,true);
+ s.target.emit('keydown',{code:'KeyW'});assert.equal(s.context.state.keys.has('KeyW'),true);
+ const yaw=s.context.player.yaw;s.document.emit('mousemove',{buttons:0,movementX:40,movementY:0});assert.equal(s.context.player.yaw,yaw);
+ s.document.emit('mousemove',{buttons:2,movementX:40,movementY:0});assert.notEqual(s.context.player.yaw,yaw);
+ s.target.emit('keydown',{code:'Escape'});assert.equal(s.context.state.locked,false);assert.equal(s.context.state.keys.size,0);assert.equal(s.$('start').classList.contains('hidden'),false);
 });

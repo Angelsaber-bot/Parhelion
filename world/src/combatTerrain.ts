@@ -1,3 +1,5 @@
+import type {StoryEncounterSpec} from './storyEncounters';
+import { gateEncounter, KINGDOM_GATE } from './kingdomGate';
 import * as THREE from 'three';
 import type { Collider } from './player';
 import type { Layout } from './types';
@@ -30,10 +32,11 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     }
     return true;
   };
+  const kingdomMarkers = new Set<string>([KINGDOM_GATE.entry,KINGDOM_GATE.latch,KINGDOM_GATE.winch,KINGDOM_GATE.service]);
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
-  const placeEnemy = (x: number, z: number, story = false, authoredHub = false): Point3 | null => {
+  const placeEnemy = (x: number, z: number, story = false, authoredHub = false, kingdomGate = false): Point3 | null => {
     if (!authoredHub && layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
-    if (layout.markers.some(m => !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
+    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
     // A downward all-collider ray finds flat roofs before terrain. Their clearance can look
@@ -58,6 +61,18 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
   const safeCompactRelaySpawn = (x: number, z: number) =>
     COMPACT_RELAY_SITE.enemySockets.some(p => Math.abs(x-p[0]) < 1e-6 && Math.abs(z-p[2]) < 1e-6)
       ? placeEnemy(x,z,true,true) : null;
+  const safeKingdomGateSpawn = (x:number,z:number) => {
+    const spec=gateEncounter();
+    return spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6)?placeEnemy(x,z,true,true,true):null;
+  };
+  const safeAdventureSpawn=(spec:StoryEncounterSpec,x:number,z:number):Point3|null=>{
+    const markerId=spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
+    const marker=layout.markers.find(m=>m.id===markerId);if(!marker||Math.abs(spec.anchor.x-marker.p[0])>.01||Math.abs(spec.anchor.z-marker.p[2])>.01||Math.abs(spec.anchor.y-(marker.p[1]-.9))>.01)return null;
+    if(!spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6))return null;
+    const g=ground(x,z,spec.anchor.y+2);if(!g||Math.abs(g.point.y-spec.anchor.y)>1.5||Math.abs(g.face?.normal.y??0)<.78)return null;
+    const p={x,y:g.point.y+.04,z};for(const[dx,dz]of[[-1.2,0],[1.2,0],[0,-1.2],[0,1.2]]){const foot=ground(x+dx,z+dz,p.y+2);if(!foot||Math.abs(foot.point.y-p.y)>.75)return null;}
+    return clear(p)?p:null;
+  };
   const terrain: CombatTerrain = {
     walk(from, x, z) {
       const g = ground(x, z, from.y + 1.1);
@@ -85,5 +100,5 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     const localCast = (origin:Point3,direction:Point3,max:number) => castAgainst(subset,origin,direction,max);
     return { cast:localCast, ground:(x:number,z:number,ceiling=180)=>localCast({x,y:ceiling,z},{x:0,y:-1,z:0},ceiling+20), colliderCount:subset.length, totalColliders:colliders.length };
   };
-  return { cast, ground, safeSpawn, safeStorySpawn, safeCompactRelaySpawn, clear, terrain, contactSurface };
+  return { cast, ground, safeSpawn, safeStorySpawn, safeCompactRelaySpawn, safeKingdomGateSpawn, safeAdventureSpawn, clear, terrain, contactSurface };
 }

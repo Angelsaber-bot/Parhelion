@@ -1,3 +1,5 @@
+import {ADVENTURE,adventureActive,adventureChapterComplete,getAdventureGuide,harborBridgeReady,winterRouteReady} from './openWorldCampaign';
+import { KINGDOM_GATE, gateGuide } from './kingdomGate';
 import type { Localized, RegionId } from './settlements/types';
 import type { Layout, Marker } from './types';
 
@@ -106,6 +108,7 @@ export const ERA_STORIES: Record<EraId, EraChapter> = {
     title: ['落日王国 · 守住旧誓', 'Sunset Kingdom · Keep the Oath'], core: 'sun_core', contract: 'saber_contract', npc: 'britain_smith',
     beats: [
       { id: 'oath', flags: ['saber_contract'], text: ['在圣剑湖与湖中之剑立约。', 'Make your pact with the lake sword.'] },
+      { id: 'gate', flags: [KINGDOM_GATE.rescued], text: ['打开王城归路，护送居民穿门抵达。', 'Open the kingdom gate and escort the residents through.'] },
       { id: 'hearth', flags: ['hall_brazier_1'], text: ['点燃圆桌大厅的第一盏誓火，回应圣剑湖的约定。', 'Light the first oath hearth in the Round Table Hall to answer the Sword Lake pact.'] },
     ],
     challenge: ['到卡姆兰战场挑战空位之王，点亮落日之核。', 'Challenge the Vacant King at Camlann and relight the Sun Core.'],
@@ -170,12 +173,17 @@ export function getEraBossRequirements(core: string, done: ReadonlySet<string>):
   const region = chapterForCore(core);
   if (!region) return undefined;
   const def = ERA_STORIES[region];
-  return coreCleared(region, done) || all(done, def.legacyRequires) ? [] : ERA_BOSS_REQUIREMENTS[core];
+  if(adventureActive(done)&&!coreCleared(region,done)&&!all(done,def.legacyRequires)){
+   if(region==='britain')return ERA_BOSS_REQUIREMENTS.sun_core;
+   if(region==='blacksail')return ['blackbeard_meet',...(harborBridgeReady(done)?[]:['adventure_harbor_rigging']),ADVENTURE.records,...(done.has('adventure_harbor_alarm_disabled')||done.has('adventure_harbor_alarm_cleared')?[]:['adventure_harbor_alarm_disabled'])];
+   if(region==='winter')return ['napoleon_meet',...(winterRouteReady(done)?[]:['beacon_1','beacon_2','beacon_3']),ADVENTURE.road];
+  }
+  return coreCleared(region, done) || all(done, def.legacyRequires) ? [] : ERA_BOSS_REQUIREMENTS[core].filter(flag=>!(region==='britain'&&flag===KINGDOM_GATE.rescued&&done.has('hall_brazier_1')));
 }
 export function getEraStoryState(region: EraId, done: ReadonlySet<string>): EraStoryState {
   const def = ERA_STORIES[region], cleared = coreCleared(region, done);
   const routeReady = all(done, getEraBossRequirements(def.core, done)!);
-  const complete = cleared && (region === 'britain' || done.has(def.contract));
+  const complete = adventureActive(done)?adventureChapterComplete(region,done):cleared && (region === 'britain' || done.has(def.contract));
   return {
     region, stage: complete ? 'complete' : cleared ? 'return' : routeReady ? 'challenge' : 'prepare',
     routeReady, complete: cleared, discovered: done.has(ERA_OPTIONALS[region].id),
@@ -184,17 +192,20 @@ export function getEraStoryState(region: EraId, done: ReadonlySet<string>): EraS
   };
 }
 export function getEraStoryGuide(region: EraId, done: ReadonlySet<string>): EraStoryGuide | null {
+  if(adventureActive(done))return getAdventureGuide(region,done);
   const def = ERA_STORIES[region], state = getEraStoryState(region, done);
   if (state.stage === 'complete') return null;
   if (state.stage === 'return') return { title: def.title, text: def.returnText, targetId: def.contract, targetKind: 'marker' };
   if (state.routeReady) return { title: def.title, text: def.challenge, targetId: def.core, targetKind: 'marker' };
-  const beat = def.beats.find(b => !all(done, b.flags))!;
+  const beat = def.beats.find(b => !all(done, b.flags) && !(region==='britain'&&b.id==='gate'&&done.has('hall_brazier_1')))!;
+  if(region==='britain'&&beat.id==='gate'){const next=gateGuide(done)!;return {title:def.title,...next,targetKind:'marker'};}
   return { title: def.title, text: beat.text, targetId: beat.flags.find(flag => !done.has(flag))!, targetKind: 'marker' };
 }
 /** Optional content is absent from required rows. Language is 0=Chinese, 1=English. */
 export function getEraObjective(region: EraId, done: ReadonlySet<string>, language: 0 | 1 = 0): Layout['objective'] {
+  if(adventureActive(done)){const next=getAdventureGuide(region,done);return{id:`adventure_${region}`,name:ERA_STORIES[region].title[language],steps:next?[{id:next.targetId,text:next.text[language],done:[next.targetId]}]:[]};}
   const def = ERA_STORIES[region], state = getEraStoryState(region, done);
-  const preparation = state.routeReady ? [] : def.beats.map(b => ({ id: b.id, text: b.text[language], done: [...b.flags] }));
+  const preparation = state.routeReady ? [] : def.beats.filter(b=>!(region==='britain'&&b.id==='gate'&&done.has('hall_brazier_1'))).map(b => ({ id: b.id, text: b.text[language], done: [...b.flags] }));
   return { id: `era_${region}`, name: def.title[language], steps: [
     ...preparation,
     { id: 'core', text: def.challenge[language], done: coreCleared(region, done) ? [] : [def.core] },
@@ -210,6 +221,7 @@ export function applyEraMarkerRequirements(markers: Marker[], done: ReadonlySet<
 }
 /** Use for BOTH Ghost_Bridge showWhen and solidWhen; unrelated doors stay untouched. */
 export function getEraPieceRequirements(name: string, done: ReadonlySet<string>): readonly string[] | undefined {
+  if(adventureActive(done)&&(name==='Ghost_Bridge'||name==='COL_Ghost_Bridge'))return harborBridgeReady(done)?[]:['adventure_harbor_rigging'];
   return name === 'Ghost_Bridge' || name === 'COL_Ghost_Bridge' ? getEraBossRequirements('sea_core', done) : undefined;
 }
 /** Existing saved repair flags drive both scene changes and personal recollections.

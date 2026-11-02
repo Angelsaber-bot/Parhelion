@@ -24,7 +24,7 @@ test('NON-GPU travel keyboard focus survives refresh, rejection and dismissal wi
     await t.test('refresh preserves an available destination; stale-button rejection focuses Back', () => {
       opener.focus(); opener.click(); assert.equal(world.travelPanel.open, true);
       destination().focus();
-      const language = document.querySelector<HTMLSelectElement>('body > .parhelion-language select')!;
+      const language = document.querySelector<HTMLSelectElement>('#start .parhelion-language select')!;
       language.value = 'en'; language.dispatchEvent(new window.Event('change', { bubbles: true }));
       assert.equal(document.activeElement, destination());
       world.combat.state.quietFor = 0; destination().click();

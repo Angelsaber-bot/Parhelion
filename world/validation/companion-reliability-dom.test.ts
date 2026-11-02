@@ -41,7 +41,7 @@ test('NON-GPU companion contacts reduce actual HP, separately from command skill
    const visual=w.combat.visuals.get(enemy.id);assert.equal(visual.root.visible,true);
    let bodies=0;visual.body.traverseVisible((o:any)=>{if(o.isMesh&&o.geometry?.attributes?.position?.count>0)bodies++;});
    assert.ok(bodies>0,'active enemy cannot be only a health bar');
-   const hp=enemy.hp;assert.equal(w.combat.damageEnemy(enemy.id,16,{source:'ranged',origin:w.player.pos}),true);assert.equal(enemy.hp,hp-16);
+   const hp=enemy.hp;assert.equal(w.combat.damageEnemy(enemy.id,16,{source:'ranged',origin:w.player.pos}),true);assert.equal(enemy.hp,hp-20.8);
    const boss=w.combat.state.enemies.find((e:any)=>e.id==='boss_vacant_king');
    assert.equal(boss.active,false);assert.equal(w.combat.visuals.get(boss.id).root.visible,false,'untriggered boss must not advertise an attackable health bar');
    assert.equal(w.combat.damageEnemy(boss.id,16,{source:'ranged',origin:w.player.pos}),false);

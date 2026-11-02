@@ -16,6 +16,7 @@ export interface PlayerAnimationState {
   flying?: boolean; gliding?: boolean; aim?: number; pitch?: number; firing?: boolean;
   /** Progression ownership, not a load-state flag; omitted preserves equipped callers. */
   armed?: boolean;
+  carrying?:'blanket'|'page'|null;
   /** World-space view heading (+Z forward), used only while firing; never changes the camera. */
   lookYaw?: number;
   /** Contact-timed melee overlay, root owns combat and input. */
@@ -268,7 +269,7 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
 
 export class SkinnedCharacterAnimator {
   facing = 0;
-  private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0;
+  private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0; private residentCarry=0;
   private jumpLead = 1;
   private readonly inertia = new PlayerInertia();
   private readonly inertiaInput = { onGround: true, swimming: false, gliding: false, flying: false, vy: 0, speed: 0, turnRate: 0, turnDecay: 12, lockedUpperBody: false };
@@ -279,7 +280,7 @@ export class SkinnedCharacterAnimator {
   /** Full new-game/reset boundary, not a normal equipment/locomotion transition. */
   reset(armed = true, facing = 0) {
     this.terrainSupport?.reset();
-    this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.adsPose = this.carry = this.strideSpeed = 0;
+    this.phase = this.time = this.air = this.glide = this.bank = this.fireAim = this.adsPose = this.carry = this.strideSpeed = this.residentCarry = 0;
     this.inertia.reset();this.jumpLead=1;
     this.ready = armed ? 1 : 0; this.facing = facing; this.meleePose = undefined; this.meleeRelease = 0;
     this.update(0, { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null, armed });
@@ -296,6 +297,7 @@ export class SkinnedCharacterAnimator {
     if (this.rig.diagnostics.disposed) return;
     this.lastState = { ...state };
     dt = Number.isFinite(dt) ? THREE.MathUtils.clamp(dt, 0, .1) : 0;
+    this.residentCarry=THREE.MathUtils.damp(this.residentCarry,state.carrying&&!state.swimming&&!state.gliding&&!state.flying?1:0,12,dt);
     const rig = this.rig, J = rig.joints;
     const armed = state.armed !== false, firing = armed && !!state.firing && !state.melee;
     if (state.melee) { this.meleePose = { ...state.melee }; this.meleeRelease = state.melee.combo > 0 ? 1 : THREE.MathUtils.clamp(state.melee.phase / .18, 0, 1); }
@@ -503,6 +505,7 @@ export class SkinnedCharacterAnimator {
           : V(.26 + Math.sin(cut * Math.PI) * .025, shoulderY - .24 + (heavy ? .10 * heavyBlend * (1 - cut) : 0), .18);
         freePoint.lerp(bladePoint, meleeWeight);
       }
+      if(this.residentCarry>0)freePoint.lerp(V(sign*.29,shoulderY-.42,.46),this.residentCarry);
       const palmPoint = rig.root.localToWorld(freePoint);
       const freePalm = state.swimming ? basis(V(sign * .15, -.12, 1), V(0, 1, .12))
         : basis(V(0, -1, 0), V(sign, 0, 0));
@@ -534,7 +537,7 @@ export class SkinnedCharacterAnimator {
       // not acquire a new elbow pop. Downward pitch retains its authored pole.
       const riflePole = -THREE.MathUtils.smoothstep(this.adsPose, 0, .8) * THREE.MathUtils.smoothstep(pitch, -.5, 0);
       solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact, bladeDirection, riflePole);
-      this.poseFingers(side, Math.max(contact, side === 'R' ? meleeWeight : 0), glideContact * (1 - contact), side === 'R' ? meleeWeight : 0);
+      this.poseFingers(side, Math.max(this.residentCarry*.28,contact, side === 'R' ? meleeWeight : 0), glideContact * (1 - contact), side === 'R' ? meleeWeight : 0);
     }
     rig.diagnostics.mode = meleeWeight > .5 ? 'melee' : r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
     rig.root.updateMatrixWorld(true);

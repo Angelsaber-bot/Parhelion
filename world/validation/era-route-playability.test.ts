@@ -1,3 +1,4 @@
+import {KINGDOM_GATE as G, gatePoint} from '../src/kingdomGate';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { Player } from '../src/player.ts';
@@ -126,6 +127,7 @@ test('era routes: every shard-free mainline requirement exists in the correct me
   for(const region of ERA_IDS){
     const core={britain:'sun_core',blacksail:'sea_core',winter:'winter_core',kyoto:'fire_core'}[region];
     for(const id of [...ERA_BOSS_REQUIREMENTS[core],core]) {
+      if(id===G.rescued){assert.ok(gatePoint(0,0)[0]<-720);continue;} // Runtime escort fact; real passage verified in kingdom-gate.test.
       const m=marker(id);const source=parts.find(p=>p.def.id===region)!;const local=source.layout.markers.find(m=>m.id===id)!;assert.ok(local);assert.deepEqual(m.p,[local.p[0]+source.def.offset[0],local.p[1],local.p[2]+source.def.offset[1]],`${id} has correct cross-layer offset`);
       assert.ok(m.p.every(Number.isFinite));assert.ok(!id.startsWith('shard_'));
     }

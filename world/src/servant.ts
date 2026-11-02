@@ -61,6 +61,7 @@ export class ContractServant {
   readonly appearance: ServantAppearance;
   state: 'unloaded' | 'loading' | 'ready' | 'failed' = 'unloaded';
   activeOutfit?: ServantOutfit;
+  private lastNeeded=0;
   private mixer?: THREE.AnimationMixer;
   private clips = new Map<string, THREE.AnimationAction>();
   private current?: THREE.AnimationAction;
@@ -115,6 +116,7 @@ export class ContractServant {
   }
   retry() { if (this.state === 'failed') this.state = 'unloaded'; return this.ensureLoaded(); }
   ensureLoaded(): Promise<void> {
+    this.lastNeeded=performance.now();
     if (this.disposed) return Promise.resolve();
     if (this.loadTask) return this.loadTask;
     if (this.state === 'failed' || this.activeOutfit === this.appearance.outfit) return Promise.resolve();
@@ -158,7 +160,7 @@ export class ContractServant {
         this.stride=new SaberStrideRuntime(candidate.scene,this.root);
         this.grounding = new SaberGroundedLocomotion(candidate.scene, this.root, outfit, this.options.colliders);
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
-        this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';
+        this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';this.lastNeeded=performance.now();
         candidate = undefined;
       } catch (error) {
         if (candidate) disposeObject(candidate.scene, this.environment?.texture);
@@ -276,7 +278,10 @@ export class ContractServant {
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     const { contract,marker } = this.options;
     const atLake = player.distanceTo(new THREE.Vector3().fromArray(marker.p)) < 80;
-    if (atLake || contract.recruited) void this.ensureLoaded();
+    const needed=atLake||(contract.recruited&&contract.selected==='saber');
+    if(needed){this.lastNeeded=performance.now();void this.ensureLoaded();}
+    else if(this.model&&!this.loadTask&&performance.now()-this.lastNeeded>15_000){this.clearModel();this.activeOutfit=undefined;this.state='unloaded';}
+
     const following = contract.summoned && enabled;
     this.root.visible = contract.recruited ? following : atLake;
     if (!following) {

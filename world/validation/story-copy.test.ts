@@ -30,7 +30,7 @@ test('chapter objectives retain concrete locations, quantities and bilingual ret
     const before = new Set<string>(), guide = getEraStoryGuide(region, before)!;
     assert.equal(guide.targetId, chapter.beats[0].flags[0]); assert.equal(before.size, 0);
   }
-  assert.match(ERA_STORIES.britain.beats[1].text[0], /第一盏/); assert.match(ERA_STORIES.britain.beats[1].text[1], /first oath hearth/);
+  assert.match(ERA_STORIES.britain.beats.find(b=>b.id==='hearth')!.text[0], /第一盏/); assert.match(ERA_STORIES.britain.beats.find(b=>b.id==='hearth')!.text[1], /first oath hearth/);
   for (const [region, noun] of [['blacksail', /three ghost boats/], ['winter', /three snowfield beacons/], ['kyoto', /three bellflower banners/]] as const) {
     const beat = ERA_STORIES[region].beats.at(-1)!;
     assert.equal(beat.flags.length, 3); assert.match(beat.text[0], /三/); assert.match(beat.text[1], noun);

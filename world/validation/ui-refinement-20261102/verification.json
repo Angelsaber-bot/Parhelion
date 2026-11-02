@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-02",
+  "scope": "World UI refinement; existing gameplay verification remains separate",
+  "build": {
+    "command": "cd world && npm run build",
+    "exitCode": 0,
+    "warning": "Existing bundle chunk size warning"
+  },
+  "tests": {
+    "command": "cd world && node --import tsx --test --test-concurrency=1 validation/input.test.ts validation/quest-journal.test.ts validation/quest-journal-main.test.ts validation/campaign-choice-panel.test.ts validation/campaign-choices-independent-dom.test.ts validation/world-modal-focus-dom.test.ts validation/world-dom-boot.test.ts validation/world-ui-soak.test.ts validation/story-input-policy-dom.test.ts validation/arena-menu-independent-dom.test.ts validation/graphics-recovery-dom.test.ts validation/world-action-hud-dom.test.ts validation/world-interruptions-dom.test.ts",
+    "passed": 67,
+    "failed": 0,
+    "nonGpu": true
+  },
+  "browser": {
+    "url": "http://127.0.0.1:4178/?q=low&nopost",
+    "viewport": {
+      "width": 1280,
+      "height": 720
+    },
+    "renderer": "Real browser WebGL",
+    "checked": [
+      "Main menu and More disclosure",
+      "Chinese/English menus",
+      "Quest panel opening and return",
+      "Explicit drag-camera fallback entry",
+      "W movement",
+      "Z evade and numeric cooldown",
+      "H help visibility",
+      "O settings and Escape return"
+    ],
+    "screenshots": [
+      "menu.png",
+      "hud.png"
+    ],
+    "limitations": [
+      "Viewport override did not change browser dimensions; narrow-screen styles were not visually verified",
+      "No touch controls added"
+    ]
+  },
+  "references": [
+    "https://www.4gamer.net/games/486/G048621/20201008053/screenshot.html?num=028",
+    "https://blog.playstation.com/2020/09/28/your-journey-in-genshin-impact-begins-now/"
+  ]
+}

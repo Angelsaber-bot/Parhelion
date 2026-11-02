@@ -178,7 +178,7 @@ export class WorldCombat {
   get storyEncounter() { return this.storyDirector.status; }
   startStoryEncounter(spec: StoryEncounterSpec, admission?: { position: Point3; playable: boolean }): StoryEncounterStartResult {
     if (this.disposed) return { ok: false, reason: 'unavailable' };
-    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: spec.id === COMPACT_RELAY_ENCOUNTER ? this.geometry.safeCompactRelaySpawn : this.geometry.safeStorySpawn });
+    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: spec.id.startsWith('adventure_') ? (x,z)=>this.geometry.safeAdventureSpawn(spec,x,z) : spec.id === 'kingdom_gate_patrol' ? this.geometry.safeKingdomGateSpawn : spec.id === COMPACT_RELAY_ENCOUNTER ? this.geometry.safeCompactRelaySpawn : this.geometry.safeStorySpawn });
     if (!result.ok) return result;
     try {
       for (const enemy of this.state.enemies.filter(actor => actor.storyEncounter)) {

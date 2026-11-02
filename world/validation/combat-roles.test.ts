@@ -92,13 +92,13 @@ test('bosses and elites are not invalidated by cheap melee stagger', () => {
 });
 
 test('rifle range falloff preserves close hits, bounds long damage, and does not affect raw/skill damage', () => {
-  assert.equal(COMBAT.shotDamage, 16); assert.equal(COMBAT.shotInterval, .14);
-  assert.equal(rangedDamageMultiplier(18), 1); assert.equal(rangedDamageMultiplier(65), .45);
-  assert.equal(rangedDamageMultiplier(500), .45); assert.ok(rangedDamageMultiplier(40) < 1);
+  assert.equal(COMBAT.shotDamage, 12); assert.equal(COMBAT.shotInterval, .18);
+  assert.equal(rangedDamageMultiplier(12), 1); assert.equal(rangedDamageMultiplier(65), .19999999999999996);
+  assert.equal(rangedDamageMultiplier(500), .19999999999999996); assert.ok(rangedDamageMultiplier(40) < 1);
   const { s, e } = setup(); e.active = true;
-  s.hitEnemy(e.id, 16, { source: 'ranged', origin: p(100) }); assert.equal(e.hp, 58.8);
-  s.hitEnemy(e.id, 16, { source: 'skill', origin: p(100) }); assert.equal(e.hp, 42.8);
-  s.hitEnemy(e.id, 10); assert.equal(e.hp, 32.8);
+  s.hitEnemy(e.id, 16, { source: 'ranged', origin: p(65) }); assert.equal(e.hp, 62.8);
+  s.hitEnemy(e.id, 16, { source: 'skill', origin: p(65) }); assert.equal(e.hp, 46.8);
+  s.hitEnemy(e.id, 10); assert.equal(e.hp, 36.8);
 });
 
 test('guard reduces actual damage, evade avoids one impact, pause and reset clear protection', () => {
@@ -157,17 +157,17 @@ test('settlement aid cannot revive, heal a boss fight, overheal or be used durin
   assert.equal(s.recoverAtSettlement(25), true); assert.equal(s.hp, 100); assert.equal(s.recoverAtSettlement(25), false);
 });
 
-test('eight rifle rounds visibly vent, pause freezes vent and a full idle resets heat', () => {
+test('six rifle rounds visibly vent, pause freezes vent and a full idle resets heat', () => {
   const { s } = setup();
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 6; i++) {
     assert.equal(s.canShoot(), true);
-    if (i < 7) advance(s, .15, p(100));
+    if (i < 5) advance(s, .19, p(100));
   }
-  assert.equal(s.gunHeat, 8); assert.equal(s.gunVent, 1.1); assert.equal(s.canShoot(), false);
-  s.step(.1, p(100), false, terrain); assert.equal(s.gunVent, 1.1, 'menus do not advance heat timing');
-  advance(s, .9, p(100)); assert.equal(s.canShoot(), false);
-  advance(s, .25, p(100)); assert.equal(s.gunHeat, 0); assert.equal(s.canShoot(), true);
-  advance(s, 1.15, p(100)); assert.equal(s.gunHeat, 0, 'controlled taps can cool without exhausting the burst');
+  assert.equal(s.gunHeat, 6); assert.equal(s.gunVent, 1.35); assert.equal(s.canShoot(), false);
+  s.step(.1, p(100), false, terrain); assert.equal(s.gunVent, 1.35, 'menus do not advance heat timing');
+  advance(s, 1.1, p(100)); assert.equal(s.canShoot(), false);
+  advance(s, .3, p(100)); assert.equal(s.gunHeat, 0); assert.equal(s.canShoot(), true);
+  advance(s, 1.4, p(100)); assert.equal(s.gunHeat, 0, 'controlled taps can cool without exhausting the burst');
   s.canShoot(); s.resetAll(); assert.equal(s.gunHeat, 0); assert.equal(s.gunVent, 0);
 });
 

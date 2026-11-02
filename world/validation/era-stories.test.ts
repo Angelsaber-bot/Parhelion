@@ -1,3 +1,4 @@
+import { KINGDOM_GATE as G } from '../src/kingdomGate';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -20,8 +21,8 @@ for (const region of ERA_IDS) {
     while (state(region, done).stage === 'prepare') {
       const next = guide(region, done)!;
       assert.equal(next.targetKind, 'marker');
-      assert.ok(ERA_BOSS_REQUIREMENTS[def.core].includes(next.targetId));
-      done.add(next.targetId);
+      if(region==='britain'&&next.targetId===G.entry){done.add(G.entry);done.add(G.unlocked);done.add(G.open);done.add(G.rescued);}
+      else { assert.ok(ERA_BOSS_REQUIREMENTS[def.core].includes(next.targetId));done.add(next.targetId); }
       assert.ok(++actions < 10, 'finite forward-only route');
     }
     assert.equal(state(region, done).stage, 'challenge');
@@ -96,6 +97,7 @@ for (const region of ERA_IDS) {
   test(`${region}: requirements and guide targets exist in unchanged generated layout`, () => {
     const layout = JSON.parse(readFileSync(new URL(`../public/assets/world_${region}.layout.json`, import.meta.url), 'utf8')) as Layout;
     const ids = new Set(layout.markers.map(m => m.id));
+    if(region==='britain')ids.add(G.rescued); // Runtime escort fact, checked against real collision in kingdom-gate.test.
     for (const id of [...ERA_BOSS_REQUIREMENTS[def.core], def.core, def.contract]) assert.ok(ids.has(id), `missing ${id}`);
     for (const lang of [0, 1] as const) {
       const objective = getEraObjective(region, new Set(), lang);
@@ -110,7 +112,7 @@ for (const region of ERA_IDS) {
 test('Britain contract is an opening oath, never proof of boss victory', () => {
   const done = new Set(['saber_contract']);
   assert.equal(state('britain', done).complete, false);
-  assert.equal(guide('britain', done)?.targetId, 'hall_brazier_1');
+  assert.equal(guide('britain', done)?.targetId, G.entry);
   assert.ok(requirements('sun_core', done)!.length > 0);
 });
 

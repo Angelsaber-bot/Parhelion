@@ -86,7 +86,7 @@ test('NON-GPU production modal interruptions return control rather than retainin
       key('KeyI'); assert.equal(dialogue.hidden, false); assert.match(hint.textContent!, /^1\//);
       const firstPage = text.textContent;
       key('KeyI'); assert.match(hint.textContent!, /^2\//); assert.notEqual(text.textContent, firstPage);
-      const language = document.querySelector<HTMLSelectElement>('body > .parhelion-language select')!;
+      const language = document.querySelector<HTMLSelectElement>('#start .parhelion-language select')!;
       language.value = 'en'; language.dispatchEvent(new window.Event('change', { bubbles: true }));
       assert.match(hint.textContent!, /^2\//, 'language change preserves the semantic page');
       assert.match(text.textContent!, /memorial|harbor|stove|lantern|trial/i);

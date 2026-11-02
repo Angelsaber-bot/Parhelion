@@ -1,7 +1,8 @@
+import {adventureTravelOpen} from './openWorldCampaign';
 import { GATES } from './regions';
 
 export function trackedStoryRouteBlocked(here: string, destination: string, done: ReadonlySet<string>): boolean {
-  return here !== destination && !done.has('summon_circle');
+  return here !== destination && !adventureTravelOpen(done);
 }
 /** Resolve live stages every frame. A previously pinned local story may acquire
  * an inaccessible remote objective; return null so original main guidance wins

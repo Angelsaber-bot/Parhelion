@@ -1,3 +1,6 @@
+import {RESIDENT_ACTIONS} from '../src/residentEventRules';
+import {ADVENTURE_ACTIONS} from '../src/adventureSites';
+import {createKingdomGateScene} from '../src/kingdomGateScene';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -8,7 +11,8 @@ import {COMPACT_RELAY} from '../src/compactRelayCampaign';
 import type {Marker} from '../src/types';
 const parts=REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))}));
 const layout=mergeLayouts(parts);
-const extra:Marker[]=[...([COMPACT_RELAY.entry,COMPACT_RELAY.controller,COMPACT_RELAY.deployment].map((id,i)=>({id,type:'interact' as const,label:id,p:[-70+i,10,228] as [number,number,number]}))),{id:'valley_route_note',type:'interact',label:'检修侧门手动锁扣',p:[-160,4,220]},...ERA_IDS.map(region=>({id:ERA_OPTIONALS[region].id,type:'interact' as const,label:ERA_OPTIONALS[region].label[0],p:[...REGIONS.find(r=>r.id===region)!.offset.slice(0,1),4,REGIONS.find(r=>r.id===region)!.offset[1]] as [number,number,number]}))];
+const gateScene=createKingdomGateScene();
+const extra:Marker[]=[...RESIDENT_ACTIONS.filter(a=>a.world).map(a=>({id:a.id,type:'interact' as const,label:a.label[0],p:a.world!})),...ADVENTURE_ACTIONS.map(a=>({id:a.id,label:a.label[0],p:a.p,type:'interact' as const})),...gateScene.markers,...([COMPACT_RELAY.entry,COMPACT_RELAY.controller,COMPACT_RELAY.deployment].map((id,i)=>({id,type:'interact' as const,label:id,p:[-70+i,10,228] as [number,number,number]}))),{id:'valley_route_note',type:'interact',label:'检修侧门手动锁扣',p:[-160,4,220]},...ERA_IDS.map(region=>({id:ERA_OPTIONALS[region].id,type:'interact' as const,label:ERA_OPTIONALS[region].label[0],p:[...REGIONS.find(r=>r.id===region)!.offset.slice(0,1),4,REGIONS.find(r=>r.id===region)!.offset[1]] as [number,number,number]}))];
 const catalog=createQuestGuideCatalog({markers:[...layout.markers,...extra],objectives:layout.objectives,npcs:[{id:'alpha_archivist',region:'alpha',position:[-166,4,212]}],enemies:[{id:'elite_oath_knight',region:'britain',position:[-800,5,40],label:['失誓骑士','Oathless Knight']}]});
 
 test('catalog covers five real main chapters, authored optional chains and every discovery without mutating facts',()=>{
@@ -76,4 +80,8 @@ test('compact exercise guides actual equipment then field and retains earned dep
  assert.equal(entry.complete,true);assert.equal(entry.trackWhenComplete,true);assert.equal(entry.guide?.targetId,COMPACT_RELAY.deployment);
  assert.equal(catalog.resolve(entry.id,done,found,{compactRelay:{active:true}})?.targetId,COMPACT_RELAY.controller);
  assert.deepEqual([...done],['relay_b','armory_rack',COMPACT_RELAY.complete]);assert.equal(found.size,0);
+});
+
+test('dry-shoe guide follows the live crossing and horse trail resumes from saved evidence',()=>{
+ const done=new Set<string>(),found=new Set<string>();assert.equal(catalog.resolve('side:dry-shoes',done,found)?.targetId,'resident_kyoto_cross_start');assert.equal(catalog.resolve('side:dry-shoes',done,found,{dryCrossing:true})?.targetId,'resident_kyoto_cross_finish');done.add('resident_winter_horse_trail');assert.equal(catalog.resolve('side:horse-search',done,found)?.targetId,'resident_winter_horse');done.add('resident_winter_horse_found');assert.equal(catalog.resolve('side:horse-search',done,found),null);
 });

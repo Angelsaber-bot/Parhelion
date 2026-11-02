@@ -27,7 +27,7 @@ export interface StoryEncounterContext {
 }
 const finite = (p: Point3) => !!p && [p.x, p.y, p.z].every(Number.isFinite);
 const distance = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
-const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && (/^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) || spec.id === 'compact_relay_training') && finite(spec.anchor)
+const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && (/^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) || spec.id === 'compact_relay_training' || spec.id === 'kingdom_gate_patrol' || /^adventure_guard_[1-3]$/.test(spec.id) || spec.id === 'adventure_guardian' || spec.id === 'adventure_harbor_alarm' || spec.id === 'adventure_winter_breach') && finite(spec.anchor)
   && Array.isArray(spec.actors) && spec.actors.length > 0 && spec.actors.length <= STORY_ENCOUNTER_LIMITS.actors
   && spec.actors.every(actor => !!actor && Object.hasOwn(ENEMY_ROLES, actor.role) && Array.isArray(actor.offset) && actor.offset.length === 2
     && actor.offset.every(Number.isFinite) && Math.hypot(...actor.offset) <= STORY_ENCOUNTER_LIMITS.actorOffset
@@ -56,7 +56,7 @@ export class StoryEncounterDirector {
       const point = context.place(spec.anchor.x+actor.offset[0],spec.anchor.z+actor.offset[1]);
       if (!point || !finite(point) || Math.abs(point.y-spec.anchor.y)>3 || distance(point,player)<2
         || spawns.some(other => distance(other.p,point)<2)
-        || state.enemies.some(other => other.mode !== 'dead' && !other.pacified && distance(other.p,point)<5)) return { ok: false, reason: 'blocked' };
+        || state.enemies.some(other => other.mode !== 'dead' && !other.pacified && distance(other.p,point)<5 && Math.abs(other.p.y-point.y)<2.6)) return { ok: false, reason: 'blocked' };
       spawns.push({ id: `story_${spec.id}_${this.generation + 1}_${index}`, kind: actor.role === 'bombardier' || actor.pattern ? 'crystal' : 'shade', p: { ...point }, role: actor.role,
         storyEncounter: spec.id, storyPattern: actor.pattern, displayName: actor.title, appearance: appearances[actor.role] });
     }

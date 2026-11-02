@@ -1,3 +1,7 @@
+import {RESIDENT_ACTIONS} from './residentEventRules';
+import {ADVENTURE,adventureActive,getAdventureGuide} from './openWorldCampaign';
+import {ADVENTURE_ACTIONS} from './adventureSites';
+import { KINGDOM_GATE, gateGuide } from './kingdomGate';
 import type {Layout,Marker} from './types';
 import type {Localized,RegionId} from './settlements/types';
 import {TEXT_PAIRS} from '../../shared-client/locales';
@@ -19,7 +23,7 @@ export interface QuestEntry {
  /** Only an actually earned permanent service may remain trackable after completion. */
  trackWhenComplete?:boolean; trackLabel?:Localized;
 }
-export interface QuestGuideContext { mounted?:boolean; compactRelay?:CompactRelayContext; }
+export interface QuestGuideContext { dryCrossing?:boolean; mounted?:boolean; compactRelay?:CompactRelayContext; }
 export interface QuestCatalogInput {
  markers:readonly Marker[];
  objectives:readonly {region:string;objective:Layout['objective']}[];
@@ -32,6 +36,12 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ ...RESIDENT_ACTIONS.map(a=>[a.id,a.label] as [string,Localized]),
+ ...ADVENTURE_ACTIONS.map(a=>[a.id,a.label] as [string,Localized]),
+ [KINGDOM_GATE.entry,['城门告示 · 打开归路','Gate notice · Open the Way Home']],
+ [KINGDOM_GATE.latch,['金色旧锁','Gold latch']],
+ [KINGDOM_GATE.winch,['城门绞盘','Gate winch']],
+ [KINGDOM_GATE.service,['归人补给点','Returners’ supply point']],
  [COMPACT_RELAY.entry,['突破演练入口','Breach exercise entrance']],
  [COMPACT_RELAY.controller,['训练联络控制柜','Training relay cabinet']],
  [COMPACT_RELAY.deployment,['前沿部署板','Forward deployment board']],
@@ -97,6 +107,8 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
   for(const region of REGIONS){
    if(region==='alpha'){
     const objective=objectives.get(region),title:Localized=['幻日谷 · 重启幻日塔','Parhelion Valley · Restart the tower'];
+    const adventure=getAdventureGuide('alpha',done);
+    if(adventureActive(done)){add('main:alpha',region,'main',adventure?.title??['让明天继续','Let Tomorrow Continue'],!adventure,adventure?guide(adventure.title,adventure.text,adventure.targetId,done,context):null);continue;}
     const intro=getValleyStoryGuide(done),step=objective?.steps.find(s=>s.done.some(id=>!done.has(id)));
     const id=step?.done.find(id=>!done.has(id));
     add('main:alpha',region,'main',title,!!objective&&!intro&&!step,intro?guide(title,intro.text,intro.targetId,done,context):id?guide(title,pair(step!.text),id,done,context):null);
@@ -105,6 +117,13 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }
+  const gateNext=gateGuide(done),gateTitle:Localized=['王城 · 打开归路','Kingdom · Open the Way Home'];
+  add('side:kingdom-gate','britain','side',gateTitle,done.has(KINGDOM_GATE.rescued),gateNext?guide(gateTitle,gateNext.text,gateNext.targetId,done,context):null);
+  for(const action of ADVENTURE_ACTIONS.filter(a=>a.id==='adventure_kingdom_abbey'||a.id==='adventure_kyoto_water'||a.id.startsWith('adventure_home_'))){const complete=!!action.flag&&done.has(action.flag);add(`side:${action.id}`,action.region,'side',action.label,complete,guide(action.label,action.hint??['到现场操作，改变通路或使用已经恢复的服务。','Work at the site to change a route or use a restored service.'],action.id,done,context));}
+  const horseTitle:Localized=['闲游 · 白马去哪了','Leisure · Where is the white horse?'];
+  add('side:horse-search','winter','side',horseTitle,done.has('resident_winter_horse_found'),guide(horseTitle,['沿营地蹄印找到吃草的白马；不会更换同行从者。','Follow the camp hoofprints to the grazing horse; your companion stays selected.'],done.has('resident_winter_horse_trail')?'resident_winter_horse':'resident_winter_hoofprints',done,context));
+  const crossingTitle:Localized=['闲游 · 不湿鞋过河','Leisure · A dry-shoe crossing'];
+  add('side:dry-shoes','kyoto','side',crossingTitle,done.has('resident_kyoto_dry_shoes'),guide(crossingTitle,['从西岸起点发起挑战，沿跳石或借风到对岸，再在终点交互。离开河道或落水即可重来。','Start on the west bank, cross by stones or glide, then interact at the finish. Restart if you leave the stretch or touch water.'],context.dryCrossing?'resident_kyoto_cross_finish':'resident_kyoto_cross_start',done,context));
   const compact=getCompactRelayState(done,context.compactRelay),compactGuide=getCompactRelayGuide(done,context.compactRelay);
   const compactTarget=guide(compactGuide.title,compactGuide.text,compactGuide.targetId,done,context);
   entries.push({id:'main:compact-relay',region:'alpha',category:'main',title:COMPACT_RELAY_TITLE,complete:compact.complete,guide:compactTarget,

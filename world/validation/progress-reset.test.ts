@@ -195,7 +195,7 @@ test('existing tutorial grants the gun before gun-required objectives and clears
   run(context, interaction + '\ninteract();');
   assert.equal(worldProgress.armed, true); assert.equal(worldProgress.equippedWeapon, 'dawn_ar'); assert.equal(fixture.rig.joints.Gun.visible, true);
   assert.equal(keys.size, 0); assert.equal(aim.held, false);
-  assert.match(equipmentMessage, /8发/); assert.match(equipmentMessage, /近战连击/);
+  assert.match(equipmentMessage, /六发|6发/); assert.match(equipmentMessage, /近战连击/);
   // Execute the production ADS permission expression, not a copied predicate.
   const canAim = source.split('\n').find(line => line.trimStart().startsWith('const canAim ='))!;
   const adsContext = vm.createContext({...campaignSourceContext,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), worldProgress, player, gameplayActive: () => true });

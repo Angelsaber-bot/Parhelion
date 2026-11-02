@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Parhelion Alpha - World first area (幻日谷) blockout generator + Three.js viewer",
+  "description": "Parhelion Alpha - World first area (\u5e7b\u65e5\u8c37) blockout generator + Three.js viewer",
   "scripts": {
     "build:world": "tsx tools/build-world.ts",
     "build:britain": "tsx tools/build-britain.ts",
@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test validation/*.test.ts",
     "test:browser": "node validation/browser.mjs",
-    "test:ci": "node --import tsx --test --test-concurrency=2 validation/*.test.ts"
+    "test:ci": "node --import tsx --test --test-concurrency=1 validation/*.test.ts",
+    "build:stream-assets": "tsx tools/build-stream-assets.ts"
   },
   "dependencies": {
     "three": "0.186.1",

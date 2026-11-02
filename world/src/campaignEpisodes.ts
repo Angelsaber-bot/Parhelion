@@ -1,3 +1,4 @@
+import {getResidentWorkGuide} from './residentEventRules';
 import type { Localized, RegionId } from './settlements/types';
 import { CAMPAIGN_WORK_TASKS } from './campaignWorkTasks';
 import { getEraStoryGuide, isEraCoreCleared } from './eraStories';
@@ -127,11 +128,11 @@ export function getCampaignEpisodeState(region: RegionId, done: ReadonlySet<stri
 }
 export interface CampaignEpisodeGuide { title: Localized; text: Localized; targetId: string; targetKind: 'npc' | 'marker'; }
 /** Opt-in pin/journal only. Never silently replaces the actual main-story guide. */
-export function getCampaignEpisodeGuide(region: RegionId, done: ReadonlySet<string>): CampaignEpisodeGuide | null {
+export function getCampaignEpisodeGuide(region: RegionId, done: ReadonlySet<string>, carrying: import('./residentEventRules').ResidentCarry = null): CampaignEpisodeGuide | null {
   const def = CAMPAIGN_EPISODES[region], state = getCampaignEpisodeState(region, done);
   switch (state.stage) {
     case 'briefing': return { title: def.title, text: def.brief, targetId: def.npc, targetKind: 'npc' };
-    case 'work': return { title: def.title, text: def.working, targetId: def.work, targetKind: 'marker' };
+    case 'work': {const field=getResidentWorkGuide(region,done,carrying);return {title:def.title,text:field?.text??def.working,targetId:field?.targetId??def.work,targetKind:'marker'};}
     case 'decision': return { title: def.title, text: def.question, targetId: def.decision, targetKind: 'marker' };
     case 'follow-through': {
       if (region !== 'alpha') {
@@ -314,13 +315,13 @@ function getCampaignEvidenceLine(target: string, done: ReadonlySet<string>): Loc
   if (/^kikyo_banner_[123]$/.test(target)) return [`桔梗旗 ${count('kikyo_banner')}/3：射落军阵旗号。`, `Bellflower banners ${count('kikyo_banner')}/3: shoot down the army’s signals.`];
   return ['沿原主线完成当前道路目标。', 'Follow the current objective on the original main route.'];
 }
-export function getCampaignEpisodeObjective(region: RegionId, done: ReadonlySet<string>): { title: Localized; line: Localized } | null {
-  const def = CAMPAIGN_EPISODES[region], state = getCampaignEpisodeState(region, done), guide = getCampaignEpisodeGuide(region, done);
+export function getCampaignEpisodeObjective(region: RegionId, done: ReadonlySet<string>, carrying: import('./residentEventRules').ResidentCarry = null): { title: Localized; line: Localized } | null {
+  const def = CAMPAIGN_EPISODES[region], state = getCampaignEpisodeState(region, done), guide = getCampaignEpisodeGuide(region, done, carrying);
   if (!guide) return null;
   let line: Localized;
   switch (state.stage) {
     case 'briefing': line = [`与${def.speaker[0]}交谈。`, `Speak with ${def.speaker[1]}.`]; break;
-    case 'work': line = [`${def.workLabel[0]} · 第${state.workProgress + 1}/2步。`, `${def.workLabel[1]} · Step ${state.workProgress + 1}/2.`]; break;
+    case 'work': if(done.has('adventure_v2')){line=guide.text;break;}line = [`${def.workLabel[0]} · 第${state.workProgress + 1}/2步。`, `${def.workLabel[1]} · Step ${state.workProgress + 1}/2.`]; break;
     case 'decision': line = [`${def.decisionLabel[0]}，亲手确认安排。`, `${def.decisionLabel[1]}; confirm your plan at the site.`]; break;
     case 'follow-through': line = getCampaignEvidenceLine(guide.targetId, done); break;
     case 'report': line = [`返回${def.speaker[0]}身边交谈。`, `Return to ${def.speaker[1]} and speak.`]; break;

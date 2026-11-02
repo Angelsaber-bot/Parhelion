@@ -1,3 +1,5 @@
+import {KINGDOM_GATE as G} from '../src/kingdomGate';
+import {gateEscortPosition} from '../src/kingdomGateScene';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
@@ -55,6 +57,15 @@ test('NON-GPU four chapters: fresh save, resident, mandatory route, victory, ret
       interact('hq_terminal'); interact('armory_rack'); closeDialogue();
       assert.ok(w.done.has('armory_rack'));
       for (const beat of chapter.beats) for (const id of beat.flags) {
+        if(id===G.rescued){
+          assert.equal(getEraStoryGuide(region,w.done)!.targetId,G.entry);
+          interact(G.entry);frame();assert.equal(w.combat.storyEncounter?.id,G.encounter,`${document.getElementById('toast')?.textContent}; prompt=${document.getElementById('prompt')?.textContent}; p=${w.player.pos.toArray()}`);
+          for(const enemy of w.combat.state.enemies.filter((e:any)=>e.storyEncounter===G.encounter))w.combat.damageEnemy(enemy.id,10000,{source:'ranged',origin:w.player.pos});frame();
+          interact(G.latch);position(marker(G.winch).p);frame(90);key('KeyF');frame();
+          document.body.dispatchEvent(new window.KeyboardEvent('keydown',{code:'KeyF',bubbles:true}));frame(210);
+          document.body.dispatchEvent(new window.KeyboardEvent('keyup',{code:'KeyF',bubbles:true}));
+          assert.ok(w.done.has(G.open));const p=gateEscortPosition(.4);position([p.x,p.y+.3,p.z]);frame(1200);assert.ok(w.done.has(G.rescued));continue;
+        }
         assert.equal(getEraStoryGuide(region, w.done)!.targetId, id, 'next mandatory goal advances monotonically');
         if (id.startsWith('ghost_boat_')) {
           position([FORT_CANNON.station.x, FORT_CANNON.station.y, FORT_CANNON.station.z]);

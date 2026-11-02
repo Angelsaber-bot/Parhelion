@@ -1,3 +1,5 @@
+import {campaignSourceContext} from './campaign-source-context';
+import {WORLD_RIFLE} from '../src/worldBalance';
 import { WorldAudio } from '../src/worldAudio';
 import * as campaignClosure from '../src/campaignClosure';
 import { getEraProgressReaction } from '../src/eraStories';
@@ -33,7 +35,7 @@ function setup({ wall = false, enemy = false, enabled = true, armed = true, cann
     damageEnemy: (id: string) => damage.push(id),
     shot: (start: THREE.Vector3,end: THREE.Vector3,hit: boolean) => shots.push({start:start.clone(),end:end.clone(),hit}),
   };
-  const context=vm.createContext({narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined,THREE,getEraProgressReaction,settings:{label:()=> 'F'},bilingual:(zh:string)=>zh,FORT_CANNON,fortCannon:new FortCannon(),actions:undefined,inspectServant:false,worldProgress:{armed},gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
+  const context=vm.createContext({...campaignSourceContext,WORLD_RIFLE,narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined,THREE,getEraProgressReaction,settings:{label:()=> 'F'},bilingual:(zh:string)=>zh,FORT_CANNON,fortCannon:new FortCannon(),actions:undefined,inspectServant:false,worldProgress:{armed},gameplayActive:()=>true,player:{flying:false,pitch:0,pos:new THREE.Vector3(0,0,2)},camera,ray:new THREE.Raycaster(),combat,
     targets:[target],rig:playerArt?.rig ?? {root,joints:{Gun:gun}},rifle:playerArt?.rifle ?? {muzzleWorld:()=>gun.localToWorld(new THREE.Vector3(0,0,-.68))},anim:animator ?? {prepareShot(){}},done,toast(){},save(){saves++;},applyWorldState(){},$(){return {classList:{add(){},remove(){}}};},setTimeout(){}});
   vm.runInContext(transformSync(section+'\nglobalThis.shoot = shoot;',{loader:'ts',format:'cjs'}).code,context);
   return {shoot:()=>context.shoot(),shots,damage,done,markers,saves:()=>saves};
