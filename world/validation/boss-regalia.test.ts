@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { BOSSES } from '../src/combat.ts';
+import { MINIBOSSES } from '../src/minibosses.ts';
+import { ELITE_CRESTS, hasEliteCrest, createEliteCrestKit } from '../src/eliteCrestVisual.ts';
 import { BOSS_REGALIA_IDS, hasBossRegalia, createBossRegaliaKit, type BossRegaliaId } from '../src/bossRegaliaVisual.ts';
 
 /** Stand-in for the authored rig: the bones the kits pin regalia to, in their bind-pose places. */
@@ -60,4 +62,35 @@ test('an unknown champion gets no regalia', () => {
   assert.equal(hasBossRegalia('elite_oath_knight'), false);
   const ids: readonly string[] = BOSS_REGALIA_IDS as readonly BossRegaliaId[];
   assert.equal(new Set(ids).size, ids.length);
+});
+
+test('every roaming elite with an authored kit carries a sashimono', () => {
+  for (const def of MINIBOSSES) {
+    // The valley sentinel is the one elite with no human kit: it is a procedural crystal creature.
+    const expected = def.id !== 'elite_valley_sentinel';
+    assert.equal(hasEliteCrest(def.id), expected, `${def.id} crest mismatch`);
+  }
+  assert.equal(hasEliteCrest(undefined), false);
+  assert.equal(hasEliteCrest('boss_vacant_king'), false);
+});
+
+test('elite crests ride the bones and clear away on remove', () => {
+  for (const id of Object.keys(ELITE_CRESTS)) {
+    const kit = createEliteCrestKit(id), actor = rig();
+    const worn = kit.attach(actor);
+    assert.ok(worn, `${id} did not attach`);
+    const head = actor.getObjectByName('head')!, chest = actor.getObjectByName('chest')!;
+    assert.equal(actor.children.filter(o => o.userData.visualOnly).length, 0, `${id} left the crest off the bones`);
+    const worn_meshes = count(head) + count(chest);
+    assert.ok(worn_meshes >= 15 && worn_meshes <= 60, `${id} crest mesh count ${worn_meshes}`);
+    // The banner must stand above the shoulder and behind the back, never across the face.
+    const banner = chest.getObjectByName('EliteSashimono')!;
+    const box = new THREE.Box3().setFromObject(banner);
+    assert.ok(box.max.y > 1.9, `${id} banner does not clear the head`);
+    assert.ok(box.min.z < -.1, `${id} banner is not worn on the back`);
+    for (const mode of ['idle', 'chase', 'windup']) worn!.update?.({ mode }, 1.5);
+    worn!.remove();
+    assert.equal(count(head) + count(chest), 0, `${id} crest survived remove()`);
+    kit.dispose();
+  }
 });
