@@ -10,9 +10,9 @@ import {WeaponArtPool,combatArt,artPoint} from '../src/weaponArt.ts';
 import {sanitizedSkins} from '../src/loadout.ts';
 import {Match} from '../shared/match.ts';
 import {ARENA_MAP} from '../shared/arenaMap.ts';
-it('the curated catalog has twelve exclusive identities and no retired collections',()=>{
- const expected={lumen:['tidal-engine','amber-apiary'],corona:['abyssal-maw'],halo:['celadon-atlas'],firefly:['mint-arcade'],longnight:['abyssal-requiem','velvet-thorn'],blade:['prismwing'],polearm:['vermilion-plume','ink-bamboo'],hammer:['foundry-bell','sugar-crash']};
- expect(SIGNATURE_SKINS).toHaveLength(12);expect(new Set(SIGNATURE_SKINS.map(s=>s.id)).size).toBe(12);
+it('the curated catalog has sixteen exclusive identities and no retired collections',()=>{
+ const expected={lumen:['tidal-engine','amber-apiary','graviton-crucible'],corona:['abyssal-maw'],halo:['celadon-atlas','owl-canticle'],firefly:['mint-arcade','koi-current'],longnight:['abyssal-requiem','velvet-thorn','meridian-key'],blade:['prismwing'],polearm:['vermilion-plume','ink-bamboo'],hammer:['foundry-bell','sugar-crash']};
+ expect(SIGNATURE_SKINS).toHaveLength(16);expect(new Set(SIGNATURE_SKINS.map(s=>s.id)).size).toBe(16);
  for(const w of WEAPONS){expect(w.skins.map(s=>s.id)).toEqual(expected[w.id]);expect(signaturesFor(w.id).map(s=>s.id)).toEqual(expected[w.id]);for(const skin of w.skins){expect(WEAPONS.filter(other=>other.skins.some(s=>s.id===skin.id)).map(w=>w.id)).toEqual([w.id]);expect(finishOf(skin.id,w.id)).toBe(skin.id);expect(finishOf(skin.id,WEAPONS.find(other=>other!==w)!.id)).toBeNull();}}
  for(const id of ['dawn','ember','astral','sunforged','petalglass','night-courier','dune-falcon','moonbite','equator-pulse','paper-crane','peach-fizz','copper-cartographer','obsidian-surveyor','snowline-ghost','rime-oath','storm-circuit','meteor-heart'])expect(finishOf(id)).toBeNull();
  const saved=WEAPONS.map(w=>w.skins.length-1);expect(sanitizedSkins(saved)).toEqual(saved);

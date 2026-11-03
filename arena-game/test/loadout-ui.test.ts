@@ -87,7 +87,7 @@ describe('lobby and combat equipment presentation', () => {
   });
   it('uses catalog-indexed ammo/skin and slot-indexed highlights for non-default loadouts', () => {
     const state = presentation(['longnight', 'firefly', 'hammer'], 1); state.ammo[3] = 7;
-    const view = weaponHud(state, sanitizedSkins([1, 1, 1]));
+    const view = weaponHud(state, sanitizedSkins([1, -1, 99]));
     expect(view.ammo).toBe('7'); expect(view.detail).toBe('/ 36');
     expect(view.name).toBe('冲锋枪 SMG'); expect(view.slots.map((s) => s.active)).toEqual([false, true, false]);
     expect(view.slots.map((s) => s.name)).toEqual(['狙击步枪', '冲锋枪 SMG', '战锤']);
@@ -111,7 +111,7 @@ describe('lobby and combat equipment presentation', () => {
     }
   });
   it('validates current catalog indices independently for each weapon', () => {
-    expect(sanitizedSkins([1, 1, 1])).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
+    expect(sanitizedSkins([1, -1, 99])).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
     expect(sanitizedSkins([NaN, -1, 9, WEAPONS[3].skins.length, .5])).toEqual(WEAPONS.map(() => 0));
     expect(sanitizedSkins({ 0: 1 })).toEqual(WEAPONS.map(() => 0));
   });

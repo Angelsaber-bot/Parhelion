@@ -6,10 +6,11 @@ import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeomet
 import {mergeGeometries,mergeVertices} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {signatureOf,signatureModelOf,type SignatureStyle} from '../shared/signatureSkins.ts';
 import type {ArtDef,ArtInstance} from './weaponArt.ts';
+import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
 
-type V=readonly[number,number,number];
-type P=readonly[number,number];
-class Sculpture{
+export type V=readonly[number,number,number];
+export type P=readonly[number,number];
+export class Sculpture{
  readonly root=new THREE.Group();readonly asset=new THREE.Group();readonly parts:Record<string,THREE.Group>={};
  readonly coat:THREE.MeshPhysicalMaterial;readonly metal:THREE.MeshPhysicalMaterial;readonly dark:THREE.MeshStandardMaterial;readonly glow:THREE.MeshPhysicalMaterial;readonly soft:THREE.MeshStandardMaterial;readonly pearl:THREE.MeshPhysicalMaterial;
  constructor(readonly def:ArtDef,readonly style:SignatureStyle){
@@ -119,6 +120,6 @@ function confectionHammer(s:Sculpture){
 
 export function buildSignatureModel(def:ArtDef,id?:string):ArtInstance|null{
  const model=signatureModelOf(id,def.combat),style=signatureOf(id,def.combat);if(!model||!style)return null;
- const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;}
+ const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;}
  return sculpture.finish();
 }

@@ -33,6 +33,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   scene.add(new THREE.HemisphereLight(0xe1f5ff, 0x45505c, 2));
   const key = new THREE.DirectionalLight(0xffe3c5, 3); key.position.set(2, 4, 3); scene.add(key);
   let handle: ArtHandle | null = null, closed = false, serial = 0, selected = 'dawn';
+  let framedModel='',framedDistance=0;
   let statusText: [string, string] = ['', ''];
   // Enter on the weapon's unique art, without changing the equipped skin.
   // Saved equipment only changes on the explicit Equip action below.
@@ -79,7 +80,8 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     retry.hidden = true; setStatus('正在加载所选模型…', 'Loading the selected model…');
     renderDetails();
     dialog.querySelectorAll<HTMLButtonElement>('[data-art]').forEach((b) => { const on = b.dataset.art === id; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
-    const current = handle = weaponArtPool.acquire(def,WEAPONS.find(w=>w.id===def.combat)!.skins[selectedSkins[WEAPONS.findIndex(w=>w.id===def.combat)]]);
+    const weapon=WEAPONS.find(w=>w.id===def.combat)!,colors=weapon.skins[selectedSkins[WEAPONS.indexOf(weapon)]],modelKey=signatureModelOf(colors.id)??def.id;
+    const current = handle = weaponArtPool.acquire(def,colors);
     try {
       const instance = await current.ready;
       if (!instance || closed || ticket !== serial) return;
@@ -91,7 +93,13 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
       const distance=Math.max(size.x/(2*tangent*aspect),size.y/(2*tangent))*1.16+size.z;
       controls.minDistance = radius * .55; controls.maxDistance = Math.max(distance*3,radius*4);
       if(!preserveView){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.set(distance*.38,distance*.24,distance);controls.target.set(0,0,0);controls.update();controls.saveState();controls.enableDamping=damping;}
-      else controls.update();
+      else {
+        // A replacement silhouette can be much smaller than the original GLB.
+        // Preserve orbit/relative zoom while fitting the new structure to the view.
+        if(framedModel!==modelKey&&framedDistance>0){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.sub(controls.target).multiplyScalar(distance/framedDistance).add(controls.target);controls.position0.set(distance*.38,distance*.24,distance);controls.target0.set(0,0,0);controls.enableDamping=damping;}
+        controls.update();
+      }
+      framedModel=modelKey;framedDistance=distance;
       dialog.setAttribute('aria-busy','false');equip.disabled=false;setStatus('','');
     } catch (error) {
       current.release();

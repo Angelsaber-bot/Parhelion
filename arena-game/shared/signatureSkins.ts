@@ -1,6 +1,6 @@
 import type {WeaponId} from './content.ts';
 
-export interface SignatureStyle {weapon:WeaponId;id:string;zh:string;en:string;body:number;accent:number;trim:number;metal:number;rough:number;iris:number;shadow?:number;inlay?:number;model?:'maw'|'butterfly'|'bamboo'|'confection';description:readonly[string,string]}
+export interface SignatureStyle {weapon:WeaponId;id:string;zh:string;en:string;body:number;accent:number;trim:number;metal:number;rough:number;iris:number;shadow?:number;inlay?:number;model?:'maw'|'butterfly'|'bamboo'|'confection'|'orrery'|'koi'|'nocturne'|'chronograph';description:readonly[string,string]}
 /** Curated, weapon-exclusive identities. Persistence uses stable IDs, never catalog positions. */
 export const SIGNATURE_SKINS = [
   {weapon:'lumen',id:'tidal-engine',zh:'潮汐引擎',en:'Tidal Engine',body:0x123f50,accent:0x6ff3d0,trim:0xd5b878,metal:.68,rough:.28,iris:.12,description:['深海搪瓷、涡轮银环与贯穿机匣的潮汐导流槽。','Ocean enamel, turbine rings and flowing receiver channels.']},
@@ -15,6 +15,10 @@ export const SIGNATURE_SKINS = [
   {weapon:'blade',id:'prismwing',zh:'琉光蝶刃',en:'Prismwing',body:0xbdb5e9,accent:0x82e2da,trim:0xcbdfea,metal:.46,rough:.25,iris:.68,shadow:0x39436b,inlay:0x5a598b,model:'butterfly',description:['细长晶刃、蝶翼护手与紫晶握柄。','A slender crystal blade, sculpted butterfly guard and an amethyst grip.']},
   {weapon:'polearm',id:'ink-bamboo',zh:'玄竹',en:'Ink Bamboo',body:0x244d44,accent:0x9bd0a0,trim:0xb5a374,metal:.23,rough:.43,iris:.05,shadow:0x172f2d,inlay:0x142c2b,model:'bamboo',description:['竹节长柄、双刃叶形枪尖与古铜束箍。','A segmented bamboo shaft, twin-edged leaf spearhead and antique-bronze collars.']},
   {weapon:'hammer',id:'sugar-crash',zh:'糖霜重击',en:'Sugar Crash',body:0xefc5d9,accent:0x8fdbc8,trim:0xe9dfc6,metal:.08,rough:.38,iris:.12,shadow:0x876b82,inlay:0xc27895,model:'confection',description:['圆筒糖霜锤头、奶油旋纹与糖纸束结。','A round icing mallet, sculpted cream spirals and a wrapped-candy collar.']},
+  {weapon:'lumen',id:'graviton-crucible',zh:'引力熔环',en:'Graviton Crucible',body:0xd8dce8,accent:0xb4a0ff,trim:0xc99c76,metal:.36,rough:.25,iris:.3,shadow:0x20243a,model:'orrery',description:['悬置紫晶核心、三轴金属环与分体陶瓷导轨。','A suspended amethyst core, three-axis metal gimbals and split ceramic rails.']},
+  {weapon:'firefly',id:'koi-current',zh:'游鲤',en:'Koi Current',body:0xf1e9d8,accent:0xf57948,trim:0xbda376,metal:.16,rough:.28,iris:.08,shadow:0x263f46,model:'koi',description:['锦鲤瓷甲、立体鳍尾与沿短机匣叠起的珊瑚鳞片。','Koi porcelain armor, sculpted fins and coral scales along a compact receiver.']},
+  {weapon:'halo',id:'owl-canticle',zh:'夜枭圣咏',en:'Owl Canticle',body:0x282b40,accent:0xc96a86,trim:0xb8b4b0,metal:.62,rough:.29,iris:.13,shadow:0x121a28,model:'nocturne',description:['黑曜翼甲、银骨羽片与嵌入镜座的石榴红枭眼。','Obsidian wing armor, silver feather blades and garnet owl eyes inset into the scope mount.']},
+  {weapon:'longnight',id:'meridian-key',zh:'时序之钥',en:'Meridian Key',body:0x624537,accent:0x8fded6,trim:0xd7b67e,metal:.38,rough:.34,iris:.06,shadow:0x202a31,model:'chronograph',description:['黄铜擒纵齿轮、珐琅钟盘与长镜身上的镂空弧架。','Brass escapement gears, an enamel clock dial and open arc braces along the long scope.']},
 ] as const satisfies readonly SignatureStyle[];
 export type SignatureId=typeof SIGNATURE_SKINS[number]['id'];
 export const signatureOf=(id?:string,weapon?:string)=>SIGNATURE_SKINS.find(s=>s.id===id&&(!weapon||s.weapon===weapon));
