@@ -59,7 +59,9 @@ export class WorldMap {
   px(x: number) { return ((x - (this.x0 ?? -this.half)) / (this.half * 2)) * this.size; }
   pz(z: number) { const hz = this.halfZ ?? this.half; return ((z - (this.z0 ?? -hz)) / (hz * 2)) * (this.sizeZ ?? this.size); }
 
-  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null; enemies?: ReadonlyArray<{ p: { x: number; z: number }; boss: boolean }> }) {
+  draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null; enemies?: ReadonlyArray<{ p: { x: number; z: number }; boss: boolean }>;
+    /** optional full-map overlay (exploration icons); absent = the historical draw stream */
+    overlay?: (ctx: CanvasRenderingContext2D, project: (x: number, z: number) => { x: number; y: number }, unit: number, width: number) => void }) {
     const W = ctx.canvas.width;
     ctx.save();
     ctx.clearRect(0, 0, W, W);
@@ -113,6 +115,7 @@ export class WorldMap {
         ctx.lineWidth = 5 * u; ctx.strokeStyle = FULL_MAP_COLORS.outline; ctx.stroke();
         ctx.lineWidth = 1.8 * u; ctx.strokeStyle = point.locked ? FULL_MAP_COLORS.locked : FULL_MAP_COLORS.landmark; ctx.stroke();
       }
+      if (opts.overlay) { opts.overlay(ctx, (x, z) => ({ x: tx(x), y: tz(z) }), fullUnit, W); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; }
     } else {
       const area = minimapArea(this.layout.areas, player.x, player.z);
       let labelBox: MapBox | undefined;

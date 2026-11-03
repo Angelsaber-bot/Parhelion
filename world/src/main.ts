@@ -8,6 +8,9 @@ import {createFlagshipInterior} from './flagshipInterior';
 import {RegionVisualStreaming} from './regionVisualStreaming';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getAdventureGuide,getCurrentAdventureGuide} from './openWorldCampaign';
 import {createAdventureSites} from './adventureSites';
+import {createExploration} from './exploration/runtime';
+import {drawExplorationIcons} from './exploration/mapIcons';
+import {glideLevel as explorationGlideLevel, glideScale as explorationGlideScale} from './exploration/catalog';
 import {createAdventureRuntime} from './adventureRuntime';
 import { WORLD_RIFLE } from './worldBalance';
 import { KINGDOM_GATE, createKingdomGateRuntime, gateEncounter, isKingdomGateOpen } from './kingdomGate';
@@ -434,6 +437,14 @@ const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.r
 const progressStorage = (() => { try { return localStorage; } catch { return undefined; } })();
 const worldProgress = new WorldProgress(progressStorage);
 const { done, found } = worldProgress;
+// 幻日探索层：宝箱、日晕之羽、石像、棱镜谜题、时层挑战、战斗据点（src/exploration）。
+const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text),terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel,
+ startEncounter:spec=>combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming}),
+ activeEncounter:()=>combat.storyEncounter?.id??null,cancelEncounter:()=>combat.cancelStoryEncounter(),
+ onGlideLevel:level=>applyExplorationGlide(level),sound:kind=>audio.explore(kind)});
+world.add(exploration.root);colliders.push(...exploration.colliders);layout.markers.push(...exploration.markers);
+addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();});
+function applyExplorationGlide(level=explorationGlideLevel(done)){const g=explorationGlideScale(level);player.glideSpeedScale=g.speed;player.glideSinkScale=g.sink;}
 const weaponFinishStore = new WeaponFinishStore(progressStorage);
 let weaponFinishControl: ReturnType<typeof createWeaponFinishControl> | undefined;
 const save = () => worldProgress.save();
@@ -505,6 +516,7 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
   const action=adventureSites.actions.get(marker.id);if(action)return bilingual(...action.label);
   if(adventureActive(done)&&marker.id==='compact_relay_entry')return bilingual('服务庭院 · 恢复最低外联','Service yard · Restore the minimum uplink');
@@ -762,6 +774,7 @@ function updateCold(dt: number) {
 
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
+if (typeof applyExplorationGlide === 'function') applyExplorationGlide(); // guarded: validation runs isolated slices of this file
 player.updrafts = layout.updrafts ?? [];
 const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
 // URL starts are intentional debug entry points only. Reset always returns to the authored Alpha
@@ -1158,8 +1171,8 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { relayDamageRevision++; audio.hurt(); },
   onKill(id) { audio.kill(); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
-  onStoryEncounterVictory(id) { if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
-  onPlayerDefeated() { kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
+  onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
+  onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
@@ -1720,6 +1733,7 @@ function handleCampaignInteraction(id: string) {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
   if(adventureMarkerIds.has(m.id)){if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}adventureRuntime?.interact(m.id);return;}
   if (kingdomGateMarkerIds.has(m.id)) {
@@ -1978,6 +1992,7 @@ function frame(now: number) {
   const activeAdventure=adventureRuntime?.channel;
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
+  exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id as RegionId,gameplayActive()&&!combat.defeated);
   flagshipInterior.apply(done,now/1000);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}
   residentEventRuntime?.update(player.pos,player.gliding,gameplayActive()&&!combat.defeated);
@@ -2035,7 +2050,7 @@ function frame(now: number) {
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
   if (mapBudget.due(now, { active: true, revision: hudRevision })) {
     map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
-    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt });
+    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width) });
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;
@@ -2074,7 +2089,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { exploration, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

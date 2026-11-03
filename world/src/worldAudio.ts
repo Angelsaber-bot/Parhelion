@@ -182,6 +182,13 @@ export class WorldAudio {
     }else if(frame.phase==='outro')this.voice('sine',.9,frame.identity==='saber'?440:180,.018,.65,.08);
   }
   evade(){this.voice('noise',.17,2600,.085);}
+  explore(kind:'open'|'pickup'|'solve'|'rotate'|'fail'){
+    if(kind==='open'){this.voice('triangle',.32,523,.08,1.5);this.voice('sine',.55,784,.06,1.33,.02);}
+    else if(kind==='pickup'){this.voice('sine',.22,988,.07,1.5);this.voice('triangle',.3,1319,.04,1.2,.03);}
+    else if(kind==='solve'){this.voice('triangle',.45,392,.08,1.5);this.voice('sine',.7,587,.07,1.5,.06);this.voice('sine',.9,784,.05,1.5,.12);}
+    else if(kind==='rotate'){this.voice('noise',.08,1800,.05);this.voice('triangle',.12,330,.05,1.2);}
+    else this.voice('sine',.4,330,.08,.6);
+  }
   interaction(){this.voice('sine',.12,520,.055,1.5);}
   private releaseContext(){this.stopVoices();for(const node of [this.master,this.compressor])try{node?.disconnect();}catch{/* best effort */}try{if(this.context&&this.context.state!=='closed')void this.context.close().catch(()=>{});}catch{/* unavailable */}this.context=null;this.master=null;this.compressor=null;this.noise=null;}
   dispose(){if(this.disposed)return;this.disposed=true;this.active=false;this.releaseContext();for(const remove of this.unlisten)remove();this.unlisten=[];}

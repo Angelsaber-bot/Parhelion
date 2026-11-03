@@ -1,0 +1,76 @@
+/**
+ * Full-map overlay for the 幻日探索层: statues, domains, outposts, prism puzzles and trials.
+ * Chests and feathers stay hidden so exploring still finds them; the legend shows each
+ * region's exploration percentage. The minimap stays a pure navigation view.
+ */
+import { bilingual } from '../../../shared-client/i18n';
+import type { RegionId } from '../settlements/types';
+import { CAMPS, DOMAINS, PUZZLES, REGION_NAMES, STATUES, TRIALS, flagCamp, flagPuzzle, flagTrial, regionExploration } from './catalog';
+
+export type MapIconKind = 'statue' | 'domain' | 'camp' | 'puzzle' | 'trial';
+export interface MapIcon { readonly id: string; readonly kind: MapIconKind; readonly x: number; readonly z: number; readonly cleared: boolean }
+type Project = (x: number, z: number) => { x: number; y: number };
+
+const domainIds = new Set(DOMAINS.map(d => d.id));
+const centroid = (pts: readonly (readonly [number, number])[]): [number, number] => [pts.reduce((s, p) => s + p[0], 0) / pts.length, pts.reduce((s, p) => s + p[1], 0) / pts.length];
+
+export function explorationMapIcons(done: ReadonlySet<string>): MapIcon[] {
+  return [
+    ...STATUES.map(s => ({ id: `statue:${s.id}`, kind: 'statue' as const, x: s.p[0], z: s.p[1], cleared: false })),
+    // a domain's seal puzzle and its waves are one icon: cleared when the last wave falls
+    ...DOMAINS.map(d => ({ id: `domain:${d.id}`, kind: 'domain' as const, x: d.center[0], z: d.center[1], cleared: done.has(flagCamp(d.id)) })),
+    ...CAMPS.filter(c => !domainIds.has(c.id)).map(c => ({ id: `camp:${c.id}`, kind: 'camp' as const, x: c.anchor[0], z: c.anchor[1], cleared: done.has(flagCamp(c.id)) })),
+    ...PUZZLES.filter(p => !domainIds.has(p.id)).map(p => { const [x, z] = centroid([p.source.p, p.receiver, ...p.prisms.map(q => q.p)]); return { id: `puzzle:${p.id}`, kind: 'puzzle' as const, x, z, cleared: done.has(flagPuzzle(p.id)) }; }),
+    ...TRIALS.map(t => ({ id: `trial:${t.id}`, kind: 'trial' as const, x: t.stele[0], z: t.stele[1], cleared: done.has(flagTrial(t.id)) })),
+  ];
+}
+
+const COLORS: Record<MapIconKind, string> = { statue: '#ffe08a', domain: '#c89bff', camp: '#ff7a6b', puzzle: '#7fe6ff', trial: '#9df0b0' };
+const OUTLINE = '#1f2a44', CLEARED = '#9aa3b2';
+
+export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number) {
+  ctx.save();
+  for (const icon of explorationMapIcons(done)) {
+    const { x, y } = project(icon.x, icon.z), u = unit;
+    if (x < -10 || y < -10 || x > width + 10 || y > width + 10) continue;
+    const color = icon.cleared ? CLEARED : COLORS[icon.kind];
+    ctx.beginPath();
+    switch (icon.kind) {
+      case 'statue': { // sun disc with eight rays
+        ctx.arc(x, y, 4.2 * u, 0, Math.PI * 2);
+        for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.moveTo(x + Math.cos(a) * 6 * u, y + Math.sin(a) * 6 * u); ctx.lineTo(x + Math.cos(a) * 8.5 * u, y + Math.sin(a) * 8.5 * u); }
+        break;
+      }
+      case 'domain': // gate: double diamond
+        ctx.moveTo(x, y - 8 * u); ctx.lineTo(x + 7 * u, y); ctx.lineTo(x, y + 8 * u); ctx.lineTo(x - 7 * u, y); ctx.closePath();
+        ctx.moveTo(x, y - 4 * u); ctx.lineTo(x + 3.5 * u, y); ctx.lineTo(x, y + 4 * u); ctx.lineTo(x - 3.5 * u, y); ctx.closePath();
+        break;
+      case 'camp': // crossed blades
+        ctx.moveTo(x - 6 * u, y - 6 * u); ctx.lineTo(x + 6 * u, y + 6 * u); ctx.moveTo(x + 6 * u, y - 6 * u); ctx.lineTo(x - 6 * u, y + 6 * u);
+        ctx.moveTo(x - 6 * u, y + 2 * u); ctx.lineTo(x - 2 * u, y + 6 * u); ctx.moveTo(x + 6 * u, y + 2 * u); ctx.lineTo(x + 2 * u, y + 6 * u);
+        break;
+      case 'puzzle': // prism triangle with a ray
+        ctx.moveTo(x, y - 6.5 * u); ctx.lineTo(x + 6 * u, y + 5 * u); ctx.lineTo(x - 6 * u, y + 5 * u); ctx.closePath();
+        ctx.moveTo(x - 9 * u, y - 1 * u); ctx.lineTo(x - 2.5 * u, y + 1 * u);
+        break;
+      case 'trial': // stele
+        ctx.moveTo(x - 3.5 * u, y + 7 * u); ctx.lineTo(x - 3.5 * u, y - 4 * u); ctx.lineTo(x, y - 7 * u); ctx.lineTo(x + 3.5 * u, y - 4 * u); ctx.lineTo(x + 3.5 * u, y + 7 * u); ctx.closePath();
+        break;
+    }
+    ctx.lineWidth = 5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
+    ctx.lineWidth = 2 * u; ctx.strokeStyle = color; ctx.stroke();
+  }
+  // legend: exploration percentage per region, bottom-left
+  const regions: RegionId[] = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'];
+  const line = 17 * unit, pad = 10 * unit, boxW = 190 * unit, boxH = pad * 2 + line * regions.length;
+  const bx = 14 * unit, by = width - boxH - 14 * unit;
+  ctx.fillStyle = '#141c30cc'; ctx.fillRect(bx, by, boxW, boxH);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = `600 ${12 * unit}px system-ui, sans-serif`;
+  regions.forEach((region, i) => {
+    const ex = regionExploration(region, done), name = REGION_NAMES[region];
+    const y = by + pad + line * (i + .5);
+    ctx.fillStyle = '#e8ecf2'; ctx.fillText(name ? bilingual(name[0], name[1]) : region, bx + pad, y);
+    ctx.textAlign = 'right'; ctx.fillStyle = ex.percent >= 100 ? '#ffe08a' : '#b8c4d6'; ctx.fillText(`${ex.percent}%`, bx + boxW - pad, y); ctx.textAlign = 'left';
+  });
+  ctx.restore();
+}

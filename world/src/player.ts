@@ -40,6 +40,9 @@ export class Player {
   pitch = 0;
   onGround = false;
   swimming = false;
+  /** Glider upgrades from the exploration layer (Halo Statues). */
+  glideSpeedScale = 1;
+  glideSinkScale = 1;
   /** Genshin-style glider: press jump in the air to open/close. Updrafts open it automatically. */
   gliding = false;
   inUpdraft = false;
@@ -123,11 +126,11 @@ export class Player {
     else if (jumpPressed) this.gliding = !this.gliding;
     if (this.inUpdraft && !this.onGround && !this.swimming) this.gliding = true;
     if (this.gliding) {
-      speed = PLAYER.glide;
+      speed = PLAYER.glide * this.glideSpeedScale;
       this.vel.y -= PLAYER.gravity * 0.35 * dt;
       if (lift > 0) this.vel.y = Math.min(this.vel.y + lift * dt, PLAYER.liftMax);
       else if (this.vel.y > 0) this.vel.y *= Math.pow(0.15, dt);
-      this.vel.y = Math.max(this.vel.y, -PLAYER.glideSink);
+      this.vel.y = Math.max(this.vel.y, -PLAYER.glideSink * this.glideSinkScale);
     } else if (this.swimming) {
       speed *= 0.55;
       this.vel.y += (feetDepth - 1.15) * 30 * dt; // buoyancy keeps the head above water
