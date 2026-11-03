@@ -9,12 +9,13 @@ import type { EnemyRole } from '../enemyRoles';
 import { ALPHA_STATUES, ALPHA_PUZZLES, ALPHA_TRIALS, ALPHA_CAMPS, ALPHA_DOMAINS, ALPHA_CHESTS, ALPHA_FEATHERS } from './content/alpha';
 import { BLACKSAIL_STATUES, BLACKSAIL_PUZZLES, BLACKSAIL_TRIALS, BLACKSAIL_CAMPS, BLACKSAIL_DOMAINS, BLACKSAIL_CHESTS, BLACKSAIL_FEATHERS } from './content/blacksail';
 import { WINTER_STATUES, WINTER_PUZZLES, WINTER_TRIALS, WINTER_CAMPS, WINTER_DOMAINS, WINTER_CHESTS, WINTER_FEATHERS } from './content/winter';
+import { EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, TREASURE_MAPS, flagDig, flagEmber, flagFox } from './regional';
 import { KYOTO_STATUES, KYOTO_PUZZLES, KYOTO_TRIALS, KYOTO_CAMPS, KYOTO_DOMAINS, KYOTO_CHESTS, KYOTO_FEATHERS } from './content/kyoto';
 
 export type XZ = readonly [number, number];
 export type ChestTier = 'common' | 'exquisite' | 'precious' | 'luxurious';
 
-export interface ChestDef { readonly id: string; readonly region: RegionId; readonly p: XZ; readonly tier: ChestTier; readonly yaw?: number; readonly requires?: string }
+export interface ChestDef { readonly id: string; readonly region: RegionId; readonly p: XZ; readonly tier: ChestTier; readonly yaw?: number; readonly requires?: string; /** hidden underground until `requires` is met (treasure maps) */ readonly buried?: boolean }
 export interface FeatherDef { readonly id: string; readonly region: RegionId; readonly p: XZ; /** absolute height when floating in the air */ readonly y?: number; readonly lift?: number }
 export interface StatueDef { readonly id: string; readonly region: RegionId; readonly p: XZ; readonly yaw: number; readonly title: Localized }
 export interface PrismDef { readonly p: XZ; readonly start: number; /** builds a ruined tower of this height under the prism */ readonly raise?: number }
@@ -171,7 +172,7 @@ export const PUZZLES: readonly PrismPuzzleDef[] = [...BRITAIN_PUZZLES, ...ALPHA_
 export const TRIALS: readonly TrialDef[] = [...BRITAIN_TRIALS, ...ALPHA_TRIALS, ...BLACKSAIL_TRIALS, ...WINTER_TRIALS, ...KYOTO_TRIALS];
 export const CAMPS: readonly CampDef[] = [...BRITAIN_CAMPS, ...ALPHA_CAMPS, ...BLACKSAIL_CAMPS, ...WINTER_CAMPS, ...KYOTO_CAMPS];
 export const DOMAINS: readonly DomainDef[] = [...BRITAIN_DOMAINS, ...ALPHA_DOMAINS, ...BLACKSAIL_DOMAINS, ...WINTER_DOMAINS, ...KYOTO_DOMAINS];
-export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS];
+export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS, ...REGIONAL_CHESTS];
 export const FEATHERS: readonly FeatherDef[] = [...BRITAIN_FEATHERS, ...ALPHA_FEATHERS, ...BLACKSAIL_FEATHERS, ...WINTER_FEATHERS, ...KYOTO_FEATHERS];
 
 // ─────────────────────────────────────── pure rules ───────────────────────────────────────
@@ -223,6 +224,9 @@ export function regionItems(region: RegionId): string[] {
     ...PUZZLES.filter(x => x.region === region).map(x => flagPuzzle(x.id)),
     ...TRIALS.filter(x => x.region === region).map(x => flagTrial(x.id)),
     ...CAMPS.filter(x => x.region === region).map(x => flagCamp(x.id)),
+    ...TREASURE_MAPS.filter(x => x.region === region).map(x => flagDig(x.id)),
+    ...EMBER_ROUTES.filter(x => x.region === region).map(x => flagEmber(x.id)),
+    ...FOXFIRES.filter(x => x.region === region).map(x => flagFox(x.id)),
   ];
 }
 export function regionExploration(region: RegionId, done: ReadonlySet<string>): RegionExploration {

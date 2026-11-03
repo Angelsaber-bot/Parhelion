@@ -4,6 +4,7 @@ import {
   CAMPS, CHESTS, FEATHERS, GLIDE, PUZZLES, STATUES, TRIALS, campEncounterId, feathersSpare, flagCamp, flagChest, flagFeather, flagGlide,
   flagPuzzle, flagTrial, glideLevel, glideScale, parseCampEncounter, regionExploration, regionItems, solvePuzzle, traceBeam,
 } from '../src/exploration/catalog.ts';
+import { EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap, foxAt, foxLength, mapHeld } from '../src/exploration/regional.ts';
 import { STORY_ENCOUNTER_LIMITS } from '../src/storyEncounters.ts';
 import { ENEMY_ROLES } from '../src/enemyRoles.ts';
 import { REGIONS } from '../src/regions.ts';
@@ -32,7 +33,8 @@ test('ids are unique and reward chests point at real challenges', () => {
   assert.equal(new Set(CHESTS.map(c => c.id)).size, CHESTS.length);
   assert.equal(new Set(FEATHERS.map(f => f.id)).size, FEATHERS.length);
   assert.ok(ids.every(id => /^[a-z0-9_]+$/.test(id)));
-  const challenges = new Set([...PUZZLES.map(p => flagPuzzle(p.id)), ...TRIALS.map(t => flagTrial(t.id)), ...CAMPS.map(c => flagCamp(c.id))]);
+  const challenges = new Set([...PUZZLES.map(p => flagPuzzle(p.id)), ...TRIALS.map(t => flagTrial(t.id)), ...CAMPS.map(c => flagCamp(c.id)),
+    ...TREASURE_MAPS.map(m => flagDig(m.id)), ...EMBER_ROUTES.map(e => flagEmber(e.id)), ...FOXFIRES.map(f => flagFox(f.id))]);
   for (const c of CHESTS) if (c.requires) assert.ok(challenges.has(c.requires), c.id);
   for (const flag of challenges) assert.ok(CHESTS.some(c => c.requires === flag) || CAMPS.some(c => c.requires === flag), `nothing unlocks from ${flag}`);
   for (const camp of CAMPS) if (camp.requires) assert.ok(challenges.has(camp.requires), camp.id);
@@ -99,4 +101,54 @@ test('full-map exploration icons hide chests/feathers and grey out cleared sites
   assert.equal(new Set(icons.map(i => i.id)).size, icons.length);
   const camp = CAMPS.find(c => !c.style)!; done.add(flagCamp(camp.id));
   assert.ok(explorationMapIcons(done).find(i => i.id === `camp:${camp.id}`)!.cleared);
+});
+
+test('each era owns a signature mechanic; copied prism puzzles are gone outside Britain and the valley', () => {
+  for (const region of ['blacksail', 'winter', 'kyoto'] as const) {
+    assert.equal(PUZZLES.filter(p => p.region === region).length, 0, region);
+    assert.ok(!TRIALS.some(t => t.region === region && /_run$/.test(t.id)), region);
+  }
+  assert.ok(TREASURE_MAPS.every(m => m.region === 'blacksail'));
+  assert.ok(EMBER_ROUTES.every(e => e.region === 'winter'));
+  assert.ok(FOXFIRES.every(f => f.region === 'kyoto'));
+  // each domain outside Britain is opened by its era mechanic
+  assert.equal(CAMPS.find(c => c.id === 'sunken_vault')!.requires, flagDig('blackbeard'));
+  assert.equal(CAMPS.find(c => c.id === 'frozen_chapel')!.requires, flagEmber('chapel_road'));
+  assert.equal(CAMPS.find(c => c.id === 'lotus_hall')!.requires, flagFox('lotus_path'));
+});
+
+test('treasure maps chain bottle → dig → next map, and nobody digs blind', () => {
+  const done = new Set<string>();
+  const [a, b, c] = TREASURE_MAPS;
+  assert.equal(canDig(a, done), false);
+  done.add(flagMap(a.id)); assert.ok(mapHeld(a, done) && !mapHeld(b, done));
+  done.add(flagDig(a.id)); assert.ok(!mapHeld(a, done) && mapHeld(b, done));
+  done.add(flagDig(b.id)); assert.ok(mapHeld(c, done));
+  done.add(flagDig(c.id)); assert.ok(TREASURE_MAPS.every(m => !mapHeld(m, done)));
+  for (const m of TREASURE_MAPS) assert.ok(CHESTS.some(ch => ch.buried && ch.requires === flagDig(m.id) && Math.hypot(ch.p[0] - m.dig[0], ch.p[1] - m.dig[1]) < 1), m.id);
+});
+
+test('ember relay: in-order kindling, per-leg timers, expiry resets', () => {
+  for (const route of EMBER_ROUTES) {
+    assert.equal(route.seconds.length, route.beacons.length);
+    let prev = route.brazier;
+    route.beacons.forEach((p, i) => { const d = Math.hypot(p[0] - prev[0], p[1] - prev[1]); assert.ok(d / 9 + 1 < route.seconds[i] && route.seconds[i] < d / 5.5, `${route.id} leg ${i} must need a sprint`); prev = p; });
+    let st = emberTake(route);
+    assert.deepEqual(emberKindle(route, st, 1), { ok: false, reason: 'wrong-beacon' });
+    for (let i = 0; i < route.beacons.length; i++) { const r = emberKindle(route, st, i); assert.ok(r.ok); if (r.ok) { st = r.state; assert.equal(r.finished, i === route.beacons.length - 1); } }
+    assert.equal(st.route, null);
+  }
+  const route = EMBER_ROUTES[0]; const t = emberTick(emberTake(route), route.seconds[0] + .1);
+  assert.ok(t.expired); assert.deepEqual(t.state, emberIdle());
+  assert.deepEqual(emberKindle(route, emberIdle(), 0), { ok: false, reason: 'no-ember' });
+});
+
+test('fox-fire paths are continuous, sprintable and end where they promise', () => {
+  for (const f of FOXFIRES) {
+    assert.deepEqual(f.path[0], f.shrine);
+    for (let i = 1; i < f.path.length; i++) assert.ok(Math.hypot(f.path[i][0] - f.path[i - 1][0], f.path[i][1] - f.path[i - 1][1]) <= 15, f.id);
+    assert.ok(f.speed < 9 && f.speed > 5.5, 'walking loses the fox, sprinting keeps up');
+    const end = foxAt(f, foxLength(f) + 5); assert.ok(end.end);
+    assert.ok(CHESTS.some(c => c.requires === flagFox(f.id)));
+  }
 });

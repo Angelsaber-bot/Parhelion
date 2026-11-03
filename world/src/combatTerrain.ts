@@ -34,9 +34,20 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
   };
   const kingdomMarkers = new Set<string>([KINGDOM_GATE.entry,KINGDOM_GATE.latch,KINGDOM_GATE.winch,KINGDOM_GATE.service]);
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
+  // Wilderness placement ignores the exploration layer entirely (its markers and colliders), so the seeded
+  // wild roster is identical whatever exploration content exists; story encounters still respect it.
+  const exploration = (c: Collider) => !!c.name?.startsWith('COL_SunwardExploration');
   const placeEnemy = (x: number, z: number, story = false, authoredHub = false, kingdomGate = false): Point3 | null => {
+    const wild = !story && !authoredHub && !kingdomGate;
+    const ground = (gx: number, gz: number, ceiling = 180) => cast({ x: gx, y: ceiling, z: gz }, { x: 0, y: -1, z: 0 }, ceiling + 20, wild ? exploration : undefined);
+    const clear = (p: Point3, radius = 1.2, height = 2.6) => {
+      const ignore = wild ? exploration : undefined;
+      if (cast({ x: p.x, y: p.y + 0.15, z: p.z }, { x: 0, y: 1, z: 0 }, height, ignore)) return false;
+      for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; if (cast({ x: p.x, y: p.y + 0.65, z: p.z }, { x: Math.cos(a), y: 0, z: Math.sin(a) }, radius, ignore)) return false; }
+      return true;
+    };
     if (!authoredHub && layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
-    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !(story && (m.id.startsWith('false_dawn_') || m.id.startsWith('xpm_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
+    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !m.id.startsWith('xpm_') && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
     // A downward all-collider ray finds flat roofs before terrain. Their clearance can look

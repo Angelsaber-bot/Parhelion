@@ -490,3 +490,102 @@ function lanternMonument(f: Frame) {
   for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; f.box([Math.cos(a) * .45, 8.05, Math.sin(a) * .45], [.32, .5, .08], '#f2c6d6', 'glow', [.5, -a + Math.PI / 2, 0]); }
   f.sphere([0, 8.25, 0], [.22, .3, .22], st);
 }
+
+// ─────────────────────────────── regional signature mechanics ───────────────────────────────
+/** 黑帆：a corked bottle washed up against a driftwood log, map rolled inside. */
+export function messageBottle(f: Frame) {
+  f.cyl([0, .22, .5], .2, 2.2, '#7a5a3a', 'body', 8, [0, 0, Math.PI / 2]);
+  f.cyl([1.15, .22, .5], .21, .05, '#9b7a55', 'body', 8, [0, 0, Math.PI / 2]);
+  f.box([-.4, .1, .9], [.5, .12, .18], '#6a4a2c', 'body', [0, .5, .2]);
+  for (const [x, z, s] of [[-.6, -.3, .25], [.7, -.4, .18], [.2, .9, .14]] as const) f.sphere([x, s * .5, z], [s, s * .6, s * 1.2], '#cfc6b0');
+}
+export function bottleGlass(): THREE.Group {
+  const g = new THREE.Group();
+  const glass = new THREE.Mesh(new THREE.CylinderGeometry(.11, .14, .42, 12), new THREE.MeshStandardMaterial({ color: '#8fd6c4', transparent: true, opacity: .55, roughness: .05, metalness: .1 }));
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(.045, .07, .14, 10), glass.material); neck.position.y = .27;
+  const cork = new THREE.Mesh(new THREE.CylinderGeometry(.05, .045, .07, 8), new THREE.MeshStandardMaterial({ color: '#a9845a' })); cork.position.y = .37;
+  const scroll = new THREE.Mesh(new THREE.CylinderGeometry(.06, .06, .3, 10), new THREE.MeshStandardMaterial({ color: '#efe1bd', emissive: '#6b5530', emissiveIntensity: .4 }));
+  const s = glint('#fff1c0', .7); s.position.y = .5;
+  g.add(glass, neck, cork, scroll, s); g.rotation.z = 1.25; return g;
+}
+/** Loose sand mound marking a dig site; only noticeable up close. */
+export function digMound(f: Frame) {
+  f.sphere([0, -.05, 0], [1.25, .28, 1.05], '#c8b383');
+  for (let i = 0; i < 5; i++) { const a = i * 1.3; f.sphere([Math.cos(a) * 1.1, -.02, Math.sin(a) * .9], [.3, .12, .3], '#b39d6e'); }
+  f.box([.95, .45, -.35], [.05, .9, .05], '#5a3d26', 'body', [.35, 0, -.3]);
+  f.box([1.12, .02, -.52], [.22, .04, .3], '#6d6d6d', 'metal', [.35, 0, -.3]);
+}
+/** 永冬：a campfire brazier that never goes out (the ember source). */
+export function emberBrazier(f: Frame) {
+  for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; f.sphere([Math.cos(a) * .95, .14, Math.sin(a) * .95], [.26, .2, .24], '#6e6a64'); }
+  for (let i = 0; i < 5; i++) f.box([0, .28, 0], [.16, .16, 1.4], '#3b2a1c', 'body', [0, i * .63, .25]);
+  f.cyl([0, .05, 0], .85, .1, '#2b2724', 'body', 12);
+  for (const [x, z] of [[-1.9, .4], [1.7, -.8]] as const) { f.box([x, .3, z], [.9, .6, .7], '#efeff2'); f.box([x, .62, z], [.95, .1, .75], '#ffffff'); }
+  f.cyl([-1.5, .45, 1.3], .07, .9, '#4f3a2a', 'body', 8, [0, 0, .3]);
+}
+/** 永冬：a stone beacon with an iron fire-basket, frosted until kindled. */
+export function emberBeacon(f: Frame) {
+  f.cyl([0, .25, 0], .9, .5, '#7d8696', 'body', 8, [0, 0, 0], true);
+  f.cyl([0, 1.6, 0], .42, 2.3, '#aeb6c2', 'body', 8, [0, Math.PI / 8, 0], true);
+  f.box([0, 2.85, 0], [1.1, .22, 1.1], '#7d8696', 'body', [0, Math.PI / 4, 0]);
+  for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; f.box([Math.cos(a) * .55, 3.35, Math.sin(a) * .55], [.06, .8, .06], '#2b2a2a', 'metal', [Math.sin(a) * .25, 0, -Math.cos(a) * .25]); }
+  f.torus([0, 3.7, 0], .72, .05, '#2b2a2a', 'metal', [Math.PI / 2, 0, 0]);
+  f.cyl([0, 3.0, 0], .42, .1, '#2b2a2a', 'metal', 8);
+  f.box([0, .9, .43], [.5, .6, .04], '#1f3a6b', 'body');
+  f.sphere([0, 3.0, 0], [.75, .12, .75], '#f4f8fc');
+}
+export function beaconFlame(): THREE.Group {
+  const g = new THREE.Group();
+  const flame = new THREE.Mesh(G.cone8, new THREE.MeshBasicMaterial({ color: '#ffb347', transparent: true, opacity: .9, blending: THREE.AdditiveBlending, depthWrite: false }));
+  flame.scale.set(.45, 1.2, .45); flame.position.y = .6; flame.name = 'Flame';
+  const core = new THREE.Mesh(G.cone8, new THREE.MeshBasicMaterial({ color: '#fff1b0', transparent: true, opacity: .95, blending: THREE.AdditiveBlending, depthWrite: false }));
+  core.scale.set(.22, .7, .22); core.position.y = .38;
+  const s = glint('#ffb347', 2.6); s.position.y = .7;
+  g.add(flame, core, s); return g;
+}
+export function emberCarry(): THREE.Group {
+  const g = new THREE.Group();
+  const core = new THREE.Mesh(G.sphere, new THREE.MeshBasicMaterial({ color: '#ffcf70' })); core.scale.setScalar(.12);
+  g.add(core, glint('#ff9a3c', 1.1)); return g;
+}
+/** 京都：a fox shrine — two kitsune statues before a small vermilion torii. */
+export function foxShrine(f: Frame) {
+  f.box([0, .1, 0], [5.2, .2, 3.6], '#a9a497', 'body', [0, 0, 0], true);
+  for (const s of [-1, 1]) {
+    f.cyl([s * 1.25, 1.6, -1.2], .13, 3.2, '#c23b2c', 'body', 8); f.cyl([s * 1.25, .2, -1.2], .18, .3, '#2a2522', 'metal', 8);
+    // kitsune on a plinth
+    f.box([s * 1.9, .55, .9], [.8, .7, .8], '#8f8a7e');
+    f.sphere([s * 1.9, 1.15, .9], [.3, .4, .26], '#e8e2d2');
+    f.sphere([s * 1.9, 1.62, .98], [.2, .2, .2], '#e8e2d2');
+    for (const e of [-1, 1]) f.cone([s * 1.9 + e * .1, 1.86, .98], .06, .2, '#e8e2d2', 'body', 4);
+    f.box([s * 1.9, 1.38, 1.1], [.3, .12, .05], '#c23b2c');
+    f.cone([s * 1.9 - s * .28, 1.0, .7], .1, .55, '#e8e2d2', 'body', 4, [-.6, 0, s * .5]);
+  }
+  f.box([0, 3.05, -1.2], [3.2, .14, .26], '#c23b2c'); f.box([0, 3.32, -1.2], [3.7, .2, .32], '#2a2522');
+  f.box([0, .45, -1.4], [.9, .5, .6], '#6c6a62');
+  f.gem([0, .9, -1.4], .14, '#9fe8ff');
+}
+/** 京都：a forgotten hokora deep in the bamboo. */
+export function hokora(f: Frame) {
+  f.box([0, .3, 0], [1.8, .6, 1.5], '#7f7a6e', 'body', [0, 0, 0], true);
+  f.box([0, 1.1, 0], [1.1, 1.0, .9], '#5a3b26');
+  f.box([0, 1.1, .46], [.6, .7, .02], '#f1ece0', 'glow');
+  f.box([0, 1.75, 0], [1.6, .12, 1.4], '#2a2522', 'body', [0, 0, 0]);
+  f.cone([0, 2.0, 0], 1.0, .5, '#3b3632', 'body', 4, [0, Math.PI / 4, 0]);
+  for (const s of [-1, 1]) f.box([s * .6, .9, .9], [.12, 1.2, .12], '#c23b2c');
+  f.box([0, 1.55, .9], [1.5, .1, .14], '#c23b2c');
+  for (let i = 0; i < 9; i++) { const a = i * .7 + .3, r = 2.4 + (i % 3) * .6; f.cyl([Math.cos(a) * r, 3.5, Math.sin(a) * r], .07, 7, '#7a9a4a', 'body', 8); }
+}
+export function foxWisp(): THREE.Group {
+  const g = new THREE.Group();
+  const outer = new THREE.Mesh(G.sphere, new THREE.MeshBasicMaterial({ color: '#7fd8ff', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false })); outer.scale.setScalar(.45);
+  const core = new THREE.Mesh(G.sphere, new THREE.MeshBasicMaterial({ color: '#fff4dc' })); core.scale.setScalar(.16);
+  const tail = new THREE.Mesh(G.cone8, new THREE.MeshBasicMaterial({ color: '#ffb36b', transparent: true, opacity: .6, blending: THREE.AdditiveBlending, depthWrite: false }));
+  tail.scale.set(.25, .9, .25); tail.rotation.x = -Math.PI / 2; tail.position.z = -.55; tail.name = 'Tail';
+  g.add(outer, core, tail, glint('#9fe8ff', 2.2)); return g;
+}
+/** Build layered parts into their own small SiteArt so the result can move or hide (buried chests). */
+export function dynamicArt(build: (f: Frame) => void): { group: THREE.Group; art: SiteArt } {
+  const art = new SiteArt(); build(new Frame(art, [0, 0, 0])); art.finish('britain');
+  const group = new THREE.Group(); group.add(art.root); return { group, art };
+}
