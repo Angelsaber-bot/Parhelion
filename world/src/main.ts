@@ -9,6 +9,7 @@ import {RegionVisualStreaming} from './regionVisualStreaming';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getAdventureGuide,getCurrentAdventureGuide} from './openWorldCampaign';
 import {createAdventureSites} from './adventureSites';
 import {createExploration} from './exploration/runtime';
+import {createAmbientLife} from './ambientLife';
 import {drawExplorationIcons} from './exploration/mapIcons';
 import {glideLevel as explorationGlideLevel, glideScale as explorationGlideScale} from './exploration/catalog';
 import {createAdventureRuntime} from './adventureRuntime';
@@ -442,6 +443,8 @@ const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text
  startEncounter:spec=>combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming}),
  activeEncounter:()=>combat.storyEncounter?.id??null,cancelEncounter:()=>combat.cancelStoryEncounter(),
  onGlideLevel:level=>applyExplorationGlide(level),sound:kind=>audio.explore(kind),refillAmmo:rounds=>combat.refillAmmo(rounds)});
+// 环境生灵：蝴蝶、飞鸟与萤火，按时代各不相同（3 次绘制，无碰撞，无玩法影响）。
+const ambientLife=createAmbientLife({terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel});world.add(ambientLife.root);addEventListener('pagehide',event=>{if(!event.persisted)ambientLife.dispose();});
 world.add(exploration.root);colliders.push(...exploration.colliders);layout.markers.push(...exploration.markers);
 addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();});
 /** Field ammo: settlements refill the rifle; an empty trigger pull points the player at the blade. */
@@ -2004,6 +2007,7 @@ function frame(now: number) {
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id as RegionId,gameplayActive()&&!combat.defeated);
+  ambientLife.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id as RegionId,regionVisuals.ready(regionAt(player.pos.x,player.pos.z).id));
   if(typeof fieldAmmo==='function')fieldAmmo();
   flagshipInterior.apply(done,now/1000);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}
@@ -2101,7 +2105,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { exploration, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { exploration, ambientLife, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {
