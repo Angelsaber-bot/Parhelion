@@ -6,7 +6,7 @@ import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
 import { ERA_BOSS_REQUIREMENTS } from './eraStories';
-import { minibossProfile } from './minibosses';
+import { minibossProfile, activeSignature } from './minibosses';
 import { ENEMY_ROLES, SHINOBI_BLINK, selectEnemyRole, type EnemyRole } from './enemyRoles';
 /** Small, local World encounter simulation. No networking/Arena rules are changed. */
 export interface Point3 { x: number; y: number; z: number }
@@ -17,12 +17,15 @@ export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
+  /** An elite is performing its rarer signature move (see minibosses.ts). */
+  signatureActive?: boolean;
 }
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
+  | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
   | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
@@ -159,6 +162,7 @@ export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'> 
 /** Shared by simulation and renderer: telegraphs must show the actual damage footprint. */
 export function enemyAttackRadius(e: Enemy): number {
   if (e.storyPattern === 'echo-warden') return echoWardenRadius(e);
+  const signature = activeSignature(e); if (signature) return signature.radius;
   if (e.attack === 'shot') return 1.4;
   if (e.attack === 'thrust') return e.kind === 'king' ? 1.2 : ENEMY_ROLES[e.role].radius;
   if (e.kind === 'king') return e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5;
@@ -171,7 +175,7 @@ const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
 export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3 }
 
 /** Thrust tells and impact share a forward rectangle, never a tracking/homing hit. */
-export function enemyThrustLength(e: Enemy): number { return e.storyPattern === 'echo-warden' ? ECHO_WARDEN.thrustLength : e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1; }
+export function enemyThrustLength(e: Enemy): number { return e.storyPattern === 'echo-warden' ? ECHO_WARDEN.thrustLength : activeSignature(e)?.length ?? (e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1); }
 export function enemyAttackContains(e: Enemy, player: Point3): boolean {
   if (e.attack !== 'thrust') {
     const center = e.attack === 'sweep' ? e.p : e.target;
@@ -196,7 +200,8 @@ export function rangedDamageMultiplier(distance: number): number {
 export function enemyAttackTiming(e: Enemy): { windup: number; recovery: number } {
   if (e.storyPattern === 'echo-warden') return echoWardenTiming(e);
   if (e.kind === 'king') return bossAttackTiming(e);
-  const elite = minibossProfile(e);
+  const elite = minibossProfile(e), signature = activeSignature(e);
+  if (signature) return signature;
   if (elite) return elite.paired && e.attackCount % 2 === 1 ? ELITE_PAIRED_TIMING : elite;
   const role = ENEMY_ROLES[e.role];
   return role.paired && e.attackCount % 2 === 1 ? DUELIST_FIRST_TIMING : role;
@@ -296,7 +301,7 @@ export class WorldCombatState {
   private resetEnemy(e: Enemy) {
     Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
     Object.assign(e.target, e.home); e.attack = 'sweep';
-    e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first;
+    e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first; e.signatureActive = false;
   }
   resetBoss() {
     if (!this.bossStarted) return;
@@ -498,7 +503,7 @@ export class WorldCombatState {
           // Snapshots stay locked even if another simulation tick moves or resets the actor.
           e.contactSequence = e.attackCount;
           this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e), ...(e.storyPattern ? { storyPattern: e.storyPattern, ...(e.attack === 'thrust' ? { length: enemyThrustLength(e) } : {}) } : {}) });
-          if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
+          if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : activeSignature(e)?.damage ?? minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
           if (this.defeated) return;
@@ -524,7 +529,16 @@ export class WorldCombatState {
           continue;
         }
       }
+      const signature = !isBoss && !e.storyPattern ? elite?.signature : undefined;
+      if (signature && sees && e.timer <= 0 && (e.attackCount + 1) % signature.every === 0 && dist >= signature.min && dist <= signature.max && hasEnemyPressureSlot(e, this.enemies, player)) {
+        // The elite's rarer move: a full tell of its own, then a longer recovery to punish.
+        e.signatureActive = true; e.attack = signature.attack; Object.assign(e.target, player); e.attackCount++;
+        e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
+        this.events.push({ type: 'signature', id: e.id, name: signature.name, counter: signature.counter });
+        continue;
+      }
       if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40) && hasEnemyPressureSlot(e, this.enemies, player)) {
+        e.signatureActive = false;
         e.attack = e.storyPattern === 'echo-warden' ? chooseEchoWardenAttack(e, dist) : elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
         Object.assign(e.target, player); e.attackCount++;
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;

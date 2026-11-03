@@ -468,6 +468,9 @@ export class WorldCombat {
       } else if (event.type === 'blink') {
         this.spark(new THREE.Vector3(event.from.x, event.from.y + 1, event.from.z), .35); this.spark(new THREE.Vector3(event.to.x, event.to.y + 1, event.to.z), .35);
         this.impact.textContent = bilingual('影忍 · 背后！', 'SHINOBI · BEHIND!'); this.impactFor = .7;
+      } else if (event.type === 'signature') {
+        // The elite's rarer move names itself and its counter for the whole tell.
+        this.impact.textContent = `${bilingual(...event.name)} · ${bilingual(...event.counter)}`; this.impactFor = 1.2;
       } else if (event.type === 'kill') {
         this.contactEffects.cancel(event.id);
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);

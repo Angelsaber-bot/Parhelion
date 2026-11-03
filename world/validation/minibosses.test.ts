@@ -63,3 +63,38 @@ test('regional elites have distinct readable attacks rather than shared magical 
     }
   }
 });
+
+test('every elite has a rarer signature move with its own tell, dodge and longer punish window', () => {
+  for (const def of MINIBOSSES) {
+    const sig = def.profile.signature;
+    assert.ok(sig, `${def.id} has no signature move`);
+    assert.ok(sig.windup >= 1, `${def.id} signature tell is too short to read`);
+    assert.ok(sig.recovery > def.profile.recovery, `${def.id} signature must leave a longer punish window than its normal strike`);
+    const make = () => {
+      const s = new WorldCombatState([{ id: def.id, miniboss: def.id, kind: def.kind, p: flat(0, 0) }], []);
+      s.enemies[0].attackCount = sig.every - 1; return s;
+    };
+    const at = flat((sig.min + sig.max) / 2, 0);
+    // Stand still: the signature starts, names itself, locks its target and lands.
+    const hit = make(), e = hit.enemies[0];
+    advance(hit, .05, at);
+    assert.equal(e.attack, sig.attack, def.id); assert.equal(e.signatureActive, true);
+    assert.equal(e.timer, sig.windup); assert.equal(enemyAttackRadius(e), sig.radius);
+    assert.deepEqual(e.target, at);
+    assert.ok(hit.drainEvents().some(event => event.type === 'signature' && event.id === def.id), `${def.id} must announce its signature`);
+    advance(hit, sig.windup + .05, at);
+    assert.equal(hit.hp, 100 - sig.damage, `${def.id} signature lands on a player who ignores it`);
+    assert.equal(e.mode, 'recover'); assert.ok(Math.abs(enemyAttackTiming(e).recovery - sig.recovery) < 1e-9);
+    // Step well clear during the tell: no damage.
+    const dodge = make(); advance(dodge, .05, at); advance(dodge, sig.windup + .05, flat(at.x, 9));
+    assert.equal(dodge.hp, 100, `${def.id} signature can be dodged`);
+    // Cover blocks it.
+    const cover = make(); advance(cover, .05, at); advance(cover, sig.windup + .05, at, { ...terrain, lineOfSight: () => false });
+    assert.equal(cover.hp, 100, `${def.id} signature respects cover`);
+    // Hugging the elite never triggers it: the signature is its answer to standing off.
+    if (sig.min > def.profile.range) {
+      const close = make(); advance(close, .05, flat(Math.min(def.profile.range, sig.min) - .5, 0));
+      assert.notEqual(close.enemies[0].signatureActive, true, `${def.id} must not fire its signature point-blank`);
+    }
+  }
+});
