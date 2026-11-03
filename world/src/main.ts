@@ -76,7 +76,8 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
-import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts, makeAmbientParticles } from './fx';
+import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './fx';
+import { makeRegionWeather } from './regionWeather';
 import { toonMaterial, addOutline, makeSky, timeUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
@@ -423,7 +424,8 @@ if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world
 const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, staticBVH, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68 }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
-const ambient = lowQ ? null : makeAmbientParticles(highQ ? 1600 : 900);
+// 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
+const ambient = lowQ ? null : makeRegionWeather(highQ ? 2400 : 1300);
 if (ambient) scene.add(ambient.points);
 debugCol.add(new THREE.Mesh(staticGeo, debugMat));
 debugCol.visible = false;
@@ -2073,7 +2075,7 @@ function frame(now: number) {
   localLights.update(camera.position, dt);
   if (composer && !lowQ) shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
-  ambient?.update(camera.position);
+  ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id as RegionId, dt, renderer.domElement.height);
   renderer.info.reset();
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += frameSeconds;
