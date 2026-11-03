@@ -2,6 +2,7 @@
 body.ultimate-showing .hud,
 body.ultimate-showing .combat-hud,
 body.ultimate-showing #world-hurt,
+body.ultimate-showing #world-counter,
 body.ultimate-showing #world-cold { visibility: hidden !important; }
 .ultimate-overlay { position: fixed; inset: 0; z-index: 2000; pointer-events: auto; color: #f5f6ff; background: linear-gradient(0deg,rgba(2,7,18,.83),transparent 28%,transparent 80%,rgba(2,7,18,.5)); font-family: system-ui,sans-serif; }
 .ultimate-overlay[hidden] { display: none !important; }

@@ -182,6 +182,8 @@ export class WorldAudio {
     }else if(frame.phase==='outro')this.voice('sine',.9,frame.identity==='saber'?440:180,.018,.65,.08);
   }
   evade(){this.voice('noise',.17,2600,.085);}
+  /** Perfect evade: a bright rising chime with a soft whoosh under it. */
+  perfectEvade(){this.voice('sine',.32,880,.07,2);this.voice('triangle',.24,1760,.035,1.5);this.voice('noise',.2,4200,.05);}
   explore(kind:'open'|'pickup'|'solve'|'rotate'|'fail'){
     if(kind==='open'){this.voice('triangle',.32,523,.08,1.5);this.voice('sine',.55,784,.06,1.33,.02);}
     else if(kind==='pickup'){this.voice('sine',.22,988,.07,1.5);this.voice('triangle',.3,1319,.04,1.2,.03);}

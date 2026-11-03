@@ -24,6 +24,8 @@ export interface WorldCombatOptions {
   scene: THREE.Scene; colliders: Collider[]; layout: Layout; done: Set<string>;
   onDamage?: (hit: { id: string; damage: number; source: HitContext['source']; eligible: true }) => void;
   onKill?: (id: string) => void;
+  /** A perfect evade: the host slows time for a breath and readies the evade again. */
+  onPerfectEvade?: (id: string) => void;
   reducedEffects?: () => boolean;
   onStoryEncounterVictory?: (id: string) => void;
   onHurt?: (damage: number) => void;
@@ -130,6 +132,8 @@ export class WorldCombat {
   private readonly bossHud = document.createElement('div');
   private readonly impact = document.createElement('div');
   private readonly hurt = document.createElement('div');
+  private readonly counterGlow = document.createElement('div');
+  private counterGlowFor = 0;
   private readonly defeat = document.createElement('div');
   private readonly effectGroup = new THREE.Group();
   private readonly contactEffects: EnemyContactEffects;
@@ -174,9 +178,9 @@ export class WorldCombat {
     this.bossHud.id = 'world-boss'; this.bossHud.className = 'combat-hud'; this.bossHud.hidden = true;
     this.bossHud.innerHTML = '<strong></strong><div class="combat-track"><div class="combat-fill"></div></div><small></small>';
     this.impact.id = 'world-impact'; this.impact.className = 'combat-hud';
-    this.hurt.id = 'world-hurt';
+    this.hurt.id = 'world-hurt'; this.counterGlow.id = 'world-counter';
     this.defeat.id = 'world-defeat'; this.defeat.className = 'combat-hud'; this.defeat.hidden = true;
-    document.body.append(this.hud, this.bossHud, this.impact, this.hurt, this.defeat);
+    document.body.append(this.hud, this.bossHud, this.impact, this.hurt, this.counterGlow, this.defeat);
     this.renderHud();
   }
   get storyEncounter() { return this.storyDirector.status; }
@@ -236,7 +240,7 @@ export class WorldCombat {
     for (const spark of this.sparks) spark.mesh.removeFromParent();
     this.sparks.length = 0;
     for (const [id, v] of this.visuals) { this.enemyAssets.release(id); v.lastMode = undefined; v.root.visible = false; v.tell.visible = false; }
-    this.impact.textContent = ''; this.hurt.style.opacity = '0';
+    this.impact.textContent = ''; this.hurt.style.opacity = '0'; this.counterGlowFor = 0; this.counterGlow.style.opacity = '0';
     this.clearHitMarker();
     this.renderHud();
   }
@@ -437,6 +441,10 @@ export class WorldCombat {
     }
     this.impactFor = Math.max(0, this.impactFor - dt); if (!this.impactFor) this.impact.textContent = '';
     this.hurtFor = Math.max(0, this.hurtFor - dt); this.hurt.style.opacity = `${Math.min(0.7, this.hurtFor * 2)}`;
+    // The counter window glows at the screen edge while it lasts, brightest right after the evade.
+    this.counterGlowFor = Math.max(0, this.counterGlowFor - dt);
+    const counterLeft = this.state.counterFor;
+    this.counterGlow.style.opacity = `${counterLeft > 0 ? Math.min(1, .35 + this.counterGlowFor * 1.6) * Math.min(1, counterLeft * 2) : 0}`;
     if (!this.warnedAssetFailure && this.enemyAssets.diagnostics.exhausted > 0) {
       this.warnedAssetFailure = true;
       this.options.toast(bilingual('精细敌人模型加载失败，暂用简化模型；刷新页面可重试', 'Detailed enemy model failed to load; simplified model shown. Reload to retry.'));
@@ -464,7 +472,7 @@ export class WorldCombat {
         }
       } else if (event.type === 'hit') {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
-        this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
+        this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
       } else if (event.type === 'explode') {
         for (const [dx, dz] of [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]]) this.spark(new THREE.Vector3(event.at.x + dx, event.at.y + .8, event.at.z + dz), .5);
@@ -475,6 +483,10 @@ export class WorldCombat {
       } else if (event.type === 'signature') {
         // The elite's rarer move names itself and its counter for the whole tell.
         this.impact.textContent = `${bilingual(...event.name)} · ${bilingual(...event.counter)}`; this.impactFor = 1.2;
+      } else if (event.type === 'perfectEvade') {
+        this.impact.textContent = bilingual('极限闪避 · 反击强化', 'PERFECT EVADE · COUNTER'); this.impactFor = 1;
+        this.counterGlowFor = .5;
+        this.options.onPerfectEvade?.(event.id);
       } else if (event.type === 'eliteRally') {
         // The rally names itself and the opening it gives; the faster cadence is the warning.
         this.impact.textContent = `${bilingual(...event.name)} · ${bilingual('战意高涨 · 趁破绽反击', 'Rallies · punish the opening')}`; this.impactFor = 1.3;
@@ -679,6 +691,6 @@ export class WorldCombat {
     this.defeatEffects.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
-    for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.defeat]) el.remove();
+    for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.counterGlow, this.defeat]) el.remove();
   }
 }

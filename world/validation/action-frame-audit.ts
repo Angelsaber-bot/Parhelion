@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player';
 import { WorldActions } from '../src/worldActions';
-import { WorldCombatState, COMBAT } from '../src/combat';
+import { WorldCombatState, COMBAT, PERFECT_EVADE } from '../src/combat';
 
 export const AUDIT_FPS = [27, 30, 60, 120] as const;
 const STEP = 1 / 120;
@@ -39,7 +39,7 @@ export function auditEvadeFrame(fps: number) {
   }};
   // This audit starts in an already-active visible frame (clock valid). Resume boundaries
   // are exercised by time-discontinuity-dom.test.ts against actual main.
-  const context = vm.createContext({ frameClockInvalid: false, frameUltimate: () => false, deferredCombatToast: null, now: 0, last: 0, acc: 0, STEP, actions, player, combat,
+  const context = vm.createContext({ perfectEvadeSlow: 0, PERFECT_EVADE, frameClockInvalid: false, frameUltimate: () => false, deferredCombatToast: null, now: 0, last: 0, acc: 0, STEP, actions, player, combat,
     gameplayActive: () => true, down: () => false, cold: { frozen: false }, camera: {},
     keys: { clear() {} }, aim: { clear() {} }, audio: { setActive() {} }, fortCannon: { update() {} },
     locked: true, dragLook: false, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },

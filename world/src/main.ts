@@ -92,7 +92,7 @@ import { SettingsStore, createSettingsPanel } from '../../shared-client/settings
 import '../../shared-client/settings.css';
 import './worldInterface.css';
 import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
-import { BOSSES } from './combat';
+import { BOSSES, PERFECT_EVADE } from './combat';
 import { nearbyElite } from './eliteNavigation';
 import { WorldGrid } from './grid';
 import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './chunk';
@@ -1194,6 +1194,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { relayDamageRevision++; audio.hurt(); },
+  onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') exploration.eliteDefeated(id); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
@@ -1884,6 +1885,7 @@ if (params.has('lit')) done.add('tower_console');
 camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
+let perfectEvadeSlow = 0;
 function frame(now: number) {
   regionVisuals.update(player.pos,camera.position,lowQ?.7:1);const visualRegion=regionAt(player.pos.x,player.pos.z).id;
   streamStatus.hidden=regionVisuals.ready(visualRegion);if(!streamStatus.hidden){streamFailure=regionVisuals.diagnostics.failed.includes(visualRegion)?visualRegion:'';streamRetry.hidden=!streamFailure;streamText.textContent=streamFailure?bilingual('前方地区画面加载失败，点击重试。','Region art failed to load. Click to retry.'):bilingual('正在载入前方地区…','Loading the region ahead…');}
@@ -1898,7 +1900,10 @@ function frame(now: number) {
   // Paused wall time is not visible simulation time, even if RAF never ran while hidden.
   const frameSeconds = frameClockInvalid ? 0 : (now - last) / 1000;
   if (frameClockInvalid) { acc = 0; frameClockInvalid = false; }
-  const dt = Math.min(0.1, frameSeconds);
+  // A perfect evade slows the whole world for half a real second.
+  const slowed = perfectEvadeSlow > 0 && gameplayActive();
+  perfectEvadeSlow = Math.max(0, perfectEvadeSlow - Math.min(0.1, frameSeconds));
+  const dt = Math.min(0.1, frameSeconds) * (slowed ? PERFECT_EVADE.slowScale : 1);
   last = now;
   if (frameUltimate(dt)) { requestAnimationFrame(frame); return; }
   if (deferredCombatToast && gameplayActive()) { const message = deferredCombatToast; deferredCombatToast = null; toast(message); }

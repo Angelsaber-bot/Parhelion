@@ -22,11 +22,12 @@ export interface Enemy extends SpawnPoint {
 }
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
-  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
   | { type: 'eliteRally'; id: string; name: readonly [string, string] }
+  | { type: 'perfectEvade'; id: string }
   | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
@@ -37,6 +38,10 @@ export interface CombatTerrain {
   walk(from: Point3, x: number, z: number): Point3 | null;
   lineOfSight(from: Point3, to: Point3): boolean;
 }
+/** Perfect evade: dodging *through* an attack that would have landed (the evade's invulnerable frames
+ * overlap the contact) rewards the read. Time slows for a breath, the evade is ready again, the
+ * attacker is left open a little longer, and every hit lands harder for a short counter window. */
+export const PERFECT_EVADE = Object.freeze({ counter: 2.5, bonus: 1.3, opening: .6, slow: .5, slowScale: .3 });
 export const COMBAT = {
   playerHp: 100, shotDamage: WORLD_RIFLE.damage, shotInterval: WORLD_RIFLE.interval, shotRange: WORLD_RIFLE.enemyRange, shotBurst: WORLD_RIFLE.burst, shotVent: WORLD_RIFLE.vent, meleePunish: 2,
   wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
@@ -231,6 +236,8 @@ export class WorldCombatState {
   quietFor = 0;
   private guardMultiplier = 1;
   private invulnerable = false;
+  /** Seconds left in the counter window earned by a perfect evade. */
+  counterFor = 0;
   private trialPending = false;
   private trialReplay = false;
   private readonly knight: Enemy | undefined;
@@ -291,7 +298,7 @@ export class WorldCombatState {
     this.clearStoryEnemies();
     this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
     this.peaceSignature='';this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
-    this.hp = COMBAT.playerHp; this.ammo = WORLD_RIFLE.ammoMax; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
+    this.hp = COMBAT.playerHp; this.ammo = WORLD_RIFLE.ammoMax; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0; this.counterFor = 0;
     for (const e of this.enemies) { e.pacified = false; this.resetEnemy(e); }
     this.bosses.forEach((b, i) => {
       this.cleared[i] = Array.isArray(cleared) ? !!cleared[i] : cleared;
@@ -378,9 +385,10 @@ export class WorldCombatState {
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
-    const dealt = Math.min(e.hp, Math.round(damage * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const counter = this.counterFor > 0;
+    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}) });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}) });
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
@@ -445,7 +453,7 @@ export class WorldCombatState {
     this.hp = Math.max(0, this.hp - amount); this.hurtCooldown = 0.45; this.quietFor = 0;
     this.events.push({ type: 'hurt', damage: amount });
     if (!this.hp) {
-      this.defeatedFor = 2.5; this.setDefense({ guard: 1, invulnerable: false }); this.resetBoss();
+      this.defeatedFor = 2.5; this.counterFor = 0; this.setDefense({ guard: 1, invulnerable: false }); this.resetBoss();
       for (const e of this.enemies) if (!this.bosses.includes(e) && e.mode !== 'dead') this.resetEnemy(e);
       this.events.push({ type: 'death' });
     }
@@ -460,6 +468,7 @@ export class WorldCombatState {
     if (this.gunVent <= 1e-9) this.gunVent = 0;
     if (!this.gunVent && this.gunIdleFor + 1e-9 >= COMBAT.shotVent) this.gunHeat = 0;
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
+    this.counterFor = Math.max(0, this.counterFor - dt);
     if (this.defeated) {
       this.defeatedFor = Math.max(0, this.defeatedFor - dt);
       if (!this.defeated) { this.hp = COMBAT.playerHp; this.ammo = Math.max(this.ammo, WORLD_RIFLE.ammoRespawn); this.hurtCooldown = 2; this.events.push({ type: 'revive' }); }
@@ -515,13 +524,15 @@ export class WorldCombatState {
           // Snapshots stay locked even if another simulation tick moves or resets the actor.
           e.contactSequence = e.attackCount;
           this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e), ...(e.storyPattern ? { storyPattern: e.storyPattern, ...(e.attack === 'thrust' ? { length: enemyThrustLength(e) } : {}) } : {}) });
+          const evaded = this.invulnerable && !this.defeated && enemyAttackContains(e, player) && sees;
+          if (evaded) { this.counterFor = PERFECT_EVADE.counter; this.events.push({ type: 'perfectEvade', id: e.id }); }
           if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : activeSignature(e)?.damage ?? minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
           if (this.defeated) return;
           // The keg blast also stuns its carrier: a long recovery is the punish window.
           if (e.role === 'powder' && !e.miniboss && e.kind !== 'king' && !e.storyPattern) this.events.push({ type: 'explode', id: e.id, at: clone(e.p) });
-          e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery;
+          e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery + (evaded ? PERFECT_EVADE.opening : 0);
         }
         continue;
       }
