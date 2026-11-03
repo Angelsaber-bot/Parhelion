@@ -1,0 +1,154 @@
+{
+  "schema": 1,
+  "source": "arena-game/src/signatureModels.ts",
+  "coordinates": "+X forward, +Y up; same raw socket coordinates as the original weapon registry",
+  "runtime": "Constructed on demand by the same native builders; these editable exports are not extra runtime downloads.",
+  "models": [
+    {
+      "id": "abyssal-maw",
+      "weapon": "corona",
+      "name": "深渊巨口",
+      "file": "abyssal-maw.glb",
+      "triangles": 7508,
+      "meshes": 13,
+      "bounds": {
+        "min": [
+          -1.4450000524520874,
+          -0.43905532360076904,
+          -0.25999999046325684
+        ],
+        "max": [
+          1.7730000019073486,
+          0.8930000066757202,
+          0.23199999332427979
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.5,
+          -0.225,
+          0
+        ],
+        "support": [
+          0.8,
+          0.08,
+          0
+        ],
+        "muzzle": [
+          1.773,
+          0.31,
+          0
+        ],
+        "sight": [
+          -0.306,
+          0.793,
+          0
+        ]
+      },
+      "bytes": 254212,
+      "sha256": "21a8e08a838ae4e608c0384f0d263e977372ab219767b9a3633471d3f9409b09"
+    },
+    {
+      "id": "prismwing",
+      "weapon": "blade",
+      "name": "琉光蝶刃",
+      "file": "prismwing.glb",
+      "triangles": 5644,
+      "meshes": 5,
+      "bounds": {
+        "min": [
+          -0.7138000130653381,
+          -0.3045211434364319,
+          -0.10045000165700912
+        ],
+        "max": [
+          1.559999942779541,
+          0.3045211434364319,
+          0.10045000165700912
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.43,
+          0,
+          0
+        ],
+        "support": [
+          -0.12,
+          0,
+          0
+        ]
+      },
+      "bytes": 213604,
+      "sha256": "cd51b7adfc10faebac71a55428c8cdbf1c7c403ce51656c95dcc80f88deaeea9"
+    },
+    {
+      "id": "ink-bamboo",
+      "weapon": "polearm",
+      "name": "玄竹",
+      "file": "ink-bamboo.glb",
+      "triangles": 4560,
+      "meshes": 5,
+      "bounds": {
+        "min": [
+          -1.7599999904632568,
+          -0.22620736062526703,
+          -0.06199999898672104
+        ],
+        "max": [
+          1.8298884630203247,
+          0.22620736062526703,
+          0.06199999898672104
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.7,
+          0,
+          0
+        ],
+        "support": [
+          0.05,
+          0,
+          0
+        ]
+      },
+      "bytes": 145868,
+      "sha256": "6f5d9553053143e90f701f42893c5264e0a47e24047295358dfe0cc9a1340d5a"
+    },
+    {
+      "id": "sugar-crash",
+      "weapon": "hammer",
+      "name": "糖霜重击",
+      "file": "sugar-crash.glb",
+      "triangles": 13596,
+      "meshes": 5,
+      "bounds": {
+        "min": [
+          -1.3809000253677368,
+          -0.41499999165534973,
+          -0.28999999165534973
+        ],
+        "max": [
+          0.9350000023841858,
+          0.4950000047683716,
+          0.28999999165534973
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.85,
+          0,
+          0
+        ],
+        "support": [
+          -0.25,
+          0,
+          0
+        ]
+      },
+      "bytes": 380820,
+      "sha256": "854beb910a22589deef66df0a6c7292b24df6ddc92749eb6c758a674f80f2fab"
+    }
+  ]
+}

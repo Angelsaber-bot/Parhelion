@@ -176,7 +176,7 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 #art-finishes{grid-template-columns:repeat(3,minmax(0,1fr))}
 #art-finishes .signature-card{position:relative;flex-direction:row;justify-content:flex-start;padding:12px 10px;gap:12px;font-size:12px;min-height:57px}
 .signature-card small{display:none;color:#ddc38f;font-size:9px;font-weight:400}
-.signature-card small.is-equipped{display:block;position:absolute;right:7px;top:3px}
+.signature-card small.is-equipped,.signature-card small.is-model{display:block;position:absolute;right:7px;top:3px}
 .signature-card i{width:35px;height:22px;flex-shrink:0}
 .art-preview{position:relative}
 #art-view-reset{position:absolute;right:10px;bottom:10px;padding:6px 9px;font-size:10px;color:#aebec9;background:#101a29c9;border:1px solid #b8c6cf33;border-radius:6px}

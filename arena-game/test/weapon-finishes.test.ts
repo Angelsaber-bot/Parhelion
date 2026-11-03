@@ -3,7 +3,7 @@ import {readFile} from 'node:fs/promises';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {WEAPONS,ARENA_SKIN_COLLECTIONS} from '../shared/content.ts';
-import {SIGNATURE_SKINS,signaturesFor} from '../shared/signatureSkins.ts';
+import {SIGNATURE_SKINS,signaturesFor,signatureModelOf} from '../shared/signatureSkins.ts';
 import {finishOf} from '../src/weaponFinishes.ts';
 import {addSignatureArt} from '../src/signatureFinishes.ts';
 import {WeaponArtPool,combatArt,artPoint} from '../src/weaponArt.ts';
@@ -45,6 +45,7 @@ for(const w of WEAPONS)it(`${w.id}: actual themed GLBs preserve anchors, source 
  const defaults=pool.acquire(def,w.skins[0]);handles.push(defaults);const originalInstance=(await defaults.ready)!;
  const disposals=new Map<THREE.BufferGeometry,number>();
  for(const theme of [...ARENA_SKIN_COLLECTIONS,...signaturesFor(w.id)]){
+  if(signatureModelOf(theme.id,w.id))continue; // replacement models have dedicated silhouette/socket tests
   const h=pool.acquire(def,w.skins.find(s=>s.id===theme.id));handles.push(h);const instance=(await h.ready)!;instance.root.updateMatrixWorld(true);
   const bounds=new THREE.Box3().setFromObject(instance.root);expect(bounds.min.distanceTo(original.min)).toBeLessThan(.001);expect(bounds.max.distanceTo(original.max)).toBeLessThan(.001);
   const signature=SIGNATURE_SKINS.some(s=>s.id===theme.id);

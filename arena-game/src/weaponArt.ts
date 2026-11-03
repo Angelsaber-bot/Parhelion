@@ -5,6 +5,7 @@ import registry from '../../assets/weapons/registry.json';
 import {finishOf,finishMaterial,addFinishInlay} from './weaponFinishes.ts';
 import {signatureOf} from '../shared/signatureSkins.ts';
 import {addSignatureArt} from './signatureFinishes.ts';
+import {buildSignatureModel} from './signatureModels.ts';
 export const WEAPON_ART = registry;
 export type ArtDef = typeof registry[number];
 // Explicit static URLs are fingerprinted by Vite; no download until acquire().
@@ -41,6 +42,8 @@ export class WeaponArtPool {
   constructor(private load: (url: string) => Promise<THREE.Group> = async (url) => (await new GLTFLoader().loadAsync(url)).scene) {}
   get size() { return this.entries.size; }
   acquire(def: ArtDef, colors?: { id?:string; body: number; accent: number }): ArtHandle {
+    const sculpture=buildSignatureModel(def,colors?.id);
+    if(sculpture){let released=false;return{ready:Promise.resolve().then(()=>released?null:sculpture),release(){if(released)return;released=true;sculpture.root.removeFromParent();disposeTree(sculpture.root);}};}
     let entry = this.entries.get(def.id);
     if (!entry) {
       entry = { refs: 0, promise: Promise.resolve(null as unknown as THREE.Group) };

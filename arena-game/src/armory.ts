@@ -6,7 +6,7 @@ import { WEAPON_ART, weaponArtPool, type ArtHandle } from './weaponArt.ts';
 import { WEAPONS } from '../shared/content.ts';
 import { displayWeaponName } from './loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from './weaponFinishes.ts';
-import {signatureFor,signatureOf,signaturesFor} from '../shared/signatureSkins.ts';
+import {signatureFor,signatureOf,signaturesFor,signatureModelOf} from '../shared/signatureSkins.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
 export function openArmory(options:{skins?:readonly number[];equip?:(weapon:number,skin:number)=>{saved:boolean}}={}) {
@@ -57,7 +57,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('#art-title')!.textContent=finish?bilingual(FINISH_DETAILS[finish].zh,FINISH_DETAILS[finish].en):localizeText(skin.name);
     dialog.querySelector('#art-info')!.textContent=displayWeaponName(weapon.id)+' · '+(finish?bilingual(...FINISH_DETAILS[finish].description):bilingual('原装材质与配色。','Original materials and colorway.'));
     const focused=(document.activeElement as HTMLElement|null)?.dataset.finish;
-    const buttons=weapon.skins.map((item,i)=>{const button=document.createElement('button');button.type='button';button.dataset.finish=String(i);button.dataset.finishId=item.id;button.className='finish-card';button.classList.toggle('on',i===selectedSkins[index]);button.setAttribute('aria-pressed',String(i===selectedSkins[index]));button.style.setProperty('--finish-body','#'+item.body.toString(16).padStart(6,'0'));button.style.setProperty('--finish-light','#'+item.accent.toString(16).padStart(6,'0'));const paint=document.createElement('i');paint.setAttribute('aria-hidden','true');const name=document.createElement('span'),theme=finishOf(item.id);name.textContent=theme?bilingual(FINISH_DETAILS[theme].zh,FINISH_DETAILS[theme].en):localizeText(item.name);button.append(paint,name);if(signatureOf(item.id)){button.classList.add('signature-card');const tag=document.createElement('small');tag.textContent=i===equippedSkins[index]?bilingual('已装备','Equipped'):bilingual('专属设计','Weapon exclusive');tag.classList.toggle('is-equipped',i===equippedSkins[index]);button.append(tag);}button.onclick=()=>{selectedSkins[index]=i;void select(selected,true);};return button;});
+    const buttons=weapon.skins.map((item,i)=>{const button=document.createElement('button');button.type='button';button.dataset.finish=String(i);button.dataset.finishId=item.id;button.className='finish-card';button.classList.toggle('on',i===selectedSkins[index]);button.setAttribute('aria-pressed',String(i===selectedSkins[index]));button.style.setProperty('--finish-body','#'+item.body.toString(16).padStart(6,'0'));button.style.setProperty('--finish-light','#'+item.accent.toString(16).padStart(6,'0'));const paint=document.createElement('i');paint.setAttribute('aria-hidden','true');const name=document.createElement('span'),theme=finishOf(item.id);name.textContent=theme?bilingual(FINISH_DETAILS[theme].zh,FINISH_DETAILS[theme].en):localizeText(item.name);button.append(paint,name);if(signatureOf(item.id)){button.classList.add('signature-card');const tag=document.createElement('small'),remodeled=!!signatureModelOf(item.id);tag.textContent=i===equippedSkins[index]?bilingual('已装备','Equipped'):remodeled?bilingual('新外形','New model'):bilingual('专属设计','Weapon exclusive');tag.classList.toggle('is-equipped',i===equippedSkins[index]);tag.classList.toggle('is-model',remodeled);button.append(tag);}button.onclick=()=>{selectedSkins[index]=i;void select(selected,true);};return button;});
     dialog.querySelector('#art-finishes')!.replaceChildren(...buttons.filter((_,i)=>signatureOf(weapon.skins[i].id)));
     dialog.querySelector('#art-classics')!.replaceChildren(...buttons.filter((_,i)=>!signatureOf(weapon.skins[i].id)));
     if(focused)dialog.querySelector<HTMLButtonElement>(`[data-finish="${focused}"]`)?.focus();
@@ -91,7 +91,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
       const aspect=Math.max(.5,canvas.clientWidth/Math.max(1,canvas.clientHeight));
       const distance=Math.max(size.x/(2*tangent*aspect),size.y/(2*tangent))*1.16+size.z;
       controls.minDistance = radius * .55; controls.maxDistance = Math.max(distance*3,radius*4);
-      if(!preserveView){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.set(distance * 0.25,distance*.2,distance);controls.target.set(0,0,0);controls.update();controls.saveState();controls.enableDamping=damping;}
+      if(!preserveView){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.set(distance*.38,distance*.24,distance);controls.target.set(0,0,0);controls.update();controls.saveState();controls.enableDamping=damping;}
       else controls.update();
       dialog.setAttribute('aria-busy','false');equip.disabled=false;setStatus('','');
     } catch (error) {
