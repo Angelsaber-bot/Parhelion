@@ -44,7 +44,8 @@ export function createResidentPortrait(region:RegionId,look?:ResidentLook){
  const ell=(list:PortraitPart[],c:number,pos:[number,number,number],scale:[number,number,number])=>add(list,sphere,c,pos,scale);
  function line(list:PortraitPart[],points:[number,number,number][],radius:number,color:number){add(list,own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(v)),12,radius,5,false)),color,[0,0,0]);}
  function strand(points:[number,number,number][],width:number,depth:number,color:number){
-  const curve=new THREE.CatmullRomCurve3(points.map(v)),verts:number[]=[],index:number[]=[],n=12,sides=6;
+  // Ordinary residents carry more locks than a portrait, so each lock is cut a little coarser.
+  const curve=new THREE.CatmullRomCurve3(points.map(v)),verts:number[]=[],index:number[]=[],n=look?9:12,sides=6;
   for(let i=0;i<=n;i++){
    const t=i/n,q=curve.getPoint(t),tangent=curve.getTangent(t),side=new THREE.Vector3(0,0,1).cross(tangent).normalize();if(side.lengthSq()<.1)side.set(1,0,0);const normal=new THREE.Vector3().crossVectors(tangent,side).normalize();
    const taper=Math.max(.025,Math.sin(Math.PI*(.12+.88*t))**.6);

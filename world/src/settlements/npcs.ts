@@ -16,6 +16,28 @@ const PALETTES: Record<RegionId,Palette> = {
 const sphere=new THREE.SphereGeometry(1,12,8), cylinder=new THREE.CylinderGeometry(1,1,1,10), box=new THREE.BoxGeometry(1,1,1), cone=new THREE.ConeGeometry(1,1,9);
 const face=new THREE.LatheGeometry([new THREE.Vector2(.022,-.185),new THREE.Vector2(.070,-.153),new THREE.Vector2(.125,-.09),new THREE.Vector2(.142,.005),new THREE.Vector2(.137,.09),new THREE.Vector2(.11,.145),new THREE.Vector2(.045,.178),new THREE.Vector2(.001,.182)],16);
 const cap=new THREE.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI*.49);
+const ring=new THREE.TorusGeometry(1,.32,6,18),shawl=new THREE.CylinderGeometry(1,1.16,1,20,1,true);
+/** Everyday dress varies by person: a coat colour from the region's cloth, and one worn layer on top. */
+const COATS:Record<RegionId,readonly [number,number][]>={
+ alpha:[[0xdce5e9,0x295b75],[0x9fb3bd,0x2f4652],[0xe8e0d0,0x7a5a3a],[0x45576a,0xc9b27a]],
+ britain:[[0x66734d,0x9a653d],[0x7b5a44,0xc2a46a],[0x5a6478,0xb49a6a],[0x8a7a5a,0x5a3d2a]],
+ blacksail:[[0x385b66,0xa96c40],[0x6a3f35,0xd0b080],[0x2f3f52,0xc8a050],[0x7a6a4a,0x2f4f5a]],
+ winter:[[0x3f5d63,0xe5ddc8],[0x5a3f3f,0xd8cdb5],[0x4a4f5e,0xc9b98f],[0x6b6052,0xe0d6c0]],
+ kyoto:[[0x555e8c,0xd1b4a0],[0x6f4a5e,0xe0c8a8],[0x3f5a52,0xd8c090],[0x7a5a3a,0x2f3550]],
+};
+export type ResidentLayer='none'|'scarf'|'shawl'|'satchel'|'sash';
+export const RESIDENT_LAYERS:readonly ResidentLayer[]=['none','scarf','shawl','satchel','sash'];
+export const residentLayer=(seed:number,region:RegionId):ResidentLayer=>{const pool=region==='winter'?RESIDENT_LAYERS.filter(l=>l!=='scarf'):RESIDENT_LAYERS;return pool[((seed>>>9)^(seed>>>21))%pool.length];};
+function layerParts(layer:ResidentLayer,p:Palette,seed:number):Part[]{
+ const cloth=[p.accent,p.trim,0x8a3f3a,0x3f5a7a,0xc8b48a][(seed>>>13)%5],side=(seed>>>17)%2?1:-1;
+ switch(layer){
+  case 'scarf':return[{g:ring,c:cloth,p:[0,.275,.005],s:[.105,.105,.085],r:[Math.PI/2,0,0]},{g:ring,c:cloth,p:[0,.255,.01],s:[.118,.118,.09],r:[Math.PI/2+.12,0,0]},{g:box,c:cloth,p:[side*.07,.12,.15],s:[.058,.24,.016],r:[.08,0,side*.1]},{g:box,c:cloth,p:[side*.05,.17,.156],s:[.05,.13,.014],r:[.1,0,-side*.25]},{g:box,c:p.trim,p:[side*.075,-.002,.152],s:[.06,.012,.017],r:[0,0,side*.1]}];
+  case 'shawl':return[{g:shawl,c:cloth,p:[0,.175,-.004],s:[.205,.19,.148]},{g:taper(.236,.24,.018),c:p.trim,p:[0,.08,-.004],s:[1,1,.72]},{g:sphere,c:p.accent,p:[0,.25,.13],s:[.02,.02,.01]}];
+  case 'satchel':return[{g:box,c:0x5a4030,p:[0,.06,.146],s:[.03,.62,.012],r:[0,0,side*.62]},{g:box,c:0x5a4030,p:[0,.06,-.13],s:[.03,.62,.012],r:[0,0,-side*.62]},{g:box,c:0x7a5a3e,p:[-side*.215,-.16,.02],s:[.07,.15,.19]},{g:box,c:0x5f4431,p:[-side*.25,-.12,.02],s:[.012,.1,.19]},{g:box,c:p.accent,p:[-side*.255,-.14,.02],s:[.008,.025,.04]}];
+  case 'sash':return[{g:box,c:cloth,p:[0,.03,.15],s:[.075,.56,.012],r:[0,0,-side*.58]},{g:box,c:cloth,p:[0,.03,-.135],s:[.075,.56,.012],r:[0,0,side*.58]},{g:sphere,c:cloth,p:[side*.15,-.13,.12],s:[.035,.03,.02]},{g:box,c:cloth,p:[side*.165,-.21,.12],s:[.035,.12,.01],r:[0,0,side*.15]}];
+  default:return[];
+ }
+}
 function hash(s:string){let h=2166136261;for(let i=0;i<s.length;i++)h=Math.imul(h^s.charCodeAt(i),16777619);return h>>>0;}
 function taper(top:number,bottom:number,height:number){return new THREE.CylinderGeometry(top,bottom,height,10);}
 function batch(parent:THREE.Group,name:string,parts:Part[],material:THREE.Material){
@@ -31,6 +53,8 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  if(medical){p.coat=0x344e61;p.trim=0xd0c3a3;}if(craft){p.coat=socket.region==='kyoto'?0x414d71:0x6d7162;p.trim=0x725039;}if(keeper){p.coat=socket.region==='kyoto'?0x8b5269:0x78839a;p.trim=0xd5c5a6;}
  if(signal){p.coat=0xc4d8d9;p.trim=0x376879;p.accent=0xc6a967;}if(witness){p.coat=0x586b87;p.trim=0xc4ad81;p.hair=0x83776b;}if(lamplighter){p.coat=0x9b794d;p.trim=0x385c61;p.accent=0xd2b97c;}if(paperKeeper){p.coat=0x62618b;p.trim=0xcbb58e;p.accent=0x9a574e;}
  const campaign=signal||witness||lamplighter||bearer||paperKeeper;
+ if(!campaign&&!medical&&!craft&&!keeper){const[coat,trim]=COATS[socket.region][(seed>>>5)%COATS[socket.region].length];p.coat=coat;p.trim=trim;}
+ const layer:ResidentLayer=campaign?'none':residentLayer(seed,socket.region);
  // Campaign residents keep their authored portrait; everyone else gets the same sculpted face with a cut of their own.
  const portrait=createResidentPortrait(socket.region,campaign?undefined:residentLook(seed,socket.region));p.skin=portrait.profile.skin;p.hair=portrait.profile.hair;
  const torso=new THREE.Group();torso.name='ResidentTorso';torso.position.y=1.04;root.add(torso);const head=new THREE.Group();head.name='ResidentHead';head.position.y=.48;torso.add(head);const eyes=new THREE.Group();eyes.name='ResidentEyes';head.add(eyes);
@@ -54,7 +78,7 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  if(lamplighter){body.push({g:taper(.235,.29,.28),c:p.trim,p:[0,.105,-.025],s:[1,1,.7]},{g:box,c:p.coat,p:[0,-.20,.15],s:[.27,.22,.035]});for(const x of[-.13,.13])body.push({g:box,c:p.accent,p:[x,-.13,.16],s:[.035,.055,.018]});}
  if(bearer){body.push({g:box,c:0xbcb399,p:[0,.02,-.2],s:[.28,.35,.15]},{g:cylinder,c:0x74818a,p:[0,.24,-.22],s:[.10,.36,.10],r:[0,0,Math.PI/2]});for(const x of[-.13,.13])body.push({g:box,c:0xa18b68,p:[x,.05,.143],s:[.035,.43,.023]},{g:box,c:p.accent,p:[x,-.10,.161],s:[.05,.04,.015]});}
  if(paperKeeper){body.push({g:box,c:0x765944,p:[-.15,-.23,.06],s:[.13,.24,.23]},{g:box,c:p.trim,p:[-.08,.06,.157],s:[.035,.44,.016],r:[0,0,-.35]});for(const x of[-.11,0,.11])body.push({g:cylinder,c:0xdfcda8,p:[x,.05,-.19],s:[.043,.45,.043]},{g:cylinder,c:0x765944,p:[x,.29,-.19],s:[.05,.035,.05]});}
- if(portrait)body.push(...portrait.coat);batch(torso,'ResidentClothing',body,material);
+ if(portrait)body.push(...portrait.coat);body.push(...layerParts(layer,p,seed));batch(torso,'ResidentClothing',body,material);
  const legs:Part[]=[];for(const sign of[-1,1])legs.push({g:box,c:0x1b1a1d,p:[sign*.11,.012,.062],s:[.165,.022,.25]},{g:box,c:0x3b2f2b,p:[sign*.11,.038,-.03],s:[.12,.035,.085]},{g:taper(.088,.082,.055),c:0x4a3a31,p:[sign*.11,.225,.006]},{g:cylinder,c:0x2b3038,p:[sign*.11,.40,.004],s:[.082,.03,.088]},{g:cylinder,c:0x343b44,p:[sign*.11,.58,0],s:[.079,.50,.085]},{g:taper(.07,.065,.30),c:0x3e302b,p:[sign*.11,.22,.006]},{g:sphere,c:0x332a28,p:[sign*.11,.08,.065],s:[.085,.075,.15]},{g:box,c:0x262528,p:[sign*.11,.028,.065],s:[.16,.025,.24]});batch(root,'ResidentBootsAndLegs',legs,material);
  let features:Part[]=[{g:face,c:p.skin,s:[witness? .96:bearer?1.06:paperKeeper?.94:1,witness?1.04:lamplighter?.96:1,.86]},{g:sphere,c:p.skin,p:[-.14,-.018,0],s:[.03,.046,.025]},{g:sphere,c:p.skin,p:[.14,-.018,0],s:[.03,.046,.025]},{g:sphere,c:p.skin,p:[0,-.044,.126],s:[.019,.030,.020]},{g:box,c:0x9b605b,p:[0,-.101,.113],s:[.041,.006,.007]},{g:cap,c:p.hair,p:[0,.036,-.002],s:[.151,.165,.153]}];
  for(const sign of[-1,1])features.push({g:sphere,c:p.hair,p:[sign*.13,.004,-.004],s:[.032,.10,.098]},{g:box,c:p.hair,p:[sign*.059,.037,.123],s:[.065,witness?.012:.010,.01],r:[0,0,sign*(lamplighter?-.12:.035)]});
@@ -80,6 +104,7 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  if(sign===1&&lamplighter){a.push({g:new THREE.TorusGeometry(.055,.009,4,10),c:0x45565b,p:[.04,-.57,.08]},{g:box,c:0x45565b,p:[.04,-.68,.08],s:[.14,.055,.13]},{g:box,c:0xe7c886,p:[.04,-.79,.08],s:[.11,.16,.10]},{g:box,c:0x45565b,p:[.04,-.9,.08],s:[.15,.04,.14]});for(const x of[-.023,.103])a.push({g:box,c:0x45565b,p:[x,-.79,.08],s:[.016,.2,.12]});}
  batch(arm,`ResidentSleeve_${sign}`,a,material);}
  root.scale.setScalar(.97+(seed%7)*.012);root.userData.triangles=0;root.traverse(o=>{if(o instanceof THREE.Mesh)root.userData.triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;});
+ root.userData.layer=layer;
  return{socket,root,torso,head,eyes,leftArm,rightArm,faceMesh,phase,craft,signal,witness,lamplighter,bearer,paperKeeper,campaign,headYaw:0,workBlend:0,speechBlend:0};
 }
 export function createSettlementNpcs(sockets:PlacedNpcSocket[]){

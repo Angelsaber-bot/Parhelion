@@ -61,3 +61,15 @@ test('ordinary residents get the sculpted face with a stable cut and colouring o
   const face=person.getObjectByName('ResidentFaceAndHair') as THREE.Mesh;assert.ok(face.morphTargetInfluences?.length===2,'speaking mouth');hairs.add(String(face.geometry.getAttribute('position').count));}
  assert.ok(hairs.size>=2,'residents do not share one head');system.dispose();
 });
+
+import {residentLayer,RESIDENT_LAYERS} from '../src/settlements/npcs';
+test('ordinary residents wear one of several everyday layers; campaign residents keep their authored dress',()=>{
+ const seen=new Set(Array.from({length:60},(_,i)=>residentLayer(Math.imul(i+7,2246822519)>>>0,'britain')));
+ for(const l of seen)assert.ok(RESIDENT_LAYERS.includes(l));assert.ok(seen.size>=4,'several layers in one town');
+ assert.ok(!Array.from({length:60},(_,i)=>residentLayer(Math.imul(i+7,2246822519)>>>0,'winter')).includes('scarf'),'winter fur collars never get a second scarf');
+ const plain=createSettlementNpcs(Array.from({length:6},(_,i)=>({...npc(`dock_${i}`,i*3),role:['港口信使','Dock Runner']})) as PlacedNpcSocket[]);
+ for(const person of plain.group.children){let triangles=0;person.traverse(o=>{if(o instanceof THREE.Mesh)triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;});assert.ok(triangles<14000,`${triangles}`);const b=new THREE.Box3().setFromObject(person);assert.ok(b.max.x-b.min.x<.95,'layers stay on the body');}
+ plain.dispose();
+ const sockets=CAMPAIGN_REGIONS.map((region,i)=>({id:CAMPAIGN_EPISODES[region].npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:[i*2,0,0]as[number,number,number],lines:[CAMPAIGN_EPISODES[region].brief]}));
+ const campaign=createSettlementNpcs(sockets);for(const person of campaign.group.children)assert.equal(person.userData.layer,'none');campaign.dispose();
+});
