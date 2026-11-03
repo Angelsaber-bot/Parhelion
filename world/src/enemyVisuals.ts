@@ -9,6 +9,7 @@ import { createJaegerKit } from './jaegerVisual';
 import { createBombardierKit, createBreakerKit } from './roleGearVisual';
 import { createBossRegaliaKit, hasBossRegalia, type BossRegaliaId } from './bossRegaliaVisual';
 import { createEliteCrestKit, hasEliteCrest } from './eliteCrestVisual';
+import { createTroopKit } from './troopKitVisual';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -50,7 +51,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { shield?: THREE.Object3D | null; gear?: { remove(): void; update?(e: Enemy, t: number): void } | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { shield?: THREE.Object3D | null; kit?: { remove(): void } | null; gear?: { remove(): void; update?(e: Enemy, t: number): void } | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -68,6 +69,7 @@ export class EnemyVisuals {
   private bossKits = new Map<BossRegaliaId, ReturnType<typeof createBossRegaliaKit>>();
   /** One regalia kit per champion id, built the first time that champion is seen. */
   private bossKit(id: BossRegaliaId) { let kit = this.bossKits.get(id); if (!kit) { kit = createBossRegaliaKit(id); this.bossKits.set(id, kit); } return kit; }
+  private troopKit?: ReturnType<typeof createTroopKit>;
   private eliteKits = new Map<string, ReturnType<typeof createEliteCrestKit>>();
   /** One sashimono kit per roaming elite, built the first time that elite is seen. */
   private eliteKit(id: string) { let kit = this.eliteKits.get(id); if (!kit) { kit = createEliteCrestKit(id); this.eliteKits.set(id, kit); } return kit; }
@@ -99,7 +101,7 @@ export class EnemyVisuals {
 
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
-    instance.insignia?.dispose(); instance.shield?.removeFromParent(); instance.gear?.remove();
+    instance.insignia?.dispose(); instance.shield?.removeFromParent(); instance.kit?.remove(); instance.gear?.remove();
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
     instance.root.traverse(o => { if (isEnemySkinnedMesh(o)) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
@@ -132,7 +134,7 @@ export class EnemyVisuals {
       // Prime immutable contact sockets in presentation, never in a fixed AI tick.
       if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
       parent.add(root);
-      instance = { shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.kind === 'king' && hasBossRegalia(e.id) ? this.bossKit(e.id).attach(root) : hasEliteCrest(e.miniboss) ? this.eliteKit(e.miniboss).attach(root) : e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : e.role === 'powder' && model === 'deck_raider' ? (this.powderKit ??= createPowderKit()).attach(root) : e.role === 'jaeger' && model === 'musketeer' ? (this.jaegerKit ??= createJaegerKit()).attach(root) : e.role === 'bombardier' && !e.miniboss && e.kind !== 'king' ? (this.bombardierKit ??= createBombardierKit()).attach(root) : e.role === 'breaker' && model === 'sunward_guard' && !e.miniboss && e.kind !== 'king' ? (this.breakerKit ??= createBreakerKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
+      instance = { kit: e.kind === 'king' || e.miniboss || e.storyPattern ? undefined : (this.troopKit ??= createTroopKit()).attach(root, e.id), shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.kind === 'king' && hasBossRegalia(e.id) ? this.bossKit(e.id).attach(root) : hasEliteCrest(e.miniboss) ? this.eliteKit(e.miniboss).attach(root) : e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : e.role === 'powder' && model === 'deck_raider' ? (this.powderKit ??= createPowderKit()).attach(root) : e.role === 'jaeger' && model === 'musketeer' ? (this.jaegerKit ??= createJaegerKit()).attach(root) : e.role === 'bombardier' && !e.miniboss && e.kind !== 'king' ? (this.bombardierKit ??= createBombardierKit()).attach(root) : e.role === 'breaker' && model === 'sunward_guard' && !e.miniboss && e.kind !== 'king' ? (this.breakerKit ??= createBreakerKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
@@ -173,6 +175,6 @@ export class EnemyVisuals {
     if (this.disposed) return; this.disposed = true;
     for (const id of this.instances.keys()) this.release(id);
     for (const gltf of this.cache.values()) if (gltf) disposeTemplate(gltf);
-    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined; this.jaegerKit?.dispose(); this.jaegerKit = undefined; this.bombardierKit?.dispose(); this.bombardierKit = undefined; this.breakerKit?.dispose(); this.breakerKit = undefined; for (const kit of this.bossKits.values()) kit.dispose(); this.bossKits.clear(); for (const kit of this.eliteKits.values()) kit.dispose(); this.eliteKits.clear();
+    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined; this.jaegerKit?.dispose(); this.jaegerKit = undefined; this.bombardierKit?.dispose(); this.bombardierKit = undefined; this.breakerKit?.dispose(); this.breakerKit = undefined; for (const kit of this.bossKits.values()) kit.dispose(); this.bossKits.clear(); for (const kit of this.eliteKits.values()) kit.dispose(); this.eliteKits.clear(); this.troopKit?.dispose(); this.troopKit = undefined;
   }
 }
