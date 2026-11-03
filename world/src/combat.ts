@@ -343,6 +343,11 @@ export class WorldCombatState {
     enemy.mode='stagger';enemy.timer=Math.min(1,seconds);enemy.staggerCooldown=enemy.kind==='king'?10:5;enemy.contactSequence=0;
     this.events.push({type:'stagger',id});return true;
   }
+  /** A field herb: up to `amount` HP at once, usable mid-fight; returns what was restored. */
+  fieldHeal(amount: number): number {
+    if (this.defeated || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return 0;
+    const before = this.hp; this.hp = Math.min(COMBAT.playerHp, this.hp + amount); return this.hp - before;
+  }
   recoverAtSettlement(amount: number): boolean {
     if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return false;
     this.hp = Math.min(COMBAT.playerHp, this.hp + Math.min(25, amount)); return true;
