@@ -1,11 +1,16 @@
 // Synthesized sound set (no audio assets yet). Shots are layered the way mature shooters build
 // them: a sharp transient, a filtered noise body, a low thump you feel, and a reverb tail; the
 // shotgun adds a pump. Everything runs through one compressor so stacked shots stay punchy.
+// Automated/browser verification is silent by default. A plain ?mute also
+// allows quiet manual checks without changing normal play or saved settings.
+const audioParams = typeof location === 'undefined' ? null : new URLSearchParams(location.search);
+const quietRun = audioParams?.has('test') || audioParams?.has('mute');
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
 let verb: ConvolverNode | null = null;
 
 function ac(): AudioContext | null {
+  if (quietRun) return null;
   if (!ctx) {
     try { ctx = new AudioContext(); } catch { return null; }
     const comp = ctx.createDynamicsCompressor();
