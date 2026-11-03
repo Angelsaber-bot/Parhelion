@@ -10,6 +10,7 @@ import { createBombardierKit, createBreakerKit } from './roleGearVisual';
 import { createBossRegaliaKit, hasBossRegalia, type BossRegaliaId } from './bossRegaliaVisual';
 import { createEliteCrestKit, hasEliteCrest } from './eliteCrestVisual';
 import { createTroopKit } from './troopKitVisual';
+import { bakeAttachedKits, disposeBakedKits } from './kitMerge';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -101,7 +102,7 @@ export class EnemyVisuals {
 
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
-    instance.insignia?.dispose(); instance.shield?.removeFromParent(); instance.kit?.remove(); instance.gear?.remove();
+    instance.insignia?.dispose(); disposeBakedKits(instance.root); instance.shield?.removeFromParent(); instance.kit?.remove(); instance.gear?.remove();
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
     instance.root.traverse(o => { if (isEnemySkinnedMesh(o)) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
@@ -135,6 +136,8 @@ export class EnemyVisuals {
       if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
       parent.add(root);
       instance = { kit: e.kind === 'king' || e.miniboss || e.storyPattern ? undefined : (this.troopKit ??= createTroopKit()).attach(root, e.id), shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.kind === 'king' && hasBossRegalia(e.id) ? this.bossKit(e.id).attach(root) : hasEliteCrest(e.miniboss) ? this.eliteKit(e.miniboss).attach(root) : e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : e.role === 'powder' && model === 'deck_raider' ? (this.powderKit ??= createPowderKit()).attach(root) : e.role === 'jaeger' && model === 'musketeer' ? (this.jaegerKit ??= createJaegerKit()).attach(root) : e.role === 'bombardier' && !e.miniboss && e.kind !== 'king' ? (this.bombardierKit ??= createBombardierKit()).attach(root) : e.role === 'breaker' && model === 'sunward_guard' && !e.miniboss && e.kind !== 'king' ? (this.breakerKit ??= createBreakerKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
+      // Gear is authored as many small meshes; bake each kit down to one draw per material.
+      bakeAttachedKits(root);
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;

@@ -41,7 +41,7 @@ export function createBombardierKit() {
         place(collar, mats.brass, root, x + .022, y + .042, .165, [0, 0, -.5]);
         place(fuse, mats.cord, root, x + .034, y + .07, .165, [0, 0, -.7]);
       }
-      const glow = place(ember, mats.ember, root, -.172, 1.1, .12);
+      const glow = place(ember, mats.ember, root, -.172, 1.1, .12); glow.userData.dynamic = true;
       place(coil, mats.cord, root, -.15, 1.11, .115, [Math.PI / 2, .3, 0]);
       actor.add(root); actor.updateWorldMatrix(true, true); chest.attach(root);
       return {

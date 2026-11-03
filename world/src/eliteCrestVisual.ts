@@ -54,7 +54,7 @@ export function createEliteCrestKit(id: string) {
       put(mount, mats.leather, body, -.055, 1.27, -.124);
       put(pole, mats.wood, body, -.055, 1.62, -.142, [-.1, 0, 0]);
       put(poleCap, mats.trim, body, -.055, 2.02, -.164, [-.1, 0, 0]);
-      const flag = put(banner, mats.cloth, body, .075, 1.76, -.154, [-.1, 0, 0]);
+      const flag = put(banner, mats.cloth, body, .075, 1.76, -.154, [-.1, 0, 0]); flag.userData.dynamic = true;
       put(bannerEdge, mats.trim, body, .075, 2.0, -.157, [-.1, 0, 0]);
       put(bannerEdge, mats.trim, body, .075, 1.52, -.147, [-.1, 0, 0]);
       for (let i = 0; i < 3; i++) put(bannerTail, mats.cloth, body, .005 + i * .07, 1.5, -.147, [Math.PI, 0, 0]);

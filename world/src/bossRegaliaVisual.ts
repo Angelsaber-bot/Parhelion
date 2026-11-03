@@ -68,7 +68,7 @@ function vacantKing() {
         if (!broken && i % 2 === 0) put(gem, stone, crown, Math.cos(a) * .142, 1.794, Math.sin(a) * .142);
       }
       // Broken halo: three quarter-arcs of one ring, turning at different speeds above the crown.
-      const rings = [0, 1, 2].map(i => put(halo, aura, crown, 0, 2.06 + i * .04, 0, [Math.PI / 2 - .42 - i * .06, 0, i * 2.1]));
+      const rings = [0, 1, 2].map(i => { const m = put(halo, aura, crown, 0, 2.06 + i * .04, 0, [Math.PI / 2 - .42 - i * .06, 0, i * 2.1]); m.userData.dynamic = true; return m; });
       put(mantle, cloth, body, 0, 1.3, -.03);
       put(hem, clothTrim, body, 0, 1.11, -.03);
       for (let i = 0; i < 5; i++) put(tatter, cloth, body, -.2 + i * .1, 1.11, -.21 + Math.abs(i - 2) * .05, [.22, 0, (i - 2) * .11]);
@@ -117,7 +117,7 @@ function drownedAdmiral() {
       for (let i = 0; i < 11; i++) {
         const a = Math.PI * (.18 + i / 10 * .64), deep = i > 2 && i < 8, side = i % 2 ? 1 : -1;
         const x = Math.sin(a) * .205 * side, z = -Math.cos(a) * .205;
-        put(deep ? kelp : kelpShort, i % 2 ? weed : weedLight, hat, x, 1.772, z, [-z * .5, 0, x * .7]);
+        put(deep ? kelp : kelpShort, i % 2 ? weed : weedLight, hat, x, 1.772, z, [-z * .5, 0, x * .7]).userData.dynamic = true;
         if (i === 3 || i === 7) put(drip, brine, hat, x, 1.59, z);
       }
       for (const sign of [-1, 1]) {
@@ -227,7 +227,7 @@ function hellfireLord() {
       const seams: THREE.Mesh[] = [];
       for (const sign of [-1, 1]) for (let i = 0; i < 3; i++) {
         put(sode, i ? lacquerDark : lacquer, body, sign * (.21 + i * .014), 1.44 - i * .055, 0, [0, 0, sign * -(.18 + i * .07)]);
-        seams.push(put(seam, ember, body, sign * (.21 + i * .014), 1.414 - i * .055, .006, [0, 0, sign * -(.18 + i * .07)]));
+        const hot = put(seam, ember, body, sign * (.21 + i * .014), 1.414 - i * .055, .006, [0, 0, sign * -(.18 + i * .07)]); hot.userData.dynamic = true; seams.push(hot);
         put(sode, iron, body, sign * (.21 + i * .014), 1.414 - i * .055, 0, [0, 0, sign * -(.18 + i * .07)]).scale.set(1.02, .18, 1.02);
       }
       actor.add(helm, body); actor.updateWorldMatrix(true, true); head.attach(helm); chest.attach(body);

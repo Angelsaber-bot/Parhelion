@@ -51,7 +51,7 @@ export function createPowderKit() {
       add(rope, mats.rope, 0, .03, -.01, [.1, 0, .62]);
       const f = add(fuse, mats.fuse, .05, .225, .02, [.4, 0, 0]);
       const fe = add(fuseEnd, mats.fuse, .085, .27, .02, [0, 0, -.5]);
-      const sp = add(spark, mats.spark, .115, .315, .02); sp.visible = false;
+      const sp = add(spark, mats.spark, .115, .315, .02); sp.visible = false; sp.userData.dynamic = true;
       void f; void fe;
       root.scale.setScalar(.82); root.position.set(0, 1.0, .27);
       actor.add(root); actor.updateWorldMatrix(true, true); chest.attach(root);
