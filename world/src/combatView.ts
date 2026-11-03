@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EnemyContactEffects } from './enemyContactEffects';
+import { DefeatEffects } from './defeatEffects';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
 import type { Layout } from './types';
@@ -132,6 +133,7 @@ export class WorldCombat {
   private readonly defeat = document.createElement('div');
   private readonly effectGroup = new THREE.Group();
   private readonly contactEffects: EnemyContactEffects;
+  private readonly defeatEffects: DefeatEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
   private readonly boltGeo = new THREE.SphereGeometry(0.075, 6, 4);
@@ -153,6 +155,7 @@ export class WorldCombat {
     this.shared.push(this.thrustTellGeo);
     this.geometry = makeCombatTerrain(options.colliders, options.layout, options.groundHeight);
     this.contactEffects = new EnemyContactEffects(this.effectGroup, this.geometry);
+    this.defeatEffects = new DefeatEffects(this.effectGroup);
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
     const bosses = this.bossDefs.map(b => {
@@ -197,7 +200,7 @@ export class WorldCombat {
     } catch { this.cancelStoryEncounter(); return { ok: false, reason: 'unavailable' }; }
   }
   cancelStoryEncounter() {
-    this.contactEffects.clear();
+    this.contactEffects.clear(); this.defeatEffects.clear();
     const id = this.storyDirector.cancel();
     this.state.clearStoryEnemies();
     for (const [actorId, resources] of this.storyResources) {
@@ -359,6 +362,7 @@ export class WorldCombat {
     this.enemyAssets.tick(dt);
     if (this.state.defeated) this.contactEffects.clear();
     this.contactEffects.update(dt, active);
+    this.defeatEffects.update(active ? dt : 0, typeof innerHeight === 'number' ? innerHeight * Math.min(devicePixelRatio || 1, 2) : undefined);
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
     const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
@@ -476,6 +480,13 @@ export class WorldCombat {
         this.impact.textContent = `${bilingual(...event.name)} · ${bilingual('战意高涨 · 趁破绽反击', 'Rallies · punish the opening')}`; this.impactFor = 1.3;
       } else if (event.type === 'kill') {
         this.contactEffects.cancel(event.id);
+        // The body breaks into light: gold for troops, the elite's own glow, a larger burst for bosses.
+        const fallen = this.state.enemies.find(e => e.id === event.id);
+        if (fallen) {
+          const elite = fallen.miniboss ? MINIBOSSES.find(m => m.id === fallen.miniboss) : undefined;
+          const color = elite ? parseInt(elite.colors[2].slice(1), 16) : fallen.kind === 'king' ? 0xffd27a : 0xffe3a0;
+          this.defeatEffects.emit(fallen.p, color, fallen.kind === 'king' ? 1.7 : elite ? 1.3 : 1, this.options.reducedEffects?.() ?? false);
+        }
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
       }
@@ -665,6 +676,7 @@ export class WorldCombat {
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.contactEffects.dispose();
+    this.defeatEffects.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.defeat]) el.remove();
