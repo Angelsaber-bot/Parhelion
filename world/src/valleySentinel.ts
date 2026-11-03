@@ -22,10 +22,22 @@ export function makeValleySentinel(geometries: THREE.BufferGeometry[], materials
     const m = new THREE.Mesh(geo,mat); m.name=name; m.position.set(p[0],p[1],p[2]); m.scale.set(scale[0],scale[1],scale[2]); m.castShadow=true; m.receiveShadow=true;parent.add(m);parts.push(m);return m;
   };
   part(root,'Horizontal_Spine',box,joint,[0,.99,-.12],[.4,.3,1.2]);
+  part(root,'Belly_Plate_Front',plateGeo,joint,[0,.87,.22],[.52,.1,.4]);
+  part(root,'Belly_Plate_Rear',plateGeo,joint,[0,.86,-.26],[.5,.1,.42]);
   for(let i=0;i<3;i++) {
     const plate=part(root,`Layered_Carapace_${i}`,plateGeo,shell,[0,1.14,-.48+i*.35],[.68,.22,.38]);plate.rotation.x=-.10;
+    // A gilt lip along each plate's trailing edge, so the carapace reads as overlapping layers.
+    const lip=part(root,`Carapace_Lip_${i}`,plateGeo,trim,[0,1.12,-.63+i*.35],[.70,.055,.1]);lip.rotation.x=-.10;
     part(root,`Spine_Light_${i}`,crystal,light,[0,1.32,-.48+i*.35],[.095,.19,.12]);
+    // Dorsal blades between the lights: the elite's crest stands taller.
+    const blade=part(root,`Dorsal_Blade_${i}`,crystal,trim,[0,1.3,-.31+i*.35],[.055,elite?.3:.19,.2]);blade.rotation.x=-.22;
+    part(root,`Flank_Vent_${i}`,box,light,[0,0,0],[.015,.06,.14]).position.set(.33,1.06,-.46+i*.34);
+    part(root,`Flank_Vent_-${i}`,box,light,[0,0,0],[.015,.06,.14]).position.set(-.33,1.06,-.46+i*.34);
   }
+  // Power core slung under the neck, visible between the shoulder plates.
+  part(root,'Core_Housing',box,joint,[0,1.02,.3],[.3,.22,.2]);
+  part(root,'Prism_Core',crystal,light,[0,1.02,.4],[.13,.17,.1]);
+  for(const i of [0,1]) part(root,`Neck_Segment_${i}`,box,joint,[0,1.05+i*.03,.44+i*.09],[.26-i*.04,.17,.11]);
   const head = new THREE.Group();head.name='Articulated_Head';head.position.set(0,1.13,.62);root.add(head);
   part(head,'Armored_Head',headGeo,shell,[0,.09,.06],[.53,.34,.55]);
   const muzzle=part(head,'Tapered_Muzzle',muzzleGeo,joint,[0,-.04,.43],[.35,.19,.39]);muzzle.rotation.x=.12;
@@ -46,12 +58,17 @@ export function makeValleySentinel(geometries: THREE.BufferGeometry[], materials
     const shin=part(leg,'Lower_Strut',box,joint,[0,-.56,.04],[.12,.33,.13]);shin.rotation.x=-.12;
     const ankle=part(leg,'Ankle_Axle',cylinder,trim,[0,-.69,.07],[.09,.14,.09]);ankle.rotation.z=Math.PI/2;
     part(leg,'Compact_Paw',muzzleGeo,shell,[0,-.80,.12],[.22,.15,.24]);
+    part(leg,'Knee_Guard',plateGeo,shell,[0,-.42,.07],[.2,.14,.16]);
     for(const claw of [-1,1]) {
       part(leg,'Split_Claw_'+claw,muzzleGeo,shell,[claw*.065,-.82,.27],[.105,.10,.18]);
+      part(leg,'Claw_Knuckle_'+claw,muzzleGeo,joint,[claw*.065,-.825,.195],[.085,.075,.07]);
       part(leg,'Claw_Tip_'+claw,box,trim,[claw*.065,-.83,.355],[.07,.04,.035]);
     }
   }
   const tail=part(root,'Counterweight_Tail',box,trim,[0,1.06,-.94],[.12,.12,.45]);tail.rotation.x=-.4;
+  part(root,'Tail_Root_Plate',plateGeo,shell,[0,1.09,-.72],[.3,.16,.2]).rotation.x=-.3;
+  part(root,'Tail_Segment',box,joint,[0,1.2,-1.2],[.085,.085,.3]).rotation.x=-.4;
+  part(root,'Tail_Beacon',crystal,light,[0,1.3,-1.37],[.085,.13,.085]);
   // Instance all compatible pieces: articulated original nodes act only as transform handles.
   // Four-legged detail therefore costs a handful of draws, not one draw per armor plate.
   const batches = new Map<string, { source: THREE.Mesh[]; mesh: THREE.InstancedMesh }>();
