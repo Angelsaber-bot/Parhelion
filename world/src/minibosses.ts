@@ -37,6 +37,17 @@ export function makeMinibossSpawns(place: (x: number, z: number) => Point3 | nul
   return result;
 }
 
+/** At half health an elite rallies once: a short stance break to punish, then it presses harder —
+ * its signature comes every second attack instead of every third, and it closes distance faster. */
+export const ELITE_RALLY = Object.freeze({ opening: 1.1, speed: 1.12, cadence: 1 });
+export function eliteName(e: Pick<SpawnPoint, 'miniboss'>): readonly [string, string] | undefined {
+  return MINIBOSSES.find(def => def.id === e.miniboss)?.name;
+}
+/** How many attacks between signatures for this elite right now. */
+export function signatureCadence(signature: EliteSignature, phase: 1 | 2) {
+  return Math.max(2, signature.every - (phase === 2 ? ELITE_RALLY.cadence : 0));
+}
+
 /** The signature move this elite is currently performing, if any. */
 export function activeSignature(e: Pick<SpawnPoint, 'miniboss'> & { signatureActive?: boolean }): EliteSignature | undefined {
   return e.signatureActive ? minibossProfile(e)?.signature : undefined;

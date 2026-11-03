@@ -6,7 +6,7 @@ import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
 import { ERA_BOSS_REQUIREMENTS } from './eraStories';
-import { minibossProfile, activeSignature } from './minibosses';
+import { minibossProfile, activeSignature, eliteName, signatureCadence, ELITE_RALLY } from './minibosses';
 import { ENEMY_ROLES, SHINOBI_BLINK, selectEnemyRole, type EnemyRole } from './enemyRoles';
 /** Small, local World encounter simulation. No networking/Arena rules are changed. */
 export interface Point3 { x: number; y: number; z: number }
@@ -26,6 +26,7 @@ export type CombatEvent =
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
+  | { type: 'eliteRally'; id: string; name: readonly [string, string] }
   | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
@@ -395,6 +396,12 @@ export class WorldCombatState {
         e.phase = 2; e.contactSequence = 0; e.staggerCooldown = 0; e.mode = 'recover'; e.timer = ECHO_WARDEN.stanceBreak;
         this.events.push({ type: 'storyPhase', id: e.id });
       }
+      const rallyName = e.miniboss && !e.storyPattern && e.kind !== 'king' && e.phase === 1 && e.hp <= e.maxHp / 2 && minibossProfile(e)?.signature ? eliteName(e) : undefined;
+      if (rallyName) {
+        // Half health: one stance break to punish, then the elite presses harder for the rest of the fight.
+        e.phase = 2; e.mode = 'recover'; e.timer = ELITE_RALLY.opening; e.signatureActive = false;
+        this.events.push({ type: 'eliteRally', id: e.id, name: rallyName });
+      }
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
         e.phase = 2; e.contactSequence = 0; e.mode = 'recover'; e.timer = 1.2;
         this.events.push({ type: 'phase' });
@@ -530,7 +537,7 @@ export class WorldCombatState {
         }
       }
       const signature = !isBoss && !e.storyPattern ? elite?.signature : undefined;
-      if (signature && sees && e.timer <= 0 && (e.attackCount + 1) % signature.every === 0 && dist >= signature.min && dist <= signature.max && hasEnemyPressureSlot(e, this.enemies, player)) {
+      if (signature && sees && e.timer <= 0 && (e.attackCount + 1) % signatureCadence(signature, e.phase) === 0 && dist >= signature.min && dist <= signature.max && hasEnemyPressureSlot(e, this.enemies, player)) {
         // The elite's rarer move: a full tell of its own, then a longer recovery to punish.
         e.signatureActive = true; e.attack = signature.attack; Object.assign(e.target, player); e.attackCount++;
         e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
@@ -547,7 +554,7 @@ export class WorldCombatState {
       const spacing = enemyRangedSpacing(e);
       const retreat = spacing > 0 && dist < spacing && e.timer > 0;
       if ((dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
-        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite?.speed ?? role.speed;
+        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed;
         const step = Math.min(speed * dt, retreat ? spacing - dist : Math.max(0, dist - 1.7));
         const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x) + (retreat ? Math.PI : 0);
         // A few local alternatives let the king skirt ruined pillars; never phase through them.

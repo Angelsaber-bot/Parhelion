@@ -471,6 +471,9 @@ export class WorldCombat {
       } else if (event.type === 'signature') {
         // The elite's rarer move names itself and its counter for the whole tell.
         this.impact.textContent = `${bilingual(...event.name)} · ${bilingual(...event.counter)}`; this.impactFor = 1.2;
+      } else if (event.type === 'eliteRally') {
+        // The rally names itself and the opening it gives; the faster cadence is the warning.
+        this.impact.textContent = `${bilingual(...event.name)} · ${bilingual('战意高涨 · 趁破绽反击', 'Rallies · punish the opening')}`; this.impactFor = 1.3;
       } else if (event.type === 'kill') {
         this.contactEffects.cancel(event.id);
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);

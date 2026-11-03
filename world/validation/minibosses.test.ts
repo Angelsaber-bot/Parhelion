@@ -98,3 +98,34 @@ test('every elite has a rarer signature move with its own tell, dodge and longer
     }
   }
 });
+
+test('at half health each elite rallies once: a punish opening, then faster signatures and footwork', async () => {
+  const { ELITE_RALLY, signatureCadence } = await import('../src/minibosses.ts');
+  for (const def of MINIBOSSES) {
+    const sig = def.profile.signature!;
+    const s = new WorldCombatState([{ id: def.id, miniboss: def.id, kind: def.kind, p: flat(0, 0) }], []), e = s.enemies[0];
+    const near = flat(1, 0);
+    advance(s, .05, near); s.drainEvents();
+    // Above half: no rally.
+    s.hitEnemy(def.id, e.maxHp / 2 - 1); assert.equal(e.phase, 1, def.id);
+    assert.ok(!s.drainEvents().some(ev => ev.type === 'eliteRally'));
+    // Crossing half: one rally, a stance break the player can punish.
+    s.hitEnemy(def.id, 2);
+    assert.equal(e.phase, 2, def.id); assert.equal(e.mode, 'recover'); assert.equal(e.timer, ELITE_RALLY.opening);
+    const rally = s.drainEvents().filter(ev => ev.type === 'eliteRally');
+    assert.equal(rally.length, 1, `${def.id} must announce its rally once`);
+    assert.deepEqual((rally[0] as { name: readonly [string, string] }).name, def.name);
+    s.hitEnemy(def.id, 1); assert.ok(!s.drainEvents().some(ev => ev.type === 'eliteRally'), `${def.id} rallies only once`);
+    // Signature cadence tightens but never to every attack.
+    assert.equal(signatureCadence(sig, 1), sig.every);
+    assert.equal(signatureCadence(sig, 2), Math.max(2, sig.every - 1));
+    assert.ok(signatureCadence(sig, 2) >= 2);
+    // A rallied elite at the right distance opens with its signature one attack earlier.
+    const t = new WorldCombatState([{ id: def.id, miniboss: def.id, kind: def.kind, p: flat(0, 0) }], []), r = t.enemies[0];
+    r.phase = 2; r.attackCount = signatureCadence(sig, 2) - 1;
+    advance(t, .05, flat((sig.min + sig.max) / 2, 0));
+    assert.equal(r.signatureActive, true, `${def.id} rallied cadence`);
+    // A full reset brings the elite back to phase 1.
+    s.resetAll(); assert.equal(s.enemies[0].phase, 1, `${def.id} reset`);
+  }
+});
