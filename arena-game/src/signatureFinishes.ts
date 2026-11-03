@@ -2,7 +2,7 @@
  * projection follows the actual painted mesh, including moving stock/fore-end.
  * No material or geometry from the source GLB is edited. */
 import * as THREE from 'three';
-import {signatureOf,type SignatureId} from '../shared/signatureSkins.ts';
+import {signatureOf,type SignatureId,type SignatureStyle} from '../shared/signatureSkins.ts';
 
 type Point=readonly[number,number];
 type ProjectedFace=readonly[number,number,number,number,number,number,number,number,number,number];
@@ -15,15 +15,32 @@ const patterns:Record<SignatureId,string>={
  'moonbite':`float folded=sin(p.x*18.0+sin(p.y*11.0)*1.8);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.38,.35,.51),(.5+.5*folded)*.12);`,
  'vermilion-plume':`float lacquer=.5+.5*sin(p.x*7.0+p.y*13.0);float vein=1.0-smoothstep(.025,.08,abs(sin(p.x*32.0-p.y*19.0)));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.55,.045,.025),lacquer*.2);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.8,.43,.12),vein*.2);`,
  'foundry-bell':`float grain=fract(sin(dot(floor(p.xy*180.0),vec2(51.1,17.7)))*43758.5);float casting=step(.95,fract(p.y*13.0));diffuseColor.rgb*=.83+grain*.22;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.23,.11,.04),casting*.25);`,
+ 'amber-apiary':`float resin=.5+.5*sin(p.x*4.0+sin(p.y*5.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.63,.35,.07),resin*.16);`,
+ 'equator-pulse':`float ceramic=.5+.5*sin(p.x*2.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.69,.73,.74),ceramic*.12);`,
+ 'mint-arcade':`float panel=step(.7,fract(p.x*3.0+p.y*2.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.31,.70,.64),panel*.12);`,
+ 'paper-crane':`float fibre=.5+.5*sin(p.x*100.0+p.y*12.0);diffuseColor.rgb*=.97+.03*fibre;`,
+ 'abyssal-maw':`float scale=.5+.5*sin(p.x*12.0+sin(p.y*14.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.04,.17,.16),scale*.2);`,
+ 'peach-fizz':`float glaze=.5+.5*sin(p.x*3.0-p.y*4.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.55,.60),glaze*.12);`,
+ 'copper-cartographer':`float grain=.5+.5*sin(p.x*11.0+sin(p.y*18.0)*1.5);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.26,.13,.075),grain*.2);`,
+ 'obsidian-surveyor':`float brushed=.5+.5*sin(p.y*70.0);diffuseColor.rgb*=.94+.06*brushed;`,
+ 'snowline-ghost':`float drift=.5+.5*sin(p.x*3.0+sin(p.y*6.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.63,.76,.82),drift*.16);`,
+ 'velvet-thorn':`float silk=.5+.5*sin(p.x*3.0-p.y*4.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.28,.07,.13),silk*.2);`,
+ 'prismwing':`float wing=.5+.5*sin(p.x*5.0+p.y*8.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.50,.73,.79),wing*.22);`,
+ 'rime-oath':`float ice=.5+.5*sin(p.x*7.0+sin(p.y*13.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.58,.76,.88),ice*.14);`,
+ 'ink-bamboo':`float fibre=.5+.5*sin(p.x*28.0+sin(p.y*4.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.22,.16),fibre*.15);`,
+ 'storm-circuit':`float plate=.5+.5*sin(p.x*4.0-p.y*3.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.19,.42),plate*.17);`,
+ 'meteor-heart':`float stone=.5+.5*sin(p.x*7.0+sin(p.y*11.0)*1.8);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.17,.13,.27),stone*.23);`,
+ 'sugar-crash':`float icing=.5+.5*sin(p.x*3.0+p.y*6.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.95,.72,.77),icing*.13);`,
 };
 export function signatureMaterial(source:THREE.MeshStandardMaterial,id:SignatureId,clock:{value:number}){
- const s=signatureOf(id)!,m=new THREE.MeshPhysicalMaterial();THREE.MeshStandardMaterial.prototype.copy.call(m,source);m.defines={...m.defines,PHYSICAL:''};
+ const s:SignatureStyle=signatureOf(id)!,m=new THREE.MeshPhysicalMaterial();THREE.MeshStandardMaterial.prototype.copy.call(m,source);m.defines={...m.defines,PHYSICAL:''};
  const body=/^PH_ivory(?:[._]?\d+)?$/.test(source.name),glow=/^PH_glow(?:[._]?\d+)?$/.test(source.name),grip=/rubber/i.test(source.name),glass=/glass/i.test(source.name);
- m.clearcoat=s.weapon==='hammer'?.22:1;m.clearcoatRoughness=.22;m.iridescence=s.iris;m.iridescenceThicknessRange=[160,420];
+ m.clearcoat=s.weapon==='hammer'&&s.metal>.4?.22:1;m.clearcoatRoughness=.22;m.iridescence=s.iris;m.iridescenceThicknessRange=[160,420];
  if(body){m.color.setHex(s.body);m.metalness=s.metal;m.roughness=s.rough;}
  else if(glow){m.color.setHex(s.accent);m.emissive.setHex(s.accent);m.emissiveIntensity=.36;m.roughness=.24;}
  else if(grip){m.color.setHex(s.weapon==='corona'?0x392920:0x17202b);m.metalness=.02;m.roughness=.88;m.clearcoat=.04;m.iridescence=0;}
  else if(glass){m.color.setHex(s.accent);m.metalness=.25;m.roughness=.12;}
+ else if(/dark|black/i.test(source.name)&&s.shadow!==undefined){m.color.setHex(s.shadow);m.metalness=Math.min(s.metal,.55);m.roughness=Math.max(s.rough,.33);}
  else if(/dark/i.test(source.name)&&['blade','polearm','hammer'].includes(s.weapon)){m.color.setHex(s.weapon==='blade'?0x201b32:s.weapon==='polearm'?0x29191d:0x252a30);m.metalness=.55;m.roughness=.33;}
  else if(!/dark|black/i.test(source.name)){m.color.setHex(s.trim);m.metalness=.83;m.roughness=s.weapon==='hammer'?.42:.27;}
  m.userData.finish=id;m.customProgramCacheKey=()=>`signature-${id}-${body?'paint':glow?'core':'trim'}-1`;
@@ -62,7 +79,18 @@ class SurfaceArt{
   if(depths===undefined){let near=Infinity,far=-Infinity;for(const f of this.grid[this.cellY(p[1])*64+this.cellX(p[0])]){const x=p[0]-f[0],y=p[1]-f[1],u=(x*f[7]-y*f[6])*f[9],v=(f[3]*y-f[4]*x)*f[9];if(u< -1e-7||v< -1e-7||u+v>1+1e-7)continue;const z=f[2]+u*f[5]+v*f[8];near=Math.min(near,z);far=Math.max(far,z);}depths=Number.isFinite(near)?[near,far]:null;this.depths.set(key,depths);}
   if(!depths)return null;return new THREE.Vector3(p[0],p[1],depths[side>0?1:0]+side*(bin===2?.0001:bin===0?.0004:.0007));
  }
- private tri(a:Point,b:Point,c:Point,bin:number){for(const side of [-1,1]){const points=[this.hit(a,side,bin),this.hit(b,side,bin),this.hit(c,side,bin)];if(points.some(p=>!p))continue;const [p,q,r]=points as THREE.Vector3[];if(Math.max(p.z,q.z,r.z)-Math.min(p.z,q.z,r.z)>.045)continue;for(const v of [p,q,r])this.positions[bin].push(...v.applyMatrix4(this.inverse).toArray());}}
+ private projectTriangle(a:Point,b:Point,c:Point,bin:number,side:number,depth=0){
+  const points=[this.hit(a,side,bin),this.hit(b,side,bin),this.hit(c,side,bin)];const [p,q,r]=points as THREE.Vector3[];
+  const ab:Point=[(a[0]+b[0])/2,(a[1]+b[1])/2],bc:Point=[(b[0]+c[0])/2,(b[1]+c[1])/2],ca:Point=[(c[0]+a[0])/2,(c[1]+a[1])/2],center:Point=[(a[0]+b[0]+c[0])/3,(a[1]+b[1]+c[1])/3];
+  const interior=[this.hit(center,side,bin),this.hit(ab,side,bin),this.hit(bc,side,bin),this.hit(ca,side,bin)];
+  const valid=points.every(Boolean)&&interior.every(Boolean)&&Math.max(p.z,q.z,r.z)-Math.min(p.z,q.z,r.z)<.045&&interior.every((v,i)=>Math.abs(v!.z-[(p.z+q.z+r.z)/3,(p.z+q.z)/2,(q.z+r.z)/2,(r.z+p.z)/2][i])<.003);
+  if(valid){for(const v of [p,q,r])this.positions[bin].push(...v.applyMatrix4(this.inverse).toArray());return;}
+  // Curved spearheads and large illustrated panels need smaller surface
+  // triangles; refine twice, retaining only the pieces that actually fit.
+  if(depth>=2||[...points,...interior].every(v=>!v))return;
+  this.projectTriangle(a,ab,ca,bin,side,depth+1);this.projectTriangle(ab,b,bc,bin,side,depth+1);this.projectTriangle(ca,bc,c,bin,side,depth+1);this.projectTriangle(ab,bc,ca,bin,side,depth+1);
+ }
+ private tri(a:Point,b:Point,c:Point,bin:number){for(const side of [-1,1])this.projectTriangle(a,b,c,bin,side);}
  polygon(points:Point[],bin=0){if(points.length<3)return;const center:Point=[points.reduce((n,p)=>n+p[0],0)/points.length,points.reduce((n,p)=>n+p[1],0)/points.length];for(let i=0;i<points.length;i++)this.tri(center,points[i],points[(i+1)%points.length],bin);}
  path(points:Point[],width:number,bin=0){for(let i=1;i<points.length;i++){const [a,b]=[points[i-1],points[i]],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);if(length<.00001)continue;const x=-dy/length*width/2,y=dx/length*width/2;this.polygon([[a[0]+x,a[1]+y],[b[0]+x,b[1]+y],[b[0]-x,b[1]-y],[a[0]-x,a[1]-y]],bin);}}
  curve(points:Point[],width:number,bin=0){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p,0)));this.path(curve.getPoints(Math.max(20,points.length*8)).map(v=>[v.x,v.y]as const),width,bin);}
@@ -71,10 +99,10 @@ class SurfaceArt{
 }
 
 export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:SignatureId){
- const s=signatureOf(id)!;
+ const s:SignatureStyle=signatureOf(id)!;
  const metal=new THREE.MeshPhysicalMaterial({color:s.trim,metalness:.86,roughness:.25,clearcoat:.75,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
  const light=new THREE.MeshPhysicalMaterial({color:s.accent,emissive:s.accent,emissiveIntensity:.20,metalness:.3,roughness:.2,clearcoat:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
- const enamel=new THREE.MeshPhysicalMaterial({color:s.weapon==='halo'?0x3c9388:s.weapon==='firefly'?0xe7ebc8:0x151f2b,metalness:.25,roughness:.34,clearcoat:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
+ const enamel=new THREE.MeshPhysicalMaterial({color:s.inlay??(s.weapon==='halo'?0x3c9388:s.weapon==='firefly'?0xe7ebc8:0x151f2b),metalness:.25,roughness:.34,clearcoat:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
  const materials=[metal,light,enamel],groups:THREE.Group[]=[];
  const draw=(role:string,paint:(a:SurfaceArt)=>void)=>{if(!parts[role])return;const a=new SurfaceArt(parts[role]);paint(a);const group=a.build(materials,`Signature_${id}_${role}`);if(group)groups.push(group);};
  draw('body',a=>{
@@ -119,6 +147,75 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
     a.polygon([[.37,-.06],[.56,-.06],[.56,.17],[.37,.17]],2);
     for(let i=0;i<3;i++)a.path([[.405+i*.055,-.025],[.405+i*.055,.13]],.017,1);
     a.path([[.27,-.38],[.35,-.22],[.28,-.12],[.33,.04]],.013,1);a.path([[.61,.20],[.7,.32],[.65,.45]],.012,1);break;
+   case'amber-apiary':
+    for(let row=0;row<2;row++)for(let col=0;col<8;col++){const x=-.4+col*.21+row*.105,y=.15+row*.145,r=.082;a.path(Array.from({length:7},(_,i)=>[x+Math.cos(i*Math.PI/3)*r,y+Math.sin(i*Math.PI/3)*r]as const),.012,col%3===0?1:0);}
+    a.polygon([[-.55,.12],[-.43,.07],[-.31,.12],[-.43,.2]],1);break;
+   case'equator-pulse':
+    a.path([[-.52,.36],[-.23,.36],[-.12,.22],[.38,.22],[.52,.35],[1.25,.35]],.026,2);
+    a.path([[-.52,.13],[-.02,.13],[.1,.29],[.34,.29]],.010,1);
+    for(let i=0;i<9;i++)a.path([[.1+i*.125,.05],[.1+i*.125,.11+(i%3)*.025]],.012,0);
+    for(let i=0;i<3;i++)a.polygon([[-.38+i*.10,.25],[-.32+i*.10,.25],[-.32+i*.10,.30],[-.38+i*.10,.30]],1);break;
+   case'mint-arcade':
+    a.polygon([[-.45,.29],[-.45,.36],[-.38,.36],[-.38,.4],[-.30,.4],[-.30,.36],[-.23,.36],[-.23,.29],[-.34,.20]],2);
+    for(let i=0;i<4;i++)a.polygon([[.05+i*.2,.14],[.13+i*.2,.14],[.13+i*.2,.22],[.05+i*.2,.22]],i%2?0:1);
+    a.path([[.15,.34],[.15,.44]],.026,0);a.path([[.1,.39],[.2,.39]],.026,0);
+    a.path([[.42,.39],[.87,.39]],.015,1);break;
+   case'paper-crane':
+    a.polygon([[-.48,.24],[-.22,.43],[.04,.27],[.45,.44],[.28,.20],[.08,.25],[-.02,.14],[-.14,.25]],2);
+    a.path([[-.48,.24],[-.10,.29],[.04,.27],[.45,.44]],.009,0);
+    a.path([[-.1,.29],[.08,.25],[.28,.2]],.008,1);
+    a.curve([[.3,.17],[.6,.12],[.95,.21]],.010,1);break;
+   case'abyssal-maw':
+    a.curve([[-.56,.36],[-.17,.39],[.29,.32]],.022,2);a.curve([[-.56,.20],[-.17,.17],[.29,.24]],.022,2);
+    for(let i=0;i<7;i++){const x=-.5+i*.11;a.polygon([[x,.34],[x+.045,.245],[x+.08,.345]],0);if(i<6)a.polygon([[x+.04,.20],[x+.09,.28],[x+.13,.205]],1);}break;
+   case'peach-fizz':
+    a.polygon([[-.5,.2],[-.46,.38],[.03,.38],[.12,.20]],0);
+    a.curve([[-.43,.25],[-.25,.32],[-.08,.25]],.015,2);
+    for(const [x,y,r]of [[.16,.29,.045],[-.3,.28,.025],[.23,.39,.026],[-.05,.43,.021]])a.arc(x,y,r,0,Math.PI*2,.009,1);
+    a.path([[-.45,.21],[.03,.21]],.009,2);break;
+   case'copper-cartographer':
+    a.arc(-.52,.32,.088,0,Math.PI*2,.012,0);
+    for(let i=0;i<8;i++){const t=i*Math.PI/4;a.path([[-.52,.32],[-.52+Math.cos(t)*.095,.32+Math.sin(t)*.095]],i%2?.005:.009,i%2?0:1);}
+    for(let i=0;i<4;i++)a.curve([[-.36,.23+i*.043],[.01,.27+i*.025],[.45,.23+i*.035],[.82,.29+i*.022]],.006,0);
+    a.path([[-.98,.44],[.84,.44]],.006,1);break;
+   case'obsidian-surveyor':
+    a.path([[-.96,.23],[-.96,.41],[.78,.41]],.013,0);a.path([[-.85,.25],[.75,.25],[.75,.36]],.010,1);
+    for(let i=0;i<18;i++)a.path([[-.82+i*.083,.40],[-.82+i*.083,.40-(i%3===0?.065:.025)]],.006,0);
+    a.path([[.13,.27],[.13,.38]],.008,1);a.path([[.08,.32],[.19,.32]],.008,1);break;
+   case'snowline-ghost':
+    a.polygon([[-.56,.10],[-.34,.30],[-.13,.13],[.19,.34],[.48,.11],[.74,.27],[1.2,.11],[1.56,.21],[1.58,.04],[-.56,.04]],2);
+    a.path([[-.56,.1],[-.34,.3],[-.13,.13],[.19,.34],[.48,.11],[.74,.27],[1.2,.11],[1.56,.21]],.012,0);
+    for(let i=0;i<7;i++)a.path([[.53+i*.13,.32],[.60+i*.13,.32]],.007,1);break;
+   case'velvet-thorn':
+    a.curve([[-.57,.12],[-.13,.27],[.42,.12],[1.03,.28],[1.58,.15]],.012,0);
+    for(let i=0;i<9;i++){const x=-.42+i*.21;a.polygon([[x,.2],[x+.055,.30],[x+.08,.21]],2);}
+    for(let j=0;j<3;j++){const r=.10-j*.026;a.path(Array.from({length:41},(_,i)=>{const t=i/40*Math.PI*2,rr=r*(1+.15*Math.cos(5*t));return[-.22+Math.cos(t)*rr,.27+Math.sin(t)*rr]as const;}),.009,j===2?1:0);}break;
+   case'prismwing':
+    for(const sign of [-1,1]){a.polygon([[.14,.01],[.42,.01+sign*.12],[.62,.01+sign*.12],[.40,.01+sign*.035],[.18,.01]],2);a.curve([[.17,.01],[.35,.01+sign*.10],[.55,.01+sign*.08]],.011,0);}
+    a.path([[.13,-.045],[.19,.07]],.015,1);
+    for(let i=0;i<5;i++)a.path([[.55+i*.13,.06],[.63+i*.13,.01],[.55+i*.13,-.04]],.007,i%2?1:0);break;
+   case'rime-oath':
+    for(let i=0;i<6;i++){const t=i*Math.PI/3;a.path([[.22,.01],[.22+Math.cos(t)*.105,.01+Math.sin(t)*.105]],.011,0);}
+    a.path([[.37,.02],[1.31,.02]],.010,1);
+    for(let i=0;i<7;i++){const x=.4+i*.115;a.path([[x,-.055],[x,.075],[x+.05,.03]],.008,0);}break;
+   case'ink-bamboo':
+    a.curve([[.67,.01],[1.03,.01],[1.36,.04],[1.71,.01]],.014,0);
+    for(let i=0;i<4;i++){const x=.72+i*.2;for(const sign of [-1,1])a.polygon([[x,.01],[x+.08,.01+sign*.12],[x+.28,.01+sign*.18],[x+.18,.01+sign*.04]],i%2?0:1);}
+    for(let i=0;i<8;i++)a.path([[-1.52+i*.27,-.035],[-1.52+i*.27,.06]],.014,0);break;
+   case'storm-circuit':
+    a.path([[.70,.01],[1.04,.15],[1.01,.03],[1.35,.20],[1.25,.04],[1.70,.01]],.024,1);
+    a.path([[.74,-.04],[.98,-.17],[1.24,-.07],[1.42,-.11],[1.65,.01]],.012,0);
+    for(let i=0;i<6;i++)a.path([[-1.5+i*.34,-.02],[-1.37+i*.34,.035],[-1.24+i*.34,-.02]],.011,0);break;
+   case'meteor-heart':
+    a.polygon([[.28,.05],[.43,.27],[.65,.16],[.60,-.12],[.40,-.18]],2);
+    a.path([[.28,.05],[.43,.27],[.65,.16],[.60,-.12],[.40,-.18],[.28,.05],[.48,.06],[.43,.27]],.016,0);
+    a.path([[.48,.06],[.65,.16]],.013,1);a.path([[.48,.06],[.4,-.18]],.013,1);
+    a.arc(.47,.055,.30,-.5,2.8,.012,0);
+    for(const [x,y]of [[.26,-.30],[.72,.34],[.64,-.28]])a.path([[x-.025,y],[x+.025,y]],.025,1);break;
+   case'sugar-crash':
+    a.path(Array.from({length:111},(_,i)=>{const t=i/110*Math.PI*4,r=.025+.21*i/110;return[.47+Math.cos(t)*r,.055+Math.sin(t)*r]as const;}),.023,0);
+    for(let i=0;i<12;i++){const t=i/12*Math.PI*2,x=.47+Math.cos(t)*.3,y=.055+Math.sin(t)*.3;a.path([[x-.014,y-.02],[x+.014,y+.02]],.018,i%2?1:2);}
+    a.curve([[.24,.35],[.35,.40],[.50,.35],[.66,.40],[.75,.35]],.022,0);break;
   }
  });
  draw('stock',a=>{
@@ -126,8 +223,18 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
   if(id==='dune-falcon')for(let i=0;i<3;i++)a.curve([[-1.28,.10+i*.07],[-1.03,.10+i*.07],[-.8,.25]],.012);
   if(id==='tidal-engine')a.curve([[-1.22,.13],[-1.06,.29],[-.8,.24]],.018,1);
   if(id==='abyssal-requiem')a.curve([[-1.42,.13],[-1.25,.44],[-.86,.31]],.013,1);
+  if(id==='amber-apiary')a.path([[-1.25,.18],[-1.06,.31],[-.8,.18]],.025,0);
+  if(id==='equator-pulse')a.path([[-1.23,.16],[-.96,.16],[-.86,.28]],.022,2);
+  if(id==='paper-crane')a.path([[-1.17,.08],[-.98,.28],[-.80,.09]],.017,0);
+  if(id==='mint-arcade')for(let i=0;i<3;i++)a.polygon([[-1.2+i*.12,.03],[-1.13+i*.12,.03],[-1.13+i*.12,.1],[-1.2+i*.12,.1]],1);
+  if(id==='snowline-ghost')a.path([[-1.43,.15],[-1.23,.43],[-1.04,.19],[-.86,.35]],.014,2);
+  if(id==='velvet-thorn')a.curve([[-1.42,.19],[-1.21,.42],[-.86,.29]],.013,0);
  });
- draw('fore_end',a=>{if(id==='dune-falcon')for(let i=0;i<7;i++)a.curve([[.46+i*.09,.07],[.54+i*.09,.19],[.68+i*.09,.26]],.017);});
+ draw('fore_end',a=>{
+  if(id==='dune-falcon')for(let i=0;i<7;i++)a.curve([[.46+i*.09,.07],[.54+i*.09,.19],[.68+i*.09,.26]],.017);
+  if(id==='abyssal-maw')for(let i=0;i<7;i++){const x=.46+i*.1;a.polygon([[x,.28],[x+.05,.14],[x+.085,.28]],0);a.polygon([[x,.04],[x+.055,.15],[x+.085,.04]],1);}
+  if(id==='peach-fizz')for(let i=0;i<5;i++)a.arc(.51+i*.14,.11+(i%2)*.12,.035,0,Math.PI*2,.011,i%2?0:1);
+ });
  draw('magazine',a=>{if(id==='tidal-engine')for(let i=0;i<3;i++)a.path([[.24+i*.1,-.5],[.21+i*.1,-.11]],.012,1);if(id==='night-courier')a.polygon([[.11,-.46],[.19,-.46],[.31,-.02],[.23,-.02]],1);});
  return {groups,dispose(){for(const group of groups){group.removeFromParent();group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}materials.forEach(m=>m.dispose());}};
 }
