@@ -49,3 +49,15 @@ test('resident mouth line sits in front of the face instead of being buried insi
  const system=createSettlementNpcs([{...npc('britain_oath_witness'),role:['见证人','Witness']}]),person=system.group.children[0],head=person.getObjectByName('ResidentHead')!;system.group.updateMatrixWorld(true);
  const origin=head.localToWorld(new THREE.Vector3(0,-.101,.5)),direction=new THREE.Vector3(0,0,-1).transformDirection(head.matrixWorld),ray=new THREE.Raycaster(origin,direction),hit=ray.intersectObject(head,true)[0];assert.ok(hit);assert.ok(head.worldToLocal(hit.point.clone()).z>.109,'lip geometry must be visible from the front');system.dispose();
 });
+
+import {residentLook} from '../src/settlements/residentPortrait';
+test('ordinary residents get the sculpted face with a stable cut and colouring of their own',()=>{
+ const looks=Array.from({length:40},(_,i)=>residentLook(Math.imul(i+1,2654435761)>>>0,'britain'));
+ for(const l of looks){for(const c of[l.profile.skin,l.profile.hair,l.profile.iris])assert.ok(Number.isInteger(c)&&c>=0&&c<=0xffffff,`bad colour ${c}`);assert.ok(l.fringe>=5&&l.fringe<=8);}
+ assert.ok(new Set(looks.map(l=>l.back)).size>=4,'several hair cuts');assert.ok(new Set(looks.map(l=>l.profile.hair)).size>=4,'several hair colours');
+ assert.deepEqual(residentLook(12345,'kyoto'),residentLook(12345,'kyoto'));
+ const ids=['market_a','market_b','market_c','market_d'];const system=createSettlementNpcs(ids.map((id,i)=>({...npc(id,i*3)})));
+ const hairs=new Set<string>();for(const person of system.group.children){let meshes=0,triangles=0;person.traverse(o=>{if(o instanceof THREE.Mesh){meshes++;triangles+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;}});assert.equal(meshes,6);assert.ok(triangles<14000,`${triangles} triangles`);
+  const face=person.getObjectByName('ResidentFaceAndHair') as THREE.Mesh;assert.ok(face.morphTargetInfluences?.length===2,'speaking mouth');hairs.add(String(face.geometry.getAttribute('position').count));}
+ assert.ok(hairs.size>=2,'residents do not share one head');system.dispose();
+});

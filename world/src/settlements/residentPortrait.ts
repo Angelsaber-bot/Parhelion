@@ -11,8 +11,33 @@ export const RESIDENT_PORTRAITS={
  kyoto:{name:'Sumi',skin:0xe9c3b0,hair:0x292c47,light:0x4e506c,iris:0x8a6f99,width:.93,chin:.83,brow:.08,lip:0xa66872,age:22},
 } as const;
 const v=(p:[number,number,number])=>new THREE.Vector3(...p);
-export function createResidentPortrait(region:RegionId){
- const p=RESIDENT_PORTRAITS[region],owned=new Set<THREE.BufferGeometry>(),head:PortraitPart[]=[],eyes:PortraitPart[]=[],coat:PortraitPart[]=[];
+export type PortraitProfile={readonly skin:number;readonly hair:number;readonly light:number;readonly iris:number;readonly width:number;readonly chin:number;readonly brow:number;readonly lip:number};
+/** Ordinary residents share the sculpted face, styled per person instead of per region. */
+export type ResidentHairBack='crop'|'bun'|'tail'|'long'|'braid';
+export interface ResidentLook{profile:PortraitProfile;fringe:number;fringeDrop:number;part:number;side:number;back:ResidentHairBack}
+const HAIR_BY_REGION:Record<RegionId,readonly number[]>={
+ alpha:[0x2f2a2c,0x4a3a33,0x2c3f4c,0x6b5242,0x8b8a86],
+ britain:[0x6d432c,0x8f6a43,0x4b3426,0xb59a6a,0x7e7a73],
+ blacksail:[0x2a2120,0x4a3127,0x6e4a2f,0x232526,0x8c6a4a],
+ winter:[0x655440,0x9a8462,0x3d3530,0xc2b49a,0x5a4a3f],
+ kyoto:[0x232233,0x2b2525,0x3a2e3d,0x1d2230,0x4a3f45],
+};
+const SKIN_BY_REGION:Record<RegionId,readonly number[]>={
+ alpha:[0xe7b99b,0xd9a98a,0xf0c8ad,0xc28e6e],britain:[0xdbaa86,0xe8bfa2,0xcf9f7f,0xf1cfb6],
+ blacksail:[0xc68e66,0xb27a56,0xd9a582,0x9b6a4b],winter:[0xe4bb9e,0xf0cdb5,0xd6a98c,0xe9c2a8],kyoto:[0xe8bda6,0xf2cdb8,0xdcae95,0xe3b39a],
+};
+const IRIS=[0x4d6d68,0x6a5440,0x58708a,0x7b6a4c,0x5a7a5c,0x6f536e] as const;
+const lift=(c:number,k:number)=>{const x=new THREE.Color(c);x.lerp(new THREE.Color(0xffffff),k);return x.getHex();};
+/** A stable look per resident id: hair colour and cut, skin, eyes and face shape. */
+export function residentLook(seed:number,region:RegionId):ResidentLook{
+ const pick=<T,>(list:readonly T[],salt:number)=>list[(((seed>>>salt)^Math.imul(seed,salt+3))>>>0)%list.length];
+ const unit=(salt:number)=>(((seed*2654435761+salt*40503)>>>0)%1000)/1000;
+ const hair=pick(HAIR_BY_REGION[region],3);
+ return {profile:{skin:pick(SKIN_BY_REGION[region],7),hair,light:lift(hair,.09),iris:pick(IRIS,11),width:.93+unit(1)*.13,chin:.84+unit(2)*.26,brow:-.06+unit(3)*.16,lip:lift(0x9a6260,unit(4)*.18)},
+  fringe:5+Math.floor(unit(5)*4),fringeDrop:.028+unit(6)*.034,part:unit(7)<.5?0:(unit(8)<.5?-1:1),side:.07+unit(9)*.2,back:(['crop','bun','tail','long','braid'] as const)[Math.floor(unit(10)*5)]};
+}
+export function createResidentPortrait(region:RegionId,look?:ResidentLook){
+ const p:PortraitProfile=look?.profile??RESIDENT_PORTRAITS[region],owned=new Set<THREE.BufferGeometry>(),head:PortraitPart[]=[],eyes:PortraitPart[]=[],coat:PortraitPart[]=[];
  const own=<T extends THREE.BufferGeometry>(g:T)=>{owned.add(g);return g;};
  const sphere=own(new THREE.SphereGeometry(1,16,10)),box=own(new THREE.BoxGeometry(1,1,1));
  const add=(list:PortraitPart[],g:THREE.BufferGeometry,c:number,pos:[number,number,number],scale:[number,number,number]=[1,1,1],rot?:[number,number,number])=>list.push({g,c,p:pos,s:scale,...(rot?{r:rot}:{})});
@@ -55,6 +80,7 @@ export function createResidentPortrait(region:RegionId){
  // Nose volume belongs to the continuous face mesh, with no separate ball tip.
  // A fitted scalp and locks with volume instead of five repeated cone fringes.
  add(head,own(new THREE.SphereGeometry(1,24,12,0,Math.PI*2,0,Math.PI*.64)),p.hair,[0,.038,-.008],[.151*p.width,.157,.147]);
+ if(look){residentHair(look);return {head,eyes,coat,profile:p,dispose(){for(const g of owned)g.dispose();}};}
  const count=region==='britain'?5:8;
  for(let i=0;i<count;i++){
   const x=(i/(count-1)-.5)*.258*p.width,asym=region==='alpha'?(i<4?.015:0):0;
@@ -63,6 +89,20 @@ export function createResidentPortrait(region:RegionId){
  for(const side of[-1,1]){
   const length=region==='alpha'?.17:region==='blacksail'?.27:region==='kyoto'?.23:region==='britain'?.11:.10;
   for(let i=0;i<3;i++)strand([[side*.12,.14,-.01-i*.035],[side*(.15+i*.006),.036,-.005-i*.038],[side*(.145+i*.007),-.055,-.015-i*.04],[side*.12,-length,-.01-i*.035]],.023,.012,i===1?p.light:p.hair);
+ }
+ /** Fringe, side locks and one of five back cuts, all from the resident's own look. */
+ function residentHair(l:ResidentLook){
+  for(let i=0;i<l.fringe;i++){
+   // Outer locks hug the temple instead of arching out past it.
+   const t=i/(l.fringe-1)-.5,x=t*.236*p.width,wrap=Math.abs(x)*.42,sweep=l.part*.022*(1-Math.abs(t)*2),drop=l.fringeDrop*(1-Math.abs(t)*.6)+(l.part&&Math.sign(t)===l.part?.012:0);
+   strand([[x*.55,.165,.035],[x*.9+sweep*.5,.122,.122-wrap],[x*.98+sweep,.052+(.06-drop)*.4,.141-wrap],[x*.88+sweep*1.4,.088-drop*1.6,.135-wrap]],.025,.007,i%3===1?p.light:p.hair);
+  }
+  for(const side of[-1,1])for(let i=0;i<3;i++){const len=l.side*(1-i*.12);strand([[side*.12,.14,-.01-i*.035],[side*(.15+i*.006),.036,-.005-i*.038],[side*(.145+i*.007),-.04,-.015-i*.04],[side*.12,-len,-.01-i*.035]],.023,.012,i===1?p.light:p.hair);}
+  if(l.back==='bun'){ell(head,p.hair,[0,.11,-.16],[.075,.07,.065]);line(head,[[-.06,.12,-.13],[0,.15,-.2],[.06,.12,-.13]],.006,p.light);}
+  else if(l.back==='tail'){ell(head,p.hair,[0,.06,-.15],[.05,.045,.04]);for(let i=0;i<3;i++)strand([[(i-1)*.02,.06,-.17],[(i-1)*.03,-.06,-.21],[(i-1)*.03,-.2,-.2],[(i-1)*.015,-.33,-.17]],.024,.014,i===1?p.light:p.hair);}
+  else if(l.back==='long'){for(let i=0;i<5;i++)strand([[(i-2)*.05,.11,-.12],[(i-2)*.058,-.03,-.17],[(i-2)*.056,-.2,-.17],[(i-2)*.04,-.34,-.14]],.03,.013,i%2?p.light:p.hair);}
+  else if(l.back==='braid'){for(let i=0;i<6;i++)ell(head,i%2?p.light:p.hair,[.012*(i%2?1:-1),-.03-i*.052,-.17+i*.004],[.034-i*.002,.032,.03]);}
+  else for(let i=0;i<4;i++)strand([[(i-1.5)*.06,.13,-.1],[(i-1.5)*.07,.03,-.16],[(i-1.5)*.06,-.06,-.14],[(i-1.5)*.04,-.1,-.11]],.03,.012,i%2?p.light:p.hair);
  }
  if(region==='britain'){
   ell(head,p.hair,[0,.055,-.154],[.086,.081,.065]);

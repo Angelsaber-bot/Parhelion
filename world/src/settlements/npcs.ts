@@ -1,7 +1,7 @@
 /** Lightweight, authored residents: articulated joint batches, no pathfinding or save mutations. */
 import * as THREE from 'three';
 import { mergeParts } from './merge';
-import {createResidentPortrait,addResidentExpression} from './residentPortrait';
+import {createResidentPortrait,addResidentExpression,residentLook} from './residentPortrait';
 import type { Localized, PlacedNpcSocket, RegionId } from './types';
 export const SETTLEMENT_NPC_LIMITS = Object.freeze({ interaction: 2.8, vertical: 2.4, animate: 24, visible: 90 });
 type Part = { g: THREE.BufferGeometry; c: number; p?: [number,number,number]; s?: [number,number,number]; r?: [number,number,number] };
@@ -31,7 +31,8 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  if(medical){p.coat=0x344e61;p.trim=0xd0c3a3;}if(craft){p.coat=socket.region==='kyoto'?0x414d71:0x6d7162;p.trim=0x725039;}if(keeper){p.coat=socket.region==='kyoto'?0x8b5269:0x78839a;p.trim=0xd5c5a6;}
  if(signal){p.coat=0xc4d8d9;p.trim=0x376879;p.accent=0xc6a967;}if(witness){p.coat=0x586b87;p.trim=0xc4ad81;p.hair=0x83776b;}if(lamplighter){p.coat=0x9b794d;p.trim=0x385c61;p.accent=0xd2b97c;}if(paperKeeper){p.coat=0x62618b;p.trim=0xcbb58e;p.accent=0x9a574e;}
  const campaign=signal||witness||lamplighter||bearer||paperKeeper;
- const portrait=campaign?createResidentPortrait(socket.region):null;if(portrait){p.skin=portrait.profile.skin;p.hair=portrait.profile.hair;}
+ // Campaign residents keep their authored portrait; everyone else gets the same sculpted face with a cut of their own.
+ const portrait=createResidentPortrait(socket.region,campaign?undefined:residentLook(seed,socket.region));p.skin=portrait.profile.skin;p.hair=portrait.profile.hair;
  const torso=new THREE.Group();torso.name='ResidentTorso';torso.position.y=1.04;root.add(torso);const head=new THREE.Group();head.name='ResidentHead';head.position.y=.48;torso.add(head);const eyes=new THREE.Group();eyes.name='ResidentEyes';head.add(eyes);
  const leftArm=new THREE.Group(),rightArm=new THREE.Group();leftArm.name='ResidentArmLeft';rightArm.name='ResidentArmRight';leftArm.position.set(-.185,.23,0);rightArm.position.set(.185,.23,0);torso.add(leftArm,rightArm);
  const body:Part[]=[{g:taper(.19,.21,.46),c:p.coat,p:[0,.02,0],s:[1,1,.65]},{g:sphere,c:p.coat,p:[0,.19,0],s:[.215,.105,.135]},{g:cylinder,c:p.skin,p:[0,.33,0],s:[.059,.12,.059]},{g:taper(.08,.1,.06),c:p.trim,p:[0,.285,0],s:[1,1,.85]},{g:taper(.207,.212,.055),c:p.trim,p:[0,-.14,.005],s:[1,1,.68]},{g:box,c:p.accent,p:[0,-.14,.153],s:[.055,.04,.012]}];
@@ -63,11 +64,12 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  // A brow line and a hint of a lower lip: readable at conversation distance, never a mask.
  for(const sign of[-1,1])features.push({g:box,c:p.hair,p:[sign*.057,.030,.126],s:[.056,.010,.008],r:[0,0,sign*.15]});
  features.push({g:sphere,c:0xb87a72,p:[0,-.112,.110],s:[.019,.006,.006]});
+ const hatStart=features.length;
  if(socket.region==='winter')features.push({g:cylinder,c:p.coat,p:[0,.18,-.006],s:[.145,.090,.13]},{g:cylinder,c:p.trim,p:[0,.125,-.006],s:[.15,.032,.136]});
- else if(clerk&&socket.region==='blacksail')features.push({g:new THREE.CylinderGeometry(.21,.22,.035,3),c:0x3d3933,p:[0,.15,-.005],r:[0,Math.PI,0]},{g:cylinder,c:0x3d3933,p:[0,.195,-.008],s:[.125,.065,.105]});else if(clerk)features.push({g:cylinder,c:p.coat,p:[0,.19,-.008],s:[.143,.055,.125]},{g:sphere,c:p.trim,p:[0,.14,.095],s:[.14,.016,.11]});else if(craft)features.push({g:cylinder,c:0xc2b59a,p:[0,.083,-.004],s:[.147,.032,.132]});else if(keeper)features.push({g:sphere,c:p.hair,p:[0,.12,-.14],s:[.09,.08,.075]});
+ else if(clerk&&socket.region==='blacksail')features.push({g:new THREE.CylinderGeometry(.21,.22,.035,3),c:0x3d3933,p:[0,.15,-.005],r:[0,Math.PI,0]},{g:cylinder,c:0x3d3933,p:[0,.195,-.008],s:[.125,.065,.105]});else if(clerk)features.push({g:cylinder,c:p.coat,p:[0,.19,-.008],s:[.143,.055,.125]},{g:sphere,c:p.trim,p:[0,.14,.095],s:[.14,.016,.11]});else if(craft)features.push({g:cylinder,c:0xc2b59a,p:[0,.083,-.004],s:[.147,.032,.132]});
  if(signal){features.push({g:new THREE.TorusGeometry(.161,.022,5,12,Math.PI),c:p.trim,p:[0,.02,-.012]},{g:sphere,c:p.trim,p:[-.158,.005,-.005],s:[.035,.067,.055]},{g:sphere,c:p.trim,p:[.158,.005,-.005],s:[.035,.067,.055]},{g:cylinder,c:p.accent,p:[-.182,.005,-.005],s:[.03,.012,.03],r:[0,0,Math.PI/2]},{g:cylinder,c:p.accent,p:[.182,.005,-.005],s:[.03,.012,.03],r:[0,0,Math.PI/2]});}
  if(witness){features.push({g:sphere,c:p.hair,p:[0,.045,-.14],s:[.09,.075,.075]},{g:box,c:0xb8a994,p:[-.06,.04,.126],s:[.07,.016,.012]},{g:box,c:0xb8a994,p:[.06,.04,.126],s:[.07,.016,.012]});}
- if(portrait)features=portrait.head;const faceMesh=batch(head,'ResidentFaceAndHair',features,material);if(portrait)addResidentExpression(faceMesh);
+ features=campaign?portrait.head:[...portrait.head,...features.slice(hatStart)];const faceMesh=batch(head,'ResidentFaceAndHair',features,material);addResidentExpression(faceMesh);
  const ep:Part[]=[];for(const sign of[-1,1])ep.push({g:sphere,c:0x403334,p:[sign*.059,-.008,.113],s:[.035,witness?.010:campaign?.012:.014,.007]},{g:sphere,c:0xf5eee6,p:[sign*.059,-.011,.117],s:[.029,witness?.007:campaign?.0085:.010,.006]},{g:sphere,c:socket.region==='kyoto'?0x6f536e:0x4d6d68,p:[sign*.059,-.01,.122],s:[.012,witness?.007:campaign?.0085:.010,.003]},{g:sphere,c:0x222b31,p:[sign*.059,-.01,.124],s:[.006,campaign?.006:.008,.002]},{g:sphere,c:0xffffff,p:[sign*.055,-.007,.127],s:[.0025,.0025,.001]});if(portrait)ep.splice(0,ep.length,...portrait.eyes);batch(eyes,'ResidentEyes',ep,material);portrait?.dispose();
  for(const[arm,sign]of[[leftArm,-1],[rightArm,1]]as const){const a:Part[]=[{g:sphere,c:p.coat,p:[sign*.02,-.045,0],s:[.082,.073,.077]},{g:taper(.078,.062,.25),c:p.coat,p:[sign*.03,-.155,0]},{g:taper(.065,.047,.23),c:p.coat,p:[sign*.04,-.37,.024],r:[-.16,0,0]},{g:cylinder,c:p.trim,p:[sign*.04,-.46,.04],s:[.052,.035,.055]},{g:sphere,c:p.skin,p:[sign*.04,-.53,.055],s:[.044,.069,.026]},{g:sphere,c:p.skin,p:[sign*.005,-.51,.07],s:[.016,.03,.016]}];
  // A readable hand: four fingers and a thumb instead of one mitten volume.
