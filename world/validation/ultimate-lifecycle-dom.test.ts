@@ -28,8 +28,8 @@ test('NON-GPU production ultimate lifecycle retains one paid cast and authored H
    const viewport=w.renderer.getViewport(new THREE.Vector4()).toArray(),shotsBefore=shots;
    const hp=enemy.hp;key('KeyX','x');assert.equal(w.actions.skills.casting,true);assert.equal(w.ultimateDirector.active,true);assert.equal(w.actions.skills.energy,0);assert.equal(activations,1);
    const playerHp=w.combat.state.hp,playerPos=w.player.pos.clone(),timer=enemy.timer;
-   const threat=s.id==='saber'&&mode==='full'?w.combat.state.enemies.find((e:any)=>e!==enemy&&e.kind!=='king'):null;
-   if(threat){Object.assign(threat.p,{x:w.player.pos.x,y:w.player.pos.y,z:w.player.pos.z+1});Object.assign(threat.home,threat.p);threat.mode='windup';threat.timer=.001;threat.hp=threat.maxHp;threat.active=true;threat.pacified=false;}
+   const threat=s.id==='saber'&&mode==='full'?w.combat.state.enemies.find((e:any)=>e!==enemy&&e.kind!=='king'&&!e.miniboss):null;
+   if(threat){Object.assign(threat.p,{x:w.player.pos.x,y:w.player.pos.y,z:w.player.pos.z+1});Object.assign(threat.home,threat.p);threat.mode='windup';threat.timer=.001;threat.hp=threat.maxHp=10000;threat.active=true;threat.pacified=false;}
 
    let interrupted=false;const originalRender=w.ultimateStage.render;
    if(mode==='renderer-failure')w.ultimateStage.render=()=>{throw Error('injected NON-GPU stage failure');};
