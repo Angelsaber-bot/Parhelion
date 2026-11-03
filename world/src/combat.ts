@@ -7,7 +7,7 @@ import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
 import { ERA_BOSS_REQUIREMENTS } from './eraStories';
 import { minibossProfile } from './minibosses';
-import { ENEMY_ROLES, selectEnemyRole, type EnemyRole } from './enemyRoles';
+import { ENEMY_ROLES, SHINOBI_BLINK, selectEnemyRole, type EnemyRole } from './enemyRoles';
 /** Small, local World encounter simulation. No networking/Arena rules are changed. */
 export interface Point3 { x: number; y: number; z: number }
 export type EnemyKind = 'shade' | 'crystal' | 'king';
@@ -16,12 +16,13 @@ export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?:
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
-  attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean;
+  attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
 }
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean }
   | { type: 'kill'; id: string }
+  | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
   | { type: 'victory'; id: string; firstClear: boolean }
@@ -293,7 +294,7 @@ export class WorldCombatState {
   private resetEnemy(e: Enemy) {
     Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
     Object.assign(e.target, e.home); e.attack = 'sweep';
-    e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0;
+    e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first;
   }
   resetBoss() {
     if (!this.bossStarted) return;
@@ -457,6 +458,7 @@ export class WorldCombatState {
     for (const e of this.enemies) {
       e.hitTime = Math.max(0, e.hitTime - dt);
       e.staggerCooldown = Math.max(0, e.staggerCooldown - dt);
+      if (e.blinkCooldown) e.blinkCooldown = Math.max(0, e.blinkCooldown - dt);
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
@@ -506,6 +508,18 @@ export class WorldCombatState {
       const isBoss = e === this.boss, elite = minibossProfile(e);
       const role = ENEMY_ROLES[e.role];
       const meleeRange = e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
+      if (e.role === 'shinobi' && !isBoss && !elite && !e.storyPattern && sees && e.timer <= 0 && !e.blinkCooldown && dist > SHINOBI_BLINK.min && dist < SHINOBI_BLINK.max && hasEnemyPressureSlot(e, this.enemies, player)) {
+        // Vanish and reappear behind the player (far side of the approach), then a readable cut.
+        const p = terrain.walk(player, player.x + (player.x - e.p.x) / dist * SHINOBI_BLINK.behind, player.z + (player.z - e.p.z) / dist * SHINOBI_BLINK.behind);
+        e.blinkCooldown = SHINOBI_BLINK.cooldown;
+        if (p && distanceXZ(p, e.home) <= COMBAT.leash) {
+          const from = clone(e.p); e.p = p;
+          this.events.push({ type: 'blink', id: e.id, from, to: clone(p) });
+          e.attack = role.attack; Object.assign(e.target, player); e.attackCount++;
+          e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
+          continue;
+        }
+      }
       if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40) && hasEnemyPressureSlot(e, this.enemies, player)) {
         e.attack = e.storyPattern === 'echo-warden' ? chooseEchoWardenAttack(e, dist) : elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
         Object.assign(e.target, player); e.attackCount++;

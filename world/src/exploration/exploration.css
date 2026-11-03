@@ -31,3 +31,11 @@ body.world-dialogue-open :is(#xp-hud,#xp-challenge){visibility:hidden}
 #xp-map b { display: block; margin-top: 8px; font-size: 13px; letter-spacing: .04em; }
 #xp-map p { margin: 4px 0 0; font-size: 12px; line-height: 1.45; font-style: italic; }
 @media (max-width: 720px) { #xp-map { width: 140px; right: 12px; top: 120px; } #xp-map p { font-size: 11px; } }
+#xp-signal { position: fixed; right: 18px; top: 178px; z-index: 6; pointer-events: none; display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; background: #101a2ccc; color: #e8f6ff; font: 600 13px system-ui, sans-serif; border: 1px solid #79e2ff55; }
+#xp-signal .bars { display: flex; align-items: flex-end; gap: 3px; height: 20px; }
+#xp-signal .bars i { width: 5px; background: #3a4a5e; border-radius: 1px; }
+#xp-signal .bars i.on { background: #79e2ff; box-shadow: 0 0 6px #79e2ff; }
+#xp-signal[data-bars="5"] .bars i.on { background: #ffe08a; box-shadow: 0 0 8px #ffe08a; }
+#xp-signal em { font-style: normal; color: #9fb4c8; font-weight: 500; }
+#xp-signal.ping .bars { animation: xp-ping .25s ease-out; }
+@keyframes xp-ping { from { filter: brightness(1.8); } to { filter: none; } }

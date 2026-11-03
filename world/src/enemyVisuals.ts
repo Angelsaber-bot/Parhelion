@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle} from './enemyShotSocket';
 import {createEchoWardenVisual} from './echoWardenVisual';
 import { createShieldKit } from './shieldbearerVisual';
+import { createShinobiKit } from './shinobiVisual';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -20,7 +21,7 @@ export function enemyModel(e: Pick<Enemy, 'id' | 'home' | 'kind'> & { miniboss?:
   const region = regionAt(e.home.x, e.home.z).id;
   const role = e.role ?? selectEnemyRole(e);
   // Yari spear geometry belongs to the thrust role; sword duelists use the actual samurai kit.
-  if (region === 'kyoto') return e.miniboss || role === 'duelist' || role === 'breaker' ? 'samurai' : 'ashigaru';
+  if (region === 'kyoto') return e.miniboss || role === 'duelist' || role === 'breaker' || role === 'shinobi' ? 'samurai' : 'ashigaru';
   if (region === 'winter') return isMusketeer(e as Enemy) ? 'musketeer' : 'officer';
   return region === 'britain' ? 'sunward_guard' : region === 'blacksail' ? 'deck_raider' : null;
 }
@@ -44,7 +45,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { shield?: THREE.Object3D | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { shield?: THREE.Object3D | null; gear?: { remove(): void } | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -54,6 +55,7 @@ export class EnemyVisuals {
   private instances = new Map<string, Instance>();
   private disposed = false;
   private shieldKit?: ReturnType<typeof createShieldKit>;
+  private shinobiKit?: ReturnType<typeof createShinobiKit>;
   private retries = new Map<string, { attempts: number; after: number }>();
   private now = 0;
   get activeMixers() { return this.instances.size; }
@@ -82,7 +84,7 @@ export class EnemyVisuals {
 
   release(id: string) {
     const instance = this.instances.get(id); if (!instance) return;
-    instance.insignia?.dispose(); instance.shield?.removeFromParent();
+    instance.insignia?.dispose(); instance.shield?.removeFromParent(); instance.gear?.remove();
     instance.mixer.stopAllAction(); instance.mixer.uncacheRoot(instance.root);
     instance.root.traverse(o => { if (isEnemySkinnedMesh(o)) o.skeleton.dispose(); });
     instance.root.removeFromParent(); this.instances.delete(id);
@@ -115,7 +117,7 @@ export class EnemyVisuals {
       // Prime immutable contact sockets in presentation, never in a fixed AI tick.
       if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
       parent.add(root);
-      instance = { shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
+      instance = { shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
@@ -156,6 +158,6 @@ export class EnemyVisuals {
     if (this.disposed) return; this.disposed = true;
     for (const id of this.instances.keys()) this.release(id);
     for (const gltf of this.cache.values()) if (gltf) disposeTemplate(gltf);
-    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined;
+    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined;
   }
 }

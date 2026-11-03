@@ -606,3 +606,21 @@ export function duelRing(f: Frame, r: number, seed: number) {
   f.torus([0, 1.55, r + .74], .42, .04, colors[1], 'metal', [0, 0, 0]);
   f.box([0, 1.55, r + .72], [.08, .6, .02], colors[1], 'metal'); f.box([0, 1.6, r + .72], [.5, .08, .02], colors[1], 'metal');
 }
+
+/** 幻日谷：a weathered field relay terminal — rack, tilted dish, whip antenna, cable spool and screen. */
+export function signalTerminal(f: Frame) {
+  f.box([0, .06, 0], [1.6, .12, 1.1], '#5d636b', 'body', [0, 0, 0], true);
+  f.box([0, .72, 0], [.9, 1.2, .62], '#d9dde2', 'body', [0, 0, 0], true);
+  f.box([0, .72, .32], [.78, 1.05, .03], '#2e3640');
+  f.box([0, 1.0, .34], [.56, .3, .02], '#79e2ff', 'glow');
+  for (let i = 0; i < 4; i++) f.box([-.24 + i * .16, .62, .34], [.08, .05, .02], i === 1 ? '#ffb347' : '#9aa6b2', i === 1 ? 'glow' : 'metal');
+  f.box([0, .4, .34], [.6, .14, .03], '#444c56', 'metal');
+  f.cyl([.3, 1.62, -.05], .04, .55, '#8b939c', 'metal', 8);
+  f.lathe([[0, 0], [.22, .02], [.42, .1], [.52, .2]], [.3, 1.86, -.05], '#e8ecf0', 'body', 16);
+  f.cyl([.3, 2.02, -.05], .015, .26, '#2b2f35', 'metal', 8);
+  f.cyl([-.34, 2.0, .1], .012, 1.5, '#2b2f35', 'metal', 8, [0, 0, .08]);
+  f.sphere([-.4, 2.76, .1], [.05, .05, .05], '#ff6a4d', 'glow');
+  f.cyl([.75, .3, .25], .26, .3, '#3a3f46', 'body', 12, [Math.PI / 2, 0, 0]);
+  f.torus([.75, .3, .25], .2, .045, '#f0c040', 'body', [0, 0, 0]);
+  for (const [x, z] of [[-.7, -.45], [-.82, .3]] as const) f.box([x, .2, z], [.4, .4, .4], '#7a8048', 'body', [0, .3, 0]);
+}

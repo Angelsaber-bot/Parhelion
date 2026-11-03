@@ -9,7 +9,7 @@ import type { EnemyRole } from '../enemyRoles';
 import { ALPHA_STATUES, ALPHA_PUZZLES, ALPHA_TRIALS, ALPHA_CAMPS, ALPHA_DOMAINS, ALPHA_CHESTS, ALPHA_FEATHERS } from './content/alpha';
 import { BLACKSAIL_STATUES, BLACKSAIL_PUZZLES, BLACKSAIL_TRIALS, BLACKSAIL_CAMPS, BLACKSAIL_DOMAINS, BLACKSAIL_CHESTS, BLACKSAIL_FEATHERS } from './content/blacksail';
 import { WINTER_STATUES, WINTER_PUZZLES, WINTER_TRIALS, WINTER_CAMPS, WINTER_DOMAINS, WINTER_CHESTS, WINTER_FEATHERS } from './content/winter';
-import { DUELS, DUEL_CHESTS, EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, TREASURE_MAPS, flagDig, flagEmber, flagFox } from './regional';
+import { DUELS, DUEL_CHESTS, EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, SIGNALS, TREASURE_MAPS, flagDig, flagEmber, flagFox, flagSignal } from './regional';
 import { KYOTO_STATUES, KYOTO_PUZZLES, KYOTO_TRIALS, KYOTO_CAMPS, KYOTO_DOMAINS, KYOTO_CHESTS, KYOTO_FEATHERS } from './content/kyoto';
 
 export type XZ = readonly [number, number];
@@ -222,6 +222,7 @@ export function regionItems(region: RegionId): string[] {
     ...TREASURE_MAPS.filter(x => x.region === region).map(x => flagDig(x.id)),
     ...EMBER_ROUTES.filter(x => x.region === region).map(x => flagEmber(x.id)),
     ...FOXFIRES.filter(x => x.region === region).map(x => flagFox(x.id)),
+    ...SIGNALS.filter(x => x.region === region).map(x => flagSignal(x.id)),
   ];
 }
 export function regionExploration(region: RegionId, done: ReadonlySet<string>): RegionExploration {

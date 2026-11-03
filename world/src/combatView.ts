@@ -460,6 +460,9 @@ export class WorldCombat {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
+      } else if (event.type === 'blink') {
+        this.spark(new THREE.Vector3(event.from.x, event.from.y + 1, event.from.z), .35); this.spark(new THREE.Vector3(event.to.x, event.to.y + 1, event.to.z), .35);
+        this.impact.textContent = bilingual('影忍 · 背后！', 'SHINOBI · BEHIND!'); this.impactFor = .7;
       } else if (event.type === 'kill') {
         this.contactEffects.cancel(event.id);
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);

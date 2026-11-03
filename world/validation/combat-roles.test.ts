@@ -15,7 +15,7 @@ function advance(s: WorldCombatState, seconds: number, player: Point3) {
 }
 function armed(e: Enemy) { e.active = true; e.mode = 'windup'; e.timer = .01; e.attack = 'sweep'; }
 
-test('seven stable roles diversify existing regional IDs without adding population or health', () => {
+test('eight stable roles diversify existing regional IDs without adding population or health', () => {
   const roles = new Set<EnemyRole>();
   for (const home of [p(0), p(-720), p(720), p(0, -720), p(0, 720)]) {
     for (let i = 0; i < 20; i++) {
@@ -23,7 +23,7 @@ test('seven stable roles diversify existing regional IDs without adding populati
       const role = selectEnemyRole(spec); assert.equal(selectEnemyRole(spec), role); roles.add(role);
     }
   }
-  assert.equal(roles.size, 7);
+  assert.equal(roles.size, 8);
   assert.equal(COMBAT.wildernessCap, 160);
   const s = new WorldCombatState([{ id: 'a', kind: 'shade', p: p(0) }, { id: 'b', kind: 'crystal', p: p(20) }], []);
   assert.deepEqual(s.enemies.map(e => e.maxHp), [66, 88], 'no sponge inflation');
@@ -186,4 +186,16 @@ test('落日王国 shieldbearer: the shield eats frontal rifle rounds, opens aft
   e.mode = 'recover'; const before = e.hp; s.hitEnemy(e.id, 12, { source: 'ranged', origin: p(2) }); assert.ok(before - e.hp > 12, 'recovery after a missed charge is open');
   e.mode = 'chase'; const mid = e.hp; s.hitEnemy(e.id, 12, { source: 'melee' }); assert.equal(mid - e.hp, 12, 'the blade is never blocked');
   assert.equal(ENEMY_ROLES.shieldbearer.attack, 'thrust');
+});
+
+test('业火京都 shinobi: vanishes behind the player, gives a readable cut and cannot chain blinks', () => {
+  const { s, e } = setup('shinobi'); e.blinkCooldown = 0;
+  const player = p(10); let blinks = 0;
+  s.step(.05, player, true, terrain);
+  for (const ev of s.drainEvents()) if (ev.type === 'blink') blinks++;
+  assert.equal(blinks, 1); assert.equal(e.mode, 'windup'); assert.ok(e.p.x > player.x, 'reappears on the far side of the player');
+  assert.ok(Math.abs(e.p.x - player.x - 1.8) < 1e-6); assert.ok(e.timer >= .8, 'readable windup after the blink');
+  assert.ok((e.blinkCooldown ?? 0) > 6);
+  e.mode = 'chase'; e.timer = 0; e.p = p(0); s.step(.05, player, true, terrain);
+  assert.notEqual(e.mode, 'windup', 'no second blink while on cooldown');
 });

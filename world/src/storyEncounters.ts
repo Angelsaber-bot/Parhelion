@@ -33,7 +33,7 @@ const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string
     && actor.offset.every(Number.isFinite) && Math.hypot(...actor.offset) <= STORY_ENCOUNTER_LIMITS.actorOffset
     && (!actor.pattern || actor.pattern === 'echo-warden')
     && (!actor.title || Array.isArray(actor.title) && actor.title.length === 2 && actor.title.every((text: unknown) => typeof text === 'string' && text.length > 0 && text.length <= 96)));
-const appearances = { stalker: 'deck_raider', duelist: 'samurai', breaker: 'sunward_guard', bombardier: 'deck_raider', musketeer: 'musketeer', lancer: 'ashigaru', shieldbearer: 'sunward_guard' } as const;
+const appearances = { stalker: 'deck_raider', duelist: 'samurai', breaker: 'sunward_guard', bombardier: 'deck_raider', musketeer: 'musketeer', lancer: 'ashigaru', shieldbearer: 'sunward_guard', shinobi: 'samurai' } as const;
 
 /** Exactly one local physical encounter. Up to three live actors enter the SAME combat
  * queries/authority as wilderness enemies. Cancellation is not a kill or a reward.

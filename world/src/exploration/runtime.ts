@@ -21,11 +21,12 @@ import {
   Frame, beamGeometry, blockerPillar, campProps, chestBody, chestLid, crystalMaterial, featherMesh, FX, glint, haloStatue,
   lightPillar, orbMesh, prismHead, prismPedestal, receiverBase, receiverCrystal, sealDome, steppingStone, sunLens, sunSource,
   trialStele, waterPlatform, domainRuin, type V3, dynamicArt, messageBottle, bottleGlass, digMound, emberBrazier, emberBeacon, beaconFlame, emberCarry,
-  foxShrine, hokora, foxWisp, duelRing,
+  foxShrine, hokora, foxWisp, duelRing, signalTerminal,
 } from './models';
 import {
   DUEL_RING, EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, FOX_GRACE, FOX_LEASH, FOX_PAUSE, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap,
   foxAt, foxLength, mapHeld, markerBeacon, markerBottle, markerBrazier, markerDig, markerFoxShrine, type EmberRouteDef, type FoxfireDef, type TreasureMapDef,
+  SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
 import './exploration.css';
 
@@ -135,6 +136,7 @@ export function createExploration(host: ExplorationHost) {
     const c = CAMPS.find(x => flagCamp(x.id) === flag); if (c) return bilingual(`击败「${c.title[0]}」的全部敌人`, `defeat every enemy at "${c.title[1]}"`);
     const m = TREASURE_MAPS.find(x => flagDig(x.id) === flag); if (m) return bilingual(`按「${m.title[0]}」挖出宝藏`, `dig up the treasure from "${m.title[1]}"`);
     const e = EMBER_ROUTES.find(x => flagEmber(x.id) === flag); if (e) return bilingual(`点亮「${e.title[0]}」的全部烽火`, `light every beacon of "${e.title[1]}"`);
+    const sg = SIGNALS.find(x => flagSignal(x.id) === flag); if (sg) return bilingual(`用扫描仪找到「${sg.title[0]}」的讯号匣`, `track down the "${sg.title[1]}" signal cache`);
     const fx = FOXFIRES.find(x => flagFox(x.id) === flag); if (fx) return bilingual(`跟随「${fx.title[0]}」走到终点`, `follow "${fx.title[1]}" to its end`);
     return flag;
   }
@@ -468,10 +470,41 @@ export function createExploration(host: ExplorationHost) {
       showBanner(bilingual(`狐火归巢 · ${rt.def.title[0]}`, `The fox-fire rests · ${rt.def.title[1]}`), first ? bilingual('它停下的地方，封印消失了。', 'Where it stopped, the seal is gone.') : '', 'solve');
     } else { host.sound('fail'); showBanner(bilingual('狐火消散了', 'The fox-fire faded'), bilingual('跟得太远了。回到狐神社再唤它一次。', 'You fell too far behind. Call it again at the fox shrine.'), 'fail'); }
   }
+  // ───────────────────────── 幻日谷 · lost signals ─────────────────────────
+  const signalHud = document.createElement('div'); signalHud.id = 'xp-signal'; signalHud.hidden = true; document.body.append(signalHud);
+  let scan: { def: SignalDef; ping: number; bars: number } | null = null;
+  for (const def of SIGNALS) {
+    const art = artFor(def.region), ty = surface(...def.terminal);
+    const yaw = Math.atan2(def.cache[0] - def.terminal[0], def.cache[1] - def.terminal[1]);
+    signalTerminal(new Frame(art, [def.terminal[0], ty, def.terminal[1]], yaw + Math.PI));
+    addMarker(markerTerminal(def.id), [def.terminal[0], ty + 1.1, def.terminal[1]], L(def.title), 2.6, () => {
+      if (done.has(flagSignal(def.id))) { host.toast(bilingual('这台中继已经安静了。', 'This relay has gone quiet.')); return; }
+      scan = { def, ping: 0, bars: 0 }; host.sound('rotate');
+      showBanner(bilingual(`扫描仪已调到「${def.title[0]}」`, `Scanner tuned to "${def.title[1]}"`), L(def.clue) + bilingual(' 信号格越满越近，满格时就在脚下。', ' More bars means closer; full bars means it is right under you.'), 'region', 5);
+    }, () => scan?.def === def ? bilingual('正在追踪这个讯号', 'Tracking this signal') : done.has(flagSignal(def.id)) ? bilingual(`已找回 · ${def.title[0]}`, `Recovered · ${def.title[1]}`) : bilingual(`调谐中继 · ${def.title[0]}`, `Tune the relay · ${def.title[1]}`));
+    const cy = surface(...def.cache);
+    addMarker(markerCache(def.id), [def.cache[0], cy + .6, def.cache[1]], bilingual('讯号源', 'Signal source'), 2.6, () => {
+      if (done.has(flagSignal(def.id)) || scan?.def !== def) return;
+      done.add(flagSignal(def.id)); host.save(); host.sound('open'); scan = null; signalHud.hidden = true;
+      showBanner(bilingual(`找回讯号匣 · ${def.title[0]}`, `Signal cache recovered · ${def.title[1]}`), bilingual('匣子从土里升了起来。', 'The case rises out of the ground.'), 'solve', 4);
+    }, () => bilingual('挖出讯号匣', 'Dig out the signal cache'));
+  }
+  function signalUpdate(dt: number, pp: THREE.Vector3, active: boolean) {
+    for (const def of SIGNALS) enableMarker(markerCache(def.id), scan?.def === def);
+    if (!scan || !active) { signalHud.hidden = true; return; }
+    const d = Math.hypot(pp.x - scan.def.cache[0], pp.z - scan.def.cache[1]), bars = signalBars(d);
+    if (bars !== scan.bars || signalHud.hidden) {
+      scan.bars = bars; signalHud.hidden = false; signalHud.dataset.bars = String(bars);
+      signalHud.innerHTML = `<b>${L(scan.def.title)}</b><span class="bars">${[1, 2, 3, 4, 5].map(i => `<i class="${i <= bars ? 'on' : ''}" style="height:${4 + i * 3}px"></i>`).join('')}</span><em>${bars === 0 ? bilingual('无信号', 'No signal') : bars === 5 ? bilingual('就在脚下！', 'Right here!') : bilingual('信号', 'Signal')}</em>`;
+    }
+    const every = signalPing(bars);
+    if (every > 0) { scan.ping -= dt; if (scan.ping <= 0) { scan.ping = every; signalHud.classList.remove('ping'); void signalHud.offsetWidth; signalHud.classList.add('ping'); if (bars >= 3) host.sound('pickup'); } }
+  }
   function regionalUpdate(dt: number, player: PlayerView, active: boolean) {
     const pp = player.pos;
     for (const b of bottles) { const got = done.has(flagMap(b.def.id)); b.obj.userData.hidden = got; enableMarker(markerBottle(b.def.id), !got); if (!got) b.obj.rotation.y += dt * .6; }
     for (const def of TREASURE_MAPS) enableMarker(markerDig(def.id), !done.has(flagDig(def.id)));
+    signalUpdate(dt, pp, active);
     refreshParchment(); parchment.hidden = !active || !parchmentFor;
     // ember
     if (ember.route) {
@@ -633,11 +666,12 @@ export function createExploration(host: ExplorationHost) {
     activeCamp = null;
     if (ember.route) { ember = emberIdle(); showNextBeacon(null); }
     if (fox) { const rt = fox.rt; fox = null; rt.wisp.userData.hidden = true; }
+    scan = null; signalHud.hidden = true;
   }
   function dispose() {
     for (const d of disposables) d.dispose();
     for (const rt of puzzles.values()) { rt.beam.geometry.dispose(); rt.glow.geometry.dispose(); }
-    hud.remove(); banner.remove(); challenge.remove(); parchment.remove(); root.removeFromParent();
+    hud.remove(); banner.remove(); challenge.remove(); parchment.remove(); signalHud.remove(); root.removeFromParent();
   }
   return {
     root, colliders, markers,

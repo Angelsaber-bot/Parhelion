@@ -4,7 +4,7 @@ import {
   CAMPS, CHESTS, FEATHERS, GLIDE, PUZZLES, STATUES, TRIALS, campEncounterId, feathersSpare, flagCamp, flagChest, flagFeather, flagGlide,
   flagPuzzle, flagTrial, glideLevel, glideScale, parseCampEncounter, regionExploration, regionItems, solvePuzzle, traceBeam,
 } from '../src/exploration/catalog.ts';
-import { EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap, foxAt, foxLength, mapHeld } from '../src/exploration/regional.ts';
+import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagSignal, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap, foxAt, foxLength, mapHeld } from '../src/exploration/regional.ts';
 import { STORY_ENCOUNTER_LIMITS } from '../src/storyEncounters.ts';
 import { ENEMY_ROLES } from '../src/enemyRoles.ts';
 import { REGIONS } from '../src/regions.ts';
@@ -34,7 +34,7 @@ test('ids are unique and reward chests point at real challenges', () => {
   assert.equal(new Set(FEATHERS.map(f => f.id)).size, FEATHERS.length);
   assert.ok(ids.every(id => /^[a-z0-9_]+$/.test(id)));
   const challenges = new Set([...PUZZLES.map(p => flagPuzzle(p.id)), ...TRIALS.map(t => flagTrial(t.id)), ...CAMPS.map(c => flagCamp(c.id)),
-    ...TREASURE_MAPS.map(m => flagDig(m.id)), ...EMBER_ROUTES.map(e => flagEmber(e.id)), ...FOXFIRES.map(f => flagFox(f.id))]);
+    ...TREASURE_MAPS.map(m => flagDig(m.id)), ...EMBER_ROUTES.map(e => flagEmber(e.id)), ...FOXFIRES.map(f => flagFox(f.id)), ...SIGNALS.map(g => flagSignal(g.id))]);
   for (const c of CHESTS) if (c.requires) assert.ok(challenges.has(c.requires), c.id);
   for (const flag of challenges) assert.ok(CHESTS.some(c => c.requires === flag) || CAMPS.some(c => c.requires === flag), `nothing unlocks from ${flag}`);
   for (const camp of CAMPS) if (camp.requires) assert.ok(challenges.has(camp.requires), camp.id);
@@ -160,4 +160,19 @@ test('Round Table duels: one knight each, chained, the last is a two-phase warde
   assert.equal(duels[1].requires, flagCamp('duel_kay')); assert.equal(duels[2].requires, flagCamp('duel_galahad'));
   assert.equal(duels[2].waves[0][0].pattern, 'echo-warden');
   assert.ok(!TRIALS.some(t => t.id === 'lakeshore'));
+});
+
+test('幻日谷 lost signals: hot/cold scanner, reachable caches, one buried chest each', async () => {
+  const { SIGNALS, SIGNAL_RANGE, signalBars, signalPing, flagSignal, REGIONAL_CHESTS } = await import('../src/exploration/regional');
+  assert.equal(SIGNALS.length, 3);
+  for (const s of SIGNALS) {
+    assert.equal(s.region, 'alpha');
+    const d = Math.hypot(s.cache[0] - s.terminal[0], s.cache[1] - s.terminal[1]);
+    assert.ok(d > 40 && d < 180, `${s.id}: the hunt is a walk, not a step (${d.toFixed(0)} m)`);
+    const chest = REGIONAL_CHESTS.filter(c => c.requires === flagSignal(s.id));
+    assert.equal(chest.length, 1); assert.ok(chest[0].buried); assert.deepEqual(chest[0].p, s.cache);
+  }
+  let last = 6; for (let d = 0; d < SIGNAL_RANGE + 10; d += .5) { const b = signalBars(d); assert.ok(b <= last, 'bars never rise with distance'); last = b; }
+  assert.equal(signalBars(2), 5); assert.equal(signalBars(SIGNAL_RANGE + 1), 0);
+  for (let b = 1; b < 5; b++) assert.ok(signalPing(b + 1) < signalPing(b), 'pings speed up as it gets hotter');
 });

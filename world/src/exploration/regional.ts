@@ -4,6 +4,7 @@
  *   黑帆尽头 — treasure maps: a hand-drawn terrain sketch, find the X, dig, the chest holds the next map
  *   永冬之城 — ember relay: carry fire from a lit brazier and kindle beacons before the ember dies
  *   业火京都 — fox-fire: follow a kitsune-bi through the streets without falling behind
+ *   幻日谷 — lost signals: tune a field terminal, then hunt the cache hot/cold with the scanner
  * Pure data + rules (no three.js) so the chains can be unit-tested.
  */
 import type { Localized, RegionId } from '../settlements/types';
@@ -26,6 +27,13 @@ export interface FoxfireDef {
   readonly shrine: XZ; readonly path: readonly XZ[]; readonly speed: number; readonly hint: Localized;
 }
 
+export interface SignalDef {
+  readonly id: string; readonly region: RegionId; readonly title: Localized;
+  readonly terminal: XZ; readonly cache: XZ; readonly clue: Localized;
+}
+export const flagSignal = (id: string) => `xp_sig_${id}`;
+export const markerTerminal = (id: string) => `xpm_sigterm_${id}`;
+export const markerCache = (id: string) => `xpm_sigcache_${id}`;
 export const flagMap = (id: string) => `xp_map_${id}`;
 export const flagDig = (id: string) => `xp_dig_${id}`;
 export const flagEmber = (id: string) => `xp_ember_${id}`;
@@ -68,6 +76,21 @@ export const FOXFIRES: readonly FoxfireDef[] = [
     hint: ['竹林深处有一座没人记得的小神社。', 'Deep in the bamboo stands a shrine no one remembers.'] },
 ];
 export const FOX_FINAL = 'lotus_path';
+
+/** 幻日谷: three lost relay caches. The scanner only says hotter or colder; the clue gives a direction. */
+export const SIGNALS: readonly SignalDef[] = [
+  { id: 'echo_forest', region: 'alpha', title: ['林中回声', 'Echo in the Woods'], terminal: [70, 4], cache: [114, 50],
+    clue: ['“回声森林里有一台还在发报的旧中继。往东北走，跟着信号格。”', '"An old relay is still transmitting in the Echo Forest. Head north-east and follow the bars."'] },
+  { id: 'outpost', region: 'alpha', title: ['前哨站残响', 'Outpost Afterglow'], terminal: [-134, -90], cache: [-222, -120],
+    clue: ['“前哨站撤离时把备份匣埋在了西边的低地。”', '"When the outpost was evacuated, the backup case was buried in the lowland to the west."'] },
+  { id: 'ridge', region: 'alpha', title: ['山脊上的哨音', 'Whistle on the Ridge'], terminal: [198, -8], cache: [260, -162],
+    clue: ['“信号从南面山脚的雾里传上来。站在山脊上看得最清楚。”', '"The signal rises from the mist at the southern foot of the hills. You see it best from the ridge."'] },
+];
+export const SIGNAL_RANGE = 90;
+/** Scanner bars 0–5 by distance: only hotter/colder, never a direction. */
+export function signalBars(d: number): number { return d < 4 ? 5 : d < 12 ? 4 : d < 28 ? 3 : d < 50 ? 2 : d < SIGNAL_RANGE ? 1 : 0; }
+/** Seconds between scanner pings (faster as it gets hotter). */
+export function signalPing(bars: number): number { return [0, 1.6, 1.1, .7, .4, .22][bars] ?? 0; }
 
 // ─────────────────────────── rules ───────────────────────────
 /** A map is held once its bottle was opened or the previous dig found it, and until it is dug. */
@@ -119,6 +142,9 @@ export const REGIONAL_CHESTS: readonly ChestDef[] = [
   { id: 'winter_ember_river_watch', region: 'winter', p: [-64, -716], tier: 'precious', requires: flagEmber('river_watch') },
   { id: 'kyoto_fox_lotus_path', region: 'kyoto', p: [-50, 966], tier: 'exquisite', requires: flagFox('lotus_path') },
   { id: 'kyoto_fox_bamboo_shrine', region: 'kyoto', p: [-262, 817], tier: 'luxurious', requires: flagFox('bamboo_shrine') },
+  { id: 'alpha_sig_echo_forest', region: 'alpha', p: [114, 50], tier: 'exquisite', requires: flagSignal('echo_forest'), buried: true },
+  { id: 'alpha_sig_outpost', region: 'alpha', p: [-222, -120], tier: 'exquisite', requires: flagSignal('outpost'), buried: true },
+  { id: 'alpha_sig_ridge', region: 'alpha', p: [260, -162], tier: 'precious', requires: flagSignal('ridge'), buried: true },
 ];
 
 /** 落日王国: the Round Table echoes. One-on-one duels inside a ring; stepping out forfeits. */
