@@ -5,7 +5,10 @@ export const MELEE_BEATS = [
   { duration: .72, contact: .31, queueAt: .40, damage: 48, range: 1.55, halfWidth: .95 },
 ] as const;
 export interface MeleeContact { combo: number; damage: number; range: number; halfWidth: number; yaw: number }
+/** Weapon scaling for the combo (see worldArsenal.ts WORLD_MELEE); the blade is all ones. */
+export interface MeleeStyleScale { damage: number; range: number; width: number; speed: number; readonly id?: string }
 export class PlayerMelee {
+  style: MeleeStyleScale = { damage: 1, range: 1, width: 1, speed: 1 };
   private beat = -1;
   private elapsed = 0;
   private queued = false;
@@ -16,6 +19,7 @@ export class PlayerMelee {
   get combo() { return Math.max(0, this.beat); }
   get yaw() { return this.heading; }
   get phase() { return this.active ? Math.min(1, this.elapsed / MELEE_BEATS[this.beat].duration) : 0; }
+  private get tempo() { return Number.isFinite(this.style.speed) && this.style.speed > 0 ? this.style.speed : 1; }
   get cooldown() { return this.recovery; }
   /** Presentation reads the same input window as press(), never a guessed animation fraction. */
   get comboWindowOpen() { return this.active && this.beat < 2 && this.elapsed >= MELEE_BEATS[this.beat].queueAt && !this.queued; }
@@ -36,12 +40,13 @@ export class PlayerMelee {
     dt = Math.min(.1, dt);
     this.recovery = Math.max(0, this.recovery - dt);
     if (!this.active) return null;
-    this.elapsed += dt;
+    this.elapsed += dt * this.tempo;
     const spec = MELEE_BEATS[this.beat];
     let hit: MeleeContact | null = null;
     if (!this.delivered && this.elapsed >= spec.contact) {
       this.delivered = true;
-      hit = { combo: this.beat, damage: spec.damage, range: spec.range, halfWidth: spec.halfWidth, yaw: this.heading };
+      const st = this.style;
+      hit = { combo: this.beat, damage: Math.round(spec.damage * st.damage), range: spec.range * st.range, halfWidth: spec.halfWidth * st.width, yaw: this.heading };
     }
     if (this.elapsed >= spec.duration) {
       if (this.queued && this.beat < 2) { this.beat++; this.elapsed = 0; this.queued = this.delivered = false; }

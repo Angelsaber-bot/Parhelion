@@ -95,6 +95,8 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
 };
 const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
 /** Only nearby HUD text is generated; visual cues reuse each enemy's existing health bar. */
+/** Short name of the equipped gun for the HUD (empty for the default AR, which the HUD has always implied). */
+function gunLabel(gun: { name?: readonly [string, string]; id?: string }) { return gun.name && gun.id !== 'lumen' ? `${bilingual(gun.name[0].split(' · ')[0], gun.name[1])} · ` : ''; }
 function counterHint(e: Enemy, playable: boolean): string {
   if (!playable) return bilingual('战斗暂停', 'Combat paused');
   if (e.mode === 'dead') return bilingual('已击败', 'Defeated');
@@ -531,9 +533,9 @@ export class WorldCombat {
     }
   }
   private renderHud() {
-    const ammo = this.state.bossStarted ? bilingual('弹药 ∞ 日冕供能', 'AMMO ∞ corona-fed') : this.state.ammo > 0 ? `${bilingual('弹药', 'AMMO')} ${this.state.ammo}/${WORLD_RIFLE.ammoMax}` : bilingual('弹药耗尽 · 近战', 'NO AMMO · melee');
+    const ammo = this.state.bossStarted ? bilingual('弹药 ∞ 日冕供能', 'AMMO ∞ corona-fed') : this.state.ammo > 0 ? `${gunLabel(this.state.gun)}${bilingual('弹药', 'AMMO')} ${this.state.ammo}/${WORLD_RIFLE.ammoMax}` : bilingual('弹药耗尽 · 近战', 'NO AMMO · melee');
     if (this.hud.dataset) this.hud.dataset.ammo = this.state.bossStarted ? 'boss' : this.state.ammo <= 0 ? 'empty' : this.state.ammo <= WORLD_RIFLE.ammoMax / 6 ? 'low' : 'ok';
-    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${this.state.maxHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${COMBAT.shotBurst}` : '');
+    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${this.state.maxHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 && this.state.gun.vent > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${this.state.gun.burst}` : '');
     (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp / this.state.maxHp * 100}%`;
     this.hud.title = bilingual('脱离战斗 5 秒后恢复生命', 'Health recovers after 5 seconds out of combat');
     this.bossHud.hidden = !this.state.bossStarted;

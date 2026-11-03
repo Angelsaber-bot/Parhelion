@@ -1,3 +1,4 @@
+import { worldGun, DEFAULT_GUN, gunDistanceMultiplier, type WorldGun } from './worldArsenal';
 import { resonanceLevel, resonanceMaxHp } from './resonance';
 import {regionAt} from './regions';
 import {ADVENTURE,adventureActive,adventureChapterComplete} from './openWorldCampaign';
@@ -256,6 +257,13 @@ export class WorldCombatState {
   private invulnerable = false;
   /** Seconds left in the counter window earned by a perfect evade. */
   counterFor = 0;
+  /** The equipped gun's handling (worldArsenal.ts); the Dawn AR by default. */
+  gun: WorldGun = worldGun(DEFAULT_GUN)!;
+  /** Equip another gun. A short draw delay; heat and an active vent carry over (no swap-to-cool). */
+  setGun(profile: WorldGun) {
+    if (profile === this.gun) return;
+    this.gun = profile; this.shotCooldown = Math.max(this.shotCooldown, .3); this.gunHeat = Math.min(this.gunHeat, Math.max(0, profile.burst - 1));
+  }
   private trialPending = false;
   private trialReplay = false;
   private readonly knight: Enemy | undefined;
@@ -392,18 +400,19 @@ export class WorldCombatState {
   }
   canShoot() {
     if (this.defeated || this.shotCooldown > 1e-9 || this.gunVent > 1e-9) return false;
-    if (!this.bossStarted) { if (this.ammo <= 0) { this.dryPulls++; return false; } this.ammo--; }
+    if (!this.bossStarted) { if (this.ammo < this.gun.ammoCost) { this.dryPulls++; return false; } this.ammo -= this.gun.ammoCost; }
     // Carry a small render-frame overrun during held fire, never bank free shots after idle/vent.
-    this.shotCooldown = this.gunHeat === 0 || this.gunIdleFor > COMBAT.shotInterval * 2 ? COMBAT.shotInterval : Math.max(1e-6, this.shotCooldown + COMBAT.shotInterval);
+    const interval = this.gun.interval;
+    this.shotCooldown = this.gunHeat === 0 || this.gunIdleFor > interval * 2 ? interval : Math.max(1e-6, this.shotCooldown + interval);
     this.gunIdleFor = 0;
     this.gunHeat++;
-    if (this.gunHeat >= COMBAT.shotBurst) this.gunVent = COMBAT.shotVent;
+    if (this.gunHeat >= this.gun.burst && this.gun.vent > 0) this.gunVent = this.gun.vent;
     return true;
   }
   hitEnemy(id: string, damage: number = COMBAT.shotDamage, context?: HitContext) {
     const e = this.enemies.find(e => e.id === id);
     if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
-    if(context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>WORLD_RIFLE.enemyRange)return false;
+    if(context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>this.gun.range)return false;
     // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
     const melee = context?.source === 'melee';
     const punish = melee && isMeleePunishWindow(e);
@@ -412,7 +421,7 @@ export class WorldCombatState {
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
-    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}) });
     if (e.hp <= 0) {
@@ -497,11 +506,11 @@ export class WorldCombatState {
     if (!active) { this.setDefense({ guard: 1, invulnerable: false }); return; }
     if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.1);
-    this.shotCooldown = Math.max(-COMBAT.shotInterval, this.shotCooldown - dt);
+    this.shotCooldown = Math.max(-this.gun.interval, this.shotCooldown - dt);
     this.gunIdleFor += dt;
     this.gunVent = Math.max(0, this.gunVent - dt);
     if (this.gunVent <= 1e-9) this.gunVent = 0;
-    if (!this.gunVent && this.gunIdleFor + 1e-9 >= COMBAT.shotVent) this.gunHeat = 0;
+    if (!this.gunVent && this.gunIdleFor + 1e-9 >= Math.max(this.gun.vent, COMBAT.shotVent)) this.gunHeat = 0;
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
     this.counterFor = Math.max(0, this.counterFor - dt);
     if (this.defeated) {

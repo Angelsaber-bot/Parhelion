@@ -20,7 +20,7 @@ export interface PlayerAnimationState {
   /** World-space view heading (+Z forward), used only while firing; never changes the camera. */
   lookYaw?: number;
   /** Contact-timed melee overlay, root owns combat and input. */
-  melee?: { phase: number; combo: number; yaw: number };
+  melee?: { phase: number; combo: number; yaw: number; style?: string };
 }
 interface RestBone { p: THREE.Vector3; q: THREE.Quaternion; s: THREE.Vector3; rootQ: THREE.Quaternion; rootP: THREE.Vector3; }
 export interface SkinnedCharacterRig {
@@ -267,6 +267,50 @@ export function solvePlayerArm(rig: SkinnedCharacterRig, side: Side, palmPoint: 
   rig.diagnostics.armReachError[side] = socket.getWorldPosition(V()).distanceTo(palmPoint);
 }
 
+/** Main-hand target (root space) and weapon axis for the two-handed Arena melee weapons.
+ * Polearm: chambered thrust, wide reverse sweep, lunging thrust. Hammer: diagonal chop,
+ * rising reverse swing, overhead slam with a visible wind-up. Contact frames stay those of
+ * MELEE_BEATS (phase ≈ .38–.43), so the arcs cross the target exactly when damage lands. */
+/** How far up the polearm shaft the left (lead) hand grips, metres from the right hand. */
+export const POLEARM_LEAD = .24;
+/** The hammer's left hand sits just below the right on the handle. */
+export const HAMMER_SUPPORT = -.10;
+export function twoHandedArm(style: 'polearm' | 'hammer', cut: number, phase: number, shoulderY: number) {
+  const now = twoHandedArc(style, cut, phase, shoulderY);
+  // A queued beat starts where the previous one ended, never from its own wind-up pose.
+  const enter = cut > 0 ? THREE.MathUtils.smoothstep(phase, 0, .2) : 1;
+  if (enter >= 1) return now;
+  const prev = twoHandedArc(style, cut - 1, 1, shoulderY);
+  return { point: prev.point.lerp(now.point, enter), dir: prev.dir.lerp(now.dir, enter).normalize() };
+}
+function twoHandedArc(style: 'polearm' | 'hammer', cut: number, phase: number, shoulderY: number) {
+  const ss = THREE.MathUtils.smoothstep, lerp = THREE.MathUtils.lerp;
+  if (style === 'polearm') {
+    // The right hand is the rear grip at the hip; the left leads on the shaft (POLEARM_LEAD ahead).
+    if (cut === 1) {
+      const a = ss(phase, .18, .58), angle = -(a - .5) * 1.9, side = Math.sin(angle);
+      return { point: V(.02 - .13 * side, shoulderY - .28, .14 - .04 * Math.abs(side)), dir: V(side, .08, Math.cos(angle)).normalize() };
+    }
+    const lunge = cut === 2, s = ss(phase, lunge ? .24 : .16, lunge ? .46 : .40) * (1 - .45 * ss(phase, .7, 1)), chamber = ss(phase, 0, lunge ? .22 : .16) * (1 - ss(phase, lunge ? .24 : .16, lunge ? .46 : .40));
+    return { point: V(-.15 + .04 * s, shoulderY - .27 + .03 * chamber + .05 * s, .02 - (lunge ? .09 : .05) * chamber + (lunge ? .20 : .13) * s),
+      dir: V(.28 - .12 * s, .12 * chamber + (lunge ? .02 : .05) * (1 - chamber), 1).normalize() };
+  }
+  if (cut === 2) {
+    const wind = ss(phase, 0, .30), s = ss(phase, .28, .50);
+    const y = lerp(lerp(shoulderY - .30, shoulderY + .20, wind), shoulderY - .40, s), z = lerp(lerp(.10, .02, wind), .35, s);
+    // Pitch of the haft from straight up, so the head travels an even arc over the top.
+    const pitch = lerp(lerp(1.28, -.75, wind), 2.1, s);
+    const dir = V(0, Math.cos(pitch), Math.sin(pitch));
+    return { point: V(-.10 + .05 * s, y, z), dir };
+  }
+  if (cut === 1) {
+    const s = ss(phase, .18, .46);
+    return { point: V(.08 - .38 * s, shoulderY - .46 + .30 * s, .26 + .06 * Math.sin(s * Math.PI)), dir: V(.45, -.35, 1).lerp(V(-.55, .55, .75), s).normalize() };
+  }
+  const s = ss(phase, .16, .44), raise = ss(phase, 0, .16) * (1 - s);
+  return { point: V(-.28 + .30 * s, shoulderY - .20 + .18 * raise - .20 * s, .14 + .12 * s), dir: V(-.35, .85, .35).lerp(V(.30, -.40, 1), s).normalize() };
+}
+
 export class SkinnedCharacterAnimator {
   facing = 0;
   private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0; private residentCarry=0;
@@ -312,6 +356,8 @@ export class SkinnedCharacterAnimator {
     const meleeWeight = meleePose ? state.melee ? meleeCut > 0 ? 1 : Math.min(1, meleePhase / .18) : this.meleeRelease : 0;
     const meleeStroke = THREE.MathUtils.smoothstep(meleePhase, meleeCut === 2 ? .20 : .18, meleeCut === 2 ? .52 : .55);
     rig.root.userData.meleeGripReady = meleeWeight > .98;
+    // Two-handed Arena weapons own their own arcs; the blade keeps the accepted one-handed combo.
+    const meleeStyle = meleePose?.style === 'polearm' || meleePose?.style === 'hammer' ? meleePose.style : null;
     J.Gun.visible = armed;
     const speed = Number.isFinite(state.speed) ? Math.max(0, state.speed) : 0;
     // Filter visual gait only; starts/stops must not jerk the shoulders/held weapon while
@@ -382,8 +428,23 @@ export class SkinnedCharacterAnimator {
     hipOffset.y -= meleeGround * (.035 + heavyBlend * .02 + load * (.04 + heavyBlend * .025));
     hipOffset.x += meleeGround * (meleeStroke - .5) * (.06 - heavyBlend * .035) * (meleeCut === 1 ? -1 : 1);
     hipOffset.z += meleeGround * (.015 + Math.sin(meleeStroke * Math.PI) * (heavy ? .035 : .02));
+    // Polearm thrusts carry the pelvis onto the lead foot; the hammer sinks under its strike and
+    // rocks back to load the overhead slam. Feet stay planted (leg IK), the controller root never moves.
+    const styleStrike = meleeStyle === 'hammer' ? THREE.MathUtils.smoothstep(meleePhase, meleeCut === 2 ? .30 : .18, meleeCut === 2 ? .50 : .46) : meleeStroke;
+    const styleSettle = 1 - THREE.MathUtils.smoothstep(meleePhase, .72, 1);
+    const slamWind = meleeStyle === 'hammer' && meleeCut === 2 ? THREE.MathUtils.smoothstep(meleePhase, 0, .30) * (1 - styleStrike) : 0;
+    if (meleeStyle === 'polearm') {
+      const lunge = meleeGround * styleStrike * styleSettle * (meleeCut === 2 ? .085 : meleeCut === 0 ? .045 : .02);
+      hipOffset.z += lunge; hipOffset.y -= lunge * .45;
+    } else if (meleeStyle === 'hammer') {
+      hipOffset.y -= meleeGround * styleStrike * styleSettle * (meleeCut === 2 ? .055 : .025);
+      hipOffset.z -= meleeGround * slamWind * .03;
+    }
+    const styleLean = !meleeStyle ? 0 : meleeGround * (meleeStyle === 'hammer'
+      ? -slamWind * .10 + styleStrike * styleSettle * (meleeCut === 2 ? .24 : .10)
+      : styleStrike * styleSettle * (meleeCut === 1 ? .03 : .09));
     const meleeTwist = meleeGround * (meleeStroke - .5) * (.62 - heavyBlend * .38) * (meleeCut === 1 ? -1 : 1);
-    const meleeLean = meleeGround * (heavy ? THREE.MathUtils.lerp(.065, -.06 + meleeStroke * .30, heavyBlend) : .065 + Math.sin(meleeStroke * Math.PI) * .055);
+    const meleeLean = (meleeStyle ? meleeGround * .05 + styleLean : meleeGround * (heavy ? THREE.MathUtils.lerp(.065, -.06 + meleeStroke * .30, heavyBlend) : .065 + Math.sin(meleeStroke * Math.PI) * .055));
     const parentRestQ = hip.parent ? hip.parent.getWorldQuaternion(Q()) : Q();
     const rootQ = rig.root.getWorldQuaternion(Q());
     hip.position.copy(hipRest.p).add(hipOffset.applyQuaternion(rootQ).applyQuaternion(parentRestQ.invert()));
@@ -478,6 +539,7 @@ export class SkinnedCharacterAnimator {
     rig.root.updateMatrixWorld(true);
     const heldGunWorldQ = rootQ.clone().multiply(gunQ), gliderWorldQ = J.Glider.getWorldQuaternion(Q());
     const handGunWeight = THREE.MathUtils.smoothstep(r, .20, .95);
+    const styleArm = meleeStyle && meleeWeight > 0 ? twoHandedArm(meleeStyle, meleeCut, meleePhase, shoulderY) : null;
     for (const [side, sign] of [['R', -1], ['L', 1]] as const) {
       const freePoint = V(sign * .25, .99, .04);
       if (side === 'L' || !armed) {
@@ -503,10 +565,20 @@ export class SkinnedCharacterAnimator {
           ? V(meleeCut === 1 ? -.04 - cut * .31 : -.35 + cut * .31,
               shoulderY - .39 + (meleeCut === 2 ? .02 * (1 - heavyBlend) + .64 * Math.sin(Math.min(1, meleePhase / .20) * Math.PI / 2) * Math.pow(1 - cut, 1.4) : .02), .23 + Math.sin(cut * Math.PI) * .035 + (heavy ? cut * .07 : 0))
           : V(.26 + Math.sin(cut * Math.PI) * .025, shoulderY - .24 + (heavy ? .10 * heavyBlend * (1 - cut) : 0), .18);
-        freePoint.lerp(bladePoint, meleeWeight);
+        freePoint.lerp(side === 'R' && styleArm ? styleArm.point : bladePoint, meleeWeight);
       }
       if(this.residentCarry>0)freePoint.lerp(V(sign*.29,shoulderY-.42,.46),this.residentCarry);
       const palmPoint = rig.root.localToWorld(freePoint);
+      // The support hand closes on the real shaft of the solved main-hand weapon: leading on the
+      // polearm, just below the main hand on the hammer handle.
+      let shaftDirection: THREE.Vector3 | undefined;
+      if (side === 'L' && styleArm) {
+        rig.root.updateMatrixWorld(true);
+        const socket = rig.handSockets.R;
+        const shaft = socket.localToWorld(V(0, -.03, meleeStyle === 'polearm' ? POLEARM_LEAD : HAMMER_SUPPORT));
+        shaftDirection = socket.localToWorld(V(0, -.03, 1)).sub(socket.localToWorld(V(0, -.03, 0))).normalize();
+        palmPoint.lerp(shaft, meleeWeight);
+      }
       const freePalm = state.swimming ? basis(V(sign * .15, -.12, 1), V(0, 1, .12))
         : basis(V(0, -1, 0), V(sign, 0, 0));
       if (side === 'R' && meleeWeight > 0) freePalm.slerp(basis(V(.12,-.8,.35), V(-1,0,.15)), meleeWeight);
@@ -530,14 +602,28 @@ export class SkinnedCharacterAnimator {
       // axis (which pointed the old blade almost vertically into the ground).
       const cutArc = THREE.MathUtils.smoothstep(meleePhase, meleeCut === 2 ? .20 : .18, meleeCut === 2 ? .58 : .60);
       const slashAngle = (cutArc - .5) * 2.25 * (meleeCut === 1 ? -1 : 1);
-      const bladeDirection = side === 'R' && meleeWeight > 0
-        ? (meleeCut === 2 ? V(Math.sin(slashAngle) * (1 - heavyBlend * .4), .12 + heavyBlend * .23, Math.cos(slashAngle)) : V(Math.sin(slashAngle), .12, Math.cos(slashAngle))).normalize().applyQuaternion(rootQ)
-        : undefined;
+      const bladeDirection = shaftDirection ?? (side === 'R' && meleeWeight > 0
+        ? styleArm ? styleArm.dir.clone().applyQuaternion(rootQ) : (meleeCut === 2 ? V(Math.sin(slashAngle) * (1 - heavyBlend * .4), .12 + heavyBlend * .23, Math.cos(slashAngle)) : V(Math.sin(slashAngle), .12, Math.cos(slashAngle))).normalize().applyQuaternion(rootQ)
+        : undefined);
       // Use the already-damped ADS state, not immediate fireAim: hip-fire must
       // not acquire a new elbow pop. Downward pitch retains its authored pole.
       const riflePole = -THREE.MathUtils.smoothstep(this.adsPose, 0, .8) * THREE.MathUtils.smoothstep(pitch, -.5, 0);
       solvePlayerArm(rig, side, palmPoint, handQ, armed ? carry : 1 - g, neutralWrist, contact, bladeDirection, riflePole);
-      this.poseFingers(side, Math.max(this.residentCarry*.28,contact, side === 'R' ? meleeWeight : 0), glideContact * (1 - contact), side === 'R' ? meleeWeight : 0);
+      if (side === 'R' && styleArm) {
+        // The sword grip leaves its blade canted up and out from the requested line, which suits a
+        // one-handed cut but would point a spear at the sky. Long hafts lay the wrist onto their
+        // authored line (at most ~55°), so thrusts land level and the slam comes straight down.
+        rig.root.updateMatrixWorld(true);
+        const socket = rig.handSockets.R, origin = socket.getWorldPosition(V());
+        const actual = socket.localToWorld(V(0, 0, 1)).sub(origin).normalize();
+        const fix = Q().setFromUnitVectors(actual, styleArm.dir.clone().applyQuaternion(rootQ).normalize());
+        const angle = 2 * Math.acos(Math.min(1, Math.abs(fix.w)));
+        const limited = angle > .95 ? Q().slerp(fix, .95 / angle) : fix;
+        const hand = J.Hand_R as THREE.Bone;
+        setWorldQuaternion(hand, Q().slerp(limited, meleeWeight).multiply(hand.getWorldQuaternion(Q())));
+      }
+      const grips = side === 'R' || styleArm ? meleeWeight : 0;
+      this.poseFingers(side, Math.max(this.residentCarry*.28,contact, grips), glideContact * (1 - contact), grips);
     }
     rig.diagnostics.mode = meleeWeight > .5 ? 'melee' : r > .99 ? aim > .5 ? 'aim' : 'ready' : g > .99 && r < .01 ? 'glide' : state.swimming ? 'swim' : !armed ? 'unarmed' : 'transition';
     rig.root.updateMatrixWorld(true);

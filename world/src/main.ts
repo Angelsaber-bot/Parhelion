@@ -87,6 +87,7 @@ import { loadLayout } from './load';
 import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './skinnedCharacter';
 import { PlayerTerrainSupport } from './playerTerrainSupport';
 import { attachExplorerRifle } from './weaponArt';
+import { WORLD_GUNS, DEFAULT_GUN, GUN_STORE_KEY, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, type WorldGunId, WORLD_MELEE, DEFAULT_MELEE, MELEE_STORE_KEY, worldMelee, meleeUnlocked, unlockedMelee, cycleMelee, equippedMelee, type WorldMeleeId } from './worldArsenal';
 import { ShoulderAim, shoulderArmLength } from './aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
@@ -187,6 +188,18 @@ Object.assign(sun.shadow.camera, { left: -70, right: 70, top: 70, bottom: -70, n
 sun.shadow.bias = -0.0005;
 sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
+renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+const shadowCenter = new THREE.Vector3(), lastShadowCenter = new THREE.Vector3(), shadowBasis = new THREE.Matrix4(), shadowInverse = new THREE.Matrix4();
+let shadowTick = 0;
+const ORIGIN = new THREE.Vector3(), UNIT_Y = new THREE.Vector3(0, 1, 0), UNIT_Z = new THREE.Vector3(0, 0, 1);
+const SHADOW_TEXEL = (sun.shadow.camera.right - sun.shadow.camera.left) / sun.shadow.mapSize.x;
+function snapShadowCenter(at: THREE.Vector3, toSun: THREE.Vector3, out: THREE.Vector3) {
+  shadowBasis.lookAt(toSun, ORIGIN, Math.abs(toSun.y) > .99 ? UNIT_Z : UNIT_Y);
+  shadowInverse.copy(shadowBasis).transpose();
+  out.copy(at).applyMatrix4(shadowInverse);
+  out.x = Math.round(out.x / SHADOW_TEXEL) * SHADOW_TEXEL; out.y = Math.round(out.y / SHADOW_TEXEL) * SHADOW_TEXEL;
+  return out.applyMatrix4(shadowBasis);
+}
 const twilight = new KingdomTwilight(sky, sun, hemisphere, scene);
 
 // post: MSAA → GTAO (high only) → bloom → sun shafts → output.  ?nopost disables, ?q=low keeps bloom only
@@ -257,10 +270,11 @@ const regionVisuals=new RegionVisualStreaming({parent:world,eager:params.has('ea
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
+// Every lit fragment loops over every point light, so the pool size is a direct per-pixel cost.
 const localLights = new LocalLightPool([
   { p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26, decay: 1.6 },
   ...(layout.lights ?? []),
-]);
+], lowQ ? 3 : highQ ? 8 : 5);
 scene.add(localLights.root);
 addEventListener('pagehide', event => { if (!event.persisted) localLights.dispose(); });
 
@@ -315,7 +329,9 @@ for (const m of artMeshes) {
   if (m.userData.bob) bobbers.push(m);
   const special = !isStaticArtEligible(m);
   const tris = (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3;
-  const pieces = !special && tris > 4000 ? chunkMesh(m, 64) : [m];
+  // Terrain is the largest draw-call source at distance (one draw per 64 m cell out to the fog);
+  // 128 m cells cut it to a quarter while frustum culling stays effective. Props keep 64 m cells.
+  const pieces = !special && tris > 4000 ? chunkMesh(m, m.name === 'Terrain' ? 128 : 64) : [m];
   for (const c of pieces) {
     if (m.userData.outline && !params.has('noline')) addOutline(c);
     if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9);
@@ -564,6 +580,7 @@ function applyCampaignState() {
 function applyFalseDawnState() { falseDawnSites.applyState(getFalseDawnState(done)); }
 function applyWorldState() {
   hudRevision++;
+  if (typeof syncArsenal === 'function') syncArsenal(); // guarded: validation runs isolated slices of this file
   for(const marker of layout.markers)if(['seam_west','seam_east','seam_north','seam_south'].includes(marker.id))marker.requires=adventureActive(done)&&done.has(ADVENTURE.online)?[]:['tower_console'];
   applyEraMarkerRequirements(layout.markers, done);
   combat.syncWorldProgress(done);
@@ -823,17 +840,84 @@ if (worldExited || !(await graphicsRecovery.whenContextAvailable())) { rig.dispo
 // grant ownership or flash an unearned gun on a clean start.
 rig.joints.Gun.visible = worldProgress.armed;
 scene.add(rig.root);
-const rifle = attachExplorerRifle(rig, renderer);
+// `var` so the hoisted guard is readable from applyWorldState calls that run before the arsenal exists.
+// eslint-disable-next-line no-var
+var arsenalReady = false;
+// The equipped Arena gun (worldArsenal.ts): remembered locally, validated against what the save owns.
+let equippedGunId: WorldGunId = (() => { try { return equippedGun(localStorage.getItem(GUN_STORE_KEY), done); } catch { return DEFAULT_GUN; } })();
+let rifle = attachExplorerRifle(rig, renderer, undefined, equippedGunId);
 try { await rifle.ready; } catch (error) { rifle.dispose(); rig.dispose(); throw error; }
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) { rifle.dispose(); rig.dispose(); return; }
 addEventListener('pagehide', (e) => { if (!e.persisted) { blade.dispose(); rifle.dispose(); rig.dispose(); } });
-const blade = attachExplorerBlade(rig);
+let equippedMeleeId: WorldMeleeId = (() => { try { return equippedMelee(localStorage.getItem(MELEE_STORE_KEY), done); } catch { return DEFAULT_MELEE; } })();
+let blade = attachExplorerBlade(rig, undefined, equippedMeleeId);
+let meleeSwap: ReturnType<typeof attachExplorerBlade> | null = null;
+let ownedMelee = new Set(unlockedMelee(done).map(x => x.id));
+/** Equip a melee weapon: combo scaling at once; the model swaps when its art has loaded. */
+function equipMelee(id: WorldMeleeId, announce = true) {
+  const weapon = worldMelee(id); if (!weapon || !meleeUnlocked(weapon, done)) return false;
+  if (id !== equippedMeleeId || meleeSwap) {
+    equippedMeleeId = id; if (typeof actions !== 'undefined' && actions) actions.melee.style = weapon;
+    try { localStorage.setItem(MELEE_STORE_KEY, id); } catch { /* applies this session */ }
+    meleeSwap?.dispose();
+    const next = attachExplorerBlade(rig, undefined, id); meleeSwap = next;
+    next.ready.then(() => { if (meleeSwap !== next) { next.dispose(); return; } const old = blade; blade = next; meleeSwap = null; old.dispose(); applyWeaponFinish(); })
+      .catch(error => { if (meleeSwap === next) meleeSwap = null; next.dispose(); console.warn('Melee art unavailable; previous weapon kept.', error); });
+  }
+  if (announce) toast(bilingual(`${weapon.name[0]} · ${weapon.role[0]}`, `${weapon.name[1]} · ${weapon.role[1]}`));
+  hudRevision++; return true;
+}
+function switchMelee() {
+  if (!worldProgress.armed) return;
+  const next = cycleMelee(equippedMeleeId, done);
+  if (next === equippedMeleeId) { toast(bilingual('目前只有折光长刃：讨伐京都与王国的精英可以解锁流星长柄和断层战锤。', 'Only the Refract Blade so far: defeat the Kyoto and Kingdom elites for the Meteor Polearm and Faultline Hammer.')); return; }
+  equipMelee(next);
+}
 function applyWeaponFinish() {
   const finish = weaponFinishStore.active(done);
   rifle.setFinish(finish); blade.setFinish(finish); weaponFinishControl?.refresh();
 }
 applyWeaponFinish();
 void blade.ready.catch(error => console.warn('Melee art unavailable', error));
+// (the combat state takes the equipped gun once it exists; see after WorldCombat below)
+let gunSwap: ReturnType<typeof attachExplorerRifle> | null = null, gunSwapAt = -1e9;
+let ownedGuns = new Set(unlockedGuns(done).map(gun => gun.id));
+arsenalReady = true;
+/** Equip a gun: handling changes at once; the model swaps when its art has loaded (the old one stays until then). */
+function equipGun(id: WorldGunId, announce = true) {
+  const gun = worldGun(id); if (!gun || !gunUnlocked(gun, done)) return false;
+  if (id !== equippedGunId || gunSwap) {
+    equippedGunId = id; combat.state.setGun(gun);
+    try { localStorage.setItem(GUN_STORE_KEY, id); } catch { /* the choice still applies this session */ }
+    gunSwap?.dispose();
+    const next = attachExplorerRifle(rig, renderer, undefined, id); gunSwap = next;
+    next.ready.then(() => { if (gunSwap !== next) { next.dispose(); return; } const old = rifle; rifle = next; gunSwap = null; old.dispose(); applyWeaponFinish(); })
+      .catch(error => { if (gunSwap === next) gunSwap = null; next.dispose(); console.warn('Gun art unavailable; previous model kept.', error); });
+  }
+  if (announce) { const n = unlockedGuns(done).length; toast(bilingual(`${gun.name[0]} · ${gun.role[0]} · ${WORLD_GUNS.indexOf(gun) + 1}/${WORLD_GUNS.length}（已解锁 ${n}）`, `${gun.name[1]} · ${gun.role[1]} · owned ${n}/${WORLD_GUNS.length}`)); }
+  hudRevision++; return true;
+}
+function cycleEquippedGun(dir: 1 | -1) {
+  const now = performance.now(); if (now - gunSwapAt < 220) return; gunSwapAt = now;
+  if (!worldProgress.armed) return;
+  const next = cycleGun(equippedGunId, dir, done);
+  if (next === equippedGunId) { toast(bilingual('目前只有一把枪：讨伐各地精英可以解锁 Arena 的其他枪械。', 'Only one gun so far: defeat roaming elites to unlock the other Arena guns.')); return; }
+  equipGun(next);
+}
+/** New unlocks get a banner; a save that no longer owns the equipped gun drops back to the AR. */
+function syncArsenal() {
+  if (!arsenalReady) return;
+  const owned = new Set(unlockedGuns(done).map(gun => gun.id));
+  for (const gun of WORLD_GUNS) if (owned.has(gun.id) && !ownedGuns.has(gun.id) && gun.unlock)
+    toast(bilingual(`解锁新武器：${gun.name[0]} · ${gun.role[0]} · 滚轮切换`, `New weapon: ${gun.name[1]} · ${gun.role[1]} · scroll to switch`));
+  ownedGuns = owned;
+  if (!owned.has(equippedGunId)) equipGun(DEFAULT_GUN, false);
+  const melee = new Set(unlockedMelee(done).map(x => x.id));
+  for (const weapon of WORLD_MELEE) if (melee.has(weapon.id) && !ownedMelee.has(weapon.id) && weapon.unlock)
+    toast(bilingual(`解锁近战武器：${weapon.name[0]} · ${weapon.role[0]} · ${settings.label('switchMelee')} 切换`, `New melee weapon: ${weapon.name[1]} · ${weapon.role[1]} · ${settings.label('switchMelee')} to switch`));
+  ownedMelee = melee;
+  if (!melee.has(equippedMeleeId)) equipMelee(DEFAULT_MELEE, false);
+}
 const anim = new SkinnedCharacterAnimator(rig, new PlayerTerrainSupport(rig, colliders));
 anim.reset(worldProgress.armed, player.yaw + Math.PI);
 let thirdPerson = !params.has('cam'); // gameplay is TPS; fixed-camera screenshots remain a debug mode
@@ -1131,6 +1215,8 @@ function press(binding: string, repeat = false) {
   keys.add(binding);
   if (action === 'aim') aim.held = true;
   if (action === 'fire') shoot();
+  if (action === 'nextWeapon' || action === 'prevWeapon') cycleEquippedGun(action === 'nextWeapon' ? 1 : -1);
+  if (action === 'switchMelee' && !repeat) switchMelee();
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
@@ -1200,6 +1286,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
+combat.state.setGun(worldGun(equippedGunId)!);
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
 actions = new WorldActions({ scene,
@@ -1228,6 +1315,7 @@ actions = new WorldActions({ scene,
   },
   cancelPoses: () => { servant.cancelSkillPose(); for (const entry of eraActors) if(entry.servant!=='napoleon'||!cavalrySupport?.ownsActor)entry.follow.cancelSkillPose(entry.actor); },
 });
+actions.melee.style = worldMelee(equippedMeleeId)!;
 ultimateStage = new UltimateStage();
 ultimateDirector = new UltimateDirector({ cutInUrls: {
   saber: new URL('../assets/cinematics/saber-cut-in-v2.webp', import.meta.url).href,
@@ -1604,7 +1692,9 @@ function shoot() {
   const wallDist = wall?.distance ?? 150;
   const target = ray.intersectObjects(targets.filter((t) => t.visible), false)[0];
   const questHit = target && target.distance <= wallDist + .04 ? target : undefined;
-  const enemy = combat.raycast(origin,look,Math.min(WORLD_RIFLE.enemyRange,wallDist,questHit?.distance ?? 150));
+  // Fixtures that execute this function in isolation may provide a combat facade without state.
+  const gun = combat.state?.gun ?? { range: WORLD_RIFLE.enemyRange, damage: WORLD_RIFLE.damage, pellets: 1, spread: 0 } as typeof combat.state.gun;
+  const enemy = combat.raycast(origin,look,Math.min(gun.range,wallDist,questHit?.distance ?? 150));
   let point = enemy ? new THREE.Vector3(enemy.point.x,enemy.point.y,enemy.point.z)
     : questHit ? questHit.point.clone() : wall ? wall.point.clone() : origin.clone().addScaledVector(look,150);
   rig.root.updateMatrixWorld(true);
@@ -1619,7 +1709,7 @@ function shoot() {
   if (blockedMount || blocked) {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
   } else if (enemy) {
-    combat.damageEnemy(enemy.id);
+    combat.damageEnemy(enemy.id, gun.damage);
   } else if (questHit && questHit.object.userData.needs === FORT_CANNON.marker) {
     toast(bilingual(`幽灵艇需要要塞炮：到炮位按 ${settings.label('interact')} 操作，再开火。`, 'Ghost boats need the fort cannon: interact at the station, then fire.'));
   } else if (questHit && questHit.object.userData.needs && !done.has(questHit.object.userData.needs as string)) {
@@ -1645,6 +1735,22 @@ function shoot() {
     combat.flashHitMarker(.14);
   }
   combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething); audio.shot();
+  // Shotgun: the remaining pellets fan out around the aim ray; each can hit an enemy or a wall.
+  if (gun.pellets > 1 && !blockedMount) firePellets(origin, look, muzzle, gun);
+}
+const pelletDir = new THREE.Vector3(), pelletSide = new THREE.Vector3(), pelletUp = new THREE.Vector3();
+function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.Vector3, gun: typeof combat.state.gun) {
+  pelletSide.crossVectors(look, THREE.Object3D.DEFAULT_UP).normalize(); pelletUp.crossVectors(pelletSide, look).normalize();
+  for (let i = 1; i < gun.pellets; i++) {
+    // Even ring plus jitter: a readable cone, never all pellets on one side.
+    const a = (i / (gun.pellets - 1)) * Math.PI * 2 + Math.random() * .6, r = gun.spread * (.45 + Math.random() * .55);
+    pelletDir.copy(look).addScaledVector(pelletSide, Math.cos(a) * r).addScaledVector(pelletUp, Math.sin(a) * r).normalize();
+    const wall = combat.geometry.cast(origin, pelletDir, gun.range), reach = wall?.distance ?? gun.range;
+    const hit = combat.raycast(origin, pelletDir, reach);
+    if (hit) combat.damageEnemy(hit.id, gun.damage);
+    const end = hit ? new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z) : wall ? wall.point.clone() : origin.clone().addScaledVector(pelletDir, reach);
+    combat.shot(muzzle, end, !!(hit || wall));
+  }
 }
 
 // ───────────── interaction / discovery ─────────────
@@ -1951,7 +2057,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying, armed: worldProgress.armed&&!residentEventRuntime?.carrying, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw } : undefined });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying, armed: worldProgress.armed&&!residentEventRuntime?.carrying, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -2041,8 +2147,15 @@ function frame(now: number) {
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
   updateCold(dt);
-  sun.position.copy(eye).addScaledVector(twilight.direction, 200);
-  sun.target.position.copy(eye);
+  // Shadow frame snaps to whole shadow texels in light space: walking no longer makes every
+  // shadow edge crawl. Shadows refresh every other frame below high quality (static art barely
+  // moves; characters' shadows trail by one frame), which halves the shadow pass.
+  snapShadowCenter(eye, twilight.direction, shadowCenter);
+  sun.position.copy(shadowCenter).addScaledVector(twilight.direction, 200);
+  sun.target.position.copy(shadowCenter);
+  shadowTick = (shadowTick + 1) % 2;
+  renderer.shadowMap.needsUpdate = highQ || shadowTick === 0 || shadowCenter.distanceToSquared(lastShadowCenter) > 4;
+  if (renderer.shadowMap.needsUpdate) lastShadowCenter.copy(shadowCenter);
 
   if (haloMat && done.has('tower_console')) haloMat.color.setScalar(0.85 + Math.sin(now / 400) * 0.15);
   for (const m of spinners) m.rotation.y += (m.userData.spin as number) * dt;
@@ -2122,7 +2235,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { exploration, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

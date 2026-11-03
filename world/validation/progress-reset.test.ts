@@ -213,7 +213,7 @@ test('late weapon-art attachment cannot reveal or equip an unowned gun', async (
   resolve(await parseLocalGlb(new URL('../../assets/weapons/glb/01_Dawn_AR.glb', import.meta.url))); await rifle.ready;
   assert.equal(rig.joints.Gun.visible, false); anim.prepareShot(new THREE.Vector3(0, 0, -1)); assert.equal(rig.joints.Gun.visible, false);
   const hiddenBeforeAttach = source.indexOf('rig.joints.Gun.visible = worldProgress.armed;');
-  assert.ok(hiddenBeforeAttach > 0 && hiddenBeforeAttach < source.indexOf('const rifle = attachExplorerRifle'));
+  assert.ok(hiddenBeforeAttach > 0 && hiddenBeforeAttach < source.indexOf('let rifle = attachExplorerRifle'));
   rifle.dispose(); rig.dispose();
 });
 
