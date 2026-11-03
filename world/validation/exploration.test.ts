@@ -101,6 +101,13 @@ test('full-map exploration icons hide chests/feathers and grey out cleared sites
   assert.equal(new Set(icons.map(i => i.id)).size, icons.length);
   const camp = CAMPS.find(c => !c.style)!; done.add(flagCamp(camp.id));
   assert.ok(explorationMapIcons(done).find(i => i.id === `camp:${camp.id}`)!.cleared);
+  // every roaming elite is marked, and greys out once its bounty is claimed
+  const { MINIBOSSES } = await import('../src/minibosses.ts');
+  const { flagElite } = await import('../src/exploration/catalog.ts');
+  assert.equal(icons.filter(i => i.kind === 'elite').length, MINIBOSSES.length);
+  done.add(flagElite(MINIBOSSES[1].id));
+  assert.ok(explorationMapIcons(done).find(i => i.id === `elite:${MINIBOSSES[1].id}`)!.cleared);
+  assert.ok(!explorationMapIcons(done).find(i => i.id === `elite:${MINIBOSSES[0].id}`)!.cleared);
 });
 
 test('each era owns a signature mechanic; copied prism puzzles are gone outside Britain and the valley', () => {
