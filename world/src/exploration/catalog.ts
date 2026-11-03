@@ -10,6 +10,7 @@ import { ALPHA_STATUES, ALPHA_PUZZLES, ALPHA_TRIALS, ALPHA_CAMPS, ALPHA_DOMAINS,
 import { BLACKSAIL_STATUES, BLACKSAIL_PUZZLES, BLACKSAIL_TRIALS, BLACKSAIL_CAMPS, BLACKSAIL_DOMAINS, BLACKSAIL_CHESTS, BLACKSAIL_FEATHERS } from './content/blacksail';
 import { WINTER_STATUES, WINTER_PUZZLES, WINTER_TRIALS, WINTER_CAMPS, WINTER_DOMAINS, WINTER_CHESTS, WINTER_FEATHERS } from './content/winter';
 import { DUELS, DUEL_CHESTS, EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, SIGNALS, TREASURE_MAPS, flagDig, flagEmber, flagFox, flagSignal } from './regional';
+import { MINIBOSSES } from '../minibosses';
 import { KYOTO_STATUES, KYOTO_PUZZLES, KYOTO_TRIALS, KYOTO_CAMPS, KYOTO_DOMAINS, KYOTO_CHESTS, KYOTO_FEATHERS } from './content/kyoto';
 
 export type XZ = readonly [number, number];
@@ -42,6 +43,10 @@ export const flagPuzzle = (id: string) => `xp_puzzle_${id}`;
 export const flagTrial = (id: string) => `xp_trial_${id}`;
 export const flagCamp = (id: string) => `xp_camp_${id}`;
 export const flagGlide = (level: number) => `xp_glide_${level}`;
+/** First defeat of a roaming elite: a one-time bounty, counted toward the region's exploration. */
+export const flagElite = (id: string) => `xp_elite_${id}`;
+export const ELITE_BOUNTY = Object.freeze({ crystals: 15, rounds: 30 });
+export const eliteInRegion = (region: RegionId) => MINIBOSSES.filter(m => m.region === region);
 export const markerChest = (id: string) => `xpm_chest_${id}`;
 export const markerPrism = (puzzle: string, index: number) => `xpm_prism_${puzzle}_${index}`;
 export const markerStele = (id: string) => `xpm_stele_${id}`;
@@ -223,14 +228,19 @@ export function regionItems(region: RegionId): string[] {
     ...EMBER_ROUTES.filter(x => x.region === region).map(x => flagEmber(x.id)),
     ...FOXFIRES.filter(x => x.region === region).map(x => flagFox(x.id)),
     ...SIGNALS.filter(x => x.region === region).map(x => flagSignal(x.id)),
+    ...eliteInRegion(region).map(m => flagElite(m.id)),
   ];
 }
 export function regionExploration(region: RegionId, done: ReadonlySet<string>): RegionExploration {
   const items = regionItems(region), finished = items.filter(id => done.has(id)).length;
-  const crystals = CHESTS.filter(c => c.region === region && done.has(flagChest(c.id))).reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0);
+  const crystals = CHESTS.filter(c => c.region === region && done.has(flagChest(c.id))).reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0)
+    + eliteInRegion(region).filter(m => done.has(flagElite(m.id))).length * ELITE_BOUNTY.crystals;
   return { region, total: items.length, done: finished, percent: items.length ? Math.floor(finished / items.length * 100) : 0, crystals };
 }
-export function totalCrystals(done: ReadonlySet<string>) { return CHESTS.filter(c => done.has(flagChest(c.id))).reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0); }
+export function totalCrystals(done: ReadonlySet<string>) {
+  return CHESTS.filter(c => done.has(flagChest(c.id))).reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0)
+    + MINIBOSSES.filter(m => done.has(flagElite(m.id))).length * ELITE_BOUNTY.crystals;
+}
 export function feathersHeld(done: ReadonlySet<string>) { return FEATHERS.filter(x => done.has(flagFeather(x.id))).length; }
 export function glideLevel(done: ReadonlySet<string>) { let level = 0; while (level < GLIDE.maxLevel && done.has(flagGlide(level + 1))) level++; return level; }
 /** Feathers not yet offered. */

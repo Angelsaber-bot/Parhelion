@@ -13,7 +13,7 @@ import type { RegionId, Localized } from '../settlements/types';
 import type { StoryEncounterSpec } from '../storyEncounters';
 import {
   CAMPS, CHESTS, CHEST_CRYSTALS, DOMAINS, CHEST_NAMES, FEATHERS, GLIDE, PUZZLES, REGION_NAMES, STATUES, TRIALS,
-  campEncounterId, feathersHeld, feathersSpare, flagCamp, flagChest, flagFeather, flagGlide, flagPuzzle, flagTrial,
+  ELITE_BOUNTY, campEncounterId, feathersHeld, feathersSpare, flagCamp, flagChest, flagElite, flagFeather, flagGlide, flagPuzzle, flagTrial,
   glideLevel, markerChest, markerPrism, markerStatue, markerStele, parseCampEncounter, regionExploration, solvePuzzle,
   totalCrystals, traceBeam, dirVec, type ChestDef, type PrismPuzzleDef, type TrialDef, type CampDef, type XZ,
 } from './catalog';
@@ -28,6 +28,7 @@ import {
   foxAt, foxLength, mapHeld, markerBeacon, markerBottle, markerBrazier, markerDig, markerFoxShrine, type EmberRouteDef, type FoxfireDef, type TreasureMapDef,
   SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
+import { MINIBOSSES } from '../minibosses';
 import './exploration.css';
 
 export interface ExplorationHost {
@@ -137,6 +138,7 @@ export function createExploration(host: ExplorationHost) {
     const m = TREASURE_MAPS.find(x => flagDig(x.id) === flag); if (m) return bilingual(`按「${m.title[0]}」挖出宝藏`, `dig up the treasure from "${m.title[1]}"`);
     const e = EMBER_ROUTES.find(x => flagEmber(x.id) === flag); if (e) return bilingual(`点亮「${e.title[0]}」的全部烽火`, `light every beacon of "${e.title[1]}"`);
     const sg = SIGNALS.find(x => flagSignal(x.id) === flag); if (sg) return bilingual(`用扫描仪找到「${sg.title[0]}」的讯号匣`, `track down the "${sg.title[1]}" signal cache`);
+    const el = MINIBOSSES.find(x => flagElite(x.id) === flag); if (el) return bilingual(`讨伐精英「${el.name[0]}」`, `defeat the elite "${el.name[1]}"`);
     const fx = FOXFIRES.find(x => flagFox(x.id) === flag); if (fx) return bilingual(`跟随「${fx.title[0]}」走到终点`, `follow "${fx.title[1]}" to its end`);
     return flag;
   }
@@ -147,6 +149,16 @@ export function createExploration(host: ExplorationHost) {
     done.add(flagChest(c.id)); host.save(); host.sound('open');
     const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done), rounds = host.refillAmmo?.(WORLD_RIFLE.ammoChest) ?? 0;
     showBanner(bilingual(`获得 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
+  }
+
+  /** A roaming elite's first defeat pays once: crystals, a full resupply's worth of rounds, exploration credit. */
+  function eliteDefeated(id: string) {
+    const elite = MINIBOSSES.find(m => m.id === id);
+    if (!elite || done.has(flagElite(id))) return false;
+    done.add(flagElite(id)); host.save(); host.sound('open');
+    const region = elite.region as RegionId, ex = regionExploration(region, done), rounds = host.refillAmmo?.(ELITE_BOUNTY.rounds) ?? 0, n = ELITE_BOUNTY.crystals;
+    showBanner(bilingual(`精英讨伐 · ${elite.name[0]} · 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Elite bounty · ${elite.name[1]} · Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${REGION_NAMES[region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${REGION_NAMES[region]?.[1] ?? ''} explored ${ex.percent}%`));
+    return true;
   }
 
   // ───────────────────────── feathers ─────────────────────────
@@ -652,7 +664,7 @@ export function createExploration(host: ExplorationHost) {
     if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) banner.hidden = true; }
     const ex = regionExploration(region, done);
     hud.hidden = !active || ex.total === 0;
-    const rev = `${region}|${ex.done}|${feathersHeld(done)}|${glideLevel(done)}|${document.documentElement.lang}`;
+    const rev = `${region}|${ex.done}|${totalCrystals(done)}|${feathersHeld(done)}|${glideLevel(done)}|${document.documentElement.lang}`;
     if (!hud.hidden && rev !== hudRev) {
       hudRev = rev;
       hud.querySelector('.xp-region')!.textContent = `${L(REGION_NAMES[region] ?? ['', ''])} · ${bilingual('探索度', 'Explored')} ${ex.percent}%`;
@@ -678,7 +690,7 @@ export function createExploration(host: ExplorationHost) {
     owns: (id: string) => ownership.has(id),
     interact: (id: string) => { ownership.get(id)?.(); },
     label: (id: string) => labels.get(id)?.() ?? null,
-    victory, update, reset, dispose,
+    victory, update, reset, dispose, eliteDefeated,
     get busy() { return !!activeTrial || !!activeCamp || !!ember.route || !!fox; },
     state: { chests, puzzles, trials, camps, feathers, embers, foxes, get ember() { return ember; }, get fox() { return fox; }, rotatePrism, startTrial: (id: string) => startTrial(trials.get(id)!) },
   };

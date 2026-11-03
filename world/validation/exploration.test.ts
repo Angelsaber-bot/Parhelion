@@ -176,3 +176,28 @@ test('幻日谷 lost signals: hot/cold scanner, reachable caches, one buried che
   assert.equal(signalBars(2), 5); assert.equal(signalBars(SIGNAL_RANGE + 1), 0);
   for (let b = 1; b < 5; b++) assert.ok(signalPing(b + 1) < signalPing(b), 'pings speed up as it gets hotter');
 });
+
+test('each roaming elite pays a one-time bounty that counts toward its region', async () => {
+  const { ELITE_BOUNTY, flagElite, totalCrystals } = await import('../src/exploration/catalog.ts');
+  const { MINIBOSSES } = await import('../src/minibosses.ts');
+  const { readFileSync } = await import('node:fs');
+  assert.ok(ELITE_BOUNTY.crystals >= 10 && ELITE_BOUNTY.rounds > 0);
+  for (const elite of MINIBOSSES) {
+    const region = elite.region as Parameters<typeof regionItems>[0];
+    assert.ok(regionItems(region).includes(flagElite(elite.id)), `${elite.id} missing from ${region} exploration`);
+    const done = new Set<string>(), before = regionExploration(region, done);
+    done.add(flagElite(elite.id));
+    const after = regionExploration(region, done);
+    assert.equal(after.done, before.done + 1);
+    assert.equal(after.crystals, before.crystals + ELITE_BOUNTY.crystals);
+    assert.equal(totalCrystals(done), ELITE_BOUNTY.crystals);
+  }
+  // The kill hook pays it, and the runtime pays it only once per elite.
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  const onKill = main.slice(main.indexOf('  onKill(id) {'), main.indexOf('\n  on', main.indexOf('  onKill(id) {') + 1));
+  assert.match(onKill, /exploration\.eliteDefeated\(id\)/);
+  const runtime = readFileSync(new URL('../src/exploration/runtime.ts', import.meta.url), 'utf8');
+  const pay = runtime.slice(runtime.indexOf('function eliteDefeated'), runtime.indexOf('// ───', runtime.indexOf('function eliteDefeated')));
+  assert.match(pay, /done\.has\(flagElite\(id\)\)\) return false/);
+  assert.match(pay, /refillAmmo\?\.\(ELITE_BOUNTY\.rounds\)/);
+});
