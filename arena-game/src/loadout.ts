@@ -84,7 +84,8 @@ export function loadoutCards(loadout: Loadout, keyLabel: (action: string) => str
   });
 }
 
-/** The saved legacy skin array is catalog-indexed, never loadout-slot-indexed. */
+/** Current runtime indices are weapon-indexed, never loadout-slot-indexed.
+ * Persisted legacy positions must first pass through readSkinSelection. */
 export function sanitizedSkins(raw: unknown): number[] {
   return WEAPONS.map((w, i) => {
     const n: unknown = Array.isArray(raw) ? raw[i] : undefined;

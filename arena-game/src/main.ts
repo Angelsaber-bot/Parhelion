@@ -10,7 +10,8 @@ import { SettingsStore, createSettingsPanel } from '../../shared-client/settings
 import '../../shared-client/settings.css';
 import { Game } from './game.ts';
 import { Hud } from './hud.ts';
-import { LoadoutStore, loadoutCards, sanitizedSkins, displayWeaponName } from './loadout.ts';
+import { LoadoutStore, loadoutCards, displayWeaponName } from './loadout.ts';
+import {readSkinSelection,withSkinSelection} from './skinSelection.ts';
 import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline, type Session } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
@@ -91,7 +92,7 @@ settings.subscribe(renderControlHints); renderControlHints();
 const saved = (() => { try { const raw = JSON.parse(localStorage.getItem('arena-lobby') ?? '{}'); return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}; } catch { return {}; } })();
 let char = Number.isInteger(saved.char) && CHARACTERS[saved.char] ? saved.char : 0;
 let mapId = mapIdOf(params.get('map') ?? saved.map);
-const skins = sanitizedSkins(saved.skins);
+const skins = readSkinSelection(saved);
 $<HTMLInputElement>('name').value = saved.name ?? 'Max';
 // Local/LAN pages default to the Colyseus server next to them; the public (https) site defaults to the
 // Cloudflare Worker, and ignores a remembered plain ws:// address that an https page can't open anyway.
@@ -171,7 +172,7 @@ $('armory').onclick = async () => {
   const generation = attemptGeneration;
   const eligible = () => !starting && !game && !pageExited && generation === attemptGeneration;
   if (!eligible()) return;
-  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory({skins,equip:(weapon,skin)=>{skins[weapon]=skin;renderSkins();try{const prior=JSON.parse(localStorage.getItem('arena-lobby')??'{}');localStorage.setItem('arena-lobby',JSON.stringify({...prior,skins:[...skins]}));return{saved:true};}catch{return{saved:false};}}}); }
+  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory({skins,equip:(weapon,skin)=>{skins[weapon]=skin;renderSkins();try{const prior=JSON.parse(localStorage.getItem('arena-lobby')??'{}');localStorage.setItem('arena-lobby',JSON.stringify(withSkinSelection(prior,skins)));return{saved:true};}catch{return{saved:false};}}}); }
   catch (error) { if (eligible()) showError(() => bilingual(`武器展示无法打开：${localizeText(String(error))}`, `Could not open the armory: ${localizeText(String(error))}`)); }
 };
 renderChars();
@@ -234,7 +235,7 @@ $('play').onclick = async () => {
   const current = () => activeStart?.id === attempt.id && !pageExited;
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
-  try { localStorage.setItem('arena-lobby', JSON.stringify({ name: opts.name, layout: opts.layout, char, skins, server, map: mapId })); } catch { /* private mode */ }
+  try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, server, map: mapId },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
     await mapReady;

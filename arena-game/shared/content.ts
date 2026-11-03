@@ -123,72 +123,54 @@ export const WEAPONS: WeaponDef[] = [
     id: 'lumen', kind: 'gun', name: 'Lumen AR', auto: true, interval: 6, damage: 20, pellets: 1, headMul: 1.5,
     spread: 0.006, spreadMove: 0.02, falloffStart: 22, falloffEnd: 45, falloffMin: 0.7,
     mag: 30, reload: Math.round(1.9 * TICK_HZ), range: 150,
-    skins: [
-      { id: 'dawn', name: 'Dawn', body: 0xeaf0ee, accent: 0x63d9db },
-      { id: 'ember', name: 'Ember', body: 0x27394b, accent: 0xefb76a },
-    ],
+    skins: [],
   },
   {
     id: 'corona', kind: 'gun', name: 'Corona SG', auto: false, interval: 48, damage: 12, pellets: 9, headMul: 1.25,
     spread: 0.075, spreadMove: 0.015, falloffStart: 7, falloffEnd: 18, falloffMin: 0.35,
     mag: 6, reload: Math.round(2.3 * TICK_HZ), range: 60,
-    skins: [
-      { id: 'sakura', name: 'Sakura', body: 0xf3d6dc, accent: 0xd98282 },
-      { id: 'graphite', name: 'Graphite', body: 0x3b4450, accent: 0xb8c6ca },
-    ],
+    skins: [],
   },
   {
     id: 'halo', kind: 'gun', name: 'Halo DMR', auto: false, interval: 22, damage: 52, pellets: 1, headMul: 2,
     spread: 0, spreadMove: 0.03, falloffStart: 60, falloffEnd: 120, falloffMin: 0.85,
     mag: 8, reload: Math.round(2.1 * TICK_HZ), range: 200,
-    skins: [
-      { id: 'aurora', name: 'Aurora', body: 0xdbe7ff, accent: 0x8f8cff },
-      { id: 'solar', name: 'Solar', body: 0xfff1c9, accent: 0xf2a33a },
-    ],
+    skins: [],
   },
   // New weapons are distinct prototype tuning, not competitively validated balance.
   {
     id: 'firefly', kind: 'gun', name: 'Firefly SMG · 流萤', auto: true, interval: 4, damage: 14, pellets: 1, headMul: 1.4,
     spread: 0.014, spreadMove: 0.025, falloffStart: 12, falloffEnd: 32, falloffMin: 0.45,
     mag: 36, reload: Math.round(1.65 * TICK_HZ), range: 100,
-    skins: [{ id: 'firefly', name: '流萤', body: 0xe9eee9, accent: 0xc1ed7d }],
+    skins: [],
   },
   {
     id: 'longnight', kind: 'gun', name: 'Longnight Sniper · 长夜', auto: false, interval: 78, damage: 90, pellets: 1, headMul: 1.7,
     spread: 0, spreadMove: 0.045, falloffStart: 80, falloffEnd: 180, falloffMin: 0.9,
     mag: 5, reload: Math.round(2.7 * TICK_HZ), range: 240,
-    skins: [{ id: 'longnight', name: '长夜', body: 0x334459, accent: 0x92bcff }],
+    skins: [],
   },
   {
     id: 'blade', kind: 'melee', name: 'Refraction Blade · 折光刃', auto: false, interval: 36, windup: 12, arc: 0.8, lunge: 10,
     damage: 55, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 3, falloffEnd: 3, falloffMin: 1,
     mag: 0, reload: 0, range: 3,
-    skins: [{ id: 'refraction', name: '折光', body: 0xe6eff4, accent: 0x8ddfe7 }],
+    skins: [],
   },
   {
     id: 'polearm', kind: 'melee', name: 'Meteor Polearm · 流星', auto: false, interval: 54, windup: 18, arc: 0.5, lunge: 8,
     damage: 70, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 4.5, falloffEnd: 4.5, falloffMin: 1,
     mag: 0, reload: 0, range: 4.5,
-    skins: [{ id: 'meteor', name: '流星', body: 0xe5e7f1, accent: 0xa6a0ff }],
+    skins: [],
   },
   {
     id: 'hammer', kind: 'melee', name: 'Fault Hammer · 断层', auto: false, interval: 72, windup: 30, arc: 0.85, lunge: 5,
     damage: 100, pellets: 0, headMul: 1, spread: 0, spreadMove: 0, falloffStart: 2.9, falloffEnd: 2.9, falloffMin: 1,
     mag: 0, reload: 0, range: 2.9,
-    skins: [{ id: 'fault', name: '断层', body: 0x455365, accent: 0xf3b767 }],
+    skins: [],
   },
 ];
 
-/** Append-only cosmetic catalog: existing saved indices retain their original finishes. */
-export const ARENA_SKIN_COLLECTIONS = [
-  { id: 'astral', name: '星穹棱镜 · Astral Prism', body: 0x18213e, accent: 0x83d9ff },
-  { id: 'sunforged', name: '赤金日冕 · Sunforged', body: 0xf0deba, accent: 0xffaa55 },
-  { id: 'petalglass', name: '樱华琉璃 · Petalglass', body: 0xe7e8f5, accent: 0xf29bc6 },
-] as const;
-for (const weapon of WEAPONS) for (const finish of ARENA_SKIN_COLLECTIONS) weapon.skins.push({ ...finish });
-
-// Previous collection finishes remain valid for old saves and remote clients.
-// New work is weapon-exclusive; a signature is never copied across the roster.
+/** Only curated weapon-exclusive skins are selectable. */
 import {SIGNATURE_SKINS} from './signatureSkins.ts';
 for(const skin of SIGNATURE_SKINS) WEAPONS.find(w=>w.id===skin.weapon)!.skins.push({id:skin.id,name:`${skin.zh} · ${skin.en}`,body:skin.body,accent:skin.accent});
 

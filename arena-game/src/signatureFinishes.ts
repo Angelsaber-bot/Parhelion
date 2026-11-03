@@ -8,28 +8,16 @@ type Point=readonly[number,number];
 type ProjectedFace=readonly[number,number,number,number,number,number,number,number,number,number];
 const patterns:Record<SignatureId,string>={
  'tidal-engine':`float wave=sin(p.x*11.0+p.y*7.0+sin(p.x*4.0)*1.5);float channel=1.0-smoothstep(.04,.12,abs(wave));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.12,.62,.57),channel*.24);`,
- 'night-courier':`float lacquer=.5+.5*sin(p.x*2.0-p.y*3.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.22,.075,.40),lacquer*.22);`,
- 'dune-falcon':`float sand=fract(sin(dot(floor(p.xy*200.0),vec2(12.9,78.2)))*43758.5);float feather=1.0-smoothstep(.025,.11,abs(sin(p.x*23.0+p.y*11.0)));diffuseColor.rgb*=.90+sand*.14;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.47,.21,.08),feather*.2);`,
  'celadon-atlas':`vec2 q=p.xy*24.0;float crack=abs(sin(q.x+sin(q.y*1.7))*sin(q.y+cos(q.x*.9)));float line=1.0-smoothstep(.008,.035,crack);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.12,.37,.32),line*.23);`,
  'abyssal-requiem':`float depth=.5+.5*sin(p.y*8.0+p.x*1.5);float mote=step(.996,fract(sin(dot(floor(p.xy*130.0),vec2(31.1,79.7)))*43758.5));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.06,.27,.37),depth*.32)+vec3(.3,.65,.78)*mote*.45;`,
- 'moonbite':`float folded=sin(p.x*18.0+sin(p.y*11.0)*1.8);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.38,.35,.51),(.5+.5*folded)*.12);`,
  'vermilion-plume':`float lacquer=.5+.5*sin(p.x*7.0+p.y*13.0);float vein=1.0-smoothstep(.025,.08,abs(sin(p.x*32.0-p.y*19.0)));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.55,.045,.025),lacquer*.2);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.8,.43,.12),vein*.2);`,
  'foundry-bell':`float grain=fract(sin(dot(floor(p.xy*180.0),vec2(51.1,17.7)))*43758.5);float casting=step(.95,fract(p.y*13.0));diffuseColor.rgb*=.83+grain*.22;diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.23,.11,.04),casting*.25);`,
  'amber-apiary':`float resin=.5+.5*sin(p.x*4.0+sin(p.y*5.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.63,.35,.07),resin*.16);`,
- 'equator-pulse':`float ceramic=.5+.5*sin(p.x*2.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.69,.73,.74),ceramic*.12);`,
  'mint-arcade':`float panel=step(.7,fract(p.x*3.0+p.y*2.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.31,.70,.64),panel*.12);`,
- 'paper-crane':`float fibre=.5+.5*sin(p.x*100.0+p.y*12.0);diffuseColor.rgb*=.97+.03*fibre;`,
  'abyssal-maw':`float scale=.5+.5*sin(p.x*12.0+sin(p.y*14.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.04,.17,.16),scale*.2);`,
- 'peach-fizz':`float glaze=.5+.5*sin(p.x*3.0-p.y*4.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.92,.55,.60),glaze*.12);`,
- 'copper-cartographer':`float grain=.5+.5*sin(p.x*11.0+sin(p.y*18.0)*1.5);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.26,.13,.075),grain*.2);`,
- 'obsidian-surveyor':`float brushed=.5+.5*sin(p.y*70.0);diffuseColor.rgb*=.94+.06*brushed;`,
- 'snowline-ghost':`float drift=.5+.5*sin(p.x*3.0+sin(p.y*6.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.63,.76,.82),drift*.16);`,
  'velvet-thorn':`float silk=.5+.5*sin(p.x*3.0-p.y*4.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.28,.07,.13),silk*.2);`,
  'prismwing':`float wing=.5+.5*sin(p.x*5.0+p.y*8.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.50,.73,.79),wing*.22);`,
- 'rime-oath':`float ice=.5+.5*sin(p.x*7.0+sin(p.y*13.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.58,.76,.88),ice*.14);`,
  'ink-bamboo':`float fibre=.5+.5*sin(p.x*28.0+sin(p.y*4.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.22,.16),fibre*.15);`,
- 'storm-circuit':`float plate=.5+.5*sin(p.x*4.0-p.y*3.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.19,.42),plate*.17);`,
- 'meteor-heart':`float stone=.5+.5*sin(p.x*7.0+sin(p.y*11.0)*1.8);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.17,.13,.27),stone*.23);`,
  'sugar-crash':`float icing=.5+.5*sin(p.x*3.0+p.y*6.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.95,.72,.77),icing*.13);`,
 };
 export function signatureMaterial(source:THREE.MeshStandardMaterial,id:SignatureId,clock:{value:number}){
@@ -112,17 +100,6 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
     a.arc(-.23,.29,.105,0,Math.PI*2,.014);a.arc(-.23,.29,.072,-.8,3.7,.024,1);
     for(let i=0;i<7;i++){const t=i/7*Math.PI*2;a.path([[-.23+Math.cos(t)*.08,.29+Math.sin(t)*.08],[-.23+Math.cos(t+.38)*.048,.29+Math.sin(t+.38)*.048]],.009);}
     break;
-   case'night-courier':
-    for(let i=0;i<4;i++){const x=-.43+i*.37;a.polygon([[x,.12],[x+.13,.12],[x+.37,.43],[x+.24,.43]],i%2?1:2);}
-    a.path([[-.49,.48],[.13,.48],[.27,.38],[.92,.38]],.016,1);
-    a.path([[-.49,.18],[-.49,.34],[-.37,.34],[-.37,.18],[-.49,.18]],.018);a.path([[-.29,.34],[-.16,.34],[-.27,.18]],.019);
-    break;
-   case'dune-falcon':
-    a.polygon([[-.59,.22],[-.45,.38],[-.17,.38],[.28,.19],[-.1,.22],[-.34,.17]],2);
-    a.polygon([[-.55,.23],[-.37,.35],[-.16,.35],[-.02,.28],[-.2,.28],[-.32,.2]],0);
-    a.path([[-.2,.32],[-.13,.32]],.014,1);
-    for(let i=0;i<6;i++)a.curve([[-.44+i*.10,.25],[-.36+i*.10,.18],[-.2+i*.10,.18]],.013,0);
-    a.path([[-.59,.39],[.3,.39]],.008);break;
    case'celadon-atlas':
     a.polygon([[-.95,.23],[-.65,.38],[-.35,.26],[-.12,.40],[.15,.23],[.41,.34],[.77,.22]],2);
     a.path([[-.95,.23],[-.65,.38],[-.35,.26],[-.12,.40],[.15,.23],[.41,.34],[.77,.22]],.012,0);
@@ -132,11 +109,6 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
     a.curve([[-.53,.21],[-.12,.30],[.65,.24],[1.54,.24]],.015,0);
     for(let i=0;i<12;i++){const x=-.38+i*.147;a.curve([[x,.27],[x+.025,.17],[x+.085,.11]],.010,i%4===0?1:0);}
     a.polygon([[1.39,.24],[1.59,.37],[1.53,.24],[1.64,.11]],0);a.arc(-.38,.25,.028,0,Math.PI*2,.010,1);break;
-   case'moonbite':
-    a.arc(.17,.01,.113,-1.3,1.3,.028,0);a.arc(.20,.01,.09,-1.1,1.1,.009,1);
-    a.curve([[.15,-.08],[.47,-.09],[.94,-.03],[1.32,.0]],.012,1);
-    a.curve([[.14,.10],[.55,.12],[1.03,.055],[1.32,.0]],.018,0);
-    for(let i=0;i<5;i++)a.path([[.42+i*.12,-.035],[.46+i*.12,.015]],.005,0);break;
    case'vermilion-plume':
     a.curve([[.68,.015],[.96,.025],[1.35,.015],[1.74,.015]],.013,1);
     for(let i=0;i<7;i++){const x=.71+i*.13,spread=.23-i*.023;for(const sign of [-1,1])a.curve([[x,.015],[x+.13,.015+sign*spread],[x+.29,.015+sign*spread*.65]],.012,0);}
@@ -150,42 +122,14 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
    case'amber-apiary':
     for(let row=0;row<2;row++)for(let col=0;col<8;col++){const x=-.4+col*.21+row*.105,y=.15+row*.145,r=.082;a.path(Array.from({length:7},(_,i)=>[x+Math.cos(i*Math.PI/3)*r,y+Math.sin(i*Math.PI/3)*r]as const),.012,col%3===0?1:0);}
     a.polygon([[-.55,.12],[-.43,.07],[-.31,.12],[-.43,.2]],1);break;
-   case'equator-pulse':
-    a.path([[-.52,.36],[-.23,.36],[-.12,.22],[.38,.22],[.52,.35],[1.25,.35]],.026,2);
-    a.path([[-.52,.13],[-.02,.13],[.1,.29],[.34,.29]],.010,1);
-    for(let i=0;i<9;i++)a.path([[.1+i*.125,.05],[.1+i*.125,.11+(i%3)*.025]],.012,0);
-    for(let i=0;i<3;i++)a.polygon([[-.38+i*.10,.25],[-.32+i*.10,.25],[-.32+i*.10,.30],[-.38+i*.10,.30]],1);break;
    case'mint-arcade':
     a.polygon([[-.45,.29],[-.45,.36],[-.38,.36],[-.38,.4],[-.30,.4],[-.30,.36],[-.23,.36],[-.23,.29],[-.34,.20]],2);
     for(let i=0;i<4;i++)a.polygon([[.05+i*.2,.14],[.13+i*.2,.14],[.13+i*.2,.22],[.05+i*.2,.22]],i%2?0:1);
     a.path([[.15,.34],[.15,.44]],.026,0);a.path([[.1,.39],[.2,.39]],.026,0);
     a.path([[.42,.39],[.87,.39]],.015,1);break;
-   case'paper-crane':
-    a.polygon([[-.48,.24],[-.22,.43],[.04,.27],[.45,.44],[.28,.20],[.08,.25],[-.02,.14],[-.14,.25]],2);
-    a.path([[-.48,.24],[-.10,.29],[.04,.27],[.45,.44]],.009,0);
-    a.path([[-.1,.29],[.08,.25],[.28,.2]],.008,1);
-    a.curve([[.3,.17],[.6,.12],[.95,.21]],.010,1);break;
    case'abyssal-maw':
     a.curve([[-.56,.36],[-.17,.39],[.29,.32]],.022,2);a.curve([[-.56,.20],[-.17,.17],[.29,.24]],.022,2);
     for(let i=0;i<7;i++){const x=-.5+i*.11;a.polygon([[x,.34],[x+.045,.245],[x+.08,.345]],0);if(i<6)a.polygon([[x+.04,.20],[x+.09,.28],[x+.13,.205]],1);}break;
-   case'peach-fizz':
-    a.polygon([[-.5,.2],[-.46,.38],[.03,.38],[.12,.20]],0);
-    a.curve([[-.43,.25],[-.25,.32],[-.08,.25]],.015,2);
-    for(const [x,y,r]of [[.16,.29,.045],[-.3,.28,.025],[.23,.39,.026],[-.05,.43,.021]])a.arc(x,y,r,0,Math.PI*2,.009,1);
-    a.path([[-.45,.21],[.03,.21]],.009,2);break;
-   case'copper-cartographer':
-    a.arc(-.52,.32,.088,0,Math.PI*2,.012,0);
-    for(let i=0;i<8;i++){const t=i*Math.PI/4;a.path([[-.52,.32],[-.52+Math.cos(t)*.095,.32+Math.sin(t)*.095]],i%2?.005:.009,i%2?0:1);}
-    for(let i=0;i<4;i++)a.curve([[-.36,.23+i*.043],[.01,.27+i*.025],[.45,.23+i*.035],[.82,.29+i*.022]],.006,0);
-    a.path([[-.98,.44],[.84,.44]],.006,1);break;
-   case'obsidian-surveyor':
-    a.path([[-.96,.23],[-.96,.41],[.78,.41]],.013,0);a.path([[-.85,.25],[.75,.25],[.75,.36]],.010,1);
-    for(let i=0;i<18;i++)a.path([[-.82+i*.083,.40],[-.82+i*.083,.40-(i%3===0?.065:.025)]],.006,0);
-    a.path([[.13,.27],[.13,.38]],.008,1);a.path([[.08,.32],[.19,.32]],.008,1);break;
-   case'snowline-ghost':
-    a.polygon([[-.56,.10],[-.34,.30],[-.13,.13],[.19,.34],[.48,.11],[.74,.27],[1.2,.11],[1.56,.21],[1.58,.04],[-.56,.04]],2);
-    a.path([[-.56,.1],[-.34,.3],[-.13,.13],[.19,.34],[.48,.11],[.74,.27],[1.2,.11],[1.56,.21]],.012,0);
-    for(let i=0;i<7;i++)a.path([[.53+i*.13,.32],[.60+i*.13,.32]],.007,1);break;
    case'velvet-thorn':
     a.curve([[-.57,.12],[-.13,.27],[.42,.12],[1.03,.28],[1.58,.15]],.012,0);
     for(let i=0;i<9;i++){const x=-.42+i*.21;a.polygon([[x,.2],[x+.055,.30],[x+.08,.21]],2);}
@@ -194,24 +138,10 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
     for(const sign of [-1,1]){a.polygon([[.14,.01],[.42,.01+sign*.12],[.62,.01+sign*.12],[.40,.01+sign*.035],[.18,.01]],2);a.curve([[.17,.01],[.35,.01+sign*.10],[.55,.01+sign*.08]],.011,0);}
     a.path([[.13,-.045],[.19,.07]],.015,1);
     for(let i=0;i<5;i++)a.path([[.55+i*.13,.06],[.63+i*.13,.01],[.55+i*.13,-.04]],.007,i%2?1:0);break;
-   case'rime-oath':
-    for(let i=0;i<6;i++){const t=i*Math.PI/3;a.path([[.22,.01],[.22+Math.cos(t)*.105,.01+Math.sin(t)*.105]],.011,0);}
-    a.path([[.37,.02],[1.31,.02]],.010,1);
-    for(let i=0;i<7;i++){const x=.4+i*.115;a.path([[x,-.055],[x,.075],[x+.05,.03]],.008,0);}break;
    case'ink-bamboo':
     a.curve([[.67,.01],[1.03,.01],[1.36,.04],[1.71,.01]],.014,0);
     for(let i=0;i<4;i++){const x=.72+i*.2;for(const sign of [-1,1])a.polygon([[x,.01],[x+.08,.01+sign*.12],[x+.28,.01+sign*.18],[x+.18,.01+sign*.04]],i%2?0:1);}
     for(let i=0;i<8;i++)a.path([[-1.52+i*.27,-.035],[-1.52+i*.27,.06]],.014,0);break;
-   case'storm-circuit':
-    a.path([[.70,.01],[1.04,.15],[1.01,.03],[1.35,.20],[1.25,.04],[1.70,.01]],.024,1);
-    a.path([[.74,-.04],[.98,-.17],[1.24,-.07],[1.42,-.11],[1.65,.01]],.012,0);
-    for(let i=0;i<6;i++)a.path([[-1.5+i*.34,-.02],[-1.37+i*.34,.035],[-1.24+i*.34,-.02]],.011,0);break;
-   case'meteor-heart':
-    a.polygon([[.28,.05],[.43,.27],[.65,.16],[.60,-.12],[.40,-.18]],2);
-    a.path([[.28,.05],[.43,.27],[.65,.16],[.60,-.12],[.40,-.18],[.28,.05],[.48,.06],[.43,.27]],.016,0);
-    a.path([[.48,.06],[.65,.16]],.013,1);a.path([[.48,.06],[.4,-.18]],.013,1);
-    a.arc(.47,.055,.30,-.5,2.8,.012,0);
-    for(const [x,y]of [[.26,-.30],[.72,.34],[.64,-.28]])a.path([[x-.025,y],[x+.025,y]],.025,1);break;
    case'sugar-crash':
     a.path(Array.from({length:111},(_,i)=>{const t=i/110*Math.PI*4,r=.025+.21*i/110;return[.47+Math.cos(t)*r,.055+Math.sin(t)*r]as const;}),.023,0);
     for(let i=0;i<12;i++){const t=i/12*Math.PI*2,x=.47+Math.cos(t)*.3,y=.055+Math.sin(t)*.3;a.path([[x-.014,y-.02],[x+.014,y+.02]],.018,i%2?1:2);}
@@ -219,22 +149,15 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
   }
  });
  draw('stock',a=>{
-  if(id==='night-courier')for(let i=0;i<3;i++)a.path([[-1.18+i*.13,.04],[-.98+i*.13,.27]],.035,i%2?1:2);
-  if(id==='dune-falcon')for(let i=0;i<3;i++)a.curve([[-1.28,.10+i*.07],[-1.03,.10+i*.07],[-.8,.25]],.012);
   if(id==='tidal-engine')a.curve([[-1.22,.13],[-1.06,.29],[-.8,.24]],.018,1);
   if(id==='abyssal-requiem')a.curve([[-1.42,.13],[-1.25,.44],[-.86,.31]],.013,1);
   if(id==='amber-apiary')a.path([[-1.25,.18],[-1.06,.31],[-.8,.18]],.025,0);
-  if(id==='equator-pulse')a.path([[-1.23,.16],[-.96,.16],[-.86,.28]],.022,2);
-  if(id==='paper-crane')a.path([[-1.17,.08],[-.98,.28],[-.80,.09]],.017,0);
   if(id==='mint-arcade')for(let i=0;i<3;i++)a.polygon([[-1.2+i*.12,.03],[-1.13+i*.12,.03],[-1.13+i*.12,.1],[-1.2+i*.12,.1]],1);
-  if(id==='snowline-ghost')a.path([[-1.43,.15],[-1.23,.43],[-1.04,.19],[-.86,.35]],.014,2);
   if(id==='velvet-thorn')a.curve([[-1.42,.19],[-1.21,.42],[-.86,.29]],.013,0);
  });
  draw('fore_end',a=>{
-  if(id==='dune-falcon')for(let i=0;i<7;i++)a.curve([[.46+i*.09,.07],[.54+i*.09,.19],[.68+i*.09,.26]],.017);
   if(id==='abyssal-maw')for(let i=0;i<7;i++){const x=.46+i*.1;a.polygon([[x,.28],[x+.05,.14],[x+.085,.28]],0);a.polygon([[x,.04],[x+.055,.15],[x+.085,.04]],1);}
-  if(id==='peach-fizz')for(let i=0;i<5;i++)a.arc(.51+i*.14,.11+(i%2)*.12,.035,0,Math.PI*2,.011,i%2?0:1);
  });
- draw('magazine',a=>{if(id==='tidal-engine')for(let i=0;i<3;i++)a.path([[.24+i*.1,-.5],[.21+i*.1,-.11]],.012,1);if(id==='night-courier')a.polygon([[.11,-.46],[.19,-.46],[.31,-.02],[.23,-.02]],1);});
+ draw('magazine',a=>{if(id==='tidal-engine')for(let i=0;i<3;i++)a.path([[.24+i*.1,-.5],[.21+i*.1,-.11]],.012,1);});
  return {groups,dispose(){for(const group of groups){group.removeFromParent();group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}materials.forEach(m=>m.dispose());}};
 }

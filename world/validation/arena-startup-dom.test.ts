@@ -11,13 +11,14 @@ const mocks:Record<string,string>={
  'scene.ts':`export class ArenaScene { loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
  'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()}setPaused(){} }`,
  'session.ts':`export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
- 'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(){}`,
+ 'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(options){window.__qa.armory=options}`,
 };
 const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/\.\/(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.slice(2),namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
-async function boot(){
+async function boot(saved?:unknown){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
- const qa={maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
+ if(saved!==undefined)w.localStorage.setItem('arena-lobby',JSON.stringify(saved));
+ const qa={armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
   loadMap(id:string){const task=deferred();this.maps.push({id,task});return task.promise},join(url:string,opts:any){const task=deferred();this.joins.push({url,opts,task});return task.promise},session(opts?:any){return{opts,close:()=>{qa.closed++}}}};
  (w as any).__qa=qa;w.requestAnimationFrame=()=>1;(w as any).matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  (w as any).fetch=()=>{throw Error('real network forbidden')};(w as any).WebSocket=class{constructor(){throw Error('real network forbidden')}};
@@ -107,3 +108,20 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  if(mode==='online'){assert.equal(h.qa.joins[0].url,'ws://192.168.1.44:2567');h.qa.joins[0].task.resolve(h.qa.session(opts));await h.flush();}
  assert.equal(h.qa.games,1);h.click('#play');await h.flush();assert.equal(h.qa.offline+h.qa.joins.length,1,'active game rejects another start');
  }finally{h.dom.window.close()}});
+
+// Exercise migration through the production entry point and both save paths.
+test('legacy equipped identities survive catalog curation and startup saves stable IDs',async()=>{const h=await boot({name:'Returning',skins:[6,6,5,5,6,5,5,6]});try{
+ assert.equal(h.d.querySelector<HTMLSelectElement>('[data-w="0"]')!.selectedOptions[0].textContent,'琥珀蜂巢 · Amber Apiary');
+ assert.equal(h.d.querySelector<HTMLSelectElement>('[data-w="1"]')!.selectedOptions[0].textContent,'深渊巨口 · Abyssal Maw');
+ h.qa.maps[0].task.resolve();await h.flush();h.click('#play');await h.flush();
+ assert.deepEqual(Array.from(h.qa.offlineInputs[0].skins),[1,0,0,0,1,0,1,1]);
+ const saved=JSON.parse(h.w.localStorage.getItem('arena-lobby')!);assert.equal(saved.name,'Returning');assert.ok(!('skins'in saved));assert.equal(saved.skinIds.lumen,'amber-apiary');assert.equal(saved.skinIds.blade,'prismwing');
+}finally{h.dom.window.close()}});
+test('workshop equipment saves IDs without erasing other lobby choices and reloads correctly',async()=>{
+ const h=await boot({name:'Keep name',layout:'1v2',map:'blackflag',char:1,skins:[7,5,7,4,5,6,6,5]});let saved;try{
+ h.click('#armory');await h.flush();assert.ok(h.qa.armory);assert.deepEqual(Array.from(h.qa.armory.skins),[0,0,0,0,0,0,0,0]);
+ assert.equal(h.qa.armory.equip(7,1).saved,true);saved=JSON.parse(h.w.localStorage.getItem('arena-lobby')!);
+ assert.equal(saved.name,'Keep name');assert.equal(saved.map,'blackflag');assert.equal(saved.layout,'1v2');assert.equal(saved.char,1);assert.equal(saved.skinIds.hammer,'sugar-crash');assert.ok(!('skins'in saved));
+}finally{h.dom.window.close()}
+ const restored=await boot(saved);try{restored.click('#armory');await restored.flush();assert.equal(restored.qa.armory.skins[7],1);}finally{restored.dom.window.close()}
+});

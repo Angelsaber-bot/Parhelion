@@ -110,8 +110,8 @@ describe('lobby and combat equipment presentation', () => {
       expect(weaponStats(w)).toContain('前摇'); expect(weaponStats(w)).not.toContain('弹匣');
     }
   });
-  it('preserves existing skin choices and safely extends the legacy three-weapon array', () => {
-    expect(sanitizedSkins([1, 1, 1])).toEqual([1, 1, 1, 0, 0, 0, 0, 0]);
+  it('validates current catalog indices independently for each weapon', () => {
+    expect(sanitizedSkins([1, 1, 1])).toEqual([1, 0, 0, 0, 0, 0, 0, 0]);
     expect(sanitizedSkins([NaN, -1, 9, WEAPONS[3].skins.length, .5])).toEqual(WEAPONS.map(() => 0));
     expect(sanitizedSkins({ 0: 1 })).toEqual(WEAPONS.map(() => 0));
   });

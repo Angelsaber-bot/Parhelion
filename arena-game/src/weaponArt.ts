@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import registry from '../../assets/weapons/registry.json';
-import {finishOf,finishMaterial,addFinishInlay} from './weaponFinishes.ts';
+import {finishOf,finishMaterial} from './weaponFinishes.ts';
 import {signatureOf} from '../shared/signatureSkins.ts';
 import {addSignatureArt} from './signatureFinishes.ts';
 import {buildSignatureModel} from './signatureModels.ts';
@@ -97,7 +97,6 @@ export class WeaponArtPool {
       for (const node of asset.children) if (node.name.startsWith(`${def.file}__`)) parts[node.name.slice(`${def.file}__`.length)] = node;
       const finish=finishOf(colors?.id,def.combat),signature=signatureOf(finish??undefined,def.combat);
       if(signature)inlays.push(addSignatureArt(parts,signature.id));
-      else if(finish&&parts.body){const inlay=addFinishInlay(parts.body,finish);if(inlay)inlays.push(inlay);}
       instance = { root, parts };
       return instance;
     });
