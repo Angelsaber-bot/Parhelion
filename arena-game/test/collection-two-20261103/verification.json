@@ -1,0 +1,24 @@
+{
+  "result": {
+    "profiles": 24,
+    "inventory": {
+      "allocated": {
+        "tracers": 11,
+        "sparks": 77,
+        "numbers": 0
+      },
+      "active": {
+        "tracers": 11,
+        "sparks": 77,
+        "numbers": 0
+      },
+      "recycled": {
+        "tracers": 0,
+        "sparks": 0,
+        "numbers": 0
+      },
+      "disposed": false
+    }
+  },
+  "errors": []
+}

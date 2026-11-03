@@ -1,3 +1,4 @@
+import {skinEffect} from './skinEffects.ts';
 // Three.js presentation: the arena map art, placeholder anime-style avatars, shields, tracers and the
 // first-person weapon. No game rules in here.
 
@@ -247,12 +248,40 @@ export class ArenaScene {
   }
 
   /** Muzzle light: a brief warm flash on the world around the shooter. */
-  muzzleFlash(at: Vec3, strength = 1) {
+  muzzleFlash(at: Vec3, strength = 1, skinId?:string) {
+    this.muzzleLight.color.setHex(skinEffect(skinId)?.color??0xffd79a);
     this.muzzleLight.position.set(at[0], at[1], at[2]);
     this.muzzleLight.intensity = 9 * strength;
     this.flashT = 0.06;
+    const style=skinEffect(skinId);
+    if(style)this.combatEffects.burst(at,style.color,style.flash*strength,.065,0,style.particle);
   }
 
+  /** Shared by predicted local shots and authoritative remote shots. */
+  skinTracer(from:Vec3,to:Vec3,id?:string,width=1){
+    const style=skinEffect(id);if(!style){this.tracer(from,to,0xfff4c0,width);return;}
+    this.combatEffects.tracer(from,to,style.color,width,style);
+    const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),length=a.distanceTo(b);
+    const count=this.quality==='low'?2:4;
+    for(let i=1;i<=count;i++){
+      const t=Math.min(.65,(.3+i*.4)/Math.max(.001,length)),p=a.clone().lerp(b,t);
+      this.combatEffects.burst(p.toArray() as Vec3,i%2?style.color:style.secondary,.075,style.life*.65,0,style.particle);
+    }
+  }
+  skinImpact(at:Vec3,onPlayer:boolean,id?:string){
+    const style=skinEffect(id);if(!style){this.impact(at,onPlayer);return;}
+    this.combatEffects.burst(at,style.color,onPlayer?.38:.28,.10,0,'star');
+    const count=this.quality==='low'?3:5;
+    for(let i=0;i<count;i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.12,style.life,style.spread,style.particle);
+  }
+  skinSwing(from:Vec3,to:Vec3,id?:string){
+    const style=skinEffect(id);if(!style)return;
+    this.combatEffects.tracer(from,to,style.color,.65,style);
+    for(let i=1;i<=4;i++){
+      const t=i/4,p=from.map((v,j)=>v+(to[j]-v)*t) as Vec3;
+      this.combatEffects.burst(p,style.color,.10,style.life*.7,0,style.particle);
+    }
+  }
   /** Bullet impact: a dust puff and flying chips on the map, a bright star burst on a player. */
   impact(at: Vec3, onPlayer: boolean, color = 0xfff4c0) {
     if (onPlayer) {
@@ -267,7 +296,13 @@ export class ArenaScene {
   }
 
   /** Melee contact: a white flash, a ring of weapon-coloured sparks and heavier debris for the hammer. */
-  meleeImpact(at: Vec3, weapon: number) {
+  meleeImpact(at: Vec3, weapon: number, skinId?:string) {
+    const style=skinEffect(skinId);
+    if(style){
+      this.combatEffects.burst(at,style.color,weapon===7?.85:.5,.14,0,'ring');
+      for(let i=0;i<(this.quality==='low'?5:9);i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.14,style.life,style.spread*(weapon===7?1.4:1),style.particle);
+      return;
+    }
     const color = weapon === 7 ? 0xffb35a : weapon === 6 ? 0xb6aaff : 0x9cf0ff, heavy = weapon === 7;
     this.burst(at, 0xffffff, heavy ? 1.3 : .9, .1, 0);
     this.burst(at, color, heavy ? 1.6 : 1.1, .2, 0);
@@ -531,6 +566,9 @@ export class Viewmodel {
     this.muzzle = muzzle;
     this.root.add(group);
     this.swap = 1;
+    const style=skinEffect(WEAPONS[weapon].skins[skin]?.id);
+    this.flash.material.color.setHex(style?.color??0xfff1b0);
+    this.flash.material.rotation=style?.particle==='crystal'?Math.PI/4:0;
     this.weapon = weapon; this.meleeHit = 0; this.meleeWindup = 0; this.kick = 0;
   }
 

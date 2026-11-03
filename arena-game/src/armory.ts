@@ -8,6 +8,8 @@ import { displayWeaponName } from './loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from './weaponFinishes.ts';
 import {signatureOf,signaturesFor,signatureModelOf} from '../shared/signatureSkins.ts';
 import {lightWeaponScene} from './weaponLighting.ts';
+import {ArenaCombatEffects} from './combatEffects.ts';
+import {skinEffect} from './skinEffects.ts';
 import {FrameGate} from './renderScheduling.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
@@ -16,7 +18,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   const dialog = document.createElement('dialog'); dialog.id = 'armory-dialog';dialog.setAttribute('data-i18n-ignore','');dialog.setAttribute('aria-labelledby','armory-title');
   dialog.innerHTML = `<header><div><small>PARHELION / WAYFARER ARMORY</small><h2 id="armory-title">皮肤工坊</h2></div><button id="armory-close" aria-label="关闭武器展示">关闭 ✕</button></header>
     <div class="armory-layout"><nav aria-label="模型选择">${WEAPON_ART.map((a) => `<button data-art="${a.id}"><b>${displayWeaponName(a.combat ?? '')}</b><span>${localizeText(a.name)} · ${bilingual('可装备作战', 'Combat-ready')}</span></button>`).join('')}</nav>
-    <section><div class="art-preview"><canvas aria-label="可旋转的三维武器模型"></canvas><button id="art-view-reset" type="button">复位视角</button></div><h3 id="art-title"></h3><p id="art-info"></p><div id="art-finishes" aria-label="皮肤主题"></div><button id="art-equip" class="primary" type="button">装备皮肤</button><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p id="art-hint" class="muted">拖动旋转 · 滚轮缩放 · Esc 返回</p></section></div>`;
+    <section><div class="art-preview"><canvas aria-label="可旋转的三维武器模型"></canvas><button id="art-view-reset" type="button">复位视角</button></div><h3 id="art-title"></h3><p id="art-info"></p><div id="art-finishes" aria-label="皮肤主题"></div><button id="art-fx" type="button">试播特效</button><button id="art-equip" class="primary" type="button">装备皮肤</button><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p id="art-hint" class="muted">拖动旋转 · 滚轮缩放 · Esc 返回</p></section></div>`;
   document.body.append(dialog); localizeDom(dialog); dialog.showModal();
   const canvas = dialog.querySelector('canvas')!;
   let renderer: THREE.WebGLRenderer;
@@ -28,6 +30,20 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   }
   renderer.setPixelRatio(Math.min(Math.max(1,devicePixelRatio),1.25)); renderer.toneMapping = THREE.NeutralToneMapping;renderer.toneMappingExposure=.98;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x101a29);
+  const glowCanvas=document.createElement('canvas');glowCanvas.width=glowCanvas.height=64;
+  const glowContext=glowCanvas.getContext('2d')!;
+  const gradient=glowContext.createRadialGradient(32,32,0,32,32,32);gradient.addColorStop(0,'white');gradient.addColorStop(.25,'#ffffffcc');gradient.addColorStop(1,'#ffffff00');glowContext.fillStyle=gradient;glowContext.fillRect(0,0,64,64);
+  const glowTexture=new THREE.CanvasTexture(glowCanvas),effects=new ArenaCombatEffects(scene,glowTexture,'low');
+  let fxStart=new THREE.Vector3(),fxEnd=new THREE.Vector3(),fxId='',fxMelee=false,fxTime=-Infinity,frameTime=0;
+  const fxButton=dialog.querySelector<HTMLButtonElement>('#art-fx')!;
+  fxButton.onclick=()=>{
+    const time=performance.now();if(time-fxTime<450||dialog.getAttribute('aria-busy')==='true')return;fxTime=time;
+    const style=skinEffect(fxId);if(!style)return;
+    const from=fxStart.toArray() as [number,number,number],to=fxEnd.toArray() as [number,number,number];
+    effects.tracer(from,to,style.color,.8,style);
+    effects.burst(from,style.color,style.flash,.09,0,style.particle);
+    for(let i=0;i<6;i++)effects.burst(to,i%2?style.color:style.secondary,fxMelee?.23:.14,style.life,style.spread*.25,style.particle);
+  };
   const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.enablePan = false;
   const pmrem = new THREE.PMREMGenerator(renderer), room = new RoomEnvironment();
@@ -47,6 +63,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('nav')!.setAttribute('aria-label',bilingual('武器选择','Weapon selection'));
     dialog.querySelector('#armory-close')!.textContent=bilingual('关闭 ✕','Close ✕');
     dialog.querySelector('#armory-close')!.setAttribute('aria-label',bilingual('关闭皮肤工坊','Close skin workshop'));
+    fxButton.textContent=bilingual('试播特效','Preview effects');
     dialog.querySelector('#art-hint')!.textContent=bilingual('拖动旋转 · 滚轮缩放 · Esc 返回','Drag to rotate · Scroll to zoom · Esc to return');
     dialog.querySelector('#art-retry')!.textContent=bilingual('重试加载','Retry');
     dialog.querySelector('#art-view-reset')!.textContent=bilingual('复位视角','Reset view');
@@ -76,7 +93,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   const select = async (id: string,preserveView=false) => {
     if(closed||!dialog.isConnected)return;
     const def = WEAPON_ART.find((a) => a.id === id)!; selected = id;
-    const ticket = ++serial; handle?.release();dialog.setAttribute('aria-busy','true');equip.disabled=true;
+    const ticket = ++serial;effects.clear(); handle?.release();dialog.setAttribute('aria-busy','true');equip.disabled=true;
     const status = dialog.querySelector('#art-status')!, retry = dialog.querySelector<HTMLButtonElement>('#art-retry')!;
     retry.hidden = true; setStatus('正在加载所选模型…', 'Loading the selected model…');
     renderDetails();
@@ -87,13 +104,16 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
       const instance = await current.ready;
       if (!instance || closed || ticket !== serial) return;
       const box = new THREE.Box3().setFromObject(instance.root), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
-      instance.root.position.sub(center); scene.add(instance.root);
+      instance.root.position.sub(center); scene.add(instance.root);instance.root.updateMatrixWorld(true);
+      fxId=colors.id;fxMelee=weapon.kind==='melee';
+      fxStart=instance.root.localToWorld(new THREE.Vector3(...(def.muzzle??[.25,0,0])));
+      fxEnd=fxStart.clone().add(new THREE.Vector3(fxMelee?.45:.65,fxMelee?.25:0,0));
       const radius = size.length() / 2;
       const tangent=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
       const aspect=Math.max(.5,canvas.clientWidth/Math.max(1,canvas.clientHeight));
       const distance=Math.max(size.x/(2*tangent*aspect),size.y/(2*tangent))*1.16+size.z;
       controls.minDistance = radius * .55; controls.maxDistance = Math.max(distance*3,radius*4);
-      if(!preserveView){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.set(distance*.38,distance*.24,distance);controls.target.set(0,0,0);controls.update();controls.saveState();controls.enableDamping=damping;}
+      if(!preserveView||framedDistance<=0){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();camera.position.set(distance*.38,distance*.24,distance);controls.target.set(0,0,0);controls.update();controls.saveState();controls.enableDamping=damping;}
       else {
         // A replacement silhouette can be much smaller than the original GLB.
         // Preserve orbit/relative zoom while fitting the new structure to the view.
@@ -118,10 +138,10 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
   }); observer.observe(canvas);
   const previewFrames=new FrameGate(30);
-  renderer.setAnimationLoop(now => { if(document.visibilityState==='hidden'||!previewFrames.allow(now))return;updateFinishClock(now/1000);controls.update(); renderer.render(scene, camera); });
+  renderer.setAnimationLoop(now => { if(document.visibilityState==='hidden'||!previewFrames.allow(now))return;effects.update(Math.min(.1,Math.max(0,(now-frameTime)/1000)));frameTime=now;updateFinishClock(now/1000);controls.update(); renderer.render(scene, camera); });
   dialog.addEventListener('close', () => {
     closed = true;removeEventListener('pagehide',pageExit);unsubscribeLanguage(); ++serial; handle?.release(); observer.disconnect(); controls.dispose();
-    renderer.setAnimationLoop(null); env.dispose(); renderer.dispose(); renderer.forceContextLoss(); dialog.remove();
+    renderer.setAnimationLoop(null);effects.dispose();glowTexture.dispose(); env.dispose(); renderer.dispose(); renderer.forceContextLoss(); dialog.remove();
   }, { once: true });
   void select(selected);
 }

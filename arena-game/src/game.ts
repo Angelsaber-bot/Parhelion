@@ -12,7 +12,7 @@ import type { Controls } from './controls.ts';
 import type { Hud } from './hud.ts';
 import { Feel } from './feel.ts';
 import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './aim.ts';
-import { TEAM_COLOR, type ArenaScene } from './scene.ts';
+import { type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
 import {FrameGate} from './renderScheduling.ts';
 
@@ -131,10 +131,10 @@ export class Game {
       case 'shot': {
         if (e.id === myId) break; // already shown by prediction
         const from = this.scene.muzzleOf(e.id) ?? e.from;
-        const col = TEAM_COLOR[this.names.get(e.id)?.team ?? 'A'];
-        for (const to of e.to) this.scene.tracer(from, to, col, 0.7);
+        const shooter=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[shooter?.skins[e.w]??0]?.id;
+        for (const to of e.to) {this.scene.skinTracer(from,to,skinId,.7);if(Math.hypot(to[0]-e.from[0],to[1]-e.from[1],to[2]-e.from[2])<WEAPONS[e.w].range-.01)this.scene.skinImpact(to,false,skinId);}
         const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
-        if (d < 30) this.scene.muzzleFlash(from, 0.6);
+        if (d < 30) this.scene.muzzleFlash(from, 0.6,skinId);
         sfx.shot(e.w, d < 25, d);
         break;
       }
@@ -146,6 +146,8 @@ export class Game {
         break;
       }
       case 'meleeStrike': {
+        const wielder=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[wielder?.skins[e.w]??0]?.id;
+        this.scene.skinSwing(e.from,e.to,skinId);
         if (e.id === myId) this.meleeContact = e.to;
         else {
           this.scene.meleeStrike(e.id);
@@ -164,7 +166,7 @@ export class Game {
             sfx.meleeHit(weapon); this.feel.melee(weapon, true);
             this.scene.viewmodel.contact(weapon === 7 ? .13 : weapon === 6 ? .09 : .075);
             const at = this.meleeContact ?? (v ? [v.pos[0], v.pos[1] + 1.1, v.pos[2]] as Vec3 : null);
-            if (at) this.scene.meleeImpact(at, weapon);
+            if (at) this.scene.meleeImpact(at, weapon,WEAPONS[weapon]?.skins[this.names.get(myId)?.skins[weapon]??0]?.id);
           } else sfx.hit(e.head);
           if (v) this.scene.damageNumber([v.pos[0], v.pos[1] + (e.head ? 2.0 : 1.6), v.pos[2]], e.dmg, e.head, false);
         }
@@ -304,8 +306,8 @@ export class Game {
         this.feel.kickAim(this.controls, e.weapon);
         // Cosmetic tracer begins at the actual loaded-model muzzle, transformed from view space.
         const start = this.scene.localMuzzle();
-        this.scene.muzzleFlash(start, e.weapon === 1 ? 1.4 : 1);
-        const w = WEAPONS[e.weapon];
+        const w = WEAPONS[e.weapon],skinId=w.skins[this.names.get(this.session.id)?.skins[e.weapon]??0]?.id;
+        this.scene.muzzleFlash(start, e.weapon === 1 ? 1.4 : 1,skinId);
         for (const d of e.dirs) {
           let t = raycastMap(this.map, e.origin, d, w.range);
           if (t === Infinity) t = w.range;
@@ -316,8 +318,8 @@ export class Game {
             if (h && h.t < t) { t = h.t; onPlayer = true; }
           }
           const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
-          this.scene.tracer(start, end, 0xfff4c0, w.pellets > 1 ? 0.5 : 1);
-          if (t < w.range) this.scene.impact(end, onPlayer);
+          this.scene.skinTracer(start, end,skinId, w.pellets > 1 ? 0.5 : 1);
+          if (t < w.range) this.scene.skinImpact(end, onPlayer,skinId);
           if (!onPlayer && t < w.range && Math.random() < (w.pellets > 1 ? 0.15 : 0.6)) sfx.impact(t);
         }
         break;

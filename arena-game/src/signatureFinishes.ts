@@ -20,6 +20,7 @@ const patterns:Record<SignatureId,string>={
  'prismwing':`float wing=.5+.5*sin(p.x*5.0+p.y*8.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.50,.73,.79),wing*.22);`,
  'ink-bamboo':`float fibre=.5+.5*sin(p.x*28.0+sin(p.y*4.0));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.08,.22,.16),fibre*.15);`,
  'sugar-crash':`float icing=.5+.5*sin(p.x*3.0+p.y*6.0);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.95,.72,.77),icing*.13);`,
+'cloudline':'', 'cinder-express':'', 'brass-horizon':'', 'mixtape':'', 'glacier-survey':'', 'crescent-sabre':'', 'reef-regalia':'', 'cathedral-chime':'',
  'graviton-crucible':'', 'koi-current':'', 'owl-canticle':'', 'meridian-key':'',
 };
 export function signatureMaterial(source:THREE.MeshStandardMaterial,id:SignatureId,clock:{value:number}){

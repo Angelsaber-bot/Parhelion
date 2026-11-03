@@ -4,19 +4,19 @@ import * as THREE from 'three';
 import type {Sculpture,V,P} from './signatureModels.ts';
 import {finishClock} from './weaponFinishes.ts';
 
-function grip(s:Sculpture){
+export function grip(s:Sculpture){
  const [x,y,z]=s.def.grip;
  s.grip([x+.055,y+.24,z],[x-.045,y-.23,z],.075);
  s.outline([[x+.07,y+.17,-.025],[x+.34,y+.17,-.025],[x+.34,y-.08,-.025],[x+.06,y-.11,-.025]],.019,s.metal);
  s.rod([x+.18,y+.14,0],[x+.16,y-.005,0],.014,s.metal);
 }
 /** Open lathed bore: a real dark recess, never a bright cap over the muzzle. */
-function bore(s:Sculpture,start:number,end:number,y:number,r:number,m:THREE.Material=s.metal){
+export function bore(s:Sculpture,start:number,end:number,y:number,r:number,m:THREE.Material=s.metal){
  const profile=[[r,start],[r,end-.018],[r*.88,end],[r*.64,end],[r*.64,end-.11]];
  const g=new THREE.LatheGeometry(profile.map(([radius,x])=>new THREE.Vector2(radius,x)),24);g.rotateZ(-Math.PI/2);
  s.mesh(g,m,[0,y,0]);s.ring(r*.83,.012,[end-.009,y,0],s.dark,'body','x');
 }
-function scope(s:Sculpture,r=.10){
+export function scope(s:Sculpture,r=.10){
  const [x,y,z]=s.def.sight!;
  s.box([.22,.14,.20],[x+.12,y-.21,z],s.dark,'optic');
  for(const at of[x+.04,x+.21])s.rod([at,y-.35,z],[at,y-.09,z],.027,s.metal,'optic');

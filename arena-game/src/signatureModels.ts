@@ -7,6 +7,7 @@ import {mergeGeometries,mergeVertices,toCreasedNormals} from 'three/examples/jsm
 import {signatureOf,signatureModelOf,type SignatureStyle,type SignatureId} from '../shared/signatureSkins.ts';
 import type {ArtDef,ArtInstance} from './weaponArt.ts';
 import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
+import {buildSecondCollection} from './signatureCollectionTwo.ts';
 import {refineWeaponMaterial} from './weaponSurface.ts';
 
 export type V=readonly[number,number,number];
@@ -131,6 +132,6 @@ function confectionHammer(s:Sculpture){
 
 export function buildSignatureModel(def:ArtDef,id?:string):ArtInstance|null{
  const model=signatureModelOf(id,def.combat),style=signatureOf(id,def.combat);if(!model||!style)return null;
- const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;}
+ const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:buildSecondCollection(sculpture,model);break;}
  return sculpture.finish();
 }

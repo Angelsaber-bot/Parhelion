@@ -23,6 +23,14 @@ export const WEAPON_SURFACES:Record<SignatureId,Finish>={
  'graviton-crucible':finish('ceramic',160,.000025,.030,.85,.13),
  'koi-current':finish('porcelain',135,.000030,.030,1,.11),
  'owl-canticle':finish('obsidian',160,.000035,.035,.75,.16),
+ 'cloudline':finish('brushed',160,.00004,.035,.75,.18),
+ 'cinder-express':finish('cast',160,.00004,.035,.75,.18),
+ 'brass-horizon':finish('enamel',160,.00004,.035,.75,.18),
+ 'mixtape':finish('polymer',160,.00004,.035,.75,.18),
+ 'glacier-survey':finish('ceramic',160,.00004,.035,.75,.18),
+ 'crescent-sabre':finish('titanium',160,.00004,.035,.75,.18),
+ 'reef-regalia':finish('porcelain',160,.00004,.035,.75,.18),
+ 'cathedral-chime':finish('obsidian',160,.00004,.035,.75,.18),
  'meridian-key':finish('wood',165,.000080,.060,.65,.21),
 };
 

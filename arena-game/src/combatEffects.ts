@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type {SkinEffect,ParticleShape} from './skinEffects.ts';
 import type { Vec3 } from '../shared/map';
 
 /** Presentation ceilings, not gameplay limits. Normal 9-pellet bursts measured
@@ -25,7 +26,7 @@ export function createNumberSurface(): NumberSurface {
 }
 type Life = { life: number; order: number };
 type Tracer = Life & { line: THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>; max: number };
-type Spark = Life & { sprite: THREE.Sprite; max: number; grow: number; moving: boolean; velocity: THREE.Vector3 };
+type Spark = Life & { sprite: THREE.Sprite; max: number; grow: number; moving: boolean; velocity: THREE.Vector3; aspect:number; spin:number; gravity:number };
 type DamageLabel = Life & { sprite: THREE.Sprite; vy: number; surface: NumberSurface; key: string };
 const finitePoint = (point: Vec3) => point.length === 3 && point.every(Number.isFinite);
 
@@ -49,28 +50,63 @@ export class ArenaCombatEffects {
     if (!slot) { slot = slots.reduce((oldest, value) => value.order < oldest.order ? value : oldest); this.recycled[kind]++; }
     slot.order = ++this.sequence; return slot;
   }
-  tracer(from: Vec3, to: Vec3, color: number, width = 1) {
+  tracer(from: Vec3, to: Vec3, color: number, width = 1, style?:SkinEffect) {
     if (this.disposed || !finitePoint(from) || !finitePoint(to) || !Number.isFinite(width)) return;
     const slot = this.acquire(this.tracers, this.budget.tracers, () => {
-      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(99), 3));
       const material = new THREE.LineBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
       const line = new THREE.Line(geometry, material); line.name = 'Arena pooled tracer';
       return { line, life: 0, max: .09, order: 0 };
     }, 'tracers');
     const position = slot.line.geometry.getAttribute('position') as THREE.BufferAttribute;
-    position.setXYZ(0, ...from); position.setXYZ(1, ...to); position.needsUpdate = true;
+    const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),axis=b.clone().sub(a),length=axis.length();
+    const sideways=new THREE.Vector3().crossVectors(axis,new THREE.Vector3(0,1,0));
+    if(sideways.lengthSq()<1e-8)sideways.set(1,0,0);else sideways.normalize();
+    const count=style&&style.trail!=='straight'?33:2;
+    for(let i=0;i<count;i++){
+      const t=i/(count-1),point=a.clone().lerp(b,t),envelope=Math.sin(t*Math.PI)*Math.min(.065,length*.006);
+      const offset=!style||style.trail==='straight'?0:style.trail==='wave'?Math.sin(t*Math.PI*10):style.trail==='pulse'?(i%4<2?1:-1):(i%2?1:-.55);
+      if(i>0&&i<count-1)point.addScaledVector(sideways,envelope*offset);position.setXYZ(i,point.x,point.y,point.z);
+    }
+    for(let i=count;i<position.count;i++)position.setXYZ(i,...to);
+    slot.line.geometry.setDrawRange(0,count);position.needsUpdate = true;
+    slot.max=style?.trail==='wave'?.12:.09;
     // Reused geometry must not retain a previous shot's culling bounds.
     slot.line.geometry.computeBoundingSphere();
     slot.line.material.color.setHex(color); slot.line.material.opacity = .9 * width;
     slot.life = slot.max; this.parent.add(slot.line);
   }
-  burst(at: Vec3, color: number, size: number, life: number, speed: number) {
+  burst(at: Vec3, color: number, size: number, life: number, speed: number, shape?:ParticleShape) {
     if (this.disposed || !finitePoint(at) || ![size, life, speed].every(Number.isFinite) || life <= 0) return;
     const slot = this.acquire(this.sparks, this.budget.sparks, () => {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
-      sprite.name = 'Arena pooled impact'; return { sprite, life: 0, max: 0, grow: 0, moving: false, velocity: new THREE.Vector3(), order: 0 };
+      sprite.material.onBeforeCompile=shader=>{
+        shader.uniforms.phParticleShape={value:0};sprite.material.userData.shapeUniform=shader.uniforms.phParticleShape;
+        shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nuniform float phParticleShape;');
+        shader.fragmentShader=shader.fragmentShader.replace('#include <map_fragment>',`#include <map_fragment>
+         vec2 q=vMapUv*2.0-1.0;float shape=phParticleShape;float r=length(q);
+         if(shape>.5){float mask=1.0;
+          if(shape<1.5)mask=1.0-smoothstep(.65,.95,abs(q.x)+abs(q.y));
+          else if(shape<2.5)mask=smoothstep(.38,.50,r)*(1.0-smoothstep(.68,.86,r));
+          else if(shape<3.5)mask=1.0-smoothstep(.65,.80,max(abs(q.x),abs(q.y)));
+          else if(shape<4.5)mask=1.0-smoothstep(.65,.95,length(vec2(q.x,q.y*1.9)));
+          else mask=1.0-smoothstep(.10,.23,min(abs(q.x),abs(q.y)));
+          diffuseColor=vec4(diffuseColor.rgb,opacity*mask);
+         }`);
+      };
+      sprite.material.customProgramCacheKey=()=> 'arena-skin-particles-v1';
+      sprite.name = 'Arena pooled impact'; return { sprite, aspect:1,spin:0,gravity:9, life: 0, max: 0, grow: 0, moving: false, velocity: new THREE.Vector3(), order: 0 };
     }, 'sparks');
-    slot.sprite.position.set(...at); slot.sprite.scale.setScalar(size * .4);
+    const index=shape?{ember:0,crystal:1,ring:2,pixel:3,petal:4,star:5}[shape]:0;
+    slot.sprite.material.userData.shapeIndex=index;
+    const uniform=slot.sprite.material.userData.shapeUniform;if(uniform)uniform.value=index;
+    // Set on every draw too: the first pooled draw may compile after this call.
+    slot.sprite.onBeforeRender=()=>{const u=slot.sprite.material.userData.shapeUniform;if(u)u.value=slot.sprite.material.userData.shapeIndex;};
+    slot.aspect=shape==='ember'?.35:shape==='petal'?1.6:1;
+    slot.spin=shape==='pixel'?0:shape==='petal'?2.5:shape==='crystal'?1.2:0;
+    slot.gravity=shape==='ring'?-.5:shape==='petal'?1.5:9;
+    slot.sprite.material.rotation=shape==='crystal'?Math.PI/4:0;
+    slot.sprite.position.set(...at); slot.sprite.scale.set(size*.4*slot.aspect,size*.4,1);
     slot.sprite.material.color.setHex(color); slot.sprite.material.opacity = 1;
     slot.life = slot.max = life; slot.grow = size * (speed ? .2 : 2.4); slot.moving = !!speed;
     if (speed) slot.velocity.set(Math.random() - .5, Math.random() * .8 + .2, Math.random() - .5).normalize().multiplyScalar(speed);
@@ -106,8 +142,8 @@ export class ArenaCombatEffects {
     }
     for (const slot of this.sparks) if (slot.life > 0) {
       slot.life -= dt;
-      if (slot.moving) { slot.velocity.y -= 9 * dt; slot.sprite.position.addScaledVector(slot.velocity, dt); }
-      slot.sprite.scale.setScalar(Math.max(.01, slot.sprite.scale.x + slot.grow * dt));
+      if (slot.moving) { slot.velocity.y -= slot.gravity * dt; slot.sprite.position.addScaledVector(slot.velocity, dt); }
+      const size=Math.max(.01,slot.sprite.scale.y+slot.grow*dt);slot.sprite.scale.set(size*slot.aspect,size,1);slot.sprite.material.rotation+=slot.spin*dt;
       slot.sprite.material.opacity = Math.max(0, slot.life / slot.max);
       if (slot.life <= 0) slot.sprite.removeFromParent();
     }
