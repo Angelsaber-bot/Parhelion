@@ -11,6 +11,8 @@ export const SUN_DIR = new THREE.Vector3(-0.45, 0.62, 0.64).normalize(); // from
 
 /** Shared clock for animated shaders (wind, water, clouds); main loop advances it. */
 export const timeUniform = { value: 0 };
+/** Drifting cloud shadows over the land (0 = off). Low quality turns them off; only lit faces dim. */
+export const cloudShadowUniform = { value: 1 };
 
 let gradient: THREE.DataTexture | null = null;
 /** Anime-style ramp: one crisp terminator with a thin soft edge, lifted shadows. */
@@ -44,7 +46,7 @@ type Kind = 'default' | 'terrain' | 'foliage' | 'water';
 /** Cel shading on top of MeshToonMaterial: cool hue-shifted shadows, warm key, fresnel rim, world-space colour breakup. */
 function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
   mat.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = timeUniform;
+    sh.uniforms.uTime = timeUniform; sh.uniforms.uCloud = cloudShadowUniform;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nuniform float uTime;\nvarying vec3 vWPos;`)
       .replace('#include <begin_vertex>', kind === 'foliage' ? `#include <begin_vertex>
@@ -57,7 +59,7 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
         }` : '#include <begin_vertex>')
       .replace('#include <project_vertex>', `#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uCloud;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         ${kind === 'terrain' ? `{
           float n = fbm(vWPos.xz * 0.045);
@@ -79,6 +81,9 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
           outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.78, 0.82, 1.12) + base * vec3(0.03, 0.02, 0.08), sh);
           // warm key light on lit faces
           outgoingLight *= mix(vec3(1.0), vec3(1.05, 1.0, 0.94), 1.0 - sh);
+          // cloud shadows: big soft patches drifting with the wind, dimming and cooling only the lit side
+          float cloud = smoothstep(0.5, 0.68, fbm(vWPos.xz * 0.0105 + vec2(uTime * 0.016, uTime * 0.008))) * uCloud * (1.0 - sh);
+          outgoingLight *= mix(vec3(1.0), vec3(0.74, 0.78, 0.9), cloud);
           vec3 vd = normalize(vViewPosition);
           float fres = pow(1.0 - clamp(dot(normal, vd), 0.0, 1.0), 3.5);
           outgoingLight += vec3(1.0, 0.96, 0.88) * fres * ${kind === 'terrain' ? '0.08' : '0.32'} * (1.0 - 0.6 * sh);

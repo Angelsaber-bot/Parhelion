@@ -78,7 +78,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './fx';
 import { makeRegionWeather } from './regionWeather';
-import { toonMaterial, addOutline, makeSky, timeUniform } from './look';
+import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
 import { WorldMap } from './map';
 import type { Layout, Marker } from './types';
@@ -122,6 +122,7 @@ const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'a
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
+cloudShadowUniform.value = lowQ ? 0 : 1;
 const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 let bootFailed = false, worldExited = false;
 let frameClockInvalid = true;
