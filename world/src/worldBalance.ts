@@ -8,6 +8,8 @@ export const WORLD_RIFLE = Object.freeze({
  /** Field ammo: era-boss arenas feed the rifle from the sun core, everywhere else rounds run out
   *  and the answer is the blade. Settlements refill, chests and kills top it up. */
  ammoMax:90, ammoPerKill:3, ammoChest:30, ammoRespawn:45,
+ /** out of combat the sun-cell trickles a small reserve back, so quest shots can never soft-lock */
+ ammoTrickleCap:12, ammoTrickleEvery:2,
 });
 export function rifleDistanceMultiplier(distance:number){
  if(!Number.isFinite(distance))return 0;

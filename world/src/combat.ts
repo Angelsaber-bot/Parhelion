@@ -218,6 +218,7 @@ export class WorldCombatState {
   ammo: number = WORLD_RIFLE.ammoMax;
   /** Set when a trigger pull found the rifle empty; the view turns it into a hint. */
   dryPulls = 0;
+  private ammoTrickle = 0;
   private gunIdleFor = 0;
   hurtCooldown = 0;
   quietFor = 0;
@@ -541,5 +542,6 @@ export class WorldCombatState {
     }
     this.quietFor = threatened ? 0 : this.quietFor + dt;
     if (this.quietFor > 5) this.hp = Math.min(COMBAT.playerHp, this.hp + dt * 10);
+    if (this.quietFor > 5 && this.ammo < WORLD_RIFLE.ammoTrickleCap) { this.ammoTrickle += dt; if (this.ammoTrickle >= WORLD_RIFLE.ammoTrickleEvery) { this.ammoTrickle = 0; this.ammo++; } } else this.ammoTrickle = 0;
   }
 }
