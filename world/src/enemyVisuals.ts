@@ -5,6 +5,7 @@ import {createEchoWardenVisual} from './echoWardenVisual';
 import { createShieldKit } from './shieldbearerVisual';
 import { createShinobiKit } from './shinobiVisual';
 import { createPowderKit } from './powderVisual';
+import { createJaegerKit } from './jaegerVisual';
 import { GLTFLoader, type GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -58,6 +59,7 @@ export class EnemyVisuals {
   private shieldKit?: ReturnType<typeof createShieldKit>;
   private shinobiKit?: ReturnType<typeof createShinobiKit>;
   private powderKit?: ReturnType<typeof createPowderKit>;
+  private jaegerKit?: ReturnType<typeof createJaegerKit>;
   private retries = new Map<string, { attempts: number; after: number }>();
   private now = 0;
   get activeMixers() { return this.instances.size; }
@@ -119,7 +121,7 @@ export class EnemyVisuals {
       // Prime immutable contact sockets in presentation, never in a fixed AI tick.
       if(model==='musketeer')nativeMusketeerContactMuzzle(gltf);
       parent.add(root);
-      instance = { shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : e.role === 'powder' && model === 'deck_raider' ? (this.powderKit ??= createPowderKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
+      instance = { shield: e.role === 'shieldbearer' && model === 'sunward_guard' ? (this.shieldKit ??= createShieldKit()).attach(root) : undefined, gear: e.role === 'shinobi' && model === 'samurai' ? (this.shinobiKit ??= createShinobiKit()).attach(root) : e.role === 'powder' && model === 'deck_raider' ? (this.powderKit ??= createPowderKit()).attach(root) : e.role === 'jaeger' && model === 'musketeer' ? (this.jaegerKit ??= createJaegerKit()).attach(root) : undefined, insignia:e.storyPattern==='echo-warden'?createEchoWardenVisual(root):undefined, root, mixer: new THREE.AnimationMixer(root), gltf, key, state: '', acting: createEnemyAttackActing(root, gltf.scene, model) };
       this.instances.set(e.id, instance);
     }
     fallback.visible = !instance;
@@ -160,6 +162,6 @@ export class EnemyVisuals {
     if (this.disposed) return; this.disposed = true;
     for (const id of this.instances.keys()) this.release(id);
     for (const gltf of this.cache.values()) if (gltf) disposeTemplate(gltf);
-    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined;
+    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined; this.jaegerKit?.dispose(); this.jaegerKit = undefined;
   }
 }

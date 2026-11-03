@@ -1,0 +1,16 @@
+<!doctype html><html><body style="margin:0;background:#9fb4c8"><script type="module">
+import * as THREE from 'three';
+import { createSettlementNpcs } from '/src/settlements/npcs.ts';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(innerWidth, innerHeight); document.body.append(r.domElement);
+const s = new THREE.Scene(); s.background = new THREE.Color(0x9fb4c8);
+s.add(new THREE.HemisphereLight(0xffffff, 0x556070, 1.5)); const d = new THREE.DirectionalLight(0xffffff, 2.1); d.position.set(3, 5, 4); s.add(d);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, .1, 60);
+const regions = ['alpha','britain','blacksail','winter','kyoto'];
+const roles = [['驻地管家','Residence steward'],['铁匠','Blacksmith'],['港务员','Harbor clerk'],['军医','Medic'],['旅籠老板','Innkeeper']];
+const sockets = regions.map((region,i)=>({id:region,region,role:roles[i],position:[(i-2)*1.25,0,0],lines:[['x','x']]}));
+const sys = createSettlementNpcs(sockets); s.add(sys.group); sys.update(.016, new THREE.Vector3(0,1,30));
+const v = new URLSearchParams(location.search).get('v')||'all';
+if (v === 'face') { cam.position.set(-2.5, 1.62, 1.1); cam.lookAt(-2.5, 1.45, 0); }
+else { cam.position.set(0, 1.1, 6.4); cam.lookAt(0, .95, 0); }
+r.render(s, cam); window.done = true;
+</script></body></html>
