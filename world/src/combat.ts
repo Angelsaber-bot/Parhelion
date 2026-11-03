@@ -23,6 +23,7 @@ export type CombatEvent =
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
+  | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
   | { type: 'victory'; id: string; firstClear: boolean }
@@ -501,6 +502,8 @@ export class WorldCombatState {
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
           if (this.defeated) return;
+          // The keg blast also stuns its carrier: a long recovery is the punish window.
+          if (e.role === 'powder' && !e.miniboss && e.kind !== 'king' && !e.storyPattern) this.events.push({ type: 'explode', id: e.id, at: clone(e.p) });
           e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery;
         }
         continue;

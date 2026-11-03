@@ -460,6 +460,9 @@ export class WorldCombat {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
+      } else if (event.type === 'explode') {
+        for (const [dx, dz] of [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]]) this.spark(new THREE.Vector3(event.at.x + dx, event.at.y + .8, event.at.z + dz), .5);
+        this.impact.textContent = bilingual('火药桶 · 轰！', 'POWDER KEG · BOOM!'); this.impactFor = .8;
       } else if (event.type === 'blink') {
         this.spark(new THREE.Vector3(event.from.x, event.from.y + 1, event.from.z), .35); this.spark(new THREE.Vector3(event.to.x, event.to.y + 1, event.to.z), .35);
         this.impact.textContent = bilingual('影忍 · 背后！', 'SHINOBI · BEHIND!'); this.impactFor = .7;

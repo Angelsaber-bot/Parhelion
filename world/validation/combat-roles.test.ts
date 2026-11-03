@@ -15,7 +15,7 @@ function advance(s: WorldCombatState, seconds: number, player: Point3) {
 }
 function armed(e: Enemy) { e.active = true; e.mode = 'windup'; e.timer = .01; e.attack = 'sweep'; }
 
-test('eight stable roles diversify existing regional IDs without adding population or health', () => {
+test('nine stable roles diversify existing regional IDs without adding population or health', () => {
   const roles = new Set<EnemyRole>();
   for (const home of [p(0), p(-720), p(720), p(0, -720), p(0, 720)]) {
     for (let i = 0; i < 20; i++) {
@@ -23,7 +23,7 @@ test('eight stable roles diversify existing regional IDs without adding populati
       const role = selectEnemyRole(spec); assert.equal(selectEnemyRole(spec), role); roles.add(role);
     }
   }
-  assert.equal(roles.size, 8);
+  assert.equal(roles.size, 9);
   assert.equal(COMBAT.wildernessCap, 160);
   const s = new WorldCombatState([{ id: 'a', kind: 'shade', p: p(0) }, { id: 'b', kind: 'crystal', p: p(20) }], []);
   assert.deepEqual(s.enemies.map(e => e.maxHp), [66, 88], 'no sponge inflation');
@@ -198,4 +198,17 @@ test('业火京都 shinobi: vanishes behind the player, gives a readable cut and
   assert.ok((e.blinkCooldown ?? 0) > 6);
   e.mode = 'chase'; e.timer = 0; e.p = p(0); s.step(.05, player, true, terrain);
   assert.notEqual(e.mode, 'windup', 'no second blink while on cooldown');
+});
+
+test('黑帆尽头 powder monkey: a long lit fuse, a wide blast that stuns its carrier', () => {
+  const { s, e } = setup('powder'); e.active = true; e.mode = 'chase';
+  const near = p(1.5); s.step(.05, near, true, terrain);
+  assert.equal(e.mode, 'windup'); assert.ok(e.timer >= 1.5, 'long readable fuse');
+  for (let i = 0; i < 40 && e.mode === 'windup'; i++) s.step(.05, near, true, terrain);
+  const ev = s.drainEvents();
+  assert.ok(ev.some(x => x.type === 'explode')); assert.ok(!ev.some(x => x.type === 'kill'));
+  assert.ok(ev.some(x => x.type === 'hurt' && x.damage === 24)); assert.equal(e.mode, 'recover'); assert.ok(e.timer > 2.4, 'stunned by its own blast');
+  const s2 = setup('powder'); s2.e.active = true; s2.e.mode = 'chase'; s2.s.step(.05, p(1.5), true, terrain);
+  for (let i = 0; i < 40 && s2.e.mode === 'windup'; i++) s2.s.step(.05, p(5), true, terrain);
+  assert.equal(s2.s.hp, 100, 'running out of the ring is safe');
 });
