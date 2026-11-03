@@ -1,0 +1,63 @@
+/** Champion regalia: every chapter boss must be told apart by silhouette, not by its health bar. */
+import assert from 'node:assert/strict';
+import { test } from 'node:test';
+import * as THREE from 'three';
+import { BOSSES } from '../src/combat.ts';
+import { BOSS_REGALIA_IDS, hasBossRegalia, createBossRegaliaKit, type BossRegaliaId } from '../src/bossRegaliaVisual.ts';
+
+/** Stand-in for the authored rig: the bones the kits pin regalia to, in their bind-pose places. */
+function rig() {
+  const root = new THREE.Group(); root.name = 'ChampionRig';
+  const pelvis = new THREE.Bone(); pelvis.name = 'pelvis'; pelvis.position.y = .91;
+  const chest = new THREE.Bone(); chest.name = 'chest'; chest.position.y = .36;
+  const head = new THREE.Bone(); head.name = 'head'; head.position.y = .28;
+  chest.add(head); pelvis.add(chest); root.add(pelvis); root.updateMatrixWorld(true);
+  return root;
+}
+const count = (o: THREE.Object3D) => { let n = 0; o.traverse(x => { if ((x as THREE.Mesh).isMesh) n++; }); return n; };
+
+test('every chapter boss has its own regalia', () => {
+  for (const boss of BOSSES) assert.ok(hasBossRegalia(boss.id), `${boss.id} has no regalia`);
+  assert.equal(BOSS_REGALIA_IDS.length, BOSSES.length);
+});
+
+test('regalia pins to the head and chest bones and carries real detail', () => {
+  for (const id of BOSS_REGALIA_IDS) {
+    const kit = createBossRegaliaKit(id), actor = rig();
+    const worn = kit.attach(actor);
+    assert.ok(worn, `${id} did not attach`);
+    const head = actor.getObjectByName('head')!, chest = actor.getObjectByName('chest')!;
+    // Nothing may be left parented to the actor root: bones carry the regalia so it follows the animation.
+    assert.equal(actor.children.filter(o => o.userData.visualOnly).length, 0, `${id} left regalia off the bones`);
+    const onBones = count(head) + count(chest);
+    assert.ok(onBones >= 20, `${id} regalia is too plain: ${onBones} meshes`);
+    assert.ok(onBones <= 140, `${id} regalia is too heavy: ${onBones} meshes`);
+    // Regalia sits on the authored silhouette, never inside the floor or out past arm's reach.
+    const box = new THREE.Box3();
+    for (const g of [...head.children, ...chest.children]) if (g.userData.visualOnly) box.expandByObject(g);
+    assert.ok(box.min.y > .78, `${id} regalia drags on the ground (${box.min.y.toFixed(2)})`);
+    assert.ok(box.max.y < 2.4, `${id} regalia towers over the champion (${box.max.y.toFixed(2)})`);
+    assert.ok(box.max.x < .5 && box.min.x > -.5, `${id} regalia sticks out past the arms`);
+    worn!.remove();
+    assert.equal(count(head) + count(chest), 0, `${id} regalia survived remove()`);
+    kit.dispose();
+  }
+});
+
+test('regalia animates without touching the simulation', () => {
+  for (const id of BOSS_REGALIA_IDS) {
+    const kit = createBossRegaliaKit(id), actor = rig();
+    const worn = kit.attach(actor)!;
+    const enemy = Object.freeze({ mode: 'windup' });
+    for (let t = 0; t < 4; t += .25) worn.update?.(enemy, t);
+    worn.update?.(Object.freeze({ mode: 'idle' }), 4);
+    worn.remove(); kit.dispose();
+  }
+});
+
+test('an unknown champion gets no regalia', () => {
+  assert.equal(hasBossRegalia('wild_3b'), false);
+  assert.equal(hasBossRegalia('elite_oath_knight'), false);
+  const ids: readonly string[] = BOSS_REGALIA_IDS as readonly BossRegaliaId[];
+  assert.equal(new Set(ids).size, ids.length);
+});

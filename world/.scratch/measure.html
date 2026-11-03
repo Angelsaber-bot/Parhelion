@@ -1,0 +1,15 @@
+<!doctype html><html><body><script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+const l = new GLTFLoader(); l.setMeshoptDecoder(MeshoptDecoder);
+for (const n of ['sunward_guard','deck_raider','officer','samurai','musketeer']) {
+  const g = await l.loadAsync(`/assets/enemies/${n}.glb`);
+  g.scene.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(g.scene);
+  const o = {};
+  for (const b of ['head','chest','pelvis','handL','forearmL']) { const x = g.scene.getObjectByName(b); if (x) o[b] = x.getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(3)); }
+  console.log(n, 'box', box.min.toArray().map(v=>+v.toFixed(2)).join(','), '->', box.max.toArray().map(v=>+v.toFixed(2)).join(','), JSON.stringify(o));
+}
+window.done = true;
+</script></body></html>

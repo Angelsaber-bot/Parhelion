@@ -29,7 +29,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -370,6 +370,8 @@ export class WorldCombat {
       const distance = distanceXZ(e.p, player);
       v.root.visible = visible(e);
       const skinned = v.model ? this.enemyAssets.update(e, v.model, v.body, v.fallback, active ? dt : 0, distance, v.root.visible && detailed.has(e.id)) : false;
+      // The authored champion carries its own regalia; the procedural crest is the fallback's.
+      if (v.crown) v.crown.visible = !skinned;
       v.root.position.set(e.p.x, e.p.y, e.p.z);
       if (!v.root.visible) { v.tell.visible = false; v.lastMode = e.mode; continue; }
       v.lastMode = e.mode;
@@ -551,6 +553,7 @@ export class WorldCombat {
     const updateCreature = fallback.userData.updateCreature as EnemyVisual['updateCreature'];
     // Region-specific champions replace every old procedural purple chapter boss.
     // Scale keeps the authored human champion near the existing king hit sphere/height.
+    let bodyCrown: THREE.Group | undefined;
     if (king) {
       body.scale.setScalar(1.8);
       const crown = new THREE.Group(); crown.name = 'Champion_Gold_Crest'; crown.position.y = 2;
@@ -562,6 +565,7 @@ export class WorldCombat {
         tooth.position.set(Math.cos(a)*.25,.08,Math.sin(a)*.25);crown.add(tooth);
       }
       body.add(crown);
+      bodyCrown = crown;
     }
     const sword = undefined;
     const bar = new THREE.Group(); bar.position.y = king ? 4.1 : 2.25; root.add(bar);
@@ -644,7 +648,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
