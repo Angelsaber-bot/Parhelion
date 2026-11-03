@@ -25,6 +25,7 @@ function scope(s:Sculpture,r=.10){
  const g=new THREE.LatheGeometry(profile.map(([radius,x])=>new THREE.Vector2(radius,x)),28);g.rotateZ(-Math.PI/2);
  s.mesh(g,s.dark,[0,y,z],'optic');
  for(const at of[a+.035,a+.16,b-.12,b-.025])s.ring(r*1.13,.012,[at,y,z],s.metal,'optic','x');
+ for(let i=0;i<16;i++){const t=i/16*Math.PI*2,cy=y+Math.cos(t)*r*1.32,cz=z+Math.sin(t)*r*1.32;s.rod([a+.017,cy,cz],[a+.052,cy,cz],.0035,s.metal,'optic',.0035,6);}
  s.box([.12,.045,.12],[x+.30,y+r+.015,z],s.metal,'optic');
 }
 function gear(s:Sculpture,x:number,y:number,z:number,r:number,teeth:number,m:THREE.Material=s.metal,depth=.018){
@@ -56,6 +57,8 @@ export function gravitonRifle(s:Sculpture){
  grip(s);
  // Open receiver with a nested three-axis reactor; armor never covers its core.
  s.box([1.48,.075,.27],[.08,.57,0],s.dark);
+ for(const side of[-1,1])s.outline([[-.58,.612,side*.095],[-.21,.612,side*.095],[.55,.612,side*.095]],.0065,s.metal);
+ for(let i=0;i<6;i++)s.box([.032,.010,.13],[-.48+i*.18,.613,0],i%3===0?s.glow:s.dark,'body',.002);
  s.plate([[-.76,.09],[-.53,.22],[-.20,.13],[.44,.13],[.74,.25],[1.02,.16],[.88,.015],[-.47,-.015]],.24,[0,0,0]);
  s.box([1.37,.075,.22],[.13,.055,0],s.metal);
  for(const side of[-1,1]){
@@ -105,7 +108,7 @@ export function koiSmg(s:Sculpture){
  s.plate([[-.67,.32],[-1.20,.55],[-1.12,.28],[-1.20,.03],[-.65,.20]],.15,[0,0,0],s.coat,'stock',.009,true);
  for(const side of[-1,1])for(let i=0;i<3;i++)s.outline([[-.72,.28,side*.08],[-1.09,.11+i*.16,side*.09]],.012,i===1?s.metal:s.glow,'stock');
  s.plate([[-.23,.49],[-.04,.67],[.21,.62],[.39,.49]],.055,[0,0,0],s.glow,'body',.006,true);
- for(let i=0;i<4;i++)s.rod([-.12+i*.1,.51,0],[-.06+i*.09,.59,0],.007,s.metal);
+ for(const side of[-1,1])for(let i=0;i<4;i++)s.rod([-.12+i*.1,.515,side*.035],[-.06+i*.09,.59,side*.035],.006,s.metal);
  s.plate([[.06,.12],[.31,.10],[.41,-.40],[.28,-.48],[.07,-.42]],.18,[0,0,0],s.dark,'magazine',.009);
  for(const side of[-1,1])s.plate([[.12,.01],[.25,-.01],[.31,-.36],[.16,-.36]],.012,[0,0,side*.103],s.glow,'magazine',.006,true);
  s.grip([.70,.05,0],[.70,-.25,0],.058,'fore_end');
@@ -136,6 +139,7 @@ export function owlMarksman(s:Sculpture){
  for(const side of[-1,1])s.outline([[.17,.04,side*.10],[.24,-.23,side*.11],[.31,.01,side*.10]],.008,s.metal,'magazine');
  s.rod([.62,.33,0],[1.50,.33,0],.048,s.dark);bore(s,1.47,1.817,.33,.073);
  for(const x of[.86,1.14,1.43])s.ring(.073,.013,[x,.33,0],s.metal,'body','x');
+ for(let i=0;i<4;i++)s.plate([[-.06,0],[.065,.018],[.12,-.012],[-.01,-.024]],.16,[-.63+i*.19,.53,0],s.metal,'body',.004);
  s.box([.28,.055,.055],[-.43,.51,-.20],s.metal,'bolt');scope(s,.087);
 }
 

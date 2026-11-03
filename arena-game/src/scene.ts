@@ -29,6 +29,9 @@ import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt
 import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
+import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
+import {lightWeaponScene,renderHeldWeapon} from './weaponLighting.ts';
+import {firearmIdlePose} from './weaponPose.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -63,22 +66,12 @@ export class ArenaScene {
   private blackflagEffects: BlackflagEffects | null = null;
   private chapterEffects: ChapterEffects | null = null;
   private bufferSize = new THREE.Vector2();
-  // Adaptive resolution: drop the pixel ratio when frames run long, creep back when there is headroom.
-  private basePixelRatio = 1;
-  private renderScale = 1;
-  private frameMs = 1000 / 60;
-  private lastFrame = 0;
-  private nextAdapt = 0;
-  private fastChecks = 0;
-  private raiseWait = 8;
-  private lastRaise = -Infinity;
   private atmo: Atmosphere = atmosphereFor('day');
 
-  constructor(canvas: HTMLCanvasElement, private readonly quality: 'high' | 'low' = 'high') {
+  constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'high') {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
-    this.basePixelRatio = Math.min(devicePixelRatio, quality === 'high' ? 1.75 : 1);
-    r.setPixelRatio(this.basePixelRatio);
+    r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
     r.toneMappingExposure = 1.05;
@@ -110,26 +103,29 @@ export class ArenaScene {
     this.camera.rotation.order = 'YXZ';
     s.add(this.muzzleLight); // always present (intensity 0 when idle) so firing never recompiles shaders
 
-    this.vmScene.add(new THREE.HemisphereLight(0xffffff, 0x445566, 2.2));
-    const key = new THREE.DirectionalLight(0xfff0dd, 2.2);
-    key.position.set(1, 2, 1);
-    this.vmScene.add(key, this.viewmodel.root);
-
-    if (quality === 'high') {
-      // bloom makes emissive trims, lanterns and neon glow; the viewmodel is drawn after it, unbloomed
-      // the composer's targets carry a depth texture so the outline pass can read scene depth
-      const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, depthTexture: new THREE.DepthTexture(1, 1) });
-      this.composer = new EffectComposer(r, rt);
-      this.composer.addPass(new RenderPass(s, this.camera));
-      this.outline = new OutlinePass(this.camera);
-      this.composer.addPass(this.outline);
-      this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.3, 0.55, 0.82);
-      this.composer.addPass(this.bloom);
-      this.composer.addPass(new OutputPass());
-    }
+    lightWeaponScene(this.vmScene);this.vmScene.add(this.viewmodel.root);
+    this.configureQuality();
 
     this.resize();
     addEventListener('resize', () => this.resize());
+  }
+
+  private configureQuality(){
+    const r=this.renderer;
+    this.composer?.passes.forEach(pass=>pass.dispose());this.composer?.dispose();
+    this.composer=null;this.bloom=null;this.outline=null;
+    r.shadowMap.enabled=this.quality==='high';r.shadowMap.needsUpdate=true;
+    if(this.quality==='high'){
+      const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:Math.min(4,r.capabilities.maxSamples)});
+      this.composer=new EffectComposer(r,rt);this.composer.addPass(new RenderPass(this.scene,this.camera));
+      this.outline=new OutlinePass(this.camera);this.composer.addPass(this.outline);
+      this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold);this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
+    }
+  }
+  /** Live quality changes do not replace the match, map or weapon selection. */
+  setQuality(quality:GraphicsQuality){
+    if(quality===this.quality)return;
+    this.quality=quality;this.configureQuality();this.resize();
   }
 
   /** Apply a map's lighting mood: sky, fog, sun, ambient, exposure, bloom and ambient particles. */
@@ -205,7 +201,9 @@ export class ArenaScene {
 
   resize() {
     const w = innerWidth, h = innerHeight;
+    this.renderer.setPixelRatio(graphicsPixelRatio(this.quality,devicePixelRatio,w,h));
     this.renderer.setSize(w, h);
+    this.viewmodel.aspect=w/h;
     this.camera.aspect = this.vmCamera.aspect = w / h;
     this.camera.updateProjectionMatrix();
     this.vmCamera.updateProjectionMatrix();
@@ -374,40 +372,14 @@ export class ArenaScene {
     this.chapterEffects?.update(dt);
   }
 
-  /** Hold ~60 fps: under ~50 fps shrink the drawing buffer (to 0.55 of base, never under 0.75 px/pt);
-   * after several smooth seconds grow it back. A grow that drops again waits twice as long next time. */
-  private adaptResolution() {
-    const now = performance.now(), dt = now - this.lastFrame;
-    this.lastFrame = now;
-    if (dt > 0 && dt < 100 && !document.hidden) this.frameMs += (dt - this.frameMs) * 0.05; // skip load hitches
-    if (now < this.nextAdapt) return;
-    this.nextAdapt = now + 1000;
-    const min = Math.min(1, Math.max(0.55, 0.75 / this.basePixelRatio));
-    let s = this.renderScale;
-    if (this.frameMs > 20 && s > min) {
-      s = Math.max(min, s - 0.15);
-      if (now - this.lastRaise < 5000) this.raiseWait = Math.min(64, this.raiseWait * 2);
-      this.fastChecks = 0;
-    } else if (this.frameMs < 17.5 && s < 1) {
-      if (++this.fastChecks >= this.raiseWait) { s = Math.min(1, s + 0.1); this.fastChecks = 0; this.lastRaise = now; }
-    } else this.fastChecks = 0;
-    if (s === this.renderScale) return;
-    this.renderScale = s;
-    this.renderer.setPixelRatio(this.basePixelRatio * s);
-    this.frameMs = 1000 / 60;
-    this.resize();
-  }
-
   render(showViewmodel: boolean) {
     const r = this.renderer;
-    this.adaptResolution();
     r.clear();
     this.chapterEffects?.sync(this.camera, r.getDrawingBufferSize(this.bufferSize).y, this.scene.fog as THREE.Fog);
     if (this.composer) this.composer.render();
     else r.render(this.scene, this.camera);
     if (showViewmodel) {
-      r.clearDepth();
-      r.render(this.vmScene, this.vmCamera);
+      renderHeldWeapon(r,this.vmScene,this.vmCamera);
     }
   }
 }
@@ -516,6 +488,7 @@ export class Viewmodel {
   private shells: { m: THREE.Mesh; v: THREE.Vector3; spin: THREE.Vector3; life: number }[] = [];
   private shellGeo = new THREE.CylinderGeometry(0.008, 0.008, 0.028, 6);
   private shellMat = celMaterial({ color: 0xe6b55a, emissive: 0x3a2400 });
+  aspect=16/9;
   reloading = 0; // 0..1 progress, set by game
   moving = 0;
   aim = 0;
@@ -603,8 +576,9 @@ export class Viewmodel {
     const bobY = Math.sin(this.stride.phase * 2) * 0.006 * this.stride.weight, bobX = Math.cos(this.stride.phase) * 0.008 * this.stride.weight;
     const rel = Math.sin(this.reloading * Math.PI);
     const kick = this.kick;
-    this.gun.position.set(0.17 + bobX - this.sway[0], -0.16 + bobY - this.swap * 0.2 - rel * 0.1 + this.sway[1] * 0.6 + kick * 0.012, -0.4 + kick * 0.06);
-    this.gun.rotation.set(kick * 0.16 + rel * 0.6, 0.04 + this.sway[0] * 1.5, rel * 0.4 - kick * 0.03 + this.sway[0] * 0.8);
+    const held=firearmIdlePose(this.weapon,this.aspect);
+    this.gun.position.set(held.x + bobX - this.sway[0], held.y + bobY - this.swap * 0.2 - rel * 0.1 + this.sway[1] * 0.6 + kick * 0.012, held.z + kick * 0.06);
+    this.gun.rotation.set(kick * 0.16 + rel * 0.6, held.yaw + this.sway[0] * 1.5, held.roll + rel * 0.4 - kick * 0.03 + this.sway[0] * 0.8);
     // At full ADS the authored optic axis runs through the centre of the view camera.
     if (this.presentation) {
       const sight = this.presentation.sight;

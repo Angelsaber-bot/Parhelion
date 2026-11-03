@@ -3,10 +3,11 @@
  * this instance and no original GLB is downloaded for these modeled finishes. */
 import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
-import {mergeGeometries,mergeVertices} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import {signatureOf,signatureModelOf,type SignatureStyle} from '../shared/signatureSkins.ts';
+import {mergeGeometries,mergeVertices,toCreasedNormals} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import {signatureOf,signatureModelOf,type SignatureStyle,type SignatureId} from '../shared/signatureSkins.ts';
 import type {ArtDef,ArtInstance} from './weaponArt.ts';
 import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
+import {refineWeaponMaterial} from './weaponSurface.ts';
 
 export type V=readonly[number,number,number];
 export type P=readonly[number,number];
@@ -16,10 +17,10 @@ export class Sculpture{
  constructor(readonly def:ArtDef,readonly style:SignatureStyle){
   this.root.name=`Sculpture_${style.id}`;this.root.userData.structuralSkin=style.id;this.asset.name=`${def.file}_ROOT`;this.root.add(this.asset);
   this.coat=new THREE.MeshPhysicalMaterial({name:'Sculpt_coat',color:style.body,metalness:style.metal,roughness:style.rough,clearcoat:1,clearcoatRoughness:.19,iridescence:style.iris});
-  this.metal=new THREE.MeshPhysicalMaterial({name:'Sculpt_metal',color:style.trim,metalness:.82,roughness:.26,clearcoat:.5});
+  this.metal=new THREE.MeshPhysicalMaterial({name:style.model==='confection'?'Sculpt_candy_trim':'Sculpt_metal',color:style.trim,metalness:style.model==='confection'?.18:.82,roughness:style.model==='confection'?.34:.26,clearcoat:.5});
   this.dark=new THREE.MeshStandardMaterial({name:'Sculpt_frame',color:style.shadow??0x132a2b,metalness:.4,roughness:.48});
   this.glow=new THREE.MeshPhysicalMaterial({name:'Sculpt_glow',color:style.accent,emissive:style.accent,emissiveIntensity:.18,metalness:.2,roughness:.22,clearcoat:1});
-  this.soft=new THREE.MeshStandardMaterial({name:'Sculpt_grip',color:style.model==='confection'?0xc1a4bb:0x263744,roughness:.85,metalness:.03});
+  this.soft=new THREE.MeshStandardMaterial({name:'Sculpt_grip',color:style.model==='confection'?0xbe9cad:style.model==='bamboo'?0x243c31:style.model==='butterfly'?0x3b365b:style.model==='chronograph'?0x352c2b:style.model==='maw'?0x293c34:0x26313e,roughness:.85,metalness:.03});
   this.pearl=new THREE.MeshPhysicalMaterial({name:'Sculpt_pearl',color:0xf2e9d1,metalness:.13,roughness:.27,clearcoat:1});
   for(const material of [this.coat,this.metal,this.dark,this.glow,this.soft,this.pearl])material.userData.finish=style.id;
  }
@@ -27,11 +28,18 @@ export class Sculpture{
  mesh(g:THREE.BufferGeometry,m:THREE.Material,p:V=[0,0,0],role='body',rotation:V=[0,0,0]){const mesh=new THREE.Mesh(g,m);mesh.position.fromArray(p);mesh.rotation.set(...rotation);mesh.castShadow=true;mesh.receiveShadow=true;this.part(role).add(mesh);return mesh;}
  box(size:V,p:V,m:THREE.Material=this.coat,role='body',round=.025){return this.mesh(new RoundedBoxGeometry(...size,2,Math.min(round,...size.map(n=>n*.35))),m,p,role);}
  rod(a:V,b:V,r:number,m:THREE.Material=this.metal,role='body',top=r,segments=12){const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),d=end.clone().sub(start);const mesh=this.mesh(new THREE.CylinderGeometry(top,r,d.length(),segments),m,start.clone().add(end).multiplyScalar(.5).toArray()as[number,number,number],role);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return mesh;}
- sphere(r:number,p:V,m:THREE.Material=this.glow,scale:V=[1,1,1],role='body'){const mesh=this.mesh(new THREE.SphereGeometry(r,16,10),m,p,role);mesh.scale.fromArray(scale);return mesh;}
- ring(r:number,t:number,p:V,m:THREE.Material=this.metal,role='body',axis:'x'|'z'='z'){return this.mesh(new THREE.TorusGeometry(r,t,6,28),m,p,role,axis==='x'?[0,Math.PI/2,0]:[0,0,0]);}
+ sphere(r:number,p:V,m:THREE.Material=this.glow,scale:V=[1,1,1],role='body'){const mesh=this.mesh(new THREE.SphereGeometry(r,24,16),m,p,role);mesh.scale.fromArray(scale);return mesh;}
+ ring(r:number,t:number,p:V,m:THREE.Material=this.metal,role='body',axis:'x'|'z'='z'){return this.mesh(new THREE.TorusGeometry(r,t,8,40),m,p,role,axis==='x'?[0,Math.PI/2,0]:[0,0,0]);}
  outline(points:V[],r:number,m:THREE.Material=this.metal,role='body'){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return this.mesh(new THREE.TubeGeometry(curve,Math.max(12,Math.min(128,points.length*6)),r,6,false),m,[0,0,0],role);}
- plate(points:P[],depth:number,p:V,m:THREE.Material=this.coat,role='body',bevel=.007,smooth=false){const contour=smooth?new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p,0)),true).getPoints(points.length*4).map(p=>[p.x,p.y]as P):points;const shape=new THREE.Shape();shape.moveTo(...contour[0]);for(const point of contour.slice(1))shape.lineTo(...point);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:1});g.translate(0,0,-depth/2);return this.mesh(g,m,p,role);}
- grip(a:V,b:V,r:number,role='body'){this.rod(a,b,r,this.soft,role);const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b);for(let i=1;i<7;i++){const p=start.clone().lerp(end,i/7);const ring=this.mesh(new THREE.TorusGeometry(r*1.01,.009,4,16),this.metal,p.toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),end.clone().sub(start).normalize());}}
+ plate(points:P[],depth:number,p:V,m:THREE.Material=this.coat,role='body',bevel=.007,smooth=false){const contour=smooth?new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p,0)),true).getPoints(points.length*4).map(p=>[p.x,p.y]as P):points;const shape=new THREE.Shape();shape.moveTo(...contour[0]);for(const point of contour.slice(1))shape.lineTo(...point);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:2});g.translate(0,0,-depth/2);const rounded=toCreasedNormals(g,Math.PI/3);if(rounded!==g)g.dispose();return this.mesh(rounded,m,p,role);}
+ grip(a:V,b:V,r:number,role='body'){
+  this.rod(a,b,r,this.soft,role);const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),axis=end.clone().sub(start).normalize();
+  const u=new THREE.Vector3(Math.abs(axis.y)>.9?1:0,Math.abs(axis.y)>.9?0:1,0).cross(axis).normalize(),v=axis.clone().cross(u).normalize();
+  const melee=['blade','polearm','hammer'].includes(this.style.weapon);
+  if(melee){for(const sign of[-1,1]){const points:V[]=Array.from({length:73},(_,i)=>{const t=i/72,angle=t*Math.PI*12*sign,p=start.clone().lerp(end,t).addScaledVector(u,Math.cos(angle)*r*1.035).addScaledVector(v,Math.sin(angle)*r*1.035);return p.toArray()as[number,number,number];});this.outline(points,.0055,this.style.model==='confection'?this.coat:this.soft,role);}}
+  else for(let i=1;i<10;i++){const p=start.clone().lerp(end,i/10),ring=this.mesh(new THREE.TorusGeometry(r*1.012,.0038,4,20),this.soft,p.toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);}
+  for(const t of [.035,.965]){const ring=this.mesh(new THREE.TorusGeometry(r*1.02,.006,6,24),this.metal,start.clone().lerp(end,t).toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);}
+ }
  gunSight(){const p=this.def.sight;if(!p)return;this.box([.19,.10,.19],[p[0],p[1]-.135,p[2]],this.dark,'optic');this.ring(.082,.018,p as[number,number,number],this.metal,'optic','x');}
  finish():ArtInstance{
   this.part();
@@ -40,7 +48,7 @@ export class Sculpture{
   for(const part of Object.values(this.parts)){
    const batches=new Map<THREE.Material,THREE.BufferGeometry[]>();
    for(const child of [...part.children]){const mesh=child as THREE.Mesh;mesh.updateMatrix();const copy=mesh.geometry.clone().applyMatrix4(mesh.matrix);const g=copy.index?copy.toNonIndexed():copy;if(g!==copy)copy.dispose();if(!g.getAttribute('uv'))g.setAttribute('uv',new THREE.Float32BufferAttribute(new Float32Array(g.getAttribute('position').count*2),2));const material=mesh.material as THREE.Material;const list=batches.get(material)??[];list.push(g);batches.set(material,list);mesh.removeFromParent();mesh.geometry.dispose();}
-   for(const [material,geometries]of batches){const merged=mergeGeometries(geometries,false)!,geometry=mergeVertices(merged,1e-5);merged.dispose();geometries.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,material);mesh.name=`${part.name}_${material.name}`;mesh.castShadow=true;mesh.receiveShadow=true;part.add(mesh);}
+   for(const [material,geometries]of batches){refineWeaponMaterial(material,this.style.id as SignatureId);const merged=mergeGeometries(geometries,false)!,geometry=mergeVertices(merged,1e-5);merged.dispose();geometries.forEach(g=>g.dispose());const mesh=new THREE.Mesh(geometry,material);mesh.name=`${part.name}_${material.name}`;mesh.castShadow=true;mesh.receiveShadow=true;part.add(mesh);}
   }
   this.root.updateMatrixWorld(true);return{root:this.root,parts:this.parts};
  }
@@ -64,6 +72,7 @@ function beastGun(s:Sculpture){
   for(let i=0;i<3;i++)s.outline([[-.65+i*.12,.38,side*.18],[-.56+i*.12,.31,side*.20],[-.63+i*.12,.22,side*.18]],.008,s.dark);
   for(let i=0;i<5;i++)s.plate([[0,0],[.11,.075],[.23,0],[.11,-.025]],.008,[.41+i*.20,.52-i*.018,side*.16],s.dark);
  }
+ for(let i=0;i<5;i++){const x=.32+i*.20,y=.615-i*.015;s.plate([[0,0],[.09,.045],[.19,.005],[.09,-.018]],.06,[x,y,0],i%2?s.dark:s.coat,'body',.005);}
  s.box([.30,.06,.06],[-.38,.48,-.23],s.metal,'bolt');s.gunSight();
 }
 
@@ -83,6 +92,7 @@ function butterflySword(s:Sculpture){
    s.sphere(.027,[.02,sign*.15,side*.091],s.glow,[1,1,.35]);
   }
  }
+ for(const sign of[-1,1])s.outline([[.25,sign*.11,0],[.92,sign*.075,0],[1.56,0,0]],.0055,s.metal);
  s.sphere(.058,[-.10,0,0],s.glow,[1.1,1,1]);
 }
 
@@ -99,6 +109,7 @@ function bambooSpear(s:Sculpture){
  }
  // Small bronze leaves wrap the socket, without a floating spear frame.
  for(const side of[-1,1])s.plate([[.62,.015],[.67,side*.13],[.93,side*.22],[.82,side*.04]],.022,[0,0,.01],s.coat);
+ for(const sign of[-1,1])s.outline([[.81,0,0],[1.06,sign*.16,0],[1.48,sign*.11,0],[1.82,0,0]],.005,s.metal);
  s.rod([-1.76,0,0],[-1.61,0,0],.061,s.metal,undefined,.044);
 }
 

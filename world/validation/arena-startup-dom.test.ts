@@ -8,7 +8,7 @@ import {build} from 'esbuild';
 import {JSDOM} from 'jsdom';
 const root=resolve('../arena-game');
 const mocks:Record<string,string>={
- 'scene.ts':`export class ArenaScene { loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
+ 'scene.ts':`export class ArenaScene { setQuality(value){window.__qa.graphics.push(value)}loadMap(id){return window.__qa.loadMap(id)}setView(){}render(){}disposeCombatEffects(){} }`,
  'game.ts':`export class Game { constructor(session){window.__qa.games++;if(window.__qa.throwGame)throw Error('view construction failed');this.session=session}stop(){this.session.close()}setPaused(){} }`,
  'session.ts':`export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(options){window.__qa.armory=options}`,
@@ -18,7 +18,7 @@ function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;
 async function boot(saved?:unknown){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
  if(saved!==undefined)w.localStorage.setItem('arena-lobby',JSON.stringify(saved));
- const qa={armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
+ const qa={graphics:[]as string[],armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
   loadMap(id:string){const task=deferred();this.maps.push({id,task});return task.promise},join(url:string,opts:any){const task=deferred();this.joins.push({url,opts,task});return task.promise},session(opts?:any){return{opts,close:()=>{qa.closed++}}}};
  (w as any).__qa=qa;w.requestAnimationFrame=()=>1;(w as any).matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});
  (w as any).fetch=()=>{throw Error('real network forbidden')};(w as any).WebSocket=class{constructor(){throw Error('real network forbidden')}};
@@ -125,3 +125,10 @@ test('workshop equipment saves IDs without erasing other lobby choices and reloa
 }finally{h.dom.window.close()}
  const restored=await boot(saved);try{restored.click('#armory');await restored.flush();assert.equal(restored.qa.armory.skins[7],1);}finally{restored.dom.window.close()}
 });
+
+test('live graphics control preserves lobby choices, persists quality and removes the legacy low URL flag',async()=>{const h=await boot({name:'Keep graphics name',skins:[6,6,5,5,6,5,5,6]});try{
+ const before=h.w.localStorage.getItem('arena-lobby');h.click('#settings-lobby');
+ const quality=h.d.querySelector<HTMLSelectElement>('#arena-graphics')!;assert.ok(quality);quality.value='low';quality.dispatchEvent(new h.w.Event('change',{bubbles:true}));
+ assert.deepEqual(h.qa.graphics,['low']);assert.equal(h.w.localStorage.getItem('parhelion-arena-graphics-v1'),'low');assert.equal(new URL(h.w.location.href).searchParams.has('low'),true);
+ quality.value='high';quality.dispatchEvent(new h.w.Event('change',{bubbles:true}));assert.deepEqual(h.qa.graphics,['low','high']);assert.equal(new URL(h.w.location.href).searchParams.has('low'),false);assert.equal(h.w.localStorage.getItem('parhelion-arena-graphics-v1'),'high');assert.equal(h.w.localStorage.getItem('arena-lobby'),before);assert.equal((h.d.getElementById('name')as HTMLInputElement).value,'Keep graphics name');assert.equal(h.qa.offline,0);
+}finally{h.dom.window.close()}});

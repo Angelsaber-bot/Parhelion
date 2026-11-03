@@ -173,6 +173,7 @@ body:not(.online) .onlineOnly, body.online .offlineOnly { display: none; }
 .finish-card{display:flex;flex-direction:column;gap:8px;align-items:center;min-width:0;border:1px solid #b8c6cf33;background:#ffffff03;border-radius:9px;padding:10px 4px;color:#c3d0d6;font-size:11px;cursor:pointer}
 .finish-card i{display:block;width:44px;height:21px;transform:skew(-18deg);border-radius:3px;background:linear-gradient(125deg,var(--finish-body),var(--finish-body) 38%,var(--finish-light) 48%,#fff9 52%,var(--finish-body) 65%);box-shadow:0 0 16px color-mix(in srgb,var(--finish-light) 20%,transparent);border:1px solid #ffffff44}
 .finish-card.on{border-color:#ddc38f;color:#f2dfb7;background:#ddc38f12}
+.arena-graphics{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:12px 0 18px;color:#c3d0d6;font-size:13px}.arena-graphics select{min-width:125px;padding:8px 12px}
 #art-finishes{grid-template-columns:repeat(var(--finish-count,1),minmax(0,1fr))}
 #art-finishes .signature-card{position:relative;flex-direction:row;justify-content:flex-start;padding:12px 10px;gap:12px;font-size:12px;min-height:57px}
 .signature-card small{display:none;color:#ddc38f;font-size:9px;font-weight:400}

@@ -9,7 +9,7 @@
       "weapon": "corona",
       "name": "深渊巨口",
       "file": "abyssal-maw.glb",
-      "triangles": 7508,
+      "triangles": 13484,
       "meshes": 13,
       "bounds": {
         "min": [
@@ -45,15 +45,15 @@
           0
         ]
       },
-      "bytes": 254212,
-      "sha256": "21a8e08a838ae4e608c0384f0d263e977372ab219767b9a3633471d3f9409b09"
+      "bytes": 403260,
+      "sha256": "e65b10f9d8209c4218021f8b9a77e277b2aad9a39b9a0752bd19ca4ede25113e"
     },
     {
       "id": "prismwing",
       "weapon": "blade",
       "name": "琉光蝶刃",
       "file": "prismwing.glb",
-      "triangles": 5644,
+      "triangles": 12748,
       "meshes": 5,
       "bounds": {
         "min": [
@@ -62,7 +62,7 @@
           -0.10045000165700912
         ],
         "max": [
-          1.559999942779541,
+          1.5605543851852417,
           0.3045211434364319,
           0.10045000165700912
         ]
@@ -79,15 +79,15 @@
           0
         ]
       },
-      "bytes": 213604,
-      "sha256": "cd51b7adfc10faebac71a55428c8cdbf1c7c403ce51656c95dcc80f88deaeea9"
+      "bytes": 363304,
+      "sha256": "825e3ba9d0dba1f711caf51b89a49de8854c85dec0696666ee540c5a1490ad05"
     },
     {
       "id": "ink-bamboo",
       "weapon": "polearm",
       "name": "玄竹",
       "file": "ink-bamboo.glb",
-      "triangles": 4560,
+      "triangles": 10976,
       "meshes": 5,
       "bounds": {
         "min": [
@@ -113,15 +113,15 @@
           0
         ]
       },
-      "bytes": 145868,
-      "sha256": "6f5d9553053143e90f701f42893c5264e0a47e24047295358dfe0cc9a1340d5a"
+      "bytes": 301292,
+      "sha256": "5639da75db53efc7d51028ef09020d72dd489a97b504248cd13c91ea5c1e026e"
     },
     {
       "id": "sugar-crash",
       "weapon": "hammer",
       "name": "糖霜重击",
       "file": "sugar-crash.glb",
-      "triangles": 13596,
+      "triangles": 28644,
       "meshes": 5,
       "bounds": {
         "min": [
@@ -147,15 +147,15 @@
           0
         ]
       },
-      "bytes": 380820,
-      "sha256": "854beb910a22589deef66df0a6c7292b24df6ddc92749eb6c758a674f80f2fab"
+      "bytes": 738440,
+      "sha256": "015ca10e3ac14640a6932344ab27ac654fcc5ea62f7786984e49499dede1a97c"
     },
     {
       "id": "graviton-crucible",
       "weapon": "lumen",
       "name": "引力熔环",
       "file": "graviton-crucible.glb",
-      "triangles": 15504,
+      "triangles": 26400,
       "meshes": 16,
       "bounds": {
         "min": [
@@ -164,7 +164,7 @@
           -0.27799999713897705
         ],
         "max": [
-          1.8883923292160034,
+          1.8899999856948853,
           0.8830000162124634,
           0.27799999713897705
         ]
@@ -191,15 +191,15 @@
           0
         ]
       },
-      "bytes": 477960,
-      "sha256": "5f1f7fcde05bab618781694ab6e8d13faa2d233976fdc04dadc02d895c8d2bcb"
+      "bytes": 747236,
+      "sha256": "a34f79fac975a9133a29bf830f0a0fa6e2e5d9599a1c1c6abca098e4567e86d1"
     },
     {
       "id": "koi-current",
       "weapon": "firefly",
       "name": "游鲤",
       "file": "koi-current.glb",
-      "triangles": 12592,
+      "triangles": 19604,
       "meshes": 16,
       "bounds": {
         "min": [
@@ -208,7 +208,7 @@
           -0.230467289686203
         ],
         "max": [
-          1.2683923244476318,
+          1.2699999809265137,
           0.9330000281333923,
           0.230467289686203
         ]
@@ -235,15 +235,15 @@
           0
         ]
       },
-      "bytes": 455008,
-      "sha256": "8b7c05ddd22da10fee05cf2811adf85495c625b7f644a23e17c3a79834874355"
+      "bytes": 601084,
+      "sha256": "36c6ed8c2352d76621e9058ff8206b761d662c7225208bdba916603686cd5312"
     },
     {
       "id": "owl-canticle",
       "weapon": "halo",
       "name": "夜枭圣咏",
       "file": "owl-canticle.glb",
-      "triangles": 12548,
+      "triangles": 21012,
       "meshes": 13,
       "bounds": {
         "min": [
@@ -252,7 +252,7 @@
           -0.2329999953508377
         ],
         "max": [
-          1.818392276763916,
+          1.8200000524520874,
           0.934499979019165,
           0.2329999953508377
         ]
@@ -279,15 +279,15 @@
           0
         ]
       },
-      "bytes": 422244,
-      "sha256": "ef061b41917406ab5d4152e9dc36eb4ff4469ab726e1df0a42c74d67297354c7"
+      "bytes": 622316,
+      "sha256": "0029af4b06d4e8404024559332ad9052d7934febc296cc2fbfc463d2b68bd576"
     },
     {
       "id": "meridian-key",
       "weapon": "longnight",
       "name": "时序之钥",
       "file": "meridian-key.glb",
-      "triangles": 20920,
+      "triangles": 35084,
       "meshes": 15,
       "bounds": {
         "min": [
@@ -296,8 +296,8 @@
           -0.29500001668930054
         ],
         "max": [
-          2.4183924198150635,
-          0.8755000233650208,
+          2.4200000762939453,
+          0.8755910992622375,
           0.21860000491142273
         ]
       },
@@ -323,8 +323,8 @@
           0
         ]
       },
-      "bytes": 769384,
-      "sha256": "079833b920fdb63c7ae1afc01a8b0bb1a024b1fc7ab1c818c25b550a7f27d6c7"
+      "bytes": 1169104,
+      "sha256": "f295228d43f86a567e5613369b810eddfc0afdbbe3cff338308bcbd5c6bcf6c2"
     }
   ]
 }

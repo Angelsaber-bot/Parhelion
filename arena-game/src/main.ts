@@ -12,6 +12,7 @@ import { Game } from './game.ts';
 import { Hud } from './hud.ts';
 import { LoadoutStore, loadoutCards, displayWeaponName } from './loadout.ts';
 import {readSkinSelection,withSkinSelection} from './skinSelection.ts';
+import {initialGraphics,mountGraphicsControl} from './graphics.ts';
 import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline, type Session } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
@@ -25,7 +26,9 @@ const MAP_THUMBS: Record<string, string> = { aster: asterThumb, sakura: sakuraTh
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);
 const canvas = $<HTMLCanvasElement>('view');
-const scene = new ArenaScene(canvas, params.has('low') ? 'low' : 'high');
+const graphicsStorage=(()=>{try{return localStorage;}catch{return undefined;}})();
+const graphicsQuality=initialGraphics(params,graphicsStorage);
+const scene = new ArenaScene(canvas,graphicsQuality);
 // Preserve reusable effects in the back/forward cache; release only on final page exit.
 addEventListener('pagehide', (event) => { if (!event.persisted) scene.disposeCombatEffects(); });
 const settings = new SettingsStore('arena');
@@ -55,6 +58,7 @@ const settingsPanel = createSettingsPanel(settings, {
   },
   onClose() { controls.blocked = false; controls.clearAll(); },
 });
+mountGraphicsControl($('arena-settings'),graphicsQuality,quality=>scene.setQuality(quality),graphicsStorage);
 controls.onSettings = () => { if (!starting && !pageExited) settingsPanel.show(); };
 $('settings-lobby').onclick = () => { if (!starting && !game && !pageExited) settingsPanel.show(); };
 $('settings-pause').onclick = () => { if (game && !game.ended && !starting && !pageExited && !$('pause').classList.contains('hidden')) settingsPanel.show(); };

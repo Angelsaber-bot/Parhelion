@@ -31,8 +31,8 @@ it('first shot still flashes immediately and recoil is visible on its first upda
   vm.update(1 / 60); expect(gun.position.z).toBeGreaterThan(restZ);
   vm.moving = 1; vm.aim = .5; vm.reloading = .6; vm.meleeWindup = 1; vm.look(.1, .1);
   vm.resetMotion(); vm.update(0);
-  expect(gun.position.toArray()).toEqual([.17, -.16, -.4]);
-  expect(gun.rotation.toArray().slice(0, 3)).toEqual([0, .04, 0]);
+  expect(gun.position.toArray()).toEqual([.13, -.15, -.45]);
+  expect(gun.rotation.toArray().slice(0, 3)).toEqual([0, .15, -.025]);
   expect(vm.root.children.filter((o) => o instanceof THREE.Sprite).every((o) => !o.visible)).toBe(true);
   vm.clear();
 });

@@ -3,6 +3,7 @@
  * No material or geometry from the source GLB is edited. */
 import * as THREE from 'three';
 import {signatureOf,type SignatureId,type SignatureStyle} from '../shared/signatureSkins.ts';
+import {refineWeaponMaterial} from './weaponSurface.ts';
 
 type Point=readonly[number,number];
 type ProjectedFace=readonly[number,number,number,number,number,number,number,number,number,number];
@@ -39,7 +40,7 @@ export function signatureMaterial(source:THREE.MeshStandardMaterial,id:Signature
   shader.fragmentShader=shader.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 phSignaturePosition;\nuniform float phSignatureTime;');
   shader.fragmentShader=shader.fragmentShader.replace('#include <color_fragment>','#include <color_fragment>\n{vec3 p=phSignaturePosition;'+(body?patterns[id]:'diffuseColor.rgb*=.95+.05*sin(phSignatureTime*.8+p.x*3.0);')+'}');
  };
- return m;
+ refineWeaponMaterial(m,id);return m;
 }
 
 /** Tiny, conformal relief: triangles with a missed sample or depth discontinuity
@@ -47,14 +48,16 @@ export function signatureMaterial(source:THREE.MeshStandardMaterial,id:Signature
 class SurfaceArt{
  private positions:number[][]=[[],[],[]];private inverse:THREE.Matrix4;private box=new THREE.Box3();
  private grid:ProjectedFace[][]=Array.from({length:64*32},()=>[]);private depths=new Map<string,readonly[number,number]|null>();
- constructor(private part:THREE.Object3D){
+ constructor(private part:THREE.Object3D,private top=false){
   part.updateWorldMatrix(true,true);this.inverse=part.matrixWorld.clone().invert();const targets:THREE.Mesh[]=[];
   part.traverse(o=>{if(o instanceof THREE.Mesh&&(Array.isArray(o.material)?o.material:[o.material]).some(m=>/^PH_(?:ivory|dark|black|steel|copper)(?:[._]?\d+)?$/.test(m.name))){targets.push(o);this.box.expandByObject(o);}});
   // A small 2D acceleration grid over the original triangles replaces thousands
   // of full-mesh raycasts. Projection still uses exact barycentric surface depth.
+  if(top){this.box.min.set(this.box.min.x,this.box.min.z,this.box.min.y);this.box.max.set(this.box.max.x,this.box.max.z,this.box.max.y);}
   const a=new THREE.Vector3(),b=new THREE.Vector3(),c=new THREE.Vector3();
   for(const mesh of targets){const p=mesh.geometry.getAttribute('position'),index=mesh.geometry.index;for(let i=0;i<(index?.count??p.count);i+=3){
    a.fromBufferAttribute(p,index?index.getX(i):i).applyMatrix4(mesh.matrixWorld);b.fromBufferAttribute(p,index?index.getX(i+1):i+1).applyMatrix4(mesh.matrixWorld);c.fromBufferAttribute(p,index?index.getX(i+2):i+2).applyMatrix4(mesh.matrixWorld);
+   if(top)for(const v of [a,b,c])v.set(v.x,v.z,v.y);
    const dx=b.x-a.x,dy=b.y-a.y,ex=c.x-a.x,ey=c.y-a.y,det=dx*ey-dy*ex;if(Math.abs(det)<1e-12)continue;
    const face:ProjectedFace=[a.x,a.y,a.z,dx,dy,b.z-a.z,ex,ey,c.z-a.z,1/det];
    const x0=this.cellX(Math.min(a.x,b.x,c.x)),x1=this.cellX(Math.max(a.x,b.x,c.x)),y0=this.cellY(Math.min(a.y,b.y,c.y)),y1=this.cellY(Math.max(a.y,b.y,c.y));for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)this.grid[y*64+x].push(face);
@@ -73,13 +76,13 @@ class SurfaceArt{
   const ab:Point=[(a[0]+b[0])/2,(a[1]+b[1])/2],bc:Point=[(b[0]+c[0])/2,(b[1]+c[1])/2],ca:Point=[(c[0]+a[0])/2,(c[1]+a[1])/2],center:Point=[(a[0]+b[0]+c[0])/3,(a[1]+b[1]+c[1])/3];
   const interior=[this.hit(center,side,bin),this.hit(ab,side,bin),this.hit(bc,side,bin),this.hit(ca,side,bin)];
   const valid=points.every(Boolean)&&interior.every(Boolean)&&Math.max(p.z,q.z,r.z)-Math.min(p.z,q.z,r.z)<.045&&interior.every((v,i)=>Math.abs(v!.z-[(p.z+q.z+r.z)/3,(p.z+q.z)/2,(q.z+r.z)/2,(r.z+p.z)/2][i])<.003);
-  if(valid){for(const v of [p,q,r])this.positions[bin].push(...v.applyMatrix4(this.inverse).toArray());return;}
+  if(valid){for(const v of [p,q,r]){if(this.top)v.set(v.x,v.z,v.y);this.positions[bin].push(...v.applyMatrix4(this.inverse).toArray());}return;}
   // Curved spearheads and large illustrated panels need smaller surface
   // triangles; refine twice, retaining only the pieces that actually fit.
   if(depth>=2||[...points,...interior].every(v=>!v))return;
   this.projectTriangle(a,ab,ca,bin,side,depth+1);this.projectTriangle(ab,b,bc,bin,side,depth+1);this.projectTriangle(ca,bc,c,bin,side,depth+1);this.projectTriangle(ab,bc,ca,bin,side,depth+1);
  }
- private tri(a:Point,b:Point,c:Point,bin:number){for(const side of [-1,1])this.projectTriangle(a,b,c,bin,side);}
+ private tri(a:Point,b:Point,c:Point,bin:number){for(const side of this.top?[1]:[-1,1])this.projectTriangle(a,b,c,bin,side);}
  polygon(points:Point[],bin=0){if(points.length<3)return;const center:Point=[points.reduce((n,p)=>n+p[0],0)/points.length,points.reduce((n,p)=>n+p[1],0)/points.length];for(let i=0;i<points.length;i++)this.tri(center,points[i],points[(i+1)%points.length],bin);}
  path(points:Point[],width:number,bin=0){for(let i=1;i<points.length;i++){const [a,b]=[points[i-1],points[i]],dx=b[0]-a[0],dy=b[1]-a[1],length=Math.hypot(dx,dy);if(length<.00001)continue;const x=-dy/length*width/2,y=dx/length*width/2;this.polygon([[a[0]+x,a[1]+y],[b[0]+x,b[1]+y],[b[0]-x,b[1]-y],[a[0]-x,a[1]-y]],bin);}}
  curve(points:Point[],width:number,bin=0){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p,0)));this.path(curve.getPoints(Math.max(20,points.length*8)).map(v=>[v.x,v.y]as const),width,bin);}
@@ -93,7 +96,8 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
  const light=new THREE.MeshPhysicalMaterial({color:s.accent,emissive:s.accent,emissiveIntensity:.20,metalness:.3,roughness:.2,clearcoat:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
  const enamel=new THREE.MeshPhysicalMaterial({color:s.inlay??(s.weapon==='halo'?0x3c9388:s.weapon==='firefly'?0xe7ebc8:0x151f2b),metalness:.25,roughness:.34,clearcoat:1,side:THREE.DoubleSide,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-1});
  const materials=[metal,light,enamel],groups:THREE.Group[]=[];
- const draw=(role:string,paint:(a:SurfaceArt)=>void)=>{if(!parts[role])return;const a=new SurfaceArt(parts[role]);paint(a);const group=a.build(materials,`Signature_${id}_${role}`);if(group)groups.push(group);};
+ refineWeaponMaterial(metal,id,'metal');refineWeaponMaterial(light,id,'accent');refineWeaponMaterial(enamel,id,'coat');
+ const draw=(role:string,paint:(a:SurfaceArt)=>void,top=false)=>{if(!parts[role])return;const a=new SurfaceArt(parts[role],top);paint(a);const group=a.build(materials,`Signature_${id}_${role}${top?'_crown':''}`);if(group)groups.push(group);};
  draw('body',a=>{
   switch(id){
    case'tidal-engine':
@@ -160,5 +164,37 @@ export function addSignatureArt(parts:Record<string,THREE.Object3D>,id:Signature
   if(id==='abyssal-maw')for(let i=0;i<7;i++){const x=.46+i*.1;a.polygon([[x,.28],[x+.05,.14],[x+.085,.28]],0);a.polygon([[x,.04],[x+.055,.15],[x+.085,.04]],1);}
  });
  draw('magazine',a=>{if(id==='tidal-engine')for(let i=0;i<3;i++)a.path([[.24+i*.1,-.5],[.21+i*.1,-.11]],.012,1);});
+ // Upper surfaces are visible for most of the time a gun is actually held.
+ // These motifs are projected onto the real crown, including holes and rails.
+ draw('body',a=>{
+  switch(id){
+   case'tidal-engine':
+    for(const side of[-1,1])a.curve([[-.46,side*.06],[-.08,side*.095],[.45,side*.045],[1.20,side*.055]],.010,1);
+    a.arc(-.36,0,.052,0,Math.PI*2,.008,0);break;
+   case'amber-apiary':
+    for(let i=0;i<7;i++){const x=-.39+i*.20,r=.054;a.path(Array.from({length:7},(_,j)=>[x+Math.cos(j*Math.PI/3)*r,Math.sin(j*Math.PI/3)*r]as const),.009,i%3===0?1:0);}break;
+   case'mint-arcade':
+    for(let i=0;i<5;i++){const x=-.32+i*.21;a.polygon([[x,-.052],[x+.065,-.052],[x+.065,.012],[x,.012]],i%2?1:2);}
+    a.path([[-.28,.065],[.72,.065]],.008,0);break;
+   case'celadon-atlas':
+    a.path([[-.82,0],[-.62,.065],[-.38,-.025],[-.15,.07],[.18,-.03],[.47,.05],[.76,0]],.011,0);
+    for(const sign of[-1,1])a.curve([[-.80,sign*.07],[-.32,sign*.085],[.21,sign*.05],[.78,sign*.06]],.006,1);break;
+   case'abyssal-requiem':
+    a.path([[-.48,0],[1.35,0]],.011,1);
+    for(let i=0;i<11;i++){const x=-.42+i*.16;for(const sign of[-1,1])a.curve([[x,0],[x+.04,sign*.055],[x+.11,sign*.08]],.008,0);}break;
+   case'velvet-thorn':
+    a.curve([[-.48,-.055],[-.02,.055],[.46,-.05],[.90,.05],[1.35,-.025]],.009,0);
+    for(let i=0;i<7;i++){const x=-.36+i*.22;a.polygon([[x,0],[x+.035,.065],[x+.075,.015]],2);}break;
+   case'vermilion-plume':
+    a.path([[.72,0],[1.70,0]],.009,0);
+    for(let i=0;i<6;i++)a.path([[.8+i*.14,-.012],[.84+i*.14,.014]],.006,1);break;
+   case'foundry-bell':
+    for(let i=0;i<5;i++){const x=.30+i*.075;a.path([[x,-.15],[x,.15]],.014,i%2?1:0);}
+    a.path([[.26,-.17],[.69,-.17],[.69,.17],[.26,.17],[.26,-.17]],.008,0);break;
+  }
+ },true);
+ draw('stock',a=>{
+  if(['tidal-engine','amber-apiary','mint-arcade','abyssal-requiem','velvet-thorn','celadon-atlas'].includes(id))for(const sign of[-1,1])a.curve([[-1.29,sign*.045],[-1.08,sign*.065],[-.82,sign*.025]],.008,id==='mint-arcade'?1:0);
+ },true);
  return {groups,dispose(){for(const group of groups){group.removeFromParent();group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}materials.forEach(m=>m.dispose());}};
 }

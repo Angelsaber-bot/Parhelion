@@ -7,6 +7,7 @@ import { WEAPONS } from '../shared/content.ts';
 import { displayWeaponName } from './loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from './weaponFinishes.ts';
 import {signatureOf,signaturesFor,signatureModelOf} from '../shared/signatureSkins.ts';
+import {lightWeaponScene} from './weaponLighting.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
 export function openArmory(options:{skins?:readonly number[];equip?:(weapon:number,skin:number)=>{saved:boolean}}={}) {
@@ -24,14 +25,13 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('#armory-close')!.addEventListener('click', () => dialog.close());
     dialog.addEventListener('close', () => dialog.remove(), { once: true }); return;
   }
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5)); renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.setPixelRatio(Math.min(Math.max(1,devicePixelRatio),2)); renderer.toneMapping = THREE.NeutralToneMapping;renderer.toneMappingExposure=.98;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x101a29);
   const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.enablePan = false;
   const pmrem = new THREE.PMREMGenerator(renderer), room = new RoomEnvironment();
   const env = pmrem.fromScene(room); scene.environment = env.texture; room.dispose(); pmrem.dispose();
-  scene.add(new THREE.HemisphereLight(0xe1f5ff, 0x45505c, 2));
-  const key = new THREE.DirectionalLight(0xffe3c5, 3); key.position.set(2, 4, 3); scene.add(key);
+  lightWeaponScene(scene);
   let handle: ArtHandle | null = null, closed = false, serial = 0, selected = 'dawn';
   let framedModel='',framedDistance=0;
   let statusText: [string, string] = ['', ''];
