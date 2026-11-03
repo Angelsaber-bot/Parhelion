@@ -14,6 +14,7 @@ import { Feel } from './feel.ts';
 import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './aim.ts';
 import { TEAM_COLOR, type ArenaScene } from './scene.ts';
 import type { Session } from './session.ts';
+import {FrameGate} from './renderScheduling.ts';
 
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -32,6 +33,7 @@ export class Game {
   private smooth: Vec3 = [0, 0, 0];
   private raf = 0;
   private running = true;
+  private pausedFrames=new FrameGate(10);
   private snapGap = 50; // ms between snapshots, smoothed (shown as a rough link-quality hint)
   private names = new Map<string, PlayerSnap>();
   private readonly map: ArenaMap;
@@ -244,7 +246,7 @@ export class Game {
     this.last = t;
     if (this.paused) {
       // keep the last frame on screen; nothing moves, nothing ticks
-      this.scene.render(!!this.me?.alive);
+      if(this.pausedFrames.allow(t))this.scene.render(!!this.me?.alive);
       return;
     }
 

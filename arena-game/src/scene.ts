@@ -15,6 +15,8 @@ import type { MapPresentation, Vec3 } from '../shared/map.ts';
 import type { PlayerSnap, Shield } from '../shared/match.ts';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
@@ -32,6 +34,8 @@ import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
 import {lightWeaponScene,renderHeldWeapon} from './weaponLighting.ts';
 import {firearmIdlePose} from './weaponPose.ts';
+import {renderTelemetry} from './renderTelemetry.ts';
+import {worldRenderVisible} from './renderScheduling.ts';
 
 const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
@@ -62,13 +66,17 @@ export class ArenaScene {
   private composer: EffectComposer | null = null;
   private bloom: UnrealBloomPass | null = null;
   private outline: OutlinePass | null = null;
+  private fxaa: ShaderPass | null = null;
+  private telemetry: ReturnType<typeof renderTelemetry> = null;
+  private mapPresentation: MapPresentation | undefined;
+  private shownMapId='';
   private particles: Particles | null = null;
   private blackflagEffects: BlackflagEffects | null = null;
   private chapterEffects: ChapterEffects | null = null;
   private bufferSize = new THREE.Vector2();
   private atmo: Atmosphere = atmosphereFor('day');
 
-  constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'high') {
+  constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'low') {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
@@ -79,6 +87,7 @@ export class ArenaScene {
     r.shadowMap.type = THREE.PCFShadowMap;
     r.autoClear = false;
     this.renderer = r;
+    this.telemetry=renderTelemetry(r);
     const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(r);
     const environment = pmrem.fromScene(room);
     this.scene.environment = this.vmScene.environment = environment.texture;
@@ -113,19 +122,32 @@ export class ArenaScene {
   private configureQuality(){
     const r=this.renderer;
     this.composer?.passes.forEach(pass=>pass.dispose());this.composer?.dispose();
-    this.composer=null;this.bloom=null;this.outline=null;
+    this.composer=null;this.bloom=null;this.outline=null;this.fxaa=null;
     r.shadowMap.enabled=this.quality==='high';r.shadowMap.needsUpdate=true;
     if(this.quality==='high'){
-      const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:Math.min(4,r.capabilities.maxSamples)});
+      // Single-sample HDR + one lightweight edge pass, never HDR MSAA × supersampling.
+      const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:0});
       this.composer=new EffectComposer(r,rt);this.composer.addPass(new RenderPass(this.scene,this.camera));
       this.outline=new OutlinePass(this.camera);this.composer.addPass(this.outline);
       this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold);this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
+      this.fxaa=new ShaderPass(FXAAShader);this.composer.addPass(this.fxaa);
     }
   }
   /** Live quality changes do not replace the match, map or weapon selection. */
   setQuality(quality:GraphicsQuality){
     if(quality===this.quality)return;
-    this.quality=quality;this.configureQuality();this.resize();
+    this.quality=quality;this.configureQuality();
+    this.combatEffects.dispose();this.combatEffects=new ArenaCombatEffects(this.scene,this.sparkTex,quality);
+    this.configureDressing();this.setAtmosphere(this.atmo);this.resize();
+  }
+
+  private configureDressing(){
+    this.blackflagEffects?.dispose();
+    this.blackflagEffects=this.shownMapId==='blackflag'?new BlackflagEffects(this.sparkTex,this.quality):null;
+    if(this.blackflagEffects)this.scene.add(this.blackflagEffects.root);
+    this.chapterEffects?.dispose();const p=this.mapPresentation;
+    this.chapterEffects=p&&(p.glows||p.pools||p.embers||p.smoke||p.field)?new ChapterEffects(p,this.sparkTex,this.quality):null;
+    if(this.chapterEffects)this.scene.add(this.chapterEffects.root);
   }
 
   /** Apply a map's lighting mood: sky, fog, sun, ambient, exposure, bloom and ambient particles. */
@@ -153,7 +175,7 @@ export class ArenaScene {
     u.uAurora.value = a.sky.aurora ?? 0;
     if (this.bloom) { this.bloom.strength = a.bloom; this.bloom.threshold = a.bloomThreshold; }
     if (this.particles) { this.particles.dispose(s); this.particles = null; }
-    if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s);
+    if (a.particles !== 'none') this.particles = new Particles(a.particles, this.sparkTex, s,this.quality);
     this.renderer.shadowMap.needsUpdate = true;
   }
 
@@ -184,13 +206,7 @@ export class ArenaScene {
     }
     const root = await p;
     if (this.wantMap !== id || this.shownMap === root) return; // a later pick won
-    this.blackflagEffects?.dispose();
-    this.blackflagEffects = id === 'blackflag' ? new BlackflagEffects(this.sparkTex, this.quality) : null;
-    if (this.blackflagEffects) this.scene.add(this.blackflagEffects.root);
-    this.chapterEffects?.dispose();
-    this.chapterEffects = presentation && (presentation.glows || presentation.pools || presentation.embers || presentation.smoke || presentation.field)
-      ? new ChapterEffects(presentation, this.sparkTex, this.quality) : null;
-    if (this.chapterEffects) this.scene.add(this.chapterEffects.root);
+    this.shownMapId=id;this.mapPresentation=presentation;this.configureDressing();
     if (this.shownMap) this.scene.remove(this.shownMap);
     this.scene.add(root);
     this.shownMap = root;
@@ -209,6 +225,7 @@ export class ArenaScene {
     this.vmCamera.updateProjectionMatrix();
     this.composer?.setPixelRatio(this.renderer.getPixelRatio());
     this.composer?.setSize(w, h);
+    if(this.fxaa)this.fxaa.uniforms.resolution.value.set(1/(w*this.renderer.getPixelRatio()),1/(h*this.renderer.getPixelRatio()));
   }
 
   setView(x: number, y: number, z: number, yaw: number, pitch: number, roll = 0, fovAdd = 0) {
@@ -373,6 +390,8 @@ export class ArenaScene {
   }
 
   render(showViewmodel: boolean) {
+    if(typeof document!=='undefined'&&!worldRenderVisible(document)){this.telemetry?.pause();return;}
+    const start=this.telemetry?.begin();
     const r = this.renderer;
     r.clear();
     this.chapterEffects?.sync(this.camera, r.getDrawingBufferSize(this.bufferSize).y, this.scene.fog as THREE.Fog);
@@ -381,6 +400,7 @@ export class ArenaScene {
     if (showViewmodel) {
       renderHeldWeapon(r,this.vmScene,this.vmCamera);
     }
+    if(start!==undefined)this.telemetry?.end(start);
   }
 }
 
@@ -762,8 +782,8 @@ class Particles {
   private readonly n: number;
   private readonly box = [26, 12, 26];
 
-  constructor(private kind: 'petals' | 'motes' | 'embers' | 'snow', tex: THREE.Texture, scene: THREE.Scene) {
-    this.n = kind === 'petals' ? 420 : kind === 'embers' ? 360 : kind === 'snow' ? 900 : 220;
+  constructor(private kind: 'petals' | 'motes' | 'embers' | 'snow', tex: THREE.Texture, scene: THREE.Scene, quality:GraphicsQuality) {
+    this.n = Math.round((kind === 'petals' ? 420 : kind === 'embers' ? 360 : kind === 'snow' ? 900 : 220)*(quality==='low'?.35:1));
     const pos = new Float32Array(this.n * 3);
     this.vel = new Float32Array(this.n * 3);
     this.phase = new Float32Array(this.n);

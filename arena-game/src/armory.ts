@@ -8,6 +8,7 @@ import { displayWeaponName } from './loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from './weaponFinishes.ts';
 import {signatureOf,signaturesFor,signatureModelOf} from '../shared/signatureSkins.ts';
 import {lightWeaponScene} from './weaponLighting.ts';
+import {FrameGate} from './renderScheduling.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
 export function openArmory(options:{skins?:readonly number[];equip?:(weapon:number,skin:number)=>{saved:boolean}}={}) {
@@ -25,7 +26,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('#armory-close')!.addEventListener('click', () => dialog.close());
     dialog.addEventListener('close', () => dialog.remove(), { once: true }); return;
   }
-  renderer.setPixelRatio(Math.min(Math.max(1,devicePixelRatio),2)); renderer.toneMapping = THREE.NeutralToneMapping;renderer.toneMappingExposure=.98;
+  renderer.setPixelRatio(Math.min(Math.max(1,devicePixelRatio),1.25)); renderer.toneMapping = THREE.NeutralToneMapping;renderer.toneMappingExposure=.98;
   const scene = new THREE.Scene(); scene.background = new THREE.Color(0x101a29);
   const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.enablePan = false;
@@ -116,7 +117,8 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     const w = Math.max(1, canvas.clientWidth), h = Math.max(1, canvas.clientHeight);
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
   }); observer.observe(canvas);
-  renderer.setAnimationLoop(() => { if(document.visibilityState==='hidden')return;updateFinishClock(performance.now()/1000);controls.update(); renderer.render(scene, camera); });
+  const previewFrames=new FrameGate(30);
+  renderer.setAnimationLoop(now => { if(document.visibilityState==='hidden'||!previewFrames.allow(now))return;updateFinishClock(now/1000);controls.update(); renderer.render(scene, camera); });
   dialog.addEventListener('close', () => {
     closed = true;removeEventListener('pagehide',pageExit);unsubscribeLanguage(); ++serial; handle?.release(); observer.disconnect(); controls.dispose();
     renderer.setAnimationLoop(null); env.dispose(); renderer.dispose(); renderer.forceContextLoss(); dialog.remove();

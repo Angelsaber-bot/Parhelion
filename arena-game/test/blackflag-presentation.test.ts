@@ -18,8 +18,6 @@ it('ship atmosphere is a separate map-ID gate and leaves shared seabreeze and ot
   });
   expect(sceneSource).toContain("id === 'blackflag' ? BLACKFLAG_ATMOSPHERE : atmosphereFor(preset)");
   expect(sceneSource).toContain("id === 'blackflag' ? blackflagCastsShadow(m) : !decorative && role !== 'floor' && role !== 'wayfinding'");
-  expect(sceneSource).toContain("id === 'blackflag' ? new BlackflagEffects(this.sparkTex, this.quality) : null");
-  expect(sceneSource.indexOf('this.blackflagEffects?.dispose()')).toBeLessThan(sceneSource.indexOf("new BlackflagEffects(this.sparkTex, this.quality)"));
 });
 
 it('ship fog starts beyond the full combat diagonal, without broad bloom or generic haze', () => {
@@ -180,10 +178,11 @@ describe('real ArenaScene.loadMap lifecycle without constructing WebGL', () => {
         ['aster', Promise.resolve(aster)], ['blackflag', Promise.resolve(blackflag)], ['sakura', Promise.resolve(sakura)],
       ]),
       blackflagEffects: null as BlackflagEffects | null,
-      sparkTex: new THREE.Texture(), quality: 'high' as const, scene: new THREE.Scene(),
+      sparkTex: new THREE.Texture(), quality: 'high' as 'high'|'low', scene: new THREE.Scene(),
       renderer: { shadowMap: { autoUpdate: true, needsUpdate: false } },
       atmo: atmosphereFor('day'), setAtmosphere(a: typeof BLACKFLAG_ATMOSPHERE) { this.atmo = a; },
     };
+    Object.setPrototypeOf(state,ArenaScene.prototype);
     state.scene.add(aster);
     return { state, load: (id: string, preset?: string) => ArenaScene.prototype.loadMap.call(state as unknown as ArenaScene, id, preset) };
   }
@@ -203,6 +202,14 @@ describe('real ArenaScene.loadMap lifecycle without constructing WebGL', () => {
         expect(state.scene.children.filter(child => child.name.startsWith('BLACKFLAG'))).toHaveLength(0);
       }
     } finally { state.blackflagEffects?.dispose(); state.sparkTex.dispose(); }
+  });
+  it('live reduction rebuilds ambient budgets without retaining the previous ship instance',async()=>{
+    const {state,load}=harness();try{
+      await load('blackflag');const old=state.blackflagEffects!;state.quality='low';(state as any).configureDressing();
+      expect(old.root.parent).toBeNull();expect(old.root.children).toHaveLength(0);
+      const points=pointsOf(state.blackflagEffects!);expect(points).toHaveLength(1);expect(points[0].geometry.getAttribute('position').count).toBe(BLACKFLAG_EFFECT_BUDGET.low.sea);
+      expect(state.scene.children.filter(o=>o.name==='BLACKFLAG_sea_light_and_air')).toHaveLength(1);
+    }finally{state.blackflagEffects?.dispose();state.sparkTex.dispose();}
   });
   it('a superseded asynchronous ship load cannot attach its atmosphere effects after a newer selection wins', async () => {
     const { state, load } = harness();

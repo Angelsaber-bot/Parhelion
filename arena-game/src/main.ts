@@ -13,6 +13,7 @@ import { Hud } from './hud.ts';
 import { LoadoutStore, loadoutCards, displayWeaponName } from './loadout.ts';
 import {readSkinSelection,withSkinSelection} from './skinSelection.ts';
 import {initialGraphics,mountGraphicsControl} from './graphics.ts';
+import {FrameGate,worldRenderVisible} from './renderScheduling.ts';
 import { ArenaScene } from './scene.ts';
 import { joinOnline, startOffline, type Session } from './session.ts';
 import asterThumb from './assets/maps/aster.webp';
@@ -325,8 +326,9 @@ onLanguageChange(() => {
 });
 
 // idle render behind the lobby
+const lobbyFrames=new FrameGate(24);
 (function idle(t: number) {
-  if (!game) {
+  if (!game && worldRenderVisible(document) && lobbyFrames.allow(t)) {
     const a = t / 9000, [bx, , bz] = getMap(mapId).data.bounds.max;
     scene.setView(Math.sin(a) * bx * 0.83, 18, Math.cos(a) * bz * 0.86, a, -0.5);
     scene.render(false);
