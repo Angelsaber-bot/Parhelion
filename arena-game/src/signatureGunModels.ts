@@ -76,7 +76,7 @@ export function gravitonRifle(s:Sculpture){
  s.box([.075,.31,.23],[-1.38,.29,0],s.soft,'stock');
  s.plate([[.10,-.04],[.39,-.04],[.45,-.46],[.27,-.61],[.10,-.53]],.19,[0,0,0],s.dark,'magazine');
  for(const side of[-1,1])for(let i=0;i<4;i++)s.box([.041,.32-i*.018,.016],[.15+i*.067,-.27,side*.107],i%2?s.metal:s.glow,'magazine',.008);
- s.rod([.43,.29,0],[1.887,.29,0],.056,s.dark);
+ s.rod([.43,.29,0],[1.56,.29,0],.056,s.dark);
  for(const x of[.82,1.10,1.37]){s.ring(.096,.018,[x,.29,0],s.coat,'body','x');for(const z of[-.075,.075])s.box([.32,.028,.025],[x-.08,.29,z],s.metal);}
  bore(s,1.52,1.887,.29,.092);
  for(let i=0;i<8;i++){const t=i/8*Math.PI*2;s.rod([1.57,.29+Math.cos(t)*.094,Math.sin(t)*.094],[1.75,.29+Math.cos(t)*.094,Math.sin(t)*.094],.007,s.dark);}
@@ -109,7 +109,7 @@ export function koiSmg(s:Sculpture){
  s.plate([[.06,.12],[.31,.10],[.41,-.40],[.28,-.48],[.07,-.42]],.18,[0,0,0],s.dark,'magazine',.009);
  for(const side of[-1,1])s.plate([[.12,.01],[.25,-.01],[.31,-.36],[.16,-.36]],.012,[0,0,side*.103],s.glow,'magazine',.006,true);
  s.grip([.70,.05,0],[.70,-.25,0],.058,'fore_end');
- s.rod([.64,.31,0],[1.267,.31,0],.060,s.dark);bore(s,.94,1.267,.31,.094);
+ s.rod([.64,.31,0],[.97,.31,0],.060,s.dark);bore(s,.94,1.267,.31,.094);
  s.ring(.10,.016,[1.00,.31,0],s.coat,'body','x');s.box([.18,.05,.05],[-.32,.49,-.19],s.metal,'bolt');s.gunSight();
 }
 
@@ -134,7 +134,7 @@ export function owlMarksman(s:Sculpture){
  }
  s.plate([[.12,.12],[.36,.11],[.36,-.28],[.17,-.34],[.09,-.20]],.18,[0,0,0],s.coat,'magazine');
  for(const side of[-1,1])s.outline([[.17,.04,side*.10],[.24,-.23,side*.11],[.31,.01,side*.10]],.008,s.metal,'magazine');
- s.rod([.62,.33,0],[1.817,.33,0],.048,s.dark);bore(s,1.47,1.817,.33,.073);
+ s.rod([.62,.33,0],[1.50,.33,0],.048,s.dark);bore(s,1.47,1.817,.33,.073);
  for(const x of[.86,1.14,1.43])s.ring(.073,.013,[x,.33,0],s.metal,'body','x');
  s.box([.28,.055,.055],[-.43,.51,-.20],s.metal,'bolt');scope(s,.087);
 }
@@ -161,7 +161,7 @@ export function clockSniper(s:Sculpture){
  }
  s.plate([[-.03,.04],[.24,.04],[.26,-.27],[.06,-.34],[-.05,-.22]],.19,[0,0,0],s.dark,'magazine');
  for(const side of[-1,1])s.box([.17,.19,.016],[.105,-.13,side*.105],s.metal,'magazine',.008);
- s.rod([.70,.29,0],[2.417,.29,0],.049,s.dark);
+ s.rod([.70,.29,0],[2.15,.29,0],.049,s.dark);
  for(const z of[-.055,.055])s.outline([[.86,.29,z],[1.48,.34,z],[2.12,.29,z]],.012,s.metal);
  for(const x of[1.15,1.55,1.94])s.ring(.076,.012,[x,.29,0],s.metal,'body','x');
  bore(s,2.12,2.417,.29,.082);

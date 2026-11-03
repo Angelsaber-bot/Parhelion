@@ -10,6 +10,11 @@ import {attachGunArt} from '../src/gunArt.ts';
 import {poseMelee} from '../src/meleeArt.ts';
 
 const modeled=SIGNATURE_SKINS.filter(s=>signatureModelOf(s.id));
+for(const id of ['graviton-crucible','koi-current','owl-canticle','meridian-key'])it(`${id}: the bore has real depth instead of a flat cap at the muzzle`,async()=>{
+ const skin=SIGNATURE_SKINS.find(s=>s.id===id)!,def=combatArt(skin.weapon)!,pool=new WeaponArtPool(async()=>{throw Error('unexpected download');}),h=pool.acquire(def,skin),model=(await h.ready)!;
+ model.root.updateMatrixWorld(true);const p=def.muzzle!,ray=new THREE.Raycaster(new THREE.Vector3(p[0]+.02,p[1],p[2]),new THREE.Vector3(-1,0,0));
+ const first=ray.intersectObject(model.root,true)[0];expect(first).toBeDefined();expect(first.distance).toBeGreaterThan(.20);expect(first.distance).toBeLessThan(.50);h.release();
+});
 for(const skin of modeled)it(`${skin.id}: editable GLB export matches its runtime model and socket manifest`,async()=>{
  const manifest=JSON.parse(await readFile(new URL('../../assets/weapons/structural_v1/manifest.json',import.meta.url),'utf8')),entry=manifest.models.find((m:any)=>m.id===skin.id),bytes=await readFile(new URL(`../../assets/weapons/structural_v1/${entry.file}`,import.meta.url));expect(createHash('sha256').update(bytes).digest('hex')).toBe(entry.sha256);
  const gltf=await new GLTFLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),''),def=combatArt(skin.weapon)!;let triangles=0,tagged=false;gltf.scene.traverse(o=>{if(o.userData.structuralSkin===skin.id)tagged=true;if(o instanceof THREE.Mesh){triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;expect(o.geometry.getAttribute('normal')).toBeDefined();}});expect(tagged).toBe(true);expect(triangles).toBe(entry.triangles);expect(entry.sockets.grip).toEqual(def.grip);expect(entry.sockets.muzzle).toEqual(def.muzzle);
