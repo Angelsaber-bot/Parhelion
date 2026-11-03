@@ -1,0 +1,75 @@
+{
+  "renderObservation": {
+    "viewport": [
+      1280,
+      720
+    ],
+    "scene": "sakura offline 2v2",
+    "shootAndTurnFPS": 58.5,
+    "p95FrameMs": 18.8,
+    "note": "single observed browser/device; not a guarantee for other hardware"
+  },
+  "repeatedSculptedShotgunConstructionMs": {
+    "uncachedMean": 56.49375525,
+    "cachedMean": 0.27577075,
+    "samplesAfterFirst": 8
+  },
+  "shotgunBodyDamage128Patterns": [
+    {
+      "meters": 2,
+      "min": 162,
+      "max": 162
+    },
+    {
+      "meters": 3,
+      "min": 162,
+      "max": 162
+    },
+    {
+      "meters": 5,
+      "min": 162,
+      "max": 162
+    },
+    {
+      "meters": 8,
+      "min": 73,
+      "max": 102
+    },
+    {
+      "meters": 12,
+      "min": 20,
+      "max": 51
+    },
+    {
+      "meters": 18,
+      "min": 15,
+      "max": 15
+    }
+  ],
+  "shotgunIntervalSeconds": 0.65,
+  "worldPointLightFlash": false,
+  "sakuraWallFix": {
+    "beforeSha256": "660be7c841744125caf23f306960553fb1fdadb6b03b6260c7fa00531b324d48",
+    "afterSha256": "500730135517904b7af74db04efdcac3232c72e370bc6ef7c4328889f3f85fdc",
+    "changedByteCount": 32,
+    "onlyWallPlasterPositionYChanged": true,
+    "walls": [
+      {
+        "mesh": "VIS_wall_west",
+        "raisedVertices": 8
+      },
+      {
+        "mesh": "VIS_wall_east",
+        "raisedVertices": 8
+      },
+      {
+        "mesh": "VIS_wall_north",
+        "raisedVertices": 8
+      },
+      {
+        "mesh": "VIS_wall_south",
+        "raisedVertices": 8
+      }
+    ]
+  }
+}

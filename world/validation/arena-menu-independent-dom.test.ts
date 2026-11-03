@@ -6,7 +6,7 @@ test('Arena actual menu mode/team/Bot/locale/custom-key edits update truthful br
  const calls={scene:0,map:0,render:0,offline:0,online:0,game:0,network:0,dispose:0};(w as any).__calls=calls;
  w.requestAnimationFrame=()=>1;(w as any).matchMedia=()=>({matches:false,addEventListener(){},removeEventListener(){}});(w as any).fetch=()=>{calls.network++;throw Error('unexpected network');};(w as any).WebSocket=class{constructor(){calls.network++;throw Error('unexpected socket');}};
  const mocks:Record<string,string>={
-  'scene.ts':`export class ArenaScene{constructor(){window.__calls.scene++}async loadMap(){window.__calls.map++}setView(){}render(){window.__calls.render++}disposeCombatEffects(){window.__calls.dispose++}}`,
+  'scene.ts':`export class ArenaScene { prepareLoadout(){} constructor(){window.__calls.scene++}async loadMap(){window.__calls.map++}setView(){}render(){window.__calls.render++}disposeCombatEffects(){window.__calls.dispose++}}`,
   'game.ts':`export class Game{constructor(){window.__calls.game++}}`,
   'session.ts':`export function startOffline(){window.__calls.offline++;throw Error('unexpected start')}export async function joinOnline(){window.__calls.online++;throw Error('unexpected join')}`,
   'audio.ts':`export const sfx={unlock(){}}`,

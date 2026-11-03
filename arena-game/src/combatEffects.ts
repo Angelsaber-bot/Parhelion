@@ -53,25 +53,17 @@ export class ArenaCombatEffects {
   tracer(from: Vec3, to: Vec3, color: number, width = 1, style?:SkinEffect) {
     if (this.disposed || !finitePoint(from) || !finitePoint(to) || !Number.isFinite(width)) return;
     const slot = this.acquire(this.tracers, this.budget.tracers, () => {
-      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(99), 3));
+      const geometry = new THREE.BufferGeometry(); geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
       const material = new THREE.LineBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
       const line = new THREE.Line(geometry, material); line.name = 'Arena pooled tracer';
       return { line, life: 0, max: .09, order: 0 };
     }, 'tracers');
     const position = slot.line.geometry.getAttribute('position') as THREE.BufferAttribute;
-    const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),axis=b.clone().sub(a),length=axis.length();
-    const sideways=new THREE.Vector3().crossVectors(axis,new THREE.Vector3(0,1,0));
-    if(sideways.lengthSq()<1e-8)sideways.set(1,0,0);else sideways.normalize();
-    const count=style&&style.trail!=='straight'?33:2;
-    for(let i=0;i<count;i++){
-      const t=i/(count-1),point=a.clone().lerp(b,t),envelope=Math.sin(t*Math.PI)*Math.min(.065,length*.006);
-      const offset=!style||style.trail==='straight'?0:style.trail==='wave'?Math.sin(t*Math.PI*10):style.trail==='pulse'?(i%4<2?1:-1):(i%2?1:-.55);
-      if(i>0&&i<count-1)point.addScaledVector(sideways,envelope*offset);position.setXYZ(i,point.x,point.y,point.z);
-    }
-    for(let i=count;i<position.count;i++)position.setXYZ(i,...to);
-    slot.line.geometry.setDrawRange(0,count);position.needsUpdate = true;
-    slot.max=style?.trail==='wave'?.12:.09;
-    // Reused geometry must not retain a previous shot's culling bounds.
+    // One pooled two-point segment. No per-shot vector objects or trigonometric coils.
+    position.setXYZ(0,...from);position.setXYZ(1,...to);
+    for(let i=2;i<position.count;i++)position.setXYZ(i,...to);
+    slot.line.geometry.setDrawRange(0,2);position.needsUpdate=true;
+    slot.max=.055;
     slot.line.geometry.computeBoundingSphere();
     slot.line.material.color.setHex(color); slot.line.material.opacity = .9 * width;
     slot.life = slot.max; this.parent.add(slot.line);

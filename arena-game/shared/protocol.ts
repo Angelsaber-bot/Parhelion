@@ -4,8 +4,8 @@ import type { Snapshot } from './match.ts';
 import type { Input } from './sim.ts';
 
 export const ROOM_NAME = 'arena';
-/** v3 adds validated two-gun/one-melee loadouts, slot input, and authoritative melee windup; v4 adds the melee move-speed bonus; v5 widens melee contact and spear reach; v6 adds melee lunge, turn-swept hits and gun resistance; v7 added a U test key, removed again in v8; v9 compacts the curated cosmetic catalog, so old numeric skin indices cannot be mixed. */
-export const RULES_VERSION = 9;
+/** v3 adds validated two-gun/one-melee loadouts, slot input, and authoritative melee windup; v4 adds the melee move-speed bonus; v5 widens melee contact and spear reach; v6 adds melee lunge, turn-swept hits and gun resistance; v7 added a U test key, removed again in v8; v9 compacts the curated cosmetic catalog, so old numeric skin indices cannot be mixed. v10 retunes shotgun damage/spread/cadence; old predictive clients must refresh. */
+export const RULES_VERSION = 10;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

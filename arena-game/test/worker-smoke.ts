@@ -61,5 +61,5 @@ try {
   await refused(['lumen', 'lumen', 'blade']);
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
-  console.log('OK: v3 two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/v2 rejection');
+  console.log(`OK: v${RULES_VERSION} two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/v2 rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

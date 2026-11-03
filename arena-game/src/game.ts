@@ -132,9 +132,9 @@ export class Game {
         if (e.id === myId) break; // already shown by prediction
         const from = this.scene.muzzleOf(e.id) ?? e.from;
         const shooter=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[shooter?.skins[e.w]??0]?.id;
-        for (const to of e.to) {this.scene.skinTracer(from,to,skinId,.7);if(Math.hypot(to[0]-e.from[0],to[1]-e.from[1],to[2]-e.from[2])<WEAPONS[e.w].range-.01)this.scene.skinImpact(to,false,skinId);}
-        const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
-        if (d < 30) this.scene.muzzleFlash(from, 0.6,skinId);
+        const d = this.me ? Math.hypot(e.from[0]-this.me.x,e.from[1]-this.me.y,e.from[2]-this.me.z) : 99;
+        // Distant shots keep audio; nearby shotguns show two representative rays, not nine particle clouds.
+        if(d<32)for(const to of e.to.slice(0,WEAPONS[e.w].pellets>1?2:1))this.scene.skinTracer(from,to,skinId,.45);
         sfx.shot(e.w, d < 25, d);
         break;
       }
@@ -308,6 +308,7 @@ export class Game {
         const start = this.scene.localMuzzle();
         const w = WEAPONS[e.weapon],skinId=w.skins[this.names.get(this.session.id)?.skins[e.weapon]??0]?.id;
         this.scene.muzzleFlash(start, e.weapon === 1 ? 1.4 : 1,skinId);
+        let visualRays=0;
         for (const d of e.dirs) {
           let t = raycastMap(this.map, e.origin, d, w.range);
           if (t === Infinity) t = w.range;
@@ -318,8 +319,11 @@ export class Game {
             if (h && h.t < t) { t = h.t; onPlayer = true; }
           }
           const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
-          this.scene.skinTracer(start, end,skinId, w.pellets > 1 ? 0.5 : 1);
-          if (t < w.range) this.scene.skinImpact(end, onPlayer,skinId);
+          if(visualRays<(w.pellets>1?2:1)){
+            this.scene.skinTracer(start,end,skinId,w.pellets>1?.38:.65);
+            if(t<w.range)this.scene.skinImpact(end,onPlayer,skinId);
+          }
+          visualRays++;
           if (!onPlayer && t < w.range && Math.random() < (w.pellets > 1 ? 0.15 : 0.6)) sfx.impact(t);
         }
         break;

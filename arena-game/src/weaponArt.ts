@@ -37,11 +37,40 @@ export interface ArtInstance { root: THREE.Group; parts: Record<string, THREE.Ob
 export interface ArtHandle { ready: Promise<ArtInstance | null>; release(): void }
 type Entry = { refs: number; promise: Promise<THREE.Group>; source?: THREE.Group };
 /** One geometry per active model, instance-owned materials/poses, no unbounded cache. */
+/** Clone CPU-authored art, including callbacks Three's Material.clone intentionally omits. */
+function cloneArt(def:ArtDef,instance:ArtInstance):ArtInstance{
+ const root=instance.root.clone(true),materials=new Map<THREE.Material,THREE.Material>(),geometries=new Map<THREE.BufferGeometry,THREE.BufferGeometry>();
+ const copyMaterial=(source:THREE.Material)=>{let m=materials.get(source);if(!m){m=source.clone();m.onBeforeCompile=source.onBeforeCompile;m.customProgramCacheKey=source.customProgramCacheKey;materials.set(source,m);}return m;};
+ root.traverse(o=>{if(!(o instanceof THREE.Mesh))return;const sourceGeometry=o.geometry as THREE.BufferGeometry;const g=geometries.get(sourceGeometry)??sourceGeometry.clone();geometries.set(sourceGeometry,g);o.geometry=g;o.material=Array.isArray(o.material)?o.material.map(copyMaterial):copyMaterial(o.material);});
+ const asset=root.children.find(o=>o.name===`${def.file}_ROOT`)!,parts:Record<string,THREE.Object3D>={};
+ for(const child of asset.children)if(child.name.startsWith(`${def.file}__`))parts[child.name.slice(`${def.file}__`.length)]=child;
+ return{root,parts};
+}
 export class WeaponArtPool {
   private entries = new Map<string, Entry>();
-  constructor(private load: (url: string) => Promise<THREE.Group> = async (url) => (await new GLTFLoader().loadAsync(url)).scene) {}
+  private templates=new Map<string,ArtInstance>();
+  constructor(private load: (url: string) => Promise<THREE.Group> = async (url) => (await new GLTFLoader().loadAsync(url)).scene, private templateLimit=0) {}
   get size() { return this.entries.size; }
   acquire(def: ArtDef, colors?: { id?:string; body: number; accent: number }): ArtHandle {
+    if(!this.templateLimit||!colors?.id)return this.acquireFresh(def,colors);
+    const key=`${def.id}:${colors.id}`,cached=this.templates.get(key);
+    if(cached){
+      this.templates.delete(key);this.templates.set(key,cached);
+      let released=false,instance:ArtInstance|null=null;
+      return{ready:Promise.resolve().then(()=>released?null:(instance=cloneArt(def,cached))),release(){if(released)return;released=true;if(instance){instance.root.removeFromParent();disposeTree(instance.root,false);}}};
+    }
+    const handle=this.acquireFresh(def,colors);
+    return{release:()=>handle.release(),ready:handle.ready.then(instance=>{
+      if(instance&&!this.templates.has(key)){
+        this.templates.set(key,cloneArt(def,instance));
+        if(this.templates.size>this.templateLimit){const oldest=this.templates.keys().next().value!;disposeTree(this.templates.get(oldest)!.root,false);this.templates.delete(oldest);}
+      }
+      return instance;
+    })};
+  }
+  clearTemplates(){for(const template of this.templates.values())disposeTree(template.root,false);this.templates.clear();}
+  get templateCount(){return this.templates.size;}
+  private acquireFresh(def:ArtDef,colors?:{id?:string;body:number;accent:number}):ArtHandle{
     const sculpture=buildSignatureModel(def,colors?.id);
     if(sculpture){let released=false;return{ready:Promise.resolve().then(()=>released?null:sculpture),release(){if(released)return;released=true;sculpture.root.removeFromParent();disposeTree(sculpture.root);}};}
     let entry = this.entries.get(def.id);
@@ -103,7 +132,7 @@ export class WeaponArtPool {
     return { ready, release };
   }
 }
-export const weaponArtPool = new WeaponArtPool();
+export const weaponArtPool = new WeaponArtPool(undefined,8);
 /** glTF +X forward/+Y up -> game -Z forward/+Y up: rotate Y exactly once. */
 export function makeArtMount(def: ArtDef, root: THREE.Object3D) {
   const mount = new THREE.Group(); mount.name = `Art_${def.id}`;

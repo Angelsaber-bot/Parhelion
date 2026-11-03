@@ -1,0 +1,24 @@
+{
+  "beforeSha256": "660be7c841744125caf23f306960553fb1fdadb6b03b6260c7fa00531b324d48",
+  "afterSha256": "500730135517904b7af74db04efdcac3232c72e370bc6ef7c4328889f3f85fdc",
+  "changedByteCount": 32,
+  "onlyWallPlasterPositionYChanged": true,
+  "walls": [
+    {
+      "mesh": "VIS_wall_west",
+      "raisedVertices": 8
+    },
+    {
+      "mesh": "VIS_wall_east",
+      "raisedVertices": 8
+    },
+    {
+      "mesh": "VIS_wall_north",
+      "raisedVertices": 8
+    },
+    {
+      "mesh": "VIS_wall_south",
+      "raisedVertices": 8
+    }
+  ]
+}

@@ -44,3 +44,7 @@ cd ../../arena-game && npx vitest run test/maps.test.ts
 
 - 只经过 Bot 对局和静态检查，还没有真人对局验证平衡。
 - 池水只是视觉效果，在池里走路速度不变。
+
+### 2026-11-03 墙脚稳定性修复
+
+四面外墙的灰墙与木墙脚原来在 y=0..0.5 使用重叠侧面，视角移动时会产生深度争抢条纹。灰墙现在从 y=0.5 开始，木墙脚继续占据 y=0..0.5。`validation/fix_wall_footings.py` 仅修改四个灰墙 primitive 的 POSITION.y 与对应 bounds，二进制只变动 32 字节；不重新生成远山、樱树或其它装饰，不改变碰撞、布局和配色。审计见 `validation/wall-footing-fix.json`。

@@ -41,8 +41,8 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     const style=skinEffect(fxId);if(!style)return;
     const from=fxStart.toArray() as [number,number,number],to=fxEnd.toArray() as [number,number,number];
     effects.tracer(from,to,style.color,.8,style);
-    effects.burst(from,style.color,style.flash,.09,0,style.particle);
-    for(let i=0;i<6;i++)effects.burst(to,i%2?style.color:style.secondary,fxMelee?.23:.14,style.life,style.spread*.25,style.particle);
+    effects.burst(from,style.color,.04,.045,0);
+    for(let i=0;i<2;i++)effects.burst(to,i%2?style.color:style.secondary,fxMelee?.055:.04,.12,1.5);
   };
   const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
   const controls = new OrbitControls(camera, canvas); controls.enableDamping = true; controls.enablePan = false;

@@ -1,3 +1,4 @@
+import {disposeTree} from './weaponArt.ts';
 import {skinEffect} from './skinEffects.ts';
 // Three.js presentation: the arena map art, placeholder anime-style avatars, shields, tracers and the
 // first-person weapon. No game rules in here.
@@ -47,7 +48,7 @@ export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 export class ArenaScene {
   readonly renderer: THREE.WebGLRenderer;
   readonly scene = new THREE.Scene();
-  readonly camera = new THREE.PerspectiveCamera(78, 1, 0.05, 260);
+  readonly camera = new THREE.PerspectiveCamera(78, 1, 0.15, 260);
   private vmScene = new THREE.Scene();
   private vmCamera = new THREE.PerspectiveCamera(58, 1, 0.01, 10);
   private avatars = new Map<string, Avatar>();
@@ -84,7 +85,7 @@ export class ArenaScene {
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping; // keeps anime saturation, unlike ACES
     r.toneMappingExposure = 1.05;
-    r.shadowMap.enabled = quality === 'high';
+    r.shadowMap.enabled = true;
     r.shadowMap.type = THREE.PCFShadowMap;
     r.autoClear = false;
     this.renderer = r;
@@ -105,13 +106,13 @@ export class ArenaScene {
     this.sun = sun;
     sun.position.set(-22, 35, 18);
     sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.mapSize.set(quality==='high'?2048:1024,quality==='high'?2048:1024);
     Object.assign(sun.shadow.camera, { left: -48, right: 48, top: 44, bottom: -44, near: 1, far: 100 });
     sun.shadow.bias = -0.00025;
     sun.shadow.normalBias = 0.045;
     s.add(sun);
     this.camera.rotation.order = 'YXZ';
-    s.add(this.muzzleLight); // always present (intensity 0 when idle) so firing never recompiles shaders
+    // No gunfire point lights in the map shader: architecture keeps stable lighting.
 
     lightWeaponScene(this.vmScene);this.vmScene.add(this.viewmodel.root);
     this.configureQuality();
@@ -124,7 +125,9 @@ export class ArenaScene {
     const r=this.renderer;
     this.composer?.passes.forEach(pass=>pass.dispose());this.composer?.dispose();
     this.composer=null;this.bloom=null;this.outline=null;this.fxaa=null;
-    r.shadowMap.enabled=this.quality==='high';r.shadowMap.needsUpdate=true;
+    r.shadowMap.enabled=true;r.shadowMap.needsUpdate=true;
+    const shadowSize=this.quality==='high'?2048:1024;
+    if(this.sun.shadow.mapSize.x!==shadowSize){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(shadowSize,shadowSize);}
     if(this.quality==='high'){
       // Single-sample HDR + one lightweight edge pass, never HDR MSAA × supersampling.
       const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:0});
@@ -216,6 +219,28 @@ export class ArenaScene {
     this.renderer.shadowMap.needsUpdate = true;
   }
 
+  /** Pay art construction and shader compilation while the loading panel is up. */
+  async prepareLoadout(indices:readonly number[],skins:readonly number[]){
+    const presentations:GunPresentation[]=[],fighters:THREE.Group[]=[];
+    try{
+      for(const index of indices){
+        const held=buildGun(index,skins[index]??0,true);presentations.push(held);await held.ready;
+        const remote=buildGun(index,skins[index]??0,false);presentations.push(remote);await remote.ready;
+        this.vmScene.add(held.group);this.scene.add(remote.group);
+      }
+      for(const char of [0,1]){const rig=buildFighter(char,TEAM_COLOR.A);fighters.push(rig.root);this.scene.add(rig.root);}
+      this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
+      this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
+      await Promise.all([this.renderer.compileAsync(this.scene,this.camera),this.renderer.compileAsync(this.vmScene,this.vmCamera)]);
+      // Program compilation alone does not upload vertex buffers/textures.
+      this.renderer.render(this.scene,this.camera);renderHeldWeapon(this.renderer,this.vmScene,this.vmCamera);
+    }finally{
+      this.combatEffects.clear();for(const presentation of presentations)presentation.dispose();
+      for(const fighter of fighters){fighter.removeFromParent();disposeTree(fighter,false);}
+      this.renderer.shadowMap.needsUpdate=true;
+    }
+  }
+
   resize() {
     const w = innerWidth, h = innerHeight;
     this.renderer.setPixelRatio(graphicsPixelRatio(this.quality,devicePixelRatio,w,h));
@@ -249,39 +274,25 @@ export class ArenaScene {
 
   /** Muzzle light: a brief warm flash on the world around the shooter. */
   muzzleFlash(at: Vec3, strength = 1, skinId?:string) {
-    this.muzzleLight.color.setHex(skinEffect(skinId)?.color??0xffd79a);
-    this.muzzleLight.position.set(at[0], at[1], at[2]);
-    this.muzzleLight.intensity = 9 * strength;
-    this.flashT = 0.06;
-    const style=skinEffect(skinId);
-    if(style)this.combatEffects.burst(at,style.color,style.flash*strength,.065,0,style.particle);
+    // World lighting remains fixed while firing; the held muzzle sprite carries the flash.
+    this.muzzleLight.position.set(...at);this.muzzleLight.intensity=0;this.flashT=0;
   }
 
-  /** Shared by predicted local shots and authoritative remote shots. */
+  /** Tight, straight tracers leave the aim point clear. Skin identity lives in a restrained tint. */
   skinTracer(from:Vec3,to:Vec3,id?:string,width=1){
-    const style=skinEffect(id);if(!style){this.tracer(from,to,0xfff4c0,width);return;}
-    this.combatEffects.tracer(from,to,style.color,width,style);
-    const a=new THREE.Vector3(...from),b=new THREE.Vector3(...to),length=a.distanceTo(b);
-    const count=this.quality==='low'?2:4;
-    for(let i=1;i<=count;i++){
-      const t=Math.min(.65,(.3+i*.4)/Math.max(.001,length)),p=a.clone().lerp(b,t);
-      this.combatEffects.burst(p.toArray() as Vec3,i%2?style.color:style.secondary,.075,style.life*.65,0,style.particle);
-    }
+    const style=skinEffect(id);
+    this.combatEffects.tracer(from,to,style?.color??0xffdfad,width);
   }
   skinImpact(at:Vec3,onPlayer:boolean,id?:string){
-    const style=skinEffect(id);if(!style){this.impact(at,onPlayer);return;}
-    this.combatEffects.burst(at,style.color,onPlayer?.38:.28,.10,0,'star');
-    const count=this.quality==='low'?3:5;
-    for(let i=0;i<count;i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.12,style.life,style.spread,style.particle);
+    const style=skinEffect(id);
+    // A compact contact fleck, never a growing star/card over the target.
+    this.combatEffects.burst(at,onPlayer?0xffe6d2:(style?.secondary??0xc7b9a2),.055,.10,1.5);
+    if(onPlayer)this.combatEffects.burst(at,style?.color??0xffcd9a,.035,.12,2);
   }
   skinSwing(from:Vec3,to:Vec3,id?:string){
-    const style=skinEffect(id);if(!style)return;
-    this.combatEffects.tracer(from,to,style.color,.65,style);
-    for(let i=1;i<=4;i++){
-      const t=i/4,p=from.map((v,j)=>v+(to[j]-v)*t) as Vec3;
-      this.combatEffects.burst(p,style.color,.10,style.life*.7,0,style.particle);
-    }
+    // No glowing line through the target on a melee swing.
   }
+
   /** Bullet impact: a dust puff and flying chips on the map, a bright star burst on a player. */
   impact(at: Vec3, onPlayer: boolean, color = 0xfff4c0) {
     if (onPlayer) {
@@ -299,8 +310,8 @@ export class ArenaScene {
   meleeImpact(at: Vec3, weapon: number, skinId?:string) {
     const style=skinEffect(skinId);
     if(style){
-      this.combatEffects.burst(at,style.color,weapon===7?.85:.5,.14,0,'ring');
-      for(let i=0;i<(this.quality==='low'?5:9);i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.14,style.life,style.spread*(weapon===7?1.4:1),style.particle);
+      const count=weapon===7?4:2;
+      for(let i=0;i<count;i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.055,.14,weapon===7?2.5:2);
       return;
     }
     const color = weapon === 7 ? 0xffb35a : weapon === 6 ? 0xb6aaff : 0x9cf0ff, heavy = weapon === 7;
@@ -598,8 +609,9 @@ export class Viewmodel {
     this.kick = this.kickMax;
     this.flash.visible = true;
     this.flash.material.rotation = Math.random() * Math.PI;
-    this.flash.scale.setScalar(w === 1 ? 0.3 : (w === 2 || w === 4) ? 0.24 : 0.17);
-    setTimeout(() => (this.flash.visible = false), w === 1 ? 60 : 40);
+    this.flash.scale.setScalar(w===1?.13:.085);
+    this.flash.material.opacity=.55;
+    setTimeout(() => (this.flash.visible = false), 24);
     if (w !== 1) this.ejectShell();
   }
 

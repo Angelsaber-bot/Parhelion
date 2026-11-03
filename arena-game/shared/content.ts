@@ -126,8 +126,8 @@ export const WEAPONS: WeaponDef[] = [
     skins: [],
   },
   {
-    id: 'corona', kind: 'gun', name: 'Corona SG', auto: false, interval: 48, damage: 12, pellets: 9, headMul: 1.25,
-    spread: 0.075, spreadMove: 0.015, falloffStart: 7, falloffEnd: 18, falloffMin: 0.35,
+    id: 'corona', kind: 'gun', name: 'Corona SG', auto: false, interval: 39, damage: 18, pellets: 9, headMul: 1.25,
+    spread: 0.06, spreadMove: 0.01, falloffStart: 5, falloffEnd: 16, falloffMin: 0.25,
     mag: 6, reload: Math.round(2.3 * TICK_HZ), range: 60,
     skins: [],
   },

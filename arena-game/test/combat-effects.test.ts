@@ -34,7 +34,7 @@ it('keeps the legacy tracer and spark visible parameters while resetting reused 
     f.effects.tracer([0, 1, 0], [1, 2, -10], 0xffcc88, .5);
     const line = f.scene.children[0] as THREE.Line<THREE.BufferGeometry, THREE.LineBasicMaterial>;
     expect(line.material.opacity).toBe(.45); expect(line.material.blending).toBe(THREE.AdditiveBlending); expect(line.material.depthWrite).toBe(false);
-    f.effects.update(.03); expect(line.material.opacity).toBeCloseTo(.6, 12); // Legacy fade intentionally ignores initial width.
+    f.effects.update(.03); expect(line.material.opacity).toBeCloseTo((1-.03/.055)*.9, 12); // Legacy fade intentionally ignores initial width.
     f.effects.update(.1); expect(f.scene.children).toHaveLength(0);
     f.effects.tracer([100, 0, 0], [110, 0, 0], 0x44aacc); expect(f.scene.children[0]).toBe(line);
     expect(line.geometry.boundingSphere!.center.x).toBe(105); expect(line.geometry.boundingSphere!.radius).toBe(5);
@@ -92,16 +92,16 @@ it('unavailable damage-label canvas is a cosmetic failure, never an exception in
   finally { effects.dispose(); glow.dispose(); }
 });
 
-it('actual scene muzzle flash keeps the 60 Hz baseline and equal elapsed brightness at 30/60/144 Hz', () => {
+it('gunfire never relights or recolors architecture at any frame rate', () => {
   const intensities: number[] = [];
   for (const hz of [30, 60, 144]) {
     const f = fixture(), light = new THREE.PointLight();
     const state = Object.assign(Object.create(ArenaScene.prototype), { combatEffects: f.effects, flashT: 0, muzzleLight: light, viewmodel: { update() {} }, particles: null, blackflagEffects: null, chapterEffects: null }) as ArenaScene;
     try {
-      state.muzzleFlash([1, 2, 3]); expect(light.position.toArray()).toEqual([1, 2, 3]); expect(light.intensity).toBe(9);
+      state.muzzleFlash([1, 2, 3]); expect(light.position.toArray()).toEqual([1, 2, 3]); expect(light.intensity).toBe(0);
       let elapsed = 0;
       while (elapsed < .05 - 1e-12) { const dt = Math.min(1 / hz, .05 - elapsed); state.update(dt); elapsed += dt; }
-      intensities.push(light.intensity); expect(light.intensity).toBeCloseTo(9 * .6 ** 3, 12);
+      intensities.push(light.intensity); expect(light.intensity).toBe(0);
       state.update(.01); expect(light.intensity).toBe(0);
     } finally { f.close(); light.dispose(); }
   }

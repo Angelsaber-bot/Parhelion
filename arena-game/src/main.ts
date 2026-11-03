@@ -245,6 +245,8 @@ $('play').onclick = async () => {
     sfx.unlock();
     await mapReady;
     if (!current()) return;
+    await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
+    if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
     ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : startOffline(opts, difficulty);
     if (!current()) { closeOwned(); return; }

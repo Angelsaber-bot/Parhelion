@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 import { JSDOM } from 'jsdom';
 const root = resolve('../arena-game');
 const mocks: Record<string, string> = {
-  'scene.ts': 'export class ArenaScene { loadMap(){return Promise.resolve()}setView(){}render(){}disposeCombatEffects(){} }',
+  'scene.ts': 'export class ArenaScene { prepareLoadout(){}  loadMap(){return Promise.resolve()}setView(){}render(){}disposeCombatEffects(){} }',
   'game.ts': `export class Game { constructor(session,scene,controls,hud,onExit){this.session=session;this.online=session.online;this.onExit=onExit;window.__qa.games++}setPaused(p){window.__qa.pauses.push(p)}stop(){if(this.stopped)return;this.stopped=true;this.session.close();this.onExit('')} }`,
   'session.ts': `export function startOffline(){return window.__qa.session(false)}export async function joinOnline(){return window.__qa.session(true)}`,
   'audio.ts': 'export const sfx={unlock(){}}', 'armory.ts': 'export function openArmory(){}',

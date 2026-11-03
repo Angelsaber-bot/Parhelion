@@ -80,7 +80,8 @@ for o in data['objects']:
     elif o['id'] == 'floor_precinct':
         m.box('gravel', lo, hi)
     elif o['id'].startswith('wall_'):
-        m.box('plaster', lo, (hi[0], 3.2, hi[2]), skip_bottom=True)
+        # The timber occupies y=0..0.5: overlapping side faces caused visible z-fighting.
+        m.box('plaster', (lo[0], .5, lo[2]), (hi[0], 3.2, hi[2]), skip_bottom=True)
         m.box('woodDark', (lo[0], 0, lo[2]), (hi[0], .5, hi[2]))
     elif o['id'] == 'hall_roof':
         m.box('roof_edge', lo, hi)

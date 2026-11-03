@@ -123,3 +123,17 @@ for (const w of WEAPONS.filter((w) => w.kind === 'melee')) it(`${w.id}: actual c
   expect(poses[4]).not.toEqual(poses[5]);
   presentation.dispose(); expect(pool.size).toBe(0);
 });
+
+it('bounded production templates avoid rebuilding sculpted art on repeated swaps and retain independent ownership',async()=>{
+ const pool=new WeaponArtPool(async()=>{throw Error('unexpected download')},2),skin=WEAPONS[1].skins.find(s=>s.id==='cinder-express')!,def=combatArt('corona')!;
+ const first=pool.acquire(def,skin),a=(await first.ready)!;first.release();expect(pool.templateCount).toBe(1);
+ const cached=pool.acquire(def,skin),b=(await cached.ready)!;
+ let geo:THREE.BufferGeometry|undefined;a.root.traverse(o=>{if(o instanceof THREE.Mesh)geo=o.geometry;});
+ b.root.traverse(o=>{if(o instanceof THREE.Mesh){expect(o.geometry).not.toBe(geo);for(const m of Array.isArray(o.material)?o.material:[o.material])expect(m.userData.finish).toBe(skin.id);}});
+ pool.clearTemplates();expect(pool.templateCount).toBe(0);expect(new THREE.Box3().setFromObject(b.root).isEmpty()).toBe(false);cached.release();
+});
+it('production art templates evict the least recent entry instead of growing with the whole catalog',async()=>{
+ const pool=new WeaponArtPool(async()=>{throw Error('unexpected download')},2);
+ for(const id of ['cinder-express','prismwing','sugar-crash']){const w=WEAPONS.find(w=>w.skins.some(s=>s.id===id))!,h=pool.acquire(combatArt(w.id)!,w.skins.find(s=>s.id===id));await h.ready;h.release();expect(pool.templateCount).toBeLessThanOrEqual(2);}
+ pool.clearTemplates();expect(pool.templateCount).toBe(0);
+});
