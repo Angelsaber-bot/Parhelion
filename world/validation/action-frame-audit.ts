@@ -57,6 +57,7 @@ export function auditHeatFrame(fps: number, seconds = 10) {
   for (let f = 0; f < fps * seconds; f++) {
     acc += 1 / fps;
     while (acc + 1e-9 >= .05) { state.step(.05, { x: 0, y: 0, z: 0 }, true, { walk: () => null, lineOfSight: () => true }); acc = Math.max(0, acc - .05); }
+    state.refillAmmo(); // cadence audit: heat/vent timing only, ammo is covered by rifle-ammo.test
     if (state.canShoot()) { shots++; if (shots === COMBAT.shotBurst) firstVent = (f + 1) / fps; if (shots === COMBAT.shotBurst+1) firstResume = (f + 1) / fps; }
   }
   return { fps, shots, firstVent, firstResume, ventSeconds: firstResume - firstVent };

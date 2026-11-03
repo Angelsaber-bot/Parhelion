@@ -9,7 +9,7 @@ import type { EnemyRole } from '../enemyRoles';
 import { ALPHA_STATUES, ALPHA_PUZZLES, ALPHA_TRIALS, ALPHA_CAMPS, ALPHA_DOMAINS, ALPHA_CHESTS, ALPHA_FEATHERS } from './content/alpha';
 import { BLACKSAIL_STATUES, BLACKSAIL_PUZZLES, BLACKSAIL_TRIALS, BLACKSAIL_CAMPS, BLACKSAIL_DOMAINS, BLACKSAIL_CHESTS, BLACKSAIL_FEATHERS } from './content/blacksail';
 import { WINTER_STATUES, WINTER_PUZZLES, WINTER_TRIALS, WINTER_CAMPS, WINTER_DOMAINS, WINTER_CHESTS, WINTER_FEATHERS } from './content/winter';
-import { EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, TREASURE_MAPS, flagDig, flagEmber, flagFox } from './regional';
+import { DUELS, DUEL_CHESTS, EMBER_ROUTES, FOXFIRES, REGIONAL_CHESTS, TREASURE_MAPS, flagDig, flagEmber, flagFox } from './regional';
 import { KYOTO_STATUES, KYOTO_PUZZLES, KYOTO_TRIALS, KYOTO_CAMPS, KYOTO_DOMAINS, KYOTO_CHESTS, KYOTO_FEATHERS } from './content/kyoto';
 
 export type XZ = readonly [number, number];
@@ -31,7 +31,7 @@ export interface TrialOrb { readonly p: XZ; /** absolute height; omitted = groun
 export interface TrialDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly stele: XZ; readonly seconds: number; readonly orbs: readonly TrialOrb[]; readonly hint: Localized }
 /** `echo-warden` turns a domain's last actor into a two-phase boss (264 HP, thrust → sweep → burst). */
 export interface CampActor { readonly role: EnemyRole; readonly offset: readonly [number, number]; readonly title?: Localized; readonly pattern?: 'echo-warden' }
-export interface CampDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly anchor: XZ; readonly waves: readonly (readonly CampActor[])[]; readonly requires?: string; readonly style?: 'camp' | 'domain' }
+export interface CampDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly anchor: XZ; readonly waves: readonly (readonly CampActor[])[]; readonly requires?: string; readonly style?: 'camp' | 'domain' | 'duel' }
 /** 秘境：a walled ruin that chains a prism seal, a gated multi-wave fight and a luxurious chest. */
 export interface DomainDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly center: XZ; readonly radius: number; readonly story: Localized }
 
@@ -100,11 +100,7 @@ const BRITAIN_PUZZLES: readonly PrismPuzzleDef[] = [
 ];
 
 const BRITAIN_TRIALS: readonly TrialDef[] = [
-  {
-    id: 'lakeshore', region: 'britain', title: ['环湖回响', 'Lakeshore Echo'], stele: [-615, 130], seconds: 42,
-    orbs: [{ p: [-630, 142] }, { p: [-650, 152] }, { p: [-687, 168] }, { p: [-702, 160] }, { p: [-720, 154] }, { p: [-743, 125] }, { p: [-752, 76] }, { p: [-740, 50] }],
-    hint: ['沿湖岸奔跑，限时内收集全部光点。', 'Sprint along the shore and collect every light before time runs out.'],
-  },
+
   {
     id: 'camelot_glide', region: 'britain', title: ['王城滑翔', 'Camelot Glide'], stele: [-880, -128], seconds: 24,
     orbs: [{ p: [-872, -114], y: 31.5 }, { p: [-863, -98], y: 27 }, { p: [-853, -82], y: 22.5 }, { p: [-843, -66], y: 18 }, { p: [-833, -50], y: 13 }, { p: [-823, -34], y: 8.2 }, { p: [-813, -18] }],
@@ -144,7 +140,6 @@ const BRITAIN_CHESTS: readonly ChestDef[] = [
   b('puzzle_mistwood', [-568, -124], 'precious', { requires: flagPuzzle('mistwood'), yaw: Math.PI }),
   b('puzzle_swordlake', [-603, 118], 'precious', { requires: flagPuzzle('swordlake'), yaw: -Math.PI / 2 }),
   b('puzzle_camelot', [-740, -206], 'luxurious', { requires: flagPuzzle('camelot'), yaw: -Math.PI / 2 }),
-  b('trial_lakeshore', [-611, 136], 'exquisite', { requires: flagTrial('lakeshore'), yaw: -Math.PI / 2 }),
   b('trial_camelot_glide', [-808, -12], 'exquisite', { requires: flagTrial('camelot_glide') }),
   b('camp_mistcamp', [-550, -88], 'precious', { requires: flagCamp('mistcamp') }),
   b('camp_hillfort', [-666, -291], 'precious', { requires: flagCamp('hillfort') }),
@@ -170,9 +165,9 @@ const BRITAIN_FEATHERS: readonly FeatherDef[] = [
 export const STATUES: readonly StatueDef[] = [...BRITAIN_STATUES, ...ALPHA_STATUES, ...BLACKSAIL_STATUES, ...WINTER_STATUES, ...KYOTO_STATUES];
 export const PUZZLES: readonly PrismPuzzleDef[] = [...BRITAIN_PUZZLES, ...ALPHA_PUZZLES, ...BLACKSAIL_PUZZLES, ...WINTER_PUZZLES, ...KYOTO_PUZZLES];
 export const TRIALS: readonly TrialDef[] = [...BRITAIN_TRIALS, ...ALPHA_TRIALS, ...BLACKSAIL_TRIALS, ...WINTER_TRIALS, ...KYOTO_TRIALS];
-export const CAMPS: readonly CampDef[] = [...BRITAIN_CAMPS, ...ALPHA_CAMPS, ...BLACKSAIL_CAMPS, ...WINTER_CAMPS, ...KYOTO_CAMPS];
+export const CAMPS: readonly CampDef[] = [...BRITAIN_CAMPS, ...ALPHA_CAMPS, ...BLACKSAIL_CAMPS, ...WINTER_CAMPS, ...KYOTO_CAMPS, ...DUELS];
 export const DOMAINS: readonly DomainDef[] = [...BRITAIN_DOMAINS, ...ALPHA_DOMAINS, ...BLACKSAIL_DOMAINS, ...WINTER_DOMAINS, ...KYOTO_DOMAINS];
-export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS, ...REGIONAL_CHESTS];
+export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS, ...REGIONAL_CHESTS, ...DUEL_CHESTS];
 export const FEATHERS: readonly FeatherDef[] = [...BRITAIN_FEATHERS, ...ALPHA_FEATHERS, ...BLACKSAIL_FEATHERS, ...WINTER_FEATHERS, ...KYOTO_FEATHERS];
 
 // ─────────────────────────────────────── pure rules ───────────────────────────────────────

@@ -54,7 +54,7 @@ test('content stays inside its region play area', () => {
 
 test('camp waves fit the story encounter director limits', () => {
   for (const camp of CAMPS) {
-    assert.ok(camp.waves.length >= 2, camp.id);
+    assert.ok(camp.waves.length >= (camp.style === 'duel' ? 1 : 2), camp.id);
     camp.waves.forEach((wave, i) => {
       assert.ok(wave.length > 0 && wave.length <= STORY_ENCOUNTER_LIMITS.actors, camp.id);
       for (const actor of wave) {
@@ -151,4 +151,13 @@ test('fox-fire paths are continuous, sprintable and end where they promise', () 
     const end = foxAt(f, foxLength(f) + 5); assert.ok(end.end);
     assert.ok(CHESTS.some(c => c.requires === flagFox(f.id)));
   }
+});
+
+test('Round Table duels: one knight each, chained, the last is a two-phase warden', () => {
+  const duels = CAMPS.filter(c => c.style === 'duel');
+  assert.deepEqual(duels.map(d => d.id), ['duel_kay', 'duel_galahad', 'duel_lancelot']);
+  assert.ok(duels.every(d => d.region === 'britain' && d.waves.length === 1 && d.waves[0].length === 1));
+  assert.equal(duels[1].requires, flagCamp('duel_kay')); assert.equal(duels[2].requires, flagCamp('duel_galahad'));
+  assert.equal(duels[2].waves[0][0].pattern, 'echo-warden');
+  assert.ok(!TRIALS.some(t => t.id === 'lakeshore'));
 });

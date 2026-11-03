@@ -25,3 +25,5 @@ body.clean .combat-hud, body.clean #world-hurt { display: none !important; }
 .combat-counter { line-height: 1.35; }
 .combat-counter--punish { color: #a1f8e8; font-weight: 750; }
 #world-vitals .combat-counter { display: block; margin-top: 4px; }
+#world-vitals[data-ammo="low"] span { color: #ffd27a; }
+#world-vitals[data-ammo="empty"] span { color: #ff8a7a; }

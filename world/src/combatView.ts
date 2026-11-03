@@ -5,6 +5,7 @@ import type { Collider } from './player';
 import type { Layout } from './types';
 import { bilingual } from '../../shared-client/i18n';
 import { BOSSES, COMBAT, WorldCombatState, makeWildernessSpawns, distanceXZ, isMeleePunishWindow, type Enemy, type Point3, type HitContext } from './combat';
+import { WORLD_RIFLE } from './worldBalance';
 import './combat.css';
 import { makeCombatTerrain } from './combatTerrain';
 import { COMPACT_RELAY_ENCOUNTER } from './compactRelayEncounter';
@@ -242,6 +243,7 @@ export class WorldCombat {
   startOptionalTrial(enemyId: string) { return this.state.startOptionalTrial(enemyId); }
   recoverAtSettlement(amount: number) { const healed = this.state.recoverAtSettlement(amount); if (healed) this.renderHud(); return healed; }
   canShoot() { return this.playable && this.state.canShoot(); }
+  refillAmmo(rounds?: number) { return this.state.refillAmmo(rounds); }
   /** One bounded marker clock for enemy and quest hits; multi-target attacks allocate no timers. */
   flashHitMarker(duration = .13) {
     if (this.disposed || !this.playable || this.state.defeated || !Number.isFinite(duration) || duration <= 0) return;
@@ -456,7 +458,7 @@ export class WorldCombat {
         }
       } else if (event.type === 'hit') {
         if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
-        this.impact.textContent = `${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
+        this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
       } else if (event.type === 'kill') {
         this.contactEffects.cancel(event.id);
@@ -482,7 +484,9 @@ export class WorldCombat {
     }
   }
   private renderHud() {
-    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${COMBAT.playerHp}` + (this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${COMBAT.shotBurst}` : '');
+    const ammo = this.state.bossStarted ? bilingual('弹药 ∞ 日冕供能', 'AMMO ∞ corona-fed') : this.state.ammo > 0 ? `${bilingual('弹药', 'AMMO')} ${this.state.ammo}/${WORLD_RIFLE.ammoMax}` : bilingual('弹药耗尽 · 近战', 'NO AMMO · melee');
+    if (this.hud.dataset) this.hud.dataset.ammo = this.state.bossStarted ? 'boss' : this.state.ammo <= 0 ? 'empty' : this.state.ammo <= WORLD_RIFLE.ammoMax / 6 ? 'low' : 'ok';
+    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${COMBAT.playerHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${COMBAT.shotBurst}` : '');
     (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp}%`;
     this.hud.title = bilingual('脱离战斗 5 秒后恢复生命', 'Health recovers after 5 seconds out of combat');
     this.bossHud.hidden = !this.state.bossStarted;

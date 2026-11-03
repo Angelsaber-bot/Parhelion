@@ -441,9 +441,20 @@ const { done, found } = worldProgress;
 const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text),terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel,
  startEncounter:spec=>combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming}),
  activeEncounter:()=>combat.storyEncounter?.id??null,cancelEncounter:()=>combat.cancelStoryEncounter(),
- onGlideLevel:level=>applyExplorationGlide(level),sound:kind=>audio.explore(kind)});
+ onGlideLevel:level=>applyExplorationGlide(level),sound:kind=>audio.explore(kind),refillAmmo:rounds=>combat.refillAmmo(rounds)});
 world.add(exploration.root);colliders.push(...exploration.colliders);layout.markers.push(...exploration.markers);
 addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();});
+/** Field ammo: settlements refill the rifle; an empty trigger pull points the player at the blade. */
+let ammoDryPulls=0,ammoHintAt=-1e9,ammoRefillAt=-1e9;
+function fieldAmmo(){
+  const st=combat.state,t=performance.now();
+  if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;toast(bilingual(`弹药耗尽：用 ${settings.label('melee')} 近战，击倒敌人、开宝箱或回到据点补给弹药。`,`Out of ammo: melee with ${settings.label('melee')}. Kills, chests and settlements resupply rounds.`));}}
+  if(!gameplayActive()||combat.defeated||st.ammo>=WORLD_RIFLE.ammoMax||st.quietFor<2||t-ammoRefillAt<1500)return;
+  const home=settlements.placements.find(p=>Math.hypot(player.pos.x-p.position[0],player.pos.z-p.position[2])<Math.hypot(...p.footprint)/2+18);
+  if(!home)return;
+  ammoRefillAt=t;const got=st.refillAmmo();
+  if(got>0)toast(bilingual(`${home.name[0]}：补充弹药 +${got}（${st.ammo}/${WORLD_RIFLE.ammoMax}）`,`${home.name[1]}: rounds resupplied +${got} (${st.ammo}/${WORLD_RIFLE.ammoMax})`));
+}
 function applyExplorationGlide(level=explorationGlideLevel(done)){const g=explorationGlideScale(level);player.glideSpeedScale=g.speed;player.glideSinkScale=g.sink;}
 const weaponFinishStore = new WeaponFinishStore(progressStorage);
 let weaponFinishControl: ReturnType<typeof createWeaponFinishControl> | undefined;
@@ -1490,14 +1501,14 @@ cavalrySupport=new LocalCavalrySupport({done,player:player.pos,actor:()=>napoleo
  strike:(origin,direction)=>combat.applyStrike({origin,direction,range:4.8,halfWidth:1.7,damage:56,maxTargets:2},'skill').hits.length>0,
  toast:line=>toast(bilingual(...line)),save,changed:applyWorldState,
 });
-adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>combat.recoverAtSettlement(25),actions:adventureSites.actions,path:adventureSites.convoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
+adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>{combat.refillAmmo(30);return combat.recoverAtSettlement(25);},actions:adventureSites.actions,path:adventureSites.convoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const result=combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming});return{ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};},
  encounter:()=>combat.storyEncounter?.id??null,cancel:()=>combat.cancelStoryEncounter(),toast:line=>toast(bilingual(...line)),
  moveCart:(from,to)=>{const p=new THREE.Vector3(...from),q=new THREE.Vector3(...to),dir=q.clone().sub(p);for(const dx of[-.9,.9])if(combat.geometry.cast(p.clone().add(new THREE.Vector3(dx,1,0)),dir,dir.length()+.7))return false;return true;},
 });
 kingdomGateRuntime = createKingdomGateRuntime({
- done,save,changed:applyWorldState,supply:()=>combat.recoverAtSettlement(100),damage:()=>relayDamageRevision,
+ done,save,changed:applyWorldState,supply:()=>{combat.refillAmmo();return combat.recoverAtSettlement(100);},damage:()=>relayDamageRevision,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&!combat.defeated&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:()=>{const result=combat.startStoryEncounter(gateEncounter(),{position:player.pos,playable:gameplayActive()&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&!fortCannon.mounted});return {ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};},
  cancel:()=>combat.cancelStoryEncounter(),encounter:()=>combat.storyEncounter?.id??null,
@@ -1815,8 +1826,8 @@ function interact() {
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
   if(m.id===ARMORY_MARKER&&adventureActive(done))return speakDialogue([
-    `步枪与短刃已领取。${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。六发连射后会散热；远距离威力降低，重卫收势时更容易被反击。\n先到工坊西侧服务庭院，接通最低外联。正面与维修侧路都能抵达机柜；完成后沿西路去圣剑湖。`,
-    `Rifle and blade acquired. ${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. Six rounds trigger a vent; range reduces damage, and heavy guards are vulnerable during recovery.\nRestore the minimum uplink in the service yard west of the workshop. Take front cover or the maintenance flank, then head west to Sword Lake.`,
+    `步枪与短刃已领取。${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。六发连射后会散热；随身弹药 90 发，打空只能近战，击倒敌人、开宝箱、回据点都能补给；远距离威力降低，重卫收势时更容易被反击。\n先到工坊西侧服务庭院，接通最低外联。正面与维修侧路都能抵达机柜；完成后沿西路去圣剑湖。`,
+    `Rifle and blade acquired. ${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. Six rounds trigger a vent; you carry 90 rounds and must melee when empty (kills, chests and settlements resupply); range reduces damage, and heavy guards are vulnerable during recovery.\nRestore the minimum uplink in the service yard west of the workshop. Take front cover or the maintenance flank, then head west to Sword Lake.`,
   ],['求援讯号','The distress signal']);
   if (m.id === ARMORY_MARKER) return speakDialogue([
     `步枪与短刃已领取。连射6发后会短暂散热，停火也能冷却。\n${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。靶场就在前方。想直接实战，可从西门走约35米到北侧服务庭院的训练入口。已为你追踪；按 ${settings.label('mainRoute')} 可返回原主线。`,
@@ -1993,6 +2004,7 @@ function frame(now: number) {
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id as RegionId,gameplayActive()&&!combat.defeated);
+  if(typeof fieldAmmo==='function')fieldAmmo();
   flagshipInterior.apply(done,now/1000);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}
   residentEventRuntime?.update(player.pos,player.gliding,gameplayActive()&&!combat.defeated);

@@ -15,7 +15,7 @@ function advance(s: WorldCombatState, seconds: number, player: Point3) {
 }
 function armed(e: Enemy) { e.active = true; e.mode = 'windup'; e.timer = .01; e.attack = 'sweep'; }
 
-test('six stable roles diversify existing regional IDs without adding population or health', () => {
+test('seven stable roles diversify existing regional IDs without adding population or health', () => {
   const roles = new Set<EnemyRole>();
   for (const home of [p(0), p(-720), p(720), p(0, -720), p(0, 720)]) {
     for (let i = 0; i < 20; i++) {
@@ -23,7 +23,7 @@ test('six stable roles diversify existing regional IDs without adding population
       const role = selectEnemyRole(spec); assert.equal(selectEnemyRole(spec), role); roles.add(role);
     }
   }
-  assert.equal(roles.size, 6);
+  assert.equal(roles.size, 7);
   assert.equal(COMBAT.wildernessCap, 160);
   const s = new WorldCombatState([{ id: 'a', kind: 'shade', p: p(0) }, { id: 'b', kind: 'crystal', p: p(20) }], []);
   assert.deepEqual(s.enemies.map(e => e.maxHp), [66, 88], 'no sponge inflation');
@@ -178,4 +178,12 @@ test('bosses keep telegraphing against a distant player instead of parity soft-l
     advance(s, 12, p(18));
     assert.ok(s.boss.attackCount >= 3, `${id}: keeps ranged pressure, ${s.boss.attackCount}`);
   }
+});
+
+test('落日王国 shieldbearer: the shield eats frontal rifle rounds, opens after its charge and never stops the blade', () => {
+  const { s, e } = setup('shieldbearer'); e.active = true; e.mode = 'chase';
+  s.hitEnemy(e.id, 12, { source: 'ranged', origin: p(2) }); assert.ok(Math.abs(e.hp - (66 - 1.8)) < 1e-6, 'front rifle hit is blocked to 15%');
+  e.mode = 'recover'; const before = e.hp; s.hitEnemy(e.id, 12, { source: 'ranged', origin: p(2) }); assert.ok(before - e.hp > 12, 'recovery after a missed charge is open');
+  e.mode = 'chase'; const mid = e.hp; s.hitEnemy(e.id, 12, { source: 'melee' }); assert.equal(mid - e.hp, 12, 'the blade is never blocked');
+  assert.equal(ENEMY_ROLES.shieldbearer.attack, 'thrust');
 });

@@ -8,7 +8,7 @@ import type { RegionId } from '../settlements/types';
 import { EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, flagDig, flagEmber, flagFox } from './regional';
 import { CAMPS, DOMAINS, PUZZLES, REGION_NAMES, STATUES, TRIALS, flagCamp, flagPuzzle, flagTrial, regionExploration } from './catalog';
 
-export type MapIconKind = 'statue' | 'domain' | 'camp' | 'puzzle' | 'trial' | 'bottle' | 'ember' | 'fox';
+export type MapIconKind = 'statue' | 'domain' | 'camp' | 'puzzle' | 'trial' | 'bottle' | 'ember' | 'fox' | 'duel';
 export interface MapIcon { readonly id: string; readonly kind: MapIconKind; readonly x: number; readonly z: number; readonly cleared: boolean }
 type Project = (x: number, z: number) => { x: number; y: number };
 
@@ -20,7 +20,7 @@ export function explorationMapIcons(done: ReadonlySet<string>): MapIcon[] {
     ...STATUES.map(s => ({ id: `statue:${s.id}`, kind: 'statue' as const, x: s.p[0], z: s.p[1], cleared: false })),
     // a domain's seal puzzle and its waves are one icon: cleared when the last wave falls
     ...DOMAINS.map(d => ({ id: `domain:${d.id}`, kind: 'domain' as const, x: d.center[0], z: d.center[1], cleared: done.has(flagCamp(d.id)) })),
-    ...CAMPS.filter(c => !domainIds.has(c.id)).map(c => ({ id: `camp:${c.id}`, kind: 'camp' as const, x: c.anchor[0], z: c.anchor[1], cleared: done.has(flagCamp(c.id)) })),
+    ...CAMPS.filter(c => !domainIds.has(c.id)).map(c => ({ id: `camp:${c.id}`, kind: (c.style === 'duel' ? 'duel' : 'camp') as MapIconKind, x: c.anchor[0], z: c.anchor[1], cleared: done.has(flagCamp(c.id)) })),
     ...PUZZLES.filter(p => !domainIds.has(p.id)).map(p => { const [x, z] = centroid([p.source.p, p.receiver, ...p.prisms.map(q => q.p)]); return { id: `puzzle:${p.id}`, kind: 'puzzle' as const, x, z, cleared: done.has(flagPuzzle(p.id)) }; }),
     ...TRIALS.map(t => ({ id: `trial:${t.id}`, kind: 'trial' as const, x: t.stele[0], z: t.stele[1], cleared: done.has(flagTrial(t.id)) })),
     // treasure: only where the first map washes up; the dig sites are the hunt itself
@@ -30,7 +30,7 @@ export function explorationMapIcons(done: ReadonlySet<string>): MapIcon[] {
   ];
 }
 
-const COLORS: Record<MapIconKind, string> = { statue: '#ffe08a', domain: '#c89bff', camp: '#ff7a6b', puzzle: '#7fe6ff', trial: '#9df0b0', bottle: '#f0d9a0', ember: '#ffa54a', fox: '#8fe0ff' };
+const COLORS: Record<MapIconKind, string> = { statue: '#ffe08a', domain: '#c89bff', camp: '#ff7a6b', puzzle: '#7fe6ff', trial: '#9df0b0', bottle: '#f0d9a0', ember: '#ffa54a', fox: '#8fe0ff', duel: '#ffd36b' };
 const OUTLINE = '#1f2a44', CLEARED = '#9aa3b2';
 
 export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number) {
@@ -68,6 +68,10 @@ export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: Readon
       case 'fox': // fox head
         ctx.moveTo(x - 6 * u, y - 7 * u); ctx.lineTo(x - 3 * u, y - 2 * u); ctx.lineTo(x + 3 * u, y - 2 * u); ctx.lineTo(x + 6 * u, y - 7 * u); ctx.lineTo(x + 6 * u, y);
         ctx.lineTo(x, y + 7 * u); ctx.lineTo(x - 6 * u, y); ctx.closePath();
+        break;
+      case 'duel': // heater shield
+        ctx.moveTo(x - 6 * u, y - 6 * u); ctx.lineTo(x + 6 * u, y - 6 * u); ctx.lineTo(x + 6 * u, y); ctx.quadraticCurveTo(x + 5 * u, y + 5 * u, x, y + 8 * u);
+        ctx.quadraticCurveTo(x - 5 * u, y + 5 * u, x - 6 * u, y); ctx.closePath(); ctx.moveTo(x, y - 6 * u); ctx.lineTo(x, y + 8 * u);
         break;
       case 'trial': // stele
         ctx.moveTo(x - 3.5 * u, y + 7 * u); ctx.lineTo(x - 3.5 * u, y - 4 * u); ctx.lineTo(x, y - 7 * u); ctx.lineTo(x + 3.5 * u, y - 4 * u); ctx.lineTo(x + 3.5 * u, y + 7 * u); ctx.closePath();

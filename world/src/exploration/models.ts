@@ -589,3 +589,20 @@ export function dynamicArt(build: (f: Frame) => void): { group: THREE.Group; art
   const art = new SiteArt(); build(new Frame(art, [0, 0, 0])); art.finish('britain');
   const group = new THREE.Group(); group.add(art.root); return { group, art };
 }
+/** 落日王国：a tourney ring — trodden sand, a low stone kerb, pennant poles and the challenger's stake. */
+export function duelRing(f: Frame, r: number, seed: number) {
+  const colors = [['#2a3f7a', '#d9b25a'], ['#f1ece0', '#9b1c1c'], ['#1d4a2e', '#c9c9c9']][seed % 3];
+  f.cyl([0, .03, 0], r, .06, '#b49a6a', 'body', 20);
+  f.torus([0, .08, 0], r * .55, .04, '#9c8458', 'body', [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 40; i++) { const a = i / 40 * Math.PI * 2; if (i % 10 === 0) continue; f.box([Math.cos(a) * (r + .3), .18, Math.sin(a) * (r + .3)], [1.45, .36, .5], i % 2 ? '#a39c89' : '#948d7a', 'body', [0, -a + Math.PI / 2, 0]); }
+  for (let i = 0; i < 8; i++) {
+    const a = i / 8 * Math.PI * 2 + Math.PI / 8, x = Math.cos(a) * (r + 1.4), z = Math.sin(a) * (r + 1.4);
+    f.cyl([x, 2.4, z], .07, 4.8, '#4a3424', 'body', 8); f.sphere([x, 4.85, z], [.12, .12, .12], '#d9b25a', 'metal');
+    f.box([x + .5, 4.3, z], [1.0, .55, .03], colors[i % 2], 'body', [0, 0, 0]); f.cone([x + 1.15, 4.3, z], .28, .5, colors[i % 2], 'body', 4, [0, 0, -Math.PI / 2]);
+  }
+  // challenger's stake with a hanging shield, on the south edge
+  f.cyl([0, 1.2, r + .9], .1, 2.4, '#4a3424', 'body', 8, [0, 0, 0], true);
+  f.cyl([0, 1.55, r + .78], .42, .08, colors[0], 'body', 12, [Math.PI / 2, 0, 0]);
+  f.torus([0, 1.55, r + .74], .42, .04, colors[1], 'metal', [0, 0, 0]);
+  f.box([0, 1.55, r + .72], [.08, .6, .02], colors[1], 'metal'); f.box([0, 1.6, r + .72], [.5, .08, .02], colors[1], 'metal');
+}

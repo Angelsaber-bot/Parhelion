@@ -4,6 +4,7 @@
  */
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
+import { WORLD_RIFLE } from '../worldBalance';
 import { bilingual } from '../../../shared-client/i18n';
 import { SiteArt } from '../campaignSites';
 import type { Collider } from '../player';
@@ -20,10 +21,10 @@ import {
   Frame, beamGeometry, blockerPillar, campProps, chestBody, chestLid, crystalMaterial, featherMesh, FX, glint, haloStatue,
   lightPillar, orbMesh, prismHead, prismPedestal, receiverBase, receiverCrystal, sealDome, steppingStone, sunLens, sunSource,
   trialStele, waterPlatform, domainRuin, type V3, dynamicArt, messageBottle, bottleGlass, digMound, emberBrazier, emberBeacon, beaconFlame, emberCarry,
-  foxShrine, hokora, foxWisp,
+  foxShrine, hokora, foxWisp, duelRing,
 } from './models';
 import {
-  EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, FOX_GRACE, FOX_LEASH, FOX_PAUSE, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap,
+  DUEL_RING, EMBER_ROUTES, FOXFIRES, TREASURE_MAPS, FOX_GRACE, FOX_LEASH, FOX_PAUSE, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap,
   foxAt, foxLength, mapHeld, markerBeacon, markerBottle, markerBrazier, markerDig, markerFoxShrine, type EmberRouteDef, type FoxfireDef, type TreasureMapDef,
 } from './regional';
 import './exploration.css';
@@ -40,6 +41,8 @@ export interface ExplorationHost {
   cancelEncounter(): void;
   onGlideLevel(level: number): void;
   sound(kind: 'open' | 'pickup' | 'solve' | 'rotate' | 'fail'): void;
+  /** loads rifle rounds; returns how many fit */
+  refillAmmo?(rounds: number): number;
 }
 interface PlayerView { pos: THREE.Vector3; onGround: boolean; gliding: boolean; flying: boolean; swimming: boolean }
 
@@ -140,8 +143,8 @@ export function createExploration(host: ExplorationHost) {
     if (done.has(flagChest(c.id))) return;
     if (c.requires && !done.has(c.requires)) { host.toast(bilingual(`宝箱被封印了：需要先${requirementText(c.requires)}。`, `The chest is sealed: first ${requirementText(c.requires)}.`)); return; }
     done.add(flagChest(c.id)); host.save(); host.sound('open');
-    const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done);
-    showBanner(bilingual(`获得 日晕晶 ×${n}`, `Halo Crystal ×${n}`), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
+    const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done), rounds = host.refillAmmo?.(WORLD_RIFLE.ammoChest) ?? 0;
+    showBanner(bilingual(`获得 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
   }
 
   // ───────────────────────── feathers ─────────────────────────
@@ -287,7 +290,13 @@ export function createExploration(host: ExplorationHost) {
   let busyHintAt = -1e9;
   CAMPS.forEach((def, i) => {
     const y = surface(...def.anchor);
-    if (def.style !== 'domain') campProps(new Frame(artFor(def.region), [def.anchor[0], y, def.anchor[1]], i * .7), i, def.region);
+    if (def.style === 'duel') {
+      duelRing(new Frame(artFor(def.region), [def.anchor[0], y, def.anchor[1]]), DUEL_RING, i);
+      addMarker(`xpm_${def.id}`, [def.anchor[0], y + 1.1, def.anchor[1] + DUEL_RING + .2], L(def.title), 2.8, () => challengeDuel(def.id), () =>
+        done.has(flagCamp(def.id)) ? bilingual(`再次决斗 · ${def.title[0]}`, `Duel again · ${def.title[1]}`)
+          : def.requires && !done.has(def.requires) ? bilingual(`${def.title[0]} · 先战胜上一位骑士`, `${def.title[1]} · defeat the previous knight first`)
+            : bilingual(`接受决斗 · ${def.title[0]}`, `Accept the duel · ${def.title[1]}`));
+    } else if (def.style !== 'domain') campProps(new Frame(artFor(def.region), [def.anchor[0], y, def.anchor[1]], i * .7), i, def.region);
     const flag = new THREE.Group(); const fl = glint('#ff5a5a', 2.4); fl.position.y = 7; flag.add(fl); flag.position.set(def.anchor[0], y, def.anchor[1]); flag.visible = !done.has(flagCamp(def.id)); dyn(flag, 220);
     camps.set(def.id, { def, wave: 0, running: false, pending: 0, y, flag });
   });
@@ -300,9 +309,18 @@ export function createExploration(host: ExplorationHost) {
     }
     if (result.ok) {
       rt.running = true; activeCamp = rt;
-      showBanner(def.style === 'domain' ? bilingual(`秘境 · ${def.title[0]}`, `Domain · ${def.title[1]}`) : bilingual(`据点 · ${def.title[0]}`, `Outpost · ${def.title[1]}`), bilingual(`第 ${rt.wave + 1} / ${def.waves.length} 波 · 击败全部敌人`, `Wave ${rt.wave + 1} / ${def.waves.length} · Defeat every enemy`), 'region', 2.6);
+      showBanner(def.style === 'duel' ? bilingual(`决斗 · ${def.title[0]}`, `Duel · ${def.title[1]}`) : def.style === 'domain' ? bilingual(`秘境 · ${def.title[0]}`, `Domain · ${def.title[1]}`) : bilingual(`据点 · ${def.title[0]}`, `Outpost · ${def.title[1]}`), bilingual(`第 ${rt.wave + 1} / ${def.waves.length} 波 · 击败全部敌人`, `Wave ${rt.wave + 1} / ${def.waves.length} · Defeat every enemy`), 'region', 2.6);
     }
     return result.ok;
+  }
+  function challengeDuel(id: string) {
+    const rt = camps.get(id)!;
+    if (rt.running || rt.pending > 0) return;
+    if (rt.def.requires && !done.has(rt.def.requires)) { host.toast(bilingual('这道残影只回应战胜过上一位骑士的人。', 'This echo answers only those who bested the previous knight.')); return; }
+    if (activeCamp || activeTrial || ember.route || fox || host.activeEncounter()) { host.toast(bilingual('先完成当前挑战。', 'Finish the current challenge first.')); return; }
+    rt.wave = 0;
+    if (startWave(rt)) host.toast(bilingual('决斗规则：一对一，离开决斗圈即判负。', 'Duel rules: one on one; leaving the ring forfeits.'));
+    else if (performance.now() - busyHintAt > 6000) host.toast(bilingual('站稳脚跟、身边没有别的敌人时才能开始决斗。', 'Stand firm with no other enemies around to begin the duel.'));
   }
   function victory(encounterId: string): boolean {
     const parsed = parseCampEncounter(encounterId); if (!parsed) return false;
@@ -311,7 +329,7 @@ export function createExploration(host: ExplorationHost) {
     if (rt.wave + 1 < rt.def.waves.length) { rt.wave++; rt.pending = 1.6; host.toast(bilingual('下一波敌人来了！', 'The next wave is coming!')); return true; }
     activeCamp = null; rt.wave = 0;
     const first = !done.has(flagCamp(rt.def.id)); done.add(flagCamp(rt.def.id)); host.save(); host.sound('solve'); rt.flag.visible = false;
-    showBanner(rt.def.style === 'domain' ? bilingual(`秘境净化 · ${rt.def.title[0]}`, `Domain purified · ${rt.def.title[1]}`) : bilingual(`据点肃清 · ${rt.def.title[0]}`, `Outpost cleared · ${rt.def.title[1]}`), first ? bilingual('宝箱的封印消失了。', 'The chest seal has faded.') : '', 'solve');
+    showBanner(rt.def.style === 'duel' ? bilingual(`决斗胜利 · ${rt.def.title[0]}`, `Duel won · ${rt.def.title[1]}`) : rt.def.style === 'domain' ? bilingual(`秘境净化 · ${rt.def.title[0]}`, `Domain purified · ${rt.def.title[1]}`) : bilingual(`据点肃清 · ${rt.def.title[0]}`, `Outpost cleared · ${rt.def.title[1]}`), first ? bilingual('宝箱的封印消失了。', 'The chest seal has faded.') : '', 'solve');
     return true;
   }
 
@@ -568,11 +586,17 @@ export function createExploration(host: ExplorationHost) {
         continue;
       }
       if (rt.running) {
+        if (rt.def.style === 'duel' && Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) > DUEL_RING + .6) {
+          host.cancelEncounter(); rt.running = false; rt.wave = 0; activeCamp = null; host.sound('fail');
+          showBanner(bilingual('判负 · 离开了决斗圈', 'Forfeit · you left the ring'), bilingual('回到木桩前可以再次挑战。', 'Return to the stake to challenge again.'), 'fail');
+          continue;
+        }
         if (host.activeEncounter() !== campEncounterId(rt.def.id, rt.wave)) { rt.running = false; rt.wave = 0; activeCamp = null; host.toast(bilingual(`离开了「${rt.def.title[0]}」，据点重置。`, `You left "${rt.def.title[1]}"; the outpost resets.`)); }
         continue;
       }
       if (!active || activeCamp || activeTrial || ember.route || fox || done.has(flagCamp(rt.def.id)) || !player.onGround || player.flying) continue;
       if (rt.def.requires && !done.has(rt.def.requires)) continue;
+      if (rt.def.style === 'duel') continue;
       if (Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) < 11 && Math.abs(pp.y - rt.y) < 6 && !host.activeEncounter()) startWave(rt);
     }
     regionalUpdate(dt, player, active);

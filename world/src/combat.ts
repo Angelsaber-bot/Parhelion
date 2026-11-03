@@ -20,7 +20,7 @@ export interface Enemy extends SpawnPoint {
 }
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
-  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
@@ -213,6 +213,10 @@ export class WorldCombatState {
   shotCooldown = 0;
   gunHeat = 0;
   gunVent = 0;
+  /** Rifle rounds (field only: boss fights do not consume). */
+  ammo: number = WORLD_RIFLE.ammoMax;
+  /** Set when a trigger pull found the rifle empty; the view turns it into a hint. */
+  dryPulls = 0;
   private gunIdleFor = 0;
   hurtCooldown = 0;
   quietFor = 0;
@@ -278,7 +282,7 @@ export class WorldCombatState {
     this.clearStoryEnemies();
     this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
     this.peaceSignature='';this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
-    this.hp = COMBAT.playerHp; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
+    this.hp = COMBAT.playerHp; this.ammo = WORLD_RIFLE.ammoMax; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
     for (const e of this.enemies) { e.pacified = false; this.resetEnemy(e); }
     this.bosses.forEach((b, i) => {
       this.cleared[i] = Array.isArray(cleared) ? !!cleared[i] : cleared;
@@ -334,8 +338,14 @@ export class WorldCombatState {
     if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return false;
     this.hp = Math.min(COMBAT.playerHp, this.hp + Math.min(25, amount)); return true;
   }
+  /** Adds rounds up to the cap; returns how many were actually loaded. */
+  refillAmmo(rounds: number = WORLD_RIFLE.ammoMax): number {
+    if (!Number.isFinite(rounds) || rounds <= 0) return 0;
+    const before = this.ammo; this.ammo = Math.min(WORLD_RIFLE.ammoMax, this.ammo + Math.floor(rounds)); return this.ammo - before;
+  }
   canShoot() {
     if (this.defeated || this.shotCooldown > 1e-9 || this.gunVent > 1e-9) return false;
+    if (!this.bossStarted) { if (this.ammo <= 0) { this.dryPulls++; return false; } this.ammo--; }
     // Carry a small render-frame overrun during held fire, never bank free shots after idle/vent.
     this.shotCooldown = this.gunHeat === 0 || this.gunIdleFor > COMBAT.shotInterval * 2 ? COMBAT.shotInterval : Math.max(1e-6, this.shotCooldown + COMBAT.shotInterval);
     this.gunIdleFor = 0;
@@ -353,13 +363,15 @@ export class WorldCombatState {
     const ranged=context?.source==='ranged';
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
-    const dealt = Math.min(e.hp, Math.round(damage * opening * armor * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
+    const dealt = Math.min(e.hp, Math.round(damage * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}) });
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
       this.events.push({ type: 'kill', id });
+      if (!e.pacified) this.refillAmmo(WORLD_RIFLE.ammoPerKill);
       if (e === this.boss) {
         const firstClear = !this.cleared[this.current];
         this.bossStarted = false; this.cleared[this.current] = true;
@@ -430,7 +442,7 @@ export class WorldCombatState {
     this.hurtCooldown = Math.max(0, this.hurtCooldown - dt);
     if (this.defeated) {
       this.defeatedFor = Math.max(0, this.defeatedFor - dt);
-      if (!this.defeated) { this.hp = COMBAT.playerHp; this.hurtCooldown = 2; this.events.push({ type: 'revive' }); }
+      if (!this.defeated) { this.hp = COMBAT.playerHp; this.ammo = Math.max(this.ammo, WORLD_RIFLE.ammoRespawn); this.hurtCooldown = 2; this.events.push({ type: 'revive' }); }
       return;
     }
     if (this.bossStarted && (distanceXZ(player, this.boss.home) > COMBAT.bossLeash || Math.abs(player.y - this.boss.home.y) > 24)) this.resetBoss();

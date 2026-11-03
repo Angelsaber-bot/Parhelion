@@ -7,7 +7,7 @@
  * Pure data + rules (no three.js) so the chains can be unit-tested.
  */
 import type { Localized, RegionId } from '../settlements/types';
-import type { ChestDef, XZ } from './catalog';
+import type { CampDef, ChestDef, XZ } from './catalog';
 
 export interface TreasureMapDef {
   readonly id: string; readonly region: RegionId; readonly title: Localized;
@@ -119,4 +119,21 @@ export const REGIONAL_CHESTS: readonly ChestDef[] = [
   { id: 'winter_ember_river_watch', region: 'winter', p: [-64, -716], tier: 'precious', requires: flagEmber('river_watch') },
   { id: 'kyoto_fox_lotus_path', region: 'kyoto', p: [-50, 966], tier: 'exquisite', requires: flagFox('lotus_path') },
   { id: 'kyoto_fox_bamboo_shrine', region: 'kyoto', p: [-262, 817], tier: 'luxurious', requires: flagFox('bamboo_shrine') },
+];
+
+/** 落日王国: the Round Table echoes. One-on-one duels inside a ring; stepping out forfeits. */
+export const DUEL_RING = 10;
+const duelChain = (id: string) => `xp_camp_duel_${id}`;
+export const DUELS: readonly CampDef[] = [
+  { id: 'duel_kay', region: 'britain', title: ['圆桌残影 · 凯', 'Round Table Echo · Sir Kay'], anchor: [-620, -190], style: 'duel',
+    waves: [[{ role: 'duelist', offset: [0, -3], title: ['总管凯的残影', 'Echo of Sir Kay'] }]] },
+  { id: 'duel_galahad', region: 'britain', title: ['圆桌残影 · 加拉哈德', 'Round Table Echo · Sir Galahad'], anchor: [-704, 4], style: 'duel', requires: duelChain('kay'),
+    waves: [[{ role: 'lancer', offset: [0, -3], title: ['纯洁骑士加拉哈德的残影', 'Echo of Sir Galahad the Pure'] }]] },
+  { id: 'duel_lancelot', region: 'britain', title: ['圆桌残影 · 兰斯洛特', 'Round Table Echo · Sir Lancelot'], anchor: [-920, -32], style: 'duel', requires: duelChain('galahad'),
+    waves: [[{ role: 'breaker', offset: [0, -3], title: ['湖上骑士兰斯洛特的残影', 'Echo of Sir Lancelot du Lac'], pattern: 'echo-warden' }]] },
+];
+export const DUEL_CHESTS: readonly ChestDef[] = [
+  { id: 'britain_duel_kay', region: 'britain', p: [-620, -178.5], tier: 'exquisite', requires: duelChain('kay') },
+  { id: 'britain_duel_galahad', region: 'britain', p: [-704, 15.5], tier: 'precious', requires: duelChain('galahad') },
+  { id: 'britain_duel_lancelot', region: 'britain', p: [-920, -20.5], tier: 'luxurious', requires: duelChain('lancelot') },
 ];
