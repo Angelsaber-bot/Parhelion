@@ -37,7 +37,7 @@ export function createEliteCrestKit(id: string) {
   const crestBar = g(new THREE.BoxGeometry(.148, .018, .024));
   const rankGem = g(new THREE.OctahedronGeometry(.021));
   const mats = {
-    cloth: new THREE.MeshStandardMaterial({ name: 'EliteBanner', color: c.cloth, roughness: .9, side: THREE.DoubleSide }),
+    cloth: new THREE.MeshStandardMaterial({ name: 'EliteBanner', color: c.cloth, roughness: .9, side: THREE.DoubleSide, emissive: c.trim, emissiveIntensity: 0 }),
     trim: new THREE.MeshStandardMaterial({ name: 'EliteBannerTrim', color: c.trim, metalness: .62, roughness: .4 }),
     wood: new THREE.MeshStandardMaterial({ name: 'EliteBannerPole', color: 0x4b3a2a, roughness: .92 }),
     leather: new THREE.MeshStandardMaterial({ name: 'EliteBannerMount', color: 0x37291f, roughness: .9 }),
@@ -73,11 +73,14 @@ export function createEliteCrestKit(id: string) {
       if (head) { actor.add(brow); actor.updateWorldMatrix(true, true); head.attach(brow); }
       return {
         remove() { body.removeFromParent(); brow.removeFromParent(); },
-        update(e: { mode: string }, t: number) {
+        update(e: { mode: string; phase?: number }, t: number) {
           // The banner stirs as the elite moves and snaps taut on the wind-up.
-          const sway = e.mode === 'chase' ? .09 : e.mode === 'windup' ? .02 : .05;
-          flag.rotation.z = Math.sin(t * (e.mode === 'chase' ? 4.4 : 1.7)) * sway;
-          mats.glow.emissiveIntensity = e.mode === 'windup' ? 1.4 : .7;
+          const rallied = e.phase === 2, pulse = .5 + .5 * Math.sin(t * 5.2);
+          const sway = e.mode === 'chase' ? (rallied ? .13 : .09) : e.mode === 'windup' ? .02 : .05;
+          flag.rotation.z = Math.sin(t * (e.mode === 'chase' ? (rallied ? 6 : 4.4) : 1.7)) * sway;
+          // After the half-health rally the banner smoulders in the region's trim colour and the gems burn.
+          mats.glow.emissiveIntensity = (e.mode === 'windup' ? 1.4 : .7) + (rallied ? 1 + pulse * .8 : 0);
+          mats.cloth.emissiveIntensity = rallied ? .25 + pulse * .35 : 0;
         },
       };
     },

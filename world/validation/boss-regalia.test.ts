@@ -94,3 +94,17 @@ test('elite crests ride the bones and clear away on remove', () => {
     kit.dispose();
   }
 });
+
+test('a rallied elite banner smoulders and its gems burn brighter', async () => {
+  const { createEliteCrestKit } = await import('../src/eliteCrestVisual.ts');
+  const THREE = await import('three');
+  const root = new THREE.Group(), chest = new THREE.Bone(), head = new THREE.Bone(); chest.name = 'chest'; head.name = 'head'; chest.position.y = 1.27; head.position.y = .28; chest.add(head); root.add(chest); root.updateMatrixWorld(true);
+  const kit = createEliteCrestKit('elite_oath_knight'), worn = kit.attach(root)!;
+  const mat = (name: string) => { let m: THREE.MeshStandardMaterial | undefined; root.traverse(o => { const x = (o as THREE.Mesh).material as THREE.MeshStandardMaterial; if (x?.name === name) m = x; }); return m!; };
+  worn.update({ mode: 'chase', phase: 1 }, 1);
+  const calm = [mat('EliteBanner').emissiveIntensity, mat('EliteRankGem').emissiveIntensity];
+  assert.equal(calm[0], 0);
+  worn.update({ mode: 'chase', phase: 2 }, 1);
+  assert.ok(mat('EliteBanner').emissiveIntensity > .2); assert.ok(mat('EliteRankGem').emissiveIntensity > calm[1] + .9);
+  worn.remove(); kit.dispose();
+});
