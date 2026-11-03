@@ -523,8 +523,8 @@ export class WorldCombat {
   private renderHud() {
     const ammo = this.state.bossStarted ? bilingual('弹药 ∞ 日冕供能', 'AMMO ∞ corona-fed') : this.state.ammo > 0 ? `${bilingual('弹药', 'AMMO')} ${this.state.ammo}/${WORLD_RIFLE.ammoMax}` : bilingual('弹药耗尽 · 近战', 'NO AMMO · melee');
     if (this.hud.dataset) this.hud.dataset.ammo = this.state.bossStarted ? 'boss' : this.state.ammo <= 0 ? 'empty' : this.state.ammo <= WORLD_RIFLE.ammoMax / 6 ? 'low' : 'ok';
-    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${COMBAT.playerHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${COMBAT.shotBurst}` : '');
-    (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp}%`;
+    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${this.state.maxHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${COMBAT.shotBurst}` : '');
+    (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp / this.state.maxHp * 100}%`;
     this.hud.title = bilingual('脱离战斗 5 秒后恢复生命', 'Health recovers after 5 seconds out of combat');
     this.bossHud.hidden = !this.state.bossStarted;
     const text = bossText(this.state.boss?.id ?? '');

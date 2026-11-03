@@ -1,3 +1,4 @@
+import { resonanceLevel, resonanceMaxHp } from './resonance';
 import {regionAt} from './regions';
 import {ADVENTURE,adventureActive,adventureChapterComplete} from './openWorldCampaign';
 import {WORLD_RIFLE,rifleDistanceMultiplier} from './worldBalance';
@@ -221,6 +222,8 @@ export class WorldCombatState {
   private readonly cleared: boolean[];
   private current = 0;
   hp: number = COMBAT.playerHp;
+  /** Maximum health: the base plus Halo Resonance levels (see resonance.ts). */
+  maxHp: number = COMBAT.playerHp;
   defeatedFor = 0;
   bossStarted = false;
   shotCooldown = 0;
@@ -288,7 +291,7 @@ export class WorldCombatState {
     this.current = i;
     this.resetEnemy(this.boss);
     this.boss.active = true; this.boss.mode = 'chase'; this.boss.timer = 1.4;
-    this.bossStarted = true; this.hp = COMBAT.playerHp; this.quietFor = 0;
+    this.bossStarted = true; this.hp = this.maxHp; this.quietFor = 0;
     this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0;
     this.events.push({ type: 'bossStart' });
     return true;
@@ -298,7 +301,7 @@ export class WorldCombatState {
     this.clearStoryEnemies();
     this.bossStarted = false; this.trialPending = false; this.trialReplay = false; this.quietKyotoRoute = false; this.relayPacified = false; this.roadPacified = false;
     this.peaceSignature='';this.current = 0; this.quietFor = 0; this.setDefense({ guard: 1, invulnerable: false });
-    this.hp = COMBAT.playerHp; this.ammo = WORLD_RIFLE.ammoMax; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0; this.counterFor = 0;
+    this.hp = this.maxHp; this.ammo = WORLD_RIFLE.ammoMax; this.defeatedFor = 0; this.shotCooldown = 0; this.gunHeat = 0; this.gunVent = 0; this.gunIdleFor = 0; this.hurtCooldown = 0; this.counterFor = 0;
     for (const e of this.enemies) { e.pacified = false; this.resetEnemy(e); }
     this.bosses.forEach((b, i) => {
       this.cleared[i] = Array.isArray(cleared) ? !!cleared[i] : cleared;
@@ -315,7 +318,14 @@ export class WorldCombatState {
     if (!this.bossStarted) return;
     this.bossStarted = false; this.resetEnemy(this.boss); this.events.push({ type: 'bossReset' });
   }
+  /** Raise or restore maximum health; a raise also fills the new headroom. */
+  setMaxHp(value: number) {
+    if (!Number.isFinite(value) || value <= 0) return;
+    const gain = value - this.maxHp; this.maxHp = value;
+    this.hp = Math.min(this.maxHp, gain > 0 && !this.defeated ? this.hp + gain : this.hp);
+  }
   syncWorldFlags(done: ReadonlySet<string>) {
+    this.setMaxHp(resonanceMaxHp(resonanceLevel(done)));
     const peace=['britain','blacksail','winter','kyoto'].filter(r=>adventureActive(done)&&adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',done));
     const signature=peace.join(',');if(signature!==this.peaceSignature){this.peaceSignature=signature;for(const e of this.enemies){if(e.kind==='king'||e.miniboss||e.storyEncounter)continue;const peaceful=peace.includes(regionAt(e.home.x,e.home.z).id)||(done.has(KNIGHT_TRIAL_CLEAR)&&this.roadEnemies.includes(e))||(done.has('relay_b')&&this.relayEnemies.includes(e));if(e.pacified!==peaceful){e.pacified=peaceful;this.resetEnemy(e);}}}
     this.quietKyotoRoute = done.has('kyoto_lantern_route');
@@ -352,12 +362,12 @@ export class WorldCombatState {
   }
   /** A field herb: up to `amount` HP at once, usable mid-fight; returns what was restored. */
   fieldHeal(amount: number): number {
-    if (this.defeated || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return 0;
-    const before = this.hp; this.hp = Math.min(COMBAT.playerHp, this.hp + amount); return this.hp - before;
+    if (this.defeated || !Number.isFinite(amount) || amount <= 0 || this.hp >= this.maxHp) return 0;
+    const before = this.hp; this.hp = Math.min(this.maxHp, this.hp + amount); return this.hp - before;
   }
   recoverAtSettlement(amount: number): boolean {
-    if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= COMBAT.playerHp) return false;
-    this.hp = Math.min(COMBAT.playerHp, this.hp + Math.min(25, amount)); return true;
+    if (this.defeated || this.bossStarted || this.quietFor < 5 || !Number.isFinite(amount) || amount <= 0 || this.hp >= this.maxHp) return false;
+    this.hp = Math.min(this.maxHp, this.hp + Math.min(25, amount)); return true;
   }
   /** Adds rounds up to the cap; returns how many were actually loaded. */
   refillAmmo(rounds: number = WORLD_RIFLE.ammoMax): number {
@@ -471,7 +481,7 @@ export class WorldCombatState {
     this.counterFor = Math.max(0, this.counterFor - dt);
     if (this.defeated) {
       this.defeatedFor = Math.max(0, this.defeatedFor - dt);
-      if (!this.defeated) { this.hp = COMBAT.playerHp; this.ammo = Math.max(this.ammo, WORLD_RIFLE.ammoRespawn); this.hurtCooldown = 2; this.events.push({ type: 'revive' }); }
+      if (!this.defeated) { this.hp = this.maxHp; this.ammo = Math.max(this.ammo, WORLD_RIFLE.ammoRespawn); this.hurtCooldown = 2; this.events.push({ type: 'revive' }); }
       return;
     }
     if (this.bossStarted && (distanceXZ(player, this.boss.home) > COMBAT.bossLeash || Math.abs(player.y - this.boss.home.y) > 24)) this.resetBoss();
@@ -581,7 +591,7 @@ export class WorldCombatState {
       }
     }
     this.quietFor = threatened ? 0 : this.quietFor + dt;
-    if (this.quietFor > 5) this.hp = Math.min(COMBAT.playerHp, this.hp + dt * 10);
+    if (this.quietFor > 5) this.hp = Math.min(this.maxHp, this.hp + dt * 10);
     if (this.quietFor > 5 && this.ammo < WORLD_RIFLE.ammoTrickleCap) { this.ammoTrickle += dt; if (this.ammoTrickle >= WORLD_RIFLE.ammoTrickleEvery) { this.ammoTrickle = 0; this.ammo++; } } else this.ammoTrickle = 0;
   }
 }

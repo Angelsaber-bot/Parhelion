@@ -2,6 +2,7 @@
  * 幻日探索层运行时：宝箱、日晕之羽、日晕石像、棱镜折光谜题、时层挑战与战斗据点。
  * Owns its own scene graph, one merged collider, interact markers and a small HUD.
  */
+import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../resonance';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { WORLD_RIFLE } from '../worldBalance';
@@ -42,6 +43,8 @@ export interface ExplorationHost {
   activeEncounter(): string | null;
   cancelEncounter(): void;
   onGlideLevel(level: number): void;
+  /** A Halo Resonance level was awakened (max health rises). */
+  onResonance?(level: number): void;
   sound(kind: 'open' | 'pickup' | 'solve' | 'rotate' | 'fail'): void;
   /** loads rifle rounds; returns how many fit */
   refillAmmo?(rounds: number): number;
@@ -93,11 +96,23 @@ export function createExploration(host: ExplorationHost) {
     const y = host.terrain(...s.p), f = new Frame(artFor(s.region), [s.p[0], y - .05, s.p[1]], s.yaw);
     haloStatue(f);
     const front = [s.p[0] + Math.sin(s.yaw) * 2.6, y + 1, s.p[1] + Math.cos(s.yaw) * 2.6] as V3;
-    addMarker(markerStatue(s.id), front, L(s.title), 3, () => offerFeathers(s.title), () => {
-      const lvl = glideLevel(done), spare = feathersSpare(done);
-      return lvl >= GLIDE.maxLevel ? bilingual(`${s.title[0]} · 滑翔翼已满级`, `${s.title[1]} · Glider maxed`)
-        : bilingual(`供奉日晕之羽 ${Math.min(spare, GLIDE.feathersPerLevel)}/${GLIDE.feathersPerLevel} · 滑翔翼 Lv.${lvl}`, `Offer Halo Feathers ${Math.min(spare, GLIDE.feathersPerLevel)}/${GLIDE.feathersPerLevel} · Glider Lv.${lvl}`);
+    addMarker(markerStatue(s.id), front, L(s.title), 3, () => { if (!awakenResonance()) offerFeathers(s.title); }, () => {
+      const lvl = glideLevel(done), spare = feathersSpare(done), rl = resonanceLevel(done), crystals = totalCrystals(done);
+      if (resonanceReady(rl, crystals)) return bilingual(`日晕共鸣 Lv.${rl + 1} 可觉醒 · 生命上限 +${RESONANCE.hpPerLevel}`, `Awaken Halo Resonance Lv.${rl + 1} · Max HP +${RESONANCE.hpPerLevel}`);
+      const cost = nextResonanceCost(rl), res = cost === null ? bilingual('共鸣已满', 'Resonance maxed') : bilingual(`共鸣 ${crystals}/${cost}`, `Resonance ${crystals}/${cost}`);
+      return lvl >= GLIDE.maxLevel ? bilingual(`${s.title[0]} · 滑翔翼已满级 · ${res}`, `${s.title[1]} · Glider maxed · ${res}`)
+        : bilingual(`供奉日晕之羽 ${Math.min(spare, GLIDE.feathersPerLevel)}/${GLIDE.feathersPerLevel} · 滑翔翼 Lv.${lvl} · ${res}`, `Offer Halo Feathers ${Math.min(spare, GLIDE.feathersPerLevel)}/${GLIDE.feathersPerLevel} · Glider Lv.${lvl} · ${res}`);
     });
+  }
+  /** Halo Resonance: crystals gathered across the world deepen it one level at a time, at any statue. */
+  function awakenResonance() {
+    const rl = resonanceLevel(done);
+    if (!resonanceReady(rl, totalCrystals(done))) return false;
+    done.add(flagResonance(rl + 1)); host.save(); host.onResonance?.(rl + 1); host.sound('solve');
+    const next = nextResonanceCost(rl + 1);
+    showBanner(bilingual(`日晕共鸣 Lv.${rl + 1} · 生命上限 ${resonanceMaxHp(rl + 1)}`, `Halo Resonance Lv.${rl + 1} · Max HP ${resonanceMaxHp(rl + 1)}`),
+      next === null ? bilingual('共鸣已达到最深。', 'The resonance is as deep as it goes.') : bilingual(`下一级需要累计日晕晶 ${next}。`, `Next level at ${next} Halo Crystals gathered.`), 'solve');
+    return true;
   }
   function offerFeathers(title: Localized) {
     const lvl = glideLevel(done), spare = feathersSpare(done);

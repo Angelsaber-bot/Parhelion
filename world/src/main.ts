@@ -446,7 +446,7 @@ const { done, found } = worldProgress;
 const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text),terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel,
  startEncounter:spec=>combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming}),
  activeEncounter:()=>combat.storyEncounter?.id??null,cancelEncounter:()=>combat.cancelStoryEncounter(),
- onGlideLevel:level=>applyExplorationGlide(level),sound:kind=>audio.explore(kind),refillAmmo:rounds=>combat.refillAmmo(rounds)});
+ onGlideLevel:level=>applyExplorationGlide(level),onResonance:()=>{combat.syncWorldProgress(done);hudRevision++;},sound:kind=>audio.explore(kind),refillAmmo:rounds=>combat.refillAmmo(rounds)});
 // 环境生灵：蝴蝶、飞鸟与萤火，按时代各不相同（3 次绘制，无碰撞，无玩法影响）。
 const ambientLife=createAmbientLife({terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel});world.add(ambientLife.root);addEventListener('pagehide',event=>{if(!event.persisted)ambientLife.dispose();});
 world.add(exploration.root);colliders.push(...exploration.colliders);layout.markers.push(...exploration.markers);
@@ -455,7 +455,8 @@ const fieldHerbs=createFieldHerbs({terrain:(x,z)=>grid.sampleHeight(x,z)??0,wate
   blocked:(x,z)=>{const hit=residentQueries.ground(x,z);return !!hit&&hit.point.y-(grid.sampleHeight(x,z)??0)>.45;},
   heal:amount=>typeof combat!=='undefined'?combat.state.fieldHeal(amount):0,
   eaten:(name,gained)=>toast(bilingual(`${name[0]} · 生命 +${Math.round(gained)}`,`${name[1]} · HP +${Math.round(gained)}`))});
-world.add(fieldHerbs.root);addEventListener('pagehide',event=>{if(!event.persisted)fieldHerbs.dispose();});
+scene.add(fieldHerbs.root); // animated (pulsing glow): kept out of the static World art tree
+addEventListener('pagehide',event=>{if(!event.persisted)fieldHerbs.dispose();});
 addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();});
 /** Field ammo: settlements refill the rifle; an empty trigger pull points the player at the blade. */
 let ammoDryPulls=0,ammoHintAt=-1e9,ammoRefillAt=-1e9;
