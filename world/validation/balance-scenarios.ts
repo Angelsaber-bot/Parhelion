@@ -1,6 +1,7 @@
 /** Reproducible ideal-input, flat-arena experiment; not a human playtest or renderer benchmark. */
 import * as THREE from 'three';
 import { WorldCombatState, COMBAT, enemyAttackRadius, distanceXZ, type Enemy, type Point3, type CombatTerrain } from '../src/combat';
+import type { EnemyRole } from '../src/enemyRoles';
 import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/worldActions';
 import { collectStrikeTargets } from '../src/combatActions';
 import { CHARACTER_KITS } from '../src/characters/catalog';
@@ -9,18 +10,18 @@ import { MELEE_BEATS } from '../src/playerMelee';
 import { PLAYER } from '../src/player';
 import { resolveServantSkillAim } from '../src/skillAim';
 import { CONTRACT_SKILLS } from '../src/contractSkills';
-export type Strategy = 'stationary-gun' | 'kite-gun' | 'dodge-gun' | 'melee-punish' | 'melee-spam' | 'melee-evade' | 'mixed';
-export interface Scenario { name: string; boss?: string; pack?: number; strategy: Strategy; identity?: ServantId; seconds?: number; companionGun?: boolean }
-export interface Result { name: string; strategy: Strategy; terminal: string; seconds: number; damageTaken: number; damageDealt: number; kills: number; phase2At: number | null; firstUltimateAt: number | null; ultimates: number; skillCasts: number; energy: number; hits: Record<string, number>; attacks: number }
+export type Strategy = 'stationary-gun' | 'kite-gun' | 'dodge-gun' | 'melee-punish' | 'melee-spam' | 'melee-evade' | 'mixed' | 'gun-then-melee';
+export interface Scenario { name: string; boss?: string; pack?: number; roles?: readonly EnemyRole[]; strategy: Strategy; identity?: ServantId; seconds?: number; companionGun?: boolean }
+export interface Result { name: string; strategy: Strategy; terminal: string; seconds: number; damageTaken: number; damageDealt: number; kills: number; shots: number; dryPulls: number; ammoLeft: number; firstDryAt: number | null; phase2At: number | null; firstUltimateAt: number | null; ultimates: number; skillCasts: number; energy: number; hits: Record<string, number>; attacks: number }
 const terrain: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const dt = 1 / 120; // Production action/capsule clock; AI remains20Hz, fire/actor contacts60Hz.
 export function runScenario(config: Scenario): Result {
   const count = config.boss ? 0 : config.pack ?? 2;
-  const state = new WorldCombatState(Array.from({ length: count }, (_, i) => ({ id: `pack${i}`, kind: 'shade' as const, role: (['stalker', 'breaker', 'lancer', 'bombardier'] as const)[i], p: { x: (i % 2) * 1.1, y: 0, z: Math.floor(i / 2) * 1.1 } })), { id: config.boss ?? 'absent-boss', kind: 'king', p: { x: 0, y: 0, z: 0 }, requires: [] });
+  const state = new WorldCombatState(Array.from({ length: count }, (_, i) => ({ id: `pack${i}`, kind: 'shade' as const, role: (config.roles ?? (['stalker', 'breaker', 'lancer', 'bombardier'] as const))[i % (config.roles ?? ['stalker', 'breaker', 'lancer', 'bombardier']).length], p: { x: (i % 2) * 1.1, y: 0, z: Math.floor(i / 2) * 1.1 } })), { id: config.boss ?? 'absent-boss', kind: 'king', p: { x: 0, y: 0, z: 0 }, requires: [] });
   if (config.boss) state.beginBoss(new Set());
   const context: WorldActionContext = { enabled: true, grounded: true, armed: true, bladeReady: true, position: { x: 0, y: 0, z: config.strategy.startsWith('melee') ? -1.5 : config.identity === 'musashi' ? -4 : config.identity === 'saber' ? -9 : config.identity === 'napoleon' ? -12 : -18 }, yaw: Math.PI, moveX: 0, moveZ: 0, identity: config.identity ?? null };
   let pose: { command: ActionPoseCommand; age: number; times: number[]; next: number; duration: number; origin: Point3; mounted: boolean } | undefined;
-  const result: Result = { name: config.name, strategy: config.strategy, terminal: 'timeout', seconds: 0, damageTaken: 0, damageDealt: 0, kills: 0, phase2At: null, firstUltimateAt: null, ultimates: 0, skillCasts: 0, energy: 0, hits: {}, attacks: 0 };
+  const result: Result = { name: config.name, strategy: config.strategy, terminal: 'timeout', seconds: 0, damageTaken: 0, damageDealt: 0, kills: 0, shots: 0, dryPulls: 0, ammoLeft: 0, firstDryAt: null, phase2At: null, firstUltimateAt: null, ultimates: 0, skillCasts: 0, energy: 0, hits: {}, attacks: 0 };
   const consume = () => {
     for (const event of state.drainEvents()) {
       if (event.type === 'hit') { result.damageDealt += event.damage; result.hits[event.source ?? 'raw'] = (result.hits[event.source ?? 'raw'] ?? 0) + event.damage; actions.recordDamage({ id: event.id, damage: event.damage, source: event.source ?? 'servant', eligible: true }); }
@@ -65,33 +66,38 @@ export function runScenario(config: Scenario): Result {
     if (state.defeated) { result.terminal = 'death'; break; }
     const target = live.sort((a, b) => distanceXZ(a.p, context.position) - distanceXZ(b.p, context.position))[0];
     const position = context.position;
+    // A field player shoots while the sun-cell holds rounds and falls back to the blade when it runs dry.
+    const strategy: Strategy = config.strategy !== 'gun-then-melee' ? config.strategy : state.ammo > 0 ? 'kite-gun' : 'melee-punish';
+    if (state.ammo <= 0) result.firstDryAt ??= +result.seconds.toFixed(2);
     if (actions.evade.active) { position.x += actions.evade.x * 13 * Math.min(dt, actions.evade.remaining); position.z += actions.evade.z * 13 * Math.min(dt, actions.evade.remaining); }
-    else if (config.strategy === 'kite-gun' || config.strategy === 'dodge-gun' || config.strategy === 'mixed') {
+    else if (strategy === 'kite-gun' || strategy === 'dodge-gun' || strategy === 'mixed') {
       const radius = config.identity === 'musashi' ? 4 : config.identity === 'saber' ? 9 : config.identity === 'napoleon' ? 12 : 18;
-      const speed = config.strategy === 'kite-gun' ? PLAYER.walk : target.mode === 'windup' ? PLAYER.sprint : PLAYER.walk;
+      const speed = strategy === 'kite-gun' ? PLAYER.walk : target.mode === 'windup' ? PLAYER.sprint : PLAYER.walk;
       orbitAngle += speed / radius * dt;
       const dx = Math.sin(orbitAngle) * radius - position.x, dz = -Math.cos(orbitAngle) * radius - position.z, length = Math.hypot(dx, dz);
       if (length > 0) { position.x += dx * Math.min(1, speed * dt / length); position.z += dz * Math.min(1, speed * dt / length); }
-    } else if (config.strategy.startsWith('melee')) {
+    } else if (strategy.startsWith('melee')) {
       const distance = distanceXZ(target.p, position), awayX = (position.x - target.p.x) / Math.max(.001, distance), awayZ = (position.z - target.p.z) / Math.max(.001, distance);
-      const wanted = config.strategy === 'melee-punish' && target.mode === 'windup' ? enemyAttackRadius(target) + 1 : MELEE_BEATS[0].range - .15;
+      const wanted = strategy === 'melee-punish' && target.mode === 'windup' ? enemyAttackRadius(target) + 1 : MELEE_BEATS[0].range - .15;
       const movement = Math.max(-PLAYER.walk * dt, Math.min(PLAYER.walk * dt, wanted - distance));
       position.x += awayX * movement; position.z += awayZ * movement;
     }
     context.yaw = Math.atan2(-(target.p.x - position.x), -(target.p.z - position.z));
-    context.moveZ = config.strategy === 'melee-evade' ? 1 : 0;
-    if (config.strategy.startsWith('melee')) {
-      if (config.strategy === 'melee-evade' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
-      if (distanceXZ(target.p, position) <= MELEE_BEATS[0].range - .05 && (config.strategy === 'melee-spam' || target.mode === 'recover' || target.mode === 'stagger')) actions.press('melee');
+    context.moveZ = strategy === 'melee-evade' ? 1 : 0;
+    if (strategy.startsWith('melee')) {
+      if (strategy === 'melee-evade' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
+      if (distanceXZ(target.p, position) <= MELEE_BEATS[0].range - .05 && (strategy === 'melee-spam' || target.mode === 'recover' || target.mode === 'stagger')) actions.press('melee');
     } else {
-      if (config.strategy === 'mixed' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
-      if (config.strategy === 'mixed' && !actions.skills.casting) {
+      if (strategy === 'mixed' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
+      if (strategy === 'mixed' && !actions.skills.casting) {
         const before = actions.skills.energy;
         if (before >= 100 && actions.skills.cooldown('ultimate') <= 0) { actions.press('ultimate'); if (actions.skills.energy < before) { result.ultimates++; result.firstUltimateAt ??= result.seconds; } }
         else if (actions.skills.cooldown('skill') <= 0) { actions.press('skill'); if (actions.skills.casting) result.skillCasts++; }
       }
-      if (frame % 2 === 1 && (!actions.skills.casting || config.companionGun) && !actions.melee.active && !actions.evade.active && state.canShoot()) {
-        state.hitEnemy(target.id, COMBAT.shotDamage, { source: 'ranged', origin: position });
+      if (frame % 2 === 1 && (!actions.skills.casting || config.companionGun) && !actions.melee.active && !actions.evade.active) {
+        const dry = state.dryPulls;
+        if (state.canShoot()) { result.shots++; state.hitEnemy(target.id, COMBAT.shotDamage, { source: 'ranged', origin: position }); }
+        else if (state.dryPulls > dry) result.dryPulls++;
       }
     }
     state.setDefense({ guard: actions.skills.guarding ? .55 : 1, invulnerable: actions.evade.remaining > .10 });
@@ -110,7 +116,7 @@ export function runScenario(config: Scenario): Result {
     actions.flush(); consume(); if (frame % 2 === 1) actions.present(dt * 2);
     attackCounts = Math.max(attackCounts, state.enemies.reduce((n, e) => n + e.attackCount, 0));
   }
-  result.energy = +actions.skills.energy.toFixed(2); result.seconds = +result.seconds.toFixed(2); result.damageTaken = +result.damageTaken.toFixed(2); result.damageDealt = +result.damageDealt.toFixed(2); result.attacks = attackCounts;
+  result.ammoLeft = state.ammo; result.energy = +actions.skills.energy.toFixed(2); result.seconds = +result.seconds.toFixed(2); result.damageTaken = +result.damageTaken.toFixed(2); result.damageDealt = +result.damageDealt.toFixed(2); result.attacks = attackCounts;
   actions.dispose(); return result;
 }
 export const BALANCE_SCENARIOS: Scenario[] = [
@@ -118,4 +124,9 @@ export const BALANCE_SCENARIOS: Scenario[] = [
   ...(['stationary-gun', 'kite-gun', 'dodge-gun', 'melee-spam', 'melee-punish', 'melee-evade'] as const).map(strategy => ({ name: `king-${strategy}`, boss: 'boss_vacant_king', strategy })),
   ...(['saber', 'blackbeard', 'napoleon', 'musashi'] as const).map(identity => ({ name: `king-mixed-${identity}`, boss: 'boss_vacant_king', strategy: 'mixed' as const, identity })),
   ...(['boss_drowned_admiral', 'boss_winter_warden', 'boss_hellfire_lord'] as const).flatMap(boss => (['kite-gun', 'dodge-gun', 'melee-punish', 'melee-evade'] as const).map(strategy => ({ name: `${boss}-${strategy}`, boss, strategy }))),
+  // Regional signature roles, and the field loop the ammo cap is meant to produce.
+  ...(['shieldbearer', 'shinobi', 'powder', 'jaeger'] as const).flatMap(role => (['kite-gun', 'melee-evade', 'gun-then-melee'] as const)
+    .map(strategy => ({ name: `${role}3-${strategy}`, pack: 3, roles: [role] as const, strategy }))),
+  { name: 'attrition8-gun-then-melee', pack: 8, strategy: 'gun-then-melee' as const, seconds: 240 },
+  { name: 'attrition8-kite-gun', pack: 8, strategy: 'kite-gun' as const, seconds: 240 },
 ];

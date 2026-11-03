@@ -62,3 +62,42 @@ After fixed-step input snapshots, fractional final-step strength, and epsilon-sa
 `WorldCombat.simulate` is called at120Hz but retains a20Hz accumulator: one simulated second is exactly20 AI/LOS updates, not120. `present` alone handles model/LOD work, DOM, and effects once per render. Continuous rifle cooldown carries short render overrun without banking idle shots; all four frame rates produce40 shots/10s and232 shots/60s. The visible first vent is1.111s at27FPS and1.100s at30/60/120FPS, within one display-frame sampling interval. Paused casts cancel pending/authored contacts and guard without refunding or advancing their cooldown, verified at each frame rate. Boss targets remain locked through sidestepping.
 
 The final table/JSON above were regenerated after this correction. These timing corrections slightly change TTK but do not change the conclusions: reactive ranged and learned melee both complete fights; stationary/blind policies fail; real ultimates are attainable; AI query frequency is not increased sixfold.
+
+## Ammo cap and the regional roles — 2026-11-03
+
+`worldBalance.ts` gained a field magazine (90 rounds, +3 per kill, +30 per chest, refilled at a
+settlement armory and free while a boss corona feeds the rifle) and five regions gained a signature
+role: the Britain shieldbearer (tower shield, `shieldBlock .15` while it faces you), the Kyoto
+shinobi (blink behind), the Blacksail powder monkey (self-stunning blast), the Winter jaeger
+(long-range aimed shot) and the Alpha signal hunt. `balance-scenarios.ts` now builds packs from any
+role list and runs a `gun-then-melee` policy — hold fire while the magazine lasts, close to the
+blade when it runs dry — which is the loop the cap is meant to produce. Boss fights are unchanged:
+a started boss corona feeds the rifle, so no boss number above moved.
+
+| Scenario (pack of 3) | Held fire | Blade only | Fire, then blade |
+|---|---|---|---|
+| Shieldbearer | **timeout**, 2/3 killed, dry at 34.7 s | 5.47 s, 0 damage | 37.12 s, 15 damage |
+| Shinobi | 5.42 s, 81 rounds left | 6.58 s, 11 damage | 5.42 s |
+| Powder monkey | 6.77 s, 80 rounds left | 7.12 s, 0 damage | 6.77 s |
+| Jaeger | 7.17 s, 78 rounds left | 8.12 s, 0 damage | 7.17 s |
+| Eight ordinary enemies | 20.67 s, 57 rounds left | — | 20.67 s, never dry |
+
+Readings:
+
+1. **The shield wall is the one fight the rifle cannot win.** Held fire spends the whole magazine
+   plus its two kill refunds — 96 shots, 160 damage — and leaves the third shieldbearer standing.
+   That is the intended wall, not an oversight: the block only applies while the shield faces the
+   player, so recovery windows, flanking and the blade all still work, and committing to the blade
+   clears the same pack in 5.47 s without a hit. Spraying first and closing late costs 37 s and the
+   only damage any new-role scenario takes.
+2. **The cap does not tax ordinary fights.** Eight ordinary enemies cost 57 rounds and never run the
+   magazine dry, because kills pay 3 rounds back. The cap is a pressure on bad habits, not a tax on
+   playing normally.
+3. **No signature role forces a hit.** Shinobi, powder and jaeger packs all fall to a ranged policy
+   with zero damage taken and most of the magazine intact; the shinobi's blink costs 11 damage to a
+   player who only ever swings, which is the cost of ignoring its tell.
+
+The new structural tests assert these properties rather than the times: held fire must not clear a
+shield wall and must run dry; the blade and the fire-then-blade loop must both clear it; every
+signature role must be answerable at range without a forced hit and for less than a magazine; and
+eight ordinary enemies must not strand the player at zero.

@@ -40,3 +40,34 @@ test('two- and four-role packs resolve without deadlocks and actual damage is HP
     assert.ok(result.seconds < 20);
   }
 });
+
+test('a shield wall cannot be shot down inside one magazine, but the blade always answers', () => {
+  const spray = runScenario({ name: 'shieldbearer3-kite-gun', pack: 3, roles: ['shieldbearer'], strategy: 'kite-gun' });
+  assert.notEqual(spray.terminal, 'victory', 'facing tower shields must not fall to held fire alone');
+  assert.ok(spray.dryPulls > 0, 'the magazine has to actually run out');
+  assert.ok(spray.kills < 3, 'held fire must not clear the pack');
+  const blade = runScenario({ name: 'shieldbearer3-melee-evade', pack: 3, roles: ['shieldbearer'], strategy: 'melee-evade' });
+  assert.equal(blade.terminal, 'victory'); assert.equal(blade.damageTaken, 0);
+  const field = runScenario({ name: 'shieldbearer3-gun-then-melee', pack: 3, roles: ['shieldbearer'], strategy: 'gun-then-melee' });
+  assert.equal(field.terminal, 'victory', 'shooting until dry and then closing has to work');
+  assert.ok(field.firstDryAt !== null && field.firstDryAt < 60, 'the cap has to bite inside the fight');
+  assert.ok((field.hits.melee ?? 0) > 30, 'the blade has to finish what the rifle started');
+  assert.ok(field.seconds > blade.seconds, 'spraying at a shield first is slower than committing to the blade');
+});
+
+test('every regional signature role is beatable by an honest policy without a forced hit', () => {
+  for (const role of ['shinobi', 'powder', 'jaeger'] as const) {
+    const gun = runScenario({ name: `${role}3-gun-then-melee`, pack: 3, roles: [role], strategy: 'gun-then-melee' });
+    const blade = runScenario({ name: `${role}3-melee-evade`, pack: 3, roles: [role], strategy: 'melee-evade' });
+    for (const result of [gun, blade]) { assert.equal(result.terminal, 'victory', `${role} ${result.strategy}`); assert.equal(result.kills, 3, role); }
+    assert.equal(gun.damageTaken, 0, `${role} must be answerable at range without a forced hit`);
+    assert.ok(gun.ammoLeft > 0, `${role} must not cost a whole magazine`);
+  }
+});
+
+test('kills keep an ordinary field fight supplied', () => {
+  const attrition = runScenario({ name: 'attrition8', pack: 8, strategy: 'gun-then-melee', seconds: 240 });
+  assert.equal(attrition.terminal, 'victory'); assert.equal(attrition.kills, 8);
+  assert.ok(attrition.ammoLeft > 0, 'eight ordinary enemies must not strand the player at zero');
+  assert.ok(attrition.shots > 40, 'the rifle still carries an ordinary pack');
+});
