@@ -15,7 +15,7 @@ function advance(s: WorldCombatState, seconds: number, player: Point3) {
 }
 function armed(e: Enemy) { e.active = true; e.mode = 'windup'; e.timer = .01; e.attack = 'sweep'; }
 
-test('nine stable roles diversify existing regional IDs without adding population or health', () => {
+test('ten stable roles diversify existing regional IDs without adding population or health', () => {
   const roles = new Set<EnemyRole>();
   for (const home of [p(0), p(-720), p(720), p(0, -720), p(0, 720)]) {
     for (let i = 0; i < 20; i++) {
@@ -23,7 +23,7 @@ test('nine stable roles diversify existing regional IDs without adding populatio
       const role = selectEnemyRole(spec); assert.equal(selectEnemyRole(spec), role); roles.add(role);
     }
   }
-  assert.equal(roles.size, 9);
+  assert.equal(roles.size, 10);
   assert.equal(COMBAT.wildernessCap, 160);
   const s = new WorldCombatState([{ id: 'a', kind: 'shade', p: p(0) }, { id: 'b', kind: 'crystal', p: p(20) }], []);
   assert.deepEqual(s.enemies.map(e => e.maxHp), [66, 88], 'no sponge inflation');

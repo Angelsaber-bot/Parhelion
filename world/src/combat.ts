@@ -154,7 +154,7 @@ function makeEnemy(s: SpawnPoint): Enemy {
 
 /** Shared deterministic role selection keeps the rendered weapon and damage behavior aligned. */
 export function isMusketeer(e: Pick<Enemy, 'kind' | 'miniboss' | 'home' | 'id'> & { role?: EnemyRole }): boolean {
-  return e.kind !== 'king' && !e.miniboss && (e.role ?? selectEnemyRole(e)) === 'musketeer';
+  const role = e.role ?? selectEnemyRole(e); return e.kind !== 'king' && !e.miniboss && (role === 'musketeer' || role === 'jaeger');
 }
 /** Shared by simulation and renderer: telegraphs must show the actual damage footprint. */
 export function enemyAttackRadius(e: Enemy): number {

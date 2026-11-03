@@ -16,7 +16,7 @@ export function enemyWalkTurns(e: Pick<Enemy, 'id'>): readonly number[] {
 }
 export function enemyRangedSpacing(e: Pick<Enemy, 'kind' | 'miniboss' | 'role'>): number {
   if (e.kind === 'king' || e.miniboss) return 0;
-  return e.role === 'musketeer' ? 8 : e.role === 'bombardier' ? 6 : 0;
+  return e.role === 'jaeger' ? 14 : e.role === 'musketeer' ? 8 : e.role === 'bombardier' ? 6 : 0;
 }
 /** At most two ordinary near-field tells overlap. Boss/elite rhythms stay authored.
  * Ready actors wait, not cancel existing attacks, change damage or share hit immunity.

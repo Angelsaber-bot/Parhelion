@@ -1,7 +1,7 @@
 import type { EnemyKind, Point3 } from './combat';
 import { regionAt } from './regions';
 
-export type EnemyRole = 'stalker' | 'duelist' | 'breaker' | 'bombardier' | 'musketeer' | 'lancer' | 'shieldbearer' | 'shinobi' | 'powder';
+export type EnemyRole = 'stalker' | 'duelist' | 'breaker' | 'bombardier' | 'musketeer' | 'lancer' | 'shieldbearer' | 'shinobi' | 'powder' | 'jaeger';
 export interface EnemyRoleProfile {
   readonly name: readonly [string, string];
   readonly counter: readonly [string, string];
@@ -25,6 +25,8 @@ export const ENEMY_ROLES: Readonly<Record<EnemyRole, EnemyRoleProfile>> = {
   shinobi: { name: ['影忍', 'Shinobi'], counter: ['黑烟一闪它就在你背后：立刻闪避或回身近战', 'Smoke means it is behind you: evade at once or turn and cut'], attack: 'sweep', range: 2.2, radius: 2.3, speed: 4.2, windup: .85, recovery: 1.5, damage: 11 },
   // 黑帆尽头 signature: charges in with a lit keg; the blast stuns the carrier too. Run out of the ring, then punish.
   powder: { name: ['火药水手', 'Powder Monkey'], counter: ['点燃火药桶后快跑出圈，爆炸会把它自己震晕，趁机反击', 'Once the keg is lit, get out of the ring; the blast stuns it, so punish'], attack: 'sweep', range: 2.4, radius: 3.4, speed: 4.4, windup: 1.6, recovery: 2.6, damage: 24 },
+  // 永冬之城 signature: a long-rifle marksman. The longest tell in the field; break line of sight or close the gap.
+  jaeger: { name: ['雪原猎兵', 'Jäger Marksman'], counter: ['看到枪口反光就躲到掩体后，或冲近逼它后撤', 'When the barrel glints, break line of sight or rush it'], attack: 'shot', range: 30, radius: 1.4, speed: 2.8, windup: 1.9, recovery: 2.6, damage: 22 },
   musketeer: { name: ['燧发枪手', 'Musketeer'], counter: ['侧移或找掩体，装填时反击', 'Sidestep or take cover; punish the reload'], attack: 'shot', range: 24, radius: 1.4, speed: 3, windup: 1.2, recovery: 2, damage: 14 },
 };
 export function enemyIdHash(id: string): number {
@@ -35,7 +37,7 @@ export function enemyIdHash(id: string): number {
 /** Assign once from stable ID/home. Appearance can read the same profile without random rolls. */
 export function selectEnemyRole(e: { id: string; kind: EnemyKind; home: Point3; miniboss?: string }): EnemyRole {
   const region = regionAt(e.home.x, e.home.z).id, hash = enemyIdHash(e.id);
-  if (region === 'winter' && e.kind !== 'king' && !e.miniboss && hash % 3 !== 0) return 'musketeer';
+  if (region === 'winter' && e.kind !== 'king' && !e.miniboss && hash % 3 !== 0) return hash % 9 === 1 ? 'jaeger' : 'musketeer';
   if (region === 'kyoto') return hash % 3 === 0 ? 'lancer' : hash % 3 === 1 && !e.miniboss && e.kind !== 'king' ? 'shinobi' : 'duelist';
   if (region === 'britain') return hash % 3 === 0 && !e.miniboss && e.kind !== 'king' ? 'shieldbearer' : hash % 2 === 0 ? 'breaker' : 'duelist';
   if (region === 'blacksail') return hash % 3 === 0 ? 'bombardier' : hash % 3 === 1 && !e.miniboss && e.kind !== 'king' ? 'powder' : 'duelist';
