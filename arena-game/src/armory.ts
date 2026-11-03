@@ -6,6 +6,7 @@ import { WEAPON_ART, weaponArtPool, type ArtHandle } from './weaponArt.ts';
 import { WEAPONS } from '../shared/content.ts';
 import { displayWeaponName } from './loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from './weaponFinishes.ts';
+import {signatureFor,signatureOf} from '../shared/signatureSkins.ts';
 
 /** Created only on demand, one selected GLB at a time; closing releases renderer + model resources. */
 export function openArmory(options:{skins?:readonly number[];equip?:(weapon:number,skin:number)=>{saved:boolean}}={}) {
@@ -13,7 +14,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   const dialog = document.createElement('dialog'); dialog.id = 'armory-dialog';dialog.setAttribute('data-i18n-ignore','');dialog.setAttribute('aria-labelledby','armory-title');
   dialog.innerHTML = `<header><div><small>PARHELION / WAYFARER ARMORY</small><h2 id="armory-title">皮肤工坊</h2></div><button id="armory-close" aria-label="关闭武器展示">关闭 ✕</button></header>
     <div class="armory-layout"><nav aria-label="模型选择">${WEAPON_ART.map((a) => `<button data-art="${a.id}"><b>${displayWeaponName(a.combat ?? '')}</b><span>${localizeText(a.name)} · ${bilingual('可装备作战', 'Combat-ready')}</span></button>`).join('')}</nav>
-    <section><canvas aria-label="可旋转的三维武器模型"></canvas><h3 id="art-title"></h3><p id="art-info"></p><div id="art-finishes" aria-label="皮肤主题"></div><button id="art-equip" class="primary" type="button">装备皮肤</button><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p id="art-hint" class="muted">拖动旋转 · 滚轮缩放 · Esc 返回</p></section></div>`;
+    <section><canvas aria-label="可旋转的三维武器模型"></canvas><h3 id="art-title"></h3><p id="art-info"></p><div id="art-finishes" aria-label="皮肤主题"></div><details id="art-archive"><summary>经典涂装</summary><div id="art-classics"></div></details><button id="art-equip" class="primary" type="button">装备皮肤</button><p id="art-status" role="status"></p><button id="art-retry" hidden>重试加载</button><p id="art-hint" class="muted">拖动旋转 · 滚轮缩放 · Esc 返回</p></section></div>`;
   document.body.append(dialog); localizeDom(dialog); dialog.showModal();
   const canvas = dialog.querySelector('canvas')!;
   let renderer: THREE.WebGLRenderer;
@@ -33,7 +34,9 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
   const key = new THREE.DirectionalLight(0xffe3c5, 3); key.position.set(2, 4, 3); scene.add(key);
   let handle: ArtHandle | null = null, closed = false, serial = 0, selected = 'dawn';
   let statusText: [string, string] = ['', ''];
-  const selectedSkins=WEAPONS.map((w,i)=>options.skins&&w.skins[options.skins[i]]?options.skins[i]:0);
+  // Enter on the weapon's unique art, without changing the equipped skin.
+  // Saved equipment only changes on the explicit Equip action below.
+  const selectedSkins=WEAPONS.map(w=>w.skins.findIndex(s=>s.id===signatureFor(w.id).id));
   const equip=dialog.querySelector<HTMLButtonElement>('#art-equip')!;equip.hidden=!options.equip;
   const setStatus = (zh: string, en: string) => { statusText = [zh, en]; dialog.querySelector('#art-status')!.textContent = bilingual(zh, en); };
   const renderDetails = () => {
@@ -44,6 +47,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('#art-hint')!.textContent=bilingual('拖动旋转 · 滚轮缩放 · Esc 返回','Drag to rotate · Scroll to zoom · Esc to return');
     dialog.querySelector('#art-retry')!.textContent=bilingual('重试加载','Retry');
     dialog.querySelector('#art-finishes')!.setAttribute('aria-label',bilingual('皮肤主题','Finish collection'));
+    dialog.querySelector('#art-archive summary')!.textContent=bilingual('经典涂装','Classic finishes');
     canvas.setAttribute('aria-label',bilingual('可旋转的三维武器模型','Rotatable 3D weapon model'));
 
     const def = WEAPON_ART.find((a) => a.id === selected)!;
@@ -51,14 +55,17 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     dialog.querySelector('#art-title')!.textContent=finish?bilingual(FINISH_DETAILS[finish].zh,FINISH_DETAILS[finish].en):localizeText(skin.name);
     dialog.querySelector('#art-info')!.textContent=displayWeaponName(weapon.id)+' · '+(finish?bilingual(...FINISH_DETAILS[finish].description):bilingual('原装材质与配色。','Original materials and colorway.'));
     const focused=(document.activeElement as HTMLElement|null)?.dataset.finish;
-    const finishes=dialog.querySelector('#art-finishes')!;finishes.replaceChildren(...weapon.skins.map((item,i)=>{const button=document.createElement('button');button.type='button';button.dataset.finish=String(i);button.className='finish-card';button.classList.toggle('on',i===selectedSkins[index]);button.setAttribute('aria-pressed',String(i===selectedSkins[index]));button.style.setProperty('--finish-body','#'+item.body.toString(16).padStart(6,'0'));button.style.setProperty('--finish-light','#'+item.accent.toString(16).padStart(6,'0'));const paint=document.createElement('i');paint.setAttribute('aria-hidden','true');const name=document.createElement('span'),theme=finishOf(item.id);name.textContent=theme?bilingual(FINISH_DETAILS[theme].zh,FINISH_DETAILS[theme].en):localizeText(item.name);button.append(paint,name);button.onclick=()=>{selectedSkins[index]=i;void select(selected,true);};return button;}));
+    const buttons=weapon.skins.map((item,i)=>{const button=document.createElement('button');button.type='button';button.dataset.finish=String(i);button.className='finish-card';button.classList.toggle('on',i===selectedSkins[index]);button.setAttribute('aria-pressed',String(i===selectedSkins[index]));button.style.setProperty('--finish-body','#'+item.body.toString(16).padStart(6,'0'));button.style.setProperty('--finish-light','#'+item.accent.toString(16).padStart(6,'0'));const paint=document.createElement('i');paint.setAttribute('aria-hidden','true');const name=document.createElement('span'),theme=finishOf(item.id);name.textContent=theme?bilingual(FINISH_DETAILS[theme].zh,FINISH_DETAILS[theme].en):localizeText(item.name);button.append(paint,name);if(signatureOf(item.id)){button.classList.add('signature-card');const tag=document.createElement('small');tag.textContent=bilingual('专属设计','Weapon exclusive');button.append(tag);}button.onclick=()=>{selectedSkins[index]=i;void select(selected,true);};return button;});
+    dialog.querySelector('#art-finishes')!.replaceChildren(...buttons.filter((_,i)=>signatureOf(weapon.skins[i].id)));
+    dialog.querySelector('#art-classics')!.replaceChildren(...buttons.filter((_,i)=>!signatureOf(weapon.skins[i].id)));
     if(focused)dialog.querySelector<HTMLButtonElement>(`[data-finish="${focused}"]`)?.focus();
     equip.textContent=bilingual('装备皮肤','Equip finish');
     dialog.querySelector('#art-status')!.textContent = bilingual(...statusText);
     dialog.querySelectorAll<HTMLButtonElement>('[data-art]').forEach((button) => {
       const def = WEAPON_ART.find((a) => a.id === button.dataset.art)!;
       button.querySelector('b')!.textContent = displayWeaponName(def.combat ?? '');
-      button.querySelector('span')!.textContent = `${localizeText(def.name)} · ${bilingual('可装备作战', 'Combat-ready')}`;
+      const signature=signatureFor(def.combat);
+      button.querySelector('span')!.textContent = bilingual(signature.zh,signature.en);
     });
     localizeDom(dialog);
   };
@@ -80,7 +87,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
       const radius = size.length() / 2;
       const tangent=Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
       const aspect=Math.max(.5,canvas.clientWidth/Math.max(1,canvas.clientHeight));
-      const distance=Math.max(size.x/(2*tangent*aspect),size.y/(2*tangent))*1.35+size.z;
+      const distance=Math.max(size.x/(2*tangent*aspect),size.y/(2*tangent))*1.16+size.z;
       if(!preserveView)camera.position.set(distance * 0.25, distance * 0.2, distance); controls.target.set(0, 0, 0);
       controls.minDistance = radius * .55; controls.maxDistance = Math.max(distance*3,radius*4); controls.update();
       dialog.setAttribute('aria-busy','false');equip.disabled=false;setStatus('','');

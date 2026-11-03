@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import registry from '../../assets/weapons/registry.json';
 import {finishOf,finishMaterial,addFinishInlay} from './weaponFinishes.ts';
+import {signatureOf} from '../shared/signatureSkins.ts';
+import {addSignatureArt} from './signatureFinishes.ts';
 export const WEAPON_ART = registry;
 export type ArtDef = typeof registry[number];
 // Explicit static URLs are fingerprinted by Vite; no download until acquire().
@@ -74,7 +76,7 @@ export class WeaponArtPool {
             if (/^PH_ivory(?:[._]?\d+)?$/.test(m.name)) pbr.color.setHex(colors.body);
             if (/^PH_glow(?:[._]?\d+)?$/.test(m.name)) { pbr.color.setHex(colors.accent); pbr.emissive.setHex(colors.accent); }
           }
-          const finish=finishOf(colors?.id);if(finish&&pbr.isMeshStandardMaterial){m=finishMaterial(pbr,finish);pbr.dispose();}
+          const finish=finishOf(colors?.id,def.combat);if(finish&&pbr.isMeshStandardMaterial){m=finishMaterial(pbr,finish);pbr.dispose();}
           cloned.set(mat,m);owned.add(m);
         }
         return m;
@@ -90,7 +92,9 @@ export class WeaponArtPool {
       if (!asset) { release(); throw new Error(`武器资产缺少 ${def.file}_ROOT`); }
       const parts: Record<string, THREE.Object3D> = {};
       for (const node of asset.children) if (node.name.startsWith(`${def.file}__`)) parts[node.name.slice(`${def.file}__`.length)] = node;
-      const finish=finishOf(colors?.id);if(finish&&parts.body){const inlay=addFinishInlay(parts.body,finish);if(inlay)inlays.push(inlay);}
+      const finish=finishOf(colors?.id,def.combat),signature=signatureOf(finish??undefined,def.combat);
+      if(signature)inlays.push(addSignatureArt(parts,signature.id));
+      else if(finish&&parts.body){const inlay=addFinishInlay(parts.body,finish);if(inlay)inlays.push(inlay);}
       instance = { root, parts };
       return instance;
     });

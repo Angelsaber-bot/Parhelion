@@ -1,16 +1,20 @@
 /** Presentation-only premium finishes. No simulation, hitboxes or audio timing. */
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-export type FinishId='astral'|'sunforged'|'petalglass';
+import {SIGNATURE_SKINS,signatureOf,type SignatureId} from '../shared/signatureSkins.ts';
+import {signatureMaterial} from './signatureFinishes.ts';
+export type FinishId='astral'|'sunforged'|'petalglass'|SignatureId;
 export const FINISH_DETAILS:Record<FinishId,{zh:string;en:string;description:[string,string];trim:number;light:number}>={
  astral:{zh:'星穹棱镜',en:'Astral Prism',description:['深空烤漆、变色镀膜与星轨镶线。','Deep-space lacquer, iridescent plating and constellation inlays.'],trim:0x9ba6da,light:0x7fcfff},
  sunforged:{zh:'赤金日冕',en:'Sunforged',description:['暖白陶瓷、鎏金日轮与熔芯光带。','Warm ceramic, gilt sunbursts and a molten light core.'],trim:0xd8ac57,light:0xffad54},
  petalglass:{zh:'樱华琉璃',en:'Petalglass',description:['珠光釉面、玫瑰金刻花与琉璃花瓣。','Pearl glaze, rose-gold engraving and glass petals.'],trim:0xc789a2,light:0xf1aedb},
+ ...Object.fromEntries(SIGNATURE_SKINS.map(s=>[s.id,{zh:s.zh,en:s.en,description:[...s.description],trim:s.trim,light:s.accent}])) as Record<SignatureId,{zh:string;en:string;description:[string,string];trim:number;light:number}>,
 };
-export const finishOf=(id?:string):FinishId|null=>id&&Object.hasOwn(FINISH_DETAILS,id)?id as FinishId:null;
+export const finishOf=(id?:string,weapon?:string):FinishId|null=>id&&Object.hasOwn(FINISH_DETAILS,id)&&(!signatureOf(id)||signatureOf(id,weapon))?id as FinishId:null;
 const clock={value:0};
 export function updateFinishClock(seconds:number){if(Number.isFinite(seconds))clock.value=seconds;}
 export function finishMaterial(source:THREE.MeshStandardMaterial,id:FinishId){
+ if(signatureOf(id))return signatureMaterial(source,id as SignatureId,clock);
  const info=FINISH_DETAILS[id],m=new THREE.MeshPhysicalMaterial();THREE.MeshStandardMaterial.prototype.copy.call(m,source);m.defines={...m.defines,PHYSICAL:''};
  // MeshPhysicalMaterial.copy expects physical extension fields; retain sensible
  // values explicitly when converting the original standard PBR material.

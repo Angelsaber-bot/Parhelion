@@ -187,6 +187,11 @@ export const ARENA_SKIN_COLLECTIONS = [
 ] as const;
 for (const weapon of WEAPONS) for (const finish of ARENA_SKIN_COLLECTIONS) weapon.skins.push({ ...finish });
 
+// Previous collection finishes remain valid for old saves and remote clients.
+// New work is weapon-exclusive; a signature is never copied across the roster.
+import {SIGNATURE_SKINS} from './signatureSkins.ts';
+for(const skin of SIGNATURE_SKINS) WEAPONS.find(w=>w.id===skin.weapon)!.skins.push({id:skin.id,name:`${skin.zh} · ${skin.en}`,body:skin.body,accent:skin.accent});
+
 export function falloff(w: WeaponDef, dist: number): number {
   if (dist <= w.falloffStart) return 1;
   if (dist >= w.falloffEnd) return w.falloffMin;
