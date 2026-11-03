@@ -12,7 +12,7 @@ import { makeCombatTerrain } from './combatTerrain';
 import { COMPACT_RELAY_ENCOUNTER } from './compactRelayEncounter';
 import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
 import { MINIBOSSES, makeMinibossSpawns } from './minibosses';
-import { enemyAttackRadius, enemyThrustLength, enemyAttackTiming } from './combat';
+import { enemyAttackRadius, enemyThrustLength, enemyAttackTiming, dazeCapable, dazeRatio, DAZE } from './combat';
 import { ENEMY_ROLES } from './enemyRoles';
 import { collectStrikeTargets, type StrikeRequest, type StrikeResult } from './combatActions';
 import { authorEncounters, KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
@@ -32,7 +32,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -101,6 +101,7 @@ function counterHint(e: Enemy, playable: boolean): string {
   if (e.pacified) return bilingual('已停战', 'Standing down');
   if (!e.active) return bilingual('接近敌人开始交战', 'Move closer to engage');
   if (isMeleePunishWindow(e)) return `${bilingual('破绽 · 近战', 'PUNISH · MELEE')} ×${COMBAT.meleePunish} · ${Math.max(0,e.timer).toFixed(1)}s`;
+  if ((e.dazedFor ?? 0) > 0) return `${bilingual('失衡 · 全力输出', 'BROKEN · All-out attack')} ×${DAZE.taken} · ${Math.max(0, e.dazedFor ?? 0).toFixed(1)}s`;
   if (e.mode === 'stagger') return bilingual('已打断 · 普通伤害', 'INTERRUPTED · Normal damage');
   if (e.mode === 'recover') return bilingual('收招中 · 普通伤害', 'Recovering · Normal damage');
   if (e.mode === 'windup') {
@@ -176,7 +177,7 @@ export class WorldCombat {
     this.hud.id = 'world-vitals'; this.hud.className = 'combat-hud';
     this.hud.innerHTML = '<span></span><div class="combat-track"><div class="combat-fill"></div></div><small></small>';
     this.bossHud.id = 'world-boss'; this.bossHud.className = 'combat-hud'; this.bossHud.hidden = true;
-    this.bossHud.innerHTML = '<strong></strong><div class="combat-track"><div class="combat-fill"></div></div><small></small>';
+    this.bossHud.innerHTML = '<strong></strong><div class="combat-track"><div class="combat-fill"></div></div><div class="combat-daze-track"><div class="combat-daze"></div></div><small></small>';
     this.impact.id = 'world-impact'; this.impact.className = 'combat-hud';
     this.hurt.id = 'world-hurt'; this.counterGlow.id = 'world-counter';
     this.defeat.id = 'world-defeat'; this.defeat.className = 'combat-hud'; this.defeat.hidden = true;
@@ -404,6 +405,11 @@ export class WorldCombat {
       v.bar.visible = active && e.active && !e.pacified && !this.state.defeated && (e.hp < e.maxHp || e.mode !== 'idle');
       if (camera) { v.bar.quaternion.copy(camera.quaternion); v.peaceMarker?.quaternion.copy(camera.quaternion); }
       const ratio = e.hp / e.maxHp; v.fill.scale.x = ratio; v.fill.position.x = -(1 - ratio) * (e.kind === 'king' ? 1.5 : 0.8) / 2;
+      if (v.daze) {
+        const d = Math.max(.001, dazeRatio(e)), broken = (e.dazedFor ?? 0) > 0;
+        v.daze.scale.x = d; v.daze.position.x = -(1 - d) * (e.kind === 'king' ? 1.5 : 0.8) / 2;
+        (v.daze.material as THREE.MeshBasicMaterial).color.set(broken ? '#ffffff' : d > .75 ? '#c9f6ff' : '#8fe6ff');
+      }
       v.tell.visible = e.mode === 'windup';
       if (v.tell.visible) {
         const center = e.attack !== 'sweep' ? e.target : e.p;
@@ -483,6 +489,10 @@ export class WorldCombat {
       } else if (event.type === 'signature') {
         // The elite's rarer move names itself and its counter for the whole tell.
         this.impact.textContent = `${bilingual(...event.name)} · ${bilingual(...event.counter)}`; this.impactFor = 1.2;
+      } else if (event.type === 'dazed') {
+        this.impact.textContent = bilingual('失衡！ · 受到伤害提高', 'BROKEN! · takes extra damage'); this.impactFor = 1.1;
+        const broken = this.state.enemies.find(e => e.id === event.id);
+        if (broken) for (const [dx, dz] of [[0, 0], [.9, 0], [-.9, 0], [0, .9], [0, -.9]]) this.spark(new THREE.Vector3(broken.p.x + dx, broken.p.y + (broken.kind === 'king' ? 2.6 : 1.6), broken.p.z + dz), .45);
       } else if (event.type === 'perfectEvade') {
         this.impact.textContent = bilingual('极限闪避 · 反击强化', 'PERFECT EVADE · COUNTER'); this.impactFor = 1;
         this.counterGlowFor = .5;
@@ -530,6 +540,8 @@ export class WorldCombat {
     const text = bossText(this.state.boss?.id ?? '');
     this.bossHud.querySelector('strong')!.textContent = bilingual(...text.name);
     (this.bossHud.querySelector('.combat-fill') as HTMLElement).style.width = `${100 * this.state.boss.hp / this.state.boss.maxHp}%`;
+    const bossDaze = this.bossHud.querySelector('.combat-daze') as HTMLElement | null;
+    if (bossDaze?.style) { bossDaze.style.width = `${100 * dazeRatio(this.state.boss)}%`; if (bossDaze.dataset) bossDaze.dataset.broken = (this.state.boss.dazedFor ?? 0) > 0 ? '1' : ''; }
     let nearest: Enemy | undefined, closest = 20;
     for (const enemy of this.state.enemies) {
       const distance = distanceXZ(enemy.p, this.player);
@@ -603,6 +615,13 @@ export class WorldCombat {
     const fillMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffd36a' : '#ffb26f', depthTest: true });
     this.shared.push(barGeo); this.materials.push(backMat, fillMat);
     const back = new THREE.Mesh(barGeo, backMat), fill = new THREE.Mesh(barGeo, fillMat); fill.position.z = 0.005; bar.add(back, fill);
+    // Elites and chapter bosses show a thin toughness gauge under the health bar; full = stance broken.
+    let daze: THREE.Mesh | undefined;
+    if (dazeCapable(e)) {
+      const dazeGeo = new THREE.PlaneGeometry(width, 0.035), dazeMat = new THREE.MeshBasicMaterial({ color: '#8fe6ff', depthTest: true });
+      this.shared.push(dazeGeo); this.materials.push(dazeMat);
+      daze = new THREE.Mesh(dazeGeo, dazeMat); daze.name = `${e.id}:daze`; daze.position.set(0, -.075, .005); bar.add(daze);
+    }
     const tellGeo = new THREE.CircleGeometry(1, 40), tellMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffb82f' : '#ff4939', transparent: true, opacity: 0.45, depthWrite: false, side: THREE.DoubleSide });
     this.shared.push(tellGeo); this.materials.push(tellMat);
     const tell = new THREE.Mesh(tellGeo, tellMat); tell.name = `${e.id}:tell`; tell.userData.circle = tellGeo; tell.rotation.x = -Math.PI / 2; tell.visible = false;
@@ -677,7 +696,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {

@@ -28,3 +28,7 @@ body.clean .combat-hud, body.clean #world-hurt, body.clean #world-counter { disp
 #world-vitals .combat-counter { display: block; margin-top: 4px; }
 #world-vitals[data-ammo="low"] span { color: #ffd27a; }
 #world-vitals[data-ammo="empty"] span { color: #ff8a7a; }
+/* Boss toughness gauge: fills with pressure, flashes white while the stance is broken. */
+.combat-daze-track { height: 4px; margin-top: 3px; border-radius: 2px; background: #0d1422aa; overflow: hidden; }
+.combat-daze { height: 100%; width: 0; background: #8fe6ff; transition: width .12s; }
+.combat-daze[data-broken="1"] { background: #ffffff; box-shadow: 0 0 8px #bff4ff; }

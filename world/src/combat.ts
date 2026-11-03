@@ -20,6 +20,8 @@ export interface Enemy extends SpawnPoint {
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
   /** An elite is performing its rarer signature move (see minibosses.ts). */
   signatureActive?: boolean;
+  /** Toughness damage built up toward a daze break (elites and chapter bosses only). */
+  daze?: number; dazeIdle?: number; dazedFor?: number;
 }
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
@@ -29,6 +31,7 @@ export type CombatEvent =
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
   | { type: 'eliteRally'; id: string; name: readonly [string, string] }
   | { type: 'perfectEvade'; id: string }
+  | { type: 'dazed'; id: string }
   | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
@@ -43,6 +46,18 @@ export interface CombatTerrain {
  * overlap the contact) rewards the read. Time slows for a breath, the evade is ready again, the
  * attacker is left open a little longer, and every hit lands harder for a short counter window. */
 export const PERFECT_EVADE = Object.freeze({ counter: 2.5, bonus: 1.3, opening: .6, slow: .5, slowScale: .3 });
+/** Daze (break): elites and chapter bosses carry a toughness gauge. Every hit fills it — the blade and
+ * skills far faster than the rifle, a punish even more — and a full gauge breaks their stance: a long
+ * stagger during which they take extra damage. The gauge drains if the pressure stops. */
+export const DAZE = Object.freeze({
+  eliteShare: .5, kingShare: .3,
+  source: Object.freeze({ melee: 1, skill: .9, ultimate: .5, servant: .6, ranged: .3 }) as Readonly<Record<HitContext['source'], number>>,
+  punish: 1.5, stun: 3, kingStun: 3.5, taken: 1.25, drainAfter: 4, drainPerSecond: .12,
+});
+export function dazeCapable(e: Pick<Enemy, 'miniboss' | 'kind' | 'storyPattern'>) { return !e.storyPattern && (!!e.miniboss || e.kind === 'king'); }
+export function dazeThreshold(e: Pick<Enemy, 'maxHp' | 'kind'>) { return e.maxHp * (e.kind === 'king' ? DAZE.kingShare : DAZE.eliteShare); }
+/** 0–1 gauge fill for presentation; 1 while dazed. */
+export function dazeRatio(e: Enemy) { return (e.dazedFor ?? 0) > 0 ? 1 : Math.min(1, (e.daze ?? 0) / dazeThreshold(e)); }
 export const COMBAT = {
   playerHp: 100, shotDamage: WORLD_RIFLE.damage, shotInterval: WORLD_RIFLE.interval, shotRange: WORLD_RIFLE.enemyRange, shotBurst: WORLD_RIFLE.burst, shotVent: WORLD_RIFLE.vent, meleePunish: 2,
   wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
@@ -313,6 +328,7 @@ export class WorldCombatState {
     Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
     Object.assign(e.target, e.home); e.attack = 'sweep';
     e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first; e.signatureActive = false;
+    e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0;
   }
   resetBoss() {
     if (!this.bossStarted) return;
@@ -395,8 +411,8 @@ export class WorldCombatState {
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
-    const counter = this.counterFor > 0;
-    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
+    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? rangedDamageMultiplier(distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}) });
     if (e.hp <= 0) {
@@ -428,6 +444,15 @@ export class WorldCombatState {
       if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
         e.phase = 2; e.contactSequence = 0; e.mode = 'recover'; e.timer = 1.2;
         this.events.push({ type: 'phase' });
+      }
+      if (dazeCapable(e) && !dazed && context?.source) {
+        e.daze = (e.daze ?? 0) + dealt * DAZE.source[context.source] * (punish ? DAZE.punish : 1); e.dazeIdle = 0;
+        if (e.daze >= dazeThreshold(e)) {
+          // Stance broken: a long stagger, extra damage taken, and the gauge starts over.
+          const stun = e.kind === 'king' ? DAZE.kingStun : DAZE.stun;
+          e.daze = 0; e.dazedFor = stun; e.mode = 'stagger'; e.timer = stun; e.contactSequence = 0; e.signatureActive = false;
+          this.events.push({ type: 'dazed', id: e.id });
+        }
       }
     }
     return true;
@@ -496,6 +521,8 @@ export class WorldCombatState {
     for (const e of this.enemies) {
       e.hitTime = Math.max(0, e.hitTime - dt);
       e.staggerCooldown = Math.max(0, e.staggerCooldown - dt);
+      if (e.dazedFor) e.dazedFor = Math.max(0, e.dazedFor - dt);
+      if (e.daze) { e.dazeIdle = (e.dazeIdle ?? 0) + dt; if (e.dazeIdle > DAZE.drainAfter) e.daze = Math.max(0, e.daze - dazeThreshold(e) * DAZE.drainPerSecond * dt); }
       if (e.blinkCooldown) e.blinkCooldown = Math.max(0, e.blinkCooldown - dt);
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
