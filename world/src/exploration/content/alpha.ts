@@ -10,7 +10,7 @@ export const ALPHA_TRIALS: readonly TrialDef[] = [
   { id: 'tower_glide', region: "alpha", title: ["塔顶滑翔","Tower Glide"], stele: [1, -141], seconds: 20, orbs: [{"p":[1,-128],"y":23.2},{"p":[1,-115],"y":20.1},{"p":[1,-102],"y":16.9},{"p":[1,-89],"y":13.8},{"p":[1,-76],"y":10.7},{"p":[1,-63],"y":7.6},{"p":[1,-50],"y":4.5}], hint: ["从塔顶跃下，展开滑翔翼穿过光圈。","Leap from the tower top and glide through the rings."] },
 ];
 export const ALPHA_CAMPS: readonly CampDef[] = [
-  { id: 'echo_ruins', region: "alpha", title: ["回声遗迹","Echo Ruins"], anchor: [150, -102], waves: [[{"role":"stalker","offset":[6,-4],"title":["回声幻影","Echo Phantom"]},{"role":"lancer","offset":[-6,-4],"title":["回声幻影","Echo Phantom"]},{"role":"bombardier","offset":[0,-7],"title":["回声射手","Echo Archer"]}],[{"role":"duelist","offset":[6,3],"title":["回声骑影","Echo Knight"]},{"role":"breaker","offset":[-6,3],"title":["回声骑影","Echo Knight"]},{"role":"musketeer","offset":[0,-7],"title":["回声射手","Echo Archer"]}]] },
+  { id: 'echo_ruins', region: "alpha", title: ["回声遗迹","Echo Ruins"], anchor: [150, -102], waves: [[{"role":"stalker","offset":[6,-4],"title":["回声幻影","Echo Phantom"]},{"role":"stalker","offset":[-6,-4],"title":["回声幻影","Echo Phantom"]},{"role":"bombardier","offset":[0,-7],"title":["回声射手","Echo Archer"]}],[{"role":"breaker","offset":[6,3],"title":["回声骑影","Echo Knight"]},{"role":"stalker","offset":[-6,3],"title":["回声骑影","Echo Knight"]},{"role":"bombardier","offset":[0,-7],"title":["回声射手","Echo Archer"]}]] },
 ];
 export const ALPHA_DOMAINS: readonly DomainDef[] = [
 

@@ -121,11 +121,11 @@ const BRITAIN_CAMPS: readonly CampDef[] = [
   ] },
   { id: 'hillfort', region: 'britain', title: ['叛骑哨站', 'Oathbreaker Outpost'], anchor: [-666, -291], waves: [
     [{ role: 'lancer', offset: [6, 3], title: knight }, { role: 'duelist', offset: [-6, 3], title: knight }, { role: 'bombardier', offset: [0, -7], title: ['叛誓弩手', 'Oathbreaker Crossbow'] }],
-    [{ role: 'breaker', offset: [0, 6], title: ['叛誓队长', 'Oathbreaker Captain'] }, { role: 'lancer', offset: [6, -4], title: knight }, { role: 'duelist', offset: [-6, -4], title: knight }],
+    [{ role: 'shieldbearer', offset: [0, 6], title: ['叛誓队长', 'Oathbreaker Captain'] }, { role: 'lancer', offset: [6, -4], title: knight }, { role: 'duelist', offset: [-6, -4], title: knight }],
   ] },
   { id: 'camlann', region: 'britain', title: ['断矛阵', 'Broken Spear Line'], anchor: [-800, 234], waves: [
     [{ role: 'stalker', offset: [6, 2], title: wraith }, { role: 'lancer', offset: [-6, 2], title: wraith }, { role: 'bombardier', offset: [0, -7], title: ['亡骑号手', 'Wraith Herald'] }],
-    [{ role: 'breaker', offset: [5, 5], title: ['亡骑重甲', 'Wraith Juggernaut'] }, { role: 'duelist', offset: [-5, 5], title: wraith }, { role: 'breaker', offset: [0, -7], title: ['亡骑重甲', 'Wraith Juggernaut'] }],
+    [{ role: 'breaker', offset: [5, 5], title: ['亡骑重甲', 'Wraith Juggernaut'] }, { role: 'duelist', offset: [-5, 5], title: wraith }, { role: 'shieldbearer', offset: [0, -7], title: ['亡骑盾卫', 'Wraith Shieldbearer'] }],
   ] },
   { id: 'oath_cloister', region: 'britain', title: ['誓约回廊', 'Oath Cloister'], anchor: [-850, 34], requires: flagPuzzle('oath_cloister'), style: 'domain', waves: [
     [{ role: 'shieldbearer', offset: [6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'lancer', offset: [-6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'bombardier', offset: [0, -7], title: ['残影术士', 'Echo Caster'] }],

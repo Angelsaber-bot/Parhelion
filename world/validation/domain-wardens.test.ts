@@ -62,3 +62,17 @@ test('phase 2 turns on the regional signature, phase 1 never does', () => {
   assert.equal(blinks(1), false);
   assert.equal(blinks(2), true);
 });
+
+test('field camps never repeat a roster, and era camps field their region\'s signature', () => {
+  const camps = CAMPS.filter(c => c.style !== 'domain' && c.style !== 'duel');
+  const seen = new Map<string, string>();
+  for (const c of camps) {
+    const roster = c.waves.map(w => w.map(a => a.role).sort().join('+')).join(' / ');
+    assert.ok(!seen.has(roster), `${c.id} repeats the roster of ${seen.get(roster)}`);
+    seen.set(roster, c.id);
+  }
+  for (const [region, sig] of Object.entries(SIGNATURE)) {
+    const fielding = camps.filter(c => c.region === region && c.waves.flat().some(a => a.role === sig));
+    assert.ok(fielding.length >= 2, `${region} camps field its ${sig} (got ${fielding.map(c => c.id)})`);
+  }
+});
