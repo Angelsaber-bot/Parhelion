@@ -62,7 +62,7 @@ body.world-interface #world-vitals .combat-fill{background:#a6c7af}
 body.world-interface #world-boss{top:28px;width:min(400px,34vw)}body.world-interface #world-boss strong{font-size:14px;font-weight:500;letter-spacing:.08em}body.world-interface #world-boss .combat-track{height:6px;border:0;border-radius:4px}body.world-interface #world-boss small{font-size:11px}
 #prompt{top:auto;bottom:130px;max-width:min(660px,80vw);font-size:13px;text-align:center;line-height:1.6;background:#13212ac9;border:1px solid var(--world-line);border-radius:7px;padding:8px 13px}
 #prompt:empty{display:none}
-#toast{bottom:190px;max-width:min(620px,calc(100vw - 48px));font-size:12px;line-height:1.7;text-align:center;border:1px solid var(--world-line);border-radius:9px;padding:10px 16px;background:var(--world-glass);color:var(--world-text)}
+#toast{bottom:190px;white-space:pre-line;max-width:min(620px,calc(100vw - 48px));font-size:12px;line-height:1.7;text-align:center;border:1px solid var(--world-line);border-radius:9px;padding:10px 16px;background:var(--world-glass);color:var(--world-text)}
 #movement-mode{left:28px;bottom:28px;background:transparent;color:#fff;text-shadow:0 1px 4px #0008;font-size:10px;padding:0}
 #area .zh{font-size:28px;font-weight:500;letter-spacing:.18em}#area .en{font-size:10px;letter-spacing:.2em}
 /* Menus share the same quiet palette. Complete quest/dialogue content stays readable. */

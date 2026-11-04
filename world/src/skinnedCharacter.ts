@@ -329,6 +329,9 @@ export class SkinnedCharacterAnimator {
     this.ready = armed ? 1 : 0; this.facing = facing; this.meleePose = undefined; this.meleeRelease = 0;
     this.update(0, { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: null, armed });
   }
+  /** A weapon swap re-draws from the back sling: the ready blend restarts low and eases back up
+   * (about half a second). A shot still takes the rifle pose immediately. */
+  drawWeapon() { if (this.ready > .08) this.ready = .08; }
   /** Match the actual targeting camera, even when input fires before RAF or after free-look. */
   prepareShot(look: THREE.Vector3) {
     if (!look.toArray().every(Number.isFinite) || look.lengthSq() < 1e-12) return;

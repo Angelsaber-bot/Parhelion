@@ -96,6 +96,10 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
 const bossText = (id: string) => BOSS_TEXT[id] ?? BOSS_TEXT.boss_vacant_king;
 /** Only nearby HUD text is generated; visual cues reuse each enemy's existing health bar. */
 /** Short name of the equipped gun for the HUD (empty for the default AR, which the HUD has always implied). */
+const SHOT_WEIGHT: Record<string, { bolt: number; flash: number }> = {
+  lumen: { bolt: 1, flash: 1 }, firefly: { bolt: .75, flash: .7 }, corona: { bolt: .6, flash: 1.55 },
+  halo: { bolt: 1.45, flash: 1.25 }, longnight: { bolt: 2.1, flash: 1.8 },
+};
 function gunLabel(gun: { name?: readonly [string, string]; id?: string }) { return gun.name && gun.id !== 'lumen' ? `${bilingual(gun.name[0].split(' · ')[0], gun.name[1])} · ` : ''; }
 function counterHint(e: Enemy, playable: boolean): string {
   if (!playable) return bilingual('战斗暂停', 'Combat paused');
@@ -321,11 +325,15 @@ export class WorldCombat {
     this.spark(new THREE.Vector3(target.p.x, target.p.y + 1.3, target.p.z), 0.16);
     return target;
   }
-  shot(muzzle: THREE.Vector3, endpoint: THREE.Vector3, didHit: boolean) {
+  /** `muzzleFlash` false for a shotgun's extra pellets: one flash per trigger pull. */
+  shot(muzzle: THREE.Vector3, endpoint: THREE.Vector3, didHit: boolean, muzzleFlash = true) {
     while (this.shots.length >= 18) this.removeShot(this.shots.shift()!);
     const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([muzzle, endpoint]), this.lineMat);
-    const bolt = new THREE.Mesh(this.boltGeo, this.boltMat); bolt.position.copy(muzzle);
-    const flash = new THREE.Mesh(this.sparkGeo, this.sparkMat); flash.position.copy(muzzle); flash.scale.setScalar(0.8);
+    // Each gun reads at a glance: the sniper's round is a heavy streak with a big flash, the SMG's a
+    // flicker, the shotgun a wide bloom with slim pellets.
+    const weight = SHOT_WEIGHT[this.state?.gun?.id ?? 'lumen'] ?? SHOT_WEIGHT.lumen;
+    const bolt = new THREE.Mesh(this.boltGeo, this.boltMat); bolt.position.copy(muzzle); bolt.scale.setScalar(weight.bolt);
+    const flash = new THREE.Mesh(this.sparkGeo, this.sparkMat); flash.position.copy(muzzle); flash.scale.setScalar(0.8 * weight.flash); flash.visible = muzzleFlash;
     this.effectGroup.add(line, bolt, flash);
     this.shots.push({ line, bolt, flash, from: muzzle.clone(), to: endpoint.clone(), age: 0, duration: Math.max(0.06, muzzle.distanceTo(endpoint) / 320) });
     if (didHit) this.spark(endpoint, 0.14);
@@ -438,7 +446,7 @@ export class WorldCombat {
       const s = this.shots[i]; s.age += dt;
       s.bolt.position.lerpVectors(s.from, s.to, Math.min(1, s.age / s.duration));
       if (camera) s.flash.quaternion.copy(this.effectFacing);
-      s.flash.visible = s.age < 0.045; s.line.visible = s.age < 0.075;
+      s.flash.visible = s.flash.visible && s.age < 0.045; s.line.visible = s.age < 0.075;
       if (s.age > s.duration + 0.035) { this.removeShot(s); this.shots.splice(i, 1); }
     }
     for (let i = this.sparks.length - 1; i >= 0; i--) {

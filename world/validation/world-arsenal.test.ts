@@ -102,3 +102,11 @@ test('melee weapons: Arena trio, elite unlocks, and the combo scales by weapon',
   assert.ok(h.hit.damage > b.hit.damage * 1.4 && h.t > b.t, 'hammer hits harder, later');
   assert.ok(p.hit.range > b.hit.range * 1.5 && p.hit.halfWidth < b.hit.halfWidth, 'polearm reaches far, narrow');
 });
+
+test('switching guns names how to earn the next locked one', async () => {
+  const { nextGunUnlock } = await import('../src/worldArsenal.ts');
+  assert.equal(nextGunUnlock(new Set())!.gun.id, 'firefly');
+  const all = new Set(WORLD_GUNS.flatMap(g => g.unlock ? [g.unlock.flag] : []));
+  assert.equal(nextGunUnlock(all), null);
+  all.delete(flagElite('elite_frost_officer')); assert.equal(nextGunUnlock(all)!.gun.id, 'longnight');
+});

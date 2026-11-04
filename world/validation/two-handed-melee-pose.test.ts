@@ -100,3 +100,16 @@ test('the hammer slam visibly winds up overhead and the polearm lunge reaches pa
   assert.ok(tip.z > 1.3 && Math.abs(tip.y - p.rig.joints.Chest.getWorldPosition(v()).y) < .45, `spearhead out front at chest height (${tip.toArray().map(n => n.toFixed(2))})`);
   p.dispose();
 });
+
+test('a gun swap re-draws from the back sling, and a shot still owns the rifle pose at once', async () => {
+  const f = await playerFixture(), a = new SkinnedCharacterAnimator(f.rig);
+  for (let i = 0; i < 120; i++) a.update(1 / 60, base);
+  const held = f.rig.joints.Gun.position.clone();
+  a.drawWeapon(); a.update(1 / 60, base);
+  assert.ok(f.rig.joints.Gun.position.distanceTo(held) > .1, 'the new gun starts at the sling');
+  for (let i = 0; i < 60; i++) a.update(1 / 60, base);
+  assert.ok(f.rig.joints.Gun.position.distanceTo(held) < .02, 'and is back in hand within a second');
+  a.drawWeapon(); a.prepareShot(new THREE.Vector3(0, 0, -1));
+  assert.ok(f.rig.joints.Gun.position.distanceTo(held) < .3, 'firing does not wait for the draw');
+  f.dispose();
+});

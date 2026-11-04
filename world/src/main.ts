@@ -87,7 +87,7 @@ import { loadLayout } from './load';
 import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './skinnedCharacter';
 import { PlayerTerrainSupport } from './playerTerrainSupport';
 import { attachExplorerRifle } from './weaponArt';
-import { WORLD_GUNS, DEFAULT_GUN, GUN_STORE_KEY, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, type WorldGunId, WORLD_MELEE, DEFAULT_MELEE, MELEE_STORE_KEY, worldMelee, meleeUnlocked, unlockedMelee, cycleMelee, equippedMelee, type WorldMeleeId } from './worldArsenal';
+import { WORLD_GUNS, DEFAULT_GUN, nextGunUnlock, GUN_STORE_KEY, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, type WorldGunId, WORLD_MELEE, DEFAULT_MELEE, MELEE_STORE_KEY, worldMelee, meleeUnlocked, unlockedMelee, cycleMelee, equippedMelee, type WorldMeleeId } from './worldArsenal';
 import { ShoulderAim, shoulderArmLength } from './aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
@@ -895,17 +895,17 @@ function equipGun(id: WorldGunId, announce = true) {
     try { localStorage.setItem(GUN_STORE_KEY, id); } catch { /* the choice still applies this session */ }
     gunSwap?.dispose();
     const next = attachExplorerRifle(rig, renderer, undefined, id); gunSwap = next;
-    next.ready.then(() => { if (gunSwap !== next) { next.dispose(); return; } const old = rifle; rifle = next; gunSwap = null; old.dispose(); applyWeaponFinish(); })
+    next.ready.then(() => { if (gunSwap !== next) { next.dispose(); return; } const old = rifle; rifle = next; gunSwap = null; old.dispose(); applyWeaponFinish(); if (announce) anim.drawWeapon(); })
       .catch(error => { if (gunSwap === next) gunSwap = null; next.dispose(); console.warn('Gun art unavailable; previous model kept.', error); });
   }
-  if (announce) { const n = unlockedGuns(done).length; toast(bilingual(`${gun.name[0]} · ${gun.role[0]} · ${WORLD_GUNS.indexOf(gun) + 1}/${WORLD_GUNS.length}（已解锁 ${n}）`, `${gun.name[1]} · ${gun.role[1]} · owned ${n}/${WORLD_GUNS.length}`)); }
+  if (announce) { const n = unlockedGuns(done).length, next = nextGunUnlock(done); toast(bilingual(`${gun.name[0]} · ${gun.role[0]} · 已解锁 ${n}/${WORLD_GUNS.length}${next ? `\n下一把 ${next.gun.name[0]}：${next.how[0]}` : ''}`, `${gun.name[1]} · ${gun.role[1]} · owned ${n}/${WORLD_GUNS.length}${next ? `\nNext, ${next.gun.name[1]}: ${next.how[1]}` : ''}`)); }
   hudRevision++; return true;
 }
 function cycleEquippedGun(dir: 1 | -1) {
   const now = performance.now(); if (now - gunSwapAt < 220) return; gunSwapAt = now;
   if (!worldProgress.armed) return;
   const next = cycleGun(equippedGunId, dir, done);
-  if (next === equippedGunId) { toast(bilingual('目前只有一把枪：讨伐各地精英可以解锁 Arena 的其他枪械。', 'Only one gun so far: defeat roaming elites to unlock the other Arena guns.')); return; }
+  if (next === equippedGunId) { const hint = nextGunUnlock(done); toast(hint ? bilingual(`目前只有一把枪 · 下一把 ${hint.gun.name[0]}：${hint.how[0]}`, `Only one gun so far · Next, ${hint.gun.name[1]}: ${hint.how[1]}`) : bilingual('目前只有一把枪。', 'Only one gun so far.')); return; }
   equipGun(next);
 }
 /** New unlocks get a banner; a save that no longer owns the equipped gun drops back to the AR. */
@@ -1753,7 +1753,7 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
     const hit = combat.raycast(origin, pelletDir, reach);
     if (hit) combat.damageEnemy(hit.id, gun.damage);
     const end = hit ? new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z) : wall ? wall.point.clone() : origin.clone().addScaledVector(pelletDir, reach);
-    combat.shot(muzzle, end, !!(hit || wall));
+    combat.shot(muzzle, end, !!(hit || wall), false);
   }
 }
 

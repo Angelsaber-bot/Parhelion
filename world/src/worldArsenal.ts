@@ -74,6 +74,11 @@ export function equippedGun(stored: unknown, done: ReadonlySet<string>): WorldGu
 export function newlyUnlocked(before: ReadonlySet<string>, after: ReadonlySet<string>) {
   return WORLD_GUNS.filter(gun => gun.unlock && !before.has(gun.unlock.flag) && after.has(gun.unlock.flag));
 }
+/** How to earn the next locked gun (catalogue order), or null when the whole arsenal is owned. */
+export function nextGunUnlock(done: ReadonlySet<string>) {
+  const gun = WORLD_GUNS.find(g => !gunUnlocked(g, done));
+  return gun?.unlock ? { gun, how: gun.unlock.how } : null;
+}
 /** Damage scale with distance for this gun (1 at close range down to its minimum). */
 export function gunDistanceMultiplier(gun: GunProfile, distance: number) {
   if (!Number.isFinite(distance)) return 0;
