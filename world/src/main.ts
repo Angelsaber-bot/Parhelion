@@ -6,6 +6,7 @@ import {makeCombatTerrain} from './combatTerrain';
 import {LocalCavalrySupport} from './localCavalrySupport';
 import {createFlagshipInterior} from './flagshipInterior';
 import {RegionVisualStreaming,streamedOutlineDistance} from './regionVisualStreaming';
+import { FarPropCuller } from './farPropCuller';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getAdventureGuide,getCurrentAdventureGuide} from './openWorldCampaign';
 import {createAdventureSites} from './adventureSites';
 import {createExploration} from './exploration/runtime';
@@ -191,6 +192,7 @@ scene.add(sun, sun.target);
 renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 const shadowCenter = new THREE.Vector3(), lastShadowCenter = new THREE.Vector3(), shadowBasis = new THREE.Matrix4(), shadowInverse = new THREE.Matrix4();
 let shadowTick = 0;
+const farProps = new FarPropCuller(), lastFarEye = new THREE.Vector3();
 let cameraKick = 0; const camRight = new THREE.Vector3();
 /** 0..1 view kick; reduced effects turns it off. Bigger melee weapons and finishers kick harder. */
 function kickCamera(amount: number) { if (!reducedEffects()) cameraKick = Math.max(cameraKick, Math.min(1, amount)); }
@@ -2198,6 +2200,8 @@ function frame(now: number) {
   const nowRegion = regionAt(player.pos.x, player.pos.z).id;
   if (nowRegion !== lastRegion) { lastRegion = nowRegion; renderObjective(); }
   culler.update(eye, lowQ ? 0.7 : 1);
+  // A teleport or travel re-sweeps every prop at once instead of popping in over a few frames.
+  farProps.update(eye, lowQ ? 0.7 : 1, eye.distanceToSquared(lastFarEye) > 900 ? 1 : 8); lastFarEye.copy(eye);
   const nextDpr = adaptiveResolution.sample(frameSeconds, dpr, targetDpr(devicePixelRatio, resolution, lowQ),
     resolution === 'adaptive' && !params.has('shot') && document.visibilityState === 'visible' && document.hasFocus());
   if (nextDpr !== dpr) { dpr = nextDpr; applyResolution(); }
@@ -2240,6 +2244,10 @@ suspendForGraphics = () => {
   $('settings-open').classList.remove('hidden'); languageToggle.hidden = false;
 };
 if (graphicsRecovery?.blocked) suspendForGraphics();
+// Small authored props outside the chunked art (exploration caches, hubs, story sets, residents)
+// stop drawing once they are a few fogged pixels away. Region art keeps its own chunk culler.
+for (const child of world.children) if (child.name && child.name !== 'Group' && !child.name.startsWith('Streamed_')) farProps.add(child);
+for (const child of scene.children) if (/^(EraStory_|ValleyStory_|SettlementResidents$|FieldHerbs$|Updrafts$)/.test(child.name)) farProps.add(child);
 requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
