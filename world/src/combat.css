@@ -32,3 +32,19 @@ body.clean .combat-hud, body.clean #world-hurt, body.clean #world-counter { disp
 .combat-daze-track { height: 4px; margin-top: 3px; border-radius: 2px; background: #0d1422aa; overflow: hidden; }
 .combat-daze { height: 100%; width: 0; background: #8fe6ff; transition: width .12s; }
 .combat-daze[data-broken="1"] { background: #ffffff; box-shadow: 0 0 8px #bff4ff; }
+
+/* Boss title cards: letterbox + name card (bossTitleCard.ts) */
+#boss-title{position:fixed;inset:0;z-index:9;pointer-events:none;--bt-color:#ffbe62}
+#boss-title .bt-bar{position:absolute;left:0;right:0;height:9vh;background:#05070c;transform:scaleY(0);animation:bt-bar 3.6s ease both}
+#boss-title .bt-top{top:0;transform-origin:top}#boss-title .bt-bottom{bottom:0;transform-origin:bottom}
+#boss-title .bt-card{position:absolute;left:0;right:0;top:calc(9vh + 54px);text-align:center;color:#fff6e4;text-shadow:0 2px 14px #000c;animation:bt-card 3.6s ease both}
+#boss-title .bt-card small{display:block;font-size:12px;letter-spacing:.38em;opacity:.8}
+#boss-title .bt-card strong{display:block;margin:8px 0 6px;font:600 46px/1.1 'Songti SC','Noto Serif SC',Georgia,serif;letter-spacing:.24em;color:var(--bt-color)}
+#boss-title .bt-card span{display:inline-block;padding-top:7px;border-top:1px solid color-mix(in srgb,var(--bt-color) 55%,transparent);font-size:14px;letter-spacing:.2em;opacity:.92}
+#boss-title.bt-act .bt-bar{animation-duration:2.4s}#boss-title.bt-act .bt-card{animation-duration:2.4s}#boss-title.bt-act strong{font-size:36px}
+#boss-title.bt-fall .bt-bar,#boss-title.bt-fall .bt-card{animation-duration:3.2s}
+#boss-title.bt-reduced .bt-bar{display:none}#boss-title.bt-reduced .bt-card{animation:none}
+@keyframes bt-bar{0%{transform:scaleY(0)}12%,82%{transform:scaleY(1)}100%{transform:scaleY(0)}}
+@keyframes bt-card{0%{opacity:0;transform:translateY(10px);letter-spacing:.1em}16%,80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-6px)}}
+body.world-dialogue-open #boss-title{visibility:hidden}
+@media(max-width:760px){#boss-title .bt-card strong{font-size:32px}}

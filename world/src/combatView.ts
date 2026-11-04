@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { EnemyContactEffects } from './enemyContactEffects';
 import { BossHazardView } from './bossHazardView';
+import { BossTitleCard } from './bossTitleCard';
 import { DefeatEffects } from './defeatEffects';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
@@ -155,6 +156,7 @@ export class WorldCombat {
   private readonly effectGroup = new THREE.Group();
   private readonly contactEffects: EnemyContactEffects;
   private readonly hazardView: BossHazardView;
+  private readonly titleCard: BossTitleCard;
   private readonly defeatEffects: DefeatEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
@@ -178,6 +180,7 @@ export class WorldCombat {
     this.geometry = makeCombatTerrain(options.colliders, options.layout, options.groundHeight);
     this.contactEffects = new EnemyContactEffects(this.effectGroup, this.geometry);
     this.hazardView = new BossHazardView(this.effectGroup, this.geometry);
+    this.titleCard = new BossTitleCard(() => this.options.reducedEffects?.() ?? false);
     this.defeatEffects = new DefeatEffects(this.effectGroup);
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
@@ -402,6 +405,7 @@ export class WorldCombat {
     if (this.state.defeated) this.contactEffects.clear();
     this.contactEffects.update(dt, active);
     this.hazardView.update(active ? dt : 0);
+    this.titleCard.update(dt);
     this.defeatEffects.update(active ? dt : 0, typeof innerHeight === 'number' ? innerHeight * Math.min(devicePixelRatio || 1, 2) : undefined);
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
@@ -565,11 +569,12 @@ export class WorldCombat {
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
-      else if (event.type === 'bossStart') this.options.toast(bilingual(...bossText(this.state.boss.id).start));
-      else if (event.type === 'bossReset') this.hazardView.clear(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
-      else if (event.type === 'phase') this.options.toast(bilingual(...bossText(this.state.boss.id).phase));
+      else if (event.type === 'bossStart') { this.titleCard.show(this.state.boss.id, 'rise'); this.options.toast(bilingual(...bossText(this.state.boss.id).start)); }
+      else if (event.type === 'bossReset') this.hazardView.clear(), this.titleCard.hide(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
+      else if (event.type === 'phase') { this.titleCard.show(this.state.boss.id, 'act'); this.options.toast(bilingual(...bossText(this.state.boss.id).phase)); }
       else if (event.type === 'victory') {
         const def = this.bossDefs.find(b => b.id === event.id)!;
+        this.titleCard.show(def.id, 'fall');
         if (event.firstClear) { this.options.done.add(def.reward); this.options.onVictory(def.core); }
         this.options.toast(event.firstClear ? bilingual(...bossText(def.id).victory) : bilingual('再次挑战成功 · 纪念奖励已领取', 'Rematch won · Keepsake already earned'));
       } else if (event.type === 'revive') this.options.onPlayerDefeated();
@@ -757,7 +762,7 @@ export class WorldCombat {
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.contactEffects.dispose();
-    this.defeatEffects.dispose();
+    this.defeatEffects.dispose(); this.titleCard.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.counterGlow, this.defeat]) el.remove();
