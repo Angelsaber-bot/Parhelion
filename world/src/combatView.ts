@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { EnemyContactEffects } from './enemyContactEffects';
 import { BossHazardView } from './bossHazardView';
 import { BossTitleCard } from './bossTitleCard';
+import { DamageNumbers, damageKind } from './damageNumbers';
 import { DefeatEffects } from './defeatEffects';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
@@ -157,6 +158,7 @@ export class WorldCombat {
   private readonly contactEffects: EnemyContactEffects;
   private readonly hazardView: BossHazardView;
   private readonly titleCard: BossTitleCard;
+  private readonly damageNumbers = new DamageNumbers();
   private readonly defeatEffects: DefeatEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
@@ -406,8 +408,10 @@ export class WorldCombat {
     this.contactEffects.update(dt, active);
     this.hazardView.update(active ? dt : 0);
     this.titleCard.update(dt);
+    if (!active || this.state.defeated) this.damageNumbers.clear();
     this.defeatEffects.update(active ? dt : 0, typeof innerHeight === 'number' ? innerHeight * Math.min(devicePixelRatio || 1, 2) : undefined);
     this.events();
+    this.damageNumbers.update(Number.isFinite(dt) && dt > 0 ? dt : 0, camera, typeof innerWidth === 'number' ? innerWidth : 0, typeof innerHeight === 'number' ? innerHeight : 0);
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
     const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
       (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
@@ -517,6 +521,8 @@ export class WorldCombat {
           this.shot(mountBlock?shoulder:muzzle,surface?.point??endpoint,!!surface);
         }
       } else if (event.type === 'hit') {
+        const struck = this.playable ? this.state.enemies.find(e => e.id === event.id) : undefined;
+        if (struck) this.damageNumbers.add(new THREE.Vector3(struck.p.x, struck.p.y + (struck.kind === 'king' ? 3.4 : struck.miniboss ? 2.5 : 2.1), struck.p.z), event.damage, damageKind(event));
         if (event.source && !event.remote) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
@@ -762,7 +768,7 @@ export class WorldCombat {
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.contactEffects.dispose();
-    this.defeatEffects.dispose(); this.titleCard.dispose();
+    this.defeatEffects.dispose(); this.titleCard.dispose(); this.damageNumbers.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.counterGlow, this.defeat]) el.remove();

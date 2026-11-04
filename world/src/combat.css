@@ -48,3 +48,19 @@ body.clean .combat-hud, body.clean #world-hurt, body.clean #world-counter { disp
 @keyframes bt-card{0%{opacity:0;transform:translateY(10px);letter-spacing:.1em}16%,80%{opacity:1;transform:none}100%{opacity:0;transform:translateY(-6px)}}
 body.world-dialogue-open #boss-title{visibility:hidden}
 @media(max-width:760px){#boss-title .bt-card strong{font-size:32px}}
+
+/* World-space damage numbers (damageNumbers.ts) */
+#world-damage-numbers{position:fixed;inset:0;z-index:6;pointer-events:none;overflow:hidden}
+#world-damage-numbers b{position:absolute;left:0;top:0;font:800 19px/1 system-ui,-apple-system,'PingFang SC',sans-serif;letter-spacing:.02em;color:#fff;
+  text-shadow:0 0 1px #000,0 1px 0 #000,0 2px 6px #000b,0 0 10px #0007;will-change:transform,opacity;white-space:nowrap}
+#world-damage-numbers b[hidden]{display:none}
+#world-damage-numbers .dn-ranged{color:#e9f2ff;font-size:16px}
+#world-damage-numbers .dn-skill{color:#8fe8ff}
+#world-damage-numbers .dn-servant{color:#c7b6ff;font-size:16px}
+#world-damage-numbers .dn-ultimate{color:#ffd36b;font-size:24px}
+#world-damage-numbers .dn-counter{color:#ffe08a;font-size:23px}
+#world-damage-numbers .dn-punish{color:#ff9a4a;font-size:26px}
+#world-damage-numbers .dn-blocked{color:#9aa7b8;font-size:15px}
+#world-damage-numbers .dn-blocked::before{content:'⛨ ';font-size:.85em}
+#world-damage-numbers .dn-heavy{font-size:1.28em}
+body.world-dialogue-open #world-damage-numbers{visibility:hidden}

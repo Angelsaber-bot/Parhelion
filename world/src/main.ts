@@ -13,6 +13,7 @@ import {createExploration} from './exploration/runtime';
 import {createAmbientLife} from './ambientLife';
 import {createFieldHerbs} from './fieldHerbs';
 import {drawExplorationIcons} from './exploration/mapIcons';
+import { HIT_STOP, hitStopSeconds } from './hitStop';
 import {glideLevel as explorationGlideLevel, glideScale as explorationGlideScale} from './exploration/catalog';
 import {createAdventureRuntime} from './adventureRuntime';
 import { WORLD_RIFLE } from './worldBalance';
@@ -1308,7 +1309,7 @@ actions = new WorldActions({ scene,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.companionSummoned ? contract.selected : null }),
-  strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
+  strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(!reducedEffects())hitStop=Math.max(hitStop,hitStopSeconds(source,result.hits,result.kills.length));if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
   cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type !== 'guard') coop.skillFx(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
   onCast: event => { actionHud.announce(event); beginUltimate(event); },
@@ -2052,7 +2053,7 @@ if (params.has('lit')) done.add('tower_console');
 camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
-let perfectEvadeSlow = 0;
+let perfectEvadeSlow = 0, hitStop = 0;
 /** This player's pose for the co-op partner's screen. */
 function coopWireState(speed: number, ads: number): PlayerWireState {
   const melee = actions?.melee.active ? [actions.melee.phase, actions.melee.combo, actions.melee.style?.id ?? equippedMeleeId] as [number, number, WorldMeleeId] : undefined;
@@ -2078,7 +2079,10 @@ function frame(now: number) {
   // A perfect evade slows the whole world for half a real second.
   const slowed = perfectEvadeSlow > 0 && gameplayActive();
   perfectEvadeSlow = Math.max(0, perfectEvadeSlow - Math.min(0.1, frameSeconds));
-  const dt = Math.min(0.1, frameSeconds) * (slowed ? PERFECT_EVADE.slowScale : 1);
+  // Hit-stop: a landed blade or skill nearly freezes the world for a few hundredths of a second.
+  const stopped = hitStop > 0 && gameplayActive();
+  hitStop = Math.max(0, hitStop - Math.min(0.1, frameSeconds));
+  const dt = Math.min(0.1, frameSeconds) * (slowed ? PERFECT_EVADE.slowScale : 1) * (stopped ? HIT_STOP.scale : 1);
   last = now;
   if (frameUltimate(dt)) { requestAnimationFrame(frame); return; }
   if (deferredCombatToast && gameplayActive()) { const message = deferredCombatToast; deferredCombatToast = null; toast(message); }
