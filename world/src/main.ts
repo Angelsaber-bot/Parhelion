@@ -5,7 +5,7 @@ import {RESIDENT_ACTIONS,getResidentWorkGuide} from './residentEventRules';
 import {makeCombatTerrain} from './combatTerrain';
 import {LocalCavalrySupport} from './localCavalrySupport';
 import {createFlagshipInterior} from './flagshipInterior';
-import {RegionVisualStreaming} from './regionVisualStreaming';
+import {RegionVisualStreaming,streamedOutlineDistance} from './regionVisualStreaming';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getAdventureGuide,getCurrentAdventureGuide} from './openWorldCampaign';
 import {createAdventureSites} from './adventureSites';
 import {createExploration} from './exploration/runtime';
@@ -191,6 +191,10 @@ scene.add(sun, sun.target);
 renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 const shadowCenter = new THREE.Vector3(), lastShadowCenter = new THREE.Vector3(), shadowBasis = new THREE.Matrix4(), shadowInverse = new THREE.Matrix4();
 let shadowTick = 0;
+let cameraKick = 0; const camRight = new THREE.Vector3();
+/** 0..1 view kick; reduced effects turns it off. Bigger melee weapons and finishers kick harder. */
+function kickCamera(amount: number) { if (!reducedEffects()) cameraKick = Math.max(cameraKick, Math.min(1, amount)); }
+function meleeKick() { const id = actions?.melee.style.id, combo = actions?.melee.combo ?? 0; return (id === 'hammer' ? .75 : id === 'polearm' ? .45 : .35) + (combo === 2 ? .25 : 0); }
 const ORIGIN = new THREE.Vector3(), UNIT_Y = new THREE.Vector3(0, 1, 0), UNIT_Z = new THREE.Vector3(0, 0, 1);
 const SHADOW_TEXEL = (sun.shadow.camera.right - sun.shadow.camera.left) / sun.shadow.mapSize.x;
 function snapShadowCenter(at: THREE.Vector3, toSun: THREE.Vector3, out: THREE.Vector3) {
@@ -334,7 +338,7 @@ for (const m of artMeshes) {
   const pieces = !special && tris > 4000 ? chunkMesh(m, m.name === 'Terrain' ? 128 : 64) : [m];
   for (const c of pieces) {
     if (m.userData.outline && !params.has('noline')) addOutline(c);
-    if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9);
+    if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9, streamedOutlineDistance(m.name));
     // Static art transforms do not change; shader foliage sway remains fully active.
     // Never freeze stateful, spinning, bobbing, target or other dynamic gameplay art.
     if (!special) freezeStaticArt(c);
@@ -1294,7 +1298,7 @@ actions = new WorldActions({ scene,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.companionSummoned ? contract.selected : null }),
-  strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
+  strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
   cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
   onCast: event => { actionHud.announce(event); beginUltimate(event); },
@@ -2077,6 +2081,12 @@ function frame(now: number) {
     camera.position.copy(pivot).addScaledVector(back, camDist);
     eye.copy(camera.position);
   } else camera.position.copy(eye);
+  // Heavy contacts nudge the view for a few frames (weight, not shake): a damped two-axis wobble.
+  if (cameraKick > 0) {
+    const t = performance.now() / 1000, k = cameraKick * cameraKick;
+    camera.position.addScaledVector(camRight.set(rx, 0, rz), Math.sin(t * 61) * k * .05).y += Math.sin(t * 47 + 1.3) * k * .06;
+    cameraKick = Math.max(0, cameraKick - dt * 5);
+  }
   // Full-body servant viewer: slow orbit in front of the active companion.
   const viewRoot = inspectServant ? servantRoot() : undefined;
   if (viewRoot?.visible) {

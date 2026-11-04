@@ -5,6 +5,11 @@ import {chunkMesh,DistanceCuller,freezeStaticArt} from './chunk';
 import {toonMaterial,addOutline} from './look';
 interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;}
 export interface RegionStreamingOptions{parent:THREE.Object3D;outlines:boolean;lowQuality:boolean;eager?:boolean;now?:()=>number;status?:(region:string,error?:unknown)=>void;}
+/** Leaves/trunks/rocks are chunked in large dense cells: their ink line is sub-pixel well before
+ * a building's, so it stops earlier (Kyoto: ~400k outline triangles past 170 m before this). */
+export function streamedOutlineDistance(name: string) {
+  return /^Trees_(Leaves|Trunks)$|^Trees$|^Leaves$/.test(name) ? 70 : name === 'Rocks' ? 90 : /Roof|Rakuchu/.test(name) ? 110 : Infinity;
+}
 /** Same reach as the valley's own art (main.ts DRAW_DIST): small props fade into fog well before 600 m. */
 export function streamedDrawDistance(name:string){return /Bushes/.test(name)?180:/Trees_Trunks/.test(name)?260:/Rocks/.test(name)?320:/(Leaves|Trees)/.test(name)?380:/Glow/.test(name)?500:600;}
 const regionDistance=(def:RegionDef,p:Pick<THREE.Vector3,'x'|'z'>)=>Math.hypot(Math.max(0,Math.abs(p.x-def.offset[0])-360),Math.max(0,Math.abs(p.z-def.offset[1])-360));
@@ -31,7 +36,7 @@ export class RegionVisualStreaming{
    const meshes:THREE.Mesh[]=[];root.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
    for(const mesh of meshes){geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);
     const count=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;const pieces=count>4000?chunkMesh(mesh,64):[mesh];
-    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece);culler.add(piece,streamedDrawDistance(piece.name));}
+    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece);culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));}
    }
    this.options.parent.add(root);root.updateMatrixWorld(true);freezeStaticArt(root);
    this.residents.set(id,{root,culler,geometries,materials,lastUsed:this.clock()});this.counters.installs++;this.failures.delete(id);this.options.status?.('');return true;

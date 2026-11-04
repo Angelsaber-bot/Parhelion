@@ -43,20 +43,21 @@ export function chunkMesh(mesh: THREE.Mesh, cell: number): THREE.Mesh[] {
 
 /** Hides chunks (and their outlines) past a per-mesh draw distance. */
 export class DistanceCuller {
-  items: { mesh: THREE.Mesh; c: THREE.Vector3; r: number; max: number; outline: THREE.Object3D | null }[] = [];
+  items: { mesh: THREE.Mesh; c: THREE.Vector3; r: number; max: number; outline: THREE.Object3D | null; outlineMax: number }[] = [];
   constructor(public outlineDist = 150) {}
-  add(mesh: THREE.Mesh, max: number) {
+  /** `outlineMax` caps this mesh's ink line closer than the shared outline distance (dense foliage). */
+  add(mesh: THREE.Mesh, max: number, outlineMax = Infinity) {
     mesh.updateWorldMatrix(true, false);
     const s = (mesh.geometry as THREE.BufferGeometry).boundingSphere!;
     const c = s.center.clone().applyMatrix4(mesh.matrixWorld);
-    this.items.push({ mesh, c, r: s.radius * mesh.matrixWorld.getMaxScaleOnAxis(), max, outline: mesh.children.find((o) => o.name.endsWith('__outline')) ?? null });
+    this.items.push({ mesh, c, r: s.radius * mesh.matrixWorld.getMaxScaleOnAxis(), max, outline: mesh.children.find((o) => o.name.endsWith('__outline')) ?? null, outlineMax: Math.min(this.outlineDist, outlineMax) });
   }
   update(eye: THREE.Vector3, scale = 1) {
     for (const it of this.items) {
       const d2 = it.c.distanceToSquared(eye);
       // Equivalent sphere/range test without one square root per chunk per frame.
       it.mesh.visible = d2 < (it.max * scale + it.r) ** 2;
-      if (it.outline) it.outline.visible = d2 < (this.outlineDist * scale + it.r) ** 2;
+      if (it.outline) it.outline.visible = d2 < (it.outlineMax * scale + it.r) ** 2;
     }
   }
 }

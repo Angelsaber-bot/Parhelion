@@ -64,3 +64,15 @@ test('squared culling matches original sphere test and respects world scaling', 
     assert.equal(mesh.visible, d < 20); assert.equal(outline.visible, d < 5);
   }
 });
+
+test('dense foliage stops drawing its ink line sooner than the shared outline distance', async () => {
+  const { streamedOutlineDistance } = await import('../src/regionVisualStreaming.ts');
+  assert.ok(streamedOutlineDistance('Trees_Leaves') < streamedOutlineDistance('Rocks'));
+  assert.equal(streamedOutlineDistance('Castle_Keep'), Infinity, 'buildings keep the shared distance');
+  const mesh = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshBasicMaterial()); mesh.geometry.computeBoundingSphere();
+  const outline = new THREE.Object3D(); outline.name = 'mesh__outline'; mesh.add(outline);
+  const culler = new DistanceCuller(160); culler.add(mesh, 400, 70);
+  culler.update(new THREE.Vector3(60, 0, 0)); assert.equal(outline.visible, true);
+  culler.update(new THREE.Vector3(100, 0, 0)); assert.equal(outline.visible, false); assert.equal(mesh.visible, true);
+  culler.update(new THREE.Vector3(100, 0, 0), .5); assert.equal(outline.visible, false);
+});

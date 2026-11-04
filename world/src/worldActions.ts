@@ -102,6 +102,8 @@ export class WorldActions {
      const strike={origin:{...c.position},direction:{x:Math.sin(contact.yaw),y:0,z:Math.cos(contact.yaw)},range:contact.range,halfWidth:contact.halfWidth,damage:contact.damage,maxTargets:3};
      this.options.strike(strike,'melee');
      this.effects.show({...strike,type:'strike',identity:null,slot:'skill',pulse:contact.combo,at:0},this.options.reducedEffects(),{style:'melee',origin:this.options.bladeOrigin?.(),bladeDirection:this.options.bladeDirection?.()});
+     // The hammer's overhead slam lands with a ground shock ring where the head strikes.
+     if(this.melee.style.id==='hammer'&&contact.combo===2){const reach=Math.min(2,contact.range*.85);this.effects.show({...strike,origin:{x:c.position.x+Math.sin(contact.yaw)*reach,y:c.position.y,z:c.position.z+Math.cos(contact.yaw)*reach},type:'strike',identity:null,slot:'ultimate',pulse:2,at:0},this.options.reducedEffects());}
    }
    this.options.defense({guard:this.skills.guarding?.55:1,invulnerable:this.evade.remaining>.10});
    this.flush();
