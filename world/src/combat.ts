@@ -7,6 +7,7 @@ import { ECHO_WARDEN, chooseEchoWardenAttack, echoWardenTiming, echoWardenRadius
 import { ENEMY_TACTICS, enemyRangedSpacing, enemyWalkTurns, hasEnemyPressureSlot } from './enemyTactics';
 import { KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from './authoredEncounters';
 import { bossAttackTiming, chooseBossAttack, bossAttackDamage } from './bossPatterns';
+import { BOSS_HAZARDS, hazardContains, planBossHazards, type Hazard } from './bossHazards';
 import { ERA_BOSS_REQUIREMENTS } from './eraStories';
 import { minibossProfile, activeSignature, eliteName, signatureCadence, ELITE_RALLY } from './minibosses';
 import { ENEMY_ROLES, SHINOBI_BLINK, selectEnemyRole, type EnemyRole } from './enemyRoles';
@@ -38,6 +39,10 @@ export type CombatEvent =
   | { type: 'partnerHurt'; id: string; damage: number }
   | { type: 'dazed'; id: string }
   | { type: 'explode'; id: string; at: Point3 }
+  /** Era-boss arena mechanic: a telegraph appears, then bursts (see bossHazards.ts). */
+  | { type: 'hazard'; hazard: Hazard }
+  | { type: 'hazardBurst'; id: number; hit: boolean; at: Point3 }
+  | { type: 'hazardClear' }
   | { type: 'stagger' | 'storyPhase'; id: string }
   | { type: 'hurt'; damage: number }
   | { type: 'victory'; id: string; firstClear: boolean }
@@ -259,6 +264,11 @@ export class WorldCombatState {
   quietFor = 0;
   private guardMultiplier = 1;
   private invulnerable = false;
+  /** Pending phase-2 arena hazards of the running era boss. */
+  hazards: Hazard[] = [];
+  private hazardTimer = 0; private hazardVolley = 0; private hazardSeq = 0; private hazardArmed = false;
+  private lastPlayer: Point3 | null = null;
+  private readonly playerVelocity = { x: 0, z: 0 };
   /** Seconds left in the counter window earned by a perfect evade. */
   counterFor = 0;
   /** The equipped gun's handling (worldArsenal.ts); the Dawn AR by default. */
@@ -559,6 +569,42 @@ export class WorldCombatState {
       this.events.push({ type: 'death' });
     }
   }
+  private stepHazards(dt: number, player: Point3) {
+    if (this.lastPlayer) {
+      const k = Math.min(1, dt * 6);
+      this.playerVelocity.x += ((player.x - this.lastPlayer.x) / dt - this.playerVelocity.x) * k;
+      this.playerVelocity.z += ((player.z - this.lastPlayer.z) / dt - this.playerVelocity.z) * k;
+    }
+    this.lastPlayer = clone(player);
+    // the co-op guest mirrors the host's boss; its arena mechanic belongs to the host's game
+    const boss = this.bossStarted && !this.remoteEnemies ? this.boss : null, def = boss ? BOSS_HAZARDS[boss.id] : undefined;
+    if (!boss || !def || boss.mode === 'dead' || boss.phase !== 2) {
+      if (this.hazards.length) { this.hazards = []; this.events.push({ type: 'hazardClear' }); }
+      this.hazardArmed = false; return;
+    }
+    if (!this.hazardArmed) { this.hazardArmed = true; this.hazardTimer = def.first; this.hazardVolley = 0; }
+    // one threat at a time: a volley waits out the boss's own swing, and the boss holds while it lands
+    if ((this.hazardTimer -= dt) <= 0 && boss.mode !== 'windup') {
+      this.hazardTimer = def.every;
+      // the first volley names itself and its answer, like an elite's signature move
+      if (!this.hazardVolley) this.events.push({ type: 'signature', id: boss.id, name: def.name, counter: def.counter });
+      for (const plan of planBossHazards(boss.id, boss.p, player, this.playerVelocity, this.hazardVolley)) {
+        const hazard: Hazard = { ...plan, id: ++this.hazardSeq, boss: boss.id, t: plan.delay };
+        this.hazards.push(hazard); this.events.push({ type: 'hazard', hazard });
+      }
+      this.hazardVolley++;
+    }
+    for (const h of [...this.hazards]) {
+      if ((h.t -= dt) > 0) continue;
+      this.hazards.splice(this.hazards.indexOf(h), 1);
+      const inside = hazardContains(h, player);
+      this.events.push({ type: 'hazardBurst', id: h.id, hit: inside && !this.invulnerable, at: clone(h.at) });
+      if (!inside) continue;
+      // evading through a burst is read like any other attack: a perfect evade
+      if (this.invulnerable) { this.counterFor = PERFECT_EVADE.counter; this.events.push({ type: 'perfectEvade', id: boss.id }); }
+      else { this.hurt(h.damage); if (this.defeated) return; }
+    }
+  }
   step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
     const player = localPlayer;
     // Co-op host in a menu or loading: the world keeps fighting the partner, never the absent host.
@@ -677,6 +723,7 @@ export class WorldCombatState {
         this.events.push({ type: 'signature', id: e.id, name: signature.name, counter: signature.counter });
         continue;
       }
+      if (isBoss && this.hazards.length) e.timer = Math.max(e.timer, .4);
       if (sees && e.timer <= 0 && (dist < meleeRange || isBoss && dist < 40) && hasEnemyPressureSlot(e, this.enemies, player)) {
         e.signatureActive = false;
         e.attack = e.storyPattern === 'echo-warden' ? chooseEchoWardenAttack(e, dist) : elite?.attack ?? (isBoss ? chooseBossAttack(e, dist) : role.attack);
@@ -697,6 +744,8 @@ export class WorldCombatState {
         }
       }
     }
+    this.stepHazards(dt, localPlayer);
+    if (this.defeated) return;
     this.quietFor = threatened ? 0 : this.quietFor + dt;
     if (this.quietFor > 5) this.hp = Math.min(this.maxHp, this.hp + dt * 10);
     if (this.quietFor > 5 && this.ammo < WORLD_RIFLE.ammoTrickleCap) { this.ammoTrickle += dt; if (this.ammoTrickle >= WORLD_RIFLE.ammoTrickleEvery) { this.ammoTrickle = 0; this.ammo++; } } else this.ammoTrickle = 0;

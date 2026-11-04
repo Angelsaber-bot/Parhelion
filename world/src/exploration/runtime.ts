@@ -30,6 +30,7 @@ import {
   SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
 import { MINIBOSSES } from '../minibosses';
+import { COMMISSION, commissionDone, dayKey, flagCommission, flagCommissionBonus, flagHuntKill, huntProgress, todaysBoard, type Commission } from './commissions';
 import './exploration.css';
 
 export interface ExplorationHost {
@@ -80,7 +81,7 @@ export function createExploration(host: ExplorationHost) {
 
   // ───────────────────────── HUD ─────────────────────────
   const hud = document.createElement('div'); hud.id = 'xp-hud'; hud.hidden = true;
-  hud.innerHTML = '<div class="xp-region"></div><div class="xp-bar"><i></i></div><div class="xp-stats"></div>';
+  hud.innerHTML = '<div class="xp-region"></div><div class="xp-bar"><i></i></div><div class="xp-stats"></div><div class="xp-comm"><b></b><span></span></div>';
   const banner = document.createElement('div'); banner.id = 'xp-banner'; banner.hidden = true;
   const challenge = document.createElement('div'); challenge.id = 'xp-challenge'; challenge.hidden = true;
   document.body.append(hud, banner, challenge);
@@ -174,6 +175,31 @@ export function createExploration(host: ExplorationHost) {
     const region = elite.region as RegionId, ex = regionExploration(region, done), rounds = host.refillAmmo?.(ELITE_BOUNTY.rounds) ?? 0, n = ELITE_BOUNTY.crystals;
     showBanner(bilingual(`精英讨伐 · ${elite.name[0]} · 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Elite bounty · ${elite.name[1]} · Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${REGION_NAMES[region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${REGION_NAMES[region]?.[1] ?? ''} explored ${ex.percent}%`));
     return true;
+  }
+
+  // ───────────────────────── 日晕委托 · daily commissions ─────────────────────────
+  let board = todaysBoard(done);
+  let boardCheck = 0;
+  const openCommission = (kind: Commission['kind'], target: string) => board.list.find(c => c.kind === kind && c.target === target && !commissionDone(done, board.day, c.n)) ?? null;
+  const commissionsLeft = () => board.list.filter(c => !commissionDone(done, board.day, c.n));
+  function completeCommission(c: Commission) {
+    if (commissionDone(done, board.day, c.n)) return;
+    done.add(flagCommission(board.day, c.n));
+    const rounds = host.refillAmmo?.(COMMISSION.rounds) ?? 0, left = commissionsLeft().length;
+    let n = COMMISSION.crystals;
+    if (!left && !done.has(flagCommissionBonus(board.day))) { done.add(flagCommissionBonus(board.day)); n += COMMISSION.bonus; }
+    host.save(); host.sound('solve');
+    showBanner(bilingual(`委托完成 · ${c.title[0]}`, `Commission complete · ${c.title[1]}`),
+      bilingual(`日晕晶 ×${n}${rounds ? ` · 弹药 +${rounds}` : ''} · ${left ? `今日还剩 ${left} 件委托` : '今日委托全部完成，额外奖励已发放'}`,
+        `Halo Crystal ×${n}${rounds ? ` · Ammo +${rounds}` : ''} · ${left ? `${left} left today` : "Today's board is clear: bonus paid"}`), 'solve', 4);
+  }
+  /** Wild kills count toward a hunt in the region the player is standing in. */
+  function enemyDefeated(id: string) {
+    if (!id.startsWith('wild_') || !lastRegion) return;
+    const hunt = openCommission('hunt', lastRegion); if (!hunt) return;
+    const k = huntProgress(done, board.day, hunt.n);
+    done.add(flagHuntKill(board.day, hunt.n, k));
+    if (k + 1 >= COMMISSION.hunt) completeCommission(hunt); else host.save();
   }
 
   // ───────────────────────── feathers ─────────────────────────
@@ -308,6 +334,8 @@ export function createExploration(host: ExplorationHost) {
     rt.active = false; activeTrial = null; rt.orbs.forEach(o => { o.visible = false; });
     if (success) {
       const first = !done.has(flagTrial(rt.def.id)); done.add(flagTrial(rt.def.id)); host.save(); host.sound('solve');
+      const echo = openCommission('trial', rt.def.id);
+      if (echo) { completeCommission(echo); return; }
       showBanner(bilingual(`挑战成功 · ${rt.def.title[0]}`, `Challenge complete · ${rt.def.title[1]}`), first ? bilingual('奖励宝箱解除了封印。', 'The reward chest has been unsealed.') : bilingual(`剩余 ${(rt.time).toFixed(1)} 秒`, `${rt.time.toFixed(1)} s to spare`), 'solve');
     } else { host.sound('fail'); showBanner(bilingual('挑战失败', 'Challenge failed'), bilingual('回到石碑可以再试一次。', 'Return to the stele to try again.'), 'fail'); }
   }
@@ -358,6 +386,8 @@ export function createExploration(host: ExplorationHost) {
     if (rt.wave + 1 < rt.def.waves.length) { rt.wave++; rt.pending = 1.6; host.toast(bilingual('下一波敌人来了！', 'The next wave is coming!')); return true; }
     activeCamp = null; rt.wave = 0;
     const first = !done.has(flagCamp(rt.def.id)); done.add(flagCamp(rt.def.id)); host.save(); host.sound('solve'); rt.flag.visible = false;
+    const regroup = openCommission('camp', rt.def.id);
+    if (regroup) { completeCommission(regroup); if (first) host.toast(bilingual('据点的宝箱解除了封印。', "The outpost's chest has been unsealed.")); return true; }
     showBanner(rt.def.style === 'duel' ? bilingual(`决斗胜利 · ${rt.def.title[0]}`, `Duel won · ${rt.def.title[1]}`) : rt.def.style === 'domain' ? bilingual(`秘境净化 · ${rt.def.title[0]}`, `Domain purified · ${rt.def.title[1]}`) : bilingual(`据点肃清 · ${rt.def.title[0]}`, `Outpost cleared · ${rt.def.title[1]}`), first ? bilingual('宝箱的封印消失了。', 'The chest seal has faded.') : '', 'solve');
     return true;
   }
@@ -654,7 +684,9 @@ export function createExploration(host: ExplorationHost) {
         if (host.activeEncounter() !== campEncounterId(rt.def.id, rt.wave)) { rt.running = false; rt.wave = 0; activeCamp = null; host.toast(bilingual(`离开了「${rt.def.title[0]}」，据点重置。`, `You left "${rt.def.title[1]}"; the outpost resets.`)); }
         continue;
       }
-      if (!active || activeCamp || activeTrial || ember.route || fox || done.has(flagCamp(rt.def.id)) || !player.onGround || player.flying) continue;
+      const regrouped = !!openCommission('camp', rt.def.id);
+      rt.flag.visible = !done.has(flagCamp(rt.def.id)) || regrouped;
+      if (!active || activeCamp || activeTrial || ember.route || fox || (done.has(flagCamp(rt.def.id)) && !regrouped) || !player.onGround || player.flying) continue;
       if (rt.def.requires && !done.has(rt.def.requires)) continue;
       if (rt.def.style === 'duel') continue;
       if (Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) < 11 && Math.abs(pp.y - rt.y) < 6 && !host.activeEncounter()) startWave(rt);
@@ -677,14 +709,20 @@ export function createExploration(host: ExplorationHost) {
       lastRegion = region;
     }
     if (bannerTimer > 0) { bannerTimer -= dt; if (bannerTimer <= 0) banner.hidden = true; }
+    if ((boardCheck -= dt) <= 0) { boardCheck = 20; if (dayKey() !== board.day) { board = todaysBoard(done); if (active) showBanner(bilingual('日晕委托已刷新', 'New commissions'), bilingual('今天的四件委托已经送到，打开地图查看。', "Today's four commissions are in. Open the map to see them."), 'region', 4); } }
     const ex = regionExploration(region, done);
     hud.hidden = !active || ex.total === 0;
-    const rev = `${region}|${ex.done}|${totalCrystals(done)}|${feathersHeld(done)}|${glideLevel(done)}|${document.documentElement.lang}`;
+    const left = commissionsLeft(), next = left.find(c => c.region === region) ?? left[0];
+    const rev = `${region}|${ex.done}|${totalCrystals(done)}|${feathersHeld(done)}|${glideLevel(done)}|${document.documentElement.lang}|${board.day}|${next?.n}|${next ? huntProgress(done, board.day, next.n) : ''}`;
     if (!hud.hidden && rev !== hudRev) {
       hudRev = rev;
       hud.querySelector('.xp-region')!.textContent = `${L(REGION_NAMES[region] ?? ['', ''])} · ${bilingual('探索度', 'Explored')} ${ex.percent}%`;
       (hud.querySelector('.xp-bar i') as HTMLElement).style.width = `${ex.percent}%`;
       hud.querySelector('.xp-stats')!.textContent = bilingual(`日晕晶 ${totalCrystals(done)} · 日晕之羽 ${feathersHeld(done)} · 滑翔 Lv.${glideLevel(done)}`, `Crystals ${totalCrystals(done)} · Feathers ${feathersHeld(done)} · Glider Lv.${glideLevel(done)}`);
+      const total = board.list.length, finished = total - left.length;
+      hud.querySelector('.xp-comm b')!.textContent = bilingual(`今日委托 ${finished}/${total}`, `Commissions ${finished}/${total}`);
+      hud.querySelector('.xp-comm span')!.textContent = !next ? bilingual('全部完成', 'All done')
+        : next.kind === 'hunt' ? `${L(next.title)} ${huntProgress(done, board.day, next.n)}/${COMMISSION.hunt}` : L(next.title);
     }
   }
   function reset() {
@@ -705,7 +743,8 @@ export function createExploration(host: ExplorationHost) {
     owns: (id: string) => ownership.has(id),
     interact: (id: string) => { ownership.get(id)?.(); },
     label: (id: string) => labels.get(id)?.() ?? null,
-    victory, update, reset, dispose, eliteDefeated,
+    victory, update, reset, dispose, eliteDefeated, enemyDefeated,
+    get commissions() { return board; },
     get busy() { return !!activeTrial || !!activeCamp || !!ember.route || !!fox; },
     state: { chests, puzzles, trials, camps, feathers, embers, foxes, get ember() { return ember; }, get fox() { return fox; }, rotatePrism, startTrial: (id: string) => startTrial(trials.get(id)!) },
   };

@@ -46,6 +46,14 @@ export const flagGlide = (level: number) => `xp_glide_${level}`;
 /** First defeat of a roaming elite: a one-time bounty, counted toward the region's exploration. */
 export const flagElite = (id: string) => `xp_elite_${id}`;
 export const ELITE_BOUNTY = Object.freeze({ crystals: 15, rounds: 30 });
+/** 日晕委托 (rules in commissions.ts): four a day, crystals each, a bonus for the full board. */
+export const COMMISSION = Object.freeze({ perDay: 4, crystals: 5, bonus: 10, rounds: 15, hunt: 5 });
+/** Crystals every commission ever completed has paid (flags xp_comm_<day>_<n|bonus>). */
+export function commissionCrystals(done: ReadonlySet<string>) {
+  let sum = 0;
+  for (const flag of done) if (flag.startsWith('xp_comm_')) sum += flag.endsWith('_bonus') ? COMMISSION.bonus : COMMISSION.crystals;
+  return sum;
+}
 export const eliteInRegion = (region: RegionId) => MINIBOSSES.filter(m => m.region === region);
 export const markerChest = (id: string) => `xpm_chest_${id}`;
 export const markerPrism = (puzzle: string, index: number) => `xpm_prism_${puzzle}_${index}`;
@@ -239,7 +247,7 @@ export function regionExploration(region: RegionId, done: ReadonlySet<string>): 
 }
 export function totalCrystals(done: ReadonlySet<string>) {
   return CHESTS.filter(c => done.has(flagChest(c.id))).reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0)
-    + MINIBOSSES.filter(m => done.has(flagElite(m.id))).length * ELITE_BOUNTY.crystals;
+    + MINIBOSSES.filter(m => done.has(flagElite(m.id))).length * ELITE_BOUNTY.crystals + commissionCrystals(done);
 }
 export function feathersHeld(done: ReadonlySet<string>) { return FEATHERS.filter(x => done.has(flagFeather(x.id))).length; }
 export function glideLevel(done: ReadonlySet<string>) { let level = 0; while (level < GLIDE.maxLevel && done.has(flagGlide(level + 1))) level++; return level; }

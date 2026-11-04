@@ -1293,7 +1293,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onHurt() { relayDamageRevision++; audio.hurt(); },
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
-  onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') exploration.eliteDefeated(id); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
+  onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     // Co-op: get back up beside a partner who is still standing (not mid boss/story fight).
@@ -2273,7 +2273,7 @@ function frame(now: number) {
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
   if (mapBudget.due(now, { active: true, revision: hudRevision })) {
     map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt, partner: coop.partnerPoint });
-    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, partner: coop.partnerPoint, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width) });
+    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, partner: coop.partnerPoint, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width, exploration.commissions) });
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;

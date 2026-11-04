@@ -1,6 +1,6 @@
 /** Reproducible ideal-input, flat-arena experiment; not a human playtest or renderer benchmark. */
 import * as THREE from 'three';
-import { WorldCombatState, COMBAT, enemyAttackRadius, distanceXZ, type Enemy, type Point3, type CombatTerrain } from '../src/combat';
+import { WorldCombatState, COMBAT, enemyAttackRadius, enemyAttackContains, distanceXZ, type Enemy, type Point3, type CombatTerrain } from '../src/combat';
 import type { EnemyRole } from '../src/enemyRoles';
 import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/worldActions';
 import { collectStrikeTargets } from '../src/combatActions';
@@ -10,6 +10,21 @@ import { MELEE_BEATS } from '../src/playerMelee';
 import { PLAYER } from '../src/player';
 import { resolveServantSkillAim } from '../src/skillAim';
 import { CONTRACT_SKILLS } from '../src/contractSkills';
+import { hazardContains, type Hazard } from '../src/bossHazards';
+/** An ideal reader of phase-2 ground telegraphs: when standing in one that bursts soon, pick the
+ * nearest spot that is clear of every telegraph bursting before (or just after) arrival. */
+function hazardEscape(hazards: readonly Hazard[], position: Point3, speed: number, swing?: Enemy): Point3 | null {
+  if (!hazards.some(h => hazardContains(h, position))) return null;
+  // prefer spots clear well past arrival; settle for clear on arrival when a swing is closing in too
+  for (const margin of [1.5, .3]) for (const d of [1, 2, 3, 4.5, 6, 8, 10]) for (let k = 0; k < 24; k++) {
+    const p = { x: position.x + Math.cos(k / 12 * Math.PI) * d, y: position.y, z: position.z + Math.sin(k / 12 * Math.PI) * d };
+    const arrive = d / speed;
+    // on the way there, never stand on a telegraph at the moment it bursts
+    const pathClear = [.25, .5, .75].every(f => { const q = { x: position.x + (p.x - position.x) * f, y: position.y, z: position.z + (p.z - position.z) * f }, at = f * arrive; return hazards.every(h => Math.abs(h.t - at) > arrive / 6 + .12 || !hazardContains(h, q)); });
+    if (pathClear && hazards.every(h => h.t > arrive + margin || !hazardContains(h, p)) && !(swing?.mode === 'windup' && enemyAttackContains(swing, p))) return p;
+  }
+  return null;
+}
 export type Strategy = 'stationary-gun' | 'kite-gun' | 'dodge-gun' | 'melee-punish' | 'melee-spam' | 'melee-evade' | 'mixed' | 'gun-then-melee';
 export interface Scenario { name: string; boss?: string; pack?: number; roles?: readonly EnemyRole[]; strategy: Strategy; identity?: ServantId; seconds?: number; companionGun?: boolean }
 export interface Result { name: string; strategy: Strategy; terminal: string; seconds: number; damageTaken: number; damageDealt: number; kills: number; shots: number; dryPulls: number; ammoLeft: number; firstDryAt: number | null; phase2At: number | null; firstUltimateAt: number | null; ultimates: number; skillCasts: number; energy: number; hits: Record<string, number>; attacks: number }
@@ -69,13 +84,26 @@ export function runScenario(config: Scenario): Result {
     // A field player shoots while the sun-cell holds rounds and falls back to the blade when it runs dry.
     const strategy: Strategy = config.strategy !== 'gun-then-melee' ? config.strategy : state.ammo > 0 ? 'kite-gun' : 'melee-punish';
     if (state.ammo <= 0) result.firstDryAt ??= +result.seconds.toFixed(2);
+    const escape = strategy === 'dodge-gun' || strategy === 'melee-evade' ? hazardEscape(state.hazards, position, PLAYER.sprint, target) : null;
     if (actions.evade.active) { position.x += actions.evade.x * 13 * Math.min(dt, actions.evade.remaining); position.z += actions.evade.z * 13 * Math.min(dt, actions.evade.remaining); }
-    else if (strategy === 'kite-gun' || strategy === 'dodge-gun' || strategy === 'mixed') {
+    else if (escape) {
+      const dx = escape.x - position.x, dz = escape.z - position.z, length = Math.hypot(dx, dz);
+      if (length > 0) { position.x += dx * Math.min(1, PLAYER.sprint * dt / length); position.z += dz * Math.min(1, PLAYER.sprint * dt / length); }
+      if (strategy === 'dodge-gun') orbitAngle = Math.atan2(position.x, -position.z);
+    } else if (strategy === 'kite-gun' || strategy === 'dodge-gun' || strategy === 'mixed') {
       const radius = config.identity === 'musashi' ? 4 : config.identity === 'saber' ? 9 : config.identity === 'napoleon' ? 12 : 18;
       const speed = strategy === 'kite-gun' ? PLAYER.walk : target.mode === 'windup' ? PLAYER.sprint : PLAYER.walk;
       orbitAngle += speed / radius * dt;
       const dx = Math.sin(orbitAngle) * radius - position.x, dz = -Math.cos(orbitAngle) * radius - position.z, length = Math.hypot(dx, dz);
-      if (length > 0) { position.x += dx * Math.min(1, speed * dt / length); position.z += dz * Math.min(1, speed * dt / length); }
+      const step = (sign: number) => { const a = orbitAngle + (sign < 0 ? -2 * speed / radius * dt : 0), ex = Math.sin(a) * radius - position.x, ez = -Math.cos(a) * radius - position.z, l = Math.hypot(ex, ez); return l > 0 ? { x: position.x + ex * Math.min(1, speed * dt / l), y: position.y, z: position.z + ez * Math.min(1, speed * dt / l) } : position; };
+      let next = length > 0 ? { x: position.x + dx * Math.min(1, speed * dt / length), y: position.y, z: position.z + dz * Math.min(1, speed * dt / length) } : position;
+      if (strategy === 'dodge-gun') {
+        // the ideal reader never walks into a live telegraph or a locked impact zone: it doubles back instead
+        const unsafe = (p: Point3) => state.hazards.some(h => hazardContains(h, p)) || (target.mode === 'windup' && enemyAttackContains(target, p));
+        if (unsafe(next) && !unsafe(position)) { const back = step(-1); next = unsafe(back) ? position : back; }
+        orbitAngle = Math.atan2(next.x, -next.z);
+      }
+      position.x = next.x; position.z = next.z;
     } else if (strategy.startsWith('melee')) {
       const distance = distanceXZ(target.p, position), awayX = (position.x - target.p.x) / Math.max(.001, distance), awayZ = (position.z - target.p.z) / Math.max(.001, distance);
       const wanted = strategy === 'melee-punish' && target.mode === 'windup' ? enemyAttackRadius(target) + 1 : MELEE_BEATS[0].range - .15;
@@ -85,10 +113,12 @@ export function runScenario(config: Scenario): Result {
     context.yaw = Math.atan2(-(target.p.x - position.x), -(target.p.z - position.z));
     context.moveZ = strategy === 'melee-evade' ? 1 : 0;
     if (strategy.startsWith('melee')) {
-      if (strategy === 'melee-evade' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
+      if (strategy === 'melee-evade' && (target.mode === 'windup' && target.timer <= .1 || state.hazards.some(h => h.t <= .1 && hazardContains(h, context.position))) && actions.evade.cooldown <= 0) actions.press('evade');
       if (distanceXZ(target.p, position) <= MELEE_BEATS[0].range - .05 && (strategy === 'melee-spam' || target.mode === 'recover' || target.mode === 'stagger')) actions.press('melee');
     } else {
       if (strategy === 'mixed' && target.mode === 'windup' && target.timer <= .1 && actions.evade.cooldown <= 0) actions.press('evade');
+      // the ideal ranged reader still has the evade's i-frames for a burst it could not clear on foot
+      if (strategy === 'dodge-gun' && (state.hazards.some(h => h.t <= .1 && hazardContains(h, context.position)) || target.mode === 'windup' && target.timer <= .1 && enemyAttackContains(target, context.position)) && actions.evade.cooldown <= 0) actions.press('evade');
       if (strategy === 'mixed' && !actions.skills.casting) {
         const before = actions.skills.energy;
         if (before >= 100 && actions.skills.cooldown('ultimate') <= 0) { actions.press('ultimate'); if (actions.skills.energy < before) { result.ultimates++; result.firstUltimateAt ??= result.seconds; } }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { EnemyContactEffects } from './enemyContactEffects';
+import { BossHazardView } from './bossHazardView';
 import { DefeatEffects } from './defeatEffects';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from './storyEncounters';
 import type { Collider } from './player';
@@ -153,6 +154,7 @@ export class WorldCombat {
   private readonly defeat = document.createElement('div');
   private readonly effectGroup = new THREE.Group();
   private readonly contactEffects: EnemyContactEffects;
+  private readonly hazardView: BossHazardView;
   private readonly defeatEffects: DefeatEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
@@ -175,6 +177,7 @@ export class WorldCombat {
     this.shared.push(this.thrustTellGeo);
     this.geometry = makeCombatTerrain(options.colliders, options.layout, options.groundHeight);
     this.contactEffects = new EnemyContactEffects(this.effectGroup, this.geometry);
+    this.hazardView = new BossHazardView(this.effectGroup, this.geometry);
     this.defeatEffects = new DefeatEffects(this.effectGroup);
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
@@ -220,7 +223,7 @@ export class WorldCombat {
     } catch { this.cancelStoryEncounter(); return { ok: false, reason: 'unavailable' }; }
   }
   cancelStoryEncounter() {
-    this.contactEffects.clear(); this.defeatEffects.clear();
+    this.contactEffects.clear(); this.defeatEffects.clear(); this.hazardView.clear();
     const id = this.storyDirector.cancel();
     this.state.clearStoryEnemies();
     for (const [actorId, resources] of this.storyResources) {
@@ -398,6 +401,7 @@ export class WorldCombat {
     this.enemyAssets.tick(dt);
     if (this.state.defeated) this.contactEffects.clear();
     this.contactEffects.update(dt, active);
+    this.hazardView.update(active ? dt : 0);
     this.defeatEffects.update(active ? dt : 0, typeof innerHeight === 'number' ? innerHeight * Math.min(devicePixelRatio || 1, 2) : undefined);
     this.events();
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
@@ -515,6 +519,13 @@ export class WorldCombat {
       } else if (event.type === 'explode') {
         for (const [dx, dz] of [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]]) this.spark(new THREE.Vector3(event.at.x + dx, event.at.y + .8, event.at.z + dz), .5);
         this.impact.textContent = bilingual('火药桶 · 轰！', 'POWDER KEG · BOOM!'); this.impactFor = .8;
+      } else if (event.type === 'hazard') {
+        if (this.playable) this.hazardView.add(event.hazard);
+      } else if (event.type === 'hazardBurst') {
+        this.hazardView.burst(event.id);
+        if (this.playable) this.spark(new THREE.Vector3(event.at.x, event.at.y + .4, event.at.z), event.hit ? .45 : .25);
+      } else if (event.type === 'hazardClear') {
+        this.hazardView.clear();
       } else if (event.type === 'blink') {
         this.spark(new THREE.Vector3(event.from.x, event.from.y + 1, event.from.z), .35); this.spark(new THREE.Vector3(event.to.x, event.to.y + 1, event.to.z), .35);
         this.impact.textContent = bilingual('影忍 · 背后！', 'SHINOBI · BEHIND!'); this.impactFor = .7;
@@ -555,7 +566,7 @@ export class WorldCombat {
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
       else if (event.type === 'bossStart') this.options.toast(bilingual(...bossText(this.state.boss.id).start));
-      else if (event.type === 'bossReset') this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
+      else if (event.type === 'bossReset') this.hazardView.clear(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
       else if (event.type === 'phase') this.options.toast(bilingual(...bossText(this.state.boss.id).phase));
       else if (event.type === 'victory') {
         const def = this.bossDefs.find(b => b.id === event.id)!;

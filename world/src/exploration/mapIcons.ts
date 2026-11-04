@@ -8,6 +8,7 @@ import type { RegionId } from '../settlements/types';
 import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagDig, flagEmber, flagFox, flagSignal } from './regional';
 import { CAMPS, DOMAINS, PUZZLES, REGION_NAMES, STATUES, TRIALS, flagCamp, flagElite, flagPuzzle, flagTrial, regionExploration } from './catalog';
 import { MINIBOSSES } from '../minibosses';
+import { COMMISSION, commissionDone, huntProgress, type Commission } from './commissions';
 
 export type MapIconKind = 'statue' | 'domain' | 'camp' | 'puzzle' | 'trial' | 'bottle' | 'ember' | 'fox' | 'duel' | 'signal' | 'elite';
 export interface MapIcon { readonly id: string; readonly kind: MapIconKind; readonly x: number; readonly z: number; readonly cleared: boolean }
@@ -37,7 +38,12 @@ export function explorationMapIcons(done: ReadonlySet<string>): MapIcon[] {
 const COLORS: Record<MapIconKind, string> = { statue: '#ffe08a', domain: '#c89bff', camp: '#ff7a6b', puzzle: '#7fe6ff', trial: '#9df0b0', bottle: '#f0d9a0', ember: '#ffa54a', fox: '#8fe0ff', duel: '#ffd36b', signal: '#79e2ff', elite: '#ff5d73' };
 const OUTLINE = '#1f2a44', CLEARED = '#9aa3b2';
 
-export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number) {
+/** Today's board as map pins: outposts and echoes get a gold ring; hunts have no single spot. */
+export function commissionPins(board: { day: string; list: readonly Commission[] }, done: ReadonlySet<string>) {
+  return board.list.filter(c => c.at && !commissionDone(done, board.day, c.n)).map(c => ({ n: c.n, x: c.at![0], z: c.at![1] }));
+}
+
+export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: ReadonlySet<string>, project: Project, unit: number, width: number, board?: { day: string; list: readonly Commission[] }) {
   ctx.save();
   for (const icon of explorationMapIcons(done)) {
     const { x, y } = project(icon.x, icon.z), u = unit;
@@ -96,6 +102,7 @@ export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: Readon
     ctx.lineWidth = 5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
     ctx.lineWidth = 2 * u; ctx.strokeStyle = color; ctx.stroke();
   }
+  if (board) drawCommissions(ctx, board, done, project, unit, width);
   // legend: exploration percentage per region, bottom-left
   const regions: RegionId[] = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'];
   const line = 17 * unit, pad = 10 * unit, boxW = 190 * unit, boxH = pad * 2 + line * regions.length;
@@ -109,4 +116,32 @@ export function drawExplorationIcons(ctx: CanvasRenderingContext2D, done: Readon
     ctx.textAlign = 'right'; ctx.fillStyle = ex.percent >= 100 ? '#ffe08a' : '#b8c4d6'; ctx.fillText(`${ex.percent}%`, bx + boxW - pad, y); ctx.textAlign = 'left';
   });
   ctx.restore();
+}
+
+const GOLD = '#ffd36b';
+function drawCommissions(ctx: CanvasRenderingContext2D, board: { day: string; list: readonly Commission[] }, done: ReadonlySet<string>, project: Project, unit: number, width: number) {
+  const u = unit;
+  for (const pin of commissionPins(board, done)) {
+    const { x, y } = project(pin.x, pin.z);
+    if (x < -10 || y < -10 || x > width + 10 || y > width + 10) continue;
+    ctx.beginPath(); ctx.arc(x, y, 12 * u, 0, Math.PI * 2);
+    ctx.lineWidth = 5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke(); ctx.lineWidth = 2.2 * u; ctx.strokeStyle = GOLD; ctx.stroke();
+    // the commission's "!" tab above the ring
+    ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x - 5 * u, y - 19 * u); ctx.lineTo(x + 5 * u, y - 19 * u); ctx.closePath();
+    ctx.fillStyle = GOLD; ctx.fill(); ctx.lineWidth = 1.5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
+  }
+  // board: top-left
+  const line = 17 * u, pad = 10 * u, boxW = 260 * u, boxH = pad * 2 + line * (board.list.length + 1);
+  const bx = 14 * u, by = 14 * u;
+  ctx.fillStyle = '#141c30cc'; ctx.fillRect(bx, by, boxW, boxH);
+  ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  const finished = board.list.filter(c => commissionDone(done, board.day, c.n)).length;
+  ctx.font = `700 ${12.5 * u}px system-ui, sans-serif`; ctx.fillStyle = GOLD;
+  ctx.fillText(bilingual(`日晕委托 ${finished}/${board.list.length}`, `Commissions ${finished}/${board.list.length}`), bx + pad, by + pad + line * .5);
+  ctx.font = `600 ${11.5 * u}px system-ui, sans-serif`;
+  board.list.forEach((c, i) => {
+    const y = by + pad + line * (i + 1.5), ok = commissionDone(done, board.day, c.n);
+    const text = bilingual(c.title[0], c.title[1]) + (c.kind === 'hunt' && !ok ? ` ${huntProgress(done, board.day, c.n)}/${COMMISSION.hunt}` : '');
+    ctx.fillStyle = ok ? CLEARED : '#e8ecf2'; ctx.fillText(`${ok ? '✓' : '◆'} ${text}`, bx + pad, y);
+  });
 }
