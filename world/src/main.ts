@@ -113,6 +113,9 @@ import { WorldGraphicsRecovery } from './graphicsRecovery';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
 import { createProgressPanel } from './progressPanel';
 import { WeaponFinishStore } from './weaponFinishes';
+import { WorldCoop } from './coop/worldCoop';
+import { createCoopPanel } from './coop/coopPanel';
+import { normalizeRoomCode, type PlayerWireState } from './coop/coopProtocol';
 import { createWeaponFinishControl } from './weaponFinishControl';
 import { getLanguage, bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
@@ -1287,6 +1290,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { relayDamageRevision++; audio.hurt(); },
+  onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') exploration.eliteDefeated(id); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
@@ -1479,6 +1483,20 @@ const renderArenaTrainingButton=()=>{arenaTrainingOpen.textContent=bilingual('�
 const unsubscribeArenaTraining=onLanguageChange(renderArenaTrainingButton);
 arenaTrainingOpen.onclick=event=>{event.stopPropagation();arenaTrainingPanel.show();};start.append(arenaTrainingOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){arenaTrainingPanel.dispose();arenaTrainingOpen.remove();unsubscribeArenaTraining();}});
+// ───────────── two-player co-op (coop/worldCoop.ts) ─────────────
+const coopServer=(()=>{const value=params.get('coop');return value&&/^wss?:\/\//.test(value)?value:undefined;})();
+const coop=new WorldCoop(scene,renderer,{combat,toast,outlines:!params.has('noline'),server:coopServer,onStatus:()=>{if(coopPanel.open)coopPanel.render();renderCoopButton();}});
+const coopPanel=createCoopPanel({
+  status:()=>({status:coop.session.status,code:coop.session.code,host:coop.session.host,partner:coop.partnerName}),
+  join:code=>coop.join(code),leave:()=>coop.leave(),
+  canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active,
+});
+const coopOpen=document.createElement('button');coopOpen.type='button';coopOpen.id='world-coop-open';
+const renderCoopButton=()=>{const s=coop.session.status;coopOpen.textContent=s==='paired'?bilingual(`双人联机 · 已连接 ${coop.session.code}`,`Co-op · Connected ${coop.session.code}`):s==='waiting'?bilingual(`双人联机 · 房间 ${coop.session.code} 等待中`,`Co-op · Room ${coop.session.code} waiting`):bilingual('双人联机 · 和朋友一起探索','Co-op · Explore with a friend');};renderCoopButton();
+const unsubscribeCoop=onLanguageChange(renderCoopButton);
+coopOpen.onclick=event=>{event.stopPropagation();coopPanel.show();};start.append(coopOpen);
+{const room=normalizeRoomCode(params.get('room')??'');if(room)coop.join(room);}
+addEventListener('pagehide',event=>{if(!event.persisted){coop.dispose();coopPanel.dispose();coopOpen.remove();unsubscribeCoop();}});
 const travelOpen=document.createElement('button'); travelOpen.type='button';travelOpen.id='world-travel-open';
 const renderTravelButton=()=>{travelOpen.textContent=bilingual(`安全据点旅行 · ${settings.label('travel')}`,`Safe settlement travel · ${settings.label('travel')}`);};
 renderTravelButton();onLanguageChange(()=>{renderTravelButton();travelPanel.refresh();});
@@ -1999,6 +2017,14 @@ camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 let perfectEvadeSlow = 0;
+/** This player's pose for the co-op partner's screen. */
+function coopWireState(speed: number, ads: number): PlayerWireState {
+  const melee = actions?.melee.active ? [actions.melee.phase, actions.melee.combo, actions.melee.style?.id ?? equippedMeleeId] as [number, number, WorldMeleeId] : undefined;
+  const armed = worldProgress.armed && !residentEventRuntime?.carrying;
+  return { p: [player.pos.x, player.pos.y, player.pos.z], f: anim.facing, v: speed, g: player.onGround ? 1 : 0, sw: player.swimming ? 1 : 0, gl: player.gliding ? 1 : 0,
+    a: ads, pi: player.pitch, fi: armed && down('fire') && !actions?.melee.active ? 1 : 0, ar: armed ? 1 : 0, ...(melee ? { m: melee } : {}),
+    gun: equippedGunId, mel: equippedMeleeId, hp: combat.state.hp, max: combat.state.maxHp };
+}
 function frame(now: number) {
   regionVisuals.update(player.pos,camera.position,lowQ?.7:1);const visualRegion=regionAt(player.pos.x,player.pos.z).id;
   streamStatus.hidden=regionVisuals.ready(visualRegion);if(!streamStatus.hidden){streamFailure=regionVisuals.diagnostics.failed.includes(visualRegion)?visualRegion:'';streamRetry.hidden=!streamFailure;streamText.textContent=streamFailure?bilingual('前方地区画面加载失败，点击重试。','Region art failed to load. Click to retry.'):bilingual('正在载入前方地区…','Loading the region ahead…');}
@@ -2064,6 +2090,7 @@ function frame(now: number) {
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
   anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying, armed: worldProgress.armed&&!residentEventRuntime?.carrying, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
+  coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now);
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);
@@ -2253,7 +2280,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

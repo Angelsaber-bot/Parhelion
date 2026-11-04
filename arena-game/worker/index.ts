@@ -9,10 +9,12 @@ import { DurableObject } from 'cloudflare:workers';
 import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
+import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
 
 interface Env {
   LOBBY: DurableObjectNamespace<Lobby>;
   ROOM: DurableObjectNamespace<ArenaRoomDO>;
+  WORLD: DurableObjectNamespace<WorldRoomDO>;
 }
 
 const CORS = { 'access-control-allow-origin': '*' };
@@ -30,6 +32,14 @@ export default {
     const url = new URL(req.url);
     if (url.pathname === '/' || url.pathname === '/health') {
       return new Response('Parhelion Arena server OK', { headers: CORS });
+    }
+    if (url.pathname === '/world') {
+      // World co-op: a plain relay room per 5-character code (see worldRelay.ts).
+      if (req.headers.get('upgrade')?.toLowerCase() !== 'websocket') return new Response('expected websocket', { status: 426, headers: CORS });
+      if (Number(url.searchParams.get('v')) !== WORLD_COOP_VERSION) return new Response('world co-op version mismatch; reload the page', { status: 426, headers: CORS });
+      const code = url.searchParams.get('code');
+      if (!validWorldRoomCode(code)) return new Response('bad room code', { status: 400, headers: CORS });
+      return env.WORLD.get(env.WORLD.idFromName(`world:${code}`)).fetch(req);
     }
     if (url.pathname !== '/arena') return new Response('not found', { status: 404, headers: CORS });
     if (req.headers.get('upgrade')?.toLowerCase() !== 'websocket') {
@@ -164,5 +174,28 @@ export class ArenaRoomDO extends DurableObject<Env> {
   private report() {
     const lobby = this.env.LOBBY.get(this.env.LOBBY.idFromName('lobby'));
     return lobby.report(this.name, this.sockets.size);
+  }
+}
+
+/** One World co-op room: relays messages between at most two players; no game state is kept. */
+export class WorldRoomDO extends DurableObject<Env> {
+  private core = new WorldRelayCore();
+  private seq = 0;
+  async fetch(): Promise<Response> {
+    const pair = new WebSocketPair();
+    const [client, ws] = [pair[0], pair[1]];
+    ws.accept();
+    const id = `w${++this.seq}-${crypto.randomUUID().slice(0, 6)}`;
+    try { this.core.join(id, data => ws.send(data)); }
+    catch (e) {
+      ws.send(JSON.stringify({ t: 'error', d: (e as Error).message }));
+      ws.close(4000, 'room full');
+      return new Response(null, { status: 101, webSocket: client });
+    }
+    ws.addEventListener('message', ev => { this.core.message(id, ev.data); });
+    const gone = () => this.core.leave(id);
+    ws.addEventListener('close', gone);
+    ws.addEventListener('error', gone);
+    return new Response(null, { status: 101, webSocket: client });
   }
 }

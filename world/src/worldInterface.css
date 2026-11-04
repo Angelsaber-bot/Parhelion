@@ -108,3 +108,19 @@ body.world-dialogue-open :is(#objective,#minimap,#contract-card,#world-shortcuts
 @media(max-width:760px){.world-action.cooling::after{top:12px;font-size:10px}}
 
 body.world-dialogue-open :is(#crosshair,#guide,#world-vitals,#world-boss,#prompt,#world-shortcuts,#elite-hint){visibility:hidden}
+
+/* Two-player co-op: partner name tag and the room-code dialog. */
+#coop-partner-tag{position:fixed;left:0;top:0;z-index:2;pointer-events:none;white-space:nowrap;font-size:12px;font-weight:600;letter-spacing:.02em;padding:3px 9px;border-radius:999px;border:1px solid #9fe3ff66;background:#0f2433cc;color:#dff6ff;text-shadow:0 1px 2px #000}
+#coop-partner-tag[hidden]{display:none}
+#world-coop{width:min(90vw,460px);max-height:85vh;overflow:auto;border:1px solid var(--world-line,#8194a2);border-radius:12px;padding:22px;background:#182a36;color:#edf4f7;text-align:center}
+#world-coop::backdrop{background:#04090ecc}
+#world-coop h2{margin:0 0 8px;font-size:19px}
+#world-coop p,#world-coop li{font-size:13px;line-height:1.65}
+#world-coop ul{text-align:left;padding-left:20px;margin:8px 0 12px;color:#c6d6df}
+#world-coop button{display:block;margin:10px auto;min-width:180px}
+#world-coop [hidden]{display:none!important}
+#world-coop-status{color:#ffd69e}
+#world-coop-code{font:700 34px/1.2 ui-monospace,Menlo,monospace;letter-spacing:.32em;margin:6px 0 4px;color:#fff3c4;user-select:all}
+#world-coop .coop-row{display:flex;gap:8px;justify-content:center;align-items:center;margin:10px 0}
+#world-coop .coop-row button{margin:0;min-width:0}
+#world-coop-input{width:9em;font:600 18px/1.3 ui-monospace,Menlo,monospace;letter-spacing:.2em;text-transform:uppercase;text-align:center;padding:6px 8px;border-radius:8px;border:1px solid #8194a2;background:#0e1c25;color:#fff}

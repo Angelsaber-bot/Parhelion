@@ -29,6 +29,8 @@ export interface WorldCombatOptions {
   reducedEffects?: () => boolean;
   onStoryEncounterVictory?: (id: string) => void;
   onHurt?: (damage: number) => void;
+  /** Co-op host: an enemy attack landed on the partner; their game applies the damage. */
+  onPartnerHurt?: (damage: number) => void;
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
@@ -270,6 +272,11 @@ export class WorldCombat {
   }
   raycast(origin: Point3, direction: Point3, maxDistance: number) { return this.state.raycast(origin, direction, maxDistance); }
   damageEnemy(id: string, amount: number = COMBAT.shotDamage, context: HitContext = { source: 'ranged', origin: this.player }) { const hit = this.state.hitEnemy(id, amount, context); this.events(); return hit; }
+  /** Co-op host: apply a hit the partner's game reported. */
+  remoteHit(id: string, amount: number, source: HitContext['source']) { const hit = this.state.remoteHit(id, amount, source); this.events(); return hit; }
+  /** Co-op guest: apply the host's enemy snapshot and a hit an enemy landed on this player. */
+  applyRemoteEnemies(list: Parameters<WorldCombatState['applyRemoteEnemies']>[0]) { this.state.applyRemoteEnemies(list); this.events(); }
+  remoteHurt(amount: number) { this.state.remoteHurt(amount); this.events(); }
   setDefense(defense: { guard: number; invulnerable: boolean }) { this.state.setDefense(defense); }
   /** Animation-contact attack API: all geometry and liveness are checked now, not at cast time. */
   applyStrike(strike: StrikeRequest, source: HitContext['source'] = 'skill'): StrikeResult {
@@ -487,7 +494,7 @@ export class WorldCombat {
           this.shot(mountBlock?shoulder:muzzle,surface?.point??endpoint,!!surface);
         }
       } else if (event.type === 'hit') {
-        if (event.source) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
+        if (event.source && !event.remote) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
       } else if (event.type === 'explode') {
@@ -525,6 +532,7 @@ export class WorldCombat {
       else if (event.type === 'storyPhase') { this.options.toast(bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!')); }
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
+      else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
       else if (event.type === 'bossStart') this.options.toast(bilingual(...bossText(this.state.boss.id).start));
       else if (event.type === 'bossReset') this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
       else if (event.type === 'phase') this.options.toast(bilingual(...bossText(this.state.boss.id).phase));

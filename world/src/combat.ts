@@ -24,14 +24,18 @@ export interface Enemy extends SpawnPoint {
   /** Toughness damage built up toward a daze break (elites and chapter bosses only). */
   daze?: number; dazeIdle?: number; dazedFor?: number;
 }
+const MODES = new Set(['idle', 'chase', 'windup', 'recover', 'stagger', 'dead']);
+const ATTACKS = new Set(['sweep', 'burst', 'shot', 'thrust']);
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
-  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
   | { type: 'eliteRally'; id: string; name: readonly [string, string] }
   | { type: 'perfectEvade'; id: string }
+  /** Co-op host: an enemy's attack landed on the partner (their game applies it). */
+  | { type: 'partnerHurt'; id: string; damage: number }
   | { type: 'dazed'; id: string }
   | { type: 'explode'; id: string; at: Point3 }
   | { type: 'stagger' | 'storyPhase'; id: string }
@@ -409,26 +413,37 @@ export class WorldCombatState {
     if (this.gunHeat >= this.gun.burst && this.gun.vent > 0) this.gunVent = this.gun.vent;
     return true;
   }
+  /** Co-op guest: told of every hit this player lands (the host's game applies it for real). */
+  onLocalHit: ((id: string, damage: number, source: HitContext['source']) => void) | null = null;
+  private rawHit = false;
+  /** Co-op host: a hit the partner landed, already scaled by their game (only daze applies here). */
+  remoteHit(id: string, damage: number, source: HitContext['source']) {
+    if (!Number.isFinite(damage) || damage <= 0 || damage > 400) return false;
+    const counter = this.counterFor; this.rawHit = true; this.counterFor = 0;
+    try { return this.hitEnemy(id, damage, { source }); } finally { this.rawHit = false; this.counterFor = counter; }
+  }
   hitEnemy(id: string, damage: number = COMBAT.shotDamage, context?: HitContext) {
     const e = this.enemies.find(e => e.id === id);
     if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
-    if(context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>this.gun.range)return false;
+    const raw = this.rawHit;
+    if(!raw&&context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>this.gun.range)return false;
     // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
     const melee = context?.source === 'melee';
-    const punish = melee && isMeleePunishWindow(e);
-    const ranged=context?.source==='ranged';
+    const punish = !raw && melee && isMeleePunishWindow(e);
+    const ranged=!raw&&context?.source==='ranged';
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
     const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}) });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(raw ? { remote: true } : {}) });
+    if (!raw && context?.source && dealt > 0) this.onLocalHit?.(id, dealt, context.source);
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
       this.events.push({ type: 'kill', id });
-      if (!e.pacified) this.refillAmmo(WORLD_RIFLE.ammoPerKill);
+      if (!e.pacified && !raw) this.refillAmmo(WORLD_RIFLE.ammoPerKill);
       if (e === this.boss) {
         const firstClear = !this.cleared[this.current];
         this.bossStarted = false; this.cleared[this.current] = true;
@@ -491,6 +506,28 @@ export class WorldCombatState {
     this.guardMultiplier = Number.isFinite(defense.guard) ? Math.min(1, Math.max(.55, defense.guard)) : 1;
     this.invulnerable = defense.invulnerable === true && !this.defeated;
   }
+  /** Co-op host: the partner's position (null when solo). */
+  partner: Point3 | null = null;
+  /** Co-op guest: enemies are driven by the host's snapshots instead of local AI. */
+  remoteEnemies = false;
+  /** Co-op guest: take the host's enemy positions, health and modes. Unknown ids are ignored. */
+  applyRemoteEnemies(list: readonly { id: string; p: readonly [number, number, number]; hp: number; mode: string; tm?: number; t?: readonly [number, number, number]; k?: string; ph?: number }[]) {
+    for (const r of list) {
+      const e = this.enemies.find(x => x.id === r.id); if (!e) continue;
+      e.p = { x: r.p[0], y: r.p[1], z: r.p[2] };
+      const wasAlive = e.mode !== 'dead';
+      e.hp = Math.min(e.maxHp, r.hp);
+      if (MODES.has(r.mode)) e.mode = r.mode as Enemy['mode'];
+      if (typeof r.tm === 'number' && Number.isFinite(r.tm)) e.timer = r.tm;
+      if (r.t) e.target = { x: r.t[0], y: r.t[1], z: r.t[2] };
+      if (r.k && ATTACKS.has(r.k)) e.attack = r.k as Enemy['attack'];
+      if (r.ph === 1 || r.ph === 2) e.phase = r.ph;
+      e.active = e.mode !== 'idle' && e.mode !== 'dead';
+      if (wasAlive && e.mode === 'dead') this.events.push({ type: 'kill', id: e.id });
+    }
+  }
+  /** Co-op guest: a host-side enemy contact landed on this player. */
+  remoteHurt(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
   private hurt(amount: number) {
     if (this.hurtCooldown > 0 || this.defeated || this.invulnerable) return;
     amount = Math.min(this.hp, Math.round(amount * this.guardMultiplier * 100) / 100);
@@ -502,7 +539,8 @@ export class WorldCombatState {
       this.events.push({ type: 'death' });
     }
   }
-  step(dt: number, player: Point3, active: boolean, terrain: CombatTerrain) {
+  step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
+    const player = localPlayer;
     if (!active) { this.setDefense({ guard: 1, invulnerable: false }); return; }
     if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.1);
@@ -533,6 +571,11 @@ export class WorldCombatState {
       if (e.dazedFor) e.dazedFor = Math.max(0, e.dazedFor - dt);
       if (e.daze) { e.dazeIdle = (e.dazeIdle ?? 0) + dt; if (e.dazeIdle > DAZE.drainAfter) e.daze = Math.max(0, e.daze - dazeThreshold(e) * DAZE.drainPerSecond * dt); }
       if (e.blinkCooldown) e.blinkCooldown = Math.max(0, e.blinkCooldown - dt);
+      // Co-op guest: the host's game moves and fights with every enemy (applyRemoteEnemies).
+      // Story actors exist only in their own player's game and keep local AI on both sides.
+      if (this.remoteEnemies && !e.storyEncounter) continue;
+      // Co-op host: each enemy fights whichever player is nearer to it.
+      const player = this.partner && !e.storyEncounter && distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer) ? this.partner : localPlayer;
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
@@ -570,9 +613,12 @@ export class WorldCombatState {
           // Snapshots stay locked even if another simulation tick moves or resets the actor.
           e.contactSequence = e.attackCount;
           this.events.push({ type: 'attackContact', id: e.id, attack: e.attack, sequence: e.attackCount, origin: clone(e.p), target: clone(e.target), radius: enemyAttackRadius(e), ...(e.storyPattern ? { storyPattern: e.storyPattern, ...(e.attack === 'thrust' ? { length: enemyThrustLength(e) } : {}) } : {}) });
-          const evaded = this.invulnerable && !this.defeated && enemyAttackContains(e, player) && sees;
+          const evaded = player === localPlayer && this.invulnerable && !this.defeated && enemyAttackContains(e, player) && sees;
           if (evaded) { this.counterFor = PERFECT_EVADE.counter; this.events.push({ type: 'perfectEvade', id: e.id }); }
-          if (enemyAttackContains(e, player) && sees) this.hurt(e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : activeSignature(e)?.damage ?? minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage);
+          if (enemyAttackContains(e, player) && sees) {
+            const damage = e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : activeSignature(e)?.damage ?? minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage;
+            if (player === localPlayer) this.hurt(damage); else this.events.push({ type: 'partnerHurt', id: e.id, damage });
+          }
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
           if (this.defeated) return;
