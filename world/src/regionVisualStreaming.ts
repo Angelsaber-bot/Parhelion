@@ -4,7 +4,9 @@ import {REGIONS,regionAt,type RegionDef} from './regions';
 import {chunkMesh,DistanceCuller,freezeStaticArt} from './chunk';
 import {toonMaterial,addOutline} from './look';
 interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;}
-export interface RegionStreamingOptions{parent:THREE.Object3D;outlines:boolean;lowQuality:boolean;eager?:boolean;now?:()=>number;status?:(region:string,error?:unknown)=>void;}
+export interface RegionStreamingOptions{parent:THREE.Object3D;outlines:boolean;lowQuality:boolean;eager?:boolean;now?:()=>number;status?:(region:string,error?:unknown)=>void;
+ /** Optional per-mesh rework of immutable art before it is chunked (null keeps the mesh as shipped). */
+ carve?:(region:string,name:string,geometry:THREE.BufferGeometry)=>THREE.BufferGeometry|null;}
 /** Leaves/trunks/rocks are chunked in large dense cells: their ink line is sub-pixel well before
  * a building's, so it stops earlier (Kyoto: ~400k outline triangles past 170 m before this). */
 export function streamedOutlineDistance(name: string) {
@@ -34,7 +36,7 @@ export class RegionVisualStreaming{
    bakeQuantized(root);root.name=`Streamed_${id}`;root.position.set(def.offset[0],0,def.offset[1]);
    const cache=new Map<THREE.Material,THREE.Material>(),culler=new DistanceCuller(this.options.lowQuality?90:160);
    const meshes:THREE.Mesh[]=[];root.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
-   for(const mesh of meshes){geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);
+   for(const mesh of meshes){const carved=this.options.carve?.(id,mesh.name,mesh.geometry);if(carved){mesh.geometry.dispose();mesh.geometry=carved;}geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);
     const count=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;const pieces=count>4000?chunkMesh(mesh,64):[mesh];
     for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece);culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));}
    }

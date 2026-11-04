@@ -17,6 +17,7 @@ import { selectEnemyRole, type EnemyRole } from './enemyRoles';
 import { regionAt } from './regions';
 import { createEnemyAttackActing } from './enemyAttackActing';
 import { enemyAttackPose } from './enemyAttackPresentation';
+import { enemyHitReaction } from './enemyHitReaction';
 import { isMusketeer, type Enemy, type EnemyMode, type Point3 } from './combat';
 
 export type EnemyModel = 'samurai' | 'ashigaru' | 'musketeer' | 'officer' | 'sunward_guard' | 'deck_raider';
@@ -52,7 +53,7 @@ function disposeTemplate(gltf: GLTF) {
   });
   geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => { t.dispose(); const image = t.source.data as { close?: () => void } | undefined; if (typeof image?.close === 'function') image.close(); });
 }
-interface Instance { shield?: THREE.Object3D | null; kit?: { remove(): void } | null; gear?: { remove(): void; update?(e: Enemy, t: number): void } | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction }
+interface Instance { shield?: THREE.Object3D | null; kit?: { remove(): void } | null; gear?: { remove(): void; update?(e: Enemy, t: number): void } | null; insignia?: ReturnType<typeof createEchoWardenVisual>; acting: ReturnType<typeof createEnemyAttackActing>; root: THREE.Object3D; mixer: THREE.AnimationMixer; gltf: GLTF; key: string; state: string; action?: THREE.AnimationAction; base?: { z: number; rx: number }; flashing?: boolean }
 /** Cache lifetime is one world. Templates own geometry/materials/textures; clones own skeletons.
  * Requests are lazy and nonblocking; failures retry at most twice with backoff. Safe after world disposal. */
 export class EnemyVisuals {
@@ -60,6 +61,17 @@ export class EnemyVisuals {
   private cache = new Map<string, GLTF | null>();
   private pending = new Set<string>();
   private instances = new Map<string, Instance>();
+  /** One white-hot twin per body material, shared by every clone wearing it (bounded by the templates). */
+  private flashMaterials = new Map<THREE.Material, THREE.Material>();
+  private flashFor(m: THREE.Material) {
+    let f = this.flashMaterials.get(m);
+    if (!f) {
+      f = m.clone(); const e = (f as THREE.MeshStandardMaterial).emissive;
+      if (e?.isColor) { e.set('#fff3e0'); (f as THREE.MeshStandardMaterial).emissiveIntensity = .9; } else { f.dispose(); f = m; }
+      this.flashMaterials.set(m, f);
+    }
+    return f;
+  }
   private disposed = false;
   private shieldKit?: ReturnType<typeof createShieldKit>;
   private shinobiKit?: ReturnType<typeof createShinobiKit>;
@@ -142,7 +154,15 @@ export class EnemyVisuals {
     }
     fallback.visible = !instance;
     if (!instance) return false;
-    instance.root.traverse(o => { if (isEnemyMesh(o)) o.castShadow = distance < 18; });
+    const reaction = enemyHitReaction(e), swap = reaction.flash !== !!instance.flashing;
+    instance.flashing = reaction.flash;
+    instance.root.traverse(o => {
+      if (!isEnemyMesh(o)) return;
+      o.castShadow = distance < 18;
+      if (!swap || !isEnemySkinnedMesh(o)) return;
+      const base = (o.userData.hitBase ??= o.material) as THREE.Material | THREE.Material[];
+      o.material = reaction.flash ? (Array.isArray(base) ? base.map(m => this.flashFor(m)) : this.flashFor(base)) : base;
+    });
     instance.acting.restore();
     const pose = enemyAttackPose(e, model);
     const clip = instance.gltf.animations.find(c => c.name === pose.clip)
@@ -171,6 +191,9 @@ export class EnemyVisuals {
     } else if (instance.action) instance.action.paused = false;
     instance.mixer.update(Number.isFinite(dt) ? Math.max(0, Math.min(dt, .1)) : 0);
     instance.acting.update(e);
+    // the flinch rides on the model root only: the enemy's own position never moves
+    const base = instance.base ??= { z: instance.root.position.z, rx: instance.root.rotation.x };
+    instance.root.position.z = base.z + reaction.push; instance.root.rotation.x = base.rx + reaction.lean;
     instance.insignia?.update(e); instance.gear?.update?.(e, this.now);
     return true;
   }
@@ -178,6 +201,6 @@ export class EnemyVisuals {
     if (this.disposed) return; this.disposed = true;
     for (const id of this.instances.keys()) this.release(id);
     for (const gltf of this.cache.values()) if (gltf) disposeTemplate(gltf);
-    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined; this.jaegerKit?.dispose(); this.jaegerKit = undefined; this.bombardierKit?.dispose(); this.bombardierKit = undefined; this.breakerKit?.dispose(); this.breakerKit = undefined; for (const kit of this.bossKits.values()) kit.dispose(); this.bossKits.clear(); for (const kit of this.eliteKits.values()) kit.dispose(); this.eliteKits.clear(); this.troopKit?.dispose(); this.troopKit = undefined;
+    this.cache.clear(); this.retries.clear(); this.pending.clear(); this.shieldKit?.dispose(); this.shieldKit = undefined; this.shinobiKit?.dispose(); this.shinobiKit = undefined; this.powderKit?.dispose(); this.powderKit = undefined; this.jaegerKit?.dispose(); this.jaegerKit = undefined; this.bombardierKit?.dispose(); this.bombardierKit = undefined; this.breakerKit?.dispose(); this.breakerKit = undefined; for (const f of new Set(this.flashMaterials.values())) if (!this.flashMaterials.has(f)) f.dispose(); this.flashMaterials.clear(); for (const kit of this.bossKits.values()) kit.dispose(); this.bossKits.clear(); for (const kit of this.eliteKits.values()) kit.dispose(); this.eliteKits.clear(); this.troopKit?.dispose(); this.troopKit = undefined;
   }
 }
