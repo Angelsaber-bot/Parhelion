@@ -22,7 +22,8 @@ export function explorationMapIcons(done: ReadonlySet<string>): MapIcon[] {
     ...STATUES.map(s => ({ id: `statue:${s.id}`, kind: 'statue' as const, x: s.p[0], z: s.p[1], cleared: false })),
     // a domain's seal puzzle and its waves are one icon: cleared when the last wave falls
     ...DOMAINS.map(d => ({ id: `domain:${d.id}`, kind: 'domain' as const, x: d.center[0], z: d.center[1], cleared: done.has(flagCamp(d.id)) })),
-    ...CAMPS.filter(c => !domainIds.has(c.id)).map(c => ({ id: `camp:${c.id}`, kind: (c.style === 'duel' ? 'duel' : 'camp') as MapIconKind, x: c.anchor[0], z: c.anchor[1], cleared: done.has(flagCamp(c.id)) })),
+    // a story vanguard shows once the road to it has opened
+    ...CAMPS.filter(c => !domainIds.has(c.id) && !(c.style === 'vanguard' && c.requires && !done.has(c.requires))).map(c => ({ id: `camp:${c.id}`, kind: (c.style === 'duel' ? 'duel' : 'camp') as MapIconKind, x: c.anchor[0], z: c.anchor[1], cleared: done.has(flagCamp(c.id)) })),
     ...PUZZLES.filter(p => !domainIds.has(p.id)).map(p => { const [x, z] = centroid([p.source.p, p.receiver, ...p.prisms.map(q => q.p)]); return { id: `puzzle:${p.id}`, kind: 'puzzle' as const, x, z, cleared: done.has(flagPuzzle(p.id)) }; }),
     ...TRIALS.map(t => ({ id: `trial:${t.id}`, kind: 'trial' as const, x: t.stele[0], z: t.stele[1], cleared: done.has(flagTrial(t.id)) })),
     // treasure: only where the first map washes up; the dig sites are the hunt itself

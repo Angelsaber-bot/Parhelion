@@ -37,7 +37,8 @@ test('ids are unique and reward chests point at real challenges', () => {
     ...TREASURE_MAPS.map(m => flagDig(m.id)), ...EMBER_ROUTES.map(e => flagEmber(e.id)), ...FOXFIRES.map(f => flagFox(f.id)), ...SIGNALS.map(g => flagSignal(g.id))]);
   for (const c of CHESTS) if (c.requires) assert.ok(challenges.has(c.requires), c.id);
   for (const flag of challenges) assert.ok(CHESTS.some(c => c.requires === flag) || CAMPS.some(c => c.requires === flag), `nothing unlocks from ${flag}`);
-  for (const camp of CAMPS) if (camp.requires) assert.ok(challenges.has(camp.requires), camp.id);
+  // the Road to Camlann opens from the main story (the first oath hearth), then chains its own fights
+  for (const camp of CAMPS) if (camp.requires) assert.ok(challenges.has(camp.requires) || camp.style === 'vanguard' && camp.requires === 'hall_brazier_1', camp.id);
 });
 
 test('content stays inside its region play area', () => {

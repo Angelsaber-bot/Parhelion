@@ -344,6 +344,7 @@ export function createExploration(host: ExplorationHost) {
   interface CampRt { def: CampDef; wave: number; running: boolean; pending: number; y: number; flag: THREE.Group }
   const camps = new Map<string, CampRt>();
   let activeCamp: CampRt | null = null;
+  const vanguardHailed = new Set<string>();
   let busyHintAt = -1e9;
   CAMPS.forEach((def, i) => {
     const y = surface(...def.anchor);
@@ -353,7 +354,7 @@ export function createExploration(host: ExplorationHost) {
         done.has(flagCamp(def.id)) ? bilingual(`再次决斗 · ${def.title[0]}`, `Duel again · ${def.title[1]}`)
           : def.requires && !done.has(def.requires) ? bilingual(`${def.title[0]} · 先战胜上一位骑士`, `${def.title[1]} · defeat the previous knight first`)
             : bilingual(`接受决斗 · ${def.title[0]}`, `Accept the duel · ${def.title[1]}`));
-    } else if (def.style !== 'domain') campProps(new Frame(artFor(def.region), [def.anchor[0], y, def.anchor[1]], i * .7), i, def.region);
+    } else if (def.style !== 'domain' && def.style !== 'vanguard') campProps(new Frame(artFor(def.region), [def.anchor[0], y, def.anchor[1]], i * .7), i, def.region);
     const flag = new THREE.Group(); const fl = glint('#ff5a5a', 2.4); fl.position.y = 7; flag.add(fl); flag.position.set(def.anchor[0], y, def.anchor[1]); flag.visible = !done.has(flagCamp(def.id)); dyn(flag, 220);
     camps.set(def.id, { def, wave: 0, running: false, pending: 0, y, flag });
   });
@@ -366,7 +367,8 @@ export function createExploration(host: ExplorationHost) {
     }
     if (result.ok) {
       rt.running = true; activeCamp = rt;
-      showBanner(def.style === 'duel' ? bilingual(`决斗 · ${def.title[0]}`, `Duel · ${def.title[1]}`) : def.style === 'domain' ? bilingual(`秘境 · ${def.title[0]}`, `Domain · ${def.title[1]}`) : bilingual(`据点 · ${def.title[0]}`, `Outpost · ${def.title[1]}`), bilingual(`第 ${rt.wave + 1} / ${def.waves.length} 波 · 击败全部敌人`, `Wave ${rt.wave + 1} / ${def.waves.length} · Defeat every enemy`), 'region', 2.6);
+      if (def.lines && rt.wave === 0) host.toast(L(def.lines.start));
+      showBanner(def.style === 'duel' ? bilingual(`决斗 · ${def.title[0]}`, `Duel · ${def.title[1]}`) : def.style === 'domain' ? bilingual(`秘境 · ${def.title[0]}`, `Domain · ${def.title[1]}`) : def.style === 'vanguard' ? bilingual(`主线 · ${def.title[0]}`, `Main story · ${def.title[1]}`) : bilingual(`据点 · ${def.title[0]}`, `Outpost · ${def.title[1]}`), bilingual(`第 ${rt.wave + 1} / ${def.waves.length} 波 · 击败全部敌人`, `Wave ${rt.wave + 1} / ${def.waves.length} · Defeat every enemy`), 'region', 2.6);
     }
     return result.ok;
   }
@@ -388,6 +390,7 @@ export function createExploration(host: ExplorationHost) {
     const first = !done.has(flagCamp(rt.def.id)); done.add(flagCamp(rt.def.id)); host.save(); host.sound('solve'); rt.flag.visible = false;
     const regroup = openCommission('camp', rt.def.id);
     if (regroup) { completeCommission(regroup); if (first) host.toast(bilingual('据点的宝箱解除了封印。', "The outpost's chest has been unsealed.")); return true; }
+    if (rt.def.lines) { showBanner(bilingual(`主线战斗胜利 · ${rt.def.title[0]}`, `Story fight won · ${rt.def.title[1]}`), L(rt.def.lines.end), 'solve', 5.5); return true; }
     showBanner(rt.def.style === 'duel' ? bilingual(`决斗胜利 · ${rt.def.title[0]}`, `Duel won · ${rt.def.title[1]}`) : rt.def.style === 'domain' ? bilingual(`秘境净化 · ${rt.def.title[0]}`, `Domain purified · ${rt.def.title[1]}`) : bilingual(`据点肃清 · ${rt.def.title[0]}`, `Outpost cleared · ${rt.def.title[1]}`), first ? bilingual('宝箱的封印消失了。', 'The chest seal has faded.') : '', 'solve');
     return true;
   }
@@ -689,6 +692,11 @@ export function createExploration(host: ExplorationHost) {
       if (!active || activeCamp || activeTrial || ember.route || fox || (done.has(flagCamp(rt.def.id)) && !regrouped) || !player.onGround || player.flying) continue;
       if (rt.def.requires && !done.has(rt.def.requires)) continue;
       if (rt.def.style === 'duel') continue;
+      // the road calls out the next stand once it is in sight, so a player heading for the Sun Core finds it
+      if (rt.def.style === 'vanguard' && !vanguardHailed.has(rt.def.id) && Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) < 70) {
+        vanguardHailed.add(rt.def.id);
+        host.toast(bilingual(`前方的红色战旗下有亡骑列阵 · ${rt.def.title[0]}`, `Wraiths are forming up under the red banner ahead · ${rt.def.title[1]}`));
+      }
       if (Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) < 11 && Math.abs(pp.y - rt.y) < 6 && !host.activeEncounter()) startWave(rt);
     }
     regionalUpdate(dt, player, active);

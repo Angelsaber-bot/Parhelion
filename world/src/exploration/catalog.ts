@@ -6,6 +6,7 @@
  */
 import type { Localized, RegionId } from '../settlements/types';
 import type { EnemyRole } from '../enemyRoles';
+import { VANGUARD_CAMPS, VANGUARD_CHESTS } from './content/vanguard';
 import { ALPHA_STATUES, ALPHA_PUZZLES, ALPHA_TRIALS, ALPHA_CAMPS, ALPHA_DOMAINS, ALPHA_CHESTS, ALPHA_FEATHERS } from './content/alpha';
 import { BLACKSAIL_STATUES, BLACKSAIL_PUZZLES, BLACKSAIL_TRIALS, BLACKSAIL_CAMPS, BLACKSAIL_DOMAINS, BLACKSAIL_CHESTS, BLACKSAIL_FEATHERS } from './content/blacksail';
 import { WINTER_STATUES, WINTER_PUZZLES, WINTER_TRIALS, WINTER_CAMPS, WINTER_DOMAINS, WINTER_CHESTS, WINTER_FEATHERS } from './content/winter';
@@ -32,7 +33,8 @@ export interface TrialOrb { readonly p: XZ; /** absolute height; omitted = groun
 export interface TrialDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly stele: XZ; readonly seconds: number; readonly orbs: readonly TrialOrb[]; readonly hint: Localized }
 /** `echo-warden` turns a domain's last actor into a two-phase boss (264 HP, thrust → sweep → burst). */
 export interface CampActor { readonly role: EnemyRole; readonly offset: readonly [number, number]; readonly title?: Localized; readonly pattern?: 'echo-warden' }
-export interface CampDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly anchor: XZ; readonly waves: readonly (readonly CampActor[])[]; readonly requires?: string; readonly style?: 'camp' | 'domain' | 'duel' }
+/** `vanguard`: a story fight on the main road (no camp props); `lines` are the companion's words as it begins and ends. */
+export interface CampDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly anchor: XZ; readonly waves: readonly (readonly CampActor[])[]; readonly requires?: string; readonly style?: 'camp' | 'domain' | 'duel' | 'vanguard'; readonly lines?: { readonly start: Localized; readonly end: Localized } }
 /** 秘境：a walled ruin that chains a prism seal, a gated multi-wave fight and a luxurious chest. */
 export interface DomainDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly center: XZ; readonly radius: number; readonly story: Localized }
 
@@ -178,9 +180,9 @@ const BRITAIN_FEATHERS: readonly FeatherDef[] = [
 export const STATUES: readonly StatueDef[] = [...BRITAIN_STATUES, ...ALPHA_STATUES, ...BLACKSAIL_STATUES, ...WINTER_STATUES, ...KYOTO_STATUES];
 export const PUZZLES: readonly PrismPuzzleDef[] = [...BRITAIN_PUZZLES, ...ALPHA_PUZZLES, ...BLACKSAIL_PUZZLES, ...WINTER_PUZZLES, ...KYOTO_PUZZLES];
 export const TRIALS: readonly TrialDef[] = [...BRITAIN_TRIALS, ...ALPHA_TRIALS, ...BLACKSAIL_TRIALS, ...WINTER_TRIALS, ...KYOTO_TRIALS];
-export const CAMPS: readonly CampDef[] = [...BRITAIN_CAMPS, ...ALPHA_CAMPS, ...BLACKSAIL_CAMPS, ...WINTER_CAMPS, ...KYOTO_CAMPS, ...DUELS];
+export const CAMPS: readonly CampDef[] = [...BRITAIN_CAMPS, ...VANGUARD_CAMPS, ...ALPHA_CAMPS, ...BLACKSAIL_CAMPS, ...WINTER_CAMPS, ...KYOTO_CAMPS, ...DUELS];
 export const DOMAINS: readonly DomainDef[] = [...BRITAIN_DOMAINS, ...ALPHA_DOMAINS, ...BLACKSAIL_DOMAINS, ...WINTER_DOMAINS, ...KYOTO_DOMAINS];
-export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS, ...REGIONAL_CHESTS, ...DUEL_CHESTS];
+export const CHESTS: readonly ChestDef[] = [...BRITAIN_CHESTS, ...VANGUARD_CHESTS, ...ALPHA_CHESTS, ...BLACKSAIL_CHESTS, ...WINTER_CHESTS, ...KYOTO_CHESTS, ...REGIONAL_CHESTS, ...DUEL_CHESTS];
 export const FEATHERS: readonly FeatherDef[] = [...BRITAIN_FEATHERS, ...ALPHA_FEATHERS, ...BLACKSAIL_FEATHERS, ...WINTER_FEATHERS, ...KYOTO_FEATHERS];
 
 // ─────────────────────────────────────── pure rules ───────────────────────────────────────
