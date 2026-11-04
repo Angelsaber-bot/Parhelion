@@ -110,3 +110,18 @@ test('switching guns names how to earn the next locked one', async () => {
   assert.equal(nextGunUnlock(all), null);
   all.delete(flagElite('elite_frost_officer')); assert.equal(nextGunUnlock(all)!.gun.id, 'longnight');
 });
+
+test('no gun trivialises a boss: sustained damage per second stays near the AR outside its niche', () => {
+  // Burst then vent; guns without venting fire continuously.
+  const sustained = (g: ReturnType<typeof worldGun> & {}, d: number) => {
+    const burst = g.vent > 0 ? g.burst : 1, cycle = burst * g.interval + (g.vent > 0 ? g.vent : 0);
+    return burst * g.damage * g.pellets * gunDistanceMultiplier(g, d) / cycle;
+  };
+  const ar = worldGun('lumen')!, arBest = sustained(ar, 5);
+  for (const g of WORLD_GUNS) {
+    const best = Math.max(...[3, 5, 10, 20, 40, 60, 90].map(d => sustained(g, d)));
+    const limit = g.id === 'corona' ? 2.4 : 1.6;
+    assert.ok(best <= arBest * limit, `${g.id} sustains ${best.toFixed(0)} dps vs AR ${arBest.toFixed(0)}`);
+  }
+  assert.ok(sustained(worldGun('corona')!, 15) < arBest, 'the shotgun is weak once it has to keep its distance');
+});

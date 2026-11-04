@@ -5,7 +5,9 @@
  * suits. Unlocks are save flags the player already earns, so no new save state is needed: only the
  * currently equipped gun is remembered locally.
  *
- * Tuning notes (World scale: enemies 66–264 HP, chapter bosses 1800):
+ * Tuning notes (World scale: enemies 66–264 HP, chapter bosses 1800). Boss arenas feed unlimited
+ * ammo, so sustained DPS is the real budget: the AR sustains ~30; every other gun stays within
+ * ~1.5x of that in its own niche (the shotgun ~2.3x, but only inside 5 m of the boss).
  * - Dawn AR (lumen): the all-rounder, unchanged from the original World rifle.
  * - Firefly SMG: fastest, weakest per round, short reach; long bursts before venting.
  * - Afterglow SG (corona): nine pellets, devastating inside 6 m, useless past 20 m; 3 rounds a shell.
@@ -40,15 +42,15 @@ export const WORLD_GUNS: readonly WorldGun[] = Object.freeze([
     range: 45, fullDamageRange: 8, minimumDamageRange: 30, minimumMultiplier: .35, ammoCost: 1,
     unlock: { flag: 'xp_resonance_1', how: ['在任意日晕雕像觉醒「日晕共鸣 Lv.1」', 'Awaken Halo Resonance Lv.1 at any Halo statue'] } }),
   g({ id: 'corona', name: ['余辉 · 霰弹枪', 'Afterglow SG'], role: ['九发弹丸 · 贴身爆发', 'Nine pellets · point-blank burst'],
-    damage: 7, pellets: 9, spread: .075, interval: .8, burst: 99, vent: 0,
+    damage: 7, pellets: 9, spread: .075, interval: .9, burst: 99, vent: 0,
     range: 22, fullDamageRange: 5, minimumDamageRange: 18, minimumMultiplier: .15, ammoCost: 3,
     unlock: { flag: 'xp_elite_elite_reef_captain', how: ['讨伐黑帆尽头的精英「暗礁船长」', "Defeat the Reef Captain, Black Sail's End elite"] } }),
   g({ id: 'halo', name: ['子午线 · 精确射手步枪', 'Meridian DMR'], role: ['高伤单发 · 远距离精准', 'Heavy single shots · long-range precision'],
-    damage: 30, pellets: 1, spread: 0, interval: .42, burst: 99, vent: 0,
+    damage: 22, pellets: 1, spread: 0, interval: .5, burst: 99, vent: 0,
     range: 90, fullDamageRange: 40, minimumDamageRange: 90, minimumMultiplier: .8, ammoCost: 2,
     unlock: { flag: 'xp_elite_elite_valley_sentinel', how: ['讨伐幻日谷的精英「棱光哨卫」', 'Defeat the Prism Sentinel, the Parhelion Valley elite'] } }),
   g({ id: 'longnight', name: ['长夜 · 狙击步枪', 'Longnight Sniper'], role: ['一击重创 · 超远射程', 'One crushing shot · extreme range'],
-    damage: 78, pellets: 1, spread: 0, interval: 1.3, burst: 99, vent: 0,
+    damage: 78, pellets: 1, spread: 0, interval: 1.7, burst: 99, vent: 0,
     range: 120, fullDamageRange: 70, minimumDamageRange: 120, minimumMultiplier: .9, ammoCost: 5,
     unlock: { flag: 'xp_elite_elite_frost_officer', how: ['讨伐永冬之城的精英「霜线督军」', 'Defeat the Frostline Officer, the Eternal Winter elite'] } }),
 ]);
