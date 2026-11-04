@@ -22,7 +22,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['界面显示', 'HUD visibility'], ['显示任务栏', 'Show quest panel'], ['显示帮助', 'Show help'], ['显示小地图', 'Show minimap'], ['显示从者卡片', 'Show servant card'],
   ['截图模式', 'Screenshot mode'],
   ['单击画面恢复界面', 'Click the screen to restore the HUD'],
-  ['查看从者模型', 'View Servant model'], ['切换从者', 'Switch servant'],
+  ['查看从者模型', 'View Servant model'], ['切换从者', 'Switch servant'], ['联机标记', 'Co-op ping'],
   ['自由飞行调试（随镜头俯仰升降）', 'Free-flight test (climb or descend with camera pitch)'],
   ['自由飞行调试 开 · 抬头前进上升，低头前进下降', 'Free-flight on · Look up and move forward to rise; look down to descend'],
   ['按键与灵敏度设置', 'Controls & sensitivity'], ['操作设置', 'Controls'], ['读取操作设置…', 'Loading controls…'],

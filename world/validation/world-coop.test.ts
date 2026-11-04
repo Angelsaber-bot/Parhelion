@@ -136,3 +136,22 @@ test('enemy snapshots cover both players, nearest first, and skip host-only stor
   assert.ok(JSON.stringify(list).length < 400);
   assert.deepEqual(enemySnapshot(state.enemies, { x: 0, y: 0, z: 0 }, null).map(e => e.id), ['near_host']);
 });
+
+test('off-screen pings pin to the screen edge; behind the camera flips to the near edge', async () => {
+  const { edgeClamp } = await import('../src/coop/pingMarkers.ts');
+  assert.deepEqual(edgeClamp(.2, -.3, false), { x: .2, y: -.3, edge: false });
+  const right = edgeClamp(3, 0, false); assert.equal(right.edge, true); assert.ok(Math.abs(right.x - .9) < 1e-9);
+  const behind = edgeClamp(.5, 0, true); assert.equal(behind.edge, true); assert.ok(behind.x < 0, 'a ping behind and to the right shows on the left edge');
+});
+
+test('a partner skill visual round-trips and junk is refused', async () => {
+  const { encodeSkillFx, decodeSkillFx } = await import('../src/coop/coopProtocol.ts');
+  const ids = ['saber', 'musashi'];
+  const strike = encodeSkillFx({ type: 'strike', identity: 'saber', slot: 'ultimate', origin: { x: 1, y: 2, z: 3 }, direction: { x: 0, y: 0, z: 1 }, pulse: 2, range: 18, halfWidth: 2.4, casterFeetY: 2 })!;
+  assert.deepEqual(decodeSkillFx(JSON.parse(JSON.stringify(strike)), ids), strike);
+  assert.equal(encodeSkillFx({ type: 'guard', identity: null, slot: 'skill', origin: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: 1 } }), null);
+  assert.equal(decodeSkillFx({ ...strike, identity: 'godzilla' }, ids), null);
+  assert.equal(decodeSkillFx({ ...strike, range: 500 }, ids), null);
+  assert.equal(decodeSkillFx({ ...strike, o: [0, NaN, 0] }, ids), null);
+  assert.ok(decodeSkillFx({ type: 'cast', identity: null, slot: 'skill', o: [0, 0, 0], d: [0, 0, 1], dur: .6 }, ids));
+});

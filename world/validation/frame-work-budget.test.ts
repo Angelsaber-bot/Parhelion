@@ -54,7 +54,7 @@ test('production map/HUD/stat integration actually schedules less work and inval
   assert.ok(mapStart>0&&mapEnd>mapStart&&hud&&statsStart>0&&statsEnd>statsStart);
   let miniDraws=0,bigDraws=0,hudDraws=0,trackedDraws=0,relayDraws=0,statWrites=0,open=false;
   const stats={set textContent(_value:string){statWrites++;}};
-  const context=vm.createContext({now:0,hudRevision:0,mapBudget:new FrameWorkBudget(30),hudBudget:new FrameWorkBudget(10),statsBudget:new FrameWorkBudget(4),
+  const context=vm.createContext({now:0,hudRevision:0,coop:{partnerPoint:null},mapBudget:new FrameWorkBudget(30),hudBudget:new FrameWorkBudget(10),statsBudget:new FrameWorkBudget(4),
     map:{draw:(_canvas:unknown,_position:unknown,_yaw:unknown,options:{full:boolean})=>options.full?bigDraws++:miniDraws++},
     mini:{},big:{},player:{pos:{x:0,y:0,z:0},yaw:0},done:new Set(),found:new Set(),mt:null,
     $:()=>({classList:{contains:()=>open}}),renderContract(){},renderCompactRelayHud(){relayDraws++;},updateTrackedStoryHud(){trackedDraws++;},actionHud:{update(){hudDraws++;}},actions:{},gameplayActive:()=>true,inspectServant:false,

@@ -409,7 +409,8 @@ export class WorldCombat {
       v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup');
       v.body.position.y = skinned || v.updateCreature ? 0 : 0.025 * Math.sin(this.time * (moving ? 10 : 3));
       v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
-      const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover') ? e.target : player;
+      // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
+      const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover' || (this.state.remoteEnemies && e.mode === 'chase')) ? e.target : player;
       v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
       v.material.emissiveIntensity = e.pacified ? 0 : e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;

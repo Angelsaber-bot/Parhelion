@@ -6,6 +6,8 @@ export interface CoopPanelOptions {
   status(): { status: CoopStatus; code: string | null; host: boolean; partner: string };
   join(code: string): void;
   leave(): void;
+  /** Travel beside the partner; returns why not, or null when done. */
+  toPartner(): string | null;
   canOpen(): boolean;
 }
 
@@ -29,14 +31,15 @@ export function createCoopPanel(options: CoopPanelOptions) {
   const root = document.createElement('dialog'); root.id = 'world-coop';
   const title = document.createElement('h2'), intro = document.createElement('p'), status = document.createElement('p'), code = document.createElement('div');
   const create = document.createElement('button'), copy = document.createElement('button'), input = document.createElement('input'), join = document.createElement('button');
-  const leave = document.createElement('button'), close = document.createElement('button'), joinRow = document.createElement('div'), rules = document.createElement('ul');
+  const toPartner = document.createElement('button'), leave = document.createElement('button'), close = document.createElement('button'), joinRow = document.createElement('div'), rules = document.createElement('ul');
   title.id = 'world-coop-title'; root.setAttribute('aria-labelledby', title.id);
   status.id = 'world-coop-status'; status.setAttribute('role', 'status'); code.id = 'world-coop-code';
-  for (const b of [create, copy, join, leave, close]) b.type = 'button';
+  for (const b of [create, copy, join, toPartner, leave, close]) b.type = 'button';
+  toPartner.id = 'world-coop-to-partner';
   create.id = 'world-coop-create'; copy.id = 'world-coop-copy'; join.id = 'world-coop-join'; leave.id = 'world-coop-leave'; close.id = 'world-coop-close';
   input.id = 'world-coop-input'; input.maxLength = 7; input.autocomplete = 'off'; input.spellcheck = false; input.setAttribute('autocapitalize', 'characters');
   joinRow.className = 'coop-row'; joinRow.append(input, join);
-  root.append(title, intro, rules, status, code, create, copy, joinRow, leave, close); document.body.append(root);
+  root.append(title, intro, rules, status, code, create, copy, joinRow, toPartner, leave, close); document.body.append(root);
   let note = '';
   function render() {
     const s = options.status(), live = s.status === 'waiting' || s.status === 'paired' || s.status === 'connecting';
@@ -54,6 +57,7 @@ export function createCoopPanel(options: CoopPanelOptions) {
     create.textContent = bilingual('创建房间', 'Open a room'); create.hidden = live;
     copy.textContent = bilingual('复制邀请链接', 'Copy invite link'); copy.hidden = !(live && s.code);
     input.placeholder = bilingual('输入房间码', 'Room code'); join.textContent = bilingual('加入', 'Join'); joinRow.hidden = live;
+    toPartner.textContent = bilingual(`传送到${s.partner}身边`, `Travel to ${s.partner}`); toPartner.hidden = s.status !== 'paired';
     leave.textContent = bilingual('离开房间', 'Leave room'); leave.hidden = !live;
     close.textContent = bilingual('返回世界', 'Return to World');
   }
@@ -71,6 +75,7 @@ export function createCoopPanel(options: CoopPanelOptions) {
     catch { note = inviteLink(s.code); }
     render();
   };
+  toPartner.onclick = () => { const why = options.toPartner(); if (why) { note = why; render(); } else root.close(); };
   leave.onclick = () => { note = ''; options.leave(); render(); };
   close.onclick = () => root.close();
   root.addEventListener('click', event => event.stopPropagation());

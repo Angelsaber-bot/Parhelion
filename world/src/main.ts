@@ -1229,6 +1229,7 @@ function press(binding: string, repeat = false) {
   if (action === 'fly') { clearInput(); player.flying = !player.flying; toast(player.flying ? '自由飞行调试 开 · 抬头前进上升，低头前进下降' : '自由飞行调试 关 · 恢复跳跃／滑翔'); }
   if (action === 'collision') { debugCol.visible = !debugCol.visible; toast(debugCol.visible ? '显示碰撞体' : '隐藏碰撞体'); }
   if (action === 'guide') toggleGuide();
+  if (action === 'ping' && !repeat) coopPing();
   if (action === 'mainRoute') { questTrackedId = null; optionalPin = null; campaignTrackedRegion = null; falseDawnTracked = false; guideOn = true; hudRevision++; toast(bilingual('已返回主线指引。', 'Main-story guidance restored.')); }
   if (action === 'help') togglePanel('help');
   if (action === 'objectives') togglePanel('objective');
@@ -1294,7 +1295,10 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') exploration.eliteDefeated(id); if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
-  onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput(); toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
+  onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+    // Co-op: get back up beside a partner who is still standing (not mid boss/story fight).
+    if (typeof coop !== 'undefined' && coop.session.paired && (coop.avatar.track.latest?.hp ?? 0) > 0 && travelToPartner() === null) return;
+    toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
 });
 combat.state.setGun(worldGun(equippedGunId)!);
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
@@ -1306,7 +1310,7 @@ actions = new WorldActions({ scene,
     identity: contract.companionSummoned ? contract.selected : null }),
   strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
-  cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
+  cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type !== 'guard') coop.skillFx(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
   onCast: event => { actionHud.announce(event); beginUltimate(event); },
   contactPoint: id => { const enemy = combat.state.enemies.find(e => e.id === id); return enemy ? { ...enemy.p } : null; },
   resolveAim: (identity, slot) => {
@@ -1485,10 +1489,41 @@ arenaTrainingOpen.onclick=event=>{event.stopPropagation();arenaTrainingPanel.sho
 addEventListener('pagehide',event=>{if(!event.persisted){arenaTrainingPanel.dispose();arenaTrainingOpen.remove();unsubscribeArenaTraining();}});
 // ───────────── two-player co-op (coop/worldCoop.ts) ─────────────
 const coopServer=(()=>{const value=params.get('coop');return value&&/^wss?:\/\//.test(value)?value:undefined;})();
-const coop=new WorldCoop(scene,renderer,{combat,toast,outlines:!params.has('noline'),server:coopServer,onStatus:()=>{if(coopPanel.open)coopPanel.render();renderCoopButton();}});
+const coop=new WorldCoop(scene,renderer,{combat,toast,onPing:()=>audio.contact(),partnerShot:(muzzle,end)=>combat.shot(muzzle,end,false),identities:SERVANTS.map(s=>s.id),
+  partnerSkill:fx=>{const origin={x:fx.o[0],y:fx.o[1],z:fx.o[2]},direction={x:fx.d[0],y:fx.d[1],z:fx.d[2]},pose={identity:fx.identity as ServantId|null,slot:fx.slot,origin,direction,...(fx.feet!==undefined?{casterFeetY:fx.feet}:{}),...(fx.los!==undefined?{losOffset:fx.los}:{})};
+    actions?.effects.show(fx.type==='strike'?{...pose,type:'strike',pulse:fx.pulse!,at:0,range:fx.range!,halfWidth:fx.hw!,damage:0,maxTargets:0}:{...pose,type:'cast',duration:fx.dur!},reducedEffects());},outlines:!params.has('noline'),server:coopServer,onStatus:()=>{if(coopPanel.open)coopPanel.render();renderCoopButton();}});
+/** Co-op ping: the enemy under the crosshair, else the surface it points at (within 150 m). */
+function coopPing() {
+  if (!coop.session.paired) { toast(bilingual('联机时可用：标记敌人或地点给队友看。', 'Available in co-op: ping an enemy or spot for your partner.')); return; }
+  if (!gameplayActive()) return;
+  const origin = camera.position.clone(), look = camera.getWorldDirection(new THREE.Vector3());
+  const wall = combat.geometry.cast(origin, look, 150);
+  const enemy = combat.raycast(origin, look, wall?.distance ?? 150);
+  const point = enemy ? enemy.point : wall ? wall.point : null;
+  if (!point) { toast(bilingual('准星没有指向可标记的地方。', 'Nothing to ping under the crosshair.')); return; }
+  coop.ping({ x: point.x, y: point.y + (enemy ? 0 : .2), z: point.z }, enemy?.id);
+}
+/** Arrive on clear ground beside the co-op partner (never mid-fight, mounted or while down). */
+function travelToPartner(): string | null {
+  const at = coop.partnerPoint, s = coop.avatar.track.latest;
+  if (!at || !s) return bilingual('还没有收到队友的位置。', 'No partner position yet.');
+  const context = travelContext();
+  if (context.defeated || !s.hp) return bilingual('倒下时不能传送。', 'Cannot travel while down.');
+  if (context.combatActive || context.mounted || ultimateDirector?.active) return bilingual('首领战、剧情战或操作装置时不能传送。', 'Not during a boss, story fight or while mounted.');
+  for (const [dx, dz] of [[1.6, 1.2], [-1.6, 1.2], [1.6, -1.2], [-1.6, -1.2], [0, 2.2], [0, -2.2], [0, 0]]) {
+    const x = at.x + dx, z = at.z + dz, landing = combat.geometry.ground(x, z, s.p[1] + 2.5);
+    if (!landing || Math.abs(landing.point.y - s.p[1]) > 2.5 || !combat.geometry.clear(landing.point, .38, 1.8)) continue;
+    clearInput(); player.flying = false;
+    player.teleport(x, landing.point.y + .25, z, player.yaw); prevPos.copy(player.pos); rig.root.position.copy(player.pos);
+    anim.reset(worldProgress.armed, player.yaw + Math.PI); camDist = 3.6; acc = 0; inspectServant = false; hudRevision++;
+    toast(bilingual(`已来到${coop.partnerName}身边。`, `Joined ${coop.partnerName}.`));
+    return null;
+  }
+  return bilingual('队友身边暂时没有安全落点，稍后再试。', 'No clear ground beside your partner yet; try again.');
+}
 const coopPanel=createCoopPanel({
   status:()=>({status:coop.session.status,code:coop.session.code,host:coop.session.host,partner:coop.partnerName}),
-  join:code=>coop.join(code),leave:()=>coop.leave(),
+  join:code=>coop.join(code),leave:()=>coop.leave(),toPartner:travelToPartner,
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active,
 });
 const coopOpen=document.createElement('button');coopOpen.type='button';coopOpen.id='world-coop-open';
@@ -2236,8 +2271,8 @@ function frame(now: number) {
   updateGuide(tgt, now);
   const mt: [number, number] | null = tgt ? [tgt.p[0], tgt.p[2]] : null;
   if (mapBudget.due(now, { active: true, revision: hudRevision })) {
-    map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt });
-    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width) });
+    map.draw(mini, player.pos, player.yaw, { full: false, done, found, target: mt, partner: coop.partnerPoint });
+    if ($('bigmap').classList.contains('open')) map.draw(big, player.pos, player.yaw, { full: true, done, found, target: mt, partner: coop.partnerPoint, overlay: (ctx, project, unit, width) => drawExplorationIcons(ctx, done, project, unit, width) });
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;

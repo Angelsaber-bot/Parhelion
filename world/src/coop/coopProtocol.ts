@@ -95,3 +95,25 @@ export function decodeHit(d: unknown): HitWire | null {
   if (!['ranged', 'melee', 'skill', 'ultimate', 'servant'].includes(h.source as string)) return null;
   return { id: h.id, damage: h.damage, source: h.source as HitWire['source'] };
 }
+
+/** A partner's skill or ultimate, for the visual only (their game resolves the damage). */
+export interface SkillFxWire { type: 'strike' | 'cast'; identity: string | null; slot: 'skill' | 'ultimate'; o: [number, number, number]; d: [number, number, number]; pulse?: number; range?: number; hw?: number; dur?: number; feet?: number; los?: 0 | 1 }
+export function encodeSkillFx(e: { type: string; identity: string | null; slot: string; origin: { x: number; y: number; z: number }; direction: { x: number; y: number; z: number }; pulse?: number; range?: number; halfWidth?: number; duration?: number; casterFeetY?: number; losOffset?: 0 | 1 }): SkillFxWire | null {
+  if (e.type !== 'strike' && e.type !== 'cast') return null;
+  return { type: e.type, identity: e.identity, slot: e.slot === 'ultimate' ? 'ultimate' : 'skill', o: [r2(e.origin.x), r2(e.origin.y), r2(e.origin.z)], d: [r2(e.direction.x), r2(e.direction.y), r2(e.direction.z)],
+    ...(e.type === 'strike' ? { pulse: e.pulse ?? 0, range: r2(e.range ?? 0), hw: r2(e.halfWidth ?? 0) } : { dur: r2(e.duration ?? 0) }),
+    ...(finite(e.casterFeetY) ? { feet: r2(e.casterFeetY) } : {}), ...(e.losOffset === 0 || e.losOffset === 1 ? { los: e.losOffset } : {}) };
+}
+export function decodeSkillFx(d: unknown, identities: readonly string[]): SkillFxWire | null {
+  if (!d || typeof d !== 'object') return null;
+  const x = d as Partial<SkillFxWire>;
+  if (x.type !== 'strike' && x.type !== 'cast') return null;
+  if (x.identity !== null && !identities.includes(x.identity as string)) return null;
+  if (x.slot !== 'skill' && x.slot !== 'ultimate') return null;
+  if (!vec(x.o) || !Array.isArray(x.d) || x.d.length !== 3 || !x.d.every(n => finite(n) && Math.abs(n) <= 2)) return null;
+  if (x.type === 'strike' && !(finite(x.range) && x.range > 0 && x.range <= 40 && finite(x.hw) && x.hw > 0 && x.hw <= 15 && finite(x.pulse))) return null;
+  if (x.type === 'cast' && !(finite(x.dur) && x.dur > 0 && x.dur <= 5)) return null;
+  return { type: x.type, identity: x.identity ?? null, slot: x.slot, o: x.o, d: x.d as [number, number, number],
+    ...(x.type === 'strike' ? { pulse: Math.max(0, Math.min(8, Math.round(x.pulse!))), range: x.range, hw: x.hw } : { dur: x.dur }),
+    ...(finite(x.feet) && Math.abs(x.feet) <= 5000 ? { feet: x.feet } : {}), ...(x.los === 0 || x.los === 1 ? { los: x.los } : {}) };
+}

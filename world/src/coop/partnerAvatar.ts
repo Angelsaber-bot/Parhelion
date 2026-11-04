@@ -87,6 +87,8 @@ export class PartnerAvatar {
       this.label.style.transform = `translate(${((this.projected.x + 1) / 2 * innerWidth).toFixed(0)}px, ${((1 - this.projected.y) / 2 * innerHeight).toFixed(0)}px) translate(-50%, -100%)`;
     }
   }
+  /** The partner's rifle muzzle in world space, once their gun art is up. */
+  muzzle(out: THREE.Vector3) { return this.rig?.root.visible && this.rifle ? this.rifle.muzzleWorld(out) : null; }
   hide() { if (this.rig) this.rig.root.visible = false; this.label.hidden = true; this.track.clear(); }
   dispose() {
     this.disposed = true; this.rifle?.dispose(); this.blade?.dispose(); this.label.remove();

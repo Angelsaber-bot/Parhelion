@@ -60,6 +60,8 @@ export class WorldMap {
   pz(z: number) { const hz = this.halfZ ?? this.half; return ((z - (this.z0 ?? -hz)) / (hz * 2)) * (this.sizeZ ?? this.size); }
 
   draw(ctx: CanvasRenderingContext2D, player: THREE.Vector3, yaw: number, opts: { full: boolean; done: Set<string>; found: Set<string>; target?: [number, number] | null; enemies?: ReadonlyArray<{ p: { x: number; z: number }; boss: boolean }>;
+    /** co-op partner position, when paired */
+    partner?: { x: number; z: number } | null;
     /** optional full-map overlay (exploration icons); absent = the historical draw stream */
     overlay?: (ctx: CanvasRenderingContext2D, project: (x: number, z: number) => { x: number; y: number }, unit: number, width: number) => void }) {
     const W = ctx.canvas.width;
@@ -157,6 +159,14 @@ export class WorldMap {
       ctx.beginPath();
       ctx.moveTo(gx, gy - r); ctx.lineTo(gx + r * 0.75, gy); ctx.lineTo(gx, gy + r); ctx.lineTo(gx - r * 0.75, gy); ctx.closePath();
       ctx.fillStyle = '#ffd76a'; ctx.fill(); ctx.lineWidth = opts.full ? 2 * fullUnit : 3; ctx.strokeStyle = '#1f2a44'; ctx.stroke();
+    }
+    // co-op partner: a cyan dot, pinned to the minimap edge when out of view
+    if (opts.partner) {
+      let px = tx(opts.partner.x), py = tz(opts.partner.z);
+      if (!opts.full) { const dx = px - W / 2, dy = py - W / 2, r = Math.hypot(dx, dy), max = W / 2 - 10; if (r > max) { px = W / 2 + dx / r * max; py = W / 2 + dy / r * max; } }
+      const u = opts.full ? fullUnit : 1;
+      ctx.beginPath(); ctx.arc(px, py, 7 * u, 0, Math.PI * 2); ctx.fillStyle = '#0d1a24'; ctx.fill();
+      ctx.beginPath(); ctx.arc(px, py, 5 * u, 0, Math.PI * 2); ctx.fillStyle = '#5fe0ff'; ctx.fill();
     }
     // player arrow
     const x = tx(player.x), y = tz(player.z);

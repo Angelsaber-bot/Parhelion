@@ -25,6 +25,7 @@ export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
     { id: 'sprint', label: '奔跑', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'interact', label: '互动', binding: 'KeyF' },
     { id: 'nextWeapon', label: '下一把枪', binding: 'WheelDown' }, { id: 'prevWeapon', label: '上一把枪', binding: 'WheelUp' }, { id: 'switchMelee', label: '切换近战武器', binding: 'BracketRight' },
     { id: 'summon', label: '召唤／收回从者', binding: 'KeyT' }, { id: 'inspectServant', label: '查看从者模型', binding: 'KeyU' }, { id: 'switchServant', label: '切换从者', binding: 'KeyY' },
+    { id: 'ping', label: '联机标记', binding: 'Mouse1', secondary: 'KeyL' },
     { id: 'map', label: '大地图', binding: 'KeyM' }, { id: 'guide', label: '任务指引', binding: 'KeyG' }, { id: 'objectives', label: '任务栏 显示／隐藏', binding: 'KeyJ' },
     { id: 'help', label: '帮助开关', binding: 'KeyH' }, { id: 'fly', label: '自由飞行调试', binding: 'KeyV' },
     { id: 'collision', label: '碰撞体调试', binding: 'KeyC' }, { id: 'reset', label: '重置进度', binding: 'KeyR' },
