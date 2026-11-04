@@ -15,7 +15,11 @@ export interface CoopCombat {
   remoteHit(id: string, amount: number, source: HitContext['source']): unknown;
   applyRemoteEnemies(list: EnemyWireState[]): void;
   remoteHurt(amount: number): void;
+  joinRemoteBoss(id: string): boolean;
+  leaveRemoteBoss(): boolean;
 }
+/** A guest joins the host's boss fight from this close to the boss's arena. */
+export const BOSS_JOIN_RADIUS = 70;
 export interface WorldCoopOptions {
   combat: CoopCombat;
   toast(text: string): void;
@@ -66,6 +70,9 @@ export class WorldCoop {
   private shown = false;
   private partnerDown = false;
   private partnerFire = 0;
+  private bossAnnounced = '';
+  private bossBeat = 0;
+  private readonly localPos = { x: 0, y: 0, z: 0 };
   private readonly muzzle = new THREE.Vector3();
   private readonly shotEnd = new THREE.Vector3();
   constructor(scene: THREE.Scene, renderer: THREE.WebGLRenderer, private readonly options: WorldCoopOptions) {
@@ -110,6 +117,16 @@ export class WorldCoop {
       return;
     }
     if (event.kind === 'skill') { const fx = decodeSkillFx(event.data, this.options.identities ?? []); if (fx) this.options.partnerSkill?.(fx); return; }
+    if (event.kind === 'boss' && this.guest) {
+      const d = event.data as { id?: unknown } | undefined, id = typeof d?.id === 'string' ? d.id : '';
+      const state = this.options.combat.state;
+      if (!id) { if (state.bossStarted && this.options.combat.leaveRemoteBoss()) this.options.toast(bilingual('房主的首领战已结束', "The host's boss fight ended")); return; }
+      if (state.bossStarted && state.boss.id === id) { this.bossBeat = 3; return; }
+      const boss = state.bosses.find(b => b.id === id);
+      if (boss && !state.bossStarted && Math.hypot(boss.home.x - this.localPos.x, boss.home.z - this.localPos.z) <= BOSS_JOIN_RADIUS && this.options.combat.joinRemoteBoss(id))
+        { this.bossBeat = 3; this.options.toast(bilingual('已加入房主的首领战 · 两人一起打', "Joined the host's boss fight")); }
+      return;
+    }
     if (event.kind === 'hurt' && this.guest) {
       const damage = (event.data as { damage?: unknown } | undefined)?.damage;
       if (typeof damage === 'number') this.options.combat.remoteHurt(damage);
@@ -131,10 +148,14 @@ export class WorldCoop {
     this.options.onStatus?.(status, detail);
   }
   /** Once per rendered frame, after the local character has animated. */
-  update(dt: number, camera: THREE.Camera, local: PlayerWireState | null, localPos: Point3, now = performance.now()) {
+  update(dt: number, camera: THREE.Camera, local: PlayerWireState | null, localPos: Point3, now = performance.now(), localActive = true) {
+    this.options.combat.state.localAbsent = this.host && !localActive;
     if (!this.session.paired) return;
     this.stateAcc += dt;
     if (local && this.stateAcc >= 1 / STATE_HZ) { this.stateAcc = Math.min(this.stateAcc - 1 / STATE_HZ, 1 / STATE_HZ); this.session.send('state', encodeState(local)); }
+    this.localPos.x = localPos.x; this.localPos.y = localPos.y; this.localPos.z = localPos.z;
+    if (this.host) this.announceBoss(dt);
+    if (this.guest && this.options.combat.state.bossStarted && this.bossBeat > 0 && (this.bossBeat -= dt) <= 0) this.options.combat.leaveRemoteBoss();
     const latest = this.avatar.track.latest;
     if (this.host) {
       const state = this.options.combat.state;
@@ -159,6 +180,14 @@ export class WorldCoop {
       return e && e.mode !== 'dead' ? this.enemyPoint.set(e.p.x, e.p.y, e.p.z) : null;
     }, this.partnerName);
     this.shown = !!latest;
+  }
+  /** Host: say which boss fight is running (on change, and every second for a late joiner). */
+  private announceBoss(dt: number) {
+    const state = this.options.combat.state, id = state.bossStarted ? state.boss.id : '';
+    this.bossBeat -= dt;
+    if (id === this.bossAnnounced && (this.bossBeat > 0 || !id)) return;
+    this.bossAnnounced = id; this.bossBeat = 1;
+    this.session.send('event', { kind: 'boss', data: id ? { id } : {} });
   }
   private drawPartnerFire(dt: number, s: PlayerWireState | null) {
     if (!s?.fi || !s.ar || s.m) { this.partnerFire = 0; return; }

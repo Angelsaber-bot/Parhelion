@@ -387,6 +387,9 @@ export function domainRuin(f: Frame, radius: number, region: RegionId = 'britain
     const a = i / n * Math.PI * 2; if (i === 5 || i === 15) continue;
     const x = Math.cos(a) * (radius - .6), z = Math.sin(a) * (radius - .6), broken = (i * 7) % 5 === 0, h = broken ? 2.2 + (i % 3) * .6 : 5.4;
     f.cyl([x, .55, z], .62, .5, dark, 'body', 8, [0, 0, 0], true);
+    // 黑帆: the ribs of a sunken hull; 永冬: frozen crystal pillars. Same footing, so collision is unchanged.
+    if (region === 'blacksail') { hullRib(f, a, radius - .6, broken, i); continue; }
+    if (t.snow && region === 'winter') { icePillar(f, x, z, a, broken, i); continue; }
     if (kyoto) {
       f.cyl([x, .3 + h / 2 + .5, z], .3, h, broken ? '#6a3a2a' : '#a8352a', 'body', 12, [0, 0, 0], true);
       f.cyl([x, 1.05, z], .36, .3, '#2a2522', 'metal', 12);
@@ -397,6 +400,7 @@ export function domainRuin(f: Frame, radius: number, region: RegionId = 'britain
     if (!broken) {
       f.box([x, h + 1.0, z], [1.1, .28, 1.1], kyoto ? '#2a2522' : dark, 'body', [0, -a, 0], true);
       const next = (i + 1) / n * Math.PI * 2, x2 = Math.cos(next) * (radius - .6), z2 = Math.sin(next) * (radius - .6);
+      if (region === 'britain' && (i + 1) % n !== 5 && (i + 1) % n !== 15 && (i * 7 + 7) % 5 !== 0) gothicArch(f, x, z, x2, z2, h, t.trim, i);
       if ((i + 1) % n !== 5 && (i + 1) % n !== 15 && (i * 7 + 7) % 5 !== 0) f.box([(x + x2) / 2, h + 1.32, (z + z2) / 2], [.6, .36, Math.hypot(x2 - x, z2 - z) + .9], kyoto ? '#a8352a' : stone, 'body', [0, -Math.atan2(z2 - z, x2 - x) + Math.PI / 2, 0]);
       if (t.snow) f.box([x, h + 1.2, z], [1.2, .14, 1.2], '#f4f8fc', 'body', [0, -a, 0]);
     } else {
@@ -409,6 +413,8 @@ export function domainRuin(f: Frame, radius: number, region: RegionId = 'britain
   // entrances (north and south): stone arches, a torii in Kyoto
   for (const a of [Math.PI / 2, -Math.PI / 2]) {
     const x = Math.cos(a) * (radius - .4), z = Math.sin(a) * (radius - .4);
+    if (region === 'blacksail') { keelGate(f, x, z); continue; }
+    if (region === 'winter') { chapelGate(f, x, z, stone); continue; }
     if (kyoto) {
       for (const s of [-1, 1]) { f.cyl([x + s * 2.5, 3.4, z], .3, 6.8, '#c23b2c', 'body', 12, [0, 0, 0], true); f.cyl([x + s * 2.5, .35, z], .42, .7, '#2a2522', 'metal', 12); }
       f.box([x, 5.6, z], [6.0, .3, .4], '#c23b2c'); f.box([x, 6.9, z], [7.4, .42, .6], '#2a2522', 'body', [0, 0, 0], true);
@@ -419,8 +425,7 @@ export function domainRuin(f: Frame, radius: number, region: RegionId = 'britain
     for (const s of [-1, 1]) f.box([x + s * 2.4, 3.3, z], [.9, 6.6, 1.2], stone, 'body', [0, 0, 0], true);
     f.box([x, 6.9, z], [6.0, .9, 1.3], dark, 'body', [0, 0, 0], true);
     f.torus([x, 6.0, z], 1.9, .22, stone, 'body', [0, 0, 0], Math.PI);
-    if (t.snow) f.box([x, 7.42, z], [6.2, .16, 1.45], '#f4f8fc');
-    f.gem([x, 7.6, z], .3, region === 'blacksail' ? '#7fffd4' : '#ffe39a');
+    f.gem([x, 7.6, z], .3, '#ffe39a');
   }
   // central monument on a two-step plinth
   f.cyl([0, .7, 0], 2.6, .8, dark, 'body', 8, [0, Math.PI / 8, 0], true);
@@ -455,6 +460,68 @@ function swordMonument(f: Frame, gold: string) {
 }
 
 /** Blackbeard's sunken-vault anchor driven into the plinth, chain coiled around it, spilled coins. */
+/** 落日王国 cloister: a pointed arch between two columns, with stained glass in every fourth bay. */
+function gothicArch(f: Frame, x: number, z: number, x2: number, z2: number, h: number, trim: string, i: number) {
+  const dx = x2 - x, dz = z2 - z, d = Math.hypot(dx, dz) - .84, ux = dx / Math.hypot(dx, dz), uz = dz / Math.hypot(dx, dz);
+  const r = .62 * d, theta = Math.acos(1 - d / (2 * r)), rise = r * Math.sin(theta), spring = h + 1.12 - rise, phi = -Math.atan2(dz, dx);
+  const mx = (x + x2) / 2, mz = (z + z2) / 2, off = d / 2 - r;
+  f.torus([mx - ux * off, spring, mz - uz * off], r, .15, trim, 'body', [0, phi, Math.PI - theta], theta);
+  f.torus([mx + ux * off, spring, mz + uz * off], r, .15, trim, 'body', [0, phi, 0], theta);
+  if (i % 4 === 1) {
+    const colors = ['#c23b4a', '#3c6bc2', '#d9b25a'];
+    for (let k = -1; k <= 1; k++) f.box([mx + ux * k * .5, spring + rise * .45 - Math.abs(k) * .25, mz + uz * k * .5], [.42, 1.5 - Math.abs(k) * .4, .04], colors[(i + k + 3) % 3], 'glow', [0, phi, 0]);
+    f.box([mx, spring + rise * .45, mz], [1.6, .06, .06], '#2a2522', 'metal', [0, phi, 0]);
+  }
+}
+/** One rib of a drowned hull rising from a barnacled piling and curving in over the floor. */
+function hullRib(f: Frame, a: number, ring: number, broken: boolean, i: number) {
+  const wood = '#5a3d26', wet = '#3d2a1c', kelp = '#3f6b4f', shell = '#d9cfb8', rope = '#a8925f';
+  const ca = Math.cos(a), sa = Math.sin(a), x = ca * ring, z = sa * ring;
+  f.cyl([x, 1.45, z], .34, 2.3, wet, 'body', 8, [0, 0, 0], true);
+  f.torus([x, 1.9, z], .37, .06, rope, 'body', [Math.PI / 2, 0, 0]);
+  for (let k = 0; k < 5; k++) { const b = k * 1.3 + i; f.sphere([x + Math.cos(b) * .33, .7 + (k % 3) * .35, z + Math.sin(b) * .33], [.11, .08, .11], shell); }
+  // The rib: a quarter arc in the radial plane, a little thicker at the root; broken ribs snap short.
+  const R = 4.2, arc = broken ? Math.PI * (.22 + (i % 3) * .06) : Math.PI * .5, cx = ca * (ring - R), cz = sa * (ring - R);
+  f.torus([cx, 2.6, cz], R, .2, wood, 'body', [0, -a, 0], arc);
+  f.torus([cx, 2.6, cz], R, .26, wet, 'body', [0, -a, 0], Math.min(arc, Math.PI * .12));
+  if (!broken) {
+    const tx = ca * (ring - R), tz = sa * (ring - R), ty = 2.6 + R;
+    for (let k = 0; k < 3; k++) f.box([tx + ca * (k - 1) * .25, ty - .9 - k * .25, tz + sa * (k - 1) * .25], [.1, 1.6 - k * .3, .05], kelp, 'body', [0, -a, (k - 1) * .12]);
+    if (i % 4 === 0) { f.cyl([tx, ty - 1.3, tz], .02, 1.1, '#2a2522', 'metal', 8); f.sphere([tx, ty - 2.0, tz], [.2, .26, .2], '#7fffd4', 'glow'); }
+  } else f.box([x + ca * 1.4, .45, z + sa * 1.4], [.36, .36, 2.6], wood, 'body', [0, -a + Math.PI / 2, .25]);
+  // Stringers tie every other rib to its neighbour, like the hull's planking.
+  if (i % 2 === 0 && !broken) { const a2 = a + Math.PI / 10, x2 = Math.cos(a2) * (ring - .3), z2 = Math.sin(a2) * (ring - .3), xm = (x + x2) / 2, zm = (z + z2) / 2;
+    f.box([xm, 3.4, zm], [.2, .24, Math.hypot(x2 - x, z2 - z) + .3], wood, 'body', [0, -Math.atan2(z2 - z, x2 - x) + Math.PI / 2, 0]); }
+}
+/** The entrance of the sunken vault: a keel and stem post with a hanging sea lantern. */
+function keelGate(f: Frame, x: number, z: number) {
+  const wood = '#5a3d26', wet = '#3d2a1c', iron = '#3f4447';
+  for (const s of [-1, 1]) { f.cyl([x + s * 2.4, 3.2, z], .42, 6.4, wet, 'body', 8, [0, 0, 0], true); f.torus([x + s * 2.4, 5.6, z], .45, .07, iron, 'metal', [Math.PI / 2, 0, 0]); f.torus([x + s * 2.4, 1.2, z], .45, .07, iron, 'metal', [Math.PI / 2, 0, 0]); }
+  f.torus([x, 5.0, z], 2.4, .3, wood, 'body', [0, 0, 0], Math.PI);
+  f.box([x, 7.3, z], [.36, 1.6, .36], wood, 'body', [0, 0, .12]);
+  f.cyl([x, 6.3, z], .02, .9, '#2a2522', 'metal', 8); f.box([x, 5.75, z], [.34, .44, .34], iron, 'metal'); f.sphere([x, 5.75, z], [.15, .2, .15], '#7fffd4', 'glow');
+}
+/** 永冬 colonnade: a cluster of ice crystals frozen around a broken stone core. */
+function icePillar(f: Frame, x: number, z: number, a: number, broken: boolean, i: number) {
+  const ice = '#bfe2f2', deep = '#8fc4dd', snow = '#f4f8fc', h = broken ? 2.4 + (i % 3) * .5 : 5.6;
+  f.cyl([x, .3 + h * .35, z], .32, h * .7, '#7d8696', 'body', 8, [0, 0, 0], true);
+  f.cone([x, .5 + h / 2, z], .58, h, ice, 'body', 4, [0, a, 0]);
+  for (let k = 0; k < 3; k++) { const b = a + k * 2.1, l = h * (.45 + (k % 2) * .15); f.cone([x + Math.cos(b) * .5, .4 + l / 2, z + Math.sin(b) * .5], .26, l, deep, 'body', 4, [Math.cos(b) * .28, b, Math.sin(b) * .28]); }
+  if (i % 3 === 0) f.gem([x, .8 + h * .7, z], .16, '#dff6ff');
+  f.sphere([x, .4, z], [1.0, .3, 1.0], snow);
+}
+/** 永冬 entrance: the chapel's gate with a small onion dome and a frozen icon lamp. */
+function chapelGate(f: Frame, x: number, z: number, stone: string) {
+  const plaster = '#e6edf5', gold = '#d9b25a', dome = '#3d6b8f';
+  for (const s of [-1, 1]) f.box([x + s * 2.4, 3.3, z], [.9, 6.6, 1.2], plaster, 'body', [0, 0, 0], true);
+  f.box([x, 6.9, z], [6.0, .9, 1.3], stone, 'body', [0, 0, 0], true);
+  f.torus([x, 6.0, z], 1.9, .22, plaster, 'body', [0, 0, 0], Math.PI);
+  f.box([x, 7.42, z], [6.2, .16, 1.45], '#f4f8fc');
+  f.cyl([x, 7.9, z], .55, .9, plaster, 'body', 12);
+  f.lathe([[0, 0], [.75, .15], [.85, .55], [.55, 1.05], [.18, 1.45], [0, 1.65]], [x, 8.35, z], dome);
+  f.cyl([x, 10.3, z], .03, .7, gold, 'metal', 8); f.box([x, 10.45, z], [.42, .05, .05], gold, 'metal'); f.box([x, 10.25, z], [.28, .05, .05], gold, 'metal', [0, 0, .3]);
+  f.sphere([x, 5.2, z], [.22, .3, .22], '#ffd27a', 'glow');
+}
 function anchorMonument(f: Frame, gold: string) {
   const iron = '#3f4447', rust = '#6b4a35';
   f.box([0, 5.4, 0], [.42, 5.2, .42], iron, 'metal');

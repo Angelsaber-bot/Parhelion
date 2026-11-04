@@ -155,3 +155,41 @@ test('a partner skill visual round-trips and junk is refused', async () => {
   assert.equal(decodeSkillFx({ ...strike, o: [0, NaN, 0] }, ids), null);
   assert.ok(decodeSkillFx({ type: 'cast', identity: null, slot: 'skill', o: [0, 0, 0], d: [0, 0, 1], dur: .6 }, ids));
 });
+
+test('a host in a menu leaves the world fighting the partner, never the absent host', () => {
+  const state = new WorldCombatState([{ id: 'wild_t', kind: 'shade', p: { x: 3, y: 0, z: 0 } }], []);
+  const local = { x: 0, y: 0, z: 0 };
+  state.partner = { x: 12, y: 0, z: 0 };
+  state.localAbsent = true;
+  const events: CombatEvent[] = [];
+  for (let i = 0; i < 600 && !events.some(e => e.type === 'partnerHurt'); i++) { state.step(.05, local, false, flat); events.push(...state.drainEvents()); }
+  assert.ok(events.some(e => e.type === 'partnerHurt'), 'the enemy beside the absent host walks to the partner');
+  assert.equal(state.hp, state.maxHp);
+  const solo = new WorldCombatState([{ id: 'wild_t', kind: 'shade', p: { x: 3, y: 0, z: 0 } }], []);
+  solo.localAbsent = true; const before = { ...solo.enemies[0].p };
+  for (let i = 0; i < 100; i++) solo.step(.05, local, false, flat);
+  assert.deepEqual(solo.enemies[0].p, before, 'without a partner a paused world stays frozen');
+});
+
+test('a guest joins the host boss fight, and the host win is the guest win', () => {
+  const boss = { id: 'boss_vacant_king', kind: 'king' as const, p: { x: 0, y: 0, z: 0 }, requires: ['never_done'] };
+  const guest = new WorldCombatState([], boss);
+  assert.equal(guest.beginBoss(new Set(['never_done'])), true, 'solo: requirements met, the fight starts');
+  guest.resetAll(false);
+  guest.remoteEnemies = true;
+  assert.equal(guest.beginBoss(new Set(['never_done'])), false, 'a guest cannot start a boss of its own');
+  assert.equal(guest.joinRemoteBoss('boss_vacant_king'), true, 'but joins the host fight without the requirements');
+  assert.ok(guest.drainEvents().some(e => e.type === 'bossStart'));
+  const b = guest.bosses[0];
+  guest.applyRemoteEnemies([{ id: b.id, p: [1, 0, 1], hp: b.maxHp / 2, mode: 'chase' }]);
+  guest.applyRemoteEnemies([{ id: b.id, p: [1, 0, 1], hp: 0, mode: 'dead' }]);
+  const events = guest.drainEvents();
+  assert.ok(events.some(e => e.type === 'victory' && e.firstClear), 'the guest earns its own first clear');
+  assert.equal(guest.bossStarted, false); assert.ok(guest.isCleared(b.id));
+
+  // A host-side corpse the guest never fought syncs quietly: no kill burst.
+  const late = new WorldCombatState([{ id: 'wild_q', kind: 'shade', p: { x: 0, y: 0, z: 0 } }], []);
+  late.remoteEnemies = true;
+  late.applyRemoteEnemies([{ id: 'wild_q', p: [0, 0, 0], hp: 0, mode: 'dead' }]);
+  assert.ok(!late.drainEvents().some(e => e.type === 'kill'));
+});

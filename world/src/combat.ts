@@ -312,6 +312,7 @@ export class WorldCombatState {
   }
   /** Start a boss fight (the first boss when no id is given) once its requirements are done. */
   beginBoss(done: ReadonlySet<string>, id?: string) {
+    if (this.remoteEnemies) return false; // a co-op guest joins the host's fight instead
     const i = id === undefined ? 0 : this.bosses.findIndex(b => b.id === id);
     if (i < 0 || i >= this.bosses.length || this.bossStarted || this.defeated) return false;
     if (!this.cleared[i] && !this.requires[i].every(r => done.has(r))) return false;
@@ -433,7 +434,7 @@ export class WorldCombatState {
     const ranged=!raw&&context?.source==='ranged';
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
-    const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern;
+    const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
     const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
@@ -508,6 +509,8 @@ export class WorldCombatState {
   }
   /** Co-op host: the partner's position (null when solo). */
   partner: Point3 | null = null;
+  /** Co-op host: this player is in a menu or loading, so enemies fight only the partner. */
+  localAbsent = false;
   /** Co-op guest: enemies are driven by the host's snapshots instead of local AI. */
   remoteEnemies = false;
   /** Co-op guest: take the host's enemy positions, health and modes. Unknown ids are ignored. */
@@ -515,7 +518,8 @@ export class WorldCombatState {
     for (const r of list) {
       const e = this.enemies.find(x => x.id === r.id); if (!e) continue;
       e.p = { x: r.p[0], y: r.p[1], z: r.p[2] };
-      const wasAlive = e.mode !== 'dead';
+      // Only a fight seen here ends in a kill burst; idle or unseen foes just take the host's state.
+      const wasFighting = e.mode !== 'dead' && e.mode !== 'idle';
       e.hp = Math.min(e.maxHp, r.hp);
       if (MODES.has(r.mode)) e.mode = r.mode as Enemy['mode'];
       if (typeof r.tm === 'number' && Number.isFinite(r.tm)) e.timer = r.tm;
@@ -523,9 +527,25 @@ export class WorldCombatState {
       if (r.k && ATTACKS.has(r.k)) e.attack = r.k as Enemy['attack'];
       if (r.ph === 1 || r.ph === 2) e.phase = r.ph;
       e.active = e.mode !== 'idle' && e.mode !== 'dead';
-      if (wasAlive && e.mode === 'dead') this.events.push({ type: 'kill', id: e.id });
+      if (wasFighting && e.mode === 'dead') {
+        this.events.push({ type: 'kill', id: e.id });
+        if (e === this.boss && this.bossStarted) {
+          const firstClear = !this.cleared[this.current];
+          this.cleared[this.current] = true; this.bossStarted = false;
+          this.events.push({ type: 'victory', id: e.id, firstClear });
+        }
+      }
     }
   }
+  /** Co-op guest: join the boss fight the host's game is running (no requirements: the host met them). */
+  joinRemoteBoss(id: string) {
+    const i = this.bosses.findIndex(b => b.id === id);
+    if (i < 0 || !this.remoteEnemies || this.bossStarted || this.defeated) return false;
+    this.current = i; this.bossStarted = true; this.hp = this.maxHp; this.quietFor = 0; this.hurtCooldown = 0;
+    this.events.push({ type: 'bossStart' }); return true;
+  }
+  /** Co-op guest: the host's fight ended without a win (reset, defeat, or the room closed). */
+  leaveRemoteBoss() { if (!this.bossStarted) return false; this.bossStarted = false; this.events.push({ type: 'bossReset' }); return true; }
   /** Co-op guest: a host-side enemy contact landed on this player. */
   remoteHurt(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
   private hurt(amount: number) {
@@ -541,7 +561,9 @@ export class WorldCombatState {
   }
   step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
     const player = localPlayer;
-    if (!active) { this.setDefense({ guard: 1, invulnerable: false }); return; }
+    // Co-op host in a menu or loading: the world keeps fighting the partner, never the absent host.
+    const away = !active && this.localAbsent && !!this.partner && !this.remoteEnemies;
+    if (!active) { this.setDefense({ guard: 1, invulnerable: false }); if (!away) return; }
     if (!Number.isFinite(dt) || dt <= 0) return;
     dt = Math.min(dt, 0.1);
     this.shotCooldown = Math.max(-this.gun.interval, this.shotCooldown - dt);
@@ -575,7 +597,8 @@ export class WorldCombatState {
       // Story actors exist only in their own player's game and keep local AI on both sides.
       if (this.remoteEnemies && !e.storyEncounter) continue;
       // Co-op host: each enemy fights whichever player is nearer to it.
-      const player = this.partner && !e.storyEncounter && distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer) ? this.partner : localPlayer;
+      if (away && e.storyEncounter) continue;
+      const player = this.partner && !e.storyEncounter && (away || distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer)) ? this.partner : localPlayer;
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
@@ -624,6 +647,8 @@ export class WorldCombatState {
           if (this.defeated) return;
           // The keg blast also stuns its carrier: a long recovery is the punish window.
           if (e.role === 'powder' && !e.miniboss && e.kind !== 'king' && !e.storyPattern) this.events.push({ type: 'explode', id: e.id, at: clone(e.p) });
+          // A powder warden's phase-2 barrage bursts where it landed.
+          else if (e.role === 'powder' && e.storyPattern === 'echo-warden' && e.phase === 2 && e.attack === 'burst') this.events.push({ type: 'explode', id: e.id, at: clone(e.target) });
           e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery + (evaded ? PERFECT_EVADE.opening : 0);
         }
         continue;
@@ -632,14 +657,14 @@ export class WorldCombatState {
       const isBoss = e === this.boss, elite = minibossProfile(e);
       const role = ENEMY_ROLES[e.role];
       const meleeRange = e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
-      if (e.role === 'shinobi' && !isBoss && !elite && !e.storyPattern && sees && e.timer <= 0 && !e.blinkCooldown && dist > SHINOBI_BLINK.min && dist < SHINOBI_BLINK.max && hasEnemyPressureSlot(e, this.enemies, player)) {
+      if (e.role === 'shinobi' && !isBoss && !elite && (!e.storyPattern || e.phase === 2) && sees && e.timer <= 0 && !e.blinkCooldown && dist > SHINOBI_BLINK.min && dist < SHINOBI_BLINK.max && hasEnemyPressureSlot(e, this.enemies, player)) {
         // Vanish and reappear behind the player (far side of the approach), then a readable cut.
         const p = terrain.walk(player, player.x + (player.x - e.p.x) / dist * SHINOBI_BLINK.behind, player.z + (player.z - e.p.z) / dist * SHINOBI_BLINK.behind);
         e.blinkCooldown = SHINOBI_BLINK.cooldown;
         if (p && distanceXZ(p, e.home) <= COMBAT.leash) {
           const from = clone(e.p); e.p = p;
           this.events.push({ type: 'blink', id: e.id, from, to: clone(p) });
-          e.attack = role.attack; Object.assign(e.target, player); e.attackCount++;
+          e.attack = e.storyPattern ? 'sweep' : role.attack; Object.assign(e.target, player); e.attackCount++;
           e.mode = 'windup'; e.timer = enemyAttackTiming(e).windup;
           continue;
         }

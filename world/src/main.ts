@@ -1952,6 +1952,7 @@ function interact() {
   const missing = done.has(m.id) && bossCore ? [] : (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(bilingual(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`, `${localizeText(m.label)}: requires ${missing.map((r) => localizeText(markers.get(r)?.label ?? '尚未完成的任务')).join(', ')}`));
   if (bossCore) {
+    if (typeof coop !== 'undefined' && coop.guest && !combat.bossStarted) return toast(bilingual('联机时由房主发起首领战，靠近首领场地即可一起加入。', 'In co-op the host starts boss fights; stay near the arena to join.'));
     if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
   }
@@ -2125,7 +2126,7 @@ function frame(now: number) {
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
   anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying, armed: worldProgress.armed&&!residentEventRuntime?.carrying, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
-  coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now);
+  coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now, gameplayActive() && !player.flying);
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
     const look = new THREE.Vector3(0, 0, -1).applyEuler(camera.rotation);

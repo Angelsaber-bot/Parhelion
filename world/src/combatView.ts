@@ -52,6 +52,13 @@ function makeImpactStreaks(): THREE.BufferGeometry {
   return geometry;
 }
 type Line = [string, string];
+/** What changes when a domain warden enters phase 2 (keyed by its regional role). */
+const WARDEN_PHASE_TEXT: Partial<Record<Enemy['role'], Line>> = {
+  shieldbearer: ['塔盾挡下正面子弹，用近战或绕到侧面', 'its tower shield stops bullets from the front; use the blade or flank it'],
+  powder: ['火药齐射的爆炸圈更大，看清落点后跑出圈', 'its powder barrage blasts a wider ring; read the mark and get out'],
+  jaeger: ['远距离会瞄准狙击，看到枪口就侧移或躲到掩体后', 'at range it takes an aimed shot; sidestep or break line of sight'],
+  shinobi: ['黑烟一闪就会绕到你身后，立刻闪避或回身', 'smoke means it is behind you; evade at once or turn and cut'],
+};
 /** Per-boss names and battle lines (zh, en); guidance follows actual attack geometry, not a fictional weak point. */
 const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: Line; victory: Line; burst: Line; sweep: Line; colors: [string, string, string] }> = {
   boss_vacant_king: {
@@ -277,6 +284,8 @@ export class WorldCombat {
   /** Co-op guest: apply the host's enemy snapshot and a hit an enemy landed on this player. */
   applyRemoteEnemies(list: Parameters<WorldCombatState['applyRemoteEnemies']>[0]) { this.state.applyRemoteEnemies(list); this.events(); }
   remoteHurt(amount: number) { this.state.remoteHurt(amount); this.events(); }
+  joinRemoteBoss(id: string) { const joined = this.state.joinRemoteBoss(id); this.events(); return joined; }
+  leaveRemoteBoss() { const left = this.state.leaveRemoteBoss(); this.events(); return left; }
   setDefense(defense: { guard: number; invulnerable: boolean }) { this.state.setDefense(defense); }
   /** Animation-contact attack API: all geometry and liveness are checked now, not at cast time. */
   applyStrike(strike: StrikeRequest, source: HitContext['source'] = 'skill'): StrikeResult {
@@ -358,6 +367,11 @@ export class WorldCombat {
     if (!active) {
       this.state.setDefense({ guard: 1, invulnerable: false });
       if (this.hitMarkerFor > 0) this.clearHitMarker();
+      // Co-op host in a menu: the enemies keep fighting the partner (see WorldCombatState.step).
+      if (!this.state.localAbsent || !this.state.partner || !Number.isFinite(dt) || dt <= 0) return;
+      this.acc += Math.min(.1, dt);
+      while (this.acc + 1e-9 >= .05) { this.state.step(.05, player, false, this.geometry.terrain); this.acc = Math.max(0, this.acc - .05); }
+      this.events();
       return;
     }
     if (!Number.isFinite(dt) || dt <= 0) return;
@@ -530,7 +544,13 @@ export class WorldCombat {
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
       }
-      else if (event.type === 'storyPhase') { this.options.toast(bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!')); }
+      else if (event.type === 'storyPhase') {
+        // Each domain warden turns its region's signature on in phase 2 (echoWarden.ts).
+        const role = this.state.enemies.find(e => e.id === event.id)?.role;
+        const twist = role ? WARDEN_PHASE_TEXT[role] : undefined;
+        this.options.toast(twist ? bilingual(`姿态崩溃，可近身反击！ · 第二阶段：${twist[0]}`, `Stance broken: close in and counter! · Phase II: ${twist[1]}`)
+          : bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!'));
+      }
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);

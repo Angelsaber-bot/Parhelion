@@ -128,9 +128,9 @@ const BRITAIN_CAMPS: readonly CampDef[] = [
     [{ role: 'breaker', offset: [5, 5], title: ['亡骑重甲', 'Wraith Juggernaut'] }, { role: 'duelist', offset: [-5, 5], title: wraith }, { role: 'breaker', offset: [0, -7], title: ['亡骑重甲', 'Wraith Juggernaut'] }],
   ] },
   { id: 'oath_cloister', region: 'britain', title: ['誓约回廊', 'Oath Cloister'], anchor: [-850, 34], requires: flagPuzzle('oath_cloister'), style: 'domain', waves: [
-    [{ role: 'stalker', offset: [6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'lancer', offset: [-6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'bombardier', offset: [0, -7], title: ['残影术士', 'Echo Caster'] }],
-    [{ role: 'duelist', offset: [7, 3], title: ['回廊剑卫', 'Cloister Blade'] }, { role: 'breaker', offset: [-7, 3], title: ['回廊重卫', 'Cloister Bulwark'] }, { role: 'lancer', offset: [0, -7], title: ['回廊枪卫', 'Cloister Lance'] }],
-    [{ role: 'breaker', offset: [0, -6.5], title: ['湖之守誓者', 'Oathkeeper of the Lake'], pattern: 'echo-warden' }, { role: 'duelist', offset: [6.5, 2], title: ['守誓近卫', 'Oath Guard'] }, { role: 'duelist', offset: [-6.5, 2], title: ['守誓近卫', 'Oath Guard'] }],
+    [{ role: 'shieldbearer', offset: [6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'lancer', offset: [-6, -4], title: ['誓约残影', 'Oath Echo'] }, { role: 'bombardier', offset: [0, -7], title: ['残影术士', 'Echo Caster'] }],
+    [{ role: 'duelist', offset: [7, 3], title: ['回廊剑卫', 'Cloister Blade'] }, { role: 'shieldbearer', offset: [-7, 3], title: ['回廊盾卫', 'Cloister Shield'] }, { role: 'lancer', offset: [0, -7], title: ['回廊枪卫', 'Cloister Lance'] }],
+    [{ role: 'shieldbearer', offset: [0, -6.5], title: ['湖之守誓者', 'Oathkeeper of the Lake'], pattern: 'echo-warden' }, { role: 'duelist', offset: [6.5, 2], title: ['守誓近卫', 'Oath Guard'] }, { role: 'duelist', offset: [-6.5, 2], title: ['守誓近卫', 'Oath Guard'] }],
   ] },
 ];
 
