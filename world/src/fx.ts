@@ -86,7 +86,9 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
         float dist = length(wxz - uCam.xz);
         float fade = 1.0 - smoothstep(uSize * 0.22, uSize * 0.48, dist);
         float keep = step(aRand.w, cm.a * fade);
-        float sc = mix(0.55, 1.25, fract(aRand.z * 7.13)) * keep;
+        // Blades right at the lens filled the bottom of the frame as giant spikes; they bow out
+        // inside ~2 m of the camera (the player stands further ahead and keeps its grass).
+        float sc = mix(0.55, 1.25, fract(aRand.z * 7.13)) * keep * smoothstep(0.7, 2.3, dist);
         float ang = aRand.z * 6.2831;
         vec3 p = position * vec3(sc, sc * mix(0.8, 1.35, fract(aRand.w * 13.7)), sc);
         p.xz = mat2(cos(ang), -sin(ang), sin(ang), cos(ang)) * p.xz;
