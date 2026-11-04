@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { SiteArt } from '../src/campaignSites.ts';
-import { CAMLANN, CORE_RING, camlannArena, carveCoreRing } from '../src/exploration/bossArenas.ts';
+import { CAMLANN, CORE_RING, HONNOJI, RED_SQUARE, camlannArena, carveCoreRing, flagshipDeckArena, honnojiArena, redSquareArena } from '../src/exploration/bossArenas.ts';
 
 test('Camlann arena: swords, stones and throne dress the field but never crowd the core or the king', () => {
   const art = new SiteArt(), flat = () => 6;
@@ -35,4 +35,25 @@ test('the core ring blocks are cut from the streamed limestone, and nothing else
   assert.equal(carveCoreRing('winter', 'Britain_Physical_Limestone', geometry), null);
   const untouched = new THREE.BufferGeometry(); untouched.setAttribute('position', new THREE.Float32BufferAttribute(wall, 3));
   assert.equal(carveCoreRing('britain', 'Britain_Physical_Limestone', untouched), null, 'meshes without ring blocks are kept as shipped');
+});
+
+test('Red Square and Honnō-ji: the centrepiece stands behind the boss and nothing lands in the duel', () => {
+  for (const [def, build] of [[RED_SQUARE, redSquareArena], [HONNOJI, honnojiArena]] as const) {
+    const art = new SiteArt();
+    const built = build(art, () => 2) as { bell?: readonly [number, number]; screen?: readonly [number, number] };
+    const [bx, bz] = def.boss, [cx, cz] = def.core, [tx, tz] = built.bell ?? built.screen!;
+    assert.ok(Math.hypot(tx - cx, tz - cz) > Math.hypot(bx - cx, bz - cz), 'behind the boss as seen from the core');
+    assert.equal(art.solids.length > 0, def === RED_SQUARE, 'only the great bell blocks movement; the burning courtyard stays open');
+    for (const g of art.solids) {
+      g.computeBoundingBox(); const c = g.boundingBox!.getCenter(new THREE.Vector3());
+      assert.ok(Math.hypot(c.x - bx, c.z - bz) > def.clear && Math.hypot(c.x - cx, c.z - cz) > 5);
+    }
+  }
+});
+
+test('the flagship deck is dressed from rail to quarterdeck without adding a single obstacle', () => {
+  const art = new SiteArt();
+  const { props } = flagshipDeckArena(art);
+  assert.ok(props > 30);
+  assert.equal(art.solids.length, 0, 'the deck fight keeps its authored collision');
 });

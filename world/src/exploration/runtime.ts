@@ -30,7 +30,7 @@ import {
   SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
 import { MINIBOSSES } from '../minibosses';
-import { camlannArena } from './bossArenas';
+import { camlannArena, flagshipDeckArena, honnojiArena, redSquareArena } from './bossArenas';
 import { COMMISSION, commissionDone, dayKey, flagCommission, flagCommissionBonus, flagHuntKill, huntProgress, todaysBoard, type Commission } from './commissions';
 import './exploration.css';
 
@@ -224,6 +224,9 @@ export function createExploration(host: ExplorationHost) {
 
   // ───────────────────────── boss arenas ─────────────────────────
   camlannArena(artFor('britain'), (x, z) => host.terrain(x, z));
+  redSquareArena(artFor('winter'), (x, z) => host.terrain(x, z));
+  honnojiArena(artFor('kyoto'), (x, z) => host.terrain(x, z));
+  flagshipDeckArena(artFor('blacksail'));
 
   // ───────────────────────── prism puzzles ─────────────────────────
   interface PuzzleRt { def: PrismPuzzleDef; orient: number[]; heads: THREE.Group[]; crystals: THREE.Mesh[]; shown: number[]; beam: THREE.Mesh; glow: THREE.Mesh; recv: THREE.Group; pillar: THREE.Mesh; heights: number[]; sourceY: number; recvY: number; solved: boolean }
