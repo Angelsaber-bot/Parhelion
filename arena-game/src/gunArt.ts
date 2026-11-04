@@ -8,6 +8,9 @@ export interface GunPresentation {
   animate(kick: number, reload: number): void;
   dispose(): void;
 }
+let artWarmer: ((root: THREE.Object3D, firstPerson: boolean) => Promise<unknown>) | null = null;
+/** The scene compiles loaded gun art against the pass it is really drawn in (see ArenaScene). */
+export function setGunArtWarmer(warm: typeof artWarmer) { artWarmer = warm; }
 /** Fallback is visible immediately; the successful async load swaps only visuals and anchors. */
 export function attachGunArt(weapon: number, skin: number, fallback: { group: THREE.Group; muzzle: THREE.Object3D }, firstPerson = false, pool: WeaponArtPool = weaponArtPool): GunPresentation {
   const group = new THREE.Group(), muzzle = new THREE.Object3D();
@@ -20,14 +23,9 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
   let dead = false, fallbackLive = true, art: ArtInstance | null = null;
   const poses = new Map<string, THREE.Vector3>();
   group.userData.artState = 'loading';
-  const ready = (handle?.ready ?? Promise.resolve(null)).then((loaded) => {
+  const ready = (handle?.ready ?? Promise.resolve(null)).then(async (loaded) => {
     if (dead || !loaded || !def) return;
-    art = loaded;
-    group.add(makeArtMount(def, art.root));
-    if (def.muzzle) muzzle.position.copy(artPoint(def, def.muzzle));
-    if (def.sight) sight.copy(artPoint(def, def.sight));
-    for (const [role, part] of Object.entries(art.parts)) poses.set(role, part.position.clone());
-    if (firstPerson) art.root.traverse((o) => {
+    if (firstPerson) loaded.root.traverse((o) => {
       const mesh = o as THREE.Mesh;
       if (!mesh.isMesh) return;
       mesh.castShadow = false; mesh.receiveShadow = false;
@@ -35,6 +33,14 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
         if (/^PH_glass(?:[._]?\d+)?$/.test(m.name)) { m.transparent = true; m.opacity = 0.12; m.depthWrite = false; }
       }
     });
+    // Compile the art's shaders off the frame while the fallback is still showing, so a rival's
+    // freshly loaded gun never stalls the match on the frame it first appears.
+    if (artWarmer) { const warm = artWarmer; await Promise.resolve().then(() => warm(loaded.root, firstPerson)).catch(() => undefined); if (dead) return; }
+    art = loaded;
+    group.add(makeArtMount(def, art.root));
+    if (def.muzzle) muzzle.position.copy(artPoint(def, def.muzzle));
+    if (def.sight) sight.copy(artPoint(def, def.sight));
+    for (const [role, part] of Object.entries(art.parts)) poses.set(role, part.position.clone());
     group.remove(fallback.group); disposeTree(fallback.group, false); fallbackLive = false;
     group.userData.artState = 'ready'; group.userData.artId = def.id;
   }).catch((error: unknown) => {

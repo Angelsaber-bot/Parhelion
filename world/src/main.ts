@@ -119,6 +119,7 @@ import { WorldCoop } from './coop/worldCoop';
 import { createCoopPanel } from './coop/coopPanel';
 import { normalizeRoomCode, type PlayerWireState } from './coop/coopProtocol';
 import { createWeaponFinishControl } from './weaponFinishControl';
+import { PointLightCensus } from './pointLightCensus';
 import { getLanguage, bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
@@ -163,6 +164,9 @@ async function boot() {
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
+// Shipped builds never read shader logs: that read forces each new program to finish compiling on the spot
+// (a visible hitch the first time an era, effect or enemy appears). Dev builds keep the checks.
+if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
 disposeRenderer = () => renderer.dispose();
 graphicsRecovery = new WorldGraphicsRecovery(canvas, () => suspendForGraphics(), () => {
   invalidateFrameClock();
@@ -232,6 +236,15 @@ if (composer) {
   composer.setSize(innerWidth, innerHeight);
 }
 renderer.info.autoReset = false; // count the whole frame, including shadows and post passes
+/** Compiles `root`'s shaders in parallel, for the target they are really drawn into: with post-processing
+ * the scene renders into the composer's linear, untonemapped buffer, and a program compiled for the
+ * screen would not match (and would be compiled again on the frame the art first appears). */
+function warmShaders(root: THREE.Object3D): Promise<unknown> | void {
+  if (typeof renderer.compileAsync !== 'function') return;
+  const previous = renderer.getRenderTarget();
+  if (composer) renderer.setRenderTarget(composer.readBuffer);
+  try { return renderer.compileAsync(root, camera, scene); } finally { renderer.setRenderTarget(previous); }
+}
 function applyResolution() {
   if (graphicsRecovery?.blocked || worldExited || bootFailed) return;
   renderer.setPixelRatio(dpr);
@@ -277,7 +290,7 @@ for (const p of parts) world.add(p.root);
 scene.add(world);
 world.updateMatrixWorld(true);
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
-const regionVisuals=new RegionVisualStreaming({parent:world,carve:carveCoreRing,eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
+const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:carveCoreRing,eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
@@ -287,6 +300,7 @@ const localLights = new LocalLightPool([
   ...(layout.lights ?? []),
 ], lowQ ? 3 : highQ ? 8 : 5);
 scene.add(localLights.root);
+const lightCensus = new PointLightCensus(scene, new Set(localLights.lights));
 addEventListener('pagehide', event => { if (!event.persisted) localLights.dispose(); });
 
 const byName = (n: string) => world.getObjectByName(n) as THREE.Mesh | undefined;
@@ -1387,7 +1401,7 @@ function frameUltimate(dt: number): boolean {
     ultimateStage.update({ ...state, reduced: state.reduced || reducedEffects(), sourceRoot: ultimateSource.root });
     try { ultimateStage.render(renderer, innerWidth / Math.max(1, innerHeight)); }
     catch (error) { ultimateStage.end(); ultimateDirector.skip(); console.warn('Ultimate renderer failed; continuing the cast in the world.', error); renderer.render(scene, camera); }
-  } else { audio.cinematicFrame(null); combat.present(0, player.pos, !suspended, camera); renderer.render(scene, camera); }
+  } else { audio.cinematicFrame(null); combat.present(0, player.pos, !suspended, camera); localLights.yieldSlots(lightCensus.active(camera)); renderer.render(scene, camera); }
   actionHud.update(actions, !ultimateDirector.showing); renderContract();
   return true;
 }
@@ -2283,6 +2297,7 @@ function frame(now: number) {
 
   timeUniform.value = now / 1000;
   localLights.update(camera.position, dt);
+  localLights.yieldSlots(lightCensus.active(camera));
   if (composer && !lowQ) shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
   ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id as RegionId, dt, renderer.domElement.height);
@@ -2316,6 +2331,9 @@ if (graphicsRecovery?.blocked) suspendForGraphics();
 // stop drawing once they are a few fogged pixels away. Region art keeps its own chunk culler.
 for (const child of world.children) if (child.name && child.name !== 'Group' && !child.name.startsWith('Streamed_')) farProps.add(child);
 for (const child of scene.children) if (/^(EraStory_|ValleyStory_|SettlementResidents$|FieldHerbs$|Updrafts$)/.test(child.name)) farProps.add(child);
+// Every material already in the world (hidden effect pools included) compiles in parallel while the
+// start menu is up, instead of on the frame it first appears.
+warmShaders(scene)?.catch(() => undefined);
 requestAnimationFrame(frame);
 const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;

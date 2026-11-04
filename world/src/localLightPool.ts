@@ -16,6 +16,7 @@ export class LocalLightPool {
   readonly sources: readonly AuthoredLocalLight[];
   private slots: { light: THREE.PointLight; current: number; target: number; level: number }[];
   private initialized = false;
+  private yielded = new Set<THREE.PointLight>();
   private disposed = false;
   constructor(sources: readonly AuthoredLocalLight[], count = 8, readonly hysteresis = 20) {
     if (!Number.isInteger(count) || count < 1 || count > 32 || !Number.isFinite(hysteresis) || hysteresis < 0) throw new RangeError('Invalid local light budget');
@@ -58,6 +59,23 @@ export class LocalLightPool {
       slot.light.intensity = slot.current < 0 ? 0 : this.sources[slot.current].intensity * slot.level;
     }
     this.initialized = true;
+  }
+  /**
+   * Hands `count` slots over to other point lights (a settlement fill, a cinematic key light) so the
+   * scene's shader light count never changes: three.js recompiles every lit material whenever the number
+   * of visible point lights changes, which is a full-screen hitch. The dimmest slots go first; a slot
+   * stays handed over until the count drops again, so lamps never flicker between slots.
+   */
+  yieldSlots(count: number) {
+    const n = Math.max(0, Math.min(this.slots.length, Math.floor(count)));
+    if (this.yielded.size > n) {
+      const back = [...this.yielded].sort((a, b) => b.intensity - a.intensity).slice(0, this.yielded.size - n);
+      for (const light of back) { this.yielded.delete(light); light.visible = true; }
+    }
+    if (this.yielded.size < n) {
+      const give = this.slots.map(s => s.light).filter(l => !this.yielded.has(l)).sort((a, b) => a.intensity - b.intensity).slice(0, n - this.yielded.size);
+      for (const light of give) { this.yielded.add(light); light.visible = false; }
+    }
   }
   dispose() { if (this.disposed) return; this.disposed = true; this.root.removeFromParent(); this.root.clear(); for (const light of this.lights) light.dispose(); }
 }

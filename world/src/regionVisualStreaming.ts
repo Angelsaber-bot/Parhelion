@@ -3,10 +3,20 @@ import {regionLoader,bakeQuantized} from './glb';
 import {REGIONS,regionAt,type RegionDef} from './regions';
 import {chunkMesh,DistanceCuller,freezeStaticArt} from './chunk';
 import {toonMaterial,addOutline} from './look';
-interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;}
+interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;
+ /** Pieces whose buffers have not reached the GPU yet; they are revealed under a per-frame byte budget. */
+ pending:{mesh:THREE.Mesh;c:THREE.Vector3}[];uploaded:Set<ArrayLike<number>>;}
 export interface RegionStreamingOptions{parent:THREE.Object3D;outlines:boolean;lowQuality:boolean;eager?:boolean;now?:()=>number;status?:(region:string,error?:unknown)=>void;
  /** Optional per-mesh rework of immutable art before it is chunked (null keeps the mesh as shipped). */
- carve?:(region:string,name:string,geometry:THREE.BufferGeometry)=>THREE.BufferGeometry|null;}
+ carve?:(region:string,name:string,geometry:THREE.BufferGeometry)=>THREE.BufferGeometry|null;
+ /** Compiles the new art's shaders off the frame (renderer.compileAsync) before it is shown. */
+ warm?:(root:THREE.Object3D)=>Promise<unknown>|void;
+ /** Bytes of geometry a newly installed region may upload to the GPU per frame (default: everything at once). */
+ uploadBudget?:number;}
+/** Bytes a mesh's buffers will upload on its first draw. Chunks of one source mesh share its vertex
+ * buffers, so a buffer is only charged to the first piece that draws it. */
+const uploadBytes=(mesh:THREE.Mesh,seen:Set<ArrayLike<number>>)=>{const g=mesh.geometry;let n=0;
+ for(const a of [g.index,...Object.values(g.attributes)] as (THREE.BufferAttribute|null)[]){const array=a?.array;if(array&&!seen.has(array)){seen.add(array);n+=array.byteLength;}}return n;};
 /** Leaves/trunks/rocks are chunked in large dense cells: their ink line is sub-pixel well before
  * a building's, so it stops earlier (Kyoto: ~400k outline triangles past 170 m before this). */
 export function streamedOutlineDistance(name: string) {
@@ -40,15 +50,25 @@ export class RegionVisualStreaming{
     const count=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;const pieces=count>4000?chunkMesh(mesh,64):[mesh];
     for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece);culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));}
    }
+   // Shaders compile in parallel before the art is shown, so crossing into an era never stalls a frame on them.
+   // A renderer without async compile returns nothing, and the install continues in the same tick.
+   let warming:Promise<unknown>|void;try{warming=this.options.warm?.(root);}catch{warming=undefined;}
+   if(warming){await warming.catch(()=>undefined);if(this.disposed||controller.signal.aborted){this.disposeUninstalled(root);return false;}}
+   const pending:Resident['pending']=[];if(this.options.uploadBudget)for(const it of culler.items){pending.push({mesh:it.mesh,c:it.c});it.mesh.visible=false;}
    this.options.parent.add(root);root.updateMatrixWorld(true);freezeStaticArt(root);
-   this.residents.set(id,{root,culler,geometries,materials,lastUsed:this.clock()});this.counters.installs++;this.failures.delete(id);this.options.status?.('');return true;
+   this.residents.set(id,{root,culler,geometries,materials,lastUsed:this.clock(),pending,uploaded:new Set()});this.counters.installs++;this.failures.delete(id);this.options.status?.('');return true;
   }catch(error){if(root){root.removeFromParent();root.clear();}geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());if(!this.disposed&&!controller.signal.aborted){this.failures.set(id,{error,retryAt:this.clock()+5});this.options.status?.(id,error);}return false;
   }finally{this.requests.delete(id);}})();
   this.requests.set(id,{controller,promise});return promise;
  }
  update(position:THREE.Vector3,eye:THREE.Vector3,scale=1){
   if(this.disposed)return;this.position.copy(position);const current=regionAt(position.x,position.z).id,now=this.clock();
-  for(const[id,r]of this.residents){r.culler.update(eye,scale);if(id===current||regionDistance(REGIONS.find(d=>d.id===id)!,position)<120)r.lastUsed=now;}
+  // Newly streamed pieces reach the GPU a few megabytes per frame (nearest first)
+  // instead of all at once; a piece stays hidden until its turn.
+  let budget=this.options.uploadBudget??Infinity;
+  for(const[id,r]of this.residents){r.culler.update(eye,scale);if(id===current||regionDistance(REGIONS.find(d=>d.id===id)!,position)<120)r.lastUsed=now;
+   if(r.pending.length){r.pending.sort((a,b)=>a.c.distanceToSquared(eye)-b.c.distanceToSquared(eye));
+    r.pending=r.pending.filter(p=>{if(!p.mesh.visible)return true;if(budget>0){p.mesh.traverse(o=>{if((o as THREE.Mesh).isMesh)budget-=uploadBytes(o as THREE.Mesh,r.uploaded);});return false;}p.mesh.visible=false;return true;});if(!r.pending.length)r.uploaded.clear();}}
   if(this.options.eager)return;
   // At most current + one approach region; hysteresis avoids seam thrashing.
   const wanted=REGIONS.filter(d=>d.id===current||regionDistance(d,position)<120).sort((a,b)=>(a.id===current?-1:b.id===current?1:regionDistance(a,position)-regionDistance(b,position))).slice(0,2);

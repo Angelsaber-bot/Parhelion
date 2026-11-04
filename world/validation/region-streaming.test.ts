@@ -23,3 +23,19 @@ test('aborted and late region downloads cannot install after departure or dispos
  const s=new RegionVisualStreaming({parent,outlines:false,lowQuality:true,eager:true});
  try{const request=s.ensure('kyoto');s.dispose();assert.ok(signal?.aborted);finish(new Response(tinyGlb()));assert.equal(await request,false);assert.equal(parent.children.length,0);assert.equal(s.diagnostics.installs,0);assert.deepEqual(s.diagnostics.pending,[]);assert.equal(await s.ensure('alpha'),false);}finally{s.dispose();globalThis.fetch=original;}
 });
+test('new region art compiles first, then reaches the GPU under a per-frame byte budget, nearest first',async()=>{
+ const original=globalThis.fetch,parent=new THREE.Group();globalThis.fetch=async()=>new Response(tinyGlb());
+ const warmed:THREE.Object3D[]=[];
+ const s=new RegionVisualStreaming({parent,outlines:false,lowQuality:true,eager:true,uploadBudget:1,warm:async root=>{warmed.push(root);assert.equal(root.parent,null,'shaders compile before the art joins the scene');}});
+ try{
+  assert.equal(await s.ensure('alpha'),true);assert.equal(warmed.length,1);
+  const meshes:THREE.Mesh[]=[];parent.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
+  assert.ok(meshes.length>0);assert.ok(meshes.every(m=>!m.visible),'nothing draws before its upload turn');
+  const eye=new THREE.Vector3(0,5,0);
+  s.update(eye,eye);assert.equal(meshes.filter(m=>m.visible).length,1,'one piece per frame under a tiny budget');
+  for(let i=0;i<meshes.length;i++)s.update(eye,eye);assert.ok(meshes.every(m=>m.visible),'every piece is shown within a few frames');
+ }finally{s.dispose();globalThis.fetch=original;}
+ // A warm-up that throws never blocks the region.
+ const t=new RegionVisualStreaming({parent:new THREE.Group(),outlines:false,lowQuality:true,eager:true,warm:()=>{throw Error('no GPU');}});
+ globalThis.fetch=async()=>new Response(tinyGlb());try{assert.equal(await t.ensure('alpha'),true);}finally{t.dispose();globalThis.fetch=original;}
+});

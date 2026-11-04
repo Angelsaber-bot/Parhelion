@@ -27,7 +27,7 @@ import { AvatarMotion, ViewmodelStride, motionDt } from './characterMotion.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
 import { CRAFTED_CHAPTERS, toChapterMaterial } from './chapterMaterial.ts';
-import { attachGunArt, type GunPresentation } from './gunArt.ts';
+import { attachGunArt, setGunArtWarmer, type GunPresentation } from './gunArt.ts';
 import { isScopedWeapon } from './aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from './meleeArt.ts';
 import { ChapterEffects } from './chapterEffects.ts';
@@ -116,6 +116,15 @@ export class ArenaScene {
 
     lightWeaponScene(this.vmScene);this.vmScene.add(this.viewmodel.root);
     this.configureQuality();
+    // Gun art that streams in mid-match is compiled for the exact pass it will be drawn in
+    // (viewmodel scene, or the world through the composer) before it replaces its fallback.
+    setGunArtWarmer((root, firstPerson) => {
+      const r = this.renderer;
+      if (firstPerson) return r.compileAsync(root, this.vmCamera, this.vmScene);
+      const previous = r.getRenderTarget();
+      if (this.composer) r.setRenderTarget(this.composer.readBuffer);
+      try { return r.compileAsync(root, this.camera, this.scene); } finally { r.setRenderTarget(previous); }
+    });
 
     this.resize();
     addEventListener('resize', () => this.resize());
@@ -220,23 +229,42 @@ export class ArenaScene {
   }
 
   /** Pay art construction and shader compilation while the loading panel is up. */
+  private releaseWarmup:(()=>void)|null=null;
   async prepareLoadout(indices:readonly number[],skins:readonly number[]){
-    const presentations:GunPresentation[]=[],fighters:THREE.Group[]=[];
+    const presentations:GunPresentation[]=[],fighters:THREE.Group[]=[],avatars:Avatar[]=[];
     try{
       for(const index of indices){
         const held=buildGun(index,skins[index]??0,true);presentations.push(held);await held.ready;
         const remote=buildGun(index,skins[index]??0,false);presentations.push(remote);await remote.ready;
         this.vmScene.add(held.group);this.scene.add(remote.group);
       }
-      for(const char of [0,1]){const rig=buildFighter(char,TEAM_COLOR.A);fighters.push(rig.root);this.scene.add(rig.root);}
+      // Whole avatars (team ring, contact shadow, nameplate) and a barrier, exactly as the match draws them.
+      for(const char of [0,1]){const avatar=new Avatar({char,team:'A'} as PlayerSnap);avatars.push(avatar);this.scene.add(avatar.root);}
+      const shield=makeShield(TEAM_COLOR.A);fighters.push(shield);this.scene.add(shield);
       this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
       this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
-      await Promise.all([this.renderer.compileAsync(this.scene,this.camera),this.renderer.compileAsync(this.vmScene,this.vmCamera)]);
-      // Program compilation alone does not upload vertex buffers/textures.
-      this.renderer.render(this.scene,this.camera);renderHeldWeapon(this.renderer,this.vmScene,this.vmCamera);
+      // With post-processing the scene is drawn into the composer's linear, untonemapped buffer; programs
+      // compiled for the screen would not match and would all compile again on the first real frame.
+      const previous=this.renderer.getRenderTarget();
+      if(this.composer)this.renderer.setRenderTarget(this.composer.readBuffer);
+      const world=this.renderer.compileAsync(this.scene,this.camera);
+      this.renderer.setRenderTarget(previous);
+      await Promise.all([world,this.renderer.compileAsync(this.vmScene,this.vmCamera)]);
+      // Program compilation alone does not upload vertex buffers/textures: draw one real frame.
+      if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);
+      renderHeldWeapon(this.renderer,this.vmScene,this.vmCamera);
     }finally{
-      this.combatEffects.clear();for(const presentation of presentations)presentation.dispose();
-      for(const fighter of fighters){fighter.removeFromParent();disposeTree(fighter,false);}
+      this.combatEffects.clear();
+      for(const presentation of presentations)presentation.group.removeFromParent();
+      for(const object of [...fighters,...avatars.map(avatar=>avatar.root)])object.removeFromParent();
+      // three.js deletes a shader program as soon as no live material uses it, so disposing the warm-up
+      // set here would throw away the programs just compiled. Keep it off-scene until the next warm-up.
+      this.releaseWarmup?.();
+      this.releaseWarmup=()=>{
+        for(const presentation of presentations)presentation.dispose();
+        for(const fighter of fighters)disposeTree(fighter,false);
+        for(const avatar of avatars){avatar.dispose(this.scene);disposeTree(avatar.root,false);}
+      };
       this.renderer.shadowMap.needsUpdate=true;
     }
   }
@@ -564,6 +592,10 @@ export class Viewmodel {
     this.flash.scale.setScalar(0.16);
     this.flash.visible = false;
     this.root.add(this.flash);
+    // A hidden casing keeps the shell shader compiled by the loadout warm-up, so the first shot never compiles it.
+    const spare = new THREE.Mesh(this.shellGeo, this.shellMat);
+    spare.visible = false;
+    this.root.add(spare);
   }
 
   set(weapon: number, skin: number) {
