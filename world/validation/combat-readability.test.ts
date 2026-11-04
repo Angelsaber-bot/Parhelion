@@ -57,7 +57,7 @@ test('existing health bar and localized boss HUD show 2x only when a real playab
     }
     e.mode='recover';e.staggerCooldown=0;
     combat.present(0,e.p,false);
-    assert.equal(v.bar.scale.y,1);assert.match(internal.bossHud.querySelector('small').textContent,/Combat paused/);
+    assert.equal(v.bar.scale.y,1);assert.equal(internal.bossHud.querySelector('small').textContent,'','a paused fight shows no cue at all');
     combat.present(0,e.p,true);setLanguage('zh');combat.present(0,e.p,true);
     assert.match(internal.bossHud.querySelector('small').textContent,/破绽 · 近战 ×2/);
     e.active=false;combat.present(0,e.p,true);assert.equal(v.bar.scale.y,1);assert.doesNotMatch(internal.bossHud.querySelector('small').textContent,/×2/);
@@ -67,7 +67,8 @@ test('existing health bar and localized boss HUD show 2x only when a real playab
 for(const id of bossIds) test(`${id}: hints follow every actual attack footprint, not its last attack or an invented core`,()=>{
   const {combat,enemy:e,internal,messages}=fixture(id);
   try {
-    assert.ok(messages.length>0);assert.doesNotMatch(messages.join(' '),/射击.*核心|射击.*火核|shoot.*core|fire at|ice heart|cold lamp/);
+    // The title card names the boss on its rise; no toast may ever point the player at a core.
+    assert.doesNotMatch(messages.join(' '),/射击.*核心|射击.*火核|shoot.*core|fire at|ice heart|cold lamp/);
     setLanguage('en');e.mode='windup';e.timer=.8;
     for(const [attack,words] of [['thrust',/sidestep the lane/],['shot',/small circle or take cover/],['burst',/circle/],['sweep',/sweep|move away/i]] as const) {
       e.attack=attack;combat.present(0,e.p,true);
@@ -76,7 +77,7 @@ for(const id of bossIds) test(`${id}: hints follow every actual attack footprint
       assert.equal(internal.visuals.get(e.id).tell.visible,true);
     }
     e.mode='chase';combat.present(0,e.p,true);
-    assert.match(internal.bossHud.querySelector('small').textContent,/Read tells/);
+    assert.equal(internal.bossHud.querySelector('small').textContent,'','between attacks the boss bar carries no advice text');
     assert.doesNotMatch(internal.bossHud.querySelector('small').textContent,/core|cold lamp|ice heart/);
   } finally {combat.dispose();setLanguage('zh');}
 });

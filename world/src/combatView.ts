@@ -67,8 +67,8 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   boss_vacant_king: {
     name: ['空位之王', 'THE VACANT KING'],
     start: ['空位之王苏醒：看清预警，避招后近身反击！', 'The Vacant King awakens: read the tells, evade, then punish up close!'],
-    reset: ['战斗重置：回到落日之核可再次挑战', 'Encounter reset: return to the Sun Core to retry.'],
-    phase: ['第二阶段 · 余烬暴怒：攻击加速，预警仍可闪避', 'Phase II · Ember Fury: faster attacks, still dodgeable.'],
+    reset: ['战斗重置', 'Encounter reset'],
+    phase: ['第二阶段 · 余烬暴怒', 'Phase II · Ember Fury'],
     victory: ['空位之王已击败 · 获得「落日誓约」纪念徽记', 'Vacant King defeated · Sunset Oath keepsake earned'],
     burst: ['日蚀冲击：离开红圈！', 'Eclipse burst: leave the red circle!'],
     sweep: ['王剑横扫：拉开距离！', 'Royal sweep: move away!'],
@@ -77,8 +77,8 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   boss_drowned_admiral: {
     name: ['亡航提督', 'THE DROWNED ADMIRAL'],
     start: ['亡航提督迎战：躲开落点与横斩，装填时近身反击！', 'The Drowned Admiral engages: evade impacts and sweeps; punish the reload up close!'],
-    reset: ['战斗重置：回到海之核可再次挑战', 'Encounter reset: return to the Sea Core to retry.'],
-    phase: ['第二阶段 · 怒潮：舷炮齐射更快，预警仍可闪避', 'Phase II · Raging Tide: faster broadsides, still dodgeable.'],
+    reset: ['战斗重置', 'Encounter reset'],
+    phase: ['第二阶段 · 怒潮', 'Phase II · Raging Tide'],
     victory: ['亡航提督已击败 · 获得「黑帆」纪念徽记', 'Drowned Admiral defeated · Black Sail keepsake earned'],
     burst: ['舷炮齐射：离开红圈！', 'Broadside: leave the red circle!'],
     sweep: ['甲板横斩：退出近身圆圈！', 'Deck sweep: leave the close-range circle!'],
@@ -87,8 +87,8 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   boss_winter_warden: {
     name: ['执冬者', 'THE WINTER WARDEN'],
     start: ['执冬者迎战：横移避开直刺，离开冰霜落点，再近身反击！', 'The Winter Warden engages: sidestep thrusts, leave frost impacts, then punish up close!'],
-    reset: ['战斗重置：回到冬之核可再次挑战', 'Encounter reset: return to the Winter Core to retry.'],
-    phase: ['第二阶段 · 暴风雪：攻势更快，预警仍可闪避', 'Phase II · Blizzard: faster attacks, still dodgeable.'],
+    reset: ['战斗重置', 'Encounter reset'],
+    phase: ['第二阶段 · 暴风雪', 'Phase II · Blizzard'],
     victory: ['执冬者已击败 · 获得「最后的鹰」纪念徽记', 'Winter Warden defeated · Last Eagle keepsake earned'],
     burst: ['冰枪坠落：离开红圈！', 'Falling ice lances: leave the red circle!'],
     sweep: ['寒霜横扫：拉开距离！', 'Frost sweep: move away!'],
@@ -97,8 +97,8 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
   boss_hellfire_lord: {
     name: ['业火之主', 'THE LORD OF HELLFIRE'],
     start: ['业火之主迎战：留意连续横斩与直刺，抓住收招破绽！', 'The Lord of Hellfire engages: watch for chained sweeps and thrusts; punish the recovery!'],
-    reset: ['战斗重置：回到京之核可再次挑战', 'Encounter reset: return to the Kyoto Core to retry.'],
-    phase: ['第二阶段 · 天魔焚城：攻势更快，预警仍可闪避', 'Phase II · Demon Fire: faster attacks, still dodgeable.'],
+    reset: ['战斗重置', 'Encounter reset'],
+    phase: ['第二阶段 · 天魔焚城', 'Phase II · Demon Fire'],
     victory: ['业火之主已击败 · 获得「二天」纪念徽记', 'Lord of Hellfire defeated · Two Heavens keepsake earned'],
     burst: ['火雨坠落：离开红圈！', 'Rain of fire: leave the red circle!'],
     sweep: ['烈焰横扫：拉开距离！', 'Flame sweep: move away!'],
@@ -112,23 +112,24 @@ const SHOT_WEIGHT: Record<string, { bolt: number; flash: number }> = {
   lumen: { bolt: 1, flash: 1 }, firefly: { bolt: .75, flash: .7 }, corona: { bolt: .6, flash: 1.55 },
   halo: { bolt: 1.45, flash: 1.25 }, longnight: { bolt: 2.1, flash: 1.8 },
 };
-function gunLabel(gun: { name?: readonly [string, string]; id?: string }) { return gun.name && gun.id !== 'lumen' ? `${bilingual(gun.name[0].split(' · ')[0], gun.name[1])} · ` : ''; }
+/**
+ * A fight only puts words on screen while they are actionable this instant: an incoming attack's
+ * footprint, an open punish window, a broken guard, or an interrupted/recovering foe (normal damage,
+ * not a punish). Idle advice and status chatter are left to the telegraphs and poses in the scene.
+ */
 function counterHint(e: Enemy, playable: boolean): string {
-  if (!playable) return bilingual('战斗暂停', 'Combat paused');
-  if (e.mode === 'dead') return bilingual('已击败', 'Defeated');
-  if (e.pacified) return bilingual('已停战', 'Standing down');
-  if (!e.active) return bilingual('接近敌人开始交战', 'Move closer to engage');
+  if (!playable || e.mode === 'dead' || e.pacified || !e.active) return '';
   if (isMeleePunishWindow(e)) return `${bilingual('破绽 · 近战', 'PUNISH · MELEE')} ×${COMBAT.meleePunish} · ${Math.max(0,e.timer).toFixed(1)}s`;
-  if ((e.dazedFor ?? 0) > 0) return `${bilingual('失衡 · 全力输出', 'BROKEN · All-out attack')} ×${DAZE.taken} · ${Math.max(0, e.dazedFor ?? 0).toFixed(1)}s`;
+  if ((e.dazedFor ?? 0) > 0) return `${bilingual('失衡', 'BROKEN')} ×${DAZE.taken} · ${Math.max(0, e.dazedFor ?? 0).toFixed(1)}s`;
   if (e.mode === 'stagger') return bilingual('已打断 · 普通伤害', 'INTERRUPTED · Normal damage');
-  if (e.mode === 'recover') return bilingual('收招中 · 普通伤害', 'Recovering · Normal damage');
+  if (e.mode === 'recover') return bilingual('收招 · 普通伤害', 'Recovering · Normal damage');
   if (e.mode === 'windup') {
-    if (e.attack === 'thrust') return bilingual('锁定直刺：横移离开长条！', 'Locked thrust: sidestep the lane!');
-    if (e.attack === 'shot') return bilingual('锁定射击：离开小圈或找掩体！', 'Locked shot: leave the small circle or take cover!');
+    if (e.attack === 'thrust') return bilingual('直刺：横移离开长条', 'Thrust: sidestep the lane');
+    if (e.attack === 'shot') return bilingual('射击：离开小圈或找掩体', 'Shot: leave the small circle or take cover');
     if (e.kind === 'king') return bilingual(...bossText(e.id)[e.attack === 'burst' ? 'burst' : 'sweep']);
-    return e.attack === 'burst' ? bilingual('落点已锁定：离开红圈！', 'Impact locked: leave the red circle!') : bilingual('近身横扫：退出圆圈！', 'Close sweep: leave the circle!');
+    return e.attack === 'burst' ? bilingual('离开红圈', 'Leave the red circle') : bilingual('横扫：退出圆圈', 'Close sweep: leave the circle');
   }
-  return e.kind === 'king' ? bilingual('看预警 · 躲招后反击 · 离场重置', 'Read tells · Evade, then counter · Leaving resets') : bilingual(...ENEMY_ROLES[e.role].counter);
+  return '';
 }
 
 
@@ -198,7 +199,7 @@ export class WorldCombat {
     for (const enemy of this.state.enemies) this.visuals.set(enemy.id, this.makeEnemy(enemy));
     options.scene.add(this.effectGroup);
     this.hud.id = 'world-vitals'; this.hud.className = 'combat-hud';
-    this.hud.innerHTML = '<span></span><div class="combat-track"><div class="combat-fill"></div></div><small></small>';
+    this.hud.innerHTML = '<span></span><b class="combat-rounds"></b><div class="combat-track"><div class="combat-fill"></div></div><small></small>';
     this.bossHud.id = 'world-boss'; this.bossHud.className = 'combat-hud'; this.bossHud.hidden = true;
     this.bossHud.innerHTML = '<strong></strong><div class="combat-track"><div class="combat-fill"></div></div><div class="combat-daze-track"><div class="combat-daze"></div></div><small></small>';
     this.impact.id = 'world-impact'; this.impact.className = 'combat-hud';
@@ -575,7 +576,7 @@ export class WorldCombat {
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
       } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
-      else if (event.type === 'bossStart') { this.titleCard.show(this.state.boss.id, 'rise'); this.options.toast(bilingual(...bossText(this.state.boss.id).start)); }
+      else if (event.type === 'bossStart') this.titleCard.show(this.state.boss.id, 'rise'); // the title card names the boss; no advice toast
       else if (event.type === 'bossReset') this.hazardView.clear(), this.titleCard.hide(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
       else if (event.type === 'phase') { this.titleCard.show(this.state.boss.id, 'act'); this.options.toast(bilingual(...bossText(this.state.boss.id).phase)); }
       else if (event.type === 'victory') {
@@ -592,9 +593,12 @@ export class WorldCombat {
     }
   }
   private renderHud() {
-    const ammo = this.state.bossStarted ? bilingual('弹药 ∞ 日冕供能', 'AMMO ∞ corona-fed') : this.state.ammo > 0 ? `${gunLabel(this.state.gun)}${bilingual('弹药', 'AMMO')} ${this.state.ammo}/${WORLD_RIFLE.ammoMax}` : bilingual('弹药耗尽 · 近战', 'NO AMMO · melee');
+    // Just the numbers: health, then rounds (∞ while the corona feeds the gun in a boss fight).
+    const ammo = this.state.bossStarted ? '∞' : this.state.ammo > 0 ? `${this.state.ammo}` : bilingual('近战', 'MELEE');
     if (this.hud.dataset) this.hud.dataset.ammo = this.state.bossStarted ? 'boss' : this.state.ammo <= 0 ? 'empty' : this.state.ammo <= WORLD_RIFLE.ammoMax / 6 ? 'low' : 'ok';
-    this.hud.querySelector('span')!.textContent = `${bilingual('生命', 'HP')} ${Math.ceil(this.state.hp)} / ${this.state.maxHp} · ${ammo}` + (!this.state.bossStarted && this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${bilingual('散热', 'VENT')} ${this.state.gunVent.toFixed(1)}s` : this.state.gunHeat > 0 && this.state.gun.vent > 0 ? ` · ${bilingual('枪热', 'HEAT')} ${this.state.gunHeat}/${this.state.gun.burst}` : '');
+    this.hud.querySelector('span')!.textContent = `${Math.ceil(this.state.hp)}`;
+    const rounds = this.hud.querySelector('.combat-rounds');
+    if (rounds) rounds.textContent = ammo + (this.state.bossStarted || this.state.ammo <= 0 ? '' : this.state.gunVent > 0 ? ` · ${this.state.gunVent.toFixed(1)}s` : '');
     (this.hud.querySelector('.combat-fill') as HTMLElement).style.width = `${this.state.hp / this.state.maxHp * 100}%`;
     this.hud.title = bilingual('脱离战斗 5 秒后恢复生命', 'Health recovers after 5 seconds out of combat');
     this.bossHud.hidden = !this.state.bossStarted;
@@ -613,11 +617,12 @@ export class WorldCombat {
     const nearestPunish = playable && nearest && !nearest.pacified && isMeleePunishWindow(nearest);
     nearestHint.className = nearestPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
     const nearestElite = nearest?.miniboss ? MINIBOSSES.find(m => m.id === nearest.miniboss) : undefined;
-    nearestHint.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('中继已接管 · 哨卫休眠 · 无需攻击', 'Relay restored · Sentinel dormant · Non-hostile') : bilingual('旧誓试炼已完成 · 护路者停战 · 无需攻击', 'Oath trial complete · Road wardens stand down · Non-hostile')) : nearest && nearest.kind !== 'king' ? `${nearestElite ? bilingual(...nearestElite.name) : bilingual(...ENEMY_ROLES[nearest.role].name)} · ${counterHint(nearest,playable)}` : '';
+    const nearestCue = nearest && nearest.kind !== 'king' ? counterHint(nearest, playable) : '';
+    nearestHint.textContent = nearest?.pacified ? (nearest.id.startsWith('wild_48') ? bilingual('哨卫休眠', 'Sentinel dormant') : bilingual('护路者停战', 'Wardens stand down')) : nearestCue ? `${nearestElite ? bilingual(...nearestElite.name) : bilingual(...ENEMY_ROLES[nearest!.role].name)} · ${nearestCue}` : '';
     const b = this.state.boss, bossHint = this.bossHud.querySelector('small')!;
     const bossPunish = playable && b.active && !b.pacified && isMeleePunishWindow(b);
     bossHint.className = bossPunish ? 'combat-counter combat-counter--punish' : 'combat-counter';
-    if (b) bossHint.textContent = `${bilingual('阶段', 'Phase')} ${b.phase} · ${Math.ceil(b.hp)} / ${b.maxHp} · ${counterHint(b,playable)}`;
+    if (b) bossHint.textContent = counterHint(b, playable);
     this.defeat.hidden = !this.state.defeated;
     this.defeat.textContent = bilingual('你倒下了\n即将回到安全地点 · 进度保留', 'You have fallen\nReturning to safety · Progress is kept');
   }

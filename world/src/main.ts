@@ -489,7 +489,7 @@ addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();})
 let ammoDryPulls=0,ammoHintAt=-1e9,ammoRefillAt=-1e9;
 function fieldAmmo(){
   const st=combat.state,t=performance.now();
-  if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;toast(bilingual(`弹药耗尽：用 ${settings.label('melee')} 近战，击倒敌人、开宝箱或回到据点补给弹药。`,`Out of ammo: melee with ${settings.label('melee')}. Kills, chests and settlements resupply rounds.`));}}
+  if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;toast(bilingual(`弹药耗尽 · ${settings.label('melee')} 近战`,`Out of ammo · ${settings.label('melee')} melee`));}}
   if(!gameplayActive()||combat.defeated||st.ammo>=WORLD_RIFLE.ammoMax||st.quietFor<2||t-ammoRefillAt<1500)return;
   const home=settlements.placements.find(p=>Math.hypot(player.pos.x-p.position[0],player.pos.z-p.position[2])<Math.hypot(...p.footprint)/2+18);
   if(!home)return;
@@ -1113,7 +1113,7 @@ let locked = false, dragLook = false;
 const start = $('start');
 const dragEntry=document.createElement('button');dragEntry.id='world-drag-controls';dragEntry.hidden=true;
 const renderDragEntry=()=>{dragEntry.textContent=bilingual('使用拖拽视角进入 · 无需锁定鼠标','Enter with drag camera · No pointer lock');};renderDragEntry();onLanguageChange(renderDragEntry);start.append(dragEntry);
-dragEntry.onclick=event=>{event.stopPropagation();if(bootFailed||worldExited||graphicsRecovery?.blocked)return;audio.unlock(event);dragLook=true;locked=true;clearInput();invalidateFrameClock();start.classList.add('hidden');$('settings-open').classList.add('hidden');languageToggle.hidden=true;toast(bilingual('右键拖拽或方向键转动视角；WASD 移动，左键射击，Esc 暂停。','Right-drag or arrow keys to look; WASD to move, left-click to fire, Esc to pause.'));};
+dragEntry.onclick=event=>{event.stopPropagation();if(bootFailed||worldExited||graphicsRecovery?.blocked)return;audio.unlock(event);dragLook=true;locked=true;clearInput();invalidateFrameClock();start.classList.add('hidden');$('settings-open').classList.add('hidden');languageToggle.hidden=true;toast(bilingual('右键拖拽转动视角','Right-drag to look'));};
 
 // Screenshot mode leaves only the canvas; only a click on the screen restores the HUD.
 $('shot-mode').addEventListener('click', (e) => { e.stopPropagation(); document.body.classList.add('shot-mode'); });
@@ -1138,7 +1138,7 @@ if (typeof document.querySelector === 'function') {
   const group = document.createElement('div'); group.className = 'settings-sliders';
   const title = document.createElement('p'); title.className = 'settings-note'; title.textContent = '界面显示'; group.append(title);
   for (const [id, text] of panels) {
-    try { const preference=localStorage.getItem(`parhelion.world.hide.${id}`);if(preference==='1'||(id==='help'&&preference!=='0'))$(id).style.display='none'; } catch { if(id==='help')$(id).style.display='none'; }
+    try { const preference=localStorage.getItem(`parhelion.world.hide.${id}`);if(preference==='1'||((id==='help'||id==='contract-card')&&preference!=='0'))$(id).style.display='none'; } catch { if(id==='help'||id==='contract-card')$(id).style.display='none'; }
     const label = document.createElement('label'); label.className = 'settings-check';
     const box = document.createElement('input'); box.type = 'checkbox'; box.dataset.hudPanel = id; box.checked = $(id).style.display !== 'none';
     box.addEventListener('change', () => togglePanel(id, !box.checked));
@@ -1529,7 +1529,7 @@ const coopPanel=createCoopPanel({
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active,
 });
 const coopOpen=document.createElement('button');coopOpen.type='button';coopOpen.id='world-coop-open';
-const renderCoopButton=()=>{const s=coop.session.status;coopOpen.textContent=s==='paired'?bilingual(`双人联机 · 已连接 ${coop.session.code}`,`Co-op · Connected ${coop.session.code}`):s==='waiting'?bilingual(`双人联机 · 房间 ${coop.session.code} 等待中`,`Co-op · Room ${coop.session.code} waiting`):bilingual('双人联机 · 和朋友一起探索','Co-op · Explore with a friend');};renderCoopButton();
+const renderCoopButton=()=>{const s=coop.session.status;coopOpen.textContent=s==='paired'?bilingual(`双人联机 · 已连接 ${coop.session.code}`,`Co-op · Connected ${coop.session.code}`):s==='waiting'?bilingual(`双人联机 · 房间 ${coop.session.code} 等待中`,`Co-op · Room ${coop.session.code} waiting`):bilingual('双人联机','Co-op');};renderCoopButton();
 const unsubscribeCoop=onLanguageChange(renderCoopButton);
 coopOpen.onclick=event=>{event.stopPropagation();coopPanel.show();};start.append(coopOpen);
 {const room=normalizeRoomCode(params.get('room')??'');if(room)coop.join(room);}

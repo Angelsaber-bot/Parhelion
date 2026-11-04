@@ -624,7 +624,7 @@ export function createExploration(host: ExplorationHost) {
   }
 
   // ───────────────────────── per-frame ─────────────────────────
-  let lastRegion: RegionId | null = null, time = 0, hudRev = '';
+  let lastRegion: RegionId | null = null, time = 0, hudRev = '', hudPeekUntil = 0;
   function update(dt: number, player: PlayerView, region: RegionId, active: boolean) {
     time += dt;
     const pp = player.pos;
@@ -729,9 +729,13 @@ export function createExploration(host: ExplorationHost) {
     hud.hidden = !active || ex.total === 0;
     const left = commissionsLeft(), next = left.find(c => c.region === region) ?? left[0];
     const rev = `${region}|${ex.done}|${totalCrystals(done)}|${feathersHeld(done)}|${glideLevel(done)}|${document.documentElement.lang}|${board.day}|${next?.n}|${next ? huntProgress(done, board.day, next.n) : ''}`;
+    // The panel only surfaces for a few seconds when something in it changes (new region,
+    // a find, a commission step), then gets out of the way.
+    const now = typeof performance === 'undefined' ? time * 1000 : performance.now();
+    if (hudPeekUntil && now > hudPeekUntil) { hudPeekUntil = 0; hud.classList?.remove('xp-peek'); }
     if (!hud.hidden && rev !== hudRev) {
-      hudRev = rev;
-      hud.querySelector('.xp-region')!.textContent = `${L(REGION_NAMES[region] ?? ['', ''])} · ${bilingual('探索度', 'Explored')} ${ex.percent}%`;
+      hudRev = rev; hudPeekUntil = now + 5000; hud.classList?.add('xp-peek');
+      hud.querySelector('.xp-region')!.textContent = `${L(REGION_NAMES[region] ?? ['', ''])} · ${ex.percent}%`;
       (hud.querySelector('.xp-bar i') as HTMLElement).style.width = `${ex.percent}%`;
       hud.querySelector('.xp-stats')!.textContent = bilingual(`日晕晶 ${totalCrystals(done)} · 日晕之羽 ${feathersHeld(done)} · 滑翔 Lv.${glideLevel(done)}`, `Crystals ${totalCrystals(done)} · Feathers ${feathersHeld(done)} · Glider Lv.${glideLevel(done)}`);
       const total = board.list.length, finished = total - left.length;

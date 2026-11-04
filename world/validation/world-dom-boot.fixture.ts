@@ -36,6 +36,8 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   const html=await readFile(resolve(world,'index.html'),'utf8');
   const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}${options.streaming?'':'&eager'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
   // Test-only pre-boot snapshots exercise the real migration path, not post-boot flag injection.
+  // DOM tests read the Chinese source text unless they pick a language themselves.
+  window.localStorage.setItem('parhelion-language-v1', 'zh');
   for (const [key, value] of Object.entries(options.initialStorage ?? {})) window.localStorage.setItem(key, value);
   const errors:unknown[][]=[],warnings:unknown[][]=[],frames:FrameRequestCallback[]=[];
   let simulatedNow=0;

@@ -10,14 +10,15 @@ afterEach(() => setLanguage('zh'));
 test('language selection persists, tolerates broken storage, and notifies once per change', () => {
   const values = new Map<string, string>();
   const storage = { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string, value: string) => { values.set(key, value); } };
-  assert.equal(readLanguage(storage), 'zh');
+  assert.equal(readLanguage(storage), 'en', 'a first visit starts in English');
+  assert.equal(readLanguage(undefined), 'zh', 'no browser storage keeps the source text');
   let calls = 0; const unsubscribe = onLanguageChange(() => calls++);
   setLanguage('en', storage); setLanguage('en', storage);
   assert.equal(values.get(LANGUAGE_KEY), 'en'); assert.equal(readLanguage(storage), 'en'); assert.equal(getLanguage(), 'en'); assert.equal(calls, 1);
-  unsubscribe(); setLanguage('zh', storage); assert.equal(calls, 1);
+  unsubscribe(); setLanguage('zh', storage); assert.equal(calls, 1); assert.equal(readLanguage(storage), 'zh', 'a chosen Chinese is remembered');
   const blocked = { getItem(): never { throw Error('blocked'); }, setItem(): never { throw Error('blocked'); } };
-  assert.equal(readLanguage(blocked), 'zh'); setLanguage('en', blocked); assert.equal(getLanguage(), 'en');
-  values.set(LANGUAGE_KEY, 'not-a-language'); assert.equal(readLanguage(storage), 'zh');
+  assert.equal(readLanguage(blocked), 'en'); setLanguage('en', blocked); assert.equal(getLanguage(), 'en');
+  values.set(LANGUAGE_KEY, 'not-a-language'); assert.equal(readLanguage(storage), 'en');
 });
 test('typed dictionary has paired entries, interpolation never leaks raw keys, and source fallback is safe', () => {
   for (const [key, entry] of Object.entries(MESSAGES)) { assert.ok(entry.zh, key); assert.ok(entry.en, key); }

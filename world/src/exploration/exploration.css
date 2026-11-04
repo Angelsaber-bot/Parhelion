@@ -4,6 +4,7 @@
 #xp-hud .xp-bar{margin:5px 0 4px auto;width:100%;height:3px;background:#ffffff26;border-radius:2px;overflow:hidden}
 #xp-hud .xp-bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#f5d58a,#fff4cf);transition:width .6s ease}
 #xp-hud .xp-stats{opacity:.82;font-size:10px}
+#xp-hud{opacity:0;transition:opacity .6s ease}#xp-hud.xp-peek{opacity:1;transition-duration:.25s}
 #xp-hud .xp-comm{margin-top:5px;padding-top:4px;border-top:1px solid #ffd36b33;font-size:10.5px;line-height:1.45}
 #xp-hud .xp-comm b{display:block;font-weight:600;color:#ffd36b;letter-spacing:.04em}
 #xp-hud .xp-comm span{display:block;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}

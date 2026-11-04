@@ -94,3 +94,30 @@ footer{display:flex;justify-content:space-between;gap:16px;padding:22px clamp(20
 .parhelion-language>span{display:none}
 .parhelion-language select{padding:6px 10px;color:#eaf3f5;border:1px solid #ffffff4d;background:#15283bcc;border-radius:999px;font:inherit;cursor:pointer}
 .parhelion-language select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+/* ---------- calm dark pass: one continuous night-sky page, pictures carry the content ---------- */
+:root{color-scheme:dark;--page:#0a1428;--page2:#0f1d38;--card:#13223f;--ink2:#e9f0fb;--muted2:#9fb0c9;--line2:#ffffff14}
+body{background:linear-gradient(180deg,var(--navy) 0,var(--page) 100svh,var(--page2) 100%);color:var(--ink2)}
+.hero-shade{background:linear-gradient(90deg,#08142be6 0%,#0a1a38a8 34%,#0b1a3a30 62%,transparent 80%),linear-gradient(0deg,var(--navy) 0%,transparent 30%),linear-gradient(180deg,#08142b99 0%,transparent 18%)}
+.halo{opacity:.45}
+.lede{color:#c9d6ea;font-size:15px;letter-spacing:2px}
+.cta{grid-template-columns:auto auto;padding:15px 24px 15px 26px}
+.cta-arrow{grid-row:1}
+.cta.primary::after{animation-duration:6s}
+h2{color:var(--ink2);font-size:clamp(24px,2.6vw,32px);font-weight:800;letter-spacing:3px}
+.section-head{margin-bottom:22px}
+.map-grid{gap:16px}
+.map-card{background:var(--card);box-shadow:0 14px 40px #0006;border:1px solid var(--line2)}
+.map-card:hover{transform:translateY(-6px);box-shadow:0 24px 60px #000a}
+.map-art{aspect-ratio:4/5;background:var(--page2)}
+.map-art::after{background:linear-gradient(180deg,transparent 45%,#0a1428e6 100%)}
+.map-body{position:absolute;left:0;right:0;bottom:0;padding:16px 18px;border-top:0;background:none}
+.map-body::before{content:"";display:block;width:26px;height:3px;margin-bottom:10px;border-radius:2px;background:var(--accent,var(--cyan))}
+.map-body h3{margin:0;color:#fff;font-size:15px;font-weight:800;letter-spacing:.6px;text-shadow:0 2px 10px #0008}
+.world-band{border:1px solid var(--line2);box-shadow:0 20px 60px #0007}
+.world-band::before{background:linear-gradient(90deg,#071a14e6,#0b241c88 42%,transparent 72%)}
+.region{background:#ffffff14;border:1px solid #ffffff3d}
+.region:hover{background:#ffffff2b}
+footer{justify-content:center;border-top:1px solid var(--line2);color:#6f82a3}
+@media(max-width:1100px){.map-art{aspect-ratio:4/3}}
+@media(max-width:560px){.map-art{aspect-ratio:16/9}.cta{justify-content:space-between}}

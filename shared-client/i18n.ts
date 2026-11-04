@@ -12,8 +12,14 @@ export const MESSAGES = {
 } as const;
 export type MessageKey = keyof typeof MESSAGES;
 function browserStorage(): LocaleStorage | undefined { try { return typeof localStorage === 'undefined' ? undefined : localStorage; } catch { return undefined; } }
+/**
+ * Players start in English; Chinese is one pick away in the language menu and is remembered.
+ * Without any browser storage (Node tools, the server) the Chinese source text is used as-is.
+ */
+export const DEFAULT_LANGUAGE: Language = 'en';
 export function readLanguage(storage: LocaleStorage | undefined = browserStorage()): Language {
-  try { return storage?.getItem(LANGUAGE_KEY) === 'en' ? 'en' : 'zh'; } catch { return 'zh'; }
+  if (!storage) return 'zh';
+  try { const stored = storage.getItem(LANGUAGE_KEY); return stored === 'zh' || stored === 'en' ? stored : DEFAULT_LANGUAGE; } catch { return DEFAULT_LANGUAGE; }
 }
 let current: Language = readLanguage();
 const listeners = new Set<() => void>();
@@ -107,6 +113,6 @@ export function createLanguageToggle(parent: HTMLElement = document.body): HTMLE
 if (typeof document !== 'undefined') document.documentElement.lang = current === 'zh' ? 'zh-CN' : 'en';
 if (typeof window !== 'undefined') window.addEventListener('storage', (event) => {
   if (event.key !== LANGUAGE_KEY) return;
-  const next = event.newValue === 'en' ? 'en' : 'zh';
+  const next = event.newValue === 'zh' ? 'zh' : event.newValue === 'en' ? 'en' : DEFAULT_LANGUAGE;
   if (next !== current) setLanguage(next);
 });

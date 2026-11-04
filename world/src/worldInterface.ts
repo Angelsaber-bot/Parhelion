@@ -22,6 +22,7 @@ export function installWorldInterface(options:InterfaceOptions){
  const dragEntry=get('world-drag-controls');
  navigation.append(get('world-quest-journal-open'),get('world-travel-open'),get('settings-open'));
  more.append(get('world-adventure-continue'),get('servant-open'));
+ const coopOpen=document.getElementById('world-coop-open');const summary=more.querySelector('summary');if(coopOpen){if(summary)summary.after(coopOpen);else more.prepend(coopOpen);}
  const locale=document.querySelector<HTMLElement>('body > .parhelion-language');
  const bottom=document.createElement('div');bottom.className='world-menu-bottom';if(locale)bottom.append(locale);
  const footer=document.createElement('div');footer.id='world-shortcuts';footer.className='hud';
