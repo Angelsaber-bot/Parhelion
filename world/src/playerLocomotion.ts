@@ -32,17 +32,24 @@ export function advancePlayerStride(previous: number, target: number, dt: number
   return { speed: next, phase: cycles * Math.PI * 2 };
 }
 
+/** 0 at the default jog (5.5 m/s), 1 at a full sprint (9 m/s). */
+export function sprintWeight(speed: number) { return THREE.MathUtils.smoothstep(speed, 5.6, 9); }
+
 export function samplePlayerFoot(phase: number, speed: number) {
   const { stance, reach, lift } = playerStride(speed);
   const p = ((phase / (Math.PI * 2)) % 1 + 1) % 1;
   if (p < stance) return { z: reach * (1 - 2 * p / stance), y: 0, swing: 0, contact: true };
   const u = (p - stance) / (1 - stance), u2 = u * u, u3 = u2 * u;
   // Hermite return matches stance velocity at both ends; no toe-off/landing position kink.
-  const tangent = -2 * reach / stance * (1 - stance);
-  const z = (2 * u3 - 3 * u2 + 1) * -reach + (u3 - 2 * u2 + u) * tangent
-    + (-2 * u3 + 3 * u2) * reach + (u3 - u2) * tangent;
+  const tangent = -2 * reach / stance * (1 - stance), sprint = sprintWeight(speed);
+  // Sprinting, the trailing foot folds up behind the hip rather than sweeping far back along the floor.
+  const z = (2 * u3 - 3 * u2 + 1) * -reach + (u3 - 2 * u2 + u) * tangent * (1 - .7 * sprint)
+    + (-2 * u3 + 3 * u2) * reach + (u3 - u2) * tangent * (1 - .35 * sprint);
   const swing = Math.sin(Math.PI * u) ** 2;
-  return { z, y: lift * swing, swing, contact: false };
+  // A sprint folds the trailing heel up under the hip before the knee drives through; a jog keeps
+  // its low, quiet recovery. Zero at both ends of the swing, so contact is untouched.
+  const heel = .7 * sprint * swing * ((1.15 - u) / 1.15) ** 2;
+  return { z, y: lift * swing + heel, swing, contact: false };
 }
 
 function setWorldQuaternion(bone: THREE.Object3D, world: THREE.Quaternion) {

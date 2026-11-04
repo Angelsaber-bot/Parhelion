@@ -362,7 +362,8 @@ export class SkinnedCharacterAnimator {
     hipOffset.y -= meleeGround * (.035 + heavyBlend * .02 + load * (.04 + heavyBlend * .025));
     hipOffset.x += meleeGround * (meleeStroke - .5) * (.06 - heavyBlend * .035) * (meleeCut === 1 ? -1 : 1);
     hipOffset.z += meleeGround * (.015 + Math.sin(meleeStroke * Math.PI) * (heavy ? .035 : .02));
-    const meleeTwist = meleeGround * (meleeStroke - .5) * (.62 - heavyBlend * .38) * (meleeCut === 1 ? -1 : 1);
+    // Mirrors the live animator's melee coil (2026-11-04) so this fixture still isolates the ADS pole.
+    const meleeTwist = meleeGround * (meleeStroke - .5) * (1.0 - heavyBlend * .55) * (meleeCut === 1 ? -1 : 1);
     const meleeLean = meleeGround * (heavy ? THREE.MathUtils.lerp(.065, -.06 + meleeStroke * .30, heavyBlend) : .065 + Math.sin(meleeStroke * Math.PI) * .055);
     const parentRestQ = hip.parent ? hip.parent.getWorldQuaternion(Q()) : Q();
     const rootQ = rig.root.getWorldQuaternion(Q());
@@ -377,7 +378,7 @@ export class SkinnedCharacterAnimator {
     rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (armed ? carry : 1 - g));
     rotation('Shoulder_R', 0, .05 * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (!armed ? 1 - g : 0));
     // Camera may look almost vertically; a human neck must not inherit that entire rotation.
-    rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim);
+    rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim, -meleeTwist * .35);
     rotation('Head', -bodyLean * .55 - meleeLean * .4 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim), 0, weightTransfer.turn * .55);
     const thighAngles: Record<Side, number> = { R: 0, L: 0 };
     for (const [side, sign] of [['L', 1], ['R', -1]] as const) {
@@ -479,7 +480,7 @@ export class SkinnedCharacterAnimator {
         const bladePoint = side === 'R'
           ? V(meleeCut === 1 ? -.04 - cut * .31 : -.35 + cut * .31,
               shoulderY - .39 + (meleeCut === 2 ? .02 * (1 - heavyBlend) + .64 * Math.sin(Math.min(1, meleePhase / .20) * Math.PI / 2) * Math.pow(1 - cut, 1.4) : .02), .23 + Math.sin(cut * Math.PI) * .035 + (heavy ? cut * .07 : 0))
-          : V(.26 + Math.sin(cut * Math.PI) * .025, shoulderY - .24 + (heavy ? .10 * heavyBlend * (1 - cut) : 0), .18);
+          : V(.26 + Math.sin(cut * Math.PI) * .07, shoulderY - .24 - .06 * Math.sin(cut * Math.PI) + (heavy ? .10 * heavyBlend * (1 - cut) : 0), .2 - .2 * cut * (1 - heavyBlend * .5));
         freePoint.lerp(bladePoint, meleeWeight);
       }
       const palmPoint = rig.root.localToWorld(freePoint);
