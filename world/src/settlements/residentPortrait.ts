@@ -39,9 +39,9 @@ export function residentLook(seed:number,region:RegionId):ResidentLook{
 export function createResidentPortrait(region:RegionId,look?:ResidentLook){
  const p:PortraitProfile=look?.profile??RESIDENT_PORTRAITS[region],owned=new Set<THREE.BufferGeometry>(),head:PortraitPart[]=[],eyes:PortraitPart[]=[],coat:PortraitPart[]=[];
  const own=<T extends THREE.BufferGeometry>(g:T)=>{owned.add(g);return g;};
- const sphere=own(new THREE.SphereGeometry(1,16,10)),box=own(new THREE.BoxGeometry(1,1,1));
+ const sphere=own(new THREE.SphereGeometry(1,16,10)),eyeSphere=own(new THREE.SphereGeometry(1,12,8)),box=own(new THREE.BoxGeometry(1,1,1));
  const add=(list:PortraitPart[],g:THREE.BufferGeometry,c:number,pos:[number,number,number],scale:[number,number,number]=[1,1,1],rot?:[number,number,number])=>list.push({g,c,p:pos,s:scale,...(rot?{r:rot}:{})});
- const ell=(list:PortraitPart[],c:number,pos:[number,number,number],scale:[number,number,number])=>add(list,sphere,c,pos,scale);
+ const ell=(list:PortraitPart[],c:number,pos:[number,number,number],scale:[number,number,number])=>add(list,list===eyes?eyeSphere:sphere,c,pos,scale);
  function line(list:PortraitPart[],points:[number,number,number][],radius:number,color:number){add(list,own(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(v)),12,radius,5,false)),color,[0,0,0]);}
  function strand(points:[number,number,number][],width:number,depth:number,color:number){
   // Ordinary residents carry more locks than a portrait, so each lock is cut a little coarser.

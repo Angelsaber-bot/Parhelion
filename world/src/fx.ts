@@ -22,7 +22,7 @@ function mulberry32(seed: number) {
  * stable (toroidal wrap), its height and colour are read from textures baked from the terrain,
  * and a mask texture removes blades from water, cliffs, paths and anything built on top.
  */
-export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number, opts: { count: number; size: number }) {
+export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: number, opts: { count: number; size: number; excluded?: Uint8Array }) {
   const n = grid.nx, nz = grid.nz;
   // bake colour+mask texture on the world grid (height comes from the grid's own texture)
   const cData = new Uint8Array(n * nz * 4);
@@ -30,11 +30,13 @@ export function makeGrassField(grid: WorldGrid, bvh: MeshBVH, waterLevel: number
   for (let k = 0; k < n * nz; k++) {
     const x = grid.x0 + (k % n) * grid.cell, z = grid.z0 + Math.floor(k / n) * grid.cell, y = grid.h[k];
     const r = grid.col[k * 3], gg = grid.col[k * 3 + 1], b = grid.col[k * 3 + 2];
-    let mask = y > waterLevel + 0.6 && grid.ny[k] > 0.8 && gg > r * 1.12 && gg > b * 1.25 ? 1 : 0;
+    let mask = !opts.excluded?.[k] && y > waterLevel + 0.6 && grid.ny[k] > 0.8 && gg > r * 1.12 && gg > b * 1.25 ? 1 : 0;
     if (mask) {
       ray.origin.set(x, y + 40, z);
-      const hit = bvh.raycastFirst(ray, THREE.DoubleSide);
-      if (hit && hit.point.y > y + 0.6) mask = 0;
+      // Query construction without the terrain itself. Coplanar castle paving
+      // and thin decks are occupied ground too; a 60 cm threshold missed them.
+      const hit = builtBvh.raycastFirst(ray, THREE.DoubleSide);
+      if (hit && hit.point.y >= y - .1) mask = 0;
     }
     cData[k * 4] = Math.min(255, r * 255); cData[k * 4 + 1] = Math.min(255, gg * 255); cData[k * 4 + 2] = Math.min(255, b * 255);
     cData[k * 4 + 3] = mask * 255;

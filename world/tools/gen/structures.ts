@@ -286,9 +286,8 @@ export function buildStructures(heightAt: HeightAt) {
     b.box(x1, floor, (z0 + z1) / 2, 1, ceil - floor, z1 - z0, PAL.rock);
     b.box(x0, floor, (z0 - 64) / 2, 1, ceil - floor, -64 - z0, PAL.rock);
     b.box(x0, floor, (-56 + z1) / 2, 1, ceil - floor, z1 + 56, PAL.rock);
-    // chest + data log
-    b.box(188, floor, -60, 1.6, 1, 1, PAL.gold);
-    b.box(188, floor + 1, -60, 1.6, 0.3, 1, PAL.orange);
+    // The interactive chest is authored by exploration/content/alpha.ts.
+    // Keep the chamber and discovery log here, without a second inert box.
     pieces.push({ name: 'Cave', material: 'M_Toon', batch: b, outline: true });
     const rng = mulberry32(WORLD.seed + 13);
     for (let i = 0; i < 9; i++) {
@@ -318,7 +317,7 @@ export function buildStructures(heightAt: HeightAt) {
       const a = k * 0.72;
       b.box(cx + Math.cos(a) * 4.6, y + 0.85 * k - 0.45, cz + Math.sin(a) * 4.6, 1.9, 0.45, 1.9, k % 3 ? PAL.stone : PAL.moss, a);
     }
-    b.box(cx, top, cz, 1.2, 0.8, 0.8, PAL.gold);
+    // Runtime owns the real chest and its collider on this pillar top.
     pieces.push({ name: 'Island', material: 'M_Toon', batch: b, outline: true });
     mk({ id: 'secret_pillar', type: 'discovery', label: '湖心石柱宝箱', p: [cx, top, cz], radius: 2.5, note: '跳台小挑战' });
   }

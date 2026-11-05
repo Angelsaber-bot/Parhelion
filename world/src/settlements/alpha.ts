@@ -1,11 +1,18 @@
 import * as THREE from 'three';
 import type { SettlementKit } from './types';
 import { SettlementArt } from './valleyBritainArt';
+import { residenceCraft } from './residenceCraft';
+import {applyCraftSurface} from './craftSurface';
 
 /** A quiet U-shaped residence annex: shared dining, two sleeping wings and a garden court. */
 export function buildAlphaSettlement(): SettlementKit {
   const a = new SettlementArt();
   const ivory = '#e9e6d8', blue = '#344c69', bronze = '#b89c67', dark = '#314353', glass = '#87c7d4', wood = '#8d6951';
+  for(const color of[ivory,'#dedace'])applyCraftSurface(a.mat(color),'plaster');
+  for(const color of[wood,'#b8b2a3'])applyCraftSurface(a.mat(color),'wood');
+  for(const color of['#619493','#8d86b1','#6d9693'])applyCraftSurface(a.mat(color),'cloth');
+  for(const color of['#adafba','#c9c9be','#d1c9b7'])applyCraftSurface(a.mat(color),'stone');
+  applyCraftSurface(a.mat(blue),'slate');
   a.box('residence_court_foundation', [0, -.24, 0], [34, .32, 29], '#adafba', true);
   a.box('residence_court_paving', [0, -.025, 5.6], [27, .07, 16], '#c9c9be', true);
   for (const side of [-1, 1]) {
@@ -18,7 +25,11 @@ export function buildAlphaSettlement(): SettlementKit {
   // Fine joints and a deliberately clear central approach, not a decorative obstacle course.
   for (let x = -12; x <= 12; x += 3) a.box('paving_joint', [x, .018, 6], [.025, .012, 15], '#a1a7a5');
   for (let z = -1; z < 14; z += 3) a.box('paving_joint', [0, .018, z], [27, .012, .025], '#a1a7a5');
-  a.room('residence', 0, -7, 28, 12, 4.7, ivory, 4.2);
+  a.box('residence_floor', [0,-.13,-7], [28,.26,12], '#b8b2a3', true);
+  const frontWindows=[-11,-5.5,5.5,11].map(center=>({center,width:2.4,bottom:1.55,top:3.45}));
+  a.windowWall('residence_front','x',0,-1,28,4.7,ivory,[...frontWindows,{center:0,width:4.2,bottom:0,top:4.1}]);
+  a.windowWall('residence_back','x',0,-13,28,4.7,ivory,[-10.5,10.5].map(center=>({center,width:2.2,bottom:1.7,top:3.4})));
+  for(const side of[-1,1])a.windowWall('residence_side','z',side*14,-7,12,4.7,ivory,[-3.5,.5,4].map(center=>({center,width:2.1,bottom:1.525,top:3.175})));
   a.gable('residence', 0, -7, 30, 14, 4.7, 2.15, blue, bronze);
   // Copper-and-glass roof lantern repeats the observatory's celestial language at a domestic scale.
   a.cyl('roof_lantern_pedestal', [0, 6.98, -7], 1.5, .28, bronze, false, .35);
@@ -63,13 +74,15 @@ export function buildAlphaSettlement(): SettlementKit {
     a.box('sleeping_wing_partition', [s * 5, 1.8, -9], [.22, 3.6, 8], '#dedace', true);
     a.box('sleeping_wing_cornice', [s * 5, 3.65, -9], [.36, .2, 8.2], bronze);
     for (const z of [-10.8, -6.6]) {
-      a.box('bed_frame', [s * 10.1, .32, z], [4, .64, 1.7], dark, true);
-      a.box('bed_mattress', [s * 10.1, .72, z], [3.85, .18, 1.6], '#f1ece2');
-      a.box('bed_folded_quilt', [s * 9.6, .84, z], [2.6, .13, 1.55], s < 0 ? '#619493' : '#8d86b1');
-      a.box('bed_pillow', [s * 11.5, .86, z], [.75, .18, 1.35], '#fff7e5');
-      a.box('bed_headboard', [s * 12.2, .82, z], [.16, 1.65, 1.9], wood);
+      a.rounded('bed_frame', [s * 10.1, .29, z], [2.35,.30,1.35], .045, dark, true);
+      a.rounded('bed_mattress', [s * 10.1, .53, z], [2.25,.23,1.29], .09, '#f1ece2');
+      a.rounded('bed_folded_quilt', [s * 9.86, .67, z], [1.65,.12,1.27], .035, s < 0 ? '#619493' : '#8d86b1');
+      a.rounded('bed_pillow', [s * 10.91, .69, z], [.43,.18,.87], .07, '#fff7e5');
+      a.rounded('bed_headboard', [s * 11.34, .66, z], [.12,1.25,1.5], .035, wood);
       a.box('bedside_chest', [s * 12.5, .45, z + 1.25], [.8, .9, .75], wood, true);
-      a.cyl('bedside_lamp', [s * 12.5, 1.17, z + 1.25], .2, .45, '#f2d593');
+      a.cyl('bedside_lamp_base', [s * 12.5, .95, z + 1.25], .17, .06, bronze);
+      a.cyl('bedside_lamp_stem', [s * 12.5, 1.09, z + 1.25], .025, .25, bronze);
+      a.mesh('bedside_lamp_shade',new THREE.CylinderGeometry(.12,.23,.27,16),a.mat('#f2d593',0,.2),[s*12.5,1.29,z+1.25],[1,1,1]);
     }
     // Courtyard pergola side wings: visibly distinct from the modern research buildings nearby.
     for (const z of [1.4, 7.7]) a.box('pergola_column', [s * 14.5, 1.7, z], [.25, 3.4, .25], dark, true);
@@ -112,6 +125,7 @@ export function buildAlphaSettlement(): SettlementKit {
   for (const x of [-1.1, 1.1]) a.beam('dining_lantern_suspension', [x, 4.6, -8.3], [x, 3.55, -8.3], .04, bronze);
   a.box('dining_lantern_frame', [0, 3.55, -8.3], [3.2, .16, .65], dark);
   a.box('dining_lantern_glow', [0, 3.44, -8.3], [2.85, .12, .48], '#f2d7a3', false, 0, .65);
+  residenceCraft(a);
   const group = a.finish('SET_Alpha_CompanionResidence');
   const light = new THREE.PointLight('#ffe8bc', 28, 20, 2); light.name = 'Residence_WarmFill';
   light.position.set(0, 3.25, -7.4); light.castShadow = false; group.add(light);

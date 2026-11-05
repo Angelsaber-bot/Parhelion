@@ -1,0 +1,2869 @@
+{
+  "mode": "Production main + real GLBs/BVH, renderer stubbed; not visual QA",
+  "hubs": [
+    {
+      "id": "alpha",
+      "triangles": 30598,
+      "meshes": 58,
+      "footprint": [
+        34,
+        30
+      ],
+      "materialSurfaces": [
+        "stone",
+        "plaster",
+        "wood",
+        "slate",
+        "cloth"
+      ]
+    },
+    {
+      "id": "britain",
+      "triangles": 5616,
+      "meshes": 58,
+      "footprint": [
+        38,
+        36
+      ],
+      "materialSurfaces": [
+        "stone",
+        "slate",
+        "wood"
+      ]
+    },
+    {
+      "id": "blacksail",
+      "triangles": 10392,
+      "meshes": 25,
+      "footprint": [
+        26,
+        36
+      ],
+      "materialSurfaces": [
+        "stone",
+        "wood",
+        "plaster",
+        "slate",
+        "paper",
+        "cloth"
+      ]
+    },
+    {
+      "id": "winter",
+      "triangles": 5640,
+      "meshes": 20,
+      "footprint": [
+        35,
+        31
+      ],
+      "materialSurfaces": [
+        "stone",
+        "wood",
+        "plaster",
+        "slate",
+        "cloth"
+      ]
+    },
+    {
+      "id": "kyoto",
+      "triangles": 17252,
+      "meshes": 24,
+      "footprint": [
+        35,
+        31
+      ],
+      "materialSurfaces": [
+        "stone",
+        "wood",
+        "plaster",
+        "slate",
+        "paper",
+        "cloth"
+      ]
+    }
+  ],
+  "chests": [
+    {
+      "id": "britain_puzzle_mistwood",
+      "region": "britain",
+      "position": [
+        -568,
+        8.313644409179688,
+        -124
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_puzzle_mistwood",
+      "owned": true,
+      "marker": [
+        -568,
+        9.213644409179688,
+        -124.9
+      ]
+    },
+    {
+      "id": "britain_puzzle_swordlake",
+      "region": "britain",
+      "position": [
+        -603,
+        4.753966331481934,
+        118
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_puzzle_swordlake",
+      "owned": true,
+      "marker": [
+        -603.9,
+        5.653966331481934,
+        118
+      ]
+    },
+    {
+      "id": "britain_puzzle_camelot",
+      "region": "britain",
+      "position": [
+        -740,
+        5.720792770385742,
+        -206
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_puzzle_camelot",
+      "owned": true,
+      "marker": [
+        -740.9,
+        6.6207927703857425,
+        -206
+      ]
+    },
+    {
+      "id": "britain_trial_camelot_glide",
+      "region": "britain",
+      "position": [
+        -808,
+        7.36879301071167,
+        -12
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_trial_camelot_glide",
+      "owned": true,
+      "marker": [
+        -808,
+        8.26879301071167,
+        -11.1
+      ]
+    },
+    {
+      "id": "britain_camp_mistcamp",
+      "region": "britain",
+      "position": [
+        -550,
+        8.247726440429688,
+        -88
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_mistcamp",
+      "owned": true,
+      "marker": [
+        -550,
+        9.147726440429688,
+        -87.1
+      ]
+    },
+    {
+      "id": "britain_camp_hillfort",
+      "region": "britain",
+      "position": [
+        -666,
+        14.411242485046387,
+        -291
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_hillfort",
+      "owned": true,
+      "marker": [
+        -666,
+        15.311242485046387,
+        -290.1
+      ]
+    },
+    {
+      "id": "britain_camp_camlann",
+      "region": "britain",
+      "position": [
+        -800,
+        8.291671752929688,
+        234
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_camlann",
+      "owned": true,
+      "marker": [
+        -800,
+        9.191671752929688,
+        234.9
+      ]
+    },
+    {
+      "id": "britain_domain_oath_cloister",
+      "region": "britain",
+      "position": [
+        -850,
+        8.0772762610674,
+        43
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001595258617,
+      "requires": "xp_camp_oath_cloister",
+      "owned": true,
+      "marker": [
+        -850,
+        8.9772762610674,
+        43.9
+      ]
+    },
+    {
+      "id": "britain_shrine",
+      "region": "britain",
+      "position": [
+        -470,
+        10.829590797424316,
+        -20
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -470,
+        11.729590797424317,
+        -19.1
+      ]
+    },
+    {
+      "id": "britain_mist_glade",
+      "region": "britain",
+      "position": [
+        -560,
+        11.961217880249023,
+        10
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -560,
+        12.861217880249024,
+        10.9
+      ]
+    },
+    {
+      "id": "britain_mist_rock",
+      "region": "britain",
+      "position": [
+        -520,
+        9.994603157043457,
+        -120
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -520,
+        10.894603157043457,
+        -119.1
+      ]
+    },
+    {
+      "id": "britain_north_shore",
+      "region": "britain",
+      "position": [
+        -670,
+        12.955511569976807,
+        7
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -670,
+        13.855511569976807,
+        7.9
+      ]
+    },
+    {
+      "id": "britain_west_shore",
+      "region": "britain",
+      "position": [
+        -768,
+        10.181379318237305,
+        90
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -768,
+        11.081379318237305,
+        90.9
+      ]
+    },
+    {
+      "id": "britain_lake_platform",
+      "region": "britain",
+      "position": [
+        -636,
+        2,
+        89.5
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -636,
+        2.9,
+        88.6
+      ]
+    },
+    {
+      "id": "britain_ridge",
+      "region": "britain",
+      "position": [
+        -760,
+        15.93838882446289,
+        -56
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -760,
+        16.83838882446289,
+        -55.1
+      ]
+    },
+    {
+      "id": "britain_knights_path",
+      "region": "britain",
+      "position": [
+        -656,
+        6.643671035766602,
+        -158
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -656,
+        7.543671035766602,
+        -157.1
+      ]
+    },
+    {
+      "id": "britain_north_hill",
+      "region": "britain",
+      "position": [
+        -718,
+        9.654017925262451,
+        -277
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -718,
+        10.554017925262452,
+        -276.1
+      ]
+    },
+    {
+      "id": "britain_west_field",
+      "region": "britain",
+      "position": [
+        -972,
+        2.435778856277466,
+        48
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -972,
+        3.3357788562774657,
+        48.9
+      ]
+    },
+    {
+      "id": "britain_west_ruin",
+      "region": "britain",
+      "position": [
+        -1000,
+        6.149272918701172,
+        -60
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -1000,
+        7.049272918701172,
+        -59.1
+      ]
+    },
+    {
+      "id": "britain_camlann_road",
+      "region": "britain",
+      "position": [
+        -864,
+        9.258498191833496,
+        104
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -864,
+        10.158498191833496,
+        104.9
+      ]
+    },
+    {
+      "id": "britain_camlann_hollow",
+      "region": "britain",
+      "position": [
+        -931,
+        3.0400470495224,
+        266
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500000715255737,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -931,
+        3.9400470495224,
+        266.9
+      ]
+    },
+    {
+      "id": "britain_south_fen",
+      "region": "britain",
+      "position": [
+        -470,
+        2.9301795959472656,
+        226
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -470,
+        3.8301795959472655,
+        226.9
+      ]
+    },
+    {
+      "id": "britain_southeast",
+      "region": "britain",
+      "position": [
+        -514,
+        3.116952657699585,
+        206
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -514,
+        4.016952657699585,
+        206.9
+      ]
+    },
+    {
+      "id": "britain_tower_top",
+      "region": "britain",
+      "position": [
+        -787.6,
+        12.666499853134155,
+        -237.6
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500004291534388,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -786.9636038969321,
+        13.566499853134156,
+        -236.9636038969321
+      ]
+    },
+    {
+      "id": "britain_vanguard_throne",
+      "region": "britain",
+      "position": [
+        -995,
+        6.992498993873596,
+        135.5
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500000715255737,
+      "requires": "xp_camp_vanguard_throne_guard",
+      "owned": true,
+      "marker": [
+        -995,
+        7.8924989938735965,
+        136.4
+      ]
+    },
+    {
+      "id": "alpha_secret_pillar",
+      "region": "alpha",
+      "position": [
+        6,
+        11.6,
+        -16
+      ],
+      "authoredFloor": 11.6,
+      "surfaceAbove": 0.5499996185302738,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        6,
+        12.5,
+        -15.1
+      ]
+    },
+    {
+      "id": "alpha_secret_cave",
+      "region": "alpha",
+      "position": [
+        188,
+        2.4,
+        -60
+      ],
+      "authoredFloor": 2.4,
+      "surfaceAbove": 7.400808906555175,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        187.1,
+        3.3,
+        -60
+      ]
+    },
+    {
+      "id": "alpha_camp_echo_ruins",
+      "region": "alpha",
+      "position": [
+        150,
+        5.399899959564209,
+        -102
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_echo_ruins",
+      "owned": true,
+      "marker": [
+        150,
+        6.299899959564209,
+        -101.1
+      ]
+    },
+    {
+      "id": "alpha_puzzle_tutorial",
+      "region": "alpha",
+      "position": [
+        -190,
+        7.536806344985962,
+        31
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": "xp_puzzle_tutorial",
+      "owned": true,
+      "marker": [
+        -190,
+        8.436806344985962,
+        31.9
+      ]
+    },
+    {
+      "id": "alpha_trial_tower_glide",
+      "region": "alpha",
+      "position": [
+        4,
+        24.549654006958008,
+        -138
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": "xp_trial_tower_glide",
+      "owned": true,
+      "marker": [
+        4,
+        25.449654006958006,
+        -137.1
+      ]
+    },
+    {
+      "id": "alpha_camp_cliff",
+      "region": "alpha",
+      "position": [
+        58,
+        5.7295002937316895,
+        204
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        58,
+        6.62950029373169,
+        204.9
+      ]
+    },
+    {
+      "id": "alpha_forest_glade",
+      "region": "alpha",
+      "position": [
+        146,
+        5.377927303314209,
+        38
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        146,
+        6.277927303314209,
+        38.9
+      ]
+    },
+    {
+      "id": "alpha_falls_ledge",
+      "region": "alpha",
+      "position": [
+        158,
+        2.400541067123413,
+        -52
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        158,
+        3.300541067123413,
+        -51.1
+      ]
+    },
+    {
+      "id": "alpha_lake_shore",
+      "region": "alpha",
+      "position": [
+        44,
+        2.5983002185821533,
+        44
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        44,
+        3.4983002185821532,
+        44.9
+      ]
+    },
+    {
+      "id": "alpha_station_yard",
+      "region": "alpha",
+      "position": [
+        -172,
+        8.003740310668945,
+        -64
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -172,
+        8.903740310668946,
+        -63.1
+      ]
+    },
+    {
+      "id": "alpha_ford_rocks",
+      "region": "alpha",
+      "position": [
+        -110,
+        7.168752193450928,
+        96
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -110,
+        8.068752193450928,
+        96.9
+      ]
+    },
+    {
+      "id": "alpha_north_wood",
+      "region": "alpha",
+      "position": [
+        -224,
+        28.14229393005371,
+        -208
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -224,
+        29.04229393005371,
+        -207.1
+      ]
+    },
+    {
+      "id": "alpha_east_field",
+      "region": "alpha",
+      "position": [
+        226,
+        2.8290212154388428,
+        96
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        226,
+        3.7290212154388427,
+        96.9
+      ]
+    },
+    {
+      "id": "alpha_south_meadow",
+      "region": "alpha",
+      "position": [
+        -62,
+        9.442992210388184,
+        304
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -62,
+        10.342992210388184,
+        304.9
+      ]
+    },
+    {
+      "id": "alpha_tower_steps",
+      "region": "alpha",
+      "position": [
+        78,
+        2.938887119293213,
+        -150
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        78,
+        3.838887119293213,
+        -149.1
+      ]
+    },
+    {
+      "id": "blacksail_domain_sunken_vault",
+      "region": "blacksail",
+      "position": [
+        738,
+        15.437824067249878,
+        33
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500003727525637,
+      "requires": "xp_camp_sunken_vault",
+      "owned": true,
+      "marker": [
+        738,
+        16.337824067249876,
+        33.9
+      ]
+    },
+    {
+      "id": "blacksail_camp_smugglers",
+      "region": "blacksail",
+      "position": [
+        702,
+        14.659645557403564,
+        -123
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": "xp_camp_smugglers",
+      "owned": true,
+      "marker": [
+        702,
+        15.559645557403565,
+        -122.1
+      ]
+    },
+    {
+      "id": "blacksail_camp_fort_outer",
+      "region": "blacksail",
+      "position": [
+        814,
+        13.604926109313965,
+        -138
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_fort_outer",
+      "owned": true,
+      "marker": [
+        814,
+        14.504926109313965,
+        -137.1
+      ]
+    },
+    {
+      "id": "blacksail_camp_reef",
+      "region": "blacksail",
+      "position": [
+        790,
+        8.276394844055176,
+        108
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_reef",
+      "owned": true,
+      "marker": [
+        790,
+        9.176394844055176,
+        108.9
+      ]
+    },
+    {
+      "id": "blacksail_trial_wreck_glide",
+      "region": "blacksail",
+      "position": [
+        891,
+        29.090628147125244,
+        -153
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500006675720215,
+      "requires": "xp_trial_wreck_glide",
+      "owned": true,
+      "marker": [
+        891,
+        29.990628147125243,
+        -152.1
+      ]
+    },
+    {
+      "id": "blacksail_pass_bend",
+      "region": "blacksail",
+      "position": [
+        448,
+        14.62668514251709,
+        -18
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        448,
+        15.52668514251709,
+        -17.1
+      ]
+    },
+    {
+      "id": "blacksail_port_crates",
+      "region": "blacksail",
+      "position": [
+        628,
+        3.398314952850342,
+        182
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        628,
+        4.298314952850342,
+        182.9
+      ]
+    },
+    {
+      "id": "blacksail_port_pier",
+      "region": "blacksail",
+      "position": [
+        574,
+        3.387328624725342,
+        186
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        574,
+        4.287328624725342,
+        186.9
+      ]
+    },
+    {
+      "id": "blacksail_meadow_mill",
+      "region": "blacksail",
+      "position": [
+        696,
+        13.912552833557129,
+        -74
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        696,
+        14.81255283355713,
+        -73.1
+      ]
+    },
+    {
+      "id": "blacksail_meadow_ruin",
+      "region": "blacksail",
+      "position": [
+        628,
+        13.000658988952637,
+        -90
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        628,
+        13.900658988952637,
+        -89.1
+      ]
+    },
+    {
+      "id": "blacksail_cave_mouth",
+      "region": "blacksail",
+      "position": [
+        712,
+        14.209193229675293,
+        -82
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        712,
+        15.109193229675293,
+        -81.1
+      ]
+    },
+    {
+      "id": "blacksail_wreck_field",
+      "region": "blacksail",
+      "position": [
+        564,
+        12.352445602416992,
+        -134
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        564,
+        13.252445602416993,
+        -133.1
+      ]
+    },
+    {
+      "id": "blacksail_wreck_rocks",
+      "region": "blacksail",
+      "position": [
+        622,
+        10.407806396484375,
+        -242
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        622,
+        11.307806396484375,
+        -241.1
+      ]
+    },
+    {
+      "id": "blacksail_fort_gate",
+      "region": "blacksail",
+      "position": [
+        876,
+        30.08492088317871,
+        -154
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        876,
+        30.98492088317871,
+        -153.1
+      ]
+    },
+    {
+      "id": "blacksail_fort_wall",
+      "region": "blacksail",
+      "position": [
+        954,
+        3.618049383163452,
+        -206
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        954,
+        4.5180493831634525,
+        -205.1
+      ]
+    },
+    {
+      "id": "blacksail_reef_spit",
+      "region": "blacksail",
+      "position": [
+        876,
+        3.8707430362701416,
+        206
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        876,
+        4.770743036270142,
+        206.9
+      ]
+    },
+    {
+      "id": "blacksail_nw_hills",
+      "region": "blacksail",
+      "position": [
+        476,
+        14.868392944335938,
+        -252
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        476,
+        15.768392944335938,
+        -251.1
+      ]
+    },
+    {
+      "id": "blacksail_north_ridge",
+      "region": "blacksail",
+      "position": [
+        756,
+        13.077566146850586,
+        -292
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        756,
+        13.977566146850586,
+        -291.1
+      ]
+    },
+    {
+      "id": "blacksail_east_coast",
+      "region": "blacksail",
+      "position": [
+        951,
+        2.2941553592681885,
+        -98
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        951,
+        3.1941553592681884,
+        -97.1
+      ]
+    },
+    {
+      "id": "blacksail_west_meadow",
+      "region": "blacksail",
+      "position": [
+        528,
+        15.483646392822266,
+        -62
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        528,
+        16.383646392822264,
+        -61.1
+      ]
+    },
+    {
+      "id": "blacksail_inland_spring",
+      "region": "blacksail",
+      "position": [
+        852,
+        8.781782150268555,
+        36
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        852,
+        9.681782150268555,
+        36.9
+      ]
+    },
+    {
+      "id": "winter_domain_frozen_chapel",
+      "region": "winter",
+      "position": [
+        -150,
+        5.264236042079599,
+        -777
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001220134205,
+      "requires": "xp_camp_frozen_chapel",
+      "owned": true,
+      "marker": [
+        -150,
+        6.164236042079599,
+        -776.1
+      ]
+    },
+    {
+      "id": "winter_camp_bivouac_pickets",
+      "region": "winter",
+      "position": [
+        -119,
+        5.105217933654785,
+        -514
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_bivouac_pickets",
+      "owned": true,
+      "marker": [
+        -119,
+        6.0052179336547855,
+        -513.1
+      ]
+    },
+    {
+      "id": "winter_camp_snowfield_raiders",
+      "region": "winter",
+      "position": [
+        -267,
+        9.200496196746826,
+        -657
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": "xp_camp_snowfield_raiders",
+      "owned": true,
+      "marker": [
+        -267,
+        10.100496196746827,
+        -656.1
+      ]
+    },
+    {
+      "id": "winter_camp_moscow_outskirts",
+      "region": "winter",
+      "position": [
+        124,
+        6.346710205078125,
+        -766
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_moscow_outskirts",
+      "owned": true,
+      "marker": [
+        124,
+        7.246710205078125,
+        -765.1
+      ]
+    },
+    {
+      "id": "winter_trial_gorge_glide",
+      "region": "winter",
+      "position": [
+        210,
+        32.286224365234375,
+        -686
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": "xp_trial_gorge_glide",
+      "owned": true,
+      "marker": [
+        210,
+        33.186224365234374,
+        -685.1
+      ]
+    },
+    {
+      "id": "winter_crossing_bank",
+      "region": "winter",
+      "position": [
+        54,
+        6.1159892082214355,
+        -430
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        54,
+        7.015989208221436,
+        -429.1
+      ]
+    },
+    {
+      "id": "winter_bivouac_tent",
+      "region": "winter",
+      "position": [
+        -204,
+        6.1050028800964355,
+        -500
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -204,
+        7.005002880096436,
+        -499.1
+      ]
+    },
+    {
+      "id": "winter_bivouac_wagon",
+      "region": "winter",
+      "position": [
+        -244,
+        5.775404930114746,
+        -560
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -244,
+        6.6754049301147464,
+        -559.1
+      ]
+    },
+    {
+      "id": "winter_snow_pine",
+      "region": "winter",
+      "position": [
+        -292,
+        4.226284503936768,
+        -730
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -292,
+        5.126284503936768,
+        -729.1
+      ]
+    },
+    {
+      "id": "winter_snow_ridge",
+      "region": "winter",
+      "position": [
+        -282,
+        5.105217933654785,
+        -808
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -282,
+        6.0052179336547855,
+        -807.1
+      ]
+    },
+    {
+      "id": "winter_field_cross",
+      "region": "winter",
+      "position": [
+        -148,
+        4.7866034507751465,
+        -720
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -148,
+        5.686603450775147,
+        -719.1
+      ]
+    },
+    {
+      "id": "winter_river_bend",
+      "region": "winter",
+      "position": [
+        106,
+        2.8968987464904785,
+        -640
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        106,
+        3.7968987464904784,
+        -639.1
+      ]
+    },
+    {
+      "id": "winter_gorge_ice",
+      "region": "winter",
+      "position": [
+        304,
+        30.04494285583496,
+        -738
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        304,
+        30.94494285583496,
+        -737.1
+      ]
+    },
+    {
+      "id": "winter_gorge_rim",
+      "region": "winter",
+      "position": [
+        292,
+        28.276090621948242,
+        -630
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        292,
+        29.17609062194824,
+        -629.1
+      ]
+    },
+    {
+      "id": "winter_moscow_gate",
+      "region": "winter",
+      "position": [
+        116,
+        12.004840850830078,
+        -862
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        116,
+        12.904840850830078,
+        -861.1
+      ]
+    },
+    {
+      "id": "winter_moscow_lane",
+      "region": "winter",
+      "position": [
+        58,
+        7.038870334625244,
+        -784
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        58,
+        7.9388703346252445,
+        -783.1
+      ]
+    },
+    {
+      "id": "winter_north_wood",
+      "region": "winter",
+      "position": [
+        -152,
+        2.3695387840270996,
+        -962
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -152,
+        3.2695387840270995,
+        -961.1
+      ]
+    },
+    {
+      "id": "winter_redsquare_side",
+      "region": "winter",
+      "position": [
+        186,
+        3.1276168823242188,
+        -956
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        186,
+        4.027616882324219,
+        -955.1
+      ]
+    },
+    {
+      "id": "winter_west_hut",
+      "region": "winter",
+      "position": [
+        -296,
+        5.566657066345215,
+        -540
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -296,
+        6.466657066345215,
+        -539.1
+      ]
+    },
+    {
+      "id": "winter_east_hut",
+      "region": "winter",
+      "position": [
+        292,
+        9.68665599822998,
+        -496
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        292,
+        10.58665599822998,
+        -495.1
+      ]
+    },
+    {
+      "id": "winter_south_field",
+      "region": "winter",
+      "position": [
+        -42,
+        3.753859043121338,
+        -552
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -42,
+        4.653859043121338,
+        -551.1
+      ]
+    },
+    {
+      "id": "kyoto_domain_lotus_hall",
+      "region": "kyoto",
+      "position": [
+        -58,
+        6.552932624816894,
+        1003
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499998283386232,
+      "requires": "xp_camp_lotus_hall",
+      "owned": true,
+      "marker": [
+        -58,
+        7.452932624816895,
+        1003.9
+      ]
+    },
+    {
+      "id": "kyoto_camp_rice_field",
+      "region": "kyoto",
+      "position": [
+        110,
+        4.678799629211426,
+        958
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_rice_field",
+      "owned": true,
+      "marker": [
+        110,
+        5.578799629211426,
+        958.9
+      ]
+    },
+    {
+      "id": "kyoto_camp_east_bank",
+      "region": "kyoto",
+      "position": [
+        232,
+        12.644131660461426,
+        510
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_camp_east_bank",
+      "owned": true,
+      "marker": [
+        232,
+        13.544131660461426,
+        510.9
+      ]
+    },
+    {
+      "id": "kyoto_camp_west_road",
+      "region": "kyoto",
+      "position": [
+        -269,
+        5.7829601764678955,
+        632
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": "xp_camp_west_road",
+      "owned": true,
+      "marker": [
+        -269,
+        6.682960176467896,
+        632.9
+      ]
+    },
+    {
+      "id": "kyoto_trial_temple_glide",
+      "region": "kyoto",
+      "position": [
+        289,
+        34.36751174926758,
+        795
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": "xp_trial_temple_glide",
+      "owned": true,
+      "marker": [
+        289,
+        35.26751174926758,
+        795.9
+      ]
+    },
+    {
+      "id": "kyoto_inari_path",
+      "region": "kyoto",
+      "position": [
+        78,
+        12.852876663208008,
+        458
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        78,
+        13.752876663208008,
+        458.9
+      ]
+    },
+    {
+      "id": "kyoto_torii_side",
+      "region": "kyoto",
+      "position": [
+        -80,
+        17.51122283935547,
+        436
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -80,
+        18.411222839355467,
+        436.9
+      ]
+    },
+    {
+      "id": "kyoto_kinkaku_pond",
+      "region": "kyoto",
+      "position": [
+        -284,
+        24.19111442565918,
+        570
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -284,
+        25.09111442565918,
+        570.9
+      ]
+    },
+    {
+      "id": "kyoto_west_farm",
+      "region": "kyoto",
+      "position": [
+        -298,
+        5.766478061676025,
+        802
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -298,
+        6.666478061676026,
+        802.9
+      ]
+    },
+    {
+      "id": "kyoto_akechi_edge",
+      "region": "kyoto",
+      "position": [
+        -182,
+        4.052562713623047,
+        848
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -182,
+        4.952562713623047,
+        848.9
+      ]
+    },
+    {
+      "id": "kyoto_south_paddy",
+      "region": "kyoto",
+      "position": [
+        -98,
+        5.700560092926025,
+        1000
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -98,
+        6.600560092926026,
+        1000.9
+      ]
+    },
+    {
+      "id": "kyoto_south_shrine",
+      "region": "kyoto",
+      "position": [
+        146,
+        2.1518688201904297,
+        1024
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        146,
+        3.0518688201904296,
+        1024.9
+      ]
+    },
+    {
+      "id": "kyoto_river_east",
+      "region": "kyoto",
+      "position": [
+        190,
+        5.425890922546387,
+        708
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        190,
+        6.325890922546387,
+        708.9
+      ]
+    },
+    {
+      "id": "kyoto_higashi_garden",
+      "region": "kyoto",
+      "position": [
+        288,
+        30.662260055541992,
+        622
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        288,
+        31.56226005554199,
+        622.9
+      ]
+    },
+    {
+      "id": "kyoto_higashi_south",
+      "region": "kyoto",
+      "position": [
+        296,
+        37.10044479370117,
+        804
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499992370605469,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        296,
+        38.00044479370117,
+        804.9
+      ]
+    },
+    {
+      "id": "kyoto_east_far",
+      "region": "kyoto",
+      "position": [
+        310,
+        79.71771240234375,
+        984
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500030517578125,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        310,
+        80.61771240234376,
+        984.9
+      ]
+    },
+    {
+      "id": "kyoto_kamo_bank",
+      "region": "kyoto",
+      "position": [
+        140,
+        1.7563502788543701,
+        580
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        140,
+        2.65635027885437,
+        580.9
+      ]
+    },
+    {
+      "id": "kyoto_city_gate",
+      "region": "kyoto",
+      "position": [
+        -32,
+        6.216933727264404,
+        1000
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -32,
+        7.116933727264405,
+        1000.9
+      ]
+    },
+    {
+      "id": "kyoto_arashi_field",
+      "region": "kyoto",
+      "position": [
+        -298,
+        5.777464389801025,
+        710
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -298,
+        6.677464389801026,
+        710.9
+      ]
+    },
+    {
+      "id": "kyoto_north_east",
+      "region": "kyoto",
+      "position": [
+        238,
+        13.896610260009766,
+        492
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        238,
+        14.796610260009766,
+        492.9
+      ]
+    },
+    {
+      "id": "kyoto_bamboo_edge",
+      "region": "kyoto",
+      "position": [
+        -258,
+        13.863651275634766,
+        904
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": null,
+      "owned": true,
+      "marker": [
+        -258,
+        14.763651275634766,
+        904.9
+      ]
+    },
+    {
+      "id": "blacksail_dig_driftwood",
+      "region": "blacksail",
+      "position": [
+        630,
+        14.714578628540039,
+        18
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.00040746037185179773,
+      "requires": "xp_dig_driftwood",
+      "owned": true,
+      "marker": [
+        630,
+        15.61457862854004,
+        18.9
+      ]
+    },
+    {
+      "id": "blacksail_dig_lighthouse",
+      "region": "blacksail",
+      "position": [
+        924,
+        6.9799675941467285,
+        4
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": -0.00021597024834818512,
+      "requires": "xp_dig_lighthouse",
+      "owned": true,
+      "marker": [
+        924,
+        7.879967594146729,
+        4.9
+      ]
+    },
+    {
+      "id": "blacksail_dig_blackbeard",
+      "region": "blacksail",
+      "position": [
+        752,
+        15.395752906799316,
+        -194
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.00020456647396827066,
+      "requires": "xp_dig_blackbeard",
+      "owned": true,
+      "marker": [
+        752,
+        16.295752906799315,
+        -193.1
+      ]
+    },
+    {
+      "id": "winter_ember_chapel_road",
+      "region": "winter",
+      "position": [
+        -143,
+        4.822311043739319,
+        -755
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500000715255737,
+      "requires": "xp_ember_chapel_road",
+      "owned": true,
+      "marker": [
+        -143,
+        5.722311043739319,
+        -754.1
+      ]
+    },
+    {
+      "id": "winter_ember_river_watch",
+      "region": "winter",
+      "position": [
+        -64,
+        7.895831108093262,
+        -716
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_ember_river_watch",
+      "owned": true,
+      "marker": [
+        -64,
+        8.795831108093262,
+        -715.1
+      ]
+    },
+    {
+      "id": "kyoto_fox_lotus_path",
+      "region": "kyoto",
+      "position": [
+        -50,
+        5.1292548179626465,
+        966
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5500001907348633,
+      "requires": "xp_fox_lotus_path",
+      "owned": true,
+      "marker": [
+        -50,
+        6.029254817962647,
+        966.9
+      ]
+    },
+    {
+      "id": "kyoto_fox_bamboo_shrine",
+      "region": "kyoto",
+      "position": [
+        -262,
+        10.01282548904419,
+        817
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": "xp_fox_bamboo_shrine",
+      "owned": true,
+      "marker": [
+        -262,
+        10.91282548904419,
+        817.9
+      ]
+    },
+    {
+      "id": "alpha_sig_echo_forest",
+      "region": "alpha",
+      "position": [
+        114,
+        5.91627311706543,
+        50
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": -0.000013078562830060037,
+      "requires": "xp_sig_echo_forest",
+      "owned": true,
+      "marker": [
+        114,
+        6.81627311706543,
+        50.9
+      ]
+    },
+    {
+      "id": "alpha_sig_outpost",
+      "region": "alpha",
+      "position": [
+        -222,
+        6.443633079528809,
+        -120
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": -0.00013682130460956898,
+      "requires": "xp_sig_outpost",
+      "owned": true,
+      "marker": [
+        -222,
+        7.343633079528809,
+        -119.1
+      ]
+    },
+    {
+      "id": "alpha_sig_ridge",
+      "region": "alpha",
+      "position": [
+        260,
+        8.882673263549805,
+        -162
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.000003353477648460057,
+      "requires": "xp_sig_ridge",
+      "owned": true,
+      "marker": [
+        260,
+        9.782673263549805,
+        -161.1
+      ]
+    },
+    {
+      "id": "britain_duel_kay",
+      "region": "britain",
+      "position": [
+        -620,
+        8.173564434051514,
+        -178.5
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499997138977051,
+      "requires": "xp_camp_duel_kay",
+      "owned": true,
+      "marker": [
+        -620,
+        9.073564434051514,
+        -177.6
+      ]
+    },
+    {
+      "id": "britain_duel_galahad",
+      "region": "britain",
+      "position": [
+        -704,
+        12.112283945083618,
+        15.5
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": "xp_camp_duel_galahad",
+      "owned": true,
+      "marker": [
+        -704,
+        13.012283945083619,
+        16.4
+      ]
+    },
+    {
+      "id": "britain_duel_lancelot",
+      "region": "britain",
+      "position": [
+        -920,
+        4.89404559135437,
+        -20.5
+      ],
+      "authoredFloor": null,
+      "surfaceAbove": 0.5499999523162842,
+      "requires": "xp_camp_duel_lancelot",
+      "owned": true,
+      "marker": [
+        -920,
+        5.7940455913543705,
+        -19.6
+      ]
+    }
+  ],
+  "discovery": [
+    {
+      "id": "secret_cave",
+      "label": "瀑布后的观测日志",
+      "position": [
+        186,
+        2.4,
+        -60
+      ],
+      "interactive": false
+    },
+    {
+      "id": "secret_pillar",
+      "label": "湖心石柱宝箱",
+      "position": [
+        6,
+        11.6,
+        -16
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_seam_stones",
+      "label": "黄昏石环",
+      "position": [
+        -408,
+        9.38990306854248,
+        -30
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_mistwood_shrine",
+      "label": "隐士的林中祠",
+      "position": [
+        -468,
+        11.960532188415527,
+        14
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_lake_lady",
+      "label": "湖中仙女的倒影",
+      "position": [
+        -650,
+        1.2790590524673462,
+        136
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_camelot_well",
+      "label": "许愿井",
+      "position": [
+        -910,
+        34,
+        -188
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_keep_top",
+      "label": "主塔之巅",
+      "position": [
+        -872.4,
+        60.8,
+        -214
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_siege_perilous",
+      "label": "危险席",
+      "position": [
+        -928.3,
+        34,
+        -165
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_camlann_hill",
+      "label": "最后的山丘",
+      "position": [
+        -896,
+        4.57041072845459,
+        242
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_first_sea",
+      "label": "初见黑帆海",
+      "position": [
+        468,
+        15.116327285766602,
+        30
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_tavern_cellar",
+      "label": "朗姆酒窖",
+      "position": [
+        586,
+        3.4,
+        124.5
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_gallows",
+      "label": "绞刑架广场",
+      "position": [
+        592,
+        3.4,
+        150
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_smugglers_cave",
+      "label": "走私者洞口",
+      "position": [
+        722,
+        15.678351402282715,
+        -35
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_fort_tower",
+      "label": "要塞瞭望",
+      "position": [
+        926.0873935394876,
+        30,
+        -163.9126064605124
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_vortex_eye",
+      "label": "风暴之眼",
+      "position": [
+        580,
+        6.000296115875244,
+        -190
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_skull_eyes",
+      "label": "骷髅之眼",
+      "position": [
+        884.9182177394447,
+        3.5821021623276095,
+        198.5719794658129
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_lighthouse_top",
+      "label": "冷灯之巅",
+      "position": [
+        986,
+        36.02726745605469,
+        -18.6
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_flagship",
+      "label": "安妮女王复仇号",
+      "position": [
+        1016,
+        7,
+        104
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_berezina",
+      "label": "断桥",
+      "position": [
+        -4,
+        1.12,
+        -492
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_old_guard",
+      "label": "老近卫军的营火",
+      "position": [
+        -222,
+        6.0152268409729,
+        -520
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_frozen_column",
+      "label": "冻住的行军队列",
+      "position": [
+        -282,
+        5.7777204513549805,
+        -580
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_eagles",
+      "label": "鹰旗冢",
+      "position": [
+        -224,
+        7.828937530517578,
+        -698
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_moscow_fire",
+      "label": "大火之后",
+      "position": [
+        40,
+        11.314172744750977,
+        -832
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_tsar_bell",
+      "label": "沙皇钟",
+      "position": [
+        10,
+        12,
+        -962
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_tsar_cannon",
+      "label": "沙皇炮",
+      "position": [
+        -30,
+        12,
+        -902
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_bell_view",
+      "label": "钟楼之上",
+      "position": [
+        -4,
+        42,
+        -926
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_basil",
+      "label": "圣瓦西里大教堂",
+      "position": [
+        96,
+        12,
+        -958
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_frozen_falls",
+      "label": "冻结的瀑布",
+      "position": [
+        298.16930457818654,
+        1.12,
+        -857.7618706018395
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_senbon",
+      "label": "千本鸟居",
+      "position": [
+        46,
+        6.258713722229004,
+        430
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_sanjo_dori",
+      "label": "三条通",
+      "position": [
+        15,
+        4,
+        645
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_honnoji",
+      "label": "本能寺",
+      "position": [
+        -51,
+        4,
+        775
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_tobiishi",
+      "label": "鸭川跳石",
+      "position": [
+        150,
+        1.9,
+        780
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_yasaka",
+      "label": "八坂神社",
+      "position": [
+        206,
+        7.9587812423706055,
+        700
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_yasaka_pagoda",
+      "label": "八坂塔",
+      "position": [
+        207,
+        8.810450553894043,
+        726
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_kiyomizu_stage",
+      "label": "清水舞台",
+      "position": [
+        266,
+        34,
+        784
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_otowa",
+      "label": "音羽瀑布",
+      "position": [
+        262,
+        14.01392650604248,
+        800
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_kinkaku",
+      "label": "金阁",
+      "position": [
+        -215,
+        2,
+        509.5
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_kyokochi",
+      "label": "镜湖池",
+      "position": [
+        -222,
+        1.7000000476837158,
+        572
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_akechi",
+      "label": "明智本阵",
+      "position": [
+        -224,
+        14,
+        894
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_rashomon",
+      "label": "罗城门遗迹",
+      "position": [
+        -15,
+        6.779728794097901,
+        1004
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_arashiyama",
+      "label": "岚山·木构渡月桥",
+      "position": [
+        -267,
+        6.77,
+        755
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_tenryu_garden",
+      "label": "天龙寺意境·借景庭园",
+      "position": [
+        -267,
+        5.8118332624435425,
+        673
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_arashiyama_bamboo",
+      "label": "岚山·竹径",
+      "position": [
+        -306,
+        6.851130485534668,
+        654
+      ],
+      "interactive": false
+    },
+    {
+      "id": "disc_arashiyama_riverfront",
+      "label": "桂川河畔",
+      "position": [
+        -267,
+        5.759408712387085,
+        796
+      ],
+      "interactive": false
+    }
+  ],
+  "residents": [
+    {
+      "id": "Resident_britain_returning_carpenter",
+      "region": "britain",
+      "position": [
+        -861.4217641324841,
+        34.096569617757076,
+        -142.41171362614537
+      ],
+      "height": 1.7654199666023302,
+      "triangles": 11896,
+      "meshes": 7,
+      "materials": 1
+    },
+    {
+      "id": "Resident_britain_returning_weaver",
+      "region": "britain",
+      "position": [
+        -862.4117136261453,
+        34.09526164641148,
+        -141.42176413248418
+      ],
+      "height": 1.7654199666023302,
+      "triangles": 12792,
+      "meshes": 7,
+      "materials": 1
+    },
+    {
+      "id": "Resident_alpha_steward",
+      "region": "alpha",
+      "position": [
+        -162.8,
+        10.058313064575195,
+        213.5
+      ],
+      "height": 1.746919001151463,
+      "triangles": 11624,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_alpha_archivist",
+      "region": "alpha",
+      "position": [
+        -169.2,
+        10.058313064575195,
+        207.8
+      ],
+      "height": 1.6625799930159477,
+      "triangles": 11332,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_britain_smith",
+      "region": "britain",
+      "position": [
+        -905.5,
+        5.501125268936157,
+        154.8
+      ],
+      "height": 1.7242839927567442,
+      "triangles": 11888,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_britain_stable_keeper",
+      "region": "britain",
+      "position": [
+        -890.8,
+        5.501125268936157,
+        160.8
+      ],
+      "height": 1.6625799930159477,
+      "triangles": 11928,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_britain_abbey_keeper",
+      "region": "britain",
+      "position": [
+        -898,
+        5.501125268936157,
+        142.9
+      ],
+      "height": 1.7242839927567442,
+      "triangles": 11560,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_customs_clerk",
+      "region": "blacksail",
+      "position": [
+        511.9,
+        12.728032741546631,
+        -127.1
+      ],
+      "height": 1.7360210064699597,
+      "triangles": 11656,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_customs_inspector",
+      "region": "blacksail",
+      "position": [
+        524.8,
+        12.728032741546631,
+        -122.1
+      ],
+      "height": 1.798895006704285,
+      "triangles": 11192,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_customs_runner",
+      "region": "blacksail",
+      "position": [
+        525.7,
+        12.728032741546631,
+        -138.4
+      ],
+      "height": 1.798895006704285,
+      "triangles": 11408,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_winter_surgeon",
+      "region": "winter",
+      "position": [
+        0.09999999999999964,
+        4.527711067199707,
+        -603.4
+      ],
+      "height": 1.712607994100181,
+      "triangles": 11948,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_winter_quartermaster",
+      "region": "winter",
+      "position": [
+        17,
+        4.527711067199707,
+        -605.1
+      ],
+      "height": 1.8172479937397048,
+      "triangles": 11900,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_kyoto_swordsmith",
+      "region": "kyoto",
+      "position": [
+        -180.8,
+        4.494066033363342,
+        810.1
+      ],
+      "height": 1.7859879924975433,
+      "triangles": 12068,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_kyoto_innkeeper",
+      "region": "kyoto",
+      "position": [
+        -160.2,
+        4.494066033363342,
+        812.6
+      ],
+      "height": 1.7037159928431453,
+      "triangles": 11008,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_alpha_signal_keeper",
+      "region": "alpha",
+      "position": [
+        -176.9,
+        10.058313064575195,
+        218.39999999999998
+      ],
+      "height": 1.7773078261650088,
+      "triangles": 12292,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_britain_oath_witness",
+      "region": "britain",
+      "position": [
+        -912.4,
+        5.501125268936157,
+        164.79999999999998
+      ],
+      "height": 1.7448519926703439,
+      "triangles": 12668,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_blacksail_lamplighter",
+      "region": "blacksail",
+      "position": [
+        529.5,
+        12.74803274154663,
+        -114.8
+      ],
+      "height": 1.6625799930159477,
+      "triangles": 12628,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_winter_stretcher_bearer",
+      "region": "winter",
+      "position": [
+        -5.1,
+        4.547711067199707,
+        -591.4
+      ],
+      "height": 1.7211109910657356,
+      "triangles": 12496,
+      "meshes": 6,
+      "materials": 1
+    },
+    {
+      "id": "Resident_kyoto_paper_keeper",
+      "region": "kyoto",
+      "position": [
+        -157.6,
+        4.514066033363342,
+        823.4000000000001
+      ],
+      "height": 1.6831479929295465,
+      "triangles": 12176,
+      "meshes": 6,
+      "materials": 1
+    }
+  ],
+  "interactions": 283,
+  "duplicateInteractions": [],
+  "errors": []
+}

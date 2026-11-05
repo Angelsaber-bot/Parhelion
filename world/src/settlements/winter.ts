@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import type { SettlementKit } from './types';
 import { KyotoWinterArt } from './kyotoWinterArt';
+import {applyCraftSurface} from './craftSurface';
 
 /** A period-style timber aid house and supply court, deliberately free of modern hospital symbols. */
 export function buildWinterSettlement(): SettlementKit {
   const a=new KyotoWinterArt('SETTLEMENT_WINTER_AID_COURT');
   const log=a.mat('#786658'), endgrain=a.mat('#a28d73'), dark=a.mat('#493f39'), plaster=a.mat('#c4c3b4'), snow=a.mat('#edf2f5'), snowShade=a.mat('#c6d4df'), slate=a.mat('#63717f'), stone=a.mat('#879193'), iron=a.mat('#4c5961',.48,.55), linen=a.mat('#e4dac4'), blue=a.mat('#465e7b'), leather=a.mat('#806653'), glass=a.mat('#bbd8df',.35,.1), fire=a.mat('#ffb65d',.7,0,.75), straw=a.mat('#b5a37a');
+  for(const m of[log,endgrain,dark])applyCraftSurface(m,'wood');
+  applyCraftSurface(plaster,'plaster');applyCraftSurface(slate,'slate');applyCraftSurface(stone,'stone');
+  for(const m of[linen,blue])applyCraftSurface(m,'cloth');
   a.box(0,-.2,0,34,.4,30,snowShade,true);
   // Trampled service lane down the central courtyard; the main gate remains 6m wide.
   a.box(0,.015,6.6,6,.03,17,stone);

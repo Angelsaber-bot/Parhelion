@@ -508,8 +508,18 @@ export function buildBlacksail(heightAt: HeightAt) {
     for (const a of [Math.PI / 4, -Math.PI / 4]) mark.add(BOX, C.red, T(xx, xg + 0.06, xz, a, 0.5, 0.06, 3.6), false);
     pieces.push({ name: 'Treasure_X', material: 'M_Emissive', batch: mark, userData: { showWhen: ['map_piece_1', 'map_piece_2', 'map_piece_3'], hideWhen: 'shard_treasure' } });
     const chest = new Batch('Treasure_Chest');
-    chest.add(BOX, C.wood, T(xx, xg + 0.4, xz, 0.3, 1.6, 0.8, 1.0), false);
-    chest.add(BOX, C.gold, T(xx, xg + 0.82, xz, 0.3, 1.64, 0.1, 1.04), false);
+    // This appears only AFTER the story treasure is claimed. Show an opened,
+    // hollow chest, so it cannot be mistaken for another unopened reward.
+    const chestPart=(lx:number,y:number,lz:number,w:number,h:number,d:number,color:string,rx=0)=>chest.add(BOX,color,T(xx+Math.cos(.3)*lx+Math.sin(.3)*lz,xg+y,xz-Math.sin(.3)*lx+Math.cos(.3)*lz,.3,w,h,d,rx),false);
+    chestPart(0,.1,0,1.6,.14,1,C.wood);
+    chestPart(0,.18,0,1.35,.03,.75,C.boneDark);
+    for(const side of[-1,1]){
+      chestPart(side*.75,.46,0,.1,.66,1,C.wood);
+      chestPart(0,.46,side*.45,1.5,.66,.1,C.wood);
+      chestPart(side*.74,.49,.46,.1,.72,.06,C.gold);
+    }
+    chestPart(0,1.34,-.54,1.64,.1,1.04,C.gold,-1.65);
+    chestPart(0,1.344,-.484,1.42,.045,.84,C.wood,-1.65);
     pieces.push({ name: 'Treasure_Chest', material: 'M_Toon', batch: chest, outline: true, userData: { showWhen: 'shard_treasure' } });
     const shard = new Batch('Shard_treasure', 'M_Emissive');
     shard.add(CRYSTAL, C.gold, T(xx, xg + 2.2, xz, 0.4, 0.4, 0.8, 0.4), false);

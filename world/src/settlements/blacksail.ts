@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeParts } from './merge';
 import type { SettlementKit } from './types';
+import {applyCraftSurface} from './craftSurface';
 
 /** A walk-through customs house, rather than a second tavern or shipyard.
  * All dimensions are local metres. Entry, public hall, bond room and rear lane
@@ -28,6 +29,11 @@ export function buildBlackSailSettlement(): SettlementKit {
     glass: new THREE.MeshStandardMaterial({ color: '#bfcaad', roughness: .4, metalness: .12 }),
     lamp: new THREE.MeshStandardMaterial({ color: '#ffe2a0', emissive: '#ffbc60', emissiveIntensity: .6, roughness: .7 }),
   };
+  for(const m of[mats.plaster,mats.worn])applyCraftSurface(m,'plaster');
+  for(const m of[mats.oak,mats.lightWood])applyCraftSurface(m,'wood');
+  for(const m of[mats.stone,mats.paleStone])applyCraftSurface(m,'stone');
+  for(const m of[mats.roof,mats.roofEdge])applyCraftSurface(m,'slate');
+  applyCraftSurface(mats.cloth,'cloth');applyCraftSurface(mats.paper,'paper');
   type Mat = keyof typeof mats;
   // Bake static details into a small set of material/solidity batches. Windows,
   // trim and ropes cannot accidentally become invisible passage-blocking boxes.

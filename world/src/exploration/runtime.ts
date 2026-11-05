@@ -127,47 +127,6 @@ export function createExploration(host: ExplorationHost) {
     showBanner(bilingual(`滑翔翼强化 Lv.${lvl + 1}`, `Glider upgraded · Lv.${lvl + 1}`), bilingual('滑翔更快，下坠更慢。', 'Faster glide, slower descent.'), 'solve');
   }
 
-  // ───────────────────────── chests ─────────────────────────
-  interface ChestRt { def: ChestDef; holder: THREE.Group; rise: number; lid: THREE.Group; seal: THREE.Mesh | null; sparkle: THREE.Sprite; open: number; base: THREE.Vector3 }
-  const chests = new Map<string, ChestRt>();
-  for (const c of CHESTS) {
-    const yaw = c.yaw ?? 0, y = surface(...c.p);
-    const holder = new THREE.Group(); holder.position.set(c.p[0], y, c.p[1]); holder.rotation.y = yaw;
-    if (c.buried) { const body = dynamicArt(f => chestBody(f, c.tier)); holder.add(body.group); disposables.push({ dispose: () => disposeArt(body.art) }); }
-    else chestBody(new Frame(artFor(c.region), [c.p[0], y, c.p[1]], yaw), c.tier);
-    const { group: lidGroup, art: lidArt } = chestLid(c.tier); disposables.push({ dispose: () => disposeArt(lidArt) });
-    lidGroup.position.set(0, .07 + .48 + .03, -.32); holder.add(lidGroup);
-    const sparkle = glint(c.tier === 'luxurious' ? '#ffe9a0' : c.tier === 'precious' ? '#ffd1a0' : '#fff6d8', .75); sparkle.position.set(0, 1.15, 0); holder.add(sparkle);
-    let seal: THREE.Mesh | null = null;
-    if (c.requires && !c.buried) { seal = sealDome(1.05); seal.position.set(0, 0, 0); holder.add(seal); disposables.push(seal.geometry); }
-    dyn(holder, 90);
-    const rt: ChestRt = { def: c, holder, lid: lidGroup, seal, sparkle, open: done.has(flagChest(c.id)) ? 1 : 0, base: holder.position.clone(), rise: c.buried && !done.has(c.requires!) ? 0 : 1 };
-    chests.set(c.id, rt);
-    addMarker(markerChest(c.id), [c.p[0] + Math.sin(yaw) * .9, y + .9, c.p[1] + Math.cos(yaw) * .9], L(CHEST_NAMES[c.tier]), 2.2, () => openChest(rt), () =>
-      done.has(flagChest(c.id)) ? bilingual('空宝箱', 'Empty chest')
-        : c.requires && !done.has(c.requires) ? bilingual(`封印的${CHEST_NAMES[c.tier][0]}`, `Sealed ${CHEST_NAMES[c.tier][1]}`)
-          : bilingual(`开启 ${CHEST_NAMES[c.tier][0]}`, `Open ${CHEST_NAMES[c.tier][1]}`));
-  }
-  function requirementText(flag: string): string {
-    const p = PUZZLES.find(x => flagPuzzle(x.id) === flag); if (p) return bilingual(`解开附近的「${p.title[0]}」谜题`, `solve the nearby "${p.title[1]}" puzzle`);
-    const t = TRIALS.find(x => flagTrial(x.id) === flag); if (t) return bilingual(`完成「${t.title[0]}」挑战`, `complete the "${t.title[1]}" challenge`);
-    const c = CAMPS.find(x => flagCamp(x.id) === flag); if (c) return bilingual(`击败「${c.title[0]}」的全部敌人`, `defeat every enemy at "${c.title[1]}"`);
-    const m = TREASURE_MAPS.find(x => flagDig(x.id) === flag); if (m) return bilingual(`按「${m.title[0]}」挖出宝藏`, `dig up the treasure from "${m.title[1]}"`);
-    const e = EMBER_ROUTES.find(x => flagEmber(x.id) === flag); if (e) return bilingual(`点亮「${e.title[0]}」的全部烽火`, `light every beacon of "${e.title[1]}"`);
-    const sg = SIGNALS.find(x => flagSignal(x.id) === flag); if (sg) return bilingual(`用扫描仪找到「${sg.title[0]}」的讯号匣`, `track down the "${sg.title[1]}" signal cache`);
-    const el = MINIBOSSES.find(x => flagElite(x.id) === flag); if (el) return bilingual(`讨伐精英「${el.name[0]}」`, `defeat the elite "${el.name[1]}"`);
-    const fx = FOXFIRES.find(x => flagFox(x.id) === flag); if (fx) return bilingual(`跟随「${fx.title[0]}」走到终点`, `follow "${fx.title[1]}" to its end`);
-    return flag;
-  }
-  function openChest(rt: ChestRt) {
-    const c = rt.def;
-    if (done.has(flagChest(c.id))) return;
-    if (c.requires && !done.has(c.requires)) { host.toast(bilingual(`宝箱被封印了：需要先${requirementText(c.requires)}。`, `The chest is sealed: first ${requirementText(c.requires)}.`)); return; }
-    done.add(flagChest(c.id)); host.save(); host.sound('open');
-    const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done), rounds = host.refillAmmo?.(WORLD_RIFLE.ammoChest) ?? 0;
-    showBanner(bilingual(`获得 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
-  }
-
   /** A roaming elite's first defeat pays once: crystals, a full resupply's worth of rounds, exploration credit. */
   function eliteDefeated(id: string) {
     const elite = MINIBOSSES.find(m => m.id === id);
@@ -201,16 +160,6 @@ export function createExploration(host: ExplorationHost) {
     const k = huntProgress(done, board.day, hunt.n);
     done.add(flagHuntKill(board.day, hunt.n, k));
     if (k + 1 >= COMMISSION.hunt) completeCommission(hunt); else host.save();
-  }
-
-  // ───────────────────────── feathers ─────────────────────────
-  interface FeatherRt { id: string; obj: THREE.Group; p: THREE.Vector3; region: RegionId }
-  const feathers: FeatherRt[] = [];
-  for (const x of FEATHERS) {
-    const obj = featherMesh(); const y = x.y ?? surface(...x.p) + 1.5 + (x.lift ?? 0);
-    obj.position.set(x.p[0], y, x.p[1]); obj.visible = !done.has(flagFeather(x.id));
-    dyn(obj, 260);
-    feathers.push({ id: x.id, obj, p: obj.position.clone(), region: x.region });
   }
 
   // ───────────────────────── domains (秘境) ─────────────────────────
@@ -315,6 +264,59 @@ export function createExploration(host: ExplorationHost) {
     } else if (!hintShown.has(rt.def.id)) { hintShown.add(rt.def.id); host.toast(L(rt.def.hint)); }
   }
   const hintShown = new Set<string>();
+
+  // Build all supporting platforms before placing rewards; otherwise lake and
+  // tower chests spawn below the very structures meant to carry them.
+  // ───────────────────────── chests ─────────────────────────
+  interface ChestRt { def: ChestDef; holder: THREE.Group; rise: number; lid: THREE.Group; seal: THREE.Mesh | null; sparkle: THREE.Sprite; open: number; base: THREE.Vector3 }
+  const chests = new Map<string, ChestRt>();
+  for (const c of CHESTS) {
+    const yaw = c.yaw ?? 0, y = c.y ?? surface(...c.p);
+    const holder = new THREE.Group(); holder.position.set(c.p[0], y, c.p[1]); holder.rotation.y = yaw;
+    if (c.buried) { const body = dynamicArt(f => chestBody(f, c.tier)); holder.add(body.group); disposables.push({ dispose: () => disposeArt(body.art) }); }
+    else chestBody(new Frame(artFor(c.region), [c.p[0], y, c.p[1]], yaw), c.tier);
+    const { group: lidGroup, art: lidArt } = chestLid(c.tier); disposables.push({ dispose: () => disposeArt(lidArt) });
+    lidGroup.position.set(0, .07 + .48 + .03, -.32); holder.add(lidGroup);
+    const sparkle = glint(c.tier === 'luxurious' ? '#ffe9a0' : c.tier === 'precious' ? '#ffd1a0' : '#fff6d8', .75); sparkle.position.set(0, 1.15, 0); holder.add(sparkle);
+    let seal: THREE.Mesh | null = null;
+    if (c.requires && !c.buried) { seal = sealDome(1.05); seal.position.set(0, 0, 0); holder.add(seal); disposables.push(seal.geometry); }
+    dyn(holder, 90);
+    const rt: ChestRt = { def: c, holder, lid: lidGroup, seal, sparkle, open: done.has(flagChest(c.id)) ? 1 : 0, base: holder.position.clone(), rise: c.buried && !done.has(c.requires!) ? 0 : 1 };
+    chests.set(c.id, rt);
+    addMarker(markerChest(c.id), [c.p[0] + Math.sin(yaw) * .9, y + .9, c.p[1] + Math.cos(yaw) * .9], L(CHEST_NAMES[c.tier]), 2.2, () => openChest(rt), () =>
+      done.has(flagChest(c.id)) ? bilingual('空宝箱', 'Empty chest')
+        : c.requires && !done.has(c.requires) ? bilingual(`封印的${CHEST_NAMES[c.tier][0]}`, `Sealed ${CHEST_NAMES[c.tier][1]}`)
+          : bilingual(`开启 ${CHEST_NAMES[c.tier][0]}`, `Open ${CHEST_NAMES[c.tier][1]}`));
+  }
+  function requirementText(flag: string): string {
+    const p = PUZZLES.find(x => flagPuzzle(x.id) === flag); if (p) return bilingual(`解开附近的「${p.title[0]}」谜题`, `solve the nearby "${p.title[1]}" puzzle`);
+    const t = TRIALS.find(x => flagTrial(x.id) === flag); if (t) return bilingual(`完成「${t.title[0]}」挑战`, `complete the "${t.title[1]}" challenge`);
+    const c = CAMPS.find(x => flagCamp(x.id) === flag); if (c) return bilingual(`击败「${c.title[0]}」的全部敌人`, `defeat every enemy at "${c.title[1]}"`);
+    const m = TREASURE_MAPS.find(x => flagDig(x.id) === flag); if (m) return bilingual(`按「${m.title[0]}」挖出宝藏`, `dig up the treasure from "${m.title[1]}"`);
+    const e = EMBER_ROUTES.find(x => flagEmber(x.id) === flag); if (e) return bilingual(`点亮「${e.title[0]}」的全部烽火`, `light every beacon of "${e.title[1]}"`);
+    const sg = SIGNALS.find(x => flagSignal(x.id) === flag); if (sg) return bilingual(`用扫描仪找到「${sg.title[0]}」的讯号匣`, `track down the "${sg.title[1]}" signal cache`);
+    const el = MINIBOSSES.find(x => flagElite(x.id) === flag); if (el) return bilingual(`讨伐精英「${el.name[0]}」`, `defeat the elite "${el.name[1]}"`);
+    const fx = FOXFIRES.find(x => flagFox(x.id) === flag); if (fx) return bilingual(`跟随「${fx.title[0]}」走到终点`, `follow "${fx.title[1]}" to its end`);
+    return flag;
+  }
+  function openChest(rt: ChestRt) {
+    const c = rt.def;
+    if (done.has(flagChest(c.id))) return;
+    if (c.requires && !done.has(c.requires)) { host.toast(bilingual(`宝箱被封印了：需要先${requirementText(c.requires)}。`, `The chest is sealed: first ${requirementText(c.requires)}.`)); return; }
+    done.add(flagChest(c.id)); host.save(); host.sound('open');
+    const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done), rounds = host.refillAmmo?.(WORLD_RIFLE.ammoChest) ?? 0;
+    showBanner(bilingual(`获得 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
+  }
+
+  // ───────────────────────── feathers ─────────────────────────
+  interface FeatherRt { id: string; obj: THREE.Group; p: THREE.Vector3; region: RegionId }
+  const feathers: FeatherRt[] = [];
+  for (const x of FEATHERS) {
+    const obj = featherMesh(); const y = x.y ?? surface(...x.p) + 1.5 + (x.lift ?? 0);
+    obj.position.set(x.p[0], y, x.p[1]); obj.visible = !done.has(flagFeather(x.id));
+    dyn(obj, 260);
+    feathers.push({ id: x.id, obj, p: obj.position.clone(), region: x.region });
+  }
 
   // ───────────────────────── trials ─────────────────────────
   interface TrialRt { def: TrialDef; orbs: THREE.Group[]; got: boolean[]; time: number; active: boolean }

@@ -1,11 +1,15 @@
 import * as THREE from 'three';
 import type { SettlementKit } from './types';
 import { SettlementArt } from './valleyBritainArt';
+import {applyCraftSurface} from './craftSurface';
 
 /** A working castle-side craft court, not another row of sealed timber houses. */
 export function buildBritainSettlement(): SettlementKit {
   const a = new SettlementArt();
   const limestone = '#c5b79d', pale = '#e2d2ad', timber = '#624936', beam = '#44392d', slate = '#69748b', iron = '#535c69', gold = '#b3925c';
+  for(const color of[limestone,pale,'#a59a86','#bcac8f'])applyCraftSurface(a.mat(color),'stone');
+  for(const color of[timber,beam,'#947351','#846549'])applyCraftSurface(a.mat(color),'wood');
+  for(const color of[slate,'#a95f48'])applyCraftSurface(a.mat(color),'slate');
   a.box('craft_court_foundation', [0, -.26, 0], [37, .36, 35], '#a59a86', true);
   a.box('craft_court_gravel', [0, -.015, 8], [34, .05, 16], '#bcac8f', true);
   for (let x = -16; x <= 16; x += 2) for (let z = 8; z < 16; z += 2) {

@@ -1,10 +1,14 @@
 import type { SettlementKit } from './types';
 import { KyotoWinterArt } from './kyotoWinterArt';
+import {applyCraftSurface} from './craftSurface';
 
 /** A walk-in craft lane, not another shrine: open swordsmith, tatami inn, and a shared rear garden. */
 export function buildKyotoSettlement(): SettlementKit {
   const a=new KyotoWinterArt('SETTLEMENT_KYOTO_CRAFT_LANE');
   const wood=a.mat('#765039'), dark=a.mat('#3e302b'), pale=a.mat('#f1dfbc'), paper=a.mat('#fff1cd'), tile=a.mat('#536476'), tileEdge=a.mat('#728496'), stone=a.mat('#96978d'), stoneDark=a.mat('#666c68'), tatami=a.mat('#b3b58a'), indigo=a.mat('#3b527b'), brass=a.mat('#b99b61',.43,.5), iron=a.mat('#424e58',.38,.6), ember=a.mat('#ff9b3d',.65,0,1.25), water=a.mat('#6fadb3',.25,.12), leaf=a.mat('#718e62');
+  for(const m of[wood,dark])applyCraftSurface(m,'wood');applyCraftSurface(pale,'plaster');
+  applyCraftSurface(paper,'paper');for(const m of[tile,tileEdge])applyCraftSurface(m,'slate');
+  for(const m of[stone,stoneDark])applyCraftSurface(m,'stone');for(const m of[tatami,indigo])applyCraftSurface(m,'cloth');
   // Continuous accessible paving has no raised doorstep that can catch the player's capsule.
   a.box(0,-.2,0,34,.4,30,stone,true);
   for(let x=-15;x<=15;x+=3) for(let z=5;z<=13;z+=2.6) a.box(x,.014,z,2.86,.026,2.46,(x+z)%2?stone:stoneDark);

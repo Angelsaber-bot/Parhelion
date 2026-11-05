@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { mergeParts } from './merge';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 /** Small authored architectural kit. Repeated pieces share geometry/materials and are batched. */
 export class SettlementArt {
@@ -23,6 +24,27 @@ export class SettlementArt {
   }
   box(name: string, p: number[], size: number[], color: string, solid = false, metal = 0, glow = 0) {
     return this.mesh(name, this.boxGeo, this.mat(color, metal, glow), p, size, solid);
+  }
+  /** Soft upholstery, eased timber and dressed-stone edges, kept in static batches. */
+  rounded(name: string, p: number[], size: [number,number,number], radius: number, color: string, solid = false) {
+    return this.mesh(name, new RoundedBoxGeometry(...size, 2, radius), this.mat(color), p, [1,1,1], solid);
+  }
+  /** A real wall opening, with continuous piers, sill and head rather than glass on an opaque wall. */
+  windowWall(name: string, axis: 'x'|'z', x: number, z: number, length: number, height: number, color: string,
+    openings: readonly {center:number;width:number;bottom:number;top:number}[]) {
+    const sorted=[...openings].sort((a,b)=>a.center-b.center);
+    const part=(along:number,y:number,w:number,h:number)=>{
+      if(w<=0||h<=0)return;
+      this.box(name, [x+(axis==='x'?along:0),y,z+(axis==='z'?along:0)], axis==='x'?[w,h,.34]:[.34,h,w],color,true);
+    };
+    let edge=-length/2;
+    for(const o of sorted){
+      part((edge+o.center-o.width/2)/2,height/2,o.center-o.width/2-edge,height);
+      part(o.center,o.bottom/2,o.width,o.bottom);
+      part(o.center,(o.top+height)/2,o.width,height-o.top);
+      edge=o.center+o.width/2;
+    }
+    part((edge+length/2)/2,height/2,length/2-edge,height);
   }
   cyl(name: string, p: number[], radius: number, h: number, color: string, solid = false, metal = 0) {
     return this.mesh(name, this.cylinderGeo, this.mat(color, metal), p, [radius, h, radius], solid);

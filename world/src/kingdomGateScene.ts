@@ -4,12 +4,23 @@ import { SiteArt } from './campaignSites';
 import type { Collider } from './player';
 import type { Marker } from './types';
 import { KINGDOM_GATE as G, gatePoint, GATE_ESCORT_PATH, isKingdomGateOpen } from './kingdomGate';
+import {createSettlementNpcs} from './settlements/npcs';
+import {residentWalkRig} from './settlements/residentWalk';
 export function gateEscortPosition(fraction:number){
  const t=THREE.MathUtils.clamp(fraction,0,1)*(GATE_ESCORT_PATH.length-1),i=Math.min(Math.floor(t),GATE_ESCORT_PATH.length-2);
  return new THREE.Vector3(...GATE_ESCORT_PATH[i]).lerp(new THREE.Vector3(...GATE_ESCORT_PATH[i+1]),t-i);
 }
-export function createKingdomGateScene(){
+export function createKingdomGateScene(terrain:(x:number,z:number)=>number=()=>34){
  const art=new SiteArt();
+ // Give the return road an actual paved walking spine, not waist-high meadow
+ // through the escort actors and gate mechanisms.
+ const roadHeight=(x:number,z:number)=>Math.max(34,terrain(x,z))+.08;
+ for(let out=-10;out<14;out++)for(let side=-2;side<2;side++){
+  const vertices:number[]=[];
+  for(const [s,o]of[[side,out],[side+1,out],[side+1,out+1],[side,out+1]]){const p=gatePoint(s,o);p[1]=roadHeight(p[0],p[2]);vertices.push(...p);}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));g.setIndex([0,2,1,0,3,2]);g.computeVertexNormals();
+  art.add(g,(out+side)%3?'#b4a68d':'#aea087',[0,0,0],[1,1,1],true,'ground');g.dispose();
+ }
  const marker=(id:string,label:string,side:number,out:number):Marker=>({id,type:'interact',label,p:gatePoint(side,out,.9),radius:2.1});
  const markers=[marker(G.entry,'城门告示 · 打开归路',0,11),marker(G.latch,'金色旧锁 · 拆闩或射断',-4,5),marker(G.winch,'城门绞盘 · 按住交互',4,5),marker(G.service,'归人补给点',0,-8)];
  // Small tactical additions remain outside the old masonry; the gate uses the actual arch.
@@ -29,23 +40,23 @@ export function createKingdomGateScene(){
  const latch=new THREE.Mesh(new THREE.BoxGeometry(.55,.7,.3),new THREE.MeshStandardMaterial({color:'#efbf54',emissive:'#886020',emissiveIntensity:.4}));
  latch.position.fromArray(gatePoint(-4,5,1.4));latch.userData.target=G.latch;root.add(latch);
  const people=new THREE.Group();people.rotation.y=-Math.PI*3/4;root.add(people);
- const walkJoints:{joint:THREE.Group;side:number;arm:boolean}[]=[];
- // Blockout residents: individual heads and coats, no additional AI companion.
- for(const side of[-.7,.7]){
-  const person=new THREE.Group();person.position.x=side;
-  const coat=new THREE.Mesh(new THREE.CylinderGeometry(.22,.33,1.1,6),new THREE.MeshStandardMaterial({color:side<0?'#8b7861':'#687f83'}));coat.position.y=.8;person.add(coat);
-  for(const side of[-1,1]){
-   for(const arm of[false,true]){const joint=new THREE.Group();joint.position.set(side*(arm?.3:.13),arm?1.2:.5,0);person.add(joint);const limb=new THREE.Mesh(new THREE.CylinderGeometry(arm?.065:.08,arm?.06:.08,arm?.55:.5,6),new THREE.MeshStandardMaterial({color:arm?'#a7957c':'#403a35'}));limb.position.y=arm?-.23:-.25;joint.add(limb);walkJoints.push({joint,side,arm});}
-  }
-  const head=new THREE.Mesh(new THREE.SphereGeometry(.2,8,6),new THREE.MeshStandardMaterial({color:'#d5b89c'}));head.position.y=1.6;person.add(head);people.add(person);
- }
+ const residents=createSettlementNpcs([
+  {id:'britain_returning_carpenter',region:'britain',role:['归城木匠','Returning Carpenter'],position:[-.7,0,0],lines:[['家就在城门另一边。','Home is on the other side of the gate.']]},
+  {id:'britain_returning_weaver',region:'britain',role:['归城织工','Returning Weaver'],position:[.7,0,0],lines:[['等大家一起走。','We go together.']]},
+ ]);
+ people.add(residents.group);
+ const walkers=residents.group.children.map(residentWalkRig);
  const lamp=new THREE.Mesh(new THREE.SphereGeometry(.16,8,6),new THREE.MeshBasicMaterial({color:'#a6e5ab'}));lamp.position.fromArray(gatePoint(2,-8,1.4));root.add(lamp);
- function apply(done:ReadonlySet<string>,fraction=0){
+ let disposed=false;const localViewer=new THREE.Vector3();
+ function apply(done:ReadonlySet<string>,fraction=0,dt=0,viewer?:THREE.Vector3){
+  if(disposed)return;
   gate.visible=!isKingdomGateOpen(done);collider.enabled=gate.visible;latch.visible=!done.has(G.unlocked)&&!done.has(G.open);
-  const moving=fraction>0&&fraction<1&&!done.has(G.rescued);for(const {joint,side,arm}of walkJoints)joint.rotation.x=moving?Math.sin(fraction*16*7+side*Math.PI/2)*(arm?-.28:.34):0;
   people.position.copy(gateEscortPosition(done.has(G.rescued)?1:fraction));lamp.visible=done.has(G.rescued);
+  if(viewer)residents.update(dt,people.worldToLocal(localViewer.copy(viewer)));
+  const moving=fraction>0&&fraction<1&&!done.has(G.rescued);walkers.forEach((walk,i)=>{const actor=residents.group.children[i],p=people.localToWorld(new THREE.Vector3(actor.position.x,0,0));walk.update(fraction*16*7+i*.65,moving,roadHeight(p.x,p.z)-people.position.y);});
  }
  return {root,markers,latch,collider,collisionGeometries:art.solids,people,apply,
-  dispose(){root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});for(const g of art.solids)g.dispose();collision.dispose();root.removeFromParent();},
+  walkway:{region:'britain' as const,points:[gatePoint(0,14),gatePoint(0,-10)],length:24},
+  dispose(){if(disposed)return;disposed=true;collider.enabled=false;residents.dispose();root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])m.dispose();}});for(const g of art.solids)g.dispose();collision.dispose();root.removeFromParent();root.clear();},
  };
 }

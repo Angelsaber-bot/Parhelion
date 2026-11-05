@@ -1,0 +1,272 @@
+[
+  {
+    "file": "assets/characters/residents_v2/Main_Cast.blend",
+    "bytes": 1412673,
+    "sha256": "44fa82bf576bf6d55cb5ba982146000bf4c5375ae6972b0d79d1fbb10dfa9f59"
+  },
+  {
+    "file": "assets/characters/residents_v2/Main_Cast.glb",
+    "bytes": 3243568,
+    "sha256": "8fc14a76e0e0666d1f2ddd81fca80d0c0fa36d676b7a38be67471d9d2ba38a8b"
+  },
+  {
+    "file": "assets/characters/residents_v2/README.md",
+    "bytes": 1645,
+    "sha256": "6345981e53e95c1c6cba1ebb6e5bbb6d23140f7d8180e9d90517b051dbcd5dba"
+  },
+  {
+    "file": "assets/characters/residents_v2/ada-portrait.png",
+    "bytes": 450095,
+    "sha256": "18a6d1f5cdd3ace859356c10ffc7f82b588dec709a79b7caeb0018b692adbb54"
+  },
+  {
+    "file": "assets/characters/residents_v2/cast-lineup.png",
+    "bytes": 1153178,
+    "sha256": "e20470ec42f96ae495591431740e3b6187762881cceaa67465e498a884223df8"
+  },
+  {
+    "file": "assets/characters/residents_v2/lan-portrait.png",
+    "bytes": 460580,
+    "sha256": "85dfb4a53643956cb133ac4085585a9635828e088d9a18d4db66df3ee3a78e36"
+  },
+  {
+    "file": "assets/characters/residents_v2/manifest.json",
+    "bytes": 1259,
+    "sha256": "44c53e2f78fdc2a7c8d06b666d8ae917c94f6e8ed94d2c8e0cc95d5c2753d7f0"
+  },
+  {
+    "file": "assets/characters/residents_v2/mara-portrait.png",
+    "bytes": 448356,
+    "sha256": "8627b54f0778e211393fd21335b6ed5a1900acb5b9f7106a385bb8eda94328f1"
+  },
+  {
+    "file": "assets/characters/residents_v2/mikhail-portrait.png",
+    "bytes": 446168,
+    "sha256": "4c279651ac1e0cff7144bdf6766c08c49fdf1ea171bdb072ce1798e789f252be"
+  },
+  {
+    "file": "assets/characters/residents_v2/sumi-portrait.png",
+    "bytes": 448360,
+    "sha256": "a3acb930326cb8fb58cebe6587c0a559629761a37084922d84fe2dd4a57e2881"
+  },
+  {
+    "file": "world/public/assets/world-stream.manifest.json",
+    "bytes": 432,
+    "sha256": "4d919349f71274702a86779dd8610d6832a074e0d5eb389e718c80eef8a5c2f3"
+  },
+  {
+    "file": "world/public/assets/world_alpha.core.glb",
+    "bytes": 2099528,
+    "sha256": "83ca767329dfbcb140df7bd9928701e7532030092e57ffff613a3e845c7599c8"
+  },
+  {
+    "file": "world/public/assets/world_alpha.glb",
+    "bytes": 3805664,
+    "sha256": "a3dc7ee02c4234e07a0034340b07ea7c9c165587f8b941db17e58129c4054ab5"
+  },
+  {
+    "file": "world/public/assets/world_alpha.layout.json",
+    "bytes": 15276,
+    "sha256": "41954bbf56b69af26c8baa23c557aa5b9726d4816284b075c344a0c78539dce0"
+  },
+  {
+    "file": "world/public/assets/world_alpha.visual.glb",
+    "bytes": 1959760,
+    "sha256": "8706ff692252d246f5d133add7b8fdd34d72cae507d7f4bcd6e6286a1af97c21"
+  },
+  {
+    "file": "world/public/assets/world_blacksail.core.glb",
+    "bytes": 2064164,
+    "sha256": "25e6ede9acad7bd4852ece0900e41834c619ef2a44f4c30f5880ca68352d57dd"
+  },
+  {
+    "file": "world/public/assets/world_blacksail.glb",
+    "bytes": 4773512,
+    "sha256": "cf3e7c4dd0a913f4f4fc6373d1f472ecab2a9237689e13dd3a8f7abe9ac5fb56"
+  },
+  {
+    "file": "world/public/assets/world_blacksail.layout.json",
+    "bytes": 10345,
+    "sha256": "9a906bdc1e231f049f8630ee3893809abab9bfd3203367875caf6d9983fbde9f"
+  },
+  {
+    "file": "world/public/assets/world_blacksail.visual.glb",
+    "bytes": 3012316,
+    "sha256": "6813bd0f672c5e876ab21c7a62c09881690bc3334d2483cb2731f83a4574de7e"
+  },
+  {
+    "file": "world/public/assets/world_britain.core.glb",
+    "bytes": 2270136,
+    "sha256": "94673eca1c9983e368ba144ea9cd6277ae683c4f894f2793a48d60e697ec52c6"
+  },
+  {
+    "file": "world/public/assets/world_britain.glb",
+    "bytes": 6134280,
+    "sha256": "670f9e375029c0dbf90faa31b4cebf03f60b768077e24d7222fa888caf17aef9"
+  },
+  {
+    "file": "world/public/assets/world_britain.layout.json",
+    "bytes": 8127,
+    "sha256": "2fefdcece190c259b4079831e8c04e9db900e7d742912c6c3efd5e77f52d6491"
+  },
+  {
+    "file": "world/public/assets/world_britain.visual.glb",
+    "bytes": 4129976,
+    "sha256": "f9a32eb868694b0a3ac64a8f68e55431b535d082c0fa69048e85cad3ddca2a51"
+  },
+  {
+    "file": "world/public/assets/world_kyoto.core.glb",
+    "bytes": 2324236,
+    "sha256": "7ed9c5559176a99fa999535ef8b67934e88d8ce6fc7d97e53f5ccd30827b7246"
+  },
+  {
+    "file": "world/public/assets/world_kyoto.glb",
+    "bytes": 12713260,
+    "sha256": "2d570209418d69b25f8dc5201140fad2cae1754227bafd1dba90dccf47f495ee"
+  },
+  {
+    "file": "world/public/assets/world_kyoto.layout.json",
+    "bytes": 11912,
+    "sha256": "a785a5372f599396a137faea0052659295de650f229ad98b827ff3172e3e0f73"
+  },
+  {
+    "file": "world/public/assets/world_kyoto.visual.glb",
+    "bytes": 10735492,
+    "sha256": "86bf3ee2a7eb483892ac1b0a84b76c15d3fee6799d91f9963a02481bc4bbc0a0"
+  },
+  {
+    "file": "world/public/assets/world_winter.core.glb",
+    "bytes": 2208968,
+    "sha256": "dfc0a5386a92a58b4b083bccb903a689d79e154913091baa97938ed40acbcd3c"
+  },
+  {
+    "file": "world/public/assets/world_winter.glb",
+    "bytes": 6544404,
+    "sha256": "1f58cfe899d791f7468929885e3600bfac2d831c21ffac4a771542503e52fbc2"
+  },
+  {
+    "file": "world/public/assets/world_winter.layout.json",
+    "bytes": 12880,
+    "sha256": "debcb3c49a0eda66bf34e9a7b9843971dddf7f24756d2b88ce34ae38b4af0019"
+  },
+  {
+    "file": "world/public/assets/world_winter.visual.glb",
+    "bytes": 4615648,
+    "sha256": "9784725f53a50c09487c2e2c876d6d2067dabd91792bb19ed34b1ccadcacca90"
+  },
+  {
+    "file": "world/src/exploration/catalog.ts",
+    "bytes": 21261,
+    "sha256": "86886e2707f928806e651dcd594784a9fbd465bbac08be5889153ac3461c3947"
+  },
+  {
+    "file": "world/src/exploration/content/alpha.ts",
+    "bytes": 3927,
+    "sha256": "c505e3b02456f56276578d4f07147f1e86f19d5f78ae65457d57040a75f2bbd6"
+  },
+  {
+    "file": "world/src/exploration/runtime.ts",
+    "bytes": 64074,
+    "sha256": "f0c196ae9ef716b41e3d4f1c5d6b9bb2f95ce6b1ac684e0d59799ae5864ea915"
+  },
+  {
+    "file": "world/src/fx.ts",
+    "bytes": 12858,
+    "sha256": "5f01186d17de523b0800189a116df9b2f49a21a5df1afd8482480032e0bd1b24"
+  },
+  {
+    "file": "world/src/grassClearance.ts",
+    "bytes": 1663,
+    "sha256": "f2d911c64d14a9ea33750611076bcc350cfbfadeb773f994d6ac7d8179626197"
+  },
+  {
+    "file": "world/src/kingdomGateScene.ts",
+    "bytes": 5224,
+    "sha256": "2f477114b4868fe9f3511e9562c75b86145bb5256d2d2ccaa000ab0c64c0fac3"
+  },
+  {
+    "file": "world/src/main.ts",
+    "bytes": 196791,
+    "sha256": "d49c238488637868bb470268bb7fcaaaa9628ecd93c7b580fc79817c72e9cc17"
+  },
+  {
+    "file": "world/src/settlements/alpha.ts",
+    "bytes": 10368,
+    "sha256": "10991711fe07c211697b989c4b224d1e3b19553d888b6a4ce000250f135f48c9"
+  },
+  {
+    "file": "world/src/settlements/blacksail.ts",
+    "bytes": 18847,
+    "sha256": "d90e3de0093f3457add8b69bf4a8dd2ce17834223ca481190dd930b552badf9c"
+  },
+  {
+    "file": "world/src/settlements/britain.ts",
+    "bytes": 11343,
+    "sha256": "e5d3d935bcc46ad328e5f9f5dfd360cdf223b51ed7333f2a6b1e93466eb74bae"
+  },
+  {
+    "file": "world/src/settlements/core.ts",
+    "bytes": 8640,
+    "sha256": "95b38b34b4f662879723220f96e27e5ebc851ab61cdd92dfa8448476ce4fbfe5"
+  },
+  {
+    "file": "world/src/settlements/craftSurface.ts",
+    "bytes": 1603,
+    "sha256": "31ff2cba74ebe14a0fd0dde9ea4270c3a29b0d6ec7b1a2f9acc830862fac552f"
+  },
+  {
+    "file": "world/src/settlements/kyoto.ts",
+    "bytes": 9092,
+    "sha256": "a6bfb2643dad9ac1a2f21a4c2e47abc2e39801fddde9cf5c189cb97ed9083cfe"
+  },
+  {
+    "file": "world/src/settlements/kyotoWinterArt.ts",
+    "bytes": 4313,
+    "sha256": "71b4fc62ce9255e4feda584a60884fd38cd702e82876f403105d721660ed31d0"
+  },
+  {
+    "file": "world/src/settlements/merge.ts",
+    "bytes": 1334,
+    "sha256": "2cf2d356bff27755038bea7e6dd5f3b634a1316b99d1e2735939bdfa1d099117"
+  },
+  {
+    "file": "world/src/settlements/npcs.ts",
+    "bytes": 23657,
+    "sha256": "d8ea0abb2038cac1de436707aced3111fa7f67a67ddd372748a47e7c0b62e645"
+  },
+  {
+    "file": "world/src/settlements/residenceCraft.ts",
+    "bytes": 6989,
+    "sha256": "dc54c11a871ad0064a4f5927788f67cdc29963e77c03c1702f049767805b56d6"
+  },
+  {
+    "file": "world/src/settlements/residentPortrait.ts",
+    "bytes": 13271,
+    "sha256": "ee0102d0d449a16f23f908604bad665af3071d73319bea99d8d09157d4d56cff"
+  },
+  {
+    "file": "world/src/settlements/residentTailoring.ts",
+    "bytes": 1739,
+    "sha256": "827ed4dedb937d6a9e01f2bdb93dfd22b86f88ddb0f339d0c23486fa497ca651"
+  },
+  {
+    "file": "world/src/settlements/residentWalk.ts",
+    "bytes": 2222,
+    "sha256": "f4f39533273e92511f7eddf6f905891511a1eac03655b77236aa362d37f91450"
+  },
+  {
+    "file": "world/src/settlements/types.ts",
+    "bytes": 1001,
+    "sha256": "fbbd4a78e17a24432680e477ab8e119fa715f925574bf3f9f83783df04edcbb5"
+  },
+  {
+    "file": "world/src/settlements/valleyBritainArt.ts",
+    "bytes": 8198,
+    "sha256": "c74ca7d2899bbea5e46cad5bfeda95a9343d18d373c3e38d8e0a1abfd0cc076c"
+  },
+  {
+    "file": "world/src/settlements/winter.ts",
+    "bytes": 8617,
+    "sha256": "c0b3404418cad3eb7d87b3cb064e0b5226a341aa4815c5cefc09345e519a906a"
+  }
+]

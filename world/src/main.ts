@@ -81,6 +81,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './fx';
+import { settlementGrassClearance } from './grassClearance';
 import { makeRegionWeather } from './regionWeather';
 import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
@@ -414,7 +415,7 @@ world.add(falseDawnSites.root); freezeStaticArt(falseDawnSites.root);
 staticGeos.push(...falseDawnSites.collisionGeometries); layout.markers.push(...falseDawnSites.markers);
 const falseDawnMarkerIds = new Set(falseDawnSites.markers.map(marker => marker.id));
 addEventListener('pagehide', event => { if (!event.persisted) falseDawnSites.dispose(); });
-const kingdomGateScene = createKingdomGateScene();
+const kingdomGateScene = createKingdomGateScene((x,z)=>grid.sampleHeight(x,z)??34);
 world.add(kingdomGateScene.root);
 staticGeos.push(...kingdomGateScene.collisionGeometries);
 colliders.push(kingdomGateScene.collider);
@@ -464,7 +465,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, staticBVH, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68 }) : null;
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway]) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -2216,7 +2217,7 @@ function frame(now: number) {
    for(const dx of[-.7,.7])if(combat.geometry.cast(escortPoint.clone().add(new THREE.Vector3(dx,1,0)),direction,direction.length()+.35))return false;
    return true;
   });
-  kingdomGateScene.apply(done,kingdomGateRuntime?.escort??0);
+  kingdomGateScene.apply(done,kingdomGateRuntime?.escort??0,dt,player.pos);
   gateChannelHud.hidden=!gameplayActive()||player.pos.distanceTo(escortPoint)>25||done.has(KINGDOM_GATE.rescued)||!done.has(KINGDOM_GATE.unlocked);
   gateChannelHud.textContent=done.has(KINGDOM_GATE.open)?bilingual(`居民行进 ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'陪同穿门':'等待：靠近居民并解除附近威胁'}`,`Residents ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'Escorting':'Waiting: stay close and clear nearby threats'}`):bilingual(`绞盘 ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · 站稳，松开后按住 ${settings.label('interact')}`,`Winch ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · Stand still, release then hold ${settings.label('interact')}`);
   const activeAdventure=adventureRuntime?.channel;
