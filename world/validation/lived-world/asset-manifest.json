@@ -165,6 +165,11 @@
     "sha256": "c505e3b02456f56276578d4f07147f1e86f19d5f78ae65457d57040a75f2bbd6"
   },
   {
+    "file": "world/src/exploration/models.ts",
+    "bytes": 53323,
+    "sha256": "e0957d754681c7cb27571e4bb260e727cad59705d41fa44838c8d0186aae642e"
+  },
+  {
     "file": "world/src/exploration/runtime.ts",
     "bytes": 64074,
     "sha256": "f0c196ae9ef716b41e3d4f1c5d6b9bb2f95ce6b1ac684e0d59799ae5864ea915"

@@ -64,7 +64,16 @@ export function chestBody(f: Frame, tier: ChestTier) {
   const s = CHEST_STYLE[tier];
   f.box([0, .035, 0], [W + .06, .07, D + .06], s.trim, 'body', [0, 0, 0], true);
   for (const x of [-1, 1]) for (const z of [-1, 1]) f.box([x * (W / 2 - .04), .03, z * (D / 2 - .04)], [.1, .06, .1], s.metal, 'metal');
-  f.box([0, .07 + H / 2, 0], [W, H, D], s.wood, 'body', [0, 0, 0], true);
+  // A real receptacle: the old solid block and full-width rim left no interior
+  // after opening. Floor, four walls and four rim rails keep every view closed.
+  f.box([0,.105,0],[W,.07,D],s.wood,'body',[0,0,0],true);
+  f.box([0,.145,0],[W-.12,.012,D-.12],s.plank);
+  for(const sign of[-1,1]){
+    f.box([sign*(W/2-.028),.07+H/2,0],[.056,H,D],s.wood,'body',[0,0,0],true);
+    f.box([0,.07+H/2,sign*(D/2-.028)],[W-.11,H,.056],s.wood,'body',[0,0,0],true);
+    f.box([0,.07+H+.012,sign*D/2],[W+.03,.035,.055],s.metal,'metal');
+    f.box([sign*W/2,.07+H+.012,0],[.055,.035,D],s.metal,'metal');
+  }
   // plank grooves on all four faces
   for (const y of [.2, .34, .46]) {
     f.box([0, y, D / 2 + .004], [W - .04, .018, .012], s.plank);
@@ -78,7 +87,6 @@ export function chestBody(f: Frame, tier: ChestTier) {
     f.box([x, .07 + H / 2, -D / 2 - .012], [.085, H, .014], s.metal, 'metal');
     for (const y of [.16, .42]) f.cyl([x, y, D / 2 + .022], .016, .012, s.trim, 'metal', 8, [Math.PI / 2, 0, 0]);
   }
-  f.box([0, .07 + H + .012, 0], [W + .03, .035, D + .03], s.metal, 'metal');
   // lock plate + keyhole
   f.box([0, .44, D / 2 + .022], [.2, .22, .025], s.metal, 'metal');
   f.box([0, .43, D / 2 + .036], [.035, .08, .01], '#1d1712');
@@ -98,6 +106,13 @@ export function chestLid(tier: ChestTier): { group: THREE.Group; art: SiteArt } 
   const r = D / 2;
   // geometry is authored relative to the hinge at (0,0,-D/2)
   f.halfCyl([0, 0, r], r, W, s.wood);
+  // CylinderGeometry's half cylinder has no face across its cut. The timber
+  // underside must be real FrontSide geometry when the lid rotates open.
+  f.box([0,-.012,r],[W,.035,D],s.plank);
+  for(const x of[-.3,.3]){
+    f.box([x,-.04,r],[.065,.025,D-.04],s.trim,'metal');
+    f.cyl([x,-.01,0],.03,.14,s.metal,'metal',12,[0,0,Math.PI/2]);
+  }
   f.part(G.halfCyl, [0, 0, r], [r + .012, .03, r + .012], s.metal, 'metal', [0, 0, Math.PI / 2]);
   for (const x of [-.3, .3]) f.part(G.halfCyl, [x, 0, r], [r + .014, .085, r + .014], s.metal, 'metal', [0, 0, Math.PI / 2]);
   for (const x of [-W / 2, W / 2]) f.part(G.halfCyl, [x, 0, r], [r + .01, .03, r + .01], s.metal, 'metal', [0, 0, Math.PI / 2]);
@@ -198,13 +213,13 @@ export function ruinTower(f: Frame, h: number) {
   for (let i = 0; i < 6; i++) { const a = i * 1.1; f.box([Math.cos(a) * 2.31, h * .3 + i * .9, Math.sin(a) * 2.31], [.5, .9, .04], '#4f6b3c', 'body', [0, -a + Math.PI / 2, 0]); }
 }
 export function waterPlatform(f: Frame, top: number, bottom: number, r = 2.6) {
-  const h = top - bottom;
+  const h = top - .145 - bottom;
   f.cyl([0, bottom + h / 2, 0], r, h, STONE_DARK, 'body', 8, [0, 0, 0], true);
-  f.cyl([0, top - .08, 0], r + .15, .16, STONE, 'body', 8, [0, Math.PI / 8, 0], true);
+  f.cyl([0, top - .08, 0], r + .25, .16, STONE, 'body', 8, [0, Math.PI / 8, 0], true);
   f.torus([0, top - .2, 0], r + .06, .05, '#6f8f5a', 'body', [Math.PI / 2, 0, 0]);
 }
 export function steppingStone(f: Frame, top: number, bottom: number, r = 1.05) {
-  const h = top - bottom;
+  const h = top - .088 - bottom;
   f.cyl([0, bottom + h / 2, 0], r, h, STONE_DARK, 'body', 8, [0, .3, 0], true);
   f.cyl([0, top - .05, 0], r * .95, .1, '#a7a28f', 'body', 8, [0, .7, 0]);
 }
