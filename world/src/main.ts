@@ -82,6 +82,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
 import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './fx';
 import { settlementGrassClearance } from './grassClearance';
+import {createArmoryWorkshop,ARMORY_WORKSHOP} from './armoryWorkshop';
 import { makeRegionWeather } from './regionWeather';
 import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './look';
 import { Player, PLAYER, type Collider } from './player';
@@ -429,6 +430,11 @@ world.add(compactRelaySites.root); freezeStaticArt(compactRelaySites.root);
 staticGeos.push(...compactRelaySites.collisionGeometries); layout.markers.push(...compactRelaySites.markers);
 const compactRelayMarkerIds = new Set(compactRelaySites.markers.map(marker => marker.id));
 addEventListener('pagehide', event => { if (!event.persisted) compactRelaySites.dispose(); });
+const armoryWorkshop=createArmoryWorkshop();
+world.add(armoryWorkshop.root);
+armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
+freezeStaticArt(armoryWorkshop.root);
+addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
 const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
@@ -465,7 +471,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway]) }) : null;
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],ARMORY_WORKSHOP.clearance) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。

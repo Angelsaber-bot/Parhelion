@@ -7,6 +7,7 @@ import type {SettlementApproach} from './settlementApproaches';
 export function settlementGrassClearance(
  grid:Pick<WorldGrid,'nx'|'nz'|'x0'|'z0'|'cell'>,
  placements:readonly SettlementPlacement[], routes:readonly SettlementApproach[],
+ rectangles:readonly (readonly [number,number,number,number])[]=[],
 ){
  const mask=new Uint8Array(grid.nx*grid.nz),pad=grid.cell;
  const fill=(x0:number,z0:number,x1:number,z1:number,inside:(x:number,z:number)=>boolean)=>{
@@ -14,6 +15,7 @@ export function settlementGrassClearance(
   const iz0=Math.max(0,Math.floor((z0-grid.z0)/grid.cell)),iz1=Math.min(grid.nz-1,Math.ceil((z1-grid.z0)/grid.cell));
   for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++)if(inside(grid.x0+ix*grid.cell,grid.z0+iz*grid.cell))mask[iz*grid.nx+ix]=1;
  };
+ for(const [x0,z0,x1,z1] of rectangles)fill(x0-pad,z0-pad,x1+pad,z1+pad,()=>true);
  for(const p of placements){
   const [x,,z]=p.position,[w,d]=p.footprint;
   fill(x-w/2-pad,z-d/2-pad,x+w/2+pad,z+d/2+pad,()=>true);
