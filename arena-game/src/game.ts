@@ -133,7 +133,7 @@ export class Game {
         const from = this.scene.muzzleOf(e.id) ?? e.from;
         const shooter=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[shooter?.skins[e.w]??0]?.id;
         const d = this.me ? Math.hypot(e.from[0]-this.me.x,e.from[1]-this.me.y,e.from[2]-this.me.z) : 99;
-        // Distant shots keep audio; nearby shotguns show two representative rays, not nine particle clouds.
+        // Distant shots keep audio; nearby shotguns show two representative rays for the full pellet burst.
         if(d<32)for(const to of e.to.slice(0,WEAPONS[e.w].pellets>1?2:1))this.scene.skinTracer(from,to,skinId,.45);
         sfx.shot(e.w, d < 25, d);
         break;

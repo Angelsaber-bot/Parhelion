@@ -2,6 +2,7 @@ import { afterEach, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { ArenaCombatEffects, ARENA_EFFECT_BUDGET, createNumberSurface, type NumberSurface } from '../src/combatEffects';
 import { ArenaScene } from '../src/scene';
+import { WEAPONS } from '../shared/content';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 function fixture(quality: 'high' | 'low' = 'high') {
@@ -12,19 +13,19 @@ function fixture(quality: 'high' | 'low' = 'high') {
   });
   return { scene, glow, effects, surfaces, close() { effects.dispose(); glow.dispose(); } };
 }
-it('reuses actual scene resources across 100 shotgun bursts instead of 7,200 materials and 900 geometries', () => {
+it('reuses actual scene resources across 100 full shotgun bursts', () => {
   const f = fixture(); const materials = new Set<string>(), geometries = new Set<string>(); let peak = 0;
   const state = Object.assign(Object.create(ArenaScene.prototype), { scene: f.scene, combatEffects: f.effects, flashT: 0, muzzleLight: new THREE.PointLight(), avatars: new Map(), shields: new Map(), camera: new THREE.PerspectiveCamera(), viewmodel: { update() {}, resetMotion() {} }, particles: null, blackflagEffects: null, chapterEffects: null }) as ArenaScene;
   try {
     for (let shot = 0; shot < 100; shot++) {
-      for (let pellet = 0; pellet < 9; pellet++) { state.tracer([0, 1, 0], [pellet * .05, 1, -10], 0xfff4c0, .5); state.impact([pellet * .05, 1, -10], false); }
+      for (let pellet = 0; pellet < WEAPONS[1].pellets; pellet++) { state.tracer([0, 1, 0], [pellet * .05, 1, -10], 0xfff4c0, .5); state.impact([pellet * .05, 1, -10], false); }
       peak = Math.max(peak, f.scene.children.length);
       for (const node of f.scene.children) { const mesh = node as THREE.Mesh; materials.add((mesh.material as THREE.Material).uuid); if ((node as THREE.Line).isLine) geometries.add(mesh.geometry.uuid); }
       for (let frame = 0; frame < 30; frame++) state.update(1 / 60);
     }
-    expect({ materials: materials.size, geometries: geometries.size, peak }).toEqual({ materials: 72, geometries: 9, peak: 72 });
+    expect({ materials: materials.size, geometries: geometries.size, peak }).toEqual({ materials: 160, geometries: 20, peak: 160 });
     expect(f.scene.children).toHaveLength(0); expect(f.effects.inventory.recycled).toEqual({ tracers: 0, sparks: 0, numbers: 0 });
-    state.clearCombatEffects(); expect(f.effects.inventory.allocated).toEqual({ tracers: 9, sparks: 63, numbers: 0 });
+    state.clearCombatEffects(); expect(f.effects.inventory.allocated).toEqual({ tracers: 20, sparks: 140, numbers: 0 });
     state.disposeCombatEffects(); expect(f.effects.inventory.disposed).toBe(true);
   } finally { f.close(); }
 });

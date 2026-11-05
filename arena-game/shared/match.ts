@@ -466,7 +466,7 @@ export class Match {
 
   private damageShield(shield: Shield, dmg: number): void {
     // The same authoritative clock protects both the player and their deployed shield.
-    if (this.spawnProtected(shield.owner)) return;
+    if (shield.hp <= 0 || this.spawnProtected(shield.owner)) return;
     shield.hp -= dmg;
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }

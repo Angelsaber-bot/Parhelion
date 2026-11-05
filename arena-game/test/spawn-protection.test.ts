@@ -55,7 +55,10 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
       strikeAt(m,impact); const snap=m.snapshot();
       expect(m.player('b')!.hp).toBe(150);
       if(impact<150){ expect(m.shields[0].hp).toBe(SHIELD.hp); expect(snap.events.some(e=>e.t==='hit'||e.t==='kill'||e.t==='shieldBreak')).toBe(false); }
-      else expect(m.shields[0].hp).toBeLessThan(SHIELD.hp);
+      else if(id==='corona'){
+        expect(m.shields).toHaveLength(0);
+        expect(snap.events.filter(e=>e.t==='shieldBreak')).toHaveLength(1);
+      }else expect(m.shields[0].hp).toBeLessThan(SHIELD.hp);
     }
   });
   it('uses world ticks without packets, ignores forged protection fields, and cannot be shortened by catch-up inputs',()=>{

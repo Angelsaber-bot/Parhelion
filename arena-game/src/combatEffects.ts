@@ -2,8 +2,8 @@ import * as THREE from 'three';
 import type {SkinEffect,ParticleShape} from './skinEffects.ts';
 import type { Vec3 } from '../shared/map';
 
-/** Presentation ceilings, not gameplay limits. Normal 9-pellet bursts measured
- * 9 tracers + 63 sparks. Saturation replaces the oldest same-kind cosmetic;
+/** Presentation ceilings, not gameplay limits. A full twenty-pellet burst can
+ * request 20 tracers + 140 sparks. Saturation replaces the oldest same-kind cosmetic;
  * authoritative events, hit indicators and damage are never filtered here. */
 export const ARENA_EFFECT_BUDGET = {
   high: { tracers: 96, sparks: 384, numbers: 48 },

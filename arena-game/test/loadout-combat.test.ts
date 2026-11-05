@@ -72,15 +72,16 @@ describe('validated two-gun one-melee loadouts', () => {
       expect(p.weapon).toBe(4); expect(p.loadout).toEqual(['longnight', 'firefly', 'hammer']);
     }
   });
-  it('the original three firearm numbers are unchanged; every new weapon has a unique role', () => {
-    expect(WEAPONS.slice(0, 3).map((w) => [w.damage, w.interval, w.mag, w.reload])).toEqual([[20, 6, 30, 114], [18, 39, 6, 138], [52, 22, 8, 126]]);
+  it('firearms retain their cadence and magazines with the approved shotgun damage increase', () => {
+    expect(WEAPONS.slice(0, 3).map((w) => [w.damage, w.interval, w.mag, w.reload])).toEqual([[20, 6, 30, 114], [20, 39, 6, 138], [52, 22, 8, 126]]);
     expect(WEAPONS.map((w) => w.id)).toEqual([...GUN_IDS, ...MELEE_IDS]);
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
-  it('version 10 refuses an old shotgun-balance client before adding any player', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(10);
-    expect(() => core.join('old', { rulesVersion: 9 })).toThrow(/版本/); expect(core.match.slots.size).toBe(0);
+  it('version 11 refuses old nine-pellet clients before adding any player', () => {
+    const core = new RoomCore({}); expect(RULES_VERSION).toBe(11);
+    for (const rulesVersion of [9, 10]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
+    expect(core.match.slots.size).toBe(0);
   });
 });
 
