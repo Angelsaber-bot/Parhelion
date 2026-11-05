@@ -1,0 +1,14 @@
+{
+  "sourceBatchCount": 306,
+  "parityMismatches": [],
+  "reviewItems": 1152,
+  "componentsIncluded": 90628,
+  "componentsExcludedAsNatureOrEffects": 41056,
+  "regions": {
+    "alpha": 112,
+    "blacksail": 101,
+    "britain": 170,
+    "kyoto": 661,
+    "winter": 108
+  }
+}

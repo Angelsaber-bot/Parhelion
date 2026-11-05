@@ -18,5 +18,9 @@ test('Everwinter exported geometry is finite and stays under the 2 million ART t
 });
 test('Everwinter collision meshes preserve exact baseline ordered triangle positions and gameplay extras',async()=>{
  const before=JSON.parse(readFileSync(new URL('./winter/baseline-collision.json',import.meta.url),'utf8'));
- assert.deepEqual(await collisionSnapshot(path),before);
+ const now=await collisionSnapshot(path);
+ const repair=now.find(m=>m.name==='COL_Winter_House_Foundations');
+ assert.deepEqual(now.filter(m=>m.name!=='COL_Winter_House_Foundations'),before,'all original ordered collision stays exact');
+ assert(repair);assert.ok(repair.triangles>0&&repair.triangles<=768);assert.equal(repair.triangles%12,0);
+ assert.equal(repair.extras.dynamic,true);assert.equal(repair.extras.groundFooting,true);
 });

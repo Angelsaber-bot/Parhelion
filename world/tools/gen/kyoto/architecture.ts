@@ -43,11 +43,10 @@ function roofSurface(w: number, d: number, h: number, kind: 'hip' | 'gable') {
   const p: number[] = [];
   const tri = (a: number[], b: number[], c: number[]) => {
     p.push(...a, ...c, ...b); // upward-facing outer skin
-    p.push(a[0],a[1]-0.14,a[2], b[0],b[1]-0.14,b[2], c[0],c[1]-0.14,c[2]); // visible timber soffit
   };
   const quad = (a: number[], b: number[], c: number[], e: number[]) => { tri(a,b,c); tri(a,c,e); };
   // Five slope breaks make the eave readable at street distance without dense tessellation.
-  const N = 5, thick = Math.min(0.22, h * 0.13);
+  const N = 5, thick = 0.14;
   const height = (t: number) => h * Math.pow(1-t, 1.45) + Math.min(0.30, h * 0.16) * Math.pow(t, 8);
   if (kind === 'gable') {
     for (const sign of [-1,1]) for (let k=0; k<N; k++) {
@@ -55,10 +54,6 @@ function roofSurface(w: number, d: number, h: number, kind: 'hip' | 'gable') {
       const a=[-w/2,height(t0),sign*d/2*t0], q=[w/2,height(t0),sign*d/2*t0];
       const c=[w/2,height(t1),sign*d/2*t1], e=[-w/2,height(t1),sign*d/2*t1];
       if(sign===1) quad(a,q,c,e); else quad(q,a,e,c);
-      for (const side of [-1,1]) {
-        const x=side*w/2;
-        quad([x,height(t0),sign*d/2*t0],[x,height(t1),sign*d/2*t1],[x,height(t1)-thick,sign*d/2*t1],[x,height(t0)-thick,sign*d/2*t0]);
-      }
     }
   } else {
     // Ridge follows the long axis; square pagodas finish in a compact crown.
@@ -71,9 +66,24 @@ function roofSurface(w: number, d: number, h: number, kind: 'hip' | 'gable') {
       const a=ring(k/N), q=ring((k+1)/N);
       for(let j=0;j<4;j++) { const jj=(j+1)%4; quad(a[jj],a[j],q[j],q[jj]); }
     }
-    const e=ring(1);
-    for(let j=0;j<4;j++) { const jj=(j+1)%4; quad(e[j],e[jj],[e[jj][0],e[jj][1]-thick,e[jj][2]],[e[j][0],e[j][1]-thick,e[j][2]]); }
     quad(...ring(0) as [number[],number[],number[],number[]]);
+  }
+  // Derive the perimeter from the outer skin. Close only true boundary edges,
+  // using the same thickness as the reversed soffit; never duplicate side skins.
+  const outer = p.slice(), edges = new Map<string, { a: number[]; b: number[]; count: number }>();
+  const vertexKey = (v: number[]) => v.map(n => Math.round(n * 1e6)).join(',');
+  const lower = (v: number[]) => [v[0], v[1] - thick, v[2]];
+  for (let i = 0; i < outer.length; i += 9) {
+    const vertices = [outer.slice(i,i+3), outer.slice(i+3,i+6), outer.slice(i+6,i+9)];
+    p.push(...lower(vertices[0]), ...lower(vertices[2]), ...lower(vertices[1]));
+    for (let j = 0; j < 3; j++) {
+      const a = vertices[j], b = vertices[(j+1)%3], ka = vertexKey(a), kb = vertexKey(b);
+      const id = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`, edge = edges.get(id);
+      if (edge) edge.count++; else edges.set(id,{ a, b, count: 1 });
+    }
+  }
+  for (const { a, b, count } of edges.values()) if (count === 1) {
+    p.push(...b, ...a, ...lower(a), ...b, ...lower(a), ...lower(b));
   }
   const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(p,3)); g.computeVertexNormals();
   roofCache.set(key,g); return g;
@@ -143,6 +153,38 @@ export function addKyotoRoof(b: Batch, x: number, y: number, z: number, ry: numb
     const u=ridgeX>=ridgeZ?s*ridgeX/2:0,v=ridgeX>=ridgeZ?0:s*ridgeZ/2;
     b.add(CAP,capColor,T(...f.point(u,y+rh+0.22,v),ry,0.22,0.28,0.22),false);
   }
+}
+
+/** Close an enclosed building's attic against the actual curved roof underside.
+ * Roofs on gates, open stages and shelters deliberately do not call this.
+ * Samples are exact intersections with triangle edges, not a different curve
+ * approximation that could leave another thin daylight seam at a slope break. */
+export function addKyotoAttic(b: Batch, x:number, y:number, z:number, ry:number, wallW:number, wallD:number, roofW:number, roofD:number, rise:number, color:string, kind:'hip'|'gable'='gable') {
+  const skin=roofSurface(roofW,roofD,rise,kind),p=skin.attributes.position;
+  const roof=new THREE.Mesh(skin,new THREE.MeshBasicMaterial({side:THREE.FrontSide}));
+  const ray=new THREE.Raycaster();
+  for(const axis of [0,2])for(const side of [-1,1]) {
+    const at=side*(axis===0?wallW:wallD)/2,half=(axis===0?wallD:wallW)/2,other=axis===0?2:0;
+    const cuts=new Set<number>([-half,half]);
+    for(let i=0;i<p.count;i+=3)for(let j=0;j<3;j++) {
+      const a=i+j,c=i+(j+1)%3,da=p.getComponent(a,axis)-at,dc=p.getComponent(c,axis)-at;
+      if(da*dc>0||Math.abs(da-dc)<1e-8)continue;
+      const u=p.getComponent(a,other)+(p.getComponent(c,other)-p.getComponent(a,other))*da/(da-dc);
+      if(u>-half+1e-5&&u<half-1e-5)cuts.add(Math.round(u*1e6)/1e6);
+    }
+    const points=[...cuts].sort((a,c)=>a-c).map(u=>{
+      ray.set(new THREE.Vector3(axis===0?at:u,-1,axis===0?u:at),new THREE.Vector3(0,1,0));
+      const hit=ray.intersectObject(roof)[0];
+      if(!hit)throw new Error(`Attic has no roof support: ${wallW}/${wallD}/${kind}`);
+      return [axis===0?-u:u,Math.max(-.04,hit.point.y+.04)];
+    }).sort((a,c)=>c[0]-a[0]);
+    const shape=new THREE.Shape();shape.moveTo(-half,-.08);shape.lineTo(half,-.08);
+    for(const [u,h]of points)shape.lineTo(u,h);shape.closePath();
+    const g=new THREE.ExtrudeGeometry(shape,{depth:.12,bevelEnabled:false});g.translate(0,0,-.06);
+    if(axis===0)g.rotateY(Math.PI/2);g.translate(axis===0?at:0,0,axis===2?at:0);
+    b.add(g,color,T(x,y,z,ry),false);g.dispose();
+  }
+  roof.material.dispose();
 }
 
 /** Recessed shoji/lattice bay with real mullions and sill, reusable on temples and shops. */
@@ -282,6 +324,7 @@ export function addCityBlock(b:Batch,x:number,y:number,z:number,w:number,d:numbe
   const hallW=kind===2?11.8:w*.70, hallD=kind===3?5.2:6.2, hz=z-d*.28, hallH=kind===2?5.7:4.1;
   b.box(x,y,hz,hallW,hallH,hallD,kind===2?'#77523b':pale);
   addKyotoRoof(b,x,y+hallH,hz,0,hallW+2.6,hallD+2.8,kind===2?3.1:2.2,'#535b5e',kind===2?'hip':'gable');
+  addKyotoAttic(b,x,y+hallH,hz,0,hallW,hallD,hallW+2.6,hallD+2.8,kind===2?3.1:2.2,kind===2?'#77523b':pale,kind===2?'hip':'gable');
   for(let i=0;i<4;i++) {
     const xx=x-hallW*.36+i*hallW*.24;
     addLattice(b,xx,y+2.0,hz+hallD/2+.04,0,hallW*.18,2.6,wood,'#b6af92',4);

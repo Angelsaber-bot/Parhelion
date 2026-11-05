@@ -1,0 +1,37 @@
+
+> parhelion-world@0.1.0 build
+> tsc --noEmit && vite build
+
+vite v8.3.5 building client environment for production...
+transforming...
+✓ 324 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                                6.01 kB │ gzip:   2.30 kB
+dist/assets/saber-cut-in-v2-C00sSGkK.webp                    288.23 kB
+dist/assets/blackbeard-cut-in-v2-D3elcP5f.webp               333.79 kB
+dist/assets/napoleon-cut-in-v2-B4Imbevv.webp                 393.60 kB
+dist/assets/musashi-cut-in-v2-Bb8sEJQV.webp                  454.94 kB
+dist/assets/06_Refract_Blade-DLNuQ6Xb.glb                    836.08 kB
+dist/assets/07_Meteor_Polearm-CibxundI.glb                 1,501.72 kB
+dist/assets/02_Firefly_SMG-A6fwOKXE.glb                    1,707.91 kB
+dist/assets/03_Afterglow_Shotgun-D1O-SiIS.glb              1,842.68 kB
+dist/assets/08_Faultline_Hammer-DqY0mhcF.glb               1,893.47 kB
+dist/assets/04_Meridian_DMR-ybTxkShj.glb                   2,275.47 kB
+dist/assets/01_Dawn_AR-CFfUgGHN.glb                        2,553.62 kB
+dist/assets/05_Longnight_Sniper-CmRzREkS.glb               2,653.96 kB
+dist/assets/player_v2-Dsl2ouNr.glb                         3,687.48 kB
+dist/assets/Blackbeard_Captain_Remaster.glb-BTflky4A.gz    7,712.51 kB
+dist/assets/Musashi_Runtime.glb-DCB3PajX.gz                7,853.22 kB
+dist/assets/artoria_civilian.glb-o80W5IK2.gz              13,773.37 kB
+dist/assets/Napoleon_WhiteHorse_Remaster.glb-BbB7dS3a.gz  21,763.45 kB
+dist/assets/artoria_armor.glb-Cak5n5ug.gz                 25,942.96 kB
+dist/assets/index-Db1NkAm8.css                                37.51 kB │ gzip:   9.04 kB
+dist/assets/index-B6fPjqtH.js                              2,288.69 kB │ gzip: 751.97 kB
+
+[plugin builtin:vite-reporter]
+(!) Some chunks are larger than 1200 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.74s

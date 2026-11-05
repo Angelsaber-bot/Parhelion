@@ -346,6 +346,7 @@ export function buildBlacksail(heightAt: HeightAt) {
   // ───────────────────────── Blackbeard's Fort: star fort on the sea cliff, battery, magazine ─────────────────────────
   {
     const b = new Batch('Fort');
+    const drums = new Batch('Fort_Tower_Drums', 'M_BlackSailStone');
     const [fx, fz] = FORT.c, y = FORT.top, R = FORT.r - 3, wallH = 5;
     const angDiff = (a: number, c: number) => Math.abs(Math.atan2(Math.sin(a - c), Math.cos(a - c)));
     // curtain walls between four bastions (a star outline)
@@ -374,6 +375,10 @@ export function buildBlacksail(heightAt: HeightAt) {
       const g = Math.min(y, lowest(ax, az, 3));
       b.addCol(CYL20, T(ax, (g + y + wallH + 3) / 2 - 1, az, 0, 2.6, y + wallH + 5 - g, 2.6));
       art.add(CYL20,'#bba88a', T(ax, (g + y + wallH + 3) / 2 - 1, az, 0, 2.6, y + wallH + 5 - g, 2.6),false);
+      // The old shaft ended at y+wallH+3, but the roof begins at +4.1.
+      // A continuous upper drum closes that 1.1 m daylight gap, with a small
+      // overlap at both joints. It stays inside the existing tower footprint.
+      drums.add(CYL20,'#bba88a', T(ax, y + wallH + 3.55, az, 0, 2.6, 1.2, 2.6));
       b.addCol(CONE16, T(ax, y + wallH + 5.4, az, 0, 3.1, 2.6, 3.1));
       art.add(CONE16,'#a96850', T(ax, y + wallH + 5.4, az, 0, 3.1, 2.6, 3.1),false);
     }
@@ -428,6 +433,8 @@ export function buildBlacksail(heightAt: HeightAt) {
     mk({ id: 'disc_fort_tower', type: 'discovery', label: '要塞瞭望', p: [corner(0)[0] - 4, y, corner(0)[1] - 4], radius: 5 });
     fortCraft(art,fx,y,fz,cx,cz);
     pieces.push({ name: 'Fort', material: 'M_Toon', batch: b, outline: true });
+    // Dedicated always-enabled proxy leaves the original ordered COL_Props intact.
+    pieces.push({ name: drums.name, material: drums.material, batch: drums, dynamic: true, outline: false });
     for (const [dx, dz] of [[-20, -6], [6, 8], [-8, 22]])
       mk({ id: `enemy_fort_${dx}`, type: 'enemy', label: '要塞海盗（占位）', p: [fx + dx, y, fz + dz] });
   }

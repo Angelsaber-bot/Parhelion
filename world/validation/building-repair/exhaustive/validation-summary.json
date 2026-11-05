@@ -1,0 +1,49 @@
+{
+  "date": "2026-11-05",
+  "testFiles": 340,
+  "fullSuite": {
+    "command": "node --import tsx --test --test-concurrency=3 validation/*.test.ts",
+    "tests": 1889,
+    "passed": 1889,
+    "failed": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "durationMs": 658187.3905,
+    "log": "full-suite.log"
+  },
+  "build": {
+    "command": "npm run build",
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "log": "production-build.log"
+  },
+  "geometry": {
+    "constructionComponents": 131684,
+    "sourceBatches": 306,
+    "sourceBatchTriangleMismatches": 0,
+    "includedBuildingAndStructureComponents": 90628,
+    "excludedNatureAndEffectsComponents": 41056,
+    "closedComponentsChecked": 92066,
+    "closedComponentIssues": 0,
+    "roofInstancesChecked": 452,
+    "atticAssembliesChecked": 402,
+    "atticProbes": 4210,
+    "failedAtticAssemblies": 0,
+    "registeredHousesChecked": 608,
+    "groundProbes": 15200,
+    "unresolvedGroundSupport": 0,
+    "addedFoundations": 28
+  },
+  "visual": {
+    "generatedReviewUnits": 1152,
+    "supplementalRuntimeUnits": 280,
+    "totalReviewUnits": 1432,
+    "sixDirectionImageSheets": 244,
+    "nativeScreenshots": 6,
+    "allRenderedAndVisuallyReviewed": true,
+    "reusedImageGeometryVerifiedByteForByte": true,
+    "runtimeFinalGeometryAndColorsMatchAtlasByteForByte": true
+  },
+  "knownUnresolvedConfirmedBuildingDefects": [],
+  "earlierRuns": "An earlier high-concurrency run had two 60-second boot timeouts under load. The final complete run above passed with concurrency 3."
+}

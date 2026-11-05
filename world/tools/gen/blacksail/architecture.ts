@@ -1,6 +1,6 @@
 /** Authored maritime architecture. Every addition is ART-only: gameplay proxies stay in build.ts. */
 import * as THREE from 'three';
-import { Batch, BOX, T } from '../geo.js';
+import { Batch, BOX, T, sealRoofSkin } from '../geo.js';
 import type { Piece } from '../structures.js';
 
 const CYL = new THREE.CylinderGeometry(1, 1, 1, 10);
@@ -54,18 +54,20 @@ class Craft {
     const m = new THREE.Matrix4().compose(p.clone().add(q).multiplyScalar(.5), new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,1,0), q.clone().sub(p).normalize()), new THREE.Vector3(width,p.distanceTo(q),width));
     this.b.add(BOX,c,m,false);
   }
-  mesh(vertices: number[], triangles: number[], color: string) {
+  mesh(vertices: number[], triangles: number[], color: string, thickness = 0) {
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(vertices,3)); g.setIndex(triangles);
-    this.b.add(g,color,T(this.x,this.y,this.z,this.a),false); g.dispose();
+    const shell=thickness?sealRoofSkin(g,thickness):g;
+    this.b.add(shell,color,T(this.x,this.y,this.z,this.a),false);
+    if(shell!==g) shell.dispose();g.dispose();
   }
 }
 
 /** Thick roof planes and a genuine ridge, not triangular-cylinder caps. */
-function roof(k: Craft, w: number, d: number, eave: number, rise: number, color: string, kind: 'gable'|'hip'|'saltbox' = 'gable') {
+function roof(k: Craft, w: number, d: number, eave: number, rise: number, color: string, kind: 'gable'|'hip'|'saltbox' = 'gable', existingLining = false) {
   const W=w/2+.48,D=d/2+.52, ridge=kind==='saltbox' ? -.7 : 0;
   if(kind==='hip') {
     const R=Math.max(.65,W-D*.65);
-    k.mesh([-W,eave,-D,W,eave,-D,W,eave,D,-W,eave,D,-R,eave+rise,0,R,eave+rise,0], [0,4,5,0,5,1,1,5,2,2,5,4,2,4,3,3,4,0],color);
+    k.mesh([-W,eave,-D,W,eave,-D,W,eave,D,-W,eave,D,-R,eave+rise,0,R,eave+rise,0], [0,4,5,0,5,1,1,5,2,2,5,4,2,4,3,3,4,0],color,existingLining?0:.04);
     k.beam([-R,eave+rise+.04,0],[R,eave+rise+.04,0],.18,C.tile);
     for(const s of [-1,1]) for(const t of [-1,1]) k.beam([s*W,eave,t*D],[s*R,eave+rise,0],.12,C.tile);
   } else {
@@ -84,6 +86,7 @@ function roof(k: Craft, w: number, d: number, eave: number, rise: number, color:
     k.box(0,eave+rise+.12,ridge,w+1.05,.18,.24,C.tile);
   }
   for(const s of [-1,1]) k.box(0,eave-.06,s*D,w+1.03,.23,.19,C.dark);
+  if(kind==='hip') for(const s of [-1,1]) k.box(s*W,eave-.06,0,.19,.23,d+1.03,C.dark);
 }
 function shutter(k: Craft,x: number,y: number,z: number,w=1.15,h=1.45,color=C.teal) {
   k.box(x,y,z,w,h,.075,C.recess);
@@ -204,7 +207,7 @@ export function tavernRoofUnderside(x: number, y: number, z: number, w: number, 
 
 export function tavernCraft(b: Batch,x: number,y: number,z: number,w: number,d: number) {
   const k=new Craft(b,x,y,z);
-  roof(k,w,d,5.12,2.35,C.red,'hip');
+  roof(k,w,d,5.12,2.35,C.red,'hip',true); // original tavern has its own exact inward lining
   const f=d/2+.46;
   // Foundation only at the wings, never across the playable entry.
   for(const s of [-1,1]) {

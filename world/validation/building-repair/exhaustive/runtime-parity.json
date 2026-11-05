@@ -1,0 +1,28 @@
+{
+  "groups": 25,
+  "units": 280,
+  "meshes": 1070,
+  "finalGeometryAndColorsMatchAtlasByteForByte": true,
+  "sha256": "07fd0cc4ded82a6b7c3ae9fbaf4a2257afbd1b403d8a05460a57e230b67d2fc1",
+  "materialMetadataChangesAfterAtlas": [
+    {
+      "id": 52,
+      "batch": "Settlement_MeshStandardMaterial",
+      "before": [
+        {
+          "name": "",
+          "side": 0,
+          "opacity": 1
+        }
+      ],
+      "after": [
+        {
+          "name": "",
+          "side": 2,
+          "opacity": 1
+        }
+      ]
+    }
+  ],
+  "note": "Original shared pale-stone DoubleSide contract restored; native screenshots and look-material-intent test validate live materials. Offline atlas uses FrontSide for a conservative shell inspection."
+}

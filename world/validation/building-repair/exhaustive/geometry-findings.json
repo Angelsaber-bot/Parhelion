@@ -1,0 +1,35 @@
+{
+  "stats": {
+    "components": 131684,
+    "triangles": 2627505,
+    "nonFinite": 0,
+    "invertedClosed": 0,
+    "degenerate": 806,
+    "degenerateByType": {
+      "LatheGeometry": 128,
+      "BufferGeometry": 294,
+      "custom": 352,
+      "ExtrudeGeometry": 32
+    },
+    "byType": {
+      "BoxGeometry": 70898,
+      "IcosahedronGeometry": 3279,
+      "OctahedronGeometry": 131,
+      "TorusGeometry": 565,
+      "CylinderGeometry": 15232,
+      "ConeGeometry": 2938,
+      "BufferGeometry": 17568,
+      "PlaneGeometry": 8,
+      "DodecahedronGeometry": 2162,
+      "SphereGeometry": 1604,
+      "TubeGeometry": 36,
+      "LatheGeometry": 4,
+      "ExtrudeGeometry": 2565,
+      "custom": 14671,
+      "CircleGeometry": 6,
+      "ShapeGeometry": 12,
+      "RingGeometry": 5
+    }
+  },
+  "issues": []
+}

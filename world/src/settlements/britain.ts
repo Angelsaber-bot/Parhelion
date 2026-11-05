@@ -14,9 +14,8 @@ export function buildBritainSettlement(): SettlementKit {
   // Wide forge hall, with a real opening, full working interior and rear chimney.
   a.room('royal_forge', -10, -1, 12, 14, 4.3, limestone, 4.2);
   a.gable('royal_forge', -10, -1, 13.2, 15.4, 4.3, 2.4, '#a95f48', beam);
-  const forgeGable = new THREE.Shape(); forgeGable.moveTo(-6, 0); forgeGable.lineTo(6, 0); forgeGable.lineTo(0, 2.25); forgeGable.closePath();
-  const gableMat = a.mat(pale); gableMat.side = THREE.DoubleSide;
-  a.mesh('forge_front_gable', new THREE.ShapeGeometry(forgeGable), gableMat, [-10, 4.3, 6.02], [1, 1, 1]);
+  for (const z of [-8, 6]) a.attic('forge_closed_gable', -10, z, 12, 13.2, 4.3, 2.4, pale);
+  a.mat(pale).side = THREE.DoubleSide; // retain the original shared pale-stone surface contract
   for (const side of [-1, 1]) a.beam('forge_gable_truss', [-10, 6.55, 6.24], [-10 + side * 4.7, 4.35, 6.24], .15, timber);
   a.beam('forge_gable_kingpost', [-10, 4.3, 6.24], [-10, 6.6, 6.24], .18, timber);
   for (const z of [-7.8, -4.4, -.7, 2.8, 5.8]) a.box('forge_side_stud', [-3.78, 2.15, z], [.19, 4.3, .19], timber);
@@ -76,6 +75,7 @@ export function buildBritainSettlement(): SettlementKit {
   a.box('stable_back_wall', [10, 1.7, -9], [11, 3.4, .3], '#bdad89', true);
   a.box('stable_side_wall', [15.5, 1.5, -1], [.3, 3, 16], timber, true);
   a.gable('stable', 10, -1, 12.4, 17.3, 3.5, 2.1, slate, beam);
+  a.attic('stable_rear_gable', 10, -9, 11, 12.4, 3.5, 2.1, timber, -.12);
   for (let y = .3; y < 3; y += .38) a.box('stable_weatherboard_joint', [15.67, y, -1], [.035, .035, 15.7], '#947351');
   for (const z of [-6.5, -.8, 4.7]) {
     a.box('stable_outer_buttress', [15.8, 1.75, z], [.28, 3.5, .3], beam);

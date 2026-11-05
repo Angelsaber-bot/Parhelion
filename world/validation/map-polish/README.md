@@ -1,5 +1,23 @@
 # Five-world micro-detail QA
 
+2026-11-05 building acceptance follow-up: the shared Kyoto roof shell and 402
+attic assemblies are repaired in the seven explicitly identified roof consumers
+(`repairedRoofs`, plus original `Inari` and `Higashiyama`). Nassau hip roof skins
+and end fascia are closed in the named craft batches. Dedicated ART/COLLISION
+pairs add the four `Fort_Tower_Drums` and the two regional foundation batches
+`Kyoto_Hillside_Foundations` / `Winter_House_Foundations`. These three permanent
+support proxies are always enabled and add no outline chunks. Every original
+ordered collision triangle, unrelated node, material identity and complete layout
+still passes its historical comparison; material table order is storage only.
+
+Kyoto attic infill has an explicit total detail ceiling of 90,000 added triangles,
+900,000 compressed bytes, and at most 64 additional prepared/outline chunks.
+Only `Arashiyama_Roofs` may shift its quantization Y center by under 2 cm.
+The original tavern lining is verified by decoded dimensions, inward normals and
+FrontSide rays after regeneration, rather than pinning a particular compressed
+BIN prefix. No historical baseline was refreshed. See the [complete acceptance
+report](../building-repair/exhaustive/README.md) for per-item evidence and checks.
+
 Baseline: `a3096254ef0fff455a29932bc5fef2e57fa49f44`. `baseline.json` was captured
 from its unmodified production GLBs before authoring, not from the revised output.
 It retains each original file SHA-256, layout-byte SHA-256, material properties,

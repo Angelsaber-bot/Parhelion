@@ -39,6 +39,13 @@ export class KyotoWinterArt {
       if(snow) this.box(x,eave+rise/2+.22,z+side*d/4,w+.12,.18,slope+.15,snow,false,0,side*angle);
     }
     this.box(x,eave+rise+.12,z,w+.35,.25,.3,trim);
+    // Continuous backing closes the 2 cm gaps between the decorative board
+    // courses below. Both sides and the thin perimeter are real solid faces.
+    const shape=new THREE.Shape();shape.moveTo(-d/2,-.12);shape.lineTo(d/2,-.12);shape.lineTo(0,rise);shape.closePath();
+    const cheek=new THREE.ExtrudeGeometry(shape,{depth:.12,bevelEnabled:false});
+    cheek.translate(0,0,-.06);cheek.rotateY(Math.PI/2);
+    for(const side of [-1,1]) this.geo(cheek.clone(),trim,x+side*(w/2-.72),eave,z,0,0,0,true);
+    cheek.dispose();
     // Closed timber attic cheeks: layered boards avoid hollow black triangular facade gaps.
     for(const side of [-1,1])for(let dy=.12;dy<rise-.08;dy+=.22){
       const span=Math.max(.1,d*(1-dy/rise)-.3);

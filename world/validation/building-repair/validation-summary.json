@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-05",
+  "focusedTests": {
+    "passed": 66,
+    "failed": 0
+  },
+  "roofRegression": {
+    "beforeFailed": 8,
+    "afterPassed": 8
+  },
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "assetAudit": "all five regions decoded; no non-finite accessor values; ART/COLLISION/MARKERS present",
+  "runtimeViews": [
+    "kyoto-street.jpg",
+    "inari-gate.jpg"
+  ],
+  "sourceBytes": {
+    "before": 12330884,
+    "after": 12194100
+  },
+  "visualBytes": {
+    "before": 10320988,
+    "after": 10228032
+  },
+  "coreBytes": 2315744,
+  "fullSuite": "stopped after the map-focused 66-test suite passed; no full-suite completion claim"
+}

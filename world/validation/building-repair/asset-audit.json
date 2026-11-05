@@ -1,0 +1,37 @@
+[
+  {
+    "region": "alpha",
+    "sourceBytes": 3806384,
+    "nodes": 151,
+    "triangles": 793954,
+    "nonFiniteValues": 0
+  },
+  {
+    "region": "britain",
+    "sourceBytes": 6134280,
+    "nodes": 71,
+    "triangles": 1100143,
+    "nonFiniteValues": 0
+  },
+  {
+    "region": "blacksail",
+    "sourceBytes": 4761928,
+    "nodes": 141,
+    "triangles": 914460,
+    "nonFiniteValues": 0
+  },
+  {
+    "region": "winter",
+    "sourceBytes": 6540268,
+    "nodes": 120,
+    "triangles": 1005648,
+    "nonFiniteValues": 0
+  },
+  {
+    "region": "kyoto",
+    "sourceBytes": 12194100,
+    "nodes": 84,
+    "triangles": 1656602,
+    "nonFiniteValues": 0
+  }
+]

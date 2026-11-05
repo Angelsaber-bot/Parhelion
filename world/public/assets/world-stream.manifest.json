@@ -10,18 +10,18 @@
     "visual": 4129976
   },
   "blacksail": {
-    "source": 4761928,
-    "core": 2054008,
-    "visual": 3010884
+    "source": 4772052,
+    "core": 2062704,
+    "visual": 3012316
   },
   "winter": {
-    "source": 6540268,
-    "core": 2204616,
+    "source": 6544404,
+    "core": 2208968,
     "visual": 4615648
   },
   "kyoto": {
-    "source": 12330884,
-    "core": 2315744,
-    "visual": 10320988
+    "source": 12713260,
+    "core": 2324236,
+    "visual": 10735492
   }
 }

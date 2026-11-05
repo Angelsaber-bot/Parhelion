@@ -1,6 +1,7 @@
 // Structures, props and vegetation for 业火京都 (Kyoto Ablaze, 1582).
 import * as THREE from 'three';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
+import { addGroundFooting } from '../footings.js';
 import { mulberry32, range } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
 import { conifer, canopy } from '../vegetation.js';
@@ -13,7 +14,7 @@ import {
 import { kamoD, pondD, inHonnoji, sannen, CITY_RECT } from './terrain.js';
 import { addGateCraft, addKitsune, addPagodaLevelCraft, addKiyomizuCraft, addKinkakuCraft, addOpenRail, addBurntCraft, addHonnojiCraft } from './landmark-craft.js';
 import { buildArashiyama, isArashiyamaReserved } from './arashiyama.js';
-import { addKyotoRoof, addMachiyaCraft, addLattice, addBracket, addBeam, localCraft, addCityBlock } from './architecture.js';
+import { addKyotoRoof, addKyotoAttic, addMachiyaCraft, addLattice, addBracket, addBeam, localCraft, addCityBlock } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -55,6 +56,7 @@ const C = {
 
 export function buildKyoto(heightAt: HeightAt) {
   const pieces: Piece[] = [];
+  const footings=new Batch('Kyoto_Hillside_Foundations','M_KyotoArchitecture');
   const markers: Marker[] = [];
   const mk = (m: Marker) => markers.push(m);
   const rng = mulberry32(KYOTO.seed + 5);
@@ -120,6 +122,7 @@ export function buildKyoto(heightAt: HeightAt) {
   const machiya = (b: Batch, x: number, z: number, ry: number, w: number, d: number, state: 'whole' | 'burnt' | 'burning') => {
     const y = lowest(x, z, Math.min(w, d) / 2), baseH = range(rng, 4.6, 6.0), fx = Math.sin(ry), fz = Math.cos(ry);
     const variant = Math.abs(Math.round(x * 29 + z * 71)) % 8;
+    if(b.name!=='Unexported_BlockPlan')addGroundFooting(footings,x,y,z,ry,w,d,heightAt,'#929183');
     const h = baseH + (state === 'whole' ? [-0.4, -1.25, -0.65, 0.5, 1.2, 0.85, -1.0, 0.1][variant] : 0);
     const burnt = state !== 'whole';
     b.add(BOX, burnt ? C.charred : variant === 1 || variant === 6 ? '#a18a68' : variant === 7 ? '#c0b99b' : C.plaster, T(x, y + h / 2, z, ry, w, h, d));
@@ -132,6 +135,10 @@ export function buildKyoto(heightAt: HeightAt) {
       if (style === 4) hip(b, x, y + h, z, ry, w + 0.7, d + 1.0, 1.75, roofColor);
       else if (style === 5) gable(b, x, y + h, z, ry + Math.PI / 2, d + 0.9, w + 0.7, 2.35, roofColor);
       else gable(b, x, y + h, z, ry, w + 0.4, d + 1.2, style === 1 ? 1.35 : 1.9, roofColor);
+      const atticColor=variant===1||variant===6?'#a18a68':variant===7?'#c0b99b':C.plaster;
+      if(style===4) addKyotoAttic(b,x,y+h,z,ry,w,d,w+.7,d+1,1.75,atticColor,'hip');
+      else if(style===5) addKyotoAttic(b,x,y+h,z,ry+Math.PI/2,d,w,d+.9,w+.7,2.35,atticColor);
+      else addKyotoAttic(b,x,y+h,z,ry,w,d,w+.4,d+1.2,style===1?1.35:1.9,atticColor);
       if (rng() < 0.3 && b.name !== 'Unexported_BlockPlan') glow.add(BOX, C.lantern, T(x + fx * (d / 2 + 0.1), y + 1.2, z + fz * (d / 2 + 0.1), ry, 0.8, 1.6, 0.04), false);
       if (rng() < 0.25) b.add(BOX, ['#3a4a8a', '#8a2a2a', '#3a6a4a'][Math.floor(rng() * 3)], T(x + fx * (d / 2 + 0.2), y + 2.0, z + fz * (d / 2 + 0.2), ry, 1.6, 0.9, 0.03), false); // noren
     } else {
@@ -711,6 +718,7 @@ export function buildKyoto(heightAt: HeightAt) {
     { name: 'Rocks', material: 'M_Toon', batch: rocks, outline: true, userData: { count: nRocks } },
     { name: 'Bushes', material: 'M_Foliage', batch: bushes },
   );
+  if(footings.vis.length)pieces.push({name:footings.name,material:footings.material,batch:footings,dynamic:true,outline:false,userData:{groundFooting:true}});
   return { pieces, markers };
 }
 

@@ -57,6 +57,17 @@ export class SettlementArt {
     }
     this.box(`${name}_ridge`, [x, y + rise + .14, z], [.28, .28, d + .3], trim);
   }
+  /** Closed attic wall follows the roof's actual pitch, including its overhang.
+   * Stop just inside the lower roof slab so no daylight seam remains. */
+  attic(name: string, x: number, z: number, wallWidth: number, roofWidth: number, eave: number, rise: number, color: string, bottom = -.06) {
+    const half = wallWidth / 2, shoulder = rise * (1 - wallWidth / roofWidth) - .1;
+    const shape = new THREE.Shape();
+    shape.moveTo(-half, bottom); shape.lineTo(half, bottom);
+    shape.lineTo(half, shoulder); shape.lineTo(0, rise - .1); shape.lineTo(-half, shoulder); shape.closePath();
+    const g = new THREE.ExtrudeGeometry(shape, { depth: .18, bevelEnabled: false });
+    g.translate(0, 0, -.09);
+    return this.mesh(name, g, this.mat(color), [x, eave, z], [1, 1, 1], true);
+  }
   window(name: string, x: number, y: number, z: number, w: number, h: number, frame: string, glass: string) {
     this.box(`${name}_glass`, [x, y, z], [w, h, .06], glass, false, .05, .13);
     for (const s of [-1, 1]) {

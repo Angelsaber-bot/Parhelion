@@ -1,6 +1,7 @@
 // Structures, props and vegetation for 永冬之城 (Everwinter City, 1812).
 import * as THREE from 'three';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
+import { addGroundFooting } from '../footings.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
 import { conifer } from '../vegetation.js';
@@ -64,6 +65,7 @@ export function buildWinter(heightAt: HeightAt) {
   resetArchitecture();
   resetFieldworkSurfaces();
   const pieces: Piece[] = [];
+  const footings=new Batch('Winter_House_Foundations','M_WinterStone');
   const markers: Marker[] = [];
   const mk = (m: Marker) => markers.push(m);
   const rng = mulberry32(WINTER.seed + 5);
@@ -130,6 +132,7 @@ export function buildWinter(heightAt: HeightAt) {
     if (burnt && (houseIndex % 5 === 0 || houseIndex % 5 === 4)) {
       for (const g of glow.vis.slice(glowStart)) g.translate(0, -h + .25, 0);
     } else glow.vis.length = glowStart;
+    addGroundFooting(footings,x,y,z,ry,w,d,heightAt,'#879193');
     winterHouse(b, x, y, z, ry, w, d, h, burnt, houseIndex++);
   };
   /** Onion dome on a drum. */
@@ -614,5 +617,6 @@ export function buildWinter(heightAt: HeightAt) {
   pieces.push(...fieldworkSurfacePieces());
   const moscow = pieces.find(p => p.name === 'Moscow');
   if (moscow) moscow.userData = { architectureManifest };
+  if(footings.vis.length)pieces.push({name:footings.name,material:footings.material,batch:footings,dynamic:true,outline:false,userData:{groundFooting:true}});
   return { pieces, markers };
 }

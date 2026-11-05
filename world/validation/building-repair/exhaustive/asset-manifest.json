@@ -1,0 +1,107 @@
+[
+  {
+    "file": "world_alpha.glb",
+    "bytes": 3806384,
+    "sha256": "1fb8d6823f2afcbdd11586d92013df4250243505a956c49db98fb14624f2e850"
+  },
+  {
+    "file": "world_alpha.core.glb",
+    "bytes": 2099820,
+    "sha256": "f34931d118113ce050fa68adee0c8b6919da30705312680f9d2340b4570f43bb"
+  },
+  {
+    "file": "world_alpha.visual.glb",
+    "bytes": 1960172,
+    "sha256": "fe92554d08c2cf9f06c6bf6a878c5b2a888cd4e63fb3d9fd2b4883e404fadaca"
+  },
+  {
+    "file": "world_alpha.layout.json",
+    "bytes": 15276,
+    "sha256": "41954bbf56b69af26c8baa23c557aa5b9726d4816284b075c344a0c78539dce0"
+  },
+  {
+    "file": "world_britain.glb",
+    "bytes": 6134280,
+    "sha256": "670f9e375029c0dbf90faa31b4cebf03f60b768077e24d7222fa888caf17aef9"
+  },
+  {
+    "file": "world_britain.core.glb",
+    "bytes": 2270136,
+    "sha256": "94673eca1c9983e368ba144ea9cd6277ae683c4f894f2793a48d60e697ec52c6"
+  },
+  {
+    "file": "world_britain.visual.glb",
+    "bytes": 4129976,
+    "sha256": "f9a32eb868694b0a3ac64a8f68e55431b535d082c0fa69048e85cad3ddca2a51"
+  },
+  {
+    "file": "world_britain.layout.json",
+    "bytes": 8127,
+    "sha256": "2fefdcece190c259b4079831e8c04e9db900e7d742912c6c3efd5e77f52d6491"
+  },
+  {
+    "file": "world_blacksail.glb",
+    "bytes": 4772052,
+    "sha256": "81dc80ea6ed6bd37d734af94b6d7cbee102b76eafca9349f9758089daefed336"
+  },
+  {
+    "file": "world_blacksail.core.glb",
+    "bytes": 2062704,
+    "sha256": "490e3db5a1d02d5898ae9d1acbecda72fb53c65d3a6b935bdccc2318435901e5"
+  },
+  {
+    "file": "world_blacksail.visual.glb",
+    "bytes": 3012316,
+    "sha256": "6813bd0f672c5e876ab21c7a62c09881690bc3334d2483cb2731f83a4574de7e"
+  },
+  {
+    "file": "world_blacksail.layout.json",
+    "bytes": 10345,
+    "sha256": "9a906bdc1e231f049f8630ee3893809abab9bfd3203367875caf6d9983fbde9f"
+  },
+  {
+    "file": "world_winter.glb",
+    "bytes": 6544404,
+    "sha256": "1f58cfe899d791f7468929885e3600bfac2d831c21ffac4a771542503e52fbc2"
+  },
+  {
+    "file": "world_winter.core.glb",
+    "bytes": 2208968,
+    "sha256": "dfc0a5386a92a58b4b083bccb903a689d79e154913091baa97938ed40acbcd3c"
+  },
+  {
+    "file": "world_winter.visual.glb",
+    "bytes": 4615648,
+    "sha256": "9784725f53a50c09487c2e2c876d6d2067dabd91792bb19ed34b1ccadcacca90"
+  },
+  {
+    "file": "world_winter.layout.json",
+    "bytes": 12880,
+    "sha256": "debcb3c49a0eda66bf34e9a7b9843971dddf7f24756d2b88ce34ae38b4af0019"
+  },
+  {
+    "file": "world_kyoto.glb",
+    "bytes": 12713260,
+    "sha256": "2d570209418d69b25f8dc5201140fad2cae1754227bafd1dba90dccf47f495ee"
+  },
+  {
+    "file": "world_kyoto.core.glb",
+    "bytes": 2324236,
+    "sha256": "7ed9c5559176a99fa999535ef8b67934e88d8ce6fc7d97e53f5ccd30827b7246"
+  },
+  {
+    "file": "world_kyoto.visual.glb",
+    "bytes": 10735492,
+    "sha256": "86bf3ee2a7eb483892ac1b0a84b76c15d3fee6799d91f9963a02481bc4bbc0a0"
+  },
+  {
+    "file": "world_kyoto.layout.json",
+    "bytes": 11912,
+    "sha256": "a785a5372f599396a137faea0052659295de650f229ad98b827ff3172e3e0f73"
+  },
+  {
+    "file": "world-stream.manifest.json",
+    "bytes": 432,
+    "sha256": "fe49ec2071425cd1b506e9e7d530055b9e13ee9233207db06ed2a05e1d2445a3"
+  }
+]

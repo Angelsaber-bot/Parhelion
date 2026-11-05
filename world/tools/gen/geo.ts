@@ -39,6 +39,30 @@ export function bare(geo: THREE.BufferGeometry, m?: THREE.Matrix4) {
 
 export const BOX = new THREE.BoxGeometry(1, 1, 1);
 
+/** Thicken an upward roof skin downward and seal its real perimeter. */
+export function sealRoofSkin(geometry: THREE.BufferGeometry, thickness: number) {
+  const source = geometry.index ? geometry.toNonIndexed() : geometry;
+  const pos = source.attributes.position, vertices: number[] = [];
+  const edges = new Map<string, { a: number[]; b: number[]; count: number }>();
+  const key = (v: number[]) => v.map(n => Math.round(n * 1e6)).join(',');
+  const lower = (v: number[]) => [v[0], v[1] - thickness, v[2]];
+  for (let i = 0; i < pos.count; i += 3) {
+    const triangle = [0, 1, 2].map(k => [pos.getX(i+k), pos.getY(i+k), pos.getZ(i+k)]);
+    vertices.push(...triangle.flat());
+    for (let j = 0; j < 3; j++) {
+      const a=triangle[j], b=triangle[(j+1)%3], ka=key(a), kb=key(b), id=ka<kb?`${ka}|${kb}`:`${kb}|${ka}`;
+      const old=edges.get(id); if(old) old.count++; else edges.set(id,{a,b,count:1});
+    }
+  }
+  for (let i=0;i<pos.count;i+=3) {
+    for(const k of [0,2,1]) vertices.push(pos.getX(i+k),pos.getY(i+k)-thickness,pos.getZ(i+k));
+  }
+  for(const {a,b,count} of edges.values()) if(count===1) vertices.push(...b,...a,...lower(a),...b,...lower(a),...lower(b));
+  const result=new THREE.BufferGeometry();result.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));result.computeVertexNormals();
+  if(source!==geometry) source.dispose();
+  return result;
+}
+
 /**
  * Accumulates coloured visual pieces and their collision proxies, then merges
  * them into one mesh each. One Batch = one named object in the GLB.
