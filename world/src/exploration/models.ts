@@ -26,8 +26,8 @@ const G = {
 /** Places parts in a local frame (origin + yaw) on a SiteArt. */
 export class Frame {
   private readonly base: THREE.Matrix4;
-  constructor(readonly art: SiteArt, origin: V3, yaw = 0) {
-    this.base = new THREE.Matrix4().compose(new THREE.Vector3(...origin), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw), new THREE.Vector3(1, 1, 1));
+  constructor(readonly art: SiteArt, origin: V3, yaw = 0, scale = 1) {
+    this.base = new THREE.Matrix4().compose(new THREE.Vector3(...origin), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw), new THREE.Vector3(scale, scale, scale));
   }
   part(g: THREE.BufferGeometry, p: V3, size: V3, color: string, layer: Layer = 'body', rot: V3 = [0, 0, 0], solid = false) {
     const local = new THREE.Matrix4().compose(new THREE.Vector3(...p), new THREE.Quaternion().setFromEuler(new THREE.Euler(...rot)), new THREE.Vector3(...size));

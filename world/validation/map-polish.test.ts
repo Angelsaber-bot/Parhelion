@@ -9,6 +9,10 @@ import {countPreparedArt} from './map-polish/chunk-budget.ts';
 const before=JSON.parse(readFileSync(new URL('./map-polish/baseline.json',import.meta.url),'utf8'));
 const assets=fileURLToPath(new URL('../public/assets/',import.meta.url));
 const chunkBaseline=JSON.parse(readFileSync(new URL('./map-polish/chunk-baseline.json',import.meta.url),'utf8'));
+// The current interaction repair replaces exactly these three legacy chest
+// visuals. Pin both sides of the change; all other historical nodes, including
+// the full ordered collision skeleton, still compare against the old baseline.
+const chestReplacements=JSON.parse(readFileSync(new URL('./lived-world/legacy-chest-nodes.json',import.meta.url),'utf8'));
 // Explicitly bounded authoring permission, NOT an updated expected-output hash.
 // Every other exported node/accessor/transform must equal the untouched a309625
 // baseline. A later explicit user request aligns four Alpha seam blockers; only
@@ -103,6 +107,21 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
           else assert.equal(v,old.nodes[name][key][i]);
         });
       }
+    } else if(region==='alpha'&&name==='MK_interact_relay_b') {
+      // Re-export also bakes the already-approved layout copy correction into
+      // its GLB marker. Admit only that same exact note, never another field.
+      assert.equal(node.extras.note,'进入据点后启动');
+      assert.equal(old.nodes[name].extras.note,'清除据点后启动');
+      assert.deepEqual({...node,extras:{...node.extras,note:old.nodes[name].extras.note}},old.nodes[name]);
+    } else if(chestReplacements.regions[region]?.[name]) {
+      const replacement=chestReplacements.regions[region][name];
+      assert.equal(chestReplacements.baselineCommit,before.baselineCommit);
+      assert.deepEqual(old.nodes[name],replacement.before,'frozen original chest, not a refreshed historical baseline');
+      assert.deepEqual(node,replacement.after,`${name}: exactly bounded chest replacement`);
+      assert.deepEqual(node.extras,old.nodes[name].extras,'original discovery / story visibility conditions');
+      assert.deepEqual(node.children,old.nodes[name].children);
+      assert.deepEqual(node.primitives.map(p=>p.material),old.nodes[name].primitives.map(p=>p.material));
+      assert.equal(node.primitives[0].triangles-old.nodes[name].primitives[0].triangles,({Cave:-24,Island:-12,Treasure_Chest:96}as Record<string,number>)[name]);
     } else if(!allowed.nodes.includes(name))assert.deepEqual(node,old.nodes[name],`${name}: exact decoded accessor hashes and scene metadata`);
     else {
       assert.notDeepEqual(node.primitives,old.nodes[name].primitives,`${name}: intended visual detail actually exported`);

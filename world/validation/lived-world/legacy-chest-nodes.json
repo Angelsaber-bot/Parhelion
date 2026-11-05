@@ -1,0 +1,360 @@
+{
+  "baselineCommit": "a3096254ef0fff455a29932bc5fef2e57fa49f44",
+  "reason": "Replace exactly the two inert Alpha chest visuals and the already-claimed Nassau chest; all original collision, routes, quest metadata and unrelated visuals remain frozen.",
+  "regions": {
+    "alpha": {
+      "Cave": {
+        "before": {
+          "translation": [
+            177.86730194091797,
+            21.079635977745056,
+            -60
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            19.279636025428772,
+            19.279636025428772,
+            19.279636025428772
+          ],
+          "extras": {
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 904,
+                  "sha256": "f6ac2fef206bd4234223a3531ba83af74020375952f5e132cfe1191c8a92fda1"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 904,
+                  "sha256": "7a676b34424101b246c90557fcce7024bafa65f1ef14d5663bc41e17ab0e1106"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 904,
+                  "sha256": "72a0e70c6a1efeea0dff3eac79ac7a7c7d948b77e58090d802f281d5e130e165"
+                }
+              },
+              "indices": {
+                "count": 1038,
+                "sha256": "c33729f277d0ec94437c2152f556c916b91adaf1dbaafc06783e86935c7783f0"
+              },
+              "triangles": 346
+            }
+          ]
+        },
+        "after": {
+          "translation": [
+            177.86730194091797,
+            21.079635977745056,
+            -60
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            19.279636025428772,
+            19.279636025428772,
+            19.279636025428772
+          ],
+          "extras": {
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 856,
+                  "sha256": "1452dc565de83df1e08d377b58d99c74c459cb12fe52beb4ad19d1c1074c4183"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 856,
+                  "sha256": "8ee059a6e0ebe89caafe6b702886af45a1a8ceaabff5549d31d5231624e1acea"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 856,
+                  "sha256": "e34a0f3bb28685e5b448dc4ebac1adfb708839f1ba72c3e43f874c168546e778"
+                }
+              },
+              "indices": {
+                "count": 966,
+                "sha256": "6354808f8c9e5015d3c51ad9207adec1a386343783d6ae6bddf473597209b83f"
+              },
+              "triangles": 322
+            }
+          ]
+        }
+      },
+      "Island": {
+        "before": {
+          "translation": [
+            6.010874718427658,
+            6.999999821186066,
+            -15.967006206512451
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            5.617748290300369,
+            5.617748290300369,
+            5.617748290300369
+          ],
+          "extras": {
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 288,
+                  "sha256": "e44f002f61ecb1d9a202c3a0efe8081e7b0ee778f9e56fe2580f2d728f095096"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 288,
+                  "sha256": "ec07987339122d416242ee8a0e532ad229e06ce65de33eef72aece0ab24b0951"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 288,
+                  "sha256": "9af5b8a6e6abd1b3a053060239475fa570448fffc3cfbf5e895953f9c63f4546"
+                }
+              },
+              "indices": {
+                "count": 432,
+                "sha256": "ff5a167de6843e2f7bd5b7deb3781d757f6fe6f07c88085e746b4b3dc50a64b3"
+              },
+              "triangles": 144
+            }
+          ]
+        },
+        "after": {
+          "translation": [
+            6.010874718427658,
+            6.600000202655792,
+            -15.967006206512451
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            5.617748290300369,
+            5.617748290300369,
+            5.617748290300369
+          ],
+          "extras": {
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 264,
+                  "sha256": "b2d1dccf50669569b98117a80222d0351af1dfe125178f2d6c74268bcc4bdfa7"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 264,
+                  "sha256": "b77a95a7a210b2730f03c1b27be1575d33a797801d18125b53ac8f5a70cc5345"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 264,
+                  "sha256": "98682c931b2f5b6a84649dbafb56e7e49fd15485202a1c1099fccc19c48ff409"
+                }
+              },
+              "indices": {
+                "count": 396,
+                "sha256": "f8cddf1c35fd6beb83f668195085bbf56a8379b5acd0cca72f2638343f472194"
+              },
+              "triangles": 132
+            }
+          ]
+        }
+      }
+    },
+    "blacksail": {
+      "Treasure_Chest": {
+        "before": {
+          "translation": [
+            152,
+            3.797177314758301,
+            192
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.937042236328125,
+            0.937042236328125,
+            0.937042236328125
+          ],
+          "extras": {
+            "showWhen": "shard_treasure",
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 48,
+                  "sha256": "a9552a420e986725c786ae14d0c2c5053f21cd565ca9da06468d31acbed4f433"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 48,
+                  "sha256": "b31e7f20e0a1a7f12f94daa828468bf39c040c7c13ea127709524d07a76f5f8c"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 48,
+                  "sha256": "22441d4e6927c5f34f4355686a69b94d6aee4c93b515eda8dd4a921c2b669913"
+                }
+              },
+              "indices": {
+                "count": 72,
+                "sha256": "5ef68257854c52f0dc4a4f7896d34f51c81af92849b1fdb0cec2436e599a3d13"
+              },
+              "triangles": 24
+            }
+          ]
+        },
+        "after": {
+          "translation": [
+            151.9710922241211,
+            4.3083401918411255,
+            191.93447875976562
+          ],
+          "rotation": [
+            0,
+            0,
+            0,
+            1
+          ],
+          "scale": [
+            0.9409408569335938,
+            0.9409408569335938,
+            0.9409408569335938
+          ],
+          "extras": {
+            "showWhen": "shard_treasure",
+            "outline": true,
+            "dynamic": false
+          },
+          "children": [],
+          "primitives": [
+            {
+              "material": "M_Toon",
+              "mode": 4,
+              "attributes": {
+                "POSITION": {
+                  "type": "VEC3",
+                  "componentType": 5122,
+                  "normalized": true,
+                  "count": 240,
+                  "sha256": "c8c3b996a05ebd1c47b5f97b686cc52278fff13518ec461909216898d783d35d"
+                },
+                "NORMAL": {
+                  "type": "VEC3",
+                  "componentType": 5120,
+                  "normalized": true,
+                  "count": 240,
+                  "sha256": "47408ccc1f969237a2b08e77a1630ebabd072b4e1a8efb4f01e677ef2bed9d41"
+                },
+                "COLOR_0": {
+                  "type": "VEC3",
+                  "componentType": 5121,
+                  "normalized": true,
+                  "count": 240,
+                  "sha256": "5d082e50a9f44eb499479c02ec0e2f4a0c45930a74702e9efe971dc6911153d9"
+                }
+              },
+              "indices": {
+                "count": 360,
+                "sha256": "280d43944eb3043e0b96359e57ffe18f007c9601f38220a6b170a8d46e817a78"
+              },
+              "triangles": 120
+            }
+          ]
+        }
+      }
+    }
+  }
+}

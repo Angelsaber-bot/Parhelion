@@ -38,3 +38,13 @@ test('water platforms and stepping stones have one top face rather than overlapp
   for(const m of art.layers.values())m.geometry.dispose();for(const g of art.solids)g.dispose();Object.values(art.materials).forEach(m=>m.dispose());
  }
 });
+
+test('interactive legacy replacements contain their original conservative collision footprints',()=>{
+ for(const [scale,w,h,d]of[[1.2,1.2,.8,.8],[1.6,1.6,1.3,1]]){
+  const art=new SiteArt();chestBody(new Frame(art,[0,0,0],0,scale),'precious');art.finish('alpha');
+  const lid=chestLid('precious');lid.group.position.set(0,.58*scale,-.32*scale);lid.group.scale.setScalar(scale);
+  const root=new THREE.Group();root.add(art.root,lid.group);root.updateMatrixWorld(true);
+  assert.ok(new THREE.Box3().setFromObject(root).containsBox(new THREE.Box3(new THREE.Vector3(-w/2,0,-d/2),new THREE.Vector3(w/2,h,d/2))),'no old collision extends beyond the visible closed chest');
+  for(const a of[art,lid.art]){for(const m of a.layers.values())m.geometry.dispose();for(const g of a.solids)g.dispose();Object.values(a.materials).forEach(m=>m.dispose());}
+ }
+});

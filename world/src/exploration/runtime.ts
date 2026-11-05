@@ -271,10 +271,11 @@ export function createExploration(host: ExplorationHost) {
   interface ChestRt { def: ChestDef; holder: THREE.Group; rise: number; lid: THREE.Group; seal: THREE.Mesh | null; sparkle: THREE.Sprite; open: number; base: THREE.Vector3 }
   const chests = new Map<string, ChestRt>();
   for (const c of CHESTS) {
-    const yaw = c.yaw ?? 0, y = c.y ?? surface(...c.p);
+    const yaw = c.yaw ?? 0, y = c.y ?? surface(...c.p), scale = c.scale ?? 1;
     const holder = new THREE.Group(); holder.position.set(c.p[0], y, c.p[1]); holder.rotation.y = yaw;
+    holder.scale.setScalar(scale);
     if (c.buried) { const body = dynamicArt(f => chestBody(f, c.tier)); holder.add(body.group); disposables.push({ dispose: () => disposeArt(body.art) }); }
-    else chestBody(new Frame(artFor(c.region), [c.p[0], y, c.p[1]], yaw), c.tier);
+    else chestBody(new Frame(artFor(c.region), [c.p[0], y, c.p[1]], yaw, scale), c.tier);
     const { group: lidGroup, art: lidArt } = chestLid(c.tier); disposables.push({ dispose: () => disposeArt(lidArt) });
     lidGroup.position.set(0, .07 + .48 + .03, -.32); holder.add(lidGroup);
     const sparkle = glint(c.tier === 'luxurious' ? '#ffe9a0' : c.tier === 'precious' ? '#ffd1a0' : '#fff6d8', .75); sparkle.position.set(0, 1.15, 0); holder.add(sparkle);
@@ -283,7 +284,7 @@ export function createExploration(host: ExplorationHost) {
     dyn(holder, 90);
     const rt: ChestRt = { def: c, holder, lid: lidGroup, seal, sparkle, open: done.has(flagChest(c.id)) ? 1 : 0, base: holder.position.clone(), rise: c.buried && !done.has(c.requires!) ? 0 : 1 };
     chests.set(c.id, rt);
-    addMarker(markerChest(c.id), [c.p[0] + Math.sin(yaw) * .9, y + .9, c.p[1] + Math.cos(yaw) * .9], L(CHEST_NAMES[c.tier]), 2.2, () => openChest(rt), () =>
+    addMarker(markerChest(c.id), [c.p[0] + Math.sin(yaw) * .9*scale, y + .9*scale, c.p[1] + Math.cos(yaw) * .9*scale], L(CHEST_NAMES[c.tier]), 2.2, () => openChest(rt), () =>
       done.has(flagChest(c.id)) ? bilingual('空宝箱', 'Empty chest')
         : c.requires && !done.has(c.requires) ? bilingual(`封印的${CHEST_NAMES[c.tier][0]}`, `Sealed ${CHEST_NAMES[c.tier][1]}`)
           : bilingual(`开启 ${CHEST_NAMES[c.tier][0]}`, `Open ${CHEST_NAMES[c.tier][1]}`));

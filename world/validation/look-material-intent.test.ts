@@ -14,7 +14,9 @@ test('authored maps remain shared and externally owned, not cloned or disposed b
 });
 test('all five authored hubs retain every practical glow and double-sided panel, without making opaque material transparent',()=>{
  let glowing=0,twoSided=0;for(const build of[buildAlphaSettlement,buildBritainSettlement,buildBlackSailSettlement,buildWinterSettlement,buildKyotoSettlement]){const kit=build(),materials=new Set<THREE.Material>();kit.group.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);});for(const source of materials){const s=source as THREE.MeshStandardMaterial,m=toonMaterial(s)as THREE.MeshToonMaterial;assert.equal(m.transparent,s.transparent);assert.equal(m.opacity,s.opacity);assert.equal(m.side,s.side);assert.equal(m.map,s.map);if(s.emissive.getHex()&&s.emissiveIntensity>0){glowing++;assert.equal(m.emissive.getHex(),s.emissive.getHex());assert.equal(m.emissiveIntensity,s.emissiveIntensity);}if(s.side===THREE.DoubleSide)twoSided++;m.dispose();s.dispose();}kit.group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});}
- assert.equal(glowing,13);assert.equal(twoSided,3);
+ // Residence rear windows and its warm bedside shades are two new authored
+ // emitting surfaces. Every individual conversion above must still preserve it.
+ assert.equal(glowing,15);assert.equal(twoSided,3);
 });
 test('named beam and water shader art direction still bypasses generic property preservation',()=>{
  const beam=new THREE.MeshStandardMaterial({name:'M_Beam',opacity:.1,transparent:false,side:THREE.FrontSide}),water=new THREE.MeshStandardMaterial({name:'M_Water',opacity:.1,transparent:false});const b=toonMaterial(beam),w=toonMaterial(water);assert.equal(b.opacity,.28);assert.equal(b.transparent,true);assert.equal(b.side,THREE.DoubleSide);assert.equal(b.depthWrite,false);assert.equal(b.blending,THREE.AdditiveBlending);assert.equal(w.opacity,.84);assert.equal(w.transparent,true);b.dispose();w.dispose();beam.dispose();water.dispose();

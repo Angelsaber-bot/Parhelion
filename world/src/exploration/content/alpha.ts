@@ -18,8 +18,8 @@ export const ALPHA_DOMAINS: readonly DomainDef[] = [
 export const ALPHA_CHESTS: readonly ChestDef[] = [
   // These discoveries used to show inert gold blocks. They now use the same
   // opening animation, saved reward and resupply as every other real chest.
-  { id: 'alpha_secret_pillar', region: 'alpha', p: [6, -16], y: 11.6, tier: 'precious' },
-  { id: 'alpha_secret_cave', region: 'alpha', p: [188, -60], y: 2.4, tier: 'precious', yaw: -Math.PI / 2 },
+  { id: 'alpha_secret_pillar', region: 'alpha', p: [6, -16], y: 11.6, scale: 1.2, tier: 'precious' },
+  { id: 'alpha_secret_cave', region: 'alpha', p: [188, -60], y: 2.4, scale: 1.6, tier: 'precious', yaw: -Math.PI / 2 },
   { id: 'alpha_camp_echo_ruins', region: "alpha", p: [150, -102], tier: 'precious', requires: 'xp_camp_echo_ruins' },
   { id: 'alpha_puzzle_tutorial', region: "alpha", p: [-190,31], tier: 'precious', requires: 'xp_puzzle_tutorial' },
   { id: 'alpha_trial_tower_glide', region: "alpha", p: [4, -138], tier: 'exquisite', requires: 'xp_trial_tower_glide' },

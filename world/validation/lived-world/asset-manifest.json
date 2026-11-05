@@ -52,17 +52,17 @@
   {
     "file": "world/public/assets/world-stream.manifest.json",
     "bytes": 432,
-    "sha256": "4d919349f71274702a86779dd8610d6832a074e0d5eb389e718c80eef8a5c2f3"
+    "sha256": "858af719695f04545f9929c23e3bccbc9218d7c15c5005b6305d2d3710eb8792"
   },
   {
     "file": "world/public/assets/world_alpha.core.glb",
-    "bytes": 2099528,
-    "sha256": "83ca767329dfbcb140df7bd9928701e7532030092e57ffff613a3e845c7599c8"
+    "bytes": 2099820,
+    "sha256": "e01d47a68fa415f762339178fc4142403c02edaadb7f54926ea174cb30d14eaf"
   },
   {
     "file": "world/public/assets/world_alpha.glb",
-    "bytes": 3805664,
-    "sha256": "a3dc7ee02c4234e07a0034340b07ea7c9c165587f8b941db17e58129c4054ab5"
+    "bytes": 3805956,
+    "sha256": "b6c073d33a0da9d7acbd403ba76574d14ab437054f4869606172b1e1344f254a"
   },
   {
     "file": "world/public/assets/world_alpha.layout.json",
@@ -156,23 +156,23 @@
   },
   {
     "file": "world/src/exploration/catalog.ts",
-    "bytes": 21261,
-    "sha256": "86886e2707f928806e651dcd594784a9fbd465bbac08be5889153ac3461c3947"
+    "bytes": 21366,
+    "sha256": "b52e723441c906f3f14f2ff54f230bef5f5ecf427b3386d9b5579a0b477a91ac"
   },
   {
     "file": "world/src/exploration/content/alpha.ts",
-    "bytes": 3927,
-    "sha256": "c505e3b02456f56276578d4f07147f1e86f19d5f78ae65457d57040a75f2bbd6"
+    "bytes": 3951,
+    "sha256": "7ab6c7d68b5668320c2aa69555694dbbda0fadfd6e398dabf433cd9f4226d602"
   },
   {
     "file": "world/src/exploration/models.ts",
-    "bytes": 53323,
-    "sha256": "e0957d754681c7cb27571e4bb260e727cad59705d41fa44838c8d0186aae642e"
+    "bytes": 53346,
+    "sha256": "2cee87163370a41011932c04d999a5ee086ea78448bebc68c689005bf34284c1"
   },
   {
     "file": "world/src/exploration/runtime.ts",
-    "bytes": 64074,
-    "sha256": "f0c196ae9ef716b41e3d4f1c5d6b9bb2f95ce6b1ac684e0d59799ae5864ea915"
+    "bytes": 64156,
+    "sha256": "64e8980d3f27f6941b516c37501309644f6e9c7a21c3f694539ad8d100adcab4"
   },
   {
     "file": "world/src/fx.ts",
@@ -273,5 +273,15 @@
     "file": "world/src/settlements/winter.ts",
     "bytes": 8617,
     "sha256": "c0b3404418cad3eb7d87b3cb064e0b5226a341aa4815c5cefc09345e519a906a"
+  },
+  {
+    "file": "world/tools/gen/structures.ts",
+    "bytes": 41280,
+    "sha256": "072ca46e7b8453b2f33b027070b40ba357da271f85eaf258fb500af3760a2f37"
+  },
+  {
+    "file": "world/validation/lived-world/legacy-chest-nodes.json",
+    "bytes": 10877,
+    "sha256": "0ee8ebbefce1c4a25ad4c4c93fb33b4f06df27d09e18104741be4dfa640d8e98"
   }
 ]

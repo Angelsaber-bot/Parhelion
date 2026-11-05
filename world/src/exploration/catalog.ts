@@ -17,7 +17,7 @@ import { KYOTO_STATUES, KYOTO_PUZZLES, KYOTO_TRIALS, KYOTO_CAMPS, KYOTO_DOMAINS,
 export type XZ = readonly [number, number];
 export type ChestTier = 'common' | 'exquisite' | 'precious' | 'luxurious';
 
-export interface ChestDef { readonly id: string; readonly region: RegionId; readonly p: XZ; /** Authored floor of an existing cave or elevated structure. */ readonly y?: number; readonly tier: ChestTier; readonly yaw?: number; readonly requires?: string; /** hidden underground until `requires` is met (treasure maps) */ readonly buried?: boolean }
+export interface ChestDef { readonly id: string; readonly region: RegionId; readonly p: XZ; /** Authored floor of an existing cave or elevated structure. */ readonly y?: number; /** Keep a legacy chest's physical footprint within its visible replacement. */ readonly scale?: number; readonly tier: ChestTier; readonly yaw?: number; readonly requires?: string; /** hidden underground until `requires` is met (treasure maps) */ readonly buried?: boolean }
 export interface FeatherDef { readonly id: string; readonly region: RegionId; readonly p: XZ; /** absolute height when floating in the air */ readonly y?: number; readonly lift?: number }
 export interface StatueDef { readonly id: string; readonly region: RegionId; readonly p: XZ; readonly yaw: number; readonly title: Localized }
 export interface PrismDef { readonly p: XZ; readonly start: number; /** builds a ruined tower of this height under the prism */ readonly raise?: number }

@@ -288,6 +288,11 @@ export function buildStructures(heightAt: HeightAt) {
     b.box(x0, floor, (-56 + z1) / 2, 1, ceil - floor, z1 + 56, PAL.rock);
     // The interactive chest is authored by exploration/content/alpha.ts.
     // Keep the chamber and discovery log here, without a second inert box.
+    // Preserve the original conservative collision skeleton and triangle order:
+    // its scaled runtime replacement contains these volumes. Even remote BVH
+    // ordering changes can affect old corner/door traversal, so do not churn it.
+    b.addCol(BOX,T(188,floor+.5,-60,0,1.6,1,1));
+    b.addCol(BOX,T(188,floor+1.15,-60,0,1.6,.3,1));
     pieces.push({ name: 'Cave', material: 'M_Toon', batch: b, outline: true });
     const rng = mulberry32(WORLD.seed + 13);
     for (let i = 0; i < 9; i++) {
@@ -317,7 +322,8 @@ export function buildStructures(heightAt: HeightAt) {
       const a = k * 0.72;
       b.box(cx + Math.cos(a) * 4.6, y + 0.85 * k - 0.45, cz + Math.sin(a) * 4.6, 1.9, 0.45, 1.9, k % 3 ? PAL.stone : PAL.moss, a);
     }
-    // Runtime owns the real chest and its collider on this pillar top.
+    // Runtime supplies the real chest over this original conservative proxy.
+    b.addCol(BOX,T(cx,top+.4,cz,0,1.2,.8,.8));
     pieces.push({ name: 'Island', material: 'M_Toon', batch: b, outline: true });
     mk({ id: 'secret_pillar', type: 'discovery', label: '湖心石柱宝箱', p: [cx, top, cz], radius: 2.5, note: '跳台小挑战' });
   }
