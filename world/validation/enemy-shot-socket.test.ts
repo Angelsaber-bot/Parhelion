@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle} from '../src/enemyShotSocket';
-import {EnemyVisuals} from '../src/enemyVisuals';import {WorldCombatState} from '../src/combat';import {parseLocalGlb} from './player-fixture';
+import {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle} from '../src/combat/enemyShotSocket';
+import {EnemyVisuals} from '../src/combat/enemyVisuals';import {WorldCombatState} from '../src/combat/combat';import {parseLocalGlb} from './player-fixture';
 for(const key of ['musketeer','musketeer_lod1'])test(`${key}: actual contact barrel cap supplies an immutable cached visual socket without touching templates`,async()=>{
  const gltf=await parseLocalGlb(new URL(`../public/assets/enemies/${key}.glb`,import.meta.url));const bones=new Map<THREE.Object3D,number[]>(),resources=new Set<THREE.BufferGeometry|THREE.Material>();gltf.scene.traverse(o=>{bones.set(o,[...o.position.toArray(),...o.quaternion.toArray()]);if(o instanceof THREE.Mesh){resources.add(o.geometry);[o.material].flat().forEach(m=>resources.add(m));}});let disposed=0;resources.forEach(r=>r.addEventListener('dispose',()=>disposed++));
  const socket=nativeMusketeerContactMuzzle(gltf);assert.ok(socket);assert.ok(Object.isFrozen(socket));assert.ok(Math.abs(socket.x-.14)<.02);assert.ok(Math.abs(socket.y-1.5185)<.015);assert.ok(Math.abs(socket.z-1.1063)<.015);assert.equal(nativeMusketeerContactMuzzle(gltf),socket);

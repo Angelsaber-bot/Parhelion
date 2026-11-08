@@ -10,11 +10,11 @@
 
 ## 代码
 
-- `world/src/mountedCharge.ts`：接敌、冲锋、恢复、地面和完整身体碰撞；缓存稳定 BVH 包围盒并预筛无关碰撞体。
+- `world/src/companions/mountedCharge.ts`：接敌、冲锋、恢复、地面和完整身体碰撞；缓存稳定 BVH 包围盒并预筛无关碰撞体。
 - `world/src/characters/mountedChargeMotion.ts`：位移曲线与单时钟的骑马攻击合成。
 - `world/src/characters/characterKit.ts`：仅为带 mount 的角色使用合成攻击，其余角色不变。
-- `world/src/kitCompanion.ts`：骑马行为分支与可选精确目标 ID。
-- `world/src/servant.ts`：Idle/Walk 放松姿态混合。
+- `world/src/companions/kitCompanion.ts`：骑马行为分支与可选精确目标 ID。
+- `world/src/companions/servant.ts`：Idle/Walk 放松姿态混合。
 - `world/src/main.ts`：现有 target 回调传递 targetId（主任务接线）。
 
 ## 验证

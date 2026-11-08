@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {parseLocalGlb} from '../player-fixture.ts';
-import {WEAPON_FINISHES} from '../../src/weaponFinishes.ts';
-import {createWeaponFinishMaterials} from '../../src/weaponFinishMaterials.ts';
+import {WEAPON_FINISHES} from '../../src/weapons/weaponFinishes.ts';
+import {createWeaponFinishMaterials} from '../../src/weapons/weaponFinishMaterials.ts';
 const out=path.resolve(process.argv[2]??'../artifacts/weapon-finish-review');await mkdir(out,{recursive:true});
 for(const weapon of ['01_Dawn_AR','06_Refract_Blade']){
  const gltf=await parseLocalGlb(new URL(`../../../assets/weapons/glb/${weapon}.glb`,import.meta.url)),root=gltf.scene,finish=createWeaponFinishMaterials(root,{patterns:weapon==='01_Dawn_AR'});root.updateMatrixWorld(true);

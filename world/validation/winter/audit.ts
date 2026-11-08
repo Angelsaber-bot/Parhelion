@@ -1,7 +1,7 @@
 /** Inspect production GLB geometry through the exact runtime decoder. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { regionLoader, bakeQuantized } from '../../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../../src/rendering/glb.ts';
 import * as THREE from 'three';
 const path=process.argv[2];const buf=readFileSync(path);
 const gltf=await regionLoader().parseAsync(buf.buffer.slice(buf.byteOffset,buf.byteOffset+buf.byteLength),'');

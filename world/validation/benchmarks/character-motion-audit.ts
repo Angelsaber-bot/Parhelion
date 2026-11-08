@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const source = resolve(process.argv[2] ?? '..'), out = resolve(process.argv[3] ?? '../docs/character-motion-20261028'), label = process.argv[4] ?? 'after';
 const { playerFixture } = await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
+const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
 await mkdir(out, { recursive: true });
 const base = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: 0 };
 const joints = ['Hips', 'Thigh_L', 'Shin_L', 'Foot_L', 'Thigh_R', 'Shin_R', 'Foot_R', 'Hand_L', 'Hand_R'];

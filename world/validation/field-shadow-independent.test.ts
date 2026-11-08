@@ -1,5 +1,5 @@
 /** Independent optional shadow-budget/ownership test, no GPU shadow cost claim. */
-import test from'node:test';import assert from'node:assert/strict';import*as THREE from'three';import{createFalseDawnSites}from'../src/falseDawnSites';
+import test from'node:test';import assert from'node:assert/strict';import*as THREE from'three';import{createFalseDawnSites}from'../src/story/falseDawnSites';
 test('field shadows remain default-off; opt-in has one near site, hysteresis, no ground casters or resource churn',()=>{
  for(const enabled of [false,true]){
   const fields=enabled?createFalseDawnSites(()=>0,{nearStructureShadows:true}):createFalseDawnSites(()=>0);

@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import { registerHooks } from 'node:module';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { FirstContract } from '../src/contracts.ts';
-import { ContractServant, SERVANT_CLIPS } from '../src/servant.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ContractServant, SERVANT_CLIPS } from '../src/companions/servant.ts';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { setLanguage } from '../../shared-client/i18n.ts';
 registerHooks({load(url,context,next){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:next(url,context);}});
@@ -20,7 +20,7 @@ class Element {
 }
 const body=new Element(),doc=Object.assign(new Element(),{body,documentElement:{lang:'zh-CN'},pointerLockElement:null as unknown,createElement:()=>new Element()});
 (globalThis as any).document=doc;
-const {createServantPanel}=await import('../src/servantPanel.ts');
+const {createServantPanel}=await import('../src/ui/servantPanel.ts');
 function flatten(root:Element):Element[]{return [root,...root.children.flatMap(flatten)];}
 test('World outfit modal is reversible, bilingual and isolated from gameplay/contract progress',async()=>{
   const done=new Set(['saber_contract','relay_a']),contract=new FirstContract(done),scene=new THREE.Scene();
@@ -42,10 +42,10 @@ test('World outfit modal is reversible, bilingual and isolated from gameplay/con
   assert.equal(doc.listeners.get('pointerlockchange')!.length,0);
 });
 test('outfit controls have bounded viewport CSS and opening clears input without changing Arena settings',()=>{
-  const css=readFileSync(new URL('../src/servant.css',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/ui/servant.css',import.meta.url),'utf8');
   assert.match(css,/#servant-open\[hidden\][^}]*display:\s*none/);
   assert.match(css,/width:\s*min\(480px,\s*calc\(100vw - 28px\)\)/);assert.match(css,/max-height:.*100vh/);assert.match(css,/overflow:\s*auto/);
   const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
   assert.match(source,/createServantPanel\(servant, contract, \(\) => \{ abortUltimate\(\); clearInput\(\); if \(document.pointerLockElement\) document.exitPointerLock\(\); \}\)/);
-  assert.doesNotMatch(readFileSync(new URL('../src/servantPanel.ts',import.meta.url),'utf8'),/SettingsStore|skinStore|from ['"][^'"]*arena-game/);
+  assert.doesNotMatch(readFileSync(new URL('../src/ui/servantPanel.ts',import.meta.url),'utf8'),/SettingsStore|skinStore|from ['"][^'"]*arena-game/);
 });

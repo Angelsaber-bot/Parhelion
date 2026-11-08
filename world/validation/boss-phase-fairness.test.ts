@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOSSES, WorldCombatState, enemyAttackContains, enemyAttackRadius, enemyAttackTiming, type CombatTerrain, type Enemy } from '../src/combat.ts';
-import { bossAttackDamage } from '../src/bossPatterns.ts';
+import { BOSSES, WorldCombatState, enemyAttackContains, enemyAttackRadius, enemyAttackTiming, type CombatTerrain, type Enemy } from '../src/combat/combat.ts';
+import { bossAttackDamage } from '../src/combat/bossPatterns.ts';
 
 const terrain: CombatTerrain = { walk: (from) => ({ ...from }), lineOfSight: () => true };
 const origin = { x: 0, y: 0, z: 0 };

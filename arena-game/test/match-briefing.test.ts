@@ -1,10 +1,10 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { arenaControlHints, arenaLimitLabel, arenaMatchBriefing, arenaPauseLabel } from '../src/matchBriefing.ts';
+import { arenaControlHints, arenaLimitLabel, arenaMatchBriefing, arenaPauseLabel } from '../src/ui/matchBriefing.ts';
 import { MATCH_TICKS, SCORE_LIMIT, TEAM_CAPACITY, TICK_HZ, type TeamLayout } from '../shared/content.ts';
 import { setLanguage } from '../../shared-client/i18n.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
-import { startOffline } from '../src/session.ts';
+import { startOffline } from '../src/network/session.ts';
 afterEach(() => { setLanguage('zh'); vi.useRealTimers(); });
 for (const language of ['zh','en'] as const) for (const layout of ['1v1','1v2','2v2'] as TeamLayout[]) it(`${language} ${layout} briefing derives scores, duration and seats from actual rules`, () => {
   setLanguage(language);

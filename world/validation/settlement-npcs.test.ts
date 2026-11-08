@@ -25,7 +25,7 @@ test('invalid and duplicate resident sockets fail clearly before scene construct
  assert.throws(()=>createSettlementNpcs([npc(),npc()]),/Duplicate/);assert.throws(()=>createSettlementNpcs([{...npc(),position:[NaN,0,0]}]),/Invalid/);
 });
 
-import {CAMPAIGN_EPISODES,CAMPAIGN_REGIONS} from '../src/campaignEpisodes';
+import {CAMPAIGN_EPISODES,CAMPAIGN_REGIONS} from '../src/story/campaignEpisodes';
 test('campaign residents have distinct work silhouettes within the existing six-batch actor budget',()=>{
  const sockets=CAMPAIGN_REGIONS.map((region,i)=>({id:CAMPAIGN_EPISODES[region].npc,region,role:CAMPAIGN_EPISODES[region].speaker,position:[i*2,0,0]as[number,number,number],lines:[CAMPAIGN_EPISODES[region].brief]}));
  const residents=createSettlementNpcs(sockets);const signatures:number[]=[];

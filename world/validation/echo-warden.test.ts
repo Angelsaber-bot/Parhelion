@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, COMBAT, enemyAttackTiming, enemyAttackContains, enemyAttackRadius, type CombatTerrain } from '../src/combat.ts';
-import { ECHO_WARDEN, chooseEchoWardenAttack } from '../src/echoWarden.ts';
-import { PlayerMelee } from '../src/playerMelee.ts';
-import { collectStrikeTargets } from '../src/combatActions.ts';
+import { WorldCombatState, COMBAT, enemyAttackTiming, enemyAttackContains, enemyAttackRadius, type CombatTerrain } from '../src/combat/combat.ts';
+import { ECHO_WARDEN, chooseEchoWardenAttack } from '../src/combat/echoWarden.ts';
+import { PlayerMelee } from '../src/player/playerMelee.ts';
+import { collectStrikeTargets } from '../src/combat/combatActions.ts';
 const p=(x=0,z=0)=>({x,y:0,z});
 const terrain:CombatTerrain={walk:(_from,x,z)=>p(x,z),lineOfSight:()=>true};
 function make(){const s=new WorldCombatState([],[]);const [e]=s.replaceStoryEnemies([{id:'story_warden_1',kind:'crystal',p:p(),role:'breaker',storyEncounter:'false_dawn_warden',storyPattern:'echo-warden'}]);return{s,e};}

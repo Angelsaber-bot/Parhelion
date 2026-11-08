@@ -1,7 +1,7 @@
 /** Independent channel authority checks. These do not substitute for actual-input/arena playability. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RelayChannel, type RelayChannelFrame } from '../src/relayChannel';
+import { RelayChannel, type RelayChannelFrame } from '../src/story/relayChannel';
 
 const valid = (dt = 1 / 120): RelayChannelFrame => ({
   dt, held: true, active: true, playable: true, inRange: true,

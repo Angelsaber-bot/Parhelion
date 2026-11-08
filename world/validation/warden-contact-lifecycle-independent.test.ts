@@ -2,7 +2,7 @@
  * isolates resources; not a narrative playthrough or balance test. Contacts/damage
  * come from production simulation, with no hostile HP or contact-event injection. */
 import test from'node:test';import assert from'node:assert/strict';
-import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{getFalseDawnEncounterSpec}from'../src/falseDawnEncounterCatalog';
+import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{getFalseDawnEncounterSpec}from'../src/story/falseDawnEncounterCatalog';
 test('real Warden contacts pause, honor reduced effects, and remain fixed-capacity across cancel/reset/retry',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true});const{world:w,window}=h,d=window.document;let now=0;const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};
  const key=(code:string)=>{for(const type of ['keydown','keyup'])d.body.dispatchEvent(new window.KeyboardEvent(type,{code,bubbles:true}));};

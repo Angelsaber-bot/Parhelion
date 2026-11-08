@@ -3,10 +3,10 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { fileURLToPath } from 'node:url';
-import { ContractServant, SERVANT_MODELS } from '../src/servant.ts';
-import { FirstContract } from '../src/contracts.ts';
-import { ServantAppearance } from '../src/servantAppearance.ts';
-import { PLAYER } from '../src/player.ts';
+import { ContractServant, SERVANT_MODELS } from '../src/companions/servant.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ServantAppearance } from '../src/companions/servantAppearance.ts';
+import { PLAYER } from '../src/player/player.ts';
 import { publishedSaberIdleClip } from '../src/characters/saberLocomotion.ts';
 import { readCharacter } from './characters/inspect.ts';
 

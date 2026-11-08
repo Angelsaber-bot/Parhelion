@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WorldCombatState} from '../src/combat';
-import {resolveServantSkillAim,trackServantSkillTarget} from '../src/skillAim';
-import {collectStrikeTargets} from '../src/combatActions';
+import {WorldCombatState} from '../src/combat/combat';
+import {resolveServantSkillAim,trackServantSkillTarget} from '../src/combat/skillAim';
+import {collectStrikeTargets} from '../src/combat/combatActions';
 const p=(x:number,z:number,y=0)=>({x,y,z});
 const clear={lineOfSight:()=>true,walk:(_f:any,x:number,z:number)=>p(x,z)};
 function fixture(){const state=new WorldCombatState([{id:'target',kind:'stalker',p:p(0,0)},{id:'side',kind:'stalker',p:p(5,0)}],{id:'boss_vacant_king',kind:'king',p:p(100,100),requires:[]});for(const e of state.enemies){e.active=e.kind!=='king';}return state;}

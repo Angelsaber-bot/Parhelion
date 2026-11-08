@@ -3,9 +3,9 @@ import * as THREE from 'three';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
-import { buildCharacter, CharacterAnimator } from '../../src/character.ts';
-import { SkinnedCharacterAnimator } from '../../src/skinnedCharacter.ts';
-import { attachExplorerRifle } from '../../src/weaponArt.ts';
+import { buildCharacter, CharacterAnimator } from '../fixtures/legacy-player/character.ts';
+import { SkinnedCharacterAnimator } from '../../src/player/skinnedCharacter.ts';
+import { attachExplorerRifle } from '../../src/weapons/weaponArt.ts';
 import { parseLocalGlb, playerFixture } from '../player-fixture.ts';
 
 const path = process.argv[2]; if (!path) throw new Error('Pass an output JSON path');
@@ -37,6 +37,6 @@ for (const [label, rig, animator] of [
   results[label] = { medianCpuMilliseconds: samples[3], samples };
 }
 const sha256=(path:URL)=>createHash('sha256').update(readFileSync(path)).digest('hex');
-writeFileSync(path, JSON.stringify({ scope: 'Node CPU animation/IK/bone/hierarchy update only, actual rifle in both rigs, no outlines, no WebGL rendering or FPS', assetHash:sha256(new URL('../../../assets/characters/player_v2/player_v2.glb',import.meta.url)),animatorHash:sha256(new URL('../../src/skinnedCharacter.ts',import.meta.url)),warmup:4000,batches:7,iterationsPerBatch:6000,states,results }, null, 2));
+writeFileSync(path, JSON.stringify({ scope: 'Node CPU animation/IK/bone/hierarchy update only, actual rifle in both rigs, no outlines, no WebGL rendering or FPS', assetHash:sha256(new URL('../../../assets/characters/player_v2/player_v2.glb',import.meta.url)),animatorHash:sha256(new URL('../../src/player/skinnedCharacter.ts',import.meta.url)),warmup:4000,batches:7,iterationsPerBatch:6000,states,results }, null, 2));
 fresh.dispose(); oldRifle.dispose();
 console.log(JSON.stringify(results, null, 2));

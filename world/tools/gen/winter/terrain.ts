@@ -5,7 +5,6 @@ import { heightFn as alphaHeight, type TerrainOut } from '../terrain.js';
 import { WINTER, OFFSET, ICE_Y, RIVER, RIVER_W, BIVOUAC, BEACONS, EAGLE, CITY, KREMLIN, REDSQ, GORGE, CAVERN, PATHS } from './layout.js';
 
 const S = WINTER.seed;
-const WL = WINTER.waterLevel;
 const GORGE_LINE = RIVER.slice(GORGE.from, GORGE.to + 1);
 
 function bump(x: number, z: number, cx: number, cz: number, r: number) {

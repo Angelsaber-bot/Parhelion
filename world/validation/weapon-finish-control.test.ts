@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { createWeaponFinishControl } from '../src/weaponFinishControl.ts';
-import { WeaponFinishStore } from '../src/weaponFinishes.ts';
+import { createWeaponFinishControl } from '../src/weapons/weaponFinishControl.ts';
+import { WeaponFinishStore } from '../src/weapons/weaponFinishes.ts';
 import { setLanguage } from '../../shared-client/i18n.ts';
 
 test('real DOM finish control rejects locked programmatic selections, refreshes earned/reset flags and localizes without progress mutation', () => {
@@ -10,7 +10,7 @@ test('real DOM finish control rejects locked programmatic selections, refreshes 
   const done = new Set<string>(), store = new WeaponFinishStore(); const applied: string[] = [];
   const control = createWeaponFinishControl(store, done, finish => applied.push(finish)); document.body.append(control.root);
   const select = control.root.querySelector('select')!;
-  assert.equal(select.value, 'original'); assert.equal(select.options.length, 6); assert.equal([...select.options].filter(o => o.disabled).length, 5);
+  assert.equal(select.value, 'original'); assert.equal(select.options.length, 10); assert.equal([...select.options].filter(o => o.disabled).length, 6);
   select.value = 'ember'; select.dispatchEvent(new dom.window.Event('change')); assert.equal(select.value, 'original'); assert.deepEqual(applied, []); assert.equal(done.size, 0);
   done.add('campaign_kyoto_complete'); control.refresh(); assert.equal(select.querySelector<HTMLOptionElement>('[value=ember]')!.disabled, false);
   select.value = 'ember'; select.dispatchEvent(new dom.window.Event('change')); assert.equal(store.preference, 'ember'); assert.deepEqual(applied, ['ember']);

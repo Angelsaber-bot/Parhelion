@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOSSES, WorldCombatState, type CombatEvent } from '../src/combat.ts';
-import { BOSS_HAZARDS, hazardContains, planBossHazards, type HazardPlan } from '../src/bossHazards.ts';
+import { BOSSES, WorldCombatState, type CombatEvent } from '../src/combat/combat.ts';
+import { BOSS_HAZARDS, hazardContains, planBossHazards, type HazardPlan } from '../src/combat/bossHazards.ts';
 
 const O = { x: 0, y: 0, z: 0 };
 const flat = { walk: (_from: unknown, x: number, z: number) => ({ x, y: 0, z }), lineOfSight: () => true };

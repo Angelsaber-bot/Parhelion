@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {readFileSync,writeFileSync} from 'node:fs';
-import {regionLoader,bakeQuantized} from '../src/glb';
-import {REGIONS} from '../src/regions';
-import {isStaticArtEligible} from '../src/chunk';
-import {carveFlagshipDeck} from '../src/shipInteriorCut';
+import {regionLoader,bakeQuantized} from '../src/rendering/glb';
+import {REGIONS} from '../src/map/regions';
+import {isStaticArtEligible} from '../src/rendering/chunk';
+import {carveFlagshipDeck} from '../src/map/shipInteriorCut';
 import {compress} from './gen/export';
 const manifest:Record<string,{core:number;visual:number;source:number}>={};
 for(const def of REGIONS){

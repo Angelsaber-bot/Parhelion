@@ -2,13 +2,13 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
-import { boundaryWalls, REGIONS, regionAt } from '../src/regions.ts';
+import { Player } from '../src/player/player.ts';
+import { boundaryWalls, REGIONS, regionAt } from '../src/map/regions.ts';
 import { FLEET, WRECKS, UPDRAFTS, LIGHTHOUSE, CANNON, GHOST_BOATS, SANDBAR, REEF, WRECK_SPIT } from '../tools/gen/blacksail/layout.ts';
-import type { Layout } from '../src/types.ts';
+import type { Layout } from '../src/core/types.ts';
 
 // World 02 黑帆尽头: reached on foot from 幻日谷 through the east pass (once the summoning circle is
 // stable), and every quest stop can be walked, glided or bridged to. Coordinates are world coordinates.

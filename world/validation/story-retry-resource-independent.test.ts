@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {FALSE_DAWN as F} from '../src/falseDawnCampaign';
+import {FALSE_DAWN as F} from '../src/story/falseDawnCampaign';
 function census(root:THREE.Object3D){let nodes=0,meshes=0;const geos=new Set(),mats=new Set<THREE.Material>(),textures=new Set<THREE.Texture>();root.traverse(o=>{nodes++;const m=o as THREE.Mesh;if(m.isMesh){meshes++;geos.add(m.geometry);}if(m.material)for(const mat of Array.isArray(m.material)?m.material:[m.material])mats.add(mat);});for(const material of mats)for(const value of Object.values(material))if(value instanceof THREE.Texture)textures.add(value);return{nodes,meshes,geometries:geos.size,materials:mats.size,textures:textures.size};}
 test('fifty actual-main deliberate story retries leave bounded scene resources and no stale actors',async()=>{
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});const{world:w,window}=h,d=window.document;let now=0;

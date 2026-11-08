@@ -58,7 +58,7 @@ export class KyotoWinterArt {
     }
   }
   finish() {
-    for(const [key,bin] of this.bins) {
+    for(const bin of this.bins.values()) {
       const geometry=mergeParts(bin.parts,false);
       const mesh=new THREE.Mesh(geometry,bin.material); mesh.name=`${this.root.name}_${bin.solid?'solid':'detail'}_${this.root.children.length}`;
       mesh.userData.solid=bin.solid; mesh.castShadow=true; mesh.receiveShadow=true; this.root.add(mesh);

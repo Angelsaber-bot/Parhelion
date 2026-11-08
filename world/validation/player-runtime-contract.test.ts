@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {buildCharacter, CharacterAnimator} from '../src/character.ts';
+import {buildCharacter, CharacterAnimator} from './fixtures/legacy-player/character.ts';
 
 const required=['Hips','CoatTails','Spine','ScarfTail','Head','Ponytail','Arm_L','Forearm_L','Thigh_L','Shin_L','Arm_R','Forearm_R','Thigh_R','Shin_R','Glider','Gun'];
 test('player rig preserves animation joints, synchronous geometry and finite attributes',()=>{
@@ -38,7 +38,7 @@ test('fully raised rifle hands meet actual grip and handguard within 2 mm at sup
  }
 });
 test('equipped production AR fits both wrists at everyday ADS pitches, not only fallback gun',async()=>{
- const {attachExplorerRifle}=await import('../src/weaponArt.ts');
+ const {attachExplorerRifle}=await import('../src/weapons/weaponArt.ts');
  const {GLTFLoader}=await import('three/examples/jsm/loaders/GLTFLoader.js');
  const {readFile}=await import('node:fs/promises');
  const data=await readFile(new URL('../../assets/weapons/glb/01_Dawn_AR.glb',import.meta.url));

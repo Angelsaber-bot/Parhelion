@@ -1,7 +1,7 @@
 import { afterEach, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { ArenaCombatEffects, ARENA_EFFECT_BUDGET, createNumberSurface, type NumberSurface } from '../src/combatEffects';
-import { ArenaScene } from '../src/scene';
+import { ArenaCombatEffects, ARENA_EFFECT_BUDGET, createNumberSurface, type NumberSurface } from '../src/rendering/combatEffects';
+import { ArenaScene } from '../src/rendering/scene';
 import { WEAPONS } from '../shared/content';
 
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });

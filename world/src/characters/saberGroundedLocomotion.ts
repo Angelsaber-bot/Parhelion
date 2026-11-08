@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Collider } from '../player';
+import type { Collider } from '../player/player';
 import { SaberTerrainPatch } from './saberTerrainPatch';
 import { SaberFootSupport } from './saberFootSupport';
 import { SABER_SOLE_PROBES } from './saberSoleGeometry';

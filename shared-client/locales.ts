@@ -1,5 +1,6 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+
   ['安全据点旅行','Safe settlement travel'], ['返回主线指引','Track main story'], ['战技','Skill'], ['终结技','Ultimate'], ['近战连击','Melee combo'], ['闪避','Evade'], ['下一把枪','Next gun'], ['上一把枪','Previous gun'], ['切换近战武器','Switch melee weapon'],
 
   ['CAM LANN 誓约荒原', 'CAM LANN Oathfield'],

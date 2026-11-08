@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { makeSky, SUN_DIR } from '../src/look.ts';
-import { KingdomTwilight, twilightWeight } from '../src/twilight.ts';
+import { makeSky, SUN_DIR } from '../src/rendering/look.ts';
+import { KingdomTwilight, twilightWeight } from '../src/map/twilight.ts';
 test('twilight is bounded to the western region and victory restores a warmer dawn', () => {
   assert.equal(twilightWeight(0), 0); assert.equal(twilightWeight(720), 0);
   assert.equal(twilightWeight(-720), 1); assert.equal(twilightWeight(-720, true), .45);

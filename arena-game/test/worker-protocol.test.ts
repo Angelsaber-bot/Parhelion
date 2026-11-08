@@ -2,7 +2,7 @@
 // This exercises client/server messages, not Cloudflare's unavailable host runtime.
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { WebSocketServer } from 'ws';
-import { joinOnline } from '../src/session.ts';
+import { joinOnline } from '../src/network/session.ts';
 import { RoomCore } from '../shared/room.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';

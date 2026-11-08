@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { WORLD_GUNS, DEFAULT_GUN, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, newlyUnlocked, gunDistanceMultiplier } from '../src/worldArsenal.ts';
-import { WORLD_RIFLE } from '../src/worldBalance.ts';
-import { MINIBOSSES } from '../src/minibosses.ts';
+import { WORLD_GUNS, DEFAULT_GUN, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, newlyUnlocked, gunDistanceMultiplier } from '../src/weapons/worldArsenal.ts';
+import { WORLD_RIFLE } from '../src/core/worldBalance.ts';
+import { MINIBOSSES } from '../src/combat/minibosses.ts';
 import { flagElite } from '../src/exploration/catalog.ts';
-import { flagResonance } from '../src/resonance.ts';
+import { flagResonance } from '../src/story/resonance.ts';
 const registry = JSON.parse(readFileSync(new URL('../../assets/weapons/registry.json', import.meta.url), 'utf8')) as { combat: string; grip?: number[]; support?: number[]; muzzle?: number[] }[];
 
 test('the World carries exactly the Arena guns, each with authored art and hand anchors', () => {
@@ -55,7 +55,7 @@ test('roles are distinct: shotgun owns close range, marksman guns keep damage fa
 });
 
 test('combat uses the equipped gun: cadence, ammo cost, reach and falloff', async () => {
-  const { WorldCombatState } = await import('../src/combat.ts');
+  const { WorldCombatState } = await import('../src/combat/combat.ts');
   const s = new WorldCombatState([{ id: 'troop', kind: 'shade', p: { x: 0, y: 0, z: 0 } }], []), e = s.enemies[0];
   const terrain = { walk: (_p: unknown, x: number, z: number) => ({ x, y: 0, z }), lineOfSight: () => true };
   s.step(.05, { x: 3, y: 0, z: 0 }, true, terrain);
@@ -80,8 +80,8 @@ test('combat uses the equipped gun: cadence, ammo cost, reach and falloff', asyn
 });
 
 test('melee weapons: Arena trio, elite unlocks, and the combo scales by weapon', async () => {
-  const { WORLD_MELEE, worldMelee, cycleMelee, equippedMelee, unlockedMelee } = await import('../src/worldArsenal.ts');
-  const { PlayerMelee, MELEE_BEATS } = await import('../src/playerMelee.ts');
+  const { WORLD_MELEE, worldMelee, cycleMelee, equippedMelee, unlockedMelee } = await import('../src/weapons/worldArsenal.ts');
+  const { PlayerMelee, MELEE_BEATS } = await import('../src/player/playerMelee.ts');
   assert.deepEqual(WORLD_MELEE.map(x => x.id), ['blade', 'polearm', 'hammer']);
   for (const x of WORLD_MELEE) assert.ok(registry.find(a => a.combat === x.id), `${x.id} has authored art`);
   const blade = worldMelee('blade')!; assert.deepEqual([blade.damage, blade.range, blade.width, blade.speed], [1, 1, 1, 1], 'blade keeps the original combo');
@@ -104,7 +104,7 @@ test('melee weapons: Arena trio, elite unlocks, and the combo scales by weapon',
 });
 
 test('switching guns names how to earn the next locked one', async () => {
-  const { nextGunUnlock } = await import('../src/worldArsenal.ts');
+  const { nextGunUnlock } = await import('../src/weapons/worldArsenal.ts');
   assert.equal(nextGunUnlock(new Set())!.gun.id, 'firefly');
   const all = new Set(WORLD_GUNS.flatMap(g => g.unlock ? [g.unlock.flag] : []));
   assert.equal(nextGunUnlock(all), null);

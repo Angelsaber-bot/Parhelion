@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { writeFileSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { COMPACT_RELAY_ROUTES as routes } from '../../src/compactRelaySitesData';
+import { COMPACT_RELAY_ROUTES as routes } from '../../src/story/compactRelaySitesData';
 import { createStoryInputPolicy } from '../combat-review/story-input-policy';
 import { bootWorldWithoutGpu } from '../world-dom-boot.fixture';
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {COMPACT_RELAY,getCompactRelayState as state,getCompactRelayGuide as guide,completeCompactRelay as complete,getCompactRelayIntro,getCompactRelayInterrupt} from '../src/compactRelayCampaign';
+import {COMPACT_RELAY,getCompactRelayState as state,getCompactRelayGuide as guide,completeCompactRelay as complete,getCompactRelayIntro,getCompactRelayInterrupt} from '../src/story/compactRelayCampaign';
 test('only equipment is required, old completion never grants the exercise reward',()=>{
  const done=new Set(['relay_b','world_epilogue_recorded','false_dawn_complete']);
  assert.equal(state(done).stage,'equipment');assert.equal(guide(done).targetId,'armory_rack');assert.equal(complete(done),false);

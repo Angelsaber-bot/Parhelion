@@ -5,8 +5,8 @@ import { registerHooks } from 'node:module';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { setLanguage } from '../../shared-client/i18n.ts';
-import { WorldCombatState, isMeleePunishWindow, COMBAT, BOSSES, type EnemyMode } from '../src/combat.ts';
-import type { Layout } from '../src/types.ts';
+import { WorldCombatState, isMeleePunishWindow, COMBAT, BOSSES, type EnemyMode } from '../src/combat/combat.ts';
+import type { Layout } from '../src/core/types.ts';
 registerHooks({load(url,context,next){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:next(url,context);}});
 class Element {
   id='';className='';textContent='';innerHTML='';hidden=false;title='';style:Record<string,string>={};
@@ -19,7 +19,7 @@ class Element {
 const crosshair=new Element();let timers=0;
 (globalThis as any).document={documentElement:{lang:''},createElement:()=>new Element(),body:new Element(),getElementById:()=>crosshair};
 (globalThis as any).window={setTimeout:()=>{timers++;return 1;},addEventListener(){}};
-const {WorldCombat}=await import('../src/combatView.ts');
+const {WorldCombat}=await import('../src/combat/combatView.ts');
 const bossIds=['boss_vacant_king','boss_drowned_admiral','boss_winter_warden','boss_hellfire_lord'];
 function fixture(id=bossIds[0]) {
   const scene=new THREE.Scene(),messages:string[]=[];
@@ -95,7 +95,7 @@ test('recovery presentation allocates no extra scene resources across repeated t
   assert.doesNotMatch(internal.bossHud.querySelector('small').className,/--punish/);
   assert.equal(internal.visuals.get(e.id).root.visible,false);
   combat.dispose();assert.equal(scene.children.length,0);
-  const css=readFileSync(new URL('../src/combat.css',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/ui/combat.css',import.meta.url),'utf8');
   assert.doesNotMatch(css.match(/\.combat-counter--punish\s*\{[^}]+\}/)![0],/animation|box-shadow|filter/);
 });
 

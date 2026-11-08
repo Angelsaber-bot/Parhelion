@@ -1,8 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { ultimateReadability } from '../src/ultimateReadability';
-import { SkillPresentation } from '../src/skillPresentation';
+import { ultimateReadability } from '../src/cinematics/ultimateReadability';
+import { SkillPresentation } from '../src/combat/skillPresentation';
 test('Musashi and Napoleon X subdued profiles are local; Saber and other profiles remain exact',()=>{
  const old={hemisphere:2.8,key:3.5,rim:3,bloomStrength:.75,bloomRadius:.48,bloomThreshold:.72};
  for(const id of ['blackbeard','unknown'])assert.deepEqual(ultimateReadability(id),old);
@@ -21,7 +21,7 @@ test('Musashi Q lowers default stroke/contact opacity without changing event dat
 });
 
 test('Musashi cinematic fill/key caps hold through normal and reduced phases',async()=>{
- const {EraCinematicRemake}=await import('../src/eraCinematicRemake');
+ const {EraCinematicRemake}=await import('../src/cinematics/eraCinematicRemake');
  const owner={mesh(g:THREE.BufferGeometry,m:THREE.Material,p:THREE.Object3D){const mesh=new THREE.Mesh(g,m);p.add(mesh);return mesh;},material(c:number,o:number){return new THREE.MeshBasicMaterial({color:c,opacity:o,transparent:true});}};
  for(const identity of ['musashi','blackbeard','napoleon'])for(const reduced of [false,true]){
   const actor=new THREE.Group(),clone=new THREE.Group(),head=new THREE.Object3D();head.name=identity==='musashi'?'mixamorigHead':'Head';clone.add(head);actor.add(clone);
@@ -36,7 +36,7 @@ test('Musashi cinematic fill/key caps hold through normal and reduced phases',as
 });
 
 test('actual stage switches local base lights back after Musashi',async()=>{
- const {UltimateStage}=await import('../src/ultimateStage');const source=new THREE.Group();source.add(new THREE.Mesh(new THREE.BoxGeometry(1,2,1),new THREE.MeshStandardMaterial()));const stage=new UltimateStage();
+ const {UltimateStage}=await import('../src/cinematics/ultimateStage');const source=new THREE.Group();source.add(new THREE.Mesh(new THREE.BoxGeometry(1,2,1),new THREE.MeshStandardMaterial()));const stage=new UltimateStage();
  for(const identity of ['musashi','blackbeard','saber','napoleon','musashi']){
   stage.begin({identity,sourceRoot:source});const p=ultimateReadability(identity);
   const hemi=stage.scene.children.find(o=>(o as THREE.HemisphereLight).isHemisphereLight) as THREE.HemisphereLight;

@@ -2,7 +2,7 @@
  * normal follow/attack/ultimate handlers thereafter. Not natural-progression or GPU QA. */
 import assert from 'node:assert/strict';import * as THREE from 'three';
 import {mkdir,writeFile,readFile}from'node:fs/promises';import path from'node:path';import{fileURLToPath}from'node:url';import{createHash}from'node:crypto';
-import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{SERVANTS}from'../../src/contracts';import{CHARACTER_KITS}from'../../src/characters/catalog';import{RuntimePoseExporter}from'../characters/export-runtime-pose';
+import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{SERVANTS}from'../../src/companions/contracts';import{CHARACTER_KITS}from'../../src/characters/catalog';import{RuntimePoseExporter}from'../characters/export-runtime-pose';
 const out=process.argv[2];assert(out,'OUTPUT_DIR');await mkdir(out,{recursive:true});
 const h=await bootWorldWithoutGpu({deterministic:true,effectsQuality:'med'}),w=h.world,d=h.window.document;let now=0;
 const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};const key=(code:string)=>{for(const type of['keydown','keyup'])d.body.dispatchEvent(new h.window.KeyboardEvent(type,{code,bubbles:true}));};

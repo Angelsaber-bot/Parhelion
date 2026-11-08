@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ContractSkills, CONTRACT_SKILLS, skillContains, type SkillStrike } from '../src/contractSkills.ts';
-import { SkillPresentation } from '../src/skillPresentation.ts';
+import { ContractSkills, CONTRACT_SKILLS, skillContains, type SkillStrike } from '../src/companions/contractSkills.ts';
+import { SkillPresentation } from '../src/combat/skillPresentation.ts';
 import * as THREE from 'three';
-import { WorldCombatState } from '../src/combat.ts';
+import { WorldCombatState } from '../src/combat/combat.ts';
 const context = () => ({ enabled: true, origin: { x: 0, y: 0, z: 0 }, direction: { x: 0, y: 0, z: 1 } });
 function advance(s: ContractSkills, seconds: number) { for (let t = 0; t < seconds - 1e-8; t += .1) s.update(.1, true); }
 function charge(s: ContractSkills) { for (let i = 0; i < 10; i++) { s.recordDamage({ id: `enemy${i}`, damage: 100, eligible: true, source: 'weapon' }); advance(s, 1); } }

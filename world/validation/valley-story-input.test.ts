@@ -1,5 +1,5 @@
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';

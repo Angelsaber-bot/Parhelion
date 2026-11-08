@@ -148,7 +148,7 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
           const copy=clone.querySelector<HTMLInputElement>(`#${input.id}`);if(!copy)continue;copy.setAttribute('value',input.value);if(input.checked)copy.setAttribute('checked','');else copy.removeAttribute('checked');
         }
         const head=clone.querySelector('head')!;
-        const css=await Promise.all(['src/actions.css','src/combat.css','src/servant.css','src/ultimateDirector.css','../shared-client/settings.css'].map(path=>readFile(resolve(world,path),'utf8')));
+        const css=await Promise.all(['src/ui/actions.css','src/ui/combat.css','src/ui/servant.css','src/cinematics/ultimateDirector.css','../shared-client/settings.css'].map(path=>readFile(resolve(world,path),'utf8')));
         const style=window.document.createElement('style');style.textContent=css.join('\n')+'\n#view{background:linear-gradient(145deg,#27343a,#39453b 50%,#1c2937)}.qa-placeholder{position:fixed;left:50%;top:45%;transform:translate(-50%,-50%);color:#d3dfda70;text-align:center;pointer-events:none;font:14px system-ui;z-index:0}.qa-label{position:fixed;bottom:3px;left:8px;z-index:99999;font:10px system-ui;color:#eef3ee;background:#111c;padding:2px 5px;pointer-events:none}';head.append(style);
         const csp=window.document.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content="default-src 'none'; style-src 'unsafe-inline'; img-src data:";head.append(csp);
         const notice=window.document.createElement('div');notice.className='qa-label';notice.textContent=`${title} · Synthetic QA progress · DOM/CSS only, no WebGL render`;clone.querySelector('body')!.append(notice);

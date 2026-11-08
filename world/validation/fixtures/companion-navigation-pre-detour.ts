@@ -1,6 +1,6 @@
 /** Historical navigation reference, git blob557f4dc58c495380ad05845e4bed4df6adcf85f1. Validation only; imports adjusted for fixture location. */
 import * as THREE from 'three';
-import type { Collider } from '../../src/player';
+import type { Collider } from '../../src/player/player';
 import { CompanionMotion } from '../../src/characters/companionMotion';
 
 const TURNS = [0, .55, 1.05, Math.PI / 2, 2.05] as const;

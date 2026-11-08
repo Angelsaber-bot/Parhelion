@@ -13,7 +13,7 @@ import {
 import { riverD } from './terrain.js';
 import { frostCavernPieces, frostGorgePieces } from './frostwork.js';
 import { resetFieldworkSurfaces, fieldworkSurfacePieces, fieldBeaconBase, fieldFrozenSoldier, fieldTent, buildCrossingTimber, fieldWagon, fieldCannon, imperialPavilion, decorateFieldworks } from './fieldworks.js';
-import { resetArchitecture, architecturePieces, architectureManifest, winterHouse, basilCathedral, cathedral, ivanTower, kremlinFortifications, oldPalace, bellScaffoldDetail, squarePaving } from './architecture.js';
+import { resetArchitecture, architecturePieces, architectureManifest, ruinCollisionManifest, winterHouse, basilCathedral, cathedral, ivanTower, kremlinFortifications, oldPalace, bellScaffoldDetail, squarePaving } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -25,7 +25,6 @@ const CRYSTAL = new THREE.OctahedronGeometry(1, 0);
 const BALL = new THREE.IcosahedronGeometry(1, 0);
 const SPHERE = new THREE.IcosahedronGeometry(1, 2);
 const CONE4 = new THREE.ConeGeometry(1, 1, 4, 1, false, Math.PI / 4);
-const CONE8 = new THREE.ConeGeometry(1, 1, 8);
 const ROOF = new THREE.CylinderGeometry(1, 1, 1, 3, 1, false, Math.PI / 2); // apex up after rz = π/2
 /** Onion dome: a squashed sphere under a spike. */
 const ONION = (() => {
@@ -66,6 +65,7 @@ export function buildWinter(heightAt: HeightAt) {
   resetFieldworkSurfaces();
   const pieces: Piece[] = [];
   const footings=new Batch('Winter_House_Foundations','M_WinterStone');
+  const ruinShells=new Batch('Winter_Ruin_Shells','M_WinterCharredWood');
   const markers: Marker[] = [];
   const mk = (m: Marker) => markers.push(m);
   const rng = mulberry32(WINTER.seed + 5);
@@ -115,7 +115,8 @@ export function buildWinter(heightAt: HeightAt) {
   const izba = (b: Batch, x: number, z: number, ry: number, burnt: boolean) => {
     const visualStart = b.vis.length, glowStart = glow.vis.length;
     const y = lowest(x, z, 3), w = range(rng, 6, 8), d = range(rng, 5, 7), h = range(rng, 3.2, 4.2);
-    b.add(BOX, burnt ? C.charred : C.logs, T(x, y + h / 2, z, ry, w, h, d));
+    const openRuin=burnt&&(houseIndex%5===0||houseIndex%5===4);
+    b.add(BOX, burnt ? C.charred : C.logs, T(x, y + h / 2, z, ry, w, h, d),!openRuin);
     for (let k = 1; k < 5; k++) b.add(BOX, burnt ? '#2a2224' : C.woodDark, T(x, y + (h * k) / 5, z, ry, w + 0.1, 0.08, d + 0.1), false);
     if (!burnt) {
       b.add(ROOF, C.snow, T(x, y + h + 1.2, z, ry, 2.4, w + 0.6, (d + 1) / 1.732, 0, Math.PI / 2));
@@ -127,13 +128,14 @@ export function buildWinter(heightAt: HeightAt) {
       }
       b.add(BOX, C.charred, T(x - Math.cos(ry) * w * 0.3, y + h + 0.8, z + Math.sin(ry) * w * 0.3, ry, 0.25, 1.6, d * 0.6, 0.4), false);
     }
-    // Baseline RNG calls and collision triangles above are deliberately unchanged.
+    // Preserve baseline RNG and every intact-house proxy. Only the burned-open
+    // timber/warehouse shells replace their old full-height box below.
     b.vis.length = visualStart;
     if (burnt && (houseIndex % 5 === 0 || houseIndex % 5 === 4)) {
       for (const g of glow.vis.slice(glowStart)) g.translate(0, -h + .25, 0);
     } else glow.vis.length = glowStart;
     addGroundFooting(footings,x,y,z,ry,w,d,heightAt,'#879193');
-    winterHouse(b, x, y, z, ry, w, d, h, burnt, houseIndex++);
+    winterHouse(b, x, y, z, ry, w, d, h, burnt, houseIndex++,ruinShells);
   };
   /** Onion dome on a drum. */
   const dome = (b: Batch, x: number, y: number, z: number, r: number, drumH: number, color: string, drum = C.whiteStone) => {
@@ -618,5 +620,8 @@ export function buildWinter(heightAt: HeightAt) {
   const moscow = pieces.find(p => p.name === 'Moscow');
   if (moscow) moscow.userData = { architectureManifest };
   if(footings.vis.length)pieces.push({name:footings.name,material:footings.material,batch:footings,dynamic:true,outline:false,userData:{groundFooting:true}});
+  // Keep the replacement shell triangles separate, like the footing repair,
+  // so unchanged collision can still be checked against the exact baseline.
+  if(ruinShells.col.length)pieces.push({name:ruinShells.name,material:ruinShells.material,batch:ruinShells,dynamic:true,userData:{winterRuinShell:true,houses:ruinCollisionManifest}});
   return { pieces, markers };
 }

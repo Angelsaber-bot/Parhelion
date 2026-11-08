@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGN_CLOSURE as C, getCampaignClosureState as state, getCampaignClosureGuide as guide, interactCampaignClosure as act, getCampaignResidentReaction } from '../src/campaignClosure';
-import { ERA_IDS, ERA_STORIES } from '../src/eraStories';
+import { CAMPAIGN_CLOSURE as C, getCampaignClosureState as state, getCampaignClosureGuide as guide, interactCampaignClosure as act, getCampaignResidentReaction } from '../src/story/campaignClosure';
+import { ERA_IDS, ERA_STORIES } from '../src/story/eraStories';
 
 const cores = ERA_IDS.map(region => ERA_STORIES[region].core);
 test('four world resolutions unlock only an optional Alpha-local closing record', () => {
@@ -63,8 +63,8 @@ test('saved closing record remains authoritative without granting missing cores'
 });
 
 test('closing record never claims unperformed optional restorations; each earned echo is conditional', async () => {
-  const { getCampaignClosingText } = await import('../src/campaignClosure');
-  const { ERA_OPTIONALS, ERA_KNIGHT_DEFEATED } = await import('../src/eraStories');
+  const { getCampaignClosingText } = await import('../src/story/campaignClosure');
+  const { ERA_OPTIONALS, ERA_KNIGHT_DEFEATED } = await import('../src/story/eraStories');
   const done = new Set(cores);
   const bare = getCampaignClosingText(done)[1];
   assert.doesNotMatch(bare, /memorial is readable|signal still guides|stove you lit|lanterns you restored|trial is recorded/);
@@ -79,8 +79,8 @@ test('closing record never claims unperformed optional restorations; each earned
 });
 
 test('re-reading the archive reflects later saved detours without extra rewards or flags', async () => {
-  const { ERA_OPTIONALS, interactEraStory } = await import('../src/eraStories');
-  const { WorldProgress } = await import('../src/progress');
+  const { ERA_OPTIONALS, interactEraStory } = await import('../src/story/eraStories');
+  const { WorldProgress } = await import('../src/core/progress');
   const map = new Map<string, string>();
   const storage = { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => { map.set(key, value); } };
   const progress = new WorldProgress(storage);

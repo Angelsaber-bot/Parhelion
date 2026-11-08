@@ -4,7 +4,7 @@
 // shared deterministic applyInput(step, state) rules; the capsule/collider setup here is meant to carry over.
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { EvadeGroundSupport } from '../../src/evadeGroundSupport';
+import { EvadeGroundSupport } from '../../src/player/evadeGroundSupport';
 
 export interface Collider { name: string; bvh: MeshBVH; enabled: boolean }
 /** Vertical wind column: lifts a gliding player from y0 up to about y1. */

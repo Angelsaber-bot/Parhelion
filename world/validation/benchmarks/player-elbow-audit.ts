@@ -1,7 +1,7 @@
 /** Root-space endpoint + signed imported-biceps audit. JSON evidence, not a visual pass. */
 import * as THREE from 'three';import {writeFile}from'node:fs/promises';import {pathToFileURL}from'node:url';
 import {playerFixture}from'../player-fixture.ts';
-const {SkinnedCharacterAnimator}=await import(process.argv[3]?pathToFileURL(process.argv[3]).href:'../../src/skinnedCharacter.ts');
+const {SkinnedCharacterAnimator}=await import(process.argv[3]?pathToFileURL(process.argv[3]).href:'../../src/player/skinnedCharacter.ts');
 const f=await playerFixture(),a=new SkinnedCharacterAnimator(f.rig),v=()=>new THREE.Vector3(),q=()=>new THREE.Quaternion();
 const records:any[]=[];
 for(const [mode,armed,speed,aim] of [['emptyhand',false,5.5,0],['carry',true,5.5,0],['ads',true,0,1]]as const){

@@ -7,9 +7,9 @@ import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { CharacterKit, type CharacterKitDefinition } from '../src/characters/characterKit.ts';
-import { KitCompanion } from '../src/kitCompanion.ts';
-import type { Layout } from '../src/types.ts';
-import type { Collider } from '../src/player.ts';
+import { KitCompanion } from '../src/companions/kitCompanion.ts';
+import type { Layout } from '../src/core/types.ts';
+import type { Collider } from '../src/player/player.ts';
 registerHooks({ load(url,context,nextLoad){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:nextLoad(url,context);} });
 class Element {
   id='';className='';textContent='';innerHTML='';hidden=false;title='';style:Record<string,string>={};
@@ -20,7 +20,7 @@ class Element {
 const body=new Element(),crosshair=new Element();
 (globalThis as any).document={documentElement:{lang:''},createElement:()=>new Element(),body,getElementById:(id:string)=>id==='crosshair'?crosshair:body.children.find(e=>e.id===id)};
 (globalThis as any).window={setTimeout:()=>1,addEventListener(){}};
-const {WorldCombat}=await import('../src/combatView.ts');
+const {WorldCombat}=await import('../src/combat/combatView.ts');
 function fixture(){
   const scene=new THREE.Scene(),colliders:Collider[]=[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2))}];
   const layout={world:{seed:537,waterLevel:-10},areas:[],markers:[{id:'boss_vacant_king',type:'enemy',p:[0,0,7],label:'Boss'}]}as unknown as Layout;
@@ -58,7 +58,7 @@ test('WorldCombat revalidates LOS during a mounted charge and blocks real HP los
 
 // Direct geometry regression for the independently reproduced rear-footprint hole.
 // These private-helper probes supplement, rather than replace, end-to-end charge tests above.
-const {MountedCharge}=await import('../src/mountedCharge.ts');
+const {MountedCharge}=await import('../src/companions/mountedCharge.ts');
 function navigationProbe(obstacle:THREE.BufferGeometry){
   const colliders:Collider[]=[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2))},{name:'obstacle',enabled:true,bvh:new MeshBVH(obstacle)}];
   return new MountedCharge({colliders,range:4.5,damage:16,target:()=>null,strike:()=>null})as any;

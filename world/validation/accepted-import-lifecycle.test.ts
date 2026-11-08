@@ -1,6 +1,6 @@
 /** Successful actual-main import with JSDOM navigation intentionally unavailable.
  * Verifies immediate teardown before reload, not successful browser navigation. */
-import test from'node:test';import assert from'node:assert/strict';import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{FALSE_DAWN as F}from'../src/falseDawnCampaign';
+import test from'node:test';import assert from'node:assert/strict';import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{FALSE_DAWN as F}from'../src/story/falseDawnCampaign';
 test('accepted backup cancels active story actors before unavailable navigation without reward or reset refund',async()=>{
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});const{world:w,window}=h,d=window.document;let now=0;const navigationErrors:Error[]=[];const vc=h.virtualConsole;const onError=(error:Error)=>navigationErrors.push(error);vc.on('jsdomError',onError);
  const key=(code:string)=>{for(const type of ['keydown','keyup'])d.body.dispatchEvent(new window.KeyboardEvent(type,{code,bubbles:true,cancelable:true}));};

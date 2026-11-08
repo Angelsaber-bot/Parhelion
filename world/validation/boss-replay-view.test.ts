@@ -1,15 +1,15 @@
 import { campaignSourceContext } from './campaign-source-context';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
-import {VALLEY_STORY} from '../src/valleyStory.ts';
-import {ERA_OPTIONALS} from '../src/eraStories.ts';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/environment/fortCannon.ts';
+import {VALLEY_STORY} from '../src/story/valleyStory.ts';
+import {ERA_OPTIONALS} from '../src/story/eraStories.ts';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import type { Layout } from '../src/types.ts';
+import type { Layout } from '../src/core/types.ts';
 
 // Headless structural/resource test, NOT browser/render QA. CSS has no bearing on these invariants.
 registerHooks({ load(url, context, nextLoad) { return url.endsWith('.css') ? { format: 'module', source: '', shortCircuit: true } : nextLoad(url, context); } });
@@ -26,14 +26,14 @@ class Element {
 const body = new Element(), crosshair = new Element();
 (globalThis as any).document = { documentElement: { lang: '' }, createElement: () => new Element(), body, getElementById: (id: string) => id === 'crosshair' ? crosshair : body.children.find(e => e.id === id) };
 (globalThis as any).window = { setTimeout: () => 1, addEventListener() {} };
-const { WorldCombat } = await import('../src/combatView.ts');
+const { WorldCombat } = await import('../src/combat/combatView.ts');
 const layout = {
   world: { seed: 537, waterLevel: 1 }, areas: [],
   markers: [{ id: 'boss_vacant_king', type: 'enemy', p: [0, 2, 0], label: 'Boss' }],
 } as unknown as Layout;
 
-const { BOSSES, COMBAT } = await import('../src/combat.ts');
-const { WorldProgress } = await import('../src/progress.ts');
+const { BOSSES, COMBAT } = await import('../src/combat/combat.ts');
+const { WorldProgress } = await import('../src/core/progress.ts');
 for(const def of BOSSES) test(`${def.id}: actual view grants first-clear reward once, reloads and resets repeated encounters`,()=>{
   const scene=new THREE.Scene(),storage={value:null as string|null,getItem(){return this.value;},setItem(_k:string,v:string){this.value=v;},removeItem(){}};
   const progress=new WorldProgress(storage);def.requires.forEach(x=>progress.done.add(x));

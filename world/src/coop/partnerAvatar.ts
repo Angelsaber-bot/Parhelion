@@ -1,7 +1,7 @@
 import * as THREE from 'three';
-import { loadSkinnedCharacter, SkinnedCharacterAnimator, type SkinnedCharacterRig } from '../skinnedCharacter';
-import { attachExplorerRifle } from '../weaponArt';
-import { attachExplorerBlade } from '../playerBladeArt';
+import { loadSkinnedCharacter, SkinnedCharacterAnimator, type SkinnedCharacterRig } from '../player/skinnedCharacter';
+import { attachExplorerRifle } from '../weapons/weaponArt';
+import { attachExplorerBlade } from '../weapons/playerBladeArt';
 import type { PlayerWireState } from './coopProtocol';
 
 /** How far behind the newest state the partner is drawn, so two samples always bracket it. */

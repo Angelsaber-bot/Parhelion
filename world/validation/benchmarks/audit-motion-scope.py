@@ -3,8 +3,8 @@ import hashlib,json,sys
 from pathlib import Path
 base,current,out=map(Path,sys.argv[1:4]);base=base.resolve();current=current.resolve()
 allow={
- 'arena-game/src/characterMotion.ts','arena-game/src/fighter.ts','arena-game/src/scene.ts',
- 'world/src/mountedCharge.ts','world/src/skinnedCharacter.ts','world/src/playerLocomotion.ts','world/src/playerEquipment.ts','world/src/servant.ts','world/src/kitCompanion.ts',
+ 'arena-game/src/player/characterMotion.ts','arena-game/src/player/fighter.ts','arena-game/src/rendering/scene.ts',
+ 'world/src/companions/mountedCharge.ts','world/src/player/skinnedCharacter.ts','world/src/player/playerLocomotion.ts','world/src/weapons/playerEquipment.ts','world/src/companions/servant.ts','world/src/companions/kitCompanion.ts',
  'world/src/characters/actionBlend.ts','world/src/characters/characterKit.ts','world/src/characters/companionMotion.ts','world/src/characters/musashiLocomotion.ts','world/src/characters/mountedChargeMotion.ts',
 }
 exclude={'node_modules','dist','__pycache__','.git','docs','validation','test'}

@@ -71,7 +71,7 @@
 
 ## 与真实战斗同步（不可妥协）
 
-已核对当前 `world/src/contractSkills.ts` 和 `world/src/worldActions.ts`：从者通过 `startPose → onContact → skills.contact(token) → flush → strike` 结算，不按静态 `pulses.at` 直接命中。保留此唯一事实来源。
+已核对当前 `world/src/companions/contractSkills.ts` 和 `world/src/combat/worldActions.ts`：从者通过 `startPose → onContact → skills.contact(token) → flush → strike` 结算，不按静态 `pulses.at` 直接命中。保留此唯一事实来源。
 
 1. 成功校验能量、冷却、目标/路径且原cast接受后才开幕。失败不播放假成功，仍遵守现有不扣能量规则。
 2. 表现层独立角色克隆/舞台，不改真实世界坐标、朝向、目标或碰撞；拿破仑仍走安全路线验证。

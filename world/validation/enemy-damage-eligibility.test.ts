@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { WorldCombatState, COMBAT, type CombatTerrain } from '../src/combat';
+import { WorldCombatState, COMBAT, type CombatTerrain } from '../src/combat/combat';
 const ground: CombatTerrain = { walk: (_p,x,z) => ({x,y:0,z}), lineOfSight: () => true };
 for (const distance of [36,50,65,69]) test(`ranged damage persists beyond pursuit leash at ${distance}m until real defeat`, () => {
   const s = new WorldCombatState([{id:'target',kind:'shade',p:{x:0,y:0,z:0}}],[]), e=s.enemies[0];

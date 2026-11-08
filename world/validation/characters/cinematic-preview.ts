@@ -1,10 +1,10 @@
 /** Deterministic actual WebGL scene capture. No portrait compositor or simulated screenshot. */
 import * as THREE from 'three';
-import { UltimateStage } from '../../src/ultimateStage';
-import { UltimateClock } from '../../src/ultimateDirector';
-import { SERVANT_MODELS,SERVANT_MOTION,loadServantGltf } from '../../src/servant';
+import { UltimateStage } from '../../src/cinematics/ultimateStage';
+import { UltimateClock } from '../../src/cinematics/ultimateDirector';
+import { SERVANT_MODELS,SERVANT_MOTION,loadServantGltf } from '../../src/companions/servant';
 import { CHARACTER_KITS } from '../../src/characters/catalog';
-import {skillAnimationProfile,skillAnimationSample} from '../../src/skillAnimationProfile';
+import {skillAnimationProfile,skillAnimationSample} from '../../src/combat/skillAnimationProfile';
 const identity=new URLSearchParams(location.search).get('identity')||'saber';
 const def=identity==='saber'?null:CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity as 'blackbeard'|'musashi'];
 const gltf=await loadServantGltf(def?.assetUrl||SERVANT_MODELS.armor);

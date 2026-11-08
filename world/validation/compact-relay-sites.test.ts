@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {createCompactRelaySites,COMPACT_RELAY_ART_LIMITS} from '../src/compactRelaySites';
-import {COMPACT_RELAY_SITE,COMPACT_RELAY_MARKER_IDS,COMPACT_RELAY_COVER,COMPACT_RELAY_PLATFORM} from '../src/compactRelaySitesData';
+import {createCompactRelaySites,COMPACT_RELAY_ART_LIMITS} from '../src/story/compactRelaySites';
+import {COMPACT_RELAY_SITE,COMPACT_RELAY_MARKER_IDS,COMPACT_RELAY_COVER,COMPACT_RELAY_PLATFORM} from '../src/story/compactRelaySitesData';
 const height=(x:number,z:number)=>z<0?8.0147:10.003314018249512;
 test('compact relay is one bounded authored yard, three covers and an accessible two-ramp deck, with no lights',()=>{
  const s=createCompactRelaySites(height),materials=new Set<THREE.Material>();let meshes=0,triangles=0;const bounds=new THREE.Box3().setFromObject(s.root);

@@ -67,7 +67,7 @@ Fresh preview evidence is recorded separately by the independent QA pass.
   room environment dimmed to 0.45 so ruins, stakes and the hall cast readable
   shadows. 15 braziers/watch fires and 18 crest torches are emissive under bloom and
   carry runtime halos, ground light pools and rising embers (`presentation` block,
-  drawn by `arena-game/src/chapterEffects.ts`; client-only, never collision).
+  drawn by `arena-game/src/rendering/chapterEffects.ts`; client-only, never collision).
 - **Art:** sharpened-stake palisade on a solid backing board, stacked hall timbers,
   dropped shields/spears/arrows (all < 0.35 m), planted swords at the stone, team
   banners, two army camps with tents and smoking fires, a standing-stone ring and a

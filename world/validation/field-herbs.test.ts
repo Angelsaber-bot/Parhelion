@@ -2,8 +2,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { FIELD_HERB, HERB_KINDS, createFieldHerbs, herbCandidates, herbModel, placeHerbs } from '../src/fieldHerbs.ts';
-import { WorldCombatState, COMBAT } from '../src/combat.ts';
+import { FIELD_HERB, HERB_KINDS, createFieldHerbs, herbCandidates, herbModel, placeHerbs } from '../src/environment/fieldHerbs.ts';
+import { WorldCombatState, COMBAT } from '../src/combat/combat.ts';
 
 const flat = () => 2;
 test('every era grows its own herb near its fights, on dry level ground', () => {

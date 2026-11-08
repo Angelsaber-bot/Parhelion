@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {JOURNEY_DRAMA as D,JOURNEY_CAST,JOURNEY_REGIONS,journeyScene,confirmJourneyScene,dramaDecision,journeyEnding,journeyRevisit} from '../src/journeyDrama';
-import {getCurrentAdventureGuide} from '../src/openWorldCampaign';
+import {JOURNEY_DRAMA as D,JOURNEY_CAST,JOURNEY_REGIONS,journeyScene,confirmJourneyScene,dramaDecision,journeyEnding,journeyRevisit} from '../src/story/journeyDrama';
+import {getCurrentAdventureGuide} from '../src/story/openWorldCampaign';
 import {createSettlementNpcs} from '../src/settlements/npcs';
 import * as THREE from 'three';
 const facts=()=>new Set<string>(['adventure_v2',D.started]);
@@ -40,6 +40,20 @@ test('legacy cleared cores still guide unfinished human rescues instead of silen
  const done=facts();done.add(D.opening);done.add(D.brief('britain'));done.add('sun_core');
  const guide=getCurrentAdventureGuide('britain',done)!;assert.ok(guide.targetId.startsWith('kingdom_gate_'));assert.equal(done.has(D.report('britain')),false);
  done.add(D.brief('blacksail'));done.add('sea_core');assert.notEqual(getCurrentAdventureGuide('blacksail',done)!.targetId,'blackbeard_meet');
+});
+test('a legacy Kyoto pact can report recovered evidence and unlock the finale without fabricated core flags',()=>{
+ const done=facts();
+ for(const flag of [D.opening,D.confession,'armory_rack','compact_relay_complete','saber_contract','sun_core','kingdom_gate_rescued','blackbeard_contract','adventure_harbor_departed','napoleon_contract','adventure_winter_arrived','musashi_contract'])done.add(flag);
+ for(const region of JOURNEY_REGIONS){done.add(D.brief(region));if(region!=='kyoto')done.add(D.report(region));}
+ assert.equal(getCurrentAdventureGuide('kyoto',done)?.targetId,'adventure_kyoto_evidence');
+ assert.equal(journeyScene(JOURNEY_CAST.kyoto.npc,done),null);
+ done.add('adventure_kyoto_evidence');
+ assert.equal(getCurrentAdventureGuide('alpha',done)?.targetId,JOURNEY_CAST.kyoto.npc);
+ const report=journeyScene(JOURNEY_CAST.kyoto.npc,done)!;
+ assert.equal(report.beat,'report');assert.equal(confirmJourneyScene(report,'accept',done),true);
+ assert.equal(getCurrentAdventureGuide('alpha',done)?.targetId,'adventure_emitter_1');
+ assert.equal(done.has('fire_core'),false);
+ for(const flag of ['kikyo_banner_1','kikyo_banner_2','kikyo_banner_3'])assert.equal(done.has(flag),false);
 });
 test('portrait speech uses stable, bounded morph buffers and releases owned geometry',()=>{
  const system=createSettlementNpcs([{id:JOURNEY_CAST.alpha.npc,region:'alpha',role:JOURNEY_CAST.alpha.name,position:[0,0,0],lines:[['你好','Hello']]}]);

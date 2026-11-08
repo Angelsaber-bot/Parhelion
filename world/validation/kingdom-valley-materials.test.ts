@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync, unlinkSync } from 'node:fs';
 import * as THREE from 'three';
-import { BRITAIN_MATERIAL_PROFILES, britainMaterialProfile } from '../src/britainMaterialProfiles.ts';
-import { VALLEY_MATERIAL_PROFILES, valleyMaterialProfile } from '../src/valleyMaterialProfiles.ts';
-import { britainToonMaterial } from '../src/britainMaterials.ts';
-import { valleyToonMaterial } from '../src/valleyMaterials.ts';
-import { toonMaterial } from '../src/look.ts';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { BRITAIN_MATERIAL_PROFILES, britainMaterialProfile } from '../src/environment/britainMaterialProfiles.ts';
+import { VALLEY_MATERIAL_PROFILES, valleyMaterialProfile } from '../src/environment/valleyMaterialProfiles.ts';
+import { britainToonMaterial } from '../src/environment/britainMaterials.ts';
+import { valleyToonMaterial } from '../src/environment/valleyMaterials.ts';
+import { toonMaterial } from '../src/rendering/look.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { Batch, BOX, T } from '../tools/gen/geo.ts';
 import { writeRegion } from '../tools/gen/export.ts';
 

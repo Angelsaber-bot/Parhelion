@@ -1,7 +1,7 @@
 /** ISOLATED design comparison only. Defer the exact immediately preceding
  * failed grounded-step retry until a melee/Q request. No proximity-only airborne
  * admission, no time grace, no hidden tracking or action/cooldown writes. */
-import * as THREE from 'three';import {EvadeGroundSupport} from '../../src/evadeGroundSupport';
+import * as THREE from 'three';import {EvadeGroundSupport} from '../../src/player/evadeGroundSupport';
 export function installGroundAdmissionCandidate(player:any,actions:any){
  const support=new EvadeGroundSupport(),lastPosition=new THREE.Vector3(),lastVelocity=new THREE.Vector3(),originalStep=player.step,originalPress=actions.press,originalTeleport=player.teleport,stepDescriptor=Object.getOwnPropertyDescriptor(player,'step'),pressDescriptor=Object.getOwnPropertyDescriptor(actions,'press'),teleportDescriptor=Object.getOwnPropertyDescriptor(player,'teleport');let pending=false,disposed=false,attempts=0,recoveredRequests=0;
  const solve=()=>player.collide();

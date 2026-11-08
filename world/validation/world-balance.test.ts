@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {WORLD_RIFLE as R,rifleDistanceMultiplier} from '../src/worldBalance';
-import {WorldCombatState,COMBAT,type CombatTerrain} from '../src/combat';
-import {ADVENTURE as A} from '../src/openWorldCampaign';
+import {WORLD_RIFLE as R,rifleDistanceMultiplier} from '../src/core/worldBalance';
+import {WorldCombatState,COMBAT,type CombatTerrain} from '../src/combat/combat';
+import {ADVENTURE as A} from '../src/story/openWorldCampaign';
 const p=(x=0,z=0)=>({x,y:0,z});
 const terrain:CombatTerrain={walk:(_from,x,z)=>p(x,z),lineOfSight:()=>true};
 function make(role:'stalker'|'breaker'='stalker'){const s=new WorldCombatState([{id:'wild_test',kind:'shade',p:p(2),role}],{id:'boss',kind:'king',p:p(50),requires:[]});s.enemies[0].active=true;return s;}

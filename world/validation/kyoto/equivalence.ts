@@ -2,7 +2,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../../src/glb.ts';
+import {regionLoader,bakeQuantized} from '../../src/rendering/glb.ts';
 const hash=(v:string|Uint8Array)=>createHash('sha256').update(v).digest('hex');
 async function inspect(path:string){
  const bytes=readFileSync(path);const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.updateMatrixWorld(true);

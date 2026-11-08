@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, type CombatTerrain } from '../src/combat.ts';
+import { WorldCombatState, type CombatTerrain } from '../src/combat/combat.ts';
 const p = (x = 0, z = 0) => ({ x, y: 0, z });
 const terrain: CombatTerrain = { walk: (_p, x, z) => p(x, z), lineOfSight: () => true };
 function ready() {

@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH}from'three-mesh-bvh';
-import {planSettlementApproach,createSettlementApproaches,APPROACH_LIMITS}from'../src/settlementApproaches';
-import type{WorldGrid}from'../src/grid';import type{SettlementPlacement}from'../src/settlements/types';
+import {planSettlementApproach,createSettlementApproaches,APPROACH_LIMITS}from'../src/map/settlementApproaches';
+import type{WorldGrid}from'../src/map/grid';import type{SettlementPlacement}from'../src/settlements/types';
 const placement:SettlementPlacement={id:'alpha',name:['庭院','Court'],position:[0,5,0],entry:[0,5,5],footprint:[10,10],groundRange:0};
 const grid={x0:-100,z0:-100,cell:2,nx:101,nz:101,h:new Float32Array(101*101).fill(5)}as WorldGrid;
 function context(blocker?:THREE.BufferGeometry){return{grid,blockers:new MeshBVH(blocker??new THREE.BoxGeometry(1,1,1).translate(95,30,95)),layout:{markers:[],paths:[[[20,-50],[20,50]]]as[number,number][][]}};}

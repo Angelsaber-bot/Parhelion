@@ -2,8 +2,8 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../../src/glb.ts';
-import {isStaticArtEligible} from '../../src/chunk.ts';
+import {regionLoader,bakeQuantized} from '../../src/rendering/glb.ts';
+import {isStaticArtEligible} from '../../src/rendering/chunk.ts';
 const result=[];
 for(const region of ['alpha','britain','blacksail','winter','kyoto']){
  const bytes=readFileSync(`public/assets/world_${region}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);

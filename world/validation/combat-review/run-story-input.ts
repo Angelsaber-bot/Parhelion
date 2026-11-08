@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import assert from 'node:assert/strict';
 import {writeFile,mkdir} from 'node:fs/promises';
 import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../../src/story/falseDawnEncounterCatalog';
 const worldRoot=process.argv.find(arg=>arg.startsWith('--world-root='))?.slice(13);
 const outputOverride=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9),naturalEntry=process.argv.includes('--natural-entry');
 const profile=process.argv[3]??'rifle-reactive',reaction=Number(process.argv[4]??'.3'),entry=process.argv[5]??'south';

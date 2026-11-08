@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, PERFECT_EVADE, enemyAttackTiming, type CombatTerrain, type Point3 } from '../src/combat.ts';
+import { WorldCombatState, PERFECT_EVADE, enemyAttackTiming, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
 const terrain: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const flat = (x: number, z: number) => ({ x, y: 0, z });
 const step = (s: WorldCombatState, p: Point3) => s.step(.05, p, true, terrain);

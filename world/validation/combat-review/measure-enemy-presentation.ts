@@ -1,6 +1,6 @@
 /** CPU-only native presentation microbenchmark, not GPU frame rate or gameplay timing. */
 import assert from 'node:assert/strict';import * as THREE from 'three';import {performance} from 'node:perf_hooks';import {writeFile,mkdir} from 'node:fs/promises';
-import {EnemyVisuals,type EnemyModel} from '../../src/enemyVisuals';import {WorldCombatState,enemyAttackTiming} from '../../src/combat';import {parseLocalGlb} from '../player-fixture';import {nativeMusketeerContactMuzzle} from '../../src/enemyShotSocket';
+import {EnemyVisuals,type EnemyModel} from '../../src/combat/enemyVisuals';import {WorldCombatState,enemyAttackTiming} from '../../src/combat/combat';import {parseLocalGlb} from '../player-fixture';import {nativeMusketeerContactMuzzle} from '../../src/combat/enemyShotSocket';
 const models:EnemyModel[]=['samurai','sunward_guard','deck_raider','officer','musketeer','ashigaru'],assets=new Map();for(const model of models)assets.set(model,await parseLocalGlb(new URL(`../../public/assets/enemies/${model}.glb`,import.meta.url)));
 const results:any[]=[];
 for(const count of [2,12,24])for(const attacking of [false,true]){

@@ -3,13 +3,25 @@
 import { RULES_VERSION, type JoinOptions } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
-import { loadoutWeapon, type Loadout } from '../shared/content.ts';
+import { loadoutWeapon, WEAPONS, type Loadout } from '../shared/content.ts';
 const url = process.argv[2] ?? 'ws://127.0.0.1:8787/arena';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const sockets: WebSocket[] = [];
+// A compatible handshake alone does not prove the new cosmetic catalog reached
+// production. Send real appended indices and inspect the other client's snapshot.
+const releaseFinishes: Record<string, string> = {
+  firefly: 'guard-sash', corona: 'sealed-passage', halo: 'night-nacre',
+};
+const releaseSkins = WEAPONS.map(weapon => {
+  const id = releaseFinishes[weapon.id];
+  if (!id) return 0;
+  const index = weapon.skins.findIndex(skin => skin.id === id);
+  if (index < 0) throw new Error(`release finish missing from catalog: ${id}`);
+  return index;
+});
 function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION) {
   return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[] }>((resolve, reject) => {
-    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: [], map: 'aster', loadout };
+    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout };
     const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(opts))}`); sockets.push(ws);
     const client = { ws, id: '', snaps: [] as Snapshot[] };
     const timer = setTimeout(() => { ws.close(); reject(new Error('join timeout')); }, 10000);
@@ -37,6 +49,10 @@ try {
   await wait(500);
   const first = a.snaps.at(-1)!;
   if (!first?.players.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
+  for (const [snapshots, remoteId] of [[a.snaps, b.id], [b.snaps, a.id]] as const) {
+    const remote = snapshots.at(-1)?.players.find(player => player.id === remoteId);
+    if (!remote || JSON.stringify(remote.skins) !== JSON.stringify(releaseSkins)) throw new Error('new finish indices were lost or clamped in the remote snapshot');
+  }
   let seq = 0;
   for (const slot of [0, 1, 2]) {
     a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: slot, view: 0 }] }));
@@ -61,5 +77,6 @@ try {
   await refused(['lumen', 'lumen', 'blade']);
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
-  console.log(`OK: v${RULES_VERSION} two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/v2 rejection`);
+  await refused(['lumen', 'corona', 'blade'], RULES_VERSION - 1);
+  console.log(`OK: v${RULES_VERSION} release finish indices, two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/old-version rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

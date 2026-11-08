@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
-import {settlementGrassClearance} from '../src/grassClearance';
-import {createKingdomGateScene} from '../src/kingdomGateScene';
-import {KINGDOM_GATE} from '../src/kingdomGate';
+import {settlementGrassClearance} from '../src/map/grassClearance';
+import {createKingdomGateScene} from '../src/environment/kingdomGateScene';
+import {KINGDOM_GATE} from '../src/story/kingdomGate';
 import {buildAlphaSettlement} from '../src/settlements/alpha';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
 import {CHESTS,flagChest,markerChest} from '../src/exploration/catalog';
-import {makeGrassField} from '../src/fx';
+import {makeGrassField} from '../src/rendering/fx';
 
 test('occupied low floors, ramps and connecting paths exclude grass without clearing the surrounding meadow',()=>{
  const grid={nx:81,nz:61,x0:-40,z0:-30,cell:1};

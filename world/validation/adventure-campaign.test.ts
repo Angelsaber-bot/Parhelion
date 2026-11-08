@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {ADVENTURE as A,getAdventureGuide,getCurrentAdventureGuide,adventureTravelOpen,harborBridgeReady,winterRouteReady,adventureChapterComplete} from '../src/openWorldCampaign';
-import {createAdventureRuntime} from '../src/adventureRuntime';
-import {ADVENTURE_ACTIONS} from '../src/adventureSites';
-import {getEraBossRequirements,getEraPieceRequirements} from '../src/eraStories';
-import {RelayChannel} from '../src/relayChannel';
+import {ADVENTURE as A,getAdventureGuide,getCurrentAdventureGuide,adventureTravelOpen,harborBridgeReady,winterRouteReady,adventureChapterComplete} from '../src/story/openWorldCampaign';
+import {createAdventureRuntime} from '../src/story/adventureRuntime';
+import {ADVENTURE_ACTIONS} from '../src/story/adventureSites';
+import {getEraBossRequirements,getEraPieceRequirements} from '../src/story/eraStories';
+import {RelayChannel} from '../src/story/relayChannel';
 function setup(flags:string[]=[]){const done=new Set([A.started,'armory_rack',...flags]),actions=new Map(ADVENTURE_ACTIONS.map(a=>[a.id,a]));let saves=0,damage=0,near=true,encounter:string|null=null;
  const runtime=createAdventureRuntime({done,actions,path:[[0,0,0],[2,0,0],[4,0,0]],reachable:()=>near,save:()=>{saves++;return true;},changed(){},toast(){},damage:()=>damage,supply:()=>true,encounter:()=>encounter,start:spec=>{encounter=spec.id;return{ok:true};},cancel(){encounter=null;},moveCart:()=>true});
  const frame={dt:1/60,held:false,playable:true,inRange:true,grounded:true,moving:false,attacking:false};
@@ -47,3 +47,37 @@ test('channel authored durations do not change with frame rate or allow hidden t
 test('default guide advances after a local chapter and preparation tracks only remaining actions',()=>{const done=new Set([A.started,A.online,'armory_rack','saber_contract','sun_core']);assert.equal(getCurrentAdventureGuide('britain',done)?.targetId,'blackbeard_meet');done.add('napoleon_meet');done.add('beacon_1');assert.equal(getAdventureGuide('winter',done)?.targetId,'beacon_2');done.add('blackbeard_meet');done.add('fort_cannon');done.add('ghost_boat_1');assert.equal(getAdventureGuide('blacksail',done)?.targetId,'ghost_boat_2');});
 
 test('adventure respects contract-only legacy victories without requiring another first-clear boss',()=>{const harbor=setup(['blackbeard_meet','blackbeard_contract',A.records]);assert.equal(getAdventureGuide('blacksail',harbor.done)?.targetId,'adventure_harbor_exit');harbor.runtime.interact('adventure_harbor_exit');assert.ok(harbor.done.has(A.exited));const winter=setup(['napoleon_meet','napoleon_contract','shard_bell',A.road]);assert.equal(getAdventureGuide('winter',winter.done)?.targetId,'adventure_winter_convoy');const kyoto=setup(['musashi_meet','musashi_contract','kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']);assert.equal(getAdventureGuide('kyoto',kyoto.done)?.targetId,A.evidence);});
+
+test('legacy Winter victories skip obsolete preparation but still require a cleared road and real delivery',()=>{
+ for(const victory of ['winter_core','napoleon_contract']){
+  const h=setup([victory]);
+  assert.equal(winterRouteReady(h.done),true);
+  assert.equal(getAdventureGuide('winter',h.done)?.targetId,'adventure_winter_latch');
+  h.runtime.interact('adventure_winter_convoy');assert.equal(h.done.has(A.convoy),false);
+  h.runtime.hit(A.brace1);h.runtime.hit(A.brace2);
+  assert.equal(getAdventureGuide('winter',h.done)?.targetId,'adventure_winter_convoy');
+  h.runtime.interact('adventure_winter_convoy');assert.equal(h.done.has(A.convoy),true);
+  assert.equal(adventureChapterComplete('winter',h.done),false);
+  for(let i=0;i<400;i++)h.runtime.update(h.frame);
+  assert.equal(h.done.has(A.arrived),false);
+  h.runtime.interact('adventure_winter_arrival');h.done.add('napoleon_contract');
+  assert.equal(adventureChapterComplete('winter',h.done),true);
+  assert.equal(getAdventureGuide('winter',h.done),null);
+  for(const flag of ['beacon_1','beacon_2','beacon_3','shard_bell'])assert.equal(h.done.has(flag),false);
+ }
+});
+
+test('legacy Kyoto victories guide actual evidence and pact without demanding flags or another boss',()=>{
+ for(const victory of ['fire_core','musashi_contract']){
+  const h=setup([victory]);
+  assert.equal(getAdventureGuide('kyoto',h.done)?.targetId,A.evidence);
+  assert.equal(adventureChapterComplete('kyoto',h.done),false);
+  h.hold(A.evidence);assert.equal(h.done.has(A.evidence),true);
+  if(victory==='fire_core')assert.equal(getAdventureGuide('kyoto',h.done)?.targetId,'musashi_contract');
+  h.done.add('musashi_contract');
+  assert.equal(adventureChapterComplete('kyoto',h.done),true);
+  assert.equal(getAdventureGuide('kyoto',h.done),null);
+  for(const flag of ['musashi_meet','kikyo_banner_1','kikyo_banner_2','kikyo_banner_3'])assert.equal(h.done.has(flag),false);
+  if(victory==='musashi_contract')assert.equal(h.done.has('fire_core'),false);
+ }
+});

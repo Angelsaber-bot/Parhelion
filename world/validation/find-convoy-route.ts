@@ -13,4 +13,4 @@ while(open.length){open.sort((a,b)=>b.f-a.f);const a=open.pop()!,id=key(a.x,a.z)
  }
 }
 if(!result)throw Error(`No convoy path: ${scores.size} nodes range ${Math.max(...[...scores.keys()].map(k=>Number(k.split(',')[1])))} end ${floor(end[0],end[1])}`);const path:number[][]=[];for(let id:string|undefined=result;id;id=prev.get(id)){const[x,z]=id.split(',').map(Number);path.push([x,floor(x,z)!,z]);}path.reverse();
-writeFileSync('src/convoyRoute.ts',`/** Grounded medicine route audited against the shipped five-region collision. */\nexport const CONVOY_ROUTE:readonly [number,number,number][]=${JSON.stringify(path)};\n`);console.log(path.length);await h.close();
+writeFileSync('src/story/convoyRoute.ts',`/** Grounded medicine route audited against the shipped five-region collision. */\nexport const CONVOY_ROUTE:readonly [number,number,number][]=${JSON.stringify(path)};\n`);console.log(path.length);await h.close();

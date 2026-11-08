@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { playerFixture } from './player-fixture';
-import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/skinnedCharacter';
+import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/player/skinnedCharacter';
 import { SkinnedCharacterAnimator as Before } from './fixtures/player-pre-ads-pole';
 const base:PlayerAnimationState={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0,armed:true,aim:0,pitch:0};
 const locals=(rig:Awaited<ReturnType<typeof playerFixture>>['rig'])=>Object.fromEntries(Object.entries(rig.bones).map(([name,b])=>[name,[...b.position.toArray(),...b.quaternion.toArray(),...b.scale.toArray()]]));

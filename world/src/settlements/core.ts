@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeParts } from './merge';
-import type { WorldGrid } from '../grid';
-import type { Layout } from '../types';
-import { REGIONS } from '../regions';
+import type { WorldGrid } from '../map/grid';
+import type { Layout } from '../core/types';
+import { REGIONS } from '../map/regions';
 import type { SettlementKit, SettlementPlacement, PlacedNpcSocket, RegionId } from './types';
 
 const PREFERRED: Record<RegionId, [number, number]> = {

@@ -2,7 +2,7 @@
 
 每次推送到 `main`，GitHub Actions（`.github/workflows/deploy.yml`）会：
 
-1. 安装依赖，跑 Arena 测试和网站测试（World 测试会跑并显示结果，但不挡部署）。
+1. 安装依赖，跑 Arena 和 World 测试；两者都是必须通过的发布检查。构建后再跑网站测试。
 2. 构建网站 `site/dist/public`，并确认里面用的是正式 Arena 服务器地址。
 3. 先部署 Arena Worker `parhelion-arena`，再用冒烟测试连一次正式服务器。
 4. 冒烟测试通过后才部署 Cloudflare Pages 项目 `parhelion-game`。

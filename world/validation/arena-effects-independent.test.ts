@@ -1,6 +1,6 @@
 /** Independent CPU resource/saturation audit of the actual Arena pool. */
 import test from'node:test';import assert from'node:assert/strict';import*as THREE from'three';
-import{ArenaCombatEffects}from'../../arena-game/src/combatEffects';
+import{ArenaCombatEffects}from'../../arena-game/src/rendering/combatEffects';
 test('Arena saturation keeps newest same-kind effects, bounded distinct label textures, and borrowed resources through clears/disposal',()=>{
  const parent=new THREE.Scene(),unrelated=new THREE.Object3D(),glow=new THREE.Texture();parent.add(unrelated);let glowDisposed=0;glow.addEventListener('dispose',()=>glowDisposed++);
  const surfaces=new Map<string,{value:number;head:boolean;kill:boolean}>(),disposed=new Map<object,number>();const watch=(o:any)=>{if(!disposed.has(o)){disposed.set(o,0);o.addEventListener('dispose',()=>disposed.set(o,disposed.get(o)!+1));}};

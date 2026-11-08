@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { WorldCombatState, type Point3 } from '../src/combat';
-import { collectStrikeTargets, type StrikeRequest } from '../src/combatActions';
-import { ContractSkills, skillContains, type SkillStrike } from '../src/contractSkills';
-import { makeCombatTerrain } from '../src/combatTerrain';
-import type { Layout } from '../src/types';
+import { WorldCombatState, type Point3 } from '../src/combat/combat';
+import { collectStrikeTargets, type StrikeRequest } from '../src/combat/combatActions';
+import { ContractSkills, skillContains, type SkillStrike } from '../src/companions/contractSkills';
+import { makeCombatTerrain } from '../src/combat/combatTerrain';
+import type { Layout } from '../src/core/types';
 
 const point = (x: number, y = 0, z = 0): Point3 => ({ x, y, z });
 const strike = (origin = point(0)): StrikeRequest => ({ origin, direction: point(1), range: 8, halfWidth: 1, damage: 30, maxTargets: 4 });

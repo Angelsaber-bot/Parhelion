@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { UltimateStage } from '../src/ultimateStage';
+import { UltimateStage } from '../src/cinematics/ultimateStage';
 function actor(){const root=new THREE.Group(),head=new THREE.Object3D(),socket=new THREE.Object3D();head.name='mixamorigHead';head.position.set(0,1.7,0);socket.name='WeaponSocket_R';socket.position.set(0,1.3,.2);root.add(head,socket,new THREE.Mesh(new THREE.BoxGeometry(.7,1.8,.3),new THREE.MeshStandardMaterial()));return root;}
 test('Saber 3D beam and aftermath require accepted contact, not cinematic time',()=>{
  const source=actor(),stage=new UltimateStage();stage.begin({identity:'saber',sourceRoot:source});

@@ -63,7 +63,7 @@
 
 早期无 GPU 快照曾出现京都 CPU 中位耗时 **+19%** 的风险，原始记录保留。随后针对隐藏敌人的矩阵遍历做限定优化，三轮独立对照中的 CPU 代理中位耗时约降低 **54–59%**，实际接入也通过行为回归与同条件确认。此结果不是 GPU 或目标设备 FPS，不能据此宣布此前 27–40 FPS 问题已解决。详见 [原始对比](WORLD_EXPANSION_CPU_COMPARISON_20261030.md) 与 [优化跟进验证](WORLD_CPU_VISIBILITY_FOLLOWUP_20261030.md)。
 
-开发入口：`world/src/eraStories.ts`（章节／可选互动）、`contractSkills.ts` / `worldActions.ts`（战斗动作）、`safeTravel.ts`（旅行）、`campaignClosure.ts`（收束）、`shared-client/settings.ts`（绑定）。在 `world/` 使用 `npm run typecheck`、`npm run test:ci`、`npm run build`；最终冻结源码已完成下列验证。
+开发入口：`world/src/story/eraStories.ts`（章节／可选互动）、`contractSkills.ts` / `worldActions.ts`（战斗动作）、`safeTravel.ts`（旅行）、`campaignClosure.ts`（收束）、`shared-client/settings.ts`（绑定）。在 `world/` 使用 `npm run typecheck`、`npm run test:ci`、`npm run build`；最终冻结源码已完成下列验证。
 
 | 最终交付记录 | 状态 |
 |---|---|

@@ -11,11 +11,11 @@ import { reorder, quantize, weldPrimitive } from '@gltf-transform/functions';
 import { MeshoptEncoder } from 'meshoptimizer';
 import type { Piece } from './structures.js';
 import type { Marker } from './layout.js';
-import { kyotoMaterialProfile } from '../../src/kyotoMaterialProfiles.js';
-import { winterMaterialProfile } from '../../src/winterMaterialProfiles.js';
-import { blackSailMaterialProfile } from '../../src/blackSailMaterialProfiles.js';
-import { britainMaterialProfile } from '../../src/britainMaterialProfiles.js';
-import { valleyMaterialProfile } from '../../src/valleyMaterialProfiles.js';
+import { kyotoMaterialProfile } from '../../src/environment/kyotoMaterialProfiles.js';
+import { winterMaterialProfile } from '../../src/environment/winterMaterialProfiles.js';
+import { blackSailMaterialProfile } from '../../src/environment/blackSailMaterialProfiles.js';
+import { britainMaterialProfile } from '../../src/environment/britainMaterialProfiles.js';
+import { valleyMaterialProfile } from '../../src/environment/valleyMaterialProfiles.js';
 
 // GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
 (globalThis as any).FileReader ??= class {
@@ -152,7 +152,7 @@ export async function writeRegion(r: RegionOut) {
 /**
  * Meshopt-compress + quantize (16-bit positions ≈ 1 cm over a 720 m region). Cloudflare Pages caps a
  * file at 25 MiB; the raw export of 幻日谷 is ~32 MiB, compressed ~5 MiB. The runtime decodes with
- * MeshoptDecoder and folds the dequantization back into the geometry (src/glb.ts), so every mesh node
+ * MeshoptDecoder and folds the dequantization back into the geometry (src/rendering/glb.ts), so every mesh node
  * must carry an identity transform here.
  */
 export async function compress(glb: Uint8Array, exactWeld = false) {

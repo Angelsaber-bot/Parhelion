@@ -1,4 +1,4 @@
-import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {fileURLToPath} from 'node:url';import {readCharacter} from './characters/inspect';import {createSaberLiveExpression} from '../src/saberLiveExpression';
+import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {fileURLToPath} from 'node:url';import {readCharacter} from './characters/inspect';import {createSaberLiveExpression} from '../src/cinematics/saberLiveExpression';
 const asset=(outfit:string,revision:number)=>fileURLToPath(new URL(`../../assets/characters/artoria_refined/runtime_revision${revision}/${outfit}/artoria_${outfit}.glb.gz`,import.meta.url));
 for(const outfit of ['armor','civilian'])test(`Saber remaster ${outfit} preserves locomotion, foot geometry, sockets and real attack clock`,async()=>{
  const old=await readCharacter(asset(outfit,1)),next=await readCharacter(asset(outfit,2));
@@ -15,14 +15,14 @@ for(const outfit of ['armor','civilian'])test(`Saber remaster ${outfit} preserve
 test('Saber live expression unsupported, zero time and hidden state are safe no-ops',()=>{const root=new THREE.Group();const f=createSaberLiveExpression(root);assert.equal(f.available,false);f.update(1/60,'attack');f.reset();f.dispose();f.dispose();});
 
 test('partial native expression arrays remain exact on reset/dispose',()=>{const root=new THREE.Group(),face=new THREE.Mesh();face.name='Face';face.morphTargetInfluences=[.1,.2,.3];root.add(face);const f=createSaberLiveExpression(root);f.update(1/60,'attack');f.reset();f.dispose();assert.deepEqual(face.morphTargetInfluences,[.1,.2,.3]);});
-import {createUltimatePerformance}from'../src/ultimatePerformance';
+import {createUltimatePerformance}from'../src/cinematics/ultimatePerformance';
 test('Saber new private-stage load keeps native planted feet finite and source contact pose clocks intact',async()=>{
  const{gltf}=await readCharacter(asset('armor',2));const root=gltf.scene,mixer=new THREE.AnimationMixer(root);mixer.clipAction(gltf.animations.find(c=>c.name==='Idle')!).play();mixer.update(0);root.updateMatrixWorld(true);const feet=['Left','Right'].map(s=>root.getObjectByName('mixamorig'+s+'Foot')!);const planted=feet.map(b=>b.getWorldPosition(new THREE.Vector3())),hips=root.getObjectByName('mixamorigHips')!,start=hips.getWorldPosition(new THREE.Vector3());const perf=createUltimatePerformance('saber',root);let maxDrift=0,maxLoad=0;
  for(let i=0;i<=60;i++){perf.update({phase:'charge',progress:i/60,elapsed:3+i*4.4/60,strikeCount:0});for(let k=0;k<2;k++)maxDrift=Math.max(maxDrift,feet[k].getWorldPosition(new THREE.Vector3()).distanceTo(planted[k]));maxLoad=Math.max(maxLoad,start.y-hips.getWorldPosition(new THREE.Vector3()).y);}
  assert.ok(maxLoad>.03&&maxLoad<.04,`positive bounded weight load ${maxLoad}`);assert.ok(maxDrift<1e-5,`planted foot drift ${maxDrift}`);root.traverse(o=>assert.ok(o.matrixWorld.elements.every(Number.isFinite)));perf.dispose();
 });
 
-import {SaberCinematicRemake} from '../src/saberCinematicRemake';
+import {SaberCinematicRemake} from '../src/cinematics/saberCinematicRemake';
 test('Saber reduced fixed camera contains the actual raised blade throughout charge and pre-contact release',async()=>{
  const {gltf}=await readCharacter(asset('armor',2)),root=gltf.scene,actor=new THREE.Group();actor.add(root);
  const mixer=new THREE.AnimationMixer(root);mixer.clipAction(gltf.animations.find(c=>c.name==='Idle')!).play();mixer.update(0);root.updateMatrixWorld(true);

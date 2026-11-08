@@ -2,7 +2,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { UltimateClock, UltimateDirector, ULTIMATE_MODE_KEY, saberCutInPresentation, type UltimateMode } from '../src/ultimateDirector';
+import { UltimateClock, UltimateDirector, ULTIMATE_MODE_KEY, saberCutInPresentation, type UltimateMode } from '../src/cinematics/ultimateDirector';
 import { setLanguage } from '../../shared-client/i18n';
 function advance(clock: { tick(dt: number): void }, seconds: number) { for (let i = 0; i < Math.round(seconds * 100); i++) clock.tick(.01); }
 function fixture(options: ConstructorParameters<typeof UltimateDirector>[0] = {}) {
@@ -187,7 +187,7 @@ test('three new identities have distinct clock-driven reveals with pause, Short,
 });
 
 test('cut-in stylesheet retains full viewport containment rather than a floating picture card',()=>{
-  const css=readFileSync(new URL('../src/ultimateDirector.css',import.meta.url),'utf8');
+  const css=readFileSync(new URL('../src/cinematics/ultimateDirector.css',import.meta.url),'utf8');
   const outer=css.match(/\.ultimate-cutin \{([^}]+)\}/)![1],image=css.match(/\.ultimate-cutin img \{([^}]+)\}/)![1];
   assert.match(outer,/inset: 0/);assert.match(outer,/width: 100%/);assert.match(outer,/height: 100%/);assert.match(image,/object-fit: contain/);
   assert.doesNotMatch(outer,/width: min|aspect-ratio|top: \d+%/);

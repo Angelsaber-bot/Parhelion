@@ -1,0 +1,618 @@
+{
+  "node": "Britain_Physical_Limestone",
+  "reason": "Round Hall visual paving lowered 0.145m to existing grounded feet; no collision or layout change",
+  "beforePositionSha256": "787350870acd84055523bb8d9a538d2039662b7513885091f4c7e16b22042251",
+  "afterPositionSha256": "ffe09fa3f91735c6195a9661d861235af588831f6dd5c86c068da256e6c1a132",
+  "edits": [
+    {
+      "vertex": 10403,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10404,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10405,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10406,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10407,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10408,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10409,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10410,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10411,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10412,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10413,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10414,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10415,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10416,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10417,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10418,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10419,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10420,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10421,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10422,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10423,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10424,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10425,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10426,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10427,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10428,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10429,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10430,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10431,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10432,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10433,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10434,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10435,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10436,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10437,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10438,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10439,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10440,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10441,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10442,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10443,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10444,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10445,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10446,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10447,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10448,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10449,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10450,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10451,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10452,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10453,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10454,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10455,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10456,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10457,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10458,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10459,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10460,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10461,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10462,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10463,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10464,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10465,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10466,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10467,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10468,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10469,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10470,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10471,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10472,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10473,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10474,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10475,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10476,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10477,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10478,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10479,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10480,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10481,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10482,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10483,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10484,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10485,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10486,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10487,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10488,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10489,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10490,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10491,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10492,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10493,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10494,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10495,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10496,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10497,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10498,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10499,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10500,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10501,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10502,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10503,
+      "before": -1567,
+      "after": -1581
+    },
+    {
+      "vertex": 10504,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10505,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10506,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10507,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10508,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10509,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10510,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10511,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10512,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10513,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10514,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10515,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10516,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10517,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10518,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10519,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10520,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10521,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10522,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10523,
+      "before": -1582,
+      "after": -1597
+    },
+    {
+      "vertex": 10524,
+      "before": -1582,
+      "after": -1597
+    }
+  ]
+}

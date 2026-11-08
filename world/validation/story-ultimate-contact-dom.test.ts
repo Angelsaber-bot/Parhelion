@@ -3,7 +3,7 @@
  * positions, HP, attack clocks and all damage remain production-owned. */
 import test from 'node:test';import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../src/story/falseDawnEncounterCatalog';
 test('story roster accepts real companion ultimate/normal fire, pause and cancellation without stale-target victory',async t=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack','saber_contract'],found:[]})}}),{world:w,window}=h,d=window.document;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};

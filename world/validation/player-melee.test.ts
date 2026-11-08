@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PlayerMelee, PlayerEvade } from '../src/playerMelee.ts';
+import { PlayerMelee, PlayerEvade } from '../src/player/playerMelee.ts';
 test('melee has one timed contact and ignores early spam', () => {
  const m=new PlayerMelee(); assert.equal(m.press(1),true); assert.equal(m.press(2),false);
  const contacts=[];for(let i=0;i<35;i++){const hit=m.update(1/60,true);if(hit)contacts.push(hit);}

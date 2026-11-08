@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
-import { AimState, isScopedWeapon } from '../src/aim.ts';
-import { startOffline } from '../src/session.ts';
+import { AimState, isScopedWeapon } from '../src/player/aim.ts';
+import { startOffline } from '../src/network/session.ts';
 import { isLoadout, type Loadout } from '../shared/content.ts';
 import { BTN } from '../shared/sim.ts';
 for (const choice of [['lumen', 'corona', 'blade'], ['halo', 'firefly', 'polearm'], ['longnight', 'lumen', 'hammer']] as Loadout[]) {

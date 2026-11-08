@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from'three';import{fileURLToPath}from'node:url';
-import{readCharacter}from'./characters/inspect';import{CHARACTER_KITS}from'../src/characters/catalog';import{createMusashiUltimatePerformance}from'../src/musashiUltimatePerformance';import{musashiLocomotionClip}from'../src/characters/musashiLocomotion';
-import{skillAnimationProfile,skillAnimationSample}from'../src/skillAnimationProfile';
+import{readCharacter}from'./characters/inspect';import{CHARACTER_KITS}from'../src/characters/catalog';import{createMusashiUltimatePerformance}from'../src/cinematics/musashiUltimatePerformance';import{musashiLocomotionClip}from'../src/characters/musashiLocomotion';
+import{skillAnimationProfile,skillAnimationSample}from'../src/combat/skillAnimationProfile';
 const asset=fileURLToPath(CHARACTER_KITS.musashi.assetUrl);
 function schedule(){const hits:number[]=[];let total=0;for(let cycle=0;hits.length<3;cycle++){const p=skillAnimationProfile('musashi','ultimate',cycle),d=skillAnimationSample(p,0,1.6,19/30).duration;for(const contact of[19/30,33/30]){if(hits.length>=3)break;let lo=0,hi=d;for(let i=0;i<35;i++){const mid=(lo+hi)/2;if(skillAnimationSample(p,mid,1.6,19/30).clipTime<contact)lo=mid;else hi=mid;}hits.push(total+hi);}total+=d;}return{hits,total};}
 

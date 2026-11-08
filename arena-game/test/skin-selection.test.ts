@@ -1,6 +1,6 @@
 import {expect,it} from 'vitest';
 import {WEAPONS} from '../shared/content.ts';
-import {readSkinSelection,withSkinSelection} from '../src/skinSelection.ts';
+import {readSkinSelection,withSkinSelection} from '../src/cosmetics/skinSelection.ts';
 
 const ids=(indices:number[])=>Object.fromEntries(WEAPONS.map((w,i)=>[w.id,w.skins[indices[i]].id]));
 it('migrates real pre-curation saves by identity, across all eight weapons',()=>{

@@ -1,12 +1,12 @@
 import {it,expect,vi,afterEach} from 'vitest';
-import {FrameGate} from '../src/renderScheduling.ts';
+import {FrameGate} from '../src/rendering/renderScheduling.ts';
 afterEach(()=>vi.unstubAllGlobals());
 import * as THREE from 'three';
-import {graphicsPixelRatio,initialGraphics} from '../src/graphics.ts';
-import {renderHeldWeapon,lightWeaponScene} from '../src/weaponLighting.ts';
-import {ArenaScene} from '../src/scene.ts';
+import {graphicsPixelRatio,initialGraphics} from '../src/rendering/graphics.ts';
+import {renderHeldWeapon,lightWeaponScene} from '../src/weapons/weaponLighting.ts';
+import {ArenaScene} from '../src/rendering/scene.ts';
 import {WEAPONS} from '../shared/content.ts';
-import {refineWeaponMaterial,WEAPON_SURFACES} from '../src/weaponSurface.ts';
+import {refineWeaponMaterial,WEAPON_SURFACES} from '../src/weapons/weaponSurface.ts';
 
 it('detailed rendering has bounded supersampling; default smooth stays at CSS resolution',()=>{
  expect(graphicsPixelRatio('high',2,1280,720)).toBe(1.25);expect(graphicsPixelRatio('low',2,1280,720)).toBe(1);

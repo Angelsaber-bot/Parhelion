@@ -4,11 +4,11 @@ import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { regionLoader, bakeQuantized } from '../src/glb';
-import { KINGDOM_GATE as G, createKingdomGateRuntime, gateGuide, gatePoint } from '../src/kingdomGate';
-import { createKingdomGateScene, gateEscortPosition } from '../src/kingdomGateScene';
-import { getEraStoryGuide, getEraBossRequirements } from '../src/eraStories';
-import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/progress';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb';
+import { KINGDOM_GATE as G, createKingdomGateRuntime, gateGuide, gatePoint } from '../src/story/kingdomGate';
+import { createKingdomGateScene, gateEscortPosition } from '../src/environment/kingdomGateScene';
+import { getEraStoryGuide, getEraBossRequirements } from '../src/story/eraStories';
+import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/core/progress';
 
 function harness(flags:string[]=[]){
  const done=new Set(flags);let saves=0,damage=0,near=true,canceled=0;

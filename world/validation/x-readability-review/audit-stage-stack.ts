@@ -4,7 +4,7 @@ const [worldRoot,output]=process.argv.slice(2);if(!worldRoot||!output)throw Erro
 const sourceNames=['ultimateReadability.ts','ultimateStage.ts','eraCinematicRemake.ts','eraBladeTrace.ts','musashiStageArt.ts','mountedStageArt.ts','main.ts','skillPresentation.ts','ultimateDirector.ts','worldActions.ts'];
 async function sourceHashes(){const files:Record<string,string>={};for(const n of sourceNames)files[n]=createHash('sha256').update(await readFile(worldRoot+'/src/'+n)).digest('hex');return files;}
 const filesBefore=await sourceHashes();
-const{UltimateStage}=await import(pathToFileURL(worldRoot+'/src/ultimateStage.ts').href);
+const{UltimateStage}=await import(pathToFileURL(worldRoot+'/src/cinematics/ultimateStage.ts').href);
 const hash=(x:unknown)=>createHash('sha256').update(JSON.stringify(x)).digest('hex');
 const source=new T.Group();source.name='QAActor';source.add(new T.Mesh(new T.BoxGeometry(.5,1.6,.4),new T.MeshStandardMaterial({color:0x989898})));
 for(const[n,x,y,z]of[['Head',0,2,0],['mixamorigHead',0,1.7,0],['Attachment_RightHand_Katana',-.3,1.1,.1],['Attachment_LeftHand_Katana',.3,1.1,.1],['SaberSocket',-.4,1.6,0],['SaberTip',-.4,2.7,0]]as const){const b=new T.Object3D();b.name=n;b.position.set(x,y,z);source.add(b);}

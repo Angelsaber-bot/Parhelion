@@ -2,16 +2,16 @@
  * 幻日探索层运行时：宝箱、日晕之羽、日晕石像、棱镜折光谜题、时层挑战与战斗据点。
  * Owns its own scene graph, one merged collider, interact markers and a small HUD.
  */
-import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../resonance';
+import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../story/resonance';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { WORLD_RIFLE } from '../worldBalance';
+import { WORLD_RIFLE } from '../core/worldBalance';
 import { bilingual } from '../../../shared-client/i18n';
-import { SiteArt } from '../campaignSites';
-import type { Collider } from '../player';
-import type { Marker } from '../types';
+import { SiteArt } from '../story/campaignSites';
+import type { Collider } from '../player/player';
+import type { Marker } from '../core/types';
 import type { RegionId, Localized } from '../settlements/types';
-import type { StoryEncounterSpec } from '../storyEncounters';
+import type { StoryEncounterSpec } from '../story/storyEncounters';
 import {
   CAMPS, CHESTS, CHEST_CRYSTALS, DOMAINS, CHEST_NAMES, FEATHERS, GLIDE, PUZZLES, REGION_NAMES, STATUES, TRIALS,
   ELITE_BOUNTY, campEncounterId, feathersHeld, feathersSpare, flagCamp, flagChest, flagElite, flagFeather, flagGlide, flagPuzzle, flagTrial,
@@ -29,7 +29,7 @@ import {
   foxAt, foxLength, mapHeld, markerBeacon, markerBottle, markerBrazier, markerDig, markerFoxShrine, type EmberRouteDef, type FoxfireDef, type TreasureMapDef,
   SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
-import { MINIBOSSES } from '../minibosses';
+import { MINIBOSSES } from '../combat/minibosses';
 import { camlannArena, flagshipDeckArena, honnojiArena, redSquareArena } from './bossArenas';
 import { COMMISSION, commissionDone, dayKey, flagCommission, flagCommissionBonus, flagHuntKill, huntProgress, todaysBoard, type Commission } from './commissions';
 import './exploration.css';
@@ -763,7 +763,7 @@ export function createExploration(host: ExplorationHost) {
   return {
     root, colliders, markers,
     owns: (id: string) => ownership.has(id),
-    interact: (id: string) => { ownership.get(id)?.(); },
+    interact: (id: string) => ownership.get(id)?.(),
     label: (id: string) => labels.get(id)?.() ?? null,
     victory, update, reset, dispose, eliteDefeated, enemyDefeated,
     get commissions() { return board; },

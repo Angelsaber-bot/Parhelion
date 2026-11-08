@@ -9,3 +9,9 @@
 # Website build output and launcher state
 /site/dist/
 /site/.parhelion-launch*
+
+# Editor settings and one-off local experiments
+.idea/
+.vscode/
+**/.scratch/
+**/_local/

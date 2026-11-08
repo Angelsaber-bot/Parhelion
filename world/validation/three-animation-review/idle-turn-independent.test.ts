@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import {readCharacter} from '../characters/inspect';
 import {CHARACTER_KITS} from '../../src/characters/catalog';
 import {CharacterKit} from '../../src/characters/characterKit';
-import {MountedIdleTurn} from '../../src/mountedIdleTurn';
+import {MountedIdleTurn} from '../../src/companions/mountedIdleTurn';
 const legs=/^H_(Fore(Upper|Cannon|Hoof)|Hind(Thigh|Shin|Cannon|Hoof))_[LR]$/;
 async function pair(disableAutomatic=true){
  const {gltf}=await readCharacter(fileURLToPath(CHARACTER_KITS.napoleonMounted.assetUrl));
@@ -36,7 +36,7 @@ test('production helper native idle-turn rejects tilted root instead of treating
 });
 
 test('production helper active turn is canonicalized only on private X clone, preserving source and framing',async()=>{
- const {UltimateStage}=await import('../../src/ultimateStage');const p=await pair(),a=new UltimateStage(),b=new UltimateStage();
+ const {UltimateStage}=await import('../../src/cinematics/ultimateStage');const p=await pair(),a=new UltimateStage(),b=new UltimateStage();
  try{for(let i=0;i<45;i++)p.step(i*.03);assert.ok(p.candidate.diagnostics.frames>0);const sourceBefore=p.bones.map(o=>p.b.model.getObjectByName(o.name)!.quaternion.toArray());
  a.begin({identity:'napoleon',sourceRoot:p.a.root,clips:p.a.presentationClips});b.begin({identity:'napoleon',sourceRoot:p.b.root,clips:p.b.presentationClips});
  for(const frame of [{elapsed:0,phase:'intro' as const,progress:0,pulse:0},{elapsed:.5,phase:'intro' as const,progress:.5,pulse:0},{elapsed:2,phase:'charge' as const,progress:.5,pulse:0}]){a.update(frame);b.update(frame);a.scene.updateMatrixWorld(true);b.scene.updateMatrixWorld(true);for(const bone of p.bones){const x=a.scene.getObjectByName(bone.name)!,y=b.scene.getObjectByName(bone.name)!;assert.deepEqual(y.position.toArray(),x.position.toArray(),bone.name);assert.deepEqual(y.quaternion.toArray(),x.quaternion.toArray(),bone.name);assert.deepEqual(y.scale.toArray(),x.scale.toArray(),bone.name);}assert.deepEqual(b.camera.position.toArray(),a.camera.position.toArray());assert.deepEqual(b.camera.quaternion.toArray(),a.camera.quaternion.toArray());}

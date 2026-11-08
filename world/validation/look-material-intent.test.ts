@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import{toonMaterial}from'../src/look';
+import{toonMaterial}from'../src/rendering/look';
 import{buildAlphaSettlement}from'../src/settlements/alpha';import{buildBritainSettlement}from'../src/settlements/britain';import{buildBlackSailSettlement}from'../src/settlements/blacksail';import{buildWinterSettlement}from'../src/settlements/winter';import{buildKyotoSettlement}from'../src/settlements/kyoto';
 
 test('generic toon conversion preserves authored emission, side, opacity and depth without mutating its source',()=>{

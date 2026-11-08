@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { regionLoader, bakeQuantized } from '../src/glb';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb';
 
 const bytes = readFileSync(new URL('../public/assets/world_alpha.glb', import.meta.url));
 const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/progress';
-import { createProgressPanel } from '../src/progressPanel';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/core/progress';
+import { createProgressPanel } from '../src/ui/progressPanel';
 import { setLanguage } from '../../shared-client/i18n';
 
 test('unavailable legacy source has truthful localized recovery copy and explicit partial-session replacement warning', () => {

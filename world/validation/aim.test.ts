@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { ShoulderAim, shoulderArmLength } from '../src/aim.ts';
+import { ShoulderAim, shoulderArmLength } from '../src/player/aim.ts';
 test('World remains TPS: shoulder aim shortens arm, never substitutes an FPS camera', () => {
   assert.equal(shoulderArmLength(0, false), 3.6);
   assert.equal(shoulderArmLength(1, false), 1.5);

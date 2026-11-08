@@ -7,7 +7,7 @@ import { bilingual } from '../../../shared-client/i18n';
 import type { RegionId } from '../settlements/types';
 import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagDig, flagEmber, flagFox, flagSignal } from './regional';
 import { CAMPS, DOMAINS, PUZZLES, REGION_NAMES, STATUES, TRIALS, flagCamp, flagElite, flagPuzzle, flagTrial, regionExploration } from './catalog';
-import { MINIBOSSES } from '../minibosses';
+import { MINIBOSSES } from '../combat/minibosses';
 import { COMMISSION, commissionDone, huntProgress, type Commission } from './commissions';
 
 export type MapIconKind = 'statue' | 'domain' | 'camp' | 'puzzle' | 'trial' | 'bottle' | 'ember' | 'fox' | 'duel' | 'signal' | 'elite';

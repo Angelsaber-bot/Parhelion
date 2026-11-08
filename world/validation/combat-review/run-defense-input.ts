@@ -1,7 +1,7 @@
 /** Production key-driven defense probe. Entry teleport/direct story admission are
  * explicit setup; no grounded/HP/charge/enemy-clock writes or defensive API calls. */
 import assert from 'node:assert/strict';import {mkdir,writeFile} from 'node:fs/promises';
-import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {getFalseDawnEncounterSpec} from '../../src/falseDawnEncounterCatalog';import {enemyAttackContains,type Enemy} from '../../src/combat';
+import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {getFalseDawnEncounterSpec} from '../../src/story/falseDawnEncounterCatalog';import {enemyAttackContains,type Enemy} from '../../src/combat/combat';
 const direction=process.argv[2]??'back',lead=Number(process.argv[3]??'.1'),companion=process.argv.includes('--companion');assert.ok(['back','right','none'].includes(direction));assert.ok(Number.isFinite(lead)&&lead>=0&&lead<=1);
 const hz=Number(process.argv.find(value=>value.startsWith('--hz='))?.split('=')[1]??60);assert.ok([30,60,120].includes(hz));
 const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack',...(companion?['saber_contract']:[])],found:[]})}}),{world:w,window}=h,d=window.document;let now=0;const frame=()=>h.frame(now+=1000/hz),held=new Set<string>();

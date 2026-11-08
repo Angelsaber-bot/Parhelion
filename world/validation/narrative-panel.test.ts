@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { createNarrativePanel, paginateDialogue } from '../src/narrativePanel';
-import { getCampaignClosingText } from '../src/campaignClosure';
-import { ERA_IDS, ERA_OPTIONALS, ERA_STORIES, ERA_KNIGHT_DEFEATED } from '../src/eraStories';
+import { createNarrativePanel, paginateDialogue } from '../src/ui/narrativePanel';
+import { getCampaignClosingText } from '../src/story/campaignClosure';
+import { ERA_IDS, ERA_OPTIONALS, ERA_STORIES, ERA_KNIGHT_DEFEATED } from '../src/story/eraStories';
 import { setLanguage } from '../../shared-client/i18n';
 import type { Localized } from '../src/settlements/types';
 

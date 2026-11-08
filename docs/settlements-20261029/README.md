@@ -19,7 +19,7 @@ These are code-authored runtime THREE meshes. They are not new hand-sculpted Ble
 
 1. Use an existing checkout containing the base revision and its existing assets/dependencies. This ZIP is an incremental source package, not the complete game.
 2. Back up or commit local edits first. Copy the included repository-relative paths into the checkout. If the checkout has changed in any of the existing replacement files, merge their changes rather than overwriting blindly.
-3. The existing replacement paths are `world/src/main.ts`, `world/src/combatTerrain.ts` and `world/validation/input.test.ts`. The settlements modules, their tests and review helpers are new.
+3. The existing replacement paths are `world/src/main.ts`, `world/src/combat/combatTerrain.ts` and `world/validation/input.test.ts`. The settlements modules, their tests and review helpers are new.
 4. From `world/`, run `npm test`, `npm run typecheck` and `npm run build`.
 5. The canonical unified website build is `npm run build --prefix site`, producing `site/dist/public`. Do not use the retired `Parhelion-Website` copy as the build root.
 

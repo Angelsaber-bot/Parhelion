@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { playerFixture } from '../player-fixture.ts';
-import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../../src/player/skinnedCharacter.ts';
 
 const out = process.argv[2]; if (!out) throw new Error('Provide local output directory');
 const label = process.argv[3] ?? 'after'; await mkdir(out, { recursive: true });

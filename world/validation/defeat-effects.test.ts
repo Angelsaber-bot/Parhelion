@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { DefeatEffects, DEFEAT_FX } from '../src/defeatEffects.ts';
+import { DefeatEffects, DEFEAT_FX } from '../src/combat/defeatEffects.ts';
 import { readFileSync } from 'node:fs';
 
 test('a defeat bursts into rising motes and a ground ring, then goes idle', () => {
@@ -29,7 +29,7 @@ test('a defeat bursts into rising motes and a ground ring, then goes idle', () =
 });
 
 test('the combat view bursts every kill in the right colour and scale', () => {
-  const src = readFileSync(new URL('../src/combatView.ts', import.meta.url), 'utf8');
+  const src = readFileSync(new URL('../src/combat/combatView.ts', import.meta.url), 'utf8');
   const kill = src.slice(src.indexOf("event.type === 'kill'"), src.indexOf('this.options.onKill?.(event.id)'));
   assert.match(kill, /this\.defeatEffects\.emit\(fallen\.p/);
   assert.match(kill, /elite\.colors\[2\]/); assert.match(kill, /kind === 'king' \? 1\.7/);

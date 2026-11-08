@@ -4,8 +4,8 @@ import { registerHooks } from 'node:module';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { parseLocalGlb } from './player-fixture.ts';
-import type { Layout } from '../src/types.ts';
-import type { StoryEncounterSpec } from '../src/storyEncounters.ts';
+import type { Layout } from '../src/core/types.ts';
+import type { StoryEncounterSpec } from '../src/story/storyEncounters.ts';
 registerHooks({load(url,context,next){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:next(url,context);}});
 class Element {
  id='';className='';textContent='';innerHTML='';hidden=false;title='';style:Record<string,string>={};children:Element[]=[]; selectors=new Map<string,Element>();
@@ -15,7 +15,7 @@ class Element {
 }
 const body=new Element();(globalThis as any).document={documentElement:{lang:''},body,createElement:()=>new Element(),getElementById:()=>null};
 (globalThis as any).window={addEventListener(){}};
-const {WorldCombat}=await import('../src/combatView.ts');
+const {WorldCombat}=await import('../src/combat/combatView.ts');
 const p=(x=0,z=0)=>({x,y:.04,z});
 const spec:StoryEncounterSpec={id:'false_dawn_courier',anchor:p(),actors:[{role:'lancer',offset:[-4,4],title:['讯号使者','Signal courier']},{role:'musketeer',offset:[4,4]}]};
 function fixture(){
@@ -73,7 +73,7 @@ test('cancel and same-encounter retry before native load resolves never resurrec
 });
 
 test('actual musket contact emits one tracer at measured barrel, never from a canceled or paused tell',async()=>{
- const {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle}=await import('../src/enemyShotSocket.ts');
+ const {nativeMusketeerContactMuzzle,transformEnemyContactMuzzle}=await import('../src/combat/enemyShotSocket.ts');
  const {combat,floor}=fixture(),internals=combat as any,assets=internals.enemyAssets as any,gltf=await parseLocalGlb(new URL('../public/assets/enemies/musketeer.glb',import.meta.url));assets.cache.set('musketeer',gltf);
  const single:StoryEncounterSpec={id:'false_dawn_muzzle_test',anchor:p(),actors:[{role:'musketeer',offset:[0,6]}]};assert.equal(combat.startStoryEncounter(single,{position:p(),playable:true}).ok,true);combat.present(0,p(),true);
  const enemy=combat.state.enemies.find(e=>e.storyEncounter)!,shots:THREE.Vector3[]=[];const shot=combat.shot.bind(combat);combat.shot=(muzzle,point,hit)=>{shots.push(muzzle.clone());shot(muzzle,point,hit);};

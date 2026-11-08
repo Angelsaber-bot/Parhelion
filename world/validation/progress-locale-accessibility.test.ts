@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {JSDOM} from 'jsdom';
-import {createProgressPanel} from '../src/progressPanel';
-import {WorldProgress} from '../src/progress';
+import {createProgressPanel} from '../src/ui/progressPanel';
+import {WorldProgress} from '../src/core/progress';
 import {setLanguage} from '../../shared-client/i18n';
 test('restore failure feedback follows locale changes without altering saved data',async()=>{
  const dom=new JSDOM('<!doctype html><body></body>'),old=new Map(['window','document'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));

@@ -5,7 +5,6 @@ import * as THREE from 'three';
 import { Batch, BOX, T } from '../geo.js';
 import { addBeam, addBracket, addLattice, addKyotoRoof, localCraft } from './architecture.js';
 const CYL8=new THREE.CylinderGeometry(1,1,1,8);
-const CYL12=new THREE.CylinderGeometry(1,1,1,12);
 const STONE=new THREE.IcosahedronGeometry(1,1);
 const CONE=new THREE.ConeGeometry(1,1,5);
 

@@ -4,10 +4,10 @@
 /** Formal deform rig. The game owns feet position/yaw; the asset owns bind pose, UVs and anatomy. */
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { addPlayerOutline, disposePlayerObject, preservePlayerMaterial, wantsPlayerOutline } from '../../src/playerMaterials';
-import { makePlayerGlider, type GliderEquipment } from '../../src/playerEquipment';
-import { PlayerInertia } from '../../src/playerInertia';
-import { advancePlayerStride, playerStride, samplePlayerFoot, posePlayerGroundLeg } from '../../src/playerLocomotion';
+import { addPlayerOutline, disposePlayerObject, preservePlayerMaterial, wantsPlayerOutline } from '../../src/player/playerMaterials';
+import { makePlayerGlider, type GliderEquipment } from '../../src/weapons/playerEquipment';
+import { PlayerInertia } from '../../src/player/playerInertia';
+import { advancePlayerStride, playerStride, samplePlayerFoot, posePlayerGroundLeg } from '../../src/player/playerLocomotion';
 
 export const PLAYER_V2_URL = new URL('../../../assets/characters/player_v2/player_v2.glb', import.meta.url).href;
 export const DAWN_PHYSICAL_SCALE = .7873802602519613;

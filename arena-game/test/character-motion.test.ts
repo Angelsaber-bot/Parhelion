@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import * as THREE from 'three';
-import { AvatarMotion, ViewmodelStride } from '../src/characterMotion.ts';
-import { buildFighter, FighterAnimator } from '../src/fighter.ts';
+import { AvatarMotion, ViewmodelStride } from '../src/player/characterMotion.ts';
+import { buildFighter, FighterAnimator } from '../src/player/fighter.ts';
 
 const make = () => { const rig = buildFighter(1, 0x4fd6e0); return { rig, anim: new FighterAnimator(rig) }; };
 const pose = (rig: ReturnType<typeof buildFighter>) => Object.fromEntries(Object.entries(rig.joints).map(([key, joint]) => [key, [...joint.position.toArray(), ...joint.quaternion.toArray()]]));

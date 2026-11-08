@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { createFalseDawnSites } from '../src/falseDawnSites';
-import { regionAt } from '../src/regions';
-import { FALSE_DAWN as F, chooseFalseDawn, confirmFalseDawnEncounterStart, getFalseDawnGuide, getFalseDawnObjective, getFalseDawnState, interactFalseDawn, recordFalseDawnEncounterVictory, type FalseDawnEncounterId } from '../src/falseDawnCampaign';
-import { paginateDialogue } from '../src/narrativePanel';
+import { createFalseDawnSites } from '../src/story/falseDawnSites';
+import { regionAt } from '../src/map/regions';
+import { FALSE_DAWN as F, chooseFalseDawn, confirmFalseDawnEncounterStart, getFalseDawnGuide, getFalseDawnObjective, getFalseDawnState, interactFalseDawn, recordFalseDawnEncounterVictory, type FalseDawnEncounterId } from '../src/story/falseDawnCampaign';
+import { paginateDialogue } from '../src/ui/narrativePanel';
 import type { Localized } from '../src/settlements/types';
 
 test('every reachable continuation guide resolves to its actual authored region/target, including canceled array retries',()=>{

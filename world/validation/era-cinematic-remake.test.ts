@@ -5,7 +5,7 @@ import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {fileURLToPath} from 'node:url';
 import {readCharacter} from './characters/inspect.ts';
 import {CHARACTER_KITS} from '../src/characters/catalog.ts';
-import {EraCinematicRemake} from '../src/eraCinematicRemake.ts';
+import {EraCinematicRemake} from '../src/cinematics/eraCinematicRemake.ts';
 const owner={mesh(g:THREE.BufferGeometry,m:THREE.Material,p:THREE.Object3D){const mesh=new THREE.Mesh(g,m);p.add(mesh);return mesh;},material(color:number,opacity:number){return new THREE.MeshBasicMaterial({color,opacity,transparent:opacity<1});}};
 for(const identity of ['blackbeard','napoleon','musashi'] as const)test(`${identity} has actual private 3D expression channels, finite camera and idempotent cleanup`,async()=>{
  const kit=CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity];

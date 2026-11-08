@@ -1,6 +1,6 @@
 # 武器新外形
 
-十六个 GLB 是 `arena-game/src/signatureModels.ts`、`arena-game/src/signatureGunModels.ts` 和 `arena-game/src/signatureCollectionTwo.ts` 使用同一构造器导出的原创模型，可在 Blender 等支持 glTF 的软件中打开编辑。运行时按选择直接构造这些模型，不需要再下载原枪体 GLB；导出文件用于美术编辑和核对。
+十六个 GLB 是 `arena-game/src/cosmetics/signatureModels.ts`、`arena-game/src/cosmetics/signatureGunModels.ts` 和 `arena-game/src/cosmetics/signatureCollectionTwo.ts` 使用同一构造器导出的原创模型，可在 Blender 等支持 glTF 的软件中打开编辑。运行时按选择直接构造这些模型，不需要再下载原枪体 GLB；导出文件用于美术编辑和核对。
 
 - 深渊巨口：仿生机匣、双颚齿列、随泵动护木平移的下颚。
 - 琉光蝶刃：实心切面晶刃、立体蝶翼护手、紫晶握柄。

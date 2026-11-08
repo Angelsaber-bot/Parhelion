@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createFalseDawnRuntime } from '../src/falseDawnRuntime';
-import { FALSE_DAWN, falseDawnEncounterFlags } from '../src/falseDawnCampaign';
+import { createFalseDawnRuntime } from '../src/story/falseDawnRuntime';
+import { FALSE_DAWN, falseDawnEncounterFlags } from '../src/story/falseDawnCampaign';
 import type { Localized } from '../src/settlements/types';
 
 function fixture() {

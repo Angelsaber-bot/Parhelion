@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { WorldMap } from '../src/map';
-import { collectMinimapLandmarks, minimapArea, MINIMAP_COLORS, MINIMAP_MAX_LANDMARKS, projectMinimapTarget, selectMinimapLandmarks, type MinimapLandmark } from '../src/minimapMarkers';
-import { GATES, mergeLayouts, REGIONS } from '../src/regions';
-import type { Layout, Marker } from '../src/types';
+import { WorldMap } from '../src/map/map';
+import { collectMinimapLandmarks, minimapArea, MINIMAP_COLORS, MINIMAP_MAX_LANDMARKS, projectMinimapTarget, selectMinimapLandmarks, type MinimapLandmark } from '../src/map/minimapMarkers';
+import { GATES, mergeLayouts, REGIONS } from '../src/map/regions';
+import type { Layout, Marker } from '../src/core/types';
 
 const area = (id: string, x: number, z: number, region = 'alpha'): Layout['areas'][number] =>
   ({ id, name: id, nameEn: id, c: [x, z], tp: [x, z], r: 100, color: '#f00', region });

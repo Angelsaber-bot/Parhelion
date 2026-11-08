@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { AdaptiveResolution, resolutionMode, targetDpr } from '../src/renderQuality.ts';
-import { DistanceCuller, freezeStaticArt } from '../src/chunk.ts';
+import { AdaptiveResolution, resolutionMode, targetDpr } from '../src/rendering/renderQuality.ts';
+import { DistanceCuller, freezeStaticArt } from '../src/rendering/chunk.ts';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { Pass } from 'three/examples/jsm/postprocessing/Pass.js';
 
@@ -66,7 +66,7 @@ test('squared culling matches original sphere test and respects world scaling', 
 });
 
 test('dense foliage stops drawing its ink line sooner than the shared outline distance', async () => {
-  const { streamedOutlineDistance } = await import('../src/regionVisualStreaming.ts');
+  const { streamedOutlineDistance } = await import('../src/map/regionVisualStreaming.ts');
   assert.ok(streamedOutlineDistance('Trees_Leaves') < streamedOutlineDistance('Rocks'));
   assert.equal(streamedOutlineDistance('Castle_Keep'), Infinity, 'buildings keep the shared distance');
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(1), new THREE.MeshBasicMaterial()); mesh.geometry.computeBoundingSphere();

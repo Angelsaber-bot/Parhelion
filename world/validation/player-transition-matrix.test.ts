@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/player/skinnedCharacter.ts';
 const v=()=>new THREE.Vector3();
 const base:PlayerAnimationState={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0,armed:true};
 test('turn/jump/ADS/melee/glide interruptions keep actual support surfaces and immediate shot contacts at30/60/120Hz',async t=>{

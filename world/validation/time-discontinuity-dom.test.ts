@@ -1,7 +1,7 @@
 /** Event/clock audit with explicit entry-position fixtures and mocked GPU. */
 import test from 'node:test';import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../src/story/falseDawnEncounterCatalog';
 test('first visible frame cannot charge hidden wall time to an already winding-up enemy',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':'{"done":["armory_rack"],"found":[]}'}}),w=h.world,d=h.window.document;let now=0;
  const frame=(ms=1000/60)=>h.frame(now+=ms);

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import { EraBladeTrace } from '../src/eraBladeTrace';import { MusashiStageArt, MUSASHI_BLADE_READABILITY } from '../src/musashiStageArt';import type { EraArtOwner, EraArtFrame } from '../src/eraStageArt';
+import { EraBladeTrace } from '../src/cinematics/eraBladeTrace';import { MusashiStageArt, MUSASHI_BLADE_READABILITY } from '../src/cinematics/musashiStageArt';import type { EraArtOwner, EraArtFrame } from '../src/cinematics/eraStageArt';
 function setup(){const root=new THREE.Group(),geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>();const owner:EraArtOwner={material(color,opacity){const m=new THREE.MeshBasicMaterial({color,opacity,transparent:opacity<1});materials.add(m);return m;},mesh(g,m,parent){geometries.add(g);materials.add(m);const mesh=new THREE.Mesh(g,m);(parent??root).add(mesh);return mesh;}};return{root,owner,dispose(){geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}};}
 const frame=(phase:EraArtFrame['phase'],elapsed:number,progress=.5,strikeCount=0,pulse=0):EraArtFrame=>({phase,elapsed,progress,strikeCount,pulse});
 test('blade readability opt-in keeps default values and exact native sample paths, while reducing only opted-in energy',()=>{

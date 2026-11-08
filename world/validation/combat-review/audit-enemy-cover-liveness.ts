@@ -1,6 +1,6 @@
 /** Real ordinary ranged enemy cover/reacquisition audit. No actor/HP/ground/AI
  * writes; explicit entry teleport, then only mouse/W movement and natural physics. */
-import assert from'node:assert/strict';import * as THREE from'three';import{mkdir,writeFile}from'node:fs/promises';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{regionAt}from'../../src/regions';
+import assert from'node:assert/strict';import * as THREE from'three';import{mkdir,writeFile}from'node:fs/promises';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{regionAt}from'../../src/map/regions';
 const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),w=h.world,d=h.window.document;let now=0,current='setup',stage='setup',held=false;const frame=()=>h.frame(now+=1000/60),contacts:any[]=[],rows:any[]=[],search:any[]=[];
 const forward=(down:boolean)=>{if(held===down)return;held=down;d.body.dispatchEvent(new h.window.KeyboardEvent(down?'keydown':'keyup',{code:w.settings.bindingsFor('forward')[0],bubbles:true}));};
 const face=(p:any)=>{const yaw=Math.atan2(w.player.pos.x-p.x,w.player.pos.z-p.z),delta=Math.atan2(Math.sin(w.player.yaw-yaw),Math.cos(w.player.yaw-yaw)),e=new h.window.MouseEvent('mousemove',{bubbles:true});Object.defineProperties(e,{movementX:{value:delta/(.0022*w.settings.value.sensitivity)},movementY:{value:w.player.pitch/(.0022*w.settings.value.sensitivity)}});d.dispatchEvent(e);};

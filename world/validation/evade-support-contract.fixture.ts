@@ -1,6 +1,6 @@
 /** Shared real-capsule contract for historical+candidate and production bodies. */
 import nodeTest from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import type {Collider} from '../src/player';import {PlayerEvade} from '../src/playerMelee';
+import type {Collider} from '../src/player/player';import {PlayerEvade} from '../src/player/playerMelee';
 export function verifyEvadeSupport(label:string,Player:new(colliders:Collider[],waterLevel:number)=>any,installEvadeSupportCandidate:(player:any)=>any){
 const test=(name:string,run:()=>void)=>nodeTest(`${label}: ${name}`,run);
 const idle={x:0,z:0,jump:false,sprint:false};

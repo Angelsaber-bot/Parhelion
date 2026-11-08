@@ -2,15 +2,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { bakeAttachedKits, disposeBakedKits } from '../src/kitMerge.ts';
-import { createBossRegaliaKit, BOSS_REGALIA_IDS } from '../src/bossRegaliaVisual.ts';
-import { createEliteCrestKit, ELITE_CRESTS } from '../src/eliteCrestVisual.ts';
-import { createTroopKit, troopVariant, TROOP_VARIANTS } from '../src/troopKitVisual.ts';
-import { createShieldKit } from '../src/shieldbearerVisual.ts';
-import { createShinobiKit } from '../src/shinobiVisual.ts';
-import { createPowderKit } from '../src/powderVisual.ts';
-import { createJaegerKit } from '../src/jaegerVisual.ts';
-import { createBombardierKit, createBreakerKit } from '../src/roleGearVisual.ts';
+import { bakeAttachedKits, disposeBakedKits } from '../src/companions/kitMerge.ts';
+import { createBossRegaliaKit, BOSS_REGALIA_IDS } from '../src/combat/bossRegaliaVisual.ts';
+import { createEliteCrestKit, ELITE_CRESTS } from '../src/combat/eliteCrestVisual.ts';
+import { createTroopKit, troopVariant, TROOP_VARIANTS } from '../src/combat/troopKitVisual.ts';
+import { createShieldKit } from '../src/combat/shieldbearerVisual.ts';
+import { createShinobiKit } from '../src/combat/shinobiVisual.ts';
+import { createPowderKit } from '../src/combat/powderVisual.ts';
+import { createJaegerKit } from '../src/combat/jaegerVisual.ts';
+import { createBombardierKit, createBreakerKit } from '../src/combat/roleGearVisual.ts';
 
 function rig() {
   const root = new THREE.Group();

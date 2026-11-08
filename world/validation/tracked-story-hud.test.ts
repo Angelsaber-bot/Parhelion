@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { createTrackedStoryHud } from '../src/trackedStoryHud';
+import { createTrackedStoryHud } from '../src/ui/trackedStoryHud';
 
 test('explicit tracked context preserves original objectives, reattaches after rerenders and never inserts markup', () => {
   const dom = new JSDOM('<div id="objective"><h3>Original</h3><div>Main task</div></div>');

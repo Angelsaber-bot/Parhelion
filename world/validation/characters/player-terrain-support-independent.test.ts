@@ -1,5 +1,5 @@
 /** Independent production support lifecycle; no-helper animator remains the explicit baseline. */
-import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{MeshBVH}from'three-mesh-bvh';import{playerFixture}from'../player-fixture';import{SkinnedCharacterAnimator as Candidate}from'../../src/skinnedCharacter';import{PlayerTerrainSupport}from'../../src/playerTerrainSupport';
+import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{MeshBVH}from'three-mesh-bvh';import{playerFixture}from'../player-fixture';import{SkinnedCharacterAnimator as Candidate}from'../../src/player/skinnedCharacter';import{PlayerTerrainSupport}from'../../src/player/playerTerrainSupport';
 const state={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0,armed:true};
 function floor(height:number,slope:number){const g=new THREE.PlaneGeometry(20,20).rotateX(-Math.PI/2),p=g.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,height+p.getX(i)*slope);p.needsUpdate=true;return{name:'independent-level',enabled:true,bvh:new MeshBVH(g)};}
 const pose=(rig:Awaited<ReturnType<typeof playerFixture>>['rig'])=>Object.fromEntries(Object.entries(rig.bones).map(([name,bone])=>[name,[...bone.position.toArray(),...bone.quaternion.toArray(),...bone.scale.toArray()]]));
@@ -28,7 +28,7 @@ test('production support observes collider enable, versioned refit and overflow 
  }finally{a.dispose();b.dispose();c.bvh.geometry.dispose();}
 });
 
-import{SkinnedCharacterAnimator as Accepted}from'../../src/skinnedCharacter';
+import{SkinnedCharacterAnimator as Accepted}from'../../src/player/skinnedCharacter';
 test('production support leaves entire authored melee release tail unchanged, then resumes terrain ownership',async()=>{
  const a=await playerFixture(),b=await playerFixture(),c=floor(0,.2),support=new PlayerTerrainSupport(b.rig,[c]),old=new Accepted(a.rig),current=new Candidate(b.rig,support);
  try{for(let i=0;i<60;i++){old.update(1/60,state);current.update(1/60,state);}assert.ok(support.diagnostics.adjusted>0);

@@ -2,10 +2,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { SkillPresentation } from '../src/skillPresentation';
-import type { SkillEvent } from '../src/contractSkills';
-import { createEraStoryScene } from '../src/eraStoryScenes';
-import type { EraId } from '../src/eraStories';
+import { SkillPresentation } from '../src/combat/skillPresentation';
+import type { SkillEvent } from '../src/companions/contractSkills';
+import { createEraStoryScene } from '../src/story/eraStoryScenes';
+import type { EraId } from '../src/story/eraStories';
 
 function inventory(root: THREE.Object3D, allowStationCraft = false) {
   const objects = new Set<THREE.Object3D>(), geometries = new Set<THREE.BufferGeometry>(), materials = new Set<THREE.Material>(), buffers = new Set<ArrayBufferLike>();

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
-import {UltimateStage} from '../src/ultimateStage.ts';
+import {UltimateStage} from '../src/cinematics/ultimateStage.ts';
 
 test('failed bloom restores main target, falls back once and stops retrying that renderer',()=>{
  const stage=new UltimateStage(),source=new THREE.Group();source.add(new THREE.Mesh(new THREE.BoxGeometry(1,2,1),new THREE.MeshStandardMaterial()));stage.begin({identity:'saber',sourceRoot:source});

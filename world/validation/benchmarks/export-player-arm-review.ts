@@ -5,7 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 const source=resolve(process.argv[3]);
 const {playerFixture}=await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
+const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
 
 const out = process.argv[2]; if (!out) throw new Error('Provide local output directory');
 const label = process.argv[4] ?? 'after'; await mkdir(out, { recursive: true });

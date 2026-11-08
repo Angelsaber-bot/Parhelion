@@ -12,7 +12,7 @@ test('Arena actual menu mode/team/Bot/locale/custom-key edits update truthful br
   'audio.ts':`export const sfx={unlock(){}}`,
   'armory.ts':`export function openArmory(){throw Error('not under test')}`,
  };
- const output=await build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'menu-boundaries',setup(b){b.onResolve({filter:/\.\/(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.slice(2),namespace:'qa-menu-boundary'}));b.onLoad({filter:/.*/,namespace:'qa-menu-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
+ const output=await build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'menu-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'qa-menu-boundary'}));b.onLoad({filter:/.*/,namespace:'qa-menu-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
  try{w.eval(output.outputFiles[0].text);await Promise.resolve();
   const change=(id:string,value:string|boolean)=>{const el=d.getElementById(id)as HTMLInputElement;if(typeof value==='boolean')el.checked=value;else el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
   const locale=d.querySelector<HTMLSelectElement>('.parhelion-language select')!;const language=(value:string)=>{locale.value=value;locale.dispatchEvent(new w.Event('change',{bubbles:true}));};

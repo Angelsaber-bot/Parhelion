@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { authorEncounters, AKECHI_GUARDS, KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR, KYOTO_QUIET_LEDGE } from '../src/authoredEncounters.ts';
-import { WorldCombatState, distanceXZ, type CombatTerrain, type Point3 } from '../src/combat.ts';
+import { authorEncounters, AKECHI_GUARDS, KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR, KYOTO_QUIET_LEDGE } from '../src/story/authoredEncounters.ts';
+import { WorldCombatState, distanceXZ, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
 import { q, spawns, layout } from './enemy-live-terrain.fixture.ts';
 
 const point = (x: number, z = 0, y = 0): Point3 => ({ x, y, z });

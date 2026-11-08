@@ -1,5 +1,5 @@
 /** Non-mutating check of authored building material intent through the live toon adapter. */
-import * as THREE from 'three';import {toonMaterial} from '../../src/look';import{writeFile,mkdir}from'node:fs/promises';
+import * as THREE from 'three';import {toonMaterial} from '../../src/rendering/look';import{writeFile,mkdir}from'node:fs/promises';
 const results:any[]=[];
 for(const [region,builder]of [['alpha','buildAlphaSettlement'],['britain','buildBritainSettlement'],['blacksail','buildBlackSailSettlement'],['winter','buildWinterSettlement'],['kyoto','buildKyotoSettlement']]){
  const module=await import(`../../src/settlements/${region}.ts`),kit=module[builder](),seen=new Map<THREE.Material,string[]>();kit.group.traverse((o:THREE.Object3D)=>{if(o instanceof THREE.Mesh)for(const m of Array.isArray(o.material)?o.material:[o.material])seen.set(m,[...(seen.get(m)??[]),o.name]);});const issues:any[]=[];

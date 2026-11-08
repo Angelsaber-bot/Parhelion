@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { WorldGrid } from '../src/grid.ts';
-import { makeCombatTerrain } from '../src/combatTerrain.ts';
-import { COMBAT } from '../src/combat.ts';
-import { REGIONS, regionAt } from '../src/regions.ts';
+import { WorldGrid } from '../src/map/grid.ts';
+import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
+import { COMBAT } from '../src/combat/combat.ts';
+import { REGIONS, regionAt } from '../src/map/regions.ts';
 import { layout, grid, q, spawns, minis } from './enemy-live-terrain.fixture.ts';
-import type { Layout } from '../src/types.ts';
+import type { Layout } from '../src/core/types.ts';
 
 function nearestToSegment(x:number,z:number,a:number[],b:number[]) {
   const dx=b[0]-a[0],dz=b[1]-a[1],t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[1])*dz)/(dx*dx+dz*dz||1)));

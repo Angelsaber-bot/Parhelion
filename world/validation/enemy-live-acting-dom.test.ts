@@ -2,9 +2,9 @@
  * and explicit authored admission are fixture setup, not a campaign playthrough. */
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../src/falseDawnEncounterCatalog';
-import {measureEnemyWeaponAxis} from '../src/enemyAttackActing';
-import {nativeMusketeerContactMuzzle} from '../src/enemyShotSocket';
+import {getFalseDawnEncounterSpec} from '../src/story/falseDawnEncounterCatalog';
+import {measureEnemyWeaponAxis} from '../src/combat/enemyAttackActing';
+import {nativeMusketeerContactMuzzle} from '../src/combat/enemyShotSocket';
 
 test('actual-main Warden uses distinct real native blade axes at all three contacts, not a silent cross-constructor fallback',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),{world:w,window}=h;let now=0;const frame=()=>h.frame(now+=1000/60),spec=getFalseDawnEncounterSpec('false_dawn_warden')!;

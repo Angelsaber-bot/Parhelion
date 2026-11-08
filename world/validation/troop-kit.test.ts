@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { createTroopKit, troopVariant, TROOP_VARIANTS } from '../src/troopKitVisual.ts';
+import { createTroopKit, troopVariant, TROOP_VARIANTS } from '../src/combat/troopKitVisual.ts';
 
 function rig() {
   const root = new THREE.Group();

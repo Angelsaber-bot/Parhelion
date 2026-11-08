@@ -1,0 +1,33 @@
+{
+  "method": "Actual production Kyoto GLB cropped around Yasaka, production toon materials, neutral inspection lights; Chromium WebGL / SwiftShader",
+  "errors": [],
+  "consoleErrors": [],
+  "cameras": {
+    "gate": {
+      "eye": [
+        198,
+        10.1,
+        -29
+      ],
+      "target": [
+        212,
+        11,
+        -20
+      ]
+    },
+    "footing": {
+      "eye": [
+        205,
+        8.8,
+        -12.5
+      ],
+      "target": [
+        210.2,
+        7.9,
+        -15.5
+      ]
+    }
+  },
+  "triangles": 4687,
+  "limitation": "Not a full running-world screenshot or frame-rate measurement."
+}

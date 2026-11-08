@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, parseProgressBackup, type ProgressStorage } from '../src/progress';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, parseProgressBackup, type ProgressStorage } from '../src/core/progress';
 
 function storage() {
   const values = new Map<string, string>();

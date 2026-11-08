@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FrameWorkBudget } from '../src/frameWorkBudget';
+import { FrameWorkBudget } from '../src/rendering/frameWorkBudget';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';

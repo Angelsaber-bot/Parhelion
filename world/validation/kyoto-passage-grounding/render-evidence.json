@@ -1,0 +1,45 @@
+{
+  "method": "Isolated production createJourneyPassageArt module, actual Chromium WebGL / SwiftShader render; neutral review lighting, no geometry substitutions",
+  "viewport": [
+    1440,
+    900
+  ],
+  "files": [
+    "exterior.png",
+    "paper-shop.png"
+  ],
+  "errors": [],
+  "limitation": "Full running-world screenshot exceeded the capture timeout; these images inspect the exact authored component with its own floor and furnishings, not full scene integration or frame rate.",
+  "cameras": {
+    "exterior": {
+      "eye": [
+        -70,
+        8.1,
+        727
+      ],
+      "target": [
+        -67.5,
+        8,
+        740
+      ]
+    },
+    "paperShop": {
+      "eye": [
+        -60.4,
+        9.6,
+        740.9
+      ],
+      "target": [
+        -63.5,
+        8.3,
+        737.5
+      ]
+    }
+  },
+  "visualReview": [
+    "Side-wall bottom beams continuously follow the sloping wooden floor; no daylight seam remains between wall and floor.",
+    "The junction between the two facades has a timber cover strip with no visible overlapping-face artifacts.",
+    "All three paper-shop worktables have horizontal tops and unequal leg lengths seated on the sloped floor.",
+    "The source component is isolated intentionally: underlying world terrain, other buildings, and gameplay lighting are not represented."
+  ]
+}

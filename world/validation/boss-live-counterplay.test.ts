@@ -1,8 +1,8 @@
 /** Authored arena collision proof, not rendered visual or human playtest acceptance. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Player } from '../src/player.ts';
-import { WorldCombatState, enemyAttackContains } from '../src/combat.ts';
+import { Player } from '../src/player/player.ts';
+import { WorldCombatState, enemyAttackContains } from '../src/combat/combat.ts';
 import { layout, q, colliders } from './enemy-live-terrain.fixture.ts';
 
 for(const id of ['boss_winter_warden','boss_hellfire_lord']) test(`${id}: actual delivered arena supports the new midrange counter at eight headings`,()=>{

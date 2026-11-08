@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {CAMPAIGN_EPISODES} from '../../src/campaignEpisodes';
+import {CAMPAIGN_EPISODES} from '../../src/story/campaignEpisodes';
 import fs from 'node:fs';
 import path from 'node:path';
 import {createSettlementNpcs} from '../../src/settlements/npcs';

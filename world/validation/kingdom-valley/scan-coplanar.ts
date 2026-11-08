@@ -1,4 +1,4 @@
-import {readFileSync}from'node:fs';import *as THREE from'three';import{regionLoader,bakeQuantized}from'../../src/glb.ts';
+import {readFileSync}from'node:fs';import *as THREE from'three';import{regionLoader,bakeQuantized}from'../../src/rendering/glb.ts';
 const path=process.argv[2],region=process.argv[3];const bytes=readFileSync(path);const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.updateMatrixWorld(true);
 const meshes:THREE.Mesh[]=[];gltf.scene.getObjectByName('ART')!.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh)});
 const points:number[][]=[];

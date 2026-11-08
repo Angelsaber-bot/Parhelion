@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { MusashiWindupCamera } from '../src/musashiWindupCamera';
-import type { EraArtFrame } from '../src/eraStageArt';
+import { MusashiWindupCamera } from '../src/cinematics/musashiWindupCamera';
+import type { EraArtFrame } from '../src/cinematics/eraStageArt';
 const frame=(phase:EraArtFrame['phase'],progress:number):EraArtFrame=>({phase,progress,elapsed:3,pulse:0,strikeCount:0});
 test('Musashi camera changes only mid-charge, preserves baseline aim and has continuous bounded endpoints',()=>{
  const actor=new THREE.Group(),helper=new MusashiWindupCamera(actor),camera=new THREE.PerspectiveCamera(35,16/9),aim=new THREE.Vector3(0,2.5,0),position=new THREE.Vector3(1.2,2.8,3.2);
@@ -13,6 +13,6 @@ test('Musashi camera changes only mid-charge, preserves baseline aim and has con
 });
 
 test('production Musashi portrait/windup boundary is continuous and deterministic through the shared camera plus local framing',async()=>{
- const{EraCinematicRemake}=await import('../src/eraCinematicRemake');const actor=new THREE.Group(),clone=new THREE.Group(),head=new THREE.Object3D();head.name='mixamorigHead';head.position.set(0,2.5,0);clone.add(head);actor.add(clone);actor.updateMatrixWorld(true);const camera=new THREE.PerspectiveCamera(35,16/9),helper=new MusashiWindupCamera(actor),art=new EraCinematicRemake(actor,clone,'musashi',{material:(color,opacity)=>new THREE.MeshBasicMaterial({color,opacity}),mesh:(g,m,parent)=>{const mesh=new THREE.Mesh(g,m);parent?.add(mesh);return mesh;}});
+ const{EraCinematicRemake}=await import('../src/cinematics/eraCinematicRemake');const actor=new THREE.Group(),clone=new THREE.Group(),head=new THREE.Object3D();head.name='mixamorigHead';head.position.set(0,2.5,0);clone.add(head);actor.add(clone);actor.updateMatrixWorld(true);const camera=new THREE.PerspectiveCamera(35,16/9),helper=new MusashiWindupCamera(actor),art=new EraCinematicRemake(actor,clone,'musashi',{material:(color,opacity)=>new THREE.MeshBasicMaterial({color,opacity}),mesh:(g,m,parent)=>{const mesh=new THREE.Mesh(g,m);parent?.add(mesh);return mesh;}});
  const sample=(p:number)=>{const f={...frame('charge',p),elapsed:1.2+3.8*p};art.update(f,camera,false);const aim=helper.update(f,camera,false,art.aim);return{position:camera.position.clone(),aim:aim.clone(),fov:camera.fov};};const a=sample(.3-1e-7),b=sample(.3+1e-7);assert(a.position.distanceTo(b.position)<1e-4);assert(a.aim.distanceTo(b.aim)<1e-4);assert(Math.abs(a.fov-b.fov)<1e-4);assert.deepEqual(sample(.302).position.toArray(),sample(.302).position.toArray());for(const phase of['release','outro']as const){const f=frame(phase,.5);art.update(f,camera,false);const p=camera.position.clone(),q=camera.quaternion.clone(),fov=camera.fov;helper.update(f,camera,false,art.aim);assert.deepEqual(camera.position.toArray(),p.toArray());assert.deepEqual(camera.quaternion.toArray(),q.toArray());assert.equal(camera.fov,fov);}art.dispose();
 });

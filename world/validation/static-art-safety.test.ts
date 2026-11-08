@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {isStaticArtEligible,freezeStaticArt} from '../src/chunk.ts';
+import {isStaticArtEligible,freezeStaticArt} from '../src/rendering/chunk.ts';
 const flags=['spin','bob','dynamic','showWhen','hideWhen','opensWhen'];
 for(const flag of flags)for(const level of ['self','parent','descendant'])test(`immutable art excludes ${flag} on ${level}`,()=>{
  const parent=new THREE.Group(),mesh=new THREE.Mesh(new THREE.BoxGeometry(),new THREE.MeshBasicMaterial()),child=new THREE.Group();parent.add(mesh);mesh.add(child);

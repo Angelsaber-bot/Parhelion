@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../../src/rendering/glb.ts';
 import { SEAM_BARRIERS, seamBarrierSegments } from '../../tools/gen/valley/seam-barrier.ts';
 import { heightFn } from '../../tools/gen/terrain.ts';
 const path=new URL('../../public/assets/world_alpha.glb',import.meta.url);

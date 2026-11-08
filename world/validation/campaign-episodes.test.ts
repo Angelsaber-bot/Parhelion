@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, chooseCampaignEpisode as choose, getCampaignEpisodeGuide as guide, getCampaignEpisodeJournal as journal, getCampaignEpisodeState as state, getCampaignEpisodeObjective as objective, interactCampaignEpisode as interact } from '../src/campaignEpisodes';
-import { CAMPAIGN_WORK_TASKS as TASKS } from '../src/campaignWorkTasks';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/progress';
-import { getEraBossRequirements, getEraStoryGuide, ERA_STORIES, ERA_IDS } from '../src/eraStories';
+import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, chooseCampaignEpisode as choose, getCampaignEpisodeGuide as guide, getCampaignEpisodeJournal as journal, getCampaignEpisodeState as state, getCampaignEpisodeObjective as objective, interactCampaignEpisode as interact } from '../src/story/campaignEpisodes';
+import { CAMPAIGN_WORK_TASKS as TASKS } from '../src/story/campaignWorkTasks';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/core/progress';
+import { getEraBossRequirements, getEraStoryGuide, ERA_STORIES, ERA_IDS } from '../src/story/eraStories';
 import type { RegionId } from '../src/settlements/types';
 const correct = (r:RegionId,i:number) => TASKS[r][i].options.find(o=>o.correct)!.id;
 function work(r:RegionId,done:Set<string>) {

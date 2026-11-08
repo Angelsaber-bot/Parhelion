@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { UltimatePerformance, UltimatePerformanceFrame } from '../../src/ultimatePerformance';
+import type { UltimatePerformance, UltimatePerformanceFrame } from '../../src/cinematics/ultimatePerformance';
 const smooth=(x:number)=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
 /** Original presentation-only performances. The caller MUST pass a private clone.
  * Contact counters are notifications, never a damage/event source. */

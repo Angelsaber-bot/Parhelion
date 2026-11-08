@@ -4,9 +4,9 @@ import { fileURLToPath } from 'node:url';
 import {readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import { readCharacter } from '../characters/inspect.ts';
-import { SERVANT_MODELS } from '../../src/servant.ts';
+import { SERVANT_MODELS } from '../../src/companions/servant.ts';
 import { CHARACTER_KITS } from '../../src/characters/catalog.ts';
-import { UltimateStage } from '../../src/ultimateStage.ts';
+import { UltimateStage } from '../../src/cinematics/ultimateStage.ts';
 const rows = [],median=(xs:number[])=>xs.length?[...xs].sort((a,b)=>a-b)[Math.floor(xs.length/2)]:null;
 for (const [identity, url] of [['saber', SERVANT_MODELS.armor], ['blackbeard', CHARACTER_KITS.blackbeard.assetUrl], ['napoleon', CHARACTER_KITS.napoleonMounted.assetUrl], ['musashi', CHARACTER_KITS.musashi.assetUrl]]) {
  const { gltf } = await readCharacter(fileURLToPath(new URL(url)));

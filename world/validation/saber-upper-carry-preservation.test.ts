@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{MeshBVH}from'three-mesh-bvh';import{fileURLToPath}from'node:url';
-import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/servant.ts';import{FirstContract}from'../src/contracts.ts';import{ServantAppearance}from'../src/servantAppearance.ts';
+import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/companions/servant.ts';import{FirstContract}from'../src/companions/contracts.ts';import{ServantAppearance}from'../src/companions/servantAppearance.ts';
 for(const outfit of ['armor','civilian']as const)test(`${outfit}: grounded runtime preserves every upper carry local transform and original clip`,async()=>{
  const geometry=new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2),p=geometry.attributes.position;for(let i=0;i<p.count;i++)p.setY(i,.12*p.getZ(i));const colliders=[{name:'carry-slope',enabled:true,bvh:new MeshBVH(geometry)}];
  const actors:ContractServant[]=[],models:THREE.Object3D[]=[],originals:string[]=[],clips:THREE.AnimationClip[][]=[];

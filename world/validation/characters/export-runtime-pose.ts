@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import type { Collider } from '../../src/player.ts';
+import type { Collider } from '../../src/player/player.ts';
 export class RuntimePoseExporter {
   // Visibility changes may reorder traversal slots. Static payload ownership follows
   // the actual mesh and geometry attributes, never its current visible-list index.

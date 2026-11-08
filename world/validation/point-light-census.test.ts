@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { LocalLightPool } from '../src/localLightPool';
-import { PointLightCensus } from '../src/pointLightCensus';
+import { LocalLightPool } from '../src/rendering/localLightPool';
+import { PointLightCensus } from '../src/rendering/pointLightCensus';
 
 test('the scene keeps one point-light count while settlement and cinematic lights come and go', () => {
   const scene = new THREE.Scene(), camera = new THREE.PerspectiveCamera();

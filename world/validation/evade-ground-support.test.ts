@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {Player} from '../src/player';import {EvadeGroundSupport} from '../src/evadeGroundSupport';import {verifyEvadeSupport} from './evade-support-contract.fixture';
+import {Player} from '../src/player/player';import {EvadeGroundSupport} from '../src/player/evadeGroundSupport';import {verifyEvadeSupport} from './evade-support-contract.fixture';
 /** Observation only: this does not replace collision or install support behavior. */
 function observeProduction(player:Player){
  const original=player.step,descriptor=Object.getOwnPropertyDescriptor(player,'step');let steps=0,maxExtra=0,maxSupport=0;

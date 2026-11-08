@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {JSDOM} from 'jsdom';
-import {createArenaTrainingPanel} from '../src/arenaTrainingPanel';import {setLanguage} from '../../shared-client/i18n';
+import {createArenaTrainingPanel} from '../src/ui/arenaTrainingPanel';import {setLanguage} from '../../shared-client/i18n';
 test('practice entry is fixed, save-gated, explicit and invalid after close/dispose',()=>{
  const dom=new JSDOM('<body><button id="open">open</button></body>',{url:'https://example.test/world/',pretendToBeVisual:true});
  const old=new Map(['document','HTMLElement'].map(k=>[k,Object.getOwnPropertyDescriptor(globalThis,k)]));for(const k of old.keys())Object.defineProperty(globalThis,k,{configurable:true,value:(dom.window as any)[k]});

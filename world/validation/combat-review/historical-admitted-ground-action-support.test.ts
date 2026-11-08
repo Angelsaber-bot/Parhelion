@@ -1,6 +1,6 @@
 /** Historical narrow API evidence only; not current production semantics. */
 import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {Player} from '../fixtures/player-pre-general-support';import {Player as HistoricalPlayer} from '../fixtures/player-pre-ground-actions';import {WorldActions} from '../../src/worldActions';
+import {Player} from '../fixtures/player-pre-general-support';import {Player as HistoricalPlayer} from '../fixtures/player-pre-ground-actions';import {WorldActions} from '../../src/combat/worldActions';
 const snapshot=(p:Player|HistoricalPlayer)=>({p:p.pos.toArray(),v:p.vel.toArray(),ground:p.onGround,swim:p.swimming,glide:p.gliding,updraft:p.inUpdraft});
 for(const hz of[30,60,120])for(const water of[-10,2])test(`default-false admitted-action API preserves historical movement at${hz}Hz/water${water}`,()=>{
  const geometry=new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2).rotateZ(.05),colliders=[{name:'slope',enabled:true,bvh:new MeshBVH(geometry)}],a=new HistoricalPlayer(colliders,water),b=new Player(colliders,water);

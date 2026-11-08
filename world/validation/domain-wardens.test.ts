@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { CAMPS } from '../src/exploration/catalog.ts';
-import { WorldCombatState, type CombatEvent } from '../src/combat.ts';
-import { WARDEN_SIGNATURE, chooseEchoWardenAttack, echoWardenRadius } from '../src/echoWarden.ts';
+import { WorldCombatState, type CombatEvent } from '../src/combat/combat.ts';
+import { WARDEN_SIGNATURE, chooseEchoWardenAttack, echoWardenRadius } from '../src/combat/echoWarden.ts';
 
 const SIGNATURE = { britain: 'shieldbearer', blacksail: 'powder', winter: 'jaeger', kyoto: 'shinobi' } as const;
 const flat = { walk: (_from: unknown, x: number, z: number) => ({ x, y: 0, z }), lineOfSight: () => true };

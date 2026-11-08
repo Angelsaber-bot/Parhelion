@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';import {readCharacter} from './characters/inspect.ts';import {SERVANT_MODELS} from '../src/servant.ts';import {fileURLToPath} from 'node:url';import {createUltimatePerformance} from '../src/ultimatePerformance.ts';
+import {clone} from 'three/examples/jsm/utils/SkeletonUtils.js';import {readCharacter} from './characters/inspect.ts';import {SERVANT_MODELS} from '../src/companions/servant.ts';import {fileURLToPath} from 'node:url';import {createUltimatePerformance} from '../src/cinematics/ultimatePerformance.ts';
 const load=()=>readCharacter(fileURLToPath(new URL(SERVANT_MODELS.armor)));
 test('Saber performance authors a two-handed anticipation on private clone without touching source',async()=>{
  const {gltf}=await load();const source=gltf.scene,copy=clone(source);const before:any[]=[];source.traverse(o=>before.push([o.position.toArray(),o.quaternion.toArray(),o.scale.toArray()]));

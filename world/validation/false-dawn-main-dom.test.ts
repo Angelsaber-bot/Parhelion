@@ -3,8 +3,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { FALSE_DAWN, getFalseDawnState, falseDawnEncounterFlags } from '../src/falseDawnCampaign';
-import { WORLD_PROGRESS_KEY, WorldProgress } from '../src/progress';
+import { FALSE_DAWN, getFalseDawnState, falseDawnEncounterFlags } from '../src/story/falseDawnCampaign';
+import { WORLD_PROGRESS_KEY, WorldProgress } from '../src/core/progress';
 
 test('NON-GPU actual main runs both False Dawn routes with deliberate starts, physical emitters, real victory delivery and persistent endings', async t => {
   const h = await bootWorldWithoutGpu({ deterministic: true }); const { world: w, window } = h, document = window.document;

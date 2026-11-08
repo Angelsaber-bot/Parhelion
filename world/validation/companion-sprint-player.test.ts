@@ -9,12 +9,12 @@ import {fileURLToPath} from 'node:url';
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {MeshBVH} from 'three-mesh-bvh';
-import {Player} from '../src/player.ts';
-import {KitCompanion} from '../src/kitCompanion.ts';
+import {Player} from '../src/player/player.ts';
+import {KitCompanion} from '../src/companions/kitCompanion.ts';
 import {CharacterKit} from '../src/characters/characterKit.ts';
 import {CHARACTER_KITS} from '../src/characters/catalog.ts';
-import {ContractServant,SERVANT_MODELS,decodeServantModel} from '../src/servant.ts';
-import {FirstContract} from '../src/contracts.ts';
+import {ContractServant,SERVANT_MODELS,decodeServantModel} from '../src/companions/servant.ts';
+import {FirstContract} from '../src/companions/contracts.ts';
 import {readCharacter} from './characters/inspect.ts';
 import {nodeImageMetadata} from './player-fixture.ts';
 for(const identity of ['saber','blackbeard','musashi','napoleonMounted'] as const)test(`${identity}: real 9m/s sprint for20s with a right-angle turn remains bounded and returns safely`,async t=>{

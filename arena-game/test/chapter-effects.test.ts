@@ -4,9 +4,9 @@ import { expect, it } from 'vitest';
 import * as THREE from 'three';
 import { getMap } from '../shared/arenaMap.ts';
 import { buildMap } from '../shared/map.ts';
-import { CHAPTER_EFFECT_BUDGET, ChapterEffects } from '../src/chapterEffects.ts';
-import { atmosphereFor } from '../src/atmosphere.ts';
-import { BLACKFLAG_ATMOSPHERE } from '../src/blackflagPresentation.ts';
+import { CHAPTER_EFFECT_BUDGET, ChapterEffects } from '../src/rendering/chapterEffects.ts';
+import { atmosphereFor } from '../src/rendering/atmosphere.ts';
+import { BLACKFLAG_ATMOSPHERE } from '../src/rendering/blackflagPresentation.ts';
 
 const CHAPTERS = ['camlann', 'frostcourt', 'blackflag'];
 

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {createEchoWardenVisual} from '../src/echoWardenVisual';import {parseLocalGlb} from './player-fixture';
+import {createEchoWardenVisual} from '../src/combat/echoWardenVisual';import {parseLocalGlb} from './player-fixture';
 test('Warden-only signal vanes are bounded opaque cosmetic meshes, phase-clock pure, and release private resources exactly once',async()=>{
  const gltf=await parseLocalGlb(new URL('../public/assets/enemies/sunward_guard.glb',import.meta.url));
  const root=gltf.scene,before:THREE.Mesh[]=[];root.traverse(o=>{if(o instanceof THREE.Mesh)before.push(o);});const originals=before.map(m=>({geometry:m.geometry,material:m.material}));

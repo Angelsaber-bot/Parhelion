@@ -1,15 +1,15 @@
 import { campaignSourceContext } from './campaign-source-context';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/environment/fortCannon.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import {transformSync} from 'esbuild';
-import {interactValleyStory, VALLEY_STORY} from '../src/valleyStory.ts';
+import {interactValleyStory, VALLEY_STORY} from '../src/story/valleyStory.ts';
 import * as THREE from 'three';
-import {interactEraStory} from '../src/eraStories.ts';
+import {interactEraStory} from '../src/story/eraStories.ts';
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const code=source.slice(source.indexOf('function nearbySettlementNpc()'),source.indexOf('function interact()'));
 function fixture(blocked=false,questDistance:number|null=null){
@@ -29,8 +29,8 @@ test('resident action is dispatched only behind existing gameplay and remapped i
  assert.match(press,/settings\.action\(binding\)/);assert.match(press,/action === 'interact' && !player\.flying && !player\.gliding && !player\.swimming && player\.onGround && !interactSettlementNpc\(\)/);
 });
 import {MeshBVH} from 'three-mesh-bvh';
-import {makeCombatTerrain} from '../src/combatTerrain.ts';
-import type {Layout} from '../src/types.ts';
+import {makeCombatTerrain} from '../src/combat/combatTerrain.ts';
+import type {Layout} from '../src/core/types.ts';
 test('new living hubs exclude random wilderness spawns without removing surrounding wilderness',()=>{
  const floor=new THREE.BoxGeometry(400,1,400).translate(0,-.5,0);
  const terrain=makeCombatTerrain([{name:'floor',enabled:true,bvh:new MeshBVH(floor)}],{

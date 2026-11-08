@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { SERVANTS } from '../src/contracts';
-import { CONTRACT_SKILLS } from '../src/contractSkills';
+import { SERVANTS } from '../src/companions/contracts';
+import { CONTRACT_SKILLS } from '../src/companions/contractSkills';
 
 /** NON-GPU production GLBs/BVH/inputs/HP, not image quality or FPS. Target recovery,
  * positions and boss gates isolate contacts; natural-charge case never sets energy. */

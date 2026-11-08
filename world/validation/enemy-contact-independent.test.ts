@@ -2,9 +2,9 @@
  * No renderer timing or synthetic frame time is represented as GPU/FPS evidence. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WorldCombatState, enemyAttackTiming, type CombatTerrain, type CombatEvent } from '../src/combat';
-import { enemyAttackPose, ENEMY_CONTACT_SAMPLE, type EnemyPoseModel } from '../src/enemyAttackPresentation';
-import type { EnemyRole } from '../src/enemyRoles';
+import { WorldCombatState, enemyAttackTiming, type CombatTerrain, type CombatEvent } from '../src/combat/combat';
+import { enemyAttackPose, ENEMY_CONTACT_SAMPLE, type EnemyPoseModel } from '../src/combat/enemyAttackPresentation';
+import type { EnemyRole } from '../src/combat/enemyRoles';
 const terrain:CombatTerrain={walk:(_p,x,z)=>({x,y:0,z}),lineOfSight:()=>true};
 const scenarios: [EnemyRole,EnemyPoseModel][]=[['stalker','deck_raider'],['duelist','samurai'],['breaker','sunward_guard'],['bombardier','officer'],['musketeer','musketeer'],['lancer','ashigaru']];
 for(const [role,model]of scenarios)test(`${role}: contact timing/events are identical at 30/60/120Hz presentation, with frozen pauses`,()=>{

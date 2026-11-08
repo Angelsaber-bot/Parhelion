@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/player/skinnedCharacter.ts';
 const base:PlayerAnimationState={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0};
 const angle=(a:number,b:number)=>Math.abs(Math.atan2(Math.sin(a-b),Math.cos(a-b)));
 

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, enemyAttackTiming, enemyAttackContains, type CombatTerrain } from '../src/combat.ts';
-import { chooseBossAttack } from '../src/bossPatterns.ts';
-import { collectStrikeTargets, strikeContains, type StrikeRequest } from '../src/combatActions.ts';
-import { CONTRACT_SKILLS, skillContains, type SkillStrike } from '../src/contractSkills.ts';
+import { WorldCombatState, enemyAttackTiming, enemyAttackContains, type CombatTerrain } from '../src/combat/combat.ts';
+import { chooseBossAttack } from '../src/combat/bossPatterns.ts';
+import { collectStrikeTargets, strikeContains, type StrikeRequest } from '../src/combat/combatActions.ts';
+import { CONTRACT_SKILLS, skillContains, type SkillStrike } from '../src/companions/contractSkills.ts';
 
 const p = (x: number, z = 0, y = 0) => ({ x, y, z });
 const terrain: CombatTerrain = { walk: (_from, x, z) => p(x,z), lineOfSight: () => true };

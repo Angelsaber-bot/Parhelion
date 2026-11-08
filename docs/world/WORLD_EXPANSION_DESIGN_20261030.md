@@ -299,7 +299,7 @@ Verified normal-route coverage: Kyoto inn-to-quiet-slope without jumping/flying 
 
 ### Bridge-lip repair accepted (2026-10-30, 04:45 UTC)
 
-Ownership of `world/src/traversalRepairs.ts` was delegated for the narrow geometry
+Ownership of `world/src/map/traversalRepairs.ts` was delegated for the narrow geometry
 fix. The initial ramp assumed a 4.425 m bridge top; decoded collision proves 4.6019 m.
 Corrected the apron to a 4.63 m top reached at X−47.05 before the capsule contacts
 the old X−47.5 edge, with a short overlap and road-side slope ending X−44.75.

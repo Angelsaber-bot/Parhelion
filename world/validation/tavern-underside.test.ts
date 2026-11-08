@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../src/glb.ts';
+import {regionLoader,bakeQuantized} from '../src/rendering/glb.ts';
 import {snapshot} from './map-polish/snapshot.mjs';
 import {tavernRoofUnderside} from '../tools/gen/blacksail/architecture.ts';
 

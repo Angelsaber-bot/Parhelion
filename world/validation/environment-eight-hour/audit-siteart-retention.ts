@@ -1,6 +1,6 @@
 /** CPU construction-reference audit; not a measured GC/heap/GPU/FPS benchmark. */
 import assert from 'node:assert/strict';import{createHash}from'node:crypto';import{readFile,writeFile}from'node:fs/promises';
-import{SiteArt,buildCampaignSite}from'../../src/campaignSites';import{createFalseDawnSites}from'../../src/falseDawnSites';
+import{SiteArt,buildCampaignSite}from'../../src/story/campaignSites';import{createFalseDawnSites}from'../../src/story/falseDawnSites';
 const output=process.argv[2];assert(output,'OUTPUT_JSON');const captured:any[]=[];const original=SiteArt.prototype.finish;
 const buffers=(geos:any[])=>{const set=new Set<ArrayBufferLike>();for(const g of geos){for(const a of Object.values(g.attributes)as any[])set.add((a.isInterleavedBufferAttribute?a.data.array:a.array).buffer);if(g.index)set.add(g.index.array.buffer);}return set;};
 const digest=(geos:any[])=>{const h=createHash('sha256');for(const b of buffers(geos))h.update(new Uint8Array(b));return h.digest('hex');};

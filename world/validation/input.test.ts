@@ -1,14 +1,14 @@
 import { campaignSourceContext } from './campaign-source-context';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import { FortCannon, FORT_CANNON } from '../src/fortCannon';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import { FortCannon, FORT_CANNON } from '../src/environment/fortCannon';
 // Execute the production event-registration section, not a duplicate input model.
 // Browser graphics/pointer-lock UX is covered separately by browser.mjs.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
-import { ShoulderAim } from '../src/aim.ts';
+import { ShoulderAim } from '../src/player/aim.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
 import { transformSync } from 'esbuild';
 class Target {

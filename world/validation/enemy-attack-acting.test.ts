@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { WorldCombatState, enemyAttackTiming } from '../src/combat.ts';
-import { EnemyVisuals, type EnemyModel } from '../src/enemyVisuals.ts';
-import { measureEnemyWeaponAxis, ENEMY_WEAPON_HAND, ENEMY_SWORD_STYLES } from '../src/enemyAttackActing.ts';
+import { WorldCombatState, enemyAttackTiming } from '../src/combat/combat.ts';
+import { EnemyVisuals, type EnemyModel } from '../src/combat/enemyVisuals.ts';
+import { measureEnemyWeaponAxis, ENEMY_WEAPON_HAND, ENEMY_SWORD_STYLES } from '../src/combat/enemyAttackActing.ts';
 import { parseLocalGlb } from './player-fixture.ts';
 for (const model of Object.keys(ENEMY_WEAPON_HAND) as (keyof typeof ENEMY_WEAPON_HAND)[]) test(`${model}: stronger sword acting retains hand attachment, native assets and exact repeat/paused poses`, async () => {
   const gltf = await parseLocalGlb(new URL(`../public/assets/enemies/${model}.glb`, import.meta.url));

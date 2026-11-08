@@ -7,14 +7,14 @@ import { rayPlayer } from '../shared/hit.ts';
 import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import type { NetEvent, PlayerSnap, Snapshot } from '../shared/match.ts';
 import { applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
-import { sfx } from './audio.ts';
-import type { Controls } from './controls.ts';
-import type { Hud } from './hud.ts';
-import { Feel } from './feel.ts';
-import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './aim.ts';
-import { type ArenaScene } from './scene.ts';
-import type { Session } from './session.ts';
-import {FrameGate} from './renderScheduling.ts';
+import { sfx } from './rendering/audio.ts';
+import type { Controls } from './player/controls.ts';
+import type { Hud } from './ui/hud.ts';
+import { Feel } from './player/feel.ts';
+import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './player/aim.ts';
+import { type ArenaScene } from './rendering/scene.ts';
+import type { Session } from './network/session.ts';
+import {FrameGate} from './rendering/renderScheduling.ts';
 
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 

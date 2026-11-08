@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {JOURNEY_DRAMA as D,JOURNEY_CAST} from '../src/journeyDrama';
+import {JOURNEY_DRAMA as D,JOURNEY_CAST} from '../src/story/journeyDrama';
 test('production story dialogue requires reading, grounded presence and explicit confirmation; personal chronicle remains available',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['adventure_v2',D.started],found:[]})}}),d=h.window.document,w=h.world;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};

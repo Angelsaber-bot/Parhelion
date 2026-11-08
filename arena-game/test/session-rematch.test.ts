@@ -5,7 +5,7 @@ import { WebSocketServer } from 'ws';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
 import { RoomCore } from '../shared/room.ts';
-import { joinOnline, type Session } from '../src/session.ts';
+import { joinOnline, type Session } from '../src/network/session.ts';
 import type { Match, Snapshot } from '../shared/match.ts';
 import { COUNTDOWN_TICKS } from '../shared/content.ts';
 const PORT = 30000 + Math.floor(Math.random() * 500);

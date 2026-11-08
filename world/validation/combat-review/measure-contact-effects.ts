@@ -1,6 +1,6 @@
 /** Paired CPU-only BVH/contact-geometry measurement, never FPS. No gameplay damage. */
 import assert from 'node:assert/strict';import * as THREE from 'three';import {mkdir,writeFile} from 'node:fs/promises';
-import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {EnemyContactEffects,ENEMY_CONTACT_EFFECT_BUDGET} from '../../src/enemyContactEffects';import type {CombatEvent} from '../../src/combat';import {getFalseDawnEncounterSpec} from '../../src/falseDawnEncounterCatalog';
+import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {EnemyContactEffects,ENEMY_CONTACT_EFFECT_BUDGET} from '../../src/combat/enemyContactEffects';import type {CombatEvent} from '../../src/combat/combat';import {getFalseDawnEncounterSpec} from '../../src/story/falseDawnEncounterCatalog';
 const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world;
 try{
  const anchor=getFalseDawnEncounterSpec('false_dawn_warden')!.anchor,g=w.combat.geometry,groups=[new THREE.Group(),new THREE.Group()],effects=[new EnemyContactEffects(groups[0],{ground:g.ground,cast:g.cast}),new EnemyContactEffects(groups[1],g)],rows:any[]=[];

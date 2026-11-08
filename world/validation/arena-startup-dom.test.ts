@@ -13,7 +13,7 @@ const mocks:Record<string,string>={
  'session.ts':`export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(options){window.__qa.armory=options}`,
 };
-const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/\.\/(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.slice(2),namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
+const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
 async function boot(saved?:unknown){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;

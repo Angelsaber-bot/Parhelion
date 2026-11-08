@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
 import{MeshBVH}from'three-mesh-bvh';import{fileURLToPath}from'node:url';
-import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/servant.ts';import{FirstContract}from'../src/contracts.ts';import{ServantAppearance}from'../src/servantAppearance.ts';
+import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/companions/servant.ts';import{FirstContract}from'../src/companions/contracts.ts';import{ServantAppearance}from'../src/companions/servantAppearance.ts';
 for(const outfit of ['armor','civilian']as const)for(const hz of [30,60,120])test(`${outfit} ${hz}Hz: actual follow pivots retain finite reach, sole clearance and world stance`,async t=>{
  const{gltf}=await readCharacter(fileURLToPath(SERVANT_MODELS[outfit]));const sourceClips=JSON.stringify(gltf.animations.map(c=>c.toJSON()));gltf.scene.updateMatrixWorld(true);
  const feet=['Left','Right'].map(s=>gltf.scene.getObjectByName('mixamorig'+s+'Foot')!);

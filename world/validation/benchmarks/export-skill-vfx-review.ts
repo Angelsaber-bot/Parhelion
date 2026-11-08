@@ -1,8 +1,8 @@
-import {skillAnimationProfile,skillAnimationSample}from'../../src/skillAnimationProfile';
+import {skillAnimationProfile,skillAnimationSample}from'../../src/combat/skillAnimationProfile';
 /** Real runtime VFX + shipped character GLBs at an ordinary 75° third-person camera.
  * CPU skin export only: this is not a browser screenshot or FPS acceptance. */
 import * as THREE from 'three';import {mkdir,writeFile,readFile}from'node:fs/promises';import{resolve}from'node:path';import{gunzipSync}from'node:zlib';
-import{playerFixture,parseLocalGlb}from'../player-fixture';import{readCharacter}from'../characters/inspect';import{SkinnedCharacterAnimator}from'../../src/skinnedCharacter';import{attachExplorerBlade}from'../../src/playerBladeArt';import{SkillPresentation}from'../../src/skillPresentation';import{CONTRACT_SKILLS,type SkillIdentity}from'../../src/contractSkills';import{CharacterKit}from'../../src/characters/characterKit';import{CHARACTER_KITS}from'../../src/characters/catalog';
+import{playerFixture,parseLocalGlb}from'../player-fixture';import{readCharacter}from'../characters/inspect';import{SkinnedCharacterAnimator}from'../../src/player/skinnedCharacter';import{attachExplorerBlade}from'../../src/weapons/playerBladeArt';import{SkillPresentation}from'../../src/combat/skillPresentation';import{CONTRACT_SKILLS,type SkillIdentity}from'../../src/companions/contractSkills';import{CharacterKit}from'../../src/characters/characterKit';import{CHARACTER_KITS}from'../../src/characters/catalog';
 const poseReviewTime=Number(process.env.SKILL_POSE_REVIEW_TIME??NaN);
 const out=resolve(process.argv[2]??'/tmp/skill-vfx-review'),source=resolve('..'),reduced=process.argv[3]==='reduced';await mkdir(out,{recursive:true});await mkdir(`${out}/assets`,{recursive:true});
 const actorPaths={saber:'assets/characters/artoria_refined/runtime_revision1/armor/artoria_armor.glb.gz',blackbeard:'assets/characters/blackbeard/blackbeard.glb.gz',musashi:'assets/characters/musashi/Musashi_Runtime.glb.gz',napoleon:'assets/characters/napoleon/runtime/napoleon_mounted.glb.gz'};

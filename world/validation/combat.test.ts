@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, WILDERNESS_ZONES, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat.ts';
+import { WorldCombatState, COMBAT, BOSS_REQUIREMENTS, WILDERNESS_ZONES, makeWildernessSpawns, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
 
 const ground: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const wall: CombatTerrain = { ...ground, lineOfSight: () => false };

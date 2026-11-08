@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {optionalPinExpired,type OptionalPin} from '../src/optionalNavigation';
+import {optionalPinExpired,type OptionalPin} from '../src/story/optionalNavigation';
 const p={x:0,y:1,z:0};
 const pin:OptionalPin={kind:'quiet-route',p:[-224,11.56,840],label:['高地','Ledge'],region:'kyoto'};
 test('Kyoto quiet route expires immediately after its purpose resolves, not just on arrival',()=>{

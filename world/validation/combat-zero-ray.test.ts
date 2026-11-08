@@ -2,8 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
-import {makeCombatTerrain} from '../src/combatTerrain';
-import type {Layout} from '../src/types';
+import {makeCombatTerrain} from '../src/combat/combatTerrain';
+import type {Layout} from '../src/core/types';
 const layout={areas:[],markers:[],world:{waterLevel:-100}} as unknown as Layout;
 test('zero-length combat LOS is visible without submitting a degenerate BVH ray',()=>{
  const bvh=new MeshBVH(new THREE.BoxGeometry(2,2,2));let queries=0;

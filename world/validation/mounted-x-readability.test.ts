@@ -1,4 +1,4 @@
-import test from 'node:test';import assert from 'node:assert/strict';import * as T from 'three';import {UltimateStage} from '../src/ultimateStage';
+import test from 'node:test';import assert from 'node:assert/strict';import * as T from 'three';import {UltimateStage} from '../src/cinematics/ultimateStage';
 function fixture(){const root=new T.Group();root.add(new T.Mesh(new T.BoxGeometry(.8,2,.5),new T.MeshBasicMaterial()));return root;}
 function mesh(stage:UltimateStage,name:string){const value=stage.scene.getObjectByName(name) as T.Mesh<T.BufferGeometry,T.MeshBasicMaterial>;assert.ok(value?.isMesh,name);return value;}
 for(const reduced of[false,true])test(`Napoleon X local peaks substantially lower; unchanged contact windows (${reduced?'reduced':'default'})`,()=>{

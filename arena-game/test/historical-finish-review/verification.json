@@ -1,0 +1,152 @@
+{
+  "method": "Actual authored GLBs with production Arena/World material controllers; Arena production Viewmodel at its real FOV and idle pose; real workshop clicks and reload.",
+  "errors": [],
+  "results": [
+    {
+      "name": "arena-guard-sash-side",
+      "meshes": 38,
+      "size": [
+        2.5565500259399414,
+        1.5149999856948853,
+        0.5459999889135361
+      ]
+    },
+    {
+      "name": "arena-guard-sash-crown",
+      "meshes": 38,
+      "size": [
+        2.5565500259399414,
+        1.5149999856948853,
+        0.5459999889135361
+      ]
+    },
+    {
+      "name": "world-guard-sash-side",
+      "meshes": 25,
+      "size": [
+        2.5565500259399414,
+        1.5149999856948853,
+        0.5459999889135361
+      ]
+    },
+    {
+      "name": "world-guard-sash-crown",
+      "meshes": 25,
+      "size": [
+        2.5565500259399414,
+        1.5149999856948853,
+        0.5459999889135361
+      ]
+    },
+    {
+      "name": "held-guard-sash-held",
+      "meshes": 39,
+      "size": [
+        0.1949764359604572,
+        0.3061081256337405,
+        0.6800929043809507
+      ]
+    },
+    {
+      "name": "arena-sealed-passage-side",
+      "meshes": 39,
+      "size": [
+        3.293026089668274,
+        1.3924999833106995,
+        0.5890000015497208
+      ]
+    },
+    {
+      "name": "arena-sealed-passage-crown",
+      "meshes": 39,
+      "size": [
+        3.293026089668274,
+        1.3924999833106995,
+        0.5890000015497208
+      ]
+    },
+    {
+      "name": "world-sealed-passage-side",
+      "meshes": 26,
+      "size": [
+        3.293026089668274,
+        1.3924999833106995,
+        0.5890000015497208
+      ]
+    },
+    {
+      "name": "world-sealed-passage-crown",
+      "meshes": 26,
+      "size": [
+        3.293026089668274,
+        1.3924999833106995,
+        0.5890000015497208
+      ]
+    },
+    {
+      "name": "held-sealed-passage-held",
+      "meshes": 40,
+      "size": [
+        0.195915982764285,
+        0.2814703697549279,
+        0.8020579025051711
+      ]
+    },
+    {
+      "name": "arena-night-nacre-side",
+      "meshes": 34,
+      "size": [
+        3.0637600123882294,
+        1.4724999740719795,
+        0.55799999833107
+      ]
+    },
+    {
+      "name": "arena-night-nacre-crown",
+      "meshes": 34,
+      "size": [
+        3.0637600123882294,
+        1.4724999740719795,
+        0.55799999833107
+      ]
+    },
+    {
+      "name": "world-night-nacre-side",
+      "meshes": 22,
+      "size": [
+        3.0637600123882294,
+        1.4724999740719795,
+        0.55799999833107
+      ]
+    },
+    {
+      "name": "world-night-nacre-crown",
+      "meshes": 22,
+      "size": [
+        3.0637600123882294,
+        1.4724999740719795,
+        0.55799999833107
+      ]
+    },
+    {
+      "name": "held-night-nacre-held",
+      "meshes": 35,
+      "size": [
+        0.20266726268328256,
+        0.30310788111614323,
+        0.7587202235108037
+      ]
+    }
+  ],
+  "selected": {
+    "lumen": "tidal-engine",
+    "corona": "sealed-passage",
+    "halo": "night-nacre",
+    "firefly": "guard-sash",
+    "longnight": "abyssal-requiem",
+    "blade": "prismwing",
+    "polearm": "vermilion-plume",
+    "hammer": "foundry-bell"
+  },
+  "limitation": "The side/crown and held views are isolated studio scenes. They do not measure a complete map or device frame rate."
+}

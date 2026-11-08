@@ -1,4 +1,4 @@
-import test from'node:test';import assert from'node:assert/strict';import*as THREE from'three';import{makeSunShafts}from'../src/fx';
+import test from'node:test';import assert from'node:assert/strict';import*as THREE from'three';import{makeSunShafts}from'../src/rendering/fx';
 test('sun shafts reuse the direction target without changing uniforms, NaN behavior, shader or pass routing',()=>{
  const shafts=makeSunShafts(),camera=new THREE.PerspectiveCamera(65,16/9,.1,6000);camera.position.set(120,12,-680);camera.updateMatrixWorld();const targets=new Set<THREE.Vector3>(),original=camera.getWorldDirection;
  camera.getWorldDirection=function(target){targets.add(target);return original.call(this,target)};

@@ -2,10 +2,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { BOSSES } from '../src/combat.ts';
-import { MINIBOSSES } from '../src/minibosses.ts';
-import { ELITE_CRESTS, hasEliteCrest, createEliteCrestKit } from '../src/eliteCrestVisual.ts';
-import { BOSS_REGALIA_IDS, hasBossRegalia, createBossRegaliaKit, type BossRegaliaId } from '../src/bossRegaliaVisual.ts';
+import { BOSSES } from '../src/combat/combat.ts';
+import { MINIBOSSES } from '../src/combat/minibosses.ts';
+import { ELITE_CRESTS, hasEliteCrest, createEliteCrestKit } from '../src/combat/eliteCrestVisual.ts';
+import { BOSS_REGALIA_IDS, hasBossRegalia, createBossRegaliaKit, type BossRegaliaId } from '../src/combat/bossRegaliaVisual.ts';
 
 /** Stand-in for the authored rig: the bones the kits pin regalia to, in their bind-pose places. */
 function rig() {
@@ -96,7 +96,7 @@ test('elite crests ride the bones and clear away on remove', () => {
 });
 
 test('a rallied elite banner smoulders and its gems burn brighter', async () => {
-  const { createEliteCrestKit } = await import('../src/eliteCrestVisual.ts');
+  const { createEliteCrestKit } = await import('../src/combat/eliteCrestVisual.ts');
   const THREE = await import('three');
   const root = new THREE.Group(), chest = new THREE.Bone(), head = new THREE.Bone(); chest.name = 'chest'; head.name = 'head'; chest.position.y = 1.27; head.position.y = .28; chest.add(head); root.add(chest); root.updateMatrixWorld(true);
   const kit = createEliteCrestKit('elite_oath_knight'), worn = kit.attach(root)!;

@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createSaberCinematicFace, SABER_FACE_MORPHS, saberFaceExpression } from '../src/saberCinematicFace.ts';
+import { createSaberCinematicFace, SABER_FACE_MORPHS, saberFaceExpression } from '../src/cinematics/saberCinematicFace.ts';
 import { readCharacter } from './characters/inspect.ts';
-import { SERVANT_MODELS } from '../src/servant.ts';
+import { SERVANT_MODELS } from '../src/companions/servant.ts';
 import { fileURLToPath } from 'node:url';
 
 test('Saber expression follows quiet charge, eye opening, shout and recovery', () => {
@@ -33,7 +33,7 @@ test('Published Saber supports actual facial morphs and private reversible geome
 test('Missing face rig is harmless',()=>{const c=createSaberCinematicFace(new THREE.Group());assert.equal(c.available,false);c.update({phase:'charge',progress:1,elapsed:2});c.reset();c.dispose();});
 
 test('Integrated stage repeated casts preserve live face, hair and materials', async()=>{
- const { UltimateStage } = await import('../src/ultimateStage.ts');
+ const { UltimateStage } = await import('../src/cinematics/ultimateStage.ts');
  const { gltf }=await readCharacter(fileURLToPath(SERVANT_MODELS.armor));
  const source=gltf.scene,face=source.getObjectByName('Face') as THREE.Mesh,hair=source.getObjectByName('Runtime_•_hair') as THREE.Mesh;
  const sourceWeights=face.morphTargetInfluences!.slice(),sourceGeometry=hair.geometry,sourceMaterial=hair.material;

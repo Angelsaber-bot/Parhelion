@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {KINGDOM_GATE as G} from '../src/kingdomGate';
-import {gateEscortPosition} from '../src/kingdomGateScene';
+import {KINGDOM_GATE as G} from '../src/story/kingdomGate';
+import {gateEscortPosition} from '../src/environment/kingdomGateScene';
 test('actual main: start guards, release latch, turn winch and escort through real collision',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack','saber_contract','summon_circle'],found:[]})}}),w=h.world,d=h.window.document;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};

@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { bilingual } from '../../../shared-client/i18n';
-import type { Enemy, HitContext, Point3, WorldCombatState } from '../combat';
+import type { Enemy, HitContext, Point3, WorldCombatState } from '../combat/combat';
 import { CoopSession, type CoopSocket, type CoopStatus } from './coopSession';
 import { ENEMY_HZ, ENEMY_SYNC_RADIUS, STATE_HZ, WORLD_COOP_SERVER, decodeSkillFx, encodeEnemy, encodeSkillFx, encodeState, type EnemyWireState, type PlayerWireState, type SkillFxWire } from './coopProtocol';
 import { PartnerAvatar } from './partnerAvatar';
 import { PingMarkers } from './pingMarkers';
-import { worldGun } from '../worldArsenal';
+import { worldGun } from '../weapons/worldArsenal';
 
 /** Most enemies one snapshot carries (nearest first); keeps a message far under the relay cap. */
 export const ENEMY_SNAPSHOT_MAX = 60;

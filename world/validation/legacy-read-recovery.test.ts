@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/progress';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/core/progress';
 
 for (const failingIndex of [0, 1]) test(`legacy read failure ${failingIndex} preserves both original records until complete migration`, () => {
   const raw = ['{"done":["armory_rack","unknown_alpha"],"found":["rare_alpha"]}', '{"done":["sea_core","unknown_coast"],"found":["rare_coast"]}'];

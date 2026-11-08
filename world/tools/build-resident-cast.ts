@@ -4,7 +4,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {createSettlementNpcs} from '../src/settlements/npcs';
-import {JOURNEY_CAST} from '../src/journeyDrama';
+import {JOURNEY_CAST} from '../src/story/journeyDrama';
 import type {RegionId,PlacedNpcSocket} from '../src/settlements/types';
 (globalThis as any).FileReader??=class{result:unknown;onloadend?:()=>void;readAsArrayBuffer(blob:Blob){blob.arrayBuffer().then(b=>{this.result=b;this.onloadend?.();});}readAsDataURL(blob:Blob){blob.arrayBuffer().then(b=>{this.result=`data:${blob.type};base64,${Buffer.from(b).toString('base64')}`;this.onloadend?.();});}};
 const out=resolve('../assets/characters/residents_v2');await mkdir(out,{recursive:true});

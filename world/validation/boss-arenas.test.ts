@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { SiteArt } from '../src/campaignSites.ts';
+import { SiteArt } from '../src/story/campaignSites.ts';
 import { CAMLANN, CORE_RING, HONNOJI, RED_SQUARE, camlannArena, carveCoreRing, flagshipDeckArena, honnojiArena, redSquareArena } from '../src/exploration/bossArenas.ts';
 
 test('Camlann arena: swords, stones and throne dress the field but never crowd the core or the king', () => {

@@ -4,9 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {CAMPAIGN_REGIONS,CAMPAIGN_EPISODES,campaignEpisodeFlags,getCampaignEpisodeState} from '../src/campaignEpisodes';
-import {CAMPAIGN_WORK_TASKS} from '../src/campaignWorkTasks';
-import {LEGACY_WORLD_PROGRESS_KEYS,WORLD_PROGRESS_KEY,WorldProgress} from '../src/progress';
+import {CAMPAIGN_REGIONS,CAMPAIGN_EPISODES,campaignEpisodeFlags,getCampaignEpisodeState} from '../src/story/campaignEpisodes';
+import {CAMPAIGN_WORK_TASKS} from '../src/story/campaignWorkTasks';
+import {LEGACY_WORLD_PROGRESS_KEYS,WORLD_PROGRESS_KEY,WorldProgress} from '../src/core/progress';
 
 test('NON-GPU five legacy-save chronicles require deliberate work/branch choices; cancel, locale, stale range and repeat are safe',async t=>{
  const legacy=['hq_terminal','armory_rack','relay_a','relay_b','sun_core','sea_core','winter_core','fire_core',...CAMPAIGN_REGIONS.flatMap(r=>CAMPAIGN_EPISODES[r].evidence)];

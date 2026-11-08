@@ -2,12 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {Player} from '../src/player';
-import {flagshipPoint} from '../src/shipInteriorCut';
-import {ADVENTURE as A} from '../src/openWorldCampaign';
-import {WORLD_PROGRESS_KEY} from '../src/progress';
-import {createResidentEventRuntime} from '../src/residentEvents';
-import {getResidentWorkGuide} from '../src/residentEventRules';
+import {Player} from '../src/player/player';
+import {flagshipPoint} from '../src/map/shipInteriorCut';
+import {ADVENTURE as A} from '../src/story/openWorldCampaign';
+import {WORLD_PROGRESS_KEY} from '../src/core/progress';
+import {createResidentEventRuntime} from '../src/story/residentEvents';
+import {getResidentWorkGuide} from '../src/story/residentEventRules';
 
 test('five resident jobs require their different field actions, preserve partial work and cancel carried items safely',()=>{
  const done=new Set(['adventure_v2',...['alpha','britain','blacksail','winter','kyoto'].map(r=>`campaign_${r}_met`)]);let reachable=true,saves=0;

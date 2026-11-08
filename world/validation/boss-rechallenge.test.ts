@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOSSES, COMBAT, WorldCombatState, type CombatTerrain, type Point3 } from '../src/combat.ts';
-import { WorldProgress, LEGACY_WORLD_PROGRESS_KEYS, WORLD_PROGRESS_KEY } from '../src/progress.ts';
+import { BOSSES, COMBAT, WorldCombatState, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
+import { WorldProgress, LEGACY_WORLD_PROGRESS_KEYS, WORLD_PROGRESS_KEY } from '../src/core/progress.ts';
 const terrain: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const advance = (s: WorldCombatState, seconds: number, p: Point3 = { x: 0, y: 0, z: 0 }) => {
   for (let i = 0; i < seconds * 20; i++) s.step(.05, p, true, terrain);

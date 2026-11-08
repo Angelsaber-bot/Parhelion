@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
-import {CompanionNavigation} from '../src/companionNavigation.ts';
+import {CompanionNavigation} from '../src/companions/companionNavigation.ts';
 const collider=(geometry:THREE.BufferGeometry,name='ground')=>({name,enabled:true,bvh:new MeshBVH(geometry)});
 const floor=()=>collider(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2));
 test('walking steering goes around a finite wall without clipping, teleporting or increasing speed',()=>{

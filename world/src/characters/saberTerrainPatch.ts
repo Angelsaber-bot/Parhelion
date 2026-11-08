@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Collider } from '../player';
+import type { Collider } from '../player/player';
 
 /** Bounded, visual-only local snapshot of immutable world-space collision triangles.
  * No controller changes. A stable patch uses no BVH calls; enabled/replaced/updated

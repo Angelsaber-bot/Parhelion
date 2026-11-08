@@ -4,7 +4,7 @@ import { COUNTDOWN_TICKS, GUN_IDS, MELEE_IDS, RESPAWN_TICKS, SHIELD, SPAWN_PROTE
 import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, type PlayerInfo } from '../shared/match.ts';
 import { BTN, type Input } from '../shared/sim.ts';
-import { startOffline } from '../src/session.ts';
+import { startOffline } from '../src/network/session.ts';
 
 const data: MapData = {
   mapId: 'spawn-fixture', version: '1', bounds: { min: [-30,-1,-30], max: [30,12,30] },

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {makeCombatTerrain} from '../src/combatTerrain';import type {Layout} from '../src/types';import type {Collider} from '../src/player';
+import {makeCombatTerrain} from '../src/combat/combatTerrain';import type {Layout} from '../src/core/types';import type {Collider} from '../src/player/player';
 const layout={world:{seed:1,waterLevel:-10},areas:[],markers:[]}as unknown as Layout;
 function collider(name:string,size:number[],p:number[]):Collider{const geometry=new THREE.BoxGeometry(...size as [number,number,number]).translate(...p as [number,number,number]);return{name,enabled:true,bvh:new MeshBVH(geometry)};}
 const point=(hit:any)=>hit?{distance:hit.distance,point:hit.point.toArray()}:null;

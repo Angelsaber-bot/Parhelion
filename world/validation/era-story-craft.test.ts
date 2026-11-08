@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {createEraStoryScene} from '../src/eraStoryScenes';
-import type {EraId} from '../src/eraStories';
+import {createEraStoryScene} from '../src/story/eraStoryScenes';
+import type {EraId} from '../src/story/eraStories';
 const collisionHashes={britain:'19a3d44e595667e9c8d795fbe6a8a2a730eba1a67001a2e76072a54cff5f8840',blacksail:'61115e7840fe46abfc211ede3e2e50345ecf5ab9564d60cf73f5c7795bff7a34',winter:'4d67ac07add3dba8c8a67d414a7bae77aab7bde6885d32669b9821c79a678497',kyoto:'910f70a28647538166c0a0835c67a0d8d417a4166e84a1bb10ad6287c7a00fe3'};
 function make(id:EraId){return createEraStoryScene({id,name:[id,id],position:[0,0,0],entry:[0,0,0],footprint:[35,35],groundRange:0});}
 test('Britain inscription clears the shield bevel; Kyoto eaves have a visible underside',()=>{

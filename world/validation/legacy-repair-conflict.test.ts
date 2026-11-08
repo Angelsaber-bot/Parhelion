@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/progress';
-import { createProgressPanel } from '../src/progressPanel';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS } from '../src/core/progress';
+import { createProgressPanel } from '../src/ui/progressPanel';
 import { setLanguage } from '../../shared-client/i18n';
 
 for (const timing of ['before', 'confirm', 'unchanged', 'quota', 'read'] as const) test(`partial legacy repair ${timing} respects the originally absent current slot`, () => {

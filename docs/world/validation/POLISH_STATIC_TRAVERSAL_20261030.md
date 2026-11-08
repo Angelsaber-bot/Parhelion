@@ -1,6 +1,6 @@
 # Guarded immutable-tree traversal — bounded CPU evidence
 
-Only `world/src/chunk.ts` changes runtime behavior in this experiment. The existing
+Only `world/src/rendering/chunk.ts` changes runtime behavior in this experiment. The existing
 `freezeStaticArt` already fixes local and world matrices. The new fast path avoids
 recursively visiting an unchanged frozen subtree on each scene matrix update.
 It does not alter rendering quality, geometry, materials, lights, culling, physics,

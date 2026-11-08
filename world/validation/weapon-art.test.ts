@@ -3,8 +3,8 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { buildCharacter, CharacterAnimator } from '../src/character.ts';
-import { attachExplorerRifle } from '../src/weaponArt.ts';
+import { buildCharacter, CharacterAnimator } from './fixtures/legacy-player/character.ts';
+import { attachExplorerRifle } from '../src/weapons/weaponArt.ts';
 async function asset() {
   const b = await readFile(new URL('../../assets/weapons/glb/01_Dawn_AR.glb', import.meta.url));
   return new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '');

@@ -4,10 +4,10 @@ import * as THREE from 'three';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 import { sourceNodeHandles } from './source-node-detach.fixture';
 import { readFileSync } from 'node:fs';
-import { REGIONS, mergeLayouts } from '../src/regions';
-import { makeWildernessSpawns } from '../src/combat';
-import { authorEncounters } from '../src/authoredEncounters';
-import { makeMinibossSpawns } from '../src/minibosses';
+import { REGIONS, mergeLayouts } from '../src/map/regions';
+import { makeWildernessSpawns } from '../src/combat/combat';
+import { authorEncounters } from '../src/story/authoredEncounters';
+import { makeMinibossSpawns } from '../src/combat/minibosses';
 
 test('detaching consumed source COLLISION/MARKERS preserves production capsule, gate, target and reset paths',async()=>{
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT});const {world:w,window}=h;
@@ -16,7 +16,7 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
   const sourceRoots=sources.handles.length?sources.handles.map(h=>({name:h.node.name})):receipt?.roots;
   assert.ok(sourceRoots,'production detach must expose a numeric receipt');
   assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,5);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,5);
-  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.objects,258); /* original 255 plus three dedicated structural repair proxies */}
+  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,259); /* original 255 plus four dedicated structural repair proxies */}
   // All original region-space JSON anchors must retain their authoritative world transform.
   const expectedLayout=mergeLayouts(REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))})));
   for(const marker of expectedLayout.markers){const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}
@@ -68,7 +68,7 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
    }
    (window.document.getElementById('start') as HTMLElement).click();window.confirm=()=>true;
    state(['summon_circle','kikyo_banner_1']);key('KeyR');assert.equal(w.done.size,0);
-   for(const id of ['Fort_Tower_Drums','Kyoto_Hillside_Foundations','Winter_House_Foundations'])assert.equal(w.colliders.find((c:any)=>c.name===`COL_${id}`)?.enabled,true,'permanent structural supports survive progress reset');
+   for(const id of ['Fort_Tower_Drums','Kyoto_Hillside_Foundations','Winter_House_Foundations','Winter_Ruin_Shells'])assert.equal(w.colliders.find((c:any)=>c.name===`COL_${id}`)?.enabled,true,'permanent structural supports survive progress reset');
    assert.equal(w.colliders.find((c:any)=>c.name==='COL_Seam_west_Gate').enabled,true);assert.equal(targets.find(t=>t.userData.target==='kikyo_banner_1')!.visible,true);
    return{paths,hits,resetPosition:w.player.pos.toArray()};
   };

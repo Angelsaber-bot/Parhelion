@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { BOSSES } from '../src/combat.ts';
-import { BOSS_TITLES, titleLines } from '../src/bossTitleCard.ts';
-import { BOSS_HAZARDS } from '../src/bossHazards.ts';
+import { BOSSES } from '../src/combat/combat.ts';
+import { BOSS_TITLES, titleLines } from '../src/combat/bossTitleCard.ts';
+import { BOSS_HAZARDS } from '../src/combat/bossHazards.ts';
 
 test('every era boss has a rise, act and fall card; the act card names its arena mechanic', () => {
   assert.deepEqual(Object.keys(BOSS_TITLES).sort(), BOSSES.map(b => b.id).sort());

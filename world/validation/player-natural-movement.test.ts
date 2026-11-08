@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
-import { ShoulderAim } from '../src/aim.ts';
+import { SkinnedCharacterAnimator } from '../src/player/skinnedCharacter.ts';
+import { ShoulderAim } from '../src/player/aim.ts';
 
 const base = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: 0 };
 type Rig = Awaited<ReturnType<typeof playerFixture>>['rig'];

@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync, unlinkSync } from 'node:fs';
 import * as THREE from 'three';
-import { KYOTO_MATERIAL_PROFILES, kyotoMaterialProfile } from '../src/kyotoMaterialProfiles.ts';
-import { kyotoToonMaterial } from '../src/kyotoMaterials.ts';
-import { toonMaterial } from '../src/look.ts';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { KYOTO_MATERIAL_PROFILES, kyotoMaterialProfile } from '../src/environment/kyotoMaterialProfiles.ts';
+import { kyotoToonMaterial } from '../src/environment/kyotoMaterials.ts';
+import { toonMaterial } from '../src/rendering/look.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { Batch, BOX, T } from '../tools/gen/geo.ts';
 import { writeRegion } from '../tools/gen/export.ts';
 

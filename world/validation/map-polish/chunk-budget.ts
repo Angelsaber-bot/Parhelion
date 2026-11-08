@@ -5,8 +5,8 @@ import {readFileSync,writeFileSync} from 'node:fs';
 import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../../src/glb.ts';
-import {chunkMesh,isStaticArtEligible} from '../../src/chunk.ts';
+import {regionLoader,bakeQuantized} from '../../src/rendering/glb.ts';
+import {chunkMesh,isStaticArtEligible} from '../../src/rendering/chunk.ts';
 
 export async function countPreparedArt(directory:string,region:string){
   const bytes=readFileSync(resolve(directory,`world_${region}.glb`));

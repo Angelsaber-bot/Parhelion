@@ -11,7 +11,7 @@ for(const hz of[30,60,120])test(`historical admitted support ends immediately an
  }finally{geometry.dispose();}
 });
 
-import {Player as GeneralPlayer} from '../src/player';
+import {Player as GeneralPlayer} from '../src/player/player';
 for(const hz of[30,60,120])test(`live general support requires real prior ground at ${hz}Hz`,()=>{
  const geometry=new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2).rotateZ(.05),colliders=[{name:'slope',enabled:true,bvh:new MeshBVH(geometry)}],p=new GeneralPlayer(colliders,-10),dt=1/hz,idle={x:0,z:0,jump:false,sprint:false},walk={...idle,x:-1};const diagnostics=()=>(p as any).evadeSupport.diagnostics;
  try{

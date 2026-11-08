@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, type ProgressStorage } from '../src/progress.ts';
-import { VALLEY_STORY as V, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from '../src/valleyStory.ts';
+import { WorldProgress, WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, type ProgressStorage } from '../src/core/progress.ts';
+import { VALLEY_STORY as V, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from '../src/story/valleyStory.ts';
 class Storage implements ProgressStorage {
  values=new Map<string,string>(); getItem(k:string){return this.values.get(k)??null;} setItem(k:string,v:string){this.values.set(k,v);} removeItem(k:string){this.values.delete(k);}
 }

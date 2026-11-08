@@ -2,11 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { readFileSync } from 'node:fs';
-import { SkinnedCharacterAnimator, loadSkinnedCharacter } from '../src/skinnedCharacter.ts';
-import { attachExplorerRifle } from '../src/weaponArt.ts';
+import { SkinnedCharacterAnimator, loadSkinnedCharacter } from '../src/player/skinnedCharacter.ts';
+import { attachExplorerRifle } from '../src/weapons/weaponArt.ts';
 import { playerFixture } from './player-fixture.ts';
 import { MeshBVH } from 'three-mesh-bvh';
-import { ShoulderAim } from '../src/aim.ts';
+import { ShoulderAim } from '../src/player/aim.ts';
 
 const base = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: 0 };
 test('default player is a real skeleton with anatomical laterality and preserved UV1/alpha materials', async () => {

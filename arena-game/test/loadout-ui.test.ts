@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import { Hud } from '../src/hud.ts';
+import { Hud } from '../src/ui/hud.ts';
 import { newPlayer } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, WEAPONS, weaponIndex, type Loadout } from '../shared/content.ts';
-import { displayWeaponName, LOADOUT_KEY, LoadoutStore, loadoutCards, sanitizedSkins, weaponHud, weaponStats } from '../src/loadout.ts';
+import { displayWeaponName, LOADOUT_KEY, LoadoutStore, loadoutCards, sanitizedSkins, weaponHud, weaponStats } from '../src/ui/loadout.ts';
 import { SettingsStore } from '../../shared-client/settings.ts';
 import { readFileSync } from 'node:fs';
 import { setLanguage } from '../../shared-client/i18n.ts';
@@ -118,7 +118,7 @@ describe('lobby and combat equipment presentation', () => {
   it('ships three HUD slots, an accessible loadout panel, and submits selection through shared JoinOptions', () => {
     const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
-    const armory = readFileSync(new URL('../src/armory.ts', import.meta.url), 'utf8');
+    const armory = readFileSync(new URL('../src/weapons/armory.ts', import.meta.url), 'utf8');
     expect((html.match(/class="wslot"/g) ?? []).length).toBe(3);
     expect(html).toContain('aria-label="出战配装"');
     expect(main).toContain('loadout: loadoutStore.value');

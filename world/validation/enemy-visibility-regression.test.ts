@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
 import * as THREE from 'three';
-import { WorldCombatState, BOSSES, COMBAT } from '../src/combat.ts';
-import { EnemyVisuals, enemyModel } from '../src/enemyVisuals.ts';
+import { WorldCombatState, BOSSES, COMBAT } from '../src/combat/combat.ts';
+import { EnemyVisuals, enemyModel } from '../src/combat/enemyVisuals.ts';
 import { parseLocalGlb } from './player-fixture.ts';
-import type { Layout } from '../src/types.ts';
+import type { Layout } from '../src/core/types.ts';
 registerHooks({ load(url, context, nextLoad) { return url.endsWith('.css') ? { format: 'module', source: '', shortCircuit: true } : nextLoad(url, context); } });
 class Element {
   id=''; className=''; textContent=''; innerHTML=''; hidden=false; title=''; width=0; height=0;
@@ -19,7 +19,7 @@ class Element {
 const body=new Element();
 (globalThis as any).document={documentElement:{lang:'en'},createElement:()=>new Element(),body,getElementById:()=>null};
 (globalThis as any).window={setTimeout:()=>1,addEventListener(){}};
-const {WorldCombat}=await import('../src/combatView.ts');
+const {WorldCombat}=await import('../src/combat/combatView.ts');
 const positions=[[-720,0],[720,0],[0,-720],[0,720]];
 const layout={world:{seed:537,waterLevel:1},areas:[],paths:[],markers:BOSSES.map((b,i)=>({id:b.id,type:'enemy',label:b.id,p:[positions[i][0],2,positions[i][1]]}))} as unknown as Layout;
 const make=()=>{

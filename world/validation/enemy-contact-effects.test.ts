@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { EnemyContactEffects, ENEMY_CONTACT_EFFECT_BUDGET } from '../src/enemyContactEffects';
-import type { CombatEvent } from '../src/combat';
+import { EnemyContactEffects, ENEMY_CONTACT_EFFECT_BUDGET } from '../src/combat/enemyContactEffects';
+import type { CombatEvent } from '../src/combat/combat';
 type Contact=Extract<CombatEvent,{type:'attackContact'}>;
 const event=(attack:Contact['attack']='thrust',sequence=1):Contact=>({type:'attackContact',id:'warden',storyPattern:'echo-warden',attack,sequence,origin:{x:4,y:0,z:3},target:{x:4,y:0,z:6},radius:attack==='thrust'?.95:attack==='sweep'?3.5:2.8,...(attack==='thrust'?{length:7.5}:{})});
 const surface={ground:(x:number,z:number)=>({point:{x,y:0,z}}),cast:()=>null};

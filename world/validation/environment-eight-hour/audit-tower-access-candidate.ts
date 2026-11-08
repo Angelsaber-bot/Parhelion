@@ -1,5 +1,5 @@
 /** Isolated component candidate; does not mutate main colliders or shipped assets. */
-import assert from'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import path from'node:path';import * as THREE from'three';import{MeshBVH}from'three-mesh-bvh';import{Player}from'../../src/player';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{buildTowerAccess}from'../../tools/gen/valley/tower-access';
+import assert from'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import path from'node:path';import * as THREE from'three';import{MeshBVH}from'three-mesh-bvh';import{Player}from'../../src/player/player';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{buildTowerAccess}from'../../tools/gen/valley/tower-access';
 const out=process.argv[2];assert(out);await mkdir(out,{recursive:true});const h=await bootWorldWithoutGpu({deterministic:true,worldRoot:process.env.WORLD_REVIEW_ROOT}),w=h.world;
 try{
  assert(!w.scene.getObjectByName("Tower_West_Access"),"Use WORLD_REVIEW_ROOT with original Alpha fixture; do not layer candidate on shipped access");

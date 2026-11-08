@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { FarPropCuller, FAR_PROP_LAYER, farPropDistance } from '../src/farPropCuller.ts';
+import { FarPropCuller, FAR_PROP_LAYER, farPropDistance } from '../src/rendering/farPropCuller.ts';
 
 const prop = (x: number, radius: number) => {
   const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius), new THREE.MeshBasicMaterial());

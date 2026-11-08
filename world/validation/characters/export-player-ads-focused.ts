@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {playerFixture} from '../player-fixture.ts';
-import {SkinnedCharacterAnimator as ProductionAnimator} from '../../src/skinnedCharacter.ts';
+import {SkinnedCharacterAnimator as ProductionAnimator} from '../../src/player/skinnedCharacter.ts';
 import {SkinnedCharacterAnimator as BeforeAnimator} from '../fixtures/player-pre-ads-pole.ts';
 const SkinnedCharacterAnimator=process.argv.includes('--baseline')?BeforeAnimator:ProductionAnimator;
 import {RuntimePoseExporter} from './export-runtime-pose.ts';

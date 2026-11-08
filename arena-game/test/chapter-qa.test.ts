@@ -5,7 +5,7 @@ import { RoomCore } from '../shared/room.ts';
 import { Match } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN, type Input } from '../shared/sim.ts';
-import { startOffline } from '../src/session.ts';
+import { startOffline } from '../src/network/session.ts';
 import { localizeText, setLanguage } from '../../shared-client/i18n.ts';
 
 afterEach(() => { setLanguage('zh'); vi.useRealTimers(); });

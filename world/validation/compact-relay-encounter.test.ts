@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {getCompactRelayEncounterSpec} from '../src/compactRelayEncounter';
-import {COMPACT_RELAY_SITE} from '../src/compactRelaySitesData';
-import {STORY_ENCOUNTER_LIMITS} from '../src/storyEncounters';
-import {ARENA_TRAINING_HREF,arenaTrainingBriefing} from '../src/arenaTrainingBridge';
+import {getCompactRelayEncounterSpec} from '../src/story/compactRelayEncounter';
+import {COMPACT_RELAY_SITE} from '../src/story/compactRelaySitesData';
+import {STORY_ENCOUNTER_LIMITS} from '../src/story/storyEncounters';
+import {ARENA_TRAINING_HREF,arenaTrainingBriefing} from '../src/story/arenaTrainingBridge';
 test('two native roles match authored sockets with bounded offsets and no stat or reward overrides',()=>{
  const s=getCompactRelayEncounterSpec(); assert.equal(s.id,'compact_relay_training');
  assert.deepEqual(s.actors.map(a=>a.role),['musketeer','breaker']);
@@ -29,7 +29,7 @@ test('runtime sampled site height is used and malformed geometry fails closed',(
  assert.throws(()=>getCompactRelayEncounterSpec([0,NaN,0],[]));assert.throws(()=>getCompactRelayEncounterSpec([0,1,2],[[0,1,2]]));
 });
 test('exact relay ID admits ordinary enemies; cancellation is not a kill and retry cannot alias targets',async()=>{
- const {WorldCombatState}=await import('../src/combat');const {StoryEncounterDirector}=await import('../src/storyEncounters');
+ const {WorldCombatState}=await import('../src/combat/combat');const {StoryEncounterDirector}=await import('../src/story/storyEncounters');
  const state=new WorldCombatState([],[]),director=new StoryEncounterDirector(),spec=getCompactRelayEncounterSpec();
  const [x,y,z]=COMPACT_RELAY_SITE.entry;
  const context={state,player:{x,y,z},playable:true,place:(x:number,z:number)=>({x,y:spec.anchor.y,z})};

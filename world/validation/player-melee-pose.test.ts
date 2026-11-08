@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import {playerFixture,parseLocalGlb} from './player-fixture';
-import {SkinnedCharacterAnimator} from '../src/skinnedCharacter';
-import {attachExplorerBlade,REFRACT_GRIP,REFRACT_PALM_OFFSET} from '../src/playerBladeArt';
-import {MELEE_BEATS,PlayerMelee} from '../src/playerMelee';
+import {SkinnedCharacterAnimator} from '../src/player/skinnedCharacter';
+import {attachExplorerBlade,REFRACT_GRIP,REFRACT_PALM_OFFSET} from '../src/weapons/playerBladeArt';
+import {MELEE_BEATS,PlayerMelee} from '../src/player/playerMelee';
 const base={speed:0,onGround:true,swimming:false,vy:0,moveYaw:0};
 const v=()=>new THREE.Vector3();
 async function fixture(){const f=await playerFixture();const blade=attachExplorerBlade(f.rig,()=>parseLocalGlb(new URL('../../assets/weapons/glb/06_Refract_Blade.glb',import.meta.url)));await blade.ready;return{...f,blade,dispose(){blade.dispose();f.dispose();}};}

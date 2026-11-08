@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from '../src/trackedStoryNavigation';
-import { GATES } from '../src/regions';
+import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from '../src/story/trackedStoryNavigation';
+import { GATES } from '../src/map/regions';
 
 test('a local pin transitioning to a remote act falls back to the original story until the actual gate opens', () => {
   const done = new Set<string>(), local = [10, 2, 30] as const;

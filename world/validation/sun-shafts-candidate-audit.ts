@@ -2,7 +2,7 @@
 import assert from'node:assert/strict';import*as THREE from'three';import{pathToFileURL}from'node:url';import{resolve}from'node:path';import{writeFileSync}from'node:fs';import{createHash}from'node:crypto';
 import{EffectComposer}from'three/examples/jsm/postprocessing/EffectComposer.js';import{OutputPass}from'three/examples/jsm/postprocessing/OutputPass.js';
 const [baseRoot,candidateRoot,out]=process.argv.slice(2);assert.ok(baseRoot&&candidateRoot&&out,'base root, candidate root, output required');
-const base=await import(pathToFileURL(resolve(baseRoot,'src/fx.ts')).href),candidate=await import(pathToFileURL(resolve(candidateRoot,'src/fx.ts')).href);
+const base=await import(pathToFileURL(resolve(baseRoot,'src/fx.ts')).href),candidate=await import(pathToFileURL(resolve(candidateRoot,'src/rendering/fx.ts')).href);
 const a=base.makeSunShafts(),b=candidate.makeSunShafts();assert.equal(a.pass.material.fragmentShader,b.pass.material.fragmentShader);assert.equal(a.pass.material.vertexShader,b.pass.material.vertexShader);assert.equal(b.pass.enabled,false);assert.equal(b.pass.uniforms.strength.value,0);
 const camera=new THREE.PerspectiveCamera(65,16/9,.1,6000);camera.position.set(120,12,-680);camera.updateMatrixWorld();const directions=new Set<THREE.Vector3>(),getDirection=camera.getWorldDirection;camera.getWorldDirection=function(v){directions.add(v);return getDirection.call(this,v)};
 let samples=0;const strengths:number[]=[];const input=[-1,0,.1,.100001,.105,.108,.109,.11,.15,.3,.6,1];

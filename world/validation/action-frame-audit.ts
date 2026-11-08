@@ -4,9 +4,9 @@ import vm from 'node:vm';
 import { transformSync } from 'esbuild';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player';
-import { WorldActions } from '../src/worldActions';
-import { WorldCombatState, COMBAT, PERFECT_EVADE } from '../src/combat';
+import { Player } from '../src/player/player';
+import { WorldActions } from '../src/combat/worldActions';
+import { WorldCombatState, COMBAT, PERFECT_EVADE } from '../src/combat/combat';
 
 export const AUDIT_FPS = [27, 30, 60, 120] as const;
 const STEP = 1 / 120;

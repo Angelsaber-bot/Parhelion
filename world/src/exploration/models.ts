@@ -4,7 +4,7 @@
  * are small groups that the runtime culls by distance.
  */
 import * as THREE from 'three';
-import { SiteArt } from '../campaignSites';
+import { SiteArt } from '../story/campaignSites';
 import type { ChestTier } from './catalog';
 import type { RegionId } from '../settlements/types';
 

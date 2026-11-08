@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync, unlinkSync } from 'node:fs';
 import * as THREE from 'three';
-import { WINTER_MATERIAL_PROFILES, winterMaterialProfile } from '../src/winterMaterialProfiles.ts';
-import { winterToonMaterial } from '../src/winterMaterials.ts';
-import { toonMaterial } from '../src/look.ts';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { WINTER_MATERIAL_PROFILES, winterMaterialProfile } from '../src/environment/winterMaterialProfiles.ts';
+import { winterToonMaterial } from '../src/environment/winterMaterials.ts';
+import { toonMaterial } from '../src/rendering/look.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { Batch, BOX, T } from '../tools/gen/geo.ts';
 import { writeRegion } from '../tools/gen/export.ts';
 

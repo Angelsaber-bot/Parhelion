@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, enemyAttackRadius, distanceXZ, isMusketeer, enemyAttackTiming, type CombatTerrain, type Point3 } from '../src/combat.ts';
-import { MINIBOSSES, makeMinibossSpawns } from '../src/minibosses.ts';
+import { WorldCombatState, enemyAttackRadius, distanceXZ, isMusketeer, enemyAttackTiming, type CombatTerrain, type Point3 } from '../src/combat/combat.ts';
+import { MINIBOSSES, makeMinibossSpawns } from '../src/combat/minibosses.ts';
 const terrain: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const flat = (x: number, z: number) => ({ x, y: 0, z });
 const advance = (s: WorldCombatState, seconds: number, p: Point3, t = terrain) => {
@@ -100,7 +100,7 @@ test('every elite has a rarer signature move with its own tell, dodge and longer
 });
 
 test('at half health each elite rallies once: a punish opening, then faster signatures and footwork', async () => {
-  const { ELITE_RALLY, signatureCadence } = await import('../src/minibosses.ts');
+  const { ELITE_RALLY, signatureCadence } = await import('../src/combat/minibosses.ts');
   for (const def of MINIBOSSES) {
     const sig = def.profile.signature!;
     const s = new WorldCombatState([{ id: def.id, miniboss: def.id, kind: def.kind, p: flat(0, 0) }], []), e = s.enemies[0];

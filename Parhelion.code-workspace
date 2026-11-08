@@ -1,0 +1,27 @@
+{
+  "folders": [
+    {
+      "name": "Parhelion · 幻日（项目展示）",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.DS_Store": true,
+      "**/.wrangler": true,
+      "**/.scratch": true,
+      "**/_local": true,
+      "**/.idea": true,
+      "**/.vscode": true,
+      "**/.claude": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/_local": true
+    },
+    "explorer.compactFolders": false
+  }
+}

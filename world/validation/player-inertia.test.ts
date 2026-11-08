@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { PlayerInertia } from '../src/playerInertia.ts';
+import { PlayerInertia } from '../src/player/playerInertia.ts';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator } from '../src/player/skinnedCharacter.ts';
 const ground = { onGround: true, swimming: false, vy: 0, speed: 0, turnRate: 0, lockedUpperBody: false };
 test('landing absorption is finite, no-bounce and rate-independent at the same contact ages', () => {
  const samples = [30,60,120].map(hz => {

@@ -1,8 +1,8 @@
 /** Offline visual/geometry audit of actual runtime settlement builders; not a browser capture. */
 import * as THREE from 'three';
-import {createCampaignSites,CAMPAIGN_SITE_LOCAL} from '../../src/campaignSites.ts';
-import {createEraStoryScene} from '../../src/eraStoryScenes.ts';
-import {createValleyStoryScene} from '../../src/valleyStoryScene.ts';
+import {createCampaignSites,CAMPAIGN_SITE_LOCAL} from '../../src/story/campaignSites.ts';
+import {createEraStoryScene} from '../../src/story/eraStoryScenes.ts';
+import {createValleyStoryScene} from '../../src/environment/valleyStoryScene.ts';
 import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {createSettlementNpcs} from '../../src/settlements/npcs.ts';

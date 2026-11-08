@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { nearbyElite } from '../src/eliteNavigation.ts';
-import { WorldCombatState } from '../src/combat.ts';
+import { nearbyElite } from '../src/combat/eliteNavigation.ts';
+import { WorldCombatState } from '../src/combat/combat.ts';
 const enemy = () => new WorldCombatState([{id:'elite',kind:'crystal',miniboss:'elite_valley_sentinel',p:{x:100,y:0,z:0}}],[]).enemies[0];
 test('elite hint uses real placed location without depending on combat activation',()=>{
  const e=enemy();assert.equal(e.active,false);

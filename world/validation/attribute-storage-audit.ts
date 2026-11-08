@@ -1,5 +1,5 @@
 /** Read-only authored normalized color/UV storage audit. No runtime change. */
-import*as THREE from'three';import{readFileSync,writeFileSync}from'node:fs';import{regionLoader,bakeQuantized}from'../src/glb';import{REGIONS}from'../src/regions';
+import*as THREE from'three';import{readFileSync,writeFileSync}from'node:fs';import{regionLoader,bakeQuantized}from'../src/rendering/glb';import{REGIONS}from'../src/map/regions';
 type A=THREE.BufferAttribute|THREE.InterleavedBufferAttribute;
 const array=(a:A)=>(a as THREE.InterleavedBufferAttribute).isInterleavedBufferAttribute?(a as THREE.InterleavedBufferAttribute).data.array:(a as THREE.BufferAttribute).array;
 const bytes=(s:Set<ArrayBufferLike>)=>[...s].reduce((n,b)=>n+b.byteLength,0);const report=[];

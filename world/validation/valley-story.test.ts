@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { VALLEY_STORY as V, getValleyStoryState as state, getValleyStoryGuide as guide, interactValleyStory as act } from '../src/valleyStory';
+import { VALLEY_STORY as V, getValleyStoryState as state, getValleyStoryGuide as guide, interactValleyStory as act } from '../src/story/valleyStory';
 
 test('short arc: meet, restore, report, complete, preserving original HQ interaction', () => {
   const done = new Set<string>();

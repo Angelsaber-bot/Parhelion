@@ -13,14 +13,14 @@ User reports continuous 27–40 FPS after entering the published a11f349 build, 
 | Path | SHA-256 |
 |---|---|
 | `world/src/main.ts` | `360b2e5514e54a7cfd9ce5cf88883d4b4962fdbd7abe9f87dc42d39af3a53e0d` |
-| `world/src/chunk.ts` | `9708a6498380e7f9b1d1e71051518860c6cc6734536732d0e5045f20da1394ab` |
-| `world/src/fx.ts` | `963dd636a43e8389a1694c06e80557dab4643a8e3d64871e2fd00822f202d1d0` |
-| `world/src/enemyVisuals.ts` | `c989ecb853b57d0ec89dfba9e95f35458120497ccea853dae343302ffae9f6e9` |
-| `world/src/valleySentinel.ts` | `0d576e3215287a828caa85215dc27c342f10a9ddb2c74429fa42f3216648693a` |
+| `world/src/rendering/chunk.ts` | `9708a6498380e7f9b1d1e71051518860c6cc6734536732d0e5045f20da1394ab` |
+| `world/src/rendering/fx.ts` | `963dd636a43e8389a1694c06e80557dab4643a8e3d64871e2fd00822f202d1d0` |
+| `world/src/combat/enemyVisuals.ts` | `c989ecb853b57d0ec89dfba9e95f35458120497ccea853dae343302ffae9f6e9` |
+| `world/src/combat/valleySentinel.ts` | `0d576e3215287a828caa85215dc27c342f10a9ddb2c74429fa42f3216648693a` |
 | `world/validation/input.test.ts` | `dece7320696a38f98301283100f0b41e26dfe8c53b705b011927b7070dce6629` |
 | `world/validation/progress-reset.test.ts` | `d201f43709817d46e0c5e1c14cf491eb1d66bf28e365cdfae358d89bb31c53ea` |
 
-The only runtime TypeScript difference versus a5b3290 is `world/src/combatView.ts` hit feedback; index.html also retains the HUD layout exception below. Its appended behavioral test checks impact position, bounded geometry/scale/lifetime, camera alignment, no body shell, no miss impact, and repeat-safe disposal. Existing enemy/boss/terrain tests cover retained gameplay fixes. Compile/build and CPU tests do not establish browser GPU performance; deployment and same-device scene/settings comparison remain pending.
+The only runtime TypeScript difference versus a5b3290 is `world/src/combat/combatView.ts` hit feedback; index.html also retains the HUD layout exception below. Its appended behavioral test checks impact position, bounded geometry/scale/lifetime, camera alignment, no body shell, no miss impact, and repeat-safe disposal. Existing enemy/boss/terrain tests cover retained gameplay fixes. Compile/build and CPU tests do not establish browser GPU performance; deployment and same-device scene/settings comparison remain pending.
 
 ## Retained HUD layout correction
 

@@ -1,5 +1,5 @@
 /** Independent production ADS comparison against frozen pre-change source. Native rigs; no GPU claim. */
-import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{playerFixture}from'../player-fixture';import{SkinnedCharacterAnimator as Baseline}from'../fixtures/player-pre-ads-pole';import{SkinnedCharacterAnimator as Candidate}from'../../src/skinnedCharacter';
+import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{playerFixture}from'../player-fixture';import{SkinnedCharacterAnimator as Baseline}from'../fixtures/player-pre-ads-pole';import{SkinnedCharacterAnimator as Candidate}from'../../src/player/skinnedCharacter';
 test('adaptive ADS pole preserves gun and non-right-arm motion through aim/fire/pitch boundaries',async t=>{
  const a=await playerFixture(),b=await playerFixture();
  try{for(const hz of[30,60,120]){

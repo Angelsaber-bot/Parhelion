@@ -1,10 +1,11 @@
-/** Hand-built, period-inspired Moscow silhouettes. Visual-only: navigation proxies remain in build.ts. */
+/** Hand-built, period-inspired Moscow silhouettes. Ruined shells share their actual geometry with collision. */
 import * as THREE from 'three';
 import { Batch, BOX, T } from '../geo.js';
 import type { Piece } from '../structures.js';
 const art = new Map<string,Batch>();
 export const architectureManifest: { id:number; family:string; burnt:boolean; p:number[]; size:number[] }[]=[];
-export function resetArchitecture(){art.clear();architectureManifest.length=0;}
+export const ruinCollisionManifest: {id:number;p:number[];size:number[];ry:number}[]=[];
+export function resetArchitecture(){art.clear();architectureManifest.length=0;ruinCollisionManifest.length=0;}
 export function architecturePieces():Piece[]{return [...art.values()].map(batch=>({name:batch.name,material:batch.material,batch,outline:true,userData:{winterArchitecture:true,...(batch.name==='Moscow_WinterTimber'?{architectureManifest}: {})}}));}
 function visualBatch(source:Batch,color:string){
  let mat='M_WinterPlaster';
@@ -48,12 +49,21 @@ function window(add:ReturnType<typeof local>,x:number,y:number,z:number,w=.85,h=
  add(BOX,C.trim,x,y,z+.09,.065,h,.08);add(BOX,C.trim,x,y+.12,z+.09,w,.065,.08);
  add(BOX,'#899b9f',x-w*.2,y+h*.22,z+.065,w*.31,h*.3,.03);
 }
-export function winterHouse(b:Batch,x:number,y:number,z:number,ry:number,w:number,d:number,h:number,burnt:boolean,id:number){
- const a=local(b,x,y,z,ry),family=id%5;
+export function winterHouse(b:Batch,x:number,y:number,z:number,ry:number,w:number,d:number,h:number,burnt:boolean,id:number,ruinCollision?:Batch){
+ const paint=local(b,x,y,z,ry),family=id%5,ruin=burnt&&(family===0||family===4),root=T(x,y,z,ry);
+ // A full-height box incorrectly blocked shots through the burned-away end walls
+ // and supplied an invisible floor at the old roof height. Reuse the authored
+ // solid plinth, surviving walls, posts and rafters instead of a second design.
+ const a:ReturnType<typeof local>=(g,c,px,py,pz,sx=1,sy=1,sz=1,angle=0,rx=0,rz=0)=>{
+  const painted=paint(g,c,px,py,pz,sx,sy,sz,angle,rx,rz);
+  if(ruin&&ruinCollision)ruinCollision.addCol(g,root.clone().multiply(T(px,py,pz,angle,sx,sy,sz,rx,rz)));
+  return painted;
+ };
  architectureManifest.push({id,family:['timber_izba','merchant_classical','service_courtyard','shop_front','warehouse'][family],burnt,p:[x,y,z],size:[w,h,d]});
+ if(ruin&&ruinCollision)ruinCollisionManifest.push({id,p:[x,y,z],size:[w,h,d],ry});
  const masonry=['#c3ae8d','#d5bfa0','#c7d1ca','#bc9b87'][id%4];
  a(BOX,'#786d65',0,.25,0,w+.25,.5,d+.25);
- if(burnt && (family===0||family===4)){
+ if(ruin){
   // Uneven surviving wall panels, exposed vertical posts and pairs of pitched rafters.
   a(BOX,'#544641',0,.9,0,w,1.3,d);
   for(const s of [-1,1]){a(BOX,'#65504a',s*(w/2-.16),h*.55,0,.32,h*.9,d);for(const t of [-1,1])a(BOX,'#322e31',s*(w/2-.13),h/2,t*(d/2-.14),.24,h,.24);}

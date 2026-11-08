@@ -1,8 +1,8 @@
 import {expect,it} from 'vitest';
 import * as THREE from 'three';
 import {SIGNATURE_SKINS} from '../shared/signatureSkins.ts';
-import {skinEffect} from '../src/skinEffects.ts';
-import {ArenaCombatEffects} from '../src/combatEffects.ts';
+import {skinEffect} from '../src/cosmetics/skinEffects.ts';
+import {ArenaCombatEffects} from '../src/rendering/combatEffects.ts';
 it('every current skin has a complete theme and unknown saved IDs fall back safely',()=>{
  expect(skinEffect('removed')).toBeUndefined();
  for(const s of SIGNATURE_SKINS){const p=skinEffect(s.id)!;expect(p.color).toBe(s.accent);expect(p.life).toBeLessThan(.4);expect(p.spread).toBeGreaterThan(0);}

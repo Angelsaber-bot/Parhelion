@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { JSDOM } from 'jsdom';
-import { WorldActions, type WorldActionContext } from '../src/worldActions';
-import { actionPresentation, createActionHud } from '../src/actionHud';
-import { PlayerMelee } from '../src/playerMelee';
+import { WorldActions, type WorldActionContext } from '../src/combat/worldActions';
+import { actionPresentation, createActionHud } from '../src/ui/actionHud';
+import { PlayerMelee } from '../src/player/playerMelee';
 function fixture() {
  const context:WorldActionContext={enabled:true,grounded:true,armed:true,bladeReady:true,position:{x:0,y:0,z:0},yaw:0,moveX:0,moveZ:0,identity:null};
  const actions=new WorldActions({scene:new THREE.Scene(),context:()=>context,strike:()=>({damage:0,hits:[],kills:[]}),defense:()=>{},startPose:()=>true,cancelPoses:()=>{},toast:()=>{},reducedEffects:()=>false});return {context,actions};

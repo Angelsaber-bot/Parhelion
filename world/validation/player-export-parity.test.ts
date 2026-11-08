@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import asset from '../src/generated/player-mesh.json';
+import asset from './fixtures/legacy-player/player-mesh.json';
 
 const publicGlb = path.resolve(import.meta.dirname, '../public/assets/character_explorer.glb');
 test('authored Blender GLB and quantized runtime agree on every joint triangle count', () => {
@@ -22,8 +22,8 @@ test('authored Blender GLB and quantized runtime agree on every joint triangle c
 });
 
 import * as THREE from 'three';
-import { buildCharacter } from '../src/character';
-import { deformUniformCloth } from '../src/playerMesh';
+import { buildCharacter } from './fixtures/legacy-player/character';
+import { deformUniformCloth } from './fixtures/legacy-player/playerMesh';
 
 test('short uniform deformation is reversible, finite and never accumulates previous frame offsets', () => {
   const rig = buildCharacter(new THREE.MeshStandardMaterial({ vertexColors: true }));

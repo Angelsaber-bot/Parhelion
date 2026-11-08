@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const source = resolve(process.argv[2] ?? '..'), output = process.argv[3];
 const { playerFixture } = await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
+const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
 const rows:any[] = [];
 const range=(xs:number[])=>Math.max(...xs)-Math.min(...xs);
 const correlation=(xs:number[],ys:number[])=>{const x=xs.reduce((a,b)=>a+b,0)/xs.length,y=ys.reduce((a,b)=>a+b,0)/ys.length;

@@ -7,16 +7,16 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { CharacterKit } from '../src/characters/characterKit.ts';
 import { CHARACTER_KITS } from '../src/characters/catalog.ts';
-import { KitCompanion } from '../src/kitCompanion.ts';
+import { KitCompanion } from '../src/companions/kitCompanion.ts';
 import { readCharacter } from './characters/inspect.ts';
-import type { Layout } from '../src/types.ts';
-import type { Collider } from '../src/player.ts';
+import type { Layout } from '../src/core/types.ts';
+import type { Collider } from '../src/player/player.ts';
 registerHooks({load(url,context,next){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:next(url,context);}});
 class Element {id='';className='';textContent='';innerHTML='';hidden=false;title='';style:Record<string,string>={};children:Element[]=[];selectors=new Map<string,Element>();classList={add(){},remove(){}};append(...v:Element[]){this.children.push(...v);}remove(){}querySelector(s:string){if(!this.selectors.has(s))this.selectors.set(s,new Element());return this.selectors.get(s)!;}}
 const body=new Element(),crosshair=new Element();
 (globalThis as any).document={documentElement:{lang:''},createElement:()=>new Element(),body,getElementById:(id:string)=>id==='crosshair'?crosshair:body.children.find(e=>e.id===id)};
 (globalThis as any).window={setTimeout:()=>1,addEventListener(){}};
-const {WorldCombat}=await import('../src/combatView.ts');
+const {WorldCombat}=await import('../src/combat/combatView.ts');
 async function fixture(kit:'musashi'|'blackbeard'='musashi'){
   const ranged=kit==='blackbeard', range=ranged?12:3.5, damage=ranged?12:9, kind=ranged?'ranged':'melee';
   const colliders:Collider[]=[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2))}],player=new THREE.Vector3();

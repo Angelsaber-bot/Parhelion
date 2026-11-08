@@ -26,7 +26,7 @@ for(const build of builders){
   for(const [x,y,z]of positions){const p=new THREE.Vector3(x,y,z);assert.ok(!solidTrees.some(b=>(b.closestPointToPoint(p)?.distance??Infinity)<.35),`socket ${x},${y},${z} has less than 0.35m physical surface clearance`);}
  });
 }
-import {Player} from '../src/player.ts';
+import {Player} from '../src/player/player.ts';
 const portals:[()=>ReturnType<typeof buildAlphaSettlement>,string,number,number][]=[
  [buildAlphaSettlement,'residence',0,-1],[buildBritainSettlement,'forge',-10,6],[buildBlackSailSettlement,'customs hall',0,5],[buildWinterSettlement,'aid house',-8,4],[buildKyotoSettlement,'inn',8,4],[buildKyotoSettlement,'swordsmith',-10,3],
 ];

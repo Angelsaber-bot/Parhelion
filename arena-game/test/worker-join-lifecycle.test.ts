@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from 'vitest';
-import { joinOnline } from '../src/session.ts';
+import { joinOnline } from '../src/network/session.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 
 class Socket {

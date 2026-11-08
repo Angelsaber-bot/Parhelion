@@ -2,7 +2,7 @@ import {test}from'node:test';
 import assert from'node:assert/strict';
 import {readFileSync}from'node:fs';
 import * as THREE from'three';
-import {regionLoader,bakeQuantized}from'../src/glb.ts';
+import {regionLoader,bakeQuantized}from'../src/rendering/glb.ts';
 const bytes=readFileSync(new URL('../public/assets/world_britain.glb',import.meta.url));
 const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
 bakeQuantized(gltf.scene);gltf.scene.updateMatrixWorld(true);

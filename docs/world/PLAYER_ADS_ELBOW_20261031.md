@@ -4,7 +4,7 @@ The right elbow now uses a **wrist-capped partial correction** during level/upwa
 
 The correction is `-smoothstep(adsPose, 0, .8) * smoothstep(pitch, -.5, 0)`, multiplied by existing rifle-contact and non-carry weights inside the right-arm solver. `adsPose` is the existing damped ADS state; immediate `fireAim` does not activate it. The optional solver parameter defaults to zero, retaining other callers. Pitch <= -0.5 rad retains the historical pole. The requested angle is then bounded analytically to the first safe elbow-circle arc: actual metacarpal/forearm bend cannot exceed max(the original same-frame bend, 12.5°). This preserves the existing <13° neutral ADS wrist gate without making already-bent poses worse. Missing/degenerate anatomy returns the original pole. The correction uses reusable synchronous scratch vectors, no added per-frame allocations, iterations, collision queries or state caches. No new controls or animation clocks were added.
 
-Production `world/src/skinnedCharacter.ts` SHA-256: `3580d1ad78ee26168908228efe5fec3e39c767f4504f0e3843071248bf3e28e6`.
+Production `world/src/player/skinnedCharacter.ts` SHA-256: `3580d1ad78ee26168908228efe5fec3e39c767f4504f0e3843071248bf3e28e6`.
 
 ## Invariants and positive verification
 

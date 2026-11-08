@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {limitRifleElbowPole} from '../src/playerRiflePose';
+import {limitRifleElbowPole} from '../src/player/playerRiflePose';
 
 test('wrist-safe elbow arc never crosses anatomical limit, including already bent wrists',()=>{
  let seed=90210;const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};

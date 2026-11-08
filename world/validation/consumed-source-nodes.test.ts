@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {detachConsumedSourceNodes} from '../src/consumedSourceNodes';
+import {detachConsumedSourceNodes} from '../src/rendering/consumedSourceNodes';
 
 test('consumed source detachment is idempotent and never disposes shared ART or protected physics resources',()=>{
  const world=new THREE.Group(),region=new THREE.Group(),art=new THREE.Group(),collision=new THREE.Group(),markers=new THREE.Group();

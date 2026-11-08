@@ -1,6 +1,6 @@
 /** Every retained Kyoto attic, against the shipped compressed ART, no selected sample houses. */
 import * as THREE from 'three';import{readFileSync,writeFileSync}from'node:fs';import{MeshBVH}from'three-mesh-bvh';
-import{regionLoader,bakeQuantized}from'../../../src/glb.ts';import{Batch,T}from'../../../tools/gen/geo.ts';import{addKyotoRoof}from'../../../tools/gen/kyoto/architecture.ts';
+import{regionLoader,bakeQuantized}from'../../../src/rendering/glb.ts';import{Batch,T}from'../../../tools/gen/geo.ts';import{addKyotoRoof}from'../../../tools/gen/kyoto/architecture.ts';
 const root=process.argv[2]??'/tmp/parhelion-exhaustive-final',d=JSON.parse(readFileSync(root+'/inventory.json','utf8')),active=new Set(d.components.flatMap((c:any)=>c.scope??[]));
 const bytes=readFileSync('public/assets/world_kyoto.glb'),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.updateMatrixWorld(true);
 const trees:MeshBVH[]=[];gltf.scene.getObjectByName('ART')!.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh)return;const g=m.geometry.clone().applyMatrix4(m.matrixWorld);trees.push(new MeshBVH(g));});

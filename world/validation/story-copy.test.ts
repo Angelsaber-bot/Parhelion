@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ERA_IDS, ERA_RESIDENTS, ERA_STORIES, ERA_OPTIONALS, getEraResidentDialogue, getEraStoryGuide, getEraProgressReaction, interactEraStory } from '../src/eraStories';
-import { CAMPAIGN_CLOSURE, getCampaignClosingText, getCampaignResidentReaction } from '../src/campaignClosure';
-import { VALLEY_STORY, interactValleyStory, getValleyStoryGuide } from '../src/valleyStory';
+import { ERA_IDS, ERA_RESIDENTS, ERA_STORIES, ERA_OPTIONALS, getEraResidentDialogue, getEraStoryGuide, getEraProgressReaction, interactEraStory } from '../src/story/eraStories';
+import { CAMPAIGN_CLOSURE, getCampaignClosingText, getCampaignResidentReaction } from '../src/story/campaignClosure';
+import { VALLEY_STORY, interactValleyStory, getValleyStoryGuide } from '../src/story/valleyStory';
 import type { Localized } from '../src/settlements/types';
 const meta = /主线|通关条件|解锁条件|不会重置|main.story|optional|condition of completion|resetting the/i;
 function readable(text: Localized, zhLimit = 95, enLimit = 310) {

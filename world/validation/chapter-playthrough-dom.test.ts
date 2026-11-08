@@ -1,13 +1,13 @@
-import {KINGDOM_GATE as G} from '../src/kingdomGate';
-import {gateEscortPosition} from '../src/kingdomGateScene';
+import {KINGDOM_GATE as G} from '../src/story/kingdomGate';
+import {gateEscortPosition} from '../src/environment/kingdomGateScene';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { ERA_IDS, ERA_STORIES, ERA_OPTIONALS, getEraStoryGuide, getEraStoryState } from '../src/eraStories';
-import { BOSSES } from '../src/combat';
-import { FORT_CANNON } from '../src/fortCannon';
-import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/progress';
+import { ERA_IDS, ERA_STORIES, ERA_OPTIONALS, getEraStoryGuide, getEraStoryState } from '../src/story/eraStories';
+import { BOSSES } from '../src/combat/combat';
+import { FORT_CANNON } from '../src/environment/fortCannon';
+import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/core/progress';
 
 /** Production handlers/state, NOT a human playthrough. Test positioning skips
  * travel already covered by real-Player route tests; decisive combat damage skips

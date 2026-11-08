@@ -4,10 +4,10 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 const source=resolve(process.argv[3]);
-const {attachExplorerBlade}=await import(pathToFileURL(`${source}/world/src/playerBladeArt.ts`).href);
+const {attachExplorerBlade}=await import(pathToFileURL(`${source}/world/src/weapons/playerBladeArt.ts`).href);
 const {parseLocalGlb}=await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
 const {playerFixture}=await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
+const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
 
 const out = process.argv[2]; if (!out) throw new Error('Provide local output directory');
 const label = process.argv[4] ?? 'after'; await mkdir(out, { recursive: true });
@@ -44,7 +44,7 @@ async function dump(root: THREE.Object3D, id: string) {
 }
 const f=await playerFixture(),animator=new SkinnedCharacterAnimator(f.rig),blade=attachExplorerBlade(f.rig,()=>parseLocalGlb(pathToFileURL(`${source}/assets/weapons/glb/06_Refract_Blade.glb`)));await blade.ready;blade.update(true);
 if(process.argv[5]==='sequence'){
- const {PlayerMelee}=await import(pathToFileURL(`${source}/world/src/playerMelee.ts`).href);const melee=new PlayerMelee();for(let i=0;i<60;i++)animator.update(1/60,base);melee.press(0);
+ const {PlayerMelee}=await import(pathToFileURL(`${source}/world/src/player/playerMelee.ts`).href);const melee=new PlayerMelee();for(let i=0;i<60;i++)animator.update(1/60,base);melee.press(0);
  for(let frame=0;frame<132;frame++){if(melee.active&&melee.phase>.6)melee.press(0);melee.update(1/60,true);animator.update(1/60,{...base,melee:melee.active?{phase:melee.phase,combo:melee.combo,yaw:0}:undefined});blade.update(melee.active);if(frame%5===0)await dump(f.rig.root,`${label}-${String(frame).padStart(3,'0')}`);}
 }else{
  for(const combo of[0,1,2])for(const phase of[.18,.4,.65]){animator.reset(true);for(let i=0;i<60;i++)animator.update(1/60,base);animator.update(1/60,{...base,melee:{phase,combo,yaw:0}});blade.update(true);await dump(f.rig.root,`${label}-cut${combo}-phase${phase}`);}

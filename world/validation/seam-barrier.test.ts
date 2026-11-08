@@ -1,4 +1,4 @@
-import {adventureTravelOpen} from '../src/openWorldCampaign';
+import {adventureTravelOpen} from '../src/story/openWorldCampaign';
 /** Actual compressed-asset / production Player / production state-loop checks. */
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -7,10 +7,10 @@ import { runInNewContext } from 'node:vm';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
-import { Player, PLAYER, type Collider } from '../src/player.ts';
-import { boundaryWalls, LINKS, REGIONS } from '../src/regions.ts';
-import { WorldProgress } from '../src/progress.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
+import { Player, PLAYER, type Collider } from '../src/player/player.ts';
+import { boundaryWalls, LINKS, REGIONS } from '../src/map/regions.ts';
+import { WorldProgress } from '../src/core/progress.ts';
 import { SEAM_BARRIERS, SEAM_FIELD, seamBarrierSegments } from '../tools/gen/valley/seam-barrier.ts';
 import { heightFn } from '../tools/gen/terrain.ts';
 

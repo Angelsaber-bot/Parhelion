@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
-import { weaponArtPool } from '../src/weaponArt.ts';
-import { Viewmodel } from '../src/scene.ts';
+import { weaponArtPool } from '../src/weapons/weaponArt.ts';
+import { Viewmodel } from '../src/rendering/scene.ts';
 import { WEAPONS } from '../shared/content.ts';
 
 beforeEach(() => {

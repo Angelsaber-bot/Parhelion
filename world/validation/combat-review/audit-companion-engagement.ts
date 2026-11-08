@@ -8,11 +8,11 @@ import * as THREE from 'three';
 import {CompanionNavigation as HistoricalCompanionNavigation} from '../fixtures/companion-navigation-pre-detour';
 import {CompanionNavigationCandidate} from './companion-navigation-candidate';
 import {installCompanionPursuitCandidate} from './companion-pursuit-candidate';
-import {CompanionNavigation} from '../../src/companionNavigation';
+import {CompanionNavigation} from '../../src/companions/companionNavigation';
 import {dirname} from 'node:path';
 import {mkdir,writeFile} from 'node:fs/promises';
 import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../../src/story/falseDawnEncounterCatalog';
 const outputOverride=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9);
 const name=process.argv[2]??'alpha-slope',diagnose=process.argv.includes('--diagnose'),reposition=process.argv.includes('--reposition')||process.argv.includes('--wide-reposition'),wideReposition=process.argv.includes('--wide-reposition');
 const scenarios:Record<string,{id:string;offset:[number,number];seconds:number}>={

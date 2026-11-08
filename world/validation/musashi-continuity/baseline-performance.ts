@@ -1,7 +1,7 @@
 // Frozen 6be0f8e performance fixture; import paths/export name only adapted.
 import * as THREE from 'three';
-import type { UltimatePerformance, UltimatePerformanceFrame } from '../../src/ultimatePerformance';
-import {skillAnimationProfile,skillAnimationSample} from '../../src/skillAnimationProfile';
+import type { UltimatePerformance, UltimatePerformanceFrame } from '../../src/cinematics/ultimatePerformance';
+import {skillAnimationProfile,skillAnimationSample} from '../../src/combat/skillAnimationProfile';
 const smooth=(x:number)=>{x=THREE.MathUtils.clamp(x,0,1);return x*x*(3-2*x);};
 /** Musashi-only private-clone performance. Sword choreography never generates hits.
  * Preserves native face/costume/hair, socket locals, fingers, scale and root travel. */

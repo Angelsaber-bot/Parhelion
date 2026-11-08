@@ -1,8 +1,8 @@
 /** Node CPU proxy only: actual production map art transforms, no WebGL/GPU/FPS claim. */
 import { readFileSync, writeFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
-import { chunkMesh, freezeStaticArt, isStaticArtEligible } from '../src/chunk.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
+import { chunkMesh, freezeStaticArt, isStaticArtEligible } from '../src/rendering/chunk.ts';
 const results = [];
 for (const name of ['alpha', 'britain', 'blacksail', 'winter', 'kyoto']) {
   const bytes = readFileSync(`public/assets/world_${name}.glb`);

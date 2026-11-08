@@ -1,7 +1,7 @@
 /** Policy helper verification: entry positioning/admission are explicit test setup,
  * never behavior hidden inside the reusable input driver. No hostile HP writes. */
 import test from 'node:test';import assert from 'node:assert/strict';
-import {bootWorldWithoutGpu} from './world-dom-boot.fixture';import {getFalseDawnEncounterSpec} from '../src/falseDawnEncounterCatalog';
+import {bootWorldWithoutGpu} from './world-dom-boot.fixture';import {getFalseDawnEncounterSpec} from '../src/story/falseDawnEncounterCatalog';
 import {createStoryInputPolicy} from './combat-review/story-input-policy';
 test('normal-input helper accepts caller-owned clock and clears a live Warden using remapped controls without placement or damage hooks',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),{world:w,window}=h;let now=0;

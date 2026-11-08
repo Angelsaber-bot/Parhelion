@@ -5,9 +5,9 @@ import * as THREE from 'three';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {SIGNATURE_SKINS,signatureModelOf} from '../shared/signatureSkins.ts';
 import {WEAPONS} from '../shared/content.ts';
-import {WeaponArtPool,artPoint,combatArt,makeArtMount} from '../src/weaponArt.ts';
-import {attachGunArt} from '../src/gunArt.ts';
-import {poseMelee} from '../src/meleeArt.ts';
+import {WeaponArtPool,artPoint,combatArt,makeArtMount} from '../src/weapons/weaponArt.ts';
+import {attachGunArt} from '../src/weapons/gunArt.ts';
+import {poseMelee} from '../src/weapons/meleeArt.ts';
 
 const modeled=SIGNATURE_SKINS.filter(s=>signatureModelOf(s.id));
 for(const id of ['graviton-crucible','koi-current','owl-canticle','meridian-key'])it(`${id}: the bore has real depth instead of a flat cap at the muzzle`,async()=>{

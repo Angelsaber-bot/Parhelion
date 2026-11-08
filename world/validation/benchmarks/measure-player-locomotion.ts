@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const source=resolve(process.argv[3] ?? '..');
 const { playerFixture } = await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
+const { SkinnedCharacterAnimator } = await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
 const out = process.argv[2];
 const results = [];
 for (const hz of [30, 60, 120]) for (const speed of [2, 5.5, 9]) {

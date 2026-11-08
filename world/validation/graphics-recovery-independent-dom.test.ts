@@ -2,7 +2,7 @@
  * Encounter entry/admission setup isolates recovery, not narrative or balance. */
 import test from 'node:test';import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../src/story/falseDawnEncounterCatalog';
 test('repeated graphics recovery preserves live contact buffers and actor timers across BFCache without stale input replay',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack'],found:[]})}}),w=h.world,d=h.window.document,canvas=d.getElementById('view')!;let now=0,renders=0;
  const originalRender=w.renderer.render.bind(w.renderer);w.renderer.render=(...args:any[])=>{renders++;return originalRender(...args);};

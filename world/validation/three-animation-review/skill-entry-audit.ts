@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { writeFile } from 'node:fs/promises';
 import { CharacterKit } from '../../src/characters/characterKit';
 import { CHARACTER_KITS } from '../../src/characters/catalog';
-import { KitCompanion } from '../../src/kitCompanion';
+import { KitCompanion } from '../../src/companions/kitCompanion';
 import { installSkillEntryVisualCandidate } from './skill-entry-visual-candidate';
 import { readCharacter } from '../characters/inspect';
 const out=process.argv[2];if(!out)throw new Error('output path required');

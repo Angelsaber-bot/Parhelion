@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WorldAudio, WORLD_AUDIO_KEY, WORLD_AUDIO_VOICES } from '../src/worldAudio';
+import { WorldAudio, WORLD_AUDIO_KEY, WORLD_AUDIO_VOICES } from '../src/rendering/worldAudio';
 
 class Parameter {value=0;events:{kind:string,value:number,time:number}[]=[];setValueAtTime(value:number,time=0){this.value=value;this.events.push({kind:'set',value,time});}exponentialRampToValueAtTime(value:number,time=0){this.value=value;this.events.push({kind:'ramp',value,time});}cancelScheduledValues(){}}
 class Node {

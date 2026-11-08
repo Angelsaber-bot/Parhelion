@@ -5,7 +5,7 @@ import {writeFileSync} from 'node:fs';
 import {writeHeapSnapshot} from 'node:v8';
 import {execFileSync} from 'node:child_process';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {isStaticArtEligible} from '../src/chunk';
+import {isStaticArtEligible} from '../src/rendering/chunk';
 function geometryBuffers(g:THREE.BufferGeometry){const b=new Set<ArrayBufferLike>();for(const a of Object.values(g.attributes)){const array=(a as THREE.InterleavedBufferAttribute).isInterleavedBufferAttribute?(a as THREE.InterleavedBufferAttribute).data.array:(a as THREE.BufferAttribute).array;b.add(array.buffer);}if(g.index)b.add(g.index.array.buffer);return b;}
 function audit(scene:THREE.Scene,camera:THREE.Camera){
  scene.updateMatrixWorld();camera.updateMatrixWorld();const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(camera.projectionMatrix,camera.matrixWorldInverse));

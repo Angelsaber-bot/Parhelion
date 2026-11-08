@@ -6,12 +6,12 @@ import path from 'node:path';import{createHash}from'node:crypto';import{createIn
 const world=process.argv.find(x=>x.startsWith('--world='))?.slice(8);if(!world)throw Error('--world required');
 const moduleUrl=(p:string)=>pathToFileURL(path.resolve(world,p)).href;
 const {CharacterKit}=await import(moduleUrl('src/characters/characterKit.ts'));
-const {KitCompanion}=await import(moduleUrl('src/kitCompanion.ts'));
+const {KitCompanion}=await import(moduleUrl('src/companions/kitCompanion.ts'));
 const {CHARACTER_KITS}=await import(moduleUrl('src/characters/catalog.ts'));
 const {readCharacter}=await import(moduleUrl('validation/characters/inspect.ts'));
 const out=process.argv[2];if(!out)throw Error('working directory required');await mkdir(out,{recursive:true});
 const fps=30,identity='musashi',definition=CHARACTER_KITS.musashi,asset=fileURLToPath(definition.assetUrl),loaded=await readCharacter(asset);
-const sourceHashes:Record<string,string>={};for(const p of ['src/characters/characterKit.ts','src/characters/actionBlend.ts','src/kitCompanion.ts','src/characters/musashiLocomotion.ts'])sourceHashes[p]=createHash('sha256').update(await readFile(path.resolve(world,p))).digest('hex');
+const sourceHashes:Record<string,string>={};for(const p of ['src/characters/characterKit.ts','src/characters/actionBlend.ts','src/companions/kitCompanion.ts','src/characters/musashiLocomotion.ts'])sourceHashes[p]=createHash('sha256').update(await readFile(path.resolve(world,p))).digest('hex');
 let follower:any;const actor=new CharacterKit(loaded.gltf,definition,{onEvent:(e:any)=>follower?.onEvent(actor,e)});
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x75818c);scene.add(actor.root);
 scene.add(new THREE.HemisphereLight(0xe6f3ff,0x75695c,1.6));const key=new THREE.DirectionalLight(0xfff4df,2.4);key.position.set(-3,6,5);scene.add(key);

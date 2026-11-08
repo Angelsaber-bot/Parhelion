@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { makeRegionWeather, REGION_WEATHER } from '../src/regionWeather.ts';
+import { makeRegionWeather, REGION_WEATHER } from '../src/map/regionWeather.ts';
 
 test('every era has its own air', () => {
   const looks = new Set(Object.values(REGION_WEATHER).map(w => JSON.stringify([w.a.shape, w.b.shape, w.a.color, w.b.color])));
@@ -32,4 +32,22 @@ test('crossing into another era fades the air out and in; drift never jumps', ()
   weather.update(cam, 'winter', NaN); weather.update(cam, 'winter', -5);
   assert.ok(Object.values(weather.uniforms.uDrift.value).every(Number.isFinite));
   weather.dispose();
+});
+
+
+test('returning to the current region during fade-out cancels the stale destination', () => {
+  const weather = makeRegionWeather(16), camera = new THREE.Vector3();
+  try {
+    weather.update(camera, 'alpha', .1);
+    for (let i = 0; i < 4; i++) weather.update(camera, 'winter', .1);
+    assert.equal(weather.region, 'alpha');
+    const faded = weather.alpha;
+    weather.update(camera, 'alpha', .1);
+    assert.ok(weather.alpha > faded, 'returning restores the current air immediately');
+    for (let i = 0; i < 20; i++) {
+      weather.update(camera, 'alpha', .1);
+      assert.equal(weather.region, 'alpha', 'the departed destination never appears');
+    }
+    assert.ok(weather.alpha > .99);
+  } finally { weather.dispose(); }
 });

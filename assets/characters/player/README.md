@@ -11,7 +11,7 @@ The current deliverable is an **iterated, game-ready candidate**, not a claim of
 - `build_player.py`: reproducible Blender authoring/export source. Editable anatomical ring cages, sculpted hair ribbons, garment panels and seams, distinct curled fingers, command seal on the right hand, shaped boot lasts.
 - `fujimaru_player_editable.blend`: editable source scene and neutral studio.
 - `player-metrics.json`: actual mesh/triangle/byte counts and GLB hash. `bodyMeshCount` is not a measured GPU draw-call count; outlines, weapons, shadows and render passes are additional.
-- `../../../world/src/generated/player-mesh.json`: indexed, quantized per-joint geometry, with normals and linear vertex colours.
+- `../../../world/validation/fixtures/legacy-player/player-mesh.json`: indexed, quantized per-joint geometry, with normals and linear vertex colours.
 - `../../../world/public/assets/character_explorer.glb`: equivalent exported body and compatible joint hierarchy, not the separate Dawn AR asset.
 
 Build from repository root:
@@ -24,7 +24,7 @@ The build creates six real Cycles inspection renders in the sibling `protagonist
 
 ## Runtime contract
 
-`world/src/playerMesh.ts` decodes indexed buffers synchronously into 12 body meshes sharing the existing toon material. No asynchronous character pop-in is introduced. The original Hips/Spine/Head/Arm/Forearm/Thigh/Shin joint names and lengths remain. ScarfTail/Ponytail placeholders remain empty for animation API compatibility; the male uniform has neither scarf nor ponytail. Gun and glider meshes stay in their original equipment path. Both hands preserve the existing grip/support point conventions.
+`world/validation/fixtures/legacy-player/playerMesh.ts` decodes indexed buffers synchronously into 12 body meshes sharing the existing toon material. No asynchronous character pop-in is introduced. The original Hips/Spine/Head/Arm/Forearm/Thigh/Shin joint names and lengths remain. ScarfTail/Ponytail placeholders remain empty for animation API compatibility; the male uniform has neither scarf nor ponytail. Gun and glider meshes stay in their original equipment path. Both hands preserve the existing grip/support point conventions.
 
 The compact geometry stores positions as signed 16-bit integers at 0.1 mm resolution, normals as normalized signed 8-bit components, colours as normalized linear 8-bit components, and triangle indices as unsigned 16-bit integers. The exporter drops quantization-collapsed triangles identically in both outputs.
 

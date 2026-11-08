@@ -409,7 +409,9 @@ export function buildBritain(heightAt: HeightAt) {
       }
       h.add(BOX, C.wallDark, T(hx + Math.cos(doorA) * r, y + hH - 1, hz + Math.sin(doorA) * r, -doorA, wallT + 0.4, 2, 5));
       h.add(CONE16, C.roofSlate, T(hx, y + hH + 4, hz, 0, r + 1.8, 8, r + 1.8));
-      h.add(CYL20, C.stone, T(hx, y + 0.08, hz, 0, r - 0.4, 0.16, r - 0.4), false);
+      // Paving is a visual skin over the retained level terrain collider. Keep
+      // its thickness below ground, rather than burying walking feet by 16cm.
+      h.add(CYL20, C.stone, T(hx, y - 0.065, hz, 0, r - 0.4, 0.16, r - 0.4), false);
       // the table: a ring, thirteen seats (one left empty: 危险席)
       h.add(new THREE.TorusGeometry(5, 0.75, 6, 40), C.timber, T(hx, y + 1.0, hz, 0, 1, 1, 0.6, Math.PI / 2));
       for (let s = 0; s < 6; s++) {

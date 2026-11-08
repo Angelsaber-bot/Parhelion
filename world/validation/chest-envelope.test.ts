@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {SiteArt} from '../src/campaignSites';
+import {SiteArt} from '../src/story/campaignSites';
 import {Frame,chestBody,chestLid,waterPlatform,steppingStone} from '../src/exploration/models';
 import type {ChestTier} from '../src/exploration/catalog';
 

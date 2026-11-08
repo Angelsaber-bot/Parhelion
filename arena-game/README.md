@@ -7,7 +7,7 @@
 - ASTER：`../arena/runtime/map.json` + `../arena/assets/station_visual.glb`
 - SAKURA / CAM LANN / BLACKFLAG / FROSTCOURT：`../arena-maps/<id>/runtime/map.json` + `../arena-maps/<id>/assets/<id>_visual.glb`，ID 为 `sakura` / `camlann` / `blackflag` / `frostcourt`（共享工具在 `../arena-maps/_lib/`）。可编辑 Python 源 `source/build.py` 一次生成布局、视觉与碰撞代理；不是仅渲染的场景外壳。
 
-每张图可在 `map.json` 的 `presentation.preset` 里选氛围（`src/atmosphere.ts`：day / noon / dusk / night），控制天空、太阳、雾、曝光、辉光和环境粒子。
+每张图可在 `map.json` 的 `presentation.preset` 里选氛围（`src/rendering/atmosphere.ts`：day / noon / dusk / night），控制天空、太阳、雾、曝光、辉光和环境粒子。
 
 地图在 `shared/arenaMap.ts` 的 `MAPS` 里注册；`CHAPTER_MAPS` 只筛选五章菜单，经典图仍在总注册表。新增地图同时登记 `scene.ts` 的 GLB 路径、预览缩略图与共享中英文本。离线、Colyseus、Worker 都通过 `getMap`/`RoomCore` 取同一碰撞数据。各地图的生成流程在自己的目录维护。
 
@@ -40,7 +40,7 @@ npx tsx test/worker-smoke.ts <wss-url> # 两个客户端进同一房间的冒烟
 | | |
 |---|---|
 | 对局 | 1v1 / 1v2 / 2v2，自由选队（满了自动分到另一边），团队先到 7 / 10 / 12 杀获胜；5 分钟到时比分高者胜，同分平局。1v2 的西·青为 1 人、东·橙为 2 人；单机其余位置补 Bot。3 秒重生，初生 / 每次复活后 2.5 秒无敌（开火不取消），出生点避开敌人 |
-| 角色 | Aster（150 HP，5.2 m/s：白色长外套、浅蓝长发、头顶幻日光环）· Vega（125 HP，5.7 m/s：深色紧身服、橙色双马尾、鳍形耳饰）。程序化动漫比例人物（`src/fighter.ts`），队伍色在饰边/腰带/手套上，带跑步、待机、跳跃的程序动画，上半身和枪跟随瞄准俯仰 |
+| 角色 | Aster（150 HP，5.2 m/s：白色长外套、浅蓝长发、头顶幻日光环）· Vega（125 HP，5.7 m/s：深色紧身服、橙色双马尾、鳍形耳饰）。程序化动漫比例人物（`src/player/fighter.ts`），队伍色在饰边/腰带/手套上，带跑步、待机、跳跃的程序动画，上半身和枪跟随瞄准俯仰 |
 | 技能 | 冲刺：0.15 秒 ~2.6 m，冷却 3.5 秒 · 护盾：2.4×2 m，300 HP 可被打碎，只挡敌方子弹，10 秒，冷却 14 秒 |
 | 配装 | 五种枪：突击步枪 AR、霰弹枪、精确射手步枪 DMR、冲锋枪 SMG、狙击步枪；三种近战：单手剑、长枪、战锤。大厅选择两把不同枪＋一件近战，默认 1/2/3 切换对应槽位；各武器外观在大厅选择，数值以配装卡为准 |
 | Bot | 规则型基线，刻意做得像人：反应时间随距离变长，瞄准有滞后和首发偏差、移动时更不准，自动枪点射+停顿；三种性格（突击/架点/绕后）决定去哪、蹲多久、多近开打、何时撤退。网格寻路（含多层高台和坡道）。三档难度；`npx tsx test/bench/duel.ts` 可对比强度 |

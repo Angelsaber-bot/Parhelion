@@ -12,9 +12,9 @@ import {
   RASHOMON, PATHS,
 } from './layout.js';
 import { kamoD, pondD, inHonnoji, sannen, CITY_RECT } from './terrain.js';
-import { addGateCraft, addKitsune, addPagodaLevelCraft, addKiyomizuCraft, addKinkakuCraft, addOpenRail, addBurntCraft, addHonnojiCraft } from './landmark-craft.js';
+import { addGateCraft, addKitsune, addPagodaLevelCraft, addKiyomizuCraft, addKinkakuCraft, addBurntCraft, addHonnojiCraft } from './landmark-craft.js';
 import { buildArashiyama, isArashiyamaReserved } from './arashiyama.js';
-import { addKyotoRoof, addKyotoAttic, addMachiyaCraft, addLattice, addBracket, addBeam, localCraft, addCityBlock } from './architecture.js';
+import { addKyotoRoof, addKyotoAttic, addMachiyaCraft, addBeam, addCityBlock } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
 
@@ -386,6 +386,10 @@ export function buildKyoto(heightAt: HeightAt) {
     {
       const [gx, gz] = YASAKA_SHRINE.c, y = heightAt(gx, gz);
       for (const s of [-1, 1]) b.box(gx, y, gz + s * 4.5, 4.6, 5.0, 3.0, C.vermilion, 0);
+      // Both piers sit on a cross-slope. Their level timber frame must not float
+      // above the downhill verge; separate stone shoes also support the outer
+      // craft posts while preserving the open pedestrian passage between them.
+      for (const s of [-1, 1]) addGroundFooting(footings, gx, y + .08, gz + s * 4.5, 0, 5.4, 3.24, heightAt, '#929183');
       b.box(gx, y + 5.0, gz, 5.0, 2.2, 12, C.vermilion, 0, false);
       hip(b, gx, y + 7.2, gz, 0, 8, 16, 3, C.tile);
       addGateCraft(b, gx, y, gz, -Math.PI / 2, 12, 5.0, 7.2);

@@ -5,13 +5,13 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {readCharacter} from './inspect.ts';
-import {SERVANT_MODELS} from '../../src/servant.ts';
+import {SERVANT_MODELS} from '../../src/companions/servant.ts';
 import {CHARACTER_KITS} from '../../src/characters/catalog.ts';
 import {CharacterKit} from '../../src/characters/characterKit.ts';
-import {UltimateStage} from '../../src/ultimateStage.ts';
+import {UltimateStage} from '../../src/cinematics/ultimateStage.ts';
 const out=process.argv[2]??'/tmp/ultimate-stages';await mkdir(out,{recursive:true});
 const sourceHashes:Record<string,string>={};
-for(const file of ['../../src/ultimateStage.ts','../../src/ultimateEnergy.ts','../../tools/gen/blacksail/ships.ts','./export-ultimate-stages.ts','./render-ultimate-stages.py'])sourceHashes[file]=createHash('sha256').update(await readFile(new URL(file,import.meta.url))).digest('hex');
+for(const file of ['../../src/cinematics/ultimateStage.ts','../../src/combat/ultimateEnergy.ts','../../tools/gen/blacksail/ships.ts','./export-ultimate-stages.ts','./render-ultimate-stages.py'])sourceHashes[file]=createHash('sha256').update(await readFile(new URL(file,import.meta.url))).digest('hex');
 for(const identity of ['saber','blackbeard','napoleon','musashi'] as const){
  const definition=identity==='saber'?null:CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity];
  const asset=fileURLToPath(new URL(definition?.assetUrl??SERVANT_MODELS.armor));

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createSafeTravelStops, isTravelStopDiscovered, discoverTravelStops, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from '../src/safeTravel';
+import { createSafeTravelStops, isTravelStopDiscovered, discoverTravelStops, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from '../src/story/safeTravel';
 import type { SettlementPlacement, RegionId } from '../src/settlements/types';
-import { ERA_OPTIONALS } from '../src/eraStories';
+import { ERA_OPTIONALS } from '../src/story/eraStories';
 
 const regions: RegionId[] = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'];
 const placements: SettlementPlacement[] = regions.map((id, index) => ({ id, name: [id, id], position: [index * 100, 10, 0], entry: [index * 100, 10, 15], footprint: [30,30], groundRange: 0 }));
@@ -85,4 +85,12 @@ test('earned field stop never inherits old settlement visits or arbitrary found 
   for (const change of [{ combatActive: true }, { threatened: true }, { quietSeconds: 4.99 }, { onGround: false }, { swimming: true }, { actionActive: true }]) {
     assert.notEqual(getTravelBlock(stop.id, [stop], legacy, found, { ...safe, ...change }), null);
   }
+});
+
+test('current adventure uplink opens discovered travel without manufacturing the legacy summon flag',()=>{
+ const done=new Set(['adventure_v2','compact_relay_complete']),found=new Set(['travel_blacksail']);
+ assert.equal(getTravelBlock('travel_blacksail',stops,done,found,safe),null);
+ assert.equal(getTravelBlock('travel_blacksail',stops,new Set(['compact_relay_complete']),found,safe),'seam-locked','an exercise alone does not open the original campaign');
+ assert.equal(getTravelBlock('travel_blacksail',stops,done,found,{...safe,carrying:true}),'carrying');
+ assert.equal(done.has('summon_circle'),false);assert.deepEqual([...found],['travel_blacksail']);
 });

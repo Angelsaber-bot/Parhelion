@@ -1,0 +1,62 @@
+{
+  "method": "Real Black Sail core/visual GLBs, production flagshipInterior component and toon materials; neutral local inspection lights; Chromium WebGL / SwiftShader",
+  "errors": [],
+  "cameras": {
+    "cabin-ceiling": {
+      "eye": [
+        8,
+        1.2,
+        4.9
+      ],
+      "target": [
+        1,
+        0,
+        6.6
+      ]
+    },
+    "port-hatch-down": {
+      "eye": [
+        -9.2,
+        -3.75,
+        8.65
+      ],
+      "target": [
+        0.7,
+        -3.75,
+        4.6
+      ]
+    },
+    "starboard-hatch-up": {
+      "eye": [
+        5.7,
+        3.75,
+        4.95
+      ],
+      "target": [
+        -5.5,
+        3.75,
+        7
+      ]
+    },
+    "alarm-support": {
+      "eye": [
+        -11.8,
+        0.3,
+        4.6
+      ],
+      "target": [
+        -10,
+        1.8,
+        4.2
+      ]
+    }
+  },
+  "sourceNames": [
+    "Ghost_Fleet_Ship_296_104_Timber",
+    "Ghost_Fleet_Ship_296_104_Canvas",
+    "Ghost_Fleet_Ship_296_104_Iron",
+    "Ghost_Fleet_Ship_296_104_Brass",
+    "Ghost_Fleet_Ship_296_104_Rigging"
+  ],
+  "limitation": "Isolated ship inspection, not a running full-world scene or a device frame-rate measurement."
+}

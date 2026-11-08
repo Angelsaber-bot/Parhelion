@@ -1,8 +1,8 @@
 /** Source-material audit only: dark albedo is not proof of a runtime rendering defect. */
 import * as THREE from 'three';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
-import {regionLoader,bakeQuantized} from '../../src/glb';
-import {REGIONS} from '../../src/regions';
+import {regionLoader,bakeQuantized} from '../../src/rendering/glb';
+import {REGIONS} from '../../src/map/regions';
 const out='../../parhelion-eight-hour-evidence/environment/material-audit';await mkdir(out,{recursive:true});
 const results:any[]=[];
 for(const def of REGIONS){

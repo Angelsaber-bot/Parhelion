@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { damageKind } from '../src/damageNumbers.ts';
+import { damageKind } from '../src/combat/damageNumbers.ts';
 
 test('a damage number says how the hit landed, most important first', () => {
   assert.equal(damageKind({ source: 'ranged' }), 'ranged');

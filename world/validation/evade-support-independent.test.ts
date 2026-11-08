@@ -1,7 +1,7 @@
 /** Historical candidate controls and independent production non-evade parity. */
 import test from 'node:test';import assert from 'node:assert/strict';
 import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {Player} from '../src/player';import {Player as HistoricalPlayer} from './fixtures/player-pre-evade-support';import {installEvadeSupportCandidate} from './combat-review/evade-support-candidate';
+import {Player} from '../src/player/player';import {Player as HistoricalPlayer} from './fixtures/player-pre-evade-support';import {installEvadeSupportCandidate} from './combat-review/evade-support-candidate';
 const snapshot=(p:Pick<Player,'pos'|'vel'|'onGround'|'swimming'|'gliding'|'inUpdraft'>)=>({position:p.pos.toArray(),velocity:p.vel.toArray(),grounded:p.onGround,swimming:p.swimming,gliding:p.gliding,updraft:p.inUpdraft});
 test('isolated support candidate leaves non-evade movement exactly unchanged and restores method ownership',()=>{
  const geometry=new THREE.BoxGeometry(200,.2,200).translate(0,-.1,0),colliders=[{name:'explicit-flat-control',enabled:true,bvh:new MeshBVH(geometry)}];

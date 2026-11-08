@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { FALSE_DAWN as F, FALSE_DAWN_ENCOUNTERS, chooseFalseDawn as choose, confirmFalseDawnEncounterStart as confirm, falseDawnEncounterFlags as flags, getExpectedFalseDawnEncounter as expected, getFalseDawnEncounterOrigin as origin, getFalseDawnGuide as guide, getFalseDawnState as state, interactFalseDawn as interact, recordFalseDawnEncounterVictory as victory, getFalseDawnEnding, getFalseDawnCompanionReaction, getFalseDawnRouteBriefing, getFalseDawnMarkerLabel, type FalseDawnEncounterId } from '../src/falseDawnCampaign';
-import { WorldProgress } from '../src/progress';
-import { getEraBossRequirements, ERA_IDS, ERA_STORIES } from '../src/eraStories';
+import { FALSE_DAWN as F, FALSE_DAWN_ENCOUNTERS, chooseFalseDawn as choose, confirmFalseDawnEncounterStart as confirm, falseDawnEncounterFlags as flags, getExpectedFalseDawnEncounter as expected, getFalseDawnEncounterOrigin as origin, getFalseDawnGuide as guide, getFalseDawnState as state, interactFalseDawn as interact, recordFalseDawnEncounterVictory as victory, getFalseDawnEnding, getFalseDawnCompanionReaction, getFalseDawnRouteBriefing, getFalseDawnMarkerLabel, type FalseDawnEncounterId } from '../src/story/falseDawnCampaign';
+import { WorldProgress } from '../src/core/progress';
+import { getEraBossRequirements, ERA_IDS, ERA_STORIES } from '../src/story/eraStories';
 function ready() { return new Set([F.receiver,'armory_rack']); }
 function start(done:Set<string>,id:FalseDawnEncounterId) {
  assert.equal(expected(done),id);const before=[...done];const request=choose(origin(id),`start:${id}`,done);assert.equal(request.encounter,id);assert.equal(request.changed,false);assert.deepEqual([...done],before,'request alone never assumes spawn acceptance');

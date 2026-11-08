@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
-import { interactEraStory } from '../src/eraStories';
-import { WorldProgress } from '../src/progress';
+import { interactEraStory } from '../src/story/eraStories';
+import { WorldProgress } from '../src/core/progress';
 
 // Execute the unchanged production adapter, not a reimplementation of reward routing.
 const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');

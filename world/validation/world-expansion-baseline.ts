@@ -4,11 +4,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb';
-import { chunkMesh, isStaticArtEligible } from '../src/chunk';
-import { REGIONS, mergeLayouts } from '../src/regions';
-import { WorldMap } from '../src/map';
-import type { Layout } from '../src/types';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb';
+import { chunkMesh, isStaticArtEligible } from '../src/rendering/chunk';
+import { REGIONS, mergeLayouts } from '../src/map/regions';
+import { WorldMap } from '../src/map/map';
+import type { Layout } from '../src/core/types';
 
 const regions = [];
 for (const def of REGIONS) {

@@ -2,9 +2,9 @@
 import * as THREE from 'three';
 import { fileURLToPath } from 'node:url';
 import { readCharacter } from '../characters/inspect.ts';
-import { SERVANT_MODELS } from '../../src/servant.ts';
+import { SERVANT_MODELS } from '../../src/companions/servant.ts';
 import { CHARACTER_KITS } from '../../src/characters/catalog.ts';
-import { UltimateStage } from '../../src/ultimateStage.ts';
+import { UltimateStage } from '../../src/cinematics/ultimateStage.ts';
 const rows=[];
 for(const identity of ['saber','blackbeard','napoleon','musashi'] as const){
  const definition=identity==='saber'?null:CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity];

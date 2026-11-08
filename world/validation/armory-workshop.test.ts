@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import {createArmoryWorkshop,ARMORY_WORKSHOP} from '../src/armoryWorkshop';
-import {settlementGrassClearance} from '../src/grassClearance';
+import {createArmoryWorkshop,ARMORY_WORKSHOP} from '../src/story/armoryWorkshop';
+import {settlementGrassClearance} from '../src/map/grassClearance';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {WORLD_PROGRESS_KEY} from '../src/progress';
+import {WORLD_PROGRESS_KEY} from '../src/core/progress';
 
 test('fitted workshop has bounded static batches, an open entry and actual circulation aisles',()=>{
  const kit=createArmoryWorkshop();kit.root.updateMatrixWorld(true);

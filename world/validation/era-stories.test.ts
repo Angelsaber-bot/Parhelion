@@ -1,4 +1,4 @@
-import { KINGDOM_GATE as G } from '../src/kingdomGate';
+import { KINGDOM_GATE as G } from '../src/story/kingdomGate';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -8,8 +8,8 @@ import {
   getEraBossRequirements as requirements, getEraObjective,
   applyEraMarkerRequirements, getEraPieceRequirements,
   interactEraStory as act, getEraResidentDialogue, getEraOptionalReward, ERA_KNIGHT_DEFEATED,
-} from '../src/eraStories';
-import type { Layout, Marker } from '../src/types';
+} from '../src/story/eraStories';
+import type { Layout, Marker } from '../src/core/types';
 
 for (const region of ERA_IDS) {
   const def = ERA_STORIES[region];
@@ -144,7 +144,7 @@ test('unknown regions/interactions and Valley-owned interactions are not interce
 });
 
 test('mainline reactions distinguish oath hearth and optional shards and are bilingual', async () => {
-  const { getEraProgressReaction: react } = await import('../src/eraStories');
+  const { getEraProgressReaction: react } = await import('../src/story/eraStories');
   for (const region of ERA_IDS) {
     const done = new Set(ERA_BOSS_REQUIREMENTS[ERA_STORIES[region].core]);
     for (const id of done) assert.ok(react(id, done)?.every(line => line.length > 5));
@@ -188,7 +188,7 @@ test('each settlement resident has a distinct practical role rather than a share
 });
 
 test('combat clear-state adapter shares legacy contract authority, except opening Saber pact', async () => {
-  const { isEraCoreCleared } = await import('../src/eraStories');
+  const { isEraCoreCleared } = await import('../src/story/eraStories');
   for (const region of ERA_IDS) {
     const def = ERA_STORIES[region];
     assert.equal(isEraCoreCleared(def.core, new Set([def.contract])), region !== 'britain');
@@ -198,7 +198,7 @@ test('combat clear-state adapter shares legacy contract authority, except openin
 });
 
 test('story uses bounded existing progress flags and reset clears visible optional outcomes', async () => {
-  const { WorldProgress, WORLD_PROGRESS_KEY } = await import('../src/progress');
+  const { WorldProgress, WORLD_PROGRESS_KEY } = await import('../src/core/progress');
   const storage = new Map<string, string>();
   const backing = { getItem: (key: string) => storage.get(key) ?? null, setItem: (key: string, value: string) => { storage.set(key, value); } };
   const progress = new WorldProgress(backing);
@@ -264,7 +264,7 @@ test('Kyoto stops reissuing a completed firing route for exact banner or legacy 
 });
 
 test('repair memories remain distinct, truthful and read-only across reload and reset', async () => {
-  const { WorldProgress } = await import('../src/progress');
+  const { WorldProgress } = await import('../src/core/progress');
   const map = new Map<string, string>();
   const storage = { getItem: (key: string) => map.get(key) ?? null, setItem: (key: string, value: string) => { map.set(key, value); } };
   const progress = new WorldProgress(storage);

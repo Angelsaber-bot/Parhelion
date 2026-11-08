@@ -1,10 +1,10 @@
 /** Read-only authored source-material identity audit. No runtime caching/batching. */
 import * as THREE from 'three';
 import {readFileSync,writeFileSync}from'node:fs';
-import{regionLoader,bakeQuantized}from'../src/glb';
-import{REGIONS}from'../src/regions';
-import{isStaticArtEligible}from'../src/chunk';
-import{toonMaterial}from'../src/look';
+import{regionLoader,bakeQuantized}from'../src/rendering/glb';
+import{REGIONS}from'../src/map/regions';
+import{isStaticArtEligible}from'../src/rendering/chunk';
+import{toonMaterial}from'../src/rendering/look';
 const report=[];
 for(const def of REGIONS){
  const bytes=readFileSync(`public/assets/${def.file}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);

@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { buildArashiyama, isArashiyamaReserved } from '../tools/gen/kyoto/arashiyama.ts';
 import { buildKyotoTerrain, heightFn } from '../tools/gen/kyoto/terrain.ts';
 import { ARASHIYAMA, AREAS, PATHS } from '../tools/gen/kyoto/layout.ts';
-import { Player } from '../src/player.ts';
+import { Player } from '../src/player/player.ts';
 
 const terrain = buildKyotoTerrain();
 const district = buildArashiyama(terrain.heightAt);

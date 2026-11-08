@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../src/glb.ts';
+import {regionLoader,bakeQuantized} from '../src/rendering/glb.ts';
 import {collisionSnapshot} from './kingdom-valley/collision-snapshot.ts';
 for(const region of ['alpha','britain']) {
  const path=new URL(`../public/assets/world_${region}.glb`,import.meta.url).pathname;

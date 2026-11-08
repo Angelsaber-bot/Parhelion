@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {createHash} from 'node:crypto';
-import {SiteArt,buildCampaignSite} from '../src/campaignSites';import {createFalseDawnSites} from '../src/falseDawnSites';
+import {SiteArt,buildCampaignSite} from '../src/story/campaignSites';import {createFalseDawnSites} from '../src/story/falseDawnSites';
 const digest=(geos:THREE.BufferGeometry[])=>{const h=createHash('sha256');for(const g of geos)for(const a of Object.values(g.attributes)){const v=a.array;h.update(Buffer.from(v.buffer,v.byteOffset,v.byteLength));}return h.digest('hex');};
 test('all campaign and False Dawn builders release construction bins without mutating final state resources',()=>{
  const captured:SiteArt[]=[],finish=SiteArt.prototype.finish;SiteArt.prototype.finish=function(region){finish.call(this,region);captured.push(this);};

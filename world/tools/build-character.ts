@@ -6,7 +6,7 @@ import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
 import { writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildCharacter } from '../src/character.js';
+import { buildCharacter } from '../validation/fixtures/legacy-player/character.js';
 
 (globalThis as any).FileReader ??= class {
   result: ArrayBuffer | null = null;

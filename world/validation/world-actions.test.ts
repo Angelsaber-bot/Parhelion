@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/worldActions';
-import type { StrikeRequest } from '../src/combatActions';
-import type { HitContext } from '../src/combat';
-import { Player, PLAYER } from '../src/player';
+import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/combat/worldActions';
+import type { StrikeRequest } from '../src/combat/combatActions';
+import type { HitContext } from '../src/combat/combat';
+import { Player, PLAYER } from '../src/player/player';
 import { MeshBVH } from 'three-mesh-bvh';
-import { attachExplorerBlade } from '../src/playerBladeArt';
-import type { SkinnedCharacterRig } from '../src/skinnedCharacter';
+import { attachExplorerBlade } from '../src/weapons/playerBladeArt';
+import type { SkinnedCharacterRig } from '../src/player/skinnedCharacter';
 
 function fixture() {
   const context:WorldActionContext={enabled:true,grounded:true,armed:true,bladeReady:true,position:{x:2,y:1,z:3},yaw:0,moveX:0,moveZ:0,identity:null};

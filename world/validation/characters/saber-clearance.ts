@@ -5,7 +5,7 @@ import {MeshBVH} from 'three-mesh-bvh';
 import {readFile,writeFile} from 'node:fs/promises';
 import {fileURLToPath} from 'node:url';
 import {readCharacter} from './inspect.ts';
-import {SERVANT_MODELS} from '../../src/servant.ts';
+import {SERVANT_MODELS} from '../../src/companions/servant.ts';
 const source=process.argv[2]??'/tmp/saber-after-review',label=process.argv[3]??'after',fullSword=process.argv.includes('--full-sword');const result:any={scope:(fullSword?'Whole sword including crossguard/pommel, excluding wrapped grip and hand/fingers contact region. ':'Blade portion >13cm from the authored hand axis; gripping hand excluded. ')+'Actual Three CPU skins; full blade vertex to non-hand body/clothing triangle-BVH distance, plus triangle intersection. Phases recorded explicitly in samplePhases; exact triangle-to-triangle minimum is also recorded. Not GPU/browser evidence.',outfits:{}};
 const selected=process.argv.find(arg=>arg.startsWith('--frames='))?.slice(9).split(',').map(Number);
 const frameIds=selected?selected.map(frame=>({suffix:`phase-${frame}`,phase:frame/120})):Array.from({length:12},(_,frame)=>({suffix:String(frame).padStart(2,'0'),phase:frame/12}));

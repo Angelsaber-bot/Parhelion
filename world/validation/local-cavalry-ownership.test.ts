@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {LocalCavalrySupport} from '../src/localCavalrySupport';
-import type {KitCompanion} from '../src/kitCompanion';
+import {LocalCavalrySupport} from '../src/companions/localCavalrySupport';
+import type {KitCompanion} from '../src/companions/kitCompanion';
 test('inactive local support cannot cancel the normal Napoleon companion skill, including far-away updates and menu cancellation',()=>{
  let cancellations=0;const h={done:new Set<string>(),player:new THREE.Vector3(-940,4,202),actor:()=>undefined,follow:{cancelSkillPose(){cancellations++;}}as unknown as KitCompanion,start:()=>({ok:true}),target:()=>null,ground:()=>0,clear:()=>true,strike:()=>false,toast(){},save(){},changed(){}};
  const support=new LocalCavalrySupport(h);for(let i=0;i<120;i++)support.update(1/60,true);support.cancel();support.reset();assert.equal(cancellations,0);assert.equal(support.ownsActor,false);assert.equal(support.request(),false);

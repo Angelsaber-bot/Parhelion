@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {buildCharacter,CharacterAnimator} from '../src/character.ts';import {deformUniformCloth} from '../src/playerMesh.ts';
+import {buildCharacter,CharacterAnimator} from './fixtures/legacy-player/character.ts';import {deformUniformCloth} from './fixtures/legacy-player/playerMesh.ts';
 test('short tunic deformation uses immutable rest data, resets, remains finite and stays inside culling sphere',()=>{
  const rig=buildCharacter(new THREE.MeshStandardMaterial()),mesh=rig.meshes.find(m=>m.name==='PlayerPart_CoatTails')!,g=mesh.geometry,p=g.attributes.position,n=g.attributes.normal;
  const original=Array.from(p.array);rig.joints.Thigh_L.rotation.x=.9;rig.joints.Thigh_R.rotation.x=-.9;deformUniformCloth(rig.joints,rig.meshes);const posed=Array.from(p.array);

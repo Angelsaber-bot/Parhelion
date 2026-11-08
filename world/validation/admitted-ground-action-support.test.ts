@@ -1,5 +1,5 @@
 import {test} from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {Player} from '../src/player';import {Player as HistoricalPlayer} from './fixtures/player-pre-ground-actions';import {WorldActions} from '../src/worldActions';
+import {Player} from '../src/player/player';import {Player as HistoricalPlayer} from './fixtures/player-pre-ground-actions';import {WorldActions} from '../src/combat/worldActions';
 const snapshot=(p:Player|HistoricalPlayer)=>({p:p.pos.toArray(),v:p.vel.toArray(),ground:p.onGround,swim:p.swimming,glide:p.gliding,updraft:p.inUpdraft});
 function run(action:'melee'|'skill',kind:'flat'|'slope'|'ledge'|'jump',enabled=true,includeGuard=false){
  const geometry=kind==='ledge'?new THREE.BoxGeometry(4,.2,20).translate(0,-.1,0):new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2).rotateZ(kind==='slope'?.055:0),p=new Player([{name:kind,enabled:true,bvh:new MeshBVH(geometry)}],-20),idle={x:0,z:0,jump:false,sprint:false},contacts:number[]=[],cooldowns:number[]=[],counts:number[]=[],grounded:boolean[]=[],guards:boolean[]=[],dt=1/120;let t=0;

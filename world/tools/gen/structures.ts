@@ -133,7 +133,6 @@ export function buildStructures(heightAt: HeightAt) {
     glow.box(-148, y + 1.1, -59, 1.8, 0.08, 0.7, PAL.glowCyan, 0, false);
     // satellite dish landmark on the roof
     b.add(CYL6, PAL.metal, T(-139, ry + 2, -59, 0, 0.35, 4, 0.35));
-    const dish = new THREE.CylinderGeometry(4.2, 1.2, 1.4, 18);
     // Parabolic dish ART is authored by buildValleyCraft; original mast proxy stays.
 
     // watchtowers
@@ -375,7 +374,21 @@ export function buildStructures(heightAt: HeightAt) {
       const hA = heightAt(LOG_BRIDGE.c[0] - px * 13, LOG_BRIDGE.c[1] - pz * 13);
       const hB = heightAt(LOG_BRIDGE.c[0] + px * 13, LOG_BRIDGE.c[1] + pz * 13);
       const y = (hA + hB) / 2;
-      b.add(CYL6, PAL.wood, T(LOG_BRIDGE.c[0], y + 0.3, LOG_BRIDGE.c[1], ry, 0.9, 30, 0.9, Math.PI / 2), false);
+      const slope = Math.atan2(hA - hB, 26);
+      // A planed walking face on the original trunk follows the proven proxy.
+      // Keep its complete X/Z footprint and the original bank connections: only
+      // vertex heights change. The lower half remains rounded bark; the end-cap
+      // centres sit below the cut so the upper fans retain nonzero triangle area.
+      const log = CYL6.clone();
+      const logPosition = log.getAttribute('position');
+      for (let i = 0; i < logPosition.count; i++) {
+        const x = logPosition.getX(i), radial = logPosition.getZ(i);
+        const along = logPosition.getY(i) * 30;
+        const depth = Math.abs(x) < 1e-6 && Math.abs(radial) < 1e-6 ? .3 : Math.max(0, radial) * .9;
+        logPosition.setXYZ(i, x * .9, y + .6 + .3 / Math.cos(slope) - along * Math.tan(slope) - depth, along);
+      }
+      b.add(log, PAL.wood, T(LOG_BRIDGE.c[0], 0, LOG_BRIDGE.c[1], ry), false);
+      log.dispose();
       b.addCol(BOX, T(LOG_BRIDGE.c[0], y + 0.6, LOG_BRIDGE.c[1], ry, 1.6, 0.6, 30, Math.atan2(hA - hB, 26)));
     }
     // stepping stones at the lake outlet
@@ -474,7 +487,9 @@ export function buildStructures(heightAt: HeightAt) {
       b.box(x0, y + H - 1.2, cz, 0.8, 1.2, 14, PAL.orange);
       b.box(cx, y + H, cz, x1 - x0 + 1, 0.5, z1 - z0 + 1, PAL.metalDark);
       b.box(cx, y + H + 0.5, cz, x1 - x0 - 4, 1.4, z1 - z0 - 6, PAL.white);
-      b.box(cx, y, cz, x1 - x0 - 1, 0.12, z1 - z0 - 1, PAL.concreteDark, 0, false);
+      // The terrain is the unchanged floor collider. Keep only a 15mm surface
+      // skin above it, rather than burying grounded feet in a 12cm visual slab.
+      b.box(cx, y - .105, cz, x1 - x0 - 1, 0.12, z1 - z0 - 1, PAL.concreteDark, 0, false);
       // racks along the back wall: frames with the three Arena guns as silhouettes
       for (const [i, dz] of [-6, 0, 6].entries()) {
         b.box(x1 - 1.2, y, cz + dz, 0.8, 3.2, 4.4, PAL.metal);
@@ -653,6 +668,6 @@ export function buildStructures(heightAt: HeightAt) {
   // Independent 2026 observatory craftsmanship, all ART only, appended after
   // legacy batches so their exact ordered collision streams remain unchanged.
   pieces.push(...buildValleyCraft(heightAt));
-  // Boundary walls are built at runtime from the union of all regions (see src/regions.ts).
+  // Boundary walls are built at runtime from the union of all regions (see src/map/regions.ts).
   return { pieces, markers };
 }

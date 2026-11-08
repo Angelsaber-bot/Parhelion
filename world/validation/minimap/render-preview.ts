@@ -12,12 +12,12 @@ import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { transformSync } from 'esbuild';
 import sharp from 'sharp';
-import { WorldMap } from '../../src/map';
-import { WorldGrid } from '../../src/grid';
-import { regionLoader, bakeQuantized } from '../../src/glb';
-import { GRID, REGIONS, mergeLayouts } from '../../src/regions';
+import { WorldMap } from '../../src/map/map';
+import { WorldGrid } from '../../src/map/grid';
+import { regionLoader, bakeQuantized } from '../../src/rendering/glb';
+import { GRID, REGIONS, mergeLayouts } from '../../src/map/regions';
 import { localizeText } from '../../../shared-client/i18n';
-import type { Layout } from '../../src/types';
+import type { Layout } from '../../src/core/types';
 
 const output = new URL('../../../docs/world-minimap/', import.meta.url);
 mkdirSync(output, { recursive: true });
@@ -132,8 +132,8 @@ const headings = `<svg xmlns="http://www.w3.org/2000/svg" width="940" height="15
 await sharp(Buffer.from(headings)).composite(composition).png().toFile(new URL('comparison.png', output).pathname);
 writeFileSync(new URL('manifest.json', output), JSON.stringify({
   method: 'Real WorldMap.draw command capture, SVG replay and sharp rasterization; not browser/WebGL validation',
-  baselineCommit: baseCommit, currentFiles: ['world/src/map.ts', 'world/src/minimapMarkers.ts'],
-  sourceSha256: Object.fromEntries(['src/map.ts', 'src/minimapMarkers.ts', 'validation/minimap-markers.test.ts', 'validation/regression.test.ts', 'validation/minimap/render-preview.ts']
+  baselineCommit: baseCommit, currentFiles: ['world/src/map/map.ts', 'world/src/map/minimapMarkers.ts'],
+  sourceSha256: Object.fromEntries(['src/map/map.ts', 'src/map/minimapMarkers.ts', 'validation/minimap-markers.test.ts', 'validation/regression.test.ts', 'validation/minimap/render-preview.ts']
     .map((file) => [`world/${file}`, createHash('sha256').update(readFileSync(new URL(`../../${file}`, import.meta.url))).digest('hex')])),
   terrain: 'Real merged WorldGrid from all five shipped GLBs', scenes,
   fullMapRegression: 'Before/after full-map SVG commands exactly equal in all three scene fixtures',

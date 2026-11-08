@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 import { getMap } from '../shared/arenaMap.ts';
 import { Match } from '../shared/match.ts';
 import { COUNTDOWN_TICKS, MATCH_TICKS } from '../shared/content.ts';
-import { startOffline } from '../src/session.ts';
+import { startOffline } from '../src/network/session.ts';
 
 function dirtyRound(match: Match) {
   match.phase = 'ended'; match.phaseT = 0; match.score = { A: 7, B: 4 };

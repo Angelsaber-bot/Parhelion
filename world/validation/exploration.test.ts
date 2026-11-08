@@ -5,9 +5,9 @@ import {
   flagPuzzle, flagTrial, glideLevel, glideScale, parseCampEncounter, regionExploration, regionItems, solvePuzzle, traceBeam,
 } from '../src/exploration/catalog.ts';
 import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagSignal, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap, foxAt, foxLength, mapHeld } from '../src/exploration/regional.ts';
-import { STORY_ENCOUNTER_LIMITS } from '../src/storyEncounters.ts';
-import { ENEMY_ROLES } from '../src/enemyRoles.ts';
-import { REGIONS } from '../src/regions.ts';
+import { STORY_ENCOUNTER_LIMITS } from '../src/story/storyEncounters.ts';
+import { ENEMY_ROLES } from '../src/combat/enemyRoles.ts';
+import { REGIONS } from '../src/map/regions.ts';
 
 test('every prism puzzle starts unsolved and has exactly one solution', () => {
   for (const p of PUZZLES) {
@@ -103,7 +103,7 @@ test('full-map exploration icons hide chests/feathers and grey out cleared sites
   const camp = CAMPS.find(c => !c.style)!; done.add(flagCamp(camp.id));
   assert.ok(explorationMapIcons(done).find(i => i.id === `camp:${camp.id}`)!.cleared);
   // every roaming elite is marked, and greys out once its bounty is claimed
-  const { MINIBOSSES } = await import('../src/minibosses.ts');
+  const { MINIBOSSES } = await import('../src/combat/minibosses.ts');
   const { flagElite } = await import('../src/exploration/catalog.ts');
   assert.equal(icons.filter(i => i.kind === 'elite').length, MINIBOSSES.length);
   done.add(flagElite(MINIBOSSES[1].id));
@@ -187,7 +187,7 @@ test('幻日谷 lost signals: hot/cold scanner, reachable caches, one buried che
 
 test('each roaming elite pays a one-time bounty that counts toward its region', async () => {
   const { ELITE_BOUNTY, flagElite, totalCrystals } = await import('../src/exploration/catalog.ts');
-  const { MINIBOSSES } = await import('../src/minibosses.ts');
+  const { MINIBOSSES } = await import('../src/combat/minibosses.ts');
   const { readFileSync } = await import('node:fs');
   assert.ok(ELITE_BOUNTY.crystals >= 10 && ELITE_BOUNTY.rounds > 0);
   for (const elite of MINIBOSSES) {

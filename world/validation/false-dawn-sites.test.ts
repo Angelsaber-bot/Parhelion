@@ -1,7 +1,7 @@
 import test from'node:test';import assert from'node:assert/strict';import * as THREE from'three';
-import{createFalseDawnSites,FALSE_DAWN_SITE_LIMITS}from'../src/falseDawnSites';import{FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_ACTOR_OFFSETS}from'../src/falseDawnSitesData';
+import{createFalseDawnSites,FALSE_DAWN_SITE_LIMITS}from'../src/story/falseDawnSites';import{FALSE_DAWN_CENTERS,FALSE_DAWN_ANCHORS,FALSE_DAWN_ACTOR_OFFSETS}from'../src/story/falseDawnSitesData';
 import{readFileSync}from'node:fs';
-test('False Dawn coordinate data has no runtime renderer dependency',()=>{const s=readFileSync(new URL('../src/falseDawnSitesData.ts',import.meta.url),'utf8');assert.doesNotMatch(s,/import.*three|import.*Sites['"]/);assert.equal(FALSE_DAWN_ANCHORS.length,3);assert.equal(FALSE_DAWN_ACTOR_OFFSETS.length,3);assert.equal(Object.keys(FALSE_DAWN_CENTERS).length,3);});
+test('False Dawn coordinate data has no runtime renderer dependency',()=>{const s=readFileSync(new URL('../src/story/falseDawnSitesData.ts',import.meta.url),'utf8');assert.doesNotMatch(s,/import.*three|import.*Sites['"]/);assert.equal(FALSE_DAWN_ANCHORS.length,3);assert.equal(FALSE_DAWN_ACTOR_OFFSETS.length,3);assert.equal(Object.keys(FALSE_DAWN_CENTERS).length,3);});
 test('False Dawn props fit audited footprints and strict material/mesh/triangle budgets',()=>{
  const scene=createFalseDawnSites();assert.equal(scene.sites.length,3);assert.equal(scene.markers.length,8);assert.equal(new Set(scene.markers.map(m=>m.id)).size,8);assert.equal(scene.markers.filter(m=>m.type==='interact').length,7);
  for(const s of scene.sites){let triangles=0,meshes=0;const materials=new Set<THREE.Material>();s.root.updateMatrixWorld(true);const b=new THREE.Box3().setFromObject(s.root);assert.ok(b.min.x>=s.origin[0]-9&&b.max.x<=s.origin[0]+9);assert.ok(b.min.z>=s.origin[2]-9&&b.max.z<=s.origin[2]+9);

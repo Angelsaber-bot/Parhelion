@@ -1,0 +1,136 @@
+{
+  "baselineCommit": "a3096254ef0fff455a29932bc5fef2e57fa49f44",
+  "campus": {
+    "node": "Campus",
+    "beforePositionSha256": "a5e11eaa7a7d1d18310e6f220312b0b1ac9ff5b4d2d3b4eba7333d99efb65c9f",
+    "afterPositionSha256": "0b0866085db28813d7493926f837505244ead6e9a4d1e72f637d2d6280ca058a",
+    "edits": [
+      {
+        "component": 3499,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3502,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3505,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3508,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3511,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3514,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3517,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3520,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3523,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3526,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3529,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3532,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3535,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3538,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3541,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3544,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3547,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3550,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3553,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3556,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3559,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3562,
+        "before": -5652,
+        "after": -5705
+      },
+      {
+        "component": 3565,
+        "before": -5591,
+        "after": -5644
+      },
+      {
+        "component": 3568,
+        "before": -5652,
+        "after": -5705
+      }
+    ]
+  },
+  "crossings": {
+    "node": "Crossings",
+    "retainedTriangles": 456,
+    "logTriangles": 32,
+    "retainedTrianglesSha256": "e3688ce19ec0e8e8fe5a7af5124485d12c718c5bf8683da16f650729f006e49d"
+  }
+}

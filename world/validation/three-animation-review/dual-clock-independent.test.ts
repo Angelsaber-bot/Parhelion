@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import {CharacterKit,type CharacterKitDefinition}from'../../src/characters/characterKit';import{KitCompanion}from'../../src/kitCompanion';
+import {CharacterKit,type CharacterKitDefinition}from'../../src/characters/characterKit';import{KitCompanion}from'../../src/companions/kitCompanion';
 function fixture(events=[.04,.08],id='qa'){
  const scene=new THREE.Group(),bone=new THREE.Bone();bone.name='qa-hand';scene.add(bone);
  const names=['idle','walk','run','attack'];const clips=names.map(name=>new THREE.AnimationClip(name,1.6,[new THREE.NumberKeyframeTrack('qa-hand.position[x]',[0,.8,1.6],name==='attack'?[0,2,0]:[0,1,0])]));

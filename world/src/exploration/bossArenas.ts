@@ -7,8 +7,8 @@
  */
 import * as THREE from 'three';
 import { Frame, type V3 } from './models';
-import type { SiteArt } from '../campaignSites';
-import { SHIP_INTERIOR, flagshipPoint } from '../shipInteriorCut';
+import type { SiteArt } from '../story/campaignSites';
+import { SHIP_INTERIOR, flagshipPoint } from '../map/shipInteriorCut';
 
 type Terrain = (x: number, z: number) => number;
 export const CAMLANN = Object.freeze({ boss: [-940, 202] as const, core: [-926, 212] as const, clear: 7.5, stones: 33, swords: 70 });

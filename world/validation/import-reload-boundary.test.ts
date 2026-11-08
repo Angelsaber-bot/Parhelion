@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { WORLD_PROGRESS_KEY } from '../src/progress';
+import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 
 for (const reloadMode of ['noop', 'throw'] as const) test(`accepted import retires old World when reload is ${reloadMode}`, async () => {
   const initial = JSON.stringify({ done: ['armory_rack', 'ruin_target_1', 'ruin_target_2', 'ruin_target_3'], found: [] });

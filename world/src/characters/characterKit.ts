@@ -1,6 +1,6 @@
-import { MountedIdleTurn } from '../mountedIdleTurn';
-import { attachCaptainCavalryArt } from '../captainCavalryArt';
-import { remasterCaptainCavalryClip } from '../captainCavalryClip';
+import { MountedIdleTurn } from '../companions/mountedIdleTurn';
+import { attachCaptainCavalryArt } from '../cinematics/captainCavalryArt';
+import { remasterCaptainCavalryClip } from '../cinematics/captainCavalryClip';
 import * as THREE from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mountedChargeClip } from './mountedChargeMotion';

@@ -1,7 +1,7 @@
 /** Actual follow controller, identical timed route before/after. CPU evidence only. */
 import * as THREE from 'three';import{mkdir,writeFile,readFile}from'node:fs/promises';import{fileURLToPath,pathToFileURL}from'node:url';import path from'node:path';import{createHash}from'node:crypto';
 import{gzipSync}from'node:zlib';
-import{MeshBVH}from'three-mesh-bvh';import{readCharacter}from'./inspect.ts';import{ContractServant,SERVANT_MODELS}from'../../src/servant.ts';import{FirstContract}from'../../src/contracts.ts';import{ServantAppearance}from'../../src/servantAppearance.ts';
+import{MeshBVH}from'three-mesh-bvh';import{readCharacter}from'./inspect.ts';import{ContractServant,SERVANT_MODELS}from'../../src/companions/servant.ts';import{FirstContract}from'../../src/companions/contracts.ts';import{ServantAppearance}from'../../src/companions/servantAppearance.ts';
 const out=process.argv[2];if(!out)throw Error('Workspace output directory required');await mkdir(out,{recursive:true});
 const option=(name:string)=>process.argv.find(a=>a.startsWith('--'+name+'='))?.split('=').slice(1).join('=');
 const baseline=option('baseline-module'),outfit=(option('outfit')??'armor')as'armor'|'civilian',fps=Number(option('fps')??12),hz=Number(option('hz')??60),metricsOnly=process.argv.includes('--metrics-only'),compact=process.argv.includes('--compact'),trueGround=process.argv.includes('--true-ground'),contactCloseup=process.argv.includes('--contact-closeup'),selected=option('frames')?new Set(option('frames')!.split(',').map(Number)):undefined;if(!['armor','civilian'].includes(outfit)||(!metricsOnly&&hz%fps!==0))throw Error('Invalid outfit or sampling rate');
@@ -9,7 +9,7 @@ const Runtime=baseline?(await import(pathToFileURL(path.resolve(baseline)).href)
 const asset=fileURLToPath(new URL(SERVANT_MODELS[outfit])),{gltf}=await readCharacter(asset),appearance=new ServantAppearance();appearance.select(outfit);
 const actor=new Runtime({scene:new THREE.Scene(),marker:{id:'test',type:'interact',label:'test',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),appearance,colliders:[{name:'floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2))}],load:async()=>gltf,target:()=>null,strike:()=>null});
 await actor.ensureLoaded();const sharedFiles=new Set<string>();const player=new THREE.Vector3(),metrics:any[]=[];
-const runtimePath=baseline?path.resolve(baseline):fileURLToPath(new URL('../../src/servant.ts',import.meta.url)),runtimeSha256=createHash('sha256').update(await readFile(runtimePath)).digest('hex');
+const runtimePath=baseline?path.resolve(baseline):fileURLToPath(new URL('../../src/companions/servant.ts',import.meta.url)),runtimeSha256=createHash('sha256').update(await readFile(runtimePath)).digest('hex');
 const sourceHashes:Record<string,string>={servant:runtimeSha256};if(!baseline)for(const name of ['saberStride','saberStrideRuntime','saberGroundedLocomotion','saberTerrainPatch','saberFootSupport','saberSoleGeometry','actionBlend'])sourceHashes[name]=createHash('sha256').update(await readFile(fileURLToPath(new URL('../../src/characters/'+name+'.ts',import.meta.url)))).digest('hex');
 for(let tick=0;tick<=8*hz;tick++){
  const time=tick/hz;let speed=0,yaw=Math.PI/2;

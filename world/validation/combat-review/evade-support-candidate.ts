@@ -4,7 +4,7 @@
  * displacement is rolled back exactly. Production Player performs its normal
  * grounded velocity cleanup after this collision hook returns.
  */
-import * as THREE from 'three';import type {Player} from '../../src/player';
+import * as THREE from 'three';import type {Player} from '../../src/player/player';
 export const EVADE_SUPPORT_DROP=.01;
 type SupportPlayer=Pick<Player,'pos'|'vel'|'onGround'|'swimming'|'gliding'|'inUpdraft'|'flying'|'colliders'|'step'>;
 export function installEvadeSupportCandidate(player:SupportPlayer){

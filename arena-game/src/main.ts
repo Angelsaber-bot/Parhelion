@@ -1,21 +1,21 @@
-import { arenaMatchBriefing, arenaControlHints, arenaPauseLabel } from './matchBriefing.ts';
+import { arenaMatchBriefing, arenaControlHints, arenaPauseLabel } from './ui/matchBriefing.ts';
 import { bilingual, createLanguageToggle, localizeDom, localizeText, onLanguageChange } from '../../shared-client/i18n.ts';
-import { ResultsBoard, syncResultsBoardLayers } from './resultsBoard.ts';
+import { ResultsBoard, syncResultsBoardLayers } from './ui/resultsBoard.ts';
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, WEAPONS, weaponIndex, type TeamLayout } from '../shared/content.ts';
 import { DEFAULT_PORT, PUBLIC_SERVER, type JoinOptions } from '../shared/protocol.ts';
-import { sfx } from './audio.ts';
-import { Controls } from './controls.ts';
+import { sfx } from './rendering/audio.ts';
+import { Controls } from './player/controls.ts';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings.ts';
 import '../../shared-client/settings.css';
 import { Game } from './game.ts';
-import { Hud } from './hud.ts';
-import { LoadoutStore, loadoutCards, displayWeaponName } from './loadout.ts';
-import {readSkinSelection,withSkinSelection} from './skinSelection.ts';
-import {initialGraphics,mountGraphicsControl} from './graphics.ts';
-import {FrameGate,worldRenderVisible} from './renderScheduling.ts';
-import { ArenaScene } from './scene.ts';
-import { joinOnline, startOffline, type Session } from './session.ts';
+import { Hud } from './ui/hud.ts';
+import { LoadoutStore, loadoutCards, displayWeaponName } from './ui/loadout.ts';
+import {readSkinSelection,withSkinSelection} from './cosmetics/skinSelection.ts';
+import {initialGraphics,mountGraphicsControl} from './rendering/graphics.ts';
+import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
+import { ArenaScene } from './rendering/scene.ts';
+import { joinOnline, startOffline, type Session } from './network/session.ts';
 import asterThumb from './assets/maps/aster.webp';
 import sakuraThumb from './assets/maps/sakura.webp';
 import blackflagThumb from './assets/maps/blackflag.webp';
@@ -177,7 +177,7 @@ $('armory').onclick = async () => {
   const generation = attemptGeneration;
   const eligible = () => !starting && !game && !pageExited && generation === attemptGeneration;
   if (!eligible()) return;
-  try { const armory = await import('./armory.ts'); if (eligible()) armory.openArmory({skins,equip:(weapon,skin)=>{skins[weapon]=skin;renderSkins();try{const prior=JSON.parse(localStorage.getItem('arena-lobby')??'{}');localStorage.setItem('arena-lobby',JSON.stringify(withSkinSelection(prior,skins)));return{saved:true};}catch{return{saved:false};}}}); }
+  try { const armory = await import('./weapons/armory.ts'); if (eligible()) armory.openArmory({skins,equip:(weapon,skin)=>{skins[weapon]=skin;renderSkins();try{const prior=JSON.parse(localStorage.getItem('arena-lobby')??'{}');localStorage.setItem('arena-lobby',JSON.stringify(withSkinSelection(prior,skins)));return{saved:true};}catch{return{saved:false};}}}); }
   catch (error) { if (eligible()) showError(() => bilingual(`武器展示无法打开：${localizeText(String(error))}`, `Could not open the armory: ${localizeText(String(error))}`)); }
 };
 renderChars();

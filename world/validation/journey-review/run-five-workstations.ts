@@ -2,8 +2,8 @@
  * Legacy evidence is setup. No forced grounding, damage or new quest flags. */
 import assert from 'node:assert/strict';import {writeFileSync,mkdirSync} from 'node:fs';
 import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';
-import {CAMPAIGN_REGIONS,CAMPAIGN_EPISODES,campaignEpisodeFlags} from '../../src/campaignEpisodes';
-import {CAMPAIGN_WORK_TASKS} from '../../src/campaignWorkTasks';
+import {CAMPAIGN_REGIONS,CAMPAIGN_EPISODES,campaignEpisodeFlags} from '../../src/story/campaignEpisodes';
+import {CAMPAIGN_WORK_TASKS} from '../../src/story/campaignWorkTasks';
 const choiceIndex=process.argv.includes('--first-branch')?0:1;
 const KEY='parhelion.world.progress.v2',legacy=['hq_terminal','armory_rack','summon_circle','relay_a','relay_b','sun_core','sea_core','winter_core','fire_core',...CAMPAIGN_REGIONS.flatMap(r=>CAMPAIGN_EPISODES[r].evidence)];
 const events:any[]=[];let saved='',error:unknown;const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{[KEY]:JSON.stringify({done:legacy,found:[]})}}),{world:w,window}=h,d=window.document;let now=0;

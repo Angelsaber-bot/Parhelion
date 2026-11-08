@@ -29,7 +29,7 @@ test('actual main quest browser only pins deliberately, advances saved steps, an
   const discovery=panel.querySelector<HTMLButtonElement>('[data-quest-track^="discovery:"]')!,discoveryId=discovery.dataset.questTrack!.slice('discovery:'.length);
   discovery.click();await enter();frames();assert.ok(d.getElementById('world-tracked-story'));
   w.found.add(discoveryId);frames();assert.equal(d.getElementById('world-tracked-story'),null,'real found-state completion releases the finished instruction');
-  open();const link=[...panel.querySelectorAll<HTMLButtonElement>('button')].find(b=>/Chronicles & continuation/.test(b.textContent!))!;link.click();assert.equal(panel.hidden,true);assert.equal(w.campaignJournal.open,true);key('Escape','Escape');
+  open();const link=[...panel.querySelectorAll<HTMLButtonElement>('button')].find(b=>/Optional investigations & chronicles/.test(b.textContent!))!;link.click();assert.equal(panel.hidden,true);assert.equal(w.campaignJournal.open,true);key('Escape','Escape');
   open();const categories=panel.querySelectorAll('select')[1];categories.value='main';categories.dispatchEvent(new h.window.Event('change'));
   panel.querySelector<HTMLButtonElement>('[data-quest-track="main:alpha"]')!.click();await enter();frames();assert.ok(d.getElementById('world-tracked-story'));
   assert.equal(w.settings.bind('reset','KeyK',true),null);h.window.confirm=()=>false;key('KeyK');assert.equal(w.done.has('armory_rack'),true,'canceling reset preserves actual progress');

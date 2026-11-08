@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, enemyAttackContains, enemyAttackRadius, enemyAttackTiming, enemyThrustLength, rangedDamageMultiplier, COMBAT, type CombatTerrain, type Enemy, type Point3 } from '../src/combat.ts';
-import { ENEMY_ROLES, selectEnemyRole, type EnemyRole } from '../src/enemyRoles.ts';
-import { collectStrikeTargets, type StrikeRequest } from '../src/combatActions.ts';
+import { WorldCombatState, enemyAttackContains, enemyAttackRadius, enemyAttackTiming, enemyThrustLength, rangedDamageMultiplier, COMBAT, type CombatTerrain, type Enemy, type Point3 } from '../src/combat/combat.ts';
+import { ENEMY_ROLES, selectEnemyRole, type EnemyRole } from '../src/combat/enemyRoles.ts';
+import { collectStrikeTargets, type StrikeRequest } from '../src/combat/combatActions.ts';
 
 const p = (x: number, z = 0, y = 0): Point3 => ({ x, y, z });
 const terrain: CombatTerrain = { walk: (_from, x, z) => p(x, z), lineOfSight: () => true };
@@ -130,7 +130,7 @@ test('area strikes cap targets, sort deterministically, reject invalid input and
 });
 
 test('chapter bosses have distinct rhythms without hidden or untelegraphed follow-ups', async () => {
-  const { chooseBossAttack, bossAttackTiming, bossAttackDamage } = await import('../src/bossPatterns.ts');
+  const { chooseBossAttack, bossAttackTiming, bossAttackDamage } = await import('../src/combat/bossPatterns.ts');
   const state = (id: string) => new WorldCombatState([], { id, kind: 'king', p: p(0), requires: [] }).boss;
   const king = state('boss_vacant_king'), admiral = state('boss_drowned_admiral'), winter = state('boss_winter_warden'), fire = state('boss_hellfire_lord');
   king.attackCount = 2; admiral.attackCount = 2;

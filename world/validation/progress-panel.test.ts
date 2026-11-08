@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/progress';
-import { createProgressPanel } from '../src/progressPanel';
+import { WorldProgress, WORLD_PROGRESS_KEY } from '../src/core/progress';
+import { createProgressPanel } from '../src/ui/progressPanel';
 import { setLanguage } from '../../shared-client/i18n';
 
 function fixture(initialRaw?: string) {

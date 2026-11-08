@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { createAmbientLife, AMBIENT_LIFE, REGION_LIFE } from '../src/ambientLife.ts';
+import { createAmbientLife, AMBIENT_LIFE, REGION_LIFE } from '../src/environment/ambientLife.ts';
 
 const hills = (x: number, z: number) => Math.sin(x * .05) * 3 + Math.cos(z * .04) * 2;
 const draws = (root: THREE.Object3D) => { let n = 0; root.traverse(o => { if ((o as THREE.Mesh).isMesh || (o as THREE.Points).isPoints) n++; }); return n; };

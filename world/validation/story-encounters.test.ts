@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, type CombatTerrain } from '../src/combat.ts';
-import { StoryEncounterDirector, type StoryEncounterSpec } from '../src/storyEncounters.ts';
+import { WorldCombatState, type CombatTerrain } from '../src/combat/combat.ts';
+import { StoryEncounterDirector, type StoryEncounterSpec } from '../src/story/storyEncounters.ts';
 const p = (x=0,z=0,y=0) => ({x,y,z});
 const ground: CombatTerrain = {walk:(_from,x,z)=>p(x,z),lineOfSight:()=>true};
 const spec:StoryEncounterSpec = {id:'false_dawn_courier',anchor:p(),actors:[{role:'lancer',offset:[-4,4]},{role:'musketeer',offset:[4,4]}]};

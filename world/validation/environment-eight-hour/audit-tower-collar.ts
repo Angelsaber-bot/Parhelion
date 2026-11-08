@@ -1,6 +1,6 @@
 /** Read-only actual-collider component traversal. One supported diagnostic setup per
  * trial, then production Player.step inputs only; no forced grounding or geometry edits. */
-import assert from 'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import path from'node:path';import * as THREE from'three';import{Player}from'../../src/player';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';
+import assert from 'node:assert/strict';import{mkdir,writeFile}from'node:fs/promises';import path from'node:path';import * as THREE from'three';import{Player}from'../../src/player/player';import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';
 const out=process.argv[2];assert(out);await mkdir(out,{recursive:true});const h=await bootWorldWithoutGpu({deterministic:true,worldRoot:process.env.WORLD_REVIEW_ROOT});const w=h.world;const center=[0,-162];
 const ground=(x:number,z:number)=>{const ray=new THREE.Ray(new THREE.Vector3(x,80,z),new THREE.Vector3(0,-1,0));let best:any=null;for(const c of w.colliders)if(c.enabled){const hit=c.bvh.raycastFirst(ray,THREE.DoubleSide);if(hit&&(!best||hit.distance<best.distance))best={...hit,collider:c.name};}return best;};
 const profile:any[]=[],trials:any[]=[];

@@ -5,8 +5,8 @@ import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const source=resolve(process.argv[2]??'..'),out=process.argv[3];
 const {playerFixture}=await import(pathToFileURL(`${source}/world/validation/player-fixture.ts`).href);
-const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/skinnedCharacter.ts`).href);
-const {ShoulderAim}=await import(pathToFileURL(`${source}/world/src/aim.ts`).href);
+const {SkinnedCharacterAnimator}=await import(pathToFileURL(`${source}/world/src/player/skinnedCharacter.ts`).href);
+const {ShoulderAim}=await import(pathToFileURL(`${source}/world/src/player/aim.ts`).href);
 const rows=[];
 for(const hz of [30,60,120]){
  const f=await playerFixture(),a=new SkinnedCharacterAnimator(f.rig),aim=new ShoulderAim();

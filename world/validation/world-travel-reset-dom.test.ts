@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { WORLD_PROGRESS_KEY, INITIAL_SPAWN_ID } from '../src/progress';
+import { WORLD_PROGRESS_KEY, INITIAL_SPAWN_ID } from '../src/core/progress';
 
 test('NON-GPU actual travel buttons and reset keys execute production handlers with revalidation', async (t) => {
   const harness = await bootWorldWithoutGpu({ deterministic: true });

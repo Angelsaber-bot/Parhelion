@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import * as THREE from 'three';
-import {UltimateStage} from '../src/ultimateStage.ts';
+import {UltimateStage} from '../src/cinematics/ultimateStage.ts';
 function source(){const root=new THREE.Group();const body=new THREE.Mesh(new THREE.BoxGeometry(.8,2,.5),new THREE.MeshBasicMaterial());body.position.y=1;root.add(body);const muzzle=new THREE.Object3D();muzzle.name='Blackbeard_Muzzle';muzzle.position.set(.3,1.5,.6);root.add(muzzle);return root;}
 function visible(stage:UltimateStage,match:RegExp){const names:string[]=[];stage.scene.traverse(o=>{if(o.visible&&match.test(o.name))names.push(o.name);});return names;}
 test('Blackbeard cannon banks follow exactly three contact counts, not phase progress or pulse',()=>{

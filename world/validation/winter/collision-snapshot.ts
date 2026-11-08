@@ -2,7 +2,7 @@
 import {readFileSync,writeFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../../src/glb.ts';
+import {regionLoader,bakeQuantized} from '../../src/rendering/glb.ts';
 export async function collisionSnapshot(path:string){
  const bytes=readFileSync(path),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
  bakeQuantized(gltf.scene);gltf.scene.updateMatrixWorld(true);

@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { registerHooks } from 'node:module';
 registerHooks({load(url,context,next){return url.endsWith('.css')?{format:'module',source:'',shortCircuit:true}:next(url,context);}});
-const { WorldCombat } = await import('../src/combatView');
-import { WorldCombatState, type Point3 } from '../src/combat';
+const { WorldCombat } = await import('../src/combat/combatView');
+import { WorldCombatState, type Point3 } from '../src/combat/combat';
 
 /** Isolated query/HP regression, intentionally synthetic terrain; production BVH
  * and actual animation contacts are separately exercised by companion-reliability-dom. */

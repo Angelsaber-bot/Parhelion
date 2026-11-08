@@ -1,7 +1,7 @@
 /** Synthetic presentation boundary stress, separate from the actual follow-controller route. */
 import{MeshBVH}from'three-mesh-bvh';
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import{fileURLToPath}from'node:url';
-import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/servant.ts';import{FirstContract}from'../src/contracts.ts';import{ServantAppearance}from'../src/servantAppearance.ts';import{saberRunRate}from'../src/characters/saberStride.ts';
+import{readCharacter}from'./characters/inspect.ts';import{ContractServant,SERVANT_MODELS}from'../src/companions/servant.ts';import{FirstContract}from'../src/companions/contracts.ts';import{ServantAppearance}from'../src/companions/servantAppearance.ts';import{saberRunRate}from'../src/characters/saberStride.ts';
 for(const hz of [30,60,120])test(`${hz}Hz: finite-leg sharp circular pivots release instead of stretching`,async t=>{
  const{gltf}=await readCharacter(fileURLToPath(SERVANT_MODELS.civilian)),appearance=new ServantAppearance();appearance.select('civilian');
  const actor=new ContractServant({scene:new THREE.Scene(),marker:{id:'test',type:'interact',label:'test',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),appearance,colliders:[{name:'actual-pivot-floor',enabled:true,bvh:new MeshBVH(new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2))}],load:async()=>gltf,target:()=>null,strike:()=>null});await actor.ensureLoaded();const a=actor as any;const run=a.clips.get('run');a.play('run',false,saberRunRate(5.5,run.getClip().duration));a.strideSpeed=5.5;

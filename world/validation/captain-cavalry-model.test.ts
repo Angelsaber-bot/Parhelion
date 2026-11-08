@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {readFile} from 'node:fs/promises';import {fileURLToPath,pathToFileURL} from 'node:url';import {resolve} from 'node:path';import {createHash} from 'node:crypto';import {gunzipSync} from 'node:zlib';
-import {readCharacter} from './characters/inspect';import {attachCaptainCavalryArt} from '../src/captainCavalryArt';import {remasterCaptainCavalryClip} from '../src/captainCavalryClip';import {mountedChargeClip} from '../src/characters/mountedChargeMotion';
+import {readCharacter} from './characters/inspect';import {attachCaptainCavalryArt} from '../src/cinematics/captainCavalryArt';import {remasterCaptainCavalryClip} from '../src/cinematics/captainCavalryClip';import {mountedChargeClip} from '../src/characters/mountedChargeMotion';
 const hash=(b:Uint8Array)=>createHash('sha256').update(b).digest('hex');
 function images(b:Buffer){const n=b.readUInt32LE(12),j=JSON.parse(b.subarray(20,20+n).toString()),bin=b.subarray(28+n);return j.images.map((im:any)=>{const v=j.bufferViews[im.bufferView];return hash(bin.subarray(v.byteOffset??0,(v.byteOffset??0)+v.byteLength));});}
 for(const id of ['blackbeard','napoleonMounted'] as const)test(`${id} v2 actual exported model, texture and contact roundtrip`,async()=>{

@@ -5,7 +5,7 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Client } from '@colyseus/sdk';
 import { expect, it } from 'vitest';
 import { ArenaRoom } from '../server/ArenaRoom.ts';
-import { joinOnline, type Session } from '../src/session.ts';
+import { joinOnline, type Session } from '../src/network/session.ts';
 
 it('LAN drop is terminal and deliberate Leave cannot retain unsupported SDK retries', async () => {
   let serverClient: any, serverRoom: ArenaRoom | undefined, sdkRoom: any;

@@ -10,14 +10,14 @@ import { createHash } from 'node:crypto';
 import * as THREE from 'three';
 import { transformSync } from 'esbuild';
 import sharp from 'sharp';
-import { WorldMap } from '../../src/map';
-import { WorldGrid } from '../../src/grid';
-import { regionLoader, bakeQuantized } from '../../src/glb';
-import { GRID, REGIONS, mergeLayouts } from '../../src/regions';
-import * as miniRules from '../../src/minimapMarkers';
-import * as regionRules from '../../src/regions';
+import { WorldMap } from '../../src/map/map';
+import { WorldGrid } from '../../src/map/grid';
+import { regionLoader, bakeQuantized } from '../../src/rendering/glb';
+import { GRID, REGIONS, mergeLayouts } from '../../src/map/regions';
+import * as miniRules from '../../src/map/minimapMarkers';
+import * as regionRules from '../../src/map/regions';
 import { localizeText, setLanguage } from '../../../shared-client/i18n';
-import type { Layout } from '../../src/types';
+import type { Layout } from '../../src/core/types';
 
 const output = new URL('../../../docs/world-full-map/', import.meta.url);
 mkdirSync(output, { recursive: true });
@@ -130,8 +130,8 @@ const headings = `<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="9
 await sharp(Buffer.from(headings)).composite(composition).png().toFile(new URL('comparison.png', output).pathname);
 writeFileSync(new URL('manifest.json', output), JSON.stringify({
   method: 'Real WorldMap.draw commands replayed to SVG and rasterized with sharp; not browser/WebGL validation',
-  baselineCommit: baseCommit, currentFiles: ['world/src/map.ts', 'world/src/fullMapPresentation.ts', 'world/index.html'],
-  sourceSha256: Object.fromEntries(['src/map.ts', 'src/fullMapPresentation.ts', 'validation/full-map-qa.test.ts', 'validation/full-map/render-preview.ts']
+  baselineCommit: baseCommit, currentFiles: ['world/src/map/map.ts', 'world/src/map/fullMapPresentation.ts', 'world/index.html'],
+  sourceSha256: Object.fromEntries(['src/map/map.ts', 'src/map/fullMapPresentation.ts', 'validation/full-map-qa.test.ts', 'validation/full-map/render-preview.ts']
     .map(file => [`world/${file}`, createHash('sha256').update(readFileSync(new URL(`../../${file}`, import.meta.url))).digest('hex')])),
   terrain: 'Unchanged real merged WorldGrid from all five shipped GLBs', scenes, counts,
   caveats: ['Deterministic approximate text metrics; browser glyph metrics can differ', 'No synthetic enemy input; includes actual authored static markers', 'Pulse frozen at performance.now() = 0', 'HUD stacking is source-checked, not browser-validated'],

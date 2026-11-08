@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { WorldCombatState, enemyAttackTiming } from '../src/combat.ts';
-import { enemyAttackPose, ENEMY_CONTACT_SAMPLE, type EnemyPoseModel } from '../src/enemyAttackPresentation.ts';
-import { EnemyVisuals } from '../src/enemyVisuals.ts';
+import { WorldCombatState, enemyAttackTiming } from '../src/combat/combat.ts';
+import { enemyAttackPose, ENEMY_CONTACT_SAMPLE, type EnemyPoseModel } from '../src/combat/enemyAttackPresentation.ts';
+import { EnemyVisuals } from '../src/combat/enemyVisuals.ts';
 import { parseLocalGlb } from './player-fixture.ts';
 const p = { x: 0, y: 0, z: 720 };
 const make = () => new WorldCombatState([{ id: 'pose', kind: 'shade', p }], []).enemies[0];

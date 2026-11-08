@@ -2,7 +2,7 @@ import vm from 'node:vm';
 import {transformSync} from 'esbuild';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {readResolutionMode} from '../src/renderSettings.ts';
+import {readResolutionMode} from '../src/rendering/renderSettings.ts';
 import {readFileSync} from 'node:fs';
 
 test('resolution URL wins over saved mode; malformed and inaccessible storage are safe',()=>{

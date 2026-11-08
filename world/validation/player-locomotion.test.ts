@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
-import { advancePlayerStride, playerStride, samplePlayerFoot } from '../src/playerLocomotion.ts';
+import { SkinnedCharacterAnimator } from '../src/player/skinnedCharacter.ts';
+import { advancePlayerStride, playerStride, samplePlayerFoot } from '../src/player/playerLocomotion.ts';
 
 const base = { speed:0,onGround:true,swimming:false,vy:0,moveYaw:0,armed:false };
 const corr=(xs:number[],ys:number[])=>{const x=xs.reduce((a,b)=>a+b)/xs.length,y=ys.reduce((a,b)=>a+b)/ys.length;return xs.reduce((n,v,i)=>n+(v-x)*(ys[i]-y),0)/Math.sqrt(xs.reduce((n,v)=>n+(v-x)**2,0)*ys.reduce((n,v)=>n+(v-y)**2,0));};

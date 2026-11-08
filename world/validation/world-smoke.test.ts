@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player, type Collider } from '../src/player.ts';
-import type { Layout } from '../src/types.ts';
+import { Player, type Collider } from '../src/player/player.ts';
+import type { Layout } from '../src/core/types.ts';
 
 const buffer = readFileSync(new URL('../public/assets/world_alpha.glb', import.meta.url));
 const gltf = await regionLoader().parseAsync(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), '');

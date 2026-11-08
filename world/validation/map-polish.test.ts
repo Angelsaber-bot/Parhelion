@@ -13,6 +13,17 @@ const chunkBaseline=JSON.parse(readFileSync(new URL('./map-polish/chunk-baseline
 // visuals. Pin both sides of the change; all other historical nodes, including
 // the full ordered collision skeleton, still compare against the old baseline.
 const chestReplacements=JSON.parse(readFileSync(new URL('./lived-world/legacy-chest-nodes.json',import.meta.url),'utf8'));
+// The existing Round Hall's decorative slab was 15.5cm above grounded feet.
+// A separate actual-asset test reverses exactly 122 slab Y components to this
+// unchanged historical POSITION hash; no baseline file is refreshed.
+const britainPaving=JSON.parse(readFileSync(new URL('./britain-floor-contact.edits.json',import.meta.url),'utf8'));
+// Alpha contact repairs only lower the workshop slab and plane the existing log.
+// alpha-surface-contact.test.ts reverses the exact 24 slab Y edits and verifies
+// every one of the 456 non-log Crossings triangles against its original bytes.
+const alphaContact=JSON.parse(readFileSync(new URL('./alpha-surface-contact.edits.json',import.meta.url),'utf8'));
+// 13 exact burned-open Winter house boxes are replaced by authored shell solids.
+// winter-export.test.ts independently pins all 24,772 remaining ordered triangles.
+const winterRuins=JSON.parse(readFileSync(new URL('./winter/ruin-collision-replacement.json',import.meta.url),'utf8'));
 // Explicitly bounded authoring permission, NOT an updated expected-output hash.
 // Every other exported node/accessor/transform must equal the untouched a309625
 // baseline. A later explicit user request aligns four Alpha seam blockers; only
@@ -37,7 +48,7 @@ const edits:Record<string,{nodes:string[];triangles:number;bytes:number}>={
   alpha:{nodes:['Valley_Landing_Fieldkit_Ceramic','Valley_Landing_Fieldkit_Metal'],triangles:700,bytes:23000},
   britain:{nodes:['Britain_Physical_Wool','Britain_Physical_Bronze','Britain_Physical_Iron'],triangles:500,bytes:5000},
   blacksail:{nodes:['Nassau_Craft_Iron','Nassau_Craft_Rope','Nassau_Craft_Timber','Nassau_Craft_Terracotta','Nassau_Craft_Shingle'],triangles:1800,bytes:25000},
-  winter:{nodes:['Bivouac_WinterCanvas'],triangles:2500,bytes:45000},
+  winter:{nodes:['Bivouac_WinterCanvas'],triangles:2500,bytes:57000},
   kyoto:{nodes:['Inari','Higashiyama'],triangles:90000,bytes:900000},
 };
 for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded detail whitelist preserves exact gameplay and all unrelated GLB content`,async()=>{
@@ -58,11 +69,24 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
   assert.deepEqual([...now.materials].sort((a,b)=>a.name.localeCompare(b.name)),[...old.materials].sort((a,b)=>a.name.localeCompare(b.name)),'existing surface/alpha/material identities (material table order is storage only)');
   const foundation=region==='kyoto'?'Kyoto_Hillside_Foundations':region==='winter'?'Winter_House_Foundations':null;
   const added = region === 'alpha' ? seamNames : region === 'blacksail' ? [tavernLining,'Fort_Tower_Drums'] : foundation?[foundation]:[];
-  const extraCollision=region==='blacksail'?['COL_Fort_Tower_Drums']:foundation?[`COL_${foundation}`]:[];
+  const extraCollision=region==='blacksail'?['COL_Fort_Tower_Drums']:region==='winter'?['COL_Winter_House_Foundations','COL_Winter_Ruin_Shells']:foundation?[`COL_${foundation}`]:[];
   const appendTriangles = region === 'blacksail' ? 6 : 0, appendBytes = region === 'blacksail' ? 1412 : 0;
   assert.deepEqual(Object.keys(now.nodes).filter(n=>!added.includes(n) && !extraCollision.includes(n)),Object.keys(old.nodes),'only explicitly named seam, lining and structural repair nodes may be added; no removal/reorder');
   for(const [name,node] of Object.entries(now.nodes)){
-    if(region==='blacksail' && name===tavernLining) {
+    if(region==='winter'&&name==='COL_Props') {
+      assert.equal(node.primitives.length,1);assert.equal(node.primitives[0].triangles,winterRuins.retainedPropsTriangles);
+      assert.equal(old.nodes[name].primitives[0].triangles-node.primitives[0].triangles,13*12);
+      const restored=structuredClone(node);
+      restored.primitives[0].triangles=old.nodes[name].primitives[0].triangles;
+      restored.primitives[0].attributes.POSITION=old.nodes[name].primitives[0].attributes.POSITION;
+      assert.deepEqual(restored,old.nodes[name],'only position triangles change; original transform, other accessors and metadata remain exact');
+      assert.equal(node.primitives[0].attributes.POSITION.sha256,'c2764e16183f9abfd9e2425eadefc9dae6e46867f0489214cfbffbc2308d88b8','exact remaining encoded positions, independently audited against ordered pre-repair triangles');
+    } else if(region==='winter'&&name==='COL_Winter_Ruin_Shells') {
+      assert.deepEqual(node.children,[]);assert.equal(node.primitives.length,1);
+      assert.equal(node.primitives[0].material,'M_Collision');assert.equal(node.primitives[0].triangles,13*23*12);
+      assert.equal(node.extras.dynamic,true);assert.equal(node.extras.art,'Winter_Ruin_Shells');assert.equal(node.extras.winterRuinShell,true);
+      assert.deepEqual(node.extras.houses.map((h:{id:number;p:number[];size:number[]})=>({id:h.id,p:h.p,size:h.size})),winterRuins.removedRuinBoxes.map((h:{id:number;p:number[];size:number[]})=>({id:h.id,p:h.p,size:h.size})));
+    } else if(region==='blacksail' && name===tavernLining) {
       assert.deepEqual(node.extras,approvedTavernNode.extras);
       assert.deepEqual(node.children,[]);
       assert.equal(node.primitives.length,1);
@@ -107,12 +131,36 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
           else assert.equal(v,old.nodes[name][key][i]);
         });
       }
+    } else if(region==='alpha' && name===alphaContact.campus.node) {
+      assert.equal(old.nodes[name].primitives[0].attributes.POSITION.sha256,alphaContact.campus.beforePositionSha256);
+      assert.equal(node.primitives[0].attributes.POSITION.sha256,alphaContact.campus.afterPositionSha256);
+      const restored=structuredClone(node);
+      restored.primitives[0].attributes.POSITION.sha256=alphaContact.campus.beforePositionSha256;
+      assert.deepEqual(restored,old.nodes[name],'only the separately verified 24 floor Y components differ');
+    } else if(region==='alpha' && name===alphaContact.crossings.node) {
+      assert.equal(old.nodes[name].primitives[0].attributes.POSITION.sha256,'2166eba92a6a20d93baf6a0c7ccd8c79ac2007e5482bac2b92882ceab72e50ea');
+      assert.equal(node.primitives.length,1);const p=node.primitives[0],original=old.nodes[name].primitives[0];
+      assert.equal(p.triangles,original.triangles);assert.equal(p.indices.count,original.indices.count);
+      assert.equal(p.material,original.material);assert.equal(p.mode,original.mode);
+      assert.deepEqual(Object.keys(p.attributes),Object.keys(original.attributes));
+      for(const [semantic,attribute] of Object.entries(p.attributes)) {
+        const a=attribute as {count:number;sha256:string};
+        assert.equal(a.count,830,'planing welds six formerly separate radial vertices');
+        assert.deepEqual({...a,count:original.attributes[semantic].count,sha256:original.attributes[semantic].sha256},original.attributes[semantic]);
+      }
+      assert.deepEqual({...node,primitives:old.nodes[name].primitives},old.nodes[name],'original transform, quantization bounds, metadata and hierarchy stay exact; independent triangle proof bounds the replacement to the log');
     } else if(region==='alpha'&&name==='MK_interact_relay_b') {
       // Re-export also bakes the already-approved layout copy correction into
       // its GLB marker. Admit only that same exact note, never another field.
       assert.equal(node.extras.note,'进入据点后启动');
       assert.equal(old.nodes[name].extras.note,'清除据点后启动');
       assert.deepEqual({...node,extras:{...node.extras,note:old.nodes[name].extras.note}},old.nodes[name]);
+    } else if(region==='britain' && name===britainPaving.node) {
+      assert.equal(old.nodes[name].primitives[0].attributes.POSITION.sha256,britainPaving.beforePositionSha256);
+      assert.equal(node.primitives[0].attributes.POSITION.sha256,britainPaving.afterPositionSha256);
+      const restored=structuredClone(node);
+      restored.primitives[0].attributes.POSITION.sha256=britainPaving.beforePositionSha256;
+      assert.deepEqual(restored,old.nodes[name],'only the verified paving POSITION bytes change; indices, normals, colours, bounds and metadata remain exact');
     } else if(chestReplacements.regions[region]?.[name]) {
       const replacement=chestReplacements.regions[region][name];
       assert.equal(chestReplacements.baselineCommit,before.baselineCommit);

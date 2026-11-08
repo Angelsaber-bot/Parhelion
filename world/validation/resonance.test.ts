@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../src/resonance.ts';
-import { WorldCombatState, COMBAT } from '../src/combat.ts';
+import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../src/story/resonance.ts';
+import { WorldCombatState, COMBAT } from '../src/combat/combat.ts';
 import { CHESTS, CHEST_CRYSTALS } from '../src/exploration/catalog.ts';
-import { MINIBOSSES } from '../src/minibosses.ts';
+import { MINIBOSSES } from '../src/combat/minibosses.ts';
 
 test('resonance thresholds rise, stay reachable, and need most of the world for the last level', () => {
   const total = CHESTS.reduce((sum, c) => sum + CHEST_CRYSTALS[c.tier], 0) + MINIBOSSES.length * 15;

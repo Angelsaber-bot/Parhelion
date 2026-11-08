@@ -3,11 +3,11 @@ import { describe, expect, it, vi } from 'vitest';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { readFileSync } from 'node:fs';
-import { atmosphereFor } from '../src/atmosphere.ts';
-import { BLACKFLAG_ATMOSPHERE, BLACKFLAG_EFFECT_BUDGET, BlackflagEffects, blackflagCastsShadow } from '../src/blackflagPresentation.ts';
-import { ArenaScene } from '../src/scene.ts';
+import { atmosphereFor } from '../src/rendering/atmosphere.ts';
+import { BLACKFLAG_ATMOSPHERE, BLACKFLAG_EFFECT_BUDGET, BlackflagEffects, blackflagCastsShadow } from '../src/rendering/blackflagPresentation.ts';
+import { ArenaScene } from '../src/rendering/scene.ts';
 
-const sceneSource = readFileSync(new URL('../src/scene.ts', import.meta.url), 'utf8');
+const sceneSource = readFileSync(new URL('../src/rendering/scene.ts', import.meta.url), 'utf8');
 const pointsOf = (effect: BlackflagEffects) => effect.root.children.filter(node => (node as THREE.Points).isPoints) as THREE.Points<THREE.BufferGeometry, THREE.PointsMaterial>[];
 
 it('ship atmosphere is a separate map-ID gate and leaves shared seabreeze and other map paths untouched', () => {

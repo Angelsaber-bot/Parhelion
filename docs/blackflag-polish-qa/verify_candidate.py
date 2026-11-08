@@ -20,7 +20,7 @@ for name,want in BASE['files'].items():
 before=inventory(BASE_ROOT);after=inventory(ROOT)
 changed=[p for p in sorted(set(before)|set(after)) if before.get(p)!=after.get(p)]
 (OUT/'diff-manifest.json').write_text(json.dumps({'baselineLabel':BASE['baselineLabel'],'scope':'Non-doc source/resource changes only; docs evidence listed separately','files':[{'path':name,'status':'new' if name not in before else 'deleted' if name not in after else 'modified','baselineSha256':before.get(name),'candidateSha256':after.get(name),'bytes':(ROOT/name).stat().st_size if (ROOT/name).is_file() else 0}for name in changed]},indent=2)+'\n')
-allowed_exact={'arena-game/src/scene.ts','arena-game/src/blackflagPresentation.ts','arena-game/test/blackflag-presentation.test.ts','arena-game/src/assets/maps/blackflag.webp','arena-maps/chapter-preview-sources.json'}
+allowed_exact={'arena-game/src/rendering/scene.ts','arena-game/src/rendering/blackflagPresentation.ts','arena-game/test/blackflag-presentation.test.ts','arena-game/src/assets/maps/blackflag.webp','arena-maps/chapter-preview-sources.json'}
 for name in changed:
  if not(name.startswith('arena-maps/blackflag/') or name in allowed_exact):failures.append({'kind':'out-of-scope-change','path':name})
 provenance='arena-maps/chapter-preview-sources.json'

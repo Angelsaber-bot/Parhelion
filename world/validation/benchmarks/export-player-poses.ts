@@ -3,8 +3,8 @@ import * as THREE from 'three';
 import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {mkdirSync,writeFileSync,readFileSync} from 'node:fs';
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader.js';
-import {attachExplorerRifle} from '../../src/weaponArt.ts';
-import {buildCharacter,CharacterAnimator} from '../../src/character.ts';
+import {attachExplorerRifle} from '../../src/weapons/weaponArt.ts';
+import {buildCharacter,CharacterAnimator} from '../fixtures/legacy-player/character.ts';
 (globalThis as any).FileReader??=class{result:ArrayBuffer|null=null;onload:any;onloadend:any;readAsArrayBuffer(blob:Blob){blob.arrayBuffer().then(buf=>{this.result=buf;this.onload?.({target:this});this.onloadend?.({target:this});});}};
 const fallback=process.argv.includes('--fallback');
 async function realRifle(){const b=readFileSync(new URL('../../../assets/weapons/glb/01_Dawn_AR.glb',import.meta.url));return new GLTFLoader().parseAsync(b.buffer.slice(b.byteOffset,b.byteOffset+b.byteLength),'');}

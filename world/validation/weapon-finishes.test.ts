@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { WeaponFinishStore, WEAPON_FINISHES, WEAPON_FINISH_KEY, weaponFinishUnlocked } from '../src/weaponFinishes.ts';
-import { createWeaponFinishMaterials } from '../src/weaponFinishMaterials.ts';
+import { WeaponFinishStore, WEAPON_FINISHES, WEAPON_FINISH_KEY, weaponFinishUnlocked } from '../src/weapons/weaponFinishes.ts';
+import { createWeaponFinishMaterials } from '../src/weapons/weaponFinishMaterials.ts';
 import { parseLocalGlb } from './player-fixture.ts';
 const unlocked = new Set(WEAPON_FINISHES.flatMap(finish => finish.unlock ? [finish.unlock] : []));
 test('finish selection is earned, save-compatible and cannot mutate progression or gameplay', () => {
@@ -11,8 +11,9 @@ test('finish selection is earned, save-compatible and cannot mutate progression 
   assert.equal(store.active(empty), 'original'); assert.equal(store.select('oath', empty), false);
   for (const invalid of [null, 'unknown', '__proto__', {}, 1]) assert.equal(store.select(invalid, unlocked), false);
   for (const finish of WEAPON_FINISHES) { assert.equal(store.select(finish.id, unlocked), true); assert.equal(store.active(unlocked), finish.id); }
-  assert.equal(empty.size, 0); assert.equal(unlocked.size, 5);
+  assert.equal(empty.size, 0); assert.equal(unlocked.size, 6);
   assert.deepEqual([...values.keys()], [WEAPON_FINISH_KEY], 'never writes progress/contracts/shared controls');
+  store.select('ember',unlocked); // Explicitly exercise an existing earned preference after appended ready-to-use finishes.
   const loaded = new WeaponFinishStore(storage); assert.equal(loaded.preference, 'ember');
   assert.equal(loaded.active(empty), 'original', 'new game/import without unlock shows original');
   assert.equal(loaded.preference, 'ember', 'saved preference is not destroyed');
@@ -52,9 +53,9 @@ for (const file of ['01_Dawn_AR', '06_Refract_Blade']) test(`${file}: every fini
 });
 
 test('rifle and blade retain pre-load finish, support changes, and cancel late loads without scene/material leaks', async () => {
-  const { buildSkinnedCharacter } = await import('../src/skinnedCharacter.ts');
-  const { attachExplorerRifle } = await import('../src/weaponArt.ts');
-  const { attachExplorerBlade } = await import('../src/playerBladeArt.ts');
+  const { buildSkinnedCharacter } = await import('../src/player/skinnedCharacter.ts');
+  const { attachExplorerRifle } = await import('../src/weapons/weaponArt.ts');
+  const { attachExplorerBlade } = await import('../src/weapons/playerBladeArt.ts');
   const character = await parseLocalGlb(new URL('../../assets/characters/player_v2/player_v2.glb', import.meta.url));
   const rig = buildSkinnedCharacter(character.scene);
   for (const kind of ['rifle', 'blade'] as const) {
@@ -80,7 +81,7 @@ test('rifle and blade retain pre-load finish, support changes, and cancel late l
 });
 
 test('five regional surface patterns are distinct, restrained, deterministic and constant-budget across repeated switching', async () => {
- const {makeWeaponFinishPattern,weaponFinishPatternInk,WEAPON_FINISH_PATTERN_SIZE}=await import('../src/weaponFinishPatterns.ts');
+ const {makeWeaponFinishPattern,weaponFinishPatternInk,WEAPON_FINISH_PATTERN_SIZE}=await import('../src/weapons/weaponFinishPatterns.ts');
  const signatures=new Set<string>();
  for(const id of ['signal','oath','tide','frost','ember'] as const){
   const texture=makeWeaponFinishPattern(id),data=texture.image.data as Uint8Array;assert.equal(data.byteLength,128*128*4);assert.equal(texture.image.width,WEAPON_FINISH_PATTERN_SIZE);
@@ -90,5 +91,5 @@ test('five regional surface patterns are distinct, restrained, deterministic and
  assert.equal(signatures.size,5);
  const gltf=await parseLocalGlb(new URL('../../assets/weapons/glb/01_Dawn_AR.glb',import.meta.url)),control=createWeaponFinishMaterials(gltf.scene),maps=new Set<THREE.Texture>();
  for(let cycle=0;cycle<30;cycle++)for(const finish of WEAPON_FINISHES){control.apply(finish.id);gltf.scene.traverse(o=>{if(o instanceof THREE.Mesh)for(const m of [o.material].flat()){const map=(m as THREE.MeshStandardMaterial).map;if(map)maps.add(map);}});}
- assert.equal(maps.size,10,'two cached64KiB source patterns per earned finish, no per-selection allocation');let disposed=0;maps.forEach(map=>map.addEventListener('dispose',()=>disposed++));control.dispose();control.dispose();assert.equal(disposed,10);
+ assert.equal(maps.size,18,'two cached 64KiB source patterns per patterned finish, no per-selection allocation');let disposed=0;maps.forEach(map=>map.addEventListener('dispose',()=>disposed++));control.dispose();control.dispose();assert.equal(disposed,18);
 });

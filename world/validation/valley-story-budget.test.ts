@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { createValleyStoryScene } from '../src/valleyStoryScene.ts';
+import { createValleyStoryScene } from '../src/environment/valleyStoryScene.ts';
 import type { SettlementPlacement } from '../src/settlements/types.ts';
 const placement:SettlementPlacement={id:'alpha',name:['测试','Test'],position:[-166,10.0383,212],entry:[-166,10.0383,227],footprint:[34,30],groundRange:0};
 test('Valley additions have a small static budget, no added light/shadow emitter or textures',()=>{

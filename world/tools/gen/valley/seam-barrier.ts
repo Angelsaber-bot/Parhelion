@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Batch, T } from '../geo.js';
 import { SEAM_W, SEAM_N, SEAM_E, SEAM_S, WORLD } from '../layout.js';
-import { LINKS, REGIONS } from '../../../src/regions.js';
+import { LINKS, REGIONS } from '../../../src/map/regions.js';
 import type { Piece } from '../structures.js';
 
 export type SeamDirection = 'west' | 'north' | 'east' | 'south';

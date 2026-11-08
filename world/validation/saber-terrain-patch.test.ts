@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { SaberTerrainPatch } from '../src/characters/saberTerrainPatch.ts';
-import { CompanionNavigation } from '../src/companionNavigation.ts';
+import { CompanionNavigation } from '../src/companions/companionNavigation.ts';
 const surface=(y:number,segments=1)=>{const g=new THREE.PlaneGeometry(8,8,segments,segments).rotateX(-Math.PI/2).translate(0,y,0);return{name:'test',enabled:true,bvh:new MeshBVH(g)};};
 test('cached triangles agree with authoritative finite floor rays, including overlapping floors',()=>{
  const colliders=[surface(0),surface(.4),surface(2)];const patch=new SaberTerrainPatch(colliders),nav=new CompanionNavigation(colliders);patch.beginFrame(0,0,0);

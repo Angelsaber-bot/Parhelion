@@ -3,10 +3,10 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { KitCompanion } from '../src/kitCompanion.ts';
+import { KitCompanion } from '../src/companions/kitCompanion.ts';
 import { CharacterKit, type CharacterKitDefinition } from '../src/characters/characterKit.ts';
 import { MOUNTED_CHARGE, mountedChargeDistance } from '../src/characters/mountedChargeMotion.ts';
-import type { Collider } from '../src/player.ts';
+import type { Collider } from '../src/player/player.ts';
 const contact=23/30,duration=1.4;
 function fixture(extra:Collider[]=[],floorSize=100) {
   const scene=new THREE.Group(),socket=new THREE.Object3D();socket.name='Saddle';scene.add(socket);

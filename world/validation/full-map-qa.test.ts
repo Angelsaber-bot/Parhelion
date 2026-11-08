@@ -6,12 +6,12 @@ import { createHash } from 'node:crypto';
 import { runInNewContext } from 'node:vm';
 import { transformSync } from 'esbuild';
 import * as THREE from 'three';
-import { WorldMap } from '../src/map';
-import * as regions from '../src/regions';
-import * as mini from '../src/minimapMarkers';
-import { fullMapPresentation, projectFullMapTarget } from '../src/fullMapPresentation';
+import { WorldMap } from '../src/map/map';
+import * as regions from '../src/map/regions';
+import * as mini from '../src/map/minimapMarkers';
+import { fullMapPresentation, projectFullMapTarget } from '../src/map/fullMapPresentation';
 import { getLanguage, localizeText, setLanguage } from '../../shared-client/i18n';
-import type { Layout } from '../src/types';
+import type { Layout } from '../src/core/types';
 const layout = regions.mergeLayouts(regions.REGIONS.map(def => ({ def,
   layout: JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) as Layout,
 })));

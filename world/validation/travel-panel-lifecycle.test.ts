@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { JSDOM } from 'jsdom';
-import { createTravelPanel } from '../src/travelPanel';
+import { createTravelPanel } from '../src/ui/travelPanel';
 
 test('stale travel buttons cannot act after refresh, close, successful travel or disposal', () => {
   const dom = new JSDOM('<!doctype html><body><button id="world-travel-open">Travel</button></body>', { pretendToBeVisual: true });

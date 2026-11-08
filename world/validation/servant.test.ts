@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { FirstContract } from '../src/contracts.ts';
-import { ContractServant, SERVANT_MODELS, SERVANT_CLIPS } from '../src/servant.ts';
-import { ServantAppearance, SERVANT_APPEARANCE_KEY } from '../src/servantAppearance.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ContractServant, SERVANT_MODELS, SERVANT_CLIPS } from '../src/companions/servant.ts';
+import { ServantAppearance, SERVANT_APPEARANCE_KEY } from '../src/companions/servantAppearance.ts';
 import { setLanguage } from '../../shared-client/i18n.ts';
 const marker = { id: 'saber_contract', type: 'interact' as const, label: 'Saber', p: [10,0,0] as [number,number,number] };
 function model() {
@@ -139,7 +139,7 @@ test('missing mandatory clips fail safely before replacing the accepted outfit',
 
 test('lossless runtime transport accepts gzip or an already HTTP-decoded GLB and rejects corruption', async () => {
   const { gzipSync }=await import('node:zlib');
-  const { decodeServantModel, loadServantGltf }=await import('../src/servant.ts');
+  const { decodeServantModel, loadServantGltf }=await import('../src/companions/servant.ts');
   const raw=new Uint8Array([0x67,0x6c,0x54,0x46,2,0,0,0,12,0,0,0]).buffer;
   assert.equal(await decodeServantModel(raw),raw,'host already decoded Content-Encoding');
   const gzip=gzipSync(Buffer.from(raw));

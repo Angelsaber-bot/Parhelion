@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { collisionSnapshot } from './winter/collision-snapshot.ts';
 const path=new URL('../public/assets/world_winter.glb',import.meta.url).pathname;
 const bytes=readFileSync(path);
@@ -16,11 +16,21 @@ test('Everwinter exported geometry is finite and stays under the 2 million ART t
   let p=m.parent;while(p){if(p.name==='ART'){artTriangles+=(m.geometry.index?.count??m.geometry.attributes.position.count)/3;break;}p=p.parent;}
  });assert.ok(artTriangles<2_000_000,`${artTriangles} ART triangles`);assert.ok(bytes.length<12_400_000,`${bytes.length} bytes`);
 });
-test('Everwinter collision meshes preserve exact baseline ordered triangle positions and gameplay extras',async()=>{
+test('Everwinter collision preserves the exact baseline except the explicitly replaced 13 burned-open boxes',async()=>{
  const before=JSON.parse(readFileSync(new URL('./winter/baseline-collision.json',import.meta.url),'utf8'));
+ const replacement=JSON.parse(readFileSync(new URL('./winter/ruin-collision-replacement.json',import.meta.url),'utf8'));
  const now=await collisionSnapshot(path);
  const repair=now.find(m=>m.name==='COL_Winter_House_Foundations');
- assert.deepEqual(now.filter(m=>m.name!=='COL_Winter_House_Foundations'),before,'all original ordered collision stays exact');
+ const props=now.find(m=>m.name==='COL_Props');
+ const originalProps=before.find((m:{name:string})=>m.name==='COL_Props');
+ assert.equal(replacement.removedRuinBoxes.length,13);
+ assert.ok(replacement.removedRuinBoxes.every((h:{triangleCount:number})=>h.triangleCount===12));
+ assert.equal(replacement.beforePropsTriangles,originalProps.triangles);
+ assert.deepEqual(props,{...originalProps,triangles:originalProps.triangles-13*12,orderedPositionHash:replacement.retainedOrderedPositionHash},'every other ordered prop triangle remains byte-exact');
+ assert.equal(props.triangles,replacement.retainedPropsTriangles);
+ assert.deepEqual(now.filter(m=>!['COL_Winter_House_Foundations','COL_Winter_Ruin_Shells','COL_Props'].includes(m.name)),before.filter((m:{name:string})=>m.name!=='COL_Props'),'terrain, gates and targets stay exact');
+ const ruins=now.find(m=>m.name==='COL_Winter_Ruin_Shells');
+ assert.ok(ruins);assert.equal(ruins.triangles,13*23*12);assert.equal(ruins.extras.winterRuinShell,true);
  assert(repair);assert.ok(repair.triangles>0&&repair.triangles<=768);assert.equal(repair.triangles%12,0);
  assert.equal(repair.extras.dynamic,true);assert.equal(repair.extras.groundFooting,true);
 });

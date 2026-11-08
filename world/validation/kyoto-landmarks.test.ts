@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { POND } from '../tools/gen/kyoto/layout.ts';
+import { Player, type Collider } from '../src/player/player';
 
 // Exercise exported geometry, including compression/quantization, rather than source strings.
 const bytes = readFileSync(new URL('../public/assets/world_kyoto.glb', import.meta.url));
@@ -66,4 +67,41 @@ test('Kyoto exported Kiyomizu upper gables have opaque infill under both curved 
     assert.ok(hit, `solid upper gable at side ${side}, z offset ${dz}, not sky through open truss`);
     assert.ok(Math.abs(hit.point.x - (298 + side * 9.55)) < .15, `hit actual upper gable face, not opposite wall: ${hit.point.x}`);
   }
+});
+
+test('Yasaka gate stone shoes span the real slope beneath both piers and outer posts', () => {
+  const support = new MeshBVH(geometry('Kyoto_Hillside_Foundations'));
+  const centre = terrain.raycastFirst(new THREE.Ray(new THREE.Vector3(212,300,-20),down),THREE.DoubleSide)!.point.y;
+  let exposed = 0;
+  for(const side of[-1,1])for(const dx of[-2.65,-2.3,0,2.3,2.65])for(const dz of[-1.55,0,1.55]){
+    const x=212+dx,z=-20+side*4.5+dz;
+    const ray=new THREE.Ray(new THREE.Vector3(x,300,z),down);
+    const ground=terrain.raycastFirst(ray,THREE.DoubleSide)!.point.y;
+    if(ground>=centre-.04)continue;
+    const hits=support.raycast(ray,THREE.DoubleSide).sort((a,b)=>a.distance-b.distance);
+    assert.ok(hits.length>=2,`solid foundation beneath exposed gate at ${x},${z}`);
+    assert.ok(hits[0].point.y>=centre+.06&&hits[0].point.y<centre+.15,'stone reaches the outer timber post bases');
+    assert.ok(hits[1].point.y<=ground-.08,'stone bottom is buried below actual exported terrain');exposed++;
+  }
+  assert.ok(exposed>=12,'both downhill footings were sampled, not only the buried uphill edge');
+});
+
+test('Yasaka gate passage remains walkable in both directions with the real stone shoes enabled',()=>{
+  const colliders:Collider[]=[];
+  gltf.scene.getObjectByName('COLLISION')!.traverse(o=>{
+    const m=o as THREE.Mesh;if(!m.isMesh)return;
+    colliders.push({name:m.name,bvh:new MeshBVH(geometry(m.name)),enabled:true});
+  });
+  const player=new Player(colliders,1),idle={x:0,z:0,jump:false,sprint:false};
+  try{
+    for(const z of[-22,-20,-18])for(const [from,to]of[[206,218],[218,206]]){
+      const y=terrain.raycastFirst(new THREE.Ray(new THREE.Vector3(from,300,z),down),THREE.DoubleSide)!.point.y;
+      player.teleport(from,y+.12,z);for(let i=0;i<45;i++)player.step(1/120,idle);
+      let frames=0;
+      while(Math.abs(player.pos.x-to)>.15&&frames++<120*6){player.yaw=Math.atan2(player.pos.x-to,player.pos.z-z);player.step(1/120,{...idle,z:1});}
+      for(let i=0;i<20;i++)player.step(1/120,idle);
+      assert.ok(Math.abs(player.pos.x-to)<.3&&Math.abs(player.pos.z-z)<.2,`clear central/edge lane at ${player.pos.toArray()}`);
+      assert.ok(player.onGround&&!player.swimming,'no jumping, falling or swimming required');
+    }
+  }finally{for(const c of colliders)c.bvh.geometry.dispose();}
 });

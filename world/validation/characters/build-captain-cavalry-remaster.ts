@@ -2,7 +2,7 @@
  * original embedded image byte while baking revised mesh/rig clips into a new GLB. */
 import * as THREE from 'three';import {GLTFExporter} from 'three/examples/jsm/exporters/GLTFExporter.js';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';import {resolve} from 'node:path';import {gzipSync,gunzipSync} from 'node:zlib';import {createHash} from 'node:crypto';
-import {readCharacter} from './inspect';import {CHARACTER_KITS} from '../../src/characters/catalog';import {attachCaptainCavalryArt} from '../../src/captainCavalryArt';import {remasterCaptainCavalryClip} from '../../src/captainCavalryClip';import {mountedChargeClip} from '../../src/characters/mountedChargeMotion';
+import {readCharacter} from './inspect';import {CHARACTER_KITS} from '../../src/characters/catalog';import {attachCaptainCavalryArt} from '../../src/cinematics/captainCavalryArt';import {remasterCaptainCavalryClip} from '../../src/cinematics/captainCavalryClip';import {mountedChargeClip} from '../../src/characters/mountedChargeMotion';
 (globalThis as any).FileReader??=class{result:ArrayBuffer|null=null;onloadend?:()=>void;readAsArrayBuffer(blob:Blob){void blob.arrayBuffer().then(b=>{this.result=b;this.onloadend?.();});}};
 const hash=(b:Uint8Array)=>createHash('sha256').update(b).digest('hex');
 function chunks(bytes:Buffer){const j=bytes.readUInt32LE(12),json=JSON.parse(bytes.subarray(20,20+j).toString()),bin=bytes.subarray(20+j+8);return{json,bin};}

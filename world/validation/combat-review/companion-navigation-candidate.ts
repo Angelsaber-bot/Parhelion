@@ -1,6 +1,6 @@
 /** ISOLATED VALIDATION CANDIDATE: bounded avoidance of directions rejected by actual step revalidation. Not imported by production. */
 import * as THREE from 'three';
-import type { Collider } from '../../src/player';
+import type { Collider } from '../../src/player/player';
 import { CompanionMotion } from '../../src/characters/companionMotion';
 
 const TURNS = [0, .55, 1.05, Math.PI / 2, 2.05] as const;

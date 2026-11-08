@@ -3,9 +3,9 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
-import { WorldCombatState, enemyAttackTiming, type Enemy, type CombatTerrain } from '../src/combat.ts';
-import { ENEMY_ROLES, type EnemyRole } from '../src/enemyRoles.ts';
+import { Player } from '../src/player/player.ts';
+import { WorldCombatState, enemyAttackTiming, type Enemy, type CombatTerrain } from '../src/combat/combat.ts';
+import { ENEMY_ROLES, type EnemyRole } from '../src/combat/enemyRoles.ts';
 
 const STEP=1/120;
 const FPS=[27,30,60,120];

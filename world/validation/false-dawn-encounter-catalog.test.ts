@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { getFalseDawnEncounterSpec } from '../src/falseDawnEncounterCatalog';
-import { FALSE_DAWN_ENCOUNTERS } from '../src/falseDawnCampaign';
-import { ENEMY_ROLES } from '../src/enemyRoles';
-import { STORY_ENCOUNTER_LIMITS } from '../src/storyEncounters';
+import { getFalseDawnEncounterSpec } from '../src/story/falseDawnEncounterCatalog';
+import { FALSE_DAWN_ENCOUNTERS } from '../src/story/falseDawnCampaign';
+import { ENEMY_ROLES } from '../src/combat/enemyRoles';
+import { STORY_ENCOUNTER_LIMITS } from '../src/story/storyEncounters';
 
 test('all six authored requests have bounded role-based encounter specs and only the finale gets Warden behavior', () => {
   for (const id of FALSE_DAWN_ENCOUNTERS) {

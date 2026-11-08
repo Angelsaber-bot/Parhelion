@@ -1,6 +1,6 @@
 /** CPU synthetic operator: real dialogs/input combat; explicitly logged entry positioning, not a walked world tour. */
 import assert from'node:assert/strict';import{writeFileSync,mkdirSync,readFileSync}from'node:fs';
-import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{createStoryInputPolicy}from'../combat-review/story-input-policy';import{FALSE_DAWN as F,getFalseDawnState}from'../../src/falseDawnCampaign';
+import{bootWorldWithoutGpu}from'../world-dom-boot.fixture';import{createStoryInputPolicy}from'../combat-review/story-input-policy';import{FALSE_DAWN as F,getFalseDawnState}from'../../src/story/falseDawnCampaign';
 const dryAlpha=process.argv.includes('--dry-alpha');
 const walkLinks=process.argv.includes('--walk-links'),linkPaths=JSON.parse(readFileSync(new URL('./hub-field-waypoints.json',import.meta.url),'utf8'));
 const route=process.argv[2]??'harbor',ending=process.argv[3]??'repurpose';assert.ok(['harbor','winter'].includes(route));assert.ok(['repurpose','seal'].includes(ending));

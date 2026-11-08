@@ -1,7 +1,7 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AimState, aimSensitivity } from '../src/aim.ts';
-import { Controls } from '../src/controls.ts';
-import { buildFighter, FighterAnimator } from '../src/fighter.ts';
+import { afterEach, expect, it, vi } from 'vitest';
+import { AimState, aimSensitivity } from '../src/player/aim.ts';
+import { Controls } from '../src/player/controls.ts';
+import { buildFighter, FighterAnimator } from '../src/player/fighter.ts';
 import * as THREE from 'three';
 import { BTN } from '../shared/sim.ts';
 class Target {

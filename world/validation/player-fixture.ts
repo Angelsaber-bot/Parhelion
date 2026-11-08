@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { buildSkinnedCharacter } from '../src/skinnedCharacter.ts';
-import { attachExplorerRifle } from '../src/weaponArt.ts';
+import { buildSkinnedCharacter } from '../src/player/skinnedCharacter.ts';
+import { attachExplorerRifle } from '../src/weapons/weaponArt.ts';
 
 /** Node metadata/geometry fixture only. This is not an image renderer or a browser visual pass. */
 export function nodeImageMetadata() {

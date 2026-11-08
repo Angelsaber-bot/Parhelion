@@ -1,32 +1,36 @@
-import {installWorldInterface} from './worldInterface';
-import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './journeyDrama';
-import {createResidentEventRuntime,createResidentEventScene} from './residentEvents';
-import {RESIDENT_ACTIONS,getResidentWorkGuide} from './residentEventRules';
-import {makeCombatTerrain} from './combatTerrain';
-import {LocalCavalrySupport} from './localCavalrySupport';
-import {createFlagshipInterior} from './flagshipInterior';
-import {RegionVisualStreaming,streamedOutlineDistance} from './regionVisualStreaming';
+import { isCampaignRegion, type WorldRegionId } from './core/regionIdentity';
+import { weaponDryFireHint } from './weapons/weaponReadiness';
+import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
+import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax } from './story/parallaxSurvey';
+import {installWorldInterface} from './ui/worldInterface';
+import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './story/journeyDrama';
+import {createResidentEventRuntime,createResidentEventScene} from './story/residentEvents';
+import {RESIDENT_ACTIONS,getResidentWorkGuide} from './story/residentEventRules';
+import {makeCombatTerrain} from './combat/combatTerrain';
+import {LocalCavalrySupport} from './companions/localCavalrySupport';
+import {createFlagshipInterior} from './environment/flagshipInterior';
+import {RegionVisualStreaming,streamedOutlineDistance} from './map/regionVisualStreaming';
 import {carveCoreRing} from './exploration/bossArenas';
-import { FarPropCuller } from './farPropCuller';
-import {ADVENTURE,adventureActive,adventureTravelOpen,getAdventureGuide,getCurrentAdventureGuide} from './openWorldCampaign';
-import {createAdventureSites} from './adventureSites';
+import { FarPropCuller } from './rendering/farPropCuller';
+import {ADVENTURE,adventureActive,adventureTravelOpen,getCurrentAdventureGuide} from './story/openWorldCampaign';
+import {createAdventureSites} from './story/adventureSites';
 import {createExploration} from './exploration/runtime';
-import {createAmbientLife} from './ambientLife';
-import {createFieldHerbs} from './fieldHerbs';
+import {createAmbientLife} from './environment/ambientLife';
+import {createFieldHerbs} from './environment/fieldHerbs';
 import {drawExplorationIcons} from './exploration/mapIcons';
-import { HIT_STOP, hitStopSeconds } from './hitStop';
+import { HIT_STOP, hitStopSeconds } from './combat/hitStop';
 import {glideLevel as explorationGlideLevel, glideScale as explorationGlideScale} from './exploration/catalog';
-import {createAdventureRuntime} from './adventureRuntime';
-import { WORLD_RIFLE } from './worldBalance';
-import { KINGDOM_GATE, createKingdomGateRuntime, gateEncounter, isKingdomGateOpen } from './kingdomGate';
-import { createKingdomGateScene, gateEscortPosition } from './kingdomGateScene';
-import { createArenaTrainingPanel } from './arenaTrainingPanel';
-import { createCompactRelaySites } from './compactRelaySites';
-import { createCompactRelayRuntime } from './compactRelayRuntime';
-import { COMPACT_RELAY, getCompactRelayGuide } from './compactRelayCampaign';
-import { getCompactRelayEncounterSpec } from './compactRelayEncounter';
-import { createQuestGuideCatalog, type QuestEntry, type QuestGuide } from './questGuideCatalog';
-import { createQuestJournal } from './questJournal';
+import {createAdventureRuntime} from './story/adventureRuntime';
+import { WORLD_RIFLE } from './core/worldBalance';
+import { KINGDOM_GATE, createKingdomGateRuntime, gateEncounter, isKingdomGateOpen } from './story/kingdomGate';
+import { createKingdomGateScene, gateEscortPosition } from './environment/kingdomGateScene';
+import { createArenaTrainingPanel } from './ui/arenaTrainingPanel';
+import { createCompactRelaySites } from './story/compactRelaySites';
+import { createCompactRelayRuntime } from './story/compactRelayRuntime';
+import { COMPACT_RELAY, getCompactRelayGuide } from './story/compactRelayCampaign';
+import { getCompactRelayEncounterSpec } from './story/compactRelayEncounter';
+import { createQuestGuideCatalog, type QuestEntry, type QuestGuide } from './story/questGuideCatalog';
+import { createQuestJournal } from './ui/questJournal';
 import { buildAlphaSettlement } from './settlements/alpha';
 import { buildBritainSettlement } from './settlements/britain';
 import { buildBlackSailSettlement } from './settlements/blacksail';
@@ -35,44 +39,44 @@ import { buildKyotoSettlement } from './settlements/kyoto';
 import { installSettlements } from './settlements/core';
 import { mergeParts } from './settlements/merge';
 import { createSettlementNpcs } from './settlements/npcs';
-import { createCampaignSites } from './campaignSites';
-import { createSettlementApproaches } from './settlementApproaches';
-import { createFalseDawnSites } from './falseDawnSites';
-import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction, getFalseDawnObjective } from './falseDawnCampaign';
-import { createFalseDawnRuntime } from './falseDawnRuntime';
-import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './falseDawnEncounterCatalog';
-import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './trackedStoryNavigation';
-import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './campaignEpisodes';
-import { createCampaignJournal } from './campaignJournal';
-import { createTrackedStoryHud } from './trackedStoryHud';
+import { createCampaignSites } from './story/campaignSites';
+import { createSettlementApproaches } from './map/settlementApproaches';
+import { createFalseDawnSites } from './story/falseDawnSites';
+import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction, getFalseDawnObjective } from './story/falseDawnCampaign';
+import { createFalseDawnRuntime } from './story/falseDawnRuntime';
+import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './story/falseDawnEncounterCatalog';
+import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
+import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './story/campaignEpisodes';
+import { createCampaignJournal } from './ui/campaignJournal';
+import { createTrackedStoryHud } from './ui/trackedStoryHud';
 import type { RegionId } from './settlements/types';
-import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './valleyStory';
-import { createValleyStoryScene } from './valleyStoryScene';
-import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './eraStories';
-import { optionalPinExpired, type OptionalPin } from './optionalNavigation';
-import { createEraStoryScene } from './eraStoryScenes';
-import { WorldActions } from './worldActions';
-import { resolveServantSkillAim, trackServantSkillTarget } from './skillAim';
-import { CONTRACT_SKILLS, type SkillEvent } from './contractSkills';
-import { UltimateDirector } from './ultimateDirector';
-import { UltimateStage } from './ultimateStage';
-import './ultimateDirector.css';
-import { FortCannon, FORT_CANNON } from './fortCannon';
-import { createTraversalRepairs } from './traversalRepairs';
-import { createActionHud } from './actionHud';
-import { WorldAudio } from './worldAudio';
-import { worldBootFailure } from './bootFailure';
-import { createTravelPanel } from './travelPanel';
-import { createNarrativePanel } from './narrativePanel';
-import { createSafeTravelStops, discoverTravelStops, isTravelStopDiscovered, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from './safeTravel';
-import { CAMPAIGN_CLOSURE, getCampaignClosureGuide, interactCampaignClosure, getCampaignResidentReaction } from './campaignClosure';
-import { attachExplorerBlade } from './playerBladeArt';
-import { FrameWorkBudget } from './frameWorkBudget';
-import { LocalLightPool } from './localLightPool';
-import { detachConsumedSourceNodes } from './consumedSourceNodes';
-import './actions.css';
-import { AdaptiveResolution, targetDpr } from './renderQuality';
-import { readResolutionMode, attachRenderSettings } from './renderSettings';
+import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './story/valleyStory';
+import { createValleyStoryScene } from './environment/valleyStoryScene';
+import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
+import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
+import { createEraStoryScene } from './story/eraStoryScenes';
+import { WorldActions } from './combat/worldActions';
+import { resolveServantSkillAim, trackServantSkillTarget } from './combat/skillAim';
+import { CONTRACT_SKILLS, type SkillEvent } from './companions/contractSkills';
+import { UltimateDirector } from './cinematics/ultimateDirector';
+import { UltimateStage } from './cinematics/ultimateStage';
+import './cinematics/ultimateDirector.css';
+import { FortCannon, FORT_CANNON } from './environment/fortCannon';
+import { createTraversalRepairs } from './map/traversalRepairs';
+import { createActionHud } from './ui/actionHud';
+import { WorldAudio } from './rendering/worldAudio';
+import { worldBootFailure } from './core/bootFailure';
+import { createTravelPanel } from './ui/travelPanel';
+import { createNarrativePanel } from './ui/narrativePanel';
+import { createSafeTravelStops, discoverTravelStops, isTravelStopDiscovered, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from './story/safeTravel';
+import { CAMPAIGN_CLOSURE, getCampaignClosureGuide, interactCampaignClosure, getCampaignResidentReaction } from './story/campaignClosure';
+import { attachExplorerBlade } from './weapons/playerBladeArt';
+import { FrameWorkBudget } from './rendering/frameWorkBudget';
+import { LocalLightPool } from './rendering/localLightPool';
+import { detachConsumedSourceNodes } from './rendering/consumedSourceNodes';
+import './ui/actions.css';
+import { AdaptiveResolution, targetDpr } from './rendering/renderQuality';
+import { readResolutionMode, attachRenderSettings } from './rendering/renderSettings';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
@@ -80,48 +84,48 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { GTAOPass } from 'three/examples/jsm/postprocessing/GTAOPass.js';
-import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './fx';
-import { settlementGrassClearance } from './grassClearance';
-import {createArmoryWorkshop,ARMORY_WORKSHOP} from './armoryWorkshop';
-import { makeRegionWeather } from './regionWeather';
-import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './look';
-import { Player, PLAYER, type Collider } from './player';
-import { WorldMap } from './map';
-import type { Layout, Marker } from './types';
-import { loadLayout } from './load';
-import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './skinnedCharacter';
-import { PlayerTerrainSupport } from './playerTerrainSupport';
-import { attachExplorerRifle } from './weaponArt';
-import { WORLD_GUNS, DEFAULT_GUN, nextGunUnlock, GUN_STORE_KEY, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, type WorldGunId, WORLD_MELEE, DEFAULT_MELEE, MELEE_STORE_KEY, worldMelee, meleeUnlocked, unlockedMelee, cycleMelee, equippedMelee, type WorldMeleeId } from './worldArsenal';
-import { ShoulderAim, shoulderArmLength } from './aim';
+import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './rendering/fx';
+import { settlementGrassClearance } from './map/grassClearance';
+import {createArmoryWorkshop,ARMORY_WORKSHOP} from './story/armoryWorkshop';
+import { makeRegionWeather } from './map/regionWeather';
+import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './rendering/look';
+import { Player, PLAYER, type Collider } from './player/player';
+import { WorldMap } from './map/map';
+import type { Layout, Marker } from './core/types';
+import { loadLayout } from './core/load';
+import { loadSkinnedCharacter, SkinnedCharacterAnimator } from './player/skinnedCharacter';
+import { PlayerTerrainSupport } from './player/playerTerrainSupport';
+import { attachExplorerRifle } from './weapons/weaponArt';
+import { WORLD_GUNS, DEFAULT_GUN, nextGunUnlock, GUN_STORE_KEY, worldGun, gunUnlocked, unlockedGuns, cycleGun, equippedGun, type WorldGunId, WORLD_MELEE, DEFAULT_MELEE, MELEE_STORE_KEY, worldMelee, meleeUnlocked, unlockedMelee, cycleMelee, equippedMelee, type WorldMeleeId } from './weapons/worldArsenal';
+import { ShoulderAim, shoulderArmLength } from './player/aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
-import './worldInterface.css';
-import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './regions';
-import { BOSSES, PERFECT_EVADE } from './combat';
-import { nearbyElite } from './eliteNavigation';
-import { WorldGrid } from './grid';
-import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './chunk';
-import { regionLoader, bakeQuantized } from './glb';
-import { KingdomTwilight } from './twilight';
-import { FirstContract, SERVANTS, servantByContract, type ServantId } from './contracts';
-import { KitCompanion } from './kitCompanion';
+import './ui/worldInterface.css';
+import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './map/regions';
+import { BOSSES, PERFECT_EVADE } from './combat/combat';
+import { nearbyElite } from './combat/eliteNavigation';
+import { WorldGrid } from './map/grid';
+import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './rendering/chunk';
+import { regionLoader, bakeQuantized } from './rendering/glb';
+import { KingdomTwilight } from './map/twilight';
+import { FirstContract, SERVANTS, servantByContract, type ServantId } from './companions/contracts';
+import { KitCompanion } from './companions/kitCompanion';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { ContractServant } from './servant';
+import { ContractServant } from './companions/servant';
 import { CHARACTER_KITS } from './characters/catalog';
 import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
-import { ServantAppearance } from './servantAppearance';
-import { createServantPanel } from './servantPanel';
-import { WorldCombat } from './combatView';
-import { WorldGraphicsRecovery } from './graphicsRecovery';
-import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './progress';
-import { createProgressPanel } from './progressPanel';
-import { WeaponFinishStore } from './weaponFinishes';
+import { ServantAppearance } from './companions/servantAppearance';
+import { createServantPanel } from './ui/servantPanel';
+import { WorldCombat } from './combat/combatView';
+import { WorldGraphicsRecovery } from './rendering/graphicsRecovery';
+import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './core/progress';
+import { createProgressPanel } from './ui/progressPanel';
+import { WeaponFinishStore } from './weapons/weaponFinishes';
 import { WorldCoop } from './coop/worldCoop';
 import { createCoopPanel } from './coop/coopPanel';
 import { normalizeRoomCode, type PlayerWireState } from './coop/coopProtocol';
-import { createWeaponFinishControl } from './weaponFinishControl';
-import { PointLightCensus } from './pointLightCensus';
+import { createWeaponFinishControl } from './weapons/weaponFinishControl';
+import { PointLightCensus } from './rendering/pointLightCensus';
 import { getLanguage, bilingual, localizeText, localizeDom, createLanguageToggle, onLanguageChange } from '../../shared-client/i18n';
 
 const params = new URLSearchParams(location.search);
@@ -447,6 +451,12 @@ for (const p of settlements.placements) layout.areas.push({
 const traversalRepairs = createTraversalRepairs(); scene.add(traversalRepairs.root); freezeStaticArt(traversalRepairs.root);
 staticGeos.push(...traversalRepairs.collisionGeometries);
 addEventListener('pagehide', event => { if (!event.persisted) traversalRepairs.dispose(); });
+const parallaxGarden = createParallaxGarden((x,z)=>grid.sampleHeight(x,z));
+world.add(parallaxGarden.root); freezeStaticArt(parallaxGarden.root);
+staticGeos.push(...parallaxGarden.collisionGeometries); layout.markers.push(...parallaxGarden.markers);
+const parallaxMarkerIds = new Set(parallaxGarden.markers.map(m=>m.id));
+layout.areas.push({id:'parallax_garden',name:'视差庭院',nameEn:'Parallax Garden',c:[-118,276],r:10,color:'#ddc28c',tp:[-118,284],region:'alpha'});
+addEventListener('pagehide',event=>{if(!event.persisted)parallaxGarden.dispose();});
 const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
@@ -471,7 +481,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],ARMORY_WORKSHOP.clearance) }) : null;
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE]) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -510,7 +520,7 @@ addEventListener('pagehide',event=>{if(!event.persisted)exploration.dispose();})
 let ammoDryPulls=0,ammoHintAt=-1e9,ammoRefillAt=-1e9;
 function fieldAmmo(){
   const st=combat.state,t=performance.now();
-  if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;toast(bilingual(`弹药耗尽 · ${settings.label('melee')} 近战`,`Out of ammo · ${settings.label('melee')} melee`));}}
+  if(st.dryPulls!==ammoDryPulls){ammoDryPulls=st.dryPulls;if(t-ammoHintAt>5000){ammoHintAt=t;const hint=weaponDryFireHint(st,settings.label('melee'));if(hint)toast(bilingual(...hint));}}
   if(!gameplayActive()||combat.defeated||st.ammo>=WORLD_RIFLE.ammoMax||st.quietFor<2||t-ammoRefillAt<1500)return;
   const home=settlements.placements.find(p=>Math.hypot(player.pos.x-p.position[0],player.pos.z-p.position[2])<Math.hypot(...p.footprint)/2+18);
   if(!home)return;
@@ -521,6 +531,7 @@ function applyExplorationGlide(level=explorationGlideLevel(done)){const g=explor
 const weaponFinishStore = new WeaponFinishStore(progressStorage);
 let weaponFinishControl: ReturnType<typeof createWeaponFinishControl> | undefined;
 const save = () => worldProgress.save();
+
 let actions: WorldActions | undefined;
 const fortCannon = new FortCannon();
 const audio = new WorldAudio();
@@ -591,6 +602,7 @@ function valleyGuide() {
 function interactionLabel(marker: Marker) {
   const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
+  const surveyLabel=PARALLAX_LABELS.find(([id])=>id===marker.id);if(surveyLabel)return bilingual(...surveyLabel[1]);
   const action=adventureSites.actions.get(marker.id);if(action)return bilingual(...action.label);
   if(adventureActive(done)&&marker.id==='compact_relay_entry')return bilingual('服务庭院 · 恢复最低外联','Service yard · Restore the minimum uplink');
   if(adventureActive(done)&&marker.id==='compact_relay_controller')return bilingual('外联控制柜 · 按住接通','Uplink cabinet · Hold to connect');
@@ -623,6 +635,7 @@ function applyWorldState() {
   applyFalseDawnState();
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
   kingdomGateScene.apply(done,kingdomGateRuntime?.escort ?? 0);
+  parallaxGarden.apply(done);
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   applyWeaponFinish();
   for (const t of targets) {
@@ -701,7 +714,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     }
   }
   if(adventureActive(done)&&optionalPin){if(optionalPinExpired(optionalPin,here,player.pos,done,found))optionalPin=null;else return{p:optionalPin.p,label:bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`,`Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`)};}
-  const adventure=getCurrentAdventureGuide(here as RegionId,done);if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
+  const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
   if(adventureActive(done))return null;
   const intro = valleyGuide();
   if (intro) return { p: intro.p, label: bilingual(...intro.text) };
@@ -757,7 +770,8 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
 
 function renderObjective() { renderMainObjective(); updateTrackedStoryHud(); }
 function renderMainObjective() {
-  const adventure=getCurrentAdventureGuide(regionAt(player.pos.x,player.pos.z).id as RegionId,done);
+  const region=regionAt(player.pos.x,player.pos.z).id;
+  const adventure=getCurrentAdventureGuide(region,done);
   if(adventure){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual(...adventure.title);text.className='cur';text.textContent=bilingual(...adventure.text);$('objective').replaceChildren(title,text);return;}
   if(adventureActive(done)&&done.has(ADVENTURE.ending)){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual('让明天继续 · 已完成','Let Tomorrow Continue · Complete');text.textContent=bilingual('归路仍然开放。可以回访居民、探索支路或自愿挑战旧敌。','Every return road remains open. Revisit the residents, explore side routes or choose a rematch.');$('objective').replaceChildren(title,text);return;}
   const intro = valleyGuide();
@@ -768,7 +782,6 @@ function renderMainObjective() {
     $('objective').append(title, goal);
     return;
   }
-  const region = regionAt(player.pos.x, player.pos.z).id;
   if (isEraId(region) && getEraStoryState(region, done).stage === 'complete') {
     const title = document.createElement('h3'); title.textContent = bilingual(...ERA_STORIES[region].title);
     const complete = document.createElement('div'); complete.className = 'chapter-clear'; complete.textContent = bilingual('✓ 本章异常已解除', '✓ Chapter anomaly resolved');
@@ -1465,7 +1478,7 @@ function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active, threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
-    mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+    carrying: !!residentEventRuntime?.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
@@ -1545,6 +1558,7 @@ function travelToPartner(): string | null {
   return bilingual('队友身边暂时没有安全落点，稍后再试。', 'No clear ground beside your partner yet; try again.');
 }
 const coopPanel=createCoopPanel({
+
   status:()=>({status:coop.session.status,code:coop.session.code,host:coop.session.host,partner:coop.partnerName}),
   join:code=>coop.join(code),leave:()=>coop.leave(),toPartner:travelToPartner,
   canOpen:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!ultimateDirector?.active,
@@ -1560,8 +1574,8 @@ const renderTravelButton=()=>{travelOpen.textContent=bilingual(`安全据点旅�
 renderTravelButton();onLanguageChange(()=>{renderTravelButton();travelPanel.refresh();});
 travelOpen.addEventListener('click',event=>{event.stopPropagation();travelPanel.show();}); start.append(travelOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose();narrative?.dispose();travelPanel.dispose();travelOpen.remove();}});
-const campaignTrackingBlocked = (region: RegionId): [string, string] | null => trackedStoryRouteBlocked(regionAt(player.pos.x, player.pos.z).id, region, done)
-  ? ['先沿主线稳定召唤阵，开启通往其他年代的道路。', 'Stabilize the summoning circle on the main route to open roads to other eras.'] : null;
+const campaignTrackingBlocked = (region: WorldRegionId): [string, string] | null => trackedStoryRouteBlocked(regionAt(player.pos.x, player.pos.z).id, region, done)
+  ? ['先沿当前主线接通外联或稳定召唤阵，开启地区通路。', 'Restore the uplink or stabilize the summoning circle on the current story to open regional routes.'] : null;
 campaignJournal = createCampaignJournal({
   done: () => done,
   onOpen: () => {
@@ -1576,7 +1590,7 @@ campaignJournal = createCampaignJournal({
   restoreMain: () => { questTrackedId = null; campaignTrackedRegion = null; falseDawnTracked = false; optionalPin = null; guideOn = true; hudRevision++; },
 });
 const journalOpen = document.createElement('button'); journalOpen.type = 'button'; journalOpen.id = 'world-campaign-journal-open';
-const renderJournalButton = () => { journalOpen.textContent = bilingual('主线续篇与归路纪事 · 故事进度', 'Continuation & chronicles · Story progress'); };
+const renderJournalButton = () => { journalOpen.textContent = bilingual('可选调查与归路纪事 · 故事进度', 'Optional investigations & chronicles · Story progress'); };
 renderJournalButton(); const unsubscribeJournalButton = onLanguageChange(renderJournalButton);
 journalOpen.addEventListener('click', event => { event.stopPropagation(); campaignJournal?.show(); }); start.append(journalOpen);
 addEventListener('pagehide', event => { if (!event.persisted) { campaignJournal?.dispose(); journalOpen.remove(); unsubscribeJournalButton(); } });
@@ -1829,9 +1843,13 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
     pelletDir.copy(look).addScaledVector(pelletSide, Math.cos(a) * r).addScaledVector(pelletUp, Math.sin(a) * r).normalize();
     const wall = combat.geometry.cast(origin, pelletDir, gun.range), reach = wall?.distance ?? gun.range;
     const hit = combat.raycast(origin, pelletDir, reach);
-    if (hit) combat.damageEnemy(hit.id, gun.damage);
     const end = hit ? new THREE.Vector3(hit.point.x, hit.point.y, hit.point.z) : wall ? wall.point.clone() : origin.clone().addScaledVector(pelletDir, reach);
-    combat.shot(muzzle, end, !!(hit || wall), false);
+    // The shoulder camera may see over cover that still hides the barrel. Check
+    // each pellet's own muzzle path so a central obstruction doesn't erase clear side pellets.
+    const path = end.clone().sub(muzzle);
+    const blocked = combat.geometry.cast(muzzle, path, Math.max(0, path.length() - .06));
+    if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage);
+    combat.shot(muzzle, blocked ? blocked.point : end, !!(blocked || hit || wall), false);
   }
 }
 
@@ -1841,7 +1859,7 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
 }
@@ -1944,9 +1962,40 @@ function handleCampaignInteraction(id: string) {
   if (result.handled) settlementNpcs.gesture(id);
   return presentCampaignInteraction(result, id);
 }
+function parallaxReachable(id: string) {
+  const marker=markers.get(id);
+  return !!marker && locked && !bootFailed && !worldExited && !graphicsRecovery?.blocked && !settingsPanel.open && !travelOpenState && !campaignJournalOpen && !ultimateDirector?.active && document.visibilityState==='visible' && document.hasFocus() && !combat.defeated && player.onGround && !player.flying && !player.swimming && !player.gliding && player.pos.distanceTo(new THREE.Vector3(...marker.p))<(marker.radius??3) && canReachValleyPanel(marker);
+}
+function interactParallax(id: string) {
+  if(!parallaxReachable(id))return;
+  if(id===PARALLAX.board){
+    if(done.has(PARALLAX.complete)){speakDialogue(PARALLAX_ENDING,PARALLAX.title);return;}
+    if(!done.has(PARALLAX.started)){done.add(PARALLAX.started);save();applyWorldState();questTrackedId=PARALLAX.quest;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;speakDialogue(PARALLAX_INTRO,PARALLAX.title);return;}
+    if(!done.has(PARALLAX.front)||!done.has(PARALLAX.side)){speakDialogue(PARALLAX_INTRO,PARALLAX.title);return;}
+    clearInput();hudRevision++;
+    narrative!.showChoices(['两次观察留下了不同的轮廓。你要如何修正“庭院只剩一枚环”的记录？','The two views show different silhouettes. How will you revise “only one ring remains”?'],PARALLAX.title,[
+      {id:'perspective',label:['两枚环都还在，只是正面视线重叠。','Both rings remain; they overlap from the front.']},
+      {id:'vanished',label:['第二枚环在观察时才重新出现。','The second ring reappeared while I was watching.']},
+      {id:'later',label:['先不下结论，再换个位置看看。','Take another look before deciding.']},
+    ],choice=>{
+      if(!parallaxReachable(PARALLAX.board)){toast(bilingual('请回到记录板前再确认。','Return to the record board to confirm.'));return;}
+      if(concludeParallax(choice,done)){save();applyWorldState();audio.interaction();speakDialogue(PARALLAX_ENDING,PARALLAX.title);}
+      else if(choice==='vanished')speakDialogue(['支架与双环始终没有移动。试着边横向走动边看：轮廓的变化来自哪里？已记录的视角保留，可以随时再判断。','Neither support nor ring moved. Watch as you step sideways: what changes the silhouette? Your observations are kept; you can decide again.'],PARALLAX.title);
+    });
+    return;
+  }
+  if(!done.has(PARALLAX.started)){toast(bilingual('先读旁边的观测记录板，了解这次观察。','Read the nearby record board before beginning.'));return;}
+  const station=id===PARALLAX.front?parallaxGarden.front:parallaxGarden.side;
+  const target=new THREE.Vector3(...parallaxGarden.subject),direction=target.clone().sub(camera.position),distance=direction.length();
+  const clear=!combat.geometry.cast(camera.position,direction,Math.max(0,distance-.2));
+  const frame={feet:player.pos.toArray() as [number,number,number],eye:camera.position.toArray() as [number,number,number],direction:camera.getWorldDirection(new THREE.Vector3()).toArray() as [number,number,number],grounded:player.onGround,playable:gameplayActive(),clear};
+  if(recordParallaxView(id,done,frame,station,parallaxGarden.subject)){save();applyWorldState();audio.interaction();toast(id===PARALLAX.front?bilingual('正面已记录：轮廓相互重叠。到右侧菱形脚印再看看。','Front recorded: overlapping silhouettes. Try the diamond footprint on the right.'):(done.has(PARALLAX.front)?bilingual('侧面已记录：两枚环前后错开。回记录板对照两次观察。','Side recorded: two rings at different depths. Compare your observations at the board.'):bilingual('侧面已记录：两枚环前后错开。再到圆形脚印记录正面视角。','Side recorded: two rings at different depths. Record the front view at the round footprint next.')));}
+  else toast(done.has(id)?bilingual('这个视角已经记录。可以继续观察，或跟随指引前往下一处。','This view is already recorded. Look again, or follow the guide to the next step.'):bilingual('站进脚印内并看向双环，将它们置于画面中央后再按交互。无需瞄准或射击。','Stand inside the footprint, center the rings, then interact. No aiming or shooting required.'));
+}
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
   if(adventureMarkerIds.has(m.id)){if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}adventureRuntime?.interact(m.id);return;}
@@ -2229,9 +2278,9 @@ function frame(now: number) {
   const activeAdventure=adventureRuntime?.channel;
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
-  exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id as RegionId,gameplayActive()&&!combat.defeated);
-  ambientLife.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id as RegionId,regionVisuals.ready(regionAt(player.pos.x,player.pos.z).id));
-  fieldHerbs.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id as RegionId,gameplayActive()&&!combat.defeated);
+  exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id,gameplayActive()&&!combat.defeated);
+  ambientLife.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id,regionVisuals.ready(regionAt(player.pos.x,player.pos.z).id));
+  fieldHerbs.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id,gameplayActive()&&!combat.defeated);
   if(typeof fieldAmmo==='function')fieldAmmo();
   flagshipInterior.apply(done,now/1000);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}
@@ -2272,7 +2321,7 @@ function frame(now: number) {
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
-    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
+    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
@@ -2307,7 +2356,7 @@ function frame(now: number) {
   localLights.yieldSlots(lightCensus.active(camera));
   if (composer && !lowQ) shafts.update(camera, twilight.direction);
   grass?.update(camera.position);
-  ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id as RegionId, dt, renderer.domElement.height);
+  ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id, dt, renderer.domElement.height);
   renderer.info.reset();
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += frameSeconds;
@@ -2346,7 +2395,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

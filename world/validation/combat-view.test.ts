@@ -2,16 +2,16 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { registerHooks } from 'node:module';
 import { readFileSync, readdirSync } from 'node:fs';
-import { VisibleEnemyRoot } from '../src/visibleEnemyRoot.ts';
-import { ENEMY_CONTACT_EFFECT_BUDGET } from '../src/enemyContactEffects.ts';
+import { VisibleEnemyRoot } from '../src/combat/visibleEnemyRoot.ts';
+import { ENEMY_CONTACT_EFFECT_BUDGET } from '../src/combat/enemyContactEffects.ts';
 import * as THREE from 'three';
-import type { Layout } from '../src/types.ts';
+import type { Layout } from '../src/core/types.ts';
 
 // Headless structural/resource test, NOT browser/render QA. CSS has no bearing on these invariants.
 registerHooks({ load(url, context, nextLoad) { return url.endsWith('.css') ? { format: 'module', source: '', shortCircuit: true } : nextLoad(url, context); } });
 class Element {
   id = ''; className = ''; textContent = ''; innerHTML = ''; hidden = false; title = '';
-  style: Record<string, string> = {}; removed = false;
+  style: Record<string, string> = {}; dataset: Record<string, string> = {}; removed = false;
   children: Element[] = []; selectors = new Map<string, Element>();
   classes = new Set<string>();
   classList = { add: (name: string) => this.classes.add(name), remove: (name: string) => this.classes.delete(name) };
@@ -22,7 +22,7 @@ class Element {
 const body = new Element(), crosshair = new Element();
 (globalThis as any).document = { documentElement: { lang: '' }, createElement: () => new Element(), body, getElementById: (id: string) => id === 'crosshair' ? crosshair : body.children.find(e => e.id === id) };
 (globalThis as any).window = { setTimeout: () => 1, addEventListener() {} };
-const { WorldCombat } = await import('../src/combatView.ts');
+const { WorldCombat } = await import('../src/combat/combatView.ts');
 const layout = {
   world: { seed: 537, waterLevel: 1 }, areas: [],
   markers: [{ id: 'boss_vacant_king', type: 'enemy', p: [0, 2, 0], label: 'Boss' }],
@@ -77,7 +77,7 @@ test('ally assist is player-proximity, range, LOS and cooldown limited', () => {
 
 test('HUD source keeps health in the bottom-left corner and gives the narrow boss layout priority over the contract card', () => {
   // Source-layout guard only: a browser render is still required for final visual acceptance.
-  const css = readFileSync(new URL('../src/combat.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/ui/combat.css', import.meta.url), 'utf8');
   const vitals = css.match(/#world-vitals\s*\{([^}]+)\}/)![1];
   assert.match(vitals, /bottom:\s*18px/); assert.match(vitals, /left:\s*18px/);
   assert.doesNotMatch(vitals, /translateX|left:\s*50%/, 'do not put HP back across the wide help panel');
@@ -143,7 +143,7 @@ test('hit feedback stays at the impact point as tiny camera-facing streaks, neve
 });
 
 test('thrust visual corners match the simulation rectangle for every facing', async () => {
-  const { enemyAttackContains, enemyThrustLength, enemyAttackRadius } = await import('../src/combat.ts');
+  const { enemyAttackContains, enemyThrustLength, enemyAttackRadius } = await import('../src/combat/combat.ts');
   const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(['saber_contract', 'shard_camp', 'shard_tower', 'shard_table']), toast() {}, onVictory() {}, onPlayerDefeated() {} });
   combat.beginBoss();
   const e = combat.state.boss, v = (combat as any).visuals.get(e.id);
@@ -288,11 +288,11 @@ test('production hidden roots allow late real GLB attachment, death release, rev
 
 
 test('visibility traversal override is confined to enemy visual containers, not source rigs, physics or effects', () => {
-  const source = readFileSync(new URL('../src/combatView.ts', import.meta.url), 'utf8');
+  const source = readFileSync(new URL('../src/combat/combatView.ts', import.meta.url), 'utf8');
   assert.equal((source.match(/new VisibleEnemyRoot\(/g) ?? []).length, 1);
   assert.match(source.slice(source.indexOf('private makeEnemy')), /const root = new VisibleEnemyRoot\(\), body = new THREE.Group\(\), fallback = new THREE.Group\(\)/);
-  for (const name of readdirSync(new URL('../src/', import.meta.url))) {
-    if (!name.endsWith('.ts') || ['combatView.ts','visibleEnemyRoot.ts'].includes(name)) continue;
+  for (const name of readdirSync(new URL('../src/', import.meta.url), { recursive: true })) {
+    if (!name.endsWith('.ts') || ['combat/combatView.ts','combat/visibleEnemyRoot.ts'].includes(name.replaceAll('\\', '/'))) continue;
     assert.doesNotMatch(readFileSync(new URL(`../src/${name}`, import.meta.url),'utf8'), /VisibleEnemyRoot/, `${name} must not share render-only enemy traversal policy`);
   }
   const root = new VisibleEnemyRoot();
@@ -305,4 +305,24 @@ test('visibility traversal override is confined to enemy visual containers, not 
   scene.traverse(node => { assert.equal(node instanceof VisibleEnemyRoot, roots.has(node)); });
   assert.equal(internal.effectGroup instanceof VisibleEnemyRoot, false);
   combat.dispose();
+});
+
+
+test('actual combat HUD distinguishes an unaffordable heavy shot and shows boss gun cooling', async () => {
+  const { worldGun } = await import('../src/weapons/worldArsenal');
+  const { setLanguage } = await import('../../shared-client/i18n');
+  const combat = new WorldCombat({ scene: new THREE.Scene(), colliders: [], layout, done: new Set(), toast() {}, onVictory() {}, onPlayerDefeated() {} });
+  const internal = combat as any, rounds = internal.hud.querySelector('.combat-rounds');
+  try {
+    setLanguage('zh'); combat.state.setGun(worldGun('longnight')!); combat.state.ammo = 2;
+    combat.present(0, { x: 0, y: 2, z: 0 }, false);
+    assert.equal(rounds.textContent, '2 · 不足'); assert.equal(internal.hud.dataset.ammo, 'empty');
+    assert.match(rounds.title, /现有 2 发 · 每次射击需要 5 发/); assert.equal(rounds.ariaLabel, rounds.title);
+    combat.state.bossStarted = true; combat.state.gunVent = .74;
+    combat.present(0, { x: 0, y: 2, z: 0 }, false);
+    assert.equal(rounds.textContent, '∞ · 散热 0.8s'); assert.equal(internal.hud.dataset.ammo, 'boss');
+    setLanguage('en'); combat.present(0, { x: 0, y: 2, z: 0 }, false);
+    assert.equal(rounds.textContent, '∞ · COOL 0.8s'); assert.match(rounds.title, /Unlimited ammunition.*Cooling/);
+    combat.state.gunVent = 0; combat.present(0, { x: 0, y: 2, z: 0 }, false); assert.equal(rounds.textContent, '∞');
+  } finally { combat.dispose(); setLanguage('zh'); }
 });

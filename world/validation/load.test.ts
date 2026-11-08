@@ -1,10 +1,10 @@
-import { worldBootFailure } from '../src/bootFailure';
+import { worldBootFailure } from '../src/core/bootFailure';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
-import { loadLayout } from '../src/load.ts';
+import { loadLayout } from '../src/core/load.ts';
 import { bilingual, localizeText, onLanguageChange, setLanguage } from '../../shared-client/i18n';
 const valid = JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json', import.meta.url), 'utf8'));
 const fetchJSON = (value: unknown) => (async () => new Response(JSON.stringify(value), { status: 200 })) as typeof fetch;

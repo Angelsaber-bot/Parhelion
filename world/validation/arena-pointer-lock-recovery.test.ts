@@ -13,7 +13,7 @@ const mocks: Record<string, string> = {
   'session.ts': `export function startOffline(){return window.__qa.session(false)}export async function joinOnline(){return window.__qa.session(true)}`,
   'audio.ts': 'export const sfx={unlock(){}}', 'armory.ts': 'export function openArmory(){}',
 };
-const bundle = build({ entryPoints: [resolve(root, 'src/main.ts')], bundle: true, write: false, format: 'iife', platform: 'browser', loader: { '.webp': 'dataurl', '.css': 'empty' }, plugins: [{ name: 'boundaries', setup(b) { b.onResolve({ filter: /\.\/(scene|game|session|audio|armory)\.ts$/ }, a => ({ path: a.path.slice(2), namespace: 'boundary' })); b.onLoad({ filter: /.*/, namespace: 'boundary' }, a => ({ contents: mocks[a.path], loader: 'js' })); } }] });
+const bundle = build({ entryPoints: [resolve(root, 'src/main.ts')], bundle: true, write: false, format: 'iife', platform: 'browser', loader: { '.webp': 'dataurl', '.css': 'empty' }, plugins: [{ name: 'boundaries', setup(b) { b.onResolve({ filter: /^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/ }, a => ({ path: a.path.split('/').at(-1)!, namespace: 'boundary' })); b.onLoad({ filter: /.*/, namespace: 'boundary' }, a => ({ contents: mocks[a.path], loader: 'js' })); } }] });
 for (const mode of ['offline', 'online']) for (const failure of ['reject', 'throw', 'event-only']) test(`${mode} pointer-lock ${failure} offers explicit retry without a duplicate session`, async () => {
   const dom = new JSDOM(readFileSync(resolve(root, 'index.html'), 'utf8'), { url: 'https://arena.test/', pretendToBeVisual: true, runScripts: 'outside-only' }), w = dom.window, d = w.document;
   const errors: unknown[] = []; dom.virtualConsole.on('jsdomError', (error: unknown) => errors.push(error));

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {playerFixture} from './player-fixture';
 import {SkinnedCharacterAnimator as Baseline} from './fixtures/player-pre-ads-pole';
-import {SkinnedCharacterAnimator as Current} from '../src/skinnedCharacter';
+import {SkinnedCharacterAnimator as Current} from '../src/player/skinnedCharacter';
 type Rig=Awaited<ReturnType<typeof playerFixture>>['rig'];
 function bend(rig:Rig){
  const hand=rig.joints.Hand_R,forearm=rig.joints.Forearm_R,middle=rig.bones.J_Bip_R_Middle1;

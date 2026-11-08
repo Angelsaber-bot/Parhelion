@@ -2,8 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { AUDIT_FPS, auditEvadeFrame, auditHeatFrame } from './action-frame-audit';
-import { WorldActions, type ActionPoseCommand, type WorldActionContext } from '../src/worldActions';
-import { WorldCombatState } from '../src/combat';
+import { WorldActions, type ActionPoseCommand, type WorldActionContext } from '../src/combat/worldActions';
+import { WorldCombatState } from '../src/combat/combat';
 
 for (const fps of AUDIT_FPS) test(`actual main frame at ${fps}FPS preserves exact evade distance and fixed-step immunity`, () => {
   const result = auditEvadeFrame(fps);

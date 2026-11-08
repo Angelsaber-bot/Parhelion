@@ -1,18 +1,18 @@
 import { campaignSourceContext } from './campaign-source-context';
 import { SettingsStore } from '../../shared-client/settings.ts';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import {FortCannon, FORT_CANNON} from '../src/fortCannon.ts';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import {FortCannon, FORT_CANNON} from '../src/environment/fortCannon.ts';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {transformSync} from 'esbuild';
 import * as THREE from 'three';
-import {VALLEY_STORY,getValleyStoryState,getValleyStoryGuide,interactValleyStory} from '../src/valleyStory.ts';
-import {createValleyStoryScene} from '../src/valleyStoryScene.ts';
-import {WorldProgress,ARMORY_MARKER} from '../src/progress.ts';
-import * as eraStory from '../src/eraStories.ts';
+import {VALLEY_STORY,getValleyStoryState,getValleyStoryGuide,interactValleyStory} from '../src/story/valleyStory.ts';
+import {createValleyStoryScene} from '../src/environment/valleyStoryScene.ts';
+import {WorldProgress,ARMORY_MARKER} from '../src/core/progress.ts';
+import * as eraStory from '../src/story/eraStories.ts';
 const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const slice=(a:string,b:string)=>{const start=source.indexOf(a);assert.ok(start>=0,`Missing source anchor ${a}`);const end=source.indexOf(b,start);assert.ok(end>start,`Missing source terminator ${b}`);return source.slice(start,end);};
 function fixture(){

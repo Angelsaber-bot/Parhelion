@@ -7,7 +7,7 @@ import { ArenaRoom } from '../server/ArenaRoom.ts';
 import { MAPS } from '../shared/arenaMap.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
-import { joinOnline, type Session } from '../src/session.ts';
+import { joinOnline, type Session } from '../src/network/session.ts';
 import type { Snapshot } from '../shared/match.ts';
 const port=31000+Math.floor(Math.random()*500);
 let server:Server;

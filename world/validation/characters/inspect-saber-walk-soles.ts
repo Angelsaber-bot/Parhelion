@@ -1,6 +1,6 @@
 /** CPU shoe/ankle diagnostic, no production pose edits. */
 import * as THREE from 'three';import {fileURLToPath}from'node:url';import{writeFile}from'node:fs/promises';
-import{readCharacter}from'./inspect.ts';import{SERVANT_MODELS}from'../../src/servant.ts';import{SaberIdleCarry}from'../../src/characters/saberLocomotion.ts';
+import{readCharacter}from'./inspect.ts';import{SERVANT_MODELS}from'../../src/companions/servant.ts';import{SaberIdleCarry}from'../../src/characters/saberLocomotion.ts';
 const rows:any[]=[],calibration:any[]=[];
 for(const outfit of ['armor','civilian']as const){const{gltf}=await readCharacter(fileURLToPath(SERVANT_MODELS[outfit]));gltf.scene.updateMatrixWorld(true);const point=new THREE.Vector3();
  const probes:{mesh:THREE.SkinnedMesh;index:number;side:number;footLocal:THREE.Vector3}[]=[];const feet=['Left','Right'].map(s=>gltf.scene.getObjectByName('mixamorig'+s+'Foot')!);

@@ -4,7 +4,7 @@
 import * as THREE from 'three';
 import {mkdir,writeFile} from 'node:fs/promises';import path from 'node:path';
 import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';
-import {getFalseDawnEncounterSpec} from '../../src/falseDawnEncounterCatalog';
+import {getFalseDawnEncounterSpec} from '../../src/story/falseDawnEncounterCatalog';
 import assert from 'node:assert/strict';
 const preview=process.argv.includes('--preview'),musket=process.argv.includes('--musket'),contactsOnly=process.argv.includes('--contacts');
 const out=path.resolve(process.argv[2]??'../artifacts/live-warden-sequence');await mkdir(out,{recursive:true});

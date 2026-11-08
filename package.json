@@ -1,0 +1,21 @@
+{
+  "name": "parhelion",
+  "private": true,
+  "description": "Parhelion 幻日：完整游戏的统一开发与展示入口",
+  "engines": {
+    "node": ">=22.22.2"
+  },
+  "scripts": {
+    "setup": "npm ci --prefix arena-game && npm ci --prefix world",
+    "start": "npm start --prefix site",
+    "dev:world": "npm run dev --prefix world",
+    "dev:arena": "npm run dev --prefix arena-game",
+    "build": "npm run build --prefix site",
+    "typecheck": "npm run typecheck --prefix world && npm run typecheck --prefix arena-game",
+    "test:world": "npm run test:ci --prefix world",
+    "test:arena": "npm test --prefix arena-game",
+    "test:site": "npm test --prefix site",
+    "test": "npm run test:arena && npm run test:world && npm run test:site",
+    "verify": "npm run build && npm test"
+  }
+}

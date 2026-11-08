@@ -3,7 +3,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {COMPACT_RELAY} from '../src/compactRelayCampaign';
+import {COMPACT_RELAY} from '../src/story/compactRelayCampaign';
 test('actual main exposes early exercise and completed deployment without mutating original progress',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,d=h.window.document;let time=0;
  const frames=()=>{for(let i=0;i<15;i++)h.frame(time+=1000/60)};

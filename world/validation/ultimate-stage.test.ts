@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
-import { UltimateStage } from '../src/ultimateStage.ts';
+import { UltimateStage } from '../src/cinematics/ultimateStage.ts';
 function fixture() {
   const source = new THREE.Group(), bone = new THREE.Bone(); bone.name = 'Hand'; source.add(bone);
   const geometry = new THREE.BoxGeometry(1, 2, 1), material = new THREE.MeshStandardMaterial();

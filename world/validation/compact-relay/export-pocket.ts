@@ -2,7 +2,7 @@
  * No invented scenery, no replacement landscape, no browser/GPU claims.
  */
 import * as THREE from'three';import{readFile,mkdir,writeFile}from'node:fs/promises';import path from'node:path';
-import{regionLoader,bakeQuantized}from'../../src/glb';import{WorldGrid}from'../../src/grid';import{REGIONS}from'../../src/regions';import {createCompactRelaySites} from '../../src/compactRelaySites';
+import{regionLoader,bakeQuantized}from'../../src/rendering/glb';import{WorldGrid}from'../../src/map/grid';import{REGIONS}from'../../src/map/regions';import {createCompactRelaySites} from '../../src/story/compactRelaySites';
 const out=process.argv[2];if(!out)throw Error('output path required');await mkdir(out,{recursive:true});
 const originals=new Map<string,THREE.Group>(),grids=new Map<string,WorldGrid>();
 for(const id of['alpha']){const def=REGIONS.find(r=>r.id===id)!,bytes=await readFile(`public/assets/${def.file}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.position.set(def.offset[0],0,def.offset[1]);gltf.scene.updateMatrixWorld(true);const terrain:THREE.Mesh[]=[];gltf.scene.getObjectByName('ART')!.traverse(o=>{if((o as THREE.Mesh).isMesh&&o.name==='Terrain')terrain.push(o as THREE.Mesh);});originals.set(id,gltf.scene);grids.set(id,new WorldGrid(terrain,def.offset[0]-360,def.offset[1]-360,720,2));}

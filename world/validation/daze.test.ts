@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, DAZE, dazeCapable, dazeThreshold, dazeRatio, type CombatTerrain } from '../src/combat.ts';
-import { makeMinibossSpawns } from '../src/minibosses.ts';
+import { WorldCombatState, DAZE, dazeCapable, dazeThreshold, dazeRatio, type CombatTerrain } from '../src/combat/combat.ts';
+import { makeMinibossSpawns } from '../src/combat/minibosses.ts';
 const terrain: CombatTerrain = { walk: (_p, x, z) => ({ x, y: 0, z }), lineOfSight: () => true };
 const flat = (x: number, z: number) => ({ x, y: 0, z });
 function elite() {

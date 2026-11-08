@@ -82,3 +82,11 @@ Automated checks on the final optimized production asset are complete: **169/169
 The pass verifies the improved landmark geometry, connected Kinkaku gallery, grounded garden fence, filled Kiyomizu gables, cleared stage, district composition, and preserved tested traversal. It is acceptance of this refinement pass, not a claim of pixel-perfect art, historically exact reconstruction, exhaustive inspection of every terrain contact, or verified runtime/GPU behavior.
 
 A minor inherited terrain-contact ambiguity remains at the cropped red gate on the far left of the Yasaka view: a dark gap/shadow at the downhill foot is visible in both the baseline and refined image. This specific foot-to-slope contact was not numerically resolved; it is not represented as a verified grounding pass. No geometry change was made for that ambiguous observation.
+
+## Yasaka gate contact follow-up — 2026-11-07
+
+The previously unresolved gate contact has now been measured against the decoded production terrain. The level timber frame left up to 0.462 m of open space above the downhill ground. Two separate stone shoes now extend below the slope and support both piers and their outer craft posts. They use the existing `Kyoto_Hillside_Foundations` art/collision batch; the gate frame, terrain, layout and quest positions are unchanged.
+
+The exported-geometry checks in `validation/kyoto-landmarks.test.ts` verify buried foundation bottoms and support below the timber. The real player capsule traverses three lanes through the gate in both directions without jumping. The focused Kyoto landmark, layout, export and five-map polish run passed 21/21 checks at this point in the repair.
+
+The actual updated GLB was also rendered with the production toon material in Chromium. Both [gate view](../validation/kyoto-gate-grounding/gate.png) and [downhill footing close-up](../validation/kyoto-gate-grounding/footing.png) were visually inspected: the stone meets the slope, the timber sits on the stone, and the central passage remains open. [Capture details](../validation/kyoto-gate-grounding/render-evidence.json) record zero page errors. This is a cropped geometry inspection under neutral lighting, not a full running-world screenshot, gameplay browser test, or frame-rate measurement. The earlier broad runtime limitations above remain applicable beyond this specific inspection.

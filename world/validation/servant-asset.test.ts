@@ -3,9 +3,9 @@ import { test } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { FirstContract } from '../src/contracts.ts';
-import { ContractServant, SERVANT_CLIPS, SERVANT_MODELS, decodeServantModel } from '../src/servant.ts';
-import type { ServantOutfit } from '../src/servantAppearance.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ContractServant, SERVANT_CLIPS, SERVANT_MODELS, decodeServantModel } from '../src/companions/servant.ts';
+import type { ServantOutfit } from '../src/companions/servantAppearance.ts';
 
 async function loadAsset(outfit: ServantOutfit) {
   const gzip=await readFile(new URL(SERVANT_MODELS[outfit]));

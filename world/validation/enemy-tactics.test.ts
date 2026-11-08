@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { WorldCombatState, COMBAT, type CombatTerrain } from '../src/combat.ts';
-import { ENEMY_TACTICS, enemyWalkTurns } from '../src/enemyTactics.ts';
+import { WorldCombatState, COMBAT, type CombatTerrain } from '../src/combat/combat.ts';
+import { ENEMY_TACTICS, enemyWalkTurns } from '../src/combat/enemyTactics.ts';
 const p = (x = 0, z = 0) => ({ x, y: 0, z });
 const ground: CombatTerrain = { walk: (_from, x, z) => p(x, z), lineOfSight: () => true };
 const make = (role: 'musketeer' | 'bombardier' | 'stalker' = 'stalker') => new WorldCombatState([{ id: 'actor', kind: 'shade', p: p(), role }], []);

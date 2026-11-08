@@ -1,9 +1,9 @@
 import {campaignSourceContext} from './campaign-source-context';
-import {WORLD_RIFLE} from '../src/worldBalance';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import { getEraProgressReaction } from '../src/eraStories';
-import { FortCannon, FORT_CANNON } from '../src/fortCannon';
+import {WORLD_RIFLE} from '../src/core/worldBalance';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import { getEraProgressReaction } from '../src/story/eraStories';
+import { FortCannon, FORT_CANNON } from '../src/environment/fortCannon';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import vm from 'node:vm';
@@ -12,7 +12,7 @@ import { transformSync } from 'esbuild';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator } from '../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator } from '../src/player/skinnedCharacter.ts';
 
 /** Execute the production shoot function, including shoulder-to-muzzle occlusion and quest bookkeeping. */
 function setup({ wall = false, enemy = false, enabled = true, armed = true, cannonTarget = false, playerArt = undefined as Awaited<ReturnType<typeof playerFixture>> | undefined, animator = undefined as SkinnedCharacterAnimator | undefined } = {}) {

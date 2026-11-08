@@ -1,6 +1,6 @@
 import * as THREE from 'three';import {writeFile}from'node:fs/promises';import{resolve}from'node:path';import{fileURLToPath,pathToFileURL}from'node:url';
 const world=resolve(process.argv[2]),output=resolve(process.argv[3]);const imp=(p:string)=>import(pathToFileURL(resolve(world,p)).href);
-const{CharacterKit}=await imp('src/characters/characterKit.ts'),{CHARACTER_KITS}=await imp('src/characters/catalog.ts'),{KitCompanion}=await imp('src/kitCompanion.ts'),{readCharacter}=await imp('validation/characters/inspect.ts');const rows:any[]=[];
+const{CharacterKit}=await imp('src/characters/characterKit.ts'),{CHARACTER_KITS}=await imp('src/characters/catalog.ts'),{KitCompanion}=await imp('src/companions/kitCompanion.ts'),{readCharacter}=await imp('validation/characters/inspect.ts');const rows:any[]=[];
 for(const hz of [30,60,120])for(const from of ['idle','walk','run','attack']){
  const def=CHARACTER_KITS.musashi,{gltf}=await readCharacter(fileURLToPath(new URL(def.assetUrl)));let time=0,ended=false;const hits:any[]=[];
  const follow=new KitCompanion({colliders:[],range:4.5,damage:16,target:()=>null,strike:()=>null});const actor=new CharacterKit(gltf,def,{onEvent:(event:any)=>follow.onEvent(actor,event)});const dt=1/hz;

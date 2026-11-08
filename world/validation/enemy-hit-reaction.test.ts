@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HIT_REACTION, enemyHitReaction } from '../src/enemyHitReaction.ts';
+import { HIT_REACTION, enemyHitReaction } from '../src/combat/enemyHitReaction.ts';
 
 const at = (hitTime: number, extra: Partial<{ kind: 'king' | 'grunt'; mode: string; pacified: boolean }> = {}) =>
   enemyHitReaction({ hitTime, kind: 'grunt', mode: 'chase', pacified: false, ...extra } as never);

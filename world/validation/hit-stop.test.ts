@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { HIT_STOP, hitStopSeconds } from '../src/hitStop.ts';
+import { HIT_STOP, hitStopSeconds } from '../src/combat/hitStop.ts';
 
 test('hit-stop: blades and skills only, heavier blows and kills hold longer, never past the cap', () => {
   assert.equal(hitStopSeconds('ranged', [{ damage: 99 }], 1), 0, 'the rifle stays fluid');

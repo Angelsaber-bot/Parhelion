@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { SERVANTS } from '../src/contracts';
-import { CONTRACT_SKILLS } from '../src/contractSkills';
+import { SERVANTS } from '../src/companions/contracts';
+import { CONTRACT_SKILLS } from '../src/companions/contractSkills';
 
 /** NON-GPU integration: actual GLB clips, production frame/input/HP/terrain BVH.
  * Synthetic recruitment, placement, full ultimate energy and long enemy recovery isolate contacts; this

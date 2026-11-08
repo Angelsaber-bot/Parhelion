@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import {readFileSync,writeFileSync} from 'node:fs';
 import {MeshBVH} from 'three-mesh-bvh';
-import {regionLoader,bakeQuantized} from '../../../src/glb.ts';
+import {regionLoader,bakeQuantized} from '../../../src/rendering/glb.ts';
 const root=process.argv[2]??'/tmp/parhelion-exhaustive-final';
 const d=JSON.parse(readFileSync(root+'/inventory.json','utf8')),rows:any[]=[];
 let foundationSupportedSamples=0;

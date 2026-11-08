@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { SERVANTS } from '../src/contracts';
+import { SERVANTS } from '../src/companions/contracts';
 
 /** Explicit NON-GPU production DOM/GLB/BVH/HP verification, not pixels or FPS.
  * Recruitment, charge and target recovery are injected only to isolate ultimate damage. */

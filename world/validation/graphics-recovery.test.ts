@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { WorldGraphicsRecovery } from '../src/graphicsRecovery';
+import { WorldGraphicsRecovery } from '../src/rendering/graphicsRecovery';
 
 test('graphics event controller is idempotent and requires explicit resume after restoration', () => {
   const canvas = new EventTarget(); let suspends = 0, changes = 0;

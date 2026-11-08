@@ -3,14 +3,14 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { KitCompanion } from '../src/kitCompanion.ts';
+import { KitCompanion } from '../src/companions/kitCompanion.ts';
 import { CharacterKit } from '../src/characters/characterKit.ts';
 import { CHARACTER_KITS } from '../src/characters/catalog.ts';
-import { ContractSkills } from '../src/contractSkills.ts';
-import { FirstContract } from '../src/contracts.ts';
-import { ContractServant, SERVANT_CLIPS, SERVANT_MOTION } from '../src/servant.ts';
-import type { StrikeOriginGeometry } from '../src/combatActions';
-import type { SkillPoseCommand } from '../src/skillPose.ts';
+import { ContractSkills } from '../src/companions/contractSkills.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ContractServant, SERVANT_CLIPS, SERVANT_MOTION } from '../src/companions/servant.ts';
+import type { StrikeOriginGeometry } from '../src/combat/combatActions';
+import type { SkillPoseCommand } from '../src/combat/skillPose.ts';
 import { readCharacter } from './characters/inspect.ts';
 import { fileURLToPath } from 'node:url';
 const floor = () => ({ name: 'floor', enabled: true, bvh: new MeshBVH(new THREE.PlaneGeometry(100, 100).rotateX(-Math.PI / 2)) });
@@ -164,7 +164,7 @@ test('real GLB Q/X holds are distinct poses while contact socket transforms rema
 });
 
 test('real Saber X holds the raised sword pose, Q releases sooner, and leash cancellation cannot revive a hit',async()=>{
- const {SERVANT_MODELS}=await import('../src/servant.ts');
+ const {SERVANT_MODELS}=await import('../src/companions/servant.ts');
  const {gltf}=await readCharacter(fileURLToPath(new URL(SERVANT_MODELS.armor))),source=gltf.animations.find(c=>c.name==='Attack')!,tracks=source.tracks.map(t=>Array.from(t.values));
  const contract=new FirstContract(new Set(['saber_contract']));let normal=0;
  const servant=new ContractServant({scene:new THREE.Scene(),contract,colliders:[floor()],marker:{id:'saber_contract',type:'interact',label:'Saber',p:[0,0,0]},target:()=>null,strike:()=>{normal++;return null;},load:async()=>gltf});

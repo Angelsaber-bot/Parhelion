@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
-import { REGIONS, boundaryWalls, regionAt } from '../src/regions.ts';
+import { Player } from '../src/player/player.ts';
+import { REGIONS, boundaryWalls, regionAt } from '../src/map/regions.ts';
 
 // All regions load side by side; walking east through the mountain pass reaches 黑帆尽头.
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];

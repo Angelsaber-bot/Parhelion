@@ -3,8 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {FALSE_DAWN as F,getFalseDawnState} from '../src/falseDawnCampaign';
-import {WorldProgress} from '../src/progress';
+import {FALSE_DAWN as F,getFalseDawnState} from '../src/story/falseDawnCampaign';
+import {WorldProgress} from '../src/core/progress';
 test('all four False Dawn route/ending pairs require explicit keyboard choices and preserve retry/replay transactions',async t=>{
  const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});const {world:w,window}=h,d=window.document;let time=0;const checkHud=!process.env.WORLD_SOURCE_QA_ROOT||process.env.WORLD_EXPECT_TRACKED_HUD==='1';
  const key=(code:string)=>{for(const type of ['keydown','keyup'])d.body.dispatchEvent(new window.KeyboardEvent(type,{code,bubbles:true,cancelable:true}));};

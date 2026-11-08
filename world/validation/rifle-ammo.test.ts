@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WORLD_RIFLE as R } from '../src/worldBalance';
-import { WorldCombatState, type CombatTerrain } from '../src/combat';
+import { WORLD_RIFLE as R } from '../src/core/worldBalance';
+import { WorldCombatState, type CombatTerrain } from '../src/combat/combat';
 const p = (x = 0, z = 0) => ({ x, y: 0, z });
 const terrain: CombatTerrain = { walk: (_f, x, z) => p(x, z), lineOfSight: () => true };
 const make = () => new WorldCombatState([{ id: 'wild_a', kind: 'shade', p: p(3) }], { id: 'boss', kind: 'king', p: p(40), requires: [] });

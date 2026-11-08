@@ -1,7 +1,7 @@
 import { campaignSourceContext } from './campaign-source-context';
-import { WorldAudio } from '../src/worldAudio';
-import * as campaignClosure from '../src/campaignClosure';
-import { FortCannon, FORT_CANNON } from '../src/fortCannon';
+import { WorldAudio } from '../src/rendering/worldAudio';
+import * as campaignClosure from '../src/story/campaignClosure';
+import { FortCannon, FORT_CANNON } from '../src/environment/fortCannon';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
@@ -9,7 +9,7 @@ import {readFileSync} from 'node:fs';
 import {transformSync} from 'esbuild';
 import * as THREE from 'three';
 import {playerFixture} from './player-fixture.ts';
-import {SkinnedCharacterAnimator} from '../src/skinnedCharacter.ts';
+import {SkinnedCharacterAnimator} from '../src/player/skinnedCharacter.ts';
 
 const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
 const press=main.slice(main.indexOf('function press('),main.indexOf('function release('));

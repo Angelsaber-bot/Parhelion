@@ -4,12 +4,12 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { fileURLToPath } from 'node:url';
 import { readCharacter } from './characters/inspect.ts';
-import { ContractServant, SERVANT_MODELS } from '../src/servant.ts';
+import { ContractServant, SERVANT_MODELS } from '../src/companions/servant.ts';
 import { SaberGroundedLocomotion } from '../src/characters/saberGroundedLocomotion.ts';
 import { saberRunRate } from '../src/characters/saberStride.ts';
 import { SABER_SOLE_PROBES } from '../src/characters/saberSoleGeometry.ts';
-import { FirstContract } from '../src/contracts.ts';
-import { ServantAppearance } from '../src/servantAppearance.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
+import { ServantAppearance } from '../src/companions/servantAppearance.ts';
 for (const outfit of ['armor', 'civilian'] as const) for (const hz of [30, 60, 120]) test(`${outfit} ${hz}Hz: grounded targets retain finite bones, world anchors and budgeted slopes`, async t => {
   const { gltf } = await readCharacter(fileURLToPath(SERVANT_MODELS[outfit]));
   const clips = JSON.stringify(gltf.animations.map(c => c.toJSON())), appearance = new ServantAppearance(); appearance.select(outfit);
@@ -42,7 +42,7 @@ for (const outfit of ['armor', 'civilian'] as const) for (const hz of [30, 60, 1
   actor.dispose(); geometry.dispose();
 });
 test('grounded run/attack interruption keeps private stages isolated and outfit reload drops support ownership', async () => {
-  const { UltimateStage } = await import('../src/ultimateStage.ts');
+  const { UltimateStage } = await import('../src/cinematics/ultimateStage.ts');
   const appearance = new ServantAppearance(); appearance.select('civilian');
   const geometry = new THREE.PlaneGeometry(200, 200).rotateX(-Math.PI / 2), positions = geometry.attributes.position;
   for (let i = 0; i < positions.count; i++) positions.setY(i, .12 * positions.getZ(i));

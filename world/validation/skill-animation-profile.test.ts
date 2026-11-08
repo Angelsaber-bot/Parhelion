@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {skillAnimationProfile,skillAnimationSample} from '../src/skillAnimationProfile';
+import {skillAnimationProfile,skillAnimationSample} from '../src/combat/skillAnimationProfile';
 test('profiles are monotonic, hold before contact, and preserve legacy 1x clock without slot',()=>{
  for(const id of ['saber','blackbeard','musashi'])for(const slot of [undefined,'skill','ultimate'] as const){
   const p=skillAnimationProfile(id,slot),contact=.65,duration=1.6,info=skillAnimationSample(p,0,duration,contact);let previous=0;

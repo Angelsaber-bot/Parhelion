@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
-import {CompanionNavigation} from '../src/companionNavigation';
+import {CompanionNavigation} from '../src/companions/companionNavigation';
 const collider=(geometry:THREE.BufferGeometry)=>({name:'query-fixture',enabled:true,bvh:new MeshBVH(geometry)});
 test('companion finite queries prune distant collider BVHs without weakening local floor or body checks',()=>{
  const floor=collider(new THREE.PlaneGeometry(20,20).rotateX(-Math.PI/2));

@@ -4,7 +4,7 @@
  * overlapping the support AABB without changing the actual walking surface.
  */
 import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {mkdir,writeFile} from 'node:fs/promises';
-import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {Player,type Collider} from '../../src/player';import {PlayerEvade} from '../../src/playerMelee';
+import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {Player,type Collider} from '../../src/player/player';import {PlayerEvade} from '../../src/player/playerMelee';
 const instrument=process.argv.includes('--instrument'),suffix=instrument?'-instrumented':'';
 const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,position={x:-54.303720415746646,y:3.9185068458863785,z:-105.20407474105565},yaw=Math.atan2(position.x-(-53.87395070094748),position.z-(-102.1539371039129)),direction={x:Math.cos(yaw),z:-Math.sin(yaw)},idle={x:0,z:0,jump:false,sprint:false},dt=1/120;
 const owned:THREE.BufferGeometry[]=[],dense:Collider[]=[];

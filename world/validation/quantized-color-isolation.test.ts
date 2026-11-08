@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import {pathToFileURL} from 'node:url';
 import {resolve} from 'node:path';
 const root=process.env.WORLD_SOURCE_QA_ROOT??resolve(import.meta.dirname,'..');
-const {bakeQuantized}=await import(pathToFileURL(resolve(root,'src/glb.ts')).href);
+const {bakeQuantized}=await import(pathToFileURL(resolve(root,'src/rendering/glb.ts')).href);
 test('quantized shared mesh clones isolate authored colors and transforms',()=>{
  for(const interleaved of [false,true]){
   const geometry=new THREE.BufferGeometry();
@@ -30,7 +30,7 @@ test('quantized shared mesh clones isolate authored colors and transforms',()=>{
 });
 
 test('terrain grid consumes normalized packed colors through accessors without mutating source',async()=>{
- const {WorldGrid}=await import('../src/grid');
+ const {WorldGrid}=await import('../src/map/grid');
  const source=new Uint8Array([0,128,255,19,255,64,0,23,1,2,3,29,64,128,192,31]);
  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute([0,0,0,2,1,0,0,2,2,2,3,2],3));geometry.setAttribute('normal',new THREE.Float32BufferAttribute([0,1,0,0,1,0,0,1,0,0,1,0],3));geometry.setAttribute('color',new THREE.InterleavedBufferAttribute(new THREE.InterleavedBuffer(source,4),3,0,true));
  const expanded=geometry.clone(),floats=new Float32Array(12),color=geometry.attributes.color;for(let i=0;i<4;i++)for(let c=0;c<3;c++)floats[i*3+c]=color.getComponent(i,c);expanded.setAttribute('color',new THREE.BufferAttribute(floats,3));

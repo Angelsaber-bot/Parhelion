@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { FirstContract, CONTRACT_STORAGE_KEY } from '../src/contracts.ts';
+import { FirstContract, CONTRACT_STORAGE_KEY } from '../src/companions/contracts.ts';
 function memory(initial?: string) { const data = new Map(initial ? [[CONTRACT_STORAGE_KEY,initial]] : []); return { getItem: (k: string) => data.get(k) ?? null, setItem: (k: string,v: string) => { data.set(k,v); } }; }
 test('first contract is unavailable before recruitment, then summoned and recall persists', () => {
   const done = new Set<string>(), storage = memory(), c = new FirstContract(done,storage);

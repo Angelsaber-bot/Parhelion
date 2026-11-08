@@ -1,6 +1,6 @@
 // End-to-end: real Colyseus server + SDK clients exchanging inputs and snapshots.
 import { Server, Room, type Client as ServerClient } from '@colyseus/core';
-import { joinOnline } from '../src/session.ts';
+import { joinOnline } from '../src/network/session.ts';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import { Client } from '@colyseus/sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';

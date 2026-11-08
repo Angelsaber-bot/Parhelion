@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
-import { boundaryWalls } from '../src/regions.ts';
-import type { Layout } from '../src/types.ts';
+import { Player } from '../src/player/player.ts';
+import { boundaryWalls } from '../src/map/regions.ts';
+import type { Layout } from '../src/core/types.ts';
 
 // The 2026 hub (World Architecture v1.0): every quest stop can be walked to from the camp.
 const buf = readFileSync(new URL('../public/assets/world_alpha.glb', import.meta.url));

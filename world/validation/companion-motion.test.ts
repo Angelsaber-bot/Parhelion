@@ -5,9 +5,9 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { CompanionMotion, COMPANION_MOTION, companionGait, turnCompanion } from '../src/characters/companionMotion.ts';
 import { CharacterKit, type CharacterKitDefinition } from '../src/characters/characterKit.ts';
-import { KitCompanion } from '../src/kitCompanion.ts';
-import { ContractServant, SERVANT_CLIPS, SERVANT_MOTION } from '../src/servant.ts';
-import { FirstContract } from '../src/contracts.ts';
+import { KitCompanion } from '../src/companions/kitCompanion.ts';
+import { ContractServant, SERVANT_CLIPS, SERVANT_MOTION } from '../src/companions/servant.ts';
+import { FirstContract } from '../src/companions/contracts.ts';
 
 function kitFixture() {
   const scene = new THREE.Group(), point = new THREE.Object3D(); point.name = 'Point'; scene.add(point);

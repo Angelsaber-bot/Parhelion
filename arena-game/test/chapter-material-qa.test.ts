@@ -4,8 +4,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
-import { toCel } from '../src/cel.ts';
-import { CRAFTED_CHAPTERS, toChapterMaterial } from '../src/chapterMaterial.ts';
+import { toCel } from '../src/rendering/cel.ts';
+import { CRAFTED_CHAPTERS, toChapterMaterial } from '../src/rendering/chapterMaterial.ts';
 const baseline=JSON.parse(readFileSync(new URL('../../docs/chapter-qa/legacy-shader-baseline.json',import.meta.url),'utf8'));
 const hash=(value:string)=>createHash('sha256').update(value).digest('hex');
 function expand(source:string,depth=0):string{
@@ -53,7 +53,7 @@ it('non-PBR materials retain their original authored shader rather than being re
 it('crafted chapter rendering is explicitly scoped and excludes every protected/legacy map',()=>{
   expect([...CRAFTED_CHAPTERS].sort()).toEqual(['blackflag','camlann','frostcourt']);
   for(const id of ['aster','sakura'])expect(CRAFTED_CHAPTERS.has(id)).toBe(false);
-  const scene=readFileSync(new URL('../src/scene.ts',import.meta.url),'utf8');
+  const scene=readFileSync(new URL('../src/rendering/scene.ts',import.meta.url),'utf8');
   expect(scene).toMatch(/CRAFTED_CHAPTERS\.has\(id\)\s*\?\s*toChapterMaterial\s*:\s*toCel/);
 });
 it('crafted PBR conversion retains all sampled glTF material/UV channels rather than discarding authored surfaces',()=>{

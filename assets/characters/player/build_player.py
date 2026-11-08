@@ -308,7 +308,7 @@ for j,b in batches.items():
  assert len(b['v'])<65536,(j,len(b['v']))
  vb=b''.join(struct.pack('<3h3b3B',*v) for v in b['v']);ib=struct.pack('<'+'H'*len(b['i']),*b['i'])
  result['parts'].append({'joint':j,'vertices':len(b['v']),'triangles':len(b['i'])//3,'data':base64.b64encode(vb).decode(),'indices':base64.b64encode(ib).decode()})
-data_path=os.path.join(ROOT,'world/src/generated/player-mesh.json')
+data_path=os.path.join(ROOT,'world/validation/fixtures/legacy-player/player-mesh.json')
 with open(data_path,'w') as f:json.dump(result,f,separators=(',',':'))
 # Export exactly the quantized geometry with preserved hierarchy for inspection and interchange.
 runtime_mat=bpy.data.materials.new('M_PlayerVertexColor');runtime_mat.use_nodes=True;p=runtime_mat.node_tree.nodes.get('Principled BSDF');p.inputs['Roughness'].default_value=.85

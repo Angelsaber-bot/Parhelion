@@ -1,6 +1,8 @@
 import type * as THREE from 'three';
+import type { CampaignRegionId } from '../core/regionIdentity';
 
-export type RegionId = 'alpha' | 'britain' | 'blacksail' | 'winter' | 'kyoto';
+/** Shared identifier for the five authored campaign regions. */
+export type RegionId = CampaignRegionId;
 export type Localized = [string, string];
 /** Socket positions are local to the settlement. The integration supplies world coordinates. */
 export interface NpcSocket {

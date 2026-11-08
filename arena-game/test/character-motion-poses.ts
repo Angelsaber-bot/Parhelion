@@ -3,7 +3,7 @@
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import * as THREE from 'three';
-import * as current from '../src/fighter.ts';
+import * as current from '../src/player/fighter.ts';
 
 const baseline = process.argv[3] ? await import(pathToFileURL(process.argv[3]).href) as typeof current : null;
 const captures: unknown[] = [];

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { collisionSnapshot } from './blacksail/collision-snapshot.ts';
 const path=new URL('../public/assets/world_blacksail.glb',import.meta.url).pathname;
 const bytes=readFileSync(path);

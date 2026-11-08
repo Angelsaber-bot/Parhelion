@@ -4,9 +4,9 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
-import * as story from '../src/eraStories';
-import { WorldCombatState, BOSSES } from '../src/combat';
-import type { Layout } from '../src/types';
+import * as story from '../src/story/eraStories';
+import { WorldCombatState, BOSSES } from '../src/combat/combat';
+import type { Layout } from '../src/core/types';
 
 const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
 const start = source.indexOf('function applyWorldState()');

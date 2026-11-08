@@ -1,0 +1,100 @@
+{
+  "method": "Actual production Alpha GLB cropped to Crossings / Terrain / Water near the log bridge, production toon materials, neutral inspection lights; Chromium WebGL / SwiftShader",
+  "errors": [],
+  "consoleErrors": [],
+  "cameras": {
+    "bridge-overview": {
+      "eye": [
+        72.41774578961437,
+        16.54772052909719,
+        -13.364962719970656
+      ],
+      "target": [
+        81,
+        3.547720529097191,
+        -36
+      ]
+    },
+    "low-bank-contact": {
+      "eye": [
+        83.68507894009397,
+        6.065585064100628,
+        -15.874385696693285
+      ],
+      "target": [
+        84.91470218368681,
+        3.265585064100628,
+        -23.603423584995827
+      ]
+    },
+    "high-bank-contact": {
+      "eye": [
+        78.31492105990603,
+        6.429855994093754,
+        -56.12561430330671
+      ],
+      "target": [
+        77.08529781631319,
+        3.6298559940937536,
+        -48.396576415004176
+      ]
+    },
+    "walking-face": {
+      "eye": [
+        84.83440000043183,
+        5.065585064100628,
+        -22.52938840895899
+      ],
+      "target": [
+        79.4943453139666,
+        3.647720529097191,
+        -40.767914005770834
+      ]
+    }
+  },
+  "sourceNames": [
+    "Crossings",
+    "Terrain",
+    "Water"
+  ],
+  "triangles": 3732,
+  "samples": [
+    {
+      "s": -15,
+      "bridge": null,
+      "terrain": 3.1202913150509914
+    },
+    {
+      "s": -14,
+      "bridge": 3.351574643716262,
+      "terrain": 2.839957420623591
+    },
+    {
+      "s": -13,
+      "bridge": 3.365585064100628,
+      "terrain": 2.4665288974683364
+    },
+    {
+      "s": 0,
+      "bridge": 3.547720529097191,
+      "terrain": -1.203083872795105
+    },
+    {
+      "s": 13,
+      "bridge": 3.7298559940937537,
+      "terrain": 2.834247773879426
+    },
+    {
+      "s": 14,
+      "bridge": 3.7438664144781058,
+      "terrain": 3.4682856270923565
+    },
+    {
+      "s": 15,
+      "bridge": null,
+      "terrain": 4.027931883705975
+    }
+  ],
+  "assetSha256": "490a981f2bfba654b7dfdd72dae3d0043eca9227fdbf7f47610f07fd6c4bb60f",
+  "limitation": "Local visual inspection only; not a complete running-world scene or a device frame-rate measurement."
+}

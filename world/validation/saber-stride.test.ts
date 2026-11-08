@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';
-import{SERVANT_MOTION}from'../src/servant.ts';
+import{SERVANT_MOTION}from'../src/companions/servant.ts';
 import{sampleSaberRunFoot,SABER_RUN_STRIDE}from'../src/characters/saberStride.ts';
 test('longer Saber run stride has continuous contact velocity and does not change controller calibration',()=>{
  assert.equal(SERVANT_MOTION.runSpeed,1.9983);assert.equal(SERVANT_MOTION.followSpeed,6);

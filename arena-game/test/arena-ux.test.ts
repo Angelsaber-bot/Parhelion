@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Controls } from '../src/controls.ts';
-import { ResultsBoard, syncResultsBoardLayers } from '../src/resultsBoard.ts';
+import { Controls } from '../src/player/controls.ts';
+import { ResultsBoard, syncResultsBoardLayers } from '../src/ui/resultsBoard.ts';
 import { readFileSync } from 'node:fs';
 import { SettingsStore, defaultSettings } from '../../shared-client/settings.ts';
 import { BTN } from '../shared/sim.ts';
-import { meleeMotion, meleeRecoverySeconds } from '../src/meleeArt.ts';
+import { meleeMotion, meleeRecoverySeconds } from '../src/weapons/meleeArt.ts';
 import { WEAPONS } from '../shared/content.ts';
-import { displayWeaponName } from '../src/loadout.ts';
+import { displayWeaponName } from '../src/ui/loadout.ts';
 import { setLanguage } from '../../shared-client/i18n.ts';
 function storage() { const values = new Map<string,string>(); return { values, getItem: (k: string) => values.get(k) ?? null, setItem: (k: string, v: string) => { values.set(k,v); } }; }
 afterEach(() => { vi.unstubAllGlobals(); setLanguage('zh'); });
@@ -140,7 +140,7 @@ it('results raise the HUD stacking context above the end overlay, restore normal
   expect(hud.classes.has('viewing-scores')).toBe(false); expect(endCard.classes.has('viewing-scores')).toBe(false);
   board.key('KeyS'); sync(); board.key('Escape'); sync(); expect(hud.classes.has('viewing-scores')).toBe(false);
   board.key('KeyS'); sync(); board.setEnded(false); sync(); expect(hud.classes.has('viewing-scores')).toBe(false);
-  const css = readFileSync(new URL('../src/style.css', import.meta.url), 'utf8');
+  const css = readFileSync(new URL('../src/ui/style.css', import.meta.url), 'utf8');
   const declaration = (selector: string) => css.slice(css.indexOf(selector + ' {')).split('}')[0];
   const z = (selector: string) => Number(declaration(selector).match(/z-index:\s*(\d+)/)?.[1]);
   expect(z('#hud')).toBeLessThan(z('.overlay'));

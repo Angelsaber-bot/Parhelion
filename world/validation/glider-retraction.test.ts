@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
-import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/skinnedCharacter.ts';
+import { Player } from '../src/player/player.ts';
+import { SkinnedCharacterAnimator, type PlayerAnimationState } from '../src/player/skinnedCharacter.ts';
 import { playerFixture } from './player-fixture.ts';
 
 const base: PlayerAnimationState = { speed: 0, onGround: true, swimming: false, vy: 0, moveYaw: 0 };

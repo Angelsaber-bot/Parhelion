@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
-import { createNarrativePanel, type NarrativeChoice } from '../src/narrativePanel';
-import { createCampaignJournal } from '../src/campaignJournal';
+import { createNarrativePanel, type NarrativeChoice } from '../src/ui/narrativePanel';
+import { createCampaignJournal } from '../src/ui/campaignJournal';
 import { setLanguage } from '../../shared-client/i18n';
-import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, getCampaignDispatchState, getCampaignDispatchText, chooseCampaignEpisode as choose, interactCampaignEpisode as interact, getCampaignEpisodeGuide as guide } from '../src/campaignEpisodes';
+import { CAMPAIGN_EPISODES as D, CAMPAIGN_REGIONS as R, campaignEpisodeFlags as flags, getCampaignDispatchState, getCampaignDispatchText, chooseCampaignEpisode as choose, interactCampaignEpisode as interact, getCampaignEpisodeGuide as guide } from '../src/story/campaignEpisodes';
 const noCalls: readonly string[] = [];
 const options: NarrativeChoice[] = [{id:'one',label:['一','One']},{id:'two',label:['二','Two']}];
 function fixture() {
@@ -76,6 +76,20 @@ test('arc journal tracking is explicit, route-gated, read-only and retains keybo
  const panel=createCampaignJournal({done:()=>done,onOpen(){},pin(){},restoreMain(){},pinArc(){pinned++;},arcTrackingBlocked:()=>blocked?['先稳定召唤阵','Stabilize the summoning circle first']:null});
  try{panel.show();assert.equal(f.document.querySelectorAll('[data-false-dawn-entry]').length,1);const before=[...done];let button=f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!;assert.equal(button.disabled,true);button.click();assert.equal(pinned,0);assert.equal(panel.open,true);
  blocked=false;panel.refresh();button=f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!;button.focus();setLanguage('en');assert.ok((f.document.activeElement as HTMLElement).hasAttribute('data-false-dawn-track'));assert.deepEqual([...done],before);f.document.querySelector<HTMLButtonElement>('[data-false-dawn-track]')!.click();assert.equal(pinned,1);assert.equal(panel.open,false);assert.deepEqual([...done],before);
+ }finally{panel.dispose();f.close();}
+});
+test('the investigation journal distinguishes optional stories from the character campaign in both languages',()=>{
+ const f=fixture(),done=new Set<string>();
+ const panel=createCampaignJournal({done:()=>done,onOpen(){},pin(){},restoreMain(){},pinArc(){}});
+ try{
+  panel.show();
+  assert.match(f.document.getElementById('world-campaign-journal-title')!.textContent!,/可选调查/);
+  assert.match(f.document.querySelector('[data-false-dawn-entry] h3')!.textContent!,/可选调查/);
+  assert.doesNotMatch(f.document.querySelector('[data-false-dawn-entry]')!.textContent!,/主线续篇/);
+  setLanguage('en');
+  assert.match(f.document.querySelector('[data-false-dawn-entry] h3')!.textContent!,/Optional Investigation/);
+  assert.match(f.document.querySelector('[data-false-dawn-entry]')!.textContent!,/either harbor interception or snowfield defense/);
+  assert.equal(done.size,0);
  }finally{panel.dispose();f.close();}
 });
 test('choice group explicitly overrides inherited noninteractive HUD CSS and provides bounded overflow',()=>{

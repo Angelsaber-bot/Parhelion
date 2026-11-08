@@ -1,16 +1,16 @@
 /** Reproducible ideal-input, flat-arena experiment; not a human playtest or renderer benchmark. */
 import * as THREE from 'three';
-import { WorldCombatState, COMBAT, enemyAttackRadius, enemyAttackContains, distanceXZ, type Enemy, type Point3, type CombatTerrain } from '../src/combat';
-import type { EnemyRole } from '../src/enemyRoles';
-import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/worldActions';
-import { collectStrikeTargets } from '../src/combatActions';
+import { WorldCombatState, COMBAT, enemyAttackRadius, enemyAttackContains, distanceXZ, type Enemy, type Point3, type CombatTerrain } from '../src/combat/combat';
+import type { EnemyRole } from '../src/combat/enemyRoles';
+import { WorldActions, type WorldActionContext, type ActionPoseCommand } from '../src/combat/worldActions';
+import { collectStrikeTargets } from '../src/combat/combatActions';
 import { CHARACTER_KITS } from '../src/characters/catalog';
-import type { ServantId } from '../src/contracts';
-import { MELEE_BEATS } from '../src/playerMelee';
-import { PLAYER } from '../src/player';
-import { resolveServantSkillAim } from '../src/skillAim';
-import { CONTRACT_SKILLS } from '../src/contractSkills';
-import { hazardContains, type Hazard } from '../src/bossHazards';
+import type { ServantId } from '../src/companions/contracts';
+import { MELEE_BEATS } from '../src/player/playerMelee';
+import { PLAYER } from '../src/player/player';
+import { resolveServantSkillAim } from '../src/combat/skillAim';
+import { CONTRACT_SKILLS } from '../src/companions/contractSkills';
+import { hazardContains, type Hazard } from '../src/combat/bossHazards';
 /** An ideal reader of phase-2 ground telegraphs: when standing in one that bursts soon, pick the
  * nearest spot that is clear of every telegraph bursting before (or just after) arrival. */
 function hazardEscape(hazards: readonly Hazard[], position: Point3, speed: number, swing?: Enemy): Point3 | null {

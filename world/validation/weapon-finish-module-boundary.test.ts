@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {createRequire} from 'node:module';import * as THREE from 'three';
-import {createWeaponFinishMaterials} from '../src/weaponFinishMaterials';
+import {createWeaponFinishMaterials} from '../src/weapons/weaponFinishMaterials';
 const Foreign=createRequire(import.meta.url)('three');
 test('loaded cross-constructor weapon receives real private color/pattern changes and exact default restoration',()=>{
  const root=new Foreign.Group(),source=new Foreign.MeshStandardMaterial({color:'#b5afa1'});source.name='PH_ivory';const mesh=new Foreign.Mesh(new Foreign.BoxGeometry(),source);root.add(mesh);

@@ -2,9 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {ADVENTURE as A,getAdventureGuide,adventureTravelOpen} from '../src/openWorldCampaign';
-import {adventureEncounter} from '../src/adventureRuntime';
-import {Player} from '../src/player';
+import {ADVENTURE as A,getAdventureGuide,adventureTravelOpen} from '../src/story/openWorldCampaign';
+import {adventureEncounter} from '../src/story/adventureRuntime';
+import {Player} from '../src/player/player';
 
 test('adventure: action sockets, final encounters, cart route and optional ramps use real collision',async()=>{
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:[A.started,'armory_rack'],found:[]})}}),w=h.world;let time=0;

@@ -1,9 +1,9 @@
 /** Hook-level transaction proof, not a synthetic substitute for live enemy/route QA. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createCompactRelayRuntime } from '../src/compactRelayRuntime';
-import { COMPACT_RELAY_ENCOUNTER } from '../src/compactRelayEncounter';
-import { COMPACT_RELAY as C, getCompactRelayGuide, getCompactRelayState } from '../src/compactRelayCampaign';
+import { createCompactRelayRuntime } from '../src/story/compactRelayRuntime';
+import { COMPACT_RELAY_ENCOUNTER } from '../src/story/compactRelayEncounter';
+import { COMPACT_RELAY as C, getCompactRelayGuide, getCompactRelayState } from '../src/story/compactRelayCampaign';
 
 function fixture(flags = ['armory_rack']) {
   const done = new Set(flags);

@@ -1,6 +1,6 @@
 /** Isolated general-continuity CPU comparison. No production patch; timed Player
  * steps only, alternating pair order, setup/diagnostics outside timing. */
-import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {writeFile,mkdir} from 'node:fs/promises';import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {Player as ProductionPlayer,type Collider} from '../../src/player';import {Player} from '../fixtures/player-pre-general-support';import {installGroundActionSupportCandidate} from './ground-action-support-candidate';
+import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';import {writeFile,mkdir} from 'node:fs/promises';import {bootWorldWithoutGpu} from '../world-dom-boot.fixture';import {Player as ProductionPlayer,type Collider} from '../../src/player/player';import {Player} from '../fixtures/player-pre-general-support';import {installGroundActionSupportCandidate} from './ground-action-support-candidate';
 const production=process.argv.includes('--production');
 const output=process.argv.find(arg=>arg.startsWith('--output='))?.slice(9)??'../artifacts/enemy-performance/general-ground-cpu.json';
 const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,position={x:-45,y:3.8892087461,z:-98.8},dt=1/120,idle={x:0,z:0,jump:false,sprint:false},length=Math.hypot(-7,13.8),input={...idle,x:-7/length,z:-13.8/length},owned:THREE.BufferGeometry[]=[],dense:Collider[]=[];

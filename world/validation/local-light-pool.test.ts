@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
-import { LocalLightPool, type AuthoredLocalLight } from '../src/localLightPool';
-import { REGIONS, mergeLayouts } from '../src/regions';
+import { LocalLightPool, type AuthoredLocalLight } from '../src/rendering/localLightPool';
+import { REGIONS, mergeLayouts } from '../src/map/regions';
 
 const source = (x: number, color = '#ffcc88'): AuthoredLocalLight => ({ p: [x, 2, 0], color, intensity: 25, distance: 10, decay: 1.6 });
 test('fixed lamp slots retain authored values and identities, while leaving other scene lights untouched', () => {

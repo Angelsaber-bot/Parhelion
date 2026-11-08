@@ -4,6 +4,13 @@
 
 公网：https://parhelion-game.pages.dev · 联机服务器：Cloudflare Worker `parhelion-arena`
 
+## 展示与代码导览
+
+- **现场试玩**：双击根目录 `启动 Parhelion.command`，在浏览器打开 `http://127.0.0.1:4173/`。
+- **展示代码**：用 VS Code 打开 `Parhelion.code-workspace`，依赖、构建产物和本机备份会自动隐藏。
+- **讲解顺序与文件位置**：见 [项目展示与代码导览](docs/PROJECT_GUIDE.md)，包含地图生成、区域连接、角色、战斗和联机的关键文件。
+- **统一开发命令**：根目录 `npm run setup` 安装依赖，`npm run build` 构建整站，`npm start` 启动，`npm run verify` 构建并测试。
+
 ## 目录
 
 | 分类 | 目录 | 内容 |

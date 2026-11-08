@@ -1,7 +1,7 @@
 /** ISOLATED comparison, not production: reuse the accepted geometric support
  * predicate either only during admitted ground actions or (contrast only) all
  * prior-grounded walking. Never changes action admission/cost/clocks directly. */
-import {EvadeGroundSupport} from '../../src/evadeGroundSupport';
+import {EvadeGroundSupport} from '../../src/player/evadeGroundSupport';
 export function installGroundActionSupportCandidate(player:any,active:()=>boolean,mode:'actions'|'general'){
  const support=new EvadeGroundSupport(),originalStep=player.step,originalCollide=player.collide,stepDescriptor=Object.getOwnPropertyDescriptor(player,'step'),collideDescriptor=Object.getOwnPropertyDescriptor(player,'collide');let eligible=false,disposed=false;
  const solve=()=>originalCollide.call(player);

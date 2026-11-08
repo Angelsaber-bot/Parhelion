@@ -14,7 +14,7 @@
 
 本轮只新增本地 World 战斗，不修改 Arena 的伤害/网络协议。敌人运动为轻量局部避障，而不是导航网格或复杂行为树；野怪和 Boss 外形是本轮程序化原型，不等同于最终角色美术。
 
-主要代码：`world/src/combat.ts`（纯规则）、`combatTerrain.ts`（真实地图碰撞查询）、`combatView.ts`（表现、HUD与从者接口）、`combat.css`；主入口整合在 `world/src/main.ts`。资产枪口接口位于 `weaponArt.ts`。
+主要代码：`world/src/combat/combat.ts`（纯规则）、`combatTerrain.ts`（真实地图碰撞查询）、`combatView.ts`（表现、HUD与从者接口）、`combat.css`；主入口整合在 `world/src/main.ts`。资产枪口接口位于 `weaponArt.ts`。
 
 ## 验证
 

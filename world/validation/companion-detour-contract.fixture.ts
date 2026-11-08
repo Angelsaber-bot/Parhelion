@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {test} from 'node:test';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {CompanionNavigation} from './fixtures/companion-navigation-pre-detour';import type {Collider} from '../src/player';
+import {CompanionNavigation} from './fixtures/companion-navigation-pre-detour';import type {Collider} from '../src/player/player';
 type DetourNavigation=Pick<CompanionNavigation,'step'|'path'|'floor'|'reset'|'stuckSeconds'>&{readonly detourDiagnostics:{rejectedDirections:number;maximumFailedDirections:number;active:number;cap:number;expiry:number;maxPlanCandidates:number}};
 export function companionDetourContract(label:string,CompanionNavigationCandidate:new(colliders:Collider[])=>DetourNavigation){
 const collider=(g:THREE.BufferGeometry,name='fixture')=>({name,enabled:true,bvh:new MeshBVH(g)});

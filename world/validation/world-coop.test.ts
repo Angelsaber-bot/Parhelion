@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { WorldRelayCore } from '../../arena-game/worker/worldRelay.ts';
-import { WorldCombatState, type CombatEvent } from '../src/combat.ts';
+import { WorldCombatState, type CombatEvent } from '../src/combat/combat.ts';
 import { CoopSession, type CoopSocket } from '../src/coop/coopSession.ts';
 import { decodeEnemies, decodeHit, decodeState, encodeEnemy, encodeState, newRoomCode, normalizeRoomCode, type PlayerWireState } from '../src/coop/coopProtocol.ts';
 import { PartnerTrack, PARTNER_DELAY_MS } from '../src/coop/partnerAvatar.ts';

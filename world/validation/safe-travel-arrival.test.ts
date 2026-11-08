@@ -1,18 +1,18 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { Player } from '../src/player';
-import { createEraStoryScene } from '../src/eraStoryScenes';
-import { createValleyStoryScene } from '../src/valleyStoryScene';
-import { createTraversalRepairs } from '../src/traversalRepairs';
-import { createSafeTravelStops } from '../src/safeTravel';
-import { makeCombatTerrain } from '../src/combatTerrain';
+import { Player } from '../src/player/player';
+import { createEraStoryScene } from '../src/story/eraStoryScenes';
+import { createValleyStoryScene } from '../src/environment/valleyStoryScene';
+import { createTraversalRepairs } from '../src/map/traversalRepairs';
+import { createSafeTravelStops } from '../src/story/safeTravel';
+import { makeCombatTerrain } from '../src/combat/combatTerrain';
 /** Match the runtime collider stack, including all five living-hub additions. */
 import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { regionLoader, bakeQuantized } from '../src/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls, GRID } from '../src/regions.ts';
-import { WorldGrid } from '../src/grid.ts';
+import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, GRID } from '../src/map/regions.ts';
+import { WorldGrid } from '../src/map/grid.ts';
 import { mergeParts } from '../src/settlements/merge.ts';
 import { installSettlements } from '../src/settlements/core.ts';
 import { buildAlphaSettlement } from '../src/settlements/alpha.ts';
@@ -20,8 +20,8 @@ import { buildBritainSettlement } from '../src/settlements/britain.ts';
 import { buildBlackSailSettlement } from '../src/settlements/blacksail.ts';
 import { buildWinterSettlement } from '../src/settlements/winter.ts';
 import { buildKyotoSettlement } from '../src/settlements/kyoto.ts';
-import type { Collider } from '../src/player.ts';
-import type { Layout } from '../src/types.ts';
+import type { Collider } from '../src/player/player.ts';
+import type { Layout } from '../src/core/types.ts';
 
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
 const props: THREE.BufferGeometry[] = [];

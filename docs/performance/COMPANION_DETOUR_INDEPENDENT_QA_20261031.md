@@ -1,6 +1,6 @@
 # Companion local detour: independent QA
 
-Production source slice: `91b0f10` (`world/src/companionNavigation.ts` only).
+Production source slice: `91b0f10` (`world/src/companions/companionNavigation.ts` only).
 No attack, target selection, terrain collision, or travel-speed authority change
 is asserted by this review. Failed local headings are bounded to nine records,
 expire after 0.4 seconds of valid simulation, and temporarily shorten planning

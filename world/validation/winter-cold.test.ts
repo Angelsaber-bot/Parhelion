@@ -1,4 +1,4 @@
-import {adventureActive,ADVENTURE} from '../src/openWorldCampaign';
+import {adventureActive,ADVENTURE} from '../src/story/openWorldCampaign';
 /** Executes the actual production cold update, with exported warmth triggers and a minimal DOM fixture. */
 import {test} from 'node:test';
 import assert from 'node:assert/strict';

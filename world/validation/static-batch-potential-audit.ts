@@ -1,5 +1,5 @@
 /** Conservative read-only draw-group potential. No geometry or runtime mutation. */
-import*as THREE from'three';import{writeFileSync}from'node:fs';import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{isStaticArtEligible}from'../src/chunk';
+import*as THREE from'three';import{writeFileSync}from'node:fs';import{bootWorldWithoutGpu}from'./world-dom-boot.fixture';import{isStaticArtEligible}from'../src/rendering/chunk';
 const h=await bootWorldWithoutGpu({worldRoot:process.env.WORLD_SOURCE_QA_ROOT,deterministic:true});
 try{const{world:w,window}=h;let now=0;(window.document.getElementById('start')as HTMLElement).click();await Promise.resolve();const samples=[];
 for(const[name,x,z]of[['hq',3,159],['kyoto_busy',100,560],['kyoto_south',60,950]]as const){w.player.teleport(x,w.ground(x,z)+.02,z);w.player.yaw=0;w.player.pitch=0;for(let i=0;i<60;i++){w.combat.state.hp=100;h.frame(now+=1000/60);}await h.settleAssets();w.camera.aspect=16/9;w.camera.updateProjectionMatrix();w.scene.updateMatrixWorld();w.camera.updateMatrixWorld();const frustum=new THREE.Frustum().setFromProjectionMatrix(new THREE.Matrix4().multiplyMatrices(w.camera.projectionMatrix,w.camera.matrixWorldInverse));

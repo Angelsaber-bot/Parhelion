@@ -1,10 +1,10 @@
 import { readFile } from 'node:fs/promises';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { WEAPON_ART, WeaponArtPool, artPoint, combatArt, makeArtMount } from '../src/weaponArt.ts';
-import { attachGunArt } from '../src/gunArt.ts';
-import { poseMelee } from '../src/meleeArt.ts';
+import { WEAPON_ART, WeaponArtPool, artPoint, combatArt, makeArtMount } from '../src/weapons/weaponArt.ts';
+import { attachGunArt } from '../src/weapons/gunArt.ts';
+import { poseMelee } from '../src/weapons/meleeArt.ts';
 import { WEAPONS } from '../shared/content.ts';
 
 async function parse(def = WEAPON_ART[0]) {

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import { Player } from '../src/player.ts';
+import { Player } from '../src/player/player.ts';
 const idle = { x: 0, z: 0, jump: false, sprint: false };
 test('teleport clears stale floor and water contacts, preventing an air jump', () => {
   const p = new Player([], 1);
@@ -25,7 +25,7 @@ test('floor collision remains stable and supports a normal jump', () => {
 });
 
 test('minimap applies its own north/south origin to the player and retained quest target', async () => {
-  const { WorldMap } = await import('../src/map.ts');
+  const { WorldMap } = await import('../src/map/map.ts');
   const map = Object.create(WorldMap.prototype) as InstanceType<typeof WorldMap>;
   Object.assign(map, { half: 240, size: 241, base: {}, layout: { areas: [], markers: [{ type: 'spawn', p: [5, 0, 165] }] } });
   const translated: number[][] = [], points: number[][] = [], markers: number[][] = [];
@@ -49,7 +49,7 @@ test('leaving flight cannot reuse a stale grounded jump', () => {
 });
 
 test('full map keeps both axes aligned to the map rather than the player', async () => {
-  const { WorldMap } = await import('../src/map.ts');
+  const { WorldMap } = await import('../src/map/map.ts');
   const map = Object.create(WorldMap.prototype) as InstanceType<typeof WorldMap>;
   Object.assign(map, { half: 240, size: 241, base: {}, layout: { areas: [], markers: [] } });
   let xy: number[] = [];

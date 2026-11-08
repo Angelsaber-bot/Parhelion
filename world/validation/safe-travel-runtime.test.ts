@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { transformSync } from 'esbuild';
 import * as THREE from 'three';
-import { Player } from '../src/player';
-import * as travel from '../src/safeTravel';
+import { Player } from '../src/player/player';
+import * as travel from '../src/story/safeTravel';
 
 const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
 const start = source.indexOf('function travelContext()');

@@ -1,6 +1,6 @@
 /** Candidate-only finite floor/cache checks; no production attachment. */
 import test from 'node:test';import assert from 'node:assert/strict';import * as THREE from 'three';import {MeshBVH} from 'three-mesh-bvh';
-import {SaberTerrainPatch} from '../../src/characters/saberTerrainPatch';import {CompanionNavigation} from '../../src/companionNavigation';
+import {SaberTerrainPatch} from '../../src/characters/saberTerrainPatch';import {CompanionNavigation} from '../../src/companions/companionNavigation';
 const surface=()=>{const geometry=new THREE.PlaneGeometry(8,8).rotateX(-Math.PI/2);return{name:'independent',enabled:true,bvh:new MeshBVH(geometry)};};
 test('candidate cache follows versioned real BVH refit and rejects nonfinite floor requests',()=>{
  const c=surface(),patch=new SaberTerrainPatch([c]),nav=new CompanionNavigation([c]);try{patch.beginFrame(0,0,0);assert.equal(patch.floor(0,0,0),0);const position=c.bvh.geometry.getAttribute('position');for(let i=0;i<position.count;i++)position.setY(i,position.getY(i)+.23);position.needsUpdate=true;c.bvh.refit();patch.beginFrame(0,0,0);assert.ok(Math.abs(patch.floor(0,0,0)!-.23)<1e-7);assert.equal(patch.floor(0,0,0),nav.floor(0,0,0));for(const args of [[NaN,0,0],[0,Infinity,0],[0,0,NaN]])assert.equal(patch.floor(...args as [number,number,number]),null);}finally{c.bvh.geometry.dispose();}

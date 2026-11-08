@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { playerFixture } from './player-fixture.ts';
-import { SkinnedCharacterAnimator, solvePlayerArm } from '../src/skinnedCharacter.ts';
+import { SkinnedCharacterAnimator, solvePlayerArm } from '../src/player/skinnedCharacter.ts';
 const v=()=>new THREE.Vector3(),q=()=>new THREE.Quaternion();
 const base={onGround:true,swimming:false,vy:0,moveYaw:0};
 

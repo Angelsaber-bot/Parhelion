@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import {fileURLToPath} from 'node:url';
 import {CHARACTER_KITS} from '../../src/characters/catalog.ts';
 import {readCharacter} from './inspect.ts';
-import {UltimateStage} from '../../src/ultimateStage.ts';
+import {UltimateStage} from '../../src/cinematics/ultimateStage.ts';
 const report=[];
 for(const identity of ['blackbeard','napoleon','musashi'] as const){
  const kit=CHARACTER_KITS[identity==='napoleon'?'napoleonMounted':identity];const {gltf}=await readCharacter(fileURLToPath(kit.assetUrl));

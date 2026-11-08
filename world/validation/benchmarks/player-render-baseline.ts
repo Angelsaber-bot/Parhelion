@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
 const baseline = process.argv.includes('--baseline');
-const {buildCharacter, CharacterAnimator} = baseline ? await import('./baseline-character.ts') : await import('../../src/character.ts');
+const {buildCharacter, CharacterAnimator} = baseline ? await import('./baseline-character.ts') : await import('../fixtures/legacy-player/character.ts');
 const rig = buildCharacter(new THREE.MeshBasicMaterial({vertexColors:true}));
 const animator = new CharacterAnimator(rig);
 const states = [

@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
-import { WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, INITIAL_SPAWN_ID } from '../src/progress';
-import { CONTRACT_STORAGE_KEY } from '../src/contracts';
+import { WORLD_PROGRESS_KEY, LEGACY_WORLD_PROGRESS_KEYS, INITIAL_SPAWN_ID } from '../src/core/progress';
+import { CONTRACT_STORAGE_KEY } from '../src/companions/contracts';
 import { defaultSettings } from '../../shared-client/settings';
 
 const legacyAlpha = JSON.stringify({ done: ['hq_terminal', 'armory_rack', 'summon_circle'], found: ['travel_alpha'] });

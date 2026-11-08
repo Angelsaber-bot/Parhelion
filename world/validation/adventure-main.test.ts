@@ -3,8 +3,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
-import {ADVENTURE as A} from '../src/openWorldCampaign';
-import {WORLD_PROGRESS_KEY} from '../src/progress';
+import {ADVENTURE as A} from '../src/story/openWorldCampaign';
+import {WORLD_PROGRESS_KEY} from '../src/core/progress';
 test('adventure actual main: four-region evidence leads to emitters, Warden, tower, evacuation and saved ending',async()=>{
  const flags=[A.started,A.online,'armory_rack','saber_contract','sun_core','sea_core','blackbeard_contract',A.departed,'winter_core','napoleon_contract',A.arrived,'fire_core','musashi_contract',A.evidence];
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{[WORLD_PROGRESS_KEY]:JSON.stringify({done:flags,found:[]})}}),w=h.world,d=h.window.document;let now=0;

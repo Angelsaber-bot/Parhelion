@@ -1,8 +1,8 @@
 {
   "alpha": {
-    "source": 3805956,
+    "source": 3805908,
     "core": 2099820,
-    "visual": 1959760
+    "visual": 1959716
   },
   "britain": {
     "source": 6134280,
@@ -15,13 +15,13 @@
     "visual": 3012316
   },
   "winter": {
-    "source": 6544404,
-    "core": 2208968,
+    "source": 6586660,
+    "core": 2251280,
     "visual": 4615648
   },
   "kyoto": {
-    "source": 12713260,
-    "core": 2324236,
+    "source": 12713728,
+    "core": 2324704,
     "visual": 10735492
   }
 }

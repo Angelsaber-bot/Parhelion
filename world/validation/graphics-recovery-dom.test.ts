@@ -80,7 +80,7 @@ test('context loss/restoration during asynchronous boot still requires a deliber
 });
 
 test('paid native cinematic cancellation cannot replay contact or refund on graphics recovery',async()=>{
- const {getFalseDawnEncounterSpec}=await import('../src/falseDawnEncounterCatalog');
+ const {getFalseDawnEncounterSpec}=await import('../src/story/falseDawnEncounterCatalog');
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{'parhelion.world.progress.v2':JSON.stringify({done:['armory_rack','saber_contract'],found:[]})}}),w=h.world,d=h.window.document,canvas=d.getElementById('view')!;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};
  const key=(code:string)=>{for(const type of ['keydown','keyup'])d.body.dispatchEvent(new h.window.KeyboardEvent(type,{code,bubbles:true}));};
