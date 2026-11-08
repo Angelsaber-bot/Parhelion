@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { PARALLAX as P, canRecordView, recordParallaxView, concludeParallax, parallaxGuide, type SurveyFrame } from '../src/story/parallaxSurvey';
+import { PARALLAX as P, canRecordView, recordParallaxView, concludeParallax, parallaxGuide, type SurveyFrame, beginParallaxExperiment, turnParallaxRing, parallaxAligned, parallaxSetting } from '../src/story/parallaxSurvey';
 import { createParallaxGarden } from '../src/environment/parallaxGarden';
 import { createQuestGuideCatalog } from '../src/story/questGuideCatalog';
 const station = [0, 10, 0] as const, subject = [0, 12, -15] as const;
@@ -23,4 +23,17 @@ test('optional survey catalog has real bilingual targets and follows saved progr
  done.add(P.complete);assert.equal(catalog.resolve(P.quest,done,new Set()),null);assert.equal(catalog.list(done,new Set()).find(e=>e.id===P.quest)?.complete,true);
  garden.apply(done);assert.equal(garden.root.getObjectByName('Campaign_alpha_resolved')!.visible,true);garden.apply(new Set());assert.equal(garden.root.getObjectByName('Campaign_alpha_resolved')!.visible,false);
  }finally{garden.dispose();garden.dispose();}
+});
+
+test('hands-on ring experiment invalidates old evidence, restores adjustments and preserves earned finish on replay',()=>{
+ const done=new Set<string>([P.complete,'armory_rack']);beginParallaxExperiment(done);
+ assert.equal(done.has(P.complete),true);assert.equal(parallaxAligned(done),false);
+ assert.equal(recordParallaxView(P.front,done,frame,station,subject),false);
+ turnParallaxRing(done,'near');turnParallaxRing(done,'far');turnParallaxRing(done,'far');
+ assert.equal(parallaxAligned(done),true);
+ const restored=new Set<string>(JSON.parse(JSON.stringify([...done])));assert.equal(parallaxSetting(restored,'far'),1);
+ recordParallaxView(P.front,restored,frame,station,subject);recordParallaxView(P.side,restored,frame,station,subject);
+ assert.equal(restored.has(P.tested),true);turnParallaxRing(restored,'near');assert.equal(restored.has(P.front),false);assert.equal(restored.has(P.side),false);assert.equal(concludeParallax('perspective',restored),false);
+ assert.equal(restored.has(P.complete),true,'replaying never revokes the finish');
+ const garden=createParallaxGarden(()=>10);try{garden.apply(restored);assert.notEqual(garden.root.getObjectByName('Parallax_Near_Ring')!.rotation.y,0);}finally{garden.dispose();}
 });

@@ -351,7 +351,7 @@ export function createExploration(host: ExplorationHost) {
   }
 
   // ───────────────────────── camps ─────────────────────────
-  interface CampRt { def: CampDef; wave: number; running: boolean; pending: number; y: number; flag: THREE.Group }
+  interface CampRt { def: CampDef; wave: number; running: boolean; pending: number; waiting?: boolean; y: number; flag: THREE.Group }
   const camps = new Map<string, CampRt>();
   let activeCamp: CampRt | null = null;
   const vanguardHailed = new Set<string>();
@@ -376,7 +376,7 @@ export function createExploration(host: ExplorationHost) {
       host.toast(bilingual('附近还有敌人在交战，先击退它们，据点才会迎战。', 'Enemies nearby are still fighting; drive them off before the outpost engages.'));
     }
     if (result.ok) {
-      rt.running = true; activeCamp = rt;
+      rt.running = true; rt.waiting = false; activeCamp = rt;
       if (def.lines && rt.wave === 0) host.toast(L(def.lines.start));
       showBanner(def.style === 'duel' ? bilingual(`决斗 · ${def.title[0]}`, `Duel · ${def.title[1]}`) : def.style === 'domain' ? bilingual(`秘境 · ${def.title[0]}`, `Domain · ${def.title[1]}`) : def.style === 'vanguard' ? bilingual(`主线 · ${def.title[0]}`, `Main story · ${def.title[1]}`) : bilingual(`据点 · ${def.title[0]}`, `Outpost · ${def.title[1]}`), bilingual(`第 ${rt.wave + 1} / ${def.waves.length} 波 · 击败全部敌人`, `Wave ${rt.wave + 1} / ${def.waves.length} · Defeat every enemy`), 'region', 2.6);
     }
@@ -684,8 +684,23 @@ export function createExploration(host: ExplorationHost) {
     // camps
     for (const rt of camps.values()) {
       if (rt.pending > 0) {
-        if (active) rt.pending -= dt;
-        if (rt.pending <= 0) { rt.pending = 0; if (!startWave(rt)) { rt.wave = 0; activeCamp = null; host.toast(bilingual('离开了据点，敌人重新集结。', 'You left the outpost; the enemies regroup.')); } }
+        if (!active) continue;
+        rt.pending -= dt;
+        if (rt.pending <= 0) {
+          rt.pending = 0;
+          if (!startWave(rt)) {
+            // The visible cloister extends beyond the encounter's start radius.
+            // Fighting at its edge must not erase already cleared waves.
+            if (rt.def.style === 'domain' && Math.hypot(pp.x - rt.def.anchor[0], pp.z - rt.def.anchor[1]) <= 30 && Math.abs(pp.y - rt.y) <= 8) {
+              rt.pending = 1.6;
+              if (!rt.waiting) host.toast(bilingual('本波已完成，进度保留。回到回廊中央附近，下一波会继续。', 'Wave cleared; progress kept. Return near the cloister centre to continue.'));
+              rt.waiting = true;
+            } else {
+              rt.wave = 0; rt.waiting = false; activeCamp = null;
+              host.toast(bilingual('离开了据点，敌人重新集结。', 'You left the outpost; the enemies regroup.'));
+            }
+          }
+        }
         continue;
       }
       if (rt.running) {
@@ -749,7 +764,7 @@ export function createExploration(host: ExplorationHost) {
   }
   function reset() {
     if (activeTrial) endTrial(activeTrial, false);
-    for (const rt of camps.values()) { rt.running = false; rt.pending = 0; rt.wave = 0; }
+    for (const rt of camps.values()) { rt.running = false; rt.pending = 0; rt.wave = 0; rt.waiting = false; }
     activeCamp = null;
     if (ember.route) { ember = emberIdle(); showNextBeacon(null); }
     if (fox) { const rt = fox.rt; fox = null; rt.wisp.userData.hidden = true; }

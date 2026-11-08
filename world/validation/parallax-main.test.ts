@@ -11,10 +11,13 @@ test('production garden records facing views, rejects distant decisions and save
  const read=()=>{for(let i=0;i<40&&d.getElementById('world-dialogue-choices')!.hidden;i++)key('KeyF');assert.equal(d.getElementById('world-dialogue-choices')!.hidden,false);};
  try{d.getElementById('start')!.click();await Promise.resolve();
  approach(P.front);key('KeyF');assert.equal(w.done.has(P.front),false);approach(P.board);key('KeyF');assert.ok(w.done.has(P.started));closeDialogue();
+ approach(P.front);key('KeyF');assert.equal(w.done.has(P.front),false,'misaligned instrument cannot be recorded');
+ approach(P.near);key('KeyF');approach(P.far);key('KeyF');key('KeyF');
  approach(P.front,false);key('KeyF');assert.equal(w.done.has(P.front),false);approach(P.front);key('KeyF');assert.ok(w.done.has(P.front),'front view can be recorded with production camera');approach(P.side);key('KeyF');assert.ok(w.done.has(P.side));
+ assert.equal(w.parallaxGarden.root.getObjectByName('Campaign_alpha_resolved').visible,true,'verified readings light the board');assert.equal(w.parallaxGarden.root.getObjectByName('Parallax_Near_Ring').rotation.y,0);assert.equal(w.parallaxGarden.root.getObjectByName('Parallax_Far_Ring').rotation.y,0);
  approach(P.board);key('KeyF');read();d.querySelector<HTMLButtonElement>('[data-choice="vanished"]')!.click();assert.equal(w.done.has(P.complete),false);closeDialogue();
  approach(P.board);key('KeyF');read();w.player.teleport(-110,10,300);d.querySelector<HTMLButtonElement>('[data-choice="perspective"]')!.click();assert.equal(w.done.has(P.complete),false);
  approach(P.board);key('KeyF');read();d.querySelector<HTMLButtonElement>('[data-choice="perspective"]')!.click();assert.ok(w.done.has(P.complete));assert.ok(JSON.parse(h.window.localStorage.getItem('parhelion.world.progress.v2')!).done.includes(P.complete));assert.equal(w.done.has('armory_rack'),false);assert.equal(w.done.has('summon_circle'),false);
- closeDialogue();approach(P.board);key('KeyF');assert.ok(w.narrative.open);assert.deepEqual(h.errors,[]);
+ closeDialogue();approach(P.board);key('KeyF');read();d.querySelector<HTMLButtonElement>('[data-choice="replay"]')!.click();assert.ok(w.done.has(P.complete),'replay keeps earned cosmetic');assert.ok(w.done.has(P.experiment));assert.equal(w.parallaxGarden.root.getObjectByName('Campaign_alpha_resolved').visible,false);assert.equal(w.done.has(P.front),false);closeDialogue();assert.notEqual(w.parallaxGarden.root.getObjectByName('Parallax_Near_Ring').rotation.y,0);assert.deepEqual(h.errors,[]);
  }finally{await h.close();}
 });

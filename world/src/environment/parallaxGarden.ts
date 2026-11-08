@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import { SiteArt } from '../story/campaignSites';
-import { PARALLAX, PARALLAX_LABELS } from '../story/parallaxSurvey';
+import { PARALLAX, PARALLAX_LABELS, parallaxSetting } from '../story/parallaxSurvey';
 import type { Marker } from '../core/types';
 
 type Point = [number, number, number];
 /** Grass exclusions follow the instruments, axial walk and observation baseline. */
 export const PARALLAX_CLEARANCE = [[-121.5, 261, -114.5, 282], [-126, 282, -102, 286]] as const;
-export const PARALLAX_ART_BUDGET = { meshes: 4, materials: 3, triangles: 6500 } as const;
+export const PARALLAX_ART_BUDGET = { meshes: 6, materials: 3, triangles: 7000 } as const;
 const GLYPHS: Record<string, readonly string[]> = {
   '0': ['111','101','101','101','111'], '1': ['010','110','010','010','111'], '2': ['111','001','111','100','111'],
   A: ['010','101','111','101','101'], L: ['100','100','100','100','111'], P: ['110','101','110','100','100'],
@@ -60,7 +60,9 @@ export function createParallaxGarden(height: (x: number, z: number) => number | 
   // low cross-braces preserve the two observation rays and all walking routes.
   for (const [z, radius, color] of [[272, 1.05, brass], [264, 1.6, teal]] as const) {
     const floor = floorAt(-118,z), half = radius+.26;
-    art.ring([-118, subject[1], z], radius, .09, color);
+    const layer=z===272?'choiceA':'choiceB';
+    art.ring([-118, subject[1], z], radius, .09, color, layer);
+    art.beam([-118,floor+.24,z],[-118,subject[1]-radius,z],.13,ink,true,'metal');
     art.box([-118,floor+.1,z],[half*2+.7,.2,1.5],edge,true);
     art.box([-118,floor+.215,z],[half*2+.48,.03,1.3],ink);
     for(const sign of[-1,1]) {
@@ -69,13 +71,13 @@ export function createParallaxGarden(height: (x: number, z: number) => number | 
       art.beam([x+sign*.16,base+.3,z-.34],[x,subject[1],z],.14,ink,true,'metal');
       art.beam([x+sign*.16,base+.3,z+.34],[x,subject[1],z],.14,ink,true,'metal');
       art.cyl([x,subject[1],z],.16,.22,'#a9b6b5',false,'metal',[0,0,Math.PI/2]);
-      art.beam([x,subject[1],z],[-118+sign*radius,subject[1],z],.1,color,false,'metal');
+
       for(const dx of[-.14,.14])for(const dz of[-.3,.3])art.cyl([x+dx,base+.31,z+dz],.035,.025,ink,false,'metal');
     }
     // Engraved azimuth marks and one broad zero mark make the instrument legible.
     for(let i=0;i<16;i++) {
       const angle=i*Math.PI/8, major=i%4===0;
-      art.box([-118+Math.cos(angle)*radius,subject[1]+Math.sin(angle)*radius,z+.093],[major?.045:.025,major?.13:.07,.012],ink,false,'metal',[0,0,angle-Math.PI/2]);
+      art.box([-118+Math.cos(angle)*radius,subject[1]+Math.sin(angle)*radius,z+.093],[major?.045:.025,major?.13:.07,.012],ink,false,layer,[0,0,angle-Math.PI/2]);
     }
     art.box([-118,floor+.24,z+.53],[.9,.018,.23],'#e0dfcc');
     lettering(z===272?'01':'02',[-118,floor+.252,z+.53],.035,true);
@@ -97,7 +99,7 @@ export function createParallaxGarden(height: (x: number, z: number) => number | 
     const major=Math.abs(x-Math.round(x))<.01;
     tile(x,284.9,x+.025,284.9+(major?.24:.12),ink,.03);
   }
-  // A dual-view diagram makes the exhibit intelligible before opening dialogue.
+  // A dial legend identifies the two controls without illustrating the answer.
   const boardY = floorAt(-124,284);
   for(const x of[-125,-123]) {
     art.box([x,boardY+.5,284],[.13,1,.18],edge,true,'metal');
@@ -109,22 +111,31 @@ export function createParallaxGarden(height: (x: number, z: number) => number | 
   lettering('PARALLAX',[-124,boardY+1.64,284.126],.045);
   art.box([-124,boardY+1.26,284.13],[.018,.48,.012],'#9baba6');
   for(const [cx,number] of[[-124.65,'01'],[-123.37,'02']] as const) {
-    const overlap=number==='01';
-    art.ring([cx-(overlap?0:.12),boardY+1.3,284.145],.13,.012,brass);
-    art.ring([cx+(overlap?.018:.12),boardY+1.3,284.165],.13,.012,teal);
+    art.ring([cx,boardY+1.3,284.145],.13,.012,number==='01'?brass:teal);
+    for(const sign of[-1,1])art.box([cx+sign*.07,boardY+1.3,284.15],[.04,.05,.018],ink);
     lettering(number,[cx,boardY+1.025,284.14],.028);
   }
   art.box([-124, boardY + 1.9, 284.12], [2.25, .07, .04], '#9dd8bc', false, 'resolved');
+  for(const x of[-120.2,-115.8]) {
+    const y=floorAt(x,284);art.box([x,y+.5,284],[.12,1,.18],edge,true,'metal');
+    art.ring([x,y+1.12,284],.26,.035,brass);art.beam([x-.22,y+1.12,284],[x+.22,y+1.12,284],.035,ink);
+    for(const dx of[-.22,0,.22])art.box([x+dx,y+.82,284.04],[.04,.07,.04],ink);
+  }
   art.finish('alpha'); art.root.name = 'ParallaxGarden';
+  const rings=[art.layers.get('choiceA')!,art.layers.get('choiceB')!];
+  rings.forEach((mesh,i)=>{mesh.geometry.translate(118,-subject[1],-(i===0?272:264));mesh.position.set(-118,subject[1],i===0?272:264);mesh.name=i===0?'Parallax_Near_Ring':'Parallax_Far_Ring';});
+
   const markers: Marker[] = [
-    { id: PARALLAX.board, type: 'interact', label: PARALLAX_LABELS[0][1][0], p: [-124, boardY + 1.2, 284.35], radius: 2.7 },
-    { id: PARALLAX.front, type: 'interact', label: PARALLAX_LABELS[1][1][0], p: [front[0], front[1] + .8, front[2]], radius: 2 },
-    { id: PARALLAX.side, type: 'interact', label: PARALLAX_LABELS[2][1][0], p: [side[0], side[1] + .8, side[2]], radius: 2 },
+    {id:PARALLAX.near,type:'interact',label:PARALLAX_LABELS[0][1][0],p:[-120.2,floorAt(-120.2,284)+1.12,284],radius:1.7},
+    {id:PARALLAX.far,type:'interact',label:PARALLAX_LABELS[1][1][0],p:[-115.8,floorAt(-115.8,284)+1.12,284],radius:1.7},
+    { id: PARALLAX.board, type: 'interact', label: PARALLAX_LABELS.find(x=>x[0]===PARALLAX.board)![1][0], p: [-124, boardY + 1.2, 284.35], radius: 2.7 },
+    { id: PARALLAX.front, type: 'interact', label: PARALLAX_LABELS.find(x=>x[0]===PARALLAX.front)![1][0], p: [front[0], front[1] + .8, front[2]], radius: 2 },
+    { id: PARALLAX.side, type: 'interact', label: PARALLAX_LABELS.find(x=>x[0]===PARALLAX.side)![1][0], p: [side[0], side[1] + .8, side[2]], radius: 2 },
   ];
   let disposed = false;
   return {
     root: art.root, markers, collisionGeometries: art.solids, front, side, subject,
-    apply(done: ReadonlySet<string>) { art.layers.get('resolved')!.visible = done.has(PARALLAX.complete); },
+    apply(done: ReadonlySet<string>) { rings.forEach((mesh,i)=>{mesh.rotation.y=((done.has(PARALLAX.complete)&&!done.has(PARALLAX.experiment)?1:parallaxSetting(done,i===0?'near':'far'))-1)*Math.PI/3;mesh.updateMatrix();}); art.layers.get('resolved')!.visible = done.has(PARALLAX.tested)||(done.has(PARALLAX.complete)&&!done.has(PARALLAX.experiment)); },
     dispose() {
       if (disposed) return; disposed = true;
       art.root.removeFromParent();

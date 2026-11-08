@@ -1,7 +1,7 @@
 import { isCampaignRegion, type WorldRegionId } from './core/regionIdentity';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
-import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax } from './story/parallaxSurvey';
+import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
 import {installWorldInterface} from './ui/worldInterface';
 import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './story/journeyDrama';
 import {createResidentEventRuntime,createResidentEventScene} from './story/residentEvents';
@@ -452,7 +452,7 @@ const traversalRepairs = createTraversalRepairs(); scene.add(traversalRepairs.ro
 staticGeos.push(...traversalRepairs.collisionGeometries);
 addEventListener('pagehide', event => { if (!event.persisted) traversalRepairs.dispose(); });
 const parallaxGarden = createParallaxGarden((x,z)=>grid.sampleHeight(x,z));
-world.add(parallaxGarden.root); freezeStaticArt(parallaxGarden.root);
+world.add(parallaxGarden.root);
 staticGeos.push(...parallaxGarden.collisionGeometries); layout.markers.push(...parallaxGarden.markers);
 const parallaxMarkerIds = new Set(parallaxGarden.markers.map(m=>m.id));
 layout.areas.push({id:'parallax_garden',name:'视差庭院',nameEn:'Parallax Garden',c:[-118,276],r:10,color:'#ddc28c',tp:[-118,284],region:'alpha'});
@@ -1968,9 +1968,13 @@ function parallaxReachable(id: string) {
 }
 function interactParallax(id: string) {
   if(!parallaxReachable(id))return;
+  if(done.has(PARALLAX.started)&&!done.has(PARALLAX.complete)&&!done.has(PARALLAX.experiment)){beginParallaxExperiment(done);save();applyWorldState();}
   if(id===PARALLAX.board){
-    if(done.has(PARALLAX.complete)){speakDialogue(PARALLAX_ENDING,PARALLAX.title);return;}
-    if(!done.has(PARALLAX.started)){done.add(PARALLAX.started);save();applyWorldState();questTrackedId=PARALLAX.quest;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;speakDialogue(PARALLAX_INTRO,PARALLAX.title);return;}
+    if(done.has(PARALLAX.complete)&&!done.has(PARALLAX.experiment)){
+      clearInput();narrative!.showChoices(['观测记录已保存。要重新调节装置，做一次新试验吗？已获得的涂装会保留。','The record is saved. Try the instruments again? Your earned finish is kept.'],PARALLAX.title,[{id:'replay',label:['重新试验','Experiment again']},{id:'record',label:['阅读已完成记录','Read the saved record']}],choice=>{if(!parallaxReachable(PARALLAX.board))return;if(choice==='replay'){beginParallaxExperiment(done);save();applyWorldState();speakDialogue(PARALLAX_INTRO,PARALLAX.title);}else speakDialogue(PARALLAX_ENDING,PARALLAX.title);});return;
+    }
+    if(!done.has(PARALLAX.started)){beginParallaxExperiment(done);save();applyWorldState();questTrackedId=PARALLAX.quest;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;speakDialogue(PARALLAX_INTRO,PARALLAX.title);return;}
+    if(!done.has(PARALLAX.experiment)){beginParallaxExperiment(done);save();applyWorldState();}
     if(!done.has(PARALLAX.front)||!done.has(PARALLAX.side)){speakDialogue(PARALLAX_INTRO,PARALLAX.title);return;}
     clearInput();hudRevision++;
     narrative!.showChoices(['两次观察留下了不同的轮廓。你要如何修正“庭院只剩一枚环”的记录？','The two views show different silhouettes. How will you revise “only one ring remains”?'],PARALLAX.title,[
@@ -1980,11 +1984,13 @@ function interactParallax(id: string) {
     ],choice=>{
       if(!parallaxReachable(PARALLAX.board)){toast(bilingual('请回到记录板前再确认。','Return to the record board to confirm.'));return;}
       if(concludeParallax(choice,done)){save();applyWorldState();audio.interaction();speakDialogue(PARALLAX_ENDING,PARALLAX.title);}
-      else if(choice==='vanished')speakDialogue(['支架与双环始终没有移动。试着边横向走动边看：轮廓的变化来自哪里？已记录的视角保留，可以随时再判断。','Neither support nor ring moved. Watch as you step sideways: what changes the silhouette? Your observations are kept; you can decide again.'],PARALLAX.title);
+      else if(choice==='vanished')speakDialogue(['你已亲手转动装置，又从两个位置验证过。同一枚环能呈现几种轮廓？观察记录保留，可以再判断。','You adjusted the rings and tested two viewpoints. How many outlines can one ring show? Your observations are kept; try again.'],PARALLAX.title);
     });
     return;
   }
+  if(id===PARALLAX.near||id===PARALLAX.far){if(turnParallaxRing(done,id===PARALLAX.near?'near':'far')){save();applyWorldState();audio.interaction();toast(bilingual('手轮已转动一格。看一看哪个轮廓变了；调节后请重新记录。','Wheel turned one notch. Watch the changing outline; take fresh observations after adjustment.'));}else toast(bilingual('先到记录板开始试验。','Start an experiment at the board first.'));return;}
   if(!done.has(PARALLAX.started)){toast(bilingual('先读旁边的观测记录板，了解这次观察。','Read the nearby record board before beginning.'));return;}
+  if(done.has(PARALLAX.experiment)&&!parallaxAligned(done)){toast(bilingual('还未获得圆形正面读数。试着调节两个手轮，观察哪枚环呈窄椭圆。','The fronts are not circular yet. Turn the wheels and watch which ring appears narrow.'));return;}
   const station=id===PARALLAX.front?parallaxGarden.front:parallaxGarden.side;
   const target=new THREE.Vector3(...parallaxGarden.subject),direction=target.clone().sub(camera.position),distance=direction.length();
   const clear=!combat.geometry.cast(camera.position,direction,Math.max(0,distance-.2));

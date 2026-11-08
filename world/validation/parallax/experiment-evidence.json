@@ -1,0 +1,33 @@
+{
+  "method": "Production garden component and actual state transitions, neutral component inspection at campus height10; Chromium WebGL / SwiftShader",
+  "errors": [],
+  "consoleErrors": [],
+  "cameras": {
+    "front": {
+      "eye": [
+        -118,
+        11.62,
+        284
+      ],
+      "target": [
+        -118,
+        12.6,
+        269
+      ]
+    },
+    "side": {
+      "eye": [
+        -104,
+        11.62,
+        284
+      ],
+      "target": [
+        -118,
+        12.6,
+        269
+      ]
+    }
+  },
+  "triangles": 4018,
+  "limitation": "Not a full running-world screenshot or frame-rate measurement."
+}
