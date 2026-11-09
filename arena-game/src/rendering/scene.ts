@@ -33,6 +33,7 @@ import { isScopedWeapon } from '../player/aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from '../weapons/meleeArt.ts';
 import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
+import { KillFinishers } from './killFinishers.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
 import {lightWeaponScene,renderHeldWeapon} from '../weapons/weaponLighting.ts';
@@ -55,6 +56,7 @@ export class ArenaScene {
   private avatars = new Map<string, Avatar>();
   private shields = new Map<number, THREE.Group>();
   private combatEffects: ArenaCombatEffects;
+  private killFinishers!: KillFinishers;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
   private flashT = 0;
   private baseFov = 78;
@@ -81,6 +83,7 @@ export class ArenaScene {
 
   constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'low') {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
+    this.killFinishers = new KillFinishers(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -244,6 +247,7 @@ export class ArenaScene {
       const shield=makeShield(TEAM_COLOR.A);fighters.push(shield);this.scene.add(shield);
       this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
       this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
+      this.killFinishers.play([0,-1000,0],'stormcoil',this.camera); // compile the finisher shader with the rest
       // With post-processing the scene is drawn into the composer's linear, untonemapped buffer; programs
       // compiled for the screen would not match and would all compile again on the first real frame.
       const previous=this.renderer.getRenderTarget();
@@ -308,9 +312,10 @@ export class ArenaScene {
   }
 
   /** Tight, straight tracers leave the aim point clear. Skin identity lives in a restrained tint. */
-  skinTracer(from:Vec3,to:Vec3,id?:string,width=1){
+  skinTracer(from:Vec3,to:Vec3,id?:string,width=1,accent=true){
     const style=skinEffect(id);
-    this.combatEffects.tracer(from,to,style?.color??0xffdfad,width,style);
+    // Accents are skipped for your own shots while aiming: they would sit on the sight line.
+    this.combatEffects.tracer(from,to,style?.color??0xffdfad,width,accent?style:undefined);
   }
   skinImpact(at:Vec3,onPlayer:boolean,id?:string){
     const style=skinEffect(id);
@@ -361,7 +366,9 @@ export class ArenaScene {
 
   get combatEffectInventory() { return this.combatEffects.inventory; }
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
-  disposeCombatEffects() { this.combatEffects.dispose(); }
+  disposeCombatEffects() { this.combatEffects.dispose(); this.killFinishers?.dispose(); }
+  /** Per-finish kill emblem at the victim; dimmed and lifted while the local player aims. */
+  killFinisher(feet: Vec3, skinId?: string) { return this.killFinishers.play(feet, skinId, this.camera, this.viewmodel.aim > .3); }
 
   // ---------- players ----------
 
@@ -435,7 +442,7 @@ export class ArenaScene {
 
   /** Round boundaries clear transient effects without reloading maps or equipped models. */
   clearCombatEffects() {
-    this.combatEffects.clear();
+    this.combatEffects.clear(); this.killFinishers?.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
@@ -453,7 +460,7 @@ export class ArenaScene {
   }
 
   update(dt: number) {
-    this.combatEffects.update(dt);
+    this.combatEffects.update(dt); this.killFinishers?.update(dt);
     const flashDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     this.flashT = Math.max(0, this.flashT - flashDt);
     // Preserve the original 60 Hz falloff, rather than dimming once per frame.
@@ -682,10 +689,11 @@ export class Viewmodel {
     this.flash.visible = true;
     this.flash.material.rotation = Math.random() * Math.PI;
     this.flash.scale.setScalar(w===1?.13:.085);
-    this.flash.material.opacity=.55;
+    this.flash.material.opacity=this.aim > .5 ? .22 : .55;
+    if (isScopedWeapon(w) && this.aim > .5) this.flash.visible = false; // never flash inside the scope image
     this.inspectT = 0;
     const style = this.style;
-    if (style && this.muzzle && this.gun) {
+    if (style && this.muzzle && this.gun && this.aim < .3) {
       // The skin's own particle shape bursts forward off the barrel axis, in viewmodel space.
       const at = this.root.worldToLocal(this.muzzle.getWorldPosition(new THREE.Vector3()));
       const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.gun.quaternion);
@@ -737,6 +745,7 @@ export class Viewmodel {
       this.gun.rotation.x *= 1 - this.aim; this.gun.rotation.y *= 1 - this.aim; this.gun.rotation.z *= 1 - this.aim;
       const melee = WEAPONS[this.weapon].kind === 'melee';
       this.presentation.animate(melee ? Math.max(meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit) : kick, this.reloading);
+      this.presentation.focus?.(this.aim);
     }
     if (WEAPONS[this.weapon].kind === 'melee') {
       poseMelee(this.gun, this.weapon, meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit, true);

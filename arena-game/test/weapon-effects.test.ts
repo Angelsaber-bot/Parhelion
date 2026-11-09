@@ -35,3 +35,10 @@ it('Arena has a rebindable inspect action on F that does not collide with other 
  const arena=ACTIONS.arena,inspect=arena.find(a=>a.id==='inspect')!;expect(inspect.binding).toBe('KeyF');
  expect(arena.filter(a=>a.binding==='KeyF'||a.secondary==='KeyF')).toHaveLength(1);
 });
+it('own tracers drop the skin accent while aiming',()=>{const parent=new THREE.Group(),fx=new ArenaCombatEffects(parent,new THREE.Texture());fx.tracer([0,1,0],[0,1,-20],0xffffff,1,undefined);expect(sprites(parent)).toHaveLength(0);fx.dispose();});
+it('ambient motes leave the sight picture while aiming and return at the hip',async()=>{
+ const skin=SIGNATURE_SKINS.find(s=>s.id==='koi-current')!,index=WEAPONS.findIndex(w=>w.id===skin.weapon),skinIndex=WEAPONS[index].skins.findIndex(s=>s.id===skin.id);
+ const group=new THREE.Group(),muzzle=new THREE.Object3D();group.add(new THREE.Mesh(new THREE.BoxGeometry(.1,.1,.1),new THREE.MeshStandardMaterial()));
+ const gun=attachGunArt(index,skinIndex,{group,muzzle},true,new WeaponArtPool(async()=>{throw Error('unexpected');}));await gun.ready;
+ const motes=gun.group.getObjectByProperty('isPoints',true)!;expect(motes.visible).toBe(true);gun.focus!(1);expect(motes.visible).toBe(false);gun.focus!(0);expect(motes.visible).toBe(true);gun.dispose();
+});

@@ -9,6 +9,8 @@ export interface GunPresentation {
   animate(kick: number, reload: number): void;
   /** Briefly brighten the finish's lit details (equip, inspect). */
   flare?(amount: number): void;
+  /** Aim-down-sights progress: ambient motes clear out of the sight picture. */
+  focus?(aim: number): void;
   dispose(): void;
 }
 let artWarmer: ((root: THREE.Object3D, firstPerson: boolean) => Promise<unknown>) | null = null;
@@ -72,6 +74,7 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
       if (art.parts.fore_end) art.parts.fore_end.position.x -= Math.min(1, kick) * 0.25;
     },
     flare(amount) { if (Number.isFinite(amount)) flare = Math.max(flare, amount); },
+    focus(aim) { const motes = art?.parts.motes; if (motes) motes.visible = !(aim > .2); },
     dispose() {
       if (dead) return;
       dead = true; handle?.release();

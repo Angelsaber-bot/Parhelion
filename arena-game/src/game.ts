@@ -182,6 +182,9 @@ export class Game {
         this.hud.kill(name(e.killer), name(e.victim), e.w, e.head, k?.team ?? 'A', v?.team ?? 'B');
         if (e.killer === myId && e.victim !== myId) { this.hud.hit(e.head, true); sfx.kill(e.head); this.hud.killPop(e.head, ++this.streak); }
         if (e.victim === myId) { this.hud.deathBy(name(e.killer)); this.streak = 0; }
+        // The killer's finish signs the kill with its own emblem where the victim fell.
+        const victim = this.latest?.players.find((p) => p.id === e.victim), finish = WEAPONS[e.w]?.skins[k?.skins[e.w] ?? 0]?.id;
+        if (victim && e.victim !== myId) this.scene.killFinisher([victim.x, victim.y, victim.z], finish);
         break;
       }
       case 'spawn':
@@ -320,7 +323,7 @@ export class Game {
           }
           const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
           if(visualRays<(w.pellets>1?2:1)){
-            this.scene.skinTracer(start,end,skinId,w.pellets>1?.38:.65);
+            this.scene.skinTracer(start,end,skinId,w.pellets>1?.38:.65,this.scene.viewmodel.aim<.3);
             if(t<w.range)this.scene.skinImpact(end,onPlayer,skinId);
           }
           visualRays++;

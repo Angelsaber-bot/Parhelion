@@ -73,3 +73,10 @@ it('skin muzzle sparks fly forward from the muzzle and expire', () => {
   for (let i = 0; i < 30; i++) vm.update(1 / 60);
   expect(vm.root.children.filter(o => o instanceof THREE.Sprite && o.visible).length).toBeLessThanOrEqual(1); vm.clear();
 });
+it('while aiming, no skin sparks are thrown into the sight picture and a scoped shot never flashes in the scope', () => {
+  const vm = new Viewmodel(); vm.set(0, WEAPONS[0].skins.findIndex(s => s.id === 'stormcoil')); vm.update(1 / 60); vm.aim = 1;
+  const before = vm.root.children.filter(o => o instanceof THREE.Sprite).length; vm.fire();
+  expect(vm.root.children.filter(o => o instanceof THREE.Sprite).length).toBe(before); vm.clear();
+  const dmr = new Viewmodel(); dmr.set(2, 0); dmr.update(1 / 60); dmr.aim = 1; dmr.fire();
+  expect(dmr.root.children.some(o => o instanceof THREE.Sprite && o.visible)).toBe(false); dmr.clear();
+});

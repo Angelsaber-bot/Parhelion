@@ -63,15 +63,15 @@ export class Sculpture{
   const p=this.def.sight;if(!p)return;const [x,y,z]=p;
   const frame=(w:number,h:number,iw:number,ih:number,r:number)=>{const shape=new THREE.Shape(),round=(sh:THREE.Shape|THREE.Path,hw:number,hh:number,rr:number)=>{sh.moveTo(-hw+rr,-hh);sh.lineTo(hw-rr,-hh);sh.quadraticCurveTo(hw,-hh,hw,-hh+rr);sh.lineTo(hw,hh-rr);sh.quadraticCurveTo(hw,hh,hw-rr,hh);sh.lineTo(-hw+rr,hh);sh.quadraticCurveTo(-hw,hh,-hw,hh-rr);sh.lineTo(-hw,-hh+rr);sh.quadraticCurveTo(-hw,-hh,-hw+rr,-hh);return sh;};round(shape,w,h,r);const hole=new THREE.Path();round(hole,iw,ih,r*.6);shape.holes.push(hole);return shape;};
   const tunnel=(shape:THREE.Shape,depth:number,at:number,m:THREE.Material,bevel=.006)=>{const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:2,curveSegments:6});g.translate(0,0,-depth/2);g.rotateY(Math.PI/2);this.mesh(g,m,[at,y,z],'optic');};
-  this.box([.17,.11,.13],[x+.01,y-.13,z],this.dark,'optic',.02);
+  this.box([.15,.10,.12],[x+.01,y-.135,z],this.dark,'optic',.02);
   for(const dx of[-.05,.07])this.box([.03,.025,.15],[x+dx,y-.17,z],this.metal,'optic',.006);
-  tunnel(frame(.095,.085,.064,.058,.03),.13,x+.02,this.dark,.008);
-  tunnel(frame(.07,.064,.062,.057,.02),.008,x+.09,this.glow,0);
-  tunnel(frame(.098,.088,.088,.078,.03),.012,x-.045,this.metal,.003);
-  this.sphere(.009,[x-.02,y-.054,z],this.glow,[1,.6,1],'optic');
-  this.mesh(new THREE.CylinderGeometry(.024,.026,.032,14),this.metal,[x+.02,y+.105,z],'optic');
-  this.mesh(new THREE.CylinderGeometry(.022,.024,.03,14),this.metal,[x+.02,y,z+.11],'optic',[Math.PI/2,0,0]);
-  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;this.box([.006,.034,.006],[x+.02+Math.cos(a)*.025,y+.105,z+Math.sin(a)*.025],this.dark,'optic',.002);}
+  // Thin hood, wide window: the frame stays at the edge of the sight picture.
+  tunnel(frame(.09,.082,.078,.07,.026),.08,x+.03,this.dark,.004);
+  tunnel(frame(.082,.074,.078,.07,.024),.006,x+.07,this.metal,0);
+  this.sphere(.006,[x-.005,y-.068,z],this.glow,[1,.6,1],'optic');
+  this.mesh(new THREE.CylinderGeometry(.02,.022,.022,14),this.metal,[x+.03,y+.093,z],'optic');
+  this.mesh(new THREE.CylinderGeometry(.018,.02,.022,14),this.metal,[x+.03,y,z+.098],'optic',[Math.PI/2,0,0]);
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;this.box([.005,.024,.005],[x+.03+Math.cos(a)*.021,y+.093,z+Math.sin(a)*.021],this.dark,'optic',.002);}
  }
  /** Asset-space bounds of every authored piece, captured before batching (for continuity checks). */
  readonly pieces:{role:string;box:THREE.Box3}[]=[];
