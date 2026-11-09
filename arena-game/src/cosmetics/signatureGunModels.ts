@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import type {Sculpture,P} from './signatureModels.ts';
 import {finishClock} from './weaponFinishes.ts';
+import {themedScope} from './signatureOptics.ts';
 
 /** Sculpted pistol grip: finger grooves, palm swell, beavertail and flared base,
  * inset textured panels, a closed trigger guard and a curved trigger blade.
@@ -31,6 +32,7 @@ export function bore(s:Sculpture,start:number,end:number,y:number,r:number,m:THR
  s.mesh(g,m,[0,y,0]);s.ring(r*.83,.012,[end-.009,y,0],s.dark,'body','x');
 }
 export function scope(s:Sculpture,r=.10){
+ if(themedScope(s,r))return;
  const [x,y,z]=s.def.sight!;
  s.box([.22,.14,.20],[x+.12,y-.21,z],s.dark,'optic');
  for(const at of[x+.04,x+.21])s.rod([at,y-.35,z],[at,y-.09,z],.027,s.metal,'optic');

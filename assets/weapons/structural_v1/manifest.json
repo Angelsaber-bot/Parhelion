@@ -53,8 +53,8 @@
       "weapon": "halo",
       "name": "青瓷山海",
       "file": "celadon-atlas.glb",
-      "triangles": 16198,
-      "meshes": 14,
+      "triangles": 16778,
+      "meshes": 16,
       "bounds": {
         "min": [
           -1.5149999856948853,
@@ -63,7 +63,7 @@
         ],
         "max": [
           1.8200000524520874,
-          0.9375,
+          0.9710000157356262,
           0.22085155546665192
         ]
       },
@@ -89,15 +89,15 @@
           0
         ]
       },
-      "bytes": 470524,
-      "sha256": "bbffe466571b1c97d53cdadf21fb8f2806e8168650106f09a40937e69a2a2064"
+      "bytes": 482296,
+      "sha256": "c9ae12cbb546b2ca4228af811a20147a10afde1212b8734bfadda576d889d593"
     },
     {
       "id": "abyssal-requiem",
       "weapon": "longnight",
       "name": "鲸落深蓝",
       "file": "abyssal-requiem.glb",
-      "triangles": 23850,
+      "triangles": 22958,
       "meshes": 15,
       "bounds": {
         "min": [
@@ -107,7 +107,7 @@
         ],
         "max": [
           2.4200000762939453,
-          0.8715000152587891,
+          0.8723194599151611,
           0.2516079246997833
         ]
       },
@@ -133,8 +133,8 @@
           0
         ]
       },
-      "bytes": 707932,
-      "sha256": "d3bd76ac13abc0b88cadb79b323d29c257678621d3fa8f096002875760b6de7c"
+      "bytes": 678576,
+      "sha256": "9011721b9682345d851c8bb9051bcb78fa83557499273ec6f5b21fae77365b15"
     },
     {
       "id": "vermilion-plume",
@@ -341,8 +341,8 @@
       "weapon": "longnight",
       "name": "绯夜蔷薇",
       "file": "velvet-thorn.glb",
-      "triangles": 20172,
-      "meshes": 17,
+      "triangles": 19824,
+      "meshes": 19,
       "bounds": {
         "min": [
           -1.6349999904632568,
@@ -351,7 +351,7 @@
         ],
         "max": [
           2.4200000762939453,
-          0.8675000071525574,
+          0.906000018119812,
           0.2348567545413971
         ]
       },
@@ -377,8 +377,8 @@
           0
         ]
       },
-      "bytes": 592760,
-      "sha256": "bdfe6c2e5e7dd030aa5b61031c831d3b842c16de7f0195a786c10adb41b33a9d"
+      "bytes": 586768,
+      "sha256": "b8f5330d74e04d2642fb3a200ee3e3581a86904ef0d0ef6f3122d8c5be1b8840"
     },
     {
       "id": "prismwing",
@@ -575,8 +575,8 @@
       "weapon": "halo",
       "name": "夜枭圣咏",
       "file": "owl-canticle.glb",
-      "triangles": 15686,
-      "meshes": 13,
+      "triangles": 14054,
+      "meshes": 15,
       "bounds": {
         "min": [
           -1.5154743194580078,
@@ -584,8 +584,8 @@
           -0.2329999953508377
         ],
         "max": [
-          1.8200000524520874,
-          0.934499979019165,
+          1.897315263748169,
+          1.0215901136398315,
           0.2329999953508377
         ]
       },
@@ -611,16 +611,16 @@
           0
         ]
       },
-      "bytes": 506064,
-      "sha256": "b2de30e3c2902e01c57ec4a1480d0bd521b69c7ac469963d5502d0c80223dde5"
+      "bytes": 481340,
+      "sha256": "6538342bc2ce575c854d3841c9e1c16e62c3005ee7eed43df39ea21bb130d804"
     },
     {
       "id": "meridian-key",
       "weapon": "longnight",
       "name": "时序之钥",
       "file": "meridian-key.glb",
-      "triangles": 23270,
-      "meshes": 15,
+      "triangles": 23546,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.6785727739334106,
@@ -628,8 +628,8 @@
           -0.29500001668930054
         ],
         "max": [
-          2.4200000762939453,
-          0.8755910992622375,
+          2.424999952316284,
+          0.8923599720001221,
           0.21804681420326233
         ]
       },
@@ -655,8 +655,8 @@
           0
         ]
       },
-      "bytes": 897416,
-      "sha256": "398bf305a393ff6d070522a8c4dda204148a9e9e6b466b94ac796f0c104610cc"
+      "bytes": 938604,
+      "sha256": "a29d53587689d0a97b139f44090580476cfd5c181849e431df9a80e674f86acc"
     },
     {
       "id": "cloudline",
@@ -707,8 +707,8 @@
       "weapon": "corona",
       "name": "烬轨快车",
       "file": "cinder-express.glb",
-      "triangles": 16778,
-      "meshes": 13,
+      "triangles": 22274,
+      "meshes": 14,
       "bounds": {
         "min": [
           -1.440000057220459,
@@ -743,16 +743,16 @@
           0
         ]
       },
-      "bytes": 559168,
-      "sha256": "2591e15313c362ddf25b2c2d5ca185c1129df14c30eec9de003d4c4768cb5108"
+      "bytes": 740352,
+      "sha256": "e15f30efe29e8dc4e5d2dd63f9368346330c5f5158aaa7698fd6d3e3f23b3753"
     },
     {
       "id": "brass-horizon",
       "weapon": "halo",
       "name": "黄铜地平线",
       "file": "brass-horizon.glb",
-      "triangles": 15218,
-      "meshes": 13,
+      "triangles": 16044,
+      "meshes": 15,
       "bounds": {
         "min": [
           -1.495877742767334,
@@ -761,7 +761,7 @@
         ],
         "max": [
           1.8200000524520874,
-          0.9325000047683716,
+          0.9564999938011169,
           0.19298096001148224
         ]
       },
@@ -787,8 +787,8 @@
           0
         ]
       },
-      "bytes": 468144,
-      "sha256": "42fde16117ce133bde2a47374c367e2afab33677f2774bc01ad0303d3e4df113"
+      "bytes": 488932,
+      "sha256": "15bdb86658f943a4f8a67618ae2fb1617e6f35a1bfa13f481f02707d6324acfc"
     },
     {
       "id": "mixtape",
@@ -839,8 +839,8 @@
       "weapon": "longnight",
       "name": "冰川勘探",
       "file": "glacier-survey.glb",
-      "triangles": 12990,
-      "meshes": 14,
+      "triangles": 10618,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.6575827598571777,
@@ -849,8 +849,8 @@
         ],
         "max": [
           2.4200000762939453,
-          0.8734999895095825,
-          0.17550000548362732
+          0.9186800122261047,
+          0.18568000197410583
         ]
       },
       "sockets": {
@@ -875,8 +875,8 @@
           0
         ]
       },
-      "bytes": 420836,
-      "sha256": "244f0705f9e5087d22b5bdf83e492c6f55130fb7a2508807d5b7bb0e52024528"
+      "bytes": 368488,
+      "sha256": "c34bdc741f10f086b0071905f7816dcfffff51b67494c2308ffd1c8fb865a615"
     },
     {
       "id": "crescent-sabre",
@@ -1073,8 +1073,8 @@
       "weapon": "halo",
       "name": "螺钿夜雨",
       "file": "night-nacre.glb",
-      "triangles": 13390,
-      "meshes": 15,
+      "triangles": 12810,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.4850000143051147,
@@ -1083,7 +1083,7 @@
         ],
         "max": [
           1.8200000524520874,
-          0.9355000257492065,
+          0.9105975031852722,
           0.1451999992132187
         ]
       },
@@ -1109,8 +1109,8 @@
           0
         ]
       },
-      "bytes": 478860,
-      "sha256": "02913b3c969e6e7b40b31830936c5f828c89988215ed0ca06e65ebfe3ee8a99b"
+      "bytes": 477416,
+      "sha256": "f482a71c663ce143e40788b0cccf73754b639be47c720f7c3cd121ae8c9ef076"
     },
     {
       "id": "stormcoil",
@@ -1249,8 +1249,8 @@
       "weapon": "halo",
       "name": "残樱刃鞘",
       "file": "petal-scabbard.glb",
-      "triangles": 33126,
-      "meshes": 15,
+      "triangles": 34234,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.5564574003219604,
@@ -1259,7 +1259,7 @@
         ],
         "max": [
           1.8200000524520874,
-          0.934499979019165,
+          0.9752237200737,
           0.2070000022649765
         ]
       },
@@ -1285,8 +1285,8 @@
           0
         ]
       },
-      "bytes": 1266836,
-      "sha256": "b25923c49aed5306f7c3f9ba8981d56c6d9f2870751d53a100ff6e1987a36988"
+      "bytes": 1380264,
+      "sha256": "372c5bb151c33da565d85c708491331987122d1e44c3def1ae6282e58f501f6f"
     },
     {
       "id": "hummingbird",
@@ -1337,8 +1337,8 @@
       "weapon": "longnight",
       "name": "星渊轨炮",
       "file": "void-lance.glb",
-      "triangles": 23338,
-      "meshes": 18,
+      "triangles": 20638,
+      "meshes": 20,
       "bounds": {
         "min": [
           -1.7350000143051147,
@@ -1347,7 +1347,7 @@
         ],
         "max": [
           2.4200000762939453,
-          0.8755910992622375,
+          0.9232286214828491,
           0.2280000001192093
         ]
       },
@@ -1373,8 +1373,8 @@
           0
         ]
       },
-      "bytes": 722512,
-      "sha256": "584fa0f44cfa03e0859c59b320ae3ad57ee360b9174fb7c9b4309528a99a5ae5"
+      "bytes": 657844,
+      "sha256": "b3e4417f1732613e13c9c84aad054006c405328124c111aae6c2d51114f30e92"
     },
     {
       "id": "clockwork-cleaver",

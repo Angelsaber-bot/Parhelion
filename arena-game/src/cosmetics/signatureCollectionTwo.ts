@@ -52,6 +52,19 @@ function express(s:Sculpture){
  }
  s.box([.22,.05,.05],[-.42,.47,-.17],s.metal,'bolt');s.gunSight();
  rivets(s,[[-.70,.43],[-.70,.16],[.14,.43],[.14,.16]],.155);
+ // Locomotive identity: smokestack, headlamp, cowcatcher and driving wheels on the pump.
+ const stack=new THREE.LatheGeometry([[0,0],[.055,0],[.055,.11],[.095,.19],[.10,.23],[.078,.23],[.07,.2],[0,.2]].map(([r,y])=>new THREE.Vector2(r,y)),20);s.mesh(stack,s.dark,[1.12,.43,0]);
+ s.ring(.10,.012,[1.12,.66,0],s.metal,'body','x').rotation.set(Math.PI/2,0,0);
+ s.mesh(new THREE.CylinderGeometry(.048,.052,.07,16),s.dark,[1.36,.47,0],'body',[0,0,Math.PI/2]);s.mesh(new THREE.CylinderGeometry(.04,.04,.01,16),s.glow,[1.40,.47,0],'body',[0,0,Math.PI/2]);
+ s.rod([1.36,.40,0],[1.36,.45,0],.02,s.metal);
+ for(let i=0;i<7;i++){const zz=-.12+i*.04;s.rod([1.24,.16,zz],[1.52,.05,zz*.35],.009,s.metal);}
+ s.rod([1.24,.16,-.13],[1.24,.16,.13],.012,s.metal);s.rod([1.20,.16,0],[1.26,.16,0],.05,s.dark);
+ for(const side of[-1,1])for(const wx of[.56,.98]){
+  s.ring(.085,.014,[wx,.07,side*.13],s.metal,'fore_end');dot(s,.02,[wx,.07,side*.14],s.glow,[1,1,.5],'fore_end');
+  for(let k=0;k<8;k++){const t=k/8*Math.PI*2;s.rod([wx,.07,side*.13],[wx+Math.cos(t)*.08,.07+Math.sin(t)*.08,side*.13],.006,s.metal,'fore_end');}
+  s.plate([[wx-.06,.02],[wx,-.005],[wx+.06,.02],[wx,.03]],.012,[0,0,side*.135],s.dark,'fore_end',.003);
+ }
+ for(const side of[-1,1])s.rod([.60,.10,side*.15],[1.02,.10,side*.15],.012,s.metal,'fore_end');
 }
 function horizon(s:Sculpture){
  grip(s);
