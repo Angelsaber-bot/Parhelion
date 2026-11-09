@@ -51,6 +51,34 @@ export const SHIELD = {
   cooldown: 14 * TICK_HZ,
 };
 
+/** Utility slot: one grenade per life, chosen before the match, recharging on a cooldown.
+ * Server-authoritative projectiles; never part of the two-gun/one-melee loadout. */
+export const UTILITY_IDS = ['frag', 'smoke'] as const;
+export type UtilityId = typeof UTILITY_IDS[number];
+export const DEFAULT_UTILITY: UtilityId = 'frag';
+export const UTILITY_ERROR = '道具无效：请选择破片手雷或烟雾弹。';
+export function validateUtility(raw: unknown): UtilityId {
+  if (raw === undefined) return DEFAULT_UTILITY;
+  if (!UTILITY_IDS.includes(raw as UtilityId)) throw new Error(UTILITY_ERROR);
+  return raw as UtilityId;
+}
+export const botUtility = (seed: number): UtilityId => Math.abs(seed | 0) % 3 === 2 ? 'smoke' : 'frag';
+export const GRENADE = {
+  speed: 15, // m/s along the aim
+  lift: 2.4, // extra upward m/s so a level throw still arcs
+  inherit: 0.5, // share of the thrower's horizontal velocity
+  radius: 0.09,
+  gravity: 18,
+  restitution: 0.42,
+  friction: 0.62, // horizontal speed kept per ground contact
+  cooldown: 18 * TICK_HZ,
+  throwLock: 12, // ticks before the held weapon can fire again
+};
+export const FRAG = { fuse: 2 * TICK_HZ, radius: 5.5, damage: 95, minDamage: 15, selfScale: 0.35 };
+export const SMOKE = { fuse: Math.round(1.1 * TICK_HZ), radius: 3.8, life: 8 * TICK_HZ };
+/** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
+export const FRAG_KILL = 100;
+
 export interface CharacterDef {
   id: string;
   name: string;

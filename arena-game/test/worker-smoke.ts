@@ -75,10 +75,15 @@ try {
   await wait(250);
   const after = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
   if (!after.crouched || Math.hypot(after.x - before.x, after.z - before.z) < .1) throw new Error('movement or crouch missing remotely');
+  // v14 utility: a thrown frag is simulated by the server and reaches the other client.
+  a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: .2, buttons: BTN.THROW, weapon: 0, view: 0 }] }));
+  await wait(400);
+  if (!b.snaps.some((s) => s.events.some((e) => e.t === 'throw' && e.id === a.id))) throw new Error('grenade throw missing remotely');
+  if (!b.snaps.some((s) => (s.grenades ?? []).length > 0)) throw new Error('grenade flight missing from snapshots');
   a.ws.close(); b.ws.close(); await wait(250);
   await refused(['lumen', 'lumen', 'blade']);
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
   await refused(['lumen', 'corona', 'blade'], RULES_VERSION - 1);
-  console.log(`OK: v${RULES_VERSION} release finish indices, two-client slot/loadout/crouch/movement, scheduled melee, forged/duplicate/old-version rejection`);
+  console.log(`OK: v${RULES_VERSION} release finish indices, two-client slot/loadout/crouch/movement, scheduled melee, thrown grenade, forged/duplicate/old-version rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

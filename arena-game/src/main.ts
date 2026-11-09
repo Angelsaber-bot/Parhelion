@@ -10,7 +10,8 @@ import { SettingsStore, createSettingsPanel } from '../../shared-client/settings
 import '../../shared-client/settings.css';
 import { Game } from './game.ts';
 import { Hud } from './ui/hud.ts';
-import { LoadoutStore, loadoutCards, displayWeaponName } from './ui/loadout.ts';
+import { LoadoutStore, loadoutCards, displayWeaponName, UTILITY_INFO, utilityCooldownSeconds } from './ui/loadout.ts';
+import { UTILITY_IDS } from '../shared/content.ts';
 import {readSkinSelection,withSkinSelection} from './cosmetics/skinSelection.ts';
 import {initialGraphics,mountGraphicsControl} from './rendering/graphics.ts';
 import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
@@ -66,7 +67,7 @@ $('settings-pause').onclick = () => { if (game && !game.ended && !starting && !p
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
   $('control-hints').textContent = arenaControlHints(k, mode);
-  $('dash').querySelector('kbd')!.textContent = k('dash'); $('shield').querySelector('kbd')!.textContent = k('shield');
+  $('dash').querySelector('kbd')!.textContent = k('dash'); $('shield').querySelector('kbd')!.textContent = k('shield'); $('utility').querySelector('kbd')!.textContent = k('throw'); $('loadout').querySelectorAll<HTMLElement>('[data-utility-key]').forEach((el) => el.textContent = k('throw'));
   $('wslots').querySelectorAll('kbd').forEach((el, i) => el.textContent = k(`weapon${i + 1}`));
   $('loadout').querySelectorAll<HTMLElement>('[data-slot-key]').forEach((el) => el.textContent = k(`weapon${Number(el.dataset.slotKey) + 1}`));
   $('end-score-hint').textContent = bilingual('按 S 查看计分板；再次按 S 或 Esc 关闭。', 'Press S to view scores; press S again or Esc to close.');
@@ -152,6 +153,13 @@ function renderLoadout() {
     renderLoadout(); renderSkins();
     $('loadout-status').textContent = localizeText(result ? '请选择两把不同的枪和一件近战；本次无效选择未应用。' : loadoutStore.notice);
   });
+  // Utility slot: one grenade per life, recharging; never one of the three weapon slots.
+  const u = loadoutStore.utility, info = UTILITY_INFO[u];
+  $('loadout').insertAdjacentHTML('beforeend', `<label class="loadout-item"><span class="loadout-heading"><b>${bilingual('道具', 'Utility')}</b><kbd data-utility-key>${settings.label('throw')}</kbd></span><select data-utility aria-label="${bilingual('道具', 'Utility')}">${UTILITY_IDS.map((id) => `<option value="${id}" ${id === u ? 'selected' : ''}>${bilingual(...UTILITY_INFO[id].name)}</option>`).join('')}</select><small>${bilingual(...info.role)} · ${bilingual(`冷却 ${utilityCooldownSeconds()}s`, `${utilityCooldownSeconds()}s cooldown`)}</small></label>`);
+  $('loadout').querySelector<HTMLSelectElement>('[data-utility]')!.onchange = (event) => {
+    loadoutStore.selectUtility((event.target as HTMLSelectElement).value); renderLoadout();
+    $('loadout-status').textContent = localizeText(loadoutStore.notice);
+  };
 }
 
 function renderMatchBriefing() {
@@ -232,7 +240,7 @@ $('play').onclick = async () => {
     layout: $<HTMLSelectElement>('layout').value as TeamLayout,
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
     name: $<HTMLInputElement>('name').value.trim() || 'Player',
-    char, skins: skins.slice(), loadout: loadoutStore.value, map: mapId,
+    char, skins: skins.slice(), loadout: loadoutStore.value, utility: loadoutStore.utility, map: mapId,
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();

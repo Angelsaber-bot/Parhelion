@@ -1,7 +1,7 @@
 // Configurable browser input. Simulation only receives its existing bitmask plus authoritative crouch.
 import { BTN } from '../../shared/sim.ts';
 import { SettingsStore } from '../../../shared-client/settings.ts';
-const BUTTONS: Record<string, number> = { jump: BTN.JUMP, dash: BTN.DASH, shield: BTN.SHIELD, reload: BTN.RELOAD, fire: BTN.FIRE, crouch: BTN.CROUCH };
+const BUTTONS: Record<string, number> = { jump: BTN.JUMP, dash: BTN.DASH, shield: BTN.SHIELD, reload: BTN.RELOAD, fire: BTN.FIRE, crouch: BTN.CROUCH, throw: BTN.THROW };
 export class Controls {
   yaw = 0;
   pitch = 0;

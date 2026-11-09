@@ -34,6 +34,8 @@ import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from '../weapons
 import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
 import { KillFinishers } from './killFinishers.ts';
+import { GrenadeView } from './grenades.ts';
+import type { Grenade, Smoke } from '../../shared/grenade.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
 import {lightWeaponScene,renderHeldWeapon} from '../weapons/weaponLighting.ts';
@@ -57,6 +59,7 @@ export class ArenaScene {
   private shields = new Map<number, THREE.Group>();
   private combatEffects: ArenaCombatEffects;
   private killFinishers!: KillFinishers;
+  private grenadeView!: GrenadeView;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
   private flashT = 0;
   private baseFov = 78;
@@ -84,6 +87,7 @@ export class ArenaScene {
   constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'low') {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     this.killFinishers = new KillFinishers(this.scene);
+    this.grenadeView = new GrenadeView(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -366,7 +370,11 @@ export class ArenaScene {
 
   get combatEffectInventory() { return this.combatEffects.inventory; }
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
-  disposeCombatEffects() { this.combatEffects.dispose(); this.killFinishers?.dispose(); }
+  disposeCombatEffects() { this.combatEffects.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); }
+  syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.grenadeView?.sync(grenades, smokes, since); }
+  /** Frag detonation: flash, shockwave, smoke, plus sparks from the shared effect pool. */
+  grenadeBlast(at: Vec3) { this.grenadeView?.blast(at); for (let i = 0; i < 10; i++) this.combatEffects.burst([at[0], at[1] + .3, at[2]], i % 2 ? 0xffd27a : 0xff7a3a, .12, .45, 7, 'ember'); }
+  smokePop(at: Vec3) { for (let i = 0; i < 6; i++) this.combatEffects.burst([at[0], at[1] + .2, at[2]], 0xdfe6ee, .4, .6, 2.2); }
   /** Per-finish kill emblem at the victim; dimmed and lifted while the local player aims. */
   killFinisher(feet: Vec3, skinId?: string) { return this.killFinishers.play(feet, skinId, this.camera, this.viewmodel.aim > .3); }
 
@@ -442,7 +450,7 @@ export class ArenaScene {
 
   /** Round boundaries clear transient effects without reloading maps or equipped models. */
   clearCombatEffects() {
-    this.combatEffects.clear(); this.killFinishers?.clear();
+    this.combatEffects.clear(); this.killFinishers?.clear(); this.grenadeView?.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
@@ -460,7 +468,7 @@ export class ArenaScene {
   }
 
   update(dt: number) {
-    this.combatEffects.update(dt); this.killFinishers?.update(dt);
+    this.combatEffects.update(dt); this.killFinishers?.update(dt); this.grenadeView?.update(dt);
     const flashDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     this.flashT = Math.max(0, this.flashT - flashDt);
     // Preserve the original 60 Hz falloff, rather than dimming once per frame.
@@ -597,6 +605,7 @@ export class Viewmodel {
   private trail = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   private trailSamples: { a: THREE.Vector3; b: THREE.Vector3; age: number }[] = [];
   private inspectT = 0;
+  private throwT = 0;
   aspect=16/9;
   reloading = 0; // 0..1 progress, set by game
   moving = 0;
@@ -678,6 +687,8 @@ export class Viewmodel {
   /** Inspect: turn the weapon to show its flank and crown, then return. Any action cancels it. */
   inspect() { if (this.gun && this.swap < .2) { this.inspectT = 2.1; this.presentation?.flare?.(1.2); } }
   get inspecting() { return this.inspectT > 0; }
+  /** Off-hand throw: the weapon dips and rolls out of the way, then comes back. */
+  throwGesture() { this.throwT = .5; this.inspectT = 0; }
   /** Confirmed melee contact: hold the follow-through pose for a few frames (cosmetic only). */
   contact(seconds: number) { if (this.meleeHit > 0) this.hitStop = seconds; }
 
@@ -760,6 +771,11 @@ export class Viewmodel {
         this.gun.rotation.y += ease * 1.05; this.gun.rotation.z += Math.sin(p * Math.PI * 2) * .32 * bell; this.gun.rotation.x += bell * .18;
         this.gun.position.x -= bell * .09; this.gun.position.y += bell * .05; this.gun.position.z += bell * .05;
       }
+    }
+    if (this.throwT > 0) {
+      this.throwT = Math.max(0, this.throwT - dt);
+      const k = Math.sin((1 - this.throwT / .5) * Math.PI);
+      this.gun.position.y -= k * .16; this.gun.position.x += k * .05; this.gun.rotation.z -= k * .5; this.gun.rotation.x -= k * .35;
     }
     this.updateTrail(dt);
     this.fx.update(dt);

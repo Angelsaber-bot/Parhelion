@@ -14,7 +14,7 @@ const move: ActionDef[] = [
 export const ACTIONS: Record<SettingsMode, ActionDef[]> = {
   arena: [...move, { id: 'dash', label: '冲刺', binding: 'ShiftLeft', secondary: 'ShiftRight' }, { id: 'shield', label: '护盾', binding: 'KeyQ' },
     { id: 'reload', label: '换弹', binding: 'KeyR' }, { id: 'crouch', label: '按住下蹲', binding: 'KeyC' },
-    { id: 'scoreboard', label: '按住计分板', binding: 'Tab' }, { id: 'inspect', label: '检视武器', binding: 'KeyF' },
+    { id: 'scoreboard', label: '按住计分板', binding: 'Tab' }, { id: 'inspect', label: '检视武器', binding: 'KeyF' }, { id: 'throw', label: '投掷道具', binding: 'KeyG' },
     ...[1,2,3].map((n) => ({ id: `weapon${n}`, label: n === 3 ? '近战槽 3' : `枪械槽 ${n}`, binding: `Digit${n}` })),
     { id: 'nextWeapon', label: '下一个装备槽', binding: 'WheelDown' }, { id: 'prevWeapon', label: '上一个装备槽', binding: 'WheelUp' }],
   world: [...move.map((a) => a.id === 'fire' ? { ...a, label: '射击' } : a),

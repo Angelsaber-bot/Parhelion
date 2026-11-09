@@ -2,7 +2,7 @@ import { arenaLimitLabel } from './matchBriefing.ts';
 import { bilingual, getLanguage, localizeText } from '../../../shared-client/i18n.ts';
 // DOM HUD. Reads state, never changes it.
 
-import { CHARACTERS, DASH, SHIELD, TICK_HZ, WEAPONS, type Team } from '../../shared/content.ts';
+import { CHARACTERS, DASH, FRAG_KILL, GRENADE, SHIELD, TICK_HZ, WEAPONS, type Team } from '../../shared/content.ts';
 import type { PlayerSnap, Snapshot } from '../../shared/match.ts';
 import type { PlayerState } from '../../shared/sim.ts';
 import { displayWeaponName, weaponHud } from './loadout.ts';
@@ -101,6 +101,9 @@ export class Hud {
       });
       cooldown($('dash'), me.dashCd / DASH.cooldown, me.dashCd);
       cooldown($('shield'), me.shieldCd / SHIELD.cooldown, me.shieldCd);
+      cooldown($('utility'), me.utilityCd / GRENADE.cooldown, me.utilityCd);
+      const utilityName = me.utility === 'smoke' ? bilingual('烟雾', 'Smoke') : bilingual('手雷', 'Frag');
+      if ($('utility').querySelector('span')!.textContent !== utilityName) $('utility').querySelector('span')!.textContent = utilityName;
       const dead = !me.alive;
       $('dead').classList.toggle('hidden', !dead);
       if (dead) $('respawn').textContent = `${Math.ceil(self.respawn / TICK_HZ)}`;
@@ -138,7 +141,7 @@ export class Hud {
   hurt() { this.hurtT = 0.5; }
 
   private renderKill(row: typeof this.feedRows[number]) {
-    row.element.innerHTML = `<span class="t${row.kTeam}" data-no-i18n>${esc(row.killer)}</span> <em>${displayWeaponName(WEAPONS[row.weapon].id)}${row.head ? ' ◎' : ''}</em> <span class="t${row.vTeam}" data-no-i18n>${esc(row.victim)}</span>`;
+    row.element.innerHTML = `<span class="t${row.kTeam}" data-no-i18n>${esc(row.killer)}</span> <em>${row.weapon === FRAG_KILL ? bilingual('破片手雷', 'Frag grenade') : displayWeaponName(WEAPONS[row.weapon]?.id ?? '')}${row.head ? ' ◎' : ''}</em> <span class="t${row.vTeam}" data-no-i18n>${esc(row.victim)}</span>`;
   }
   kill(killer: string, victim: string, weapon: number, head: boolean, kTeam: Team, vTeam: Team) {
     const row = { element: document.createElement('div'), killer, victim, weapon, head, kTeam, vTeam };

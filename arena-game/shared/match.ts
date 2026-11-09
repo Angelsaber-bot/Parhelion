@@ -5,7 +5,9 @@
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
+  FRAG, FRAG_KILL, SMOKE, validateUtility, type UtilityId,
 } from './content.ts';
+import { fragDamage, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
@@ -37,7 +39,11 @@ export type NetEvent =
   | { t: 'shieldBreak'; sid: number }
   | { t: 'spawn'; id: string }
   | { t: 'phase'; phase: Phase; winner?: Team | 'draw' }
-  | { t: 'fx'; id: string; kind: 'dash' | 'jump' | 'reload' };
+  | { t: 'fx'; id: string; kind: 'dash' | 'jump' | 'reload' }
+  | { t: 'throw'; id: string; gid: number; kind: UtilityId }
+  | { t: 'bounce'; gid: number; at: Vec3 }
+  | { t: 'blast'; gid: number; owner: string; at: Vec3 }
+  | { t: 'smoke'; sid: number; owner: string; at: Vec3 };
 
 export interface PlayerInfo {
   name: string;
@@ -45,6 +51,7 @@ export interface PlayerInfo {
   char: number;
   skins: number[]; // skin index per catalog weapon
   loadout?: Loadout;
+  utility?: UtilityId;
   bot: boolean;
 }
 
@@ -68,6 +75,9 @@ export interface Snapshot {
   score: Record<Team, number>;
   players: PlayerSnap[];
   shields: Shield[];
+  /** Additive in v14: live grenades and smoke clouds. */
+  grenades?: Grenade[];
+  smokes?: Smoke[];
   events: NetEvent[];
 }
 
@@ -99,6 +109,9 @@ export class Match {
   phaseT = 0;
   score: Record<Team, number> = { A: 0, B: 0 };
   shields: Shield[] = [];
+  grenades: Grenade[] = [];
+  smokes: Smoke[] = [];
+  private nextGrenade = 1;
   readonly slots = new Map<string, Slot>();
   private events: NetEvent[] = [];
   private history: Map<string, HistoricalPose>[] = [];
@@ -130,10 +143,10 @@ export class Match {
     if (!this.hasRoom(info.team)) throw new Error(`team ${info.team} is full`);
     const char = Math.max(0, Math.min(CHARACTERS.length - 1, info.char | 0));
     const skins = WEAPONS.map((w, i) => Math.max(0, Math.min(w.skins.length - 1, info.skins[i] | 0)));
-    const loadout = validateLoadout(info.loadout);
+    const loadout = validateLoadout(info.loadout), utility = validateUtility(info.utility);
     const slot: Slot = {
-      state: newPlayer(id, info.team, char, loadout),
-      info: { ...info, char, skins, loadout },
+      state: newPlayer(id, info.team, char, loadout, utility),
+      info: { ...info, char, skins, loadout, utility },
       queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0, spawnProtectedUntilTick: 0, meleeReadyTick: 0, melee: null,
     };
     this.slots.set(id, slot);
@@ -143,6 +156,7 @@ export class Match {
   removePlayer(id: string): void {
     this.slots.delete(id);
     this.shields = this.shields.filter((s) => s.owner !== id);
+    this.grenades = this.grenades.filter((g) => g.owner !== id);
   }
 
   /** Bots occupying slots, used to make room when a human joins a full team. */
@@ -204,6 +218,7 @@ export class Match {
     }
     for (const sh of this.shields) sh.life--;
     this.shields = this.shields.filter((s) => s.life > 0 && s.hp > 0);
+    this.stepGrenades();
 
     this.stepPhase();
     this.record();
@@ -249,7 +264,7 @@ export class Match {
     // Keep world tick and acknowledged sequence monotonic, but never replay a prior round.
     this.events = []; this.history = [];
     this.score = { A: 0, B: 0 };
-    this.shields = [];
+    this.shields = []; this.grenades = []; this.smokes = [];
     for (const s of this.slots.values()) {
       s.kills = 0;
       s.deaths = 0;
@@ -283,7 +298,7 @@ export class Match {
       yaw: Math.atan2(x, z), // face the map centre
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
-      ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0,
+      ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0, utilityCd: 0,
     });
     slot.spawnProtectedUntilTick = this.tick + SPAWN_PROTECTION_TICKS;
     slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
@@ -314,6 +329,13 @@ export class Match {
         });
         this.events.push({ t: 'shieldUp', sid: this.nextShield++, owner: id });
         break;
+      case 'throw': {
+        if (this.phase === 'ended') break;
+        const g = launchGrenade(this.map, this.nextGrenade++, id, slot.state.team, ev.utility, ev.origin, ev.dir, ev.carry);
+        this.grenades.push(g);
+        this.events.push({ t: 'throw', id, gid: g.id, kind: g.kind });
+        break;
+      }
       case 'dash': case 'jump': case 'reload':
         this.events.push({ t: 'fx', id, kind: ev.type });
         break;
@@ -489,6 +511,59 @@ export class Match {
     this.events.push({ t: 'kill', killer: from.state.id, victim: victimId, w: weapon, head });
   }
 
+  /** Flight, fuses, frag blasts and smoke clouds; all on the authoritative tick. */
+  private stepGrenades(): void {
+    const live: Grenade[] = [];
+    for (const g of this.grenades) {
+      if (stepGrenade(this.map, g)) this.events.push({ t: 'bounce', gid: g.id, at: [g.x, g.y, g.z] });
+      if (g.kind === 'smoke' && (g.rest || g.fuse <= 1)) {
+        this.smokes.push({ id: g.id, owner: g.owner, x: g.x, y: quant(g.y - .09), z: g.z, life: SMOKE.life });
+        this.events.push({ t: 'smoke', sid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
+        continue;
+      }
+      if (--g.fuse <= 0) { if (g.kind === 'frag') this.blast(g); continue; }
+      live.push(g);
+    }
+    this.grenades = live;
+    for (const s of this.smokes) s.life--;
+    this.smokes = this.smokes.filter((s) => s.life > 0);
+  }
+
+  /** A frag reaches what it can see: walls block, hostile-team shields absorb, teammates are spared,
+   *  and the thrower takes a non-lethal share. */
+  private blast(g: Grenade): void {
+    const at: Vec3 = [g.x, g.y + .15, g.z];
+    this.events.push({ t: 'blast', gid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
+    if (this.phase !== 'live') return;
+    const owner = this.slots.get(g.owner), struck = new Set<Shield>();
+    for (const [id, s] of this.slots) {
+      const p = s.state;
+      if (!p.alive || (p.team === g.team && id !== g.owner)) continue;
+      const h = playerHitbox(p.crouched);
+      let best = Infinity;
+      for (const y of [h.bodyBottom + .1, (h.bodyBottom + h.bodyTop) / 2, h.headY]) {
+        const point: Vec3 = [p.x, p.y + y, p.z], d: Vec3 = [point[0] - at[0], point[1] - at[1], point[2] - at[2]], len = Math.hypot(...d);
+        if (len > FRAG.radius + h.bodyRadius) continue;
+        const dir = d.map((v) => v / Math.max(len, 1e-6)) as Vec3;
+        if (len > 1e-3 && raycastMap(this.map, at, dir, len) < len - .05) continue;
+        let shielded = false;
+        for (const sh of this.shields) {
+          if (sh.team === g.team || sh.hp <= 0) continue;
+          if (rayShield(at, dir, sh.x, sh.y, sh.z, sh.yaw) < len) { shielded = true; struck.add(sh); }
+        }
+        if (!shielded) best = Math.min(best, Math.max(0, len - h.bodyRadius));
+      }
+      const dmg = fragDamage(best);
+      if (dmg <= 0) continue;
+      if (id === g.owner) {
+        if (this.spawnProtected(id)) continue;
+        const self = Math.min(p.hp - 1, Math.round(dmg * FRAG.selfScale));
+        if (self > 0) { p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
+      } else if (owner) this.damage(owner, id, dmg, false, FRAG_KILL);
+    }
+    for (const sh of struck) this.damageShield(sh, FRAG.damage);
+  }
+
   private record(): void {
     const frame = new Map<string, HistoricalPose>();
     for (const [id, s] of this.slots) frame.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched]);
@@ -508,7 +583,8 @@ export class Match {
     this.events = [];
     return {
       rulesVersion: RULES_VERSION, tick: this.tick, layout: this.layout, phase: this.phase, phaseT: this.phaseT,
-      score: { ...this.score }, players, shields: this.shields.map((s) => ({ ...s })), events,
+      score: { ...this.score }, players, shields: this.shields.map((s) => ({ ...s })),
+      grenades: this.grenades.map((g) => ({ ...g })), smokes: this.smokes.map((s) => ({ ...s })), events,
     };
   }
 }
@@ -528,7 +604,7 @@ export function sanitize(raw: unknown): Input | null {
     mx: Math.round(num(r.mx, -1, 1) ?? 0),
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
-    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 63,
+    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 127,
     weapon: typeof r.weapon === 'number' && Number.isInteger(r.weapon) && r.weapon >= 0 && r.weapon < 3 ? r.weapon : -1,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };

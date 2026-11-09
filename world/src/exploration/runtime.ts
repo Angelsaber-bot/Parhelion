@@ -30,6 +30,7 @@ import {
   SIGNALS, flagSignal, markerCache, markerTerminal, signalBars, signalPing, type SignalDef,
 } from './regional';
 import { MINIBOSSES } from '../combat/minibosses';
+import { trialFlightHeights } from './trialFlight';
 import { camlannArena, flagshipDeckArena, honnojiArena, redSquareArena } from './bossArenas';
 import { COMMISSION, commissionDone, dayKey, flagCommission, flagCommissionBonus, flagHuntKill, huntProgress, todaysBoard, type Commission } from './commissions';
 import './exploration.css';
@@ -328,7 +329,8 @@ export function createExploration(host: ExplorationHost) {
     // face the first orb
     const yaw = Math.atan2(def.orbs[0].p[0] - def.stele[0], def.orbs[0].p[1] - def.stele[1]);
     trialStele(new Frame(artFor(def.region), [def.stele[0], y - .05, def.stele[1]], yaw));
-    const orbs = def.orbs.map(o => { const g = orbMesh(); g.position.set(o.p[0], o.y ?? host.terrain(...o.p) + 1.3, o.p[1]); g.visible = false; root.add(g); return g; });
+    const heights = trialFlightHeights(def, glideLevel(done), host.terrain);
+    const orbs = def.orbs.map((o, i) => { const g = orbMesh(); g.position.set(o.p[0], heights[i], o.p[1]); g.visible = false; root.add(g); return g; });
     const rt: TrialRt = { def, orbs, got: orbs.map(() => false), time: 0, active: false };
     trials.set(def.id, rt);
     addMarker(markerStele(def.id), [def.stele[0] + Math.sin(yaw) * 1.4, y + 1, def.stele[1] + Math.cos(yaw) * 1.4], L(def.title), 2.6, () => startTrial(rt), () =>
@@ -336,6 +338,8 @@ export function createExploration(host: ExplorationHost) {
   }
   function startTrial(rt: TrialRt) {
     if (activeTrial || activeCamp || ember.route || fox) { host.toast(bilingual('先完成当前挑战。', 'Finish the current challenge first.')); return; }
+    const heights = trialFlightHeights(rt.def, glideLevel(done), host.terrain);
+    rt.orbs.forEach((orb, i) => { orb.position.y = heights[i]; });
     rt.active = true; rt.time = rt.def.seconds; rt.got = rt.got.map(() => false); rt.orbs.forEach(o => { o.visible = true; });
     activeTrial = rt; host.sound('rotate');
     showBanner(bilingual(`时层挑战 · ${rt.def.title[0]}`, `Time Echo · ${rt.def.title[1]}`), L(rt.def.hint), 'region', 3.5);

@@ -124,6 +124,7 @@ export class Game {
       winner: s.score.A === s.score.B ? 'draw' : s.score.A > s.score.B ? 'A' : 'B' });
   }
 
+  private distance(at: readonly number[]) { const me = this.me; return me ? Math.hypot(at[0] - me.x, at[1] - me.y, at[2] - me.z) : 30; }
   private onEvent(e: NetEvent) {
     const myId = this.session.id;
     const name = (id: string) => this.names.get(id)?.name ?? id;
@@ -177,6 +178,13 @@ export class Game {
         }
         break;
       }
+      case 'throw':
+        if (e.id === myId) this.scene.viewmodel.throwGesture();
+        sfx.throw();
+        break;
+      case 'bounce': sfx.bounce(this.distance(e.at)); break;
+      case 'blast': this.scene.grenadeBlast(e.at); sfx.blast(this.distance(e.at)); break;
+      case 'smoke': this.scene.smokePop(e.at); sfx.smoke(this.distance(e.at)); break;
       case 'kill': {
         const k = this.names.get(e.killer), v = this.names.get(e.victim);
         this.hud.kill(name(e.killer), name(e.victim), e.w, e.head, k?.team ?? 'A', v?.team ?? 'B');
@@ -377,7 +385,7 @@ export class Game {
     }
     this.scene.endAvatars();
     this.scene.pruneAvatars(ids);
-    if (this.latest) this.scene.syncShields(this.latest.shields);
+    if (this.latest) { this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
 
     const me = this.me;
     if (me) {

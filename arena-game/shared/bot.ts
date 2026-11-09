@@ -11,7 +11,8 @@
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+import { CHARACTERS, FRAG, GRENADE, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+import { smokeBlocks } from './grenade.ts';
 /** Melee reach including most of the windup lunge. */
 const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
 import { playerHitbox } from './hit.ts';
@@ -31,6 +32,19 @@ export interface BotSkill {
   pause: [number, number]; // pause between bursts, ticks
   head: number; // chance to go for the head at range
   moveErr: number; // extra radians of wobble while it is moving
+}
+
+/** Launch pitch whose (unbounced) arc lands `distance` metres away from `drop` metres above the target. */
+export function throwPitch(distance: number, drop: number): number {
+  let best = 0, err = Infinity;
+  for (let a = -.45; a <= 1.05; a += .01) {
+    const vx = GRENADE.speed * Math.cos(a), vy = GRENADE.speed * Math.sin(a) + GRENADE.lift, g = GRENADE.gravity;
+    const disc = vy * vy + 2 * g * drop;
+    if (disc < 0) continue;
+    const range = vx * (vy + Math.sqrt(disc)) / g, e = Math.abs(range - distance);
+    if (e < err) { err = e; best = a; }
+  }
+  return Math.round(best * 1000) / 1000;
 }
 
 export const BOT_SKILL: Record<'easy' | 'normal' | 'hard', BotSkill> = {
@@ -92,6 +106,8 @@ export class Bot implements Controller {
   private scan = 0;
   private aimHead = false;
   private chase: boolean | null = null; // decided once per lost contact: go look, or move on
+  /** A grenade it intends to throw: turn to this heading, then release. */
+  private throwPlan: { yaw: number; pitch: number; t: number } | null = null;
   private readonly aggression: number;
   private readonly preferMul: number;
 
@@ -135,7 +151,8 @@ export class Bot implements Controller {
       if (off > 1.3 && !tookDamage && d > 3 && oid !== this.targetId) continue;
       const h = playerHitbox(o.crouched);
       const chest: Vec3 = [o.x, o.y + (o.crouched ? 0.65 : 1.1), o.z], head: Vec3 = [o.x, o.y + h.headY, o.z];
-      if ((lineOfSight(match.map, eye, chest) || lineOfSight(match.map, eye, head)) && d < bestD) {
+      const sees = (point: Vec3) => lineOfSight(match.map, eye, point) && !smokeBlocks(match.smokes, eye, point);
+      if ((sees(chest) || sees(head)) && d < bestD) {
         bestD = d; target = o;
       }
     }
@@ -234,6 +251,13 @@ export class Bot implements Controller {
       moveZ += (fx * side + fz * toward) * 2;
     }
 
+    // A frag about to go off nearby overrides the route: get out of its radius.
+    for (const g of match.grenades) {
+      if (g.kind !== 'frag' || g.fuse > 1.4 * TICK_HZ) continue;
+      const gx = me.x - g.x, gz = me.z - g.z, gd = Math.hypot(gx, gz);
+      if (gd < FRAG.radius + .8) { moveX = gd > .05 ? gx / gd : 1; moveZ = gd > .05 ? gz / gd : 0; break; }
+    }
+
     // stuck detection: try jumping and re-pathing
     if (Math.hypot(me.x - this.lastPos[0], me.z - this.lastPos[1]) < 0.02 && (moveX || moveZ)) {
       if (++this.stuckT > 20) { inp.buttons |= BTN.JUMP; this.strafe = -this.strafe; this.repath = 0; this.stuckT = 0; }
@@ -276,6 +300,26 @@ export class Bot implements Controller {
       this.scan += 0.02;
       aimYaw = Math.atan2(-moveX, -moveZ) + Math.sin(this.scan) * 0.45;
     }
+    // Utility: frags go where an enemy is hiding (or was last seen); smoke screens a hurt retreat.
+    if (this.throwPlan && --this.throwPlan.t <= 0) this.throwPlan = null;
+    if (!this.throwPlan && me.utilityCd === 0 && me.meleeWindup === 0) {
+      let spot: Vec3 | null = null;
+      if (me.utility === 'frag') {
+        // Only at someone who just broke line of sight: never abandon a live fight to wind up a throw.
+        if (!target && this.lastSeen && this.rand() < .02) {
+          const d = Math.hypot(this.lastSeen[0] - me.x, this.lastSeen[2] - me.z);
+          if (d > 6 && d < 18) spot = this.lastSeen;
+        }
+      } else if (target && hurt && bestD > 6 && this.rand() < .03) {
+        const k = 3 / Math.max(bestD, 1e-3);
+        spot = [me.x + (target.x - me.x) * k, me.y, me.z + (target.z - me.z) * k];
+      }
+      if (spot) {
+        const dx = spot[0] - me.x, dz = spot[2] - me.z;
+        this.throwPlan = { yaw: Math.atan2(-dx, -dz), pitch: throwPitch(Math.hypot(dx, dz) * (me.utility === 'frag' ? .82 : 1), eye[1] - .12 - spot[1]), t: 45 };
+      }
+    }
+    if (this.throwPlan) { aimYaw = this.throwPlan.yaw; aimPitch = this.throwPlan.pitch; }
     const errYaw = wrap(aimYaw - this.yaw);
     const rate = target ? this.skill.aimRate : 0.07;
     // turning speed is limited, as with a mouse: big flicks take several ticks
@@ -284,6 +328,10 @@ export class Bot implements Controller {
     this.pitch += (aimPitch - this.pitch) * rate;
     inp.yaw = Math.round(this.yaw * 10000) / 10000;
     inp.pitch = Math.round(this.pitch * 10000) / 10000;
+    if (this.throwPlan) {
+      this.pitch += (this.throwPlan.pitch - this.pitch) * .25; inp.pitch = Math.round(this.pitch * 10000) / 10000;
+      if (Math.abs(wrap(this.throwPlan.yaw - this.yaw)) < .08 && Math.abs(this.throwPlan.pitch - this.pitch) < .08) { inp.buttons |= BTN.THROW; this.throwPlan = null; }
+    }
 
     // --- trigger: bursts for automatics, uneven follow-ups for semi-autos ---
     const w = WEAPONS[me.weapon];

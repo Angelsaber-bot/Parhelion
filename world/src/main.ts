@@ -110,6 +110,7 @@ import { regionLoader, bakeQuantized } from './rendering/glb';
 import { KingdomTwilight } from './map/twilight';
 import { FirstContract, SERVANTS, servantByContract, type ServantId } from './companions/contracts';
 import { KitCompanion } from './companions/kitCompanion';
+import { medicineCartPathClear } from './story/medicineCartNavigation';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ContractServant } from './companions/servant';
 import { CHARACTER_KITS } from './characters/catalog';
@@ -1704,7 +1705,7 @@ adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.reques
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const result=combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming});return{ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};},
  encounter:()=>combat.storyEncounter?.id??null,cancel:()=>combat.cancelStoryEncounter(),toast:line=>toast(bilingual(...line)),
- moveCart:(from,to)=>{const p=new THREE.Vector3(...from),q=new THREE.Vector3(...to),dir=q.clone().sub(p);for(const dx of[-.9,.9])if(combat.geometry.cast(p.clone().add(new THREE.Vector3(dx,1,0)),dir,dir.length()+.7))return false;return true;},
+ moveCart:(from,to)=>medicineCartPathClear(combat.geometry.contactSurface({minX:Math.min(from[0],to[0])-3,maxX:Math.max(from[0],to[0])+3,minZ:Math.min(from[2],to[2])-3,maxZ:Math.max(from[2],to[2])+3}),from,to),
 });
 kingdomGateRuntime = createKingdomGateRuntime({
  done,save,changed:applyWorldState,supply:()=>{combat.refillAmmo();return combat.recoverAtSettlement(100);},damage:()=>relayDamageRevision,

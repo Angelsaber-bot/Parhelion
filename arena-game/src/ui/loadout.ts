@@ -1,5 +1,5 @@
 import { bilingual, localizeText } from '../../../shared-client/i18n.ts';
-import { DEFAULT_LOADOUT, GUN_IDS, MELEE_IDS, MELEE_MOVE, TICK_HZ, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type WeaponDef, type WeaponId } from '../../shared/content.ts';
+import { DEFAULT_LOADOUT, DEFAULT_UTILITY, FRAG, GRENADE, GUN_IDS, MELEE_IDS, MELEE_MOVE, SMOKE, TICK_HZ, UTILITY_IDS, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type UtilityId, type WeaponDef, type WeaponId } from '../../shared/content.ts';
 
 export interface LoadoutStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export const LOADOUT_KEY = 'parhelion-loadout-v1';
@@ -8,6 +8,7 @@ function browserStorage(): LoadoutStorage | undefined { try { return typeof loca
 /** Local convenience only: both server transports independently validate the submitted tuple. */
 export class LoadoutStore {
   private selection: Loadout = [...DEFAULT_LOADOUT];
+  private utilityChoice: UtilityId = DEFAULT_UTILITY;
   saved = true;
   notice = '';
   constructor(private readonly storage: LoadoutStorage | undefined = browserStorage()) {
@@ -17,10 +18,23 @@ export class LoadoutStore {
         const raw = JSON.parse(text);
         if (raw?.version !== 1 || !isLoadout(raw.weapons)) throw new Error('version or selection');
         this.selection = validateLoadout(raw.weapons);
+        if ((UTILITY_IDS as readonly unknown[]).includes(raw.utility)) this.utilityChoice = raw.utility;
       }
     } catch { this.notice = '本机配装记录无效，已使用默认的两把枪和一件近战；其他设置不受影响。'; }
   }
   get value(): Loadout { return [...this.selection]; }
+  get utility(): UtilityId { return this.utilityChoice; }
+  selectUtility(id: string): boolean {
+    if (!(UTILITY_IDS as readonly string[]).includes(id)) return false;
+    this.utilityChoice = id as UtilityId; this.persist(); return true;
+  }
+  private persist() {
+    try {
+      this.storage?.setItem(LOADOUT_KEY, JSON.stringify({ version: 1, weapons: this.selection, utility: this.utilityChoice }));
+      this.saved = !!this.storage;
+    } catch { this.saved = false; }
+    this.notice = this.saved ? '配装已保存到本机；下一局生效。' : '配装已应用；当前浏览器无法持久保存。';
+  }
   select(slot: number, id: string): 'slot' | 'type' | 'duplicate' | null {
     if (!Number.isInteger(slot) || slot < 0 || slot > 2) return 'slot';
     const allowed: readonly string[] = slot === 2 ? MELEE_IDS : GUN_IDS;
@@ -28,11 +42,7 @@ export class LoadoutStore {
     if (slot < 2 && this.selection[1 - slot] === id) return 'duplicate';
     const next = [...this.selection]; next[slot] = id as WeaponId;
     this.selection = validateLoadout(next);
-    try {
-      this.storage?.setItem(LOADOUT_KEY, JSON.stringify({ version: 1, weapons: this.selection }));
-      this.saved = !!this.storage;
-    } catch { this.saved = false; }
-    this.notice = this.saved ? '配装已保存到本机；下一局生效。' : '配装已应用；当前浏览器无法持久保存。';
+    this.persist();
     return null;
   }
 }
@@ -69,6 +79,12 @@ export function weaponStats(w: WeaponDef): string {
   return bilingual(`伤害 ${damage} · 弹匣 ${w.mag} · 间隔 ${(w.interval / TICK_HZ).toFixed(2)}s · 装填 ${(w.reload / TICK_HZ).toFixed(1)}s`,
     `Damage ${damage} · Magazine ${w.mag} · Interval ${(w.interval / TICK_HZ).toFixed(2)}s · Reload ${(w.reload / TICK_HZ).toFixed(1)}s`);
 }
+
+export const UTILITY_INFO: Record<UtilityId, { name: [string, string]; role: [string, string] }> = {
+  frag: { name: ['破片手雷', 'Frag grenade'], role: [`弹跳后 ${FRAG.fuse / TICK_HZ}s 引爆，半径 ${FRAG.radius}m，最高 ${FRAG.damage} 伤害；护盾可挡`, `Bounces, explodes after ${FRAG.fuse / TICK_HZ}s: ${FRAG.radius}m radius, up to ${FRAG.damage} damage; shields block it`] },
+  smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`落地展开 ${SMOKE.radius}m 烟幕，持续 ${SMOKE.life / TICK_HZ}s，阻挡视线`, `Lands into a ${SMOKE.radius}m cloud for ${SMOKE.life / TICK_HZ}s that blocks sight`] },
+};
+export const utilityCooldownSeconds = () => GRENADE.cooldown / TICK_HZ;
 
 export function loadoutCards(loadout: Loadout, keyLabel: (action: string) => string) {
   return loadout.map((id, slot) => {

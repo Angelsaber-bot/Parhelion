@@ -157,4 +157,8 @@ export const sfx = {
   shieldBreak() { noise(0.3, 2500, 0.4, 2, { send: 0.6 }); tone(900, 0.25, 0.12, 'triangle', 0.3); },
   reload() { noise(0.03, 1800, 0.2, 4); noise(0.04, 1200, 0.22, 4, { delay: 0.18 }); tone(600, 0.04, 0.06, 'square', 1, { delay: 0.3 }); },
   empty() { tone(300, 0.04, 0.08, 'square'); },
+  throw() { noise(0.12, 1600, 0.16, 0.8); tone(520, 0.06, 0.05, 'triangle', 1.6, { delay: 0.04 }); },
+  bounce(dist = 0) { if (dist < 35) tone(1300 + Math.random() * 400, 0.05, Math.max(0.02, 0.12 - dist / 300), 'triangle', 0.7); },
+  blast(dist = 0) { const k = Math.max(0.08, 1 - dist / 60); noise(0.9, 180, 0.9 * k, 0.7, { send: 0.5, lowpass: 2600 }, 'lowpass'); noise(0.25, 1200, 0.45 * k, 0.8); tone(70, 0.6, 0.5 * k, 'sine', 0.5); },
+  smoke(dist = 0) { const k = Math.max(0.1, 1 - dist / 50); noise(1.2, 900, 0.35 * k, 0.5, { send: 0.3 }, 'lowpass'); tone(260, 0.1, 0.08 * k, 'square', 0.7); },
 };

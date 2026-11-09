@@ -3,10 +3,10 @@
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { CHARACTERS, CROUCH, DASH, DT, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, type Loadout, type Team } from './content.ts';
+import { CHARACTERS, CROUCH, DASH, DT, GRENADE, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
-export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32 } as const;
+export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, THROW: 64 } as const;
 
 export interface Input {
   seq: number;
@@ -42,6 +42,8 @@ export interface PlayerState {
   dashT: number;
   dashX: number; dashZ: number;
   shieldCd: number;
+  utility: UtilityId;
+  utilityCd: number;
   prevButtons: number;
   lastSeq: number;
 }
@@ -51,6 +53,7 @@ export type SimEvent =
   | { type: 'meleeStart'; weapon: number; yaw: number; pitch: number }
   | { type: 'meleeStrike'; weapon: number; origin: Vec3; dir: Vec3 }
   | { type: 'shield'; x: number; y: number; z: number; yaw: number }
+  | { type: 'throw'; utility: UtilityId; origin: Vec3; dir: Vec3; carry: [number, number] }
   | { type: 'dash' }
   | { type: 'reload' }
   | { type: 'jump' }
@@ -60,14 +63,14 @@ const Q = 4096;
 export const quant = (v: number) => Math.round(v * Q) / Q;
 export const quantAngle = (v: number) => Math.round(v * 10000) / 10000;
 
-export function newPlayer(id: string, team: Team, char: number, choice?: Loadout): PlayerState {
-  const loadout = validateLoadout(choice);
+export function newPlayer(id: string, team: Team, char: number, choice?: Loadout, utilityChoice?: UtilityId): PlayerState {
+  const loadout = validateLoadout(choice), utility = validateUtility(utilityChoice);
   return {
     id, team, char,
     x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0,
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
-    dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, prevButtons: 0, lastSeq: -1,
+    dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, utility, utilityCd: 0, prevButtons: 0, lastSeq: -1,
   };
 }
 
@@ -195,6 +198,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   if (p.fireCd > 0) p.fireCd--;
   if (p.dashCd > 0) p.dashCd--;
   if (p.shieldCd > 0) p.shieldCd--;
+  if (p.utilityCd > 0) p.utilityCd--;
   if (!p.alive) { p.meleeWindup = 0; return events; }
 
   // --- movement ---
@@ -283,6 +287,13 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
       type: 'shield',
       x: quant(p.x + fx * SHIELD.distance), y: quant(p.y), z: quant(p.z + fz * SHIELD.distance), yaw: p.yaw,
     });
+  }
+
+  // Utility: the grenade itself is a server projectile; the shared rule only spends the charge.
+  if (pressed & BTN.THROW && p.utilityCd === 0 && p.meleeWindup === 0) {
+    p.utilityCd = GRENADE.cooldown;
+    p.fireCd = Math.max(p.fireCd, GRENADE.throwLock);
+    events.push({ type: 'throw', utility: p.utility, origin: [quant(p.x), quant(p.y + playerEye(m, p) - .12), quant(p.z)], dir: aimDir(p.yaw, p.pitch), carry: [quant(p.vx), quant(p.vz)] });
   }
 
   // --- weapons: input selects a slot, only the server-approved loadout resolves to an ID ---

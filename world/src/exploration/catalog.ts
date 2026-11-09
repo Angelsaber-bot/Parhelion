@@ -29,8 +29,8 @@ export interface PrismPuzzleDef {
   readonly blockers: readonly { readonly p: XZ; readonly r: number; readonly h: number }[];
   readonly hint: Localized;
 }
-export interface TrialOrb { readonly p: XZ; /** absolute height; omitted = ground + 1.3 */ readonly y?: number }
-export interface TrialDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly stele: XZ; readonly seconds: number; readonly orbs: readonly TrialOrb[]; readonly hint: Localized }
+export interface TrialOrb { readonly p: XZ; /** Authored absolute height; glide courses calibrate descent at runtime. Omitted = ground + 1.3. */ readonly y?: number }
+export interface TrialDef { readonly id: string; readonly region: RegionId; readonly title: Localized; readonly stele: XZ; readonly seconds: number; readonly orbs: readonly TrialOrb[]; readonly hint: Localized; readonly glide?: boolean }
 /** `echo-warden` turns a domain's last actor into a two-phase boss (264 HP, thrust → sweep → burst). */
 export interface CampActor { readonly role: EnemyRole; readonly offset: readonly [number, number]; readonly title?: Localized; readonly pattern?: 'echo-warden' }
 /** `vanguard`: a story fight on the main road (no camp props); `lines` are the companion's words as it begins and ends. */
@@ -117,9 +117,9 @@ const BRITAIN_PUZZLES: readonly PrismPuzzleDef[] = [
 const BRITAIN_TRIALS: readonly TrialDef[] = [
 
   {
-    id: 'camelot_glide', region: 'britain', title: ['王城滑翔', 'Camelot Glide'], stele: [-880, -128], seconds: 24,
+    id: 'camelot_glide', region: 'britain', title: ['王城滑翔', 'Camelot Glide'], stele: [-880, -128], seconds: 24, glide: true,
     orbs: [{ p: [-872, -114], y: 31.5 }, { p: [-863, -98], y: 27 }, { p: [-853, -82], y: 22.5 }, { p: [-843, -66], y: 18 }, { p: [-833, -50], y: 13 }, { p: [-823, -34], y: 8.2 }, { p: [-813, -18] }],
-    hint: ['从高台边缘跳下，空中按跳跃展开滑翔翼，穿过光圈。', 'Leap off the plateau edge, open the glider in mid-air and fly through the rings.'],
+    hint: ['从石碑前方起跳，空中再按跳跃展开滑翔翼，沿光圈下降。', 'Jump forward from the stele, press Jump again in mid-air to open the glider, and follow the rings.'],
   },
 ];
 
