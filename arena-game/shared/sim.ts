@@ -43,7 +43,9 @@ export interface PlayerState {
   dashX: number; dashZ: number;
   shieldCd: number;
   utility: UtilityId;
-  utilityCd: number;
+  utilityCd: number; // ticks until the next spent charge returns
+  utilityCharges: number;
+  utilityLock: number; // ticks before another throw
   prevButtons: number;
   lastSeq: number;
 }
@@ -70,7 +72,7 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0,
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
-    dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, utility, utilityCd: 0, prevButtons: 0, lastSeq: -1,
+    dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }
 
@@ -198,7 +200,9 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   if (p.fireCd > 0) p.fireCd--;
   if (p.dashCd > 0) p.dashCd--;
   if (p.shieldCd > 0) p.shieldCd--;
-  if (p.utilityCd > 0) p.utilityCd--;
+  if (p.utilityLock > 0) p.utilityLock--;
+  // One spent charge returns per cooldown, then the next starts recharging.
+  if (p.utilityCharges < GRENADE.charges && p.utilityCd > 0 && --p.utilityCd === 0 && ++p.utilityCharges < GRENADE.charges) p.utilityCd = GRENADE.cooldown;
   if (!p.alive) { p.meleeWindup = 0; return events; }
 
   // --- movement ---
@@ -290,8 +294,9 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   }
 
   // Utility: the grenade itself is a server projectile; the shared rule only spends the charge.
-  if (pressed & BTN.THROW && p.utilityCd === 0 && p.meleeWindup === 0) {
-    p.utilityCd = GRENADE.cooldown;
+  if (pressed & BTN.THROW && p.utilityCharges > 0 && p.utilityLock === 0 && p.meleeWindup === 0) {
+    p.utilityCharges--; p.utilityLock = GRENADE.throwGap;
+    if (p.utilityCd === 0) p.utilityCd = GRENADE.cooldown;
     p.fireCd = Math.max(p.fireCd, GRENADE.throwLock);
     events.push({ type: 'throw', utility: p.utility, origin: [quant(p.x), quant(p.y + playerEye(m, p) - .12), quant(p.z)], dir: aimDir(p.yaw, p.pitch), carry: [quant(p.vx), quant(p.vz)] });
   }

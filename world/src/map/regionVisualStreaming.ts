@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {regionLoader,bakeQuantized} from '../rendering/glb';
-import {REGIONS,regionAt,type RegionDef} from './regions';
+import {REGIONS,regionAt,regionDistance} from './regions';
 import {chunkMesh,DistanceCuller,freezeStaticArt} from '../rendering/chunk';
 import {toonMaterial,addOutline} from '../rendering/look';
 interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;
@@ -24,7 +24,6 @@ export function streamedOutlineDistance(name: string) {
 }
 /** Same reach as the valley's own art (main.ts DRAW_DIST): small props fade into fog well before 600 m. */
 export function streamedDrawDistance(name:string){return /Bushes/.test(name)?180:/Trees_Trunks/.test(name)?260:/Rocks/.test(name)?320:/(Leaves|Trees)/.test(name)?380:/Glow/.test(name)?500:600;}
-const regionDistance=(def:RegionDef,p:Pick<THREE.Vector3,'x'|'z'>)=>Math.hypot(Math.max(0,Math.abs(p.x-def.offset[0])-360),Math.max(0,Math.abs(p.z-def.offset[1])-360));
 /** Only heavyweight immutable art is streamed. Terrain, collision, interactive
  * surfaces and save facts have independent permanent ownership. */
 export class RegionVisualStreaming{

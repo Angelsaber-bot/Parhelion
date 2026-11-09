@@ -23,10 +23,10 @@ it('new finishes save by stable identity, restore to their own guns and preserve
 
 it('the production server room preserves new indices through join and broadcast snapshots', () => {
   const room = new RoomCore({ layout: '1v1', map: 'blackflag', bots: false });
-  expect(() => room.join('old', { rulesVersion: 13, skins: selected() })).toThrow(/版本/);
+  expect(() => room.join('old', { rulesVersion: 14, skins: selected() })).toThrow(/版本/);
   expect(room.match.slots.size).toBe(0);
   const welcome = room.join('new', { rulesVersion: RULES_VERSION, team: 'A', name: 'Craft', skins: selected(), loadout: ['firefly', 'corona', 'blade'] });
-  expect(welcome.rulesVersion).toBe(14);
+  expect(welcome.rulesVersion).toBe(15);
   let snapshot = room.step();
   for (let tick = 0; tick < 10 && !snapshot; tick++) snapshot = room.step();
   const player = snapshot!.players.find(p => p.id === 'new')!;

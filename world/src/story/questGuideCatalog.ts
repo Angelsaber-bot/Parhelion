@@ -8,6 +8,7 @@ import type {Layout,Marker} from '../core/types';
 import type {Localized,RegionId} from '../settlements/types';
 import {TEXT_PAIRS} from '../../../shared-client/locales';
 import {regionAt} from '../map/regions';
+import {isCampaignRegion} from '../core/regionIdentity';
 import {ERA_IDS,ERA_STORIES,ERA_OPTIONALS,ERA_KNIGHT_DEFEATED,getEraStoryGuide,getEraBossRequirements,isEraCoreCleared} from './eraStories';
 import {getValleyStoryGuide,VALLEY_STORY} from './valleyStory';
 import {getCampaignClosureState,CAMPAIGN_CLOSURE} from './campaignClosure';
@@ -79,7 +80,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
   const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
   const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;return marker?{targetKind:'marker',region:regionAt(marker.p[0],marker.p[2]).id,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&isCampaignRegion(region)?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -157,7 +158,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
   if(closure.stage==='ready')closing=guide(closureTitle,['回观测所终端，记录四处时层的旅程。','Return to the Observatory terminal to record the four-era journey.'],CAMPAIGN_CLOSURE.terminal,done,context);
   else if(missingEra){const next=getEraStoryGuide(missingEra,done);if(next)closing=guide(closureTitle,next.text,next.targetId,done,context);if(closing)closing.prerequisite=['先完成四处时层的核心，再回观测所记录。','Resolve all four era cores before recording the journey at the Observatory.'];}
   add('side:closure','alpha','side',closureTitle,closure.stage==='recorded',closing);
-  for(const marker of input.markers.filter(m=>m.type==='discovery')){const title=specialLabels.get(marker.id)??pair(marker.label);add(`discovery:${marker.id}`,regionAt(marker.p[0],marker.p[2]).id,'discovery',title,found.has(marker.id),guide(title,instruction(marker.id),marker.id,done,context));}
+  for(const marker of input.markers.filter(m=>m.type==='discovery')){const region=regionAt(marker.p[0],marker.p[2]).id;if(!isCampaignRegion(region))continue;const title=specialLabels.get(marker.id)??pair(marker.label);add(`discovery:${marker.id}`,region,'discovery',title,found.has(marker.id),guide(title,instruction(marker.id),marker.id,done,context));}
   return entries;
  };
  return{list:build,resolve(id:string,done:ReadonlySet<string>,found:ReadonlySet<string>,context:QuestGuideContext={}){return build(done,found,context).find(entry=>entry.id===id)?.guide??null;}};

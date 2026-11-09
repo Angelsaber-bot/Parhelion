@@ -36,7 +36,7 @@ import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
 import { KillFinishers } from './killFinishers.ts';
 import { GrenadeView } from './grenades.ts';
-import type { Grenade, Smoke } from '../../shared/grenade.ts';
+import { insideSmoke, smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
 import {lightWeaponScene,renderHeldWeapon} from '../weapons/weaponLighting.ts';
@@ -372,7 +372,8 @@ export class ArenaScene {
   get combatEffectInventory() { return this.combatEffects.inventory; }
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
   disposeCombatEffects() { this.combatEffects.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); }
-  syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.grenadeView?.sync(grenades, smokes, since); }
+  private smokes: readonly Smoke[] = [];
+  syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.smokes = smokes; this.grenadeView?.sync(grenades, smokes, since); }
   /** Frag detonation: flash, shockwave, smoke, plus sparks from the shared effect pool. */
   grenadeBlast(at: Vec3) { this.grenadeView?.blast(at); for (let i = 0; i < 10; i++) this.combatEffects.burst([at[0], at[1] + .3, at[2]], i % 2 ? 0xffd27a : 0xff7a3a, .12, .45, 7, 'ember'); }
   smokePop(at: Vec3) { for (let i = 0; i < 6; i++) this.combatEffects.burst([at[0], at[1] + .2, at[2]], 0xdfe6ee, .4, .6, 2.2); }
@@ -392,6 +393,9 @@ export class ArenaScene {
     if (a.root.visible !== p.alive) a.resetMotion(p.crouched, p.grounded);
     a.root.visible = p.alive;
     a.setAlly(ally);
+    // Smoke hides an enemy completely: no nameplate or health bar through or inside a cloud.
+    const head: Vec3 = [pos[0], pos[1] + 1.6, pos[2]], eye = this.camera.position;
+    a.conceal(!ally && this.smokes.length > 0 && (insideSmoke(this.smokes, head) || smokeBlocks(this.smokes, [eye.x, eye.y, eye.z], head)));
     const now = performance.now() / 1000;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     const facing = p.meleeWindup > 0 ? p.meleeYaw : yaw;
@@ -843,6 +847,7 @@ class Avatar {
   setAlly(ally: boolean) {
     this.plate.material.depthTest = !ally;
   }
+  conceal(hidden: boolean) { this.plate.visible = !hidden; }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
   strike() { this.meleeHit = 1; }

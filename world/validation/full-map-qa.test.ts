@@ -69,14 +69,14 @@ test('36 historical full-map projection cases and 36 published-minimap draw stre
   } finally { setLanguage(language); }
 });
 const project = ([x, z]: readonly [number, number]) => ({ x: (x + 1080) / 2160 * 1200, y: (z + 1080) / 2160 * 1200 });
-test('five localized readable headings, bounded existing symbols, nonoverlapping labels on small and retina canvases', () => {
+test('eight localized readable headings, bounded existing symbols, nonoverlapping labels on small and retina canvases', () => {
   const language = getLanguage();
   try {
     for (const lang of ['zh', 'en'] as const) for (const width of [320, 480, 720, 1200]) {
       setLanguage(lang);
       const result = fullMapPresentation(layout, project, 1200, width, project([3, 159]), project([-118, 222]), new Set(), measure);
-      assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 5, `${lang} at ${width}px`);
-      assert.ok(result.landmarks.length <= 9);
+      assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 8, `${lang} at ${width}px`);
+      assert.ok(result.landmarks.length <= 12);
       const boxes = [...new Set(result.labels.map(l => l.box))];
       for (const a of boxes) for (const b of boxes) if (a !== b) assert.ok(a[0] >= b[2] || a[2] <= b[0] || a[1] >= b[3] || a[3] <= b[1]);
       for (const label of result.labels) assert.ok(label.size / result.unit >= (label.region ? 12 : 9));
@@ -92,7 +92,7 @@ test('five localized readable headings, bounded existing symbols, nonoverlapping
 test('region headings relocate inside their region when player and quest cover the usual anchor', () => {
   for (const width of [320, 640]) for (const player of [[0, -402], [3, 159]] as const) {
     const result = fullMapPresentation(layout, project, 1200, width, project(player), project([0, -150.5]), new Set(), measure);
-    assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 5);
+    assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 8);
   }
 });
 test('chapter symbols reflect existing summon unlock, and presentation cannot mutate progress', () => {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { RegionId } from '../settlements/types';
+import type { WorldRegionId as RegionId } from '../core/regionIdentity';
 /**
  * Region weather motes: the air itself tells you which era you are in. The valley drifts pollen
  * and pale petals, the dusk kingdom sheds autumn leaves, the pirate coast throws salt spray and
@@ -21,6 +21,9 @@ export interface WeatherPreset {
   /** share of the cloud that is lit in this era (snow is thick, valley air is light) */ density: number;
 }
 export const REGION_WEATHER: Readonly<Record<RegionId, WeatherPreset>> = Object.freeze({
+  orleans: {a:{shape:'mote',color:0xded8ba,size:.09,fall:-.3},b:{shape:'ember',color:0xd28b58,size:.13,fall:.22},split:.85,wind:[1.3,.4],opacity:.7,density:.35},
+  egypt: {a:{shape:'mote',color:0xf1d593,size:.1,fall:-.1},b:{shape:'streak',color:0xe4c48c,size:.14,fall:-.35},split:.8,wind:[2.3,.5],opacity:.65,density:.4},
+  qin: {a:{shape:'mote',color:0xd1c8aa,size:.08,fall:-.2},b:{shape:'leaf',color:0xa9b67c,size:.18,fall:-.5},split:.7,wind:[.6,.3],opacity:.65,density:.3},
   alpha: { a: { shape: 'mote', color: 0xfffacc, size: .09, fall: -.32 }, b: { shape: 'petal', color: 0xffc8e0, size: .2, fall: -.38 }, split: .6, wind: [.95, .35], opacity: 1, density: .45 },
   britain: { a: { shape: 'mote', color: 0xffd7a0, size: .085, fall: -.25 }, b: { shape: 'leaf', color: 0xd27a35, size: .26, fall: -.7 }, split: .55, wind: [1.25, .5], opacity: 1, density: .6 },
   blacksail: { a: { shape: 'mote', color: 0xe2f4ff, size: .08, fall: -.6 }, b: { shape: 'streak', color: 0xcfe4ee, size: .26, fall: -6.5 }, split: .45, wind: [3.4, 1.1], opacity: .8, density: .8 },

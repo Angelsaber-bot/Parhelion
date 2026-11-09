@@ -41,7 +41,7 @@ function smokeModel() {
 
 type Cloud = { group: THREE.Group; puffs: { sprite: THREE.Sprite; base: THREE.Vector3; phase: number; size: number }[]; seen: number };
 type Blast = { flash: THREE.Sprite; ring: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>; puffs: THREE.Sprite[]; life: number };
-const PUFFS = 30, BLAST_LIFE = 1.1;
+const PUFFS = 44, BLAST_LIFE = 1.1;
 
 export class GrenadeView {
   private live = new Map<number, { model: THREE.Group; warn: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>; kind: Grenade['kind'] }>();
@@ -90,7 +90,7 @@ export class GrenadeView {
         p.sprite.position.copy(p.base).multiplyScalar(.45 + .55 * fadeIn).add(new THREE.Vector3(...smokeCentre(s)));
         p.sprite.position.y += Math.sin(this.time * .4 + p.phase) * .12 + age * .02;
         const size = p.size * (.6 + .4 * fadeIn); p.sprite.scale.set(size, size, 1);
-        p.sprite.material.opacity = .78 * k; p.sprite.material.rotation = p.phase + this.time * .05;
+        p.sprite.material.opacity = .93 * k; p.sprite.material.rotation = p.phase + this.time * .05;
       }
     }
     for (const [id, c] of this.clouds) if (!clouds.has(id)) { for (const p of c.puffs) { p.sprite.material.dispose(); } this.drop(c.group, false); this.clouds.delete(id); }
@@ -106,7 +106,7 @@ export class GrenadeView {
       if (base.y < -.35) base.y = -.35 + base.y * .08;
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.smokeTex, color: 0xc9d1db, transparent: true, depthWrite: false, opacity: 0 }));
       sprite.raycast = () => {}; sprite.renderOrder = 4;
-      group.add(sprite); puffs.push({ sprite, base, phase: i * 1.7, size: (2.6 + 1.4 * ((i * .37) % 1)) * (base.y < 0 ? .72 : 1) });
+      group.add(sprite); puffs.push({ sprite, base, phase: i * 1.7, size: (3.3 + 1.8 * ((i * .37) % 1)) * (base.y < 0 ? .72 : 1) });
     }
     const c = { group, puffs, seen: 0 }; this.clouds.set(s.id, c); this.parent.add(group); return c;
   }

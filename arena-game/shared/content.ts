@@ -71,11 +71,15 @@ export const GRENADE = {
   gravity: 18,
   restitution: 0.42,
   friction: 0.62, // horizontal speed kept per ground contact
-  cooldown: 18 * TICK_HZ,
+  charges: 2, // grenades carried per life
+  cooldown: 14 * TICK_HZ, // to recharge one spent charge
+  throwGap: 24, // ticks between two throws
   throwLock: 12, // ticks before the held weapon can fire again
 };
-export const FRAG = { fuse: 2 * TICK_HZ, radius: 5.5, damage: 95, minDamage: 15, selfScale: 0.35 };
-export const SMOKE = { fuse: Math.round(1.1 * TICK_HZ), radius: 3.8, life: 8 * TICK_HZ };
+/** Lethal inside `core`, falling to `minDamage` at the edge; the blast throws people back. */
+export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, core: 1.6, damage: 150, minDamage: 20, selfScale: 0.35, knockback: 9, lift: 4.5, shieldScale: 2 };
+/** Blocks sight; anyone inside takes `cover` of the damage from shooters outside it. */
+export const SMOKE = { fuse: TICK_HZ, radius: 5, life: 12 * TICK_HZ, cover: 0.75 };
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
 export const FRAG_KILL = 100;
 

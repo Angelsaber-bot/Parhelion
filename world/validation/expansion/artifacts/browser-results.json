@@ -1,0 +1,128 @@
+[
+  {
+    "id": "orleans",
+    "info": {
+      "regions": [
+        "alpha",
+        "britain",
+        "blacksail",
+        "winter",
+        "kyoto",
+        "orleans",
+        "egypt",
+        "qin"
+      ],
+      "spawn": [
+        -480,
+        208.38,
+        -420
+      ],
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "britain"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 62,
+        "calls": 59,
+        "triangles": 385264,
+        "points": 640,
+        "lines": 0
+      },
+      "objective": "Orleans · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+    },
+    "errors": []
+  },
+  {
+    "id": "egypt",
+    "info": {
+      "regions": [
+        "alpha",
+        "britain",
+        "blacksail",
+        "winter",
+        "kyoto",
+        "orleans",
+        "egypt",
+        "qin"
+      ],
+      "spawn": [
+        980,
+        178.38,
+        1000
+      ],
+      "stream": {
+        "resident": [
+          "egypt"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 167,
+        "calls": 97,
+        "triangles": 427344,
+        "points": 640,
+        "lines": 0
+      },
+      "objective": "Solar Egypt · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+    },
+    "errors": []
+  },
+  {
+    "id": "qin",
+    "info": {
+      "regions": [
+        "alpha",
+        "britain",
+        "blacksail",
+        "winter",
+        "kyoto",
+        "orleans",
+        "egypt",
+        "qin"
+      ],
+      "spawn": [
+        980,
+        318.38,
+        -420
+      ],
+      "stream": {
+        "resident": [
+          "qin",
+          "blacksail"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 2,
+        "installs": 2,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 167,
+        "calls": 78,
+        "triangles": 397232,
+        "points": 648,
+        "lines": 0
+      },
+      "objective": "Qin Empire · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+    },
+    "errors": []
+  }
+]

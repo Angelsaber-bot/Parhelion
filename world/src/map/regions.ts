@@ -1,17 +1,20 @@
 // The open world is several generated regions placed side by side in one scene.
 // 幻日谷 sits at the origin; 黑帆尽头 continues east through the mountain pass at z ≈ 30, and
 // 落日王国 lies west through the era seam gorge at z ≈ -30, 永冬之城 north along the frozen channel at
-// x ≈ 0, 业火京都 south through the torii tunnel at x ≈ 40 (each region is 720 m across).
+// x ≈ 0, 业火京都 south through the torii tunnel at x ≈ 40. Three irregular corner
+// domains extend the same ~3×3 planning envelope; 720 m is a production spacing only.
 import * as THREE from 'three';
 import type { Layout, Marker } from '../core/types';
 import type { WorldRegionId } from '../core/regionIdentity';
+import { EXPANSION_CONNECTIONS, EXPANSION_PLANS, distanceToLine, inPolygon, polygonDistance, type MapPoint2 } from './worldPlan';
 
 export interface RegionDef {
   id: WorldRegionId;
   file: string;
   offset: [number, number];
-  /** playable rect in region-local coordinates: x0, x1, z0, z1 */
+  /** Local broad-phase bounds: x0, x1, z0, z1. An outline, when supplied, owns the boundary. */
   play: [number, number, number, number];
+  outline?: readonly MapPoint2[];
 }
 
 export const REGIONS: RegionDef[] = [
@@ -20,6 +23,8 @@ export const REGIONS: RegionDef[] = [
   { id: 'blacksail', file: 'world_blacksail', offset: [720, 0], play: [-334, 334, -334, 334] },
   { id: 'winter', file: 'world_winter', offset: [0, -720], play: [-334, 334, -334, 334] },
   { id: 'kyoto', file: 'world_kyoto', offset: [0, 720], play: [-334, 334, -334, 334] },
+  ...EXPANSION_PLANS.map(plan => ({id:plan.id,file:`world_${plan.id}`,offset:plan.offset,
+    play:[Math.min(...plan.outline.map(p=>p[0])),Math.max(...plan.outline.map(p=>p[0])),Math.min(...plan.outline.map(p=>p[1])),Math.max(...plan.outline.map(p=>p[1]))] as [number,number,number,number],outline:plan.outline})),
 ];
 
 /** Extra walkable rects in world coordinates joining regions (the east pass, the west seam gorge). */
@@ -39,10 +44,22 @@ export const GATES: Record<string, { p: [number, number, number]; via: string }>
 /** Terrain grid covering every region (2 m cells, aligned with each region's own grid). */
 export const GRID = { x0: -1080, z0: -1080, span: 2160, spanZ: 2160, cell: 2 };
 
-/** The region whose 720 m square contains (x, z), or the nearest one (the links sit on the edges). */
+/** Geographical ownership; transport/grid squares do not define a region's shape. */
 export function regionAt(x: number, z = 0): RegionDef {
-  const d = (r: RegionDef) => Math.max(Math.abs(x - r.offset[0]), Math.abs(z - r.offset[1]));
+  const containing=REGIONS.find(r=>regionContains(r,x,z));
+  if(containing)return containing;
+  const d = (r: RegionDef) => regionDistance(r,{x,z});
   return REGIONS.reduce((a, b) => (d(b) < d(a) ? b : a));
+}
+
+export function regionContains(r:RegionDef,x:number,z:number):boolean {
+  const lx=x-r.offset[0],lz=z-r.offset[1];
+  if(lx<r.play[0]||lx>r.play[1]||lz<r.play[2]||lz>r.play[3])return false;
+  return !r.outline||inPolygon(lx,lz,r.outline);
+}
+export function regionDistance(r:RegionDef,p:{x:number;z:number}):number {
+  const x=p.x-r.offset[0],z=p.z-r.offset[1];
+  return r.outline?polygonDistance(x,z,r.outline):Math.hypot(Math.max(r.play[0]-x,0,x-r.play[1]),Math.max(r.play[2]-z,0,z-r.play[3]));
 }
 
 export interface RegionLayout { def: RegionDef; layout: Layout }
@@ -65,7 +82,7 @@ export function mergeLayouts(parts: RegionLayout[]) {
   }
   const base = parts[0].layout;
   const out: Layout & { objectives: { region: string; objective: Layout['objective'] }[] } = {
-    world: { ...base.world, id: 'parhelion_world', name: '幻日谷 · 落日王国 · 黑帆尽头 · 永冬之城 · 业火京都', nameEn: 'Parhelion World' },
+    world: { ...base.world, id: 'parhelion_world', name: parts.map(p=>p.layout.world.name).join(' · '), nameEn: 'Parhelion World' },
     areas: [], paths: [], markers: [], updrafts: [], lights: [],
     objective: base.objective,
     objectives: [],
@@ -86,19 +103,24 @@ export function mergeLayouts(parts: RegionLayout[]) {
   return out;
 }
 
-/** Invisible boundary walls around the union of the regions' playable rects and the links. */
+/** Invisible walls around the union of geographical footprints and actual connecting roads. */
 export function boundaryWalls(): THREE.BufferGeometry {
   const rects: [number, number, number, number][] = [
     ...REGIONS.map((r) => [r.play[0] + r.offset[0], r.play[1] + r.offset[0], r.play[2] + r.offset[1], r.play[3] + r.offset[1]] as [number, number, number, number]),
+    ...EXPANSION_CONNECTIONS.map(link=>[Math.min(...link.points.map(p=>p[0]))-link.width/2,Math.max(...link.points.map(p=>p[0]))+link.width/2,Math.min(...link.points.map(p=>p[1]))-link.width/2,Math.max(...link.points.map(p=>p[1]))+link.width/2] as [number,number,number,number]),
     ...LINKS,
   ];
   const c = 2;
   const x0 = Math.min(...rects.map((r) => r[0])) - 20, z0 = Math.min(...rects.map((r) => r[2])) - 20;
   const nx = Math.ceil((Math.max(...rects.map((r) => r[1])) + 20 - x0) / c), nz = Math.ceil((Math.max(...rects.map((r) => r[3])) + 20 - z0) / c);
-  const inside = (i: number, j: number) => {
+  const playable = (i: number, j: number) => {
     const x = x0 + (i + 0.5) * c, z = z0 + (j + 0.5) * c;
-    return rects.some(([a, b, d, e]) => x > a && x < b && z > d && z < e);
+    return REGIONS.some(r=>regionContains(r,x,z)) || LINKS.some(([a,b,d,e])=>x>a&&x<b&&z>d&&z<e)
+      || EXPANSION_CONNECTIONS.some(link=>distanceToLine(x,z,link.points)<=link.width/2);
   };
+  const occupied=new Uint8Array(nx*nz);
+  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++)occupied[j*nx+i]=Number(playable(i,j));
+  const inside=(i:number,j:number)=>i>=0&&j>=0&&i<nx&&j<nz?occupied[j*nx+i]!==0:false;
   const H = 300, Y = H / 2 - 20;
   const boxes: THREE.BufferGeometry[] = [];
   const wall = (x: number, z: number, w: number, d: number) => {

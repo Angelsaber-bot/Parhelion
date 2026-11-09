@@ -3,7 +3,7 @@
 // peeking, shields, grenades over cover, or melee range. Never offered for online rooms.
 import rangeData from '../../arena-maps/range/runtime/map.json';
 import { BTN, type Input } from './sim.ts';
-import { TICK_HZ, validateLoadout, validateUtility, WEAPONS, loadoutWeapon, type Loadout, type UtilityId } from './content.ts';
+import { GRENADE, TICK_HZ, validateLoadout, validateUtility, WEAPONS, loadoutWeapon, type Loadout, type UtilityId } from './content.ts';
 import { buildMap, type ArenaMap, type MapData, type Vec3 } from './map.ts';
 import type { Controller, Match } from './match.ts';
 
@@ -65,7 +65,7 @@ export function applyPracticeLoadout(match: Match, id: string, choice: { loadout
   const skins = WEAPONS.map((w, i) => Math.max(0, Math.min(w.skins.length - 1, choice.skins[i] | 0)));
   slot.info = { ...slot.info, loadout, utility, skins };
   const p = slot.state;
-  p.loadout = [...loadout]; p.utility = utility; p.utilityCd = 0;
+  p.loadout = [...loadout]; p.utility = utility; p.utilityCd = 0; p.utilityCharges = GRENADE.charges; p.utilityLock = 0;
   p.weapon = loadoutWeapon(loadout, p.weaponSlot); p.reload = 0; p.meleeWindup = 0;
   p.ammo = WEAPONS.map((w) => w.mag);
   slot.melee = null;

@@ -159,7 +159,7 @@ function renderLoadout() {
   });
   // Utility slot: one grenade per life, recharging; never one of the three weapon slots.
   const u = loadoutStore.utility, info = UTILITY_INFO[u];
-  $('loadout').insertAdjacentHTML('beforeend', `<label class="loadout-item"><span class="loadout-heading"><b>${bilingual('道具', 'Utility')}</b><kbd data-utility-key>${settings.label('throw')}</kbd></span><select data-utility aria-label="${bilingual('道具', 'Utility')}">${UTILITY_IDS.map((id) => `<option value="${id}" ${id === u ? 'selected' : ''}>${bilingual(...UTILITY_INFO[id].name)}</option>`).join('')}</select><small>${bilingual(...info.role)} · ${bilingual(`冷却 ${utilityCooldownSeconds()}s`, `${utilityCooldownSeconds()}s cooldown`)}</small></label>`);
+  $('loadout').insertAdjacentHTML('beforeend', `<label class="loadout-item"><span class="loadout-heading"><b>${bilingual('道具', 'Utility')}</b><kbd data-utility-key>${settings.label('throw')}</kbd></span><select data-utility aria-label="${bilingual('道具', 'Utility')}">${UTILITY_IDS.map((id) => `<option value="${id}" ${id === u ? 'selected' : ''}>${bilingual(...UTILITY_INFO[id].name)}</option>`).join('')}</select><small>${bilingual(...info.role)} · ${bilingual(`每条命 2 颗，每 ${utilityCooldownSeconds()}s 恢复 1 颗`, `2 per life, one back every ${utilityCooldownSeconds()}s`)}</small></label>`);
   $('loadout').querySelector<HTMLSelectElement>('[data-utility]')!.onchange = (event) => {
     loadoutStore.selectUtility((event.target as HTMLSelectElement).value); renderLoadout();
     $('loadout-status').textContent = localizeText(loadoutStore.notice);

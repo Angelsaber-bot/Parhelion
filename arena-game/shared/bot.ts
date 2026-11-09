@@ -302,7 +302,7 @@ export class Bot implements Controller {
     }
     // Utility: frags go where an enemy is hiding (or was last seen); smoke screens a hurt retreat.
     if (this.throwPlan && --this.throwPlan.t <= 0) this.throwPlan = null;
-    if (!this.throwPlan && me.utilityCd === 0 && me.meleeWindup === 0) {
+    if (!this.throwPlan && me.utilityCharges > 0 && me.utilityLock === 0 && me.meleeWindup === 0) {
       let spot: Vec3 | null = null;
       if (me.utility === 'frag') {
         // Only at someone who just broke line of sight: never abandon a live fight to wind up a throw.

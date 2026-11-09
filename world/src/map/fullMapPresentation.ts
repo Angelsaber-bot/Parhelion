@@ -1,14 +1,16 @@
-import { localizeText } from '../../../shared-client/i18n';
+import { bilingual, localizeText } from '../../../shared-client/i18n';
 import { GATES, REGIONS } from './regions';
 import type { Layout } from '../core/types';
 import type { MapBox, MapPoint } from './minimapMarkers';
+import { EXPANSION_PLANS } from './worldPlan';
 
 /** A navigation overview, not an inventory of every encounter and interaction. */
 export const FULL_MAP_COLORS = { label: '#e0e6e9', landmark: '#b9c8d0', locked: '#83949f', outline: '#1f2a44' } as const;
-const OVERVIEW: Record<string, { name: string; hub: string }> = {
+const OVERVIEW: Record<string, { name: string; nameEn?:string; hub: string }> = {
   alpha: { name: '幻日谷', hub: 'hq' }, britain: { name: '落日王国', hub: 'swordlake' },
   blacksail: { name: '黑帆尽头', hub: 'port' }, winter: { name: '永冬之城', hub: 'bivouac' },
   kyoto: { name: '业火京都', hub: 'kamo' },
+  ...Object.fromEntries(EXPANSION_PLANS.map(p=>[p.id,{name:p.name,nameEn:p.nameEn,hub:`${p.id}_${p.sites[0].id}`}])) ,
 };
 export interface FullMapLabel extends MapPoint { text: string; size: number; region: boolean; box: MapBox }
 export interface FullMapLandmark extends MapPoint { id: string; kind: 'travel' | 'entrance'; locked: boolean }
@@ -74,15 +76,16 @@ export function fullMapPresentation(
   // Place edge regions first so a displaced central heading cannot consume
   // their limited compact-screen space.
   for (const def of [...regions].sort((a, b) => Number(a.id === 'alpha') - Number(b.id === 'alpha'))) {
-    const a = project([def.offset[0] - 334, def.offset[1] - 334]), b = project([def.offset[0] + 334, def.offset[1] + 334]);
-    addLabel(localizeText(OVERVIEW[def.id].name), project([def.offset[0], def.offset[1] - 235]), font, true, width * .28, [a.x, a.y, b.x, b.y]);
+    const a = project([def.offset[0] + def.play[0], def.offset[1] + def.play[2]]), b = project([def.offset[0] + def.play[1], def.offset[1] + def.play[3]]);
+    const overview=OVERVIEW[def.id];
+    addLabel(overview.nameEn?bilingual(overview.name,overview.nameEn):localizeText(overview.name), project([def.offset[0], def.offset[1] - 235]), font, true, width * .28, [a.x, a.y, b.x, b.y]);
   }
   const sources = [
     ...regions.filter(def => GATES[def.id]).map(def => ({ id: `entrance:${def.id}`, kind: 'entrance' as const,
       position: [GATES[def.id].p[0], GATES[def.id].p[2]] as const, name: '', locked: !done.has('summon_circle') })),
     ...regions.flatMap(def => {
       const area = layout.areas.find(area => area.region === def.id && area.id === OVERVIEW[def.id].hub);
-      return area ? [{ id: `travel:${def.id}:${area.id}`, kind: 'travel' as const, position: area.tp, name: localizeText(area.name), locked: false }] : [];
+      return area ? [{ id: `travel:${def.id}:${area.id}`, kind: 'travel' as const, position: area.tp, name: OVERVIEW[def.id].nameEn?bilingual(area.name,area.nameEn):localizeText(area.name), locked: false }] : [];
     }),
   ];
   for (const source of sources) {

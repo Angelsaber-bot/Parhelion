@@ -62,12 +62,17 @@ export function stepGrenade(m: ArenaMap, g: Grenade): boolean {
 /** Linear falloff from full damage at the centre to the minimum at the edge; 0 outside. */
 export function fragDamage(distance: number): number {
   if (!(distance >= 0) || distance > FRAG.radius) return 0;
-  return Math.round(FRAG.damage + (FRAG.minDamage - FRAG.damage) * distance / FRAG.radius);
+  if (distance <= FRAG.core) return FRAG.damage;
+  return Math.round(FRAG.damage + (FRAG.minDamage - FRAG.damage) * (distance - FRAG.core) / (FRAG.radius - FRAG.core));
 }
 
 /** Smoke is a sphere around the cloud's centre, a little above where the can landed. */
 export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + 1.3, s.z];
-/** True when the segment a→b passes through any live smoke volume (vision only, never bullets). */
+export function insideSmoke(smokes: readonly Smoke[], p: readonly number[]): boolean {
+  for (const s of smokes) { if (s.life <= 0) continue; const c = smokeCentre(s); if ((p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2 < SMOKE.radius * SMOKE.radius) return true; }
+  return false;
+}
+/** True when the segment a→b passes through any live smoke volume (vision; bullets only lose damage). */
 export function smokeBlocks(smokes: readonly Smoke[], a: Vec3, b: Vec3): boolean {
   const d: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
   for (const s of smokes) {

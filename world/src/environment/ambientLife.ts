@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { RegionId } from '../settlements/types';
+import type { WorldRegionId as RegionId } from '../core/regionIdentity';
 /**
  * Ambient life: butterflies over the grass, birds that perch and take flight, fireflies in the
  * dusk. Each era has its own mix — swallows over the valley, crows in the dusk kingdom, gulls over
@@ -18,6 +18,9 @@ export interface RegionLife {
   fireflies: number;
 }
 export const REGION_LIFE: Readonly<Record<RegionId, RegionLife>> = Object.freeze({
+  orleans:{butterflies:5,butterflyColors:[0xe5d9a4,0xffffff],birds:7,birdColor:0x34333c,perched:.5,overWater:false,fireflies:4},
+  egypt:{butterflies:2,butterflyColors:[0xe6c576],birds:4,birdColor:0x57442c,perched:.2,overWater:false,fireflies:0},
+  qin:{butterflies:6,butterflyColors:[0xd4dcb5,0xe5c77d],birds:5,birdColor:0x333a36,perched:.5,overWater:false,fireflies:8},
   alpha: { butterflies: 12, butterflyColors: [0x8fd3ff, 0xffe27a, 0xffffff], birds: 6, birdColor: 0x2a3550, perched: .3, overWater: false, fireflies: 14 },
   britain: { butterflies: 14, butterflyColors: [0xffffff, 0xf4a25a, 0xe9d68a], birds: 8, birdColor: 0x1b1b20, perched: .55, overWater: false, fireflies: 12 },
   blacksail: { butterflies: 4, butterflyColors: [0xffd27a, 0xffffff], birds: 11, birdColor: 0xeef2f2, perched: .3, overWater: true, fireflies: 0 },

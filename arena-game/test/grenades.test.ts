@@ -22,24 +22,29 @@ const input = (seq: number, o: Partial<Input> = {}): Input => ({ seq, mx: 0, mz:
 const nade = (o: Partial<Grenade> = {}): Grenade => ({ id: 1, owner: 'a', team: 'A', kind: 'frag', x: 0, y: 1.5, z: 0, vx: 0, vy: 0, vz: 0, fuse: FRAG.fuse, rest: false, ...o });
 
 describe('throwing spends one recharging charge per life', () => {
-  it('a throw emits one event, starts the cooldown and briefly locks the weapon; prediction replays it identically', () => {
+  it('two charges per life: a short gap between throws, then one charge back per cooldown; prediction replays it', () => {
     const p = newPlayer('a', 'A', 0); p.alive = true;
     const shadow = clonePlayer(p);
     const first = applyInput(map, p, input(1, { buttons: BTN.THROW, pitch: .3 }));
     applyInput(map, shadow, input(1, { buttons: BTN.THROW, pitch: .3 }));
     expect(first.filter((e) => e.type === 'throw')).toHaveLength(1);
-    expect(p.utilityCd).toBe(GRENADE.cooldown); expect(p.fireCd).toBeGreaterThanOrEqual(GRENADE.throwLock - 1);
+    expect(p.utilityCharges).toBe(GRENADE.charges - 1); expect(p.utilityCd).toBe(GRENADE.cooldown);
+    expect(p.fireCd).toBeGreaterThanOrEqual(GRENADE.throwLock - 1);
     expect(JSON.stringify(p)).toBe(JSON.stringify(shadow));
-    let again = 0;
-    for (let seq = 2; seq < 2 + GRENADE.cooldown - 2; seq++) again += applyInput(map, p, input(seq, { buttons: seq % 2 ? BTN.THROW : 0 })).filter((e) => e.type === 'throw').length;
-    expect(again).toBe(0);
+    const throwsBy = (from: number, to: number) => { let n = 0; for (let seq = from; seq < to; seq++) n += applyInput(map, p, input(seq, { buttons: seq % 2 ? BTN.THROW : 0 })).filter((e) => e.type === 'throw').length; return n; };
+    expect(throwsBy(2, GRENADE.throwGap - 1)).toBe(0);          // too soon
+    expect(throwsBy(GRENADE.throwGap - 1, GRENADE.throwGap + 6)).toBe(1); // the second charge
+    expect(p.utilityCharges).toBe(0);
+    expect(throwsBy(GRENADE.throwGap + 6, GRENADE.cooldown - 4)).toBe(0); // empty until a charge returns
+    let back = 0; for (let seq = GRENADE.cooldown; seq < GRENADE.cooldown + 40; seq++) { applyInput(map, p, input(seq)); if (p.utilityCharges === 1) { back = seq; break; } }
+    expect(back).toBeGreaterThan(0); expect(p.utilityCd).toBe(GRENADE.cooldown); // the other charge starts recharging
   });
   it('dead players cannot throw and a respawn restores the charge', () => {
     const m = new Match(open, '1v1'); m.addPlayer('a', { name: 'a', team: 'A', char: 0, skins: [], bot: false });
-    const a = m.player('a')!; a.utilityCd = 500; a.alive = false;
+    const a = m.player('a')!; a.utilityCd = 500; a.utilityCharges = 0; a.alive = false;
     expect(applyInput(open, a, input(1, { buttons: BTN.THROW })).some((e) => e.type === 'throw')).toBe(false);
     (m as unknown as { spawn(slot: unknown): void }).spawn(m.slots.get('a'));
-    expect(m.player('a')!.utilityCd).toBe(0);
+    expect(m.player('a')!.utilityCd).toBe(0); expect(m.player('a')!.utilityCharges).toBe(GRENADE.charges);
   });
   it('utility choices are validated like loadouts and saved locally', () => {
     expect(validateUtility(undefined)).toBe('frag'); expect(validateUtility('smoke')).toBe('smoke');
@@ -94,7 +99,8 @@ function detonate(m: Match, at: [number, number, number], owner = 'a') {
 
 describe('frag blasts', () => {
   it('damage falls off with distance and reaches nothing beyond the radius', () => {
-    expect(fragDamage(0)).toBe(FRAG.damage); expect(fragDamage(FRAG.radius)).toBe(FRAG.minDamage);
+    expect(fragDamage(0)).toBe(FRAG.damage); expect(fragDamage(FRAG.core)).toBe(FRAG.damage); expect(fragDamage(FRAG.radius)).toBe(FRAG.minDamage);
+    expect(FRAG.damage).toBeGreaterThanOrEqual(150); // lethal for every character inside the core
     expect(fragDamage(FRAG.radius + .01)).toBe(0); expect(fragDamage(2)).toBeGreaterThan(fragDamage(4));
   });
   it('hurts an enemy in the open, spares a teammate, and hurts the thrower only a little and never fatally', () => {
@@ -115,6 +121,15 @@ describe('frag blasts', () => {
     m.shields.push({ id: 9, team: 'B', owner: 'b', x: 0, y: 0, z: -1.5, yaw: 0, hp: 300, life: 600 });
     const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, 0]);
     expect(m.player('b')!.hp).toBe(hp); expect(m.shields[0].hp).toBeLessThan(300);
+  });
+  it('the blast throws enemies away from it and off their feet', () => {
+    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    detonate(m, [0, GRENADE.radius, 0]);
+    const b = m.player('b')!; expect(b.vz).toBeLessThan(-2); expect(b.vy).toBeGreaterThan(1); expect(b.grounded).toBe(false);
+  });
+  it('a full-health enemy at the centre of a frag dies', () => {
+    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -.4, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.alive).toBe(false);
   });
   it('a lethal blast credits the thrower with a grenade kill', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -.5, hp: 20 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
@@ -138,6 +153,18 @@ describe('frag blasts', () => {
 });
 
 describe('smoke', () => {
+  it('is cover: shots from outside into the cloud deal less, shots from inside do not', () => {
+    const shoot = (smokeAt: number) => {
+      const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 8, yaw: 0 }); Object.assign(m.player('b')!, { x: 0, z: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 10, z: 10 });
+      m.smokes = [{ id: 1, owner: 'b', x: 0, y: 0, z: smokeAt, life: 600 }];
+      m.queueInputs('a', [{ seq: 1, mx: 0, mz: 0, yaw: 0, pitch: -.04, buttons: BTN.FIRE, weapon: 0, view: 0 }]);
+      for (let i = 0; i < 20; i++) m.step();
+      return 150 - m.player('b')!.hp;
+    };
+    const open = shoot(60), covered = shoot(0), shooterInside = shoot(6);
+    expect(open).toBeGreaterThan(0); expect(covered).toBeLessThan(open); expect(covered).toBeCloseTo(open * SMOKE.cover, 0);
+    expect(shooterInside).toBe(open);
+  });
   it('deploys on landing, blocks sight lines through it for its lifetime, then clears', () => {
     const m = duel(); m.grenades.push(nade({ kind: 'smoke', fuse: SMOKE.fuse, y: GRENADE.radius, rest: true }));
     m.step(); expect(m.smokes).toHaveLength(1);

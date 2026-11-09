@@ -1,4 +1,5 @@
-import { isCampaignRegion, type WorldRegionId } from './core/regionIdentity';
+import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
+import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE } from './map/worldPlan';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
 import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
@@ -482,7 +483,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE]) }) : null;
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE]) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -688,6 +689,8 @@ function toggleGuide() {
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
+  // Blockouts have no authored campaign yet; never point through an invented gate.
+  if(isExpansionRegion(here))return null;
   const quest=trackedQuest();
   if(quest){
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
@@ -772,6 +775,14 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
 function renderObjective() { renderMainObjective(); updateTrackedStoryHud(); }
 function renderMainObjective() {
   const region=regionAt(player.pos.x,player.pos.z).id;
+  if(isExpansionRegion(region)) {
+    const plan=EXPANSION_PLANS.find(p=>p.id===region)!;
+    const title=document.createElement('h3'),text=document.createElement('div'),note=document.createElement('div');
+    title.textContent=bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
+    text.textContent=bilingual(plan.identity,'Explore the hub, landmarks and alternate routes.');
+    note.textContent=bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    $('objective').replaceChildren(title,text,note);return;
+  }
   const adventure=getCurrentAdventureGuide(region,done);
   if(adventure){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual(...adventure.title);text.className='cur';text.textContent=bilingual(...adventure.text);$('objective').replaceChildren(title,text);return;}
   if(adventureActive(done)&&done.has(ADVENTURE.ending)){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual('让明天继续 · 已完成','Let Tomorrow Continue · Complete');text.textContent=bilingual('归路仍然开放。可以回访居民、探索支路或自愿挑战旧敌。','Every return road remains open. Revisit the residents, explore side routes or choose a rematch.');$('objective').replaceChildren(title,text);return;}
@@ -2285,9 +2296,11 @@ function frame(now: number) {
   const activeAdventure=adventureRuntime?.channel;
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
-  exploration.update(gameplayActive()?dt:0,player,regionAt(player.pos.x,player.pos.z).id,gameplayActive()&&!combat.defeated);
-  ambientLife.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id,regionVisuals.ready(regionAt(player.pos.x,player.pos.z).id));
-  fieldHerbs.update(gameplayActive()?dt:0,player.pos,regionAt(player.pos.x,player.pos.z).id,gameplayActive()&&!combat.defeated);
+  const fieldRegion=regionAt(player.pos.x,player.pos.z).id;
+  const campaignField=isCampaignRegion(fieldRegion);
+  exploration.update(gameplayActive()?dt:0,player,campaignField?fieldRegion:'alpha',campaignField&&gameplayActive()&&!combat.defeated);
+  ambientLife.update(gameplayActive()?dt:0,player.pos,fieldRegion,regionVisuals.ready(fieldRegion));
+  fieldHerbs.update(gameplayActive()?dt:0,player.pos,campaignField?fieldRegion:'alpha',campaignField&&gameplayActive()&&!combat.defeated);
   if(typeof fieldAmmo==='function')fieldAmmo();
   flagshipInterior.apply(done,now/1000);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}

@@ -81,10 +81,11 @@ export function weaponStats(w: WeaponDef): string {
 }
 
 export const UTILITY_INFO: Record<UtilityId, { name: [string, string]; role: [string, string] }> = {
-  frag: { name: ['破片手雷', 'Frag grenade'], role: [`弹跳后 ${FRAG.fuse / TICK_HZ}s 引爆，半径 ${FRAG.radius}m，最高 ${FRAG.damage} 伤害；护盾可挡`, `Bounces, explodes after ${FRAG.fuse / TICK_HZ}s: ${FRAG.radius}m radius, up to ${FRAG.damage} damage; shields block it`] },
-  smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`落地展开 ${SMOKE.radius}m 烟幕，持续 ${SMOKE.life / TICK_HZ}s，阻挡视线`, `Lands into a ${SMOKE.radius}m cloud for ${SMOKE.life / TICK_HZ}s that blocks sight`] },
+  frag: { name: ['破片手雷', 'Frag grenade'], role: [`${FRAG.fuse / TICK_HZ}s 引爆，${FRAG.core}m 内 ${FRAG.damage} 伤害（一击致命），半径 ${FRAG.radius}m，把人炸飞；对护盾双倍伤害`, `Explodes after ${FRAG.fuse / TICK_HZ}s: ${FRAG.damage} damage within ${FRAG.core}m (lethal), ${FRAG.radius}m radius, throws people back; double damage to shields`] },
+  smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`${SMOKE.radius}m 烟幕持续 ${SMOKE.life / TICK_HZ}s，完全遮挡视线和名牌；烟内的人受外部枪击伤害 -${Math.round((1 - SMOKE.cover) * 100)}%`, `A ${SMOKE.radius}m cloud for ${SMOKE.life / TICK_HZ}s hides sight and nameplates; people inside take ${Math.round((1 - SMOKE.cover) * 100)}% less damage from shots fired from outside`] },
 };
 export const utilityCooldownSeconds = () => GRENADE.cooldown / TICK_HZ;
+export const utilityCharges = () => GRENADE.charges;
 
 export function loadoutCards(loadout: Loadout, keyLabel: (action: string) => string) {
   return loadout.map((id, slot) => {

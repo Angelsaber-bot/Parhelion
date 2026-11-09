@@ -101,8 +101,9 @@ export class Hud {
       });
       cooldown($('dash'), me.dashCd / DASH.cooldown, me.dashCd);
       cooldown($('shield'), me.shieldCd / SHIELD.cooldown, me.shieldCd);
-      cooldown($('utility'), me.utilityCd / GRENADE.cooldown, me.utilityCd);
-      const utilityName = me.utility === 'smoke' ? bilingual('烟雾', 'Smoke') : bilingual('手雷', 'Frag');
+      // Charges first: the dial only greys out once both grenades are spent.
+      cooldown($('utility'), me.utilityCharges > 0 ? 0 : me.utilityCd / GRENADE.cooldown, me.utilityCharges > 0 ? 0 : me.utilityCd);
+      const utilityName = `${me.utility === 'smoke' ? bilingual('烟雾', 'Smoke') : bilingual('手雷', 'Frag')} ×${me.utilityCharges}`;
       if ($('utility').querySelector('span')!.textContent !== utilityName) $('utility').querySelector('span')!.textContent = utilityName;
       const dead = !me.alive;
       $('dead').classList.toggle('hidden', !dead);

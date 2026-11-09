@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { SUN_DIR } from '../rendering/look';
+import { regionAt } from './regions';
 
 /** Blend across the western seam rather than switching the whole world's palette abruptly. */
 export function twilightWeight(worldX: number, restored = false): number {
@@ -46,6 +47,11 @@ const FIRE = {
   fog: new THREE.Color('#7a4a52'), sun: new THREE.Color('#ffb070'), sky: new THREE.Color('#8f7ab8'), ground: new THREE.Color('#8a6058'),
 };
 const FIRE_SUN = new THREE.Vector3(.3, .2, .93).normalize();
+const EXPANSION_SKIES = [
+  {id:'orleans',top:'#536c99',mid:'#aab9cc',horizon:'#f6ddbd',fog:'#cbd1cb',sun:'#ffe4bb',sky:'#e0e5f0',ground:'#969b7a',direction:new THREE.Vector3(-.6,.55,.35).normalize()},
+  {id:'egypt',top:'#347bb0',mid:'#9dcddd',horizon:'#ffe5b7',fog:'#e3d0aa',sun:'#fff1ce',sky:'#e1edeb',ground:'#bca16a',direction:new THREE.Vector3(.3,.9,.2).normalize()},
+  {id:'qin',top:'#5b8291',mid:'#bed3cb',horizon:'#eee7cf',fog:'#ccd8cc',sun:'#f8edc9',sky:'#dbe8dc',ground:'#829175',direction:new THREE.Vector3(.4,.65,-.4).normalize()},
+].map(p=>({...p,top:new THREE.Color(p.top),mid:new THREE.Color(p.mid),horizon:new THREE.Color(p.horizon),fog:new THREE.Color(p.fog),sun:new THREE.Color(p.sun),sky:new THREE.Color(p.sky),ground:new THREE.Color(p.ground)}));
 
 /** Reuses the existing sky, sunlight and fog; adds no passes, particles or shadow maps. */
 export class KingdomTwilight {
@@ -54,6 +60,7 @@ export class KingdomTwilight {
   private storm = 0;
   private snow = 0;
   private fire = 0;
+  private expansionWeights = [0,0,0];
   private readonly uniforms: Record<string, THREE.IUniform>;
   constructor(sky: THREE.Mesh, private sun: THREE.DirectionalLight,
     private hemisphere: THREE.HemisphereLight, private scene: THREE.Scene) {
@@ -78,6 +85,16 @@ export class KingdomTwilight {
       this.scene.fog.color.copy(DAY.fog).lerp(DUSK.fog, a).lerp(STORM.fog, b).lerp(SNOW.fog, c).lerp(FIRE.fog, f);
       this.scene.fog.near = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(120, 145, a), 120, b), 100, c), 110, f);
       this.scene.fog.far = THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(THREE.MathUtils.lerp(720, 680, a), 640, b), 600, c), 620, f);
+    }
+    // Corner domains own their atmosphere; axis-based legacy era blends alone
+    // would make Egypt inherit Kyoto's fire and Qin inherit the winter storm.
+    const region=regionAt(x,z).id;
+    for(const [i,preset] of EXPANSION_SKIES.entries()) {
+      const weight=this.expansionWeights[i]=THREE.MathUtils.damp(this.expansionWeights[i],region===preset.id?1:0,1.8,dt);
+      for(const key of ['top','mid','horizon'] as const)(this.uniforms[key].value as THREE.Color).lerp(preset[key],weight);
+      this.direction.lerp(preset.direction,weight).normalize();this.sun.color.lerp(preset.sun,weight);this.sun.intensity=THREE.MathUtils.lerp(this.sun.intensity,2.7,weight);
+      this.hemisphere.color.lerp(preset.sky,weight);this.hemisphere.groundColor.lerp(preset.ground,weight);
+      if(this.scene.fog instanceof THREE.Fog){this.scene.fog.color.lerp(preset.fog,weight);this.scene.fog.near=THREE.MathUtils.lerp(this.scene.fog.near,150,weight);this.scene.fog.far=THREE.MathUtils.lerp(this.scene.fog.far,780,weight);}
     }
   }
 }

@@ -6,6 +6,7 @@ import { WorldGrid } from '../src/map/grid.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
 import { COMBAT } from '../src/combat/combat.ts';
 import { REGIONS, regionAt } from '../src/map/regions.ts';
+import { isCampaignRegion } from '../src/core/regionIdentity';
 import { layout, grid, q, spawns, minis } from './enemy-live-terrain.fixture.ts';
 import type { Layout } from '../src/core/types.ts';
 
@@ -41,7 +42,8 @@ test('actual runtime map with settlements has moderately denser grounded encount
   assert.ok(spawns.length>=140 && spawns.length<=150,`ordinary count ${spawns.length}`);
   assert.ok(spawns.length+minis.length<=COMBAT.wildernessCap);
   assert.equal(minis.length,5);assert.equal(new Set(minis.map(e=>regionAt(e.p.x,e.p.z).id)).size,5);
-  for(const def of REGIONS)assert.ok(spawns.filter(e=>regionAt(e.p.x,e.p.z).id===def.id).length>=27,def.id);
+  for(const def of REGIONS.filter(r=>isCampaignRegion(r.id)))assert.ok(spawns.filter(e=>regionAt(e.p.x,e.p.z).id===def.id).length>=27,def.id);
+  assert.ok(spawns.every(e=>isCampaignRegion(regionAt(e.p.x,e.p.z).id)),'new blockouts do not inherit finished campaign encounters');
   for(const enemy of [...spawns,...minis]){
     assert.ok(q.safeSpawn(enemy.p.x,enemy.p.z),`${enemy.id} respects actual settlement and quest filters`);
     assert.ok(q.clear(enemy.p));
@@ -55,7 +57,7 @@ test('authored route coverage is improved in every region without filling protec
   // Baseline sampled the same 20m path points: median distances were 86.6,99.1,74.5,65.8,80.3m.
   // Samples include safe hubs; requiring every point to have combat would violate town safety.
   const limits:Record<string,number>={alpha:65,britain:65,blacksail:60,winter:60,kyoto:60};
-  for(const def of REGIONS){
+  for(const def of REGIONS.filter(r=>isCampaignRegion(r.id))){
     const samples:number[]=[];
     for(const path of layout.paths)for(let i=1;i<path.length;i++){
       const a=path[i-1],b=path[i],length=Math.hypot(b[0]-a[0],b[1]-a[1]);

@@ -6,8 +6,10 @@ import {REGIONS} from '../src/map/regions';
 import {isStaticArtEligible} from '../src/rendering/chunk';
 import {carveFlagshipDeck} from '../src/map/shipInteriorCut';
 import {compress} from './gen/export';
-const manifest:Record<string,{core:number;visual:number;source:number}>={};
-for(const def of REGIONS){
+const manifestUrl=new URL('../public/assets/world-stream.manifest.json',import.meta.url);
+const expansionsOnly=process.argv.includes('--expansions');
+const manifest:Record<string,{core:number;visual:number;source:number}>=expansionsOnly?JSON.parse(readFileSync(manifestUrl,'utf8')):{};
+for(const def of REGIONS.filter(def=>!expansionsOnly||['orleans','egypt','qin'].includes(def.id))){
  const source=readFileSync(new URL(`../public/assets/${def.file}.glb`,import.meta.url));
  const gltf=await regionLoader().parseAsync(source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength),'');bakeQuantized(gltf.scene);
  if(def.id==='blacksail')gltf.scene.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh||m.name==='Terrain'||m.name==='COL_Terrain')return;const cut=carveFlagshipDeck(m.geometry);if(cut){m.geometry.dispose();m.geometry=cut;}});

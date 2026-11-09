@@ -23,5 +23,20 @@
     "source": 12713728,
     "core": 2324704,
     "visual": 10735492
+  },
+  "orleans": {
+    "source": 716896,
+    "core": 1022512,
+    "visual": 36468
+  },
+  "egypt": {
+    "source": 706556,
+    "core": 1172656,
+    "visual": 38192
+  },
+  "qin": {
+    "source": 658520,
+    "core": 1094152,
+    "visual": 33560
   }
 }
