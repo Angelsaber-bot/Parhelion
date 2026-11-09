@@ -778,7 +778,7 @@ class Avatar {
       poseMelee(this.gun, this.weapon, windup, this.meleeHit, false);
       this.anim.melee(windup, this.meleeHit, this.weapon);
       this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
-    } else this.anim.melee(0, 0);
+    } else { this.anim.melee(0, 0); this.presentation?.animate(0, 0); }
   }
 
   setWeapon(weapon: number, skin: number) {

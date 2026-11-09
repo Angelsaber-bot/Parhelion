@@ -8,6 +8,7 @@ import {signatureOf,signatureModelOf,type SignatureStyle,type SignatureId} from 
 import type {ArtDef,ArtInstance} from '../weapons/weaponArt.ts';
 import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
 import {buildSecondCollection} from './signatureCollectionTwo.ts';
+import {buildThirdCollection,THIRD_COLLECTION_MODELS} from './signatureCollectionThree.ts';
 import {refineWeaponMaterial} from '../weapons/weaponSurface.ts';
 
 export type V=readonly[number,number,number];
@@ -25,8 +26,12 @@ export class Sculpture{
   this.pearl=new THREE.MeshPhysicalMaterial({name:'Sculpt_pearl',color:0xf2e9d1,metalness:.13,roughness:.27,clearcoat:1});
   for(const material of [this.coat,this.metal,this.dark,this.glow,this.soft,this.pearl])material.userData.finish=style.id;
  }
+ readonly pivots:Record<string,THREE.Vector3>={};
  part(role='body'){if(!this.parts[role]){const group=new THREE.Group();group.name=`${this.def.file}__${role}`;this.parts[role]=group;this.asset.add(group);}return this.parts[role];}
- mesh(g:THREE.BufferGeometry,m:THREE.Material,p:V=[0,0,0],role='body',rotation:V=[0,0,0]){const mesh=new THREE.Mesh(g,m);mesh.position.fromArray(p);mesh.rotation.set(...rotation);mesh.castShadow=true;mesh.receiveShadow=true;this.part(role).add(mesh);return mesh;}
+ /** A rigid rotor around `pivot`. Authored in model coordinates; the group sits
+  * at the pivot so `signatureMotion.ts` can turn it without moving any socket. */
+ spin(role:string,pivot:V,speed:number,boost=0,axis:'x'|'y'|'z'='x'){const group=this.part(role);group.position.fromArray(pivot);this.pivots[role]=group.position.clone();group.userData.spin={axis,speed,boost};return group;}
+ mesh(g:THREE.BufferGeometry,m:THREE.Material,p:V=[0,0,0],role='body',rotation:V=[0,0,0]){const mesh=new THREE.Mesh(g,m);mesh.position.fromArray(p);if(this.pivots[role])mesh.position.sub(this.pivots[role]);mesh.rotation.set(...rotation);mesh.castShadow=true;mesh.receiveShadow=true;this.part(role).add(mesh);return mesh;}
  box(size:V,p:V,m:THREE.Material=this.coat,role='body',round=.025){return this.mesh(new RoundedBoxGeometry(...size,2,Math.min(round,...size.map(n=>n*.35))),m,p,role);}
  rod(a:V,b:V,r:number,m:THREE.Material=this.metal,role='body',top=r,segments=12){const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),d=end.clone().sub(start);const mesh=this.mesh(new THREE.CylinderGeometry(top,r,d.length(),segments),m,start.clone().add(end).multiplyScalar(.5).toArray()as[number,number,number],role);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return mesh;}
  sphere(r:number,p:V,m:THREE.Material=this.glow,scale:V=[1,1,1],role='body'){const mesh=this.mesh(new THREE.SphereGeometry(r,24,16),m,p,role);mesh.scale.fromArray(scale);return mesh;}
@@ -132,6 +137,6 @@ function confectionHammer(s:Sculpture){
 
 export function buildSignatureModel(def:ArtDef,id?:string):ArtInstance|null{
  const model=signatureModelOf(id,def.combat),style=signatureOf(id,def.combat);if(!model||!style)return null;
- const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:buildSecondCollection(sculpture,model);break;}
+ const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:if((THIRD_COLLECTION_MODELS as readonly string[]).includes(model))buildThirdCollection(sculpture,model);else buildSecondCollection(sculpture,model);break;}
  return sculpture.finish();
 }

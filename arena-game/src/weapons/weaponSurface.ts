@@ -35,6 +35,12 @@ export const WEAPON_SURFACES:Record<SignatureId,Finish>={
  'guard-sash':finish('weave',155,.000060,.035,.25,.32),
  'sealed-passage':finish('paper',110,.000025,.040,.22,.35),
  'night-nacre':finish('lacquer',170,.000020,.025,.92,.14),
+ 'stormcoil':finish('titanium',200,.000040,.030,.6,.2),
+ 'lantern-warden':finish('cast',120,.000090,.060,.2,.36),
+ 'bastion-breaker':finish('polymer',170,.000040,.035,.55,.24),
+ 'petal-scabbard':finish('lacquer',180,.000020,.020,1,.09),
+ 'hummingbird':finish('enamel',150,.000030,.030,.9,.12),
+ 'void-lance':finish('titanium',220,.000040,.030,.35,.26),
 };
 
 export function surfaceRole(name:string):SurfaceRole{

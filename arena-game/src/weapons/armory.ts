@@ -2,12 +2,13 @@ import { bilingual, localizeDom, localizeText, onLanguageChange } from '../../..
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { WEAPON_ART, weaponArtPool, type ArtHandle } from './weaponArt.ts';
+import { WEAPON_ART, weaponArtPool, type ArtHandle, type ArtInstance } from './weaponArt.ts';
 import { WEAPONS } from '../../shared/content.ts';
 import { displayWeaponName } from '../ui/loadout.ts';
 import {finishOf,FINISH_DETAILS,updateFinishClock} from '../cosmetics/weaponFinishes.ts';
 import {signatureOf,signaturesFor,signatureModelOf} from '../../shared/signatureSkins.ts';
 import {lightWeaponScene} from './weaponLighting.ts';
+import {spinSignatureParts} from '../cosmetics/signatureMotion.ts';
 import {ArenaCombatEffects} from '../rendering/combatEffects.ts';
 import {skinEffect} from '../cosmetics/skinEffects.ts';
 import {FrameGate} from '../rendering/renderScheduling.ts';
@@ -90,6 +91,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     localizeDom(dialog);
   };
   const unsubscribeLanguage = onLanguageChange(renderDetails);
+  let shown:ArtInstance|null=null;
   const select = async (id: string,preserveView=false) => {
     if(closed||!dialog.isConnected)return;
     const def = WEAPON_ART.find((a) => a.id === id)!; selected = id;
@@ -104,7 +106,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
       const instance = await current.ready;
       if (!instance || closed || ticket !== serial) return;
       const box = new THREE.Box3().setFromObject(instance.root), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3());
-      instance.root.position.sub(center); scene.add(instance.root);instance.root.updateMatrixWorld(true);
+      instance.root.position.sub(center); scene.add(instance.root);instance.root.updateMatrixWorld(true);shown=instance;
       fxId=colors.id;fxMelee=weapon.kind==='melee';
       fxStart=instance.root.localToWorld(new THREE.Vector3(...(def.muzzle??[.25,0,0])));
       fxEnd=fxStart.clone().add(new THREE.Vector3(fxMelee?.45:.65,fxMelee?.25:0,0));
@@ -138,7 +140,7 @@ export function openArmory(options:{skins?:readonly number[];equip?:(weapon:numb
     renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
   }); observer.observe(canvas);
   const previewFrames=new FrameGate(30);
-  renderer.setAnimationLoop(now => { if(document.visibilityState==='hidden'||!previewFrames.allow(now))return;effects.update(Math.min(.1,Math.max(0,(now-frameTime)/1000)));frameTime=now;updateFinishClock(now/1000);controls.update(); renderer.render(scene, camera); });
+  renderer.setAnimationLoop(now => { if(document.visibilityState==='hidden'||!previewFrames.allow(now))return;if(shown?.root.parent===scene)spinSignatureParts(shown.parts,now/1000);effects.update(Math.min(.1,Math.max(0,(now-frameTime)/1000)));frameTime=now;updateFinishClock(now/1000);controls.update(); renderer.render(scene, camera); });
   dialog.addEventListener('close', () => {
     closed = true;removeEventListener('pagehide',pageExit);unsubscribeLanguage(); ++serial; handle?.release(); observer.disconnect(); controls.dispose();
     renderer.setAnimationLoop(null);effects.dispose();glowTexture.dispose(); env.dispose(); renderer.dispose(); renderer.forceContextLoss(); dialog.remove();

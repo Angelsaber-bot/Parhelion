@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "source": "arena-game/src/signatureModels.ts",
+  "source": "arena-game/src/cosmetics/signatureModels.ts",
   "coordinates": "+X forward, +Y up; same raw socket coordinates as the original weapon registry",
   "runtime": "Constructed on demand by the same native builders; these editable exports are not extra runtime downloads.",
   "models": [
@@ -647,6 +647,270 @@
       },
       "bytes": 184640,
       "sha256": "9e95186583c0a3beeab8edbe33d9d43afb7e4278523eb7e97743af50970e4170"
+    },
+    {
+      "id": "stormcoil",
+      "weapon": "lumen",
+      "name": "雷鸣回路",
+      "file": "stormcoil.glb",
+      "triangles": 29508,
+      "meshes": 18,
+      "bounds": {
+        "min": [
+          -1.434999942779541,
+          -0.455608069896698,
+          -0.2199999988079071
+        ],
+        "max": [
+          1.9700000286102295,
+          0.8830000162124634,
+          0.2199999988079071
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.5,
+          -0.21,
+          0
+        ],
+        "support": [
+          0.86,
+          0.04,
+          0
+        ],
+        "muzzle": [
+          1.887,
+          0.29,
+          0
+        ],
+        "sight": [
+          -0.146,
+          0.783,
+          0
+        ]
+      },
+      "bytes": 842000,
+      "sha256": "673cb4bcc664346c602693ef6fcb73f604e919ac0d38ef188f9fdb298ed1225e"
+    },
+    {
+      "id": "lantern-warden",
+      "weapon": "corona",
+      "name": "守灯人",
+      "file": "lantern-warden.glb",
+      "triangles": 22392,
+      "meshes": 15,
+      "bounds": {
+        "min": [
+          -1.4850000143051147,
+          -0.47060808539390564,
+          -0.2150000035762787
+        ],
+        "max": [
+          1.7730000019073486,
+          0.8930000066757202,
+          0.1899999976158142
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.5,
+          -0.225,
+          0
+        ],
+        "support": [
+          0.8,
+          0.08,
+          0
+        ],
+        "muzzle": [
+          1.773,
+          0.31,
+          0
+        ],
+        "sight": [
+          -0.306,
+          0.793,
+          0
+        ]
+      },
+      "bytes": 610252,
+      "sha256": "f75594ba1fafaa956d57102c8741d83757e59982450f009a783e57f49c986162"
+    },
+    {
+      "id": "bastion-breaker",
+      "weapon": "corona",
+      "name": "铁壁重铳",
+      "file": "bastion-breaker.glb",
+      "triangles": 20304,
+      "meshes": 14,
+      "bounds": {
+        "min": [
+          -1.475000023841858,
+          -0.47060808539390564,
+          -0.22499999403953552
+        ],
+        "max": [
+          1.7769999504089355,
+          0.8930000066757202,
+          0.21899999678134918
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.5,
+          -0.225,
+          0
+        ],
+        "support": [
+          0.8,
+          0.08,
+          0
+        ],
+        "muzzle": [
+          1.773,
+          0.31,
+          0
+        ],
+        "sight": [
+          -0.306,
+          0.793,
+          0
+        ]
+      },
+      "bytes": 666420,
+      "sha256": "76fa1bb154c0b21f55fa0c640178e94207c44e9776b79066f3c9f062e78aaa04"
+    },
+    {
+      "id": "petal-scabbard",
+      "weapon": "halo",
+      "name": "残樱刃鞘",
+      "file": "petal-scabbard.glb",
+      "triangles": 34228,
+      "meshes": 15,
+      "bounds": {
+        "min": [
+          -1.5564574003219604,
+          -0.3318224251270294,
+          -0.2070000022649765
+        ],
+        "max": [
+          1.8200000524520874,
+          0.934499979019165,
+          0.2070000022649765
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.12,
+          -0.085,
+          0
+        ],
+        "support": [
+          0.84,
+          0.12,
+          0
+        ],
+        "muzzle": [
+          1.817,
+          0.33,
+          0
+        ],
+        "sight": [
+          -0.24,
+          0.81,
+          0
+        ]
+      },
+      "bytes": 1282192,
+      "sha256": "ed4eb24b4d85add9cb2d3bf64bdbd07abba746a2ee0be3cea7485d82e6bcc094"
+    },
+    {
+      "id": "hummingbird",
+      "weapon": "firefly",
+      "name": "蜂鸟旋翼",
+      "file": "hummingbird.glb",
+      "triangles": 23284,
+      "meshes": 19,
+      "bounds": {
+        "min": [
+          -1.274999976158142,
+          -0.4696202278137207,
+          -0.2678781747817993
+        ],
+        "max": [
+          1.2699999809265137,
+          0.9330000281333923,
+          0.2678781747817993
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.41,
+          -0.135,
+          0
+        ],
+        "support": [
+          0.7,
+          -0.1,
+          0
+        ],
+        "muzzle": [
+          1.267,
+          0.31,
+          0
+        ],
+        "sight": [
+          0.12,
+          0.833,
+          0
+        ]
+      },
+      "bytes": 770452,
+      "sha256": "e7d8143c521096b476ffcacb24216c5e954dabc09ea5638e78a693be9ad1e0c9"
+    },
+    {
+      "id": "void-lance",
+      "weapon": "longnight",
+      "name": "星渊轨炮",
+      "file": "void-lance.glb",
+      "triangles": 33040,
+      "meshes": 18,
+      "bounds": {
+        "min": [
+          -1.7350000143051147,
+          -0.455608069896698,
+          -0.29500001668930054
+        ],
+        "max": [
+          2.4200000762939453,
+          0.8755910992622375,
+          0.2280000001192093
+        ]
+      },
+      "sockets": {
+        "grip": [
+          -0.52,
+          -0.21,
+          0
+        ],
+        "support": [
+          0.93,
+          0.05,
+          0
+        ],
+        "muzzle": [
+          2.417,
+          0.29,
+          0
+        ],
+        "sight": [
+          -0.66,
+          0.73,
+          0
+        ]
+      },
+      "bytes": 957736,
+      "sha256": "6ca21fac07109bde7c7fd3d0f956c4e3c5bc96441f359aad47284f59a07d5c17"
     }
   ]
 }

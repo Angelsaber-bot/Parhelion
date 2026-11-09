@@ -48,3 +48,16 @@ for(const skin of modeled)it(`${skin.id}: real view-model poses keep original so
  }
  presentation.dispose();
 });
+it('every firearm carries the same number of exclusive finishes, at least three of them full models',()=>{
+ const guns=WEAPONS.filter(w=>w.kind!=='melee'),counts=new Set(guns.map(w=>w.skins.length));
+ expect(counts.size).toBe(1);expect([...counts][0]).toBe(5);
+ for(const w of guns)expect(modeled.filter(s=>s.weapon===w.id).length).toBeGreaterThanOrEqual(3);
+});
+for(const id of ['stormcoil','lantern-warden','hummingbird','void-lance'])it(`${id}: its rotor turns around a fixed pivot and speeds up under kick`,async()=>{
+ const {spinSignatureParts}=await import('../src/cosmetics/signatureMotion.ts');
+ const skin=SIGNATURE_SKINS.find(s=>s.id===id)!,def=combatArt(skin.weapon)!,pool=new WeaponArtPool(async()=>{throw Error('unexpected');}),h=pool.acquire(def,skin),model=(await h.ready)!;
+ const rotors=Object.values(model.parts).filter(p=>p.userData.spin);expect(rotors).toHaveLength(1);const rotor=rotors[0],pivot=rotor.position.clone();
+ spinSignatureParts(model.parts,1);spinSignatureParts(model.parts,1.05);const idle=rotor.rotation.x;expect(idle).toBeGreaterThan(0);
+ spinSignatureParts(model.parts,1.10,1);expect(rotor.rotation.x-idle).toBeGreaterThan(idle);expect(rotor.position.distanceTo(pivot)).toBe(0);
+ spinSignatureParts(model.parts,Number.NaN);spinSignatureParts(model.parts,500);expect(Number.isFinite(rotor.rotation.x)).toBe(true);h.release();
+});

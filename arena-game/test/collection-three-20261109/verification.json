@@ -1,0 +1,45 @@
+{
+  "workshopCounts": [
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "2 exclusive finishes",
+    "3 exclusive finishes",
+    "3 exclusive finishes"
+  ],
+  "fps": {
+    "stormcoil": {
+      "model": "stormcoil",
+      "rotorBefore": 0,
+      "rotorAfter": 2.248080000000451
+    },
+    "lantern-warden": {
+      "model": "lantern-warden",
+      "rotorBefore": 0,
+      "rotorAfter": 0.2907099999999514
+    },
+    "bastion-breaker": {
+      "model": "bastion-breaker",
+      "rotorBefore": null,
+      "rotorAfter": null
+    },
+    "petal-scabbard": {
+      "model": "petal-scabbard",
+      "rotorBefore": null,
+      "rotorAfter": null
+    },
+    "hummingbird": {
+      "model": "hummingbird",
+      "rotorBefore": 0,
+      "rotorAfter": 5.0663999999994225
+    },
+    "void-lance": {
+      "model": "void-lance",
+      "rotorBefore": 0,
+      "rotorAfter": 0.91321999999995
+    }
+  },
+  "errors": []
+}

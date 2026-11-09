@@ -19,6 +19,9 @@ const motifs:Record<SignatureId,readonly[ParticleShape,TrailShape,number,number,
  'guard-sash':['ember','straight',.20,1.4,.14],
  'sealed-passage':['ember','straight',.22,1.5,.15],
  'night-nacre':['crystal','straight',.22,1.4,.14],
+ 'stormcoil':['star','fork',.24,2.6,.21], 'lantern-warden':['ember','pulse',.28,3.4,.24],
+ 'bastion-breaker':['ring','straight',.24,3.2,.23], 'petal-scabbard':['petal','straight',.27,2.2,.17],
+ 'hummingbird':['star','wave',.22,2.2,.16], 'void-lance':['ring','pulse',.32,1.8,.25],
 };
 export function skinEffect(id?:string):SkinEffect|undefined{
  const s=signatureOf(id);if(!s)return;const [particle,trail,life,spread,flash]=motifs[s.id];
