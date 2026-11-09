@@ -9,17 +9,17 @@
       "weapon": "lumen",
       "name": "潮汐引擎",
       "file": "tidal-engine.glb",
-      "triangles": 19736,
-      "meshes": 15,
+      "triangles": 18366,
+      "meshes": 16,
       "bounds": {
         "min": [
           -1.475000023841858,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.21799999475479126
         ],
         "max": [
           1.8899999856948853,
-          0.8830000162124634,
+          0.9049999713897705,
           0.21799999475479126
         ]
       },
@@ -45,20 +45,20 @@
           0
         ]
       },
-      "bytes": 561236,
-      "sha256": "cf1cd30e12d64c3e050228daca467b8375483021605d134f6beda5d05ececa23"
+      "bytes": 616460,
+      "sha256": "d6965979c2ddcaacf49f86574e3a97cbab356d34af1c4fa371a8badf39fccede"
     },
     {
       "id": "celadon-atlas",
       "weapon": "halo",
       "name": "青瓷山海",
       "file": "celadon-atlas.glb",
-      "triangles": 18324,
+      "triangles": 16198,
       "meshes": 14,
       "bounds": {
         "min": [
           -1.5149999856948853,
-          -0.330608069896698,
+          -0.356401264667511,
           -0.22085155546665192
         ],
         "max": [
@@ -89,20 +89,20 @@
           0
         ]
       },
-      "bytes": 510452,
-      "sha256": "221429fb490ccee3918669e5ede86a6e7c67c8b963414ca04adf9216e925dad0"
+      "bytes": 470524,
+      "sha256": "bbffe466571b1c97d53cdadf21fb8f2806e8168650106f09a40937e69a2a2064"
     },
     {
       "id": "abyssal-requiem",
       "weapon": "longnight",
       "name": "鲸落深蓝",
       "file": "abyssal-requiem.glb",
-      "triangles": 29824,
+      "triangles": 23850,
       "meshes": 15,
       "bounds": {
         "min": [
           -1.668078064918518,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.29500001668930054
         ],
         "max": [
@@ -133,8 +133,8 @@
           0
         ]
       },
-      "bytes": 847464,
-      "sha256": "26bb4499b62be19d867add27f7a4d72062369bd3c561cbe42e202b758abd74d2"
+      "bytes": 707932,
+      "sha256": "d3bd76ac13abc0b88cadb79b323d29c257678621d3fa8f096002875760b6de7c"
     },
     {
       "id": "vermilion-plume",
@@ -175,7 +175,7 @@
       "weapon": "hammer",
       "name": "熔城钟鸣",
       "file": "foundry-bell.glb",
-      "triangles": 17220,
+      "triangles": 12486,
       "meshes": 7,
       "bounds": {
         "min": [
@@ -201,25 +201,25 @@
           0
         ]
       },
-      "bytes": 462056,
-      "sha256": "bfcbbb3df8da2c3be78e63fd1bb6d3bbfbe11e5d6e8c916325b82dab527ee606"
+      "bytes": 341824,
+      "sha256": "90570f3c5197c93ab2323de2d00cbc1a553450c21199205f47f6fa557ac3bad6"
     },
     {
       "id": "amber-apiary",
       "weapon": "lumen",
       "name": "琥珀蜂巢",
       "file": "amber-apiary.glb",
-      "triangles": 23292,
-      "meshes": 15,
+      "triangles": 22062,
+      "meshes": 16,
       "bounds": {
         "min": [
           -1.475000023841858,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.19500000774860382
         ],
         "max": [
           1.8899999856948853,
-          0.8830000162124634,
+          0.9049999713897705,
           0.1583714336156845
         ]
       },
@@ -245,25 +245,25 @@
           0
         ]
       },
-      "bytes": 1006192,
-      "sha256": "85559256194390a8f078037e5e8e9ef88c6508ae4929909645f50132b215b484"
+      "bytes": 1063656,
+      "sha256": "509f5a140f7f3e79e4b62d0369b824e086a734307de9dc979c7aeed044c8fe36"
     },
     {
       "id": "mint-arcade",
       "weapon": "firefly",
       "name": "薄荷街机",
       "file": "mint-arcade.glb",
-      "triangles": 24344,
-      "meshes": 17,
+      "triangles": 23602,
+      "meshes": 18,
       "bounds": {
         "min": [
           -1.3700000047683716,
-          -0.38060808181762695,
+          -0.40640127658843994,
           -0.1550000011920929
         ],
         "max": [
           1.2699999809265137,
-          0.9330000281333923,
+          0.9549999833106995,
           0.1550000011920929
         ]
       },
@@ -289,26 +289,26 @@
           0
         ]
       },
-      "bytes": 724836,
-      "sha256": "47d6a29a6e3e9ac9ac4f24de414ad2ca93bcffda15000557f9b259c227786429"
+      "bytes": 790796,
+      "sha256": "3fae8d51b1371ba3e807859a9c9b5add7d413cb926ff4a060f876c8d1e503a4f"
     },
     {
       "id": "abyssal-maw",
       "weapon": "corona",
       "name": "深渊巨口",
       "file": "abyssal-maw.glb",
-      "triangles": 13784,
-      "meshes": 13,
+      "triangles": 11490,
+      "meshes": 14,
       "bounds": {
         "min": [
           -1.4450000524520874,
-          -0.43905532360076904,
-          -0.23199999332427979
+          -0.49640128016471863,
+          -0.23149047791957855
         ],
         "max": [
           1.7730000019073486,
-          0.8930000066757202,
-          0.23199999332427979
+          0.9150000214576721,
+          0.23149047791957855
         ]
       },
       "sockets": {
@@ -333,20 +333,20 @@
           0
         ]
       },
-      "bytes": 411844,
-      "sha256": "5c7698b87e566272d54ff261515c6389b9276efd64350a3f48b9707256f4cef0"
+      "bytes": 446504,
+      "sha256": "f804bc2637d6addcdea3bf03177ed4f1acf76ed10536a9096a4644e4d7da071c"
     },
     {
       "id": "velvet-thorn",
       "weapon": "longnight",
       "name": "绯夜蔷薇",
       "file": "velvet-thorn.glb",
-      "triangles": 21442,
+      "triangles": 20172,
       "meshes": 17,
       "bounds": {
         "min": [
           -1.6349999904632568,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.29500001668930054
         ],
         "max": [
@@ -377,26 +377,26 @@
           0
         ]
       },
-      "bytes": 612296,
-      "sha256": "bc193322f50227ac8a52f3c28e8dc6a7a52a0904b99c42ec35603a58939759dd"
+      "bytes": 592760,
+      "sha256": "bdfe6c2e5e7dd030aa5b61031c831d3b842c16de7f0195a786c10adb41b33a9d"
     },
     {
       "id": "prismwing",
       "weapon": "blade",
       "name": "琉光蝶刃",
       "file": "prismwing.glb",
-      "triangles": 12748,
+      "triangles": 9078,
       "meshes": 5,
       "bounds": {
         "min": [
           -0.7138000130653381,
           -0.3045211434364319,
-          -0.10045000165700912
+          -0.09976214915513992
         ],
         "max": [
           1.5605543851852417,
           0.3045211434364319,
-          0.10045000165700912
+          0.09976214915513992
         ]
       },
       "sockets": {
@@ -411,8 +411,8 @@
           0
         ]
       },
-      "bytes": 363304,
-      "sha256": "825e3ba9d0dba1f711caf51b89a49de8854c85dec0696666ee540c5a1490ad05"
+      "bytes": 275704,
+      "sha256": "1af850dbf7397f1c67ded7553759a0249009569ac687d4a18ff5f43468ad11e9"
     },
     {
       "id": "ink-bamboo",
@@ -453,17 +453,17 @@
       "weapon": "hammer",
       "name": "糖霜重击",
       "file": "sugar-crash.glb",
-      "triangles": 28644,
+      "triangles": 23800,
       "meshes": 5,
       "bounds": {
         "min": [
-          -1.3809000253677368,
+          -1.3805663585662842,
           -0.41499999165534973,
           -0.28999999165534973
         ],
         "max": [
           0.9350000023841858,
-          0.4950000047683716,
+          0.7053698897361755,
           0.28999999165534973
         ]
       },
@@ -479,26 +479,26 @@
           0
         ]
       },
-      "bytes": 738440,
-      "sha256": "015ca10e3ac14640a6932344ab27ac654fcc5ea62f7786984e49499dede1a97c"
+      "bytes": 660468,
+      "sha256": "9648c45a2573a9a15c08a71e77ac43296beec35c34df71a7b300a7cfb23a5b9f"
     },
     {
       "id": "graviton-crucible",
       "weapon": "lumen",
       "name": "引力熔环",
       "file": "graviton-crucible.glb",
-      "triangles": 26400,
-      "meshes": 16,
+      "triangles": 19698,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.4175000190734863,
           -0.618232786655426,
-          -0.27799999713897705
+          -0.27676260471343994
         ],
         "max": [
           1.8899999856948853,
-          0.8830000162124634,
-          0.27799999713897705
+          0.9049999713897705,
+          0.27676260471343994
         ]
       },
       "sockets": {
@@ -523,16 +523,16 @@
           0
         ]
       },
-      "bytes": 747232,
-      "sha256": "4eb3a468c7d6cdd6a4789c7c7f864ce380e71191149c58e8f8a44b6ba137cfbe"
+      "bytes": 668764,
+      "sha256": "6cef88576e8e01ad7f6ad3ef0eb34a3934e4995ac92551521fb10a77e1422cac"
     },
     {
       "id": "koi-current",
       "weapon": "firefly",
       "name": "游鲤",
       "file": "koi-current.glb",
-      "triangles": 19904,
-      "meshes": 17,
+      "triangles": 18850,
+      "meshes": 18,
       "bounds": {
         "min": [
           -1.2112228870391846,
@@ -541,7 +541,7 @@
         ],
         "max": [
           1.2699999809265137,
-          0.9330000281333923,
+          0.9549999833106995,
           0.230467289686203
         ]
       },
@@ -567,20 +567,20 @@
           0
         ]
       },
-      "bytes": 610632,
-      "sha256": "e3a2c63ee1b2eca5a47f8f749cc1ff5e9565b012f814b386fb67e5443a9fb601"
+      "bytes": 672472,
+      "sha256": "97a6c1403a25d3221d31eb425282772d22b205be29490a4abd53ac66b5629e6d"
     },
     {
       "id": "owl-canticle",
       "weapon": "halo",
       "name": "夜枭圣咏",
       "file": "owl-canticle.glb",
-      "triangles": 21012,
+      "triangles": 15686,
       "meshes": 13,
       "bounds": {
         "min": [
           -1.5154743194580078,
-          -0.3483753800392151,
+          -0.356401264667511,
           -0.2329999953508377
         ],
         "max": [
@@ -611,26 +611,26 @@
           0
         ]
       },
-      "bytes": 622316,
-      "sha256": "0029af4b06d4e8404024559332ad9052d7934febc296cc2fbfc463d2b68bd576"
+      "bytes": 506064,
+      "sha256": "b2de30e3c2902e01c57ec4a1480d0bd521b69c7ac469963d5502d0c80223dde5"
     },
     {
       "id": "meridian-key",
       "weapon": "longnight",
       "name": "时序之钥",
       "file": "meridian-key.glb",
-      "triangles": 35084,
+      "triangles": 23270,
       "meshes": 15,
       "bounds": {
         "min": [
           -1.6785727739334106,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.29500001668930054
         ],
         "max": [
           2.4200000762939453,
           0.8755910992622375,
-          0.21860000491142273
+          0.21804681420326233
         ]
       },
       "sockets": {
@@ -655,16 +655,16 @@
           0
         ]
       },
-      "bytes": 1169104,
-      "sha256": "7044d80f26f8f508c5b99b8de0c2171979e9ff2a042a6525cdebb5cc35fe38a1"
+      "bytes": 897416,
+      "sha256": "398bf305a393ff6d070522a8c4dda204148a9e9e6b466b94ac796f0c104610cc"
     },
     {
       "id": "cloudline",
       "weapon": "lumen",
       "name": "云际航邮",
       "file": "cloudline.glb",
-      "triangles": 17204,
-      "meshes": 13,
+      "triangles": 14518,
+      "meshes": 14,
       "bounds": {
         "min": [
           -1.4292542934417725,
@@ -673,7 +673,7 @@
         ],
         "max": [
           1.8899999856948853,
-          0.8830000162124634,
+          0.9049999713897705,
           0.20550000667572021
         ]
       },
@@ -699,25 +699,25 @@
           0
         ]
       },
-      "bytes": 485616,
-      "sha256": "600130d487249af6b4cf518d71429e4b16a58657ee17b83bd63f9a4da17393c8"
+      "bytes": 508480,
+      "sha256": "ccf1f7b836c9ce62ca28c31bace83b92ee982998e9a5a77cb16e9ac8a9805e2d"
     },
     {
       "id": "cinder-express",
       "weapon": "corona",
       "name": "烬轨快车",
       "file": "cinder-express.glb",
-      "triangles": 23928,
-      "meshes": 12,
+      "triangles": 16778,
+      "meshes": 13,
       "bounds": {
         "min": [
           -1.440000057220459,
-          -0.47060808539390564,
+          -0.49640128016471863,
           -0.19500000774860382
         ],
         "max": [
           1.7760000228881836,
-          0.8930000066757202,
+          0.9150000214576721,
           0.18000000715255737
         ]
       },
@@ -743,26 +743,26 @@
           0
         ]
       },
-      "bytes": 642960,
-      "sha256": "4559fada845da89d476e8fcfa8bba9288eb2560b1abd87a9408a0c69615e1e80"
+      "bytes": 559168,
+      "sha256": "2591e15313c362ddf25b2c2d5ca185c1129df14c30eec9de003d4c4768cb5108"
     },
     {
       "id": "brass-horizon",
       "weapon": "halo",
       "name": "黄铜地平线",
       "file": "brass-horizon.glb",
-      "triangles": 18992,
+      "triangles": 15218,
       "meshes": 13,
       "bounds": {
         "min": [
           -1.495877742767334,
-          -0.330608069896698,
-          -0.1940000057220459
+          -0.356401264667511,
+          -0.19298096001148224
         ],
         "max": [
           1.8200000524520874,
           0.9325000047683716,
-          0.1940000057220459
+          0.19298096001148224
         ]
       },
       "sockets": {
@@ -787,26 +787,26 @@
           0
         ]
       },
-      "bytes": 550600,
-      "sha256": "194edfeba536ce730a52eabf942f8177617619d2e0630157420bc364de8524ec"
+      "bytes": 468144,
+      "sha256": "42fde16117ce133bde2a47374c367e2afab33677f2774bc01ad0303d3e4df113"
     },
     {
       "id": "mixtape",
       "weapon": "firefly",
       "name": "磁带漫游",
       "file": "mixtape.glb",
-      "triangles": 27112,
-      "meshes": 16,
+      "triangles": 20318,
+      "meshes": 20,
       "bounds": {
         "min": [
           -1.2480452060699463,
           -0.47999998927116394,
-          -0.20100000500679016
+          -0.1899999976158142
         ],
         "max": [
           1.2699999809265137,
-          0.9330000281333923,
-          0.20100000500679016
+          0.9549999833106995,
+          0.17949999868869781
         ]
       },
       "sockets": {
@@ -831,21 +831,21 @@
           0
         ]
       },
-      "bytes": 743784,
-      "sha256": "5bc9a996324222a6c8973e47fa3fc8eb668407e89d49a77c6b9e9036cfe8469d"
+      "bytes": 705180,
+      "sha256": "917dbd13fa0a79d35ad86178cc4e1bfc25703dbd4fdc8f2d29a1001a3b42c00b"
     },
     {
       "id": "glacier-survey",
       "weapon": "longnight",
       "name": "冰川勘探",
       "file": "glacier-survey.glb",
-      "triangles": 14152,
+      "triangles": 12990,
       "meshes": 14,
       "bounds": {
         "min": [
           -1.6575827598571777,
-          -0.455608069896698,
-          -0.2919999957084656
+          -0.481401264667511,
+          -0.2905302047729492
         ],
         "max": [
           2.4200000762939453,
@@ -875,26 +875,26 @@
           0
         ]
       },
-      "bytes": 437744,
-      "sha256": "740968dee77ac68783ff4f397a306fe1c26d6c41817e935324a9bc14931ce1ad"
+      "bytes": 420836,
+      "sha256": "244f0705f9e5087d22b5bdf83e492c6f55130fb7a2508807d5b7bb0e52024528"
     },
     {
       "id": "crescent-sabre",
       "weapon": "blade",
       "name": "月港弯刀",
       "file": "crescent-sabre.glb",
-      "triangles": 6484,
-      "meshes": 4,
+      "triangles": 19658,
+      "meshes": 6,
       "bounds": {
         "min": [
-          -0.7365358471870422,
-          -0.23642884194850922,
-          -0.0729999989271164
+          -0.7599999904632568,
+          -0.3499999940395355,
+          -0.1469999998807907
         ],
         "max": [
-          1.5244938135147095,
-          0.405459463596344,
-          0.0729999989271164
+          1.4669897556304932,
+          0.38481074571609497,
+          0.1469999998807907
         ]
       },
       "sockets": {
@@ -909,19 +909,19 @@
           0
         ]
       },
-      "bytes": 174860,
-      "sha256": "d8ee9435ae18a2a626921afc7007f0f2d0e214f12604ffd323061049211d66da"
+      "bytes": 580144,
+      "sha256": "ce57b123e85b92d9c7ce2a8a8f01ed6a1d4d684692cb3369eabdab4ebf5fa305"
     },
     {
       "id": "reef-regalia",
       "weapon": "polearm",
       "name": "珊瑚王权",
       "file": "reef-regalia.glb",
-      "triangles": 11376,
+      "triangles": 10132,
       "meshes": 5,
       "bounds": {
         "min": [
-          -1.7949999570846558,
+          -1.794338345527649,
           -0.34733864665031433,
           -0.09099999815225601
         ],
@@ -943,26 +943,26 @@
           0
         ]
       },
-      "bytes": 304256,
-      "sha256": "b50afb05a0543c7c6c36e02ec1bb624c9457da5f493d9e136d5402c3ea78bb70"
+      "bytes": 274868,
+      "sha256": "6b38c2260b8a450b2a5aa00abdaf42371cb542a6036754d6e5da109bca37e231"
     },
     {
       "id": "cathedral-chime",
       "weapon": "hammer",
       "name": "圣堂回响",
       "file": "cathedral-chime.glb",
-      "triangles": 6304,
+      "triangles": 13952,
       "meshes": 5,
       "bounds": {
         "min": [
-          -1.4045000076293945,
-          -0.33655181527137756,
-          -0.335999995470047
+          -1.404146671295166,
+          -0.4950000047683716,
+          -0.33399999141693115
         ],
         "max": [
-          0.8565518260002136,
-          0.416551798582077,
-          0.335999995470047
+          0.9388427734375,
+          0.6269999742507935,
+          0.33399999141693115
         ]
       },
       "sockets": {
@@ -977,16 +977,16 @@
           0
         ]
       },
-      "bytes": 184640,
-      "sha256": "9e95186583c0a3beeab8edbe33d9d43afb7e4278523eb7e97743af50970e4170"
+      "bytes": 420448,
+      "sha256": "24254560065029f929075a03925785aa598f172d535784e2c4b8fa82b0f5ef13"
     },
     {
       "id": "guard-sash",
       "weapon": "firefly",
       "name": "近卫绶带",
       "file": "guard-sash.glb",
-      "triangles": 18488,
-      "meshes": 14,
+      "triangles": 18634,
+      "meshes": 15,
       "bounds": {
         "min": [
           -1.3153575658798218,
@@ -995,7 +995,7 @@
         ],
         "max": [
           1.70424222946167,
-          0.9330000281333923,
+          0.9549999833106995,
           0.2084108144044876
         ]
       },
@@ -1021,25 +1021,25 @@
           0
         ]
       },
-      "bytes": 555464,
-      "sha256": "5329b18b951ff4531eeba2b886db98af3f8534460b650869e4cb635bcdb2f10b"
+      "bytes": 644844,
+      "sha256": "cb5c3724eb6e38dbe112e6aa6acd2a2ab6cae588ef67874d6ef8cccf3458be50"
     },
     {
       "id": "sealed-passage",
       "weapon": "corona",
       "name": "航契封蜡",
       "file": "sealed-passage.glb",
-      "triangles": 18152,
-      "meshes": 16,
+      "triangles": 17482,
+      "meshes": 17,
       "bounds": {
         "min": [
           -1.434999942779541,
-          -0.47060808539390564,
+          -0.49640128016471863,
           -0.19500000774860382
         ],
         "max": [
           1.7760000228881836,
-          0.8930000066757202,
+          0.9150000214576721,
           0.1850000023841858
         ]
       },
@@ -1065,20 +1065,20 @@
           0
         ]
       },
-      "bytes": 543388,
-      "sha256": "1a2cdbc7db55c60fb4fc8c33d94df2f28ca3175b209b57cd86b6531e1eba7728"
+      "bytes": 615272,
+      "sha256": "3f88c84dee7a4d28a240817d3c924cf073c219c9c890add51a0ba439eb191dd9"
     },
     {
       "id": "night-nacre",
       "weapon": "halo",
       "name": "螺钿夜雨",
       "file": "night-nacre.glb",
-      "triangles": 15356,
+      "triangles": 13390,
       "meshes": 15,
       "bounds": {
         "min": [
           -1.4850000143051147,
-          -0.330608069896698,
+          -0.356401264667511,
           -0.19500000774860382
         ],
         "max": [
@@ -1109,25 +1109,25 @@
           0
         ]
       },
-      "bytes": 514760,
-      "sha256": "43dd1c664aacd3c03de46f702a9fae564aed0464b185928b678e950a8b943c68"
+      "bytes": 478860,
+      "sha256": "02913b3c969e6e7b40b31830936c5f828c89988215ed0ca06e65ebfe3ee8a99b"
     },
     {
       "id": "stormcoil",
       "weapon": "lumen",
       "name": "雷鸣回路",
       "file": "stormcoil.glb",
-      "triangles": 29508,
-      "meshes": 18,
+      "triangles": 26134,
+      "meshes": 19,
       "bounds": {
         "min": [
           -1.434999942779541,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.2199999988079071
         ],
         "max": [
           1.9700000286102295,
-          0.8830000162124634,
+          0.9049999713897705,
           0.2199999988079071
         ]
       },
@@ -1153,25 +1153,25 @@
           0
         ]
       },
-      "bytes": 842000,
-      "sha256": "673cb4bcc664346c602693ef6fcb73f604e919ac0d38ef188f9fdb298ed1225e"
+      "bytes": 837772,
+      "sha256": "9398a2f536194546e00c16039db6e371f33899c48e7d65ccf167a74e08450b3f"
     },
     {
       "id": "lantern-warden",
       "weapon": "corona",
       "name": "守灯人",
       "file": "lantern-warden.glb",
-      "triangles": 22392,
-      "meshes": 15,
+      "triangles": 21322,
+      "meshes": 16,
       "bounds": {
         "min": [
           -1.4850000143051147,
-          -0.47060808539390564,
+          -0.49640128016471863,
           -0.1899999976158142
         ],
         "max": [
           1.7730000019073486,
-          0.8930000066757202,
+          0.9150000214576721,
           0.1899999976158142
         ]
       },
@@ -1197,25 +1197,25 @@
           0
         ]
       },
-      "bytes": 610252,
-      "sha256": "18f441047a5212bac0ad6dabcdd4ca49d88436df75d39d62bb67609b9608810d"
+      "bytes": 672944,
+      "sha256": "53f0d444cf495d7d60043e5859f6001b93a670de0a1c08d29b15e36e58cde35b"
     },
     {
       "id": "bastion-breaker",
       "weapon": "corona",
       "name": "铁壁重铳",
       "file": "bastion-breaker.glb",
-      "triangles": 20304,
-      "meshes": 14,
+      "triangles": 17762,
+      "meshes": 15,
       "bounds": {
         "min": [
           -1.475000023841858,
-          -0.47060808539390564,
+          -0.49640128016471863,
           -0.22499999403953552
         ],
         "max": [
           1.7769999504089355,
-          0.8930000066757202,
+          0.9150000214576721,
           0.21899999678134918
         ]
       },
@@ -1241,20 +1241,20 @@
           0
         ]
       },
-      "bytes": 666420,
-      "sha256": "cea62eb5dbf033ed5a443fdd014854c69a40703f78e0108ea22f18b110dc75fe"
+      "bytes": 691024,
+      "sha256": "91d45372ffa4731ebcb4e6c806a5c94dd33b3b7b0511dcea710d130a4b2352ab"
     },
     {
       "id": "petal-scabbard",
       "weapon": "halo",
       "name": "残樱刃鞘",
       "file": "petal-scabbard.glb",
-      "triangles": 34228,
+      "triangles": 33126,
       "meshes": 15,
       "bounds": {
         "min": [
           -1.5564574003219604,
-          -0.3318224251270294,
+          -0.356401264667511,
           -0.2070000022649765
         ],
         "max": [
@@ -1285,16 +1285,16 @@
           0
         ]
       },
-      "bytes": 1282192,
-      "sha256": "a318277050bc8d65b3a7cc439a913e6d6510834642f2dab1897ab5b979f3a86f"
+      "bytes": 1266836,
+      "sha256": "b25923c49aed5306f7c3f9ba8981d56c6d9f2870751d53a100ff6e1987a36988"
     },
     {
       "id": "hummingbird",
       "weapon": "firefly",
       "name": "蜂鸟旋翼",
       "file": "hummingbird.glb",
-      "triangles": 23284,
-      "meshes": 19,
+      "triangles": 19776,
+      "meshes": 20,
       "bounds": {
         "min": [
           -1.274999976158142,
@@ -1303,7 +1303,7 @@
         ],
         "max": [
           1.2699999809265137,
-          0.9330000281333923,
+          0.9549999833106995,
           0.2678781747817993
         ]
       },
@@ -1329,20 +1329,20 @@
           0
         ]
       },
-      "bytes": 770452,
-      "sha256": "e7d8143c521096b476ffcacb24216c5e954dabc09ea5638e78a693be9ad1e0c9"
+      "bytes": 774620,
+      "sha256": "d8052dfccc03225d456b76ea49721426119cde7b8b1381341ab0c2419e9d049c"
     },
     {
       "id": "void-lance",
       "weapon": "longnight",
       "name": "星渊轨炮",
       "file": "void-lance.glb",
-      "triangles": 33040,
+      "triangles": 23338,
       "meshes": 18,
       "bounds": {
         "min": [
           -1.7350000143051147,
-          -0.455608069896698,
+          -0.481401264667511,
           -0.29500001668930054
         ],
         "max": [
@@ -1373,15 +1373,15 @@
           0
         ]
       },
-      "bytes": 957736,
-      "sha256": "6ca21fac07109bde7c7fd3d0f956c4e3c5bc96441f359aad47284f59a07d5c17"
+      "bytes": 722512,
+      "sha256": "584fa0f44cfa03e0859c59b320ae3ad57ee360b9174fb7c9b4309528a99a5ae5"
     },
     {
       "id": "clockwork-cleaver",
       "weapon": "blade",
       "name": "齿轮裁决",
       "file": "clockwork-cleaver.glb",
-      "triangles": 13564,
+      "triangles": 11836,
       "meshes": 7,
       "bounds": {
         "min": [
@@ -1407,8 +1407,8 @@
           0
         ]
       },
-      "bytes": 449152,
-      "sha256": "874f0eaf1a48a1e4a3e05ef341bb6929e7a024ebfab47c1e48d66ad2f252d651"
+      "bytes": 407872,
+      "sha256": "e2f6d4d73c5ac8dee790676740a7630080b399a12dbf0b8bbca9cd03e3553ed1"
     },
     {
       "id": "serpent-kris",
@@ -1449,7 +1449,7 @@
       "weapon": "blade",
       "name": "霜牙",
       "file": "frost-fang.glb",
-      "triangles": 5188,
+      "triangles": 4868,
       "meshes": 4,
       "bounds": {
         "min": [
@@ -1475,15 +1475,15 @@
           0
         ]
       },
-      "bytes": 147364,
-      "sha256": "97bb4d361ccc705fcb67aa04ad21fa3ed26ccbbf73c7decf3fbc3aa6678d4d56"
+      "bytes": 139680,
+      "sha256": "36955eb89632d3cd7868d3fb5c5b12814b445b3f4ccbb05a8a0c6ece64248413"
     },
     {
       "id": "tide-moon",
       "weapon": "polearm",
       "name": "潮月偃刀",
       "file": "tide-moon.glb",
-      "triangles": 14336,
+      "triangles": 13216,
       "meshes": 6,
       "bounds": {
         "min": [
@@ -1509,15 +1509,15 @@
           0
         ]
       },
-      "bytes": 426080,
-      "sha256": "f3d1385d3d08a75ae540253e1d8f8b460eeb72773fdc6b0e53d06eb847379bec"
+      "bytes": 399900,
+      "sha256": "468b08192ea084a1407fa8872c28abc781d6024e0ba883fd48f88e7ab6efe5e4"
     },
     {
       "id": "storm-halberd",
       "weapon": "polearm",
       "name": "雷霆斧戟",
       "file": "storm-halberd.glb",
-      "triangles": 14020,
+      "triangles": 13348,
       "meshes": 6,
       "bounds": {
         "min": [
@@ -1543,15 +1543,15 @@
           0
         ]
       },
-      "bytes": 383864,
-      "sha256": "da4a1dbe670eb0d6039aaba4298a25cd7b9e423eb22f608beadd2d06437c2b26"
+      "bytes": 367732,
+      "sha256": "253f1b41961560a936c67b40aa9619c2faea8d93af6c1fba8170c5d3f515d3b9"
     },
     {
       "id": "comet-thruster",
       "weapon": "hammer",
       "name": "彗星推进锤",
       "file": "comet-thruster.glb",
-      "triangles": 10776,
+      "triangles": 10314,
       "meshes": 8,
       "bounds": {
         "min": [
@@ -1577,15 +1577,15 @@
           0
         ]
       },
-      "bytes": 376728,
-      "sha256": "ab0d3f0e0c36d71a14d9a045204ceb85ead09567da684fbbf760d5354d1ef675"
+      "bytes": 365732,
+      "sha256": "2139a8cb9d00642132a1b9159923104054196b778c650ec318ada15b83b4bc86"
     },
     {
       "id": "amethyst-geode",
       "weapon": "hammer",
       "name": "紫晶洞",
       "file": "amethyst-geode.glb",
-      "triangles": 9432,
+      "triangles": 8970,
       "meshes": 5,
       "bounds": {
         "min": [
@@ -1611,8 +1611,8 @@
           0
         ]
       },
-      "bytes": 281096,
-      "sha256": "26d30a7356536726007b660fe93708c3685b000b47b81b6b066786fbb14f2e6e"
+      "bytes": 270096,
+      "sha256": "69edc334146abc00829c4f54e169f18207f426a083dd43b165db83deeae2edf5"
     }
   ]
 }

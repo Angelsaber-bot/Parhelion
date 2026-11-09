@@ -4,11 +4,25 @@ import * as THREE from 'three';
 import type {Sculpture,P} from './signatureModels.ts';
 import {finishClock} from './weaponFinishes.ts';
 
+/** Sculpted pistol grip: finger grooves, palm swell, beavertail and flared base,
+ * inset textured panels, a closed trigger guard and a curved trigger blade.
+ * The hand socket is unchanged; only the surrounding form is authored. */
 export function grip(s:Sculpture){
- const [x,y,z]=s.def.grip;
- s.grip([x+.055,y+.24,z],[x-.045,y-.23,z],.075);
- s.outline([[x+.07,y+.17,-.025],[x+.34,y+.17,-.025],[x+.34,y-.08,-.025],[x+.06,y-.11,-.025]],.019,s.metal);
- s.rod([x+.18,y+.14,0],[x+.16,y-.005,0],.014,s.metal);
+ const [x,y,z]=s.def.grip,top=new THREE.Vector2(x+.055,y+.24),bottom=new THREE.Vector2(x-.045,y-.23);
+ const axis=bottom.clone().sub(top),len=axis.length();axis.normalize();const back=new THREE.Vector2(axis.y,-axis.x),front=back.clone().negate();
+ const at=(t:number,side:THREE.Vector2,w:number)=>top.clone().addScaledVector(axis,len*t).addScaledVector(side,w);
+ const groove=(t:number)=>t>.24&&t<.86?.014*Math.max(0,Math.sin((t-.24)/.62*3*Math.PI)):0,flare=(t:number)=>t>.9?(t-.9)*.25:0;
+ const outline:P[]=[];
+ for(let i=0;i<=24;i++){const t=i/24,p=at(t,front,.068+groove(t)+flare(t));outline.push([p.x,p.y]);}
+ for(let i=24;i>=0;i--){const t=i/24,p=at(t,back,.07+.012*Math.sin(t*Math.PI)+flare(t));outline.push([p.x,p.y]);}
+ const tail=at(-.04,back,.15);outline.push([tail.x,tail.y]);const tail2=at(.02,back,.12);outline.push([tail2.x,tail2.y]);
+ s.plate(outline,.13,[0,0,z],s.soft,'body',.022);
+ const panel:P[]=[];for(let i=0;i<=8;i++){const t=.16+.62*i/8,p=at(t,front,.03);panel.push([p.x,p.y]);}for(let i=8;i>=0;i--){const t=.16+.62*i/8,p=at(t,back,.05);panel.push([p.x,p.y]);}
+ s.plate(panel,.168,[0,0,z],s.dark,'body',.006);
+ for(const side of[-1,1])for(let i=0;i<7;i++){const t=.2+i*.085,a=at(t,back,.044),b=at(t,front,.024);s.rod([a.x,a.y,z+side*.091],[b.x,b.y,z+side*.091],.0035,s.soft,'body',.0035,6);}
+ const base=at(1.0,back,0),cap=s.box([.2,.03,.16],[base.x,base.y-.008,z],s.metal,'body',.01);cap.rotation.z=Math.atan2(axis.x,-axis.y);
+ s.outline([[x+.05,y+.17,z],[x+.30,y+.17,z],[x+.345,y+.12,z],[x+.33,y-.04,z],[x+.24,y-.09,z],[x+.10,y-.10,z],[x+.04,y-.06,z]],.017,s.metal);
+ s.outline([[x+.19,y+.17,z],[x+.215,y+.11,z],[x+.20,y+.04,z],[x+.175,y+.01,z]],.012,s.metal);
 }
 /** Open lathed bore: a real dark recess, never a bright cap over the muzzle. */
 export function bore(s:Sculpture,start:number,end:number,y:number,r:number,m:THREE.Material=s.metal){

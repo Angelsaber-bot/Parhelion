@@ -6,7 +6,7 @@ import {RoundedBoxGeometry} from 'three/examples/jsm/geometries/RoundedBoxGeomet
 import {mergeGeometries,mergeVertices,toCreasedNormals} from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import {signatureOf,signatureModelOf,type SignatureStyle,type SignatureId} from '../../shared/signatureSkins.ts';
 import type {ArtDef,ArtInstance} from '../weapons/weaponArt.ts';
-import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
+import {gravitonRifle,koiSmg,owlMarksman,clockSniper,grip as sharedGrip} from './signatureGunModels.ts';
 import {buildSecondCollection} from './signatureCollectionTwo.ts';
 import {buildThirdCollection,THIRD_COLLECTION_MODELS} from './signatureCollectionThree.ts';
 import {buildFourthCollection,FOURTH_COLLECTION_MODELS} from './signatureCollectionFour.ts';
@@ -34,10 +34,17 @@ export class Sculpture{
   * at the pivot so `signatureMotion.ts` can turn it without moving any socket. */
  spin(role:string,pivot:V,speed:number,boost=0,axis:'x'|'y'|'z'='x'){const group=this.part(role);group.position.fromArray(pivot);this.pivots[role]=group.position.clone();group.userData.spin={axis,speed,boost};return group;}
  mesh(g:THREE.BufferGeometry,m:THREE.Material,p:V=[0,0,0],role='body',rotation:V=[0,0,0]){const mesh=new THREE.Mesh(g,m);mesh.position.fromArray(p);if(this.pivots[role])mesh.position.sub(this.pivots[role]);mesh.rotation.set(...rotation);mesh.castShadow=true;mesh.receiveShadow=true;this.part(role).add(mesh);return mesh;}
- box(size:V,p:V,m:THREE.Material=this.coat,role='body',round=.025){return this.mesh(new RoundedBoxGeometry(...size,2,Math.min(round,...size.map(n=>n*.35))),m,p,role);}
+ /** Rounding detail follows size: slivers and sharp keys are plain boxes, small
+  * parts get one bevel step, and only large forms carry the full rounded edge. */
+ box(size:V,p:V,m:THREE.Material=this.coat,role='body',round=.025){
+  const r=Math.min(round,...size.map(n=>n*.35)),big=Math.max(...size);
+  const g=r<.0025?new THREE.BoxGeometry(...size):new RoundedBoxGeometry(...size,big<.12?1:2,r);
+  return this.mesh(g,m,p,role);
+ }
  rod(a:V,b:V,r:number,m:THREE.Material=this.metal,role='body',top=r,segments=12){const start=new THREE.Vector3(...a),end=new THREE.Vector3(...b),d=end.clone().sub(start);const mesh=this.mesh(new THREE.CylinderGeometry(top,r,d.length(),segments),m,start.clone().add(end).multiplyScalar(.5).toArray()as[number,number,number],role);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),d.normalize());return mesh;}
- sphere(r:number,p:V,m:THREE.Material=this.glow,scale:V=[1,1,1],role='body'){const mesh=this.mesh(new THREE.SphereGeometry(r,24,16),m,p,role);mesh.scale.fromArray(scale);return mesh;}
- ring(r:number,t:number,p:V,m:THREE.Material=this.metal,role='body',axis:'x'|'z'='z'){return this.mesh(new THREE.TorusGeometry(r,t,8,40),m,p,role,axis==='x'?[0,Math.PI/2,0]:[0,0,0]);}
+ /** Tessellation follows size: a rivet does not need the 24×16 of a hammer pommel. */
+ sphere(r:number,p:V,m:THREE.Material=this.glow,scale:V=[1,1,1],role='body'){const big=r*Math.max(...scale),mesh=this.mesh(new THREE.SphereGeometry(r,Math.max(10,Math.min(24,Math.round(big*260))),Math.max(7,Math.min(16,Math.round(big*170)))),m,p,role);mesh.scale.fromArray(scale);return mesh;}
+ ring(r:number,t:number,p:V,m:THREE.Material=this.metal,role='body',axis:'x'|'z'='z'){return this.mesh(new THREE.TorusGeometry(r,t,t<.01?5:8,Math.max(16,Math.min(40,Math.round(r*320)))),m,p,role,axis==='x'?[0,Math.PI/2,0]:[0,0,0]);}
  outline(points:V[],r:number,m:THREE.Material=this.metal,role='body'){const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)));return this.mesh(new THREE.TubeGeometry(curve,Math.max(12,Math.min(128,points.length*6)),r,6,false),m,[0,0,0],role);}
  plate(points:P[],depth:number,p:V,m:THREE.Material=this.coat,role='body',bevel=.007,smooth=false){const contour=smooth?new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p,0)),true).getPoints(points.length*4).map(p=>[p.x,p.y]as P):points;const shape=new THREE.Shape();shape.moveTo(...contour[0]);for(const point of contour.slice(1))shape.lineTo(...point);shape.closePath();const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:2});g.translate(0,0,-depth/2);const rounded=toCreasedNormals(g,Math.PI/3);if(rounded!==g)g.dispose();return this.mesh(rounded,m,p,role);}
  grip(a:V,b:V,r:number,role='body'){
@@ -48,7 +55,22 @@ export class Sculpture{
   else for(let i=1;i<10;i++){const p=start.clone().lerp(end,i/10),ring=this.mesh(new THREE.TorusGeometry(r*1.012,.0038,4,20),this.soft,p.toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);}
   for(const t of [.035,.965]){const ring=this.mesh(new THREE.TorusGeometry(r*1.02,.006,6,24),this.metal,start.clone().lerp(end,t).toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);}
  }
- gunSight(){const p=this.def.sight;if(!p)return;this.box([.19,.10,.19],[p[0],p[1]-.135,p[2]],this.dark,'optic');this.ring(.082,.018,p as[number,number,number],this.metal,'optic','x');}
+ /** Open reflex sight: a hooded window around the authored sight axis (never on it),
+  * lens bezel, emitter and turrets. The ADS ray passes through the empty window. */
+ gunSight(){
+  const p=this.def.sight;if(!p)return;const [x,y,z]=p;
+  const frame=(w:number,h:number,iw:number,ih:number,r:number)=>{const shape=new THREE.Shape(),round=(sh:THREE.Shape|THREE.Path,hw:number,hh:number,rr:number)=>{sh.moveTo(-hw+rr,-hh);sh.lineTo(hw-rr,-hh);sh.quadraticCurveTo(hw,-hh,hw,-hh+rr);sh.lineTo(hw,hh-rr);sh.quadraticCurveTo(hw,hh,hw-rr,hh);sh.lineTo(-hw+rr,hh);sh.quadraticCurveTo(-hw,hh,-hw,hh-rr);sh.lineTo(-hw,-hh+rr);sh.quadraticCurveTo(-hw,-hh,-hw+rr,-hh);return sh;};round(shape,w,h,r);const hole=new THREE.Path();round(hole,iw,ih,r*.6);shape.holes.push(hole);return shape;};
+  const tunnel=(shape:THREE.Shape,depth:number,at:number,m:THREE.Material,bevel=.006)=>{const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:2,curveSegments:6});g.translate(0,0,-depth/2);g.rotateY(Math.PI/2);this.mesh(g,m,[at,y,z],'optic');};
+  this.box([.17,.11,.13],[x+.01,y-.13,z],this.dark,'optic',.02);
+  for(const dx of[-.05,.07])this.box([.03,.025,.15],[x+dx,y-.17,z],this.metal,'optic',.006);
+  tunnel(frame(.095,.085,.064,.058,.03),.13,x+.02,this.dark,.008);
+  tunnel(frame(.07,.064,.062,.057,.02),.008,x+.09,this.glow,0);
+  tunnel(frame(.098,.088,.088,.078,.03),.012,x-.045,this.metal,.003);
+  this.sphere(.009,[x-.02,y-.054,z],this.glow,[1,.6,1],'optic');
+  this.mesh(new THREE.CylinderGeometry(.024,.026,.032,14),this.metal,[x+.02,y+.105,z],'optic');
+  this.mesh(new THREE.CylinderGeometry(.022,.024,.03,14),this.metal,[x+.02,y,z+.11],'optic',[Math.PI/2,0,0]);
+  for(let i=0;i<8;i++){const a=i/8*Math.PI*2;this.box([.006,.034,.006],[x+.02+Math.cos(a)*.025,y+.105,z+Math.sin(a)*.025],this.dark,'optic',.002);}
+ }
  /** Asset-space bounds of every authored piece, captured before batching (for continuity checks). */
  readonly pieces:{role:string;box:THREE.Box3}[]=[];
  finish():ArtInstance{
@@ -71,7 +93,7 @@ function beastGun(s:Sculpture){
  s.sphere(.35,[-.29,.3,0],s.coat,[1.45,.65,.55]);
  s.plate([[-1.43,.07],[-1.43,.36],[-1.17,.49],[-.66,.35],[-.64,.22],[-1.12,.16]],.24,[0,0,0],s.coat,'stock');
  s.box([.11,.36,.29],[-1.39,.22,0],s.soft,'stock');
- s.grip([-.46,.13,0],[-.52,-.43,0],.085);s.outline([[-.50,-.04,-.02],[-.12,-.10,-.02],[-.08,-.30,-.02],[-.40,-.36,-.02]],.024,s.metal);
+ sharedGrip(s);s.box([.15,.24,.14],[-.47,.07,0],s.dark);
  s.rod([.22,.31,0],[1.773,.31,0],.072,s.dark);
  s.ring(.080,.019,[1.74,.31,0],s.metal,'body','x');
  s.plate([[.10,.42],[.31,.61],[.82,.65],[1.35,.53],[1.65,.42],[1.52,.37],[.65,.43]],.30,[0,0,0]);
@@ -126,19 +148,31 @@ function bambooSpear(s:Sculpture){
 
 function confectionHammer(s:Sculpture){
  s.rod([-1.38,0,0],[.55,0,0],.058,s.coat);s.grip([-1.20,0,0],[-.50,0,0],.065);
+ // Candy-cane stripes on the exposed haft.
+ for(const start of[0,Math.PI]){const points:V[]=Array.from({length:49},(_,i)=>{const t=i/48,a=start+t*Math.PI*9;return[-.48+.53*t,Math.cos(a)*.059,Math.sin(a)*.059];});this_outline(s,points);}
  s.sphere(.087,[-1.32,0,0],s.pearl,[.7,1,1]);s.ring(.07,.015,[-1.32,0,0],s.metal,'body','x');
  s.rod([-.17,0,0],[.15,0,0],.092,s.metal,undefined,.075);
  // A round, double-faced mallet with a scalloped icing rim.
  s.mesh(new THREE.CylinderGeometry(.43,.43,.46,36),s.coat,[.48,.04,0],'body',[Math.PI/2,0,0]);
+ const sprinkleMats=[s.glow,s.pearl,s.metal,s.soft];
  for(const side of[-1,1]){
   s.mesh(new THREE.CylinderGeometry(.39,.39,.035,32),s.pearl,[.48,.04,side*.239],'body',[Math.PI/2,0,0]);
   s.ring(.37,.022,[.48,.04,side*.265],s.metal);
   const swirl:V[]=Array.from({length:73},(_,i)=>{const t=i/72*Math.PI*4,r=.018+.29*i/72;return[.48+Math.cos(t)*r,.04+Math.sin(t)*r,side*.269];});s.outline(swirl,.015,s.coat);
-  for(let i=0;i<12;i++){const t=i/12*Math.PI*2;s.sphere(.037,[.48+Math.cos(t)*.418,.04+Math.sin(t)*.418,side*.19],i%3?s.pearl:s.glow,[1,1,.65]);}
+  // Frosting: a wavy piped ring around the face edge.
+  s.outline(Array.from({length:97},(_,i)=>{const t=i/96*Math.PI*2,r=.40+.012*Math.sin(t*16);return[.48+Math.cos(t)*r,.04+Math.sin(t)*r,side*(.232+.012*Math.cos(t*16))]as const;}),.022,s.pearl);
+  for(let i=0;i<12;i++){const t=i/12*Math.PI*2;s.mesh(new THREE.SphereGeometry(.037,12,8),i%3?s.pearl:s.glow,[.48+Math.cos(t)*.418,.04+Math.sin(t)*.418,side*.19]).scale.set(1,1,.65);}
+  // Drips running down the barrel of the mallet.
+  for(let i=0;i<7;i++){const t=Math.PI*(.15+i*.1),x=.48+Math.cos(t)*.432,y=.04+Math.sin(t)*.432,len=.05+.04*((i*5)%3);s.rod([x,y,side*.22],[x,y,side*(.22-len)],.02,s.pearl,'body',.02,8);s.mesh(new THREE.SphereGeometry(.022,8,6),s.pearl,[x,y,side*(.22-len)]);}
   for(let i=0;i<7;i++){const t=i/7*Math.PI*2;s.rod([.48+Math.cos(t)*.31,.04+Math.sin(t)*.31,side*.281],[.49+Math.cos(t)*.31,.065+Math.sin(t)*.31,side*.281],.009,i%2?s.glow:s.metal);}
+  // Sprinkles scattered between the spiral arms.
+  for(let i=0;i<16;i++){const a=i*2.39996,r=.08+.24*((i*.618)%1),x=.48+Math.cos(a)*r,y=.04+Math.sin(a)*r,d=.022;s.rod([x-Math.cos(a*3)*d,y-Math.sin(a*3)*d,side*.262],[x+Math.cos(a*3)*d,y+Math.sin(a*3)*d,side*.262],.008,sprinkleMats[i%4],'body',.008,6);}
  }
+ // A cherry on top.
+ s.sphere(.07,[.48,.52,0],s.glow,[1,.92,1]);s.outline([[.48,.58,0],[.50,.65,0],[.55,.70,.01]],.008,s.soft);
  s.plate([[-.04,0],[-.16,.14],[-.31,.13],[-.21,.01],[-.31,-.13],[-.16,-.14]],.04,[0,0,0],s.coat);s.sphere(.07,[-.075,0,0],s.glow);
 }
+function this_outline(s:Sculpture,points:V[]){s.outline(points,.012,s.pearl);}
 
 /** Groups authored pieces whose bounds touch (within `gap`); one group means nothing floats. */
 export function pieceIslands(pieces:readonly{role:string;box:THREE.Box3}[],gap=.012){
