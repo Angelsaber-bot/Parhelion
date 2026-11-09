@@ -12,6 +12,7 @@ const sockets: WebSocket[] = [];
 const releaseFinishes: Record<string, string> = {
   lumen: 'stormcoil', corona: 'bastion-breaker', halo: 'petal-scabbard',
   firefly: 'hummingbird', longnight: 'void-lance',
+  blade: 'frost-fang', polearm: 'storm-halberd', hammer: 'amethyst-geode',
 };
 const releaseSkins = WEAPONS.map(weapon => {
   const id = releaseFinishes[weapon.id];

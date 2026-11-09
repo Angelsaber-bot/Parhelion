@@ -9,35 +9,35 @@ import {grip as baseGrip,bore,scope} from './signatureGunModels.ts';
 export const THIRD_COLLECTION_MODELS=['tesla','lantern','bastion','scabbard','rotor','railgun'] as const;
 export type ThirdCollectionModel=typeof THIRD_COLLECTION_MODELS[number];
 
-function grip(s:Sculpture){
+export function grip(s:Sculpture){
  baseGrip(s);
  const [x,y,z]=s.def.grip;s.box([.15,.24,.14],[x+.03,y+.28,z],s.dark);
 }
-function tube(s:Sculpture,points:readonly V[],r:number,m:THREE.Material,role='body',segments=96,closed=false){
+export function tube(s:Sculpture,points:readonly V[],r:number,m:THREE.Material,role='body',segments=96,closed=false){
  const curve=new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)),closed);
  return s.mesh(new THREE.TubeGeometry(curve,segments,r,7,closed),m,[0,0,0],role);
 }
 /** Turned part along +X: profile is [radius, x] pairs. */
-function lathe(s:Sculpture,profile:readonly P[],y:number,m:THREE.Material,role='body',segments=28,z=0){
+export function lathe(s:Sculpture,profile:readonly P[],y:number,m:THREE.Material,role='body',segments=28,z=0){
  const g=new THREE.LatheGeometry(profile.map(([r,x])=>new THREE.Vector2(r,x)),segments);g.rotateZ(-Math.PI/2);
  return s.mesh(g,m,[0,y,z],role);
 }
 /** Flat extrusion with real openings, for skeleton stocks, vents and the tsuba. */
-function cutPlate(s:Sculpture,contour:readonly P[],holes:readonly(readonly P[])[],depth:number,p:V,m:THREE.Material,role='body',bevel=.006){
+export function cutPlate(s:Sculpture,contour:readonly P[],holes:readonly(readonly P[])[],depth:number,p:V,m:THREE.Material,role='body',bevel=.006){
  const shape=new THREE.Shape(contour.map(([x,y])=>new THREE.Vector2(x,y)));
  for(const hole of holes)shape.holes.push(new THREE.Path(hole.map(([x,y])=>new THREE.Vector2(x,y))));
  const g=new THREE.ExtrudeGeometry(shape,{depth,steps:1,bevelEnabled:bevel>0,bevelSize:bevel,bevelThickness:bevel,bevelSegments:2,curveSegments:16});g.translate(0,0,-depth/2);
  return s.mesh(g,m,p,role);
 }
-function glass(s:Sculpture,tint:number){
+export function glass(s:Sculpture,tint:number){
  const m=new THREE.MeshPhysicalMaterial({name:'Sculpt_glass',color:tint,metalness:0,roughness:.06,clearcoat:1,clearcoatRoughness:.05,transparent:true,opacity:.32,depthWrite:false});
  m.userData.finish=s.style.id;return m;
 }
-function rect(x:number,y:number,w:number,h:number):P[]{return[[x-w/2,y-h/2],[x+w/2,y-h/2],[x+w/2,y+h/2],[x-w/2,y+h/2]];}
+export function rect(x:number,y:number,w:number,h:number):P[]{return[[x-w/2,y-h/2],[x+w/2,y-h/2],[x+w/2,y+h/2],[x-w/2,y+h/2]];}
 /** Small details do not need the 24×16 sculpture sphere or 8×40 torus. */
-function dot(s:Sculpture,r:number,p:V,m:THREE.Material,scale:V=[1,1,1],role='body'){const mesh=s.mesh(new THREE.SphereGeometry(r,10,8),m,p,role);mesh.scale.fromArray(scale);return mesh;}
-function band(s:Sculpture,r:number,t:number,p:V,m:THREE.Material,role='body'){return s.mesh(new THREE.TorusGeometry(r,t,5,20),m,p,role,[0,Math.PI/2,0]);}
-function rivets(s:Sculpture,points:readonly P[],z:number,role='body'){
+export function dot(s:Sculpture,r:number,p:V,m:THREE.Material,scale:V=[1,1,1],role='body'){const mesh=s.mesh(new THREE.SphereGeometry(r,10,8),m,p,role);mesh.scale.fromArray(scale);return mesh;}
+export function band(s:Sculpture,r:number,t:number,p:V,m:THREE.Material,role='body'){return s.mesh(new THREE.TorusGeometry(r,t,5,20),m,p,role,[0,Math.PI/2,0]);}
+export function rivets(s:Sculpture,points:readonly P[],z:number,role='body'){
  for(const side of[-1,1])for(const [x,y]of points)dot(s,.017,[x,y,side*z],s.metal,[1,1,.4],role);
 }
 
@@ -141,7 +141,7 @@ function lanternWarden(s:Sculpture){
   tube(s,curl,.008,s.metal,'stock',60);
   tube(s,[[-1.40,.40,side*.123],[-1.10,.41,side*.123],[-.84,.33,side*.123]],.007,s.metal,'stock',24);
  }
- s.box([.22,.05,.05],[-.44,.50,-.19],s.metal,'bolt');s.gunSight();
+ s.box([.22,.05,.05],[-.44,.48,-.16],s.metal,'bolt');s.gunSight();
 }
 
 /** 铁壁重铳 — armored over-under barrels; pistons on the pump slide into
@@ -170,7 +170,7 @@ function bastion(s:Sculpture){
  for(const y of[.385,.235])s.rod([.46,y,0],[1.58,y,0],.062,s.dark);
  for(const side of[-1,1]){
   cutPlate(s,[[.46,.16],[.46,.47],[1.30,.45],[1.42,.40],[1.42,.18],[1.30,.15]],[0,1,2,3,4].map(i=>rect(.62+i*.155,.31,.085,.17)),.022,[0,0,side*.098],s.coat,'body',.004);
-  cutPlate(s,[[1.52,.15],[1.52,.47],[1.773,.45],[1.773,.17]],[0,1,2].map(i=>rect(1.57+i*.065,.31,.032,.20)),.03,[0,0,side*.098],s.dark,'body',.004);
+  cutPlate(s,[[1.52,.15],[1.52,.47],[1.773,.45],[1.773,.17]],[0,1,2].map(i=>rect(1.57+i*.065,.31,.032,.20)),.03,[0,0,side*.085],s.dark,'body',.004);
  }
  s.box([.96,.03,.17],[.94,.475,0],s.metal,'body',.008);
  for(const y of[.385,.235]){bore(s,1.56,1.773,y,.07);s.ring(.074,.012,[1.48,y,0],s.metal,'body','x');}
@@ -182,7 +182,7 @@ function bastion(s:Sculpture){
  cutPlate(s,[[-1.42,.08],[-1.42,.46],[-1.25,.50],[-.80,.42],[-.80,.20],[-1.10,.20],[-1.20,.08]],[[[-1.30,.20],[-1.30,.38],[-1.00,.36],[-.98,.28],[-1.14,.26]]],.24,[0,0,0],s.coat,'stock',.012);
  s.box([.07,.40,.25],[-1.44,.27,0],s.soft,'stock');
  for(const side of[-1,1])s.box([.30,.025,.012],[-1.08,.44,side*.126],s.glow,'stock',.006);
- s.box([.22,.05,.05],[-.42,.52,-.20],s.metal,'bolt');s.gunSight();
+ s.box([.22,.05,.05],[-.42,.49,-.17],s.metal,'bolt');s.gunSight();
  rivets(s,[[-.70,.44],[-.70,.16],[.38,.44],[.38,.14]],.17);
 }
 
@@ -235,7 +235,7 @@ function scabbard(s:Sculpture){
  }
  s.plate([[.10,.14],[.36,.14],[.36,-.26],[.18,-.32],[.08,-.18]],.17,[0,0,0],s.coat,'magazine',.01);
  for(const side of[-1,1])s.box([.24,.02,.012],[.23,-.06,side*.092],s.metal,'magazine',.004);
- s.box([.26,.05,.05],[-.50,.48,-.16],s.metal,'bolt');scope(s,.087);
+ s.box([.26,.05,.05],[-.50,.44,-.13],s.metal,'bolt');scope(s,.087);
 }
 
 /** 蜂鸟旋翼 — an iridescent body, folded wings, a ducted rotor around the beak. */

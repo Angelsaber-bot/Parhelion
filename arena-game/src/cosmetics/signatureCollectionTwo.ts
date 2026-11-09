@@ -15,6 +15,8 @@ function rivets(s:Sculpture,points:readonly P[],z:number){
 function magazine(s:Sculpture,x:number,y:number,width:number,height:number){
  s.box([width,height,.18],[x,y,0],s.dark,'magazine');
  for(const side of[-1,1])for(let i=0;i<3;i++)s.box([width*.72,.012,.012],[x,y-height*.27+i*height*.27,side*.097],s.metal,'magazine',.003);
+ // Magazine well: the receiver reaches down to meet the magazine instead of leaving a gap.
+ const top=y+height/2;if(top<.17)s.box([width*.9,.19-top,.16],[x,(top+.19)/2,0],s.dark,'body',.012);
 }
 function cloudline(s:Sculpture){
  grip(s);
@@ -40,15 +42,15 @@ function express(s:Sculpture){
  s.rod([.17,.31,0],[1.42,.31,0],.152,s.coat);
  for(const x of[.24,.59,.94,1.29])s.ring(.155,.015,[x,.31,0],s.metal,'body','x');
  bore(s,1.40,1.773,.31,.105);
- s.box([.86,.12,.23],[.78,.07,0],s.dark,'fore_end');
+ s.box([.86,.17,.23],[.78,.085,0],s.dark,'fore_end');
  for(const side of[-1,1]){
   s.rod([.37,.08,side*.139],[1.16,.08,side*.139],.024,s.metal,'fore_end');
   for(const x of[.38,1.14]){s.ring(.053,.012,[x,.08,side*.15],s.metal,'fore_end');s.sphere(.021,[x,.08,side*.16],s.glow,[1,1,.4],'fore_end');}
   s.box([.43,.16,.015],[-.29,.31,side*.16],s.dark);
   for(let i=0;i<5;i++)s.box([.024,.12,.016],[-.45+i*.075,.31,side*.172],s.metal);
  }
- s.box([.22,.05,.05],[-.42,.51,-.19],s.metal,'bolt');s.gunSight();
- rivets(s,[[-.70,.43],[-.70,.16],[.14,.43],[.14,.16],[-1.25,.32]],.165);
+ s.box([.22,.05,.05],[-.42,.47,-.17],s.metal,'bolt');s.gunSight();
+ rivets(s,[[-.70,.43],[-.70,.16],[.14,.43],[.14,.16]],.155);
 }
 function horizon(s:Sculpture){
  grip(s);
@@ -63,7 +65,7 @@ function horizon(s:Sculpture){
   for(let i=0;i<4;i++)s.box([.065,.10,.025],[.40+i*.14,.32,side*.15],s.metal);
  }
  s.rod([.65,.33,0],[1.53,.33,0],.046,s.dark);bore(s,1.49,1.817,.33,.075);
- magazine(s,.20,-.12,.25,.38);scope(s,.085);s.box([.24,.05,.05],[-.43,.50,-.18],s.metal,'bolt');
+ magazine(s,.20,-.12,.25,.38);scope(s,.085);s.box([.24,.05,.05],[-.43,.45,-.145],s.metal,'bolt');
 }
 function mixtape(s:Sculpture){
  grip(s);s.box([1.18,.39,.31],[-.03,.31,0],s.coat);
@@ -81,8 +83,8 @@ function mixtape(s:Sculpture){
  s.box([.06,.30,.27],[-1.18,.27,0],s.soft,'stock');
  magazine(s,.13,-.23,.21,.50);s.box([.14,.24,.14],[.65,.20,0],s.dark,'fore_end');s.grip([.65,.13,0],[.65,-.20,0],.055,'fore_end');
  bore(s,.53,1.267,.31,.082);s.ring(.091,.015,[.91,.31,0],s.metal,'body','x');
- s.box([.18,.04,.05],[-.32,.53,-.19],s.metal,'bolt');s.gunSight();
- rivets(s,[[-.52,.47],[.48,.47],[-.52,.16],[.48,.16]],.17);
+ s.box([.18,.04,.05],[-.32,.50,-.165],s.metal,'bolt');s.gunSight();
+ rivets(s,[[-.52,.47],[.48,.47],[-.52,.16],[.48,.16]],.16);
 }
 function glacier(s:Sculpture){
  grip(s);

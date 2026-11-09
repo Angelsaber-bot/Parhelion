@@ -42,15 +42,17 @@ it('one load per active model, independent materials/poses, resource lifetime fo
   const geometries = new Set<THREE.BufferGeometry>(); source.traverse((o) => { if ((o as THREE.Mesh).isMesh) geometries.add((o as THREE.Mesh).geometry); });
   geometries.forEach((g) => g.addEventListener('dispose', () => geometryDisposals++));
   const pool = new WeaponArtPool(async () => { loads++; return source; });
-  const a = pool.acquire(WEAPON_ART[0], WEAPONS[0].skins[0]), b = pool.acquire(WEAPON_ART[0], WEAPONS[0].skins[1]);
+  // Every catalog finish is now a sculpted model; plain tints still exercise the shared GLB path.
+  const tints = [{ body: 0x2f6f8f, accent: 0xffc65a }, { body: 0x8f2f4a, accent: 0x6ff3d0 }];
+  const a = pool.acquire(WEAPON_ART[0], tints[0]), b = pool.acquire(WEAPON_ART[0], tints[1]);
   const [x, y] = await Promise.all([a.ready, b.ready]);
   expect(loads).toBe(1);
   x!.parts.magazine.position.y -= 1;
   expect(x!.parts.magazine.position.y).not.toBe(y!.parts.magazine.position.y);
   const getMaterial = (root: THREE.Object3D) => { let found: THREE.Material | undefined; root.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { const mat = Array.isArray(m.material) ? m.material[0] : m.material; if (mat.name === 'PH_ivory') found = mat; } }); return found as THREE.MeshStandardMaterial; };
   expect(getMaterial(x!.root)).not.toBe(getMaterial(y!.root));
-  expect(getMaterial(x!.root).color.getHex()).toBe(WEAPONS[0].skins[0].body);
-  expect(getMaterial(y!.root).color.getHex()).toBe(WEAPONS[0].skins[1].body);
+  expect(getMaterial(x!.root).color.getHex()).toBe(tints[0].body);
+  expect(getMaterial(y!.root).color.getHex()).toBe(tints[1].body);
   a.release(); a.release(); expect(geometryDisposals).toBe(0); expect(pool.size).toBe(1);
   b.release(); expect(geometryDisposals).toBe(geometries.size); expect(pool.size).toBe(0);
 });
@@ -82,6 +84,7 @@ it('gun swaps only art, uses authored muzzle/sight, animates cosmetic parts, the
 });
 it('load failure retains the usable fallback and its muzzle', async () => {
   const old = fallback(), pool = new WeaponArtPool(async () => { throw new Error('404'); });
+  pool.acquire = () => ({ ready: Promise.reject(new Error('404')), release() {} }); // art build/download failure
   const gun = attachGunArt(0, 0, old, false, pool); await gun.ready;
   expect(gun.group.children).toContain(old.group); expect(gun.group.userData.artState).toBe('fallback'); expect(gun.muzzle.position.z).toBe(-.45);
   gun.dispose(); expect(pool.size).toBe(0);

@@ -1,0 +1,45 @@
+{
+  "workshopCounts": [
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes",
+    "5 exclusive finishes"
+  ],
+  "fps": {
+    "tidal-engine": {
+      "model": "tidal-engine",
+      "rotorBefore": 0.36736000000237945,
+      "rotorAfter": 3.115556851194974
+    },
+    "clockwork-cleaver": {
+      "model": "clockwork-cleaver",
+      "rotorBefore": 0.28313999999836004,
+      "rotorAfter": 2.1164733333316934
+    },
+    "tide-moon": {
+      "model": "tide-moon",
+      "rotorBefore": 0,
+      "rotorAfter": 0.7
+    },
+    "foundry-bell": {
+      "model": "foundry-bell",
+      "rotorBefore": 0.06379999999981507,
+      "rotorAfter": 0.3971333333331483
+    },
+    "comet-thruster": {
+      "model": "comet-thruster",
+      "rotorBefore": 0.6015000000037247,
+      "rotorAfter": 3.4348333333370578
+    },
+    "amethyst-geode": {
+      "model": "amethyst-geode",
+      "rotorBefore": null,
+      "rotorAfter": null
+    }
+  },
+  "errors": []
+}

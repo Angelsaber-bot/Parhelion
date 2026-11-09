@@ -41,6 +41,13 @@ export const WEAPON_SURFACES:Record<SignatureId,Finish>={
  'petal-scabbard':finish('lacquer',180,.000020,.020,1,.09),
  'hummingbird':finish('enamel',150,.000030,.030,.9,.12),
  'void-lance':finish('titanium',220,.000040,.030,.35,.26),
+ 'clockwork-cleaver':finish('brushed',210,.000040,.035,.3,.24),
+ 'serpent-kris':finish('lacquer',170,.000030,.030,.85,.14),
+ 'frost-fang':finish('crystal',90,.000015,.018,1,.06),
+ 'tide-moon':finish('enamel',160,.000030,.030,.8,.14),
+ 'storm-halberd':finish('cast',150,.000070,.050,.25,.32),
+ 'comet-thruster':finish('ceramic',150,.000025,.025,.9,.12),
+ 'amethyst-geode':finish('crystal',100,.000020,.020,1,.08),
 };
 
 export function surfaceRole(name:string):SurfaceRole{

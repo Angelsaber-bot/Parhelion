@@ -77,7 +77,7 @@ export function gravitonRifle(s:Sculpture){
  s.plate([[-1.40,.14],[-1.38,.48],[-1.18,.51],[-.66,.38],[-.66,.24],[-1.05,.30],[-1.23,.14]],.19,[0,0,0],s.coat,'stock');
  s.outline([[-1.29,.17,0],[-1.06,.08,0],[-.71,.13,0]],.036,s.metal,'stock');
  s.box([.075,.31,.23],[-1.38,.29,0],s.soft,'stock');
- s.plate([[.10,-.04],[.39,-.04],[.45,-.46],[.27,-.61],[.10,-.53]],.19,[0,0,0],s.dark,'magazine');
+ s.plate([[.10,.06],[.39,.06],[.45,-.46],[.27,-.61],[.10,-.53]],.19,[0,0,0],s.dark,'magazine');
  for(const side of[-1,1])for(let i=0;i<4;i++)s.box([.041,.32-i*.018,.016],[.15+i*.067,-.27,side*.107],i%2?s.metal:s.glow,'magazine',.008);
  s.rod([.43,.29,0],[1.56,.29,0],.056,s.dark);
  for(const x of[.82,1.10,1.37]){s.ring(.096,.018,[x,.29,0],s.coat,'body','x');for(const z of[-.075,.075])s.box([.32,.028,.025],[x-.08,.29,z],s.metal);}
@@ -111,7 +111,7 @@ export function koiSmg(s:Sculpture){
  for(const side of[-1,1])for(let i=0;i<4;i++)s.rod([-.12+i*.1,.515,side*.035],[-.06+i*.09,.59,side*.035],.006,s.metal);
  s.plate([[.06,.12],[.31,.10],[.41,-.40],[.28,-.48],[.07,-.42]],.18,[0,0,0],s.dark,'magazine',.009);
  for(const side of[-1,1])s.plate([[.12,.01],[.25,-.01],[.31,-.36],[.16,-.36]],.012,[0,0,side*.103],s.glow,'magazine',.006,true);
- s.grip([.70,.05,0],[.70,-.25,0],.058,'fore_end');
+ s.grip([.70,.05,0],[.70,-.25,0],.058,'fore_end');s.box([.12,.10,.11],[.70,.07,0],s.dark,'fore_end',.02);
  s.rod([.64,.31,0],[.97,.31,0],.060,s.dark);bore(s,.94,1.267,.31,.094);
  s.ring(.10,.016,[1.00,.31,0],s.coat,'body','x');s.box([.18,.05,.05],[-.32,.49,-.19],s.metal,'bolt');s.gunSight();
 }
@@ -172,5 +172,5 @@ export function clockSniper(s:Sculpture){
  s.rod([-.63,.44,-.14],[-.69,.25,-.25],.023,s.metal,'bolt');s.sphere(.045,[-.69,.25,-.25],s.dark,[1,1,1],'bolt');
  scope(s,.108);
  for(const side of[-1,1])s.outline([[-.77,.61,side*.12],[-.48,.53,side*.16],[-.17,.61,side*.12]],.012,s.metal,'optic');
- screws(s,[[-1.32,.32],[.81,.27]],.14);
+ screws(s,[[.81,.27]],.14);screws(s,[[-1.32,.32]],.115);
 }

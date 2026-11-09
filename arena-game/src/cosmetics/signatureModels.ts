@@ -9,7 +9,9 @@ import type {ArtDef,ArtInstance} from '../weapons/weaponArt.ts';
 import {gravitonRifle,koiSmg,owlMarksman,clockSniper} from './signatureGunModels.ts';
 import {buildSecondCollection} from './signatureCollectionTwo.ts';
 import {buildThirdCollection,THIRD_COLLECTION_MODELS} from './signatureCollectionThree.ts';
+import {buildFourthCollection,FOURTH_COLLECTION_MODELS} from './signatureCollectionFour.ts';
 import {refineWeaponMaterial} from '../weapons/weaponSurface.ts';
+import {addSignatureMotes} from './signatureMotes.ts';
 
 export type V=readonly[number,number,number];
 export type P=readonly[number,number];
@@ -47,8 +49,11 @@ export class Sculpture{
   for(const t of [.035,.965]){const ring=this.mesh(new THREE.TorusGeometry(r*1.02,.006,6,24),this.metal,start.clone().lerp(end,t).toArray()as[number,number,number],role);ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);}
  }
  gunSight(){const p=this.def.sight;if(!p)return;this.box([.19,.10,.19],[p[0],p[1]-.135,p[2]],this.dark,'optic');this.ring(.082,.018,p as[number,number,number],this.metal,'optic','x');}
+ /** Asset-space bounds of every authored piece, captured before batching (for continuity checks). */
+ readonly pieces:{role:string;box:THREE.Box3}[]=[];
  finish():ArtInstance{
-  this.part();
+  this.part();this.asset.updateMatrixWorld(true);
+  for(const [role,part]of Object.entries(this.parts))for(const child of part.children){const box=new THREE.Box3().setFromObject(child);this.root.worldToLocal(box.min);this.root.worldToLocal(box.max);this.pieces.push({role,box});}
   // Batch by material within each articulated part, retaining the pump, bolt
   // and stock pivots without issuing one draw call per tooth or icing bead.
   for(const part of Object.values(this.parts)){
@@ -79,7 +84,7 @@ function beastGun(s:Sculpture){
   for(let i=0;i<5;i++)s.plate([[0,0],[.11,.075],[.23,0],[.11,-.025]],.008,[.41+i*.20,.52-i*.018,side*.16],s.dark);
  }
  for(let i=0;i<5;i++){const x=.32+i*.20,y=.615-i*.015;s.plate([[0,0],[.09,.045],[.19,.005],[.09,-.018]],.06,[x,y,0],i%2?s.dark:s.coat,'body',.005);}
- s.box([.30,.06,.06],[-.38,.48,-.23],s.metal,'bolt');s.gunSight();
+ s.box([.30,.06,.06],[-.38,.48,-.19],s.metal,'bolt');s.box([.09,.10,.10],[-.306,.57,0],s.dark,'optic',.01);s.gunSight();
 }
 
 function butterflySword(s:Sculpture){
@@ -135,8 +140,21 @@ function confectionHammer(s:Sculpture){
  s.plate([[-.04,0],[-.16,.14],[-.31,.13],[-.21,.01],[-.31,-.13],[-.16,-.14]],.04,[0,0,0],s.coat);s.sphere(.07,[-.075,0,0],s.glow);
 }
 
-export function buildSignatureModel(def:ArtDef,id?:string):ArtInstance|null{
+/** Groups authored pieces whose bounds touch (within `gap`); one group means nothing floats. */
+export function pieceIslands(pieces:readonly{role:string;box:THREE.Box3}[],gap=.012){
+ const parent=pieces.map((_,i)=>i),find=(i:number):number=>parent[i]===i?i:(parent[i]=find(parent[i]));
+ for(let i=0;i<pieces.length;i++)for(let j=i+1;j<pieces.length;j++)if(pieces[i].box.clone().expandByScalar(gap).intersectsBox(pieces[j].box))parent[find(i)]=find(j);
+ const groups=new Map<number,number[]>();pieces.forEach((_,i)=>{const r=find(i);groups.set(r,[...(groups.get(r)??[]),i]);});
+ return[...groups.values()].sort((a,b)=>b.length-a.length);
+}
+export function sculptSignature(def:ArtDef,id?:string):Sculpture|null{
  const model=signatureModelOf(id,def.combat),style=signatureOf(id,def.combat);if(!model||!style)return null;
- const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:if((THIRD_COLLECTION_MODELS as readonly string[]).includes(model))buildThirdCollection(sculpture,model);else buildSecondCollection(sculpture,model);break;}
- return sculpture.finish();
+ const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:if((THIRD_COLLECTION_MODELS as readonly string[]).includes(model))buildThirdCollection(sculpture,model);else if((FOURTH_COLLECTION_MODELS as readonly string[]).includes(model))buildFourthCollection(sculpture,model);else buildSecondCollection(sculpture,model);break;}
+ return sculpture;
+}
+export function buildSignatureModel(def:ArtDef,id?:string,motes=true):ArtInstance|null{
+ const sculpture=sculptSignature(def,id);if(!sculpture)return null;
+ const instance=sculpture.finish();
+ if(motes){const points=addSignatureMotes(sculpture.asset,def.file,sculpture.style);if(points)instance.parts.motes=points;}
+ return instance;
 }

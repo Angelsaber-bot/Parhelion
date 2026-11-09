@@ -133,7 +133,7 @@ export const WEAPONS: WeaponDef[] = [
   },
   {
     id: 'halo', kind: 'gun', name: 'Halo DMR', auto: false, interval: 22, damage: 52, pellets: 1, headMul: 2,
-    spread: 0, spreadMove: 0.03, falloffStart: 60, falloffEnd: 120, falloffMin: 0.85,
+    spread: 0, spreadMove: 0, falloffStart: 60, falloffEnd: 120, falloffMin: 0.85,
     mag: 8, reload: Math.round(2.1 * TICK_HZ), range: 200,
     skins: [],
   },
@@ -146,7 +146,7 @@ export const WEAPONS: WeaponDef[] = [
   },
   {
     id: 'longnight', kind: 'gun', name: 'Longnight Sniper · 长夜', auto: false, interval: 78, damage: 90, pellets: 1, headMul: 1.7,
-    spread: 0, spreadMove: 0.045, falloffStart: 80, falloffEnd: 180, falloffMin: 0.9,
+    spread: 0, spreadMove: 0, falloffStart: 80, falloffEnd: 180, falloffMin: 0.9,
     mag: 5, reload: Math.round(2.7 * TICK_HZ), range: 240,
     skins: [],
   },

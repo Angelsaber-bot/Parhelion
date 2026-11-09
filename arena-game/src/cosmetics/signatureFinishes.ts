@@ -25,6 +25,7 @@ const patterns:Record<SignatureId,string>={
  'graviton-crucible':'', 'koi-current':'', 'owl-canticle':'', 'meridian-key':'',
  'guard-sash':'', 'sealed-passage':'', 'night-nacre':'',
  'stormcoil':'', 'lantern-warden':'', 'bastion-breaker':'', 'petal-scabbard':'', 'hummingbird':'', 'void-lance':'',
+ 'clockwork-cleaver':'', 'serpent-kris':'', 'frost-fang':'', 'tide-moon':'', 'storm-halberd':'', 'comet-thruster':'', 'amethyst-geode':'',
 };
 export function signatureMaterial(source:THREE.MeshStandardMaterial,id:SignatureId,clock:{value:number}){
  const s:SignatureStyle=signatureOf(id)!,m=new THREE.MeshPhysicalMaterial();THREE.MeshStandardMaterial.prototype.copy.call(m,source);m.defines={...m.defines,PHYSICAL:''};

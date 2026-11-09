@@ -6,7 +6,7 @@ import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, sanitize, type PlayerInfo } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
-import { applyInput, BTN, clonePlayer, newPlayer, type Input } from '../shared/sim.ts';
+import { aimDir, applyInput, BTN, clonePlayer, newPlayer, type Input } from '../shared/sim.ts';
 
 const data: MapData = {
   mapId: 'combat-fixture', version: '1', bounds: { min: [-30, -1, -30], max: [30, 12, 30] },
@@ -79,7 +79,7 @@ describe('validated two-gun one-melee loadouts', () => {
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
   it('version 12 refuses old cosmetic catalogs and old shotgun rules before adding any player', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(12);
+    const core = new RoomCore({}); expect(RULES_VERSION).toBe(13);
     for (const rulesVersion of [9, 10, 11]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
     expect(core.match.slots.size).toBe(0);
   });
@@ -258,4 +258,20 @@ describe('shared host, bot and transport contract', () => {
       }
     }
   });
+});
+
+it('precision rifles (DMR and sniper) fire exactly along the aim, even while moving or airborne', () => {
+  for (const id of ['halo', 'longnight'] as const) {
+    const w = WEAPONS.find(weapon => weapon.id === id)!;
+    expect(w.pellets).toBe(1); expect(w.spread).toBe(0); expect(w.spreadMove).toBe(0);
+    // Real fire events: strafing and jumping at varied aim angles never deflect the shot.
+    const p = newPlayer('a', 'A', 0, [id, id === 'halo' ? 'longnight' : 'halo', 'blade']); p.alive = true;
+    let fired = 0;
+    for (let seq = 1; seq < 600; seq++) {
+      const yaw = seq * .037, pitch = Math.sin(seq * .05) * .6;
+      const events = applyInput(flat, p, input(seq, { mx: seq % 3 - 1, mz: 1, yaw, pitch, buttons: (seq % 2 ? BTN.FIRE : 0) | (seq % 40 === 1 ? BTN.JUMP : 0) | (p.ammo[p.weapon] === 0 ? BTN.RELOAD : 0) }));
+      for (const e of events) if (e.type === 'fire') { fired++; const aim = aimDir(yaw, pitch); expect(e.dirs).toHaveLength(1); for (let k = 0; k < 3; k++) expect(e.dirs[0][k]).toBeCloseTo(aim[k], 12); }
+    }
+    expect(fired).toBeGreaterThan(3);
+  }
 });

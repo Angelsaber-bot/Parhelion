@@ -687,7 +687,8 @@ export class Viewmodel {
       this.aimPosition.set(-sight.x * .72, -sight.y * .72, -.34 - sight.z * .72);
       this.gun.position.lerp(this.aimPosition, this.aim);
       this.gun.rotation.x *= 1 - this.aim; this.gun.rotation.y *= 1 - this.aim; this.gun.rotation.z *= 1 - this.aim;
-      this.presentation.animate(kick, this.reloading);
+      const melee = WEAPONS[this.weapon].kind === 'melee';
+      this.presentation.animate(melee ? Math.max(meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit) : kick, this.reloading);
     }
     if (WEAPONS[this.weapon].kind === 'melee') {
       poseMelee(this.gun, this.weapon, meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon].windup ?? 1), this.meleeHit, true);
@@ -777,6 +778,7 @@ class Avatar {
       const windup = meleeWindupProgress(meleeWindup, WEAPONS[this.weapon].windup ?? 1);
       poseMelee(this.gun, this.weapon, windup, this.meleeHit, false);
       this.anim.melee(windup, this.meleeHit, this.weapon);
+      this.presentation?.animate(Math.max(windup, this.meleeHit), 0); // sculpted rotors speed up through the swing
       this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
     } else { this.anim.melee(0, 0); this.presentation?.animate(0, 0); }
   }

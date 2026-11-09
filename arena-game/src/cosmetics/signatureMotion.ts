@@ -2,11 +2,13 @@
  * spinning group carries `userData.spin` from `Sculpture.spin`; firing kick
  * temporarily speeds it up. Never touches sockets, timing or simulation. */
 import type * as THREE from 'three';
+import {animateMotes} from './signatureMotes.ts';
 
 export interface SpinSpec {axis:'x'|'y'|'z';speed:number;boost:number}
 export function spinSignatureParts(parts:Record<string,THREE.Object3D>,seconds:number,kick=0){
  if(!Number.isFinite(seconds))return;
  for(const part of Object.values(parts)){
+  if(part.userData.motes){animateMotes(part,seconds,kick);continue;}
   const spin=part.userData.spin as SpinSpec|undefined;if(!spin)continue;
   const last=part.userData.spinTime as number|undefined,dt=last===undefined?0:Math.min(.1,Math.max(0,seconds-last));
   part.userData.spinTime=seconds;
