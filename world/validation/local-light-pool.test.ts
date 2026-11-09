@@ -37,10 +37,10 @@ test('selection changes only replaced slots, not retained source identities', ()
   assert.deepEqual(new Set(pool.selectedSources), new Set([1, 2]));
   assert.equal(retained.userData.authoredSource, 1); assert.equal(retained.intensity, 25); pool.dispose();
 });
-test('actual five-region authored lamps keep every nearby source selected along crossings and return trips', () => {
+test('actual eight-region authored lamps keep every nearby source selected along crossings and return trips', () => {
   const layout = mergeLayouts(REGIONS.map(def => ({ def, layout: JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) })));
   const sources: AuthoredLocalLight[] = [{ p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26 }, ...layout.lights!];
-  assert.equal(sources.length, 14);
+  assert.equal(sources.length, 29);
   const pool = new LocalLightPool(sources);
   for (const region of [...REGIONS, ...[...REGIONS].reverse()]) {
     for (const sign of [1, -1]) for (let step = 0; step <= 36; step++) {

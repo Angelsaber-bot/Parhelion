@@ -6,6 +6,7 @@ import { CHARACTERS, DASH, FRAG_KILL, GRENADE, SHIELD, TICK_HZ, WEAPONS, type Te
 import type { PlayerSnap, Snapshot } from '../../shared/match.ts';
 import type { PlayerState } from '../../shared/sim.ts';
 import { displayWeaponName, weaponHud } from './loadout.ts';
+import { ScopeOverlay, type ScopeFrame } from './scopeOverlay.ts';
 
 const $ = (id: string) => document.getElementById(id)!;
 const TEAM_NAME: Record<Team, string> = { A: '西 · 青', B: '东 · 橙' };
@@ -22,6 +23,14 @@ export class Hud {
   private pop: { head: boolean; streak: number } | null = null;
   private language = getLanguage();
 
+  private scopeView: ScopeOverlay | null = null;
+  /** Draw the scope picture for this frame (only while a scoped weapon is aimed). */
+  scope(frame: ScopeFrame | null) {
+    const canvas = document.getElementById('scope-canvas') as HTMLCanvasElement | null;
+    if (!canvas) return;
+    this.scopeView ??= new ScopeOverlay(canvas);
+    if (frame) this.scopeView.draw(frame); else this.scopeView.clear();
+  }
   aim(value: number, scoped: boolean) {
     const scope = $('scope');
     scope.style.opacity = String(scoped ? Math.max(0, (value - 0.7) / 0.3) : 0);

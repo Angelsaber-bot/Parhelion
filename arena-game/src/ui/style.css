@@ -141,7 +141,9 @@ body:not(.range) .rangeOnly, body.range .notRange { display: none !important; }
 #endcard h2 { font-size: 34px; letter-spacing: 6px; }
 
 /* ADS is a real camera zoom; these are only its reticle / peripheral mask. */
-#scope { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; background: radial-gradient(circle at center, transparent 0 33vh, #07111ce8 34vh); }
+#scope { position: absolute; inset: 0; pointer-events: none; display: grid; place-items: center; }
+#scope-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+#scope .scope-ring { display: none; } /* the canvas draws the lens; the ring keeps its label for assistive text */
 #scope.hidden { display: none; }
 .scope-ring { position: relative; width: 66vh; height: 66vh; border: 3px solid #111e2d; border-radius: 50%; box-shadow: 0 0 0 2px #a1b9c044, inset 0 0 28px #0008; }
 .scope-ring::before, .scope-ring::after { content: ''; position: absolute; background: #14202c; }

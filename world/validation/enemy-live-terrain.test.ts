@@ -7,7 +7,7 @@ import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
 import { COMBAT } from '../src/combat/combat.ts';
 import { REGIONS, regionAt } from '../src/map/regions.ts';
 import { isCampaignRegion } from '../src/core/regionIdentity';
-import { layout, grid, q, spawns, minis } from './enemy-live-terrain.fixture.ts';
+import { layout, grid, q, spawns, minis, campaignPaths } from './enemy-live-terrain.fixture.ts';
 import type { Layout } from '../src/core/types.ts';
 
 function nearestToSegment(x:number,z:number,a:number[],b:number[]) {
@@ -53,13 +53,13 @@ test('actual runtime map with settlements has moderately denser grounded encount
   for(const elite of minis)assert.ok(nearestPath(elite.p.x,elite.p.z)<=25,`${elite.id} too far from a visible route`);
 });
 
-test('authored route coverage is improved in every region without filling protected hubs',()=>{
+test('authored campaign route coverage is improved in every original region without filling protected hubs',()=>{
   // Baseline sampled the same 20m path points: median distances were 86.6,99.1,74.5,65.8,80.3m.
   // Samples include safe hubs; requiring every point to have combat would violate town safety.
   const limits:Record<string,number>={alpha:65,britain:65,blacksail:60,winter:60,kyoto:60};
   for(const def of REGIONS.filter(r=>isCampaignRegion(r.id))){
     const samples:number[]=[];
-    for(const path of layout.paths)for(let i=1;i<path.length;i++){
+    for(const path of campaignPaths)for(let i=1;i<path.length;i++){
       const a=path[i-1],b=path[i],length=Math.hypot(b[0]-a[0],b[1]-a[1]);
       for(let distance=0;distance<length;distance+=20){
         const x=a[0]+(b[0]-a[0])*distance/length,z=a[1]+(b[1]-a[1])*distance/length;

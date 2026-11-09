@@ -1,0 +1,28 @@
+{
+  "date": "2026-11-09",
+  "stage": "three explorable region blockouts; story, mechanisms, NPCs, Arena travel and bosses pending",
+  "finalFocusedRun": {
+    "tests": 114,
+    "passed": 114,
+    "failed": 0,
+    "scope": [
+      "bidirectional capsule traversal on shipping assets",
+      "old-to-new physical connections",
+      "old five-region combat coverage",
+      "all 55 glide upgrade/route combinations",
+      "medicine cart, checkpoints and arrival",
+      "source-node ownership and original gate/reset behavior",
+      "eight-region map labels, lighting, weather and identity",
+      "quest catalog compatibility",
+      "streamed asset delivery"
+    ]
+  },
+  "worldProductionBuild": "passed",
+  "firstFullRun": {
+    "tests": 2053,
+    "passed": 2037,
+    "failed": 16,
+    "note": "Ran while blockouts were under development. All failed cases were fixed and included in the final 114-test rerun. The complete 2053-test suite was not repeated on the final version."
+  },
+  "visualCheck": "Browser snapshots and per-region page errors are recorded in artifacts/browser-results.json."
+}

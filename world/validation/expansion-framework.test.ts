@@ -64,7 +64,7 @@ for(const plan of EXPANSION_PLANS) {
   test(`${plan.id}: shipped collision supports all main, side and vertical routes without jumping`,async()=>{
     const root=await load(plan.id),geos=geometry(root);const merged=mergeGeometries([boundaries,...geos]);const bvh=new MeshBVH(merged);
     for(const route of plan.routes) {
-      try{walk(bvh,route.points,plan.offset);}catch(error){throw new Error(`${plan.id}/${route.id}: ${error instanceof Error?error.message:error}`);}
+      try{walk(bvh,route.points,plan.offset);walk(bvh,[...route.points].reverse(),plan.offset);}catch(error){throw new Error(`${plan.id}/${route.id}: ${error instanceof Error?error.message:error}`);}
     }
     for(const site of plan.sites) {
       const ray=new THREE.Ray(new THREE.Vector3(site.position[0]+plan.offset[0],site.position[1]+1,site.position[2]+plan.offset[1]),new THREE.Vector3(0,-1,0));
@@ -81,6 +81,7 @@ for(const plan of EXPANSION_PLANS) {
     const mesh=root.getObjectByName('Terrain') as THREE.Mesh;
     const grid=new WorldGrid([mesh],plan.offset[0]-400,plan.offset[1]-400,800,2);
     assert.equal(grid.sampleHeight(plan.offset[0]-330,plan.offset[1]-330),-12,'map baking does not paint square terrain outside the contour');
+    if(plan.id==='qin')assert.ok(Math.abs(grid.sampleHeight(plan.offset[0],plan.offset[1])!-10)<.05,'the shaft shows its dry underground floor, rather than sea');
     const p=mesh.geometry.attributes.position;
     for(let i=0;i<p.count;i+=137) {
       const x=p.getX(i),z=p.getZ(i);

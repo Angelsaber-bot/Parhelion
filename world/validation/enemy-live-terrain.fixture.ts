@@ -17,6 +17,7 @@ import { buildWinterSettlement } from '../src/settlements/winter.ts';
 import { buildKyotoSettlement } from '../src/settlements/kyoto.ts';
 import type { Collider } from '../src/player/player.ts';
 import type { Layout } from '../src/core/types.ts';
+import { isCampaignRegion } from '../src/core/regionIdentity';
 
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
 const props: THREE.BufferGeometry[] = [];
@@ -45,6 +46,9 @@ const parts = await Promise.all(REGIONS.map(async def => {
   return { def, layout };
 }));
 const layout = mergeLayouts(parts);
+// Combat coverage remains a contract for authored campaign routes. New connecting
+// decks and blockout routes are verified by expansion-framework, without fake encounters.
+const campaignPaths=parts.filter(p=>isCampaignRegion(p.def.id)).flatMap(({def,layout})=>layout.paths.map(path=>path.map(([x,z])=>[x+def.offset[0],z+def.offset[1]])));
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 const settlements = installSettlements([
   buildAlphaSettlement(), buildBritainSettlement(), buildBlackSailSettlement(), buildWinterSettlement(), buildKyotoSettlement(),
@@ -59,4 +63,4 @@ colliders.unshift({ name: 'static', enabled: true, bvh: new MeshBVH(mergeParts(g
 const q = makeCombatTerrain(colliders, layout, (x, z) => grid.sampleHeight(x, z));
 const spawns = makeWildernessSpawns(layout.world.seed ^ 537, q.safeSpawn);
 const minis = makeMinibossSpawns(q.safeSpawn, spawns);
-export { layout, grid, q, spawns, minis, colliders };
+export { layout, grid, q, spawns, minis, colliders, campaignPaths };

@@ -33,12 +33,12 @@
       },
       "render": {
         "frame": 62,
-        "calls": 59,
-        "triangles": 385264,
+        "calls": 57,
+        "triangles": 377206,
         "points": 640,
         "lines": 0
       },
-      "objective": "Orleans · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+      "objective": "奥尔良 · 地图框架围城救援、河道侧路、城墙屋顶与教堂高地当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。"
     },
     "errors": []
   },
@@ -73,13 +73,13 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 167,
-        "calls": 97,
-        "triangles": 427344,
+        "frame": 47,
+        "calls": 94,
+        "triangles": 423044,
         "points": 640,
         "lines": 0
       },
-      "objective": "Solar Egypt · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+      "objective": "古埃及 · 地图框架绿洲商队、砂岩峡谷、可攀巨像与神殿光路当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。"
     },
     "errors": []
   },
@@ -103,25 +103,26 @@
       ],
       "stream": {
         "resident": [
-          "qin",
+          "qin"
+        ],
+        "pending": [
           "blacksail"
         ],
-        "pending": [],
         "failed": [],
         "downloads": 2,
-        "installs": 2,
+        "installs": 1,
         "evictions": 0,
         "disposedGeometries": 0,
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 167,
-        "calls": 78,
-        "triangles": 397232,
+        "frame": 62,
+        "calls": 70,
+        "triangles": 411500,
         "points": 648,
         "lines": 0
       },
-      "objective": "Qin Empire · Map blockoutExplore the hub, landmarks and alternate routes.Terrain and routes are explorable; characters, story, mechanisms and bosses are in development."
+      "objective": "秦帝国 · 地图框架骊山行宫、工匠集镇、可调度俑阵与三层地下王城当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。"
     },
     "errors": []
   }

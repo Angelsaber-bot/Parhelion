@@ -352,6 +352,9 @@ export class Bot implements Controller {
     } else if (!target) { this.burstT = 0; this.pauseT = Math.max(this.pauseT, 6); }
     if (w.kind === 'gun' && !target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
 
+    // A scoped rifle on a visible target is aimed down the scope, so its glint shows like a player's.
+    if (target && (w.id === 'halo' || w.id === 'longnight') && this.seenFor > reaction * .5) inp.buttons |= BTN.AIM;
+
     // --- abilities, used sparingly ---
     if (target && tookDamage && me.dashCd === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;
     if (target && hurt && me.shieldCd === 0 && bestD > 6 && this.rand() < 0.05) inp.buttons |= BTN.SHIELD;

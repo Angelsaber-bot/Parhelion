@@ -6,7 +6,7 @@ import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { spawnYaw, type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
-import { applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
+import { aimDir, applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './rendering/audio.ts';
 import type { Controls } from './player/controls.ts';
 import type { Hud } from './ui/hud.ts';
@@ -16,6 +16,8 @@ import { type ArenaScene } from './rendering/scene.ts';
 import type { Session } from './network/session.ts';
 import {FrameGate} from './rendering/renderScheduling.ts';
 import { RangeStats } from './ui/rangeStats.ts';
+import { ScopeSway } from './player/scopeSway.ts';
+import { AIM_FOV } from './player/aim.ts';
 
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -129,6 +131,9 @@ export class Game {
   private distance(at: readonly number[]) { const me = this.me; return me ? Math.hypot(at[0] - me.x, at[1] - me.y, at[2] - me.z) : 30; }
   /** Training range readout (null in real matches). */
   rangeStats: RangeStats | null = null;
+  /** Scoped rifles: breath-held sway applied to the real aim, plus the lens recoil kick. */
+  private sway = new ScopeSway();
+  private scopeKick = 0;
   private rangeStatsAt = 0;
 
   private onEvent(e: NetEvent) {
@@ -319,6 +324,7 @@ export class Game {
     switch (e.type) {
       case 'fire': {
         this.scene.viewmodel.fire();
+        if (isScopedWeapon(e.weapon)) this.scopeKick = 1;
         sfx.shot(e.weapon, true, 0);
         this.feel.fire(e.weapon);
         this.feel.kickAim(this.controls, e.weapon);
@@ -403,6 +409,22 @@ export class Game {
       if (this.controls.inspect) { this.controls.inspect = false; if (me.alive && !this.ended) this.scene.viewmodel.inspect(); }
       this.controls.lookScale = 1 + (aimSensitivity(this.aim.fov(me.weapon), this.controls.adsSensitivity) - 1) * aim;
       this.hud.aim(aim, isScopedWeapon(me.weapon));
+      // Scoped rifles: the reticle drifts in a slow figure-eight (real aim, so what you see is what
+      // you hit); the dash key holds breath to steady it while fully scoped, like modern shooters.
+      const scoped = isScopedWeapon(me.weapon) && aim > .9 && me.alive;
+      this.controls.breathMode = scoped;
+      const [swayYaw, swayPitch] = this.sway.update(dt, { scoped, sniper: me.weapon === 4, wantHold: this.controls.holdingBreath, moving: Math.hypot(me.vx, me.vz) > .5, airborne: !me.grounded, crouched: me.crouched });
+      this.controls.yaw += swayYaw; this.controls.pitch = Math.max(-1.45, Math.min(1.45, this.controls.pitch + swayPitch));
+      this.scopeKick = Math.max(0, this.scopeKick - dt * 3.5);
+      if (isScopedWeapon(me.weapon) && aim > .7 && me.alive) {
+        const eyeAt: Vec3 = [me.x, me.y + playerEye(this.map, me), me.z], dir = aimDir(this.controls.yaw, this.controls.pitch);
+        let range = raycastMap(this.map, eyeAt, dir, 400);
+        for (const p of this.latest?.players ?? []) { if (p.id === this.session.id || !p.alive) continue; const h = rayPlayer(eyeAt, dir, p.x, p.y, p.z, p.crouched); if (h && h.t < range) range = h.t; }
+        const skin = WEAPONS[me.weapon]?.skins[this.names.get(this.session.id)?.skins[me.weapon] ?? 0];
+        this.hud.scope({ open: (aim - .7) / .3, kind: me.weapon === 4 ? 'sniper' : 'dmr', accent: skin?.accent ?? 0xff4a3a, range: Number.isFinite(range) ? range : null,
+          zoom: Math.tan(78 * Math.PI / 360) / Math.tan((AIM_FOV[me.weapon] ?? 78) * Math.PI / 360), stamina: this.sway.stamina, holding: this.sway.holding, gasp: this.sway.gasp > 0,
+          kick: this.scopeKick, label: me.weapon === 4 ? 'LONGNIGHT · MIL-DOT' : 'HALO · BDC' });
+      } else this.hud.scope(null);
       const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead
       const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
       this.feel.update(dt, this.controls, speed);

@@ -131,9 +131,13 @@ function drawCommissions(ctx: CanvasRenderingContext2D, board: { day: string; li
     ctx.beginPath(); ctx.moveTo(x, y - 12 * u); ctx.lineTo(x - 5 * u, y - 19 * u); ctx.lineTo(x + 5 * u, y - 19 * u); ctx.closePath();
     ctx.fillStyle = GOLD; ctx.fill(); ctx.lineWidth = 1.5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
   }
-  // board: top-left
+  // The northwest is now Orleans. Keep its title and geography visible: on wide
+  // maps the board shares the unused southwest with the exploration legend;
+  // compact maps retain commission pins and the journal instead of a text box.
+  if(width/u<800)return;
   const line = 17 * u, pad = 10 * u, boxW = 260 * u, boxH = pad * 2 + line * (board.list.length + 1);
-  const bx = 14 * u, by = 14 * u;
+  const legendH=20*u+17*u*Object.keys(REGION_NAMES).length;
+  const bx = 14 * u, by = width-legendH-boxH-42*u;
   ctx.fillStyle = '#141c30cc'; ctx.fillRect(bx, by, boxW, boxH);
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   const finished = board.list.filter(c => commissionDone(done, board.day, c.n)).length;

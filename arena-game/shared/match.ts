@@ -631,7 +631,7 @@ export function sanitize(raw: unknown): Input | null {
     mx: Math.round(num(r.mx, -1, 1) ?? 0),
     mz: Math.round(num(r.mz, -1, 1) ?? 0),
     yaw, pitch,
-    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 127,
+    buttons: ((num(r.buttons, 0, 2 ** 31 - 1) ?? 0) | 0) & 255,
     weapon: typeof r.weapon === 'number' && Number.isInteger(r.weapon) && r.weapon >= 0 && r.weapon < 3 ? r.weapon : -1,
     view: num(r.view, 0, 2 ** 31) ?? 0,
   };

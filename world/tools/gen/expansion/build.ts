@@ -144,13 +144,13 @@ export function buildExpansion(plan:ExpansionPlan) {
         house(x+dx,y,z+dz,14,12);if(++placed>=3)break;
       }
     }
-    else for(const dx of [-13,0,13])column(x+dx,y,z+10,.6,3,plan.accent);
+    else if(plan.id!=='qin')for(const dx of [-13,0,13])column(x+dx,y,z+10,.6,3,plan.accent);
   }
   if(plan.id==='orleans') {
     // Walkable wall deck with a real opening beneath it; no solid box across the road.
     slab(0,24,-30,190,9);b.box(-94,14,-30,2,10,9,plan.stone);b.box(94,14,-30,2,10,9,plan.stone);
     for(let x=-90;x<=90;x+=9)for(const z of [-35, -25]) {
-      if(z===-25&&x<=-81)continue; // clear the actual ramp entrance through the parapet
+      if(x<=-81||x>=72)continue; // leave both sides of each ramp landing open
       b.box(x,24,z,3,1.2,1.4,plan.stone);
     }
     for(const x of [-90,80]){column(x,14,-35,6,10,plan.stone);slab(x,24,-35,14,14);}
@@ -173,7 +173,7 @@ export function buildExpansion(plan:ExpansionPlan) {
     for(const x of [38,58,102,122])for(const z of [-115,-160])column(x,30,z,2.4,18,plan.stone);
     b.box(28,30,-145,3,14,76,plan.stone);b.box(132,30,-145,3,14,76,plan.stone);b.box(80,30,-181,105,20,3,plan.stone);
     const lens=batch('SunMirrors',plan.accent);
-    for(const [x,y,z] of [[-20,14,75],[92,24,20],[92,44,-100]]){column(x,y,z,1,4,plan.stone);lens.b.add(new THREE.CylinderGeometry(3,3,.5,16),plan.accent,T(x,y+5,z,0,1,1,1,Math.PI/3),false);}
+    for(const [x,y,z] of [[-20,14,75],[92,24,20],[92,44,-106]]){column(x,y,z,1,4,plan.stone);lens.b.add(new THREE.CylinderGeometry(3,3,.5,16),plan.accent,T(x,y+5,z,0,1,1,1,Math.PI/3),false);}
     const palms=batch('OasisPalms','#597e51');
     for(let i=0;i<9;i++){const a=i*Math.PI*2/9,x=-225+Math.cos(a)*35,z=110+Math.sin(a)*35,y=expansionHeight(plan,x,z);palms.b.add(cylinder,'#8c7050',T(x,y+5,z,0,.6,10,.6));for(let j=0;j<5;j++)palms.b.add(new THREE.ConeGeometry(2,9,3),palms.color,T(x,y+10,z,j*1.256,1,1,1,1.15),false);}
   } else {
@@ -184,8 +184,8 @@ export function buildExpansion(plan:ExpansionPlan) {
     b.box(0,8,-151,224,56,2,plan.stone);b.box(0,8,141,150,56,2,plan.stone);
     // The south wall stops short of the descent ramp and does not seal its mouth.
     const army=batch('Terracotta', '#98795e');
-    for(let row=0;row<6;row++)for(let col=0;col<3;col++) {
-      const x=-99+col*8,z=-125+row*16;army.b.box(x,28,z,1.2,1.8,1,army.color);
+    for(let row=0;row<6;row++)for(let col=0;col<2;col++) {
+      const x=-101+col*22,z=-125+row*16;army.b.box(x,28,z,1.2,1.8,1,army.color);
       army.b.add(new THREE.SphereGeometry(.48,6,4),army.color,T(x,30.2,z));
     }
     for(const x of [-35,35])for(const z of [-10,80])column(x,10,z,2,17,plan.accent);

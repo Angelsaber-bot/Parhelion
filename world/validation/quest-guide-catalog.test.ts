@@ -18,7 +18,7 @@ const catalog=createQuestGuideCatalog({markers:[...layout.markers,...extra],obje
 test('catalog covers five real main chapters, authored optional chains and every discovery without mutating facts',()=>{
  const done=new Set<string>(),found=new Set<string>(),entries=catalog.list(done,found);
  assert.equal(entries.filter(e=>e.category==='main').length,6);
- for(const region of REGIONS)assert.ok(entries.find(e=>e.id===`main:${region.id}`));
+ for(const region of REGIONS){const hasChapter=!!entries.find(e=>e.id===`main:${region.id}`);assert.equal(hasChapter,['alpha','britain','blacksail','winter','kyoto'].includes(region.id),'blockouts do not advertise unfinished chapters');}
  assert.equal(entries.filter(e=>e.category==='discovery').length,layout.markers.filter(m=>m.type==='discovery').length);
  assert.equal(new Set(entries.map(e=>e.id)).size,entries.length);
  for(const entry of entries){assert.ok(entry.guide,entry.id);const guide=entry.guide!;assert.ok(guide.position.every(Number.isFinite));assert.ok(guide.text[0]);assert.ok(guide.text[1]);assert.doesNotMatch(guide.text[1],/[\u3400-\u9fff]/,entry.id);assert.doesNotMatch(guide.targetLabel[1],/[\u3400-\u9fff]/,entry.id);}

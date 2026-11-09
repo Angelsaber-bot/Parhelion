@@ -36,6 +36,8 @@ import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
 import { KillFinishers } from './killFinishers.ts';
 import { GrenadeView } from './grenades.ts';
+import { ScopeGlints } from './scopeGlint.ts';
+import { BTN } from '../../shared/sim.ts';
 import { insideSmoke, smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
@@ -61,6 +63,7 @@ export class ArenaScene {
   private combatEffects: ArenaCombatEffects;
   private killFinishers!: KillFinishers;
   private grenadeView!: GrenadeView;
+  private glints!: ScopeGlints;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
   private flashT = 0;
   private baseFov = 78;
@@ -89,6 +92,7 @@ export class ArenaScene {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     this.killFinishers = new KillFinishers(this.scene);
     this.grenadeView = new GrenadeView(this.scene);
+    this.glints = new ScopeGlints(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -395,7 +399,18 @@ export class ArenaScene {
     a.setAlly(ally);
     // Smoke hides an enemy completely: no nameplate or health bar through or inside a cloud.
     const head: Vec3 = [pos[0], pos[1] + 1.6, pos[2]], eye = this.camera.position;
-    a.conceal(!ally && this.smokes.length > 0 && (insideSmoke(this.smokes, head) || smokeBlocks(this.smokes, [eye.x, eye.y, eye.z], head)));
+    const hidden = !ally && this.smokes.length > 0 && (insideSmoke(this.smokes, head) || smokeBlocks(this.smokes, [eye.x, eye.y, eye.z], head));
+    a.conceal(hidden);
+    // A scoped sniper/DMR flashes a lens glint toward whoever they are looking at.
+    if (this.glints) {
+      const scoped = p.alive && !hidden && isScopedWeapon(p.weapon) && (p.prevButtons & BTN.AIM) !== 0;
+      if (scoped) {
+        const c = Math.cos(pitch), aim = new THREE.Vector3(-Math.sin(yaw) * c, Math.sin(pitch), -Math.cos(yaw) * c);
+        const lens = new THREE.Vector3(pos[0], pos[1] + (p.crouched ? 1.05 : 1.58), pos[2]).addScaledVector(aim, .45);
+        const toMe = eye.clone().sub(lens), d = toMe.length();
+        this.glints.set(p.id, lens, d > 1e-3 ? aim.dot(toMe.divideScalar(d)) : 0, d, performance.now() / 1000);
+      } else this.glints.set(p.id, null, 0, 0, 0);
+    }
     const now = performance.now() / 1000;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     const facing = p.meleeWindup > 0 ? p.meleeYaw : yaw;
@@ -414,6 +429,7 @@ export class ArenaScene {
 
   pruneAvatars(ids: Set<string>) {
     for (const [id, a] of this.avatars) if (!ids.has(id)) { a.dispose(this.scene); this.avatars.delete(id); }
+    this.glints?.prune(ids);
   }
 
   /** World-space muzzle of a remote avatar, for its tracers. */
