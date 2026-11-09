@@ -81,7 +81,7 @@ export function weaponStats(w: WeaponDef): string {
 }
 
 export const UTILITY_INFO: Record<UtilityId, { name: [string, string]; role: [string, string] }> = {
-  frag: { name: ['破片手雷', 'Frag grenade'], role: [`${FRAG.fuse / TICK_HZ}s 引爆，${FRAG.core}m 内 ${FRAG.damage} 伤害（一击致命），半径 ${FRAG.radius}m，把人炸飞；对护盾双倍伤害`, `Explodes after ${FRAG.fuse / TICK_HZ}s: ${FRAG.damage} damage within ${FRAG.core}m (lethal), ${FRAG.radius}m radius, throws people back; double damage to shields`] },
+  frag: { name: ['破片手雷', 'Frag grenade'], role: [`${FRAG.fuse / TICK_HZ}s 引爆，半径 ${FRAG.radius}m 内炸到就死；墙和敌方护盾能挡（护盾会被炸碎），不伤队友`, `Explodes after ${FRAG.fuse / TICK_HZ}s: anyone the blast reaches within ${FRAG.radius}m dies; walls and enemy shields block it (the shield breaks), teammates are safe`] },
   smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`${SMOKE.radius}m 烟幕持续 ${SMOKE.life / TICK_HZ}s，完全遮挡视线和名牌；烟内的人受外部枪击伤害 -${Math.round((1 - SMOKE.cover) * 100)}%`, `A ${SMOKE.radius}m cloud for ${SMOKE.life / TICK_HZ}s hides sight and nameplates; people inside take ${Math.round((1 - SMOKE.cover) * 100)}% less damage from shots fired from outside`] },
 };
 export const utilityCooldownSeconds = () => GRENADE.cooldown / TICK_HZ;

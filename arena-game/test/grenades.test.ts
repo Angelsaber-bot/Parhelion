@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FRAG, FRAG_KILL, GRENADE, SMOKE, SPAWN_PROTECTION_TICKS, TICK_HZ, validateUtility } from '../shared/content.ts';
-import { fragDamage, launchGrenade, smokeBlocks, stepGrenade, type Grenade } from '../shared/grenade.ts';
+import { fragReaches, launchGrenade, smokeBlocks, stepGrenade, type Grenade } from '../shared/grenade.ts';
 import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, type NetEvent } from '../shared/match.ts';
 import { RoomCore } from '../shared/room.ts';
@@ -98,16 +98,23 @@ function detonate(m: Match, at: [number, number, number], owner = 'a') {
 }
 
 describe('frag blasts', () => {
-  it('damage falls off with distance and reaches nothing beyond the radius', () => {
-    expect(fragDamage(0)).toBe(FRAG.damage); expect(fragDamage(FRAG.core)).toBe(FRAG.damage); expect(fragDamage(FRAG.radius)).toBe(FRAG.minDamage);
-    expect(FRAG.damage).toBeGreaterThanOrEqual(150); // lethal for every character inside the core
-    expect(fragDamage(FRAG.radius + .01)).toBe(0); expect(fragDamage(2)).toBeGreaterThan(fragDamage(4));
+  it('reaches everything inside its radius and nothing beyond it', () => {
+    expect(fragReaches(0)).toBe(true); expect(fragReaches(FRAG.radius)).toBe(true);
+    expect(fragReaches(FRAG.radius + .01)).toBe(false); expect(fragReaches(Number.NaN)).toBe(false);
+  });
+  it('any full-health enemy the blast reaches dies, even at the edge of the radius', () => {
+    for (const d of [.5, 3, FRAG.radius - .6]) {
+      const m = duel(); Object.assign(m.player('a')!, { x: 20, z: 20 }); Object.assign(m.player('b')!, { x: 0, z: -d, hp: 150 }); Object.assign(m.player('c')!, { x: 22, z: 20 });
+      detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.alive, `at ${d} m`).toBe(false);
+    }
+    const far = duel(); Object.assign(far.player('a')!, { x: 20, z: 20 }); Object.assign(far.player('b')!, { x: 0, z: -(FRAG.radius + 1.5), hp: 150 }); Object.assign(far.player('c')!, { x: 22, z: 20 });
+    detonate(far, [0, GRENADE.radius, 0]); expect(far.player('b')!.hp).toBe(150);
   });
   it('hurts an enemy in the open, spares a teammate, and hurts the thrower only a little and never fatally', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 2, hp: 10 }); Object.assign(m.player('b')!, { x: 0, z: -1.5 }); Object.assign(m.player('c')!, { x: 1, z: 0 });
     const hpB = m.player('b')!.hp, hpC = m.player('c')!.hp;
     const events = detonate(m, [0, GRENADE.radius, 0]);
-    expect(m.player('b')!.hp).toBeLessThan(hpB); expect(m.player('c')!.hp).toBe(hpC);
+    expect(m.player('b')!.hp).toBeLessThan(hpB); expect(m.player('b')!.alive).toBe(false); expect(m.player('c')!.hp).toBe(hpC);
     expect(m.player('a')!.hp).toBeGreaterThanOrEqual(1); expect(m.player('a')!.alive).toBe(true);
     expect(events.some((e) => e.t === 'blast')).toBe(true);
   });
@@ -120,7 +127,7 @@ describe('frag blasts', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -3 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
     m.shields.push({ id: 9, team: 'B', owner: 'b', x: 0, y: 0, z: -1.5, yaw: 0, hp: 300, life: 600 });
     const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, 0]);
-    expect(m.player('b')!.hp).toBe(hp); expect(m.shields[0].hp).toBeLessThan(300);
+    expect(m.player('b')!.hp).toBe(hp); expect(m.shields[0]?.hp ?? 0).toBeLessThanOrEqual(0); // the shield takes the blast and breaks
   });
   it('the blast throws enemies away from it and off their feet', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });

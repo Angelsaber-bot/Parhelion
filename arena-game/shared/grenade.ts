@@ -59,12 +59,8 @@ export function stepGrenade(m: ArenaMap, g: Grenade): boolean {
   return loud;
 }
 
-/** Linear falloff from full damage at the centre to the minimum at the edge; 0 outside. */
-export function fragDamage(distance: number): number {
-  if (!(distance >= 0) || distance > FRAG.radius) return 0;
-  if (distance <= FRAG.core) return FRAG.damage;
-  return Math.round(FRAG.damage + (FRAG.minDamage - FRAG.damage) * (distance - FRAG.core) / (FRAG.radius - FRAG.core));
-}
+/** True when a blast this far away reaches you (it is then lethal to enemies). */
+export function fragReaches(distance: number): boolean { return distance >= 0 && distance <= FRAG.radius; }
 
 /** Smoke is a sphere around the cloud's centre, a little above where the can landed. */
 export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + 1.3, s.z];

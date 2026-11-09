@@ -7,7 +7,7 @@ import {
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
   FRAG, FRAG_KILL, GRENADE, SMOKE, validateUtility, type UtilityId,
 } from './content.ts';
-import { fragDamage, insideSmoke, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
+import { fragReaches, insideSmoke, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
@@ -574,21 +574,20 @@ export class Match {
         }
         if (!shielded) best = Math.min(best, Math.max(0, len - h.bodyRadius));
       }
-      const dmg = fragDamage(best);
-      if (dmg <= 0) continue;
+      if (!fragReaches(best)) continue;
       if (!this.spawnProtected(id)) {
         // The blast throws people away from it and off their feet, harder the closer they were.
-        const k = dmg / FRAG.damage, dx = p.x - at[0], dz = p.z - at[2], len = Math.hypot(dx, dz) || 1;
+        const k = 1 - .6 * best / FRAG.radius, dx = p.x - at[0], dz = p.z - at[2], len = Math.hypot(dx, dz) || 1;
         p.vx = quant(p.vx + (len > .05 ? dx / len : 1) * FRAG.knockback * k); p.vz = quant(p.vz + (len > .05 ? dz / len : 0) * FRAG.knockback * k);
         p.vy = quant(Math.max(p.vy, FRAG.lift * k)); p.grounded = false; p.dashT = 0;
       }
       if (id === g.owner) {
         if (this.spawnProtected(id)) continue;
-        const self = Math.min(p.hp - 1, Math.round(dmg * FRAG.selfScale));
+        const self = Math.min(p.hp - 1, FRAG.selfDamage);
         if (self > 0) { p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
-      } else if (owner) this.damage(owner, id, dmg, false, FRAG_KILL);
+      } else if (owner) this.damage(owner, id, p.hp, false, FRAG_KILL); // reached = dead
     }
-    for (const sh of struck) this.damageShield(sh, FRAG.damage * FRAG.shieldScale);
+    for (const sh of struck) this.damageShield(sh, SHIELD.hp); // the shield takes the blast and breaks
   }
 
   private record(): void {

@@ -76,8 +76,9 @@ export const GRENADE = {
   throwGap: 24, // ticks between two throws
   throwLock: 12, // ticks before the held weapon can fire again
 };
-/** Lethal inside `core`, falling to `minDamage` at the edge; the blast throws people back. */
-export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, core: 1.6, damage: 150, minDamage: 20, selfScale: 0.35, knockback: 9, lift: 4.5, shieldScale: 2 };
+/** Lethal anywhere the blast reaches: walls and enemy shields still block it, teammates are spared,
+ * and the thrower takes a fixed, never-fatal `selfDamage`. The blast throws people back. */
+export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
 /** Blocks sight; anyone inside takes `cover` of the damage from shooters outside it. */
 export const SMOKE = { fuse: TICK_HZ, radius: 5, life: 12 * TICK_HZ, cover: 0.75 };
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
