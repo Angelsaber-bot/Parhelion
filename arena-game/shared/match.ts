@@ -556,7 +556,7 @@ export class Match {
     const at: Vec3 = [g.x, g.y + .15, g.z];
     this.events.push({ t: 'blast', gid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
     if (this.phase !== 'live') return;
-    const owner = this.slots.get(g.owner), struck = new Set<Shield>();
+    const owner = this.slots.get(g.owner);
     for (const [id, s] of this.slots) {
       const p = s.state;
       if (!p.alive || (p.team === g.team && id !== g.owner)) continue;
@@ -564,15 +564,8 @@ export class Match {
       let best = Infinity;
       for (const y of [h.bodyBottom + .1, (h.bodyBottom + h.bodyTop) / 2, h.headY]) {
         const point: Vec3 = [p.x, p.y + y, p.z], d: Vec3 = [point[0] - at[0], point[1] - at[1], point[2] - at[2]], len = Math.hypot(...d);
-        if (len > FRAG.radius + h.bodyRadius) continue;
-        const dir = d.map((v) => v / Math.max(len, 1e-6)) as Vec3;
-        if (len > 1e-3 && raycastMap(this.map, at, dir, len) < len - .05) continue;
-        let shielded = false;
-        for (const sh of this.shields) {
-          if (sh.team === g.team || sh.hp <= 0) continue;
-          if (rayShield(at, dir, sh.x, sh.y, sh.z, sh.yaw) < len) { shielded = true; struck.add(sh); }
-        }
-        if (!shielded) best = Math.min(best, Math.max(0, len - h.bodyRadius));
+        // Nothing stops it: walls and shields do not shelter anyone inside the radius.
+        if (len <= FRAG.radius + h.bodyRadius) best = Math.min(best, Math.max(0, len - h.bodyRadius));
       }
       if (!fragReaches(best)) continue;
       if (!this.spawnProtected(id)) {
@@ -587,7 +580,8 @@ export class Match {
         if (self > 0) { p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
       } else if (owner) this.damage(owner, id, p.hp, false, FRAG_KILL); // reached = dead
     }
-    for (const sh of struck) this.damageShield(sh, SHIELD.hp); // the shield takes the blast and breaks
+    // Enemy shields caught in the radius are blown apart too.
+    for (const sh of this.shields) if (sh.team !== g.team && sh.hp > 0 && Math.hypot(sh.x - at[0], sh.y + SHIELD.height / 2 - at[1], sh.z - at[2]) <= FRAG.radius) this.damageShield(sh, SHIELD.hp);
   }
 
   private record(): void {

@@ -118,16 +118,16 @@ describe('frag blasts', () => {
     expect(m.player('a')!.hp).toBeGreaterThanOrEqual(1); expect(m.player('a')!.alive).toBe(true);
     expect(events.some((e) => e.t === 'blast')).toBe(true);
   });
-  it('a wall between the blast and the enemy blocks it completely', () => {
+  it('a wall between the blast and the enemy does not save them', () => {
     const m = duel(true); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -8 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
-    const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, -4]);
-    expect(m.player('b')!.hp).toBe(hp);
+    detonate(m, [0, GRENADE.radius, -4]);
+    expect(m.player('b')!.alive).toBe(false);
   });
-  it('a hostile shield in the way absorbs the blast for the player behind it', () => {
+  it('a shield does not save the player behind it, and shields in range are blown apart', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -3 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
-    m.shields.push({ id: 9, team: 'B', owner: 'b', x: 0, y: 0, z: -1.5, yaw: 0, hp: 300, life: 600 });
-    const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, 0]);
-    expect(m.player('b')!.hp).toBe(hp); expect(m.shields[0]?.hp ?? 0).toBeLessThanOrEqual(0); // the shield takes the blast and breaks
+    m.shields.push({ id: 9, team: 'B', owner: 'b', x: 0, y: 0, z: -1.5, yaw: 0, hp: 300, life: 600 }, { id: 10, team: 'B', owner: 'b', x: 0, y: 0, z: -15, yaw: 0, hp: 300, life: 600 });
+    detonate(m, [0, GRENADE.radius, 0]);
+    expect(m.player('b')!.alive).toBe(false); expect(m.shields[0].hp).toBeLessThanOrEqual(0); expect(m.shields[1].hp).toBe(300); // out of range
   });
   it('the blast throws enemies away from it and off their feet', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });

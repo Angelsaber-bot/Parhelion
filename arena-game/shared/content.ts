@@ -76,8 +76,8 @@ export const GRENADE = {
   throwGap: 24, // ticks between two throws
   throwLock: 12, // ticks before the held weapon can fire again
 };
-/** Lethal anywhere the blast reaches: walls and enemy shields still block it, teammates are spared,
- * and the thrower takes a fixed, never-fatal `selfDamage`. The blast throws people back. */
+/** Lethal to every enemy within `radius`: walls and shields do not stop it (shields in range break),
+ * teammates are spared, and the thrower takes a fixed, never-fatal `selfDamage`. Throws people back. */
 export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
 /** Blocks sight; anyone inside takes `cover` of the damage from shooters outside it. */
 export const SMOKE = { fuse: TICK_HZ, radius: 5, life: 12 * TICK_HZ, cover: 0.75 };

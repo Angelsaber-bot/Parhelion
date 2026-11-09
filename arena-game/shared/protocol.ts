@@ -11,7 +11,7 @@ export const ROOM_NAME = 'arena';
 // v14 adds the utility slot: thrown frag and smoke grenades simulated by the server.
 // v15 makes grenades matter: lethal frag core with knockback, two charges, and smoke that is cover.
 // v16 accepts an eighth input bit (reserved, carries no rule); kept so clients match the deployed server.
-// v17: a frag kills any enemy its blast reaches (walls and enemy shields still block it).
+// v17: a frag kills every enemy within its radius; walls and shields do not stop it.
 export const RULES_VERSION = 17;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
