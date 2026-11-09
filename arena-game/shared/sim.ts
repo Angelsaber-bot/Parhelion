@@ -6,8 +6,7 @@
 import { CHARACTERS, CROUCH, DASH, DT, GRENADE, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
-/** AIM carries no rule; it only lets other clients draw a scope glint. */
-export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, THROW: 64, AIM: 128 } as const;
+export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, THROW: 64 } as const;
 
 export interface Input {
   seq: number;

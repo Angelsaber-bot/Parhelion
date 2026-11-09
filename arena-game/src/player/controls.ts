@@ -12,10 +12,6 @@ export class Controls {
   scoreboard = false;
   /** One-shot cosmetic request; consumed by the game loop. */
   inspect = false;
-  /** Set by the game while a scoped rifle is fully aimed: the dash key holds breath instead. */
-  breathMode = false;
-  private breathKey = false;
-  get holdingBreath() { return this.breathMode && this.breathKey; }
   /** Results-only display state; S never enters the live movement binding table. */
   resultsScoreboard = false;
   blocked = false;
@@ -60,7 +56,6 @@ export class Controls {
     if (!action || repeat) return;
     if (action === 'settings') { this.clearAll(); this.onSettings(); return; }
     this.keys.add(binding);
-    if (action === 'dash' && this.breathMode) { this.breathKey = true; return; } // steady the scope, never a dash
     this.latched |= BUTTONS[action] ?? 0;
     if (action === 'aim') this.aimHeld = true;
     if (action === 'scoreboard') this.scoreboard = true;
@@ -74,7 +69,6 @@ export class Controls {
     this.keys.delete(binding);
     const action = this.settings.action(binding);
     if (action === 'aim') this.aimHeld = this.settings.isDown(this.keys, 'aim');
-    if (action === 'dash') this.breathKey = this.settings.isDown(this.keys, 'dash') && this.breathKey;
     if (action === 'scoreboard') this.scoreboard = this.settings.isDown(this.keys, 'scoreboard');
   }
   /** Automated browser tests may explicitly bypass pointer lock; menus still block them. */
@@ -82,7 +76,7 @@ export class Controls {
   get locked() { return !this.blocked && (this.force || document.pointerLockElement === this.canvas); }
   get adsSensitivity() { return this.settings.value.adsSensitivity; }
   clearAim() { for (const binding of this.settings.bindingsFor('aim')) this.keys.delete(binding); this.aimHeld = false; this.lookScale = 1; }
-  clearAll() { this.keys.clear(); this.latched = 0; this.breathKey = false; this.scoreboard = false; this.clearAim(); }
+  clearAll() { this.keys.clear(); this.latched = 0; this.scoreboard = false; this.clearAim(); }
   private lockFailed(request: number) {
     if (request !== this.lockRequest || this.failedLockRequest === request || this.blocked || this.locked) return;
     this.failedLockRequest = request; this.clearAll(); this.onLockError();
@@ -103,8 +97,7 @@ export class Controls {
     const mz = Number(down('forward')) - Number(down('back'));
     const mx = Number(down('right')) - Number(down('left'));
     let buttons = this.latched; this.latched = 0;
-    for (const [action, bit] of Object.entries(BUTTONS)) if (down(action) && !(action === 'dash' && this.breathKey)) buttons |= bit;
-    if (this.aimHeld) buttons |= BTN.AIM; // lets others see a scope glint
+    for (const [action, bit] of Object.entries(BUTTONS)) if (down(action)) buttons |= bit;
     return { mx, mz, buttons };
   }
 }

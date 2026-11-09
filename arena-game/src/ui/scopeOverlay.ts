@@ -1,7 +1,6 @@
 /** Scope picture drawn over the real zoomed camera: a lens in a dark tube with edge vignette,
  * colour fringing, glare and a little dirt; a per-weapon reticle whose illuminated element takes
- * the finish's accent colour; and live readouts (range, zoom, breath). Presentation only. */
-import { bilingual } from '../../../shared-client/i18n.ts';
+ * the finish's accent colour; and range/zoom readouts. Purely visual: it never moves the aim. */
 
 export interface ScopeFrame {
   open: number; // 0..1 as the scope comes up
@@ -9,10 +8,6 @@ export interface ScopeFrame {
   accent: number;
   range: number | null; // metres to what the reticle is on
   zoom: number;
-  stamina: number; // 0..1 breath left
-  holding: boolean;
-  gasp: boolean;
-  kick: number; // 0..1 recoil, decays
   label: string;
 }
 
@@ -46,7 +41,7 @@ export class ScopeOverlay {
     f = { ...f, accent: reticleColour(f.accent) };
     this.fit(); g.setTransform(this.ratio, 0, 0, this.ratio, 0, 0); g.clearRect(0, 0, this.w, this.h);
     const { w, h } = this, open = Math.max(0, Math.min(1, f.open));
-    const R = Math.min(w, h) * .46 * (.82 + .18 * open), cx = w / 2, cy = h / 2 + f.kick * R * .07;
+    const R = Math.min(w, h) * .46 * (.82 + .18 * open), cx = w / 2, cy = h / 2;
     // Tube: everything outside the lens is the inside of the scope, then the eyepiece shadow.
     g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(cx, cy, R, 0, Math.PI * 2, true); g.fillStyle = '#020407'; g.fill('evenodd'); g.restore();
     const rim = g.createRadialGradient(cx, cy, R * .74, cx, cy, R);
@@ -89,15 +84,6 @@ export class ScopeOverlay {
     g.fillText(f.range === null ? '--- m' : `${Math.round(f.range)} m`, cx + R * .52 - 12, base);
     g.textAlign = 'left'; g.fillText(`${f.zoom.toFixed(1)}×`, cx - R * .52 + 12, base);
     g.textAlign = 'center'; g.font = '600 10px ui-monospace, monospace'; g.fillStyle = 'rgba(210,235,230,.55)'; g.fillText(f.label, cx, cy + R * .9);
-    // Breath: a thin arc that drains while held, red while gasping.
-    if (f.holding || f.gasp || f.stamina < .999) {
-      g.lineWidth = 3; g.strokeStyle = 'rgba(255,255,255,.12)'; g.beginPath(); g.arc(cx, cy, R * .62, Math.PI * .62, Math.PI * .38, true); g.stroke();
-      g.strokeStyle = f.gasp ? 'rgba(255,90,80,.85)' : hex(f.accent, .85);
-      const span = Math.PI * 1.76 * Math.max(0, Math.min(1, f.stamina));
-      g.beginPath(); g.arc(cx, cy, R * .62, Math.PI * .62, Math.PI * .62 - span, true); g.stroke();
-      g.fillStyle = f.gasp ? 'rgba(255,120,110,.9)' : 'rgba(220,240,235,.8)'; g.font = '700 11px system-ui, sans-serif';
-      g.fillText(f.gasp ? bilingual('换气', 'Out of breath') : f.holding ? bilingual('屏息', 'Holding breath') : '', cx, cy + R * .56);
-    }
     // Scope-in: a dark tunnel that clears as the optic settles.
     if (open < 1) { g.fillStyle = `rgba(2,4,7,${(1 - open) * .85})`; g.beginPath(); g.arc(cx, cy, R + 2, 0, Math.PI * 2); g.fill(); }
   }

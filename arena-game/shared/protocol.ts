@@ -10,7 +10,7 @@ export const ROOM_NAME = 'arena';
 // v13 makes the DMR and sniper exactly on-axis while moving or airborne, and appends seven melee finishes.
 // v14 adds the utility slot: thrown frag and smoke grenades simulated by the server.
 // v15 makes grenades matter: lethal frag core with knockback, two charges, and smoke that is cover.
-// v16 forwards the (rule-free) aim bit so other clients can draw a sniper's scope glint.
+// v16 accepts an eighth input bit (reserved, carries no rule); kept so clients match the deployed server.
 export const RULES_VERSION = 16;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
