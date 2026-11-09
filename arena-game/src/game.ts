@@ -411,7 +411,7 @@ export class Game {
         for (const p of this.latest?.players ?? []) { if (p.id === this.session.id || !p.alive) continue; const h = rayPlayer(eyeAt, dir, p.x, p.y, p.z, p.crouched); if (h && h.t < range) range = h.t; }
         const skin = WEAPONS[me.weapon]?.skins[this.names.get(this.session.id)?.skins[me.weapon] ?? 0];
         this.hud.scope({ open: (aim - .7) / .3, kind: me.weapon === 4 ? 'sniper' : 'dmr', accent: skin?.accent ?? 0xff4a3a, range: Number.isFinite(range) ? range : null,
-          zoom: Math.tan(78 * Math.PI / 360) / Math.tan((AIM_FOV[me.weapon] ?? 78) * Math.PI / 360), label: me.weapon === 4 ? 'LONGNIGHT · MIL-DOT' : 'HALO · BDC' });
+          zoom: Math.tan(78 * Math.PI / 360) / Math.tan((AIM_FOV[me.weapon] ?? 78) * Math.PI / 360), label: me.weapon === 4 ? 'LONGNIGHT · MIL-DOT' : 'HALO · BDC', theme: skin?.id, time: performance.now() / 1000 });
       } else this.hud.scope(null);
       const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead
       const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
