@@ -10,7 +10,8 @@ const sockets: WebSocket[] = [];
 // A compatible handshake alone does not prove the new cosmetic catalog reached
 // production. Send real appended indices and inspect the other client's snapshot.
 const releaseFinishes: Record<string, string> = {
-  firefly: 'guard-sash', corona: 'sealed-passage', halo: 'night-nacre',
+  lumen: 'stormcoil', corona: 'bastion-breaker', halo: 'petal-scabbard',
+  firefly: 'hummingbird', longnight: 'void-lance',
 };
 const releaseSkins = WEAPONS.map(weapon => {
   const id = releaseFinishes[weapon.id];
