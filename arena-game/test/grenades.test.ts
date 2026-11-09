@@ -144,6 +144,26 @@ describe('frag blasts', () => {
     const kill = events.find((e): e is Extract<NetEvent, { t: 'kill' }> => e.t === 'kill');
     expect(kill).toMatchObject({ killer: 'a', victim: 'b', w: FRAG_KILL }); expect(m.score.A).toBe(1);
   });
+  it('100% lethal sweep: every enemy within the radius dies — any direction, crouched or airborne, behind walls or shields, any hp', () => {
+    let cases = 0;
+    for (let ring = 0; ring <= 6; ring++) for (let k = 0; k < 12; k++) for (const crouched of [false, true]) for (const lift of [0, 1.2]) for (const cover of [false, true]) {
+      const d = Math.min(FRAG.radius, ring * FRAG.radius / 6), ang = k / 12 * Math.PI * 2, cz = cover ? -3 : 0, bx = Math.sin(ang) * d, bz = cz - Math.cos(ang) * d;
+      const m = duel(cover); Object.assign(m.player('a')!, { x: 25, z: 25 }); Object.assign(m.player('c')!, { x: 27, z: 25 });
+      Object.assign(m.player('b')!, { x: bx, z: bz, y: lift, crouched, hp: 1 + (cases * 37) % 200 });
+      if (cover) m.shields.push({ id: 50, team: 'B', owner: 'b', x: bx * .5, y: 0, z: (bz + cz) * .5, yaw: ang, hp: 300, life: 600 });
+      detonate(m, [0, GRENADE.radius, cz]);
+      expect(m.player('b')!.alive, `d=${d.toFixed(2)} ang=${k} crouched=${crouched} lift=${lift} cover=${cover}`).toBe(false);
+      cases++;
+    }
+    expect(cases).toBe(672);
+  });
+  it('a thrower who left the match before the fuse ran out still kills with it', () => {
+    const m = duel(); Object.assign(m.player('b')!, { x: 0, z: -2, hp: 150 }); Object.assign(m.player('c')!, { x: 20, z: 20 });
+    m.grenades.push(nade({ x: 0, y: GRENADE.radius, z: 0, owner: 'a', team: 'A', fuse: 1, rest: true }));
+    m.removePlayer('a');
+    (m as unknown as { stepGrenades(): void }).stepGrenades();
+    expect(m.player('b')!.alive).toBe(false); expect(m.score.A).toBe(1);
+  });
   it('spawn protection and the warm-up phase still apply', () => {
     const m = duel(); Object.assign(m.player('b')!, { x: 0, z: -1 }); m.slots.get('b')!.spawnProtectedUntilTick = m.tick + SPAWN_PROTECTION_TICKS;
     const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.hp).toBe(hp);

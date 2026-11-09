@@ -79,8 +79,8 @@ describe('validated two-gun one-melee loadouts', () => {
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
   it('version 14 refuses clients from before the utility slot, the old catalogs and old shotgun rules', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(17);
-    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
+    const core = new RoomCore({}); expect(RULES_VERSION).toBe(18);
+    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16, 17]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
     expect(core.match.slots.size).toBe(0);
   });
 });
@@ -178,9 +178,17 @@ describe('fair authoritative melee', () => {
     const wall = buildMap({ ...data, objects: [...data.objects, { id: 'wall', type: 'box', position: [0, 1.5, -1], size: [5, 3, .15], material: '', collision: true, role: 'wall' }] });
     for (const id of MELEE_IDS) { const m = arena(id, wall); attack(m); expect(m.player('b')!.hp).toBe(150); }
   });
-  it('hostile shields take one impact and block players; no through-shield cleave', () => {
-    const m = arena('hammer'); m.shields.push({ id: 1, owner: 'b', team: 'B', x: 0, y: 0, z: -1, yaw: 0, hp: 300, life: 600 });
-    attack(m); expect(m.player('b')!.hp).toBe(150); expect(m.shields[0].hp).toBe(300 - WEAPONS[weaponIndex('hammer')].damage);
+  it('shields do not block melee: every melee weapon hits the player behind a hostile shield', () => {
+    for (const id of MELEE_IDS) {
+      const m = arena(id); m.shields.push({ id: 1, owner: 'b', team: 'B', x: 0, y: 0, z: -1, yaw: 0, hp: 300, life: 600 });
+      attack(m); expect(m.player('b')!.hp, id).toBe(150 - WEAPONS[weaponIndex(id)].damage); expect(m.shields[0].hp).toBe(300);
+    }
+  });
+  it('with nobody in reach, a swing straight at a shield still damages it', () => {
+    // Crouched, so the swing does not lunge past the shield before it lands.
+    const m = arena('hammer'); Object.assign(m.player('b')!, { z: -20 }); m.shields.push({ id: 1, owner: 'b', team: 'B', x: 0, y: 0, z: -1, yaw: 0, hp: 300, life: 600 });
+    command(m, BTN.FIRE | BTN.CROUCH); for (let i = 0; i < WEAPONS[weaponIndex('hammer')].windup!; i++) command(m, BTN.CROUCH);
+    expect(m.shields[0].hp).toBe(300 - WEAPONS[weaponIndex('hammer')].damage);
   });
   it('a swing contacts at most one enemy, never a teammate', () => {
     const m = arena('hammer'); m.addPlayer('c', info('B')); for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step(); Object.assign(m.player('c')!, { x: .4, y: 0, z: -2.1 });

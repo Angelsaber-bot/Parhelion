@@ -165,7 +165,7 @@ export class Match {
   removePlayer(id: string): void {
     this.slots.delete(id);
     this.shields = this.shields.filter((s) => s.owner !== id);
-    this.grenades = this.grenades.filter((g) => g.owner !== id);
+    // Grenades already thrown stay live: a frag still goes off after its thrower leaves.
   }
 
   /** Bots occupying slots, used to make room when a human joins a full team. */
@@ -461,20 +461,15 @@ export class Match {
           const hit = rayPlayer(origin, dir, target.x, target.y, target.z, target.crouched);
           if (!hit || hit.t > nearest || hit.t > w.range) continue;
           if (raycastMap(this.map, origin, dir, hit.t + .001) <= hit.t + .001) continue;
-          let blocked: Shield | null = null, distance = hit.t;
-          for (const sh of this.shields) {
-            if (sh.team === p.team || sh.hp <= 0) continue;
-            const t = rayShield(origin, dir, sh.x, sh.y, sh.z, sh.yaw);
-            if (t < distance) { distance = t; blocked = sh; }
-          }
-          if (distance < nearest) {
-            nearest = distance; victim = blocked ? null : id; shield = blocked;
-            end = origin.map((v, i) => v + dir[i] * distance) as Vec3;
+          // Shields stop bullets, not blades: a swing reaches the player behind one.
+          if (hit.t < nearest) {
+            nearest = hit.t; victim = id; shield = null;
+            end = origin.map((v, i) => v + dir[i] * hit.t) as Vec3;
           }
         }
       }
-      // A directly aimed shield can also be struck without a player behind it.
-      for (const sh of this.shields) {
+      // With nobody in reach, a directly aimed shield can still be struck (and broken).
+      if (!victim) for (const sh of this.shields) {
         if (sh.team === p.team || sh.hp <= 0) continue;
         const t = rayShield(origin, aim, sh.x, sh.y, sh.z, sh.yaw);
         if (t < nearest && raycastMap(this.map, origin, aim, t + .001) > t + .001) {
@@ -514,7 +509,7 @@ export class Match {
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
-  private damage(from: Slot, victimId: string, dmg: number, head: boolean, weapon: number): void {
+  private damage(from: Pick<Slot, 'kills'> & { state: { id: string; team: Team } }, victimId: string, dmg: number, head: boolean, weapon: number): void {
     // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
@@ -550,13 +545,14 @@ export class Match {
     this.smokes = this.smokes.filter((s) => s.life > 0);
   }
 
-  /** A frag reaches what it can see: walls block, hostile-team shields absorb, teammates are spared,
-   *  and the thrower takes a non-lethal share. */
+  /** A frag kills every enemy within its radius (walls and shields do not shelter them), spares
+   *  teammates and spawn-protected players, and the thrower takes a non-lethal share. */
   private blast(g: Grenade): void {
     const at: Vec3 = [g.x, g.y + .15, g.z];
     this.events.push({ t: 'blast', gid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
     if (this.phase !== 'live') return;
-    const owner = this.slots.get(g.owner);
+    // A thrower who already left still owns the blast: it kills, credited to their team.
+    const owner = this.slots.get(g.owner) ?? { state: { id: g.owner, team: g.team }, kills: 0 };
     for (const [id, s] of this.slots) {
       const p = s.state;
       if (!p.alive || (p.team === g.team && id !== g.owner)) continue;
@@ -578,7 +574,7 @@ export class Match {
         if (this.spawnProtected(id)) continue;
         const self = Math.min(p.hp - 1, FRAG.selfDamage);
         if (self > 0) { p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
-      } else if (owner) this.damage(owner, id, p.hp, false, FRAG_KILL); // reached = dead
+      } else this.damage(owner, id, p.hp, false, FRAG_KILL); // reached = dead
     }
     // Enemy shields caught in the radius are blown apart too.
     for (const sh of this.shields) if (sh.team !== g.team && sh.hp > 0 && Math.hypot(sh.x - at[0], sh.y + SHIELD.height / 2 - at[1], sh.z - at[2]) <= FRAG.radius) this.damageShield(sh, SHIELD.hp);

@@ -53,8 +53,11 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
       m.queueInputs('b',[input(1,{yaw:Math.PI,buttons:BTN.SHIELD})]); m.step();
       expect(m.shields).toHaveLength(1); expect(m.shields[0].hp).toBe(SHIELD.hp); m.snapshot();
       strikeAt(m,impact); const snap=m.snapshot();
-      expect(m.player('b')!.hp).toBe(150);
+      const melee=(MELEE_IDS as readonly string[]).includes(id);
+      // Melee passes through shields (v18): once immunity ends the swing reaches b, not the shield.
+      if(!(melee&&impact>=150)) expect(m.player('b')!.hp).toBe(150);
       if(impact<150){ expect(m.shields[0].hp).toBe(SHIELD.hp); expect(snap.events.some(e=>e.t==='hit'||e.t==='kill'||e.t==='shieldBreak')).toBe(false); }
+      else if(melee){ expect(m.player('b')!.hp).toBeLessThan(150); expect(m.shields[0].hp).toBe(SHIELD.hp); }
       else if(id==='corona'){
         expect(m.shields).toHaveLength(0);
         expect(snap.events.filter(e=>e.t==='shieldBreak')).toHaveLength(1);

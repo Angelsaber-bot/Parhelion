@@ -23,10 +23,50 @@ const polar = (c: FxContext, a: number, r: number): [number, number] => [c.cx + 
 function outside(g: G, c: FxContext, paint: () => void, inset = 0) {
   g.save(); g.beginPath(); g.rect(0, 0, c.w, c.h); g.arc(c.cx, c.cy, c.R - inset, 0, TAU, true); g.clip('evenodd'); paint(); g.restore();
 }
+/** Offscreen canvases for things that never change between frames (glow rings, flame sprites). */
+function surface(w: number, h: number): HTMLCanvasElement | null {
+  if (typeof document === 'undefined') return null;
+  const c = document.createElement('canvas'); c.width = Math.max(1, Math.round(w)); c.height = Math.max(1, Math.round(h));
+  return c.getContext('2d') ? c : null;
+}
+const glowCache = new Map<string, HTMLCanvasElement | null>();
+/** A soft coloured annulus at the rim, rendered once per size and then just stamped. */
 function ringGlow(g: G, c: FxContext, colour: string, inner: number, outer: number, peak = .25) {
+  const key = `${Math.round(c.R)}|${colour}|${inner}|${outer}|${peak}`;
+  let img = glowCache.get(key);
+  if (img === undefined) {
+    const size = Math.ceil(c.R * outer * 2) + 2;
+    img = surface(size, size);
+    if (img) {
+      const x = img.getContext('2d')!, m = size / 2, grad = x.createRadialGradient(m, m, c.R * inner, m, m, c.R * outer);
+      grad.addColorStop(0, colour.replace('ALPHA', '0')); grad.addColorStop(peak, colour.replace('ALPHA', '.38')); grad.addColorStop(1, colour.replace('ALPHA', '0'));
+      x.fillStyle = grad; x.beginPath(); x.arc(m, m, c.R * outer, 0, TAU); x.arc(m, m, c.R * inner, 0, TAU, true); x.fill('evenodd');
+    }
+    if (glowCache.size > 48) glowCache.clear();
+    glowCache.set(key, img);
+  }
+  if (img) { g.drawImage(img, c.cx - img.width / 2, c.cy - img.height / 2); return; }
   const grad = g.createRadialGradient(c.cx, c.cy, c.R * inner, c.cx, c.cy, c.R * outer);
   grad.addColorStop(0, colour.replace('ALPHA', '0')); grad.addColorStop(peak, colour.replace('ALPHA', '.38')); grad.addColorStop(1, colour.replace('ALPHA', '0'));
   g.fillStyle = grad; g.beginPath(); g.arc(c.cx, c.cy, c.R * outer, 0, TAU); g.arc(c.cx, c.cy, c.R * inner, 0, TAU, true); g.fill('evenodd');
+}
+/** One flame tongue, base at the bottom centre, drawn once (crisp or pre-blurred) and stamped many times. */
+let flameSprites: { sharp: HTMLCanvasElement | null; soft: HTMLCanvasElement | null } | null = null;
+function flameSprite(soft: boolean): HTMLCanvasElement | null {
+  if (!flameSprites) {
+    const make = (blur: boolean) => {
+      const W = 48, H = 160, pad = blur ? 14 : 2, img = surface(W + pad * 2, H + pad * 2); if (!img) return null;
+      const x = img.getContext('2d')!, cx = W / 2 + pad, base = H + pad, top = pad;
+      if (blur) x.filter = 'blur(6px)';
+      const grad = x.createLinearGradient(cx, base, cx, top);
+      grad.addColorStop(0, blur ? 'rgba(255,200,90,.55)' : 'rgba(255,248,205,.95)'); grad.addColorStop(.3, blur ? 'rgba(255,120,30,.5)' : 'rgba(255,175,55,.85)');
+      grad.addColorStop(.7, blur ? 'rgba(200,40,10,.32)' : 'rgba(235,70,20,.55)'); grad.addColorStop(1, 'rgba(120,10,0,0)');
+      x.fillStyle = grad; x.beginPath(); x.moveTo(cx - W / 2, base); x.quadraticCurveTo(cx - W * .42, top + H * .45, cx, top); x.quadraticCurveTo(cx + W * .42, top + H * .45, cx + W / 2, base); x.closePath(); x.fill();
+      return img;
+    };
+    flameSprites = { sharp: make(false), soft: make(true) };
+  }
+  return soft ? flameSprites.soft : flameSprites.sharp;
 }
 
 /** Flames licking in over the lens edge and out into the dark, with rising embers. */
@@ -34,24 +74,25 @@ function fire(g: G, c: FxContext) {
   g.save(); g.globalCompositeOperation = 'lighter';
   ringGlow(g, c, 'rgba(255,120,30,ALPHA)', .88, 1.5, .2);
   outside(g, c, () => {
-    // Two passes: a soft blurred body of fire, then crisp swaying tongues of uneven height.
+    // Two passes of pre-rendered tongues: a soft body of fire, then crisp swaying flames of uneven height.
     for (const pass of [0, 1]) {
-      g.filter = pass ? 'none' : 'blur(7px)';
+      const img = flameSprite(!pass);
       for (let i = 0; i < 64; i++) {
         const a = i / 64 * TAU + Math.sin(c.t * .7 + i) * .03, flick = .5 + .5 * wave(c.t * 3.4 + i * 1.37), tall = hash(i * 5) > .7 ? 1.6 : 1;
         for (const dir of [-1, 1]) {
           const len = c.R * (dir < 0 ? .04 + .08 * flick : (.08 + .2 * flick) * tall) * (.7 + .6 * hash(i * 3 + dir)) * (pass ? 1 : 1.25);
           const half = c.R * (.035 + .03 * hash(i)) * (pass ? .7 : 1.4), sway = Math.sin(c.t * 5 + i * 2.1) * .07 + Math.sin(c.t * 2.3 + i) * .04;
-          const [bx, by] = polar(c, a, c.R + c.R * .012), [tx, ty] = polar(c, a + sway, c.R + dir * len), [mx, my] = polar(c, a + sway * .5, c.R + dir * len * .55);
-          const nx = -Math.sin(a) * half, ny = Math.cos(a) * half;
-          const grad = g.createLinearGradient(bx, by, tx, ty);
-          grad.addColorStop(0, pass ? 'rgba(255,248,205,.95)' : 'rgba(255,200,90,.5)'); grad.addColorStop(.3, pass ? 'rgba(255,175,55,.8)' : 'rgba(255,120,30,.45)');
-          grad.addColorStop(.7, pass ? 'rgba(235,70,20,.5)' : 'rgba(200,40,10,.3)'); grad.addColorStop(1, 'rgba(120,10,0,0)');
-          g.fillStyle = grad; g.beginPath(); g.moveTo(bx + nx, by + ny); g.quadraticCurveTo(mx + nx * .8, my + ny * .8, tx, ty); g.quadraticCurveTo(mx - nx * .8, my - ny * .8, bx - nx, by - ny); g.closePath(); g.fill();
+          const [bx, by] = polar(c, a, c.R + c.R * .012), heading = a + (dir > 0 ? sway : Math.PI + sway);
+          if (img) {
+            g.save(); g.translate(bx, by); g.rotate(heading + Math.PI / 2); g.scale(half * 2 / 48, len / 160);
+            g.drawImage(img, -img.width / 2, -img.height + (img.height - 160) / 2); g.restore();
+          } else {
+            const [tx, ty] = polar(c, heading, 0).map((v, k) => v - (k ? c.cy : c.cx)) as [number, number];
+            g.fillStyle = 'rgba(255,150,40,.6)'; g.beginPath(); g.moveTo(bx, by); g.lineTo(bx + tx * len, by + ty * len); g.stroke();
+          }
         }
       }
     }
-    g.filter = 'none';
     for (let i = 0; i < 70; i++) {
       const p = (c.t * (.18 + .12 * hash(i)) + hash(i + 50)) % 1, a = hash(i + 9) * TAU, [x, y] = polar(c, a, c.R * (1.02 + .35 * hash(i + 3)));
       const ey = y - p * c.h * .35, ex = x + Math.sin(c.t * 2 + i) * 12;

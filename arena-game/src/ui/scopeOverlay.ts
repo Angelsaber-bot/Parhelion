@@ -32,6 +32,7 @@ export function reticleColour(c: number) {
 export class ScopeOverlay {
   private ctx: CanvasRenderingContext2D | null;
   private w = 0; private h = 0; private ratio = 1;
+  private layer: HTMLCanvasElement | null = null; private layerKey = ''; private layerAt = -1; private layerR = 0;
   constructor(readonly canvas: HTMLCanvasElement) { this.ctx = canvas.getContext?.('2d') ?? null; }
   /** Animated themes are soft: a capped internal resolution keeps them cheap on large, dense screens. */
   private fit(themed = false) {
@@ -47,21 +48,23 @@ export class ScopeOverlay {
     this.fit(!!scopeTheme(f.theme)); g.setTransform(this.ratio, 0, 0, this.ratio, 0, 0); g.clearRect(0, 0, this.w, this.h);
     const { w, h } = this, open = Math.max(0, Math.min(1, f.open));
     const R = Math.min(w, h) * .46 * (.82 + .18 * open), cx = w / 2, cy = h / 2, theme = scopeTheme(f.theme), t = f.time ?? 0;
-    // Tube: everything outside the lens is the inside of the scope (tinted by the finish's theme).
-    let tube: string | CanvasGradient = '#020407';
-    if (theme) { const tint = g.createRadialGradient(cx, cy, R, cx, cy, Math.hypot(w, h) / 2); tint.addColorStop(0, theme.surround[0]); tint.addColorStop(1, theme.surround[1]); tube = tint; }
-    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(cx, cy, R, 0, Math.PI * 2, true); g.fillStyle = tube; g.fill('evenodd'); g.restore();
-    const rim = g.createRadialGradient(cx, cy, R * .74, cx, cy, R);
-    rim.addColorStop(0, 'rgba(0,0,0,0)'); rim.addColorStop(.75, 'rgba(0,0,0,.18)'); rim.addColorStop(1, 'rgba(0,0,0,.78)');
-    g.fillStyle = rim; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
-    // Chromatic fringe at the rim and a soft glare arc.
-    g.lineWidth = 2;
-    for (const [dx, col] of [[1.6, 'rgba(255,70,60,.38)'], [-1.6, 'rgba(70,210,255,.34)']] as const) { g.strokeStyle = col; g.beginPath(); g.arc(cx + dx, cy, R - 1.5, 0, Math.PI * 2); g.stroke(); }
-    g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = R * .05; g.beginPath(); g.arc(cx, cy, R * .86, Math.PI * 1.08, Math.PI * 1.42); g.stroke();
-    g.strokeStyle = 'rgba(255,255,255,.035)'; g.lineWidth = R * .02; g.beginPath(); g.arc(cx, cy, R * .78, Math.PI * 1.12, Math.PI * 1.3); g.stroke();
-    for (const d of DIRT) { g.fillStyle = `rgba(210,220,230,${d.o})`; g.beginPath(); g.arc(cx + Math.cos(d.a) * d.r * R, cy + Math.sin(d.a) * d.r * R, d.s, 0, Math.PI * 2); g.fill(); }
-    // The finish's living surround: fire, lightning, frost, petals...
-    if (theme) { g.save(); theme.fx(g, { cx, cy, R, w, h, t }); g.restore(); }
+    if (theme) {
+      // Themed surrounds are soft and busy: paint them into a half-resolution layer at most ~30
+      // times a second, then stretch it under the crisp, every-frame reticle.
+      const layer = this.layer ??= typeof document === 'undefined' ? null : document.createElement('canvas'), scale = .5;
+      const lw = Math.max(1, Math.round(w * scale)), lh = Math.max(1, Math.round(h * scale)), key = `${lw}x${lh}|${f.theme}`;
+      if (layer && (key !== this.layerKey || t < this.layerAt || t - this.layerAt >= 1 / 30 || Math.abs(R - this.layerR) > R * .02)) {
+        if (layer.width !== lw || layer.height !== lh) { layer.width = lw; layer.height = lh; }
+        const lg = layer.getContext('2d');
+        if (lg) {
+          lg.setTransform(lw / w, 0, 0, lh / h, 0, 0); lg.clearRect(0, 0, w, h);
+          this.backdrop(lg, w, h, cx, cy, R, theme); lg.save(); theme.fx(lg, { cx, cy, R, w, h, t }); lg.restore();
+          this.layerKey = key; this.layerAt = t; this.layerR = R;
+        } else this.layerKey = '';
+      }
+      if (layer && this.layerKey === key) { g.imageSmoothingEnabled = true; g.drawImage(layer, 0, 0, w, h); }
+      else { this.backdrop(g, w, h, cx, cy, R, theme); g.save(); theme.fx(g, { cx, cy, R, w, h, t }); g.restore(); }
+    } else this.backdrop(g, w, h, cx, cy, R, undefined);
     // Reticle.
     g.save(); g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.clip();
     if (theme) { this.themedReticle(g, f.kind, theme, cx, cy, R, t); g.restore(); this.readouts(g, f, cx, cy, R, open); return; }
@@ -87,6 +90,22 @@ export class ScopeOverlay {
     g.restore();
     this.readouts(g, f, cx, cy, R, open);
   }
+  /** Tube, rim darkening, colour fringe, glare and dirt: everything under the reticle. */
+  private backdrop(g: CanvasRenderingContext2D, w: number, h: number, cx: number, cy: number, R: number, theme: ScopeTheme | undefined) {
+    // Tube: everything outside the lens is the inside of the scope (tinted by the finish's theme).
+    let tube: string | CanvasGradient = '#020407';
+    if (theme) { const tint = g.createRadialGradient(cx, cy, R, cx, cy, Math.hypot(w, h) / 2); tint.addColorStop(0, theme.surround[0]); tint.addColorStop(1, theme.surround[1]); tube = tint; }
+    g.save(); g.beginPath(); g.rect(0, 0, w, h); g.arc(cx, cy, R, 0, Math.PI * 2, true); g.fillStyle = tube; g.fill('evenodd'); g.restore();
+    const rim = g.createRadialGradient(cx, cy, R * .74, cx, cy, R);
+    rim.addColorStop(0, 'rgba(0,0,0,0)'); rim.addColorStop(.75, 'rgba(0,0,0,.18)'); rim.addColorStop(1, 'rgba(0,0,0,.78)');
+    g.fillStyle = rim; g.beginPath(); g.arc(cx, cy, R, 0, Math.PI * 2); g.fill();
+    // Chromatic fringe at the rim and a soft glare arc.
+    g.lineWidth = 2;
+    for (const [dx, col] of [[1.6, 'rgba(255,70,60,.38)'], [-1.6, 'rgba(70,210,255,.34)']] as const) { g.strokeStyle = col; g.beginPath(); g.arc(cx + dx, cy, R - 1.5, 0, Math.PI * 2); g.stroke(); }
+    g.strokeStyle = 'rgba(255,255,255,.07)'; g.lineWidth = R * .05; g.beginPath(); g.arc(cx, cy, R * .86, Math.PI * 1.08, Math.PI * 1.42); g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,.035)'; g.lineWidth = R * .02; g.beginPath(); g.arc(cx, cy, R * .78, Math.PI * 1.12, Math.PI * 1.3); g.stroke();
+    for (const d of DIRT) { g.fillStyle = `rgba(210,220,230,${d.o})`; g.beginPath(); g.arc(cx + Math.cos(d.a) * d.r * R, cy + Math.sin(d.a) * d.r * R, d.s, 0, Math.PI * 2); g.fill(); }
+  }
   private readouts(g: CanvasRenderingContext2D, f: ScopeFrame, cx: number, cy: number, R: number, open: number) {
     // Readouts inside the bottom of the lens.
     g.font = '700 15px ui-monospace, SFMono-Regular, Menlo, monospace'; g.textBaseline = 'middle';
@@ -110,8 +129,9 @@ export class ScopeOverlay {
     const line = (x1: number, y1: number, x2: number, y2: number, width: number, id: number) => {
       g.lineCap = 'round';
       g.shadowBlur = 0; g.strokeStyle = 'rgba(0,0,0,.55)'; g.lineWidth = width + 2.4; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
-      g.shadowColor = theme.line; g.shadowBlur = theme.style === 'flame' ? 10 + 6 * Math.sin(t * 17 + id) : 8;
+      g.shadowColor = theme.line; g.shadowBlur = theme.style === 'flame' ? Math.round(10 + 6 * Math.sin(t * 17 + id)) : 8;
       g.globalAlpha = flicker; g.strokeStyle = theme.line; g.lineWidth = width; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.globalAlpha = 1;
+      g.shadowBlur = 0; // additive strokes under a live shadow are the slow path; the glow is already there
       if (theme.style === 'flame' && width > 2) { g.globalCompositeOperation = 'lighter'; g.strokeStyle = 'rgba(255,240,170,.7)'; g.lineWidth = width * .35; g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke(); g.globalCompositeOperation = 'source-over'; }
       if (theme.style === 'electric') {
         const len = Math.hypot(x2 - x1, y2 - y1), nx = -(y2 - y1) / (len || 1), ny = (x2 - x1) / (len || 1), steps = Math.max(4, Math.round(len / 18));
