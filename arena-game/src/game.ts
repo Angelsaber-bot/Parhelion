@@ -5,7 +5,7 @@ import { bilingual } from '../../shared-client/i18n.ts';
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
-import type { NetEvent, PlayerSnap, Snapshot } from '../shared/match.ts';
+import { spawnYaw, type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
 import { applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './rendering/audio.ts';
 import type { Controls } from './player/controls.ts';
@@ -15,6 +15,7 @@ import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './player
 import { type ArenaScene } from './rendering/scene.ts';
 import type { Session } from './network/session.ts';
 import {FrameGate} from './rendering/renderScheduling.ts';
+import { RangeStats } from './ui/rangeStats.ts';
 
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
@@ -58,6 +59,7 @@ export class Game {
     private onExit: (reason: string) => void,
   ) {
     this.map = session.map;
+    this.rangeStats = session.practice ? new RangeStats() : null;
     // Hud and ArenaScene are reused after returning to the lobby: clear them before
     // the first snapshot of a new session, not three seconds later at live phase.
     this.controls.clearAll(); this.controls.resultsScoreboard = false; this.controls.weapon = 0;
@@ -125,8 +127,13 @@ export class Game {
   }
 
   private distance(at: readonly number[]) { const me = this.me; return me ? Math.hypot(at[0] - me.x, at[1] - me.y, at[2] - me.z) : 30; }
+  /** Training range readout (null in real matches). */
+  rangeStats: RangeStats | null = null;
+  private rangeStatsAt = 0;
+
   private onEvent(e: NetEvent) {
     const myId = this.session.id;
+    this.rangeStats?.event(e, myId, performance.now() / 1000);
     const name = (id: string) => this.names.get(id)?.name ?? id;
     switch (e.t) {
       case 'shot': {
@@ -198,7 +205,7 @@ export class Game {
       case 'spawn':
         if (e.id === myId) {
           const mine = this.latest?.players.find((p) => p.id === myId);
-          if (mine) { this.controls.yaw = mine.yaw; this.controls.pitch = 0; }
+          if (mine) { this.controls.yaw = spawnYaw(mine.x, mine.z); this.controls.pitch = 0; }
           this.smooth = [0, 0, 0];
         }
         break;
@@ -416,6 +423,7 @@ export class Game {
     this.scene.update(dt);
     this.scene.render(!!me?.alive);
     const ping = this.session.online ? bilingual(`快照间隔 ${Math.round(this.snapGap)} ms`, `Snapshot interval ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');
+    if (this.rangeStats && performance.now() - this.rangeStatsAt > 200) { this.rangeStatsAt = performance.now(); const panel = document.getElementById('range-stats'); if (panel) panel.innerHTML = this.rangeStats.render(performance.now() / 1000); }
     this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping);
   }
 }

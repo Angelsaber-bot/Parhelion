@@ -10,7 +10,7 @@ const root = resolve('../arena-game');
 const mocks: Record<string, string> = {
   'scene.ts': 'export class ArenaScene { prepareLoadout(){}  loadMap(){return Promise.resolve()}setView(){}render(){}disposeCombatEffects(){} }',
   'game.ts': `export class Game { constructor(session,scene,controls,hud,onExit){this.session=session;this.online=session.online;this.onExit=onExit;window.__qa.games++}setPaused(p){window.__qa.pauses.push(p)}stop(){if(this.stopped)return;this.stopped=true;this.session.close();this.onExit('')} }`,
-  'session.ts': `export function startOffline(){return window.__qa.session(false)}export async function joinOnline(){return window.__qa.session(true)}`,
+  'session.ts': `export function startRange(){throw Error('unexpected training range start')}export function startOffline(){return window.__qa.session(false)}export async function joinOnline(){return window.__qa.session(true)}`,
   'audio.ts': 'export const sfx={unlock(){}}', 'armory.ts': 'export function openArmory(){}',
 };
 const bundle = build({ entryPoints: [resolve(root, 'src/main.ts')], bundle: true, write: false, format: 'iife', platform: 'browser', loader: { '.webp': 'dataurl', '.css': 'empty' }, plugins: [{ name: 'boundaries', setup(b) { b.onResolve({ filter: /^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/ }, a => ({ path: a.path.split('/').at(-1)!, namespace: 'boundary' })); b.onLoad({ filter: /.*/, namespace: 'boundary' }, a => ({ contents: mocks[a.path], loader: 'js' })); } }] });

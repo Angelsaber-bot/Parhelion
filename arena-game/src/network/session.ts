@@ -7,6 +7,8 @@ import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
 import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
+import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../../shared/trainingRange.ts';
+import type { Loadout, UtilityId } from '../../shared/content.ts';
 import { isWorkerUrl, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../../shared/protocol.ts';
 import type { Input } from '../../shared/sim.ts';
 
@@ -24,6 +26,12 @@ export interface Session {
   setPaused(paused: boolean): void;
   /** Offline only: the in-browser authoritative match (debug/testing). */
   match?: Match;
+  /** Training range only: live loadout swaps and a dummy reset. */
+  practice?: PracticeControls;
+}
+export interface PracticeControls {
+  apply(choice: { loadout: Loadout; utility: UtilityId; skins: number[] }): boolean;
+  resetDummies(): void;
 }
 
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
@@ -152,6 +160,21 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
       match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
+  return runLocal(match, id);
+}
+
+/** Offline training range: you, the range map and its dummies. */
+export function startRange(opts: JoinOptions): Session {
+  const match = new Match(getRangeMap(), '1v1');
+  setupRange(match);
+  const id = 'you';
+  match.addPlayer(id, { name: opts.name || 'You', team: 'A', char: opts.char, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
+  const s = runLocal(match, id);
+  s.practice = { apply: (choice) => applyPracticeLoadout(match, id, choice), resetDummies: () => resetDummies(match) };
+  return s;
+}
+
+function runLocal(match: Match, id: string): Session {
   let last = performance.now(), acc = 0, paused = false;
   const s: Session = {
     id,

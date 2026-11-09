@@ -14,6 +14,9 @@ import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
 import { aimDir, applyInput, clonePlayer, newPlayer, playerEye, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
 
 export type Phase = 'waiting' | 'countdown' | 'live' | 'ended';
+/** Spawn facing: toward the map centre. Clients derive it from the spawn position, because later
+ * inputs in the same snapshot window may already have replaced the authoritative yaw. */
+export const spawnYaw = (x: number, z: number) => Math.atan2(x, z);
 
 export interface Controller {
   /** Called once per tick before inputs are consumed; returns this tick's input. */
@@ -112,6 +115,8 @@ export class Match {
   grenades: Grenade[] = [];
   smokes: Smoke[] = [];
   private nextGrenade = 1;
+  /** Training range only: untimed, never ends, dummies seated at fixed posts and back in a second. */
+  practice: { homes: Map<string, { x: number; y: number; z: number; yaw: number }>; respawnTicks: number } | null = null;
   readonly slots = new Map<string, Slot>();
   private events: NetEvent[] = [];
   private history: Map<string, HistoricalPose>[] = [];
@@ -128,6 +133,7 @@ export class Match {
   }
 
   hasRoom(team: Team): boolean {
+    if (this.practice) return true;
     return this.teamCount(team) < TEAM_CAPACITY[this.layout][team];
   }
 
@@ -152,6 +158,9 @@ export class Match {
     this.slots.set(id, slot);
     this.spawn(slot);
   }
+
+  /** Training range: return a seated player to its post immediately. */
+  respawnNow(id: string): void { const slot = this.slots.get(id); if (slot) this.spawn(slot); }
 
   removePlayer(id: string): void {
     this.slots.delete(id);
@@ -225,6 +234,14 @@ export class Match {
   }
 
   private stepPhase(): void {
+    if (this.practice) {
+      if (this.phase !== 'live') {
+        // Going live re-seats everyone, so the client receives its spawn (and facing) like a real match.
+        this.phase = 'live'; this.phaseT = 0; this.events.push({ t: 'phase', phase: 'live' });
+        for (const slot of this.slots.values()) this.spawn(slot);
+      }
+      return;
+    }
     const bothTeams = this.teamCount('A') > 0 && this.teamCount('B') > 0;
     if (!bothTeams && this.phase !== 'waiting') { this.setPhase('waiting', 0); return; }
     switch (this.phase) {
@@ -295,12 +312,14 @@ export class Match {
     const [x, y, z] = best.position;
     Object.assign(p, {
       x, y, z, vx: 0, vy: 0, vz: 0,
-      yaw: Math.atan2(x, z), // face the map centre
+      yaw: spawnYaw(x, z), // face the map centre
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0, utilityCd: 0,
     });
-    slot.spawnProtectedUntilTick = this.tick + SPAWN_PROTECTION_TICKS;
+    const home = this.practice?.homes.get(p.id);
+    if (home) Object.assign(p, { x: home.x, y: home.y, z: home.z, yaw: home.yaw });
+    slot.spawnProtectedUntilTick = home ? this.tick : this.tick + SPAWN_PROTECTION_TICKS;
     slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
     this.events.push({ t: 'spawn', id: p.id });
   }
@@ -504,7 +523,7 @@ export class Match {
     if (v.state.hp > 0) return;
     v.state.alive = false;
     v.state.dashT = 0; v.state.meleeWindup = 0; v.melee = null;
-    v.respawn = RESPAWN_TICKS;
+    v.respawn = this.practice?.homes.has(victimId) ? this.practice.respawnTicks : RESPAWN_TICKS;
     v.deaths++;
     from.kills++;
     if (this.phase === 'live') this.score[from.state.team]++;

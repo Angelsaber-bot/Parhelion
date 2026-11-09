@@ -31,7 +31,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['冲刺', 'Dash'], ['护盾', 'Shield'], ['奔跑', 'Sprint'], ['跳跃', 'Jump'], ['移动', 'Move'],
   ['向前', 'Forward'], ['向后', 'Backward'], ['向左', 'Left'], ['向右', 'Right'],
   ['射击 / 近战攻击', 'Fire / melee attack'], ['射击 / 近战', 'Fire / melee'], ['射击', 'Fire'], ['按住瞄准', 'Hold aim'],
-  ['设置菜单', 'Settings menu'], ['换弹', 'Reload'], ['按住下蹲', 'Hold crouch'], ['按住计分板', 'Hold scoreboard'], ['检视武器', 'Inspect weapon'], ['投掷道具', 'Throw utility'], ['手雷', 'Frag'], ['烟雾', 'Smoke'],
+  ['设置菜单', 'Settings menu'], ['换弹', 'Reload'], ['按住下蹲', 'Hold crouch'], ['按住计分板', 'Hold scoreboard'], ['检视武器', 'Inspect weapon'], ['投掷道具', 'Throw utility'], ['手雷', 'Frag'], ['烟雾', 'Smoke'], ['训练场', 'Training range'],
   ['近战槽 3', 'Melee slot 3'], ['枪械槽 1', 'Gun slot 1'], ['枪械槽 2', 'Gun slot 2'],
   ['下一个装备槽', 'Next equipment slot'], ['上一个装备槽', 'Previous equipment slot'], ['互动', 'Interact'],
   ['大地图', 'World map'], ['任务指引', 'Quest guide'], ['帮助开关', 'Toggle help'], ['自由飞行调试', 'Free-flight test'],

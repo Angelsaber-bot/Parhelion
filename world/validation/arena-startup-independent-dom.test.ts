@@ -4,7 +4,7 @@ const root=resolve(process.env.ARENA_SOURCE_QA_ROOT??'../arena-game');
 const mocks:Record<string,string>={
  'scene.ts':`export class ArenaScene { prepareLoadout(){return window.__qa.preparePromise} loadMap(){return window.__qa.mapPromise}setView(){}render(){}disposeCombatEffects(){}}`,
  'game.ts':`export class Game{constructor(session,scene,controls,hud,onExit){this.session=session;this.onExit=onExit;window.__qa.games++;if(window.__qa.throwGame)throw Error('constructor failure')}stop(){if(this.stopped)return;this.stopped=true;try{this.session.close()}finally{this.onExit('')}}setPaused(){}}`,
- 'session.ts':`export function startOffline(){return window.__qa.session()}export function joinOnline(){return window.__qa.joinPromise}`,
+ 'session.ts':`export function startRange(){throw Error('unexpected training range start')}export function startOffline(){return window.__qa.session()}export function joinOnline(){return window.__qa.joinPromise}`,
  'audio.ts':`export const sfx={unlock(){}}`,
  'armory.ts':`export function openArmory(){window.__qa.armory++}`,
 };

@@ -16,7 +16,9 @@ import {readSkinSelection,withSkinSelection} from './cosmetics/skinSelection.ts'
 import {initialGraphics,mountGraphicsControl} from './rendering/graphics.ts';
 import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
-import { joinOnline, startOffline, type Session } from './network/session.ts';
+import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
+import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
+import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
 import asterThumb from './assets/maps/aster.webp';
 import sakuraThumb from './assets/maps/sakura.webp';
 import blackflagThumb from './assets/maps/blackflag.webp';
@@ -51,7 +53,9 @@ function renderPointerLockNote() {
   pointerLockNote.textContent = pointerLockFailed ? bilingual('浏览器未锁定鼠标。点击继续重试，或返回大厅。', 'Mouse capture was not granted. Click Continue to retry, or return to the lobby.') : '';
 }
 const resultsBoard = new ResultsBoard();
-let mode: 'offline' | 'online' = params.get('mode') === 'online' ? 'online' : 'offline';
+// The range is offline too; any other value still falls back to the plain offline lobby.
+let mode: 'offline' | 'online' | 'range' = params.get('mode') === 'range' ? 'range' : (params.get('mode') === 'online' ? 'online' : 'offline');
+const matchMode = () => mode === 'online' ? 'online' as const : 'offline' as const;
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() {
     controls.blocked = true; controls.clearAll();
@@ -66,7 +70,7 @@ $('settings-lobby').onclick = () => { if (!starting && !game && !pageExited) set
 $('settings-pause').onclick = () => { if (game && !game.ended && !starting && !pageExited && !$('pause').classList.contains('hidden')) settingsPanel.show(); };
 function renderControlHints() {
   const k = (action: string) => settings.label(action);
-  $('control-hints').textContent = arenaControlHints(k, mode);
+  $('control-hints').textContent = arenaControlHints(k, matchMode());
   $('dash').querySelector('kbd')!.textContent = k('dash'); $('shield').querySelector('kbd')!.textContent = k('shield'); $('utility').querySelector('kbd')!.textContent = k('throw'); $('loadout').querySelectorAll<HTMLElement>('[data-utility-key]').forEach((el) => el.textContent = k('throw'));
   $('wslots').querySelectorAll('kbd').forEach((el, i) => el.textContent = k(`weapon${i + 1}`));
   $('loadout').querySelectorAll<HTMLElement>('[data-slot-key]').forEach((el) => el.textContent = k(`weapon${Number(el.dataset.slotKey) + 1}`));
@@ -116,7 +120,7 @@ function renderMaps() {
   $('maps').innerHTML = MAPS.map((m) =>
     `<button class="mapcard ${m.id === mapId ? 'on' : ''}" data-id="${m.id}"><img src="${MAP_THUMBS[m.id] ?? ''}" alt="" /><b>${localizeText(m.name)}</b><span>${bilingual(`第 ${m.chapter} 章`, `Chapter ${m.chapter}`)} · ${localizeText(m.blurb)}</span></button>`).join('');
   $('maps').querySelectorAll<HTMLButtonElement>('.mapcard').forEach((b) => b.onclick = () => pickMap(b.dataset.id!));
-  $('title').textContent = localizeText(MAPS.find((m) => m.id === mapId)!.name);
+  $('title').textContent = mode === 'range' ? bilingual('训练场', 'Training range') : localizeText(MAPS.find((m) => m.id === mapId)!.name);
 }
 let starting = false;
 let mapReady: Promise<void>;
@@ -164,11 +168,16 @@ function renderLoadout() {
 
 function renderMatchBriefing() {
   const briefing = arenaMatchBriefing({ layout: $<HTMLSelectElement>('layout').value as TeamLayout,
-    team: $<HTMLSelectElement>('team').value as 'A' | 'B' | 'auto', mode, bots: $<HTMLInputElement>('bots').checked });
+    team: $<HTMLSelectElement>('team').value as 'A' | 'B' | 'auto', mode: matchMode(), bots: $<HTMLInputElement>('bots').checked });
   $('match-rules').textContent = briefing.rules;
   $('match-teams').textContent = briefing.teams;
   $('match-connection').textContent = briefing.connection;
-  $('pause-title').textContent = arenaPauseLabel(mode);
+  $('pause-title').textContent = mode === 'range' ? bilingual('训练场', 'Training range') : arenaPauseLabel(matchMode());
+  if (mode === 'range') {
+    $('match-rules').textContent = bilingual('训练场：假人不会还击，倒下 1 秒后回到原位。有 10/20/30/45 米固定靶、横移靶、掩体探头靶、护盾靶、手雷坑和近战靶。', 'Training range: dummies never shoot back and return to their posts a second after they fall. Static targets at 10/20/30/45 m, strafing, peeking and shield dummies, a grenade pit and melee dummies.');
+    $('match-teams').textContent = bilingual('按 Esc 打开训练场菜单，随时更换武器、皮肤和道具；左上角显示命中率、秒伤和击杀用时。', 'Press Esc for the range menu to swap weapons, finishes and utility at any time; accuracy, DPS and time-to-kill show top left.');
+    $('match-connection').textContent = bilingual('离线 · 不计战绩', 'Offline · not ranked');
+  }
 }
 for (const id of ['layout', 'team', 'bots']) $(id).addEventListener('change', renderMatchBriefing);
 
@@ -177,6 +186,8 @@ function setMode(m: typeof mode) {
   mode = m;
   document.querySelectorAll<HTMLButtonElement>('.tab').forEach((t) => t.classList.toggle('on', t.dataset.mode === m));
   document.body.classList.toggle('online', m === 'online');
+  document.body.classList.toggle('range', m === 'range');
+  renderMaps(); // refreshes the title for the chosen mode
   if (m === 'offline' && $<HTMLSelectElement>('team').value === 'auto') $<HTMLSelectElement>('team').value = 'A';
   renderMatchBriefing(); renderControlHints();
 }
@@ -251,15 +262,17 @@ $('play').onclick = async () => {
   try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, server, map: mapId },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
-    await mapReady;
+    await (attempt.mode === 'range' ? scene.loadMap(RANGE_MAP_ID, 'day') : mapReady);
     if (!current()) return;
     await scene.prepareLoadout(loadoutStore.value.map(weaponIndex),skins);
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
-    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : startOffline(opts, difficulty);
+    ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, difficulty);
     if (!current()) { closeOwned(); return; }
     attempt.phase = 'game'; renderStartupStatus();
     const session = ownedSession;
+    rangeSession = session.practice ? session : null;
+    if (rangeSession) { rangeChoice = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() }; renderRangePanel(); }
     game = new Game(session, scene, controls, hud, (reason) => backToLobby(reason));
     ownedSession = null; // Game now owns exactly one session.
     $('lobby').classList.add('hidden'); hud.show(true);
@@ -291,7 +304,28 @@ $('play').onclick = async () => {
   }
 };
 
+// ---------- training range menu (inside the pause card) ----------
+let rangeSession: Session | null = null;
+let rangeChoice: { loadout: Loadout; utility: UtilityId; skins: number[] } = { loadout: loadoutStore.value, utility: loadoutStore.utility, skins: skins.slice() };
+function renderRangePanel() {
+  const panel = $('range-panel');
+  if (!rangeSession) { panel.innerHTML = ''; return; }
+  const c = rangeChoice, option = (value: string, label: string, on: boolean, disabled = false) => `<option value="${value}" ${on ? 'selected' : ''} ${disabled ? 'disabled' : ''}>${label}</option>`;
+  const slotSelect = (slot: number) => `<label>${slot === 2 ? bilingual('近战', 'Melee') : bilingual(`枪械 ${slot + 1}`, `Gun ${slot + 1}`)}<select data-range-slot="${slot}">${(slot === 2 ? MELEE_IDS : GUN_IDS).map((id) => option(id, displayWeaponName(id), c.loadout[slot] === id, slot < 2 && c.loadout[1 - slot] === id)).join('')}</select></label>`;
+  const skinSelect = (slot: number) => { const i = weaponIndex(c.loadout[slot]), w = WEAPONS[i]; return `<label>${displayWeaponName(w.id)}<select data-range-skin="${i}">${w.skins.map((s, j) => option(String(j), localizeText(s.name), c.skins[i] === j)).join('')}</select></label>`; };
+  panel.innerHTML = `<div class="range-row">${slotSelect(0)}${slotSelect(1)}</div><div class="range-row">${slotSelect(2)}<label>${bilingual('道具', 'Utility')}<select data-range-utility>${UTILITY_IDS.map((id) => option(id, bilingual(...UTILITY_INFO[id].name), c.utility === id)).join('')}</select></label></div>`
+    + `<div class="range-row">${skinSelect(0)}${skinSelect(1)}</div><div class="range-row">${skinSelect(2)}<span></span></div>`
+    + `<div class="range-row"><button type="button" data-range-reset>${bilingual('重置假人', 'Reset dummies')}</button><button type="button" data-range-stats>${bilingual('清零数据', 'Clear stats')}</button></div>`;
+  const apply = () => { if (rangeSession?.practice?.apply(rangeChoice)) void scene.prepareLoadout(rangeChoice.loadout.map(weaponIndex), rangeChoice.skins); renderRangePanel(); };
+  panel.querySelectorAll<HTMLSelectElement>('[data-range-slot]').forEach((s) => s.onchange = () => { const next = [...c.loadout] as Loadout; next[Number(s.dataset.rangeSlot)] = s.value as never; if (next[0] !== next[1]) { rangeChoice = { ...c, loadout: next }; apply(); } else renderRangePanel(); });
+  panel.querySelectorAll<HTMLSelectElement>('[data-range-skin]').forEach((s) => s.onchange = () => { const next = c.skins.slice(); next[Number(s.dataset.rangeSkin)] = Number(s.value); rangeChoice = { ...c, skins: next }; apply(); });
+  panel.querySelector<HTMLSelectElement>('[data-range-utility]')!.onchange = (e) => { rangeChoice = { ...c, utility: (e.target as HTMLSelectElement).value as UtilityId }; apply(); };
+  panel.querySelector<HTMLButtonElement>('[data-range-reset]')!.onclick = () => rangeSession?.practice?.resetDummies();
+  panel.querySelector<HTMLButtonElement>('[data-range-stats]')!.onclick = () => game?.rangeStats?.reset();
+}
+
 function backToLobby(reason: string) {
+  rangeSession = null; renderRangePanel();
   pointerLockFailed = false; renderPointerLockNote();
   game = null; rematchRequested = false; resultsBoard.setEnded(false); renderResultsBoard();
   hud.show(false);

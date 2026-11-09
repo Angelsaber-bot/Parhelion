@@ -1,0 +1,379 @@
+{
+  "mapId": "training_range",
+  "name": "TRAINING RANGE 训练场",
+  "version": "0.1.0",
+  "mode": "arena",
+  "supportedTeamLayouts": [
+    "1v1"
+  ],
+  "units": "metres",
+  "upAxis": "Y",
+  "bounds": {
+    "min": [
+      -38,
+      0,
+      -23
+    ],
+    "max": [
+      38,
+      8,
+      23
+    ]
+  },
+  "symmetry": "none",
+  "presentation": {
+    "preset": "day"
+  },
+  "palette": {
+    "floor": "#c9d3df",
+    "lane": "#b6c2d1",
+    "line": "#ffd36b",
+    "wall": "#e9eef4",
+    "trim": "#5b6b80",
+    "cover": "#8494a8",
+    "target": "#ff6b5a",
+    "pit": "#7d6a5a",
+    "glow": "#7fe0ff"
+  },
+  "objects": [
+    {
+      "id": "floor_range",
+      "type": "box",
+      "position": [
+        0,
+        -0.3,
+        0
+      ],
+      "size": [
+        76,
+        0.6,
+        46
+      ],
+      "material": "floor",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "wall_west",
+      "type": "box",
+      "position": [
+        -38,
+        3,
+        0
+      ],
+      "size": [
+        0.5,
+        6,
+        46
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_east",
+      "type": "box",
+      "position": [
+        38,
+        4,
+        0
+      ],
+      "size": [
+        0.5,
+        8,
+        46
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_north",
+      "type": "box",
+      "position": [
+        0,
+        3,
+        -23
+      ],
+      "size": [
+        76,
+        6,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "wall_south",
+      "type": "box",
+      "position": [
+        0,
+        3,
+        23
+      ],
+      "size": [
+        76,
+        6,
+        0.5
+      ],
+      "material": "wall",
+      "collision": true,
+      "role": "structure"
+    },
+    {
+      "id": "bench_0",
+      "type": "box",
+      "position": [
+        -24.4,
+        0.45,
+        -15
+      ],
+      "size": [
+        0.7,
+        0.9,
+        4.5
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "bench_1",
+      "type": "box",
+      "position": [
+        -24.4,
+        0.45,
+        -6
+      ],
+      "size": [
+        0.7,
+        0.9,
+        4.5
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "bench_2",
+      "type": "box",
+      "position": [
+        -24.4,
+        0.45,
+        6
+      ],
+      "size": [
+        0.7,
+        0.9,
+        4.5
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "bench_3",
+      "type": "box",
+      "position": [
+        -24.4,
+        0.45,
+        15
+      ],
+      "size": [
+        0.7,
+        0.9,
+        4.5
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "peek_cover",
+      "type": "box",
+      "position": [
+        -4.8,
+        0.6,
+        8
+      ],
+      "size": [
+        0.8,
+        1.2,
+        3.2
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pit_front",
+      "type": "box",
+      "position": [
+        2,
+        0.9,
+        17.4
+      ],
+      "size": [
+        0.4,
+        1.8,
+        5.2
+      ],
+      "material": "pit",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pit_north",
+      "type": "box",
+      "position": [
+        5,
+        0.9,
+        14.9
+      ],
+      "size": [
+        6.4,
+        1.8,
+        0.4
+      ],
+      "material": "pit",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "pit_south",
+      "type": "box",
+      "position": [
+        5,
+        0.9,
+        19.9
+      ],
+      "size": [
+        6.4,
+        1.8,
+        0.4
+      ],
+      "material": "pit",
+      "collision": true,
+      "role": "cover"
+    },
+    {
+      "id": "yard_rail",
+      "type": "box",
+      "position": [
+        -17,
+        0.5,
+        -20
+      ],
+      "size": [
+        14,
+        1,
+        0.3
+      ],
+      "material": "cover",
+      "collision": true,
+      "role": "cover"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west",
+      "kind": "spawn",
+      "position": [
+        -30,
+        0,
+        0
+      ],
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_2",
+      "kind": "spawn",
+      "position": [
+        -30,
+        0,
+        3
+      ],
+      "team": "west"
+    },
+    {
+      "id": "spawn_east",
+      "kind": "spawn",
+      "position": [
+        33,
+        0,
+        0
+      ],
+      "team": "east"
+    },
+    {
+      "id": "cover_bench",
+      "kind": "cover",
+      "position": [
+        -25.2,
+        0,
+        0
+      ],
+      "height": 0.9
+    },
+    {
+      "id": "cover_pit",
+      "kind": "cover",
+      "position": [
+        1,
+        0,
+        17.4
+      ],
+      "height": 1.8
+    }
+  ],
+  "routes": [
+    {
+      "id": "lanes",
+      "name": "Firing line to the targets",
+      "points": [
+        [
+          -30,
+          0,
+          0
+        ],
+        [
+          -20,
+          0,
+          0
+        ],
+        [
+          0,
+          0,
+          0
+        ],
+        [
+          30,
+          0,
+          0
+        ]
+      ]
+    }
+  ],
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "range": {
+    "firingLine": -24.0,
+    "lanes": {
+      "static": -10,
+      "strafe": 0,
+      "cover": 8
+    },
+    "distances": [
+      10,
+      20,
+      30,
+      45
+    ]
+  }
+}

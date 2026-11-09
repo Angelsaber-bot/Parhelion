@@ -8,7 +8,7 @@ test('Arena actual menu mode/team/Bot/locale/custom-key edits update truthful br
  const mocks:Record<string,string>={
   'scene.ts':`export class ArenaScene { prepareLoadout(){} constructor(){window.__calls.scene++}async loadMap(){window.__calls.map++}setView(){}render(){window.__calls.render++}disposeCombatEffects(){window.__calls.dispose++}}`,
   'game.ts':`export class Game{constructor(){window.__calls.game++}}`,
-  'session.ts':`export function startOffline(){window.__calls.offline++;throw Error('unexpected start')}export async function joinOnline(){window.__calls.online++;throw Error('unexpected join')}`,
+  'session.ts':`export function startRange(){throw Error('unexpected training range start')}export function startOffline(){window.__calls.offline++;throw Error('unexpected start')}export async function joinOnline(){window.__calls.online++;throw Error('unexpected join')}`,
   'audio.ts':`export const sfx={unlock(){}}`,
   'armory.ts':`export function openArmory(){throw Error('not under test')}`,
  };

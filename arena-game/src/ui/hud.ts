@@ -79,7 +79,7 @@ export class Hud {
       snap.phase === 'live' ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` :
       snap.phase === 'countdown' ? bilingual(`开始倒计时 ${secs}`, `Starting in ${secs}`) :
       snap.phase === 'ended' ? bilingual('本局结束', 'Match over') : bilingual('等待对手…', 'Waiting for opponent…');
-    $('limit').textContent = arenaLimitLabel(snap.layout);
+    $('limit').textContent = document.body?.classList.contains('range') ? bilingual('训练场 · 不限时', 'Training range · untimed') : arenaLimitLabel(snap.layout);
     $('ping').textContent = ping;
 
     const self = snap.players.find((p) => p.id === myId);

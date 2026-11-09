@@ -51,7 +51,7 @@ it('production UI refreshes on locale, mode, layout, team and Bot changes withou
   expect(main).toContain("['layout', 'team', 'bots']"); expect(main).toContain("addEventListener('change', renderMatchBriefing)");
   expect(main).toContain('renderMatchBriefing(); renderControlHints();');
   expect(main.slice(main.indexOf('onLanguageChange(() =>'))).toContain('renderMatchBriefing();');
-  expect(main).toContain('arenaControlHints(k, mode)');
+  expect(main).toContain('arenaControlHints(k, matchMode())'); // the range plays as an offline match
 });
 
 it('page-exit effect cleanup preserves BFCache and ordinary rematches', () => {

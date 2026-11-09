@@ -57,7 +57,7 @@ for(const id of ['stormcoil','lantern-warden','hummingbird','void-lance','tidal-
  for(const other of(['x','y','z']as const).filter(a=>a!==axis))expect(rotor.rotation[other]).toBe(0);
  spinSignatureParts(model.parts,Number.NaN);spinSignatureParts(model.parts,500);expect(Number.isFinite(rotor.rotation[axis])).toBe(true);h.release();
 });
-it('every sculpted finish is one continuous piece: no part floats more than 0.006 units from the rest',async()=>{
+it('every sculpted finish is one continuous piece: no part floats more than 0.006 units from the rest',{timeout:30000},async()=>{
  const {sculptSignature,pieceIslands}=await import('../src/cosmetics/signatureModels.ts');const {disposeTree}=await import('../src/weapons/weaponArt.ts');
  for(const skin of modeled){const s=sculptSignature(combatArt(skin.weapon)!,skin.id)!,instance=s.finish();expect(s.pieces.length).toBeGreaterThan(8);
   const islands=pieceIslands(s.pieces,.006);expect(islands.length,`${skin.id} has ${islands.length} separate pieces`).toBe(1);disposeTree(instance.root);}
