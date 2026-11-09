@@ -13,6 +13,7 @@ import {buildFourthCollection,FOURTH_COLLECTION_MODELS} from './signatureCollect
 import {refineWeaponMaterial} from '../weapons/weaponSurface.ts';
 import {addSignatureMotes} from './signatureMotes.ts';
 import {themedMuzzle} from './signatureOptics.ts';
+import {addFirearmAnatomy} from './signatureAnatomy.ts';
 
 export type V=readonly[number,number,number];
 export type P=readonly[number,number];
@@ -186,6 +187,7 @@ export function sculptSignature(def:ArtDef,id?:string):Sculpture|null{
  const model=signatureModelOf(id,def.combat),style=signatureOf(id,def.combat);if(!model||!style)return null;
  const sculpture=new Sculpture(def,style);switch(model){case'maw':beastGun(sculpture);break;case'butterfly':butterflySword(sculpture);break;case'bamboo':bambooSpear(sculpture);break;case'confection':confectionHammer(sculpture);break;case'orrery':gravitonRifle(sculpture);break;case'koi':koiSmg(sculpture);break;case'nocturne':owlMarksman(sculpture);break;case'chronograph':clockSniper(sculpture);break;default:if((THIRD_COLLECTION_MODELS as readonly string[]).includes(model))buildThirdCollection(sculpture,model);else if((FOURTH_COLLECTION_MODELS as readonly string[]).includes(model))buildFourthCollection(sculpture,model);else buildSecondCollection(sculpture,model);break;}
  themedMuzzle(sculpture);
+ if(def.muzzle)addFirearmAnatomy(sculpture);
  return sculpture;
 }
 export function buildSignatureModel(def:ArtDef,id?:string,motes=true):ArtInstance|null{

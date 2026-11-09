@@ -7,6 +7,8 @@ export interface GunPresentation {
   group: THREE.Group; muzzle: THREE.Object3D; sight: THREE.Vector3;
   ready: Promise<void>;
   animate(kick: number, reload: number): void;
+  /** Briefly brighten the finish's lit details (equip, inspect). */
+  flare?(amount: number): void;
   dispose(): void;
 }
 let artWarmer: ((root: THREE.Object3D, firstPerson: boolean) => Promise<unknown>) | null = null;
@@ -23,6 +25,9 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
   const handle = def ? pool.acquire(def, colors) : null;
   let dead = false, fallbackLive = true, art: ArtInstance | null = null;
   const poses = new Map<string, THREE.Vector3>();
+  // Reactive finish: lit details flare with each shot or swing and on equip, then settle.
+  const glows: { material: THREE.MeshStandardMaterial; base: number }[] = [];
+  let flare = 0, lastNow = 0;
   group.userData.artState = 'loading';
   const ready = (handle?.ready ?? Promise.resolve(null)).then(async (loaded) => {
     if (dead || !loaded || !def) return;
@@ -43,6 +48,8 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
     if (def.sight) sight.copy(artPoint(def, def.sight));
     for (const [role, part] of Object.entries(art.parts)) poses.set(role, part.position.clone());
     group.remove(fallback.group); disposeTree(fallback.group, false); fallbackLive = false;
+    art.root.traverse((o) => { const mesh = o as THREE.Mesh; if (!mesh.isMesh) return; for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) { const std = m as THREE.MeshStandardMaterial; if (std.isMeshStandardMaterial && /glow/i.test(std.name) && !glows.some(g => g.material === std)) glows.push({ material: std, base: std.emissiveIntensity }); } });
+    flare = 1.1;
     group.userData.artState = 'ready'; group.userData.artId = def.id;
   }).catch((error: unknown) => {
     handle?.release();
@@ -54,6 +61,9 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
       const now = performance.now()/1000;
       updateFinishClock(now);
       if (!art) return;
+      const dt = lastNow ? Math.min(.1, Math.max(0, now - lastNow)) : 0; lastNow = now;
+      flare = Math.max(flare * Math.exp(-dt * 6), Math.min(1, Math.max(0, kick)));
+      for (const g of glows) g.material.emissiveIntensity = g.base * (1 + 2.6 * flare);
       spinSignatureParts(art.parts, now, kick);
       // Cosmetic only: preserve authored pivots, reset each pose, never alter fire timing/ammo.
       for (const [role, p] of poses) art.parts[role].position.copy(p);
@@ -61,6 +71,7 @@ export function attachGunArt(weapon: number, skin: number, fallback: { group: TH
       if (art.parts.magazine) art.parts.magazine.position.y -= Math.sin(reload * Math.PI) * 0.65;
       if (art.parts.fore_end) art.parts.fore_end.position.x -= Math.min(1, kick) * 0.25;
     },
+    flare(amount) { if (Number.isFinite(amount)) flare = Math.max(flare, amount); },
     dispose() {
       if (dead) return;
       dead = true; handle?.release();

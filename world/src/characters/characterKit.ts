@@ -6,6 +6,7 @@ import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { mountedChargeClip } from './mountedChargeMotion';
 import { musashiLocomotionClip } from './musashiLocomotion';
 import { ActionBlend } from './actionBlend';
+import { COMPANION_MOTION } from './companionMotion';
 
 export type Axis = readonly [number, number, number];
 export interface KitEvent { at: number; kind: 'fire' | 'hit'; socket?: string; }
@@ -123,7 +124,7 @@ export class CharacterKit {
   get state() { return this.currentState; }
   get clipTime() { return this.elapsed; }
   get playbackRate() { return this.rate; }
-  play(state: string, options: { restart?: boolean; speed?: number; rate?: number } = {}) {
+  play(state: string, options: { restart?: boolean; speed?: number; rate?: number; catchUp?: boolean } = {}) {
     if (this.disposed) return false;
     const contract = this.definition.clips[state], next = this.actions.get(state);
     if (!contract || !next) return false;
@@ -131,7 +132,7 @@ export class CharacterKit {
     let rate = options.rate ?? 1;
     if (options.speed !== undefined && contract.nominalSpeed) rate = Math.abs(options.speed) / contract.nominalSpeed;
     if (!Number.isFinite(rate)) rate = 1;
-    const nextRate = THREE.MathUtils.clamp(rate, 0, 3), rateChanged = this.rate !== nextRate;
+    const nextRate = THREE.MathUtils.clamp(rate, 0, state === 'run' && options.catchUp ? COMPANION_MOTION.catchUpRate : COMPANION_MOTION.maxRate), rateChanged = this.rate !== nextRate;
     this.rate = nextRate;
     next.setEffectiveTimeScale(this.rate);
     if (['walk', 'run'].includes(state)) for (const gait of ['walk', 'run']) {

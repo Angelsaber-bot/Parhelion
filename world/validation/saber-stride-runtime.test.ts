@@ -9,17 +9,20 @@ for(const outfit of ['armor','civilian']as const)for(const hz of [30,60,120])tes
   for(let i=0;i<ix.count;i++){let weight=0;for(let c=0;c<4;c++)if(/Foot|Toe/.test(m.skeleton.bones[ix.getComponent(i,c)].name))weight+=w.getComponent(i,c);if(weight>.8&&m.getVertexPosition(i,point).applyMatrix4(m.matrixWorld).y<.08)ids.push(i);}if(ids.length)soles.push({mesh:m,ids});});
  const appearance=new ServantAppearance();appearance.select(outfit);const floor=new THREE.PlaneGeometry(200,200).rotateX(-Math.PI/2);
  const actor=new ContractServant({scene:new THREE.Scene(),marker:{id:'test',type:'interact',label:'test',p:[0,0,0]},contract:new FirstContract(new Set(['saber_contract'])),appearance,colliders:[{name:'floor',enabled:true,bvh:new MeshBVH(floor)}],load:async()=>gltf,target:()=>null,strike:()=>null});await actor.ensureLoaded();
- const player=new THREE.Vector3();let previous=feet.map(f=>f.getWorldPosition(new THREE.Vector3())),previousPlanted=[false,false],maxDrift=0,minSole=Infinity,minRunSole=Infinity,contacts=0,maxFootStep=0;let runFrames=0,flightFrames=0,worstSole:any;
+ const player=new THREE.Vector3();let previous=feet.map(f=>f.getWorldPosition(new THREE.Vector3())),previousPlanted=[false,false],maxDrift=0,minSole=Infinity,minRunSole=Infinity,contacts=0,maxFootStep=0,maxFootStepRatio=0;let runFrames=0,flightFrames=0,worstSole:any;
  for(let tick=0;tick<=8*hz;tick++){
   const time=tick/hz;let speed=0,yaw=Math.PI/2;if(time>=.5&&time<2.5)speed=5.5;else if(time>=3&&time<4)speed=9;else if(time>=4&&time<5){speed=5.5;yaw=Math.PI/2*(5-time);}else if(time>=5&&time<6){speed=5.5;yaw=-Math.PI/2;}
-  if(tick){player.x+=Math.sin(yaw)*speed/hz;player.z+=Math.cos(yaw)*speed/hz;}actor.update(1/hz,player,yaw,true,false);actor.root.updateMatrixWorld(true);
+  if(tick){player.x+=Math.sin(yaw)*speed/hz;player.z+=Math.cos(yaw)*speed/hz;}const rootBefore=actor.root.position.clone();actor.update(1/hz,player,yaw,true,false);actor.root.updateMatrixWorld(true);
+  // World-space foot speed includes root translation. Keep the old 9.5m/s
+  // limit at ordinary speeds, adding only the actual travel beyond the former 6m/s cap.
+  const footStepLimit=(9.5+Math.max(0,actor.root.position.distanceTo(rootBefore)*hz-6))/hz;
   const diag=actor.strideDiagnostics??{planted:[false,false],reachReleases:0,maxAnchorError:0,weight:0};
-  for(let side=0;side<2;side++){const p=feet[side].getWorldPosition(new THREE.Vector3());if(diag.planted[side]&&diag.weight>.99999&&previousPlanted[side]){maxDrift=Math.max(maxDrift,p.distanceTo(previous[side])*hz);contacts++;}if(tick)maxFootStep=Math.max(maxFootStep,p.distanceTo(previous[side]));previous[side]=p;previousPlanted[side]=diag.planted[side]&&diag.weight>.99999;}
+  for(let side=0;side<2;side++){const p=feet[side].getWorldPosition(new THREE.Vector3());if(diag.planted[side]&&diag.weight>.99999&&previousPlanted[side]){maxDrift=Math.max(maxDrift,p.distanceTo(previous[side])*hz);contacts++;}if(tick){const step=p.distanceTo(previous[side]);maxFootStep=Math.max(maxFootStep,step);maxFootStepRatio=Math.max(maxFootStepRatio,step/footStepLimit);}previous[side]=p;previousPlanted[side]=diag.planted[side]&&diag.weight>.99999;}
   if(actor.animation==='Run'){runFrames++;if(!diag.planted[0]&&!diag.planted[1])flightFrames++;}
   if(tick%Math.max(1,Math.round(hz/30))===0)for(const{mesh,ids}of soles){mesh.skeleton.update();for(const i of ids){const y=mesh.getVertexPosition(i,point).applyMatrix4(mesh.matrixWorld).y;if(actor.animation==='Run'&&(actor as any).clips.get('run').getEffectiveWeight()>.995)minRunSole=Math.min(minRunSole,y);if(y<minSole){minSole=y;worstSole={time,state:actor.animation,weight:(actor as any).clips.get('run').getEffectiveWeight(),mesh:mesh.name,index:i};}}}
  }
- t.diagnostic(JSON.stringify({outfit,hz,maxDrift,minSole,minRunSole,worstSole,maxFootStep,contacts,runFrames,flightFrames,diagnostics:actor.strideDiagnostics}));
- assert.equal(JSON.stringify(gltf.animations.map(c=>c.toJSON())),sourceClips,'runtime correction never rewrites authored clips');assert.ok(maxFootStep*hz<9.5,'no transition snap hidden by contact-only metrics');
+ t.diagnostic(JSON.stringify({outfit,hz,maxDrift,minSole,minRunSole,worstSole,maxFootStep,maxFootStepRatio,contacts,runFrames,flightFrames,diagnostics:actor.strideDiagnostics}));
+ assert.equal(JSON.stringify(gltf.animations.map(c=>c.toJSON())),sourceClips,'runtime correction never rewrites authored clips');assert.ok(maxFootStepRatio<1,'no transition snap hidden by contact-only metrics or faster root travel');
  assert.ok(contacts>20);assert.ok(maxDrift<.001);assert.ok(minRunSole>-.0002,`runtime run sole penetrates ${minRunSole}`);assert.ok(minSole>-.001,`sole limit regressed ${minSole}`);assert.ok(actor.strideDiagnostics!.maxAnchorError<.00001);assert.ok(actor.strideDiagnostics!.reachReleases<12);assert.ok(flightFrames>0,'legitimate running flight is not removed to game support metrics');
  actor.dispose();floor.dispose();
 });

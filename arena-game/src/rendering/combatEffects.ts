@@ -67,8 +67,25 @@ export class ArenaCombatEffects {
     slot.line.geometry.computeBoundingSphere();
     slot.line.material.color.setHex(color); slot.line.material.opacity = .9 * width;
     slot.life = slot.max; this.parent.add(slot.line);
+    if (style) this.tracerAccent(from, to, style);
   }
-  burst(at: Vec3, color: number, size: number, life: number, speed: number, shape?:ParticleShape) {
+  /** Skin identity on the shot, placed only along the first metres from the muzzle so
+   * the aim point and the target stay clear: wave, pulse, fork or a pair of glints. */
+  private tracerAccent(from: Vec3, to: Vec3, style: SkinEffect) {
+    const d = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]), length = d.length();
+    if (length < .5) return; d.divideScalar(length);
+    const side = new THREE.Vector3(0, 1, 0).cross(d); if (side.lengthSq() < 1e-6) side.set(1, 0, 0); side.normalize();
+    const up = d.clone().cross(side).normalize(), reach = Math.min(3, length * .3);
+    const count = style.trail === 'wave' ? 6 : style.trail === 'pulse' ? 3 : style.trail === 'fork' ? 4 : 2;
+    for (let i = 0; i < count; i++) {
+      const t = (i + 1) / (count + 1), along = reach * t, p = new THREE.Vector3(...from).addScaledVector(d, along);
+      if (style.trail === 'wave') p.addScaledVector(side, Math.sin(t * Math.PI * 3) * .05);
+      if (style.trail === 'fork') p.addScaledVector(i % 2 ? side : up, (i % 2 ? .04 : -.04));
+      const size = style.trail === 'pulse' ? .09 : .045;
+      this.burst([p.x, p.y, p.z], i % 2 ? style.secondary : style.color, size, style.trail === 'pulse' ? .1 : .12, style.trail === 'fork' ? .6 : 0, style.particle, style.trail === 'fork' ? [side.x, side.y, side.z] : undefined, 0);
+    }
+  }
+  burst(at: Vec3, color: number, size: number, life: number, speed: number, shape?:ParticleShape, dir?:Vec3, gravity?:number) {
     if (this.disposed || !finitePoint(at) || ![size, life, speed].every(Number.isFinite) || life <= 0) return;
     const slot = this.acquire(this.sparks, this.budget.sparks, () => {
       const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glow, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
@@ -101,8 +118,10 @@ export class ArenaCombatEffects {
     slot.sprite.position.set(...at); slot.sprite.scale.set(size*.4*slot.aspect,size*.4,1);
     slot.sprite.material.color.setHex(color); slot.sprite.material.opacity = 1;
     slot.life = slot.max = life; slot.grow = size * (speed ? .2 : 2.4); slot.moving = !!speed;
-    if (speed) slot.velocity.set(Math.random() - .5, Math.random() * .8 + .2, Math.random() - .5).normalize().multiplyScalar(speed);
+    if (speed&&dir) { slot.velocity.set(Math.random() - .5, Math.random() - .5, Math.random() - .5).multiplyScalar(.7).add(new THREE.Vector3(...dir)).normalize().multiplyScalar(speed); }
+    else if (speed) slot.velocity.set(Math.random() - .5, Math.random() * .8 + .2, Math.random() - .5).normalize().multiplyScalar(speed);
     else slot.velocity.set(0, 0, 0);
+    if (gravity !== undefined) slot.gravity = gravity;
     this.parent.add(slot.sprite);
   }
   damageNumber(at: Vec3, value: number, head: boolean, kill: boolean) {

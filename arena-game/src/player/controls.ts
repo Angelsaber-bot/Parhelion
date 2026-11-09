@@ -10,6 +10,8 @@ export class Controls {
   aimHeld = false;
   lookScale = 1;
   scoreboard = false;
+  /** One-shot cosmetic request; consumed by the game loop. */
+  inspect = false;
   /** Results-only display state; S never enters the live movement binding table. */
   resultsScoreboard = false;
   blocked = false;
@@ -57,6 +59,7 @@ export class Controls {
     this.latched |= BUTTONS[action] ?? 0;
     if (action === 'aim') this.aimHeld = true;
     if (action === 'scoreboard') this.scoreboard = true;
+    if (action === 'inspect') this.inspect = true;
     if (/^weapon[1-3]$/.test(action)) { this.weapon = Number(action.slice(-1)) - 1; this.clearAim(); }
     if (action === 'nextWeapon' || action === 'prevWeapon') {
       this.clearAim(); this.weapon = (this.weapon + (action === 'nextWeapon' ? 1 : 2)) % 3;

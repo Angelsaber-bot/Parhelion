@@ -90,13 +90,13 @@ test('walking kits keep actual follow displacement and animation stride speed ma
   assert.ok(runFrames > 50 && walkFrames > 50); assert.equal(actor.state, 'idle'); actor.dispose();
 });
 
-test('Saber actual follow speeds use the same stride budget and preserve 6m/s chase within its 3x run limit', async () => {
+test('Saber catch-up movement and animation share the same bounded speed budget', async () => {
   const scene = new THREE.Group(), gltf = { scene, animations: SERVANT_CLIPS.map(name => new THREE.AnimationClip(name, name === 'Attack' ? 1.2 : 1, [])) } as GLTF;
   const servant = new ContractServant({ scene: new THREE.Scene(), marker: { id: 'saber_contract', type: 'interact', label: 'Saber', p: [0, 0, 0] }, contract: new FirstContract(new Set(['saber_contract'])), colliders: floor(), load: async () => gltf, target: () => null, strike: () => null });
   await servant.ensureLoaded(); const player = new THREE.Vector3(); servant.update(1 / 60, player, 0, true, false);
   let maximum = 0;
   for (let i = 0; i < 180; i++) {
-    player.z += 6 / 60; const p = servant.root.position.clone(); servant.update(1 / 60, player, 0, true, false);
+    player.z += 9 / 60; const p = servant.root.position.clone(); servant.update(1 / 60, player, 0, true, false);
     const speed = servant.root.position.distanceTo(p) * 60; maximum = Math.max(maximum, speed);
     if (servant.animation === 'Walk' || servant.animation === 'Run') {
       const action = (servant as any).current as THREE.AnimationAction;
@@ -104,7 +104,7 @@ test('Saber actual follow speeds use the same stride budget and preserve 6m/s ch
       assert.ok(Math.abs(speed - action.getEffectiveTimeScale() * nominal) < 1e-8);
     }
   }
-  assert.ok(maximum > 5.8 && maximum <= SERVANT_MOTION.runSpeed * SERVANT_MOTION.maxRate + 1e-8); servant.dispose();
+  assert.ok(maximum > 8.5 && maximum <= COMPANION_MOTION.catchUpSpeed + 1e-8); servant.dispose();
 });
 
 
@@ -120,7 +120,7 @@ test('re-entering a still-visible gait during stop/start retains its clock inste
   assert.ok(point.position.distanceTo(position) < 1e-8, 'weighted gait pose is continuous at re-entry'); actor.dispose();
 });
 
-test('sprinting and sharp player turns keep a foot companion recoverable with supported, non-attacking regroup',()=>{
+test('sprinting and sharp player turns keep a foot companion close without regroup teleports',()=>{
  const {actor}=kitFixture(),player=new THREE.Vector3(),colliders=floor();let rejoins=0,contacts=0;
  const follow=new KitCompanion({colliders,range:3.5,damage:9,target:()=>null,strike:()=>{contacts++;return null;},onRejoin:()=>rejoins++});
  follow.update(actor,1/60,player,0,false);
@@ -131,11 +131,11 @@ test('sprinting and sharp player turns keep a foot companion recoverable with su
   const before=actor.root.position.clone(),count=rejoins;
   follow.update(actor,1/60,player,yaw,false);
   largestGap=Math.max(largestGap,actor.root.position.distanceTo(player));
-  if(rejoins===count)assert.ok(actor.root.position.distanceTo(before)<=.10001,'walking never exceeds authored stride budget');
+  if(rejoins===count)assert.ok(actor.root.position.distanceTo(before)<=COMPANION_MOTION.catchUpSpeed/60+1e-8,'catch-up movement remains bounded');
   else {assert.ok(actor.root.position.distanceTo(player)<4);assert.ok(Math.abs(actor.root.position.y)<1e-7);assert.notEqual(actor.state,'attack');}
  }
- assert.ok(rejoins>0,'a 9m/s player can outpace the 6m/s rig, so explicit safe regroup is exercised');
- assert.ok(largestGap<33,`no indefinitely abandoned follower: ${largestGap}`);
+ assert.equal(rejoins,0,'ordinary sprint travel must not require periodic teleporting');
+ assert.ok(largestGap<9,`no indefinitely abandoned follower: ${largestGap}`);
  assert.ok(actor.root.position.distanceTo(player)<4);assert.equal(contacts,0);actor.dispose();
 });
 

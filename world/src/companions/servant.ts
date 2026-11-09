@@ -11,6 +11,7 @@ import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
 import { ActionBlend } from '../characters/actionBlend';
 import { CompanionNavigation } from './companionNavigation';
+import { CompanionFollow } from './companionFollow';
 import { saberRunRate } from '../characters/saberStride';
 import { SaberStrideRuntime } from '../characters/saberStrideRuntime';
 import { SaberGroundedLocomotion } from '../characters/saberGroundedLocomotion';
@@ -72,6 +73,7 @@ export class ContractServant {
   private groundingActive = false;
   private idleCarry?: SaberIdleCarry;
   private navigation: CompanionNavigation;
+  private follow = new CompanionFollow();
   private separatedFor = 0;
   private pursuing = false;
   private rejoinRetry = 0;
@@ -285,7 +287,7 @@ export class ContractServant {
     const following = contract.summoned && enabled;
     this.root.visible = contract.recruited ? following : atLake;
     if (!following) {
-      this.activeLast = false; this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity); this.cancelAttack();
+      this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity); this.cancelAttack();
       if (!contract.recruited) { this.root.position.fromArray(marker.p).add(new THREE.Vector3(1.5,0,0)); this.root.rotation.y = Math.PI; }
       if (!paused && this.root.visible) this.tick(dt);
       return;
@@ -297,28 +299,29 @@ export class ContractServant {
     }
     this.rejoinRetry=Math.max(0,this.rejoinRetry-dt);
     if(this.rejoinPlayer.distanceToSquared(player)>4){this.rejoinRetry=0;this.rejoinPlayer.copy(player);}
-    const separation=this.root.position.distanceTo(player);
-    // Preserve the authored <=3x gait. Pure following regroups before the 16m skill-command limit;
-    // committed pursuit keeps its 24m leash, and never teleports to the enemy.
-    const inCombat=(this.attackTime>0) || this.pursuing;
+    let separation=this.root.position.distanceTo(player);
+    this.follow.update(separation,player,dt);
+    if(this.follow.prioritizePlayer && (this.attackTime>0 || this.pursuing)){this.cancelAttack();this.pursuing=false;}
+    const inCombat=!this.follow.prioritizePlayer && ((this.attackTime>0) || this.pursuing);
     this.separatedFor=separation>(inCombat?24:14)?this.separatedFor+dt:0;
-    const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || separation>12 && this.navigation.stuckSeconds>2);
+    const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || !inCombat && separation>4 && this.navigation.stuckSeconds>1.5);
     if((!this.activeLast || rejoin) && this.rejoinRetry<=0) {
       const safe=this.navigation.safeReturn(player,yaw);
-      if(safe){this.root.position.copy(safe);this.root.rotation.y=yaw;this.cancelAttack();this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
+      if(safe){this.root.position.copy(safe);this.root.rotation.y=yaw;this.cancelAttack();this.follow.reset();separation=this.root.position.distanceTo(player);this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
       else this.rejoinRetry=.25;
     }
     this.activeLast=true;
     if(separation>24 && this.attackTime>0)this.cancelAttack();
     if(this.attackTime>0){this.advanceAttack(dt);return;}
     const destination=player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
-    const prey=this.options.engage?.(player,this.root.position);
+    const prey=this.follow.prioritizePlayer ? null : this.options.engage?.(player,this.root.position);
     this.pursuing=!!prey; this.pursuitTargetId=prey?.id ?? null;
     if(prey && separation<24)destination.copy(prey.position).add(this.root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(1));
     const frameYaw=this.root.rotation.y;
-    const speed=this.navigation.step(this.root,destination,dt,Math.min(SERVANT_MOTION.followSpeed,SERVANT_MOTION.runSpeed*SERVANT_MOTION.maxRate));
+    const normalSpeed=Math.min(SERVANT_MOTION.followSpeed,SERVANT_MOTION.runSpeed*SERVANT_MOTION.maxRate);
+    const speed=this.navigation.step(this.root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed));
     if(this.model) {
-      const target=this.options.target(this.root.position);
+      const target=this.follow.prioritizePlayer ? null : this.options.target(this.root.position);
       if(target && Math.hypot(target.position.x-this.root.position.x,target.position.z-this.root.position.z)<1.75) {
         this.attackYaw=Math.atan2(target.position.x-this.root.position.x,target.position.z-this.root.position.z);
         this.navigation.reset();this.root.rotation.y=frameYaw;
@@ -328,7 +331,7 @@ export class ContractServant {
       } else {
         const running=companionGait(speed,SERVANT_MOTION.walkSpeed,this.animation==='Run')==='run';
         this.strideSpeed=speed;
-        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(running&&this.stride?.supported?saberRunRate(speed,this.clips.get('run')!.getClip().duration):speed/(running?SERVANT_MOTION.runSpeed:SERVANT_MOTION.walkSpeed),0,SERVANT_MOTION.maxRate));
+        this.play(speed<.1?'idle':running?'run':'walk',false,speed<.1?1:THREE.MathUtils.clamp(running&&this.stride?.supported?saberRunRate(speed,this.clips.get('run')!.getClip().duration):speed/(running?SERVANT_MOTION.runSpeed:SERVANT_MOTION.walkSpeed),0,running&&!prey?COMPANION_MOTION.catchUpRate:SERVANT_MOTION.maxRate));
       }
     }
     if(this.attackTime>0)this.advanceAttack(dt);else this.tick(dt);

@@ -5,6 +5,7 @@ import type { Collider } from '../player/player';
 import { validSkillPose, type SkillPoseCommand } from '../combat/skillPose';
 import { MountedCharge } from './mountedCharge';
 import { CompanionNavigation } from './companionNavigation';
+import { CompanionFollow } from './companionFollow';
 import { COMPANION_MOTION, companionGait, turnCompanion } from '../characters/companionMotion';
 
 type Target = { id: string; position: THREE.Vector3 } | null;
@@ -30,6 +31,7 @@ export interface KitCompanionOptions {
 export class KitCompanion {
   private activeLast = false;
   private navigation: CompanionNavigation;
+  private follow = new CompanionFollow();
   private attackAge = 0;
   private separatedFor = 0;
   private pursuing = false;
@@ -83,7 +85,7 @@ export class KitCompanion {
   release(actor?: CharacterKit) {
     this.cancelSkillPose(actor);
     this.mounted?.release(actor);
-    this.activeLast = false; this.pursuing=false;this.separatedFor=0; this.attackTarget = null; this.navigation.reset(); this.rejoinRetry=0;this.rejoinPlayer.set(Infinity,0,Infinity);
+    this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.attackTarget = null; this.navigation.reset(); this.rejoinRetry=0;this.rejoinPlayer.set(Infinity,0,Infinity);
     if (actor && actor.state === 'attack') actor.play(actor.definition.defaultState);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number, paused: boolean) {
@@ -129,15 +131,17 @@ export class KitCompanion {
     }
     this.rejoinRetry=Math.max(0,this.rejoinRetry-dt);
     if(this.rejoinPlayer.distanceToSquared(player)>4){this.rejoinRetry=0;this.rejoinPlayer.copy(player);}
-    const separation=root.position.distanceTo(player);
-    // Preserve the authored <=3x gait. Pure following regroups before the 16m skill-command limit;
-    // committed pursuit keeps its 24m leash, and never teleports to the enemy.
-    const inCombat=(actor.state==='attack' && this.attackTarget!==null) || this.pursuing;
+    let separation=root.position.distanceTo(player);
+    this.follow.update(separation,player,dt);
+    if(this.follow.prioritizePlayer && (this.attackTarget || this.pursuing)){
+      actor.play(actor.definition.defaultState);this.attackTarget=null;this.pursuing=false;this.navigation.reset();
+    }
+    const inCombat=!this.follow.prioritizePlayer && ((actor.state==='attack' && this.attackTarget!==null) || this.pursuing);
     this.separatedFor=separation>(inCombat?24:14)?this.separatedFor+dt:0;
-    const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || separation>12 && this.navigation.stuckSeconds>2);
+    const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || !inCombat && separation>4 && this.navigation.stuckSeconds>1.5);
     if ((!this.activeLast || rejoin) && this.rejoinRetry<=0) {
       const safe=this.navigation.safeReturn(player,yaw);
-      if(safe){root.position.copy(safe);root.rotation.y=yaw;this.release(actor);this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
+      if(safe){root.position.copy(safe);root.rotation.y=yaw;this.release(actor);separation=root.position.distanceTo(player);this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
       else this.rejoinRetry=.25;
     }
     this.activeLast=true;
@@ -155,12 +159,13 @@ export class KitCompanion {
     }
     this.attackTarget=null;
     const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
-    const prey=this.options.engage?.(player,root.position);
+    const prey=this.follow.prioritizePlayer ? null : this.options.engage?.(player,root.position);
     this.pursuing=!!prey;
     if(prey && separation<24) destination.copy(prey.position).add(root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(this.options.range>5?this.options.range*.65:1));
     const frameYaw=root.rotation.y;
-    const speed=this.navigation.step(root,destination,dt,Math.min(6,(actor.definition.clips.run?.nominalSpeed??2)*COMPANION_MOTION.maxRate));
-    const target=this.options.target(root.position,this.options.range);
+    const normalSpeed=Math.min(6,(actor.definition.clips.run?.nominalSpeed??2)*COMPANION_MOTION.maxRate);
+    const speed=this.navigation.step(root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed));
+    const target=this.follow.prioritizePlayer ? null : this.options.target(root.position,this.options.range);
     const inReach=target && Math.hypot(target.position.x-root.position.x,target.position.z-root.position.z)<(this.options.range>5?this.options.range:1.75);
     if(inReach && actor.definition.clips.attack) {
       this.attackYaw=Math.atan2(target.position.x-root.position.x,target.position.z-root.position.z);
@@ -170,7 +175,7 @@ export class KitCompanion {
       else actor.play('idle');
     } else {
       const running=companionGait(speed,actor.definition.clips.walk?.nominalSpeed??.75,actor.state==='run')==='run';
-      actor.play(speed<.1?'idle':running?'run':'walk',speed<.1?undefined:{speed});
+      actor.play(speed<.1?'idle':running?'run':'walk',speed<.1?undefined:{speed,catchUp:!prey});
     }
     actor.update(dt);
   }

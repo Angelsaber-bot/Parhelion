@@ -382,6 +382,7 @@ export class Game {
       const activeAim = canAimWeapon(me.weapon) && me.alive && this.controls.locked && document.visibilityState === 'visible' && document.hasFocus() && !this.ended && me.reload <= 0;
       if (!activeAim) this.controls.clearAim();
       const aim = this.aim.update(dt, this.controls.aimHeld, activeAim, me.weapon);
+      if (this.controls.inspect) { this.controls.inspect = false; if (me.alive && !this.ended) this.scene.viewmodel.inspect(); }
       this.controls.lookScale = 1 + (aimSensitivity(this.aim.fov(me.weapon), this.controls.adsSensitivity) - 1) * aim;
       this.hud.aim(aim, isScopedWeapon(me.weapon));
       const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead

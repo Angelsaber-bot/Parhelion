@@ -5,6 +5,7 @@ import { MOUNTED_CHARGE as MOTION, mountedChargeDistance } from '../characters/m
 import type { KitCompanionOptions } from './kitCompanion';
 import type { Collider } from '../player/player';
 import { companionGait } from '../characters/companionMotion';
+import { CompanionFollow } from './companionFollow';
 
 type Target = NonNullable<ReturnType<KitCompanionOptions['target']>>;
 type ChargePlan = { target: Target; direction: THREE.Vector3; start: THREE.Vector3; end: THREE.Vector3 };
@@ -23,6 +24,7 @@ export class MountedCharge {
   private separatedFor = 0;
   private returnRetry = 0;
   private followStuckFor = 0;
+  private follow = new CompanionFollow();
   private readonly ray = new THREE.Ray();
   private readonly bounds = new WeakMap<Collider['bvh'], THREE.Box3>();
   private readonly body = new THREE.Box3(new THREE.Vector3(-MOTION.radius, .42, -MOTION.halfLength), new THREE.Vector3(MOTION.radius, 3.4, MOTION.halfLength));
@@ -61,6 +63,7 @@ export class MountedCharge {
   release(actor?: CharacterKit) {
     this.finishSkillPose(false);
     this.active = false; this.plan = undefined; this.phase = 'follow'; this.cooldown = 0; this.emitted = false; this.planCheck = 0; this.stalled = 0;
+    this.follow.reset();this.separatedFor=0;this.followStuckFor=0;
     if (actor?.state === 'attack') actor.play('idle');
   }
   onEvent(actor: CharacterKit, event: KitEventResult) {
@@ -82,7 +85,13 @@ export class MountedCharge {
     const contact = attack?.events?.find(event => event.kind === 'hit')?.at;
     if (!attack || contact === undefined) { actor.play('idle'); actor.update(dt); return; }
     this.returnRetry = Math.max(0,this.returnRetry-dt);
-    const separation=root.position.distanceTo(player), leash=this.plan||this.skillPose?24:14;
+    let separation=root.position.distanceTo(player);
+    this.follow.update(separation,player,dt);
+    if(this.follow.prioritizePlayer && !this.skillPose){
+      if(this.phase==='charge')this.recover(actor);
+      else if(this.phase!=='recover'){this.plan=undefined;this.phase='follow';}
+    }
+    const leash=this.plan||this.skillPose?24:14;
     this.separatedFor=separation>leash?this.separatedFor+dt:0;
     if (!this.active || this.separatedFor > (this.plan || this.skillPose ? .75 : .5) || this.followStuckFor>2) {
       if(this.returnRetry>0){actor.play('idle');actor.update(dt);return;}
@@ -90,6 +99,7 @@ export class MountedCharge {
       this.release(actor);this.returnRetry=.25;
       if(!slot){actor.play('idle');actor.update(dt);return;}
       root.position.copy(slot);root.rotation.y=yaw;this.active=true;
+      separation=root.position.distanceTo(player);
       this.separatedFor=this.followStuckFor=0;
       if(wasActive)this.options.onRejoin?.();
     }
@@ -120,7 +130,7 @@ export class MountedCharge {
       if (this.cooldown <= 0) this.phase = 'follow';
       return;
     }
-    let prey = this.plan ? this.resolve(this.plan.target) : this.options.engage?.(player, root.position) ?? this.options.target(root.position, this.options.range);
+    let prey = this.follow.prioritizePlayer && !this.skillPose ? null : this.plan ? this.resolve(this.plan.target) : this.options.engage?.(player, root.position) ?? this.options.target(root.position, this.options.range);
     if (prey && (prey.position.distanceTo(player) > 16 || Math.abs(prey.position.y - root.position.y) > 1.5)) prey = null;
     if (!prey) { this.plan = undefined; this.phase = 'follow'; }
     if (prey && !this.plan && this.cooldown <= 0) {
@@ -140,7 +150,8 @@ export class MountedCharge {
       }
     }
     const destination = this.plan?.start ?? this.followSlot(player, yaw);
-    const speed = this.move(actor, destination, dt, this.plan ? 4.4 : Math.min(6.2,(actor.definition.clips.run?.nominalSpeed ?? 2.1)*3));
+    const normalSpeed=Math.min(6.2,(actor.definition.clips.run?.nominalSpeed ?? 2.1)*3);
+    const speed = this.move(actor, destination, dt, this.plan ? 4.4 : this.follow.speed(separation,normalSpeed));
     this.followStuckFor=!this.plan&&speed===0&&root.position.distanceTo(destination)>1?this.followStuckFor+dt:0;
     // A new obstruction may invalidate a previously reachable staging slot. Wait rather than
     // play a running pose against it, then drop the plan and let the next bounded retry replan.
@@ -158,7 +169,7 @@ export class MountedCharge {
       }
     }
     const running = companionGait(speed, actor.definition.clips.walk?.nominalSpeed ?? .7, actor.state === 'run') === 'run';
-    if (speed < .05) actor.play('idle'); else actor.play(running ? 'run' : 'walk', { speed });
+    if (speed < .05) actor.play('idle'); else actor.play(running ? 'run' : 'walk', { speed, catchUp: !this.plan });
     actor.update(dt);
   }
   private resolve(target: Target) {

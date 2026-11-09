@@ -154,7 +154,10 @@ export class CompanionNavigation {
       if(!found){this.waypoint.copy(root.position);this.motion.reset();}
     }
     this.before.copy(root.position);
-    this.motion.step(root,this.waypoint,dt,maxSpeed);
+    // During catch-up, brake for the actual destination rather than every short
+    // steering waypoint. Keep the local sweep short enough for walkable slopes;
+    // actual displacement is still clamped to the waypoint and revalidated below.
+    this.motion.step(root,this.waypoint,dt,maxSpeed,maxSpeed>6?distance:undefined);
     const moved=Math.hypot(root.position.x-this.before.x,root.position.z-this.before.z);
     if(moved>1e-7) {
       // Revalidate even inside the plan interval: a quest gate can close between render frames.

@@ -3,6 +3,7 @@ import {test} from 'node:test';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
 import {CompanionNavigation} from '../src/companions/companionNavigation.ts';
+import {CompanionFollow} from '../src/companions/companionFollow.ts';
 const collider=(geometry:THREE.BufferGeometry,name='ground')=>({name,enabled:true,bvh:new MeshBVH(geometry)});
 const floor=()=>collider(new THREE.PlaneGeometry(100,100).rotateX(-Math.PI/2));
 test('walking steering goes around a finite wall without clipping, teleporting or increasing speed',()=>{
@@ -37,4 +38,18 @@ test('closing a gate after planning blocks the very next walk step',()=>{
  nav.step(root,goal,.05,6);gate.enabled=true;
  for(let i=0;i<60;i++)nav.step(root,goal,1/60,6);
  assert.ok(Math.hypot(Math.max(0,Math.abs(root.position.x)-2),Math.max(0,Math.abs(root.position.z-.55)-.1))>=.33,JSON.stringify(root.position));
+});
+for(const hz of [30,60,120])test(`catch-up keeps pace uphill without extending horizontal sweeps into the slope at ${hz}Hz`,()=>{
+ const geometry=new THREE.PlaneGeometry(500,500).rotateX(-Math.PI/2).rotateZ(.1);
+ const nav=new CompanionNavigation([collider(geometry)]),follow=new CompanionFollow(),root=new THREE.Group(),player=new THREE.Vector3();
+ root.position.set(-2.4,-2.4*Math.tan(.1),-.8);let maximumGap=0;
+ for(let i=0;i<20*hz;i++){
+  player.x+=9/hz;player.y=player.x*Math.tan(.1);
+  const gap=root.position.distanceTo(player),before=root.position.clone();follow.update(gap,player,1/hz);
+  nav.step(root,player.clone().add(new THREE.Vector3(-2.4,0,-.8)),1/hz,follow.speed(gap,6));
+  maximumGap=Math.max(maximumGap,root.position.distanceTo(player));
+  assert.ok(Math.hypot(root.position.x-before.x,root.position.z-before.z)<=11/hz+1e-8);
+  assert.ok(Math.abs(root.position.y-root.position.x*Math.tan(.1))<1e-6);
+ }
+ assert.ok(maximumGap<9,`uphill gap ${maximumGap}`);geometry.dispose();
 });

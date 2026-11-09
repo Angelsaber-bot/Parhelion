@@ -1,6 +1,6 @@
 /** Actual Player capsule and delivered companion rigs on a controlled flat BVH runway.
- * Twenty seconds of legal sprint input, one 90-degree turn. Noncombat regroup14m/.5s keeps
- * the companion near the16m skill-command envelope; attacks retain24m, never warp toward a target. Not GPU/FPS or human-play acceptance.
+ * Twenty seconds of legal sprint input and one 90-degree turn must stay close through
+ * actual locomotion, without periodic regroup teleports. Not GPU/FPS or human-play acceptance.
  */
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
@@ -22,6 +22,7 @@ for(const identity of ['saber','blackbeard','musashi','napoleonMounted'] as cons
  const colliders=[{name:'runway',enabled:true,bvh:new MeshBVH(geometry)}],player=new Player(colliders,-10);
  player.teleport(0,.02,0);for(let i=0;i<30;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});
  let rejoins=0,contacts=0,root:THREE.Group,update:(dt:number)=>void,dispose:()=>void;
+ let gaitSpeed:()=>number|null=()=>null;
  if(identity==='saber') {
   nodeImageMetadata();const bytes=await readFile(fileURLToPath(SERVANT_MODELS.armor));
   const gltf=await new GLTFLoader().parseAsync(await decodeServantModel(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength)),'');
@@ -31,6 +32,7 @@ for(const identity of ['saber','blackbeard','musashi','napoleonMounted'] as cons
   const {gltf}=await readCharacter(fileURLToPath(new URL(CHARACTER_KITS[identity].assetUrl)));
   const follow=new KitCompanion({colliders,range:identity==='blackbeard'?12:identity==='napoleonMounted'?4.5:3.5,damage:9,target:()=>null,strike:()=>{contacts++;return null;},onRejoin:()=>rejoins++});
   const actor=new CharacterKit(gltf,CHARACTER_KITS[identity],{onEvent:event=>follow.onEvent(actor,event)});
+  gaitSpeed=()=>actor.state==='walk'||actor.state==='run'?actor.playbackRate*actor.definition.clips[actor.state].nominalSpeed!:null;
   root=actor.root;update=dt=>follow.update(actor,dt,player.pos,player.yaw,false);dispose=()=>{follow.release(actor);actor.dispose();};
  }
  try {
@@ -44,11 +46,13 @@ for(const identity of ['saber','blackbeard','musashi','napoleonMounted'] as cons
    const gap=root.position.distanceTo(player.pos);maximumGap=Math.max(maximumGap,gap);
    assert.ok(player.onGround&&!player.swimming&&!player.flying);
    assert.ok(root.position.toArray().every(Number.isFinite));
-   if(rejoins===count)assert.ok(root.position.distanceTo(previous)<=(identity==='napoleonMounted'?6.2:6)/60+.00001,'authored walk/run speed cap stays bounded');
+   if(rejoins===count)assert.ok(root.position.distanceTo(previous)<=11/60+.00001,'catch-up movement stays bounded');
    else {assert.ok(gap<4,'regroup finishes near the real player, never the enemy');assert.ok(Math.abs(root.position.y)<1e-7);}
+   const authoredSpeed=gaitSpeed();
+   if(authoredSpeed!==null&&rejoins===count)assert.ok(Math.abs(root.position.distanceTo(previous)*60-authoredSpeed)<1e-6,'catch-up animation matches the real displacement');
   }
   assert.ok(Math.abs(travel-180)<.05,`actual player traversed ${travel}m, not a slow synthetic proxy`);
-  assert.ok(maximumGap<17,`maximum separation ${maximumGap}`);assert.ok(rejoins>=2&&rejoins<=5,`${rejoins} safe regroup placements`);
+  assert.ok(maximumGap<9,`maximum separation ${maximumGap}`);assert.equal(rejoins,0,'ordinary sprinting never needs a regroup teleport');
   for(let i=0;i<180;i++){player.step(1/120,{x:0,z:0,jump:false,sprint:false});player.step(1/120,{x:0,z:0,jump:false,sprint:false});update(1/60);}
   assert.ok(root.position.distanceTo(player.pos)<4);assert.equal(contacts,0);
   t.diagnostic(JSON.stringify({identity,playerMetres:travel,maximumGap,rejoins,settledGap:root.position.distanceTo(player.pos)}));
