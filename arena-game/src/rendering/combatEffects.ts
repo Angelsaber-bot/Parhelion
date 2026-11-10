@@ -71,6 +71,7 @@ export class ArenaCombatEffects {
   }
   /** Skin identity on the shot, placed only along the first metres from the muzzle so
    * the aim point and the target stay clear: wave, pulse, fork or a pair of glints. */
+  accent(from: Vec3, to: Vec3, style: SkinEffect) { if (!this.disposed && finitePoint(from) && finitePoint(to)) this.tracerAccent(from, to, style); }
   private tracerAccent(from: Vec3, to: Vec3, style: SkinEffect) {
     const d = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]), length = d.length();
     if (length < .5) return; d.divideScalar(length);

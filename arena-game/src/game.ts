@@ -13,6 +13,7 @@ import type { Hud } from './ui/hud.ts';
 import { Feel } from './player/feel.ts';
 import { AimState, aimSensitivity, canAimWeapon, isScopedWeapon } from './player/aim.ts';
 import { type ArenaScene } from './rendering/scene.ts';
+import { surfaceNormal } from './rendering/weaponFx.ts';
 import type { Session } from './network/session.ts';
 import {FrameGate} from './rendering/renderScheduling.ts';
 import { RangeStats } from './ui/rangeStats.ts';
@@ -143,7 +144,15 @@ export class Game {
         const shooter=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[shooter?.skins[e.w]??0]?.id;
         const d = this.me ? Math.hypot(e.from[0]-this.me.x,e.from[1]-this.me.y,e.from[2]-this.me.z) : 99;
         // Distant shots keep audio; nearby shotguns show two representative rays for the full pellet burst.
-        if(d<32)for(const to of e.to.slice(0,WEAPONS[e.w].pellets>1?2:1))this.scene.skinTracer(from,to,skinId,.45);
+        if(d<32){
+          this.scene.remoteMuzzle(from,e.w,skinId);
+          e.to.slice(0,WEAPONS[e.w].pellets>1?2:1).forEach((to,i)=>{
+            this.scene.skinTracer(from,to,skinId,.45,true,e.w);
+            // A shot that ended on the map (not in the air or on a player) leaves its mark there.
+            const dir:Vec3=[to[0]-e.from[0],to[1]-e.from[1],to[2]-e.from[2]],len=Math.hypot(...dir);
+            if(i===0&&len>.5){const unit:Vec3=[dir[0]/len,dir[1]/len,dir[2]/len];if(Math.abs(raycastMap(this.map,e.from,unit,len+.05)-len)<.08)this.scene.skinImpact(to,false,skinId,surfaceNormal(this.map,to,unit));}
+          });
+        }
         sfx.shot(e.w, d < 25, d);
         break;
       }
@@ -156,9 +165,9 @@ export class Game {
       }
       case 'meleeStrike': {
         const wielder=this.names.get(e.id),skinId=WEAPONS[e.w]?.skins[wielder?.skins[e.w]??0]?.id;
-        this.scene.skinSwing(e.from,e.to,skinId);
         if (e.id === myId) this.meleeContact = e.to;
         else {
+          this.scene.skinSwing(e.from,e.to,skinId,e.w);
           this.scene.meleeStrike(e.id);
           const d = this.me ? Math.hypot(e.from[0] - this.me.x, e.from[2] - this.me.z) : 99;
           if (d < 28) sfx.melee(e.w, false, d);
@@ -339,8 +348,9 @@ export class Game {
           }
           const end: Vec3 = [e.origin[0] + d[0] * t, e.origin[1] + d[1] * t, e.origin[2] + d[2] * t];
           if(visualRays<(w.pellets>1?2:1)){
-            this.scene.skinTracer(start,end,skinId,w.pellets>1?.38:.65,this.scene.viewmodel.aim<.3);
-            if(t<w.range)this.scene.skinImpact(end,onPlayer,skinId);
+            const aiming=this.scene.viewmodel.aim>=.3;
+            this.scene.skinTracer(start,end,skinId,w.pellets>1?.38:.65,!aiming,e.weapon,aiming);
+            if(t<w.range)this.scene.skinImpact(end,onPlayer,skinId,onPlayer?undefined:surfaceNormal(this.map,end,d));
           }
           visualRays++;
           if (!onPlayer && t < w.range && Math.random() < (w.pellets > 1 ? 0.15 : 0.6)) sfx.impact(t);

@@ -34,6 +34,7 @@ import { isScopedWeapon } from '../player/aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from '../weapons/meleeArt.ts';
 import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
+import { WeaponFx, muzzleFlashTexture } from './weaponFx.ts';
 import { KillFinishers } from './killFinishers.ts';
 import { GrenadeView } from './grenades.ts';
 import { insideSmoke, smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
@@ -59,6 +60,7 @@ export class ArenaScene {
   private avatars = new Map<string, Avatar>();
   private shields = new Map<number, THREE.Group>();
   private combatEffects: ArenaCombatEffects;
+  private weaponFx: WeaponFx | null = null;
   private killFinishers!: KillFinishers;
   private grenadeView!: GrenadeView;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
@@ -87,6 +89,7 @@ export class ArenaScene {
 
   constructor(canvas: HTMLCanvasElement, private quality: GraphicsQuality = 'low') {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
+    this.weaponFx = new WeaponFx(this.scene, quality);
     this.killFinishers = new KillFinishers(this.scene);
     this.grenadeView = new GrenadeView(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -160,6 +163,7 @@ export class ArenaScene {
     if(quality===this.quality)return;
     this.quality=quality;this.configureQuality();
     this.combatEffects.dispose();this.combatEffects=new ArenaCombatEffects(this.scene,this.sparkTex,quality);
+    this.weaponFx?.dispose();this.weaponFx=new WeaponFx(this.scene,quality);
     this.configureDressing();this.setAtmosphere(this.atmo);this.resize();
   }
 
@@ -252,6 +256,8 @@ export class ArenaScene {
       const shield=makeShield(TEAM_COLOR.A);fighters.push(shield);this.scene.add(shield);
       this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
       this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
+      // Every weapon-effect material, so the first shot, hit or swing never compiles a shader.
+      const wf=this.weaponFx;if(wf){wf.streak([0,-1000,0],[0,-1000,-5],0xffffff);wf.flash([0,-1000,0],0xffffff);wf.puff([0,-1000,0],0xffffff,.1,.5);wf.decal([0,-1000,0],[0,1,0]);wf.arc([0,-1000,0],[0,-1000,-1],0xffffff,1,1);}
       this.killFinishers.play([0,-1000,0],'stormcoil',this.camera); // compile the finisher shader with the rest
       // With post-processing the scene is drawn into the composer's linear, untonemapped buffer; programs
       // compiled for the screen would not match and would all compile again on the first real frame.
@@ -264,7 +270,7 @@ export class ArenaScene {
       if(this.composer)this.composer.render();else this.renderer.render(this.scene,this.camera);
       renderHeldWeapon(this.renderer,this.vmScene,this.vmCamera);
     }finally{
-      this.combatEffects.clear();
+      this.combatEffects.clear();this.weaponFx?.clear();
       for(const presentation of presentations)presentation.group.removeFromParent();
       for(const object of [...fighters,...avatars.map(avatar=>avatar.root)])object.removeFromParent();
       // three.js deletes a shader program as soon as no live material uses it, so disposing the warm-up
@@ -316,20 +322,42 @@ export class ArenaScene {
     this.muzzleLight.position.set(...at);this.muzzleLight.intensity=0;this.flashT=0;
   }
 
-  /** Tight, straight tracers leave the aim point clear. Skin identity lives in a restrained tint. */
-  skinTracer(from:Vec3,to:Vec3,id?:string,width=1,accent=true){
-    const style=skinEffect(id);
-    // Accents are skipped for your own shots while aiming: they would sit on the sight line.
-    this.combatEffects.tracer(from,to,style?.color??0xffdfad,width,accent?style:undefined);
+  /** A travelling slug of light from the muzzle to the hit, in the finish's colour. Your own shot
+   *  while aiming starts a few metres out and stays faint, so the sight picture stays clear. */
+  skinTracer(from:Vec3,to:Vec3,id?:string,width=1,accent=true,weapon=0,aiming=false){
+    const style=skinEffect(id),color=style?.color??0xffa63d,p=TRACER_PROFILE[weapon]??TRACER_PROFILE[0];
+    if(!this.weaponFx){this.combatEffects.tracer(from,to,color,width,accent?style:undefined);return;}
+    this.weaponFx.streak(from,to,color,p.width,p.speed,aiming?.3:Math.min(1,.45+width*.8),aiming?2.5:0);
+    if(accent&&style)this.combatEffects.accent(from,to,style);
   }
-  skinImpact(at:Vec3,onPlayer:boolean,id?:string){
+  /** Bullet contact. On the map: a hole flush with the surface, a dust puff off it and a few hot chips.
+   *  On a player: a compact hit flash and particles in the finish's shape, never a card over them. */
+  skinImpact(at:Vec3,onPlayer:boolean,id?:string,normal?:Vec3){
     const style=skinEffect(id);
-    // A compact contact fleck, never a growing star/card over the target.
     this.combatEffects.burst(at,onPlayer?0xffe6d2:(style?.secondary??0xc7b9a2),.055,.10,1.5,style?.particle);
-    if(onPlayer)this.combatEffects.burst(at,style?.color??0xffcd9a,.035,.12,2,style?.particle);
+    if(onPlayer){
+      this.combatEffects.burst(at,0xffffff,.16,.06,0);
+      for(let i=0;i<4;i++)this.combatEffects.burst(at,i%2?style?.secondary??0xffd0b0:style?.color??0xffcd9a,.035,.16,2.6,style?.particle);
+      return;
+    }
+    const n=normal??[0,1,0],out:Vec3=[at[0]+n[0]*.04,at[1]+n[1]*.04,at[2]+n[2]*.04];
+    this.weaponFx?.decal(at,n);
+    this.weaponFx?.puff(out,0xbdb3a3,.28,.55,.42,[n[0]*.7,n[1]*.7,n[2]*.7],.25);
+    for(let i=0;i<3;i++)this.combatEffects.burst(out,i?0xffd28a:0xffffff,.03,.22+Math.random()*.12,3.2,'ember',n,9);
   }
-  skinSwing(from:Vec3,to:Vec3,id?:string){
-    // No glowing line through the target on a melee swing.
+  /** Other players' shots: a star flash at their muzzle and a thin breath of smoke. */
+  remoteMuzzle(at:Vec3,weapon:number,id?:string){
+    const style=skinEffect(id);
+    this.weaponFx?.flash(at,style?.color??0xffa040,weapon===1?.55:weapon===4?.5:.36);
+    if(weapon===1||weapon===4)this.weaponFx?.puff(at,0xd9d4cb,.3,.6,.22,[0,0,0],.5);
+  }
+  /** Another player's swing, drawn as the crescent the weapon sweeps (blade), a long narrow
+   *  thrust (polearm) or an overhead chop (hammer). Never a line through the target. */
+  skinSwing(from:Vec3,to:Vec3,id?:string,weapon=5){
+    const style=skinEffect(id),color=style?.color??MELEE_COLOR[weapon]??0x9cf0ff,centre:Vec3=[from[0],from[1]-.25,from[2]];
+    if(weapon===7)this.weaponFx?.arc(centre,to,color,1.5,2.2,true,.24);
+    else if(weapon===6)this.weaponFx?.arc(centre,to,color,2.4,.45,false,.18);
+    else this.weaponFx?.arc(centre,to,color,1.55,2.1,false,.2);
   }
 
   /** Bullet impact: a dust puff and flying chips on the map, a bright star burst on a player. */
@@ -345,19 +373,16 @@ export class ArenaScene {
     }
   }
 
-  /** Melee contact: a white flash, a ring of weapon-coloured sparks and heavier debris for the hammer. */
+  /** Melee contact: a white flash, a shock ring, a spray of sparks in the finish's colours and shape,
+   *  heavier debris and a dust burst for the hammer. Finished weapons get the same weight as stock. */
   meleeImpact(at: Vec3, weapon: number, skinId?:string) {
-    const style=skinEffect(skinId);
-    if(style){
-      const count=weapon===7?4:2;
-      for(let i=0;i<count;i++)this.combatEffects.burst(at,i%2?style.color:style.secondary,.055,.14,weapon===7?2.5:2,style.particle);
-      return;
-    }
-    const color = weapon === 7 ? 0xffb35a : weapon === 6 ? 0xb6aaff : 0x9cf0ff, heavy = weapon === 7;
-    this.burst(at, 0xffffff, heavy ? 1.3 : .9, .1, 0);
-    this.burst(at, color, heavy ? 1.6 : 1.1, .2, 0);
-    for (let i = 0; i < (heavy ? 12 : 8); i++) this.burst(at, color, .12, .32, heavy ? 4.5 : 5.5);
-    for (let i = 0; i < (heavy ? 6 : 3); i++) this.burst(at, 0xfff1c8, .08, .4, 3);
+    const style=skinEffect(skinId), heavy = weapon === 7;
+    const color = style?.color ?? MELEE_COLOR[weapon] ?? 0x9cf0ff, second = style?.secondary ?? 0xfff1c8, shape = style?.particle;
+    this.combatEffects.burst(at, 0xffffff, heavy ? 1.1 : .75, .08, 0);
+    this.combatEffects.burst(at, color, heavy ? 1.4 : 1, .18, 0, 'ring');
+    for (let i = 0; i < (heavy ? 12 : 8); i++) this.combatEffects.burst(at, i % 3 ? color : second, .1, .3, heavy ? 4.5 : 5.5, shape);
+    for (let i = 0; i < (heavy ? 6 : 3); i++) this.combatEffects.burst(at, 0xfff1c8, .07, .4, 3, 'ember');
+    if (heavy) for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2; this.weaponFx?.puff([at[0], at[1] - .6, at[2]], 0xc8bba6, .5, .7, .35, [Math.cos(a) * 1.4, 0, Math.sin(a) * 1.4], .3); }
   }
 
   private burst(at: Vec3, color: number, size: number, life: number, speed: number) {
@@ -371,7 +396,7 @@ export class ArenaScene {
 
   get combatEffectInventory() { return this.combatEffects.inventory; }
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
-  disposeCombatEffects() { this.combatEffects.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); }
+  disposeCombatEffects() { this.combatEffects.dispose(); this.weaponFx?.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); }
   private smokes: readonly Smoke[] = [];
   syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.smokes = smokes; this.grenadeView?.sync(grenades, smokes, since); }
   /** Frag detonation: flash, shockwave, smoke, plus sparks from the shared effect pool. */
@@ -455,7 +480,7 @@ export class ArenaScene {
 
   /** Round boundaries clear transient effects without reloading maps or equipped models. */
   clearCombatEffects() {
-    this.combatEffects.clear(); this.killFinishers?.clear(); this.grenadeView?.clear();
+    this.combatEffects.clear(); this.weaponFx?.clear(); this.killFinishers?.clear(); this.grenadeView?.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
@@ -473,7 +498,7 @@ export class ArenaScene {
   }
 
   update(dt: number) {
-    this.combatEffects.update(dt); this.killFinishers?.update(dt); this.grenadeView?.update(dt);
+    this.combatEffects.update(dt); this.weaponFx?.update(dt); this.killFinishers?.update(dt); this.grenadeView?.update(dt);
     const flashDt = Number.isFinite(dt) ? Math.max(0, dt) : 0;
     this.flashT = Math.max(0, this.flashT - flashDt);
     // Preserve the original 60 Hz falloff, rather than dimming once per frame.
@@ -605,10 +630,15 @@ export class Viewmodel {
   private shellMat = celMaterial({ color: 0xe6b55a, emissive: 0x3a2400 });
   /** Viewmodel-space cosmetics: skin muzzle sparks. Separate pool, never in the world. */
   private fx = new ArenaCombatEffects(this.root, makeGlowTexture(), 'low');
+  /** Viewmodel-space smoke from the muzzle (normal-blended puffs). */
+  private vfx = new WeaponFx(this.root, 'low');
+  private flashLife = 0; private flashSize = .1;
   private style: SkinEffect | undefined;
   /** Melee swing ribbon: recent tip/heel samples in viewmodel space, faded by age. */
   private trail = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
   private trailSamples: { a: THREE.Vector3; b: THREE.Vector3; age: number }[] = [];
+  private trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 3), 3);
+  private trailCol = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 3), 3);
   private inspectT = 0;
   private throwT = 0;
   aspect=16/9;
@@ -617,7 +647,7 @@ export class Viewmodel {
   aim = 0;
 
   constructor() {
-    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: makeGlowTexture(), color: 0xfff1b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: muzzleFlashTexture(), color: 0xfff1b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     this.flash.scale.setScalar(0.16);
     this.flash.visible = false;
     this.root.add(this.flash);
@@ -625,6 +655,9 @@ export class Viewmodel {
     const spare = new THREE.Mesh(this.shellGeo, this.shellMat);
     spare.visible = false;
     this.root.add(spare);
+    this.trailPos.setUsage(THREE.DynamicDrawUsage); this.trailCol.setUsage(THREE.DynamicDrawUsage);
+    const trailIndex: number[] = []; for (let i = 1; i < TRAIL_VERTS / 2; i++) trailIndex.push((i - 1) * 2, i * 2, (i - 1) * 2 + 1, i * 2, i * 2 + 1, (i - 1) * 2 + 1);
+    this.trail.geometry.setAttribute('position', this.trailPos); this.trail.geometry.setAttribute('color', this.trailCol); this.trail.geometry.setIndex(trailIndex);
     this.trail.name = 'Viewmodel swing trail'; this.trail.frustumCulled = false; this.trail.renderOrder = 3; this.trail.visible = false; this.root.add(this.trail);
   }
 
@@ -649,8 +682,8 @@ export class Viewmodel {
 
   resetMotion() {
     for (const shell of this.shells) this.root.remove(shell.m); this.shells = [];
-    this.fx.clear(); this.trailSamples.length = 0; this.trail.visible = false; this.inspectT = 0;
-    this.flash.visible = false; this.aim = 0; this.meleeHit = 0; this.hitStop = 0; this.meleeWindup = 0;
+    this.fx.clear(); this.vfx.clear(); this.trailSamples.length = 0; this.trail.visible = false; this.inspectT = 0;
+    this.flash.visible = false; this.flashLife = 0; this.aim = 0; this.meleeHit = 0; this.hitStop = 0; this.meleeWindup = 0;
     this.kick = 0; this.swap = 0; this.stride.reset(); this.sway = [0, 0]; this.reloading = 0; this.moving = 0;
   }
 
@@ -663,28 +696,41 @@ export class Viewmodel {
 
   private updateTrail(dt: number) {
     for (const sample of this.trailSamples) sample.age += dt;
-    while (this.trailSamples.length && this.trailSamples[0].age > .16) this.trailSamples.shift();
+    while (this.trailSamples.length && this.trailSamples[0].age > TRAIL_AGE) this.trailSamples.shift();
     const def = combatArt(WEAPONS[this.weapon]?.id ?? ''), melee = WEAPONS[this.weapon]?.kind === 'melee';
     const ready = meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon]?.windup ?? 1);
-    if (melee && def && this.gun && this.style && (this.meleeHit > .62 || ready > .7)) {
+    // Every melee weapon leaves a ribbon; finishes colour it, stock weapons use their own colour.
+    if (melee && def && this.gun && (this.meleeHit > .62 || ready > .7)) {
       const [tip, heel] = this.weapon === 7 ? [[.82, .04, 0], [.2, .04, 0]] : this.weapon === 6 ? [[1.8, 0, 0], [1.0, 0, 0]] : [[1.5, 0, 0], [.55, 0, 0]];
       this.gun.updateMatrixWorld(true);
       const point = (raw: number[]) => this.root.worldToLocal(this.gun!.localToWorld(artPoint(def, raw)));
       this.trailSamples.push({ a: point(tip), b: point(heel), age: 0 });
-      if (this.trailSamples.length > 16) this.trailSamples.shift();
+      if (this.trailSamples.length > TRAIL_SAMPLES) this.trailSamples.shift();
     }
     const n = this.trailSamples.length;
     this.trail.visible = n > 1;
     if (n < 2) return;
-    const position = new Float32Array(n * 6), color = new Float32Array(n * 6), tint = new THREE.Color(this.style?.color ?? 0xffffff), index: number[] = [];
-    this.trailSamples.forEach((sample, i) => {
-      const fade = Math.max(0, 1 - sample.age / .16) * (i / (n - 1)) * .55;
-      position.set([sample.a.x, sample.a.y, sample.a.z, sample.b.x, sample.b.y, sample.b.z], i * 6);
-      color.set([tint.r * fade, tint.g * fade, tint.b * fade, tint.r * fade * .2, tint.g * fade * .2, tint.b * fade * .2], i * 6);
-      if (i) index.push((i - 1) * 2, i * 2, (i - 1) * 2 + 1, i * 2, i * 2 + 1, (i - 1) * 2 + 1);
-    });
-    const g = this.trail.geometry; g.setAttribute('position', new THREE.BufferAttribute(position, 3)); g.setAttribute('color', new THREE.BufferAttribute(color, 3)); g.setIndex(index);
+    // Catmull-Rom between samples (3 steps each), so a fast swing reads as a smooth arc, not facets.
+    const tint = this.trailTint.setHex(this.style?.color ?? VIEW_MELEE_COLOR[this.weapon] ?? 0xffffff), pos = this.trailPos.array as Float32Array, col = this.trailCol.array as Float32Array;
+    const cr = (p0: number, p1: number, p2: number, p3: number, t: number) => .5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t * t * t);
+    let v = 0; const steps = 3, total = (n - 1) * steps + 1;
+    for (let k = 0; k < total; k++) {
+      const seg = Math.min(n - 2, Math.floor(k / steps)), t = k === total - 1 ? 1 : (k - seg * steps) / steps;
+      const s0 = this.trailSamples[Math.max(0, seg - 1)], s1 = this.trailSamples[seg], s2 = this.trailSamples[seg + 1], s3 = this.trailSamples[Math.min(n - 1, seg + 2)];
+      const age = s1.age + (s2.age - s1.age) * t, along = k / (total - 1);
+      // Newest edge is hot and nearly white at the tip; older edge and the heel fade out.
+      const fade = Math.max(0, 1 - age / TRAIL_AGE) * along * .82, hot = along * along * .55;
+      for (const [edge, bright] of [['a', 1], ['b', .14]] as const) {
+        pos[v * 3] = cr(s0[edge].x, s1[edge].x, s2[edge].x, s3[edge].x, t); pos[v * 3 + 1] = cr(s0[edge].y, s1[edge].y, s2[edge].y, s3[edge].y, t); pos[v * 3 + 2] = cr(s0[edge].z, s1[edge].z, s2[edge].z, s3[edge].z, t);
+        const w = edge === 'a' ? hot : 0;
+        col[v * 3] = (tint.r + (1 - tint.r) * w) * fade * bright; col[v * 3 + 1] = (tint.g + (1 - tint.g) * w) * fade * bright; col[v * 3 + 2] = (tint.b + (1 - tint.b) * w) * fade * bright;
+        v++;
+      }
+    }
+    this.trailPos.needsUpdate = this.trailCol.needsUpdate = true;
+    this.trail.geometry.setDrawRange(0, (total - 1) * 6);
   }
+  private trailTint = new THREE.Color();
 
   muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
@@ -702,9 +748,9 @@ export class Viewmodel {
     if (WEAPONS[w].kind === 'melee') return;
     this.kickMax = w === 1 ? 1.9 : (w === 2 || w === 4) ? 1.4 : 0.85;
     this.kick = this.kickMax;
-    this.flash.visible = true;
+    this.flash.visible = true; this.flashLife = FLASH_LIFE;
     this.flash.material.rotation = Math.random() * Math.PI;
-    this.flash.scale.setScalar(w===1?.13:.085);
+    this.flashSize = (w===1?.15:w===4?.13:.1) * (.85 + Math.random() * .3); this.flash.scale.setScalar(this.flashSize);
     this.flash.material.opacity=this.aim > .5 ? .22 : .55;
     if (isScopedWeapon(w) && this.aim > .5) this.flash.visible = false; // never flash inside the scope image
     this.inspectT = 0;
@@ -715,7 +761,11 @@ export class Viewmodel {
       const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(this.gun.quaternion);
       for (let i = 0, n = w === 1 ? 6 : 4; i < n; i++) this.fx.burst([at.x, at.y, at.z], i % 2 ? style.secondary : style.color, .016 + Math.random() * .012, .07 + Math.random() * .06, 1.2 + Math.random() * .9, style.particle, [dir.x, dir.y, dir.z], 0);
     }
-    setTimeout(() => (this.flash.visible = false), 24);
+    // A breath of smoke off the muzzle at the hip (never while aiming: it would sit in the sight).
+    if (this.muzzle && this.aim < .3 && (w === 1 || w === 4 || Math.random() < .35)) {
+      const at = this.root.worldToLocal(this.muzzle.getWorldPosition(new THREE.Vector3()));
+      this.vfx.puff([at.x, at.y + .01, at.z], 0xe4e0d8, w === 1 ? .1 : .06, w === 1 ? .7 : .5, w === 1 ? .2 : .13, [.02, 0, -.05], .06);
+    }
     if (w !== 1) this.ejectShell();
   }
 
@@ -783,7 +833,13 @@ export class Viewmodel {
       this.gun.position.y -= k * .16; this.gun.position.x += k * .05; this.gun.rotation.z -= k * .5; this.gun.rotation.x -= k * .35;
     }
     this.updateTrail(dt);
-    this.fx.update(dt);
+    this.fx.update(dt); this.vfx.update(dt);
+    // Two frames of flash, shrinking, whatever the frame rate.
+    if (this.flashLife > 0) {
+      this.flashLife = Math.max(0, this.flashLife - dt);
+      if (this.flashLife <= 0) this.flash.visible = false;
+      else { const k = this.flashLife / FLASH_LIFE; this.flash.scale.setScalar(this.flashSize * (.65 + .35 * k)); }
+    }
     this.gun.visible = !(isScopedWeapon(this.weapon) && this.aim > 0.92); // scopes have an unobstructed magnified view
     for (let i = this.shells.length - 1; i >= 0; i--) {
       const sh = this.shells[i];
@@ -934,6 +990,14 @@ function makeShield(color: number): THREE.Group {
   return g;
 }
 
+const FLASH_LIFE = .045, TRAIL_AGE = .2, TRAIL_SAMPLES = 18, TRAIL_VERTS = ((TRAIL_SAMPLES - 1) * 3 + 1) * 2;
+const VIEW_MELEE_COLOR: Record<number, number> = { 5: 0x9cf0ff, 6: 0xb6aaff, 7: 0xffb35a };
+/** Tracer look per base weapon: slug width (m) and visual speed (m/s). */
+const TRACER_PROFILE: Record<number, { width: number; speed: number }> = {
+  0: { width: .028, speed: 480 }, 1: { width: .018, speed: 380 }, 2: { width: .034, speed: 650 }, 3: { width: .022, speed: 440 }, 4: { width: .045, speed: 820 },
+};
+/** Stock melee colours (finishes use their own accent). */
+const MELEE_COLOR: Record<number, number> = { 5: 0x9cf0ff, 6: 0xb6aaff, 7: 0xffb35a };
 function makeGlowTexture(): THREE.Texture {
   const c = document.createElement('canvas');
   c.width = c.height = 64;

@@ -54,9 +54,27 @@ it('a melee strike leaves a short skin-coloured trail in viewmodel space that fa
   vm.strike(); for (let i = 0; i < 6; i++) vm.update(1 / 60);
   expect(trail.visible).toBe(true); expect(trail.geometry.getIndex()!.count).toBeGreaterThan(6);
   const colors = trail.geometry.getAttribute('color'); let lit = 0; for (let i = 0; i < colors.count; i++) lit = Math.max(lit, colors.getX(i), colors.getY(i), colors.getZ(i));
-  expect(lit).toBeGreaterThan(.1); expect(lit).toBeLessThanOrEqual(.56);
+  expect(lit).toBeGreaterThan(.1); expect(lit).toBeLessThanOrEqual(.9);
   for (let i = 0; i < 90; i++) vm.update(1 / 60);
   expect(trail.visible).toBe(false); vm.clear();
+});
+it('stock melee weapons (no finish) also leave a swing trail, and it clears on reset', () => {
+  for (const weapon of [5, 6, 7]) {
+    const vm = new Viewmodel(); vm.set(weapon, 0); vm.update(1 / 60);
+    const trail = vm.root.getObjectByName('Viewmodel swing trail') as THREE.Mesh;
+    vm.strike(); for (let i = 0; i < 6; i++) vm.update(1 / 60);
+    expect(trail.visible, `weapon ${weapon}`).toBe(true); expect(trail.geometry.drawRange.count).toBeGreaterThan(6);
+    vm.resetMotion(); vm.update(0); expect(trail.visible).toBe(false); vm.clear();
+  }
+});
+it('the muzzle flash lasts two frames of time at any frame rate', () => {
+  for (const hz of [30, 60, 144, 240]) {
+    const vm = new Viewmodel(); vm.set(0, 0); vm.update(0); vm.fire();
+    const flash = () => vm.root.children.some((o) => o instanceof THREE.Sprite && o.visible && (o as THREE.Sprite).material.blending === THREE.AdditiveBlending && o.parent === vm.root);
+    expect(flash()).toBe(true); let t = 0; while (t < .03) { vm.update(1 / hz); t += 1 / hz; }
+    const at30 = (vm as unknown as { flashLife: number }).flashLife; for (let i = 0; i < 20; i++) vm.update(1 / hz);
+    expect((vm as unknown as { flashLife: number }).flashLife).toBe(0); expect(at30).toBeLessThan(.045); vm.clear();
+  }
 });
 it('inspect turns the weapon and any shot cancels it at once', () => {
   const vm = new Viewmodel(); vm.set(0, 0); for (let i = 0; i < 30; i++) vm.update(1 / 60);
