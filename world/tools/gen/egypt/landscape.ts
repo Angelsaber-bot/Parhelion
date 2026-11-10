@@ -29,7 +29,11 @@ export function egyptNaturalHeight(x: number, z: number): number {
   // 台地: a sandstone tableland with banded cliffs; higher toward the north.
   const depth = plateauDepth(x, z), wobble = fbm(x * .03, z * .03, 3, 3307) * 5;
   const top = 30 + 10 * smoothstep(30, 150, depth) + fbm(x * .012, z * .012, 3, 3311) * 1.5;
-  const rise = smoothstep(-EGYPT_PLATEAU.cliff, EGYPT_PLATEAU.cliff, depth + wobble);
+  // Toward the Black Sail and Kyoto joins the escarpment relaxes into a broken slope,
+  // so no straight wall runs parallel to a seam; the southern face stays sheer.
+  const soft = Math.max(smoothstep(-210, -290, z), smoothstep(-200, -255, x));
+  const cliffW = EGYPT_PLATEAU.cliff + 16 * soft;
+  const rise = smoothstep(-cliffW, cliffW, depth + wobble * (1 + soft));
   // strata: the cliff steps in hard bands rather than one smooth ramp
   const banded = rise < .98 && rise > .02 ? Math.round(rise * 5) / 5 * .6 + rise * .4 : rise;
   y = lerp(y, top, banded);
