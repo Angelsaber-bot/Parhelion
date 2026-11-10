@@ -128,6 +128,21 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
       // checked independently in seam-barrier.test.ts, not accepted by a hash refresh.
     } else if(name==='ART' && added.length) {
       assert.deepEqual({...node,children:node.children.filter(n=>!added.includes(n))},old.nodes[name]);
+    } else if(region==='kyoto' && name==='Honnoji') {
+      // The requested hall/gate/lookout/bell-tower repair appends 1,344 visual
+      // triangles to this one existing batch. honnoji-continuity.test.ts checks
+      // the actual compressed hall shells, roof joints and open lookout bays.
+      assert.deepEqual({...node,primitives:old.nodes[name].primitives},old.nodes[name],
+        'Honnoji retains its exact transform, hierarchy and visibility metadata');
+      assert.equal(node.primitives.length,1);
+      const p=node.primitives[0],original=old.nodes[name].primitives[0];
+      assert.equal(p.triangles,original.triangles+1344,'bounded structural infill and timber append');
+      assert.equal(p.material,original.material);assert.equal(p.mode,original.mode);
+      assert.deepEqual(Object.keys(p.attributes),Object.keys(original.attributes));
+      for(const semantic of Object.keys(p.attributes)) {
+        const a=p.attributes[semantic],prior=original.attributes[semantic];
+        assert.deepEqual({...a,count:prior.count,sha256:prior.sha256},prior,'unchanged accessor schema');
+      }
     } else if(region==='kyoto' && repairedRoofs.includes(name)) {
       assert.deepEqual(node.extras,old.nodes[name].extras);
       assert.deepEqual(node.children,old.nodes[name].children);
@@ -207,7 +222,8 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
   else assert.ok(prepared.chunks<=original.chunks+64,'bounded prepared meshes for complete attic infills');
   if(region!=='kyoto') assert.equal(prepared.outlineChunks,original.outlineChunks,'no additional outline meshes');
   else assert.ok(prepared.outlineChunks<=original.outlineChunks+64,'bounded outline meshes for complete attic infills');
-  const unchangedMesh = (name:string) => name!=='Terrain'&&!added.includes(name) && !(region==='kyoto' && repairedRoofs.includes(name));
+  if(region==='kyoto')assert.equal(prepared.byMesh.Honnoji,9,'the repaired batch crosses 4k triangles and occupies its existing 3×3 spatial cells');
+  const unchangedMesh = (name:string) => name!=='Terrain'&&!added.includes(name) && !(region==='kyoto' && (repairedRoofs.includes(name)||name==='Honnoji'));
   assert.deepEqual(Object.fromEntries(Object.entries(prepared.byMesh).filter(([name])=>unchangedMesh(name))),Object.fromEntries(Object.entries(original.byMesh).filter(([name])=>unchangedMesh(name))),'exact unrelated per-source chunk distribution, including 4k threshold');
   for(const name of added)assert.equal(prepared.byMesh[name],1);
 });
