@@ -34,7 +34,9 @@ import { isScopedWeapon } from '../player/aim.ts';
 import { meleeRecoverySeconds, meleeWindupProgress, poseMelee } from '../weapons/meleeArt.ts';
 import { ChapterEffects } from './chapterEffects.ts';
 import { ArenaCombatEffects } from './combatEffects.ts';
-import { WeaponFx, muzzleFlashTexture } from './weaponFx.ts';
+import { WeaponFx, SWING_GLSL } from './weaponFx.ts';
+import { flashTexture } from './fxShapes.ts';
+import { signatureFx, SWING_STYLES, type GunFx, type MeleeFx } from '../cosmetics/signatureFx.ts';
 import { KillFinishers } from './killFinishers.ts';
 import { GrenadeView } from './grenades.ts';
 import { insideSmoke, smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
@@ -257,7 +259,9 @@ export class ArenaScene {
       this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
       this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
       // Every weapon-effect material, so the first shot, hit or swing never compiles a shader.
-      const wf=this.weaponFx;if(wf){wf.streak([0,-1000,0],[0,-1000,-5],0xffffff);wf.flash([0,-1000,0],0xffffff);wf.puff([0,-1000,0],0xffffff,.1,.5);wf.decal([0,-1000,0],[0,1,0]);wf.arc([0,-1000,0],[0,-1000,-1],0xffffff,1,1);}
+      const wf=this.weaponFx;if(wf){wf.streak([0,-1000,0],[0,-1000,-5],0xffffff);wf.flash([0,-1000,0],0xffffff);wf.puff([0,-1000,0],0xffffff,.1,.5);wf.decal([0,-1000,0],[0,1,0]);wf.arc([0,-1000,0],[0,-1000,-1],0xffffff,1,1);
+        // And each equipped finish's own flash / mark / emblem textures, uploaded now rather than on first use.
+        for(const index of indices){const f=signatureFx(WEAPONS[index]?.skins[skins[index]??0]?.id);if(f?.kind==='gun'){wf.flash([0,-1000,0],f.head,.1,f.flash);wf.decal([0,-1000,0],[0,1,0],.1,1,f.mark,f.head);}else if(f)wf.flash([0,-1000,0],f.head,.1,f.glyph);}}
       this.killFinishers.play([0,-1000,0],'stormcoil',this.camera); // compile the finisher shader with the rest
       // With post-processing the scene is drawn into the composer's linear, untonemapped buffer; programs
       // compiled for the screen would not match and would all compile again on the first real frame.
@@ -325,15 +329,16 @@ export class ArenaScene {
   /** A travelling slug of light from the muzzle to the hit, in the finish's colour. Your own shot
    *  while aiming starts a few metres out and stays faint, so the sight picture stays clear. */
   skinTracer(from:Vec3,to:Vec3,id?:string,width=1,accent=true,weapon=0,aiming=false){
-    const style=skinEffect(id),color=style?.color??0xffa63d,p=TRACER_PROFILE[weapon]??TRACER_PROFILE[0];
+    const style=skinEffect(id),fx=gunFx(id),color=fx?.head??style?.color??0xffa63d,p=TRACER_PROFILE[weapon]??TRACER_PROFILE[0];
     if(!this.weaponFx){this.combatEffects.tracer(from,to,color,width,accent?style:undefined);return;}
-    this.weaponFx.streak(from,to,color,p.width,p.speed,aiming?.3:Math.min(1,.45+width*.8),aiming?2.5:0);
+    // Each finish flies its own way: helix, beads, bolt, ribbon, comet, dashes or a wave.
+    this.weaponFx.streak(from,to,color,p.width,p.speed,aiming?.3:Math.min(1,.45+width*.8),aiming?2.5:0,{style:fx?.tracer,tail:fx?.tail});
     if(accent&&style)this.combatEffects.accent(from,to,style);
   }
-  /** Bullet contact. On the map: a hole flush with the surface, a dust puff off it and a few hot chips.
-   *  On a player: a compact hit flash and particles in the finish's shape, never a card over them. */
+  /** Bullet contact. On the map: the finish's own mark flush with the surface (a plain hole for
+   *  stock), a dust puff and a few hot chips. On a player: a compact flash and particles. */
   skinImpact(at:Vec3,onPlayer:boolean,id?:string,normal?:Vec3){
-    const style=skinEffect(id);
+    const style=skinEffect(id),fx=gunFx(id);
     this.combatEffects.burst(at,onPlayer?0xffe6d2:(style?.secondary??0xc7b9a2),.055,.10,1.5,style?.particle);
     if(onPlayer){
       this.combatEffects.burst(at,0xffffff,.16,.06,0);
@@ -341,23 +346,25 @@ export class ArenaScene {
       return;
     }
     const n=normal??[0,1,0],out:Vec3=[at[0]+n[0]*.04,at[1]+n[1]*.04,at[2]+n[2]*.04];
-    this.weaponFx?.decal(at,n);
+    this.weaponFx?.decal(at,n,undefined,undefined,fx?.mark,fx?.head);
     this.weaponFx?.puff(out,0xbdb3a3,.28,.55,.42,[n[0]*.7,n[1]*.7,n[2]*.7],.25);
-    for(let i=0;i<3;i++)this.combatEffects.burst(out,i?0xffd28a:0xffffff,.03,.22+Math.random()*.12,3.2,'ember',n,9);
+    for(let i=0;i<3;i++)this.combatEffects.burst(out,i?(style?.color??0xffd28a):0xffffff,.03,.22+Math.random()*.12,3.2,style?.particle??'ember',n,9);
   }
-  /** Other players' shots: a star flash at their muzzle and a thin breath of smoke. */
+  /** Other players' shots: their finish's flash shape at the muzzle and a thin breath of smoke. */
   remoteMuzzle(at:Vec3,weapon:number,id?:string){
-    const style=skinEffect(id);
-    this.weaponFx?.flash(at,style?.color??0xffa040,weapon===1?.55:weapon===4?.5:.36);
+    const fx=gunFx(id);
+    this.weaponFx?.flash(at,fx?.head??0xffa040,weapon===1?.55:weapon===4?.5:.36,fx?.flash);
     if(weapon===1||weapon===4)this.weaponFx?.puff(at,0xd9d4cb,.3,.6,.22,[0,0,0],.5);
   }
   /** Another player's swing, drawn as the crescent the weapon sweeps (blade), a long narrow
-   *  thrust (polearm) or an overhead chop (hammer). Never a line through the target. */
+   *  thrust (polearm) or an overhead chop (hammer), in the finish's own style. Never a line
+   *  through the target. */
   skinSwing(from:Vec3,to:Vec3,id?:string,weapon=5){
-    const style=skinEffect(id),color=style?.color??MELEE_COLOR[weapon]??0x9cf0ff,centre:Vec3=[from[0],from[1]-.25,from[2]];
-    if(weapon===7)this.weaponFx?.arc(centre,to,color,1.5,2.2,true,.24);
-    else if(weapon===6)this.weaponFx?.arc(centre,to,color,2.4,.45,false,.18);
-    else this.weaponFx?.arc(centre,to,color,1.55,2.1,false,.2);
+    const style=skinEffect(id),fx=meleeFx(id),color=fx?.head??style?.color??MELEE_COLOR[weapon]??0x9cf0ff,centre:Vec3=[from[0],from[1]-.25,from[2]];
+    const look=fx?.swing??'crescent',tail=fx?.tail;
+    if(weapon===7)this.weaponFx?.arc(centre,to,color,1.05,2.4,'chop',.24,look,tail);
+    else if(weapon===6)this.weaponFx?.arc(centre,to,color,.42,6.1,'thrust',.2,look,tail);
+    else this.weaponFx?.arc(centre,to,color,1.1,2.5,'slash',.2,look,tail);
   }
 
   /** Bullet impact: a dust puff and flying chips on the map, a bright star burst on a player. */
@@ -382,6 +389,8 @@ export class ArenaScene {
     this.combatEffects.burst(at, color, heavy ? 1.4 : 1, .18, 0, 'ring');
     for (let i = 0; i < (heavy ? 12 : 8); i++) this.combatEffects.burst(at, i % 3 ? color : second, .1, .3, heavy ? 4.5 : 5.5, shape);
     for (let i = 0; i < (heavy ? 6 : 3); i++) this.combatEffects.burst(at, 0xfff1c8, .07, .4, 3, 'ember');
+    // The finish's emblem bursts at the point of contact: a gear, a rose, a snowflake, a bolt...
+    const fx = meleeFx(skinId); if (fx) this.weaponFx?.flash(at, fx.head, heavy ? 1.3 : 1, fx.glyph, .2);
     if (heavy) for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2; this.weaponFx?.puff([at[0], at[1] - .6, at[2]], 0xc8bba6, .5, .7, .35, [Math.cos(a) * 1.4, 0, Math.sin(a) * 1.4], .3); }
   }
 
@@ -635,10 +644,15 @@ export class Viewmodel {
   private flashLife = 0; private flashSize = .1;
   private style: SkinEffect | undefined;
   /** Melee swing ribbon: recent tip/heel samples in viewmodel space, faded by age. */
-  private trail = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide }));
+  private trail = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
+    uniforms: { uStyle: { value: 0 }, uTime: { value: 0 } }, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: 'varying vec3 vCol; varying vec2 vUv; void main(){ vCol = color; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
+    fragmentShader: `uniform float uStyle; uniform float uTime; varying vec3 vCol; varying vec2 vUv;\n${SWING_GLSL}\nvoid main(){ gl_FragColor = vec4(vCol * swingMask(vUv.x, vUv.y, uStyle, uTime), 1.); }`,
+  }));
   private trailSamples: { a: THREE.Vector3; b: THREE.Vector3; age: number }[] = [];
   private trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 3), 3);
   private trailCol = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 3), 3);
+  private trailUv = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 2), 2);
   private inspectT = 0;
   private throwT = 0;
   aspect=16/9;
@@ -647,7 +661,7 @@ export class Viewmodel {
   aim = 0;
 
   constructor() {
-    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: muzzleFlashTexture(), color: 0xfff1b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+    this.flash = new THREE.Sprite(new THREE.SpriteMaterial({ map: flashTexture('star'), color: 0xfff1b0, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
     this.flash.scale.setScalar(0.16);
     this.flash.visible = false;
     this.root.add(this.flash);
@@ -657,7 +671,7 @@ export class Viewmodel {
     this.root.add(spare);
     this.trailPos.setUsage(THREE.DynamicDrawUsage); this.trailCol.setUsage(THREE.DynamicDrawUsage);
     const trailIndex: number[] = []; for (let i = 1; i < TRAIL_VERTS / 2; i++) trailIndex.push((i - 1) * 2, i * 2, (i - 1) * 2 + 1, i * 2, i * 2 + 1, (i - 1) * 2 + 1);
-    this.trail.geometry.setAttribute('position', this.trailPos); this.trail.geometry.setAttribute('color', this.trailCol); this.trail.geometry.setIndex(trailIndex);
+    this.trail.geometry.setAttribute('position', this.trailPos); this.trail.geometry.setAttribute('color', this.trailCol); this.trail.geometry.setAttribute('uv', this.trailUv); this.trailUv.setUsage(THREE.DynamicDrawUsage); this.trail.geometry.setIndex(trailIndex);
     this.trail.name = 'Viewmodel swing trail'; this.trail.frustumCulled = false; this.trail.renderOrder = 3; this.trail.visible = false; this.root.add(this.trail);
   }
 
@@ -675,6 +689,10 @@ export class Viewmodel {
     const style=skinEffect(WEAPONS[weapon].skins[skin]?.id);
     this.flash.material.color.setHex(style?.color??0xfff1b0);
     this.flash.material.rotation=style?.particle==='crystal'?Math.PI/4:0;
+    // The finish's own muzzle-flash shape and swing style.
+    const sig=signatureFx(WEAPONS[weapon].skins[skin]?.id);
+    this.flash.material.map=flashTexture(sig?.kind==='gun'?sig.flash:'star');if(sig)this.flash.material.color.setHex(sig.head);
+    (this.trail.material as THREE.ShaderMaterial).uniforms.uStyle.value=sig?.kind==='melee'?SWING_STYLES.indexOf(sig.swing):0;this.trailTail.setHex(sig?.tail??0xffffff);this.trailSig=!!sig;
     this.style=style;this.shellMat.color.setHex(style?.secondary??0xe6b55a);this.shellMat.emissive.setHex(style?.color??0x3a2400).multiplyScalar(.18);
     this.trailSamples.length=0;this.inspectT=0;
     this.weapon = weapon; this.meleeHit = 0; this.meleeWindup = 0; this.kick = 0;
@@ -720,17 +738,22 @@ export class Viewmodel {
       const age = s1.age + (s2.age - s1.age) * t, along = k / (total - 1);
       // Newest edge is hot and nearly white at the tip; older edge and the heel fade out.
       const fade = Math.max(0, 1 - age / TRAIL_AGE) * along * .82, hot = along * along * .55;
+      // Finishes blend from their trim colour at the heel to the accent at the tip.
+      const uv = this.trailUv.array as Float32Array;
       for (const [edge, bright] of [['a', 1], ['b', .14]] as const) {
+        uv[v * 2] = along; uv[v * 2 + 1] = edge === 'a' ? 1 : 0;
+        const base = this.trailSig && edge === 'b' ? this.trailTail : tint;
         pos[v * 3] = cr(s0[edge].x, s1[edge].x, s2[edge].x, s3[edge].x, t); pos[v * 3 + 1] = cr(s0[edge].y, s1[edge].y, s2[edge].y, s3[edge].y, t); pos[v * 3 + 2] = cr(s0[edge].z, s1[edge].z, s2[edge].z, s3[edge].z, t);
         const w = edge === 'a' ? hot : 0;
-        col[v * 3] = (tint.r + (1 - tint.r) * w) * fade * bright; col[v * 3 + 1] = (tint.g + (1 - tint.g) * w) * fade * bright; col[v * 3 + 2] = (tint.b + (1 - tint.b) * w) * fade * bright;
+        col[v * 3] = (base.r + (1 - base.r) * w) * fade * bright; col[v * 3 + 1] = (base.g + (1 - base.g) * w) * fade * bright; col[v * 3 + 2] = (base.b + (1 - base.b) * w) * fade * bright;
         v++;
       }
     }
-    this.trailPos.needsUpdate = this.trailCol.needsUpdate = true;
+    this.trailPos.needsUpdate = this.trailCol.needsUpdate = this.trailUv.needsUpdate = true;
+    (this.trail.material as THREE.ShaderMaterial).uniforms.uTime.value += dt;
     this.trail.geometry.setDrawRange(0, (total - 1) * 6);
   }
-  private trailTint = new THREE.Color();
+  private trailTint = new THREE.Color(); private trailTail = new THREE.Color(); private trailSig = false;
 
   muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
@@ -996,6 +1019,8 @@ const VIEW_MELEE_COLOR: Record<number, number> = { 5: 0x9cf0ff, 6: 0xb6aaff, 7: 
 const TRACER_PROFILE: Record<number, { width: number; speed: number }> = {
   0: { width: .028, speed: 480 }, 1: { width: .018, speed: 380 }, 2: { width: .034, speed: 650 }, 3: { width: .022, speed: 440 }, 4: { width: .045, speed: 820 },
 };
+const gunFx = (id?: string) => { const f = signatureFx(id); return f?.kind === 'gun' ? f as GunFx & { head: number; tail: number } : undefined; };
+const meleeFx = (id?: string) => { const f = signatureFx(id); return f?.kind === 'melee' ? f as MeleeFx & { head: number; tail: number } : undefined; };
 /** Stock melee colours (finishes use their own accent). */
 const MELEE_COLOR: Record<number, number> = { 5: 0x9cf0ff, 6: 0xb6aaff, 7: 0xffb35a };
 function makeGlowTexture(): THREE.Texture {

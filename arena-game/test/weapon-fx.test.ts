@@ -50,7 +50,7 @@ it('bullet holes lie flush on the face that was hit and fade before they vanish'
   fx.update(7); expect(hole.material.opacity).toBeLessThan(.9); fx.update(2); expect(parent.children).toHaveLength(0); fx.dispose();
 });
 it('a melee arc sweeps in, then fades, and its middle points at the target', () => {
-  const parent = new THREE.Group(), fx = new WeaponFx(parent); fx.arc([0, 1.4, 0], [3, 1.4, 0], 0x9cf0ff, 1.5, 2, false, .2);
+  const parent = new THREE.Group(), fx = new WeaponFx(parent); fx.arc([0, 1.4, 0], [3, 1.4, 0], 0x9cf0ff, 1.5, 2, 'slash', .2);
   const arc = parent.children[0] as THREE.Mesh, u = uniforms(arc);
   const mid = new THREE.Vector3(0, 0, -1).applyQuaternion(arc.quaternion); expect(mid.x).toBeGreaterThan(.85);
   fx.update(.05); const p1 = u.uProgress.value; fx.update(.05); expect(u.uProgress.value).toBeGreaterThan(p1);

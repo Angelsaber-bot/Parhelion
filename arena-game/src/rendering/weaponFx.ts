@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import type { ArenaMap, Vec3 } from '../../shared/map.ts';
+import { flashTexture, markTexture } from './fxShapes.ts';
+import { SWING_STYLES, TRACER_STYLES, type FlashShape, type MarkShape, type SwingStyle, type TracerStyle } from '../cosmetics/signatureFx.ts';
 
 /** Weapon presentation that the plain spark pool cannot draw well: travelling tracer streaks,
  * star-shaped muzzle flashes, bullet holes with a dust puff, and melee swing arcs. Purely
@@ -24,24 +26,9 @@ function canvasTexture(size: number, paint: (g: CanvasRenderingContext2D, s: num
     paint(g, size); return new THREE.CanvasTexture(c);
   } catch { return new THREE.Texture(); }
 }
-let flashTex: THREE.Texture | null = null, puffTex: THREE.Texture | null = null, holeTex: THREE.Texture | null = null;
-/** A hot core with uneven spikes: the classic star-shaped muzzle flash. */
-export function muzzleFlashTexture() {
-  return flashTex ??= canvasTexture(128, (g, s) => {
-    const m = s / 2;
-    const core = g.createRadialGradient(m, m, 0, m, m, m * .55);
-    core.addColorStop(0, 'rgba(255,255,255,1)'); core.addColorStop(.35, 'rgba(255,255,255,.75)'); core.addColorStop(1, 'rgba(255,255,255,0)');
-    g.fillStyle = core; g.fillRect(0, 0, s, s);
-    g.globalCompositeOperation = 'lighter';
-    const spikes = [1, .55, .85, .5, .95, .6, .8, .45];
-    spikes.forEach((len, i) => {
-      const a = i / spikes.length * Math.PI * 2 + .2, r = m * .96 * len, w = m * (i % 2 ? .07 : .11);
-      g.save(); g.translate(m, m); g.rotate(a);
-      const grad = g.createLinearGradient(0, 0, r, 0); grad.addColorStop(0, 'rgba(255,255,255,.95)'); grad.addColorStop(1, 'rgba(255,255,255,0)');
-      g.fillStyle = grad; g.beginPath(); g.moveTo(0, -w); g.lineTo(r, 0); g.lineTo(0, w); g.closePath(); g.fill(); g.restore();
-    });
-  });
-}
+let puffTex: THREE.Texture | null = null;
+/** The stock star-shaped muzzle flash (finishes have their own shapes, see fxShapes). */
+export const muzzleFlashTexture = () => flashTexture('star');
 /** Soft, lumpy smoke/dust ball (normal blending, so it can darken as well as lighten). */
 export function puffTexture() {
   return puffTex ??= canvasTexture(64, (g, s) => {
@@ -53,18 +40,8 @@ export function puffTexture() {
     }
   });
 }
-/** Bullet hole: a dark punched centre, a ragged chipped ring and a faint scorch. */
-export function bulletHoleTexture() {
-  return holeTex ??= canvasTexture(64, (g, s) => {
-    const m = s / 2;
-    const scorch = g.createRadialGradient(m, m, 0, m, m, m);
-    scorch.addColorStop(0, 'rgba(14,11,8,1)'); scorch.addColorStop(.28, 'rgba(22,18,14,.92)'); scorch.addColorStop(.45, 'rgba(55,47,40,.55)'); scorch.addColorStop(1, 'rgba(40,34,28,0)');
-    g.fillStyle = scorch; g.fillRect(0, 0, s, s);
-    g.strokeStyle = 'rgba(15,12,10,.7)'; g.lineWidth = 1.2;
-    for (let i = 0; i < 7; i++) { const a = i * 2.39 + .4, r0 = m * .2, r1 = m * (.42 + (i % 3) * .12); g.beginPath(); g.moveTo(m + Math.cos(a) * r0, m + Math.sin(a) * r0); g.lineTo(m + Math.cos(a + .15) * r1, m + Math.sin(a + .15) * r1); g.stroke(); }
-    g.fillStyle = 'rgba(0,0,0,1)'; g.beginPath(); g.arc(m, m, m * .17, 0, Math.PI * 2); g.fill();
-  });
-}
+/** Stock bullet hole. */
+export const bulletHoleTexture = () => markTexture('hole');
 
 /** Surface normal at a ray's hit point on the map's boxes and ramps; -dir when unknown. */
 export function surfaceNormal(map: ArenaMap, at: Vec3, dir: Vec3): Vec3 {
@@ -93,50 +70,96 @@ type Decal = Life & { mesh: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMater
 type Arc = Life & { mesh: THREE.Mesh<THREE.BufferGeometry, THREE.ShaderMaterial> };
 
 const STREAK_VERT = `
-uniform vec3 uTail; uniform vec3 uHead; uniform float uWidth;
-varying vec2 vUv;
+uniform vec3 uTail; uniform vec3 uHead; uniform float uWidth; uniform float uStyle; uniform float uSeed; uniform float uTime;
+varying vec2 vUv; varying float vM;
+float h1(float n){ return fract(sin(n * 127.1 + uSeed * 311.7) * 43758.5453); }
 void main(){
   vec3 p = mix(uTail, uHead, position.y);
-  vec3 axis = uHead - uTail; axis = length(axis) > 1e-5 ? normalize(axis) : vec3(0., 0., -1.);
+  vec3 axis = uHead - uTail; float len = length(axis); axis = len > 1e-5 ? axis / len : vec3(0., 0., -1.);
   vec3 toCam = cameraPosition - p; float dist = length(toCam);
   vec3 side = cross(axis, toCam / max(dist, 1e-4)); side = length(side) > 1e-4 ? normalize(side) : vec3(1., 0., 0.);
   // Never thinner than ~1.5 px, so a distant tracer does not shimmer away.
-  float w = max(uWidth, dist * .0016) * mix(.3, 1., position.y);
-  p += side * position.x * w;
-  vUv = position.xy;
+  float base = max(uWidth, dist * .0016);
+  float widen = uStyle == 1. ? 2.4 : uStyle == 4. ? 2.1 : uStyle == 2. ? 1.7 : uStyle == 5. ? 1.4 : 1.;
+  float shape = uStyle == 5. ? mix(.12, 1., pow(position.y, 1.5)) : uStyle == 4. ? mix(.6, 1., position.y) : mix(.3, 1., position.y);
+  float m = position.y * len, disp = 0.;
+  if (uStyle == 7.) disp = sin(m * 2.4 + uSeed * 6.28) * base * 2.4 * position.y;                       // wave
+  if (uStyle == 3.) disp = (h1(floor(position.y * 24. + .5) + floor(uTime * 30.) * 7.) - .5) * base * 7.   // bolt
+                       * step(.03, position.y) * step(position.y, .97);
+  p += side * (position.x * base * widen * shape + disp);
+  vUv = position.xy; vM = m;
   gl_Position = projectionMatrix * viewMatrix * vec4(p, 1.);
 }`;
 const STREAK_FRAG = `
-uniform vec3 uColor; uniform float uOpacity;
-varying vec2 vUv;
+uniform vec3 uColor; uniform vec3 uColor2; uniform float uOpacity; uniform float uStyle; uniform float uSeed;
+varying vec2 vUv; varying float vM;
 void main(){
-  float across = 1. - abs(vUv.x);
-  float body = across * across * smoothstep(0., .85, vUv.y);
-  float core = smoothstep(.6, 1., across) * smoothstep(.3, 1., vUv.y);
+  float x = vUv.x, y = vUv.y, across = 1. - abs(x);
+  float body = across * across * smoothstep(0., .85, y);
+  float core = smoothstep(.6, 1., across) * smoothstep(.3, 1., y);
+  if (uStyle == 1.) {        // helix: two strands twisting round the line of fire
+    float s = sin(vM * 4. + uSeed * 6.28) * .62, a = smoothstep(.24, 0., abs(x - s)), b = smoothstep(.24, 0., abs(x + s));
+    body = max(a, b) * smoothstep(0., .5, y) + .2 * across * across * y; core = max(a, b) * .55 * y;
+  } else if (uStyle == 2.) { // beads: a string of glowing drops
+    float d = length(vec2((fract(vM * 1.4 - uSeed) - .5) * 1.6, x));
+    body = smoothstep(.75, .35, d) * smoothstep(0., .4, y) + .12 * across * y; core = smoothstep(.4, .1, d) * y;
+  } else if (uStyle == 3.) { // bolt: a hard white filament
+    body = smoothstep(.1, .7, across) * smoothstep(0., .25, y); core = smoothstep(.5, .9, across);
+  } else if (uStyle == 4.) { // ribbon: a wide soft band, colour running head to tail
+    body = smoothstep(0., .9, across) * .72 * smoothstep(0., .5, y); core = smoothstep(.8, 1., across) * .45 * y;
+  } else if (uStyle == 5.) { // comet: a round hot head and a long thinning tail
+    body = across * across * pow(y, 2.); core = smoothstep(.45, 1., across) * smoothstep(.75, 1., y);
+  } else if (uStyle == 6.) { // dash: separate slugs
+    float on = step(.42, fract(vM * .9 - uSeed)); body *= on; core *= on;
+  }
+  vec3 col = mix(uColor2, uColor, smoothstep(0., 1., y));
   // Normal blending with a coloured body and a white-hot core: it reads on snow and white
   // concrete as well as in the dark, where additive light would wash out.
-  gl_FragColor = vec4(mix(uColor, vec3(1.), core * .7), min(1., body * 1.25) * uOpacity);
+  gl_FragColor = vec4(mix(col, vec3(1.), core * .7), min(1., body * 1.25) * uOpacity);
+}`;
+/** Swing-ribbon styles, shared by remote arcs and your own viewmodel trail.
+ *  u runs along the swing (0 oldest, 1 newest), v from the heel/inner edge (0) to the blade path (1). */
+export const SWING_GLSL = `
+float swingMask(float u, float v, float style, float t){
+  if (style == 1.) { float d = length(vec2((fract(u * 9.) - .5) * 1.4, (v - .62) * 1.9)); return smoothstep(.62, .35, d); }       // petals
+  if (style == 2.) { float n = sin(u * 37. + t * 14.) * .5 + sin(u * 71. - t * 23.) * .3 + sin(u * 13. + t * 7.) * .2;           // flame
+                     return step(v, .7 + .24 * n) * (.55 + .45 * v); }
+  if (style == 3.) { float tooth = abs(fract(u * 14.) * 2. - 1.); return step(v, .58 + .4 * tooth); }                              // frost
+  if (style == 4.) { float zz = abs(fract(u * 18. + floor(t * 30.) * .37) * 2. - 1.) * .18;                                         // bolt
+                     return smoothstep(.07, 0., abs(v - (.76 + zz))) * 1.4 + .12 * step(.5, v); }
+  if (style == 5.) { float h = fract(sin(floor(v * 22.) * 91.7) * 43758.5); return mix(.2, 1., step(.35, h)) * smoothstep(0., .3, u * (1. + h)); } // ink
+  if (style == 6.) { return step(v, .8 + .2 * step(.5, fract(u * 16.))); }                                                          // cog
+  if (style == 7.) { return step(v, .76 + .2 * sin(u * 28. - t * 8.)); }                                                             // wave
+  return 1. - smoothstep(.92, 1., v);                                                                                                 // crescent
 }`;
 const ARC_VERT = `
-uniform float uSpan; uniform float uRadius;
+uniform float uSpan; uniform float uRadius; uniform float uReach; uniform float uLift;
 varying vec2 vUv;
 void main(){
   vUv = uv;
-  float a = (uv.x - .5) * uSpan, r = mix(.55, 1., uv.y) * uRadius;
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(sin(a) * r, 0., -cos(a) * r, 1.);
+  // A curved slash hung in the air in front of the attacker, facing out along their swing, so
+  // the player being swung at sees its full face. Its ends curl back toward the attacker.
+  float a = (uv.x - .5) * uSpan, r = mix(.6, 1., uv.y) * uRadius;
+  vec3 p = vec3(sin(a) * r, cos(a) * r - uRadius * uLift, -uReach + (1. - cos(a)) * uRadius * .45);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(p, 1.);
 }`;
 const ARC_FRAG = `
-uniform vec3 uColor; uniform float uProgress; uniform float uOpacity;
+uniform vec3 uColor; uniform vec3 uColor2; uniform float uProgress; uniform float uOpacity; uniform float uStyle;
 varying vec2 vUv;
+${SWING_GLSL}
 void main(){
-  // u runs along the swing, v from the inner edge (0) to the blade's path (1).
   float lead = uProgress, trail = lead - .55;
   if (vUv.x > lead) discard;
   float along = smoothstep(trail, lead, vUv.x);
-  float edge = smoothstep(0., 1., vUv.y) * (1. - smoothstep(.92, 1., vUv.y));
+  float mask = swingMask(vUv.x, vUv.y, uStyle, uProgress);
   float hot = smoothstep(.75, .97, vUv.y) * along;
-  gl_FragColor = vec4(mix(uColor, vec3(1.), hot * .55), min(1., along * edge * 1.3) * uOpacity * .85);
+  vec3 col = mix(uColor2, uColor, smoothstep(.2, .9, vUv.y));
+  gl_FragColor = vec4(mix(col, vec3(1.), hot * .5), min(1., along * smoothstep(0., 1., vUv.y) * mask * 1.3) * uOpacity * .88);
 }`;
+/** Trail length multipliers: comets and ribbons stream further behind the head. */
+const STREAK_LENGTH: Record<TracerStyle, number> = { slug: 1, helix: 1.3, beads: 1.6, bolt: 1.6, ribbon: 1.4, comet: 2.2, dash: 1.8, wave: 1.3 };
+export interface StreakLook { style?: TracerStyle; tail?: number }
+export type SwingMode = 'slash' | 'chop' | 'thrust';
 
 export class WeaponFx {
   private streaks: Streak[] = [];
@@ -153,8 +176,10 @@ export class WeaponFx {
   constructor(private parent: THREE.Object3D, quality: 'high' | 'low' = 'high') {
     this.budget = WEAPON_FX_BUDGET[quality];
     this.streakGeo = new THREE.BufferGeometry();
-    this.streakGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1, 0, 0, 1, 0, 0, -1, 1, 0, 1, 1, 0]), 3));
-    this.streakGeo.setIndex([0, 1, 2, 1, 3, 2]);
+    // 24 segments along the shot, so wave and bolt styles can bend it.
+    const sp: number[] = [], si: number[] = [];
+    for (let i = 0; i <= 24; i++) { sp.push(-1, i / 24, 0, 1, i / 24, 0); if (i) si.push((i - 1) * 2, (i - 1) * 2 + 1, i * 2, (i - 1) * 2 + 1, i * 2 + 1, i * 2); }
+    this.streakGeo.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); this.streakGeo.setIndex(si);
     // A crescent ribbon: u along the sweep, v from inner radius to outer (the blade path).
     const seg = 24, pos: number[] = [], uv: number[] = [], index: number[] = [];
     for (let i = 0; i <= seg; i++) {
@@ -174,13 +199,13 @@ export class WeaponFx {
 
   /** A glowing slug that flies from the muzzle to the hit, thick hot head and thin fading tail.
    *  `skip` keeps the first metres empty (your own shot while aiming down the sights). */
-  streak(from: Vec3, to: Vec3, color: number, width = .022, speed = 420, opacity = 1, skip = 0) {
+  streak(from: Vec3, to: Vec3, color: number, width = .022, speed = 420, opacity = 1, skip = 0, look: StreakLook = {}) {
     if (this.disposed || ![...from, ...to, width, speed, opacity].every(Number.isFinite)) return;
     const dir = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2]), dist = dir.length();
     if (dist < .3) return; dir.divideScalar(dist);
     const slot = this.acquire(this.streaks, this.budget.streaks, () => {
       const material = new THREE.ShaderMaterial({
-        uniforms: { uTail: { value: new THREE.Vector3() }, uHead: { value: new THREE.Vector3() }, uWidth: { value: .02 }, uColor: { value: new THREE.Color() }, uOpacity: { value: 1 } },
+        uniforms: { uTail: { value: new THREE.Vector3() }, uHead: { value: new THREE.Vector3() }, uWidth: { value: .02 }, uColor: { value: new THREE.Color() }, uColor2: { value: new THREE.Color() }, uOpacity: { value: 1 }, uStyle: { value: 0 }, uSeed: { value: 0 }, uTime: { value: 0 } },
         vertexShader: STREAK_VERT, fragmentShader: STREAK_FRAG, transparent: true, depthWrite: false,
       });
       const mesh = new THREE.Mesh(this.streakGeo, material); mesh.frustumCulled = false; mesh.name = 'Arena tracer streak'; mesh.renderOrder = 2;
@@ -188,9 +213,11 @@ export class WeaponFx {
     });
     const { travel, fade } = streakTiming(dist, speed);
     slot.from.set(...from); slot.dir.copy(dir); slot.dist = dist; slot.travel = travel; slot.skip = Math.min(skip, dist * .5);
-    slot.length = Math.min(dist * .45, Math.max(1.5, dist / travel * .018));
+    const style = look.style ?? 'slug';
+    slot.length = Math.min(dist * .6, Math.max(1.5, dist / travel * .018) * STREAK_LENGTH[style]);
     slot.life = slot.max = travel + fade;
-    const u = slot.mesh.material.uniforms; u.uColor.value.setHex(color); u.uWidth.value = width; u.uOpacity.value = slot.base = opacity;
+    const u = slot.mesh.material.uniforms; u.uColor.value.setHex(color); u.uColor2.value.setHex(look.tail ?? color); u.uWidth.value = width; u.uOpacity.value = slot.base = opacity;
+    u.uStyle.value = TRACER_STYLES.indexOf(style); u.uSeed.value = Math.random(); u.uTime.value = 0;
     this.placeStreak(slot); this.parent.add(slot.mesh);
   }
   private placeStreak(s: Streak) {
@@ -202,7 +229,7 @@ export class WeaponFx {
   }
 
   /** World-space muzzle flash (other players' guns): a star that pops and shrinks in two frames. */
-  flash(at: Vec3, color: number, size = .32) {
+  flash(at: Vec3, color: number, size = .32, shape: FlashShape = 'star', life = .055) {
     if (this.disposed || !at.every(Number.isFinite)) return;
     const slot = this.acquire(this.flashes, this.budget.flashes, () => {
       // A coloured star (normal blending, visible on bright walls) around an additive white-hot core.
@@ -213,7 +240,8 @@ export class WeaponFx {
     });
     slot.sprite.position.set(...at); slot.sprite.material.color.setHex(color); slot.sprite.material.rotation = Math.random() * Math.PI;
     slot.size = size * (.85 + Math.random() * .3); slot.sprite.scale.setScalar(slot.size); slot.sprite.material.opacity = 1; slot.core.material.opacity = 1; slot.core.material.rotation = -slot.sprite.material.rotation;
-    slot.life = slot.max = .055; this.parent.add(slot.sprite);
+    const map = flashTexture(shape); slot.sprite.material.map = map; slot.core.material.map = map;
+    slot.life = slot.max = life; this.parent.add(slot.sprite);
   }
 
   /** Smoke or dust: normal-blended, grows, rises and thins out. */
@@ -229,7 +257,7 @@ export class WeaponFx {
   }
 
   /** Bullet hole on a wall/floor, flush with the surface; it lingers, then fades. */
-  decal(at: Vec3, normal: Vec3, size = .17, life = 8) {
+  decal(at: Vec3, normal: Vec3, size = .17, life = 8, shape: MarkShape = 'hole', tint = 0xffffff) {
     if (this.disposed || !at.every(Number.isFinite) || !normal.every(Number.isFinite)) return;
     const slot = this.acquire(this.decals, this.budget.decals, () => {
       const mesh = new THREE.Mesh(this.decalGeo, new THREE.MeshBasicMaterial({ map: bulletHoleTexture(), transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }));
@@ -238,31 +266,34 @@ export class WeaponFx {
     const n = new THREE.Vector3(...normal).normalize();
     slot.mesh.position.set(at[0] + n.x * .006, at[1] + n.y * .006, at[2] + n.z * .006);
     slot.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), n); slot.mesh.rotateZ(Math.random() * Math.PI * 2);
-    slot.mesh.scale.setScalar(size * (.85 + Math.random() * .3)); slot.mesh.material.opacity = .9;
+    slot.mesh.material.map = markTexture(shape); slot.mesh.material.color.setHex(tint);
+    slot.mesh.scale.setScalar(size * (shape === 'hole' ? 1 : 1.5) * (.85 + Math.random() * .3)); slot.mesh.material.opacity = .9;
     slot.life = slot.max = life; this.parent.add(slot.mesh);
   }
 
   /** A crescent swept by another player's melee swing, centred on their chest, toward the target.
    *  `span` is the sweep in radians; `vertical` turns it into an overhead chop (hammer). */
-  arc(centre: Vec3, toward: Vec3, color: number, radius: number, span: number, vertical = false, life = .2) {
+  arc(centre: Vec3, toward: Vec3, color: number, radius: number, span: number, mode: SwingMode = 'slash', life = .2, style: SwingStyle = 'crescent', tail?: number) {
     if (this.disposed || ![...centre, ...toward, radius, span].every(Number.isFinite)) return;
     const slot = this.acquire(this.arcs, this.budget.arcs, () => {
       const material = new THREE.ShaderMaterial({
-        uniforms: { uColor: { value: new THREE.Color() }, uProgress: { value: 0 }, uOpacity: { value: 1 }, uSpan: { value: 1 }, uRadius: { value: 1 } },
+        uniforms: { uColor: { value: new THREE.Color() }, uColor2: { value: new THREE.Color() }, uProgress: { value: 0 }, uOpacity: { value: 1 }, uSpan: { value: 1 }, uRadius: { value: 1 }, uReach: { value: 1 }, uLift: { value: .55 }, uStyle: { value: 0 } },
         vertexShader: ARC_VERT, fragmentShader: ARC_FRAG, transparent: true, depthWrite: false, side: THREE.DoubleSide,
       });
       const mesh = new THREE.Mesh(this.arcGeo, material); mesh.name = 'Arena melee arc'; mesh.frustumCulled = false; return { mesh, life: 0, max: 0, order: 0 };
     });
-    const f = new THREE.Vector3(toward[0] - centre[0], vertical ? 0 : toward[1] - centre[1], toward[2] - centre[2]);
+    const f = new THREE.Vector3(toward[0] - centre[0], mode === 'chop' ? 0 : toward[1] - centre[1], toward[2] - centre[2]);
     if (f.lengthSq() < 1e-6) f.set(0, 0, -1); f.normalize();
     const m = slot.mesh; m.position.set(...centre);
-    // Local -Z is the swing's middle; the sweep lies in the local XZ plane (scaled by span).
+    // Local -Z is the swing's direction. A slash is a diagonal arch, a chop an upside-down arch
+    // driven down, a thrust a small pierce ring at the tip.
     m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, -1), f);
-    // Overhead chops stand upright; sweeps are tilted into a diagonal slash so they never read edge-on.
-    if (vertical) m.rotateZ(Math.PI / 2 + (Math.random() - .5) * .3);
-    else m.rotateZ((Math.random() < .5 ? -1 : 1) * (.5 + Math.random() * .35));
-    m.material.uniforms.uSpan.value = span; m.material.uniforms.uRadius.value = radius;
-    m.material.uniforms.uColor.value.setHex(color); m.material.uniforms.uProgress.value = 0; m.material.uniforms.uOpacity.value = 1;
+    if (mode === 'chop') m.rotateZ(Math.PI + (Math.random() - .5) * .3);
+    else if (mode === 'thrust') m.rotateZ(Math.random() * Math.PI * 2);
+    else m.rotateZ((Math.random() < .5 ? -1 : 1) * (.5 + Math.random() * .4));
+    const u = m.material.uniforms;
+    u.uSpan.value = span; u.uRadius.value = radius; u.uReach.value = mode === 'thrust' ? radius * 2.2 : radius * .75; u.uLift.value = mode === 'thrust' ? 0 : .55;
+    m.material.uniforms.uColor.value.setHex(color); m.material.uniforms.uColor2.value.setHex(tail ?? color); m.material.uniforms.uStyle.value = SWING_STYLES.indexOf(style); m.material.uniforms.uProgress.value = 0; m.material.uniforms.uOpacity.value = 1;
     slot.life = slot.max = life; this.parent.add(m);
   }
 
@@ -272,6 +303,7 @@ export class WeaponFx {
       s.life -= dt; if (s.life <= 0) { s.mesh.removeFromParent(); continue; }
       this.placeStreak(s);
       const age = s.max - s.life; s.mesh.material.uniforms.uOpacity.value = s.base * (age > s.travel ? Math.max(0, s.life / (s.max - s.travel)) : 1);
+      s.mesh.material.uniforms.uTime.value = age;
     }
     for (const f of this.flashes) if (f.life > 0) {
       f.life -= dt; if (f.life <= 0) { f.sprite.removeFromParent(); continue; }
