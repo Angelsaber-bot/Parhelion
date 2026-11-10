@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb.ts';
 import {collisionSnapshot} from './kingdom-valley/collision-snapshot.ts';
+import {unseatedGlbPath} from './join-band-seating.ts';
 for(const region of ['alpha','britain']) {
  const path=new URL(`../public/assets/world_${region}.glb`,import.meta.url).pathname;
  const bytes=readFileSync(path);
@@ -21,7 +22,7 @@ for(const region of ['alpha','britain']) {
  });
  test(`${region}: exact baseline collision preserved except explicitly realigned Alpha seam gates`,async()=>{
   const baseline=JSON.parse(readFileSync(new URL(`./kingdom-valley/${region}-baseline-collision.json`,import.meta.url),'utf8'));
-  const now=await collisionSnapshot(path);
+  const now=await collisionSnapshot(await unseatedGlbPath(path,region)); // join-band prop seating reversed
   const allowed=region==='alpha'?['west','north','east','south'].map(id=>`COL_Seam_${id}_Gate`):[];
   // Continuous-mainland terrain is deliberately replaced; every building and
   // gameplay collider retains its original ordered positions and metadata.

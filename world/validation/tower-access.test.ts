@@ -13,7 +13,7 @@ test('rejected tower ramp stays absent and the original tower approach remains b
  const baseline=JSON.parse(readFileSync(new URL('./map-polish/baseline.json',import.meta.url),'utf8'));
  assert.equal(baseline.baselineCommit,'a3096254ef0fff455a29932bc5fef2e57fa49f44');
  const before=baseline.regions.alpha;
- const now=await snapshot(fileURLToPath(new URL('../public/assets/',import.meta.url)),'alpha');
+ const now=await snapshot(fileURLToPath(new URL('../public/assets/',import.meta.url)),'alpha',{unseat:true}); // join-band prop seating reversed
  for(const name of ['Tower_West_Access','COL_Tower_West_Access'])assert.equal(Object.hasOwn(now.nodes,name),false);
  // Includes the entire ordered static prop collider, not merely its tower slice.
  // Exact COLLISION children also reject a newly appended access obstruction.

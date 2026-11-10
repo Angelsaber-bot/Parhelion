@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { collisionSnapshot } from './winter/collision-snapshot.ts';
+import {unseatedGlbPath} from './join-band-seating.ts';
 const path=new URL('../public/assets/world_winter.glb',import.meta.url).pathname;
 const bytes=readFileSync(path);
 const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
@@ -19,7 +20,7 @@ test('Everwinter exported geometry is finite and stays under the 2 million ART t
 test('Everwinter collision preserves the exact baseline except the explicitly replaced 13 burned-open boxes',async()=>{
  const before=JSON.parse(readFileSync(new URL('./winter/baseline-collision.json',import.meta.url),'utf8'));
  const replacement=JSON.parse(readFileSync(new URL('./winter/ruin-collision-replacement.json',import.meta.url),'utf8'));
- const now=await collisionSnapshot(path);
+ const now=await collisionSnapshot(await unseatedGlbPath(path,'winter')); // join-band prop seating reversed
  const repair=now.find(m=>m.name==='COL_Winter_House_Foundations');
  const props=now.find(m=>m.name==='COL_Props');
  const originalProps=before.find((m:{name:string})=>m.name==='COL_Props');

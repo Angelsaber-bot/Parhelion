@@ -7,11 +7,14 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
-export async function snapshot(directory, region) {
+export async function snapshot(directory, region, options = {}) {
   await MeshoptDecoder.ready;
   const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.decoder':MeshoptDecoder});
   const bytes = await readFile(resolve(directory,`world_${region}.glb`));
   const doc = await io.readBinary(bytes), root = doc.getRoot();
+  // Optional: compare reviewed content with the documented join-band prop seating reversed
+  // (join-band-seating.edits.json; verified on its own in continental-seams.test.ts).
+  if (options.unseat) { const { applySeating, seating } = await import('../join-band-seating.ts'); applySeating(seating.regions[region] ?? {}, root.listNodes(), -1); }
   const nodes = {};
   let artTriangles = 0, artPrimitives = 0;
   for(const node of root.listNodes()){

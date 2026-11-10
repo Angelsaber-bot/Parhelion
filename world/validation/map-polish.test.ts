@@ -54,7 +54,8 @@ const edits:Record<string,{nodes:string[];triangles:number;bytes:number}>={
   kyoto:{nodes:['Inari','Higashiyama'],triangles:90000,bytes:900000},
 };
 for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded detail whitelist preserves exact gameplay and all unrelated GLB content`,async()=>{
-  const old=before.regions[region],now=await snapshot(assets,region);
+  // Join-band trees/rocks were re-seated vertically (join-band-seating.edits.json); compare them reversed.
+  const old=before.regions[region],now=await snapshot(assets,region,{unseat:true});
   const currentIndices=await triangleIndexProof(readFileSync(`${assets}/world_${region}.glb`));
   assert.equal(before.baselineCommit,'a3096254ef0fff455a29932bc5fef2e57fa49f44');
   if (region === 'alpha') {

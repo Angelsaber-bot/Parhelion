@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { collisionSnapshot } from './blacksail/collision-snapshot.ts';
+import {unseatedGlbPath} from './join-band-seating.ts';
 const path=new URL('../public/assets/world_blacksail.glb',import.meta.url).pathname;
 const bytes=readFileSync(path);
 const gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
@@ -18,7 +19,7 @@ test('Everblacksail exported geometry is finite and stays under the 2 million AR
 });
 test('Everblacksail collision meshes preserve exact baseline ordered triangle positions and gameplay extras',async()=>{
  const before=JSON.parse(readFileSync(new URL('./blacksail/baseline-collision.json',import.meta.url),'utf8'));
- const now=await collisionSnapshot(path);
+ const now=await collisionSnapshot(await unseatedGlbPath(path,'blacksail')); // join-band prop seating reversed
  const repair=now.find(m=>m.name==='COL_Fort_Tower_Drums'),original=now.filter(m=>m.name!=='COL_Fort_Tower_Drums'&&m.name!=='COL_Terrain');
  assert.deepEqual(original,before.filter((m:{name:string})=>m.name!=='COL_Terrain'),'every pre-existing building, prop and target collider stays exact');
  const terrain=now.find(m=>m.name==='COL_Terrain');assert.equal(terrain.triangles,259200,'continuous-world terrain retains full surface resolution');

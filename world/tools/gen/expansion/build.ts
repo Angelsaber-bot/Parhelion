@@ -36,7 +36,8 @@ export function connectionRoute(plan:ExpansionPlan):RoutePoint[] {
   const heights=samples.map(([x,z])=>{
     const source=link.from==='britain'?Math.abs(x+720)<=360&&Math.abs(z)<=360:link.from==='winter'?Math.abs(x)<=360&&Math.abs(z+720)<=360:Math.abs(x)<=360&&Math.abs(z-720)<=360;
     const y=source?oldHeight(link.from,x,z)+.2:expansionHeight(plan,x-plan.offset[0],z-plan.offset[1])+.1;
-    return plan.id==='orleans'&&riverDistance(x-plan.offset[0],z-plan.offset[1])<65?Math.max(14.2,y):y;
+    // The raised bridge approach belongs to the Loire; on the neighbour's ground the road follows its terrain.
+    return plan.id==='orleans'&&!source&&riverDistance(x-plan.offset[0],z-plan.offset[1])<65?Math.max(14.2,y):y;
   });
   // Minimal 0.5-grade envelope above the existing terrain, in two linear passes.
   // This clears mountain ridges without stair-like jumps or a steep final descent.
