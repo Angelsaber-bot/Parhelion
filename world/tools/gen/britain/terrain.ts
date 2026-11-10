@@ -1,8 +1,9 @@
+import { continentalHeight } from '../continent.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline } from '../geo.js';
 import { heightFn as alphaHeight, type TerrainOut } from '../terrain.js';
-import { BRITAIN, OFFSET, SEAM_Z, LAKE, ISLET, KCAMP, CASTLE, CAMLANN, CORE, PATHS } from './layout.js';
+import { BRITAIN, OFFSET, LAKE, ISLET, KCAMP, CASTLE, CAMLANN, CORE, PATHS } from './layout.js';
 
 const S = BRITAIN.seed;
 const WL = BRITAIN.waterLevel;
@@ -15,10 +16,7 @@ function bump(x: number, z: number, cx: number, cz: number, r: number) {
 function natural(x: number, z: number) {
   let h = 6 + fbm(x * 0.006, z * 0.006, 4, S) * 10 + fbm(x * 0.04, z * 0.04, 2, S + 9) * 1.2;
   h += bump(x, z, -40, -60, 70) * 8 + bump(x, z, 250, 150, 80) * 14 + bump(x, z, 80, -260, 70) * 12 + bump(x, z, 250, -150, 60) * 10;
-  // mountain ring, opened on the east where the seam gorge comes in from 幻日谷
-  const se = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  const notch = (1 - smoothstep(18, 46, Math.abs(z - SEAM_Z))) * smoothstep(250, 320, x);
-  h += smoothstep(296, 356, se) * (1 - notch * 0.9) * (52 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
+  // Regional hills continue into neighbouring terrain without an enclosing ring.
   return h;
 }
 
@@ -53,7 +51,7 @@ export function heightFn(x: number, z: number): number {
     const k = smoothstep(316, 360, x);
     if (k > 0) h = lerp(h, alphaHeight(x + OFFSET[0], z + OFFSET[1]), k);
   }
-  return h;
+  return continentalHeight('britain', x, z, h);
 }
 
 const C = {

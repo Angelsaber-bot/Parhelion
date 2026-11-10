@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { Batch, T } from '../geo.js';
 import { SEAM_W, SEAM_N, SEAM_E, SEAM_S, WORLD } from '../layout.js';
-import { LINKS, REGIONS } from '../../../src/map/regions.js';
+import { LINKS } from '../../../src/map/regions.js';
 import type { Piece } from '../structures.js';
 
 export type SeamDirection = 'west' | 'north' | 'east' | 'south';
@@ -26,15 +26,14 @@ export const SEAM_FIELD = { halfOpening: 10, thickness: .6, bottom: -10, height:
 export const SEAM_UNLOCK = ['summon_circle'] as const;
 export type SeamSegment = { a: [number, number]; b: [number, number] };
 
-/** A central curtain BETWEEN the existing pylons, with short visible returns to
- * the existing link mouth. Without the returns a moved curtain could be walked
- * around inside Alpha's unchanged playable rectangle. No old remote wall remains. */
+/** Local story installation between the existing pylons. Its returns preserve the
+ * reviewed structure; surrounding continental terrain remains freely traversable. */
 export function seamBarrierSegments(s: SeamBarrier): SeamSegment[] {
   const [cx, cz] = s.center, [ix, iz] = s.inward;
   const tx = iz, tz = -ix, h = SEAM_FIELD.halfOpening;
   const a: [number, number] = [cx - tx * h, cz - tz * h];
   const b: [number, number] = [cx + tx * h, cz + tz * h];
-  const play = REGIONS.find(r => r.id === 'alpha')!.play, link = LINKS[s.link];
+  const play = [-334,334,-334,334] as const, link = LINKS[s.link];
   const overlap = SEAM_FIELD.boundaryOverlap;
   const mouth = (p: [number, number]): [number, number] => ix !== 0
     ? [ix > 0 ? play[0] - overlap : play[1] + overlap,

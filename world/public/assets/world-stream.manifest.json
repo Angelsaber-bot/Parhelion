@@ -1,42 +1,42 @@
 {
   "alpha": {
-    "source": 3805908,
-    "core": 2099820,
+    "source": 4277272,
+    "core": 2090268,
     "visual": 1959716
   },
   "britain": {
-    "source": 6134280,
-    "core": 2270136,
+    "source": 8038332,
+    "core": 3474180,
     "visual": 4129976
   },
   "blacksail": {
-    "source": 4773512,
-    "core": 2064164,
+    "source": 5372436,
+    "core": 2122000,
     "visual": 3012316
   },
   "winter": {
-    "source": 6586660,
-    "core": 2251280,
+    "source": 7186248,
+    "core": 2236328,
     "visual": 4615648
   },
   "kyoto": {
-    "source": 12713728,
-    "core": 2324704,
+    "source": 13660860,
+    "core": 2284696,
     "visual": 10735492
   },
   "orleans": {
-    "source": 702856,
-    "core": 999568,
-    "visual": 35016
+    "source": 3413264,
+    "core": 2090712,
+    "visual": 1896152
   },
   "egypt": {
-    "source": 697484,
-    "core": 1136956,
-    "visual": 37836
+    "source": 843448,
+    "core": 1723112,
+    "visual": 38388
   },
   "qin": {
-    "source": 637184,
-    "core": 1055944,
-    "visual": 28824
+    "source": 798812,
+    "core": 1547556,
+    "visual": 29124
   }
 }

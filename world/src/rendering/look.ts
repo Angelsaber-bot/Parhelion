@@ -1,3 +1,4 @@
+import {orleansToonMaterial} from '../environment/orleansMaterials';
 // Toon look: banded lighting, inverted-hull outlines, and a sky with a 22° halo + sundogs
 // (the "parhelion" the game is named after).
 import * as THREE from 'three';
@@ -126,6 +127,7 @@ function waterMaterial(name: string) {
 }
 
 export function toonMaterial(src: THREE.Material): THREE.Material {
+  const orleans=orleansToonMaterial(src,toonGradient());if(orleans)return orleans;
   const kyoto = kyotoToonMaterial(src, toonGradient());
   if (kyoto) return kyoto;
   const winter = winterToonMaterial(src, toonGradient());

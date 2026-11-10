@@ -1,6 +1,9 @@
+import { orleansAuthoredHeight, orleansTerrainColor, riverDistance } from '../orleans/landscape';
+import { buildOrleans } from '../orleans/build';
+import { continentalHeight } from '../continent';
 import * as THREE from 'three';
 import type { Layout, Marker } from '../../../src/core/types';
-import { EXPANSION_CONNECTIONS, distanceToLine, inPolygon, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
+import { EXPANSION_CONNECTIONS, distanceToLine, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
 import { Batch, T, distToSegment } from '../geo';
 import type { Piece } from '../structures';
 import { heightFn as britainHeight } from '../britain/terrain';
@@ -14,12 +17,11 @@ const inExcavation=(x:number,z:number)=>x>QIN_EXCAVATION.x0&&x<QIN_EXCAVATION.x1
 const oldHeight=(id:string,x:number,z:number)=>id==='britain'?britainHeight(x+720,z):id==='winter'?winterHeight(x,z+720):kyotoHeight(x,z-720);
 
 export function expansionHeight(plan:ExpansionPlan,x:number,z:number):number {
+  if(plan.id==='orleans')return continentalHeight(plan.id,x,z,orleansAuthoredHeight(plan,x,z));
   let y=plan.id==='qin'?24:14;
   const wave=Math.sin(x*.018+1)*Math.cos(z*.023)*3+Math.sin((x+z)*.034)*1.2;
   y+=wave;
-  if(plan.id==='orleans') {
-    y+=(32-14)*(1-smooth((Math.hypot(x-35,z+170)-50)/95));
-  } else if(plan.id==='egypt') {
+  if(plan.id==='egypt') {
     y+=26*Math.exp(-Math.pow((x+185)/35,2))*Math.exp(-Math.pow((z+70)/145,2));
     y+=(30-14)*(1-smooth((Math.hypot(x-80,z+140)-65)/70));
     y+=(24-14)*(1-smooth((Math.hypot(x-80,z-20)-50)/65));
@@ -40,10 +42,10 @@ export function expansionHeight(plan:ExpansionPlan,x:number,z:number):number {
     const d=distToSegment(x,z,[a[0],a[2]],[b[0],b[2]]);
     y=THREE.MathUtils.lerp(y,THREE.MathUtils.lerp(a[1],b[1],t),1-smooth((d-5)/10));
   }
-  return y;
+  return continentalHeight(plan.id,x,z,y);
 }
 
-/** Access decks join existing terrain without regenerating any of the five old maps. */
+/** Roads follow the continuous continental terrain between authored settlements. */
 export function connectionRoute(plan:ExpansionPlan):RoutePoint[] {
   const link=EXPANSION_CONNECTIONS.find(c=>c.to===plan.id)!;
   const samples:[number,number][]=[];
@@ -53,7 +55,8 @@ export function connectionRoute(plan:ExpansionPlan):RoutePoint[] {
   }
   const heights=samples.map(([x,z])=>{
     const source=link.from==='britain'?Math.abs(x+720)<=360&&Math.abs(z)<=360:link.from==='winter'?Math.abs(x)<=360&&Math.abs(z+720)<=360:Math.abs(x)<=360&&Math.abs(z-720)<=360;
-    return source?oldHeight(link.from,x,z)+.2:expansionHeight(plan,x-plan.offset[0],z-plan.offset[1])+.1;
+    const y=source?oldHeight(link.from,x,z)+.2:expansionHeight(plan,x-plan.offset[0],z-plan.offset[1])+.1;
+    return plan.id==='orleans'&&riverDistance(x-plan.offset[0],z-plan.offset[1])<65?Math.max(14.2,y):y;
   });
   // Minimal 0.5-grade envelope above the existing terrain, in two linear passes.
   // This clears mountain ridges without stair-like jumps or a steep final descent.
@@ -66,25 +69,18 @@ export function connectionRoute(plan:ExpansionPlan):RoutePoint[] {
 export function buildExpansion(plan:ExpansionPlan) {
   const access=connectionRoute(plan);
   const link=EXPANSION_CONNECTIONS.find(c=>c.to===plan.id)!;
-  const localLink=link.points.map(([x,z])=>[x-plan.offset[0],z-plan.offset[1]] as const);
-  const mask=(x:number,z:number)=>inPolygon(x,z,plan.outline)||distanceToLine(x,z,localLink)<=link.width/2;
-  const accessHeight=(x:number,z:number)=>{
-    if(inPolygon(x,z,plan.outline))return expansionHeight(plan,x,z);
-    let best=Infinity,y=14;
-    for(let i=1;i<access.length;i++) {
-      const a=access[i-1],b=access[i],dx=b[0]-a[0],dz=b[2]-a[2],t=clamp(((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1));
-      const d=Math.hypot(x-a[0]-t*dx,z-a[2]-t*dz);if(d<best){best=d;y=THREE.MathUtils.lerp(a[1],b[1],t)-.2;}
-    }return y;
-  };
-  const all=[...plan.outline,...access.map(p=>[p[0],p[2]] as const)],cell=2;
-  const x0=Math.floor((Math.min(...all.map(p=>p[0]))-12)/cell)*cell,z0=Math.floor((Math.min(...all.map(p=>p[1]))-12)/cell)*cell;
-  const x1=Math.ceil((Math.max(...all.map(p=>p[0]))+12)/cell)*cell,z1=Math.ceil((Math.max(...all.map(p=>p[1]))+12)/cell)*cell;
+  // Production tiles meet at exactly ±360. Outlines describe regional character,
+  // never a hole in the shared ground or an interior coastline.
+  const mask=(x:number,z:number)=>x>=-360&&x<=360&&z>=-360&&z<=360;
+  const accessHeight=(x:number,z:number)=>expansionHeight(plan,x,z);
+  const cell=2,x0=-360,z0=-360,x1=360,z1=360;
   const nx=(x1-x0)/cell+1,nz=(z1-z0)/cell+1,pos:number[]=[],colors:number[]=[],idx:number[]=[],vertices=new Map<number,number>();
   const base=new THREE.Color(plan.color),rock=new THREE.Color(plan.stone),c=new THREE.Color();
   const vertex=(i:number,j:number)=>{
     const k=j*nx+i,existing=vertices.get(k);if(existing!==undefined)return existing;
     const x=x0+i*cell,z=z0+j*cell,y=accessHeight(x,z),v=pos.length/3;vertices.set(k,v);pos.push(x,y,z);
     c.copy(base).lerp(rock,smooth((y-(plan.id==='qin'?40:28))/35)*.65).multiplyScalar(1+.035*Math.sin(x*.2)*Math.cos(z*.17));
+    if(plan.id==='orleans')c.copy(orleansTerrainColor(plan,x,y,z));
     colors.push(c.r,c.g,c.b);return v;
   };
   for(let j=0;j<nz-1;j++)for(let i=0;i<nx-1;i++) {
@@ -106,7 +102,7 @@ export function buildExpansion(plan:ExpansionPlan) {
   const col=new THREE.BufferGeometry();col.setAttribute('position',vis.attributes.position.clone());col.setIndex(idx);
   const pieces:Piece[]=[];
   const batch=(name:string,color:string=plan.stone)=>{const b=new Batch(`${plan.id}_${name}`);pieces.push({name:b.name,material:'M_Toon',batch:b,outline:true});return {b,color};};
-  const roads=batch('Routes',plan.id==='egypt'?'#e6cf9d':'#b9af94');
+  const roads=batch('Routes',plan.id==='egypt'?'#e6cf9d':plan.id==='orleans'?'#b0a17f':'#b9af94');
   const ribbon=(points:readonly RoutePoint[],width:number,color:string)=>{
     const edges=points.map((p,i)=>{
       const a=points[Math.max(0,i-1)],b=points[Math.min(points.length-1,i+1)],dx=b[0]-a[0],dz=b[2]-a[2],length=Math.hypot(dx,dz)||1;
@@ -124,8 +120,23 @@ export function buildExpansion(plan:ExpansionPlan) {
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));roads.b.add(g,color,new THREE.Matrix4());g.dispose();
   };
-  for(const route of plan.routes)ribbon(route.points,route.kind==='main'||route.kind==='underground'?7:5,route.kind==='high'?plan.accent:roads.color);
-  ribbon(access,link.width-2,roads.color);
+  for(const route of plan.routes)ribbon(route.points,route.kind==='main'||route.kind==='underground'?7:5,route.kind==='high'?(plan.id==='orleans'?'#c7b99b':plan.accent):roads.color);
+  ribbon(access,plan.id==='orleans'?9:link.width-2,roads.color);
+  if(plan.id==='orleans'){
+    // Feather the raised bridge approach into the town's ground-level lanes.
+    // A vertical ribbon edge, even a small one, snags a capsule crossing obliquely.
+    for(let i=1;i<access.length;i++){
+      const a=access[i-1],b=access[i],dx=b[0]-a[0],dz=b[2]-a[2],len=Math.hypot(dx,dz)||1;
+      if(riverDistance(a[0],a[2])<38||riverDistance(b[0],b[2])<38)continue;
+      for(const side of [-1,1]){
+        const edge=(p:RoutePoint,d:number)=>[p[0]-dz/len*d*side,p[2]+dx/len*d*side];
+        const ai=edge(a,4.5),ao=edge(a,8),bi=edge(b,4.5),bo=edge(b,8);
+        const v=[ai[0],a[1]+.1,ai[1],ao[0],accessHeight(ao[0],ao[1])+.06,ao[1],bi[0],b[1]+.1,bi[1],bo[0],accessHeight(bo[0],bo[1])+.06,bo[1]];
+        const g=new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(v,3));
+        g.setIndex(side===1?[0,1,2,1,3,2]:[0,2,1,1,2,3]);roads.b.add(g,roads.color,new THREE.Matrix4());g.dispose();
+      }
+    }
+  }
   const architecture=batch('Architecture');
   const b=architecture.b;
   const cylinder=new THREE.CylinderGeometry(1,1,1,12);
@@ -135,7 +146,7 @@ export function buildExpansion(plan:ExpansionPlan) {
     slab(x,y,z,w,d);b.box(x-w/2+.4,y,z,.8,7,d,plan.stone);b.box(x+w/2-.4,y,z,.8,7,d,plan.stone);b.box(x,y,z-d/2+.4,w,7,.8,plan.stone);
     slab(x,y+7.5,z,w+1,d+1,plan.accent);
   };
-  for(const site of plan.sites.filter(s=>s.purpose==='hub'||s.purpose==='arena')) {
+  for(const site of plan.sites.filter(s=>plan.id!=='orleans'&&(s.purpose==='hub'||s.purpose==='arena'))) {
     const [x,y,z]=site.position;slab(x,y,z,site.radius*1.1,site.radius*.8);
     if(site.purpose==='hub') {
       const lines=[...plan.routes.map(r=>r.points),access];let placed=0;
@@ -147,21 +158,7 @@ export function buildExpansion(plan:ExpansionPlan) {
     else if(plan.id!=='qin')for(const dx of [-13,0,13])column(x+dx,y,z+10,.6,3,plan.accent);
   }
   if(plan.id==='orleans') {
-    // Walkable wall deck with a real opening beneath it; no solid box across the road.
-    slab(0,24,-30,190,9);b.box(-94,14,-30,2,10,9,plan.stone);b.box(94,14,-30,2,10,9,plan.stone);
-    for(let x=-90;x<=90;x+=9)for(const z of [-35, -25]) {
-      if(x<=-81||x>=72)continue; // leave both sides of each ramp landing open
-      b.box(x,24,z,3,1.2,1.4,plan.stone);
-    }
-    for(const x of [-90,80]){column(x,14,-35,6,10,plan.stone);slab(x,24,-35,14,14);}
-    // The belfry and cathedral are hollow shells; roof walk and approach remain accessible.
-    house(0,24,-48,12,12);column(0,31.5,-48,3,13,plan.accent);
-    slab(35,32,-170,62,62);house(35,32,-175,42,46);
-    for(const x of [7,63]){column(x,32,-195,5,27,plan.stone);b.add(new THREE.ConeGeometry(6,10,8),plan.accent,T(x,64,-195));}
-    const river=batch('River', '#437e99');
-    for(let z=-245;z<=180;z+=10)river.b.box(-195+Math.sin(z*.014)*12,1.5,z,18,.18,10.2,river.color,0,false);
-    // Low dry side route is distinct from the river and has room for a later covered culvert.
-    for(const z of [-100,-80,-60]){b.box(-163,8,z,1.5,5,8,plan.stone);b.box(-147,8,z,1.5,5,8,plan.stone);}
+    pieces.push(...buildOrleans(plan,(x,z)=>expansionHeight(plan,x,z),access));
   } else if(plan.id==='egypt') {
     // Two sculptural colossi, with the east one's shoulder aligned to the high route.
     for(const x of [30,130]) {
@@ -191,13 +188,15 @@ export function buildExpansion(plan:ExpansionPlan) {
     for(const x of [-35,35])for(const z of [-10,80])column(x,10,z,2,17,plan.accent);
     slab(0,10,80,64,45);b.box(0,10,62,12,5,4,plan.accent);
   }
+  const orleansNotes:Record<string,string>={market:'蓝白布棚围着旧井，沿街巷可走向城门或河港。',ramparts:'城墙转折处的钟楼，可以沿外梯登上眺望回廊。',cathedral:'双塔俯瞰河谷，开放的中殿通向高地侧院。',rivergate:'低位河门连接木桥、码头和城内侧路。',muster:'守城队伍在此整备，演武场与主战线分开。',harbour:'踏轮吊机旁留出运粮的通道，河港步道通向河门。',cloister:'回廊遮雨、庭院留光，药草畦之间留有通路。',repairyard:'新石、木料与修缮坡道排列在东墙外。'};
   const spawn=plan.sites[0].position;
   const markers:Marker[]=[{id:'spawn_p1',type:'spawn',label:`${plan.name}入口`,p:[spawn[0],spawn[1]+.5,spawn[2]]},
-    ...plan.sites.map(site=>({id:`${plan.id}_${site.id}`,type:'poi' as const,label:site.name,p:[...site.position] as [number,number,number],radius:site.radius,note:`地图框架；${site.purpose}内容待制作，不授予章节通关。`}))];
+    ...plan.sites.map(site=>({id:`${plan.id}_${site.id}`,type:(plan.id==='orleans'?'discovery':'poi') as 'discovery'|'poi',label:site.name,p:[...site.position] as [number,number,number],radius:plan.id==='orleans'?6:site.radius,note:plan.id==='orleans'?orleansNotes[site.id]:`地图框架；${site.purpose}内容待制作，不授予章节通关。`}))];
+  if(plan.id==='orleans')markers.push({id:'orleans_belfry_view',type:'discovery',label:'钟楼三面眺廊',p:[-23,39,-62],radius:5,note:'从外梯登高，可以俯瞰河港、街巷与教堂高地。'});
   const world={id:`world_${plan.id}`,name:plan.name,nameEn:plan.nameEn,half:360,playHalf:334,waterLevel:0,seed:20261109,version:1};
   const layout:Layout={world,areas:plan.sites.map(site=>({id:`${plan.id}_${site.id}`,name:site.name,nameEn:site.nameEn,c:[site.position[0],site.position[2]],r:site.radius,color:plan.color,tp:[site.position[0],site.position[2]]})),
     paths:[...plan.routes.map(route=>route.points.map(p=>[p[0],p[2]] as [number,number])),access.map(p=>[p[0],p[2]] as [number,number])],markers,
-    objective:{id:`${plan.id}_blockout`,name:`${plan.name} · 地图框架制作中`,steps:[]},
-    lights:plan.sites.map(site=>({p:[site.position[0],site.position[1]+5,site.position[2]],color:plan.accent,intensity:35,distance:36}))};
+    objective:{id:plan.id==='orleans'?'orleans_explore':`${plan.id}_blockout`,name:plan.id==='orleans'?'奥尔良 · 河港与钟楼':`${plan.name} · 地图框架制作中`,steps:[]},
+    lights:plan.sites.map(site=>({p:[site.position[0]+(plan.id==='orleans'?2.5:0),site.position[1]+(plan.id==='orleans'?4.6:5),site.position[2]+(plan.id==='orleans'?2.4:0)],color:plan.id==='orleans'?'#f1ca8c':plan.accent,intensity:plan.id==='orleans'?22:35,distance:plan.id==='orleans'?28:36}))};
   return {terrain:{vis,col},pieces,markers,layout,world,access};
 }

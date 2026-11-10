@@ -28,7 +28,7 @@ test('Everwinter collision preserves the exact baseline except the explicitly re
  assert.equal(replacement.beforePropsTriangles,originalProps.triangles);
  assert.deepEqual(props,{...originalProps,triangles:originalProps.triangles-13*12,orderedPositionHash:replacement.retainedOrderedPositionHash},'every other ordered prop triangle remains byte-exact');
  assert.equal(props.triangles,replacement.retainedPropsTriangles);
- assert.deepEqual(now.filter(m=>!['COL_Winter_House_Foundations','COL_Winter_Ruin_Shells','COL_Props'].includes(m.name)),before.filter((m:{name:string})=>m.name!=='COL_Props'),'terrain, gates and targets stay exact');
+ assert.deepEqual(now.filter(m=>!['COL_Terrain','COL_Winter_House_Foundations','COL_Winter_Ruin_Shells','COL_Props'].includes(m.name)),before.filter((m:{name:string})=>!['COL_Terrain','COL_Props'].includes(m.name)),'gates and targets stay exact; continuous mainland terrain is independently checked');
  const ruins=now.find(m=>m.name==='COL_Winter_Ruin_Shells');
  assert.ok(ruins);assert.equal(ruins.triangles,13*23*12);assert.equal(ruins.extras.winterRuinShell,true);
  assert(repair);assert.ok(repair.triangles>0&&repair.triangles<=768);assert.equal(repair.triangles%12,0);

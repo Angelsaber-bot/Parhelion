@@ -8,7 +8,7 @@ export interface ExpansionSite {
 }
 export interface ExpansionPlan {
   id: ExpansionRegionId; name: string; nameEn: string; offset: [number, number];
-  /** Local geographical envelope, independent of the 720 m production grid. */
+  /** Local landmark envelope; surrounding terrain continues into every neighbour. */
   outline: MapPoint2[]; color: string; stone: string; accent: string;
   identity: string; servant: string; sites: ExpansionSite[];
   routes: { id: string; name: string; kind: 'main' | 'flank' | 'high' | 'underground'; points: RoutePoint[] }[];
@@ -16,6 +16,7 @@ export interface ExpansionPlan {
 
 export const WORLD_PLAN = {
   cellSize: 720, columns: 3, rows: 3,
+  topology: 'continuous-mainland', interiorBarriers: false, southwest: 'wooded-foothills',
   bounds: [-1080, 1080, -1080, 1080] as const,
   /** Deliberately outside the overworld: the Orleans dragon is a regional boss. */
   finale: { id: 'convergence', separateMap: true, requiredRegions: ['britain', 'blacksail', 'winter', 'kyoto', 'orleans', 'egypt', 'qin'] as const, status: 'planned' },
@@ -33,11 +34,20 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'cathedral', name:'龙影教堂', nameEn:'Dragonshadow Cathedral', position:[35,32,-170], radius:54, purpose:'boss' },
       { id:'rivergate', name:'河门与排水侧路', nameEn:'River Gate', position:[-155,8,-75], radius:32, purpose:'landmark' },
       { id:'muster', name:'骑士演武营地', nameEn:'Knight Muster', position:[130,14,125], radius:38, purpose:'arena' },
+      { id:'harbour', name:'踏轮吊机与河港', nameEn:'Treadwheel Harbour', position:[-186,8.35,-20], radius:18, purpose:'hub' },
+      { id:'cloister', name:'教堂药草回廊', nameEn:'Cathedral Herb Cloister', position:[111,32,-194], radius:25, purpose:'landmark' },
+      { id:'repairyard', name:'东墙修缮场', nameEn:'Eastern Wall Works', position:[178,14,50], radius:28, purpose:'landmark' },
     ],
     routes: [
-      { id:'main', name:'城门正面进攻', kind:'main', points:[[0,14,170],[-80,14,90],[0,14,30],[30,14,-55],[35,32,-130],[35,32,-170]] },
+      { id:'main', name:'城门正面进攻', kind:'main', points:[[0,14,170],[-80,14,90],[-55,14,70],[-16,14,43],[15,14,15],[30,14,-10],[30,14,-55],[34,23,-92],[35,32,-130],[35,32,-170]] },
       { id:'flank', name:'沿河潜入', kind:'flank', points:[[-80,14,90],[-120,14,70],[-150,8,45],[-155,8,-75],[-125,8,-125],[-65,14,-175],[-10,32,-130],[35,32,-130],[35,32,-170]] },
-      { id:'high', name:'城墙钟楼绕行', kind:'high', points:[[-80,14,90],[-90,14,20],[-90,24,-15],[-90,24,-30],[80,24,-30],[80,32,-130],[35,32,-130],[35,32,-170]] },
+      { id:'high', name:'城墙钟楼绕行', kind:'high', points:[[-80,14,90],[-90,14,20],[-90,24,-15],[-90,24,-30],[-36,24,-22],[22,24,-26],[80,24,-30],[95,27,-72],[80,32,-130],[35,32,-130],[35,32,-170]] },
+      { id:'riverfront', name:'河港与木桥环线', kind:'flank', points:[[-80,14,90],[-120,14,70],[-150,8,45],[-155,8,-75],[-240,8,-90],[-270,14,-40],[-252,14,75],[-170,14,130],[-80,14,90]] },
+      { id:'harbourwalk', name:'河港码头巡行', kind:'flank', points:[[-150,8,45],[-179.5,8.35,39.3],[-183.5,8.35,19.7],[-185.6,8.35,-2.2],[-186,8.35,-20],[-186.6,8.35,-48.4],[-188,8.35,-71.2],[-184,8.15,-76],[-180,8,-79.4],[-155,8,-75]] },
+      { id:'dockapproach', name:'河港至街巷坡道', kind:'flank', points:[[-185.6,8.35,-2.2],[-177,8.35,-2],[-160,11.3,-2],[-138,14,-2]] },
+      { id:'cloisterwalk', name:'教堂侧院回廊', kind:'flank', points:[[80,32,-130],[100,32,-146],[130,32,-160],[130,32,-194],[111,32,-194],[96,32,-194],[96,32,-218],[130,32,-218],[130,32,-194]] },
+      { id:'wallworks', name:'修缮场与东墙木构坡道', kind:'high', points:[[130,14,125],[165,14,95],[178,14,50],[180,14,-70],[160,24,-88],[137,24,-72],[108,24,-50],[80,24,-30]] },
+      { id:'belfrywalk', name:'钟楼外梯与三面眺廊', kind:'high', points:[[0,24,-45],[-1,24,-45],[-1,24,-74],[-5,24,-74],[-19,29,-74],[-23,29,-74],[-23,29,-70],[-23,34,-54],[-23,34,-50],[-19,34,-50],[-5,39,-50],[-1,39,-50],[-1,39,-74],[-23,39,-74],[-23,39,-54]] },
     ],
   },
   {
@@ -82,16 +92,18 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
 export const EXPANSION_GRASS_CLEARANCE:readonly (readonly [number,number,number,number])[]=[
   [330,330,1055,1055],[608,-872,832,-578],
 ];
+/** World-space centre/radii of Orleans' worn paved courts; rounded ground stays rounded. */
+export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-832,20,12],[-800,-630,23,18]];
 
 export interface ExpansionConnection {
   id:string; from:WorldRegionId; to:ExpansionRegionId; name:string;
-  /** World-space line; the construction pass samples the old terrain without moving it. */
+  /** World-space road across broad, continuous land; never the only crossing. */
   points: MapPoint2[]; width:number;
 }
 export const EXPANSION_CONNECTIONS: ExpansionConnection[] = [
   {id:'britain-orleans',from:'britain',to:'orleans',name:'北境围城古道',points:[[-720,-120],[-720,-420],[-800,-630]],width:18},
   // Route along the southern snowfield, clear of the existing Gorge Glide descent.
-  {id:'winter-qin',from:'winter',to:'qin',name:'东境山河栈道',points:[[120,-520],[420,-520],[535,-620]],width:18},
+  {id:'winter-qin',from:'winter',to:'qin',name:'东境山河驿道',points:[[120,-520],[420,-520],[535,-620]],width:18},
   {id:'kyoto-egypt',from:'kyoto',to:'egypt',name:'沙海商队古道',points:[[120,720],[420,720],[555,830]],width:18},
 ];
 

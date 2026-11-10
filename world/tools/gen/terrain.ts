@@ -1,3 +1,4 @@
+import { continentalHeight } from './continent.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from './rng.js';
 import { distToPolyline } from './geo.js';
@@ -31,17 +32,7 @@ function natural(x: number, z: number) {
   // outer hills of the enlarged valley: SE downs, NE highland, NW crags, the knoll west of the HQ
   h += bump(x, z, 236, 190, 95) * 20 + bump(x, z, 210, -250, 90) * 26 + bump(x, z, -232, -214, 85) * 22
     + bump(x, z, -262, 186, 70) * 14 + bump(x, z, 120, 250, 60) * 9 + bump(x, z, 280, 66, 40) * 7;
-  // ring of mountains (superellipse so the corners stay playable), notched where the era seams open
-  const se = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  // (the west notch runs on into 落日王国, the north one on into 永冬之城 along the frozen channel,
-  // the south one on into 业火京都 through the torii)
-  const notch = Math.max(
-    (1 - smoothstep(18, 46, Math.abs(z - SEAM_W.c[1]))) * smoothstep(-200, -260, x),
-    (1 - smoothstep(60, 100, Math.abs(x - BAY_N.c[0]))) * smoothstep(-200, -250, z),
-    (1 - smoothstep(18, 44, Math.abs(x - SEAM_S.c[0]))) * smoothstep(250, 300, z),
-  );
-  const ring = smoothstep(296, 356, se) * (1 - notch * 0.9);
-  h += ring * (52 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
+  // Regional hills continue into neighbouring terrain without an enclosing ring.
   // east ridge with a near-vertical cliff behind the falls, sloping away into the eastern downs
   const ridgeZ = smoothstep(-160, -128, z) * (1 - smoothstep(0, 40, z));
   const ridgeX = smoothstep(FALLS.x - 1, FALLS.x + 4, x) * (1 - smoothstep(205 + fbm(z * 0.03, 1.3, 2, S + 6) * 30, 270, x));
@@ -131,7 +122,7 @@ export function heightFn(x: number, z: number): number {
     const d = Math.hypot(x - ISLAND.c[0], z - ISLAND.c[1]);
     h = Math.max(h, lerp(WORLD.waterLevel + 1.6, h, smoothstep(ISLAND.r - 2, ISLAND.r + 4, d)));
   }
-  return h;
+  return continentalHeight('alpha', x, z, h);
 }
 
 /** Paved ground on the HQ campus (no grass grows there). */

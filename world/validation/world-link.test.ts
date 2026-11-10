@@ -45,11 +45,11 @@ test('walking east through the pass crosses from 幻日谷 onto the 黑帆尽头
   assert.ok(!p.swimming && minY > 8, `stayed on the ridge (lowest y ${minY.toFixed(1)})`);
 });
 
-test('boundary walls still close the world outside the pass', () => {
+test('continuous mainland remains open outside the historical pass', () => {
   const p = new Player([{ name: 'static', bvh, enabled: true }], 1);
   p.flying = true;
   p.teleport(325, 90, -100); // on alpha's east mountains, north of the pass
   p.flying = false;
   for (let i = 0; i < 20 * 120; i++) { p.yaw = -Math.PI / 2; p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true }); }
-  assert.ok(p.pos.x < 335, `blocked at x=${p.pos.x.toFixed(1)}`);
+  assert.ok(p.pos.x > 410, `off-road crossing blocked at x=${p.pos.x.toFixed(1)}`);
 });

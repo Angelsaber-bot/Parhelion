@@ -50,11 +50,12 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  const root=new THREE.Group();root.name=`Resident_${socket.id}`;root.position.set(...socket.position);root.rotation.y=socket.yaw??0;root.userData.settlementNpc=true;root.userData.region=socket.region;
  const seed=hash(socket.id),phase=(seed%997)*.017,p={...PALETTES[socket.region]},role=`${socket.id} ${socket.role.join(' ')}`.toLowerCase();
  const signal=socket.id==='alpha_signal_keeper',witness=socket.id==='britain_oath_witness',lamplighter=socket.id==='blacksail_lamplighter',bearer=socket.id==='winter_stretcher_bearer',paperKeeper=socket.id==='kyoto_paper_keeper';
- const craft=/smith|forge|carpenter|铁匠|刀匠|锻|工匠|木匠/.test(role),medical=bearer||/medic|healer|医|救护/.test(role),clerk=/clerk|harbor|customs|港务|海关|账|书记|管家|steward/.test(role),keeper=paperKeeper||/inn|旅|客栈|resident|住民/.test(role);
+ const craft=/smith|forge|carpenter|铁匠|刀匠|锻|工匠|木匠/.test(role)||(socket.id.startsWith('orleans_')&&/mason|石匠/.test(role)),medical=bearer||/medic|healer|医|救护/.test(role),clerk=/clerk|harbor|customs|港务|海关|账|书记|管家|steward/.test(role),keeper=paperKeeper||/inn|旅|客栈|resident|住民/.test(role);
  if(medical){p.coat=0x344e61;p.trim=0xd0c3a3;}if(craft){p.coat=socket.region==='kyoto'?0x414d71:0x6d7162;p.trim=0x725039;}if(keeper){p.coat=socket.region==='kyoto'?0x8b5269:0x78839a;p.trim=0xd5c5a6;}
  if(signal){p.coat=0xc4d8d9;p.trim=0x376879;p.accent=0xc6a967;}if(witness){p.coat=0x586b87;p.trim=0xc4ad81;p.hair=0x83776b;}if(lamplighter){p.coat=0x9b794d;p.trim=0x385c61;p.accent=0xd2b97c;}if(paperKeeper){p.coat=0x62618b;p.trim=0xcbb58e;p.accent=0x9a574e;}
  const campaign=signal||witness||lamplighter||bearer||paperKeeper;
  if(!campaign&&!medical&&!craft&&!keeper){const[coat,trim]=COATS[socket.region][(seed>>>5)%COATS[socket.region].length];p.coat=coat;p.trim=trim;}
+ Object.assign(p,socket.appearance??{});
  const layer:ResidentLayer=campaign?'none':residentLayer(seed,socket.region);
  // Campaign residents keep their authored portrait; everyone else gets the same sculpted face with a cut of their own.
  const portrait=createResidentPortrait(socket.region,campaign?undefined:residentLook(seed,socket.region));p.skin=portrait.profile.skin;p.hair=portrait.profile.hair;
@@ -103,6 +104,9 @@ function resident(socket:PlacedNpcSocket,material:THREE.Material){
  if(sign===1&&craft)a.push({g:cylinder,c:0x795236,p:[.04,-.52,.13],s:[.014,.23,.014],r:[Math.PI/2,0,0]},{g:box,c:0x4a5057,p:[.04,-.52,.235],s:[.14,.06,.055]});if(sign===-1&&(clerk||medical))a.push({g:box,c:medical?0xe6dbc7:0x795541,p:[-.04,-.45,.09],s:[.14,.19,.055]},{g:box,c:0xd5c5a3,p:[-.04,-.45,.123],s:[.11,.16,.008]});if(sign===-1&&(witness||paperKeeper))a.push({g:box,c:paperKeeper?0x84633e:0x5a4e43,p:[-.04,-.45,.09],s:[.16,.22,.065]},{g:box,c:0xe0d0ad,p:[-.04,-.45,.127],s:[.13,.19,.012]});
  if(sign===-1&&(witness||paperKeeper)){for(let line=0;line<4;line++)a.push({g:box,c:0xa49173,p:[-.045,-.39-line*.03,.136],s:[line===3?.065:.092,.004,.003]});a.push({g:cylinder,c:paperKeeper?0xa2534b:0x98644d,p:[-.005,-.51,.14],s:[.015,.005,.015],r:[Math.PI/2,0,0]});}
  if(sign===1&&lamplighter){a.push({g:new THREE.TorusGeometry(.055,.009,4,10),c:0x45565b,p:[.04,-.57,.08]},{g:box,c:0x45565b,p:[.04,-.68,.08],s:[.14,.055,.13]},{g:box,c:0xe7c886,p:[.04,-.79,.08],s:[.11,.16,.10]},{g:box,c:0x45565b,p:[.04,-.9,.08],s:[.15,.04,.14]});for(const x of[-.023,.103])a.push({g:box,c:0x45565b,p:[x,-.79,.08],s:[.016,.2,.12]});}
+ if(sign===-1&&socket.appearance?.carry==='sack')a.push({g:taper(.15,.21,.34),c:0xb9aa83,p:[-.04,-.44,.20],s:[1,1,.8]},{g:ring,c:0x806849,p:[-.04,-.27,.20],s:[.10,.10,.10],r:[Math.PI/2,0,0]});
+ if(sign===1&&socket.appearance?.carry==='net')a.push({g:cylinder,c:0x8f7650,p:[.04,-.5,.19],s:[.02,.58,.02],r:[.5,0,.2]},{g:ring,c:0x9b927b,p:[.04,-.35,.35],s:[.17,.17,.17]});
+ if(sign===-1&&socket.appearance?.carry==='bellrope')a.push({g:ring,c:0x9f8657,p:[-.04,-.49,.18],s:[.13,.18,.13]});
  batch(arm,`ResidentSleeve_${sign}`,a,material);}
  root.scale.setScalar(.97+(seed%7)*.012);root.userData.triangles=0;root.traverse(o=>{if(o instanceof THREE.Mesh)root.userData.triangles+=(o.geometry.index?.count??o.geometry.getAttribute('position').count)/3;});
  root.userData.layer=layer;
@@ -117,6 +121,7 @@ export function createSettlementNpcs(sockets:PlacedNpcSocket[]){
  const pending=new Map<string,{position:[number,number,number];yaw:number}>(),gestures=new Map<string,number>();
  return{group,
  setSpeaking(id:string|null){if(!disposed)speaking=id&&byId.has(id)?id:null;},
+ pose(id:string,position:[number,number,number],yaw:number){if(disposed||!position.every(Number.isFinite)||!Number.isFinite(yaw))return false;const person=people.find(p=>p.socket.id===id);if(!person)return false;person.socket.position=[...position];person.root.position.set(...position);person.root.rotation.y=yaw;return true;},
  getPosition(id:string):[number,number,number]|null{const s=byId.get(id);return !disposed&&s?[...s.position]:null;},
  /** Dialogue changes preserve authored defaults and never mutate caller-owned sockets. */
  setDialogue(id:string,lines:Localized[]|null){const s=byId.get(id);if(disposed||!s)return false;s.lines=(lines??original.get(id)!.lines).map(l=>[...l] as Localized);lineIndices.delete(id);return true;},

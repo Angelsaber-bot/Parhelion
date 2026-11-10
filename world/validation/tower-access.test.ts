@@ -20,8 +20,8 @@ test('rejected tower ramp stays absent and the original tower approach remains b
  const unchanged=[
   'Tower','Tower_Halo','Valley_Tower_Calibration_Metal','Valley_Tower_Calibration_Glass',
   'Valley_Tower_Calibration_Ceramic','Valley_Tower_Calibration_Brass',
-  'Terrain','Glow_Props','Lamps','Rocks','Trees_Trunks','Trees_Leaves','Bushes',
-  'COLLISION','COL_Terrain','COL_Props',
+  'Glow_Props','Lamps','Rocks','Trees_Trunks','Trees_Leaves','Bushes',
+  'COLLISION','COL_Props',
   'MK_interact_tower_console','MK_enemy_tower_enemy_0','MK_enemy_tower_enemy_1',
  ];
  for(const name of unchanged){

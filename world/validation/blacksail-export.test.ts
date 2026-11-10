@@ -19,8 +19,9 @@ test('Everblacksail exported geometry is finite and stays under the 2 million AR
 test('Everblacksail collision meshes preserve exact baseline ordered triangle positions and gameplay extras',async()=>{
  const before=JSON.parse(readFileSync(new URL('./blacksail/baseline-collision.json',import.meta.url),'utf8'));
  const now=await collisionSnapshot(path);
- const repair=now.find(m=>m.name==='COL_Fort_Tower_Drums'),original=now.filter(m=>m.name!=='COL_Fort_Tower_Drums');
- assert.deepEqual(original,before,'every pre-existing ordered collider stays exact');
+ const repair=now.find(m=>m.name==='COL_Fort_Tower_Drums'),original=now.filter(m=>m.name!=='COL_Fort_Tower_Drums'&&m.name!=='COL_Terrain');
+ assert.deepEqual(original,before.filter((m:{name:string})=>m.name!=='COL_Terrain'),'every pre-existing building, prop and target collider stays exact');
+ const terrain=now.find(m=>m.name==='COL_Terrain');assert.equal(terrain.triangles,259200,'continuous-world terrain retains full surface resolution');
  assert(repair,'four roof-support drums have their own always-enabled collision');
  assert.equal(repair.triangles,320);assert.deepEqual(repair.extras,{name:'COL_Fort_Tower_Drums',dynamic:true,art:'Fort_Tower_Drums'});
 });

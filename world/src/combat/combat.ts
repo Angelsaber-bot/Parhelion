@@ -130,7 +130,9 @@ export const WILDERNESS_ZONES = [
   { x: 0, z: -220, r: 14, kind: 'shade' as const, pack: 5 },
   { x: -90, z: 380, r: 14, kind: 'crystal' as const },
   { x: 540, z: 200, r: 14, kind: 'shade' as const },
-  { x: -300, z: 1010, r: 14, kind: 'crystal' as const, pack: 5 },
+  // The southern shoreline now curves inland; keep this existing pack on the
+  // dry western field so its two reserved Akechi guards remain available.
+  { x: -300, z: 970, r: 14, kind: 'crystal' as const, pack: 5 },
   { x: -900, z: 50, r: 14, kind: 'shade' as const },
   { x: -630, z: 230, r: 14, kind: 'crystal' as const },
   { x: -510, z: -340, r: 14, kind: 'shade' as const },

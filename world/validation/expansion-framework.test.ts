@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { EXPANSION_PLANS, EXPANSION_CONNECTIONS, WORLD_PLAN, polygonDistance, distanceToLine, type RoutePoint } from '../src/map/worldPlan';
-import { REGIONS, regionAt, regionContains, boundaryWalls } from '../src/map/regions';
+import { EXPANSION_PLANS, EXPANSION_CONNECTIONS, WORLD_PLAN, type RoutePoint } from '../src/map/worldPlan';
+import { REGIONS, regionAt, boundaryWalls } from '../src/map/regions';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb';
 import { Player } from '../src/player/player';
 import { WorldGrid } from '../src/map/grid';
@@ -50,10 +50,11 @@ test('eight areas fit the approximate 3×3 envelope; finale remains an independe
     assert.equal(regionAt(...plan.offset).id,plan.id);
     for(const [x,z] of plan.outline)assert.ok(x+plan.offset[0]>=-1080&&x+plan.offset[0]<=1080&&z+plan.offset[1]>=-1080&&z+plan.offset[1]<=1080);
     const def=REGIONS.find(r=>r.id===plan.id)!;
-    assert.ok(!regionContains(def,plan.offset[0]+def.play[0],plan.offset[1]+def.play[2]),'rectangle corners are not playable by implication');
+    assert.equal(WORLD_PLAN.topology,'continuous-mainland');
+    assert.equal(WORLD_PLAN.interiorBarriers,false);
     const layout:Layout=JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'));
     assert.equal(layout.objective.steps.length,0,'walking through a blockout cannot finish a chapter');
-    assert.ok(layout.markers.every(m=>m.type==='spawn'||m.type==='poi'),'no pretend story or boss completion markers');
+    assert.ok(layout.markers.every(m=>m.type==='spawn'||m.type==='poi'||(plan.id==='orleans'&&m.type==='discovery')),'real Orleans discoveries are separate from story and boss completion markers');
   }
   for(const id of ['alpha','britain','blacksail','winter','kyoto']) {
     const def=REGIONS.find(r=>r.id===id)!;assert.equal(regionAt(...def.offset).id,id);
@@ -72,7 +73,7 @@ for(const plan of EXPANSION_PLANS) {
     }
     merged.dispose();geos.forEach(g=>g.dispose());
   });
-  test(`${plan.id}: existing neighbour connects on foot; irregular terrain leaves unused corners empty`,async()=>{
+  test(`${plan.id}: existing neighbour connects on foot and land continues beyond the landmark envelope`,async()=>{
     const connection=EXPANSION_CONNECTIONS.find(c=>c.to===plan.id)!,root=await load(plan.id),old=await load(connection.from);
     const geos=[...geometry(root),...geometry(old)],merged=mergeGeometries([boundaries,...geos]),bvh=new MeshBVH(merged);
     const layout=JSON.parse(readFileSync(new URL(`../public/assets/world_${plan.id}.layout.json`,import.meta.url),'utf8'));
@@ -80,14 +81,8 @@ for(const plan of EXPANSION_PLANS) {
     walk(bvh,layout.development.access.filter((_:unknown,i:number,a:unknown[])=>i%5===0||i===a.length-1),plan.offset);
     const mesh=root.getObjectByName('Terrain') as THREE.Mesh;
     const grid=new WorldGrid([mesh],plan.offset[0]-400,plan.offset[1]-400,800,2);
-    assert.equal(grid.sampleHeight(plan.offset[0]-330,plan.offset[1]-330),-12,'map baking does not paint square terrain outside the contour');
-    if(plan.id==='qin')assert.ok(Math.abs(grid.sampleHeight(plan.offset[0],plan.offset[1])!-10)<.05,'the shaft shows its dry underground floor, rather than sea');
-    const p=mesh.geometry.attributes.position;
-    for(let i=0;i<p.count;i+=137) {
-      const x=p.getX(i),z=p.getZ(i);
-      const onAccess=distanceToLine(x+plan.offset[0],z+plan.offset[1],connection.points)<connection.width/2+.04;
-      assert.ok(polygonDistance(x,z,plan.outline)<.04||onAccess,'terrain vertices belong to the footprint or the physical road (within GLB quantization)');
-    }
+    const joins=plan.id==='orleans'?[[330,0],[0,330]]:plan.id==='egypt'?[[-330,0],[0,-330]]:[[-330,0],[0,330]];
+    for(const [x,z] of joins)assert.ok(grid.sampleHeight(plan.offset[0]+x,plan.offset[1]+z)!>0,'broad land continues past the former island contour');
     merged.dispose();geos.forEach(g=>g.dispose());
   });
 }

@@ -45,7 +45,9 @@ function walk(from: [number, number], route: [number, number][]) {
 const at = (id: string): [number, number] => [marker(id).p[0], marker(id).p[2]];
 
 test('camp → observatory terminal → armory rack → range line', () => {
-  const route: [number, number][] = [[-6, 146], [-34, 152], [-62, 182], [-90, 212], [-112, 236], at('hq_terminal'), [-100, 248], [-80, 250], at('armory_rack'), [-80, 250], [-92, 262], at('range_line')];
+  // Follow the visible range lane around the workshop corner. Cutting diagonally
+  // across that corner catches its existing slab on macOS even in the frozen baseline.
+  const route: [number, number][] = [[-6, 146], [-34, 152], [-62, 182], [-90, 212], [-112, 236], at('hq_terminal'), [-100, 248], [-80, 250], at('armory_rack'), [-80, 250], [-92, 262], [-92,266],[-85,266],at('range_line')];
   const { p, k } = walk([3, 159], route);
   assert.equal(k, route.length, `stuck at ${p.pos.toArray().map(v => v.toFixed(1))} heading for ${route[k]}`);
 });

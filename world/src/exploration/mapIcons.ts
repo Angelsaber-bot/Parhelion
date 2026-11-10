@@ -132,7 +132,7 @@ function drawCommissions(ctx: CanvasRenderingContext2D, board: { day: string; li
     ctx.fillStyle = GOLD; ctx.fill(); ctx.lineWidth = 1.5 * u; ctx.strokeStyle = OUTLINE; ctx.stroke();
   }
   // The northwest is now Orleans. Keep its title and geography visible: on wide
-  // maps the board shares the unused southwest with the exploration legend;
+  // maps the board sits above the southwest exploration legend;
   // compact maps retain commission pins and the journal instead of a text box.
   if(width/u<800)return;
   const line = 17 * u, pad = 10 * u, boxW = 260 * u, boxH = pad * 2 + line * (board.list.length + 1);

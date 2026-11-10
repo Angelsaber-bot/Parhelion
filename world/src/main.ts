@@ -1,5 +1,6 @@
+import {orleansResidentSockets,createOrleansResidentLife} from './map/orleansResidents';
 import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
-import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE } from './map/worldPlan';
+import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
 import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
@@ -441,7 +442,7 @@ world.add(armoryWorkshop.root);
 armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
 freezeStaticArt(armoryWorkshop.root);
 addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
-const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs]);
+const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets()]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -474,6 +475,8 @@ let cavalrySupport:LocalCavalrySupport|undefined;
 let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined;
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
+const orleansResidentLife=createOrleansResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
+addEventListener('pagehide',e=>{if(!e.persisted)orleansResidentLife.dispose();});
 const residentEventScene=createResidentEventScene(campaignSites.markers,(x,z,ceiling=300)=>residentQueries.ground(x,z,ceiling)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
 world.add(residentEventScene.root);layout.markers.push(...residentEventScene.markers);const residentEventMarkerIds=new Set(residentEventScene.markers.map(m=>m.id));
 addEventListener('pagehide',e=>{if(!e.persisted)residentEventScene.dispose();});
@@ -483,7 +486,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE]) }) : null;
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE],ORLEANS_PAVED_COURTS) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -689,15 +692,15 @@ function toggleGuide() {
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
-  // Blockouts have no authored campaign yet; never point through an invented gate.
-  if(isExpansionRegion(here))return null;
   const quest=trackedQuest();
   if(quest){
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
     const local: [number,number,number] = quest.targetKind==='npc' ? settlementNpcs.getPosition(quest.targetId) ?? quest.position : enemy ? [enemy.p.x,enemy.p.y,enemy.p.z] : quest.position;
-    const p=resolveTrackedStoryPoint(here,quest.region,done,local);
+    const p=isExpansionRegion(quest.region)?local:resolveTrackedStoryPoint(here,quest.region,done,local);
     if(p)return {p,label:bilingual(...quest.targetLabel)};
   }
+  // New domains have exploration guides, but no invented campaign or gates.
+  if(isExpansionRegion(here))return null;
   if (compactRelayRuntime?.active) { const guide=getCompactRelayGuide(done,{active:true,progress:compactRelayRuntime.progress*3});const point=guide&&markers.get(guide.targetId)?.p;if(point)return{p:point,label:bilingual(...guide!.title)}; }
   if (falseDawnTracked) {
     const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
@@ -778,9 +781,11 @@ function renderMainObjective() {
   if(isExpansionRegion(region)) {
     const plan=EXPANSION_PLANS.find(p=>p.id===region)!;
     const title=document.createElement('h3'),text=document.createElement('div'),note=document.createElement('div');
-    title.textContent=bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
+    title.textContent=region==='orleans'?bilingual('奥尔良 · 河港与钟楼','Orleans · Quay and Belfry'):bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
     text.textContent=bilingual(plan.identity,'Explore the hub, landmarks and alternate routes.');
-    note.textContent=bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    const localDiscoveries=layout.markers.filter(m=>m.type==='discovery'&&m.id.startsWith('orleans_'));
+    const discovered=localDiscoveries.filter(m=>found.has(m.id)).length;
+    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Ask the residents for directions.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
   const adventure=getCurrentAdventureGuide(region,done);
@@ -1588,6 +1593,7 @@ travelOpen.addEventListener('click',event=>{event.stopPropagation();travelPanel.
 addEventListener('pagehide',event=>{if(!event.persisted){audio.dispose();narrative?.dispose();travelPanel.dispose();travelOpen.remove();}});
 const campaignTrackingBlocked = (region: WorldRegionId): [string, string] | null => trackedStoryRouteBlocked(regionAt(player.pos.x, player.pos.z).id, region, done)
   ? ['先沿当前主线接通外联或稳定召唤阵，开启地区通路。', 'Restore the uplink or stabilize the summoning circle on the current story to open regional routes.'] : null;
+const questTrackingBlocked=(guide:QuestGuide)=>isExpansionRegion(guide.region)?null:campaignTrackingBlocked(guide.region);
 campaignJournal = createCampaignJournal({
   done: () => done,
   onOpen: () => {
@@ -1613,13 +1619,13 @@ questCatalog = createQuestGuideCatalog({
 });
 questJournal = createQuestJournal({
   entries: currentQuestEntries, currentRegion:()=>regionAt(player.pos.x,player.pos.z).id, position:()=>[player.pos.x,player.pos.y,player.pos.z],
-  trackingBlocked: guide=>campaignTrackingBlocked(guide.region),
+  trackingBlocked: questTrackingBlocked,
   onOpen:()=>{
     if(bootFailed||worldExited||graphicsRecovery?.blocked||campaignJournalOpen||travelOpenState||settingsPanel.open||servantPanel.open||narrative?.open||ultimateDirector?.active||fortCannon.mounted||actions?.skills.casting||actions?.melee.active||actions?.evade.active)return false;
     campaignJournalOpen=true;clearInput();if(document.pointerLockElement)document.exitPointerLock();return true;
   },
   onClose:()=>{campaignJournalOpen=false;clearInput();},
-  pin:id=>{const guide=currentQuestEntries().find(entry=>entry.id===id)?.guide;if(!guide||campaignTrackingBlocked(guide.region))return false;questTrackedId=id;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;return true;},
+  pin:id=>{const guide=currentQuestEntries().find(entry=>entry.id===id)?.guide;if(!guide||questTrackingBlocked(guide))return false;questTrackedId=id;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;return true;},
   restoreMain:()=>{questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;hudRevision++;},
   openChronicles:()=>campaignJournal?.show(),
 });
@@ -1645,7 +1651,7 @@ function updateTrackedStoryHud() {
   const active = combat.storyEncounter;
   const returnHint = bilingual(`${settings.label('mainRoute')} · 返回原主线指引`, `${settings.label('mainRoute')} · Restore original story guide`);
   const quest=trackedQuest();
-  if(quest){trackedStoryHud.update({title:bilingual(...quest.title),instruction:bilingual(...(campaignTrackingBlocked(quest.region)??quest.text)),returnHint});return;}
+  if(quest){trackedStoryHud.update({title:bilingual(...quest.title),instruction:bilingual(...(questTrackingBlocked(quest)??quest.text)),returnHint});return;}
   if (falseDawnTracked) {
     const objective = getFalseDawnObjective(done, active?.id ?? null);
     const guide = getFalseDawnGuide(done, { activeEncounter: active?.id ?? null });
@@ -2313,6 +2319,7 @@ function frame(now: number) {
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
   settlementNpcs.setSpeaking(narrative?.open?nearbySettlementNpc()?.id??null:null);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  orleansResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('orleans'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -2415,7 +2422,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, ambientLife, fieldHerbs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, ambientLife, fieldHerbs, orleansResidentLife, settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

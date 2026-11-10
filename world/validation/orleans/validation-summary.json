@@ -1,0 +1,105 @@
+{
+  "date": "2026-11-09",
+  "stage": "Orleans environment and exploration polish",
+  "houses": 45,
+  "buildingFamilies": {
+    "river-merchant": 8,
+    "stone-arcade": 8,
+    "harbour-warehouse": 8,
+    "narrow-street-house": 7,
+    "artisan-workshop": 7,
+    "oriel-corner-house": 7
+  },
+  "ordinaryStreetLanes": 5,
+  "routes": [
+    "main",
+    "flank",
+    "high",
+    "riverfront",
+    "harbourwalk",
+    "dockapproach",
+    "cloisterwalk",
+    "wallworks",
+    "belfrywalk"
+  ],
+  "residents": 8,
+  "patrols": 2,
+  "persistentDiscoveries": 9,
+  "tests": {
+    "total": 107,
+    "passed": 107,
+    "failed": 0,
+    "record": "final-checks.txt",
+    "files": [
+      "orleans-environment.test.ts",
+      "orleans-roofs.test.ts",
+      "expansion-framework.test.ts",
+      "continent-continuity.test.ts",
+      "full-map-qa.test.ts",
+      "streamed-map-repairs.test.ts",
+      "source-node-detach.test.ts",
+      "local-light-pool.test.ts",
+      "quest-guide-catalog.test.ts",
+      "settlement-npcs.test.ts",
+      "settlement-interaction.test.ts",
+      "look-material-intent.test.ts",
+      "static-material-isolation.test.ts",
+      "region-identity.test.ts",
+      "region-weather.test.ts",
+      "quest-journal.test.ts",
+      "quest-journal-main.test.ts",
+      "tracked-story-navigation.test.ts",
+      "tracked-story-hud.test.ts",
+      "lived-world-quality.test.ts",
+      "armory-workshop.test.ts"
+    ],
+    "scope": [
+      "45 street-to-room entrances, interior centre/rear and return routes without jumping",
+      "nine main/side/elevated routes and five ordinary streets walked in both directions",
+      "closed outward-facing roof shells, cathedral floor/roof, cloister shelter and body clearance",
+      "eight bilingual residents, body clearance, two patrols and conversation pauses without mutating caller data",
+      "nine real discoveries in quest browser, live main-program tracking and saved found-state completion",
+      "rounded court grass clearance and retained meadow",
+      "12 continental joins and existing streamed repairs, identity, weather, materials and source ownership",
+      "all real chest actions still work through grounded input after protecting the old Camlann and Kyoto shrine shorelines"
+    ]
+  },
+  "productionBuild": "passed; existing bundle-size advisory remains",
+  "delivery": {
+    "source": 3413264,
+    "core": 2090712,
+    "visual": 1896152
+  },
+  "browser": {
+    "quality": "med (default), grass enabled",
+    "views": [
+      "working-harbour",
+      "cloister",
+      "belfry-gallery",
+      "wall-works",
+      "warehouse-interior",
+      "churchyard",
+      "market-street",
+      "cathedral",
+      "overview"
+    ],
+    "pageAndShaderErrors": 0,
+    "details": "artifacts/browser-results.json",
+    "atlas": "artifacts/atlas.png",
+    "dialogueAndSaveRoundtrip": "artifacts/dialogue-results.json",
+    "interaction": "Actual F-key resident conversation; all nine discoveries retained after reload; done flags unchanged",
+    "method": "Discovery save review uses test-only repositioning; physical traversal is validated separately against shipped collision."
+  },
+  "baselineCriteria": [
+    "distinct region-specific building masses and facades",
+    "usable furnished interiors",
+    "connected ground, wall and belfry routes",
+    "inhabited town with actual dialogue and patrols",
+    "persistent explorable landmarks and explicit tracking",
+    "physical lamps and regional surface treatment",
+    "continuous connections and existing-content compatibility"
+  ],
+  "comparativeLimit": "Environment and exploration criteria are verified; no numerical aesthetic superiority or complete chapter/Boss parity is claimed.",
+  "scopeLimit": "Jeanne/Alter servant models and contracts, siege campaign, dragon encounter, operable crane and Arena entry are not implemented. Egypt and Qin remain at their prior framework stage.",
+  "fullSuite": "The 21 relevant test files above were run. This is not a complete repository test run."
+}

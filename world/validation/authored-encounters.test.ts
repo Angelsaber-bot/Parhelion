@@ -9,7 +9,7 @@ const flat: CombatTerrain = { walk: (_from, x, z) => point(x, z), lineOfSight: (
 const authored = authorEncounters(spawns, q.safeSpawn);
 
 test('authored Akechi pair swaps two safe Kyoto actors, never grows population or weakens exclusions', () => {
-  assert.equal(authored.length, 145); assert.deepEqual(authored.map(s => s.id), spawns.map(s => s.id));
+  assert.equal(authored.length, spawns.length); assert.deepEqual(authored.map(s => s.id), spawns.map(s => s.id));
   const moved = authored.filter((s, i) => distanceXZ(s.p, spawns[i].p) > .01);
   assert.deepEqual(moved.map(s => s.id), AKECHI_GUARDS.map(s => s.id));
   assert.deepEqual(moved.map(s => s.role), ['lancer', 'duelist']);

@@ -1,33 +1,27 @@
-// The open world is several generated regions placed side by side in one scene.
-// 幻日谷 sits at the origin; 黑帆尽头 continues east through the mountain pass at z ≈ 30, and
-// 落日王国 lies west through the era seam gorge at z ≈ -30, 永冬之城 north along the frozen channel at
-// x ≈ 0, 业火京都 south through the torii tunnel at x ≈ 40. Three irregular corner
-// domains extend the same ~3×3 planning envelope; 720 m is a production spacing only.
 import * as THREE from 'three';
 import type { Layout, Marker } from '../core/types';
 import type { WorldRegionId } from '../core/regionIdentity';
-import { EXPANSION_CONNECTIONS, EXPANSION_PLANS, distanceToLine, inPolygon, polygonDistance, type MapPoint2 } from './worldPlan';
+import { EXPANSION_PLANS } from './worldPlan';
 
 export interface RegionDef {
   id: WorldRegionId;
   file: string;
   offset: [number, number];
-  /** Local broad-phase bounds: x0, x1, z0, z1. An outline, when supplied, owns the boundary. */
+  /** Production/render bounds only: x0, x1, z0, z1; never a movement boundary. */
   play: [number, number, number, number];
-  outline?: readonly MapPoint2[];
 }
 
 export const REGIONS: RegionDef[] = [
-  { id: 'alpha', file: 'world_alpha', offset: [0, 0], play: [-334, 334, -334, 334] },
-  { id: 'britain', file: 'world_britain', offset: [-720, 0], play: [-334, 334, -334, 334] },
-  { id: 'blacksail', file: 'world_blacksail', offset: [720, 0], play: [-334, 334, -334, 334] },
-  { id: 'winter', file: 'world_winter', offset: [0, -720], play: [-334, 334, -334, 334] },
-  { id: 'kyoto', file: 'world_kyoto', offset: [0, 720], play: [-334, 334, -334, 334] },
+  { id: 'alpha', file: 'world_alpha', offset: [0, 0], play: [-360, 360, -360, 360] },
+  { id: 'britain', file: 'world_britain', offset: [-720, 0], play: [-360, 360, -360, 360] },
+  { id: 'blacksail', file: 'world_blacksail', offset: [720, 0], play: [-360, 360, -360, 360] },
+  { id: 'winter', file: 'world_winter', offset: [0, -720], play: [-360, 360, -360, 360] },
+  { id: 'kyoto', file: 'world_kyoto', offset: [0, 720], play: [-360, 360, -360, 360] },
   ...EXPANSION_PLANS.map(plan => ({id:plan.id,file:`world_${plan.id}`,offset:plan.offset,
-    play:[Math.min(...plan.outline.map(p=>p[0])),Math.max(...plan.outline.map(p=>p[0])),Math.min(...plan.outline.map(p=>p[1])),Math.max(...plan.outline.map(p=>p[1]))] as [number,number,number,number],outline:plan.outline})),
+    play:[-360,360,-360,360] as [number,number,number,number]})),
 ];
 
-/** Extra walkable rects in world coordinates joining regions (the east pass, the west seam gorge). */
+/** Historical story approach locations; continuous land is walkable outside these roads too. */
 export const LINKS: [number, number, number, number][] = [[316, 410, 14, 46], [-410, -316, -46, -14], [-46, 46, -410, -316], [-6, 86, 316, 410]];
 
 /** Where the east pass crosses from 幻日谷 into 黑帆尽头 (world coordinates, ground height). */
@@ -46,20 +40,18 @@ export const GRID = { x0: -1080, z0: -1080, span: 2160, spanZ: 2160, cell: 2 };
 
 /** Geographical ownership; transport/grid squares do not define a region's shape. */
 export function regionAt(x: number, z = 0): RegionDef {
-  const containing=REGIONS.find(r=>regionContains(r,x,z));
-  if(containing)return containing;
-  const d = (r: RegionDef) => regionDistance(r,{x,z});
-  return REGIONS.reduce((a, b) => (d(b) < d(a) ? b : a));
+  // Curved climate/ownership transitions do not constrain movement or ground meshes.
+  const wx=x+35*Math.sin(z*.008),wz=z+35*Math.sin(x*.007);
+  const distance=(r:RegionDef)=>Math.min(Math.hypot(wx-r.offset[0],wz-r.offset[1]),
+    r.id==='britain'?Math.hypot(wx+720,wz-720):Infinity);
+  return REGIONS.reduce((a,b)=>distance(b)<distance(a)?b:a);
 }
-
 export function regionContains(r:RegionDef,x:number,z:number):boolean {
-  const lx=x-r.offset[0],lz=z-r.offset[1];
-  if(lx<r.play[0]||lx>r.play[1]||lz<r.play[2]||lz>r.play[3])return false;
-  return !r.outline||inPolygon(lx,lz,r.outline);
+  return x>=GRID.x0&&x<=GRID.x0+GRID.span&&z>=GRID.z0&&z<=GRID.z0+GRID.spanZ&&regionAt(x,z).id===r.id;
 }
 export function regionDistance(r:RegionDef,p:{x:number;z:number}):number {
   const x=p.x-r.offset[0],z=p.z-r.offset[1];
-  return r.outline?polygonDistance(x,z,r.outline):Math.hypot(Math.max(r.play[0]-x,0,x-r.play[1]),Math.max(r.play[2]-z,0,z-r.play[3]));
+  return Math.hypot(Math.max(-360-x,0,x-360),Math.max(-360-z,0,z-(r.id==='britain'?1080:360)));
 }
 
 export interface RegionLayout { def: RegionDef; layout: Layout }
@@ -103,49 +95,12 @@ export function mergeLayouts(parts: RegionLayout[]) {
   return out;
 }
 
-/** Invisible walls around the union of geographical footprints and actual connecting roads. */
+/** Only the outside of the entire world has a safety boundary. No interior region walls. */
 export function boundaryWalls(): THREE.BufferGeometry {
-  const rects: [number, number, number, number][] = [
-    ...REGIONS.map((r) => [r.play[0] + r.offset[0], r.play[1] + r.offset[0], r.play[2] + r.offset[1], r.play[3] + r.offset[1]] as [number, number, number, number]),
-    ...EXPANSION_CONNECTIONS.map(link=>[Math.min(...link.points.map(p=>p[0]))-link.width/2,Math.max(...link.points.map(p=>p[0]))+link.width/2,Math.min(...link.points.map(p=>p[1]))-link.width/2,Math.max(...link.points.map(p=>p[1]))+link.width/2] as [number,number,number,number]),
-    ...LINKS,
-  ];
-  const c = 2;
-  const x0 = Math.min(...rects.map((r) => r[0])) - 20, z0 = Math.min(...rects.map((r) => r[2])) - 20;
-  const nx = Math.ceil((Math.max(...rects.map((r) => r[1])) + 20 - x0) / c), nz = Math.ceil((Math.max(...rects.map((r) => r[3])) + 20 - z0) / c);
-  const playable = (i: number, j: number) => {
-    const x = x0 + (i + 0.5) * c, z = z0 + (j + 0.5) * c;
-    return REGIONS.some(r=>regionContains(r,x,z)) || LINKS.some(([a,b,d,e])=>x>a&&x<b&&z>d&&z<e)
-      || EXPANSION_CONNECTIONS.some(link=>distanceToLine(x,z,link.points)<=link.width/2);
-  };
-  const occupied=new Uint8Array(nx*nz);
-  for(let j=0;j<nz;j++)for(let i=0;i<nx;i++)occupied[j*nx+i]=Number(playable(i,j));
-  const inside=(i:number,j:number)=>i>=0&&j>=0&&i<nx&&j<nz?occupied[j*nx+i]!==0:false;
-  const H = 300, Y = H / 2 - 20;
-  const boxes: THREE.BufferGeometry[] = [];
-  const wall = (x: number, z: number, w: number, d: number) => {
-    const g = new THREE.BoxGeometry(w, H, d).toNonIndexed();
-    g.deleteAttribute('normal'); g.deleteAttribute('uv');
-    boxes.push(g.translate(x, Y, z));
-  };
-  // walls along x (between rows j-1 and j), merged into runs
-  for (let j = 0; j <= nz; j++) {
-    let run = -1;
-    for (let i = 0; i <= nx; i++) {
-      const edge = i < nx && inside(i, j) !== inside(i, j - 1);
-      if (edge && run < 0) run = i;
-      if (!edge && run >= 0) { wall(x0 + ((run + i) / 2) * c, z0 + j * c, (i - run) * c, 1); run = -1; }
-    }
+  const positions:number[]=[];
+  for(const [x,z,w,d] of [[-1081,0,2,2164],[1081,0,2,2164],[0,-1081,2164,2],[0,1081,2164,2]]) {
+    const g=new THREE.BoxGeometry(w,300,d).toNonIndexed();g.translate(x,130,z);
+    for(const v of g.attributes.position.array)positions.push(v);g.dispose();
   }
-  for (let i = 0; i <= nx; i++) {
-    let run = -1;
-    for (let j = 0; j <= nz; j++) {
-      const edge = j < nz && inside(i, j) !== inside(i - 1, j);
-      if (edge && run < 0) run = j;
-      if (!edge && run >= 0) { wall(x0 + i * c, z0 + ((run + j) / 2) * c, 1, (j - run) * c); run = -1; }
-    }
-  }
-  const pos: number[] = [];
-  for (const b of boxes) pos.push(...(b.attributes.position.array as Float32Array));
-  return new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  return new THREE.BufferGeometry().setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
 }

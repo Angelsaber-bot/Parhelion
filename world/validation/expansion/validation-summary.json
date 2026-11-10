@@ -1,28 +1,39 @@
 {
   "date": "2026-11-09",
-  "stage": "three explorable region blockouts; story, mechanisms, NPCs, Arena travel and bosses pending",
+  "stage": "continuous mainland blockout; story, mechanisms, NPCs, Arena travel and bosses in new domains pending",
   "finalFocusedRun": {
-    "tests": 114,
-    "passed": 114,
+    "tests": 166,
+    "passed": 166,
     "failed": 0,
     "scope": [
-      "bidirectional capsule traversal on shipping assets",
-      "old-to-new physical connections",
-      "old five-region combat coverage",
-      "all 55 glide upgrade/route combinations",
-      "medicine cart, checkpoints and arrival",
-      "source-node ownership and original gate/reset behavior",
-      "eight-region map labels, lighting, weather and identity",
-      "quest catalog compatibility",
-      "streamed asset delivery"
+      "12 shared terrain joins, 48 off-road capsule crossings in both directions",
+      "shared-edge floor continuity and no interior world-boundary walls",
+      "southwest terrain and four-region junctions",
+      "new domain main, flank, elevated and underground routes",
+      "existing four-era quest routes, ships, gates and teleport destinations",
+      "55 glide upgrade/route combinations and medicine cart",
+      "original regional combat coverage and 140–150 total wilderness encounters",
+      "story installations remain local obstacles, with open land around them",
+      "source-node ownership, lighting, eight-region map, weather and identity",
+      "runtime asset manifest and retained building repairs"
     ]
   },
-  "worldProductionBuild": "passed",
-  "firstFullRun": {
-    "tests": 2053,
-    "passed": 2037,
-    "failed": 16,
-    "note": "Ran while blockouts were under development. All failed cases were fixed and included in the final 114-test rerun. The complete 2053-test suite was not repeated on the final version."
+  "worldProductionBuild": "passed; existing bundle-size advisory remains",
+  "browser": {
+    "regions": [
+      "orleans",
+      "egypt",
+      "qin"
+    ],
+    "pageErrors": 0,
+    "atlas": "artifacts/atlas.png",
+    "details": "artifacts/browser-results.json"
   },
-  "visualCheck": "Browser snapshots and per-region page errors are recorded in artifacts/browser-results.json."
+  "testExpectationChanges": [
+    "Retired enclosing-world boundary assertions now check local story installations can be bypassed, per continuous-world requirement. Centerline story unlock/reset checks remain.",
+    "Broader terrain changes seeded placement retries; regional density requires at least 25 per original chapter, retaining the original total and authored-route coverage checks."
+  ],
+  "fullSuite": "The entire repository suite was not rerun for this revision. These results refer only to the focused checks above.",
+  "historicalScope": "Continuous-mainland framework validation at the earlier revision; later Orleans work and local shoreline compatibility fixes have their own current record.",
+  "currentOrleansReview": "../orleans/validation-summary.json"
 }

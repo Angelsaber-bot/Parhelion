@@ -1,5 +1,6 @@
 import {bilingual,onLanguageChange} from '../../../shared-client/i18n';
 import type {Localized} from '../settlements/types';
+import {isExpansionRegion} from '../core/regionIdentity';
 import {QUEST_REGION_NAMES,type QuestEntry,type QuestGuide,type QuestPoint} from '../story/questGuideCatalog';
 
 export interface QuestJournalOptions {
@@ -91,7 +92,8 @@ export function createQuestJournal(options:QuestJournalOptions){
    if(guide){
     const target=document.createElement('p');target.className='quest-target';
     const distance=Math.round(Math.hypot(position[0]-guide.position[0],position[1]-guide.position[1],position[2]-guide.position[2]));
-    target.textContent=bilingual(`目标：${guide.targetLabel[0]} · ${QUEST_REGION_NAMES[guide.region][0]}${here===guide.region?` · 直线约 ${distance} 米`:' · 需跨年代通路'}`,`Target: ${guide.targetLabel[1]} · ${QUEST_REGION_NAMES[guide.region][1]}${here===guide.region?` · about ${distance} m straight-line`:' · Era passage required'}`);article.append(target);
+    const remote=isExpansionRegion(guide.region)?[' · 沿大世界道路前往',' · Follow world roads']:[' · 需跨年代通路',' · Era passage required'];
+    target.textContent=bilingual(`目标：${guide.targetLabel[0]} · ${QUEST_REGION_NAMES[guide.region][0]}${here===guide.region?` · 直线约 ${distance} 米`:remote[0]}`,`Target: ${guide.targetLabel[1]} · ${QUEST_REGION_NAMES[guide.region][1]}${here===guide.region?` · about ${distance} m straight-line`:remote[1]}`);article.append(target);
     if(guide.prerequisite){const note=document.createElement('p');note.textContent=bilingual(...guide.prerequisite);article.append(note);}
     if(blocked){const note=document.createElement('p');note.textContent=bilingual(...blocked);article.append(note);}
    }

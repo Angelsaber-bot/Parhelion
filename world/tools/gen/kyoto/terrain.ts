@@ -1,3 +1,4 @@
+import { continentalHeight } from '../continent.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline } from '../geo.js';
@@ -59,10 +60,7 @@ function natural(x: number, z: number) {
   h += smoothstep(-230, -330, z) * (20 + fbm(x * 0.02 + 3, z * 0.02, 3, S + 5) * 8);
   h += bump(x, z, -215, -268, 70) * 18; // Kinugasa-yama behind the Golden Pavilion
   h += bump(x, z, 40, -296, 70) * 14; // Inari-yama around the torii tunnel
-  // mountains around all four edges, notched where the torii tunnel comes in from the valley
-  const m = Math.pow(Math.pow(Math.abs(x), 4) + Math.pow(Math.abs(z), 4), 0.25);
-  const notch = (1 - smoothstep(16, 40, Math.abs(x - 40))) * smoothstep(-250, -300, z);
-  h += smoothstep(296, 352, m) * (1 - notch * 0.75) * (48 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 24);
+  // Regional hills continue into neighbouring terrain without an enclosing ring.
   return h;
 }
 
@@ -153,7 +151,7 @@ export function heightFn(x: number, z: number): number {
       h = lerp(h, lerp(v, toriiFloor(z), tunnel), k);
     }
   }
-  return h;
+  return continentalHeight('kyoto', x, z, h);
 }
 
 const C = {

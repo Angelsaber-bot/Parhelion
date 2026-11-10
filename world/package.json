@@ -19,7 +19,9 @@
     "test": "node --import tsx --test validation/*.test.ts",
     "test:browser": "node validation/browser.mjs",
     "test:ci": "node --import tsx --test --test-concurrency=1 validation/*.test.ts",
-    "build:stream-assets": "tsx tools/build-stream-assets.ts"
+    "build:stream-assets": "tsx tools/build-stream-assets.ts",
+    "build:continent": "node --import tsx tools/build-continent.ts",
+    "build:orleans": "node --import tsx tools/build-expansions.ts --region=orleans && node --import tsx tools/build-stream-assets.ts --region=orleans"
   },
   "dependencies": {
     "three": "0.186.1",

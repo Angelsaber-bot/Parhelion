@@ -12,7 +12,7 @@ export interface NpcSocket {
   yaw?: number;
   lines: Localized[];
 }
-export interface PlacedNpcSocket extends NpcSocket { region: RegionId; }
+export interface PlacedNpcSocket extends NpcSocket { region: RegionId; worldRegion?: import('../core/regionIdentity').WorldRegionId; appearance?: {coat?:number;trim?:number;accent?:number;carry?:'sack'|'net'|'bellrope'}; }
 export interface SettlementKit {
   id: RegionId;
   name: Localized;

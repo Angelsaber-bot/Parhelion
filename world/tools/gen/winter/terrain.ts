@@ -1,3 +1,4 @@
+import { continentalHeight } from '../continent.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline } from '../geo.js';
@@ -22,10 +23,7 @@ function natural(x: number, z: number) {
   h += bump(x, z, -240, 10, 110) * 6;
   // Borovitsky hill under the city
   h += bump(x, z, CITY.c[0], CITY.c[1], 170) * 6;
-  // mountains around all four edges; the south one is notched for the river from the ice seam
-  const m = Math.max(Math.abs(x), Math.abs(z));
-  const notch = (1 - smoothstep(30, 70, Math.abs(x))) * smoothstep(200, 300, z);
-  h += smoothstep(292, 352, m) * (1 - notch) * (50 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
+  // Regional hills continue into neighbouring terrain without an enclosing ring.
   return h;
 }
 
@@ -72,7 +70,7 @@ export function heightFn(x: number, z: number): number {
       h = lerp(h, lerp(v, ICE_Y, ice), k);
     }
   }
-  return h;
+  return continentalHeight('winter', x, z, h);
 }
 
 const C = {

@@ -1,3 +1,4 @@
+import { continentalHeight } from '../continent.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline, distToSegment } from '../geo.js';
@@ -33,10 +34,7 @@ function natural(x: number, z: number) {
   }
   // rolling downs and a knoll by the windmill
   h += bump(x, z, MEADOW.c[0] + 30, MEADOW.c[1] - 34, 50) * 6 + bump(x, z, 40, -120, 70) * 8 * smoothstep(0, 40, d);
-  // mountains along the north and west (land) edges; the pass road notches the west wall at z = 30
-  const m = Math.max(-x, -z);
-  const notch = (1 - smoothstep(16, 44, Math.abs(z - PASS_Z))) * smoothstep(-260, -330, x);
-  h += smoothstep(296, 352, m) * smoothstep(-40, 10, d) * (1 - notch) * (50 + fbm(x * 0.018 + 7, z * 0.018, 4, S + 3) * 26);
+  // Regional hills continue into neighbouring terrain without an enclosing ring.
   return h;
 }
 
@@ -99,7 +97,7 @@ export function heightFn(x: number, z: number): number {
     const k = smoothstep(-316, -360, x);
     if (k > 0) h = lerp(h, alphaHeight(x + OFFSET[0], z + OFFSET[1]), k);
   }
-  return h;
+  return continentalHeight('blacksail', x, z, h);
 }
 
 const C = {

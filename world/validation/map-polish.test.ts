@@ -5,9 +5,11 @@ import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {snapshot} from './map-polish/snapshot.mjs';
 import {countPreparedArt} from './map-polish/chunk-budget.ts';
+import {triangleIndexProof} from './map-polish/triangle-index-proof';
 
 const before=JSON.parse(readFileSync(new URL('./map-polish/baseline.json',import.meta.url),'utf8'));
 const assets=fileURLToPath(new URL('../public/assets/',import.meta.url));
+const indexProof=JSON.parse(readFileSync(new URL('./map-polish/continental-index-proof.json',import.meta.url),'utf8'));
 const chunkBaseline=JSON.parse(readFileSync(new URL('./map-polish/chunk-baseline.json',import.meta.url),'utf8'));
 // The current interaction repair replaces exactly these three legacy chest
 // visuals. Pin both sides of the change; all other historical nodes, including
@@ -53,6 +55,7 @@ const edits:Record<string,{nodes:string[];triangles:number;bytes:number}>={
 };
 for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded detail whitelist preserves exact gameplay and all unrelated GLB content`,async()=>{
   const old=before.regions[region],now=await snapshot(assets,region);
+  const currentIndices=await triangleIndexProof(readFileSync(`${assets}/world_${region}.glb`));
   assert.equal(before.baselineCommit,'a3096254ef0fff455a29932bc5fef2e57fa49f44');
   if (region === 'alpha') {
     // Approved copy-only corrections: Relay B needs no kill gate; the tower
@@ -73,7 +76,13 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
   const appendTriangles = region === 'blacksail' ? 6 : 0, appendBytes = region === 'blacksail' ? 1412 : 0;
   assert.deepEqual(Object.keys(now.nodes).filter(n=>!added.includes(n) && !extraCollision.includes(n)),Object.keys(old.nodes),'only explicitly named seam, lining and structural repair nodes may be added; no removal/reorder');
   for(const [name,node] of Object.entries(now.nodes)){
-    if(region==='winter'&&name==='COL_Props') {
+    if(name==='Terrain'||name==='COL_Terrain'){
+      // The former island edges are now one shared continent, independently
+      // checked by continent-continuity.test.ts. All other whitelist checks stay exact.
+      assert.equal(node.primitives.length,1);assert.deepEqual(node.extras,old.nodes[name].extras);
+      assert.equal(node.primitives[0].material,old.nodes[name].primitives[0].material);
+      assert.ok(node.primitives[0].triangles>=old.nodes[name].primitives[0].triangles,'terrain resolution is retained, including southwest land');
+    } else if(region==='winter'&&name==='COL_Props') {
       assert.equal(node.primitives.length,1);assert.equal(node.primitives[0].triangles,winterRuins.retainedPropsTriangles);
       assert.equal(old.nodes[name].primitives[0].triangles-node.primitives[0].triangles,13*12);
       const restored=structuredClone(node);
@@ -170,7 +179,14 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
       assert.deepEqual(node.children,old.nodes[name].children);
       assert.deepEqual(node.primitives.map(p=>p.material),old.nodes[name].primitives.map(p=>p.material));
       assert.equal(node.primitives[0].triangles-old.nodes[name].primitives[0].triangles,({Cave:-24,Island:-12,Treasure_Chest:96}as Record<string,number>)[name]);
-    } else if(!allowed.nodes.includes(name))assert.deepEqual(node,old.nodes[name],`${name}: exact decoded accessor hashes and scene metadata`);
+    } else if(!allowed.nodes.includes(name)){
+      const restored=structuredClone(node);
+      for(const [i,p] of (restored.primitives??[]).entries())if(p.indices&&old.nodes[name].primitives[i]?.indices&&p.indices.sha256!==old.nodes[name].primitives[i].indices.sha256){
+        assert.equal(currentIndices[name][i],indexProof.regions[region][name][i],`${name}: exact ordered triangles, allowing only cyclic corner rotation during lossless re-encoding`);
+        p.indices.sha256=old.nodes[name].primitives[i].indices.sha256;
+      }
+      assert.deepEqual(restored,old.nodes[name],`${name}: exact attributes, geometry and scene metadata`);
+    }
     else {
       assert.notDeepEqual(node.primitives,old.nodes[name].primitives,`${name}: intended visual detail actually exported`);
       assert.deepEqual(node.extras,old.nodes[name].extras,`${name}: no new dynamic/quest behavior`);
@@ -180,15 +196,18 @@ for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded det
     }
   }
   assert.equal(now.artPrimitives,old.artPrimitives+added.length,'only explicitly approved single ART primitives added');
-  assert.ok((region==='kyoto' ? now.artTriangles>old.artTriangles-15000 : now.artTriangles>old.artTriangles)&&now.artTriangles-old.artTriangles-appendTriangles<=allowed.triangles,'bounded triangle budget including removal of duplicate roof skins');
-  assert.ok(now.bytes-old.bytes-appendBytes<=allowed.bytes,'small compressed asset delta budget');
+  const terrainGrowth=now.nodes.Terrain.primitives[0].triangles-old.nodes.Terrain.primitives[0].triangles;
+  assert.ok((region==='kyoto' ? now.artTriangles>old.artTriangles-15000 : now.artTriangles>old.artTriangles)&&now.artTriangles-old.artTriangles-appendTriangles-terrainGrowth<=allowed.triangles,'bounded architecture budget, with continuous terrain counted separately');
+  assert.ok(now.bytes-old.bytes-appendBytes<=allowed.bytes+3*1024*1024,'bounded continental surface and lossless preservation overhead');
   assert.ok(now.bytes<25*1024*1024,'existing individual-file delivery ceiling');
   const prepared=await countPreparedArt(assets,region),original=chunkBaseline[region];
-  if(region!=='kyoto') assert.equal(prepared.chunks,original.chunks+added.length,'only explicitly approved single prepared meshes added');
+  const terrainChunks=prepared.byMesh.Terrain-original.byMesh.Terrain;
+  assert.ok(prepared.byMesh.Terrain<=original.byMesh.Terrain*(region==='britain'?2:1),'bounded terrain chunks, including southwest extension');
+  if(region!=='kyoto') assert.equal(prepared.chunks-terrainChunks,original.chunks+added.length,'only explicitly approved prepared architecture meshes added');
   else assert.ok(prepared.chunks<=original.chunks+64,'bounded prepared meshes for complete attic infills');
   if(region!=='kyoto') assert.equal(prepared.outlineChunks,original.outlineChunks,'no additional outline meshes');
   else assert.ok(prepared.outlineChunks<=original.outlineChunks+64,'bounded outline meshes for complete attic infills');
-  const unchangedMesh = (name:string) => !added.includes(name) && !(region==='kyoto' && repairedRoofs.includes(name));
+  const unchangedMesh = (name:string) => name!=='Terrain'&&!added.includes(name) && !(region==='kyoto' && repairedRoofs.includes(name));
   assert.deepEqual(Object.fromEntries(Object.entries(prepared.byMesh).filter(([name])=>unchangedMesh(name))),Object.fromEntries(Object.entries(original.byMesh).filter(([name])=>unchangedMesh(name))),'exact unrelated per-source chunk distribution, including 4k threshold');
   for(const name of added)assert.equal(prepared.byMesh[name],1);
 });

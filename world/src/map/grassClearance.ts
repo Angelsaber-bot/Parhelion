@@ -8,6 +8,7 @@ export function settlementGrassClearance(
  grid:Pick<WorldGrid,'nx'|'nz'|'x0'|'z0'|'cell'>,
  placements:readonly SettlementPlacement[], routes:readonly SettlementApproach[],
  rectangles:readonly (readonly [number,number,number,number])[]=[],
+ ellipses:readonly (readonly [number,number,number,number])[]=[],
 ){
  const mask=new Uint8Array(grid.nx*grid.nz),pad=grid.cell;
  const fill=(x0:number,z0:number,x1:number,z1:number,inside:(x:number,z:number)=>boolean)=>{
@@ -16,6 +17,7 @@ export function settlementGrassClearance(
   for(let iz=iz0;iz<=iz1;iz++)for(let ix=ix0;ix<=ix1;ix++)if(inside(grid.x0+ix*grid.cell,grid.z0+iz*grid.cell))mask[iz*grid.nx+ix]=1;
  };
  for(const [x0,z0,x1,z1] of rectangles)fill(x0-pad,z0-pad,x1+pad,z1+pad,()=>true);
+ for(const [x,z,rx,rz] of ellipses)fill(x-rx-pad,z-rz-pad,x+rx+pad,z+rz+pad,(px,pz)=>((px-x)/(rx+pad))**2+((pz-z)/(rz+pad))**2<=1);
  for(const p of placements){
   const [x,,z]=p.position,[w,d]=p.footprint;
   fill(x-w/2-pad,z-d/2-pad,x+w/2+pad,z+d/2+pad,()=>true);

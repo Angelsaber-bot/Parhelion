@@ -8,7 +8,8 @@ import type {Layout,Marker} from '../core/types';
 import type {Localized,RegionId} from '../settlements/types';
 import {TEXT_PAIRS} from '../../../shared-client/locales';
 import {regionAt} from '../map/regions';
-import {isCampaignRegion} from '../core/regionIdentity';
+import {isCampaignRegion,type WorldRegionId} from '../core/regionIdentity';
+import {EXPANSION_PLANS} from '../map/worldPlan';
 import {ERA_IDS,ERA_STORIES,ERA_OPTIONALS,ERA_KNIGHT_DEFEATED,getEraStoryGuide,getEraBossRequirements,isEraCoreCleared} from './eraStories';
 import {getValleyStoryGuide,VALLEY_STORY} from './valleyStory';
 import {getCampaignClosureState,CAMPAIGN_CLOSURE} from './campaignClosure';
@@ -18,10 +19,10 @@ export type QuestCategory='main'|'side'|'discovery';
 export type QuestPoint=[number,number,number];
 export interface QuestGuide {
  title:Localized; text:Localized; targetId:string; targetKind:'marker'|'npc'|'enemy';
- region:RegionId; position:QuestPoint; targetLabel:Localized; prerequisite?:Localized;
+ region:WorldRegionId; position:QuestPoint; targetLabel:Localized; prerequisite?:Localized;
 }
 export interface QuestEntry {
- id:string; region:RegionId; category:QuestCategory; title:Localized;
+ id:string; region:WorldRegionId; category:QuestCategory; title:Localized;
  complete:boolean; guide:QuestGuide|null; unavailable?:Localized;
  /** Only an actually earned permanent service may remain trackable after completion. */
  trackWhenComplete?:boolean; trackLabel?:Localized;
@@ -39,6 +40,8 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ ...EXPANSION_PLANS.flatMap(plan=>plan.sites.map(site=>[`${plan.id}_${site.id}`,[site.name,site.nameEn]] as [string,Localized])),
+ ['orleans_belfry_view',['钟楼三面眺廊','Belfry viewing gallery']],
  ...PARALLAX_LABELS.map(([id,label])=>[id,label] as [string,Localized]),
  ...RESIDENT_ACTIONS.map(a=>[a.id,a.label] as [string,Localized]),
  ...ADVENTURE_ACTIONS.map(a=>[a.id,a.label] as [string,Localized]),
@@ -54,7 +57,7 @@ const specialLabels=new Map<string,Localized>([
  ...ERA_IDS.map(region=>[ERA_OPTIONALS[region].id,ERA_OPTIONALS[region].label] as [string,Localized]),
 ]);
 const REGIONS:readonly RegionId[]=['alpha','britain','blacksail','winter','kyoto'];
-export const QUEST_REGION_NAMES:Record<RegionId,Localized>={alpha:['幻日谷','Parhelion Valley'],britain:['落日王国','Sunset Kingdom'],blacksail:['黑帆尽头','Black Sail’s End'],winter:['永冬之城','Winter City'],kyoto:['业火京都','Kyoto Ablaze']};
+export const QUEST_REGION_NAMES:Record<WorldRegionId,Localized>={alpha:['幻日谷','Parhelion Valley'],britain:['落日王国','Sunset Kingdom'],blacksail:['黑帆尽头','Black Sail’s End'],winter:['永冬之城','Winter City'],kyoto:['业火京都','Kyoto Ablaze'],orleans:['奥尔良','Orleans'],egypt:['古埃及','Solar Egypt'],qin:['秦帝国','Qin Empire']};
 const OPTIONAL_CHAINS:readonly {id:string;region:RegionId;title:Localized;flags:readonly string[]}[]=[
  {id:'oath-camp',region:'britain',title:['可选 · 誓约营地碎片','Optional · Oath camp fragment'],flags:['camp_dummy_1','camp_dummy_2','camp_dummy_3','shard_camp']},
  {id:'oath-tower',region:'britain',title:['可选 · 王座碎片','Optional · Throne fragment'],flags:['shard_tower']},
@@ -80,7 +83,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
   const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
   const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&isCampaignRegion(region)?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||marker.type==='discovery')?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -107,7 +110,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  };
  const build=(done:ReadonlySet<string>,found:ReadonlySet<string>,context:QuestGuideContext={}):QuestEntry[]=>{
   const entries:QuestEntry[]=[];
-  const add=(id:string,region:RegionId,category:QuestCategory,title:Localized,complete:boolean,next:QuestGuide|null)=>entries.push({id,region,category,title,complete,guide:complete?null:next,...(!complete&&!next?{unavailable}: {})});
+  const add=(id:string,region:WorldRegionId,category:QuestCategory,title:Localized,complete:boolean,next:QuestGuide|null)=>entries.push({id,region,category,title,complete,guide:complete?null:next,...(!complete&&!next?{unavailable}: {})});
   for(const region of REGIONS){
    if(region==='alpha'){
     const objective=objectives.get(region),title:Localized=['幻日谷 · 重启幻日塔','Parhelion Valley · Restart the tower'];
@@ -158,7 +161,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
   if(closure.stage==='ready')closing=guide(closureTitle,['回观测所终端，记录四处时层的旅程。','Return to the Observatory terminal to record the four-era journey.'],CAMPAIGN_CLOSURE.terminal,done,context);
   else if(missingEra){const next=getEraStoryGuide(missingEra,done);if(next)closing=guide(closureTitle,next.text,next.targetId,done,context);if(closing)closing.prerequisite=['先完成四处时层的核心，再回观测所记录。','Resolve all four era cores before recording the journey at the Observatory.'];}
   add('side:closure','alpha','side',closureTitle,closure.stage==='recorded',closing);
-  for(const marker of input.markers.filter(m=>m.type==='discovery')){const region=regionAt(marker.p[0],marker.p[2]).id;if(!isCampaignRegion(region))continue;const title=specialLabels.get(marker.id)??pair(marker.label);add(`discovery:${marker.id}`,region,'discovery',title,found.has(marker.id),guide(title,instruction(marker.id),marker.id,done,context));}
+  for(const marker of input.markers.filter(m=>m.type==='discovery')){const region=regionAt(marker.p[0],marker.p[2]).id;const title=specialLabels.get(marker.id)??pair(marker.label);add(`discovery:${marker.id}`,region,'discovery',title,found.has(marker.id),guide(title,instruction(marker.id),marker.id,done,context));}
   return entries;
  };
  return{list:build,resolve(id:string,done:ReadonlySet<string>,found:ReadonlySet<string>,context:QuestGuideContext={}){return build(done,found,context).find(entry=>entry.id===id)?.guide??null;}};

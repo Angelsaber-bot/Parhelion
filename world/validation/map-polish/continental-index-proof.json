@@ -1,0 +1,1048 @@
+{
+  "baselineCommit": "5c14f99783fcfbc59c49dd3ef7aa394ad9a6940a",
+  "method": "Ordered original index triples; only cyclic starting corners are normalized. Vertex attributes, triangle order and winding stay exact.",
+  "regions": {
+    "alpha": {
+      "Terrain": [
+        "5263acb9fc07bef73aadb2311863d41f576dedefa5242f95a498dcf9e1f51f27"
+      ],
+      "Water": [
+        "a55571c9db30026e44ac0bdd7674d9c597d8254732feb18418f3aaf8a5b4f418"
+      ],
+      "Glow_Props": [
+        "6d6de0e2befbf4902b295694a56aab8c7d3f441f0f2f9b1ea66b3d795eec9dd3"
+      ],
+      "Camp": [
+        "bc2a4161dfa786248c274d9003f1b6de29e739c80f16da5d65f6baa16122f56d"
+      ],
+      "Station": [
+        "24f42e0ea2161e0555693a8b4ca5be7231982a869d9b1f86e47214fecd047285"
+      ],
+      "Ruin": [
+        "cc2f21391c2729c5359921552c649f33dd821d5c4a0b6ec57d6c17a6bd596e6a"
+      ],
+      "Ruin_Door": [
+        "ba70ddbb6384e2eff97ec3d30b9d524885b2d9197bb541c619eab752fefb2f11"
+      ],
+      "TGT_ruin_target_1": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "TGT_ruin_target_2": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "TGT_ruin_target_3": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "Tower": [
+        "a7ec01032b84590f933b2598b327b0cc8893218bf24febca73e95a0734192f2b"
+      ],
+      "Tower_Halo": [
+        "7a8234ac96f48f0d635aa1c48621b0a6b0414f72352732089a4bd5c824ad76c5"
+      ],
+      "Cave": [
+        "498b1ae076ce34161e32638e65be5c019c297d4fde6e4feb2120fef1771b5929"
+      ],
+      "Waterfall": [
+        "bf2bd3192909a572520904fde45ffa07073b287db02b5ee2f3903d896d087e6c"
+      ],
+      "Island": [
+        "2d6eef8841aad53b6b8764c988608f90d2fc4f649019d225fb9de7adaaaa1724"
+      ],
+      "Crossings": [
+        "9de9faa66a66a23ef17d2d4720eba68e6cc8a7eaf4e5a4976b075068f81e1130"
+      ],
+      "Lamps": [
+        "549edda36fc81b5c1b8f261c67c763c087af547626306d021d1c3f3ba68e10d5"
+      ],
+      "TGT_range_target_1": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "TGT_range_target_2": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "TGT_range_target_3": [
+        "8b719fa23049fa0769a284b38278f503887dc4a1dbdbc11d3b0e9dc02d21b744"
+      ],
+      "Summon_Beam": [
+        "4ebe74849336162d63e086a63597961eaaad2f6212940dae4e00e6a6b7741ede"
+      ],
+      "Campus": [
+        "2a6738ab11341a66ddb761338935da270dc57e9e98ee1c7fc3cc71e193bd3962"
+      ],
+      "Seam_west_Veil": [
+        "1b42490e08fdaf6c776388f3c449c2832b60a328d632207021a1d1650ee57cd6"
+      ],
+      "Seam_west_Gate": [
+        "21e590dac1b9a2e513607d156b28a2a5121a7cfe6e21caf1ddb04355de828940"
+      ],
+      "Ice_Bay": [
+        "5488f897d54fb4eb1139752262827b0a2a5493ae158f2ac07047bc6e45272ee2"
+      ],
+      "Seam_north_Veil": [
+        "1b42490e08fdaf6c776388f3c449c2832b60a328d632207021a1d1650ee57cd6"
+      ],
+      "Seam_north_Gate": [
+        "21e590dac1b9a2e513607d156b28a2a5121a7cfe6e21caf1ddb04355de828940"
+      ],
+      "Seam_east_Veil": [
+        "1b42490e08fdaf6c776388f3c449c2832b60a328d632207021a1d1650ee57cd6"
+      ],
+      "Seam_east_Gate": [
+        "21e590dac1b9a2e513607d156b28a2a5121a7cfe6e21caf1ddb04355de828940"
+      ],
+      "Seam_south_Veil": [
+        "1b42490e08fdaf6c776388f3c449c2832b60a328d632207021a1d1650ee57cd6"
+      ],
+      "Seam_south_Gate": [
+        "21e590dac1b9a2e513607d156b28a2a5121a7cfe6e21caf1ddb04355de828940"
+      ],
+      "Seams": [
+        "7e1fde2f958ac0fa3f27aa36c8bd5b577830bdd3f7946d49389c7e2fa70c6b0e"
+      ],
+      "Valley_HQ_Optical_Stone": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Valley_HQ_Optical_Glass": [
+        "d2dad55946a31649fca23d2672c86ccfd42873f8fa0e8a0cefe0238d28d62725"
+      ],
+      "Valley_HQ_Optical_Metal": [
+        "8e9a39fabc9e996ccb9a6f26df4716afa2a7bb3e4815716a61ff72aed97c5d9a"
+      ],
+      "Valley_HQ_Optical_Ceramic": [
+        "c5832de90c3100c1f6d68c0a52c21c780493b6706b0e03d0866b2659c1e05b15"
+      ],
+      "Valley_HQ_Optical_Brass": [
+        "a44cd7728e69bfc89745b22de268c30f7591e3d800815efbf1ab2f5ef6b1e52e"
+      ],
+      "Valley_HQ_Optical_Timber": [
+        "634daaa92a83a13743eb077ba239fcb23af10009a00369b11428f3d01fbe737f"
+      ],
+      "Valley_Armory_Fabrication_Ceramic": [
+        "adb916e9f682d9a66f8b936fc6eb498648240c6d71605616e41488f8d00f3dd7"
+      ],
+      "Valley_Armory_Fabrication_Glass": [
+        "e8d7c85b8fcc1fc0249e481bd08e3ffc4afe615a493df3399b7aba9b8497b124"
+      ],
+      "Valley_Armory_Fabrication_Metal": [
+        "955e7d922896bd0aff8a5ec4452108c055ff1af03e9ee30961a3b51f18d8fd18"
+      ],
+      "Valley_Armory_Fabrication_Brass": [
+        "2402eb313f73f7a12cc7967a1b1a41ec500c934ded216cfe50037dba08f64f77"
+      ],
+      "Valley_Armory_Fabrication_Canvas": [
+        "982d06d4660836e5cc4cebe4496f59b9adb934dca5eed44eb1b1566704223f64"
+      ],
+      "Valley_Summon_Interferometer_Metal": [
+        "5b73b7eca2d2b865e49d0a23919ec05e05e8ef4d961d72f77001fed113c8aa2a"
+      ],
+      "Valley_Summon_Interferometer_Brass": [
+        "c1c9f66b8ce845c956493bd9275540208d79152d0d9a6be83b26c032bb417894"
+      ],
+      "Valley_Summon_Interferometer_Ceramic": [
+        "0b5d734f4af66d7188ac859796a760492aa0a996348034f92fc7f2834daa57e0"
+      ],
+      "Valley_Tower_Calibration_Metal": [
+        "8c4b1e8543cf097b09f179333b7def061d150d491a6970738be883cebc2a1a16"
+      ],
+      "Valley_Tower_Calibration_Glass": [
+        "c44331c88af05c357aa066aff90574f6e023ca5ce8970c1aec06ed2c9f732f54"
+      ],
+      "Valley_Tower_Calibration_Ceramic": [
+        "4fe3885c2ef90478f83f78fe086a92efa4d886c0fea0aa9355751f4f4827d59e"
+      ],
+      "Valley_Tower_Calibration_Brass": [
+        "5c47d2c662994879fdc6cdc3e10691fe3a2dc13910df54095814203c3d76b814"
+      ],
+      "Valley_Landing_Fieldkit_Ceramic": [
+        "b1a171e3cba52e95aabbc0ce48442f9c6eeafbf80e9faf5fddd3410045228428"
+      ],
+      "Valley_Landing_Fieldkit_Metal": [
+        "af1dd9ccd0cdddaae22eee8c0a1ba7c561cba8f82b34c1481bd21e4c892160f3"
+      ],
+      "Valley_Landing_Fieldkit_Glass": [
+        "2402eb313f73f7a12cc7967a1b1a41ec500c934ded216cfe50037dba08f64f77"
+      ],
+      "Valley_Landing_Fieldkit_Brass": [
+        "0cefe1eb6766859a7d575f030d754f16007b2ad78f4b5d950721180911f65a5f"
+      ],
+      "Valley_Landing_Fieldkit_Canvas": [
+        "13b88b5b271ac3324303ea201f388427037e8567403380267880e3d49c9a3a67"
+      ],
+      "Valley_Station_Retrofit_Glass": [
+        "35a9a431f93d1308d16da014113c715eab915118fe71093661a78d06f1209eb1"
+      ],
+      "Valley_Station_Retrofit_Metal": [
+        "2f9e968b868024a52edcf5b54e4e5a8815d0e6b099686c55228b7104be3a9d94"
+      ],
+      "Valley_Station_Retrofit_Ceramic": [
+        "c5e343f80372f3f2254f4d4026fab619f7d790902e9914d1836b7dd240bd3f2b"
+      ],
+      "Valley_Station_Retrofit_Stone": [
+        "c405a1b015e8cd5f787889b0a3429bb42262a2487577750b74e57ffc3917e6e2"
+      ],
+      "Valley_Station_Retrofit_Brass": [
+        "3523beba573b05985e96e9e5cc3bdbc3d0dc603196a603a1541b8e618014be91"
+      ],
+      "Valley_Station_Retrofit_Timber": [
+        "2ef6383583131d80ba6f0c0bf7480543c97f696677790efa42a579b9c4226fdb"
+      ],
+      "Valley_Ruin_Resonator_Stone": [
+        "0a90c9965c27278b92058faf3b7dc5a472ea6f4f392c66610b71f7ee8233a047"
+      ],
+      "Valley_Ruin_Resonator_Metal": [
+        "39883d3d1501fc0b1b215fe8446d9ad97968576401e02ba2594cbfdbd182d13e"
+      ],
+      "Valley_Ruin_Resonator_Brass": [
+        "1bcd880e8b32e9d1063f769d2bb9bdfefb48222b0796eddea95e5f31a26a7861"
+      ],
+      "Valley_Exploration_Detail_Stone": [
+        "c50068d497ddb7a50303bcdbdfb833e134aed3fbb2e14f685fe5b051415856a2"
+      ],
+      "Valley_Exploration_Detail_Metal": [
+        "549edda36fc81b5c1b8f261c67c763c087af547626306d021d1c3f3ba68e10d5"
+      ],
+      "Valley_Exploration_Detail_Brass": [
+        "2ef6383583131d80ba6f0c0bf7480543c97f696677790efa42a579b9c4226fdb"
+      ],
+      "Valley_Exploration_Detail_Ceramic": [
+        "963cc6862da1d0984f050ca981ddf8704cc1d38549177269aad40d9e9ecdd1f1"
+      ],
+      "Valley_Ford_Hydrology_Timber": [
+        "f3e227866f0837fb7073ae663d0b11139823d1ee5099a4e5b492dc257e41bbf7"
+      ],
+      "Valley_Ford_Hydrology_Metal": [
+        "f3a6c4055f32d9d0d99dca567ed8052f71d510311f5eb8eb6c7f0680dea9f083"
+      ],
+      "Valley_Ford_Hydrology_Brass": [
+        "f80f23ecdf6e12d1201c0614a32c1c65f3db636f839fb4ec2442698c844f9bf8"
+      ],
+      "Valley_Ford_Hydrology_Ceramic": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Valley_Ford_Hydrology_Glass": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Trees_Trunks": [
+        "6492152c7672502f74d3562de68fe1ea9789f0ed9b6670f73e7b0b2379d4b8a1"
+      ],
+      "Trees_Leaves": [
+        "78ebba9651ae7909cd5da19c80f04c6f56a3ff307ad6851ff318d875dea7ce3b"
+      ],
+      "Rocks": [
+        "6daf92934a91ebcb48c9f6d076e0e4c1a456870a16415e54fe28b61d60d454dd"
+      ],
+      "Bushes": [
+        "f5527c91d466324c217d7b0e21a89476ae590908b0b46db76530334d0618ceda"
+      ],
+      "COL_Terrain": [
+        "5263acb9fc07bef73aadb2311863d41f576dedefa5242f95a498dcf9e1f51f27"
+      ],
+      "COL_Ruin_Door": [
+        null
+      ],
+      "COL_TGT_ruin_target_1": [
+        null
+      ],
+      "COL_TGT_ruin_target_2": [
+        null
+      ],
+      "COL_TGT_ruin_target_3": [
+        null
+      ],
+      "COL_TGT_range_target_1": [
+        null
+      ],
+      "COL_TGT_range_target_2": [
+        null
+      ],
+      "COL_TGT_range_target_3": [
+        null
+      ],
+      "COL_Seam_west_Gate": [
+        null
+      ],
+      "COL_Seam_north_Gate": [
+        null
+      ],
+      "COL_Seam_east_Gate": [
+        null
+      ],
+      "COL_Seam_south_Gate": [
+        null
+      ],
+      "COL_Props": [
+        null
+      ]
+    },
+    "britain": {
+      "Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "Water": [
+        "a55571c9db30026e44ac0bdd7674d9c597d8254732feb18418f3aaf8a5b4f418"
+      ],
+      "Glow_Props": [
+        "4f703771d64d89eaa110da5da1ba3e57c0826e6cdc412bdac58e962221f77223"
+      ],
+      "Sword_Beam": [
+        "327bfa96e3b9890096e021d52f5d1a6bdc723509580a2f44e1e0e6b791dee5c5"
+      ],
+      "TGT_camp_dummy_1": [
+        "0645d39527f870e178a090c9cf3137f0b223ee73ed4db8a60244c72a73dc309e"
+      ],
+      "TGT_camp_dummy_2": [
+        "0645d39527f870e178a090c9cf3137f0b223ee73ed4db8a60244c72a73dc309e"
+      ],
+      "TGT_camp_dummy_3": [
+        "0645d39527f870e178a090c9cf3137f0b223ee73ed4db8a60244c72a73dc309e"
+      ],
+      "Shard_camp": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Camelot": [
+        "a2db6669450fef5039c48dc86a65aa86347aca08c378457a4f60da9ad4f06bfa"
+      ],
+      "Shard_tower": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Hall_Fire_1": [
+        "3f7d0a45cc4936b26a6f138671edd24e2b6762d813c272eb6baad82d6f8bcd10"
+      ],
+      "Hall_Fire_2": [
+        "3f7d0a45cc4936b26a6f138671edd24e2b6762d813c272eb6baad82d6f8bcd10"
+      ],
+      "Hall_Fire_3": [
+        "3f7d0a45cc4936b26a6f138671edd24e2b6762d813c272eb6baad82d6f8bcd10"
+      ],
+      "Shard_table": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Camlann": [
+        "f3323132d8fe9c7be7b51855b3e9018bdbc70bc05195985f6428c4803e1e2ac9"
+      ],
+      "Dark_Sun": [
+        "91b1c6fce557d67d54cc1ea44cfe2e6e6f774016f57c70a0071ae8d470f20855"
+      ],
+      "Sun_Core": [
+        "11deda148d8fd05aaf9d7bdc704d3aa9f04d72908652cdfd3fa0cd4f64dd6cc1"
+      ],
+      "Sun_Core_Beam": [
+        "3f4a9f35fbc7de2bf9074d25577884a7b0ddec94f8a8bb0deae3c323b1dbb163"
+      ],
+      "Trees_Leaves": [
+        "950cee7793ec36d7dc49fb7e73f87e0b7f6272c0356ab68f59e320b154427d95"
+      ],
+      "Bushes": [
+        "c3b6bf7c236a41e0c891ab8ab6af3f0ac1aae983a7d324cd6903a969138d3a4d"
+      ],
+      "Trees_Trunks_Oak": [
+        "9f654dc3f694a88f89fc49a4e6d70f41997ab6274d9e8c47840c58cbd7a11571"
+      ],
+      "Trees_Trunks_CharredWood": [
+        "0710bef7230fa56b9688a17bff089e4f5e9fd7e87232e0ad59c7cf88521c7eed"
+      ],
+      "Rocks_Sandstone": [
+        "eaf80c780294d368f8afee6b5896ec37fcc949f313e87b4e77be8dc671ff3daa"
+      ],
+      "Britain_Physical_Limestone": [
+        "ba0d8dbf4a4d8c6eb2ee321c30efdf2c77721177b982b32fc6a61c65d586d636"
+      ],
+      "Britain_Physical_Oak": [
+        "3d8ce74797ed688ea9e6b104c478e68a7234878abcd4f70000a1840c9808f8d7"
+      ],
+      "Britain_Physical_Wool": [
+        "fc182cee13b9bdc81b06b9540cb3720bb514ca5e830e149242147c5a3e230c1d"
+      ],
+      "Britain_Physical_Bronze": [
+        "8a9dfe706eea199d53b2e288f854b6382e5666be19cc117c71eedc64e4210faf"
+      ],
+      "Britain_Physical_Slate": [
+        "d5992dc94b387f43a21bd9d3c30f0dda442d7f8c3a1efd2f1a1fc6d671757527"
+      ],
+      "Britain_Physical_Sandstone": [
+        "ad37e4bc86b4683ebb3dd9ec1e8b89b0572ef273cc8492994f6c2e5400cb6d7d"
+      ],
+      "Britain_Physical_Iron": [
+        "aff699da119192c24490dc5b02a33fbb218e69c1f3cb8c4a862f4865cfaa043b"
+      ],
+      "Britain_Physical_Plaster": [
+        "e568a6ad2c3cba24b12bcdbfb82aafaa775ee4e690996c0405d41bc99c3af7d4"
+      ],
+      "Britain_Physical_CharredWood": [
+        "b17d31267dc9b48729312725b060ceb7592a85ffc526a66bee3be89ff225cd4f"
+      ],
+      "Britain_Physical_Thatch": [
+        "268dada76085aec0b1976bfc84ee6c4d9fc3700812a87929f241b16d8af448fc"
+      ],
+      "COL_Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "COL_TGT_camp_dummy_1": [
+        null
+      ],
+      "COL_TGT_camp_dummy_2": [
+        null
+      ],
+      "COL_TGT_camp_dummy_3": [
+        null
+      ],
+      "COL_Props": [
+        null
+      ]
+    },
+    "blacksail": {
+      "Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "Water": [
+        "a55571c9db30026e44ac0bdd7674d9c597d8254732feb18418f3aaf8a5b4f418"
+      ],
+      "Glow_Props": [
+        "4a8cc1cbb376060002036e2e63498cf83a69ccac71f8ebd4023e62ad2c206264"
+      ],
+      "Pass_Trail": [
+        "b8dd65352a51a7b0d602789e4624ddb0c7f13a39d9f69aa23ddd6d3fa4d2ad59"
+      ],
+      "Nassau_Ship_-159_246_Timber": [
+        "4b67b26e8daa8c5543e74a8187cb2138c37b3bb6d6d476bc12f4fdb43f48a516"
+      ],
+      "Nassau_Ship_-159_246_Canvas": [
+        "719f16846def6cb9bd46ea3e92013705ae17393da41f9101a0f0246bb2227d37"
+      ],
+      "Nassau_Ship_-159_246_Iron": [
+        "9aa465f02ed18256543ee7c253ec649ee0d08126d285dc8d4e3590fa91523b8f"
+      ],
+      "Nassau_Ship_-159_246_Brass": [
+        "dd93f412cf10117918c6155d222f00779bcfc70808ffdb29f5c6daea59daa3d6"
+      ],
+      "Nassau_Ship_-159_246_Rigging": [
+        "b2da0e1587e6b8a2546ca951b1cf9ff07e6fba469a08d882256ce9b3d8bc17f8"
+      ],
+      "Nassau_Ship_-109_238_Timber": [
+        "e2cdc745d068a57c5ae2e3fbfa9966d2068e5379164f1461f190fa1f9c599088"
+      ],
+      "Nassau_Ship_-109_238_Canvas": [
+        "d75cb74981da0280170b2b110fca55dfe610c4857bdb1b68ad35609dc4ba3406"
+      ],
+      "Nassau_Ship_-109_238_Iron": [
+        "03879a8e9518fd5dac508f92d3f82c0561f8bf0f467fe0fd3f9d92159312d740"
+      ],
+      "Nassau_Ship_-109_238_Brass": [
+        "dd93f412cf10117918c6155d222f00779bcfc70808ffdb29f5c6daea59daa3d6"
+      ],
+      "Nassau_Ship_-109_238_Rigging": [
+        "52874799622109736dadd3f049dec209de7ac4558bb8383c7b9c10503b2cf85b"
+      ],
+      "Nassau_Ship_-59_230_Timber": [
+        "83edcbe3d056b22a8bc8f8b92563eafbb8150e9574752f2d98739694f550423a"
+      ],
+      "Nassau_Ship_-59_230_Canvas": [
+        "719f16846def6cb9bd46ea3e92013705ae17393da41f9101a0f0246bb2227d37"
+      ],
+      "Nassau_Ship_-59_230_Iron": [
+        "03879a8e9518fd5dac508f92d3f82c0561f8bf0f467fe0fd3f9d92159312d740"
+      ],
+      "Nassau_Ship_-59_230_Brass": [
+        "dd93f412cf10117918c6155d222f00779bcfc70808ffdb29f5c6daea59daa3d6"
+      ],
+      "Nassau_Ship_-59_230_Rigging": [
+        "91f588f4c2d5689630df73c62ac719282adfa6069ef235b1ac7209fa992490a2"
+      ],
+      "Nassau_Tavern_Timber_Underside": [
+        "7a2579f1505082e3b40e98c1f8075b8cb5030c4f27f5453f67cb4135f875598c"
+      ],
+      "Nassau_Shipwright_Frame": [
+        "c4b7e520a66baf3cab1678976dae3522ef4f9bab4c442c92269bda5df13e0fd0"
+      ],
+      "Nassau_Shipwright_Fasteners": [
+        "88a03d3fb1f9122c5bd8f177cff90e99f76847a28f0d29664ba73b50e913fa65"
+      ],
+      "Map_Piece_1": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Nassau": [
+        "af96bb78780c88a8b5ec5724ef0d07c863506a284418fb8637b445226998d2ef"
+      ],
+      "Map_Piece_2": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Smugglers": [
+        "cccff108d13a3d0486ad2184a93f53eeb3d1f750990cf7f4900c8c6822e0a1e9"
+      ],
+      "TGT_ghost_boat_1": [
+        "e9039a8785318f5215d888608251c7ed306a95fedde4f6d0203e49dac9ad0f2d"
+      ],
+      "TGT_ghost_boat_2": [
+        "e9039a8785318f5215d888608251c7ed306a95fedde4f6d0203e49dac9ad0f2d"
+      ],
+      "TGT_ghost_boat_3": [
+        "e9039a8785318f5215d888608251c7ed306a95fedde4f6d0203e49dac9ad0f2d"
+      ],
+      "Shard_powder": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Fort": [
+        "3589e504526d6d49658851ce6a68a7cf49dff02a9170a19b508052df7f1c66e7"
+      ],
+      "Fort_Tower_Drums": [
+        "6a4a99b0c21f9fe9b38dcd55643b70c799990c6fee0ccdecad33f7d17558e2b4"
+      ],
+      "Vortex_Debris": [
+        "a92f757c0cb313eb577190da0341b765a406294260e9d132fa4475850fbc89a3"
+      ],
+      "Sky_Wrecks_Ship_-112_-160_Timber": [
+        "f67861b600d8116a6ed559148bc282dc1b3cf5f207610654ca8df3a91cb74742"
+      ],
+      "Sky_Wrecks_Ship_-112_-160_Canvas": [
+        "c8b70003183894391ef4d9cf60ee0baa91ff0c444aa7ed234d7512e228a369d3"
+      ],
+      "Sky_Wrecks_Ship_-112_-160_Rigging": [
+        "388c6a6e82e7d399f13c3962cb0ca79a29ed086d40f6817edbe68410dd6070f4"
+      ],
+      "Sky_Wrecks_Ship_-146_-142_Timber": [
+        "fa5ba4488963f6c80c92592ae6dc7851de24cf978dedbae63628ca2019ac820e"
+      ],
+      "Sky_Wrecks_Ship_-146_-142_Canvas": [
+        "909ebce031bb05d8bc3144e6a459ebd98fdb17ae30d1a54906225053185cf0e9"
+      ],
+      "Sky_Wrecks_Ship_-146_-142_Rigging": [
+        "d634e6ac95e36fe2b8a125afb44c6e72b4ce96b2edf6fa36f7cce75d03ebd140"
+      ],
+      "Sky_Wrecks_Ship_-178_-170_Timber": [
+        "bdda36bda50fabde18442b62f254920d69dbbfa7c07102ccff8d86598009c525"
+      ],
+      "Sky_Wrecks_Ship_-178_-170_Canvas": [
+        "c8b70003183894391ef4d9cf60ee0baa91ff0c444aa7ed234d7512e228a369d3"
+      ],
+      "Sky_Wrecks_Ship_-178_-170_Rigging": [
+        "160bb212532d61e69387669cbe6e5c622f32c146e72e8455f313e26ef35efedb"
+      ],
+      "Sky_Wrecks_Ship_-160_-214_Timber": [
+        "a17598b1a6728715571d84daf3c178b77908bd9098f40718524b9bd257ae60f6"
+      ],
+      "Sky_Wrecks_Ship_-160_-214_Canvas": [
+        "249348f02c7a78fc4082c07134816abfabb700d7603e1cbc2b112d1671af6d76"
+      ],
+      "Sky_Wrecks_Ship_-160_-214_Rigging": [
+        "58c3508312fb0789c1db588ab0ca05fddaeb431301da7172c4a20e88ea422115"
+      ],
+      "Sky_Wrecks_Ship_-108_-214_Timber": [
+        "2f9893fddec5a559e47edd86a87cf2e0e5d79d63dc9c74a414ec66144cc63e71"
+      ],
+      "Sky_Wrecks_Ship_-108_-214_Canvas": [
+        "c8b70003183894391ef4d9cf60ee0baa91ff0c444aa7ed234d7512e228a369d3"
+      ],
+      "Sky_Wrecks_Ship_-108_-214_Rigging": [
+        "a40cdfa652c7da291a5f96854495a9a40c3ab3fb2290a8c8493e2e56334ea95d"
+      ],
+      "Shard_compass": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Sky_Wrecks": [
+        "db325d5141a72ed8741e88ea0d0d31952676348bd61d85368359959d932dd37a"
+      ],
+      "Treasure_X": [
+        "2402eb313f73f7a12cc7967a1b1a41ec500c934ded216cfe50037dba08f64f77"
+      ],
+      "Treasure_Chest": [
+        "2ef6383583131d80ba6f0c0bf7480543c97f696677790efa42a579b9c4226fdb"
+      ],
+      "Shard_treasure": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Reef_Yawl_Timber": [
+        "bfce6397e8029505eff5bdb6d55e16768205c89ff219570fae9c6a66c51e81ef"
+      ],
+      "Reef_Yawl_Rope": [
+        "4ee7cbedd4ffd39a51b149bb84650ccae48f468c14ae9b530723aa2a14835778"
+      ],
+      "Skull_Reef": [
+        "9fdf58942c8e4d9889ac36a99cbfe4a4105264ab8fe274397dcf33450ccf115c"
+      ],
+      "Half_Wreck_RibbedHull": [
+        "40cc66524ea544883350a390363a5fab4167060bd9a47e4c0269aad8d3382a64"
+      ],
+      "Half_Wreck": [
+        "b667f3c23e5a87003dd5a3953beb8c694ecc35ae97a7f765b7d750f8b6e605f6"
+      ],
+      "Map_Piece_3": [
+        "11635a373f5ea68cd485278d65c7266a42cff45748c19f3f76bc133e81d132ec"
+      ],
+      "Lighthouse": [
+        "461d72a3843e933de6b4933626d34193dd75952018f334883f0fb12655f7fe1d"
+      ],
+      "Cold_Lamp": [
+        "713477c2e01b8800c0aea1251960623b5b4f5a8749fec3c2663ee1936de2acc1"
+      ],
+      "Warm_Lamp": [
+        "713477c2e01b8800c0aea1251960623b5b4f5a8749fec3c2663ee1936de2acc1"
+      ],
+      "Lighthouse_Beam": [
+        "95350b3ff196048341bce0c130b5b9c216c79db8c6e2c0b6325b65064c17b0a5"
+      ],
+      "Ghost_Fleet_Ship_298_22_Timber": [
+        "41f1b4537702dbd3ee29948120bfd455e56da28bfc189433f1096db58ed50171"
+      ],
+      "Ghost_Fleet_Ship_298_22_Canvas": [
+        "9f40eb8ac25e4cd17fd36317f9a4c91d9b15dcb3932eef2454ddc5122a281571"
+      ],
+      "Ghost_Fleet_Ship_298_22_Iron": [
+        "3f42430c944b24c3f3adc285b4ca6dfb2a84bcfc4f617196a78395304e48d15e"
+      ],
+      "Ghost_Fleet_Ship_298_22_Rigging": [
+        "fabfff1ab635ac6a04f6163aa29839f23d79e395798f1a98c56c90b44684f387"
+      ],
+      "Ghost_Fleet_Ship_312_58_Timber": [
+        "0c6ef14538d4f60117223f4e4741e548650ef6d173ca19c682b37bf611eab842"
+      ],
+      "Ghost_Fleet_Ship_312_58_Canvas": [
+        "9f40eb8ac25e4cd17fd36317f9a4c91d9b15dcb3932eef2454ddc5122a281571"
+      ],
+      "Ghost_Fleet_Ship_312_58_Iron": [
+        "0990e3d4aeeb229a8cd2ecd8ca6b370b66b915bfaf800341c7543189dd358bf6"
+      ],
+      "Ghost_Fleet_Ship_312_58_Rigging": [
+        "f39fedbd0462cf9f92dd41be6ec9903ed2118f7a1e336a484fc3ba6e364c9503"
+      ],
+      "Ghost_Fleet_Ship_296_104_Timber": [
+        "f3d9ef55679c997f7b0ce7e2902ce184df73cdfc87dc60a285d872acea81bbd4"
+      ],
+      "Ghost_Fleet_Ship_296_104_Canvas": [
+        "22b14b6ebb9dec0ac48057f0bb7cb6d35dd82371141bf801081270c088b183de"
+      ],
+      "Ghost_Fleet_Ship_296_104_Iron": [
+        "c103a511156dfb84f740d845e3ddbc85a86f207cce07fb259f23d8436c30fd4c"
+      ],
+      "Ghost_Fleet_Ship_296_104_Brass": [
+        "19a98db51ac04b49c4a15ba4cf0968c207d46d0c4ae7c45a98a4f15dca5c99c0"
+      ],
+      "Ghost_Fleet_Ship_296_104_Rigging": [
+        "bd0eebde0f31f58ca96a8e7810d7a30b537364ecdeff66d86f9aaf3c643aa2db"
+      ],
+      "Ghost_Fleet": [
+        "a2db6669450fef5039c48dc86a65aa86347aca08c378457a4f60da9ad4f06bfa"
+      ],
+      "Ghost_Bridge": [
+        "d60bd51ade6c98f57321b187029c9e665a8fb2805e78d771b8326c5ce866a55b"
+      ],
+      "Sea_Core_Dark": [
+        "2a8a217b99f3dcbc0e7208ae295d3e3d823f44d1e766f647eafdf70bab8924c4"
+      ],
+      "Sea_Core": [
+        "11deda148d8fd05aaf9d7bdc704d3aa9f04d72908652cdfd3fa0cd4f64dd6cc1"
+      ],
+      "Sea_Core_Beam": [
+        "3f4a9f35fbc7de2bf9074d25577884a7b0ddec94f8a8bb0deae3c323b1dbb163"
+      ],
+      "Lamps": [
+        "3f6a1d1ede3bf7ee11bd463bccf92bf02c763b757645ba7548749a8996315db5"
+      ],
+      "Trees_Trunks": [
+        "56fa7aee918d1221e3abb79c6b32ecc24331e8255fa45e3577df95cecb6f73fb"
+      ],
+      "Trees_Leaves": [
+        "60fae1bab08a20962f1e4184cc2fd28e8642a2ed580d4e474db8596b85c7f010"
+      ],
+      "Rocks": [
+        "cc7a0b34704da749a652f2e18d8327cd2d424a707644bc8dd2c4bfa3901546bd"
+      ],
+      "Bushes": [
+        "d04f68f21a1347be4fbcecd0b4355a7c9107133e727db515567d277dedad00bc"
+      ],
+      "Nassau_Craft_Timber": [
+        "29ae029d8a2f7f324bf4855bda6d6916d301e3a235a2f261b58e3745487f4b47"
+      ],
+      "Nassau_Craft_Iron": [
+        "be4d785b18f9d1bfe89006d68bdf6b57238509d3edcba12380ffc0ace70eb40a"
+      ],
+      "Nassau_Craft_Rope": [
+        "4351017e654411272f20bba2bd2effed5b11d0507de3fce01f4ae0c5fb79227e"
+      ],
+      "Nassau_Craft_Plaster": [
+        "73c5249df00f5769629a636be020bc5db6df50e608e89c6c609003a684b89906"
+      ],
+      "Nassau_Craft_Terracotta": [
+        "bf4f24d6e26a078cb9ae34c969e0b00be850594afaae8ae590bc2b80bd2c519b"
+      ],
+      "Nassau_Craft_Stone": [
+        "8d1bc4e59742fb9da71a6abc5f4897ca7c5a3453c6f887b3a8505a397ed02928"
+      ],
+      "Nassau_Craft_Canvas": [
+        "1b3c9aacfd145227845d36151939a63c596babe8d58384b23aeb3a9b1151cab0"
+      ],
+      "Nassau_Craft_Brass": [
+        "aaff4644ba5cc311fc23e81051123882833a3100032f6b86bffb27faa5dbf61b"
+      ],
+      "Nassau_Craft_Shingle": [
+        "a074448541b91f92808af2964225927b2a1bf83857f30419dca71ab12b64a1ad"
+      ],
+      "Nassau_Craft_Thatch": [
+        "195893b2078f0322ae467a17c06adcb383325c94076df5733ac84aa52e6dfdc7"
+      ],
+      "COL_Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "COL_TGT_ghost_boat_1": [
+        null
+      ],
+      "COL_TGT_ghost_boat_2": [
+        null
+      ],
+      "COL_TGT_ghost_boat_3": [
+        null
+      ],
+      "COL_Fort_Tower_Drums": [
+        null
+      ],
+      "COL_Ghost_Bridge": [
+        null
+      ],
+      "COL_Props": [
+        null
+      ]
+    },
+    "winter": {
+      "Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "Water": [
+        "a55571c9db30026e44ac0bdd7674d9c597d8254732feb18418f3aaf8a5b4f418"
+      ],
+      "Glow_Props": [
+        "033c468c969bd6897ef8d9f41377fde48a54e55bbecdd1119508724d957c794b"
+      ],
+      "Crossing": [
+        "89ea9f8ccc1af122a6a88c089a2e9b98f67054b5298f4c752ec5b16c2fb8f385"
+      ],
+      "Bivouac": [
+        "3b22b79cc62aae0cf2ec775ff633c68905ede2e7f9af46fd2bdffc279beee6a0"
+      ],
+      "Beacon_Frost_1": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Fire_beacon_1": [
+        "a73874773f9b76a5b5ed58108e9a81ec2308129db626722fd01fc16b551943f6"
+      ],
+      "Beacon_Frost_2": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Fire_beacon_2": [
+        "a73874773f9b76a5b5ed58108e9a81ec2308129db626722fd01fc16b551943f6"
+      ],
+      "Beacon_Frost_3": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Fire_beacon_3": [
+        "a73874773f9b76a5b5ed58108e9a81ec2308129db626722fd01fc16b551943f6"
+      ],
+      "Shard_eagle": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Snowfield": [
+        "aa8b9b011a03aecda2865f214ca4744238c6cd9ab088c6de724a0a4ca05c419e"
+      ],
+      "Shard_bell": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Kremlin": [
+        "585cc6983a4edd5ec6a2e17b8a61c54bc1a800409bb6e086594423a647e900b9"
+      ],
+      "Winter_Core_Dark": [
+        "7247fe62644469577ca38a2a0f1ee1bc2735d97fe5eb0df187b3abbabe51ea55"
+      ],
+      "Winter_Core": [
+        "11deda148d8fd05aaf9d7bdc704d3aa9f04d72908652cdfd3fa0cd4f64dd6cc1"
+      ],
+      "Winter_Core_Beam": [
+        "3f4a9f35fbc7de2bf9074d25577884a7b0ddec94f8a8bb0deae3c323b1dbb163"
+      ],
+      "Red_Square": [
+        "1599ad022a64634c6b684c3d7fd75a5007e8385d1bd59278391ba4742d36b653"
+      ],
+      "Ice_Gate": [
+        "3c57f1317f59e61b8acb08778aa0760ba10a572f811911e85b016c2aba3e58c4"
+      ],
+      "TGT_frost_seal_1": [
+        "5d3c638f0858f379864c2947bc69c993b52d4ccb422192225d7296049850f6dd"
+      ],
+      "TGT_frost_seal_2": [
+        "5d3c638f0858f379864c2947bc69c993b52d4ccb422192225d7296049850f6dd"
+      ],
+      "TGT_frost_seal_3": [
+        "5d3c638f0858f379864c2947bc69c993b52d4ccb422192225d7296049850f6dd"
+      ],
+      "Cavern_FracturedStrata": [
+        "eaa402ff06d9b09005b3be2fefef27faa6448b8802a3842d5841680c0d28bc01"
+      ],
+      "Cavern_SnowShelves": [
+        "126046ea2ad528ee83abdc48f0425b15c2754e284659e62f24786e5eb85f80bc"
+      ],
+      "Cavern_FrostFacets": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Shard_frost": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Gorge": [
+        "0c574cc6e4b68a7f2212ace7bb5b871870d8a81f8a6c3bf978817254b5fa4b27"
+      ],
+      "Lamps": [
+        "c18bd373fe35c68f3dfb23e0e2a3e7b728b4e79812c86121db8b4d6911b79e92"
+      ],
+      "Trees_Trunks": [
+        "d089a2a09942474d2ff3ef1af544cebc42c4dd4420bb8bf4d581a6578e2085e8"
+      ],
+      "Trees_Leaves": [
+        "a10040c1370f8ec7729e16a2731bcce2fb0a8bf20f9f66953fd20fe00e30e6f4"
+      ],
+      "Rocks": [
+        "fa393e17790c82e3ea6736f3cde3b4fac6b55de2fe8f3821f767960fb118e24e"
+      ],
+      "Bushes": [
+        "4923288c3d81b0e53ada4bea6c84ac4c5b9fa55bb230fe5f645ea90acaf42b44"
+      ],
+      "Moscow_WinterTimber": [
+        "4a12ecb92509b178fca0044fd9a64cd6fa4eae36445e4728a1a7b455b28769f9"
+      ],
+      "Moscow_WinterCharredWood": [
+        "b9d70a33bf0f17d9395dcb96b2aad74d9b9f565dfe045ba9dc51d3b20c731b93"
+      ],
+      "Moscow_WinterBrick": [
+        "2f3d734005ff9275eafd145599e02e2fdad61752d13326961ca2b4f9244a3e68"
+      ],
+      "Moscow_WinterSnow": [
+        "ce3891cbb7a3fb39033a21be652a0803cb4bef98fe883d2a56726563577e8f92"
+      ],
+      "Moscow_WinterPlaster": [
+        "8385e396cf19e8a88f424965437904236dadac58c6fb25452fa07a94a4531a85"
+      ],
+      "Moscow_WinterStone": [
+        "40a109aac6402bf4c15cb8ea8b6def5f3ecc583745d15a83dfe15e4683646700"
+      ],
+      "Moscow_WinterCopper": [
+        "05642bfaaf532f0ff8bd0673c1c225b4b34bc18c4102884d6f8affd24fbddaa1"
+      ],
+      "Kremlin_WinterPlaster": [
+        "4c205ac265a2a4c1e64f6048da3d3c3c9897f05fc38a495fe7d118f175a2ed60"
+      ],
+      "Kremlin_WinterSnow": [
+        "a94eb5d0bdeae6badbcec53f5cba158585afd850bd00fff7fbcce5f6db382e02"
+      ],
+      "Kremlin_WinterStone": [
+        "bad928dd47488e0f9c3ba27f1f51b654c22bd05814f3e21a8dd1ae6d65138d59"
+      ],
+      "Kremlin_WinterCopper": [
+        "1c30453a9a63be01c78a24c8cc8a60beec4605f9a4d5af80fd38a0790383c6f3"
+      ],
+      "Kremlin_WinterGold": [
+        "f3a4c3d216ced51527a87934404f82ace396d318b0f1be287e15120d4f58382c"
+      ],
+      "Red_Square_WinterBrick": [
+        "7b4c518c86726abed90328de25d1cbc0caaf39e1a8d4d30304f44829ab7b4698"
+      ],
+      "Red_Square_WinterStone": [
+        "63a6824743865659ac39c32bd385a3300a5dffc3a36201b81c148a41f994db9e"
+      ],
+      "Red_Square_WinterCopper": [
+        "5e1b9ab3f18ad67fff0c1e2a86a5a5a462eb7f2a8b8e9c1f5a7a879d3762e8c6"
+      ],
+      "Red_Square_WinterPlaster": [
+        "b3344f7516609eafaf5a45674c9e2377f587fd00e0899a42434ff58b07d17921"
+      ],
+      "Red_Square_WinterGold": [
+        "79f557250930692e31fa58ffc7eab0b14964be00f6ba86b783f36b93edf09dc7"
+      ],
+      "Red_Square_WinterSnow": [
+        "a734a7b112ae568b9ba1012659d7df1ea2eaa732728390026eb964dfa295c828"
+      ],
+      "Fieldworks_Details": [
+        "01279d45134fcf37005c19c29928c062ddd6c1be8788310c427206b329f8e8d5"
+      ],
+      "Crossing_WinterIron": [
+        "4d4c0384a11f1880fef358dd8f23870b2dd9714b32d544864ee01b5beb1f8cff"
+      ],
+      "Crossing_WinterCanvas": [
+        "f5ab8f904d7fcbafc2c451ec4624d20aadbe45d0ffbacfb0b73689f8ac0d71c5"
+      ],
+      "Bivouac_WinterCanvas": [
+        "e7367824a68d806bb74a67def9387eef408eef6e67234902fe972e75284802a0"
+      ],
+      "Bivouac_WinterGold": [
+        "5aba3e0dc336d49356aaab7f715e6cbebd6dea530ba6b9a2845497c3a2c2b631"
+      ],
+      "Bivouac_WinterIron": [
+        "a68b830ecc1828e872524cee57383eacf5ea00cdcae0e6e3ac1b177ecd2dd44d"
+      ],
+      "Fieldworks_Details_WinterCanvas": [
+        "8a981b8d056974ada23be4d6510d8bcd4cddb4146e0ffd50e6e9d8279666ee10"
+      ],
+      "Fieldworks_Details_WinterIron": [
+        "e088cfb051d0f9aeda32c53fedc68ebe31324c70d98736b1b68e57434dcf2e21"
+      ],
+      "Winter_House_Foundations": [
+        "7cf1f85f8ccf3809eb56fe4fa758ab5c2bef6abe18b99bfe33ea55cda1800a04"
+      ],
+      "COL_Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "COL_Ice_Gate": [
+        null
+      ],
+      "COL_TGT_frost_seal_1": [
+        null
+      ],
+      "COL_TGT_frost_seal_2": [
+        null
+      ],
+      "COL_TGT_frost_seal_3": [
+        null
+      ],
+      "COL_Winter_House_Foundations": [
+        null
+      ],
+      "COL_Winter_Ruin_Shells": [
+        null
+      ],
+      "COL_Props": [
+        null
+      ]
+    },
+    "kyoto": {
+      "Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "Water": [
+        "a55571c9db30026e44ac0bdd7674d9c597d8254732feb18418f3aaf8a5b4f418"
+      ],
+      "Kyoto_RoofCraft": [
+        "771526a050a8216c474443ebde17b10d2458ce8aa2b8c35128bd355c19ddf475"
+      ],
+      "Glow_Props": [
+        "ad483f4abaac98c222b335afcd299f9bef298f2ffdc51662e9c9e91b7add8d19"
+      ],
+      "Kyoto_Flames": [
+        "db4bacc40baa86b849bb8ba177dc0d6c1f964e40cfa7f961b699b30853d04937"
+      ],
+      "Inari": [
+        "a455edd68a75e28324306fd6d54ea61d0e58c81d4d9c38e4577f0f2f8336b472"
+      ],
+      "Rakuchu": [
+        "78413850fdf8c8413c6afd903fbac97e0ff9053f63630b6943448205c291c001"
+      ],
+      "Rakuchu_B": [
+        "6b5521c1a0314ef2f2dc9ca89d76599458e7ad688a4d111225a844164667ba9e"
+      ],
+      "Honnoji": [
+        "d6c130a4944ca7dd1d6405da95fa8a41ec400908ae33a3857101113a55c19fd3"
+      ],
+      "Kyoto_Core_Dark": [
+        "d606d776ee73c3ad2ac01637fbcde68c3b85e581e06f1dba673cb7ff3d36e4f2"
+      ],
+      "Kyoto_Core": [
+        "11deda148d8fd05aaf9d7bdc704d3aa9f04d72908652cdfd3fa0cd4f64dd6cc1"
+      ],
+      "Kyoto_Core_Beam": [
+        "3f4a9f35fbc7de2bf9074d25577884a7b0ddec94f8a8bb0deae3c323b1dbb163"
+      ],
+      "Kamo": [
+        "881dde6f52fadecd0843f296a331913f87ff788de43761aea663587f7f1884a5"
+      ],
+      "Shard_kiyomizu": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Higashiyama": [
+        "5579fac5cbaea5ae04e5ea68740ab5e488e74cad9c2abce5bde98a7132f639cf"
+      ],
+      "Kinkaku": [
+        "a9157b81dac947a0dcfad980c8b96701880958a702c5bdd275d48de6f49a5c26"
+      ],
+      "Kinkaku_Gold": [
+        "8e278271d5e72dc84f47f72b5baaa3ec09df60c03c978f28a7d5c546cfeb53a8"
+      ],
+      "Shard_kinkaku": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "TGT_kikyo_banner_1": [
+        "a474b1119c214b7f2bd38f04450edc68a50689f02d50958b9adfc8fe67fb7b28"
+      ],
+      "TGT_kikyo_banner_2": [
+        "a474b1119c214b7f2bd38f04450edc68a50689f02d50958b9adfc8fe67fb7b28"
+      ],
+      "TGT_kikyo_banner_3": [
+        "a474b1119c214b7f2bd38f04450edc68a50689f02d50958b9adfc8fe67fb7b28"
+      ],
+      "Akechi": [
+        "c585fd455020ee672c34b699d1f2b27703cb7aca9ec7abd9800190aeb8b9bc8c"
+      ],
+      "Shard_kikyo": [
+        "a26f2589bc817e205aed8ed29161a2538dbe40952ed97c98974e90b4b056d4b4"
+      ],
+      "Rashomon": [
+        "f17742ce4eaa0201c2eff07d6eb4481bd4ec690a23f4afc9cc2f617b865f60e9"
+      ],
+      "Arashiyama_Timber": [
+        "6384ea8a61e43d6b1c90b56cf4dc5d6cec017d4d4929cee0c0713b73a704d3ba"
+      ],
+      "Arashiyama_Roofs": [
+        "089508b67cd69232da88ca8b18bcfdd176a8364a90d08e61bed6cb72097af010"
+      ],
+      "Arashiyama_PaperAndPlaster": [
+        "634daaa92a83a13743eb077ba239fcb23af10009a00369b11428f3d01fbe737f"
+      ],
+      "Arashiyama_GardenStone": [
+        "44ad3b80cf697a26fadf32063c5b8704114f4ff92025d330d69bd4015ab9fc08"
+      ],
+      "Arashiyama_Bamboo": [
+        "bd46b925f276cc1d5f94d9f23556f3958eb13f2293b33f7baecab356376f4c6e"
+      ],
+      "Arashiyama_Foliage": [
+        "43a208f07e209aa1595bed2fb167452b2fc327708ed1ab69b04e2d2d4ce3b811"
+      ],
+      "Arashiyama_RiverfrontCloth": [
+        "30c49ccba5383fcbb2367ae2acebf3f1282e1900aab62fc4875e30be16d1df46"
+      ],
+      "Arashiyama_GardenWater": [
+        "f54fbf661b48f1475135263ec4a1a084f6ba7c9b967de4ff7f80942345bab9b3"
+      ],
+      "Arashiyama_Lanterns": [
+        "963cc6862da1d0984f050ca981ddf8704cc1d38549177269aad40d9e9ecdd1f1"
+      ],
+      "Lamps": [
+        "957738ef70f6774b436b6d4bf6c52134f2160c21fa5e8398b8b2f7d16e48a84d"
+      ],
+      "Trees_Trunks": [
+        "96ccff7c5af8847fa697a92d6025706098f04cb0fbd5e78aff363d986f179319"
+      ],
+      "Trees_Leaves": [
+        "52addbe50b6cb89b89534b3b0bb32197e8a3b72bff58f3305b4434f177170985"
+      ],
+      "Rocks": [
+        "62fb6da16ea34e8e94fd955a02c1fd21c374c545bb7376fa80a8baa14f8b178e"
+      ],
+      "Bushes": [
+        "9b6bcdd85f789dfbfb53eafd1f9949f97435d0275e14190921c931b1fde976da"
+      ],
+      "Kyoto_Hillside_Foundations": [
+        "2fecf6f08693d8ada13ff08e9b3702ba1cc0e76847d07640c5bd664b672464cd"
+      ],
+      "COL_Terrain": [
+        "3af837b757483379b7e3d0da12104030f2c6047c9555256f823e7a2eb4c8f28b"
+      ],
+      "COL_TGT_kikyo_banner_1": [
+        null
+      ],
+      "COL_TGT_kikyo_banner_2": [
+        null
+      ],
+      "COL_TGT_kikyo_banner_3": [
+        null
+      ],
+      "COL_Kyoto_Hillside_Foundations": [
+        null
+      ],
+      "COL_Props": [
+        null
+      ]
+    }
+  }
+}

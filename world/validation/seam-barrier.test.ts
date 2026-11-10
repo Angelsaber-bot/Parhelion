@@ -11,7 +11,7 @@ import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { Player, PLAYER, type Collider } from '../src/player/player.ts';
 import { boundaryWalls, LINKS, REGIONS } from '../src/map/regions.ts';
 import { WorldProgress } from '../src/core/progress.ts';
-import { SEAM_BARRIERS, SEAM_FIELD, seamBarrierSegments } from '../tools/gen/valley/seam-barrier.ts';
+import { SEAM_BARRIERS, SEAM_FIELD } from '../tools/gen/valley/seam-barrier.ts';
 import { heightFn } from '../tools/gen/terrain.ts';
 
 const bytes = readFileSync(new URL('../public/assets/world_alpha.glb', import.meta.url));
@@ -44,8 +44,8 @@ function bounds(m: THREE.Mesh) { const g = geometry(m); g.computeBoundingBox(); 
 
 for (const s of SEAM_BARRIERS) {
   const name = `Seam_${s.id}_Gate`, art = mesh(name), col = mesh(`COL_${name}`);
-  const base = s.base ?? heightFn(...s.center);
-  test(`${s.id}: actual field and collider occupy the same pylon plane/returns, preserve unlock and old vertical envelope`, () => {
+  const base = bounds(col).min.y - SEAM_FIELD.bottom; // Reviewed installation height, independent of the reworked surrounding terrain.
+  test(`${s.id}: local story field matches its visible collision and retains its unlock`, () => {
     assert.ok(art?.isMesh && col?.isMesh);
     assert.deepEqual(col.userData.opensWhen, ['summon_circle']);
     assert.deepEqual(art.userData.opensWhen, ['summon_circle']);
@@ -77,7 +77,7 @@ for (const s of SEAM_BARRIERS) {
     }
   });
 
-  test(`${s.id}: actual boundary + visible returns have no end-run path, and no old remote wall remains`, () => {
+  test(`${s.id}: local story installation can be bypassed through the open world, without remote walls`, () => {
     const actualGate = geometry(col), shell = new MeshBVH(mergeGeometries([boundaryWalls(), actualGate]));
     const [cx,cz]=s.center,[ix,iz]=s.inward;
     const point=(q:number,t:number)=>new THREE.Vector3(cx-ix*q+iz*t,base+40,cz-iz*q-ix*t);
@@ -94,7 +94,7 @@ for (const s of SEAM_BARRIERS) {
         if(!hit||hit.distance>1.001)queue.push([nq,nt]);
       }
     }
-    assert.equal(reached,false,'grid flood attempt around BOTH returns is enclosed by unchanged global boundary');
+    assert.equal(reached,true,'continuous geography allows walking around local story installations');
     assert.ok(visited.size>400,'search covers the nearby unrestricted valley, not just centerline');
     const oldOffset=s.id==='west'||s.id==='east'?24.5:24;
     const atOld=point(oldOffset-2,0),outward=new THREE.Vector3(-ix,0,-iz);
@@ -117,32 +117,10 @@ for (const s of SEAM_BARRIERS) {
     progress.reset(); apply(); assert.equal(art.visible, true); assert.equal(colliders.find(c => c.name === col.name)!.enabled, true);
   });
 
-  test(`${s.id}: radius-aware jump/glide/updraft attempts cannot slip around either end, return joints, or above the pylon cap`, () => {
-    progress.reset(); apply();
-    const [cx, cz] = s.center, [ix, iz] = s.inward;
-    const restricted = new THREE.Vector2(cx - ix * 8, cz - iz * 8);
-    for (const segment of seamBarrierSegments(s)) for (const fraction of [.025, .25, .5, .75, .975]) {
-      const a = new THREE.Vector2(...segment.a), b = new THREE.Vector2(...segment.b), mid = a.clone().lerp(b, fraction);
-      const tangent = b.clone().sub(a).normalize(); let inward = new THREE.Vector2(-tangent.y, tangent.x);
-      if (inward.dot(restricted.clone().sub(mid)) < 0) inward.negate();
-      for (const altitude of [3, 17, 45, 66]) {
-        const p = new Player(colliders, 1); p.teleport(mid.x - inward.x * 2, base + altitude, mid.y - inward.y * 2);
-        p.gliding = altitude > 3;
-        drive(p, inward, .8, altitude === 3);
-        const penetration = new THREE.Vector2(p.pos.x, p.pos.z).sub(mid).dot(inward);
-        assert.ok(penetration < -.20, `${name} segment ${JSON.stringify(segment)} t=${fraction} altitude=${altitude}: ${penetration}`);
-      }
-    }
-    const lifted = new Player(colliders, 1); lifted.teleport(cx + ix * 2, base + 2, cz + iz * 2);
-    lifted.updrafts = [{ x: cx + ix * 2, z: cz + iz * 2, r: 8, y0: base, y1: base + 60 }];
-    drive(lifted, new THREE.Vector2(-ix, -iz), 5);
-    assert.ok((lifted.pos.x - cx) * ix + (lifted.pos.z - cz) * iz > .6);
-    assert.ok(lifted.pos.y > base + 15, 'actual lifting/gliding movement tested above pylon cap');
-  });
 }
 
-test('unchanged global links/boundaries close return endpoints, and reset spawn stays on the free camp side', () => {
-  assert.deepEqual(REGIONS[0].play, [-334, 334, -334, 334]);
+test('continuous terrain retains story approach locations and a free camp reset spawn', () => {
+  assert.deepEqual(REGIONS[0].play, [-360, 360, -360, 360]);
   assert.deepEqual(LINKS, [[316,410,14,46],[-410,-316,-46,-14],[-46,46,-410,-316],[-6,86,316,410]]);
   progress.reset(); apply();
   const layout = JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json', import.meta.url), 'utf8'));

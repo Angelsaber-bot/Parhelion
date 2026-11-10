@@ -1,0 +1,36 @@
+{
+  "before": [],
+  "title": "露西 · 布商",
+  "text": "蓝布是守城旗，白布留给侧院的药草师。别把两卷都搬去城墙。",
+  "done": [],
+  "grounded": true,
+  "errors": [],
+  "discovered": {
+    "found": [
+      "orleans_belfry_view",
+      "orleans_cathedral",
+      "orleans_cloister",
+      "orleans_harbour",
+      "orleans_market",
+      "orleans_muster",
+      "orleans_ramparts",
+      "orleans_repairyard",
+      "orleans_rivergate"
+    ],
+    "done": []
+  },
+  "restored": {
+    "found": [
+      "orleans_belfry_view",
+      "orleans_cathedral",
+      "orleans_cloister",
+      "orleans_harbour",
+      "orleans_market",
+      "orleans_muster",
+      "orleans_ramparts",
+      "orleans_repairyard",
+      "orleans_rivergate"
+    ],
+    "done": []
+  }
+}

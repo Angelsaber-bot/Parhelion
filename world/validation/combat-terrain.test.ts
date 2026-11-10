@@ -5,7 +5,8 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls } from '../src/map/regions.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, regionAt } from '../src/map/regions.ts';
+import { CAMPAIGN_REGION_IDS } from '../src/core/regionIdentity';
 import { makeMinibossSpawns, MINIBOSSES } from '../src/combat/minibosses.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
 import { makeWildernessSpawns, WorldCombatState, BOSS_REQUIREMENTS } from '../src/combat/combat.ts';
@@ -32,12 +33,9 @@ const layout = mergeLayouts(parts), query = makeCombatTerrain(colliders, layout)
 const spawns = makeWildernessSpawns(layout.world.seed ^ 537, query.safeSpawn);
 
 test('actual five-region map admits bounded dry, clear wilderness encounters away from quest hubs', () => {
-  assert.equal(spawns.length, 145, `expected 145 accepted seeded wilderness locations: ${JSON.stringify(spawns)}`);
-  assert.equal(spawns.filter(s => s.p.x < -360).length, 27);
-  assert.equal(spawns.filter(s => s.p.x > 360).length, 29);
-  assert.equal(spawns.filter(s => s.p.z < -360).length, 29);
-  assert.equal(spawns.filter(s => s.p.z > 360).length, 29);
-  assert.equal(spawns.filter(s => s.p.x >= -360 && s.p.x <= 360 && s.p.z >= -360 && s.p.z <= 360).length, 31);
+  assert.ok(spawns.length>=140&&spawns.length<=150,`continuous-world seeded population ${spawns.length}`);
+  for(const region of CAMPAIGN_REGION_IDS)assert.ok(spawns.filter(s=>regionAt(s.p.x,s.p.z).id===region).length>=25,`${region} retains regional encounter density`);
+  assert.ok(spawns.every(s=>(CAMPAIGN_REGION_IDS as readonly string[]).includes(regionAt(s.p.x,s.p.z).id)),'framework domains do not inherit completed campaign combat');
   for (const s of spawns) {
     assert.ok(query.clear(s.p), `${s.id} has capsule clearance`);
     assert.ok(s.p.y > layout.world.waterLevel + 0.45, `${s.id} is on dry ground`);
