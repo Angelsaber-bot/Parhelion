@@ -16,7 +16,20 @@ test('adventure actual main: four-region evidence leads to emitters, Warden, tow
  const hold=()=>{frame();key(true);frame(190);key(false);frame();};
  try{
   (d.getElementById('start')as HTMLElement).click();await Promise.resolve();frame(2);await h.settleAssets();
-  for(const id of A.emitters){place(id);tap();assert.ok(w.combat.storyEncounter?.id.startsWith('adventure_guard_'),d.getElementById('toast')?.textContent);clear();hold();assert.ok(w.done.has(id),`${id}: ${d.getElementById('toast')?.textContent}`);}
+  for(const id of A.emitters){
+   place(id);tap();assert.ok(w.combat.storyEncounter?.id.startsWith('adventure_guard_'),d.getElementById('toast')?.textContent);
+   // The production attack handler interrupts interaction before the last hit.
+   // A victory must survive this, then re-engaging the panel must not respawn it.
+   const attack=w.settings.bindingsFor('melee')[0];
+   d.body.dispatchEvent(new h.window.KeyboardEvent('keydown',{code:attack,bubbles:true,cancelable:true}));
+   d.body.dispatchEvent(new h.window.KeyboardEvent('keyup',{code:attack,bubbles:true,cancelable:true}));
+   assert.equal(w.adventureRuntime.channel,null,'normal combat input cancels the hold');
+   const encounter=w.combat.storyEncounter.id;clear();frame(90);
+   assert.ok(w.done.has(`${encounter}_cleared`),'real combat victory survives attack interruption');
+   assert.ok(JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY)!).done.includes(`${encounter}_cleared`),'guard victory is saved before panel completion');
+   tap();assert.equal(w.combat.storyEncounter,null,'reopening the panel never replaces defeated guards');
+   hold();assert.ok(w.done.has(id),`${id}: ${d.getElementById('toast')?.textContent}`);
+  }
   place('adventure_guardian');tap();assert.equal(w.combat.storyEncounter?.id,'adventure_guardian');clear();assert.ok(w.done.has(A.guardian));
   place('adventure_tower');tap();hold();assert.ok(w.done.has(A.takeover),d.getElementById('toast')?.textContent);
   place('adventure_exit');tap();assert.ok(w.done.has(A.escaped));place('adventure_tomorrow');tap();assert.ok(w.done.has(A.ending),d.getElementById('toast')?.textContent);

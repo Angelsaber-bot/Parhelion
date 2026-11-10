@@ -15,7 +15,9 @@ export function adventureEncounter(action:AdventureAction,guardian=false):StoryE
 }
 export function cartCheckpoint(done:ReadonlySet<string>,length:number,prefix='adventure_cart_leg_'){let leg=0;while(leg<length-1&&done.has(`${prefix}${leg+1}`))leg++;return leg;}
 export function createAdventureRuntime(h:AdventureHooks){
- let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,leg=cartCheckpoint(h.done,h.path.length),fraction=0,guardianPending=false,patrolCleared=false;
+ let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,leg=cartCheckpoint(h.done,h.path.length),fraction=0,guardianPending=false,pendingGuard:string|null=null;
+ const guardId=(id:string)=>`adventure_guard_${id.slice(-1)}`;
+ const guardsCleared=(id:string)=>h.done.has(`${guardId(id)}_cleared`);
  const commit=(id:string)=>{if(h.done.has(id))return false;h.done.add(id);if(!h.save())h.toast(['进度尚未写入存档，请重试保存或备份。','Progress has not been saved; retry saving or make a backup.']);h.changed();return true;};
  const finalReady=()=>['britain','blacksail','winter','kyoto'].every(r=>adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',h.done))&&(!dramaActive(h.done)||(dramaReported(h.done).length===4&&h.done.has(JOURNEY_DRAMA.confession)));
  function blocked(action:AdventureAction):Localized|null{
@@ -56,11 +58,12 @@ export function createAdventureRuntime(h:AdventureHooks){
     const result=h.start(adventureEncounter(action,true));if(result.ok)guardianPending=true;h.toast(result.ok?['守门者已显现。观察预警，侧移躲开突刺，在收势时反击。','The Warden appears. Read the tells, sidestep its thrust and punish recovery.']:result.reason??['先脱离其他战斗。','Leave other combat first.']);return true;
    }
    if(current?.id===id)return true;
-   if((A.emitters as readonly string[]).includes(id)&&h.encounter()!==`adventure_guard_${id.slice(-1)}`){
+   if((A.emitters as readonly string[]).includes(id)&&!guardsCleared(id)&&h.encounter()!==guardId(id)){
     const result=h.start(adventureEncounter(action));if(!result.ok){h.toast(result.reason??['发射器守卫暂不能接通，请稍后重试。','Cannot engage the emitter guards; try again shortly.']);return true;}
+    pendingGuard=guardId(id);
    }
    if(action.seconds&&current?.id===action.id)return true;
-   if(action.seconds){current=action;patrolCleared=false;channel=new RelayChannel(action.seconds);channel.reset(h.damage());h.toast([`${action.label[0]}：站稳，松开后按住交互键 ${action.seconds} 秒。`,`${action.label[1]}: stand still, release then hold Interact for ${action.seconds} seconds.`]);return true;}
+   if(action.seconds){current=action;channel=new RelayChannel(action.seconds);channel.reset(h.damage());h.toast([`${action.label[0]}：站稳，松开后按住交互键 ${action.seconds} 秒。`,`${action.label[1]}: stand still, release then hold Interact for ${action.seconds} seconds.`]);return true;}
    if(action.flag)commit(action.flag);
    if(id==='adventure_tomorrow'&&h.ending)h.ending(getAdventureEndingText());
    else if(id==='adventure_tomorrow')h.toast(['你记录了一个没有被预先写好的明天。所有归路仍然开放，可以继续探索、与从者同行或自愿重战。','You record a tomorrow that was not written in advance. Every return route remains open: explore, travel with your companion, or choose a rematch.']);
@@ -68,7 +71,7 @@ export function createAdventureRuntime(h:AdventureHooks){
   },
   update(frame:Omit<RelayChannelFrame,'active'|'damageRevision'>){
    if(guardianPending&&h.encounter()!=='adventure_guardian')guardianPending=false;
-   if(current&&(A.emitters as readonly string[]).includes(current.id)&&!patrolCleared&&h.encounter()!==`adventure_guard_${current.id.slice(-1)}`){current=null;channel.reset(h.damage());}
+   if(current&&(A.emitters as readonly string[]).includes(current.id)&&!guardsCleared(current.id)&&h.encounter()!==guardId(current.id)){current=null;channel.reset(h.damage());}
    const result=channel.update({...frame,active:!!current,damageRevision:h.damage()});
    if(result.interrupted)h.toast(['操作中断，已提交的世界变化保留；松开交互后重新操作。','Interaction interrupted. Committed changes remain; release Interact and try again.']);
    if(current&&result.completedNow&&h.reachable(current.id)&&!blocked(current)){
@@ -86,8 +89,8 @@ export function createAdventureRuntime(h:AdventureHooks){
    if(!Number.isFinite(next)||!h.moveCart(this.cartPosition,p))return;
    fraction=next;if(fraction>=1){leg++;fraction=0;commit(`adventure_cart_leg_${leg}`);if(leg===h.path.length-1)h.toast(['药车已到渡口，等待你验收。','The medicine cart has reached the crossing and awaits your confirmation.']);}
   },
-  victory(id:string){if(id==='adventure_harbor_alarm'){commit('adventure_harbor_alarm_cleared');return true;}if(current&&id===`adventure_guard_${current.id.slice(-1)}`){patrolCleared=true;return true;}if(id!=='adventure_guardian'||!guardianPending||!finalReady()||!A.emitters.every(flag=>h.done.has(flag)))return false;guardianPending=false;commit(A.guardian);h.toast(['守门者已解除。登塔手动接管，再沿照明出口撤离。','The Warden is defeated. Take manual control atop the tower, then follow the lit exit.']);return true;},
+  victory(id:string){if(id==='adventure_harbor_alarm'){commit('adventure_harbor_alarm_cleared');return true;}if(id===pendingGuard){pendingGuard=null;commit(`${id}_cleared`);h.toast(['发射器守卫已清除。回到装置，按住交互键关闭；守卫不会因操作中断而重生。','Emitter guards defeated. Return and hold Interact to shut it down; interrupted operation will not respawn the guards.']);return true;}if(id!=='adventure_guardian'||!guardianPending||!finalReady()||!A.emitters.every(flag=>h.done.has(flag)))return false;guardianPending=false;commit(A.guardian);h.toast(['守门者已解除。登塔手动接管，再沿照明出口撤离。','The Warden is defeated. Take manual control atop the tower, then follow the lit exit.']);return true;},
   interrupt(){current=null;channel.reset(h.damage());},
-  reset(){this.interrupt();guardianPending=false;patrolCleared=false;leg=cartCheckpoint(h.done,h.path.length);fraction=0;shipTime=0;shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_');},
+  reset(){this.interrupt();guardianPending=false;pendingGuard=null;leg=cartCheckpoint(h.done,h.path.length);fraction=0;shipTime=0;shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_');},
  };
 }

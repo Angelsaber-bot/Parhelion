@@ -5,12 +5,30 @@ import {createAdventureRuntime} from '../src/story/adventureRuntime';
 import {ADVENTURE_ACTIONS} from '../src/story/adventureSites';
 import {getEraBossRequirements,getEraPieceRequirements} from '../src/story/eraStories';
 import {RelayChannel} from '../src/story/relayChannel';
-function setup(flags:string[]=[]){const done=new Set([A.started,'armory_rack',...flags]),actions=new Map(ADVENTURE_ACTIONS.map(a=>[a.id,a]));let saves=0,damage=0,near=true,encounter:string|null=null;
- const runtime=createAdventureRuntime({done,actions,path:[[0,0,0],[2,0,0],[4,0,0]],reachable:()=>near,save:()=>{saves++;return true;},changed(){},toast(){},damage:()=>damage,supply:()=>true,encounter:()=>encounter,start:spec=>{encounter=spec.id;return{ok:true};},cancel(){encounter=null;},moveCart:()=>true});
+function setup(flags:string[]=[]){const done=new Set([A.started,'armory_rack',...flags]),actions=new Map(ADVENTURE_ACTIONS.map(a=>[a.id,a]));let saves=0,starts=0,damage=0,near=true,encounter:string|null=null;
+ const runtime=createAdventureRuntime({done,actions,path:[[0,0,0],[2,0,0],[4,0,0]],reachable:()=>near,save:()=>{saves++;return true;},changed(){},toast(){},damage:()=>damage,supply:()=>true,encounter:()=>encounter,start:spec=>{starts++;encounter=spec.id;return{ok:true};},cancel(){encounter=null;},moveCart:()=>true});
  const frame={dt:1/60,held:false,playable:true,inRange:true,grounded:true,moving:false,attacking:false};
  const hold=(id:string)=>{runtime.interact(id);runtime.update(frame);for(let n=0;n<200;n++)runtime.update({...frame,held:true});runtime.update(frame);};
- return{done,runtime,frame,hold,get saves(){return saves;},set damage(n:number){damage=n;},set near(b:boolean){near=b;}};
+ return{done,runtime,frame,hold,get saves(){return saves;},get starts(){return starts;},set encounter(id:string|null){encounter=id;},set damage(n:number){damage=n;},set near(b:boolean){near=b;}};
 }
+const finaleFlags=['sun_core','sea_core','blackbeard_contract',A.departed,'winter_core','napoleon_contract',A.arrived,'musashi_contract',A.evidence];
+test('adventure: defeated emitter guards stay cleared through attacking, interruption, reset and reload',()=>{
+ const h=setup(finaleFlags),id=A.emitters[0],encounter='adventure_guard_1';
+ assert.equal(h.runtime.victory(encounter),false,'a victory without an admitted encounter cannot grant progress');
+ h.runtime.interact(id);assert.equal(h.starts,1);h.runtime.interrupt();
+ h.encounter=null;assert.equal(h.runtime.victory(encounter),true);
+ assert.ok(h.done.has(`${encounter}_cleared`));assert.equal(h.done.has(id),false,'clearing guards does not silently shut down the panel');
+ h.runtime.reset();h.runtime.interact(id);assert.equal(h.starts,1,'reset retains the saved clear');
+ h.runtime.interrupt();h.hold(id);assert.ok(h.done.has(id));assert.equal(h.starts,1);
+ const reload=setup([...finaleFlags,`${encounter}_cleared`]);reload.hold(id);
+ assert.ok(reload.done.has(id));assert.equal(reload.starts,0,'a saved clear can finish after reload without another encounter');
+ reload.runtime.interact(A.emitters[1]);assert.equal(reload.starts,1,'clearing one emitter does not clear the next');
+});
+test('adventure: unfinished emitter battles retry normally without granting a guard clear',()=>{
+ const h=setup(finaleFlags),id=A.emitters[0];h.runtime.interact(id);h.runtime.interrupt();
+ h.encounter=null;h.runtime.reset();h.runtime.interact(id);
+ assert.equal(h.starts,2);assert.equal(h.done.has('adventure_guard_1_cleared'),false);
+});
 test('adventure: minimum uplink opens travel without forging old tower/seam/summon facts',()=>{
  const h=setup();assert.equal(adventureTravelOpen(h.done),false);h.done.add(A.online);assert.ok(adventureTravelOpen(h.done));
  assert.equal(getAdventureGuide('alpha',h.done)?.targetId,'saber_contract');for(const old of ['tower_console','summon_circle','relay_a','relay_b'])assert.equal(h.done.has(old),false);

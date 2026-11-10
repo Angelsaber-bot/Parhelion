@@ -236,6 +236,8 @@ export function addHonnojiCraft(b:Batch,x:number,y:number,z:number,w:number,d:nu
     addBracket(b,...f.point(u,y+7.4,w/2+.40),Math.PI/2,1.1,'#4a3b2d');
   }
   f.box(0,y+1.2,w/2+.8,d+2,.3,2.0,'#665037');
+  // Join the veranda posts and brackets to the new attic at the wall line.
+  f.box(0,y+7.95,w/2+.35,d+2,.30,1.1,'#4a3b2d');
   // Jagged structural frames protruding through the fire, built as skewed broken timbers.
   for(let k=0;k<5;k++) {
     const zz=z-d*.35+k*d*.175;

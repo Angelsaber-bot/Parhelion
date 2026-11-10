@@ -269,6 +269,17 @@ export function buildKyoto(heightAt: HeightAt) {
     // the gate: a four-legged gate house and a plank bridge over the moat
     for (const s of [-1, 1]) b.add(CYL8, C.woodDark, T(hx + H, y + 2.6, hz + s * (gateHalf + 0.4), 0, 0.35, 5.2, 0.35));
     gable(b, hx + H, y + 5.2, hz, Math.PI / 2, 10, 6, 2.4, C.tileDark);
+    // The roof is a curved skin: the posts end at its eave datum, below the
+    // ridge. A lintel and two roof-following timber trusses carry it across.
+    b.box(hx + H, y + 5.05, hz, .42, .30, 9.4, C.woodDark, 0, false);
+    for (const s of [-1, 1]) {
+      const z = hz + s * (gateHalf + .4);
+      addBeam(b, [hx + H, y + 5.15, z], [hx + H, y + 7.62, z], .22, .24, C.woodDark);
+      for (const side of [-1, 1]) for (let k = 0; k < 5; k++) {
+        const at = (t: number): [number, number, number] => [hx + H + side * 3 * t, y + 5.2 + 2.4 * Math.pow(1-t, 1.45) + .3 * Math.pow(t, 8) - .23, z];
+        addBeam(b, at(k/5), at((k+1)/5), .18, .20, C.woodDark);
+      }
+    }
     b.box(hx + H + HONNOJI.moat / 2, CITY_Y + 0.25, hz, HONNOJI.moat + 3, 0.35, 5, C.wood);
     for (const s of [-1, 1]) b.box(hx + H + HONNOJI.moat / 2, CITY_Y + 0.6, hz + s * 2.4, HONNOJI.moat + 2, 0.9, 0.15, C.woodDark);
     // corner watch platforms (yagura) with banners of the Oda: black on yellow
@@ -277,6 +288,14 @@ export function buildKyoto(heightAt: HeightAt) {
       for (const [px, pz] of [[-1.6, -1.6], [1.6, -1.6], [-1.6, 1.6], [1.6, 1.6]]) b.add(CYL6, C.woodDark, T(x + px, y + 3, z + pz, 0, 0.2, 6, 0.2));
       b.box(x, y + 6, z, 4.4, 0.3, 4.4, C.wood, 0, false);
       hip(b, x, y + 8.6, z, 0, 6, 6, 1.6, C.charred);
+      // Keep the lookout open below its roof, with a complete upper frame.
+      for (const px of [-1.6, 1.6]) for (const pz of [-1.6, 1.6])
+        b.box(x + px, y + 6.2, z + pz, .22, 2.52, .22, C.woodDark, 0, false);
+      for (const s of [-1, 1]) {
+        b.box(x, y + 8.45, z + s * 1.6, 3.5, .30, .24, C.woodDark, 0, false);
+        b.box(x + s * 1.6, y + 8.45, z, .24, .30, 3.5, C.woodDark, 0, false);
+      }
+      addKyotoAttic(b, x, y + 8.6, z, 0, 3.4, 3.4, 6, 6, 1.6, C.charred, 'hip');
       b.add(CYL6, C.woodDark, T(x, y + 11, z, 0, 0.06, 4, 0.06), false);
       b.add(BOX, '#f2c94a', T(x + 0.5, y + 11.4, z, 0, 1.0, 2.4, 0.03), false);
       glow.add(CYL16, '#1c1a1a', T(x + 0.5, y + 11.6, z + 0.02, 0, 0.35, 0.02, 0.35, Math.PI / 2), false);
@@ -289,18 +308,28 @@ export function buildKyoto(heightAt: HeightAt) {
     b.box(mx, y + 1.0, hz, mw, 7, md, C.charred);
     for (let k = 0; k < 7; k++) b.add(CYL8, '#1e1818', T(mx + mw / 2 + 0.6, y + 4.5, hz - md / 2 + 1 + k * (md - 2) / 6, 0, 0.32, 7, 0.32), false);
     hip(b, mx, y + 8, hz, 0, mw + 8, md + 8, 8.3, '#51463a');
+    addKyotoAttic(b, mx, y + 8, hz, 0, mw, md, mw + 8, md + 8, 8.3, C.charred, 'hip');
     addHonnojiCraft(b, mx, y, hz, mw, md);
     for (let k = 0; k < 6; k++) blaze(mx + range(rng, -mw / 3, mw / 3), y + 12 + range(rng, -1, 2), hz + range(rng, -md / 3, md / 3), range(rng, 1.6, 2.6));
     for (let k = 0; k < 14; k++) glow.add(BALL, C.ember, T(mx + range(rng, -mw / 2, mw / 2), y + 8.2 + range(rng, 0, 4), hz + range(rng, -md / 2, md / 2), rng() * 6, range(rng, 0.6, 1.2), 0.3, range(rng, 0.6, 1.2)), false);
     // the kuri (priests' quarters) and a bell tower, half burnt; pines; stone lanterns lining the court
     b.box(hx - 22, y, hz + 35, 26, 5, 10, C.charred);
     gable(b, hx - 22, y + 5, hz + 35, 0, 27, 12, 3.2, C.tileDark);
+    addKyotoAttic(b, hx - 22, y + 5, hz + 35, 0, 26, 10, 27, 12, 3.2, C.charred);
     blaze(hx - 30, y + 6.5, hz + 35, 1.4);
     {
       const bx = hx + 28, bz = hz - 32;
       b.box(bx, y, bz, 6, 1.2, 6, C.stone);
       for (const [px, pz] of [[-2, -2], [2, -2], [-2, 2], [2, 2]]) b.add(CYL8, C.woodDark, T(bx + px, y + 4, bz + pz, 0, 0.22, 6, 0.22));
       hip(b, bx, y + 7.2, bz, 0, 7, 7, 2.4, C.tileDark);
+      for (const s of [-1, 1]) {
+        b.box(bx, y + 6.8, bz + s * 2, 4.4, .4, .30, C.woodDark, 0, false);
+        b.box(bx + s * 2, y + 6.8, bz, .30, .4, 4.4, C.woodDark, 0, false);
+      }
+      addKyotoAttic(b, bx, y + 7.2, bz, 0, 4.2, 4.2, 7, 7, 2.4, C.woodDark, 'hip');
+      // Suspension crosses the roof cavity and joins the bell's crown.
+      b.box(bx, y + 7.2, bz, 4.4, .3, .3, C.woodDark, 0, false);
+      b.box(bx, y + 5.8, bz, .24, 1.65, .24, C.woodDark, 0, false);
       b.add(CYL16, '#6e5a3a', T(bx, y + 5.0, bz, 0, 0.8, 1.8, 0.8), false);
     }
     for (let k = 0; k < 6; k++) for (const s of [-1, 1]) toro(b, hx + 6 + k * 6, hz + s * 9);
