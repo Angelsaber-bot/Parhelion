@@ -1,0 +1,110 @@
+[
+  {
+    "id": "overview",
+    "errors": [],
+    "info": {
+      "calls": 224,
+      "triangles": 655430,
+      "saberVisible": false
+    }
+  },
+  {
+    "id": "square",
+    "errors": [],
+    "info": {
+      "calls": 230,
+      "triangles": 1552694,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "your-home",
+    "errors": [],
+    "info": {
+      "calls": 251,
+      "triangles": 2369003,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "living-room",
+    "errors": [],
+    "info": {
+      "calls": 155,
+      "triangles": 1123539,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "upstairs",
+    "errors": [],
+    "info": {
+      "calls": 353,
+      "triangles": 2588563,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "homeward-house",
+    "errors": [],
+    "info": {
+      "calls": 167,
+      "triangles": 1509855,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "shared-dining",
+    "errors": [],
+    "info": {
+      "calls": 235,
+      "triangles": 2407443,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "saber-room",
+    "errors": [],
+    "info": {
+      "calls": 322,
+      "triangles": 2898997,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "harbour",
+    "errors": [],
+    "info": {
+      "calls": 76,
+      "triangles": 125397,
+      "saberVisible": false
+    }
+  },
+  {
+    "id": "garden-restored",
+    "errors": [],
+    "info": {
+      "calls": 305,
+      "triangles": 1928825,
+      "saberVisible": true
+    }
+  },
+  {
+    "id": "boat-repaired",
+    "errors": [],
+    "info": {
+      "calls": 278,
+      "triangles": 1005749,
+      "saberVisible": false
+    }
+  },
+  {
+    "id": "lighthouse-restored",
+    "errors": [],
+    "info": {
+      "calls": 68,
+      "triangles": 354739,
+      "saberVisible": false
+    }
+  }
+]

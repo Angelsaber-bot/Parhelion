@@ -1,0 +1,60 @@
+✔ twenty buildings have real doors, floors, roof cover and street-to-interior return paths (505.694333ms)
+✔ home interior stair reaches the upper writing corner and returns without jumping (44.228125ms)
+✔ all eight guest rooms open onto the corridor and the Saber daily route is walkable in both directions (310.285459ms)
+✔ home interactions and residents are grounded, clear of furniture and remain independent of chapter completion (42.7405ms)
+(node:57568) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ real main input invites Saber, welcomes her, shares a meal, preserves saves and uses one actor for home/follow (64222.265625ms)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ uncontracted guest book and stale home facts cannot summon or house Saber (27855.802542ms)
+✔ cancelling shader warm-up releases detached source art and preserves resident shared outlines (83.962167ms)
+✔ preparation failure releases unprocessed meshes and cloned geometry, then permits retry (7.862334ms)
+(node:57769) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ World outfit modal is reversible, bilingual and isolated from gameplay/contract progress (11.714167ms)
+✔ outfit controls have bounded viewport CSS and opening clears input without changing Arena settings (3.929375ms)
+(node:57771) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ appearance defaults to accepted armor; invalid/corrupt/denied storage cannot affect contract saves (1.808833ms)
+✔ lake NPC lazy loads once, contract follows, recall hides, pause prevents target acquisition (18.277708ms)
+✔ Idle/Walk/Run crossfades follow actual movement and teleport rematerializes without traversing walls (17.766167ms)
+✔ Attack anticipates, contacts once at the clip phase, recovers fully and can replay (8.471666ms)
+✔ pause cancels the attack; recall, traversal suppression and quest reset cancel pending contact (5.7285ms)
+✔ serialized outfit loading is latest-wins; stale candidates and old resources are disposed exactly once (2.792291ms)
+✔ latest selection queues behind a stale initial load and late completion after disposal cannot resurrect it (12.592916ms)
+✔ bad outfit retains the last good model and recall state; no auto-retry loop; explicit retry recovers (3.615083ms)
+✔ missing mandatory clips fail safely before replacing the accepted outfit (1.688208ms)
+✔ lossless runtime transport accepts gzip or an already HTTP-decoded GLB and rejects corruption (51.417416ms)
+✔ unselected distant Saber releases owned art after residency grace and reloads when selected again (4.549083ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 101388.609292

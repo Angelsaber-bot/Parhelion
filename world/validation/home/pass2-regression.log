@@ -1,0 +1,105 @@
+(node:68697) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ real held works move the boat and collision, persist scene changes, require release and cancel invalid finishes (270.487625ms)
+✔ a real bread carry is required and interruptions cannot grant delivery or town report (34.303792ms)
+✔ fishing has a bite window and practice needs three distinct hits in a live local round (27.651291ms)
+✔ town services preserve equipment gates and quest targets follow physical delivery state (34.307708ms)
+(node:68709) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ actual main input carries bread, operates works, fishes and shoots a complete town practice round (62207.401666ms)
+(node:68970) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ twenty buildings have real doors, floors, roof cover and street-to-interior return paths (404.776792ms)
+✔ home interior stair reaches the upper writing corner and returns without jumping (32.811083ms)
+✔ all eight guest rooms open onto the corridor and the Saber daily route is walkable in both directions (251.919208ms)
+✔ home interactions and residents are grounded, clear of furniture and remain independent of chapter completion (27.848708ms)
+✔ all civic counters and controls have standing clearance and unique interaction identifiers (20.955041ms)
+✔ garden and harbour residents walk real terrain and stop to talk (453.013625ms)
+(node:68971) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:68971) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ real main input invites Saber, welcomes her, shares a meal, preserves saves and uses one actor for home/follow (38154.495833ms)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ uncontracted guest book and stale home facts cannot summon or house Saber (22701.290292ms)
+(node:69065) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ clean startup is unarmed at authored Alpha spawn; no gameplay method writes preferences (85.284959ms)
+✔ current save is authoritative, reset survives reload without old quests/equipment/contracts reappearing (1.61425ms)
+✔ legacy migration occurs only once; empty current and stale slot fields never grant a gun (0.622666ms)
+✔ reset preserves custom controls, sensitivity, locale, graphics, HUD and appearance preferences byte-for-byte (5.510833ms)
+✔ unavailable persistence still resets live state without deleting unrelated storage (0.361917ms)
+✔ production reset clears dirty gameplay immediately, resets URL start overrides, and survives reload at Alpha (1015.789375ms)
+✔ existing tutorial grants the gun before gun-required objectives and clears a previously held trigger (115.62675ms)
+✔ late weapon-art attachment cannot reveal or equip an unowned gun (70.173ms)
+✔ production world-state application re-locks quest gates and restores targets after clearing progress (10.452166ms)
+✔ catalog covers five real main chapters, authored optional chains and every discovery without mutating facts (7.090416ms)
+✔ Alpha main follows actual archivist then original steps, and reacts to same-size changed saves (6.390583ms)
+✔ era main uses current real boss requirements, not obsolete optional shard gates; legacy contracts remain authoritative (10.612833ms)
+✔ cannon boats route to actual cannon unless mounted and optional prerequisite chains advance without granting flags (8.103791ms)
+✔ discovery uses found, trial uses true victory, epilogue follows unresolved eras rather than pretending ready (5.439459ms)
+✔ Orleans exploration lists nine bilingual real landmarks and completes only from saved discoveries (1.7595ms)
+✔ missing/cyclic prerequisites fail closed and unknown IDs never become destinations (0.989333ms)
+✔ missing main layout and nonfinite target data are unavailable, never falsely completed (0.387917ms)
+✔ compact exercise guides actual equipment then field and retains earned deployment tracking (5.400792ms)
+✔ dry-shoe guide follows the live crossing and horse trail resumes from saved evidence (3.314791ms)
+(node:69073) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ actual main quest browser only pins deliberately, advances saved steps, and preserves modal/locale/remap gates (23110.537042ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 163196.25775

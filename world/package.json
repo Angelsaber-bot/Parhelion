@@ -24,7 +24,8 @@
     "build:seams": "node --import tsx tools/build-seam-data.ts",
     "build:orleans": "node --import tsx tools/build-expansions.ts --region=orleans && node --import tsx tools/build-stream-assets.ts --region=orleans",
     "build:qin": "node --import tsx tools/build-expansions.ts --region=qin && node --import tsx tools/build-stream-assets.ts --region=qin",
-    "build:egypt": "node --import tsx tools/build-expansions.ts --region=egypt && node --import tsx tools/build-stream-assets.ts --region=egypt"
+    "build:egypt": "node --import tsx tools/build-expansions.ts --region=egypt && node --import tsx tools/build-stream-assets.ts --region=egypt",
+    "build:home": "node --import tsx tools/build-expansions.ts --region=home && node --import tsx tools/build-stream-assets.ts --region=home"
   },
   "dependencies": {
     "three": "0.186.1",

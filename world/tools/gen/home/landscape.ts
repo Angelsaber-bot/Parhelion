@@ -1,14 +1,18 @@
 import { fbm, smoothstep, lerp } from '../rng';
 import type { ExpansionPlan } from '../../../src/map/worldPlan';
+import {HOME_BUILDINGS} from '../../../src/map/homePlan';
 
 /** The home-town tile: rolling farmland west, a broad town shelf, falling to an east harbour. */
 export function homeAuthoredHeight(plan: ExpansionPlan, x: number, z: number): number {
   let h = 15 + fbm(x * .006, z * .006, 4, 7301) * 5 + fbm(x * .03, z * .03, 2, 7307) * .8;
   // the land steps down toward the eastern bay
   h = lerp(h, 3.5 + fbm(x * .02, z * .02, 2, 7311) * .6, smoothstep(140, 300, x + 25 * Math.sin(z * .013)));
+  // A tidal inlet, open to the eastern sea; the main quay stays on dry land.
+  const inlet=(1-smoothstep(42,70,Math.abs(z-110)))*smoothstep(265,300,x);
+  h=lerp(h,-2.8,inlet);
   const site = (id: string) => plan.sites.find(s => s.id === id)!.position;
   // level town square and harbour apron
-  for (const [id, r] of [['square', 48], ['harbour', 34], ['northroad', 24]] as const) {
+  for (const [id, r] of [['square', 32], ['harbour', 26], ['northroad', 24],['garden',22],['practice',28],['park',22]] as const) {
     const [sx, sy, sz] = site(id), d = Math.hypot(x - sx, z - sz);
     h = lerp(h, sy - .1, 1 - smoothstep(r * .7, r * 1.6, d));
   }
@@ -18,6 +22,13 @@ export function homeAuthoredHeight(plan: ExpansionPlan, x: number, z: number): n
     const t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
     const d = Math.hypot(x - ax - dx * t, z - az - dz * t);
     h = lerp(h, ay + (by - ay) * t - .1, 1 - smoothstep(7, 26, d));
+  }
+  // Level the entire rotated footprint, not only the door; foundations extend into the slope.
+  for(const b of HOME_BUILDINGS){
+    const dx=x-b.p[0],dz=z-b.p[2],c=Math.cos(b.yaw),s=Math.sin(b.yaw);
+    const lx=c*dx-s*dz,lz=s*dx+c*dz;
+    const edge=Math.max(Math.abs(lx)-b.w/2,Math.abs(lz)-b.d/2);
+    h=lerp(h,b.p[1]-.08,1-smoothstep(1,9,edge));
   }
   return h;
 }

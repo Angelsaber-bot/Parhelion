@@ -79,6 +79,7 @@ export async function writeRegion(r: RegionOut) {
       applyBlackSailBeamFallback(m, r.file);
       if (name === 'M_Water') Object.assign(m, { transparent: true, opacity: 0.75, vertexColors: false, color: new THREE.Color('#46b8d8') });
       if (name === 'M_Waterfall') Object.assign(m, { transparent: true, opacity: 0.7, vertexColors: false, color: new THREE.Color('#c9f3ff') });
+      if (name === 'M_HomeGlass') Object.assign(m, { transparent:true,opacity:.22,depthWrite:false,side:THREE.DoubleSide,roughness:.15 });
       materials.set(name, m);
     }
     return m;

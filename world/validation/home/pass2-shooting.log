@@ -1,0 +1,21 @@
+(node:69800) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ production press first shot synchronously matches real camera at ±90/180 free-look, with no RAF or ADS (602.431125ms)
+✔ held fire tracks view between eligible shots, rather than reverting to locomotion/low-ready on cooldown frames (447.101792ms)
+(node:69801) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ World production shooting preserves quest targets and always renders a visible shot (45.258833ms)
+✔ closer enemy receives damage instead of completing the target behind it (3.946791ms)
+✔ solid wall blocks both camera targeting and the actual muzzle-to-target shot (6.31025ms)
+✔ shot cadence blocks all damage, quest mutation and visuals together (2.842542ms)
+✔ unarmed input cannot damage enemies, complete gun-required objectives or render shots (6.895209ms)
+✔ immediate input-event shoot prepares actual held weapon before muzzle query, without awaiting RAF (159.869334ms)
+✔ rifle cannot bypass the mounted cannon even after loading and while standing on its firing deck (8.611125ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1395.441666

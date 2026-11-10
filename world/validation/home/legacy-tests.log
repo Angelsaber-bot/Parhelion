@@ -1,0 +1,38 @@
+✔ first contract is unavailable before recruitment, then summoned and recall persists (0.768042ms)
+✔ legacy quest saves recruit Saber; clearing progress cannot preserve an active companion (0.321917ms)
+✔ corrupt and denied storage remain playable without granting a missing quest (0.266917ms)
+✔ second contract can be switched to, cycled and persisted; only one companion follows (0.869334ms)
+(node:57385) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ clean startup is unarmed at authored Alpha spawn; no gameplay method writes preferences (99.465625ms)
+✔ current save is authoritative, reset survives reload without old quests/equipment/contracts reappearing (0.681542ms)
+✔ legacy migration occurs only once; empty current and stale slot fields never grant a gun (0.27975ms)
+✔ reset preserves custom controls, sensitivity, locale, graphics, HUD and appearance preferences byte-for-byte (1.754458ms)
+✔ unavailable persistence still resets live state without deleting unrelated storage (0.334083ms)
+✔ production reset clears dirty gameplay immediately, resets URL start overrides, and survives reload at Alpha (125.086625ms)
+✔ existing tutorial grants the gun before gun-required objectives and clears a previously held trigger (37.215209ms)
+✔ late weapon-art attachment cannot reveal or equip an unowned gun (21.345625ms)
+✔ production world-state application re-locks quest gates and restores targets after clearing progress (5.178625ms)
+(node:57389) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+All-region captured anchors audited {"markers":251,"areas":78,"bosses":4,"encounters":152,"regions":["alpha","britain","blacksail","winter","kyoto","orleans","egypt","qin","home"]}
+Consumed source inventory []
+Production detached route/target/reset result {"paths":[["west",false,-309.35004272460935,3.8404282005976578,-30],["west",true,-414.99999999997954,9.412948419155512,-30],["east",false,317.35040893554685,15.609828625138912,30],["east",true,414.99999999997954,12.621672609636065,30],["north",false,0,1.114550828933716,-317.3500732421875],["north",true,0,1.147087472881251,-414.99999999997954],["south",false,40,10.008614540100098,317.3500732421875],["south",true,40,10.008614540100227,359.65]],"hits":[66.2076421003563,99.12167223221056,110.98744217833863],"resetPosition":[3,21,159]}
+✔ detaching consumed source COLLISION/MARKERS preserves production capsule, gate, target and reset paths (33975.985917ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 36748.618708

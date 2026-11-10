@@ -1,0 +1,50 @@
+(node:61986) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ real main input invites Saber, welcomes her, shares a meal, preserves saves and uses one actor for home/follow (22132.483ms)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:192:4:
+      192 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+✔ uncontracted guest book and stale home facts cannot summon or house Saber (10287.001125ms)
+(node:61987) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ appearance defaults to accepted armor; invalid/corrupt/denied storage cannot affect contract saves (1.714834ms)
+✔ lake NPC lazy loads once, contract follows, recall hides, pause prevents target acquisition (13.19925ms)
+✔ Idle/Walk/Run crossfades follow actual movement and teleport rematerializes without traversing walls (7.643417ms)
+✔ Attack anticipates, contacts once at the clip phase, recovers fully and can replay (2.392459ms)
+✔ pause cancels the attack; recall, traversal suppression and quest reset cancel pending contact (2.678708ms)
+✔ serialized outfit loading is latest-wins; stale candidates and old resources are disposed exactly once (2.616333ms)
+✔ latest selection queues behind a stale initial load and late completion after disposal cannot resurrect it (6.92875ms)
+✔ bad outfit retains the last good model and recall state; no auto-retry loop; explicit retry recovers (0.977875ms)
+✔ missing mandatory clips fail safely before replacing the accepted outfit (0.508875ms)
+✔ lossless runtime transport accepts gzip or an already HTTP-decoded GLB and rejects corruption (38.363083ms)
+✔ unselected distant Saber releases owned art after residency grace and reloads when selected again (1.443ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33918.424625

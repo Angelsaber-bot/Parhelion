@@ -1,0 +1,31 @@
+✔ eight areas fit the approximate 3×3 envelope; finale remains an independent seven-domain map (16.78575ms)
+✔ orleans: shipped collision supports all main, side and vertical routes without jumping (3234.156334ms)
+✔ orleans: existing neighbour connects on foot and land continues beyond the landmark envelope (1316.375792ms)
+✔ egypt: shipped collision supports all main, side and vertical routes without jumping (980.419792ms)
+✔ egypt: existing neighbour connects on foot and land continues beyond the landmark envelope (824.628542ms)
+✔ qin: shipped collision supports all main, side and vertical routes without jumping (1363.945167ms)
+✔ qin: existing neighbour connects on foot and land continues beyond the landmark envelope (653.108416ms)
+✔ home: shipped collision supports all main, side and vertical routes without jumping (1321.229709ms)
+✔ home: existing neighbour connects on foot and land continues beyond the landmark envelope (708.567792ms)
+(node:69719) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ real held works move the boat and collision, persist scene changes, require release and cancel invalid finishes (222.550542ms)
+✔ a real bread carry is required and interruptions cannot grant delivery or town report (34.990958ms)
+✔ fishing has a bite window and practice needs three distinct hits in a live local round (23.950041ms)
+✔ town services preserve equipment gates and quest targets follow physical delivery state (23.410167ms)
+(node:69720) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ twenty buildings have real doors, floors, roof cover and street-to-interior return paths (545.212667ms)
+✔ home interior stair reaches the upper writing corner and returns without jumping (43.227ms)
+✔ all eight guest rooms open onto the corridor and the Saber daily route is walkable in both directions (391.229459ms)
+✔ home interactions and residents are grounded, clear of furniture and remain independent of chapter completion (40.65875ms)
+✔ all civic counters and controls have standing clearance and unique interaction identifiers (30.996709ms)
+✔ garden and harbour residents walk real terrain and stop to talk (943.543125ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11155.728625

@@ -1,0 +1,80 @@
+{
+  "date": "2026-11-10",
+  "region": "home",
+  "round": "home-and-saber-pass-1",
+  "build": {
+    "site": "c3cdb4f6e803",
+    "status": "passed"
+  },
+  "content": {
+    "buildings": 20,
+    "guestRooms": 8,
+    "routes": 8,
+    "residents": 8,
+    "servant": "Saber",
+    "otherServants": "reserved for future mainline updates"
+  },
+  "checks": [
+    {
+      "files": [
+        "home-environment.test.ts",
+        "expansion-framework.test.ts"
+      ],
+      "passed": 13,
+      "failed": 0,
+      "evidence": "geometry-tests.log"
+    },
+    {
+      "files": [
+        "home-town-main.test.ts",
+        "servant.test.ts"
+      ],
+      "passed": 13,
+      "failed": 0,
+      "evidence": "residence-tests.log"
+    },
+    {
+      "files": [
+        "contracts.test.ts",
+        "progress-reset.test.ts",
+        "source-node-detach.test.ts"
+      ],
+      "passed": 14,
+      "failed": 0,
+      "evidence": "legacy-tests.log"
+    },
+    {
+      "scope": "related home, appearance and streaming resource regression",
+      "passed": 21,
+      "failed": 0,
+      "evidence": "related-tests.log"
+    },
+    {
+      "scope": "site launch, routing and navigation",
+      "passed": 13,
+      "failed": 0
+    }
+  ],
+  "browser": {
+    "mode": "headless Chromium, native Metal, medium quality, grass disabled for geometry review",
+    "source": "artifacts/browser-results.json",
+    "views": [
+      "overview",
+      "square",
+      "your-home",
+      "living-room",
+      "upstairs",
+      "homeward-house",
+      "shared-dining",
+      "saber-room",
+      "harbour"
+    ],
+    "pageErrors": 0
+  },
+  "limits": [
+    "No full repository suite claimed. Runs are distinct scopes, not one aggregated total.",
+    "Browser cameras use test positions and a seeded test-only contracted/invited save. Interaction/save evidence is from the production-main non-GPU harness.",
+    "No complete manual walking playthrough or device FPS claim.",
+    "Meal is prepared-table state and dialogue; no seating/eating animation."
+  ]
+}

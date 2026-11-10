@@ -16,7 +16,7 @@
 | 分类 | 目录 | 内容 |
 |---|---|---|
 | 游戏 | `arena-game/` | Arena 运行时：Three.js 客户端、Colyseus / Worker 服务器、共享确定性规则、Bot、测试 |
-| | `world/` | World：幻日谷、落日王国、黑帆尽头、永冬之城、业火京都 |
+| | `world/` | World：九宫格连续大陆，含幻日谷、主角城镇与七个幻史域 |
 | | `shared-client/` | 两边共用的中英文本、按键与灵敏度设置 |
 | 地图 | `arena/` | 第 1 章 ASTER 研究站（Blender 流程） |
 | | `arena-maps/` | 第 2–5 章：`camlann/`、`blackflag/`、`frostcourt/`、`sakura/`；`aster/` 是 ASTER 美化层，`_lib/` 是共享 GLB 工具 |
@@ -43,6 +43,18 @@
 | 黑帆尽头 | 1718 | `/world/?region=blacksail` |
 | 永冬之城 | 1812 | `/world/?region=winter` |
 | 业火京都 | 1582 | `/world/?region=kyoto` |
+| 秦帝国 | 幻史域 | `/world/?region=qin` |
+| 古埃及 | 幻史域 | `/world/?region=egypt` |
+| 奥尔良 | 幻史域 | `/world/?region=orleans` |
+| 主角城镇 | 2026 | `/world/?region=home` |
+
+当前九宫格：北排「奥尔良／古埃及／京都」，中排「秦／永冬／黑帆」，南排「落日王国／幻日谷／主角城镇」。主线规划从幻日谷出发，依次经过落日王国、黑帆、永冬、京都、秦、古埃及和奥尔良；新区环境开放不等于对应主线已经完成。
+
+2026-11-10 最新内容：
+
+- **主角城镇**：20 栋可进入建筑、两层主角家、八间客房的公馆、八条道路、Saber 入住与日常、四件镇务、垂钓和三靶练习、店铺服务与安全归家。见 [城镇说明](docs/world/HOME_TOWN_20261110.md)。
+- **秦帝国**：秦式材质、居民、升降台、守陵俑与军令机关，以及第四轮新增的地上陵园、地下铜车马／石铠甲／青铜水禽三座陪葬坑。见 [秦地进度](docs/world/QIN_ENVIRONMENT_20261110.md)。
+- **其余新区**：奥尔良已有街屋、居民与三项设施；古埃及已有太阳神殿与引光机关。区域从者、主线、Boss 及独立终局地图仍按 [大陆规划](docs/world/WORLD_FRAMEWORK_20261109.md) 逐步扩展。
 
 ## World 玩法迭代
 

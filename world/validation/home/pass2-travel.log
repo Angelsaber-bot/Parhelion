@@ -1,0 +1,54 @@
+(node:70388) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+✔ real held works move the boat and collision, persist scene changes, require release and cancel invalid finishes (536.74925ms)
+✔ a real bread carry is required and interruptions cannot grant delivery or town report (109.339041ms)
+✔ fishing has a bite window and practice needs three distinct hits in a live local round (80.173584ms)
+✔ town services preserve equipment gates and quest targets follow physical delivery state (54.384709ms)
+✔ home travel requires a real grounded visit and keeps the combat gate without a historical-seam prerequisite (0.5055ms)
+✔ alpha: arrival +0.06 passes real preflight, settles below roof and walks outward (101.741125ms)
+✔ britain: arrival +0.06 passes real preflight, settles below roof and walks outward (149.832291ms)
+✔ blacksail: arrival +0.06 passes real preflight, settles below roof and walks outward (57.516291ms)
+✔ winter: arrival +0.06 passes real preflight, settles below roof and walks outward (50.403542ms)
+✔ kyoto: arrival +0.06 passes real preflight, settles below roof and walks outward (49.664542ms)
+✔ alpha: arrival +0.25 passes real preflight, settles below roof and walks outward (43.999125ms)
+✔ britain: arrival +0.25 passes real preflight, settles below roof and walks outward (68.599084ms)
+✔ blacksail: arrival +0.25 passes real preflight, settles below roof and walks outward (51.009792ms)
+✔ winter: arrival +0.25 passes real preflight, settles below roof and walks outward (46.856333ms)
+✔ kyoto: arrival +0.25 passes real preflight, settles below roof and walks outward (56.16875ms)
+✔ alpha: arrival +1 passes real preflight, settles below roof and walks outward (53.129709ms)
+✔ britain: arrival +1 passes real preflight, settles below roof and walks outward (197.019666ms)
+✔ blacksail: arrival +1 passes real preflight, settles below roof and walks outward (147.7005ms)
+✔ winter: arrival +1 passes real preflight, settles below roof and walks outward (77.363375ms)
+✔ kyoto: arrival +1 passes real preflight, settles below roof and walks outward (74.02075ms)
+✔ destinations come only from validated runtime settlement entrances and are copied (1.892458ms)
+✔ only grounded nearby presence discovers a stop, once, in existing found set (0.339042ms)
+✔ legacy physical visits restore discovered hubs but cores and generic area exploration do not (0.226333ms)
+✔ travel rejects battle, pursuit, unsafe locomotion, death, active actions and undiscovered regions (0.404291ms)
+✔ selection is rechecked at execution, does not mutate progress, and reset relocks destinations (0.260209ms)
+✔ earned field stop never inherits old settlement visits or arbitrary found flags (0.242708ms)
+✔ current adventure uplink opens discovered travel without manufacturing the legacy summon flag (0.162375ms)
+(node:70391) [THREE_CJS_DEPRECATED] DeprecationWarning: `require("three")` is deprecated and will be removed.
+Replace `const THREE = require("three")` with `import * as THREE from "three"`.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+▲ [WARNING] "import.meta" is not available with the "cjs" output format and will be empty [empty-import-meta]
+
+    src/main.ts:194:4:
+      194 │ if (import.meta.env?.PROD) renderer.debug.checkShaderErrors = false;
+          ╵     ~~~~~~~~~~~
+
+  You need to set the output format to "esm" for "import.meta" to work correctly.
+
+▶ NON-GPU actual travel buttons and reset keys execute production handlers with revalidation
+  ✔ N then an enabled destination button travels without restoring HP, energy or cooldown (597.902291ms)
+  ✔ a real stale enabled button rechecks a newly introduced threat and rejects travel (23.903375ms)
+  ✔ travel updates the real defeat-respawn destination, not merely the displayed position (124.411959ms)
+  ✔ actual R cancel preserves progress; actual R accept clears gameplay and retains preferences (33.471042ms)
+✔ NON-GPU actual travel buttons and reset keys execute production handlers with revalidation (29442.527041ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 33025.179

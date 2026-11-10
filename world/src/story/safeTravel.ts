@@ -2,12 +2,13 @@ import { adventureTravelOpen } from './openWorldCampaign';
 import type { Localized, RegionId, SettlementPlacement } from '../settlements/types';
 import { ERA_OPTIONALS, isEraId } from './eraStories';
 import { VALLEY_STORY } from './valleyStory';
+import type {WorldRegionId} from '../core/regionIdentity';
 
 /** Only these five runtime-validated settlement entrances are destinations; never arbitrary map clicks. */
 const REGIONS: readonly RegionId[] = ['alpha', 'britain', 'blacksail', 'winter', 'kyoto'];
 export interface SafeTravelStop {
   id: string;
-  region: RegionId;
+  region: WorldRegionId;
   name: Localized;
   position: [number, number, number];
   foundFlag: string;
@@ -91,7 +92,7 @@ export function getTravelBlock(stopId: string, stops: readonly SafeTravelStop[],
   if (!stop) return 'unknown';
   const unsafe = getTravelSafetyBlock(context); if (unsafe) return unsafe;
   if (!isTravelStopDiscovered(stop, done, found)) return 'undiscovered';
-  if (stop.region !== 'alpha' && !adventureTravelOpen(done)) return 'seam-locked';
+  if (stop.region !== 'alpha' && stop.region !== 'home' && !adventureTravelOpen(done)) return 'seam-locked';
   return null;
 }
 export type SafeTravelPlan = { ok: false; reason: TravelBlock } | { ok: true; stopId: string; position: [number, number, number]; yaw: number };

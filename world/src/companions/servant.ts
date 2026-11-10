@@ -86,6 +86,14 @@ export class ContractServant {
   private contactPending = false;
   private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; clipElapsed: number; motionTime: number; cycle: number; emitted: boolean; started: boolean };
   private activeLast = false;
+  private residence?: {goal:THREE.Vector3;spawn:THREE.Vector3;paused:boolean};
+  private residing=false;
+  /** Residence uses this same actor and navigation; summoning always takes priority. */
+  setResidence(goal:THREE.Vector3|null,spawn?:THREE.Vector3,paused=false){
+    if(!goal){this.residence=undefined;return;}
+    if(!this.residence)this.residence={goal:goal.clone(),spawn:(spawn??goal).clone(),paused};
+    else{this.residence.goal.copy(goal);if(spawn)this.residence.spawn.copy(spawn);this.residence.paused=paused;}
+  }
   private disposed = false;
   private model?: THREE.Object3D;
   private liveExpression?: ReturnType<typeof createSaberLiveExpression>;
@@ -104,7 +112,7 @@ export class ContractServant {
     if (this.state === 'failed') return `${prefix} · ${bilingual('外观加载失败，可重试', 'Outfit unavailable; retry')}${this.activeOutfit ? ` (${outfitLabel(this.activeOutfit)})` : ''}`;
     if (this.state === 'loading') return `${prefix} · ${bilingual('正在加载外观', 'Loading outfit')}`;
     if (!this.options.contract.recruited) return prefix;
-    return `${bilingual('Saber', 'Saber')} · ${this.options.contract.summoned ? bilingual('同行中', 'Following') : bilingual('已收回', 'Recalled')} · ${outfitLabel(this.activeOutfit ?? this.appearance.outfit)}`;
+    return `${bilingual('Saber', 'Saber')} · ${this.options.contract.summoned ? bilingual('同行中', 'Following') : this.residence ? bilingual('在归乡公馆休息', 'Resting at Homeward House') : bilingual('已收回', 'Recalled')} · ${outfitLabel(this.activeOutfit ?? this.appearance.outfit)}`;
   }
   selectOutfit(value: unknown) {
     if (this.disposed || !this.appearance.select(value)) return Promise.resolve();
@@ -162,7 +170,7 @@ export class ContractServant {
         this.stride=new SaberStrideRuntime(candidate.scene,this.root);
         this.grounding = new SaberGroundedLocomotion(candidate.scene, this.root, outfit, this.options.colliders);
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
-        this.activeOutfit = outfit; this.play('idle'); this.state = 'ready';this.lastNeeded=performance.now();
+        this.activeOutfit = outfit; this.play('idle'); this.tick(0); this.state = 'ready';this.lastNeeded=performance.now();
         candidate = undefined;
       } catch (error) {
         if (candidate) disposeObject(candidate.scene, this.environment?.texture);
@@ -280,18 +288,26 @@ export class ContractServant {
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     const { contract,marker } = this.options;
     const atLake = player.distanceTo(new THREE.Vector3().fromArray(marker.p)) < 80;
-    const needed=atLake||(contract.recruited&&contract.selected==='saber');
+    const atHome=contract.recruited&&!!this.residence&&!contract.summoned;
+    const needed=atLake||atHome||(contract.recruited&&contract.selected==='saber');
     if(needed){this.lastNeeded=performance.now();void this.ensureLoaded();}
     else if(this.model&&!this.loadTask&&performance.now()-this.lastNeeded>15_000){this.clearModel();this.activeOutfit=undefined;this.state='unloaded';}
 
     const following = contract.summoned && enabled;
-    this.root.visible = contract.recruited ? following : atLake;
+    this.root.visible = contract.recruited ? following||atHome : atLake;
     if (!following) {
-      this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity); this.cancelAttack();
+      this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity);
+      if(!atHome||!this.residing||this.attackTime>0||this.skillPose)this.cancelAttack();
       if (!contract.recruited) { this.root.position.fromArray(marker.p).add(new THREE.Vector3(1.5,0,0)); this.root.rotation.y = Math.PI; }
+      if(atHome&&this.residence){
+        if(!this.residing){this.root.position.copy(this.residence.spawn);this.root.rotation.y=0;this.navigation.reset();this.residing=true;}
+        const speed=!paused&&!this.residence.paused?this.navigation.step(this.root,this.residence.goal,dt,SERVANT_MOTION.walkSpeed):0;
+        this.strideSpeed=speed;this.play(speed>.05?'walk':'idle',false,speed>.05?Math.min(1.5,speed/SERVANT_MOTION.walkSpeed):1);
+      }else this.residing=false;
       if (!paused && this.root.visible) this.tick(dt);
       return;
     }
+    this.residing=false;
     if (paused) { this.cancelAttack(); return; }
     if (this.skillPose) {
       if(this.root.position.distanceTo(player)>24)this.cancelSkillPose();

@@ -1,5 +1,6 @@
 import type { ExpansionRegionId, WorldRegionId } from '../core/regionIdentity';
 import {ORLEANS_UNDERPASS} from './orleansWorks';
+import {HOME_SITES, HOME_ROUTES} from './homePlan';
 
 export type MapPoint2 = readonly [number, number];
 export type RoutePoint = readonly [number, number, number];
@@ -128,21 +129,13 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
     ],
   },
   {
-    // The protagonist's own harbour town beside 幻日谷. Ground, roads and the town square
-    // are laid out; the town itself is built in its own pass.
+    // The protagonist's harbour town: lived-in houses, a shared residence and the homeward loop.
     id:'home', name:'主角城镇', nameEn:'Home Town', offset:[720,0],
     outline:[[-300,-260],[-120,-320],[120,-300],[300,-200],[320,40],[250,260],[60,320],[-180,300],[-320,120]],
     color:'#86a85e', stone:'#c9b892', accent:'#d9a441',
     identity:'幻日谷东侧的港湾城镇：主角的家，从者在此落脚，旅程从这里出发、最后回到这里', servant:'',
-    sites:[
-      { id:'square', name:'城镇广场', nameEn:'Town Square', position:[-150,16,40], radius:36, purpose:'hub' },
-      { id:'harbour', name:'东岸港湾', nameEn:'East Harbour', position:[230,6,120], radius:30, purpose:'landmark' },
-      { id:'northroad', name:'北门驿道', nameEn:'North Road', position:[40,16,-250], radius:20, purpose:'landmark' },
-    ],
-    routes:[
-      { id:'main', name:'幻日谷至城镇广场', kind:'main', points:[[-150,16,40],[-40,16,60],[80,14,90],[230,6,120]] },
-      { id:'north', name:'广场至北门驿道', kind:'flank', points:[[-150,16,40],[-90,16,-80],[0,16,-180],[40,16,-250]] },
-    ],
+    sites:HOME_SITES,
+    routes:HOME_ROUTES,
   },
 ];
 

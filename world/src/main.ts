@@ -7,6 +7,10 @@ import {createOrleansWorksScene} from './environment/orleansWorksScene';
 import {createOrleansWorksRuntime} from './story/orleansWorks';
 import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
+import {HOME_BUILDINGS,HOME_ROUTES,HOME_SITES,HOME_ACTIONS} from './map/homePlan';
+import {createHomeTown,homeResidentSockets,homeSaberReady} from './story/homeTown';
+import {HOME_CIVIC_ACTIONS} from './map/homeActivities';
+import {createHomeResidentLife} from './map/homeResidents';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
 import { createQinArmyOrder, qinTurnBlocked, toggleQinOrder, QIN_ORDER_MARKERS } from './environment/qinArmyOrder';
@@ -82,7 +86,7 @@ import { WorldAudio } from './rendering/worldAudio';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
 import { createNarrativePanel } from './ui/narrativePanel';
-import { createSafeTravelStops, discoverTravelStops, isTravelStopDiscovered, getTravelBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from './story/safeTravel';
+import { createSafeTravelStops, discoverTravelStops, isTravelStopDiscovered, getTravelBlock, getTravelSafetyBlock, planSafeTravel, TRAVEL_BLOCK_TEXT, type TravelContext } from './story/safeTravel';
 import { CAMPAIGN_CLOSURE, getCampaignClosureGuide, interactCampaignClosure, getCampaignResidentReaction } from './story/campaignClosure';
 import { attachExplorerBlade } from './weapons/playerBladeArt';
 import { FrameWorkBudget } from './rendering/frameWorkBudget';
@@ -454,7 +458,7 @@ world.add(armoryWorkshop.root);
 armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
 freezeStaticArt(armoryWorkshop.root);
 addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
-const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets(), ...egyptResidentSockets()]);
+const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets(), ...egyptResidentSockets(), ...homeResidentSockets()]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -515,6 +519,8 @@ addEventListener('pagehide',e=>{if(!e.persisted)orleansResidentLife.dispose();})
 const qinResidentLife=createQinResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 addEventListener('pagehide',e=>{if(!e.persisted)qinResidentLife.dispose();});
 const egyptResidentLife=createEgyptResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
+const homeResidentLife=createHomeResidentLife(settlementNpcs,colliders);
+addEventListener('pagehide',e=>{if(!e.persisted)homeResidentLife.dispose();});
 addEventListener('pagehide',e=>{if(!e.persisted)egyptResidentLife.dispose();});
 const residentEventScene=createResidentEventScene(campaignSites.markers,(x,z,ceiling=300)=>residentQueries.ground(x,z,ceiling)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
 world.add(residentEventScene.root);layout.markers.push(...residentEventScene.markers);const residentEventMarkerIds=new Set(residentEventScene.markers.map(m=>m.id));
@@ -525,7 +531,10 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE],ORLEANS_PAVED_COURTS) }) : null;
+const homeGrassRoutes=HOME_ROUTES.map(r=>({region:'alpha' as const,length:0,points:r.points.map(p=>[p[0]+720,p[1],p[2]] as [number,number,number])}));
+const homeGrassBuildings=HOME_BUILDINGS.map(h=>[h.p[0]+720-h.w/2-1,h.p[2]-h.d/2-1,h.p[0]+720+h.w/2+1,h.p[2]+h.d/2+1] as const);
+const homeGrassCourts=HOME_SITES.filter(s=>['square','garden','practice','park'].includes(s.id)).map(s=>[s.position[0]+720,s.position[2],s.radius,s.radius] as const);
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway,...homeGrassRoutes],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE,...homeGrassBuildings],[...ORLEANS_PAVED_COURTS,...homeGrassCourts]) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -580,6 +589,7 @@ let actions: WorldActions | undefined;
 const fortCannon = new FortCannon();
 const audio = new WorldAudio();
 const travelStops = createSafeTravelStops(settlements.placements);
+travelStops.push({id:'travel_home',region:'home',name:['归乡广场 · 家','Homeward Square · Home'],position:[570,16.1,40],foundFlag:'travel_home',radius:12});
 travelStops.push({ id: 'compact_relay_outpost', region: 'alpha', name: ['前沿部署 · 前哨站南门外', 'Forward deployment · Outpost south gate'], position: [...compactRelaySites.arrival], foundFlag: 'compact_relay_outpost', radius: 3, requiredCompletionFlag: 'compact_relay_complete' });
 let compactRelayRuntime: ReturnType<typeof createCompactRelayRuntime> | undefined;
 let relayDamageRevision = 0;
@@ -587,6 +597,7 @@ const relayLastPosition = new THREE.Vector3();
 let hudRevision = 0;
 let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
+let homeTown:ReturnType<typeof createHomeTown>|undefined;
 let ultimateDirector: UltimateDirector | undefined;
 let ultimateStage: UltimateStage | undefined;
 let ultimateSource: { identity: ServantId | null; root: THREE.Object3D } | null = null;
@@ -597,8 +608,8 @@ let questCatalog: ReturnType<typeof createQuestGuideCatalog> | undefined;
 let questCacheKey = '', questEntries: QuestEntry[] = [];
 function currentQuestEntries(): QuestEntry[] {
   if(!questCatalog)return [];
-  const key=`${hudRevision}:${residentEventRuntime?.crossing}:${done.size}:${found.size}:${fortCannon.mounted}:${compactRelayRuntime?.active}:${Math.floor((compactRelayRuntime?.progress ?? 0)*30)}`;
-  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{dryCrossing:residentEventRuntime?.crossing,mounted:fortCannon.mounted,compactRelay:{active:compactRelayRuntime?.active??false,progress:(compactRelayRuntime?.progress??0)*3}});}
+  const key=`${hudRevision}:${residentEventRuntime?.crossing}:${done.size}:${found.size}:${fortCannon.mounted}:${compactRelayRuntime?.active}:${Math.floor((compactRelayRuntime?.progress ?? 0)*30)}:${homeTown?.activities.carrying}`;
+  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{homeCarrying:homeTown?.activities.carrying,dryCrossing:residentEventRuntime?.crossing,mounted:fortCannon.mounted,compactRelay:{active:compactRelayRuntime?.active??false,progress:(compactRelayRuntime?.progress??0)*3}});}
   return questEntries;
 }
 function trackedQuest(): QuestGuide | null {
@@ -644,6 +655,8 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const townAction=HOME_CIVIC_ACTIONS.find(a=>a.id===marker.id);if(townAction)return bilingual(...townAction.label);
+  const homeAction=HOME_ACTIONS.find(a=>a.id===marker.id);if(homeAction)return bilingual(homeAction.label[0],homeAction.label[1]);
   const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
   const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
@@ -685,9 +698,11 @@ function applyWorldState() {
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.apply(done);
   if(typeof qinSentinels!=='undefined')qinSentinels.apply(done);
   if(typeof egyptMirrors!=='undefined')egyptMirrors.apply(done);
+  if(typeof homeTown!=='undefined')homeTown?.apply();
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   applyWeaponFinish();
   for (const t of targets) {
+    if(t.userData.homeTarget)continue;
     const id = t.userData.target as string;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
     t.visible = !hit;
@@ -825,12 +840,12 @@ function renderMainObjective() {
   if(isExpansionRegion(region)) {
     const plan=EXPANSION_PLANS.find(p=>p.id===region)!;
     const title=document.createElement('h3'),text=document.createElement('div'),note=document.createElement('div');
-    title.textContent=region==='orleans'?bilingual('奥尔良 · 河港与钟楼','Orleans · Quay and Belfry'):region==='qin'?bilingual('秦帝国 · 骊山上下','Qin Empire · Above and Below Mount Li'):region==='egypt'?bilingual('古埃及 · 日河与太阳神殿','Solar Egypt · Sun River and Sun Temple'):bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
+    title.textContent=region==='home'?bilingual('主角城镇 · 归处','Home Town · A place to return'):region==='orleans'?bilingual('奥尔良 · 河港与钟楼','Orleans · Quay and Belfry'):region==='qin'?bilingual('秦帝国 · 骊山上下','Qin Empire · Above and Below Mount Li'):region==='egypt'?bilingual('古埃及 · 日河与太阳神殿','Solar Egypt · Sun River and Sun Temple'):bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
     text.textContent=bilingual(plan.identity,'Explore the hub, landmarks and alternate routes.');
     const localDiscoveries=layout.markers.filter(m=>m.type==='discovery'&&m.id.startsWith(`${region}_`));
     const discovered=localDiscoveries.filter(m=>found.has(m.id)).length;
     const works=ORLEANS_WORK_ACTIONS.filter(a=>done.has(a.flag)).length;
-    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='egypt'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 太阳神殿中庭的铜镜可以引光。`,`Landmarks ${discovered}/${localDiscoveries.length} · The temple court's mirrors can lead the sunlight.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    note.textContent=region==='home'?bilingual(`镇务 ${homeTown?.civicCount??0}/4 · 到广场公告栏接受或回报；日志可追踪设施与日常。${homeSaberReady(done)?' Saber 已入住。':' 公馆可邀请已缔约的 Saber。'}`,`Town jobs ${homeTown?.civicCount??0}/4 · Accept or report at the square; track activities in the journal.${homeSaberReady(done)?' Saber has moved in.':' Invite your contracted Saber at the guest book.'}`):region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='egypt'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 太阳神殿中庭的铜镜可以引光。`,`Landmarks ${discovered}/${localDiscoveries.length} · The temple court's mirrors can lead the sunlight.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
   const adventure=getCurrentAdventureGuide(region,done);
@@ -1170,6 +1185,7 @@ addEventListener('pagehide', (event) => { if (!event.persisted) {
 function resetProgress() {
   abortUltimate(); clearInput(); deferredCombatToast = null;
   const saved = worldProgress.reset();
+  if(typeof homeTown!=='undefined')homeTown?.activities.reset();
   campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
@@ -1222,7 +1238,7 @@ for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addE
   if (type === 'pointerdown') swallowClick = true;
   document.body.classList.remove('shot-mode');
 }, true);
-const clearInput = () => { orleansWorksRuntime?.interrupt();residentEventRuntime?.cancelCarry(); cavalrySupport?.cancel(); adventureRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); compactRelayRuntime?.interrupt(); keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
+const clearInput = () => { if(typeof homeTown!=='undefined')homeTown?.activities.interrupt(); orleansWorksRuntime?.interrupt();residentEventRuntime?.cancelCarry(); cavalrySupport?.cancel(); adventureRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); compactRelayRuntime?.interrupt(); keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
   onClose() { clearInput(); },
@@ -1489,6 +1505,15 @@ function frameUltimate(dt: number): boolean {
 }
 addEventListener('pagehide', event => { if (!event.persisted) { abortUltimate(); ultimateDirector?.dispose(); ultimateStage?.dispose(); } });
 narrative = createNarrativePanel(() => settings.label('interact'));
+homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,changed:()=>{applyWorldState();renderObjective();},
+ canInteract:id=>{const m=homeTown?.markers.find(m=>m.id===id);return !!m&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??2.6)&&canReachValleyPanel(m);},
+ safe:()=>!getTravelSafetyBlock({...travelContext(),carrying:!!residentEventRuntime?.carrying})&&!ultimateDirector?.active,
+ rest:()=>combat.recoverAtSettlement(25),refill:()=>combat.refillAmmo(60),interactLabel:()=>settings.label('interact'),
+ input:()=>({held:down('interact'),moving:!!(down('forward')||down('back')||down('left')||down('right')||down('jump'))||Math.hypot(player.vel.x,player.vel.z)>.2,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active),grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,unsafeMotion:player.flying||player.swimming||player.gliding,damage:relayDamageRevision}),
+ toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
+layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
+colliders.push(...homeTown.activities.colliders);targets.push(...homeTown.activities.targets);
+addEventListener('pagehide',e=>{if(!e.persisted)homeTown?.dispose();});
 function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
   if (graphicsRecovery?.blocked || bootFailed || worldExited) return;
   clearInput(); narrative!.show(line,speaker); hudRevision++; audio.interaction();
@@ -1540,7 +1565,7 @@ function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active, threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
-    carrying: !!residentEventRuntime?.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
@@ -1842,6 +1867,7 @@ function shootCannon() {
   hudRevision++;
 }
 function shoot() {
+  if(typeof homeTown!=='undefined'&&homeTown?.activities.carrying)return;
   if(residentEventRuntime?.carrying)return;
   if (fortCannon.mounted) { shootCannon(); return; }
   if (!worldProgress.armed || !gameplayActive() || inspectServant || player.flying || actions?.melee.active || (actions?.skills.casting && actions.skills.selected === null) || actions?.evade.active || !combat.canShoot()) return;
@@ -1885,6 +1911,7 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if(typeof homeTown!=='undefined'&&homeTown?.activities.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(adventureRuntime?.hit(id)){const fun=[...adventureSites.fun.values()].find(f=>f.ids.includes(id));if(fun&&fun.ids.every(flag=>done.has(flag)))toast(bilingual(...fun.line));combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(id===KINGDOM_GATE.latch){kingdomGateRuntime?.unlock();combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     done.add(id);
@@ -1952,6 +1979,7 @@ function interactSettlementNpc() {
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
   if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+    const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
     if (handleCampaignInteraction(npc.id)) return true;
     const closing = getCampaignResidentReaction(npc.id, done); if (closing) { speakDialogue(closing, npc.role); return true; }
     if (handleValleyInteraction(npc.id,npc.role) || handleEraInteraction(npc.id,npc.role)) return true;
@@ -2086,6 +2114,7 @@ function interactQinOrder() {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if(typeof homeTown!=='undefined'&&homeTown?.interact(m.id))return;
   if(orleansWorksMarkerIds.has(m.id)){if(!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请为交互绑定一个可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}orleansWorksRuntime?.interact(m.id);return;}
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if(typeof qinOrderMarkerIds!=="undefined"&&qinOrderMarkerIds.has(m.id)){interactQinOrder();return;}
@@ -2276,7 +2305,7 @@ function frame(now: number) {
     acc = Math.max(0, acc - STEP);
   }
 
-  const canAim = worldProgress.armed && !residentEventRuntime?.carrying && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
+  const canAim = worldProgress.armed && !residentEventRuntime?.carrying && (typeof homeTown==='undefined'||!homeTown?.activities.carrying) && gameplayActive() && !player.swimming && !player.gliding && !player.flying;
   if (!canAim) for (const binding of settings.bindingsFor('aim')) keys.delete(binding);
   const ads = aim.step(dt, canAim);
   $('movement-mode').textContent = player.flying ? bilingual(`自由飞行调试 · ${settings.label('fly')} 退出`, `Free-flight test · ${settings.label('fly')} Exit`)
@@ -2295,7 +2324,7 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying, armed: worldProgress.armed&&!residentEventRuntime?.carrying, aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying??(typeof homeTown!=='undefined'&&homeTown?.activities.carrying?'blanket':undefined), armed: worldProgress.armed&&!residentEventRuntime?.carrying&&(typeof homeTown==='undefined'||!homeTown?.activities.carrying), aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
   coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now, gameplayActive() && !player.flying);
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
@@ -2350,6 +2379,7 @@ function frame(now: number) {
   const elite = gameplayActive() && !combat.defeated && !combat.bossStarted ? nearbyElite(combat.state.enemies, player.pos) : null;
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
+  homeTown?.update(dt,player.pos,gameplayActive(),regionVisuals.ready('home'));
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
   updateEraActors(dt);
@@ -2388,6 +2418,7 @@ function frame(now: number) {
   residentEventRuntime?.update(player.pos,player.gliding,gameplayActive()&&!combat.defeated);
   residentEventScene.apply(done,player.pos,now/1000,residentEventRuntime?.carrying??null,residentEventRuntime?.dial??0);
   if(residentEventRuntime?.carrying){rig.root.updateMatrixWorld(true);const left=rig.handSockets.L.getWorldPosition(new THREE.Vector3()),right=rig.handSockets.R.getWorldPosition(new THREE.Vector3());residentEventScene.carried.position.copy(left).add(right).multiplyScalar(.5).add(new THREE.Vector3(0,residentEventRuntime.carrying==='page'?.012:.07,0));rig.root.getWorldQuaternion(residentEventScene.carried.quaternion);}
+  if(homeTown?.activities.carrying){rig.root.updateMatrixWorld(true);const left=rig.handSockets.L.getWorldPosition(new THREE.Vector3()),right=rig.handSockets.R.getWorldPosition(new THREE.Vector3());homeTown.activities.carried.position.copy(left).add(right).multiplyScalar(.5);rig.root.getWorldQuaternion(homeTown.activities.carried.quaternion);}
   campaignSites.update(player.pos);
   falseDawnSites.update(player.pos);
   compactRelaySites.update(player.pos);
@@ -2403,6 +2434,7 @@ function frame(now: number) {
   orleansResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('orleans'));
   qinResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('qin'));
   egyptResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('egypt'));
+  homeResidentLife.update(dt,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,gameplayActive()||!!narrative?.open,regionVisuals.ready('home'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -2506,7 +2538,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

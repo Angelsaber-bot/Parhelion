@@ -1,0 +1,88 @@
+{
+  "date": "2026-11-10",
+  "region": "home",
+  "round": "home-town-complete-pass-2",
+  "build": {
+    "site": "15e75ea0f5ad",
+    "status": "passed"
+  },
+  "content": {
+    "buildings": 20,
+    "guestRooms": 8,
+    "routes": 8,
+    "residents": 8,
+    "walkingResidents": 2,
+    "civicJobs": 4,
+    "repeatableActivities": [
+      "three-target shooting",
+      "fishing"
+    ],
+    "shops": [
+      "healing",
+      "bread",
+      "ammo for owned equipment",
+      "home textile colours",
+      "state-dependent newspaper"
+    ],
+    "safeTravel": "grounded visit at Homeward Square",
+    "residentServant": "Saber"
+  },
+  "checks": [
+    {
+      "scope": "town physics, all expansion routes and activity state machine",
+      "passed": 19,
+      "failed": 0,
+      "evidence": "pass2-physical.log"
+    },
+    {
+      "scope": "town, Saber, civic inputs, quest catalog, quest journal and save reset",
+      "passed": 33,
+      "failed": 0,
+      "evidence": "pass2-regression.log"
+    },
+    {
+      "scope": "town activities, home discovery/return, historical travel and travel reset",
+      "passed": 32,
+      "failed": 0,
+      "evidence": "pass2-travel.log"
+    },
+    {
+      "scope": "camera/muzzle firing and unarmed shooting compatibility",
+      "passed": 9,
+      "failed": 0,
+      "evidence": "pass2-shooting.log"
+    },
+    {
+      "scope": "final actual-input town workflow, physical bread carry, facility channels, fishing, camera/muzzle target hits, safe return and reload",
+      "passed": 1,
+      "failed": 0,
+      "evidence": "pass2-workflow.log"
+    }
+  ],
+  "browser": {
+    "mode": "headless Chromium, native Metal, medium quality, grass disabled for geometry review",
+    "source": "artifacts/browser-results.json",
+    "views": [
+      "overview",
+      "square",
+      "your-home",
+      "living-room",
+      "upstairs",
+      "homeward-house",
+      "shared-dining",
+      "saber-room",
+      "harbour",
+      "garden-restored",
+      "boat-repaired",
+      "lighthouse-restored"
+    ],
+    "pageErrors": 0,
+    "state": "isolated seeded test save; restored facility views explicitly apply completed flags for visual review"
+  },
+  "limits": [
+    "Separate scopes overlap; do not add their counts as one full-repository run.",
+    "Actual input workflow uses the production-main non-GPU harness, with real collision walking for the bakery-to-pantry route. Other sites use test relocation.",
+    "Screenshots are not a complete manual playthrough or a frame-rate measurement.",
+    "Other servants follow future mainline updates; meals remain table state/dialogue rather than seating/eating animation."
+  ]
+}

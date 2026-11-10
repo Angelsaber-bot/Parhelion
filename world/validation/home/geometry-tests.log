@@ -1,0 +1,21 @@
+✔ eight areas fit the approximate 3×3 envelope; finale remains an independent seven-domain map (13.997708ms)
+✔ orleans: shipped collision supports all main, side and vertical routes without jumping (3982.458375ms)
+✔ orleans: existing neighbour connects on foot and land continues beyond the landmark envelope (1789.808084ms)
+✔ egypt: shipped collision supports all main, side and vertical routes without jumping (1590.639125ms)
+✔ egypt: existing neighbour connects on foot and land continues beyond the landmark envelope (697.1575ms)
+✔ qin: shipped collision supports all main, side and vertical routes without jumping (370942.017375ms)
+✔ qin: existing neighbour connects on foot and land continues beyond the landmark envelope (842.647ms)
+✔ home: shipped collision supports all main, side and vertical routes without jumping (2168.4635ms)
+✔ home: existing neighbour connects on foot and land continues beyond the landmark envelope (969.84325ms)
+✔ twenty buildings have real doors, floors, roof cover and street-to-interior return paths (978.642042ms)
+✔ home interior stair reaches the upper writing corner and returns without jumping (108.098917ms)
+✔ all eight guest rooms open onto the corridor and the Saber daily route is walkable in both directions (578.823ms)
+✔ home interactions and residents are grounded, clear of furniture and remain independent of chapter completion (50.613417ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 384288.954084

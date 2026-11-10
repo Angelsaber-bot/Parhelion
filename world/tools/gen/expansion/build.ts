@@ -6,6 +6,8 @@ import { egyptAuthoredHeight, egyptTerrainColor, egyptTunnelCut } from '../egypt
 import { buildEgypt } from '../egypt/build';
 import { continentalHeight, CONTINENT_OFFSETS, toTile } from '../continent';
 import { homeAuthoredHeight } from '../home/landscape';
+import { buildHome } from '../home/build';
+import {HOME_LIGHTS} from '../../../src/map/homePlan';
 import { heightFn as alphaHeight } from '../terrain';
 import * as THREE from 'three';
 import type { Layout, Marker } from '../../../src/core/types';
@@ -194,14 +196,14 @@ export function buildExpansion(plan:ExpansionPlan) {
   } else if(plan.id==='egypt') {
     pieces.push(...buildEgypt(plan,(x,z)=>expansionHeight(plan,x,z),access));
   } else if(plan.id==='home') {
-    // Ground, roads and the square for now; the town itself is built in its own pass.
+    pieces.push(...buildHome((x,z)=>expansionHeight(plan,x,z)));
   } else {
     pieces.push(...buildQin(plan,(x,z)=>expansionHeight(plan,x,z),access));
   }
   const orleansNotes:Record<string,string>={market:'蓝白布棚围着旧井，沿街巷可走向城门或河港。',ramparts:'城墙转折处的钟楼，可以沿外梯登上眺望回廊。',cathedral:'双塔俯瞰河谷，开放的中殿通向高地侧院。',rivergate:'低位河门连接木桥、码头和城内侧路。',muster:'守城队伍在此整备，演武场与主战线分开。',harbour:'踏轮吊机旁留出运粮的通道，河港步道通向河门。',cloister:'回廊遮雨、庭院留光，药草畦之间留有通路。',repairyard:'新石、木料与修缮坡道排列在东墙外。'};
   const qinNotes:Record<string,string>={worktown:'驿道进镇，主街两侧是陶铺、铜匠与粮囷；往西过关，往南上山脊，沿水渠可绕上宫城。',pass:'骊水在双阙之下穿墙而过，驿道从厚重的关门进入宫城山道。',palace:'夯土高台上的前殿；殿后山屏开着通往地宫的斜道。',kilns:'两条龙窑顺坡而卧，晾瓦架上排着新烧的黑瓦。',archive:'简牍成捆上架，记着工匠、窑次和运俑的账目。',quarry:'南坡采石的台阶之间，检修道直通山腹。',pavilion:'从山脊下来的路落在观阙，俯瞰前殿、广场与驿道。',workshop:'炉火未熄，铜汁沿槽流向模具，运俑轨道把陶俑送往下层。',army:'成片的兵俑列阵待命。转动军令台，阵列会改变朝向与通路。',royalcity:'星图穹顶下，水银江河环绕封土；这里是骊山之下的不死王城。',mausoleum:'骊山脚下的陵园：三级覆斗封土立在内外两重城垣中，寝殿面朝封土，神道从东门伸出；封土之下就是地下王城。',chariots:'两乘彩绘铜车一前一后，立车撑着伞盖，安车罩着龟背顶，各驾四匹铜马。',armoury:'成排的石甲用石片和铜丝编成，旁边的长架上摆着石胄。',waterfowl:'水渠两岸立着铜雁、天鹅和鹤，跽坐的乐俑面朝水禽奏乐；有一只鹤正低头衔虫。'};
   const egyptNotes:Record<string,string>={oasis:'泉湖边的泥砖商队镇，风塔和鸽楼之间是集市；往西沿河岸到码头，往南进峡谷。',quay:'日河码头，帆船靠岸，量水尺的刻度记着每年的洪水。',canyon:'裂日峡谷切开台地，沙底平缓，一路通到神殿东门。',tombs:'峡谷南壁凿出的崖墓，门楣上还留着彩绘。',colossi:'两尊坐像守着通往神殿的坡道，方尖碑立在台前。',temple:'塔门之后是列柱中庭；中庭西侧的金盘射出日光，转动铜镜把光引进圣所。',roofshrine:'从中庭东侧的阶梯登上柱廊屋顶，屋顶祭坛俯瞰整座神殿。',barque:'圣所日轮照亮后，后壁石门沉下，斜道通往台地下的太阳船墓。',pyramid:'神殿西侧的堤道通往金字塔和它的河谷神殿。',trial:'沙丘上的圆形日晷台，方尖碑围成试炼场。'};
-  const homeNotes:Record<string,string>={square:'主角城镇的广场。西边的归乡大道通往幻日谷，城镇正在筹建。',harbour:'东岸的港湾，将来从者和商船在这里靠岸。',northroad:'北门驿道，翻过缓坡就是黑帆尽头的南岸。'};
+  const homeNotes:Record<string,string>={square:'归乡大道从西侧接入广场，面包房和生活街通向东岸港湾。',house:'推门就是客厅与厨房，内侧楼梯通往卧室和书桌。',lodge:'有公共餐厅和八间客房的归乡公馆。在入住簿邀请已缔约的 Saber。',garden:'公馆的开放庭院；休息的同伴会来这里走走。',practice:'北坡的小练习庭，沿步道可回广场或前往北门驿道。',park:'花园步道连接家、住宅街与海岸。',harbour:'仓库、修船棚、小灯塔与伸入海湾的木栈桥。',northroad:'北门驿道，翻过缓坡就是黑帆尽头的南岸。'};
   const spawn=plan.sites[0].position;
   const markers:Marker[]=[{id:'spawn_p1',type:'spawn',label:`${plan.name}入口`,p:[spawn[0],spawn[1]+.5,spawn[2]]},
     ...plan.sites.map(site=>({id:`${plan.id}_${site.id}`,type:'discovery' as 'discovery'|'poi',label:site.name,p:[...site.position] as [number,number,number],radius:6,note:plan.id==='orleans'?orleansNotes[site.id]:plan.id==='qin'?qinNotes[site.id]:plan.id==='egypt'?egyptNotes[site.id]:plan.id==='home'?homeNotes[site.id]:`地图框架；${site.purpose}内容待制作，不授予章节通关。`}))];
@@ -210,6 +212,6 @@ export function buildExpansion(plan:ExpansionPlan) {
   const layout:Layout={world,areas:plan.sites.map(site=>({id:`${plan.id}_${site.id}`,name:site.name,nameEn:site.nameEn,c:[site.position[0],site.position[2]],r:site.radius,color:plan.color,tp:[site.position[0],site.position[2]]})),
     paths:[...plan.routes.map(route=>route.points.map(p=>[p[0],p[2]] as [number,number])),access.map(p=>[p[0],p[2]] as [number,number])],markers,
     objective:{id:plan.id==='orleans'?'orleans_explore':`${plan.id}_explore`,name:plan.id==='orleans'?'奥尔良 · 河港与钟楼':plan.id==='qin'?'秦帝国 · 骊山上下':plan.id==='home'?'主角城镇 · 归处':'古埃及 · 日河与太阳神殿',steps:[]},
-    lights:plan.id==='qin'?QIN_LIGHTS:plan.id==='egypt'?EGYPT_LIGHTS:plan.id==='home'?[]:plan.sites.map(site=>({p:[site.position[0]+(plan.id==='orleans'?2.5:0),site.position[1]+(plan.id==='orleans'?4.6:5),site.position[2]+(plan.id==='orleans'?2.4:0)],color:plan.id==='orleans'?'#f1ca8c':plan.accent,intensity:plan.id==='orleans'?22:35,distance:plan.id==='orleans'?28:36}))};
+    lights:plan.id==='qin'?QIN_LIGHTS:plan.id==='egypt'?EGYPT_LIGHTS:plan.id==='home'?HOME_LIGHTS:plan.sites.map(site=>({p:[site.position[0]+(plan.id==='orleans'?2.5:0),site.position[1]+(plan.id==='orleans'?4.6:5),site.position[2]+(plan.id==='orleans'?2.4:0)],color:plan.id==='orleans'?'#f1ca8c':plan.accent,intensity:plan.id==='orleans'?22:35,distance:plan.id==='orleans'?28:36}))};
   return {terrain:{vis,col},pieces,markers,layout,world,access};
 }
