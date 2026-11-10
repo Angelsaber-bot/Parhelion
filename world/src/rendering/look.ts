@@ -1,5 +1,5 @@
 import {orleansToonMaterial} from '../environment/orleansMaterials';
-import {qinToonMaterial} from '../environment/qinMaterials';
+import {qinToonMaterial,qinMercuryMaterial} from '../environment/qinMaterials';
 import {egyptToonMaterial} from '../environment/egyptMaterials';
 // Toon look: banded lighting, inverted-hull outlines, and a sky with a 22° halo + sundogs
 // (the "parhelion" the game is named after).
@@ -130,6 +130,7 @@ function waterMaterial(name: string) {
 
 export function toonMaterial(src: THREE.Material): THREE.Material {
   const orleans=orleansToonMaterial(src,toonGradient());if(orleans)return orleans;
+  const mercury=qinMercuryMaterial(src,timeUniform);if(mercury)return mercury;
   const qin=qinToonMaterial(src,toonGradient());if(qin)return qin;
   const egypt=egyptToonMaterial(src,toonGradient());if(egypt)return egypt;
   const kyoto = kyotoToonMaterial(src, toonGradient());

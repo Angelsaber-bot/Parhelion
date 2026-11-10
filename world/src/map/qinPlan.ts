@@ -62,6 +62,10 @@ export const QIN_ROOMS: readonly QinRoom[] = [
   { id: 'quarry-landing', x0: -129.5, x1: -120.5, z0: -119.5, z1: -110.5, floor: 28, height: 7 },
   { id: 'deep-landing', x0: -21.5, x1: -12.5, z0: -194.5, z1: -185.5, floor: 19, height: 7 },
   { id: 'royal', x0: 31, x1: 79, z0: -202, z1: -154, floor: 10, height: 29 },
+  // 陪葬坑 opening off the royal city: bronze chariots (east), stone armour (south), bronze waterfowl (north).
+  { id: 'chariot-pit', x0: 87, x1: 125, z0: -187, z1: -165, floor: 10, height: 8 },
+  { id: 'armour-pit', x0: 36, x1: 74, z0: -146, z1: -128, floor: 10, height: 7 },
+  { id: 'waterfowl-pit', x0: 34, x1: 76, z0: -234, z1: -210, floor: 10, height: 8 },
 ];
 export const QIN_CORRIDORS: readonly QinCorridor[] = [
   // 斜道: palace rear court into the mountain, then down to the foundry.
@@ -75,7 +79,28 @@ export const QIN_CORRIDORS: readonly QinCorridor[] = [
   // 斜井: from the garrison's middle file down to the buried royal city.
   { id: 'deep-shaft', a: [-17, 28, -160], b: [-17, 19, -185.5], width: 6, height: 6 },
   { id: 'royal-gallery', a: [-12.5, 19, -190], b: [31, 10, -190], width: 6, height: 6 },
+  { id: 'chariot-door', a: [79, 10, -176], b: [87, 10, -176], width: 6, height: 6 },
+  { id: 'armour-door', a: [55, 10, -154], b: [55, 10, -146], width: 6, height: 6 },
+  { id: 'waterfowl-door', a: [55, 10, -202], b: [55, 10, -210], width: 6, height: 6 },
 ];
+
+/**
+ * 骊山陵园 on the plain north of the mountain, over the buried city: a three-tier rammed
+ * mound inside a walled inner city and outer city, gate towers on every side (三出阙 on
+ * the east, the ceremonial axis), the sleeping hall north-west of the mound and rows of
+ * companion tombs. Platform tops are absolute heights so discovery sites stay exact.
+ */
+export const QIN_MAUSOLEUM = {
+  // 覆斗形: each tier batters in by .55 m per metre of rise; ledges step in 2 m to the next tier.
+  mound: { x: 55, z: -266, tiers: [[30, 12], [21.4, 10], [13.9, 9]] as const }, // [half-width at the foot, rise]
+  inner: [-12, 122, -326, -214] as const,
+  outer: [-44, 154, -344, -200] as const,
+  gateGap: 9,
+  sleepingHall: { x: 12, z: -309, w: 30, d: 18, top: 36 },
+  sideHalls: [{ x: 66, z: -310, w: 20, d: 12, top: 35 }, { x: 98, z: -310, w: 16, d: 12, top: 35 }],
+  companions: { z: -335, x0: -30, x1: 140, count: 9 },
+  spiritWay: { z: -270, x0: 154, x1: 236 },
+};
 
 /**
  * 军令机关: two rows of turntable ranks across the garrison hall. A rank lying along

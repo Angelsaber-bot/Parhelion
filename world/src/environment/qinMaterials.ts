@@ -88,3 +88,37 @@ export function qinToonMaterial(src: THREE.Material, gradientMap: THREE.Texture)
   m.customProgramCacheKey = () => 'qin-crafted-surfaces-v1';
   return m;
 }
+
+/**
+ * 水银百川: flowing liquid metal for the buried rivers and sea. Silver body, slow travelling
+ * swells, a bright crest along each swell and fine glints; it carries its own light so it
+ * reads underground without an environment map.
+ */
+export const QIN_MERCURY = 'M_QinMercury';
+export function qinMercuryMaterial(src: THREE.Material, time: { value: number }): THREE.MeshToonMaterial | null {
+  if (src.name !== QIN_MERCURY) return null;
+  const m = new THREE.MeshToonMaterial({ name: src.name, color: new THREE.Color('#6f7a86'), emissive: new THREE.Color('#9eabba'), emissiveIntensity: .3, side: THREE.DoubleSide, fog: true });
+  m.userData = { ...src.userData, qinSurface: 'mercury', artStyle: 'painted-anime' };
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uTime = time;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vMerc;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvMerc=(modelMatrix*vec4(transformed,1.0)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      uniform float uTime; varying vec3 vMerc;
+      float mHash(vec2 p){return fract(sin(dot(p,vec2(41.3,289.1)))*43758.5453);}
+      float mNoise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(mHash(i),mHash(i+vec2(1,0)),f.x),mix(mHash(i+vec2(0,1)),mHash(i+vec2(1,1)),f.x),f.y);}`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+      {
+        vec2 p=vMerc.xz;
+        float warp=mNoise(p*.35+uTime*.05)*2.0;
+        float swell=sin(dot(p,vec2(.71,.7))*1.7-uTime*.9+warp)*.5+.5;
+        float cross=sin(dot(p,vec2(-.6,.8))*2.6+uTime*.6+warp*1.3)*.5+.5;
+        float crest=smoothstep(.82,.98,swell*.65+cross*.35);
+        float glint=step(.985,mHash(floor(p*9.0)+floor(uTime*3.0)));
+        diffuseColor.rgb*=.75+.35*swell;
+        totalEmissiveRadiance*=.45+.4*swell+1.3*crest+2.2*glint;
+      }`);
+  };
+  m.customProgramCacheKey = () => 'qin-mercury-v1';
+  return m;
+}

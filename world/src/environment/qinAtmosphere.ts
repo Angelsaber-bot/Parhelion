@@ -20,6 +20,10 @@ export const QIN_EMITTERS: readonly Emitter[] = [
   { id: 'foundry-haze', mode: 'drift', at: [130, 46.6, -96], count: 140, spread: [28, 8, 32], color: '#ffcf8a', size: .06, height: 0, speed: .04, range: 80, opacity: .55 },
   { id: 'mercury-haze', mode: 'haze', at: [55, 10.2, -178], count: 260, spread: [21, 2.4, 21], color: '#dfe9ff', size: .09, height: 0, speed: .05, range: 70, opacity: .9 },
   { id: 'dome-glitter', mode: 'haze', at: [55, 22, -178], count: 120, spread: [17, 9, 17], color: '#ffe6a8', size: .06, height: 0, speed: .02, range: 70, opacity: .7 },
+  // 陪葬坑: dust turning in the chariot pit's lamplight, a cold mist over the waterfowl bank, lamp-tree sparks.
+  { id: 'chariot-dust', mode: 'drift', at: [106, 12.5, -179], count: 90, spread: [17, 2.5, 6], color: '#ffe3b0', size: .05, height: 0, speed: .03, range: 60, opacity: .6 },
+  { id: 'waterfowl-mist', mode: 'haze', at: [55, 10.5, -226], count: 120, spread: [19, .5, 2.2], color: '#e6f0ff', size: .12, height: 0, speed: .04, range: 60, opacity: .55 },
+  ...([[36, -197], [74, -197], [36, -159], [74, -159]] as const).map(([x, z], i) => ({ id: `lamp-tree-${i}`, mode: 'rise' as const, at: [x, 15, z] as [number, number, number], count: 24, spread: [.9, .1, .9] as [number, number, number], color: '#ffc06a', size: .05, height: 1.8, speed: .5, range: 50, opacity: .9 })),
 ];
 
 const vertex = /* glsl */`

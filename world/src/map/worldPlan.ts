@@ -109,6 +109,10 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'workshop', name:'地下铸造层', nameEn:'Buried Foundry', position:[130,46,-96], radius:16, purpose:'landmark' },
       { id:'army', name:'兵马俑军阵层', nameEn:'Terracotta Garrison', position:[-17,28,-130], radius:20, purpose:'arena' },
       { id:'royalcity', name:'地下王城', nameEn:'Buried Royal City', position:[38,10,-190], radius:18, purpose:'boss' },
+      { id:'mausoleum', name:'骊山陵园', nameEn:'Lishan Mausoleum Park', position:[12,36,-298.5], radius:30, purpose:'landmark' },
+      { id:'chariots', name:'铜车马坑', nameEn:'Bronze Chariot Pit', position:[104,10,-169], radius:10, purpose:'landmark' },
+      { id:'armoury', name:'石铠甲坑', nameEn:'Stone Armour Pit', position:[55,10,-134], radius:10, purpose:'landmark' },
+      { id:'waterfowl', name:'青铜水禽坑', nameEn:'Bronze Waterfowl Pit', position:[55,10,-217], radius:10, purpose:'landmark' },
     ],
     routes:[
       { id:'main', name:'驿道—集镇—关隘—宫城', kind:'main', points:[[-185,22,100],[-140,23,86],[-100,25,80],[-70,27,82],[-35,31,92],[5,37,108],[45,44,116],[80,50,108],[70,55,98],[42,57.6,98],[40,58,90],[40,58,56],[40,58,44],[40,70,16],[40,70,0]] },
@@ -118,6 +122,9 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'palace-descent', name:'宫后斜道至铸造层与运俑轨道', kind:'underground', points:[[40,70,-30],[40,70,-44],[40,62,-68],[40,62,-72.5],[44.5,62,-72.5],[100,46,-72.5],[106,46,-72.5],[106,46,-115],[100,46,-115],[30,28,-115],[20,28,-115]] },
       { id:'maintenance', name:'石料场检修道', kind:'underground', points:[[-128,28,-42],[-125,28,-56],[-125,28,-110.5],[-125,28,-115],[-120.5,28,-115],[-60,28,-115],[-50,28,-115]] },
       { id:'royal-descent', name:'斜井下至地下王城', kind:'underground', points:[[-17,28,-130],[-17,28,-160],[-17,19,-185.5],[-17,19,-190],[-12.5,19,-190],[31,10,-190],[38,10,-190]] },
+      { id:'chariot-pit', name:'王城东门至铜车马坑', kind:'underground', points:[[38,10,-190],[44,10,-195],[66,10,-195],[74,10,-188],[76,10,-176],[88,10,-176],[90,10,-170],[120,10,-170]] },
+      { id:'armour-pit', name:'王城南门至石铠甲坑', kind:'underground', points:[[38,10,-190],[36,10,-178],[40,10,-162],[55,10,-160],[55,10,-154],[55,10,-131]] },
+      { id:'waterfowl-pit', name:'王城北门至青铜水禽坑', kind:'underground', points:[[38,10,-190],[44,10,-195],[55,10,-196],[55,10,-202],[55,10,-219]] },
     ],
   },
   {

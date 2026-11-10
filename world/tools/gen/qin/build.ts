@@ -4,7 +4,8 @@ import { mulberry32 } from '../rng';
 import type { Piece } from '../structures';
 import { Frame } from '../orleans/craft';
 import { distanceToLine, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
-import { QIN_ROOMS, QIN_CORRIDORS, QIN_PALACE, QIN_STREAM, QIN_ARMY, QIN_LIFT, QIN_LEVELS, type QinCorridor, type QinPoint, type QinRoom } from '../../../src/map/qinPlan';
+import { QIN_ROOMS, QIN_CORRIDORS, QIN_PALACE, QIN_STREAM, QIN_ARMY, QIN_LIFT, QIN_LEVELS, QIN_MAUSOLEUM, type QinCorridor, type QinPoint, type QinRoom } from '../../../src/map/qinPlan';
+import { buildMausoleumPark, furnishChariotPit, furnishArmourPit, furnishWaterfowlPit, royalCityDetails } from './mausoleum';
 import { ding, banner, balustrade } from './craft';
 import { warriorPrims, horsePrims } from '../../../src/map/qinFigures';
 import { Q, CYL, CYL8, MAT, qinRoof, pentRoof, gableRoof, barWindow, bracket, terrainWall, figure, rammedPlatform, earthWall, column, palaceHall, gateHouse, slabBetween, walkStrip, warrior, Shell } from './craft';
@@ -22,6 +23,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
   const town = make('ArtisanTown'), works = make('Workshops'), palace = make('Palace'), pass = make('RiverPass'), aqueduct = make('Aqueduct');
   const ridge = make('RidgeBeacons'), halls = make('BuriedHalls'), foundry = make('BuriedFoundry'), garrison = make('TerracottaGarrison');
   const royal = make('BuriedRoyalCity'), glow = make('Glow', 'M_Emissive', false), water = make('Water', 'M_Water', false);
+  const park = make('MausoleumPark'), pits = make('BurialPits'), mercury = make('Mercury', 'M_QinMercury', false);
   const trunks = make('Trees_Trunks'), leaves = make('Trees_Leaves', 'M_Foliage', false), beams = make('LightShafts', 'M_Beam', false);
   const surfaceRoutes = plan.routes.filter(r => r.kind !== 'underground');
   const roadLines = [...surfaceRoutes.map(r => r.points.map(p => [p[0], p[2]] as const)), access.map(p => [p[0], p[2]] as const)];
@@ -245,17 +247,25 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
   }
 
   // ───────────── 地宫: rooms, corridors, portals ─────────────
-  for (const room of QIN_ROOMS) buildRoom(room.id === 'royal' ? royal : halls, room);
+  for (const room of QIN_ROOMS) buildRoom(room.id === 'royal' ? royal : room.id.endsWith('-pit') ? pits : halls, room);
   for (const c of QIN_CORRIDORS) buildCorridor(c.id === 'rail-incline' ? foundry : halls, glow, c);
   portal(halls, QIN_CORRIDORS.find(c => c.id === 'maintenance-south')!, '工');
   buildLiftShaft(halls);
   furnishFoundry(foundry, glow, make);
   furnishGarrison(garrison, glow);
   furnishRoyalCity(royal, glow);
+  // 陪葬坑 off the royal city, and the walled mausoleum park on the plain above.
+  { const room = (id: string) => QIN_ROOMS.find(r => r.id === id)!;
+    const c = room('chariot-pit'), a = room('armour-pit'), w = room('waterfowl-pit');
+    furnishChariotPit(pits, glow, c.x0, c.x1, c.z0, c.z1, c.floor);
+    furnishArmourPit(pits, glow, a.x0, a.x1, a.z0, a.z1, a.floor);
+    furnishWaterfowlPit(pits, glow, water, w.x0, w.x1, w.z0, w.z1, w.floor); }
+  buildMausoleumPark(park, trunks, leaves, glow, heightAt);
 
   // ───────────── vegetation: pines on the mountain, willows in the valley ─────────────
   const random = mulberry32(7019); let trees = 0;
   const avoid = (x: number, z: number) => roadDistance(x, z) < 9 || houses.some(h => Math.hypot(h.position[0] - x, h.position[2] - z) < 10) || workshopZones.some(([zx, zz, zr]) => Math.hypot(x - zx, z - zz) < zr + 4)
+    || (x > QIN_MAUSOLEUM.outer[0] - 6 && x < QIN_MAUSOLEUM.spiritWay.x1 + 6 && z > QIN_MAUSOLEUM.outer[2] - 6 && z < QIN_MAUSOLEUM.outer[3] + 6)
     || (x > -10 && x < 110 && z > -50 && z < 100) || (x > -150 && x < -100 && z > -70 && z < -20) || Math.abs(x + 70) < 10 && z > 45 && z < 125;
   for (let i = 0; i < 1400 && trees < 230; i++) {
     const x = -300 + random() * 600, z = -260 + random() * 560, y = heightAt(x, z);
@@ -675,7 +685,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     const y = 10, cx = 55, cz = -178;
     // 星图穹顶: an inward-facing dome over the hall, set with lit constellations.
     const dome = new THREE.SphereGeometry(22.95, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2); dome.scale(1, .86, -1);
-    b.add(dome, '#2f3f72', T(cx, y + 8, cz), false); dome.dispose();
+    b.add(dome, '#3a4f8c', T(cx, y + 8, cz), false); dome.dispose();
     const domePoint = (az: number, el: number, r = 22.5) => [cx + Math.cos(az) * Math.cos(el) * r, y + 8 + Math.sin(el) * r * .86, cz + Math.sin(az) * Math.cos(el) * r] as const;
     const stars = mulberry32(221); for (let i = 0; i < 360; i++) {
       const p = domePoint(stars() * Math.PI * 2, .12 + stars() * 1.38);
@@ -702,10 +712,10 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     for (let k = 0; k < 8; k++) {
       const a = k / 8 * Math.PI * 2 + .2, pts: QinPoint[] = [];
       for (let t = 0; t <= 8; t++) { const r = 22 - t * 1.6, w = Math.sin(t * 1.3 + k) * 1.5; pts.push([cx + Math.cos(a) * r - Math.sin(a) * w, y + .03, cz + Math.sin(a) * r + Math.cos(a) * w]); }
-      walkStripMercury(g, pts, .9);
+      walkStripMercury(mercury, pts, .9);
       for (const t of [3, 6]) { const p = pts[t]; b.add(new THREE.SphereGeometry(.22, 7, 5), Q.gold, T(p[0], y + .2, p[2], a, 1.3, .8, .9), false); b.add(new THREE.SphereGeometry(.09, 6, 4), Q.gold, T(p[0] + Math.cos(a) * .3, y + .42, p[2] + Math.sin(a) * .3), false); }
     }
-    g.add(new THREE.RingGeometry(8.6, 11, 40).rotateX(-Math.PI / 2), Q.mercury, T(cx, y + .04, cz), false);
+    mercury.add(new THREE.RingGeometry(8.6, 11, 40).rotateX(-Math.PI / 2), Q.mercury, T(cx, y + .04, cz), false);
     // 封土: three stepped rammed terraces with a stone stair on the gallery side.
     for (let i = 0; i < 3; i++) { const r = 8 - i * 2.1; b.box(cx, y + i * 1.1, cz, r * 2, 1.1, r * 2, i % 2 ? Q.earthDark : Q.earth); b.box(cx, y + (i + 1) * 1.1 - .1, cz, r * 2 + .3, .2, r * 2 + .3, Q.stoneDark, 0, false); }
     for (let k = 0; k < 9; k++) b.box(cx - 8.6 + k * .62, y, cz, .62, (k + 1) * 3.3 / 9, 2.4, Q.stone, 0, false);
@@ -720,6 +730,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; g.add(CYL8, Q.jade, T(cx + Math.cos(a) * 7.4, y + 1.6, cz + Math.sin(a) * 7.4, 0, .2, .5, .2), false); }
     // A city in miniature along the walls: halls, gate towers and que pairs, no two alike.
     for (let i = 0; i < 6; i++) for (const s of [-1, 1]) {
+      if (i === 2 || i === 3) continue; // aisles to the north and south burial-pit doors
       const x = 36 + i * 7.6, z = s < 0 ? cz - 21 : cz + 21, f = new Frame(b, x, y, z, s < 0 ? 0 : Math.PI), kind = (i + (s > 0 ? 3 : 0)) % 4;
       f.box(0, .4, 0, 5.4, .8, 3.2, Q.earth); f.box(0, .82, 0, 5.6, .06, 3.4, Q.stoneDark, false);
       if (kind === 0) { f.box(0, 1.5, 0, 3.6, 1.3, 2, Q.plaster, false); qinRoof(f, 3.6, 2, 2.2, .9, Q.tile, .5, false, { finScale: .3, rafters: false }); }
@@ -727,6 +738,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
       else if (kind === 2) { f.box(0, 1.4, 0, 4, 1.1, 2.2, Q.plaster, false); f.box(0, 2.3, 0, 2.6, .8, 1.4, Q.plaster, false); qinRoof(f, 2.6, 1.4, 2.8, .7, Q.tile, .45, false, { finScale: .25, rafters: false }); pentRoof(f, 4, 2.2, 2, .5, .35); }
       else { f.box(0, 1.6, 0, 2.2, 1.6, 2.2, Q.earth, false); f.box(0, 2.7, 0, 1.6, .6, 1.6, Q.plaster, false); qinRoof(f, 1.6, 1.6, 3.1, .8, Q.tile, .5, false, { fins: false, rafters: false }); }
     }
+    royalCityDetails(b, g, cx, y, cz, 31, -190);
   }
   function walkStripMercury(b: Batch, points: QinPoint[], width: number) {
     const v: number[] = [];
