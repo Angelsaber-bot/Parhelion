@@ -302,5 +302,53 @@
       "qinMarkers": 14
     },
     "errors": []
+  },
+  {
+    "id": "lift-headframe",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 70,
+        "triangles": 265639,
+        "points": 868,
+        "lines": 0
+      },
+      "qinMarkers": 16
+    },
+    "errors": []
+  },
+  {
+    "id": "town-residents",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 73,
+        "triangles": 355901,
+        "points": 714,
+        "lines": 0
+      },
+      "qinMarkers": 16
+    },
+    "errors": []
+  },
+  {
+    "id": "lift-bottom",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 82,
+        "triangles": 419684,
+        "points": 1028,
+        "lines": 0
+      },
+      "qinMarkers": 16
+    },
+    "errors": []
   }
 ]

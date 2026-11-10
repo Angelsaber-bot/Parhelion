@@ -25,6 +25,9 @@ const shots=[
  {id:'chariot',eye:[-13,30.5,-110],target:[-22,29,-121]},
  {id:'furnace',eye:[117,50.5,-93],target:[140,49,-84]},
  {id:'palace-portal',eye:[42,74,-20],target:[40,74,-42]},
+ {id:'lift-headframe',eye:[-1,104,-118],target:[-17,97,-131]},
+ {id:'town-residents',eye:[-160,29,122],target:[-178,23,104]},
+ {id:'lift-bottom',eye:[-6,32,-118],target:[-17,30,-130]},
 ];
 const only=process.env.SHOTS?.split(','),results=[];
 try{for(const shot of shots.filter(s=>!only||only.includes(s.id))){

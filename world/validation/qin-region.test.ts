@@ -45,6 +45,7 @@ function walk(colliders: Collider[], start: readonly [number, number, number], p
 
 test('every underground room and corridor stays inside Mount Li except its two portals', () => {
   for (const r of QIN_ROOMS) for (let x = r.x0; x <= r.x1; x += 4) for (let z = r.z0; z <= r.z1; z += 4) {
+    if (r.id === 'army' && Math.abs(x - QIN_LIFT.x) < QIN_LIFT.half + 1 && Math.abs(z - QIN_LIFT.z) < QIN_LIFT.half + 1) continue; // the lift shaft opens the roof here
     const ground = grid.sampleHeight(x + OX, z + OZ)!;
     assert.ok(ground > r.floor + r.height + 1.2, `${r.id} is covered by the mountain at ${x},${z}: ${ground.toFixed(1)}`);
     const roof = bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(...W(x, r.floor + 1.5, z)), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
@@ -145,4 +146,76 @@ test('sneaking route: quarry tunnel → garrison → foundry → palace works on
   const up = walk(colliders, [-17, 28, -126], [[-17, -115], [20, -115], [30, -115], [100, -115], [106, -115], [106, -72.5], [100, -72.5], [44.5, -72.5], [40, -72.5], [40, -68], [40, -44], [40, -30]]);
   assert.ok(up.ok && Math.abs(up.at[1] - 70) < .6, `rail incline, foundry and palace incline lead up to the rear court: ${up.at}`);
   order.dispose();
+});
+
+import { qinResidentSockets, createQinResidentLife } from '../src/map/qinResidents';
+import { createSettlementNpcs } from '../src/settlements/npcs';
+test('Lishan residents give their own directions, stand grounded with body clearance, and the courier walks the post road', () => {
+  const sockets = qinResidentSockets(), original = JSON.stringify(sockets), system = createSettlementNpcs(sockets);
+  const ground = (x: number, z: number, ceiling: number) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, ceiling, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? null;
+  const life = createQinResidentLife(system, ground);
+  assert.ok(sockets.length >= 8 && sockets.every(s => s.worldRegion === 'qin'));
+  assert.equal(new Set(sockets.map(s => s.lines[0][0])).size, sockets.length, 'no two residents repeat each other');
+  for (const s of sockets) {
+    const line = system.interact(s.id)!; assert.ok(line[0].length > 10 && line[1].length > 20);
+    const p = system.getPosition(s.id)!, floor = ground(p[0], p[2], p[1] + 1); assert.ok(floor !== null && Math.abs(floor - p[1]) < .18, `${s.id} is grounded at ${p}`);
+    const visitor = new Player([staticCollider], 0); visitor.teleport(p[0], p[1] + .6, p[2]);
+    for (let j = 0; j < 120; j++) visitor.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false });
+    assert.ok(Math.hypot(visitor.pos.x - p[0], visitor.pos.z - p[2]) < .25 && Math.abs(visitor.pos.y - floor!) < .25, `${s.id} has full body clearance`);
+  }
+  const start = system.getPosition('qin_courier')!, viewer = new THREE.Vector3(start[0] + 8, start[1], start[2] + 5);
+  for (let i = 0; i < 900; i++) { system.update(1 / 60, viewer); life.update(1 / 60, viewer, null, true); }
+  const end = system.getPosition('qin_courier')!; assert.ok(Math.hypot(end[0] - start[0], end[2] - start[2]) > 5, 'the courier visibly walks');
+  for (let i = 0; i < 120; i++) life.update(1 / 60, viewer, 'qin_courier', true); assert.deepEqual(system.getPosition('qin_courier'), end, 'conversation pauses the courier');
+  assert.equal(JSON.stringify(sockets), original); life.dispose(); system.dispose();
+});
+
+import { createQinLift } from '../src/environment/qinLift';
+import { QIN_LIFT } from '../src/map/qinPlan';
+test('lift: ride from the ridge headframe down the shaft into the garrison avenue and back up', () => {
+  const lift = createQinLift(), colliders = [staticCollider, ...lift.colliders];
+  const p = new Player(colliders, 0), go = (x: number, z: number) => {
+    for (let i = 0; i < 4000 && Math.hypot(p.pos.x - x - OX, p.pos.z - z - OZ) > .4; i++) { p.yaw = Math.atan2(-(x + OX - p.pos.x), -(z + OZ - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); lift.update(1 / 120, p.pos); }
+    return Math.hypot(p.pos.x - x - OX, p.pos.z - z - OZ) <= .4;
+  };
+  const settle = (frames: number) => { for (let i = 0; i < frames; i++) { lift.update(1 / 120, p.pos); p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false }); } };
+  p.teleport(-17 + OX, 95.6, -141 + OZ); settle(90);
+  assert.ok(go(-17, -135) && go(-17, -130), `walk from the ridge path onto the cage: ${p.pos.toArray()}`);
+  assert.ok(Math.abs(p.pos.y - QIN_LIFT.top) < .4, 'the cage waits flush with the deck');
+  assert.equal(lift.operate(), 'bottom');
+  settle(120 * 30);
+  assert.equal(lift.moving, false); assert.ok(Math.abs(p.pos.y - QIN_LIFT.bottom) < .4, `carried down to the garrison floor: ${p.pos.y}`); assert.equal(p.swimming, false);
+  assert.ok(go(-17, -124), 'step off into the central avenue');
+  // The shaft mouth is barred while the cage is below: nobody walks into the hole.
+  const q = new Player(colliders, 0); q.teleport(-17 + OX, QIN_LIFT.top + .6, -139 + OZ);
+  for (let i = 0; i < 600; i++) { q.yaw = Math.PI; q.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); }
+  assert.ok(q.pos.y > QIN_LIFT.top - .5, `the bar holds at the mouth: ${q.pos.toArray()}`);
+  assert.ok(go(-17, -130)); assert.equal(lift.operate(), 'top'); settle(120 * 30);
+  assert.ok(Math.abs(p.pos.y - QIN_LIFT.top) < .4, `carried back up: ${p.pos.y}`);
+  assert.ok(go(-17, -135) && go(-17, -140), 'step back across the deck onto the ridge path');
+  lift.dispose();
+});
+
+import { createQinSentinels, qinSentinelFlag } from '../src/environment/qinSentinels';
+test('tomb guardians patrol, chase and evict an intruder, and are ground down when lured beside a turning rank', () => {
+  const s = createQinSentinels(), done = new Set<string>(), east = s.guards.find(g => g.def.id === 'east')!;
+  s.apply(done);
+  const far = { x: 200 + OX, y: 70, z: OZ }, start = [east.x, east.z];
+  for (let i = 0; i < 300; i++) s.update(1 / 60, far, done);
+  assert.ok(Math.hypot(east.x - start[0], east.z - start[1]) > 3, 'the guardian walks its beat');
+  // Spotted in the open east zone: it gives chase and sends the intruder back to the entrance.
+  east.x = 20; east.z = -130; east.yaw = -Math.PI / 2; east.mode = 'patrol';
+  let back: [number, number, number] | null = null; const intruder = { x: 14 + OX, y: 28, z: -130 + OZ };
+  for (let i = 0; i < 600 && !back; i++) back = s.update(1 / 60, intruder, done);
+  assert.ok(back && Math.abs(back[0] - (27 + OX)) < .01, 'caught and returned to the east entrance');
+  // Lure: phase A seals the east file; the guardian presses against it chasing someone beyond.
+  east.x = 6; east.z = -130; east.yaw = -Math.PI / 2; east.mode = 'patrol';
+  const beyond = { x: -2.5 + OX, y: 28, z: -130 + OZ };
+  for (let i = 0; i < 400; i++) assert.equal(s.update(1 / 60, beyond, done), null, 'a closed file stops the chase');
+  assert.ok(east.x >= 2.99 && east.x < 4, `pressed against the file at ${east.x}`);
+  toggleQinOrder(done); const crushed = s.orderTurned(done);
+  assert.deepEqual(crushed, ['east']); assert.ok(done.has(qinSentinelFlag('east')));
+  for (let i = 0; i < 200; i++) s.update(1 / 60, { x: east.x + OX, y: 28, z: east.z + OZ }, done);
+  assert.equal(east.mode, 'broken'); assert.equal(east.group.visible, false);
+  s.dispose();
 });

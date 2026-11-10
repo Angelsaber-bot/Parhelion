@@ -4,7 +4,7 @@ import { mulberry32 } from '../rng';
 import type { Piece } from '../structures';
 import { Frame } from '../orleans/craft';
 import { distanceToLine, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
-import { QIN_ROOMS, QIN_CORRIDORS, QIN_PALACE, QIN_STREAM, QIN_ARMY, type QinCorridor, type QinPoint, type QinRoom } from '../../../src/map/qinPlan';
+import { QIN_ROOMS, QIN_CORRIDORS, QIN_PALACE, QIN_STREAM, QIN_ARMY, QIN_LIFT, QIN_LEVELS, type QinCorridor, type QinPoint, type QinRoom } from '../../../src/map/qinPlan';
 import { ding, banner, balustrade } from './craft';
 import { warriorPrims, horsePrims } from '../../../src/map/qinFigures';
 import { Q, CYL, CYL8, MAT, qinRoof, pentRoof, gableRoof, barWindow, bracket, terrainWall, figure, rammedPlatform, earthWall, column, palaceHall, gateHouse, slabBetween, walkStrip, warrior, Shell } from './craft';
@@ -248,6 +248,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
   for (const room of QIN_ROOMS) buildRoom(room.id === 'royal' ? royal : halls, room);
   for (const c of QIN_CORRIDORS) buildCorridor(c.id === 'rail-incline' ? foundry : halls, glow, c);
   portal(halls, QIN_CORRIDORS.find(c => c.id === 'maintenance-south')!, '工');
+  buildLiftShaft(halls);
   furnishFoundry(foundry, glow, make);
   furnishGarrison(garrison, glow);
   furnishRoyalCity(royal, glow);
@@ -469,6 +470,31 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     b.add(new THREE.CylinderGeometry(.35, .45, .9, 9), Q.clay, T(-148, 28.45, -47.5), false);
   }
 
+  function buildLiftShaft(b: Batch) {
+    // 竖井: a timber-lined square shaft from the garrison roof to the ridge, guide posts in
+    // each corner, and above ground a deck, a winch house and a headframe with its wheel.
+    const { x, z, half, top } = QIN_LIFT, base = QIN_LEVELS.army + 11, h = top - base, t = 1.2;
+    for (const [dx, dz, w, d] of [[-half - t / 2, 0, t, half * 2 + t * 2], [half + t / 2, 0, t, half * 2 + t * 2], [0, -half - t / 2, half * 2, t], [0, half + t / 2, half * 2, t]] as const) b.box(x + dx, base, z + dz, w, h - .02, d, Q.earth);
+    for (let yy = base + 2; yy < top - 1; yy += 3.2) for (const s of [-1, 1]) { b.box(x + s * (half - .1), yy, z, .2, .3, half * 2, Q.wood, 0, false); b.box(x, yy, z + s * (half - .1), half * 2, .3, .2, Q.wood, 0, false); }
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.box(x + sx * (half - .15), QIN_LEVELS.army, z + sz * (half - .15), .3, top - QIN_LEVELS.army + 6, .3, Q.bronze, 0, false);
+    // bottom: a bronze-kerbed landing ring flush with the garrison floor
+    for (const s of [-1, 1]) { b.box(x + s * (half + .2), QIN_LEVELS.army, z, .4, .06, half * 2 + .8, Q.bronzeBright, 0, false); b.box(x, QIN_LEVELS.army, z + s * (half + .2), half * 2 + .8, .06, .4, Q.bronzeBright, 0, false); }
+    // top deck around the opening, flush with the ridge path, with a stone foot
+    const [dx0, dx1, dz0, dz1] = QIN_LIFT.deck;
+    for (const [ax0, ax1, az0, az1] of [[dx0, x - half, dz0, dz1], [x + half, dx1, dz0, dz1], [x - half, x + half, dz0, z - half], [x - half, x + half, z + half, dz1]] as const) b.box((ax0 + ax1) / 2, top - 3, (az0 + az1) / 2, ax1 - ax0, 3, az1 - az0, Q.stoneDark);
+    for (let k = 0; k < 12; k++) b.box(dx0 + .5 + k * (dx1 - dx0 - 1) / 11, top - .02, (dz0 + dz1) / 2, (dx1 - dx0) / 12 - .1, .04, dz1 - dz0 - .6, Q.wood, 0, false);
+    // railings on the south and side edges of the opening; the north side is the boarding side
+    for (const s of [-1, 1]) { b.box(x + s * (half + .15), top, z + .6, .2, 1.1, half * 2 - 1.2, Q.redDark); }
+    b.box(x, top, z + half + .15, half * 2 + .5, 1.1, .2, Q.redDark);
+    // headframe: two raked legs each side carrying the sheave wheel axle over the shaft
+    const hf = new Frame(b, x, top, z);
+    for (const sx of [-1, 1]) { hf.beam([sx * (half + 1.6), 0, -2.6], [sx * (half + .4), 9, 0], .45, Q.wood); hf.beam([sx * (half + 1.6), 0, 2.6], [sx * (half + .4), 9, 0], .45, Q.wood); hf.beam([sx * (half + 1.2), 3.2, -1.8], [sx * (half + 1.2), 3.2, 1.8], .25, Q.wood); }
+    hf.box(0, 9.1, 0, half * 2 + 1.6, .5, .6, Q.wood); hf.box(0, 9.6, 0, half * 2 + 2.2, .2, 1, Q.tile, false);
+    const winch = new Frame(b, x + half + 4.2, top, z - 4.6, 0); winch.box(0, 1.4, 0, 3.4, 2.8, 3, Q.earth); gableRoof(winch, 3.4, 3, 2.9, 1, Q.tile, .5, .5);
+    winch.cyl(-2.4, 1.2, 0, .6, 2.2, Q.wood, false); for (let k = 0; k < 4; k++) winch.box(-2.4, 1.2, 0, .12, 2.6, .12, Q.woodPale, false, k * Math.PI / 4);
+    banner(b, x - half - 2.5, top, z - 6.5, Math.PI / 2, 7);
+  }
+
   function portal(b: Batch, c: QinCorridor, glyph: string) {
     // A gate-face cut into the mountain: rammed side walls stepping down like que towers,
     // a lintel of timber and bronze, a hip-roofed porch, guardian figures and hanging lamps.
@@ -497,7 +523,12 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     const w = r.x1 - r.x0, d = r.z1 - r.z0, cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, top = r.floor + r.height;
     // Floor only under the interior: sloped corridors own the floor through the doorway.
     b.box(cx, r.floor - 1.2, cz, w, 1.2, d, r.id === 'royal' ? '#5a5f68' : Q.paving);
-    b.box(cx, top, cz, w + WALL * 2, 1.4, d + WALL * 2, Q.earthDark);
+    if (r.id === 'army') {
+      // The lift shaft pierces the garrison roof over the central avenue.
+      const hx0 = QIN_LIFT.x - QIN_LIFT.half - .1, hx1 = QIN_LIFT.x + QIN_LIFT.half + .1, hz0 = QIN_LIFT.z - QIN_LIFT.half - .1, hz1 = QIN_LIFT.z + QIN_LIFT.half + .1, X0 = r.x0 - WALL, X1 = r.x1 + WALL, Z0 = r.z0 - WALL, Z1 = r.z1 + WALL;
+      b.box((X0 + hx0) / 2, top, cz, hx0 - X0, 1.4, Z1 - Z0, Q.earthDark); b.box((hx1 + X1) / 2, top, cz, X1 - hx1, 1.4, Z1 - Z0, Q.earthDark);
+      b.box(QIN_LIFT.x, top, (Z0 + hz0) / 2, hx1 - hx0, 1.4, hz0 - Z0, Q.earthDark); b.box(QIN_LIFT.x, top, (hz1 + Z1) / 2, hx1 - hx0, 1.4, Z1 - hz1, Q.earthDark);
+    } else b.box(cx, top, cz, w + WALL * 2, 1.4, d + WALL * 2, Q.earthDark);
     const openings = (axis: 'x' | 'z', at: number) => QIN_CORRIDORS.flatMap(c => [c.a, c.b].filter(p => Math.abs((axis === 'x' ? p[0] : p[2]) - at) < .01 && (axis === 'x' ? p[2] > r.z0 && p[2] < r.z1 : p[0] > r.x0 && p[0] < r.x1)).map(p => ({ at: axis === 'x' ? p[2] : p[0], half: c.width / 2, top: p[1] + c.height })));
     const side = (axis: 'x' | 'z', at: number, from: number, to: number, out: number) => {
       const holes = openings(axis, at).sort((p, q) => p.at - q.at);
@@ -517,7 +548,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     };
     side('x', r.x0, r.z0, r.z1, -1); side('x', r.x1, r.z0, r.z1, 1); side('z', r.z0, r.x0, r.x1, -1); side('z', r.z1, r.x0, r.x1, 1);
     // Roof timbers (棚木) under the ceiling.
-    if (r.id !== 'royal') for (let x = r.x0 + 1.5; x < r.x1; x += 3) b.box(x, top - .7, cz, .7, .7, d, Q.wood, 0, false);
+    if (r.id !== 'royal') for (let x = r.x0 + 1.5; x < r.x1; x += 3) { if (r.id === 'army' && Math.abs(x - QIN_LIFT.x) < QIN_LIFT.half + .6) continue; b.box(x, top - .7, cz, .7, .7, d, Q.wood, 0, false); }
   }
 
   function buildCorridor(b: Batch, g: Batch, c: QinCorridor) {
@@ -633,7 +664,6 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
       for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; b.box(row.x + Math.cos(a) * 7.55, y + .02, zc + Math.sin(a) * 7.55, k % 2 ? .25 : .5, .05, 1.1, k % 2 ? Q.bronze : Q.bronzeBright, Math.PI / 2 - a, false); }
     }
     // Skylight (天井): a shaft of daylight falling onto the central avenue.
-    g.add(new THREE.CylinderGeometry(2.6, 2.6, .1, 20), '#f6edc8', T(-17, y + 10.9, -130), false);
     beams.add(new THREE.CylinderGeometry(2.5, 3.8, 10.8, 20, 1, true), '#fff1c8', T(-17, y + 5.45, -130), false);
     // Standing bronze lamps and wall sconces; racks of crossbows along the north wall.
     for (let x = -54; x < 28; x += 12) for (const z of [-159.6, -100.4]) { g.box(x, y + 4.2, z, .5, .4, .2, Q.molten, 0, false); b.box(x, y + 3.7, z, .7, .35, .5, Q.bronze, 0, false); }

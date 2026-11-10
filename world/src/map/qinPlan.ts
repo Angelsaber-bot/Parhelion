@@ -94,6 +94,17 @@ export const QIN_ARMY = {
   ],
 };
 
+/**
+ * 升降机关: a lift shaft from a headframe beside the ridge path straight down into the
+ * garrison's central avenue (the skylight), so the middle file can be entered from above.
+ */
+export const QIN_LIFT = {
+  x: -17, z: -130, half: 2.5, bottom: 28, top: 95.2,
+  deck: [-21, -13, -136.5, -125.6] as const,
+  markers: { top: 'qin_lift_top', bottom: 'qin_lift_bottom' },
+  speed: 4,
+};
+
 export function qinDistanceToPolyline(x: number, z: number, line: readonly QinPoint[]): { d: number; y: number } {
   let best = { d: Infinity, y: line[0][1] };
   for (let i = 1; i < line.length; i++) {

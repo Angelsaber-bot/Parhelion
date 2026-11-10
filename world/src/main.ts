@@ -1,4 +1,5 @@
 import {orleansResidentSockets,createOrleansResidentLife} from './map/orleansResidents';
+import {qinResidentSockets,createQinResidentLife} from './map/qinResidents';
 import {ORLEANS_WORK_ACTIONS} from './map/orleansWorks';
 import {createOrleansWorksScene} from './environment/orleansWorksScene';
 import {createOrleansWorksRuntime} from './story/orleansWorks';
@@ -8,6 +9,8 @@ import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
 import { createQinArmyOrder, qinTurnBlocked, toggleQinOrder, QIN_ORDER_MARKERS } from './environment/qinArmyOrder';
 import { createQinAtmosphere } from './environment/qinAtmosphere';
+import { createQinLift, QIN_LIFT_MARKERS } from './environment/qinLift';
+import { createQinSentinels } from './environment/qinSentinels';
 import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
 import {installWorldInterface} from './ui/worldInterface';
 import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './story/journeyDrama';
@@ -447,7 +450,7 @@ world.add(armoryWorkshop.root);
 armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
 freezeStaticArt(armoryWorkshop.root);
 addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
-const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets()]);
+const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets()]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -471,6 +474,11 @@ world.add(qinArmyOrder.root); colliders.push(...qinArmyOrder.colliders); layout.
 const qinOrderMarkerIds = new Set<string>(QIN_ORDER_MARKERS);
 addEventListener('pagehide',event=>{if(!event.persisted)qinArmyOrder.dispose();});
 const qinAtmosphere = createQinAtmosphere(); world.add(qinAtmosphere.root);
+const qinLift = createQinLift(m => toonMaterial(m)); world.add(qinLift.root); colliders.push(...qinLift.colliders); layout.markers.push(...qinLift.markers);
+const qinLiftMarkerIds = new Set<string>(QIN_LIFT_MARKERS);
+const qinSentinels = createQinSentinels(m => toonMaterial(m)); world.add(qinSentinels.root);
+addEventListener('pagehide',event=>{if(!event.persisted)qinSentinels.dispose();});
+addEventListener('pagehide',event=>{if(!event.persisted)qinLift.dispose();});
 addEventListener('pagehide',event=>{if(!event.persisted)qinAtmosphere.dispose();});
 const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
@@ -494,6 +502,8 @@ let orleansWorksRuntime:ReturnType<typeof createOrleansWorksRuntime>|undefined;
 addEventListener('pagehide',e=>{if(!e.persisted){orleansWorksRuntime?.dispose();orleansWorksScene.dispose();}});
 const orleansResidentLife=createOrleansResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 addEventListener('pagehide',e=>{if(!e.persisted)orleansResidentLife.dispose();});
+const qinResidentLife=createQinResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
+addEventListener('pagehide',e=>{if(!e.persisted)qinResidentLife.dispose();});
 const residentEventScene=createResidentEventScene(campaignSites.markers,(x,z,ceiling=300)=>residentQueries.ground(x,z,ceiling)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
 world.add(residentEventScene.root);layout.markers.push(...residentEventScene.markers);const residentEventMarkerIds=new Set(residentEventScene.markers.map(m=>m.id));
 addEventListener('pagehide',e=>{if(!e.persisted)residentEventScene.dispose();});
@@ -661,6 +671,7 @@ function applyWorldState() {
   parallaxGarden.apply(done);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.apply(done);
+  if(typeof qinSentinels!=='undefined')qinSentinels.apply(done);
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   applyWeaponFinish();
   for (const t of targets) {
@@ -806,7 +817,7 @@ function renderMainObjective() {
     const localDiscoveries=layout.markers.filter(m=>m.type==='discovery'&&m.id.startsWith(`${region}_`));
     const discovered=localDiscoveries.filter(m=>found.has(m.id)).length;
     const works=ORLEANS_WORK_ACTIONS.filter(a=>done.has(a.flag)).length;
-    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
   const adventure=getCurrentAdventureGuide(region,done);
@@ -2044,11 +2055,19 @@ function interactParallax(id: string) {
   if(recordParallaxView(id,done,frame,station,parallaxGarden.subject)){save();applyWorldState();audio.interaction();toast(id===PARALLAX.front?bilingual('正面已记录：轮廓相互重叠。到右侧菱形脚印再看看。','Front recorded: overlapping silhouettes. Try the diamond footprint on the right.'):(done.has(PARALLAX.front)?bilingual('侧面已记录：两枚环前后错开。回记录板对照两次观察。','Side recorded: two rings at different depths. Compare your observations at the board.'):bilingual('侧面已记录：两枚环前后错开。再到圆形脚印记录正面视角。','Side recorded: two rings at different depths. Record the front view at the round footprint next.')));}
   else toast(done.has(id)?bilingual('这个视角已经记录。可以继续观察，或跟随指引前往下一处。','This view is already recorded. Look again, or follow the guide to the next step.'):bilingual('站进脚印内并看向双环，将它们置于画面中央后再按交互。无需瞄准或射击。','Stand inside the footprint, center the rings, then interact. No aiming or shooting required.'));
 }
+function interactQinLift() {
+  if(!player.onGround||player.flying||player.swimming||player.gliding)return;
+  const to=qinLift.operate();
+  if(!to){toast(bilingual('升降台正在起落。','The cage is already moving.'));return;}
+  audio.interaction();
+  toast(to==='bottom'?bilingual('绞盘松开，升降台沉入竖井，落向军阵中轴。','The winch pays out; the cage sinks down the shaft toward the garrison avenue.'):bilingual('绞盘收紧，升降台升向山脊井架。','The winch hauls in; the cage rises toward the ridge headframe.'));
+}
 function interactQinOrder() {
   if(!player.onGround||player.flying||player.swimming||player.gliding)return;
   if(qinArmyOrder.turning){toast(bilingual('阵列仍在转动。','The ranks are still turning.'));return;}
   if(qinTurnBlocked(player.pos)){toast(bilingual('有人站在转台上：离开兵俑转台和铜闸下方后再下令。','Someone is on a turntable: step clear of the ranks and the bronze gate first.'));return;}
-  const phase=toggleQinOrder(done);save();applyWorldState();audio.interaction();
+  const phase=toggleQinOrder(done);const crushed=qinSentinels.orderTurned(done);save();applyWorldState();audio.interaction();
+  if(crushed.length)setTimeout(()=>toast(bilingual(`转动的兵俑阵碾碎了 ${crushed.length} 尊守陵俑。`,`The turning ranks ground down ${crushed.length} tomb guardian${crushed.length>1?'s':''}.`)),1600);
   toast(phase==='b'?bilingual('军令：让道阵。东列兵俑转为横向让出通道，斜井铜闸升起；西列合拢封路。','Order: open ranks. The east row turns aside and the shaft gate rises; the west row closes.'):bilingual('军令：守陵阵。东列兵俑合拢封路，斜井铜闸落下；西列转向让出通道。','Order: guard ranks. The east row closes, the shaft gate falls, and the west row turns aside.'));
 }
 function interact() {
@@ -2057,6 +2076,7 @@ function interact() {
   if(orleansWorksMarkerIds.has(m.id)){if(!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请为交互绑定一个可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}orleansWorksRuntime?.interact(m.id);return;}
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if(typeof qinOrderMarkerIds!=="undefined"&&qinOrderMarkerIds.has(m.id)){interactQinOrder();return;}
+  if(typeof qinLiftMarkerIds!=="undefined"&&qinLiftMarkerIds.has(m.id)){interactQinLift();return;}
   if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
   if(adventureMarkerIds.has(m.id)){if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}adventureRuntime?.interact(m.id);return;}
@@ -2362,7 +2382,10 @@ function frame(now: number) {
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
+  if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);
+  if(typeof qinSentinels!=='undefined'&&gameplayActive()&&!player.flying){const back=qinSentinels.update(dt,player.pos,done);if(back){player.teleport(back[0],back[1]+.1,back[2],player.yaw);toast(bilingual('守陵俑把你逐回了入口。把它引到转台边，再转动军令。','A tomb guardian drives you back to the entrance. Lure it beside a turntable, then turn the order.'));}}
   orleansResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('orleans'));
+  qinResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('qin'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -2466,7 +2489,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

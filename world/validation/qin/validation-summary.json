@@ -117,6 +117,24 @@
         "file": "artifacts/palace-portal.png",
         "pageErrors": 0,
         "orderPhase": "a"
+      },
+      {
+        "id": "lift-headframe",
+        "file": "artifacts/lift-headframe.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "town-residents",
+        "file": "artifacts/town-residents.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "lift-bottom",
+        "file": "artifacts/lift-bottom.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
       }
     ]
   },
@@ -125,13 +143,12 @@
     "expansion-framework.test.ts": "pass",
     "continent-continuity.test.ts": "14/14",
     "fullSuite": {
-      "total": 2093,
-      "pass": 2093,
-      "fail": 0,
-      "base": "fd6a04a"
+      "total": 2096,
+      "pass": 2096,
+      "fail": 0
     }
   },
-  "round": "modeling-pass-2",
+  "round": "residents-lift-guardians",
   "assets": {
     "qinGlbMB": 6.52,
     "triangles": 717000

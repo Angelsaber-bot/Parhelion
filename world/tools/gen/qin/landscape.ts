@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { fbm, smoothstep, lerp } from '../rng';
 import { distToSegment } from '../geo';
 import type { ExpansionPlan, RoutePoint } from '../../../src/map/worldPlan';
-import { QIN_RIDGES, QIN_STREAM, QIN_PADS, QIN_PALACE, QIN_ROOMS, QIN_CORRIDORS, qinDistanceToPolyline, type QinCorridor } from '../../../src/map/qinPlan';
+import { QIN_RIDGES, QIN_STREAM, QIN_PADS, QIN_PALACE, QIN_ROOMS, QIN_CORRIDORS, QIN_LIFT, qinDistanceToPolyline, type QinCorridor } from '../../../src/map/qinPlan';
 
 const BASE = 20;
 /** Corridor footprint as an axis rectangle [x0,x1,z0,z1]. */
@@ -86,6 +86,8 @@ export function qinAuthoredHeight(plan: ExpansionPlan, x: number, z: number): nu
     y = Math.max(y, lerp(top + 6, y, smoothstep(6, 16, d)));
   };
   for (const r of QIN_ROOMS) cover([r.x0, r.x1, r.z0, r.z1], r.floor + r.height, null);
+  // Headframe deck over the lift shaft sits flush with the ridge path.
+  { const [x0, x1, z0, z1] = QIN_LIFT.deck, d = rectDistance(x, z, [x0, x1, z0, z1]); y = lerp(QIN_LIFT.top - .03, y, smoothstep(0, 7, d)); }
   // The stream keeps its bed through town and under every bridge deck.
   const stream = qinDistanceToPolyline(x, z, QIN_STREAM);
   y = lerp(y, Math.min(y, stream.y - 1.1), 1 - smoothstep(1.6, 3.4, stream.d));
@@ -98,6 +100,7 @@ export function qinAuthoredHeight(plan: ExpansionPlan, x: number, z: number): nu
  * tunnel floor (separate vertices), so the hillside opens only into the tunnel.
  */
 export function qinTunnelCut(x: number, z: number): number | null {
+  if (Math.abs(x - QIN_LIFT.x) < QIN_LIFT.half + 1 && Math.abs(z - QIN_LIFT.z) < QIN_LIFT.half + 1) return QIN_LIFT.bottom - 1.6; // beneath the garrison floor, never inside the shaft
   for (const c of QIN_CORRIDORS) {
     if (!c.portal) continue;
     const r = corridorRect(c, 1.4);
@@ -107,6 +110,7 @@ export function qinTunnelCut(x: number, z: number): number | null {
   return null;
 }
 export function qinTunnelRoof(x: number, z: number): number | null {
+  if (Math.abs(x - QIN_LIFT.x) < QIN_LIFT.half + 1 && Math.abs(z - QIN_LIFT.z) < QIN_LIFT.half + 1) return QIN_LIFT.top + 50;
   for (const c of QIN_CORRIDORS) {
     if (!c.portal) continue;
     const r = corridorRect(c, 1.4);
