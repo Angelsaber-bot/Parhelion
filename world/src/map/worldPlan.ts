@@ -1,4 +1,5 @@
 import type { ExpansionRegionId, WorldRegionId } from '../core/regionIdentity';
+import {ORLEANS_UNDERPASS} from './orleansWorks';
 
 export type MapPoint2 = readonly [number, number];
 export type RoutePoint = readonly [number, number, number];
@@ -48,6 +49,7 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'cloisterwalk', name:'教堂侧院回廊', kind:'flank', points:[[80,32,-130],[100,32,-146],[130,32,-160],[130,32,-194],[111,32,-194],[96,32,-194],[96,32,-218],[130,32,-218],[130,32,-194]] },
       { id:'wallworks', name:'修缮场与东墙木构坡道', kind:'high', points:[[130,14,125],[165,14,95],[178,14,50],[180,14,-70],[160,24,-88],[137,24,-72],[108,24,-50],[80,24,-30]] },
       { id:'belfrywalk', name:'钟楼外梯与三面眺廊', kind:'high', points:[[0,24,-45],[-1,24,-45],[-1,24,-74],[-5,24,-74],[-19,29,-74],[-23,29,-74],[-23,29,-70],[-23,34,-54],[-23,34,-50],[-19,34,-50],[-5,39,-50],[-1,39,-50],[-1,39,-74],[-23,39,-74],[-23,39,-54]] },
+      {id:'underpass',name:'河门旧引水道',kind:'underground',points:[...ORLEANS_UNDERPASS]},
     ],
   },
   {

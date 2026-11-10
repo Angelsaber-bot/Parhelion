@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {fbm,smoothstep,lerp} from '../rng';
 import {distToSegment} from '../geo';
 import {distanceToLine,type ExpansionPlan,type MapPoint2} from '../../../src/map/worldPlan';
+import {ORLEANS_UNDERPASS_CUTS} from '../../../src/map/orleansWorks';
+import {ORLEANS_UNDERPASS} from '../../../src/map/orleansWorks';
 
 /** A spring in the eastern foothills flows past the city to the northwest estuary. */
 const riverCurve=new THREE.CatmullRomCurve3([
@@ -42,6 +44,16 @@ export const TOWN_HOUSES=[
   [112,-189,11,14,-.3],[82,-230,12,13,.2],[-22,-234,11,14,.4],[-122,158,12,12,.5],[-177,158,13,14,.7],
 ] as const;
 
+/** Break the heightfield only at the two mouths, where walking crosses from
+ * above the ground to below it. The rest of the vault keeps its earth cover. */
+export function orleansTerrainOpening(x:number,z:number){
+  const a=ORLEANS_UNDERPASS[3],b=ORLEANS_UNDERPASS[4],c=ORLEANS_UNDERPASS[5];
+  const entry=[a[0]+(b[0]-a[0])*.35,a[2]+(b[2]-a[2])*.35] as const;
+  const exit=[c[0]+(b[0]-c[0])*.25,c[2]+(b[2]-c[2])*.25] as const;
+  const lines:MapPoint2[][]=[...ORLEANS_UNDERPASS_CUTS.map(line=>line.map(p=>[p[0],p[2]] as const)),[[a[0],a[2]],entry],[exit,[c[0],c[2]]]];
+  return lines.some(line=>distanceToLine(x,z,line)<2.8);
+}
+
 export function orleansAuthoredHeight(plan:ExpansionPlan,x:number,z:number):number {
   let y=14+fbm((x-720)*.008,(z-720)*.008,4,1489)*6+fbm(x*.035,z*.035,2,1491)*.8;
   // An asymmetric hill rather than a rectangular cathedral plinth.
@@ -64,6 +76,12 @@ export function orleansAuthoredHeight(plan:ExpansionPlan,x:number,z:number):numb
   // Water is a real channel at the world's sea level. Bridges stay above the bed.
   const d=riverDistance(x,z),source=1-smoothstep(258,305,x);
   y=lerp(y,lerp(-2.5,y,smoothstep(10,37,d)),source);
+  // Excavate only the two sloped mouths. The middle watercourse stays beneath
+  // intact town terrain, with a real stone roof rather than an open trench.
+  for(const line of ORLEANS_UNDERPASS_CUTS)for(let i=1;i<line.length;i++){
+    const a=line[i-1],b=line[i],dx=b[0]-a[0],dz=b[2]-a[2],t=THREE.MathUtils.clamp(((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1),0,1);
+    y=lerp(y,Math.min(y,lerp(a[1],b[1],t)-.25),1-smoothstep(3.4,6.5,distToSegment(x,z,[a[0],a[2]],[b[0],b[2]])));
+  }
   return y;
 }
 export function orleansTerrainColor(plan:ExpansionPlan,x:number,y:number,z:number):THREE.Color {

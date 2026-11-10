@@ -1,4 +1,7 @@
 import {orleansResidentSockets,createOrleansResidentLife} from './map/orleansResidents';
+import {ORLEANS_WORK_ACTIONS} from './map/orleansWorks';
+import {createOrleansWorksScene} from './environment/orleansWorksScene';
+import {createOrleansWorksRuntime} from './story/orleansWorks';
 import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
@@ -475,6 +478,11 @@ let cavalrySupport:LocalCavalrySupport|undefined;
 let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined;
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
+const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
+world.add(orleansWorksScene.root);colliders.push(orleansWorksScene.collider);layout.markers.push(...orleansWorksScene.markers);
+const orleansWorksMarkerIds=new Set(orleansWorksScene.markers.map(m=>m.id));
+let orleansWorksRuntime:ReturnType<typeof createOrleansWorksRuntime>|undefined;
+addEventListener('pagehide',e=>{if(!e.persisted){orleansWorksRuntime?.dispose();orleansWorksScene.dispose();}});
 const orleansResidentLife=createOrleansResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 addEventListener('pagehide',e=>{if(!e.persisted)orleansResidentLife.dispose();});
 const residentEventScene=createResidentEventScene(campaignSites.markers,(x,z,ceiling=300)=>residentQueries.ground(x,z,ceiling)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
@@ -605,6 +613,7 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
   const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
   const surveyLabel=PARALLAX_LABELS.find(([id])=>id===marker.id);if(surveyLabel)return bilingual(...surveyLabel[1]);
@@ -641,6 +650,7 @@ function applyWorldState() {
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
   kingdomGateScene.apply(done,kingdomGateRuntime?.escort ?? 0);
   parallaxGarden.apply(done);
+  orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   applyWeaponFinish();
   for (const t of targets) {
@@ -785,7 +795,8 @@ function renderMainObjective() {
     text.textContent=bilingual(plan.identity,'Explore the hub, landmarks and alternate routes.');
     const localDiscoveries=layout.markers.filter(m=>m.type==='discovery'&&m.id.startsWith('orleans_'));
     const discovered=localDiscoveries.filter(m=>found.has(m.id)).length;
-    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Ask the residents for directions.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    const works=ORLEANS_WORK_ACTIONS.filter(a=>done.has(a.flag)).length;
+    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
   const adventure=getCurrentAdventureGuide(region,done);
@@ -1177,7 +1188,7 @@ for (const type of ['pointerdown', 'mousedown', 'click'] as const) document.addE
   if (type === 'pointerdown') swallowClick = true;
   document.body.classList.remove('shot-mode');
 }, true);
-const clearInput = () => { residentEventRuntime?.cancelCarry(); cavalrySupport?.cancel(); adventureRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); compactRelayRuntime?.interrupt(); keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
+const clearInput = () => { orleansWorksRuntime?.interrupt();residentEventRuntime?.cancelCarry(); cavalrySupport?.cancel(); adventureRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); compactRelayRuntime?.interrupt(); keys.clear(); aim.clear(); narrative?.hide(); if (!ultimateDirector?.active) actions?.cancel(); fortCannon.cancel(); hudRevision++; };
 const settingsPanel = createSettingsPanel(settings, {
   onOpen() { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); },
   onClose() { clearInput(); },
@@ -1272,7 +1283,7 @@ function press(binding: string, repeat = false) {
   }
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
-  if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) { compactRelayRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); adventureRuntime?.interrupt(); }
+  if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) {orleansWorksRuntime?.interrupt(); compactRelayRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); adventureRuntime?.interrupt(); }
   if (actions?.press(action)) { hudRevision++; return; }
   keys.add(binding);
   if (action === 'aim') aim.held = true;
@@ -1731,6 +1742,13 @@ kingdomGateRuntime = createKingdomGateRuntime({
  cancel:()=>combat.cancelStoryEncounter(),encounter:()=>combat.storyEncounter?.id??null,
  toast:line=>toast(bilingual(...line)),
 });
+orleansWorksRuntime=createOrleansWorksRuntime({done,save,changed:applyWorldState,damage:()=>relayDamageRevision,
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+ toast:line=>toast(bilingual(...line)),ring:()=>{orleansWorksScene.ring();audio.bell();},sound:()=>audio.explore('solve'),
+});
+const orleansWorkHud=document.createElement('div');orleansWorkHud.id='orleans-work-progress';orleansWorkHud.className='hud';orleansWorkHud.hidden=true;
+Object.assign(orleansWorkHud.style,{position:'fixed',left:'50%',bottom:'140px',transform:'translateX(-50%)',maxWidth:'min(580px,88vw)',padding:'10px 16px',border:'1px solid #c6b492',borderRadius:'8px',background:'#20313ce8',color:'#eee4ce',textAlign:'center',pointerEvents:'none'});document.body.append(orleansWorkHud);
+addEventListener('pagehide',e=>{if(!e.persisted)orleansWorkHud.remove();});
 compactRelayRuntime = createCompactRelayRuntime({
   done, reachable: compactRelayReachable,
   sessionValid: () => !bootFailed && !worldExited && !graphicsRecovery?.blocked && !combat.defeated
@@ -1877,7 +1895,7 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
-    if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
+    if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
 }
@@ -2019,6 +2037,7 @@ function interactParallax(id: string) {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if(orleansWorksMarkerIds.has(m.id)){if(!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请为交互绑定一个可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}orleansWorksRuntime?.interact(m.id);return;}
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
@@ -2297,6 +2316,10 @@ function frame(now: number) {
    return true;
   });
   kingdomGateScene.apply(done,kingdomGateRuntime?.escort??0,dt,player.pos);
+  orleansWorksRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:nearestInteract()?.id===orleansWorksRuntime?.active,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
+  orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
+  const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();
+  if(working){const release=orleansWorksRuntime?.requiresRelease;orleansWorkHud.textContent=bilingual(`${working.label[0]} ${Math.round((orleansWorksRuntime?.progress??0)*100)}% · ${release?'松开，再按住':'按住'} ${settings.label('interact')}`,`${working.label[1]} ${Math.round((orleansWorksRuntime?.progress??0)*100)}% · ${release?'Release, then hold':'Hold'} ${settings.label('interact')}`);}
   gateChannelHud.hidden=!gameplayActive()||player.pos.distanceTo(escortPoint)>25||done.has(KINGDOM_GATE.rescued)||!done.has(KINGDOM_GATE.unlocked);
   gateChannelHud.textContent=done.has(KINGDOM_GATE.open)?bilingual(`居民行进 ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'陪同穿门':'等待：靠近居民并解除附近威胁'}`,`Residents ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'Escorting':'Waiting: stay close and clear nearby threats'}`):bilingual(`绞盘 ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · 站稳，松开后按住 ${settings.label('interact')}`,`Winch ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · Stand still, release then hold ${settings.label('interact')}`);
   const activeAdventure=adventureRuntime?.channel;
@@ -2359,6 +2382,7 @@ function frame(now: number) {
     interactionPrompt = bilingual('请在稳固地面站定后交互', 'Stand on solid ground to interact') + ' · ' +
       (npcPrompt ? bilingual(...nearbyNpc.role) : interactionLabel(it!));
   }
+  if(orleansWorksRuntime?.active)interactionPrompt='';
   const prompt = $('prompt');
   if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;
 
@@ -2422,7 +2446,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, ambientLife, fieldHerbs, orleansResidentLife, settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, ambientLife, fieldHerbs, orleansResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

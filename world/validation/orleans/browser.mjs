@@ -2,12 +2,13 @@ import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const output=resolve('validation/orleans/artifacts');await mkdir(output,{recursive:true});
-const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:process.env.WORLD_GPU_NATIVE==='1'?['--use-angle=metal']:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const layout=JSON.parse(await readFile(new URL('../../public/assets/world_orleans.layout.json',import.meta.url),'utf8'));
 const warehouse=layout.development.houses.find(h=>h.family==='harbour-warehouse');
 const [hx,hy,hz]=warehouse.position,ha=warehouse.rotation,entry=warehouse.depth/2-1;
 const street=layout.development.streetLanes[0],streetEye=street[12],streetTarget=street[24];
 const allShots=[
+  {id:'watercourse',eye:[-158,4.2,-61.7],target:[-142,4.1,-73.2]},
   {id:'overview',eye:[190,145,190],target:[-20,26,-65]},
   {id:'working-harbour',eye:[-232,31,48],target:[-175,16,-12]},
   {id:'cloister',eye:[155,55,-125],target:[111,35,-194]},
@@ -30,7 +31,7 @@ try{
   await page.evaluate(()=>window.__world.regionVisuals.ensure('orleans'));
   await page.waitForTimeout(2400);
   const info=await page.evaluate(()=>({residents:window.__world.settlementNpcs?.group.children.filter(p=>p.userData.region==='orleans').length,regions:window.__world.layout.objectives.length,stream:window.__world.regionVisuals.diagnostics,render:window.__world.renderer.info.render}));
-  await page.screenshot({path:resolve(output,`${shot.id}.png`)});
+  await page.screenshot({path:resolve(output,`${shot.id}.png`),timeout:120000});
   if(shot.id==='overview'){
    await page.evaluate(()=>{document.body.classList.remove('clean');document.getElementById('start').style.visibility='hidden';document.getElementById('settings-open').style.visibility='hidden';document.getElementById('bigmap').classList.add('open');});
    await page.waitForTimeout(500);await page.locator('#bigmap canvas').screenshot({path:resolve(output,'atlas.png')});

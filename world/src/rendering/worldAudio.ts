@@ -192,6 +192,8 @@ export class WorldAudio {
     else this.voice('sine',.4,330,.08,.6);
   }
   interaction(){this.voice('sine',.12,520,.055,1.5);}
+  /** One local bell strike, sharing mute, suspension and the bounded voice pool. */
+  bell(){this.voice('sine',2.8,196,.055,.995,.002);this.voice('sine',2.2,196*2.76,.022,.998,.003);this.voice('sine',1.5,196*5.4,.012,.99,.002);}
   private releaseContext(){this.stopVoices();for(const node of [this.master,this.compressor])try{node?.disconnect();}catch{/* best effort */}try{if(this.context&&this.context.state!=='closed')void this.context.close().catch(()=>{});}catch{/* unavailable */}this.context=null;this.master=null;this.compressor=null;this.noise=null;}
   dispose(){if(this.disposed)return;this.disposed=true;this.active=false;this.releaseContext();for(const remove of this.unlisten)remove();this.unlisten=[];}
 }

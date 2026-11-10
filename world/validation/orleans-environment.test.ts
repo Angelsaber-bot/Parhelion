@@ -9,6 +9,7 @@ import {Player} from '../src/player/player';
 import {WorldGrid} from '../src/map/grid';
 import {settlementGrassClearance} from '../src/map/grassClearance';
 import {ORLEANS_PAVED_COURTS} from '../src/map/worldPlan';
+import {ORLEANS_UNDERPASS} from '../src/map/orleansWorks';
 
 const bytes=readFileSync(new URL('../public/assets/world_orleans.core.glb',import.meta.url));
 const {scene}=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(scene);scene.updateMatrixWorld(true);
@@ -31,6 +32,16 @@ test('river is cut into the terrain, with dry banks rather than a painted blue s
     let westBank=-Infinity;for(let x=-260;x<=-220;x+=2)westBank=Math.max(westBank,grid.sampleHeight(x,z)!);
     assert.ok(westBank>5&&grid.sampleHeight(-120,z)!>5,`dry banks before the outer estuary at ${z}`);
   }
+});
+test('the service watercourse has a visible inward-facing stone vault and clear headroom below intact terrain',()=>{
+ for(let i=4;i<=5;i++)for(const t of [.2,.5,.8]){
+  const a=ORLEANS_UNDERPASS[i-1],b=ORLEANS_UNDERPASS[i],x=a[0]+(b[0]-a[0])*t,z=a[2]+(b[2]-a[2])*t;
+  const floor=bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x,3,z),new THREE.Vector3(0,-1,0)),THREE.FrontSide);
+  const roof=bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x,4.1,z),new THREE.Vector3(0,1,0)),THREE.FrontSide);
+  assert.ok(floor&&Math.abs(floor.point.y-2.5)<.1,`dry walkway ${x},${z}`);
+  assert.ok(roof&&roof.point.y>7.3&&roof.point.y<7.8,`inside-facing vault ${x},${z}: ${roof?.point.y}`);
+  if((i===4&&t===.8)||(i===5&&t===.2))assert.ok(grid.sampleHeight(x,z)!>roof.point.y,'central tunnel retains town terrain above; the two sloping mouths are open');
+ }
 });
 test('cathedral has an open nave, stone floor, a solid roof and a usable main entrance',()=>{
   for(const z of [-142,-165,-185]){

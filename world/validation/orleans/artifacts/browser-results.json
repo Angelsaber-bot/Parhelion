@@ -1,32 +1,5 @@
 [
   {
-    "view": "working-harbour",
-    "info": {
-      "residents": 8,
-      "regions": 8,
-      "stream": {
-        "resident": [
-          "orleans"
-        ],
-        "pending": [],
-        "failed": [],
-        "downloads": 1,
-        "installs": 1,
-        "evictions": 0,
-        "disposedGeometries": 0,
-        "disposedMaterials": 0
-      },
-      "render": {
-        "frame": 64,
-        "calls": 105,
-        "triangles": 612269,
-        "points": 1944,
-        "lines": 0
-      }
-    },
-    "errors": []
-  },
-  {
     "view": "cloister",
     "info": {
       "residents": 8,
@@ -47,33 +20,6 @@
         "frame": 64,
         "calls": 90,
         "triangles": 382215,
-        "points": 1944,
-        "lines": 0
-      }
-    },
-    "errors": []
-  },
-  {
-    "view": "belfry-gallery",
-    "info": {
-      "residents": 8,
-      "regions": 8,
-      "stream": {
-        "resident": [
-          "orleans"
-        ],
-        "pending": [],
-        "failed": [],
-        "downloads": 1,
-        "installs": 1,
-        "evictions": 0,
-        "disposedGeometries": 0,
-        "disposedMaterials": 0
-      },
-      "render": {
-        "frame": 80,
-        "calls": 166,
-        "triangles": 655219,
         "points": 1944,
         "lines": 0
       }
@@ -236,6 +182,87 @@
         "frame": 64,
         "calls": 80,
         "triangles": 483091,
+        "points": 1944,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "watercourse",
+    "info": {
+      "residents": 8,
+      "regions": 8,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 1552,
+        "calls": 179,
+        "triangles": 651217,
+        "points": 1944,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "working-harbour",
+    "info": {
+      "residents": 8,
+      "regions": 8,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 2336,
+        "calls": 276,
+        "triangles": 828966,
+        "points": 1944,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "belfry-gallery",
+    "info": {
+      "residents": 8,
+      "regions": 8,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 2368,
+        "calls": 228,
+        "triangles": 740239,
         "points": 1944,
         "lines": 0
       }

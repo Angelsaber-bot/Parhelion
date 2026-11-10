@@ -1,5 +1,6 @@
 import {C,CYL,CONE,Frame,gable,hipRoof,workshopRoof,pointedArch,window,banner,strip} from './craft';
 import {buildOrleansDetails} from './details';
+import {buildOrleansWatercourse} from './watercourse';
 import * as THREE from 'three';
 import {Batch,T} from '../geo';
 import {mulberry32} from '../rng';
@@ -134,7 +135,7 @@ function archBridge(f:Frame,length:number,width:number,deck:number,wood=false){
 export function buildOrleans(plan:ExpansionPlan,heightAt:(x:number,z:number)=>number,access:RoutePoint[]):Piece[]{
   const pieces:Piece[]=[],make=(name:string,material='M_OrleansCraft',outline=true)=>{const b=new Batch(`orleans_${name}`,material);pieces.push({name:b.name,material,batch:b,outline});return b;};
   const town=make('RiverTown'),walls=make('CurtainWalls'),church=make('Cathedral'),river=make('RiverHarbour'),props=make('MarketAndCraft'),trunks=make('Trees_Trunks'),leaves=make('Trees_Leaves','M_Foliage',false),land=make('OrchardsAndLanes', 'M_OrleansCraft',false);
-  const roadLines=[...plan.routes.map(r=>r.points.map(p=>[p[0],p[2]] as const)),access.map(p=>[p[0],p[2]] as const),...ORLEANS_LANE_POINTS];
+  const roadLines=[...plan.routes.filter(r=>r.kind!=='underground').map(r=>r.points.map(p=>[p[0],p[2]] as const)),access.map(p=>[p[0],p[2]] as const),...ORLEANS_LANE_POINTS];
   const roadDistance=(x:number,z:number)=>Math.min(...roadLines.map(line=>distanceToLine(x,z,line)));
   const groundPaths=[...plan.routes.filter(r=>r.kind==='main'||r.kind==='flank').map(r=>r.points),access,...ORLEANS_LANE_POINTS.map(line=>line.filter(([x,z])=>riverDistance(x,z)>35).map(([x,z])=>[x,heightAt(x,z),z] as RoutePoint))];
   const nearestStreet=(x:number,z:number)=>{
@@ -211,7 +212,7 @@ export function buildOrleans(plan:ExpansionPlan,heightAt:(x:number,z:number)=>nu
   strip(walls,[[-36,24.1,-22],[0,24.1,-45]],6,C.pale);
   walls.box(0,23.6,-45,17,.5,17,C.stone);
   const bell=new Frame(walls,-12,14,-62);bell.box(0,10,0,14,20,13,C.stone);for(const x of [-4.6,4.6])bell.box(x,24,0,2.2,8,11,C.pale);
-  for(const z of [-4.5,4.5])bell.box(0,24,z,11,8,2,C.pale);bell.cyl(0,24,0,2.1,3,C.gold,false);gable(bell,16,15,28,7,C.slate);banner(bell,0,18,6.7,6);
+  for(const z of [-4.5,4.5])bell.box(0,24,z,11,8,2,C.pale);gable(bell,16,15,28,7,C.slate);banner(bell,0,18,6.7,6);
   // The cathedral's nave is a real interior, reached through the open west portal.
   const f=new Frame(church,35,32,-174),w=50,d=82,h=23;
   f.box(0,-.14,0,62,.6,96,C.pale);
@@ -285,5 +286,6 @@ export function buildOrleans(plan:ExpansionPlan,heightAt:(x:number,z:number)=>nu
   for(const x of [112,147]){const tent=new Frame(props,x,14,145,.2);gable(tent,10,13,0,6,x===112?C.blue:C.white);banner(tent,0,7,7,4);}
   for(let i=0;i<4;i++){const x=113+i*10,z=113;if(roadDistance(x,z)<8)continue;props.box(x,14,z,.5,3,.5,C.oak);props.add(new THREE.CylinderGeometry(1.2,1.2,.2,12),'#a98e69',T(x,16.5,z,0,1,1,1,Math.PI/2));}
   pieces.push(...buildOrleansDetails(plan,heightAt,builtHouses));
+  pieces.push(...buildOrleansWatercourse());
   return pieces;
 }

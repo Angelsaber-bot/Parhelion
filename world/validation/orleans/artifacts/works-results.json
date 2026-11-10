@@ -1,0 +1,46 @@
+{
+  "operations": [
+    {
+      "id": "orleans_crane_handle",
+      "flag": "orleans_crane_delivered",
+      "grounded": true,
+      "done": true,
+      "active": null,
+      "grilleEnabled": true
+    },
+    {
+      "id": "orleans_sluice_winch",
+      "flag": "orleans_sluice_open",
+      "grounded": true,
+      "done": true,
+      "active": null,
+      "grilleEnabled": false
+    },
+    {
+      "id": "orleans_belfry_rope",
+      "flag": "orleans_belfry_rung",
+      "grounded": true,
+      "done": true,
+      "active": null,
+      "grilleEnabled": false
+    }
+  ],
+  "errors": [],
+  "before": [],
+  "completed": {
+    "done": [
+      "orleans_belfry_rung",
+      "orleans_crane_delivered",
+      "orleans_sluice_open"
+    ],
+    "grilleEnabled": false
+  },
+  "restored": {
+    "done": [
+      "orleans_belfry_rung",
+      "orleans_crane_delivered",
+      "orleans_sluice_open"
+    ],
+    "grilleEnabled": false
+  }
+}

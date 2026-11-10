@@ -1,4 +1,4 @@
-import { orleansAuthoredHeight, orleansTerrainColor, riverDistance } from '../orleans/landscape';
+import { orleansAuthoredHeight, orleansTerrainColor, riverDistance,orleansTerrainOpening } from '../orleans/landscape';
 import { buildOrleans } from '../orleans/build';
 import { continentalHeight } from '../continent';
 import * as THREE from 'three';
@@ -86,6 +86,7 @@ export function buildExpansion(plan:ExpansionPlan) {
   for(let j=0;j<nz-1;j++)for(let i=0;i<nx-1;i++) {
     const x=x0+i*cell,z=z0+j*cell;
     if(![[x,z],[x+cell,z],[x,z+cell],[x+cell,z+cell]].every(([px,pz])=>mask(px,pz)))continue;
+    if(plan.id==='orleans'&&orleansTerrainOpening(x+cell/2,z+cell/2))continue;
     if(plan.id==='qin'&&inExcavation(x+cell/2,z+cell/2))continue;
     const a=vertex(i,j),b=vertex(i+1,j),cc=vertex(i,j+1),d=vertex(i+1,j+1);idx.push(a,cc,b,b,cc,d);
   }
@@ -120,7 +121,7 @@ export function buildExpansion(plan:ExpansionPlan) {
     }
     const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));roads.b.add(g,color,new THREE.Matrix4());g.dispose();
   };
-  for(const route of plan.routes)ribbon(route.points,route.kind==='main'||route.kind==='underground'?7:5,route.kind==='high'?(plan.id==='orleans'?'#c7b99b':plan.accent):roads.color);
+  for(const route of plan.routes)ribbon(route.points,plan.id==='orleans'&&route.kind==='underground'?4.8:route.kind==='main'||route.kind==='underground'?7:5,route.kind==='high'?(plan.id==='orleans'?'#c7b99b':plan.accent):roads.color);
   ribbon(access,plan.id==='orleans'?9:link.width-2,roads.color);
   if(plan.id==='orleans'){
     // Feather the raised bridge approach into the town's ground-level lanes.

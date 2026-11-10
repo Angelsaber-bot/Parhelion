@@ -10,6 +10,7 @@ import {TEXT_PAIRS} from '../../../shared-client/locales';
 import {regionAt} from '../map/regions';
 import {isCampaignRegion,type WorldRegionId} from '../core/regionIdentity';
 import {EXPANSION_PLANS} from '../map/worldPlan';
+import {ORLEANS_WORK_ACTIONS} from '../map/orleansWorks';
 import {ERA_IDS,ERA_STORIES,ERA_OPTIONALS,ERA_KNIGHT_DEFEATED,getEraStoryGuide,getEraBossRequirements,isEraCoreCleared} from './eraStories';
 import {getValleyStoryGuide,VALLEY_STORY} from './valleyStory';
 import {getCampaignClosureState,CAMPAIGN_CLOSURE} from './campaignClosure';
@@ -40,6 +41,7 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ ...ORLEANS_WORK_ACTIONS.map(a=>[a.id,a.label] as [string,Localized]),
  ...EXPANSION_PLANS.flatMap(plan=>plan.sites.map(site=>[`${plan.id}_${site.id}`,[site.name,site.nameEn]] as [string,Localized])),
  ['orleans_belfry_view',['钟楼三面眺廊','Belfry viewing gallery']],
  ...PARALLAX_LABELS.map(([id,label])=>[id,label] as [string,Localized]),
@@ -83,7 +85,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
   const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
   const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||marker.type==='discovery')?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||marker.type==='discovery'||ORLEANS_WORK_ACTIONS.some(a=>a.id===id))?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -124,6 +126,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }
+  for(const action of ORLEANS_WORK_ACTIONS){if(markers.has(action.id))add(`side:${action.id}`,'orleans','side',action.label,done.has(action.flag),guide(action.label,action.hint,action.id,done,context));}
   if(markers.has(PARALLAX.board)){const next=parallaxGuide(done);add(PARALLAX.quest,'alpha','side',PARALLAX.title,done.has(PARALLAX.complete),next?guide(PARALLAX.title,next.text,next.targetId,done,context):null);}
   const gateNext=gateGuide(done),gateTitle:Localized=['王城 · 打开归路','Kingdom · Open the Way Home'];
   add('side:kingdom-gate','britain','side',gateTitle,done.has(KINGDOM_GATE.rescued),gateNext?guide(gateTitle,gateNext.text,gateNext.targetId,done,context):null);

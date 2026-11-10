@@ -6,7 +6,7 @@ const ORIGIN=[-720,-720] as const;
 const world=(p:readonly[number,number,number]):[number,number,number]=>[p[0]+ORIGIN[0],p[1],p[2]+ORIGIN[1]];
 const RESIDENTS=[
   {id:'orleans_dock_clerk',role:['奥黛特 · 港务书记','Odette · harbour clerk'],p:[-185,8.45,-30],yaw:Math.PI*.6,coat:0x536d89,
-    lines:[['石桥通向集市，木桥通向城外果园。贴着石岸往北走，就能到河门。','The stone bridge leads to the market; the timber bridge to the orchards. Follow the quay north to the river gate.'],['吊机抬的是粮袋，不是军械。先让磨坊开工，守城的人才有饭吃。','The crane lifts grain, not weapons. The mills must work before the defenders can eat.']]},
+    lines:[['石桥通向集市，木桥通向城外果园。贴着石岸往北走，就能到河门。','The stone bridge leads to the market; the timber bridge to the orchards. Follow the quay north to the river gate.'],['旁边石堤上有吊机把手。站稳后按住交互，把船上的粮袋吊上来；守城的人还等着这批粮。','The crane handle is on the stone quay beside us. Stand still and hold Interact to unload the grain; the defenders are waiting for it.']]},
   {id:'orleans_market_vendor',role:['露西 · 布商','Lucie · cloth merchant'],p:[-63,14.15,75],yaw:-.6,coat:0x946c63,
     lines:[['蓝布是守城旗，白布留给侧院的药草师。别把两卷都搬去城墙。','Blue cloth is for the defenders; white cloth for the herbalist. Please do not carry both rolls to the wall.'],['想去教堂就穿过拱门；想看河港，就沿着集市西边的小路下坡。','For the cathedral, pass through the arch. For the harbour, take the lane down the west side of the market.']]},
   {id:'orleans_cloister_healer',role:['艾莉丝 · 药草师','Elise · herbalist healer'],p:[104,32.18,-194],yaw:Math.PI/2,coat:0xd8d0b6,
@@ -14,7 +14,7 @@ const RESIDENTS=[
   {id:'orleans_wall_mason',role:['马塞尔 · 石匠','Marcel · stonemason'],p:[188,14.1,20],yaw:-1.1,coat:0x7d8274,
     lines:[['新石要和旧墙咬合，不能只把缺口堵上。你看得到坡道，上面的通路已经接通了。','New stone must bind into the old wall. The timber approach above us is already open.'],['城墙跟着山走，河岸跟着水走。若把城造得笔直，这两样都得吃亏。','The wall follows the hill and the quay follows the river. A ruler-straight town would serve neither.']]},
   {id:'orleans_bell_keeper',role:['雷米 · 守钟人','Remy · bell keeper'],p:[0,24.15,-45],yaw:.7,coat:0x6f7490,
-    lines:[['沿钟楼外侧的木梯上去，能同时看见河港和东墙。钟声传不过去的地方，旗手还要再跑一趟。','The timber stair outside the belfry overlooks both the quay and east wall. Flag bearers still carry news beyond the reach of the bell.'],['旧钟没有坏，只是绳子磨断了几股。别在钟下试枪。','The bell is sound; only a few strands of rope have worn through. Please do not test your rifle beneath it.']]},
+    lines:[['沿钟楼外侧的木梯上去，能同时看见河港和东墙。钟声传不过去的地方，旗手还要再跑一趟。','The timber stair outside the belfry overlooks both the quay and east wall. Flag bearers still carry news beyond the reach of the bell.'],['报时绳在三面眺廊的西侧。站稳后拉住它，城墙和河港就能听见钟声。','The bell rope is on the west side of the viewing gallery. Stand still and pull it to send the toll across the walls and quay.']]},
   {id:'orleans_river_fisher',role:['阿兰 · 渔人','Alain · river fisher'],p:[-184.5,8.45,23],yaw:-1.4,coat:0x73877c,
     lines:[['水浅不等于能走。货物走石桥，人走木桥，船才走河里。','Shallow water is not a footpath. Freight takes the stone bridge, people the timber bridge, and boats the river.']]},
   {id:'orleans_wall_patrol',role:['西墙巡守','West wall patrol'],p:[-80,24.15,-29],yaw:Math.PI/2,coat:0x536783,

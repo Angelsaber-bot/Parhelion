@@ -1,6 +1,6 @@
 {
   "date": "2026-11-09",
-  "stage": "Orleans environment and exploration polish",
+  "stage": "Orleans environment, exploration and working river-town facilities",
   "houses": 45,
   "buildingFamilies": {
     "river-merchant": 8,
@@ -20,14 +20,15 @@
     "dockapproach",
     "cloisterwalk",
     "wallworks",
-    "belfrywalk"
+    "belfrywalk",
+    "underpass"
   ],
   "residents": 8,
   "patrols": 2,
   "persistentDiscoveries": 9,
   "tests": {
-    "total": 107,
-    "passed": 107,
+    "total": 116,
+    "passed": 116,
     "failed": 0,
     "record": "final-checks.txt",
     "files": [
@@ -51,27 +52,32 @@
       "tracked-story-navigation.test.ts",
       "tracked-story-hud.test.ts",
       "lived-world-quality.test.ts",
-      "armory-workshop.test.ts"
+      "armory-workshop.test.ts",
+      "orleans-works.test.ts",
+      "orleans-works-main.test.ts"
     ],
     "scope": [
       "45 street-to-room entrances, interior centre/rear and return routes without jumping",
-      "nine main/side/elevated routes and five ordinary streets walked in both directions",
+      "ten main/side/elevated/underground routes and five ordinary streets walked in both directions",
       "closed outward-facing roof shells, cathedral floor/roof, cloister shelter and body clearance",
       "eight bilingual residents, body clearance, two patrols and conversation pauses without mutating caller data",
       "nine real discoveries in quest browser, live main-program tracking and saved found-state completion",
       "rounded court grass clearance and retained meadow",
       "12 continental joins and existing streamed repairs, identity, weather, materials and source ownership",
-      "all real chest actions still work through grounded input after protecting the old Camlann and Kyoto shrine shorelines"
+      "all real chest actions still work through grounded input after protecting the old Camlann and Kyoto shrine shorelines",
+      "Actual main grounded held input, physical closed/open grille, complete underpass in both directions, interrupted operations and saved facility restoration",
+      "Inward-facing vault roof, full headroom and preserved town terrain above the central tunnel",
+      "Three bilingual side guides complete only from actual facility facts"
     ]
   },
   "productionBuild": "passed; existing bundle-size advisory remains",
   "delivery": {
-    "source": 3413264,
-    "core": 2090712,
-    "visual": 1896152
+    "source": 3471600,
+    "core": 1852132,
+    "visual": 1921568
   },
   "browser": {
-    "quality": "med (default), grass enabled",
+    "quality": "med (default); new harbour, belfry and watercourse views checked with native Metal rendering",
     "views": [
       "working-harbour",
       "cloister",
@@ -81,14 +87,16 @@
       "churchyard",
       "market-street",
       "cathedral",
-      "overview"
+      "overview",
+      "watercourse"
     ],
     "pageAndShaderErrors": 0,
     "details": "artifacts/browser-results.json",
     "atlas": "artifacts/atlas.png",
     "dialogueAndSaveRoundtrip": "artifacts/dialogue-results.json",
-    "interaction": "Actual F-key resident conversation; all nine discoveries retained after reload; done flags unchanged",
-    "method": "Discovery save review uses test-only repositioning; physical traversal is validated separately against shipped collision."
+    "interaction": "Actual F-key resident conversation; all nine discoveries retained after reload; done flags unchanged; actual held-key crane, grille and bell operation, all three saved facility flags restored after reload",
+    "method": "Discovery save review uses test-only repositioning; physical traversal is validated separately against shipped collision. Facility controls are reached by test-only repositioning; completion uses actual input and frames, not injected completion flags.",
+    "worksAndSaveRoundtrip": "artifacts/works-results.json"
   },
   "baselineCriteria": [
     "distinct region-specific building masses and facades",
@@ -100,6 +108,23 @@
     "continuous connections and existing-content compatibility"
   ],
   "comparativeLimit": "Environment and exploration criteria are verified; no numerical aesthetic superiority or complete chapter/Boss parity is claimed.",
-  "scopeLimit": "Jeanne/Alter servant models and contracts, siege campaign, dragon encounter, operable crane and Arena entry are not implemented. Egypt and Qin remain at their prior framework stage.",
-  "fullSuite": "The 21 relevant test files above were run. This is not a complete repository test run."
+  "scopeLimit": "Jeanne/Alter servant models and contracts, siege campaign, dragon encounter, Arena entry are not implemented. Egypt and Qin remain at their prior framework stage.",
+  "fullSuite": "Focused current checks above passed; the required full-game release gate runs separately in GitHub Deploy. The previous e54d73a release passed all 2079 World checks.",
+  "facilities": [
+    {
+      "id": "orleans_crane_handle",
+      "seconds": 5,
+      "flag": "orleans_crane_delivered"
+    },
+    {
+      "id": "orleans_sluice_winch",
+      "seconds": 3,
+      "flag": "orleans_sluice_open"
+    },
+    {
+      "id": "orleans_belfry_rope",
+      "seconds": 1.5,
+      "flag": "orleans_belfry_rung"
+    }
+  ]
 }

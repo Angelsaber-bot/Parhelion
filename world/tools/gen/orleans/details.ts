@@ -13,14 +13,8 @@ export function buildOrleansDetails(plan:ExpansionPlan,heightAt:(x:number,z:numb
   const crane=new Frame(dock,-175,8.35,-8,-Math.PI/2);
   for(const side of [-1,1]){crane.box(side*2,5,0,.55,10,.55,C.wood);crane.beam([side*2,0,-3],[side*2,8,0],.4,C.oak,true);}
   crane.box(0,9.9,0,5,.6,1,C.wood);crane.beam([0,10,-2],[0,10,23],.55,C.wood,true);crane.beam([0,3.5,0],[0,10,8],.4,C.oak,true);
-  for(const side of [-1,1]){
-    const center=crane.point(side*2.5,5.8,-.5);
-    // Wheel planes face along the quay; two rims and timber treads form a real drum.
-    const rim=new THREE.TorusGeometry(3.3,.17,5,24);dock.add(rim,C.oak,T(center.x,center.y,center.z),false);rim.dispose();
-    for(let i=0;i<12;i++){const a=i/12*Math.PI*2;crane.beam([side*2.5,5.8,-.5],[side*2.5,5.8+Math.sin(a)*3.2,-.5+Math.cos(a)*3.2],.15,C.wood);}
-  }
-  for(let i=0;i<18;i++){const a=i/18*Math.PI*2;crane.beam([-2.5,5.8+Math.sin(a)*3.2,-.5+Math.cos(a)*3.2],[2.5,5.8+Math.sin(a)*3.2,-.5+Math.cos(a)*3.2],.23,C.oak);}
-  crane.beam([0,10,22],[0,3.7,22],.055,C.dark);const hook=crane.point(0,3.6,22);dock.add(new THREE.TorusGeometry(.45,.08,5,12,Math.PI*1.6),C.dark,T(hook.x,hook.y,hook.z),false);
+  // Treadwheels, hauling rope and grain pallet are owned by the playable works
+  // scene, keeping the static support frame clear of duplicate moving geometry.
   gable(crane,6,6,10.5,3,C.slate);
   strip(dock,[[-180,8.08,-79.4],[-184,8.25,-76],[-188,8.45,-71.2]],7,C.stone);
   // Landings connect the low river walk to a cargo apron seated in the bank.
