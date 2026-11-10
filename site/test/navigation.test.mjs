@@ -85,7 +85,7 @@ test('landing links both games, every chapter map and every World region with lo
     assert.ok(statSync(fileURLToPath(new URL(asset, site))).isFile(), asset);
   }
   for (const id of ['aster', 'camlann', 'blackflag', 'frostcourt', 'sakura']) assert.match(html, new RegExp(`href="/arena/\\?map=${id}"`));
-  for (const id of ['britain', 'blacksail', 'winter', 'kyoto']) assert.match(html, new RegExp(`href="/world/\\?region=${id}"`));
+  for (const id of ['britain', 'blacksail', 'winter', 'kyoto', 'qin', 'egypt', 'orleans', 'home']) assert.match(html, new RegExp(`href="/world/\\?region=${id}"`));
   assert.doesNotMatch(html, /neon|zenith|夜港|日冕/i);
 });
 
