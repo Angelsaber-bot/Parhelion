@@ -1,0 +1,178 @@
+[
+  {
+    "id": "overview",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 101,
+        "triangles": 537717,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "artisan-town",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 130,
+        "triangles": 377627,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "river-pass",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 152,
+        "triangles": 510792,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "palace",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 63,
+        "triangles": 211753,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "aqueduct",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 72,
+        "triangles": 371244,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "watch-tower-ridge",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 163,
+        "triangles": 369141,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "quarry-portal",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 137,
+        "calls": 117,
+        "triangles": 197372,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "foundry",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 137,
+        "calls": 78,
+        "triangles": 98305,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "garrison-guard",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 122,
+        "calls": 196,
+        "triangles": 390041,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "garrison-open",
+    "info": {
+      "phase": "b",
+      "regions": 8,
+      "render": {
+        "frame": 242,
+        "calls": 201,
+        "triangles": 392356,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "royal-city",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 83,
+        "triangles": 335263,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  }
+]

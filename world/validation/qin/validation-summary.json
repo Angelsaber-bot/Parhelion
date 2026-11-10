@@ -1,0 +1,86 @@
+{
+  "date": "2026-11-10",
+  "region": "qin",
+  "browser": {
+    "mode": "headless chromium --mute-audio, swiftshader, q=low",
+    "shots": [
+      {
+        "id": "overview",
+        "file": "artifacts/overview.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "artisan-town",
+        "file": "artifacts/artisan-town.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "river-pass",
+        "file": "artifacts/river-pass.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "palace",
+        "file": "artifacts/palace.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "aqueduct",
+        "file": "artifacts/aqueduct.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "watch-tower-ridge",
+        "file": "artifacts/watch-tower-ridge.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "quarry-portal",
+        "file": "artifacts/quarry-portal.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "foundry",
+        "file": "artifacts/foundry.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "garrison-guard",
+        "file": "artifacts/garrison-guard.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "garrison-open",
+        "file": "artifacts/garrison-open.png",
+        "pageErrors": 0,
+        "orderPhase": "b"
+      },
+      {
+        "id": "royal-city",
+        "file": "artifacts/royal-city.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      }
+    ]
+  },
+  "tests": {
+    "qin-region.test.ts": "5/5",
+    "expansion-framework.test.ts": "all pass (qin: 7 routes both directions + access from Winter)",
+    "continent-continuity.test.ts": "14/14",
+    "fullSuite": {
+      "total": 2084,
+      "pass": 2083,
+      "fail": 1,
+      "preExisting": "kyoto: Sanjo avenue to Honno-ji gate (fails identically on unmodified HEAD e91c784)"
+    }
+  }
+}

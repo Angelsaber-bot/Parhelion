@@ -74,25 +74,34 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
     id:'qin', name:'秦帝国', nameEn:'Qin Empire', offset:[720,-720],
     outline:[[-285,-250],[-130,-325],[35,-300],[205,-330],[315,-175],[270,-25],[325,110],[215,290],[30,300],[-30,300],[-180,320],[-310,175],[-300,30],[-300,-30],[-335,-130]],
     color:'#7d926e', stone:'#929b94', accent:'#bd5343',
-    identity:'骊山行宫、工匠集镇、可调度俑阵与三层地下王城', servant:'秦始皇',
+    identity:'骊山之上的帝国，骊山之下的不死王城：驿道、工匠集镇、夯土宫城与三层地宫', servant:'秦始皇',
     sites:[
-      { id:'worktown', name:'骊山工匠集镇', nameEn:'Lishan Artisan Town', position:[-185,24,100], radius:48, purpose:'hub' },
-      { id:'palace', name:'山河行宫', nameEn:'Mountain Palace', position:[0,64,240], radius:48, purpose:'landmark' },
-      { id:'workshop', name:'地下铸造层', nameEn:'Buried Foundry', position:[80,46,-45], radius:24, purpose:'landmark' },
-      { id:'army', name:'兵马俑军阵层', nameEn:'Terracotta Garrison', position:[-90,28,-60], radius:24, purpose:'arena' },
-      { id:'royalcity', name:'地下王城中枢', nameEn:'Buried Royal City', position:[0,10,80], radius:40, purpose:'boss' },
+      { id:'worktown', name:'骊山工匠集镇', nameEn:'Lishan Artisan Town', position:[-185,22,100], radius:34, purpose:'hub' },
+      { id:'pass', name:'骊水关', nameEn:'Li River Pass', position:[-70,27,82], radius:10, purpose:'landmark' },
+      { id:'palace', name:'骊山宫城', nameEn:'Mount Li Palace', position:[40,70,0], radius:16, purpose:'landmark' },
+      { id:'kilns', name:'龙窑窑场', nameEn:'Dragon Kiln Yard', position:[-208,24,54], radius:10, purpose:'landmark' },
+      { id:'archive', name:'简牍库', nameEn:'Bamboo-slip Archive', position:[-212,22,138], radius:8, purpose:'landmark' },
+      { id:'quarry', name:'北坡石料场', nameEn:'North Slope Quarry', position:[-128,28,-42], radius:12, purpose:'landmark' },
+      { id:'pavilion', name:'宫城观阙', nameEn:'Palace Watch Tower', position:[90,82,-32], radius:6, purpose:'landmark' },
+      { id:'workshop', name:'地下铸造层', nameEn:'Buried Foundry', position:[130,46,-96], radius:16, purpose:'landmark' },
+      { id:'army', name:'兵马俑军阵层', nameEn:'Terracotta Garrison', position:[-17,28,-130], radius:20, purpose:'arena' },
+      { id:'royalcity', name:'地下王城', nameEn:'Buried Royal City', position:[38,10,-190], radius:18, purpose:'boss' },
     ],
     routes:[
-      { id:'main', name:'驿道至骊山行宫', kind:'main', points:[[-185,24,100],[-185,24,190],[-60,64,200],[-60,64,240],[0,64,240],[80,64,240],[80,64,145]] },
-      { id:'flank', name:'山脊工匠侧路', kind:'flank', points:[[-185,24,100],[-180,24,-210],[-40,64,-210],[165,64,-210],[165,64,145],[80,64,145]] },
-      { id:'underground', name:'三层王城折返坡道', kind:'underground', points:[[80,64,145],[80,64,135],[80,46,25],[80,46,-100],[45,46,-100],[-75,28,-100],[-90,28,-100],[-90,28,20],[-90,10,140],[0,10,80]] },
+      { id:'main', name:'驿道—集镇—关隘—宫城', kind:'main', points:[[-185,22,100],[-140,23,86],[-100,25,80],[-70,27,82],[-35,31,92],[5,37,108],[45,44,116],[80,50,108],[70,55,98],[42,57.6,98],[40,58,90],[40,58,56],[40,58,44],[40,70,16],[40,70,0]] },
+      { id:'aqueduct', name:'沿输水渠潜入宫城', kind:'flank', points:[[-185,22,100],[-150,22.6,96],[-140,25,60],[-122,30,26],[-96,37,0],[-64,46,-16],[-34,56,-26],[-8,66,-31],[2,70,-29],[14,70,-28],[36,70,-30]] },
+      { id:'ridge', name:'骊山山脊绕至观阙', kind:'high', points:[[-185,22,100],[-200,23,62],[-212,26,20],[-214,30,-12],[-182,40,-44],[-150,50,-72],[-118,61,-96],[-85,72,-116],[-50,84,-130],[-15,95,-140],[25,104,-131],[60,111,-118],[84,103,-96],[98,93,-72],[100,86,-50],[92,82,-40],[90,82,-28],[80,82,-28],[48,70,-28],[40,70,-30]] },
+      { id:'quarry-path', name:'水渠岔道至石料场', kind:'flank', points:[[-122,30,26],[-125,30,-8],[-128,28,-42]] },
+      { id:'palace-descent', name:'宫后斜道至铸造层与运俑轨道', kind:'underground', points:[[40,70,-30],[40,70,-44],[40,62,-68],[40,62,-72.5],[44.5,62,-72.5],[100,46,-72.5],[106,46,-72.5],[106,46,-115],[100,46,-115],[30,28,-115],[20,28,-115]] },
+      { id:'maintenance', name:'石料场检修道', kind:'underground', points:[[-128,28,-42],[-125,28,-56],[-125,28,-110.5],[-125,28,-115],[-120.5,28,-115],[-60,28,-115],[-50,28,-115]] },
+      { id:'royal-descent', name:'斜井下至地下王城', kind:'underground', points:[[-17,28,-130],[-17,28,-160],[-17,19,-185.5],[-17,19,-190],[-12.5,19,-190],[31,10,-190],[38,10,-190]] },
     ],
   },
 ];
 
-/** No grass in desert sand or on the excavated underground floor. X0,Z0,X1,Z1. */
+/** No grass in desert sand or through Qin's rammed-earth palace platforms. X0,Z0,X1,Z1. */
 export const EXPANSION_GRASS_CLEARANCE:readonly (readonly [number,number,number,number])[]=[
-  [330,330,1055,1055],[608,-872,832,-578],
+  [330,330,1055,1055],[722,-762,824,-642],
 ];
 /** World-space centre/radii of Orleans' worn paved courts; rounded ground stays rounded. */
 export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-832,20,12],[-800,-630,23,18]];
