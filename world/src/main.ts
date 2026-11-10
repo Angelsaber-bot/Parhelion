@@ -7,6 +7,7 @@ import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from
 import { weaponDryFireHint } from './weapons/weaponReadiness';
 import { createParallaxGarden, PARALLAX_CLEARANCE } from './environment/parallaxGarden';
 import { createQinArmyOrder, qinTurnBlocked, toggleQinOrder, QIN_ORDER_MARKERS } from './environment/qinArmyOrder';
+import { createQinAtmosphere } from './environment/qinAtmosphere';
 import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
 import {installWorldInterface} from './ui/worldInterface';
 import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './story/journeyDrama';
@@ -465,10 +466,12 @@ const parallaxMarkerIds = new Set(parallaxGarden.markers.map(m=>m.id));
 layout.areas.push({id:'parallax_garden',name:'视差庭院',nameEn:'Parallax Garden',c:[-118,276],r:10,color:'#ddc28c',tp:[-118,284],region:'alpha'});
 addEventListener('pagehide',event=>{if(!event.persisted)parallaxGarden.dispose();});
 // 秦地军令机关: turntable ranks and the deep-shaft gate under Mount Li.
-const qinArmyOrder = createQinArmyOrder();
+const qinArmyOrder = createQinArmyOrder(m => toonMaterial(m));
 world.add(qinArmyOrder.root); colliders.push(...qinArmyOrder.colliders); layout.markers.push(...qinArmyOrder.markers);
 const qinOrderMarkerIds = new Set<string>(QIN_ORDER_MARKERS);
 addEventListener('pagehide',event=>{if(!event.persisted)qinArmyOrder.dispose();});
+const qinAtmosphere = createQinAtmosphere(); world.add(qinAtmosphere.root);
+addEventListener('pagehide',event=>{if(!event.persisted)qinAtmosphere.dispose();});
 const staticGeo = mergeParts(staticGeos);
 const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
@@ -2358,6 +2361,7 @@ function frame(now: number) {
   settlementNpcs.setSpeaking(narrative?.open?nearbySettlementNpc()?.id??null:null);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
+  if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
   orleansResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('orleans'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
@@ -2462,7 +2466,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, ambientLife, fieldHerbs, orleansResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

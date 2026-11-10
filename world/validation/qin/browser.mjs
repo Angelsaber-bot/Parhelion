@@ -17,6 +17,14 @@ const shots=[
  {id:'garrison-guard',eye:[27,37,-103],target:[-25,28,-140]},
  {id:'garrison-open',eye:[27,37,-103],target:[-25,28,-140],order:true},
  {id:'royal-city',eye:[43,21,-191],target:[57,12,-176]},
+ {id:'palace-hall',eye:[40,77,34],target:[40,76,-2]},
+ {id:'palace-gate',eye:[44,63,114],target:[40,65,84]},
+ {id:'town-street',eye:[-168,27,134],target:[-186,24,106]},
+ {id:'kiln-yard',eye:[-198,31,72],target:[-224,26,52]},
+ {id:'garrison-pit',eye:[29,31.5,-121],target:[14,28.5,-134]},
+ {id:'chariot',eye:[-13,30.5,-110],target:[-22,29,-121]},
+ {id:'furnace',eye:[117,50.5,-93],target:[140,49,-84]},
+ {id:'palace-portal',eye:[42,74,-20],target:[40,74,-42]},
 ];
 const only=process.env.SHOTS?.split(','),results=[];
 try{for(const shot of shots.filter(s=>!only||only.includes(s.id))){

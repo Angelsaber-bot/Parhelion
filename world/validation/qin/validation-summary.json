@@ -69,18 +69,71 @@
         "file": "artifacts/royal-city.png",
         "pageErrors": 0,
         "orderPhase": "a"
+      },
+      {
+        "id": "palace-hall",
+        "file": "artifacts/palace-hall.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "palace-gate",
+        "file": "artifacts/palace-gate.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "town-street",
+        "file": "artifacts/town-street.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "kiln-yard",
+        "file": "artifacts/kiln-yard.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "garrison-pit",
+        "file": "artifacts/garrison-pit.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "chariot",
+        "file": "artifacts/chariot.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "furnace",
+        "file": "artifacts/furnace.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
+      },
+      {
+        "id": "palace-portal",
+        "file": "artifacts/palace-portal.png",
+        "pageErrors": 0,
+        "orderPhase": "a"
       }
     ]
   },
   "tests": {
     "qin-region.test.ts": "5/5",
-    "expansion-framework.test.ts": "all pass (qin: 7 routes both directions + access from Winter)",
+    "expansion-framework.test.ts": "pass",
     "continent-continuity.test.ts": "14/14",
     "fullSuite": {
-      "total": 2084,
-      "pass": 2083,
-      "fail": 1,
-      "preExisting": "kyoto: Sanjo avenue to Honno-ji gate (fails identically on unmodified HEAD e91c784)"
+      "total": 2093,
+      "pass": 2093,
+      "fail": 0,
+      "base": "fd6a04a"
     }
+  },
+  "round": "modeling-pass-2",
+  "assets": {
+    "qinGlbMB": 6.52,
+    "triangles": 717000
   }
 }

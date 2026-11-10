@@ -5,9 +5,9 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 77,
+        "frame": 92,
         "calls": 101,
-        "triangles": 537717,
+        "triangles": 586130,
         "points": 648,
         "lines": 0
       },
@@ -21,10 +21,10 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 107,
-        "calls": 130,
-        "triangles": 377627,
-        "points": 648,
+        "frame": 92,
+        "calls": 163,
+        "triangles": 586718,
+        "points": 782,
         "lines": 0
       },
       "qinMarkers": 14
@@ -37,10 +37,10 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 107,
-        "calls": 152,
-        "triangles": 510792,
-        "points": 648,
+        "frame": 122,
+        "calls": 212,
+        "triangles": 829018,
+        "points": 706,
         "lines": 0
       },
       "qinMarkers": 14
@@ -53,10 +53,10 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 62,
-        "calls": 63,
-        "triangles": 211753,
-        "points": 648,
+        "frame": 107,
+        "calls": 96,
+        "triangles": 463018,
+        "points": 692,
         "lines": 0
       },
       "qinMarkers": 14
@@ -69,9 +69,9 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 62,
-        "calls": 72,
-        "triangles": 371244,
+        "frame": 77,
+        "calls": 80,
+        "triangles": 430111,
         "points": 648,
         "lines": 0
       },
@@ -85,9 +85,9 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 107,
-        "calls": 163,
-        "triangles": 369141,
+        "frame": 122,
+        "calls": 206,
+        "triangles": 851611,
         "points": 648,
         "lines": 0
       },
@@ -101,9 +101,9 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 137,
-        "calls": 117,
-        "triangles": 197372,
+        "frame": 107,
+        "calls": 97,
+        "triangles": 324520,
         "points": 648,
         "lines": 0
       },
@@ -117,10 +117,10 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 137,
-        "calls": 78,
-        "triangles": 98305,
-        "points": 648,
+        "frame": 152,
+        "calls": 135,
+        "triangles": 344806,
+        "points": 998,
         "lines": 0
       },
       "qinMarkers": 14
@@ -133,10 +133,10 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 122,
-        "calls": 196,
-        "triangles": 390041,
-        "points": 648,
+        "frame": 77,
+        "calls": 99,
+        "triangles": 487660,
+        "points": 1028,
         "lines": 0
       },
       "qinMarkers": 14
@@ -149,10 +149,10 @@
       "phase": "b",
       "regions": 8,
       "render": {
-        "frame": 242,
-        "calls": 201,
-        "triangles": 392356,
-        "points": 648,
+        "frame": 137,
+        "calls": 156,
+        "triangles": 570083,
+        "points": 1028,
         "lines": 0
       },
       "qinMarkers": 14
@@ -165,9 +165,137 @@
       "phase": "a",
       "regions": 8,
       "render": {
-        "frame": 62,
-        "calls": 83,
-        "triangles": 335263,
+        "frame": 107,
+        "calls": 106,
+        "triangles": 431015,
+        "points": 1028,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "palace-hall",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 122,
+        "calls": 163,
+        "triangles": 817561,
+        "points": 648,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "palace-gate",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 92,
+        "triangles": 518557,
+        "points": 692,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "town-street",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 118,
+        "triangles": 470293,
+        "points": 714,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "kiln-yard",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 85,
+        "triangles": 560246,
+        "points": 714,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "garrison-pit",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 116,
+        "triangles": 529024,
+        "points": 1288,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "chariot",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 122,
+        "calls": 183,
+        "triangles": 763757,
+        "points": 1028,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "furnace",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 137,
+        "calls": 78,
+        "triangles": 317897,
+        "points": 998,
+        "lines": 0
+      },
+      "qinMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "palace-portal",
+    "info": {
+      "phase": "a",
+      "regions": 8,
+      "render": {
+        "frame": 122,
+        "calls": 187,
+        "triangles": 816605,
         "points": 648,
         "lines": 0
       },

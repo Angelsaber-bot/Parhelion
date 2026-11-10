@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
 import { QIN_ARMY, QIN_OFFSET, QIN_LEVELS } from '../map/qinPlan';
+import { warriorPrims, placeFigure, type WarriorKind } from '../map/qinFigures';
 
 export type QinOrderPhase = 'a' | 'b';
 export const QIN_ORDER_LABEL: readonly [string, string] = ['军令台 · 转动兵俑阵列', 'Command post · Turn the terracotta ranks'];
@@ -42,33 +43,29 @@ function bake(parts: Part[]) {
   });
   const merged = mergeGeometries(geos)!; geos.forEach(g => g.dispose()); merged.computeVertexNormals(); return merged;
 }
-/** One rank on its turntable, built along local Z (the closed orientation). */
+/** One rank on its turntable, built along local Z (the closed orientation): a rammed plinth
+ * with a bronze kerb, two files of seven figures facing out, kneeling archers at the head. */
 function rankGeometry(seed: number) {
   const parts: Part[] = [], L = QIN_ARMY.rankLength, W = QIN_ARMY.rankWidth;
-  piece(parts, [W, .5, L], [0, .25, 0], '#8c7356');
-  for (const s of [-1, 1]) piece(parts, [.18, .52, L], [s * (W / 2 - .09), .26, 0], '#6d5a46');
+  piece(parts, [W, .42, L], [0, .21, 0], '#8c7356');
+  for (const s of [-1, 1]) { piece(parts, [.14, .46, L], [s * (W / 2 - .07), .23, 0], '#5f7c66'); piece(parts, [W, .46, .14], [0, .23, s * (L / 2 - .07)], '#5f7c66'); }
   for (let i = 0; i < 7; i++) for (const s of [-1, 1]) {
-    const z = -L / 2 + 1.25 + i * (L - 2.5) / 6, x = s * 1.25, k = (i * 2 + (s > 0 ? 1 : 0) + seed) % 3;
-    const body = k === 0 ? '#9b7b5d' : k === 1 ? '#a3846a' : '#7f6249';
-    for (const leg of [-.15, .15]) piece(parts, [.2, .8, .24], [x + leg, .9, z], body);
-    piece(parts, [.66, .78, .42], [x, 1.69, z], body);
-    piece(parts, [.62, .1, .05], [x, 1.55, z + .23], '#6b5440'); piece(parts, [.62, .1, .05], [x, 1.83, z + .23], '#6b5440');
-    for (const arm of [-.4, .4]) piece(parts, [.16, .62, .18], [x + arm, 1.72, z + .05], body);
-    piece(parts, [.32, .36, .32], [x, 2.32, z], '#ab8b70');
-    piece(parts, [.2, .16, .2], [x + .05, 2.56, z - .04], '#7f6249');
-    if ((i + seed) % 3 === 0) piece(parts, [.06, 2.8, .06], [x + .45, 1.9, z + .1], '#5c4532');
+    const z = -L / 2 + 1.25 + i * (L - 2.5) / 6, x = s * 1.25, head = i === 6;
+    const kind = (head ? 4 : (i + seed + (s > 0 ? 1 : 0)) % 3 === 0 ? 0 : (i + seed) % 3 === 1 ? 2 : 1) as WarriorKind;
+    placeFigure(warriorPrims(kind, i * 2 + (s > 0 ? 1 : 0) + seed), x, .42, z, s * Math.PI / 2, (geo, color, m) => { const g = geo.toNonIndexed().applyMatrix4(m); parts.push({ geo: g, color }); });
   }
-  // standard-bearer at the rank's head: the banner faces along the rank's axis
-  piece(parts, [.12, 4.4, .12], [0, 2.7, L / 2 - .5], '#5c4532');
-  piece(parts, [.08, 1.4, 1.8], [0, 4.2, L / 2 - 1.4], '#2b2826');
-  piece(parts, [.1, .5, .5], [0, 4.2, L / 2 - 1.4], '#a63a2c');
+  // standard-bearer's pole at the rank's head with a black, cinnabar-edged banner
+  piece(parts, [.12, 4.6, .12], [0, 2.7, L / 2 - .5], '#5c4532');
+  piece(parts, [.08, 1.5, 1.9], [0, 4.2, L / 2 - 1.45], '#201e1d');
+  piece(parts, [.1, .12, 1.9], [0, 4.98, L / 2 - 1.45], '#c0452f');
   return bake(parts);
 }
 
-export function createQinArmyOrder() {
+/** `convert` lets the game swap in its toon/Qin surface shading; tests keep the plain material. */
+export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Material = m => m) {
   const [ox, oz] = QIN_OFFSET, floor = QIN_LEVELS.army, root = new THREE.Group(); root.name = 'QinArmyOrder';
-  const material = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .92 });
-  const bronze = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .45, metalness: .55 });
+  const material = convert(new THREE.MeshStandardMaterial({ name: 'M_QinCraft', vertexColors: true, roughness: .92 }));
+  const bronze = convert(new THREE.MeshStandardMaterial({ name: 'M_QinCraft', vertexColors: true, roughness: .45, metalness: .55 }));
   const glow = new THREE.MeshBasicMaterial({ vertexColors: true });
   const ranks: { mesh: THREE.Mesh; row: (typeof QIN_ARMY.rows)[number]; angle: number }[] = [];
   const geometries: THREE.BufferGeometry[] = [];
