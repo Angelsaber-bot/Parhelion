@@ -9,6 +9,7 @@ import { Player } from '../src/player/player.ts';
 import { boundaryWalls, REGIONS, regionAt } from '../src/map/regions.ts';
 import { TORII_PATH, STONE_ROUTE, SANNEN, KIYOMIZU, BANNERS, AKECHI, TOBI_Z, HONNOJI } from '../tools/gen/kyoto/layout.ts';
 import type { Layout } from '../src/core/types.ts';
+import {createTraversalRepairs} from '../src/map/traversalRepairs';
 
 // World 04 业火京都: reached on foot from 幻日谷 through the torii tunnel of the southern seam (once the
 // summoning circle is stable); every quest stop can be walked, waded or climbed to.
@@ -22,7 +23,11 @@ const loadRegion = async (file: string, offset: [number, number]) => {
 };
 const def = (id: string) => REGIONS.find(r => r.id === id)!;
 const roots = [await loadRegion('world_alpha', def('alpha').offset), await loadRegion('world_kyoto', def('kyoto').offset)];
-const geos: THREE.BufferGeometry[] = [boundaryWalls()];
+const bridgeApproach=createTraversalRepairs();
+// Match the shipping main scene: its existing timber apron connects the raised
+// Honnō-ji bridge to the avenue. The source-only fixture previously omitted it.
+const geos: THREE.BufferGeometry[] = [boundaryWalls(),...bridgeApproach.collisionGeometries.map(g=>new THREE.BufferGeometry().setAttribute('position',g.attributes.position.clone()))];
+bridgeApproach.dispose();
 const dynamic = new Map<string, MeshBVH>();
 for (const r of roots) r.getObjectByName('COLLISION')!.traverse(o => {
   const m = o as THREE.Mesh;
