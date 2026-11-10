@@ -121,7 +121,7 @@ void main(){
  *  u runs along the swing (0 oldest, 1 newest), v from the heel/inner edge (0) to the blade path (1). */
 export const SWING_GLSL = `
 float swingMask(float u, float v, float style, float t){
-  if (style == 1.) { float d = length(vec2((fract(u * 9.) - .5) * 1.4, (v - .62) * 1.9)); return smoothstep(.62, .35, d); }       // petals
+  if (style == 1.) { vec2 q = vec2((fract(u * 7.) - .5) * 1.3, (v - .62) * 1.7); float d = length(q) + .18 * abs(q.x * 3.); return smoothstep(.56, .48, d); } // petals: crisp, pointed lobes
   if (style == 2.) { float n = sin(u * 37. + t * 14.) * .5 + sin(u * 71. - t * 23.) * .3 + sin(u * 13. + t * 7.) * .2;           // flame
                      return step(v, .7 + .24 * n) * (.55 + .45 * v); }
   if (style == 3.) { float tooth = abs(fract(u * 14.) * 2. - 1.); return step(v, .58 + .4 * tooth); }                              // frost

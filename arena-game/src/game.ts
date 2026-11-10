@@ -188,6 +188,16 @@ export class Game {
           } else sfx.hit(e.head);
           if (v) this.scene.damageNumber([v.pos[0], v.pos[1] + (e.head ? 2.0 : 1.6), v.pos[2]], e.dmg, e.head, false);
         }
+        else if (e.victim !== myId && e.victim !== e.shooter) {
+          // Someone else's hit on someone else: you see it in their weapon's own style too —
+          // the finish's contact emblem for melee, its hit flash and particles for guns.
+          const shooter = this.names.get(e.shooter), v = this.remotes.find((r) => r.snap.id === e.victim), w = shooter?.weapon ?? 0;
+          const skinId = WEAPONS[w]?.skins[shooter?.skins[w] ?? 0]?.id;
+          if (v && this.distance(v.pos) < 40) {
+            const at: Vec3 = [v.pos[0], v.pos[1] + (e.head ? 1.65 : 1.15), v.pos[2]];
+            if (WEAPONS[w]?.kind === 'melee') this.scene.meleeImpact(at, w, skinId); else this.scene.skinImpact(at, true, skinId);
+          }
+        }
         if (e.victim === myId) {
           const melee = WEAPONS[this.names.get(e.shooter)?.weapon ?? 0]?.kind === 'melee';
           this.hud.hurt(); sfx.hurt(); this.feel.hurt(e.dmg, melee);
@@ -358,7 +368,10 @@ export class Game {
         break;
       }
       case 'meleeStart': sfx.melee(e.weapon, true); break;
-      case 'meleeStrike': this.scene.viewmodel.strike(); sfx.melee(e.weapon, false); this.feel.melee(e.weapon, false); this.meleeContact = null; break;
+      case 'meleeStrike':
+        this.scene.viewmodel.strike(); sfx.melee(e.weapon, false); this.feel.melee(e.weapon, false); this.meleeContact = null;
+        this.scene.ownSwing(e.weapon, WEAPONS[e.weapon]?.skins[this.names.get(this.session.id)?.skins[e.weapon] ?? 0]?.id);
+        break;
       case 'dash': sfx.dash(); break;
       case 'reload': sfx.reload(); break;
     }

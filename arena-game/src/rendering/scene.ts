@@ -356,12 +356,26 @@ export class ArenaScene {
     this.weaponFx?.flash(at,fx?.head??0xffa040,weapon===1?.55:weapon===4?.5:.36,fx?.flash);
     if(weapon===1||weapon===4)this.weaponFx?.puff(at,0xd9d4cb,.3,.6,.22,[0,0,0],.5);
   }
+  /** Your own polearm thrust and hammer chop drive straight into the screen, where a ribbon along
+   *  the weapon cannot show them. A pierce ring (polearm) or a downward chop arc (hammer) in the
+   *  finish's swing style opens in front of you instead, low and clear of the crosshair. */
+  ownSwing(weapon:number,id?:string){
+    if(weapon!==6&&weapon!==7)return;
+    const fx=meleeFx(id),c=this.camera,f=new THREE.Vector3(0,0,-1).applyQuaternion(c.quaternion),r=new THREE.Vector3(1,0,0).applyQuaternion(c.quaternion),u=new THREE.Vector3(0,1,0).applyQuaternion(c.quaternion);
+    const chop=weapon===7,centre=c.position.clone().addScaledVector(f,chop?.35:.55).addScaledVector(r,chop?.05:.12).addScaledVector(u,chop?-.08:-.12),to=centre.clone().add(f);
+    let color=fx?.head??MELEE_COLOR[weapon],tail=fx?.tail;if(fx&&luma(fx.head)>.78&&luma(fx.tail)<luma(fx.head)){color=fx.tail;tail=fx.head;}
+    if(chop)this.weaponFx?.arc([centre.x,centre.y,centre.z],[to.x,to.y,to.z],color,.5,2.2,'chop',.22,fx?.swing??'crescent',tail);
+    else this.weaponFx?.arc([centre.x,centre.y,centre.z],[to.x,to.y,to.z],color,.3,6.1,'thrust',.2,fx?.swing??'crescent',tail);
+  }
   /** Another player's swing, drawn as the crescent the weapon sweeps (blade), a long narrow
    *  thrust (polearm) or an overhead chop (hammer), in the finish's own style. Never a line
    *  through the target. */
   skinSwing(from:Vec3,to:Vec3,id?:string,weapon=5){
-    const style=skinEffect(id),fx=meleeFx(id),color=fx?.head??style?.color??MELEE_COLOR[weapon]??0x9cf0ff,centre:Vec3=[from[0],from[1]-.25,from[2]];
-    const look=fx?.swing??'crescent',tail=fx?.tail;
+    const style=skinEffect(id),fx=meleeFx(id),centre:Vec3=[from[0],from[1]-.25,from[2]];
+    // A very pale accent (silver, ice) would vanish on white maps: lead with the deeper trim colour instead.
+    let color=fx?.head??style?.color??MELEE_COLOR[weapon]??0x9cf0ff,tail=fx?.tail;
+    if(fx&&luma(fx.head)>.78&&luma(fx.tail)<luma(fx.head)){color=fx.tail;tail=fx.head;}
+    const look=fx?.swing??'crescent';
     if(weapon===7)this.weaponFx?.arc(centre,to,color,1.05,2.4,'chop',.24,look,tail);
     else if(weapon===6)this.weaponFx?.arc(centre,to,color,.42,6.1,'thrust',.2,look,tail);
     else this.weaponFx?.arc(centre,to,color,1.1,2.5,'slash',.2,look,tail);
@@ -645,9 +659,9 @@ export class Viewmodel {
   private style: SkinEffect | undefined;
   /** Melee swing ribbon: recent tip/heel samples in viewmodel space, faded by age. */
   private trail = new THREE.Mesh(new THREE.BufferGeometry(), new THREE.ShaderMaterial({
-    uniforms: { uStyle: { value: 0 }, uTime: { value: 0 } }, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide,
+    uniforms: { uStyle: { value: 0 }, uTime: { value: 0 } }, vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide,
     vertexShader: 'varying vec3 vCol; varying vec2 vUv; void main(){ vCol = color; vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.); }',
-    fragmentShader: `uniform float uStyle; uniform float uTime; varying vec3 vCol; varying vec2 vUv;\n${SWING_GLSL}\nvoid main(){ gl_FragColor = vec4(vCol * swingMask(vUv.x, vUv.y, uStyle, uTime), 1.); }`,
+    fragmentShader: `uniform float uStyle; uniform float uTime; varying vec3 vCol; varying vec2 vUv;\n${SWING_GLSL}\nvoid main(){ vec3 c = vCol * swingMask(vUv.x, vUv.y, uStyle, uTime); float a = max(max(c.r, c.g), c.b); gl_FragColor = vec4(c / max(a, 1e-3), min(1., a * 1.15)); }`,
   }));
   private trailSamples: { a: THREE.Vector3; b: THREE.Vector3; age: number }[] = [];
   private trailPos = new THREE.BufferAttribute(new Float32Array(TRAIL_VERTS * 3), 3);
@@ -692,7 +706,9 @@ export class Viewmodel {
     // The finish's own muzzle-flash shape and swing style.
     const sig=signatureFx(WEAPONS[weapon].skins[skin]?.id);
     this.flash.material.map=flashTexture(sig?.kind==='gun'?sig.flash:'star');if(sig)this.flash.material.color.setHex(sig.head);
-    (this.trail.material as THREE.ShaderMaterial).uniforms.uStyle.value=sig?.kind==='melee'?SWING_STYLES.indexOf(sig.swing):0;this.trailTail.setHex(sig?.tail??0xffffff);this.trailSig=!!sig;
+    (this.trail.material as THREE.ShaderMaterial).uniforms.uStyle.value=sig?.kind==='melee'?SWING_STYLES.indexOf(sig.swing):0;this.trailSig=!!sig;
+    // Normal blending (reads on white maps); a very pale accent leads with the deeper trim colour.
+    const pale=!!sig&&luma(sig.head)>.78&&luma(sig.tail)<luma(sig.head);this.trailMain.setHex(sig?(pale?sig.tail:sig.head):(VIEW_MELEE_COLOR[weapon]??0xffffff));this.trailTail.setHex(sig?(pale?sig.head:sig.tail):0xffffff);
     this.style=style;this.shellMat.color.setHex(style?.secondary??0xe6b55a);this.shellMat.emissive.setHex(style?.color??0x3a2400).multiplyScalar(.18);
     this.trailSamples.length=0;this.inspectT=0;
     this.weapon = weapon; this.meleeHit = 0; this.meleeWindup = 0; this.kick = 0;
@@ -719,7 +735,9 @@ export class Viewmodel {
     const ready = meleeWindupProgress(this.meleeWindup, WEAPONS[this.weapon]?.windup ?? 1);
     // Every melee weapon leaves a ribbon; finishes colour it, stock weapons use their own colour.
     if (melee && def && this.gun && (this.meleeHit > .62 || ready > .7)) {
-      const [tip, heel] = this.weapon === 7 ? [[.82, .04, 0], [.2, .04, 0]] : this.weapon === 6 ? [[1.8, 0, 0], [1.0, 0, 0]] : [[1.5, 0, 0], [.55, 0, 0]];
+      // Ribbons span across the part that travels: the hammer's head (a chop moves the whole head),
+      // the spearhead (a thrust runs along the shaft, so tip-to-heel would have no width).
+      const [tip, heel] = this.weapon === 7 ? [[.86, .22, 0], [.86, -.18, 0]] : this.weapon === 6 ? [[1.75, .16, .05], [1.75, -.16, -.05]] : [[1.5, 0, 0], [.55, 0, 0]];
       this.gun.updateMatrixWorld(true);
       const point = (raw: number[]) => this.root.worldToLocal(this.gun!.localToWorld(artPoint(def, raw)));
       this.trailSamples.push({ a: point(tip), b: point(heel), age: 0 });
@@ -729,7 +747,7 @@ export class Viewmodel {
     this.trail.visible = n > 1;
     if (n < 2) return;
     // Catmull-Rom between samples (3 steps each), so a fast swing reads as a smooth arc, not facets.
-    const tint = this.trailTint.setHex(this.style?.color ?? VIEW_MELEE_COLOR[this.weapon] ?? 0xffffff), pos = this.trailPos.array as Float32Array, col = this.trailCol.array as Float32Array;
+    const tint = this.trailTint.copy(this.trailMain), pos = this.trailPos.array as Float32Array, col = this.trailCol.array as Float32Array;
     const cr = (p0: number, p1: number, p2: number, p3: number, t: number) => .5 * (2 * p1 + (p2 - p0) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (3 * p1 - p0 - 3 * p2 + p3) * t * t * t);
     let v = 0; const steps = 3, total = (n - 1) * steps + 1;
     for (let k = 0; k < total; k++) {
@@ -737,10 +755,10 @@ export class Viewmodel {
       const s0 = this.trailSamples[Math.max(0, seg - 1)], s1 = this.trailSamples[seg], s2 = this.trailSamples[seg + 1], s3 = this.trailSamples[Math.min(n - 1, seg + 2)];
       const age = s1.age + (s2.age - s1.age) * t, along = k / (total - 1);
       // Newest edge is hot and nearly white at the tip; older edge and the heel fade out.
-      const fade = Math.max(0, 1 - age / TRAIL_AGE) * along * .82, hot = along * along * .55;
+      const fade = Math.max(0, 1 - age / TRAIL_AGE) * Math.sqrt(along) * .85, hot = along * along * .55;
       // Finishes blend from their trim colour at the heel to the accent at the tip.
       const uv = this.trailUv.array as Float32Array;
-      for (const [edge, bright] of [['a', 1], ['b', .14]] as const) {
+      for (const [edge, bright] of [['a', 1], ['b', .38]] as const) {
         uv[v * 2] = along; uv[v * 2 + 1] = edge === 'a' ? 1 : 0;
         const base = this.trailSig && edge === 'b' ? this.trailTail : tint;
         pos[v * 3] = cr(s0[edge].x, s1[edge].x, s2[edge].x, s3[edge].x, t); pos[v * 3 + 1] = cr(s0[edge].y, s1[edge].y, s2[edge].y, s3[edge].y, t); pos[v * 3 + 2] = cr(s0[edge].z, s1[edge].z, s2[edge].z, s3[edge].z, t);
@@ -753,7 +771,7 @@ export class Viewmodel {
     (this.trail.material as THREE.ShaderMaterial).uniforms.uTime.value += dt;
     this.trail.geometry.setDrawRange(0, (total - 1) * 6);
   }
-  private trailTint = new THREE.Color(); private trailTail = new THREE.Color(); private trailSig = false;
+  private trailTint = new THREE.Color(); private trailTail = new THREE.Color(); private trailMain = new THREE.Color(0xffffff); private trailSig = false;
 
   muzzlePosition() { return this.muzzle?.getWorldPosition(new THREE.Vector3()) ?? new THREE.Vector3(0.17, -0.16, -0.7); }
 
@@ -1019,6 +1037,7 @@ const VIEW_MELEE_COLOR: Record<number, number> = { 5: 0x9cf0ff, 6: 0xb6aaff, 7: 
 const TRACER_PROFILE: Record<number, { width: number; speed: number }> = {
   0: { width: .028, speed: 480 }, 1: { width: .018, speed: 380 }, 2: { width: .034, speed: 650 }, 3: { width: .022, speed: 440 }, 4: { width: .045, speed: 820 },
 };
+const luma = (c: number) => (.2126 * ((c >> 16) & 255) + .7152 * ((c >> 8) & 255) + .0722 * (c & 255)) / 255;
 const gunFx = (id?: string) => { const f = signatureFx(id); return f?.kind === 'gun' ? f as GunFx & { head: number; tail: number } : undefined; };
 const meleeFx = (id?: string) => { const f = signatureFx(id); return f?.kind === 'melee' ? f as MeleeFx & { head: number; tail: number } : undefined; };
 /** Stock melee colours (finishes use their own accent). */
