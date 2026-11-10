@@ -35,7 +35,7 @@ export function createResidentEventRuntime(h:ResidentEventHooks){
    case 'weight':if(f){commit(a.fact!);if(h.done.has('resident_kyoto_weight_a')&&h.done.has('resident_kyoto_weight_b'))worked('kyoto');h.toast(['木片压住卷角，纸页仍然保持通风。','The strip holds the curling corner while leaving air between the pages.']);}else h.toast(['先把三页分别摊到晾架，再压住卷角。','Spread all three pages on the rack before weighting their corners.']);break;
   }return true;
  },
- update(p:THREE.Vector3,gliding:boolean,playable:boolean){if(!playable||!crossing)return;usedGlider ||=gliding;const wet=p.x>141&&p.x<164&&p.z>774&&p.z<786&&p.y<1.3;const outside=p.z<772||p.z>788||p.x<120||p.x>185;if(wet||outside){crossing=false;h.toast(wet?['鞋碰到水了。回西岸起点可以马上重来。','Your shoes touched water. Restart at the west bank whenever ready.']:['已经离开这段挑战河道。回起点可以重新尝试。','You left the challenge stretch. Return to the start to try again.']);}},
+ update(p:THREE.Vector3,gliding:boolean,playable:boolean){if(!playable||!crossing)return;usedGlider ||=gliding;const wet=p.x>556&&p.x<579&&p.z>-1506&&p.z<-1494&&p.y<1.3; /* Kyoto turned half a circle */const outside=p.z<-1508||p.z>-1492||p.x<535||p.x>600;if(wet||outside){crossing=false;h.toast(wet?['鞋碰到水了。回西岸起点可以马上重来。','Your shoes touched water. Restart at the west bank whenever ready.']:['已经离开这段挑战河道。回起点可以重新尝试。','You left the challenge stretch. Return to the start to try again.']);}},
  cancelCarry(){const changed=!!carrying;carrying=null;crossing=false;if(changed)h.changed();},reset(){carrying=null;crossing=false;horseSearch=h.done.has('resident_winter_horse_trail');dial=h.done.has('campaign_alpha_worked')?1:0;},
  };
 }
@@ -49,7 +49,7 @@ export function createResidentEventScene(workMarkers:readonly Marker[],floor:(x:
  const materials={paper:new THREE.MeshStandardMaterial({color:'#dccda7',roughness:.95}),cloth:new THREE.MeshStandardMaterial({color:'#b4b6a1',roughness:1}),blue:new THREE.MeshStandardMaterial({color:'#496874',roughness:.7}),brass:new THREE.MeshStandardMaterial({color:'#b39d69',metalness:.5,roughness:.4}),ink:new THREE.MeshStandardMaterial({color:'#4b5047',roughness:.9}),green:new THREE.MeshBasicMaterial({color:'#9dc5a8'})};
  const movable=(parent:THREE.Object3D,name:string,size:[number,number,number],p:[number,number,number],material:THREE.Material)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(...size),material);mesh.name=name;mesh.position.fromArray(p);parent.add(mesh);return mesh;};
  const dynamics=new Map<string,THREE.Mesh>();let journeyLamps:THREE.InstancedMesh|undefined,journeyLampState='';
- for(const a of RESIDENT_ACTIONS){const origin=origins.get(a.region)!,p=a.world?choose(a.world[0],a.world[2],a.world[1]):choose(origin.x+a.offset![0],origin.z+a.offset![1],origin.y);points.set(a.id,p);markers.push({id:a.id,type:'interact',label:a.label[0],p:[p.x,p.y+.9,p.z],radius:1.7});}
+ for(const a of RESIDENT_ACTIONS){const origin=origins.get(a.region)!,turn=a.region==='kyoto'?-1:1/* Kyoto stands turned half a circle */,p=a.world?choose(a.world[0],a.world[2],a.world[1]):choose(origin.x+turn*a.offset![0],origin.z+turn*a.offset![1],origin.y);points.set(a.id,p);markers.push({id:a.id,type:'interact',label:a.label[0],p:[p.x,p.y+.9,p.z],radius:1.7});}
  for(const a of RESIDENT_ACTIONS){
   const p=points.get(a.id)!,art=arts.get(a.region)!,prop=new THREE.Group();prop.name=a.id;prop.position.copy(p).add(new THREE.Vector3(.8,0,-.25));root.add(prop);props.set(a.id,prop);
   const x=prop.position.x,y=prop.position.y,z=prop.position.z;

@@ -7,7 +7,7 @@ import {
 import { EMBER_ROUTES, FOXFIRES, SIGNALS, TREASURE_MAPS, flagSignal, canDig, emberIdle, emberKindle, emberTake, emberTick, flagDig, flagEmber, flagFox, flagMap, foxAt, foxLength, mapHeld } from '../src/exploration/regional.ts';
 import { STORY_ENCOUNTER_LIMITS } from '../src/story/storyEncounters.ts';
 import { ENEMY_ROLES } from '../src/combat/enemyRoles.ts';
-import { REGIONS } from '../src/map/regions.ts';
+import { REGIONS, worldToRegion } from '../src/map/regions.ts';
 
 test('every prism puzzle starts unsolved and has exactly one solution', () => {
   for (const p of PUZZLES) {
@@ -43,7 +43,7 @@ test('ids are unique and reward chests point at real challenges', () => {
 
 test('content stays inside its region play area', () => {
   const inside = (region: string, x: number, z: number) => {
-    const r = REGIONS.find(r => r.id === region)!; const lx = x - r.offset[0], lz = z - r.offset[1];
+    const r = REGIONS.find(r => r.id === region)!; const [lx, lz] = worldToRegion(r, x, z);
     return lx > r.play[0] && lx < r.play[1] && lz > r.play[2] && lz < r.play[3];
   };
   for (const c of CHESTS) assert.ok(inside(c.region, ...c.p), c.id);

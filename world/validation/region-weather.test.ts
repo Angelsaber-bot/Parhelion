@@ -6,7 +6,7 @@ import { makeRegionWeather, REGION_WEATHER } from '../src/map/regionWeather.ts';
 
 test('every era has its own air', () => {
   const looks = new Set(Object.values(REGION_WEATHER).map(w => JSON.stringify([w.a.shape, w.b.shape, w.a.color, w.b.color])));
-  assert.equal(looks.size, 8);
+  assert.equal(looks.size, 9, "eight eras and the home town");
   assert.ok(REGION_WEATHER.winter.a.fall < 0 && REGION_WEATHER.winter.b.fall < 0 && REGION_WEATHER.winter.density === 1, 'it snows on the winter road');
   assert.equal(REGION_WEATHER.britain.b.shape, 'leaf');
   assert.equal(REGION_WEATHER.blacksail.b.shape, 'streak');

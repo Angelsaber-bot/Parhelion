@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 /** Flagship-local deck hatches. u points sternward; v points starboard. */
 export const SHIP_INTERIOR={center:[296,104] as const,yaw:.15,deck:7,floor:3.4,hatches:[[-8,4,2.35,5.15],[-8,4,-5.15,-2.35]] as const};
-export function flagshipPoint(u:number,v:number,y:number,world=true):[number,number,number]{const{center,yaw}=SHIP_INTERIOR;return[center[0]+Math.sin(yaw)*u+Math.cos(yaw)*v+(world?720:0),y,center[1]+Math.cos(yaw)*u-Math.sin(yaw)*v];}
+export function flagshipPoint(u:number,v:number,y:number,world=true):[number,number,number]{const{center,yaw}=SHIP_INTERIOR;return[center[0]+Math.sin(yaw)*u+Math.cos(yaw)*v+(world?720:0),y,center[1]+Math.cos(yaw)*u-Math.sin(yaw)*v+(world?-720:0)];} // Black Sail tile origin (720,-720)
 type Vertex={values:Record<string,number[]>;u:number;v:number};
 /** Subtract a convex rectangle using disjoint outside strips. No triangle-wide
  * deletion: original deck remains continuous right up to each hatch coaming. */

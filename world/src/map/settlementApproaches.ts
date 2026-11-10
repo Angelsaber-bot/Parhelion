@@ -14,8 +14,8 @@ const COLORS:Record<RegionId,[string,string]>={alpha:['#b1bec0','#70918e'],brita
 function nearSegment(p:V2,a:V2,b:V2):V2{const dx=b[0]-a[0],dz=b[1]-a[1],t=THREE.MathUtils.clamp(((p[0]-a[0])*dx+(p[1]-a[1])*dz)/(dx*dx+dz*dz||1),0,1);return[a[0]+dx*t,a[1]+dz*t];}
 /** Independent planning API: useful for geometry audits without creating rendering resources. */
 export function planSettlementApproach(p:SettlementPlacement,ctx:PlacementContext):SettlementApproach {
- const [ox,oz]=REGIONS.find(r=>r.id===p.id)!.offset;
- const start:V2=[p.entry[0],p.entry[2]+9],segments:[V2,V2][]=[];
+ const region=REGIONS.find(r=>r.id===p.id)!,[ox,oz]=region.offset;
+ const start:V2=[p.entry[0],p.entry[2]+(region.rotated?-9:9)],segments:[V2,V2][]=[];
  for(const path of ctx.layout.paths)for(let i=1;i<path.length;i++)if(Math.abs(path[i][0]-ox)<340&&Math.abs(path[i][1]-oz)<340)segments.push([path[i-1],path[i]]);
  if(!segments.length)return{region:p.id,points:[],length:0,reason:'No authored road in this region'};
  let goal:V2=start,distance=Infinity;

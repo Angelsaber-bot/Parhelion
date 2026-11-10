@@ -6,7 +6,7 @@ import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player/player.ts';
-import { REGIONS, boundaryWalls, regionAt } from '../src/map/regions.ts';
+import { REGIONS, boundaryWalls, regionAt, placeRegion } from '../src/map/regions.ts';
 
 // All regions load side by side; walking east through the mountain pass reaches 黑帆尽头.
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
@@ -14,7 +14,7 @@ for (const def of REGIONS) {
   const buf = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('COLLISION')!.traverse(o => {
     const m = o as THREE.Mesh;
@@ -28,10 +28,31 @@ for (const def of REGIONS) {
 const bvh = new MeshBVH(mergeGeometries(geos));
 const ground = (x: number, z: number) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)!.point.y;
 
-test('walking east through the pass crosses from 幻日谷 onto the 黑帆尽头 pass trail', () => {
+function walkEast(start: [number, number], route: [number, number][]) {
   const p = new Player([{ name: 'static', bvh, enabled: true }], 1);
-  p.teleport(280, ground(280, 30) + 0.5, 30);
-  const route: [number, number][] = [[320, 30], [360, 30], [400, 30], [436, 30]];
+  p.teleport(start[0], ground(start[0], start[1]) + 0.5, start[1]);
+  let k = 0, minY = Infinity;
+  for (let i = 0; i < 120 * 120 && k < route.length; i++) {
+    const [x, z] = route[k];
+    if (Math.hypot(p.pos.x - x, p.pos.z - z) < 1) { k++; continue; }
+    p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z));
+    p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true });
+    if (p.pos.x > 320) minY = Math.min(minY, p.pos.y);
+  }
+  return { p, k, minY };
+}
+test('walking east from 幻日谷 through the old pass reaches the home town', () => {
+  const route: [number, number][] = [[320, 30], [360, 30], [400, 30], [436, 30]], { p, k, minY } = walkEast([280, 30], route);
+  assert.equal(k, route.length, `walked the pass (stuck at ${p.pos.toArray().map(v => v.toFixed(1))})`);
+  assert.equal(regionAt(p.pos.x, p.pos.z).id, 'home');
+  assert.ok(!p.swimming && minY > 8, `stayed on the ridge (lowest y ${minY.toFixed(1)})`);
+});
+
+// Since the 2026-11-10 relayout 黑帆尽头's west pass opens onto 永冬's eastern shoulder.
+test('walking east over 永冬’s shoulder crosses onto the 黑帆尽头 pass trail', () => {
+  const p = new Player([{ name: 'static', bvh, enabled: true }], 1);
+  p.teleport(330, ground(330, -660) + 0.5, -660);
+  const route: [number, number][] = [[345, -690], [360, -690], [400, -690], [436, -690]];
   let k = 0, minY = Infinity;
   for (let i = 0; i < 120 * 120 && k < route.length; i++) {
     const [x, z] = route[k];

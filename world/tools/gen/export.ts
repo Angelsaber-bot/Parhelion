@@ -1,4 +1,4 @@
-import { blendContinentalColors, appendSouthwest, CONTINENT_OFFSETS } from './continent.js';
+import { blendContinentalColors, CONTINENT_OFFSETS } from './continent.js';
 // Shared GLB/layout writer for every World region generator.
 import * as THREE from 'three';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter.js';
@@ -59,7 +59,6 @@ export async function writeRegion(r: RegionOut) {
   const { world: W } = r;
   const regionId=r.file.replace('world_','');
   if(CONTINENT_OFFSETS[regionId])blendContinentalColors(r.terrain.vis,regionId);
-  if(regionId==='britain')appendSouthwest(r.terrain);
   const materials = new Map<string, THREE.Material>();
   const mat = (name: string) => {
     let m = materials.get(name);

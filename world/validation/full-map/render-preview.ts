@@ -13,7 +13,7 @@ import sharp from 'sharp';
 import { WorldMap } from '../../src/map/map';
 import { WorldGrid } from '../../src/map/grid';
 import { regionLoader, bakeQuantized } from '../../src/rendering/glb';
-import { GRID, REGIONS, mergeLayouts } from '../../src/map/regions';
+import { GRID, REGIONS, mergeLayouts, placeRegion } from '../../src/map/regions';
 import * as miniRules from '../../src/map/minimapMarkers';
 import * as regionRules from '../../src/map/regions';
 import { localizeText, setLanguage } from '../../../shared-client/i18n';
@@ -93,7 +93,7 @@ for (const def of REGIONS) {
   const bytes = readFileSync(new URL(`../../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.traverse((object) => { if ((object as THREE.Mesh).isMesh && object.name === 'Terrain') terrains.push(object as THREE.Mesh); });
   parts.push({ def, layout: JSON.parse(readFileSync(new URL(`../../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) as Layout });

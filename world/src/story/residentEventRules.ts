@@ -10,9 +10,9 @@ export const RESIDENT_ACTIONS:readonly ResidentActionDef[]=[
  {id:'resident_britain_witness_a',region:'britain',kind:'witness',label:['城门归人刻名 · 确认已有名字','Gate returners’ inscription · Verify known names'],world:[-863,34,-138],fact:'resident_britain_witness_a'},
  {id:'resident_britain_witness_b',region:'britain',kind:'witness',label:['修院待核实铭牌 · 保留空行','Abbey verification plaque · Preserve unknown names'],world:[-862,34,-174],fact:'resident_britain_witness_b'},
  def('britain','stamp','stamp',['在空行旁盖上待核实印记','Stamp the unknown lines for verification'],[2,2]),
- {id:'resident_blacksail_manifest_a',region:'blacksail',kind:'manifest',label:['造船厂货重牌 · 三次满载','Shipyard cargo board · Three full loads'],world:[518,7.8,154],fact:'resident_blacksail_manifest_a'},
- {id:'resident_blacksail_manifest_b',region:'blacksail',kind:'manifest',label:['港口口粮牌 · 零份水手口粮','Harbor ration board · No crew rations'],world:[601,3.4,144],fact:'resident_blacksail_manifest_b'},
- {id:'resident_blacksail_manifest_c',region:'blacksail',kind:'manifest',label:['码头值守牌 · 同一航次反复返回','Quay watch board · The same voyage returns'],world:[588,3.4,153],fact:'resident_blacksail_manifest_c'},
+ {id:'resident_blacksail_manifest_a',region:'blacksail',kind:'manifest',label:['造船厂货重牌 · 三次满载','Shipyard cargo board · Three full loads'],world:[518,7.8,-566],fact:'resident_blacksail_manifest_a'},
+ {id:'resident_blacksail_manifest_b',region:'blacksail',kind:'manifest',label:['港口口粮牌 · 零份水手口粮','Harbor ration board · No crew rations'],world:[601,3.4,-576],fact:'resident_blacksail_manifest_b'},
+ {id:'resident_blacksail_manifest_c',region:'blacksail',kind:'manifest',label:['码头值守牌 · 同一航次反复返回','Quay watch board · The same voyage returns'],world:[588,3.4,-567],fact:'resident_blacksail_manifest_c'},
  def('blacksail','hood','hood',['旋转暖灯遮板 · 设为安全等待线','Rotate the warm-light hood · Set a safe holding line'],[0,3]),
  def('winter','blanket','blanket',['拿起备用干布卷','Pick up the dry blanket roll'],[-2,2]),
  def('winter','underlay','underlay',['把干布垫入担架底部','Pad the stretcher underneath'],[0,3.6]),
@@ -24,8 +24,8 @@ export const RESIDENT_ACTIONS:readonly ResidentActionDef[]=[
  def('kyoto','weight_b','weight',['压稳晾架背风侧木片','Weight the leeward rack corner'],[2,4.2],'resident_kyoto_weight_b'),
  {id:'resident_winter_hoofprints',region:'winter',kind:'horse',label:['循马蹄印找白马','Follow the hoofprints to the white horse'],world:[-168,6,-580]},
  {id:'resident_winter_horse',region:'winter',kind:'horse',label:['找到偷吃草的白马','Find the white horse eating grass'],world:[-153,6,-574]},
- {id:'resident_kyoto_cross_start',region:'kyoto',kind:'cross-start',label:['不湿鞋挑战 · 西岸起点','Dry-shoe crossing · West bank start'],world:[128,4,780]},
- {id:'resident_kyoto_cross_finish',region:'kyoto',kind:'cross-finish',label:['不湿鞋挑战 · 东岸终点','Dry-shoe crossing · East bank finish'],world:[176,4,780]},
+ {id:'resident_kyoto_cross_start',region:'kyoto',kind:'cross-start',label:['不湿鞋挑战 · 西岸起点','Dry-shoe crossing · West bank start'],world:[592,4,-1500]},
+ {id:'resident_kyoto_cross_finish',region:'kyoto',kind:'cross-finish',label:['不湿鞋挑战 · 东岸终点','Dry-shoe crossing · East bank finish'],world:[544,4,-1500]},
 ];
 export type ResidentCarry='blanket'|'page'|null;
 export function getResidentWorkGuide(region:RegionId,done:ReadonlySet<string>,carrying:ResidentCarry=null):{targetId:string;text:Localized}|null{

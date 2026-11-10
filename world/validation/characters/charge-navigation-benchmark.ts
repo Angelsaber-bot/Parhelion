@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader,bakeQuantized } from '../../src/rendering/glb.ts';
-import { REGIONS,boundaryWalls } from '../../src/map/regions.ts';
+import { REGIONS,boundaryWalls, placeRegion } from '../../src/map/regions.ts';
 import { MountedCharge } from '../../src/companions/mountedCharge.ts';
 import { CharacterKit } from '../../src/characters/characterKit.ts';
 import { CHARACTER_KITS } from '../../src/characters/catalog.ts';
@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url';
 import type { Collider } from '../../src/player/player.ts';
 const geos:THREE.BufferGeometry[]=[boundaryWalls()],colliders:Collider[]=[];
 for(const def of REGIONS){const bytes=readFileSync(new URL(`../../public/assets/${def.file}.glb`,import.meta.url)),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
-  bakeQuantized(gltf.scene);gltf.scene.position.set(def.offset[0],0,def.offset[1]);gltf.scene.updateMatrixWorld(true);
+  bakeQuantized(gltf.scene);placeRegion(gltf.scene, def);gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('COLLISION')!.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh)return;let g=new THREE.BufferGeometry().setAttribute('position',m.geometry.attributes.position.clone());if(m.geometry.index)g.setIndex(m.geometry.index.clone());g.applyMatrix4(m.matrixWorld);if(g.index)g=g.toNonIndexed();if(m.userData.dynamic)colliders.push({name:m.name,bvh:new MeshBVH(g),enabled:true});else geos.push(g);});
 }
 colliders.unshift({name:'static',enabled:true,bvh:new MeshBVH(mergeGeometries(geos))});let queries=0,boxQueries=0;

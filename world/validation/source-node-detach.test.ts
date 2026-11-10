@@ -15,8 +15,8 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
   const sources=sourceNodeHandles(w.scene), receipt=w.consumedSourceReceipt;
   const sourceRoots=sources.handles.length?sources.handles.map(h=>({name:h.node.name})):receipt?.roots;
   assert.ok(sourceRoots,'production detach must expose a numeric receipt');
-  assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,8);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,8);
-  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,303); /* original 259 + 3 blockout roots/meshes/markers + 4 Orleans exploration markers + 5 Qin + 5 Egypt discovery markers */}
+  assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,9);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,9);
+  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,311); /* +8 home-town roots, colliders and markers; original 259 + 3 blockout roots/meshes/markers + 4 Orleans exploration markers + 5 Qin + 5 Egypt discovery markers */}
   // All original region-space JSON anchors must retain their authoritative world transform.
   const expectedLayout=mergeLayouts(REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))})));
   for(const marker of expectedLayout.markers){const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}
@@ -55,14 +55,15 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
      const ground=w.combat.geometry.ground(x,z);assert.ok(ground);w.player.teleport(x,ground.point.y+.2,z);for(let settle=0;settle<120;settle++)w.player.step(1/120,{x:0,z:0,jump:false,sprint:false});w.player.yaw=Math.atan2(-dx,-dz);
      for(let i=0;i<1800;i++)w.player.step(1/120,{x:0,z:1,jump:false,sprint:true});
      const distance=(w.player.pos.x-x)*dx+(w.player.pos.z-z)*dz;
-     assert.ok(open?distance>100:distance<70,`${name} ${open?'open':'closed'} actual capsule: ${distance}; pos=${w.player.pos.toArray()}; ground=${ground.point.y}; flying=${w.player.flying}`);
+     // Since the relayout the south gate opens onto the outer shore: open means reaching the world edge.
+     assert.ok(open?distance>(name==='south'?75:100):distance<70,`${name} ${open?'open':'closed'} actual capsule: ${distance}; pos=${w.player.pos.toArray()}; ground=${ground.point.y}; flying=${w.player.flying}`);
      paths.push([name,open,...w.player.pos.toArray()]);
     }
    }
    const hits=[];state(['summon_circle']);
    for(const id of ['kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']){
     const target=targets.find(t=>t.userData.target===id)!;assert.ok(target);assert.equal(target.visible,true);
-    const from=new THREE.Vector3(-224,w.ground(-224,840)+1.62,840),center=new THREE.Box3().setFromObject(target).getCenter(new THREE.Vector3());
+    const from=new THREE.Vector3(944,w.ground(944,-1560)+1.62,-1560),center=new THREE.Box3().setFromObject(target).getCenter(new THREE.Vector3());
     const ray=new THREE.Raycaster(from,center.sub(from).normalize());const hit=ray.intersectObject(target,false)[0];assert.ok(hit,`real ART target ray ${id}`);hits.push(hit.distance);
     state(['summon_circle',id]);assert.equal(target.visible,false);assert.equal(w.colliders.find((c:any)=>c.name===`COL_${target.name}`).enabled,false);state(['summon_circle']);
    }

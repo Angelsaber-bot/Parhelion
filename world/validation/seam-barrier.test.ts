@@ -121,7 +121,8 @@ for (const s of SEAM_BARRIERS) {
 
 test('continuous terrain retains story approach locations and a free camp reset spawn', () => {
   assert.deepEqual(REGIONS[0].play, [-360, 360, -360, 360]);
-  assert.deepEqual(LINKS, [[316,410,14,46],[-410,-316,-46,-14],[-46,46,-410,-316],[-6,86,316,410]]);
+  // Black Sail and Kyoto approaches moved with their regions (west pass onto 永冬, torii onto Black Sail).
+  assert.deepEqual(LINKS, [[316,410,-706,-674],[-410,-316,-46,-14],[-46,46,-410,-316],[634,726,-1130,-1036]]);
   progress.reset(); apply();
   const layout = JSON.parse(readFileSync(new URL('../public/assets/world_alpha.layout.json', import.meta.url), 'utf8'));
   const spawn = layout.markers.find((m: {id: string}) => m.id === 'spawn_p1').p;

@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls, GRID } from '../src/map/regions.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, GRID, placeRegion } from '../src/map/regions.ts';
 import { WorldGrid } from '../src/map/grid.ts';
 import { mergeParts } from '../src/settlements/merge.ts';
 import { installSettlements } from '../src/settlements/core.ts';
@@ -31,7 +31,7 @@ const parts = await Promise.all(REGIONS.map(async def => {
   const bytes = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('ART')!.traverse(object => {
     if (object instanceof THREE.Mesh && object.name === 'Terrain') terrains.push(object);

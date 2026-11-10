@@ -15,7 +15,9 @@ import {MeshoptEncoder,MeshoptDecoder} from 'meshoptimizer';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb';
 import {WorldGrid} from '../src/map/grid';
 import {components} from './reground-scatter-parts';
-import {TILE_JOINS} from './gen/continent';
+import {TILE_JOINS,toTile} from './gen/continent';
+import {REGIONS,regionToWorld} from '../src/map/regions';
+import {EXPANSION_CONNECTIONS,distanceToLine} from '../src/map/worldPlan';
 import {applySeating,type SeatingEdits} from '../validation/join-band-seating';
 
 const TARGET=/^(Trees_Trunks|Trees_Leaves|Rocks|Bushes|COL_Props)/,BAND=220,WATER=.25;
@@ -24,7 +26,7 @@ const selected=process.argv.find(a=>a.startsWith('--region='))?.slice(9),dry=pro
 await Promise.all([MeshoptEncoder.ready,MeshoptDecoder.ready]);
 const io=new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({'meshopt.encoder':MeshoptEncoder,'meshopt.decoder':MeshoptDecoder});
 const record:SeatingEdits=existsSync(EDITS)?JSON.parse(readFileSync(EDITS,'utf8')):{reason:'',band:BAND,regions:{}};
-record.reason='Continental join bands: whole trees, bushes, rocks and their prop colliders move only vertically onto the current ground (or sink below it where the ground is now sea or the open seam strip). Values are int16 Y deltas per vertex range.';
+record.reason='Continental join bands and cross-region road decks: whole trees, bushes, rocks and their prop colliders move only vertically onto the current ground, or sink below it where the ground is now sea, the open seam strip or a road. Values are int16 Y deltas per vertex range.';
 record.band=BAND;
 type Part={verts:number[];x:number;z:number;minY:number;maxY:number;r:number};
 for(const id of ['alpha','britain','winter','kyoto','blacksail'].filter(r=>!selected||r===selected)){
@@ -41,7 +43,10 @@ for(const id of ['alpha','britain','winter','kyoto','blacksail'].filter(r=>!sele
   const structures=built.length?new MeshBVH(mergeGeometries(built)):null,ray=new THREE.Ray();
   const onStructure=(pt:Part)=>{if(!structures)return false;for(const [dx,dz] of [[0,0],[.6,0],[-.6,0],[0,.6],[0,-.6]]){ray.set(new THREE.Vector3(pt.x+dx,pt.minY+1.2,pt.z+dz),new THREE.Vector3(0,-1,0));const hit=structures.raycastFirst(ray,THREE.DoubleSide);if(hit&&hit.distance<3)return true;}return false;};
   const ground=(pt:Part)=>{let g=Infinity;for(const [dx,dz] of [[0,0],[pt.r*.5,0],[-pt.r*.5,0],[0,pt.r*.5],[0,-pt.r*.5]]){const y=grid.sampleHeight(pt.x+dx,pt.z+dz);if(y!=null)g=Math.min(g,y);}return g;};
-  const seamDistance=(x:number,z:number)=>Math.min(...TILE_JOINS[id].map(s=>s==='N'?z+360:s==='S'?360-z:s==='W'?x+360:360-x));
+  // Cross-region roads stay clear: props on a road deck sink below the ground.
+  const def=REGIONS.find(r=>r.id===id)!;
+  const onRoad=(pt:Part)=>{const [wx,wz]=regionToWorld(def,pt.x,pt.z);return EXPANSION_CONNECTIONS.some(c=>distanceToLine(wx,wz,c.points)<c.width/2+1.5+pt.r);};
+  const seamDistance=(ax:number,az:number)=>{const [x,z]=toTile(id,ax,az);return Math.min(...TILE_JOINS[id].map(s=>s==='N'?z+360:s==='S'?360-z:s==='W'?x+360:360-x));};
   // decode the reviewed positions (uniform-scale quantized nodes, no rotation)
   const decoded=new Map<string,{node:typeof nodes[number];array:Int16Array;scale:number;t:number[];parts:Part[]}>();
   for(const node of nodes){
@@ -58,8 +63,9 @@ for(const id of ['alpha','britain','winter','kyoto','blacksail'].filter(r=>!sele
   const moved:{x:number;z:number;oldMin:number;dy:number}[]=[];
   const apply=(name:string,pt:Part,dy:number)=>{if(dy===0)return;const m=shift.get(name)??shift.set(name,new Map()).get(name)!;for(const i of pt.verts)m.set(i,dy);};
   const seat=(pt:Part,kind:'trunk'|'rock'|'bush')=>{
-    if(Math.max(Math.abs(pt.x),Math.abs(pt.z))<BAND)return 0;
     const gy=ground(pt);if(!Number.isFinite(gy))return 0;
+    if(onRoad(pt)&&pt.maxY>gy-1&&!onStructure(pt)){const dy=gy-1-pt.maxY;stats.sunk++;moved.push({x:pt.x,z:pt.z,oldMin:pt.minY,dy});return dy;}
+    if(Math.max(Math.abs(pt.x),Math.abs(pt.z))<BAND)return 0;
     const height=pt.maxY-pt.minY,sink=kind==='trunk'?.3:kind==='rock'?Math.min(1.2,.25*height):Math.min(.2,.15*height);
     let dy=gy-sink-pt.minY;
     if(Math.abs(dy)<Math.min(.35,Math.max(.08,.5*height)))return 0;

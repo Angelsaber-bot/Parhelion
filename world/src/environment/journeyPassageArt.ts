@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {SiteArt} from '../story/campaignSites';
 import {gatePoint} from '../story/kingdomGate';
+import {legacyFrameMatrix} from '../map/regions';
 import type {AdventurePoint} from '../story/openWorldCampaign';
 /** Furnished through-spaces wrap the actual maintenance paths. Doorways remain
  * open on both ends; walls and roofs are solid while the verified ramp owns floors. */
@@ -83,6 +84,8 @@ export function createJourneyPassageArt(){
  // Cover the abutting end-board seam without coplanar faces at the facade.
  for(const side of[-1,1])houses.box([-68,8.8+(-68+59)*grade+1.75,740+side*3.57],[.2,3.64,.08],'#66503b');
  houses.finish('kyoto');houses.root.name='Kyoto_TwoMachiyaPassage';
- const roofRoute:AdventurePoint[]=[[-43,4.45,749],[-53,12.8,749],[-59,12.8,740],[-77,8.7,740],[-87,4.7,740]];
+ // Authored in Kyoto's pre-relayout frame; Kyoto now stands turned half a circle in the north-east.
+ houses.relocate(legacyFrameMatrix('kyoto'));
+ const roofRoute:AdventurePoint[]=[[763,4.45,-1469],[773,12.8,-1469],[779,12.8,-1460],[797,8.7,-1460],[807,4.7,-1460]];
  return{abbey,houses,roofRoute};
 }

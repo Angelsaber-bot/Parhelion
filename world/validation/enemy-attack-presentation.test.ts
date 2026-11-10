@@ -5,7 +5,7 @@ import { WorldCombatState, enemyAttackTiming } from '../src/combat/combat.ts';
 import { enemyAttackPose, ENEMY_CONTACT_SAMPLE, type EnemyPoseModel } from '../src/combat/enemyAttackPresentation.ts';
 import { EnemyVisuals } from '../src/combat/enemyVisuals.ts';
 import { parseLocalGlb } from './player-fixture.ts';
-const p = { x: 0, y: 0, z: 720 };
+const p = { x: 720, y: 0, z: -1440 };
 const make = () => new WorldCombatState([{ id: 'pose', kind: 'shade', p }], []).enemies[0];
 for (const model of Object.keys(ENEMY_CONTACT_SAMPLE) as EnemyPoseModel[]) {
   test(`${model}: strike leads real contact, preserves exact contact sample and stops on cancellation`, () => {

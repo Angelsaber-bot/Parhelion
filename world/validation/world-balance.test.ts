@@ -19,7 +19,7 @@ test('balance: armor rewards movement or recovery timing; Saber hit interrupt is
  e.mode='recover';s.hitEnemy(e.id,12,{source:'ranged',origin:p(2)});assert.ok(Math.abs(e.hp-42)<.001);
 });
 test('balance: restored regions pacify wilderness across reload/reset without completing neighboring chapters',()=>{
- const s=new WorldCombatState([{id:'wild_test',kind:'shade',p:p(600,30)}],{id:'boss',kind:'king',p:p(50),requires:[]});
+ const s=new WorldCombatState([{id:'wild_test',kind:'shade',p:p(600,-690)}],{id:'boss',kind:'king',p:p(50),requires:[]});
  const done=new Set([A.started,'sea_core','blackbeard_contract',A.departed]);s.syncWorldFlags(done);assert.equal(s.enemies[0].pacified,true);assert.equal(s.enemies[0].mode,'pacified');
  s.resetAll();s.syncWorldFlags(new Set());assert.equal(s.enemies[0].pacified,false);assert.equal(done.has('winter_core'),false);
 });

@@ -31,7 +31,7 @@ export type EraStoryReward =
   | { kind: 'quiet-route'; region: 'kyoto'; position: [number, number, number]; label: Localized }
 ;
 export const ERA_KNIGHT_DEFEATED = 'era_britain_knight_defeated';
-export const KYOTO_QUIET_LEDGE: readonly [number, number, number] = [-224, 11.56, 840];
+export const KYOTO_QUIET_LEDGE: readonly [number, number, number] = [944, 11.56, -1560];
 export interface EraStoryInteraction {
   handled: boolean;
   changed: boolean;

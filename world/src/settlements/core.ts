@@ -3,7 +3,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { mergeParts } from './merge';
 import type { WorldGrid } from '../map/grid';
 import type { Layout } from '../core/types';
-import { REGIONS } from '../map/regions';
+import { REGIONS, regionToWorld } from '../map/regions';
 import type { SettlementKit, SettlementPlacement, PlacedNpcSocket, RegionId } from './types';
 
 const PREFERRED: Record<RegionId, [number, number]> = {
@@ -40,7 +40,7 @@ export function findSettlementPlacement(kit: SettlementKit, ctx: PlacementContex
   const relevantPaths = ctx.layout.paths.filter((path) => path.some(([x,z]) => Math.abs(x-ox)<340 && Math.abs(z-oz)<340));
   const rejected = { bounds:0, paths:0, markers:0, terrain:0, approach:0, props:0, ramp:0 };
   for (const [lx, lz] of candidates) {
-    const x = lx + ox, z = lz + oz;
+    const [x, z] = regionToWorld(region, lx, lz);
     if (Math.abs(lx) + w/2 > 310 || Math.abs(lz) + d/2 + 12 > 310) {rejected.bounds++;continue;}
     let pathDistance = Infinity;
     for (const path of relevantPaths) for (let i = 1; i < path.length; i++) pathDistance = Math.min(pathDistance, segmentDistance(x,z,path[i-1],path[i]));
@@ -52,12 +52,14 @@ export function findSettlementPlacement(kit: SettlementKit, ctx: PlacementContex
     const min = Math.min(...heights), max = Math.max(...heights), range = max-min;
     if (!Number.isFinite(min) || min < 2.2 || range > 1.4) {rejected.terrain++;continue;}
     const y = max + .035;
-    const ex = x + kit.entry[0], ez = z + Math.max(kit.entry[1],d/2);
-    const approach = settlementHeight(ctx.grid, ex, ez + 9);
+    // A hub in a region turned half a circle is turned with it (entry faces the region's own south).
+    const s = region.rotated ? -1 : 1;
+    const ex = x + s*kit.entry[0], ez = z + s*Math.max(kit.entry[1],d/2);
+    const approach = settlementHeight(ctx.grid, ex, ez + s*9);
     if (!Number.isFinite(approach) || approach < 2.2 || y-approach < -.15 || y-approach > 2.3) {rejected.approach++;continue;}
     box.set(new THREE.Vector3(x-w/2-.8,y+.12,z-d/2-.8),new THREE.Vector3(x+w/2+.8,y+18,z+d/2+.8));
     if (ctx.blockers.intersectsBox(box,new THREE.Matrix4())) {rejected.props++;continue;}
-    box.set(new THREE.Vector3(ex-2,Math.min(y,approach)+.12,ez),new THREE.Vector3(ex+2,y+3,ez+10));
+    box.set(new THREE.Vector3(ex-2,Math.min(y,approach)+.12,Math.min(ez,ez+s*10)),new THREE.Vector3(ex+2,y+3,Math.max(ez,ez+s*10)));
     if (ctx.blockers.intersectsBox(box,new THREE.Matrix4())) {rejected.ramp++;continue;}
     return { id:kit.id,name:kit.name,position:[x,y,z],entry:[ex,y,ez],footprint:kit.footprint,groundRange:range };
   }
@@ -112,13 +114,14 @@ export function installSettlements(kits: SettlementKit[], ctx: PlacementContext)
     const mat=new THREE.MeshStandardMaterial({color:FOUNDATION[kit.id],roughness:.95});mat.name=`${kit.id}_foundation`;
     const base=new THREE.Mesh(new THREE.BoxGeometry(w,Math.max(.18,p.groundRange+.18),d),mat);
     base.name='Settlement_foundation';base.position.y=-Math.max(.18,p.groundRange+.18)/2-.12;base.userData.solid=true;kit.group.add(base);
+    const turned=!!REGIONS.find(r=>r.id===kit.id)?.rotated,s=turned?-1:1;
     const ex=kit.entry[0],ez=Math.max(kit.entry[1],d/2);
-    const approach=settlementHeight(ctx.grid,x+ex,z+ez+9);
+    const approach=settlementHeight(ctx.grid,x+s*ex,z+s*(ez+9));
     const ramp=new THREE.Mesh(rampGeometry(3.4,9,Math.max(0,y-approach)),mat);
     ramp.position.set(ex,.02,ez);ramp.name='Settlement_access_ramp';ramp.userData.solid=true;kit.group.add(ramp);
-    kit.group.name=`Settlement_${kit.id}`;kit.group.position.set(x,y,z);root.add(kit.group);root.updateMatrixWorld(true);
+    kit.group.name=`Settlement_${kit.id}`;kit.group.position.set(x,y,z);kit.group.rotation.y=turned?Math.PI:0;root.add(kit.group);root.updateMatrixWorld(true);
     kit.group.traverse((o)=>{if(o instanceof THREE.Mesh && o.userData.solid)collisionGeometries.push(positionGeometry(o));});
-    for(const socket of kit.npcs)npcs.push({...socket,region:kit.id,position:[x+socket.position[0],y+socket.position[1],z+socket.position[2]]});
+    for(const socket of kit.npcs)npcs.push({...socket,region:kit.id,position:[x+s*socket.position[0],y+socket.position[1],z+s*socket.position[2]],...(turned&&typeof socket.yaw==='number'?{yaw:socket.yaw+Math.PI}:{})});
     batchSettlementVisuals(kit.group);
   }
   return {root,collisionGeometries,npcs,placements,update(player:THREE.Vector3){for(const group of root.children)group.visible=Math.hypot(group.position.x-player.x,group.position.z-player.z)<235;}};

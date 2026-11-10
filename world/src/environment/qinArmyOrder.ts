@@ -3,7 +3,8 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
-import { QIN_ARMY, QIN_OFFSET, QIN_LEVELS } from '../map/qinPlan';
+import { QIN_ARMY, QIN_FRAME, QIN_LEVELS, worldToQin, qinToWorld } from '../map/qinPlan';
+import { planMatrix } from '../map/planFrame';
 import { warriorPrims, placeFigure, type WarriorKind } from '../map/qinFigures';
 
 export type QinOrderPhase = 'a' | 'b';
@@ -21,11 +22,11 @@ export function toggleQinOrder(done: Set<string>): QinOrderPhase {
 }
 /** World-space position (feet) blocks a turn when it stands in any rank's sweep or under the shaft gate. */
 export function qinTurnBlocked(p: { x: number; y: number; z: number }): boolean {
-  const [ox, oz] = QIN_OFFSET, floor = QIN_LEVELS.army;
+  const floor = QIN_LEVELS.army, [x, z] = worldToQin(p.x, p.z);
   if (p.y < floor - 1 || p.y > floor + 9) return false;
-  for (const row of QIN_ARMY.rows) for (const zc of QIN_ARMY.rankCenters) if (Math.hypot(p.x - (row.x + ox), p.z - (zc + oz)) < QIN_RANK_SWEEP + .35) return true;
+  for (const row of QIN_ARMY.rows) for (const zc of QIN_ARMY.rankCenters) if (Math.hypot(x - row.x, z - zc) < QIN_RANK_SWEEP + .35) return true;
   const g = QIN_ARMY.shaftGate;
-  return Math.abs(p.x - (g.x + ox)) < g.width / 2 + .4 && Math.abs(p.z - (g.z + oz)) < 1.2;
+  return Math.abs(x - g.x) < g.width / 2 + .4 && Math.abs(z - g.z) < 1.2;
 }
 
 type Part = { geo: THREE.BufferGeometry; color: string };
@@ -63,7 +64,9 @@ function rankGeometry(seed: number) {
 
 /** `convert` lets the game swap in its toon/Qin surface shading; tests keep the plain material. */
 export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Material = m => m) {
-  const [ox, oz] = QIN_OFFSET, floor = QIN_LEVELS.army, root = new THREE.Group(); root.name = 'QinArmyOrder';
+  // Built in Qin's authored frame; the root and the colliders are then placed in the world.
+  const ox = 0, oz = 0, frame = planMatrix(QIN_FRAME), floor = QIN_LEVELS.army, root = new THREE.Group(); root.name = 'QinArmyOrder';
+  root.applyMatrix4(frame);
   const material = convert(new THREE.MeshStandardMaterial({ name: 'M_QinCraft', vertexColors: true, roughness: .92 }));
   const bronze = convert(new THREE.MeshStandardMaterial({ name: 'M_QinCraft', vertexColors: true, roughness: .45, metalness: .55 }));
   const glow = new THREE.MeshBasicMaterial({ vertexColors: true });
@@ -83,7 +86,7 @@ export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Materia
       const g = mergeGeometries(QIN_ARMY.rankCenters.map(zc => open
         ? solidBox(row.x + ox, zc + oz, QIN_ARMY.rankLength, QIN_ARMY.rankWidth, 3.2)
         : solidBox(row.x + ox, zc + oz, QIN_ARMY.rankWidth, QIN_ARMY.rankLength, 3.2)))!;
-      geometries.push(g); return { name: `COL_QinRank_${row.id}_${open ? 'open' : 'closed'}`, bvh: new MeshBVH(g), enabled: false } as Collider;
+      g.applyMatrix4(frame); geometries.push(g); return { name: `COL_QinRank_${row.id}_${open ? 'open' : 'closed'}`, bvh: new MeshBVH(g), enabled: false } as Collider;
     };
     rowColliders.set(row.id, { closed: make(false), open: make(true) });
   }
@@ -93,7 +96,7 @@ export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Materia
   for (const y of [1.2, 3, 4.8]) piece(gateParts, [G.width, .25, .26], [0, y, 0], '#a8854a');
   const gateGeo = bake(gateParts); geometries.push(gateGeo);
   const gate = new THREE.Mesh(gateGeo, bronze); gate.name = 'QinShaftGate'; gate.position.set(G.x + ox, floor, G.z + oz); root.add(gate);
-  const gateCollisionGeo = new THREE.BoxGeometry(G.width + .6, G.height, .8).translate(G.x + ox, floor + G.height / 2, G.z + oz); geometries.push(gateCollisionGeo);
+  const gateCollisionGeo = new THREE.BoxGeometry(G.width + .6, G.height, .8).translate(G.x + ox, floor + G.height / 2, G.z + oz).applyMatrix4(frame); geometries.push(gateCollisionGeo);
   const gateCollider: Collider = { name: 'COL_QinShaftGate', bvh: new MeshBVH(gateCollisionGeo), enabled: true };
   // Command posts: a bronze drum on a rammed step, its wheel and pennant showing the order.
   const levers: { wheel: THREE.Mesh; pennant: THREE.Mesh }[] = [];
@@ -119,7 +122,7 @@ export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Materia
   }
   pennantB.side = THREE.DoubleSide;
   void glow;
-  const markers: Marker[] = QIN_ARMY.levers.map(l => ({ id: l.id, type: 'interact', label: QIN_ORDER_LABEL[0], p: [l.p[0] + ox, floor + 1.2, l.p[2] + oz], radius: 2.6 }));
+  const markers: Marker[] = QIN_ARMY.levers.map(l => { const [x, z] = qinToWorld(l.p[0], l.p[2]); return { id: l.id, type: 'interact', label: QIN_ORDER_LABEL[0], p: [x, floor + 1.2, z], radius: 2.6 }; });
   let phase: QinOrderPhase | null = null, gateLift = 0, disposed = false;
   const targetAngle = (row: { openIn: QinOrderPhase }, p: QinOrderPhase) => qinRowOpen(row, p) ? Math.PI / 2 : 0;
   function apply(done: ReadonlySet<string>, instant = false) {

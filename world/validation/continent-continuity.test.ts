@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
-import {REGIONS,boundaryWalls} from '../src/map/regions';
+import {REGIONS,boundaryWalls, placeRegion } from '../src/map/regions';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb';
 import {WorldGrid} from '../src/map/grid';
 import {Player} from '../src/player/player';
@@ -11,17 +11,17 @@ const roots:THREE.Object3D[]=[],terrains:THREE.Mesh[]=[];
 for(const def of REGIONS){
   const bytes=readFileSync(new URL(`../public/assets/${def.file}.core.glb`,import.meta.url));
   const {scene}=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
-  bakeQuantized(scene);scene.position.set(def.offset[0],0,def.offset[1]);scene.updateMatrixWorld(true);
+  bakeQuantized(scene);placeRegion(scene, def);scene.updateMatrixWorld(true);
   roots.push(scene);terrains.push(scene.getObjectByName('Terrain') as THREE.Mesh);
 }
-const grid=new WorldGrid(terrains,-1080,-1080,2160,2);
+const grid=new WorldGrid(terrains,-1080,-1800,2160,2);
 const joins=[
-  {x:-360,z:-720,axis:'x',name:'Orleans–Winter'}, {x:360,z:-720,axis:'x',name:'Winter–Qin'},
-  {x:-360,z:0,axis:'x',name:'Britain–Valley'}, {x:360,z:0,axis:'x',name:'Valley–Black Sail'},
-  {x:-360,z:720,axis:'x',name:'Southwest–Kyoto'}, {x:360,z:720,axis:'x',name:'Kyoto–Egypt'},
-  {x:-720,z:-360,axis:'z',name:'Orleans–Britain'}, {x:0,z:-360,axis:'z',name:'Winter–Valley'},
-  {x:720,z:-360,axis:'z',name:'Qin–Black Sail'}, {x:-720,z:360,axis:'z',name:'Britain–Southwest'},
-  {x:0,z:360,axis:'z',name:'Valley–Kyoto'}, {x:720,z:360,axis:'z',name:'Black Sail–Egypt'},
+  {x:-360,z:-1440,axis:'x',name:'Orleans–Egypt'}, {x:360,z:-1440,axis:'x',name:'Egypt–Kyoto'},
+  {x:-360,z:-720,axis:'x',name:'Qin–Winter'}, {x:360,z:-720,axis:'x',name:'Winter–Black Sail'},
+  {x:-360,z:0,axis:'x',name:'Britain–Valley'}, {x:360,z:0,axis:'x',name:'Valley–Home'},
+  {x:-720,z:-1080,axis:'z',name:'Orleans–Qin'}, {x:0,z:-1080,axis:'z',name:'Egypt–Winter'},
+  {x:720,z:-1080,axis:'z',name:'Kyoto–Black Sail'}, {x:-720,z:-360,axis:'z',name:'Qin–Britain'},
+  {x:0,z:-360,axis:'z',name:'Winter–Valley'}, {x:720,z:-360,axis:'z',name:'Black Sail–Home'},
 ];
 function localCollision(x:number,z:number,axis:string){
   const dx=axis==='x'?50:12,dz=axis==='z'?50:12,positions:number[]=[],v=new THREE.Vector3();
@@ -54,7 +54,7 @@ function cross(bvh:MeshBVH,x:number,z:number,axis:string,reverse:boolean){
 }
 test('only the world exterior has a boundary wall',()=>{
   const g=boundaryWalls(),p=g.attributes.position;
-  for(let i=0;i<p.count;i++)assert.ok(Math.abs(p.getX(i))>=1080||Math.abs(p.getZ(i))>=1080);
+  for(let i=0;i<p.count;i++)assert.ok(Math.abs(p.getX(i))>=1080||p.getZ(i)<=-1800||p.getZ(i)>=360);
   g.dispose();
 });
 for(const join of joins)test(`${join.name}: broad joins match heights and permit walking both ways off the road`,()=>{
@@ -65,11 +65,11 @@ for(const join of joins)test(`${join.name}: broad joins match heights and permit
       const local=new THREE.Vector3(x,0,z).applyMatrix4(m.matrixWorld.clone().invert()),p=m.geometry.attributes.position;
       let height:number|undefined;for(let i=0;i<p.count;i++)if(Math.abs(p.getX(i)-local.x)<.04&&Math.abs(p.getZ(i)-local.z)<.04){height=p.getY(i);break;}return height;
     }).filter((y):y is number=>y!==undefined);
-    assert.ok(heights.length>=(join.name==='Britain–Southwest'?1:2));assert.ok(Math.max(...heights)-Math.min(...heights)<.08,'meshes share a floor');
+    assert.ok(heights.length>=2);assert.ok(Math.max(...heights)-Math.min(...heights)<.08,'meshes share a floor');
     cross(bvh,x,z,join.axis,false);cross(bvh,x,z,join.axis,true);g.dispose();
   }
 });
-test('southwest void is dry terrain and four-tile junctions have a floor',()=>{
-  for(const x of [-900,-720,-540])for(const z of [540,720,900])assert.ok(grid.sampleHeight(x,z)!>0);
-  for(const x of [-360,360])for(const z of [-360,360])assert.ok(grid.sampleHeight(x,z)!>0);
+test('the home town is dry land and the four-tile junctions have a floor',()=>{
+  for(const x of [540,720,900])for(const z of [-180,0,180])assert.ok(grid.sampleHeight(x,z)!>0);
+  for(const x of [-360,360])for(const z of [-1080,-360])assert.ok(grid.sampleHeight(x,z)!>0);
 });

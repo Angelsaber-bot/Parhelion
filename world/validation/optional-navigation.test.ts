@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {optionalPinExpired,type OptionalPin} from '../src/story/optionalNavigation';
 const p={x:0,y:1,z:0};
-const pin:OptionalPin={kind:'quiet-route',p:[-224,11.56,840],label:['高地','Ledge'],region:'kyoto'};
+const pin:OptionalPin={kind:'quiet-route',p:[944,11.56,-1560],label:['高地','Ledge'],region:'kyoto'};
 test('Kyoto quiet route expires immediately after its purpose resolves, not just on arrival',()=>{
  const done=new Set(['kyoto_lantern_route']);assert.equal(optionalPinExpired(pin,'kyoto',p,done,new Set()),false);
  for(let i=1;i<=3;i++)done.add(`kikyo_banner_${i}`);assert.equal(optionalPinExpired(pin,'kyoto',p,done,new Set()),true);

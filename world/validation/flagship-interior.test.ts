@@ -14,7 +14,7 @@ import { Player, type Collider } from '../src/player/player';
 const roots = await Promise.all(['core', 'visual'].map(async kind => {
   const bytes = await readFile(new URL(`../public/assets/world_blacksail.${kind}.glb`, import.meta.url));
   const { scene } = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
-  bakeQuantized(scene); scene.position.x = 720; scene.updateMatrixWorld(true); return scene;
+  bakeQuantized(scene); scene.position.set(720, 0, -720); scene.updateMatrixWorld(true); return scene;
 }));
 const staticParts: THREE.BufferGeometry[] = [];
 roots[0].getObjectByName('COLLISION')!.traverse(object => {

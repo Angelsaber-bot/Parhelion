@@ -129,7 +129,7 @@ test('enemy snapshots cover both players, nearest first, and skip host-only stor
   const state = new WorldCombatState([
     { id: 'near_host', kind: 'shade', p: { x: 10, y: 0, z: 0 } },
     { id: 'near_partner', kind: 'shade', p: { x: 300, y: 0, z: 0 } },
-    { id: 'far', kind: 'shade', p: { x: 900, y: 0, z: 0 } },
+    { id: 'far', kind: 'shade', p: { x: 900, y: 0, z: -720 } },
   ], []);
   const list = enemySnapshot(state.enemies, { x: 0, y: 0, z: 0 }, { x: 305, y: 0, z: 0 });
   assert.deepEqual(list.map(e => e.id), ['near_partner', 'near_host']);

@@ -14,7 +14,7 @@ test('stream failure is retryable; concurrent callers deduplicate; eviction owns
   assert.equal(await s.ensure('alpha'),false);assert.deepEqual(s.diagnostics.failed,['alpha']);assert.deepEqual(s.diagnostics.pending,[]);
   fail=false;const results=await Promise.all([s.retry('alpha'),s.ensure('alpha')]);assert.deepEqual(results,[true,true]);assert.equal(requests,2);assert.equal(parent.children.length,1);
   let g=0,m=0;parent.traverse(o=>{const mesh=o as THREE.Mesh;if(mesh.isMesh){mesh.geometry.addEventListener('dispose',()=>g++);(mesh.material as THREE.Material).addEventListener('dispose',()=>m++);}});
-  now=20;s.update(new THREE.Vector3(600,0,0),new THREE.Vector3(600,5,0));await s.ensure('blacksail');assert.equal(s.ready('alpha'),false);assert.ok(g>0&&m>0);assert.ok(s.diagnostics.disposedGeometries>0&&s.diagnostics.disposedMaterials>0);assert.equal(parent.children.length,1);
+  now=20;s.update(new THREE.Vector3(600,0,-720),new THREE.Vector3(600,5,-720));await s.ensure('blacksail');assert.equal(s.ready('alpha'),false);assert.ok(g>0&&m>0);assert.ok(s.diagnostics.disposedGeometries>0&&s.diagnostics.disposedMaterials>0);assert.equal(parent.children.length,1);
  }finally{s.dispose();globalThis.fetch=original;}assert.equal(parent.children.length,0);
 });
 test('aborted and late region downloads cannot install after departure or disposal',async()=>{

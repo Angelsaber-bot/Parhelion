@@ -13,7 +13,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls, GRID } from '../src/map/regions.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, GRID, placeRegion, regionToWorld } from '../src/map/regions.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
 import { WorldGrid } from '../src/map/grid.ts';
 import { mergeParts } from '../src/settlements/merge.ts';
@@ -36,7 +36,7 @@ const parts = await Promise.all(REGIONS.map(async def => {
   const bytes = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('ART')!.traverse(object => {
     if (object instanceof THREE.Mesh && object.name === 'Terrain') terrains.push(object);
@@ -88,7 +88,7 @@ function progress(flags: readonly string[]) {
 const idle = { x: 0, z: 0, jump: false, sprint: false };
 const marker = (id: string) => { const m = layout.markers.find(m => m.id === id); assert.ok(m, `missing marker ${id}`); return m; };
 const at = (id: string): [number,number] => [marker(id).p[0],marker(id).p[2]];
-const world = (region: string,x: number,z: number): [number,number] => {const r=REGIONS.find(r=>r.id===region)!;return[x+r.offset[0],z+r.offset[1]];};
+const world = (region: string,x: number,z: number): [number,number] => regionToWorld(REGIONS.find(r=>r.id===region)!,x,z);
 const path = (region:string,index:number):[number,number][] => parts.find(p=>p.def.id===region)!.layout.paths[index].map(([x,z])=>world(region,x,z));
 function make(from:[number,number], y?:number) {
   const p = new Player(colliders,layout.world.waterLevel);
@@ -128,7 +128,7 @@ test('era routes: every shard-free mainline requirement exists in the correct me
     const core={britain:'sun_core',blacksail:'sea_core',winter:'winter_core',kyoto:'fire_core'}[region];
     for(const id of [...ERA_BOSS_REQUIREMENTS[core],core]) {
       if(id===G.rescued){assert.ok(gatePoint(0,0)[0]<-720);continue;} // Runtime escort fact; real passage verified in kingdom-gate.test.
-      const m=marker(id);const source=parts.find(p=>p.def.id===region)!;const local=source.layout.markers.find(m=>m.id===id)!;assert.ok(local);assert.deepEqual(m.p,[local.p[0]+source.def.offset[0],local.p[1],local.p[2]+source.def.offset[1]],`${id} has correct cross-layer offset`);
+      const m=marker(id);const source=parts.find(p=>p.def.id===region)!;const local=source.layout.markers.find(m=>m.id===id)!;assert.ok(local);{const [wx,wz]=regionToWorld(source.def,local.p[0],local.p[2]);assert.deepEqual(m.p,[wx,local.p[1],wz],`${id} has correct cross-layer offset`);}
       assert.ok(m.p.every(Number.isFinite));assert.ok(!id.startsWith('shard_'));
     }
   }
@@ -138,7 +138,7 @@ test('era routes: actual Player walks Kyoto inn south entrance to grounded quiet
   progress(['summon_circle']);
   const hub=settlements.placements.find(p=>p.id==='kyoto')!;
   const p=make([hub.entry[0],hub.entry[2]+8],hub.position[1]);
-  follow(p,[[-172,835.5],[-190,835.5],[-205,838],[-224,840]],{jump:false,sprint:false,tol:.55});
+  follow(p,[[892,-1555.5],[910,-1555.5],[925,-1558],[944,-1560]],{jump:false,sprint:false,tol:.55});
   assert.ok(p.onGround&&!p.swimming&&!p.flying);
   assert.ok(Math.abs(p.pos.y-grid.sampleHeight(p.pos.x,p.pos.z)!)<.25,'on true terrain, not a prop roof');
   for(const id of ['kikyo_banner_1','kikyo_banner_2','kikyo_banner_3']) {
@@ -214,6 +214,8 @@ test('era routes: Kyoto bridge ally and Honnoji core stay reachable with full sc
 });
 
 test('era routes: all four seam colliders block before and permit walking after summon stability',()=>{
+  // Since the 2026-11-10 relayout the east gate opens toward the home town and the south gate
+  // faces the outer shore: it still holds while closed, but there is no land beyond to walk to.
   const routes:[string,[number,number],[number,number]][]=[
     ['west',[-280,-30],[-390,-30]],['east',[280,30],[390,30]],
     ['north',[0,-280],[0,-390]],['south',[40,280],[40,390]],
@@ -227,6 +229,7 @@ test('era routes: all four seam colliders block before and permit walking after 
     assert.ok(Math.hypot(p.pos.x-to[0],p.pos.z-to[1])>20,`${name} physically blocks closed state`);
     assert.ok((p.pos.x-from[0])*direction.x+(p.pos.z-from[1])*direction.z<70,`${name} cannot overshoot the far endpoint and masquerade as blocked`);
     progress(['summon_circle']);assert.equal(gate.enabled,false);
+    if(name==='south')continue;
     p=make(from);follow(p,[to],{jump:false});assert.equal(p.swimming,false,`${name} continuous terrain/ice/bridge`);
   }
 });
@@ -245,20 +248,22 @@ test('era routes: unearned ghost bridge cannot carry Player to first ship',()=>{
 
 test('era routes: Honnoji repaired apron crosses east-west and west-east without jump and retains rails',()=>{
   progress(['summon_circle']);
-  for(const sprint of [false,true])for(const z of [764,765,766]) {
-    const p=make([-44,z]);follow(p,[[-49,z],[-54,z],[-60,z]],{jump:false,sprint,tol:.5});
-    follow(p,[[-54,z],[-49,z],[-44,z]],{jump:false,sprint,tol:.5});
+  // Kyoto stands turned half a circle: authored x -44…-60 is world 764…780, authored z 764…766 is world -1484…-1486.
+  for(const sprint of [false,true])for(const z of [-1484,-1485,-1486]) {
+    const p=make([764,z]);follow(p,[[769,z],[774,z],[780,z]],{jump:false,sprint,tol:.5});
+    follow(p,[[774,z],[769,z],[764,z]],{jump:false,sprint,tol:.5});
     // Downhill sprint may leave the slope for a fraction of a frame; allow a
     // quarter second to settle, without any movement/jump input or correction.
     for(let i=0;i<30;i++)p.step(1/120,idle);
     assert.ok(p.onGround&&!p.swimming,`stable after bidirectional ${sprint?'sprint':'walk'} at z=${z}: ${p.pos.toArray()}`);
   }
   for(const sign of [-1,1]){
-    const r=make([-52,765]);r.yaw=sign>0?Math.PI:0;
+    const r=make([772,-1485]);r.yaw=sign>0?Math.PI:0;
     for(let i=0;i<120*3;i++)r.step(1/120,{...idle,z:1,sprint:true});
-    assert.ok(r.pos.z>762.7&&r.pos.z<767.3,`original side rail blocks direction ${sign}: ${r.pos.toArray()}`);
+    assert.ok(r.pos.z>-1487.3&&r.pos.z<-1482.7,`original side rail blocks direction ${sign}: ${r.pos.toArray()}`);
   }
-  const wall=make([-62,755]);wall.yaw=-Math.PI/2;
+  // Kyoto turned half a circle: the authored eastward push (x −62 → −55) now runs west (782 → 775).
+  const wall=make([782,-1475]);wall.yaw=Math.PI/2;
   for(let i=0;i<120*3;i++)wall.step(1/120,{...idle,z:1,sprint:true});
-  assert.ok(wall.pos.x<-55,`closed temple wall remains solid away from gate: ${wall.pos.toArray()}`);
+  assert.ok(wall.pos.x>775,`closed temple wall remains solid away from gate: ${wall.pos.toArray()}`);
 });

@@ -1,5 +1,5 @@
 import { createQinAtmosphere, type Emitter } from './qinAtmosphere';
-import { EGYPT_OFFSET } from '../map/egyptPlan';
+import { EGYPT_FRAME } from '../map/egyptPlan';
 
 /** Egypt's air: heat-shimmer motes over the river and lake, dust devils on the desert,
  * incense in the temple, embers on the roof altar and gold dust in the barque tomb. */
@@ -13,4 +13,4 @@ export const EGYPT_EMITTERS: readonly Emitter[] = [
   { id: 'hall-motes', mode: 'drift', at: [80, 31, -145], count: 160, spread: [32, 5, 18], color: '#ffe9b8', size: .05, height: 0, speed: .03, range: 90, opacity: .7 },
   { id: 'tomb-gold', mode: 'haze', at: [80, 15, -252], count: 140, spread: [16, 4, 14], color: '#ffd77a', size: .07, height: 0, speed: .04, range: 70, opacity: .9 },
 ];
-export function createEgyptAtmosphere() { return createQinAtmosphere(EGYPT_EMITTERS, EGYPT_OFFSET, 'EgyptAtmosphere'); }
+export function createEgyptAtmosphere() { return createQinAtmosphere(EGYPT_EMITTERS, EGYPT_FRAME, 'EgyptAtmosphere'); }

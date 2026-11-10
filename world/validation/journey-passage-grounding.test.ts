@@ -4,11 +4,14 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { createJourneyPassageArt } from '../src/environment/journeyPassageArt';
 import { mergeParts } from '../src/settlements/merge';
+import { legacyFrameMatrix } from '../src/map/regions';
 
 const grade=4.1/18;
 const floor=(x:number)=>8.8+(x+59)*grade-.07;
 const passage=createJourneyPassageArt();
-const collision=mergeParts(passage.houses.solids),collider=new MeshBVH(collision);
+// The passage is authored in Kyoto's pre-relayout frame and placed in the world as a whole;
+// these checks measure the authored construction, so the colliders are read back in that frame.
+const collision=mergeParts(passage.houses.solids).applyMatrix4(legacyFrameMatrix('kyoto').invert()),collider=new MeshBVH(collision);
 const render=mergeParts(passage.houses.root.children.filter((o):o is THREE.Mesh=>o instanceof THREE.Mesh).map(mesh=>mesh.geometry));
 const visual=new MeshBVH(render);
 const ray=(x:number,y:number,z:number,dx:number,dy:number,dz:number)=>new THREE.Ray(new THREE.Vector3(x,y,z),new THREE.Vector3(dx,dy,dz));
@@ -34,7 +37,9 @@ test('Kyoto passage keeps full height through both end doors and the connecting 
 });
 
 test('paper shop tables have level tops and individually grounded unequal legs',()=>{
- const boxes=passage.houses.solids.map(g=>{g.computeBoundingBox();return g.boundingBox!;});
+ // measured in the authored (pre-relayout) frame, like the merged colliders above
+ const toAuthored=legacyFrameMatrix('kyoto').invert();
+ const boxes=passage.houses.solids.map(g=>{const c=g.clone().applyMatrix4(toAuthored);c.computeBoundingBox();return c.boundingBox!;});
  for(const dx of[-2,0,2])for(const lx of[-.48,.48])for(const lz of[-.23,.23]){
   const x=-63.5+dx+lx,z=737.5+lz;
   const leg=boxes.find(box=>Math.abs((box.min.x+box.max.x)/2-x)<.005&&Math.abs((box.min.z+box.max.z)/2-z)<.005&&box.max.x-box.min.x<.1);

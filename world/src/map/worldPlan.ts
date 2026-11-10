@@ -9,23 +9,38 @@ export interface ExpansionSite {
 }
 export interface ExpansionPlan {
   id: ExpansionRegionId; name: string; nameEn: string; offset: [number, number];
+  /** Half turn in place: the plan's authored (x,z) sits at world offset + (-x,-z). */
+  rotated?: boolean;
   /** Local landmark envelope; surrounding terrain continues into every neighbour. */
   outline: MapPoint2[]; color: string; stone: string; accent: string;
   identity: string; servant: string; sites: ExpansionSite[];
   routes: { id: string; name: string; kind: 'main' | 'flank' | 'high' | 'underground'; points: RoutePoint[] }[];
 }
 
+/** Authored plan coordinates → world (the plan's own frame may be turned half a circle). */
+export function planToWorld(plan:{offset:readonly [number,number];rotated?:boolean},x:number,z:number):[number,number]{
+  return plan.rotated?[plan.offset[0]-x,plan.offset[1]-z]:[plan.offset[0]+x,plan.offset[1]+z];
+}
+export function worldToPlan(plan:{offset:readonly [number,number];rotated?:boolean},x:number,z:number):[number,number]{
+  return plan.rotated?[plan.offset[0]-x,plan.offset[1]-z]:[x-plan.offset[0],z-plan.offset[1]];
+}
+
+// The journey grows north from 幻日谷 (2026-11-10 layout), in story order:
+//   ⑦奥尔良 | ⑥古埃及 | ④京都
+//   ⑤秦     | ③永冬   | ②黑帆
+//   ①落日王国 | 幻日谷  | 主角城镇
 export const WORLD_PLAN = {
   cellSize: 720, columns: 3, rows: 3,
-  topology: 'continuous-mainland', interiorBarriers: false, southwest: 'wooded-foothills',
-  bounds: [-1080, 1080, -1080, 1080] as const,
+  topology: 'continuous-mainland', interiorBarriers: false,
+  bounds: [-1080, 1080, -1800, 360] as const,
+  storyOrder: ['britain', 'blacksail', 'winter', 'kyoto', 'qin', 'egypt', 'orleans'] as const,
   /** Deliberately outside the overworld: the Orleans dragon is a regional boss. */
   finale: { id: 'convergence', separateMap: true, requiredRegions: ['britain', 'blacksail', 'winter', 'kyoto', 'orleans', 'egypt', 'qin'] as const, status: 'planned' },
 };
 
 export const EXPANSION_PLANS: ExpansionPlan[] = [
   {
-    id: 'orleans', name: '奥尔良', nameEn: 'Orleans', offset: [-720, -720],
+    id: 'orleans', name: '奥尔良', nameEn: 'Orleans', offset: [-720, -1440],
     outline: [[-310,-240],[-205,-330],[-60,-310],[70,-330],[245,-260],[310,-120],[290,-30],[300,30],[325,165],[170,300],[30,300],[30,388],[-30,388],[-30,300],[-190,270],[-315,120],[-280,-30],[-330,-140]],
     color: '#718d60', stone: '#c3b49c', accent: '#7185b8',
     identity: '围城救援、河道侧路、城墙屋顶与教堂高地', servant: '贞德 / 黑贞',
@@ -53,7 +68,7 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
     ],
   },
   {
-    id:'egypt', name:'古埃及', nameEn:'Solar Egypt', offset:[720,720],
+    id:'egypt', name:'古埃及', nameEn:'Solar Egypt', offset:[0,-1440], rotated:true,
     outline:[[-295,-235],[-150,-310],[-30,-300],[30,-300],[170,-320],[295,-205],[325,-35],[270,95],[315,230],[140,325],[-20,285],[-190,325],[-320,170],[-300,30],[-388,30],[-388,-30],[-300,-30]],
     color:'#c6a168', stone:'#dcc18b', accent:'#49a8ae',
     identity:'绿洲与日河、砂岩台地与裂日峡谷、双巨像、太阳神殿与引光机关、台地下的太阳船墓', servant:'奥兹曼迪亚斯',
@@ -64,7 +79,7 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'tombs', name:'峡谷崖墓', nameEn:'Canyon Rock Tombs', position:[-66,24,-126], radius:8, purpose:'landmark' },
       { id:'colossi', name:'双巨像庭院', nameEn:'Court of Colossi', position:[80,24,20], radius:30, purpose:'landmark' },
       { id:'temple', name:'太阳神殿', nameEn:'Sun Temple', position:[80,30,-112], radius:20, purpose:'boss' },
-      { id:'roofshrine', name:'屋顶太阳祭坛', nameEn:'Roof Sun Altar', position:[56,40,-150], radius:6, purpose:'landmark' },
+      { id:'roofshrine', name:'屋顶太阳祭坛', nameEn:'Roof Sun Altar', position:[56,40,-145], radius:6, purpose:'landmark' },
       { id:'barque', name:'太阳船墓室', nameEn:'Tomb of the Solar Barque', position:[72,14,-252], radius:12, purpose:'landmark' },
       { id:'pyramid', name:'日之金字塔', nameEn:'Pyramid of the Sun', position:[156,37,-181], radius:10, purpose:'landmark' },
       { id:'trial', name:'引光试炼台', nameEn:'Solar Trial', position:[160,18,112], radius:26, purpose:'arena' },
@@ -73,13 +88,13 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'main', name:'绿洲—码头—狮身像大道—神殿', kind:'main', points:[[-165,14,110],[-100,12.3,124],[-30,10,140],[0,13,110],[40,19,76],[74,24,48],[80,24,40],[80,24,20],[80,24,-40],[80,30,-78],[80,30,-112],[80,30,-128],[74,30,-140],[74,30,-162],[80,30,-170],[80,30,-182]] },
       { id:'canyon', name:'裂日峡谷侧路', kind:'flank', points:[[-165,14,110],[-150,14,40],[-128,14.2,-38],[-112,16,-70],[-92,19,-104],[-66,24,-126],[-36,29.5,-128],[-6,33,-122],[20,31.5,-114],[34,30,-110],[44,30,-110],[50,30,-100]] },
       { id:'roof', name:'神殿屋顶上层', kind:'high', points:[[80,30,-97],[52,30,-97],[52,30,-99],[52,40,-123],[46,40,-124],[46,40,-146],[52,40,-150]] },
-      { id:'causeway', name:'神殿东侧至金字塔堤道', kind:'flank', points:[[80,30,-82],[124,30,-82],[124,30,-150],[140,32.5,-166],[150,36,-176],[156,37,-181]] },
+      { id:'causeway', name:'神殿西侧至金字塔堤道', kind:'flank', points:[[80,30,-82],[124,30,-82],[124,30,-150],[140,32.5,-166],[150,36,-176],[156,37,-181]] },
       { id:'trialroad', name:'巨像庭院至试炼台', kind:'flank', points:[[80,24,20],[98,24,44],[106,21.5,62],[136,19,94],[160,18,112]] },
       { id:'tomb', name:'圣所后门下至太阳船墓', kind:'underground', points:[[80,30,-182],[80,30,-192],[80,14,-236],[80,14,-244],[72,14,-252]] },
     ],
   },
   {
-    id:'qin', name:'秦帝国', nameEn:'Qin Empire', offset:[720,-720],
+    id:'qin', name:'秦帝国', nameEn:'Qin Empire', offset:[-720,-720], rotated:true,
     outline:[[-285,-250],[-130,-325],[35,-300],[205,-330],[315,-175],[270,-25],[325,110],[215,290],[30,300],[-30,300],[-180,320],[-310,175],[-300,30],[-300,-30],[-335,-130]],
     color:'#7d926e', stone:'#929b94', accent:'#bd5343',
     identity:'骊山之上的帝国，骊山之下的不死王城：驿道、工匠集镇、夯土宫城与三层地宫', servant:'秦始皇',
@@ -89,7 +104,7 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'palace', name:'骊山宫城', nameEn:'Mount Li Palace', position:[40,70,0], radius:16, purpose:'landmark' },
       { id:'kilns', name:'龙窑窑场', nameEn:'Dragon Kiln Yard', position:[-208,24,54], radius:10, purpose:'landmark' },
       { id:'archive', name:'简牍库', nameEn:'Bamboo-slip Archive', position:[-212,22,138], radius:8, purpose:'landmark' },
-      { id:'quarry', name:'北坡石料场', nameEn:'North Slope Quarry', position:[-128,28,-42], radius:12, purpose:'landmark' },
+      { id:'quarry', name:'南坡石料场', nameEn:'South Slope Quarry', position:[-128,28,-42], radius:12, purpose:'landmark' },
       { id:'pavilion', name:'宫城观阙', nameEn:'Palace Watch Tower', position:[90,82,-32], radius:6, purpose:'landmark' },
       { id:'workshop', name:'地下铸造层', nameEn:'Buried Foundry', position:[130,46,-96], radius:16, purpose:'landmark' },
       { id:'army', name:'兵马俑军阵层', nameEn:'Terracotta Garrison', position:[-17,28,-130], radius:20, purpose:'arena' },
@@ -105,16 +120,33 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'royal-descent', name:'斜井下至地下王城', kind:'underground', points:[[-17,28,-130],[-17,28,-160],[-17,19,-185.5],[-17,19,-190],[-12.5,19,-190],[31,10,-190],[38,10,-190]] },
     ],
   },
+  {
+    // The protagonist's own harbour town beside 幻日谷. Ground, roads and the town square
+    // are laid out; the town itself is built in its own pass.
+    id:'home', name:'主角城镇', nameEn:'Home Town', offset:[720,0],
+    outline:[[-300,-260],[-120,-320],[120,-300],[300,-200],[320,40],[250,260],[60,320],[-180,300],[-320,120]],
+    color:'#86a85e', stone:'#c9b892', accent:'#d9a441',
+    identity:'幻日谷东侧的港湾城镇：主角的家，从者在此落脚，旅程从这里出发、最后回到这里', servant:'',
+    sites:[
+      { id:'square', name:'城镇广场', nameEn:'Town Square', position:[-150,16,40], radius:36, purpose:'hub' },
+      { id:'harbour', name:'东岸港湾', nameEn:'East Harbour', position:[230,6,120], radius:30, purpose:'landmark' },
+      { id:'northroad', name:'北门驿道', nameEn:'North Road', position:[40,16,-250], radius:20, purpose:'landmark' },
+    ],
+    routes:[
+      { id:'main', name:'幻日谷至城镇广场', kind:'main', points:[[-150,16,40],[-40,16,60],[80,14,90],[230,6,120]] },
+      { id:'north', name:'广场至北门驿道', kind:'flank', points:[[-150,16,40],[-90,16,-80],[0,16,-180],[40,16,-250]] },
+    ],
+  },
 ];
 
 /** Grass already follows green ground, so desert sand needs no rectangle (a straight
  * clearance edge would show across the Kyoto and Black Sail joins). Only Qin's
  * rammed-earth palace platforms are cleared. X0,Z0,X1,Z1. */
 export const EXPANSION_GRASS_CLEARANCE:readonly (readonly [number,number,number,number])[]=[
-  [722,-762,824,-642],
+  [-824,-798,-722,-678],
 ];
 /** World-space centre/radii of Orleans' worn paved courts; rounded ground stays rounded. */
-export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-832,20,12],[-800,-630,23,18]];
+export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-1552,20,12],[-800,-1350,23,18]];
 
 export interface ExpansionConnection {
   id:string; from:WorldRegionId; to:ExpansionRegionId; name:string;
@@ -122,10 +154,14 @@ export interface ExpansionConnection {
   points: MapPoint2[]; width:number;
 }
 export const EXPANSION_CONNECTIONS: ExpansionConnection[] = [
-  {id:'britain-orleans',from:'britain',to:'orleans',name:'北境围城古道',points:[[-720,-120],[-720,-420],[-800,-630]],width:18},
-  // Route along the southern snowfield, clear of the existing Gorge Glide descent.
-  {id:'winter-qin',from:'winter',to:'qin',name:'东境山河驿道',points:[[120,-520],[420,-520],[535,-620]],width:18},
-  {id:'kyoto-egypt',from:'kyoto',to:'egypt',name:'沙海商队古道',points:[[120,720],[420,720],[555,830]],width:18},
+  // Over the desert's western flank to the Loire, entering Orleans by its south gate road.
+  {id:'egypt-orleans',from:'egypt',to:'orleans',name:'沙海西境古道',points:[[-200,-1520],[-470,-1240],[-720,-1140],[-800,-1350]],width:18},
+  // From the snowfield west of the city to Qin's post road (which faces 永冬 after the half turn).
+  {id:'winter-qin',from:'winter',to:'qin',name:'西境山河驿道',points:[[-140,-780],[-420,-800],[-535,-820]],width:18},
+  // Both ends turned half a circle: the caravan road still runs from Kyoto's west gate to the oasis.
+  {id:'kyoto-egypt',from:'kyoto',to:'egypt',name:'沙海商队古道',points:[[600,-1440],[300,-1440],[165,-1550]],width:18},
+  // 幻日谷's old east pass now leads home.
+  {id:'alpha-home',from:'alpha',to:'home',name:'归乡大道',points:[[300,30],[420,30],[570,40]],width:18},
 ];
 
 export function distanceToLine(x:number,z:number,line:readonly MapPoint2[]):number {

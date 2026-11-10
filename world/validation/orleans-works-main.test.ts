@@ -23,8 +23,8 @@ test('actual grounded main input operates local works, opens the physical passag
   }
   assert.deepEqual([...w.done].filter((v:string)=>!before.includes(v)).sort(),ORLEANS_WORK_ACTIONS.map(a=>a.flag).sort());assert.equal(gate.enabled,false);
   for(const points of [ORLEANS_UNDERPASS,[...ORLEANS_UNDERPASS].reverse()]){
-   const player=new Player(w.colliders,0),first=points[0];player.teleport(first[0]-720,first[1]+.6,first[2]-720);for(let i=0;i<120;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});
-   for(const point of points.slice(1)){assert.ok(walk(player,point[0]-720,point[2]-720)<.3,`open route blocked at ${player.pos.toArray()}`);assert.equal(player.swimming,false);}
+   const player=new Player(w.colliders,0),first=points[0];player.teleport(first[0]-720,first[1]+.6,first[2]-1440);for(let i=0;i<120;i++)player.step(1/120,{x:0,z:0,jump:false,sprint:false});
+   for(const point of points.slice(1)){assert.ok(walk(player,point[0]-720,point[2]-1440)<.3,`open route blocked at ${player.pos.toArray()}`);assert.equal(player.swimming,false);}
   }
   if(d.pointerLockElement)d.exitPointerLock();(d.getElementById('world-quest-journal-open')as HTMLElement).click();
   const journal=d.getElementById('world-quest-journal')!,showDone=journal.querySelector<HTMLInputElement>('input[type=checkbox]')!;showDone.checked=true;showDone.dispatchEvent(new h.window.Event('change',{bubbles:true}));for(const a of ORLEANS_WORK_ACTIONS)assert.match(journal.textContent!,new RegExp(a.label[0]));

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { legacyFrameMatrix } from './regions';
 
 /** Visible local apron; preserves the map, bridge, rails and global Player physics. */
 export function createTraversalRepairs() {
@@ -32,6 +33,8 @@ export function createTraversalRepairs() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));
   geometry.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  // Authored in Kyoto's pre-relayout frame; Kyoto now stands turned half a circle in the north-east.
+  geometry.applyMatrix4(legacyFrameMatrix('kyoto'));
   geometry.computeVertexNormals();
   const material = new THREE.MeshStandardMaterial({color:0xffffff,vertexColors:true,roughness:.9,side:THREE.DoubleSide});
   const mesh = new THREE.Mesh(geometry,material); mesh.name = 'HonnojiBridgeApproach';

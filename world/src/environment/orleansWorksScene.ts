@@ -6,7 +6,7 @@ import type {Collider} from '../player/player';
 import {toonMaterial} from '../rendering/look';
 import {ORLEANS_WORK_ACTIONS,ORLEANS_WORKS as W,ORLEANS_SLUICE_GATE as G} from '../map/orleansWorks';
 
-const OX=-720,OZ=-720;
+const OX=-720,OZ=-1440; // Orleans tile origin (north-west corner of the 2026-11-10 layout)
 export function createOrleansWorksScene(ground:(x:number,z:number,ceiling:number)=>number|null){
  const root=new THREE.Group();root.name='OrleansPublicWorks';
  const geometries=new Set<THREE.BufferGeometry>(),materials=new Map<string,THREE.Material>();

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls, GRID } from '../src/map/regions.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, GRID, placeRegion, regionToWorld } from '../src/map/regions.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
 import { makeWildernessSpawns } from '../src/combat/combat.ts';
 import { makeMinibossSpawns } from '../src/combat/minibosses.ts';
@@ -27,7 +27,7 @@ const parts = await Promise.all(REGIONS.map(async def => {
   const bytes = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('ART')!.traverse(object => {
     if (object instanceof THREE.Mesh && object.name === 'Terrain') terrains.push(object);
@@ -48,7 +48,7 @@ const parts = await Promise.all(REGIONS.map(async def => {
 const layout = mergeLayouts(parts);
 // Combat coverage remains a contract for authored campaign routes. New connecting
 // decks and blockout routes are verified by expansion-framework, without fake encounters.
-const campaignPaths=parts.filter(p=>isCampaignRegion(p.def.id)).flatMap(({def,layout})=>layout.paths.map(path=>path.map(([x,z])=>[x+def.offset[0],z+def.offset[1]])));
+const campaignPaths=parts.filter(p=>isCampaignRegion(p.def.id)).flatMap(({def,layout})=>layout.paths.map(path=>path.map(([x,z])=>regionToWorld(def,x,z))));
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 const settlements = installSettlements([
   buildAlphaSettlement(), buildBritainSettlement(), buildBlackSailSettlement(), buildWinterSettlement(), buildKyotoSettlement(),

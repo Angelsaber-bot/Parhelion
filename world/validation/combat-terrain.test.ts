@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
-import { REGIONS, mergeLayouts, boundaryWalls, regionAt } from '../src/map/regions.ts';
+import { REGIONS, mergeLayouts, boundaryWalls, regionAt, placeRegion } from '../src/map/regions.ts';
 import { CAMPAIGN_REGION_IDS } from '../src/core/regionIdentity';
 import { makeMinibossSpawns, MINIBOSSES } from '../src/combat/minibosses.ts';
 import { makeCombatTerrain } from '../src/combat/combatTerrain.ts';
@@ -18,7 +18,7 @@ const colliders: Collider[] = [];
 const parts = await Promise.all(REGIONS.map(async def => {
   const bytes = readFileSync(new URL(`../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
-  bakeQuantized(gltf.scene); gltf.scene.position.set(def.offset[0], 0, def.offset[1]); gltf.scene.updateMatrixWorld(true);
+  bakeQuantized(gltf.scene); placeRegion(gltf.scene, def); gltf.scene.updateMatrixWorld(true);
   gltf.scene.getObjectByName('COLLISION')!.traverse(o => {
     const m = o as THREE.Mesh; if (!m.isMesh) return;
     let g = new THREE.BufferGeometry().setAttribute('position', m.geometry.attributes.position.clone());

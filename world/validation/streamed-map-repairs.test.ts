@@ -25,9 +25,9 @@ function dispose(scene: THREE.Object3D) {
 }
 const down = new THREE.Vector3(0, -1, 0);
 
-test('delivery manifest contains all eight maps and current asset sizes', () => {
+test('delivery manifest contains all nine maps and current asset sizes', () => {
   const manifest = JSON.parse(readFileSync(asset('world-stream.manifest.json'), 'utf8'));
-  assert.deepEqual(Object.keys(manifest).sort(), ['alpha', 'blacksail', 'britain', 'egypt', 'kyoto', 'orleans', 'qin', 'winter']);
+  assert.deepEqual(Object.keys(manifest).sort(), ['alpha', 'blacksail', 'britain', 'egypt', 'home', 'kyoto', 'orleans', 'qin', 'winter']);
   for (const region of Object.keys(manifest)) for (const kind of ['source', 'core', 'visual']) {
     const suffix = kind === 'source' ? '' : `.${kind}`;
     assert.equal(manifest[region][kind], statSync(asset(`world_${region}${suffix}.glb`)).size, `${region} ${kind} was regenerated together`);

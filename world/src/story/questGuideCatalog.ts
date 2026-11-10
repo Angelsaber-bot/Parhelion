@@ -59,7 +59,7 @@ const specialLabels=new Map<string,Localized>([
  ...ERA_IDS.map(region=>[ERA_OPTIONALS[region].id,ERA_OPTIONALS[region].label] as [string,Localized]),
 ]);
 const REGIONS:readonly RegionId[]=['alpha','britain','blacksail','winter','kyoto'];
-export const QUEST_REGION_NAMES:Record<WorldRegionId,Localized>={alpha:['幻日谷','Parhelion Valley'],britain:['落日王国','Sunset Kingdom'],blacksail:['黑帆尽头','Black Sail’s End'],winter:['永冬之城','Winter City'],kyoto:['业火京都','Kyoto Ablaze'],orleans:['奥尔良','Orleans'],egypt:['古埃及','Solar Egypt'],qin:['秦帝国','Qin Empire']};
+export const QUEST_REGION_NAMES:Record<WorldRegionId,Localized>={alpha:['幻日谷','Parhelion Valley'],home:['主角城镇','Home Town'],britain:['落日王国','Sunset Kingdom'],blacksail:['黑帆尽头','Black Sail’s End'],winter:['永冬之城','Winter City'],kyoto:['业火京都','Kyoto Ablaze'],orleans:['奥尔良','Orleans'],egypt:['古埃及','Solar Egypt'],qin:['秦帝国','Qin Empire']};
 const OPTIONAL_CHAINS:readonly {id:string;region:RegionId;title:Localized;flags:readonly string[]}[]=[
  {id:'oath-camp',region:'britain',title:['可选 · 誓约营地碎片','Optional · Oath camp fragment'],flags:['camp_dummy_1','camp_dummy_2','camp_dummy_3','shard_camp']},
  {id:'oath-tower',region:'britain',title:['可选 · 王座碎片','Optional · Throne fragment'],flags:['shard_tower']},

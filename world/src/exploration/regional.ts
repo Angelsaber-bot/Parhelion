@@ -46,11 +46,11 @@ export const markerFoxShrine = (id: string) => `xpm_foxshrine_${id}`;
 
 /** 黑帆尽头: three maps, each chest holds the next; the last one opens the Sunken Vault. */
 export const TREASURE_MAPS: readonly TreasureMapDef[] = [
-  { id: 'driftwood', region: 'blacksail', title: ['漂流瓶藏宝图', 'Message-in-a-Bottle Map'], bottle: [565, 69], dig: [630, 18],
+  { id: 'driftwood', region: 'blacksail', title: ['漂流瓶藏宝图', 'Message-in-a-Bottle Map'], bottle: [565, -651], dig: [630, -702],
     clue: ['“潮水退去的湾口，两块礁石之间。向着日落走五十步。”', '"Where the tide leaves the cove, between two rocks. Fifty paces toward the sunset."'] },
-  { id: 'lighthouse', region: 'blacksail', title: ['灯塔守的残图', "Lighthouse Keeper's Scrap"], after: 'driftwood', dig: [924, 4],
+  { id: 'lighthouse', region: 'blacksail', title: ['灯塔守的残图', "Lighthouse Keeper's Scrap"], after: 'driftwood', dig: [924, -716],
     clue: ['“灯光照不到的地方，就在它脚下。”', '"Where the lamp never shines: right beneath it."'] },
-  { id: 'blackbeard', region: 'blacksail', title: ['黑胡子的海图', "Blackbeard's Chart"], after: 'lighthouse', dig: [752, -194],
+  { id: 'blackbeard', region: 'blacksail', title: ['黑胡子的海图', "Blackbeard's Chart"], after: 'lighthouse', dig: [752, -914],
     clue: ['“炮台之下，悬崖之上。金库的钥匙埋在能看见整片海的地方。”', '"Below the battery, above the cliff. The vault key lies where the whole sea can be seen."'] },
 ];
 export const TREASURE_FINAL = 'blackbeard';
@@ -68,11 +68,11 @@ export const EMBER_FINAL = 'chapel_road';
 
 /** 业火京都: the fox-fire leads to Lotus Hall and to a shrine hidden in the bamboo. */
 export const FOXFIRES: readonly FoxfireDef[] = [
-  { id: 'lotus_path', region: 'kyoto', title: ['狐火引路 · 莲华', 'Fox-fire · Lotus Path'], shrine: [100, 880], speed: 6.6,
-    path: [[100, 880], [86, 880], [74, 886], [64, 894], [54, 902], [46, 910], [38, 918], [30, 926], [22, 934], [14, 942], [4, 948], [-8, 950], [-22, 950], [-32, 956], [-42, 962], [-52, 968], [-58, 970]],
+  { id: 'lotus_path', region: 'kyoto', title: ['狐火引路 · 莲华', 'Fox-fire · Lotus Path'], shrine: [620, -1600], speed: 6.6,
+    path: [[620, -1600], [634, -1600], [646, -1606], [656, -1614], [666, -1622], [674, -1630], [682, -1638], [690, -1646], [698, -1654], [706, -1662], [716, -1668], [728, -1670], [742, -1670], [752, -1676], [762, -1682], [772, -1688], [778, -1690]],
     hint: ['狐火只为跟得上的人引路。冲刺跟紧它，落后太远它就会消散。', 'The fox-fire only guides those who keep up. Sprint after it; fall too far behind and it fades.'] },
-  { id: 'bamboo_shrine', region: 'kyoto', title: ['狐火引路 · 竹林', 'Fox-fire · Bamboo Shrine'], shrine: [-186, 930], speed: 6.9,
-    path: [[-186, 930], [-194, 920], [-194, 906], [-194, 892], [-202, 882], [-210, 872], [-216, 862], [-224, 854], [-232, 846], [-240, 836], [-248, 828], [-260, 822]],
+  { id: 'bamboo_shrine', region: 'kyoto', title: ['狐火引路 · 竹林', 'Fox-fire · Bamboo Shrine'], shrine: [906, -1650], speed: 6.9,
+    path: [[906, -1650], [914, -1640], [914, -1626], [914, -1612], [922, -1602], [930, -1592], [936, -1582], [944, -1574], [952, -1566], [960, -1556], [968, -1548], [980, -1542]],
     hint: ['竹林深处有一座没人记得的小神社。', 'Deep in the bamboo stands a shrine no one remembers.'] },
 ];
 export const FOX_FINAL = 'lotus_path';
@@ -135,13 +135,13 @@ export const FOX_PAUSE = 1.1, FOX_LEASH = 16, FOX_GRACE = 2.5;
 
 /** Reward chests for the signature mechanics. Treasure chests stay buried until dug up. */
 export const REGIONAL_CHESTS: readonly ChestDef[] = [
-  { id: 'blacksail_dig_driftwood', region: 'blacksail', p: [630, 18], tier: 'exquisite', requires: flagDig('driftwood'), buried: true },
-  { id: 'blacksail_dig_lighthouse', region: 'blacksail', p: [924, 4], tier: 'precious', requires: flagDig('lighthouse'), buried: true },
-  { id: 'blacksail_dig_blackbeard', region: 'blacksail', p: [752, -194], tier: 'luxurious', requires: flagDig('blackbeard'), buried: true },
+  { id: 'blacksail_dig_driftwood', region: 'blacksail', p: [630, -702], tier: 'exquisite', requires: flagDig('driftwood'), buried: true },
+  { id: 'blacksail_dig_lighthouse', region: 'blacksail', p: [924, -716], tier: 'precious', requires: flagDig('lighthouse'), buried: true },
+  { id: 'blacksail_dig_blackbeard', region: 'blacksail', p: [752, -914], tier: 'luxurious', requires: flagDig('blackbeard'), buried: true },
   { id: 'winter_ember_chapel_road', region: 'winter', p: [-143, -755], tier: 'exquisite', requires: flagEmber('chapel_road') },
   { id: 'winter_ember_river_watch', region: 'winter', p: [-64, -716], tier: 'precious', requires: flagEmber('river_watch') },
-  { id: 'kyoto_fox_lotus_path', region: 'kyoto', p: [-50, 966], tier: 'exquisite', requires: flagFox('lotus_path') },
-  { id: 'kyoto_fox_bamboo_shrine', region: 'kyoto', p: [-262, 817], tier: 'luxurious', requires: flagFox('bamboo_shrine') },
+  { id: 'kyoto_fox_lotus_path', region: 'kyoto', p: [770, -1686], tier: 'exquisite', requires: flagFox('lotus_path') },
+  { id: 'kyoto_fox_bamboo_shrine', region: 'kyoto', p: [982, -1537], tier: 'luxurious', requires: flagFox('bamboo_shrine') },
   { id: 'alpha_sig_echo_forest', region: 'alpha', p: [114, 50], tier: 'exquisite', requires: flagSignal('echo_forest'), buried: true },
   { id: 'alpha_sig_outpost', region: 'alpha', p: [-222, -120], tier: 'exquisite', requires: flagSignal('outpost'), buried: true },
   { id: 'alpha_sig_ridge', region: 'alpha', p: [260, -162], tier: 'precious', requires: flagSignal('ridge'), buried: true },

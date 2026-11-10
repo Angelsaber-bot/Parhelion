@@ -15,28 +15,28 @@ import { createSettlementNpcs } from '../src/settlements/npcs';
 const [OX, OZ] = EGYPT_OFFSET;
 const bytes = readFileSync(new URL('../public/assets/world_egypt.core.glb', import.meta.url));
 const { scene } = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
-bakeQuantized(scene); scene.position.set(OX, 0, OZ); scene.updateMatrixWorld(true);
+bakeQuantized(scene); scene.position.set(OX, 0, OZ); scene.rotation.y = Math.PI; scene.updateMatrixWorld(true); // the region stands turned half a circle
 const geos: THREE.BufferGeometry[] = [];
 scene.getObjectByName('COLLISION')!.traverse(o => { const m = o as THREE.Mesh; if (!m.isMesh) return; let g = new THREE.BufferGeometry().setAttribute('position', m.geometry.attributes.position.clone()); if (m.geometry.index) g.setIndex(m.geometry.index.clone()); g.applyMatrix4(m.matrixWorld); if (g.index) g = g.toNonIndexed(); geos.push(g); });
 const bvh = new MeshBVH(mergeGeometries(geos)), staticCollider: Collider = { name: 'egypt', bvh, enabled: true };
 const grid = new WorldGrid([scene.getObjectByName('Terrain') as THREE.Mesh], OX - 360, OZ - 360, 720, 2);
 const layout = JSON.parse(readFileSync(new URL('../public/assets/world_egypt.layout.json', import.meta.url), 'utf8'));
 function walk(colliders: Collider[], start: readonly [number, number, number], path: readonly (readonly [number, number])[], tol = .6) {
-  const p = new Player(colliders, 0); p.teleport(start[0] + OX, start[1] + .5, start[2] + OZ); for (let i = 0; i < 90; i++) p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false });
-  for (const [lx, lz] of path) { const x = lx + OX, z = lz + OZ; for (let i = 0; i < 6000 && Math.hypot(p.pos.x - x, p.pos.z - z) > tol; i++) { p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); } if (Math.hypot(p.pos.x - x, p.pos.z - z) > tol) return { ok: false, at: [p.pos.x - OX, p.pos.y, p.pos.z - OZ] }; assert.equal(p.swimming, false); }
-  return { ok: true, at: [p.pos.x - OX, p.pos.y, p.pos.z - OZ] };
+  const p = new Player(colliders, 0); p.teleport(OX - start[0], start[1] + .5, OZ - start[2]); for (let i = 0; i < 90; i++) p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false });
+  for (const [lx, lz] of path) { const x = OX - lx, z = OZ - lz; for (let i = 0; i < 6000 && Math.hypot(p.pos.x - x, p.pos.z - z) > tol; i++) { p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); } if (Math.hypot(p.pos.x - x, p.pos.z - z) > tol) return { ok: false, at: [OX - p.pos.x, p.pos.y, OZ - p.pos.z] }; assert.equal(p.swimming, false); }
+  return { ok: true, at: [OX - p.pos.x, p.pos.y, OZ - p.pos.z] };
 }
 
 test('landscape: a mesa with cliffs, a cut canyon, a spring lake and a river falling to the sea', () => {
-  const plateau = grid.sampleHeight(0 + OX, -200 + OZ)!, desert = grid.sampleHeight(-200 + OX, 40 + OZ)!;
+  const plateau = grid.sampleHeight(OX - 0, OZ - -200)!, desert = grid.sampleHeight(OX - -200, OZ - 40)!;
   assert.ok(plateau - desert > 12, `plateau ${plateau} stands over the desert ${desert}`);
-  let steep = 0; for (let z = -90; z < -40; z += 2) steep = Math.max(steep, Math.abs(grid.sampleHeight(-150 + OX, z + OZ)! - grid.sampleHeight(-150 + OX, z + 2 + OZ)!));
+  let steep = 0; for (let z = -90; z < -40; z += 2) steep = Math.max(steep, Math.abs(grid.sampleHeight(OX - -150, OZ - z)! - grid.sampleHeight(OX - -150, OZ - z - 2)!));
   assert.ok(steep > 2, 'the escarpment is a cliff, not a long ramp');
-  assert.ok(grid.sampleHeight(-92 + OX, -104 + OZ)! < grid.sampleHeight(-74.6 + OX, -93.8 + OZ)! - 8, 'the canyon is cut deep into the plateau');
-  const lakeFloor = grid.sampleHeight(EGYPT_LAKE.x + OX, EGYPT_LAKE.z + OZ)!; assert.ok(lakeFloor < EGYPT_LAKE.surface && lakeFloor > .5, 'the spring lake has a dry-land basin above sea level');
-  for (const [x, y, z] of EGYPT_RIVER.slice(1, -2)) assert.ok(grid.sampleHeight(x + OX, z + OZ)! < y, `river bed at ${x},${z}`);
-  for (const r of EGYPT_ROOMS) for (let x = r.x0; x <= r.x1; x += 4) for (let z = r.z0; z <= r.z1; z += 4) assert.ok(grid.sampleHeight(x + OX, z + OZ)! > r.floor + r.height + 1.2, `tomb buried at ${x},${z}`);
-  for (const c of EGYPT_CORRIDORS) for (let t = .3; t <= 1; t += .1) { const z = c.a[2] + (c.b[2] - c.a[2]) * t, y = c.a[1] + (c.b[1] - c.a[1]) * t; assert.ok(grid.sampleHeight(c.a[0] + OX, z + OZ)! > y + c.height + 1.2, `incline buried at ${z}`); }
+  assert.ok(grid.sampleHeight(OX - -92, OZ - -104)! < grid.sampleHeight(OX - -74.6, OZ - -93.8)! - 8, 'the canyon is cut deep into the plateau');
+  const lakeFloor = grid.sampleHeight(OX - EGYPT_LAKE.x, OZ - EGYPT_LAKE.z)!; assert.ok(lakeFloor < EGYPT_LAKE.surface && lakeFloor > .5, 'the spring lake has a dry-land basin above sea level');
+  for (const [x, y, z] of EGYPT_RIVER.slice(1, -2)) assert.ok(grid.sampleHeight(OX - x, OZ - z)! < y, `river bed at ${x},${z}`);
+  for (const r of EGYPT_ROOMS) for (let x = r.x0; x <= r.x1; x += 4) for (let z = r.z0; z <= r.z1; z += 4) assert.ok(grid.sampleHeight(OX - x, OZ - z)! > r.floor + r.height + 1.2, `tomb buried at ${x},${z}`);
+  for (const c of EGYPT_CORRIDORS) for (let t = .3; t <= 1; t += .1) { const z = c.a[2] + (c.b[2] - c.a[2]) * t, y = c.a[1] + (c.b[1] - c.a[1]) * t; assert.ok(grid.sampleHeight(OX - c.a[0], OZ - z)! > y + c.height + 1.2, `incline buried at ${z}`); }
 });
 
 test('sun mirrors: light travels straight, reflects only from the bright face, and the right turns light the disc', () => {

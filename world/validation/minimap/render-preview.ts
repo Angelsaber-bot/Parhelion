@@ -15,7 +15,7 @@ import sharp from 'sharp';
 import { WorldMap } from '../../src/map/map';
 import { WorldGrid } from '../../src/map/grid';
 import { regionLoader, bakeQuantized } from '../../src/rendering/glb';
-import { GRID, REGIONS, mergeLayouts } from '../../src/map/regions';
+import { GRID, REGIONS, mergeLayouts, placeRegion } from '../../src/map/regions';
 import { localizeText } from '../../../shared-client/i18n';
 import type { Layout } from '../../src/core/types';
 
@@ -90,7 +90,7 @@ for (const def of REGIONS) {
   const bytes = readFileSync(new URL(`../../public/assets/${def.file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   gltf.scene.updateMatrixWorld(true);
   gltf.scene.traverse((object) => { if ((object as THREE.Mesh).isMesh && object.name === 'Terrain') terrains.push(object as THREE.Mesh); });
   parts.push({ def, layout: JSON.parse(readFileSync(new URL(`../../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) as Layout });
@@ -104,7 +104,7 @@ const before = Object.assign(Object.create(LegacyWorldMap.prototype) as WorldMap
   { size: current.size, sizeZ: current.sizeZ, half: current.half, halfZ: current.halfZ, x0: current.x0, z0: current.z0, base: current.base, layout });
 const scenes = [
   { id: 'hub', title: '总部密集区域 / Dense headquarters', player: [-112, 246], target: [-65, 250] },
-  { id: 'entrance', title: '章节入口 / Chapter entrance', player: [325, 30], target: [455, 45] },
+  { id: 'entrance', title: '章节入口 / Chapter entrance', player: [325, 30], target: [455, -675] },
   { id: 'distant-target', title: '远处任务保留方向 / Distant quest bearing', player: [3, 159], target: [0, -150.5] },
 ];
 for (const scene of scenes) {

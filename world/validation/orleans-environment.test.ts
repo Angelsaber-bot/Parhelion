@@ -93,14 +93,14 @@ import {orleansResidentSockets,createOrleansResidentLife} from '../src/map/orlea
 import {createSettlementNpcs} from '../src/settlements/npcs';
 test('local residents speak independent directions, stay grounded and patrol without changing authored data',()=>{
   const sockets=orleansResidentSockets(),original=JSON.stringify(sockets),system=createSettlementNpcs(sockets);
-  const ground=(x:number,z:number,ceiling:number)=>bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x+720,ceiling,z+720),new THREE.Vector3(0,-1,0)),THREE.DoubleSide)?.point.y??null;
+  const ground=(x:number,z:number,ceiling:number)=>bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x+720,ceiling,z+1440),new THREE.Vector3(0,-1,0)),THREE.DoubleSide)?.point.y??null;
   const life=createOrleansResidentLife(system,ground);
   assert.equal(sockets.length,8);assert.ok(sockets.every(s=>s.worldRegion==='orleans'));
   for(const s of sockets){
     const line=system.interact(s.id)!;assert.ok(line[0].length>10&&line[1].length>20);const p=system.getPosition(s.id)!;const floor=ground(p[0],p[2],p[1]+1);assert.ok(floor!==null&&Math.abs(floor-p[1])<.18,`${s.id} is grounded`);
-    const visitor=new Player(colliders,0);visitor.teleport(p[0]+720,p[1]+.6,p[2]+720);
+    const visitor=new Player(colliders,0);visitor.teleport(p[0]+720,p[1]+.6,p[2]+1440);
     for(let j=0;j<120;j++)visitor.step(1/120,{x:0,z:0,jump:false,sprint:false});
-    assert.ok(Math.hypot(visitor.pos.x-p[0]-720,visitor.pos.z-p[2]-720)<.25&&Math.abs(visitor.pos.y-floor!)<.25,`${s.id} has full body clearance`);
+    assert.ok(Math.hypot(visitor.pos.x-p[0]-720,visitor.pos.z-p[2]-1440)<.25&&Math.abs(visitor.pos.y-floor!)<.25,`${s.id} has full body clearance`);
   }
   for(const id of ['orleans_wall_patrol','orleans_quay_porter']){
     const start=system.getPosition(id)!,viewer=new THREE.Vector3(start[0]+8,start[1],start[2]+5);
@@ -127,7 +127,7 @@ test('nine finished landmarks use persistent discovery markers without granting 
   for(const m of discoveries){const [x,y,z]=m.p;const hit=bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x,y+1,z),new THREE.Vector3(0,-1,0)),THREE.DoubleSide);assert.ok(hit&&Math.abs(hit.point.y-y)<.6,`${m.id} is a physical place`);}
 });
 test('rounded paved courts exclude grass while their surrounding hillside remains planted',()=>{
-  const g={x0:-1080,z0:-1080,cell:2,nx:361,nz:361},mask=settlementGrassClearance(g,[],[],[],ORLEANS_PAVED_COURTS);
+  const g={x0:-1080,z0:-1800,cell:2,nx:361,nz:361},mask=settlementGrassClearance(g,[],[],[],ORLEANS_PAVED_COURTS);
   const at=(x:number,z:number)=>mask[Math.round((z-g.z0)/g.cell)*g.nx+Math.round((x-g.x0)/g.cell)];
   for(const [x,z,rx,rz] of ORLEANS_PAVED_COURTS){
     assert.equal(at(x,z),1);assert.equal(at(x+rx*.65,z),1,'walkable paving stays clear');

@@ -14,7 +14,7 @@ export interface FalseDawnSiteState {readonly anchors:readonly boolean[];readonl
 export const FALSE_DAWN_SITE_LIMITS=Object.freeze({visible:180,shadowEnter:70,shadowExit:85,shadowCasters:2,trianglesPerField:9000,meshesPerField:8,materialsPerField:3});
 const FALLBACK:Record<FalseDawnFieldId,ReadonlyArray<V3>>={
  alpha:[FALSE_DAWN_CENTERS.alpha,...FALSE_DAWN_ANCHORS],
- blacksail:[FALSE_DAWN_CENTERS.blacksail,[787,13.13781148257476,27],[801,13.686946225015276,27],[794,13.330206333573897,39]],
+ blacksail:[FALSE_DAWN_CENTERS.blacksail,[787,13.13781148257476,-693],[801,13.686946225015276,-693],[794,13.330206333573897,-681]],
  winter:[FALSE_DAWN_CENTERS.winter,[61,4.094503873914334,-633],[75,3.676637101233837,-633],[68,4.473441560380223,-621]],
 };
 /** Offline previews can use audited samples; production always supplies the terrain grid. */

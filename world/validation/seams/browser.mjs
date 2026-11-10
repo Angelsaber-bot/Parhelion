@@ -5,8 +5,8 @@ const pw=await import(process.env.PLAYWRIGHT_MODULE||'playwright'),chromium=pw.c
 const output=resolve(process.env.WORLD_TEST_OUTPUT||'validation/seams/artifacts');await mkdir(output,{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_EXECUTABLE||undefined,args:['--mute-audio','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
 const joins=[
- ['orleans-winter',-360,-720,'x'],['winter-qin',360,-720,'x'],['britain-valley',-360,0,'x'],['valley-blacksail',360,0,'x'],['southwest-kyoto',-360,720,'x'],['kyoto-egypt',360,720,'x'],
- ['orleans-britain',-720,-360,'z'],['winter-valley',0,-360,'z'],['qin-blacksail',720,-360,'z'],['britain-southwest',-720,360,'z'],['valley-kyoto',0,360,'z'],['blacksail-egypt',720,360,'z'],
+ ['orleans-egypt',-360,-1440,'x'],['egypt-kyoto',360,-1440,'x'],['qin-winter',-360,-720,'x'],['winter-blacksail',360,-720,'x'],['britain-valley',-360,0,'x'],['valley-home',360,0,'x'],
+ ['orleans-qin',-720,-1080,'z'],['egypt-winter',0,-1080,'z'],['kyoto-blacksail',720,-1080,'z'],['qin-britain',-720,-360,'z'],['winter-valley',0,-360,'z'],['blacksail-home',720,-360,'z'],
 ];
 const only=process.env.SHOTS?.split(','),results=[];
 try{for(const [id,x,z,axis] of joins.filter(j=>!only||only.includes(j[0]))){

@@ -2,10 +2,10 @@ import type { Point3, SpawnPoint } from '../combat/combat';
 
 export const KNIGHT_TRIAL_ID = 'elite_oath_knight';
 export const KNIGHT_TRIAL_CLEAR = 'era_britain_knight_defeated';
-export const KYOTO_QUIET_LEDGE = { x: -224, y: 11.56, z: 840 } as const;
+export const KYOTO_QUIET_LEDGE = { x: 944, y: 11.56, z: -1560 } as const;
 export const AKECHI_GUARDS = [
-  { id: 'wild_35d', x: -202, z: 882, role: 'lancer' as const },
-  { id: 'wild_35e', x: -206, z: 908, role: 'duelist' as const },
+  { id: 'wild_35d', x: 922, z: -1602, role: 'lancer' as const },
+  { id: 'wild_35e', x: 926, z: -1628, role: 'duelist' as const },
 ] as const;
 /** Reserve two existing Kyoto pack actors, not additional population. Every relocation must pass
  * the UNCHANGED wilderness validator; a failed candidate keeps the original actor/home intact. */

@@ -6,7 +6,7 @@ import { regionLoader, bakeQuantized } from '../src/rendering/glb.ts';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
 import { Player } from '../src/player/player.ts';
-import { boundaryWalls, REGIONS, regionAt } from '../src/map/regions.ts';
+import { boundaryWalls, REGIONS, regionAt, placeRegion, regionToWorld } from '../src/map/regions.ts';
 import { TORII_PATH, STONE_ROUTE, SANNEN, KIYOMIZU, BANNERS, AKECHI, TOBI_Z, HONNOJI } from '../tools/gen/kyoto/layout.ts';
 import type { Layout } from '../src/core/types.ts';
 import {createTraversalRepairs} from '../src/map/traversalRepairs';
@@ -17,12 +17,13 @@ const loadRegion = async (file: string, offset: [number, number]) => {
   const buf = readFileSync(new URL(`../public/assets/${file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(offset[0], 0, offset[1]);
+  placeRegion(gltf.scene, REGIONS.find(r => r.offset[0] === offset[0] && r.offset[1] === offset[1])!);
   gltf.scene.updateMatrixWorld(true);
   return gltf.scene;
 };
 const def = (id: string) => REGIONS.find(r => r.id === id)!;
-const roots = [await loadRegion('world_alpha', def('alpha').offset), await loadRegion('world_kyoto', def('kyoto').offset)];
+// Kyoto stands turned half a circle in the north-east; its torii approach now rises from Black Sail's north shore.
+const roots = [await loadRegion('world_alpha', def('alpha').offset), await loadRegion('world_blacksail', def('blacksail').offset), await loadRegion('world_kyoto', def('kyoto').offset)];
 const bridgeApproach=createTraversalRepairs();
 // Match the shipping main scene: its existing timber apron connects the raised
 // Honnō-ji bridge to the avenue. The source-only fixture previously omitted it.
@@ -41,12 +42,12 @@ for (const r of roots) r.getObjectByName('COLLISION')!.traverse(o => {
 });
 const bvh = new MeshBVH(mergeGeometries(geos));
 const layout: Layout = JSON.parse(readFileSync(new URL('../public/assets/world_kyoto.layout.json', import.meta.url), 'utf8'));
-const [OX, OZ] = def('kyoto').offset;
-const W = (x: number, z: number): [number, number] => [x + OX, z + OZ];
+const W = (x: number, z: number): [number, number] => regionToWorld(def('kyoto'), x, z);
 const marker = (id: string) => {
   const m = layout.markers.find(m => m.id === id)!;
   assert.ok(m, `marker ${id}`);
-  return { ...m, p: [m.p[0] + OX, m.p[1], m.p[2] + OZ] as [number, number, number] };
+  const [x, z] = W(m.p[0], m.p[2]);
+  return { ...m, p: [x, m.p[1], z] as [number, number, number] };
 };
 const at = (id: string): [number, number] => [marker(id).p[0], marker(id).p[2]];
 const ground = (x: number, z: number) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)!.point.y;
@@ -80,13 +81,13 @@ const nudge = (p: Player, id: string) => { for (let i = 0; i < 360 && !reach(p, 
 
 test('kyoto: the southern torii seam gate holds until the summoning circle is stable', () => {
   assert.ok(dynamic.has('COL_Seam_south_Gate'), 'gate collider exported');
-  const { p } = walk([40, 290], [[40, 330], [40, 380]], ['COL_Seam_south_Gate']);
+  const { p } = walk([40, 290], [[40, 330], [40, 355]], ['COL_Seam_south_Gate']);
   assert.ok(p.pos.z < 343, `blocked at the seam (${where(p)})`);
 });
 
-test('kyoto: walk from the valley through the thousand torii, down into the city and on to the Sanjō bridge', () => {
-  const route: [number, number][] = [[40, 300], [40, 330], ...TORII_PATH.slice(1).map(([x, z]) => W(x, z)), ...layout.paths[0].map(([x, z]) => W(x, z))];
-  const { p, k } = walk([40, 290], route, [], { jump: false });
+test('kyoto: walk from Black Sail\'s north shore through the thousand torii, down into the city and on to the Sanjō bridge', () => {
+  const route: [number, number][] = [[680, -1050], ...TORII_PATH.map(([x, z]) => W(x, z)), ...layout.paths[0].map(([x, z]) => W(x, z))];
+  const { p, k } = walk([680, -1030], route, [], { jump: false });
   assert.equal(k, route.length, `stuck at ${where(p)} heading for ${route[k]}`);
   assert.equal(regionAt(p.pos.x, p.pos.z).id, 'kyoto');
   assert.ok(!p.swimming, 'stayed dry');

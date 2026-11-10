@@ -14,7 +14,8 @@ import {orleansAuthoredHeight} from './gen/orleans/landscape';
 import {qinAuthoredHeight} from './gen/qin/landscape';
 import {egyptAuthoredHeight} from './gen/egypt/landscape';
 import {EXPANSION_PLANS} from '../src/map/worldPlan';
-import {TILE_JOINS,TILE_OFFSETS,sideJoin,joinKey,continentBase,authoredTap,shapeTile} from './gen/continent';
+import {TILE_JOINS,TILE_OFFSETS,sideJoin,joinKey,authoredTap,shapeTile,toTile} from './gen/continent';
+import {homeAuthoredHeight} from './gen/home/landscape';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb';
 import {EXTRA_PROTECTION} from './gen/continent-protect-extra';
 
@@ -24,7 +25,7 @@ const viaTap=(fn:(x:number,z:number)=>number)=>(x:number,z:number)=>{fn(x,z);ret
 const AUTHORED:Record<string,(x:number,z:number)=>number>={
   alpha:viaTap(alpha),britain:viaTap(britain),winter:viaTap(winter),kyoto:viaTap(kyoto),blacksail:viaTap(blacksail),
   orleans:(x,z)=>orleansAuthoredHeight(plan('orleans'),x,z),qin:(x,z)=>qinAuthoredHeight(plan('qin'),x,z),egypt:(x,z)=>egyptAuthoredHeight(plan('egypt'),x,z),
-  southwest:(x,z)=>continentBase(x-720,z+720),
+  home:(x,z)=>homeAuthoredHeight(plan('home'),x,z),
 };
 const STEP=8,profiles:Record<string,number[]>={};
 const joins=new Map<string,{j:ReturnType<typeof sideJoin>;tiles:{id:string;side:string}[]}>();
@@ -37,7 +38,8 @@ for(const [key,{j,tiles}] of joins){
       const [ox,oz]=TILE_OFFSETS[id];let t=0,n=0;
       for(let d=50;d<=120;d+=10){
         const wx=j.axis==='x'?j.jx+(side==='W'?d:-d):j.jx+s,wz=j.axis==='z'?j.jz+(side==='N'?d:-d):j.jz+s;
-        t+=shapeTile(id,wx-ox,wz-oz,AUTHORED[id](wx-ox,wz-oz));n++;
+        const [ax,az]=toTile(id,wx-ox,wz-oz); // tile frame → authoring frame (a half turn is its own inverse)
+        t+=shapeTile(id,ax,az,AUTHORED[id](ax,az));n++;
       }
       return t/n;
     });

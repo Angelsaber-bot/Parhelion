@@ -25,12 +25,12 @@ test('authored Akechi pair swaps two safe Kyoto actors, never grows population o
 
 test('actual camp direct approach is threatened, but quiet ledge can observe without aggro', () => {
   const guards = authored.filter(s => s.encounter === 'akechi');
-  const direct = point(-216, 888, q.ground(-216, 888)!.point.y);
+  const direct = point(936, -1608, q.ground(936, -1608)!.point.y);
   const s = new WorldCombatState(guards, []); s.setDefense({ guard: 1, invulnerable: true });
   for (let i = 0; i < 240; i++) s.step(.05, direct, true, q.terrain);
   assert.ok(s.enemies.some(e => e.attackCount > 0), `direct camp route must have actual attacks: ${JSON.stringify(s.enemies)}`);
   assert.ok(s.enemies.every(e => q.clear(e.p, .6)), 'no phasing into camp structures');
-  const innerApproach = point(-216, 900, q.ground(-216, 900)!.point.y);
+  const innerApproach = point(936, -1620, q.ground(936, -1620)!.point.y);
   const inner = new WorldCombatState(guards, []); inner.setDefense({ guard: 1, invulnerable: true });
   for (let i = 0; i < 160; i++) inner.step(.05, innerApproach, true, q.terrain);
   assert.ok(inner.enemies.every(e => e.attackCount > 0), 'both complementary roles can actually attack along the inner camp approach');
@@ -40,13 +40,13 @@ test('actual camp direct approach is threatened, but quiet ledge can observe wit
 });
 
 test('lantern route meaningfully reduces local perception, not all-world immunity', () => {
-  const spawn = { id: 'guard', kind: 'shade' as const, p: point(-202, 882), encounter: 'akechi' as const, role: 'lancer' as const };
+  const spawn = { id: 'guard', kind: 'shade' as const, p: point(922, -1602), encounter: 'akechi' as const, role: 'lancer' as const };
   const normal = new WorldCombatState([spawn], []), quiet = new WorldCombatState([spawn], []);
-  const lane = point(-218, 864);
+  const lane = point(938, -1584);
   quiet.syncWorldFlags(new Set(['kyoto_lantern_route']));
   normal.step(.05, lane, true, flat); quiet.step(.05, lane, true, flat);
   assert.notEqual(normal.enemies[0].mode, 'idle'); assert.equal(quiet.enemies[0].mode, 'idle');
-  quiet.step(.05, point(-202, 875), true, flat); assert.notEqual(quiet.enemies[0].mode, 'idle', 'entering the camp still starts combat');
+  quiet.step(.05, point(922, -1595), true, flat); assert.notEqual(quiet.enemies[0].mode, 'idle', 'entering the camp still starts combat');
 });
 
 test('named knight first win stays retired, explicit rematch waits for arrival and does not move home', () => {

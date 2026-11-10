@@ -3,7 +3,8 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
-import { EGYPT_MIRRORS, EGYPT_OFFSET, EGYPT_TEMPLE } from '../map/egyptPlan';
+import { EGYPT_MIRRORS, EGYPT_FRAME, EGYPT_TEMPLE, egyptToWorld } from '../map/egyptPlan';
+import { planMatrix } from '../map/planFrame';
 
 /**
  * 引光: sunlight leaves the gilded disc in the court's east colonnade and travels in
@@ -52,8 +53,9 @@ export function traceSunlight(done: ReadonlySet<string>): { points: [number, num
 }
 
 export function createEgyptSunMirrors(convert: (m: THREE.Material) => THREE.Material = m => m) {
-  const [ox, oz] = EGYPT_OFFSET, y = EGYPT_MIRRORS.y, top = EGYPT_TEMPLE.terrace[4];
-  const root = new THREE.Group(); root.name = 'EgyptSunMirrors';
+  // Built in Egypt's authored frame; the root and the door collider are then placed in the world.
+  const ox = 0, oz = 0, frame = planMatrix(EGYPT_FRAME), y = EGYPT_MIRRORS.y, top = EGYPT_TEMPLE.terrace[4];
+  const root = new THREE.Group(); root.name = 'EgyptSunMirrors'; root.applyMatrix4(frame);
   const bronze = convert(new THREE.MeshStandardMaterial({ name: 'M_EgyptCraft', vertexColors: true, roughness: .35, metalness: .7 }));
   const stone = convert(new THREE.MeshStandardMaterial({ name: 'M_EgyptCraft', vertexColors: true, roughness: .9 }));
   const beamMat = new THREE.MeshBasicMaterial({ color: '#fff0b8', transparent: true, opacity: .55, blending: THREE.AdditiveBlending, depthWrite: false });
@@ -74,13 +76,13 @@ export function createEgyptSunMirrors(convert: (m: THREE.Material) => THREE.Mate
   const disc = new THREE.Mesh(discGeo, bronze); disc.name = 'EgyptSunDisc'; root.add(disc);
   const haloMat = new THREE.MeshBasicMaterial({ color: '#ffe7a0', transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   const halo = new THREE.Mesh(new THREE.CircleGeometry(2.6, 32), haloMat); halo.name = 'EgyptSunHalo'; root.add(halo);
-  const doorCollisionGeo = new THREE.BoxGeometry(door.width + .4, door.height, 1.2).translate(door.x + ox, top + door.height / 2, door.z + oz);
+  const doorCollisionGeo = new THREE.BoxGeometry(door.width + .4, door.height, 1.2).translate(door.x + ox, top + door.height / 2, door.z + oz).applyMatrix4(frame);
   const doorCollider: Collider = { name: 'COL_EgyptSunDoor', bvh: new MeshBVH(doorCollisionGeo), enabled: true };
   const beam = new THREE.Group(); beam.name = 'EgyptSunBeam'; root.add(beam);
   const unitCyl = new THREE.CylinderGeometry(1, 1, 1, 10, 1, true);
   // a fixed pool of beam segments (core + sheath), repositioned rather than recreated
   const segments = Array.from({ length: 8 }, (_, i) => ([[.09, coreMat], [.32, beamMat]] as const).map(([r, mat], j) => { const m = new THREE.Mesh(unitCyl, mat); m.name = `EgyptSunBeam_${i}_${j ? 'sheath' : 'core'}`; m.userData.radius = r; m.renderOrder = 4; m.visible = false; m.userData.dynamic = true; beam.add(m); return m; }));
-  const markers: Marker[] = EGYPT_MIRRORS.mirrors.map(m => ({ id: m.id, type: 'interact', label: EGYPT_MIRROR_LABEL[0], p: [m.p[0] + ox, top + 1.4, m.p[1] + oz], radius: 2.8 }));
+  const markers: Marker[] = EGYPT_MIRRORS.mirrors.map(m => { const [x, z] = egyptToWorld(m.p[0], m.p[1]); return { id: m.id, type: 'interact', label: EGYPT_MIRROR_LABEL[0], p: [x, top + 1.4, z], radius: 2.8 }; });
   let sinking = 0, lit = false, disposed = false, time = 0;
   const placeDoor = () => { const dy = -sinking * (door.height + .1); doorMesh.position.set(door.x + ox, top + door.height / 2 + dy, door.z + oz + .3); disc.position.set(door.x + ox, y + dy, door.z + oz + .95); halo.position.set(door.x + ox, y + dy, door.z + oz + 1.1); };
   placeDoor();

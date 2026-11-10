@@ -51,7 +51,7 @@ test('production Kyoto resident can restore a lost route but never replaces it a
   const f = fixture(['era_kyoto_met', 'kyoto_lantern_route']);
   f.context.interact('kyoto_innkeeper');
   assert.equal(f.context.optionalPin.region, 'kyoto');
-  assert.deepEqual([...f.context.optionalPin.p], [-224, 11.56, 840]);
+  assert.deepEqual([...f.context.optionalPin.p], [944, 11.56, -1560]);
   f.context.optionalPin = null;
   f.context.interact('kyoto_innkeeper');
   assert.equal(f.context.optionalPin.region, 'kyoto');

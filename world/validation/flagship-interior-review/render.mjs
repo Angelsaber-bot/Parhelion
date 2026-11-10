@@ -17,7 +17,7 @@ const scene=new THREE.Scene();scene.add(new THREE.HemisphereLight('#e3eef4','#74
 const light=new THREE.PointLight('#ffe1aa',9,30,1);light.position.fromArray(P(5,0,5.9));scene.add(light);
 const camera=new THREE.PerspectiveCamera(62,1280/800,.06,140),hold=createFlagshipInterior();scene.add(hold.root);
 const sourceNames=[];for(const kind of['core','visual']){
- const {scene:source}=await regionLoader().loadAsync('/assets/world_blacksail.'+kind+'.glb');bakeQuantized(source);source.position.x=720;source.updateMatrixWorld(true);
+ const {scene:source}=await regionLoader().loadAsync('/assets/world_blacksail.'+kind+'.glb');bakeQuantized(source);source.position.set(720,0,-720);source.updateMatrixWorld(true);
  const meshes=[];source.traverse(o=>{if(o.isMesh&&o.name.startsWith('Ghost_Fleet_Ship_296_104'))meshes.push(o);});
  for(const mesh of meshes){const copy=new THREE.Mesh(mesh.geometry,toonMaterial(mesh.material));copy.name=mesh.name;copy.applyMatrix4(mesh.matrixWorld);scene.add(copy);sourceNames.push(mesh.name);}
 }

@@ -20,7 +20,7 @@ const body=new Element();
 (globalThis as any).document={documentElement:{lang:'en'},createElement:()=>new Element(),body,getElementById:()=>null};
 (globalThis as any).window={setTimeout:()=>1,addEventListener(){}};
 const {WorldCombat}=await import('../src/combat/combatView.ts');
-const positions=[[-720,0],[720,0],[0,-720],[0,720]];
+const positions=[[-720,0],[720,-720],[0,-720],[720,-1440]];
 const layout={world:{seed:537,waterLevel:1},areas:[],paths:[],markers:BOSSES.map((b,i)=>({id:b.id,type:'enemy',label:b.id,p:[positions[i][0],2,positions[i][1]]}))} as unknown as Layout;
 const make=()=>{
   const scene=new THREE.Scene(),done=new Set(BOSSES.flatMap(b=>[...b.requires]));
@@ -28,7 +28,7 @@ const make=()=>{
   const internal=combat as any;internal.enemyAssets.loader.load=()=>{};
   const spawns=new WorldCombatState([
     {id:'alpha_probe',kind:'shade',p:{x:202,y:34,z:-4}},
-    {id:'kyoto_probe',kind:'shade',p:{x:100,y:4,z:560}},
+    {id:'kyoto_probe',kind:'shade',p:{x:620,y:4,z:-1280}},
     {id:'winter_probe',kind:'shade',p:{x:40,y:9,z:-690}},
   ],[]).enemies;
   combat.state.enemies.push(...spawns);
@@ -90,7 +90,7 @@ test('Valley and all chapter fallback silhouettes remove the old purple blob rat
   combat.dispose();
 });
 
-const dummy=()=>new WorldCombatState([{id:'loader_probe',kind:'shade',p:{x:0,y:0,z:720}}],[]).enemies[0];
+const dummy=()=>new WorldCombatState([{id:'loader_probe',kind:'shade',p:{x:720,y:0,z:-1440}}],[]).enemies[0];
 test('transient model failure retries after backoff, then displays a real GLB even when AI is paused',async()=>{
   const visuals=new EnemyVisuals(),internal=visuals as any,parent=new THREE.Group(),fallback=new THREE.Group(),enemy=dummy();
   let calls=0,ok:Function=()=>{},fail:Function=()=>{};

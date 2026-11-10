@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
-import {REGIONS} from '../src/map/regions';
+import {REGIONS, placeRegion, regionToWorld } from '../src/map/regions';
+import {EXPANSION_CONNECTIONS,distanceToLine} from '../src/map/worldPlan';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb';
 import {WorldGrid} from '../src/map/grid';
 import {components} from '../tools/reground-scatter-parts';
@@ -11,11 +12,11 @@ const terrains:THREE.Mesh[]=[];
 for(const def of REGIONS){
   const bytes=readFileSync(new URL(`../public/assets/${def.file}.core.glb`,import.meta.url));
   const {scene}=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
-  bakeQuantized(scene);scene.position.set(def.offset[0],0,def.offset[1]);scene.updateMatrixWorld(true);
+  bakeQuantized(scene);placeRegion(scene, def);scene.updateMatrixWorld(true);
   terrains.push(scene.getObjectByName('Terrain') as THREE.Mesh);
 }
-const grid=new WorldGrid(terrains,-1080,-1080,2160,2),h=(x:number,z:number)=>grid.sampleHeight(x,z)!;
-const joins=[[-360,-720,'x'],[360,-720,'x'],[-360,0,'x'],[360,0,'x'],[-360,720,'x'],[360,720,'x'],[-720,-360,'z'],[0,-360,'z'],[720,-360,'z'],[-720,360,'z'],[0,360,'z'],[720,360,'z']] as const;
+const grid=new WorldGrid(terrains,-1080,-1800,2160,2),h=(x:number,z:number)=>grid.sampleHeight(x,z)!;
+const joins=[[-360,-1440,'x'],[360,-1440,'x'],[-360,-720,'x'],[360,-720,'x'],[-360,0,'x'],[360,0,'x'],[-720,-1080,'z'],[0,-1080,'z'],[720,-1080,'z'],[-720,-360,'z'],[0,-360,'z'],[720,-360,'z']] as const;
 
 test('no tile join is a ruled dyke: the seam never stands far above the ground on both sides of it', () => {
   for(const [jx,jz,axis] of joins)for(let s=-240;s<=240;s+=24){
@@ -45,12 +46,14 @@ test('join-band seating moves whole props, only vertically, only inside the join
         const shift=dq[c[0]];if(!c.some(v=>dq[v]!==0))continue;
         assert.ok(c.every(v=>dq[v]===shift),`${region}/${name}: a prop moves as one piece`);
         let x=0,z=0;for(const v of c){x+=p.getX(v);z+=p.getZ(v);}x/=c.length;z/=c.length;
-        // crowns follow their trunk and may overhang the band edge by their radius
-        assert.ok(Math.max(Math.abs(x),Math.abs(z))>=seating.band-(/^(Trees_Leaves|Bushes|COL_Props)/.test(name)?5:0),`${region}/${name}: seated prop at ${x.toFixed(0)},${z.toFixed(0)} lies inside the join band`);
+        // crowns follow their trunk and may overhang the band edge by their radius; road decks are cleared anywhere
+        const def0=REGIONS.find(d=>d.id===region)!,[wx,wz]=regionToWorld(def0,x,z);
+        const road=EXPANSION_CONNECTIONS.some(c=>distanceToLine(wx,wz,c.points)<c.width/2+8);
+        assert.ok(road||Math.max(Math.abs(x),Math.abs(z))>=seating.band-(/^(Trees_Leaves|Bushes|COL_Props)/.test(name)?5:0),`${region}/${name}: seated prop at ${x.toFixed(0)},${z.toFixed(0)} lies inside the join band`);
         if(!/^(Trees_Trunks|Rocks)/.test(name))continue;
         let minY=Infinity,maxY=-Infinity,r=0;for(const v of c){const y=p.getY(v)+shift*s;minY=Math.min(minY,y);maxY=Math.max(maxY,y);r=Math.max(r,Math.hypot(p.getX(v)-x,p.getZ(v)-z));}
-        const [ox,oz]=REGIONS.find(d=>d.id===region)!.offset;
-        let ground=Infinity;for(const [dx,dz] of [[0,0],[r*.5,0],[-r*.5,0],[0,r*.5],[0,-r*.5]])ground=Math.min(ground,h(x+dx+ox,z+dz+oz));
+        const def=REGIONS.find(d=>d.id===region)!;
+        let ground=Infinity;for(const [dx,dz] of [[0,0],[r*.5,0],[-r*.5,0],[0,r*.5],[0,-r*.5]])ground=Math.min(ground,h(...regionToWorld(def,x+dx,z+dz)));
         assert.ok(maxY<ground+.05||(minY-ground>-1.3&&minY-ground<.1),`${region}/${name} at ${x.toFixed(0)},${z.toFixed(0)}: base ${(minY-ground).toFixed(2)} m from the ground`);
       }
       g.dispose();

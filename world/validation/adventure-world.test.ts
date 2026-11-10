@@ -35,6 +35,6 @@ test('adventure: action sockets, final encounters, cart route and optional ramps
    assert.equal(k,route.length,`ramp stuck ${p.pos.toArray()} next ${route[k]}`);
   }
   w.done.add('adventure_kingdom_abbey');w.adventureSites.apply(w.done);walk(w.adventureSites.abbeyRoute);
-  w.done.add(A.water);w.adventureSites.apply(w.done);walk(w.adventureSites.roofRoute);walk([[-43,4.45,740],[-53,8.8,740],[-59,8.8,740],[-77,4.7,740]]);
+  w.done.add(A.water);w.adventureSites.apply(w.done);walk(w.adventureSites.roofRoute);walk([[763,4.45,-1460],[773,8.8,-1460],[779,8.8,-1460],[797,4.7,-1460]]);
  }finally{await h.close();}
 });

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import type {PlacedNpcSocket} from '../settlements/types';
 import {residentWalkRig} from '../settlements/residentWalk';
 
-const ORIGIN=[-720,-720] as const;
+const ORIGIN=[-720,-1440] as const;
 const world=(p:readonly[number,number,number]):[number,number,number]=>[p[0]+ORIGIN[0],p[1],p[2]+ORIGIN[1]];
 const RESIDENTS=[
   {id:'orleans_dock_clerk',role:['奥黛特 · 港务书记','Odette · harbour clerk'],p:[-185,8.45,-30],yaw:Math.PI*.6,coat:0x536d89,
@@ -36,7 +36,7 @@ export function createOrleansResidentLife(host:ResidentHost,ground:(x:number,z:n
   for(const s of RESIDENTS){const p=host.getPosition(s.id)!;const y=ground(p[0],p[2],p[1]+2);if(y!==null&&Math.abs(y-p[1])<1.2)host.pose(s.id,[p[0],y+.02,p[2]],s.yaw);const root=host.group.getObjectByName(`Resident_${s.id}`);if(root)root.userData.region='orleans';}
   let disposed=false;
   return{update(dt:number,player:THREE.Vector3,speaking:string|null,ready:boolean){
-    if(disposed||!ready||Math.hypot(player.x+720,player.z+720)>500)return;
+    if(disposed||!ready||Math.hypot(player.x-ORIGIN[0],player.z-ORIGIN[1])>500)return;
     dt=Number.isFinite(dt)?Math.min(.05,Math.max(0,dt)):0;
     for(const p of walkers){
       const at=host.getPosition(p.id)!;if(Math.hypot(at[0]-player.x,at[2]-player.z)>95)continue;

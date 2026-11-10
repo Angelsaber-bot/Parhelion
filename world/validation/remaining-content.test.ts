@@ -21,8 +21,8 @@ test('five resident jobs require their different field actions, preserve partial
  for(let i=0;i<3;i++){act('kyoto_page');assert.equal(getResidentWorkGuide('kyoto',done,r.carrying)?.targetId,'resident_kyoto_rack');act('kyoto_rack');}assert.ok(done.has('campaign_kyoto_work_step_1'));for(const k of ['weight_a','weight_b'])act(`kyoto_${k}`);assert.ok(done.has('campaign_kyoto_worked'));
  const before=saves;reachable=false;assert.equal(act('winter_hoofprints'),false);assert.equal(saves,before);reachable=true;
  act('winter_horse');assert.equal(done.has('resident_winter_horse_found'),false);act('winter_hoofprints');act('winter_horse');assert.ok(done.has('resident_winter_horse_found'));
- act('kyoto_cross_start');r.update(new THREE.Vector3(150,.5,780),false,true);act('kyoto_cross_finish');assert.equal(done.has('resident_kyoto_dry_shoes'),false);
- act('kyoto_cross_start');r.update(new THREE.Vector3(150,3,780),true,true);act('kyoto_cross_finish');assert.ok(done.has('resident_kyoto_dry_shoes'));assert.ok(done.has('resident_kyoto_glider_trick'));
+ act('kyoto_cross_start');r.update(new THREE.Vector3(570,.5,-1500),false,true);act('kyoto_cross_finish');assert.equal(done.has('resident_kyoto_dry_shoes'),false);
+ act('kyoto_cross_start');r.update(new THREE.Vector3(570,3,-1500),true,true);act('kyoto_cross_finish');assert.ok(done.has('resident_kyoto_dry_shoes'));assert.ok(done.has('resident_kyoto_glider_trick'));
  const copy=new Set(done);r.reset();assert.deepEqual(done,copy);assert.equal(r.carrying,null);
 });
 
@@ -40,9 +40,9 @@ test('finished spaces: both hold entrances and exits walk on actual carved hull;
   }
   for(const route of w.flagshipInterior.rampRoutes){walk(route);walk([...route].reverse());}
   const leisureDone=new Set<string>(),crossing=createResidentEventRuntime({done:leisureDone,reachable:()=>true,save(){},changed(){},toast(){}});
-  crossing.interact('resident_kyoto_cross_start');walk([[128,q.ground(128,780)!.point.y,780],[176,1.8,780]],p=>crossing.update(p,false,true));assert.equal(crossing.crossing,true,'actual turtle stones keep shoes dry');crossing.interact('resident_kyoto_cross_finish');assert.ok(leisureDone.has('resident_kyoto_dry_shoes'));
-  crossing.interact('resident_kyoto_cross_start');walk([[128,q.ground(128,784)!.point.y,784],[176,1.8,784]],p=>crossing.update(p,false,true));assert.equal(crossing.crossing,false,'wading alongside the stones invalidates the challenge');
-  const edge=flagshipPoint(10,4.3,3.4);w.player.teleport(...edge,Math.PI/2);frame(90);const cameraV=(w.camera.position.x-1016)*Math.cos(.15)-(w.camera.position.z-104)*Math.sin(.15);assert.ok(cameraV<5.02,`camera stays inside the new hold wall: ${cameraV}`);
+  crossing.interact('resident_kyoto_cross_start');walk([[592,q.ground(592,-1500)!.point.y,-1500],[544,1.8,-1500]],p=>crossing.update(p,false,true));assert.equal(crossing.crossing,true,'actual turtle stones keep shoes dry');crossing.interact('resident_kyoto_cross_finish');assert.ok(leisureDone.has('resident_kyoto_dry_shoes'));
+  crossing.interact('resident_kyoto_cross_start');walk([[592,q.ground(592,-1504)!.point.y,-1504],[544,1.8,-1504]],p=>crossing.update(p,false,true));assert.equal(crossing.crossing,false,'wading alongside the stones invalidates the challenge');
+  const edge=flagshipPoint(10,4.3,3.4);w.player.teleport(...edge,Math.PI/2);frame(90);const cameraV=(w.camera.position.x-1016)*Math.cos(.15)-(w.camera.position.z+616)*Math.sin(.15);assert.ok(cameraV<5.02,`camera stays inside the new hold wall: ${cameraV}`);
   const sequence:Record<string,string[]>={alpha:['ground','rhythm','tune'],britain:['order','witness_a','witness_b','stamp'],blacksail:['manifest_a','manifest_b','manifest_c','hood'],winter:['blanket','underlay','strap_a','strap_b'],kyoto:['page','rack','page','rack','page','rack','weight_a','weight_b']};
   for(const[region,actions]of Object.entries(sequence)){
    for(const key of actions){const id=`resident_${region}_${key}`,m=w.layout.markers.find((m:any)=>m.id===id)!;w.player.teleport(m.p[0],m.p[1]-.6,m.p[2]);frame(60);const code=w.settings.bindingsFor('interact')[0];h.window.document.body.dispatchEvent(new h.window.KeyboardEvent('keydown',{code,bubbles:true}));h.window.document.body.dispatchEvent(new h.window.KeyboardEvent('keyup',{code,bubbles:true}));frame();if(w.residentEventRuntime.carrying){const midpoint=w.rig.handSockets.L.getWorldPosition(new THREE.Vector3()).add(w.rig.handSockets.R.getWorldPosition(new THREE.Vector3())).multiplyScalar(.5);assert.ok(midpoint.distanceTo(w.residentEventScene.carried.position)<.09,'carried prop follows both actual palms');assert.equal(w.rig.joints.Gun.visible,false,'hands stay occupied while carrying');}if(key.startsWith('manifest_'))assert.ok(w.done.has(id),`${id}: ${w.player.pos.toArray()}, prompt=${h.window.document.getElementById('prompt')?.textContent}, toast=${h.window.document.getElementById('toast')?.textContent}`);}
@@ -60,7 +60,7 @@ test('production region streaming starts with one visual payload and evicts real
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(time+=1000/60);};
  try{
   assert.deepEqual(Array.from(w.regionVisuals.diagnostics.resident),['alpha']);assert.equal(w.regionVisuals.diagnostics.downloads,1);
-  const original=[...w.done];w.player.teleport(520,10,150);frame();assert.equal(w.regionVisuals.ready('blacksail'),false);await h.settleAssets();frame();assert.ok(w.regionVisuals.ready('blacksail'));
+  const original=[...w.done];w.player.teleport(520,10,-570);frame();assert.equal(w.regionVisuals.ready('blacksail'),false);await h.settleAssets();frame();assert.ok(w.regionVisuals.ready('blacksail'));
   frame(900);const d=w.regionVisuals.diagnostics;assert.equal(d.resident.includes('alpha'),false);assert.ok(d.evictions>=1&&d.disposedGeometries>0&&d.disposedMaterials>0,JSON.stringify(d));
   w.player.teleport(-90,10,240);frame();await h.settleAssets();frame();assert.ok(w.regionVisuals.ready('alpha'));assert.ok(w.regionVisuals.diagnostics.downloads>=3);assert.deepEqual([...w.done],original);assert.equal(h.errors.length,0);
  }finally{await h.close();}

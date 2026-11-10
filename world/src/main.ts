@@ -115,7 +115,7 @@ import { ShoulderAim, shoulderArmLength } from './player/aim';
 import { SettingsStore, createSettingsPanel } from '../../shared-client/settings';
 import '../../shared-client/settings.css';
 import './ui/worldInterface.css';
-import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt } from './map/regions';
+import { REGIONS, GRID, GATES, mergeLayouts, boundaryWalls, regionAt, placeRegion, regionToWorld } from './map/regions';
 import { BOSSES, PERFECT_EVADE } from './combat/combat';
 import { nearbyElite } from './combat/eliteNavigation';
 import { WorldGrid } from './map/grid';
@@ -300,7 +300,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
   }
   bakeQuantized(gltf.scene);
-  gltf.scene.position.set(def.offset[0], 0, def.offset[1]);
+  placeRegion(gltf.scene, def);
   return { def, layout: lay, root: gltf.scene };
 }));
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
@@ -362,7 +362,7 @@ for (const m of artMeshes) {
     // a target that must be shot from a spot (the fort cannon): that spot is region-local, make it world
     const near = m.userData.near as [number, number] | undefined;
     const part = parts.find((p) => { let o: THREE.Object3D | null = m; while (o && o !== p.root) o = o.parent; return !!o; });
-    if (near && part) m.userData.nearWorld = [near[0] + part.def.offset[0], near[1] + part.def.offset[1]];
+    if (near && part) m.userData.nearWorld = regionToWorld(part.def, near[0], near[1]);
   }
   // spinning pieces are exported in region space: move their pivot to the mesh origin
   if (m.userData.spin && Array.isArray(m.userData.pivot)) {
@@ -2081,7 +2081,7 @@ function interactQinOrder() {
   if(qinTurnBlocked(player.pos)){toast(bilingual('有人站在转台上：离开兵俑转台和铜闸下方后再下令。','Someone is on a turntable: step clear of the ranks and the bronze gate first.'));return;}
   const phase=toggleQinOrder(done);const crushed=qinSentinels.orderTurned(done);save();applyWorldState();audio.interaction();
   if(crushed.length)setTimeout(()=>toast(bilingual(`转动的兵俑阵碾碎了 ${crushed.length} 尊守陵俑。`,`The turning ranks ground down ${crushed.length} tomb guardian${crushed.length>1?'s':''}.`)),1600);
-  toast(phase==='b'?bilingual('军令：让道阵。东列兵俑转为横向让出通道，斜井铜闸升起；西列合拢封路。','Order: open ranks. The east row turns aside and the shaft gate rises; the west row closes.'):bilingual('军令：守陵阵。东列兵俑合拢封路，斜井铜闸落下；西列转向让出通道。','Order: guard ranks. The east row closes, the shaft gate falls, and the west row turns aside.'));
+  toast(phase==='b'?bilingual('军令：让道阵。西列兵俑转为横向让出通道，斜井铜闸升起；东列合拢封路。','Order: open ranks. The west row turns aside and the shaft gate rises; the east row closes.'):bilingual('军令：守陵阵。西列兵俑合拢封路，斜井铜闸落下；东列转向让出通道。','Order: guard ranks. The west row closes, the shaft gate falls, and the east row turns aside.'));
 }
 function interact() {
   const m = nearestInteract();

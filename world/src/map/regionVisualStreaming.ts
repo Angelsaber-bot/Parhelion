@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {regionLoader,bakeQuantized} from '../rendering/glb';
-import {REGIONS,regionAt,regionDistance} from './regions';
+import {REGIONS,regionAt,regionDistance,placeRegion} from './regions';
 import {chunkMesh,DistanceCuller,freezeStaticArt} from '../rendering/chunk';
 import {toonMaterial,addOutline} from '../rendering/look';
 interface Resident{root:THREE.Group;culler:DistanceCuller;geometries:Set<THREE.BufferGeometry>;materials:Set<THREE.Material>;lastUsed:number;
@@ -45,7 +45,7 @@ export class RegionVisualStreaming{
    // source resources, while outlines use global materials owned by look.ts.
    root.traverse(o=>{const mesh=o as THREE.Mesh;if(mesh.isMesh){geometries.add(mesh.geometry);for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])materials.add(m);}});
    if(this.disposed||controller.signal.aborted){this.releaseResources(root,geometries,materials);return false;}
-   bakeQuantized(root);root.traverse(o=>{if((o as THREE.Mesh).isMesh)geometries.add((o as THREE.Mesh).geometry);});root.name=`Streamed_${id}`;root.position.set(def.offset[0],0,def.offset[1]);
+   bakeQuantized(root);root.traverse(o=>{if((o as THREE.Mesh).isMesh)geometries.add((o as THREE.Mesh).geometry);});root.name=`Streamed_${id}`;placeRegion(root,def);
    const cache=new Map<THREE.Material,THREE.Material>(),culler=new DistanceCuller(this.options.lowQuality?90:160);
    const meshes:THREE.Mesh[]=[];root.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
    for(const mesh of meshes){const carved=this.options.carve?.(id,mesh.name,mesh.geometry);if(carved&&carved!==mesh.geometry){const original=mesh.geometry;mesh.geometry=carved;geometries.delete(original);original.dispose();this.counters.disposedGeometries++;}geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);

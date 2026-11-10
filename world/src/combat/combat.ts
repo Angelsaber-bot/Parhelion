@@ -96,11 +96,11 @@ export const WILDERNESS_ZONES = [
   { x: -454, z: -100, r: 26, kind: 'shade' as const },
   { x: -724, z: -100, r: 28, kind: 'shade' as const },
   // 黑帆尽头 (region offset x + 720): the downs, the fort road, the vortex rim, the headland road
-  { x: 660, z: -60, r: 24, kind: 'crystal' as const },
-  { x: 780, z: -70, r: 22, kind: 'crystal' as const },
-  { x: 640, z: -100, r: 20, kind: 'crystal' as const },
-  { x: 850, z: 10, r: 20, kind: 'crystal' as const },
-  { x: 760, z: 70, r: 22, kind: 'crystal' as const },
+  { x: 660, z: -780, r: 24, kind: 'crystal' as const },
+  { x: 780, z: -790, r: 22, kind: 'crystal' as const },
+  { x: 640, z: -820, r: 20, kind: 'crystal' as const },
+  { x: 850, z: -710, r: 20, kind: 'crystal' as const },
+  { x: 760, z: -650, r: 22, kind: 'crystal' as const },
   { x: 145, z: 140, r: 20, kind: 'shade' as const },
   // 永冬之城 (region offset z - 720): the bank road, the snowfield, the Smolensk road, the gorge mouth
   { x: -90, z: -540, r: 24, kind: 'crystal' as const },
@@ -109,42 +109,42 @@ export const WILDERNESS_ZONES = [
   { x: 130, z: -550, r: 22, kind: 'crystal' as const },
   { x: 90, z: -800, r: 20, kind: 'shade' as const },
   // 业火京都 (region offset z + 720): north-east streets, the Kinkaku road, below Higashiyama, the ninth street, the southern plain
-  { x: 100, z: 560, r: 20, kind: 'shade' as const },
-  { x: -172, z: 612, r: 20, kind: 'crystal' as const },
-  { x: 222, z: 652, r: 18, kind: 'shade' as const },
-  { x: -100, z: 855, r: 22, kind: 'shade' as const },
-  { x: 60, z: 950, r: 26, kind: 'crystal' as const },
+  { x: 620, z: -1280, r: 20, kind: 'shade' as const },
+  { x: 892, z: -1332, r: 20, kind: 'crystal' as const },
+  { x: 498, z: -1372, r: 18, kind: 'shade' as const },
+  { x: 820, z: -1575, r: 22, kind: 'shade' as const },
+  { x: 660, z: -1670, r: 26, kind: 'crystal' as const },
   // Additional remote pockets: keep the 82 m active window and town-safe placement,
   // while raising the seeded wilderness roster by roughly 23%.
   { x: -260, z: -220, r: 20, kind: 'shade' as const },
   { x: 260, z: -210, r: 20, kind: 'shade' as const },
   { x: 300, z: 120, r: 18, kind: 'shade' as const },
-  { x: 900, z: 130, r: 20, kind: 'crystal' as const },
+  { x: 860, z: -619, r: 20, kind: 'crystal' as const } /* off the new southern shore */,
   { x: -220, z: -840, r: 20, kind: 'crystal' as const },
-  { x: 260, z: 860, r: 20, kind: 'shade' as const },
+  { x: 460, z: -1580, r: 20, kind: 'shade' as const },
   // Gap fill (measured >130 m from any spawn on the real map); `pack` zones seed a group of 5.
-  { x: -870, z: 290, r: 14, kind: 'shade' as const, pack: 5 },
-  { x: -420, z: 350, r: 14, kind: 'crystal' as const },
-  { x: 930, z: -280, r: 14, kind: 'shade' as const, pack: 5 },
+  { x: -819, z: 191, r: 14, kind: 'shade' as const, pack: 5 } /* Britain's south is now coast */,
+  { x: -492, z: 266, r: 14, kind: 'crystal' as const },
+  { x: 930, z: -1000, r: 14, kind: 'shade' as const, pack: 5 },
   { x: 270, z: -1000, r: 14, kind: 'crystal' as const, pack: 5 },
   { x: 0, z: -220, r: 14, kind: 'shade' as const, pack: 5 },
-  { x: -90, z: 380, r: 14, kind: 'crystal' as const },
-  { x: 540, z: 200, r: 14, kind: 'shade' as const },
+  { x: 810, z: -1100, r: 14, kind: 'crystal' as const },
+  { x: 540, z: -520, r: 14, kind: 'shade' as const },
   // The southern shoreline now curves inland; keep this existing pack on the
   // dry western field so its two reserved Akechi guards remain available.
-  { x: -300, z: 970, r: 14, kind: 'crystal' as const, pack: 5 },
+  { x: 990, z: -1665, r: 14, kind: 'crystal' as const, pack: 5 },
   { x: -900, z: 50, r: 14, kind: 'shade' as const },
   { x: -630, z: 230, r: 14, kind: 'crystal' as const },
   { x: -510, z: -340, r: 14, kind: 'shade' as const },
-  { x: 240, z: 380, r: 14, kind: 'crystal' as const },
+  { x: 480, z: -1100, r: 14, kind: 'crystal' as const },
   { x: -60, z: -1000, r: 14, kind: 'shade' as const },
-  { x: 510, z: -280, r: 14, kind: 'crystal' as const },
+  { x: 510, z: -1000, r: 14, kind: 'crystal' as const },
   { x: 300, z: -700, r: 14, kind: 'shade' as const },
   { x: -300, z: -430, r: 14, kind: 'crystal' as const },
-  { x: 420, z: -70, r: 14, kind: 'shade' as const },
+  { x: 420, z: -790, r: 14, kind: 'shade' as const },
   { x: -840, z: -280, r: 14, kind: 'crystal' as const },
-  { x: -300, z: 800, r: 14, kind: 'shade' as const },
-  { x: 720, z: -280, r: 14, kind: 'crystal' as const },
+  { x: 1020, z: -1520, r: 14, kind: 'shade' as const },
+  { x: 720, z: -1000, r: 14, kind: 'crystal' as const },
   { x: -120, z: -70, r: 14, kind: 'shade' as const },
   { x: -360, z: 170, r: 14, kind: 'crystal' as const },
   // Route-side pairs fill measured 98–169 m visibility gaps, without entering protected hubs.
@@ -155,15 +155,15 @@ export const WILDERNESS_ZONES = [
   { x: -764, z: 129, r: 12, kind: 'shade' as const },
   { x: -855, z: -92, r: 12, kind: 'shade' as const },
   { x: -634, z: 8, r: 12, kind: 'shade' as const },
-  { x: 552, z: 42, r: 12, kind: 'shade' as const },
-  { x: 673, z: 167, r: 12, kind: 'shade' as const },
-  { x: 860, z: -132, r: 12, kind: 'shade' as const },
+  { x: 552, z: -678, r: 12, kind: 'shade' as const },
+  { x: 673, z: -553, r: 12, kind: 'shade' as const },
+  { x: 860, z: -852, r: 12, kind: 'shade' as const },
   { x: 221, z: -615, r: 12, kind: 'shade' as const },
   { x: -214, z: -628, r: 12, kind: 'shade' as const },
   { x: -4, z: -859, r: 12, kind: 'shade' as const },
-  { x: 7, z: 703, r: 12, kind: 'shade' as const },
-  { x: -299, z: 616, r: 12, kind: 'shade' as const },
-  { x: 7, z: 823, r: 12, kind: 'shade' as const },
+  { x: 713, z: -1423, r: 12, kind: 'shade' as const },
+  { x: 1019, z: -1336, r: 12, kind: 'shade' as const },
+  { x: 713, z: -1543, r: 12, kind: 'shade' as const },
 ];
 export function makeWildernessSpawns(seed: number, place: (x: number, z: number) => Point3 | null): SpawnPoint[] {
   let state = seed >>> 0;
@@ -664,7 +664,7 @@ export class WorldCombatState {
       const sees = heightOk && terrain.lineOfSight(from, to);
       // The nearby road pair yield the named duel; they do not pile onto its long tells.
       if (dueling && (e.id === 'wild_56' || e.id === 'wild_56b')) { e.mode = 'idle'; e.timer = 0; continue; }
-      const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x < -213 && player.z < 870;
+      const quietLane = this.quietKyotoRoute && e.encounter === 'akechi' && player.x > 933 && player.z > -1590; // Kyoto turned half a circle (legacy x<-213, z<870)
       const aggroRange = e.encounter === 'akechi' ? quietLane ? 12 : 26 : COMBAT.aggroRange;
       if (e.mode === 'idle') { if (dist < aggroRange && sees) e.mode = 'chase'; else continue; }
       if (e !== this.boss && (distanceXZ(e.home, player) > COMBAT.leash || distanceXZ(e.home, e.p) > COMBAT.leash)) {

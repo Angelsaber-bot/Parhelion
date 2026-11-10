@@ -2,11 +2,11 @@
 import * as THREE from 'three';
 import {readFile,writeFile,mkdir} from 'node:fs/promises';
 import {regionLoader,bakeQuantized} from '../../src/rendering/glb';
-import {REGIONS} from '../../src/map/regions';
+import {REGIONS, placeRegion } from '../../src/map/regions';
 const out='../../parhelion-eight-hour-evidence/environment/material-audit';await mkdir(out,{recursive:true});
 const results:any[]=[];
 for(const def of REGIONS){
- const bytes=await readFile(`public/assets/${def.file}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);gltf.scene.position.set(def.offset[0],0,def.offset[1]);gltf.scene.updateMatrixWorld(true);
+ const bytes=await readFile(`public/assets/${def.file}.glb`),gltf=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');bakeQuantized(gltf.scene);placeRegion(gltf.scene, def);gltf.scene.updateMatrixWorld(true);
  const rows:any[]=[],errors:string[]=[],materials=new Set<THREE.Material>();let meshCount=0,triangles=0;
  gltf.scene.getObjectByName('ART')!.traverse(o=>{
   if(!(o instanceof THREE.Mesh))return;meshCount++;const g:THREE.BufferGeometry=o.geometry,p=g.attributes.position,n=g.attributes.normal,ix=g.index,c=g.attributes.color,slots=Array.isArray(o.material)?o.material:[o.material],count=ix?.count??p.count;triangles+=count/3;

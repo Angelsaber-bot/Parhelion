@@ -265,7 +265,7 @@ export function redSquareArena(art: SiteArt, terrain: Terrain) {
  * still glowing, volleys of arrows in the ground, torn nobori of the attacking army, and behind the Lord a
  * gold-leaf folding screen half eaten by fire. All visual; the courtyard's own lanterns keep their places.
  */
-export const HONNOJI = Object.freeze({ boss: [-86, 765] as const, core: [-74, 765] as const, clear: 6.5 });
+export const HONNOJI = Object.freeze({ boss: [806, -1485] as const, core: [794, -1485] as const, clear: 6.5 });
 
 function scorch(f: Frame, s: number) {
   f.cyl([0, .02, 0], s, .03, '#2a1c17', 'body', 12);

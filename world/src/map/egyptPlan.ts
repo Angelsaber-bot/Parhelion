@@ -5,7 +5,12 @@
  * (world = local + [720, 720]); -Z is north. Shared by generator, runtime and tests.
  */
 export type EgyptPoint = readonly [number, number, number];
-export const EGYPT_OFFSET = [720, 720] as const;
+export const EGYPT_OFFSET = [0, -1440] as const;
+/** Egypt is turned half a circle: authored (x,z) sits at EGYPT_OFFSET + (-x,-z). */
+export const EGYPT_FRAME = { offset: EGYPT_OFFSET, rotated: true } as const;
+/** Egypt authored (x,z) → world, and back (a half turn is its own inverse). */
+export const egyptToWorld = (x: number, z: number): [number, number] => [EGYPT_OFFSET[0] - x, EGYPT_OFFSET[1] - z];
+export const worldToEgypt = (x: number, z: number): [number, number] => [EGYPT_OFFSET[0] - x, EGYPT_OFFSET[1] - z];
 
 /** Spring lake at the oasis and the river it feeds, falling to the southern shore. */
 export const EGYPT_LAKE = { x: -205, z: 150, rx: 38, rz: 26, surface: 12.4 } as const;

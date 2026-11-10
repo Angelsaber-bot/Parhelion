@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
-import { QIN_ARMY, QIN_OFFSET, QIN_LEVELS } from '../map/qinPlan';
+import { QIN_ARMY, QIN_LEVELS, qinToWorld, worldToQin } from '../map/qinPlan';
 import { warriorPrims, placeFigure } from '../map/qinFigures';
 import { QIN_RANK_SWEEP, qinOrderPhase, qinRowOpen } from './qinArmyOrder';
 
@@ -16,7 +16,8 @@ export const QIN_SENTINELS: readonly { id: string; path: V2[]; home: V2; safe: [
   { id: 'west', path: [[-54, -106], [-54, -156], [-45, -156], [-54, -156]], home: [-54, -106], safe: [-57, 28, -118] },
 ];
 export const qinSentinelFlag = (id: string) => `qin_sentinel_${id}_broken`;
-const FLOOR = QIN_LEVELS.army, [OX, OZ] = QIN_OFFSET;
+// Guards walk in Qin's authored frame; Qin stands turned half a circle in the world.
+const FLOOR = QIN_LEVELS.army;
 const SIGHT = 9, CONE = Math.cos(THREE.MathUtils.degToRad(65)), CATCH = 1.1, PATROL = 1.3, CHASE = 3.1;
 const HALL = { x0: -59, x1: 29, z0: -159, z1: -101 };
 
@@ -42,7 +43,7 @@ export function createQinSentinels(convert: (m: THREE.Material) => THREE.Materia
     root.add(group); root.add(rubble);
     return { def, group, body, rubble, x: def.home[0], z: def.home[1], yaw: 0, leg: 1, mode: 'patrol' as 'patrol' | 'chase' | 'broken', step: 0 };
   });
-  const place = (g: typeof guards[number]) => { g.group.position.set(g.x + OX, FLOOR, g.z + OZ); g.group.rotation.y = g.yaw; g.body.position.y = Math.abs(Math.sin(g.step * 2)) * .06; g.rubble.position.set(g.x + OX, FLOOR, g.z + OZ); };
+  const place = (g: typeof guards[number]) => { const [x, z] = qinToWorld(g.x, g.z); g.group.position.set(x, FLOOR, z); g.group.rotation.y = g.yaw + Math.PI; g.body.position.y = Math.abs(Math.sin(g.step * 2)) * .06; g.rubble.position.set(x, FLOOR, z); };
   guards.forEach(place);
   /** A closed file is a wall three metres either side of its line; guardians press against it. */
   const crosses = (x0: number, x1: number, done: ReadonlySet<string>) => {
@@ -58,7 +59,7 @@ export function createQinSentinels(convert: (m: THREE.Material) => THREE.Materia
     update(dt: number, player: { x: number; y: number; z: number }, done: ReadonlySet<string>): [number, number, number] | null {
       if (disposed) return null;
       dt = Math.min(Math.max(dt, 0), .05);
-      const px = player.x - OX, pz = player.z - OZ, onFloor = Math.abs(player.y - FLOOR) < 2.5 && px > HALL.x0 - 2 && px < HALL.x1 + 2 && pz > HALL.z0 - 2 && pz < HALL.z1 + 2;
+      const [px, pz] = worldToQin(player.x, player.z), onFloor = Math.abs(player.y - FLOOR) < 2.5 && px > HALL.x0 - 2 && px < HALL.x1 + 2 && pz > HALL.z0 - 2 && pz < HALL.z1 + 2;
       let caught: [number, number, number] | null = null;
       for (const g of guards) {
         if (g.mode === 'broken') continue;
@@ -76,7 +77,7 @@ export function createQinSentinels(convert: (m: THREE.Material) => THREE.Materia
           g.yaw = Math.atan2(ddx, ddz);
         }
         if (g.mode === 'chase' && onFloor && Math.hypot(px - g.x, pz - g.z) < CATCH) {
-          caught = [g.def.safe[0] + OX, g.def.safe[1], g.def.safe[2] + OZ]; g.mode = 'patrol'; g.x = g.def.home[0]; g.z = g.def.home[1];
+          { const [x, z] = qinToWorld(g.def.safe[0], g.def.safe[2]); caught = [x, g.def.safe[1], z]; } g.mode = 'patrol'; g.x = g.def.home[0]; g.z = g.def.home[1];
         }
         place(g);
       }

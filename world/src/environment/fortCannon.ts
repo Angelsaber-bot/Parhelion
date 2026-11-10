@@ -1,6 +1,6 @@
 import type { Point3 } from '../combat/combat';
 export const FORT_CANNON = {
- marker: 'fort_cannon', muzzle: { x:925.12,y:33.6,z:-172 }, station:{x:923.5,y:32.6,z:-172},
+ marker: 'fort_cannon', muzzle: { x:925.12,y:33.6,z:-892 }, station:{x:923.5,y:32.6,z:-892},
  radius:4.5, reload:1.3, range:180, halfArc:Math.PI*50/180,
 } as const;
 const finite=(p:Point3)=>Number.isFinite(p.x)&&Number.isFinite(p.y)&&Number.isFinite(p.z);

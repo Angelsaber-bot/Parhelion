@@ -17,7 +17,7 @@ function armed(e: Enemy) { e.active = true; e.mode = 'windup'; e.timer = .01; e.
 
 test('ten stable roles diversify existing regional IDs without adding population or health', () => {
   const roles = new Set<EnemyRole>();
-  for (const home of [p(0), p(-720), p(720), p(0, -720), p(0, 720)]) {
+  for (const home of [p(0), p(-720), p(720, -720), p(0, -720), p(720, -1440)]) {
     for (let i = 0; i < 20; i++) {
       const spec = { id: `wild_${i}`, home, kind: i % 2 ? 'shade' as const : 'crystal' as const };
       const role = selectEnemyRole(spec); assert.equal(selectEnemyRole(spec), role); roles.add(role);

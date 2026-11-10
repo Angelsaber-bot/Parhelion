@@ -5,7 +5,12 @@
  * All coordinates are region-local (world = local + [720, -720]); -Z is north.
  */
 export type QinPoint = readonly [number, number, number];
-export const QIN_OFFSET = [720, -720] as const;
+export const QIN_OFFSET = [-720, -720] as const;
+/** Qin is turned half a circle: authored (x,z) sits at QIN_OFFSET + (-x,-z). */
+export const QIN_FRAME = { offset: QIN_OFFSET, rotated: true } as const;
+/** Qin authored (x,z) → world, and back (a half turn is its own inverse). */
+export const qinToWorld = (x: number, z: number): [number, number] => [QIN_OFFSET[0] - x, QIN_OFFSET[1] - z];
+export const worldToQin = (x: number, z: number): [number, number] => [QIN_OFFSET[0] - x, QIN_OFFSET[1] - z];
 
 /** Crest polylines [x, crestHeight, z]. Heights fall away as broad Gaussian flanks. */
 export const QIN_RIDGES: readonly { id: string; points: QinPoint[] }[] = [

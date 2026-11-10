@@ -13,16 +13,16 @@ import {gatePoint} from './kingdomGate';
 export interface AdventureAction {id:string;region:RegionId;label:Localized;p:AdventurePoint;seconds?:number;flag?:string;hint?:Localized;}
 export const ADVENTURE_ACTIONS:readonly AdventureAction[]=[
  ...(['britain','blacksail','winter','kyoto'] as const).map((region,i):AdventureAction=>({id:`adventure_home_${region}`,region:'alpha',label:[['归人工匠补给台','海港运补台','暖路药箱','京都归人茶席'][i],['Returner workshop','Harbor supply desk','Warmroad medicine chest','Kyoto travelers’ tea'][i]],p:[-94+i*3,10,237]})),
- {id:'adventure_harbor_rigging',region:'blacksail',label:['侧舷索具绞盘','Side rigging winch'],p:[1009,10.5,-4],seconds:3,flag:A.harborSide},
+ {id:'adventure_harbor_rigging',region:'blacksail',label:['侧舷索具绞盘','Side rigging winch'],p:[1009,10.5,-724],seconds:3,flag:A.harborSide},
  {id:'adventure_harbor_records',region:'blacksail',label:['真实航路记录','True voyage record'],p:flagshipPoint(10,.7,3.4),seconds:2,flag:A.records},
- {id:'adventure_harbor_exit',region:'blacksail',label:['灯塔离舰检查点','Lighthouse disembarkation'],p:[1005,10.5,-4],flag:A.exited},
- {id:'adventure_harbor_depart',region:'blacksail',label:['暖灯出港信号','Warm-light departure signal'],p:[599,3.4,137],flag:A.sailing},
+ {id:'adventure_harbor_exit',region:'blacksail',label:['灯塔离舰检查点','Lighthouse disembarkation'],p:[1005,10.5,-724],flag:A.exited},
+ {id:'adventure_harbor_depart',region:'blacksail',label:['暖灯出港信号','Warm-light departure signal'],p:[599,3.4,-583],flag:A.sailing},
  {id:'adventure_winter_latch',region:'winter',label:['拒马侧闩 · 或射断两支架','Roadblock latch · or shoot both braces'],p:[34,5,-680],seconds:3,flag:A.road},
  {id:'adventure_winter_support',region:'winter',label:['宽街突破信号 · 当地骑兵支援','Wide-road breach signal · Local cavalry'],p:[40,5,-687]},
  {id:'adventure_winter_convoy',region:'winter',label:['药车启程信号','Medicine convoy departure'],p:[40,5,-650],flag:A.convoy},
  {id:'adventure_winter_arrival',region:'winter',label:['渡口药车验收','Receive the medicine cart'],p:[36,5,-458],flag:A.arrived},
- {id:'adventure_kyoto_water',region:'kyoto',label:['水门检修栈道锁','Water-gate maintenance walkway latch'],p:[-43,4,740],seconds:2,flag:A.water},
- {id:'adventure_kyoto_evidence',region:'kyoto',label:['焦黑的命令板','Charred command record'],p:[-80,4.6,774],seconds:2,flag:A.evidence},
+ {id:'adventure_kyoto_water',region:'kyoto',label:['水门检修栈道锁','Water-gate maintenance walkway latch'],p:[763,4,-1460],seconds:2,flag:A.water},
+ {id:'adventure_kyoto_evidence',region:'kyoto',label:['焦黑的命令板','Charred command record'],p:[800,4.6,-1494],seconds:2,flag:A.evidence},
  ...([-1,1,0] as const).map((side,i):AdventureAction=>({id:A.emitters[i],region:'alpha',label:[`复制发射器 ${i+1}`,`Copying emitter ${i+1}`],p:[side*25,5,i===2?-110:-140],seconds:3,flag:A.emitters[i]})),
  {id:'adventure_guardian',region:'alpha',label:['塔前讯号源 · 守门者','Tower signal source · Warden'],p:[0,5,-105]},
  {id:'adventure_tower',region:'alpha',label:['塔顶手动接管台','Tower manual override'],p:[2,30.5,-150.5],seconds:3,flag:A.takeover},
@@ -33,9 +33,9 @@ export const ADVENTURE_ACTIONS:readonly AdventureAction[]=[
 export const ADVENTURE_LEISURE:readonly {region:RegionId;p:AdventurePoint;line:Localized}[]=[
  {region:'alpha',p:[-72,10,240],line:['修理工：“三声都响了。这次就算一次合格的噪声测试。”','Mechanic: “Three good rings. That counts as a successful noise test.”']},
  {region:'britain',p:[-544,5,-188],line:['营地骑士：“枪比礼节快。可别忘了等同伴准备好。”','Camp knight: “The gun is quicker than ceremony. Remember to wait for your companion.”']},
- {region:'blacksail',p:[586,3.4,138],line:['酒馆老板：“三瓶全中。账记在木板上，酒可没打算送你。”','Innkeeper: “Three bottles. The score is on the board; the drinks still cost money.”']},
+ {region:'blacksail',p:[586,3.4,-582],line:['酒馆老板：“三瓶全中。账记在木板上，酒可没打算送你。”','Innkeeper: “Three bottles. The score is on the board; the drinks still cost money.”']},
  {region:'winter',p:[-157,6,-582],line:['军需官：“比起向雪开枪，这至少能知道器材有没有冻住。”','Quartermaster: “Better than shooting snow. At least we know the equipment has not frozen.”']},
- {region:'kyoto',p:[164,5.2,643],line:['武藏：“三发都中。下回试试先让风走过去。”','Musashi: “Three hits. Next time, let the wind pass first.”']},
+ {region:'kyoto',p:[556,5.2,-1363],line:['武藏：“三发都中。下回试试先让风走过去。”','Musashi: “Three hits. Next time, let the wind pass first.”']},
 ];
 export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>number|null){
  const root=new THREE.Group(),art=new SiteArt(),markers:Marker[]=[],actions=new Map<string,AdventureAction>(),targets:THREE.Mesh[]=[],colliders:Collider[]=[];
@@ -76,7 +76,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   }a.finish(name==='kyoto'?'kyoto':'britain');root.add(a.root);
   const bvs=a.solids.map((g,i)=>({name:`COL_AdventureRamp_${name}_${i}`,bvh:new MeshBVH(g),enabled:false}));colliders.push(...bvs);return{art:a,colliders:bvs};
  }
- const kyotoRamp=ramp('kyoto',[[-43,4.45,740],[-53,8.8,740],[-59,8.8,740],[-77,4.7,740]],3);
+ const kyotoRamp=ramp('kyoto',[[763,4.45,-1460],[773,8.8,-1460],[779,8.8,-1460],[797,4.7,-1460]],3);
  const abbeyStart=gatePoint(-24,26),abbeyEnd=gatePoint(-24,-34);abbeyStart[1]=(floor(abbeyStart[0],abbeyStart[2])??34)+.05;abbeyEnd[1]=(floor(abbeyEnd[0],abbeyEnd[2])??34)+.05;
  const abbeyRoute=[abbeyStart,gatePoint(-24,0,8.8),gatePoint(-24,-12,8.8),abbeyEnd];
  const abbeyRamp=ramp('abbey',abbeyRoute,3.5);

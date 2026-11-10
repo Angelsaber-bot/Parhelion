@@ -10,8 +10,8 @@ import { boundaryWalls, REGIONS, regionAt } from '../src/map/regions.ts';
 import { FLEET, WRECKS, UPDRAFTS, LIGHTHOUSE, CANNON, GHOST_BOATS, SANDBAR, REEF, WRECK_SPIT } from '../tools/gen/blacksail/layout.ts';
 import type { Layout } from '../src/core/types.ts';
 
-// World 02 黑帆尽头: reached on foot from 幻日谷 through the east pass (once the summoning circle is
-// stable), and every quest stop can be walked, glided or bridged to. Coordinates are world coordinates.
+// World 02 黑帆尽头: since the 2026-11-10 relayout its west pass opens onto 永冬's eastern shoulder;
+// every quest stop can be walked, glided or bridged to. Coordinates are world coordinates.
 const loadRegion = async (file: string, offset: [number, number]) => {
   const buf = readFileSync(new URL(`../public/assets/${file}.glb`, import.meta.url));
   const gltf = await regionLoader().parseAsync(buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength), '');
@@ -21,7 +21,7 @@ const loadRegion = async (file: string, offset: [number, number]) => {
   return gltf.scene;
 };
 const def = (id: string) => REGIONS.find(r => r.id === id)!;
-const roots = [await loadRegion('world_alpha', def('alpha').offset), await loadRegion('world_blacksail', def('blacksail').offset)];
+const roots = [await loadRegion('world_alpha', def('alpha').offset), await loadRegion('world_winter', def('winter').offset), await loadRegion('world_blacksail', def('blacksail').offset)];
 const geos: THREE.BufferGeometry[] = [boundaryWalls()];
 const dynamic = new Map<string, MeshBVH>();
 for (const r of roots) r.getObjectByName('COLLISION')!.traverse(o => {
@@ -85,9 +85,9 @@ test('blacksail: the east pass gate holds until the summoning circle is stable',
   assert.ok(p.pos.x < 343, `blocked at the pass (${where(p)})`);
 });
 
-test('blacksail: walk from the valley through the pass trail down to Nassau', () => {
-  const route: [number, number][] = [[330, 30], [360, 30], ...layout.paths[0].map(([x, z]) => W(x, z))];
-  const { p, k } = walk([300, 30], route);
+test('blacksail: walk from 永冬 over the eastern shoulder, through the pass trail down to Nassau', () => {
+  const route: [number, number][] = [[350, -600], [352, -650], [345, -690], [360, -690], ...layout.paths[0].map(([x, z]) => W(x, z))];
+  const { p, k } = walk([350, -540], route);
   assert.equal(k, route.length, `stuck at ${where(p)} heading for ${route[k]}`);
   assert.equal(regionAt(p.pos.x, p.pos.z).id, 'blacksail');
   assert.ok(!p.swimming, 'stayed dry');

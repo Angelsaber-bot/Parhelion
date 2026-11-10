@@ -43,17 +43,17 @@ for(const model of models) for(const suffix of ['', '_lod1']) test(`${model}${su
 
 test('enemy appearance is deterministic by authored home and bosses use regional champions',()=>{
   const mk=(x:number,z:number)=>({id:'sample',home:{x,y:0,z},kind:'shade' as const});
-  assert.ok(['samurai','ashigaru'].includes(enemyModel(mk(0,720))!));
+  assert.ok(['samurai','ashigaru'].includes(enemyModel(mk(720,-1440))!));
   assert.ok(['musketeer','officer'].includes(enemyModel(mk(0,-720))!));
-  assert.equal(enemyModel(mk(-720,0)),'sunward_guard');assert.equal(enemyModel(mk(720,0)),'deck_raider');
-  assert.equal(enemyModel({...mk(720,0),id:'boss_drowned_admiral',kind:'king'}),'deck_raider');
-  assert.equal(enemyModel({...mk(0,720),miniboss:'captain'}),'samurai');
+  assert.equal(enemyModel(mk(-720,0)),'sunward_guard');assert.equal(enemyModel(mk(720,-720)),'deck_raider');
+  assert.equal(enemyModel({...mk(720,-720),id:'boss_drowned_admiral',kind:'king'}),'deck_raider');
+  assert.equal(enemyModel({...mk(720,-1440),miniboss:'captain'}),'samurai');
 });
 
 test('real-GLB visual lifecycle stays capped, releases paused/dead instances, shares templates and disposes once',async()=>{
   const gltf=await asset('ashigaru'), low=await asset('ashigaru_lod1'), visuals=new EnemyVisuals();
   const internals=visuals as any;internals.cache.set('ashigaru',gltf);internals.cache.set('ashigaru_lod1',low);
-  const state=new WorldCombatState(Array.from({length:30},(_,i)=>({id:`test_${i}`,kind:'shade' as const,p:{x:0,y:0,z:720}})),[]);
+  const state=new WorldCombatState(Array.from({length:30},(_,i)=>({id:`test_${i}`,kind:'shade' as const,p:{x:720,y:0,z:-1440}})),[]);
   const parents=state.enemies.map(()=>new THREE.Group()),fallbacks=state.enemies.map(()=>new THREE.Group());
   state.enemies.forEach((e,i)=>{e.active=true;visuals.update(e,'ashigaru',parents[i],fallbacks[i],.05,5,true);});
   assert.equal(visuals.activeMixers,ENEMY_VISUAL_BUDGET);assert.equal(fallbacks[24].visible,true);
@@ -95,7 +95,7 @@ for(const model of models) test(`${model}: exact CPU skinned bounds stay grounde
 });
 
 test('asset failure is cached and late successful load after disposal releases template without resurrecting enemies',async()=>{
-  const enemy=new WorldCombatState([{id:'late',kind:'shade',p:{x:0,y:0,z:720}}],[]).enemies[0];enemy.active=true;
+  const enemy=new WorldCombatState([{id:'late',kind:'shade',p:{x:720,y:0,z:-1440}}],[]).enemies[0];enemy.active=true;
   const parent=new THREE.Group(),fallback=new THREE.Group();let calls=0;let success:Function=()=>{},failure:Function=()=>{};
   const visuals=new EnemyVisuals(),internals=visuals as any;
   internals.loader.load=(_url:string,onLoad:Function,_progress:unknown,onError:Function)=>{calls++;success=onLoad;failure=onError;};
@@ -110,7 +110,7 @@ test('asset failure is cached and late successful load after disposal releases t
 });
 
 test('explicit roles choose matching native weapon kits without changing regional elite identities', () => {
-  const e = { id: 'role-check', kind: 'shade' as const, home: { x: 0, y: 0, z: 720 } };
+  const e = { id: 'role-check', kind: 'shade' as const, home: { x: 720, y: 0, z: -1440 } };
   assert.equal(enemyModel({ ...e, role: 'lancer' }), 'ashigaru', 'actual Yari spear belongs to thrust role');
   assert.equal(enemyModel({ ...e, role: 'duelist' }), 'samurai', 'paired blade attacks use actual Samurai weapon');
   assert.equal(enemyModel({ ...e, role: 'breaker' }), 'samurai');

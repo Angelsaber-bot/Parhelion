@@ -13,8 +13,8 @@ const hold = (down: boolean) => d.body.dispatchEvent(new h.window.KeyboardEvent(
 const cases: [string, [number, number], [number, number]][] = [
   ['alpha-exit', [-45,-98.8], [-52,-85]],
   ['alpha-peek', [-52,-91], [-53.5,-91]],
-  ['harbor-exit', [794,27.2], [786,28]],
-  ['harbor-peek', [786,35], [786,32]],
+  ['harbor-exit', [794,-692.8], [786,-692]],
+  ['harbor-peek', [786,-685], [786,-688]],
   ['winter-exit', [64.1,-631.6], [60,-626]],
   ['winter-peek', [60,-625], [60,-628.5]],
 ];

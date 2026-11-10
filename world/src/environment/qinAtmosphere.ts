@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { QIN_OFFSET } from '../map/qinPlan';
+import { QIN_FRAME } from '../map/qinPlan';
 
 /**
  * Qin's living air: furnace sparks, kiln and incense smoke, dust turning in the
@@ -8,7 +8,6 @@ import { QIN_OFFSET } from '../map/qinPlan';
  */
 export type Mode = 'rise' | 'smoke' | 'drift' | 'haze';
 export interface Emitter { id: string; mode: Mode; at: [number, number, number]; count: number; spread: [number, number, number]; color: string; size: number; height: number; speed: number; range: number; opacity: number }
-const [OX, OZ] = QIN_OFFSET;
 export const QIN_EMITTERS: readonly Emitter[] = [
   ...([[124, -84], [142, -84], [146, -106]] as const).map(([x, z], i) => ({ id: `foundry-sparks-${i}`, mode: 'rise' as const, at: [x, 51.8, z] as [number, number, number], count: 70, spread: [1.6, .2, 1.6] as [number, number, number], color: '#ffb35a', size: .16, height: 4.2, speed: .45, range: 90, opacity: 1 })),
   { id: 'shed-sparks', mode: 'rise', at: [-131.1, 25.1, 123.3], count: 40, spread: [.7, .1, .7], color: '#ffb35a', size: .14, height: 2.6, speed: .55, range: 80, opacity: 1 },
@@ -60,16 +59,17 @@ const fragment = /* glsl */`
   }`;
 
 /** Any region can pass its own emitters and offset; Qin's are the default. */
-export function createQinAtmosphere(emitters: readonly Emitter[] = QIN_EMITTERS, offset: readonly [number, number] = [OX, OZ], name = 'QinAtmosphere') {
-  const [OX2, OZ2] = offset;
+export function createQinAtmosphere(emitters: readonly Emitter[] = QIN_EMITTERS, frame: { offset: readonly [number, number]; rotated?: boolean } = QIN_FRAME, name = 'QinAtmosphere') {
+  // Emitters are authored in the region's own frame (a half turn flips x and z).
+  const s = frame.rotated ? -1 : 1, [OX2, OZ2] = frame.offset;
   const root = new THREE.Group(); root.name = name;
   const systems: { points: THREE.Points; material: THREE.ShaderMaterial; centre: THREE.Vector3; range: number }[] = [];
   let rand = 90215; const rnd = () => ((rand = (rand * 16807) % 2147483647) / 2147483647);
   for (const e of emitters) {
     const geo = new THREE.BufferGeometry(), pos = new Float32Array(e.count * 3), seed = new Float32Array(e.count * 4);
-    for (let i = 0; i < e.count; i++) { pos.set([e.at[0] + OX2, e.at[1], e.at[2] + OZ2], i * 3); seed.set([rnd(), rnd(), rnd(), rnd()], i * 4); }
+    for (let i = 0; i < e.count; i++) { pos.set([OX2 + s * e.at[0], e.at[1], OZ2 + s * e.at[2]], i * 3); seed.set([rnd(), rnd(), rnd(), rnd()], i * 4); }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('seed', new THREE.BufferAttribute(seed, 4));
-    const r = Math.max(...e.spread) + e.height + 4; geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(e.at[0] + OX2, e.at[1] + e.height / 2, e.at[2] + OZ2), r);
+    const r = Math.max(...e.spread) + e.height + 4; geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(OX2 + s * e.at[0], e.at[1] + e.height / 2, OZ2 + s * e.at[2]), r);
     const smoke = e.mode === 'smoke', mode = { rise: 0, smoke: 1, drift: 2, haze: 3 }[e.mode];
     const material = new THREE.ShaderMaterial({
       name: `${name}_${e.id}`, vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false,

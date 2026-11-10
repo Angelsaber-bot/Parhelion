@@ -11,7 +11,7 @@ const expansionsOnly=process.argv.includes('--expansions');
 const selected=process.argv.find(arg=>arg.startsWith('--region='))?.slice(9);
 if(selected&&!REGIONS.some(r=>r.id===selected))throw new Error(`Unknown region: ${selected}`);
 const manifest:Record<string,{core:number;visual:number;source:number}>=(expansionsOnly||selected)?JSON.parse(readFileSync(manifestUrl,'utf8')):{};
-for(const def of REGIONS.filter(def=>(!selected||def.id===selected)&&(!expansionsOnly||['orleans','egypt','qin'].includes(def.id)))){
+for(const def of REGIONS.filter(def=>(!selected||def.id===selected)&&(!expansionsOnly||['orleans','egypt','qin','home'].includes(def.id)))){
  const source=readFileSync(new URL(`../public/assets/${def.file}.glb`,import.meta.url));
  const gltf=await regionLoader().parseAsync(source.buffer.slice(source.byteOffset,source.byteOffset+source.byteLength),'');bakeQuantized(gltf.scene);
  if(def.id==='blacksail')gltf.scene.traverse(o=>{const m=o as THREE.Mesh;if(!m.isMesh||m.name==='Terrain'||m.name==='COL_Terrain')return;const cut=carveFlagshipDeck(m.geometry);if(cut){m.geometry.dispose();m.geometry=cut;}});

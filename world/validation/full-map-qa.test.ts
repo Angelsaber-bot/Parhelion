@@ -68,14 +68,15 @@ test('36 historical full-map projection cases and 36 published-minimap draw stre
     }
   } finally { setLanguage(language); }
 });
-const project = ([x, z]: readonly [number, number]) => ({ x: (x + 1080) / 2160 * 1200, y: (z + 1080) / 2160 * 1200 });
-test('eight localized readable headings, bounded existing symbols, nonoverlapping labels on small and retina canvases', () => {
+// The continent now spans z −1800…360 (the journey grows north from 幻日谷).
+const project = ([x, z]: readonly [number, number]) => ({ x: (x + 1080) / 2160 * 1200, y: (z + 1800) / 2160 * 1200 });
+test('nine localized readable headings, bounded existing symbols, nonoverlapping labels on small and retina canvases', () => {
   const language = getLanguage();
   try {
     for (const lang of ['zh', 'en'] as const) for (const width of [320, 480, 720, 1200]) {
       setLanguage(lang);
       const result = fullMapPresentation(layout, project, 1200, width, project([3, 159]), project([-118, 222]), new Set(), measure);
-      assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 8, `${lang} at ${width}px`);
+      assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 9, `${lang} at ${width}px`);
       assert.ok(result.landmarks.length <= 12);
       const boxes = [...new Set(result.labels.map(l => l.box))];
       for (const a of boxes) for (const b of boxes) if (a !== b) assert.ok(a[0] >= b[2] || a[2] <= b[0] || a[1] >= b[3] || a[3] <= b[1]);
@@ -90,9 +91,9 @@ test('eight localized readable headings, bounded existing symbols, nonoverlappin
   } finally { setLanguage(language); }
 });
 test('region headings relocate inside their region when player and quest cover the usual anchor', () => {
-  for (const width of [320, 640]) for (const player of [[0, -402], [3, 159]] as const) {
+  for (const width of [400, -1360]) for (const player of [[0, -402], [3, 159]] as const) {
     const result = fullMapPresentation(layout, project, 1200, width, project(player), project([0, -150.5]), new Set(), measure);
-    assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 8);
+    assert.equal(new Set(result.labels.filter(l => l.region).map(l => l.box)).size, 9);
   }
 });
 test('chapter symbols reflect existing summon unlock, and presentation cannot mutate progress', () => {
@@ -106,7 +107,7 @@ test('chapter symbols reflect existing summon unlock, and presentation cannot mu
 test('active quest survives clustering, switching, clearing, arrival and out-of-world positions', t => {
   t.mock.method(performance, 'now', () => 123);
   const map = instance(WorldMap, { size: 1081, half: 1080 });
-  for (const target of [[-112, 246], [360, 30], [3, 159], [1032, 0], [10000, -10000], null] as Array<[number, number] | null>) {
+  for (const target of [[-112, 246], [360, 30], [3, 159], [1032, -720], [10000, -10000], null] as Array<[number, number] | null>) {
     const drawn = recorder(1200, 320);
     map.draw(drawn.ctx, new THREE.Vector3(3, 0, 159), 0, { full: true, done: new Set(), found: new Set(), target });
     assert.equal(drawn.commands.filter(c => c[0] === 'set' && c[1] === 'fillStyle' && c[2] === '#ffd76a').length, target ? 1 : 0);
@@ -117,7 +118,7 @@ test('active quest survives clustering, switching, clearing, arrival and out-of-
       assert.ok(result.landmarks.every(l => Math.hypot(l.x - p.x, l.y - p.y) > 23 * 3.75));
     }
   }
-  for (const position of [[300, 300], [1032, 0]] as const) assert.deepEqual(projectFullMapTarget(project(position), 1200, 3.75), project(position));
+  for (const position of [[300, 300], [1032, -720]] as const) assert.deepEqual(projectFullMapTarget(project(position), 1200, 3.75), project(position));
 });
 test('full-map overlay covers help/HUD without modifying controls or their visibility state', () => {
   const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');

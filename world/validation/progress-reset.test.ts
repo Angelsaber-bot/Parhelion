@@ -53,7 +53,7 @@ test('clean startup is unarmed at authored Alpha spawn; no gameplay method write
 
 test('current save is authoritative, reset survives reload without old quests/equipment/contracts reappearing', () => {
   const storage = new MemoryStorage();
-  storage.setItem(WORLD_PROGRESS_KEY, JSON.stringify({ done: [ARMORY_MARKER, 'saber_contract', 'sun_core'], found: ['secret_cave'], equippedWeapon: 'dawn_ar', selectedWeapon: 'dawn_ar', position: [900, 4, 30] }));
+  storage.setItem(WORLD_PROGRESS_KEY, JSON.stringify({ done: [ARMORY_MARKER, 'saber_contract', 'sun_core'], found: ['secret_cave'], equippedWeapon: 'dawn_ar', selectedWeapon: 'dawn_ar', position: [900, 4, -690] }));
   for (const key of LEGACY_WORLD_PROGRESS_KEYS) storage.setItem(key, snapshot([ARMORY_MARKER, 'relay_a', 'tower_console'], ['old_secret']));
   storage.setItem(CONTRACT_STORAGE_KEY, JSON.stringify({ version: 1, servant: 'saber', summoned: true }));
   const progress = new WorldProgress(storage), contract = new FirstContract(progress.done, storage);
@@ -132,7 +132,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   const elements = new Map<string, any>();
   const $ = (id: string) => { if (!elements.has(id)) elements.set(id, { textContent: 'stale', classList: { remove() {} } }); return elements.get(id); };
   // No active cinematic in this reset fixture; exercise all pre-existing dirty gameplay state.
-  const c = vm.createContext({...campaignSourceContext,abortUltimate() {}, deferredCombatToast: null, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [30, 8, 930] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
+  const c = vm.createContext({...campaignSourceContext,abortUltimate() {}, deferredCombatToast: null, narrative:undefined,...campaignClosure,audio:new WorldAudio({listen:false}),travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined, FORT_CANNON, fortCannon: new FortCannon(), actions: undefined, hudRevision: 0, Player, THREE, URL, clearStartOverrides, colliders: [], layout: alpha, markers: new Map([...markers, ['kyoto_spawn_p1', { ...marker, p: [690, 8, -1650] }]]), INITIAL_SPAWN_ID, startRegion: 'kyoto', params: new URLSearchParams(),
     worldProgress, contract, combat: { reset: () => combatState.resetAll(false) }, rig, anim,
     prevPos: new THREE.Vector3(900, 30, 30), inspectServant: true, thirdPerson: false,
     servant: { update(dt: number, p: THREE.Vector3, yaw: number, enabled: boolean, paused: boolean) { servantCanceled = dt === 0 && !enabled && paused; } },
@@ -143,7 +143,7 @@ test('production reset clears dirty gameplay immediately, resets URL start overr
   });
   run(c, startup + reset + '\nglobalThis.runtime = { player, resetProgress, spawnAt, get spawn(){return spawn} };');
   const p: Player = c.runtime.player;
-  assert.deepEqual(p.pos.toArray(), [30, 9, 930], 'fresh intentional chapter debug start still works');
+  assert.deepEqual(p.pos.toArray(), [690, 9, -1650], 'fresh intentional chapter debug start still works');
   c.params = params;
   p.flying = true; p.pitch = 1.2; p.yaw = 2.4; p.pos.set(40, 50, -800); p.vel.set(3, -7, 5);
   p.gliding = true; p.inUpdraft = true; p.swimming = true; (p as any).jumpHeld = true;

@@ -12,7 +12,7 @@ import {buildBritainTerrain} from './gen/britain/terrain';
 import {buildBlacksailTerrain} from './gen/blacksail/terrain';
 import {buildWinterTerrain} from './gen/winter/terrain';
 import {buildKyotoTerrain} from './gen/kyoto/terrain';
-import {blendContinentalColors,appendSouthwest} from './gen/continent';
+import {blendContinentalColors} from './gen/continent';
 import {compress} from './gen/export';
 import {regionLoader,bakeQuantized} from '../src/rendering/glb';
 import {WorldGrid} from '../src/map/grid';
@@ -60,7 +60,6 @@ for(const [id,build] of Object.entries(builders).filter(([id])=>!selected||selec
     if(Math.abs(y-positions.getY(i))>.02)positions.setY(i,y);
   }
   loaded.scene.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of [o.material].flat())m.dispose();}});
-  if(id==='britain')appendSouthwest(terrain);
   const patchScene=new THREE.Scene();
   for(const [name,geometry] of [['Terrain',terrain.vis]] as const){
     const mesh=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({name:'M_Terrain',vertexColors:name==='Terrain'}));mesh.name=name;patchScene.add(mesh);

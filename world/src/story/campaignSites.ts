@@ -75,6 +75,12 @@ export class SiteArt {
     for(let i=0;i<4;i++)this.box([x,1.77-i*.18,z+.095],[.95-(i%2)*.2,.025,.015],accent);
     for(const sx of[-.57,.57])this.cyl([x+sx,1.8,z+.105],.035,.03,'#a68c5e',false,'metal',[Math.PI/2,0,0]);
   }
+  /** Move art authored in a region's pre-relayout world frame (render and colliders together). */
+  relocate(matrix: THREE.Matrix4) {
+    this.root.applyMatrix4(matrix);this.root.updateMatrixWorld(true);
+    for(const g of this.solids)g.applyMatrix4(matrix);
+    return this;
+  }
   finish(region: RegionId) {
     this.root.name = `CampaignSite_${region}`;
     for(const [layer,parts] of this.bins){

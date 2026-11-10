@@ -19,6 +19,7 @@ export interface RegionLife {
 }
 export const REGION_LIFE: Readonly<Record<RegionId, RegionLife>> = Object.freeze({
   orleans:{butterflies:5,butterflyColors:[0xe5d9a4,0xffffff],birds:7,birdColor:0x34333c,perched:.5,overWater:false,fireflies:4},
+  home:{butterflies:7,butterflyColors:[0xf3e6a8,0xffffff,0xf2b98c],birds:9,birdColor:0x3b3c44,perched:.55,overWater:true,fireflies:6},
   egypt:{butterflies:2,butterflyColors:[0xe6c576],birds:4,birdColor:0x57442c,perched:.2,overWater:false,fireflies:0},
   qin:{butterflies:6,butterflyColors:[0xd4dcb5,0xe5c77d],birds:5,birdColor:0x333a36,perched:.5,overWater:false,fireflies:8},
   alpha: { butterflies: 12, butterflyColors: [0x8fd3ff, 0xffe27a, 0xffffff], birds: 6, birdColor: 0x2a3550, perched: .3, overWater: false, fireflies: 14 },

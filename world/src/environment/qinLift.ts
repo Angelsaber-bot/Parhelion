@@ -3,7 +3,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
-import { QIN_LIFT, QIN_OFFSET } from '../map/qinPlan';
+import { QIN_LIFT, qinToWorld } from '../map/qinPlan';
 
 export const QIN_LIFT_LABEL: readonly [string, string] = ['升降机关 · 起落竖井', 'Lift · raise or lower the shaft cage'];
 export const QIN_LIFT_MARKERS = [QIN_LIFT.markers.top, QIN_LIFT.markers.bottom];
@@ -14,7 +14,8 @@ export const QIN_LIFT_MARKERS = [QIN_LIFT.markers.top, QIN_LIFT.markers.bottom];
  * player standing on it is carried. A bar closes the shaft mouth whenever the cage is away.
  */
 export function createQinLift(convert: (m: THREE.Material) => THREE.Material = m => m) {
-  const [ox, oz] = QIN_OFFSET, X = QIN_LIFT.x + ox, Z = QIN_LIFT.z + oz, H = QIN_LIFT.half - .15;
+  // Qin stands turned half a circle: the authored north (boarding) side faces world south (+z).
+  const [X, Z] = qinToWorld(QIN_LIFT.x, QIN_LIFT.z), N = 1, H = QIN_LIFT.half - .15;
   const root = new THREE.Group(); root.name = 'QinLift';
   const material = convert(new THREE.MeshStandardMaterial({ name: 'M_QinCraft', vertexColors: true, roughness: .8 }));
   const parts: THREE.BufferGeometry[] = [];
@@ -44,7 +45,7 @@ export function createQinLift(convert: (m: THREE.Material) => THREE.Material = m
   wheelParts.push(...parts); const wheelGeo = mergeGeometries(wheelParts)!; wheelParts.forEach(p => p.dispose()); wheelGeo.computeVertexNormals();
   const wheel = new THREE.Mesh(wheelGeo, material); wheel.name = 'QinLiftSheave'; wheel.position.set(X, QIN_LIFT.top + 9.9, Z); root.add(wheel);
   // the shaft-mouth bar on the boarding (north) side
-  const barGeo = new THREE.BoxGeometry(QIN_LIFT.half * 2 + .4, 1.1, .2); barGeo.translate(X, QIN_LIFT.top + .55, Z - QIN_LIFT.half - .15);
+  const barGeo = new THREE.BoxGeometry(QIN_LIFT.half * 2 + .4, 1.1, .2); barGeo.translate(X, QIN_LIFT.top + .55, Z + N * (QIN_LIFT.half + .15));
   const bar = new THREE.Mesh(barGeo, material); bar.name = 'QinLiftBar';
   { const c = new Float32Array(barGeo.attributes.position.count * 3).fill(.55); barGeo.setAttribute('color', new THREE.BufferAttribute(c, 3)); }
   root.add(bar);
@@ -55,8 +56,8 @@ export function createQinLift(convert: (m: THREE.Material) => THREE.Material = m
   const floorCollider: Collider = { name: 'COL_QinLiftCage', bvh: floorBvh, enabled: true };
   const barCollider: Collider = { name: 'COL_QinLiftBar', bvh: new MeshBVH(barGeo.clone()), enabled: false };
   const markers: Marker[] = [
-    { id: QIN_LIFT.markers.top, type: 'interact', label: QIN_LIFT_LABEL[0], p: [X, QIN_LIFT.top + 1.2, Z - QIN_LIFT.half - .6], radius: 3.4 },
-    { id: QIN_LIFT.markers.bottom, type: 'interact', label: QIN_LIFT_LABEL[0], p: [X, QIN_LIFT.bottom + 1.2, Z + QIN_LIFT.half + .4], radius: 3.4 },
+    { id: QIN_LIFT.markers.top, type: 'interact', label: QIN_LIFT_LABEL[0], p: [X, QIN_LIFT.top + 1.2, Z + N * (QIN_LIFT.half + .6)], radius: 3.4 },
+    { id: QIN_LIFT.markers.bottom, type: 'interact', label: QIN_LIFT_LABEL[0], p: [X, QIN_LIFT.bottom + 1.2, Z - N * (QIN_LIFT.half + .4)], radius: 3.4 },
   ];
   let y: number = QIN_LIFT.top, target: number = QIN_LIFT.top, disposed = false;
   const setY = (value: number) => {

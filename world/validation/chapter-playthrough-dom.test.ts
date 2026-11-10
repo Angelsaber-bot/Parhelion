@@ -71,7 +71,7 @@ test('NON-GPU four chapters: fresh save, resident, mandatory route, victory, ret
           position([FORT_CANNON.station.x, FORT_CANNON.station.y, FORT_CANNON.station.z]);
           shootAt(id, true); frame(90); w.combat.state.hp = 100;
         } else if (id.startsWith('kikyo_banner_')) {
-          position([-224, 11.56, 840]); frame(2); w.player.onGround = true;
+          position([944, 11.56, -1560]); frame(2); w.player.onGround = true;
           shootAt(id, false); frame(15); w.combat.state.hp = 100;
         } else interact(id);
         closeDialogue(); assert.ok(w.done.has(id), `${id} actual interaction completed`);

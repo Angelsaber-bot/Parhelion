@@ -14,7 +14,7 @@ import { createQinArmyOrder, qinOrderPhase, qinTurnBlocked, toggleQinOrder, QIN_
 const [OX, OZ] = QIN_OFFSET;
 const bytes = readFileSync(new URL('../public/assets/world_qin.core.glb', import.meta.url));
 const { scene } = await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength), '');
-bakeQuantized(scene); scene.position.set(OX, 0, OZ); scene.updateMatrixWorld(true);
+bakeQuantized(scene); scene.position.set(OX, 0, OZ); scene.rotation.y = Math.PI; scene.updateMatrixWorld(true); // the region stands turned half a circle
 const geos: THREE.BufferGeometry[] = [];
 scene.getObjectByName('COLLISION')!.traverse(o => {
   const m = o as THREE.Mesh; if (!m.isMesh) return;
@@ -26,34 +26,34 @@ const staticCollider: Collider = { name: 'qin', bvh, enabled: true };
 const terrain = scene.getObjectByName('Terrain') as THREE.Mesh;
 const grid = new WorldGrid([terrain], OX - 360, OZ - 360, 720, 2);
 const layout = JSON.parse(readFileSync(new URL('../public/assets/world_qin.layout.json', import.meta.url), 'utf8'));
-const W = (x: number, y: number, z: number) => [x + OX, y, z + OZ] as const;
+const W = (x: number, y: number, z: number) => [OX - x, y, OZ - z] as const;
 
 /** Walk through local waypoints; returns false (instead of throwing) when blocked. */
 function walk(colliders: Collider[], start: readonly [number, number, number], path: readonly (readonly [number, number])[], tolerance = .6) {
   const p = new Player(colliders, 0), [sx, sy, sz] = W(...start);
   p.teleport(sx, sy + .5, sz); for (let i = 0; i < 90; i++) p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false });
   for (const [lx, lz] of path) {
-    const x = lx + OX, z = lz + OZ;
+    const x = OX - lx, z = OZ - lz;
     for (let i = 0; i < 6000 && Math.hypot(p.pos.x - x, p.pos.z - z) > tolerance; i++) {
       p.yaw = Math.atan2(-(x - p.pos.x), -(z - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
     }
-    if (Math.hypot(p.pos.x - x, p.pos.z - z) > tolerance) return { ok: false, at: p.pos.toArray().map((v, i) => +(v - (i === 0 ? OX : i === 2 ? OZ : 0)).toFixed(1)) };
+    if (Math.hypot(p.pos.x - x, p.pos.z - z) > tolerance) return { ok: false, at: p.pos.toArray().map((v, i) => +(i === 0 ? OX - v : i === 2 ? OZ - v : v).toFixed(1)) };
     assert.equal(p.swimming, false);
   }
-  return { ok: true, at: [p.pos.x - OX, p.pos.y, p.pos.z - OZ] };
+  return { ok: true, at: [OX - p.pos.x, p.pos.y, OZ - p.pos.z] };
 }
 
 test('every underground room and corridor stays inside Mount Li except its two portals', () => {
   for (const r of QIN_ROOMS) for (let x = r.x0; x <= r.x1; x += 4) for (let z = r.z0; z <= r.z1; z += 4) {
     if (r.id === 'army' && Math.abs(x - QIN_LIFT.x) < QIN_LIFT.half + 1 && Math.abs(z - QIN_LIFT.z) < QIN_LIFT.half + 1) continue; // the lift shaft opens the roof here
-    const ground = grid.sampleHeight(x + OX, z + OZ)!;
+    const ground = grid.sampleHeight(OX - x, OZ - z)!;
     assert.ok(ground > r.floor + r.height + 1.2, `${r.id} is covered by the mountain at ${x},${z}: ${ground.toFixed(1)}`);
     const roof = bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(...W(x, r.floor + 1.5, z)), new THREE.Vector3(0, 1, 0)), THREE.DoubleSide);
     assert.ok(roof && roof.point.y <= r.floor + r.height + .1, `${r.id} has its own ceiling at ${x},${z}`);
   }
   for (const c of QIN_CORRIDORS.filter(c => !c.portal)) for (let t = 0; t <= 1; t += .1) {
     const x = c.a[0] + (c.b[0] - c.a[0]) * t, z = c.a[2] + (c.b[2] - c.a[2]) * t, y = c.a[1] + (c.b[1] - c.a[1]) * t;
-    assert.ok(grid.sampleHeight(x + OX, z + OZ)! > y + c.height + 1.2, `${c.id} is buried at ${x},${z}`);
+    assert.ok(grid.sampleHeight(OX - x, OZ - z)! > y + c.height + 1.2, `${c.id} is buried at ${x},${z}`);
   }
   assert.equal(QIN_CORRIDORS.filter(c => c.portal).length, 2, 'palace incline and quarry maintenance tunnel are the daylight entrances');
   const portals = QIN_CORRIDORS.filter(c => c.portal).map(c => c.portal === 'a' ? c.a[1] : c.b[1]);
@@ -65,13 +65,13 @@ test('every underground room and corridor stays inside Mount Li except its two p
 
 test('surface: stream, terraces, pass gorge and palace platforms read in the terrain', () => {
   for (const [x, , z] of QIN_STREAM.slice(1, -1)) {
-    const bed = grid.sampleHeight(x + OX, z + OZ)!, bank = Math.max(grid.sampleHeight(x + OX + 7, z + OZ)!, grid.sampleHeight(x + OX, z + OZ + 7)!);
+    const bed = grid.sampleHeight(OX - x, OZ - z)!, bank = Math.max(grid.sampleHeight(OX - x - 7, OZ - z)!, grid.sampleHeight(OX - x, OZ - z - 7)!);
     assert.ok(bed > .5 && bank - bed > .8, `stream bed is cut but dry-land at ${x},${z}`);
   }
-  const steps = new Set<number>(); for (let z = 125; z < 175; z += 1) steps.add(Math.round(grid.sampleHeight(-60 + OX, z + OZ)! * 2) / 2);
+  const steps = new Set<number>(); for (let z = 125; z < 175; z += 1) steps.add(Math.round(grid.sampleHeight(OX - -60, OZ - z)! * 2) / 2);
   assert.ok(steps.size >= 6, 'terraced fields step down the southern hills');
-  const road = grid.sampleHeight(-70 + OX, 82 + OZ)!;
-  assert.ok(grid.sampleHeight(-70 + OX, 52 + OZ)! - road > 10 && grid.sampleHeight(-70 + OX, 108 + OZ)! - road > 10, 'the pass gate sits in a real gorge');
+  const road = grid.sampleHeight(OX - -70, OZ - 82)!;
+  assert.ok(grid.sampleHeight(OX - -70, OZ - 52)! - road > 10 && grid.sampleHeight(OX - -70, OZ - 108)! - road > 10, 'the pass gate sits in a real gorge');
   for (const [x, z, y] of [[40, 60, 58], [40, -30, 70], [90, -32, 82]] as const) {
     const hit = bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(...W(x, y + 1, z)), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide);
     assert.ok(hit && Math.abs(hit.point.y - y) < .3, `platform floor at ${x},${z}`);
@@ -111,7 +111,7 @@ test('army order: turning the command posts swaps which file of ranks is open an
   assert.equal(walk(colliders, west, crossWest).ok, true, 'phase A opens the west row');
   assert.equal(walk(colliders, [-17, 28, -130], [[-17, -170]]).ok, false, 'phase A keeps the shaft gate down');
   // Every lever stays usable: none lies in a turntable sweep, and each is reachable in both phases from its zone.
-  for (const l of QIN_ARMY.levers) assert.equal(qinTurnBlocked({ x: l.p[0] + OX, y: 28, z: l.p[2] + OZ }), false, `${l.id} is clear of turntables`);
+  for (const l of QIN_ARMY.levers) assert.equal(qinTurnBlocked({ x: OX - l.p[0], y: 28, z: OZ - l.p[2] }), false, `${l.id} is clear of turntables`);
   const approach = { east: [east, [[27, -118], [27, -148], [17.8, -150.2]]], west: [west, [[-51.8, -150.2]]], middle: [[-17, 28, -126], [[-17, -105.8]]] } as const;
   for (const phase of ['a', 'b'] as const) {
     if (qinOrderPhase(done) !== phase) toggleQinOrder(done); order.apply(done, true);
@@ -129,9 +129,9 @@ test('army order: turning the command posts swaps which file of ranks is open an
   const deep = walk(colliders, [-17, 28, -130], [[-17, -160], [-17, -188], [-10, -190], [31, -190], [38, -190]]);
   assert.ok(deep.ok && Math.abs(deep.at[1] - 10) < .6, `phase B opens the way to the buried royal city: ${deep.at}`);
   // A player standing on a turntable or under the gate prevents the turn.
-  assert.equal(qinTurnBlocked({ x: OX, y: 28, z: -122.5 + OZ }), true);
-  assert.equal(qinTurnBlocked({ x: -17 + OX, y: 28, z: -159 + OZ }), true);
-  assert.equal(qinTurnBlocked({ x: OX, y: 70, z: -122.5 + OZ }), false, 'the surface above is unaffected');
+  assert.equal(qinTurnBlocked({ x: OX, y: 28, z: OZ - -122.5 }), true);
+  assert.equal(qinTurnBlocked({ x: OX - -17, y: 28, z: OZ - -159 }), true);
+  assert.equal(qinTurnBlocked({ x: OX, y: 70, z: OZ - -122.5 }), false, 'the surface above is unaffected');
   assert.ok(QIN_RANK_SWEEP > QIN_ARMY.rankLength / 2);
   order.dispose();
 });
@@ -175,11 +175,11 @@ import { QIN_LIFT } from '../src/map/qinPlan';
 test('lift: ride from the ridge headframe down the shaft into the garrison avenue and back up', () => {
   const lift = createQinLift(), colliders = [staticCollider, ...lift.colliders];
   const p = new Player(colliders, 0), go = (x: number, z: number) => {
-    for (let i = 0; i < 4000 && Math.hypot(p.pos.x - x - OX, p.pos.z - z - OZ) > .4; i++) { p.yaw = Math.atan2(-(x + OX - p.pos.x), -(z + OZ - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); lift.update(1 / 120, p.pos); }
-    return Math.hypot(p.pos.x - x - OX, p.pos.z - z - OZ) <= .4;
+    for (let i = 0; i < 4000 && Math.hypot(p.pos.x - (OX - x), p.pos.z - (OZ - z)) > .4; i++) { p.yaw = Math.atan2(-(OX - x - p.pos.x), -(OZ - z - p.pos.z)); p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); lift.update(1 / 120, p.pos); }
+    return Math.hypot(p.pos.x - (OX - x), p.pos.z - (OZ - z)) <= .4;
   };
   const settle = (frames: number) => { for (let i = 0; i < frames; i++) { lift.update(1 / 120, p.pos); p.step(1 / 120, { x: 0, z: 0, jump: false, sprint: false }); } };
-  p.teleport(-17 + OX, 95.6, -141 + OZ); settle(90);
+  p.teleport(OX - -17, 95.6, OZ - -141); settle(90);
   assert.ok(go(-17, -135) && go(-17, -130), `walk from the ridge path onto the cage: ${p.pos.toArray()}`);
   assert.ok(Math.abs(p.pos.y - QIN_LIFT.top) < .4, 'the cage waits flush with the deck');
   assert.equal(lift.operate(), 'bottom');
@@ -187,8 +187,8 @@ test('lift: ride from the ridge headframe down the shaft into the garrison avenu
   assert.equal(lift.moving, false); assert.ok(Math.abs(p.pos.y - QIN_LIFT.bottom) < .4, `carried down to the garrison floor: ${p.pos.y}`); assert.equal(p.swimming, false);
   assert.ok(go(-17, -124), 'step off into the central avenue');
   // The shaft mouth is barred while the cage is below: nobody walks into the hole.
-  const q = new Player(colliders, 0); q.teleport(-17 + OX, QIN_LIFT.top + .6, -139 + OZ);
-  for (let i = 0; i < 600; i++) { q.yaw = Math.PI; q.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); }
+  const q = new Player(colliders, 0); q.teleport(OX - -17, QIN_LIFT.top + .6, OZ - -139);
+  for (let i = 0; i < 600; i++) { q.yaw = 0 /* authored south, turned half a circle */; q.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false }); }
   assert.ok(q.pos.y > QIN_LIFT.top - .5, `the bar holds at the mouth: ${q.pos.toArray()}`);
   assert.ok(go(-17, -130)); assert.equal(lift.operate(), 'top'); settle(120 * 30);
   assert.ok(Math.abs(p.pos.y - QIN_LIFT.top) < .4, `carried back up: ${p.pos.y}`);
@@ -200,22 +200,22 @@ import { createQinSentinels, qinSentinelFlag } from '../src/environment/qinSenti
 test('tomb guardians patrol, chase and evict an intruder, and are ground down when lured beside a turning rank', () => {
   const s = createQinSentinels(), done = new Set<string>(), east = s.guards.find(g => g.def.id === 'east')!;
   s.apply(done);
-  const far = { x: 200 + OX, y: 70, z: OZ }, start = [east.x, east.z];
+  const far = { x: OX - 200, y: 70, z: OZ }, start = [east.x, east.z];
   for (let i = 0; i < 300; i++) s.update(1 / 60, far, done);
   assert.ok(Math.hypot(east.x - start[0], east.z - start[1]) > 3, 'the guardian walks its beat');
   // Spotted in the open east zone: it gives chase and sends the intruder back to the entrance.
   east.x = 20; east.z = -130; east.yaw = -Math.PI / 2; east.mode = 'patrol';
-  let back: [number, number, number] | null = null; const intruder = { x: 14 + OX, y: 28, z: -130 + OZ };
+  let back: [number, number, number] | null = null; const intruder = { x: OX - 14, y: 28, z: OZ - -130 };
   for (let i = 0; i < 600 && !back; i++) back = s.update(1 / 60, intruder, done);
-  assert.ok(back && Math.abs(back[0] - (27 + OX)) < .01, 'caught and returned to the east entrance');
+  assert.ok(back && Math.abs(back[0] - (OX - 27)) < .01, 'caught and returned to the east entrance');
   // Lure: phase A seals the east file; the guardian presses against it chasing someone beyond.
   east.x = 6; east.z = -130; east.yaw = -Math.PI / 2; east.mode = 'patrol';
-  const beyond = { x: -2.5 + OX, y: 28, z: -130 + OZ };
+  const beyond = { x: OX - -2.5, y: 28, z: OZ - -130 };
   for (let i = 0; i < 400; i++) assert.equal(s.update(1 / 60, beyond, done), null, 'a closed file stops the chase');
   assert.ok(east.x >= 2.99 && east.x < 4, `pressed against the file at ${east.x}`);
   toggleQinOrder(done); const crushed = s.orderTurned(done);
   assert.deepEqual(crushed, ['east']); assert.ok(done.has(qinSentinelFlag('east')));
-  for (let i = 0; i < 200; i++) s.update(1 / 60, { x: east.x + OX, y: 28, z: east.z + OZ }, done);
+  for (let i = 0; i < 200; i++) s.update(1 / 60, { x: OX - east.x, y: 28, z: OZ - east.z }, done);
   assert.equal(east.mode, 'broken'); assert.equal(east.group.visible, false);
   s.dispose();
 });
