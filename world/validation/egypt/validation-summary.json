@@ -1,0 +1,108 @@
+{
+  "date": "2026-11-10",
+  "region": "egypt",
+  "round": "environment-pass-1",
+  "assets": {
+    "glbMB": 4.8,
+    "triangles": 541000
+  },
+  "browser": {
+    "mode": "headless chromium --mute-audio, swiftshader, q=low",
+    "shots": [
+      {
+        "id": "overview",
+        "file": "artifacts/overview.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "sphinx-avenue",
+        "file": "artifacts/sphinx-avenue.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "temple-pylon",
+        "file": "artifacts/temple-pylon.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "temple-lit",
+        "file": "artifacts/temple-lit.png",
+        "pageErrors": 0,
+        "sunLit": true
+      },
+      {
+        "id": "temple-hall",
+        "file": "artifacts/temple-hall.png",
+        "pageErrors": 0,
+        "sunLit": true
+      },
+      {
+        "id": "roof-shrine",
+        "file": "artifacts/roof-shrine.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "canyon-tombs",
+        "file": "artifacts/canyon-tombs.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "pyramid",
+        "file": "artifacts/pyramid.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "solar-trial",
+        "file": "artifacts/solar-trial.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "oasis-town",
+        "file": "artifacts/oasis-town.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "river-quay",
+        "file": "artifacts/river-quay.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "colossi",
+        "file": "artifacts/colossi.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "temple-court",
+        "file": "artifacts/temple-court.png",
+        "pageErrors": 0,
+        "sunLit": false
+      },
+      {
+        "id": "barque-tomb",
+        "file": "artifacts/barque-tomb.png",
+        "pageErrors": 0,
+        "sunLit": false
+      }
+    ]
+  },
+  "tests": {
+    "egypt-region.test.ts": "4/4",
+    "expansion-framework.test.ts": "pass (egypt: 6 routes both ways + access from Kyoto)",
+    "continent-continuity.test.ts": "14/14",
+    "fullSuite": {
+      "total": 2100,
+      "pass": 2100,
+      "note": "2099 in the full run; the one failure (consumed-source inventory) was fixed and re-run"
+    }
+  }
+}

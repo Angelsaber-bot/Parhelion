@@ -56,18 +56,26 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
     id:'egypt', name:'古埃及', nameEn:'Solar Egypt', offset:[720,720],
     outline:[[-295,-235],[-150,-310],[-30,-300],[30,-300],[170,-320],[295,-205],[325,-35],[270,95],[315,230],[140,325],[-20,285],[-190,325],[-320,170],[-300,30],[-388,30],[-388,-30],[-300,-30]],
     color:'#c6a168', stone:'#dcc18b', accent:'#49a8ae',
-    identity:'绿洲商队、砂岩峡谷、可攀巨像与神殿光路', servant:'奥兹曼迪亚斯',
+    identity:'绿洲与日河、砂岩台地与裂日峡谷、双巨像、太阳神殿与引光机关、台地下的太阳船墓', servant:'奥兹曼迪亚斯',
     sites:[
-      { id:'oasis', name:'商队绿洲', nameEn:'Caravan Oasis', position:[-165,14,110], radius:55, purpose:'hub' },
-      { id:'canyon', name:'裂日峡谷', nameEn:'Sunrift Canyon', position:[-110,14,-65], radius:46, purpose:'landmark' },
-      { id:'colossi', name:'双巨像庭院', nameEn:'Court of Colossi', position:[80,24,20], radius:65, purpose:'landmark' },
-      { id:'temple', name:'太阳神殿', nameEn:'Sun Temple', position:[80,30,-140], radius:62, purpose:'boss' },
-      { id:'trial', name:'引光试炼台', nameEn:'Solar Trial', position:[165,24,125], radius:34, purpose:'arena' },
+      { id:'oasis', name:'商队绿洲', nameEn:'Caravan Oasis', position:[-165,14,110], radius:30, purpose:'hub' },
+      { id:'quay', name:'日河码头', nameEn:'Sun River Quay', position:[-30,10,140], radius:10, purpose:'landmark' },
+      { id:'canyon', name:'裂日峡谷', nameEn:'Sunrift Canyon', position:[-92,19,-104], radius:10, purpose:'landmark' },
+      { id:'tombs', name:'峡谷崖墓', nameEn:'Canyon Rock Tombs', position:[-66,24,-126], radius:8, purpose:'landmark' },
+      { id:'colossi', name:'双巨像庭院', nameEn:'Court of Colossi', position:[80,24,20], radius:30, purpose:'landmark' },
+      { id:'temple', name:'太阳神殿', nameEn:'Sun Temple', position:[80,30,-112], radius:20, purpose:'boss' },
+      { id:'roofshrine', name:'屋顶太阳祭坛', nameEn:'Roof Sun Altar', position:[56,40,-150], radius:6, purpose:'landmark' },
+      { id:'barque', name:'太阳船墓室', nameEn:'Tomb of the Solar Barque', position:[72,14,-252], radius:12, purpose:'landmark' },
+      { id:'pyramid', name:'日之金字塔', nameEn:'Pyramid of the Sun', position:[156,37,-181], radius:10, purpose:'landmark' },
+      { id:'trial', name:'引光试炼台', nameEn:'Solar Trial', position:[160,18,112], radius:26, purpose:'arena' },
     ],
     routes:[
-      { id:'main', name:'绿洲与巨像大道', kind:'main', points:[[-165,14,110],[-30,14,75],[80,24,20],[80,30,-90],[80,30,-140]] },
-      { id:'flank', name:'峡谷侧径', kind:'flank', points:[[-165,14,110],[-160,14,0],[-110,14,-65],[-65,20,-160],[-35,30,-90],[80,30,-90],[80,30,-140]] },
-      { id:'high', name:'巨像肩部与神殿上层', kind:'high', points:[[80,24,20],[130,24,0],[130,44,-80],[130,44,-100],[80,44,-100]] },
+      { id:'main', name:'绿洲—码头—狮身像大道—神殿', kind:'main', points:[[-165,14,110],[-100,12.3,124],[-30,10,140],[0,13,110],[40,19,76],[74,24,48],[80,24,40],[80,24,20],[80,24,-40],[80,30,-78],[80,30,-112],[80,30,-128],[74,30,-140],[74,30,-162],[80,30,-170],[80,30,-182]] },
+      { id:'canyon', name:'裂日峡谷侧路', kind:'flank', points:[[-165,14,110],[-150,14,40],[-128,14.2,-38],[-112,16,-70],[-92,19,-104],[-66,24,-126],[-36,29.5,-128],[-6,33,-122],[20,31.5,-114],[34,30,-110],[44,30,-110],[50,30,-100]] },
+      { id:'roof', name:'神殿屋顶上层', kind:'high', points:[[80,30,-97],[52,30,-97],[52,30,-99],[52,40,-123],[46,40,-124],[46,40,-146],[52,40,-150]] },
+      { id:'causeway', name:'神殿东侧至金字塔堤道', kind:'flank', points:[[80,30,-82],[124,30,-82],[124,30,-150],[140,32.5,-166],[150,36,-176],[156,37,-181]] },
+      { id:'trialroad', name:'巨像庭院至试炼台', kind:'flank', points:[[80,24,20],[98,24,44],[106,21.5,62],[136,19,94],[160,18,112]] },
+      { id:'tomb', name:'圣所后门下至太阳船墓', kind:'underground', points:[[80,30,-182],[80,30,-192],[80,14,-236],[80,14,-244],[72,14,-252]] },
     ],
   },
   {
@@ -99,9 +107,11 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
   },
 ];
 
-/** No grass in desert sand or through Qin's rammed-earth palace platforms. X0,Z0,X1,Z1. */
+/** Grass already follows green ground, so desert sand needs no rectangle (a straight
+ * clearance edge would show across the Kyoto and Black Sail joins). Only Qin's
+ * rammed-earth palace platforms are cleared. X0,Z0,X1,Z1. */
 export const EXPANSION_GRASS_CLEARANCE:readonly (readonly [number,number,number,number])[]=[
-  [330,330,1055,1055],[722,-762,824,-642],
+  [722,-762,824,-642],
 ];
 /** World-space centre/radii of Orleans' worn paved courts; rounded ground stays rounded. */
 export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-832,20,12],[-800,-630,23,18]];

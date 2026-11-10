@@ -1,0 +1,226 @@
+[
+  {
+    "id": "overview",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 102,
+        "triangles": 623195,
+        "points": 640,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "sphinx-avenue",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 87,
+        "triangles": 408260,
+        "points": 1150,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "temple-pylon",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 120,
+        "triangles": 590218,
+        "points": 712,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "temple-lit",
+    "info": {
+      "lit": true,
+      "regions": 8,
+      "render": {
+        "frame": 137,
+        "calls": 151,
+        "triangles": 865244,
+        "points": 912,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "temple-hall",
+    "info": {
+      "lit": true,
+      "regions": 8,
+      "render": {
+        "frame": 167,
+        "calls": 131,
+        "triangles": 593580,
+        "points": 858,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "roof-shrine",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 90,
+        "triangles": 478591,
+        "points": 876,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "canyon-tombs",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 80,
+        "triangles": 389582,
+        "points": 640,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "pyramid",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 89,
+        "triangles": 452360,
+        "points": 800,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "solar-trial",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 92,
+        "calls": 59,
+        "triangles": 100817,
+        "points": 860,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "oasis-town",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 114,
+        "triangles": 789024,
+        "points": 890,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "river-quay",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 62,
+        "calls": 106,
+        "triangles": 770344,
+        "points": 930,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "colossi",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 109,
+        "triangles": 681777,
+        "points": 860,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "temple-court",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 77,
+        "calls": 139,
+        "triangles": 852514,
+        "points": 912,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  },
+  {
+    "id": "barque-tomb",
+    "info": {
+      "lit": false,
+      "regions": 8,
+      "render": {
+        "frame": 107,
+        "calls": 75,
+        "triangles": 442956,
+        "points": 780,
+        "lines": 0
+      },
+      "egyptMarkers": 14
+    },
+    "errors": []
+  }
+]

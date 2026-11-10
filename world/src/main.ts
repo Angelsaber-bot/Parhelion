@@ -1,5 +1,7 @@
 import {orleansResidentSockets,createOrleansResidentLife} from './map/orleansResidents';
 import {qinResidentSockets,createQinResidentLife} from './map/qinResidents';
+import {egyptResidentSockets,createEgyptResidentLife} from './map/egyptResidents';
+import { createEgyptAtmosphere } from './environment/egyptAtmosphere';
 import {ORLEANS_WORK_ACTIONS} from './map/orleansWorks';
 import {createOrleansWorksScene} from './environment/orleansWorksScene';
 import {createOrleansWorksRuntime} from './story/orleansWorks';
@@ -11,6 +13,8 @@ import { createQinArmyOrder, qinTurnBlocked, toggleQinOrder, QIN_ORDER_MARKERS }
 import { createQinAtmosphere } from './environment/qinAtmosphere';
 import { createQinLift, QIN_LIFT_MARKERS } from './environment/qinLift';
 import { createQinSentinels } from './environment/qinSentinels';
+import { createEgyptSunMirrors, turnEgyptMirror, EGYPT_MIRROR_MARKERS } from './environment/egyptSunMirrors';
+import { EGYPT_MIRRORS } from './map/egyptPlan';
 import { PARALLAX, PARALLAX_LABELS, PARALLAX_INTRO, PARALLAX_ENDING, recordParallaxView, concludeParallax, beginParallaxExperiment, turnParallaxRing, parallaxAligned } from './story/parallaxSurvey';
 import {installWorldInterface} from './ui/worldInterface';
 import {JOURNEY_DRAMA,dramaActive,journeyScene,confirmJourneyScene,journeyEnding} from './story/journeyDrama';
@@ -450,7 +454,7 @@ world.add(armoryWorkshop.root);
 armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
 freezeStaticArt(armoryWorkshop.root);
 addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
-const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets()]);
+const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets(), ...egyptResidentSockets()]);
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -478,6 +482,12 @@ const qinLift = createQinLift(m => toonMaterial(m)); world.add(qinLift.root); co
 const qinLiftMarkerIds = new Set<string>(QIN_LIFT_MARKERS);
 const qinSentinels = createQinSentinels(m => toonMaterial(m)); world.add(qinSentinels.root);
 addEventListener('pagehide',event=>{if(!event.persisted)qinSentinels.dispose();});
+// 古埃及引光机关: turning mirrors lead sunlight to the sanctuary's sun disc.
+const egyptMirrors = createEgyptSunMirrors(m => toonMaterial(m)); world.add(egyptMirrors.root); colliders.push(...egyptMirrors.colliders); layout.markers.push(...egyptMirrors.markers);
+const egyptMirrorMarkerIds = new Set<string>(EGYPT_MIRROR_MARKERS);
+const egyptAtmosphere = createEgyptAtmosphere(); world.add(egyptAtmosphere.root);
+addEventListener('pagehide',event=>{if(!event.persisted)egyptAtmosphere.dispose();});
+addEventListener('pagehide',event=>{if(!event.persisted)egyptMirrors.dispose();});
 addEventListener('pagehide',event=>{if(!event.persisted)qinLift.dispose();});
 addEventListener('pagehide',event=>{if(!event.persisted)qinAtmosphere.dispose();});
 const staticGeo = mergeParts(staticGeos);
@@ -504,6 +514,8 @@ const orleansResidentLife=createOrleansResidentLife(settlementNpcs,(x,z,ceiling)
 addEventListener('pagehide',e=>{if(!e.persisted)orleansResidentLife.dispose();});
 const qinResidentLife=createQinResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 addEventListener('pagehide',e=>{if(!e.persisted)qinResidentLife.dispose();});
+const egyptResidentLife=createEgyptResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
+addEventListener('pagehide',e=>{if(!e.persisted)egyptResidentLife.dispose();});
 const residentEventScene=createResidentEventScene(campaignSites.markers,(x,z,ceiling=300)=>residentQueries.ground(x,z,ceiling)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
 world.add(residentEventScene.root);layout.markers.push(...residentEventScene.markers);const residentEventMarkerIds=new Set(residentEventScene.markers.map(m=>m.id));
 addEventListener('pagehide',e=>{if(!e.persisted)residentEventScene.dispose();});
@@ -672,6 +684,7 @@ function applyWorldState() {
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.apply(done);
   if(typeof qinSentinels!=='undefined')qinSentinels.apply(done);
+  if(typeof egyptMirrors!=='undefined')egyptMirrors.apply(done);
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
   applyWeaponFinish();
   for (const t of targets) {
@@ -812,12 +825,12 @@ function renderMainObjective() {
   if(isExpansionRegion(region)) {
     const plan=EXPANSION_PLANS.find(p=>p.id===region)!;
     const title=document.createElement('h3'),text=document.createElement('div'),note=document.createElement('div');
-    title.textContent=region==='orleans'?bilingual('奥尔良 · 河港与钟楼','Orleans · Quay and Belfry'):region==='qin'?bilingual('秦帝国 · 骊山上下','Qin Empire · Above and Below Mount Li'):bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
+    title.textContent=region==='orleans'?bilingual('奥尔良 · 河港与钟楼','Orleans · Quay and Belfry'):region==='qin'?bilingual('秦帝国 · 骊山上下','Qin Empire · Above and Below Mount Li'):region==='egypt'?bilingual('古埃及 · 日河与太阳神殿','Solar Egypt · Sun River and Sun Temple'):bilingual(`${plan.name} · 地图框架`,`${plan.nameEn} · Map blockout`);
     text.textContent=bilingual(plan.identity,'Explore the hub, landmarks and alternate routes.');
     const localDiscoveries=layout.markers.filter(m=>m.type==='discovery'&&m.id.startsWith(`${region}_`));
     const discovered=localDiscoveries.filter(m=>found.has(m.id)).length;
     const works=ORLEANS_WORK_ACTIONS.filter(a=>done.has(a.flag)).length;
-    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
+    note.textContent=region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='egypt'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 太阳神殿中庭的铜镜可以引光。`,`Landmarks ${discovered}/${localDiscoveries.length} · The temple court's mirrors can lead the sunlight.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
   const adventure=getCurrentAdventureGuide(region,done);
@@ -2077,6 +2090,7 @@ function interact() {
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if(typeof qinOrderMarkerIds!=="undefined"&&qinOrderMarkerIds.has(m.id)){interactQinOrder();return;}
   if(typeof qinLiftMarkerIds!=="undefined"&&qinLiftMarkerIds.has(m.id)){interactQinLift();return;}
+  if(typeof egyptMirrorMarkerIds!=="undefined"&&egyptMirrorMarkerIds.has(m.id)){if(!player.onGround||player.flying)return;turnEgyptMirror(done,m.id);save();applyWorldState();audio.interaction();toast(egyptMirrors.lit?bilingual('日光沿着铜镜一路照进了圣所。','The light now runs mirror to mirror into the sanctuary.'):bilingual('铜镜转了一格。看光束落在哪里。','The mirror turns a quarter. Watch where the beam falls.'));return;}
   if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
   if(adventureMarkerIds.has(m.id)){if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}adventureRuntime?.interact(m.id);return;}
@@ -2382,10 +2396,13 @@ function frame(now: number) {
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
+  if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
   if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);
+  if(typeof egyptMirrors!=='undefined'&&egyptMirrors.update(dt,done)){done.add(EGYPT_MIRRORS.solved);save();applyWorldState();toast(bilingual('日轮被照亮，圣所后壁的石门缓缓沉下，斜道通向台地深处。','The sun disc blazes; the stone door behind it sinks, opening an incline into the plateau.'));}
   if(typeof qinSentinels!=='undefined'&&gameplayActive()&&!player.flying){const back=qinSentinels.update(dt,player.pos,done);if(back){player.teleport(back[0],back[1]+.1,back[2],player.yaw);toast(bilingual('守陵俑把你逐回了入口。把它引到转台边，再转动军令。','A tomb guardian drives you back to the entrance. Lure it beside a turntable, then turn the order.'));}}
   orleansResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('orleans'));
   qinResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('qin'));
+  egyptResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('egypt'));
   sky.position.copy(eye);
   twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
   matchServantLighting();
@@ -2489,7 +2506,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

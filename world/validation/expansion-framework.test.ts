@@ -54,7 +54,7 @@ test('eight areas fit the approximate 3×3 envelope; finale remains an independe
     assert.equal(WORLD_PLAN.interiorBarriers,false);
     const layout:Layout=JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'));
     assert.equal(layout.objective.steps.length,0,'walking through a blockout cannot finish a chapter');
-    assert.ok(layout.markers.every(m=>m.type==='spawn'||m.type==='poi'||(plan.id!=='egypt'&&m.type==='discovery')),'real Orleans and Qin discoveries are separate from story and boss completion markers');
+    assert.ok(layout.markers.every(m=>m.type==='spawn'||m.type==='poi'||m.type==='discovery'),'real discoveries are separate from story and boss completion markers');
   }
   for(const id of ['alpha','britain','blacksail','winter','kyoto']) {
     const def=REGIONS.find(r=>r.id===id)!;assert.equal(regionAt(...def.offset).id,id);

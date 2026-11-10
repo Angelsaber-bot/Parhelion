@@ -6,8 +6,8 @@ import { QIN_OFFSET } from '../map/qinPlan';
  * garrison skylight and a silver haze over the mercury sea. Every particle moves on
  * the GPU from its seed and the clock; the CPU only advances time and culls by range.
  */
-type Mode = 'rise' | 'smoke' | 'drift' | 'haze';
-interface Emitter { id: string; mode: Mode; at: [number, number, number]; count: number; spread: [number, number, number]; color: string; size: number; height: number; speed: number; range: number; opacity: number }
+export type Mode = 'rise' | 'smoke' | 'drift' | 'haze';
+export interface Emitter { id: string; mode: Mode; at: [number, number, number]; count: number; spread: [number, number, number]; color: string; size: number; height: number; speed: number; range: number; opacity: number }
 const [OX, OZ] = QIN_OFFSET;
 export const QIN_EMITTERS: readonly Emitter[] = [
   ...([[124, -84], [142, -84], [146, -106]] as const).map(([x, z], i) => ({ id: `foundry-sparks-${i}`, mode: 'rise' as const, at: [x, 51.8, z] as [number, number, number], count: 70, spread: [1.6, .2, 1.6] as [number, number, number], color: '#ffb35a', size: .16, height: 4.2, speed: .45, range: 90, opacity: 1 })),
@@ -59,22 +59,24 @@ const fragment = /* glsl */`
     gl_FragColor = vec4(uColor, a);
   }`;
 
-export function createQinAtmosphere() {
-  const root = new THREE.Group(); root.name = 'QinAtmosphere';
+/** Any region can pass its own emitters and offset; Qin's are the default. */
+export function createQinAtmosphere(emitters: readonly Emitter[] = QIN_EMITTERS, offset: readonly [number, number] = [OX, OZ], name = 'QinAtmosphere') {
+  const [OX2, OZ2] = offset;
+  const root = new THREE.Group(); root.name = name;
   const systems: { points: THREE.Points; material: THREE.ShaderMaterial; centre: THREE.Vector3; range: number }[] = [];
   let rand = 90215; const rnd = () => ((rand = (rand * 16807) % 2147483647) / 2147483647);
-  for (const e of QIN_EMITTERS) {
+  for (const e of emitters) {
     const geo = new THREE.BufferGeometry(), pos = new Float32Array(e.count * 3), seed = new Float32Array(e.count * 4);
-    for (let i = 0; i < e.count; i++) { pos.set([e.at[0] + OX, e.at[1], e.at[2] + OZ], i * 3); seed.set([rnd(), rnd(), rnd(), rnd()], i * 4); }
+    for (let i = 0; i < e.count; i++) { pos.set([e.at[0] + OX2, e.at[1], e.at[2] + OZ2], i * 3); seed.set([rnd(), rnd(), rnd(), rnd()], i * 4); }
     geo.setAttribute('position', new THREE.BufferAttribute(pos, 3)); geo.setAttribute('seed', new THREE.BufferAttribute(seed, 4));
-    const r = Math.max(...e.spread) + e.height + 4; geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(e.at[0] + OX, e.at[1] + e.height / 2, e.at[2] + OZ), r);
+    const r = Math.max(...e.spread) + e.height + 4; geo.boundingSphere = new THREE.Sphere(new THREE.Vector3(e.at[0] + OX2, e.at[1] + e.height / 2, e.at[2] + OZ2), r);
     const smoke = e.mode === 'smoke', mode = { rise: 0, smoke: 1, drift: 2, haze: 3 }[e.mode];
     const material = new THREE.ShaderMaterial({
-      name: `QinFx_${e.id}`, vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false,
+      name: `${name}_${e.id}`, vertexShader: vertex, fragmentShader: fragment, transparent: true, depthWrite: false,
       blending: smoke ? THREE.NormalBlending : THREE.AdditiveBlending,
       uniforms: { uTime: { value: 0 }, uSpeed: { value: e.speed }, uHeight: { value: e.height }, uSize: { value: e.size }, uMode: { value: mode }, uSpread: { value: new THREE.Vector3(...e.spread) }, uColor: { value: new THREE.Color(e.color) }, uOpacity: { value: e.opacity }, uSoft: { value: smoke ? 1 : 0 } },
     });
-    const points = new THREE.Points(geo, material); points.name = `QinFx_${e.id}`; points.frustumCulled = true; points.renderOrder = 3; points.userData.dynamic = true;
+    const points = new THREE.Points(geo, material); points.name = `${name}_${e.id}`; points.frustumCulled = true; points.renderOrder = 3; points.userData.dynamic = true;
     root.add(points); systems.push({ points, material, centre: geo.boundingSphere.center.clone(), range: e.range });
   }
   let time = 0, disposed = false;
