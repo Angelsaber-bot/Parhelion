@@ -298,7 +298,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   // Homepage
   ['Parhelion 幻日：动漫风 3D 射击，竞技场对战与开放世界。', 'Parhelion: an anime-style 3D shooter with Arena battles and an open World.'],
   ['站点', 'Site navigation'], ['Parhelion 首页', 'Parhelion home'], ['竞技场', 'Arena'], ['世界', 'World'], ['幻日', 'Parhelion'],
-  ['秦帝国', 'Qin Empire'], ['古埃及', 'Solar Egypt'], ['奥尔良', 'Orleans'], ['主角城镇', 'Home Town'], ['探索', 'Explore'],
+  ['秦帝国', 'Qin Empire'], ['古埃及', 'Solar Egypt'], ['奥尔良', 'Orleans'], ['主角城镇', 'Home Town'],
   ['动漫风 3D 射击 · 竞技场对战 · 开放世界', 'Anime-style 3D shooter · Arena battles · Open world'],
   ['进入世界', 'Enter the World'], ['WORLD · 五个时代', 'WORLD · Five eras'],
   ['第 1 章', 'Chapter 1'], ['第 2 章', 'Chapter 2'], ['第 3 章', 'Chapter 3'], ['第 4 章', 'Chapter 4'], ['第 5 章', 'Chapter 5'],
