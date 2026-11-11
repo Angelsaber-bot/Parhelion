@@ -18,7 +18,7 @@ export const EGYPT_RIVER: readonly EgyptPoint[] = [[-178, 11.8, 168], [-140, 10.
 
 /** Sandstone plateau: a polygon of the escarpment edge, top height and how sharp the cliffs are. */
 export const EGYPT_PLATEAU = {
-  edge: [[-250, -40], [-210, -52], [-150, -40], [-120, -50], [-60, -70], [-10, -64], [30, -60], [130, -60], [190, -78], [260, -60], [310, -90], [300, -230], [262, -258], [230, -292], [192, -270], [150, -300], [100, -284], [40, -282], [2, -302], [-60, -296], [-108, -272], [-150, -300], [-200, -278], [-235, -270], [-246, -218], [-268, -186], [-262, -160], [-238, -112]] as [number, number][],
+  edge: [[-250, -40], [-210, -52], [-150, -40], [-120, -50], [-60, -70], [-10, -64], [30, -60], [130, -60], [160, -60], [176, -63], [214, -63], [232, -60], [260, -60], [310, -90], [300, -230], [262, -258], [230, -292], [192, -270], [150, -300], [100, -284], [40, -282], [2, -302], [-60, -296], [-108, -272], [-150, -300], [-200, -278], [-235, -270], [-246, -218], [-268, -186], [-262, -160], [-238, -112]] as [number, number][],
   top: 36, cliff: 7,
 };
 /** 裂日峡谷: the canyon floor polyline from the desert up onto the plateau. */
@@ -54,7 +54,10 @@ export interface EgyptRoom { id: string; x0: number; x1: number; z0: number; z1:
 export interface EgyptCorridor { id: string; a: EgyptPoint; b: EgyptPoint; width: number; height: number }
 export const EGYPT_ROOMS: readonly EgyptRoom[] = [
   { id: 'barque-tomb', x0: 62, x1: 98, z0: -268, z1: -236, floor: 14, height: 11 },
+  { id: 'treasury', x0: 106, x1: 126, z0: -263, z1: -243, floor: 14, height: 7 },
 ];
+/** The short passage cut through the barque tomb's east wall into the treasury. */
+export const EGYPT_TREASURY_DOOR = { x0: 98, x1: 106, z: -253, width: 4, height: 4.2 } as const;
 export const EGYPT_CORRIDORS: readonly EgyptCorridor[] = [
   { id: 'tomb-incline', a: [80, 30, -192], b: [80, 14, -236], width: 6, height: 5.5 },
 ];
@@ -66,6 +69,42 @@ export const EGYPT_PADS: readonly (readonly [number, number, number, number])[] 
   [80, 24, 6, 40],      // court of colossi
   [165, 18, 125, 26],   // solar trial
   [190, 37, -200, 46],  // pyramid plateau
+  [-60, 16, 10, 24],    // workmen's village
+  [214, 15.4, 54, 14],  // the fallen colossus
+  [195, 16, -6, 36],    // forecourt of the cliff temple
+];
+
+/**
+ * 崖壁祭庙: three terraces stepping up into the escarpment bay, joined by axial ramps,
+ * each fronted by a pillared portico; the sanctuary is cut into the cliff under the peak.
+ * Terraces are [x0, x1, z0, z1, top]; porticoes roof the strip in front of each retaining wall.
+ */
+export const EGYPT_MORTUARY = {
+  axis: 195,
+  forecourt: [163, 227, -24, 12, 16] as const,
+  middle: [169, 221, -46, -24, 21] as const,
+  upper: [175, 215, -70, -46, 26] as const,
+  portico: 4,
+  ramps: [{ z0: -4, z1: -24, y0: 16, y1: 21 }, { z0: -28, z1: -46, y0: 21, y1: 26 }] as const,
+  sanctuary: { x0: 188, x1: 202, z0: -86, z1: -70, floor: 26, height: 6 },
+  /** 日峰: the natural pyramid of rock that rises over the temple. */
+  peak: { x: 198, z: -96, radius: 44, height: 30 },
+} as const;
+/** 圣湖: the stone-rimmed basin beside the Sun Temple, on a paved precinct level with its terrace. */
+export const EGYPT_SACRED_LAKE = { precinct: [128, 170, -138, -94, 30] as const, basin: [137, 163, -131, -101] as const, surface: 28.7, bed: 27.2 } as const;
+/** 方尖碑采石场: a pit cut into the western plateau, with the unfinished obelisk still in its trench. */
+export const EGYPT_QUARRY = { pit: [-202, -160, -170, -136, 27] as const, obelisk: { x: -184, z: -156, length: 30, yaw: .32 } } as const;
+/** 工匠村: the walled village of the tomb builders on the plain below the canyon. */
+export const EGYPT_VILLAGE = { rect: [-80, -40, -8, 28] as const, ground: 16, gate: [-80, 14] as const } as const;
+/** The trunkless legs in the eastern sand. */
+export const EGYPT_FALLEN = { x: 214, z: 50 } as const;
+/** Ground caps, [x0, x1, z0, z1, top, blend]: ground never rises above just under `top` inside,
+ * and higher ground is cut back to it over `blend` metres outside. */
+export const EGYPT_CAPS: readonly (readonly [number, number, number, number, number, number])[] = [
+  [...EGYPT_MORTUARY.upper, 3],
+  [...EGYPT_SACRED_LAKE.precinct, 10],
+  [EGYPT_SACRED_LAKE.basin[0], EGYPT_SACRED_LAKE.basin[1], EGYPT_SACRED_LAKE.basin[2], EGYPT_SACRED_LAKE.basin[3], EGYPT_SACRED_LAKE.bed + .35, 1.5],
+  [...EGYPT_QUARRY.pit, 5],
 ];
 
 export function egyptDistanceToPolyline(x: number, z: number, line: readonly EgyptPoint[]): { d: number; y: number; t: number } {

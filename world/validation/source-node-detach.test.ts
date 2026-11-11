@@ -16,7 +16,7 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
   const sourceRoots=sources.handles.length?sources.handles.map(h=>({name:h.node.name})):receipt?.roots;
   assert.ok(sourceRoots,'production detach must expose a numeric receipt');
   assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,9);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,9);
-  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,320); /* Previous 311 + five additional physical home-town discovery markers + four Qin mausoleum and burial-pit discoveries. */}
+  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,326); /* Previous 311 + five additional physical home-town discovery markers + four Qin mausoleum and burial-pit discoveries + six Egypt second-ring discoveries. */}
   // All original region-space JSON anchors must retain their authoritative world transform.
   const expectedLayout=mergeLayouts(REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))})));
   for(const marker of expectedLayout.markers){const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}

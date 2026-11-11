@@ -7,7 +7,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import { regionLoader, bakeQuantized } from '../src/rendering/glb';
 import { Player, type Collider } from '../src/player/player';
 import { WorldGrid } from '../src/map/grid';
-import { EGYPT_OFFSET, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_LAKE, EGYPT_RIVER } from '../src/map/egyptPlan';
+import { EGYPT_OFFSET, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_LAKE, EGYPT_RIVER, EGYPT_MORTUARY, EGYPT_SACRED_LAKE, EGYPT_QUARRY, EGYPT_VILLAGE, EGYPT_FALLEN, EGYPT_TREASURY_DOOR } from '../src/map/egyptPlan';
 import { createEgyptSunMirrors, traceSunlight, turnEgyptMirror, egyptMirrorSetting, reflect } from '../src/environment/egyptSunMirrors';
 import { egyptResidentSockets, createEgyptResidentLife } from '../src/map/egyptResidents';
 import { createSettlementNpcs } from '../src/settlements/npcs';
@@ -85,4 +85,24 @@ test('oasis town: mudbrick houses are enterable from the street, residents are g
   for (let i = 0; i < 900; i++) { system.update(1 / 60, viewer); life.update(1 / 60, viewer, null, true); }
   const end = system.getPosition('egypt_courier')!; assert.ok(Math.hypot(end[0] - start[0], end[2] - start[2]) > 5);
   life.dispose(); system.dispose();
+});
+
+test('second ring: cliff temple under its peak, sacred lake basin, quarry, village street, treasury and the fallen colossus', () => {
+  const floorAt = (x: number, z: number, from = 80) => bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(OX - x, from, OZ - z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? null;
+  const M = EGYPT_MORTUARY, S = M.sanctuary;
+  assert.ok(grid.sampleHeight(OX - M.peak.x, OZ - M.peak.z)! > M.upper[4] + 14, 'the peak rises over the cliff temple');
+  for (let z = S.z0 + 2; z < S.z1 - 5; z += 3) assert.ok(grid.sampleHeight(OX - M.axis, OZ - z)! > S.floor + S.height + 1.4, `the sanctuary is cut into the rock at ${z}`);
+  for (const [t, y] of [[M.forecourt, 16], [M.middle, 21], [M.upper, 26]] as const) assert.ok(Math.abs(floorAt((t[0] + t[1]) / 2 - 8, (t[2] + t[3]) / 2)! - y) < .2, `terrace floor at ${y}`);
+  // from the upper terrace into the sanctuary and back out
+  assert.ok(walk([staticCollider], [M.axis, 26, -60], [[M.axis, S.z1 - 4], [M.axis, -58]]).ok, 'into the rock-cut sanctuary');
+  const L = EGYPT_SACRED_LAKE, [bx0, bx1, bz0, bz1] = L.basin;
+  const bed = floorAt((bx0 + bx1) / 2, (bz0 + bz1) / 2)!; assert.ok(bed < L.surface && L.surface < L.precinct[4] && Math.abs(bed - L.bed) < .2, `sacred lake bed ${bed}`);
+  assert.ok(Math.abs(floorAt(L.precinct[0] + 3, (bz0 + bz1) / 2)! - L.precinct[4]) < .2, 'the precinct is level with the temple terrace');
+  const [qx0, qx1, qz0, qz1, qtop] = EGYPT_QUARRY.pit; assert.ok(grid.sampleHeight(OX - (qx0 + qx1) / 2, OZ - (qz0 + qz1) / 2)! < qtop, 'the quarry floor is cut down');
+  const O = EGYPT_QUARRY.obelisk; assert.ok(floorAt(O.x, O.z)! > qtop + 1.5, 'the unfinished obelisk lies in its trench');
+  const V = EGYPT_VILLAGE; assert.ok(walk([staticCollider], [V.gate[0] - 4, V.ground, V.gate[1]], [[V.rect[1] - 4, V.gate[1]]]).ok, 'the village street runs from the gate to the chapel');
+  assert.ok(floorAt(EGYPT_FALLEN.x + 3, EGYPT_FALLEN.z)! > grid.sampleHeight(OX - EGYPT_FALLEN.x - 9, OZ - EGYPT_FALLEN.z)! + 6, 'the legs stand on their pedestal');
+  const tr = EGYPT_ROOMS.find(r => r.id === 'treasury')!, D = EGYPT_TREASURY_DOOR;
+  const r = walk([staticCollider], [80, 14, -244], [[92, D.z], [D.x0 - 1, D.z], [D.x1 + 2, D.z], [(tr.x0 + tr.x1) / 2, D.z]]);
+  assert.ok(r.ok && Math.abs(r.at[1] - tr.floor) < .6, `through the passage into the treasury: ${r.at}`);
 });

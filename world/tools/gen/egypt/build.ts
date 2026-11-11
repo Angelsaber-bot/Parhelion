@@ -5,7 +5,8 @@ import type { Piece } from '../structures';
 import { Frame } from '../orleans/craft';
 import { Shell, walkStrip, slabBetween } from '../qin/craft';
 import { distanceToLine, type ExpansionPlan, type RoutePoint } from '../../../src/map/worldPlan';
-import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_TEMPLE, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_CANYON, type EgyptPoint } from '../../../src/map/egyptPlan';
+import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_TEMPLE, EGYPT_MIRRORS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_CANYON, EGYPT_TREASURY_DOOR, type EgyptPoint } from '../../../src/map/egyptPlan';
+import { buildEgyptMonuments } from './monuments';
 import { E, EMAT, CYL8, batter, cornice, pylonTower, papyrusColumn, lotusColumn, obelisk, seatedColossus, criosphinx, palm, felucca, camel, shaduf, pyramid } from './craft';
 import { egyptLakeDistance, egyptRiver, egyptGreen, plateauDepth } from './landscape';
 
@@ -129,12 +130,16 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
   // ───────────── 太阳船墓: the incline and the barque tomb under the plateau ─────────────
   barqueTomb();
 
+  // ───────────── 第二圈: cliff temple, sacred lake, village, quarry, necropolis, treasury ─────────────
+  const keep = buildEgyptMonuments({ make, heightAt, roadDistance, glow, water, leaves, trunks, beams });
+
   // ───────────── vegetation: palms by water and town, acacias on the desert edge ─────────────
   { const r = mulberry32(919); let palms = 0, acacias = 0;
     for (let i = 0; i < 3000 && (palms < 170 || acacias < 40); i++) {
       const x = -320 + r() * 640, z = -320 + r() * 640, y = heightAt(x, z), g = egyptGreen(x, z), lake = egyptLakeDistance(x, z);
       if (y < 2 || roadDistance(x, z) < 7 || houses.some(h => Math.hypot(h.position[0] - x, h.position[2] - z) < 8.5) || Math.abs(x) > 330 || Math.abs(z) > 330 || lake < 1.05 || egyptRiver(x, z).d < 6.5) continue;
       if (x > 25 && x < 135 && z > -205 && z < 50) continue;
+      if (keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr)) continue;
       if ((g > .35 || lake < 2.2) && palms < 170) { palm(trunks, leaves, x, y, z, 8 + r() * 6, .1 + r() * .25, r() * 6.28, i); palms++; }
       else if (plateauDepth(x, z) < -25 && r() < .04 && acacias < 40) { trunks.add(CYL8, '#5e4a36', T(x, y + 1.6, z, 0, .25, 3.2, .25)); leaves.add(new THREE.CylinderGeometry(3, 2.2, .8, 10), '#748a46', T(x, y + 3.6, z), false); acacias++; }
     }
@@ -285,7 +290,11 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     const cx = (r.x0 + r.x1) / 2, cz = (r.z0 + r.z1) / 2, w = r.x1 - r.x0, d = r.z1 - r.z0, rt = r.floor + r.height;
     tomb.box(cx, r.floor - 1.2, cz, w, 1.2, d, '#cdbb94');
     tomb.box(cx, rt, cz, w + 4.8, 1.4, d + 4.8, E.limestone);
-    for (const s of [-1, 1]) tomb.box(cx + s * (w / 2 + 1.2), r.floor - 1.2, cz, 2.4, r.height + 2.6, d + 4.8, E.limestoneDark);
+    // The east wall opens on the short passage into the treasury.
+    { const D = EGYPT_TREASURY_DOOR, wx = cx - w / 2 - 1.2, ex = cx + w / 2 + 1.2, za = r.z0 - 2.4, zb = r.z1 + 2.4, dz0 = D.z - D.width / 2, dz1 = D.z + D.width / 2;
+      tomb.box(wx, r.floor - 1.2, cz, 2.4, r.height + 2.6, d + 4.8, E.limestoneDark);
+      tomb.box(ex, r.floor - 1.2, (za + dz0) / 2, 2.4, r.height + 2.6, dz0 - za, E.limestoneDark); tomb.box(ex, r.floor - 1.2, (dz1 + zb) / 2, 2.4, r.height + 2.6, zb - dz1, E.limestoneDark);
+      tomb.box(ex, r.floor + D.height, D.z, 2.4, r.height - D.height + 1.4, D.width, E.limestoneDark); }
     tomb.box(cx, r.floor - 1.2, r.z0 - 1.2, w, r.height + 2.6, 2.4, E.limestoneDark);
     tomb.box((r.x0 + c.b[0] - hw) / 2, r.floor - 1.2, r.z1 + 1.2, c.b[0] - hw - r.x0, r.height + 2.6, 2.4, E.limestoneDark);
     tomb.box((c.b[0] + hw + r.x1) / 2, r.floor - 1.2, r.z1 + 1.2, r.x1 - c.b[0] - hw, r.height + 2.6, 2.4, E.limestoneDark);
@@ -294,7 +303,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     for (let k = 0; k < 90; k++) glow.add(new THREE.OctahedronGeometry(.14, 0), E.yellow, T(r.x0 + 1 + (k * 37 % (w - 2)), rt - .12, r.z0 + 1 + (k * 53 % (d - 2))), false);
     for (const x of [r.x0 + 6, r.x1 - 6]) for (const z of [r.z0 + 7, r.z1 - 9]) { const f = new Frame(tomb, x, r.floor, z); f.box(0, r.height / 2, 0, 1.6, r.height, 1.6, E.limestone); for (const s of [-1, 1]) f.box(0, r.height * .55, s * .82, 1.2, r.height * .7, .05, E.plaster, false); f.box(0, r.height * .6, .86, .7, 2.4, .04, E.red, false); }
     // painted walls: the sun's night journey in registers of coloured figures
-    for (const s of [-1, 1]) for (let i = 0; i < 12; i++) { const z = r.z0 + 2 + i * (d - 4) / 11; tomb.box(cx + s * (w / 2 - .05), r.floor + 2.4, z, .05, 3.2, 2.2, E.plaster, 0, false); tomb.box(cx + s * (w / 2 - .1), r.floor + 2.4, z, .04, 2.2, .6, [E.red, E.blue, E.yellow, E.green, E.black][i % 5], 0, false); tomb.box(cx + s * (w / 2 - .1), r.floor + 4.4, z, .04, .3, 2, E.yellow, 0, false); }
+    for (const s of [-1, 1]) for (let i = 0; i < 12; i++) { const z = r.z0 + 2 + i * (d - 4) / 11; if (s > 0 && Math.abs(z - EGYPT_TREASURY_DOOR.z) < EGYPT_TREASURY_DOOR.width / 2 + 1.1) continue; tomb.box(cx + s * (w / 2 - .05), r.floor + 2.4, z, .05, 3.2, 2.2, E.plaster, 0, false); tomb.box(cx + s * (w / 2 - .1), r.floor + 2.4, z, .04, 2.2, .6, [E.red, E.blue, E.yellow, E.green, E.black][i % 5], 0, false); tomb.box(cx + s * (w / 2 - .1), r.floor + 4.4, z, .04, .3, 2, E.yellow, 0, false); }
     // 太阳船: the gilded solar barque on its stand, with its cabin, oars and sun disc
     { const f = new Frame(tomb, cx, r.floor + 1.3, cz - 2, 0), sh = new Shell(f), L = 9, W = 1.5;
       const ring = (zz: number, ww: number, yy: number): [number, number, number][] => [[-ww, yy + .7, zz], [ww, yy + .7, zz], [ww * .55, yy, zz], [-ww * .55, yy, zz]];

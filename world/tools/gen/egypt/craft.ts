@@ -205,6 +205,8 @@ export function pyramid(b: Batch, x: number, y: number, z: number, base: number,
   const gs = new Shell(f), apex: V = [0, h, 0];
   for (let i = 0; i < 4; i++) { const j = (i + 1) % 4; gs.tri(U[i], U[j], apex, hint[i]); } gs.done(E.gold);
   // stepped core showing where the casing has been robbed on one corner
-  for (let k = 0; k < 6; k++) { const t = k / 6, rr = r * (1 - t) - 1.5; f.box(r - rr * .25 - 1, t * h + h / 12, r - rr * .25 - 1, rr * .5, h / 6 - .2, rr * .5, E.sandstone, false); }
+  // Each course of the exposed core steps out a little proud of the casing line at its foot,
+  // so the robbed corner reads as a staircase running up the arris, never as a tower beside it.
+  for (let k = 0; k < 7; k++) { const y0 = k * h * .7 / 7, y1 = (k + 1) * h * .7 / 7, half = r * (1 - y0 / h) - .3, size = Math.max(1.2, r * .32 * (1 - y0 / h)); f.box(half - size / 2, (y0 + y1) / 2, half - size / 2, size, y1 - y0 - .15, size, k % 2 ? E.sandstone : E.sandstoneDark, false); }
   f.box(0, h * .12, -r * .86, 2.4, 3, 2, E.black, false);
 }

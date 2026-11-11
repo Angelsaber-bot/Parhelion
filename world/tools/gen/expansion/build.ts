@@ -85,8 +85,8 @@ const EGYPT_LIGHTS:{p:[number,number,number];color:string;intensity:number;dista
   {p:[-165,18,110],color:'#ffc27a',intensity:24,distance:26},
   {p:[80,36,-145],color:'#ffd99a',intensity:30,distance:40},
   {p:[80,35,-180],color:'#ffcc66',intensity:26,distance:22},
-  {p:[80,20,-252],color:'#ffbe6a',intensity:34,distance:34},
-  {p:[56,42,-150],color:'#ffb85a',intensity:14,distance:16},
+  {p:[94,19.5,-253],color:'#ffbe6a',intensity:40,distance:42},
+  {p:[195,29.2,-76],color:'#ffc890',intensity:14,distance:20},
 ];
 export function buildExpansion(plan:ExpansionPlan) {
   const access=connectionRoute(plan);
@@ -202,7 +202,7 @@ export function buildExpansion(plan:ExpansionPlan) {
   }
   const orleansNotes:Record<string,string>={market:'蓝白布棚围着旧井，沿街巷可走向城门或河港。',ramparts:'城墙转折处的钟楼，可以沿外梯登上眺望回廊。',cathedral:'双塔俯瞰河谷，开放的中殿通向高地侧院。',rivergate:'低位河门连接木桥、码头和城内侧路。',muster:'守城队伍在此整备，演武场与主战线分开。',harbour:'踏轮吊机旁留出运粮的通道，河港步道通向河门。',cloister:'回廊遮雨、庭院留光，药草畦之间留有通路。',repairyard:'新石、木料与修缮坡道排列在东墙外。'};
   const qinNotes:Record<string,string>={worktown:'驿道进镇，主街两侧是陶铺、铜匠与粮囷；往西过关，往南上山脊，沿水渠可绕上宫城。',pass:'骊水在双阙之下穿墙而过，驿道从厚重的关门进入宫城山道。',palace:'夯土高台上的前殿；殿后山屏开着通往地宫的斜道。',kilns:'两条龙窑顺坡而卧，晾瓦架上排着新烧的黑瓦。',archive:'简牍成捆上架，记着工匠、窑次和运俑的账目。',quarry:'南坡采石的台阶之间，检修道直通山腹。',pavilion:'从山脊下来的路落在观阙，俯瞰前殿、广场与驿道。',workshop:'炉火未熄，铜汁沿槽流向模具，运俑轨道把陶俑送往下层。',army:'成片的兵俑列阵待命。转动军令台，阵列会改变朝向与通路。',royalcity:'星图穹顶下，水银江河环绕封土；这里是骊山之下的不死王城。',mausoleum:'骊山脚下的陵园：三级覆斗封土立在内外两重城垣中，寝殿面朝封土，神道从东门伸出；封土之下就是地下王城。',chariots:'两乘彩绘铜车一前一后，立车撑着伞盖，安车罩着龟背顶，各驾四匹铜马。',armoury:'成排的石甲用石片和铜丝编成，旁边的长架上摆着石胄。',waterfowl:'水渠两岸立着铜雁、天鹅和鹤，跽坐的乐俑面朝水禽奏乐；有一只鹤正低头衔虫。'};
-  const egyptNotes:Record<string,string>={oasis:'泉湖边的泥砖商队镇，风塔和鸽楼之间是集市；往西沿河岸到码头，往南进峡谷。',quay:'日河码头，帆船靠岸，量水尺的刻度记着每年的洪水。',canyon:'裂日峡谷切开台地，沙底平缓，一路通到神殿东门。',tombs:'峡谷南壁凿出的崖墓，门楣上还留着彩绘。',colossi:'两尊坐像守着通往神殿的坡道，方尖碑立在台前。',temple:'塔门之后是列柱中庭；中庭西侧的金盘射出日光，转动铜镜把光引进圣所。',roofshrine:'从中庭东侧的阶梯登上柱廊屋顶，屋顶祭坛俯瞰整座神殿。',barque:'圣所日轮照亮后，后壁石门沉下，斜道通往台地下的太阳船墓。',pyramid:'神殿西侧的堤道通往金字塔和它的河谷神殿。',trial:'沙丘上的圆形日晷台，方尖碑围成试炼场。'};
+  const egyptNotes:Record<string,string>={oasis:'泉湖边的泥砖商队镇，风塔和鸽楼之间是集市；往西沿河岸到码头，往南进峡谷。',quay:'日河码头，帆船靠岸，量水尺的刻度记着每年的洪水。',canyon:'裂日峡谷切开台地，沙底平缓，一路通到神殿东门。',tombs:'峡谷南壁凿出的崖墓，门楣上还留着彩绘。',colossi:'两尊坐像守着通往神殿的坡道，方尖碑立在台前。',temple:'塔门之后是列柱中庭；中庭西侧的金盘射出日光，转动铜镜把光引进圣所。',roofshrine:'从中庭东侧的阶梯登上柱廊屋顶，屋顶祭坛俯瞰整座神殿。',barque:'圣所日轮照亮后，后壁石门沉下，斜道通往台地下的太阳船墓。',pyramid:'神殿西侧的堤道通往金字塔和它的河谷神殿。',trial:'沙丘上的圆形日晷台，方尖碑围成试炼场。',mortuary:'巨像庭院往西，三层台地嵌进日峰下的崖湾：坡道居中，柱廊里画着远航香料之国的船队，最上层的奥西里斯柱像后面是凿进山里的圣所。',sacredlake:'神殿台基西侧的石砌圣湖，四面台阶下到湖底；角上的花岗岩圣甲虫是绕湖祈愿的起点。',village:'修墓工匠的围墙村落，一条街两排屋，街尾是村里的小神龛；村外坡上是他们自己的小金字塔墓。',quarry:'从裂日峡谷东侧的石道上台地，采石坑里躺着一根没凿完的方尖碑——它在凿出之前就裂了。',treasury:'太阳船墓西壁的小门后面是宝库：鎏金内龛、守门的黑色王像、伏在宝箱上的阿努比斯。',fallen:'沙海里只剩一双巨腿立在石座上，碎裂的面孔半埋在旁边的沙里；石座上的铭文还能认出“王中之王”。'};
   const homeNotes:Record<string,string>={square:'归乡大道从西侧接入广场，面包房和生活街通向东岸港湾。',house:'推门就是客厅与厨房，内侧楼梯通往卧室和书桌。',lodge:'有公共餐厅和八间客房的归乡公馆。在入住簿邀请已缔约的 Saber。',garden:'公馆的开放庭院；休息的同伴会来这里走走。',practice:'北坡的小练习庭，沿步道可回广场或前往北门驿道。',park:'花园步道连接家、住宅街与海岸。',harbour:'仓库、修船棚、小灯塔与伸入海湾的木栈桥。',northroad:'北门驿道，翻过缓坡就是黑帆尽头的南岸。'};
   const spawn=plan.sites[0].position;
   const markers:Marker[]=[{id:'spawn_p1',type:'spawn',label:`${plan.name}入口`,p:[spawn[0],spawn[1]+.5,spawn[2]]},
