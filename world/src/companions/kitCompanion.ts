@@ -21,6 +21,10 @@ export interface KitCompanionOptions {
   engage?: (player: THREE.Vector3, from?: THREE.Vector3) => Target;
   track?: (position: THREE.Vector3, range: number, targetId: string) => Target;
   onRejoin?: () => void;
+  /** Default remains the story companion's left slot; optional models can use the right. */
+  followSide?: 1 | -1;
+  /** Optional reservation check for placement and movement; never changes world colliders. */
+  canPlace?: (position: THREE.Vector3) => boolean;
 }
 
 /**
@@ -39,6 +43,12 @@ export class KitCompanion {
   private readonly rejoinPlayer = new THREE.Vector3(Infinity,0,Infinity);
   private attackYaw = 0;
   private attackTarget: string | null = null;
+  // Generic fallback for delivered kits without an authored attack clip/contact.
+  // This is gameplay-only damage timing, not a claim about a character-specific animation.
+  private fallbackAttackCooldown = 0;
+  private fallbackAttackTarget: string | null = null;
+  private fallbackAttackAge = 0;
+  private fallbackAttackHit = false;
   private mounted?: MountedCharge;
   private skillPose?: { command: SkillPoseCommand; contacts: number; elapsed: number; motionTime: number; cycle: number; started: boolean };
   constructor(private options: KitCompanionOptions) { this.navigation = new CompanionNavigation(options.colliders); }
@@ -85,12 +95,33 @@ export class KitCompanion {
   release(actor?: CharacterKit) {
     this.cancelSkillPose(actor);
     this.mounted?.release(actor);
-    this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.attackTarget = null; this.navigation.reset(); this.rejoinRetry=0;this.rejoinPlayer.set(Infinity,0,Infinity);
+    this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.attackTarget = null; this.fallbackAttackTarget = null; this.fallbackAttackAge = 0; this.fallbackAttackHit = false; this.fallbackAttackCooldown = 0; this.navigation.reset(); this.rejoinRetry=0;this.rejoinPlayer.set(Infinity,0,Infinity);
     if (actor && actor.state === 'attack') actor.play(actor.definition.defaultState);
   }
   update(actor: CharacterKit, dt: number, player: THREE.Vector3, yaw: number, paused: boolean) {
     if (paused) { this.cancelSkillPose(actor); this.attackTarget=null; this.attackAge=0; this.navigation.reset(); if(!actor.definition.mount && actor.state==='attack')actor.play(actor.definition.defaultState); return; }
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
+    this.fallbackAttackCooldown = Math.max(0, this.fallbackAttackCooldown - dt);
+    if (this.fallbackAttackTarget) {
+      this.fallbackAttackAge += dt;
+      const target = this.options.track?.(actor.root.position, this.options.range + 1, this.fallbackAttackTarget);
+      if (!target || actor.root.position.distanceTo(target.position) > 4 || this.fallbackAttackAge > .72) {
+        this.resetGenericAttack(actor); return;
+      }
+      const angle = Math.atan2(target.position.x - actor.root.position.x, target.position.z - actor.root.position.z);
+      turnCompanion(actor.root, angle, dt);
+      const phase = Math.min(1, this.fallbackAttackAge / .32);
+      // Temporary procedural contact pose: distinct timing/lean per delivered servant.
+      const style = actor.definition.id === 'jeanne' ? 0 : actor.definition.id === 'ozymandias' ? 1 : 2;
+      actor.model.rotation.x = Math.sin(phase * Math.PI) * (style === 1 ? -.16 : .10);
+      actor.model.rotation.z = Math.sin(phase * Math.PI) * (style === 0 ? .12 : style === 2 ? -.12 : .04);
+      if (!this.fallbackAttackHit && this.fallbackAttackAge >= .28) {
+        this.options.strike(actor.root.position, Math.min(2.6, this.options.range), this.options.damage, this.fallbackAttackTarget);
+        this.fallbackAttackHit = true;
+      }
+      if (this.fallbackAttackAge >= .58) this.resetGenericAttack(actor);
+      actor.update(dt); return;
+    }
     if (actor.definition.mount) {
       this.mounted ??= new MountedCharge(this.options);
       this.mounted.update(actor, dt, player, yaw); return;
@@ -140,7 +171,7 @@ export class KitCompanion {
     this.separatedFor=separation>(inCombat?24:14)?this.separatedFor+dt:0;
     const rejoin=this.activeLast && (this.separatedFor>(inCombat?.75:.5) || !inCombat && separation>4 && this.navigation.stuckSeconds>1.5);
     if ((!this.activeLast || rejoin) && this.rejoinRetry<=0) {
-      const safe=this.navigation.safeReturn(player,yaw);
+      const safe=this.navigation.safeReturn(player,yaw,{side:this.options.followSide,canPlace:this.options.canPlace});
       if(safe){root.position.copy(safe);root.rotation.y=yaw;this.release(actor);separation=root.position.distanceTo(player);this.separatedFor=0;this.rejoinRetry=0;if(rejoin)this.options.onRejoin?.();}
       else this.rejoinRetry=.25;
     }
@@ -158,13 +189,16 @@ export class KitCompanion {
       return;
     }
     this.attackTarget=null;
-    const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4-Math.cos(yaw)*.8));
+    const side = this.options.followSide ?? 1;
+    const destination = player.clone().add(new THREE.Vector3(-Math.cos(yaw)*2.4*side-Math.sin(yaw)*.8,0,Math.sin(yaw)*2.4*side-Math.cos(yaw)*.8));
     const prey=this.follow.prioritizePlayer ? null : this.options.engage?.(player,root.position);
     this.pursuing=!!prey;
     if(prey && separation<24) destination.copy(prey.position).add(root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(this.options.range>5?this.options.range*.65:1));
     const frameYaw=root.rotation.y;
     const normalSpeed=Math.min(6,(actor.definition.clips.run?.nominalSpeed??2)*COMPANION_MOTION.maxRate);
-    const speed=this.navigation.step(root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed));
+    const before=this.options.canPlace?root.position.clone():undefined;
+    let speed=this.navigation.step(root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed));
+    if(before&&this.options.canPlace&&!this.options.canPlace(root.position)){root.position.copy(before);this.navigation.reset();speed=0;}
     const target=this.follow.prioritizePlayer ? null : this.options.target(root.position,this.options.range);
     const inReach=target && Math.hypot(target.position.x-root.position.x,target.position.z-root.position.z)<(this.options.range>5?this.options.range:1.75);
     if(inReach && actor.definition.clips.attack) {
@@ -173,11 +207,21 @@ export class KitCompanion {
       const remaining=turnCompanion(root,this.attackYaw,dt);
       if(Math.abs(remaining)<.12){this.attackTarget=target.id;this.attackAge=0;actor.play('attack',{restart:true});}
       else actor.play('idle');
+    } else if (inReach && !actor.definition.clips.attack) {
+      // Delivered Jeanne/Ozymandias/Qin checkpoints have no attack event contract.
+      // Apply a bounded generic contact pulse so they can participate in combat while
+      // keeping the missing dedicated attack animation explicit.
+      if (this.fallbackAttackCooldown <= 0) { this.fallbackAttackTarget = target!.id; this.fallbackAttackAge = 0; this.fallbackAttackHit = false; this.fallbackAttackCooldown = 1; actor.play('idle', { restart: true }); }
     } else {
       const running=companionGait(speed,actor.definition.clips.walk?.nominalSpeed??.75,actor.state==='run')==='run';
       actor.play(speed<.1?'idle':running?'run':'walk',speed<.1?undefined:{speed,catchUp:!prey});
     }
     actor.update(dt);
+  }
+  private resetGenericAttack(actor: CharacterKit) {
+    actor.model.rotation.x = 0; actor.model.rotation.z = 0;
+    this.fallbackAttackTarget = null; this.fallbackAttackAge = 0; this.fallbackAttackHit = false;
+    actor.play('idle');
   }
   private observe(position:THREE.Vector3,range:number,id:string):Target {
     const target=this.options.track?.(position,range,id) ?? (!this.options.track?this.options.target(position,range,id):null);

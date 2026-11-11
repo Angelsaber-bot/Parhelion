@@ -105,11 +105,13 @@ export class CompanionNavigation {
     return true;
   }
   /** Only explicit summon/long separation may use this: never an attack-target teleport. */
-  safeReturn(player:THREE.Vector3,yaw:number):THREE.Vector3|null {
+  safeReturn(player:THREE.Vector3,yaw:number,options:{side?:1|-1;canPlace?:(point:THREE.Vector3)=>boolean}={}):THREE.Vector3|null {
     for(const offset of RETURN_OFFSETS) {
-      const x=player.x-Math.cos(yaw)*offset-Math.sin(yaw)*.8,z=player.z+Math.sin(yaw)*offset-Math.cos(yaw)*.8;
+      const side=offset*(options.side??1);
+      const x=player.x-Math.cos(yaw)*side-Math.sin(yaw)*.8,z=player.z+Math.sin(yaw)*side-Math.cos(yaw)*.8;
       const y=this.floor(x,z,player.y);if(y===null||Math.abs(y-player.y)>.65)continue;
       this.candidate.set(x,y,z);
+      if(options.canPlace&&!options.canPlace(this.candidate))continue;
       if(this.clear(this.candidate)&&this.path(player,this.candidate))return this.candidate;
     }
     // If side slots lie off a narrow bridge, try behind then ahead on its
@@ -124,6 +126,7 @@ export class CompanionNavigation {
       }
       if(!supported)continue;
       this.candidate.set(x,y,z);
+      if(options.canPlace&&!options.canPlace(this.candidate))continue;
       if(this.clear(this.candidate)&&this.path(player,this.candidate))return this.candidate;
     }
     return null;

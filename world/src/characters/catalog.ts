@@ -43,5 +43,69 @@ export const CHARACTER_KITS = {
     },
     mount: { saddleSocket: 'saddle', riderSeatSocket: 'seat' },
   },
+  // Optional companions. Native scale and authored root/hover are preserved.
+  // These clips have no authored combat contacts; gameplay uses an explicit fallback.
+  jeanne: {
+    id: 'jeanne', defaultState: 'idle', rootMotion: 'in-place',
+    assetUrl: new URL('../../../assets/characters/jeanne/final_20261110/runtime.part1.bin', import.meta.url).href,
+    additionalAssetUrls: [new URL('../../../assets/characters/jeanne/final_20261110/runtime.part2.bin', import.meta.url).href],
+    clips: {
+      idle: { name: 'Idle', duration: 2, loop: true },
+      // Native Walk/Run are retained in the GLB as reference clips only.
+      walk: { name: 'Walk_Draped', duration: .9, loop: true },
+      run: { name: 'Run_Draped', duration: .65, loop: true },
+      presentation: { name: 'Jeanne_Resolve', duration: 8, loop: false },
+    },
+    sockets: { head: { node: 'HeadSocket' }, rightHand: { node: 'Hand_R' }, leftHand: { node: 'Hand_L' }, weapon: { node: 'WeaponSocket' } },
+  },
+  ozymandias: {
+    id: 'ozymandias', defaultState: 'idle', rootMotion: 'in-place',
+    assetUrl: new URL('../../../assets/characters/ozymandias/final_20261110/runtime.glb.gz', import.meta.url).href,
+    clips: {
+      idle: { name: 'Idle', duration: 2, loop: true },
+      walk: { name: 'Walk', duration: .9, loop: true },
+      run: { name: 'Run', duration: .65, loop: true },
+      presentation: { name: 'Ozy_Regal', duration: 3, loop: false },
+    },
+    sockets: { head: { node: 'HeadSocket' }, rightHand: { node: 'Hand_R' }, leftHand: { node: 'Hand_L' }, weapon: { node: 'WeaponSocket' } },
+  },
+  qinShiHuang: {
+    id: 'qinShiHuang', defaultState: 'idle', rootMotion: 'in-place',
+    assetUrl: new URL('../../../assets/characters/qin-shi-huang/final_20261110/runtime.glb.gz', import.meta.url).href,
+    clips: {
+      idle: { name: 'Idle', duration: 4, loop: true },
+      walk: { name: 'Walk', duration: 2, loop: true },
+      run: { name: 'Run', duration: 1.5, loop: true },
+      presentation: { name: 'RegalHover', duration: 6, loop: false },
+    },
+    sockets: { head: { node: 'HeadSocket' }, rightHand: { node: 'Hand_R' }, leftHand: { node: 'Hand_L' }, weapon: { node: 'WeaponSocket' } },
+  },
 } satisfies Record<string, CharacterKitDefinition>;
 export type CharacterKitId = keyof typeof CHARACTER_KITS;
+
+/** Explicit opt-in selection, separate from the quest/combat servant roster. */
+export const MODEL_COMPANIONS = [
+  { id: 'jeanne', name: '贞德', nameEn: 'Jeanne' },
+  { id: 'ozymandias', name: '奥兹曼迪亚斯', nameEn: 'Ozymandias' },
+  { id: 'qinShiHuang', name: '始皇帝', nameEn: 'Qin Shi Huang' },
+] as const satisfies readonly { id: CharacterKitId; name: string; nameEn: string }[];
+export type ModelCompanionId = typeof MODEL_COMPANIONS[number]['id'];
+export const isModelCompanionId = (id: string): id is ModelCompanionId => MODEL_COMPANIONS.some(entry => entry.id === id);
+
+/** Padded, orientation-independent upper-body/prop placement envelopes.
+ * Derived from every vertex at 33 phases of each registered native clip.
+ * Deliberately conservative; not continuous-time or arbitrary-blend collision certification.
+ */
+export const MODEL_COMPANION_CLEARANCE: Record<ModelCompanionId, { radius: number; height: number; bands: readonly { bottom: number; top: number; radius: number }[] }> = {
+  jeanne: { radius: 1.6, height: 2.6, bands: [
+    { bottom: .2, top: .5, radius: .9 }, { bottom: .5, top: 1, radius: .8 },
+    { bottom: 1, top: 1.5, radius: 1.3 }, { bottom: 1.5, top: 2.6, radius: 1.6 },
+  ] },
+  ozymandias: { radius: .9, height: 1.9, bands: [
+    { bottom: .2, top: .5, radius: .9 }, { bottom: .5, top: 1.5, radius: .8 }, { bottom: 1.5, top: 1.9, radius: .5 },
+  ] },
+  qinShiHuang: { radius: 1.1, height: 2.3, bands: [
+    { bottom: .2, top: .5, radius: .7 }, { bottom: .5, top: 1, radius: 1 },
+    { bottom: 1, top: 2, radius: 1.1 }, { bottom: 2, top: 2.3, radius: .8 },
+  ] },
+};

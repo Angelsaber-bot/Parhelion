@@ -137,6 +137,8 @@ import { CHARACTER_KITS } from './characters/catalog';
 import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './companions/servantAppearance';
 import { createServantPanel } from './ui/servantPanel';
+import { ModelCompanion } from './companions/modelCompanion';
+import { createModelCompanionControls } from './ui/modelCompanionControls';
 import { WorldCombat } from './combat/combatView';
 import { WorldGraphicsRecovery } from './rendering/graphicsRecovery';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './core/progress';
@@ -552,6 +554,14 @@ scene.add(debugCol);
 
 const collider = (name: string) => colliders.find((c) => c.name === name);
 const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
+// Fast-play claim points for the recovered three-servant World assets.
+// Positions are existing region hubs, not new terrain or map boundaries.
+const modelClaimPoints: Array<{ id: 'jeanne' | 'ozymandias' | 'qinShiHuang'; marker: Marker }> = [
+  { id: 'jeanne', marker: { id: 'servant_claim_jeanne', type: 'interact', label: '奥尔良 · 贞德领取点', p: [-800, 14, -1350], radius: 7, note: 'Jeanne claim point' } },
+  { id: 'ozymandias', marker: { id: 'servant_claim_ozymandias', type: 'interact', label: '古埃及 · 奥斯曼迪斯领取点', p: [165, 14, -1550], radius: 7, note: 'Ozymandias claim point' } },
+  { id: 'qinShiHuang', marker: { id: 'servant_claim_qin', type: 'interact', label: '秦地 · 始皇帝领取点', p: [-535, 22, -820], radius: 7, note: 'Qin Shi Huang claim point' } },
+];
+for (const point of modelClaimPoints) { layout.markers.push(point.marker); markers.set(point.marker.id, point.marker); }
 const map = new WorldMap(grid, layout);
 const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.region === regionAt(x, z).id)!.objective;
 
@@ -1097,7 +1107,7 @@ function matchServantLighting() {
   // Valley daytime values from the light setup above, so starting in a dusk region cannot shift the baseline.
   const daylight = lum(new THREE.Color('#fff0d2')) * 2.7 + lum(new THREE.Color('#d6ecff')) * 1.15 * .6;
   const k = THREE.MathUtils.clamp(light / daylight, .25, 1.1);
-  const roots = [servant.root, ...eraActors.map((e) => e.actor?.root)];
+  const roots = [servant.root, ...eraActors.map((e) => e.actor?.root), modelCompanion.actor?.root];
   for (const root of roots) root?.traverse((o) => {
     const mesh = o as THREE.Mesh; if (!mesh.isMesh) return;
     for (const m of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
@@ -1166,6 +1176,17 @@ function updateEraActors(dt: number) {
   }
 }
 const servantPanel = createServantPanel(servant, contract, () => { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
+const modelCompanion = new ModelCompanion({ scene, colliders, environment: servantEnvironment,
+  reservedRoots: () => [servant.root, ...eraActors.flatMap(entry => entry.actor ? [entry.actor.root] : [])],
+  combat: {
+    range: 3.5, damage: 14,
+    target: (position, range, targetId) => { const hit = combat.allyTarget(position, range, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
+    track: (position, range, targetId) => { const hit = combat.allyTrack(position, range, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
+    strike: (position, range, damage, targetId) => { const hit = combat.allyStrike(position, range, damage, targetId, 'melee'); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
+    engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
+  },
+});
+servantPanel.addSection(createModelCompanionControls(modelCompanion));
 const contractCard = document.createElement('div');
 contractCard.id = 'contract-card'; contractCard.className = 'hud';
 Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px', padding: '12px', borderRadius: '12px',
@@ -1185,7 +1206,7 @@ function renderContract() {
 }
 addEventListener('pagehide', (event) => { if (!event.persisted) {
   eraActorsDisposed = true;
-  servantPanel.dispose(); servant.dispose();
+  servantPanel.dispose(); servant.dispose(); modelCompanion.dispose();
   for (const entry of eraActors) {entry.controller?.abort();entry.actor?.dispose();}
 } });
 function resetProgress() {
@@ -2120,6 +2141,11 @@ function interactQinOrder() {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  const claim = modelClaimPoints.find(point => point.marker.id === m.id);
+  if (claim && canReachValleyPanel(m)) {
+    void modelCompanion.select(claim.id).then(() => { audio.interaction(); toast(bilingual(`${m.label}：已领取`, `${localizeText(m.label)}: claimed`)); servantPanel.render(); });
+    return;
+  }
   if(typeof homeTown!=='undefined'&&homeTown?.interact(m.id))return;
   if(orleansWorksMarkerIds.has(m.id)){if(!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请为交互绑定一个可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}orleansWorksRuntime?.interact(m.id);return;}
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
@@ -2389,6 +2415,7 @@ function frame(now: number) {
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
   updateEraActors(dt);
+  modelCompanion.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
   if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); }
   settlements.update(player.pos);

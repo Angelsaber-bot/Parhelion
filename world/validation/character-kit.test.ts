@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { gzipSync } from 'node:zlib';
 import * as THREE from 'three';
-import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader, type GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterKit, decodeCharacterAsset, loadCharacterKit, type CharacterKitDefinition, type KitEventResult } from '../src/characters/characterKit.ts';
 function fixture(onEvent?: (event:KitEventResult)=>void) {
   const scene=new THREE.Group(),socket=new THREE.Object3D();socket.name='Muzzle';scene.add(socket);
@@ -77,4 +77,25 @@ test('event callbacks can pause or change the current clip rate without corrupti
   f.kit.play('attack',{rate:2});f.kit.update(.25);assert.equal(calls,1);assert.equal(f.kit.clipTime,.25);
   assert.ok(Number.isFinite(f.kit.mixer.time));f.kit.update(.25);assert.equal(f.kit.clipTime,.25);
   f.kit.play('attack',{rate:1});tick(f.kit,4);assert.equal(calls,2);assert.equal(f.kit.state,'idle');f.kit.dispose();
+});
+
+
+test('multipart transport preserves byte order, passes abort signals and rejects missing parts', async () => {
+  const f = fixture(), originalFetch = globalThis.fetch, originalParse = GLTFLoader.prototype.parseAsync;
+  const raw = new Uint8Array([0x67, 0x6c, 0x54, 0x46, 2, 0, 0, 0, 12, 0, 0, 0]);
+  const compressed = gzipSync(raw), middle = Math.ceil(compressed.length / 2);
+  const definition = { ...f.definition, assetUrl: '/part1.bin', additionalAssetUrls: ['/part2.bin'] };
+  const controller = new AbortController();
+  try {
+    globalThis.fetch = async (url, options) => {
+      assert.equal(options?.signal, controller.signal);
+      if (url === '/part1.bin') await new Promise(resolve => setTimeout(resolve, 5));
+      return new Response(url === '/part1.bin' ? compressed.subarray(0, middle) : compressed.subarray(middle));
+    };
+    GLTFLoader.prototype.parseAsync = async bytes => { assert.deepEqual(Buffer.from(bytes as ArrayBuffer), Buffer.from(raw)); return f.gltf; };
+    const kit = await loadCharacterKit(definition, { signal: controller.signal });
+    assert.equal(kit.state, 'idle'); kit.dispose();
+    globalThis.fetch = async url => url === '/part2.bin' ? new Response('missing', { status: 404 }) : new Response(compressed.subarray(0, middle));
+    await assert.rejects(loadCharacterKit(definition), /HTTP 404/);
+  } finally { globalThis.fetch = originalFetch; GLTFLoader.prototype.parseAsync = originalParse; f.kit.dispose(); }
 });

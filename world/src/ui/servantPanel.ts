@@ -22,8 +22,10 @@ export function createServantPanel(servant: ContractServant, contract: FirstCont
   const pickLabel = document.createElement('label'), pickText = document.createElement('span');
   const pick = document.createElement('select'); pick.id = 'servant-active'; pickLabel.append(pickText, pick);
   dialog.append(header, pickLabel, label, note, state, saved, actions); document.body.append(launcher, dialog);
+  const sections: Array<{ element: HTMLElement; render(): void; dispose(): void }> = [];
   let signature = '';
   function render() {
+    for (const section of sections) section.render();
     const next = [getLanguage(), servant.status, servant.appearance.outfit, servant.appearance.saved, contract.roster.join(','), contract.selected, contract.companionSummoned].join('|');
     if (signature === next) return;
     signature = next;
@@ -57,7 +59,8 @@ export function createServantPanel(servant: ContractServant, contract: FirstCont
   document.addEventListener('pointerlockchange', visibility); render(); visibility();
   return {
     get open() { return dialog.open; },
+    addSection(section: { element: HTMLElement; render(): void; dispose(): void }) { sections.push(section); dialog.append(section.element); },
     render() { if (dialog.open) render(); },
-    dispose() { unsubscribe(); document.removeEventListener('pointerlockchange', visibility); dialog.remove(); launcher.remove(); },
+    dispose() { for (const section of sections.splice(0)) section.dispose(); unsubscribe(); document.removeEventListener('pointerlockchange', visibility); dialog.remove(); launcher.remove(); },
   };
 }

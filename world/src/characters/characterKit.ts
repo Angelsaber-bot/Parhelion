@@ -17,6 +17,8 @@ export interface KitClip {
 export interface KitSocket { node: string; forward?: Axis; up?: Axis; }
 export interface CharacterKitDefinition {
   id: string; assetUrl: string; defaultState: string;
+  /** Ordered continuation bytes for a large byte-exact asset transport. */
+  additionalAssetUrls?: readonly string[];
   clips: Readonly<Record<string, KitClip>>;
   sockets: Readonly<Record<string, KitSocket>>;
   /** All delivered clips are in-place. The host owns movement/collision/gameplay. */
@@ -50,9 +52,15 @@ export async function decodeCharacterAsset(bytes: ArrayBuffer): Promise<ArrayBuf
   return result;
 }
 export async function loadCharacterKit(definition: CharacterKitDefinition, options: CharacterKitOptions & { signal?: AbortSignal } = {}) {
-  const response = await fetch(definition.assetUrl, { signal: options.signal });
-  if (!response.ok) throw new Error(`Character asset HTTP ${response.status}`);
-  const bytes = await decodeCharacterAsset(await response.arrayBuffer());
+  const parts = await Promise.all([definition.assetUrl, ...(definition.additionalAssetUrls ?? [])].map(async url => {
+    const response = await fetch(url, { signal: options.signal });
+    if (!response.ok) throw new Error(`Character asset HTTP ${response.status}`);
+    return new Uint8Array(await response.arrayBuffer());
+  }));
+  const transport = new Uint8Array(parts.reduce((total, part) => total + part.byteLength, 0));
+  let offset = 0;
+  for (const part of parts) { transport.set(part, offset); offset += part.byteLength; }
+  const bytes = await decodeCharacterAsset(transport.buffer);
   options.signal?.throwIfAborted();
   const gltf = await new GLTFLoader().parseAsync(bytes, '');
   try {
