@@ -194,3 +194,23 @@ test('height-varying upper clearances permit gentle open slopes without shrinkin
     companion.dispose(); geometry.dispose();
   }
 });
+
+for (const id of ['jeanne', 'qinShiHuang'] as const) test(`${id}: recovers from model clearance blocking a platform descent`, async () => {
+  const platform = { name: 'raised-platform', enabled: true, bvh: new MeshBVH(new THREE.BoxGeometry(10, .4, 20).translate(-5, .2, 0)) };
+  const companion = new ModelCompanion({ scene: new THREE.Scene(), colliders: [floor(), platform], load: async definition => fixture(definition).actor });
+  await companion.select(id);
+  const player = new THREE.Vector3(-5, .4, 0);
+  companion.update(1 / 60, player, 0, true, false);
+  const actor = companion.actor!;
+  assert.equal(actor.root.visible, true);
+  for (let frame = 0; frame < 144; frame++) {
+    player.x += 1 / 12;
+    player.y = player.x < 0 ? .4 : 0;
+    companion.update(1 / 60, player, 0, true, false);
+  }
+  for (let frame = 0; frame < 300; frame++) companion.update(1 / 60, player, 0, true, false);
+  assert.ok(actor.root.position.distanceTo(player) < 4, `companion stranded at ${actor.root.position.toArray()} while player is ${player.toArray()}`);
+  assert.ok(Math.abs(actor.root.position.y) < 1e-6);
+  assert.equal(actor.state, 'idle');
+  companion.dispose();
+});

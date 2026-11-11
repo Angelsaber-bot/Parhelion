@@ -196,9 +196,7 @@ export class KitCompanion {
     if(prey && separation<24) destination.copy(prey.position).add(root.position.clone().sub(prey.position).setY(0).normalize().multiplyScalar(this.options.range>5?this.options.range*.65:1));
     const frameYaw=root.rotation.y;
     const normalSpeed=Math.min(6,(actor.definition.clips.run?.nominalSpeed??2)*COMPANION_MOTION.maxRate);
-    const before=this.options.canPlace?root.position.clone():undefined;
-    let speed=this.navigation.step(root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed));
-    if(before&&this.options.canPlace&&!this.options.canPlace(root.position)){root.position.copy(before);this.navigation.reset();speed=0;}
+    const speed=this.navigation.step(root,destination,dt,prey?normalSpeed:this.follow.speed(separation,normalSpeed),this.options.canPlace);
     const target=this.follow.prioritizePlayer ? null : this.options.target(root.position,this.options.range);
     const inReach=target && Math.hypot(target.position.x-root.position.x,target.position.z-root.position.z)<(this.options.range>5?this.options.range:1.75);
     if(inReach && actor.definition.clips.attack) {

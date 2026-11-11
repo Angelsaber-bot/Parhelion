@@ -45,9 +45,12 @@ export class CompanionNavigation {
   private planFor = 0;
   private side = 0;
   private blockedFor = 0;
-  get stuckSeconds() { return this.blockedFor; }
+  private clearanceStalledFor = 0;
+  private clearanceDistance = Infinity;
+  private readonly clearanceGoal = new THREE.Vector3(Infinity, 0, Infinity);
+  get stuckSeconds() { return Math.max(this.blockedFor, this.clearanceStalledFor); }
   constructor(private readonly colliders: Collider[]) {}
-  reset() { this.failedDirections.length=0; this.motion.reset(); this.planFor=0; this.side=0; this.blockedFor=0; }
+  reset() { this.failedDirections.length=0; this.motion.reset(); this.planFor=0; this.side=0; this.blockedFor=0; this.clearanceStalledFor=0; this.clearanceDistance=Infinity; }
   private hit(max:number) {
     this.prepareSegment(max);
     for(const collider of this.colliders) if(collider.enabled && this.overlapsSegment(collider)) {
@@ -131,13 +134,22 @@ export class CompanionNavigation {
     }
     return null;
   }
-  step(root:THREE.Object3D,destination:THREE.Vector3,dt:number,maxSpeed:number):number {
+  step(root:THREE.Object3D,destination:THREE.Vector3,dt:number,maxSpeed:number,canPlace?:(point:THREE.Vector3)=>boolean):number {
     if(!Number.isFinite(dt)||dt<=0)return 0;
     dt=Math.min(.1,dt);this.planFor-=dt;
     for(const failed of this.failedDirections)failed.left-=dt;
     for(let i=this.failedDirections.length-1;i>=0;i--)if(this.failedDirections[i].left<=0)this.failedDirections.splice(i,1);
     const distance=Math.hypot(destination.x-root.position.x,destination.z-root.position.z);
-    if(distance<.255){this.motion.reset();this.blockedFor=0;return 0;}
+    if(distance<.255){this.motion.reset();this.blockedFor=0;this.clearanceStalledFor=0;this.clearanceDistance=Infinity;return 0;}
+    if(canPlace) {
+      // Sideways shuffling along a wide-model obstruction is not progress.
+      // Keep the ordinary companions' safe-return timeout effective here too.
+      if(this.clearanceGoal.distanceToSquared(destination)>1 || distance<this.clearanceDistance-.25) {
+        this.clearanceGoal.copy(destination);
+        this.clearanceDistance=distance;
+        this.clearanceStalledFor=0;
+      } else this.clearanceStalledFor+=dt;
+    }
     if(this.planFor<=0 || Math.hypot(destination.x-this.goal.x,destination.z-this.goal.z)>1) {
       this.goal.copy(destination);this.planFor=.12;
       const angle=Math.atan2(destination.z-root.position.z,destination.x-root.position.x),reach=Math.min(this.failedDirections.length ? .65 : 3,distance);
@@ -165,7 +177,10 @@ export class CompanionNavigation {
     if(moved>1e-7) {
       // Revalidate even inside the plan interval: a quest gate can close between render frames.
       const y=this.floor(root.position.x,root.position.z,this.before.y);
-      if(y===null || !this.path(this.before,root.position)){
+      // Apply model clearance inside navigation so rejected moves retain detour
+      // memory and stuck time, allowing the existing safe-return recovery.
+      if(y!==null)root.position.y=y;
+      if(y===null || !this.path(this.before,root.position) || (canPlace && !canPlace(root.position))){
         const heading=Math.atan2(root.position.z-this.before.z,root.position.x-this.before.x),existing=this.failedDirections.find(failed=>Math.abs(Math.atan2(Math.sin(heading-failed.heading),Math.cos(heading-failed.heading)))<.28);
         if(existing)existing.left=.4;else{if(this.failedDirections.length>=9)this.failedDirections.shift();this.failedDirections.push({heading,left:.4});}
         this.rejectedDirections++;this.maximumFailedDirections=Math.max(this.maximumFailedDirections,this.failedDirections.length);
