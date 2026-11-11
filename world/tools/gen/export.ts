@@ -44,6 +44,8 @@ export interface RegionOut {
   pieces: Piece[];
   markers: Marker[];
   layout: Record<string, unknown>;
+  /** Authored ground paint (0–1, region frame) that the continental colour blend must not wash out. */
+  groundPaint?: (x: number, z: number) => number;
   /** water plane size (m); defaults to the map size. A sea region uses a larger one for the horizon. */
   waterSize?: number;
 }
@@ -58,7 +60,7 @@ export function applyBlackSailBeamFallback(material: THREE.Material, regionFile:
 export async function writeRegion(r: RegionOut) {
   const { world: W } = r;
   const regionId=r.file.replace('world_','');
-  if(CONTINENT_OFFSETS[regionId])blendContinentalColors(r.terrain.vis,regionId);
+  if(CONTINENT_OFFSETS[regionId])blendContinentalColors(r.terrain.vis,regionId,r.groundPaint);
   const materials = new Map<string, THREE.Material>();
   const mat = (name: string) => {
     let m = materials.get(name);

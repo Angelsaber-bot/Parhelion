@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {Batch,T} from '../geo';
 import type {Piece} from '../structures';
-import {distanceToLine,type ExpansionPlan,type RoutePoint} from '../../../src/map/worldPlan';
+import {distanceToLine,ORLEANS_LIT_SITES,type ExpansionPlan,type RoutePoint} from '../../../src/map/worldPlan';
 import {ORLEANS_LANE_POINTS,riverDistance} from './landscape';
 import {C,Frame,gable,pointedArch,strip,banner} from './craft';
 
@@ -149,7 +149,7 @@ export function buildOrleansDetails(plan:ExpansionPlan,heightAt:(x:number,z:numb
   }
   const lanterns=make('StreetLanterns'),glass=new Batch('orleans_Lantern_Glass','M_Emissive');
   pieces.push({name:glass.name,batch:glass,material:'M_Emissive'});
-  for(const site of plan.sites){
+  for(const site of plan.sites.slice(0,ORLEANS_LIT_SITES)){
     const [x,y,z]=site.position,f=new Frame(lanterns,x+2.5,y,z+2.4),g=new Frame(glass,x+2.5,y,z+2.4);
     f.cyl(0,2.2,0,.075,4.4,C.dark);f.box(0,4.25,0,.55,.1,.55,C.dark,false);f.box(0,4.95,0,.55,.14,.55,C.dark,false);
     for(const sx of [-.22,.22])for(const sz of [-.22,.22])f.box(sx,4.6,sz,.045,.7,.045,C.dark,false);

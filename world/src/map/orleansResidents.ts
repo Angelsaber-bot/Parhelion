@@ -21,10 +21,21 @@ const RESIDENTS=[
     lines:[['沿墙走到东边，可以从修缮场下去。河门在另一侧，别绕回城门。','Follow the wall east to the builders’ descent. The river gate is on the other side; you need not return through the main arch.']]},
   {id:'orleans_quay_porter',role:['河港搬运工','Quay porter'],p:[-185.6,8.45,-2.2],yaw:Math.PI,coat:0x94836c,
     lines:[['这边留一条路，粮车要转弯。仓库的货都码在两侧，中间能一直走过去。','Leave the turning space clear. The warehouses stack goods along the sides so the middle aisle stays open.']]},
+  // Second ring: the people of the banks and fields outside the walls.
+  {id:'orleans_bridge_warden',role:['吉尔 · 桥头堡守卫','Gilles · bridgehead warden'],p:[-1.9,14.4,285.7],yaw:2.2,coat:0x516c94,
+    lines:[['西塔的顶是围城那年打掉的，石头还堆在墙脚。门洞没坏，大路照走。','The west tower lost its cap in the year of the siege; the stones still lie at its foot. The gate held, and the road runs through as before.'],['过了桥往西，乡道通葡萄园，再绕到河对岸的磨坊。往东过长桥，就是去沙海的旧路。','West of the bridge a lane leads to the vineyard and round to the mill across the water. East over the long bridge is the old road to the sand sea.']]},
+  {id:'orleans_miller',role:['贝尔纳 · 磨坊主','Bernard · miller'],p:[-169.1,14,125.6],yaw:-.4,coat:0xcfc4a6,
+    lines:[['水轮挂在石墩外侧，水大了就往上提一格。麦子从城里的集市来，面粉再从这座桥回去。','The wheel hangs off the side of the pier, and we raise it a notch when the river runs high. Grain comes from the market and goes back over this bridge as flour.'],['木栈桥在墩上拐弯：往东回集市，往西上堤，一直走到低处的木桥。','The trestle turns on this pier: east to the market, west onto the levee and down to the low timber bridge.']]},
+  {id:'orleans_vintner',role:['柯莱特 · 葡萄农','Colette · vintner'],p:[-128.8,17.5,312.5],yaw:Math.PI,coat:0x7c5c8c,
+    lines:[['螺旋榨机要四个人推。今年摘得早，桶还没箍完，葡萄已经堆到棚口了。','The screw press takes four of us to turn. The harvest came early this year; the barrels are not yet hooped and the grapes are already at the door.'],['顺着乡道往西，沿河岸一直走，会回到通磨坊的那座木栈桥。','Follow the lane west and keep to the bank; it brings you back to the trestle that leads to the mill.']]},
+  {id:'orleans_dovekeeper',role:['马蒂厄 · 农庄老人','Mathieu · old man of the grange'],p:[144,15.8,309],yaw:.9,coat:0x8a7a5c,
+    lines:[['那一夜没有打雷。一片影子从教堂那边过来，谷仓就着了，地上留下三道沟。','There was no thunder that night. A shadow came over from the cathedral, the barn took fire, and three furrows were left in the ground.'],['鸽子第二天就回来了。它们比我们清楚，那东西落脚的地方不在这里。','The doves came back the next day. They know better than we do that the thing does not roost here.']]},
+  {id:'orleans_gunner',role:['艾蒂安 · 炮手','Etienne · gunner'],p:[282,13.9,7],yaw:-1.9,coat:0x6f7490,
+    lines:[['这座营垒是他们围城时垒的。我们从西面的缺口冲进来，炮和抛石机都没来得及带走。','They raised this fort for the siege. We came in through the breach on the west side, and they left the guns and the engine behind.'],['炮口还对着城墙，没人去动它。石弹打得穿城墙，打不到天上飞的东西。','The guns still point at the wall; nobody has turned them. A stone shot can break a wall. It cannot reach what flies.']]},
 ] as const;
 /** The common human rig is an appearance template; chapter facts stay entirely independent. */
 export function orleansResidentSockets():PlacedNpcSocket[]{
-  return RESIDENTS.map(s=>({id:s.id,role:[...s.role],position:world(s.p),yaw:s.yaw,region:'britain',worldRegion:'orleans',appearance:{coat:s.coat,trim:0xd7c8aa,accent:0xbba05e,...(s.id==='orleans_quay_porter'?{carry:'sack' as const}:s.id==='orleans_river_fisher'?{carry:'net' as const}:s.id==='orleans_bell_keeper'?{carry:'bellrope' as const}:{})},lines:s.lines.map(l=>[...l])}));
+  return RESIDENTS.map(s=>({id:s.id,role:[...s.role],position:world(s.p),yaw:s.yaw,region:'britain',worldRegion:'orleans',appearance:{coat:s.coat,trim:0xd7c8aa,accent:0xbba05e,...(s.id==='orleans_quay_porter'||s.id==='orleans_miller'?{carry:'sack' as const}:s.id==='orleans_river_fisher'?{carry:'net' as const}:s.id==='orleans_bell_keeper'?{carry:'bellrope' as const}:{})},lines:s.lines.map(l=>[...l])}));
 }
 type ResidentHost={group:THREE.Group;getPosition(id:string):[number,number,number]|null;pose(id:string,p:[number,number,number],yaw:number):boolean};
 export function createOrleansResidentLife(host:ResidentHost,ground:(x:number,z:number,ceiling:number)=>number|null){

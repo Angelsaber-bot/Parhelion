@@ -41,7 +41,7 @@ test('actual main quest browser only pins deliberately, advances saved steps, an
   const regionFilter=panel.querySelector('select')!;regionFilter.value='orleans';regionFilter.dispatchEvent(new h.window.Event('change'));
   const discoveryFilter=panel.querySelectorAll('select')[1];discoveryFilter.value='discovery';discoveryFilter.dispatchEvent(new h.window.Event('change'));
   const showDone=panel.querySelector<HTMLInputElement>('input[type=checkbox]')!;showDone.checked=true;showDone.dispatchEvent(new h.window.Event('change'));
-  assert.equal(panel.querySelectorAll('[data-quest-id^="discovery:orleans_"]').length,9);
+  assert.equal(panel.querySelectorAll('[data-quest-id^="discovery:orleans_"]').length,15);
   assert.equal(panel.querySelector('[data-quest-id="main:orleans"]'),null);
   const lookout=panel.querySelector<HTMLButtonElement>('[data-quest-track="discovery:orleans_belfry_view"]')!;assert.equal(lookout.disabled,false);lookout.click();
   await enter();frames();assert.match(d.getElementById('world-tracked-story')!.textContent!,/Belfry viewing gallery/);

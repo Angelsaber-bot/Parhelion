@@ -1,6 +1,7 @@
 import {C,CYL,CONE,Frame,gable,hipRoof,workshopRoof,pointedArch,window,banner,strip} from './craft';
 import {buildOrleansDetails} from './details';
 import {buildOrleansWatercourse} from './watercourse';
+import {buildOrleansOutskirts,outskirtsOccupied} from './outskirts';
 import * as THREE from 'three';
 import {Batch,T} from '../geo';
 import {mulberry32} from '../rng';
@@ -277,7 +278,7 @@ export function buildOrleans(plan:ExpansionPlan,heightAt:(x:number,z:number)=>nu
   const random=mulberry32(16118);let trees=0;
   for(let i=0;i<380;i++){
     const x=-310+random()*620,z=-305+random()*610,y=heightAt(x,z),d=riverDistance(x,z);
-    if((x>150&&x<216&&z>-105&&z<90)||y<2||y>27||d<29||roadDistance(x,z)<13||Math.hypot(x-35,z+170)<125||Math.hypot((x+10)/185,(z-40)/155)<1.1||builtHouses.some(p=>Math.hypot(p.position[0]-x,p.position[2]-z)<17)||distanceToLine(x,z,ORLEANS_WALL)<16)continue;
+    if((x>150&&x<216&&z>-105&&z<90)||y<2||y>27||d<29||roadDistance(x,z)<13||Math.hypot(x-35,z+170)<125||Math.hypot((x+10)/185,(z-40)/155)<1.1||builtHouses.some(p=>Math.hypot(p.position[0]-x,p.position[2]-z)<17)||distanceToLine(x,z,ORLEANS_WALL)<16||outskirtsOccupied(x,z))continue;
     const h=7+random()*5,r=3+random()*2;trunks.add(CYL,C.wood,T(x,y+h/2,z,0,.5,h,.5));
     const willow=d<50;for(let j=0;j<3;j++)leaves.add(new THREE.IcosahedronGeometry(1,1),willow?'#7b985a':j%2?'#789051':'#93a368',T(x+(j-1)*r*.65,y+h+j%2*r*.55,z+(j%2)*r*.4,0,r,willow?r*1.4:r,r),false);
     trees++;if(trees>=90)break;
@@ -287,5 +288,6 @@ export function buildOrleans(plan:ExpansionPlan,heightAt:(x:number,z:number)=>nu
   for(let i=0;i<4;i++){const x=113+i*10,z=113;if(roadDistance(x,z)<8)continue;props.box(x,14,z,.5,3,.5,C.oak);props.add(new THREE.CylinderGeometry(1.2,1.2,.2,12),'#a98e69',T(x,16.5,z,0,1,1,1,Math.PI/2));}
   pieces.push(...buildOrleansDetails(plan,heightAt,builtHouses));
   pieces.push(...buildOrleansWatercourse());
+  pieces.push(...buildOrleansOutskirts(plan,heightAt,access));
   return pieces;
 }

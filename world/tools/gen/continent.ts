@@ -199,12 +199,13 @@ export function continentColor(x:number,z:number,target=new THREE.Color()):THREE
   return target;
 }
 /** Blend surface colours across broad ecotones, including both copies of a shared edge. */
-export function blendContinentalColors(g:THREE.BufferGeometry,id:string) {
+/** `keep` (tile frame, 0–1) holds authored ground paint such as fields against the ecotone. */
+export function blendContinentalColors(g:THREE.BufferGeometry,id:string,keep?:(x:number,z:number)=>number) {
   const [ox,oz]=CONTINENT_OFFSETS[id],p=g.attributes.position,c=g.attributes.color,tmp=new THREE.Color(),old=new THREE.Color();
   for(let i=0;i<p.count;i++) {
     const [x,z]=toTile(id,p.getX(i),p.getZ(i));
     const bend=35*Math.sin((x+ox)*.012+(z+oz)*.008);
-    const w=smoothstep(185+bend,360,Math.hypot(x,z));
+    const w=smoothstep(185+bend,360,Math.hypot(x,z))*(keep?1-Math.max(0,Math.min(1,keep(p.getX(i),p.getZ(i)))):1);
     if(w===0)continue;
     continentColor(x+ox,z+oz,tmp);old.fromBufferAttribute(c,i).lerp(tmp,w);c.setXYZ(i,old.r,old.g,old.b);
   }

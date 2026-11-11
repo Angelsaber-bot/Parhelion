@@ -4,6 +4,7 @@ import {distToSegment} from '../geo';
 import {distanceToLine,type ExpansionPlan,type MapPoint2} from '../../../src/map/worldPlan';
 import {ORLEANS_UNDERPASS_CUTS} from '../../../src/map/orleansWorks';
 import {ORLEANS_UNDERPASS} from '../../../src/map/orleansWorks';
+import {ORLEANS_SANDBARS,ORLEANS_SCORCH,fieldAt,laneDistance} from '../../../src/map/orleansOutskirts';
 
 /** A spring in the eastern foothills flows past the city to the northwest estuary. */
 const riverCurve=new THREE.CatmullRomCurve3([
@@ -76,6 +77,11 @@ export function orleansAuthoredHeight(plan:ExpansionPlan,x:number,z:number):numb
   // Water is a real channel at the world's sea level. Bridges stay above the bed.
   const d=riverDistance(x,z),source=1-smoothstep(258,305,x);
   y=lerp(y,lerp(-2.5,y,smoothstep(10,37,d)),source);
+  // Loire sandbanks: low pale bars that stand just clear of the water in the wide reaches.
+  for(const bar of ORLEANS_SANDBARS){
+    const dx=x-bar.x,dz=z-bar.z,u=Math.cos(bar.a)*dx-Math.sin(bar.a)*dz,v=Math.sin(bar.a)*dx+Math.cos(bar.a)*dz,e=Math.hypot(u/bar.rx,v/bar.rz);
+    if(e<1)y=Math.max(y,lerp(-2.5,.62+.1*fbm(x*.2,z*.2,2,1497),1-smoothstep(.3,1,e)));
+  }
   // Excavate only the two sloped mouths. The middle watercourse stays beneath
   // intact town terrain, with a real stone roof rather than an open trench.
   for(const line of ORLEANS_UNDERPASS_CUTS)for(let i=1;i<line.length;i++){
@@ -90,5 +96,23 @@ export function orleansTerrainColor(plan:ExpansionPlan,x:number,y:number,z:numbe
   const lane=Math.min(...ORLEANS_LANE_POINTS.map(line=>distanceToLine(x,z,line)),...plan.routes.filter(r=>r.kind!=='high').map(r=>distanceToLine(x,z,r.points.map(p=>[p[0],p[2]] as const))));
   if(d>28)c.lerp(new THREE.Color('#b0a17f'),1-smoothstep(2.5,8,lane));
   if(d>35&&y>24)c.lerp(new THREE.Color('#b9b195'),smoothstep(24,42,y)*.25);
+  // Second ring: strip fields, vine rows, country lanes, damp banks and the burnt swath.
+  const plot=d>34?fieldAt(x,z):null;
+  if(plot){
+    const strip=Math.floor((plot.u+plot.field.w/2)/6),odd=strip%2===0,crop=plot.field.crop;
+    const tone=crop==='wheat'?(odd?'#cdb56c':strip%3===0?'#a7ad62':'#bda862'):crop==='plough'?(odd?'#8d7455':'#7b674c'):crop==='vine'?(Math.floor((plot.v+plot.field.d/2)/3.2)%2?'#9c8b63':'#8a8f58'):(odd?'#94a063':'#a3a568');
+    c.lerp(new THREE.Color(tone),.86);
+  }
+  const country=laneDistance(x,z);
+  if(d>30)c.lerp(new THREE.Color('#a8976f'),(1-smoothstep(1.4,4.2,country))*.9);
+  // Wet margin and reed-green shallows give the channel a readable edge.
+  if(y>=.5&&d>=23&&d<34)c.lerp(new THREE.Color('#93a06a'),(1-smoothstep(23,34,d))*.55);
+  if(y<.5&&y>-1.2)c.lerp(new THREE.Color('#9db09a'),smoothstep(-1.2,.4,y)*.6);
+  if(y>=.45&&y<1.3&&d<22)c.set('#d9cda4').multiplyScalar(1+.05*Math.sin(x*.7+z*.4));
+  {
+    const k=ORLEANS_SCORCH,dx=x-k.x,dz=z-k.z,u=Math.cos(k.a)*dx-Math.sin(k.a)*dz,v=Math.sin(k.a)*dx+Math.cos(k.a)*dz,e=Math.hypot(u/k.rx,v/k.rz)+fbm(x*.09,z*.09,2,1499)*.28;
+    if(e<1.25)c.lerp(new THREE.Color('#4b443b'),(1-smoothstep(.55,1.25,e))*.88);
+    for(const [a,b] of k.claws){const g=distToSegment(x,z,[...a],[...b]);if(g<3)c.lerp(new THREE.Color('#2b2826'),1-smoothstep(1.1,3,g));}
+  }
   return c.multiplyScalar(1+noise*.12);
 }

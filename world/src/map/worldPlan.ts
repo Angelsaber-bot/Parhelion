@@ -54,6 +54,13 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
       { id:'harbour', name:'踏轮吊机与河港', nameEn:'Treadwheel Harbour', position:[-186,8.35,-20], radius:18, purpose:'hub' },
       { id:'cloister', name:'教堂药草回廊', nameEn:'Cathedral Herb Cloister', position:[111,32,-194], radius:25, purpose:'landmark' },
       { id:'repairyard', name:'东墙修缮场', nameEn:'Eastern Wall Works', position:[178,14,50], radius:28, purpose:'landmark' },
+      // Second ring (2026-11-11): the banks and fields outside the walls.
+      { id:'tourelles', name:'桥头堡', nameEn:'Bridgehead Towers', position:[-5.5,14.2,285.5], radius:14, purpose:'landmark' },
+      { id:'bridgemill', name:'桥上磨坊', nameEn:'Mill on the Bridge', position:[-170,14,130], radius:8, purpose:'landmark' },
+      { id:'vineyard', name:'河岸葡萄园', nameEn:'Riverbank Vineyard', position:[-130,17.3,311], radius:20, purpose:'landmark' },
+      { id:'grange', name:'焦痕农庄', nameEn:'Scorched Grange', position:[150,15.7,306], radius:20, purpose:'landmark' },
+      { id:'windmill', name:'东岗风车', nameEn:'East Ridge Windmill', position:[238,23.4,-196.5], radius:14, purpose:'landmark' },
+      { id:'bastille', name:'东郊围城营垒', nameEn:'Eastern Siege Bastille', position:[292,13.9,-6], radius:24, purpose:'landmark' },
     ],
     routes: [
       { id:'main', name:'城门正面进攻', kind:'main', points:[[0,14,170],[-80,14,90],[-55,14,70],[-16,14,43],[15,14,15],[30,14,-10],[30,14,-55],[34,23,-92],[35,32,-130],[35,32,-170]] },
@@ -156,6 +163,8 @@ export const EXPANSION_PLANS: ExpansionPlan[] = [
 export const EXPANSION_GRASS_CLEARANCE:readonly (readonly [number,number,number,number])[]=[
   [-824,-798,-722,-678],
 ];
+/** The first eight Orleans sites carry the town's lanterns; the shared pool holds eight lamps. */
+export const ORLEANS_LIT_SITES=8;
 /** World-space centre/radii of Orleans' worn paved courts; rounded ground stays rounded. */
 export const ORLEANS_PAVED_COURTS:readonly (readonly [number,number,number,number])[]=[[-685,-1552,20,12],[-800,-1350,23,18]];
 

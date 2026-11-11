@@ -58,12 +58,12 @@ test('discovery uses found, trial uses true victory, epilogue follows unresolved
  assert.notEqual(catalog.resolve('side:closure',new Set(),new Set())?.targetId,'hq_terminal');
  const done=new Set(['sun_core','sea_core','winter_core','fire_core']);assert.equal(catalog.resolve('side:closure',done,new Set())?.targetId,'hq_terminal');done.add('world_epilogue_recorded');assert.equal(catalog.resolve('side:closure',done,new Set()),null);
 });
-test('Orleans exploration lists nine bilingual real landmarks and completes only from saved discoveries',()=>{
+test('Orleans exploration lists fifteen bilingual real landmarks and completes only from saved discoveries',()=>{
  const done=new Set<string>(),found=new Set<string>();
  const entries=catalog.list(done,found).filter(e=>e.region==='orleans');
- assert.equal(entries.length,9);assert.ok(entries.every(e=>e.category==='discovery'&&e.guide&&!e.complete));
+ assert.equal(entries.length,15);assert.ok(entries.every(e=>e.category==='discovery'&&e.guide&&!e.complete));
  for(const e of entries){
-  assert.ok(e.guide!.position[0]<-500&&e.guide!.position[2]<-500,'world-space target belongs to Orleans');
+  assert.ok(e.guide!.position[0]>-1080&&e.guide!.position[0]<-360&&e.guide!.position[2]>-1800&&e.guide!.position[2]<-1080,'world-space target lies inside the Orleans tile');
   assert.doesNotMatch(e.title[1],/[\u3400-\u9fff]/);found.add(e.guide!.targetId);
  }
  assert.ok(catalog.list(done,found).filter(e=>e.region==='orleans').every(e=>e.complete&&e.guide===null));

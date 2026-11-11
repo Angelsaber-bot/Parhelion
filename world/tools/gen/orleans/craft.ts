@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {Batch,BOX,T} from '../geo';
 import type {RoutePoint} from '../../../src/map/worldPlan';
 
-export const C={stone:'#cbbc9b',pale:'#e5d6b5',joint:'#9a8d73',dark:'#465665',blue:'#516c94',slate:'#53677b',wood:'#66513d',oak:'#987650',gold:'#cab56c',glass:'#557e9d',white:'#ece0c1',ash:'#746e62'};
+export const C={stone:'#cbbc9b',pale:'#e5d6b5',joint:'#9a8d73',dark:'#465665',blue:'#516c94',slate:'#53677b',wood:'#66513d',oak:'#987650',gold:'#cab56c',glass:'#557e9d',white:'#ece0c1',ash:'#746e62',thatch:'#b9a26a',earth:'#8f7a5c',turf:'#84985f',iron:'#3f4650',char:'#3b3632',hay:'#cdb26a',wicker:'#a58b5e',grape:'#6d4f7c',vine:'#6f8f4a'};
 export const CYL=new THREE.CylinderGeometry(1,1,1,12),CONE=new THREE.ConeGeometry(1,1,12);
 export class Frame {
   constructor(public b:Batch,public x:number,public y:number,public z:number,public a=0){}

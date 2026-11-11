@@ -4,6 +4,8 @@ import {egyptResidentSockets,createEgyptResidentLife} from './map/egyptResidents
 import { createEgyptAtmosphere } from './environment/egyptAtmosphere';
 import {ORLEANS_WORK_ACTIONS} from './map/orleansWorks';
 import {createOrleansWorksScene} from './environment/orleansWorksScene';
+import {createOrleansOutskirtsScene} from './environment/orleansOutskirtsScene';
+import {createOrleansAtmosphere} from './environment/orleansAtmosphere';
 import {createOrleansWorksRuntime} from './story/orleansWorks';
 import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
@@ -512,6 +514,10 @@ const residentQueries=makeCombatTerrain(colliders,layout);
 const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 world.add(orleansWorksScene.root);colliders.push(orleansWorksScene.collider);layout.markers.push(...orleansWorksScene.markers);
 const orleansWorksMarkerIds=new Set(orleansWorksScene.markers.map(m=>m.id));
+// 奥尔良外圈: the mill wheel, the windmill sails and the region's own air.
+const orleansOutskirts=createOrleansOutskirtsScene();world.add(orleansOutskirts.root);
+const orleansAtmosphere=createOrleansAtmosphere();world.add(orleansAtmosphere.root);
+addEventListener('pagehide',e=>{if(!e.persisted){orleansOutskirts.dispose();orleansAtmosphere.dispose();}});
 let orleansWorksRuntime:ReturnType<typeof createOrleansWorksRuntime>|undefined;
 addEventListener('pagehide',e=>{if(!e.persisted){orleansWorksRuntime?.dispose();orleansWorksScene.dispose();}});
 const orleansResidentLife=createOrleansResidentLife(settlementNpcs,(x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
@@ -2428,6 +2434,7 @@ function frame(now: number) {
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
   if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
+  orleansAtmosphere.update(dt,player.pos);orleansOutskirts.update(dt,player.pos);
   if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);
   if(typeof egyptMirrors!=='undefined'&&egyptMirrors.update(dt,done)){done.add(EGYPT_MIRRORS.solved);save();applyWorldState();toast(bilingual('日轮被照亮，圣所后壁的石门缓缓沉下，斜道通向台地深处。','The sun disc blazes; the stone door behind it sinks, opening an incline into the plateau.'));}
   if(typeof qinSentinels!=='undefined'&&gameplayActive()&&!player.flying){const back=qinSentinels.update(dt,player.pos,done);if(back){player.teleport(back[0],back[1]+.1,back[2],player.yaw);toast(bilingual('守陵俑把你逐回了入口。把它引到转台边，再转动军令。','A tomb guardian drives you back to the entrance. Lure it beside a turntable, then turn the order.'));}}
@@ -2538,7 +2545,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

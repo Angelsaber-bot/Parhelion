@@ -1,9 +1,174 @@
 [
   {
+    "view": "watercourse",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 105,
+        "triangles": 565331,
+        "points": 2164,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "overview",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 77,
+        "triangles": 473081,
+        "points": 2228,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "working-harbour",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 120,
+        "triangles": 584818,
+        "points": 2306,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
     "view": "cloister",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 97,
+        "triangles": 365560,
+        "points": 1944,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "belfry-gallery",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 111,
+        "triangles": 579824,
+        "points": 1944,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "wall-works",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -19,34 +184,7 @@
       "render": {
         "frame": 64,
         "calls": 90,
-        "triangles": 382215,
-        "points": 1944,
-        "lines": 0
-      }
-    },
-    "errors": []
-  },
-  {
-    "view": "wall-works",
-    "info": {
-      "residents": 8,
-      "regions": 8,
-      "stream": {
-        "resident": [
-          "orleans"
-        ],
-        "pending": [],
-        "failed": [],
-        "downloads": 1,
-        "installs": 1,
-        "evictions": 0,
-        "disposedGeometries": 0,
-        "disposedMaterials": 0
-      },
-      "render": {
-        "frame": 64,
-        "calls": 95,
-        "triangles": 449743,
+        "triangles": 448087,
         "points": 1944,
         "lines": 0
       }
@@ -56,8 +194,13 @@
   {
     "view": "warehouse-interior",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -71,37 +214,10 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 64,
-        "calls": 186,
-        "triangles": 1291990,
-        "points": 1944,
-        "lines": 0
-      }
-    },
-    "errors": []
-  },
-  {
-    "view": "churchyard",
-    "info": {
-      "residents": 8,
-      "regions": 8,
-      "stream": {
-        "resident": [
-          "orleans"
-        ],
-        "pending": [],
-        "failed": [],
-        "downloads": 1,
-        "installs": 1,
-        "evictions": 0,
-        "disposedGeometries": 0,
-        "disposedMaterials": 0
-      },
-      "render": {
-        "frame": 112,
-        "calls": 124,
-        "triangles": 576823,
-        "points": 1944,
+        "frame": 80,
+        "calls": 198,
+        "triangles": 1273583,
+        "points": 2010,
         "lines": 0
       }
     },
@@ -110,8 +226,13 @@
   {
     "view": "market-street",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -125,10 +246,10 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 112,
-        "calls": 213,
-        "triangles": 1244911,
-        "points": 1944,
+        "frame": 64,
+        "calls": 153,
+        "triangles": 1027469,
+        "points": 2160,
         "lines": 0
       }
     },
@@ -137,8 +258,13 @@
   {
     "view": "cathedral",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -153,19 +279,24 @@
       },
       "render": {
         "frame": 64,
-        "calls": 73,
-        "triangles": 374866,
-        "points": 1944,
+        "calls": 55,
+        "triangles": 344734,
+        "points": 2164,
         "lines": 0
       }
     },
     "errors": []
   },
   {
-    "view": "overview",
+    "view": "churchyard",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -180,8 +311,8 @@
       },
       "render": {
         "frame": 64,
-        "calls": 80,
-        "triangles": 483091,
+        "calls": 93,
+        "triangles": 505562,
         "points": 1944,
         "lines": 0
       }
@@ -189,10 +320,117 @@
     "errors": []
   },
   {
-    "view": "watercourse",
+    "view": "outskirts-overview",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "qin"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 127,
+        "triangles": 560005,
+        "points": 2166,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "tourelles",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "qin"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 83,
+        "triangles": 446347,
+        "points": 2184,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "long-bridge",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "qin"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 149,
+        "triangles": 554064,
+        "points": 2406,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "bridge-mill",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -206,20 +444,25 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 1552,
-        "calls": 179,
-        "triangles": 651217,
-        "points": 1944,
+        "frame": 64,
+        "calls": 116,
+        "triangles": 604686,
+        "points": 2140,
         "lines": 0
       }
     },
     "errors": []
   },
   {
-    "view": "working-harbour",
+    "view": "mill-trestle",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -233,20 +476,93 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 2336,
-        "calls": 276,
-        "triangles": 828966,
-        "points": 1944,
+        "frame": 80,
+        "calls": 214,
+        "triangles": 1204137,
+        "points": 2278,
         "lines": 0
       }
     },
     "errors": []
   },
   {
-    "view": "belfry-gallery",
+    "view": "vineyard",
     "info": {
-      "residents": 8,
-      "regions": 8,
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "qin"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 119,
+        "triangles": 629802,
+        "points": 2064,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "scorched-grange",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "qin"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 158,
+        "triangles": 703115,
+        "points": 2402,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "windmill",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
       "stream": {
         "resident": [
           "orleans"
@@ -260,10 +576,76 @@
         "disposedMaterials": 0
       },
       "render": {
-        "frame": 2368,
-        "calls": 228,
-        "triangles": 740239,
-        "points": 1944,
+        "frame": 64,
+        "calls": 107,
+        "triangles": 454120,
+        "points": 2054,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "siege-bastille",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [
+          "egypt"
+        ],
+        "failed": [],
+        "downloads": 2,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 64,
+        "calls": 105,
+        "triangles": 587626,
+        "points": 1984,
+        "lines": 0
+      }
+    },
+    "errors": []
+  },
+  {
+    "view": "west-levee",
+    "info": {
+      "machines": {
+        "wheel": true,
+        "sails": true
+      },
+      "emitters": 21,
+      "residents": 13,
+      "regions": 9,
+      "stream": {
+        "resident": [
+          "orleans"
+        ],
+        "pending": [],
+        "failed": [],
+        "downloads": 1,
+        "installs": 1,
+        "evictions": 0,
+        "disposedGeometries": 0,
+        "disposedMaterials": 0
+      },
+      "render": {
+        "frame": 96,
+        "calls": 322,
+        "triangles": 1139271,
+        "points": 2164,
         "lines": 0
       }
     },

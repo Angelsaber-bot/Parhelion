@@ -95,7 +95,7 @@ test('local residents speak independent directions, stay grounded and patrol wit
   const sockets=orleansResidentSockets(),original=JSON.stringify(sockets),system=createSettlementNpcs(sockets);
   const ground=(x:number,z:number,ceiling:number)=>bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x+720,ceiling,z+1440),new THREE.Vector3(0,-1,0)),THREE.DoubleSide)?.point.y??null;
   const life=createOrleansResidentLife(system,ground);
-  assert.equal(sockets.length,8);assert.ok(sockets.every(s=>s.worldRegion==='orleans'));
+  assert.equal(sockets.length,13);assert.ok(sockets.every(s=>s.worldRegion==='orleans'));
   for(const s of sockets){
     const line=system.interact(s.id)!;assert.ok(line[0].length>10&&line[1].length>20);const p=system.getPosition(s.id)!;const floor=ground(p[0],p[2],p[1]+1);assert.ok(floor!==null&&Math.abs(floor-p[1])<.18,`${s.id} is grounded`);
     const visitor=new Player(colliders,0);visitor.teleport(p[0]+720,p[1]+.6,p[2]+1440);
@@ -121,9 +121,9 @@ test('ordinary curving street lanes remain walkable between their houses and mar
   }
 });
 
-test('nine finished landmarks use persistent discovery markers without granting story or boss completion',()=>{
-  const discoveries=layout.markers.filter((m:{type:string})=>m.type==='discovery');assert.equal(discoveries.length,9);assert.equal(layout.objective.steps.length,0);
-  assert.equal(new Set(discoveries.map((m:{id:string})=>m.id)).size,9);
+test('fifteen finished landmarks use persistent discovery markers without granting story or boss completion',()=>{
+  const discoveries=layout.markers.filter((m:{type:string})=>m.type==='discovery');assert.equal(discoveries.length,15);assert.equal(layout.objective.steps.length,0);
+  assert.equal(new Set(discoveries.map((m:{id:string})=>m.id)).size,15);
   for(const m of discoveries){const [x,y,z]=m.p;const hit=bvh.raycastFirst(new THREE.Ray(new THREE.Vector3(x,y+1,z),new THREE.Vector3(0,-1,0)),THREE.DoubleSide);assert.ok(hit&&Math.abs(hit.point.y-y)<.6,`${m.id} is a physical place`);}
 });
 test('rounded paved courts exclude grass while their surrounding hillside remains planted',()=>{
