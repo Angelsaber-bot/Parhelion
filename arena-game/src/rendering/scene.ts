@@ -13,6 +13,9 @@ import rangeGlb from '../../../arena-maps/range/assets/range_visual.glb?url';
 import blackflagGlb from '../../../arena-maps/blackflag/assets/blackflag_visual.glb?url';
 import frostcourtGlb from '../../../arena-maps/frostcourt/assets/frostcourt_visual.glb?url';
 import camlannGlb from '../../../arena-maps/camlann/assets/camlann_visual.glb?url';
+import lishanGlb from '../../../arena-maps/lishan/assets/lishan_visual.glb?url';
+import suntempleGlb from '../../../arena-maps/suntemple/assets/suntemple_visual.glb?url';
+import orleansGlb from '../../../arena-maps/orleans/assets/orleans_visual.glb?url';
 import asterOverlayGlb from '../../../arena-maps/aster/assets/aster_overlay.glb?url';
 import { CHARACTERS, SHIELD, WEAPONS, type Team } from '../../shared/content.ts';
 import type { MapPresentation, Vec3 } from '../../shared/map.ts';
@@ -47,7 +50,7 @@ import {firearmIdlePose} from '../weapons/weaponPose.ts';
 import {renderTelemetry} from './renderTelemetry.ts';
 import {worldRenderVisible} from './renderScheduling.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb, range: rangeGlb };
+const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb, lishan: lishanGlb, suntemple: suntempleGlb, orleans: orleansGlb, range: rangeGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
 const MAP_OVERLAY: Record<string, string> = { aster: asterOverlayGlb };
 

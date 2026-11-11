@@ -1,0 +1,20 @@
+<!doctype html>
+<!-- Development-only map review: the real ArenaScene (sky, atmosphere, chapter materials and
+     effects) with a free camera. Not linked from the game and not part of the production build.
+     /tools/map-preview.html?map=lishan&eye=x,y,z&at=x,y,z&q=high -->
+<html><head><meta charset="utf-8"><title>Arena map preview</title>
+<style>html,body{margin:0;height:100%;background:#000;overflow:hidden}canvas{width:100vw;height:100vh;display:block}</style></head>
+<body><canvas id="c"></canvas>
+<script type="module">
+import { ArenaScene } from '/src/rendering/scene.ts';
+import { MAPS } from '/shared/arenaMap.ts';
+const q = new URLSearchParams(location.search), id = q.get('map') ?? 'aster', info = MAPS.find(m => m.id === id);
+const num = (k, d) => (q.get(k) ?? d).split(',').map(Number);
+const scene = new ArenaScene(document.getElementById('c'), q.get('q') === 'low' ? 'low' : 'high');
+await scene.loadMap(id, info?.data.presentation?.preset ?? info?.preset, info?.data.presentation);
+const eye = num('eye', '0,30,40'), at = num('at', '0,0,0');
+scene.camera.fov = Number(q.get('fov') ?? 62); scene.camera.position.set(...eye); scene.camera.lookAt(...at); scene.camera.updateProjectionMatrix();
+let frames = 0;
+const loop = () => { scene.update(1 / 60); scene.camera.position.set(...eye); scene.camera.lookAt(...at); scene.render(false); if (++frames === 30) window.__ready = true; requestAnimationFrame(loop); };
+loop();
+</script></body></html>

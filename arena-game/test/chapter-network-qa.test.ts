@@ -19,7 +19,7 @@ function next<T>(room:Room,type:string,predicate:(value:T)=>boolean=()=>true):Pr
     const off=room.onMessage(type,(value:T)=>{if(predicate(value)){clearTimeout(timeout);off();resolve(value);}});
   });
 }
-it('all five chapters pair only with their own map and acknowledge authoritative input over real sockets',async()=>{
+it('all eight chapters pair only with their own map and acknowledge authoritative input over real sockets',async()=>{
   const rooms:Room[]=[],ids=new Set<string>(),client=new Client(`ws://127.0.0.1:${port}`);
   try{
     for(const info of MAPS){
@@ -36,7 +36,7 @@ it('all five chapters pair only with their own map and acknowledge authoritative
       const snap=await acknowledged;expect(snap.players).toHaveLength(2);expect(snap.players.find(p=>p.id===a.sessionId)!.crouched).toBe(true);
       a.onMessage('snap',()=>{});
     }
-    expect(ids.size).toBe(5);
+    expect(ids.size).toBe(8);
   }finally{await Promise.all(rooms.map(room=>room.leave()));}
 },15000);
 
@@ -68,7 +68,7 @@ function jsonMessage<T>(ws:WebSocket,type:string):Promise<T>{
     ws.on('message',listener);
   });
 }
-it('all five chapter IDs and inputs cross actual Worker-style JSON sockets using RoomCore (not hosted Cloudflare)',async()=>{
+it('all eight chapter IDs and inputs cross actual Worker-style JSON sockets using RoomCore (not hosted Cloudflare)',async()=>{
   const sockets:WebSocket[]=[];
   try{
     for(const info of MAPS){

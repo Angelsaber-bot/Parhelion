@@ -7,6 +7,8 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['CAM LANN 誓约荒原', 'CAM LANN Oathfield'],
   ['BLACKFLAG 黑帆战舰', 'BLACKFLAG Battle Galleon'],
   ['FROSTCOURT 永冬庭院', 'FROSTCOURT Winter Courtyard'],
+  ['LISHAN 骊山地宫', 'LISHAN Buried Army'], ['SUNTEMPLE 日轮神殿', 'SUNTEMPLE Temple of the Sun'], ['ORLEANS 奥尔良', 'ORLEANS River Town'],
+  ['秦始皇 · 俑坑甬道', 'First Emperor · Pit corridors'], ['奥兹曼迪亚斯 · 柱厅日庭', 'Ozymandias · Columns and sun court'], ['贞德 · 河城街巷', 'Jeanne d’Arc · Streets and quay'],
   ['极光研究站 · 长廊高台', 'Aurora station · High gallery'], ['亚瑟王 · 石垒废墟', 'King Arthur · Stone ruins'],
   ['黑胡子 · 双舷甲板', 'Blackbeard · Twin decks'], ['拿破仑 · 雪庭拱廊', 'Napoleon · Snowy arcade'], ['黄昏神社 · 经典三路', 'Dusk shrine · Three lanes'],
   ["换弹 ·", "Reload ·"],

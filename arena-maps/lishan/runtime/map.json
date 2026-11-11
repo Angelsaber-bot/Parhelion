@@ -1,0 +1,3067 @@
+{
+  "mapId": "lishan",
+  "name": "LISHAN 骊山地宫",
+  "version": "1.0.0",
+  "mode": "arena",
+  "units": "metres",
+  "upAxis": "Y",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "bounds": {
+    "min": [
+      -30.0,
+      -2.2,
+      -22.0
+    ],
+    "max": [
+      30.0,
+      12,
+      22.0
+    ]
+  },
+  "presentation": {
+    "preset": "tomb",
+    "glows": [
+      [
+        -19.6,
+        1.84,
+        -20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -3.2,
+        1.84,
+        -20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        3.2,
+        1.84,
+        -20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        19.6,
+        1.84,
+        -20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -19.6,
+        1.84,
+        20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -3.2,
+        1.84,
+        20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        3.2,
+        1.84,
+        20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        19.6,
+        1.84,
+        20.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -28.2,
+        1.84,
+        -19.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -28.2,
+        1.84,
+        -6.2,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -28.2,
+        1.84,
+        6.2,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -28.2,
+        1.84,
+        19.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        28.2,
+        1.84,
+        -19.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        28.2,
+        1.84,
+        -6.2,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        28.2,
+        1.84,
+        6.2,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        28.2,
+        1.84,
+        19.6,
+        1.5,
+        "#ffb86a",
+        0.5
+      ],
+      [
+        -9,
+        1.15,
+        -20,
+        1.1,
+        "#ff8a3a",
+        0.6
+      ],
+      [
+        9,
+        1.15,
+        -20,
+        1.1,
+        "#ff8a3a",
+        0.6
+      ],
+      [
+        -9,
+        1.15,
+        20,
+        1.1,
+        "#ff8a3a",
+        0.6
+      ],
+      [
+        9,
+        1.15,
+        20,
+        1.1,
+        "#ff8a3a",
+        0.6
+      ]
+    ],
+    "pools": [
+      [
+        -19.6,
+        0.03,
+        -20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -3.2,
+        0.03,
+        -20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        3.2,
+        0.03,
+        -20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        19.6,
+        0.03,
+        -20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -19.6,
+        0.03,
+        20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -3.2,
+        0.03,
+        20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        3.2,
+        0.03,
+        20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        19.6,
+        0.03,
+        20.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -28.2,
+        0.03,
+        -19.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -28.2,
+        0.03,
+        -6.2,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -28.2,
+        0.03,
+        6.2,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -28.2,
+        0.03,
+        19.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        28.2,
+        0.03,
+        -19.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        28.2,
+        0.03,
+        -6.2,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        28.2,
+        0.03,
+        6.2,
+        4.6,
+        "#ffb060",
+        0.5
+      ],
+      [
+        28.2,
+        0.03,
+        19.6,
+        4.6,
+        "#ffb060",
+        0.5
+      ]
+    ],
+    "embers": [
+      [
+        -9,
+        1.1,
+        -20,
+        0.3
+      ],
+      [
+        9,
+        1.1,
+        -20,
+        0.3
+      ],
+      [
+        -9,
+        1.1,
+        20,
+        0.3
+      ],
+      [
+        9,
+        1.1,
+        20,
+        0.3
+      ]
+    ],
+    "field": {
+      "kind": "glitter",
+      "count": 160,
+      "color": "#cfe2ff",
+      "size": 0.07,
+      "min": [
+        -20,
+        -2.1500000000000004,
+        -16
+      ],
+      "max": [
+        20,
+        -1.3000000000000003,
+        16
+      ]
+    }
+  },
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "projection": "world-metre planar per face",
+    "channels": [
+      "baseColor",
+      "occlusionRoughnessMetallic",
+      "normal"
+    ]
+  },
+  "palette": {
+    "rammed": "#b89468",
+    "rammedDark": "#97754f",
+    "rammedLight": "#cfae80",
+    "earthFloor": "#7f6a54",
+    "earthDark": "#5f4f40",
+    "brick": "#8b8e92",
+    "brickDark": "#6c7076",
+    "brickLight": "#a3a7aa",
+    "terracotta": "#b98a62",
+    "terracottaDark": "#96694a",
+    "terracottaPale": "#cfa582",
+    "pigmentRed": "#a2473a",
+    "pigmentGreen": "#5d7f6a",
+    "pigmentBlue": "#56658f",
+    "lacquer": "#7e2a22",
+    "lacquerDark": "#2a1c1c",
+    "timber": "#5d4634",
+    "timberLight": "#8a6b4c",
+    "tile": "#4b5258",
+    "tileLight": "#687078",
+    "bronze": "#4f7466",
+    "bronzeDark": "#35544c",
+    "gold": "#c9a65a",
+    "jade": "#7fb7a0",
+    "rope": "#9a8463",
+    "bannerBlack": "#22222a",
+    "bannerRed": "#8f2f2a",
+    "mercury": "#b9d6ff",
+    "star": "#fff3c9",
+    "nightLacquer": "#141a33",
+    "flame": "#ff9a3c",
+    "flameCore": "#ffe6a0",
+    "coal": "#c2461e",
+    "iron": "#3a3d42",
+    "rock": "#3d4250",
+    "rockLight": "#555b6c"
+  },
+  "objects": [
+    {
+      "id": "pit_floor",
+      "type": "box",
+      "position": [
+        0.0,
+        -2.7,
+        0.0
+      ],
+      "size": [
+        60,
+        1.0,
+        44
+      ],
+      "material": "earthFloor",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "wall_x_-1",
+      "type": "box",
+      "position": [
+        -29.7,
+        2.4,
+        0.0
+      ],
+      "size": [
+        0.6,
+        9.2,
+        44
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "wall_x_1",
+      "type": "box",
+      "position": [
+        29.7,
+        2.4,
+        0.0
+      ],
+      "size": [
+        0.6,
+        9.2,
+        44
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "wall_z_-1",
+      "type": "box",
+      "position": [
+        0.0,
+        2.4,
+        -21.7
+      ],
+      "size": [
+        58.8,
+        9.2,
+        0.6
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_-1",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.1,
+        -18.7
+      ],
+      "size": [
+        42,
+        2.2,
+        5.4
+      ],
+      "material": "brick",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_-1_0",
+      "type": "box",
+      "position": [
+        -15.25,
+        -1.1,
+        -5.5
+      ],
+      "size": [
+        11.5,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_-1_1",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.1,
+        -5.5
+      ],
+      "size": [
+        13.0,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_-1_2",
+      "type": "box",
+      "position": [
+        15.25,
+        -1.1,
+        -5.5
+      ],
+      "size": [
+        11.5,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "plank_bridge_-1_-1",
+      "type": "box",
+      "position": [
+        -8.0,
+        -0.125,
+        -5.5
+      ],
+      "size": [
+        3.0,
+        0.25,
+        2.0
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "plank_bridge_-1_1",
+      "type": "box",
+      "position": [
+        8.0,
+        -0.125,
+        -5.5
+      ],
+      "size": [
+        3.0,
+        0.25,
+        2.0
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "gallery_stair_-1",
+      "type": "ramp",
+      "position": [
+        0.0,
+        -2.2,
+        -13.25
+      ],
+      "size": [
+        3.0,
+        2.2,
+        5.5
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_0",
+      "type": "box",
+      "position": [
+        -18.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_1",
+      "type": "box",
+      "position": [
+        -12.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_2",
+      "type": "box",
+      "position": [
+        -6.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_3",
+      "type": "box",
+      "position": [
+        6.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_4",
+      "type": "box",
+      "position": [
+        12.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_-1_5",
+      "type": "box",
+      "position": [
+        18.0,
+        2.15,
+        -16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.5,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.5,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2",
+      "type": "box",
+      "position": [
+        9.0,
+        0.5,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3",
+      "type": "box",
+      "position": [
+        15.0,
+        0.5,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_-1_-1",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.675,
+        -20.0
+      ],
+      "size": [
+        1.4,
+        1.35,
+        1.4
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        3.0,
+        1.75,
+        0.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_-1_1",
+      "type": "box",
+      "position": [
+        9.0,
+        0.675,
+        -20.0
+      ],
+      "size": [
+        1.4,
+        1.35,
+        1.4
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1",
+      "type": "box",
+      "position": [
+        15.0,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        3.0,
+        1.75,
+        0.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_roof_-1",
+      "type": "box",
+      "position": [
+        0.0,
+        5.025,
+        -18.4
+      ],
+      "size": [
+        42,
+        1.35,
+        6.0
+      ],
+      "material": "tile",
+      "collision": false,
+      "role": "roof",
+      "batch": "main"
+    },
+    {
+      "id": "wall_z_1",
+      "type": "box",
+      "position": [
+        0.0,
+        2.4,
+        21.7
+      ],
+      "size": [
+        58.8,
+        9.2,
+        0.6
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_1",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.1,
+        18.7
+      ],
+      "size": [
+        42,
+        2.2,
+        5.4
+      ],
+      "material": "brick",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_1_0",
+      "type": "box",
+      "position": [
+        -15.25,
+        -1.1,
+        5.5
+      ],
+      "size": [
+        11.5,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_1_1",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.1,
+        5.5
+      ],
+      "size": [
+        13.0,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "baulk_1_2",
+      "type": "box",
+      "position": [
+        15.25,
+        -1.1,
+        5.5
+      ],
+      "size": [
+        11.5,
+        2.2,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "plank_bridge_1_-1",
+      "type": "box",
+      "position": [
+        -8.0,
+        -0.125,
+        5.5
+      ],
+      "size": [
+        3.0,
+        0.25,
+        2.0
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "plank_bridge_1_1",
+      "type": "box",
+      "position": [
+        8.0,
+        -0.125,
+        5.5
+      ],
+      "size": [
+        3.0,
+        0.25,
+        2.0
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "gallery_stair_1",
+      "type": "ramp",
+      "position": [
+        0.0,
+        -2.2,
+        13.25
+      ],
+      "size": [
+        3.0,
+        2.2,
+        5.5
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_0",
+      "type": "box",
+      "position": [
+        -18.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_1",
+      "type": "box",
+      "position": [
+        -12.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_2",
+      "type": "box",
+      "position": [
+        -6.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_3",
+      "type": "box",
+      "position": [
+        6.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_4",
+      "type": "box",
+      "position": [
+        12.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_column_1_5",
+      "type": "box",
+      "position": [
+        18.0,
+        2.15,
+        16.6
+      ],
+      "size": [
+        0.7,
+        4.3,
+        0.7
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.5,
+        16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.5,
+        16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2",
+      "type": "box",
+      "position": [
+        9.0,
+        0.5,
+        16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3",
+      "type": "box",
+      "position": [
+        15.0,
+        0.5,
+        16.6
+      ],
+      "size": [
+        5.3,
+        1.0,
+        0.3
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_1_-1",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.675,
+        20.0
+      ],
+      "size": [
+        1.4,
+        1.35,
+        1.4
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.875,
+        20.3
+      ],
+      "size": [
+        3.0,
+        1.75,
+        0.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_1_1",
+      "type": "box",
+      "position": [
+        9.0,
+        0.675,
+        20.0
+      ],
+      "size": [
+        1.4,
+        1.35,
+        1.4
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1",
+      "type": "box",
+      "position": [
+        15.0,
+        0.875,
+        20.3
+      ],
+      "size": [
+        3.0,
+        1.75,
+        0.6
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_roof_1",
+      "type": "box",
+      "position": [
+        0.0,
+        5.025,
+        18.4
+      ],
+      "size": [
+        42,
+        1.35,
+        6.0
+      ],
+      "material": "tile",
+      "collision": false,
+      "role": "roof",
+      "batch": "main"
+    },
+    {
+      "id": "platform_west",
+      "type": "box",
+      "position": [
+        -25.2,
+        -1.1,
+        0.0
+      ],
+      "size": [
+        8.4,
+        2.2,
+        42.8
+      ],
+      "material": "brick",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "spirit_screen_west",
+      "type": "box",
+      "position": [
+        -23.9,
+        1.7,
+        0.0
+      ],
+      "size": [
+        0.6,
+        3.4,
+        10
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "que_tower_west_-1",
+      "type": "box",
+      "position": [
+        -23.0,
+        2.8,
+        -9.5
+      ],
+      "size": [
+        2.4,
+        5.6,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "weapon_rack_west_-1",
+      "type": "box",
+      "position": [
+        -28.8,
+        0.65,
+        -15.0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        2.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        -7.5
+      ],
+      "size": [
+        0.3,
+        1.0,
+        1.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "que_tower_west_1",
+      "type": "box",
+      "position": [
+        -23.0,
+        2.8,
+        9.5
+      ],
+      "size": [
+        2.4,
+        5.6,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "weapon_rack_west_1",
+      "type": "box",
+      "position": [
+        -28.8,
+        0.65,
+        15.0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        2.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        3.0
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        7.5
+      ],
+      "size": [
+        0.3,
+        1.0,
+        1.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.5,
+        14.65
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ramp_west_north",
+      "type": "ramp",
+      "position": [
+        -18.25,
+        -2.2,
+        -11.5
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "ramp_west_centre",
+      "type": "ramp",
+      "position": [
+        -18.25,
+        -2.2,
+        0.0
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "ramp_west_south",
+      "type": "ramp",
+      "position": [
+        -18.25,
+        -2.2,
+        11.5
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "spawn_mark_west",
+      "type": "box",
+      "position": [
+        -28.0,
+        0.02,
+        0.0
+      ],
+      "size": [
+        1.2,
+        0.04,
+        5.2
+      ],
+      "material": "bannerBlack",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "end_roof_west",
+      "type": "box",
+      "position": [
+        -21.7,
+        6.85,
+        0.0
+      ],
+      "size": [
+        15.4,
+        0.3,
+        42.8
+      ],
+      "material": "timber",
+      "collision": false,
+      "role": "roof",
+      "batch": "main"
+    },
+    {
+      "id": "platform_east",
+      "type": "box",
+      "position": [
+        25.2,
+        -1.1,
+        0.0
+      ],
+      "size": [
+        8.4,
+        2.2,
+        42.8
+      ],
+      "material": "brick",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "spirit_screen_east",
+      "type": "box",
+      "position": [
+        23.9,
+        1.7,
+        0.0
+      ],
+      "size": [
+        0.6,
+        3.4,
+        10
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "que_tower_east_-1",
+      "type": "box",
+      "position": [
+        23.0,
+        2.8,
+        -9.5
+      ],
+      "size": [
+        2.4,
+        5.6,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "weapon_rack_east_-1",
+      "type": "box",
+      "position": [
+        28.8,
+        0.65,
+        -15.0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        2.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        -7.5
+      ],
+      "size": [
+        0.3,
+        1.0,
+        1.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "que_tower_east_1",
+      "type": "box",
+      "position": [
+        23.0,
+        2.8,
+        9.5
+      ],
+      "size": [
+        2.4,
+        5.6,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "weapon_rack_east_1",
+      "type": "box",
+      "position": [
+        28.8,
+        0.65,
+        15.0
+      ],
+      "size": [
+        1.2,
+        1.3,
+        2.8
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        3.0
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        7.5
+      ],
+      "size": [
+        0.3,
+        1.0,
+        1.4
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.5,
+        14.65
+      ],
+      "size": [
+        0.3,
+        1.0,
+        2.7
+      ],
+      "material": "timber",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ramp_east_north",
+      "type": "ramp",
+      "position": [
+        18.25,
+        -2.2,
+        -11.5
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "ramp_east_centre",
+      "type": "ramp",
+      "position": [
+        18.25,
+        -2.2,
+        0.0
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "ramp_east_south",
+      "type": "ramp",
+      "position": [
+        18.25,
+        -2.2,
+        11.5
+      ],
+      "size": [
+        5.5,
+        2.2,
+        3.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "spawn_mark_east",
+      "type": "box",
+      "position": [
+        28.0,
+        0.02,
+        0.0
+      ],
+      "size": [
+        1.2,
+        0.04,
+        5.2
+      ],
+      "material": "bannerRed",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "end_roof_east",
+      "type": "box",
+      "position": [
+        21.7,
+        6.85,
+        0.0
+      ],
+      "size": [
+        15.4,
+        0.3,
+        42.8
+      ],
+      "material": "timber",
+      "collision": false,
+      "role": "roof",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_w",
+      "type": "box",
+      "position": [
+        12.6,
+        -1.2,
+        -8.05
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_e",
+      "type": "box",
+      "position": [
+        -12.6,
+        -1.2,
+        -8.05
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_w",
+      "type": "box",
+      "position": [
+        12.6,
+        -1.2,
+        -14.7
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_e",
+      "type": "box",
+      "position": [
+        -12.6,
+        -1.2,
+        -14.7
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_w",
+      "type": "box",
+      "position": [
+        4.4,
+        -1.2,
+        -13.4
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_e",
+      "type": "box",
+      "position": [
+        -4.4,
+        -1.2,
+        -13.4
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_w",
+      "type": "box",
+      "position": [
+        3.4,
+        -1.2,
+        -7.9
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_e",
+      "type": "box",
+      "position": [
+        -3.4,
+        -1.2,
+        -7.9
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_4_w",
+      "type": "box",
+      "position": [
+        13.0,
+        -1.2,
+        -3.2
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_4_e",
+      "type": "box",
+      "position": [
+        -13.0,
+        -1.2,
+        -3.2
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_5_w",
+      "type": "box",
+      "position": [
+        13.0,
+        -1.2,
+        3.2
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_5_e",
+      "type": "box",
+      "position": [
+        -13.0,
+        -1.2,
+        3.2
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_w",
+      "type": "box",
+      "position": [
+        4.8,
+        -1.2,
+        0.0
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_e",
+      "type": "box",
+      "position": [
+        -4.8,
+        -1.2,
+        0.0
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_w",
+      "type": "box",
+      "position": [
+        12.2,
+        -1.2,
+        7.95
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_e",
+      "type": "box",
+      "position": [
+        -12.2,
+        -1.2,
+        7.95
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_w",
+      "type": "box",
+      "position": [
+        11.6,
+        -1.2,
+        14.8
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_e",
+      "type": "box",
+      "position": [
+        -11.6,
+        -1.2,
+        14.8
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_w",
+      "type": "box",
+      "position": [
+        4.2,
+        -1.2,
+        14.3
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_e",
+      "type": "box",
+      "position": [
+        -4.2,
+        -1.2,
+        14.3
+      ],
+      "size": [
+        1.0,
+        2.0,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_w",
+      "type": "box",
+      "position": [
+        3.2,
+        -1.2,
+        7.85
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_e",
+      "type": "box",
+      "position": [
+        -3.2,
+        -1.2,
+        7.85
+      ],
+      "size": [
+        1.0,
+        2.0,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_plinth",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.975,
+        0.0
+      ],
+      "size": [
+        4.8,
+        0.45,
+        3.0
+      ],
+      "material": "brick",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.85,
+        0.25
+      ],
+      "size": [
+        3.4,
+        1.8,
+        2.5
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_team",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.3,
+        2.55
+      ],
+      "size": [
+        3.0,
+        1.8,
+        2.1
+      ],
+      "material": "bronze",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "mercury_-1_0",
+      "type": "box",
+      "position": [
+        -15.25,
+        -2.185,
+        -4.31
+      ],
+      "size": [
+        10.9,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "mercury_-1_1",
+      "type": "box",
+      "position": [
+        0.0,
+        -2.185,
+        -4.31
+      ],
+      "size": [
+        12.4,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "mercury_-1_2",
+      "type": "box",
+      "position": [
+        15.25,
+        -2.185,
+        -4.31
+      ],
+      "size": [
+        10.9,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "mercury_1_0",
+      "type": "box",
+      "position": [
+        -15.25,
+        -2.185,
+        4.31
+      ],
+      "size": [
+        10.9,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "mercury_1_1",
+      "type": "box",
+      "position": [
+        0.0,
+        -2.185,
+        4.31
+      ],
+      "size": [
+        12.4,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "mercury_1_2",
+      "type": "box",
+      "position": [
+        15.25,
+        -2.185,
+        4.31
+      ],
+      "size": [
+        10.9,
+        0.03,
+        0.22
+      ],
+      "material": "mercury",
+      "collision": false,
+      "role": "wayfinding"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_0",
+      "kind": "spawn",
+      "position": [
+        -27.5,
+        0,
+        -2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_1",
+      "kind": "spawn",
+      "position": [
+        -27.5,
+        0,
+        2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "cover_screen_west",
+      "kind": "cover",
+      "position": [
+        -25.4,
+        0,
+        0
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "cover_que_west",
+      "kind": "cover",
+      "position": [
+        -25.2,
+        0,
+        9.5
+      ],
+      "height": 5.6
+    },
+    {
+      "id": "spawn_east_0",
+      "kind": "spawn",
+      "position": [
+        27.5,
+        0,
+        -2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "spawn",
+      "position": [
+        27.5,
+        0,
+        2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_screen_east",
+      "kind": "cover",
+      "position": [
+        25.4,
+        0,
+        0
+      ],
+      "height": 3.4
+    },
+    {
+      "id": "cover_que_east",
+      "kind": "cover",
+      "position": [
+        25.2,
+        0,
+        9.5
+      ],
+      "height": 5.6
+    },
+    {
+      "id": "cover_rank_0_w",
+      "kind": "cover",
+      "position": [
+        13.65,
+        -2.2,
+        -8.05
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_0_e",
+      "kind": "cover",
+      "position": [
+        -13.65,
+        -2.2,
+        -8.05
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_1_w",
+      "kind": "cover",
+      "position": [
+        13.65,
+        -2.2,
+        -14.7
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_1_e",
+      "kind": "cover",
+      "position": [
+        -13.65,
+        -2.2,
+        -14.7
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_2_w",
+      "kind": "cover",
+      "position": [
+        5.45,
+        -2.2,
+        -13.4
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_2_e",
+      "kind": "cover",
+      "position": [
+        -5.45,
+        -2.2,
+        -13.4
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_3_w",
+      "kind": "cover",
+      "position": [
+        4.45,
+        -2.2,
+        -7.9
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_3_e",
+      "kind": "cover",
+      "position": [
+        -4.45,
+        -2.2,
+        -7.9
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_4_w",
+      "kind": "cover",
+      "position": [
+        14.05,
+        -2.2,
+        -3.2
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_4_e",
+      "kind": "cover",
+      "position": [
+        -14.05,
+        -2.2,
+        -3.2
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_5_w",
+      "kind": "cover",
+      "position": [
+        14.05,
+        -2.2,
+        3.2
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_5_e",
+      "kind": "cover",
+      "position": [
+        -14.05,
+        -2.2,
+        3.2
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_6_w",
+      "kind": "cover",
+      "position": [
+        5.85,
+        -2.2,
+        0.0
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_6_e",
+      "kind": "cover",
+      "position": [
+        -5.85,
+        -2.2,
+        0.0
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_7_w",
+      "kind": "cover",
+      "position": [
+        13.25,
+        -2.2,
+        7.95
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_7_e",
+      "kind": "cover",
+      "position": [
+        -13.25,
+        -2.2,
+        7.95
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_8_w",
+      "kind": "cover",
+      "position": [
+        12.65,
+        -2.2,
+        14.8
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_8_e",
+      "kind": "cover",
+      "position": [
+        -12.65,
+        -2.2,
+        14.8
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_9_w",
+      "kind": "cover",
+      "position": [
+        5.25,
+        -2.2,
+        14.3
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_9_e",
+      "kind": "cover",
+      "position": [
+        -5.25,
+        -2.2,
+        14.3
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_10_w",
+      "kind": "cover",
+      "position": [
+        4.25,
+        -2.2,
+        7.85
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "cover_rank_10_e",
+      "kind": "cover",
+      "position": [
+        -4.25,
+        -2.2,
+        7.85
+      ],
+      "height": 2.0
+    },
+    {
+      "id": "objective_chariot",
+      "kind": "objective",
+      "position": [
+        0,
+        -2.2,
+        -3.2
+      ],
+      "radius": 2
+    },
+    {
+      "id": "objective_north",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        -18.6
+      ],
+      "radius": 2
+    },
+    {
+      "id": "objective_south",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        18.6
+      ],
+      "radius": 2
+    },
+    {
+      "id": "cover_chariot",
+      "kind": "cover",
+      "position": [
+        3.2,
+        -2.2,
+        0
+      ],
+      "height": 1.8
+    },
+    {
+      "id": "cover_ding_-1",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        -18.6
+      ],
+      "height": 1.35
+    },
+    {
+      "id": "cover_rail_-1",
+      "kind": "cover",
+      "position": [
+        -15,
+        0,
+        -17.4
+      ],
+      "height": 1.0
+    },
+    {
+      "id": "cover_ding_1",
+      "kind": "cover",
+      "position": [
+        9,
+        0,
+        18.6
+      ],
+      "height": 1.35
+    },
+    {
+      "id": "cover_rail_1",
+      "kind": "cover",
+      "position": [
+        -15,
+        0,
+        17.4
+      ],
+      "height": 1.0
+    }
+  ],
+  "routes": [
+    {
+      "id": "north_gallery",
+      "name": "north gallery",
+      "points": [
+        [
+          -27.5,
+          0,
+          -2
+        ],
+        [
+          -27.5,
+          0,
+          -18
+        ],
+        [
+          27.5,
+          0,
+          -18
+        ],
+        [
+          27.5,
+          0,
+          -2
+        ]
+      ]
+    },
+    {
+      "id": "south_gallery",
+      "name": "south gallery",
+      "points": [
+        [
+          -27.5,
+          0,
+          2
+        ],
+        [
+          -27.5,
+          0,
+          18
+        ],
+        [
+          27.5,
+          0,
+          18
+        ],
+        [
+          27.5,
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "baulk_catwalk",
+      "name": "baulk catwalk",
+      "points": [
+        [
+          -25.4,
+          0,
+          6.6
+        ],
+        [
+          -22.4,
+          0,
+          5.5
+        ],
+        [
+          22.4,
+          0,
+          5.5
+        ],
+        [
+          25.4,
+          0,
+          6.6
+        ]
+      ]
+    },
+    {
+      "id": "centre_corridor",
+      "name": "centre corridor",
+      "points": [
+        [
+          -25.4,
+          0,
+          6.6
+        ],
+        [
+          -22.4,
+          0,
+          6.6
+        ],
+        [
+          -22.4,
+          0,
+          0
+        ],
+        [
+          -15,
+          -2.2,
+          0
+        ],
+        [
+          -8,
+          -2.2,
+          0
+        ],
+        [
+          -8,
+          -2.2,
+          -3.2
+        ],
+        [
+          0,
+          -2.2,
+          -3.2
+        ],
+        [
+          8,
+          -2.2,
+          -3.2
+        ],
+        [
+          8,
+          -2.2,
+          0
+        ],
+        [
+          15,
+          -2.2,
+          0
+        ],
+        [
+          22.4,
+          0,
+          0
+        ]
+      ]
+    },
+    {
+      "id": "south_corridor",
+      "name": "south corridor",
+      "points": [
+        [
+          -22.4,
+          0,
+          11.5
+        ],
+        [
+          -15,
+          -2.2,
+          11.5
+        ],
+        [
+          -8,
+          -2.2,
+          11.2
+        ],
+        [
+          -3,
+          -2.2,
+          10.0
+        ],
+        [
+          3,
+          -2.2,
+          10.0
+        ],
+        [
+          8,
+          -2.2,
+          11.2
+        ],
+        [
+          15,
+          -2.2,
+          11.5
+        ],
+        [
+          22.4,
+          0,
+          11.5
+        ]
+      ]
+    },
+    {
+      "id": "gallery_stair",
+      "name": "gallery stair",
+      "points": [
+        [
+          0,
+          0,
+          -18.6
+        ],
+        [
+          0,
+          0,
+          -16.2
+        ],
+        [
+          0,
+          -2.2,
+          -10.3
+        ],
+        [
+          -8,
+          -2.2,
+          -10.6
+        ],
+        [
+          -8,
+          -2.2,
+          0
+        ]
+      ]
+    }
+  ]
+}

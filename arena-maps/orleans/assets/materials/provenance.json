@@ -1,0 +1,93 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis (erakit.synth_materials); no external imagery, scans, textures or AI image inputs.",
+  "seed": 1429,
+  "size": [
+    128,
+    128
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "recipes": {
+    "limestone": {
+      "kind": "blocks",
+      "rows": 5,
+      "cols": 3,
+      "joint": 0.04,
+      "contrast": 11,
+      "vary": 0.5,
+      "bump": 1.1
+    },
+    "cobble": {
+      "kind": "paving",
+      "rows": 7,
+      "cols": 7,
+      "contrast": 17,
+      "bump": 1.6
+    },
+    "plaster": {
+      "kind": "plaster",
+      "contrast": 8,
+      "bump": 0.5,
+      "warm": 0.3
+    },
+    "timber": {
+      "kind": "wood",
+      "rows": 8,
+      "cols": 1,
+      "contrast": 16,
+      "bump": 1.0
+    },
+    "oak": {
+      "kind": "wood",
+      "rows": 6,
+      "cols": 4,
+      "contrast": 18,
+      "bump": 1.1
+    },
+    "slate": {
+      "kind": "tile",
+      "rows": 7,
+      "cols": 5,
+      "contrast": 15,
+      "bump": 1.4
+    },
+    "bronze": {
+      "kind": "metal",
+      "contrast": 14,
+      "bump": 0.5,
+      "rough": 140,
+      "metal": 190,
+      "roughVary": 30
+    },
+    "canvas": {
+      "kind": "cloth",
+      "contrast": 7,
+      "bump": 0.5
+    }
+  },
+  "files": {
+    "bronze_basecolor.png": "9b8b72b11f10f4ddb0155073a80857477378d76ec6630c38aa33b59d78c09f7e",
+    "bronze_normal.png": "b36d2ef85e92d3307431dcfcb60ed719b3bc0765a9e660f0d0bd0a220dd890ac",
+    "bronze_orm.png": "5fcba5103ebb21c985a0749463cd70c2528e45fb9fb3d30236875a580784d870",
+    "canvas_basecolor.png": "6253b2325a4569f17ad4526aa9db390a4637e145e2cb84a0276cfedfacc17e93",
+    "canvas_normal.png": "3785d2c3b530efb6c048fcf726e3af16ea988240ffcb1bcf92f93ad316a39af8",
+    "canvas_orm.png": "a90afce59c1f95c3ad5de7bfd9f700070d2639c670d928ac31004c5fb7d1a2cb",
+    "cobble_basecolor.png": "c2d8f0e977785636eb53876200c2cf22d3ed87bea2820a25eb3250c141362e07",
+    "cobble_normal.png": "824a46e6435a63d3d9968aac3316ceaa5293624794eb0119308d0f3bfa260a12",
+    "cobble_orm.png": "29de56198c30202c958596e6d89e840024e46e094064427423ccbd24501a24bb",
+    "limestone_basecolor.png": "398a0c674a7fc21919b7fa21e421904e2516896d34ff0c8f7bb85c7771494a9d",
+    "limestone_normal.png": "ce85c570a4284bbc9a8c3af69864e483de48e3a58ea9e60fb742cd0996c5ea5a",
+    "limestone_orm.png": "b002a722f3f1a7e59e4048d9934143e61eb89f12b2af4c29f4e26ab8510b4942",
+    "oak_basecolor.png": "0ae07dd0e4bb10cf742f254dd0c4e43985fa8d79d3de5a666e80c3ab6342db58",
+    "oak_normal.png": "f8305456eb3cf51f8a530606a6396a827663faa1d6ce0496638eede07974cd4e",
+    "oak_orm.png": "2c8e4eb8c6ca484f8eafdbad818aafd5062b2111cdc587d937638863db917d11",
+    "plaster_basecolor.png": "602b15b3e5662224b9554a6318e4bd93f6bf699476709428737e123cfd217bf2",
+    "plaster_normal.png": "3b542cc9a9b7521971540220441bbcc3d0ae9472bc98c722981fc83b0a6d7ae4",
+    "plaster_orm.png": "3641be7f3784c279d32e3c938d939413cea53320ff98fbb711fa37527488591c",
+    "slate_basecolor.png": "391e3047d5a923ac3b02d9d7c49d2231b5a2828dffb9f6b25005945660e1ddc3",
+    "slate_normal.png": "13ffc606154cf799780ce7b69c0c6b40d074525a69acd2e2a9e99e44cfc8f199",
+    "slate_orm.png": "e900b590c77cc4da472fcee4ae6f494579ac87f3128e3be1c92d83ea2682a972",
+    "timber_basecolor.png": "187547fd4703d98ea0019114ccfafc0b979a85debe12200f72605e56faa0769e",
+    "timber_normal.png": "2dcf89dd3dda2d9333408af2d74a4664ccb875097a58a467e515e2f442eb6e63",
+    "timber_orm.png": "a48ac69349071054b13a28b98de67b4b23c2f0b3e09e32580269cbca9f1dba26"
+  }
+}

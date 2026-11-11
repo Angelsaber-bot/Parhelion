@@ -1,0 +1,93 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis (erakit.synth_materials); no external imagery, scans, textures or AI image inputs.",
+  "seed": 221,
+  "size": [
+    128,
+    128
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "recipes": {
+    "rammed": {
+      "kind": "rammed",
+      "rows": 9,
+      "contrast": 14,
+      "bump": 1.1
+    },
+    "earth": {
+      "kind": "plaster",
+      "contrast": 13,
+      "bump": 1.2
+    },
+    "brick": {
+      "kind": "blocks",
+      "rows": 8,
+      "cols": 4,
+      "joint": 0.07,
+      "contrast": 13,
+      "vary": 0.6,
+      "bump": 1.2
+    },
+    "terracotta": {
+      "kind": "plaster",
+      "contrast": 11,
+      "bump": 0.8,
+      "warm": 0.5
+    },
+    "lacquer": {
+      "kind": "wood",
+      "rows": 3,
+      "cols": 1,
+      "contrast": 6,
+      "bump": 0.4,
+      "rough": 150
+    },
+    "timber": {
+      "kind": "wood",
+      "rows": 7,
+      "cols": 3,
+      "contrast": 20,
+      "bump": 1.1
+    },
+    "tile": {
+      "kind": "tile",
+      "rows": 6,
+      "cols": 6,
+      "contrast": 14,
+      "bump": 1.3
+    },
+    "bronze": {
+      "kind": "metal",
+      "contrast": 14,
+      "bump": 0.6,
+      "rough": 150,
+      "metal": 190,
+      "roughVary": 30
+    }
+  },
+  "files": {
+    "brick_basecolor.png": "8ac60f5cf1c85d622b901da819ff79e972d59d4d74560fe0c1600c693b616d15",
+    "brick_normal.png": "98ebb14adee5fab0b64e322056db0a11ee985d2f0fb1e293c7a42197f7296d05",
+    "brick_orm.png": "43248841578758b1e1c101ebc830b53fd66439f33f1fe86b30f1d5469312186e",
+    "bronze_basecolor.png": "0db19ddad14673a7fc4bdf8feac79c812b30a3fcdfce07d64be35ecd6f5c7083",
+    "bronze_normal.png": "04df0e2978cfb311be84d62942b61f08fe73ee7e12e2582454eb824cc90c91e7",
+    "bronze_orm.png": "dd5f92899033927b67378762323009c7804ca4868616b06f7782be65cad1ccf6",
+    "earth_basecolor.png": "8a44d8f6c6908b51df82394e2362a72993e79815be5002f06299807df47447f4",
+    "earth_normal.png": "d0de13657f23d4b3bc1ad410f78147a8e77b5298c7b0783f60e0744838122696",
+    "earth_orm.png": "c4a00468670b74d0589c92e71d8edd808fe8fdc0d4e4eca83f9633646c8cb4f0",
+    "lacquer_basecolor.png": "3968b2d42beac1adbbc45428938da9272359f5216ce569d7d649e88ec17e4a8d",
+    "lacquer_normal.png": "5b9e6d1a7be2640fbbca1c3ab15c66b33cd4ff8b8eb6116d9313a5580c87478d",
+    "lacquer_orm.png": "087daf324340d5a48b16d06ed0ae004cf15cfdc41559d22295ec09e83ee4e1dc",
+    "rammed_basecolor.png": "86355f5c2dddc11b4b4789dd6a69bdd3e3a30111adf8d8bf0bb71571e2dfa9f6",
+    "rammed_normal.png": "c1b13b6329ffbd24df80628b30f2e9f9dc6c7f51105823608a229330d60862b8",
+    "rammed_orm.png": "954520ddedb9ca412b8da5bfef036c24bb63a8ab30f84854b534c3b2de69d9b3",
+    "terracotta_basecolor.png": "2a604c8a8eae20ff721eb65dbc631792677bdf68fcfe520a3899b894cb0d8d44",
+    "terracotta_normal.png": "206dd6127da2bf8d925cc200df0e03a34f15e79d37300b076187698819a980c1",
+    "terracotta_orm.png": "485ecaa1bed9493622a2c91d75ae79cf85ef2a37d521c750a802a607ce71f66c",
+    "tile_basecolor.png": "8716addee07d9a666e8f85bf939659a0cf9d3cc6f29760424c41866e0aa7ffba",
+    "tile_normal.png": "0dbb0d0805f1fdcc211680d407a2a36c3e5d150e1dd2013fa92a58e4ad953958",
+    "tile_orm.png": "c7006144f8e39181e8e4499d0344764de371bbc53495dee06c777b24ea3bab25",
+    "timber_basecolor.png": "80c9ff0fc23dc6761c97d9b46f2fbcd86971b5ed25d71ae7afabdc3caadd25fb",
+    "timber_normal.png": "706791f853b9fd591877394da99ca46d1647c3be5faf644ce9b0be3d2d13f00f",
+    "timber_orm.png": "89a1c1ff653a7c913e19c5471f2a7bc9bc70b0adb0b8828c324a879814b596ff"
+  }
+}

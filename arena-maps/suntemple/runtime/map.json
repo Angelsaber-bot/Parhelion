@@ -1,0 +1,2649 @@
+{
+  "mapId": "suntemple",
+  "name": "SUNTEMPLE 日轮神殿",
+  "version": "1.0.0",
+  "mode": "arena",
+  "units": "metres",
+  "upAxis": "Y",
+  "supportedTeamLayouts": [
+    "1v1",
+    "1v2",
+    "2v2"
+  ],
+  "bounds": {
+    "min": [
+      -30.0,
+      -1.2,
+      -24.0
+    ],
+    "max": [
+      30.0,
+      12,
+      24.0
+    ]
+  },
+  "presentation": {
+    "preset": "sunblaze",
+    "glows": [
+      [
+        -10.3,
+        9.1,
+        -14.4,
+        1.4,
+        "#ffd36b",
+        0.1
+      ],
+      [
+        -10.3,
+        9.1,
+        4.4,
+        1.4,
+        "#ffd36b",
+        0.1
+      ],
+      [
+        10.3,
+        9.1,
+        -14.4,
+        1.4,
+        "#ffd36b",
+        0.1
+      ],
+      [
+        10.3,
+        9.1,
+        4.4,
+        1.4,
+        "#ffd36b",
+        0.1
+      ],
+      [
+        -3.3,
+        1.23,
+        6.2,
+        1.3,
+        "#ff9a48",
+        0.5
+      ],
+      [
+        3.3,
+        1.23,
+        6.2,
+        1.3,
+        "#ff9a48",
+        0.5
+      ],
+      [
+        -8.5,
+        1.23,
+        -16.2,
+        1.3,
+        "#ff9a48",
+        0.5
+      ],
+      [
+        8.5,
+        1.23,
+        -16.2,
+        1.3,
+        "#ff9a48",
+        0.5
+      ],
+      [
+        -3.3,
+        1.55,
+        -9.75,
+        1.0,
+        "#ffb35c",
+        0.5
+      ],
+      [
+        3.3,
+        1.55,
+        -9.75,
+        1.0,
+        "#ffb35c",
+        0.5
+      ],
+      [
+        -3.3,
+        1.55,
+        -3.15,
+        1.0,
+        "#ffb35c",
+        0.5
+      ],
+      [
+        3.3,
+        1.55,
+        -3.15,
+        1.0,
+        "#ffb35c",
+        0.5
+      ]
+    ],
+    "pools": [
+      [
+        -3.3,
+        0.02,
+        6.2,
+        3.8,
+        "#ffb063",
+        0.55
+      ],
+      [
+        3.3,
+        0.02,
+        6.2,
+        3.8,
+        "#ffb063",
+        0.55
+      ],
+      [
+        -8.5,
+        0.02,
+        -16.2,
+        3.8,
+        "#ffb063",
+        0.55
+      ],
+      [
+        8.5,
+        0.02,
+        -16.2,
+        3.8,
+        "#ffb063",
+        0.55
+      ],
+      [
+        -3.3,
+        0.02,
+        -9.75,
+        3.2,
+        "#ffb060",
+        0.5
+      ],
+      [
+        3.3,
+        0.02,
+        -9.75,
+        3.2,
+        "#ffb060",
+        0.5
+      ],
+      [
+        -3.3,
+        0.02,
+        -3.15,
+        3.2,
+        "#ffb060",
+        0.5
+      ],
+      [
+        3.3,
+        0.02,
+        -3.15,
+        3.2,
+        "#ffb060",
+        0.5
+      ]
+    ],
+    "embers": [
+      [
+        -3.3,
+        1.2320000000000002,
+        6.2,
+        0.25
+      ],
+      [
+        3.3,
+        1.2320000000000002,
+        6.2,
+        0.25
+      ],
+      [
+        -8.5,
+        1.2320000000000002,
+        -16.2,
+        0.25
+      ],
+      [
+        8.5,
+        1.2320000000000002,
+        -16.2,
+        0.25
+      ]
+    ],
+    "field": {
+      "kind": "pollen",
+      "count": 140,
+      "color": "#ffe6a8",
+      "size": 0.06,
+      "min": [
+        -10.5,
+        0.3,
+        -14.5
+      ],
+      "max": [
+        10.5,
+        4.8,
+        4.5
+      ]
+    }
+  },
+  "player": {
+    "radius": 0.32,
+    "height": 1.8,
+    "eyeHeight": 1.65,
+    "walkSpeed": 4.2,
+    "stepHeight": 0.28
+  },
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "projection": "world-metre planar per face",
+    "channels": [
+      "baseColor",
+      "occlusionRoughnessMetallic",
+      "normal"
+    ]
+  },
+  "palette": {
+    "sand": "#d9bb86",
+    "sandDune": "#e4c592",
+    "sandShade": "#c5a271",
+    "limestone": "#e6d8bb",
+    "limestoneShade": "#cdbd9c",
+    "sandstone": "#d2a874",
+    "sandstoneDark": "#b38a5c",
+    "sandstoneLight": "#e2bf8b",
+    "granite": "#8e4f45",
+    "graniteDark": "#5d3631",
+    "basalt": "#33343a",
+    "lapis": "#2f5f9e",
+    "lapisDark": "#1f3f74",
+    "ochre": "#b6492f",
+    "malachite": "#2f8a76",
+    "turquoise": "#3fa7a8",
+    "white": "#f0e9d8",
+    "black": "#24211f",
+    "gold": "#d7a940",
+    "goldPale": "#e9c76a",
+    "water": "#3e9fb0",
+    "waterDeep": "#2a6f86",
+    "lotus": "#4f8a52",
+    "lotusFlower": "#f1c6d2",
+    "papyrus": "#6f9a4f",
+    "papyrusHead": "#9ab86a",
+    "palm": "#5f8a43",
+    "palmDark": "#46703a",
+    "palmTrunk": "#8a6a48",
+    "linen": "#f2eadb",
+    "linenShade": "#d7cbb6",
+    "cedar": "#7a5634",
+    "distant": "#d8b98d",
+    "distantShade": "#c39d70",
+    "pyramid": "#e3cda2",
+    "flame": "#ff9a3c",
+    "flameCore": "#ffe6a0",
+    "coal": "#c2461e",
+    "iron": "#47413a",
+    "sunDisc": "#ffd36b"
+  },
+  "objects": [
+    {
+      "id": "floor_north",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.5,
+        -6.5
+      ],
+      "size": [
+        60,
+        1,
+        35
+      ],
+      "material": "sand",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "floor_south",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.5,
+        21.5
+      ],
+      "size": [
+        60,
+        1,
+        5
+      ],
+      "material": "sand",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "floor_court_-1",
+      "type": "box",
+      "position": [
+        -18.5,
+        -0.5,
+        15.0
+      ],
+      "size": [
+        23,
+        1,
+        8
+      ],
+      "material": "sand",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "floor_court_1",
+      "type": "box",
+      "position": [
+        18.5,
+        -0.5,
+        15.0
+      ],
+      "size": [
+        23,
+        1,
+        8
+      ],
+      "material": "sand",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "basin_floor",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.7,
+        15.0
+      ],
+      "size": [
+        14,
+        1.0,
+        8
+      ],
+      "material": "waterDeep",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "boundary_x_-1",
+      "type": "box",
+      "position": [
+        -29.7,
+        2.5,
+        0.0
+      ],
+      "size": [
+        0.6,
+        5,
+        48
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "boundary_x_1",
+      "type": "box",
+      "position": [
+        29.7,
+        2.5,
+        0.0
+      ],
+      "size": [
+        0.6,
+        5,
+        48
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "boundary_z_-1",
+      "type": "box",
+      "position": [
+        0.0,
+        2.5,
+        -23.7
+      ],
+      "size": [
+        58.8,
+        5,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "boundary_z_1",
+      "type": "box",
+      "position": [
+        0.0,
+        2.5,
+        23.7
+      ],
+      "size": [
+        58.8,
+        5,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_roof",
+      "type": "box",
+      "position": [
+        0.0,
+        5.4,
+        -5.0
+      ],
+      "size": [
+        22,
+        0.4,
+        20
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_side_-1_door",
+      "type": "box",
+      "position": [
+        -10.7,
+        2.6,
+        -14.7
+      ],
+      "size": [
+        0.6,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_side_-1",
+      "type": "box",
+      "position": [
+        -10.7,
+        2.6,
+        -3.8
+      ],
+      "size": [
+        0.6,
+        5.2,
+        17.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_side_-1",
+      "type": "box",
+      "position": [
+        -10.7,
+        4.15,
+        -13.5
+      ],
+      "size": [
+        0.6,
+        2.1,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_side_1_door",
+      "type": "box",
+      "position": [
+        10.7,
+        2.6,
+        -14.7
+      ],
+      "size": [
+        0.6,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_side_1",
+      "type": "box",
+      "position": [
+        10.7,
+        2.6,
+        -3.8
+      ],
+      "size": [
+        0.6,
+        5.2,
+        17.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_side_1",
+      "type": "box",
+      "position": [
+        10.7,
+        4.15,
+        -13.5
+      ],
+      "size": [
+        0.6,
+        2.1,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_south_0",
+      "type": "box",
+      "position": [
+        -10.2,
+        2.6,
+        4.7
+      ],
+      "size": [
+        1.6,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_south_1",
+      "type": "box",
+      "position": [
+        -4.55,
+        2.6,
+        4.7
+      ],
+      "size": [
+        6.1,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_south_2",
+      "type": "box",
+      "position": [
+        4.55,
+        2.6,
+        4.7
+      ],
+      "size": [
+        6.1,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_south_3",
+      "type": "box",
+      "position": [
+        10.2,
+        2.6,
+        4.7
+      ],
+      "size": [
+        1.6,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_south_0",
+      "type": "box",
+      "position": [
+        -8.5,
+        4.15,
+        4.7
+      ],
+      "size": [
+        1.8,
+        2.1,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_south_1",
+      "type": "box",
+      "position": [
+        0.0,
+        4.3,
+        4.7
+      ],
+      "size": [
+        3.0,
+        1.8,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_south_2",
+      "type": "box",
+      "position": [
+        8.5,
+        4.15,
+        4.7
+      ],
+      "size": [
+        1.8,
+        2.1,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_north_0",
+      "type": "box",
+      "position": [
+        -6.25,
+        2.6,
+        -14.7
+      ],
+      "size": [
+        9.5,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_wall_north_1",
+      "type": "box",
+      "position": [
+        6.25,
+        2.6,
+        -14.7
+      ],
+      "size": [
+        9.5,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_north",
+      "type": "box",
+      "position": [
+        0.0,
+        4.3,
+        -14.7
+      ],
+      "size": [
+        3.0,
+        1.8,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_2",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_2",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_0",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_1",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_2",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_0",
+      "type": "box",
+      "position": [
+        1.65,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_1",
+      "type": "box",
+      "position": [
+        1.65,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_2",
+      "type": "box",
+      "position": [
+        1.65,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3",
+      "type": "box",
+      "position": [
+        1.65,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4",
+      "type": "box",
+      "position": [
+        1.65,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0",
+      "type": "box",
+      "position": [
+        4.95,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1",
+      "type": "box",
+      "position": [
+        4.95,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_2",
+      "type": "box",
+      "position": [
+        4.95,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3",
+      "type": "box",
+      "position": [
+        4.95,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4",
+      "type": "box",
+      "position": [
+        4.95,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0",
+      "type": "box",
+      "position": [
+        8.25,
+        2.6,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1",
+      "type": "box",
+      "position": [
+        8.25,
+        2.6,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_2",
+      "type": "box",
+      "position": [
+        8.25,
+        2.6,
+        -4.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3",
+      "type": "box",
+      "position": [
+        8.25,
+        2.6,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4",
+      "type": "box",
+      "position": [
+        8.25,
+        2.6,
+        1.8
+      ],
+      "size": [
+        1.24,
+        5.2,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_south_0",
+      "type": "box",
+      "position": [
+        -8.3,
+        6.1,
+        4.775
+      ],
+      "size": [
+        4.2,
+        1.0,
+        0.45
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_south_1",
+      "type": "box",
+      "position": [
+        -2.8,
+        6.1,
+        4.775
+      ],
+      "size": [
+        2.8,
+        1.0,
+        0.45
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_south_2",
+      "type": "box",
+      "position": [
+        2.8,
+        6.1,
+        4.775
+      ],
+      "size": [
+        2.8,
+        1.0,
+        0.45
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_south_3",
+      "type": "box",
+      "position": [
+        8.3,
+        6.1,
+        4.775
+      ],
+      "size": [
+        4.2,
+        1.0,
+        0.45
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_-1_0",
+      "type": "box",
+      "position": [
+        -10.775,
+        6.1,
+        -13.075
+      ],
+      "size": [
+        0.45,
+        1.0,
+        2.95
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_-1_1",
+      "type": "box",
+      "position": [
+        -10.775,
+        6.1,
+        -4.8
+      ],
+      "size": [
+        0.45,
+        1.0,
+        5.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_-1_2",
+      "type": "box",
+      "position": [
+        -10.775,
+        6.1,
+        2.175
+      ],
+      "size": [
+        0.45,
+        1.0,
+        4.75
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_stair_-1",
+      "type": "ramp",
+      "position": [
+        -12.3,
+        0,
+        -3.6
+      ],
+      "size": [
+        2.6,
+        5.6,
+        14.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_1_0",
+      "type": "box",
+      "position": [
+        10.775,
+        6.1,
+        -13.075
+      ],
+      "size": [
+        0.45,
+        1.0,
+        2.95
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_1_1",
+      "type": "box",
+      "position": [
+        10.775,
+        6.1,
+        -4.8
+      ],
+      "size": [
+        0.45,
+        1.0,
+        5.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_parapet_side_1_2",
+      "type": "box",
+      "position": [
+        10.775,
+        6.1,
+        2.175
+      ],
+      "size": [
+        0.45,
+        1.0,
+        4.75
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_stair_1",
+      "type": "ramp",
+      "position": [
+        12.3,
+        0,
+        -3.6
+      ],
+      "size": [
+        2.6,
+        5.6,
+        14.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "sun_shrine",
+      "type": "box",
+      "position": [
+        0.0,
+        6.4,
+        -6.0
+      ],
+      "size": [
+        2.8,
+        1.6,
+        2.8
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "pylon_west_-1",
+      "type": "box",
+      "position": [
+        -21.5,
+        4.5,
+        -6.5
+      ],
+      "size": [
+        2.2,
+        9,
+        7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "pylon_west_1",
+      "type": "box",
+      "position": [
+        -21.5,
+        4.5,
+        6.5
+      ],
+      "size": [
+        2.2,
+        9,
+        7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "pylon_lintel_west",
+      "type": "box",
+      "position": [
+        -21.5,
+        6.8,
+        0.0
+      ],
+      "size": [
+        1.8,
+        1.2,
+        6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "spawn_mark_west",
+      "type": "box",
+      "position": [
+        -27.0,
+        0.02,
+        0.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        5.6
+      ],
+      "material": "lapis",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "offering_west_-1",
+      "type": "box",
+      "position": [
+        -25.1,
+        0.6,
+        -5.9
+      ],
+      "size": [
+        1.0,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "offering_west_1",
+      "type": "box",
+      "position": [
+        -25.1,
+        0.6,
+        5.9
+      ],
+      "size": [
+        1.0,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "drums_west",
+      "type": "box",
+      "position": [
+        -15.5,
+        0.575,
+        -5.3
+      ],
+      "size": [
+        2.2,
+        1.15,
+        2.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "fallen_west",
+      "type": "box",
+      "position": [
+        -16.6,
+        0.65,
+        11.4
+      ],
+      "size": [
+        2.4,
+        1.3,
+        3.6
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "palm_bed_west",
+      "type": "box",
+      "position": [
+        -17.0,
+        0.25,
+        0.0
+      ],
+      "size": [
+        2.4,
+        0.5,
+        2.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west",
+      "type": "box",
+      "position": [
+        -4.9,
+        2.9,
+        8.0
+      ],
+      "size": [
+        2.6,
+        5.8,
+        3.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_west",
+      "type": "box",
+      "position": [
+        -10.2,
+        4.3,
+        9.0
+      ],
+      "size": [
+        1.4,
+        8.6,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_0",
+      "type": "box",
+      "position": [
+        -6.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_1",
+      "type": "box",
+      "position": [
+        -12.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_2",
+      "type": "box",
+      "position": [
+        -18.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "table_west_0",
+      "type": "box",
+      "position": [
+        -9.2,
+        0.5,
+        22.9
+      ],
+      "size": [
+        2.4,
+        1.0,
+        1.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "table_west_1",
+      "type": "box",
+      "position": [
+        -17.2,
+        0.5,
+        22.9
+      ],
+      "size": [
+        2.4,
+        1.0,
+        1.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "basin_steps_west",
+      "type": "ramp",
+      "position": [
+        -5.8,
+        -1.2,
+        15.0
+      ],
+      "size": [
+        2.4,
+        1.2,
+        3.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "pylon_east_-1",
+      "type": "box",
+      "position": [
+        21.5,
+        4.5,
+        -6.5
+      ],
+      "size": [
+        2.2,
+        9,
+        7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "pylon_east_1",
+      "type": "box",
+      "position": [
+        21.5,
+        4.5,
+        6.5
+      ],
+      "size": [
+        2.2,
+        9,
+        7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "pylon_lintel_east",
+      "type": "box",
+      "position": [
+        21.5,
+        6.8,
+        0.0
+      ],
+      "size": [
+        1.8,
+        1.2,
+        6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "spawn_mark_east",
+      "type": "box",
+      "position": [
+        27.0,
+        0.02,
+        0.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        5.6
+      ],
+      "material": "ochre",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "offering_east_-1",
+      "type": "box",
+      "position": [
+        25.1,
+        0.6,
+        -5.9
+      ],
+      "size": [
+        1.0,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "offering_east_1",
+      "type": "box",
+      "position": [
+        25.1,
+        0.6,
+        5.9
+      ],
+      "size": [
+        1.0,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "drums_east",
+      "type": "box",
+      "position": [
+        15.5,
+        0.575,
+        -5.3
+      ],
+      "size": [
+        2.2,
+        1.15,
+        2.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "fallen_east",
+      "type": "box",
+      "position": [
+        16.6,
+        0.65,
+        11.4
+      ],
+      "size": [
+        2.4,
+        1.3,
+        3.6
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "palm_bed_east",
+      "type": "box",
+      "position": [
+        17.0,
+        0.25,
+        0.0
+      ],
+      "size": [
+        2.4,
+        0.5,
+        2.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east",
+      "type": "box",
+      "position": [
+        4.9,
+        2.9,
+        8.0
+      ],
+      "size": [
+        2.6,
+        5.8,
+        3.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_east",
+      "type": "box",
+      "position": [
+        10.2,
+        4.3,
+        9.0
+      ],
+      "size": [
+        1.4,
+        8.6,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_0",
+      "type": "box",
+      "position": [
+        6.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_1",
+      "type": "box",
+      "position": [
+        12.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_2",
+      "type": "box",
+      "position": [
+        18.8,
+        0.85,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        1.7,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "table_east_0",
+      "type": "box",
+      "position": [
+        9.2,
+        0.5,
+        22.9
+      ],
+      "size": [
+        2.4,
+        1.0,
+        1.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "table_east_1",
+      "type": "box",
+      "position": [
+        17.2,
+        0.5,
+        22.9
+      ],
+      "size": [
+        2.4,
+        1.0,
+        1.0
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "basin_steps_east",
+      "type": "ramp",
+      "position": [
+        5.8,
+        -1.2,
+        15.0
+      ],
+      "size": [
+        2.4,
+        1.2,
+        3.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "barque_shrine",
+      "type": "box",
+      "position": [
+        0.0,
+        1.8,
+        -19.9
+      ],
+      "size": [
+        5.2,
+        3.6,
+        3.8
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "basin_barque",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.675,
+        15.0
+      ],
+      "size": [
+        4.4,
+        1.05,
+        1.4
+      ],
+      "material": "gold",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    }
+  ],
+  "anchors": [
+    {
+      "id": "spawn_west_0",
+      "kind": "spawn",
+      "position": [
+        -27,
+        0,
+        -2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_1",
+      "kind": "spawn",
+      "position": [
+        -27,
+        0,
+        2
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "cover_pylon_west",
+      "kind": "cover",
+      "position": [
+        -23.3,
+        0,
+        6
+      ],
+      "height": 9
+    },
+    {
+      "id": "cover_drums_west",
+      "kind": "cover",
+      "position": [
+        -15.5,
+        0,
+        -3.5
+      ],
+      "height": 1.15
+    },
+    {
+      "id": "cover_fallen_west",
+      "kind": "cover",
+      "position": [
+        -16.6,
+        0,
+        14
+      ],
+      "height": 1.3
+    },
+    {
+      "id": "cover_colossus_west",
+      "kind": "cover",
+      "position": [
+        -4.9,
+        0,
+        10.4
+      ],
+      "height": 5.8
+    },
+    {
+      "id": "cover_sphinx_west_0",
+      "kind": "cover",
+      "position": [
+        -6.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_sphinx_west_1",
+      "kind": "cover",
+      "position": [
+        -12.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_sphinx_west_2",
+      "kind": "cover",
+      "position": [
+        -18.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "spawn_east_0",
+      "kind": "spawn",
+      "position": [
+        27,
+        0,
+        -2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_1",
+      "kind": "spawn",
+      "position": [
+        27,
+        0,
+        2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "cover_pylon_east",
+      "kind": "cover",
+      "position": [
+        23.3,
+        0,
+        6
+      ],
+      "height": 9
+    },
+    {
+      "id": "cover_drums_east",
+      "kind": "cover",
+      "position": [
+        15.5,
+        0,
+        -3.5
+      ],
+      "height": 1.15
+    },
+    {
+      "id": "cover_fallen_east",
+      "kind": "cover",
+      "position": [
+        16.6,
+        0,
+        14
+      ],
+      "height": 1.3
+    },
+    {
+      "id": "cover_colossus_east",
+      "kind": "cover",
+      "position": [
+        4.9,
+        0,
+        10.4
+      ],
+      "height": 5.8
+    },
+    {
+      "id": "cover_sphinx_east_0",
+      "kind": "cover",
+      "position": [
+        6.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_sphinx_east_1",
+      "kind": "cover",
+      "position": [
+        12.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_sphinx_east_2",
+      "kind": "cover",
+      "position": [
+        18.8,
+        0,
+        -19.2
+      ],
+      "height": 1.7
+    },
+    {
+      "id": "cover_basin_-1",
+      "kind": "cover",
+      "position": [
+        -3,
+        -1.2,
+        12.2
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_basin_1",
+      "kind": "cover",
+      "position": [
+        3,
+        -1.2,
+        12.2
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "objective_basin",
+      "kind": "objective",
+      "position": [
+        0,
+        -1.2,
+        12.4
+      ],
+      "radius": 2
+    },
+    {
+      "id": "objective_roof",
+      "kind": "objective",
+      "position": [
+        0,
+        5.6,
+        -2
+      ],
+      "radius": 2
+    },
+    {
+      "id": "objective_shrine",
+      "kind": "objective",
+      "position": [
+        0,
+        0,
+        -16.6
+      ],
+      "radius": 2
+    },
+    {
+      "id": "cover_roof_shrine",
+      "kind": "cover",
+      "position": [
+        2.2,
+        5.6,
+        -6
+      ],
+      "height": 1.6
+    },
+    {
+      "id": "cover_hall",
+      "kind": "cover",
+      "position": [
+        -3.3,
+        0,
+        -6.45
+      ],
+      "height": 5.2
+    }
+  ],
+  "routes": [
+    {
+      "id": "south_lane",
+      "name": "south lane",
+      "points": [
+        [
+          -27,
+          0,
+          2
+        ],
+        [
+          -27,
+          0,
+          20.6
+        ],
+        [
+          27,
+          0,
+          20.6
+        ],
+        [
+          27,
+          0,
+          2
+        ]
+      ]
+    },
+    {
+      "id": "sphinx_avenue",
+      "name": "sphinx avenue",
+      "points": [
+        [
+          -27,
+          0,
+          -2
+        ],
+        [
+          -27,
+          0,
+          -17.2
+        ],
+        [
+          27,
+          0,
+          -17.2
+        ],
+        [
+          27,
+          0,
+          -2
+        ]
+      ]
+    },
+    {
+      "id": "hypostyle",
+      "name": "hypostyle",
+      "points": [
+        [
+          -27,
+          0,
+          0
+        ],
+        [
+          -27,
+          0,
+          -11.5
+        ],
+        [
+          -19,
+          0,
+          -13.7
+        ],
+        [
+          -6.6,
+          0,
+          -13.7
+        ],
+        [
+          -6.6,
+          0,
+          3.4
+        ],
+        [
+          0,
+          0,
+          3.4
+        ],
+        [
+          0,
+          0,
+          6.2
+        ],
+        [
+          0,
+          0,
+          10.4
+        ]
+      ]
+    },
+    {
+      "id": "hall_roof",
+      "name": "hall roof",
+      "points": [
+        [
+          -12.3,
+          0,
+          4.4
+        ],
+        [
+          -12.3,
+          5.6,
+          -10.35
+        ],
+        [
+          -9.4,
+          5.6,
+          -10.35
+        ],
+        [
+          -6,
+          5.6,
+          -2
+        ],
+        [
+          6,
+          5.6,
+          -2
+        ],
+        [
+          9.4,
+          5.6,
+          -10.35
+        ],
+        [
+          12.3,
+          5.6,
+          -10.35
+        ],
+        [
+          12.3,
+          0,
+          4.4
+        ]
+      ]
+    },
+    {
+      "id": "lotus_basin",
+      "name": "lotus basin",
+      "points": [
+        [
+          -12,
+          0,
+          15
+        ],
+        [
+          -4,
+          -1.2,
+          15
+        ],
+        [
+          -3,
+          -1.2,
+          12.3
+        ],
+        [
+          3,
+          -1.2,
+          12.3
+        ],
+        [
+          4,
+          -1.2,
+          15
+        ],
+        [
+          12,
+          0,
+          15
+        ]
+      ]
+    },
+    {
+      "id": "north_door",
+      "name": "north door",
+      "points": [
+        [
+          0,
+          0,
+          -16.6
+        ],
+        [
+          0,
+          0,
+          -9.75
+        ],
+        [
+          -3.3,
+          0,
+          -9.75
+        ],
+        [
+          -3.3,
+          0,
+          0
+        ]
+      ]
+    }
+  ]
+}

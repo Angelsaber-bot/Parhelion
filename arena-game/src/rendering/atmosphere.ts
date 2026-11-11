@@ -41,6 +41,30 @@ export const ATMOSPHERES: Record<string, Atmosphere> = {
     sky: { horizon: 0xffc27e, mid: 0xdca383, top: 0x3e5f8c, sun: 0xfff0c2, cloudLit: 0xffcf98, cloudShade: 0x8e7c8e, night: 0.08 },
     particles: 'motes', bloom: 0.5, bloomThreshold: 1.15, environment: 0.45,
   },
+  // LISHAN: the buried hall under Mount Li. Cold moonlight falls through the open
+  // centre of the roof; bronze lamp trees carry the warm bloom along the galleries.
+  tomb: {
+    background: 0x0c1322, fog: [0x121b2e, 38, 150], exposure: 1.22, hemi: [0x8496cc, 0x3a3028, 1.35],
+    sun: { color: 0xc3d2ff, intensity: 2.5, pos: [-12, 44, 9] },
+    sky: { horizon: 0x25305c, mid: 0x141b44, top: 0x060a1e, sun: 0xe4ecff, cloudLit: 0x39437a, cloudShade: 0x171b3a, night: 1 },
+    particles: 'motes', bloom: 0.8, bloomThreshold: 0.82, environment: 0.5,
+  },
+  // SUNTEMPLE: white desert noon. Hard sun, short violet shadows under the architraves,
+  // gilded capstones and the sun disc pushed just over the bloom threshold.
+  sunblaze: {
+    background: 0xe9d6ae, fog: [0xecd9b2, 70, 230], exposure: 0.96, hemi: [0xfff0d0, 0x8a6a4a, 1.25],
+    sun: { color: 0xfff0d0, intensity: 3.6, pos: [-16, 44, 14] },
+    sky: { horizon: 0xf7e2b6, mid: 0x9fd0ea, top: 0x2f79c8, sun: 0xfff8de, cloudLit: 0xfff6e2, cloudShade: 0xd9c9b0, night: 0 },
+    particles: 'motes', bloom: 0.4, bloomThreshold: 1.35, environment: 0.4,
+  },
+  // ORLEANS: a clear river morning. Soft sun from the east over the water, cool
+  // shade under the bridge and the jettied houses, mist on the far bank.
+  loire: {
+    background: 0xcfdbe2, fog: [0xd2dde4, 62, 215], exposure: 1.0, hemi: [0xcfe3f2, 0x6b6558, 1.35],
+    sun: { color: 0xffe2bd, intensity: 3.0, pos: [30, 28, 16] },
+    sky: { horizon: 0xf6e3cf, mid: 0x9cc6e0, top: 0x3f79b8, sun: 0xfff3da, cloudLit: 0xfff5ea, cloudShade: 0xa9b8cc, night: 0 },
+    particles: 'motes', bloom: 0.36, bloomThreshold: 1.3, environment: 0.42,
+  },
   day: {
     background: 0xbfdcf2, fog: [0xc4e2f6, 70, 220], exposure: 1.05, hemi: [0xd6ecff, 0x6a7088, 1.8],
     sun: { color: 0xffe7c8, intensity: 3.0, pos: [-22, 35, 18] },

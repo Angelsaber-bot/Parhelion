@@ -1,0 +1,85 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis (erakit.synth_materials); no external imagery, scans, textures or AI image inputs.",
+  "seed": 1352,
+  "size": [
+    128,
+    128
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "recipes": {
+    "sandstone": {
+      "kind": "blocks",
+      "rows": 4,
+      "cols": 2,
+      "joint": 0.035,
+      "contrast": 12,
+      "vary": 0.45,
+      "bump": 1.1,
+      "warm": 0.4
+    },
+    "limestone": {
+      "kind": "paving",
+      "rows": 2,
+      "cols": 2,
+      "contrast": 10,
+      "bump": 0.8
+    },
+    "sand": {
+      "kind": "sand",
+      "rows": 9,
+      "contrast": 12,
+      "bump": 1.0,
+      "warm": 0.5
+    },
+    "granite": {
+      "kind": "plaster",
+      "contrast": 16,
+      "bump": 0.5,
+      "rough": 170,
+      "grain": 0.9
+    },
+    "cedar": {
+      "kind": "wood",
+      "rows": 9,
+      "cols": 2,
+      "contrast": 18,
+      "bump": 1.0
+    },
+    "linen": {
+      "kind": "cloth",
+      "contrast": 8,
+      "bump": 0.5
+    },
+    "gold": {
+      "kind": "metal",
+      "contrast": 10,
+      "bump": 0.4,
+      "rough": 120,
+      "metal": 200,
+      "roughVary": 25
+    }
+  },
+  "files": {
+    "cedar_basecolor.png": "dc0efc417b883966c80618355af70514dedad11515f883fb4dc6bd82c7345251",
+    "cedar_normal.png": "2dd51e42886f50b0f1b31d298eb4e6c9572ce3a37b738dcda93a11b5d8a0f2cd",
+    "cedar_orm.png": "6317a453a508c54c7b75b2792fa319b17c556f0a9428064d54a3caacae8e2d0c",
+    "gold_basecolor.png": "4f58166a9b9ba694789f3147df3cd77c95323fcc0957ec274f849dab0c9d81a7",
+    "gold_normal.png": "128af32318625eefe0c1019b72911bc3889c56ad04ee44254698fdd850c02a2b",
+    "gold_orm.png": "6297b861384caf3c6b02ad52d8e6f3d71fb8e9588fcd07e53b5d10b6ad21d88c",
+    "granite_basecolor.png": "e0548e185744471ac16d6ad9b4cec69effbcafcb2fd51f72db9e07b894ded7cb",
+    "granite_normal.png": "3aee2ca6fce4106c7644d8d7aa03705cccce54cb0464af48e0968b5d53c7890d",
+    "granite_orm.png": "a8facb931cf834b3a8143421c30bc2ed7aa348e51703e3534fa553964ac21a66",
+    "limestone_basecolor.png": "9a496f43548d6aa77bc10ac61efae5fabd5ededc0590cc56b89a28214aa7032c",
+    "limestone_normal.png": "7f89b77048a92637484c4ad1e295265cb909026617f177d27e94aae523e63fdd",
+    "limestone_orm.png": "82ce31b0f4ebda31710b3508159bfad6a0b0c9ad0c15e8ba20a71b034a0ea6f5",
+    "linen_basecolor.png": "31271cdff548a4e869be3d55dda22dc6eee6c0a4277892108d25c971f988cbbb",
+    "linen_normal.png": "dd8198a35391e2340ed1734e8283619aa2cb1239268c626d42e73fc73de8d214",
+    "linen_orm.png": "afb8636292f536cfbd66dc2a0637fb20446ad56c30a0d47f83cb126fe010f68f",
+    "sand_basecolor.png": "7f2a728c16dec3a314dec918abb9299687fb6da7768627b5009cffaf95a69b5c",
+    "sand_normal.png": "c8d34738160e200e55ddff2d959d8ceb9ab51d3813e7c345897eac1e3b6c468c",
+    "sand_orm.png": "84ecbb8218190e722cc6d88d78911f71d1f819476d8a6ebcb2701e309fe9c8c6",
+    "sandstone_basecolor.png": "0f737e1cd44f46725eece1525d817f3f71d9fc1aff7fb3cbe09324016921760d",
+    "sandstone_normal.png": "dad5dc9bbeaa36645bb78e9da8b378dbed65da8554126458b5d189a89c755efd",
+    "sandstone_orm.png": "aa24898aa6a51d61dcd2df12848b39159a8b5e0385605f8b5785f6d073fd8fdd"
+  }
+}

@@ -24,8 +24,11 @@ import sakuraThumb from './assets/maps/sakura.webp';
 import blackflagThumb from './assets/maps/blackflag.webp';
 import frostcourtThumb from './assets/maps/frostcourt.webp';
 import camlannThumb from './assets/maps/camlann.webp';
+import lishanThumb from './assets/maps/lishan.webp';
+import suntempleThumb from './assets/maps/suntemple.webp';
+import orleansThumb from './assets/maps/orleans.webp';
 
-const MAP_THUMBS: Record<string, string> = { aster: asterThumb, sakura: sakuraThumb, blackflag: blackflagThumb, frostcourt: frostcourtThumb, camlann: camlannThumb };
+const MAP_THUMBS: Record<string, string> = { aster: asterThumb, sakura: sakuraThumb, blackflag: blackflagThumb, frostcourt: frostcourtThumb, camlann: camlannThumb, lishan: lishanThumb, suntemple: suntempleThumb, orleans: orleansThumb };
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const params = new URLSearchParams(location.search);

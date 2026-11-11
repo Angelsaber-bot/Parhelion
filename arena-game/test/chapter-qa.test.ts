@@ -10,11 +10,11 @@ import { localizeText, setLanguage } from '../../shared-client/i18n.ts';
 
 afterEach(() => { setLanguage('zh'); vi.useRealTimers(); });
 
-it('the active chapter selector has exactly five unique maps and the three new battlefields', () => {
+it('the active chapter selector has exactly eight unique maps, ending with the three era battlefields', () => {
   const ids = MAPS.map(m => m.id);
-  expect(ids).toHaveLength(5);
-  expect(new Set(ids).size).toBe(5);
-  expect(ids).toEqual(['aster', 'camlann', 'blackflag', 'frostcourt', 'sakura']);
+  expect(ids).toHaveLength(8);
+  expect(new Set(ids).size).toBe(8);
+  expect(ids).toEqual(['aster', 'camlann', 'blackflag', 'frostcourt', 'sakura', 'lishan', 'suntemple', 'orleans']);
 });
 
 it('active menu names and blurbs have complete English translations without changing stable IDs', () => {
