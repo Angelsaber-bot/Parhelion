@@ -2145,8 +2145,21 @@ function interact() {
   const m = nearestInteract();
   if (!m) return;
   const claim = modelClaimPoints.find(point => point.marker.id === m.id);
-  if (claim && canReachValleyPanel(m)) {
-    void modelCompanion.select(claim.id).then(() => { audio.interaction(); toast(bilingual(`${m.label}：已领取`, `${localizeText(m.label)}: claimed`)); servantPanel.render(); });
+  if (claim) {
+    // Claim markers sit at foot level. Aim the visibility ray above the ground,
+    // just as nearby residents do, and never fall through to generic activation.
+    const reachable = canReachValleyPanel({ ...m, p: [m.p[0], m.p[1] + 1.2, m.p[2]] });
+    if (!reachable) { toast(bilingual('请走近领取点，避开中间的障碍。', 'Move closer to the claim point with a clear path.')); return; }
+    const loading = modelCompanion.selected === claim.id && modelCompanion.state === 'failed'
+      ? modelCompanion.retry() : modelCompanion.select(claim.id);
+    void loading.then(() => {
+      if (modelCompanion.selected !== claim.id) return;
+      if (modelCompanion.state === 'ready') {
+        audio.interaction();
+        toast(bilingual(`${m.label}：已领取`, `${localizeText(m.label)}: claimed`));
+      } else toast(bilingual('从者加载失败，请再次交互重试。', 'Servant failed to load. Interact again to retry.'));
+      servantPanel.render();
+    });
     return;
   }
   if(typeof homeTown!=='undefined'&&homeTown?.interact(m.id))return;
@@ -2500,7 +2513,7 @@ function frame(now: number) {
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
-    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
+    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || modelClaimPoints.some(point => point.marker.id === it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 
