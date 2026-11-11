@@ -531,13 +531,18 @@ export class Match {
   private stepGrenades(): void {
     const live: Grenade[] = [];
     for (const g of this.grenades) {
-      if (stepGrenade(this.map, g)) this.events.push({ t: 'bounce', gid: g.id, at: [g.x, g.y, g.z] });
-      if (g.kind === 'smoke' && (g.rest || g.fuse <= 1)) {
-        this.smokes.push({ id: g.id, owner: g.owner, x: g.x, y: quant(g.y - .09), z: g.z, life: SMOKE.life });
+      const { loud, landed } = stepGrenade(this.map, g);
+      if (loud) this.events.push({ t: 'bounce', gid: g.id, at: [g.x, g.y, g.z] });
+      if (g.kind === 'smoke' && landed) {
+        this.smokes.push({ id: g.id, owner: g.owner, x: g.x, y: quant(g.y - GRENADE.radius), z: g.z, life: SMOKE.life });
         this.events.push({ t: 'smoke', sid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
         continue;
       }
-      if (--g.fuse <= 0) { if (g.kind === 'frag') this.blast(g); continue; }
+      if (g.kind === 'frag') {
+        g.fuse = Math.max(0, g.fuse - 1);
+        if (g.fuse === 0 && landed) { this.blast(g); continue; }
+      }
+      if (g.y < this.map.data.bounds.min[1] - 2) continue;
       live.push(g);
     }
     this.grenades = live;

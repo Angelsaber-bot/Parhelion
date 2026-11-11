@@ -26,7 +26,7 @@ it('the production server room preserves new indices through join and broadcast 
   expect(() => room.join('old', { rulesVersion: 17, skins: selected() })).toThrow(/版本/);
   expect(room.match.slots.size).toBe(0);
   const welcome = room.join('new', { rulesVersion: RULES_VERSION, team: 'A', name: 'Craft', skins: selected(), loadout: ['firefly', 'corona', 'blade'] });
-  expect(welcome.rulesVersion).toBe(18);
+  expect(welcome.rulesVersion).toBe(RULES_VERSION);
   let snapshot = room.step();
   for (let tick = 0; tick < 10 && !snapshot; tick++) snapshot = room.step();
   const player = snapshot!.players.find(p => p.id === 'new')!;

@@ -9,7 +9,7 @@ import { Bot, BOT_SKILL, throwPitch } from '../shared/bot.ts';
 import { applyInput, BTN, clonePlayer, newPlayer, type Input } from '../shared/sim.ts';
 import { LoadoutStore } from '../src/ui/loadout.ts';
 
-const box = (id: string, position: [number, number, number], size: [number, number, number]) => ({ id, type: 'box', position, size, material: '', collision: true, role: 'wall' });
+const box = (id: string, position: [number, number, number], size: [number, number, number]): MapData['objects'][number] => ({ id, type: 'box', position, size, material: '', collision: true, role: 'wall' });
 const data = (walls = true): MapData => ({
   mapId: 'grenade-fixture', version: '1', bounds: { min: [-30, -1, -30], max: [30, 12, 30] },
   player: { radius: .32, height: 1.8, eyeHeight: 1.65, walkSpeed: 5.2, stepHeight: .28 },
@@ -73,6 +73,21 @@ describe('flight is deterministic, bounces off walls and settles', () => {
     for (let i = 0; i < 120; i++) { stepGrenade(map, g); minZ = Math.min(minZ, g.z); }
     expect(minZ).toBeGreaterThan(-5.8 - GRENADE.radius); expect(g.z).toBeGreaterThan(-5.8);
   });
+  it('the underside of a thin platform is not a landing surface; its top and a ramp are', () => {
+    const layout = data(false);
+    layout.objects.push(box('platform', [0, 1.48, 0], [4, .04, 4]),
+      { ...box('ramp', [6, 0, 0], [4, 2, 4]), type: 'ramp', axis: 'x', lowAt: 1 });
+    const elevated = buildMap(layout);
+    const under = nade({ y: 1.35, vy: 5 });
+    expect(stepGrenade(elevated, under)).toEqual({ loud: true, landed: false });
+    expect(under.y).toBeCloseTo(1.46 - GRENADE.radius, 3);
+    expect(under.vy).toBeLessThan(0);
+    for (const [x, height] of [[0, 1.5], [6, 1]]) {
+      const falling = nade({ x, y: height + GRENADE.radius + .03, vy: -5 });
+      expect(stepGrenade(elevated, falling).landed).toBe(true);
+      expect(falling.y).toBeCloseTo(height + GRENADE.radius, 3);
+    }
+  });
   it('the bot launch solver reaches the requested distance on flat ground', () => {
     for (const d of [5, 9, 14]) {
       const g = launchGrenade(open, 1, 'a', 'A', 'frag', [0, 1.53, 0], [-Math.sin(0) * Math.cos(throwPitch(d, 1.53)), Math.sin(throwPitch(d, 1.53)), -Math.cos(throwPitch(d, 1.53))], [0, 0]);
@@ -96,6 +111,45 @@ function detonate(m: Match, at: [number, number, number], owner = 'a') {
   (m as unknown as { stepGrenades(): void }).stepGrenades();
   return m.snapshot().events;
 }
+
+describe('throw effects require ground contact', () => {
+  it.each(['frag', 'smoke'] as const)('a high %s stays live past its old timer and triggers exactly once on landing', (kind) => {
+    const m = duel();
+    m.player('a')!.utility = kind;
+    m.queueInputs('a', [input(1, { pitch: 1.45, buttons: BTN.THROW })]);
+    const effects: { tick: number; at: [number, number, number] }[] = [];
+    for (let tick = 1; tick <= 4 * TICK_HZ; tick++) {
+      m.step(); const snap = m.snapshot();
+      for (const event of snap.events) if (event.t === 'blast' || event.t === 'smoke') effects.push({ tick, at: event.at });
+      if (tick === FRAG.fuse) {
+        expect(snap.grenades).toHaveLength(1);
+        expect(snap.grenades![0].y).toBeGreaterThan(1);
+        expect(snap.grenades![0].fuse).toBe(0);
+        expect(snap.smokes).toHaveLength(0);
+        expect(effects).toHaveLength(0);
+      }
+    }
+    expect(effects).toHaveLength(1);
+    expect(effects[0].tick).toBeGreaterThan(FRAG.fuse);
+    expect(effects[0].at[1]).toBeCloseTo(GRENADE.radius, 3);
+    expect(m.grenades).toHaveLength(0);
+    expect(m.smokes).toHaveLength(kind === 'smoke' ? 1 : 0);
+    if (kind === 'smoke') expect(m.smokes[0].y).toBeCloseTo(0, 3);
+  });
+  it('a frag whose fuse expires during a bounce waits for its next contact', () => {
+    const m = duel();
+    m.grenades.push(nade({ y: GRENADE.radius + .1, vy: -8, vx: 2, fuse: 4 }));
+    m.step(); expect(m.snapshot().events.some(e => e.t === 'bounce')).toBe(true);
+    for (let i = 0; i < 3; i++) { m.step(); expect(m.snapshot().events.some(e => e.t === 'blast')).toBe(false); }
+    expect(m.grenades[0].fuse).toBe(0);
+    expect(m.grenades[0].y).toBeGreaterThan(GRENADE.radius + .05);
+    const events: NetEvent[] = [];
+    for (let i = 0; i < TICK_HZ; i++) { m.step(); events.push(...m.snapshot().events); }
+    const blasts = events.filter(e => e.t === 'blast');
+    expect(blasts).toHaveLength(1);
+    expect(blasts[0].at[1]).toBeCloseTo(GRENADE.radius, 3);
+  });
+});
 
 describe('frag blasts', () => {
   it('reaches everything inside its radius and nothing beyond it', () => {
@@ -169,13 +223,19 @@ describe('frag blasts', () => {
     const hp = m.player('b')!.hp; detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.hp).toBe(hp);
     m.phase = 'countdown'; m.slots.get('b')!.spawnProtectedUntilTick = 0; detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.hp).toBe(hp);
   });
-  it('a real thrown frag flies, explodes on its fuse and is reported in snapshots meanwhile', () => {
+  it('a real thrown frag flies, waits for both fuse and landing, and appears in snapshots meanwhile', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 0, yaw: 0 }); Object.assign(m.player('b')!, { x: 0, z: -9 }); Object.assign(m.player('c')!, { x: 6, z: 6 });
     m.queueInputs('a', [{ seq: 1, mx: 0, mz: 0, yaw: 0, pitch: .15, buttons: BTN.THROW, weapon: 0, view: 0 }]);
     m.step(); const flying = m.snapshot();
     expect(flying.grenades).toHaveLength(1); expect(flying.events.some((e) => e.t === 'throw')).toBe(true);
-    let blasted = false; for (let i = 0; i < FRAG.fuse + 5; i++) { m.step(); if (m.snapshot().events.some((e) => e.t === 'blast')) blasted = true; }
-    expect(blasted).toBe(true); expect(m.grenades).toHaveLength(0);
+    const blasts: NetEvent[] = [];
+    for (let i = 1; i <= 4 * TICK_HZ; i++) {
+      m.step();
+      const events = m.snapshot().events.filter(e => e.t === 'blast');
+      if (i + 1 < FRAG.fuse) expect(events).toHaveLength(0);
+      blasts.push(...events);
+    }
+    expect(blasts).toHaveLength(1); expect(m.grenades).toHaveLength(0);
   });
 });
 
@@ -193,7 +253,7 @@ describe('smoke', () => {
     expect(shooterInside).toBe(open);
   });
   it('deploys on landing, blocks sight lines through it for its lifetime, then clears', () => {
-    const m = duel(); m.grenades.push(nade({ kind: 'smoke', fuse: SMOKE.fuse, y: GRENADE.radius, rest: true }));
+    const m = duel(); m.grenades.push(nade({ kind: 'smoke', fuse: 0, y: GRENADE.radius + .03, vy: -6 }));
     m.step(); expect(m.smokes).toHaveLength(1);
     expect(smokeBlocks(m.smokes, [-6, 1.5, 0], [6, 1.5, 0])).toBe(true);
     expect(smokeBlocks(m.smokes, [-6, 1.5, 8], [6, 1.5, 8])).toBe(false);

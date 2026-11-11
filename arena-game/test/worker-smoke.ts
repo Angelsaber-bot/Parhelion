@@ -3,7 +3,9 @@
 import { RULES_VERSION, type JoinOptions } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
-import { loadoutWeapon, WEAPONS, type Loadout } from '../shared/content.ts';
+import { GRENADE, loadoutWeapon, WEAPONS, type Loadout, type UtilityId } from '../shared/content.ts';
+import { ARENA_MAP } from '../shared/arenaMap.ts';
+import { groundAt } from '../shared/map.ts';
 const url = process.argv[2] ?? 'ws://127.0.0.1:8787/arena';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const sockets: WebSocket[] = [];
@@ -21,9 +23,9 @@ const releaseSkins = WEAPONS.map(weapon => {
   if (index < 0) throw new Error(`release finish missing from catalog: ${id}`);
   return index;
 });
-function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION) {
+function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION, utility: UtilityId = 'frag') {
   return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[] }>((resolve, reject) => {
-    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout };
+    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout, utility };
     const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(opts))}`); sockets.push(ws);
     const client = { ws, id: '', snaps: [] as Snapshot[] };
     const timer = setTimeout(() => { ws.close(); reject(new Error('join timeout')); }, 10000);
@@ -47,7 +49,7 @@ async function refused(choice: Loadout, version = RULES_VERSION) {
 }
 try {
   const choice: Loadout = ['firefly', 'longnight', 'hammer'];
-  const a = await join('A', 'SmokeA', choice), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm']);
+  const a = await join('A', 'SmokeA', choice), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm'], RULES_VERSION, 'smoke');
   await wait(500);
   const first = a.snaps.at(-1)!;
   if (!first?.players.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
@@ -75,15 +77,30 @@ try {
   await wait(250);
   const after = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
   if (!after.crouched || Math.hypot(after.x - before.x, after.z - before.z) < .1) throw new Error('movement or crouch missing remotely');
-  // v14 utility: a thrown frag is simulated by the server and reaches the other client.
-  a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: .2, buttons: BTN.THROW, weapon: 0, view: 0 }] }));
-  await wait(400);
-  if (!b.snaps.some((s) => s.events.some((e) => e.t === 'throw' && e.id === a.id))) throw new Error('grenade throw missing remotely');
-  if (!b.snaps.some((s) => (s.grenades ?? []).length > 0)) throw new Error('grenade flight missing from snapshots');
+  // Both throws travel through the real room; peers must see flight and effects on supported ground.
+  for (const [client, inputSeq] of [[a, ++seq], [b, 1]] as const) {
+    client.ws.send(JSON.stringify({ t: 'input', d: [{ seq: inputSeq, mx: 0, mz: 0, yaw: 0, pitch: 1.45, buttons: BTN.THROW, weapon: 0, view: 0 }] }));
+  }
+  for (const [thrower, peer, kind, effect] of [[a, b, 'frag', 'blast'], [b, a, 'smoke', 'smoke']] as const) {
+    const deadline = Date.now() + 7000;
+    for (;;) {
+      const events = peer.snaps.flatMap(s => s.events);
+      const release = events.find(e => (e.t === 'blast' || e.t === 'smoke') && e.t === effect && e.owner === thrower.id);
+      if (release && (release.t === 'blast' || release.t === 'smoke')) {
+        const [x, y, z] = release.at;
+        if (Math.abs(y - groundAt(ARENA_MAP, x, z, y, 0) - GRENADE.radius) > .005) throw new Error(`${kind} triggered without ground contact at ${release.at}`);
+        if (!events.some(e => e.t === 'throw' && e.id === thrower.id && e.kind === kind)) throw new Error(`${kind} throw missing remotely`);
+        if (!peer.snaps.some(s => s.grenades?.some(g => g.owner === thrower.id && g.kind === kind))) throw new Error(`${kind} flight missing remotely`);
+        break;
+      }
+      if (Date.now() >= deadline) throw new Error(`grounded ${kind} effect missing remotely`);
+      await wait(100);
+    }
+  }
   a.ws.close(); b.ws.close(); await wait(250);
   await refused(['lumen', 'lumen', 'blade']);
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
   await refused(['lumen', 'corona', 'blade'], RULES_VERSION - 1);
-  console.log(`OK: v${RULES_VERSION} release finish indices, two-client slot/loadout/crouch/movement, scheduled melee, thrown grenade, forged/duplicate/old-version rejection`);
+  console.log(`OK: v${RULES_VERSION} finish indices, two-client slot/loadout/crouch/movement, scheduled melee, grounded frag and smoke, forged/duplicate/old-version rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

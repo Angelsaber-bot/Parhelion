@@ -80,7 +80,7 @@ export const GRENADE = {
  * teammates are spared, and the thrower takes a fixed, never-fatal `selfDamage`. Throws people back. */
 export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
 /** Blocks sight; anyone inside takes `cover` of the damage from shooters outside it. */
-export const SMOKE = { fuse: TICK_HZ, radius: 5, life: 12 * TICK_HZ, cover: 0.75 };
+export const SMOKE = { radius: 5, life: 12 * TICK_HZ, cover: 0.75 };
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
 export const FRAG_KILL = 100;
 

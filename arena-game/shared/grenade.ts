@@ -9,7 +9,7 @@ import { quant } from './sim.ts';
 export interface Grenade {
   id: number; owner: string; team: Team; kind: UtilityId;
   x: number; y: number; z: number; vx: number; vy: number; vz: number;
-  fuse: number; // ticks left
+  fuse: number; // frag ticks left, zero while waiting for contact; smoke has no fuse
   rest: boolean;
 }
 export interface Smoke { id: number; owner: string; x: number; y: number; z: number; life: number }
@@ -23,40 +23,49 @@ export function launchGrenade(m: ArenaMap, id: number, owner: string, team: Team
     vx: quant(dir[0] * GRENADE.speed + carry[0] * GRENADE.inherit),
     vy: quant(dir[1] * GRENADE.speed + GRENADE.lift),
     vz: quant(dir[2] * GRENADE.speed + carry[1] * GRENADE.inherit),
-    fuse: kind === 'frag' ? FRAG.fuse : SMOKE.fuse, rest: false,
+    fuse: kind === 'frag' ? FRAG.fuse : 0, rest: false,
   };
 }
 
-/** One tick of flight. Returns true when it struck a surface hard enough to be heard. */
-export function stepGrenade(m: ArenaMap, g: Grenade): boolean {
-  if (g.rest) return false;
+/** One tick of flight. Landed means support this tick, not a past bounce. */
+export function stepGrenade(m: ArenaMap, g: Grenade): { loud: boolean; landed: boolean } {
+  if (g.rest) return { loud: false, landed: true };
   g.vy -= GRENADE.gravity * DT;
   const r = GRENADE.radius;
   let loud = false;
-  // X, then Z, then Y: each axis is swept separately, so a box face reflects only its own axis.
-  for (const axis of [0, 2, 1] as const) {
-    const v = axis === 0 ? g.vx : axis === 2 ? g.vz : g.vy, d = v * DT;
+  // Sweep horizontal axes separately so a wall reflects only its own axis.
+  for (const axis of [0, 2] as const) {
+    const v = axis === 0 ? g.vx : g.vz, d = v * DT;
     if (Math.abs(d) < 1e-9) continue;
-    const s = Math.sign(d), dir: Vec3 = axis === 0 ? [s, 0, 0] : axis === 2 ? [0, 0, s] : [0, s, 0];
+    const s = Math.sign(d), dir: Vec3 = axis === 0 ? [s, 0, 0] : [0, 0, s];
     const hit = raycastMap(m, [g.x, g.y, g.z], dir, Math.abs(d) + r);
     const move = hit === Infinity ? d : s * Math.max(0, hit - r);
-    if (axis === 0) g.x += move; else if (axis === 2) g.z += move; else g.y += move;
+    if (axis === 0) g.x += move; else g.z += move;
     if (hit === Infinity) continue;
     loud ||= Math.abs(v) > 2;
     const bounced = -v * GRENADE.restitution;
-    if (axis === 0) g.vx = bounced; else if (axis === 2) g.vz = bounced;
-    else { g.vy = bounced; if (v < 0) { g.vx *= GRENADE.friction; g.vz *= GRENADE.friction; } }
+    if (axis === 0) g.vx = bounced; else g.vz = bounced;
   }
-  // The arena floor and open edges are a hard boundary too.
-  const floor = groundAt(m, g.x, g.z, g.y + .3) + r;
-  if (g.y < floor) { g.y = floor; if (g.vy < 0) { loud ||= g.vy < -2; g.vy = -g.vy * GRENADE.restitution; g.vx *= GRENADE.friction; g.vz *= GRENADE.friction; } }
   const b = m.movementBounds;
   if (g.x < b.minX || g.x > b.maxX) { g.x = Math.max(b.minX, Math.min(b.maxX, g.x)); g.vx = -g.vx * GRENADE.restitution; }
   if (g.z < b.minZ || g.z > b.maxZ) { g.z = Math.max(b.minZ, Math.min(b.maxZ, g.z)); g.vz = -g.vz * GRENADE.restitution; }
-  if (g.y <= floor + .02 && Math.abs(g.vy) < 1.2 && Math.hypot(g.vx, g.vz) < .5) { g.rest = true; g.vx = g.vy = g.vz = 0; }
+  // Sweep the bottom onto real support below the centre. Player step-up tolerance
+  // would let a grenade snap onto a platform from underneath.
+  const dy = g.vy * DT;
+  const floor = dy <= 0 ? groundAt(m, g.x, g.z, g.y, 0) : -100;
+  const landed = floor > -100 && g.y + dy <= floor + r;
+  if (landed) {
+    g.y = floor + r; loud ||= g.vy < -2;
+    g.vy = -g.vy * GRENADE.restitution; g.vx *= GRENADE.friction; g.vz *= GRENADE.friction;
+    if (g.vy < 1.2 && Math.hypot(g.vx, g.vz) < .5) { g.rest = true; g.vx = g.vy = g.vz = 0; }
+  } else if (dy > 0) {
+    const hit = raycastMap(m, [g.x, g.y, g.z], [0, 1, 0], dy + r);
+    g.y += hit === Infinity ? dy : Math.max(0, hit - r);
+    if (hit !== Infinity) { loud ||= g.vy > 2; g.vy = -g.vy * GRENADE.restitution; }
+  } else g.y += dy;
   g.x = quant(g.x); g.y = quant(g.y); g.z = quant(g.z);
   g.vx = quant(g.vx); g.vy = quant(g.vy); g.vz = quant(g.vz);
-  return loud;
+  return { loud, landed };
 }
 
 /** True when a blast this far away reaches you (it is then lethal to enemies). */

@@ -78,9 +78,9 @@ describe('validated two-gun one-melee loadouts', () => {
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });
-  it('version 14 refuses clients from before the utility slot, the old catalogs and old shotgun rules', () => {
-    const core = new RoomCore({}); expect(RULES_VERSION).toBe(18);
-    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16, 17]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
+  it('refuses clients with old catalogs, combat rules or airborne grenade effects', () => {
+    const core = new RoomCore({});
+    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
     expect(core.match.slots.size).toBe(0);
   });
 });

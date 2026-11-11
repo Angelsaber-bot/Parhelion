@@ -7,8 +7,7 @@ import { fileURLToPath } from 'node:url';
 import assert from 'node:assert/strict';
 import { Client } from '../../arena-game/node_modules/@colyseus/sdk/build/index.mjs';
 import WebSocket from '../../arena-game/node_modules/ws/wrapper.mjs';
-// Matches arena-game/shared/protocol.ts RULES_VERSION.
-const RULES_VERSION = 3;
+import { RULES_VERSION } from '../../arena-game/shared/protocol.ts';
 const source = fileURLToPath(new URL('../dist/', import.meta.url));
 const root = await fs.mkdtemp(path.join(os.tmpdir(), 'Parhelion 中文 smoke '));
 await fs.cp(source, path.join(root, 'dist'), { recursive: true });

@@ -191,7 +191,7 @@ function overlaps(s: Solid, x: number, z: number, r: number): boolean {
 }
 
 /** Highest standable surface under (x,z) that is reachable from height y (within step height). */
-export function groundAt(m: ArenaMap, x: number, z: number, y: number): number {
+export function groundAt(m: ArenaMap, x: number, z: number, y: number, stepHeight = m.step): number {
   let g = -100;
   const ids = near(m, x, z, EPS * 2);
   const n = ids ? ids.length : m.solids.length;
@@ -199,7 +199,7 @@ export function groundAt(m: ArenaMap, x: number, z: number, y: number): number {
     const s = m.solids[ids ? ids[k] : k];
     if (!inside(s, x, z)) continue;
     const t = topAt(s, x, z);
-    if (t <= y + m.step + EPS && t > g) g = t;
+    if (t <= y + stepHeight + EPS && t > g) g = t;
   }
   return g;
 }
