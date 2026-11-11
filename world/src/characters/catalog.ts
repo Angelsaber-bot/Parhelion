@@ -43,6 +43,11 @@ export const CHARACTER_KITS = {
     },
     mount: { saddleSocket: 'saddle', riderSeatSocket: 'seat' },
   },
+} satisfies Record<string, CharacterKitDefinition>;
+export type CharacterKitId = keyof typeof CHARACTER_KITS;
+
+/** Optional recovered models do not satisfy the original authored-combat kit contract. */
+export const MODEL_CHARACTER_KITS = {
   // Optional companions. Native scale and authored root/hover are preserved.
   // These clips have no authored combat contacts; gameplay uses an explicit fallback.
   jeanne: {
@@ -81,14 +86,14 @@ export const CHARACTER_KITS = {
     sockets: { head: { node: 'HeadSocket' }, rightHand: { node: 'Hand_R' }, leftHand: { node: 'Hand_L' }, weapon: { node: 'WeaponSocket' } },
   },
 } satisfies Record<string, CharacterKitDefinition>;
-export type CharacterKitId = keyof typeof CHARACTER_KITS;
+export type ModelCharacterKitId = keyof typeof MODEL_CHARACTER_KITS;
 
 /** Explicit opt-in selection, separate from the quest/combat servant roster. */
 export const MODEL_COMPANIONS = [
   { id: 'jeanne', name: '贞德', nameEn: 'Jeanne' },
   { id: 'ozymandias', name: '奥兹曼迪亚斯', nameEn: 'Ozymandias' },
   { id: 'qinShiHuang', name: '始皇帝', nameEn: 'Qin Shi Huang' },
-] as const satisfies readonly { id: CharacterKitId; name: string; nameEn: string }[];
+] as const satisfies readonly { id: ModelCharacterKitId; name: string; nameEn: string }[];
 export type ModelCompanionId = typeof MODEL_COMPANIONS[number]['id'];
 export const isModelCompanionId = (id: string): id is ModelCompanionId => MODEL_COMPANIONS.some(entry => entry.id === id);
 

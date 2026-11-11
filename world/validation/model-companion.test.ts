@@ -6,7 +6,7 @@ import type { GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CharacterKit, type CharacterKitDefinition, type CharacterKitOptions } from '../src/characters/characterKit.ts';
 import { ModelCompanion } from '../src/companions/modelCompanion.ts';
 import { KitCompanion } from '../src/companions/kitCompanion.ts';
-import { CHARACTER_KITS } from '../src/characters/catalog.ts';
+import { CHARACTER_KITS, MODEL_CHARACTER_KITS } from '../src/characters/catalog.ts';
 import { FirstContract } from '../src/companions/contracts.ts';
 
 function fixture(definition: CharacterKitDefinition, options: CharacterKitOptions = {}) {
@@ -42,7 +42,7 @@ test('rapid A/B/A selections abort old requests; stale completions dispose once 
   const b = companion.select('ozymandias'); await flush();
   const newest = companion.select('jeanne'); await flush();
   assert.equal(loader.calls.length, 3); assert.equal(loader.calls[0].signal?.aborted, true); assert.equal(loader.calls[1].signal?.aborted, true);
-  const oldA = fixture(CHARACTER_KITS.jeanne), oldB = fixture(CHARACTER_KITS.ozymandias), current = fixture(CHARACTER_KITS.jeanne);
+  const oldA = fixture(MODEL_CHARACTER_KITS.jeanne), oldB = fixture(MODEL_CHARACTER_KITS.ozymandias), current = fixture(MODEL_CHARACTER_KITS.jeanne);
   loader.calls[2].resolve(current.actor); await newest;
   loader.calls[0].resolve(oldA.actor); loader.calls[1].resolve(oldB.actor); await Promise.all([a, b]);
   assert.equal(companion.actor, current.actor); assert.equal(companion.state, 'ready');
@@ -60,7 +60,7 @@ test('clearing or disposing during a request removes the preview and absorbs lat
     const loader = deferredLoader(), scene = new THREE.Scene(), companion = new ModelCompanion({ scene, colliders: [], load: loader.load });
     const pending = companion.select('qinShiHuang'); await flush();
     if (finish === 'clear') await companion.select(null); else companion.dispose();
-    const loaded = fixture(CHARACTER_KITS.qinShiHuang); loader.calls[0].resolve(loaded.actor); await pending;
+    const loaded = fixture(MODEL_CHARACTER_KITS.qinShiHuang); loader.calls[0].resolve(loaded.actor); await pending;
     assert.equal(companion.selected, null); assert.equal(companion.state, 'off'); assert.equal(companion.actor, undefined); assert.equal(scene.children.length, 0); assert.equal(loaded.counts.dispose, 1);
     companion.dispose(); assert.equal(loaded.counts.dispose, 1);
   }
@@ -76,7 +76,7 @@ test('failed and synchronous loads are recoverable without touching contract pro
   const first = companion.select('ozymandias'); await flush(); loader.calls[0].reject(new Error('HTTP 503')); await first;
   assert.equal(companion.state, 'failed'); assert.equal(companion.selected, 'ozymandias'); assert.equal(companion.actor, undefined);
   const retry = companion.retry(); assert.equal(companion.state, 'loading'); await flush();
-  const loaded = fixture(CHARACTER_KITS.ozymandias); loader.calls[1].resolve(loaded.actor); await retry;
+  const loaded = fixture(MODEL_CHARACTER_KITS.ozymandias); loader.calls[1].resolve(loaded.actor); await retry;
   assert.equal(companion.state, 'ready'); assert.equal(companion.error, undefined); assert.equal(contract.selected, 'saber'); assert.equal(contract.summoned, true); assert.deepEqual([...done], ['saber_contract', 'relay_a']); assert.deepEqual(writes, []);
   companion.dispose();
   const synchronous = new ModelCompanion({ scene: new THREE.Scene(), colliders: [], load: () => { throw new Error('synchronous loader failure'); } });

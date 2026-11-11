@@ -8,6 +8,7 @@ import {ORLEANS_WORK_ACTIONS} from '../src/map/orleansWorks';
 /** Legacy exact-source slices do not instantiate new sites. Keep their tests
  * on the real old route while explicitly supplying the new optional adapter. */
 export const campaignSourceContext = {
+  modelClaimPoints: [],
   ...drama,
   ORLEANS_WORK_ACTIONS, orleansWorksMarkerIds:new Set<string>(), orleansWorksRuntime:undefined, orleansWorksScene:{apply(){}},
   parallaxMarkerIds: new Set<string>(), parallaxGarden: { apply() {} },

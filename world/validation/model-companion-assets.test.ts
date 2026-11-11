@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone } from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { CHARACTER_KITS, MODEL_COMPANIONS } from '../src/characters/catalog.ts';
+import { CHARACTER_KITS, MODEL_CHARACTER_KITS, MODEL_COMPANIONS } from '../src/characters/catalog.ts';
 import { CharacterKit, decodeCharacterAsset, type CharacterKitDefinition } from '../src/characters/characterKit.ts';
 import { ModelCompanion } from '../src/companions/modelCompanion.ts';
 import { Player } from '../src/player/player.ts';
@@ -20,7 +20,7 @@ const transforms = (root: THREE.Object3D) => { const result: number[] = []; root
 const assertClose = (a: number[], b: number[]) => { assert.equal(a.length, b.length); for (let i = 0; i < a.length; i++) assert.ok(Math.abs(a[i] - b[i]) < 1e-6, `transform mismatch ${i}: ${a[i]} vs ${b[i]}`); };
 
 for (const { id } of MODEL_COMPANIONS) test(`${id}: exact frozen runtime loads in the actual CharacterKit with native clips, transforms, sockets and pause`, async () => {
-  const definition: CharacterKitDefinition = CHARACTER_KITS[id], transport = Buffer.concat([definition.assetUrl, ...(definition.additionalAssetUrls ?? [])].map(url => readFileSync(new URL(url)))), bytes = Buffer.from(await decodeCharacterAsset(transport.buffer.slice(transport.byteOffset, transport.byteOffset + transport.byteLength)));
+  const definition: CharacterKitDefinition = MODEL_CHARACTER_KITS[id], transport = Buffer.concat([definition.assetUrl, ...(definition.additionalAssetUrls ?? [])].map(url => readFileSync(new URL(url)))), bytes = Buffer.from(await decodeCharacterAsset(transport.buffer.slice(transport.byteOffset, transport.byteOffset + transport.byteLength)));
   assert.ok(transport.byteLength <= 25 * 1024 * 1024, 'character transport fits Cloudflare Pages per-file limit');
   assert.equal(createHash('sha256').update(bytes).digest('hex'), hashes[id]);
   // CPU rig/animation validation only. Browser image decoding and GPU rendering are not simulated.
@@ -80,4 +80,11 @@ for (const { id } of MODEL_COMPANIONS) test(`${id}: real model follows actual Pl
     assert.ok(actor.root.position.distanceTo(player.pos) < 4); assert.equal(actor.state, 'idle'); assert.equal(actor.definition.clips.attack, undefined);
     t.diagnostic(JSON.stringify({ id, playerMetres: travel, maximumGap, settledGap: actor.root.position.distanceTo(player.pos), nativePlaybackRate: actor.playbackRate, scope: 'CPU generic follow only; no calibrated foot-speed or GPU claim' }));
   } finally { companion.dispose(); assert.equal(scene.children.length, 0); geometry.dispose(); }
+});
+
+
+test('recovered model companions remain separate from authored combat kits', () => {
+  assert.deepEqual(Object.keys(MODEL_CHARACTER_KITS).sort(), ['jeanne', 'ozymandias', 'qinShiHuang']);
+  assert.deepEqual(MODEL_COMPANIONS.map(entry => entry.id).sort(), Object.keys(MODEL_CHARACTER_KITS).sort());
+  for (const id of Object.keys(MODEL_CHARACTER_KITS)) assert.ok(!(id in CHARACTER_KITS));
 });

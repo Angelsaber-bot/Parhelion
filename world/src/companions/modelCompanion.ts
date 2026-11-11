@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CHARACTER_KITS, MODEL_COMPANION_CLEARANCE, isModelCompanionId, type ModelCompanionId } from '../characters/catalog';
+import { MODEL_CHARACTER_KITS, MODEL_COMPANION_CLEARANCE, isModelCompanionId, type ModelCompanionId } from '../characters/catalog';
 import { loadCharacterKit, type CharacterKit } from '../characters/characterKit';
 import type { Collider } from '../player/player';
 import { CompanionNavigation } from './companionNavigation';
@@ -104,7 +104,7 @@ export class ModelCompanion {
     // Normalize synchronous loader/environment errors into the same recoverable state.
     const pending = Promise.resolve().then(() => {
       controller.signal.throwIfAborted();
-      return (this.options.load ?? loadCharacterKit)(CHARACTER_KITS[id], { signal: controller.signal, environment: this.options.environment?.(), onEvent: (event) => { if (this.current) this.follow.onEvent(this.current, event); } });
+      return (this.options.load ?? loadCharacterKit)(MODEL_CHARACTER_KITS[id], { signal: controller.signal, environment: this.options.environment?.(), onEvent: (event) => { if (this.current) this.follow.onEvent(this.current, event); } });
     }).then(actor => {
       if (this.disposed || generation !== this.generation || controller.signal.aborted) { actor.dispose(); return; }
       this.current = actor;

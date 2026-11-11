@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshBVH } from 'three-mesh-bvh';
-import { CHARACTER_KITS, MODEL_COMPANIONS } from '../src/characters/catalog.ts';
+import { MODEL_COMPANIONS } from '../src/characters/catalog.ts';
 import { CharacterKit, decodeCharacterAsset } from '../src/characters/characterKit.ts';
 import { ModelCompanion } from '../src/companions/modelCompanion.ts';
 import { Player } from '../src/player/player.ts';
