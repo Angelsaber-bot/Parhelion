@@ -103,7 +103,12 @@ const saved = (() => { try { const raw = JSON.parse(localStorage.getItem('arena-
 let char = Number.isInteger(saved.char) && CHARACTERS[saved.char] ? saved.char : 0;
 let mapId = mapIdOf(params.get('map') ?? saved.map);
 const skins = readSkinSelection(saved);
-$<HTMLInputElement>('name').value = saved.name ?? 'Max';
+const nameInput = $<HTMLInputElement>('name');
+nameInput.value = typeof saved.name === 'string' ? saved.name.trim() : '';
+const nameRequired = () => bilingual('请先输入你的名字。', 'Enter your name before starting.');
+nameInput.addEventListener('input', () => {
+  if (errorSource === nameRequired && nameInput.value.trim()) showError('');
+});
 // Local/LAN pages default to the Colyseus server next to them; the public (https) site defaults to the
 // Cloudflare Worker, and ignores a remembered plain ws:// address that an https page can't open anyway.
 const localHost = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)|\.local$/.test(location.hostname) || !location.hostname;
@@ -240,6 +245,12 @@ addEventListener('pagehide', event => {
 });
 $('play').onclick = async () => {
   if (starting || game || pageExited || settingsPanel.open || (document.getElementById('armory-dialog') as HTMLDialogElement|null)?.open) return;
+  const name = nameInput.value.trim();
+  if (!name) {
+    showError(nameRequired);
+    nameInput.focus();
+    return;
+  }
   // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
   if (mapState === 'failed') pickMap(mapId);
   const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode };
@@ -250,7 +261,7 @@ $('play').onclick = async () => {
   const opts: JoinOptions = {
     layout: $<HTMLSelectElement>('layout').value as TeamLayout,
     team: $<HTMLSelectElement>('team').value as JoinOptions['team'],
-    name: $<HTMLInputElement>('name').value.trim() || 'Player',
+    name,
     char, skins: skins.slice(), loadout: loadoutStore.value, utility: loadoutStore.utility, map: mapId,
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
@@ -360,8 +371,11 @@ $('leave').onclick = () => game?.stop();
 
 const languageToggle = createLanguageToggle();
 document.addEventListener('pointerlockchange', () => { languageToggle.hidden = !!document.pointerLockElement; });
+const renderNamePlaceholder = () => { nameInput.placeholder = bilingual('请输入你的名字', 'Enter your name'); };
+renderNamePlaceholder();
 localizeDom(document.body);
 onLanguageChange(() => {
+  renderNamePlaceholder();
   renderChars(); renderMaps(); renderLoadout(); renderSkins(); renderControlHints(); renderResultsBoard(); renderMatchBriefing(); renderStartupStatus(); renderPointerLockNote();
   if (loadoutStore.notice) $('loadout-status').textContent = localizeText(loadoutStore.notice);
   $('endtitle').textContent = localizeText(endTitleSource);
@@ -380,4 +394,7 @@ const lobbyFrames=new FrameGate(24);
   requestAnimationFrame(idle);
 })(0);
 
-if (params.has('autostart')) $('play').click();
+if (params.has('autostart')) {
+  if (controls.force && !nameInput.value) nameInput.value = 'Test Player';
+  $('play').click();
+}

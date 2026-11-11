@@ -25,6 +25,7 @@ for (const mode of ['offline', 'online']) for (const failure of ['reject', 'thro
   w.HTMLCanvasElement.prototype.requestPointerLock = function() { if (failure === 'throw') throw new Error('browser rejected'); d.dispatchEvent(new w.Event('pointerlockerror')); return failure === 'reject' ? Promise.reject(new Error('browser rejected')) : undefined as any; };
   const flush = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); await new Promise(resolve => setTimeout(resolve, 0)); };
   try {
+    w.localStorage.setItem('arena-lobby', JSON.stringify({ name: 'Pointer Lock QA' }));
     w.eval((await bundle).outputFiles[0].text); await flush();
     (d.querySelector(`[data-mode="${mode}"]`) as HTMLElement).click(); (d.getElementById('play') as HTMLElement).click(); await flush();
     const controls = (w as any).arena.controls;

@@ -15,7 +15,7 @@ const mocks:Record<string,string>={
 };
 const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
-async function boot(saved?:unknown){
+async function boot(saved:unknown={name:'Startup QA'}){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
  if(saved!==undefined)w.localStorage.setItem('arena-lobby',JSON.stringify(saved));
  const qa={graphics:[]as string[],armory:null as any,maps:[]as {id:string;task:ReturnType<typeof deferred>}[],joins:[]as {url:string;opts:any;task:ReturnType<typeof deferred>}[],games:0,offline:0,offlineInputs:[]as any[],closed:0,throwGame:false,
@@ -29,6 +29,24 @@ async function boot(saved?:unknown){
  const language=d.querySelector<HTMLSelectElement>('.parhelion-language select')!;language.value='en';language.dispatchEvent(new w.Event('change',{bubbles:true}));
  return{dom,w,d,qa,flush,click};
 }
+test('first-time Arena players must enter a name before starting',async()=>{const h=await boot(null);let saved;try{
+ const name=h.d.querySelector<HTMLInputElement>('#name')!;
+ assert.equal(name.value,'');assert.equal(name.placeholder,'Enter your name');
+ const locale=h.d.querySelector<HTMLSelectElement>('.parhelion-language select')!;
+ locale.value='zh';locale.dispatchEvent(new h.w.Event('change',{bubbles:true}));
+ assert.equal(name.placeholder,'请输入你的名字');
+ h.click('#play');assert.equal(h.d.activeElement,name);assert.equal(h.d.getElementById('error')!.textContent,'请先输入你的名字。');
+ locale.value='en';locale.dispatchEvent(new h.w.Event('change',{bubbles:true}));
+ name.value='   ';h.click('#play');assert.equal(h.d.getElementById('error')!.textContent,'Enter your name before starting.');
+ h.qa.maps[0].task.resolve();await h.flush();assert.equal(h.qa.offline,0);
+ name.value='  New fighter  ';name.dispatchEvent(new h.w.Event('input',{bubbles:true}));
+ assert.ok(h.d.getElementById('error')!.classList.contains('hidden'));
+ h.click('#play');await h.flush();assert.equal(h.qa.offlineInputs[0].name,'New fighter');
+ saved=JSON.parse(h.w.localStorage.getItem('arena-lobby')!);
+}finally{h.dom.window.close()}
+ const returning=await boot(saved);try{assert.equal(returning.d.querySelector<HTMLInputElement>('#name')!.value,'New fighter');}
+ finally{returning.dom.window.close()}
+});
 test('obsolete map rejection cannot overwrite the current successful selection',async()=>{const h=await boot();try{
  h.click('[data-id="blackflag"]');h.qa.maps[1].task.resolve();await h.flush();h.qa.maps[0].task.reject(Error('old map failed'));await h.flush();
  assert.ok(h.d.getElementById('error')!.classList.contains('hidden'));
