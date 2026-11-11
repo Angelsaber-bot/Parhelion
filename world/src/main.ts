@@ -138,6 +138,7 @@ import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './companions/servantAppearance';
 import { createServantPanel } from './ui/servantPanel';
 import { ModelCompanion } from './companions/modelCompanion';
+import { MODEL_CLAIM_POINTS } from './companions/modelClaimPoints';
 import { createModelCompanionControls } from './ui/modelCompanionControls';
 import { WorldCombat } from './combat/combatView';
 import { WorldGraphicsRecovery } from './rendering/graphicsRecovery';
@@ -556,11 +557,7 @@ const collider = (name: string) => colliders.find((c) => c.name === name);
 const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
 // Fast-play claim points for the recovered three-servant World assets.
 // Positions are existing region hubs, not new terrain or map boundaries.
-const modelClaimPoints: Array<{ id: 'jeanne' | 'ozymandias' | 'qinShiHuang'; marker: Marker }> = [
-  { id: 'jeanne', marker: { id: 'servant_claim_jeanne', type: 'interact', label: '奥尔良 · 贞德领取点', p: [-800, 14, -1350], radius: 7, note: 'Jeanne claim point' } },
-  { id: 'ozymandias', marker: { id: 'servant_claim_ozymandias', type: 'interact', label: '古埃及 · 奥斯曼迪斯领取点', p: [165, 14, -1550], radius: 7, note: 'Ozymandias claim point' } },
-  { id: 'qinShiHuang', marker: { id: 'servant_claim_qin', type: 'interact', label: '秦地 · 始皇帝领取点', p: [-535, 22, -820], radius: 7, note: 'Qin Shi Huang claim point' } },
-];
+const modelClaimPoints = MODEL_CLAIM_POINTS;
 for (const point of modelClaimPoints) { layout.markers.push(point.marker); markers.set(point.marker.id, point.marker); }
 const map = new WorldMap(grid, layout);
 const objectiveFor = (x: number, z: number) => layout.objectives.find((o) => o.region === regionAt(x, z).id)!.objective;
@@ -671,6 +668,7 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  const claim=modelClaimPoints.find(point=>point.marker.id===marker.id);if(claim)return bilingual(...claim.label);
   const townAction=HOME_CIVIC_ACTIONS.find(a=>a.id===marker.id);if(townAction)return bilingual(...townAction.label);
   const homeAction=HOME_ACTIONS.find(a=>a.id===marker.id);if(homeAction)return bilingual(homeAction.label[0],homeAction.label[1]);
   const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
@@ -1730,6 +1728,11 @@ const questOpen=document.createElement('button');questOpen.type='button';questOp
 const renderQuestButton=()=>{questOpen.textContent=bilingual('任务指引 · 主线、支线与探索','Quest guide · Main, side & exploration');};
 renderQuestButton();const unsubscribeQuestButton=onLanguageChange(renderQuestButton);
 questOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show();});start.append(questOpen);
+const claimsOpen=document.createElement('button');claimsOpen.type='button';claimsOpen.id='world-servant-claims-open';
+const renderClaimsButton=()=>{claimsOpen.textContent=bilingual('从者领取','Claim servants');};
+renderClaimsButton();const unsubscribeClaimsButton=onLanguageChange(renderClaimsButton);
+claimsOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show({region:'all',category:'side',search:'从者领取'});});start.append(claimsOpen);
+addEventListener('pagehide',event=>{if(!event.persisted){claimsOpen.remove();unsubscribeClaimsButton();}});
 const adventureButton=document.createElement('button');adventureButton.type='button';adventureButton.id='world-adventure-continue';
 const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续五区新冒险 · 保留已有存档','Continue the five-region adventure · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
 adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);save();questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('主线人物篇已启用，原有进度保留。进入世界后跟随岚的指引。','Character chapters enabled. Progress kept. Enter World and follow Lan’s lead.'));};start.append(adventureButton);

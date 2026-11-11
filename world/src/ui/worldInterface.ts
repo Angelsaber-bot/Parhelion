@@ -21,6 +21,7 @@ export function installWorldInterface(options:InterfaceOptions){
  const more=get('world-more-journey');
  const dragEntry=get('world-drag-controls');
  navigation.append(get('world-quest-journal-open'),get('world-travel-open'),get('settings-open'));
+ const claimsOpen=document.getElementById('world-servant-claims-open');if(claimsOpen)navigation.insertBefore(claimsOpen,get('world-travel-open'));
  more.append(get('world-adventure-continue'),get('servant-open'));
  const coopOpen=document.getElementById('world-coop-open');const summary=more.querySelector('summary');if(coopOpen){if(summary)summary.after(coopOpen);else more.prepend(coopOpen);}
  const locale=document.querySelector<HTMLElement>('body > .parhelion-language');
@@ -49,6 +50,7 @@ export function installWorldInterface(options:InterfaceOptions){
   navigation.setAttribute('aria-label',bilingual('旅途菜单','Journey menu'));
   const labels:Record<string,[string,string]>={
    'world-quest-journal-open':['任务指引','Quests'],
+   'world-servant-claims-open':['从者领取','Claim servants'],
    'world-travel-open':['据点旅行','Travel'],
    'settings-open':['设置','Settings'],
    'world-adventure-continue':['主线 · 人物篇','Story · Character chapters'],

@@ -81,7 +81,7 @@ cd site && npm run build      # 构建 Arena + World + 首页 → site/dist
 ```
 
 - 本机：双击 `启动 Parhelion.command`（http://127.0.0.1:4173/），`停止 Parhelion.command` 停止。
-- 常规发布：推送 main 后由 GitHub Actions 依次测试、部署 Worker、冒烟测试和发布 Pages。World 回归测试失败也会阻止发布。
+- 常规发布：推送 main 后由 GitHub Actions 依次构建（含类型检查）、部署 Worker、联机冒烟检查和发布 Pages。Arena、World 与整站全量回归不再作为自动发布门槛，仍可通过下方测试命令手动运行。
 - 手动公网发布：双击 `部署到公网.command`（发布 `site/dist/public` 到 Cloudflare Pages `parhelion-game`）；联机服务器用 `部署Arena服务器.command`。两者都需要本机已登录 wrangler。
 - 测试：`npm test --prefix arena-game`、`npm test --prefix world`、`npm test --prefix site`。
 

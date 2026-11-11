@@ -24,7 +24,7 @@ export function createModelCompanionControls(companion: ModelCompanion) {
     choices[0].textContent = bilingual('无（不加载额外模型）', 'None (no extra model loaded)');
     MODEL_COMPANIONS.forEach((entry, index) => { choices[index + 1].textContent = bilingual(entry.name, entry.nameEn); });
     select.value = companion.selected ?? '';
-    note.textContent = bilingual('可在奥尔良、古埃及、秦地的领取点直接领取。基础攻击为临时程序动作；专属技能/宝具动作尚未恢复。建议在开阔地使用。', 'Claim at the Orleans, Egypt, or Qin claim points. Basic attack uses a temporary procedural motion; dedicated skills/ultimates are not restored. Best in open areas.');
+    note.textContent = bilingual('暂停菜单打开「从者领取」，选择目标后跟随金色指引前往奥尔良守城集市、古埃及商队绿洲或秦地骊山工匠集镇。基础攻击为临时程序动作；专属技能/宝具动作尚未恢复。建议在开阔地使用。', 'Open Claim servants in the pause menu, select a destination and follow the gold guide to Defenders Market in Orleans, Caravan Oasis in Egypt or Lishan Artisan Town in Qin. Basic attack uses a temporary procedural motion; dedicated skills/ultimates are not restored. Best in open areas.');
     const messages = {
       off: ['未启用额外模型。', 'Extra model disabled.'],
       loading: ['模型加载中，可随时切换或取消。', 'Loading model. You can switch or cancel at any time.'],

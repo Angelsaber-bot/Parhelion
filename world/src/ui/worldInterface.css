@@ -144,3 +144,5 @@ body.world-interface #world-vitals small:empty{display:none}
 #world-vitals[data-ammo="low"] .combat-rounds{color:#ffd27a}#world-vitals[data-ammo="empty"] .combat-rounds{color:#ff8a7a}
 #world-vitals[data-ammo] span{color:inherit}
 body.world-interface #world-boss small:empty{display:none}
+
+.world-menu-navigation:has(#world-servant-claims-open){grid-template-columns:repeat(2,minmax(0,1fr))}
