@@ -32,6 +32,7 @@ function fixture() {
   // Existing travel assertions exercise the ordinary (non-cinematic) action gates.
   const context = vm.createContext({...campaignSourceContext,bootFailed:false,worldExited:false,graphicsRecovery:undefined, ultimateDirector: undefined, ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
     optionalPin:{sentinel:true}, hudRevision:0, camDist:3.6, acc:1, inspectServant:false, travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined,
+    homeTown:{activities:{carrying:false}},
     createTravelPanel:(options:unknown)=>options, document:{pointerLockElement:{},exitPointerLock(){}},
     spawn:{id:'old_spawn'}, prevPos:new THREE.Vector3(), rig:{root:{position:new THREE.Vector3()}}, worldProgress:{armed:true},
     anim:{reset(){animationResets++;}},
@@ -57,6 +58,7 @@ test('production execution rechecks every unsafe state rather than trusting an o
     f=>{f.combat.state.enemies.push({active:true,pacified:false,mode:'chase',p:{x:2,y:10,z:0}});},
     f=>{f.player.flying=true;}, f=>{f.player.gliding=true;}, f=>{f.player.swimming=true;}, f=>{f.player.onGround=false;},
     f=>{f.fortCannon.mounted=true;}, f=>{f.actions.melee.active=true;}, f=>{f.actions.evade.active=true;},
+    f=>{f.context.homeTown.activities.carrying=true;},
     f=>{f.found.clear();}, f=>{f.done.clear();},
   ];
   for (const block of blocks) {

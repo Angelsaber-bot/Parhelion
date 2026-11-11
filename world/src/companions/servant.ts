@@ -170,7 +170,7 @@ export class ContractServant {
         this.stride=new SaberStrideRuntime(candidate.scene,this.root);
         this.grounding = new SaberGroundedLocomotion(candidate.scene, this.root, outfit, this.options.colliders);
         this.attackDuration = candidate.animations.find(c => c.name === 'Attack')!.duration;
-        this.activeOutfit = outfit; this.play('idle'); this.tick(0); this.state = 'ready';this.lastNeeded=performance.now();
+        this.activeOutfit = outfit; this.play('idle'); this.mixer.update(0); this.state = 'ready';this.lastNeeded=performance.now();
         candidate = undefined;
       } catch (error) {
         if (candidate) disposeObject(candidate.scene, this.environment?.texture);
@@ -301,6 +301,7 @@ export class ContractServant {
       if (!contract.recruited) { this.root.position.fromArray(marker.p).add(new THREE.Vector3(1.5,0,0)); this.root.rotation.y = Math.PI; }
       if(atHome&&this.residence){
         if(!this.residing){this.root.position.copy(this.residence.spawn);this.root.rotation.y=0;this.navigation.reset();this.residing=true;}
+        if(dt===0)return;
         const speed=!paused&&!this.residence.paused?this.navigation.step(this.root,this.residence.goal,dt,SERVANT_MOTION.walkSpeed):0;
         this.strideSpeed=speed;this.play(speed>.05?'walk':'idle',false,speed>.05?Math.min(1.5,speed/SERVANT_MOTION.walkSpeed):1);
       }else this.residing=false;
@@ -309,6 +310,8 @@ export class ContractServant {
     }
     this.residing=false;
     if (paused) { this.cancelAttack(); return; }
+    // The first resumed frame has no simulation time; preserve its pose and foot support.
+    if(dt===0&&this.activeLast)return;
     if (this.skillPose) {
       if(this.root.position.distanceTo(player)>24)this.cancelSkillPose();
       else { this.advanceSkillPose(dt); return; }
