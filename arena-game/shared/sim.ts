@@ -38,7 +38,9 @@ export interface PlayerState {
   ammo: number[];
   reload: number; // ticks left
   fireCd: number;
-  dashCd: number;
+  dashCd: number; // ticks until the next charge returns
+  dashCharges: number;
+  dashQueue: (readonly [number, number])[]; // directions captured at each press
   dashT: number;
   dashX: number; dashZ: number;
   shieldCd: number;
@@ -72,7 +74,8 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, yaw: 0, pitch: 0,
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
-    dashCd: 0, dashT: 0, dashX: 0, dashZ: 0, shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
+    dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, dashX: 0, dashZ: 0,
+    shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }
 
@@ -84,7 +87,7 @@ export function playerEye(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number
 }
 
 export function clonePlayer(p: PlayerState): PlayerState {
-  return { ...p, ammo: p.ammo.slice(), loadout: [...p.loadout] };
+  return { ...p, ammo: p.ammo.slice(), loadout: [...p.loadout], dashQueue: p.dashQueue.slice() };
 }
 
 /** Forward unit vector for yaw (Three.js camera convention: yaw 0 looks down -Z). */
@@ -198,7 +201,10 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   p.prevButtons = inp.buttons;
 
   if (p.fireCd > 0) p.fireCd--;
-  if (p.dashCd > 0) p.dashCd--;
+  if (p.dashCd > 0 && --p.dashCd === 0) {
+    p.dashCharges++;
+    if (p.dashCharges < DASH.charges) p.dashCd = DASH.cooldown;
+  }
   if (p.shieldCd > 0) p.shieldCd--;
   if (p.utilityLock > 0) p.utilityLock--;
   // One spent charge returns per cooldown, then the next starts recharging.
@@ -210,7 +216,10 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   if (wantsCrouch) p.crouched = true;
   else if (p.crouched && !blockedAt(m, p.x, p.z, p.y, m.height)) p.crouched = false;
   // Full dash speed cannot be carried into the short collision stance.
-  if (p.crouched) p.dashT = 0;
+  if (p.crouched) {
+    p.dashT = 0;
+    p.dashQueue.length = 0;
+  }
   const height = playerHeight(m, p);
   const char = CHARACTERS[p.char];
   const speed = char.speed * (p.crouched ? CROUCH.speedMultiplier : 1)
@@ -223,14 +232,19 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   const wishZ = (fz * mz + fx * mx) * speed;
   const moving = len > 0.01;
 
-  if (pressed & BTN.DASH && p.dashCd === 0 && !p.crouched) {
-    let dx = wishX, dz = wishZ;
-    if (!moving) { dx = fx; dz = fz; }
-    const l = Math.hypot(dx, dz);
-    p.dashX = dx / l; p.dashZ = dz / l;
-    p.dashT = DASH.ticks;
-    p.dashCd = DASH.cooldown;
-    events.push({ type: 'dash' });
+  if (!p.crouched) {
+    if (pressed & BTN.DASH && p.dashQueue.length < p.dashCharges) {
+      const dx = moving ? wishX : fx, dz = moving ? wishZ : fz;
+      const length = Math.hypot(dx, dz);
+      p.dashQueue.push([dx / length, dz / length]);
+    }
+    if (p.dashT === 0 && p.dashQueue.length > 0) {
+      [p.dashX, p.dashZ] = p.dashQueue.shift()!;
+      p.dashT = DASH.ticks;
+      p.dashCharges--;
+      if (p.dashCd === 0) p.dashCd = DASH.cooldown;
+      events.push({ type: 'dash' });
+    }
   }
 
   if (p.dashT > 0) {

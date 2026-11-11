@@ -31,7 +31,7 @@ export const MOVE = {
   substep: 0.06, // metres per collision substep
 };
 
-export const DASH = { speed: 17, ticks: 9, cooldown: Math.round(3.5 * TICK_HZ) }; // ~2.6 m burst
+export const DASH = { speed: 17, ticks: 9, charges: 3, cooldown: Math.round(3.5 * TICK_HZ) }; // ~2.6 m burst
 
 /** Holding a melee weapon (any kind) moves faster; applies to players and bots alike in the shared sim. */
 export const MELEE_MOVE = {

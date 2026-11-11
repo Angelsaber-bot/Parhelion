@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARENA_MAP } from '../shared/arenaMap.ts';
 import { Bot, BOT_SKILL } from '../shared/bot.ts';
-import { TICK_HZ, WEAPONS } from '../shared/content.ts';
+import { DASH, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer } from '../shared/hit.ts';
 import { groundAt, lineOfSight, raycastMap } from '../shared/map.ts';
 import { Match } from '../shared/match.ts';
@@ -63,6 +63,27 @@ describe('applyInput', () => {
     for (let i = 2; i <= 12; i++) applyInput(m, p, inp(i, { yaw: Math.PI }));
     expect(p.z - 20).toBeGreaterThan(2.2);
     expect(p.dashCd).toBeGreaterThan(0);
+  });
+  it('buffers two quick taps with their directions and restores spent charges one at a time', () => {
+    const p = spawned(0, 20);
+    const starts: number[] = [], directions: number[][] = [];
+    for (let seq = 1; seq <= 1 + DASH.charges * DASH.cooldown; seq++) {
+      const buttons = seq === 1 || seq === 3 || seq >= 5 ? BTN.DASH : 0;
+      const yaw = seq === 3 ? Math.PI / 2 : seq === 5 ? Math.PI : 0;
+      const events = applyInput(m, p, inp(seq, { yaw, buttons }));
+      if (events.some(e => e.type === 'dash')) {
+        starts.push(seq);
+        directions.push([p.dashX, p.dashZ].map(v => Math.round(v) || 0));
+      }
+      if (seq === 1 + 2 * DASH.ticks) expect(p.dashCharges).toBe(0);
+      for (let charge = 1; charge <= DASH.charges; charge++) {
+        if (seq === 1 + charge * DASH.cooldown) expect(p.dashCharges).toBe(charge);
+      }
+    }
+    expect(starts).toEqual([1, 1 + DASH.ticks, 1 + 2 * DASH.ticks]);
+    expect(directions).toEqual([[0, -1], [-1, 0], [0, 1]]);
+    expect(p.dashQueue).toHaveLength(0);
+    expect(p.dashCd).toBe(0);
   });
   it('fire consumes ammo, respects interval and auto-reloads', () => {
     const p = spawned(0, 20);

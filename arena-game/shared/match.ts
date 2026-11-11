@@ -5,7 +5,7 @@
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
-  FRAG, FRAG_KILL, GRENADE, SMOKE, validateUtility, type UtilityId,
+  DASH, FRAG, FRAG_KILL, GRENADE, SMOKE, validateUtility, type UtilityId,
 } from './content.ts';
 import { fragReaches, insideSmoke, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
@@ -315,7 +315,9 @@ export class Match {
       yaw: spawnYaw(x, z), // face the map centre
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
-      ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0, dashCd: 0, dashT: 0, shieldCd: 0, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0,
+      ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
+      dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0,
+      shieldCd: 0, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0,
     });
     const home = this.practice?.homes.get(p.id);
     if (home) Object.assign(p, { x: home.x, y: home.y, z: home.z, yaw: home.yaw });
@@ -519,7 +521,7 @@ export class Match {
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
     v.state.alive = false;
-    v.state.dashT = 0; v.state.meleeWindup = 0; v.melee = null;
+    v.state.dashT = 0; v.state.dashQueue.length = 0; v.state.meleeWindup = 0; v.melee = null;
     v.respawn = this.practice?.homes.has(victimId) ? this.practice.respawnTicks : RESPAWN_TICKS;
     v.deaths++;
     from.kills++;
@@ -573,7 +575,7 @@ export class Match {
         // The blast throws people away from it and off their feet, harder the closer they were.
         const k = 1 - .6 * best / FRAG.radius, dx = p.x - at[0], dz = p.z - at[2], len = Math.hypot(dx, dz) || 1;
         p.vx = quant(p.vx + (len > .05 ? dx / len : 1) * FRAG.knockback * k); p.vz = quant(p.vz + (len > .05 ? dz / len : 0) * FRAG.knockback * k);
-        p.vy = quant(Math.max(p.vy, FRAG.lift * k)); p.grounded = false; p.dashT = 0;
+        p.vy = quant(Math.max(p.vy, FRAG.lift * k)); p.grounded = false; p.dashT = 0; p.dashQueue.length = 0;
       }
       if (id === g.owner) {
         if (this.spawnProtected(id)) continue;

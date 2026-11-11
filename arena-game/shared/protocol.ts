@@ -14,7 +14,8 @@ export const ROOM_NAME = 'arena';
 // v17: a frag kills every enemy within its radius; walls and shields do not stop it.
 // v18: melee swings pass through shields (shields still stop bullets); thrown frags outlive a thrower who leaves.
 // v19: smoke deploys at first ground contact; an expired frag waits for ground contact.
-export const RULES_VERSION = 19;
+// v20: three rechargeable dash charges with buffered directions in predicted player state.
+export const RULES_VERSION = 20;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

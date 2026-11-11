@@ -353,7 +353,7 @@ export class Bot implements Controller {
     if (w.kind === 'gun' && !target && me.ammo[me.weapon] < w.mag * 0.5 && (me.prevButtons & BTN.RELOAD) === 0) inp.buttons |= BTN.RELOAD;
 
     // --- abilities, used sparingly ---
-    if (target && tookDamage && me.dashCd === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;
+    if (target && tookDamage && me.dashCharges > 0 && me.dashT === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;
     if (target && hurt && me.shieldCd === 0 && bestD > 6 && this.rand() < 0.05) inp.buttons |= BTN.SHIELD;
     return inp;
   }

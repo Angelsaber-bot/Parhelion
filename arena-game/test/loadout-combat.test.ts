@@ -80,7 +80,7 @@ describe('validated two-gun one-melee loadouts', () => {
   });
   it('refuses clients with old catalogs, combat rules or airborne grenade effects', () => {
     const core = new RoomCore({});
-    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16, 17, 18]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
+    for (const rulesVersion of [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]) expect(() => core.join('old', { rulesVersion })).toThrow(/版本/);
     expect(core.match.slots.size).toBe(0);
   });
 });

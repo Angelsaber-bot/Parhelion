@@ -108,7 +108,11 @@ export class Hud {
         el.querySelector('small')!.textContent = slot.name;
         el.setAttribute('aria-label', `${el.querySelector('kbd')!.textContent} · ${slot.name}`);
       });
-      cooldown($('dash'), me.dashCd / DASH.cooldown, me.dashCd);
+      const dash = $('dash');
+      cooldown(dash, me.dashCharges > 0 ? 0 : me.dashCd / DASH.cooldown, me.dashCharges > 0 ? 0 : me.dashCd);
+      const dashLabel = dash.querySelector('span')!;
+      const dashName = `${bilingual('冲刺', 'Dash')} ×${me.dashCharges}`;
+      if (dashLabel.textContent !== dashName) dashLabel.textContent = dashName;
       cooldown($('shield'), me.shieldCd / SHIELD.cooldown, me.shieldCd);
       // Charges first: the dial only greys out once both grenades are spent.
       cooldown($('utility'), me.utilityCharges > 0 ? 0 : me.utilityCd / GRENADE.cooldown, me.utilityCharges > 0 ? 0 : me.utilityCd);
