@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import * as THREE from 'three';
 import { LocalLightPool, type AuthoredLocalLight } from '../src/rendering/localLightPool';
 import { REGIONS, mergeLayouts } from '../src/map/regions';
+import { HOME_BUILDINGS, HOME_LIGHTS, HOME_ROUTES, SABER_HOME_WALK, homeWorld } from '../src/map/homePlan';
 
 const source = (x: number, color = '#ffcc88'): AuthoredLocalLight => ({ p: [x, 2, 0], color, intensity: 25, distance: 10, decay: 1.6 });
 test('fixed lamp slots retain authored values and identities, while leaving other scene lights untouched', () => {
@@ -37,8 +38,9 @@ test('selection changes only replaced slots, not retained source identities', ()
   assert.deepEqual(new Set(pool.selectedSources), new Set([1, 2]));
   assert.equal(retained.userData.authoredSource, 1); assert.equal(retained.intensity, 25); pool.dispose();
 });
-test('actual eight-region authored lamps keep every nearby source selected along crossings and return trips', () => {
-  const layout = mergeLayouts(REGIONS.map(def => ({ def, layout: JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) })));
+test('original eight-region authored lamps keep every nearby source selected along crossings and return trips', () => {
+  const originalRegions = REGIONS.filter(def => def.id !== 'home');
+  const layout = mergeLayouts(originalRegions.map(def => ({ def, layout: JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) })));
   const sources: AuthoredLocalLight[] = [{ p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26 }, ...layout.lights!];
   assert.equal(sources.length, 32);
   const pool = new LocalLightPool(sources);
@@ -50,6 +52,25 @@ test('actual eight-region authored lamps keep every nearby source selected along
       for (const [id, light] of sources.entries()) if (Math.hypot(x - light.p[0], 15 - light.p[1], z - light.p[2]) < light.distance + 250) assert.ok(selected.has(id), `nearby light ${id} omitted at ${x},${z}`);
       assert.equal(pool.root.children.length, 8); assert.ok(pool.lights.every(light => light.visible));
     }
+  }
+  pool.dispose();
+});
+test('nine-region pool keeps town rooms lit while retaining eight fixed slots across dense interiors and return trips', () => {
+  const layout = mergeLayouts(REGIONS.map(def => ({ def, layout: JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`, import.meta.url), 'utf8')) })));
+  const sources: AuthoredLocalLight[] = [{ p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26 }, ...layout.lights!];
+  assert.equal(sources.length, 32 + HOME_LIGHTS.length);
+  const pool = new LocalLightPool(sources), identities = [...pool.lights];
+  const points = [...HOME_ROUTES.flatMap(route => route.points), ...HOME_BUILDINGS.map(h => h.p), ...SABER_HOME_WALK, [-175, 21.3, 135] as [number, number, number]];
+  const position = new THREE.Vector3(0, 15, 0);
+  for (const point of [...points, ...points.toReversed()]) {
+    const target = new THREE.Vector3(...homeWorld(point)).add(new THREE.Vector3(0, 1.6, 0));
+    const start = position.clone(), steps = Math.max(1, Math.ceil(start.distanceTo(target) / 2));
+    for (let step = 1; step <= steps; step++) { position.lerpVectors(start, target, step / steps); pool.update(position, .1); }
+    for (let step = 0; step < 6; step++) pool.update(position, .1);
+    const influences = (light: AuthoredLocalLight) => position.distanceTo(new THREE.Vector3(...light.p)) < light.distance;
+    if (sources.some(influences)) assert.ok(pool.lights.some(light => light.intensity > 0 && position.distanceTo(light.position) < light.distance), `unlit town interior at ${position.toArray()}`);
+    assert.deepEqual(pool.lights, identities); assert.equal(pool.root.children.length, 8);
+    assert.equal(new Set(pool.selectedSources).size, 8); assert.ok(pool.lights.every(light => light.visible));
   }
   pool.dispose();
 });
