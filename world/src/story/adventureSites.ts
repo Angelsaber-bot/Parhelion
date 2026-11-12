@@ -132,6 +132,8 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   for(const [w,d] of [[.52,.11],[.11,.47]]){const mark=new THREE.Mesh(new THREE.BoxGeometry(w,.018,d),medicineSeal);mark.position.set(x,y+.318,z);parent.add(mark);}
  }
  supply(relief,0,.88,1.2);
+ const extraOnboard=new THREE.Group();extraOnboard.name='NassauExtraReliefCrates';relief.add(extraOnboard);
+ supply(extraOnboard,-.62,.87,-1.3);supply(extraOnboard,.61,.87,-1.3);
  const cable = new THREE.Group(); cable.name = 'NassauReliefPierCable'; root.add(cable);
  const cableMaterial = new THREE.MeshStandardMaterial({color:'#786246'});
  for (const x of [HARBOR_MEDICINE_LANE.x-7,HARBOR_MEDICINE_LANE.x+7]) {
@@ -143,6 +145,8 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
  const chestBase=actions.get('adventure_home_blacksail')!.p;
  received.position.set(chestBase[0]+.65,chestBase[1],chestBase[2]+2.8);
  supply(received,.4,.35,0);supply(received,1.55,.35,0);
+ const extraReceived=new THREE.Group();extraReceived.name='ValleyReceivedWorkboatMedicine';received.add(extraReceived);
+ supply(extraReceived,.4,.35,1.02);supply(extraReceived,1.55,.35,1.02);
  const fun=new Map<string,{region:RegionId;line:Localized;ids:string[]}>();
  for(const item of ADVENTURE_LEISURE.filter(item=>item.region!=='winter'&&item.region!=='kyoto')){const base=at(item.p),ids:string[]=[];for(let i=0;i<3;i++){const id=`adventure_fun_${item.region}_${i+1}`;ids.push(id);target(id,[base[0]+(i-1)*1.1,base[1]+1.2,base[2]],[.3,.7,.3]);}fun.set(item.region,{...item,ids});}
  art.finish('alpha');root.add(art.root);const facilities=createAdventureFacilityArt(actions);root.add(facilities.root);colliders.push(...facilities.colliders);root.name='OpenWorldAdventure';
@@ -168,6 +172,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   ship.visible=!done.has(A.departed);
   relief.position.set(medicine.x,1.38,THREE.MathUtils.lerp(medicine.startZ,medicine.endZ,THREE.MathUtils.clamp(reliefProgress,0,1)));
   relief.visible=done.has(R.reserve)&&!done.has(R.delivered);received.visible=done.has(R.delivered);
+  extraOnboard.visible=extraReceived.visible=done.has(R.extra);
   cable.visible=done.has(R.reserve);span.position.y=done.has(R.crossing)?5.8:2;
  }
  return {root,markers,actions,targets,colliders,fun,convoyPath,millConvoyPath,abbeyRoute,roofRoute:passages.roofRoute,ship,cart,apply,

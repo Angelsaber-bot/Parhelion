@@ -4,10 +4,13 @@ import { Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import {
   FIELD_SIDE_STORIES, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K, VALLEY_RADIO as V, SKY_MAINTENANCE as S, EGYPT_SEEDS as E, ORLEANS_SOUP as O, QIN_QUIET_ROOM as Q,
-  KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, fieldSideNext, fieldSideReady,
+  KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC, fieldSideNext, fieldSideReady,
+  WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR,
 } from '../src/story/fieldSideStories';
 import { JOURNEY as J } from '../src/story/worldJourney';
+import { HARBOR_WORKBOAT as HB } from '../src/story/harborRelief';
 import { VALLEY_PROLOGUE as P } from '../src/story/valleyPrologue';
+import { ADVENTURE } from '../src/story/openWorldCampaign';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
 test('the wage store stays accessible after the officers leave and the bell routes are interchangeable', () => {
@@ -27,7 +30,7 @@ test('the wage store stays accessible after the officers leave and the bell rout
 });
 
 test('field side quests accept actual inputs and restore their route rewards from a saved game', async () => {
-  const starting = ['armory_rack', 'saber_contract', 'blackbeard_meet', 'napoleon_meet', 'musashi_meet', P.record, J.skyReview, J.skyReturnSight, J.egyptRead, J.orleansRead, J.qinRead];
+  const starting = ['armory_rack', 'saber_contract', 'blackbeard_meet', 'napoleon_meet', 'musashi_meet', P.record, J.skyReview, J.skyReturnSight, J.egyptRead, J.orleansRead, J.qinRead, ADVENTURE.road];
   const first = await bootWorldWithoutGpu({ deterministic: true, initialStorage: {
     [WORLD_PROGRESS_KEY]: JSON.stringify({ done: starting, found: [] }),
   } });
@@ -76,6 +79,19 @@ test('field side quests accept actual inputs and restore their route rewards fro
     const from = boat.position.clone(); frame(38);
     assert.ok(boat.position.distanceTo(from) > .1, 'the completed boat sails along the shore');
     approach(B.watch); tap(); finishDialogue();
+    approach(B.board); frame(450); tap();
+    const fromShore = w.player.pos.clone();
+    frame(220);
+    assert.ok(w.player.pos.distanceTo(fromShore) > 6, 'the player is carried by the boat');
+    assert.ok(w.player.pos.distanceTo(boat.position) < 2, 'the player stays inside the hull');
+    assert.ok(!w.done.has(B.crossed), 'an unfinished crossing is not saved');
+    frame(460);
+    const west = marker(B.returnFerry).p;
+    assert.ok(Math.hypot(w.player.pos.x - west[0], w.player.pos.z - west[2]) < .5, 'the player arrives on the west platform');
+    assert.ok(w.player.onGround && w.done.has(B.crossed));
+    tap(); frame(660);
+    const east = marker(B.board).p;
+    assert.ok(Math.hypot(w.player.pos.x - east[0], w.player.pos.z - east[2]) < .5, 'the player can ride back');
 
     assert.equal(passage('NassauFoldingRamp')?.enabled, false);
     approach(W.chest); tap(); assert.equal(w.done.has(W.chest), false);
@@ -88,6 +104,45 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.ok(guard.position.distanceTo(guardStart) > .5, 'the sentry walks toward the unloading signal');
     [W.chest, W.return].forEach(complete);
     assert.equal(passage('NassauFoldingRamp').enabled, true);
+    complete(HB.inspect);
+    complete(HB.gangway);
+    assert.ok(w.done.has(HB.access) && !w.done.has(HB.fought));
+    approach(HB.release); tap();
+    assert.ok(!w.done.has(HB.release), 'the guards need time to clear the rear gangway');
+    frame(290); complete(HB.release);
+    const workboat = w.scene.getObjectByName('EliNassauWorkboat');
+    const originalMooring = workboat.position.clone();
+    frame(190);
+    assert.ok(workboat.position.distanceTo(originalMooring) > 3);
+    assert.ok(w.scene.getObjectByName('NassauWorkboatReception').visible);
+
+    complete(HK.sight);
+    for (const [id, deck] of [[HK.forward, 'NassauForwardWreckDeck'], [HK.aft, 'NassauAftWreckDeck']] as const) {
+      approach(id); tap();
+      assert.equal(passage(deck).enabled, false);
+      tap(); finishDialogue();
+      assert.ok(w.done.has(id) && passage(deck).enabled);
+    }
+    const cabin = marker(HK.chest).p;
+    for (const [x, z] of [[607, -883.4], [598.1, -883.4], [cabin[0], cabin[2]]]) {
+      const distance = () => Math.hypot(w.player.pos.x - x, w.player.pos.z - z);
+      for (let i = 0; i < 430 && distance() > .29; i++) {
+        w.player.yaw = Math.atan2(w.player.pos.x - x, w.player.pos.z - z);
+        w.player.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
+      }
+      assert.ok(distance() <= .3 && w.player.pos.y > 25.5, `wreck passage: ${w.player.pos.toArray()} toward ${x},${z}`);
+    }
+    frame(25); tap(); finishDialogue(); assert.ok(w.done.has(HK.chest));
+    choose(HK.choose, 'memorial');
+    assert.ok(w.done.has(HK.memorial) && w.scene.getObjectByName('NassauPublicMemorialCase').visible);
+    assert.ok(w.scene.getObjectByName('NassauRepairedWreckBeacon').visible);
+
+    complete(CC.talk);
+    choose(CC.throw, 'right');
+    assert.ok(!w.done.has(CC.throw));
+    frame(105);
+    assert.ok(w.done.has(CC.throw) && w.done.has(CC.win));
+    complete(CC.repair);
 
     complete(I.hear); approach(I.rope);
     const clevis = w.scene.getObjectByName('BerezinaBellClevis');
@@ -101,6 +156,20 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.ok(w.done.has(I.camp));
     approach(I.test); tap(); frame(3);
     assert.ok(Math.abs(w.scene.getObjectByName('BerezinaRecoveredBell').rotation.z) > .01);
+
+    [WB.box, WB.house].forEach(complete);
+    choose(WB.plan, 'warm-house');
+    assert.ok(w.done.has(WB.leave) && !w.done.has(WB.chimney));
+    assert.equal(passage('WinterWarmHouseRoofRoute')?.enabled, true);
+    complete(WB.report);
+    [WS.line, WS.cellar].forEach(complete);
+    choose(WS.choose, 'shoe-stall');
+    assert.ok(w.done.has(WS.crossing));
+    assert.ok(w.scene.getObjectByName('WinterCrossingShoeStall').visible);
+    [WR.meet, WR.crest, WR.valley, WR.bend].forEach(complete);
+    choose(WR.choose, 'railings');
+    assert.ok(w.done.has(WR.rails));
+    assert.equal(passage('WinterGunnerMillRailings')?.enabled, true);
 
     assert.equal(passage('KinkakuServiceWalk')?.enabled, false);
     [K.shore, K.upper, K.inspect].forEach(complete);
@@ -182,6 +251,9 @@ test('field side quests accept actual inputs and restore their route rewards fro
     const { world } = restored;
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KinkakuServiceWalk')?.enabled, true);
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_NassauFoldingRamp')?.enabled, true);
+    assert.ok(world.done.has(B.crossed) && world.done.has(HB.release));
+    assert.ok(world.done.has(HK.memorial) && world.done.has(CC.repair));
+    assert.ok(world.done.has(WB.leave) && world.done.has(WS.crossing) && world.done.has(WR.rails));
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoHandoffShutter')?.enabled, false);
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoPaperRoofShortcut')?.enabled, true);
     assert.ok(world.done.has(I.camp));

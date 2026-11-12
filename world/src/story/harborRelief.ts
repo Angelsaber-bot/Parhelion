@@ -7,7 +7,14 @@ export const HARBOR_RELIEF = {
   delivered: 'adventure_harbor_relief_delivered',
   lookout: 'adventure_harbor_relief_lookout',
   crossing: 'adventure_harbor_relief_crossing',
+  extra: 'adventure_harbor_relief_workboat_load',
 } as const;
+export const HARBOR_WORKBOAT = {
+  inspect: 'field_workboat_inspect', access: 'field_workboat_access', gangway: 'field_workboat_gangway',
+  fight: 'field_workboat_fight', signal: 'field_workboat_signal', fought: 'field_workboat_fought',
+  release: 'field_workboat_release',
+} as const;
+export const HARBOR_WORKBOAT_ENCOUNTER = 'adventure_harbor_workboat';
 
 const R = HARBOR_RELIEF;
 export const harborReliefRequired = (done: ReadonlySet<string>) => done.has(R.reserve) ||

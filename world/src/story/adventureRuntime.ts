@@ -1,7 +1,7 @@
 import {RelayChannel,type RelayChannelFrame} from './relayChannel';
 import {dramaActive,dramaReported,dramaDecision,JOURNEY_DRAMA} from './journeyDrama';
 import {ADVENTURE as A,adventureChapterComplete,harborBridgeReady,winterRouteReady,type AdventurePoint,getAdventureEndingText} from './openWorldCampaign';
-import { HARBOR_RELIEF as R, HARBOR_RELIEF_STAGE_SECONDS, harborReliefPassage, harborReliefReady, harborReliefRequired } from './harborRelief';
+import { HARBOR_RELIEF as R, HARBOR_RELIEF_STAGE_SECONDS, HARBOR_WORKBOAT, harborReliefPassage, harborReliefReady, harborReliefRequired } from './harborRelief';
 import { WINTER_WITHDRAWAL as W, WINTER_CART_PREFIX, WINTER_MILL_CART_PREFIX, winterWithdrawalReady, winterWithdrawalRequired, winterWithdrawalSelected } from './winterWithdrawal';
 import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LINES, kyotoWitnessActionReady, kyotoWitnessGateReady, type KyotoWitnessAction } from './kyotoWitness';
 import type {AdventureAction} from './adventureSites';
@@ -91,6 +91,7 @@ export function createAdventureRuntime(h:AdventureHooks){
    if(action.seconds&&current?.id===action.id)return true;
    if(action.seconds){current=action;channel=new RelayChannel(action.seconds);channel.reset(h.damage());h.toast([`${action.label[0]}：站稳，松开后按住交互键 ${action.seconds} 秒。`,`${action.label[1]}: stand still, release then hold Interact for ${action.seconds} seconds.`]);return true;}
    if (id === Y.private) h.done.add(A.water);
+   if (id === R.launch && h.done.has(HARBOR_WORKBOAT.release)) h.done.add(R.extra);
    if(action.flag)commit(action.flag);
    const witnessLine = KYOTO_WITNESS_LINES[id as KyotoWitnessAction];
    if (witnessLine) { h.toast(witnessLine); return true; }
@@ -123,7 +124,9 @@ export function createAdventureRuntime(h:AdventureHooks){
      if (!h.done.has(R.underway)) commit(R.underway);
      else {
       commit(R.delivered);
-      h.toast(['幻日谷回报：急救药已入柜。仍有船员与余下的货物留在旗舰上。', 'Valley receipt: the emergency medicine is stocked. Crew and remaining cargo are still on the flagship.']);
+      h.toast(h.done.has(R.extra)
+       ? ['幻日谷回报：常备药和埃利加装的药箱均已入柜。旗舰上还有船员等候接应。', 'Valley receipt: the regular medicine and Eli’s extra crates are stocked. Crew aboard the flagship still need help.']
+       : ['幻日谷回报：急救药已入柜。仍有船员与余下的货物留在旗舰上。', 'Valley receipt: the emergency medicine is stocked. Crew and remaining cargo are still on the flagship.']);
      }
     }
    }

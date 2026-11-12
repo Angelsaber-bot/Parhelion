@@ -5,7 +5,8 @@ import { FREIGHT_YARD as FY, MIST_RESCUE as MR, NEXT_SHIFT as NS, OLD_TICKET as 
 import { FIFTH_ROAD as FR, REPLAY_TEST as RT, WATERWORKS as WW, VALLEY_INVESTIGATION_STEPS, VALLEY_WATER_RESTORE, valleyInvestigationReady } from './story/valleyInvestigations';
 import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
-import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, fieldSideReady } from './story/fieldSideStories';
+import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC, fieldSideReady } from './story/fieldSideStories';
+import { WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR } from './story/fieldSideStories';
 import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
 import { CROOKED_EFFIGY as CE, CULTURAL_STEPS, SHADOW_PLAY as SP, culturalStepReady } from './story/realmCulturalStories';
 import { createEgyptGaugeScene } from './environment/egyptGaugeScene';
@@ -48,7 +49,7 @@ import {ADVENTURE,adventureActive,adventureTravelOpen,getCurrentAdventureGuide} 
 import {createAdventureSites} from './story/adventureSites';
 import { createKingdomWorksScene } from './environment/kingdomWorksScene';
 import { KINGDOM_WORKS as KW, KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORK_LABELS, KINGDOM_WORK_LINES, commitKingdomWork, kingdomWorkReady, type KingdomWork } from './story/kingdomWorks';
-import { harborReliefRequired } from './story/harborRelief';
+import { HARBOR_WORKBOAT as HB, HARBOR_WORKBOAT_ENCOUNTER, harborReliefRequired } from './story/harborRelief';
 import { KYOTO_WITNESS, kyotoWitnessActionReady, type KyotoWitnessAction } from './story/kyotoWitness';
 import { SKY_SHUTTER_FLAGS, SKY_SUPPORT, SKY_SUPPORTERS, skySupportFlag, type SkySupporter } from './story/skySupport';
 import {createExploration} from './exploration/runtime';
@@ -1651,7 +1652,7 @@ function press(binding: string, repeat = false) {
     return;
   }
   if (action === 'inspectServant') {
-    if (repeat || combat.defeated || $('bigmap').classList.contains('open')) return;
+    if (repeat || combat.defeated || fieldSideSites?.royalFerry?.riding || $('bigmap').classList.contains('open')) return;
     clearInput();
     inspectServant = !inspectServant && !!servantRoot()?.visible;
     toast(inspectServant ? bilingual(`查看从者模型 · 再按 ${settings.label('inspectServant')} 返回`, `Servant model view · Press ${settings.label('inspectServant')} to return`) : bilingual('已返回游戏视角', 'Back to gameplay view'));
@@ -1659,6 +1660,7 @@ function press(binding: string, repeat = false) {
   }
   if (!gameplayActive() || combat.defeated) return;
   if (repeat) return;
+  if (fieldSideSites?.royalFerry?.riding) return;
   if (['fire','melee','skill','evade','ultimate','jump'].includes(action)) {orleansWorksRuntime?.interrupt(); compactRelayRuntime?.interrupt(); kingdomGateRuntime?.interrupt(); adventureRuntime?.interrupt(); }
   if (actions?.press(action)) { hudRevision++; return; }
   keys.add(binding);
@@ -1735,6 +1737,12 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
+    if (id === HARBOR_WORKBOAT_ENCOUNTER) {
+      done.add(HB.access); done.add(HB.fight); done.add(HB.fought);
+      saveJourneyProgress();
+      toast(bilingual('扣押岗已解除。到船尾松开工作船的系缆。', 'The seizure post is clear. Release the workboat’s stern line.'));
+      return;
+    }
     if (id === KINGDOM_WATCH_ENCOUNTER) { advanceKingdomWorks(KW.secure); return; }
     if (id === VALLEY_RESCUE_ENCOUNTER) {
       done.add(VALLEY_PROLOGUE.machinesCleared); saveJourneyProgress();
@@ -1746,7 +1754,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
     }
     if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id);
   },
-  onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+  onPlayerDefeated() { fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
       const site = realmClimaxSites.sites[activeRealmClimax.id];
       stopRealmClimax(); player.teleport(site.start[0], site.start[1] + .3, site.start[2]); combat.refillAmmo();
@@ -1761,7 +1769,7 @@ combat.state.setGun(worldGun(equippedGunId)!);
 addEventListener('pagehide', (event) => { if (!event.persisted) combat.dispose(); });
 const actionClockActive = () => gameplayActive() || (!!ultimateDirector?.releasing && document.visibilityState === 'visible' && document.hasFocus() && !settingsPanel.open && !servantPanel.open);
 actions = new WorldActions({ scene,
-  context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !residentEventRuntime?.carrying && !player.flying && !player.swimming && !player.gliding,
+  context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !fieldSideSites?.royalFerry?.riding && !inspectServant && !combat.defeated && !residentEventRuntime?.carrying && !player.flying && !player.swimming && !player.gliding,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.following }),
@@ -1911,7 +1919,7 @@ function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active) || (typeof activeRealmClimax !== 'undefined' && !!activeRealmClimax), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
-    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
@@ -2523,7 +2531,55 @@ function interactValleyInvestigation(id: string) {
   if (id === RT.plate || id === RT.bell || id === WW.fill) toast(bilingual(...item.result));
   else speakDialogue(item.result, item.label);
 }
+function canCommitFieldChoice(id: string) {
+  const marker = markers.get(id);
+  return !!marker && fieldSideReady(id, done) && !combat.defeated && player.onGround && !player.flying &&
+    !player.swimming && !player.gliding &&
+    player.pos.distanceTo(new THREE.Vector3(...marker.p)) <= (marker.radius ?? 2) && canReachValleyPanel(marker);
+}
+const winterFieldChoices: Readonly<Record<string, readonly { id: string; flag: string; label: [string, string] }[]>> = {
+  [WB.plan]: [
+    { id: 'flue', flag: WB.chimney, label: ['修好烟道，拿回烤盘', 'Patch the flue and take the tray back'] },
+    { id: 'warm-house', flag: WB.leave, label: ['留下烤盘，开放暖房', 'Leave the tray and open the warm house'] },
+  ],
+  [WS.choose]: [
+    { id: 'two-sided-sign', flag: WS.sign, label: ['留下，立两面都能看见的鞋标', 'Stay and post two-sided shoe signs'] },
+    { id: 'shoe-stall', flag: WS.crossing, label: ['去渡口开临时修鞋摊', 'Open a temporary stall at the crossing'] },
+  ],
+  [WR.choose]: [
+    { id: 'smoke', flag: WR.smoke, label: ['留一轮后卫烟幕', 'Save one smoke volley for the rear guard'] },
+    { id: 'railings', flag: WR.rails, label: ['去磨坊先安护栏', 'Set up railings at the mill first'] },
+  ],
+};
 function interactFieldSide(id: string) {
+  if (id === WR.trigger) {
+    const suppressible = combat.state.enemies.filter(enemy => enemy.hp > 0 && enemy.active && !enemy.pacified &&
+      enemy.storyEncounter === 'adventure_winter_breach' && Math.hypot(enemy.p.x - player.pos.x, enemy.p.z - player.pos.z) < 36);
+    if (!suppressible.length) {
+      toast(bilingual('等后卫交战开始再放烟。', 'Wait for the rear-guard fight before signaling smoke.'));
+      return;
+    }
+    for (const enemy of suppressible) combat.state.interruptEnemy(enemy.id, 4.5);
+    done.add(WR.smokeUsed);
+    fieldSideSites?.smokeVolley(); saveJourneyProgress(); audio.explore('solve');
+    toast(bilingual('烟幕落下。趁远射停顿换位。', 'Smoke lands. Change position while ranged fire is interrupted.'));
+    return;
+  }
+  if (id === RB.board || id === RB.returnFerry) {
+    const ferry = fieldSideSites?.royalFerry;
+    const blocked = getTravelSafetyBlock(travelContext());
+    if (blocked) { toast(bilingual(...TRAVEL_BLOCK_TEXT[blocked])); return; }
+    const result = ferry?.board(id === RB.board ? 0 : 1);
+    if (result === 'boarding' && ferry) {
+      clearInput(); actions?.cancel();
+      player.teleport(ferry.seat.x, ferry.seat.y, ferry.seat.z, ferry.yaw + Math.PI);
+      player.onGround = true;
+      prevPos.copy(player.pos);
+      toast(bilingual('伊芙掌桨，木舟正驶向对岸栈台。', 'Eve takes the oar. The ferry is headed for the opposite landing.'));
+    } else if (result === 'called') toast(bilingual('奥伦看见了手势，木舟正在靠过来。', 'Oren saw your signal. The ferry is coming over.'));
+    else if (result === 'sailing') toast(bilingual('等木舟完成试航、靠稳再上船。', 'Wait for the ferry to finish its run and tie up.'));
+    return;
+  }
   if (id === KP.return) {
     speakDialogue(done.has(KP.sealed)
       ? ['阿纪把实名簿锁在柜里。交接台面上只放工号。', 'Aki keeps the register locked away. Only the work numbers are on the handoff table.']
@@ -2531,8 +2587,57 @@ function interactFieldSide(id: string) {
     ['鸭川交接点', 'Kamo handoff']);
     return;
   }
+  if (id === HB.fight) {
+    const marker = markers.get(id);
+    if (!marker || !worldProgress.armed || activeRealmClimax || helionFight.active) return;
+    const [x, y, z] = marker.p;
+    const spec: StoryEncounterSpec = { id: HARBOR_WORKBOAT_ENCOUNTER, anchor: { x, y: y - .9, z }, actors: [] };
+    const officers: Omit<StoryEncounterActor, 'offset'>[] = [
+      { role: 'musketeer', title: ['扣船征召兵', 'Conscript on seizure duty'] },
+      { role: 'lancer', title: ['码头巡兵', 'Quayside conscript'] },
+    ];
+    const actors = selectStoryPositions(spec, officers, [[-.4, 5], [1.3, -5], [-1.9, -6], [1.1, 8], [0, -9], [2, 3]]);
+    if (actors.length !== officers.length) {
+      toast(bilingual('码头周围仍有武装，等近处安全后再挑战。', 'Nearby armed guards block the challenge. Clear the quay first.'));
+      return;
+    }
+    const result = combat.startStoryEncounter({ ...spec, actors }, { position: player.pos, playable: gameplayActive() && player.onGround });
+    if (!result.ok) toast(bilingual(...FALSE_DAWN_START_HINTS[result.reason]));
+    return;
+  }
+  if (id === HB.access || id === HB.gangway || id === HB.release) {
+    if (combat.storyEncounter?.id === HARBOR_WORKBOAT_ENCOUNTER) return;
+    if (id === HB.release && !fieldSideSites?.workboatReady) {
+      toast(bilingual('等征召兵走完栈桥再松缆。', 'Wait for the conscripts to clear the gangway.'));
+      return;
+    }
+    if (id === HB.gangway) {
+      done.add(HB.gangway); done.add(HB.access); saveJourneyProgress();
+      speakDialogue(['拉夫：“他们只给我们发了守船的枪，没给回家的路。现在有梯子了，乌里，咱们从这边走。”',
+        'Ralph: “They gave us guns to hold this boat, and no road home. There’s a ladder now, Uri. Let’s go.”'],
+      ['码头征召兵', 'Quayside conscript']);
+      return;
+    }
+  }
   if (id === KL.courier) {
     fieldSideSites?.sendPaper(); audio.explore('rotate');
+    return;
+  }
+  if (id === HK.lookout) {
+    speakDialogue(['航标照向拿骚外港。海面上那条亮线，是下一艘船能认出来的航路。', 'The beacon shines toward Nassau. The next boat can follow that line of light out to sea.'],
+      ['旧客船的望台', 'Passenger wreck lookout']);
+    return;
+  }
+  if (id === CC.throw || id === CC.rematch) {
+    const first = id === CC.throw;
+    const line = FIELD_SIDE_STEPS.get(CC.throw)!;
+    clearInput();
+    narrative?.showChoices(line.line, ['黑胡子', 'Blackbeard'], [
+      { id: 'left', label: ['押左盘 · 一道刻线', 'Stake the left tray · One mark'] },
+      { id: 'right', label: ['押右盘 · 两道刻线', 'Stake the right tray · Two marks'] },
+    ], choice => {
+      if ((choice === 'left' || choice === 'right') && canCommitFieldChoice(id) && fieldSideSites?.startChipToss(choice, first)) audio.explore('rotate');
+    });
     return;
   }
   if (id === RB.watch) {
@@ -2582,16 +2687,46 @@ function interactFieldSide(id: string) {
   }
   const step = FIELD_SIDE_STEPS.get(id);
   if (!step) return;
+  const winterOptions = winterFieldChoices[id];
+  if (winterOptions) {
+    clearInput();
+    narrative?.showChoices(step.line, step.label, winterOptions, choice => {
+      const option = winterOptions.find(entry => entry.id === choice);
+      if (!option || !canCommitFieldChoice(id)) return;
+      done.add(id); done.add(option.flag);
+      saveJourneyProgress(); audio.explore('solve');
+      toast(bilingual(...option.label));
+    });
+    return;
+  }
+  if (id === HK.forward || id === HK.aft) {
+    audio.explore('rotate');
+    if (!fieldSideSites?.turnWreckDeck(id)) {
+      toast(bilingual('刻线还没对平，再扳一格。', 'The marks are still out of line. Move the lever another notch.'));
+      return;
+    }
+  }
+  if (id === HK.choose) {
+    clearInput();
+    narrative?.showChoices(step.line, ['港口家属', 'The harbor families'], [
+      { id: 'family', label: ['把遗物交还家属', 'Return the keepsakes to the family'] },
+      { id: 'memorial', label: ['把遗物留在公共纪念舱', 'Leave the keepsakes in the shared memorial'] },
+    ], choice => {
+      if ((choice !== 'family' && choice !== 'memorial') || !canCommitFieldChoice(id)) return;
+      done.add(id); done.add(choice === 'family' ? HK.family : HK.memorial);
+      saveJourneyProgress(); audio.explore('solve');
+      toast(choice === 'family' ? bilingual('家属收起了防水匣。', 'The family takes the case home.')
+        : bilingual('遗物放在纪念舱，留给愿意来看看的人。', 'The keepsakes are in the memorial for anyone who wants to visit.'));
+    });
+    return;
+  }
   if (id === KP.choice) {
     clearInput();
     narrative?.showChoices(step.line, ['抄写人阿纪', 'Aki the copyist'], [
       { id: 'sealed', label: ['封存实名，公开工号', 'Seal the names and post work numbers'] },
       { id: 'family', label: ['先送健太一家离开', 'Help Kenta’s household leave'] },
     ], choice => {
-      const marker = markers.get(id);
-      if ((choice !== 'sealed' && choice !== 'family') || !marker || !fieldSideReady(id, done) ||
-        combat.defeated || !player.onGround || player.flying ||
-        player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2) || !canReachValleyPanel(marker)) return;
+      if ((choice !== 'sealed' && choice !== 'family') || !canCommitFieldChoice(id)) return;
       done.add(id); done.add(choice === 'sealed' ? KP.sealed : KP.family);
       saveJourneyProgress(); audio.explore('solve');
       toast(choice === 'sealed' ? bilingual('实名簿已入柜，工棚接应门打开了。', 'The names are secured and the handoff shelter is open.')
@@ -2627,6 +2762,7 @@ function interactFieldSide(id: string) {
     return;
   }
   done.add(id);
+  if (id === HB.access) done.add(HB.signal);
   if (id === KL.counterweight) fieldSideSites?.sendPaper();
   saveJourneyProgress();
   if (id === IB.raise || id === IB.hear) { fieldSideSites?.ring(); audio.bell(); }
@@ -2845,6 +2981,7 @@ function shootCannon() {
   hudRevision++;
 }
 function shoot() {
+  if (fieldSideSites?.royalFerry?.riding) return;
   if(typeof homeTown!=='undefined'&&homeTown?.activities.carrying)return;
   if(residentEventRuntime?.carrying)return;
   if (fortCannon.mounted) { shootCannon(); return; }
@@ -3409,6 +3546,30 @@ function frame(now: number) {
   if(dragLook&&gameplayActive()){player.yaw+=(Number(keys.has('ArrowLeft'))-Number(keys.has('ArrowRight')))*dt*1.5;player.pitch=THREE.MathUtils.clamp(player.pitch+(Number(keys.has('ArrowUp'))-Number(keys.has('ArrowDown')))*dt,-1.5,1.5);}
   if (!gameplayActive()) { keys.clear(); aim.clear(); }
   audio.setActive(gameplayActive() || (!!narrative?.open && locked && document.visibilityState === 'visible' && document.hasFocus()));
+  const ferry = fieldSideSites?.royalFerry;
+  fieldSideSites?.setWorkboatBattle(combat.storyEncounter?.id === HARBOR_WORKBOAT_ENCOUNTER);
+  fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  const chipOutcome = fieldSideSites?.readChipOutcome();
+  if (chipOutcome) {
+    if (chipOutcome.first && !done.has(CC.throw)) {
+      done.add(CC.throw);
+      if (chipOutcome.won) done.add(CC.win);
+      saveJourneyProgress();
+    }
+    audio.explore(chipOutcome.won ? 'solve' : 'rotate');
+    toast(chipOutcome.won ? bilingual('木筹落进你押的盘。黑胡子把筹推给你。', 'The chip lands in your tray. Blackbeard slides it back to you.')
+      : bilingual('木筹滑进另一只盘。黑胡子敲了敲短桌腿。', 'The chip slides into the other tray. Blackbeard taps the short table leg.'));
+  }
+  const ferryLanding = ferry?.landing;
+  if (ferryLanding) {
+    player.teleport(ferryLanding[0], ferryLanding[1] + .09, ferryLanding[2]);
+    prevPos.copy(player.pos);
+    if (!done.has(RB.crossed)) { done.add(RB.crossed); saveJourneyProgress(); }
+    toast(bilingual('木舟已靠岸。沿栈台走回陆地，或在码头再搭一程。', 'The ferry is tied up. Follow the landing back to shore or take another trip.'));
+  } else if (ferry?.riding) {
+    player.pos.copy(ferry.seat);
+    player.vel.set(0, 0, 0);
+  }
   fortCannon.update(dt, player.pos, gameplayActive() && !combat.defeated && !player.flying);
   const input = {
     x: combat.defeated ? 0 : Number(down('right')) - Number(down('left')),
@@ -3423,7 +3584,7 @@ function frame(now: number) {
     if (combat.defeated) { input.x = input.z = 0; input.jump = input.sprint = false; }
     input.evade = active && actions?.evade.active ? { x: actions.evade.x, z: actions.evade.z, strength: Math.min(actions.evade.remaining, STEP) / STEP } : undefined;
     combat.setDefense({ guard: active && actions?.skills.guarding ? .55 : 1, invulnerable: !!(active && actions && actions.evade.remaining > .10) });
-    player.step(STEP, input);
+    if (!ferry?.riding) player.step(STEP, input);
     combat.simulate(STEP, player.pos, gameplayActive() && !player.flying);
     actions?.update(STEP);
     acc = Math.max(0, acc - STEP);
@@ -3444,7 +3605,7 @@ function frame(now: number) {
   // character: face the movement direction, animate from actual displacement
   const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
   const wx = fx * input.z + rx * input.x, wz = fz * input.z + rz * input.x;
-  const hs = dt > 0 ? Math.hypot(player.pos.x - prevPos.x, player.pos.z - prevPos.z) / dt : 0;
+  const hs = !ferry?.riding && dt > 0 ? Math.hypot(player.pos.x - prevPos.x, player.pos.z - prevPos.z) / dt : 0;
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
@@ -3604,7 +3765,6 @@ function frame(now: number) {
     ['纸影戏班', 'Shadow troupe']);
   }
   egyptGaugeScene?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, gaugeKeeperSpeaking);
-  fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
   valleyCommunity?.update(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
   valleyInvestigations?.apply(done, gameplayActive() || narrative?.open ? dt : 0);
   const waterChanged = valleyInvestigations?.waterResult();
@@ -3664,6 +3824,7 @@ function frame(now: number) {
     interactionPrompt = bilingual('请在稳固地面站定后交互', 'Stand on solid ground to interact') + ' · ' +
       (npcPrompt ? bilingual(...nearbyNpc.role) : interactionLabel(it!));
   }
+  if (ferry?.riding && gameplayActive()) interactionPrompt = bilingual('木舟航行中 · 靠岸后下船', 'Crossing Sword Lake · Disembark on arrival');
   if(orleansWorksRuntime?.active)interactionPrompt='';
   const prompt = $('prompt');
   if (prompt.textContent !== interactionPrompt) prompt.textContent = interactionPrompt;

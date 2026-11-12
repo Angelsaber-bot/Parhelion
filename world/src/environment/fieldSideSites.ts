@@ -9,9 +9,12 @@ import { createSettlementNpcs } from '../settlements/npcs';
 import { residentWalkRig } from '../settlements/residentWalk';
 import { mergeParts } from '../settlements/merge';
 import { SiteArt } from '../story/campaignSites';
+import { HARBOR_WORKBOAT as HB } from '../story/harborRelief';
 import {
   FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K,
   KYOTO_PASS as KP, KYOTO_PAPERLINE as KL,
+  HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC,
+  WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR,
   VALLEY_RADIO as V, SKY_MAINTENANCE as S, EGYPT_SEEDS as E, ORLEANS_SOUP as O, QIN_QUIET_ROOM as Q, fieldSideReady, harborCustomsGone,
 } from '../story/fieldSideStories';
 import { SKY_APPROACH_DECKS as DECK } from './skyCrownApproach';
@@ -94,7 +97,7 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
     node.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction.normalize());
     return node;
   }
-  function walkway(name: string, region: Parameters<SiteArt['finish']>[0], points: [Point, Point], width: number, color: string, enabled: boolean) {
+  function walkway(name: string, region: Parameters<SiteArt['finish']>[0], points: [Point, Point], width: number, color: string, enabled: boolean, rails = true) {
     const art = scenery(name);
     const from = new THREE.Vector3(...points[0]), to = new THREE.Vector3(...points[1]);
     const run = to.clone().sub(from), length = run.length();
@@ -110,7 +113,7 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
       const p = from.clone().lerp(to, t / length).addScaledVector(up, .025);
       art.box(p.toArray(), [width - .08, .03, .028], wood, false, 'body', angles);
     }
-    for (const side of [-1, 1]) {
+    for (const side of rails ? [-1, 1] : []) {
       const off = width / 2 * side;
       const rail = mid.clone().addScaledVector(right, off).addScaledVector(up, .9);
       art.box(rail.toArray(), [.095, .11, length], wood, true, 'body', angles);
@@ -124,6 +127,8 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
   }
 
   const lake = prior.get('disc_lake_lady')?.p;
+  let ferry: { board(side: 0 | 1): 'sailing' | 'called' | 'boarding'; update(dt: number): void;
+    seat: THREE.Vector3; yaw: number; riding: boolean; landing: Point | null; cancel(): void } | null = null;
   if (lake) {
     const shed = place(offset(lake, 4, .25, 6.7), 10.5);
     const crank = shed && place(offset(shed, -2.7, 0, -2.9), 4.5);
@@ -180,11 +185,92 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
         return arm;
       });
       const deckBank = place(offset(mooring, -2, 0, 1.5), 4.5);
-      if (deckBank) {
+      const westBank = place(offset(lake, -58, 2.9, -1.75), 9);
+      if (deckBank && westBank) {
         const end = offset(deckBank, -2.5, .13, -3.65);
+        const westEnd: Point = [-704.2, water + .59, 133.3];
         const deck = walkway('SwordLakeViewingDeck', 'britain', [offset(deckBank, 0, .035), end], 2.55, faded, false);
+        const west = walkway('SwordLakeWestLanding', 'britain', [offset(westBank, 0, .035), westEnd], 2.65, faded, false);
         interact(B.watch, end);
-        updates.push(done => { deck.art.root.visible = deck.collider.enabled = done.has(B.launch); });
+        const eastLand = offset(end, .84, 0, 1.23), westLand = offset(westEnd, -.5, .012, .15);
+        interact(B.board, eastLand); interact(B.returnFerry, westLand);
+        const outlook = scenery('SwordLakeWestOutlook');
+        outlook.box(offset(westEnd, -.4, -.145, .1), [3.7, .29, 3.1], faded, true);
+        for (const x of [-1.52, 1.5]) {
+          outlook.box(offset(westEnd, x, -.63, -.98), [.23, 1.4, .22], wood, true);
+          outlook.box(offset(westEnd, x, -.63, 1.14), [.23, 1.4, .22], wood, true);
+        }
+        outlook.box(offset(westEnd, -.4, .47, 1.22), [1.58, .13, .38], wood, true);
+        outlook.box(offset(westEnd, -.4, .74, 1.38), [1.57, .49, .09], faded, true);
+        outlook.lantern(westEnd[0] + .96, westEnd[1] + .57, westEnd[2] + 1.02, wood);
+        const outlookFloor = finish(outlook, 'britain', false)!;
+        const ports = [eastLand, westLand] as const;
+        const route = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(end[0] - .7, water + .18, end[2] - 3.1),
+          new THREE.Vector3(-674, water + .18, 131.8),
+          new THREE.Vector3(-690.1, water + .18, 130.35),
+          new THREE.Vector3(westEnd[0] + 2.9, water + .18, westEnd[2] - .6),
+        ]);
+        let dock: 0 | 1 = 0, leg: { from: 0 | 1; time: number } | null = null;
+        let riding = false, trial = 0, firstFrame = true, settled: Point | null = null, clock = 0;
+        const at = new THREE.Vector3(), aim = new THREE.Vector3(), seat = new THREE.Vector3();
+        const forward = new THREE.Vector3();
+        let heading = 0;
+        function sample() {
+          const t = leg ? THREE.MathUtils.smoothstep(leg.time, 0, 10.8) : dock;
+          const progress = leg?.from === 1 ? 1 - t : t;
+          route.getPointAt(progress, at); route.getTangentAt(progress, forward);
+          if ((leg?.from ?? dock) === 1) forward.negate();
+          if (trial < 7.4 && !leg) {
+            const swing = Math.sin(Math.PI * THREE.MathUtils.clamp(trial / 7.4, 0, 1));
+            at.x -= swing * 5.3; at.z -= swing * 2.65;
+          }
+          at.y += Math.sin(clock * 2.5) * .035;
+          boat.position.copy(at);
+          heading = Math.atan2(forward.x, forward.z);
+          boat.rotation.y = heading;
+          boat.rotation.z = Math.sin(clock * 2.4) * .028;
+          aim.set(-.26, .21, 1.14).applyAxisAngle(THREE.Object3D.DEFAULT_UP, heading);
+          seat.copy(at).add(aim);
+        }
+        ferry = {
+          get riding() { return riding; },
+          get landing() { const result = settled; settled = null; return result; },
+          seat,
+          get yaw() { return heading; },
+          board(side) {
+            if (trial < 7.4 || leg) return 'sailing';
+            settled = null;
+            riding = side === dock;
+            leg = { from: dock, time: 0 };
+            sample();
+            return riding ? 'boarding' : 'called';
+          },
+          update(dt) {
+            trial = Math.min(7.4, trial + dt); clock += dt;
+            if (leg) {
+              leg.time += dt;
+              if (leg.time >= 10.8) {
+                dock = leg.from === 0 ? 1 : 0;
+                leg = null;
+                if (riding) { riding = false; settled = ports[dock]; }
+              }
+            }
+            sample();
+          },
+          cancel() { leg = null; riding = false; settled = null; },
+        };
+        updates.push((done, dt, player) => {
+          const open = done.has(B.launch);
+          deck.art.root.visible = deck.collider.enabled = open;
+          west.art.root.visible = west.collider.enabled = open;
+          outlook.root.visible = outlookFloor.enabled = open;
+          if (!open) { firstFrame = true; trial = 0; dock = 0; ferry?.cancel(); return; }
+          if (firstFrame) {
+            firstFrame = false;
+            if (Math.hypot(player.x - end[0], player.z - end[2]) > 55) trial = 7.4;
+          }
+        });
       }
       art.box(offset(shed, -1.48, 1.38, -2.56), [.57, .46, .06], linen);
       finish(art, 'britain');
@@ -207,7 +293,11 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
         const near = Math.hypot(player.x - mooring[0], player.z - mooring[2]) < 76;
         haulProgress = visited ? THREE.MathUtils.damp(haulProgress, Number(pulled), 4, dt) : Number(pulled);
         destination.copy(dry).lerp(hauled, haulProgress);
-        if (launched) {
+        if (launched && ferry) {
+          ferry.update(near || ferry.riding ? dt : 0);
+          destination.copy(boat.position);
+          if (near) run += dt;
+        } else if (launched) {
           if (near) run += dt;
           const cycle = run * .16;
           const x = mooring[0] - 8.1 - Math.cos(cycle) * 5.4;
@@ -240,6 +330,7 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
   }
 
   const shipyard = prior.get('map_piece_1')?.p;
+  let workboatReady = false, workboatBattle = false;
   if (shipyard) {
     const bench = place(offset(shipyard, 1.8, -1, 3.6));
     const bell = place(offset(shipyard, -7.6, -1, -3.8));
@@ -319,6 +410,383 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
         initialized = true;
       });
     }
+  }
+
+  const workboatQuay = place([599, 3.4, -525], 9);
+  const flagStation = workboatQuay && place(offset(workboatQuay, -1.7, 0, -9.9), 7.5);
+  const fight = workboatQuay && place(offset(workboatQuay, 0, 0, 4.4), 6);
+  const release = fight && place(offset(fight, -.6, 0, 11.2), 7.5);
+  const gangway = release && place(offset(release, .7, 0, 7.2), 7.5);
+  if (workboatQuay && flagStation && fight && release && gangway) {
+    interact(HB.inspect, workboatQuay); interact(HB.access, flagStation); interact(HB.fight, fight);
+    interact(HB.release, release); interact(HB.gangway, gangway);
+    const art = scenery('NassauSeizedWorkboat');
+    const post = offset(workboatQuay, -.96, 0, -.91);
+    art.box(offset(post, 0, .77), [.18, 1.54, .19], faded, true);
+    art.box(offset(post, 0, 1.11, .12), [.46, .84, .09], steel);
+    for (let i = 0; i < 5; i++) art.box(offset(post, .075, .75 + .15 * i, .181), [.22 + (i % 2) * .08, .026, .02], bronze);
+    const hullShape = new THREE.Shape().moveTo(0, -4.8).quadraticCurveTo(1.76, -3.5, 1.7, -1.4).lineTo(1.56, 3.4)
+      .quadraticCurveTo(0, 4.43, -1.56, 3.4).lineTo(-1.7, -1.4).quadraticCurveTo(-1.76, -3.5, 0, -4.8);
+    const hull = new THREE.ExtrudeGeometry(hullShape, { depth: .58, bevelSize: .09, bevelThickness: .09, bevelSegments: 1 }).rotateX(-Math.PI / 2);
+    const ship = group(art.root, [release[0] + 5, water + .14, release[2] + 1.6], 'EliNassauWorkboat');
+    mesh(ship, hull, materials.wood, [0, 0, 0]);
+    for (const side of [-1, 1]) {
+      beamMesh(ship, [side * 1.54, .84, -2.8], [side * 1.5, .84, 2.9], .065, materials.dark);
+      for (const z of [-2.8, -.8, 1, 2.9]) mesh(ship, new THREE.BoxGeometry(.135, .32, .13), materials.wood, [side * 1.51, .71, z]);
+    }
+    const load = group(ship, [.33, .6, .1], 'EliWorkboatMedicine');
+    for (let i = 0; i < 3; i++) {
+      mesh(load, new THREE.BoxGeometry(.59, .39, .52), materials.wood, [i % 2 * .53 - .53, .23, Math.floor(i / 2) * .63]);
+      mesh(load, new THREE.BoxGeometry(.23, .11, .026), materials.beacon, [i % 2 * .53 - .53, .27, Math.floor(i / 2) * .63 + .275]);
+    }
+    const emptyBoat = group(art.root, [flagStation[0] + 5.3, water + .16, flagStation[2] - 1.2], 'NassauBlackFlagDecoy');
+    const small = mesh(emptyBoat, hull, materials.dark, [0, 0, 0]);
+    small.scale.set(.67, .62, .55);
+    const mast = mesh(emptyBoat, new THREE.CylinderGeometry(.072, .1, 4.7, 8), materials.wood, [0, 2.28, 0]);
+    mast.rotation.z = -.065;
+    const flag = mesh(emptyBoat, new THREE.BoxGeometry(1.56, .84, .018), materials.dark, [.68, 1.24, 0], 'NassauRaisedDecoyFlag');
+    mesh(flag, new THREE.BoxGeometry(.19, .19, .026), materials.metal, [.44, 0, .015]).rotation.z = Math.PI / 4;
+    const beam = group(art.root, offset(gangway, .91, .18, -.84), 'NassauRearGangway');
+    mesh(beam, new THREE.BoxGeometry(.93, .12, 3.3), materials.wood, [0, 0, -1.65]);
+    for (const x of [-.44, .44]) mesh(beam, new THREE.BoxGeometry(.055, .18, 3.31), materials.metal, [x, .12, -1.65]);
+    for (const p of [fight, release, gangway]) {
+      art.box(offset(p, .71, .46, -.82), [.24, .92, .25], wood, true);
+      art.ring(offset(p, .71, .61, -.664), .118, .03, bronze, 'metal');
+    }
+    const recovery = scenery('NassauWorkboatReception');
+    table(recovery, offset(workboatQuay, .82, 0, 1.7));
+    for (const x of [-.22, .23]) recovery.box(offset(workboatQuay, .82 + x, .947, .86), [.37, .12, .41], '#657f75');
+    recovery.lantern(workboatQuay[0] + 1.39, workboatQuay[1] + 1.34, workboatQuay[2] + .7);
+    const receptionCollider = finish(recovery, 'blacksail', false)!;
+    const sentries = createSettlementNpcs([
+      { id: 'field_workboat_levy', region: 'blacksail', position: offset(release, -.92, 0, -2.4),
+        role: ['征召兵乌里', 'Uri the conscript'], appearance: { coat: 0x746057, trim: 0x424f56 }, lines: [] },
+      { id: 'field_workboat_quayside', region: 'blacksail', position: offset(release, .91, 0, -2.1),
+        role: ['征召兵拉夫', 'Ralph the conscript'], appearance: { coat: 0x77664b, trim: 0x465868 }, lines: [] },
+    ]);
+    art.root.add(sentries.group); actorCleanup.push(() => sentries.dispose());
+    const walkers = sentries.group.children.map(actor => {
+      const start = actor.position.clone();
+      return { actor, start, walk: residentWalkRig(actor) };
+    });
+    finish(art, 'blacksail');
+    const start = ship.position.clone();
+    let clock = 0, walkTime = 0, towTime = 0, initialized = false;
+    updates.push((done, dt, player) => {
+      const gone = harborCustomsGone(done), freed = done.has(HB.release);
+      const moving = done.has(HB.signal) || done.has(HB.gangway);
+      if (dt > 0 && Math.hypot(player.x - release[0], player.z - release[2]) < 85) clock += dt;
+      if (!moving) walkTime = 0;
+      else if (!initialized || freed) walkTime = 1;
+      else if (dt > 0 && Math.hypot(player.x - release[0], player.z - release[2]) < 85) walkTime = Math.min(1, walkTime + dt / 4.5);
+      if (!freed) towTime = 0;
+      else if (!initialized) towTime = 1;
+      else if (dt > 0 && Math.hypot(player.x - release[0], player.z - release[2]) < 85) towTime = Math.min(1, towTime + dt / 6);
+      workboatReady = gone || done.has(HB.fought) || (moving && walkTime >= 1);
+      flag.position.y = THREE.MathUtils.damp(flag.position.y, done.has(HB.signal) ? 4.14 : 1.24, 5, dt);
+      flag.rotation.y = Math.sin(clock * 2) * .09;
+      beam.rotation.x = THREE.MathUtils.damp(beam.rotation.x, done.has(HB.gangway) || gone ? 0 : -.85, 6, dt);
+      ship.position.set(start.x, start.y + Math.sin(clock * 1.8) * .035, start.z + towTime * 16.7);
+      ship.rotation.z = Math.sin(clock * 1.47) * .019;
+      load.visible = freed;
+      recovery.root.visible = receptionCollider.enabled = freed;
+      const battle = workboatBattle || done.has(HB.fight);
+      sentries.group.visible = done.has(HB.inspect) && !gone && !battle && !freed && walkTime < 1;
+      if (sentries.group.visible) {
+        sentries.update(dt, player);
+        for (const { actor, start: p, walk } of walkers) {
+          const targetZ = done.has(HB.signal) ? flagStation[2] + 2.1 : gangway[2] + 3.6;
+          const z = THREE.MathUtils.lerp(p.z, targetZ, walkTime);
+          const y = ground(p.x, z, p.y + 1.2) ?? p.y;
+          actor.position.set(p.x, y, z);
+          actor.rotation.y = moving ? targetZ > p.z ? 0 : Math.PI : .4;
+          walk.update(clock * 9, moving && walkTime < 1, y - p.y);
+        }
+      }
+      initialized = true;
+    });
+  }
+
+  let adjustWreck: ((id: string) => boolean) | null = null;
+  let startChipToss: ((choice: 'left' | 'right', first: boolean) => boolean) | null = null;
+  let chipOutcome: { won: boolean; first: boolean } | null = null;
+  const wreckSight = place([582, 6.2, -909], 12);
+  const firstWinch = place([609, 26.05, -883.6], 4.5);
+  const secondWinch = firstWinch && place(offset(firstWinch, .28, 0, 2.85), 4.5);
+  const memorial = place([586, 3.4, -587], 7.5);
+  if (wreckSight && firstWinch && secondWinch && memorial) {
+    const x = 598.1, y = 27.41, z = -883.4;
+    interact(HK.sight, wreckSight); interact(HK.forward, firstWinch); interact(HK.aft, secondWinch);
+    interact(HK.chest, [x - .25, y, z - 1.25]); interact(HK.lookout, [x - 2.55, y, z + .4]);
+    interact(HK.choose, memorial);
+    const art = scenery('NassauPassengerWreck');
+    art.box([x, y - .19, z], [6.1, .38, 5.15], faded, true);
+    art.box([x - 1.28, y - .74, z], [5.9, .36, 4.8], wood);
+    for (const side of [-1, 1]) {
+      for (let i = 0; i < 5; i++) {
+        art.box([x - 2.6 + i * 1.1, y - .56, z + side * 2.4], [.18, 1.27, .34], '#5d4c46', false, 'body', [side * -.34, 0, 0]);
+      }
+      art.box([x, y + .61, z + side * 2.52], [6.35, .13, .2], wood, true);
+      for (const px of [-2.95, -.98, 1.8]) art.box([x + px, y + .3, z + side * 2.52], [.145, .63, .15], steel, true);
+    }
+    art.box([x - 3, y + .56, z], [.19, .13, 5.12], wood, true);
+    const casework = group(art.root, [x - .45, y + .18, z - 1.95], 'NassauWaterproofCase');
+    mesh(casework, new THREE.BoxGeometry(.72, .29, .43), materials.wood, [0, 0, 0]);
+    const lid = group(casework, [0, .16, -.19], 'NassauWaterproofCaseLid');
+    mesh(lid, new THREE.BoxGeometry(.72, .085, .44), materials.metal, [0, 0, .21]);
+    const keepsake = mesh(casework, new THREE.TorusGeometry(.099, .023, 7, 15).rotateX(Math.PI / 2),
+      materials.metal, [-.15, .15, .018], 'NassauFamilyPendant');
+    mesh(casework, new THREE.BoxGeometry(.22, .055, .081), materials.dark, [.18, .146, .013]);
+    const mast = [x - 2.05, y + 1.64, z - 1.83] as Point;
+    art.beam(offset(mast, 0, -1.65), mast, .103, faded, true);
+    const beacon = mesh(art.root, new THREE.SphereGeometry(.23, 12, 8), materials.beacon, mast, 'NassauRepairedWreckBeacon');
+    art.ring(mast, .33, .048, bronze);
+    const spar = offset(wreckSight, .9, 1.5, -.72);
+    art.beam(offset(wreckSight, .92, 0, -.76), spar, .13, faded, true);
+    for (const j of [0, 1, 2]) art.box(offset(wreckSight, .93, .48 + j * .32, -.59), [.18, .036, .053], bronze);
+    const reflection = mesh(art.root, new THREE.OctahedronGeometry(.13), materials.beacon, offset(spar, 0, .09), 'NassauLowWaterReflection');
+    const settings = [
+      { id: HK.forward, p: firstWinch, a: [608.86, 26.02, z] as Point, b: [603.23, y, z] as Point, name: 'NassauForwardWreckDeck' },
+      { id: HK.aft, p: secondWinch, a: [603.23, y, z] as Point, b: [600.86, y, z] as Point, name: 'NassauAftWreckDeck' },
+    ];
+    const trims = settings.map(({ id, p, a, b, name }, i) => {
+      const bridge = walkway(name, 'blacksail', [a, b], 2.28, faded, false, i !== 0);
+      const distance = Math.abs(a[0] - b[0]);
+      const tilt = group(art.root, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 - .13, z], name + 'Hinge');
+      mesh(tilt, new THREE.BoxGeometry(distance + .85, .23, 2.21), materials.wood, [0, 0, 0]);
+      for (const edge of [-.96, .96]) mesh(tilt, new THREE.BoxGeometry(distance + .85, .11, .11), materials.metal, [0, .66, edge]);
+      const base = group(art.root, offset(p, .65, .69, -.72), name + 'Lever');
+      mesh(base, new THREE.BoxGeometry(.22, .85, .23), materials.wood, [0, -.21, 0]);
+      mesh(base, new THREE.BoxGeometry(.08, .56, .078), materials.metal, [0, .24, .09]);
+      mesh(base, new THREE.SphereGeometry(.095, 8, 6), materials.beacon, [0, .53, .09]);
+      const angles = i === 0 ? [-.52, .31, 0] : [.49, -.32, 0];
+      tilt.rotation.z = angles[0];
+      return { id, bridge, tilt, base, angles, notch: 0 };
+    });
+    adjustWreck = id => {
+      const lever = trims.find(t => t.id === id);
+      if (!lever) return false;
+      lever.notch = (lever.notch + 1) % lever.angles.length;
+      return lever.notch === 2;
+    };
+    table(art, memorial);
+    const publicCase = mesh(art.root, new THREE.BoxGeometry(.41, .18, .31), materials.metal, offset(memorial, -.35, 1, -.84), 'NassauPublicMemorialCase');
+    const familyCase = mesh(art.root, new THREE.BoxGeometry(.41, .18, .31), materials.wood, offset(memorial, .29, 1, -.84), 'NassauReturnedFamilyCase');
+    finish(art, 'blacksail');
+    let tide = 0;
+    updates.push((done, dt, player) => {
+      tide = (tide + dt) % 13;
+      reflection.scale.setScalar(.8 + .46 * (Math.sin(tide * Math.PI / 6.5) * .5 + .5));
+      reflection.rotation.y = tide * .7;
+      for (const t of trims) {
+        const flat = done.has(t.id);
+        if (flat) t.notch = 2;
+        else if (!done.has(HK.sight)) t.notch = 0;
+        t.tilt.rotation.z = THREE.MathUtils.damp(t.tilt.rotation.z, t.angles[t.notch], 7, dt);
+        t.tilt.visible = !flat; t.bridge.art.root.visible = t.bridge.collider.enabled = flat;
+        t.base.rotation.x = (t.notch - 1) * .29;
+      }
+      const open = done.has(HK.chest);
+      lid.rotation.x = open ? -1.52 : 0;
+      keepsake.visible = !open; beacon.visible = open;
+      if (open && Math.hypot(player.x - mast[0], player.z - mast[2]) < 185) beacon.scale.setScalar(1 + .22 * Math.sin(tide * 4.1));
+      publicCase.visible = done.has(HK.memorial); familyCase.visible = done.has(HK.family);
+    });
+  }
+
+  const tavern = place([583.2, 3.4, -581.4], 9);
+  const stool = tavern && place(offset(tavern, -2.5, 0, 1.82), 5.5);
+  if (tavern && stool) {
+    interact(CC.talk, tavern); interact(CC.throw, tavern); interact(CC.rematch, tavern); interact(CC.repair, stool);
+    const art = scenery('NassauCaptainsTable');
+    table(art, tavern);
+    const tableTop = group(art.root, offset(tavern, 0, .933, -.84), 'NassauThrowingBoard');
+    tableTop.rotation.z = -.083;
+    for (const side of [-1, 1]) {
+      mesh(tableTop, new THREE.CylinderGeometry(.268, .3, .055, 18), side === -1 ? materials.blue : materials.red, [side * .49, .02, -.03]);
+      for (let i = 0; i < (side === -1 ? 1 : 2); i++)
+        mesh(tableTop, new THREE.BoxGeometry(.14, .012, .026), materials.metal, [side * .49, .054, i * .073 - .054]);
+    }
+    const chip = mesh(tableTop, new THREE.CylinderGeometry(.071, .071, .025, 16), materials.metal, [0, .08, .28], 'NassauWoodenStake');
+    const chair = group(art.root, offset(stool, -.13, 0, -.86), 'NassauCaptainsLooseStool');
+    mesh(chair, new THREE.BoxGeometry(.64, .115, .54), materials.wood, [0, .49, 0]);
+    mesh(chair, new THREE.BoxGeometry(.62, .34, .10), materials.wood, [0, .77, -.22]);
+    let looseLeg: THREE.Mesh | null = null;
+    for (const x of [-.23, .23]) for (const z of [-.19, .19]) {
+      const leg = mesh(chair, new THREE.BoxGeometry(.09, .49, .09), materials.wood, [x, .24, z]);
+      if (x > 0 && z > 0) looseLeg = leg;
+    }
+    const wedge = mesh(chair, new THREE.BoxGeometry(.144, .041, .092), materials.metal, [.224, .423, .18]);
+    finish(art, 'blacksail');
+    let toss: { landed: 'left' | 'right'; chosen: 'left' | 'right'; time: number; first: boolean } | null = null;
+    let round = 0;
+    startChipToss = (choice, first) => {
+      if (toss || chipOutcome) return false;
+      toss = { landed: round % 2 === 0 ? 'right' : 'left', chosen: choice, time: 0, first };
+      round++;
+      return true;
+    };
+    updates.push((done, dt, player) => {
+      if (toss && Math.hypot(player.x - tavern[0], player.z - tavern[2]) < 14) {
+        toss.time = Math.min(1, toss.time + dt / 1.55);
+        const t = toss.time;
+        chip.position.set((toss.landed === 'right' ? .49 : -.49) * t, .075 + Math.sin(t * Math.PI) * .56, .28 - .31 * t);
+        chip.rotation.set(t * Math.PI * 8, t * 9, t * Math.PI * 4);
+        if (t === 1) {
+          chipOutcome = { won: toss.chosen === toss.landed, first: toss.first };
+          toss = null;
+          tableTop.rotation.z = round % 2 === 0 ? -.083 : .083;
+        }
+      }
+      if (looseLeg) looseLeg.rotation.x = THREE.MathUtils.damp(looseLeg.rotation.x, done.has(CC.repair) ? 0 : -.44, 8, dt);
+      wedge.visible = done.has(CC.repair);
+    });
+  }
+
+  const school = place([29, 5, -660], 12);
+  const warmHouse = school && place(offset(school, -13.8, 0, 2.5), 10.5);
+  const roofFoot = warmHouse && place(offset(warmHouse, 0, 0, 5), 6);
+  if (school && warmHouse && roofFoot) {
+    interact(WB.box, school); interact(WB.report, school);
+    interact(WB.house, warmHouse); interact(WB.plan, warmHouse);
+    const art = scenery('WinterSchoolAndWarmHouse');
+    const snow = '#9ba8a8', fireColor = new THREE.MeshBasicMaterial({ color: '#f4ab65' });
+    table(art, school, steel); art.paper(...offset(school, -.14, .91, -.78), .54, .36);
+    for (const x of [-1.72, 1.72]) art.box(offset(school, x, 1.29, -1.81), [.24, 2.58, .23], steel, true);
+    art.box(offset(school, 0, 2.61, -2.2), [4.37, .23, 3.44], snow, true);
+    art.box(offset(school, 0, 1.27, -3.62), [4.18, 2.54, .24], faded, true);
+    for (let i = 0; i < 4; i++) art.box(offset(school, -1.46 + .96 * i, .44, -2.7), [.73, .13, .39], wood);
+    const schoolTray = mesh(art.root, new THREE.BoxGeometry(.64, .056, .43), materials.metal, offset(school, -.22, .932, -.93), 'WinterReturnedBreadTray');
+    const [x, y, z] = offset(warmHouse, -.23, 0, -2.8);
+    for (const side of [-1, 1]) art.box([x + side * 2.36, y + 1.13, z], [.22, 2.26, 4.6], faded, true);
+    art.box([x, y + 1.12, z - 2.27], [4.77, 2.23, .24], faded, true);
+    for (const side of [-1, 1]) {
+      art.box([x + side * 1.67, y + 1.1, z + 2.24], [1.43, 2.2, .22], wood, true);
+      art.box([x + side * 1.67, y + 1.47, z + 2.36], [.89, .82, .075], '#e8af75');
+      art.box([x + side * 1.67, y + 1.47, z + 2.42], [.065, .84, .06], steel);
+    }
+    art.box([x, y + 2.32, z], [5.08, .32, 4.78], snow, true);
+    art.box([x - 1.38, y + 3.08, z - 1.3], [.62, 1.65, .6], '#7e655c');
+    const flue = mesh(art.root, new THREE.BoxGeometry(.66, .15, .65), materials.metal, [x - 1.38, y + 3.99, z - 1.3], 'WinterHouseRepairedFlue');
+    const stove = group(art.root, [x - 1.08, y + .38, z - .94], 'WinterWarmHouseStove');
+    mesh(stove, new THREE.BoxGeometry(.85, .77, .73), materials.dark, [0, 0, 0]);
+    const flame = mesh(stove, new THREE.BoxGeometry(.39, .27, .042), fireColor, [0, -.035, .383]);
+    const householdTray = mesh(stove, new THREE.BoxGeometry(.62, .073, .52), materials.metal, [.01, .42, .01]);
+    const roof = walkway('WinterWarmHouseRoofRoute', 'winter', [offset(roofFoot, 0, .03), [x, y + 2.51, z + 2.1]], 1.93, faded, false);
+    const valleyBread = group(art.root, offset(residence, -3.2, .88, 2.7), 'ValleyBreadFromLuc');
+    mesh(valleyBread, new THREE.BoxGeometry(.82, .13, .58), materials.wood, [0, -.12, 0]);
+    for (const px of [-.21, .17]) mesh(valleyBread, new THREE.SphereGeometry(.17, 10, 8), new THREE.MeshStandardMaterial({ color: '#b9864c' }), [px, 0, 0]).scale.set(1, .55, 1.18);
+    markers.push({ id: 'field_winter_warm_house', type: 'poi', label: '卢克的暖屋', p: [x, y + .3, z], radius: 6.5, requires: [WB.leave] });
+    finish(art, 'winter');
+    let clock = 0;
+    updates.push((done, dt) => {
+      clock += dt;
+      flue.visible = done.has(WB.chimney);
+      householdTray.visible = !done.has(WB.chimney);
+      schoolTray.visible = valleyBread.visible = done.has(WB.chimney) && done.has(WB.report);
+      roof.art.root.visible = roof.collider.enabled = done.has(WB.leave);
+      flame.scale.y = .87 + .13 * Math.sin(clock * 9);
+    });
+  }
+
+  const shoeWell = place([17, 5, -613], 12);
+  const shoeDoor = shoeWell && place(offset(shoeWell, -9.5, -.8, -3.9), 9);
+  const cobblerTable = shoeDoor && place(offset(shoeDoor, 0, 0, -4.7), 6);
+  const shoeLanding = place([26, 4, -467], 10.5);
+  if (shoeWell && shoeDoor && cobblerTable && shoeLanding) {
+    interact(WS.line, shoeWell); interact(WS.cellar, shoeDoor); interact(WS.choose, cobblerTable);
+    const art = scenery('WinterCobblerStore');
+    art.ring(offset(shoeWell, -.7, .43, -.86), .53, .125, steel, 'metal', [Math.PI / 2, 0, 0]);
+    const shoes = [offset(shoeWell, -.1, .12, -.44), offset(shoeWell, .29, .12, -.41), offset(shoeWell, .63, .09, -.58)];
+    shoes.forEach((p, i) => {
+      const leather = i === 2 ? '#996554' : i === 0 ? '#424655' : '#575447';
+      art.box(p, [.19 - i * .02, .13, .37 - i * .045], leather);
+      art.box(offset(p, 0, .095, -.083), [.16 - i * .02, .22 - i * .05, .15], leather);
+      for (const h of [-.025, .023]) art.box(offset(p, 0, .06 + h, .187 - i * .025), [.12 - i * .018, .018, .021], '#b7a287');
+    });
+    const cellar = offset(cobblerTable, 0, 0, -.9);
+    for (const side of [-1, 1]) art.box(offset(cellar, side * 1.96, 1.01, -.58), [.25, 2.02, 5.95], steel, true);
+    art.box(offset(cellar, 0, 2.4, -.59), [4.17, .26, 6.04], '#a5b5b7', true);
+    art.box(offset(cellar, 0, 1.01, -3.55), [4.12, 2.05, .23], steel, true);
+    table(art, cobblerTable, '#656451'); art.lantern(cellar[0] - 1.38, cellar[1] + 1.33, cellar[2] - 1.24);
+    const signage = scenery('WinterTwoSidedShoeSign');
+    for (const p of [offset(shoeWell, -1.12, 0, 1.5), offset(shoeDoor, 1.35, 0, .8)]) {
+      signage.box(offset(p, 0, .89), [.14, 1.77, .14], faded);
+      for (const side of [-1, 1]) {
+        signage.box(offset(p, 0, 1.49, side * .081), [.62, .35, .075], wood);
+        signage.box(offset(p, .049, 1.47, side * .124), [.38, .084, .028], bronze);
+        signage.box(offset(p, -.082, 1.55, side * .126), [.142, .12, .028], bronze);
+      }
+    }
+    const stall = scenery('WinterCrossingShoeStall');
+    table(stall, shoeLanding, steel);
+    for (const px of [-.63, -.14, .45]) stall.box(offset(shoeLanding, px, .93, -.86), [.19, .08, .29], wood);
+    const stallCollider = finish(stall, 'winter', false)!;
+    finish(signage, 'winter'); finish(art, 'winter');
+    const actors = createSettlementNpcs([
+      { id: 'winter_cobbler_original', region: 'winter', position: offset(cobblerTable, 1, 0, -.83),
+        role: ['老鞋匠', 'The old cobbler'], appearance: { coat: 0x645349 }, lines: [] },
+      { id: 'winter_cobbler_crossing', region: 'winter', position: offset(shoeLanding, 1, 0, -.83),
+        role: ['渡口鞋匠', 'Crossing cobbler'], appearance: { coat: 0x645349 }, lines: [] },
+      { id: 'winter_cobbler_valley', region: 'alpha', position: offset(residence, 4.1, 0, 4.7),
+        role: ['随药车来的鞋匠', 'Cobbler from the convoy'], appearance: { coat: 0x645349 }, lines: [] },
+    ]);
+    root.add(actors.group); actorCleanup.push(() => actors.dispose());
+    updates.push((done, dt, player) => {
+      const moved = done.has(WS.crossing), returned = moved && done.has('adventure_winter_arrived');
+      signage.root.visible = done.has(WS.sign); stall.root.visible = stallCollider.enabled = moved;
+      actors.update(dt, player);
+      actors.group.children[0].visible &&= !moved;
+      actors.group.children[1].visible &&= moved && !returned;
+      actors.group.children[2].visible &&= returned;
+    });
+  }
+
+  let rangeSmoke = 0;
+  const battery = place([50, 4.9, -631], 10.5);
+  const crest = battery && place(offset(battery, 8.6, 0, -4.8), 7.5);
+  const valleySight = crest && place(offset(crest, -.9, 0, 10.2), 7.5);
+  const bend = valleySight && place(offset(valleySight, 5.8, 0, 8.3), 7.5);
+  const smokeLever = place([44, 8.2, -688], 9);
+  if (battery && crest && valleySight && bend && smokeLever) {
+    interact(WR.meet, battery); interact(WR.choose, battery); interact(WR.crest, crest);
+    interact(WR.valley, valleySight); interact(WR.bend, bend); interact(WR.trigger, smokeLever);
+    const art = scenery('WinterGunnerRangeStations');
+    table(art, battery); art.paper(...offset(battery, -.27, .92, -.81), .62, .4);
+    const marks = [crest, valleySight, bend].map((p, i) => {
+      const column = offset(p, .68, .7, -.69);
+      art.box(column, [.21, 1.4, .22], wood, true);
+      art.ring(offset(column, 0, .61), .26, .039, bronze);
+      return mesh(art.root, new THREE.SphereGeometry(.105, 9, 7), materials.beacon, offset(column, 0, .62), 'WinterRangeLock_' + i);
+    });
+    const rails = scenery('WinterGunnerMillRailings');
+    for (const x of [59.5, 66.1]) {
+      for (const z of [-610.8, -607.1]) {
+        const y = ground(x, z, 7.4) ?? 4;
+        rails.box([x, y + .45, z], [.18, .9, .21], faded, true);
+      }
+      const y = ground(x, -609, 7.4) ?? 4;
+      rails.box([x, y + .78, -609], [.17, .17, 4.12], faded, true);
+    }
+    const railCollider = finish(rails, 'winter', false)!;
+    const smokeMaterial = new THREE.MeshStandardMaterial({ color: '#b8c4cc', transparent: true, opacity: 0, depthWrite: false });
+    const smoke = group(art.root, offset(smokeLever, 1, 0, -3.8), 'WinterGunnerSmokeVolley');
+    for (let i = 0; i < 7; i++) {
+      mesh(smoke, new THREE.SphereGeometry(1, 9, 6), smokeMaterial, [(i - 3) * 1.05, .8 + (i % 3) * .33, -.82 * Math.cos(i)]);
+    }
+    finish(art, 'winter');
+    updates.push((done, dt) => {
+      marks.forEach((mark, i) => { mark.visible = done.has([WR.crest, WR.valley, WR.bend][i]); });
+      rails.root.visible = railCollider.enabled = done.has(WR.rails);
+      rangeSmoke = Math.max(0, rangeSmoke - dt);
+      smoke.visible = rangeSmoke > 0;
+      if (rangeSmoke > 0) {
+        const age = 5 - rangeSmoke;
+        smoke.scale.setScalar(.48 + age * .29);
+        smoke.position.y = smokeLever[1] + age * .42;
+        smokeMaterial.opacity = Math.min(.24, rangeSmoke * .1, age * .56);
+      }
+    });
   }
 
   const hear = place([222, 2.1, -642], 12), rope = place([229, 2.2, -650], 12);
@@ -768,6 +1236,13 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
 
   return {
     root, markers, colliders, targets,
+    get royalFerry() { return ferry; },
+    get workboatReady() { return workboatReady; },
+    setWorkboatBattle(active: boolean) { workboatBattle = active; },
+    turnWreckDeck(id: string) { return adjustWreck?.(id) ?? false; },
+    startChipToss(choice: 'left' | 'right', first: boolean) { return startChipToss?.(choice, first) ?? false; },
+    readChipOutcome() { const result = chipOutcome; chipOutcome = null; return result; },
+    smokeVolley() { rangeSmoke = 5; },
     sendPaper() { paperLineT = 1; },
     ring() { bellRing = 1.25; },
     seedsArrived() { return seedTravel >= 1; },

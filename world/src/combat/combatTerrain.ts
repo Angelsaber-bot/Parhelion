@@ -8,6 +8,7 @@ import type { Point3, CombatTerrain } from './combat';
 import { COMPACT_RELAY_SITE } from '../story/compactRelaySitesData';
 import { VALLEY_FIELD, VALLEY_NIGHT_ENCOUNTER } from '../story/valleyField';
 import { KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORKS } from '../story/kingdomWorks';
+import { HARBOR_WORKBOAT, HARBOR_WORKBOAT_ENCOUNTER } from '../story/harborRelief';
 
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
@@ -80,7 +81,7 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     return spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6)?placeEnemy(x,z,true,true,true):null;
   };
   const safeAdventureSpawn=(spec:StoryEncounterSpec,x:number,z:number):Point3|null=>{
-    const markerId=spec.id===VALLEY_RESCUE_ENCOUNTER?VALLEY_PROLOGUE.survey:spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
+    const markerId=spec.id===HARBOR_WORKBOAT_ENCOUNTER?HARBOR_WORKBOAT.fight:spec.id===VALLEY_RESCUE_ENCOUNTER?VALLEY_PROLOGUE.survey:spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
     const marker=layout.markers.find(m=>m.id===markerId);
     const height = spec.id === VALLEY_RESCUE_ENCOUNTER ? VALLEY_SURVEY_HEIGHT : .9;
     if(!marker||Math.abs(spec.anchor.x-marker.p[0])>.01||Math.abs(spec.anchor.z-marker.p[2])>.01||Math.abs(spec.anchor.y-(marker.p[1]-height))>.01)return null;

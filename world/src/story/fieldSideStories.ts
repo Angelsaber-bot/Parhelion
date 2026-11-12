@@ -3,17 +3,41 @@ import type { WorldRegionId } from '../core/regionIdentity';
 import { JOURNEY } from './worldJourney';
 import { ADVENTURE } from './openWorldCampaign';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
+import { HARBOR_WORKBOAT } from './harborRelief';
 
 export const ROYAL_BOAT = {
   shed: 'field_boat_shed', haul: 'field_boat_haul', brace: 'field_boat_brace',
   launch: 'field_boat_launch', watch: 'field_boat_watch',
+  board: 'field_boat_board_east', returnFerry: 'field_boat_board_west', crossed: 'field_boat_crossed',
 } as const;
 export const HARBOR_WAGES = {
   bench: 'field_wages_bench', divert: 'field_wages_divert', chest: 'field_wages_chest', return: 'field_wages_return',
 } as const;
+export const HARBOR_KEEPSAKES = {
+  sight: 'field_wreck_sight', forward: 'field_wreck_forward', aft: 'field_wreck_aft',
+  chest: 'field_wreck_chest', choose: 'field_wreck_choose',
+  family: 'field_wreck_family', memorial: 'field_wreck_memorial', lookout: 'field_wreck_lookout',
+} as const;
+export const CAPTAINS_CHAIR = {
+  talk: 'field_captain_chair_talk', throw: 'field_captain_chair_throw', win: 'field_captain_chair_win',
+  repair: 'field_captain_chair_repair', rematch: 'field_captain_chair_rematch',
+} as const;
 export const ICE_BELL = {
   hear: 'field_ice_bell_hear', rope: 'field_ice_bell_rope', pin: 'field_ice_bell_pin',
   raise: 'field_ice_bell_raise', choose: 'field_ice_bell_choose', camp: 'field_ice_bell_camp', test: 'field_ice_bell_test',
+} as const;
+export const WINTER_BREAD = {
+  box: 'field_winter_bread_box', house: 'field_winter_bread_house', plan: 'field_winter_bread_plan',
+  chimney: 'field_winter_bread_chimney', leave: 'field_winter_bread_leave', report: 'field_winter_bread_report',
+} as const;
+export const WINTER_SHOES = {
+  line: 'field_winter_shoes_line', cellar: 'field_winter_shoes_cellar', choose: 'field_winter_shoes_choose',
+  sign: 'field_winter_shoes_sign', crossing: 'field_winter_shoes_crossing',
+} as const;
+export const WINTER_RANGE = {
+  meet: 'field_winter_range_meet', crest: 'field_winter_range_crest', valley: 'field_winter_range_valley',
+  bend: 'field_winter_range_bend', choose: 'field_winter_range_choose', smoke: 'field_winter_range_smoke',
+  rails: 'field_winter_range_rails', smokeUsed: 'field_winter_range_smoke_used', trigger: 'field_winter_range_signal',
 } as const;
 export const KYOTO_REFLECTION = {
   shore: 'field_reflection_shore', upper: 'field_reflection_upper', inspect: 'field_reflection_inspect',
@@ -48,7 +72,9 @@ type Step = { id: string; label: Localized; hint: Localized; line: Localized; af
 type SideStory = { id: string; region: WorldRegionId; title: Localized; steps: readonly Step[]; available: (done: Flags) => boolean };
 const B = ROYAL_BOAT, W = HARBOR_WAGES, I = ICE_BELL, K = KYOTO_REFLECTION, V = VALLEY_RADIO, S = SKY_MAINTENANCE;
 const E = EGYPT_SEEDS, O = ORLEANS_SOUP, Q = QIN_QUIET_ROOM;
-const P = KYOTO_PASS, L = KYOTO_PAPERLINE;
+const P = KYOTO_PASS, L = KYOTO_PAPERLINE, H = HARBOR_WORKBOAT;
+const D = HARBOR_KEEPSAKES, C = CAPTAINS_CHAIR;
+const F = WINTER_BREAD, SH = WINTER_SHOES, WR = WINTER_RANGE;
 const ropeLoose = (done: Flags) => done.has(I.rope) || done.has(I.pin);
 export const harborCustomsGone = (done: Flags) => done.has('sea_core') || done.has(ADVENTURE.departed);
 
@@ -100,6 +126,60 @@ export const FIELD_SIDE_STORIES: readonly SideStory[] = [
     ],
   },
   {
+    id: 'nassau-workboat', region: 'blacksail', title: ['一次没有炮声的劫船', 'A Boarding Without Cannon Fire'],
+    available: done => done.has('blackbeard_meet') || harborCustomsGone(done),
+    steps: [
+      { id: H.inspect, label: ['低潮水尺 · 查看埃利的工作船', 'Tide gauge · Survey Eli’s workboat'],
+        hint: ['从拿骚内港的潮尺看清扣船人、空船旗和断开的后舷梯。', 'From the inner-harbor tide gauge, look for the conscripts, an empty boat’s flag and the broken rear gangway.'],
+        line: ['埃利：“低潮时能摸到船尾。看见那艘空船上的黑旗了吗？你也能放下后舷梯，给船上那两个征来的士兵一条回家的路。”',
+          'Eli: “Low tide puts the stern within reach. See the black flag on that empty boat? Or lower the rear gangway and give those two conscripts a way home.”'] },
+      { id: H.access, label: ['空船信号桅 · 拉起黑旗', 'Empty skiff signal mast · Raise the black flag'],
+        hint: ['可在信号桅引开岗哨、从后舷梯放人离开，或在正面挑战守船兵。', 'Draw the watch to the flag, let the conscripts leave by the rear gangway, or confront them at the front.'],
+        line: ['黑旗在空船上升起，征召兵沿岸追过去。等他们走出栈桥，再去松开工作船。', 'The black flag goes up on the empty boat. The conscripts follow it along the shore. Wait for them to clear the pier, then release the workboat.'],
+        after: done => !harborCustomsGone(done) },
+      { id: H.release, label: ['埃利的船 · 松开扣押缆', 'Eli’s boat · Cast off the seized mooring'],
+        hint: ['从栈桥到工作船缆桩，松开缆绳。', 'Reach the workboat’s mooring from the quay and release its line.'],
+        line: ['埃利保住了船和工具。空出来的船舱还能载一批备用药箱。港区给返乡的人添了新的接应台。', 'Eli has his boat and tools back. The hold can carry another load of medicine, and the harbor has a new reception table for people returning home.'],
+        after: done => harborCustomsGone(done) || done.has(H.access) },
+    ],
+  },
+  {
+    id: 'sea-keepsakes', region: 'blacksail', title: ['海里没有金币', 'There Is No Gold in the Sea'],
+    available: done => done.has('blackbeard_meet') || harborCustomsGone(done),
+    steps: [
+      { id: D.sight, label: ['风暴低处 · 看退水刻线的斜光', 'Vortex floor · Trace the low-water reflection'],
+        hint: ['到风暴之眼附近的水痕线，跟斜光找浮空旧船。', 'Look by the low-water mark near the eye of the vortex, then follow the glint to the wreck.'],
+        line: ['水痕退到第二刻，断桅把一道光折向漂起的客船。借上升气流登上第一段残骸，两块活动甲板还斜挂在那儿。', 'At the lower water mark a broken spar throws a glint toward the floating passenger ship. Ride the updraft to the first wreck. Two tilting deck sections still hang from it.'] },
+      { id: D.forward, label: ['前甲板拉杆 · 将刻线对平', 'Forward deck lever · Align the level mark'],
+        hint: ['在第一艘浮船上分段扳动拉杆，直到前甲板对平。', 'On the first floating wreck, move the forward lever in steps until its board is level.'],
+        line: ['前甲板对平了。下一块还压着另一侧的栏杆。', 'The forward deck is level. The other board still rests against the far rail.'] },
+      { id: D.aft, label: ['后甲板拉杆 · 衔接两块甲板', 'Aft deck lever · Join the two decks'],
+        hint: ['扳动旁边的第二个拉杆，直到后甲板也对平。', 'Work the second lever until the aft deck is level too.'],
+        line: ['两块甲板接上了。沿木梁上客船，看看防水匣里装的是什么。', 'Both decks now meet. Walk the boards to the passenger ship and open the waterproof case.'] },
+      { id: D.chest, label: ['旧客船 · 打开防水匣', 'Passenger wreck · Open the waterproof case'],
+        hint: ['走过拼好的活动甲板，到旧客船的船灯旁打开匣子。', 'Cross the aligned decks and open the case beside the old ship’s lantern.'],
+        line: ['没有金币。匣里是梳子、挂坠和一个孩子的鞋。航标的挡片完好，装回去后出港船也能看见这一段海路。', 'There is no gold. The case holds a comb, a pendant and a child’s shoe. The beacon shutter still works. Put it back so departing ships can read this stretch of sea.'] },
+      { id: D.choose, label: ['拿骚家属接应桌 · 安置遗物', 'Nassau reception table · Place the keepsakes'],
+        hint: ['把遗物带回拿骚，交还家属或留在公共纪念舱。', 'Take the keepsakes to Nassau. Return them to the family or leave them in the shared memorial.'],
+        line: ['家属愿意带走自己的东西，也愿意让它们留在公共纪念舱。航标已经修好，之后可以从旧客船上看海。', 'The family can take the keepsakes home or leave them in the shared memorial. The beacon is repaired, and the old passenger ship is a lookout now.'] },
+    ],
+  },
+  {
+    id: 'captains-chair', region: 'blacksail', title: ['船长的座位', 'The Captain’s Seat'],
+    available: done => done.has('blackbeard_meet') || harborCustomsGone(done),
+    steps: [
+      { id: C.talk, label: ['拿骚酒馆外桌 · 听黑胡子夸口', 'Nassau tavern table · Hear Blackbeard’s boast'],
+        hint: ['去酒馆后门外的木桌，看看两只投掷盘。', 'Find the two throwing trays on the wooden table behind the tavern.'],
+        line: ['黑胡子：“我闭着眼也知道木筹会停哪边。你押一枚，我扔。先看桌脚往哪边歪。”', 'Blackbeard: “I can call where the chip will land with my eyes shut. You stake one, I throw. Take a look at which way the table leans.”'] },
+      { id: C.throw, label: ['酒馆桌 · 押一枚木筹', 'Tavern table · Stake one wooden chip'],
+        hint: ['在桌边选一只投掷盘，看木筹落在哪边。', 'Choose a tray at the table and watch where the chip lands.'],
+        line: ['哪一边会接住木筹？左盘更近，右边的桌腿较短。', 'Which tray will catch the chip? The left is closer. The table’s right leg is shorter.'] },
+      { id: C.repair, label: ['船长的凳子 · 固定松腿', 'Captain’s stool · Brace the loose leg'],
+        hint: ['米拉把松动的凳子推到桌旁。一起把凳腿敲回去。', 'Mira sets the loose stool beside the table. Help knock the leg back into place.'],
+        line: ['黑胡子扶住凳腿，抱怨了三句，还是等木楔完全咬住才松手。下次来的时候，靠门的位置给你留着。', 'Blackbeard holds the leg and grumbles. He keeps his grip until the wedge seats. Next time, he leaves you the place by the door.'] },
+    ],
+  },
+  {
     id: 'ice-bell', region: 'winter', title: ['冰下的铃', 'The Bell Beneath the Ice'],
     available: done => done.has('napoleon_meet') || done.has('winter_core'),
     steps: [
@@ -118,6 +198,60 @@ export const FIELD_SIDE_STORIES: readonly SideStory[] = [
         hint: ['在吊索旁决定铃的去向。', 'Decide where to mount the bell at the hoist.'],
         line: ['把铃留给走雪路的人，或带去渡口，让两边的人都知道何时集合？', 'Keep the bell for travelers on the snow road, or take it to the landing so both sides can hear the muster?'],
         after: done => done.has(I.raise) },
+    ],
+  },
+  {
+    id: 'winter-bread', region: 'winter', title: ['没有寄出的面包', 'The Bread That Never Left'],
+    available: done => done.has('napoleon_meet') || done.has('winter_core'),
+    steps: [
+      { id: F.box, label: ['雪中教室 · 看有炉子画的面包箱', 'Schoolroom · Read the bread box'],
+        hint: ['在取暖教室里找卢克画了炉子的木箱。', 'Find the box with Luc’s drawing of an oven in the warm schoolroom.'],
+        line: ['卢克：“烤盘被邻居借走了。我闻到靠坡那家的焦面包味。去看看他们是不是还在用。”', 'Luc: “The neighbors borrowed the baking tray. I can smell burnt bread from the house by the slope. Find out if they still need it.”'] },
+      { id: F.house, label: ['暖窗 · 找仍在使用的烤盘', 'Warm window · Find the tray in use'],
+        hint: ['沿亮着的窗户找到坡下住家，查看烟道。', 'Follow the lit windows to the house by the slope and inspect the flue.'],
+        line: ['烤盘盖在裂开的炉口上。主人说烟道一直漏风。补好烟道能换回烤盘，也可以让他们留下烤盘和这间暖屋。', 'The tray covers a cracked stove mouth. The flue leaks. Patch it and take the tray back, or leave it with the household so the room stays warm.'] },
+      { id: F.plan, label: ['暖房门口 · 决定烤盘的去向', 'Warm house · Decide where the tray goes'],
+        hint: ['在暖房选择修烟道换烤盘，或把烤盘留在这里。', 'At the warm house, decide whether to patch the flue or leave the tray.'],
+        line: ['修好烟道后能把烤盘交还卢克。也能留下烤盘，让邻居继续照看暖屋和屋顶通道。', 'A repaired flue lets you bring the tray back to Luc. Leaving it here lets the neighbors keep the warm room and rooftop path open.'] },
+      { id: F.report, label: ['雪中教室 · 告诉卢克结果', 'Schoolroom · Tell Luc what happened'],
+        hint: ['回教室向卢克交代烤盘的去向。', 'Return to the schoolroom and tell Luc where the tray ended up.'],
+        line: ['卢克把炉子的画夹进下一趟货单。有人会在谷地收到一封短短的消息。', 'Luc tucks the oven drawing into the next freight slip. Someone in the Valley will get a short note.'] },
+    ],
+  },
+  {
+    id: 'winter-shoes', region: 'winter', title: ['不属于任何一边的鞋', 'Shoes for Neither Side'],
+    available: done => done.has('napoleon_meet') || done.has('winter_core'),
+    steps: [
+      { id: SH.line, label: ['废井 · 沿三种鞋的脚印找人', 'Old well · Follow the three kinds of shoes'],
+        hint: ['在废井边找两军旧靴和一双儿童鞋，沿它们往储藏间走。', 'Find two soldiers’ boots and a child’s shoe by the well, then follow them to the store.'],
+        line: ['有的靴跟磨得外翻，有的鞋底缝过两次。三双鞋都朝同一扇低门。', 'One heel is worn outward. Another sole has been sewn twice. All three pairs point toward a low door.'] },
+      { id: SH.cellar, label: ['低门下 · 和老鞋匠交谈', 'Below the low door · Meet the cobbler'],
+        hint: ['沿放着鞋楦的低道进储藏间。', 'Follow the low passage past the shoe lasts into the store.'],
+        line: ['老人说，有些人还没来取鞋。他可以留下把路标立起来，也可以带工具去渡口，只要下一班的人知道去哪找。', 'The cobbler is still waiting for people to collect their shoes. He can put up a sign and stay, or take his tools to the crossing if the next group knows where to find him.'] },
+      { id: SH.choose, label: ['鞋匠的桌 · 安排下一班接应', 'Cobbler’s table · Arrange the next handoff'],
+        hint: ['在储藏间选择双面路标或渡口临时摊。', 'Choose a two-sided sign at the store or a temporary stall at the crossing.'],
+        line: ['留下能让两条雪路都找到储藏间，去渡口则能当面接到等鞋的人。', 'A sign guides both snow roads to the store. A stall lets the cobbler meet the people waiting at the crossing.'] },
+    ],
+  },
+  {
+    id: 'winter-range', region: 'winter', title: ['炮兵的刻度', 'The Gunner’s Scale'],
+    available: done => done.has(ADVENTURE.road) || done.has('winter_core'),
+    steps: [
+      { id: WR.meet, label: ['红堤旧炮台 · 扶正测距尺', 'Redoubt battery · Set up the range staff'],
+        hint: ['走到炮台边，把真炮兵留下的测距尺立起来。', 'Reach the battery and set up the range staff the gunner left.'],
+        line: ['炮兵：“撤退以后，还能用这尺做什么？来，从脊线看断桥、风口和低弯，打一份实际看得见的测绘。”', 'Gunner: “What good is this staff after a withdrawal? Walk the ridge and sight the broken bridge, wind gap and lower bend.”'] },
+      { id: WR.crest, label: ['脊线标架 · 对准断桥', 'Ridge sight · Range the broken bridge'],
+        hint: ['沿脊线到第一座标架，对准断桥方向。', 'Follow the ridge to the first frame and take a bearing toward the bridge.'],
+        line: ['断桥在炮线外。沿低处看风是怎么拐过来的。', 'The bridge is outside the firing lane. Look down the slope to see where the wind turns.'] },
+      { id: WR.valley, label: ['避风点 · 对准低谷的信号旗', 'Sheltered sight · Range the valley flag'],
+        hint: ['走到侧坡测风点，记录低谷的视线。', 'Walk to the flank station and record the valley sightline.'],
+        line: ['风从这条沟掠过去。到最后一个弯复核路线。', 'The wind crosses this gully. Check the route at the final bend.'] },
+      { id: WR.bend, label: ['低弯 · 核对两条运货视线', 'Lower bend · Verify both freight bearings'],
+        hint: ['从最后一个标架核对测得的两条路线。', 'Use the final sight to check both of the measured routes.'],
+        line: ['线连上了。炮兵能留在后卫放一轮烟，或去磨坊帮桥工安护栏。', 'The bearings meet. The gunner can give the rear guard one smoke volley or help the mill crew set up railings.'] },
+      { id: WR.choose, label: ['测距图 · 交给后卫或桥工', 'Survey sheet · Give it to the rear guard or bridge crew'],
+        hint: ['把测绘交给后卫排烟幕，或交给桥工提前安护栏。', 'Give the survey to the rear guard for smoke or to the bridge crew for railings.'],
+        line: ['烟幕会暂时压住后卫交战中的远射。护栏会提前布在磨坊近岸。炮兵只能先去一处。', 'Smoke will briefly suppress ranged fire in a rear-guard fight. Railings go up early at the mill approach. The gunner can serve one place first.'] },
     ],
   },
   {
@@ -269,6 +403,11 @@ export function fieldSideNext(story: SideStory, done: Flags) {
   return story.steps.find(step => !done.has(step.id) && (step.after?.(done) ?? true)) ?? null;
 }
 export function fieldSideReady(id: string, done: Flags) {
+  if (id === WR.trigger) return done.has(WR.smoke) && !done.has(WR.smokeUsed);
+  if (id === D.lookout) return done.has(D.choose);
+  if (id === C.rematch) return done.has(C.repair);
+  if (id === H.gangway || id === H.fight) return fieldSideReady(H.access, done);
+  if (id === B.board || id === B.returnFerry) return done.has(B.launch);
   if (id === P.return) return done.has(P.choice);
   if (id === L.courier) return done.has(L.counterweight);
   if (id === B.watch) return done.has(B.launch);
@@ -281,6 +420,13 @@ export function fieldSideReady(id: string, done: Flags) {
   return FIELD_SIDE_STORIES.some(story => fieldSideNext(story, done)?.id === id);
 }
 export const FIELD_SERVICE_LABELS = new Map<string, Localized>([
+  [WR.trigger, ['后卫烟幕信号 · 一次', 'Rear-guard smoke signal · One volley']],
+  [D.lookout, ['旧客船 · 登上安全观景甲板', 'Old passenger ship · Look out from the safe deck']],
+  [C.rematch, ['酒馆外桌 · 再投一轮', 'Tavern table · Throw another round']],
+  [H.gangway, ['后舷梯 · 让征召兵离开', 'Rear gangway · Let the conscripts leave']],
+  [H.fight, ['正面扣押岗 · 挑战守船兵', 'Seizure post · Confront the boat guards']],
+  [B.board, ['剑湖东岸 · 搭乘木舟', 'Sword Lake east landing · Ride the ferry']],
+  [B.returnFerry, ['剑湖西岸 · 搭乘木舟', 'Sword Lake west landing · Ride the ferry']],
   [P.return, ['河街 · 看交接安排', 'River street · Check the handoff']],
   [L.courier, ['纸架 · 再送一份样张', 'Paper rack · Send another test sheet']],
   [B.watch, ['剑湖观景栈台 · 看木舟试航', 'Sword Lake viewing deck · Watch the trial launch']],
