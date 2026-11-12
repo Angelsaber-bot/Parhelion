@@ -199,8 +199,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   bowl.add(broth);
   mealArt.root.add(bowl);
 
-  const medicineStart = new THREE.Vector3(...floor([windowSeat[0] - 3.6, windowSeat[1], windowSeat[2] - 4.6]));
-  const medicineStore = new THREE.Vector3(...floor([meal[0] + 3.4, meal[1], meal[2] - 4.6]));
+  const medicineFallback = new THREE.Vector3(...floor([meal[0] + 3.4, meal[1], meal[2] - 4.6]));
   const medicineCart = new THREE.Group();
   medicineCart.name = 'WinterReturnMedicineCart';
   const trolleyWood = new THREE.MeshStandardMaterial({ color: wood });
@@ -220,12 +219,11 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   medicineCart.add(box);
   const distributed = new THREE.Mesh(new THREE.BoxGeometry(.64, .29, .81), medicalBoxMaterial);
   distributed.name = 'WinterReturnMedicineDelivered';
-  distributed.position.copy(medicineStore).add(new THREE.Vector3(.81, .145, .28));
   distributed.rotation.y = .24;
   mealArt.root.add(medicineCart, distributed);
   const medicinePoint = new THREE.Vector3();
-  const medicineHeading = Math.atan2(medicineStore.x - medicineStart.x, medicineStore.z - medicineStart.z);
-  const medicineTravelSeconds = Math.max(3, medicineStart.distanceTo(medicineStore) / 1.85);
+  let medicineLane: THREE.Vector3[] | undefined;
+  let medicineHeading = 0, medicineTravelSeconds = 3;
   const medicineWorker = 'journey_winter_medicine_worker';
   let medicineTravel: number | undefined;
   let medicineAvailable = false;
@@ -337,7 +335,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   }
 
   const residents = createSettlementNpcs([
-    { id: medicineWorker, region: 'alpha', role: ['药箱搬运员', 'Medicine porter'], position: medicineStart.toArray(), yaw: medicineHeading, appearance: { coat: 0x637e73 }, lines: [] },
+    { id: medicineWorker, region: 'alpha', role: ['药箱搬运员', 'Medicine porter'], position: medicineFallback.toArray(), appearance: { coat: 0x637e73 }, lines: [] },
     { id: 'journey_visitor_actor', region: 'alpha', role: ['王城访客', 'Kingdom visitor'], position: [bx, by, bz], yaw: Math.PI / 2, appearance: { coat: 0xa4885a, carry: 'sack' }, lines: [] },
     { id: 'journey_qin_work_actor', region: 'alpha', worldRegion: 'qin', role: ['工匠', 'Worker'], position: [march[0] - 3.2, march[1], march[2]], appearance: { coat: 0x7f6249, carry: 'sack' }, lines: [] },
     { id: 'journey_orleans_relief_actor', region: 'alpha', worldRegion: 'orleans', role: ['接应队', 'Relief crew'], position: orleans, yaw: Math.PI / 2, appearance: { coat: 0x864b42, carry: 'sack' }, lines: [] },
@@ -407,7 +405,10 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     medicineAvailable = done.has(J.meal) || journeyStepReady(J.meal, done);
     mealArt.root.visible = medicineAvailable;
     if (medicineTravel === undefined || !medicineAvailable) medicineTravel = done.has(J.meal) ? 1 : 0;
-    if (medicineAvailable) placeMedicine();
+    if (medicineAvailable) {
+      medicineLane ??= buildMedicineLane();
+      placeMedicine();
+    }
     mealArt.layers.get('resolved')!.visible = done.has(J.mealGear);
     mealArt.layers.get('choiceB')!.visible = done.has(J.mealSketch);
     const mealSeat = done.has(J.mealWindow) ? windowSeat : meal;
@@ -448,17 +449,53 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     placeCart();
     a.root.updateMatrixWorld(true);
   }
+  function buildMedicineLane() {
+    // Sample the live collision field once. The trolley follows those heights
+    // without casting a terrain ray on each animation frame.
+    const candidates = [
+      [-5, -5, 8, 0], [-5, -7, 8, 0], [-5, -9, 8, 0],
+      [-5, 4.5, 8, 0], [-5, 7, 8, 0], [6, -5, 0, 7],
+      [-7, -4, 0, 7], [-4, -11, 6, 0], [1, -9, 5, 0],
+      [-4, 9, 6, 0], [9, -4, 0, 6],
+    ];
+    for (const [offsetX, offsetZ, dx, dz] of candidates) {
+      const length = Math.hypot(dx, dz);
+      const samples = Math.ceil(length / .32);
+      const lane: THREE.Vector3[] = [];
+      for (let i = 0; i <= samples; i++) {
+        const x = meal[0] + offsetX + dx * i / samples;
+        const z = meal[2] + offsetZ + dz * i / samples;
+        const y = ground(x, z, meal[1] + 1.8);
+        if (y === null || y < 1.15 || lane.length && Math.abs(y - lane.at(-1)!.y) > .22) break;
+        const point = new THREE.Vector3(x, y, z);
+        if (!clear(point.clone().add(new THREE.Vector3(0, .1, 0)))) break;
+        lane.push(point);
+      }
+      if (lane.length !== samples + 1) continue;
+      medicineHeading = Math.atan2(dx, dz);
+      medicineTravelSeconds = Math.max(3, length / 1.85);
+      return lane;
+    }
+    // Older maps can supply a tighter porch. Keep the handover usable there.
+    medicineTravel = 1;
+    return [medicineFallback];
+  }
   function placeMedicine() {
+    if (!medicineLane?.length) return;
     const travel = medicineTravel ?? 0;
-    medicinePoint.copy(medicineStart).lerp(medicineStore, travel);
-    medicinePoint.y = ground(medicinePoint.x, medicinePoint.z, medicinePoint.y + .8) ?? medicinePoint.y;
+    const offset = (medicineLane.length - 1) * travel;
+    const index = Math.floor(offset);
+    const from = medicineLane[index], to = medicineLane[index + 1] ?? from;
+    medicinePoint.copy(from).lerp(to, offset - index);
     medicineCart.position.copy(medicinePoint);
     medicineCart.rotation.y = medicineHeading;
+    medicineCart.visible = medicineLane.length > 1;
     box.visible = travel < 1;
     distributed.visible = travel >= 1;
-    const offset = travel >= 1 ? .95 : -.86;
+    if (distributed.visible) distributed.position.copy(medicinePoint).add(new THREE.Vector3(.81, .145, .28));
+    const porterOffset = travel >= 1 ? .95 : -.86;
     residents.pose(medicineWorker, [
-      medicinePoint.x + Math.sin(medicineHeading) * offset, medicinePoint.y, medicinePoint.z + Math.cos(medicineHeading) * offset,
+      medicinePoint.x + Math.sin(medicineHeading) * porterOffset, medicinePoint.y, medicinePoint.z + Math.cos(medicineHeading) * porterOffset,
     ], medicineHeading);
   }
   function placeBridge() {

@@ -147,7 +147,8 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (id === J.cutoff || id === J.bypass) return !valleyRouteOpen(done);
   if (id === J.egyptRead || id === J.orleansRead) return dispatchReady(done);
   if (id === J.qinRead) return reached(done, J.egyptDone, J.orleansDone);
-  if (id === J.skyBearing || id === J.skySight) return reached(done, J.qinDone, J.egyptDone, J.orleansDone) && (!done.has(F.nightDone) || done.has(F.roofSight) || done.has(J.skyBearing));
+  if (id === J.skyBearing || id === J.skySight)
+    return done.has(J.egyptDone) && (!done.has(F.nightDone) || done.has(F.roofSight) || done.has(J.skyBearing));
   if (id === F.nightStart) return valleyRouteOpen(done) && !done.has(J.handover);
   if (id === F.dimWatch || id === F.soundDecoy) return !nightTacticReady(done);
   if (id === F.nightPatrol) return nightTacticReady(done) && !done.has(F.patrolCleared);
@@ -159,7 +160,8 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (id === F.drillStart) return reached(done, F.doorLoad, J.orleansDone);
   if (id === F.drillCart || id === F.drillObserver) return !done.has(F.drillDone) && !done.has(F.drillCart) && !done.has(F.drillObserver);
   if (id === F.drillDone) return done.has(F.drillBeacon);
-  if (id === J.handover && done.has(F.nightDone)) return done.has(F.drillDone);
+  if (id === J.handover)
+    return reached(done, J.egyptDone, J.orleansDone, J.qinDone) && (!done.has(F.nightDone) || done.has(F.drillDone));
   if (id === F.towerLow || id === F.towerHigh) return done.has(F.drillDone) && !towerApproachVerified(done);
   if (id === J.groundWatch && done.has(F.nightDone)) return towerApproachVerified(done);
   if (id === F.chair) return done.has(J.epilogue) && done.has(F.drillDone);
@@ -227,11 +229,11 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
     if (!nightAuthorityOpen(done)) return at(F.radioRemove);
     return at(done.has(F.nightBrace) ? F.nightDone : F.nightBrace);
   }
+  if (!done.has(J.skySight) && (done.has(J.qinDone) || (here === 'alpha' && done.has(J.egyptDone)))) {
+    if (done.has(F.nightDone) && !done.has(F.roofSight) && !done.has(J.skyBearing)) return at(F.roofSight);
+    return at(done.has(J.skyBearing) ? J.skySight : J.skyBearing);
+  }
   if (done.has(J.qinDone)) {
-    if (!done.has(J.skySight)) {
-      if (done.has(F.nightDone) && !done.has(F.roofSight) && !done.has(J.skyBearing)) return at(F.roofSight);
-      return at(done.has(J.skyBearing) ? J.skySight : J.skyBearing);
-    }
     if (done.has(F.nightDone) && !done.has(J.handover)) {
       const missing = [F.replay, F.disconnect, F.doorPower, F.doorDisconnect, F.doorRequest, F.doorNear, F.doorFar, F.doorLoad, F.drillStart, F.drillBeacon, F.drillDone].find(id => !done.has(id));
       if (missing) return at(missing);

@@ -1,4 +1,4 @@
-name: Validate World medicine delivery
+name: Validate Valley delivery and early observations
 on:
   pull_request:
     branches: [main]
@@ -26,7 +26,4 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: ./node_modules/.bin/tsc --noEmit
       - run: node --import tsx --test validation/mirror-lake-brace.test.ts
-      - name: Check public World entry
-        if: always()
-        continue-on-error: true
-        run: curl --fail --silent --show-error --retry 2 'https://parhelion-game.pages.dev/world/' | grep -oE 'assets/index-[A-Za-z0-9_-]+\.js'
+      - run: node --import tsx --test --test-name-pattern='seven-region route' validation/world-journey.test.ts
