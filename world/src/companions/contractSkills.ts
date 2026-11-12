@@ -1,9 +1,9 @@
 import type { Point3 } from '../combat/combat';
 import { strikeContains, type StrikeOriginGeometry } from '../combat/combatActions';
-import type { ServantId } from './contracts';
+import type { CompanionId } from './contracts';
 
 export type SkillSlot = 'skill' | 'ultimate';
-export type SkillIdentity = ServantId | null;
+export type SkillIdentity = CompanionId | null;
 interface Pattern { at: number; range: number; halfWidth: number; damage: number; maxTargets: number }
 export interface SkillDefinition {
   name: string; nameEn: string; cooldown: number; duration: number;
@@ -11,7 +11,7 @@ export interface SkillDefinition {
 }
 const pulse = (at: number, range: number, halfWidth: number, damage: number, maxTargets = 3): Pattern => ({ at, range, halfWidth, damage, maxTargets });
 /** Budgets are per target, not per rendered particle. No effect teleports its caster. */
-export const CONTRACT_SKILLS: Readonly<Record<ServantId | 'player', Readonly<Record<SkillSlot, SkillDefinition>>>> = {
+export const CONTRACT_SKILLS: Readonly<Record<CompanionId | 'player', Readonly<Record<SkillSlot, SkillDefinition>>>> = {
   player: {
     skill: { name: '破阵脉冲', nameEn: 'Disruption Pulse', cooldown: 7, duration: .6, guard: .65, pulses: [pulse(.25, 3.8, 2.1, 30)] },
     ultimate: { name: '曙光反击', nameEn: 'Dawn Counter', cooldown: 24, duration: 1.1, guard: 1.1, pulses: [pulse(.55, 6, 3, 90)] },
@@ -31,6 +31,18 @@ export const CONTRACT_SKILLS: Readonly<Record<ServantId | 'player', Readonly<Rec
   musashi: {
     skill: { name: '二天双斩', nameEn: 'Twin Heavens', cooldown: 7, duration: .8, pulses: [pulse(.2, 4.8, 2.5, 27), pulse(.5, 5.4, 2.8, 29)] },
     ultimate: { name: '无空连刃', nameEn: 'Void Blades', cooldown: 26, duration: 1.4, pulses: [pulse(.35, 6, 3, 48), pulse(.65, 6.5, 3, 48), pulse(1, 7, 3.2, 60)] },
+  },
+  jeanne: {
+    skill: { name: '战旗格挡', nameEn: 'Banner Parry', cooldown: 9, duration: 1.3, guard: 1.35, pulses: [pulse(.74, 5.8, 2.9, 35)] },
+    ultimate: { name: '奥尔良之旗', nameEn: 'Banner of Orleans', cooldown: 28, duration: 2.9, guard: 3.0, pulses: [pulse(1.22, 9, 3.8, 46, 4), pulse(2.08, 11, 4.5, 80, 4)] },
+  },
+  ozymandias: {
+    skill: { name: '日轮贯照', nameEn: 'Solar Lance', cooldown: 8, duration: 1.1, pulses: [pulse(.69, 22, 1.15, 49, 2)] },
+    ultimate: { name: '王冠日轮', nameEn: 'Crown of the Sun', cooldown: 30, duration: 2.65, pulses: [pulse(1.13, 23, 2.4, 54, 3), pulse(1.86, 26, 3.1, 100, 4)] },
+  },
+  qinShiHuang: {
+    skill: { name: '铜令定阵', nameEn: 'Bronze Edict', cooldown: 8, duration: 1.35, pulses: [pulse(.58, 8, 2.4, 23), pulse(.98, 12, 2.5, 29)] },
+    ultimate: { name: '六合行令', nameEn: 'Imperial Mandate', cooldown: 30, duration: 2.75, pulses: [pulse(.82, 9, 2.2, 28), pulse(1.32, 15, 3.1, 42), pulse(2.1, 20, 4, 84, 4)] },
   },
 };
 interface SkillPose extends StrikeOriginGeometry { identity: SkillIdentity; slot: SkillSlot; origin: Point3; direction: Point3 }

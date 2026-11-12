@@ -1,14 +1,15 @@
 /** Production input/collision test with a non-GPU renderer and explicit preboot
- * four-region evidence. Synthetic kills isolate the finale's state authority. */
+ * regional handovers and a connected independent circuit. Synthetic kills isolate the finale's state authority. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
 import {ADVENTURE as A} from '../src/story/openWorldCampaign';
 import {WORLD_PROGRESS_KEY} from '../src/core/progress';
 import {HARBOR_RELIEF as R,HARBOR_MEDICINE_LANE,HARBOR_MERCHANT_LANE} from '../src/story/harborRelief';
+import {JOURNEY as J} from '../src/story/worldJourney';
 import {VALLEY_PROLOGUE} from '../src/story/valleyPrologue';
-test('adventure actual main: four-region evidence leads to emitters, Warden, tower, evacuation and saved ending',async()=>{
- const flags=[A.started,A.online,'armory_rack','saber_contract','sun_core','sea_core','blackbeard_contract',A.departed,'winter_core','napoleon_contract',A.arrived,'fire_core','musashi_contract',A.evidence];
+test('adventure actual main: regional handovers lead to emitters, Warden, tower, and saved evacuation before the sky handover',async()=>{
+ const flags=[A.started,A.online,'armory_rack','saber_contract','sun_core','sea_core','blackbeard_contract',A.departed,'winter_core','napoleon_contract',A.arrived,'fire_core','musashi_contract',A.evidence,J.egyptDone,J.orleansDone,J.qinDone,J.groundWatch];
  const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{[WORLD_PROGRESS_KEY]:JSON.stringify({done:flags,found:[]})}}),w=h.world,d=h.window.document;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};
  const key=(held:boolean)=>d.body.dispatchEvent(new h.window.KeyboardEvent(held?'keydown':'keyup',{code:w.settings.bindingsFor('interact')[0],bubbles:true,cancelable:true}));
@@ -34,8 +35,11 @@ test('adventure actual main: four-region evidence leads to emitters, Warden, tow
   }
   place('adventure_guardian');tap();assert.equal(w.combat.storyEncounter?.id,'adventure_guardian');clear();assert.ok(w.done.has(A.guardian));
   place('adventure_tower');tap();hold();assert.ok(w.done.has(A.takeover),d.getElementById('toast')?.textContent);
-  place('adventure_exit');tap();assert.ok(w.done.has(A.escaped));place('adventure_tomorrow');tap();assert.ok(w.done.has(A.ending),d.getElementById('toast')?.textContent);
-  assert.ok(JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY)!).done.includes(A.ending));assert.equal(h.errors.length,0);
+  place('adventure_exit');tap();assert.ok(w.done.has(A.escaped));
+  place('adventure_tomorrow');tap();assert.equal(w.done.has(A.ending),false);
+  assert.match(d.getElementById('toast')?.textContent??'',/天穹观测冠/);
+  const saved = JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY)!);
+  assert.ok(saved.done.includes(A.escaped));assert.equal(saved.done.includes(A.ending),false);assert.equal(h.errors.length,0);
  }finally{await h.close();}
 });
 test('adventure actual main: harbor relief, side boarding, Admiral victory and merchant departure',async()=>{

@@ -4,6 +4,14 @@ import { loadCharacterKit, type CharacterKit } from '../characters/characterKit'
 import type { Collider } from '../player/player';
 import { CompanionNavigation } from './companionNavigation';
 import { KitCompanion } from './kitCompanion';
+import { CONTRACT_SKILLS, type SkillDefinition, type SkillSlot } from './contractSkills';
+import { validSkillPose, type SkillPoseCommand } from '../combat/skillPose';
+
+const REGIONAL_POSE_WINDOWS: Record<ModelCompanionId, Record<SkillSlot, { startAt: number; rate: number }>> = {
+  jeanne: { skill: { startAt: .55, rate: 2.4 }, ultimate: { startAt: 2.1, rate: 1.8 } },
+  ozymandias: { skill: { startAt: .15, rate: 2.5 }, ultimate: { startAt: .15, rate: 1.05 } },
+  qinShiHuang: { skill: { startAt: 1.12, rate: 2.2 }, ultimate: { startAt: .65, rate: 1.85 } },
+};
 
 export interface ModelCompanionOptions {
   scene: THREE.Scene;
@@ -35,6 +43,7 @@ export class ModelCompanion {
   private generation = 0;
   private disposed = false;
   private placed = false;
+  private pose?: { command: SkillPoseCommand; definition: SkillDefinition; elapsed: number; next: number; forward: THREE.Vector3 };
   private readonly navigation: CompanionNavigation;
   private readonly follow: KitCompanion;
   private readonly clearanceBox = new THREE.Box3();
@@ -98,6 +107,47 @@ export class ModelCompanion {
     return this.startLoad(this.chosen);
   }
 
+  startSkillPose(id: ModelCompanionId, command: SkillPoseCommand, player: THREE.Vector3) {
+    const actor = this.current;
+    if (id !== this.chosen || !actor?.root.visible || !this.placed || this.pose || !validSkillPose(command) ||
+        actor.root.position.distanceTo(player) >= 16 || !this.canPlace(actor.root.position)) return false;
+    const slot = command.slot ?? 'skill', definition = CONTRACT_SKILLS[id][slot];
+    if (command.contacts !== definition.pulses.length || !actor.definition.clips.presentation) return false;
+    this.follow.release(actor);
+    const forward = new THREE.Vector3(command.direction.x, 0, command.direction.z).normalize();
+    actor.root.rotation.y = Math.atan2(forward.x, forward.z);
+    if (!actor.play('presentation', { restart: true, ...REGIONAL_POSE_WINDOWS[id][slot] })) return false;
+    this.pose = { command, definition, elapsed: 0, next: 0, forward };
+    return true;
+  }
+
+  cancelSkillPose() {
+    const pose = this.pose;
+    if (!pose) return;
+    this.pose = undefined;
+    this.current?.play('idle');
+    pose.command.onFinish(false);
+  }
+
+  private advancePose(actor: CharacterKit, dt: number) {
+    const pose = this.pose;
+    if (!pose) return false;
+    if (!Number.isFinite(dt) || dt <= 0) return true;
+    const end = Math.min(pose.definition.duration, pose.elapsed + Math.min(dt, .1));
+    const pulses = pose.definition.pulses;
+    while (pose.next < pulses.length && pulses[pose.next].at <= end + 1e-9) {
+      const at = pulses[pose.next++].at;
+      actor.update(Math.max(0, at - pose.elapsed)); pose.elapsed = at;
+      pose.command.onContact(actor.root.position, pose.forward);
+      if (this.pose !== pose) return true;
+    }
+    actor.update(Math.max(0, end - pose.elapsed)); pose.elapsed = end;
+    if (end >= pose.definition.duration) {
+      this.pose = undefined; actor.play('idle'); pose.command.onFinish(true);
+    }
+    return true;
+  }
+
   private startLoad(id: ModelCompanionId): Promise<void> {
     const generation = this.generation, controller = new AbortController();
     this.controller = controller;
@@ -132,6 +182,7 @@ export class ModelCompanion {
     if (!enabled) {
       actor.root.visible = false;
       this.placed = false;
+      this.cancelSkillPose();
       this.follow.release(actor);
       return;
     }
@@ -140,8 +191,10 @@ export class ModelCompanion {
     if (this.placed && !this.canPlace(actor.root.position)) {
       actor.root.visible = false;
       this.placed = false;
+      this.cancelSkillPose();
       this.follow.release(actor);
     }
+    if (this.advancePose(actor, dt)) return;
     if (!this.placed) {
       const safe = this.navigation.safeReturn(player, yaw, { side: -1, canPlace: this.canPlace });
       if (!safe) return; // Do not place the actor in midair or through an obstacle.
@@ -159,6 +212,7 @@ export class ModelCompanion {
     this.controller?.abort();
     this.controller = undefined;
     this.pending = undefined;
+    this.cancelSkillPose();
     this.follow.release(this.current);
     this.current?.dispose();
     this.current = undefined;

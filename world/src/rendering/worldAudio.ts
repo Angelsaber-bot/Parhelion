@@ -166,6 +166,18 @@ export class WorldAudio {
           this.voice('sine',final?.24:.14,final?160:210,final?.11:.045,.6);
         }else{this.voice('noise',.12,1900+event.pulse*450,.095);this.voice('triangle',.13,520+event.pulse*130,.045,1.65);}
         break;
+      case 'jeanne':
+        this.voice('sine',ultimate?.62:.31,392,.06,.997);
+        this.voice('triangle',.24,784+event.pulse*160,.035,.88);
+        break;
+      case 'ozymandias':
+        this.voice('noise',.13,1950,.075);
+        this.voice('triangle',ultimate?.46:.29,225,.068,2.1+event.pulse*.28);
+        break;
+      case 'qinShiHuang':
+        this.voice('sine',.25,124+event.pulse*36,.098,.72);
+        this.voice('triangle',.34,442+event.pulse*64,.035,1.005);
+        break;
       default:this.skill();
     }
   }

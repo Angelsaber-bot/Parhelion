@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ContractSkills, type SkillSlot, type SkillEvent } from '../companions/contractSkills';
 import { SkillPresentation } from './skillPresentation';
 import { PlayerMelee, PlayerEvade } from '../player/playerMelee';
-import { SERVANTS, type ServantId } from '../companions/contracts';
+import { COMPANIONS, type CompanionId } from '../companions/contracts';
 import type { Point3, HitContext } from './combat';
 import type { StrikeRequest, StrikeResult } from './combatActions';
 import type { ResolvedSkillAim } from './skillAim';
@@ -11,21 +11,21 @@ import { bilingual } from '../../../shared-client/i18n';
 export interface ActionPoseCommand extends SkillPoseCommand {}
 export interface WorldActionContext {
  enabled: boolean; clockRunning?: boolean; grounded: boolean; armed: boolean; bladeReady: boolean; bladeFailed?: boolean;
- position: Point3; yaw: number; moveX: number; moveZ: number; identity: ServantId | null;
+ position: Point3; yaw: number; moveX: number; moveZ: number; identity: CompanionId | null;
 }
 export interface WorldActionOptions {
  scene: THREE.Object3D;
  context(): WorldActionContext;
  strike(request: StrikeRequest, source: HitContext['source']): StrikeResult;
  defense(value: {guard:number;invulnerable:boolean}):void;
- startPose(identity:ServantId, command:ActionPoseCommand):boolean;
+ startPose(identity:CompanionId, command:ActionPoseCommand):boolean;
  cancelPoses():void;
  toast(message:string):void;
  reducedEffects():boolean;
  bladeDirection?():Point3;
  bladeOrigin?():Point3;
  cue?(kind:'melee'|'skill'|'evade'):void;
- resolveAim?(identity:ServantId,slot:SkillSlot):ResolvedSkillAim|null;
+ resolveAim?(identity:CompanionId,slot:SkillSlot):ResolvedSkillAim|null;
  contactPoint?(id:string):Point3|null;
  skillEvent?(event:SkillEvent):void;
  onCast?(event: Extract<SkillEvent,{type:'cast'}>):void;
@@ -71,7 +71,7 @@ export class WorldActions {
    // fallback. MountedCharge is different: startPose validates a live target and
    // a horse-sized approach BEFORE payment, so a safe approach may close range.
    if(c.identity&&c.identity!=='napoleon'&&slot==='ultimate'&&(!aim.targetId||!aim.targetPoint)){
-     const servant=SERVANTS.find(value=>value.id===c.identity)!;
+     const servant=COMPANIONS.find(value=>value.id===c.identity)!;
      const range=Math.max(...this.skills.definition(slot).pulses.map(pulse=>pulse.range));
      this.options.toast(c.identity==='saber'
        ? bilingual('Saber 尚未锁定可命中的敌人：瞄准同层、无遮挡且距她18米内的敌人。能量未消耗。','Saber has no reachable target. Aim at an unobstructed enemy on her level within 18m of her. Energy was not spent.')

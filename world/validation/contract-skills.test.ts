@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { ContractSkills, CONTRACT_SKILLS, skillContains, type SkillStrike } from '../src/companions/contractSkills.ts';
+import { COMPANIONS } from '../src/companions/contracts';
 import { SkillPresentation } from '../src/combat/skillPresentation.ts';
 import * as THREE from 'three';
 import { WorldCombatState } from '../src/combat/combat.ts';
@@ -8,7 +9,7 @@ const context = () => ({ enabled: true, origin: { x: 0, y: 0, z: 0 }, direction:
 function advance(s: ContractSkills, seconds: number) { for (let t = 0; t < seconds - 1e-8; t += .1) s.update(.1, true); }
 function charge(s: ContractSkills) { for (let i = 0; i < 10; i++) { s.recordDamage({ id: `enemy${i}`, damage: 100, eligible: true, source: 'weapon' }); advance(s, 1); } }
 test('all identities have bounded distinct skill and ultimate patterns', () => {
-  assert.equal(Object.keys(CONTRACT_SKILLS).length, 5);
+  assert.deepEqual(new Set(Object.keys(CONTRACT_SKILLS)), new Set(['player', ...COMPANIONS.map(c => c.id)]));
   for (const d of Object.values(CONTRACT_SKILLS)) {
     assert.ok(d.skill.cooldown >= 7);
     const normal = d.skill.pulses.reduce((n, p) => n + p.damage, 0), ult = d.ultimate.pulses.reduce((n, p) => n + p.damage, 0);
@@ -56,7 +57,7 @@ test('presentation reuses pool/geometry/materials, reduced flash, idempotent dis
   const geometry = new Set(), materials = new Set();
   fx.root.traverse(o => { if (o instanceof THREE.Mesh) { geometry.add(o.geometry); materials.add(o.material); } });
   for (let i = 0; i < 100; i++) fx.show(e, true);
-  assert.equal(fx.root.children.length, 18); assert.equal(geometry.size, 10); assert.equal(materials.size, 18);
+  assert.equal(fx.root.children.length, 18); assert.equal(geometry.size, 16); assert.equal(materials.size, 18);
   fx.root.traverse(o => { if (o instanceof THREE.Mesh) assert.ok(o.material.opacity <= .12); });
   fx.update(.1, false); assert.ok(fx.root.children.every(o => !o.visible)); fx.dispose(); fx.dispose(); assert.equal(scene.children.length, 0);
 });

@@ -1,3 +1,4 @@
+import { EGYPT_WATER_RECORD } from './egyptGauge';
 import { QIN_ARMY } from '../map/qinPlan';
 import { EGYPT_MIRRORS } from '../map/egyptPlan';
 import { ORLEANS_WORKS as O } from '../map/orleansWorks';
@@ -16,7 +17,7 @@ export const JOURNEY = {
   cargoCall: 'journey_cargo_dispatch', cargoSwitch: 'journey_cargo_switch', cargoPin: 'journey_cargo_coupler',
   cargoParked: 'journey_cargo_parked', cargo: 'journey_cargo_claimed', signalLamp: 'journey_test_return_lamp', signal: 'journey_rooftop_signal', compare: 'journey_compare_feed',
   cutoff: 'journey_gate_cutoff', bypass: 'journey_gate_bypass',
-  egyptRead: 'journey_egypt_riverbed', egyptWeir: 'journey_egypt_weir', egyptTie: 'journey_egypt_shear_pin', egyptDone: 'journey_egypt_water_returned',
+  egyptRead: EGYPT_WATER_RECORD, egyptWeir: 'journey_egypt_weir', egyptTie: 'journey_egypt_shear_pin', egyptDone: 'journey_egypt_water_returned',
   orleansRead: 'journey_orleans_muster', orleansFlag: 'journey_orleans_flag_handoff', orleansBattery: 'journey_orleans_disable_battery',
   orleansBrace: 'journey_orleans_battery_brace', orleansDone: 'journey_orleans_crossing_open',
   qinRead: 'journey_qin_workers', qinMarch: 'journey_qin_march', qinHalt: 'journey_qin_halt', qinTurn: 'journey_qin_turn', qinDone: 'journey_qin_public_order',

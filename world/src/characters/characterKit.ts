@@ -132,7 +132,7 @@ export class CharacterKit {
   get state() { return this.currentState; }
   get clipTime() { return this.elapsed; }
   get playbackRate() { return this.rate; }
-  play(state: string, options: { restart?: boolean; speed?: number; rate?: number; catchUp?: boolean } = {}) {
+  play(state: string, options: { restart?: boolean; speed?: number; rate?: number; catchUp?: boolean; startAt?: number } = {}) {
     if (this.disposed) return false;
     const contract = this.definition.clips[state], next = this.actions.get(state);
     if (!contract || !next) return false;
@@ -158,7 +158,8 @@ export class CharacterKit {
     const phase = gaitChange && previous && previousContract ? previous.time / previousContract.duration : 0;
     // A stop/start can re-enter a gait while it is still visible in an unfinished fade.
     // Keep that action's time too; resetting a 70%-weighted arm/leg pose causes a pop.
-    const startTime = gaitChange ? phase * contract.duration : !options.restart && contract.loop && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0 ? next.time : 0;
+    const offset = options.restart && Number.isFinite(options.startAt) ? THREE.MathUtils.clamp(options.startAt!, 0, contract.duration) : 0;
+    const startTime = gaitChange ? phase * contract.duration : !options.restart && contract.loop && next.enabled && next.isScheduled() && next.getEffectiveWeight() > 0 ? next.time : offset;
     this.currentState = state; this.elapsed = startTime; this.emitted.clear(); this.generation++;
     this.blend.start(next, previous === next ? 0 : this.transition, () => {
       next.reset().setEffectiveTimeScale(this.rate).setLoop(contract.loop ? THREE.LoopRepeat : THREE.LoopOnce, contract.loop ? Infinity : 1).play();

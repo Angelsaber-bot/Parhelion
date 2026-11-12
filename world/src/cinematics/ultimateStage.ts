@@ -1,3 +1,4 @@
+import { isRegionalStageIdentity, RegionalUltimateArt } from './regionalUltimateArt';
 import { ultimateReadability } from './ultimateReadability';
 import { MusashiWindupCamera } from './musashiWindupCamera';
 import { CaptainCavalryCamera } from './captainCavalryCamera';
@@ -19,11 +20,13 @@ import { ultimateEnergyGeometry } from '../combat/ultimateEnergy';
 import { buildMaritimeShip } from '../../tools/gen/blacksail/ships';
 import { clone as cloneSkeleton } from 'three/examples/jsm/utils/SkeletonUtils.js';
 export type UltimateStagePhase = 'intro' | 'charge' | 'release' | 'outro';
-export interface UltimateStageBegin { identity: string; sourceRoot: THREE.Object3D; clips?: readonly THREE.AnimationClip[]; reducedEffects?: boolean; }
+export interface UltimateStageBegin { identity: string; sourceRoot: THREE.Object3D; clips?: readonly THREE.AnimationClip[]; chargeClip?: string; reducedEffects?: boolean; }
 export interface UltimateStageFrame { elapsed: number; phase: UltimateStagePhase; progress: number; pulse: number; sourceRoot?: THREE.Object3D; reduced?: boolean; strikeCount?: number; }
 const palettes: Record<string, [number, number, number]> = {
   saber: [0x090e19, 0xffd47c, 0xffefbd], blackbeard: [0x07141e, 0xf5ac52, 0x6ec1d3],
   napoleon: [0x233248, 0xffe5a1, 0xf5f7ff], musashi: [0xc5bcbc, 0xb6284d, 0x2678af],
+  jeanne: [0x182334, 0xffe8b3, 0x9bc6df], ozymandias: [0x26170e, 0xffc568, 0xe77f43],
+  qinshihuang: [0x162625, 0x9fe8cc, 0xcfaa72],
 };
 const clamp = (n: number) => THREE.MathUtils.clamp(Number.isFinite(n) ? n : 0, 0, 1);
 /** Isolated full-canvas presentation: no gameplay events or ownership of source assets. */
@@ -45,6 +48,7 @@ export class UltimateStage {
   private eraPerformance?: ReturnType<typeof createEraUltimatePerformance>;
   private blackbeardArt?: BlackbeardStageArt; private mountedArt?: MountedStageArt; private musashiArt?: MusashiStageArt; private mountedTravel = 0; private mountedReleaseAt = -1; private mountedReleaseOrigin = 0;
   private eraCinema?: EraCinematicRemake;
+  private regionalArt?: RegionalUltimateArt;
   private captainCamera?: CaptainCavalryCamera;
   private musashiCamera?: MusashiWindupCamera;
   private bloomFailed = new WeakSet<THREE.WebGLRenderer>(); private bloomComposer?: EffectComposer; private bloomPass?: UnrealBloomPass; private bloomRenderer?: THREE.WebGLRenderer; private bloomWidth=0;private bloomHeight=0;
@@ -76,7 +80,7 @@ export class UltimateStage {
       // Canonicalize only the PRIVATE clone before framing and pose calibration.
       // A cast during running/attack must not freeze a lifted foot into the stage.
       this.mixer.update(0);
-      const attack = options.clips.find(c => /attack/i.test(c.name));
+      const attack = options.clips.find(c => c.name === options.chargeClip) ?? options.clips.find(c => /attack/i.test(c.name));
       if (attack) { this.chargeAction = this.mixer.clipAction(attack); this.chargeAction.setLoop(THREE.LoopOnce, 1); this.chargeAction.clampWhenFinished = true; }
     }
     this.clone.updateMatrixWorld(true);
@@ -161,6 +165,10 @@ export class UltimateStage {
     if (['blackbeard','napoleon','musashi'].includes(this.identity)) {this.eraCinema=new EraCinematicRemake(this.actor,this.clone,this.identity,eraOwner);this.effects.add(this.eraCinema.root);}
     if (this.identity === 'musashi') { this.musashiArt=new MusashiStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.musashiArt.root); }
     if (this.identity === 'napoleon') { this.mountedArt=new MountedStageArt(this.actor,this.clone,eraOwner);this.effects.add(this.mountedArt.root); }
+    if (isRegionalStageIdentity(this.identity)) {
+      this.regionalArt = new RegionalUltimateArt(this.identity, eraOwner);
+      this.effects.add(this.regionalArt.root);
+    }
     this.active = true; this.update({ elapsed: 0, phase: 'intro', progress: 0, pulse: 0 });
   }
   private material(color: number, opacity: number) {
@@ -282,6 +290,7 @@ export class UltimateStage {
       this.actor.position.z = this.mountedTravel;
       this.camera.position.z += this.mountedTravel; this.aim.z += this.mountedTravel;
     } else this.actor.position.z = 0;
+    this.regionalArt?.update(frame, this.camera, this.aim, this.reduced);
     this.saberCinema?.update(frame,this.camera,this.reduced);
     this.eraCinema?.update(frame,this.camera,this.reduced);if(this.eraCinema && (this.clone?.getObjectByName('Head') || this.clone?.getObjectByName('mixamorigHead')))this.aim.copy(this.eraCinema.aim);
     if(this.musashiCamera)this.aim.copy(this.musashiCamera.update(frame,this.camera,this.reduced,this.aim));
@@ -359,6 +368,7 @@ export class UltimateStage {
     }
   }
   end() {
+    this.regionalArt = undefined;
     this.active = false; this.musashiCamera=undefined; this.captainCamera=undefined; this.eraCinema?.dispose();this.eraCinema=undefined; this.saberFace?.dispose();this.saberFace=undefined; this.saberCinema?.dispose();this.saberCinema=undefined; this.mountedArt?.dispose();this.mountedArt=undefined;this.musashiArt?.dispose();this.musashiArt=undefined;this.mountedTravel=0;this.mountedReleaseAt=-1;this.mountedReleaseOrigin=0;this.blackbeardArt?.dispose(); this.blackbeardArt = undefined; this.eraPerformance?.dispose(); this.eraPerformance = undefined; this.performance?.dispose(); this.performance = undefined; this.saberArt?.dispose(); this.saberArt = undefined; this.mixer?.stopAllAction(); if (this.clone) this.mixer?.uncacheRoot(this.clone); this.mixer = undefined; this.idleAction = undefined; this.chargeAction = undefined; this.charging = false;
     // SkeletonUtils skeletons are private; source geometry/materials/textures are never disposed.
     const skeletons = new Set<THREE.Skeleton>(); this.clone?.traverse(o => { if ((o as THREE.SkinnedMesh).isSkinnedMesh) skeletons.add((o as THREE.SkinnedMesh).skeleton); }); skeletons.forEach(s => s.dispose());

@@ -1,3 +1,7 @@
+import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
+import { CROOKED_EFFIGY as CE, CULTURAL_STEPS, SHADOW_PLAY as SP, culturalStepReady } from './story/realmCulturalStories';
+import { createEgyptGaugeScene } from './environment/egyptGaugeScene';
+import { EGYPT_GAUGE as G, EGYPT_GAUGE_BY_ID, EGYPT_GAUGE_CHOICES, EGYPT_GAUGE_KEEPER, EGYPT_GAUGE_TITLE, egyptGaugeNext, type EgyptGaugeAction } from './story/egyptGauge';
 import {orleansResidentSockets,createOrleansResidentLife} from './map/orleansResidents';
 import {qinResidentSockets,createQinResidentLife} from './map/qinResidents';
 import {egyptResidentSockets,createEgyptResidentLife} from './map/egyptResidents';
@@ -585,6 +589,27 @@ if (realmClimaxSites) {
   }
   addEventListener('pagehide', event => { if (!event.persisted) realmClimaxSites.dispose(); });
 }
+const egyptGaugeScene = createEgyptGaugeScene((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null,
+  p => residentQueries.clear(p, .38, 1.8));
+if (egyptGaugeScene) {
+  world.add(egyptGaugeScene.root); colliders.push(egyptGaugeScene.collider); layout.markers.push(...egyptGaugeScene.markers);
+  egyptGaugeScene.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) egyptGaugeScene.dispose(); });
+}
+let gaugeKeeperSpeaking = false;
+const culturalGround = (x: number, z: number, ceiling: number) => residentQueries.ground(x, z, ceiling)?.point.y ?? null;
+const culturalClear = (p: THREE.Vector3) => residentQueries.clear(p, .38, 1.8);
+const orleansShadowPlay = createOrleansShadowPlay(culturalGround, culturalClear);
+const qinCrookedEffigy = createQinCrookedEffigy(culturalGround, culturalClear);
+for (const site of [orleansShadowPlay, qinCrookedEffigy]) {
+  if (!site) continue;
+  world.add(site.root); colliders.push(site.collider); layout.markers.push(...site.markers);
+  site.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) site.dispose(); });
+}
+let shadowPlayCue: { afterSiege: boolean; swallowtail: boolean } | null = null;
+let qinPotterSpeaking = false;
+
 let activeRealmClimax: ReturnType<typeof createRealmClimax> | null = null;
 // 奥尔良外圈: the mill wheel, the windmill sails and the region's own air.
 const orleansOutskirts=createOrleansOutskirtsScene();world.add(orleansOutskirts.root);
@@ -687,7 +712,7 @@ let narrative: ReturnType<typeof createNarrativePanel> | undefined;
 let homeTown:ReturnType<typeof createHomeTown>|undefined;
 let ultimateDirector: UltimateDirector | undefined;
 let ultimateStage: UltimateStage | undefined;
-let ultimateSource: { identity: ServantId | null; root: THREE.Object3D } | null = null;
+let ultimateSource: { identity: CompanionId | null; root: THREE.Object3D } | null = null;
 let optionalPin: OptionalPin | null = null;
 let questTrackedId: string | null = null;
 let questJournal: ReturnType<typeof createQuestJournal> | undefined;
@@ -778,6 +803,8 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (CULTURAL_STEPS.has(id)) return !(orleansShadowPlay?.playing && (id === SP.rope || id === SP.encore)) && culturalStepReady(id, done);
+  if (EGYPT_GAUGE_BY_ID.has(id)) return egyptGaugeNext(done)?.id === id;
   if (id === F.nightPatrol && combat.storyEncounter?.id === VALLEY_NIGHT_ENCOUNTER) return false;
   const realm = realmStationByMarker.get(id);
   if (realm) return realm.station === 'start' ? !activeRealmClimax && journeyClimaxReady(realm.region, done)
@@ -795,6 +822,10 @@ function journeyMarkerActive(id: string) {
 function interactionLabel(marker: Marker) {
   if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const cultural = CULTURAL_STEPS.get(marker.id);
+    if (cultural) return bilingual(...cultural.label);
+    const gaugeStep = EGYPT_GAUGE_BY_ID.get(marker.id);
+    if (gaugeStep) return bilingual(gaugeStep.label[0], gaugeStep.label[1]);
     const field = VALLEY_FIELD_BY_ID.get(marker.id);
     if (field) return bilingual(...field.label);
     const realm = realmStationByMarker.get(marker.id);
@@ -1282,12 +1313,15 @@ const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof
 const napoleonMeetingPoints=new Map(['napoleon_meet','napoleon_contract'].map(id=>[id,[...markers.get(id)!.p] as [number,number,number]]));
 let eraActorsDisposed = false;
 let inspectServant = false;
-const servantRoot = () => {
-  const id = contract.following;
+function companionKit(id: CompanionId | null) {
+  if (id && isModelCompanionId(id)) return modelCompanion.selected === id ? modelCompanion.actor : undefined;
+  return eraActors.find(entry => entry.servant === id)?.actor;
+}
+function companionRoot(id: CompanionId | null) {
   if (id === 'saber') return servant.root;
-  if (id && isModelCompanionId(id)) return modelCompanion.selected === id ? modelCompanion.actor?.root : undefined;
-  return eraActors.find(entry => entry.servant === id)?.actor?.root;
-};
+  return companionKit(id)?.root;
+}
+const servantRoot = () => companionRoot(contract.following);
 // Same studio light as Saber's model (scene.environment is unset), so every servant reads equally lit.
 let servantEnv: THREE.Texture | undefined;
 const servantEnvironment = () => {
@@ -1427,6 +1461,7 @@ function resetProgress() {
   if(typeof homeTown!=='undefined')homeTown?.activities.reset();
   campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset();
   if (typeof helionFight !== 'undefined') helionFight.reset();
+  shadowPlayCue = null; orleansShadowPlay?.reset();
   if (typeof stopRealmClimax === 'function') stopRealmClimax();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
@@ -1675,14 +1710,14 @@ actions = new WorldActions({ scene,
   context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !residentEventRuntime?.carrying && !player.flying && !player.swimming && !player.gliding,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
-    identity: contract.skillIdentity }),
+    identity: contract.following }),
   strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(!reducedEffects())hitStop=Math.max(hitStop,hitStopSeconds(source,result.hits,result.kills.length));if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
   cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type !== 'guard') coop.skillFx(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
   onCast: event => { actionHud.announce(event); beginUltimate(event); },
   contactPoint: id => { const enemy = combat.state.enemies.find(e => e.id === id); return enemy ? { ...enemy.p } : null; },
   resolveAim: (identity, slot) => {
-    const root = identity === 'saber' ? servant.root : eraActors.find(e => e.servant === identity)?.actor?.root;
+    const root = companionRoot(identity);
     if (!root?.visible || root.position.distanceTo(player.pos) >= 16) return null;
     const range = Math.max(...CONTRACT_SKILLS[identity][slot].pulses.map(pulse => pulse.range));
     return resolveServantSkillAim({ player: player.pos, caster: root.position, viewOrigin: camera.position, viewDirection: camera.getWorldDirection(new THREE.Vector3()), range, assistNearby: identity === 'saber' && slot === 'skill', preferredTargetId: identity === 'saber' ? servant.engagedTargetId : undefined, enemies: combat.state.enemies, terrain: combat.geometry.terrain });
@@ -1691,11 +1726,12 @@ actions = new WorldActions({ scene,
     if (identity === 'saber') return servant.root.visible && servant.root.position.distanceTo(player.pos) < 16 && servant.startSkillPose({ ...command,
       trackTarget: command.slot === 'skill' && command.targetId ? () => trackServantSkillTarget(servant.root.position, command.targetId!, Math.max(...CONTRACT_SKILLS.saber.skill.pulses.map(pulse => pulse.range)), combat.state.enemies, combat.geometry.terrain) : undefined,
     });
+    if (isModelCompanionId(identity)) return modelCompanion.startSkillPose(identity, command, player.pos);
     if(identity==='napoleon'&&cavalrySupport?.busy)return false;
     const entry = eraActors.find(e => e.servant === identity);
     return !!entry?.actor?.root.visible && entry.actor.root.position.distanceTo(player.pos) < 16 && entry.follow.startSkillPose(entry.actor, command, player.pos, player.yaw);
   },
-  cancelPoses: () => { servant.cancelSkillPose(); for (const entry of eraActors) if(entry.servant!=='napoleon'||!cavalrySupport?.ownsActor)entry.follow.cancelSkillPose(entry.actor); },
+  cancelPoses: () => { servant.cancelSkillPose(); modelCompanion.cancelSkillPose(); for (const entry of eraActors) if(entry.servant!=='napoleon'||!cavalrySupport?.ownsActor)entry.follow.cancelSkillPose(entry.actor); },
 });
 actions.melee.style = worldMelee(equippedMeleeId)!;
 ultimateStage = new UltimateStage();
@@ -1706,8 +1742,8 @@ ultimateDirector = new UltimateDirector({ cutInUrls: {
   musashi: new URL('../assets/cinematics/musashi-cut-in-v2.webp', import.meta.url).href,
 }, reducedEffects, onEnd: () => { audio.cinematicFrame(null); ultimateStage?.end(); ultimateSource = null; hudRevision++; } });
 document.querySelector('#world-settings .settings-sliders')?.after(ultimateDirector.settingsControl);
-function presentationModel(identity: ServantId | null): THREE.Object3D | null {
-  return identity === null ? rig.model : identity === 'saber' ? servant.presentationModel : eraActors.find(entry => entry.servant === identity)?.actor?.model ?? null;
+function presentationModel(identity: CompanionId | null): THREE.Object3D | null {
+  return identity === null ? rig.model : identity === 'saber' ? servant.presentationModel : companionKit(identity)?.model ?? null;
 }
 function beginUltimate(event: Extract<SkillEvent, { type: 'cast' }>) {
   if (event.slot !== 'ultimate' || !ultimateDirector || !ultimateStage || ultimateDirector.active) return;
@@ -1715,9 +1751,10 @@ function beginUltimate(event: Extract<SkillEvent, { type: 'cast' }>) {
   keys.clear(); aim.clear();
   ultimateSource = { identity: event.identity, root: model };
   if (!ultimateDirector.begin(event.identity ?? 'player')) { ultimateSource = null; return; }
-  const clips = event.identity === 'saber' ? servant.presentationClips : event.identity ? eraActors.find(entry => entry.servant === event.identity)?.actor?.presentationClips : [];
+  const kit = companionKit(event.identity);
+  const clips = event.identity === 'saber' ? servant.presentationClips : kit?.presentationClips;
   if (ultimateDirector.showing) {
-    try { ultimateStage.begin({ identity: event.identity ?? 'player', sourceRoot: model, clips, reducedEffects: reducedEffects() || ultimateDirector.frame?.reduced }); }
+    try { ultimateStage.begin({ identity: event.identity ?? 'player', sourceRoot: model, clips, chargeClip: kit?.definition.clips.presentation?.name, reducedEffects: reducedEffects() || ultimateDirector.frame?.reduced }); }
     catch (error) { ultimateStage.end(); ultimateDirector.skip(); console.warn('Ultimate stage unavailable; continuing the original cast without close-up.', error); }
   }
   hudRevision++;
@@ -1727,7 +1764,7 @@ function abortUltimate() { ultimateDirector?.abort(); ultimateStage?.end(); ulti
  * advance here; all other world clocks stay frozen in Full, Short and Off. */
 function frameUltimate(dt: number): boolean {
   if (!ultimateDirector?.active || !ultimateStage || !ultimateSource || !actions) return false;
-  const identity = contract.skillIdentity;
+  const identity = contract.following;
   if (combat.defeated || identity !== ultimateSource.identity || presentationModel(identity) !== ultimateSource.root) { abortUltimate(); return false; }
   const suspended = document.visibilityState !== 'visible' || !document.hasFocus() || settingsPanel.open || servantPanel.open;
   keys.clear(); aim.clear(); acc = 0; prevPos.copy(player.pos);
@@ -1741,6 +1778,7 @@ function frameUltimate(dt: number): boolean {
       const step = Math.min(STEP, remaining); remaining -= step;
       actions.update(step);
       if (identity === 'saber') servant.update(step, player.pos, player.yaw, true, false);
+      else if (identity && isModelCompanionId(identity)) modelCompanion.update(step, player.pos, anim.facing - Math.PI, companionEnabled(), false);
       else if (identity) { const entry = eraActors.find(value => value.servant === identity); if (entry?.actor) entry.follow.update(entry.actor, step, player.pos, anim.facing - Math.PI, false); }
       actions.flush();
     }
@@ -1866,8 +1904,8 @@ arenaTrainingOpen.onclick=event=>{event.stopPropagation();arenaTrainingPanel.sho
 addEventListener('pagehide',event=>{if(!event.persisted){arenaTrainingPanel.dispose();arenaTrainingOpen.remove();unsubscribeArenaTraining();}});
 // ───────────── two-player co-op (coop/worldCoop.ts) ─────────────
 const coopServer=(()=>{const value=params.get('coop');return value&&/^wss?:\/\//.test(value)?value:undefined;})();
-const coop=new WorldCoop(scene,renderer,{combat,toast,onPing:()=>audio.contact(),partnerShot:(muzzle,end)=>combat.shot(muzzle,end,false),identities:SERVANTS.map(s=>s.id),
-  partnerSkill:fx=>{const origin={x:fx.o[0],y:fx.o[1],z:fx.o[2]},direction={x:fx.d[0],y:fx.d[1],z:fx.d[2]},pose={identity:fx.identity as ServantId|null,slot:fx.slot,origin,direction,...(fx.feet!==undefined?{casterFeetY:fx.feet}:{}),...(fx.los!==undefined?{losOffset:fx.los}:{})};
+const coop=new WorldCoop(scene,renderer,{combat,toast,onPing:()=>audio.contact(),partnerShot:(muzzle,end)=>combat.shot(muzzle,end,false),identities:COMPANIONS.map(s=>s.id),
+  partnerSkill:fx=>{const origin={x:fx.o[0],y:fx.o[1],z:fx.o[2]},direction={x:fx.d[0],y:fx.d[1],z:fx.d[2]},pose={identity:fx.identity as CompanionId|null,slot:fx.slot,origin,direction,...(fx.feet!==undefined?{casterFeetY:fx.feet}:{}),...(fx.los!==undefined?{losOffset:fx.los}:{})};
     actions?.effects.show(fx.type==='strike'?{...pose,type:'strike',pulse:fx.pulse!,at:0,range:fx.range!,halfWidth:fx.hw!,damage:0,maxTargets:0}:{...pose,type:'cast',duration:fx.dur!},reducedEffects());},outlines:!params.has('noline'),server:coopServer,onStatus:()=>{if(coopPanel.open)coopPanel.render();renderCoopButton();}});
 /** Co-op ping: the enemy under the crosshair, else the surface it points at (within 150 m). */
 function coopPing() {
@@ -2225,8 +2263,82 @@ function startValleyNightPatrol() {
   combat.refillAmmo();
   toast(bilingual(...VALLEY_FIELD_BY_ID.get(F.nightPatrol)!.result));
 }
+function interactEgyptGauge(id: EgyptGaugeAction) {
+  if (id === G.align) {
+    clearInput(); audio.interaction();
+    narrative?.showChoices(['盐线已经干透，井底是旧泥。只有中间那道潮痕仍在往上爬。把指针锁在哪一格？',
+      'The salt is dry. The silt is old. Only the middle stain still creeps upward. Where should the pointer lock?'],
+    EGYPT_GAUGE_TITLE, EGYPT_GAUGE_CHOICES, selected => {
+      const marker = markers.get(id);
+      if (!marker || !journeyMarkerActive(id) || combat.defeated || player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2)
+        || !canReachValleyPanel(marker)) return;
+      if (selected !== 'seep') {
+        toast(bilingual('水尺对不上活水。再看仍在向上爬的痕迹。', 'The reading misses the live water. Look for the stain still climbing.'));
+        return;
+      }
+      done.add(id); saveJourneyProgress(); audio.explore('solve');
+      toast(bilingual('铜针锁住了第二刻度。去找帕赫核对这次读数。', 'The bronze pointer locks onto the second mark. Check the reading with Pahek.'));
+    });
+    return;
+  }
+  done.add(id); saveJourneyProgress();
+  if (id === G.trace) {
+    speakDialogue(['井口明明没有涨水，墙上却有一股细水向上爬。循着潮湿的石块去低井找旧水尺。',
+      'The well hasn’t risen, yet a thin trickle climbs the wall. Follow the damp stones to the old gauge.'], EGYPT_GAUGE_TITLE);
+    return;
+  }
+  gaugeKeeperSpeaking = true;
+  egyptGaugeScene?.gesture();
+  speakDialogue(done.has(JOURNEY.egyptDone)
+    ? ['父亲教我用第一道刻度量退水。你找回的第二道能在水压反冲前报信。明天我就教接班的人读它。',
+      'My father taught me to read the receding water on the first mark. Your second mark warns us before the pressure surges. Tomorrow I’ll teach it to the next shift.']
+    : ['父亲教我用第一道刻度量退水。第二道会在反冲前震响。我会把井铃接到汇水台。听见第一声就离开湿线。',
+      'My father taught me to read the receding water on the first mark. The second rings before backflow. I’ll link the well bell to the forebay. Leave the wet line on the first ring.'],
+  EGYPT_GAUGE_KEEPER);
+}
+function interactCulturalStory(id: string) {
+  const theatre: [string, string] = ['纸影戏班', 'Shadow troupe'];
+  const afterSiege = done.has(JOURNEY.orleansDone);
+  function startShadowPlay(swallowtail: boolean) {
+    if (!orleansShadowPlay) return;
+    shadowPlayCue = { afterSiege, swallowtail };
+    orleansShadowPlay.start(afterSiege, swallowtail);
+    audio.bell();
+    toast(bilingual('纸幕亮了。站在牵绳旁，看演员把旗传过去。', 'The paper screen lights up. Stay by the rope to watch the flag change hands.'));
+  }
+  if (id === SP.rope || id === SP.encore) {
+    if (id === SP.encore) { startShadowPlay(done.has(SP.swallowtail)); return; }
+    clearInput(); audio.interaction();
+    narrative?.showChoices(['旗还没上杆。你想让哪个样式留在这出戏里？', 'The flag hasn’t gone up yet. Which design should we keep in the play?'], theatre,
+      [{ id: 'pennant', label: ['金色尖旗', 'Gold pennant'] }, { id: 'swallowtail', label: ['蓝色燕尾旗', 'Blue swallowtail'] }], choice => {
+        const m = markers.get(id);
+        if (m && journeyMarkerActive(id) && !combat.defeated && player.pos.distanceTo(new THREE.Vector3(...m.p)) <= (m.radius ?? 2) && canReachValleyPanel(m)) {
+          startShadowPlay(choice === 'swallowtail');
+        }
+      });
+    return;
+  }
+  done.add(id); saveJourneyProgress();
+  if (id === SP.discover) {
+    speakDialogue(['守钟人把落幕绳借走了，演员只好拿擀面杖挑旗。绕到屏风另一侧，帮他们拉一次牵绳。',
+      'The bell keeper borrowed the curtain cord, so the actors are holding up the flag with a rolling pin. Go around the screen and give their rope a pull.'], theatre);
+  } else if (id === CE.turn) {
+    speakDialogue(['转盘把歪脸朝里，背上露出两枚手印，一大一小。刻痕边上还有湿泥，陶工应该就在旁边。',
+      'The stand turns the tilted face inward, revealing two handprints, one large and one small. The clay around them is damp. The potter must be nearby.'], ['窑场制俑台', 'Kiln worktable']);
+  } else {
+    qinPotterSpeaking = true; qinCrookedEffigy?.gesture();
+    speakDialogue(done.has(JOURNEY.qinDone)
+      ? ['她本来按着泥问我，守门的为什么不能笑。如今这尊放门外，谁路过都能看到她的手印。',
+        'She pressed the clay and asked why a guard couldn’t smile. It’ll stand outside now, where everyone can see her handprint.']
+      : ['小手印是我女儿的。她问守门的为什么不能笑，我只好先捏一个给她看。等门重开，就让这尊迎第一批客。',
+        'The small handprint is my daughter’s. She asked why a guard couldn’t smile, so I made her one. When the gates reopen, this one can greet the first visitors.'],
+    ['陶工路容', 'Lu Rong, potter']);
+  }
+}
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (EGYPT_GAUGE_BY_ID.has(id)) { interactEgyptGauge(id as EgyptGaugeAction); return; }
+  if (CULTURAL_STEPS.has(id)) { interactCulturalStory(id); return; }
   const realm = realmStationByMarker.get(id);
   if (realm) { operateRealmClimax(realm.region, realm.station); return; }
   if (id === F.nightPatrol) { startValleyNightPatrol(); return; }
@@ -3108,6 +3220,23 @@ function frame(now: number) {
   valleyPrologueScene?.update(gameplayActive() ? dt : 0, settlementNpcs.pose);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
+  if (!narrative?.open) { gaugeKeeperSpeaking = false; qinPotterSpeaking = false; }
+  qinCrookedEffigy?.update(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, qinPotterSpeaking);
+  if (orleansShadowPlay?.update(done, gameplayActive() && !combat.defeated ? dt : 0, player.pos) && shadowPlayCue) {
+    const { afterSiege, swallowtail } = shadowPlayCue;
+    shadowPlayCue = null;
+    done.add(SP.rope);
+    if (afterSiege) done.add(SP.encore);
+    if (swallowtail) done.add(SP.swallowtail);
+    saveJourneyProgress();
+    speakDialogue(afterSiege
+      ? ['这一幕改成了两个人接旗。工兵和船工都来看了，我们得给他们留个座。',
+        'This time two people carry the flag. The engineers and ferrymen came to watch. We should save them a seat.']
+      : ['擀面杖终于退场了。我们把你的旗样留在幕边。等河桥通了，再来看下一出。',
+        'The rolling pin can retire. We’ll keep your flag beside the screen. Come see our next play when the bridge reopens.'],
+    ['纸影戏班', 'Shadow troupe']);
+  }
+  egyptGaugeScene?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, gaugeKeeperSpeaking);
   if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
   orleansAtmosphere.update(dt,player.pos);orleansOutskirts.update(dt,player.pos);
   if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);

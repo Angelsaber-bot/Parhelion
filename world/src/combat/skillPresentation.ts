@@ -1,7 +1,10 @@
 import * as THREE from 'three';
 import { skillContains, type SkillStrike, type SkillEvent } from '../companions/contractSkills';
 import type { Point3 } from './combat';
-const COLORS: Record<string, number> = { player: 0x91d6cf, melee: 0xb5e2dd, saber: 0xdbb36b, blackbeard: 0xf3ad78, napoleon: 0x83b7e1, musashi: 0xcca4e0 };
+const COLORS: Record<string, number> = {
+  player: 0x91d6cf, melee: 0xb5e2dd, saber: 0xdbb36b, blackbeard: 0xf3ad78, napoleon: 0x83b7e1, musashi: 0xcca4e0,
+  jeanne: 0xffe3a1, ozymandias: 0xffa64f, qinShiHuang: 0x87d7b9,
+};
 export interface SkillVisualOptions { style?: 'melee'; origin?: Point3; bladeDirection?: Point3 }
 interface Effect { root: THREE.Group; bar: THREE.Mesh; ring: THREE.Mesh; material: THREE.MeshBasicMaterial; age: number; life: number; range: number; charge: boolean; cast: boolean; peak: number; style: string; width: number; motif: THREE.Mesh; contact: boolean }
 /** Two shared, open silhouettes. Vertex alpha feathers both edges and the pointed ends.
@@ -50,11 +53,11 @@ function contactGeometry() {
  * Only thin strokes, never filled rectangles, additive blending, lights or flashing planes. */
 function corridorGeometry(identity: string, ultimate: boolean) {
   const positions:number[]=[],colors:number[]=[],indices:number[]=[];
-  const stroke=(point:(t:number)=>[number,number,number],width=.055,vertical=false)=>{
-    const base=positions.length/3,steps=12;
+  const stroke=(point:(t:number)=>[number,number,number],width=.055,vertical=false,steps=12)=>{
+    const base=positions.length/3;
     for(let i=0;i<=steps;i++)for(let j=0;j<3;j++){
       const t=i/steps,[x,y,z]=point(t),edge=(j-1)*width*Math.sin(Math.PI*t);
-      positions.push(Math.max(-1,Math.min(1,x+(vertical?0:edge))),y+(vertical?edge:0),Math.max(.001,Math.min(.999,z)));
+      positions.push(Math.max(-.98,Math.min(.98,x+(vertical?0:edge))),y+(vertical?edge:0),Math.max(.001,Math.min(.999,z)));
       colors.push(1,.94,1,j===1?Math.pow(Math.sin(Math.PI*t),.4):0);
     }
     for(let i=0;i<steps;i++)for(let j=0;j<2;j++){const a=base+i*3+j,b=a+3;indices.push(a,b,a+1,b,b+1,a+1);}
@@ -71,13 +74,26 @@ function corridorGeometry(identity: string, ultimate: boolean) {
   } else if(identity==='napoleon') {
     for(const side of[-1,1])stroke(t=>[side*(.9-.5*t),0,t]);
     for(const offset of ultimate?[.08,.34,.60]:[.20])for(const side of[-1,1])stroke(t=>[side*.50*(1-t),.03,offset+t*.28]);
+  } else if (identity === 'jeanne') {
+    for (const depth of ultimate ? [.29, .56, .78] : [.58])
+      stroke(t => [2 * t - 1, Math.sin(Math.PI * t) * .96, depth - .28 * Math.abs(2 * t - 1)], .054, true, 8);
+    for (const side of [-1, 1]) stroke(t => [side * (.55 + .32 * t), .035, t], .04, false, 4);
+  } else if (identity === 'ozymandias') {
+    stroke(t => [0, .12, t], .075, true, 4);
+    for (const side of [-1, 1]) stroke(t => [side * (.18 + .51 * Math.sin(Math.PI * t)), Math.sin(Math.PI * t) * .62, t], .055, false, 8);
+    if (ultimate) stroke(t => [Math.cos(t * Math.PI * 2) * .58, .28 + Math.sin(Math.PI * t * 2) * .35, .86 + Math.sin(Math.PI * t * 2) * .1], .045, false, 12);
+  } else if (identity === 'qinShiHuang') {
+    for (const rank of ultimate ? [.27, .49, .72, .92] : [.40, .73]) {
+      stroke(t => [1.78 * t - .89, .08, rank], .06, true, 3);
+      for (const column of [-.63, 0, .63]) stroke(t => [column, .14 + Math.sin(t * Math.PI) * .48, rank - .15 + .21 * t], .032, false, 4);
+    }
   } else {
     // Alternating cutting planes, contained in the same broad close-range corridor.
     stroke(t=>[-.92+1.84*t,Math.sin(Math.PI*t)*.55,.08+.84*t],.065);
     stroke(t=>[.92-1.84*t,Math.sin(Math.PI*t)*.55,.08+.84*t],.065);
     if(ultimate)stroke(t=>[Math.sin(t*Math.PI*2)*.8,.15,.06+.88*t],.025);
   }
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Float32BufferAttribute(colors,4));g.setIndex(indices);g.computeBoundingSphere();return g;
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setAttribute('color',new THREE.Uint8BufferAttribute(colors.map(channel => Math.round(channel * 255)), 4, true));g.setIndex(indices);g.computeBoundingSphere();return g;
 }
 /** Fixed 18-slot pool; one visible draw per slot, shared immutable geometries.
  * Activation only changes transforms/materials; no GPU resources or timers allocated. */
@@ -86,7 +102,7 @@ export class SkillPresentation {
   private readonly barGeometry = ribbonGeometry('lance');
   private readonly ringGeometry = ribbonGeometry('arc');
   private readonly contactGeometry = contactGeometry();
-  private readonly motifs = Object.fromEntries(['saber','blackbeard','napoleon','musashi'].flatMap(id => [false,true].map(ultimate => [`${id}-${ultimate?'ultimate':'skill'}`,corridorGeometry(id,ultimate)])));
+  private readonly motifs = Object.fromEntries(['saber','blackbeard','napoleon','musashi','jeanne','ozymandias','qinShiHuang'].flatMap(id => [false,true].map(ultimate => [`${id}-${ultimate?'ultimate':'skill'}`,corridorGeometry(id,ultimate)])));
   private readonly effects: Effect[] = [];
   private readonly blade = new THREE.Vector3();
   private readonly tangent = new THREE.Vector3();

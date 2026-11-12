@@ -1,3 +1,4 @@
+import { EGYPT_GAUGE } from './egyptGauge';
 import type { Localized } from '../settlements/types';
 
 export const REALM_CLIMAX_IDS = ['egypt', 'orleans', 'qin'] as const;
@@ -160,7 +161,7 @@ export function createRealmClimax(id: RealmClimaxId, origin: ClimaxPoint, hooks:
         const shape = data().attack!;
         const x = player.x === origin.x && player.z === origin.z ? player.x + 1 : player.x;
         tell = { shape, from: origin, x, z: player.z, width: shape === 'circle' ? 4.3 : 1.55, length: 28 };
-        mode = 'locked'; time = 1.35; hooks.warn();
+        mode = 'locked'; time = id === 'egypt' && hooks.done.has(EGYPT_GAUGE.report) ? 2.15 : 1.35; hooks.warn();
       }
     },
   };

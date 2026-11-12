@@ -1,3 +1,5 @@
+import { CROOKED_EFFIGY as CE, SHADOW_PLAY as SP } from '../src/story/realmCulturalStories';
+import { EGYPT_GAUGE as G } from '../src/story/egyptGauge';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Vector3 } from 'three';
@@ -162,6 +164,24 @@ test('the repaired Lookback Bridge provides a walkable side crossing after the h
     for (let frame = 0; frame < 600 && walker.pos.x < x + 9.85; frame++) walker.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
     assert.ok(walker.pos.x >= x + 9.85 && walker.onGround, `crossing stopped at ${walker.pos.toArray()}`);
   } finally { await h.close(); }
+});
+
+test('Pahek’s completed gauge report adds time to both of Tide-Eater’s warning patterns', () => {
+  const origin = { x: 0, y: 5, z: 0 }, player = { x: 0, y: 5, z: 8 };
+  for (const phase of [0, 1]) {
+    for (const calibrated of [false, true]) {
+      const done = new Set<string>(phase ? [climaxCheckpoint('egypt', 0)] : []);
+      if (calibrated) done.add(G.report);
+      let damage = 0;
+      const fight = createRealmClimax('egypt', origin, { done, save() {}, warn() {}, hurt: n => { damage += n; } });
+      assert.ok(fight.start());
+      for (let i = 0; i < 154; i++) fight.update(.02, player);
+      assert.equal(Boolean(fight.tell), calibrated);
+      assert.equal(damage > 0, !calibrated);
+      for (let i = 0; i < 45; i++) fight.update(.02, player);
+      assert.ok(damage > 0);
+    }
+  }
 });
 
 test('regional fights checkpoint engineering and accept Qin’s nonlethal or early-defeat routes', () => {
@@ -360,6 +380,22 @@ test('production quest stands, three regional handovers and the sky finale work 
     interact(F.countPatch); interact(F.nightBrace); frame(285); interact(F.nightDone);
     assert.ok(w.done.has(F.nightDone));
     interact(J.egyptRead); assert.ok(w.done.has(J.egyptRead));
+    const dismiss = () => { for (let i = 0; i < 5 && w.narrative.open; i++) tap(); assert.equal(w.narrative.open, false); };
+    interact(G.trace); assert.ok(w.done.has(G.trace)); dismiss();
+    interact(G.align);
+    assert.ok(w.narrative.choosing);
+    d.querySelector<HTMLButtonElement>('[data-choice="salt"]')!.click();
+    assert.equal(w.done.has(G.align), false);
+    interact(G.align);
+    d.querySelector<HTMLButtonElement>('[data-choice="seep"]')!.click();
+    assert.ok(w.done.has(G.align));
+    frame(92);
+    const pointer = w.scene.getObjectByName('EgyptGaugePointer');
+    assert.ok(Math.abs(pointer.position.y - (marker(G.align).p[1] - .13)) < .02);
+    interact(G.report); assert.ok(w.done.has(G.report)); dismiss();
+    const persisted = JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY) ?? '{}');
+    for (const id of Object.values(G)) assert.ok(persisted.done.includes(id));
+
     EGYPT_MIRRORS.mirrors.forEach(({ id }, index) => {
       for (let turn = 0; turn < [3, 0, 2][index]; turn++) interact(id);
     });
@@ -372,7 +408,18 @@ test('production quest stands, three regional handovers and the sky finale work 
     shootPhase('egypt', 1, 'TideEaterTarget2');
     station('egypt', 'east'); assert.ok(w.done.has(climaxCleared('egypt')));
     frame(690); interact(J.egyptDone); assert.ok(w.done.has(J.egyptDone));
-    interact(J.orleansRead); hold(ORLEANS_WORKS.crane); hold(ORLEANS_WORKS.sluice);
+    interact(J.orleansRead);
+    interact(SP.discover); assert.ok(w.done.has(SP.discover)); dismiss();
+    interact(SP.rope); assert.ok(w.narrative.choosing);
+    d.querySelector<HTMLButtonElement>('[data-choice="swallowtail"]')!.click();
+    frame(120);
+    assert.equal(w.done.has(SP.rope), false);
+    const shadowFlag = w.scene.getObjectByName('ShadowPlayFlag');
+    const movingFlag = shadowFlag.position.clone();
+    frame(96);
+    assert.ok(shadowFlag.position.distanceTo(movingFlag) > .12);
+    frame(110); assert.ok(w.done.has(SP.rope)); assert.ok(w.done.has(SP.swallowtail)); dismiss();
+    hold(ORLEANS_WORKS.crane); hold(ORLEANS_WORKS.sluice);
     interact(J.orleansFlag); hold(ORLEANS_WORKS.bell);
     interact(J.orleansBattery); assert.ok(w.done.has(J.orleansBattery));
     station('orleans', 'start'); station('orleans', 'west');
@@ -380,7 +427,15 @@ test('production quest stands, three regional handovers and the sky finale work 
     station('orleans', 'east'); shootPhase('orleans', 1, 'BridgefortTarget2');
     station('orleans', 'west'); assert.ok(w.done.has(climaxCleared('orleans')));
     frame(260); interact(J.orleansDone); assert.ok(w.done.has(J.orleansDone));
-    interact(J.qinRead); interact(J.qinMarch);
+    interact(SP.encore); frame(330); assert.ok(w.done.has(SP.encore)); dismiss();
+    interact(J.qinRead); assert.ok(w.done.has(J.qinRead));
+    interact(CE.turn); assert.ok(w.done.has(CE.turn)); dismiss();
+    frame(95);
+    const effigy = w.scene.getObjectByName('QinClayStudy');
+    assert.ok(Math.abs(effigy.rotation.y - Math.PI) < .03);
+    const studio = effigy.position.clone();
+    interact(CE.maker); assert.ok(w.done.has(CE.maker)); dismiss();
+    interact(J.qinMarch);
     frame(500); interact(J.qinHalt); assert.ok(w.done.has(J.qinHalt));
     interact(QIN_ARMY.levers[1].id); frame(150);
     assert.ok(w.done.has(J.qinTurn));
@@ -388,6 +443,10 @@ test('production quest stands, three regional handovers and the sky finale work 
     station('qin', 'west'); station('qin', 'east'); station('qin', 'west');
     assert.ok(w.done.has(climaxCleared('qin'))); assert.equal(w.done.has(QIN_GENERAL_DOWN), false);
     interact(J.qinDone); assert.ok(w.done.has(J.qinDone));
+    frame(2); assert.ok(effigy.position.distanceTo(studio) > 4);
+    const culturalSave = JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY) ?? '{}');
+    for (const id of [SP.discover, SP.rope, SP.swallowtail, SP.encore, CE.turn, CE.maker]) assert.ok(culturalSave.done.includes(id));
+
     for (const id of [F.roofSight, J.skyBearing, J.skySight, F.replay, F.disconnect, F.doorPower, F.doorDisconnect, F.doorRequest, F.doorNear, F.doorFar, F.doorLoad, F.drillStart, F.drillBeacon]) {
       interact(id);
       assert.ok(w.done.has(id), `${id}: ${d.getElementById('prompt')?.textContent} (${w.player.pos.toArray()}, grounded ${w.player.onGround})`);

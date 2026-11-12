@@ -42,10 +42,6 @@ export class FirstContract {
   /** The contracted servant that is (or would be) following; falls back to the first contracted one. */
   get selected(): CompanionId | null { return this.has(this.chosen) ? this.chosen : this.roster[0] ?? null; }
   get following(): CompanionId | null { return this.active ? this.selected : null; }
-  get skillIdentity(): ServantId | null {
-    const id = this.following;
-    return SERVANTS.find(servant => servant.id === id)?.id ?? null;
-  }
   get companionSummoned() { return this.anyRecruited && this.active; }
   /** Saber is the active companion and summoned. */
   get summoned() { return this.isFollowing('saber'); }
