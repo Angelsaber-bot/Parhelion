@@ -5,18 +5,20 @@ import type { Collider } from '../player/player';
 import { mergeParts } from '../settlements/merge';
 import { SiteArt } from '../story/campaignSites';
 import { SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS, SHUTTER_SPAN, helionBeamDirection, type createHelionFight } from '../story/helionFight';
-import { JOURNEY as J, SKY_MARKERS as M, journeyStepReady, type JourneyPoint } from '../story/worldJourney';
+import { JOURNEY as J, SKY_MARKERS as M, type JourneyPoint } from '../story/worldJourney';
+import { addSkyCrownApproach, SKY_APPROACH_LANDING } from './skyCrownApproach';
 
 const [X, Y, Z] = SKY_ORIGIN;
 const p = (x: number, y: number, z: number): JourneyPoint => [X + x, Y + y, Z + z];
-export const SKY_LANDING = p(0, 0, 62);
+export const SKY_LANDING = SKY_APPROACH_LANDING;
 export const SKY_CHECKPOINT = p(0, 0, 24);
-export const insideSkyCrown = (position: { x: number; y: number; z: number }) => position.y > Y - 14 && Math.abs(position.x - X) < 55 && position.z > Z - 60 && position.z < Z + 91;
+export const insideSkyCrown = (position: { x: number; y: number; z: number }) => position.y > 129 && position.x > 19 && position.x < 347 && position.z > 105 && position.z < 350;
 
 export function createSkyCrownScene() {
   const a = new SiteArt();
   const slate = '#384f68', ivory = '#c5c5b5', gold = '#d3a85f', steel = '#263c51', glass = '#66b8b7', red = '#a15143';
-  const markers: Marker[] = [];
+  const approach = addSkyCrownApproach(a);
+  const markers: Marker[] = [...approach.markers];
   const post = (id: string, label: string, x: number, z: number, plate = true) => {
     markers.push({ id, label, p: p(x, 1, z), type: 'interact', radius: 2.25 });
     if (plate) {
@@ -42,7 +44,9 @@ export function createSkyCrownScene() {
     for (let offset = -span / 2 + .3; offset < span / 2; offset += 3.1) a.box(p(x + (alongX ? offset : 0), .52, z + (alongX ? 0 : offset)), [.11, 1.04, .11], ivory, true);
   };
   for (const side of [-1, 1]) {
-    rail(side * 10.3, 62, 17); rail(side * 5.4, 45, 19); rail(side * 18.3, 30, 13);
+    if (side < 0) rail(-10.3, 62, 17);
+    else { rail(10.3, 56.25, 5.5); rail(10.3, 69.5, 2); }
+    rail(side * 5.4, 45, 19); rail(side * 18.3, 30, 13);
     rail(side * 28.8, -10, 46); rail(side * 18.35, -36, 4.8);
     for (const x of [side * 11.9, side * 18.0]) rail(x, 19.2, 10.6);
     for (const z of [39, 45, 51, 56]) a.box(p(side * 4.6, .014, z), [.42, .026, 1.4], ivory);
@@ -72,20 +76,15 @@ export function createSkyCrownScene() {
     a.box(p(x, .065, 28), [3.2, .035, 1.2], glass, false, 'choiceA');
   }
   a.box(p(0, .015, 19), [1.1, .028, 10.5], glass, false, 'choiceB');
-  post(J.feed, '并联独立生活线路', -6.5, 58);
-  post(J.westService, '西侧维护旁路', -15, 21);
-  post(J.test, '旁路负荷台', 15, 29);
-  post(J.isolate, '机械隔离锁', -15, 29);
   post(M.start, '承日台 · 面对赫利昂', 0, 10);
   post(M.cache, '维修箱 · 战前补给', -3.4, 24);
   post(M.left, '转动西侧遮板', -8.75, -12, false);
   post(M.right, '转动东侧遮板', 8.75, -12, false);
   post(J.finish, '交接台 · 锁住紧急写入臂', 4.5, -24);
-  post(J.returnHome, '接驳架 · 回到幻日谷', 0, 65);
   a.finish('alpha'); a.root.name = 'SkyCrown';
 
   const solids = mergeParts(a.solids); a.solids.forEach(geometry => geometry.dispose());
-  const colliders: Collider[] = [{ name: 'COL_SkyCrownDecks', bvh: new MeshBVH(solids), enabled: true }];
+  const colliders: Collider[] = [{ name: 'COL_SkyCrownDecks', bvh: new MeshBVH(solids), enabled: true }, ...approach.colliders];
   const gateMat = new THREE.MeshStandardMaterial({ color: steel, emissive: red, emissiveIntensity: .3 });
   const gates = [-15, 0, 15].map(x => {
     const geometry = new THREE.BoxGeometry(x === 0 ? 9 : 6, 2.8, .28).translate(...p(x, 1.4, 14));
@@ -93,10 +92,6 @@ export function createSkyCrownScene() {
     const collider: Collider = { name: `COL_${node.name}`, bvh: new MeshBVH(geometry), enabled: true };
     colliders.push(collider); return { node, collider };
   });
-  const latchMat = new THREE.MeshStandardMaterial({ color: '#f1c45a', emissive: '#de9e2b', emissiveIntensity: .7 });
-  const latch = new THREE.Mesh(new THREE.BoxGeometry(.65, .48, .36), latchMat);
-  latch.name = 'SkyEnforcementLatch'; latch.position.fromArray(p(15, 1.44, 14.25)); latch.userData.target = J.eastLatch;
-  a.root.add(latch);
   const shutterMat = new THREE.MeshStandardMaterial({ color: '#2f5862', metalness: .25, roughness: .45 });
   const slitMat = new THREE.MeshBasicMaterial({ color: glass });
   const shutterGeo = new THREE.BoxGeometry(SHUTTER_SPAN, 3.05, .32);
@@ -138,7 +133,7 @@ export function createSkyCrownScene() {
     a.layers.get('choiceB')!.visible = done.has(J.isolate);
     frame.visible = !done.has(J.finish);
     for (const { node, collider } of gates) node.visible = collider.enabled = !done.has(J.isolate);
-    latch.visible = journeyStepReady(J.eastLatch, done);
+    approach.apply(done);
   }
   function update(fight: ReturnType<typeof createHelionFight>, seconds: number) {
     shutters.forEach(({ node, variants }, i) => {
@@ -171,11 +166,11 @@ export function createSkyCrownScene() {
     tellBeam.rotation.y = Math.atan2(d.x, d.z);
     tellBeam.scale.set(tell.width * 2, 1, distance);
   }
-  return { root: a.root, markers, targets: [core, ...emitters, latch], colliders, apply, update, dispose() {
+  return { root: a.root, markers, targets: [core, ...emitters, ...approach.targets], colliders, apply, update, updateApproach: approach.update, dispose() {
     const geometries = new Set<THREE.BufferGeometry>(colliders.map(collider => collider.bvh.geometry));
     a.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
     geometries.forEach(geometry => geometry.dispose());
-    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, latchMat, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
+    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, ...approach.materials, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
     colliders.forEach(collider => { collider.enabled = false; }); a.root.removeFromParent();
   } };
 }

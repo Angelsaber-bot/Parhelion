@@ -6,6 +6,8 @@ export const VALLEY_PROLOGUE = {
   steward: 'alpha_steward',
   apprentice: 'valley_prologue_azhou',
   worker: 'valley_prologue_guqiao',
+  room: 'valley_prologue_pack_radio',
+  workshop: 'valley_prologue_radio_handoff',
   briefed: 'valley_prologue_briefed',
   cartStop: 'valley_prologue_cart_stop',
   cartReturn: 'valley_prologue_cart_return',
@@ -19,6 +21,8 @@ export const VALLEY_PROLOGUE = {
 
 const P = VALLEY_PROLOGUE;
 export const PROLOGUE_LABELS = {
+  [P.room]: ['拿起旧收音机', 'Pick up the old radio'],
+  [P.workshop]: ['把旧收音机交给工坊', 'Leave the old radio with the workshop'],
   [P.cartStop]: ['抬起轨道挡板', 'Raise the track stop'],
   [P.cartReturn]: ['把工具车推回轨道', 'Push the tool cart back'],
   [P.radio]: ['收听工坊电台', 'Listen to the workshop radio'],
@@ -28,16 +32,16 @@ export const PROLOGUE_LABELS = {
   [P.record]: ['登记现场撤离人数', 'Record the evacuation count'],
 } satisfies Record<string, Localized>;
 
-export type ValleyPrologueStage = 'briefing' | 'cart' | 'armory' | 'radio' | 'survey' | 'release' | 'secure' | 'record' | 'complete' | 'legacy';
+export type ValleyPrologueStage = 'room' | 'briefing' | 'cart' | 'workshop' | 'armory' | 'radio' | 'survey' | 'release' | 'secure' | 'record' | 'complete' | 'legacy';
 
 export function valleyPrologueStage(done: ReadonlySet<string>): ValleyPrologueStage {
   if (done.has(P.record)) return 'complete';
   if (!done.has(P.briefed)) {
     const existingStory = getValleyStoryState(done).stage !== 'meet' || done.has(VALLEY_STORY.discovery);
-    return existingStory || done.has('adventure_v2') ? 'legacy' : 'briefing';
+    return existingStory || done.has('adventure_v2') ? 'legacy' : done.has(P.room) ? 'briefing' : 'room';
   }
   if (!done.has(P.cartStop) && !done.has(P.cartReturn)) return 'cart';
-  if (!done.has(ARMORY_MARKER)) return 'armory';
+  if (!done.has(ARMORY_MARKER)) return done.has(P.room) && !done.has(P.workshop) ? 'workshop' : 'armory';
   if (!done.has(P.radio)) return 'radio';
   if (!done.has(P.survey)) return 'survey';
   if (!done.has(P.breaker) && !done.has(P.pin)) return 'release';
@@ -48,8 +52,10 @@ export function valleyPrologueGuide(stage: ValleyPrologueStage): { targetId: str
   const home: Localized = ['序章 · 熟悉这条路', 'Prologue · A Familiar Road'];
   const rescue: Localized = ['序章 · 尚未发生的求救', 'Prologue · A Call Ahead of Time'];
   switch (stage) {
+    case 'room': return { targetId: P.room, title: home, text: ['拿起房里的旧收音机。沿楼梯下去，到门口找孟槐。', 'Pick up the old radio. Go down the steps and meet Meng Huai at the entrance.'] };
     case 'briefing': return { targetId: P.steward, title: home, text: ['出发前，到生活馆门口找孟槐领外勤单。', 'Collect your field slip from Meng Huai at the residence entrance.'] };
     case 'cart': return { targetId: P.cartStop, title: home, text: ['帮阿舟拦住工具车。抬起前方挡板，或到车边把它推回去。', 'Help Azhou with the tool cart. Raise the stop ahead or walk to the cart and push it back.'] };
+    case 'workshop': return { targetId: P.workshop, title: home, text: ['沿谷地道路到工坊，把旧收音机放在检修桌上。', 'Follow the valley road to the workshop and leave the old radio on the repair bench.'] };
     case 'armory': return { targetId: ARMORY_MARKER, title: home, text: ['沿谷地道路去枪械工坊领装备。靶场可自由试射。', 'Follow the valley road to the armory for your gear. The firing range is optional.'] };
     case 'radio': return { targetId: P.radio, title: rescue, text: ['从工坊西门出去，绕到北侧收听外勤电台。', 'Leave by the armory’s west door and round the north side to the field radio.'] };
     case 'survey': return { targetId: P.survey, title: rescue, text: ['去电台东面的检修平台。比对广播与现场。', 'Go east to the service platform and compare the broadcast with the scene.'] };
@@ -65,6 +71,10 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
   let flag = id;
   let line: Localized;
   switch (stage) {
+    case 'room':
+      if (id !== P.room) return null;
+      line = ['装好旧收音机。窗边的单子还空着回程时间。', 'Old radio packed. The field slip by the window still has a blank return time.'];
+      break;
     case 'briefing':
       if (id !== P.steward) return null;
       flag = P.briefed;
@@ -74,6 +84,10 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
       if (id !== P.cartStop && id !== P.cartReturn) return null;
       line = id === P.cartStop ? ['挡板接住了车。我去卸工具。你回来时，试试我接好的屋顶信号线！', 'The stop caught it. I’ll unload the tools. Try my rooftop signal line when you get back!']
         : ['你把车推回去了！我来卸工具。等你回来，我给你看屋顶那条线能传多远。', 'You got the cart back! I’ll unload it. When you’re home I’ll show you how far my rooftop line can reach.'];
+      break;
+    case 'workshop':
+      if (id !== P.workshop) return null;
+      line = ['旧机只收不发。工坊留它检修，外勤电台在北门外。先去武器架。', 'The old set can receive but can’t transmit. Leave it here for repair. The field radio is outside the north side. Collect your gear first.'];
       break;
     case 'radio':
       if (id !== P.radio) return null;

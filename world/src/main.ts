@@ -74,11 +74,15 @@ import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyS
 import { createValleyStoryScene } from './environment/valleyStoryScene';
 import { createValleyPrologueScene } from './environment/valleyPrologueScene';
 import { createWorldJourneySites } from './environment/worldJourneySites';
+import { createValleyFieldScene } from './environment/valleyFieldScene';
+import { VALLEY_FIELD as F, VALLEY_FIELD_BY_ID, VALLEY_NIGHT_ENCOUNTER } from './story/valleyField';
+import type { StoryEncounterActor, StoryEncounterSpec } from './story/storyEncounters';
 import { createRealmClimaxSites } from './environment/realmClimaxSites';
 import { climaxMarker, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
 import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_LANDING } from './environment/skyCrownScene';
+import { SKY_DOWN_LANDING, SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LANDING, SKY_UP_LIFT } from './environment/skyCrownApproach';
 import { createHelionFight } from './story/helionFight';
-import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
+import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, legacySkyApproach, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
 import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
 import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
@@ -532,6 +536,7 @@ let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
 const worldJourneySites = alphaResidence ? createWorldJourneySites(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
+const valleyFieldScene = alphaResidence ? createValleyFieldScene(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const skyCrown = createSkyCrownScene();
 const worldJourneyMarkerIds = new Set<string>();
 for (const site of [worldJourneySites, skyCrown]) {
@@ -539,6 +544,11 @@ for (const site of [worldJourneySites, skyCrown]) {
   scene.add(site.root); colliders.push(...site.colliders); targets.push(...site.targets);
   layout.markers.push(...site.markers);
   site.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+}
+if (valleyFieldScene) {
+  scene.add(valleyFieldScene.root); colliders.push(...valleyFieldScene.colliders); layout.markers.push(...valleyFieldScene.markers);
+  valleyFieldScene.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) valleyFieldScene.dispose(); });
 }
 addEventListener('pagehide', event => { if (!event.persisted) { worldJourneySites?.dispose(); skyCrown.dispose(); } });
 const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
@@ -755,24 +765,29 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (id === F.nightPatrol && combat.storyEncounter?.id === VALLEY_NIGHT_ENCOUNTER) return false;
   const realm = realmStationByMarker.get(id);
   if (realm) return realm.station === 'start' ? !activeRealmClimax && journeyClimaxReady(realm.region, done)
     : activeRealmClimax?.id === realm.region && activeRealmClimax.stationReady(realm.station);
   if (id === JOURNEY_DISPATCH) return journeyDestinations(done).length > 0;
+  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT) return insideSkyCrown(player.pos) && done.has(JOURNEY.skyCourt) && !helionFight.active;
   if (id === SKY_MARKERS.cache) return insideSkyCrown(player.pos) && !helionFight.active;
-  if (id === SKY_MARKERS.start) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate) && skyPhase(done) >= 0 && !helionFight.active;
+  if (id === SKY_MARKERS.start) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate) && (done.has(JOURNEY.skyCourt) || legacySkyApproach(done)) && skyPhase(done) >= 0 && !helionFight.active;
   if (id === SKY_MARKERS.left || id === SKY_MARKERS.right) return helionFight.active;
   if (id === JOURNEY.launch && done.has(JOURNEY.launch)) return !done.has(JOURNEY.returnHome);
   return journeyStepReady(id, done);
 }
 function interactionLabel(marker: Marker) {
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const field = VALLEY_FIELD_BY_ID.get(marker.id);
+    if (field) return bilingual(...field.label);
     const realm = realmStationByMarker.get(marker.id);
     if (realm) {
       const line = realm.station === 'start' ? REALM_CLIMAXES[realm.region].start : activeRealmClimax?.stationText(realm.station);
       return line ? bilingual(...line) : marker.label;
     }
     if (marker.id === JOURNEY_DISPATCH) return bilingual(marker.label, 'Dispatch · Egypt, Orleans and Qin');
+    if (marker.id === SKY_UP_LIFT || marker.id === SKY_DOWN_LIFT) return bilingual(marker.label, marker.id === SKY_UP_LIFT ? 'Service lift · Observation hall' : 'Service lift · Clear Sky Court');
     const step = journeyStepById.get(marker.id);
     if (step) return bilingual(marker.label, step.text[1]);
     if (marker.id === SKY_MARKERS.start) return bilingual(marker.label, 'Face Helion');
@@ -819,6 +834,7 @@ function applyWorldState() {
   applyValleyStory();
   if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
+  if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
   applyCampaignState();
   applyFalseDawnState();
@@ -837,7 +853,7 @@ function applyWorldState() {
     if(t.userData.realmClimax)continue;
     const id = t.userData.target as string;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
-    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) continue;
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === JOURNEY.skyScan || id === SKY_MARKERS.target)) continue;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
     t.visible = !hit;
     const c = collider(`COL_${t.name}`); if (c) c.enabled = !hit;
@@ -1098,7 +1114,8 @@ const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
 let spawn = markers.get(startRegion === 'alpha' ? INITIAL_SPAWN_ID : `${startRegion}_spawn_p1`) ?? initialSpawn;
 if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene && !params.has('region') && !params.has('spawn')) {
   const stage = valleyPrologueStage(done);
-  if (stage === 'briefing' || stage === 'cart' || stage === 'armory') spawn = valleyPrologueScene.spawn;
+  if (stage === 'room') spawn = valleyPrologueScene.spawn;
+  else if (stage === 'briefing' || stage === 'cart' || stage === 'workshop' || stage === 'armory') spawn = valleyPrologueScene.courtyardSpawn;
   else if (stage !== 'legacy' && stage !== 'complete') spawn = valleyPrologueScene.radioSpawn;
 }
 if (typeof JOURNEY !== 'undefined' && !params.has('region') && !params.has('spawn')) {
@@ -1582,7 +1599,13 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
-  onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
+  onStoryEncounterVictory(id) {
+    if (id === VALLEY_NIGHT_ENCOUNTER) {
+      done.add(F.patrolCleared); saveJourneyProgress();
+      toast(bilingual('接点已压制。拆下远程接收器，或把真实计数接到救援口。', 'Junction secure. Remove the remote receiver or feed the true headcount to the rescue port.')); return;
+    }
+    if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id);
+  },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
       const site = realmClimaxSites.sites[activeRealmClimax.id];
@@ -2000,7 +2023,11 @@ const helionFight = createHelionFight({ done,
 });
 addEventListener('pagehide', event => { if (!event.persisted) helionHud.remove(); });
 
-function skyJourneySpawn(): Marker { return { id: JOURNEY.launch, type: 'spawn', label: '天穹观测冠', p: [...(done.has(JOURNEY.isolate) ? SKY_CHECKPOINT : SKY_LANDING)] }; }
+function skyJourneySpawn(): Marker {
+  const point = done.has(JOURNEY.skyCourt) || (done.has(JOURNEY.isolate) && legacySkyApproach(done)) ? SKY_CHECKPOINT
+    : done.has(JOURNEY.isolate) ? SKY_THROAT_CHECKPOINT : done.has(JOURNEY.skyReview) ? SKY_HALL_CHECKPOINT : SKY_LANDING;
+  return { id: JOURNEY.launch, type: 'spawn', label: '天穹观测冠', p: [...point] };
+}
 function journeyHomeSpawn(): Marker { return { id: JOURNEY.returnHome, type: 'spawn', label: '回望桥', p: worldJourneySites?.homecoming ?? initialSpawn.p }; }
 function moveJourneyPlayer(destination: Marker) {
   const [x, y, z] = destination.p;
@@ -2075,10 +2102,52 @@ function updateRealmClimax(dt: number) {
     : fight.exposed ? bilingual('可射击 · 瞄准金色目标','Target open · Aim for the gold target')
       : bilingual('查看当前任务，操作现场机关','Follow the current objective to the field controls');
 }
+function startValleyNightPatrol() {
+  const marker = markers.get(F.nightPatrol);
+  if (!marker || !worldProgress.armed || combat.bossStarted || activeRealmClimax) return;
+  const [x, y, z] = marker.p;
+  const spec: StoryEncounterSpec = { id: VALLEY_NIGHT_ENCOUNTER, anchor: { x, y: y - .9, z }, actors: [] };
+  const decoy = done.has(F.soundDecoy);
+  const officers: Omit<StoryEncounterActor, 'offset'>[] = [
+    { role: 'breaker', pattern: 'echo-warden', title: ['巡护官 07', 'Patrol Officer 07'] },
+    ...(done.has(F.dimWatch) ? [] : [{ role: 'musketeer' as const, title: ['执行巡卫', 'Enforcement patrol'] as const }]),
+  ];
+  const slots = (decoy ? [[-7, -5], [-8, 3], [6, 6], [5, -7], [0, 9], [9, 0]] : [[-7, 5], [6, -6], [0, 9], [-8, 0], [8, 0]]) as [number, number][];
+  const actors: StoryEncounterActor[] = [];
+  for (const offset of slots) {
+    const next = { ...officers[actors.length], offset };
+    const candidate = { ...spec, actors: [next] };
+    const px = x + offset[0], pz = z + offset[1];
+    const point = combat.geometry.safeAdventureSpawn(candidate, px, pz);
+    if (!point || combat.state.enemies.some(e => e.hp > 0 && !e.pacified && Math.abs(e.p.y - point.y) < 2.6 && Math.hypot(e.p.x - px, e.p.z - pz) < 5)) continue;
+    actors.push(next);
+    if (actors.length === officers.length) break;
+  }
+  if (actors.length !== officers.length) {
+    toast(bilingual('接点站位暂受阻。清理周边威胁后重试。','Junction approach blocked. Clear nearby threats and retry.')); return;
+  }
+  const result = combat.startStoryEncounter({ ...spec, actors }, { position: player.pos, playable: gameplayActive() && player.onGround });
+  if (!result.ok) { toast(bilingual(...FALSE_DAWN_START_HINTS[result.reason])); return; }
+  spawn = { ...marker, type: 'spawn', p: [x, y - .92, z] };
+  combat.refillAmmo();
+  toast(bilingual(...VALLEY_FIELD_BY_ID.get(F.nightPatrol)!.result));
+}
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
   const realm = realmStationByMarker.get(id);
   if (realm) { operateRealmClimax(realm.region, realm.station); return; }
+  if (id === F.nightPatrol) { startValleyNightPatrol(); return; }
+  if (id === F.nightDone && !valleyFieldScene?.workerSafe()) {
+    toast(bilingual('工人正在过桥，等他到达安全线。','The worker is crossing. Wait for him to reach the safe line.')); return;
+  }
+  if (id === F.drillDone && !valleyFieldScene?.drillReady()) {
+    toast(bilingual('地面班组正在把两边带到广场。你也可以沿林线协助一处。','The crew is bringing both groups to the square. You can also help one along the forest route.')); return;
+  }
+  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT) {
+    const checkpoint = skyJourneySpawn();
+    if (moveJourneyPlayer({ ...checkpoint, p: [...(id === SKY_UP_LIFT ? SKY_DOWN_LANDING : SKY_UP_LANDING)] })) spawn = checkpoint;
+    return;
+  }
   if (id === JOURNEY_DISPATCH) {
     clearInput();
     const options = journeyDestinations(done).map(destination => ({ id: destination.id, label: destination.name }));
@@ -2137,7 +2206,8 @@ function interactWorldJourney(id: string) {
   const line = commitJourneyStep(id, done);
   if (!line) return;
   if (id === JOURNEY.lake && !contract.recruited) contract.recruit();
-  if (id === JOURNEY.isolate) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
+  if (id === JOURNEY.skyReview || id === JOURNEY.isolate || id === JOURNEY.skyCourt) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
+  if (id === JOURNEY.skyAnchor) combat.refillAmmo(24);
   saveJourneyProgress();
   if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
   else { toast(bilingual(...line)); audio.interaction(); }
@@ -2148,7 +2218,11 @@ function updateSkyJourney(dt: number, seconds: number) {
     helionFight.reset(); moveJourneyPlayer(skyJourneySpawn()); combat.refillAmmo();
     toast(bilingual('已返回最近的天穹检查点。','Returned to the last Sky Crown checkpoint.'));
   }
-  if (inSky && gameplayActive() && !combat.defeated) helionFight.update(dt, player.pos);
+  const playing = gameplayActive() && !combat.defeated;
+  skyCrown.updateApproach(inSky && playing ? dt : 0, player.pos, damage => combat.state.applyExternalDamage(damage));
+  const atCrown = inSky && player.pos.y > SKY_CHECKPOINT[1] - 5 && player.pos.z < SKY_CHECKPOINT[2] + 6;
+  if (helionFight.active && !atCrown) helionFight.reset();
+  if (atCrown && playing) helionFight.update(dt, player.pos);
   if (inSky || skyCrown.targets.some(target => target.visible)) skyCrown.update(helionFight, reducedEffects() ? 0 : seconds);
   helionHud.hidden = !inSky || !helionFight.active || !gameplayActive();
   if (helionHud.hidden) return;
@@ -2281,7 +2355,7 @@ function shoot() {
       if (hit) combat.flashHitMarker(.14);
       combat.shot(muzzle, point, !!hit); audio.shot(); return;
     }
-    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) {
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === JOURNEY.skyScan || id === SKY_MARKERS.target)) {
       const hit = id === SKY_MARKERS.target
         ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint)
         : questHit.distance <= gun.range && commitJourneyStep(id, done);
@@ -2597,6 +2671,12 @@ function interact() {
     return;
   }
   const prologueArming = m.id === ARMORY_MARKER && typeof VALLEY_PROLOGUE !== 'undefined' && done.has(VALLEY_PROLOGUE.briefed) && !done.has(VALLEY_PROLOGUE.record);
+  if (m.id === ARMORY_MARKER && typeof valleyPrologueStage === 'function' && typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene) {
+    const stage = valleyPrologueStage(done);
+    if (stage === 'room' || stage === 'briefing' || stage === 'cart' || stage === 'workshop') {
+      toast(bilingual('先完成外勤准备，再来领枪。','Finish your field preparations before taking the rifle.')); return;
+    }
+  }
   if(m.id===ARMORY_MARKER&&!prologueArming&&!done.has('summon_circle')&&!done.has('tower_console')&&!(['britain','blacksail','winter','kyoto'] as const).some(r=>done.has(`era_${r}_met`))) startCurrentAdventure();
   done.add(m.id);
   if (m.id === FORT_CANNON.marker) { actions?.cancel(); fortCannon.toggle(player.pos, true); }
@@ -2826,6 +2906,7 @@ function frame(now: number) {
     toast(bilingual('货车已停稳。取回返程信标。','The cart has stopped. Recover the return beacon.'));
   }
   updateSkyJourney(dt, now / 1000);
+  valleyFieldScene?.update(gameplayActive() ? dt : 0, player.pos);
   updateRealmClimax(dt);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
@@ -2894,7 +2975,8 @@ function frame(now: number) {
   egyptResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('egypt'));
   homeResidentLife.update(dt,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,gameplayActive()||!!narrative?.open,regionVisuals.ready('home'));
   sky.position.copy(eye);
-  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'));
+  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'),
+    done.has(F.nightStart) && !done.has(F.nightDone));
   matchServantLighting();
   updateCold(dt);
   // Shadow frame snaps to whole shadow texels in light space: walking no longer makes every

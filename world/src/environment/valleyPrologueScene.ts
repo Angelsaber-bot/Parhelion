@@ -16,12 +16,29 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   const [bx, by, bz] = floor(-47, 244);
   const bay = (x: number, y: number, z: number): Point => [bx + x, by + y, bz + z];
   const radio = floor(-63, 234);
+  const repair = floor(-68, 247);
   const workerInside = bay(0, .04, -.95);
   const workerSafe = bay(0, .04, 4.1);
   const cartStart = court(7.3, .025, 3.8);
   const cartEnd = court(7.3, .025, 8.9);
   const art = new SiteArt();
   const slate = '#394d59', cream = '#ccd1c6', amber = '#eca64d', steel = '#75848a', dark = '#253540';
+  const wood = '#7c6551';
+  const roomRadio = court(-7.25, 1.61, -11.22);
+  art.box(court(-7.25, .29, -9.85), [2.65, .58, 3.5], wood, true);
+  for (let i = 0; i < 3; i++) {
+    const height = .17 * (3 - i);
+    art.box(court(-7.25, height / 2, -7.88 + .44 * i), [2.62, height, .46], wood, true);
+  }
+  art.box(court(-7.25, .97, -11.3), [1.7, .78, .62], wood, true);
+  art.box(court(-7.25, 1.39, -11.3), [1.82, .12, .73], cream);
+  art.paper(ox - 7.75, oy + 1.458, oz - 11.25, .43, .32);
+  art.box(roomRadio, [.59, .29, .34], slate, false, 'choiceB');
+  art.beam(court(-7.49, 1.72, -11.28), court(-7.58, 2.17, -11.4), .028, steel, false, 'choiceB');
+  const [mx, my, mz] = repair;
+  art.box([mx, my + .46, mz - .77], [1.22, .91, .49], wood);
+  art.box([mx, my + .94, mz - .77], [1.44, .14, .69], slate);
+  art.box([mx, my + 1.1, mz - .73], [.55, .26, .32], amber);
 
   for (const dx of [-.46, .46]) {
     art.box(court(7.3 + dx, .043, 6.6), [.065, .065, 7.15], steel, false, 'metal');
@@ -116,12 +133,14 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
     return { id, type: 'interact', label: PROLOGUE_LABELS[id][0], p, radius };
   }
   const cartReturn = marker(P.cartReturn, [...cartStart]);
-  const markers = [marker(P.cartStop, court(8.25, 1.08, 9.77)), cartReturn,
+  const markers = [marker(P.room, court(-7.25, 1.5, -10.55)), marker(P.workshop, [mx, my + .91, mz]),
+    marker(P.cartStop, court(8.25, 1.08, 9.77)), cartReturn,
     marker(P.radio, [rx, ry + 1.1, rz]), marker(P.survey, bay(0, 1.08, 3.5)),
     marker(P.breaker, bay(-1.72, 1.13, 2.89)), marker(P.ratchet, bay(1.73, 1.13, 2.92)),
     marker(P.record, bay(2.64, 1.12, 4.81), 1.95)];
   const targets = [pin];
-  const spawn: Marker = { id: 'valley_prologue_spawn', type: 'spawn', label: '归灯镇 · 生活馆', p: court(.4, .05, 5) };
+  const spawn: Marker = { id: 'valley_prologue_spawn', type: 'spawn', label: '归灯镇 · 外勤员房间', p: court(-7.25, .58, -9.18) };
+  const courtyardSpawn: Marker = { id: 'valley_prologue_court_spawn', type: 'spawn', label: '归灯镇 · 生活馆', p: court(.4, .05, 5) };
   const radioSpawn: Marker = { id: 'valley_prologue_field_spawn', type: 'spawn', label: '工坊北侧', p: [rx - 2, ry, rz + 1] };
   const npcs: PlacedNpcSocket[] = [
     { id: P.apprentice, region: 'alpha', role: ['阿舟', 'Azhou'], position: court(9.9, .025, 5.7), yaw: -1.3,
@@ -130,7 +149,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
       appearance: { coat: 0xb69352, trim: 0x465360 }, lines: [['电锁松开以后，先撑住平台。我能自己走。', 'Once the lock releases, brace the platform. I can walk out.']] },
   ];
 
-  let stage: ValleyPrologueStage = 'briefing';
+  let stage: ValleyPrologueStage = 'room';
   let cartTravel = 0, platformDrop = 0, escape = 0;
   let cartStopped = false, workerMoved = false;
   function placeCart() {
@@ -142,7 +161,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   function apply(next: ValleyPrologueStage, done: ReadonlySet<string>, initial = false) {
     const previous = stage;
     stage = next;
-    if (next === 'briefing') { cartTravel = 0; platformDrop = 0; escape = 0; }
+    if (next === 'room' || next === 'briefing') { cartTravel = 0; platformDrop = 0; escape = 0; }
     if (initial && next === 'cart') cartTravel = 1;
     cartStopped = done.has(P.cartStop);
     if (next !== 'cart') cartTravel = cartStopped ? .94 : 0;
@@ -155,17 +174,18 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
     art.layers.get('resolved')!.visible = cartStopped;
     art.layers.get('briefed')!.visible = next === 'release' || next === 'secure';
     art.layers.get('choiceA')!.visible = next === 'record' || next === 'complete';
+    art.layers.get('choiceB')!.visible = next === 'room';
     placeCart();
     platform.rotation.z = platformDrop * -.16;
     art.root.updateMatrixWorld(true);
   }
   const activeMarkers: Partial<Record<ValleyPrologueStage, readonly string[]>> = {
-    cart: [P.cartStop, P.cartReturn], radio: [P.radio], survey: [P.survey],
+    room: [P.room], workshop: [P.workshop], cart: [P.cartStop, P.cartReturn], radio: [P.radio], survey: [P.survey],
     release: [P.breaker], secure: [P.ratchet], record: [P.record],
   };
   const markerIds = new Set<string>(markers.map(marker => marker.id));
   function update(dt: number, poseWorker: (id: string, position: Point, yaw: number) => boolean) {
-    if (stage === 'briefing' && workerMoved) { poseWorker(P.worker, workerInside, 0); workerMoved = false; }
+    if ((stage === 'room' || stage === 'briefing') && workerMoved) { poseWorker(P.worker, workerInside, 0); workerMoved = false; }
     if (stage === 'cart' && cartTravel < 1) { cartTravel = Math.min(1, cartTravel + dt / 4.5); placeCart(); }
     if (stage === 'secure' && platformDrop < 1) { platformDrop = Math.min(1, platformDrop + dt / 2); platform.rotation.z = platformDrop * -.16; }
     if ((stage === 'record' || stage === 'complete') && (!workerMoved || escape < 1)) {
@@ -175,7 +195,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
       workerMoved = true;
     }
   }
-  return { root: art.root, colliders, markers, targets, npcs, spawn, radioSpawn, apply, update,
+  return { root: art.root, colliders, markers, targets, npcs, spawn, courtyardSpawn, radioSpawn, apply, update,
     workerClear: () => escape >= 1,
     ownsMarker: (id: string) => markerIds.has(id),
     markerActive: (id: string) => activeMarkers[stage]?.includes(id) ?? false,

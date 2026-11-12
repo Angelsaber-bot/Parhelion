@@ -10,9 +10,13 @@ test('prologue choices are exclusive, resume from saved actions and preserve exi
     const done = new Set<string>();
     const act = (id: string) => advanceValleyPrologue(valleyPrologueStage(done), id, done);
     assert.equal(act(P.radio), null);
+    assert.equal(act(P.steward), null);
+    assert.ok(act(P.room));
     assert.ok(act(P.steward));
     assert.ok(act(cart));
     assert.equal(act(cart === P.cartStop ? P.cartReturn : P.cartStop), null);
+    assert.equal(valleyPrologueStage(new Set(done)), 'workshop');
+    assert.ok(act(P.workshop));
     assert.equal(valleyPrologueStage(new Set(done)), 'armory');
     done.add(ARMORY_MARKER);
     assert.ok(act(P.radio));
@@ -67,9 +71,10 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     (d.getElementById('start') as HTMLElement).click();
     await Promise.resolve();
     frame(30);
-    assert.match(d.getElementById('objective')!.textContent!, /孟槐/);
+    assert.match(d.getElementById('objective')!.textContent!, /旧收音机/);
+    assert.ok(w.player.pos.distanceTo(new Vector3(...marker(P.room))) < 3, 'new game starts inside the room');
+    use(P.room); assert.ok(w.done.has(P.room));
     const [sx, sy, sz] = w.settlementNpcs.getPosition(P.steward);
-    assert.ok(w.player.pos.distanceTo(new Vector3(sx, sy, sz)) < 6, 'new game starts at the residence');
     place(sx, sy, sz + 1.1);
     tap('interact');
     assert.ok(w.done.has(P.briefed));
@@ -77,6 +82,7 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     use(P.cartStop, 0, .35);
     assert.ok(w.done.has(P.cartStop));
     closeDialogue();
+    use(P.workshop); assert.ok(w.done.has(P.workshop));
     use(ARMORY_MARKER, -.6, -1);
     assert.ok(w.worldProgress.armed);
     closeDialogue();

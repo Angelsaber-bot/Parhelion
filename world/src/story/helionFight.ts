@@ -103,9 +103,11 @@ export function createHelionFight(h: HelionHooks) {
       hp = emitters[0] + emitters[1];
       if (hp > 0 && emitters[index] === 0) setBeat('waiting', .55);
     } else hp = Math.max(0, hp - damage);
-    if (hp > 0) return true;
-    if (phase === 2 && !spentWriter) {
-      lastWrite = true; hp = 1; setBeat('waiting', .45); return true;
+    if (hp > 0) {
+      if (phase === 2 && hp <= PHASE_HP[2] * .38 && !spentWriter) {
+        lastWrite = true; setBeat('waiting', .45);
+      }
+      return true;
     }
     const cleared = SKY_PHASES[phase];
     reset(); h.phaseCleared(cleared);

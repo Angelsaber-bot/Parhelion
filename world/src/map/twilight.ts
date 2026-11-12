@@ -47,6 +47,10 @@ const FIRE = {
   fog: new THREE.Color('#7a4a52'), sun: new THREE.Color('#ffb070'), sky: new THREE.Color('#8f7ab8'), ground: new THREE.Color('#8a6058'),
 };
 const FIRE_SUN = new THREE.Vector3(.3, .2, .93).normalize();
+const VALLEY_NIGHT = {
+  top: new THREE.Color('#253960'), mid: new THREE.Color('#4a6381'), horizon: new THREE.Color('#8b9bae'),
+  fog: new THREE.Color('#72839b'), sun: new THREE.Color('#a4b9ed'), sky: new THREE.Color('#9eaed0'), ground: new THREE.Color('#717b75'),
+};
 const EXPANSION_SKIES = [
   {id:'orleans',top:'#536c99',mid:'#aab9cc',horizon:'#f6ddbd',fog:'#cbd1cb',sun:'#ffe4bb',sky:'#e0e5f0',ground:'#969b7a',direction:new THREE.Vector3(-.6,.55,.35).normalize()},
   {id:'egypt',top:'#347bb0',mid:'#9dcddd',horizon:'#ffe5b7',fog:'#e3d0aa',sun:'#fff1ce',sky:'#e1edeb',ground:'#bca16a',direction:new THREE.Vector3(.3,.9,.2).normalize()},
@@ -60,6 +64,7 @@ export class KingdomTwilight {
   private storm = 0;
   private snow = 0;
   private fire = 0;
+  private valleyNight = 0;
   private expansionWeights = [0,0,0];
   private readonly uniforms: Record<string, THREE.IUniform>;
   constructor(sky: THREE.Mesh, private sun: THREE.DirectionalLight,
@@ -67,7 +72,7 @@ export class KingdomTwilight {
     this.uniforms = (sky.material as THREE.ShaderMaterial).uniforms;
     this.uniforms.sunDir.value = this.direction;
   }
-  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false, fireRestored = false) {
+  update(dt: number, x: number, restored: boolean, stormRestored = false, z = 0, snowRestored = false, fireRestored = false, valleyTrial = false) {
     this.blend = THREE.MathUtils.damp(this.blend, twilightWeight(x, restored), 1.8, dt);
     this.storm = THREE.MathUtils.damp(this.storm, stormWeight(x, stormRestored), 1.8, dt);
     this.snow = THREE.MathUtils.damp(this.snow, snowWeight(z, snowRestored), 1.8, dt);
@@ -95,6 +100,15 @@ export class KingdomTwilight {
       this.direction.lerp(preset.direction,weight).normalize();this.sun.color.lerp(preset.sun,weight);this.sun.intensity=THREE.MathUtils.lerp(this.sun.intensity,2.7,weight);
       this.hemisphere.color.lerp(preset.sky,weight);this.hemisphere.groundColor.lerp(preset.ground,weight);
       if(this.scene.fog instanceof THREE.Fog){this.scene.fog.color.lerp(preset.fog,weight);this.scene.fog.near=THREE.MathUtils.lerp(this.scene.fog.near,150,weight);this.scene.fog.far=THREE.MathUtils.lerp(this.scene.fog.far,780,weight);}
+    }
+    this.valleyNight = THREE.MathUtils.damp(this.valleyNight, valleyTrial && region === 'alpha' ? 1 : 0, 1.65, dt);
+    const night = this.valleyNight;
+    for (const key of ['top', 'mid', 'horizon'] as const) (this.uniforms[key].value as THREE.Color).lerp(VALLEY_NIGHT[key], night);
+    this.sun.color.lerp(VALLEY_NIGHT.sun, night); this.sun.intensity = THREE.MathUtils.lerp(this.sun.intensity, .85, night);
+    this.hemisphere.color.lerp(VALLEY_NIGHT.sky, night); this.hemisphere.groundColor.lerp(VALLEY_NIGHT.ground, night);
+    if (this.scene.fog instanceof THREE.Fog) {
+      this.scene.fog.color.lerp(VALLEY_NIGHT.fog, night);
+      this.scene.fog.far = THREE.MathUtils.lerp(this.scene.fog.far, 410, night);
     }
   }
 }

@@ -7,8 +7,10 @@ import { JOURNEY_DRAMA, JOURNEY_REGIONS, dramaActive, dramaReported } from './jo
 import { ADVENTURE as A, adventureActive, adventureChapterComplete } from './openWorldCampaign';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
 import { climaxCleared, climaxMarker, REALM_CLIMAXES, type RealmClimaxId } from './realmClimaxes';
+import { nightAuthorityOpen, nightTacticReady, towerApproachVerified, VALLEY_FIELD as F, VALLEY_FIELD_ACTIONS } from './valleyField';
 
 export const JOURNEY = {
+  ...F,
   lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin',
   bridge: 'journey_lookback_bridge', visitor: 'journey_visitor_arrived', meal: 'journey_return_meal',
   cargoCall: 'journey_cargo_dispatch', cargoSwitch: 'journey_cargo_switch', cargoPin: 'journey_cargo_coupler',
@@ -19,7 +21,9 @@ export const JOURNEY = {
   orleansBrace: 'journey_orleans_battery_brace', orleansDone: 'journey_orleans_crossing_open',
   qinRead: 'journey_qin_workers', qinMarch: 'journey_qin_march', qinHalt: 'journey_qin_halt', qinTurn: 'journey_qin_turn', qinDone: 'journey_qin_public_order',
   skyBearing: 'journey_sky_bearing', skySight: 'journey_sky_sighting', handover: 'journey_local_handover', groundWatch: 'journey_ground_watch',
-  launch: 'journey_sky_launch', feed: 'journey_sky_feed', westService: 'journey_sky_west_service', eastLatch: 'journey_sky_east_latch',
+  launch: 'journey_sky_launch', skyRanging: 'journey_sky_ranging', skyScan: 'journey_sky_scanner_cut', skyReview: 'journey_sky_observation_review',
+  skyAnchor: 'journey_sky_anchor_repair', skyArchive: 'journey_sky_zero_archive', skyReturnSight: 'journey_sky_check_ground_lights', skyCourt: 'journey_sky_court_checkpoint',
+  feed: 'journey_sky_feed', westService: 'journey_sky_west_service', eastLatch: 'journey_sky_east_latch',
   test: 'journey_sky_load_test', isolate: 'journey_sky_isolation',
   phase1: 'journey_helion_lens_disabled', phase2: 'journey_helion_emitters_disabled', phase3: 'journey_helion_writer_disabled',
   finish: 'journey_sky_handover', returnHome: 'journey_sky_return', epilogue: 'journey_tomorrow_bridge',
@@ -80,14 +84,22 @@ export const JOURNEY_STEPS = [
   step('alpha', J.handover, ['把可撤销的维护权限交给回望桥上的居民。', 'Hand revocable maintenance authority to the residents at Lookback Bridge.'], ['阿舟接过联络，顾桥和许青接手地面设施。这次你登塔，他们来值守。', 'Azhou takes communications. Gu Qiao and Xu Qing take over the ground systems. They will keep watch while you climb.'], [J.skySight]),
   step('alpha', J.groundWatch, ['在塔外接入各地独立线路，准备解除归位。', 'Connect the regions’ independent circuits outside the tower to prepare for the reset.'], ['地面各处回应。切断发射器、解开塔前封锁，再登上接驳架。', 'The ground stations answer. Cut the transmitters, clear the tower approach and reach the boarding cradle.'], [J.handover]),
   step('alpha', J.launch, ['从幻日塔顶接驳架登上天穹观测冠。', 'Board the Sky Crown from the tower’s upper cradle.'], ['地面联络灯保持明亮。沿外廊进入配光喉。', 'The ground lights stay on. Follow the outer walk to the light throat.'], [J.groundWatch, A.takeover]),
-  step('sky', J.feed, ['接通独立生活线路。', 'Connect the independent life-support feed.'], ['生活线路已并联。去西侧扳开维护旁路，或从东廊打掉执行线路的锁销。', 'The independent feed is connected. Open the service bypass on the west walk or shoot the enforcement latch from the east walk.'], [J.launch]),
-  step('sky', J.westService, ['在西侧维护廊扳开旁路，或到东廊射断黄色锁销。', 'Open the bypass on the west service walk or shoot the yellow latch on the east walk.'], ['西侧旁路已开。去负荷台验证。', 'The west service bypass is open. Verify the transfer at the load bank.'], [J.feed]),
-  step('sky', J.eastLatch, ['从东侧掠光廊射断执行线路的锁销。', 'Shoot the enforcement latch from the east light walk.'], ['东侧执行线路脱扣。去负荷台验证。', 'The east enforcement line has tripped. Verify the transfer at the load bank.'], [J.feed]),
+  step('sky', J.skyRanging, ['沿坡道登上外环测距台，启动采样。', 'Take the ramp to the outer ranging deck and start a sample.'], ['扫描器会锁定你刚才的位置。离开橙色射界，再击断金色采样器。', 'The scanner locks your last position. Leave the orange lane and shoot the gold scanner.'], [J.launch]),
+  step('sky', J.skyScan, ['横移离开固定射界，射断金色采样器。', 'Step out of the fixed firing lane and shoot the gold scanner.'], ['扫描停止，下层观测厅通道开启。', 'The scan stops and the way to the observation hall opens.'], [J.skyRanging]),
+  step('sky', J.skyReview, ['在下层观测厅把回放记录与实时地面画面对照。', 'Compare the recorded feed with live ground activity in the observation hall.'], ['回放里桥门仍在关闭，实时画面里居民已换班。可走背光维护层扳旁路，也可走掠光长廊射锁。', 'The recording still shows a closing gate. In the live feed, the crew has already changed shifts. Open the service bypass or shoot the latch on the light walk.'], [J.skyScan]),
+  step('sky', J.skyAnchor, ['在风暴锚场检查旧锚臂。', 'Check the old anchor arm on the storm deck.'], ['锚臂重新定位。编号 07 的救援磨痕仍留在锚盘上。', 'The anchor arm is aligned again. Patrol 07’s rescue marks are still visible on the spindle.'], [J.skyScan]),
+  step('sky', J.skyArchive, ['读零号记录室的首次救援缓存。', 'Read the first rescue cache in Archive Zero.'], ['当年预案曾带人脱离险情。此后的每次执行却越来越少由现场签字。', 'The early plan once got people out of danger. Fewer later actions carried a signature from the scene.'], [J.skyReview]),
+  step('sky', J.westService, ['在背光维护层扳开旁路，或从掠光长廊射断锁销。', 'Open the bypass on the backlight service deck or shoot the latch on the light walk.'], ['维护旁路已开。沿连桥上到配光喉。', 'The service bypass is open. Cross the bridge up to the light throat.']),
+  step('sky', J.eastLatch, ['从掠光长廊射断执行线路的锁销。', 'Shoot the enforcement latch from the light walk.'], ['执行线路脱扣。沿连桥进入配光喉。', 'The enforcement line trips. Cross the bridge to the light throat.']),
+  step('sky', J.feed, ['在配光喉并联独立生活线路。', 'Connect independent life support at the light throat.'], ['生活线路已并联。转到另一侧的负荷台。', 'Independent life support is connected. Test it at the load bank on the other side.'], [J.launch]),
   step('sky', J.test, ['在旁路负荷台验证切换。', 'Verify the transfer at the bypass load bank.'], ['负荷稳定。可以机械锁定生活线路，切断执行端。', 'The load holds. You can mechanically isolate life support from enforcement.'], [J.feed]),
   step('sky', J.isolate, ['拉下机械隔离锁。', 'Engage the mechanical isolation lock.'], ['生活供给独立运行。赫利昂仍握有武装与紧急写入储能。', 'Life support now runs independently. Helion still holds weapons and the emergency writer.'], [J.test]),
+  step('sky', J.skyReturnSight, ['穿过日背回廊，验证谷地仍在运行。', 'Cross the sunback walk and verify that the valley stays online.'], ['执行扫描停了，地面的生活灯仍亮。向晴空庭前进。', 'The enforcement scan has stopped. The ground lights remain on. Continue to Clear Sky Court.'], [J.isolate, J.skyReview]),
+  step('sky', J.skyCourt, ['到晴空庭补给，登记承日台检查点。', 'Resupply at Clear Sky Court and register the Crown checkpoint.'], ['检查点已登记，服务升降梯也已接通。承日台在前方。', 'The checkpoint is registered and the service lift is online. The Crown deck lies ahead.'], [J.skyReturnSight]),
   step('sky', J.finish, ['把失效的紧急写入臂锁入安全槽，登记责任交接。', 'Latch the spent emergency writer into its safe slot and sign the handover.'], ['公共预警继续工作。强制写入已解除。', 'Public warning remains online. Compulsory write authority is gone.'], SKY_PHASES),
   step('sky', J.returnHome, ['从接驳架返回地面。', 'Take the boarding cradle back to the valley.'], ['地面的人已修好了桥。他们在等你过桥。', 'The people below have repaired the bridge. They are waiting for you to cross.'], [J.finish]),
   step('alpha', J.epilogue, ['走过居民修好的回望桥，留下回程时间。', 'Cross Lookback Bridge and enter your return time.'], ['孟槐：“回来了。明天你想走哪条路？”', 'Meng Huai: “You’re home. Which road do you want to take tomorrow?”'], [J.returnHome]),
+  ...VALLEY_FIELD_ACTIONS.map(action => step('alpha', action.id, action.text, action.result, action.after)),
 ] as const;
 
 export const journeyStepById = new Map<string, Step>(JOURNEY_STEPS.map(value => [value.targetId, value]));
@@ -99,7 +111,9 @@ export const journeyEnabled = (done: ReadonlySet<string>) => adventureActive(don
 export const skyPhase = (done: ReadonlySet<string>) => SKY_PHASES.findIndex(id => !done.has(id));
 export const valleyRouteOpen = (done: ReadonlySet<string>) => done.has(J.cutoff) || done.has(J.bypass);
 const skyRouteOpen = (done: ReadonlySet<string>) => done.has(J.westService) || done.has(J.eastLatch);
-export const journeyDestinations = (done: ReadonlySet<string>) => valleyRouteOpen(done)
+export const legacySkyApproach = (done: ReadonlySet<string>) => done.has(J.feed) && !done.has(J.skyRanging);
+const dispatchReady = (done: ReadonlySet<string>) => valleyRouteOpen(done) && (done.has(F.nightDone) || done.has(J.egyptRead) || done.has(J.orleansRead) || done.has(J.qinDone));
+export const journeyDestinations = (done: ReadonlySet<string>) => dispatchReady(done)
   ? JOURNEY_DESTINATIONS.filter(destination => destination.id !== 'qin' || reached(done, J.egyptDone, J.orleansDone)) : [];
 export const journeyTowerReady = (done: ReadonlySet<string>) => !journeyEnabled(done) || done.has(J.groundWatch);
 export const REALM_HANDOVER = { egypt: J.egyptDone, orleans: J.orleansDone, qin: J.qinDone } as const;
@@ -119,15 +133,33 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (id === J.signalLamp) return !done.has(J.signal);
   if (id === J.compare) return originalFourReady(done);
   if (id === J.cutoff || id === J.bypass) return !valleyRouteOpen(done);
-  if (id === J.egyptRead || id === J.orleansRead) return valleyRouteOpen(done);
+  if (id === J.egyptRead || id === J.orleansRead) return dispatchReady(done);
   if (id === J.qinRead) return reached(done, J.egyptDone, J.orleansDone);
-  if (id === J.skyBearing || id === J.skySight) return reached(done, J.qinDone, J.egyptDone, J.orleansDone);
-  if (id === J.westService || id === J.eastLatch) return !skyRouteOpen(done) && !done.has(J.test);
+  if (id === J.skyBearing || id === J.skySight) return reached(done, J.qinDone, J.egyptDone, J.orleansDone) && (!done.has(F.nightDone) || done.has(F.roofSight) || done.has(J.skyBearing));
+  if (id === F.nightStart) return valleyRouteOpen(done) && !done.has(J.handover);
+  if (id === F.dimWatch || id === F.soundDecoy) return !nightTacticReady(done);
+  if (id === F.nightPatrol) return nightTacticReady(done) && !done.has(F.patrolCleared);
+  if (id === F.radioRemove || id === F.countPatch) return !nightAuthorityOpen(done);
+  if (id === F.nightBrace) return nightAuthorityOpen(done);
+  if (id === F.roofSight) return done.has(F.nightDone) && done.has(J.egyptDone);
+  if (id === F.replay) return reached(done, F.nightDone, J.skySight);
+  if (id === F.doorPower) return reached(done, F.disconnect, J.qinDone);
+  if (id === F.drillStart) return reached(done, F.doorLoad, J.orleansDone);
+  if (id === F.drillCart || id === F.drillObserver) return !done.has(F.drillDone) && !done.has(F.drillCart) && !done.has(F.drillObserver);
+  if (id === F.drillDone) return done.has(F.drillBeacon);
+  if (id === J.handover && done.has(F.nightDone)) return done.has(F.drillDone);
+  if (id === F.towerLow || id === F.towerHigh) return done.has(F.drillDone) && !towerApproachVerified(done);
+  if (id === J.groundWatch && done.has(F.nightDone)) return towerApproachVerified(done);
+  if (id === F.chair) return done.has(J.epilogue) && done.has(F.drillDone);
+  if (id === J.skyRanging) return !done.has(J.feed);
+  if (id === J.westService || id === J.eastLatch) return (done.has(J.skyReview) || legacySkyApproach(done)) && !skyRouteOpen(done) && !done.has(J.test);
+  if (id === J.feed) return skyRouteOpen(done);
   if (id === J.test) return skyRouteOpen(done);
   return true;
 }
 
 export function commitJourneyStep(id: string, done: Set<string>): Localized | null {
+  if (id === F.nightPatrol) return null;
   if (id === J.cargoPin) {
     if (!journeyStepReady(J.cargoSwitch, done)) return null;
     done.add(id);
@@ -148,14 +180,21 @@ const regionalHandover = (region: RealmClimaxId, done: ReadonlySet<string>) => d
   ? at(REALM_HANDOVER[region]) : objective(region, climaxMarker(region, 'start'), REALM_CLIMAXES[region].start);
 
 export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>): JourneyGuide | null {
-  if (!journeyEnabled(done) || done.has(J.epilogue)) return null;
+  if (!journeyEnabled(done)) return null;
+  if (done.has(J.epilogue)) return done.has(F.drillDone) && !done.has(F.nextSlip) ? at(done.has(F.chair) ? F.nextSlip : F.chair) : null;
   if (done.has(J.finish)) return at(done.has(J.returnHome) ? J.epilogue : here === 'sky' ? J.returnHome : J.launch);
   if (done.has(J.launch)) {
     if (here !== 'sky') return at(J.launch);
+    if (!legacySkyApproach(done)) {
+      if (!done.has(J.skyRanging)) return at(J.skyRanging);
+      if (!done.has(J.skyScan)) return at(J.skyScan);
+      if (!done.has(J.skyReview)) return at(J.skyReview);
+    }
+    if (!skyRouteOpen(done) && !done.has(J.test)) return at(J.westService);
     if (!done.has(J.feed)) return at(J.feed);
-    if (!done.has(J.test) && !skyRouteOpen(done)) return at(J.westService);
     if (!done.has(J.test)) return at(J.test);
     if (!done.has(J.isolate)) return at(J.isolate);
+    if (!legacySkyApproach(done) && !done.has(J.skyCourt)) return at(done.has(J.skyReturnSight) ? J.skyCourt : J.skyReturnSight);
     return skyPhase(done) >= 0 ? objective('sky', SKY_MARKERS.start, ['前往承日台迎战赫利昂。锁定后改变遮板，或离开预警射界，趁收势射击核心。', 'Face Helion on the Crown deck. Turn a shutter after lock or leave the marked attack lane, then shoot during recovery.']) : at(J.finish);
   }
   if (done.has(J.groundWatch)) {
@@ -165,7 +204,27 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
     if (!done.has(A.guardian)) return objective('alpha', 'adventure_guardian', ['击退塔前守门者，保护登天路线。', 'Defeat the signal Warden and secure the route to the cradle.']);
     return objective('alpha', 'adventure_tower', ['登塔手动接管接驳架。', 'Climb the tower and take manual control of the boarding cradle.']);
   }
-  if (done.has(J.qinDone)) return at(!done.has(J.skySight) ? (done.has(J.skyBearing) ? J.skySight : J.skyBearing) : !done.has(J.handover) ? J.handover : J.groundWatch);
+  if (valleyRouteOpen(done) && !done.has(F.nightDone) && !done.has(J.handover)
+    && (done.has(J.qinDone) || (!done.has(J.egyptRead) && !done.has(J.orleansRead)))) {
+    if (!done.has(F.nightStart)) return at(F.nightStart);
+    if (!done.has(F.paperMap)) return at(F.paperMap);
+    if (!nightTacticReady(done)) return at(F.dimWatch);
+    if (!done.has(F.patrolCleared)) return at(F.nightPatrol);
+    if (!nightAuthorityOpen(done)) return at(F.radioRemove);
+    return at(done.has(F.nightBrace) ? F.nightDone : F.nightBrace);
+  }
+  if (done.has(J.qinDone)) {
+    if (!done.has(J.skySight)) {
+      if (done.has(F.nightDone) && !done.has(F.roofSight) && !done.has(J.skyBearing)) return at(F.roofSight);
+      return at(done.has(J.skyBearing) ? J.skySight : J.skyBearing);
+    }
+    if (done.has(F.nightDone) && !done.has(J.handover)) {
+      const missing = [F.replay, F.disconnect, F.doorPower, F.doorDisconnect, F.doorRequest, F.doorNear, F.doorFar, F.doorLoad, F.drillStart, F.drillBeacon, F.drillDone].find(id => !done.has(id));
+      if (missing) return at(missing);
+    }
+    if (!done.has(J.handover)) return at(J.handover);
+    return at(done.has(F.drillDone) && !towerApproachVerified(done) ? F.towerLow : J.groundWatch);
+  }
   if (reached(done, J.egyptDone, J.orleansDone)) {
     if (!done.has(J.qinRead)) return at(J.qinRead);
     if (!done.has(J.qinMarch)) return at(J.qinMarch);
