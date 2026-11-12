@@ -95,7 +95,7 @@ describe('applyInput', () => {
   });
   it('semi-auto needs a fresh press', () => {
     const p = spawned(0, 20);
-    p.loadout = ['halo', 'lumen', 'blade']; p.weapon = 2;
+    p.loadout = ['longnight', 'lumen', 'blade']; p.weapon = 4; // semi-auto; 120 ticks would allow two shots if it were automatic
     let shots = 0;
     for (let i = 1; i <= 120; i++) shots += applyInput(m, p, inp(i, { weapon: 0, buttons: BTN.FIRE })).filter((e) => e.type === 'fire').length;
     expect(shots).toBe(1);

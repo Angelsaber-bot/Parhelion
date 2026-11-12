@@ -60,7 +60,7 @@ export function displayWeaponName(id: string): string {
 const ROLES: Record<string, [string, string]> = {
   lumen: ['均衡全自动，适合中距离持续交火', 'Balanced automatic fire for sustained mid-range combat'],
   corona: ['近距离二十弹丸齐射，单发后需重新扣动扳机', 'Twenty-pellet close-range burst; pull the trigger for each shot'],
-  halo: ['半自动精确射击，适合中远距离', 'Precise semi-automatic fire for medium to long range'],
+  halo: ['全自动精确射击，按住连发，适合中远距离', 'Precise full-auto fire, hold to keep shooting; for medium to long range'],
   firefly: ['高射速短程压制，远距离伤害较低', 'Rapid close-range fire with lower damage at distance'],
   longnight: ['慢速高伤狙击，强倍率瞄准，失手恢复慢', 'Slow, powerful sniper with high magnification and long recovery'],
   blade: ['快速突进斩，挥砍时转向也能砍中', 'Fast lunging slash; turning mid-swing still connects'],

@@ -337,7 +337,8 @@ export class Bot implements Controller {
     const w = WEAPONS[me.weapon];
     const onTarget = Math.abs(errYaw) < this.skill.fireCone + 0.4 / Math.max(bestD, 1);
     if (target && this.seenFor > reaction && onTarget && (w.kind === 'gun' || bestD <= meleeReach(w))) {
-      if (w.auto) {
+      // Slow full-autos (the Halo DMR) keep the deliberate semi-auto rhythm below.
+      if (w.auto && w.interval < 15) {
         if (this.pauseT > 0) this.pauseT--;
         else {
           if (this.burstT <= 0) this.burstT = this.range(this.skill.burst);

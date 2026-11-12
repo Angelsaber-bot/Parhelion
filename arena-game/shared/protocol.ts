@@ -20,7 +20,8 @@ export const ROOM_NAME = 'arena';
 // v23: attacking ends spawn protection (G02); solid walls and floors shelter from frags, shields still do not (G03).
 // v24: era-map colliders fitted to their models (figures, chariot, rails, columns, statues): shots pass visible gaps.
 // v25: Halo DMR fires every 25 ticks (was 22) with a 1.75 head multiplier (was 2).
-export const RULES_VERSION = 25;
+// v26: v25's Halo change reverted (22 ticks, 2x head) and Halo made full-auto: hold to keep firing.
+export const RULES_VERSION = 26;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
