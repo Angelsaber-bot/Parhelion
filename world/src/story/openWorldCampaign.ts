@@ -1,6 +1,7 @@
 import {gateGuide} from './kingdomGate';
 import {kingdomWorksEnded,kingdomWorksNext} from './kingdomWorks';
 import {HARBOR_RELIEF as R,harborReliefReady} from './harborRelief';
+import {WINTER_WITHDRAWAL as W,winterWithdrawalReady,winterWithdrawalSelected} from './winterWithdrawal';
 import {JOURNEY_DRAMA,JOURNEY_CAST,JOURNEY_REGIONS,dramaActive,dramaReported,dramaDecision,dramaChapterReady} from './journeyDrama';
 import type { Localized, RegionId } from '../settlements/types';
 export type AdventurePoint=[number,number,number];
@@ -93,6 +94,10 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(!done.has('napoleon_meet')&&!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['在皇帝帐篷确认药车的撤离方向。','Confirm the medicine convoy’s route at the emperor’s tent.'],'napoleon_meet');
   if(!winterRouteReady(done))return at(region,title,['选择准备：点亮三座烽火建立暖路，或登钟楼取得观察记录（钟声碎片）。两条准备路线任选其一。','Prepare either by lighting all three beacons, or climbing the bell tower for its observation record (Bell fragment).'],`beacon_${[1,2,3].find(i=>!done.has(`beacon_${i}`))??1}`);
   if(!done.has(ADVENTURE.road))return at(region,title,['清开大道拒马：射断两处金色支架，或沿侧翼靠近拆闩。完整道路开放后才能放行。','Clear the roadblock: shoot both gold braces, or approach from the flank and release the latch. Open the whole corridor before signaling.'],'adventure_winter_latch');
+  if (!winterWithdrawalReady(done)) {
+   if (!winterWithdrawalSelected(done)) return at(region,title,['走到岔路，选择保留红堤道路，或把弃置的炮架用于修好磨坊跨峡桥。两条路都通向同一渡口。','At the fork, keep the redoubt road or use the abandoned gun carriage to brace the mill bridge. Both lead to the same crossing.'],W.mill);
+   return at(region,title,['在撤离信号站确认所有人退出炮线，再把高地让给空阵。','At the withdrawal signal, confirm everyone is out of the firing lane before abandoning the high ground.'],W.retreat);
+  }
   if(!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['沿清出的道路到红场，解除执冬者的命令。','Follow the cleared road to Red Square and end the Winter Warden’s orders.'],'winter_core');
   if(!done.has(ADVENTURE.convoy))return at(region,title,['回救护棚信号台放行药车。出发、途中与抵达都会留在现场。','Release the medicine cart at the aid-post signal. Departure, transit and arrival remain visible.'],'adventure_winter_convoy');
   if(!done.has(ADVENTURE.arrived))return at(region,title,['药车已经启程。到渡口验收同一辆车抵达；不会因你离开而丢失。','The cart has departed. Confirm its arrival at the crossing; leaving the area does not erase the journey.'],'adventure_winter_arrival');
