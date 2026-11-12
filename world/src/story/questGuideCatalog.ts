@@ -1,4 +1,5 @@
 import { VALLEY_INVESTIGATIONS, VALLEY_INVESTIGATION_STEPS } from './valleyInvestigations';
+import { VALLEY_COMMUNITY, VALLEY_COMMUNITY_STEPS } from './valleyCommunity';
 import { FIELD_SIDE_STEPS, FIELD_SIDE_STORIES, fieldSideNext } from './fieldSideStories';
 import { CULTURAL_STEPS, CULTURAL_STORIES, culturalStoryNext } from './realmCulturalStories';
 import { EGYPT_GAUGE, EGYPT_GAUGE_BY_ID, EGYPT_GAUGE_STEPS, EGYPT_GAUGE_TITLE, EGYPT_WATER_RECORD, egyptGaugeNext } from './egyptGauge';
@@ -48,6 +49,7 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ ...Array.from(VALLEY_COMMUNITY_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
  ...Array.from(VALLEY_INVESTIGATION_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
  ...Array.from(FIELD_SIDE_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
  ...Array.from(CULTURAL_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
@@ -151,6 +153,12 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
    const step = egyptGaugeNext(done);
    add('side:egypt-second-mark', 'egypt', 'side', EGYPT_GAUGE_TITLE, done.has(EGYPT_GAUGE.report),
     step ? guide(EGYPT_GAUGE_TITLE, [...step.hint], step.id, done, context) : null);
+  }
+  for (const quest of VALLEY_COMMUNITY) {
+   if ((quest.opensWith && !done.has(quest.opensWith)) || !quest.steps.every(step => markers.has(step.id))) continue;
+   const next = quest.steps.find(step => !done.has(step.id));
+   add(`side:${quest.id}`, 'alpha', 'side', quest.title, done.has(quest.terminal),
+    next ? guide(quest.title, next.label, next.id, done, context) : null);
   }
   for (const chain of VALLEY_INVESTIGATIONS) {
    if (!chain.steps.every(step => markers.has(step.id))) continue;

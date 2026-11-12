@@ -218,6 +218,10 @@ export class WorldAudio {
   interaction(){this.voice('sine',.12,520,.055,1.5);}
   /** One local bell strike, sharing mute, suspension and the bounded voice pool. */
   bell(){this.voice('sine',2.8,196,.055,.995,.002);this.voice('sine',2.2,196*2.76,.022,.998,.003);this.voice('sine',1.5,196*5.4,.012,.99,.002);}
+  pipeKnocks(lower:boolean){
+    const knocks=lower?[.01,.18,.35,.6]:[.01,.75];
+    knocks.forEach((delay,i)=>this.voice('triangle',i===knocks.length-1?.27:.11,lower?247:326,.053,.93,delay));
+  }
   private releaseContext(){this.stopVoices();for(const node of [this.master,this.compressor])try{node?.disconnect();}catch{/* best effort */}try{if(this.context&&this.context.state!=='closed')void this.context.close().catch(()=>{});}catch{/* unavailable */}this.context=null;this.master=null;this.compressor=null;this.noise=null;}
   dispose(){if(this.disposed)return;this.disposed=true;this.active=false;this.releaseContext();for(const remove of this.unlisten)remove();this.unlisten=[];}
 }

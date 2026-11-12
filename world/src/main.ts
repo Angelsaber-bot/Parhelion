@@ -1,4 +1,7 @@
 import { createValleyInvestigationSites } from './environment/valleyInvestigationSites';
+import { createValleyCommunitySites } from './environment/valleyCommunitySites';
+import { FREIGHT_YARD as FY, MIST_RESCUE as MR, NEXT_SHIFT as NS, OLD_TICKET as OT,
+  VALLEY_COMMUNITY_STEPS, chooseFreightYard, valleyCommunityReady } from './story/valleyCommunity';
 import { FIFTH_ROAD as FR, REPLAY_TEST as RT, WATERWORKS as WW, VALLEY_INVESTIGATION_STEPS, VALLEY_WATER_RESTORE, valleyInvestigationReady } from './story/valleyInvestigations';
 import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
@@ -631,6 +634,15 @@ if (valleyInvestigations) {
   valleyInvestigations.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
   addEventListener('pagehide', event => { if (!event.persisted) valleyInvestigations.dispose(); });
 }
+const valleyCommunity = alphaResidence ? createValleyCommunitySites(alphaResidence.position, layout.markers,
+  layout.world.waterLevel, culturalGround, culturalClear) : null;
+if (valleyCommunity) {
+  world.add(valleyCommunity.root);
+  colliders.push(...valleyCommunity.colliders);
+  layout.markers.push(...valleyCommunity.markers);
+  valleyCommunity.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) valleyCommunity.dispose(); });
+}
 let shadowPlayCue: { afterSiege: boolean; swallowtail: boolean } | null = null;
 let qinPotterSpeaking = false;
 
@@ -827,6 +839,7 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (VALLEY_COMMUNITY_STEPS.has(id)) return valleyCommunityReady(id, done);
   if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) return valleyInvestigationReady(id, done);
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) return fieldSideReady(id, done);
   if (CULTURAL_STEPS.has(id)) return !(orleansShadowPlay?.playing && (id === SP.rope || id === SP.encore)) && culturalStepReady(id, done);
@@ -848,6 +861,8 @@ function journeyMarkerActive(id: string) {
 function interactionLabel(marker: Marker) {
   if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const community = VALLEY_COMMUNITY_STEPS.get(marker.id);
+    if (community) return bilingual(...community.label);
     const investigation = VALLEY_INVESTIGATION_STEPS.get(marker.id)?.label ?? (marker.id === WW.restore ? VALLEY_WATER_RESTORE : undefined);
     if (investigation) return bilingual(...investigation);
     const fieldSide = FIELD_SIDE_STEPS.get(marker.id)?.label ?? FIELD_SERVICE_LABELS.get(marker.id);
@@ -924,6 +939,7 @@ function applyWorldState() {
   if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
   if (typeof fieldSideSites !== 'undefined' && typeof player !== 'undefined') fieldSideSites?.apply(done, 0, player.pos);
   if (typeof valleyInvestigations !== 'undefined') valleyInvestigations?.apply(done);
+  if (typeof valleyCommunity !== 'undefined' && typeof player !== 'undefined') valleyCommunity?.update(done, 0, player.pos);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
   if (typeof kingdomWorksScene !== 'undefined') kingdomWorksScene?.apply(done);
   applyCampaignState();
@@ -2381,6 +2397,71 @@ function hitValleyRustLock(strike: StrikeRequest) {
   done.add(FR.lock); saveJourneyProgress(); audio.contact(); combat.flashHitMarker(.14);
   toast(bilingual(...VALLEY_INVESTIGATION_STEPS.get(FR.lock)!.result));
 }
+function interactValleyCommunity(id: string) {
+  const site = valleyCommunity, step = VALLEY_COMMUNITY_STEPS.get(id);
+  if (!site || !step) return;
+  if (id === FY.practice || id === FY.west || id === FY.east || id === FY.variant || id === FY.variantDone) {
+    const follower = companionRoot(contract.following);
+    if (!follower?.visible || follower.position.distanceToSquared(player.pos) > 5.5 ** 2) {
+      toast(bilingual('等当前同行从者靠近挡板，再发信号。', 'Wait for your active companion to reach the barricade before signaling.'));
+      return;
+    }
+    const partner = site.activePartner();
+    if (id === FY.practice) {
+      done.delete(FY.west);
+      site.usePartner(contract.following);
+    } else if (id === FY.variant || partner === null) site.usePartner(contract.following);
+    else if (contract.following !== partner) {
+      toast(bilingual('请切回刚才的伙伴，或在货栈重新开始练习。', 'Switch back to your drill partner or restart at the freight shed.'));
+      return;
+    }
+    if (id !== FY.practice) audio.bell();
+  }
+  if (id === MR.safe && !site.workerSafe()) {
+    toast(bilingual('等检修工跨过黄线。', 'Wait for the worker to cross the yellow line.'));
+    return;
+  }
+  if (id === FY.loadTest && !site.hoistReady()) {
+    toast(bilingual('等配重升到黄线。', 'Wait for the load to reach the yellow line.'));
+    return;
+  }
+  if ((id === OT.mile && !site.taoAtMile()) || (id === OT.terminus && !site.taoReady())) {
+    toast(bilingual('陶叔还在沿旧货线走。', 'Tao is still walking along the old freight line.'));
+    return;
+  }
+  if (id === FY.decision) {
+    clearInput();
+    site.cue(id);
+    narrative?.showChoices(step.line, step.label, [
+      { id: 'training', label: ['保留公共协作训练场', 'Keep the public training yard'] },
+      { id: 'workshop', label: ['保留共同工坊', 'Keep the shared workshop'] },
+    ], choice => {
+      const marker = markers.get(id);
+      if ((choice !== 'training' && choice !== 'workshop') || !marker || !valleyCommunityReady(id, done) ||
+        combat.defeated || !player.onGround || player.flying ||
+        player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2) || !canReachValleyPanel(marker)) return;
+      chooseFreightYard(done, choice); saveJourneyProgress(); audio.explore('solve');
+      toast(choice === 'training' ? bilingual('训练挡板沿两侧固定，货道继续通行。', 'The drill barricades are fixed along the sides. Freight still gets through.')
+        : bilingual('吊具与邻里工作台留在货栈两侧。', 'The hoist and neighborhood workbenches stay along the sides.'));
+    });
+    return;
+  }
+  if (id === MR.upper || id === MR.lower) audio.pipeKnocks(id === MR.lower);
+  if (id === NS.view) {
+    const cart = site.root.getObjectByName('ValleyNextDepartureCart');
+    if (cart) {
+      const x = cart.position.x - player.pos.x, z = cart.position.z - player.pos.z;
+      player.yaw = Math.atan2(-x, -z);
+      player.pitch = Math.atan2(cart.position.y + .8 - player.pos.y - 1.55, Math.hypot(x, z));
+    }
+  }
+  site.cue(id);
+  if (id !== OT.seat && id !== NS.view) {
+    done.add(id); saveJourneyProgress();
+  }
+  if (id === FY.west || id === FY.variant || id === FY.load) toast(bilingual(...step.line));
+  else speakDialogue(step.line, step.label);
+}
 function interactValleyInvestigation(id: string) {
   const site = valleyInvestigations;
   if (!site) return;
@@ -2496,6 +2577,7 @@ function interactFieldSide(id: string) {
 }
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (VALLEY_COMMUNITY_STEPS.has(id)) { interactValleyCommunity(id); return; }
   if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) { interactValleyInvestigation(id); return; }
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) { interactFieldSide(id); return; }
   if (EGYPT_GAUGE_BY_ID.has(id)) { interactEgyptGauge(id as EgyptGaugeAction); return; }
@@ -3433,6 +3515,7 @@ function frame(now: number) {
   }
   egyptGaugeScene?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, gaugeKeeperSpeaking);
   fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  valleyCommunity?.update(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
   valleyInvestigations?.apply(done, gameplayActive() || narrative?.open ? dt : 0);
   const waterChanged = valleyInvestigations?.waterResult();
   if (waterChanged === true || waterChanged === false) {
