@@ -647,6 +647,8 @@ let shadowPlayCue: { afterSiege: boolean; swallowtail: boolean } | null = null;
 let qinPotterSpeaking = false;
 
 let activeRealmClimax: ReturnType<typeof createRealmClimax> | null = null;
+type JourneyPortrait = { actor: THREE.Object3D; height: number; width: number; distance: number; elapsed: number };
+let journeyPortrait: JourneyPortrait | null = null;
 // 奥尔良外圈: the mill wheel, the windmill sails and the region's own air.
 const orleansOutskirts=createOrleansOutskirtsScene();world.add(orleansOutskirts.root);
 const orleansAtmosphere=createOrleansAtmosphere();world.add(orleansAtmosphere.root);
@@ -2200,6 +2202,30 @@ const realmName = document.createElement('div'), realmHealth = document.createEl
 realmHealth.style.width = '100%'; realmClimaxHud.append(realmName, realmHealth, realmCue); document.body.append(realmClimaxHud);
 addEventListener('pagehide', event => { if (!event.persisted) realmClimaxHud.remove(); });
 
+const realmEntrance = {
+  egypt: {
+    height: 1.5, width: 3.2, distance: 6.7,
+    lines: ['河工帕赫：“它贴着旧主渠上来了。等它张口，看水往哪条渠倒。奥斯曼迪斯，给西闸留出余地。”',
+      'Pahek: “It’s coming up the old channel. When it opens its jaws, watch where the water turns. Ozymandias, leave the west sluice room to move.”'],
+  },
+  orleans: {
+    height: 1.5, width: -2.3, distance: 5.2,
+    lines: ['马修·韦尔：“我看见你们的旗。让搬粮的人先退到桥墩后。我会让弩手等我的手势。”',
+      'Mathieu Vale: “I see your flag. Get the grain carriers behind the bridge pier. My crossbowmen will wait for my signal.”'],
+  },
+  qin: {
+    height: 1.73, width: 2.1, distance: 5.5,
+    lines: ['封陵将举起军符，西阵先动。工匠路容：“我认得这道令。你看两侧的令台，行与驻可以分开。”',
+      'The general raises his tally and the western rank moves first. Lu Rong: “I know this order. Look at both stations. The marching and standing commands can be split.”'],
+  },
+} satisfies Record<RealmClimaxId, { height: number; width: number; distance: number; lines: [string, string] }>;
+
+function showJourneyPortrait(actor: THREE.Object3D | undefined, height: number, width: number, distance: number,
+  line: [string, string], speaker: [string, string]) {
+  journeyPortrait = actor ? { actor, height, width, distance, elapsed: 0 } : null;
+  speakDialogue(line, speaker);
+}
+
 function stopRealmClimax() {
   const fight = activeRealmClimax;
   if (!fight) return;
@@ -2229,6 +2255,12 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
   });
   if (fight.start()) {
     activeRealmClimax = fight; combat.refillAmmo(); site.update(fight); hudRevision++; renderObjective();
+    const intro = realmEntrance[region], seen = `journey_${region}_climax_entrance`;
+    if (fight.phase === 0 && !done.has(seen)) {
+      done.add(seen); saveJourneyProgress();
+      showJourneyPortrait(site.body, intro.height, intro.width, intro.distance,
+        intro.lines, fight.definition.title);
+    }
   }
 }
 function updateRealmClimax(dt: number) {
@@ -2241,7 +2273,8 @@ function updateRealmClimax(dt: number) {
   }
   const playing = gameplayActive() && !combat.defeated;
   if (playing) fight.update(dt, player.pos);
-  site.update(fight, playing ? dt : 0);
+  const entrance = !reducedEffects() && journeyPortrait?.actor === site.body ? journeyPortrait.elapsed : undefined;
+  site.update(fight, playing || entrance !== undefined ? dt : 0, entrance);
   realmClimaxHud.hidden = !playing;
   if (!playing) return;
   const phase = fight.definition.phases[fight.phase];
@@ -2684,7 +2717,9 @@ function interactWorldJourney(id: string) {
     crownRecoverySector = null; combat.refillAmmo();
     if (helionFight.start() && helionFight.phase === 0 && !done.has(JOURNEY.helionFirstWords)) {
       done.add(JOURNEY.helionFirstWords); saveJourneyProgress();
-      toast(bilingual('赫利昂：“我已经失去过他们。不会再选一次。”', 'Helion: “I’ve lost them before. I won’t make that choice again.”'));
+      showJourneyPortrait(skyCrown.root.getObjectByName('HelionUnmaskedFace'), -.16, -1.25, 3.3,
+        ['我已经失去过他们。那晚我一直等到最后一个人的名字。今天我不会再选一次。', 'I lost them once. That night I waited for the last name. I won’t make that choice again.'],
+        ['赫利昂', 'Helion']);
     }
     hudRevision++; return;
   }
@@ -3450,7 +3485,9 @@ function frame(now: number) {
   } else inspectServant = false;
   // Character scenes get a readable, collision-checked portrait shot. Leaving
   // dialogue restores the ordinary aim camera before gameplay can fire again.
-  const conversationNpc=dramaActive(done)&&narrative?.open&&locked&&!inspectServant?nearbySettlementNpc():null;
+  if (journeyPortrait && !narrative?.open) journeyPortrait = null;
+  const portrait = locked && !inspectServant ? journeyPortrait : null;
+  const conversationNpc=!portrait&&dramaActive(done)&&narrative?.open&&locked&&!inspectServant?nearbySettlementNpc():null;
   const conversationActor=conversationNpc?settlementNpcs.group.getObjectByName(`Resident_${conversationNpc.id}`):null;
   if(conversationActor){
     const focus=conversationActor.getObjectByName('ResidentHead')!.getWorldPosition(new THREE.Vector3());
@@ -3459,7 +3496,28 @@ function frame(now: number) {
     const direction=desired.clone().sub(focus),distance=direction.length(),hit=combat.geometry.cast(focus,direction.clone().normalize(),distance);
     const allowed=hit?Math.max(0,hit.distance-.22):distance;
     if(allowed>.8){rig.root.visible=false;desired.copy(focus).addScaledVector(direction.normalize(),Math.min(distance,allowed));conversationBlend=reducedEffects()?1:THREE.MathUtils.damp(conversationBlend,1,7,dt);camera.position.lerp(desired,conversationBlend);const target=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,focus,camera.up));camera.quaternion.slerp(target,conversationBlend);eye.copy(camera.position);}else conversationBlend=0;
-  }else conversationBlend=0;
+  } else if (portrait) {
+    const focus = portrait.actor.getWorldPosition(new THREE.Vector3());
+    focus.y += portrait.height;
+    const toward = player.pos.clone().sub(focus); toward.y = 0; toward.normalize();
+    const side = new THREE.Vector3(toward.z, 0, -toward.x);
+    const still = reducedEffects();
+    portrait.elapsed = Math.min(2.5, portrait.elapsed + dt);
+    const fraction = still ? .66 : THREE.MathUtils.smoothstep(portrait.elapsed, 0, 2.5);
+    const shot = toward.multiplyScalar(portrait.distance + (1 - fraction) * .66)
+      .addScaledVector(side, portrait.width * (1 - fraction * .63));
+    shot.y = .38 + (1 - fraction) * .62;
+    const length = shot.length(), direction = shot.clone().normalize();
+    const obstruction = combat.geometry.cast(focus, direction, length);
+    const reachable = obstruction ? obstruction.distance - .24 : length;
+    if (reachable > 1.1) {
+      camera.position.copy(focus).addScaledVector(direction, reachable);
+      camera.lookAt(focus);
+      rig.root.visible = false;
+      eye.copy(camera.position);
+    }
+    conversationBlend = 0;
+  } else conversationBlend=0;
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (worldJourneySites?.update(gameplayActive() ? dt : 0, player.pos)) {
     done.add(JOURNEY.cargoParked); saveJourneyProgress();

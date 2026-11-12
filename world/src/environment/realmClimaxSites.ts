@@ -183,15 +183,15 @@ function createSite(id: RealmClimaxId, anchor: Marker, ground: Ground, clear: (p
   }
   let lastTell: ClimaxTell | null = null;
   return {
-    root: art.root, markers, targets, origin, start,
+    root: art.root, body, markers, targets, origin, start,
     apply(flags: ReadonlySet<string>) {
       done = flags;
       result.visible = done.has(climaxCleared(id));
       if (result.visible) wings.root.visible = true;
     },
-    update(fight: ReturnType<typeof createRealmClimax>, dt = 0) {
+    update(fight: ReturnType<typeof createRealmClimax>, dt = 0, entranceSeconds?: number) {
       body.visible = fight.phase >= 0 && fight.phase < 2 && !(id === 'qin' && done.has(QIN_GENERAL_DOWN));
-      character.update({ phase: fight.phase, charging: !!fight.tell, exposed: fight.exposed, dt });
+      character.update({ phase: fight.phase, charging: !!fight.tell, exposed: fight.exposed, dt, entranceSeconds });
       if (id === 'qin' && fight.phase === 1 && done.has(climaxCheckpoint(id, 0)) && body.visible) body.rotation.x = -.14;
       else body.rotation.x = 0;
       for (const [index, target] of targets.entries()) target.visible = body.visible && fight.phase === index && fight.hp > 0;

@@ -304,6 +304,7 @@ test('production quest stands, three regional handovers and the sky finale work 
     d.body.dispatchEvent(new h.window.KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
   };
   const tap = () => { key('keydown'); key('keyup'); };
+  const dismiss = () => { for (let i = 0; i < 5 && w.narrative.open; i++) tap(); assert.equal(w.narrative.open, false); };
   const marker = (id: string) => w.layout.markers.find((m: { id: string }) => m.id === id);
   const approach = (id: string) => {
     const m = marker(id);
@@ -329,7 +330,17 @@ test('production quest stands, three regional handovers and the sky finale work 
     w.camera.updateMatrixWorld(true);
     for (const type of ['mousedown', 'mouseup']) canvas.dispatchEvent(new h.window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
   };
-  const station = (region: RealmClimaxId, which: 'start' | 'west' | 'east') => interact(climaxMarker(region, which));
+  const station = (region: RealmClimaxId, which: 'start' | 'west' | 'east') => {
+    interact(climaxMarker(region, which));
+    if (which === 'start' && w.narrative.open) {
+      assert.ok(w.done.has(`journey_${region}_climax_entrance`));
+      const hp = w.combat.state.hp;
+      frame(54);
+      assert.equal(w.combat.state.hp, hp, 'the entrance freezes attacks');
+      assert.ok(w.narrative.open);
+      dismiss();
+    }
+  };
   const shootPhase = (region: RealmClimaxId, phase: number, model: string) => {
     const flag = climaxCheckpoint(region, phase);
     const target = w.scene.getObjectByName(model);
@@ -380,7 +391,6 @@ test('production quest stands, three regional handovers and the sky finale work 
     interact(F.countPatch); interact(F.nightBrace); frame(285); interact(F.nightDone);
     assert.ok(w.done.has(F.nightDone));
     interact(J.egyptRead); assert.ok(w.done.has(J.egyptRead));
-    const dismiss = () => { for (let i = 0; i < 5 && w.narrative.open; i++) tap(); assert.equal(w.narrative.open, false); };
     interact(G.trace); assert.ok(w.done.has(G.trace)); dismiss();
     interact(G.align);
     assert.ok(w.narrative.choosing);
@@ -476,6 +486,8 @@ test('production quest stands, three regional handovers and the sky finale work 
     assert.ok(w.done.has(J.isolate));
     interact(M.start);
     assert.ok(w.done.has(J.helionFirstWords));
+    assert.ok(w.narrative.open, 'Helion speaks before his first attack begins');
+    frame(18); dismiss();
     frame(2);
     const suit = w.scene.getObjectByName('HelionObservationSuit');
     assert.ok(suit?.visible && suit.getObjectByName('HelionUnmaskedFace') && suit.getObjectByName('HelionExecutionArm'));

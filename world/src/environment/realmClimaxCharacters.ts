@@ -3,7 +3,7 @@ import type { RealmClimaxId } from '../story/realmClimaxes';
 import { SiteArt } from '../story/campaignSites';
 
 type Point = [number, number, number];
-type Motion = { phase: number; charging: boolean; exposed: boolean; dt: number };
+type Motion = { phase: number; charging: boolean; exposed: boolean; dt: number; entranceSeconds?: number };
 const cube = new THREE.BoxGeometry(1, 1, 1);
 const ball = new THREE.SphereGeometry(1, 18, 12);
 const cone = new THREE.ConeGeometry(.5, 1, 8);
@@ -51,7 +51,7 @@ export function createRealmClimaxCharacter(id: RealmClimaxId, root: THREE.Group)
   art.seal();
   let t = 0, windup = 0, release = 0, previous = false;
   return {
-    update({ phase, charging, exposed, dt }: Motion) {
+    update({ phase, charging, exposed, dt, entranceSeconds }: Motion) {
       if (phase < 0) { t = windup = release = 0; previous = false; }
       else {
         t += dt;
@@ -60,7 +60,8 @@ export function createRealmClimaxCharacter(id: RealmClimaxId, root: THREE.Group)
         else release = Math.max(0, release - dt * 2.8);
         previous = charging;
       }
-      step(t, windup, release, exposed, phase);
+      const entrance = entranceSeconds === undefined ? 0 : .8 * Math.sin(Math.PI * THREE.MathUtils.smoothstep(entranceSeconds, 0, 2.35));
+      step(t, Math.max(windup, entrance), release, exposed, phase);
     },
     dispose: () => art.dispose(),
   };
