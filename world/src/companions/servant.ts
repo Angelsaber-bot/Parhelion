@@ -288,7 +288,7 @@ export class ContractServant {
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     const { contract,marker } = this.options;
     const atLake = player.distanceTo(new THREE.Vector3().fromArray(marker.p)) < 80;
-    const atHome=contract.recruited&&!!this.residence&&!contract.summoned;
+    const atHome=contract.recruited&&!!this.residence&&!contract.companionSummoned;
     const needed=atLake||atHome||(contract.recruited&&contract.selected==='saber');
     if(needed){this.lastNeeded=performance.now();void this.ensureLoaded();}
     else if(this.model&&!this.loadTask&&performance.now()-this.lastNeeded>15_000){this.clearModel();this.activeOutfit=undefined;this.state='unloaded';}

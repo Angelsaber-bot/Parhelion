@@ -145,18 +145,17 @@ import { WorldGrid } from './map/grid';
 import { chunkMesh, DistanceCuller, freezeStaticArt, isStaticArtEligible } from './rendering/chunk';
 import { regionLoader, bakeQuantized } from './rendering/glb';
 import { KingdomTwilight } from './map/twilight';
-import { FirstContract, SERVANTS, servantByContract, type ServantId } from './companions/contracts';
+import { COMPANIONS, FirstContract, SERVANTS, servantByContract, type CompanionId, type ServantId } from './companions/contracts';
 import { KitCompanion } from './companions/kitCompanion';
 import { medicineCartPathClear } from './story/medicineCartNavigation';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ContractServant } from './companions/servant';
-import { CHARACTER_KITS } from './characters/catalog';
+import { CHARACTER_KITS, isModelCompanionId } from './characters/catalog';
 import { loadCharacterKit, type CharacterKit } from './characters/characterKit';
 import { ServantAppearance } from './companions/servantAppearance';
-import { createServantPanel } from './ui/servantPanel';
+import { companionStatus, createServantPanel } from './ui/servantPanel';
 import { ModelCompanion } from './companions/modelCompanion';
 import { MODEL_CLAIM_POINTS } from './companions/modelClaimPoints';
-import { createModelCompanionControls } from './ui/modelCompanionControls';
 import { WorldCombat } from './combat/combatView';
 import { WorldGraphicsRecovery } from './rendering/graphicsRecovery';
 import { WorldProgress, ARMORY_MARKER, INITIAL_SPAWN_ID, clearStartOverrides } from './core/progress';
@@ -819,7 +818,12 @@ function interactionLabel(marker: Marker) {
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(marker.id)) {
     return bilingual(...PROLOGUE_LABELS[marker.id as keyof typeof PROLOGUE_LABELS]);
   }
-  const claim=modelClaimPoints.find(point=>point.marker.id===marker.id);if(claim)return bilingual(...claim.label);
+  const claim=modelClaimPoints.find(point=>point.marker.id===marker.id);
+  if (claim) {
+    if (!done.has(marker.id)) return bilingual(...claim.label);
+    const name = servantName(claim.id);
+    return bilingual(`邀请 ${name.zh} 同行`, `Travel with ${name.en}`);
+  }
   const townAction=HOME_CIVIC_ACTIONS.find(a=>a.id===marker.id);if(townAction)return bilingual(...townAction.label);
   const homeAction=HOME_ACTIONS.find(a=>a.id===marker.id);if(homeAction)return bilingual(homeAction.label[0],homeAction.label[1]);
   const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
@@ -1278,7 +1282,12 @@ const eraActors: Array<{ markerId: string; servant: ServantId; kit: keyof typeof
 const napoleonMeetingPoints=new Map(['napoleon_meet','napoleon_contract'].map(id=>[id,[...markers.get(id)!.p] as [number,number,number]]));
 let eraActorsDisposed = false;
 let inspectServant = false;
-const servantRoot = () => contract.selected === 'saber' ? servant.root : eraActors.find((e) => e.servant === contract.selected)?.actor?.root;
+const servantRoot = () => {
+  const id = contract.following;
+  if (id === 'saber') return servant.root;
+  if (id && isModelCompanionId(id)) return modelCompanion.selected === id ? modelCompanion.actor?.root : undefined;
+  return eraActors.find(entry => entry.servant === id)?.actor?.root;
+};
 // Same studio light as Saber's model (scene.environment is unset), so every servant reads equally lit.
 let servantEnv: THREE.Texture | undefined;
 const servantEnvironment = () => {
@@ -1305,11 +1314,7 @@ function matchServantLighting() {
   });
 }
 const companionEnabled = () => !combat.defeated && !player.flying && !player.swimming && !player.gliding;
-const servantName = (id: ServantId | null) => { const s = SERVANTS.find((x) => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
-function servantStatus() {
-  const n = servantName(contract.selected);
-  return bilingual(`${n.zh} · ${contract.companionSummoned ? '同行中' : '已收回'}`, `${n.en} · ${contract.companionSummoned ? 'Following' : 'Recalled'}`);
-}
+const servantName = (id: CompanionId | null) => { const s = COMPANIONS.find(x => x.id === id) ?? SERVANTS[0]; return { zh: s.name, en: s.nameEn }; };
 function updateEraActors(dt: number) {
   if (eraActorsDisposed) return;
   const now = performance.now();
@@ -1323,7 +1328,8 @@ function updateEraActors(dt: number) {
     if (!marker) continue;
     const nearMarker = player.pos.distanceTo(new THREE.Vector3(...marker.p)) < 110;
     const following = contract.isFollowing(entry.servant) && companionEnabled();
-    const nearby = nearMarker || following || (entry.servant==='napoleon'&&(!!cavalrySupport?.needed||(done.has('napoleon_meet')&&done.has(ADVENTURE.road)&&Math.hypot(player.pos.x-40,player.pos.z+687)<60)));
+    const nearby = following || (nearMarker && !contract.has(entry.servant)) ||
+      (entry.servant === 'napoleon' && (!!cavalrySupport?.needed || !!residentEventRuntime?.horseSearch && nearMarker));
     const selected=contract.selected===entry.servant;
     if(nearby||selected)entry.lastNeeded=now;
     const pinned=selected||(entry.servant==='napoleon'&&!!cavalrySupport?.needed);
@@ -1340,6 +1346,7 @@ function updateEraActors(dt: number) {
           entry.actor = actor;
           actor.root.position.fromArray(marker.p);
           actor.root.rotation.y = Math.PI;
+          actor.root.visible = false;
           scene.add(actor.root);
         })
         .catch((error) => {
@@ -1362,8 +1369,7 @@ function updateEraActors(dt: number) {
     entry.actor.update(dt, !nearby || !gameplayActive());
   }
 }
-const servantPanel = createServantPanel(servant, contract, () => { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); });
-const modelCompanion = new ModelCompanion({ scene, colliders, environment: servantEnvironment,
+const modelCompanion = new ModelCompanion({ scene, colliders, environment: servantEnvironment, onRejoin: noteCompanionRejoin,
   reservedRoots: () => [servant.root, ...eraActors.flatMap(entry => entry.actor ? [entry.actor.root] : [])],
   combat: {
     range: 3.5, damage: 14,
@@ -1373,7 +1379,26 @@ const modelCompanion = new ModelCompanion({ scene, colliders, environment: serva
     engage: (_player, from) => { const hit = combat.allyEngage(15, from); return hit ? { id: hit.id, position: new THREE.Vector3(hit.p.x, hit.p.y, hit.p.z) } : null; },
   },
 });
-servantPanel.addSection(createModelCompanionControls(modelCompanion));
+const servantPanel = createServantPanel(servant, contract, () => { abortUltimate(); clearInput(); if (document.pointerLockElement) document.exitPointerLock(); }, modelCompanion);
+function syncCompanionSelection() {
+  const active = contract.following, selected = contract.selected;
+  if (active !== 'saber' && (contract.recruited || active)) servant.root.visible = false;
+  for (const entry of eraActors) {
+    if (!entry.actor || active === entry.servant || entry.servant === 'napoleon' && cavalrySupport?.ownsActor) continue;
+    entry.actor.root.visible = false;
+    entry.follow.release(entry.actor);
+  }
+  const model = selected && isModelCompanionId(selected) ? selected : null;
+  if (!active) modelCompanion.update(0, player.pos, player.yaw, false, true);
+  if (model !== modelCompanion.selected) {
+    void modelCompanion.select(active ? model : null).then(() => { hudRevision++; servantPanel.render(); });
+  }
+  companionRegroupUntil = 0;
+  hudRevision++;
+  servantPanel.render();
+}
+const unsubscribeCompanion = contract.subscribe(syncCompanionSelection);
+syncCompanionSelection();
 const contractCard = document.createElement('div');
 contractCard.id = 'contract-card'; contractCard.className = 'hud';
 Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px', padding: '12px', borderRadius: '12px',
@@ -1381,7 +1406,7 @@ Object.assign(contractCard.style, { right: '18px', top: '222px', width: '230px',
 document.body.append(contractCard);
 function renderContract() {
   servantPanel.render();
-  const state = contract.selected && contract.selected !== 'saber' ? servantStatus() : servant.status;
+  const state = companionStatus(servant, contract, modelCompanion);
   const multi = contract.roster.length > 1 ? bilingual(`\n[${settings.label('switchServant')}] 切换从者（${contract.roster.length} 位已缔约）`, `\n[${settings.label('switchServant')}] Switch servant (${contract.roster.length} contracted)`) : '';
   const hint = contract.anyRecruited ? bilingual(`[${settings.label('summon')}] 召唤／收回 · 协助攻击`, `[${settings.label('summon')}] Summon / recall · Assists in combat`) + multi
     : bilingual('前往圣剑湖，与第一位契约从者会面', 'Visit Sword Lake to meet your first contracted servant');
@@ -1393,7 +1418,7 @@ function renderContract() {
 }
 addEventListener('pagehide', (event) => { if (!event.persisted) {
   eraActorsDisposed = true;
-  servantPanel.dispose(); servant.dispose(); modelCompanion.dispose();
+  unsubscribeCompanion(); servantPanel.dispose(); servant.dispose(); modelCompanion.dispose();
   for (const entry of eraActors) {entry.controller?.abort();entry.actor?.dispose();}
 } });
 function resetProgress() {
@@ -1650,7 +1675,7 @@ actions = new WorldActions({ scene,
   context: () => ({ clockRunning: actionClockActive() && !combat.defeated, enabled: actionClockActive() && !fortCannon.mounted && !inspectServant && !combat.defeated && !residentEventRuntime?.carrying && !player.flying && !player.swimming && !player.gliding,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
-    identity: contract.companionSummoned ? contract.selected : null }),
+    identity: contract.skillIdentity }),
   strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(!reducedEffects())hitStop=Math.max(hitStop,hitStopSeconds(source,result.hits,result.kills.length));if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
   cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type !== 'guard') coop.skillFx(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
@@ -1702,7 +1727,7 @@ function abortUltimate() { ultimateDirector?.abort(); ultimateStage?.end(); ulti
  * advance here; all other world clocks stay frozen in Full, Short and Off. */
 function frameUltimate(dt: number): boolean {
   if (!ultimateDirector?.active || !ultimateStage || !ultimateSource || !actions) return false;
-  const identity = contract.companionSummoned ? contract.selected : null;
+  const identity = contract.skillIdentity;
   if (combat.defeated || identity !== ultimateSource.identity || presentationModel(identity) !== ultimateSource.root) { abortUltimate(); return false; }
   const suspended = document.visibilityState !== 'visible' || !document.hasFocus() || settingsPanel.open || servantPanel.open;
   keys.clear(); aim.clear(); acc = 0; prevPos.copy(player.pos);
@@ -1983,7 +2008,7 @@ const falseDawnLine = (line: [string, string]): [string, string] => {
   const blocked = guide ? campaignTrackingBlocked(guide.region) : null;
   if (blocked) line = [`${line[0]}\n${blocked[0]}`, `${line[1]}\n${blocked[1]}`];
   const root = contract.companionSummoned ? servantRoot() : undefined;
-  const reaction = root?.visible && root.position.distanceTo(player.pos) <= 16 ? getFalseDawnCompanionReaction(contract.selected, done) : null;
+  const reaction = root?.visible && root.position.distanceTo(player.pos) <= 16 ? getFalseDawnCompanionReaction(contract.following, done) : null;
   return reaction ? [`${line[0]}\n${reaction.speaker[0]}：${reaction.line[0]}`, `${line[1]}\n${reaction.speaker[1]}: ${reaction.line[1]}`] : line;
 };
 falseDawnRuntime = createFalseDawnRuntime({
@@ -2022,7 +2047,7 @@ cavalrySupport=new LocalCavalrySupport({done,player:player.pos,actor:()=>napoleo
  strike:(origin,direction)=>combat.applyStrike({origin,direction,range:4.8,halfWidth:1.7,damage:56,maxTargets:2},'skill').hits.length>0,
  toast:line=>toast(bilingual(...line)),save,changed:applyWorldState,
 });
-adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>{combat.refillAmmo(30);return combat.recoverAtSettlement(25);},actions:adventureSites.actions,path:adventureSites.convoyPath,millPath:adventureSites.millConvoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
+adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<CompanionId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”'],jeanne:['贞德：“旗可以放下了。下一班有人接手。”','Jeanne: “We can lower the flag. The next watch is here.”'],ozymandias:['奥斯曼迪斯：“水还在流。让他们分配自己的河水。”','Ozymandias: “The water still flows. Let them share their own river.”'],qinShiHuang:['秦始皇：“今日的交接已记。明日照样可以改令。”','Qin Shi Huang: “Today’s handover is recorded. Tomorrow they may change the order.”']};const reaction=contract.following?voices[contract.following]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>{combat.refillAmmo(30);return combat.recoverAtSettlement(25);},actions:adventureSites.actions,path:adventureSites.convoyPath,millPath:adventureSites.millConvoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
  continuationBlock:id=>{
   if(id==='adventure_tomorrow'&&journeyEnabled(done)&&!done.has(JOURNEY.epilogue))return ['地面撤离已经完成。真正的交接在天穹观测冠。','The ground evacuation is complete. The final handover takes place at the Sky Crown.'];
   if((id==='adventure_guardian'||id==='adventure_tower'||id==='adventure_exit'||(ADVENTURE.emitters as readonly string[]).includes(id))&&!journeyTowerReady(done))return ['先完成各地交接，再接通塔外的独立线路。','Complete the regional handovers and connect the independent circuits outside the tower first.'];
@@ -2055,7 +2080,7 @@ let crownRecoverySector: number | null = null;
 
 function availableSkySupport(): SkySupporter | undefined {
   if (!helionFight.active) return;
-  const preferred = modelCompanion.selected ?? (contract.companionSummoned ? contract.selected : null);
+  const preferred = contract.following;
   return preferred && helionFight.canSupport(preferred) ? preferred : SKY_SUPPORTERS.find(id => helionFight.canSupport(id));
 }
 
@@ -2728,10 +2753,13 @@ function interact() {
     // just as nearby residents do, and never fall through to generic activation.
     const reachable = canReachValleyPanel({ ...m, p: [m.p[0], m.p[1] + 1.2, m.p[2]] });
     if (!reachable) { toast(bilingual('请走近领取点，避开中间的障碍。', 'Move closer to the claim point with a clear path.')); return; }
-    const loading = modelCompanion.selected === claim.id && modelCompanion.state === 'failed'
-      ? modelCompanion.retry() : modelCompanion.select(claim.id);
+    if (!contract.has(claim.id)) {
+      contract.recruit(claim.marker.id);
+      saveJourneyProgress();
+    } else contract.select(claim.id);
+    const loading = modelCompanion.state === 'failed' ? modelCompanion.retry() : modelCompanion.select(claim.id);
     void loading.then(() => {
-      if (modelCompanion.selected !== claim.id) return;
+      if (!contract.isFollowing(claim.id) || modelCompanion.selected !== claim.id) return;
       if (modelCompanion.state === 'ready') {
         audio.interaction();
         toast(bilingual(`${m.label}：已领取`, `${localizeText(m.label)}: claimed`));
@@ -3033,7 +3061,7 @@ function frame(now: number) {
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
   updateEraActors(dt);
-  modelCompanion.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
+  modelCompanion.update(dt, player.pos, anim.facing - Math.PI, !!modelCompanion.selected && contract.isFollowing(modelCompanion.selected) && companionEnabled(), !gameplayActive());
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
   if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); }
   settlements.update(player.pos);

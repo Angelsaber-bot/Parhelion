@@ -13,6 +13,7 @@ class Element {
   children:Element[]=[];attributes=new Map<string,string>();listeners=new Map<string,((e:any)=>void)[]>();
   onclick?: (e:any)=>void; onchange?: (e:any)=>void;
   append(...nodes:Element[]){this.children.push(...nodes);}
+  replaceChildren(...nodes:Element[]){this.children=nodes;}
   setAttribute(key:string,value:string){this.attributes.set(key,value);}
   addEventListener(name:string,listener:(e:any)=>void){this.listeners.set(name,[...this.listeners.get(name)??[],listener]);}
   removeEventListener(name:string,listener:(e:any)=>void){this.listeners.set(name,(this.listeners.get(name)??[]).filter(fn=>fn!==listener));}
@@ -33,7 +34,7 @@ test('World outfit modal is reversible, bilingual and isolated from gameplay/con
   select.value='civilian';select.onchange!({});await servant.ensureLoaded();panel.render();
   assert.equal(servant.activeOutfit,'civilian');assert.equal(contract.summoned,true);assert.deepEqual([...done],['saber_contract','relay_a']);
   select.value='armor';select.onchange!({});await servant.ensureLoaded();assert.equal(servant.activeOutfit,'armor');
-  setLanguage('en');assert.equal(launcher.textContent,'Servant · Outfits');assert.equal(select.children[0].textContent,'Oath armor');assert.equal(select.children[1].textContent,'Travel clothes');
+  setLanguage('en');assert.equal(launcher.textContent,'Servants');assert.equal(select.children[0].textContent,'Oath armor');assert.equal(select.children[1].textContent,'Travel clothes');
   setLanguage('zh');assert.equal(select.children[0].textContent,'誓约战甲');
   let stopped=0;for(const listener of dialog.listeners.get('keydown')!)listener({stopPropagation(){stopped++;}});assert.equal(stopped,1);
   doc.pointerLockElement={};for(const fn of doc.listeners.get('pointerlockchange')!)fn({});assert.equal(launcher.hidden,true);
@@ -46,6 +47,6 @@ test('outfit controls have bounded viewport CSS and opening clears input without
   assert.match(css,/#servant-open\[hidden\][^}]*display:\s*none/);
   assert.match(css,/width:\s*min\(480px,\s*calc\(100vw - 28px\)\)/);assert.match(css,/max-height:.*100vh/);assert.match(css,/overflow:\s*auto/);
   const source=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-  assert.match(source,/createServantPanel\(servant, contract, \(\) => \{ abortUltimate\(\); clearInput\(\); if \(document.pointerLockElement\) document.exitPointerLock\(\); \}\)/);
+  assert.match(source,/createServantPanel\(servant, contract, \(\) => \{ abortUltimate\(\); clearInput\(\); if \(document.pointerLockElement\) document.exitPointerLock\(\); \}, modelCompanion\)/);
   assert.doesNotMatch(readFileSync(new URL('../src/ui/servantPanel.ts',import.meta.url),'utf8'),/SettingsStore|skinStore|from ['"][^'"]*arena-game/);
 });

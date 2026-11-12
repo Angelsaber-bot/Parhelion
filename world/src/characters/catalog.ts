@@ -46,9 +46,9 @@ export const CHARACTER_KITS = {
 } satisfies Record<string, CharacterKitDefinition>;
 export type CharacterKitId = keyof typeof CHARACTER_KITS;
 
-/** Optional recovered models do not satisfy the original authored-combat kit contract. */
+/** Regional character kits use the shared fallback for basic combat contacts. */
 export const MODEL_CHARACTER_KITS = {
-  // Optional companions. Native scale and authored root/hover are preserved.
+  // Native scale and authored root/hover are preserved.
   // These clips have no authored combat contacts; gameplay uses an explicit fallback.
   jeanne: {
     id: 'jeanne', defaultState: 'idle', rootMotion: 'in-place',
@@ -88,7 +88,7 @@ export const MODEL_CHARACTER_KITS = {
 } satisfies Record<string, CharacterKitDefinition>;
 export type ModelCharacterKitId = keyof typeof MODEL_CHARACTER_KITS;
 
-/** Explicit opt-in selection, separate from the quest/combat servant roster. */
+/** Character kits loaded by the regional companion renderer. */
 export const MODEL_COMPANIONS = [
   { id: 'jeanne', name: '贞德', nameEn: 'Jeanne' },
   { id: 'ozymandias', name: '奥兹曼迪亚斯', nameEn: 'Ozymandias' },

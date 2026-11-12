@@ -132,13 +132,12 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }
-  // Repeatable claim services: tracking only points to the existing interaction.
-  // No contract flags or progression changes are inferred from opening the guide.
   for(const claim of MODEL_CLAIM_POINTS){
    if(!markers.has(claim.marker.id))continue;
-   const next=guide(claim.title,claim.hint,claim.marker.id,done,context);
+   const complete=done.has(claim.marker.id);
+   const next=complete?null:guide(claim.title,claim.hint,claim.marker.id,done,context);
    entries.push({id:`side:${claim.marker.id}`,region:claim.region,category:'side',title:claim.title,
-    complete:false,guide:next,trackLabel:['前往领取点','Go to claim point'],...(!next?{unavailable}:{})});
+    complete,guide:next,trackLabel:['前往领取点','Go to claim point'],...(!next&&!complete?{unavailable}:{})});
   }
   for(const action of ORLEANS_WORK_ACTIONS){if(markers.has(action.id))add(`side:${action.id}`,'orleans','side',action.label,done.has(action.flag),guide(action.label,action.hint,action.id,done,context));}
   if(markers.has('home_notice')){

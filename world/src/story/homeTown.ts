@@ -76,7 +76,7 @@ export function createHomeTown(host:Host){
      const line:Localized=first?['“我原以为，旅途中只需要一个能守住的营地。”她看了看桌上的空杯，“原来这里还为我留了明天的位置。”','“I thought a journey needed only a camp we could defend.” She looks at the empty cup. “You have left a place for tomorrow, too.”']:garden?['“在这里练剑，不必等下一场战斗。”她收住脚步，“你也可以只在这里走一走。”','“Here, practice need not be preparation for the next battle.” She stops. “You may simply take a walk.”']:['“屋里很安静。我会把门前的灯留着。”她把目光转向你，“下一段路，你想好了吗？”','“It is quiet here. I will leave the porch light on.” She turns to you. “Have you chosen the next road?”'];
      show(line,['Saber','Saber'],[{id:'talk',label:first?['欢迎回家。','Welcome home.']:['在这里陪她聊一会儿。','Stay and talk a little.']},{id:'follow',label:['一起出发吧。','Let us set out together.']},later],id,choice=>{if(!homeSaberReady(host.done)||host.contract.summoned)return;if(choice==='talk')commit(first?HOME_FLAGS.welcome:garden?HOME_FLAGS.garden:HOME_FLAGS.welcome);else if(choice==='follow')host.contract.select('saber');});
    }else if(id==='home_meal'){
-     if(!homeSaberReady(host.done)||host.contract.summoned){host.toast(['先在入住簿邀请 Saber，并让她留在公馆休息。','Invite Saber at the guest book and let her rest at the house first.']);return true;}
+     if(!homeSaberReady(host.done)||host.contract.companionSummoned){host.toast(['先在入住簿邀请 Saber，再收回当前从者。','Invite Saber at the guest book, then recall your current companion.']);return true;}
      show(['锅里还有热汤。要摆好两个人的碗筷，邀请 Saber 来吃饭吗？','There is still warm soup. Set two places and invite Saber to a meal?'],['公馆厨房','House kitchen'],[{id:'meal',label:['摆好碗筷，一起吃饭。','Set the table and share a meal.']},later],id,()=>{if(!homeSaberReady(host.done)||host.contract.summoned)return;commit(HOME_FLAGS.meal);dwell=0;host.prepareDialogue();host.dialogue.show(['“那我就不客气了。”她接过碗，停了一下，“下次出发前，也留一点时间做这个吧。”','“Then I shall gladly accept.” She takes a bowl. “Before our next journey, let us leave time for this again.”'],['Saber','Saber']);});
    }else if(id==='home_rest')show(['客厅里听得到远处的海风。坐下来休息，等呼吸平稳再出发。','The sea breeze reaches the living room. Sit down and catch your breath before setting out.'],['主角的家','Your home'],[{id:'rest',label:['休息一会儿。','Rest a while.']},later],id,()=>{host.toast(host.rest()?['在家休息，恢复一些生命。可以继续休息；旅途进度保持。','You rest at home and recover some health. Rest again if needed; journey progress is kept.']:['已经休息好了。准备好就再出发吧。','You are rested. Set out whenever you are ready.']);});
    else if(id==='home_letters'){host.prepareDialogue();host.dialogue.show(homeChapterMemories(host.done),['家中的书桌','Your writing desk']);}
@@ -86,7 +86,7 @@ export function createHomeTown(host:Host){
  function update(dt:number,player:THREE.Vector3,active:boolean,ready:boolean){
    if(disposed)return;
    activities.update(dt,player,active&&ready);
-   const atHome=homeSaberReady(host.done)&&!host.contract.summoned&&ready&&Math.hypot(player.x-685,player.z+35)<240;
+   const atHome=homeSaberReady(host.done)&&!host.contract.companionSummoned&&ready&&Math.hypot(player.x-685,player.z+35)<240;
    root.visible=Math.hypot(player.x-720,player.z)<600;
    if(!atHome){host.servant.setResidence(null);talk.p=[0,-10000,0];wasHome=false;return;}
    if(!wasHome){index=0;dwell=22;host.servant.setResidence(start,start);wasHome=true;}

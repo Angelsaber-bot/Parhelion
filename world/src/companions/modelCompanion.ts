@@ -9,7 +9,8 @@ export interface ModelCompanionOptions {
   scene: THREE.Scene;
   colliders: Collider[];
   environment?: () => THREE.Texture | undefined;
-  /** Existing story actors keep priority. The optional model reserves its own body space. */
+  onRejoin?: () => void;
+  /** Keep summoned actors clear of nearby quest actors. */
   reservedRoots?: () => readonly THREE.Object3D[];
   /** Dependency injection for offline lifecycle tests; production uses the real loader. */
   load?: typeof loadCharacterKit;
@@ -24,7 +25,7 @@ export interface ModelCompanionOptions {
   };
 }
 
-/** One optional model companion with an explicit combat bridge. Never writes quest or save state. */
+/** Renderer and follow controller for the three regional companion kits. */
 export class ModelCompanion {
   private chosen: ModelCompanionId | null = null;
   private phase: 'off' | 'loading' | 'ready' | 'failed' = 'off';
@@ -49,7 +50,7 @@ export class ModelCompanion {
       colliders: options.colliders, range: combat?.range ?? 0, damage: combat?.damage ?? 0,
       target: combat?.target ?? (() => null), track: combat?.track,
       strike: combat?.strike ?? (() => null), engage: combat?.engage,
-      followSide: -1, canPlace: this.canPlace,
+      onRejoin: options.onRejoin, followSide: -1, canPlace: this.canPlace,
     });
   }
   get selected() { return this.chosen; }
