@@ -1,3 +1,6 @@
+import { createValleyInvestigationSites } from './environment/valleyInvestigationSites';
+import { FIFTH_ROAD as FR, REPLAY_TEST as RT, WATERWORKS as WW, VALLEY_INVESTIGATION_STEPS, VALLEY_WATER_RESTORE, valleyInvestigationReady } from './story/valleyInvestigations';
+import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
 import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, fieldSideReady } from './story/fieldSideStories';
 import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
@@ -619,6 +622,15 @@ if (fieldSideSites) {
   fieldSideSites.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
   addEventListener('pagehide', event => { if (!event.persisted) fieldSideSites.dispose(); });
 }
+const valleyInvestigations = alphaResidence ? createValleyInvestigationSites(alphaResidence.position, layout.markers,
+  layout.world.waterLevel, culturalGround, culturalClear) : null;
+if (valleyInvestigations) {
+  world.add(valleyInvestigations.root);
+  colliders.push(...valleyInvestigations.colliders);
+  layout.markers.push(...valleyInvestigations.markers);
+  valleyInvestigations.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) valleyInvestigations.dispose(); });
+}
 let shadowPlayCue: { afterSiege: boolean; swallowtail: boolean } | null = null;
 let qinPotterSpeaking = false;
 
@@ -815,6 +827,7 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) return valleyInvestigationReady(id, done);
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) return fieldSideReady(id, done);
   if (CULTURAL_STEPS.has(id)) return !(orleansShadowPlay?.playing && (id === SP.rope || id === SP.encore)) && culturalStepReady(id, done);
   if (EGYPT_GAUGE_BY_ID.has(id)) return egyptGaugeNext(done)?.id === id;
@@ -835,6 +848,8 @@ function journeyMarkerActive(id: string) {
 function interactionLabel(marker: Marker) {
   if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const investigation = VALLEY_INVESTIGATION_STEPS.get(marker.id)?.label ?? (marker.id === WW.restore ? VALLEY_WATER_RESTORE : undefined);
+    if (investigation) return bilingual(...investigation);
     const fieldSide = FIELD_SIDE_STEPS.get(marker.id)?.label ?? FIELD_SERVICE_LABELS.get(marker.id);
     if (fieldSide) return bilingual(...fieldSide);
     const cultural = CULTURAL_STEPS.get(marker.id);
@@ -908,6 +923,7 @@ function applyWorldState() {
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
   if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
   if (typeof fieldSideSites !== 'undefined' && typeof player !== 'undefined') fieldSideSites?.apply(done, 0, player.pos);
+  if (typeof valleyInvestigations !== 'undefined') valleyInvestigations?.apply(done);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
   if (typeof kingdomWorksScene !== 'undefined') kingdomWorksScene?.apply(done);
   applyCampaignState();
@@ -1731,7 +1747,7 @@ actions = new WorldActions({ scene,
     grounded: player.onGround, armed: worldProgress.armed&&!residentEventRuntime?.carrying, bladeReady: blade.loaded, bladeFailed: blade.root.userData.artState === 'error', position: player.pos, yaw: player.yaw,
     moveX: Number(down('right')) - Number(down('left')), moveZ: Number(down('forward')) - Number(down('back')),
     identity: contract.following }),
-  strike: (strike, source) => {const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(!reducedEffects())hitStop=Math.max(hitStop,hitStopSeconds(source,result.hits,result.kills.length));if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
+  strike: (strike, source) => {if (source === 'melee') hitValleyRustLock(strike); const result=combat.applyStrike(strike,source);if(source==='melee'&&result.hits.length)kickCamera(meleeKick());if(!reducedEffects())hitStop=Math.max(hitStop,hitStopSeconds(source,result.hits,result.kills.length));if(source==='skill'&&actions?.skills.selected==='saber')for(const hit of result.hits)combat.state.interruptEnemy(hit.id,.8);return result;},
   defense: value => combat.setDefense(value), toast, reducedEffects, bladeOrigin: () => blade.root.getWorldPosition(new THREE.Vector3()), bladeDirection: () => blade.root.getWorldDirection(new THREE.Vector3()),
   cue: kind => audio[kind](), skillEvent: event => { audio.skillEvent(event); if (event.type !== 'guard') coop.skillFx(event); if (event.type === 'strike' && event.slot === 'ultimate') ultimateDirector?.notifyStrike(); },
   onCast: event => { actionHud.announce(event); beginUltimate(event); },
@@ -2355,6 +2371,44 @@ function interactCulturalStory(id: string) {
     ['陶工路容', 'Lu Rong, potter']);
   }
 }
+function hitValleyRustLock(strike: StrikeRequest) {
+  if (!valleyInvestigationReady(FR.lock, done)) return;
+  const point = valleyInvestigations?.lockPoint();
+  if (!point || !strikeContains(strike, point)) return;
+  const origin = new THREE.Vector3(strike.origin.x, strike.origin.y + (strike.losOffset ?? 1), strike.origin.z);
+  const ray = point.clone().sub(origin);
+  if (combat.geometry.cast(origin, ray, Math.max(0, ray.length() - .08))) return;
+  done.add(FR.lock); saveJourneyProgress(); audio.contact(); combat.flashHitMarker(.14);
+  toast(bilingual(...VALLEY_INVESTIGATION_STEPS.get(FR.lock)!.result));
+}
+function interactValleyInvestigation(id: string) {
+  const site = valleyInvestigations;
+  if (!site) return;
+  if (id === WW.divert && !site.floatReady()) {
+    toast(bilingual('浮标还没到刻线，等水槽蓄满。', 'Wait for the float to reach the marked line.'));
+    return;
+  }
+  if (id === WW.drain || id === WW.restore) {
+    if (site.waterChanging()) return;
+    if (site.waterContains(player.pos) || site.waterContains(companionRoot(contract.following)?.position)) {
+      toast(bilingual('检修池内还有人，等两侧都清空再换水位。', 'Wait until the maintenance basin is clear before changing the water level.'));
+      return;
+    }
+    if (site.moveWater(id === WW.drain)) audio.explore('rotate');
+    return;
+  }
+  const item = VALLEY_INVESTIGATION_STEPS.get(id);
+  if (!item) return;
+  if (id === RT.plate) site.flipPlate();
+  if (id === RT.bell) { site.ringBell(); audio.bell(); }
+  if (!done.has(id)) {
+    done.add(id);
+    if (id === RT.compare) done.add(F.replay);
+    saveJourneyProgress();
+  }
+  if (id === RT.plate || id === RT.bell || id === WW.fill) toast(bilingual(...item.result));
+  else speakDialogue(item.result, item.label);
+}
 function interactFieldSide(id: string) {
   if (id === RB.watch) {
     speakDialogue(['伊芙：“下一圈换我掌桨。你站在那儿，帮我看船有没有偏离木桩。”', 'Eve: “My turn to row next time. From there you can tell if I drift past the posts.”'],
@@ -2442,6 +2496,7 @@ function interactFieldSide(id: string) {
 }
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) { interactValleyInvestigation(id); return; }
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) { interactFieldSide(id); return; }
   if (EGYPT_GAUGE_BY_ID.has(id)) { interactEgyptGauge(id as EgyptGaugeAction); return; }
   if (CULTURAL_STEPS.has(id)) { interactCulturalStory(id); return; }
@@ -3378,6 +3433,15 @@ function frame(now: number) {
   }
   egyptGaugeScene?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, gaugeKeeperSpeaking);
   fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  valleyInvestigations?.apply(done, gameplayActive() || narrative?.open ? dt : 0);
+  const waterChanged = valleyInvestigations?.waterResult();
+  if (waterChanged === true || waterChanged === false) {
+    if (waterChanged) { done.add(WW.drain); done.add(WW.low); }
+    else done.delete(WW.low);
+    saveJourneyProgress(); audio.explore('solve');
+    toast(waterChanged ? bilingual(...VALLEY_INVESTIGATION_STEPS.get(WW.drain)!.result)
+      : bilingual('检修池恢复到正常水位，备用渠继续送水。', 'The maintenance pool is full again. The backup channel keeps supplying the town.'));
+  }
   if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
   orleansAtmosphere.update(dt,player.pos);orleansOutskirts.update(dt,player.pos);
   if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);
