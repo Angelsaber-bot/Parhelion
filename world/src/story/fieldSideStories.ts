@@ -56,6 +56,30 @@ export const VALLEY_RADIO = {
 export const EGYPT_SEEDS = {
   yard: 'field_egypt_seed_yard', cart: 'field_egypt_seed_cart', rack: 'field_egypt_seed_rack',
 } as const;
+export const EGYPT_MAIL = {
+  flag: 'field_egypt_mail_flag', locker: 'field_egypt_mail_locker', late: 'field_egypt_mail_salvage',
+  return: 'field_egypt_mail_return',
+} as const;
+export const EGYPT_REED_RACE = {
+  meet: 'field_egypt_reed_meet', race: 'field_egypt_reed_race', win: 'field_egypt_reed_win',
+  prize: 'field_egypt_reed_prize', again: 'field_egypt_reed_again',
+} as const;
+export const EGYPT_SHIP_HINGE = {
+  inspect: 'field_egypt_hinge_inspect', pin: 'field_egypt_hinge_pin', brace: 'field_egypt_hinge_brace',
+  shutter: 'field_egypt_hinge_shutter', coverOpen: 'field_egypt_hinge_cover_open',
+} as const;
+export const EGYPT_REVERSE_WHEEL = {
+  trace: 'field_egypt_wheel_trace', ladder: 'field_egypt_wheel_ladder', baffle: 'field_egypt_wheel_baffle',
+  view: 'field_egypt_wheel_view',
+} as const;
+export const EGYPT_HERD = {
+  bell: 'field_egypt_herd_bell', rig: 'field_egypt_herd_rig', settle: 'field_egypt_herd_settle',
+  supplies: 'field_egypt_herd_supplies',
+} as const;
+export const EGYPT_THRONE = {
+  colonnade: 'field_egypt_throne_colonnade', terrace: 'field_egypt_throne_terrace',
+  east: 'field_egypt_throne_east', west: 'field_egypt_throne_west', revisit: 'field_egypt_throne_revisit',
+} as const;
 export const ORLEANS_SOUP = {
   pot: 'field_orleans_soup_pot', gate: 'field_orleans_soup_gate', share: 'field_orleans_soup_share', bowl: 'field_orleans_soup_bowl',
 } as const;
@@ -75,6 +99,8 @@ const E = EGYPT_SEEDS, O = ORLEANS_SOUP, Q = QIN_QUIET_ROOM;
 const P = KYOTO_PASS, L = KYOTO_PAPERLINE, H = HARBOR_WORKBOAT;
 const D = HARBOR_KEEPSAKES, C = CAPTAINS_CHAIR;
 const F = WINTER_BREAD, SH = WINTER_SHOES, WR = WINTER_RANGE;
+const EM = EGYPT_MAIL, ER = EGYPT_REED_RACE, EH = EGYPT_SHIP_HINGE, EW = EGYPT_REVERSE_WHEEL;
+const EG = EGYPT_HERD, ET = EGYPT_THRONE;
 const ropeLoose = (done: Flags) => done.has(I.rope) || done.has(I.pin);
 export const harborCustomsGone = (done: Flags) => done.has('sea_core') || done.has(ADVENTURE.departed);
 
@@ -316,6 +342,99 @@ export const FIELD_SIDE_STORIES: readonly SideStory[] = [
     ],
   },
   {
+    id: 'sand-mailboat', region: 'egypt', title: ['沉在沙里的邮船', 'The Mailboat in the Sand'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: EM.flag, label: ['河岸 · 追踪半露的船旗', 'Riverbank · Follow the half-buried flag'],
+        hint: ['去集市下游的沙岸找仍露在外面的邮船旗。', 'Look on the sandbank downriver from the market for a mailboat flag still sticking out.'],
+        line: ['船翻过来了，桅杆只剩半截。阿塞说船里的信件用油布裹着，翻船后从船尾还能摸进邮舱。', 'The boat rolled over, leaving half its mast exposed. Ase says the letters were wrapped in oilcloth. The stern still gives access to the mail hold.'] },
+      { id: EM.locker, label: ['倒置船舱 · 取油布信袋', 'Overturned hold · Recover the oilcloth mailbag'],
+        hint: ['绕到船尾，打开邮舱扣板并取信。', 'Go around to the stern, release the hold catch and recover the mail.'],
+        line: ['信袋没有进水。扳开舱门的反扣，回去时可直接从船身下穿过。', 'The bag stayed dry. Release the reverse latch to go straight through the hold on your way back.'],
+        after: done => !done.has(JOURNEY.egyptDone) && !done.has(EM.late) },
+      { id: EM.late, label: ['退水打捞架 · 认领油布信袋', 'Salvage rack · Claim the oilcloth mailbag'],
+        hint: ['船已被打捞。到河岸木架认领收好的信袋。', 'The boat has been salvaged. Collect the mailbag at the riverbank rack.'],
+        line: ['河工收信时没有拆封。穿过已稳住的倒舱，就能把信带回集市。', 'The crew left the letters sealed. Walk through the stabilized hold and take the letters back to the market.'],
+        after: done => done.has(JOURNEY.egyptDone) && !done.has(EM.locker) },
+      { id: EM.return, label: ['市集回邮桌 · 把家信交给阿塞', 'Market mail table · Give Ase the family letter'],
+        hint: ['沿河岸回市集，把家信交给阿塞。', 'Follow the bank back to the market and give Ase the letter.'],
+        line: ['阿塞认出姐姐打的结。他把收信人的名字写在木牌上，等下一班邮船经过。', 'Ase recognizes his sister’s knot. He writes the recipient’s name on the board for the next mailboat.'],
+        after: done => done.has(EM.locker) || done.has(EM.late) },
+    ],
+  },
+  {
+    id: 'reed-races', region: 'egypt', title: ['芦苇的竞速线', 'Reed Racing'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: ER.meet, label: ['渠边 · 看孩子放标记芦苇', 'Canal edge · Watch the marked reeds'],
+        hint: ['找绿洲边两条并排的小水道。', 'Find the two side-by-side channels at the oasis.'],
+        line: ['萨芮：“短槽直，可是水慢。长槽绕过石头，水会被那道窄口推快。你猜哪根先过线？”', 'Sari: “The short run is straight, but the water is slow. The long run bends around the stones, but its throat speeds up the current. Which reed reaches the line first?”'] },
+      { id: ER.race, label: ['双渠起点 · 放下两根芦苇', 'Split channel · Release both reeds'],
+        hint: ['选一条渠预测先到，然后看两根芦苇漂到终点。', 'Pick a channel to win, then watch both reeds float to the finish.'],
+        line: ['哪条渠的芦苇会先碰到终点木线？', 'Which reed will hit the finish bar first?'] },
+      { id: ER.prize, label: ['渠尾 · 领取手编舟饰', 'Channel finish · Accept the woven boat charm'],
+        hint: ['走到渠尾看看刚才先到的芦苇，领取孩子编的舟饰。', 'Follow the channel to see which reed won and collect the child’s woven boat charm.'],
+        line: ['萨芮把刚才折下的芦苇拧成小环，说下次要换水速再赛一次。', 'Sari twists one of the reeds into a tiny ring and asks to race again with the currents switched.'] },
+    ],
+  },
+  {
+    id: 'shipwright-hinge', region: 'egypt', title: ['船匠的坏铰链', 'The Shipwright’s Jammed Hinge'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: EH.inspect, label: ['船匠铺 · 查卡住的舟侧折板', 'Shipwright stall · Inspect the jammed side panel'],
+        hint: ['看船坞里不能放下的青铜边折板。', 'Look at the bronze-edged panel that will not come down in the boatyard.'],
+        line: ['锈销把铰链卡死了。先射断销头，避开牵索的回弹线，再把折板牵回原位。', 'A rusted pin locks the hinge. Shoot its head clear, stay out of the recoil line, then pull the panel back into place.'] },
+      { id: EH.pin, label: ['折板铰链 · 射断锈销', 'Panel hinge · Shoot the rusted pin'],
+        hint: ['从木桩外侧瞄准橙铜销头。', 'Aim at the orange bronze pin from outside the mooring post.'],
+        line: ['销头已经断开。回牵索边把折板拖平。', 'The pin is clear. Return to the rope and pull the panel level.'] },
+      { id: EH.brace, label: ['牵索 · 复位折板', 'Hauling rope · Reset the side panel'],
+        hint: ['回到牵索，把可收放的折板修好。', 'Return to the hauling rope and restore the folding panel.'],
+        line: ['船匠把折板装回太阳舟。到汇水台也可以展开一面备用挡板来挡水。', 'The shipwright mounts the panel on the solar boat. A spare shield can be raised at the confluence to break the flow.'] },
+    ],
+  },
+  {
+    id: 'reverse-waterwheel', region: 'egypt', title: ['会倒着走的水车', 'The Waterwheel That Runs Backward'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: EW.trace, label: ['灌渠 · 找逆转轮上的影线', 'Irrigation channel · Follow the reverse wheel shadow'],
+        hint: ['沿旧水渠找倒转水车与轮架后的上行道。', 'Follow the old channel to the backward wheel and the ramp behind its frame.'],
+        line: ['水从回流槽推着叶片倒转。轮轴影子落在维修斜道上，从那里可以到挡板层。', 'The return flume drives the paddles backward. The axle casts a shadow across the service ramp to the baffle deck.'] },
+      { id: EW.ladder, label: ['水车检修层 · 登上挡板架', 'Wheel service level · Reach the baffle frame'],
+        hint: ['走上轮架旁的维修斜道。', 'Climb the maintenance ramp beside the wheel frame.'],
+        line: ['挡板上两道刻线分别接回流槽和高渠。转到高渠侧可以让水从另一边推叶片。', 'The two baffle marks feed the return flume and the high channel. Switch it to the high channel to push the paddles from the other side.'] },
+      { id: EW.baffle, label: ['高渠挡板 · 切换水路', 'High-channel baffle · Redirect the flow'],
+        hint: ['切换挡板，使高渠送水并放下检修桥。', 'Turn the baffle to feed the upper channel and lower the service bridge.'],
+        line: ['水车开始正转。高渠检修桥也放下来了，从这里能走回村边。', 'The wheel now runs forward. The high-channel service bridge drops, giving you a way back toward the village.'] },
+    ],
+  },
+  {
+    id: 'herd-uphill', region: 'egypt', title: ['牧人的上坡路线', 'The Herd’s Way Uphill'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: EG.bell, label: ['浅汊 · 沿铃声找到羊群', 'Shallows · Follow the herd bell'],
+        hint: ['沿河岸找被一条浅水槽分开的山羊和牧人。', 'Follow the bank to the herder and goats separated by a shallow channel.'],
+        line: ['牧人：“拉紧两根绳，木架就能浮起来。羊认我的铃，等桥稳了我自己叫它们走。”', 'Herder: “Tension the two ropes and the timber frame will float. The goats know my bell. Once it settles, I can call them across.”'] },
+      { id: EG.rig, label: ['浮架绞索 · 把木架接到坡脚', 'Float lashings · Join the timber frame to the slope'],
+        hint: ['在浮架边收紧牵索，接通上坡路。', 'Tighten the float lashings to open the uphill crossing.'],
+        line: ['木架抵住两边的桩。牧人敲铃，羊群开始上坡。', 'The frame seats against both posts. The herder rings the bell and the goats start uphill.'] },
+      { id: EG.settle, label: ['上坡牧栏 · 等最后一只过来', 'Uphill pen · Wait for the last goat'],
+        hint: ['到坡上的栏边确认最后一只羊已经过桥。', 'Reach the upper pen and make sure the last goat has crossed.'],
+        line: ['最后一只也上来了。牧人把备用水袋放到沿河支架上；退水以后羊群会去新聚落。', 'The last goat makes it. The herder leaves a spare waterskin on the riverside stand. The herd will move to the new settlement when the water recedes.'] },
+    ],
+  },
+  {
+    id: 'vacant-sun-throne', region: 'egypt', title: ['无人使用的王座', 'The Throne No One Uses'],
+    available: done => done.has(JOURNEY.egyptRead),
+    steps: [
+      { id: ET.colonnade, label: ['崖庙外廊 · 找王座旁的测绘图', 'Cliff temple portico · Find the survey beside the throne'],
+        hint: ['沿崖庙外廊找一条通往小阳台的坡道。', 'Follow the portico to a short ramp leading to a balcony.'],
+        line: ['座位上没有脚印，座旁的薄板却刻出了两条水路。沿外廊上坡，到能看见它们的地方。', 'There are no footprints at the throne, but its survey board shows two waterways. Take the outer ramp to the place where you can see both.'] },
+      { id: ET.terrace, label: ['王座外台 · 对照两条河路', 'Throne terrace · Compare both waterways'],
+        hint: ['登上小阳台，先选一侧远景。', 'Climb the balcony and choose a direction to survey first.'],
+        line: ['奥斯曼迪斯：“王座离水太远。去栏边亲眼看。东侧沿低岸，西侧经高渠。”', 'Ozymandias: “A throne sits too far from the water. Go to the rail and look. The east road keeps to the low bank. The west uses the upper channel.”'] },
+    ],
+  },
+  {
     id: 'seed-jars', region: 'egypt', title: ['巷尾的种子罐', 'Seed Jars at the End of the Lane'],
     available: done => done.has(JOURNEY.egyptRead),
     steps: [
@@ -403,6 +522,11 @@ export function fieldSideNext(story: SideStory, done: Flags) {
   return story.steps.find(step => !done.has(step.id) && (step.after?.(done) ?? true)) ?? null;
 }
 export function fieldSideReady(id: string, done: Flags) {
+  if (id === EG.supplies) return done.has(EG.settle) && !done.has(EG.supplies);
+  if (id === ET.revisit) return done.has(ET.terrace);
+  if (id === ER.again) return done.has(ER.prize);
+  if (id === EH.shutter) return done.has(EH.brace);
+  if (id === EW.view) return done.has(EW.baffle);
   if (id === WR.trigger) return done.has(WR.smoke) && !done.has(WR.smokeUsed);
   if (id === D.lookout) return done.has(D.choose);
   if (id === C.rematch) return done.has(C.repair);
@@ -420,6 +544,11 @@ export function fieldSideReady(id: string, done: Flags) {
   return FIELD_SIDE_STORIES.some(story => fieldSideNext(story, done)?.id === id);
 }
 export const FIELD_SERVICE_LABELS = new Map<string, Localized>([
+  [EG.supplies, ['沿河支架 · 取备用水袋', 'Riverside stand · Take the spare waterskin']],
+  [ET.revisit, ['王座外台 · 再看一侧远景', 'Throne terrace · View the other waterway']],
+  [ER.again, ['双渠起点 · 再赛一次', 'Split channel · Race again']],
+  [EH.shutter, ['汇水台 · 升降备用折板', 'Confluence · Raise or lower the spare shield']],
+  [EW.view, ['旧灌渠 · 看正转的水车', 'Old channel · Watch the wheel run forward']],
   [WR.trigger, ['后卫烟幕信号 · 一次', 'Rear-guard smoke signal · One volley']],
   [D.lookout, ['旧客船 · 登上安全观景甲板', 'Old passenger ship · Look out from the safe deck']],
   [C.rematch, ['酒馆外桌 · 再投一轮', 'Tavern table · Throw another round']],

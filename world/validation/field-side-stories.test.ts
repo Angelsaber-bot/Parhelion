@@ -6,6 +6,8 @@ import {
   FIELD_SIDE_STORIES, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K, VALLEY_RADIO as V, SKY_MAINTENANCE as S, EGYPT_SEEDS as E, ORLEANS_SOUP as O, QIN_QUIET_ROOM as Q,
   KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC, fieldSideNext, fieldSideReady,
   WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR,
+  EGYPT_MAIL as EM, EGYPT_REED_RACE as ER, EGYPT_SHIP_HINGE as EH, EGYPT_REVERSE_WHEEL as EW,
+  EGYPT_HERD as EG, EGYPT_THRONE as ET,
 } from '../src/story/fieldSideStories';
 import { JOURNEY as J } from '../src/story/worldJourney';
 import { HARBOR_WORKBOAT as HB } from '../src/story/harborRelief';
@@ -213,6 +215,47 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.equal(crops.visible, false);
     w.done.add(J.egyptDone); frame();
     assert.equal(crops.visible, true);
+    complete(EM.flag);
+    assert.ok(w.scene.getObjectByName('EgyptSalvageRackBag').visible);
+    assert.ok(!w.scene.getObjectByName('EgyptMailHoldBag').visible);
+    complete(EM.late); complete(EM.return);
+    assert.equal(passage('EgyptMailHoldLatch').enabled, false);
+    assert.ok(w.scene.getObjectByName('EgyptDeliveredMail').visible);
+    complete(ER.meet); choose(ER.race, 'long');
+    const reed = w.scene.getObjectByName('EgyptRacingReed_1');
+    const reedStart = reed.position.clone();
+    frame(290);
+    assert.ok(reed.position.distanceTo(reedStart) > 2);
+    assert.ok(w.done.has(ER.win));
+    complete(ER.prize);
+    complete(EH.inspect);
+    const hinge = w.scene.getObjectByName('EgyptRustedHingePin');
+    assert.ok(hinge.visible);
+    w.camera.position.copy(w.player.pos).add(new Vector3(0, 1.38, 0));
+    w.camera.lookAt(hinge.getWorldPosition(new Vector3())); w.camera.updateMatrixWorld(true);
+    for (const type of ['mousedown', 'mouseup']) view.dispatchEvent(new window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
+    assert.ok(w.done.has(EH.pin));
+    complete(EH.brace);
+    approach(EH.shutter); tap(); assert.ok(w.done.has(EH.coverOpen));
+    assert.ok(passage('EgyptConfluenceFoldingShield').enabled);
+    tap(); assert.ok(!passage('EgyptConfluenceFoldingShield').enabled);
+    [EW.trace, EW.ladder].forEach(complete);
+    const wheel = w.scene.getObjectByName('EgyptReverseWheel');
+    const angleBefore = wheel.rotation.z;
+    frame(50); assert.ok(wheel.rotation.z < angleBefore);
+    complete(EW.baffle);
+    const afterSwitch = wheel.rotation.z; frame(75);
+    assert.ok(wheel.rotation.z > afterSwitch);
+    assert.ok(passage('EgyptHighChannelShortcut').enabled);
+    [EG.bell, EG.rig].forEach(complete);
+    approach(EG.settle); tap(); assert.ok(!w.done.has(EG.settle));
+    const goat = w.scene.getObjectByName('EgyptUphillGoat_0');
+    const goatStart = goat.position.clone(); frame(405); complete(EG.settle);
+    assert.ok(goat.position.distanceTo(goatStart) > 4);
+    assert.ok(passage('EgyptHerdFloatBridge').enabled);
+    complete(ET.colonnade);
+    choose(ET.terrace, 'west'); assert.ok(w.done.has(ET.west));
+    choose(ET.revisit, 'east'); assert.ok(w.done.has(ET.east));
     assert.equal(passage('OrleansWorkshopSideGate').enabled, true);
     [O.pot, O.gate, O.share].forEach(complete);
     assert.equal(passage('OrleansWorkshopSideGate').enabled, false);
@@ -254,6 +297,8 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.ok(world.done.has(B.crossed) && world.done.has(HB.release));
     assert.ok(world.done.has(HK.memorial) && world.done.has(CC.repair));
     assert.ok(world.done.has(WB.leave) && world.done.has(WS.crossing) && world.done.has(WR.rails));
+    assert.ok(world.done.has(EM.return) && world.done.has(ER.prize) && world.done.has(EH.brace) && world.done.has(EW.baffle));
+    assert.ok(world.done.has(EG.settle) && world.done.has(ET.east) && world.done.has(ET.west));
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoHandoffShutter')?.enabled, false);
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoPaperRoofShortcut')?.enabled, true);
     assert.ok(world.done.has(I.camp));

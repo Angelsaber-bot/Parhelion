@@ -7,6 +7,7 @@ import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
 import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC, fieldSideReady } from './story/fieldSideStories';
 import { WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR } from './story/fieldSideStories';
+import { EGYPT_REED_RACE as ER, EGYPT_SHIP_HINGE as EH, EGYPT_REVERSE_WHEEL as EW, EGYPT_HERD as EG, EGYPT_THRONE as ET } from './story/fieldSideStories';
 import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
 import { CROOKED_EFFIGY as CE, CULTURAL_STEPS, SHADOW_PLAY as SP, culturalStepReady } from './story/realmCulturalStories';
 import { createEgyptGaugeScene } from './environment/egyptGaugeScene';
@@ -959,7 +960,7 @@ function applyWorldState() {
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
-    if(t.userData.realmClimax || (typeof IB !== 'undefined' && t.userData.target === IB.pin)) continue;
+    if(t.userData.realmClimax || (typeof IB !== 'undefined' && t.userData.target === IB.pin) || (typeof EH !== 'undefined' && t.userData.target === EH.pin)) continue;
     const id = t.userData.target as string;
     if (typeof KYOTO_WITNESS !== 'undefined' && (id === KYOTO_WITNESS.cut || id === KYOTO_WITNESS.pin)) continue;
     if (typeof KW !== 'undefined' && id === KW.pin) continue;
@@ -2258,7 +2259,14 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
         toast(bilingual('现场已安全，完成交接。','The site is secure. Complete the handover.'));
       } else combat.refillAmmo();
     },
-    hurt: damage => combat.state.applyExternalDamage(damage),
+    hurt: damage => {
+      if (region === 'egypt' && fieldSideSites?.egypt.shieldBlocksWater(site.origin, player.pos)) {
+        audio.explore('rotate');
+        toast(bilingual('折板把水压推向侧渠。', 'The shield diverts the surge into the side channel.'));
+        return;
+      }
+      combat.state.applyExternalDamage(damage);
+    },
     warn: () => audio.realmWarning(region),
   });
   if (fight.start()) {
@@ -2552,6 +2560,67 @@ const winterFieldChoices: Readonly<Record<string, readonly { id: string; flag: s
   ],
 };
 function interactFieldSide(id: string) {
+  if (id === EG.settle && !fieldSideSites?.egypt.herdSafe) {
+    toast(bilingual('最后一只羊还在上坡。', 'The last goat is still on its way uphill.'));
+    return;
+  }
+  if (id === EG.supplies) {
+    if (!combat.state.fieldHeal(24)) {
+      toast(bilingual('把水袋留给需要补给的时候。', 'Leave the waterskin here until you need it.'));
+      return;
+    }
+    done.add(EG.supplies); saveJourneyProgress(); audio.explore('pickup');
+    return;
+  }
+  if (id === ET.terrace || id === ET.revisit) {
+    const description = FIELD_SIDE_STEPS.get(ET.terrace)!.line;
+    clearInput();
+    narrative?.showChoices(description, ['奥斯曼迪斯', 'Ozymandias'], [
+      { id: 'east', label: ['看东侧低岸与临时船道', 'Look east along the low-bank boat route'] },
+      { id: 'west', label: ['看西侧高渠与聚落', 'Look west toward the upper canal and homes'] },
+    ], choice => {
+      if ((choice !== 'east' && choice !== 'west') || !canCommitFieldChoice(id)) return;
+      const east = choice === 'east';
+      const x = (east ? -32 : 88) - player.pos.x, z = -1585 - player.pos.z;
+      player.yaw = Math.atan2(-x, -z);
+      player.pitch = Math.atan2(13 - player.pos.y, Math.hypot(x, z));
+      done.add(ET.terrace); done.add(east ? ET.east : ET.west);
+      saveJourneyProgress(); audio.explore('solve');
+      toast(east ? bilingual('低岸留出了短船道。退水后能看见旧滩的边界。', 'The low bank leaves a short boat route. At low water the old shore becomes visible.')
+        : bilingual('高渠通往西侧聚落。守住水尺刻度，坡上的田就有水。', 'The upper channel reaches the western homes. Keep the gauge on its mark and the fields uphill get water.'));
+    });
+    return;
+  }
+  if (id === ER.race || id === ER.again) {
+    const first = id === ER.race;
+    const step = FIELD_SIDE_STEPS.get(ER.race)!;
+    clearInput();
+    narrative?.showChoices(step.line, ['萨芮', 'Sari'], [
+      { id: 'short', label: ['直槽 · 水路较短', 'Straight channel · Shorter run'] },
+      { id: 'long', label: ['弯槽 · 窄口水流快', 'Bending channel · Faster throat'] },
+    ], choice => {
+      if ((choice === 'short' || choice === 'long') && canCommitFieldChoice(id) && fieldSideSites?.egypt.startReedRace(choice, first))
+        audio.explore('rotate');
+    });
+    return;
+  }
+  if (id === EH.shutter) {
+    const shield = fieldSideSites?.root.getObjectByName('EgyptConfluenceFoldingShield');
+    if (!shield) return;
+    const occupied = (p: THREE.Vector3 | undefined) => p &&
+      Math.abs(shield.position.x - p.x) < 1.92 && Math.abs(shield.position.z - p.z) < .49 && Math.abs(shield.position.y - p.y) < 1.8;
+    if (done.has(EH.coverOpen)) done.delete(EH.coverOpen);
+    else if (occupied(player.pos) || occupied(companionRoot(contract.following)?.position)) {
+      toast(bilingual('先离开折板的转动范围。', 'Step clear of the shield’s swing first.'));
+      return;
+    } else done.add(EH.coverOpen);
+    saveJourneyProgress(); audio.explore('rotate');
+    return;
+  }
+  if (id === EW.view) {
+    toast(bilingual('高渠一直有水，水车顺着正槽推送。', 'The upper channel stays fed and the wheel runs with the main flume.'));
+    return;
+  }
   if (id === WR.trigger) {
     const suppressible = combat.state.enemies.filter(enemy => enemy.hp > 0 && enemy.active && !enemy.pacified &&
       enemy.storyEncounter === 'adventure_winter_breach' && Math.hypot(enemy.p.x - player.pos.x, enemy.p.z - player.pos.z) < 36);
@@ -2762,6 +2831,7 @@ function interactFieldSide(id: string) {
     return;
   }
   done.add(id);
+  if (id === EG.bell || id === EG.rig) audio.bell();
   if (id === HB.access) done.add(HB.signal);
   if (id === KL.counterweight) fieldSideSites?.sendPaper();
   saveJourneyProgress();
@@ -3026,11 +3096,12 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
-    if (typeof IB !== 'undefined' && id === IB.pin) {
+    if ((typeof IB !== 'undefined' && id === IB.pin) || (typeof EH !== 'undefined' && id === EH.pin)) {
       const hit = questHit.distance <= gun.range && fieldSideReady(id, done);
       if (hit) {
         done.add(id); saveJourneyProgress(); combat.flashHitMarker(.14);
-        toast(bilingual('扣销断开，旧索松脱。沿河岸下到吊索旁。', 'The clevis breaks and the old line slackens. Follow the bank to the hoist.'));
+        toast(id === IB.pin ? bilingual('扣销断开，旧索松脱。沿河岸下到吊索旁。', 'The clevis breaks and the old line slackens. Follow the bank to the hoist.')
+          : bilingual('锈销断开。回到牵索旁，把折板拉回原位。', 'The rusty pin breaks. Return to the rope and pull the panel back into place.'));
       }
       combat.shot(muzzle, point, hit); audio.shot(); return;
     }
@@ -3559,6 +3630,16 @@ function frame(now: number) {
     audio.explore(chipOutcome.won ? 'solve' : 'rotate');
     toast(chipOutcome.won ? bilingual('木筹落进你押的盘。黑胡子把筹推给你。', 'The chip lands in your tray. Blackbeard slides it back to you.')
       : bilingual('木筹滑进另一只盘。黑胡子敲了敲短桌腿。', 'The chip slides into the other tray. Blackbeard taps the short table leg.'));
+  }
+  const reedOutcome = fieldSideSites?.egypt.readReedOutcome();
+  if (reedOutcome) {
+    if (reedOutcome.first && !done.has(ER.race)) {
+      done.add(ER.race);
+      if (reedOutcome.won) done.add(ER.win);
+      saveJourneyProgress();
+    }
+    toast(reedOutcome.won ? bilingual('你猜的芦苇先过线了。', 'Your reed reached the finish first.')
+      : bilingual('另一条渠的芦苇先碰到了终点。', 'The reed in the other channel reached the finish first.'));
   }
   const ferryLanding = ferry?.landing;
   if (ferryLanding) {
