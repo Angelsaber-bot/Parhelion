@@ -75,6 +75,8 @@ describe('validated two-gun one-melee loadouts', () => {
   it('firearms retain their cadence and magazines with the approved shotgun damage increase', () => {
     expect(WEAPONS.slice(0, 3).map((w) => [w.damage, w.interval, w.mag, w.reload])).toEqual([[20, 6, 30, 114], [20, 39, 6, 138], [52, 15, 8, 126]]);
     expect(WEAPONS.map((w) => w.id)).toEqual([...GUN_IDS, ...MELEE_IDS]);
+    const reload = (id: string) => WEAPONS.find((w) => w.id === id)!.reload;
+    expect(reload('firefly')).toBeGreaterThan(Math.max(reload('lumen'), reload('halo'))); // the SMG reloads slowest of the automatics
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
   });

@@ -182,7 +182,7 @@ export const WEAPONS: WeaponDef[] = [
   {
     id: 'firefly', kind: 'gun', name: 'Firefly SMG · 流萤', auto: true, interval: 4, damage: 14, pellets: 1, headMul: 1.4,
     spread: 0.014, spreadMove: 0.025, falloffStart: 12, falloffEnd: 32, falloffMin: 0.45,
-    mag: 50, reload: Math.round(1.65 * TICK_HZ), range: 100,
+    mag: 50, reload: Math.round(2.2 * TICK_HZ), range: 100, // v29: longer than both rifles (AR 1.9 s, DMR 2.1 s)
     skins: [],
   },
   {
