@@ -2937,11 +2937,13 @@ function interactWorldJourney(id: string) {
   }
   const line = commitJourneyStep(id, done);
   if (!line) return;
-  if (id === JOURNEY.lake && !contract.recruited) contract.recruit();
+  if (id === JOURNEY.lakeWinch && !contract.recruited) contract.recruit();
+  if (id === JOURNEY.visitorDesk) combat.refillAmmo(18);
   if (id === JOURNEY.skyReview || id === JOURNEY.isolate || id === JOURNEY.skyCourt) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
   if (id === JOURNEY.skyAnchor) combat.refillAmmo(24);
   saveJourneyProgress();
   if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
+  else if (id === JOURNEY.visitorDesk) speakDialogue(line, ['王城访客','Kingdom visitor']);
   else { toast(bilingual(...line)); audio.interaction(); }
 }
 function updateSkyJourney(dt: number, seconds: number) {
@@ -3121,6 +3123,7 @@ function shoot() {
       const hit = id === SKY_MARKERS.target
         ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint)
         : questHit.distance <= gun.range && commitJourneyStep(id, done);
+      if (hit && id === JOURNEY.lakePin && !contract.recruited) contract.recruit();
       if (hit && id === JOURNEY.cargoPin) worldJourneySites?.saveCargoBrake(done);
       if (Array.isArray(hit)) { saveJourneyProgress(); toast(bilingual(...hit)); }
       if (hit) combat.flashHitMarker(.14);

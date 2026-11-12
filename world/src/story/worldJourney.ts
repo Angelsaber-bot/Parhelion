@@ -12,9 +12,9 @@ import { nightAuthorityOpen, nightTacticReady, towerApproachVerified, VALLEY_FIE
 
 export const JOURNEY = {
   ...F,
-  lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin',
+  lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin', ridge: 'journey_west_ridge',
   bridge: 'journey_lookback_bridge', bridgeSouth: 'journey_lookback_bridge_south', bridgeRear: 'journey_lookback_bridge_rear',
-  visitor: 'journey_visitor_arrived', meal: 'journey_return_meal',
+  visitor: 'journey_visitor_arrived', visitorDesk: 'journey_visitor_workbench', meal: 'journey_return_meal',
   cargoCall: 'journey_cargo_dispatch', cargoSwitch: 'journey_cargo_switch', cargoPin: 'journey_cargo_coupler',
   cargoParked: 'journey_cargo_parked', cargo: 'journey_cargo_claimed', signalLamp: 'journey_test_return_lamp', signal: 'journey_rooftop_signal', compare: 'journey_compare_feed',
   cutoff: 'journey_gate_cutoff', bypass: 'journey_gate_bypass',
@@ -59,10 +59,12 @@ const step = (region: JourneyRegion, targetId: string, text: Localized, result: 
 export const JOURNEY_STEPS = [
   step('alpha', J.lake, ['到镜湖南岸见 Saber。', 'Meet Saber on Mirror Lake’s south shore.'], ['Saber：“我撑住导架。你可以扳绞盘，也可以从右侧打断卡销。先把这条路还给岸上的人。”', 'Saber: “I can hold the frame. Use the winch or shoot the pin from the right. Let’s give this road back to the people on shore.”']),
   step('alpha', J.lakeWinch, ['在镜湖松开绞盘，或从右侧打断黄色卡销。', 'Release the lake winch or shoot the yellow pin from the right.'], ['导架落稳，西岭灯塔收到回声。往日落王国走。', 'The frame settles and West Ridge answers. Continue to Sunset Kingdom.'], [J.lake]),
+  step('alpha', J.ridge, ['到西岭看亮起的路标，在外勤单上登记王国方向。', 'Follow the relit West Ridge marker and enter the kingdom on your field slip.'], ['归灯镇的灯还看得见。第一程：西岭向西，落日王国。', 'Returnlight Town is still in sight. First leg: west over the ridge, into the Sunset Kingdom.'], [J.lakeWinch]),
   step('alpha', J.bridge, ['在回望桥选一处踏桥落位点，或沿北侧旧路去开后门。', 'Seat a footbridge at either anchor, or follow the old north path to the rear latch.'], ['北侧踏桥正在落位。到另一侧接应王城访客。', 'The north deck is seating. Meet the visitor from the kingdom on the far side.']),
   step('alpha', J.bridgeSouth, ['落下南侧踏桥，走避风线。', 'Lower the south deck along the sheltered route.'], ['南侧踏桥已松闩。访客会从避风一侧过桥。', 'The south deck is unlatched. The visitor will cross on the sheltered side.']),
   step('alpha', J.bridgeRear, ['沿旧路开前哨后门。', 'Open the outpost’s rear latch from the old path.'], ['后门已开。访客可以沿旧路过来。', 'The rear gate is open. The visitor can take the old path.']),
   step('alpha', J.visitor, ['在桥另一侧确认王城的访客已经走出来。', 'Cross the bridge to receive the visitors from the kingdom.'], ['访客把工具箱放在桥边：“我认识路了。明天我自己来。”', 'The visitor sets a toolbox by the bridge. “I know the road now. Tomorrow I can come on my own.”'], [J.bridge]),
+  step('alpha', J.visitorDesk, ['到生活馆外的维修台看看访客带来的桥铰。', 'Meet the visitor at the outdoor repair bench and see what he brought for the bridge.'], ['我带了备用桥铰，阿舟去装。工作台上还有一包枪弹，你跑外勤，带着吧。', 'I brought a spare hinge. Azhou will fit it. Take the ammunition on the bench for your next trip.'], [J.visitor]),
   step('alpha', J.meal, ['回生活馆坐下，听孟槐说说冰雪撤离之后的事。', 'Sit down at the residence and hear what happened after the winter evacuation.'], ['孟槐：“药车到了。剩下的由我们去办。来，先吃口热的。”', 'Meng Huai: “The medicine cart made it. We’ll take it from here. Have something warm first.”']),
   step('alpha', J.cargoCall, ['到东渡口看一眼被错误扣下的货箱。', 'Inspect the wrongly detained cargo at East Landing.'], ['扣货车正在去封存棚。可以扳旁线道岔、射断车上的耦合销，或追到封存棚。', 'The cart is headed for the impound shed. Throw the siding switch, shoot the coupler on the cart, or follow it all the way to the shed.']),
   step('alpha', J.cargoSwitch, ['抄近路到道岔，或从侧面射断货车的黄色耦合销。', 'Cut across to the switch or shoot the cart’s yellow coupler from the side.'], ['道岔已经切换。货车会进本地支线。', 'The switch is thrown. The cart will enter the local siding.'], [J.cargoCall]),
@@ -254,6 +256,7 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
   }
   const fresh = done.has(VALLEY_PROLOGUE.record);
   if (fresh && done.has(A.online) && !done.has(J.lakeWinch) && !done.has(A.ending) && (!done.has('saber_contract') || done.has(J.lake))) return at(done.has(J.lake) ? J.lakeWinch : J.lake);
+  if (here === 'alpha' && fresh && !done.has('sun_core') && journeyStepReady(J.ridge, done)) return at(J.ridge);
   if (fresh && kingdomReady(done) && !done.has(J.visitor)) return at(done.has(J.bridge) ? J.visitor : J.bridge);
   if (originalFourReady(done) || (kingdomReady(done) && (fresh ? midwayReady(done) : originalFourReady(done)))) {
     if (!done.has(J.meal)) return at(J.meal);
