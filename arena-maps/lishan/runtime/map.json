@@ -1580,6 +1580,40 @@
       "role": "wayfinding"
     },
     {
+      "id": "spawn_mark_west_-1",
+      "type": "box",
+      "position": [
+        -27.4,
+        0.02,
+        -9.8
+      ],
+      "size": [
+        2.0,
+        0.04,
+        1.2
+      ],
+      "material": "bannerBlack",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_west_1",
+      "type": "box",
+      "position": [
+        -27.4,
+        0.02,
+        9.8
+      ],
+      "size": [
+        2.0,
+        0.04,
+        1.2
+      ],
+      "material": "bannerBlack",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
       "id": "end_roof_west",
       "type": "box",
       "position": [
@@ -1890,6 +1924,40 @@
       "role": "wayfinding"
     },
     {
+      "id": "spawn_mark_east_-1",
+      "type": "box",
+      "position": [
+        27.4,
+        0.02,
+        -9.8
+      ],
+      "size": [
+        2.0,
+        0.04,
+        1.2
+      ],
+      "material": "bannerRed",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_east_1",
+      "type": "box",
+      "position": [
+        27.4,
+        0.02,
+        9.8
+      ],
+      "size": [
+        2.0,
+        0.04,
+        1.2
+      ],
+      "material": "bannerRed",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
       "id": "end_roof_east",
       "type": "box",
       "position": [
@@ -2052,24 +2120,6 @@
       "batch": "main"
     },
     {
-      "id": "rank_4_w",
-      "type": "box",
-      "position": [
-        13.0,
-        -1.2,
-        -3.2
-      ],
-      "size": [
-        1.0,
-        2.0,
-        2.6
-      ],
-      "material": "terracotta",
-      "collision": true,
-      "role": "cover",
-      "batch": "main"
-    },
-    {
       "id": "rank_4_e",
       "type": "box",
       "position": [
@@ -2092,24 +2142,6 @@
       "type": "box",
       "position": [
         13.0,
-        -1.2,
-        3.2
-      ],
-      "size": [
-        1.0,
-        2.0,
-        2.6
-      ],
-      "material": "terracotta",
-      "collision": true,
-      "role": "cover",
-      "batch": "main"
-    },
-    {
-      "id": "rank_5_e",
-      "type": "box",
-      "position": [
-        -13.0,
         -1.2,
         3.2
       ],
@@ -2304,6 +2336,224 @@
       "batch": "main"
     },
     {
+      "id": "return_ramp_w",
+      "type": "ramp",
+      "position": [
+        -13.1,
+        -2.2,
+        3.3
+      ],
+      "size": [
+        4.2,
+        2.2,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "return_landing_w",
+      "type": "box",
+      "position": [
+        -10.25,
+        -1.1,
+        3.3
+      ],
+      "size": [
+        1.5,
+        2.2,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "return_screen_w",
+      "type": "box",
+      "position": [
+        -10.65,
+        0.725,
+        2.3
+      ],
+      "size": [
+        2.3,
+        2.35,
+        0.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "return_screen_w_end",
+      "type": "box",
+      "position": [
+        -9.7,
+        0.95,
+        3.5
+      ],
+      "size": [
+        0.4,
+        1.9,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "return_ramp_e",
+      "type": "ramp",
+      "position": [
+        13.1,
+        -2.2,
+        -3.3
+      ],
+      "size": [
+        4.2,
+        2.2,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
+      "id": "return_landing_e",
+      "type": "box",
+      "position": [
+        10.25,
+        -1.1,
+        -3.3
+      ],
+      "size": [
+        1.5,
+        2.2,
+        2.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "floor"
+    },
+    {
+      "id": "return_screen_e",
+      "type": "box",
+      "position": [
+        10.65,
+        0.725,
+        -2.3
+      ],
+      "size": [
+        2.3,
+        2.35,
+        0.4
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "return_screen_e_end",
+      "type": "box",
+      "position": [
+        9.7,
+        0.95,
+        -3.5
+      ],
+      "size": [
+        0.4,
+        1.9,
+        2.0
+      ],
+      "material": "rammed",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_w",
+      "type": "box",
+      "position": [
+        -7.1,
+        -1.25,
+        -11.05
+      ],
+      "size": [
+        1.8,
+        1.9,
+        3.1
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "vermilion_gate_w",
+      "type": "box",
+      "position": [
+        -7.1,
+        -1.25,
+        11.0
+      ],
+      "size": [
+        1.0,
+        1.9,
+        3.4
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_e",
+      "type": "box",
+      "position": [
+        7.1,
+        -1.25,
+        -11.05
+      ],
+      "size": [
+        1.8,
+        1.9,
+        3.1
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "vermilion_gate_e",
+      "type": "box",
+      "position": [
+        7.1,
+        -1.25,
+        11.0
+      ],
+      "size": [
+        1.0,
+        1.9,
+        3.4
+      ],
+      "material": "lacquer",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
       "id": "chariot_plinth",
       "type": "box",
       "position": [
@@ -2484,6 +2734,28 @@
       "team": "west"
     },
     {
+      "id": "spawn_west_2",
+      "kind": "spawn",
+      "position": [
+        -27.4,
+        0,
+        -9.8
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_3",
+      "kind": "spawn",
+      "position": [
+        -27.4,
+        0,
+        9.8
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
       "id": "cover_screen_west",
       "kind": "cover",
       "position": [
@@ -2521,6 +2793,28 @@
         27.5,
         0,
         2
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_2",
+      "kind": "spawn",
+      "position": [
+        27.4,
+        0,
+        -9.8
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_3",
+      "kind": "spawn",
+      "position": [
+        27.4,
+        0,
+        9.8
       ],
       "yaw": -1.5708,
       "team": "east"
@@ -2626,16 +2920,6 @@
       "height": 2.0
     },
     {
-      "id": "cover_rank_4_w",
-      "kind": "cover",
-      "position": [
-        14.05,
-        -2.2,
-        -3.2
-      ],
-      "height": 2.0
-    },
-    {
       "id": "cover_rank_4_e",
       "kind": "cover",
       "position": [
@@ -2650,16 +2934,6 @@
       "kind": "cover",
       "position": [
         14.05,
-        -2.2,
-        3.2
-      ],
-      "height": 2.0
-    },
-    {
-      "id": "cover_rank_5_e",
-      "kind": "cover",
-      "position": [
-        -14.05,
         -2.2,
         3.2
       ],
@@ -2764,6 +3038,66 @@
         7.85
       ],
       "height": 2.0
+    },
+    {
+      "id": "cover_return_w",
+      "kind": "cover",
+      "position": [
+        -10.45,
+        0,
+        3.7
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_return_e",
+      "kind": "cover",
+      "position": [
+        10.45,
+        0,
+        -3.7
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_drum_w",
+      "kind": "cover",
+      "position": [
+        -7.1,
+        -2.2,
+        -13.2
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_gate_w",
+      "kind": "cover",
+      "position": [
+        -8.2,
+        -2.2,
+        11.3
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_drum_e",
+      "kind": "cover",
+      "position": [
+        7.1,
+        -2.2,
+        -13.2
+      ],
+      "height": 1.9
+    },
+    {
+      "id": "cover_gate_e",
+      "kind": "cover",
+      "position": [
+        8.2,
+        -2.2,
+        11.3
+      ],
+      "height": 1.9
     },
     {
       "id": "objective_chariot",
@@ -3001,24 +3335,44 @@
           11.5
         ],
         [
-          -8,
+          -10.4,
           -2.2,
-          11.2
+          11.5
         ],
         [
-          -3,
+          -10.4,
+          -2.2,
+          8.2
+        ],
+        [
+          -5.2,
+          -2.2,
+          8.2
+        ],
+        [
+          -5.2,
           -2.2,
           10.0
         ],
         [
-          3,
+          5.2,
           -2.2,
           10.0
         ],
         [
-          8,
+          5.2,
           -2.2,
-          11.2
+          8.2
+        ],
+        [
+          10.4,
+          -2.2,
+          8.2
+        ],
+        [
+          10.4,
+          -2.2,
+          11.5
         ],
         [
           15,
@@ -3052,14 +3406,96 @@
           -10.3
         ],
         [
+          -5,
+          -2.2,
+          -10.3
+        ],
+        [
+          -5,
+          -2.2,
+          -8.4
+        ],
+        [
           -8,
           -2.2,
-          -10.6
+          -7.6
         ],
         [
           -8,
           -2.2,
           0
+        ]
+      ]
+    },
+    {
+      "id": "return_west",
+      "name": "return west",
+      "points": [
+        [
+          -14.5,
+          -2.2,
+          0.3
+        ],
+        [
+          -16,
+          -2.2,
+          3.3
+        ],
+        [
+          -11.0,
+          0,
+          3.3
+        ],
+        [
+          -10.45,
+          0,
+          3.6
+        ],
+        [
+          -10.45,
+          0,
+          5.5
+        ],
+        [
+          -14,
+          0,
+          5.5
+        ]
+      ]
+    },
+    {
+      "id": "return_east",
+      "name": "return east",
+      "points": [
+        [
+          14.5,
+          -2.2,
+          -0.3
+        ],
+        [
+          16,
+          -2.2,
+          -3.3
+        ],
+        [
+          11.0,
+          0,
+          -3.3
+        ],
+        [
+          10.45,
+          0,
+          -3.6
+        ],
+        [
+          10.45,
+          0,
+          -5.5
+        ],
+        [
+          14,
+          0,
+          -5.5
         ]
       ]
     }

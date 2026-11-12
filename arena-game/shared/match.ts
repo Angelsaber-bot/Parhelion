@@ -5,12 +5,12 @@
 import {
   CHARACTERS, COUNTDOWN_TICKS, END_TICKS, MATCH_TICKS, MAX_REWIND_TICKS, RESPAWN_TICKS, SCORE_LIMIT,
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
-  DASH, FRAG, FRAG_KILL, GRENADE, SMOKE, validateUtility, type UtilityId,
+  DASH, FRAG, FRAG_KILL, GRENADE, SMOKE, TICK_HZ, validateUtility, type UtilityId,
 } from './content.ts';
 import { fragReaches, insideSmoke, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
-import { raycastMap, spawnAnchors, type ArenaMap, type Vec3 } from './map.ts';
+import { lineOfSight, raycastMap, spawnAnchors, type ArenaMap, type MapAnchor, type Vec3 } from './map.ts';
 import { aimDir, applyInput, clonePlayer, newPlayer, playerEye, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
 
 export type Phase = 'waiting' | 'countdown' | 'live' | 'ended';
@@ -103,6 +103,8 @@ type HistoricalPose = [number, number, number, boolean, boolean]; // x, y, z, al
 const HISTORY = 64;
 const MAX_QUEUE = 30;
 const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a stall
+/** A spawn anchor used this recently by anyone is a slightly worse pick (G01 recent-use rule). */
+const SPAWN_REUSE_TICKS = 4 * TICK_HZ;
 
 export class Match {
   tick = 0;
@@ -121,6 +123,8 @@ export class Match {
   private events: NetEvent[] = [];
   private history: Map<string, HistoricalPose>[] = [];
   private nextShield = 1;
+  /** Last tick each spawn anchor was used. */
+  private spawnUse = new Map<string, number>();
 
   constructor(readonly map: ArenaMap, readonly layout: TeamLayout) {}
 
@@ -296,20 +300,48 @@ export class Match {
     this.setPhase('live', MATCH_TICKS);
   }
 
-  private spawn(slot: Slot): void {
-    const p = slot.state;
-    const enemies = [...this.slots.values()].filter((s) => s.info.team !== p.team && s.state.alive);
-    const mates = [...this.slots.values()].filter((s) => s !== slot && s.info.team === p.team && s.state.alive);
-    let best = spawnAnchors(this.map, p.team)[0];
+  /**
+   * Choose a spawn anchor (map design report G01, 2026-11). Candidates a live enemy can see, a
+   * live enemy frag is about to cover, or a teammate is standing on are threats; the pick has the
+   * fewest threats, then the most room to the nearest enemy, then a pocket the team has not used
+   * in the last few seconds. When every candidate is threatened this still returns the least
+   * exposed one, so maps keep real cover in their spawn pockets rather than relying on this.
+   */
+  private pickSpawn(slot: Slot): MapAnchor {
+    const team = slot.state.team;
+    const anchors = spawnAnchors(this.map, team);
+    const enemies = [...this.slots.values()].filter((s) => s.info.team !== team && s.state.alive);
+    const mates = [...this.slots.values()].filter((s) => s !== slot && s.info.team === team && s.state.alive);
+    let best = anchors[0];
     let bestScore = -Infinity;
-    for (const a of spawnAnchors(this.map, p.team)) {
-      const [ax, , az] = a.position;
-      let score = 0;
-      for (const e of enemies) score += Math.min(40, Math.hypot(e.state.x - ax, e.state.z - az));
-      for (const m of mates) if (Math.hypot(m.state.x - ax, m.state.z - az) < 1.2) score -= 1000;
+    for (const a of anchors) {
+      const [ax, ay, az] = a.position;
+      let threats = 0;
+      for (const m of mates) if (Math.hypot(m.state.x - ax, m.state.z - az) < 1.2) threats += 4;
+      for (const e of enemies) {
+        const from: Vec3 = [e.state.x, e.state.y + playerEye(this.map, e.state), e.state.z];
+        if (lineOfSight(this.map, from, [ax, ay + this.map.eye, az]) || lineOfSight(this.map, from, [ax, ay + 1, az])) threats++;
+      }
+      for (const g of this.grenades) {
+        if (g.kind === 'frag' && g.team !== team && Math.hypot(g.x - ax, g.y - ay, g.z - az) <= FRAG.radius + 1.5) threats++;
+      }
+      let nearest = 40, total = 0;
+      for (const e of enemies) {
+        const d = Math.min(40, Math.hypot(e.state.x - ax, e.state.z - az));
+        nearest = Math.min(nearest, d); total += d;
+      }
+      const used = this.spawnUse.get(a.id);
+      const recent = used !== undefined && this.tick - used < SPAWN_REUSE_TICKS ? 3 : 0;
+      const score = -threats * 1000 + nearest + total * 0.1 - recent;
       if (score > bestScore) { bestScore = score; best = a; }
     }
-    const [x, y, z] = best.position;
+    this.spawnUse.set(best.id, this.tick);
+    return best;
+  }
+
+  private spawn(slot: Slot): void {
+    const p = slot.state;
+    const [x, y, z] = this.pickSpawn(slot).position;
     Object.assign(p, {
       x, y, z, vx: 0, vy: 0, vz: 0,
       yaw: spawnYaw(x, z), // face the map centre

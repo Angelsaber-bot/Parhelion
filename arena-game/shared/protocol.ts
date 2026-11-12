@@ -16,7 +16,8 @@ export const ROOM_NAME = 'arena';
 // v19: smoke deploys at first ground contact; an expired frag waits for ground contact.
 // v20: three rechargeable dash charges with buffered directions in predicted player state.
 // v21: dash charges recover every five seconds.
-export const RULES_VERSION = 21;
+// v22: LISHAN, SUNTEMPLE and ORLEANS revised layouts (shared collision) and spawn choice that avoids enemy sight.
+export const RULES_VERSION = 22;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

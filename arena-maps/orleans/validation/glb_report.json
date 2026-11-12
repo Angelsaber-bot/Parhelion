@@ -1,12 +1,12 @@
 {
   "mapId": "orleans",
   "version": "1.0.0",
-  "checks": 562,
+  "checks": 555,
   "failed": [],
-  "visualNodes": 11,
-  "visualTriangles": 36945,
-  "visualBytes": 3065312,
+  "visualNodes": 17,
+  "visualTriangles": 35433,
+  "visualBytes": 2956036,
   "embeddedTextureBytes": 219958,
-  "collisionNodes": 137,
-  "collisionBytes": 193424
+  "collisionNodes": 124,
+  "collisionBytes": 174360
 }

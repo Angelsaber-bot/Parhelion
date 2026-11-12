@@ -1,12 +1,12 @@
 {
   "mapId": "suntemple",
   "version": "1.0.0",
-  "checks": 410,
+  "checks": 457,
   "failed": [],
-  "visualNodes": 9,
-  "visualTriangles": 65678,
-  "visualBytes": 5403412,
+  "visualNodes": 13,
+  "visualTriangles": 63892,
+  "visualBytes": 5285040,
   "embeddedTextureBytes": 178238,
-  "collisionNodes": 103,
-  "collisionBytes": 145196
+  "collisionNodes": 114,
+  "collisionBytes": 159376
 }

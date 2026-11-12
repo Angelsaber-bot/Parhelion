@@ -4,8 +4,19 @@ Run: python3 arena-maps/lishan/source/build.py        (add --materials to re-syn
 Play idea (unlike the five earlier arenas): three sunken corridors full of terracotta
 ranks, two rammed-earth baulks whose tops are bare catwalks, and a raised brick gallery
 round the pit. Low ground has cover everywhere and no view; high ground has the view
-and nothing to hide behind. Collision is mirrored in x; the west ranks are infantry,
-the east ranks cavalry.
+and nothing to hide behind. The decision is when to drop into the pit and where to come
+back up.
+
+Revised 2026-11 from the arena map design report (L01-L05):
+  * a mid-pit return ramp on each side climbs from the centre corridor to a screened landing
+    on a baulk (west ramp to the south baulk, east ramp to the north baulk), so a baulk top
+    overlooks one return, never both, and the ramp head itself is not the firing spot;
+  * the long north and south corridor lines are cut by landmark blocks: war drums in the
+    north corridor (the ranks, 军阵), the bronze chariot in the centre (战车), vermilion gates
+    in the south corridor (朱门);
+  * every rank stands on a continuous earthen base, so the solid you collide with reads solid.
+Collision is mirrored in x except the two return ramps, which are point-symmetric; the
+west ranks are infantry, the east ranks cavalry.
 """
 from pathlib import Path
 import sys, math, random
@@ -62,8 +73,12 @@ for sx in (-1, 1):
     # Three earth ramps: one into each corridor.
     for name, z in (('north', -11.5), ('centre', 0), ('south', 11.5)):
         c.R(f'ramp_{team}_{name}', sx * 21, sx * 15.5, PIT, 0, z - 1.5, z + 1.5, 'x', -sx, 'rammed')
-    for i, z in enumerate((-2, 2)): c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * 27.5, 0, z], yaw=-sx * 1.5708, team=team)
+    # three pockets (G01): behind the spirit screen, and behind each que tower
+    for i, (x, z) in enumerate(((27.5, -2), (27.5, 2), (27.4, -9.8), (27.4, 9.8))):
+        c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * x, 0, z], yaw=-sx * 1.5708, team=team)
     c.B(f'spawn_mark_{team}', sx * 28.6, sx * 27.4, 0, .04, -2.6, 2.6, 'bannerBlack' if sx < 0 else 'bannerRed', 'wayfinding', collision=False)
+    for sz in (-1, 1):
+        c.B(f'spawn_mark_{team}_{sz}', sx * 28.4, sx * 26.4, 0, .04, sz * 9.2, sz * 10.4, 'bannerBlack' if sx < 0 else 'bannerRed', 'wayfinding', collision=False)
     c.anchor(f'cover_screen_{team}', 'cover', [sx * 25.4, 0, 0], height=3.4)
     c.anchor(f'cover_que_{team}', 'cover', [sx * 25.2, 0, 9.5], height=5.6)
     c.B(f'end_roof_{team}', sx * 29.4, sx * 14, 6.7, 7.0, -21.4, 21.4, 'timber', 'roof', dict(kind='endroof', sx=sx), collision=False)
@@ -73,10 +88,34 @@ RANKS = [(-12.6, -9.6, -6.5), (-12.6, -16, -13.4), (-4.4, -14.9, -11.9), (-3.4, 
          (-13, -4.5, -1.9), (-13, 1.9, 4.5), (-4.8, -1.6, 1.6),                                    # centre corridor
          (-12.2, 6.5, 9.4), (-11.6, 13.6, 16), (-4.2, 12.6, 16), (-3.2, 6.5, 9.2)]                 # south corridor
 # Each file either meets a baulk or gallery face flush or leaves a full metre: no pockets a player cannot leave.
+RETURN_RANKS = {(5, 1), (4, -1)}   # (rank, sx) the return ramps replace: x<0 south side, x>0 north side (sx mirrors RANKS' negative x)
 for i, (x, z0, z1) in enumerate(RANKS):
     for sx in (-1, 1):
+        if (i, sx) in RETURN_RANKS: continue
         c.B(f'rank_{i}_{"w" if sx < 0 else "e"}', sx * x - .5, sx * x + .5, PIT, PIT + 2.0, z0, z1, 'terracotta', 'cover', dict(kind='rank', sx=sx, n=i))
         c.anchor(f'cover_rank_{i}_{"w" if sx < 0 else "e"}', 'cover', [sx * (x - 1.05), PIT, (z0 + z1) / 2], height=2.0)
+# L01: return ramps. Each climbs 2.2 m over 4.2 m along a baulk's inner face to a landing on the
+# baulk, screened toward the centre corridor; the landing sits beside, not on, the plank underpass.
+for sx in (-1, 1):
+    side = 'w' if sx < 0 else 'e'; sz = -sx          # west ramp to the south baulk, east to the north
+    za, zb = sorted((sz * 2.1, sz * 4.5)); zs = sorted((sz * 2.1, sz * 2.5))
+    c.R(f'return_ramp_{side}', sx * 15.2, sx * 11.0, PIT, 0, za, zb, 'x', sx, 'rammed', dict(kind='steps'))
+    c.B(f'return_landing_{side}', sx * 11.0, sx * 9.5, PIT, 0, za, zb, 'rammed', 'floor', dict(kind='baulk'))
+    # The landing is an alcove: an L of wall on its pit sides (reaching over the ramp head) hides
+    # whoever stands there from the centre corridor and from the far baulk; the fight starts once
+    # they step onto their own baulk.
+    c.B(f'return_screen_{side}', sx * 11.8, sx * 9.5, -.45, 1.9, *zs, 'rammed', 'cover', dict(kind='lowwall', axis='z'))
+    ze = sorted((sz * 2.5, sz * 4.5))
+    c.B(f'return_screen_{side}_end', sx * 9.9, sx * 9.5, 0, 1.9, *ze, 'rammed', 'cover', dict(kind='lowwall', axis='x'))
+    c.anchor(f'cover_return_{side}', 'cover', [sx * 10.45, 0, sz * 3.7], height=1.9)
+# L02/L05: landmark blocks cut the 40 m lines along the outer corridors: war drums in the north
+# corridor, vermilion gates in the south one. Both stop below the baulk tops (no new perch).
+for sx in (-1, 1):
+    side = 'w' if sx < 0 else 'e'
+    c.B(f'war_drum_{side}', sx * 8.0, sx * 6.2, PIT, PIT + 1.9, -12.6, -9.5, 'lacquer', 'cover', dict(kind='wardrum'))
+    c.B(f'vermilion_gate_{side}', sx * 7.6, sx * 6.6, PIT, PIT + 1.9, 9.3, 12.7, 'lacquer', 'cover', dict(kind='redgate'))
+    c.anchor(f'cover_drum_{side}', 'cover', [sx * 7.1, PIT, -13.2], height=1.9)
+    c.anchor(f'cover_gate_{side}', 'cover', [sx * 8.2, PIT, 11.3], height=1.9)
 # The emperor's bronze chariot on its plinth, the four-horse team in front of it.
 c.B('chariot_plinth', -2.4, 2.4, PIT, PIT + .45, -1.5, 1.5, 'brick', 'cover', dict(kind='plinth'))
 c.B('chariot', -1.7, 1.7, PIT + .45, PIT + 2.25, -1.0, 1.5, 'bronze', 'cover', dict(kind='chariot'))
@@ -97,8 +136,10 @@ c.route('north_gallery', [[-27.5, 0, -2], [-27.5, 0, -18], [27.5, 0, -18], [27.5
 c.route('south_gallery', [[-27.5, 0, 2], [-27.5, 0, 18], [27.5, 0, 18], [27.5, 0, 2]])
 c.route('baulk_catwalk', [[-25.4, 0, 6.6], [-22.4, 0, 5.5], [22.4, 0, 5.5], [25.4, 0, 6.6]])
 c.route('centre_corridor', [[-25.4, 0, 6.6], [-22.4, 0, 6.6], [-22.4, 0, 0], [-15, PIT, 0], [-8, PIT, 0], [-8, PIT, -3.2], [0, PIT, -3.2], [8, PIT, -3.2], [8, PIT, 0], [15, PIT, 0], [22.4, 0, 0]])
-c.route('south_corridor', [[-22.4, 0, 11.5], [-15, PIT, 11.5], [-8, PIT, 11.2], [-3, PIT, 10.0], [3, PIT, 10.0], [8, PIT, 11.2], [15, PIT, 11.5], [22.4, 0, 11.5]])
-c.route('gallery_stair', [[0, 0, -18.6], [0, 0, -16.2], [0, PIT, -10.3], [-8, PIT, -10.6], [-8, PIT, 0]])
+c.route('south_corridor', [[-22.4, 0, 11.5], [-15, PIT, 11.5], [-10.4, PIT, 11.5], [-10.4, PIT, 8.2], [-5.2, PIT, 8.2], [-5.2, PIT, 10.0], [5.2, PIT, 10.0], [5.2, PIT, 8.2], [10.4, PIT, 8.2], [10.4, PIT, 11.5], [15, PIT, 11.5], [22.4, 0, 11.5]])
+c.route('gallery_stair', [[0, 0, -18.6], [0, 0, -16.2], [0, PIT, -10.3], [-5, PIT, -10.3], [-5, PIT, -8.4], [-8, PIT, -7.6], [-8, PIT, 0]])
+c.route('return_west', [[-14.5, PIT, .3], [-16, PIT, 3.3], [-11.0, 0, 3.3], [-10.45, 0, 3.6], [-10.45, 0, 5.5], [-14, 0, 5.5]])
+c.route('return_east', [[14.5, PIT, -.3], [16, PIT, -3.3], [11.0, 0, -3.3], [10.45, 0, -3.6], [10.45, 0, -5.5], [14, 0, -5.5]])
 
 # ------------------------------------------------------------------ figures (modelled once, placed many times)
 def warrior(kind=0):
@@ -163,11 +204,14 @@ def rank(m, o, a):
     """A file of figures shoulder to shoulder. West: red-sashed infantry led by an officer; east: the blue guard."""
     x0, x1, y0, y1, z0, z1 = ext(o); sx = a['sx']; face = 0 if sx < 0 else math.pi; r = random.Random(900 + a['n'] * 2 + (sx > 0))
     cx = (x0 + x1) / 2; n = max(2, int((z1 - z0 - .76) / .58) + 1)
-    m.box('earthDark', (x0 + .02, y0, z0 + .02), (x1 - .02, y0 + .04, z1 - .02))
+    # L04: the file stands on a continuous earthen base with a timber kerb, so the whole box reads as one solid
+    BASE = .24; fit = (y1 - y0 - BASE) / 1.98
+    tbox(m, 'rammedDark', x0, x1, z0, z1, y0, y0 + BASE, .03, top_material='earthDark')
+    for xx in (x0 + .03, x1 - .09): m.box('timber', (xx, y0 + BASE - .08, z0 + .03), (xx + .06, y0 + BASE, z1 - .03))
     for k in range(n):
         officer = (k == 0 and a['n'] % 2 == 0) if sx < 0 else k % 2 == 0
-        place(m, WARRIORS[1 if officer else 0], cx + r.uniform(-.02, .02), y0 + .04, z0 + .38 + (z1 - z0 - .76) * k / (n - 1),
-              face + r.uniform(-.06, .06), 1.0, .955 if officer else r.uniform(.96, .995), remap=None if sx < 0 else dict(pigmentRed='pigmentBlue'))
+        place(m, WARRIORS[1 if officer else 0], cx + r.uniform(-.02, .02), y0 + BASE, z0 + .38 + (z1 - z0 - .76) * k / (n - 1),
+              face + r.uniform(-.06, .06), 1.0, fit * (.98 if officer else r.uniform(.97, 1.0)), remap=None if sx < 0 else dict(pigmentRed='pigmentBlue'))
     return True
 
 
@@ -415,7 +459,48 @@ def endroof(m, o, a):
     return True
 
 
-KINDS = dict(rank=rank, chariot=chariot, team=team, plinth=plinth, wall=wall, baulk=baulk,
+def lowwall(m, o, a):
+    """Short rammed-earth wall with a brick foot and a tiled coping."""
+    x0, x1, y0, y1, z0, z1 = ext(o)
+    m.box('brickDark', (x0, y0, z0), (x1, y0 + .3, z1)); m.box('rammed', (x0 + .02, y0 + .3, z0 + .02), (x1 - .02, y1 - .22, z1 - .02))
+    m.box('lacquerDark', (x0, y1 - .22, z0), (x1, y1 - .14, z1)); m.box('tile', (x0, y1 - .14, z0), (x1, y1, z1))
+    return True
+
+
+def wardrum(m, o, a):
+    """A great war drum of the host on its lacquered stand: bronze-studded skin, gilt hoops."""
+    x0, x1, y0, y1, z0, z1 = ext(o); xc, zc = (x0 + x1) / 2, (z0 + z1) / 2
+    tbox(m, 'brick', x0, x1, z0, z1, y0, y0 + .25, .05)
+    m.box('lacquerDark', (x0 + .08, y0 + .25, z0 + .08), (x1 - .08, y0 + .55, z1 - .08))
+    r = min(x1 - x0, z1 - z0) / 2 - .05
+    lathe(m, 'lacquer', xc, zc, [(r * .9, y0 + .55), (r, y0 + .85), (r, y1 - .35), (r * .9, y1 - .06)], 20, cap=False)
+    lathe(m, 'gold', xc, zc, [(r * .905, y1 - .1), (r * .905, y1 - .06)], 20, cap=False)
+    lathe(m, 'gold', xc, zc, [(r + .005, y0 + 1.0), (r + .005, y0 + 1.06)], 20, cap=False)
+    lathe(m, 'rammedLight', xc, zc, [(r * .9, y1 - .06), (0, y1 - .06)], 20, cap=False)         # the skin
+    for i in range(16):
+        t = math.tau * i / 16; m.blob('bronze', (xc + r * .86 * math.cos(t), y1 - .1, zc + r * .86 * math.sin(t)), .035, 1)
+    return True
+
+
+def redgate(m, o, a):
+    """Vermilion gate (朱门): two lacquered leaves with rows of bronze studs in a black frame under a tiled hood."""
+    x0, x1, y0, y1, z0, z1 = ext(o); zc = (z0 + z1) / 2
+    m.box('lacquerDark', (x0, y0, z0), (x1, y1 - .25, z1))
+    m.box('lacquer', (x0 + .06, y0 + .1, z0 + .1), (x1 - .06, y1 - .35, z1 - .1))
+    for xf, sg in ((x0 + .06, -1), (x1 - .06, 1)):
+        m.box('lacquerDark', (min(xf, xf + sg * .02), y0 + .1, zc - .03), (max(xf, xf + sg * .02), y1 - .35, zc + .03))   # the meeting of the leaves
+        for row in range(4):
+            for col in range(4):
+                for half in (-1, 1):
+                    zz = zc + half * (.18 + col * .2); yy = y0 + .35 + row * .32
+                    m.box('bronze', (min(xf, xf + sg * .035), yy - .03, zz - .03), (max(xf, xf + sg * .035), yy + .03, zz + .03))
+        for half in (-1, 1):
+            m.box('gold', (min(xf, xf + sg * .05), y0 + .8, zc + half * .1 - .05), (max(xf, xf + sg * .05), y0 + .95, zc + half * .1 + .05))
+    m.box('tile', (x0, y1 - .25, z0), (x1, y1 - .1, z1)); m.box('tileLight', (x0 + .1, y1 - .1, z0), (x1 - .1, y1, z1))
+    return True
+
+
+KINDS = dict(lowwall=lowwall, wardrum=wardrum, redgate=redgate, rank=rank, chariot=chariot, team=team, plinth=plinth, wall=wall, baulk=baulk,
              planks=planks, gallery=gallery, column=column, rail=rail, ding=ding, chimes=chimes, rack=rack, screen=screen, que=que,
              leanroof=leanroof, endroof=endroof, steps=lambda m, o, a: steps(m, o, 'timberLight', 'rammed', 'rammedDark', .22))
 

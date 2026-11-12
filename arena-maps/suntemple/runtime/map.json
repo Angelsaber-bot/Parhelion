@@ -74,17 +74,17 @@
         0.5
       ],
       [
-        -8.5,
+        -6.3,
         1.23,
-        -16.2,
+        -16.0,
         1.3,
         "#ff9a48",
         0.5
       ],
       [
-        8.5,
+        6.3,
         1.23,
-        -16.2,
+        -16.0,
         1.3,
         "#ff9a48",
         0.5
@@ -140,17 +140,17 @@
         0.55
       ],
       [
-        -8.5,
+        -6.3,
         0.02,
-        -16.2,
+        -16.0,
         3.8,
         "#ffb063",
         0.55
       ],
       [
-        8.5,
+        6.3,
         0.02,
-        -16.2,
+        -16.0,
         3.8,
         "#ffb063",
         0.55
@@ -202,15 +202,15 @@
         0.25
       ],
       [
-        -8.5,
+        -6.3,
         1.2320000000000002,
-        -16.2,
+        -16.0,
         0.25
       ],
       [
-        8.5,
+        6.3,
         1.2320000000000002,
-        -16.2,
+        -16.0,
         0.25
       ]
     ],
@@ -448,17 +448,71 @@
       "batch": "main"
     },
     {
-      "id": "hall_roof",
+      "id": "hall_roof_0",
       "type": "box",
       "position": [
-        0.0,
+        -6.1,
         5.4,
         -5.0
       ],
       "size": [
-        22,
+        9.8,
         0.4,
         20
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_roof_1",
+      "type": "box",
+      "position": [
+        6.1,
+        5.4,
+        -5.0
+      ],
+      "size": [
+        9.8,
+        0.4,
+        20
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_roof_2",
+      "type": "box",
+      "position": [
+        0.0,
+        5.4,
+        -13.55
+      ],
+      "size": [
+        2.4,
+        0.4,
+        2.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_roof_3",
+      "type": "box",
+      "position": [
+        0.0,
+        5.4,
+        -0.25
+      ],
+      "size": [
+        2.4,
+        0.4,
+        10.5
       ],
       "material": "sandstone",
       "collision": true,
@@ -703,12 +757,12 @@
       "id": "hall_wall_north_0",
       "type": "box",
       "position": [
-        -6.25,
+        -10.2,
         2.6,
         -14.7
       ],
       "size": [
-        9.5,
+        1.6,
         5.2,
         0.6
       ],
@@ -721,12 +775,12 @@
       "id": "hall_wall_north_1",
       "type": "box",
       "position": [
-        6.25,
+        0.0,
         2.6,
         -14.7
       ],
       "size": [
-        9.5,
+        15.2,
         5.2,
         0.6
       ],
@@ -736,16 +790,52 @@
       "batch": "main"
     },
     {
-      "id": "hall_lintel_north",
+      "id": "hall_wall_north_2",
       "type": "box",
       "position": [
-        0.0,
-        4.3,
+        10.2,
+        2.6,
         -14.7
       ],
       "size": [
-        3.0,
+        1.6,
+        5.2,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_north_0",
+      "type": "box",
+      "position": [
+        -8.5,
+        4.15,
+        -14.7
+      ],
+      "size": [
         1.8,
+        2.1,
+        0.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "hall_lintel_north_1",
+      "type": "box",
+      "position": [
+        8.5,
+        4.15,
+        -14.7
+      ],
+      "size": [
+        1.8,
+        2.1,
         0.6
       ],
       "material": "sandstone",
@@ -778,24 +868,6 @@
         -8.25,
         2.6,
         -8.1
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_0_2",
-      "type": "box",
-      "position": [
-        -8.25,
-        2.6,
-        -4.8
       ],
       "size": [
         1.24,
@@ -880,24 +952,6 @@
       "batch": "main"
     },
     {
-      "id": "column_1_2",
-      "type": "box",
-      "position": [
-        -4.95,
-        2.6,
-        -4.8
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
       "id": "column_1_3",
       "type": "box",
       "position": [
@@ -934,60 +988,6 @@
       "batch": "main"
     },
     {
-      "id": "column_2_0",
-      "type": "box",
-      "position": [
-        -1.65,
-        2.6,
-        -11.4
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_2_1",
-      "type": "box",
-      "position": [
-        -1.65,
-        2.6,
-        -8.1
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_2_2",
-      "type": "box",
-      "position": [
-        -1.65,
-        2.6,
-        -4.8
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
       "id": "column_2_3",
       "type": "box",
       "position": [
@@ -1012,60 +1012,6 @@
         -1.65,
         2.6,
         1.8
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_3_0",
-      "type": "box",
-      "position": [
-        1.65,
-        2.6,
-        -11.4
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_3_1",
-      "type": "box",
-      "position": [
-        1.65,
-        2.6,
-        -8.1
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
-      "id": "column_3_2",
-      "type": "box",
-      "position": [
-        1.65,
-        2.6,
-        -4.8
       ],
       "size": [
         1.24,
@@ -1150,24 +1096,6 @@
       "batch": "main"
     },
     {
-      "id": "column_4_2",
-      "type": "box",
-      "position": [
-        4.95,
-        2.6,
-        -4.8
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
       "id": "column_4_3",
       "type": "box",
       "position": [
@@ -1240,24 +1168,6 @@
       "batch": "main"
     },
     {
-      "id": "column_5_2",
-      "type": "box",
-      "position": [
-        8.25,
-        2.6,
-        -4.8
-      ],
-      "size": [
-        1.24,
-        5.2,
-        1.24
-      ],
-      "material": "sandstone",
-      "collision": true,
-      "role": "structure",
-      "batch": "main"
-    },
-    {
       "id": "column_5_3",
       "type": "box",
       "position": [
@@ -1294,15 +1204,111 @@
       "batch": "main"
     },
     {
+      "id": "sun_stair_landing",
+      "type": "box",
+      "position": [
+        0.0,
+        1.4,
+        -13.25
+      ],
+      "size": [
+        2.4,
+        2.8,
+        2.3
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "sun_stair_base",
+      "type": "box",
+      "position": [
+        0.0,
+        1.4,
+        -8.8
+      ],
+      "size": [
+        2.4,
+        2.8,
+        6.6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "sun_stair_upper",
+      "type": "ramp",
+      "position": [
+        0.0,
+        2.8,
+        -8.8
+      ],
+      "size": [
+        2.4,
+        2.8,
+        6.6
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "sun_stair_-1",
+      "type": "ramp",
+      "position": [
+        -4.1,
+        0,
+        -13.25
+      ],
+      "size": [
+        5.8,
+        2.8,
+        2.3
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
+      "id": "sun_stair_1",
+      "type": "ramp",
+      "position": [
+        4.1,
+        0,
+        -13.25
+      ],
+      "size": [
+        5.8,
+        2.8,
+        2.3
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "x",
+      "lowAt": 1,
+      "batch": "main"
+    },
+    {
       "id": "roof_parapet_south_0",
       "type": "box",
       "position": [
-        -8.3,
+        -4.0,
         6.1,
         4.775
       ],
       "size": [
-        4.2,
+        5.2,
         1.0,
         0.45
       ],
@@ -1315,48 +1321,12 @@
       "id": "roof_parapet_south_1",
       "type": "box",
       "position": [
-        -2.8,
+        4.0,
         6.1,
         4.775
       ],
       "size": [
-        2.8,
-        1.0,
-        0.45
-      ],
-      "material": "limestone",
-      "collision": true,
-      "role": "cover",
-      "batch": "main"
-    },
-    {
-      "id": "roof_parapet_south_2",
-      "type": "box",
-      "position": [
-        2.8,
-        6.1,
-        4.775
-      ],
-      "size": [
-        2.8,
-        1.0,
-        0.45
-      ],
-      "material": "limestone",
-      "collision": true,
-      "role": "cover",
-      "batch": "main"
-    },
-    {
-      "id": "roof_parapet_south_3",
-      "type": "box",
-      "position": [
-        8.3,
-        6.1,
-        4.775
-      ],
-      "size": [
-        4.2,
+        5.2,
         1.0,
         0.45
       ],
@@ -1367,24 +1337,6 @@
     },
     {
       "id": "roof_parapet_side_-1_0",
-      "type": "box",
-      "position": [
-        -10.775,
-        6.1,
-        -13.075
-      ],
-      "size": [
-        0.45,
-        1.0,
-        2.95
-      ],
-      "material": "limestone",
-      "collision": true,
-      "role": "cover",
-      "batch": "main"
-    },
-    {
-      "id": "roof_parapet_side_-1_1",
       "type": "box",
       "position": [
         -10.775,
@@ -1402,17 +1354,17 @@
       "batch": "main"
     },
     {
-      "id": "roof_parapet_side_-1_2",
+      "id": "roof_parapet_side_-1_1",
       "type": "box",
       "position": [
         -10.775,
         6.1,
-        2.175
+        0.9
       ],
       "size": [
         0.45,
         1.0,
-        4.75
+        2.2
       ],
       "material": "limestone",
       "collision": true,
@@ -1440,25 +1392,79 @@
       "batch": "main"
     },
     {
-      "id": "roof_parapet_side_1_0",
+      "id": "roof_sanctuary_w",
       "type": "box",
       "position": [
-        10.775,
-        6.1,
-        -13.075
+        -2.7,
+        7.0,
+        -7.1
       ],
       "size": [
-        0.45,
-        1.0,
-        2.95
+        3.0,
+        2.8,
+        15.8
       ],
-      "material": "limestone",
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_chapel_w",
+      "type": "box",
+      "position": [
+        -7.6,
+        7.0,
+        -13.1
+      ],
+      "size": [
+        6.8,
+        2.8,
+        3.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_kiosk_w",
+      "type": "box",
+      "position": [
+        -8.8,
+        7.0,
+        3.5
+      ],
+      "size": [
+        4.4,
+        2.8,
+        3.0
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_altar_w",
+      "type": "box",
+      "position": [
+        -7.6,
+        6.2,
+        -3.7
+      ],
+      "size": [
+        1.2,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
       "collision": true,
       "role": "cover",
       "batch": "main"
     },
     {
-      "id": "roof_parapet_side_1_1",
+      "id": "roof_parapet_side_1_0",
       "type": "box",
       "position": [
         10.775,
@@ -1476,17 +1482,17 @@
       "batch": "main"
     },
     {
-      "id": "roof_parapet_side_1_2",
+      "id": "roof_parapet_side_1_1",
       "type": "box",
       "position": [
         10.775,
         6.1,
-        2.175
+        0.9
       ],
       "size": [
         0.45,
         1.0,
-        4.75
+        2.2
       ],
       "material": "limestone",
       "collision": true,
@@ -1514,17 +1520,107 @@
       "batch": "main"
     },
     {
-      "id": "sun_shrine",
+      "id": "roof_sanctuary_e",
+      "type": "box",
+      "position": [
+        2.7,
+        7.0,
+        -7.1
+      ],
+      "size": [
+        3.0,
+        2.8,
+        15.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_chapel_e",
+      "type": "box",
+      "position": [
+        7.6,
+        7.0,
+        -13.1
+      ],
+      "size": [
+        6.8,
+        2.8,
+        3.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_kiosk_e",
+      "type": "box",
+      "position": [
+        8.8,
+        7.0,
+        3.5
+      ],
+      "size": [
+        4.4,
+        2.8,
+        3.0
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_altar_e",
+      "type": "box",
+      "position": [
+        7.6,
+        6.2,
+        -3.7
+      ],
+      "size": [
+        1.2,
+        1.2,
+        1.4
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "roof_sanctuary_n",
       "type": "box",
       "position": [
         0.0,
-        6.4,
-        -6.0
+        7.0,
+        -13.55
       ],
       "size": [
+        2.4,
         2.8,
-        1.6,
-        2.8
+        2.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "roof_bridge_screen",
+      "type": "box",
+      "position": [
+        0.0,
+        6.5,
+        2.4
+      ],
+      "size": [
+        3.2,
+        1.8,
+        0.4
       ],
       "material": "granite",
       "collision": true,
@@ -1572,13 +1668,31 @@
       "type": "box",
       "position": [
         -21.5,
-        6.8,
+        5.4,
         0.0
       ],
       "size": [
         1.8,
-        1.2,
+        4.0,
         6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gate_screen_west",
+      "type": "box",
+      "position": [
+        -25.3,
+        1.8,
+        0.0
+      ],
+      "size": [
+        0.6,
+        3.6,
+        8.0
       ],
       "material": "sandstone",
       "collision": true,
@@ -1589,14 +1703,48 @@
       "id": "spawn_mark_west",
       "type": "box",
       "position": [
-        -27.0,
+        -27.6,
         0.02,
         0.0
       ],
       "size": [
         1.6,
         0.04,
-        5.6
+        4.8
+      ],
+      "material": "lapis",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_west_-1",
+      "type": "box",
+      "position": [
+        -24.2,
+        0.02,
+        -7.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        1.6
+      ],
+      "material": "lapis",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_west_1",
+      "type": "box",
+      "position": [
+        -24.2,
+        0.02,
+        7.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        1.6
       ],
       "material": "lapis",
       "collision": false,
@@ -1606,9 +1754,9 @@
       "id": "offering_west_-1",
       "type": "box",
       "position": [
-        -25.1,
+        -28.5,
         0.6,
-        -5.9
+        -5.1
       ],
       "size": [
         1.0,
@@ -1624,9 +1772,9 @@
       "id": "offering_west_1",
       "type": "box",
       "position": [
-        -25.1,
+        -28.5,
         0.6,
-        5.9
+        5.1
       ],
       "size": [
         1.0,
@@ -1783,6 +1931,24 @@
       "batch": "main"
     },
     {
+      "id": "stela_west",
+      "type": "box",
+      "position": [
+        -13.8,
+        1.3,
+        -16.8
+      ],
+      "size": [
+        1.6,
+        2.6,
+        1.6
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
       "id": "table_west_0",
       "type": "box",
       "position": [
@@ -1839,6 +2005,26 @@
       "batch": "main"
     },
     {
+      "id": "basin_steps_south_west",
+      "type": "ramp",
+      "position": [
+        -3.4,
+        -1.2,
+        17.9
+      ],
+      "size": [
+        2.0,
+        1.2,
+        2.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
       "id": "pylon_east_-1",
       "type": "box",
       "position": [
@@ -1879,13 +2065,31 @@
       "type": "box",
       "position": [
         21.5,
-        6.8,
+        5.4,
         0.0
       ],
       "size": [
         1.8,
-        1.2,
+        4.0,
         6
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "gate_screen_east",
+      "type": "box",
+      "position": [
+        25.3,
+        1.8,
+        0.0
+      ],
+      "size": [
+        0.6,
+        3.6,
+        8.0
       ],
       "material": "sandstone",
       "collision": true,
@@ -1896,14 +2100,48 @@
       "id": "spawn_mark_east",
       "type": "box",
       "position": [
-        27.0,
+        27.6,
         0.02,
         0.0
       ],
       "size": [
         1.6,
         0.04,
-        5.6
+        4.8
+      ],
+      "material": "ochre",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_east_-1",
+      "type": "box",
+      "position": [
+        24.2,
+        0.02,
+        -7.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        1.6
+      ],
+      "material": "ochre",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_east_1",
+      "type": "box",
+      "position": [
+        24.2,
+        0.02,
+        7.0
+      ],
+      "size": [
+        1.6,
+        0.04,
+        1.6
       ],
       "material": "ochre",
       "collision": false,
@@ -1913,9 +2151,9 @@
       "id": "offering_east_-1",
       "type": "box",
       "position": [
-        25.1,
+        28.5,
         0.6,
-        -5.9
+        -5.1
       ],
       "size": [
         1.0,
@@ -1931,9 +2169,9 @@
       "id": "offering_east_1",
       "type": "box",
       "position": [
-        25.1,
+        28.5,
         0.6,
-        5.9
+        5.1
       ],
       "size": [
         1.0,
@@ -2090,6 +2328,24 @@
       "batch": "main"
     },
     {
+      "id": "stela_east",
+      "type": "box",
+      "position": [
+        13.8,
+        1.3,
+        -16.8
+      ],
+      "size": [
+        1.6,
+        2.6,
+        1.6
+      ],
+      "material": "granite",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
       "id": "table_east_0",
       "type": "box",
       "position": [
@@ -2146,6 +2402,26 @@
       "batch": "main"
     },
     {
+      "id": "basin_steps_south_east",
+      "type": "ramp",
+      "position": [
+        3.4,
+        -1.2,
+        17.9
+      ],
+      "size": [
+        2.0,
+        1.2,
+        2.2
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "ramp",
+      "axis": "z",
+      "lowAt": -1,
+      "batch": "main"
+    },
+    {
       "id": "barque_shrine",
       "type": "box",
       "position": [
@@ -2184,12 +2460,32 @@
   ],
   "anchors": [
     {
+      "id": "cover_terrace_w",
+      "kind": "cover",
+      "position": [
+        -9.2,
+        5.6,
+        -3.7
+      ],
+      "height": 1.2
+    },
+    {
+      "id": "cover_terrace_e",
+      "kind": "cover",
+      "position": [
+        9.2,
+        5.6,
+        -3.7
+      ],
+      "height": 1.2
+    },
+    {
       "id": "spawn_west_0",
       "kind": "spawn",
       "position": [
-        -27,
+        -27.6,
         0,
-        -2
+        -1.6
       ],
       "yaw": 1.5708,
       "team": "west"
@@ -2198,9 +2494,31 @@
       "id": "spawn_west_1",
       "kind": "spawn",
       "position": [
-        -27,
+        -27.6,
         0,
-        2
+        1.6
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_2",
+      "kind": "spawn",
+      "position": [
+        -24.2,
+        0,
+        -7.0
+      ],
+      "yaw": 1.5708,
+      "team": "west"
+    },
+    {
+      "id": "spawn_west_3",
+      "kind": "spawn",
+      "position": [
+        -24.2,
+        0,
+        7.0
       ],
       "yaw": 1.5708,
       "team": "west"
@@ -2214,6 +2532,16 @@
         6
       ],
       "height": 9
+    },
+    {
+      "id": "cover_screen_west",
+      "kind": "cover",
+      "position": [
+        -24.4,
+        0,
+        0
+      ],
+      "height": 3.6
     },
     {
       "id": "cover_drums_west",
@@ -2276,12 +2604,22 @@
       "height": 1.7
     },
     {
+      "id": "cover_stela_west",
+      "kind": "cover",
+      "position": [
+        -13.8,
+        0,
+        -15.3
+      ],
+      "height": 2.6
+    },
+    {
       "id": "spawn_east_0",
       "kind": "spawn",
       "position": [
-        27,
+        27.6,
         0,
-        -2
+        -1.6
       ],
       "yaw": -1.5708,
       "team": "east"
@@ -2290,9 +2628,31 @@
       "id": "spawn_east_1",
       "kind": "spawn",
       "position": [
-        27,
+        27.6,
         0,
-        2
+        1.6
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_2",
+      "kind": "spawn",
+      "position": [
+        24.2,
+        0,
+        -7.0
+      ],
+      "yaw": -1.5708,
+      "team": "east"
+    },
+    {
+      "id": "spawn_east_3",
+      "kind": "spawn",
+      "position": [
+        24.2,
+        0,
+        7.0
       ],
       "yaw": -1.5708,
       "team": "east"
@@ -2306,6 +2666,16 @@
         6
       ],
       "height": 9
+    },
+    {
+      "id": "cover_screen_east",
+      "kind": "cover",
+      "position": [
+        24.4,
+        0,
+        0
+      ],
+      "height": 3.6
     },
     {
       "id": "cover_drums_east",
@@ -2368,6 +2738,16 @@
       "height": 1.7
     },
     {
+      "id": "cover_stela_east",
+      "kind": "cover",
+      "position": [
+        13.8,
+        0,
+        -15.3
+      ],
+      "height": 2.6
+    },
+    {
       "id": "cover_basin_-1",
       "kind": "cover",
       "position": [
@@ -2403,7 +2783,7 @@
       "position": [
         0,
         5.6,
-        -2
+        1.5
       ],
       "radius": 2
     },
@@ -2416,16 +2796,6 @@
         -16.6
       ],
       "radius": 2
-    },
-    {
-      "id": "cover_roof_shrine",
-      "kind": "cover",
-      "position": [
-        2.2,
-        5.6,
-        -6
-      ],
-      "height": 1.6
     },
     {
       "id": "cover_hall",
@@ -2477,12 +2847,32 @@
         [
           -27,
           0,
+          -18.7
+        ],
+        [
+          -11.5,
+          0,
+          -18.7
+        ],
+        [
+          -11.5,
+          0,
           -17.2
+        ],
+        [
+          11.5,
+          0,
+          -17.2
+        ],
+        [
+          11.5,
+          0,
+          -18.7
         ],
         [
           27,
           0,
-          -17.2
+          -18.7
         ],
         [
           27,
@@ -2511,9 +2901,19 @@
           -13.7
         ],
         [
-          -6.6,
+          -9.6,
           0,
           -13.7
+        ],
+        [
+          -9.6,
+          0,
+          -6.45
+        ],
+        [
+          -6.6,
+          0,
+          -6.45
         ],
         [
           -6.6,
@@ -2538,6 +2938,22 @@
       ]
     },
     {
+      "id": "lateral_aisle",
+      "name": "lateral aisle",
+      "points": [
+        [
+          -9.6,
+          0,
+          -4.8
+        ],
+        [
+          9.6,
+          0,
+          -4.8
+        ]
+      ]
+    },
+    {
       "id": "hall_roof",
       "name": "hall roof",
       "points": [
@@ -2557,14 +2973,24 @@
           -10.35
         ],
         [
-          -6,
+          -5.4,
           5.6,
-          -2
+          -1.0
         ],
         [
-          6,
+          -5.4,
           5.6,
-          -2
+          3.6
+        ],
+        [
+          5.4,
+          5.6,
+          3.6
+        ],
+        [
+          5.4,
+          5.6,
+          -1.0
         ],
         [
           9.4,
@@ -2580,6 +3006,62 @@
           12.3,
           0,
           4.4
+        ]
+      ]
+    },
+    {
+      "id": "public_stair",
+      "name": "public stair",
+      "points": [
+        [
+          -8.5,
+          0,
+          -17.0
+        ],
+        [
+          -8.5,
+          0,
+          -13.25
+        ],
+        [
+          0,
+          2.8,
+          -13.25
+        ],
+        [
+          0,
+          2.8,
+          -12.0
+        ],
+        [
+          0,
+          5.6,
+          -5.3
+        ],
+        [
+          0,
+          5.6,
+          1.5
+        ],
+        [
+          -2.6,
+          5.6,
+          1.5
+        ],
+        [
+          -2.6,
+          5.6,
+          3.6
+        ],
+        [
+          -5.4,
+          5.6,
+          3.6
+        ],
+        [
+          -5.6,
+          5.6,
+          -2.0
         ]
       ]
     },
@@ -2620,26 +3102,57 @@
       ]
     },
     {
+      "id": "lotus_steps",
+      "name": "lotus steps",
+      "points": [
+        [
+          -3.4,
+          0,
+          21.0
+        ],
+        [
+          -3.4,
+          -1.2,
+          16.4
+        ],
+        [
+          -3.4,
+          -1.2,
+          12.3
+        ]
+      ]
+    },
+    {
       "id": "north_door",
       "name": "north door",
       "points": [
         [
+          8.5,
           0,
-          0,
-          -16.6
+          -17.0
         ],
         [
+          8.5,
           0,
-          0,
-          -9.75
+          -13.25
         ],
         [
-          -3.3,
+          9.6,
           0,
-          -9.75
+          -13.25
         ],
         [
-          -3.3,
+          9.6,
+          0,
+          -6.45
+        ],
+        [
+          3.3,
+          0,
+          -6.45
+        ],
+        [
+          3.3,
           0,
           0
         ]

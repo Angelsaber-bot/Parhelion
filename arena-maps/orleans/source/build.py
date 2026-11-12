@@ -1,13 +1,21 @@
 """ORLEANS 奥尔良: a walled river town on the Loire, anime fiction of the relieved city.
 Run: python3 arena-maps/orleans/source/build.py        (add --materials to re-synthesise surfaces)
 
-Play idea: a town you fight through on three storeys.
-  * market square: stalls, a hay cart and the bronze standard-bearer on her plinth;
-  * four half-timbered houses you can enter, each with an inner stair to an upper room
-    whose windows command the square, the lane or the quay;
-  * the north rampart: a wall walk the length of the town, through a covered gate tower;
-  * the quay: a lower level along the river, reached by four stairs, hidden from the square.
-Teams start behind the west and east town gates. Collision is mirrored in x.
+Play idea: a chase through streets, houses and the river bank, where pairs pin from the front
+and slip round the side.
+  * market square: booths, stalls, a hay cart and the bronze standard-bearer on her plinth;
+  * four half-timbered houses. The two north houses are ground-floor passages (their upper
+    storeys are shuttered, the stair boarded up). The two river houses are the only upper rooms
+    in play: an inner stair, an outside stair to a balcony on the other side of the room, a
+    hoist door to drop out of, and just two shooting windows (one on the square, one on the quay).
+    Their ground floors run street door -> turn -> quay door;
+  * the north rampart: two short wall walks either side of a closed gatehouse, the far ends
+    shut off by turrets; breastworks leave one bay over the square and one over the street;
+  * the quay: a lower level along the river with six stairs, two of them beside the crane to
+    rejoin the square from its side.
+Teams start in three pockets behind the west and east town gates. Collision is mirrored in x.
+
+Revised 2026-11 from the arena map design report (O01-O06).
 """
 from pathlib import Path
 import sys, math, random
@@ -42,71 +50,103 @@ c.B('rampart_parapet', -29.4, 29.4, 0, WALK + 1.3, -22, -21.5, 'limestone', 'str
 c.B('rampart_walk', -29.4, 29.4, 0, WALK, -21.5, -19, 'limestone', 'floor', dict(kind='walk'))
 c.B('tower_inner_wall', -2.2, 2.2, WALK, WALK + 2.9, -19.3, -19, 'limestone', 'structure', dict(kind='towerwall'))
 c.B('tower_roof', -2.6, 2.6, WALK + 2.9, WALK + 5.6, -22, -19, 'slate', 'roof', dict(kind='towerroof'), collision=False)
+# O04: the walk is cut into two short local fights. The gatehouse is shut (no passage through it),
+# turrets close the long ends, which stay as background town wall, and an inner breastwork leaves
+# one bay over the square and one over the north street, so watching one gives up the other.
+c.B('tower_gate', -2.2, 2.2, WALK, WALK + 2.9, -21.5, -19.3, 'limestone', 'structure', dict(kind='gatehouse'))
 for sx in (-1, 1):
     c.B(f'corner_tower_{sx}', sx * 29.4, sx * 27, WALK, WALK + 3.2, -21.5, -19, 'limestone', 'structure', dict(kind='cornertower'))
+    c.B(f'rampart_turret_{sx}', sx * 16.4, sx * 14.6, WALK, WALK + 3.2, -21.5, -19, 'limestone', 'structure', dict(kind='cornertower'))
     c.R(f'rampart_stair_{sx}', sx * 14, sx * 4, 0, WALK, -19, -17.2, 'x', -sx, 'limestone', dict(kind='stonestair'))
-    c.anchor(f'cover_rampart_{sx}', 'cover', [sx * 20, WALK, -20.3], height=1.3)
-c.anchor('objective_rampart', 'objective', [0, WALK, -20.4], radius=2)
+    for i, (x0, x1) in enumerate(((2.2, 4.6), (7.4, 11.6))):
+        c.B(f'breastwork_{sx}_{i}', sx * x0, sx * x1, WALK, WALK + 2.2, -19.4, -19, 'limestone', 'structure', dict(kind='towerwall'))
+    c.anchor(f'cover_rampart_{sx}', 'cover', [sx * 9.5, WALK, -20.3], height=2.2)
+c.anchor('objective_rampart', 'objective', [0, 0, -17.8], radius=2)
 
-def house(name, x0, x1, z0, z1, sx, back):
-    """Two-storey half-timbered house. `sx` is its side of the map; `back` (+1/-1) is the z side its stair runs along."""
+def house(name, x0, x1, z0, z1, sx, back, upper):
+    """Two-storey half-timbered house. `sx` is its side of the map; `back` (+1/-1) is the z side its
+    stair runs along. upper='closed': ground-floor passage only, upper storey shuttered and its stair
+    boarded up. upper='open': the river house of the design report (O01-O03)."""
     T = .4; sq = x1                               # square-facing wall plane (outer face); callers pass the outer x first
     out = x0                                      # wall away from the square
     off = lambda d: out - sx * d                  # a distance in from the outer wall, mirrored with the house
     zb, zf = (z1, z0) if back > 0 else (z0, z1)   # back wall plane, front (street) wall plane
     ax0, ax1 = min(x0, x1), max(x0, x1)
+    zc = (z0 + z1) / 2
+    is_open = upper == 'open'
     def W(id, xa, xb, ya, yb, za, zb_, level, axis, face, part='wall'):
-        c.B(f'{name}_{id}', xa, xb, ya, yb, za, zb_, 'limestone' if level == 'g' else 'plaster', 'structure', dict(kind='hwall', level=level, axis=axis, face=face, part=part))
-    for level, y0, y1 in (('g', 0, 3.0), ('u', UP, EAVE)):
-        # wall away from the square: solid
-        xa, xb = (out, out + T) if sx < 0 else (out - T, out)
-        W(f'{level}_out', xa, xb, y0, y1, z0, z1, level, 'x', sx)
-        # back wall: solid at ground; above, a window toward the quay or the rampart lane
-        za, zb_ = (zb - T, zb) if back > 0 else (zb, zb + T)
-        if level == 'g': W('g_back', ax0 + T, ax1 - T, y0, y1, za, zb_, level, 'z', back)
-        else:
-            wx0, wx1 = (ax1 - 3.0, ax1 - 1.8) if sx < 0 else (ax0 + 1.8, ax0 + 3.0)
-            W('u_back_sill', ax0 + T, ax1 - T, UP, 4.15, za, zb_, 'u', 'z', back, 'sill')
-            W('u_back_a', ax0 + T, wx0, 4.15, 5.4, za, zb_, 'u', 'z', back, 'pier'); W('u_back_b', wx1, ax1 - T, 4.15, 5.4, za, zb_, 'u', 'z', back, 'pier')
-            W('u_back_head', ax0 + T, ax1 - T, 5.4, EAVE, za, zb_, 'u', 'z', back, 'head')
-        # front wall: street door at ground; one window above
-        za, zb_ = (zf, zf + T) if back > 0 else (zf - T, zf)
-        dx0, dx1 = sorted((off(2.7), off(4.3)))
-        if level == 'g':
-            W('g_front_a', ax0 + T, dx0, 0, 3.0, za, zb_, 'g', 'z', -back); W('g_front_b', dx1, ax1 - T, 0, 3.0, za, zb_, 'g', 'z', -back)
-            W('g_front_lintel', dx0, dx1, 2.3, 3.0, za, zb_, 'g', 'z', -back, 'lintel')
-        else:
-            W('u_front_sill', ax0 + T, ax1 - T, UP, 4.15, za, zb_, 'u', 'z', -back, 'sill')
-            wa, wb = sorted((off(3.4), off(4.6)))
-            W('u_front_a', ax0 + T, wa, 4.15, 5.4, za, zb_, 'u', 'z', -back, 'pier'); W('u_front_b', wb, ax1 - T, 4.15, 5.4, za, zb_, 'u', 'z', -back, 'pier')
-            W('u_front_head', ax0 + T, ax1 - T, 5.4, EAVE, za, zb_, 'u', 'z', -back, 'head')
-        # square wall: a door at ground, two windows above
-        xa, xb = (sq - T, sq) if sx < 0 else (sq, sq + T)
-        zc = (z0 + z1) / 2
-        if level == 'g':
-            W('g_sq_a', xa, xb, 0, 3.0, z0, zc - .8, 'g', 'x', -sx); W('g_sq_b', xa, xb, 0, 3.0, zc + .8, z1, 'g', 'x', -sx)
-            W('g_sq_lintel', xa, xb, 2.3, 3.0, zc - .8, zc + .8, 'g', 'x', -sx, 'lintel')
-        else:
-            W('u_sq_sill', xa, xb, UP, 4.15, z0, z1, 'u', 'x', -sx, 'sill')
-            for i, (za_, zb2) in enumerate(((z0, zc - 2.3), (zc - 1.1, zc + 1.1), (zc + 2.3, z1))): W(f'u_sq_pier_{i}', xa, xb, 4.15, 5.4, za_, zb2, 'u', 'x', -sx, 'pier')
-            W('u_sq_head', xa, xb, 5.4, EAVE, z0, z1, 'u', 'x', -sx, 'head')
-    # inner stair along the back wall, rising away from the square; the upper floor leaves its well open
+        c.B(f'{name}_{id}', xa, xb, ya, yb, za, zb_, 'limestone' if level == 'g' else 'plaster', 'structure', dict(kind='hwall', level=level, axis=axis, face=face, part=part, shut=not is_open))
+    def wall_with_openings(id, axis, face, plane0, plane1, u0, u1, openings, level, y0, y1):
+        """A wall run along u with door/window openings (ua, ub, sill, head); pieces between them."""
+        cuts = sorted(openings); u = u0
+        box = (lambda ua, ub, ya, yb, pid, part: W(pid, plane0, plane1, ya, yb, ua, ub, level, axis, face, part)) if axis == 'x' else \
+              (lambda ua, ub, ya, yb, pid, part: W(pid, ua, ub, ya, yb, plane0, plane1, level, axis, face, part))
+        for i, (ua, ub, sill, head) in enumerate(cuts):
+            if ua > u + 1e-6: box(u, ua, y0, y1, f'{id}_{i}', 'wall' if level == 'g' or ua - u > 1.4 else 'pier')
+            if sill > y0 + 1e-6: box(ua, ub, y0, sill, f'{id}_sill_{i}', 'sill')
+            box(ua, ub, head, y1, f'{id}_head_{i}', 'lintel' if level == 'g' else 'head')
+            u = ub
+        if u1 > u + 1e-6: box(u, u1, y0, y1, f'{id}_{len(cuts)}', 'wall' if level == 'g' or u1 - u > 1.4 else 'pier')
+
+    xo0, xo1 = (out, out + T) if sx < 0 else (out - T, out)          # wall away from the square
+    xs0, xs1 = (sq - T, sq) if sx < 0 else (sq, sq + T)              # square wall
+    zb0, zb1 = (zb - T, zb) if back > 0 else (zb, zb + T)            # back wall
+    zf0, zf1 = (zf, zf + T) if back > 0 else (zf - T, zf)            # front (street) wall
+    sdoor = sorted((off(2.7), off(4.3)))                             # street door, as before
+    corner = sorted((sq + sx * T, sq + sx * (T + 1.6)))              # a 1.6 m bay against the square wall
+    # ---- ground storey
+    W('g_out', xo0, xo1, 0, 3.0, z0, z1, 'g', 'x', sx)
+    wall_with_openings('g_front', 'z', -back, zf0, zf1, ax0 + T, ax1 - T, [(*sdoor, 0, 2.3)], 'g', 0, 3.0)
+    if is_open:
+        # O02: the square door moved round to the quay side; street in, turn, out to the quay stair
+        wall_with_openings('g_back', 'z', back, zb0, zb1, ax0 + T, ax1 - T, [(*corner, 0, 2.3)], 'g', 0, 3.0)
+        W('g_sq', xs0, xs1, 0, 3.0, z0, z1, 'g', 'x', -sx)
+    else:
+        W('g_back', ax0 + T, ax1 - T, 0, 3.0, zb0, zb1, 'g', 'z', back)
+        wall_with_openings('g_sq', 'x', -sx, xs0, xs1, z0, z1, [(zc - .8, zc + .8, 0, 2.3)], 'g', 0, 3.0)
+    # ---- upper storey
+    if is_open:
+        # O01/O03: one window on the quay, one hoist door on the square (also the drop-out exit),
+        # and the balcony door at the square end of the street front.
+        qwin = sorted((sq + sx * 1.8, sq + sx * 3.0))
+        wall_with_openings('u_back', 'z', back, zb0, zb1, ax0 + T, ax1 - T, [(*qwin, 4.15, 5.4)], 'u', UP, EAVE)
+        hoist = (zc - 2.3, zc - 1.1) if back > 0 else (zc + 1.1, zc + 2.3)
+        wall_with_openings('u_sq', 'x', -sx, xs0, xs1, z0, z1, [(*hoist, UP, 5.4)], 'u', UP, EAVE)
+        bdoor = sorted((sq + sx * (T + .2), sq + sx * (T + 1.8)))
+        wall_with_openings('u_front', 'z', -back, zf0, zf1, ax0 + T, ax1 - T, [(*bdoor, UP, 5.4)], 'u', UP, EAVE)
+    else:
+        W('u_back', ax0 + T, ax1 - T, UP, EAVE, zb0, zb1, 'u', 'z', back, 'sill')
+        W('u_sq', xs0, xs1, UP, EAVE, z0, z1, 'u', 'x', -sx, 'sill')
+        W('u_front', ax0 + T, ax1 - T, UP, EAVE, zf0, zf1, 'u', 'z', -back, 'sill')
+    W('u_out', xo0, xo1, UP, EAVE, z0, z1, 'u', 'x', sx)
+    # inner stair along the back wall, rising away from the square
     sz0, sz1 = (zb - T - 1.3, zb - T) if back > 0 else (zb + T, zb + T + 1.3)
     stx_top, stx_low = (ax0 + T, ax0 + T + 5.6) if sx < 0 else (ax1 - T, ax1 - T - 5.6)
-    c.R(f'{name}_stair', stx_top, stx_low, 0, UP, sz0, sz1, 'x', -sx, 'oak', dict(kind='woodstair'))
-    fz0, fz1 = (z0 + T, sz0) if back > 0 else (sz1, z1 - T)
+    if is_open:
+        c.R(f'{name}_stair', stx_top, stx_low, 0, UP, sz0, sz1, 'x', -sx, 'oak', dict(kind='woodstair'))
+        fz0, fz1 = (z0 + T, sz0) if back > 0 else (sz1, z1 - T)
+    else:
+        fz0, fz1 = z0 + T, z1 - T                 # the well is floored over; the stair foot is boarded (decor)
     c.B(f'{name}_floor', ax0 + T, ax1 - T, 3.0, UP, fz0, fz1, 'oak', 'floor', dict(kind='boards'))
     c.B(f'{name}_roof', ax0 - .5, ax1 + .5, EAVE, EAVE + 3.6, z0 - .5, z1 + .5, 'slate', 'roof', dict(kind='houseroof', sx=sx, back=back), collision=False)
-    zc = (z0 + z1) / 2; doorx = sq + (-sx) * 1.2
-    c.anchor(f'cover_{name}_door', 'cover', [doorx, 0, zc + 1.6], height=3.0)
-    c.anchor(f'cover_{name}_upper', 'cover', [(ax0 + ax1) / 2, UP, (fz0 + fz1) / 2], height=.9)
-    return dict(sq=sq, zc=zc, stair=(stx_top, stx_low, sz0, sz1), floor=(fz0, fz1), ax=(ax0, ax1))
+    doorx = sq + (-sx) * 1.2
+    if is_open:
+        c.anchor(f'cover_{name}_door', 'cover', [doorx, 0, zc - 1.6], height=3.0)
+        c.anchor(f'cover_{name}_upper', 'cover', [(ax0 + ax1) / 2, UP, (fz0 + fz1) / 2], height=.9)
+    else:
+        c.anchor(f'cover_{name}_door', 'cover', [doorx, 0, zc + 1.6], height=3.0)
+    return dict(sq=sq, zc=zc, stair=(stx_top, stx_low, sz0, sz1), floor=(fz0, fz1), ax=(ax0, ax1), open=is_open,
+                hoist=hoist if is_open else None, bdoor=bdoor if is_open else None, corner=corner, back=back, zb=zb, zf=zf)
 
 HOUSES = {}
 for sx in (-1, 1):
     side = 'w' if sx < 0 else 'e'
-    HOUSES['n' + side] = house('house_n' + side, sx * 20, sx * 12, -15, -8, sx, -1)
-    HOUSES['s' + side] = house('house_s' + side, sx * 20, sx * 12, 5, 12, sx, 1)
+    HOUSES['n' + side] = house('house_n' + side, sx * 20, sx * 12, -15, -8, sx, -1, 'closed')
+    HOUSES['s' + side] = house('house_s' + side, sx * 20, sx * 12, 5, 12, sx, 1, 'open')
+    # O03: outside stair from the lane up to a balcony at the square end of the river house's front.
+    c.R(f'balcony_stair_{side}', sx * 12.4, sx * 14.2, 0, UP, -2.0, 3.4, 'z', -1, 'limestone', dict(kind='stonestair'))
+    c.B(f'balcony_{side}', sx * 12.0, sx * 14.6, 3.0, UP, 3.4, 5.0, 'oak', 'floor', dict(kind='boards'))
+    c.B(f'balcony_screen_{side}', sx * 14.6, sx * 14.4, UP, 5.0, 3.4, 5.0, 'timber', 'cover', dict(kind='bscreen'))
 
 # Town gates in front of the spawn yards.
 for sx in (-1, 1):
@@ -114,12 +154,16 @@ for sx in (-1, 1):
     c.B(f'gate_wall_{team}_n', sx * 23.6, sx * 22.4, 0, 6, -9, -4, 'limestone', 'structure', dict(kind='gatewall', sx=sx))
     c.B(f'gate_wall_{team}_s', sx * 23.6, sx * 22.4, 0, 6, -1.2, 9, 'limestone', 'structure', dict(kind='gatewall', sx=sx))
     c.B(f'gate_lintel_{team}', sx * 23.6, sx * 22.4, 3.3, 6, -4, -1.2, 'limestone', 'structure', dict(kind='gatearch', sx=sx))
-    for i, z in enumerate((-2, 2)): c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * 27, 0, z], yaw=-sx * 1.5708, team=team)
-    c.B(f'spawn_mark_{team}', sx * 27.8, sx * 26.2, 0, .04, -2.8, 2.8, 'blue' if sx < 0 else 'red', 'wayfinding', collision=False)
+    # three pockets (G01): north behind the north gate wall, centre behind the south gate wall, south by the well
+    for i, (x, z) in enumerate(((25.4, -7.8), (27.4, 2.2), (27.4, 4.6), (27.0, 7.6))):
+        c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * x, 0, z], yaw=-sx * 1.5708, team=team)
+    for i, (xa, xb, z0, z1) in enumerate(((26.4, 24.4, -8.8, -6.8), (28.2, 26.4, 1.4, 5.4), (28.2, 26.4, 6.6, 8.6))):
+        c.B(f'spawn_mark_{team}_{i}', sx * xa, sx * xb, 0, .04, z0, z1, 'blue' if sx < 0 else 'red', 'wayfinding', collision=False)
     c.anchor(f'cover_gate_{team}', 'cover', [sx * 24.4, 0, 3], height=6)
     c.B(f'yard_well_{team}', sx * 28.6, sx * 27, 0, 1.0, 10.4, 12, 'limestone', 'cover', dict(kind='well'))
     # market square furniture
-    c.B(f'stall_{team}_n', sx * 7.4, sx * 5, 0, 1.15, -6.6, -4.6, 'oak', 'cover', dict(kind='stall', goods='bread'))
+    # O06: the north stalls are now closed booths, full standing cover that splits the square
+    c.B(f'stall_{team}_n', sx * 7.4, sx * 5, 0, 2.1, -6.6, -4.6, 'oak', 'cover', dict(kind='booth', sx=sx))
     c.B(f'stall_{team}_s', sx * 7.4, sx * 5, 0, 1.15, 2.2, 4.2, 'oak', 'cover', dict(kind='stall', goods='cloth'))
     c.B(f'cart_{team}', sx * 10.6, sx * 8.4, 0, 1.5, -.8, .8, 'oak', 'cover', dict(kind='cart', sx=sx))
     c.anchor(f'cover_stall_{team}', 'cover', [sx * 8.2, 0, -5.6], height=1.15)
@@ -127,13 +171,14 @@ for sx in (-1, 1):
     # quay: parapet on the street edge, two stairs down, cargo on the lower level
     for i, (x0, x1) in enumerate(((12.2, 22.8), (26.2, 29.4))):
         c.B(f'quay_parapet_{team}_{i}', sx * x0, sx * x1, 0, 1.0, 15.0, 15.4, 'limestone', 'cover', dict(kind='qparapet'))
-    for i, (x0, x1) in enumerate(((9, 12), (23, 26))):
+    for i, (x0, x1) in enumerate(((9, 12), (23, 26), (1.6, 4.0))):   # i=2: O05 crane stairs, back to the square's side
         c.R(f'quay_stair_{team}_{i}', sx * x0, sx * x1, QUAY, 0, 15.4, 19.4, 'z', 1, 'limestone', dict(kind='stonestair'))
     c.B(f'crates_{team}', sx * 7, sx * 5, QUAY, QUAY + 1.2, 16.6, 18.2, 'oak', 'cover', dict(kind='crates'))
     c.B(f'barrels_{team}', sx * 17.2, sx * 15, QUAY, QUAY + 1.15, 20.4, 22, 'oak', 'cover', dict(kind='barrels'))
     c.anchor(f'cover_crates_{team}', 'cover', [sx * 6, QUAY, 19], height=1.2)
     c.anchor(f'cover_parapet_{team}', 'cover', [sx * 17, 0, 14.4], height=1.0)
-c.B('quay_parapet_centre', -8.8, 8.8, 0, 1.0, 15.0, 15.4, 'limestone', 'cover', dict(kind='qparapet'))
+for i, (x0, x1) in enumerate(((-8.8, -4.0), (-1.6, 1.6), (4.0, 8.8))):
+    c.B(f'quay_parapet_centre_{i}', x0, x1, 0, 1.0, 15.0, 15.4, 'limestone', 'cover', dict(kind='qparapet'))
 c.B('crane', -1.5, 1.5, QUAY, QUAY + 2.4, 15.4, 17.6, 'oak', 'structure', dict(kind='crane'))
 c.B('statue_plinth', -1.6, 1.6, 0, 2.0, -2.4, 2.4, 'limestone', 'structure', dict(kind='plinth'))
 c.B('statue', -.75, .75, 2.0, 5.4, -2.0, 2.0, 'bronze', 'structure', dict(kind='statue'))
@@ -141,14 +186,15 @@ c.anchor('objective_square', 'objective', [0, 0, -4.4], radius=2)
 c.anchor('objective_quay', 'objective', [0, QUAY, 19.6], radius=2)
 c.anchor('cover_plinth', 'cover', [2.4, 0, 0], height=2.0)
 
-c.route('market_square', [[-27, 0, -2], [-25, 0, -2.6], [-11.4, 0, -2.6], [-4, 0, -3.6], [4, 0, -3.6], [11.4, 0, -2.6], [25, 0, -2.6], [27, 0, -2]])
-c.route('rampart_walk', [[-27, 0, -2], [-25.6, 0, -12], [-21.2, 0, -16.1], [-3.5, 0, -16.1], [-3.5, 0, -18.1], [-13.8, WALK, -18.1], [-13.8, WALK, -20.3], [13.8, WALK, -20.3], [13.8, WALK, -18.1], [3.5, 0, -18.1], [3.5, 0, -16.1], [21.2, 0, -16.1]])
+c.route('market_square', [[-27, 0, -2.6], [-25, 0, -2.6], [-11.4, 0, -3.0], [-4, 0, -3.6], [4, 0, -3.6], [11.4, 0, -3.0], [25, 0, -2.6], [27, 0, -2.6]])
+c.route('rampart_walk', [[-27, 0, -2.6], [-25.6, 0, -12], [-21.2, 0, -16.1], [-3.5, 0, -16.1], [-3.5, 0, -18.1], [-13.8, WALK, -18.1], [-13.8, WALK, -20.3], [-3.0, WALK, -20.3]])
 c.route('river_quay', [[-27, 0, 2], [-24.5, 0, 12], [-24.5, 0, 15], [-24.5, QUAY, 19.6], [-10.5, QUAY, 19.3], [10.5, QUAY, 19.3], [24.5, QUAY, 19.6], [24.5, 0, 15], [24.5, 0, 12], [27, 0, 2]])
 c.route('quay_stair', [[-10.5, 0, 13.6], [-10.5, 0, 15.2], [-10.5, QUAY, 19.6]])
-H_ = HOUSES['nw']
-c.route('upper_room', [[-9, 0, -11.5], [-13.2, 0, -11.5], [-13.2, 0, -13.95], [-19.3, UP, -13.95], [-19.3, UP, -11], [-13.4, UP, -11]])
-H_ = HOUSES['sw']
-c.route('quay_house', [[-9, 0, 8.5], [-13.2, 0, 8.5], [-13.2, 0, 10.95], [-19.3, UP, 10.95], [-19.3, UP, 8], [-13.4, UP, 8]])
+c.route('crane_stair', [[-2.8, QUAY, 20.2], [-2.8, 0, 15.0], [-2.8, 0, 11.0]])
+c.route('north_passage', [[-9, 0, -11.5], [-13.2, 0, -11.5], [-16.5, 0, -10.6], [-16.5, 0, -6.0]])
+c.route('quay_house', [[-16.5, 0, 2.0], [-16.5, 0, 7.6], [-13.2, 0, 7.6], [-13.2, 0, 13.4], [-10.5, 0, 13.6]])
+c.route('upper_room', [[-13.2, 0, 9.0], [-13.2, 0, 10.95], [-19.3, UP, 10.95], [-19.3, UP, 8], [-13.3, UP, 6.6]])
+c.route('balcony', [[-13.3, 0, -3.2], [-13.3, UP, 3.6], [-13.3, UP, 4.4], [-13.3, UP, 6.4], [-16.0, UP, 7.6]])
 
 # ------------------------------------------------------------------ object art
 def framing(m, axis, plane, sign, u0, u1, y0, y1, part, depth=.045):
@@ -459,7 +505,48 @@ def statue(m, o, a):
     return True
 
 
-KINDS = dict(hwall=hwall, boards=boards, houseroof=houseroof, woodstair=woodstair, stonestair=stonestair, townfloor=townfloor, townwall=townwall,
+def booth(m, o, a):
+    """Closed market booth: a plank body with a shuttered back, a counter toward the square and a canvas hood."""
+    x0, x1, y0, y1, z0, z1 = ext(o); sx = a['sx']
+    m.box('oak', (x0, y0, z0), (x1, y0 + .95, z1))
+    for k in range(int((x1 - x0) / .3)):
+        xx = x0 + .02 + k * .3
+        for zz, d in ((z0, .015), (z1 - .015, .015)): m.box('oakLight' if k % 2 else 'timber', (xx, y0 + .05, zz), (min(x1 - .02, xx + .26), y0 + .9, zz + d))
+    m.box('timberDark', (x0, y0 + .95, z0), (x1, y0 + 1.05, z1))
+    for xx in (x0, x1 - .12):
+        for zz in (z0, z1 - .12): m.box('timber', (xx, y0 + 1.05, zz), (xx + .12, y1 - .25, zz + .12))
+    m.box('timber', (x0, y0 + 1.05, z0), (x1, y1 - .25, z0 + .06))      # shuttered back toward the north
+    m.box('blue' if sx < 0 else 'red', (x0 + .14, y0 + 1.15, z0 + .06), (x1 - .14, y1 - .4, z0 + .08))
+    m.box('canvas', (x0, y1 - .25, z0), (x1, y1 - .08, z1)); m.box('canvasShade', (x0 + .1, y1 - .08, z0 + .1), (x1 - .1, y1, z1 - .1))
+    for i in range(5):
+        px = x0 + .35 + i * (x1 - x0 - .7) / 4
+        lathe(m, 'bread' if i % 2 else 'fruit', px, (z0 + z1) / 2, [(.14, y0 + 1.05), (.16, y0 + 1.1), (.08, y0 + 1.17)], 8)
+    return True
+
+
+def bscreen(m, o, a):
+    """Balcony end: a boarded timber screen in a frame, with a flower box."""
+    x0, x1, y0, y1, z0, z1 = ext(o)
+    m.box('timber', (x0, y0, z0), (x1, y1, z1))
+    for k in range(int((z1 - z0) / .26)):
+        zz = z0 + .02 + k * .26; m.box('oakLight' if k % 2 else 'oak', (x0 - .0, y0 + .1, zz), (x1, y1 - .12, min(z1 - .02, zz + .22)))
+    m.box('timberDark', (x0, y1 - .12, z0), (x1, y1, z1))
+    return True
+
+
+def gatehouse(m, o, a):
+    """The shut gatehouse over the wall walk: ashlar with a barred oak door on each face."""
+    x0, x1, y0, y1, z0, z1 = ext(o)
+    m.box('limestone', (x0, y0, z0), (x1, y1, z1))
+    for xf, sg in ((x0, -1), (x1, 1)):
+        za, zb = z0 + .35, z1 - .35
+        m.box('oak', (min(xf, xf - sg * .03), y0, za), (max(xf, xf - sg * .03), y0 + 2.2, zb))
+        for k in range(4): m.box('timberDark', (min(xf, xf - sg * .04), y0 + .25 + k * .5, za), (max(xf, xf - sg * .04), y0 + .33 + k * .5, zb))
+        m.box('iron', (min(xf, xf - sg * .05), y0 + 1.0, za - .05), (max(xf, xf - sg * .05), y0 + 1.12, zb + .05))
+    return True
+
+
+KINDS = dict(booth=booth, bscreen=bscreen, gatehouse=gatehouse, hwall=hwall, boards=boards, houseroof=houseroof, woodstair=woodstair, stonestair=stonestair, townfloor=townfloor, townwall=townwall,
              battlement=battlement, walk=walk, towerwall=towerwall, towerroof=towerroof, cornertower=cornertower, gatewall=gatewall, gatearch=gatearch,
              well=well, stall=stall, cart=cart, qparapet=qparapet, crates=crates, barrels=barrels, crane=crane, plinth=plinth, statue=statue,
              steps=stonestair)
@@ -490,11 +577,31 @@ SMOKE = []
 for key, h in HOUSES.items():
     sx = -1 if key.endswith('w') else 1; sq, zc = h['sq'], h['zc']; face = -sx
     xs = sq + face * .03
-    for dz in (-1.7, 1.7):   # shutters and flower boxes at the two upper windows
-        for s in (-1, 1):
-            za, zb = sorted((zc + dz + s * .62, zc + dz + s * .98)); D.box('blue' if key[0] == 'n' else 'red', (min(xs, xs + face * .05), 4.2, za), (max(xs, xs + face * .05), 5.36, zb))
+    col = 'blue' if key[0] == 'n' else 'red'
+    for dz in (-1.7, 1.7):   # the two old square windows: the hoist door (open river houses) or closed shutters
+        hoist = h['open'] and h['hoist'][0] < zc + dz < h['hoist'][1]
+        if hoist:
+            for s in (-1, 1):   # shutters folded back beside the hoist door
+                za, zb = sorted((zc + dz + s * .62, zc + dz + s * .98)); D.box(col, (min(xs, xs + face * .05), 3.4, za), (max(xs, xs + face * .05), 5.36, zb))
+            beam(D, 'timber', (xs, 5.75, zc + dz), (xs + face * 1.1, 5.75, zc + dz), .08, 5)       # hoist beam with its pulley and rope
+            lathe(D, 'iron', xs + face * .95, zc + dz, [(.12, 5.55), (.12, 5.65)], 8)
+            beam(D, 'rope', (xs + face * .95, 5.6, zc + dz), (xs + face * .95, 2.9, zc + dz), .02, 4)
+            continue
+        for s in (-1, 1):   # shut: two leaves closed over the old opening, flush with the wall
+            za, zb = sorted((zc + dz, zc + dz + s * .6)); D.box(col, (min(xs, xs + face * .05), 4.15, za + (.01 if s > 0 else 0)), (max(xs, xs + face * .05), 5.4, zb - (.01 if s < 0 else 0)))
+            D.box('timberDark', (min(xs, xs + face * .06), 4.6, min(za, zb) + .05), (max(xs, xs + face * .06), 4.68, max(za, zb) - .05))
         D.box('timber', (min(xs, xs + face * .26), 3.98, zc + dz - .6), (max(xs, xs + face * .26), 4.14, zc + dz + .6))
         for k in range(5): D.blob(('leaf', 'fruit', 'leafLight', 'pear', 'leaf')[k], (xs + face * .14, 4.2, zc + dz - .44 + k * .22), .11, .9)
+    if not h['open']:
+        # the stair foot is boarded up inside: a frame with planks nailed across, on the back wall
+        zi = h['zb'] + (.4 if h['back'] < 0 else -.4); fs = 1 if h['back'] < 0 else -1
+        st = h['stair']; xa, xb = sorted((st[0] - sx * .2, st[0] - sx * 1.8))
+        D.box('timber', (xa, 0, min(zi, zi + fs * .05)), (xb, 2.3, max(zi, zi + fs * .05)))
+        for k in range(4): D.box('oakLight' if k % 2 else 'oak', (xa - .05, .35 + k * .5, min(zi, zi + fs * .09)), (xb + .05, .55 + k * .5, max(zi, zi + fs * .09)))
+    else:
+        # balcony door: an oak frame and a lantern by it
+        ba, bb = h['bdoor']; zfo = h['zf'] - .02
+        D.box('timberDark', (ba - .08, 5.4, zfo - .04), (bb + .08, 5.52, zfo + .0))
     # hanging sign on an iron bracket by the door
     zs = zc + 1.5
     beam(D, 'iron', (xs, 2.75, zs), (xs + face * .9, 2.75, zs), .025, 4); beam(D, 'iron', (xs, 2.45, zs), (xs + face * .55, 2.75, zs), .02, 4)

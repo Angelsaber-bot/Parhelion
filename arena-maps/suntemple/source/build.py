@@ -1,12 +1,20 @@
 """SUNTEMPLE 日轮神殿: a sun temple on the river, anime fiction after the New Kingdom temples.
 Run: python3 arena-maps/suntemple/source/build.py        (add --materials to re-synthesise surfaces)
 
-Play idea: three readings of one temple axis.
-  * the hypostyle hall: thirty papyrus columns under a roof, a forest of thin cover;
-  * the hall roof: open high ground over the sun court, reached by two outer stairs;
-  * the sun court: two colossi, obelisks and a sunken lotus basin, long open lanes.
-Teams start behind the west and east pylons; the north sphinx avenue is the flank.
+Play idea: three readings of one temple axis; the main decision is when to expose yourself
+crossing open ground for a better angle.
+  * the hypostyle hall: papyrus columns under a roof, a forest of thin cover, with its middle
+    row fallen so a lateral aisle crosses the hall;
+  * the hall roof: two terraces joined by an exposed bridge, the rest of the roof built up into
+    a clerestory sanctuary and roof chapels. Each terrace has its own outer stair; a public
+    stair inside the hall rises to the bridge, so no terrace can be held from one spot;
+  * the sun court: two colossi, obelisks and a sunken lotus basin with three ways out.
+Teams start behind the west and east pylons in three spawn pockets; a screen wall inside each
+gate cuts the roof's line into the spawn court. The north sphinx avenue is the flank.
 Collision is mirrored in x.
+
+Revised 2026-11 from the arena map design report (S01-S05): spawn screen and pockets, roof
+terraces, public stair, lateral aisle, basin steps and avenue stelae.
 """
 from pathlib import Path
 import sys, math, random
@@ -43,7 +51,10 @@ for sz in (-1, 1):
 
 # Hypostyle hall: walls, thirty columns and a walkable roof.
 HX, HZ0, HZ1 = 11, -15, 5
-c.B('hall_roof', -HX, HX, ROOF, ROOFTOP, HZ0, HZ1, 'sandstone', 'structure', dict(kind='roof'))   # walkable; casts the hall's shade
+# The roof slab casts the hall's shade; it is open only over the public stair's upper flight.
+WELL = (-1.2, 1.2, -12.1, -5.5)   # stairwell through the roof: x0, x1, z0, z1
+for i, (x0, x1, z0, z1) in enumerate(((-HX, WELL[0], HZ0, HZ1), (WELL[1], HX, HZ0, HZ1), (WELL[0], WELL[1], HZ0, WELL[2]), (WELL[0], WELL[1], WELL[3], HZ1))):
+    c.B(f'hall_roof_{i}', x0, x1, ROOF, ROOFTOP, z0, z1, 'sandstone', 'structure', dict(kind='roof'))
 for sx in (-1, 1):
     c.B(f'hall_wall_side_{sx}_door', sx * HX, sx * (HX - .6), 0, ROOF, HZ0, HZ0 + .6, 'sandstone', 'structure', dict(kind='wall', face=sx, axis='x'))
     c.B(f'hall_wall_side_{sx}', sx * HX, sx * (HX - .6), 0, ROOF, HZ0 + 2.4, HZ1, 'sandstone', 'structure', dict(kind='wall', face=sx, axis='x'))
@@ -54,34 +65,72 @@ for i, (x0, x1) in enumerate(SOUTH):
     c.B(f'hall_wall_south_{i}', x0, x1, 0, ROOF, HZ1 - .6, HZ1, 'sandstone', 'structure', dict(kind='wall', face=1, axis='z'))
 for i, (x0, x1) in enumerate(((-9.4, -7.6), (-1.5, 1.5), (7.6, 9.4))):
     c.B(f'hall_lintel_south_{i}', x0, x1, 3.4 if i == 1 else 3.1, ROOF, HZ1 - .6, HZ1, 'sandstone', 'structure', dict(kind='lintel', axis='x'))
-for i, (x0, x1) in enumerate(((-HX, -1.5), (1.5, HX))):
+for i, (x0, x1) in enumerate(((-HX, -9.4), (-7.6, 7.6), (9.4, HX))):
     c.B(f'hall_wall_north_{i}', x0, x1, 0, ROOF, HZ0, HZ0 + .6, 'sandstone', 'structure', dict(kind='wall', face=-1, axis='z'))
-c.B('hall_lintel_north', -1.5, 1.5, 3.4, ROOF, HZ0, HZ0 + .6, 'sandstone', 'structure', dict(kind='lintel', axis='x'))
+for i, (x0, x1) in enumerate(((-9.4, -7.6), (7.6, 9.4))):
+    c.B(f'hall_lintel_north_{i}', x0, x1, 3.1, ROOF, HZ0, HZ0 + .6, 'sandstone', 'structure', dict(kind='lintel', axis='x'))
 COLX = (-8.25, -4.95, -1.65, 1.65, 4.95, 8.25); COLZ = (-11.4, -8.1, -4.8, -1.5, 1.8)
+FALLEN_ROW = 2                       # z = -4.8: only stumps below step height remain
+STAIR_COLS = {(2, 0), (3, 0), (2, 1), (3, 1)}
 for i, x in enumerate(COLX):
     for k, z in enumerate(COLZ):
+        if k == FALLEN_ROW or (i, k) in STAIR_COLS: continue
         c.B(f'column_{i}_{k}', x - .62, x + .62, 0, ROOF, z - .62, z + .62, 'sandstone', 'structure', dict(kind='column', nave=abs(x) < 2))
+# Public stair (S02): two flights rise from the north doors to a landing on the axis, then one
+# flight climbs the nave through the roof well to the bridge between the terraces.
+STAIR_MID = 2.8
+c.B('sun_stair_landing', -1.2, 1.2, 0, STAIR_MID, HZ0 + .6, WELL[2], 'sandstone', 'structure', dict(kind='stairblock', face='landing'))
+c.B('sun_stair_base', -1.2, 1.2, 0, STAIR_MID, WELL[2], WELL[3], 'sandstone', 'structure', dict(kind='stairblock', face='base'))
+c.R('sun_stair_upper', -1.2, 1.2, STAIR_MID, ROOFTOP, WELL[2], WELL[3], 'z', -1, 'limestone', dict(kind='steps'))
+for sx in (-1, 1):
+    c.R(f'sun_stair_{sx}', sx * 1.2, sx * 7, 0, STAIR_MID, HZ0 + .6, WELL[2], 'x', sx, 'limestone', dict(kind='steps'))
 # Roof parapets: cover on the high ground, open where the stairs arrive.
-for i, (x0, x1) in enumerate(((-10.4, -6.2), (-4.2, -1.4), (1.4, 4.2), (6.2, 10.4))):
+# Roof (S02): a west and an east terrace (x 4.2..10.55, z -11.2..4.55) joined by a bridge along the
+# south edge (z 0.8..4.55). Everything else is built up 2.8 m (out of jump reach): the clerestory
+# sanctuary over the nave with the stair's covered passage through it, two roof chapels at the
+# north corners and a kiosk on each terrace's south-west corner, so a terrace watches part of
+# the court through one opening instead of patrolling the whole edge.
+BUILT = ROOFTOP + 2.8
+TER_N, BRIDGE_N = -11.2, .8
+for i, (x0, x1) in enumerate(((-6.6, -1.4), (1.4, 6.6))):
     c.B(f'roof_parapet_south_{i}', x0, x1, ROOFTOP, ROOFTOP + 1.0, HZ1 - .45, HZ1, 'limestone', 'cover', dict(kind='parapet', axis='x'))
 for sx in (-1, 1):
-    for i, (z0, z1) in enumerate(((HZ0 + .45, -11.6), (-7.4, -2.2), (-.2, HZ1 - .45))):
+    side = 'w' if sx < 0 else 'e'
+    for i, (z0, z1) in enumerate(((-7.4, -2.2), (-.2, 2.0))):
         c.B(f'roof_parapet_side_{sx}_{i}', sx * HX, sx * (HX - .45), ROOFTOP, ROOFTOP + 1.0, z0, z1, 'limestone', 'cover', dict(kind='parapet', axis='z'))
     c.R(f'roof_stair_{sx}', sx * 13.6, sx * HX, 0, ROOFTOP, -10.6, 3.4, 'z', 1, 'limestone', dict(kind='roofstair', sx=sx))
-c.B('sun_shrine', -1.4, 1.4, ROOFTOP, ROOFTOP + 1.6, -7.4, -4.6, 'granite', 'cover', dict(kind='sunshrine'))
+    c.B(f'roof_sanctuary_{side}', sx * WELL[1], sx * 4.2, ROOFTOP, BUILT, HZ0, BRIDGE_N, 'sandstone', 'structure', dict(kind='sanctuary', face=(0, sx, 1), disc=False))
+    c.B(f'roof_chapel_{side}', sx * 4.2, sx * HX, ROOFTOP, BUILT, HZ0, TER_N, 'sandstone', 'structure', dict(kind='sanctuary', face=(1, 0, 0), disc=False))
+    c.B(f'roof_kiosk_{side}', sx * 6.6, sx * HX, ROOFTOP, BUILT, 2.0, HZ1, 'sandstone', 'structure', dict(kind='sanctuary', face=(-1, -sx, 0), disc=False))
+    # one altar on each terrace: cover for one task at a time, not for the court, stair and bridge at once
+    c.B(f'roof_altar_{side}', sx * 8.2, sx * 7.0, ROOFTOP, ROOFTOP + 1.2, -4.4, -3.0, 'granite', 'cover', dict(kind='offering'))
+    c.anchor(f'cover_terrace_{side}', 'cover', [sx * 9.2, ROOFTOP, -3.7], height=1.2)
+c.B('roof_sanctuary_n', WELL[0], WELL[1], ROOFTOP, BUILT, HZ0, WELL[2], 'sandstone', 'structure', dict(kind='sanctuary', face=(0, 0, 1), disc=True))
+# The stair's passage leaves the sanctuary facing a short screen, so whoever arrives turns
+# toward one terrace instead of standing in both terraces' fire.
+c.B('roof_bridge_screen', -1.6, 1.6, ROOFTOP, ROOFTOP + 1.8, 2.2, 2.6, 'granite', 'cover', dict(kind='screenwall', axis='z'))
 
 # Pylon gates in front of each spawn court.
 for sx in (-1, 1):
     team = 'west' if sx < 0 else 'east'
     for sz in (-1, 1):
         c.B(f'pylon_{team}_{sz}', sx * 22.6, sx * 20.4, 0, 9, sz * 3, sz * 10, 'sandstone', 'structure', dict(kind='pylon', sx=sx, sz=sz))
-    c.B(f'pylon_lintel_{team}', sx * 22.4, sx * 20.6, 6.2, 7.4, -3, 3, 'sandstone', 'structure', dict(kind='gatelintel'))
-    for i, z in enumerate((-2, 2)): c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * 27, 0, z], yaw=-sx * 1.5708, team=team)
-    c.B(f'spawn_mark_{team}', sx * 27.8, sx * 26.2, 0, .04, -2.8, 2.8, 'lapis' if sx < 0 else 'ochre', 'wayfinding', collision=False)
-    c.anchor(f'cover_pylon_{team}', 'cover', [sx * 23.3, 0, 6], height=9)
-    # gate screen: a pair of offering stands at the court entrance
+    # S01: the gate head comes down to 3.4 m, so high ground east of it cannot look down through the gate
+    c.B(f'pylon_lintel_{team}', sx * 22.4, sx * 20.6, 3.4, 7.4, -3, 3, 'sandstone', 'structure', dict(kind='gatelintel'))
+    # Spawn court (S01): a screen wall inside the gate cuts the roof's line through the gate
+    # opening; three pockets (centre behind the screen, north and south behind the pylons) each
+    # leave by their own side.
+    c.B(f'gate_screen_{team}', sx * 25.6, sx * 25.0, 0, 3.6, -4.0, 4.0, 'sandstone', 'structure', dict(kind='screenwall', axis='x'))
+    for i, (x, z) in enumerate(((27.6, -1.6), (27.6, 1.6), (24.2, -7.0), (24.2, 7.0))):   # side pockets in the pylons' shadow
+        c.anchor(f'spawn_{team}_{i}', 'spawn', [sx * x, 0, z], yaw=-sx * 1.5708, team=team)
+    c.B(f'spawn_mark_{team}', sx * 28.4, sx * 26.8, 0, .04, -2.4, 2.4, 'lapis' if sx < 0 else 'ochre', 'wayfinding', collision=False)
     for sz in (-1, 1):
-        c.B(f'offering_{team}_{sz}', sx * 25.6, sx * 24.6, 0, 1.2, sz * 5.2, sz * 6.6, 'granite', 'cover', dict(kind='offering'))
+        c.B(f'spawn_mark_{team}_{sz}', sx * 25.0, sx * 23.4, 0, .04, sz * 6.2, sz * 7.8, 'lapis' if sx < 0 else 'ochre', 'wayfinding', collision=False)
+    c.anchor(f'cover_pylon_{team}', 'cover', [sx * 23.3, 0, 6], height=9)
+    c.anchor(f'cover_screen_{team}', 'cover', [sx * 24.4, 0, 0], height=3.6)
+    # offering stands divide the centre pocket from the side pockets
+    for sz in (-1, 1):
+        c.B(f'offering_{team}_{sz}', sx * 29.0, sx * 28.0, 0, 1.2, sz * 4.4, sz * 5.8, 'granite', 'cover', dict(kind='offering'))
     # forecourt: fallen column drums and a toppled statue between pylon and hall
     c.B(f'drums_{team}', sx * 16.6, sx * 14.4, 0, 1.15, -6.4, -4.2, 'sandstone', 'cover', dict(kind='drums', sx=sx))
     c.B(f'fallen_{team}', sx * 17.8, sx * 15.4, 0, 1.3, 9.6, 13.2, 'granite', 'cover', dict(kind='fallen', sx=sx))
@@ -96,27 +145,34 @@ for sx in (-1, 1):
     for i, (x0, x1) in enumerate(((5, 8.6), (11, 14.6), (17, 20.6))):
         c.B(f'sphinx_{team}_{i}', sx * x0, sx * x1, 0, 1.7, -21.6, -19.8, 'sandstone', 'cover', dict(kind='sphinx', sx=sx))
         c.anchor(f'cover_sphinx_{team}_{i}', 'cover', [sx * (x0 + x1) / 2, 0, -19.2], height=1.7)
+    # avenue stela (S05): a push node between the spawn side and the hall's north door
+    c.B(f'stela_{team}', sx * 14.6, sx * 13.0, 0, 2.6, -17.6, -16.0, 'granite', 'cover', dict(kind='stela', sx=sx))
+    c.anchor(f'cover_stela_{team}', 'cover', [sx * 13.8, 0, -15.3], height=2.6)
     # south lane offering tables against the enclosure
     for i, (x0, x1) in enumerate(((8, 10.4), (16, 18.4))):
         c.B(f'table_{team}_{i}', sx * x0, sx * x1, 0, 1.0, 22.4, 23.4, 'limestone', 'cover', dict(kind='table'))
     # basin steps
     c.R(f'basin_steps_{team}', sx * 7, sx * 4.6, -1.2, 0, 13.4, 16.6, 'x', -sx, 'limestone', dict(kind='bsteps'))
+    # S04: a third way out, up to the south lane beside the barque, off the bridge's axis
+    c.R(f'basin_steps_south_{team}', sx * 4.4, sx * 2.4, -1.2, 0, 16.8, 19.0, 'z', -1, 'limestone', dict(kind='bsteps'))
 c.B('barque_shrine', -2.6, 2.6, 0, 3.6, -21.8, -18, 'granite', 'structure', dict(kind='shrine'))
 c.B('basin_barque', -2.2, 2.2, -1.2, -.15, 14.3, 15.7, 'gold', 'cover', dict(kind='barque'))
 for sx in (-1, 1):
     c.anchor(f'cover_basin_{sx}', 'cover', [sx * 3, -1.2, 12.2], height=1.2)
 c.anchor('objective_basin', 'objective', [0, -1.2, 12.4], radius=2)
-c.anchor('objective_roof', 'objective', [0, ROOFTOP, -2], radius=2)
+c.anchor('objective_roof', 'objective', [0, ROOFTOP, 1.5], radius=2)
 c.anchor('objective_shrine', 'objective', [0, 0, -16.6], radius=2)
-c.anchor('cover_roof_shrine', 'cover', [2.2, ROOFTOP, -6], height=1.6)
 c.anchor('cover_hall', 'cover', [-3.3, 0, -6.45], height=ROOF)
 
 c.route('south_lane', [[-27, 0, 2], [-27, 0, 20.6], [27, 0, 20.6], [27, 0, 2]])
-c.route('sphinx_avenue', [[-27, 0, -2], [-27, 0, -17.2], [27, 0, -17.2], [27, 0, -2]])
-c.route('hypostyle', [[-27, 0, 0], [-27, 0, -11.5], [-19, 0, -13.7], [-6.6, 0, -13.7], [-6.6, 0, 3.4], [0, 0, 3.4], [0, 0, 6.2], [0, 0, 10.4]])
-c.route('hall_roof', [[-12.3, 0, 4.4], [-12.3, ROOFTOP, -10.35], [-9.4, ROOFTOP, -10.35], [-6, ROOFTOP, -2], [6, ROOFTOP, -2], [9.4, ROOFTOP, -10.35], [12.3, ROOFTOP, -10.35], [12.3, 0, 4.4]])
+c.route('sphinx_avenue', [[-27, 0, -2], [-27, 0, -18.7], [-11.5, 0, -18.7], [-11.5, 0, -17.2], [11.5, 0, -17.2], [11.5, 0, -18.7], [27, 0, -18.7], [27, 0, -2]])
+c.route('hypostyle', [[-27, 0, 0], [-27, 0, -11.5], [-19, 0, -13.7], [-9.6, 0, -13.7], [-9.6, 0, -6.45], [-6.6, 0, -6.45], [-6.6, 0, 3.4], [0, 0, 3.4], [0, 0, 6.2], [0, 0, 10.4]])
+c.route('lateral_aisle', [[-9.6, 0, -4.8], [9.6, 0, -4.8]])
+c.route('hall_roof', [[-12.3, 0, 4.4], [-12.3, ROOFTOP, -10.35], [-9.4, ROOFTOP, -10.35], [-5.4, ROOFTOP, -1.0], [-5.4, ROOFTOP, 3.6], [5.4, ROOFTOP, 3.6], [5.4, ROOFTOP, -1.0], [9.4, ROOFTOP, -10.35], [12.3, ROOFTOP, -10.35], [12.3, 0, 4.4]])
+c.route('public_stair', [[-8.5, 0, -17.0], [-8.5, 0, -13.25], [0, STAIR_MID, -13.25], [0, STAIR_MID, -12.0], [0, ROOFTOP, -5.3], [0, ROOFTOP, 1.5], [-2.6, ROOFTOP, 1.5], [-2.6, ROOFTOP, 3.6], [-5.4, ROOFTOP, 3.6], [-5.6, ROOFTOP, -2.0]])
 c.route('lotus_basin', [[-12, 0, 15], [-4, -1.2, 15], [-3, -1.2, 12.3], [3, -1.2, 12.3], [4, -1.2, 15], [12, 0, 15]])
-c.route('north_door', [[0, 0, -16.6], [0, 0, -9.75], [-3.3, 0, -9.75], [-3.3, 0, 0]])
+c.route('lotus_steps', [[-3.4, 0, 21.0], [-3.4, -1.2, 16.4], [-3.4, -1.2, 12.3]])
+c.route('north_door', [[8.5, 0, -17.0], [8.5, 0, -13.25], [9.6, 0, -13.25], [9.6, 0, -6.45], [3.3, 0, -6.45], [3.3, 0, 0]])
 
 # ------------------------------------------------------------------ painted relief helpers
 def face_frame(o, face, axis):
@@ -573,7 +629,80 @@ def barque(m, o, a):
     return True
 
 
-KINDS = dict(wall=wall, lintel=lintel, column=column, roof=roof, parapet=parapet, roofstair=roofstair, sunshrine=sunshrine, pylon=pylon,
+def stairblock(m, o, a):
+    """Solid stone under the public stair: a dado, an ochre band and a winged disc on its long faces."""
+    x0, x1, y0, y1, z0, z1 = ext(o)
+    m.box('sandstone', (x0, y0, z0), (x1, y1, z1), top_mat='limestone')
+    for pl, sg in ((x0, -1), (x1, 1)):
+        paint(m, 'sandstoneDark', 'x', pl, sg, z0 + .05, z1 - .05, y0, y0 + .5)
+        paint(m, 'ochre', 'x', pl, sg, z0 + .05, z1 - .05, y1 - .4, y1 - .32)
+        if z1 - z0 > 4: winged_disc(m, 'x', pl, sg, (z0 + z1) / 2, y0 + 1.5, 3.0)
+    return True
+
+
+def screenwall(m, o, a):
+    """Free-standing screen wall: a dado, a register of painted offering figures and a gorge cornice.
+    `axis` is the wall's face normal, as for the hall walls."""
+    x0, x1, y0, y1, z0, z1 = ext(o); axis = a['axis']
+    th = (x1 - x0) if axis == 'x' else (z1 - z0); out = min(.12, th * .2)
+    m.box('sandstone', (x0 + out, y0, z0 + out), (x1 - out, y1 - .45, z1 - out))
+    cavetto(m, 'sandstoneLight', x0 + out, x1 - out, z0 + out, z1 - out, y1 - .45, .45, out - .005, band='gold')
+    if axis == 'x': faces, u0, u1 = ((x0 + out, -1), (x1 - out, 1)), z0 + out, z1 - out
+    else: faces, u0, u1 = ((z0 + out, -1), (z1 - out, 1)), x0 + out, x1 - out
+    for pl, sg in faces:
+        paint(m, 'sandstoneDark', axis, pl, sg, u0, u1, y0, y0 + .45)
+        paint(m, 'lapis', axis, pl, sg, u0, u1, y1 - .62, y1 - .55)
+        n = max(1, int((u1 - u0) / 1.3)); fig = min(.95, (y1 - y0 - 1.2) / 1.75)
+        for k in range(n):
+            relief_figure(m, axis, pl, sg, u0 + (k + .5) * (u1 - u0) / n, y0 + .55, fig, ('ochre', 'sandstoneDark')[k % 2], 1 if k % 2 else -1, k % 2 == 0)
+    return True
+
+
+def sanctuary(m, o, a):
+    """Built-up roof: clerestory sanctuary and roof chapels, ashlar under a gorge cornice, painted bands;
+    the north sanctuary carries the gilded sun disc that used to stand loose on the roof."""
+    x0, x1, y0, y1, z0, z1 = ext(o); out = .2
+    m.box('sandstone', (x0 + out, y0, z0 + out), (x1 - out, y1 - .6, z1 - out), top_mat='sandstoneLight')
+    cavetto(m, 'sandstoneLight', x0 + out, x1 - out, z0 + out, z1 - out, y1 - .6, .6, out - .005, band='gold')
+    for axis, pl, sg, u0, u1 in (('x', x0 + out, -1, z0 + out, z1 - out), ('x', x1 - out, 1, z0 + out, z1 - out),
+                                 ('z', z0 + out, -1, x0 + out, x1 - out), ('z', z1 - out, 1, x0 + out, x1 - out)):
+        paint(m, 'sandstoneDark', axis, pl, sg, u0, u1, y0, y0 + .35)
+        paint(m, 'ochre', axis, pl, sg, u0, u1, y0 + .35, y0 + .42)
+        paint(m, 'lapis', axis, pl, sg, u0, u1, y1 - .85, y1 - .75)
+        for k in range(int((u1 - u0) / .5)):
+            uu = u0 + .1 + k * .5
+            if uu + .3 > u1: break
+            paint(m, 'gold' if k % 2 else 'turquoise', axis, pl, sg, uu, uu + .2, y1 - 1.25, y1 - .9)
+        if u1 - u0 > 2.4 and not a.get('disc'):
+            winged_disc(m, axis, pl, sg, (u0 + u1) / 2, y0 + 1.15, min(2.6, (u1 - u0) * .5))
+    if a.get('disc'):   # the sun on the south face, over the stair's passage
+        xc = (x0 + x1) / 2; zf = z1 - out + .01
+        for k in range(18):
+            t0, t1 = math.tau * k / 18, math.tau * (k + 1) / 18
+            m.tri('sunDisc', (xc, y0 + 1.3, zf), (xc + .5 * math.cos(t0), y0 + 1.3 + .5 * math.sin(t0), zf), (xc + .5 * math.cos(t1), y0 + 1.3 + .5 * math.sin(t1), zf))
+        winged_disc(m, 'z', z1 - out, 1, xc, y0 + .6, 2.4)
+    return True
+
+
+def stela(m, o, a):
+    """Granite stela on the avenue: a squared shaft with a painted relief of the king before the sun, under a pyramid cap."""
+    x0, x1, y0, y1, z0, z1 = ext(o); xc, zc = (x0 + x1) / 2, (z0 + z1) / 2
+    tbox(m, 'graniteDark', x0, x1, z0, z1, y0, y0 + .35, .05)
+    m.box('granite', (x0 + .1, y0 + .35, z0 + .1), (x1 - .1, y1 - .55, z1 - .1))
+    loft(m, 'gold', [rect(x0 + .1, x1 - .1, y1 - .55, z0 + .1, z1 - .1), [(xc, y1, zc)] * 4], close=False)
+    for pl, sg in ((x0 + .1, -1), (x1 - .1, 1)):
+        paint(m, 'graniteDark', 'x', pl, sg, z0 + .3, z1 - .3, y0 + .55, y1 - .75)
+        relief_figure(m, 'x', pl, sg, zc - .25, y0 + .7, .85, 'gold', 1, True)
+        for k in range(12):
+            t0, t1 = math.pi * k / 12, math.pi * (k + 1) / 12; cy = y1 - 1.05
+            paint(m, 'goldPale', 'x', pl, sg, zc + .3 + .22 * math.cos(t1), zc + .3 + .22 * math.cos(t0), cy + .2 * math.sin(t0) - .03, cy + .2 * math.sin(t0) + .03, .009)
+    for pl, sg in ((z0 + .1, -1), (z1 - .1, 1)):
+        paint(m, 'lapis', 'z', pl, sg, x0 + .3, x1 - .3, y1 - .95, y1 - .85)
+        paint(m, 'ochre', 'z', pl, sg, x0 + .3, x1 - .3, y0 + .55, y0 + .62)
+    return True
+
+
+KINDS = dict(stairblock=stairblock, screenwall=screenwall, sanctuary=sanctuary, stela=stela, wall=wall, lintel=lintel, column=column, roof=roof, parapet=parapet, roofstair=roofstair, sunshrine=sunshrine, pylon=pylon,
              gatelintel=gatelintel, enclosure=enclosure, offering=offering, drums=drums, fallen=fallen, palmbed=palmbed, colossus=colossus,
              obelisk=obelisk, sphinx=sphinx, shrine=shrine, table=table, bsteps=bsteps, basinfloor=basinfloor, barque=barque,
              steps=lambda m, o, a: steps(m, o, 'limestone', 'limestoneShade', None, .2))
@@ -595,10 +724,10 @@ slabs(-8, 8, 19, 21.6); slabs(-8.6, -7, 10.4, 19.6); slabs(7, 8.6, 10.4, 19.6); 
 for sx in (-1, 1):
     slabs(sx * 29.4 if sx < 0 else 19, -19 if sx < 0 else 29.4, -2.4, 2.4)
 # Basin: limestone kerb, a sheet of water a hand deep, lotus pads and blooms, papyrus at the corners.
-for (x0, x1, z0, z1) in ((-7.2, 7.2, 10.8, 11.0), (-7.2, 7.2, 19.0, 19.2), (-7.2, -7.0, 11, 13.4), (-7.2, -7.0, 16.6, 19), (7.0, 7.2, 11, 13.4), (7.0, 7.2, 16.6, 19)):
+for (x0, x1, z0, z1) in ((-7.2, 7.2, 10.8, 11.0), (-7.2, -4.4, 19.0, 19.2), (-2.4, 2.4, 19.0, 19.2), (4.4, 7.2, 19.0, 19.2), (-7.2, -7.0, 11, 13.4), (-7.2, -7.0, 16.6, 19), (7.0, 7.2, 11, 13.4), (7.0, 7.2, 16.6, 19)):
     D.box('limestone', (x0, -.02, z0), (x1, .06, z1))
 D.box('water', (-7, -1.12, 11), (7, -1.1, 19))
-for (x, z) in scatter(rng, 26, -6.5, 6.5, 11.5, 18.5, lambda x, z: not (abs(x) < 2.6 and 13.8 < z < 16.2) and not (abs(x) > 4.4 and 13.2 < z < 16.8), .55):
+for (x, z) in scatter(rng, 26, -6.5, 6.5, 11.5, 18.5, lambda x, z: not (abs(x) < 2.6 and 13.8 < z < 16.2) and not (abs(x) > 4.4 and 13.2 < z < 16.8) and not (2.0 < abs(x) < 4.8 and z > 16.4), .55):
     r = rng.uniform(.18, .32)
     for k in range(9):
         t0, t1 = math.tau * k / 10 + .3, math.tau * (k + 1) / 10 + .3
@@ -641,14 +770,24 @@ from erakit import tbox as _tb
 for (x0, x1, z0, z1) in ((-HX - .02, HX + .02, HZ1 - .02, HZ1 + .38), (-HX - .02, HX + .02, HZ0 - .38, HZ0 + .02), (-HX - .38, -HX + .02, HZ0, HZ1), (HX - .02, HX + .38, HZ0, HZ1)):
     D.box('gold', (x0, ROOF - .25, z0), (x1, ROOF - .15, z1))
     D.box('sandstoneLight', (x0, ROOF - .15, z0), (x1, ROOF + .02, z1))
-for z in COLZ:
-    D.box('sandstoneDark', (-HX + .6, ROOF - .5, z - .5), (HX - .6, ROOF, z + .5))
-    D.box('lapis', (-HX + .6, ROOF - .5, z - .505), (HX - .6, ROOF - .38, z + .505))
-    for x in COLX:
+for k, z in enumerate(COLZ):
+    if k == FALLEN_ROW: continue
+    spans = ((-HX + .6, WELL[0] - .05), (WELL[1] + .05, HX - .6)) if WELL[2] < z < WELL[3] else ((-HX + .6, HX - .6),)
+    for xa, xb in spans:
+        D.box('sandstoneDark', (xa, ROOF - .5, z - .5), (xb, ROOF, z + .5))
+        D.box('lapis', (xa, ROOF - .5, z - .505), (xb, ROOF - .38, z + .505))
+    for i, x in enumerate(COLX):
+        if (i, k) in STAIR_COLS: continue
         for s in (-1, 1): D.box('gold', (x - .7, ROOF - .36, z + s * .502 - .003), (x + .7, ROOF - .3, z + s * .502 + .003))
+# The fallen middle row: drums lying low and split bases, all under step height (no collision).
+for x in COLX:
+    z = COLZ[FALLEN_ROW]
+    lathe(D, 'limestoneShade', x, z, [(.6, 0), (.6, .1), (.55, .16)], 20)
+    lathe(D, 'sandstone', x, z, [(.47, .16), (.5, .22), (.0, .22)], 16)
+    D.blob('sandstoneDark', (x + .5, .02, z + .55), .22, .45); D.blob('sandstone', (x - .55, .02, z - .4), .18, .4)
 for i in range(160):   # stars on the lapis soffit between the architraves
     x, z = rng.uniform(-10.2, 10.2), rng.uniform(-14.2, 4.2)
-    if min(abs(z - zz) for zz in COLZ) < .65: continue
+    if min(abs(z - zz) for zz in COLZ) < .65 or (WELL[0] - .1 < x < WELL[1] + .1 and WELL[2] < z < WELL[3]): continue
     s = rng.uniform(.06, .1)
     for k in range(5):
         t = math.tau * k / 5; D.tri('goldPale', (x, ROOF - .007, z), (x + s * math.cos(t), ROOF - .007, z + s * math.sin(t)), (x + s * .4 * math.cos(t + .63), ROOF - .007, z + s * .4 * math.sin(t + .63)))
@@ -673,7 +812,7 @@ for sx in (-1, 1):
             D.quad(col, (xm, ya, z), (xm - sx * 2.1, ya - .25 - k * .05, z + .25), (xm - sx * 2.0, ya - .5 - k * .05, z + .28), (xm, ya - .3, z))
             D.quad(col, (xm, ya, z), (xm, ya - .3, z), (xm - sx * 2.0, ya - .5 - k * .05, z + .28), (xm - sx * 2.1, ya - .25 - k * .05, z + .25))
 # Braziers at the doors and inside the hall, their light pooled on the floor.
-for (x, z) in ((-3.3, 6.2), (3.3, 6.2), (-8.5, -16.2), (8.5, -16.2)):
+for (x, z) in ((-3.3, 6.2), (3.3, 6.2), (-6.3, -16.0), (6.3, -16.0)):
     p = brazier(D, x, 0, z, 1.1); GLOWS.append([round(p[0], 2), round(p[1], 2), round(p[2], 2), 1.3, '#ff9a48', .5]); POOLS.append([x, .02, z, 3.8, '#ffb063', .55]); EMBERS.append([x, p[1], z, .25])
 for (x, z) in ((-3.3, -9.75), (3.3, -9.75), (-3.3, -3.15), (3.3, -3.15)):
     lathe(D, 'gold', x, z, [(.18, 0), (.08, .2), (.05, 1.0), (.2, 1.2), (.22, 1.3)], 10)
