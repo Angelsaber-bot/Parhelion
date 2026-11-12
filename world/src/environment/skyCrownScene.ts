@@ -5,7 +5,7 @@ import type { Collider } from '../player/player';
 import { mergeParts } from '../settlements/merge';
 import { SiteArt } from '../story/campaignSites';
 import { SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS, SHUTTER_SPAN, helionBeamDirection, type createHelionFight } from '../story/helionFight';
-import { JOURNEY as J, SKY_MARKERS as M, type JourneyPoint } from '../story/worldJourney';
+import { JOURNEY as J, SKY_MARKERS as M, journeyStepReady, type JourneyPoint } from '../story/worldJourney';
 
 const [X, Y, Z] = SKY_ORIGIN;
 const p = (x: number, y: number, z: number): JourneyPoint => [X + x, Y + y, Z + z];
@@ -73,6 +73,7 @@ export function createSkyCrownScene() {
   }
   a.box(p(0, .015, 19), [1.1, .028, 10.5], glass, false, 'choiceB');
   post(J.feed, '并联独立生活线路', -6.5, 58);
+  post(J.westService, '西侧维护旁路', -15, 21);
   post(J.test, '旁路负荷台', 15, 29);
   post(J.isolate, '机械隔离锁', -15, 29);
   post(M.start, '承日台 · 面对赫利昂', 0, 10);
@@ -85,6 +86,17 @@ export function createSkyCrownScene() {
 
   const solids = mergeParts(a.solids); a.solids.forEach(geometry => geometry.dispose());
   const colliders: Collider[] = [{ name: 'COL_SkyCrownDecks', bvh: new MeshBVH(solids), enabled: true }];
+  const gateMat = new THREE.MeshStandardMaterial({ color: steel, emissive: red, emissiveIntensity: .3 });
+  const gates = [-15, 0, 15].map(x => {
+    const geometry = new THREE.BoxGeometry(x === 0 ? 9 : 6, 2.8, .28).translate(...p(x, 1.4, 14));
+    const node = new THREE.Mesh(geometry, gateMat); node.name = `SkyIsolationGate_${x}`; a.root.add(node);
+    const collider: Collider = { name: `COL_${node.name}`, bvh: new MeshBVH(geometry), enabled: true };
+    colliders.push(collider); return { node, collider };
+  });
+  const latchMat = new THREE.MeshStandardMaterial({ color: '#f1c45a', emissive: '#de9e2b', emissiveIntensity: .7 });
+  const latch = new THREE.Mesh(new THREE.BoxGeometry(.65, .48, .36), latchMat);
+  latch.name = 'SkyEnforcementLatch'; latch.position.fromArray(p(15, 1.44, 14.25)); latch.userData.target = J.eastLatch;
+  a.root.add(latch);
   const shutterMat = new THREE.MeshStandardMaterial({ color: '#2f5862', metalness: .25, roughness: .45 });
   const slitMat = new THREE.MeshBasicMaterial({ color: glass });
   const shutterGeo = new THREE.BoxGeometry(SHUTTER_SPAN, 3.05, .32);
@@ -125,6 +137,8 @@ export function createSkyCrownScene() {
     a.layers.get('choiceA')!.visible = done.has(J.feed);
     a.layers.get('choiceB')!.visible = done.has(J.isolate);
     frame.visible = !done.has(J.finish);
+    for (const { node, collider } of gates) node.visible = collider.enabled = !done.has(J.isolate);
+    latch.visible = journeyStepReady(J.eastLatch, done);
   }
   function update(fight: ReturnType<typeof createHelionFight>, seconds: number) {
     shutters.forEach(({ node, variants }, i) => {
@@ -137,7 +151,7 @@ export function createSkyCrownScene() {
     coreMat.emissiveIntensity = fight.vulnerable ? 1.65 : .32;
     coreMat.color.setHex(fight.vulnerable ? 0xffdb9b : 0xb44828);
     for (const [index, emitter] of emitters.entries()) {
-      emitter.visible = fight.phase === 1;
+      emitter.visible = fight.emitterOnline(index);
       emitter.rotation.y = seconds * .8;
       const open = fight.vulnerable && fight.exposedEmitter === index;
       emitter.material.color.setHex(open ? 0xffdb9b : 0x9b4733);
@@ -157,11 +171,11 @@ export function createSkyCrownScene() {
     tellBeam.rotation.y = Math.atan2(d.x, d.z);
     tellBeam.scale.set(tell.width * 2, 1, distance);
   }
-  return { root: a.root, markers, targets: [core, ...emitters], colliders, apply, update, dispose() {
+  return { root: a.root, markers, targets: [core, ...emitters, latch], colliders, apply, update, dispose() {
     const geometries = new Set<THREE.BufferGeometry>(colliders.map(collider => collider.bvh.geometry));
     a.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
     geometries.forEach(geometry => geometry.dispose());
-    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
+    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, latchMat, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
     colliders.forEach(collider => { collider.enabled = false; }); a.root.removeFromParent();
   } };
 }

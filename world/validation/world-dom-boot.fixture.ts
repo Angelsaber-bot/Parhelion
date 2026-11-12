@@ -31,7 +31,7 @@ class NoGpuRenderer {
   dispose(){}
 }
 class NoGpuPMREM {constructor(_renderer:unknown){}fromScene(){return{texture:new THREE.Texture(),dispose(){}};}dispose(){}}
-export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean; reloadMode?: 'noop' | 'throw'; exposeEraActors?: boolean; streaming?: boolean } = {}) {
+export async function bootWorldWithoutGpu(options: { worldRoot?: string; deterministic?: boolean; initialStorage?: Record<string, string>; effectsQuality?: 'low' | 'med' | 'high'; faultAfterInputRegistration?: boolean; contextLossDuringBoot?: boolean; reloadMode?: 'noop' | 'throw'; exposeEraActors?: boolean; streaming?: boolean; bootTimeoutMs?: number } = {}) {
   const world = options.worldRoot ?? resolve(dirname(fileURLToPath(import.meta.url)), '..');
   const html=await readFile(resolve(world,'index.html'),'utf8');
   const dom=new JSDOM(html,{url:`http://world.test/?nopost&q=${options.effectsQuality ?? 'low'}${options.streaming?'':'&eager'}`,pretendToBeVisual:true,runScripts:'outside-only'}),window=dom.window;
@@ -134,9 +134,10 @@ export async function bootWorldWithoutGpu(options: { worldRoot?: string; determi
   try{
     const bundle=await build({entryPoints:[resolve(world,'src/main.ts')],bundle:true,write:false,platform:'node',format:'cjs',external:['three','three/*','three-mesh-bvh'],loader:{'.css':'empty'},plugins:[{name:'real-module-urls',setup(plugin){plugin.onLoad({filter:/\.ts$/},async args=>({contents:(await readFile(args.path,'utf8')).replace(options.exposeEraActors && args.path === resolve(world,'src/main.ts') ? '(window as any).__world = {' : '__unused_fixture_era_observation__', '(window as any).__world = { __qaEraActors: eraActors,').replaceAll('import.meta.url',JSON.stringify(pathToFileURL(args.path).href)).replaceAll(options.reloadMode && args.path === resolve(world,'src/main.ts') ? 'location.reload()' : '__unused_fixture_reload__', options.reloadMode === 'throw' ? '(() => { throw new Error("Injected navigation failure"); })()' : '(() => {})()').replace(options.faultAfterInputRegistration && args.path === resolve(world,'src/main.ts') ? 'const combat = new WorldCombat(' : '__unused_fixture_fault_anchor__', "throw new Error('Injected late initialization failure');\nconst combat = new WorldCombat("),loader:'ts'}));}}]});
     window.eval(bundle.outputFiles[0].text);
-    const deadline=Date.now()+60000;
+    const bootTimeoutMs = options.bootTimeoutMs ?? 60_000;
+    const deadline=Date.now()+bootTimeoutMs;
     while(!(window as any).__world?.ready&&!errors.length&&Date.now()<deadline)await new Promise(r=>setTimeout(r,10));
-    if(!(window as any).__world?.ready && !(options.faultAfterInputRegistration && window.document.getElementById('retry')))throw new Error(`Production boot did not become ready: ${errors.map(args=>args.map(String).join(' ')).join('\n')||'60 second timeout'}`);
+    if(!(window as any).__world?.ready && !(options.faultAfterInputRegistration && window.document.getElementById('retry')))throw new Error(`Production boot did not become ready: ${errors.map(args=>args.map(String).join(' ')).join('\n') || `${bootTimeoutMs / 1000} second timeout (${window.document.getElementById('loading')?.textContent?.trim() ?? 'loading'})`}`);
     // `ready` does not block optional art; tests explicitly settle its real task chain.
     await settleAssets();
     return{window,world:(window as any).__world,errors,warnings,settleAssets,virtualConsole:dom.virtualConsole,

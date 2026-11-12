@@ -651,8 +651,19 @@ let questCatalog: ReturnType<typeof createQuestGuideCatalog> | undefined;
 let questCacheKey = '', questEntries: QuestEntry[] = [];
 function currentQuestEntries(): QuestEntry[] {
   if(!questCatalog)return [];
-  const key=`${hudRevision}:${residentEventRuntime?.crossing}:${done.size}:${found.size}:${fortCannon.mounted}:${compactRelayRuntime?.active}:${Math.floor((compactRelayRuntime?.progress ?? 0)*30)}:${homeTown?.activities.carrying}`;
-  if(key!==questCacheKey){questCacheKey=key;questEntries=questCatalog.list(done,found,{homeCarrying:homeTown?.activities.carrying,dryCrossing:residentEventRuntime?.crossing,mounted:fortCannon.mounted,compactRelay:{active:compactRelayRuntime?.active??false,progress:(compactRelayRuntime?.progress??0)*3}});}
+  const here = regionAt(player.pos.x, player.pos.z).id;
+  const key=`${here}:${hudRevision}:${residentEventRuntime?.crossing}:${done.size}:${found.size}:${fortCannon.mounted}:${compactRelayRuntime?.active}:${Math.floor((compactRelayRuntime?.progress ?? 0)*30)}:${homeTown?.activities.carrying}`;
+  if(key!==questCacheKey){
+    questCacheKey=key;
+    questEntries=questCatalog.list(done,found,{homeCarrying:homeTown?.activities.carrying,dryCrossing:residentEventRuntime?.crossing,mounted:fortCannon.mounted,compactRelay:{active:compactRelayRuntime?.active??false,progress:(compactRelayRuntime?.progress??0)*3}});
+    const next = journeyGuide();
+    const complete = done.has(JOURNEY.epilogue);
+    if (next || complete) {
+      const region = !next || next.region === 'sky' ? 'alpha' : next.region;
+      const guide: QuestGuide | null = next ? { title: next.title, text: next.text, targetId: next.targetId, targetKind: 'marker', region, position: next.p, targetLabel: next.text } : null;
+      questEntries.unshift({ id: 'main:journey', region, category: 'main', title: ['让明天继续','Let Tomorrow Continue'], complete, guide });
+    }
+  }
   return questEntries;
 }
 function trackedQuest(): QuestGuide | null {
@@ -708,7 +719,7 @@ function journeyGuide() {
   const guide = worldJourneyGuide(here, done);
   if (guide && here === 'alpha' && journeyDestinations(done).some(destination => destination.id === guide.region)) {
     const p = markers.get(JOURNEY_DISPATCH)?.p;
-    if (p) return { ...guide, p, text: ['前往观测所出发台选择目的地，也可沿大陆道路自行前往。', 'Choose your destination at the Observatory dispatch post, or take the overland road.'] as [string, string] };
+    if (p) return { ...guide, region: 'alpha' as const, targetId: JOURNEY_DISPATCH, p, text: ['前往观测所出发台选择目的地，也可沿大陆道路自行前往。', 'Choose your destination at the Observatory dispatch post, or take the overland road.'] as [string, string] };
   }
   const p = guide && (here === 'sky' && typeof helionFight !== 'undefined' && helionFight.active
     ? skyCrown.targets[0].position.toArray() : markers.get(guide.targetId)?.p);
@@ -787,7 +798,7 @@ function applyWorldState() {
     if(t.userData.homeTarget)continue;
     const id = t.userData.target as string;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
-    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === SKY_MARKERS.target)) continue;
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) continue;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
     t.visible = !hit;
     const c = collider(`COL_${t.name}`); if (c) c.enabled = !hit;
@@ -1960,7 +1971,7 @@ function saveJourneyProgress() {
   applyWorldState();
 }
 function interactWorldJourney(id: string) {
-  if (!journeyMarkerActive(id)) return;
+  if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
   if (id === JOURNEY_DISPATCH) {
     clearInput();
     const options = journeyDestinations(done).map(destination => ({ id: destination.id, label: destination.name }));
@@ -1979,6 +1990,18 @@ function interactWorldJourney(id: string) {
   }
   if (id === JOURNEY.visitor && !worldJourneySites?.visitorArrived()) {
     toast(bilingual('访客正在过桥，在接应点等一下。','The visitor is crossing. Wait at the far side.')); return;
+  }
+  if (id === JOURNEY.egyptDone && !worldJourneySites?.ferryArrived()) {
+    toast(bilingual('让试航船先驶过水尺，再登记通航。','Let the test ferry pass the gauge before registering the route.')); return;
+  }
+  if (id === JOURNEY.orleansDone && !worldJourneySites?.reliefArrived()) {
+    toast(bilingual('接应队正在过桥。等他们到齐再登记。','The relief crew is crossing. Register the route once they arrive.')); return;
+  }
+  if (id === JOURNEY.qinHalt && !worldJourneySites?.workersArrived()) {
+    toast(bilingual('让工匠先走出行进阵列，再下驻令。','Let the workers clear the marching ranks before giving the halt order.')); return;
+  }
+  if (id === JOURNEY.cargoSwitch && !worldJourneySites?.canSwitchCargo()) {
+    toast(bilingual('货车已经过了道岔。沿轨道追到封存棚。','The cart has passed the switch. Follow the rails to the impound shed.')); return;
   }
   if (id === SKY_MARKERS.left || id === SKY_MARKERS.right) {
     const index = id === SKY_MARKERS.left ? 0 : 1;
@@ -2144,8 +2167,11 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
-    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === SKY_MARKERS.target)) {
-      const hit = id === SKY_MARKERS.target ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint) : commitJourneyStep(id, done);
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) {
+      const hit = id === SKY_MARKERS.target
+        ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint)
+        : questHit.distance <= gun.range && commitJourneyStep(id, done);
+      if (hit && id === JOURNEY.cargoPin) worldJourneySites?.saveCargoBrake(done);
       if (Array.isArray(hit)) { saveJourneyProgress(); toast(bilingual(...hit)); }
       if (hit) combat.flashHitMarker(.14);
       combat.shot(muzzle, point, !!hit); audio.shot(); return;
@@ -2681,7 +2707,10 @@ function frame(now: number) {
     if(allowed>.8){rig.root.visible=false;desired.copy(focus).addScaledVector(direction.normalize(),Math.min(distance,allowed));conversationBlend=reducedEffects()?1:THREE.MathUtils.damp(conversationBlend,1,7,dt);camera.position.lerp(desired,conversationBlend);const target=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,focus,camera.up));camera.quaternion.slerp(target,conversationBlend);eye.copy(camera.position);}else conversationBlend=0;
   }else conversationBlend=0;
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
-  worldJourneySites?.update(gameplayActive() ? dt : 0, player.pos);
+  if (worldJourneySites?.update(gameplayActive() ? dt : 0, player.pos)) {
+    done.add(JOURNEY.cargoParked); saveJourneyProgress();
+    toast(bilingual('货车已停稳。取回返程信标。','The cart has stopped. Recover the return beacon.'));
+  }
   updateSkyJourney(dt, now / 1000);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});

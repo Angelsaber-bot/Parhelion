@@ -2,16 +2,50 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
+import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import { EGYPT_MIRRORS } from '../src/map/egyptPlan';
-import { ORLEANS_WORKS } from '../src/map/orleansWorks';
+import { ORLEANS_WORKS, ORLEANS_WORK_ACTIONS } from '../src/map/orleansWorks';
 import { QIN_ARMY } from '../src/map/qinPlan';
 import { createHelionFight, SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS } from '../src/story/helionFight';
 import { ADVENTURE as A } from '../src/story/openWorldCampaign';
 import { commitJourneyStep, JOURNEY as J, SKY_MARKERS as M, SKY_PHASES, journeyTowerReady, worldJourneyGuide } from '../src/story/worldJourney';
 import { VALLEY_PROLOGUE } from '../src/story/valleyPrologue';
+import type { SettlementPlacement } from '../src/settlements/types';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
 const four = [A.started, A.online, 'armory_rack', 'saber_contract', 'sun_core', A.arrived, 'napoleon_contract', A.departed, 'blackbeard_contract', A.evidence, 'musashi_contract'];
+
+test('east landing supports the siding, a moving coupler, and recovery at the end of the rails', () => {
+  const residence = { position: [0, 5, 0] } as SettlementPlacement;
+  const make = () => createWorldJourneySites(residence, (_x, _z, ceiling = 7) => ceiling - 2, () => true);
+  for (const route of ['switch', 'shot', 'depot']) {
+    const sites = make(), done = new Set(four);
+    try {
+      assert.ok(commitJourneyStep(J.cargoCall, done)); sites.apply(done);
+      const cart = sites.root.getObjectByName('JourneyCargoCart')!;
+      const start = cart.position.clone();
+      assert.equal(sites.update(2, start), false);
+      if (route === 'switch') assert.ok(commitJourneyStep(J.cargoSwitch, done));
+      if (route === 'shot') {
+        assert.ok(commitJourneyStep(J.cargoPin, done)); sites.saveCargoBrake(done);
+      }
+      sites.apply(done);
+      for (let i = 0; i < 80; i++) {
+        if (sites.update(.25, start)) { done.add(J.cargoParked); sites.apply(done); break; }
+      }
+      assert.ok(done.has(J.cargoParked), route);
+      assert.equal(cart.position.z > start.z + 1, route === 'switch');
+      assert.equal(cart.position.x - start.x, route === 'depot' ? 42 : route === 'switch' ? 33 : 9);
+      const savedPosition = cart.position.clone();
+      assert.ok(commitJourneyStep(J.cargo, done));
+      const resumed = make();
+      try {
+        resumed.apply(done);
+        assert.deepEqual(resumed.root.getObjectByName('JourneyCargoCart')!.position.toArray(), savedPosition.toArray());
+      } finally { resumed.dispose(); }
+    } finally { sites.dispose(); }
+  }
+});
 
 test('seven-region route keeps saved demo endings, accepts either branch, and requires a real sky victory', () => {
   const done = new Set([...four, A.ending]);
@@ -19,7 +53,12 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
   assert.equal(worldJourneyGuide('alpha', done)?.targetId, J.meal);
   assert.equal(commitJourneyStep(J.finish, done), null);
   assert.equal(journeyTowerReady(done), false);
-  [J.meal, J.cargo, J.signal, J.compare, J.bypass, J.orleansRead].forEach(act);
+  act(J.meal); act(J.cargoCall);
+  assert.equal(commitJourneyStep(J.cargo, done), null);
+  act(J.cargoSwitch);
+  assert.equal(commitJourneyStep(J.cargoPin, done), null);
+  done.add(J.cargoParked);
+  [J.cargo, J.signalLamp, J.signal, J.compare, J.bypass, J.orleansRead].forEach(act);
   assert.equal(commitJourneyStep(J.cutoff, done), null);
   assert.equal(commitJourneyStep(J.qinRead, done), null);
   for (const flag of [ORLEANS_WORKS.craneDone, ORLEANS_WORKS.sluiceDone, ORLEANS_WORKS.bellDone]) done.add(flag);
@@ -27,6 +66,7 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
   assert.equal(commitJourneyStep(J.egyptTie, done), null);
   done.add(EGYPT_MIRRORS.solved);
   [J.egyptTie, J.egyptDone, J.qinRead, J.qinMarch, J.qinHalt].forEach(act);
+  assert.equal(worldJourneyGuide('qin', done)?.targetId, QIN_ARMY.levers[1].id);
   act(J.qinTurn);
   assert.equal(commitJourneyStep(J.qinDone, done), null);
   done.add(QIN_ARMY.flag);
@@ -34,7 +74,11 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
   assert.ok(journeyTowerReady(done));
   assert.equal(commitJourneyStep(J.launch, done), null);
   done.add(A.takeover);
-  [J.launch, J.feed, J.test, J.isolate].forEach(act);
+  [J.launch, J.feed].forEach(act);
+  assert.equal(commitJourneyStep(J.test, done), null);
+  act(J.eastLatch);
+  assert.equal(commitJourneyStep(J.westService, done), null);
+  [J.test, J.isolate].forEach(act);
   assert.equal(worldJourneyGuide('sky', done)?.targetId, M.start);
   for (const phase of SKY_PHASES) done.add(phase);
   act(J.finish);
@@ -47,6 +91,9 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
   assert.ok(commitJourneyStep(J.lake, fresh));
   assert.ok(commitJourneyStep(J.lakePin, fresh));
   assert.ok(fresh.has(J.lakeWinch));
+
+  const existing = new Set([...four, J.meal, J.cargo, J.signal]);
+  assert.equal(worldJourneyGuide('alpha', existing)?.targetId, J.compare);
 });
 
 test('Helion locks his aim, can be reflected by a late shutter, and checkpoints each phase', () => {
@@ -75,7 +122,13 @@ test('Helion locks his aim, can be reflected by a late shutter, and checkpoints 
   run(.9, SKY_ORIGIN[0] + 21, SKY_ORIGIN[2] + 8);
   assert.equal(locked?.x, x);
   assert.equal(damage, 0);
+  assert.equal(fight.hit(1000, 1), false, 'the opposite rig remains shielded');
   fight.hit(1000);
+  assert.equal(fight.emitterOnline(0), false);
+  assert.equal(done.has(J.phase2), false);
+  run(3, SKY_ORIGIN[0] + 21, SKY_ORIGIN[2] + 8);
+  assert.equal(fight.exposedEmitter, 1);
+  fight.hit(1000, 1);
   assert.ok(done.has(J.phase2));
   assert.ok(fight.start());
   run(3.35, x, z);
@@ -89,24 +142,41 @@ test('Helion locks his aim, can be reflected by a late shutter, and checkpoints 
   assert.equal(fight.start(), false);
 });
 
-test('production map geometry admits every new quest stand and the sky handover survives real input', async () => {
-  const seed = [...four, J.egyptDone, J.orleansDone, J.qinDone, J.skySight, J.handover, J.groundWatch, A.takeover];
-  const h = await bootWorldWithoutGpu({ deterministic: true, initialStorage: { [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }) } });
+test('production quest stands, three regional handovers and the sky finale work with actual input', async () => {
+  const seed = [...four.filter(flag => flag !== 'saber_contract'), VALLEY_PROLOGUE.record, A.takeover];
+  const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 120_000, initialStorage: { [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }) } });
   const w = h.world, d = h.window.document;
   let time = 0;
   const frame = (n = 1) => { for (let i = 0; i < n; i++) h.frame(time += 1000 / 60); };
-  const tap = () => {
+  const key = (type: 'keydown' | 'keyup') => {
     const code = w.settings.bindingsFor('interact')[0];
-    for (const type of ['keydown', 'keyup']) d.body.dispatchEvent(new h.window.KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
+    d.body.dispatchEvent(new h.window.KeyboardEvent(type, { code, bubbles: true, cancelable: true }));
   };
+  const tap = () => { key('keydown'); key('keyup'); };
   const marker = (id: string) => w.layout.markers.find((m: { id: string }) => m.id === id);
-  const interact = (id: string) => {
+  const approach = (id: string) => {
     const m = marker(id);
     assert.ok(m, id);
     const floor = w.combat.geometry.ground(m.p[0], m.p[2], m.p[1] + 1.25);
     assert.ok(floor, id);
     w.player.teleport(floor.point.x, floor.point.y + .2, floor.point.z);
-    frame(22); tap();
+    frame(22);
+  };
+  const interact = (id: string) => { approach(id); tap(); };
+  const hold = (id: string) => {
+    const action = ORLEANS_WORK_ACTIONS.find(action => action.id === id)!;
+    approach(id);
+    key('keydown'); frame(2); key('keyup'); frame(2);
+    assert.equal(w.orleansWorksRuntime.active, id);
+    key('keydown'); frame(Math.ceil((action.seconds + .4) * 60)); key('keyup');
+    assert.ok(w.done.has(action.flag), action.flag);
+  };
+  const shootAt = (point: Vector3) => {
+    const canvas = d.getElementById('view')!;
+    w.camera.position.copy(w.player.pos).add(new Vector3(0, 1.4, 0));
+    w.camera.lookAt(point);
+    w.camera.updateMatrixWorld(true);
+    for (const type of ['mousedown', 'mouseup']) canvas.dispatchEvent(new h.window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
   };
   try {
     (d.getElementById('start') as HTMLElement).click(); await Promise.resolve(); frame(3);
@@ -114,20 +184,59 @@ test('production map geometry admits every new quest stand and the sky handover 
     for (const m of w.layout.markers.filter((candidate: { id: string }) => /^journey_/.test(candidate.id))) {
       const [x, y, z] = m.p;
       const floor = w.combat.geometry.ground(x, z, y + 1.25);
-      if (!floor || Math.abs(floor.point.y + .92 - y) > .7 || !w.combat.geometry.clear(new Vector3(x, floor.point.y + .04, z), .32, 1.65)) missing.push(`${m.id} ${m.p} floor ${floor?.point.y}`);
+      if (!floor || floor.point.y < w.layout.world.waterLevel + .05 || Math.abs(floor.point.y + .92 - y) > .7 || !w.combat.geometry.clear(new Vector3(x, floor.point.y + .04, z), .32, 1.65)) missing.push(`${m.id} ${m.p} floor ${floor?.point.y}`);
     }
     assert.deepEqual(missing, []);
+    interact(J.lake); assert.ok(w.done.has(J.lake));
+    for (let line = 0; line < 3 && w.narrative.open; line++) tap();
+    interact(J.lakeWinch); assert.ok(w.done.has(J.lakeWinch));
+    assert.ok(w.done.has('saber_contract'));
+    interact(J.bridge); assert.ok(w.done.has(J.bridge));
+    frame(380); interact(J.visitor); assert.ok(w.done.has(J.visitor));
+    interact(J.meal); assert.ok(w.done.has(J.meal));
+    interact(J.cargoCall); assert.ok(w.done.has(J.cargoCall));
+    const pin = w.scene.getObjectByName('JourneyCargoCoupler');
+    assert.ok(pin?.visible);
+    shootAt(pin.getWorldPosition(new Vector3()));
+    assert.ok(w.done.has(J.cargoPin), 'firing at the moving cart activates the saved braking route');
+    for (let i = 0; i < 300 && !w.done.has(J.cargoParked); i++) frame();
+    assert.ok(w.done.has(J.cargoParked));
+    interact(J.cargo); assert.ok(w.done.has(J.cargo));
+    interact(J.signalLamp); assert.ok(w.done.has(J.signalLamp));
+    interact(J.signal); assert.ok(w.done.has(J.signal));
+    interact(J.compare); interact(J.bypass); assert.ok(w.done.has(J.bypass));
+    interact(J.egyptRead); assert.ok(w.done.has(J.egyptRead));
+    EGYPT_MIRRORS.mirrors.forEach(({ id }, index) => {
+      for (let turn = 0; turn < [3, 0, 2][index]; turn++) interact(id);
+    });
+    frame(2);
+    assert.ok(w.done.has(EGYPT_MIRRORS.solved));
+    interact(J.egyptWeir); assert.ok(w.done.has(J.egyptWeir));
+    interact(J.egyptDone); assert.equal(w.done.has(J.egyptDone), false, 'the ferry needs time to cross');
+    frame(690); interact(J.egyptDone); assert.ok(w.done.has(J.egyptDone));
+    interact(J.orleansRead); hold(ORLEANS_WORKS.crane); hold(ORLEANS_WORKS.sluice);
+    interact(J.orleansFlag); hold(ORLEANS_WORKS.bell);
+    interact(J.orleansBattery); assert.ok(w.done.has(J.orleansBattery));
+    frame(260); interact(J.orleansDone); assert.ok(w.done.has(J.orleansDone));
+    interact(J.qinRead); interact(J.qinMarch);
+    frame(500); interact(J.qinHalt); assert.ok(w.done.has(J.qinHalt));
+    interact(QIN_ARMY.levers[1].id); frame(150);
+    assert.ok(w.done.has(J.qinTurn));
+    interact(J.qinDone); assert.ok(w.done.has(J.qinDone));
+    for (const id of [J.skyBearing, J.skySight, J.handover, J.groundWatch]) {
+      interact(id);
+      assert.ok(w.done.has(id), `${id}: ${d.getElementById('prompt')?.textContent} (${w.player.pos.toArray()}, grounded ${w.player.onGround})`);
+    }
     interact(J.launch);
     assert.ok(w.done.has(J.launch));
     assert.ok(w.player.pos.y > 200);
-    [J.feed, J.test, J.isolate].forEach(interact);
+    [J.feed, J.westService, J.test, J.isolate].forEach(interact);
     assert.ok(w.done.has(J.isolate));
     interact(M.start);
     frame(2);
     assert.equal((d.getElementById('helion-status') as HTMLElement).hidden, false);
     assert.equal(commitJourneyStep(J.finish, w.done), null);
     const hud = d.getElementById('helion-status')!;
-    const canvas = d.getElementById('view')!;
     const shift = (x: number) => {
       w.player.teleport(x, SKY_ORIGIN[1] + .21, SKY_ORIGIN[2] - 19);
       frame(12);
@@ -142,10 +251,7 @@ test('production map geometry admits every new quest stand and the sky handover 
         const target = ['HelionCore', 'HelionEmitter_0', 'HelionEmitter_1'].map(name => w.scene.getObjectByName(name))
           .find(node => node?.visible && node.material.emissiveIntensity > 1);
         assert.ok(target, 'an exposed core or emitter must be visible');
-        w.camera.position.copy(w.player.pos).add(new Vector3(0, 1.4, 0));
-        w.camera.lookAt(target.position);
-        w.camera.updateMatrixWorld(true);
-        for (const type of ['mousedown', 'mouseup']) canvas.dispatchEvent(new h.window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
+        shootAt(target.position);
         frame(11);
       }
     }

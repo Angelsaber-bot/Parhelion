@@ -3,6 +3,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import type { Marker } from '../core/types';
 import type { Collider } from '../player/player';
 import { egyptToWorld } from '../map/egyptPlan';
+import { ORLEANS_WORKS } from '../map/orleansWorks';
 import { qinToWorld } from '../map/qinPlan';
 import { mergeParts } from '../settlements/merge';
 import { createSettlementNpcs } from '../settlements/npcs';
@@ -49,7 +50,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     a.box([position[0], position[1] - .76, position[2]], [.23, .93, .23], metal);
     return pin;
   }
-  const lake = stand(J.lake, '镜湖 · 与 Saber 会合', [-26, 4, 16]);
+  const lake = stand(J.lake, '镜湖 · 与 Saber 会合', [-57, 4.5, 65]);
   const winch = stand(J.lakeWinch, '镜湖导架绞盘', [lake[0] + 6, lake[1], lake[2] + 1]);
   const lakePin = shotPin(J.lakePin, [winch[0] + 5, winch[1] + 1.42, winch[2] - 2]);
   a.beam([winch[0] + .65, winch[1] + .91, winch[2] - .65], lakePin.position.toArray(), .08, metal, false, 'briefed');
@@ -73,10 +74,41 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   bridgeGate.name = 'JourneyLookbackGate'; a.root.add(bridgeGate);
 
   stand(J.meal, '生活馆 · 孟槐的热饭', [ox - 3, oy, oz - 5], false);
-  const cargo = stand(J.cargo, '东渡口 · 返程货箱', [278, 16, 30], false);
-  a.box([cargo[0], cargo[1] + .41, cargo[2] - 1], [1.9, .82, 1.35], wood);
-  a.box([cargo[0], cargo[1] + .91, cargo[2] - 1], [.54, .17, .36], amber, false, 'briefed');
-  stand(J.signal, '阿舟的便携接收器', [ox + 4.7, oy, oz + 10.7]);
+  const cargo = stand(J.cargoCall, '东渡口 · 扣货记录', [269, 5, 77]);
+  stand(J.cargoSwitch, '东渡口 · 本地支线道岔', [cargo[0] + 17, cargo[1], cargo[2] + 3]);
+  stand(J.cargo, '东渡口 · 取回返程信标', [cargo[0] + 3, cargo[1], cargo[2] + 1.6], false);
+  const cargoMarker = markers.at(-1)!;
+  const railStart = cargo[0] + 2, railLength = 42, railZ = cargo[2] - 2.45;
+  const cart = new THREE.Group(); cart.name = 'JourneyCargoCart'; a.root.add(cart);
+  const cargoMaterials = [new THREE.MeshStandardMaterial({ color: wood }), new THREE.MeshStandardMaterial({ color: metal }), pinMaterial];
+  const cartBed = new THREE.Mesh(new THREE.BoxGeometry(2.25, .25, 1.62), cargoMaterials[1]); cartBed.position.y = .43;
+  const cargoCrate = new THREE.Mesh(new THREE.BoxGeometry(1.6, .83, 1.21), cargoMaterials[0]); cargoCrate.position.y = .95;
+  const cartPin = new THREE.Mesh(new THREE.BoxGeometry(.42, .42, .27), pinMaterial); cartPin.name = 'JourneyCargoCoupler';
+  cartPin.position.set(-.94, .71, .84); cartPin.userData.target = J.cargoPin; targets.push(cartPin);
+  cart.add(cartBed, cargoCrate, cartPin);
+  const railY = (x: number, z: number) => ground(x, z, cargo[1] + 3) ?? cargo[1];
+  for (let offset = 0; offset <= railLength; offset += 2) {
+    const x = railStart + offset, y = railY(x, railZ);
+    a.box([x, y + .03, railZ], [.17, .07, 1.7], wood);
+    if (offset < railLength) for (const z of [railZ - .62, railZ + .62]) a.beam([x, railY(x, z) + .072, z], [x + 2, railY(x + 2, z) + .072, z], .09, metal);
+  }
+  for (const offset of [18, 23, 28, 33]) {
+    const x = railStart + offset, z = railZ + (offset - 18) * .24;
+    a.box([x, railY(x, z) + .055, z], [2.6, .07, .42], verdigris);
+  }
+  const depotX = railStart + railLength;
+  const depotY = railY(depotX, railZ);
+  for (const dz of [-2.25, 2.25]) a.box([depotX, depotY + 1.6, railZ + dz], [.24, 3.2, .26], wood);
+  a.box([depotX, depotY + 3.1, railZ], [5.5, .22, 5.3], metal);
+  stand(J.signalLamp, '归航灯 · 照明支路', [ox - 1.9, oy, oz + 10.5]);
+  const signal = stand(J.signal, '阿舟的便携接收器', [ox + 4.7, oy, oz + 10.7]);
+  const lampMaterial = new THREE.MeshStandardMaterial({ color: '#f3d996', emissive: '#e2b560', emissiveIntensity: .65 });
+  const transmitterMaterial = new THREE.MeshStandardMaterial({ color: '#5cb4a4', emissive: '#5cb4a4', emissiveIntensity: .65 });
+  const lamp = new THREE.Mesh(new THREE.BoxGeometry(.28, .45, .3), lampMaterial);
+  lamp.position.set(ox - 1.9, oy + 2.35, oz + 9.65); a.root.add(lamp);
+  a.box([ox - 1.9, oy + 1.09, oz + 9.65], [.14, 2.18, .14], metal);
+  const transmitter = new THREE.Mesh(new THREE.BoxGeometry(.41, .085, .22), transmitterMaterial);
+  transmitter.position.set(signal[0], signal[1] + 1.08, signal[2] - .61); a.root.add(transmitter);
   const comparison = stand(J.compare, '广播室 · 实况校准板', [-110, 10, 230]);
   stand(JOURNEY_DISPATCH, '出发台 · 埃及、奥尔良与秦', [-111, 10, 237]);
   const [cx, cy, cz] = comparison;
@@ -135,7 +167,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const halt = stand(J.qinHalt, '军阵中轴 · 驻令', local(qinToWorld, -17, 28, -149));
   stand(J.qinDone, '铜闸内侧 · 交出军令册', local(qinToWorld, -17, 28, -162));
 
-  const firstBearing = stand(J.skyBearing, '镜湖北岸 · 第一组天穹方位', [-24, 5, -46]);
+  const firstBearing = stand(J.skyBearing, '镜湖北岸 · 第一组天穹方位', [-38, 2.5, -78]);
   const secondBearing = stand(J.skySight, '幻日塔外 · 第二组天穹方位', [13, 5, -111]);
   for (const [x, y, z] of [firstBearing, secondBearing]) a.beam([x - .22, y + 1.25, z - .73], [x + .4, y + 1.64, z - 1.58], .21, metal);
   stand(J.handover, '回望桥 · 地面维护交接', [bx + 11, by, bz + 3.3]);
@@ -146,15 +178,32 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const residents = createSettlementNpcs([
     { id: 'journey_visitor_actor', region: 'alpha', role: ['王城访客', 'Kingdom visitor'], position: [bx, by, bz], yaw: Math.PI / 2, appearance: { coat: 0xa4885a, carry: 'sack' }, lines: [] },
     { id: 'journey_qin_work_actor', region: 'alpha', worldRegion: 'qin', role: ['工匠', 'Worker'], position: [march[0] - 3.2, march[1], march[2]], appearance: { coat: 0x7f6249, carry: 'sack' }, lines: [] },
+    { id: 'journey_orleans_relief_actor', region: 'alpha', worldRegion: 'orleans', role: ['接应队', 'Relief crew'], position: orleans, yaw: Math.PI / 2, appearance: { coat: 0x864b42, carry: 'sack' }, lines: [] },
   ]);
   const visitorActor = residents.group.getObjectByName('Resident_journey_visitor_actor');
   const workerActor = residents.group.getObjectByName('Resident_journey_qin_work_actor');
+  const reliefActor = residents.group.getObjectByName('Resident_journey_orleans_relief_actor');
   a.root.add(residents.group);
 
   const solids = mergeParts(a.solids); a.solids.forEach(g => g.dispose());
   const bridgeCollider: Collider = { name: 'COL_JourneyLookbackGate', bvh: new MeshBVH(bridgeGateGeometry), enabled: false };
   const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, ...gates.map(gate => gate.collider)];
-  let bridgeOpen = false, visitTravel = 0, waterOpen = false, boatTravel = 0, marchOrdered = false, halted = false, marchTravel = 0;
+  let bridgeOpen = false, visitTravel = 0, waterOpen = false, boatTravel = 0;
+  let marchOrdered = false, halted = false, marchTravel = 0;
+  let reliefMoving = false, reliefTravel = 0;
+  let cartDistance = 0, brakeAt = 0, cartStarted = false, cartParked = false, cartTurned = false, cartBraked = false, cartClaimed = false;
+  const brakingStops = [5, 9, 13, 17, 21, 25, 29, 33, 37, 42];
+  const brakeFlag = (distance: number) => `journey_cargo_brake_${distance}`;
+  function placeCart() {
+    const x = railStart + cartDistance, z = railZ + (cartTurned ? Math.max(0, cartDistance - 18) * .24 : 0);
+    const y = railY(x, z);
+    cart.position.set(x, y + .045, z);
+    cart.rotation.y = cartTurned && cartDistance > 18 ? -.235 : 0;
+    const approachZ = z + 1.65;
+    cargoMarker.p[0] = x; cargoMarker.p[1] = railY(x, approachZ) + .92; cargoMarker.p[2] = approachZ;
+    cartPin.visible = cartStarted && !cartParked && !cartTurned && !cartBraked && cartDistance < railLength - 2;
+    cart.updateMatrixWorld(true);
+  }
   function apply(done: ReadonlySet<string>) {
     bridgeCollider.enabled = journeyEnabled(done) && !done.has(J.bridge) && !done.has(J.finish);
     bridgeGate.visible = bridgeCollider.enabled;
@@ -170,47 +219,91 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     }
     waterOpen = done.has(J.egyptWeir); water.visible = waterOpen;
     if (!waterOpen) boatTravel = 0;
+    if (done.has(J.egyptDone)) { boatTravel = 1; placeBoat(); }
     marchOrdered = done.has(J.qinMarch); halted = done.has(J.qinHalt);
     if (!marchOrdered) marchTravel = 0;
     if (halted) marchTravel = 1;
+    reliefMoving = done.has(J.orleansFlag) && done.has(ORLEANS_WORKS.bellDone) && done.has(J.orleansBattery);
+    if (!reliefMoving) reliefTravel = 0;
+    if (done.has(J.orleansDone)) { reliefTravel = 1; placeRelief(); }
     for (const [i, gate] of gates.entries()) {
       gate.collider.enabled = done.has(J.compare) && !(i ? done.has(J.bypass) : done.has(J.cutoff));
       gate.mesh.visible = gate.collider.enabled;
     }
     reliefFlags.visible = done.has(J.orleansFlag);
-    a.layers.get('briefed')!.visible = !done.has(J.lakeWinch) || !done.has(J.cargo);
+    a.layers.get('briefed')!.visible = !done.has(J.lakeWinch);
     a.layers.get('resolved')!.visible = done.has(J.lakeWinch);
     a.layers.get('choiceB')!.visible = done.has(J.finish);
+    cartStarted = done.has(J.cargoCall); cartTurned = done.has(J.cargoSwitch); cartClaimed = done.has(J.cargo);
+    if (done.has(J.cargoPin)) {
+      brakeAt = brakingStops.find(distance => done.has(brakeFlag(distance))) ?? brakingStops[0];
+      if (!cartBraked && !cartParked) cartDistance = Math.max(cartDistance, brakeAt - 4);
+    }
+    cartBraked = done.has(J.cargoPin);
+    if (!cartStarted) cartDistance = 0;
+    if (done.has(J.cargoParked) && !cartParked) cartDistance = cartTurned ? 33 : cartBraked ? brakeAt : railLength;
+    cartParked = done.has(J.cargoParked);
+    cargoCrate.visible = !cartClaimed;
+    lampMaterial.emissiveIntensity = done.has(J.signalLamp) && !done.has(J.signal) ? 0 : .65;
+    lampMaterial.color.setHex(lampMaterial.emissiveIntensity ? 0xf3d996 : 0x566061);
+    transmitterMaterial.emissiveIntensity = done.has(J.signal) ? 0 : .65;
+    placeCart();
     a.root.updateMatrixWorld(true);
   }
   const boatPoint = new THREE.Vector3();
+  function placeBoat() {
+    boatPoint.copy(startWater).lerp(endWater, boatTravel);
+    boat.position.set(boatPoint.x, (ground(boatPoint.x, boatPoint.z, Math.max(weir[1], river[1]) + 2) ?? boatPoint.y) + .08, boatPoint.z);
+  }
+  function placeRelief() {
+    const x = orleans[0] + 1.5, z = orleans[2] + THREE.MathUtils.lerp(7, 2.1, reliefTravel);
+    residents.pose('journey_orleans_relief_actor', [x, ground(x, z, orleans[1] + 1.4) ?? orleans[1], z], Math.PI);
+  }
   function update(dt: number, player: THREE.Vector3) {
     residents.update(dt, player);
     if (visitorActor) visitorActor.visible &&= bridgeOpen;
     if (workerActor) workerActor.visible &&= marchOrdered;
+    if (reliefActor) reliefActor.visible &&= reliefMoving;
     if (bridgeOpen && visitTravel < 1) {
       visitTravel = Math.min(1, visitTravel + dt / 6);
       const x = THREE.MathUtils.lerp(bx + 1.5, visitor[0] + .85, visitTravel);
       const y = ground(x, bz, by + 1.6) ?? by;
       residents.pose('journey_visitor_actor', [x, y + .03, bz], Math.PI / 2);
     }
-    if (marchOrdered) {
+    if (marchOrdered && (workerActor?.visible || !halted)) {
       if (!halted && marchTravel < 1) marchTravel = Math.min(1, marchTravel + dt / 8);
       residents.pose('journey_qin_work_actor', [march[0] - 3.2, march[1], THREE.MathUtils.lerp(march[2], halt[2] - 2, marchTravel)], 0);
+    }
+    if (reliefMoving && reliefTravel < 1) {
+      reliefTravel = Math.min(1, reliefTravel + dt / 4);
+      placeRelief();
     }
     boat.visible = waterOpen;
     if (waterOpen && boatTravel < 1) {
       boatTravel = Math.min(1, boatTravel + dt / 11);
-      boatPoint.copy(startWater).lerp(endWater, boatTravel);
-      boat.position.set(boatPoint.x, (ground(boatPoint.x, boatPoint.z, Math.max(weir[1], river[1]) + 2) ?? boatPoint.y) + .08, boatPoint.z);
+      placeBoat();
     }
+    if (!cartStarted || cartParked || dt <= 0 || Math.hypot(player.x - cart.position.x, player.z - cart.position.z) > 90) return false;
+    const stop = cartTurned ? 33 : cartBraked ? brakeAt : railLength;
+    cartDistance = Math.min(stop, cartDistance + dt * (cartBraked ? 1.4 : 3.15));
+    placeCart();
+    return cartDistance >= stop;
   }
-  return { root: a.root, markers, targets, colliders, homecoming, apply, update, visitorArrived: () => visitTravel >= 1, dispose() {
+  return { root: a.root, markers, targets, colliders, homecoming, apply, update, visitorArrived: () => visitTravel >= 1,
+    ferryArrived: () => boatTravel >= 1,
+    workersArrived: () => marchTravel >= 1,
+    reliefArrived: () => reliefTravel >= 1,
+    canSwitchCargo: () => cartDistance < 18.8,
+    saveCargoBrake(done: Set<string>) {
+      const stop = brakingStops.find(distance => distance >= cartDistance + 1.5) ?? railLength;
+      done.add(brakeFlag(stop));
+    },
+    dispose() {
     residents.dispose();
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); Object.values(a.materials).forEach(material => material.dispose());
-    for (const material of [pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, ...ferryMaterials]) material.dispose();
+    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };
 }

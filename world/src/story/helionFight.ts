@@ -46,6 +46,8 @@ export function createHelionFight(h: HelionHooks) {
   let tell: HelionTell | null = null, flash: HelionTell | null = null, flashLength = 0, flashFor = 0;
   let lastWrite = false, spentWriter = false;
   const shutters = [false, false], changedAfterLock = [false, false];
+  const emitters = [PHASE_HP[1] / 2, PHASE_HP[1] / 2];
+  let attackingEmitter = 0;
 
   function setBeat(next: Beat, seconds: number) {
     beat = next; clock = seconds;
@@ -54,6 +56,7 @@ export function createHelionFight(h: HelionHooks) {
   function reset() {
     phase = -1; hp = 0; beat = 'waiting'; clock = 0; cycle = 0; tell = null; flash = null; flashFor = 0;
     lastWrite = false; spentWriter = false; shutters.fill(false); changedAfterLock.fill(false);
+    emitters.fill(PHASE_HP[1] / 2); attackingEmitter = 0;
   }
   function start() {
     if (phase >= 0) return false;
@@ -64,8 +67,11 @@ export function createHelionFight(h: HelionHooks) {
     return true;
   }
   function track(p: Position) {
-    const shape: Shape = lastWrite ? 'write' : phase > 0 && cycle % 3 === 2 ? 'pulse' : 'beam';
-    const offset = phase === 1 ? (cycle % 2 ? 12 : -12) : 0;
+    const preferred = cycle % 2;
+    if (phase === 1) attackingEmitter = emitters[preferred] > 0 ? preferred : 1 - preferred;
+    const pressurePulse = phase === 2 || (phase === 1 && emitters.every(value => value > 0));
+    const shape: Shape = lastWrite ? 'write' : pressurePulse && cycle % 3 === 2 ? 'pulse' : 'beam';
+    const offset = phase === 1 ? (attackingEmitter ? 12 : -12) : 0;
     const from: JourneyPoint = [SKY_BOSS[0] + offset, SKY_BOSS[1], SKY_BOSS[2]];
     tell = { shape, from, x: p.x, z: p.z, width: shape === 'pulse' ? (phase === 2 ? 6.2 : 5) : shape === 'write' ? 3.6 : 1.65 };
     changedAfterLock.fill(false);
@@ -90,8 +96,13 @@ export function createHelionFight(h: HelionHooks) {
   }
   function hit(damage: number, weakPoint?: number) {
     if (phase < 0 || beat !== 'recovering' || !Number.isFinite(damage) || damage <= 0) return false;
-    if (phase === 1 && weakPoint !== undefined && weakPoint !== (cycle - 1) % 2) return false;
-    hp = Math.max(0, hp - damage);
+    if (phase === 1) {
+      const index = weakPoint ?? attackingEmitter;
+      if (index !== attackingEmitter || emitters[index] <= 0) return false;
+      emitters[index] = Math.max(0, emitters[index] - damage);
+      hp = emitters[0] + emitters[1];
+      if (hp > 0 && emitters[index] === 0) setBeat('waiting', .55);
+    } else hp = Math.max(0, hp - damage);
     if (hp > 0) return true;
     if (phase === 2 && !spentWriter) {
       lastWrite = true; hp = 1; setBeat('waiting', .45); return true;
@@ -102,7 +113,8 @@ export function createHelionFight(h: HelionHooks) {
   }
   return {
     get active() { return phase >= 0; }, get phase() { return phase; }, get hp() { return hp; },
-    get maxHp() { return PHASE_HP[phase] ?? 1; }, get beat() { return beat; }, get exposedEmitter() { return (cycle - 1) % 2; },
+    get maxHp() { return PHASE_HP[phase] ?? 1; }, get beat() { return beat; }, get exposedEmitter() { return attackingEmitter; },
+    emitterOnline(index: number) { return phase === 1 && emitters[index] > 0; },
     get tell() { return tell; }, get flash() { return flashFor > 0 ? flash : null; }, get flashLength() { return flashLength; },
     get shutters() { return shutters as readonly boolean[]; },
     get vulnerable() { return beat === 'recovering'; },

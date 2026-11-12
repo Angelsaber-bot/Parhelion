@@ -10,14 +10,16 @@ import { VALLEY_PROLOGUE } from './valleyPrologue';
 export const JOURNEY = {
   lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin',
   bridge: 'journey_lookback_bridge', visitor: 'journey_visitor_arrived', meal: 'journey_return_meal',
-  cargo: 'journey_cargo_claimed', signal: 'journey_rooftop_signal', compare: 'journey_compare_feed',
+  cargoCall: 'journey_cargo_dispatch', cargoSwitch: 'journey_cargo_switch', cargoPin: 'journey_cargo_coupler',
+  cargoParked: 'journey_cargo_parked', cargo: 'journey_cargo_claimed', signalLamp: 'journey_test_return_lamp', signal: 'journey_rooftop_signal', compare: 'journey_compare_feed',
   cutoff: 'journey_gate_cutoff', bypass: 'journey_gate_bypass',
   egyptRead: 'journey_egypt_riverbed', egyptWeir: 'journey_egypt_weir', egyptTie: 'journey_egypt_shear_pin', egyptDone: 'journey_egypt_water_returned',
   orleansRead: 'journey_orleans_muster', orleansFlag: 'journey_orleans_flag_handoff', orleansBattery: 'journey_orleans_disable_battery',
   orleansBrace: 'journey_orleans_battery_brace', orleansDone: 'journey_orleans_crossing_open',
   qinRead: 'journey_qin_workers', qinMarch: 'journey_qin_march', qinHalt: 'journey_qin_halt', qinTurn: 'journey_qin_turn', qinDone: 'journey_qin_public_order',
   skyBearing: 'journey_sky_bearing', skySight: 'journey_sky_sighting', handover: 'journey_local_handover', groundWatch: 'journey_ground_watch',
-  launch: 'journey_sky_launch', feed: 'journey_sky_feed', test: 'journey_sky_load_test', isolate: 'journey_sky_isolation',
+  launch: 'journey_sky_launch', feed: 'journey_sky_feed', westService: 'journey_sky_west_service', eastLatch: 'journey_sky_east_latch',
+  test: 'journey_sky_load_test', isolate: 'journey_sky_isolation',
   phase1: 'journey_helion_lens_disabled', phase2: 'journey_helion_emitters_disabled', phase3: 'journey_helion_writer_disabled',
   finish: 'journey_sky_handover', returnHome: 'journey_sky_return', epilogue: 'journey_tomorrow_bridge',
 } as const;
@@ -52,8 +54,11 @@ export const JOURNEY_STEPS = [
   step('alpha', J.bridge, ['到回望桥打开侧门，为王城访客留出一条不经审查的路。', 'Open the Lookback Bridge side gate so visitors from the kingdom can pass without the old checkpoint.'], ['机械侧门已打开。访客能从这条路回镇。', 'The mechanical side gate is open. Visitors have a way back into town.']),
   step('alpha', J.visitor, ['在桥另一侧确认王城的访客已经走出来。', 'Cross the bridge to receive the visitors from the kingdom.'], ['访客把工具箱放在桥边：“我认识路了。明天我自己来。”', 'The visitor sets a toolbox by the bridge. “I know the road now. Tomorrow I can come on my own.”'], [J.bridge]),
   step('alpha', J.meal, ['回生活馆坐下，听孟槐说说冰雪撤离之后的事。', 'Sit down at the residence and hear what happened after the winter evacuation.'], ['孟槐：“药车到了。剩下的由我们去办。来，先吃口热的。”', 'Meng Huai: “The medicine cart made it. We’ll take it from here. Have something warm first.”']),
-  step('alpha', J.cargo, ['从东渡口运回的货箱上取下被误扣的返程信标。', 'Recover the detained return beacon from the cargo at East Landing.'], ['箱里还有一张合照。信标的接口和镇里的归航灯一样。', 'There is a photograph in the crate. The beacon uses the same connection as the town light.']),
-  step('alpha', J.signal, ['用阿舟的便携接收器分离灯路和上行信号。', 'Use Azhou’s receiver to separate the lamps from the uplink.'], ['关掉上行口，路灯还亮着。信号是发往天空的。', 'The lamps stay on with the uplink disconnected. The signal was going up into the sky.'], [J.meal, J.cargo]),
+  step('alpha', J.cargoCall, ['到东渡口看一眼被错误扣下的货箱。', 'Inspect the wrongly detained cargo at East Landing.'], ['扣货车正在去封存棚。可以扳旁线道岔、射断车上的耦合销，或追到封存棚。', 'The cart is headed for the impound shed. Throw the siding switch, shoot the coupler on the cart, or follow it all the way to the shed.']),
+  step('alpha', J.cargoSwitch, ['抄近路到道岔，或从侧面射断货车的黄色耦合销。', 'Cut across to the switch or shoot the cart’s yellow coupler from the side.'], ['道岔已经切换。货车会进本地支线。', 'The switch is thrown. The cart will enter the local siding.'], [J.cargoCall]),
+  step('alpha', J.cargo, ['等货车停稳后，取回返程信标。', 'Recover the return beacon once the cart comes to a stop.'], ['箱里还有一张合照。信标的接口和镇里的归航灯一样。', 'There is a photograph in the crate. The beacon uses the same connection as the town light.'], [J.cargoParked]),
+  step('alpha', J.signalLamp, ['在生活馆先断开归航灯的照明支路。', 'Disconnect the return lamp’s lighting circuit at the residence.'], ['灯熄了，发送指示却还亮着。去接收器旁单独断开上行口。', 'The light goes out, but the transmitter stays on. Disconnect the uplink by itself at the receiver.'], [J.meal, J.cargo]),
+  step('alpha', J.signal, ['恢复照明，单独断开阿舟接收器的上行口。', 'Restore the lamp and disconnect only the uplink at Azhou’s receiver.'], ['上行曲线消失，路灯仍亮着。之前的信号是发往天空的。', 'The uplink trace disappears and the lamp stays on. That signal was being sent into the sky.'], [J.signalLamp]),
   step('alpha', J.compare, ['翻转室外校准板，与旁边监视画面对照。', 'Flip the calibration plate and compare it with the monitor beside it.'], ['现场已经翻面，屏幕却重复旧画面。根据这段画面封路，会把下堤的人困住。', 'The plate flips in front of you, but the monitor repeats an old feed. Closing the road on that evidence will trap the people below.'], [J.signal]),
   step('alpha', J.cutoff, ['切断门禁执行器，或到下堤打开居民走过的老路。', 'Disconnect the gate actuator or open the old footpath used by the residents.'], ['人群从低处出来了。天气预警仍在，中央的命令无法再落到这扇门。', 'People emerge from the lower path. The weather alert still works. Central orders can no longer close this route.'], [J.compare]),
   step('alpha', J.bypass, ['打开下堤旧路。', 'Open the old lower footpath.'], ['下堤的居民从旧路绕开闸门，天气预警继续工作。', 'The people below bypass the gate along the old road. Weather alerts stay online.'], [J.compare]),
@@ -74,7 +79,9 @@ export const JOURNEY_STEPS = [
   step('alpha', J.handover, ['把可撤销的维护权限交给回望桥上的居民。', 'Hand revocable maintenance authority to the residents at Lookback Bridge.'], ['阿舟接过联络，顾桥和许青接手地面设施。这次你登塔，他们来值守。', 'Azhou takes communications. Gu Qiao and Xu Qing take over the ground systems. They will keep watch while you climb.'], [J.skySight]),
   step('alpha', J.groundWatch, ['在塔外接入各地独立线路，准备解除归位。', 'Connect the regions’ independent circuits outside the tower to prepare for the reset.'], ['地面各处回应。切断发射器、解开塔前封锁，再登上接驳架。', 'The ground stations answer. Cut the transmitters, clear the tower approach and reach the boarding cradle.'], [J.handover]),
   step('alpha', J.launch, ['从幻日塔顶接驳架登上天穹观测冠。', 'Board the Sky Crown from the tower’s upper cradle.'], ['地面联络灯保持明亮。沿外廊进入配光喉。', 'The ground lights stay on. Follow the outer walk to the light throat.'], [J.groundWatch, A.takeover]),
-  step('sky', J.feed, ['接通独立生活线路。', 'Connect the independent life-support feed.'], ['生活线路已并联。请在另一侧试负荷。', 'The independent feed is connected. Test it under load on the far side.'], [J.launch]),
+  step('sky', J.feed, ['接通独立生活线路。', 'Connect the independent life-support feed.'], ['生活线路已并联。去西侧扳开维护旁路，或从东廊打掉执行线路的锁销。', 'The independent feed is connected. Open the service bypass on the west walk or shoot the enforcement latch from the east walk.'], [J.launch]),
+  step('sky', J.westService, ['在西侧维护廊扳开旁路，或到东廊射断黄色锁销。', 'Open the bypass on the west service walk or shoot the yellow latch on the east walk.'], ['西侧旁路已开。去负荷台验证。', 'The west service bypass is open. Verify the transfer at the load bank.'], [J.feed]),
+  step('sky', J.eastLatch, ['从东侧掠光廊射断执行线路的锁销。', 'Shoot the enforcement latch from the east light walk.'], ['东侧执行线路脱扣。去负荷台验证。', 'The east enforcement line has tripped. Verify the transfer at the load bank.'], [J.feed]),
   step('sky', J.test, ['在旁路负荷台验证切换。', 'Verify the transfer at the bypass load bank.'], ['负荷稳定。可以机械锁定生活线路，切断执行端。', 'The load holds. You can mechanically isolate life support from enforcement.'], [J.feed]),
   step('sky', J.isolate, ['拉下机械隔离锁。', 'Engage the mechanical isolation lock.'], ['生活供给独立运行。赫利昂仍握有武装与紧急写入储能。', 'Life support now runs independently. Helion still holds weapons and the emergency writer.'], [J.test]),
   step('sky', J.finish, ['把失效的紧急写入臂锁入安全槽，登记责任交接。', 'Latch the spent emergency writer into its safe slot and sign the handover.'], ['公共预警继续工作。强制写入已解除。', 'Public warning remains online. Compulsory write authority is gone.'], SKY_PHASES),
@@ -90,6 +97,7 @@ const originalFourReady = (done: ReadonlySet<string>) => done.has(A.ending) || (
 export const journeyEnabled = (done: ReadonlySet<string>) => adventureActive(done) && (done.has(VALLEY_PROLOGUE.record) || originalFourReady(done));
 export const skyPhase = (done: ReadonlySet<string>) => SKY_PHASES.findIndex(id => !done.has(id));
 export const valleyRouteOpen = (done: ReadonlySet<string>) => done.has(J.cutoff) || done.has(J.bypass);
+const skyRouteOpen = (done: ReadonlySet<string>) => done.has(J.westService) || done.has(J.eastLatch);
 export const journeyDestinations = (done: ReadonlySet<string>) => valleyRouteOpen(done)
   ? JOURNEY_DESTINATIONS.filter(destination => destination.id !== 'qin' || reached(done, J.egyptDone, J.orleansDone)) : [];
 export const journeyTowerReady = (done: ReadonlySet<string>) => !journeyEnabled(done) || done.has(J.groundWatch);
@@ -100,16 +108,25 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (id === J.lake) return done.has(A.online);
   if (id === J.bridge) return kingdomReady(done);
   if (id === J.meal) return adventureChapterComplete('winter', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
-  if (id === J.cargo) return adventureChapterComplete('blacksail', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
+  if (id === J.cargoCall) return !done.has(J.cargo) && adventureChapterComplete('blacksail', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
+  if (id === J.cargoSwitch) return !done.has(J.cargoPin) && !done.has(J.cargoParked);
+  if (id === J.signalLamp) return !done.has(J.signal);
   if (id === J.compare) return originalFourReady(done);
   if (id === J.cutoff || id === J.bypass) return !valleyRouteOpen(done);
   if (id === J.egyptRead || id === J.orleansRead) return valleyRouteOpen(done);
   if (id === J.qinRead) return reached(done, J.egyptDone, J.orleansDone);
   if (id === J.skyBearing || id === J.skySight) return reached(done, J.qinDone, J.egyptDone, J.orleansDone);
+  if (id === J.westService || id === J.eastLatch) return !skyRouteOpen(done) && !done.has(J.test);
+  if (id === J.test) return skyRouteOpen(done);
   return true;
 }
 
 export function commitJourneyStep(id: string, done: Set<string>): Localized | null {
+  if (id === J.cargoPin) {
+    if (!journeyStepReady(J.cargoSwitch, done)) return null;
+    done.add(id);
+    return ['耦合销已断，货车制动。靠近停稳的货箱。','The coupler breaks and the cart brakes. Approach the crate when it stops.'];
+  }
   const actual = id === J.lakePin ? J.lakeWinch : id === J.egyptTie ? J.egyptWeir : id === J.orleansBrace ? J.orleansBattery : id;
   if (!journeyStepReady(actual, done)) return null;
   if (id !== actual) done.add(id);
@@ -128,6 +145,7 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
   if (done.has(J.launch)) {
     if (here !== 'sky') return at(J.launch);
     if (!done.has(J.feed)) return at(J.feed);
+    if (!done.has(J.test) && !skyRouteOpen(done)) return at(J.westService);
     if (!done.has(J.test)) return at(J.test);
     if (!done.has(J.isolate)) return at(J.isolate);
     return skyPhase(done) >= 0 ? objective('sky', SKY_MARKERS.start, ['前往承日台迎战赫利昂。锁定后改变遮板，或离开预警射界，趁收势射击核心。', 'Face Helion on the Crown deck. Turn a shutter after lock or leave the marked attack lane, then shoot during recovery.']) : at(J.finish);
@@ -144,7 +162,7 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
     if (!done.has(J.qinRead)) return at(J.qinRead);
     if (!done.has(J.qinMarch)) return at(J.qinMarch);
     if (!done.has(J.qinHalt)) return at(J.qinHalt);
-    if (!done.has(QIN_ARMY.flag)) return objective('qin', QIN_ARMY.levers[0].id, at(J.qinTurn).text);
+    if (!done.has(QIN_ARMY.flag)) return objective('qin', QIN_ARMY.levers[1].id, at(J.qinTurn).text);
     return at(J.qinDone);
   }
   if (valleyRouteOpen(done)) {
@@ -166,8 +184,11 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
   if (fresh && kingdomReady(done) && !done.has(J.visitor)) return at(done.has(J.bridge) ? J.visitor : J.bridge);
   if (originalFourReady(done) || (kingdomReady(done) && (fresh ? midwayReady(done) : originalFourReady(done)))) {
     if (!done.has(J.meal)) return at(J.meal);
-    if (!done.has(J.cargo)) return at(J.cargo);
-    if (!done.has(J.signal)) return at(J.signal);
+    if (!done.has(J.cargo)) {
+      if (!done.has(J.cargoCall)) return at(J.cargoCall);
+      return at(done.has(J.cargoSwitch) || done.has(J.cargoPin) || done.has(J.cargoParked) ? J.cargo : J.cargoSwitch);
+    }
+    if (!done.has(J.signal)) return at(done.has(J.signalLamp) ? J.signal : J.signalLamp);
     if (originalFourReady(done)) return at(done.has(J.compare) ? J.cutoff : J.compare);
   }
   return null;
