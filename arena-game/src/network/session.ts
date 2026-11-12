@@ -11,6 +11,7 @@ import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../
 import type { Loadout, UtilityId } from '../../shared/content.ts';
 import { isWorkerUrl, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../../shared/protocol.ts';
 import type { Input } from '../../shared/sim.ts';
+import type { MatchRecord } from '../../shared/weaponStats.ts';
 
 export interface Session {
   readonly id: string;
@@ -28,6 +29,8 @@ export interface Session {
   match?: Match;
   /** Training range only: live loadout swaps and a dummy reset. */
   practice?: PracticeControls;
+  /** Offline only: a finished (or quit) round's human weapon telemetry. */
+  onStats?: (record: MatchRecord) => void;
 }
 export interface PracticeControls {
   apply(choice: { loadout: Loadout; utility: UtilityId; skins: number[] }): boolean;
@@ -160,6 +163,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
       match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
+  match.stats.meta = { source: 'offline', botSkill: difficulty, host: typeof location === 'undefined' ? undefined : location.hostname };
   return runLocal(match, id);
 }
 
@@ -183,11 +187,12 @@ function runLocal(match: Match, id: string): Session {
     send: (inputs) => match.queueInputs(id, inputs),
     onSnapshot: () => {},
     onClose: () => {},
-    close: () => clearInterval(timer),
+    close: () => { clearInterval(timer); match.flushStats(); deliver(); },
     rematch: () => match.rematch(),
     setPaused: (p) => { paused = p; last = performance.now(); acc = 0; },
     match,
   };
+  const deliver = () => { for (const r of match.stats.drain()) { try { s.onStats?.(r); } catch { /* telemetry never breaks play */ } } };
   const timer = setInterval(() => {
     if (paused) return;
     const now = performance.now();
@@ -198,6 +203,7 @@ function runLocal(match: Match, id: string): Session {
       match.step();
       if (match.tick % SNAPSHOT_EVERY === 0) s.onSnapshot(match.snapshot());
     }
+    deliver();
   }, 4);
   return s;
 }

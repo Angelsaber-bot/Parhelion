@@ -17,6 +17,11 @@ class_name = "ArenaRoomDO"
 name = "WORLD"
 class_name = "WorldRoomDO"
 
+# Human-only Arena weapon telemetry (GET/POST /stats)
+[[durable_objects.bindings]]
+name = "STATS"
+class_name = "ArenaStats"
+
 # SQLite-backed Durable Objects are available on the Workers free plan
 [[migrations]]
 tag = "v1"
@@ -25,3 +30,7 @@ new_sqlite_classes = ["Lobby", "ArenaRoomDO"]
 [[migrations]]
 tag = "v2"
 new_sqlite_classes = ["WorldRoomDO"]
+
+[[migrations]]
+tag = "v3"
+new_sqlite_classes = ["ArenaStats"]

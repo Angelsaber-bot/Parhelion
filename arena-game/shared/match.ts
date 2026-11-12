@@ -12,6 +12,7 @@ import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { lineOfSight, raycastMap, spawnAnchors, type ArenaMap, type MapAnchor, type Vec3 } from './map.ts';
 import { aimDir, applyInput, clonePlayer, newPlayer, playerEye, quant, type Input, type PlayerState, type SimEvent } from './sim.ts';
+import { AIM_CONE, StatsCollector, type StatsPlayer } from './weaponStats.ts';
 
 export type Phase = 'waiting' | 'countdown' | 'live' | 'ended';
 /** Spawn facing: toward the map centre. Clients derive it from the spawn position, because later
@@ -125,6 +126,8 @@ export class Match {
   private nextShield = 1;
   /** Last tick each spawn anchor was used. */
   private spawnUse = new Map<string, number>();
+  /** Human-only weapon telemetry; off until a host sets `stats.meta` (never on the training range). */
+  readonly stats = new StatsCollector();
 
   constructor(readonly map: ArenaMap, readonly layout: TeamLayout) {}
 
@@ -160,6 +163,7 @@ export class Match {
       queue: [], credits: 0, controller, kills: 0, deaths: 0, respawn: 0, spawnProtectedUntilTick: 0, meleeReadyTick: 0, melee: null,
     };
     this.slots.set(id, slot);
+    this.stats.join(statsPlayer(slot));
     this.spawn(slot);
   }
 
@@ -226,6 +230,9 @@ export class Match {
       }
     }
 
+    if (this.stats.on && this.phase === 'live') {
+      for (const slot of this.slots.values()) if (slot.state.alive && !slot.info.bot) this.stats.held(slot.state.id, slot.state.weapon);
+    }
     for (const slot of this.slots.values()) {
       if (!slot.state.alive && slot.respawn > 0 && --slot.respawn === 0) this.spawn(slot);
     }
@@ -275,6 +282,9 @@ export class Match {
   }
 
   private setPhase(phase: Phase, ticks: number, winner?: Team | 'draw'): void {
+    if (this.phase === 'live' && phase !== 'live') {
+      this.stats.end(this.tick, phase === 'ended' ? 'finished' : 'abandoned', winner ?? null, this.score, this.map.data.mapId, this.layout);
+    }
     if (this.phase === 'ended' && phase !== 'ended') this.resetRound();
     this.phase = phase;
     this.phaseT = ticks;
@@ -298,6 +308,12 @@ export class Match {
   private startLive(): void {
     this.resetRound();
     this.setPhase('live', MATCH_TICKS);
+    this.stats.begin(this.tick, [...this.slots.values()].map(statsPlayer));
+  }
+
+  /** Close the running round's telemetry early (the host is shutting down or the player quit). */
+  flushStats(): void {
+    if (this.phase === 'live') this.stats.end(this.tick, 'abandoned', null, this.score, this.map.data.mapId, this.layout);
   }
 
   /**
@@ -355,6 +371,7 @@ export class Match {
     if (home) Object.assign(p, { x: home.x, y: home.y, z: home.z, yaw: home.yaw });
     slot.spawnProtectedUntilTick = home ? this.tick : this.tick + SPAWN_PROTECTION_TICKS;
     slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
+    this.stats.forgetVictim(p.id);
     this.events.push({ t: 'spawn', id: p.id });
   }
 
@@ -370,6 +387,7 @@ export class Match {
         }
         slot.meleeReadyTick = this.tick + w.interval;
         this.endProtection(slot);
+        if (!slot.info.bot) this.stats.swing(id, ev.weapon);
         slot.melee = { weapon: ev.weapon, impactTick: this.tick + w.windup!, yaw: ev.yaw, pitch: ev.pitch };
         this.events.push({ t: 'meleeStart', id, w: ev.weapon, windup: w.windup!, yaw: ev.yaw, pitch: ev.pitch });
         break;
@@ -420,7 +438,10 @@ export class Match {
     const w = WEAPONS[ev.weapon];
     const pos = this.rewound(ev.view);
     const ends: Vec3[] = [];
-    const damage = new Map<string, { dmg: number; head: boolean }>();
+    const damage = new Map<string, { dmg: number; head: boolean; t: number }>();
+    const human = this.stats.on && !slot.info.bot;
+    const aimDist = human ? this.aimedDistance(shooter, ev.origin, ev.dirs, pos) : null;
+    let pelletHits = 0, shieldHit = false;
     for (const d of ev.dirs) {
       let best = raycastMap(this.map, ev.origin, d, w.range);
       if (best === Infinity) best = w.range;
@@ -443,17 +464,46 @@ export class Match {
       // Smoke is cover: blind fire from outside into a cloud lands for less.
       if (target.kind === 'player') { const v = pos.get(target.id)!; if (insideSmoke(this.smokes, [v[0], v[1] + 1, v[2]]) && !insideSmoke(this.smokes, ev.origin)) dmg *= SMOKE.cover; }
       if (target.kind === 'shield') {
+        shieldHit = true;
         this.damageShield(target.sh, dmg);
       } else {
-        const acc = damage.get(target.id) ?? { dmg: 0, head: false };
+        pelletHits++;
+        const acc = damage.get(target.id) ?? { dmg: 0, head: false, t: best };
         acc.dmg += dmg * (target.head ? w.headMul : 1);
         acc.head ||= target.head;
+        acc.t = Math.min(acc.t, best);
         damage.set(target.id, acc);
       }
     }
     this.events.push({ t: 'shot', id: shooter.id, w: ev.weapon, from: ev.origin.map(quant) as Vec3, to: ends });
+    if (human) {
+      let hitDist: number | null = null, head = false;
+      for (const v of damage.values()) { hitDist = Math.min(hitDist ?? Infinity, v.t); head ||= v.head; }
+      this.stats.shot(shooter.id, ev.weapon, { pellets: ev.dirs.length, pelletHits, head, shield: shieldHit, hitDist, aimDist });
+    }
     if (this.phase === 'ended') return;
-    for (const [vid, { dmg, head }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon);
+    for (const [vid, { dmg, head, t }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon, t);
+  }
+
+  /** Telemetry only: distance to the visible enemy nearest the aim line, inside AIM_CONE. */
+  private aimedDistance(shooter: PlayerState, origin: Vec3, dirs: Vec3[], pos: Map<string, HistoricalPose>): number | null {
+    const aim = dirs[0];
+    if (!aim) return null;
+    let best: number | null = null, bestCos = Math.cos(AIM_CONE);
+    for (const [id, s] of this.slots) {
+      if (id === shooter.id || s.info.team === shooter.team) continue;
+      const p = pos.get(id);
+      if (!p || !p[3]) continue;
+      const h = playerHitbox(p[4]);
+      const chest: Vec3 = [p[0], p[1] + (h.bodyBottom + h.bodyTop) / 2, p[2]];
+      const d: Vec3 = [chest[0] - origin[0], chest[1] - origin[1], chest[2] - origin[2]];
+      const len = Math.hypot(d[0], d[1], d[2]);
+      if (len < 1e-6) continue;
+      const cos = (d[0] * aim[0] + d[1] * aim[1] + d[2] * aim[2]) / len;
+      if (cos < bestCos || !lineOfSight(this.map, origin, chest)) continue;
+      bestCos = cos; best = len;
+    }
+    return best;
   }
 
   /** One current-time contact in a 3D arc swept from the last checked heading to the current one.
@@ -519,11 +569,17 @@ export class Match {
     if (!attack.struck) this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
     attack.struck = true;
     if (this.phase === 'ended') return !!(victim || shield);
+    const human = !slot.info.bot;
     if (shield) {
+      if (human) this.stats.swingHit(p.id, attack.weapon, 'shield');
       this.damageShield(shield, w.damage);
       return true;
     }
-    if (victim) { this.damage(slot, victim, w.damage, false, attack.weapon); return true; }
+    if (victim) {
+      if (human) this.stats.swingHit(p.id, attack.weapon, 'player');
+      this.damage(slot, victim, w.damage, false, attack.weapon, nearest);
+      return true;
+    }
     return false;
   }
 
@@ -552,13 +608,15 @@ export class Match {
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
 
-  private damage(from: Pick<Slot, 'kills'> & { state: { id: string; team: Team } }, victimId: string, dmg: number, head: boolean, weapon: number): void {
+  private damage(from: Pick<Slot, 'kills'> & { state: { id: string; team: Team } }, victimId: string, dmg: number, head: boolean, weapon: number, dist: number | null = null): void {
     // Warmup/countdown shots may be visible, but cannot pre-populate the next round's score.
     if (this.phase !== 'live') return;
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
     if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
+    const applied = Math.min(v.state.hp, dmg);
     v.state.hp = Math.max(0, v.state.hp - dmg);
+    this.stats.damage(from.state.id, victimId, weapon, applied, head, v.state.hp <= 0, this.tick, dist);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
     v.state.alive = false;
@@ -662,6 +720,10 @@ export class Match {
       grenades: this.grenades.map((g) => ({ ...g })), smokes: this.smokes.map((s) => ({ ...s })), events,
     };
   }
+}
+
+function statsPlayer(s: Slot): StatsPlayer {
+  return { id: s.state.id, team: s.info.team, char: s.state.char, loadout: s.state.loadout, utility: s.info.utility ?? 'frag', bot: s.info.bot };
 }
 
 const num = (v: unknown, lo: number, hi: number): number | null =>

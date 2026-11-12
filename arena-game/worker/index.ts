@@ -4,20 +4,29 @@
 //   client → {t:'input', d:Input[]} | {t:'rematch'}
 //   server → {t:'welcome', d:{id,tick,map,rulesVersion}} | {t:'snap', d:Snapshot} | {t:'error', d:string}
 // Lobby (one DO) keeps open rooms per layout/map/bots key; each ArenaRoomDO runs one 60 Hz match.
+// Weapon telemetry (human shooters only, no names) lands in one ArenaStats DO:
+//   GET  /stats?since=<ms>&limit=<n>  → {records: MatchRecord[]} oldest first
+//   POST /stats  (offline browser rounds; online rooms write server-side)
 
 import { DurableObject } from 'cloudflare:workers';
 import { TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
 import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
+import { sanitizeRecord, type MatchRecord } from '../shared/weaponStats.ts';
 
 interface Env {
   LOBBY: DurableObjectNamespace<Lobby>;
   ROOM: DurableObjectNamespace<ArenaRoomDO>;
   WORLD: DurableObjectNamespace<WorldRoomDO>;
+  STATS: DurableObjectNamespace<ArenaStats>;
 }
 
+const statsStore = (env: Env) => env.STATS.get(env.STATS.idFromName('stats'));
+const MAX_STATS_BODY = 64 * 1024;
+
 const CORS = { 'access-control-allow-origin': '*' };
+const JSON_HEADERS = { ...CORS, 'content-type': 'application/json' };
 
 function parseOptions(url: URL): Partial<JoinOptions> {
   try { const value: unknown = JSON.parse(url.searchParams.get('o') ?? '{}'); return value && typeof value === 'object' && !Array.isArray(value) ? value as Partial<JoinOptions> : {}; } catch { return {}; }
@@ -32,6 +41,22 @@ export default {
     const url = new URL(req.url);
     if (url.pathname === '/' || url.pathname === '/health') {
       return new Response('Parhelion Arena server OK', { headers: CORS });
+    }
+    if (url.pathname === '/stats') {
+      if (req.method === 'OPTIONS') return new Response(null, { headers: { ...CORS, 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' } });
+      if (req.method === 'GET') {
+        const since = Number(url.searchParams.get('since')) || 0, limit = Number(url.searchParams.get('limit')) || 500;
+        return new Response(JSON.stringify({ records: await statsStore(env).list(since, limit) }), { headers: JSON_HEADERS });
+      }
+      if (req.method !== 'POST') return new Response('method not allowed', { status: 405, headers: CORS });
+      const body = await req.text();
+      if (body.length > MAX_STATS_BODY) return new Response('too large', { status: 413, headers: CORS });
+      let raw: unknown;
+      try { raw = JSON.parse(body); } catch { return new Response('bad json', { status: 400, headers: CORS }); }
+      const record = sanitizeRecord(raw, 'offline');
+      if (!record) return new Response('bad record', { status: 400, headers: CORS });
+      await statsStore(env).add(record);
+      return new Response(null, { status: 204, headers: CORS });
     }
     if (url.pathname === '/world') {
       // World co-op: a plain relay room per 5-character code (see worldRelay.ts).
@@ -112,7 +137,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
     const pair = new WebSocketPair();
     const [client, ws] = [pair[0], pair[1]];
     ws.accept();
-    this.core ??= new RoomCore(opts);
+    this.core ??= new RoomCore(opts, 'online');
     const id = `p${++this.seq}-${crypto.randomUUID().slice(0, 6)}`;
     try {
       const welcome = this.core.join(id, opts);
@@ -157,13 +182,23 @@ export class ArenaRoomDO extends DurableObject<Env> {
           for (const ws of this.sockets.values()) { try { ws.send(data); } catch { /* closing */ } }
         }
       }
+      this.saveStats(core);
     }, dt);
+  }
+
+  /** Server-side human weapon telemetry; never blocks the tick. */
+  private saveStats(core: RoomCore) {
+    for (const r of core.match.stats.drain()) {
+      const record = sanitizeRecord(r, 'online');
+      if (record) void statsStore(this.env).add(record).catch(() => {});
+    }
   }
 
   private drop(id: string) {
     if (!this.sockets.delete(id)) return;
     this.core?.leave(id);
     if (this.sockets.size === 0) {
+      if (this.core) { this.core.match.flushStats(); this.saveStats(this.core); }
       if (this.timer) clearInterval(this.timer);
       this.timer = null;
       this.core = null; // next player to get this room name starts fresh
@@ -174,6 +209,27 @@ export class ArenaRoomDO extends DurableObject<Env> {
   private report() {
     const lobby = this.env.LOBBY.get(this.env.LOBBY.idFromName('lobby'));
     return lobby.report(this.name, this.sockets.size);
+  }
+}
+
+const STATS_CAP = 3000;
+const statsKey = (at: number) => `r:${String(Math.max(0, Math.floor(at))).padStart(15, '0')}`;
+
+/** Rolling store of the latest STATS_CAP match records, one storage key each. */
+export class ArenaStats extends DurableObject<Env> {
+  async add(record: MatchRecord): Promise<void> {
+    const store = this.ctx.storage;
+    await store.put(`${statsKey(record.at)}:${crypto.randomUUID().slice(0, 8)}`, record);
+    const n = ((await store.get<number>('count')) ?? 0) + 1;
+    if (n <= STATS_CAP + 100) { await store.put('count', n); return; }
+    const oldest = [...(await store.list({ prefix: 'r:', limit: n - STATS_CAP })).keys()];
+    await store.delete(oldest);
+    await store.put('count', n - oldest.length);
+  }
+
+  async list(since: number, limit: number): Promise<MatchRecord[]> {
+    const rows = await this.ctx.storage.list<MatchRecord>({ prefix: 'r:', start: statsKey(since), limit: Math.max(1, Math.min(1000, limit | 0)) });
+    return [...rows.values()];
   }
 }
 

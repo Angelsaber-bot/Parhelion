@@ -7,6 +7,7 @@ import { Bot, BOT_SKILL } from './bot.ts';
 import { SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
 import { LAYOUTS, RULES_VERSION, assertRulesVersion, type JoinOptions } from './protocol.ts';
+import type { StatsSource } from './weaponStats.ts';
 
 let botSeed = 1;
 
@@ -17,13 +18,15 @@ export class RoomCore {
   readonly fillBots: boolean;
   readonly capacity: number;
 
-  constructor(options: Partial<JoinOptions>) {
+  /** `statsSource` turns on human-only weapon telemetry for the room's matches. */
+  constructor(options: Partial<JoinOptions>, statsSource?: StatsSource) {
     this.layout = LAYOUTS.includes(options.layout as TeamLayout) ? options.layout as TeamLayout : '1v1';
     this.mapId = mapIdOf(options.map);
     this.match = new Match(getMap(this.mapId), this.layout);
     this.fillBots = !!options.bots;
     const cap = TEAM_CAPACITY[this.layout];
     this.capacity = cap.A + cap.B;
+    if (statsSource) this.match.stats.meta = { source: statsSource, botSkill: this.fillBots ? 'normal' : 'none' };
     if (this.fillBots) this.topUpBots();
   }
 
@@ -57,7 +60,10 @@ export class RoomCore {
   }
 
   leave(id: string) {
-    this.match.removePlayer(id);
+    // The last human leaving closes the round's telemetry before a bot takes the seat.
+    const m = this.match, slot = m.slots.get(id);
+    if (slot && !slot.info.bot && ![...m.slots.values()].some((s) => s !== slot && !s.info.bot)) m.flushStats();
+    m.removePlayer(id);
     if (this.fillBots) this.topUpBots();
   }
 

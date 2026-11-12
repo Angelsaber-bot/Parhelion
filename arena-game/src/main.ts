@@ -17,6 +17,7 @@ import {initialGraphics,mountGraphicsControl} from './rendering/graphics.ts';
 import {FrameGate,worldRenderVisible} from './rendering/renderScheduling.ts';
 import { ArenaScene } from './rendering/scene.ts';
 import { joinOnline, startOffline, startRange, type Session } from './network/session.ts';
+import { postStats } from './network/stats.ts';
 import { RANGE_MAP_ID } from '../shared/trainingRange.ts';
 import { GUN_IDS, MELEE_IDS, type Loadout, type UtilityId } from '../shared/content.ts';
 import asterThumb from './assets/maps/aster.webp';
@@ -282,6 +283,7 @@ $('play').onclick = async () => {
     if (!current()) return;
     attempt.phase = 'join'; renderStartupStatus();
     ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, difficulty);
+    if (attempt.mode === 'offline') ownedSession.onStats = postStats;
     if (!current()) { closeOwned(); return; }
     attempt.phase = 'game'; renderStartupStatus();
     const session = ownedSession;
