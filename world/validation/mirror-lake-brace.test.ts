@@ -6,6 +6,7 @@ import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import type { SettlementPlacement } from '../src/settlements/types';
 import { ADVENTURE as A } from '../src/story/openWorldCampaign';
 import { VALLEY_PROLOGUE } from '../src/story/valleyPrologue';
+import { VALLEY_FIELD as F } from '../src/story/valleyField';
 import { commitJourneyStep, JOURNEY as J, journeyStepReady, worldJourneyGuide } from '../src/story/worldJourney';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
@@ -52,7 +53,7 @@ test('actual World input completes Mirror Lake, West Ridge, and the optional win
   } });
   const w = h.world, d = h.window.document;
   let now = 0;
-  const frame = (count: number) => { for (let i = 0; i < count; i++) h.frame(now += 1000 / 60); };
+  const frame = (count: number, step = 1000 / 60) => { for (let i = 0; i < count; i++) h.frame(now += step); };
   const interact = () => {
     const code = w.settings.bindingsFor('interact')[0];
     for (const type of ['keydown', 'keyup']) d.body.dispatchEvent(new h.window.KeyboardEvent(type, { code, bubbles: true }));
@@ -112,6 +113,15 @@ test('actual World input completes Mirror Lake, West Ridge, and the optional win
     approach(J.mealSketch);
     interact();
     assert.ok(w.done.has(J.mealSketch));
+    const cart = w.scene.getObjectByName('WinterReturnMedicineCart')!;
+    const crate = w.scene.getObjectByName('WinterReturnMedicineDelivered')!;
+    assert.ok(cart.visible, 'a usable delivery lane was found on the production map');
+    for (let i = 0; i < 65 && !crate.visible; i++) {
+      frame(1, 1000 / 12);
+      const p = cart.position.clone().add(new Vector3(0, .1, 0));
+      assert.ok(w.combat.geometry.clear(p, .32, .9), `medicine route blocked at ${p.toArray()}`);
+    }
+    assert.ok(crate.visible);
     assert.deepEqual(h.errors, []);
   } finally { await h.close(); }
 });
@@ -177,4 +187,82 @@ test('merged World fixture draws can be culled independently in each distant reg
       assert.deepEqual(visible, groups.map((_candidate, i) => i === index));
     }
   } finally { site.dispose(); }
+});
+
+test('winter medicine moves to the residence stock point and returns there on a completed save', () => {
+  const create = () => createWorldJourneySites({ position: [0, 5, 0] } as SettlementPlacement, () => 4.5, () => true);
+  const site = create(), restored = create();
+  const done = new Set([...initial, A.arrived, 'napoleon_contract', J.bridge, J.visitor]);
+  try {
+    site.apply(done);
+    const cart = site.root.getObjectByName('WinterReturnMedicineCart')!;
+    const crate = site.root.getObjectByName('WinterReturnMedicineDelivered')!;
+    const seat = site.markers.find(marker => marker.id === J.mealWindow)!;
+    const player = new Vector3(...seat.p);
+    const start = cart.position.clone();
+    assert.equal(crate.visible, false);
+    for (let i = 0; i < 30; i++) site.update(.1, player);
+    assert.ok(cart.position.distanceTo(start) > 2);
+    for (let i = 0; i < 50; i++) site.update(.1, player);
+    assert.equal(crate.visible, true);
+    assert.ok(commitJourneyStep(J.mealWindow, done));
+    restored.apply(done);
+    assert.equal(restored.root.getObjectByName('WinterReturnMedicineDelivered')!.visible, true);
+    assert.deepEqual(restored.root.getObjectByName('WinterReturnMedicineCart')!.position.toArray(), cart.position.toArray());
+  } finally {
+    site.dispose();
+    restored.dispose();
+  }
+});
+
+test('shooting the Mirror Lake clevis through the actual rifle input also signs Saber’s pact', async () => {
+  const h = await bootWorldWithoutGpu({ deterministic: true, initialStorage: {
+    [WORLD_PROGRESS_KEY]: JSON.stringify({ done: [...initial, J.lake], found: [] }),
+  } });
+  const w = h.world, d = h.window.document;
+  let now = 0;
+  const frame = (count: number) => { for (let i = 0; i < count; i++) h.frame(now += 1000 / 60); };
+  try {
+    (d.getElementById('start') as HTMLElement).click();
+    frame(3);
+    const pin = w.scene.getObjectByName('TGT_' + J.lakePin)!;
+    assert.ok(pin?.visible);
+    const aim = pin.getWorldPosition(new Vector3());
+    const floor = w.combat.geometry.ground(aim.x + 3.2, aim.z + .75, aim.y + 1)!;
+    assert.ok(floor, 'dry firing position on the east bank');
+    w.player.teleport(floor.point.x, floor.point.y + .15, floor.point.z, Math.PI / 2);
+    frame(22);
+    assert.equal(w.contract.recruited, false);
+    const canvas = d.getElementById('view')!;
+    for (let i = 0; i < 3 && !w.done.has(J.lakePin); i++) {
+      w.camera.position.copy(w.player.pos).add(new Vector3(0, 1.45, 0));
+      w.camera.lookAt(aim);
+      w.camera.updateMatrixWorld(true);
+      for (const type of ['mousedown', 'mouseup'])
+        canvas.dispatchEvent(new h.window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
+      frame(14);
+    }
+    assert.ok(w.done.has(J.lakePin));
+    assert.ok(w.done.has(J.lakeWinch));
+    assert.ok(w.contract.recruited);
+    assert.ok(w.contract.isFollowing('saber'));
+    assert.deepEqual(h.errors, []);
+  } finally { await h.close(); }
+});
+
+test('returning from Egypt unlocks H09 observations while the Sky handover still requires all three realms', () => {
+  const done = new Set([...initial, F.nightDone, J.egyptDone]);
+  assert.equal(worldJourneyGuide('alpha', done)?.targetId, F.roofSight);
+  assert.equal(commitJourneyStep(J.skyBearing, done), null);
+  assert.ok(commitJourneyStep(F.roofSight, done));
+  assert.equal(worldJourneyGuide('alpha', done)?.targetId, J.skyBearing);
+  assert.ok(commitJourneyStep(J.skyBearing, done));
+  assert.equal(worldJourneyGuide('alpha', done)?.targetId, J.skySight);
+  assert.ok(commitJourneyStep(J.skySight, done));
+  done.add(F.drillDone);
+  assert.equal(commitJourneyStep(J.handover, done), null);
+  done.add(J.orleansDone);
+  assert.equal(commitJourneyStep(J.handover, done), null);
+  done.add(J.qinDone);
+  assert.ok(commitJourneyStep(J.handover, done));
 });
