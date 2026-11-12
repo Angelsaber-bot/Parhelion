@@ -74,9 +74,11 @@ import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyS
 import { createValleyStoryScene } from './environment/valleyStoryScene';
 import { createValleyPrologueScene } from './environment/valleyPrologueScene';
 import { createWorldJourneySites } from './environment/worldJourneySites';
+import { createRealmClimaxSites } from './environment/realmClimaxSites';
+import { climaxMarker, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
 import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_LANDING } from './environment/skyCrownScene';
 import { createHelionFight } from './story/helionFight';
-import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
+import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
 import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
 import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
@@ -542,6 +544,25 @@ addEventListener('pagehide', event => { if (!event.persisted) { worldJourneySite
 const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 world.add(orleansWorksScene.root);colliders.push(orleansWorksScene.collider);layout.markers.push(...orleansWorksScene.markers);
 const orleansWorksMarkerIds=new Set(orleansWorksScene.markers.map(m=>m.id));
+const realmClimaxSites = worldJourneySites ? createRealmClimaxSites({
+  egypt: worldJourneySites.markers.find(m => m.id === REALM_HANDOVER.egypt)!,
+  orleans: worldJourneySites.markers.find(m => m.id === REALM_HANDOVER.orleans)!,
+  qin: worldJourneySites.markers.find(m => m.id === REALM_HANDOVER.qin)!,
+}, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null,
+p => residentQueries.clear(p, .38, 1.8), (a, b) => {
+  const delta = b.clone().sub(a);
+  return !residentQueries.cast(a, delta, Math.max(0, delta.length() - .1));
+}) : null;
+const realmStationByMarker = new Map<string, { region: RealmClimaxId; station: ClimaxStation | 'start' }>();
+if (realmClimaxSites) {
+  scene.add(realmClimaxSites.root); layout.markers.push(...realmClimaxSites.markers); targets.push(...realmClimaxSites.targets);
+  for (const region of REALM_CLIMAX_IDS) for (const station of ['start', 'west', 'east'] as const) {
+    const id = climaxMarker(region, station);
+    realmStationByMarker.set(id, { region, station }); worldJourneyMarkerIds.add(id);
+  }
+  addEventListener('pagehide', event => { if (!event.persisted) realmClimaxSites.dispose(); });
+}
+let activeRealmClimax: ReturnType<typeof createRealmClimax> | null = null;
 // 奥尔良外圈: the mill wheel, the windmill sails and the region's own air.
 const orleansOutskirts=createOrleansOutskirtsScene();world.add(orleansOutskirts.root);
 const orleansAtmosphere=createOrleansAtmosphere();world.add(orleansAtmosphere.root);
@@ -716,6 +737,14 @@ function valleyGuide() {
 }
 function journeyGuide() {
   const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
+  if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax) {
+    const fight = activeRealmClimax;
+    const station = (['west', 'east'] as const).find(id => fight.stationReady(id));
+    const targetId = climaxMarker(fight.id, station ?? 'start');
+    const p = markers.get(targetId)?.p;
+    if (p) return { region: fight.id, targetId, p, title: fight.definition.title,
+      text: (station ? fight.stationText(station) : ['躲开标线，攻击战场上的目标。', 'Evade the marked attack and shoot the exposed target.']) as [string, string] };
+  }
   const guide = worldJourneyGuide(here, done);
   if (guide && here === 'alpha' && journeyDestinations(done).some(destination => destination.id === guide.region)) {
     const p = markers.get(JOURNEY_DISPATCH)?.p;
@@ -726,6 +755,9 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  const realm = realmStationByMarker.get(id);
+  if (realm) return realm.station === 'start' ? !activeRealmClimax && journeyClimaxReady(realm.region, done)
+    : activeRealmClimax?.id === realm.region && activeRealmClimax.stationReady(realm.station);
   if (id === JOURNEY_DISPATCH) return journeyDestinations(done).length > 0;
   if (id === SKY_MARKERS.cache) return insideSkyCrown(player.pos) && !helionFight.active;
   if (id === SKY_MARKERS.start) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate) && skyPhase(done) >= 0 && !helionFight.active;
@@ -735,6 +767,11 @@ function journeyMarkerActive(id: string) {
 }
 function interactionLabel(marker: Marker) {
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const realm = realmStationByMarker.get(marker.id);
+    if (realm) {
+      const line = realm.station === 'start' ? REALM_CLIMAXES[realm.region].start : activeRealmClimax?.stationText(realm.station);
+      return line ? bilingual(...line) : marker.label;
+    }
     if (marker.id === JOURNEY_DISPATCH) return bilingual(marker.label, 'Dispatch · Egypt, Orleans and Qin');
     const step = journeyStepById.get(marker.id);
     if (step) return bilingual(marker.label, step.text[1]);
@@ -782,6 +819,7 @@ function applyWorldState() {
   applyValleyStory();
   if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
+  if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
   applyCampaignState();
   applyFalseDawnState();
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
@@ -796,6 +834,7 @@ function applyWorldState() {
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
+    if(t.userData.realmClimax)continue;
     const id = t.userData.target as string;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
     if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) continue;
@@ -1321,6 +1360,7 @@ function resetProgress() {
   if(typeof homeTown!=='undefined')homeTown?.activities.reset();
   campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset();
   if (typeof helionFight !== 'undefined') helionFight.reset();
+  if (typeof stopRealmClimax === 'function') stopRealmClimax();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
   clearStartOverrides(params);
@@ -1544,6 +1584,11 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+    if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
+      const site = realmClimaxSites.sites[activeRealmClimax.id];
+      stopRealmClimax(); player.teleport(site.start[0], site.start[1] + .3, site.start[2]); combat.refillAmmo();
+      toast(bilingual('回到接应点 · 已完成的战斗阶段保留', 'Returned to the rally point · Completed phases are saved')); return;
+    }
     if (typeof helionFight !== 'undefined' && helionFight.active) { helionFight.reset(); combat.refillAmmo(); return; }
     // Co-op: get back up beside a partner who is still standing (not mid boss/story fight).
     if (typeof coop !== 'undefined' && coop.session.paired && (coop.avatar.track.latest?.hp ?? 0) > 0 && travelToPartner() === null) return;
@@ -1698,7 +1743,7 @@ audioGroup.append(volumeLabel,muteLabel,fxLabel);document.querySelector('#world-
 addEventListener('pagehide', event => { if (!event.persisted) { actions?.dispose(); actionHud.dispose(); } });
 function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
-  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active), threatened, quietSeconds: combat.state.quietFor,
+  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active) || (typeof activeRealmClimax !== 'undefined' && !!activeRealmClimax), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
     carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
@@ -1970,8 +2015,70 @@ function saveJourneyProgress() {
   if (!save()) toast(bilingual('本次进度未保存，请在设置里重试。','Progress could not be saved. Retry in Settings.'));
   applyWorldState();
 }
+const realmClimaxHud = document.createElement('div');
+realmClimaxHud.id = 'realm-climax-status'; realmClimaxHud.className = 'hud'; realmClimaxHud.hidden = true;
+Object.assign(realmClimaxHud.style, { top: '78px', left: '50%', transform: 'translateX(-50%)', width: 'min(440px, 82vw)', textAlign: 'center' });
+const realmName = document.createElement('div'), realmHealth = document.createElement('progress'), realmCue = document.createElement('div');
+realmHealth.style.width = '100%'; realmClimaxHud.append(realmName, realmHealth, realmCue); document.body.append(realmClimaxHud);
+addEventListener('pagehide', event => { if (!event.persisted) realmClimaxHud.remove(); });
+
+function stopRealmClimax() {
+  const fight = activeRealmClimax;
+  if (!fight) return;
+  fight.reset(); realmClimaxSites?.sites[fight.id].update(fight);
+  activeRealmClimax = null; realmClimaxHud.hidden = true; hudRevision++;
+}
+function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'start') {
+  const site = realmClimaxSites?.sites[region];
+  if (!site) return;
+  if (station !== 'start') {
+    if (activeRealmClimax?.id === region && activeRealmClimax.work(station)) {
+      audio.interaction(); hudRevision++; renderObjective();
+    }
+    return;
+  }
+  if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || helionFight.active || activeRealmClimax) return;
+  const fight = createRealmClimax(region, site.origin, { done,
+    save(flag) {
+      done.add(flag); saveJourneyProgress(); hudRevision++; audio.explore('solve');
+      if (fight.phase < 0) {
+        stopRealmClimax(); combat.state.fieldHeal(26);
+        toast(bilingual('现场已安全，完成交接。','The site is secure. Complete the handover.'));
+      } else combat.refillAmmo();
+    },
+    hurt: damage => combat.state.applyExternalDamage(damage),
+    warn: () => audio.interaction(),
+  });
+  if (fight.start()) {
+    activeRealmClimax = fight; combat.refillAmmo(); site.update(fight); hudRevision++; renderObjective();
+  }
+}
+function updateRealmClimax(dt: number) {
+  const fight = activeRealmClimax;
+  if (!fight || !realmClimaxSites) return;
+  const site = realmClimaxSites.sites[fight.id];
+  if (Math.hypot(player.pos.x - site.start[0], player.pos.z - site.start[2]) > 33 || Math.abs(player.pos.y - site.start[1]) > 7) {
+    stopRealmClimax(); renderObjective();
+    toast(bilingual('已离开战场 · 返回接应点继续', 'Left the battlefield · Return to the rally point to resume')); return;
+  }
+  const playing = gameplayActive() && !combat.defeated;
+  if (playing) fight.update(dt, player.pos);
+  site.update(fight);
+  realmClimaxHud.hidden = !playing;
+  if (!playing) return;
+  const phase = fight.definition.phases[fight.phase];
+  realmName.textContent = bilingual(
+    `${fight.definition.title[0]} · ${phase.title[0]}`, `${fight.definition.title[1]} · ${phase.title[1]}`);
+  realmHealth.hidden = fight.maxHp === 0;
+  realmHealth.max = fight.maxHp || 1; realmHealth.value = fight.hp;
+  realmCue.textContent = fight.tell ? bilingual('危险区域已锁定 · 离开橙色标线','Danger zone locked · Move clear of the orange marks')
+    : fight.exposed ? bilingual('可射击 · 瞄准金色目标','Target open · Aim for the gold target')
+      : bilingual('查看当前任务，操作现场机关','Follow the current objective to the field controls');
+}
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  const realm = realmStationByMarker.get(id);
+  if (realm) { operateRealmClimax(realm.region, realm.station); return; }
   if (id === JOURNEY_DISPATCH) {
     clearInput();
     const options = journeyDestinations(done).map(destination => ({ id: destination.id, label: destination.name }));
@@ -2167,6 +2274,13 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    const realm = questHit.object.userData.realmClimax as RealmClimaxId | undefined;
+    if (realm) {
+      const hit = typeof activeRealmClimax !== 'undefined' && activeRealmClimax?.id === realm && questHit.distance <= gun.range
+        && activeRealmClimax.hit(questHit.object.userData.realmPhase, gun.damage);
+      if (hit) combat.flashHitMarker(.14);
+      combat.shot(muzzle, point, !!hit); audio.shot(); return;
+    }
     if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === SKY_MARKERS.target)) {
       const hit = id === SKY_MARKERS.target
         ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint)
@@ -2712,6 +2826,7 @@ function frame(now: number) {
     toast(bilingual('货车已停稳。取回返程信标。','The cart has stopped. Recover the return beacon.'));
   }
   updateSkyJourney(dt, now / 1000);
+  updateRealmClimax(dt);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   relayLastPosition.copy(player.pos);

@@ -8,6 +8,7 @@ import { ORLEANS_WORKS, ORLEANS_WORK_ACTIONS } from '../src/map/orleansWorks';
 import { QIN_ARMY } from '../src/map/qinPlan';
 import { createHelionFight, SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS } from '../src/story/helionFight';
 import { ADVENTURE as A } from '../src/story/openWorldCampaign';
+import { climaxCheckpoint, climaxCleared, climaxMarker, createRealmClimax, QIN_GENERAL_DOWN, type RealmClimaxId } from '../src/story/realmClimaxes';
 import { commitJourneyStep, JOURNEY as J, SKY_MARKERS as M, SKY_PHASES, journeyTowerReady, worldJourneyGuide } from '../src/story/worldJourney';
 import { VALLEY_PROLOGUE } from '../src/story/valleyPrologue';
 import type { SettlementPlacement } from '../src/settlements/types';
@@ -62,14 +63,23 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
   assert.equal(commitJourneyStep(J.cutoff, done), null);
   assert.equal(commitJourneyStep(J.qinRead, done), null);
   for (const flag of [ORLEANS_WORKS.craneDone, ORLEANS_WORKS.sluiceDone, ORLEANS_WORKS.bellDone]) done.add(flag);
-  [J.orleansFlag, J.orleansBrace, J.orleansDone, J.egyptRead].forEach(act);
+  [J.orleansFlag, J.orleansBrace].forEach(act);
+  assert.equal(commitJourneyStep(J.orleansDone, done), null);
+  assert.equal(worldJourneyGuide('orleans', done)?.targetId, climaxMarker('orleans', 'start'));
+  done.add(climaxCleared('orleans'));
+  [J.orleansDone, J.egyptRead].forEach(act);
   assert.equal(commitJourneyStep(J.egyptTie, done), null);
   done.add(EGYPT_MIRRORS.solved);
-  [J.egyptTie, J.egyptDone, J.qinRead, J.qinMarch, J.qinHalt].forEach(act);
+  act(J.egyptTie);
+  assert.equal(commitJourneyStep(J.egyptDone, done), null);
+  done.add(climaxCleared('egypt'));
+  [J.egyptDone, J.qinRead, J.qinMarch, J.qinHalt].forEach(act);
   assert.equal(worldJourneyGuide('qin', done)?.targetId, QIN_ARMY.levers[1].id);
   act(J.qinTurn);
   assert.equal(commitJourneyStep(J.qinDone, done), null);
   done.add(QIN_ARMY.flag);
+  assert.equal(worldJourneyGuide('qin', done)?.targetId, climaxMarker('qin', 'start'));
+  done.add(climaxCleared('qin'));
   [J.qinDone, J.skyBearing, J.skySight, J.handover, J.groundWatch].forEach(act);
   assert.ok(journeyTowerReady(done));
   assert.equal(commitJourneyStep(J.launch, done), null);
@@ -94,6 +104,38 @@ test('seven-region route keeps saved demo endings, accepts either branch, and re
 
   const existing = new Set([...four, J.meal, J.cargo, J.signal]);
   assert.equal(worldJourneyGuide('alpha', existing)?.targetId, J.compare);
+  const restored = new Set([...four, J.egyptDone, J.orleansDone, J.qinDone]);
+  assert.equal(worldJourneyGuide('alpha', restored)?.targetId, J.skyBearing, 'old completed handovers stay complete');
+});
+
+test('regional fights checkpoint engineering and accept Qin’s nonlethal or early-defeat routes', () => {
+  const origin = { x: 0, y: 5, z: 0 }, player = { x: 0, y: 5, z: 8 };
+  const done = new Set<string>();
+  let damage = 0;
+  const hooks = { done, save: (flag: string) => done.add(flag), hurt: (amount: number) => { damage += amount; }, warn() {} };
+  const tick = (fight: ReturnType<typeof createRealmClimax>) => { for (let i = 0; i < 160; i++) fight.update(.02, player); };
+  const egypt = createRealmClimax('egypt', origin, hooks);
+  assert.ok(egypt.start()); assert.equal(egypt.hit(0, 300), false);
+  tick(egypt); assert.equal(damage, 21); assert.equal(egypt.hit(0, 300), false);
+  assert.ok(egypt.work('west')); assert.ok(egypt.hit(0, 300));
+  egypt.reset(); assert.ok(egypt.start()); assert.equal(egypt.phase, 1);
+  assert.equal(egypt.work('east'), false); assert.ok(egypt.work('west')); assert.ok(egypt.work('east'));
+  tick(egypt); assert.ok(egypt.hit(1, 300)); assert.equal(done.has(climaxCleared('egypt')), false);
+  assert.ok(egypt.work('east')); assert.ok(done.has(climaxCleared('egypt')));
+
+  for (const defeat of [true, false]) {
+    const flags = new Set<string>();
+    const general = createRealmClimax('qin', origin, { ...hooks, done: flags, save: flag => flags.add(flag) });
+    assert.ok(general.start()); assert.equal(general.work('east'), false);
+    if (defeat) assert.ok(general.hit(0, 500));
+    else assert.ok(general.work('west'));
+    assert.equal(flags.has(QIN_GENERAL_DOWN), defeat);
+    general.reset(); assert.ok(general.start());
+    if (!defeat) assert.ok(general.work('west'));
+    assert.ok(general.work('east'));
+    assert.ok(general.work('west')); assert.ok(general.work('east'));
+    assert.ok(general.work('west')); assert.ok(flags.has(climaxCleared('qin')));
+  }
 });
 
 test('Helion locks his aim, can be reflected by a late shutter, and checkpoints each phase', () => {
@@ -178,10 +220,23 @@ test('production quest stands, three regional handovers and the sky finale work 
     w.camera.updateMatrixWorld(true);
     for (const type of ['mousedown', 'mouseup']) canvas.dispatchEvent(new h.window.MouseEvent(type, { button: 0, bubbles: true, cancelable: true }));
   };
+  const station = (region: RealmClimaxId, which: 'start' | 'west' | 'east') => interact(climaxMarker(region, which));
+  const shootPhase = (region: RealmClimaxId, phase: number, model: string) => {
+    const flag = climaxCheckpoint(region, phase);
+    const target = w.scene.getObjectByName(model);
+    approach(climaxMarker(region, 'west'));
+    assert.ok(target?.visible, model);
+    for (let i = 0; i < 36 && !w.done.has(flag); i++) {
+      for (let f = 0; f < 450 && target.visible && target.material.emissiveIntensity < 1; f++) frame();
+      if (!target.visible) break;
+      shootAt(target.getWorldPosition(new Vector3())); frame(15);
+    }
+    assert.ok(w.done.has(flag), `${model}: ${d.getElementById('realm-climax-status')?.textContent} | ${d.getElementById('objective')?.textContent}`);
+  };
   try {
     (d.getElementById('start') as HTMLElement).click(); await Promise.resolve(); frame(3);
     const missing: string[] = [];
-    for (const m of w.layout.markers.filter((candidate: { id: string }) => /^journey_/.test(candidate.id))) {
+    for (const m of w.layout.markers.filter((candidate: { id: string }) => /^(journey_|realm_)/.test(candidate.id))) {
       const [x, y, z] = m.p;
       const floor = w.combat.geometry.ground(x, z, y + 1.25);
       if (!floor || floor.point.y < w.layout.world.waterLevel + .05 || Math.abs(floor.point.y + .92 - y) > .7 || !w.combat.geometry.clear(new Vector3(x, floor.point.y + .04, z), .32, 1.65)) missing.push(`${m.id} ${m.p} floor ${floor?.point.y}`);
@@ -212,16 +267,27 @@ test('production quest stands, three regional handovers and the sky finale work 
     frame(2);
     assert.ok(w.done.has(EGYPT_MIRRORS.solved));
     interact(J.egyptWeir); assert.ok(w.done.has(J.egyptWeir));
-    interact(J.egyptDone); assert.equal(w.done.has(J.egyptDone), false, 'the ferry needs time to cross');
+    station('egypt', 'start'); station('egypt', 'west');
+    shootPhase('egypt', 0, 'TideEaterTarget1');
+    station('egypt', 'west'); station('egypt', 'east');
+    shootPhase('egypt', 1, 'TideEaterTarget2');
+    station('egypt', 'east'); assert.ok(w.done.has(climaxCleared('egypt')));
     frame(690); interact(J.egyptDone); assert.ok(w.done.has(J.egyptDone));
     interact(J.orleansRead); hold(ORLEANS_WORKS.crane); hold(ORLEANS_WORKS.sluice);
     interact(J.orleansFlag); hold(ORLEANS_WORKS.bell);
     interact(J.orleansBattery); assert.ok(w.done.has(J.orleansBattery));
+    station('orleans', 'start'); station('orleans', 'west');
+    shootPhase('orleans', 0, 'BridgefortTarget1');
+    station('orleans', 'east'); shootPhase('orleans', 1, 'BridgefortTarget2');
+    station('orleans', 'west'); assert.ok(w.done.has(climaxCleared('orleans')));
     frame(260); interact(J.orleansDone); assert.ok(w.done.has(J.orleansDone));
     interact(J.qinRead); interact(J.qinMarch);
     frame(500); interact(J.qinHalt); assert.ok(w.done.has(J.qinHalt));
     interact(QIN_ARMY.levers[1].id); frame(150);
     assert.ok(w.done.has(J.qinTurn));
+    station('qin', 'start'); station('qin', 'west'); station('qin', 'east');
+    station('qin', 'west'); station('qin', 'east'); station('qin', 'west');
+    assert.ok(w.done.has(climaxCleared('qin'))); assert.equal(w.done.has(QIN_GENERAL_DOWN), false);
     interact(J.qinDone); assert.ok(w.done.has(J.qinDone));
     for (const id of [J.skyBearing, J.skySight, J.handover, J.groundWatch]) {
       interact(id);

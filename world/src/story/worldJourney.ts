@@ -6,6 +6,7 @@ import type { Localized } from '../settlements/types';
 import { JOURNEY_DRAMA, JOURNEY_REGIONS, dramaActive, dramaReported } from './journeyDrama';
 import { ADVENTURE as A, adventureActive, adventureChapterComplete } from './openWorldCampaign';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
+import { climaxCleared, climaxMarker, REALM_CLIMAXES, type RealmClimaxId } from './realmClimaxes';
 
 export const JOURNEY = {
   lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin',
@@ -64,16 +65,16 @@ export const JOURNEY_STEPS = [
   step('alpha', J.bypass, ['打开下堤旧路。', 'Open the old lower footpath.'], ['下堤的居民从旧路绕开闸门，天气预警继续工作。', 'The people below bypass the gate along the old road. Weather alerts stay online.'], [J.compare]),
   step('egypt', J.egyptRead, ['到绿洲码头核对搁浅船只的水位刻度。', 'Read the water marks on the stranded boat at the oasis.'], ['河床是干的，屋檐上却有鱼。先把阳光送进圣所，给本地泄洪闸独立供电。', 'The bed is dry, yet fish sit on the rooftops. Guide sunlight into the sanctuary to power the local sluice independently.']),
   step('egypt', J.egyptWeir, ['在水道拉下泄洪杆，或绕到对岸射断牵引销。', 'Pull the release lever at the spillway or shoot the tow pin from the far bank.'], ['配重落下，水从独立水道流向谷地。沿渠到下游查看水位。', 'The counterweight falls and water enters the independent channel. Follow it downstream to verify the level.'], [J.egyptRead, EGYPT_MIRRORS.solved]),
-  step('egypt', J.egyptDone, ['去下游核对水位，允许船工恢复渡航。', 'Verify the water level downstream so the ferrymen can reopen the crossing.'], ['船工启动了自己的渡船。这条水道和日照供给由当地人维护。', 'The ferrymen launch their own boat. Local operators will maintain the waterway and its solar supply.'], [J.egyptWeir]),
+  step('egypt', J.egyptDone, ['去下游核对水位，允许船工恢复渡航。', 'Verify the water level downstream so the ferrymen can reopen the crossing.'], ['船工启动了自己的渡船。这条水道和日照供给由当地人维护。', 'The ferrymen launch their own boat. Local operators will maintain the waterway and its solar supply.'], [J.egyptWeir, climaxCleared('egypt')]),
   step('orleans', J.orleansRead, ['到集市联络守城的人，确认两岸分工。', 'Meet the defenders at the market to coordinate both riverbanks.'], ['贞德把守岸、搬粮和鸣钟交给三队。你去打通他们之间的路。', 'Jeanne assigns three teams to hold the bank, move grain and ring the bell. Clear the routes between them.']),
   step('orleans', J.orleansFlag, ['粮船已卸货，引水道也开了。到河门将旗帜交给接应队。', 'Grain is ashore and the watercourse is open. Hand the flag to the relief team at the river gate.'], ['旗交给了接应队。待钟楼响起，两岸就会同时放行。', 'The relief team takes the flag. Both banks will open together when the belfry sounds.'], [J.orleansRead, O.craneDone, O.sluiceDone]),
   step('orleans', J.orleansBattery, ['趁接应队举旗掩护，从炮台侧面拆下击发杆，或射断正面的支架。', 'While the relief flag is up, remove the battery’s firing lever from the flank or shoot its brace from the front.'], ['封锁桥面的炮台已失效。两岸接应队可以同时开路。', 'The battery covering the bridge is disabled. Both relief teams can open their routes.'], [J.orleansFlag, O.bellDone]),
-  step('orleans', J.orleansDone, ['到桥头堡确认两岸协同通行。', 'Confirm both sides have opened the crossing at the bridgehead.'], ['钟声从城墙传到对岸。下一班运粮也由各队自己安排。', 'The bell carries across the wall to the far bank. The teams schedule the next grain shipment themselves.'], [J.orleansBattery]),
+  step('orleans', J.orleansDone, ['到桥头堡确认两岸协同通行。', 'Confirm both sides have opened the crossing at the bridgehead.'], ['钟声从城墙传到对岸。下一班运粮也由各队自己安排。', 'The bell carries across the wall to the far bank. The teams schedule the next grain shipment themselves.'], [J.orleansBattery, climaxCleared('orleans')]),
   step('qin', J.qinRead, ['到工匠镇查阅封陵册，与工匠约定撤出路线。', 'Read the burial register at the workers’ town and agree on a way out.'], ['名册要求活人随陵一并封存。先下军阵，用行、驻、转为工匠腾出路。', 'The register orders living workers sealed in with the tomb. Descend to the ranks and use March, Halt and Turn to clear a path.']),
   step('qin', J.qinMarch, ['在中轴发出行令，让前列移动。', 'Issue March on the central avenue to move the front ranks.'], ['前列移动，工匠已等在安全线。继续发驻令。', 'The front ranks move. The workers wait behind the safety line. Give the Halt order next.'], [J.qinRead]),
   step('qin', J.qinHalt, ['在中轴靠近深层铜闸，发驻令停住前列。', 'Give Halt near the deep bronze gate on the central avenue.'], ['工匠已确认无人站在转台上。到军令台转开通往铜闸的一列。', 'The workers confirm that the turntables are clear. Use a command post to turn the row away from the bronze gate.'], [J.qinMarch]),
   step('qin', J.qinTurn, ['在军令台转动阵列，开启深层铜闸。', 'Turn the ranks at a command post to open the deep bronze gate.'], ['铜闸升起。穿过铜闸，把军令册交给工匠。', 'The bronze gate rises. Pass through and hand over the order book.'], [J.qinHalt]),
-  step('qin', J.qinDone, ['穿过铜闸，在另一侧把可撤销的军令交给工匠。', 'Cross the bronze gate and hand the revocable order to the workers on the other side.'], ['工匠亲手确认出口。以后他们也能改令，出口不再只认一枚印。', 'The workers confirm their own exit. They can amend the order from now on.'], [J.qinTurn, QIN_ARMY.flag]),
+  step('qin', J.qinDone, ['穿过铜闸，在另一侧把可撤销的军令交给工匠。', 'Cross the bronze gate and hand the revocable order to the workers on the other side.'], ['工匠亲手确认出口。以后他们也能改令，出口不再只认一枚印。', 'The workers confirm their own exit. They can amend the order from now on.'], [J.qinTurn, QIN_ARMY.flag, climaxCleared('qin')]),
   step('alpha', J.skyBearing, ['到镜湖北岸记录观测环的第一组方位。', 'Take the first bearing on the ring from Mirror Lake’s north shore.'], ['第一组方位已记下。移到塔外的第二测点。', 'First bearing recorded. Take a second reading from outside the tower.']),
   step('alpha', J.skySight, ['在塔外测点比对两组方位，找出真正的天穹观测冠。', 'Compare both bearings from the tower station to locate the real Sky Crown.'], ['近处假太阳随测点偏移，远处观测环仍在同一方向。幻日塔是通往它的接驳架。', 'The false sun shifts between stations. The distant ring holds its bearing. The tower is its boarding point.'], [J.skyBearing]),
   step('alpha', J.handover, ['把可撤销的维护权限交给回望桥上的居民。', 'Hand revocable maintenance authority to the residents at Lookback Bridge.'], ['阿舟接过联络，顾桥和许青接手地面设施。这次你登塔，他们来值守。', 'Azhou takes communications. Gu Qiao and Xu Qing take over the ground systems. They will keep watch while you climb.'], [J.skySight]),
@@ -101,6 +102,11 @@ const skyRouteOpen = (done: ReadonlySet<string>) => done.has(J.westService) || d
 export const journeyDestinations = (done: ReadonlySet<string>) => valleyRouteOpen(done)
   ? JOURNEY_DESTINATIONS.filter(destination => destination.id !== 'qin' || reached(done, J.egyptDone, J.orleansDone)) : [];
 export const journeyTowerReady = (done: ReadonlySet<string>) => !journeyEnabled(done) || done.has(J.groundWatch);
+export const REALM_HANDOVER = { egypt: J.egyptDone, orleans: J.orleansDone, qin: J.qinDone } as const;
+export function journeyClimaxReady(region: RealmClimaxId, done: ReadonlySet<string>) {
+  if (!journeyEnabled(done) || done.has(REALM_HANDOVER[region]) || done.has(climaxCleared(region))) return false;
+  return region === 'egypt' ? done.has(J.egyptWeir) : region === 'orleans' ? done.has(J.orleansBattery) : reached(done, J.qinTurn, QIN_ARMY.flag);
+}
 
 export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   const entry = journeyStepById.get(id);
@@ -138,6 +144,8 @@ export function commitJourneyStep(id: string, done: Set<string>): Localized | nu
 
 const objective = (region: JourneyRegion, targetId: string, text: Localized): JourneyGuide => ({ region, targetId, title: titles[region], text });
 const at = (id: string) => journeyStepById.get(id)!;
+const regionalHandover = (region: RealmClimaxId, done: ReadonlySet<string>) => done.has(climaxCleared(region))
+  ? at(REALM_HANDOVER[region]) : objective(region, climaxMarker(region, 'start'), REALM_CLIMAXES[region].start);
 
 export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>): JourneyGuide | null {
   if (!journeyEnabled(done) || done.has(J.epilogue)) return null;
@@ -163,7 +171,7 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
     if (!done.has(J.qinMarch)) return at(J.qinMarch);
     if (!done.has(J.qinHalt)) return at(J.qinHalt);
     if (!done.has(QIN_ARMY.flag)) return objective('qin', QIN_ARMY.levers[1].id, at(J.qinTurn).text);
-    return at(J.qinDone);
+    return regionalHandover('qin', done);
   }
   if (valleyRouteOpen(done)) {
     if (!done.has(J.orleansDone) && (here === 'orleans' || done.has(J.egyptDone))) {
@@ -173,11 +181,11 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
       if (!done.has(J.orleansFlag)) return at(J.orleansFlag);
       if (!done.has(O.bellDone)) return objective('orleans', O.bell, ['鸣钟通知两岸同步放行。', 'Ring the belfry to signal both banks to open together.']);
       if (!done.has(J.orleansBattery)) return at(J.orleansBattery);
-      return at(J.orleansDone);
+      return regionalHandover('orleans', done);
     }
     if (!done.has(J.egyptRead)) return at(J.egyptRead);
     if (!done.has(EGYPT_MIRRORS.solved)) return objective('egypt', EGYPT_MIRRORS.mirrors[0].id, ['将三面铜镜的光路接入圣所。', 'Guide the light through three bronze mirrors into the sanctuary.']);
-    return at(done.has(J.egyptWeir) ? J.egyptDone : J.egyptWeir);
+    return done.has(J.egyptWeir) ? regionalHandover('egypt', done) : at(J.egyptWeir);
   }
   const fresh = done.has(VALLEY_PROLOGUE.record);
   if (fresh && done.has(A.online) && !done.has(J.lakeWinch) && !done.has(A.ending) && (!done.has('saber_contract') || done.has(J.lake))) return at(done.has(J.lake) ? J.lakeWinch : J.lake);
