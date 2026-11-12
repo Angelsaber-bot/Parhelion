@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { Vector3 } from 'three';
 import { ARMORY_MARKER, WORLD_PROGRESS_KEY } from '../src/core/progress';
-import { advanceValleyPrologue, VALLEY_PROLOGUE as P, valleyPrologueStage } from '../src/story/valleyPrologue';
+import { advanceValleyPrologue, VALLEY_PROLOGUE as P, VALLEY_RESCUE_ENCOUNTER, valleyPrologueStage } from '../src/story/valleyPrologue';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
 test('prologue choices are exclusive, resume from saved actions and preserve existing campaigns', () => {
@@ -92,6 +92,12 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     closeDialogue();
     use(P.survey, 0, .25);
     assert.ok(w.done.has(P.survey));
+    assert.equal(w.combat.storyEncounter?.id, VALLEY_RESCUE_ENCOUNTER);
+    const patrol = w.scene.getObjectByName('Resident_prologue_patrol_07');
+    const before = patrol.position.clone();
+    frame(50);
+    assert.ok(patrol.position.distanceTo(before) > .8, '07 physically moves the first worker toward safety');
+    assert.equal(w.done.has(P.firstSafe), false);
     const pin = w.scene.getObjectByName('TGT_ValleyProloguePin');
     assert.ok(pin.visible);
     const point = pin.getWorldPosition(new Vector3());
@@ -115,6 +121,8 @@ test('fresh World: real inputs save the cart and a shot opens the rescue route',
     frame(190);
     use(P.record, 0, .45);
     assert.ok(w.done.has(P.record));
+    assert.ok(w.done.has(P.firstSafe));
+    assert.equal(w.combat.storyEncounter, null, 'evacuation can finish with both people safe before clearing the patrol');
     assert.ok(w.done.has('adventure_v2'));
     assert.match(d.getElementById('objective')!.textContent!, /岚/);
     const saved = JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY)!);

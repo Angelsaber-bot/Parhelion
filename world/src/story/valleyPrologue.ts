@@ -13,12 +13,16 @@ export const VALLEY_PROLOGUE = {
   cartReturn: 'valley_prologue_cart_return',
   radio: 'valley_prologue_radio',
   survey: 'valley_prologue_survey',
+  firstSafe: 'valley_prologue_first_safe',
+  machinesCleared: 'valley_prologue_machines_cleared',
   breaker: 'valley_prologue_breaker',
   pin: 'valley_prologue_pin',
   ratchet: 'valley_prologue_ratchet',
   record: 'valley_prologue_record',
 } as const;
 
+export const VALLEY_RESCUE_ENCOUNTER = 'adventure_valley_rescue';
+export const VALLEY_SURVEY_HEIGHT = 1.08;
 const P = VALLEY_PROLOGUE;
 export const PROLOGUE_LABELS = {
   [P.room]: ['拿起旧收音机', 'Pick up the old radio'],
@@ -95,7 +99,7 @@ export function advanceValleyPrologue(stage: ValleyPrologueStage, id: string, do
       break;
     case 'survey':
       if (id !== P.survey) return null;
-      line = ['第一名工人已撤到围栏外。栏杆后还有人敲击。卷轮开始打滑，出口的电锁卡住了。', 'The first worker is clear. Someone is tapping behind the bars. The winch starts slipping and the exit lock jams.'];
+      line = ['落石打坏了巡检机。07 正把第一名工人扶出去，栏杆后还有人敲击。先让两台失控的机器远离出口，或绕侧道直奔急停。', 'Falling rock has damaged the inspection units. 07 is helping the first worker out. Someone still taps behind the bars. Drive the malfunctioning units away from the exit, or take the side path straight to the cutoff.'];
       break;
     case 'release':
       if (id !== P.breaker && id !== P.pin) return null;

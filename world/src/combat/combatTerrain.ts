@@ -1,3 +1,4 @@
+import { VALLEY_PROLOGUE, VALLEY_RESCUE_ENCOUNTER, VALLEY_SURVEY_HEIGHT } from '../story/valleyPrologue';
 import type {StoryEncounterSpec} from '../story/storyEncounters';
 import { gateEncounter, KINGDOM_GATE } from '../story/kingdomGate';
 import * as THREE from 'three';
@@ -79,8 +80,10 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     return spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6)?placeEnemy(x,z,true,true,true):null;
   };
   const safeAdventureSpawn=(spec:StoryEncounterSpec,x:number,z:number):Point3|null=>{
-    const markerId=spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
-    const marker=layout.markers.find(m=>m.id===markerId);if(!marker||Math.abs(spec.anchor.x-marker.p[0])>.01||Math.abs(spec.anchor.z-marker.p[2])>.01||Math.abs(spec.anchor.y-(marker.p[1]-.9))>.01)return null;
+    const markerId=spec.id===VALLEY_RESCUE_ENCOUNTER?VALLEY_PROLOGUE.survey:spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
+    const marker=layout.markers.find(m=>m.id===markerId);
+    const height = spec.id === VALLEY_RESCUE_ENCOUNTER ? VALLEY_SURVEY_HEIGHT : .9;
+    if(!marker||Math.abs(spec.anchor.x-marker.p[0])>.01||Math.abs(spec.anchor.z-marker.p[2])>.01||Math.abs(spec.anchor.y-(marker.p[1]-height))>.01)return null;
     if(!spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6))return null;
     const g=ground(x,z,spec.anchor.y+2);if(!g||Math.abs(g.point.y-spec.anchor.y)>1.5||Math.abs(g.face?.normal.y??0)<.78)return null;
     const p={x,y:g.point.y+.04,z};for(const[dx,dz]of[[-1.2,0],[1.2,0],[0,-1.2],[0,1.2]]){const foot=ground(x+dx,z+dz,p.y+2);if(!foot||Math.abs(foot.point.y-p.y)>.75)return null;}

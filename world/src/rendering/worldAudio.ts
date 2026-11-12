@@ -203,6 +203,18 @@ export class WorldAudio {
     else if(kind==='rotate'){this.voice('noise',.08,1800,.05);this.voice('triangle',.12,330,.05,1.2);}
     else this.voice('sine',.4,330,.08,.6);
   }
+  realmWarning(region: 'egypt' | 'orleans' | 'qin') {
+    if (region === 'egypt') {
+      this.voice('noise', .66, 365, .092, 2.9, .17);
+      this.voice('sine', .55, 107, .06, .72, .14);
+    } else if (region === 'orleans') {
+      this.voice('noise', .24, 1270, .065, .67, .09);
+      this.voice('triangle', .23, 334, .073, .73, .022);
+    } else {
+      this.voice('triangle', .7, 208, .06, .985, .005);
+      this.voice('sine', .39, 553, .035, .985, .007);
+    }
+  }
   interaction(){this.voice('sine',.12,520,.055,1.5);}
   /** One local bell strike, sharing mute, suspension and the bounded voice pool. */
   bell(){this.voice('sine',2.8,196,.055,.995,.002);this.voice('sine',2.2,196*2.76,.022,.998,.003);this.voice('sine',1.5,196*5.4,.012,.99,.002);}

@@ -1,3 +1,4 @@
+import { FIELD_SIDE_STEPS, FIELD_SIDE_STORIES, fieldSideNext } from './fieldSideStories';
 import { CULTURAL_STEPS, CULTURAL_STORIES, culturalStoryNext } from './realmCulturalStories';
 import { EGYPT_GAUGE, EGYPT_GAUGE_BY_ID, EGYPT_GAUGE_STEPS, EGYPT_GAUGE_TITLE, EGYPT_WATER_RECORD, egyptGaugeNext } from './egyptGauge';
 import { MODEL_CLAIM_POINTS } from '../companions/modelClaimPoints';
@@ -46,6 +47,7 @@ const pair=(text:string):Localized=>{
  return[text,translations.get(text)??(numbered&&translations.has(numbered[1])?translations.get(numbered[1])!+numbered[2]:text)];
 };
 const specialLabels=new Map<string,Localized>([
+ ...Array.from(FIELD_SIDE_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
  ...Array.from(CULTURAL_STEPS, ([id, step]): [string, Localized] => [id, step.label]),
  ...EGYPT_GAUGE_STEPS.map(step => [step.id, [...step.label]] as [string, Localized]),
  ...MODEL_CLAIM_POINTS.map(point=>[point.marker.id,point.label] as [string,Localized]),
@@ -95,7 +97,7 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
  const point=(id:string):Pick<QuestGuide,'targetKind'|'region'|'position'|'targetLabel'>|null=>{
   const npc=npcs.get(id);if(npc&&!npc.position.every(Number.isFinite))return null;if(npc)return{targetKind:'npc',region:npc.region,position:[...npc.position],targetLabel:npc.label??specialLabels.get(id)??pair(id)};
   const enemy=enemies.get(id);if(enemy&&!enemy.position.every(Number.isFinite))return null;if(enemy)return{targetKind:'enemy',region:enemy.region,position:[...enemy.position],targetLabel:enemy.label};
-  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||MODEL_CLAIM_POINTS.some(point=>point.marker.id===id)||marker.type==='discovery'||EGYPT_GAUGE_BY_ID.has(id)||CULTURAL_STEPS.has(id)||ORLEANS_WORK_ACTIONS.some(a=>a.id===id)||HOME_CIVIC_ACTIONS.some(a=>a.id===id)||HOME_ACTIONS.some(a=>a.id===id))?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
+  const marker=markers.get(id);if(marker&&!marker.p.every(Number.isFinite))return null;const region=marker&&regionAt(marker.p[0],marker.p[2]).id;return marker&&region&&(isCampaignRegion(region)||MODEL_CLAIM_POINTS.some(point=>point.marker.id===id)||marker.type==='discovery'||EGYPT_GAUGE_BY_ID.has(id)||FIELD_SIDE_STEPS.has(id)||CULTURAL_STEPS.has(id)||ORLEANS_WORK_ACTIONS.some(a=>a.id===id)||HOME_CIVIC_ACTIONS.some(a=>a.id===id)||HOME_ACTIONS.some(a=>a.id===id))?{targetKind:'marker',region,position:[...marker.p],targetLabel:specialLabels.get(id)??pair(marker.label)}:null;
  };
  const instruction=(id:string):Localized=>{
   const marker=markers.get(id),label=specialLabels.get(id)??(marker?pair(marker.label):pair(id));
@@ -147,6 +149,12 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
    const step = egyptGaugeNext(done);
    add('side:egypt-second-mark', 'egypt', 'side', EGYPT_GAUGE_TITLE, done.has(EGYPT_GAUGE.report),
     step ? guide(EGYPT_GAUGE_TITLE, [...step.hint], step.id, done, context) : null);
+  }
+  for (const story of FIELD_SIDE_STORIES) {
+   if (!story.available(done) || !story.steps.every(step => markers.has(step.id))) continue;
+   const step = fieldSideNext(story, done);
+   add(`side:${story.id}`, story.region, 'side', story.title, done.has(story.steps.at(-1)!.id),
+    step ? guide(story.title, step.hint, step.id, done, context) : null);
   }
   for (const story of CULTURAL_STORIES) {
    if (!done.has(story.opensWith) || !markers.has(story.steps[0].id)) continue;

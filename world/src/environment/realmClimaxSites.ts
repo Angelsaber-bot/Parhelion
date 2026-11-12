@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { Marker } from '../core/types';
 import { SiteArt } from '../story/campaignSites';
+import { createRealmClimaxCharacter } from './realmClimaxCharacters';
 import { climaxCheckpoint, climaxCleared, climaxMarker, climaxTarget, QIN_GENERAL_DOWN, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxPoint, type ClimaxTell, type RealmClimaxId, type createRealmClimax } from '../story/realmClimaxes';
 import type { JourneyPoint } from '../story/worldJourney';
 
@@ -59,6 +60,45 @@ function createSite(id: RealmClimaxId, anchor: Marker, ground: Ground, clear: (p
     art.box([x, y + 1, z - .67], [.61, .06, .31], tint, false, 'glow');
     art.box([x, y + .023, z], [1.45, .035, 1.35], tint);
   }
+  const wings = new SiteArt(), plinth = new SiteArt();
+  const heading = Math.atan2(sx - boss[0], sz - boss[2]);
+  const around = (side: number, height: number, along: number): JourneyPoint => [
+    boss[0] + Math.cos(heading) * side + Math.sin(heading) * along, boss[1] + height,
+    boss[2] - Math.sin(heading) * side + Math.cos(heading) * along,
+  ];
+  if (id === 'egypt') {
+    for (const side of [-1, 1]) {
+      for (const depth of [-3.7, -.7, 2.3]) {
+        plinth.box(around(side * 3.45, .071, depth), [.95, .142, 2.94], '#9c7953', false, 'body', [0, heading, 0]);
+        plinth.box(around(side * 3.06, .182, depth), [.18, .36, 2.94], '#b9976c', false, 'body', [0, heading, 0]);
+        wings.box(around(side * 3.46, .168, depth), [.63, .07, 2.83], '#60a6a2', false, 'glow', [0, heading, 0]);
+      }
+      plinth.box(around(side * 3.45, .52, -4.97), [1.17, 1.02, .81], '#8a7254', false, 'body', [0, heading, 0]);
+      plinth.ring(around(side * 3.45, .99, -4.58), .21, .039, '#b49a67');
+    }
+  } else if (id === 'orleans') {
+    for (const side of [-1, 1]) {
+      const color = side < 0 ? '#945247' : '#635c51';
+      plinth.box(around(side * 3.1, .42, -.74), [2.2, .84, .67], '#7e7568', false, 'body', [0, heading, 0]);
+      for (let i = 0; i < 4; i++) {
+        plinth.box(around(side * (2.2 + i * .43), .96, -.8), [.16, .62, .18], '#9a8972', false, 'body', [0, heading, side * .18]);
+      }
+      wings.beam(around(side * 3.65, .04, 1.19), around(side * 3.65, 2.5, 1.19), .103, '#76604b');
+      wings.box(around(side * 3.38, 2.06, 1.19), [.67, .61, .055], color, false, 'body', [0, heading, side * .08]);
+      wings.box(around(side * 3.38, 2.03, 1.228), [.28, .073, .038], '#d5bb8e', false, 'metal', [0, heading, 0]);
+    }
+  } else {
+    for (const side of [-1, 1]) {
+      for (const depth of [-3.6, -1.9, -.15]) {
+        plinth.box(around(side * 2.6, .08, depth), [1.44, .16, 1.54], '#706050', false, 'body', [0, heading, 0]);
+        plinth.cyl(around(side * 2.6, .195, depth), .37, .22, '#796d51', false, 'metal');
+        wings.box(around(side * 2.6, .42, depth), [.47, .44, .23], '#7b9a87', false, 'metal', [0, heading, 0]);
+      }
+    }
+  }
+  plinth.finish('alpha'); plinth.root.name = groups[id] + 'CourtWorks';
+  wings.finish('alpha'); wings.root.name = groups[id] + 'ReadySignals'; wings.root.visible = false;
+  art.root.add(plinth.root, wings.root);
   art.finish('alpha');
   art.root.name = groups[id];
   const body = new THREE.Group(); body.name = `${groups[id]}Body`;
@@ -69,38 +109,7 @@ function createSite(id: RealmClimaxId, anchor: Marker, ground: Ground, clear: (p
   const trim = new THREE.MeshStandardMaterial({ color: id === 'egypt' ? '#577a70' : '#d4b47d', roughness: .42, metalness: .42 });
   const lit = new THREE.MeshStandardMaterial({ color: '#4f967e', emissive: '#3a745e', emissiveIntensity: .85 });
   const unitBox = new THREE.BoxGeometry(1, 1, 1);
-  const unitCone = new THREE.ConeGeometry(.5, 1, 5);
-  function part(geometry: THREE.BufferGeometry, material: THREE.Material, p: JourneyPoint, scale: JourneyPoint, rx = 0, rz = 0) {
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.position.fromArray(p); mesh.scale.fromArray(scale); mesh.rotation.set(rx, 0, rz);
-    mesh.castShadow = true; mesh.receiveShadow = true; body.add(mesh); return mesh;
-  }
-  if (id === 'egypt') {
-    part(unitBox, hide, [0, 1.12, -.66], [3.15, 1.55, 4.8]);
-    part(unitBox, hide, [0, 1.13, 2.05], [2.3, .92, 2.6]);
-    part(unitBox, trim, [0, .68, 2.45], [2.15, .31, 2.4]);
-    part(unitCone, hide, [0, .7, -3.8], [1.65, 3.4, 1.6], -Math.PI / 2);
-    for (const x of [-1.55, 1.55]) {
-      for (const z of [-1.8, .8]) part(unitBox, hide, [x, .38, z], [.84, .75, 1.22], 0, x * .24);
-      for (const z of [-2.4, -1.35, -.3, .72]) part(unitCone, trim, [x * .58, 2.01, z], [.81, 1.03, .84]);
-    }
-  } else {
-    part(unitBox, hide, [0, 1.28, 0], [.94, 1.03, .48]);
-    part(unitBox, trim, [0, 2.03, .01], [.54, .59, .53]);
-    part(unitBox, hide, [0, .48, 0], [1.1, .8, .52]);
-    for (const side of [-1, 1]) part(unitBox, trim, [side * .61, 1.43, .03], [.36, .73, .36], 0, side * .27);
-    if (id === 'qin') {
-      part(unitBox, trim, [-.7, 1.04, .42], [.73, 1.24, .15], 0, -.22);
-      part(unitBox, trim, [.78, 1.66, .12], [.14, 2.9, .14], 0, .18);
-      part(unitCone, trim, [.53, 3.14, .12], [.43, .84, .43], 0, .18);
-    } else {
-      part(unitBox, trim, [0, 2.27, .1], [.92, .14, .8]);
-      for (const side of [-1, 1]) {
-        part(unitBox, hide, [side * 1.44, .96, -.1], [1.18, 1.9, .23]);
-        part(unitBox, trim, [side * 1.44, 1.18, .05], [.73, .16, .14]);
-      }
-    }
-  }
+  const character = createRealmClimaxCharacter(id, body);
   const weakMat = new THREE.MeshStandardMaterial({ color: '#f7cf75', emissive: '#f9b74c', emissiveIntensity: .6, roughness: .48 });
   const targetGeometry = id === 'egypt' ? new THREE.OctahedronGeometry(.68, 0) : new THREE.BoxGeometry(.64, .87, .28);
   const targets = [0, 1].map(index => {
@@ -178,12 +187,15 @@ function createSite(id: RealmClimaxId, anchor: Marker, ground: Ground, clear: (p
     apply(flags: ReadonlySet<string>) {
       done = flags;
       result.visible = done.has(climaxCleared(id));
+      if (result.visible) wings.root.visible = true;
     },
-    update(fight: ReturnType<typeof createRealmClimax>) {
+    update(fight: ReturnType<typeof createRealmClimax>, dt = 0) {
       body.visible = fight.phase >= 0 && fight.phase < 2 && !(id === 'qin' && done.has(QIN_GENERAL_DOWN));
+      character.update({ phase: fight.phase, charging: !!fight.tell, exposed: fight.exposed, dt });
       if (id === 'qin' && fight.phase === 1 && done.has(climaxCheckpoint(id, 0)) && body.visible) body.rotation.x = -.14;
       else body.rotation.x = 0;
       for (const [index, target] of targets.entries()) target.visible = body.visible && fight.phase === index && fight.hp > 0;
+      wings.root.visible = result.visible || fight.phase >= 0 && (fight.phase > 0 || fight.stationWorked('west'));
       indicators[0].visible = fight.phase >= 0 && fight.stationWorked('west');
       indicators[1].visible = fight.phase >= 0 && fight.stationWorked('east');
       weakMat.emissiveIntensity = fight.exposed ? 1.15 : .05;
@@ -194,7 +206,8 @@ function createSite(id: RealmClimaxId, anchor: Marker, ground: Ground, clear: (p
       const geometries = new Set<THREE.BufferGeometry>();
       art.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
       geometries.forEach(geometry => geometry.dispose());
-      for (const material of [...Object.values(art.materials), hide, trim, lit, weakMat, warning]) material.dispose();
+      character.dispose();
+      for (const material of [...Object.values(art.materials), ...Object.values(plinth.materials), ...Object.values(wings.materials), hide, trim, lit, weakMat, warning]) material.dispose();
       art.root.removeFromParent();
     },
   };

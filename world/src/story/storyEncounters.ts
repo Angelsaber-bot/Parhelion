@@ -1,6 +1,7 @@
 import type { Point3, Enemy, SpawnPoint, WorldCombatState } from '../combat/combat';
 import { ENEMY_ROLES, type EnemyRole } from '../combat/enemyRoles';
 import { VALLEY_NIGHT_ENCOUNTER } from './valleyField';
+import { VALLEY_RESCUE_ENCOUNTER } from './valleyPrologue';
 import { KINGDOM_WATCH_ENCOUNTER } from './kingdomWorks';
 
 export interface StoryEncounterActor {
@@ -29,7 +30,7 @@ export interface StoryEncounterContext {
 }
 const finite = (p: Point3) => !!p && [p.x, p.y, p.z].every(Number.isFinite);
 const distance = (a: Point3, b: Point3) => Math.hypot(a.x - b.x, a.z - b.z);
-const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && (/^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) || /^sunward_[a-z0-9_]{1,40}_\d$/.test(spec.id) || spec.id === 'compact_relay_training' || spec.id === 'kingdom_gate_patrol' || /^adventure_guard_[1-3]$/.test(spec.id) || spec.id === 'adventure_guardian' || spec.id === 'adventure_harbor_alarm' || spec.id === 'adventure_winter_breach' || spec.id === VALLEY_NIGHT_ENCOUNTER || spec.id === KINGDOM_WATCH_ENCOUNTER) && finite(spec.anchor)
+const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string' && (/^false_dawn_[a-z0-9_]{1,48}$/.test(spec.id) || /^sunward_[a-z0-9_]{1,40}_\d$/.test(spec.id) || spec.id === 'compact_relay_training' || spec.id === 'kingdom_gate_patrol' || /^adventure_guard_[1-3]$/.test(spec.id) || spec.id === 'adventure_guardian' || spec.id === 'adventure_harbor_alarm' || spec.id === 'adventure_winter_breach' || spec.id === VALLEY_RESCUE_ENCOUNTER || spec.id === VALLEY_NIGHT_ENCOUNTER || spec.id === KINGDOM_WATCH_ENCOUNTER) && finite(spec.anchor)
   && Array.isArray(spec.actors) && spec.actors.length > 0 && spec.actors.length <= STORY_ENCOUNTER_LIMITS.actors
   && spec.actors.every(actor => !!actor && Object.hasOwn(ENEMY_ROLES, actor.role) && Array.isArray(actor.offset) && actor.offset.length === 2
     && actor.offset.every(Number.isFinite) && Math.hypot(...actor.offset) <= STORY_ENCOUNTER_LIMITS.actorOffset
@@ -60,7 +61,7 @@ export class StoryEncounterDirector {
         || spawns.some(other => distance(other.p,point)<2)
         || state.enemies.some(other => other.mode !== 'dead' && !other.pacified && distance(other.p,point)<5 && Math.abs(other.p.y-point.y)<2.6)) return { ok: false, reason: 'blocked' };
       spawns.push({ id: `story_${spec.id}_${this.generation + 1}_${index}`, kind: actor.role === 'bombardier' || actor.pattern ? 'crystal' : 'shade', p: { ...point }, role: actor.role,
-        storyEncounter: spec.id, storyPattern: actor.pattern, displayName: actor.title, appearance: appearances[actor.role] });
+        storyEncounter: spec.id, storyPattern: actor.pattern, displayName: actor.title, appearance: spec.id === VALLEY_RESCUE_ENCOUNTER ? undefined : appearances[actor.role] });
     }
     const actors = state.replaceStoryEnemies(spawns); this.generation++;
     this.current = { id: spec.id, anchor: { ...spec.anchor }, actors };

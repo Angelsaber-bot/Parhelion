@@ -26,6 +26,7 @@ export const JOURNEY = {
   skyAnchor: 'journey_sky_anchor_repair', skyArchive: 'journey_sky_zero_archive', skyReturnSight: 'journey_sky_check_ground_lights', skyCourt: 'journey_sky_court_checkpoint',
   feed: 'journey_sky_feed', westService: 'journey_sky_west_service', eastLatch: 'journey_sky_east_latch',
   test: 'journey_sky_load_test', isolate: 'journey_sky_isolation',
+  helionFirstWords: 'journey_helion_first_words',
   phase1: 'journey_helion_lens_disabled', phase2: 'journey_helion_emitters_disabled', phase3: 'journey_helion_writer_disabled',
   finish: 'journey_sky_handover', returnHome: 'journey_sky_return', epilogue: 'journey_tomorrow_bridge',
 } as const;

@@ -7,6 +7,7 @@ import { SiteArt } from '../story/campaignSites';
 import { SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS, SHUTTER_SPAN, helionBeamDirection, type createHelionFight } from '../story/helionFight';
 import { JOURNEY as J, SKY_MARKERS as M, type JourneyPoint } from '../story/worldJourney';
 import { addSkyCrownApproach, SKY_APPROACH_LANDING } from './skyCrownApproach';
+import { createHelionCharacter } from './realmClimaxCharacters';
 import { SKY_SUPPORT, SKY_SUPPORT_RADIUS } from '../story/skySupport';
 
 const [X, Y, Z] = SKY_ORIGIN;
@@ -114,18 +115,40 @@ export function createSkyCrownScene() {
   });
 
   const coreMat = new THREE.MeshStandardMaterial({ color: '#d28258', emissive: '#b34922', emissiveIntensity: .65, metalness: .3 });
-  const core = new THREE.Mesh(new THREE.OctahedronGeometry(1.28, 1), coreMat);
+  // Keep the existing ray volume while the visible weak point belongs to the suit.
+  const coreRayMaterial = coreMat.clone();
+  coreRayMaterial.colorWrite = false;
+  coreRayMaterial.depthWrite = false;
+  const core = new THREE.Mesh(new THREE.OctahedronGeometry(1.28, 1), coreRayMaterial);
   core.name = 'HelionCore'; core.userData.target = M.target; core.position.fromArray(SKY_BOSS); core.visible = false;
   const emitterGeometry = new THREE.IcosahedronGeometry(1.12, 0);
+  const emitterBands = new THREE.TorusGeometry(1.41, .112, 10, 36);
+  const emitterBrass = new THREE.MeshStandardMaterial({ color: '#a5977e', metalness: .49, roughness: .43 });
+  const wings = [-12, 12].map((x, index) => {
+    const node = new THREE.Group();
+    node.name = 'HelionEnforcementRig_' + index;
+    node.position.fromArray(p(x, 2.35, -27));
+    node.visible = false; a.root.add(node);
+    for (const side of [-1, 1]) {
+      const band = new THREE.Mesh(emitterBands, emitterBrass);
+      band.rotation.y = side * .68;
+      band.rotation.x = .2 * side;
+      node.add(band);
+      const actuator = new THREE.Mesh(new THREE.BoxGeometry(.23, .29, 1.47), emitterBrass);
+      actuator.position.set(side * .79, -.57, -.31); actuator.rotation.set(-.7, side * .36, side * .47);
+      node.add(actuator);
+    }
+    return node;
+  });
   const emitters = [-12, 12].map((x, index) => {
     const emitter = new THREE.Mesh(emitterGeometry, coreMat.clone());
     emitter.name = `HelionEmitter_${index}`; emitter.userData.target = M.target; emitter.userData.helionWeakPoint = index;
     emitter.position.fromArray(p(x, 2.35, -27)); emitter.visible = false; a.root.add(emitter);
     return emitter;
   });
-  const frameMat = new THREE.MeshStandardMaterial({ color: '#a89875', metalness: .48, roughness: .42 });
-  const frame = new THREE.Mesh(new THREE.TorusGeometry(1.68, .18, 8, 32), frameMat);
-  frame.position.copy(core.position); a.root.add(core, frame);
+  a.root.add(core);
+  const helion = createHelionCharacter(a.root, SKY_BOSS);
+  let writerStopped = false;
   const beamMat = new THREE.MeshBasicMaterial({ color: '#fac36b', opacity: .42, transparent: true, depthWrite: false, side: THREE.DoubleSide });
   const tellBeam = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), beamMat);
   const pulse = new THREE.Mesh(new THREE.CircleGeometry(1, 42).rotateX(-Math.PI / 2), beamMat);
@@ -139,7 +162,7 @@ export function createSkyCrownScene() {
     a.layers.get('resolved')!.visible = done.has(J.phase2);
     a.layers.get('choiceA')!.visible = done.has(J.feed);
     a.layers.get('choiceB')!.visible = done.has(J.isolate);
-    frame.visible = !done.has(J.finish);
+    writerStopped = done.has(J.phase3);
     for (const { node, collider } of gates) node.visible = collider.enabled = !done.has(J.isolate);
     approach.apply(done);
   }
@@ -158,10 +181,15 @@ export function createSkyCrownScene() {
     });
     core.visible = fight.active && fight.phase !== 1;
     core.rotation.set(seconds * .57, seconds * .78, .12);
-    coreMat.emissiveIntensity = fight.vulnerable ? 1.65 : .32;
-    coreMat.color.setHex(fight.vulnerable ? 0xffdb9b : 0xb44828);
+    coreRayMaterial.emissiveIntensity = fight.vulnerable ? 1.65 : .32;
+    const angle = fight.tell ? THREE.MathUtils.clamp(Math.atan2(fight.tell.x - SKY_BOSS[0], Math.max(6, fight.tell.z - SKY_BOSS[2])), -1.1, 1.1) : 0;
+    helion.update(seconds, fight.phase, fight.active, fight.beat === 'locked', fight.vulnerable, angle, writerStopped);
     for (const [index, emitter] of emitters.entries()) {
-      emitter.visible = fight.emitterOnline(index);
+      const rig = wings[index];
+      emitter.visible = rig.visible = fight.emitterOnline(index);
+      const selecting = fight.exposedEmitter === index;
+      rig.rotation.z = (index ? -.19 : .19) + (selecting ? Math.sin(seconds * 1.4) * .12 : 0);
+      rig.scale.setScalar(selecting && fight.beat === 'locked' ? 1.16 : 1);
       emitter.rotation.y = seconds * .8;
       const open = fight.vulnerable && fight.exposedEmitter === index;
       emitter.material.color.setHex(open ? 0xffdb9b : 0x9b4733);
@@ -185,7 +213,8 @@ export function createSkyCrownScene() {
     const geometries = new Set<THREE.BufferGeometry>(colliders.map(collider => collider.bvh.geometry));
     a.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
     geometries.forEach(geometry => geometry.dispose());
-    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, coverMaterial, ...approach.materials, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
+    helion.dispose();
+    [...Object.values(a.materials), shutterMat, slitMat, coreMat, coreRayMaterial, emitterBrass, beamMat, gateMat, coverMaterial, ...approach.materials, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
     colliders.forEach(collider => { collider.enabled = false; }); a.root.removeFromParent();
   } };
 }

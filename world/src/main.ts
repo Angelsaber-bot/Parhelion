@@ -1,3 +1,5 @@
+import { createFieldSideSites } from './environment/fieldSideSites';
+import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, fieldSideReady } from './story/fieldSideStories';
 import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
 import { CROOKED_EFFIGY as CE, CULTURAL_STEPS, SHADOW_PLAY as SP, culturalStepReady } from './story/realmCulturalStories';
 import { createEgyptGaugeScene } from './environment/egyptGaugeScene';
@@ -92,7 +94,7 @@ import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_CROWN_RECOVERY
 import { SKY_DOWN_LANDING, SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LANDING, SKY_UP_LIFT } from './environment/skyCrownApproach';
 import { createHelionFight } from './story/helionFight';
 import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, legacySkyApproach, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
-import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
+import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, VALLEY_RESCUE_ENCOUNTER, VALLEY_SURVEY_HEIGHT, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
 import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
 import { createEraStoryScene } from './story/eraStoryScenes';
@@ -607,6 +609,16 @@ for (const site of [orleansShadowPlay, qinCrookedEffigy]) {
   site.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
   addEventListener('pagehide', event => { if (!event.persisted) site.dispose(); });
 }
+const fieldSideSites = alphaResidence ? createFieldSideSites(layout.markers, alphaResidence.position, layout.world.waterLevel,
+  culturalGround, culturalClear) : null;
+if (fieldSideSites) {
+  world.add(fieldSideSites.root);
+  colliders.push(...fieldSideSites.colliders);
+  targets.push(...fieldSideSites.targets);
+  layout.markers.push(...fieldSideSites.markers);
+  fieldSideSites.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+  addEventListener('pagehide', event => { if (!event.persisted) fieldSideSites.dispose(); });
+}
 let shadowPlayCue: { afterSiege: boolean; swallowtail: boolean } | null = null;
 let qinPotterSpeaking = false;
 
@@ -803,6 +815,7 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) return fieldSideReady(id, done);
   if (CULTURAL_STEPS.has(id)) return !(orleansShadowPlay?.playing && (id === SP.rope || id === SP.encore)) && culturalStepReady(id, done);
   if (EGYPT_GAUGE_BY_ID.has(id)) return egyptGaugeNext(done)?.id === id;
   if (id === F.nightPatrol && combat.storyEncounter?.id === VALLEY_NIGHT_ENCOUNTER) return false;
@@ -822,6 +835,8 @@ function journeyMarkerActive(id: string) {
 function interactionLabel(marker: Marker) {
   if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    const fieldSide = FIELD_SIDE_STEPS.get(marker.id)?.label ?? FIELD_SERVICE_LABELS.get(marker.id);
+    if (fieldSide) return bilingual(...fieldSide);
     const cultural = CULTURAL_STEPS.get(marker.id);
     if (cultural) return bilingual(...cultural.label);
     const gaugeStep = EGYPT_GAUGE_BY_ID.get(marker.id);
@@ -892,6 +907,7 @@ function applyWorldState() {
   if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
   if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
+  if (typeof fieldSideSites !== 'undefined' && typeof player !== 'undefined') fieldSideSites?.apply(done, 0, player.pos);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
   if (typeof kingdomWorksScene !== 'undefined') kingdomWorksScene?.apply(done);
   applyCampaignState();
@@ -908,7 +924,7 @@ function applyWorldState() {
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
-    if(t.userData.realmClimax)continue;
+    if(t.userData.realmClimax || (typeof IB !== 'undefined' && t.userData.target === IB.pin)) continue;
     const id = t.userData.target as string;
     if (typeof KYOTO_WITNESS !== 'undefined' && (id === KYOTO_WITNESS.cut || id === KYOTO_WITNESS.pin)) continue;
     if (typeof KW !== 'undefined' && id === KW.pin) continue;
@@ -1686,6 +1702,10 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
     if (id === KINGDOM_WATCH_ENCOUNTER) { advanceKingdomWorks(KW.secure); return; }
+    if (id === VALLEY_RESCUE_ENCOUNTER) {
+      done.add(VALLEY_PROLOGUE.machinesCleared); saveJourneyProgress();
+      toast(bilingual('两台巡检机已停下。绕到急停旁继续撤离。', 'Both inspection units are down. Reach the cutoff and continue the evacuation.')); return;
+    }
     if (id === VALLEY_NIGHT_ENCOUNTER) {
       done.add(F.patrolCleared); saveJourneyProgress();
       toast(bilingual('接点已压制。拆下远程接收器，或把真实计数接到救援口。', 'Junction secure. Remove the remote receiver or feed the true headcount to the rescue port.')); return;
@@ -2173,7 +2193,7 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
       } else combat.refillAmmo();
     },
     hurt: damage => combat.state.applyExternalDamage(damage),
-    warn: () => audio.interaction(),
+    warn: () => audio.realmWarning(region),
   });
   if (fight.start()) {
     activeRealmClimax = fight; combat.refillAmmo(); site.update(fight); hudRevision++; renderObjective();
@@ -2189,7 +2209,7 @@ function updateRealmClimax(dt: number) {
   }
   const playing = gameplayActive() && !combat.defeated;
   if (playing) fight.update(dt, player.pos);
-  site.update(fight);
+  site.update(fight, playing ? dt : 0);
   realmClimaxHud.hidden = !playing;
   if (!playing) return;
   const phase = fight.definition.phases[fight.phase];
@@ -2335,8 +2355,94 @@ function interactCulturalStory(id: string) {
     ['陶工路容', 'Lu Rong, potter']);
   }
 }
+function interactFieldSide(id: string) {
+  if (id === RB.watch) {
+    speakDialogue(['伊芙：“下一圈换我掌桨。你站在那儿，帮我看船有没有偏离木桩。”', 'Eve: “My turn to row next time. From there you can tell if I drift past the posts.”'],
+      ['剑湖渡棚', 'Sword Lake ferry shelter']);
+    return;
+  }
+  if (id === IB.test) {
+    fieldSideSites?.ring(); audio.bell();
+    toast(done.has(IB.camp)
+      ? bilingual('渡口集合铃响了。', 'The landing muster bell rings.')
+      : bilingual('雪路的定位铃响了。', 'The snow-road wayfinding bell rings.'));
+    return;
+  }
+  if (id === VR.listen) {
+    speakDialogue(done.has(JOURNEY.epilogue)
+      ? ['归灯镇电台：回望桥换班结束，新外勤请在生活馆领单。', 'Lamplight Town Radio: Lookback Bridge has changed shifts. New fieldworkers, collect your slips at the residence.']
+      : ['归灯镇电台：回望桥今晚有人值守。雾瀑下道湿滑，请从上道走。', 'Lamplight Town Radio: Lookback Bridge is staffed tonight. The lower Mist Falls path is slick. Please take the upper road.'],
+    ['阿舟的电台', 'Azhou’s radio']);
+    return;
+  }
+  if (id === ES.rack && !fieldSideSites?.seedsArrived()) {
+    toast(bilingual('种罐还在上坡，等小车停稳。', 'The jars are still moving uphill. Wait for the cart to settle.'));
+    return;
+  }
+  if (id === QR.supplies) {
+    if (!worldProgress.armed || combat.refillAmmo(24) <= 0) {
+      toast(bilingual('现在用不上，弹药留给下次。', 'The ammunition can stay here for next time.'));
+      return;
+    }
+    done.add(id); saveJourneyProgress(); audio.explore('solve');
+    toast(bilingual('从小室补给柜补充了弹药。', 'Replenished ammunition from the quiet room.'));
+    return;
+  }
+  if (id === SM.medicine || id === OS.bowl) {
+    const soup = id === OS.bowl;
+    const healed = combat.state.fieldHeal(soup ? 23 : 40);
+    if (healed <= 0) {
+      toast(soup ? bilingual('生命值已满，这碗汤先留着。', 'Health is full. The bowl can wait.')
+        : bilingual('生命值已满，备用药品留在柜里。', 'Health is full. The reserve stays in the cabinet.'));
+      return;
+    }
+    done.add(id); saveJourneyProgress(); audio.explore('solve');
+    toast(soup ? bilingual('喝完热汤，恢复了一些生命值。', 'The hot soup restores some health.')
+      : bilingual('用了医疗柜的备用补给。', 'Used the medical cabinet’s reserve.'));
+    return;
+  }
+  const step = FIELD_SIDE_STEPS.get(id);
+  if (!step) return;
+  if (id === VR.repeater || id === IB.choose) {
+    clearInput();
+    const radio = id === VR.repeater;
+    const speaker: [string, string] = radio ? ['阿舟的试播单', 'Azhou’s test sheet'] : ['玛拉', 'Mara'];
+    narrative?.showChoices(step.line, speaker, radio
+      ? [{ id: 'early', label: ['回波提前半格', 'Return pulse half a tick early'] },
+        { id: 'match', label: ['两个短脉冲完全重合', 'Both short pulses align'] },
+        { id: 'late', label: ['回波拖后一格', 'Return pulse one tick late'] }]
+      : [{ id: 'gorge', label: ['留在峡口，给雪路定位', 'Leave it in the gorge as a waypoint'] },
+        { id: 'camp', label: ['送去渡口，召集两边居民', 'Take it to the landing for the muster'] }], choice => {
+      const marker = markers.get(id);
+      if (!marker || !journeyMarkerActive(id) || combat.defeated || !player.onGround || player.flying ||
+          player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2) || !canReachValleyPanel(marker)) return;
+      if (radio && choice !== 'match') {
+        toast(bilingual('回传仍有偏移，再对一次。', 'The return pulse is still offset. Try another bearing.'));
+        return;
+      }
+      done.add(id);
+      if (!radio && choice === 'camp') done.add(IB.camp);
+      saveJourneyProgress(); audio.explore('solve');
+      if (!radio) { fieldSideSites?.ring(); audio.bell(); }
+      toast(radio ? bilingual('本地信号稳定了。回生活馆听阿舟试播。', 'The local signal is stable. Return to the residence for Azhou’s broadcast.')
+        : choice === 'camp' ? bilingual('铃挂在渡口的新集合架上了。', 'The bell now hangs on the landing muster frame.')
+          : bilingual('铃留在峡口，给雪路上的人指方向。', 'The bell stays at the gorge to guide people along the snow road.'));
+    });
+    return;
+  }
+  done.add(id);
+  saveJourneyProgress();
+  if (id === IB.raise || id === IB.hear) { fieldSideSites?.ring(); audio.bell(); }
+  const title = id === SM.playback ? ['本地救援录音', 'Local rescue recording'] as [string, string]
+    : step.label;
+  const line: [string, string] = id === RB.shed && done.has('sun_core')
+    ? ['誓印已经暗了。伊芙指着船底的裂纹：“现在能直接补，不用再搬船。”', 'The mark is dark. Eve points to the split in the hull. “We can patch it here now. No need to haul the boat.”']
+    : step.line;
+  speakDialogue(line, title);
+}
 function interactWorldJourney(id: string) {
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) { interactFieldSide(id); return; }
   if (EGYPT_GAUGE_BY_ID.has(id)) { interactEgyptGauge(id as EgyptGaugeAction); return; }
   if (CULTURAL_STEPS.has(id)) { interactCulturalStory(id); return; }
   const realm = realmStationByMarker.get(id);
@@ -2409,7 +2515,12 @@ function interactWorldJourney(id: string) {
   }
   if (id === SKY_MARKERS.start) {
     if (combat.bossStarted || combat.storyEncounter || combat.defeated) return;
-    crownRecoverySector = null; combat.refillAmmo(); helionFight.start(); hudRevision++; return;
+    crownRecoverySector = null; combat.refillAmmo();
+    if (helionFight.start() && helionFight.phase === 0 && !done.has(JOURNEY.helionFirstWords)) {
+      done.add(JOURNEY.helionFirstWords); saveJourneyProgress();
+      toast(bilingual('赫利昂：“我已经失去过他们。不会再选一次。”', 'Helion: “I’ve lost them before. I won’t make that choice again.”'));
+    }
+    hudRevision++; return;
   }
   if (id === JOURNEY.launch || id === JOURNEY.returnHome) {
     if (!moveJourneyPlayer(id === JOURNEY.launch ? skyJourneySpawn() : journeyHomeSpawn())) {
@@ -2577,6 +2688,14 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if (typeof IB !== 'undefined' && id === IB.pin) {
+      const hit = questHit.distance <= gun.range && fieldSideReady(id, done);
+      if (hit) {
+        done.add(id); saveJourneyProgress(); combat.flashHitMarker(.14);
+        toast(bilingual('扣销断开，旧索松脱。沿河岸下到吊索旁。', 'The clevis breaks and the old line slackens. Follow the bank to the hoist.'));
+      }
+      combat.shot(muzzle, point, hit); audio.shot(); return;
+    }
     if (typeof KW !== 'undefined' && id === KW.pin) {
       const hit = questHit.distance <= gun.range && advanceKingdomWorks(KW.pin);
       if (hit) combat.flashHitMarker(.14);
@@ -2709,16 +2828,34 @@ function startCurrentAdventure() {
   done.add(ADVENTURE.started);
   done.add(JOURNEY_DRAMA.started);
 }
+function startPrologueMachines() {
+  const marker = markers.get(VALLEY_PROLOGUE.survey);
+  if (!marker || !worldProgress.armed || combat.storyEncounter || combat.bossStarted || done.has(VALLEY_PROLOGUE.machinesCleared)) return;
+  const [x, y, z] = marker.p;
+  const spec: StoryEncounterSpec = { id: VALLEY_RESCUE_ENCOUNTER, anchor: { x, y: y - VALLEY_SURVEY_HEIGHT, z }, actors: [] };
+  const machines: Omit<StoryEncounterActor, 'offset'>[] = [
+    { role: 'stalker', title: ['失控巡检机 · 切割臂', 'Damaged inspection unit · Cutting arm'] },
+    { role: 'bombardier', title: ['失控巡检机 · 投射臂', 'Damaged inspection unit · Projector'] },
+  ];
+  const actors = selectStoryPositions(spec, machines, [[-7, -2], [7, -1], [-7, 6], [7, 6], [0, 9], [9, -2]]);
+  if (actors.length !== machines.length) return;
+  const result = combat.startStoryEncounter({ ...spec, actors }, { position: player.pos, playable: gameplayActive() && player.onGround });
+  if (result.ok) spawn = { ...marker, type: 'spawn', p: [x, y - VALLEY_SURVEY_HEIGHT, z] };
+}
 function advancePrologue(id: string) {
   if (!valleyPrologueScene) return false;
   const P = VALLEY_PROLOGUE;
   if (id === P.record && !valleyPrologueScene.workerClear()) {
-    toast(bilingual('等顾桥走出围栏。', 'Wait for Gu Qiao to clear the rail.'));
+    toast(bilingual('等两名工人都走到围栏外。', 'Wait for both workers to clear the rail.'));
     return true;
   }
   const line = advanceValleyPrologue(valleyPrologueStage(done), id, done);
   if (!line) return false;
-  if (id === P.record) startCurrentAdventure();
+  if (id === P.survey) startPrologueMachines();
+  if (id === P.record) {
+    if (combat.storyEncounter?.id === VALLEY_RESCUE_ENCOUNTER) combat.cancelStoryEncounter();
+    startCurrentAdventure();
+  }
   const saved = save();
   applyWorldState();
   if (id === P.steward || id === P.cartStop || id === P.cartReturn) {
@@ -3217,7 +3354,10 @@ function frame(now: number) {
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
   settlementNpcs.setSpeaking(narrative?.open?nearbySettlementNpc()?.id??null:null);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
-  valleyPrologueScene?.update(gameplayActive() ? dt : 0, settlementNpcs.pose);
+  if (valleyPrologueScene?.update(gameplayActive() ? dt : 0, settlementNpcs.pose, player.pos)) {
+    done.add(VALLEY_PROLOGUE.firstSafe); saveJourneyProgress();
+    toast(bilingual('07 已把陈芮带出危险区，顾桥还在等出口。', '07 gets Chen Rui to safety. Gu Qiao is still waiting for the exit.'));
+  }
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
   if (!narrative?.open) { gaugeKeeperSpeaking = false; qinPotterSpeaking = false; }
@@ -3237,6 +3377,7 @@ function frame(now: number) {
     ['纸影戏班', 'Shadow troupe']);
   }
   egyptGaugeScene?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos, gaugeKeeperSpeaking);
+  fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
   if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
   orleansAtmosphere.update(dt,player.pos);orleansOutskirts.update(dt,player.pos);
   if(typeof qinLift!=='undefined')qinLift.update(dt,player.pos);

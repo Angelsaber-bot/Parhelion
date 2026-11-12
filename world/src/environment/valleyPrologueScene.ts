@@ -2,10 +2,12 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import type { Marker } from '../core/types';
 import type { Collider } from '../player/player';
+import { createSettlementNpcs } from '../settlements/npcs';
+import { residentWalkRig } from '../settlements/residentWalk';
 import { mergeParts } from '../settlements/merge';
 import type { PlacedNpcSocket, SettlementPlacement } from '../settlements/types';
 import { SiteArt } from '../story/campaignSites';
-import { PROLOGUE_LABELS, VALLEY_PROLOGUE as P, type ValleyPrologueStage } from '../story/valleyPrologue';
+import { PROLOGUE_LABELS, VALLEY_PROLOGUE as P, VALLEY_SURVEY_HEIGHT, type ValleyPrologueStage } from '../story/valleyPrologue';
 
 type Point = [number, number, number];
 
@@ -135,7 +137,7 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   const cartReturn = marker(P.cartReturn, [...cartStart]);
   const markers = [marker(P.room, court(-7.25, 1.5, -10.55)), marker(P.workshop, [mx, my + .91, mz]),
     marker(P.cartStop, court(8.25, 1.08, 9.77)), cartReturn,
-    marker(P.radio, [rx, ry + 1.1, rz]), marker(P.survey, bay(0, 1.08, 3.5)),
+    marker(P.radio, [rx, ry + 1.1, rz]), marker(P.survey, bay(0, VALLEY_SURVEY_HEIGHT, 3.5)),
     marker(P.breaker, bay(-1.72, 1.13, 2.89)), marker(P.ratchet, bay(1.73, 1.13, 2.92)),
     marker(P.record, bay(2.64, 1.12, 4.81), 1.95)];
   const targets = [pin];
@@ -149,6 +151,32 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
       appearance: { coat: 0xb69352, trim: 0x465360 }, lines: [['电锁松开以后，先撑住平台。我能自己走。', 'Once the lock releases, brace the platform. I can walk out.']] },
   ];
 
+  // 07 escorts the injured worker alongside the fence while the other route
+  // stays playable. The jointed cast shares the game's resident walk rig.
+  const firstActor = 'prologue_first_worker', officerActor = 'prologue_patrol_07';
+  const firstPath = [floor(bx - 4.05, bz - 1.4), floor(bx - 4.85, bz + 1.45), floor(bx - 4.3, bz + 5.28)];
+  const cast = createSettlementNpcs([
+    { id: officerActor, region: 'alpha', role: ['巡护官 07', 'Patrol Officer 07'], position: firstPath[0], yaw: .15,
+      appearance: { coat: 0x3b5260, trim: 0x75858b, accent: 0xec9b51 }, lines: [] },
+    { id: firstActor, region: 'alpha', role: ['检修工陈芮', 'Service worker Chen Rui'], position: [firstPath[0][0] + .64, firstPath[0][1], firstPath[0][2]], yaw: .18,
+      appearance: { coat: 0xaa7547, trim: 0x493a35, accent: 0xe6bc63 }, lines: [] },
+  ]);
+  art.root.add(cast.group);
+  const officer = cast.group.getObjectByName('Resident_' + officerActor)!;
+  const firstWorker = cast.group.getObjectByName('Resident_' + firstActor)!;
+  const officerGait = residentWalkRig(officer), workerGait = residentWalkRig(firstWorker);
+  const supportArm = officer.getObjectByName('ResidentArmRight')!;
+  const workerTorso = firstWorker.getObjectByName('ResidentTorso')!;
+  const visorMaterial = new THREE.MeshStandardMaterial({ color: '#38434d', metalness: .65, roughness: .42 });
+  const visorGlow = new THREE.MeshStandardMaterial({ color: '#f2af5b', emissive: '#f39542', emissiveIntensity: .8 });
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(.28, .112, .12), visorMaterial);
+  visor.position.set(0, .022, .105);
+  const slit = new THREE.Mesh(new THREE.BoxGeometry(.215, .02, .01), visorGlow); slit.position.z = .066; visor.add(slit);
+  officer.getObjectByName('ResidentHead')!.add(visor);
+  const firstA = new THREE.Vector3(...firstPath[0]), firstB = new THREE.Vector3(...firstPath[1]), firstC = new THREE.Vector3(...firstPath[2]);
+  const firstPoint = new THREE.Vector3(), firstAhead = new THREE.Vector3();
+  let firstEscape = 0, firstObserved = false;
+
   let stage: ValleyPrologueStage = 'room';
   let cartTravel = 0, platformDrop = 0, escape = 0;
   let cartStopped = false, workerMoved = false;
@@ -161,6 +189,10 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   function apply(next: ValleyPrologueStage, done: ReadonlySet<string>, initial = false) {
     const previous = stage;
     stage = next;
+    firstObserved = done.has(P.survey);
+    if (done.has(P.firstSafe) || done.has(P.record)) firstEscape = 1;
+    if (!firstObserved) firstEscape = 0;
+    cast.group.visible = firstObserved && next !== 'legacy';
     if (next === 'room' || next === 'briefing') { cartTravel = 0; platformDrop = 0; escape = 0; }
     if (initial && next === 'cart') cartTravel = 1;
     cartStopped = done.has(P.cartStop);
@@ -184,7 +216,28 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
     release: [P.breaker], secure: [P.ratchet], record: [P.record],
   };
   const markerIds = new Set<string>(markers.map(marker => marker.id));
-  function update(dt: number, poseWorker: (id: string, position: Point, yaw: number) => boolean) {
+  function update(dt: number, poseWorker: (id: string, position: Point, yaw: number) => boolean, player: THREE.Vector3) {
+    const wasClear = firstEscape >= 1;
+    if (firstObserved && Math.hypot(player.x - bx, player.z - bz) < 24 && Math.abs(player.y - by) < 5)
+      firstEscape = Math.min(1, firstEscape + dt / 3.2);
+    if (cast.group.visible) {
+      const t = firstEscape < .45 ? firstEscape / .45 : (firstEscape - .45) / .55;
+      const a = firstEscape < .45 ? firstA : firstB, b = firstEscape < .45 ? firstB : firstC;
+      firstPoint.copy(a).lerp(b, t);
+      const yaw = Math.atan2(b.x - a.x, b.z - a.z);
+      const moving = firstEscape > 0 && firstEscape < 1;
+      cast.update(dt, player);
+      officer.position.x = firstPoint.x; officer.position.z = firstPoint.z;
+      firstAhead.set(firstPoint.x + .64, firstPoint.y, firstPoint.z + .23);
+      firstWorker.position.x = firstAhead.x; firstWorker.position.z = firstAhead.z;
+      officer.rotation.y = moving ? yaw : .29;
+      firstWorker.rotation.y = moving ? yaw : .14;
+      officer.visible = firstWorker.visible = Math.hypot(player.x - bx, player.z - bz) < 56 && Math.abs(player.y - by) < 30;
+      officerGait.update(firstEscape * 24, moving, firstPoint.y - firstA.y);
+      workerGait.update(firstEscape * 24 - .35, moving, firstPoint.y - firstA.y);
+      supportArm.rotation.z = moving ? .72 : .15;
+      workerTorso.rotation.z = moving ? -.14 : 0;
+    }
     if ((stage === 'room' || stage === 'briefing') && workerMoved) { poseWorker(P.worker, workerInside, 0); workerMoved = false; }
     if (stage === 'cart' && cartTravel < 1) { cartTravel = Math.min(1, cartTravel + dt / 4.5); placeCart(); }
     if (stage === 'secure' && platformDrop < 1) { platformDrop = Math.min(1, platformDrop + dt / 2); platform.rotation.z = platformDrop * -.16; }
@@ -194,12 +247,14 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
       poseWorker(P.worker, position, 0);
       workerMoved = true;
     }
+    return !wasClear && firstEscape >= 1;
   }
   return { root: art.root, colliders, markers, targets, npcs, spawn, courtyardSpawn, radioSpawn, apply, update,
-    workerClear: () => escape >= 1,
+    workerClear: () => escape >= 1 && firstEscape >= 1,
     ownsMarker: (id: string) => markerIds.has(id),
     markerActive: (id: string) => activeMarkers[stage]?.includes(id) ?? false,
     dispose() {
+      cast.dispose(); visorMaterial.dispose(); visorGlow.dispose();
       const geometries = new Set<THREE.BufferGeometry>([solid, gateSolid]);
       art.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
       geometries.forEach(geometry => geometry.dispose());

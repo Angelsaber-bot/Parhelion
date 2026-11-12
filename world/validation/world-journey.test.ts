@@ -403,6 +403,10 @@ test('production quest stands, three regional handovers and the sky finale work 
     assert.ok(w.done.has(EGYPT_MIRRORS.solved));
     interact(J.egyptWeir); assert.ok(w.done.has(J.egyptWeir));
     station('egypt', 'start'); station('egypt', 'west');
+    const jaw = w.scene.getObjectByName('TideEaterJaw');
+    const restingJaw = jaw.rotation.x;
+    frame(128);
+    assert.ok(jaw.rotation.x > restingJaw + .2, 'Tide-Eater opens its jaws during the actual attack tell');
     shootPhase('egypt', 0, 'TideEaterTarget1');
     station('egypt', 'west'); station('egypt', 'east');
     shootPhase('egypt', 1, 'TideEaterTarget2');
@@ -423,6 +427,10 @@ test('production quest stands, three regional handovers and the sky finale work 
     interact(J.orleansFlag); hold(ORLEANS_WORKS.bell);
     interact(J.orleansBattery); assert.ok(w.done.has(J.orleansBattery));
     station('orleans', 'start'); station('orleans', 'west');
+    const crossbowArm = w.scene.getObjectByName('ValeCrossbowArm');
+    const restingArm = crossbowArm.rotation.x;
+    frame(128);
+    assert.ok(crossbowArm.rotation.x < restingArm - .2, 'Vale raises his crossbow during the actual attack tell');
     shootPhase('orleans', 0, 'BridgefortTarget1');
     station('orleans', 'east'); shootPhase('orleans', 1, 'BridgefortTarget2');
     station('orleans', 'west'); assert.ok(w.done.has(climaxCleared('orleans')));
@@ -439,7 +447,11 @@ test('production quest stands, three regional handovers and the sky finale work 
     frame(500); interact(J.qinHalt); assert.ok(w.done.has(J.qinHalt));
     interact(QIN_ARMY.levers[1].id); frame(150);
     assert.ok(w.done.has(J.qinTurn));
-    station('qin', 'start'); station('qin', 'west'); station('qin', 'east');
+    station('qin', 'start'); station('qin', 'west');
+    const commandHand = w.scene.getObjectByName('GeneralCommandHand');
+    const restingHand = commandHand.rotation.x;
+    frame(128);
+    assert.ok(commandHand.rotation.x < restingHand - .2, 'the Sealing General raises his tally during the actual attack tell'); station('qin', 'east');
     station('qin', 'west'); station('qin', 'east'); station('qin', 'west');
     assert.ok(w.done.has(climaxCleared('qin'))); assert.equal(w.done.has(QIN_GENERAL_DOWN), false);
     interact(J.qinDone); assert.ok(w.done.has(J.qinDone));
@@ -463,6 +475,10 @@ test('production quest stands, three regional handovers and the sky finale work 
     [J.skyReview, J.westService, J.feed, J.test, J.isolate, J.skyReturnSight, J.skyCourt].forEach(interact);
     assert.ok(w.done.has(J.isolate));
     interact(M.start);
+    assert.ok(w.done.has(J.helionFirstWords));
+    frame(2);
+    const suit = w.scene.getObjectByName('HelionObservationSuit');
+    assert.ok(suit?.visible && suit.getObjectByName('HelionUnmaskedFace') && suit.getObjectByName('HelionExecutionArm'));
     frame(2);
     assert.equal((d.getElementById('helion-status') as HTMLElement).hidden, false);
     interact(M.westAmmo);
