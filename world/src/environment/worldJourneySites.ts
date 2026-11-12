@@ -9,6 +9,7 @@ import { mergeParts } from '../settlements/merge';
 import { createSettlementNpcs } from '../settlements/npcs';
 import type { SettlementPlacement } from '../settlements/types';
 import { SiteArt } from '../story/campaignSites';
+import { createLookbackDeck } from './lookbackDeck';
 import { JOURNEY as J, JOURNEY_DISPATCH, journeyEnabled, journeyStepReady, type JourneyPoint } from '../story/worldJourney';
 
 type Height = (x: number, z: number, ceiling?: number) => number | null;
@@ -77,22 +78,38 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const lakeApproach = new THREE.Vector3(...lake);
   let lakeMeeting = false, lakeWaiting = false, lakeReleased: boolean | undefined, frameDrop = 0;
 
-  const [bx, by, bz] = stand(J.bridge, '回望桥 · 机械侧门', [-275, 5, -30]);
+  const [bx, by, bz] = stand(J.bridge, '回望桥 · 北侧踏桥', [-275, 5, -30]);
+  const southZ = bz + 3.9, rearZ = bz - 4.6;
+  stand(J.bridgeSouth, '回望桥 · 南侧踏桥', [bx - 1.2, by, southZ]);
+  stand(J.bridgeRear, '前哨 · 旧路后门闩', [bx + 7, by, rearZ]);
   const visitor = stand(J.visitor, '回望桥 · 接应访客', [bx + 12, by, bz]);
   stand(J.epilogue, '回望桥 · 填上回程时间', [bx + 17, by, bz - 1]);
   const homecoming = floor([bx - 2, by, bz]);
-  const bridgeSurface = Math.max(by + .04, ground(bx + 4.5, bz, by + 2) ?? by);
-  for (let i = 0; i < 15; i++) a.box([bx + 1.3 + i * .46, bridgeSurface, bz], [.43, .16, 3.05], wood, true);
-  for (const z of [bz - 1.48, bz + 1.48]) {
-    a.box([bx + 4.5, bridgeSurface + .83, z], [7.1, .13, .12], wood, true);
-    for (const x of [bx + 1.15, bx + 4.5, bx + 7.85]) a.box([x, bridgeSurface + .45, z], [.16, .94, .16], wood);
-    a.box([bx + 4.5, bridgeSurface + .47, z], [7.1, .12, .13], verdigris, false, 'choiceB');
+  const bridgeGround = (x: number, z: number) => ground(x, z, by + 2) ?? by;
+  const bridgeSurface = bridgeGround(bx + 1.2, bz);
+  const northDeck = createLookbackDeck('North', bx + .8, bx + 9.2, bz, x => bridgeGround(x, bz));
+  const southDeck = createLookbackDeck('South', bx + .8, bx + 9.2, southZ, x => bridgeGround(x, southZ));
+  a.root.add(northDeck.root, southDeck.root);
+  for (const z of [bz, southZ]) for (const x of [bx + .8, bx + 9.2]) {
+    const y = bridgeGround(x, z);
+    for (const side of [-1, 1]) {
+      a.box([x, y + .91, z + side * 1.36], [.2, 1.82, .23], metal, true);
+      a.box([x, y + 1.72, z + side * 1.36], [.24, .13, .27], amber);
+    }
+  }
+  for (const x of [bx - 1, bx + 2, bx + 5, bx + 8, bx + 11]) {
+    const y = bridgeGround(x, rearZ - .87);
+    a.box([x, y + .37, rearZ - .87], [.1, .74, .13], wood);
+    a.box([x, y + .63, rearZ - .87], [2.86, .08, .08], wood, true);
   }
   const bridgeGateGeometry = new THREE.BoxGeometry(.18, 1.7, 2.8).translate(bx + 1.2, bridgeSurface + .85, bz);
   const bridgeGateMaterial = new THREE.MeshStandardMaterial({ color: metal });
   const bridgeGate = new THREE.Mesh(bridgeGateGeometry, bridgeGateMaterial);
   bridgeGate.name = 'JourneyLookbackGate'; a.root.add(bridgeGate);
-  const repair = new SiteArt(), repairZ = bz + 3.9;
+  const rearGateGeometry = new THREE.BoxGeometry(.17, 1.5, 1.58).translate(bx + 7.7, bridgeGround(bx + 7.7, rearZ) + .75, rearZ);
+  const rearGate = new THREE.Mesh(rearGateGeometry, bridgeGateMaterial);
+  rearGate.name = 'JourneyLookbackRearGate'; a.root.add(rearGate);
+  const repair = new SiteArt(), repairZ = southZ;
   const repairGround = (x: number) => ground(x, repairZ, by + 2.1) ?? by;
   const repairLeft = bx - 1, repairRight = bx + 10;
   const repairHeight = Math.max(...[1.5, 3.5, 5.5, 7.5].map(offset => repairGround(bx + offset))) + .18;
@@ -234,8 +251,11 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
 
   const solids = mergeParts(a.solids); a.solids.forEach(g => g.dispose());
   const bridgeCollider: Collider = { name: 'COL_JourneyLookbackGate', bvh: new MeshBVH(bridgeGateGeometry), enabled: false };
-  const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, repairCollider, ...gates.map(gate => gate.collider)];
+  const rearCollider: Collider = { name: 'COL_JourneyLookbackRearGate', bvh: new MeshBVH(rearGateGeometry), enabled: false };
+  const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, rearCollider,
+    northDeck.collider, southDeck.collider, repairCollider, ...gates.map(gate => gate.collider)];
   let bridgeOpen = false, visitTravel = 0, waterOpen = false, boatTravel = 0;
+  let route: 'north' | 'south' | 'rear' | undefined, bridgeDrop = 0, bridgeRepaired = false;
   let marchOrdered = false, halted = false, marchTravel = 0;
   let reliefMoving = false, reliefTravel = 0;
   let cartDistance = 0, brakeAt = 0, cartStarted = false, cartParked = false, cartTurned = false, cartBraked = false, cartClaimed = false;
@@ -252,9 +272,18 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     cart.updateMatrixWorld(true);
   }
   function apply(done: ReadonlySet<string>) {
-    bridgeCollider.enabled = journeyEnabled(done) && !done.has(J.bridge) && !done.has(J.finish);
+    const nextOpen = done.has(J.bridge), nextRepaired = done.has(J.finish);
+    const nextRoute = done.has(J.bridgeRear) ? 'rear' : done.has(J.bridgeSouth) ? 'south' : 'north';
+    if (route === undefined || !nextOpen) bridgeDrop = nextOpen || !journeyEnabled(done) || nextRepaired ? 1 : 0;
+    route = nextRoute;
+    bridgeOpen = nextOpen;
+    bridgeRepaired = nextRepaired;
+    bridgeCollider.enabled = journeyEnabled(done) && !nextRepaired && (!nextOpen || route === 'rear' || route === 'south');
+    rearCollider.enabled = journeyEnabled(done) && !nextRepaired && !done.has(J.visitor) && (!nextOpen || route !== 'rear');
     bridgeGate.visible = bridgeCollider.enabled;
-    repair.root.visible = repairCollider.enabled = done.has(J.finish);
+    rearGate.visible = rearCollider.enabled;
+    repair.root.visible = repairCollider.enabled = bridgeRepaired;
+    placeBridge();
     lakeMeeting = !done.has('saber_contract') && journeyStepReady(J.lake, done);
     lakeWaiting = journeyStepReady(J.lakeWinch, done);
     lakePin.visible = lakeWaiting;
@@ -267,7 +296,6 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     tie.visible = journeyStepReady(J.egyptWeir, done);
     batteryBrace.visible = journeyStepReady(J.orleansBattery, done);
     plateMaterial.color.setHex(done.has(J.compare) ? 0x2a3848 : 0xf7f1d7);
-    bridgeOpen = done.has(J.bridge);
     if (!bridgeOpen) visitTravel = 0;
     if (done.has(J.visitor)) {
       visitTravel = 1;
@@ -288,7 +316,6 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     }
     reliefFlags.visible = done.has(J.orleansFlag);
     a.layers.get('briefed')!.visible = !done.has(J.lakeWinch);
-    a.layers.get('choiceB')!.visible = done.has(J.finish);
     cartStarted = done.has(J.cargoCall); cartTurned = done.has(J.cargoSwitch); cartClaimed = done.has(J.cargo);
     if (done.has(J.cargoPin)) {
       brakeAt = brakingStops.find(distance => done.has(brakeFlag(distance))) ?? brakingStops[0];
@@ -304,6 +331,12 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     transmitterMaterial.emissiveIntensity = done.has(J.signal) ? 0 : .65;
     placeCart();
     a.root.updateMatrixWorld(true);
+  }
+  function placeBridge() {
+    northDeck.root.visible = !bridgeOpen || route === 'north';
+    northDeck.lower(route === 'north' ? bridgeDrop : 0, route === 'north');
+    southDeck.root.visible = !bridgeRepaired && (!bridgeOpen || route === 'south');
+    southDeck.lower(route === 'south' ? bridgeDrop : 0, route === 'south' && !bridgeRepaired);
   }
   function placeGuideFrame() {
     const drop = THREE.MathUtils.smoothstep(frameDrop, 0, 1);
@@ -325,15 +358,23 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
       frameDrop = Math.min(1, frameDrop + dt / .54);
       placeGuideFrame();
     }
+    if (bridgeOpen && bridgeDrop < 1 && dt > 0) {
+      bridgeDrop = Math.min(1, bridgeDrop + dt / .66);
+      placeBridge();
+    }
     residents.update(dt, player);
     if (visitorActor) visitorActor.visible &&= bridgeOpen;
     if (workerActor) workerActor.visible &&= marchOrdered;
     if (reliefActor) reliefActor.visible &&= reliefMoving;
     if (bridgeOpen && visitTravel < 1) {
-      visitTravel = Math.min(1, visitTravel + dt / 6);
-      const x = THREE.MathUtils.lerp(bx + 1.5, visitor[0] + .85, visitTravel);
-      const y = ground(x, bz, by + 1.6) ?? by;
-      residents.pose('journey_visitor_actor', [x, y + .03, bz], Math.PI / 2);
+      if (bridgeDrop >= 1 || route === 'rear') visitTravel = Math.min(1, visitTravel + dt / 5.55);
+      const x = THREE.MathUtils.lerp(bx - .5, visitor[0] + .85, visitTravel);
+      const pathZ = route === 'rear' ? rearZ : route === 'south' ? southZ : bz;
+      const merge = THREE.MathUtils.smoothstep(visitTravel, .72, 1);
+      const z = THREE.MathUtils.lerp(pathZ, visitor[2], merge);
+      const y = bridgeGround(x, z);
+      const yaw = Math.atan2(visitor[0] + 1.35 - bx, (visitor[2] - pathZ) * 6 * merge * (1 - merge));
+      residents.pose('journey_visitor_actor', [x, y + .03, z], yaw);
     }
     if (marchOrdered && (workerActor?.visible || !halted)) {
       if (!halted && marchTravel < 1) marchTravel = Math.min(1, marchTravel + dt / 8);
@@ -371,6 +412,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     },
     dispose() {
     residents.dispose();
+    northDeck.dispose(); southDeck.dispose();
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); repairGeometry.dispose();
