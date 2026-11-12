@@ -56,6 +56,7 @@ it('records only the human shooter: shots, hits, heads, damage, kill distance an
   expect(halo.aimed[distBucket(12)][0]).toBe(3);
   expect(halo.aimed[distBucket(12)][1]).toBe(2);
   expect(halo.wild).toBe(0);
+  expect(halo.idle).toBe(0);
   expect(halo.held).toBeGreaterThan(60);
   expect(h.kills).toBe(1);
 });
@@ -123,4 +124,17 @@ it('the last human leaving a bot room closes the round before a bot refills the 
   expect(records[0].humans[0].weapons.firefly.held).toBeGreaterThan(100);
   for (let i = 0; i < 300; i++) core.step();
   expect(core.match.stats.drain()).toEqual([]); // bots alone are never recorded
+});
+
+it('shots while every enemy is dead count as idle, not as wild misses', () => {
+  const m = liveMatch(true, ['halo', 'lumen', 'blade']);
+  fire(m, 'you', 12, 0.9, 22); fire(m, 'you', 12, 0.9, 22); fire(m, 'you', 12, 1.6, 22); // dead
+  expect(m.player('bot')!.alive).toBe(false);
+  fire(m, 'you', 12, 0.9, 22); // into the empty respawn wait
+  m.player('bot')!.alive = true; Object.assign(m.player('bot')!, { x: 20, z: 0 }); m.step();
+  fire(m, 'you', 12, 0.9, 22); // a living enemy, but off to the side
+  m.flushStats();
+  const halo = m.stats.drain()[0].humans[0].weapons.halo;
+  expect(halo.idle).toBe(1);
+  expect(halo.wild).toBe(1);
 });

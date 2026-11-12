@@ -27,13 +27,13 @@ async function load(): Promise<MatchRecord[]> {
 }
 
 const sum = (a: WeaponLine, b: WeaponLine) => {
-  for (const k of ['held', 'shots', 'hits', 'heads', 'pellets', 'pelletHits', 'shieldHits', 'damage', 'kills', 'headKills', 'wild'] as const) a[k] += b[k];
+  for (const k of ['held', 'shots', 'hits', 'heads', 'pellets', 'pelletHits', 'shieldHits', 'damage', 'kills', 'headKills', 'wild', 'idle'] as const) a[k] = (a[k] ?? 0) + (b[k] ?? 0);
   b.aimed.forEach(([s, h], i) => { a.aimed[i][0] += s; a.aimed[i][1] += h; });
   b.killDist.forEach((n, i) => { a.killDist[i] += n; });
   a.ttk.push(...b.ttk);
 };
 const blank = (): WeaponLine => ({ held: 0, shots: 0, hits: 0, heads: 0, pellets: 0, pelletHits: 0, shieldHits: 0, damage: 0, kills: 0, headKills: 0,
-  aimed: Array.from({ length: STAT_BUCKETS }, () => [0, 0] as [number, number]), wild: 0, killDist: Array(STAT_BUCKETS).fill(0), ttk: [] });
+  aimed: Array.from({ length: STAT_BUCKETS }, () => [0, 0] as [number, number]), wild: 0, idle: 0, killDist: Array(STAT_BUCKETS).fill(0), ttk: [] });
 const pct = (a: number, b: number) => b ? `${Math.round(100 * a / b)}%` : '-';
 const median = (xs: number[]) => { if (!xs.length) return NaN; const s = [...xs].sort((a, b) => a - b); return s[s.length >> 1]; };
 
@@ -58,7 +58,7 @@ const sources = new Map<string, number>(); for (const r of records) { const k = 
 for (const [k, n] of sources) console.log(`  ${n} × ${k}`);
 const chars = new Map<number, number>(); for (const r of records) for (const h of r.humans) chars.set(h.char, (chars.get(h.char) ?? 0) + 1);
 console.log(`  characters: ${[...chars].map(([c, n]) => `${CHARACTERS[c]?.name ?? c} ${n}`).join(', ')}`);
-console.log('\nweapon      held   shots  hit%  head%  pellet%  dmg/shot  dmg/min  kills  headK  median TTK  shieldHits  wild');
+console.log('\nweapon      held   shots  hit%  head%  pellet%  dmg/shot  dmg/min  kills  headK  median TTK  shieldHits  wild  idle');
 for (const def of WEAPONS) {
   const w = byWeapon.get(def.id);
   if (!w) continue;
@@ -67,7 +67,7 @@ for (const def of WEAPONS) {
     def.id.padEnd(10), `${minutes.toFixed(1)}m`.padStart(6), String(w.shots).padStart(7), pct(w.hits, w.shots).padStart(5), pct(w.heads, w.hits).padStart(6),
     (def.pellets > 1 ? pct(w.pelletHits, w.pellets) : '').padStart(8), (w.shots ? (w.damage / w.shots).toFixed(1) : '-').padStart(9),
     (minutes ? (w.damage / minutes).toFixed(0) : '-').padStart(8), String(w.kills).padStart(6), String(w.headKills).padStart(6),
-    (w.ttk.length ? `${(median(w.ttk) / TICK_HZ).toFixed(2)}s (${w.ttk.length})` : '-').padStart(11), String(w.shieldHits).padStart(11), pct(w.wild, w.shots).padStart(5),
+    (w.ttk.length ? `${(median(w.ttk) / TICK_HZ).toFixed(2)}s (${w.ttk.length})` : '-').padStart(11), String(w.shieldHits).padStart(11), pct(w.wild, w.shots).padStart(5), pct(w.idle, w.shots).padStart(5),
   ].join(' '));
 }
 const edges = STAT_DIST.map((d, i) => `${i ? STAT_DIST[i - 1] : 0}-${d}`).concat(`${STAT_DIST.at(-1)}+`);

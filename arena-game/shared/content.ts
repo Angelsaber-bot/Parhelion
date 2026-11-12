@@ -121,6 +121,13 @@ export function weaponIndex(id: WeaponId): number { return WEAPONS.findIndex((w)
 export function loadoutWeapon(loadout: Loadout | Readonly<Loadout>, slot: number): number {
   return weaponIndex(loadout[slot >= 0 && slot < 3 && Number.isInteger(slot) ? slot : 0]);
 }
+/** Any legal bot kit, uniformly: two distinct guns and one melee. `rand` returns [0, 1). */
+export function randomBotLoadout(rand: () => number): Loadout {
+  const pick = <T,>(xs: readonly T[]): T => xs[Math.min(xs.length - 1, Math.floor(rand() * xs.length))];
+  const first = pick(GUN_IDS);
+  return [first, pick(GUN_IDS.filter((g) => g !== first)), pick(MELEE_IDS)];
+}
+export const randomBotUtility = (rand: () => number): UtilityId => rand() < 1 / 3 ? 'smoke' : 'frag';
 export function botLoadout(seed: number): Loadout {
   const n = Math.abs(seed | 0);
   return [GUN_IDS[n % GUN_IDS.length], GUN_IDS[(n + 2) % GUN_IDS.length], MELEE_IDS[n % MELEE_IDS.length]];

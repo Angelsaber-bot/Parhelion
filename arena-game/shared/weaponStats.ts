@@ -36,8 +36,10 @@ export interface WeaponLine {
   headKills: number;
   /** Guns only, per distance bucket: [shots with a visible enemy inside the aim cone, of those that hit]. */
   aimed: [number, number][];
-  /** Shots with no visible enemy inside the aim cone (pre-fire, spraying, far misses). */
+  /** Shots with a living enemy somewhere but none visible inside the aim cone (pre-fire, spraying, far misses). */
   wild: number;
+  /** Shots fired while no enemy was alive (spraying on after a kill, firing into a respawn wait). */
+  idle: number;
   /** Kills per distance bucket. */
   killDist: number[];
   /** Ticks from this player's first damage on a victim's life to the kill (latest 60). */
@@ -101,6 +103,8 @@ export interface ShotStat {
   hitDist: number | null;
   /** Distance to the visible enemy the shot was aimed at, or null for a wild shot. */
   aimDist: number | null;
+  /** Whether any enemy was alive when the shot left the barrel. */
+  enemyAlive: boolean;
 }
 
 const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? 'frag';
@@ -108,7 +112,7 @@ const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? 'frag';
 function newWeaponLine(): WeaponLine {
   return {
     held: 0, shots: 0, hits: 0, heads: 0, pellets: 0, pelletHits: 0, shieldHits: 0, damage: 0, kills: 0, headKills: 0,
-    aimed: Array.from({ length: STAT_BUCKETS }, () => [0, 0] as [number, number]), wild: 0,
+    aimed: Array.from({ length: STAT_BUCKETS }, () => [0, 0] as [number, number]), wild: 0, idle: 0,
     killDist: Array.from({ length: STAT_BUCKETS }, () => 0), ttk: [],
   };
 }
@@ -167,7 +171,7 @@ export class StatsCollector {
     if (s.shield) w.shieldHits++;
     // Bucket by the aimed enemy's centre so hits and misses share one ruler; hits fall back to contact.
     const d = s.aimDist ?? s.hitDist;
-    if (d === null) w.wild++;
+    if (d === null) { if (s.enemyAlive) w.wild++; else w.idle++; }
     else { const b = w.aimed[distBucket(d)]; b[0]++; if (s.hitDist !== null) b[1]++; }
   }
 
@@ -247,7 +251,7 @@ function cleanWeapon(raw: unknown): WeaponLine {
   return {
     held: int(r.held), shots: int(r.shots), hits: int(r.hits), heads: int(r.heads), pellets: int(r.pellets), pelletHits: int(r.pelletHits),
     shieldHits: int(r.shieldHits), damage: int(r.damage), kills: int(r.kills), headKills: int(r.headKills),
-    aimed: Array.from({ length: STAT_BUCKETS }, (_, i) => ints(aimed[i], 2) as [number, number]), wild: int(r.wild),
+    aimed: Array.from({ length: STAT_BUCKETS }, (_, i) => ints(aimed[i], 2) as [number, number]), wild: int(r.wild), idle: int(r.idle),
     killDist: ints(r.killDist, STAT_BUCKETS), ttk: (Array.isArray(r.ttk) ? r.ttk : []).slice(-TTK_KEEP).map((t) => int(t, 1e6)),
   };
 }

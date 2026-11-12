@@ -4,7 +4,7 @@
 import { Client } from '@colyseus/sdk';
 import { getMap } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
-import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, type Team } from '../../shared/content.ts';
+import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
 import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../../shared/trainingRange.ts';
@@ -150,19 +150,22 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
   });
 }
 
-export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL): Session {
+/** `rand` picks the bots' kits: every legal loadout, re-rolled for each rematch. */
+export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKILL, rand: () => number = Math.random): Session {
   const match = new Match(getMap(opts.map), opts.layout);
   navFor(match); // build the nav grid up front so the first bot tick doesn't hitch
   const team: Team = opts.team === 'B' ? 'B' : 'A';
   const id = 'you';
   match.addPlayer(id, { name: opts.name || 'You', team, char: opts.char, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
+  const kit = () => ({ loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) });
   let seed = 7;
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
-      const n = seed++;
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL[difficulty]));
+      const n = seed++, k = kit();
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
+  match.botKit = kit;
   match.stats.meta = { source: 'offline', botSkill: difficulty, host: typeof location === 'undefined' ? undefined : location.hostname };
   return runLocal(match, id);
 }

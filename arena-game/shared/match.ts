@@ -128,6 +128,8 @@ export class Match {
   private spawnUse = new Map<string, number>();
   /** Human-only weapon telemetry; off until a host sets `stats.meta` (never on the training range). */
   readonly stats = new StatsCollector();
+  /** Offline host only: a fresh kit for every bot at the start of each rematch. Online rooms keep theirs. */
+  botKit: (() => { loadout: Loadout; utility: UtilityId }) | null = null;
 
   constructor(readonly map: ArenaMap, readonly layout: TeamLayout) {}
 
@@ -285,10 +287,20 @@ export class Match {
     if (this.phase === 'live' && phase !== 'live') {
       this.stats.end(this.tick, phase === 'ended' ? 'finished' : 'abandoned', winner ?? null, this.score, this.map.data.mapId, this.layout);
     }
-    if (this.phase === 'ended' && phase !== 'ended') this.resetRound();
+    if (this.phase === 'ended' && phase !== 'ended') { this.rerollBots(); this.resetRound(); }
     this.phase = phase;
     this.phaseT = ticks;
     this.events.push({ t: 'phase', phase, winner });
+  }
+
+  private rerollBots(): void {
+    if (!this.botKit) return;
+    for (const s of this.slots.values()) {
+      if (!s.info.bot) continue;
+      const kit = this.botKit();
+      s.info.loadout = kit.loadout; s.info.utility = kit.utility;
+      s.state.loadout = [...kit.loadout] as Loadout; s.state.utility = kit.utility;
+    }
   }
 
   private resetRound(): void {
@@ -440,7 +452,7 @@ export class Match {
     const ends: Vec3[] = [];
     const damage = new Map<string, { dmg: number; head: boolean; t: number }>();
     const human = this.stats.on && !slot.info.bot;
-    const aimDist = human ? this.aimedDistance(shooter, ev.origin, ev.dirs, pos) : null;
+    const aim = human ? this.aimedDistance(shooter, ev.origin, ev.dirs, pos) : null;
     let pelletHits = 0, shieldHit = false;
     for (const d of ev.dirs) {
       let best = raycastMap(this.map, ev.origin, d, w.range);
@@ -479,21 +491,22 @@ export class Match {
     if (human) {
       let hitDist: number | null = null, head = false;
       for (const v of damage.values()) { hitDist = Math.min(hitDist ?? Infinity, v.t); head ||= v.head; }
-      this.stats.shot(shooter.id, ev.weapon, { pellets: ev.dirs.length, pelletHits, head, shield: shieldHit, hitDist, aimDist });
+      this.stats.shot(shooter.id, ev.weapon, { pellets: ev.dirs.length, pelletHits, head, shield: shieldHit, hitDist, aimDist: aim!.dist, enemyAlive: aim!.enemyAlive });
     }
     if (this.phase === 'ended') return;
     for (const [vid, { dmg, head, t }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon, t);
   }
 
   /** Telemetry only: distance to the visible enemy nearest the aim line, inside AIM_CONE. */
-  private aimedDistance(shooter: PlayerState, origin: Vec3, dirs: Vec3[], pos: Map<string, HistoricalPose>): number | null {
+  private aimedDistance(shooter: PlayerState, origin: Vec3, dirs: Vec3[], pos: Map<string, HistoricalPose>): { dist: number | null; enemyAlive: boolean } {
     const aim = dirs[0];
-    if (!aim) return null;
-    let best: number | null = null, bestCos = Math.cos(AIM_CONE);
+    let best: number | null = null, bestCos = Math.cos(AIM_CONE), enemyAlive = false;
     for (const [id, s] of this.slots) {
       if (id === shooter.id || s.info.team === shooter.team) continue;
       const p = pos.get(id);
       if (!p || !p[3]) continue;
+      enemyAlive = true;
+      if (!aim) continue;
       const h = playerHitbox(p[4]);
       const chest: Vec3 = [p[0], p[1] + (h.bodyBottom + h.bodyTop) / 2, p[2]];
       const d: Vec3 = [chest[0] - origin[0], chest[1] - origin[1], chest[2] - origin[2]];
@@ -503,7 +516,7 @@ export class Match {
       if (cos < bestCos || !lineOfSight(this.map, origin, chest)) continue;
       bestCos = cos; best = len;
     }
-    return best;
+    return { dist: best, enemyAlive };
   }
 
   /** One current-time contact in a 3D arc swept from the last checked heading to the current one.
