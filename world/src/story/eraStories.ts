@@ -1,5 +1,6 @@
 import {ADVENTURE,adventureActive,adventureChapterComplete,getAdventureGuide,harborBridgeReady,winterRouteReady} from './openWorldCampaign';
 import { KINGDOM_GATE, gateGuide } from './kingdomGate';
+import { KINGDOM_WORKS, kingdomWorksActive } from './kingdomWorks';
 import type { Localized, RegionId } from '../settlements/types';
 import type { Layout, Marker } from '../core/types';
 
@@ -173,6 +174,8 @@ export function getEraBossRequirements(core: string, done: ReadonlySet<string>):
   const region = chapterForCore(core);
   if (!region) return undefined;
   const def = ERA_STORIES[region];
+  if (region === 'britain' && adventureActive(done) && !coreCleared(region, done) && kingdomWorksActive(done))
+    return [...ERA_BOSS_REQUIREMENTS.sun_core, KINGDOM_WORKS.lamp];
   if(adventureActive(done)&&!coreCleared(region,done)&&!all(done,def.legacyRequires)){
    if(region==='britain')return ERA_BOSS_REQUIREMENTS.sun_core;
    if(region==='blacksail')return ['blackbeard_meet',...(harborBridgeReady(done)?[]:['adventure_harbor_rigging']),ADVENTURE.records,...(done.has('adventure_harbor_alarm_disabled')||done.has('adventure_harbor_alarm_cleared')?[]:['adventure_harbor_alarm_disabled'])];

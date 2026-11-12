@@ -1,6 +1,7 @@
 import type {Localized,RegionId} from '../settlements/types';
 import type {NarrativeChoice} from '../ui/narrativePanel';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
+import { kingdomWorksEnded } from './kingdomWorks';
 
 /** New scenes augment the shipped rescue journey. They never manufacture combat,
  * transport, contract or resident-work completion. Old saves opt in explicitly. */
@@ -18,7 +19,7 @@ export const dramaReported=(done:ReadonlySet<string>)=>JOURNEY_REGIONS.filter(r=
 export const dramaDecision=(done:ReadonlySet<string>)=>done.has(JOURNEY_DRAMA.decision+'open')?'open':done.has(JOURNEY_DRAMA.decision+'watch')?'watch':null;
 export function dramaChapterReady(region:RegionId,done:ReadonlySet<string>){
  if(region==='alpha')return done.has('compact_relay_complete');
- if(region==='britain')return done.has('sun_core')&&done.has('kingdom_gate_rescued');
+ if(region==='britain')return done.has('sun_core')&&done.has('kingdom_gate_rescued')&&kingdomWorksEnded(done);
  if(region==='blacksail')return done.has('adventure_harbor_departed');
  if(region==='winter')return done.has('adventure_winter_arrived');
  // Musashi's pact is a post-victory fact in legacy saves; evidence is still a

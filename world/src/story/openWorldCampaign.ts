@@ -1,4 +1,5 @@
 import {gateGuide} from './kingdomGate';
+import {kingdomWorksEnded,kingdomWorksNext} from './kingdomWorks';
 import {JOURNEY_DRAMA,JOURNEY_CAST,JOURNEY_REGIONS,dramaActive,dramaReported,dramaDecision,dramaChapterReady} from './journeyDrama';
 import type { Localized, RegionId } from '../settlements/types';
 export type AdventurePoint=[number,number,number];
@@ -21,7 +22,7 @@ export function harborBridgeReady(done:ReadonlySet<string>){return done.has(ADVE
 export function winterRouteReady(done:ReadonlySet<string>){return done.has('winter_core')||done.has('napoleon_contract')||done.has('shard_bell')||['beacon_1','beacon_2','beacon_3'].every(id=>done.has(id));}
 export function adventureChapterComplete(region:RegionId,done:ReadonlySet<string>){
  if(adventureLegacy(region,done))return true;
- if(region==='britain')return done.has('sun_core')&&(!dramaActive(done)||done.has('kingdom_gate_rescued'));
+ if(region==='britain')return done.has('sun_core')&&kingdomWorksEnded(done)&&(!dramaActive(done)||done.has('kingdom_gate_rescued'));
  if(region==='blacksail')return done.has(ADVENTURE.departed)&&done.has('blackbeard_contract');
  if(region==='winter')return done.has(ADVENTURE.arrived)&&done.has('napoleon_contract');
  if(region==='kyoto')return done.has(ADVENTURE.evidence)&&done.has('musashi_contract');
@@ -60,6 +61,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  }
  if(region==='britain'){
   const title:Localized=['落日王国 · 打开归路','Sunset Kingdom · Open the Way Home'];
+  const works=kingdomWorksNext(done);if(works)return at(region,title,works.text,works.id);
   if(done.has('sun_core'))return null;
   if(!done.has('saber_contract'))return at(region,title,['在圣剑湖与 Saber 正式契约。','Make your pact with Saber at Sword Lake.'],'saber_contract');
   const gate=gateGuide(done);if(gate)return at(region,title,gate.text,gate.targetId);

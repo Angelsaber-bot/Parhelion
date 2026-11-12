@@ -34,6 +34,8 @@ import {carveCoreRing} from './exploration/bossArenas';
 import { FarPropCuller } from './rendering/farPropCuller';
 import {ADVENTURE,adventureActive,adventureTravelOpen,getCurrentAdventureGuide} from './story/openWorldCampaign';
 import {createAdventureSites} from './story/adventureSites';
+import { createKingdomWorksScene } from './environment/kingdomWorksScene';
+import { KINGDOM_WORKS as KW, KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORK_LABELS, KINGDOM_WORK_LINES, commitKingdomWork, kingdomWorkReady, type KingdomWork } from './story/kingdomWorks';
 import {createExploration} from './exploration/runtime';
 import {createAmbientLife} from './environment/ambientLife';
 import {createFieldHerbs} from './environment/fieldHerbs';
@@ -535,6 +537,15 @@ let cavalrySupport:LocalCavalrySupport|undefined;
 let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined;
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
+const kingdomHearth = layout.markers.find(marker => marker.id === 'hall_brazier_1');
+const kingdomWorksScene = kingdomHearth ? createKingdomWorksScene(kingdomHearth.p,
+  (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null,
+  p => residentQueries.clear(p, .38, 1.8)) : null;
+const kingdomWorkMarkers = new Set(kingdomWorksScene?.markers.map(marker => marker.id));
+if (kingdomWorksScene) {
+  world.add(kingdomWorksScene.root); layout.markers.push(...kingdomWorksScene.markers); targets.push(kingdomWorksScene.target);
+  addEventListener('pagehide', event => { if (!event.persisted) kingdomWorksScene.dispose(); });
+}
 const worldJourneySites = alphaResidence ? createWorldJourneySites(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const valleyFieldScene = alphaResidence ? createValleyFieldScene(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const skyCrown = createSkyCrownScene();
@@ -778,6 +789,7 @@ function journeyMarkerActive(id: string) {
   return journeyStepReady(id, done);
 }
 function interactionLabel(marker: Marker) {
+  if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
     const field = VALLEY_FIELD_BY_ID.get(marker.id);
     if (field) return bilingual(...field.label);
@@ -836,6 +848,7 @@ function applyWorldState() {
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
   if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
+  if (typeof kingdomWorksScene !== 'undefined') kingdomWorksScene?.apply(done);
   applyCampaignState();
   applyFalseDawnState();
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
@@ -852,6 +865,7 @@ function applyWorldState() {
     if(t.userData.homeTarget)continue;
     if(t.userData.realmClimax)continue;
     const id = t.userData.target as string;
+    if (typeof KW !== 'undefined' && id === KW.pin) continue;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
     if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === JOURNEY.skyScan || id === SKY_MARKERS.target)) continue;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
@@ -1600,6 +1614,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
+    if (id === KINGDOM_WATCH_ENCOUNTER) { advanceKingdomWorks(KW.secure); return; }
     if (id === VALLEY_NIGHT_ENCOUNTER) {
       done.add(F.patrolCleared); saveJourneyProgress();
       toast(bilingual('接点已压制。拆下远程接收器，或把真实计数接到救援口。', 'Junction secure. Remove the remote receiver or feed the true headcount to the rescue port.')); return;
@@ -2102,6 +2117,47 @@ function updateRealmClimax(dt: number) {
     : fight.exposed ? bilingual('可射击 · 瞄准金色目标','Target open · Aim for the gold target')
       : bilingual('查看当前任务，操作现场机关','Follow the current objective to the field controls');
 }
+function selectStoryPositions(spec: StoryEncounterSpec, officers: readonly Omit<StoryEncounterActor, 'offset'>[], slots: readonly [number, number][]) {
+  const { x, z } = spec.anchor;
+  const actors: StoryEncounterActor[] = [];
+  for (const offset of slots) {
+    const next = { ...officers[actors.length], offset };
+    const px = x + offset[0], pz = z + offset[1];
+    const point = combat.geometry.safeAdventureSpawn({ ...spec, actors: [next] }, px, pz);
+    if (!point || combat.state.enemies.some(e => e.hp > 0 && !e.pacified && Math.abs(e.p.y - point.y) < 2.6 && Math.hypot(e.p.x - px, e.p.z - pz) < 5)) continue;
+    actors.push(next);
+    if (actors.length === officers.length) break;
+  }
+  return actors;
+}
+function advanceKingdomWorks(id: KingdomWork) {
+  if (!kingdomWorkReady(id, done)) return false;
+  if (id === KW.patrol) {
+    const marker = markers.get(id);
+    if (!marker || !worldProgress.armed || combat.bossStarted || activeRealmClimax) return false;
+    const [x, y, z] = marker.p;
+    const spec: StoryEncounterSpec = { id: KINGDOM_WATCH_ENCOUNTER, anchor: { x, y: y - .9, z }, actors: [] };
+    const officers: Omit<StoryEncounterActor, 'offset'>[] = [
+      { role: 'breaker', title: ['旧誓盾卫', 'Oathbound shield guard'] },
+      { role: 'musketeer', title: ['空甲巡卫', 'Empty patrol marksman'] },
+    ];
+    const lateral = done.has(KW.market) ? 1 : -1;
+    const actors = selectStoryPositions(spec, officers, [[5*lateral,-5], [-5*lateral,-5], [0,-8], [-8,2], [8,2], [-6,6], [6,6]]);
+    if (actors.length !== officers.length) {
+      toast(bilingual('守夜点附近受阻。清理附近威胁后再启动。', 'The watch approaches are blocked. Clear nearby threats and try again.')); return false;
+    }
+    const result = combat.startStoryEncounter({ ...spec, actors }, { position: player.pos, playable: gameplayActive() && player.onGround });
+    if (!result.ok) { toast(bilingual(...FALSE_DAWN_START_HINTS[result.reason])); return false; }
+    spawn = { ...marker, type: 'spawn', p: [x, y - .9, z] }; combat.refillAmmo();
+    return true;
+  }
+  if (!commitKingdomWork(id, done)) return false;
+  kingdomWorksScene?.apply(done, 0, true);
+  saveJourneyProgress();
+  if (id === KW.bell) audio.bell(); else audio.interaction();
+  const line = KINGDOM_WORK_LINES[id]; if (line) toast(bilingual(...line));
+  return true;
+}
 function startValleyNightPatrol() {
   const marker = markers.get(F.nightPatrol);
   if (!marker || !worldProgress.armed || combat.bossStarted || activeRealmClimax) return;
@@ -2113,16 +2169,7 @@ function startValleyNightPatrol() {
     ...(done.has(F.dimWatch) ? [] : [{ role: 'musketeer' as const, title: ['执行巡卫', 'Enforcement patrol'] as const }]),
   ];
   const slots = (decoy ? [[-7, -5], [-8, 3], [6, 6], [5, -7], [0, 9], [9, 0]] : [[-7, 5], [6, -6], [0, 9], [-8, 0], [8, 0]]) as [number, number][];
-  const actors: StoryEncounterActor[] = [];
-  for (const offset of slots) {
-    const next = { ...officers[actors.length], offset };
-    const candidate = { ...spec, actors: [next] };
-    const px = x + offset[0], pz = z + offset[1];
-    const point = combat.geometry.safeAdventureSpawn(candidate, px, pz);
-    if (!point || combat.state.enemies.some(e => e.hp > 0 && !e.pacified && Math.abs(e.p.y - point.y) < 2.6 && Math.hypot(e.p.x - px, e.p.z - pz) < 5)) continue;
-    actors.push(next);
-    if (actors.length === officers.length) break;
-  }
+  const actors = selectStoryPositions(spec, officers, slots);
   if (actors.length !== officers.length) {
     toast(bilingual('接点站位暂受阻。清理周边威胁后重试。','Junction approach blocked. Clear nearby threats and retry.')); return;
   }
@@ -2348,6 +2395,11 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if (typeof KW !== 'undefined' && id === KW.pin) {
+      const hit = questHit.distance <= gun.range && advanceKingdomWorks(KW.pin);
+      if (hit) combat.flashHitMarker(.14);
+      combat.shot(muzzle, point, hit); audio.shot(); return;
+    }
     const realm = questHit.object.userData.realmClimax as RealmClimaxId | undefined;
     if (realm) {
       const hit = typeof activeRealmClimax !== 'undefined' && activeRealmClimax?.id === realm && questHit.distance <= gun.range
@@ -2413,6 +2465,11 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
+    if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
+      if (d < (m.radius ?? 3) && d < bd && kingdomWorkReady(m.id as KingdomWork, done) &&
+          (m.id !== KW.patrol || combat.storyEncounter?.id !== KINGDOM_WATCH_ENCOUNTER) && canReachValleyPanel(m)) { bd = d; best = m; }
+      continue;
+    }
     if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) {
       if (d < (m.radius ?? 3) && d < bd && journeyMarkerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
       continue;
@@ -2612,6 +2669,10 @@ function interactQinOrder() {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
+    if (player.onGround && !player.flying && !combat.defeated) advanceKingdomWorks(m.id as KingdomWork);
+    return;
+  }
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) { interactWorldJourney(m.id); return; }
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) { advancePrologue(m.id); return; }
   const claim = modelClaimPoints.find(point => point.marker.id === m.id);
@@ -2944,6 +3005,7 @@ function frame(now: number) {
   const activeAdventure=adventureRuntime?.channel;
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
+  kingdomWorksScene?.apply(done, gameplayActive() ? dt : 0);
   const fieldRegion=regionAt(player.pos.x,player.pos.z).id;
   const campaignField=isCampaignRegion(fieldRegion);
   exploration.update(gameplayActive()?dt:0,player,campaignField?fieldRegion:'alpha',campaignField&&gameplayActive()&&!combat.defeated);
@@ -2975,8 +3037,8 @@ function frame(now: number) {
   egyptResidentLife.update(gameplayActive()||narrative?.open?dt:0,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,regionVisuals.ready('egypt'));
   homeResidentLife.update(dt,player.pos,narrative?.open?nearbySettlementNpc()?.id??null:null,gameplayActive()||!!narrative?.open,regionVisuals.ready('home'));
   sky.position.copy(eye);
-  twilight.update(dt, player.pos.x, done.has('sun_core'), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'),
-    done.has(F.nightStart) && !done.has(F.nightDone));
+  twilight.update(dt, player.pos.x, done.has('sun_core') && !done.has(KW.recall), done.has('sea_core'), player.pos.z, done.has('winter_core'), done.has('fire_core'),
+    done.has(F.nightStart) && !done.has(F.nightDone), done.has(KW.bell));
   matchServantLighting();
   updateCold(dt);
   // Shadow frame snaps to whole shadow texels in light space: walking no longer makes every
