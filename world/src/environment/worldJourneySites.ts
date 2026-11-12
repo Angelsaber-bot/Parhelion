@@ -169,7 +169,34 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const repairGeometry = mergeParts(repair.solids); repair.solids.forEach(g => g.dispose());
   const repairCollider: Collider = { name: 'COL_LookbackRepairedWalk', bvh: new MeshBVH(repairGeometry), enabled: false };
 
-  stand(J.meal, '生活馆 · 孟槐的热饭', [ox - 3, oy, oz - 5], false);
+  const meal = stand(J.meal, '生活馆 · 公共桌热饭', [ox - 3, oy, oz - 5], false);
+  const windowSeat = stand(J.mealWindow, '生活馆 · 廊窗座位', [meal[0] - 3.1, meal[1], meal[2] - .4], false);
+  const coatRack = stand(J.mealGear, '生活馆 · 暖廊衣架', [meal[0] + 2.8, meal[1], meal[2] - 1.1], false);
+  const sketch = stand(J.mealSketch, '生活馆 · 给阿舟看撤离草图', [meal[0] - 1.3, meal[1], meal[2] + 2.6], false);
+  const mealArt = new SiteArt();
+  for (const [x, y, z] of [meal, windowSeat]) {
+    mealArt.box([x, y + .82, z - .71], [1.34, .15, .67], wood);
+    for (const dx of [-.54, .54]) mealArt.box([x + dx, y + .39, z - .71], [.13, .77, .5], wood);
+    mealArt.box([x + .74, y + .43, z + .18], [.42, .13, .42], wood);
+    mealArt.box([x + .74, y + .22, z + .18], [.29, .42, .29], wood);
+  }
+  for (const dx of [-.45, .45]) mealArt.box([coatRack[0] + dx, coatRack[1] + .81, coatRack[2] - .66], [.11, 1.62, .14], wood);
+  mealArt.box([coatRack[0], coatRack[1] + 1.51, coatRack[2] - .66], [1.06, .11, .14], wood);
+  mealArt.box([coatRack[0], coatRack[1] + 1.04, coatRack[2] - .66], [.49, .73, .15], '#5d7882', false, 'resolved');
+  mealArt.box([sketch[0], sketch[1] + .49, sketch[2] - .68], [.87, .98, .46], wood);
+  mealArt.paper(sketch[0], sketch[1] + 1, sketch[2] - .67, .57, .34, 'choiceB');
+  mealArt.finish('alpha');
+  mealArt.root.name = 'WinterReturnMealPorch';
+  a.root.add(mealArt.root);
+  const bowl = new THREE.Group();
+  bowl.name = 'WinterReturnMealBowl';
+  const ceramic = new THREE.MeshStandardMaterial({ color: '#ba8f67', roughness: .76 });
+  const soup = new THREE.MeshStandardMaterial({ color: '#e1af5a', roughness: .43 });
+  bowl.add(new THREE.Mesh(new THREE.CylinderGeometry(.14, .08, .11, 12), ceramic));
+  const broth = new THREE.Mesh(new THREE.CylinderGeometry(.123, .123, .01, 12), soup);
+  broth.position.y = .055;
+  bowl.add(broth);
+  mealArt.root.add(bowl);
   const cargo = stand(J.cargoCall, '东渡口 · 扣货记录', [269, 5, 77]);
   stand(J.cargoSwitch, '东渡口 · 本地支线道岔', [cargo[0] + 17, cargo[1], cargo[2] + 3]);
   stand(J.cargo, '东渡口 · 取回返程信标', [cargo[0] + 3, cargo[1], cargo[2] + 1.6], false);
@@ -335,6 +362,11 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     if (!bridgeOpen) visitTravel = 0;
     visitorReceived = done.has(J.visitor);
     bench.root.visible = visitorReceived;
+    mealArt.root.visible = done.has(J.meal) || journeyStepReady(J.meal, done);
+    mealArt.layers.get('resolved')!.visible = done.has(J.mealGear);
+    mealArt.layers.get('choiceB')!.visible = done.has(J.mealSketch);
+    const mealSeat = done.has(J.mealWindow) ? windowSeat : meal;
+    bowl.position.set(mealSeat[0], mealSeat[1] + .945, mealSeat[2] - .68);
     if (!visitorReceived) visitorAtTown = false;
     if (visitorReceived) {
       visitTravel = 1;
@@ -459,8 +491,8 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); repairGeometry.dispose();
-    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials)].forEach(material => material.dispose());
-    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ...cargoMaterials, ...ferryMaterials])) material.dispose();
+    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials), ...Object.values(mealArt.materials)].forEach(material => material.dispose());
+    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ceramic, soup, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };
 }
