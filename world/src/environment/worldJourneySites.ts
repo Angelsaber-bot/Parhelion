@@ -3,6 +3,7 @@ import { MeshBVH } from 'three-mesh-bvh';
 import type { Marker } from '../core/types';
 import type { Collider } from '../player/player';
 import { egyptToWorld } from '../map/egyptPlan';
+import { GATES } from '../map/regions';
 import { ORLEANS_WORKS } from '../map/orleansWorks';
 import { qinToWorld } from '../map/qinPlan';
 import { mergeParts } from '../settlements/merge';
@@ -78,11 +79,42 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const lakeApproach = new THREE.Vector3(...lake);
   let lakeMeeting = false, lakeWaiting = false, lakeReleased: boolean | undefined, frameDrop = 0;
 
+  const [ridgeX, , ridgeZ] = GATES.britain.p;
+  const ridgeY = ground(ridgeX, ridgeZ, 40) ?? 4;
+  const ridge = stand(J.ridge, '西岭 · 外勤路单', [ridgeX, ridgeY, ridgeZ], false);
+  const ridgeLantern = new THREE.Mesh(
+    new THREE.BoxGeometry(.24, .36, .25),
+    new THREE.MeshStandardMaterial({ color: '#615949', emissive: '#ffcf6b', emissiveIntensity: 0 }),
+  );
+  ridgeLantern.name = 'WestRidgeRouteLamp';
+  for (const side of [-1, 1]) {
+    const x = ridge[0] - .55, z = ridge[2] + side * 1.36;
+    const y = ground(x, z, ridge[1] + 3) ?? ridge[1];
+    a.box([x, y + .17, z], [.54, .33, .5], sandstone, true);
+    a.box([x, y + .93, z], [.19, 1.7, .22], wood);
+    a.box([x, y + 2.12, z], [.4, .09, .37], metal);
+    if (side === -1) ridgeLantern.position.set(x, y + 1.89, z);
+  }
+  a.root.add(ridgeLantern);
+  a.box([ridge[0] - .22, ridge[1] + .42, ridge[2] - .68], [.72, .84, .35], wood);
+  a.box([ridge[0] - .22, ridge[1] + .88, ridge[2] - .68], [.87, .10, .51], sandstone);
+  a.paper(ridge[0] - .23, ridge[1] + .95, ridge[2] - .66, .5, .32);
+
   const [bx, by, bz] = stand(J.bridge, '回望桥 · 北侧踏桥', [-275, 5, -30]);
   const southZ = bz + 3.9, rearZ = bz - 4.6;
   stand(J.bridgeSouth, '回望桥 · 南侧踏桥', [bx - 1.2, by, southZ]);
   stand(J.bridgeRear, '前哨 · 旧路后门闩', [bx + 7, by, rearZ]);
   const visitor = stand(J.visitor, '回望桥 · 接应访客', [bx + 12, by, bz]);
+  const townDesk = stand(J.visitorDesk, '生活馆外 · 访客的维修台', [ox + 7.4, oy, oz + 4.7], false);
+  const bench = new SiteArt();
+  bench.box([townDesk[0], townDesk[1] + .89, townDesk[2] - .68], [1.52, .14, .63], wood);
+  for (const dx of [-.59, .59]) bench.box([townDesk[0] + dx, townDesk[1] + .43, townDesk[2] - .68], [.14, .83, .47], metal);
+  bench.box([townDesk[0] + .36, townDesk[1] + 1.05, townDesk[2] - .7], [.47, .2, .35], verdigris);
+  for (const dx of [-.42, -.14]) bench.ring([townDesk[0] + dx, townDesk[1] + 1, townDesk[2] - .63], .105, .025, metal, 'metal', [Math.PI / 2, 0, 0]);
+  bench.finish('alpha');
+  bench.root.name = 'LookbackVisitorWorkbench';
+  a.root.add(bench.root);
+  const townVisitor = new THREE.Vector3(...floor([townDesk[0] + 1.12, townDesk[1], townDesk[2] - .61]));
   stand(J.epilogue, '回望桥 · 填上回程时间', [bx + 17, by, bz - 1]);
   const homecoming = floor([bx - 2, by, bz]);
   const bridgeGround = (x: number, z: number) => ground(x, z, by + 2) ?? by;
@@ -255,6 +287,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, rearCollider,
     northDeck.collider, southDeck.collider, repairCollider, ...gates.map(gate => gate.collider)];
   let bridgeOpen = false, visitTravel = 0, waterOpen = false, boatTravel = 0;
+  let visitorReceived = false, visitorAtTown = false;
   let route: 'north' | 'south' | 'rear' | undefined, bridgeDrop = 0, bridgeRepaired = false;
   let marchOrdered = false, halted = false, marchTravel = 0;
   let reliefMoving = false, reliefTravel = 0;
@@ -288,6 +321,9 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     lakeWaiting = journeyStepReady(J.lakeWinch, done);
     lakePin.visible = lakeWaiting;
     const released = done.has(J.lakeWinch);
+    const registered = done.has(J.ridge);
+    ridgeLantern.material.emissiveIntensity = !released ? 0 : registered ? 1.35 : .83;
+    ridgeLantern.material.color.set(released ? '#e8bd69' : '#615949');
     if (lakeReleased === undefined || lakeReleased && !released) {
       frameDrop = released ? 1 : 0;
       placeGuideFrame();
@@ -297,9 +333,12 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     batteryBrace.visible = journeyStepReady(J.orleansBattery, done);
     plateMaterial.color.setHex(done.has(J.compare) ? 0x2a3848 : 0xf7f1d7);
     if (!bridgeOpen) visitTravel = 0;
-    if (done.has(J.visitor)) {
+    visitorReceived = done.has(J.visitor);
+    bench.root.visible = visitorReceived;
+    if (!visitorReceived) visitorAtTown = false;
+    if (visitorReceived) {
       visitTravel = 1;
-      residents.pose('journey_visitor_actor', [visitor[0] + .85, visitor[1], visitor[2]], Math.PI / 2);
+      if (!visitorAtTown) residents.pose('journey_visitor_actor', [visitor[0] + .85, visitor[1], visitor[2]], Math.PI / 2);
     }
     waterOpen = done.has(J.egyptWeir); water.visible = waterOpen;
     if (!waterOpen) boatTravel = 0;
@@ -362,6 +401,10 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
       bridgeDrop = Math.min(1, bridgeDrop + dt / .66);
       placeBridge();
     }
+    if (visitorReceived && !visitorAtTown && player.distanceToSquared(townVisitor) < 55 ** 2) {
+      visitorAtTown = true;
+      residents.pose('journey_visitor_actor', townVisitor.toArray(), -.6);
+    }
     residents.update(dt, player);
     if (visitorActor) visitorActor.visible &&= bridgeOpen;
     if (workerActor) workerActor.visible &&= marchOrdered;
@@ -416,8 +459,8 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); repairGeometry.dispose();
-    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials)].forEach(material => material.dispose());
-    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
+    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials)].forEach(material => material.dispose());
+    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };
 }

@@ -6,7 +6,7 @@ import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import type { SettlementPlacement } from '../src/settlements/types';
 import { ADVENTURE as A } from '../src/story/openWorldCampaign';
 import { VALLEY_PROLOGUE } from '../src/story/valleyPrologue';
-import { commitJourneyStep, JOURNEY as J } from '../src/story/worldJourney';
+import { commitJourneyStep, JOURNEY as J, journeyStepReady, worldJourneyGuide } from '../src/story/worldJourney';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
 const initial = [A.started, A.online, 'armory_rack', VALLEY_PROLOGUE.record];
@@ -80,6 +80,7 @@ test('the native Saber rig braces the guide and rejoins after the actual winch i
     assert.ok(w.combat.geometry.clear(bracePosition.clone().add(new Vector3(0, .06, 0)), .32, 1.65));
     interact();
     assert.ok(w.done.has(J.lake));
+    assert.equal(w.contract.recruited, false, 'meet first, then make the pact after solving the guide');
     assert.ok(w.narrative.open);
     for (let i = 0; i < 5 && w.narrative.open; i++) interact();
     assert.equal(w.narrative.open, false);
@@ -92,6 +93,37 @@ test('the native Saber rig braces the guide and rejoins after the actual winch i
     assert.ok(w.contract.isFollowing('saber'));
     assert.ok(actor.root.position.distanceTo(w.player.pos) < 5);
     assert.ok(actor.root.position.distanceTo(bracePosition) > .2);
+    const lamp = w.scene.getObjectByName('WestRidgeRouteLamp')!;
+    assert.ok(lamp.material.emissiveIntensity > 0);
+    approach(J.ridge);
+    interact();
+    assert.ok(w.done.has(J.ridge));
     assert.deepEqual(h.errors, []);
   } finally { await h.close(); }
+});
+
+test('the ridge and visitor workbench reflect persistent World outcomes', () => {
+  const site = createWorldJourneySites({ position: [0, 5, 0] } as SettlementPlacement, () => 4.5, () => true);
+  const done = new Set(initial);
+  try {
+    const bench = site.root.getObjectByName('LookbackVisitorWorkbench')!;
+    site.apply(done);
+    assert.equal(bench.visible, false);
+    assert.equal(journeyStepReady(J.ridge, done), false);
+    assert.ok(commitJourneyStep(J.lake, done));
+    assert.ok(commitJourneyStep(J.lakePin, done));
+    assert.equal(worldJourneyGuide('alpha', done)?.targetId, J.ridge);
+    assert.ok(commitJourneyStep(J.ridge, done));
+    assert.equal(commitJourneyStep(J.visitorDesk, done), null);
+    done.add(J.bridge);
+    assert.ok(commitJourneyStep(J.visitor, done));
+    site.apply(done);
+    assert.equal(bench.visible, true);
+    const desk = site.markers.find(marker => marker.id === J.visitorDesk)!;
+    site.update(.1, new Vector3(...desk.p));
+    const visitor = site.root.getObjectByName('Resident_journey_visitor_actor')!;
+    assert.ok(visitor.position.distanceTo(new Vector3(...desk.p)) < 3);
+    assert.ok(commitJourneyStep(J.visitorDesk, done));
+    assert.equal(commitJourneyStep(J.visitorDesk, done), null);
+  } finally { site.dispose(); }
 });
