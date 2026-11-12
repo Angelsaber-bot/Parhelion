@@ -23,6 +23,7 @@ const local = (toWorld: (x: number, z: number) => [number, number], x: number, y
 export function createWorldJourneySites(residence: SettlementPlacement, ground: Height, clear: Clear) {
   const [ox, oy, oz] = residence.position;
   const a = new SiteArt();
+  const regionalArt = { Egypt: new SiteArt(), Orleans: new SiteArt(), Qin: new SiteArt() };
   const markers: Marker[] = [];
   const targets: THREE.Mesh[] = [];
   const metal = '#465966', sandstone = '#bda57d', amber = '#e4a447', verdigris = '#70b6a5', wood = '#796652';
@@ -35,13 +36,13 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     }
     return [x, ground(x, z, y + 2.1) ?? y, z];
   }
-  function stand(id: string, label: string, preferred: JourneyPoint, art = true) {
+  function stand(id: string, label: string, preferred: JourneyPoint, art: SiteArt | false = a) {
     const [x, y, z] = floor(preferred);
     markers.push({ id, label, type: 'interact', p: [x, y + .92, z], radius: 2.1 });
     if (art) {
-      a.box([x, y + .45, z - .74], [.64, .88, .41], metal);
-      a.box([x, y + .91, z - .74], [1.08, .14, .64], sandstone);
-      a.box([x, y + 1, z - .66], [.72, .035, .35], verdigris, false, 'metal');
+      art.box([x, y + .45, z - .74], [.64, .88, .41], metal);
+      art.box([x, y + .91, z - .74], [1.08, .14, .64], sandstone);
+      art.box([x, y + 1, z - .66], [.72, .035, .35], verdigris, false, 'metal');
     }
     return [x, y, z] as JourneyPoint;
   }
@@ -250,9 +251,9 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     return { mesh, collider };
   });
 
-  stand(J.egyptRead, '绿洲 · 搁浅船只水尺', local(egyptToWorld, -164, 14.5, 114));
-  const weir = stand(J.egyptWeir, '水道独立泄洪杆', local(egyptToWorld, -30, 11, 141));
-  const river = stand(J.egyptDone, '下游水尺 · 验收渡航', local(egyptToWorld, 2, 9, 144));
+  stand(J.egyptRead, '绿洲 · 搁浅船只水尺', local(egyptToWorld, -164, 14.5, 114), regionalArt.Egypt);
+  const weir = stand(J.egyptWeir, '水道独立泄洪杆', local(egyptToWorld, -30, 11, 141), regionalArt.Egypt);
+  const river = stand(J.egyptDone, '下游水尺 · 验收渡航', local(egyptToWorld, 2, 9, 144), regionalArt.Egypt);
   const tie = shotPin(J.egyptTie, [weir[0] + 5, weir[1] + 1.55, weir[2] - 2]);
   const startWater = new THREE.Vector3(weir[0] + 3, weir[1] - .18, weir[2] - 1);
   const endWater = new THREE.Vector3(river[0] - 2, river[1] - .18, river[2] - 1);
@@ -272,23 +273,23 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const hull = new THREE.Mesh(new THREE.BoxGeometry(3.4, .38, 1.22), ferryMaterials[0]); hull.position.y = .2;
   const cabin = new THREE.Mesh(new THREE.BoxGeometry(1.18, .8, .8), ferryMaterials[1]); cabin.position.y = .71;
   boat.add(hull, cabin); boat.rotation.y = angle; a.root.add(boat);
-  stand(J.orleansRead, '奥尔良集市 · 城防分工', [-802, 14.5, -1350]);
-  stand(J.orleansFlag, '河门 · 接应旗手', [-874, 8, -1512]);
-  const orleans = stand(J.orleansDone, '桥头堡 · 两岸通行验收', [-725.5, 14.2, -1151]);
-  const battery = stand(J.orleansBattery, '桥头堡炮台 · 拆下击发杆', [-716.5, 14.2, -1152.5]);
+  stand(J.orleansRead, '奥尔良集市 · 城防分工', [-802, 14.5, -1350], regionalArt.Orleans);
+  stand(J.orleansFlag, '河门 · 接应旗手', [-874, 8, -1512], regionalArt.Orleans);
+  const orleans = stand(J.orleansDone, '桥头堡 · 两岸通行验收', [-725.5, 14.2, -1151], regionalArt.Orleans);
+  const battery = stand(J.orleansBattery, '桥头堡炮台 · 拆下击发杆', [-716.5, 14.2, -1152.5], regionalArt.Orleans);
   const batteryBrace = shotPin(J.orleansBrace, [battery[0] + 3.5, battery[1] + 1.4, battery[2] - 2.4]);
-  a.cyl([battery[0] + 2.3, battery[1] + .52, battery[2] - 2.4], 1.2, 1.04, wood);
-  a.cyl([battery[0] + 2.35, battery[1] + 1.45, battery[2] - 1.9], .32, 2.4, metal, false, 'metal', [Math.PI / 2, 0, 0]);
+  regionalArt.Orleans.cyl([battery[0] + 2.3, battery[1] + .52, battery[2] - 2.4], 1.2, 1.04, wood);
+  regionalArt.Orleans.cyl([battery[0] + 2.35, battery[1] + 1.45, battery[2] - 1.9], .32, 2.4, metal, false, 'metal', [Math.PI / 2, 0, 0]);
   const reliefFlags = new THREE.Group(); a.root.add(reliefFlags);
   const flagMaterial = new THREE.MeshStandardMaterial({ color: '#a23836', side: THREE.DoubleSide });
   for (const x of [orleans[0] - 2, orleans[0] + 2]) {
-    a.box([x, orleans[1] + 1.65, orleans[2]], [.13, 3.3, .13], wood);
+    regionalArt.Orleans.box([x, orleans[1] + 1.65, orleans[2]], [.13, 3.3, .13], wood);
     const flag = new THREE.Mesh(new THREE.PlaneGeometry(1, .65), flagMaterial); flag.position.set(x + .48, orleans[1] + 2.7, orleans[2]); reliefFlags.add(flag);
   }
-  stand(J.qinRead, '工匠镇 · 封陵册', local(qinToWorld, -182, 22.5, 103));
-  const march = stand(J.qinMarch, '军阵中轴 · 行令', local(qinToWorld, -17, 28, -111));
-  const halt = stand(J.qinHalt, '军阵中轴 · 驻令', local(qinToWorld, -17, 28, -149));
-  stand(J.qinDone, '铜闸内侧 · 交出军令册', local(qinToWorld, -17, 28, -162));
+  stand(J.qinRead, '工匠镇 · 封陵册', local(qinToWorld, -182, 22.5, 103), regionalArt.Qin);
+  const march = stand(J.qinMarch, '军阵中轴 · 行令', local(qinToWorld, -17, 28, -111), regionalArt.Qin);
+  const halt = stand(J.qinHalt, '军阵中轴 · 驻令', local(qinToWorld, -17, 28, -149), regionalArt.Qin);
+  stand(J.qinDone, '铜闸内侧 · 交出军令册', local(qinToWorld, -17, 28, -162), regionalArt.Qin);
 
   const firstBearing = stand(J.skyBearing, '镜湖北岸 · 第一组天穹方位', [-38, 2.5, -78]);
   const secondBearing = stand(J.skySight, '幻日塔外 · 第二组天穹方位', [13, 5, -111]);
@@ -297,6 +298,12 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   stand(J.groundWatch, '幻日塔 · 独立线路联检', [5, 5, -95]);
   stand(J.launch, '幻日塔顶 · 天穹接驳架', [4.5, 30.5, -151.2]);
   a.finish('alpha'); a.root.name = 'WorldJourneySites';
+  // Keep each merged draw bounded to its own map, so distant fixtures can be culled.
+  for (const [region, art] of Object.entries(regionalArt)) {
+    art.finish('alpha');
+    art.root.name = `WorldJourneyFixtures${region}`;
+    a.root.add(art.root);
+  }
 
   const residents = createSettlementNpcs([
     { id: 'journey_visitor_actor', region: 'alpha', role: ['王城访客', 'Kingdom visitor'], position: [bx, by, bz], yaw: Math.PI / 2, appearance: { coat: 0xa4885a, carry: 'sack' }, lines: [] },
@@ -308,7 +315,9 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const reliefActor = residents.group.getObjectByName('Resident_journey_orleans_relief_actor');
   a.root.add(residents.group);
 
-  const solids = mergeParts(a.solids); a.solids.forEach(g => g.dispose());
+  const fixtureSolids = [a, ...Object.values(regionalArt)].flatMap(art => art.solids);
+  const solids = mergeParts(fixtureSolids);
+  fixtureSolids.forEach(g => g.dispose());
   const bridgeCollider: Collider = { name: 'COL_JourneyLookbackGate', bvh: new MeshBVH(bridgeGateGeometry), enabled: false };
   const rearCollider: Collider = { name: 'COL_JourneyLookbackRearGate', bvh: new MeshBVH(rearGateGeometry), enabled: false };
   const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, rearCollider,
@@ -491,7 +500,8 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); repairGeometry.dispose();
-    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials), ...Object.values(mealArt.materials)].forEach(material => material.dispose());
+    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials), ...Object.values(mealArt.materials),
+      ...Object.values(regionalArt).flatMap(art => Object.values(art.materials))].forEach(material => material.dispose());
     for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ceramic, soup, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { Vector3 } from 'three';
+import { Box3, Frustum, Matrix4, Mesh, PerspectiveCamera, Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import type { SettlementPlacement } from '../src/settlements/types';
@@ -154,4 +154,27 @@ test('the shared table and porch window satisfy the same winter return requireme
     assert.equal(journeyStepReady(J.mealWindow, done), false);
     assert.ok(commitJourneyStep(J.mealSketch, done));
   }
+});
+
+test('merged World fixture draws can be culled independently in each distant region', () => {
+  const site = createWorldJourneySites({ position: [0, 5, 0] } as SettlementPlacement, (_x, _z, ceiling = 7) => ceiling - 2, () => true);
+  try {
+    site.root.updateMatrixWorld(true);
+    const groups = ['Egypt', 'Orleans', 'Qin'].map(region => {
+      const group = site.root.getObjectByName('WorldJourneyFixtures' + region)!;
+      const geometry = group.children.filter(child => child instanceof Mesh);
+      assert.ok(geometry.length > 0, region);
+      return { bounds: new Box3().setFromObject(group), geometry };
+    });
+    for (const [index, group] of groups.entries()) {
+      const center = group.bounds.getCenter(new Vector3());
+      const camera = new PerspectiveCamera(60, 1, .1, 40);
+      camera.position.copy(center).add(new Vector3(0, 8, 18));
+      camera.lookAt(center);
+      camera.updateMatrixWorld(true);
+      const frustum = new Frustum().setFromProjectionMatrix(new Matrix4().multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+      const visible = groups.map(candidate => candidate.geometry.some(mesh => frustum.intersectsObject(mesh)));
+      assert.deepEqual(visible, groups.map((_candidate, i) => i === index));
+    }
+  } finally { site.dispose(); }
 });
