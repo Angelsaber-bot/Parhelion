@@ -5,6 +5,8 @@ import {createAdventureRuntime} from '../src/story/adventureRuntime';
 import {ADVENTURE_ACTIONS} from '../src/story/adventureSites';
 import {getEraBossRequirements,getEraPieceRequirements} from '../src/story/eraStories';
 import {RelayChannel} from '../src/story/relayChannel';
+import {HARBOR_RELIEF as R,harborReliefReady} from '../src/story/harborRelief';
+import {VALLEY_PROLOGUE} from '../src/story/valleyPrologue';
 function setup(flags:string[]=[]){const done=new Set([A.started,'armory_rack',...flags]),actions=new Map(ADVENTURE_ACTIONS.map(a=>[a.id,a]));let saves=0,starts=0,damage=0,near=true,encounter:string|null=null;
  const runtime=createAdventureRuntime({done,actions,path:[[0,0,0],[2,0,0],[4,0,0]],reachable:()=>near,save:()=>{saves++;return true;},changed(){},toast(){},damage:()=>damage,supply:()=>true,encounter:()=>encounter,start:spec=>{starts++;encounter=spec.id;return{ok:true};},cancel(){encounter=null;},moveCart:()=>true});
  const frame={dt:1/60,held:false,playable:true,inRange:true,grounded:true,moving:false,attacking:false};
@@ -40,6 +42,23 @@ test('adventure: harbor accepts both preparations, records before or after boss 
  h.runtime.interact('adventure_harbor_exit');h.runtime.interact('adventure_harbor_depart');assert.equal(h.done.has(A.departed),false);for(let i=0;i<1801;i++)h.runtime.update(h.frame);assert.ok(h.done.has(A.departed));h.done.add('blackbeard_contract');assert.ok(adventureChapterComplete('blacksail',h.done));
  const before=h.saves;h.runtime.interact('adventure_harbor_depart');assert.equal(h.saves,before);
  const cannon=setup(['blackbeard_meet','fort_cannon','ghost_boat_1','ghost_boat_2','ghost_boat_3']);assert.ok(harborBridgeReady(cannon.done));assert.equal(cannon.done.has(A.harborSide),false);
+});
+test('harbor relief needs the two pier actions and resumes from the saved mid-channel checkpoint', () => {
+ const h=setup(['blackbeard_meet',A.harborSide,VALLEY_PROLOGUE.room]);
+ assert.equal(getAdventureGuide('blacksail',h.done)?.targetId,R.reserve);
+ h.runtime.interact(R.launch);assert.equal(h.done.has(R.launch),false);
+ h.runtime.interact(R.reserve);h.runtime.interact(R.lookout);
+ h.runtime.interact(R.launch);assert.equal(h.done.has(R.launch),false);
+ h.hold(R.crossing);h.runtime.interact(R.launch);
+ for(let i=0;i<310;i++) h.runtime.update(h.frame);
+ assert.ok(h.done.has(R.underway));assert.equal(h.done.has(R.delivered),false);
+ const restored=setup([...h.done]);assert.equal(restored.runtime.reliefProgress,.5);
+ for(let i=0;i<310;i++) restored.runtime.update({...restored.frame,playable:false});
+ assert.equal(restored.runtime.reliefProgress,.5);
+ for(let i=0;i<310;i++) restored.runtime.update(restored.frame);
+ assert.ok(harborReliefReady(restored.done));assert.equal(restored.runtime.reliefProgress,1);
+ assert.equal(getAdventureGuide('blacksail',restored.done)?.targetId,A.records);
+ assert.ok(harborReliefReady(new Set([...h.done].filter(flag=>flag!==R.reserve).concat(A.records))));
 });
 test('adventure: winter route choice, two real braces, convoy checkpoints, pause and arrival authority',()=>{
  const h=setup(['napoleon_meet','shard_bell','winter_core']);assert.ok(winterRouteReady(h.done));h.runtime.hit(A.brace1);assert.equal(h.done.has(A.road),false);h.runtime.hit(A.brace2);assert.ok(h.done.has(A.road));

@@ -36,6 +36,7 @@ import {ADVENTURE,adventureActive,adventureTravelOpen,getCurrentAdventureGuide} 
 import {createAdventureSites} from './story/adventureSites';
 import { createKingdomWorksScene } from './environment/kingdomWorksScene';
 import { KINGDOM_WORKS as KW, KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORK_LABELS, KINGDOM_WORK_LINES, commitKingdomWork, kingdomWorkReady, type KingdomWork } from './story/kingdomWorks';
+import { harborReliefRequired } from './story/harborRelief';
 import {createExploration} from './exploration/runtime';
 import {createAmbientLife} from './environment/ambientLife';
 import {createFieldHerbs} from './environment/fieldHerbs';
@@ -859,7 +860,7 @@ function applyWorldState() {
   if(typeof qinSentinels!=='undefined')qinSentinels.apply(done);
   if(typeof egyptMirrors!=='undefined')egyptMirrors.apply(done);
   if(typeof homeTown!=='undefined')homeTown?.apply();
-  adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
+  adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress,adventureRuntime?.reliefProgress);
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
@@ -2464,6 +2465,7 @@ function nearestInteract(): Marker | null {
   let best: Marker | null = null, bd = Infinity;
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
+    if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
     if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
       if (d < (m.radius ?? 3) && d < bd && kingdomWorkReady(m.id as KingdomWork, done) &&
@@ -3004,7 +3006,7 @@ function frame(now: number) {
   gateChannelHud.textContent=done.has(KINGDOM_GATE.open)?bilingual(`居民行进 ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'陪同穿门':'等待：靠近居民并解除附近威胁'}`,`Residents ${Math.round((kingdomGateRuntime?.escort??0)*100)}% · ${escortSafe?'Escorting':'Waiting: stay close and clear nearby threats'}`):bilingual(`绞盘 ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · 站稳，松开后按住 ${settings.label('interact')}`,`Winch ${Math.round((kingdomGateRuntime?.progress??0)*100)}% · Stand still, release then hold ${settings.label('interact')}`);
   const activeAdventure=adventureRuntime?.channel;
   adventureRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:!!activeAdventure&&nearestInteract()?.id===activeAdventure.id,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
-  adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress);
+  adventureSites.apply(done,gameplayActive()?dt:0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress,adventureRuntime?.reliefProgress);
   kingdomWorksScene?.apply(done, gameplayActive() ? dt : 0);
   const fieldRegion=regionAt(player.pos.x,player.pos.z).id;
   const campaignField=isCampaignRegion(fieldRegion);

@@ -1,6 +1,7 @@
 import {RelayChannel,type RelayChannelFrame} from './relayChannel';
 import {dramaActive,dramaReported,dramaDecision,JOURNEY_DRAMA} from './journeyDrama';
-import {ADVENTURE as A,adventureChapterComplete,winterRouteReady,type AdventurePoint,getAdventureEndingText} from './openWorldCampaign';
+import {ADVENTURE as A,adventureChapterComplete,harborBridgeReady,winterRouteReady,type AdventurePoint,getAdventureEndingText} from './openWorldCampaign';
+import { HARBOR_RELIEF as R, HARBOR_RELIEF_STAGE_SECONDS, harborReliefPassage, harborReliefReady, harborReliefRequired } from './harborRelief';
 import type {AdventureAction} from './adventureSites';
 import type {Localized} from '../settlements/types';
 import type {StoryEncounterSpec} from './storyEncounters';
@@ -16,7 +17,7 @@ export function adventureEncounter(action:AdventureAction,guardian=false):StoryE
 }
 export function cartCheckpoint(done:ReadonlySet<string>,length:number,prefix='adventure_cart_leg_'){let leg=0;while(leg<length-1&&done.has(`${prefix}${leg+1}`))leg++;return leg;}
 export function createAdventureRuntime(h:AdventureHooks){
- let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,leg=cartCheckpoint(h.done,h.path.length),fraction=0,guardianPending=false,pendingGuard:string|null=null;
+ let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,reliefTime=0,leg=cartCheckpoint(h.done,h.path.length),fraction=0,guardianPending=false,pendingGuard:string|null=null;
  const guardId=(id:string)=>`adventure_guard_${id.slice(-1)}`;
  const guardsCleared=(id:string)=>h.done.has(`${guardId(id)}_cleared`);
  const commit=(id:string)=>{if(h.done.has(id))return false;h.done.add(id);if(!h.save())h.toast(['进度尚未写入存档，请重试保存或备份。','Progress has not been saved; retry saving or make a backup.']);h.changed();return true;};
@@ -25,6 +26,12 @@ export function createAdventureRuntime(h:AdventureHooks){
   const id=action.id;
   const continuation=h.continuationBlock?.(id);if(continuation)return continuation;
   if(id==='adventure_tomorrow'&&dramaActive(h.done)&&!dramaDecision(h.done))return ['先与岚决定频道今后的值守方式。','Decide the channel’s future with Lan first.'];
+  if (id === A.records && !harborReliefReady(h.done)) return ['先从拿骚港把急救药送出去，等幻日谷回执再登舰。','Send the emergency medicine from Nassau and wait for the Valley’s receipt before boarding.'];
+  if (id === R.reserve || id === R.lookout || id === R.crossing || id === R.launch) {
+   if (!harborReliefRequired(h.done) || !harborBridgeReady(h.done) || !h.done.has('blackbeard_meet')) return ['先与黑胡子会面并完成登舰准备。','Meet Blackbeard and prepare a boarding route first.'];
+   if (id !== R.reserve && !h.done.has(R.reserve)) return ['先查验码头上的急救药箱。','Check the emergency medicine on the quay first.'];
+   if (id === R.launch && !harborReliefPassage(h.done)) return ['先调开海务哨点，并升起支栈缆索。','Divert the customs lookout and raise the side-pier cable first.'];
+  }
   if(id==='adventure_harbor_records'&&h.done.has('adventure_harbor_alarm_disabled'))return null;
   if(id==='adventure_harbor_exit'&&(!h.done.has(A.records)||(!h.done.has('sea_core')&&!h.done.has('blackbeard_contract'))))return ['先取得真实记录并解除提督的命令，再确认离舰。','Recover the true record and end the Admiral’s orders before confirming disembarkation.'];
   if(id==='adventure_harbor_depart'&&!h.done.has(A.exited))return ['先带着记录离舰，再放行商船。','Disembark with the record before authorizing the merchant ship.'];
@@ -42,6 +49,7 @@ export function createAdventureRuntime(h:AdventureHooks){
  }
  return {
   get departureProgress(){return h.done.has(A.departed)?1:(shipLeg+shipTime/5)/6;},
+  get reliefProgress(){return h.done.has(R.delivered) ? 1 : (Number(h.done.has(R.underway)) + reliefTime / HARBOR_RELIEF_STAGE_SECONDS) / 2;},
   get channel(){return current;},get progress(){return channel.progress;},
   get cartPosition():AdventurePoint{if(h.done.has(A.arrived))return [...h.path.at(-1)!];const a=h.path[Math.min(leg,h.path.length-1)],b=h.path[Math.min(leg+1,h.path.length-1)];return a.map((v,i)=>v+(b[i]-v)*fraction)as AdventurePoint;},
   get cartProgress(){return h.done.has(A.arrived)?1:(leg+fraction)/(h.path.length-1);},
@@ -51,7 +59,7 @@ export function createAdventureRuntime(h:AdventureHooks){
   },
   interact(id:string){
    const action=h.actions.get(id);if(!action||!h.reachable(id))return false;
-   if(id.startsWith('adventure_home_')){const region=id.slice('adventure_home_'.length) as 'britain'|'blacksail'|'winter'|'kyoto';if(!adventureChapterComplete(region,h.done)){h.toast(['当地归路还未完成，这处服务暂未开放。','The region’s return journey is unfinished; this service is not open yet.']);return true;}commit(`${id}_seen`);h.toast(h.supply()?['归来的居民为你补充了药品，体力恢复。','The returning residents offer medicine; health restored.']:['居民记得你打开的归路。休息并脱离战斗后，可以在这里补给。','The residents remember the road you opened. Rest out of combat to resupply here.']);return true;}
+   if(id.startsWith('adventure_home_')){const region=id.slice('adventure_home_'.length) as 'britain'|'blacksail'|'winter'|'kyoto';if(!adventureChapterComplete(region,h.done) && !(region==='blacksail' && h.done.has(R.delivered))){h.toast(['当地归路还未完成，这处服务暂未开放。','The region’s return journey is unfinished; this service is not open yet.']);return true;}commit(`${id}_seen`);h.toast(h.supply()?['归来的居民为你补充了药品，体力恢复。','The returning residents offer medicine; health restored.']:['居民记得你打开的归路。休息并脱离战斗后，可以在这里补给。','The residents remember the road you opened. Rest out of combat to resupply here.']);return true;}
    if(id==='adventure_winter_support'){h.cavalry?.();return true;}
    const reason=blocked(action);if(reason){h.toast(reason);return true;}
    if(action.flag&&h.done.has(action.flag)){h.toast(['这项行动已经完成，结果仍然保留。','This action is complete; its result remains.']);return true;}
@@ -84,6 +92,17 @@ export function createAdventureRuntime(h:AdventureHooks){
     h.toast([`${action.label[0]}已完成，现场状态已经改变。`,`${action.label[1]} complete; the site has changed.`]);
    }
    if(frame.playable&&h.done.has(A.sailing)&&!h.done.has(A.departed)){shipTime+=Math.min(Math.max(frame.dt,0),.05);if(shipTime+1e-9>=5){shipTime=0;shipLeg++;commit(`adventure_ship_leg_${shipLeg}`);if(shipLeg>=6){commit(A.departed);h.toast(['商船已驶离港口。回酒馆与黑胡子正式契约，或继续沿海岸探索。','The merchant ship has left port. Return to the tavern for your pact with Blackbeard, or keep exploring the coast.']);}}}
+   if (frame.playable && h.done.has(R.launch) && !h.done.has(R.delivered)) {
+    reliefTime += Math.min(Math.max(frame.dt, 0), .05);
+    if (reliefTime + 1e-9 >= HARBOR_RELIEF_STAGE_SECONDS) {
+     reliefTime = 0;
+     if (!h.done.has(R.underway)) commit(R.underway);
+     else {
+      commit(R.delivered);
+      h.toast(['幻日谷回报：急救药已入柜。仍有船员与余下的货物留在旗舰上。', 'Valley receipt: the emergency medicine is stocked. Crew and remaining cargo are still on the flagship.']);
+     }
+    }
+   }
    if(!frame.playable||!h.done.has(A.convoy)||h.done.has(A.arrived)||leg>=h.path.length-1)return;
    const a=h.path[leg],b=h.path[leg+1],length=Math.hypot(a[0]-b[0],a[2]-b[2]);
    const next=Math.min(1,fraction+Math.min(Math.max(frame.dt,0),.05)*2.8/Math.max(1,length));
@@ -93,6 +112,6 @@ export function createAdventureRuntime(h:AdventureHooks){
   },
   victory(id:string){if(id==='adventure_harbor_alarm'){commit('adventure_harbor_alarm_cleared');return true;}if(id===pendingGuard){pendingGuard=null;commit(`${id}_cleared`);h.toast(['发射器守卫已清除。回到装置，按住交互键关闭；守卫不会因操作中断而重生。','Emitter guards defeated. Return and hold Interact to shut it down; interrupted operation will not respawn the guards.']);return true;}if(id!=='adventure_guardian'||!guardianPending||!finalReady()||!A.emitters.every(flag=>h.done.has(flag)))return false;guardianPending=false;commit(A.guardian);h.toast(['守门者已解除。登塔手动接管，再沿照明出口撤离。','The Warden is defeated. Take manual control atop the tower, then follow the lit exit.']);return true;},
   interrupt(){current=null;channel.reset(h.damage());},
-  reset(){this.interrupt();guardianPending=false;pendingGuard=null;leg=cartCheckpoint(h.done,h.path.length);fraction=0;shipTime=0;shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_');},
+  reset(){this.interrupt();guardianPending=false;pendingGuard=null;leg=cartCheckpoint(h.done,h.path.length);fraction=0;shipTime=0;reliefTime=0;shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_');},
  };
 }

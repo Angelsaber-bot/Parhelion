@@ -1,5 +1,6 @@
 import {gateGuide} from './kingdomGate';
 import {kingdomWorksEnded,kingdomWorksNext} from './kingdomWorks';
+import {HARBOR_RELIEF as R,harborReliefReady} from './harborRelief';
 import {JOURNEY_DRAMA,JOURNEY_CAST,JOURNEY_REGIONS,dramaActive,dramaReported,dramaDecision,dramaChapterReady} from './journeyDrama';
 import type { Localized, RegionId } from '../settlements/types';
 export type AdventurePoint=[number,number,number];
@@ -73,6 +74,12 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   if(!done.has('blackbeard_meet')&&!done.has('sea_core')&&!done.has('blackbeard_contract'))return at(region,title,['到酒馆问清无法出港的原因。可以一直带着当前从者。','Ask at the tavern why the ship cannot depart. Keep your chosen companion.'],'blackbeard_meet');
   if(!harborBridgeReady(done)&&done.has('fort_cannon')){const boat=[1,2,3].find(i=>!done.has(`ghost_boat_${i}`));if(boat)return at(region,title,['留在要塞炮位，击沉剩余的幽灵艇以开放登舰通路；不要游向目标。','Stay at the fort cannon and sink the remaining ghost boats to open boarding access; do not swim to the target.'],`ghost_boat_${boat}`);}
   if(!harborBridgeReady(done))return at(region,title,['选择准备：夺取要塞炮位并击沉三艘幽灵艇，或到灯塔石码头松开侧舷索具。两种行动都开放登舰通路。','Prepare either by destroying the three ghost boats from the fort, or releasing the side rigging at the lighthouse jetty. Either opens boarding access.'],'adventure_harbor_rigging');
+  if (!harborReliefReady(done)) {
+   if (!done.has(R.reserve)) return at(region,title,['到拿骚码头查验第一批急救药，把它们留给轻装救援艇。','Check the emergency medicine at Nassau and reserve it for the relief skiff.'],R.reserve);
+   if (!done.has(R.lookout)) return at(region,title,['在港灯前调开海务哨点，替药船找一条离岸通路。','Divert the customs lookout at the harbor light and clear the skiff’s departure.'],R.lookout);
+   if (!done.has(R.crossing)) return at(region,title,['抬起支栈缆索，让轻舟可以从两排码头之间穿出去。','Raise the side-pier cable so the skiff can slip between the piers.'],R.crossing);
+   return at(region,title,done.has(R.launch) ? ['药船已出发。等幻日谷回执，或沿码头看它过港。','The medicine skiff is underway. Wait for the Valley’s receipt or watch from the pier.'] : ['在外码头放行药船。确认这批药送达后再登旗舰。','Launch the skiff from the outer pier. Confirm delivery before boarding the flagship.'],R.launch);
+  }
   if(!done.has(ADVENTURE.records))return at(region,title,['登上旗舰，从两处甲板舱口进入船腹记录室，取回真实航次。开门和撤离仍需你亲自完成。','Board the flagship and recover the true voyage record in the below-deck records room, reached through either hatch. You must still leave the ship yourself.'],'adventure_harbor_records');
   if(!done.has('sea_core')&&!done.has('blackbeard_contract')&&!done.has('adventure_harbor_alarm_disabled')&&!done.has('adventure_harbor_alarm_cleared'))return at(region,title,['取证触发了警报。可在船腹切断警报解除追击，或应对舱口守卫后上甲板挑战提督。','The record triggers an alarm. Disable its breaker in the hold to end pursuit, or defeat the hatch guards before challenging the Admiral.'],'adventure_harbor_alarm');
   if(!done.has('sea_core')&&!done.has('blackbeard_contract'))return at(region,title,['记录与广播不符。到甲板海之核挑战亡航提督，解除强制返航。','The record contradicts the broadcast. Challenge the Admiral at the Sea Core and end the forced return.'],'sea_core');

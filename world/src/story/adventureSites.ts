@@ -10,10 +10,15 @@ import type {Collider} from '../player/player';
 import type {Localized,RegionId} from '../settlements/types';
 import {ADVENTURE as A,adventureChapterComplete,type AdventurePoint} from './openWorldCampaign';
 import {gatePoint} from './kingdomGate';
+import { HARBOR_RELIEF as R, HARBOR_MEDICINE_LANE, HARBOR_MERCHANT_LANE } from './harborRelief';
 export interface AdventureAction {id:string;region:RegionId;label:Localized;p:AdventurePoint;seconds?:number;flag?:string;hint?:Localized;}
 export const ADVENTURE_ACTIONS:readonly AdventureAction[]=[
  ...(['britain','blacksail','winter','kyoto'] as const).map((region,i):AdventureAction=>({id:`adventure_home_${region}`,region:'alpha',label:[['归人工匠补给台','海港运补台','暖路药箱','京都归人茶席'][i],['Returner workshop','Harbor supply desk','Warmroad medicine chest','Kyoto travelers’ tea'][i]],p:[-94+i*3,10,237]})),
  {id:'adventure_harbor_rigging',region:'blacksail',label:['侧舷索具绞盘','Side rigging winch'],p:[1009,10.5,-724],seconds:3,flag:A.harborSide},
+ {id:R.reserve,region:'blacksail',label:['码头药箱 · 查验封条','Quay medicine crate · Check the seals'],p:[598,3.4,-578],flag:R.reserve},
+ {id:R.lookout,region:'blacksail',label:['港灯信号 · 调开海务哨点','Harbor lamp · Divert the customs lookout'],p:[586,3.4,-573],flag:R.lookout},
+ {id:R.crossing,region:'blacksail',label:['支栈缆索 · 升起通航','Side-pier cable · Raise for passage'],p:[600,3.4,-498],seconds:2,flag:R.crossing},
+ {id:R.launch,region:'blacksail',label:['外码头 · 放行急救艇','Outer pier · Launch the relief skiff'],p:[600,3.4,-479],flag:R.launch},
  {id:'adventure_harbor_records',region:'blacksail',label:['真实航路记录','True voyage record'],p:flagshipPoint(10,.7,3.4),seconds:2,flag:A.records},
  {id:'adventure_harbor_exit',region:'blacksail',label:['灯塔离舰检查点','Lighthouse disembarkation'],p:[1005,10.5,-724],flag:A.exited},
  {id:'adventure_harbor_depart',region:'blacksail',label:['暖灯出港信号','Warm-light departure signal'],p:[599,3.4,-583],flag:A.sailing},
@@ -93,7 +98,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
  for(let plank=-2;plank<=2;plank++){const slat=new THREE.Mesh(new THREE.BoxGeometry(.27,.04,2.3),new THREE.MeshStandardMaterial({color:'#9c815a'}));slat.position.set(plank*.3,1.23,0);cart.add(slat);}
  const aid=new THREE.Mesh(new THREE.BoxGeometry(.65,.15,1),new THREE.MeshStandardMaterial({color:'#ece2d0'}));aid.position.y=1.3;cart.add(aid);
  const convoyPath=CONVOY_ROUTE.map(p=>[...p] as AdventurePoint);
- const ship=new THREE.Group();root.add(ship);ship.position.set(596,1.5,160);
+ const ship=new THREE.Group();root.add(ship);ship.name='NassauMerchantDeparture';
  const hullOutline=new THREE.Shape();hullOutline.moveTo(-2.3,-5.8);for(const[x,z]of[[2.3,-5.8],[2.6,2.5],[1.4,5.8],[0,7],[-1.4,5.8],[-2.6,2.5]])hullOutline.lineTo(x,z);hullOutline.closePath();
  const hullGeo=new THREE.ExtrudeGeometry(hullOutline,{depth:1.5,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.15,bevelThickness:.15});hullGeo.rotateX(Math.PI/2);
  const hull=new THREE.Mesh(hullGeo,new THREE.MeshStandardMaterial({color:'#69513d'}));hull.position.y=.5;ship.add(hull);
@@ -102,15 +107,34 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
 
  const mast=new THREE.Mesh(new THREE.CylinderGeometry(.13,.18,10,8),new THREE.MeshStandardMaterial({color:'#5b4937'}));mast.position.y=5;ship.add(mast);
  const sail=new THREE.Mesh(new THREE.PlaneGeometry(6,7),new THREE.MeshStandardMaterial({color:'#d8c9aa',side:THREE.DoubleSide}));sail.position.set(0,6,.2);ship.add(sail);
+ const relief=ship.clone();relief.name='NassauReliefSkiff';relief.scale.set(.57,.54,.58);root.add(relief);
+ const medicineMaterial=new THREE.MeshStandardMaterial({color:'#e4e2cc'});
+ const medicineSeal=new THREE.MeshStandardMaterial({color:'#8a5041'});
+ function supply(parent:THREE.Group,x:number,y:number,z:number){
+  const crate=new THREE.Mesh(new THREE.BoxGeometry(1,.62,.87),medicineMaterial);crate.position.set(x,y,z);parent.add(crate);
+  for(const [w,d] of [[.52,.11],[.11,.47]]){const mark=new THREE.Mesh(new THREE.BoxGeometry(w,.018,d),medicineSeal);mark.position.set(x,y+.318,z);parent.add(mark);}
+ }
+ supply(relief,0,.88,1.2);
+ const cable = new THREE.Group(); cable.name = 'NassauReliefPierCable'; root.add(cable);
+ const cableMaterial = new THREE.MeshStandardMaterial({color:'#786246'});
+ for (const x of [HARBOR_MEDICINE_LANE.x-7,HARBOR_MEDICINE_LANE.x+7]) {
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(.22,.3,8,10),cableMaterial);post.position.set(x,2,-491);cable.add(post);
+ }
+ const span = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,14,8),cableMaterial);
+ span.position.set(HARBOR_MEDICINE_LANE.x,2,-491);span.rotation.z=Math.PI/2;cable.add(span);
+ const received=new THREE.Group();received.name='ValleyDeliveredMedicine';root.add(received);
+ const chestBase=actions.get('adventure_home_blacksail')!.p;
+ received.position.set(chestBase[0]+.65,chestBase[1],chestBase[2]+2.8);
+ supply(received,.4,.35,0);supply(received,1.55,.35,0);
  const fun=new Map<string,{region:RegionId;line:Localized;ids:string[]}>();
  for(const item of ADVENTURE_LEISURE.filter(item=>item.region!=='winter'&&item.region!=='kyoto')){const base=at(item.p),ids:string[]=[];for(let i=0;i<3;i++){const id=`adventure_fun_${item.region}_${i+1}`;ids.push(id);target(id,[base[0]+(i-1)*1.1,base[1]+1.2,base[2]],[.3,.7,.3]);}fun.set(item.region,{...item,ids});}
  art.finish('alpha');root.add(art.root);const facilities=createAdventureFacilityArt(actions);root.add(facilities.root);colliders.push(...facilities.colliders);root.name='OpenWorldAdventure';
  const homeLights:THREE.Mesh[]=[];for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshBasicMaterial({color:'#b4e2b7'}));m.position.set(-93+i*3,11.6,237);root.add(m);homeLights.push(m);}
 
  const priorCart=new THREE.Vector3();let cartInitialized=false;
- function apply(done:ReadonlySet<string>,dt=0,cartPosition?:AdventurePoint,departureProgress=done.has(A.departed)?1:0){
+ function apply(done:ReadonlySet<string>,dt=0,cartPosition?:AdventurePoint,departureProgress=done.has(A.departed)?1:0,reliefProgress=done.has(R.delivered)?1:done.has(R.underway)?0.5:0){
   facilities.apply(done,dt);
-  homeLights.forEach((m,i)=>{m.visible=adventureChapterComplete((['britain','blacksail','winter','kyoto'] as const)[i],done);});
+  homeLights.forEach((m,i)=>{m.visible=adventureChapterComplete((['britain','blacksail','winter','kyoto'] as const)[i],done)||(i===1&&done.has(R.delivered));});
   const open=!done.has(A.started)||done.has(A.road)||done.has('winter_core');obstacle.visible=false;roadArt.root.visible=!open;debrisArt.root.visible=open&&done.has(A.road);roadCollider.enabled=!open;
   for(const t of targets)t.visible=!done.has(t.userData.target as string)&&(!(t.userData.target===A.brace1||t.userData.target===A.brace2)||!open);
   kyotoRamp.art.root.visible=done.has(A.water);roofRamp.art.root.visible=done.has(A.water);for(const c of roofRamp.colliders)c.enabled=done.has(A.water);for(const c of kyotoRamp.colliders)c.enabled=done.has(A.water);
@@ -118,7 +142,12 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   const leg=done.has(A.arrived)?convoyPath.length-1:Math.min(convoyPath.length-1,[...done].filter(id=>/^adventure_cart_leg_\d+$/.test(id)).length);
   priorCart.copy(cart.position);cart.visible=done.has(A.convoy)||done.has(A.arrived);cart.position.fromArray(done.has(A.arrived)?convoyPath.at(-1)!:cartPosition??convoyPath[leg]);
   if(cartInitialized&&dt>0){const d=cart.position.clone().sub(priorCart),distance=d.length();if(distance>1e-5&&distance<1){const wanted=Math.atan2(d.x,d.z),delta=Math.atan2(Math.sin(wanted-cart.rotation.y),Math.cos(wanted-cart.rotation.y));cart.rotation.y+=THREE.MathUtils.clamp(delta,-dt*4,dt*4);for(const wheel of wheels)wheel.rotation.x+=distance/.45;}}cartInitialized=true;
-  ship.position.z=160+150*THREE.MathUtils.clamp(departureProgress,0,1);
+  const merchant=HARBOR_MERCHANT_LANE, medicine=HARBOR_MEDICINE_LANE;
+  ship.position.set(merchant.x,1.5,THREE.MathUtils.lerp(merchant.startZ,merchant.endZ,THREE.MathUtils.clamp(departureProgress,0,1)));
+  ship.visible=!done.has(A.departed);
+  relief.position.set(medicine.x,1.38,THREE.MathUtils.lerp(medicine.startZ,medicine.endZ,THREE.MathUtils.clamp(reliefProgress,0,1)));
+  relief.visible=done.has(R.reserve)&&!done.has(R.delivered);received.visible=done.has(R.delivered);
+  cable.visible=done.has(R.reserve);span.position.y=done.has(R.crossing)?5.8:2;
  }
  return {root,markers,actions,targets,colliders,fun,convoyPath,abbeyRoute,roofRoute:passages.roofRoute,ship,cart,apply,
   dispose(){facilities.dispose();for(const a of [passages.abbey,passages.houses,roofRamp.art]){Object.values(a.materials).forEach(m=>m.dispose());a.solids.forEach(g=>g.dispose());}Object.values(roadArt.materials).forEach(m=>m.dispose());Object.values(debrisArt.materials).forEach(m=>m.dispose());root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});for(const m of materials)m.dispose();for(const g of[...art.solids,...privateGeos,...kyotoRamp.art.solids,...abbeyRamp.art.solids])g.dispose();Object.values(art.materials).forEach(m=>m.dispose());root.removeFromParent();},
