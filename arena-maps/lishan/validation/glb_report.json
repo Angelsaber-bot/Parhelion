@@ -1,12 +1,12 @@
 {
   "mapId": "lishan",
   "version": "1.0.0",
-  "checks": 612,
+  "checks": 1660,
   "failed": [],
   "visualNodes": 31,
-  "visualTriangles": 104732,
-  "visualBytes": 9175352,
+  "visualTriangles": 105840,
+  "visualBytes": 9208940,
   "embeddedTextureBytes": 227920,
-  "collisionNodes": 110,
-  "collisionBytes": 153180
+  "collisionNodes": 442,
+  "collisionBytes": 637608
 }

@@ -212,6 +212,30 @@ describe('LISHAN revisions', () => {
   });
 
   it('L05: each corridor has its landmark (war drums, chariot, vermilion gates)', () => {
-    for (const id of ['war_drum_w', 'war_drum_e', 'chariot', 'vermilion_gate_w', 'vermilion_gate_e']) expect(obj(m, id).collision, id).toBe(true);
+    for (const id of ['war_drum_w_drums', 'war_drum_e_drums', 'chariot_car', 'vermilion_gate_w', 'vermilion_gate_e']) expect(obj(m, id).collision, id).toBe(true);
+  });
+});
+
+describe('bullet fit: visible gaps do not stop shots (2026-11 air-wall pass)', () => {
+  const PIT = -2.2;
+  it('LISHAN: beside a file of figures, under the chariot, between the horses\' legs and through railing lattice', () => {
+    const m = getMap('lishan');
+    expect(lineOfSight(m, [5.18, PIT + 1.0, -3], [5.18, PIT + 1.0, 3])).toBe(true);        // beside rank 6, inside its old box
+    expect(lineOfSight(m, [-3, PIT + .75, 0], [3, PIT + .75, 0])).toBe(true);              // under the car, through the spoked wheels
+    expect(lineOfSight(m, [-3, PIT + .5, 2.4], [3, PIT + .5, 2.4])).toBe(true);            // below the horses' bellies
+    expect(lineOfSight(m, [-15.65, .75, -18], [-15.65, .75, -15])).toBe(true);                   // gallery rail lattice between posts
+    expect(lineOfSight(m, [-15.65, .3, -18], [-15.65, .3, -15])).toBe(false);                    // its skirting board is solid
+    expect(lineOfSight(m, [4.8, PIT + 1.0, -3], [4.8, PIT + 1.0, 3])).toBe(false);        // the figures themselves are
+  });
+  it('SUNTEMPLE: a round column no longer has square corners', () => {
+    const m = getMap('suntemple');
+    expect(lineOfSight(m, [-10, 2, -11.4 + .58], [-5.5, 2, -11.4 + .58])).toBe(true);
+    expect(lineOfSight(m, [-10, 2, -11.4 + .3], [-5.5, 2, -11.4 + .3])).toBe(false);
+  });
+  it('ORLEANS: between the bronze horse\'s legs and under the market cart', () => {
+    const m = getMap('orleans');
+    expect(lineOfSight(m, [-3, 2.6, 0], [3, 2.6, 0])).toBe(true);
+    expect(lineOfSight(m, [-9.5, .3, -3], [-9.5, .3, 3])).toBe(true);
+    expect(lineOfSight(m, [-9.5, 1.0, -3], [-9.5, 1.0, 3])).toBe(false);
   });
 });

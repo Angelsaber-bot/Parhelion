@@ -39,6 +39,26 @@ PIT = -2.2
 c = Era(ROOT, 'lishan', 'LISHAN 骊山地宫', 60, 44, 'tomb', P, height=12, lowest=PIT); D = c.detail
 rng = random.Random(221)
 
+def proxy(id, x0, x1, y0, y1, z0, z1):
+    """Collision-only part of a modelled object (no art of its own): the model it belongs to is
+    drawn by a visual-only object, and its proxies follow the model's actual mass, so a shot
+    through a visible gap is not stopped by an invisible box (2026-11 bullet-fit pass)."""
+    c.B(id, x0, x1, y0, y1, z0, z1, 'terracotta', 'cover', dict(kind='proxy'))
+
+def rail_proxies(id, x0, x1, z0, z1, axis, y0=0.0, y1=1.0):
+    """Railing: solid skirting board to 0.6 m, open lattice above with only posts and handrail."""
+    if axis == 'x':
+        zc = (z0 + z1) / 2; proxy(f'{id}_board', x0, x1, y0, y0 + .6, zc - .08, zc + .08)
+        n = max(1, round((x1 - x0) / 1.3)); step = (x1 - x0) / n
+        for i in range(n + 1):
+            x = min(max(x0 + step * i, x0 + .07), x1 - .07); proxy(f'{id}_post_{i}', x - .07, x + .07, y0 + .6, y1 - .1, z0, z1)
+    else:
+        xc = (x0 + x1) / 2; proxy(f'{id}_board', xc - .08, xc + .08, y0, y0 + .6, z0, z1)
+        n = max(1, round((z1 - z0) / 1.3)); step = (z1 - z0) / n
+        for i in range(n + 1):
+            z = min(max(z0 + step * i, z0 + .07), z1 - .07); proxy(f'{id}_post_{i}', x0, x1, y0 + .6, y1 - .1, z - .07, z + .07)
+    proxy(f'{id}_top', x0, x1, y1 - .1, y1, z0, z1)
+
 # ------------------------------------------------------------------ collision layout
 c.B('pit_floor', -30, 30, PIT - 1, PIT, -22, 22, 'earthFloor', 'floor')
 for sx in (-1, 1):
@@ -56,10 +76,19 @@ for sz in (-1, 1):
     for i, x in enumerate((-18, -12, -6, 6, 12, 18)):
         c.B(f'gallery_column_{sz}_{i}', x - .35, x + .35, 0, 4.3, sz * 16.95, sz * 16.25, 'lacquer', 'structure', dict(kind='column'))
     for i, (x0, x1) in enumerate(((-17.65, -12.35), (-11.65, -6.35), (6.35, 11.65), (12.35, 17.65))):
-        c.B(f'gallery_rail_{sz}_{i}', x0, x1, 0, 1.0, sz * 16.75, sz * 16.45, 'timber', 'cover', dict(kind='rail', axis='x'))
+        c.B(f'gallery_rail_{sz}_{i}', x0, x1, 0, 1.0, sz * 16.75, sz * 16.45, 'timber', 'cover', dict(kind='rail', axis='x'), collision=False)
+        rail_proxies(f'gallery_rail_{sz}_{i}', x0, x1, *sorted((sz * 16.75, sz * 16.45)), 'x')
     for sx in (-1, 1):
-        c.B(f'ding_{sz}_{sx}', sx * 9 - .7, sx * 9 + .7, 0, 1.35, sz * 20.7, sz * 19.3, 'bronze', 'cover', dict(kind='ding'))
-        c.B(f'chimes_{sz}_{sx}', sx * 15 - 1.5, sx * 15 + 1.5, 0, 1.75, sz * 20.6, sz * 20.0, 'timber', 'cover', dict(kind='chimes'))
+        c.B(f'ding_{sz}_{sx}', sx * 9 - .7, sx * 9 + .7, 0, 1.35, sz * 20.7, sz * 19.3, 'bronze', 'cover', dict(kind='ding'), collision=False)
+        proxy(f'ding_{sz}_{sx}_belly', sx * 9 - .55, sx * 9 + .55, .45, 1.06, sz * 20 - .55, sz * 20 + .55)   # legs and ears are open
+        c.B(f'chimes_{sz}_{sx}', sx * 15 - 1.5, sx * 15 + 1.5, 0, 1.75, sz * 20.6, sz * 20.0, 'timber', 'cover', dict(kind='chimes'), collision=False)
+        cx0, cx1, czc = sx * 15 - 1.5, sx * 15 + 1.5, sz * 20.3
+        for k, xx in enumerate((cx0 + .11, cx1 - .11)): proxy(f'chimes_{sz}_{sx}_post_{k}', xx - .09, xx + .09, 0, 1.75, czc - .12, czc + .12)
+        for k, yy in enumerate((.9, 1.65)): proxy(f'chimes_{sz}_{sx}_beam_{k}', cx0 + .2, cx1 - .2, yy, yy + .1, czc - .07, czc + .07)
+        for tier, (yy, n, sc) in enumerate(((.9, 5, 1.0), (1.65, 7, .68))):
+            for i in range(n):
+                bx = cx0 + .35 + (cx1 - cx0 - .7) * i / (n - 1); h = .44 * sc * (1 - .06 * i)
+                proxy(f'chimes_{sz}_{sx}_bell_{tier}_{i}', bx - .15 * sc, bx + .15 * sc, yy - .06 - h, yy - .06, czc - .15 * sc, czc + .15 * sc)
     c.B(f'gallery_roof_{sz}', -21, 21, 4.35, 5.7, sz * 21.4, sz * 15.4, 'tile', 'roof', dict(kind='leanroof', sz=sz), collision=False)
 for sx in (-1, 1):
     team = 'west' if sx < 0 else 'east'
@@ -69,7 +98,8 @@ for sx in (-1, 1):
         c.B(f'que_tower_{team}_{sz}', sx * 24.2, sx * 21.8, 0, 5.6, sz * 8.3, sz * 10.7, 'rammed', 'structure', dict(kind='que'))
         c.B(f'weapon_rack_{team}_{sz}', sx * 29.4, sx * 28.2, 0, 1.3, sz * 13.6, sz * 16.4, 'timber', 'cover', dict(kind='rack'))
         for i, (z0, z1) in enumerate(((1.8, 4.2), (6.8, 8.2), (13.3, 16))):
-            c.B(f'platform_rail_{team}_{sz}_{i}', sx * 21.3, sx * 21, 0, 1.0, sz * z0, sz * z1, 'timber', 'cover', dict(kind='rail', axis='z'))
+            c.B(f'platform_rail_{team}_{sz}_{i}', sx * 21.3, sx * 21, 0, 1.0, sz * z0, sz * z1, 'timber', 'cover', dict(kind='rail', axis='z'), collision=False)
+            rail_proxies(f'platform_rail_{team}_{sz}_{i}', *sorted((sx * 21.3, sx * 21)), *sorted((sz * z0, sz * z1)), 'z')
     # Three earth ramps: one into each corridor.
     for name, z in (('north', -11.5), ('centre', 0), ('south', 11.5)):
         c.R(f'ramp_{team}_{name}', sx * 21, sx * 15.5, PIT, 0, z - 1.5, z + 1.5, 'x', -sx, 'rammed')
@@ -88,11 +118,20 @@ RANKS = [(-12.6, -9.6, -6.5), (-12.6, -16, -13.4), (-4.4, -14.9, -11.9), (-3.4, 
          (-13, -4.5, -1.9), (-13, 1.9, 4.5), (-4.8, -1.6, 1.6),                                    # centre corridor
          (-12.2, 6.5, 9.4), (-11.6, 13.6, 16), (-4.2, 12.6, 16), (-3.2, 6.5, 9.2)]                 # south corridor
 # Each file either meets a baulk or gallery face flush or leaves a full metre: no pockets a player cannot leave.
+RANK_BASE = .24
 RETURN_RANKS = {(5, 1), (4, -1)}   # (rank, sx) the return ramps replace: x<0 south side, x>0 north side (sx mirrors RANKS' negative x)
 for i, (x, z0, z1) in enumerate(RANKS):
     for sx in (-1, 1):
         if (i, sx) in RETURN_RANKS: continue
-        c.B(f'rank_{i}_{"w" if sx < 0 else "e"}', sx * x - .5, sx * x + .5, PIT, PIT + 2.0, z0, z1, 'terracotta', 'cover', dict(kind='rank', sx=sx, n=i))
+        rid = f'rank_{i}_{"w" if sx < 0 else "e"}'
+        c.B(rid, sx * x - .5, sx * x + .5, PIT, PIT + 2.0, z0, z1, 'terracotta', 'cover', dict(kind='rank', sx=sx, n=i), collision=False)
+        # Bullets meet the figures, not the file's bounding box: the earthen base, one slab for the
+        # shoulder-to-shoulder bodies and a narrow band for the heads, so shots pass beside the file
+        # and over the shoulders. Bodies and heads are continuous, never slots a player could drop into.
+        cx = sx * x; fit = (2.0 - RANK_BASE) / 1.98; nf = max(2, int((z1 - z0 - .76) / .58) + 1)
+        proxy(f'{rid}_base', cx - .5, cx + .5, PIT, PIT + RANK_BASE, z0, z1)
+        proxy(f'{rid}_bodies', cx - .19, cx + .19, PIT + RANK_BASE, PIT + RANK_BASE + 1.56 * fit, z0, z1)
+        proxy(f'{rid}_heads', cx - .11, cx + .11, PIT + RANK_BASE + 1.56 * fit, PIT + RANK_BASE + 1.97 * fit, z0 + .27, z1 - .27)
         c.anchor(f'cover_rank_{i}_{"w" if sx < 0 else "e"}', 'cover', [sx * (x - 1.05), PIT, (z0 + z1) / 2], height=2.0)
 # L01: return ramps. Each climbs 2.2 m over 4.2 m along a baulk's inner face to a landing on the
 # baulk, screened toward the centre corridor; the landing sits beside, not on, the plank underpass.
@@ -112,14 +151,23 @@ for sx in (-1, 1):
 # corridor, vermilion gates in the south one. Both stop below the baulk tops (no new perch).
 for sx in (-1, 1):
     side = 'w' if sx < 0 else 'e'
-    c.B(f'war_drum_{side}', sx * 8.0, sx * 6.2, PIT, PIT + 1.9, -12.6, -9.5, 'lacquer', 'cover', dict(kind='wardrum'))
+    c.B(f'war_drum_{side}', sx * 8.0, sx * 6.2, PIT, PIT + 2.1, -12.6, -9.5, 'lacquer', 'cover', dict(kind='wardrum'), collision=False)
+    proxy(f'war_drum_{side}_stand', *sorted((sx * 8.0, sx * 6.2)), PIT, PIT + .5, -12.6, -9.5)
+    proxy(f'war_drum_{side}_drums', *sorted((sx * 7.82, sx * 6.38)), PIT + .58, PIT + 2.02, -12.55, -9.55)
     c.B(f'vermilion_gate_{side}', sx * 7.6, sx * 6.6, PIT, PIT + 1.9, 9.3, 12.7, 'lacquer', 'cover', dict(kind='redgate'))
     c.anchor(f'cover_drum_{side}', 'cover', [sx * 7.1, PIT, -13.2], height=1.9)
     c.anchor(f'cover_gate_{side}', 'cover', [sx * 8.2, PIT, 11.3], height=1.9)
 # The emperor's bronze chariot on its plinth, the four-horse team in front of it.
 c.B('chariot_plinth', -2.4, 2.4, PIT, PIT + .45, -1.5, 1.5, 'brick', 'cover', dict(kind='plinth'))
-c.B('chariot', -1.7, 1.7, PIT + .45, PIT + 2.25, -1.0, 1.5, 'bronze', 'cover', dict(kind='chariot'))
-c.B('chariot_team', -1.5, 1.5, PIT, PIT + 1.8, 1.5, 3.6, 'bronze', 'cover', dict(kind='team'))
+c.B('chariot', -1.7, 1.7, PIT + .45, PIT + 2.25, -1.0, 1.5, 'bronze', 'cover', dict(kind='chariot'), collision=False)
+c.B('chariot_team', -1.5, 1.5, PIT, PIT + 1.8, 1.5, 3.6, 'bronze', 'cover', dict(kind='team'), collision=False)
+# Bullet fit: the car's box and the canopy stop shots; under the car, through the spoked wheels and
+# round the canopy staff is open. Each horse is a body and a head; between the legs is open.
+CY = PIT + .45
+proxy('chariot_car', -1.2, 1.2, CY + .62, CY + 1.4, -.9, .63)
+proxy('chariot_canopy', -.69, .69, PIT + 1.92, PIT + 2.25, -.99, .39)
+proxy('chariot_horses', -1.32, 1.32, PIT + .8, PIT + 1.4, 1.76, 3.09)          # the team abreast: one body block, legs open below
+proxy('chariot_horse_heads', -1.16, 1.16, PIT + 1.18, PIT + 1.68, 3.09, 3.56)
 c.anchor('objective_chariot', 'objective', [0, PIT, -3.2], radius=2)
 c.anchor('objective_north', 'objective', [0, 0, -18.6], radius=2)
 c.anchor('objective_south', 'objective', [0, 0, 18.6], radius=2)
@@ -205,7 +253,7 @@ def rank(m, o, a):
     x0, x1, y0, y1, z0, z1 = ext(o); sx = a['sx']; face = 0 if sx < 0 else math.pi; r = random.Random(900 + a['n'] * 2 + (sx > 0))
     cx = (x0 + x1) / 2; n = max(2, int((z1 - z0 - .76) / .58) + 1)
     # L04: the file stands on a continuous earthen base with a timber kerb, so the whole box reads as one solid
-    BASE = .24; fit = (y1 - y0 - BASE) / 1.98
+    BASE = RANK_BASE; fit = (y1 - y0 - BASE) / 1.98
     tbox(m, 'rammedDark', x0, x1, z0, z1, y0, y0 + BASE, .03, top_material='earthDark')
     for xx in (x0 + .03, x1 - .09): m.box('timber', (xx, y0 + BASE - .08, z0 + .03), (xx + .06, y0 + BASE, z1 - .03))
     for k in range(n):
@@ -319,6 +367,14 @@ def column(m, o, a):
     return True
 
 
+def lattice(m, axis, plane, sg, u, v, w=.025):
+    """A flat gilt strip painted on a board face from (u0, y0) to (u1, y1); u runs along the board."""
+    (ua, ya), (ub, yb) = u, v; p = plane + sg * .004
+    if axis == 'z': q = [(ua, ya - w, p), (ub, yb - w, p), (ub, yb + w, p), (ua, ya + w, p)]
+    else: q = [(p, ya - w, ua), (p, yb - w, ub), (p, yb + w, ub), (p, ya + w, ua)]
+    m.quad('gold', *q); m.quad('gold', *q[::-1])
+
+
 def rail(m, o, a):
     x0, x1, y0, y1, z0, z1 = ext(o)
     if a['axis'] == 'x':
@@ -326,10 +382,11 @@ def rail(m, o, a):
         m.box('lacquerDark', (x0, y1 - .1, z0), (x1, y1, z1)); m.box('lacquer', (x0, y0, z0 + .05), (x1, y0 + .12, z1 - .05)); m.box('lacquer', (x0, y0 + .52, zc - .04), (x1, y0 + .6, zc + .04))
         for i in range(n + 1):
             x = x0 + step * i; x = min(max(x, x0 + .07), x1 - .07); m.box('lacquerDark', (x - .07, y0, z0), (x + .07, y1 - .1, z1))
+        m.box('lacquer', (x0, y0 + .12, zc - .08), (x1, y0 + .52, zc + .08))      # skirting board: solid, as is its collision
         for i in range(n):
             xa, xb = x0 + step * i + .1, x0 + step * (i + 1) - .1
-            for u, v in (((xa, y0 + .14), (xb, y0 + .5)), ((xa, y0 + .5), (xb, y0 + .14))):
-                beam(m, 'timberLight', (u[0], u[1], zc), (v[0], v[1], zc), .022, 4)
+            for u, v in (((xa, y0 + .16), (xb, y0 + .48)), ((xa, y0 + .48), (xb, y0 + .16))):
+                for zz, sg in ((zc - .085, -1), (zc + .085, 1)): lattice(m, 'z', zz, sg, u, v)
             for u, v in (((xa, y0 + .62), ((xa + xb) / 2, y1 - .12)), (((xa + xb) / 2, y1 - .12), (xb, y0 + .62))):
                 beam(m, 'timberLight', (u[0], u[1], zc), (v[0], v[1], zc), .02, 4)
     else:
@@ -337,10 +394,13 @@ def rail(m, o, a):
         m.box('lacquerDark', (x0, y1 - .1, z0), (x1, y1, z1)); m.box('lacquer', (x0 + .05, y0, z0), (x1 - .05, y0 + .12, z1)); m.box('lacquer', (xc - .04, y0 + .52, z0), (xc + .04, y0 + .6, z1))
         for i in range(n + 1):
             z = z0 + step * i; z = min(max(z, z0 + .07), z1 - .07); m.box('lacquerDark', (x0, y0, z - .07), (x1, y1 - .1, z + .07))
+        m.box('lacquer', (xc - .08, y0 + .12, z0), (xc + .08, y0 + .52, z1))      # skirting board: solid, as is its collision
         for i in range(n):
             za, zb = z0 + step * i + .1, z0 + step * (i + 1) - .1
-            for u, v in (((za, y0 + .14), (zb, y0 + .5)), ((za, y0 + .5), (zb, y0 + .14))):
-                beam(m, 'timberLight', (xc, u[1], u[0]), (xc, v[1], v[0]), .022, 4)
+            for u, v in (((za, y0 + .16), (zb, y0 + .48)), ((za, y0 + .48), (zb, y0 + .16))):
+                for xx, sg in ((xc - .085, -1), (xc + .085, 1)): lattice(m, 'x', xx, sg, u, v)
+            for u, v in (((za, y0 + .62), ((za + zb) / 2, y1 - .12)), (((za + zb) / 2, y1 - .12), (zb, y0 + .62))):
+                beam(m, 'timberLight', (xc, u[1], u[0]), (xc, v[1], v[0]), .02, 4)
     return True
 
 
@@ -468,17 +528,32 @@ def lowwall(m, o, a):
 
 
 def wardrum(m, o, a):
-    """A great war drum of the host on its lacquered stand: bronze-studded skin, gilt hoops."""
-    x0, x1, y0, y1, z0, z1 = ext(o); xc, zc = (x0 + x1) / 2, (z0 + z1) / 2
+    """Two great war drums of the host lying end to end on a lacquered stand (axis along z), so from
+    the corridor they read as one solid bank: barrel staves, gilt hoops, studded skins."""
+    x0, x1, y0, y1, z0, z1 = ext(o); xc = (x0 + x1) / 2
     tbox(m, 'brick', x0, x1, z0, z1, y0, y0 + .25, .05)
-    m.box('lacquerDark', (x0 + .08, y0 + .25, z0 + .08), (x1 - .08, y0 + .55, z1 - .08))
-    r = min(x1 - x0, z1 - z0) / 2 - .05
-    lathe(m, 'lacquer', xc, zc, [(r * .9, y0 + .55), (r, y0 + .85), (r, y1 - .35), (r * .9, y1 - .06)], 20, cap=False)
-    lathe(m, 'gold', xc, zc, [(r * .905, y1 - .1), (r * .905, y1 - .06)], 20, cap=False)
-    lathe(m, 'gold', xc, zc, [(r + .005, y0 + 1.0), (r + .005, y0 + 1.06)], 20, cap=False)
-    lathe(m, 'rammedLight', xc, zc, [(r * .9, y1 - .06), (0, y1 - .06)], 20, cap=False)         # the skin
-    for i in range(16):
-        t = math.tau * i / 16; m.blob('bronze', (xc + r * .86 * math.cos(t), y1 - .1, zc + r * .86 * math.sin(t)), .035, 1)
+    m.box('lacquerDark', (x0 + .06, y0 + .25, z0 + .05), (x1 - .06, y0 + .5, z1 - .05))
+    r = (x1 - x0) / 2 - .1; yc = y1 - r - .02; n = 24
+    zm = (z0 + z1) / 2
+    for za, zb in ((z0 + .04, zm - .01), (zm + .01, z1 - .04)):
+        L = zb - za
+        def ring(t, rr):
+            return [(xc + rr * math.cos(math.tau * k / n), yc + rr * math.sin(math.tau * k / n), za + L * t) for k in range(n)]
+        rings = [ring(0, r * .9), ring(.12, r * .97), ring(.5, r), ring(.88, r * .97), ring(1, r * .9)]
+        for A, B in zip(rings, rings[1:]):
+            for k in range(n): m.quad('lacquer', A[k], A[(k + 1) % n], B[(k + 1) % n], B[k])
+        for t, zz in ((0, za), (1, zb)):   # skins and gilt hoops
+            for k in range(n):
+                p, q = ring(t, r * .9)[k], ring(t, r * .9)[(k + 1) % n]
+                m.tri('rammedLight', (xc, yc, zz), *((q, p) if t == 0 else (p, q)))
+            for k in range(12):
+                th = math.tau * k / 12; bxx, byy = xc + r * .84 * math.cos(th), yc + r * .84 * math.sin(th); dz = .025 if t == 0 else -.025
+                m.box('bronze', (bxx - .03, byy - .03, min(zz, zz + dz)), (bxx + .03, byy + .03, max(zz, zz + dz)))
+        for t in (.12, .88):
+            hoop = ring(t, r * .975); hoop2 = [(p[0], p[1], p[2] + .05) for p in ring(t, r * .975)]
+            for k in range(n): m.quad('gold', hoop[k], hoop[(k + 1) % n], hoop2[(k + 1) % n], hoop2[k])
+    for zz in (z0 + .3, zm, z1 - .3):   # cradle blocks under the drums
+        m.box('lacquerDark', (xc - r * .7, y0 + .5, zz - .12), (xc + r * .7, yc - r * .75, zz + .12))
     return True
 
 
@@ -500,7 +575,7 @@ def redgate(m, o, a):
     return True
 
 
-KINDS = dict(lowwall=lowwall, wardrum=wardrum, redgate=redgate, rank=rank, chariot=chariot, team=team, plinth=plinth, wall=wall, baulk=baulk,
+KINDS = dict(proxy=lambda m, o, a: True, lowwall=lowwall, wardrum=wardrum, redgate=redgate, rank=rank, chariot=chariot, team=team, plinth=plinth, wall=wall, baulk=baulk,
              planks=planks, gallery=gallery, column=column, rail=rail, ding=ding, chimes=chimes, rack=rack, screen=screen, que=que,
              leanroof=leanroof, endroof=endroof, steps=lambda m, o, a: steps(m, o, 'timberLight', 'rammed', 'rammedDark', .22))
 

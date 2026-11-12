@@ -38,6 +38,11 @@ c = Era(ROOT, 'suntemple', 'SUNTEMPLE 日轮神殿', 60, 48, 'sunblaze', P, heig
 rng = random.Random(1352)
 ROOF = 5.2; ROOFTOP = 5.6
 
+def proxy(id, x0, x1, y0, y1, z0, z1):
+    """Collision-only part of a modelled object drawn by a visual-only object: bullets meet the
+    model's actual mass, not its bounding box (2026-11 bullet-fit pass)."""
+    c.B(id, x0, x1, y0, y1, z0, z1, 'sandstone', 'cover', dict(kind='proxy'))
+
 # ------------------------------------------------------------------ collision layout
 c.B('floor_north', -30, 30, -1, 0, -24, 11, 'sand', 'floor')
 c.B('floor_south', -30, 30, -1, 0, 19, 24, 'sand', 'floor')
@@ -75,7 +80,12 @@ STAIR_COLS = {(2, 0), (3, 0), (2, 1), (3, 1)}
 for i, x in enumerate(COLX):
     for k, z in enumerate(COLZ):
         if k == FALLEN_ROW or (i, k) in STAIR_COLS: continue
-        c.B(f'column_{i}_{k}', x - .62, x + .62, 0, ROOF, z - .62, z + .62, 'sandstone', 'structure', dict(kind='column', nave=abs(x) < 2))
+        c.B(f'column_{i}_{k}', x - .62, x + .62, 0, ROOF, z - .62, z + .62, 'sandstone', 'structure', dict(kind='column', nave=abs(x) < 2), collision=False)
+        # round shaft as an octagon of three boxes; square base and abacus as modelled
+        cid = f'column_{i}_{k}'
+        proxy(f'{cid}_base', x - .56, x + .56, 0, .24, z - .56, z + .56)
+        for j, (hx, hz) in enumerate(((.52, .215), (.215, .52), (.37, .37))): proxy(f'{cid}_shaft_{j}', x - hx, x + hx, .24, ROOF - .42, z - hz, z + hz)
+        proxy(f'{cid}_abacus', x - .62, x + .62, ROOF - .42, ROOF, z - .62, z + .62)
 # Public stair (S02): two flights rise from the north doors to a landing on the axis, then one
 # flight climbs the nave through the roof well to the bridge between the terraces.
 STAIR_MID = 2.8
@@ -138,12 +148,27 @@ for sx in (-1, 1):
     c.anchor(f'cover_drums_{team}', 'cover', [sx * 15.5, 0, -3.5], height=1.15)
     c.anchor(f'cover_fallen_{team}', 'cover', [sx * 16.6, 0, 14], height=1.3)
     # sun court: a colossus either side of the central door, an obelisk outside each
-    c.B(f'colossus_{team}', sx * 6.2, sx * 3.6, 0, 5.8, 6.4, 9.6, 'sandstone', 'cover', dict(kind='colossus', sx=sx))
-    c.B(f'obelisk_{team}', sx * 10.9, sx * 9.5, 0, 8.6, 8.3, 9.7, 'granite', 'structure', dict(kind='obelisk'))
+    c.B(f'colossus_{team}', sx * 6.2, sx * 3.6, 0, 5.8, 6.4, 9.6, 'sandstone', 'cover', dict(kind='colossus', sx=sx), collision=False)
+    c.B(f'obelisk_{team}', sx * 10.9, sx * 9.5, 0, 8.6, 8.3, 9.7, 'granite', 'structure', dict(kind='obelisk'), collision=False)
+    # seated king (model faces +z from his centre): plinth, throne, back, legs, torso, head, crown
+    kx, kz = sx * 4.9, 8.0
+    for part, (hx, za, zb, ya, yb) in dict(plinth=(1.3, -1.6, 1.6, 0, .55), throne=(1.15, -1.55, .35, .55, 2.15), back=(.95, -1.55, -1.15, 2.15, 3.75),
+                                            legs=(.63, -.65, 1.45, .55, 2.4), torso=(.78, -1.12, -.22, 2.4, 3.75), head=(.62, -1.0, -.2, 3.75, 4.72),
+                                            crown=(.44, -1.0, -.3, 4.72, 5.62)).items():
+        proxy(f'colossus_{team}_{part}', kx - hx, kx + hx, ya, yb, kz + za, kz + zb)
+    # obelisk: base, a shaft in two tapering steps, pyramidion
+    ox, oz = sx * 10.2, 9.0
+    for part, (h, ya, yb) in dict(base=(.7, 0, .5), lower=(.46, .5, 4.2), upper=(.38, 4.2, 7.9), tip=(.2, 7.9, 8.45)).items():
+        proxy(f'obelisk_{team}_{part}', ox - h, ox + h, ya, yb, oz - h, oz + h)
     c.anchor(f'cover_colossus_{team}', 'cover', [sx * 4.9, 0, 10.4], height=5.8)
     # north avenue sphinxes face the barque shrine
     for i, (x0, x1) in enumerate(((5, 8.6), (11, 14.6), (17, 20.6))):
-        c.B(f'sphinx_{team}_{i}', sx * x0, sx * x1, 0, 1.7, -21.6, -19.8, 'sandstone', 'cover', dict(kind='sphinx', sx=sx))
+        c.B(f'sphinx_{team}_{i}', sx * x0, sx * x1, 0, 1.7, -21.6, -19.8, 'sandstone', 'cover', dict(kind='sphinx', sx=sx), collision=False)
+        # plinth, then one block for body and head (tall enough that the plinth is no step onto its back);
+        # the forepaws and the space beside the flanks are open
+        mx = sx * (x0 + x1) / 2
+        proxy(f'sphinx_{team}_{i}_plinth', *sorted((sx * x0, sx * x1)), 0, .35, -21.6, -19.8)
+        proxy(f'sphinx_{team}_{i}_body', *sorted((mx - sx * 1.6, mx + sx * 1.14)), .35, 1.75, -20.7 - .52, -20.7 + .52)
         c.anchor(f'cover_sphinx_{team}_{i}', 'cover', [sx * (x0 + x1) / 2, 0, -19.2], height=1.7)
     # avenue stela (S05): a push node between the spawn side and the hall's north door
     c.B(f'stela_{team}', sx * 14.6, sx * 13.0, 0, 2.6, -17.6, -16.0, 'granite', 'cover', dict(kind='stela', sx=sx))
@@ -702,7 +727,7 @@ def stela(m, o, a):
     return True
 
 
-KINDS = dict(stairblock=stairblock, screenwall=screenwall, sanctuary=sanctuary, stela=stela, wall=wall, lintel=lintel, column=column, roof=roof, parapet=parapet, roofstair=roofstair, sunshrine=sunshrine, pylon=pylon,
+KINDS = dict(proxy=lambda m, o, a: True, stairblock=stairblock, screenwall=screenwall, sanctuary=sanctuary, stela=stela, wall=wall, lintel=lintel, column=column, roof=roof, parapet=parapet, roofstair=roofstair, sunshrine=sunshrine, pylon=pylon,
              gatelintel=gatelintel, enclosure=enclosure, offering=offering, drums=drums, fallen=fallen, palmbed=palmbed, colossus=colossus,
              obelisk=obelisk, sphinx=sphinx, shrine=shrine, table=table, bsteps=bsteps, basinfloor=basinfloor, barque=barque,
              steps=lambda m, o, a: steps(m, o, 'limestone', 'limestoneShade', None, .2))

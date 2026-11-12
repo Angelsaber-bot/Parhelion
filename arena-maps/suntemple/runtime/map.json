@@ -857,8 +857,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0_base",
+      "type": "box",
+      "position": [
+        -8.25,
+        0.12,
+        -11.4
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0_shaft_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0_shaft_1",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0_shaft_2",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_0_abacus",
+      "type": "box",
+      "position": [
+        -8.25,
+        4.99,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -875,8 +965,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1_base",
+      "type": "box",
+      "position": [
+        -8.25,
+        0.12,
+        -8.1
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1_shaft_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1_shaft_1",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1_shaft_2",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_1_abacus",
+      "type": "box",
+      "position": [
+        -8.25,
+        4.99,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -893,8 +1073,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3_base",
+      "type": "box",
+      "position": [
+        -8.25,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3_shaft_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3_shaft_1",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3_shaft_2",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_3_abacus",
+      "type": "box",
+      "position": [
+        -8.25,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -911,8 +1181,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4_base",
+      "type": "box",
+      "position": [
+        -8.25,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4_shaft_0",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4_shaft_1",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4_shaft_2",
+      "type": "box",
+      "position": [
+        -8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_0_4_abacus",
+      "type": "box",
+      "position": [
+        -8.25,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -929,8 +1289,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0_base",
+      "type": "box",
+      "position": [
+        -4.95,
+        0.12,
+        -11.4
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0_shaft_0",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0_shaft_1",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0_shaft_2",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_0_abacus",
+      "type": "box",
+      "position": [
+        -4.95,
+        4.99,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -947,8 +1397,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1_base",
+      "type": "box",
+      "position": [
+        -4.95,
+        0.12,
+        -8.1
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1_shaft_0",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1_shaft_1",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1_shaft_2",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_1_abacus",
+      "type": "box",
+      "position": [
+        -4.95,
+        4.99,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -965,8 +1505,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3_base",
+      "type": "box",
+      "position": [
+        -4.95,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3_shaft_0",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3_shaft_1",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3_shaft_2",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_3_abacus",
+      "type": "box",
+      "position": [
+        -4.95,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -983,8 +1613,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4_base",
+      "type": "box",
+      "position": [
+        -4.95,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4_shaft_0",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4_shaft_1",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4_shaft_2",
+      "type": "box",
+      "position": [
+        -4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_1_4_abacus",
+      "type": "box",
+      "position": [
+        -4.95,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1001,8 +1721,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3_base",
+      "type": "box",
+      "position": [
+        -1.65,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3_shaft_0",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3_shaft_1",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3_shaft_2",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_3_abacus",
+      "type": "box",
+      "position": [
+        -1.65,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1019,8 +1829,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4_base",
+      "type": "box",
+      "position": [
+        -1.65,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4_shaft_0",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4_shaft_1",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4_shaft_2",
+      "type": "box",
+      "position": [
+        -1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_2_4_abacus",
+      "type": "box",
+      "position": [
+        -1.65,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1037,8 +1937,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3_base",
+      "type": "box",
+      "position": [
+        1.65,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3_shaft_0",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3_shaft_1",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3_shaft_2",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_3_abacus",
+      "type": "box",
+      "position": [
+        1.65,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1055,8 +2045,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4_base",
+      "type": "box",
+      "position": [
+        1.65,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4_shaft_0",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4_shaft_1",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4_shaft_2",
+      "type": "box",
+      "position": [
+        1.65,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_3_4_abacus",
+      "type": "box",
+      "position": [
+        1.65,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1073,8 +2153,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0_base",
+      "type": "box",
+      "position": [
+        4.95,
+        0.12,
+        -11.4
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0_shaft_0",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0_shaft_1",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0_shaft_2",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_0_abacus",
+      "type": "box",
+      "position": [
+        4.95,
+        4.99,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1091,8 +2261,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1_base",
+      "type": "box",
+      "position": [
+        4.95,
+        0.12,
+        -8.1
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1_shaft_0",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1_shaft_1",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1_shaft_2",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_1_abacus",
+      "type": "box",
+      "position": [
+        4.95,
+        4.99,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1109,8 +2369,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3_base",
+      "type": "box",
+      "position": [
+        4.95,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3_shaft_0",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3_shaft_1",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3_shaft_2",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_3_abacus",
+      "type": "box",
+      "position": [
+        4.95,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1127,8 +2477,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4_base",
+      "type": "box",
+      "position": [
+        4.95,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4_shaft_0",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4_shaft_1",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4_shaft_2",
+      "type": "box",
+      "position": [
+        4.95,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_4_4_abacus",
+      "type": "box",
+      "position": [
+        4.95,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1145,8 +2585,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0_base",
+      "type": "box",
+      "position": [
+        8.25,
+        0.12,
+        -11.4
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0_shaft_0",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0_shaft_1",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0_shaft_2",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -11.4
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_0_abacus",
+      "type": "box",
+      "position": [
+        8.25,
+        4.99,
+        -11.4
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1163,8 +2693,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1_base",
+      "type": "box",
+      "position": [
+        8.25,
+        0.12,
+        -8.1
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1_shaft_0",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1_shaft_1",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1_shaft_2",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -8.1
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_1_abacus",
+      "type": "box",
+      "position": [
+        8.25,
+        4.99,
+        -8.1
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1181,8 +2801,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3_base",
+      "type": "box",
+      "position": [
+        8.25,
+        0.12,
+        -1.5
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3_shaft_0",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3_shaft_1",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3_shaft_2",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        -1.5
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_3_abacus",
+      "type": "box",
+      "position": [
+        8.25,
+        4.99,
+        -1.5
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1199,8 +2909,98 @@
         1.24
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4_base",
+      "type": "box",
+      "position": [
+        8.25,
+        0.12,
+        1.8
+      ],
+      "size": [
+        1.12,
+        0.24,
+        1.12
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4_shaft_0",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        1.04,
+        4.54,
+        0.43
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4_shaft_1",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.43,
+        4.54,
+        1.04
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4_shaft_2",
+      "type": "box",
+      "position": [
+        8.25,
+        2.51,
+        1.8
+      ],
+      "size": [
+        0.74,
+        4.54,
+        0.74
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "column_5_4_abacus",
+      "type": "box",
+      "position": [
+        8.25,
+        4.99,
+        1.8
+      ],
+      "size": [
+        1.24,
+        0.42,
+        1.24
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1854,7 +3654,7 @@
         3.2
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "cover",
       "batch": "main"
     },
@@ -1872,8 +3672,206 @@
         1.4
       ],
       "material": "granite",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_plinth",
+      "type": "box",
+      "position": [
+        -4.9,
+        0.275,
+        8.0
+      ],
+      "size": [
+        2.6,
+        0.55,
+        3.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_throne",
+      "type": "box",
+      "position": [
+        -4.9,
+        1.35,
+        7.4
+      ],
+      "size": [
+        2.3,
+        1.6,
+        1.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_back",
+      "type": "box",
+      "position": [
+        -4.9,
+        2.95,
+        6.65
+      ],
+      "size": [
+        1.9,
+        1.6,
+        0.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_legs",
+      "type": "box",
+      "position": [
+        -4.9,
+        1.475,
+        8.4
+      ],
+      "size": [
+        1.26,
+        1.85,
+        2.1
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_torso",
+      "type": "box",
+      "position": [
+        -4.9,
+        3.075,
+        7.33
+      ],
+      "size": [
+        1.56,
+        1.35,
+        0.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_head",
+      "type": "box",
+      "position": [
+        -4.9,
+        4.235,
+        7.4
+      ],
+      "size": [
+        1.24,
+        0.97,
+        0.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_west_crown",
+      "type": "box",
+      "position": [
+        -4.9,
+        5.17,
+        7.35
+      ],
+      "size": [
+        0.88,
+        0.9,
+        0.7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_west_base",
+      "type": "box",
+      "position": [
+        -10.2,
+        0.25,
+        9.0
+      ],
+      "size": [
+        1.4,
+        0.5,
+        1.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_west_lower",
+      "type": "box",
+      "position": [
+        -10.2,
+        2.35,
+        9.0
+      ],
+      "size": [
+        0.92,
+        3.7,
+        0.92
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_west_upper",
+      "type": "box",
+      "position": [
+        -10.2,
+        6.05,
+        9.0
+      ],
+      "size": [
+        0.76,
+        3.7,
+        0.76
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_west_tip",
+      "type": "box",
+      "position": [
+        -10.2,
+        8.175,
+        9.0
+      ],
+      "size": [
+        0.4,
+        0.55,
+        0.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -1888,6 +3886,42 @@
         3.6,
         1.7,
         1.8
+      ],
+      "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_0_plinth",
+      "type": "box",
+      "position": [
+        -6.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_0_body",
+      "type": "box",
+      "position": [
+        -6.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
       ],
       "material": "sandstone",
       "collision": true,
@@ -1908,6 +3942,42 @@
         1.8
       ],
       "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_1_plinth",
+      "type": "box",
+      "position": [
+        -12.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_1_body",
+      "type": "box",
+      "position": [
+        -12.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
+      ],
+      "material": "sandstone",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1924,6 +3994,42 @@
         3.6,
         1.7,
         1.8
+      ],
+      "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_2_plinth",
+      "type": "box",
+      "position": [
+        -18.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_west_2_body",
+      "type": "box",
+      "position": [
+        -18.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
       ],
       "material": "sandstone",
       "collision": true,
@@ -2251,7 +4357,7 @@
         3.2
       ],
       "material": "sandstone",
-      "collision": true,
+      "collision": false,
       "role": "cover",
       "batch": "main"
     },
@@ -2269,8 +4375,206 @@
         1.4
       ],
       "material": "granite",
-      "collision": true,
+      "collision": false,
       "role": "structure",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_plinth",
+      "type": "box",
+      "position": [
+        4.9,
+        0.275,
+        8.0
+      ],
+      "size": [
+        2.6,
+        0.55,
+        3.2
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_throne",
+      "type": "box",
+      "position": [
+        4.9,
+        1.35,
+        7.4
+      ],
+      "size": [
+        2.3,
+        1.6,
+        1.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_back",
+      "type": "box",
+      "position": [
+        4.9,
+        2.95,
+        6.65
+      ],
+      "size": [
+        1.9,
+        1.6,
+        0.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_legs",
+      "type": "box",
+      "position": [
+        4.9,
+        1.475,
+        8.4
+      ],
+      "size": [
+        1.26,
+        1.85,
+        2.1
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_torso",
+      "type": "box",
+      "position": [
+        4.9,
+        3.075,
+        7.33
+      ],
+      "size": [
+        1.56,
+        1.35,
+        0.9
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_head",
+      "type": "box",
+      "position": [
+        4.9,
+        4.235,
+        7.4
+      ],
+      "size": [
+        1.24,
+        0.97,
+        0.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "colossus_east_crown",
+      "type": "box",
+      "position": [
+        4.9,
+        5.17,
+        7.35
+      ],
+      "size": [
+        0.88,
+        0.9,
+        0.7
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_east_base",
+      "type": "box",
+      "position": [
+        10.2,
+        0.25,
+        9.0
+      ],
+      "size": [
+        1.4,
+        0.5,
+        1.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_east_lower",
+      "type": "box",
+      "position": [
+        10.2,
+        2.35,
+        9.0
+      ],
+      "size": [
+        0.92,
+        3.7,
+        0.92
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_east_upper",
+      "type": "box",
+      "position": [
+        10.2,
+        6.05,
+        9.0
+      ],
+      "size": [
+        0.76,
+        3.7,
+        0.76
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "obelisk_east_tip",
+      "type": "box",
+      "position": [
+        10.2,
+        8.175,
+        9.0
+      ],
+      "size": [
+        0.4,
+        0.55,
+        0.4
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
       "batch": "main"
     },
     {
@@ -2285,6 +4589,42 @@
         3.6,
         1.7,
         1.8
+      ],
+      "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_0_plinth",
+      "type": "box",
+      "position": [
+        6.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_0_body",
+      "type": "box",
+      "position": [
+        6.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
       ],
       "material": "sandstone",
       "collision": true,
@@ -2305,6 +4645,42 @@
         1.8
       ],
       "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_1_plinth",
+      "type": "box",
+      "position": [
+        12.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_1_body",
+      "type": "box",
+      "position": [
+        12.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
+      ],
+      "material": "sandstone",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2321,6 +4697,42 @@
         3.6,
         1.7,
         1.8
+      ],
+      "material": "sandstone",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_2_plinth",
+      "type": "box",
+      "position": [
+        18.8,
+        0.175,
+        -20.7
+      ],
+      "size": [
+        3.6,
+        0.35,
+        1.8
+      ],
+      "material": "sandstone",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "sphinx_east_2_body",
+      "type": "box",
+      "position": [
+        18.57,
+        1.05,
+        -20.7
+      ],
+      "size": [
+        2.74,
+        1.4,
+        1.04
       ],
       "material": "sandstone",
       "collision": true,

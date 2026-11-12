@@ -18,7 +18,8 @@ export const ROOM_NAME = 'arena';
 // v21: dash charges recover every five seconds.
 // v22: LISHAN, SUNTEMPLE and ORLEANS revised layouts (shared collision) and spawn choice that avoids enemy sight.
 // v23: attacking ends spawn protection (G02); solid walls and floors shelter from frags, shields still do not (G03).
-export const RULES_VERSION = 23;
+// v24: era-map colliders fitted to their models (figures, chariot, rails, columns, statues): shots pass visible gaps.
+export const RULES_VERSION = 24;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

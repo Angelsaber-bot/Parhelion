@@ -40,6 +40,10 @@ c = Era(ROOT, 'orleans', 'ORLEANS 奥尔良', 60, 44, 'loire', P, height=12, low
 rng = random.Random(1429)
 WALK = 4.0; UP = 3.25; EAVE = 6.2
 
+def proxy(id, x0, x1, y0, y1, z0, z1):
+    """Collision-only part of a modelled object drawn by a visual-only object (2026-11 bullet fit)."""
+    c.B(id, x0, x1, y0, y1, z0, z1, 'bronze', 'cover', dict(kind='proxy'))
+
 # ------------------------------------------------------------------ collision layout
 c.B('floor_town', -30, 30, -2.6, 0, -22, 15.4, 'cobble', 'floor', dict(kind='townfloor'))
 c.B('quay_floor', -30, 30, -2.6, QUAY, 15.4, 22, 'cobbleWarm', 'floor')
@@ -165,7 +169,11 @@ for sx in (-1, 1):
     # O06: the north stalls are now closed booths, full standing cover that splits the square
     c.B(f'stall_{team}_n', sx * 7.4, sx * 5, 0, 2.1, -6.6, -4.6, 'oak', 'cover', dict(kind='booth', sx=sx))
     c.B(f'stall_{team}_s', sx * 7.4, sx * 5, 0, 1.15, 2.2, 4.2, 'oak', 'cover', dict(kind='stall', goods='cloth'))
-    c.B(f'cart_{team}', sx * 10.6, sx * 8.4, 0, 1.5, -.8, .8, 'oak', 'cover', dict(kind='cart', sx=sx))
+    c.B(f'cart_{team}', sx * 10.6, sx * 8.4, 0, 1.5, -.8, .8, 'oak', 'cover', dict(kind='cart', sx=sx), collision=False)
+    # bed with its staved sides and the hay load; under the bed and through the spoked wheels is open
+    ca, cb = sorted((sx * 10.6, sx * 8.4))
+    proxy(f'cart_{team}_bed', ca + .1, cb - .1, .55, 1.1, -.62, .62)
+    proxy(f'cart_{team}_load', ca + .4, cb - .4, 1.1, 1.5, -.44, .44)
     c.anchor(f'cover_stall_{team}', 'cover', [sx * 8.2, 0, -5.6], height=1.15)
     c.anchor(f'cover_cart_{team}', 'cover', [sx * 11.4, 0, 0], height=1.5)
     # quay: parapet on the street edge, two stairs down, cargo on the lower level
@@ -181,7 +189,11 @@ for i, (x0, x1) in enumerate(((-8.8, -4.0), (-1.6, 1.6), (4.0, 8.8))):
     c.B(f'quay_parapet_centre_{i}', x0, x1, 0, 1.0, 15.0, 15.4, 'limestone', 'cover', dict(kind='qparapet'))
 c.B('crane', -1.5, 1.5, QUAY, QUAY + 2.4, 15.4, 17.6, 'oak', 'structure', dict(kind='crane'))
 c.B('statue_plinth', -1.6, 1.6, 0, 2.0, -2.4, 2.4, 'limestone', 'structure', dict(kind='plinth'))
-c.B('statue', -.75, .75, 2.0, 5.4, -2.0, 2.0, 'bronze', 'structure', dict(kind='statue'))
+c.B('statue', -.75, .75, 2.0, 5.4, -2.0, 2.0, 'bronze', 'structure', dict(kind='statue'), collision=False)
+# horse and rider as modelled (horse faces +z); legs, lance and the cloth banner are open
+for part, (xa, xb, ya, yb, za, zb) in dict(horse=(-.3, .3, 1.14, 1.92, -1.2, .85), neck=(-.2, .2, 1.7, 2.4, .8, 1.66),
+                                          rider=(-.4, .4, 1.92, 2.86, -.36, .1), head=(-.17, .17, 2.86, 3.18, -.3, .02)).items():
+    proxy(f'statue_{part}', xa, xb, 2.0 + ya, 2.0 + yb, za, zb)
 c.anchor('objective_square', 'objective', [0, 0, -4.4], radius=2)
 c.anchor('objective_quay', 'objective', [0, QUAY, 19.6], radius=2)
 c.anchor('cover_plinth', 'cover', [2.4, 0, 0], height=2.0)
@@ -389,6 +401,10 @@ def stall(m, o, a):
     for xx in (x0 + .12, x1 - .24):
         for zz in (z0 + .12, z1 - .24): m.box('timber', (xx, y0, zz), (xx + .12, y1 - .26, zz + .12))
     m.box('timberDark', (x0 + .1, y0 + .3, z0 + .14), (x1 - .1, y0 + .38, z1 - .14))
+    for k in range(int((x1 - x0) / .3)):   # plank skirts round the trestles: the stall is solid cover, so it looks solid
+        xx = x0 + .02 + k * .3
+        for zz in (z0, z1 - .02): m.box('oakLight' if k % 2 else 'oak', (xx, y0 + .02, zz), (min(x1 - .02, xx + .27), y1 - .26, zz + .02))
+    for xx in (x0, x1 - .02): m.box('oak', (xx, y0 + .02, z0), (xx + .02, y1 - .26, z1))
     n = 4
     for i in range(n):
         for k in range(2):
@@ -546,7 +562,7 @@ def gatehouse(m, o, a):
     return True
 
 
-KINDS = dict(booth=booth, bscreen=bscreen, gatehouse=gatehouse, hwall=hwall, boards=boards, houseroof=houseroof, woodstair=woodstair, stonestair=stonestair, townfloor=townfloor, townwall=townwall,
+KINDS = dict(proxy=lambda m, o, a: True, booth=booth, bscreen=bscreen, gatehouse=gatehouse, hwall=hwall, boards=boards, houseroof=houseroof, woodstair=woodstair, stonestair=stonestair, townfloor=townfloor, townwall=townwall,
              battlement=battlement, walk=walk, towerwall=towerwall, towerroof=towerroof, cornertower=cornertower, gatewall=gatewall, gatearch=gatearch,
              well=well, stall=stall, cart=cart, qparapet=qparapet, crates=crates, barrels=barrels, crane=crane, plinth=plinth, statue=statue,
              steps=stonestair)

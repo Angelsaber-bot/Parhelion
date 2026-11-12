@@ -729,6 +729,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_board",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.3,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_post_0",
+      "type": "box",
+      "position": [
+        -17.58,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_post_1",
+      "type": "box",
+      "position": [
+        -16.325,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_post_2",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_post_3",
+      "type": "box",
+      "position": [
+        -13.675,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_post_4",
+      "type": "box",
+      "position": [
+        -12.42,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_0_top",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.95,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -747,6 +873,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_board",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.3,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_post_0",
+      "type": "box",
+      "position": [
+        -11.58,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_post_1",
+      "type": "box",
+      "position": [
+        -10.325,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_post_2",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_post_3",
+      "type": "box",
+      "position": [
+        -7.675,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_post_4",
+      "type": "box",
+      "position": [
+        -6.42,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_1_top",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.95,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -765,6 +1017,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_board",
+      "type": "box",
+      "position": [
+        9.0,
+        0.3,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_post_0",
+      "type": "box",
+      "position": [
+        6.42,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_post_1",
+      "type": "box",
+      "position": [
+        7.675,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_post_2",
+      "type": "box",
+      "position": [
+        9.0,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_post_3",
+      "type": "box",
+      "position": [
+        10.325,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_post_4",
+      "type": "box",
+      "position": [
+        11.58,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_2_top",
+      "type": "box",
+      "position": [
+        9.0,
+        0.95,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -783,6 +1161,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_board",
+      "type": "box",
+      "position": [
+        15.0,
+        0.3,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_post_0",
+      "type": "box",
+      "position": [
+        12.42,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_post_1",
+      "type": "box",
+      "position": [
+        13.675,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_post_2",
+      "type": "box",
+      "position": [
+        15.0,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_post_3",
+      "type": "box",
+      "position": [
+        16.325,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_post_4",
+      "type": "box",
+      "position": [
+        17.58,
+        0.75,
+        -16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_-1_3_top",
+      "type": "box",
+      "position": [
+        15.0,
+        0.95,
+        -16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -801,6 +1305,24 @@
         1.4
       ],
       "material": "bronze",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_-1_-1_belly",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.755,
+        -20.0
+      ],
+      "size": [
+        1.1,
+        0.61,
+        1.1
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -819,6 +1341,294 @@
         0.6
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_post_0",
+      "type": "box",
+      "position": [
+        -16.39,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_post_1",
+      "type": "box",
+      "position": [
+        -13.61,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_beam_0",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.95,
+        -20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_beam_1",
+      "type": "box",
+      "position": [
+        -15.0,
+        1.7,
+        -20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_0_0",
+      "type": "box",
+      "position": [
+        -16.15,
+        0.62,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.44,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_0_1",
+      "type": "box",
+      "position": [
+        -15.575,
+        0.633,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.414,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_0_2",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.646,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.387,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_0_3",
+      "type": "box",
+      "position": [
+        -14.425,
+        0.66,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.361,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_0_4",
+      "type": "box",
+      "position": [
+        -13.85,
+        0.673,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.334,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_0",
+      "type": "box",
+      "position": [
+        -16.15,
+        1.44,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.299,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_1",
+      "type": "box",
+      "position": [
+        -15.767,
+        1.449,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.281,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_2",
+      "type": "box",
+      "position": [
+        -15.383,
+        1.458,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.263,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_3",
+      "type": "box",
+      "position": [
+        -15.0,
+        1.467,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.245,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_4",
+      "type": "box",
+      "position": [
+        -14.617,
+        1.476,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.227,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_5",
+      "type": "box",
+      "position": [
+        -14.233,
+        1.485,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.209,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_-1_bell_1_6",
+      "type": "box",
+      "position": [
+        -13.85,
+        1.494,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.191,
+        0.204
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -837,6 +1647,24 @@
         1.4
       ],
       "material": "bronze",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_-1_1_belly",
+      "type": "box",
+      "position": [
+        9.0,
+        0.755,
+        -20.0
+      ],
+      "size": [
+        1.1,
+        0.61,
+        1.1
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -855,6 +1683,294 @@
         0.6
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_post_0",
+      "type": "box",
+      "position": [
+        13.61,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_post_1",
+      "type": "box",
+      "position": [
+        16.39,
+        0.875,
+        -20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_beam_0",
+      "type": "box",
+      "position": [
+        15.0,
+        0.95,
+        -20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_beam_1",
+      "type": "box",
+      "position": [
+        15.0,
+        1.7,
+        -20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_0_0",
+      "type": "box",
+      "position": [
+        13.85,
+        0.62,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.44,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_0_1",
+      "type": "box",
+      "position": [
+        14.425,
+        0.633,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.414,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_0_2",
+      "type": "box",
+      "position": [
+        15.0,
+        0.646,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.387,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_0_3",
+      "type": "box",
+      "position": [
+        15.575,
+        0.66,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.361,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_0_4",
+      "type": "box",
+      "position": [
+        16.15,
+        0.673,
+        -20.3
+      ],
+      "size": [
+        0.3,
+        0.334,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_0",
+      "type": "box",
+      "position": [
+        13.85,
+        1.44,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.299,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_1",
+      "type": "box",
+      "position": [
+        14.233,
+        1.449,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.281,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_2",
+      "type": "box",
+      "position": [
+        14.617,
+        1.458,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.263,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_3",
+      "type": "box",
+      "position": [
+        15.0,
+        1.467,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.245,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_4",
+      "type": "box",
+      "position": [
+        15.383,
+        1.476,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.227,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_5",
+      "type": "box",
+      "position": [
+        15.767,
+        1.485,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.209,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_-1_1_bell_1_6",
+      "type": "box",
+      "position": [
+        16.15,
+        1.494,
+        -20.3
+      ],
+      "size": [
+        0.204,
+        0.191,
+        0.204
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1139,6 +2255,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_board",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.3,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_post_0",
+      "type": "box",
+      "position": [
+        -17.58,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_post_1",
+      "type": "box",
+      "position": [
+        -16.325,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_post_2",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_post_3",
+      "type": "box",
+      "position": [
+        -13.675,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_post_4",
+      "type": "box",
+      "position": [
+        -12.42,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_0_top",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.95,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1157,6 +2399,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_board",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.3,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_post_0",
+      "type": "box",
+      "position": [
+        -11.58,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_post_1",
+      "type": "box",
+      "position": [
+        -10.325,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_post_2",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_post_3",
+      "type": "box",
+      "position": [
+        -7.675,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_post_4",
+      "type": "box",
+      "position": [
+        -6.42,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_1_top",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.95,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1175,6 +2543,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_board",
+      "type": "box",
+      "position": [
+        9.0,
+        0.3,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_post_0",
+      "type": "box",
+      "position": [
+        6.42,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_post_1",
+      "type": "box",
+      "position": [
+        7.675,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_post_2",
+      "type": "box",
+      "position": [
+        9.0,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_post_3",
+      "type": "box",
+      "position": [
+        10.325,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_post_4",
+      "type": "box",
+      "position": [
+        11.58,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_2_top",
+      "type": "box",
+      "position": [
+        9.0,
+        0.95,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1193,6 +2687,132 @@
         0.3
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_board",
+      "type": "box",
+      "position": [
+        15.0,
+        0.3,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.6,
+        0.16
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_post_0",
+      "type": "box",
+      "position": [
+        12.42,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_post_1",
+      "type": "box",
+      "position": [
+        13.675,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_post_2",
+      "type": "box",
+      "position": [
+        15.0,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_post_3",
+      "type": "box",
+      "position": [
+        16.325,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_post_4",
+      "type": "box",
+      "position": [
+        17.58,
+        0.75,
+        16.6
+      ],
+      "size": [
+        0.14,
+        0.3,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "gallery_rail_1_3_top",
+      "type": "box",
+      "position": [
+        15.0,
+        0.95,
+        16.6
+      ],
+      "size": [
+        5.3,
+        0.1,
+        0.3
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1211,6 +2831,24 @@
         1.4
       ],
       "material": "bronze",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_1_-1_belly",
+      "type": "box",
+      "position": [
+        -9.0,
+        0.755,
+        20.0
+      ],
+      "size": [
+        1.1,
+        0.61,
+        1.1
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1229,6 +2867,294 @@
         0.6
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_post_0",
+      "type": "box",
+      "position": [
+        -16.39,
+        0.875,
+        20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_post_1",
+      "type": "box",
+      "position": [
+        -13.61,
+        0.875,
+        20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_beam_0",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.95,
+        20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_beam_1",
+      "type": "box",
+      "position": [
+        -15.0,
+        1.7,
+        20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_0_0",
+      "type": "box",
+      "position": [
+        -16.15,
+        0.62,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.44,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_0_1",
+      "type": "box",
+      "position": [
+        -15.575,
+        0.633,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.414,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_0_2",
+      "type": "box",
+      "position": [
+        -15.0,
+        0.646,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.387,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_0_3",
+      "type": "box",
+      "position": [
+        -14.425,
+        0.66,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.361,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_0_4",
+      "type": "box",
+      "position": [
+        -13.85,
+        0.673,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.334,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_0",
+      "type": "box",
+      "position": [
+        -16.15,
+        1.44,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.299,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_1",
+      "type": "box",
+      "position": [
+        -15.767,
+        1.449,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.281,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_2",
+      "type": "box",
+      "position": [
+        -15.383,
+        1.458,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.263,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_3",
+      "type": "box",
+      "position": [
+        -15.0,
+        1.467,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.245,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_4",
+      "type": "box",
+      "position": [
+        -14.617,
+        1.476,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.227,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_5",
+      "type": "box",
+      "position": [
+        -14.233,
+        1.485,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.209,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_-1_bell_1_6",
+      "type": "box",
+      "position": [
+        -13.85,
+        1.494,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.191,
+        0.204
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1247,6 +3173,24 @@
         1.4
       ],
       "material": "bronze",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "ding_1_1_belly",
+      "type": "box",
+      "position": [
+        9.0,
+        0.755,
+        20.0
+      ],
+      "size": [
+        1.1,
+        0.61,
+        1.1
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1265,6 +3209,294 @@
         0.6
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_post_0",
+      "type": "box",
+      "position": [
+        13.61,
+        0.875,
+        20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_post_1",
+      "type": "box",
+      "position": [
+        16.39,
+        0.875,
+        20.3
+      ],
+      "size": [
+        0.18,
+        1.75,
+        0.24
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_beam_0",
+      "type": "box",
+      "position": [
+        15.0,
+        0.95,
+        20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_beam_1",
+      "type": "box",
+      "position": [
+        15.0,
+        1.7,
+        20.3
+      ],
+      "size": [
+        2.6,
+        0.1,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_0_0",
+      "type": "box",
+      "position": [
+        13.85,
+        0.62,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.44,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_0_1",
+      "type": "box",
+      "position": [
+        14.425,
+        0.633,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.414,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_0_2",
+      "type": "box",
+      "position": [
+        15.0,
+        0.646,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.387,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_0_3",
+      "type": "box",
+      "position": [
+        15.575,
+        0.66,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.361,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_0_4",
+      "type": "box",
+      "position": [
+        16.15,
+        0.673,
+        20.3
+      ],
+      "size": [
+        0.3,
+        0.334,
+        0.3
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_0",
+      "type": "box",
+      "position": [
+        13.85,
+        1.44,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.299,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_1",
+      "type": "box",
+      "position": [
+        14.233,
+        1.449,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.281,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_2",
+      "type": "box",
+      "position": [
+        14.617,
+        1.458,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.263,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_3",
+      "type": "box",
+      "position": [
+        15.0,
+        1.467,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.245,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_4",
+      "type": "box",
+      "position": [
+        15.383,
+        1.476,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.227,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_5",
+      "type": "box",
+      "position": [
+        15.767,
+        1.485,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.209,
+        0.204
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chimes_1_1_bell_1_6",
+      "type": "box",
+      "position": [
+        16.15,
+        1.494,
+        20.3
+      ],
+      "size": [
+        0.204,
+        0.191,
+        0.204
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1372,6 +3604,96 @@
         2.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        -3.0
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -4.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0_post_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -1.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_0_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1390,6 +3712,78 @@
         1.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_1_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        -7.5
+      ],
+      "size": [
+        0.16,
+        0.6,
+        1.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_1_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -8.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_1_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -6.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_1_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        -7.5
+      ],
+      "size": [
+        0.3,
+        0.1,
+        1.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1408,6 +3802,96 @@
         2.7
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        -14.65
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -15.93
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2_post_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        -13.37
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_-1_2_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.7
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1462,6 +3946,96 @@
         2.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        3.0
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        1.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        3.0
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0_post_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        4.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_0_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        3.0
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1480,6 +4054,78 @@
         1.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_1_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        7.5
+      ],
+      "size": [
+        0.16,
+        0.6,
+        1.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_1_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        6.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_1_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        8.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_1_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        7.5
+      ],
+      "size": [
+        0.3,
+        0.1,
+        1.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1498,6 +4144,96 @@
         2.7
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2_board",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.3,
+        14.65
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2_post_0",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        13.37
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2_post_1",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        14.65
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2_post_2",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.75,
+        15.93
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_west_1_2_top",
+      "type": "box",
+      "position": [
+        -21.15,
+        0.95,
+        14.65
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.7
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1716,6 +4452,96 @@
         2.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        -3.0
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -4.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0_post_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -1.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_0_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        -3.0
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1734,6 +4560,78 @@
         1.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_1_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        -7.5
+      ],
+      "size": [
+        0.16,
+        0.6,
+        1.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_1_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -8.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_1_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -6.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_1_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        -7.5
+      ],
+      "size": [
+        0.3,
+        0.1,
+        1.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1752,6 +4650,96 @@
         2.7
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        -14.65
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -15.93
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2_post_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        -13.37
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_-1_2_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        -14.65
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.7
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1806,6 +4794,96 @@
         2.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        3.0
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        1.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        3.0
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0_post_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        4.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_0_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        3.0
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1824,6 +4902,78 @@
         1.4
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_1_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        7.5
+      ],
+      "size": [
+        0.16,
+        0.6,
+        1.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_1_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        6.87
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_1_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        8.13
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_1_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        7.5
+      ],
+      "size": [
+        0.3,
+        0.1,
+        1.4
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1842,6 +4992,96 @@
         2.7
       ],
       "material": "timber",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2_board",
+      "type": "box",
+      "position": [
+        21.15,
+        0.3,
+        14.65
+      ],
+      "size": [
+        0.16,
+        0.6,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2_post_0",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        13.37
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2_post_1",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        14.65
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2_post_2",
+      "type": "box",
+      "position": [
+        21.15,
+        0.75,
+        15.93
+      ],
+      "size": [
+        0.3,
+        0.3,
+        0.14
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "platform_rail_east_1_2_top",
+      "type": "box",
+      "position": [
+        21.15,
+        0.95,
+        14.65
+      ],
+      "size": [
+        0.3,
+        0.1,
+        2.7
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -1989,6 +5229,60 @@
         3.1
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_w_base",
+      "type": "box",
+      "position": [
+        12.6,
+        -2.08,
+        -8.05
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_w_bodies",
+      "type": "box",
+      "position": [
+        12.6,
+        -1.267,
+        -8.05
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_w_heads",
+      "type": "box",
+      "position": [
+        12.6,
+        -0.391,
+        -8.05
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.56
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2005,6 +5299,60 @@
         1.0,
         2.0,
         3.1
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_e_base",
+      "type": "box",
+      "position": [
+        -12.6,
+        -2.08,
+        -8.05
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_e_bodies",
+      "type": "box",
+      "position": [
+        -12.6,
+        -1.267,
+        -8.05
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_0_e_heads",
+      "type": "box",
+      "position": [
+        -12.6,
+        -0.391,
+        -8.05
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.56
       ],
       "material": "terracotta",
       "collision": true,
@@ -2025,6 +5373,60 @@
         2.6
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_w_base",
+      "type": "box",
+      "position": [
+        12.6,
+        -2.08,
+        -14.7
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_w_bodies",
+      "type": "box",
+      "position": [
+        12.6,
+        -1.267,
+        -14.7
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_w_heads",
+      "type": "box",
+      "position": [
+        12.6,
+        -0.391,
+        -14.7
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.06
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2041,6 +5443,60 @@
         1.0,
         2.0,
         2.6
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_e_base",
+      "type": "box",
+      "position": [
+        -12.6,
+        -2.08,
+        -14.7
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_e_bodies",
+      "type": "box",
+      "position": [
+        -12.6,
+        -1.267,
+        -14.7
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_1_e_heads",
+      "type": "box",
+      "position": [
+        -12.6,
+        -0.391,
+        -14.7
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.06
       ],
       "material": "terracotta",
       "collision": true,
@@ -2061,6 +5517,60 @@
         3.0
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_w_base",
+      "type": "box",
+      "position": [
+        4.4,
+        -2.08,
+        -13.4
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_w_bodies",
+      "type": "box",
+      "position": [
+        4.4,
+        -1.267,
+        -13.4
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_w_heads",
+      "type": "box",
+      "position": [
+        4.4,
+        -0.391,
+        -13.4
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.46
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2077,6 +5587,60 @@
         1.0,
         2.0,
         3.0
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_e_base",
+      "type": "box",
+      "position": [
+        -4.4,
+        -2.08,
+        -13.4
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_e_bodies",
+      "type": "box",
+      "position": [
+        -4.4,
+        -1.267,
+        -13.4
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.0
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_2_e_heads",
+      "type": "box",
+      "position": [
+        -4.4,
+        -0.391,
+        -13.4
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.46
       ],
       "material": "terracotta",
       "collision": true,
@@ -2097,6 +5661,60 @@
         2.8
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_w_base",
+      "type": "box",
+      "position": [
+        3.4,
+        -2.08,
+        -7.9
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_w_bodies",
+      "type": "box",
+      "position": [
+        3.4,
+        -1.267,
+        -7.9
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_w_heads",
+      "type": "box",
+      "position": [
+        3.4,
+        -0.391,
+        -7.9
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.26
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2113,6 +5731,60 @@
         1.0,
         2.0,
         2.8
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_e_base",
+      "type": "box",
+      "position": [
+        -3.4,
+        -2.08,
+        -7.9
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_e_bodies",
+      "type": "box",
+      "position": [
+        -3.4,
+        -1.267,
+        -7.9
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.8
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_3_e_heads",
+      "type": "box",
+      "position": [
+        -3.4,
+        -0.391,
+        -7.9
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.26
       ],
       "material": "terracotta",
       "collision": true,
@@ -2133,6 +5805,60 @@
         2.6
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_4_e_base",
+      "type": "box",
+      "position": [
+        -13.0,
+        -2.08,
+        -3.2
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_4_e_bodies",
+      "type": "box",
+      "position": [
+        -13.0,
+        -1.267,
+        -3.2
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_4_e_heads",
+      "type": "box",
+      "position": [
+        -13.0,
+        -0.391,
+        -3.2
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.06
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2149,6 +5875,60 @@
         1.0,
         2.0,
         2.6
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_5_w_base",
+      "type": "box",
+      "position": [
+        13.0,
+        -2.08,
+        3.2
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_5_w_bodies",
+      "type": "box",
+      "position": [
+        13.0,
+        -1.267,
+        3.2
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.6
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_5_w_heads",
+      "type": "box",
+      "position": [
+        13.0,
+        -0.391,
+        3.2
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.06
       ],
       "material": "terracotta",
       "collision": true,
@@ -2169,6 +5949,60 @@
         3.2
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_w_base",
+      "type": "box",
+      "position": [
+        4.8,
+        -2.08,
+        0.0
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_w_bodies",
+      "type": "box",
+      "position": [
+        4.8,
+        -1.267,
+        0.0
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_w_heads",
+      "type": "box",
+      "position": [
+        4.8,
+        -0.391,
+        0.0
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.66
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2185,6 +6019,60 @@
         1.0,
         2.0,
         3.2
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_e_base",
+      "type": "box",
+      "position": [
+        -4.8,
+        -2.08,
+        0.0
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_e_bodies",
+      "type": "box",
+      "position": [
+        -4.8,
+        -1.267,
+        0.0
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.2
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_6_e_heads",
+      "type": "box",
+      "position": [
+        -4.8,
+        -0.391,
+        0.0
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.66
       ],
       "material": "terracotta",
       "collision": true,
@@ -2205,6 +6093,60 @@
         2.9
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_w_base",
+      "type": "box",
+      "position": [
+        12.2,
+        -2.08,
+        7.95
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_w_bodies",
+      "type": "box",
+      "position": [
+        12.2,
+        -1.267,
+        7.95
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_w_heads",
+      "type": "box",
+      "position": [
+        12.2,
+        -0.391,
+        7.95
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.36
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2221,6 +6163,60 @@
         1.0,
         2.0,
         2.9
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_e_base",
+      "type": "box",
+      "position": [
+        -12.2,
+        -2.08,
+        7.95
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_e_bodies",
+      "type": "box",
+      "position": [
+        -12.2,
+        -1.267,
+        7.95
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.9
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_7_e_heads",
+      "type": "box",
+      "position": [
+        -12.2,
+        -0.391,
+        7.95
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.36
       ],
       "material": "terracotta",
       "collision": true,
@@ -2241,6 +6237,60 @@
         2.4
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_w_base",
+      "type": "box",
+      "position": [
+        11.6,
+        -2.08,
+        14.8
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_w_bodies",
+      "type": "box",
+      "position": [
+        11.6,
+        -1.267,
+        14.8
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_w_heads",
+      "type": "box",
+      "position": [
+        11.6,
+        -0.391,
+        14.8
+      ],
+      "size": [
+        0.22,
+        0.364,
+        1.86
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2257,6 +6307,60 @@
         1.0,
         2.0,
         2.4
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_e_base",
+      "type": "box",
+      "position": [
+        -11.6,
+        -2.08,
+        14.8
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_e_bodies",
+      "type": "box",
+      "position": [
+        -11.6,
+        -1.267,
+        14.8
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_8_e_heads",
+      "type": "box",
+      "position": [
+        -11.6,
+        -0.391,
+        14.8
+      ],
+      "size": [
+        0.22,
+        0.364,
+        1.86
       ],
       "material": "terracotta",
       "collision": true,
@@ -2277,6 +6381,60 @@
         3.4
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_w_base",
+      "type": "box",
+      "position": [
+        4.2,
+        -2.08,
+        14.3
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_w_bodies",
+      "type": "box",
+      "position": [
+        4.2,
+        -1.267,
+        14.3
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_w_heads",
+      "type": "box",
+      "position": [
+        4.2,
+        -0.391,
+        14.3
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.86
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2293,6 +6451,60 @@
         1.0,
         2.0,
         3.4
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_e_base",
+      "type": "box",
+      "position": [
+        -4.2,
+        -2.08,
+        14.3
+      ],
+      "size": [
+        1.0,
+        0.24,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_e_bodies",
+      "type": "box",
+      "position": [
+        -4.2,
+        -1.267,
+        14.3
+      ],
+      "size": [
+        0.38,
+        1.387,
+        3.4
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_9_e_heads",
+      "type": "box",
+      "position": [
+        -4.2,
+        -0.391,
+        14.3
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.86
       ],
       "material": "terracotta",
       "collision": true,
@@ -2313,6 +6525,60 @@
         2.7
       ],
       "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_w_base",
+      "type": "box",
+      "position": [
+        3.2,
+        -2.08,
+        7.85
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_w_bodies",
+      "type": "box",
+      "position": [
+        3.2,
+        -1.267,
+        7.85
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_w_heads",
+      "type": "box",
+      "position": [
+        3.2,
+        -0.391,
+        7.85
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.16
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2329,6 +6595,60 @@
         1.0,
         2.0,
         2.7
+      ],
+      "material": "terracotta",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_e_base",
+      "type": "box",
+      "position": [
+        -3.2,
+        -2.08,
+        7.85
+      ],
+      "size": [
+        1.0,
+        0.24,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_e_bodies",
+      "type": "box",
+      "position": [
+        -3.2,
+        -1.267,
+        7.85
+      ],
+      "size": [
+        0.38,
+        1.387,
+        2.7
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "rank_10_e_heads",
+      "type": "box",
+      "position": [
+        -3.2,
+        -0.391,
+        7.85
+      ],
+      "size": [
+        0.22,
+        0.364,
+        2.16
       ],
       "material": "terracotta",
       "collision": true,
@@ -2486,15 +6806,51 @@
       "type": "box",
       "position": [
         -7.1,
-        -1.25,
+        -1.15,
         -11.05
       ],
       "size": [
         1.8,
-        1.9,
+        2.1,
         3.1
       ],
       "material": "lacquer",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_w_stand",
+      "type": "box",
+      "position": [
+        -7.1,
+        -1.95,
+        -11.05
+      ],
+      "size": [
+        1.8,
+        0.5,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_w_drums",
+      "type": "box",
+      "position": [
+        -7.1,
+        -0.9,
+        -11.05
+      ],
+      "size": [
+        1.44,
+        1.44,
+        3.0
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2522,15 +6878,51 @@
       "type": "box",
       "position": [
         7.1,
-        -1.25,
+        -1.15,
         -11.05
       ],
       "size": [
         1.8,
-        1.9,
+        2.1,
         3.1
       ],
       "material": "lacquer",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_e_stand",
+      "type": "box",
+      "position": [
+        7.1,
+        -1.95,
+        -11.05
+      ],
+      "size": [
+        1.8,
+        0.5,
+        3.1
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "war_drum_e_drums",
+      "type": "box",
+      "position": [
+        7.1,
+        -0.9,
+        -11.05
+      ],
+      "size": [
+        1.44,
+        1.44,
+        3.0
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
@@ -2585,7 +6977,7 @@
         2.5
       ],
       "material": "bronze",
-      "collision": true,
+      "collision": false,
       "role": "cover",
       "batch": "main"
     },
@@ -2603,6 +6995,78 @@
         2.1
       ],
       "material": "bronze",
+      "collision": false,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_car",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.74,
+        -0.135
+      ],
+      "size": [
+        2.4,
+        0.78,
+        1.53
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_canopy",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.115,
+        -0.3
+      ],
+      "size": [
+        1.38,
+        0.33,
+        1.38
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_horses",
+      "type": "box",
+      "position": [
+        0.0,
+        -1.1,
+        2.425
+      ],
+      "size": [
+        2.64,
+        0.6,
+        1.33
+      ],
+      "material": "terracotta",
+      "collision": true,
+      "role": "cover",
+      "batch": "main"
+    },
+    {
+      "id": "chariot_horse_heads",
+      "type": "box",
+      "position": [
+        0.0,
+        -0.77,
+        3.325
+      ],
+      "size": [
+        2.32,
+        0.5,
+        0.47
+      ],
+      "material": "terracotta",
       "collision": true,
       "role": "cover",
       "batch": "main"
