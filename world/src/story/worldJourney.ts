@@ -14,7 +14,8 @@ export const JOURNEY = {
   ...F,
   lake: 'journey_lake_saber', lakeWinch: 'journey_lake_winch', lakePin: 'journey_lake_pin', ridge: 'journey_west_ridge',
   bridge: 'journey_lookback_bridge', bridgeSouth: 'journey_lookback_bridge_south', bridgeRear: 'journey_lookback_bridge_rear',
-  visitor: 'journey_visitor_arrived', visitorDesk: 'journey_visitor_workbench', meal: 'journey_return_meal',
+  visitor: 'journey_visitor_arrived', visitorDesk: 'journey_visitor_workbench', meal: 'journey_return_meal', mealWindow: 'journey_meal_window',
+  mealGear: 'journey_meal_dry_gear', mealSketch: 'journey_meal_route_sketch',
   cargoCall: 'journey_cargo_dispatch', cargoSwitch: 'journey_cargo_switch', cargoPin: 'journey_cargo_coupler',
   cargoParked: 'journey_cargo_parked', cargo: 'journey_cargo_claimed', signalLamp: 'journey_test_return_lamp', signal: 'journey_rooftop_signal', compare: 'journey_compare_feed',
   cutoff: 'journey_gate_cutoff', bypass: 'journey_gate_bypass',
@@ -65,7 +66,10 @@ export const JOURNEY_STEPS = [
   step('alpha', J.bridgeRear, ['沿旧路开前哨后门。', 'Open the outpost’s rear latch from the old path.'], ['后门已开。访客可以沿旧路过来。', 'The rear gate is open. The visitor can take the old path.']),
   step('alpha', J.visitor, ['在桥另一侧确认王城的访客已经走出来。', 'Cross the bridge to receive the visitors from the kingdom.'], ['访客把工具箱放在桥边：“我认识路了。明天我自己来。”', 'The visitor sets a toolbox by the bridge. “I know the road now. Tomorrow I can come on my own.”'], [J.bridge]),
   step('alpha', J.visitorDesk, ['到生活馆外的维修台看看访客带来的桥铰。', 'Meet the visitor at the outdoor repair bench and see what he brought for the bridge.'], ['我带了备用桥铰，阿舟去装。工作台上还有一包枪弹，你跑外勤，带着吧。', 'I brought a spare hinge. Azhou will fit it. Take the ammunition on the bench for your next trip.'], [J.visitor]),
-  step('alpha', J.meal, ['回生活馆坐下，听孟槐说说冰雪撤离之后的事。', 'Sit down at the residence and hear what happened after the winter evacuation.'], ['孟槐：“药车到了。剩下的由我们去办。来，先吃口热的。”', 'Meng Huai: “The medicine cart made it. We’ll take it from here. Have something warm first.”']),
+  step('alpha', J.meal, ['回生活馆吃口热饭。公共桌和廊窗边都有座。', 'Have a warm meal at the residence. Sit at the shared table or by the porch window.'], ['孟槐：“药车到了。剩下的由我们去办。来，先吃口热的。”', 'Meng Huai: “The medicine cart made it. We’ll take it from here. Have something warm first.”']),
+  step('alpha', J.mealWindow, ['在廊窗边吃热饭。', 'Eat by the porch window.'], ['从窗边看得见药箱正在分发。孟槐：“你坐着就行，这一趟他们自己知道怎么走。”', 'You can see the medicine being handed out. “Stay and eat,” Meng Huai says. “They know this route now.”']),
+  step('alpha', J.mealGear, ['把雪湿的外套挂到暖廊。', 'Hang your snow-damp coat on the warm porch.'], ['你把外套挂在门廊。热气顺着衣角散开。', 'You hang the wet coat on the porch and watch the warmth lift the damp.']),
+  step('alpha', J.mealSketch, ['把冰雪撤离的路线草图递给阿舟。', 'Show Azhou your sketch of the winter evacuation.'], ['阿舟在图边画了两个线头：“归航灯一根线亮灯，另一根往外送信号。你回头可以单独试。”', 'Azhou marks two leads. “One lights the return lamp. The other sends a signal out. You can test them separately.”'], [J.meal]),
   step('alpha', J.cargoCall, ['到东渡口看一眼被错误扣下的货箱。', 'Inspect the wrongly detained cargo at East Landing.'], ['扣货车正在去封存棚。可以扳旁线道岔、射断车上的耦合销，或追到封存棚。', 'The cart is headed for the impound shed. Throw the siding switch, shoot the coupler on the cart, or follow it all the way to the shed.']),
   step('alpha', J.cargoSwitch, ['抄近路到道岔，或从侧面射断货车的黄色耦合销。', 'Cut across to the switch or shoot the cart’s yellow coupler from the side.'], ['道岔已经切换。货车会进本地支线。', 'The switch is thrown. The cart will enter the local siding.'], [J.cargoCall]),
   step('alpha', J.cargo, ['等货车停稳后，取回返程信标。', 'Recover the return beacon once the cart comes to a stop.'], ['箱里还有一张合照。信标的接口和镇里的归航灯一样。', 'There is a photograph in the crate. The beacon uses the same connection as the town light.'], [J.cargoParked]),
@@ -134,7 +138,8 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (!entry || !journeyEnabled(done) || done.has(id) || !reached(done, ...entry.after ?? [])) return false;
   if (id === J.lake) return done.has(A.online);
   if (id === J.bridge || id === J.bridgeSouth || id === J.bridgeRear) return !done.has(J.bridge) && kingdomReady(done);
-  if (id === J.meal) return adventureChapterComplete('winter', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
+  if (id === J.meal || id === J.mealWindow || id === J.mealGear)
+    return (id === J.mealGear || !done.has(J.meal)) && adventureChapterComplete('winter', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
   if (id === J.cargoCall) return !done.has(J.cargo) && adventureChapterComplete('blacksail', done) && (done.has(J.visitor) || !done.has(VALLEY_PROLOGUE.record));
   if (id === J.cargoSwitch) return !done.has(J.cargoPin) && !done.has(J.cargoParked);
   if (id === J.signalLamp) return !done.has(J.signal);
@@ -177,6 +182,7 @@ export function commitJourneyStep(id: string, done: Set<string>): Localized | nu
   if (id !== actual) done.add(id);
   done.add(actual);
   if (id === J.bridgeSouth || id === J.bridgeRear) done.add(J.bridge);
+  if (id === J.mealWindow) done.add(J.meal);
   if (actual === J.qinHalt && done.has(QIN_ARMY.flag)) done.add(J.qinTurn);
   if (actual === J.epilogue) done.add(A.ending);
   return journeyStepById.get(actual)!.result;

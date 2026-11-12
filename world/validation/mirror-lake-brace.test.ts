@@ -46,7 +46,7 @@ test('both Mirror Lake solutions lower the frame and restore the settled pose fr
   }
 });
 
-test('the native Saber rig braces the guide and rejoins after the actual winch interaction', async () => {
+test('actual World input completes Mirror Lake, West Ridge, and the optional winter return interactions', async () => {
   const h = await bootWorldWithoutGpu({ deterministic: true, initialStorage: {
     [WORLD_PROGRESS_KEY]: JSON.stringify({ done: initial, found: [] }),
   } });
@@ -95,9 +95,23 @@ test('the native Saber rig braces the guide and rejoins after the actual winch i
     assert.ok(actor.root.position.distanceTo(bracePosition) > .2);
     const lamp = w.scene.getObjectByName('WestRidgeRouteLamp')!;
     assert.ok(lamp.material.emissiveIntensity > 0);
+    for (const flag of [A.arrived, 'napoleon_contract', J.bridge, J.visitor]) w.done.add(flag);
     approach(J.ridge);
     interact();
     assert.ok(w.done.has(J.ridge));
+    approach(J.mealGear);
+    interact();
+    assert.ok(w.done.has(J.mealGear));
+    approach(J.mealWindow);
+    interact();
+    assert.ok(w.done.has(J.mealWindow));
+    assert.ok(w.done.has(J.meal));
+    const window = w.layout.markers.find(m => m.id === J.mealWindow)!;
+    const bowl = w.scene.getObjectByName('WinterReturnMealBowl')!;
+    assert.equal(bowl.position.x, window.p[0]);
+    approach(J.mealSketch);
+    interact();
+    assert.ok(w.done.has(J.mealSketch));
     assert.deepEqual(h.errors, []);
   } finally { await h.close(); }
 });
@@ -126,4 +140,18 @@ test('the ridge and visitor workbench reflect persistent World outcomes', () => 
     assert.ok(commitJourneyStep(J.visitorDesk, done));
     assert.equal(commitJourneyStep(J.visitorDesk, done), null);
   } finally { site.dispose(); }
+});
+
+test('the shared table and porch window satisfy the same winter return requirement', () => {
+  for (const seat of [J.meal, J.mealWindow]) {
+    const done = new Set([...initial, A.arrived, 'napoleon_contract', J.bridge]);
+    assert.equal(commitJourneyStep(seat, done), null);
+    done.add(J.visitor);
+    assert.equal(journeyStepReady(J.mealSketch, done), false);
+    assert.ok(commitJourneyStep(J.mealGear, done));
+    assert.ok(commitJourneyStep(seat, done));
+    assert.ok(done.has(J.meal));
+    assert.equal(journeyStepReady(J.mealWindow, done), false);
+    assert.ok(commitJourneyStep(J.mealSketch, done));
+  }
 });
