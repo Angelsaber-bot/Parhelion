@@ -17,6 +17,7 @@ import { SaberStrideRuntime } from '../characters/saberStrideRuntime';
 import { SaberGroundedLocomotion } from '../characters/saberGroundedLocomotion';
 import { SaberIdleCarry } from '../characters/saberLocomotion';
 import { COMPANION_MOTION, companionGait, turnCompanion } from '../characters/companionMotion';
+import { createSaberBrace, type SaberBraceCue } from './saberBrace';
 
 // Only accepted, project-authored outfits; the rejected v1 model is never requested.
 export const SERVANT_MODELS: Record<ServantOutfit, string> = {
@@ -72,6 +73,9 @@ export class ContractServant {
   private grounding?: SaberGroundedLocomotion;
   private groundingActive = false;
   private idleCarry?: SaberIdleCarry;
+  private brace?: ReturnType<typeof createSaberBrace>;
+  private braceWeight = 0;
+  private braceTarget = new THREE.Vector3();
   private navigation: CompanionNavigation;
   private follow = new CompanionFollow();
   private separatedFor = 0;
@@ -165,6 +169,7 @@ export class ContractServant {
         const clips = new Map(candidate.animations.map(clip => [clip.name.toLowerCase(), mixer.clipAction(idleCarry.locomotionClip(clip))]));
         this.clearModel();
         this.model = candidate.scene; this.root.add(this.model);
+        this.brace = createSaberBrace(this.model, this.root);
         this.liveExpression = createSaberLiveExpression(this.model);
         this.mixer = mixer; this.clips = clips; this.idleCarry = idleCarry;
         this.stride=new SaberStrideRuntime(candidate.scene,this.root);
@@ -283,17 +288,40 @@ export class ContractServant {
     }
   }
 
-  update(dt: number,player: THREE.Vector3,yaw: number,enabled: boolean,paused: boolean) {
+  update(dt: number,player: THREE.Vector3,yaw: number,enabled: boolean,paused: boolean,brace?: SaberBraceCue) {
     if (this.disposed) return;
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
+    this.brace?.restore();
     const { contract,marker } = this.options;
     const atLake = player.distanceTo(new THREE.Vector3().fromArray(marker.p)) < 80;
     const atHome=contract.recruited&&!!this.residence&&!contract.companionSummoned;
-    const needed=atLake||atHome||(contract.recruited&&contract.selected==='saber');
+    const needed=!!brace||atLake||atHome||(contract.recruited&&contract.selected==='saber');
     if(needed){this.lastNeeded=performance.now();void this.ensureLoaded();}
     else if(this.model&&!this.loadTask&&performance.now()-this.lastNeeded>15_000){this.clearModel();this.activeOutfit=undefined;this.state='unloaded';}
 
     const following = contract.summoned && enabled;
+    if (brace || this.braceWeight > 0) {
+      if (brace && this.braceWeight === 0) {
+        this.cancelAttack();
+        this.follow.reset();
+        this.residing = false;
+        this.activeLast = false;
+      }
+      const step = dt / (brace ? .36 : .22);
+      this.braceWeight = THREE.MathUtils.clamp(this.braceWeight + (brace ? step : -step), 0, 1);
+      if (brace) {
+        this.root.position.copy(brace.position);
+        this.root.rotation.y = 0;
+        this.braceTarget.copy(brace.target);
+      }
+      if (brace || this.braceWeight > 0) {
+        this.root.visible = true;
+        this.play('idle');
+        this.tick(paused ? 0 : dt);
+        this.brace?.apply(this.braceTarget, THREE.MathUtils.smoothstep(this.braceWeight, 0, 1));
+        return;
+      }
+    }
     this.root.visible = contract.recruited ? following||atHome : atLake;
     if (!following) {
       this.activeLast = false; this.follow.reset(); this.pursuing=false;this.separatedFor=0; this.rejoinRetry=0; this.rejoinPlayer.set(Infinity,0,Infinity);
@@ -382,6 +410,7 @@ export class ContractServant {
     if(this.attackTime<=0)this.cancelAttack();
   }
   private clearModel() {
+    this.brace?.restore(); this.brace = undefined;
     this.liveExpression?.dispose(); this.liveExpression = undefined;
     this.grounding?.restore();
     this.stride?.clear();this.stride=undefined;this.strideSpeed=-1;

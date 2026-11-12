@@ -3695,7 +3695,7 @@ function frame(now: number) {
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   homeTown?.update(dt,player.pos,gameplayActive(),regionVisuals.ready('home'));
-  servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive());
+  servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive(), worldJourneySites?.lakeBrace(player.pos));
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
   updateEraActors(dt);
   modelCompanion.update(dt, player.pos, anim.facing - Math.PI, !!modelCompanion.selected && contract.isFollowing(modelCompanion.selected) && companionEnabled(), !gameplayActive());

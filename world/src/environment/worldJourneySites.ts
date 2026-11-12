@@ -53,9 +53,29 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const lake = stand(J.lake, '镜湖 · 与 Saber 会合', [-57, 4.5, 65]);
   const winch = stand(J.lakeWinch, '镜湖导架绞盘', [lake[0] + 6, lake[1], lake[2] + 1]);
   const lakePin = shotPin(J.lakePin, [winch[0] + 5, winch[1] + 1.42, winch[2] - 2]);
-  a.beam([winch[0] + .65, winch[1] + .91, winch[2] - .65], lakePin.position.toArray(), .08, metal, false, 'briefed');
-  for (const side of [-1, 1]) a.box([winch[0] + 2, winch[1] + .95, winch[2] + side * 1.6], [.18, 1.9, .18], wood);
-  a.box([winch[0] + 2, winch[1] + .48, winch[2]], [3.4, .21, 2.7], wood, false, 'resolved');
+  const bracePosition = new THREE.Vector3(...floor([winch[0] + 1.6, winch[1], winch[2] - 1.85]));
+  const guide = new SiteArt();
+  guide.box([.65, .02, 0], [2.35, .15, .23], wood);
+  for (const x of [-.39, .43, 1.69]) guide.box([x, 0, 0], [.13, .26, .31], metal, false, 'metal');
+  guide.box([.2, -.09, -.16], [.29, .12, .13], amber, false, 'metal');
+  guide.finish('alpha');
+  guide.root.name = 'MirrorLakeGuideFrame';
+  guide.root.position.copy(bracePosition).add(new THREE.Vector3(0, 1.18, .48));
+  guide.root.rotation.z = .22;
+  const grip = new THREE.Object3D();
+  grip.name = 'MirrorLakeGuideGrip';
+  grip.position.set(.2, -.19, -.16);
+  guide.root.add(grip);
+  a.root.add(guide.root);
+  for (const x of [-.53, 1.78]) {
+    a.box([bracePosition.x + x, bracePosition.y + .47, bracePosition.z + .48], [.17, .94, .22], wood);
+    a.box([bracePosition.x + x, bracePosition.y + .05, bracePosition.z + .48], [.36, .1, .46], sandstone);
+  }
+  a.beam([winch[0] + .25, winch[1] + .84, winch[2] - .72], lakePin.position.toArray(), .046, metal, false, 'briefed');
+  const braceTarget = new THREE.Vector3();
+  const lakeBrace = { position: bracePosition, target: braceTarget };
+  const lakeApproach = new THREE.Vector3(...lake);
+  let lakeMeeting = false, lakeWaiting = false, lakeReleased: boolean | undefined, frameDrop = 0;
 
   const [bx, by, bz] = stand(J.bridge, '回望桥 · 机械侧门', [-275, 5, -30]);
   const visitor = stand(J.visitor, '回望桥 · 接应访客', [bx + 12, by, bz]);
@@ -235,7 +255,15 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     bridgeCollider.enabled = journeyEnabled(done) && !done.has(J.bridge) && !done.has(J.finish);
     bridgeGate.visible = bridgeCollider.enabled;
     repair.root.visible = repairCollider.enabled = done.has(J.finish);
-    lakePin.visible = journeyStepReady(J.lakeWinch, done);
+    lakeMeeting = !done.has('saber_contract') && journeyStepReady(J.lake, done);
+    lakeWaiting = journeyStepReady(J.lakeWinch, done);
+    lakePin.visible = lakeWaiting;
+    const released = done.has(J.lakeWinch);
+    if (lakeReleased === undefined || lakeReleased && !released) {
+      frameDrop = released ? 1 : 0;
+      placeGuideFrame();
+    }
+    lakeReleased = released;
     tie.visible = journeyStepReady(J.egyptWeir, done);
     batteryBrace.visible = journeyStepReady(J.orleansBattery, done);
     plateMaterial.color.setHex(done.has(J.compare) ? 0x2a3848 : 0xf7f1d7);
@@ -260,7 +288,6 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     }
     reliefFlags.visible = done.has(J.orleansFlag);
     a.layers.get('briefed')!.visible = !done.has(J.lakeWinch);
-    a.layers.get('resolved')!.visible = done.has(J.lakeWinch);
     a.layers.get('choiceB')!.visible = done.has(J.finish);
     cartStarted = done.has(J.cargoCall); cartTurned = done.has(J.cargoSwitch); cartClaimed = done.has(J.cargo);
     if (done.has(J.cargoPin)) {
@@ -278,6 +305,12 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     placeCart();
     a.root.updateMatrixWorld(true);
   }
+  function placeGuideFrame() {
+    const drop = THREE.MathUtils.smoothstep(frameDrop, 0, 1);
+    guide.root.position.y = bracePosition.y + 1.18 - .31 * drop;
+    guide.root.rotation.z = .22 * (1 - drop);
+    guide.root.updateMatrixWorld(true);
+  }
   const boatPoint = new THREE.Vector3();
   function placeBoat() {
     boatPoint.copy(startWater).lerp(endWater, boatTravel);
@@ -288,6 +321,10 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     residents.pose('journey_orleans_relief_actor', [x, ground(x, z, orleans[1] + 1.4) ?? orleans[1], z], Math.PI);
   }
   function update(dt: number, player: THREE.Vector3) {
+    if (lakeReleased && frameDrop < 1 && dt > 0) {
+      frameDrop = Math.min(1, frameDrop + dt / .54);
+      placeGuideFrame();
+    }
     residents.update(dt, player);
     if (visitorActor) visitorActor.visible &&= bridgeOpen;
     if (workerActor) workerActor.visible &&= marchOrdered;
@@ -318,6 +355,12 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     return cartDistance >= stop;
   }
   return { root: a.root, markers, targets, colliders, homecoming, apply, update, visitorArrived: () => visitTravel >= 1,
+    lakeBrace(player: THREE.Vector3) {
+      if (!(lakeWaiting && player.distanceToSquared(bracePosition) < 34 ** 2 ||
+        lakeMeeting && player.distanceToSquared(lakeApproach) < 24 ** 2)) return;
+      grip.getWorldPosition(braceTarget);
+      return lakeBrace;
+    },
     ferryArrived: () => boatTravel >= 1,
     workersArrived: () => marchTravel >= 1,
     reliefArrived: () => reliefTravel >= 1,
@@ -331,7 +374,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
     solids.dispose(); repairGeometry.dispose();
-    [...Object.values(a.materials), ...Object.values(repair.materials)].forEach(material => material.dispose());
+    [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials)].forEach(material => material.dispose());
     for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };
