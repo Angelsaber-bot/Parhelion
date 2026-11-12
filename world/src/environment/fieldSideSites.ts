@@ -11,6 +11,7 @@ import { mergeParts } from '../settlements/merge';
 import { SiteArt } from '../story/campaignSites';
 import {
   FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K,
+  KYOTO_PASS as KP, KYOTO_PAPERLINE as KL,
   VALLEY_RADIO as V, SKY_MAINTENANCE as S, EGYPT_SEEDS as E, ORLEANS_SOUP as O, QIN_QUIET_ROOM as Q, fieldSideReady, harborCustomsGone,
 } from '../story/fieldSideStories';
 import { SKY_APPROACH_DECKS as DECK } from './skyCrownApproach';
@@ -424,6 +425,108 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
     }
   }
 
+  let paperLineT = 0;
+  const riverbank = prior.get('disc_tobiishi')?.p;
+  if (riverbank) {
+    const register = place(offset(riverbank, -35, 1.8, -12), 12);
+    const decision = register && place(offset(register, -4.5, 0, 1), 7.5);
+    const handoff = decision && place(offset(decision, 0, 0, -5.8), 6);
+    if (register && decision && handoff) {
+      interact(KP.register, register); interact(KP.choice, decision); interact(KP.return, decision);
+      const shelter = scenery('KyotoProtectedHandoff');
+      table(shelter, register); shelter.paper(...offset(register, -.1, .904, -.87), .6, .35);
+      const screenPoint = offset(decision, 0, 0, -2.3);
+      const door = mesh(shelter.root, new THREE.BoxGeometry(2.46, 1.87, .13), materials.dark, offset(screenPoint, 0, .93), 'KyotoHandoffShutter');
+      const g = door.geometry.clone().translate(...door.position.toArray());
+      const gate = { name: 'COL_KyotoHandoffShutter', bvh: new MeshBVH(g), enabled: true };
+      colliders.push(gate);
+      for (const x of [-1.45, 1.45]) {
+        shelter.box(offset(screenPoint, x, 1.35), [.21, 2.7, .22], wood, true);
+        shelter.box(offset(screenPoint, x * 1.66, .75), [1.65, 1.5, .18], faded, true);
+      }
+      shelter.box(offset(screenPoint, 0, 2.7, -1.2), [5.5, .17, 3.3], '#775350', true);
+      table(shelter, handoff);
+      const workPass = mesh(shelter.root, new THREE.BoxGeometry(.27, .36, .041), materials.beacon, offset(screenPoint, 1.56, 1.45, .14), 'KyotoWorkNumberPass');
+      const registry = mesh(shelter.root, new THREE.BoxGeometry(.46, .14, .31), materials.red, offset(handoff, .25, .99, -.8), 'KyotoSealedNames');
+      const family = createSettlementNpcs([
+        { id: 'kyoto_pass_kenta', role: ['搬运工健太', 'Kenta the porter'], region: 'kyoto',
+          position: offset(decision, -1.35, 0, -.35), appearance: { coat: 0x466069, carry: 'sack' }, lines: [] },
+        { id: 'kyoto_pass_household', role: ['健太的家人', 'Kenta’s family'], region: 'kyoto',
+          position: offset(decision, 1.35, 0, -.35), appearance: { coat: 0x805742, carry: 'sack' }, lines: [] },
+      ]);
+      shelter.root.add(family.group); actorCleanup.push(() => family.dispose());
+      const walkers = family.group.children.map(residentWalkRig);
+      finish(shelter, 'kyoto');
+      let left = 0, initialized = false;
+      updates.push((done, dt, player) => {
+        const sealed = done.has(KP.sealed), departing = done.has(KP.family);
+        if (!departing) left = 0;
+        else if (!initialized) left = 1;
+        else if (left < 1) left = Math.min(1, left + dt / 5);
+        initialized = true;
+        door.position.y = screenPoint[1] + (sealed ? 3.51 : .93);
+        gate.enabled = !sealed;
+        workPass.visible = registry.visible = sealed;
+        family.group.visible = done.has(KP.register) && left < 1;
+        if (!family.group.visible || Math.hypot(player.x - decision[0], player.z - decision[2]) > 55) return;
+        family.update(dt, player);
+        family.group.children.forEach((resident, i) => {
+          const x = decision[0] + (i ? 1.35 : -1.35), z = decision[2] - .35 + left * 8.4;
+          resident.position.x = x; resident.position.z = z;
+          walkers[i].update(left * 45, departing && left < 1, (ground(x, z, decision[1] + 1.3) ?? decision[1]) - decision[1]);
+        });
+      });
+    }
+
+    const shop = place(offset(riverbank, -38, 2.5, 17), 13.5);
+    const farStreet = shop && place(offset(shop, -12, 0, 3.6), 7.5);
+    const landing = farStreet && place(offset(farStreet, -5.55, 0, 3.1), 7.5);
+    if (shop && farStreet && landing) {
+      const art = scenery('KyotoKamoPaperRoofs'), paper = '#dbcba9';
+      const nearRoof = offset(shop, -5.55, 2.15, -.25), farRoof = offset(farStreet, .9, 2.15, -1.1);
+      interact(KL.shop, shop); interact(KL.rooftop, nearRoof);
+      interact(KL.counterweight, offset(farRoof, .67, .22, -1.32)); interact(KL.courier, landing);
+      walkway('KyotoPaperShopRamp', 'kyoto', [offset(shop, 0, .03), offset(nearRoof, 1.92, .035, -.12)], 2.12, faded, true);
+      const direction = new THREE.Vector3(farRoof[0] - nearRoof[0], 0, farRoof[2] - nearRoof[2]).normalize();
+      const edge = Math.min(1.675 / Math.abs(direction.x), 1.575 / Math.abs(direction.z)) + .16;
+      const dx = direction.x * edge, dz = direction.z * edge;
+      walkway('KyotoPaperRoofBeam', 'kyoto', [offset(nearRoof, dx, .028, dz), offset(farRoof, -dx, .028, -dz)], 1.78, faded, true);
+      const farRamp = walkway('KyotoPaperRoofShortcut', 'kyoto',
+        [offset(farRoof, -1.79, .025, .56), offset(landing, 0, .05)], 1.89, faded, false);
+      table(art, shop); art.paper(...offset(shop, -.11, .91, -.81), .5, .35);
+      for (const [i, p] of [nearRoof, farRoof].entries()) {
+        art.box(offset(p, 0, -.16), [3.35, .32, 3.15], wood, true);
+        for (const x of [-1.45, 1.45]) for (const z of [-1.25, 1.25])
+          art.box(offset(p, x, -1.16, z), [.16, 2.32, .16], faded, true);
+        art.box(offset(p, .84, .93, -1.14), [.16, 1.86, .16], faded);
+        art.ring(offset(p, .84, 1.5, -1.04), .17, .048, steel, 'metal');
+        art.lantern(p[0] - .95, p[1] + .35, p[2] + 1.11, wood);
+        for (let j = 0; j < 4; j++) art.box(offset(p, -.74 + j * .46, .46, -1.35), [.38, .71, .025], i === 1 ? paper : '#bcb69d');
+      }
+      const start = offset(nearRoof, .84, 1.47, -1.11), end = offset(farRoof, .84, 1.47, -1.11);
+      art.beam(start, end, .025, steel);
+      const weight = mesh(art.root, new THREE.BoxGeometry(.33, .43, .34), materials.metal, offset(farRoof, .83, 1.22, -1.12), 'KyotoJammedPaperWeight');
+      const carrier = group(art.root, start, 'KyotoPaperSampleCarrier');
+      mesh(carrier, new THREE.BoxGeometry(.58, .08, .12), materials.dark, [0, -.04, 0]);
+      const sample = new THREE.MeshStandardMaterial({ color: paper, roughness: 1, side: THREE.DoubleSide });
+      mesh(carrier, new THREE.PlaneGeometry(.47, .7), sample, [0, -.45, -.04]);
+      finish(art, 'kyoto');
+      const from = new THREE.Vector3(...start), to = new THREE.Vector3(...end);
+      let initialized = false;
+      updates.push((done, dt) => {
+        const released = done.has(KL.counterweight);
+        farRamp.art.root.visible = farRamp.collider.enabled = released;
+        const rest = farRoof[1] + (released ? .43 : 1.22);
+        weight.position.y = initialized ? THREE.MathUtils.damp(weight.position.y, rest, 6, dt) : rest;
+        initialized = true;
+        carrier.visible = released;
+        if (paperLineT > 0) paperLineT = Math.max(0, paperLineT - dt / 3.8);
+        carrier.position.copy(from).lerp(to, 1 - paperLineT);
+        carrier.rotation.z = Math.sin(paperLineT * 24) * .15 * paperLineT;
+      });
+    }
+  }
+
   const desk = place(offset(residence, 4.5, 0, -3), 9);
   const aerial = desk && place(offset(desk, -9, 1.8, -14), 12);
   if (desk && aerial) {
@@ -665,6 +768,7 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
 
   return {
     root, markers, colliders, targets,
+    sendPaper() { paperLineT = 1; },
     ring() { bellRing = 1.25; },
     seedsArrived() { return seedTravel >= 1; },
     apply(done: ReadonlySet<string>, dt: number, p: THREE.Vector3) { updates.forEach(update => update(done, dt, p)); },

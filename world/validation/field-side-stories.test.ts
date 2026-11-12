@@ -4,7 +4,7 @@ import { Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import {
   FIELD_SIDE_STORIES, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K, VALLEY_RADIO as V, SKY_MAINTENANCE as S, EGYPT_SEEDS as E, ORLEANS_SOUP as O, QIN_QUIET_ROOM as Q,
-  fieldSideNext, fieldSideReady,
+  KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, fieldSideNext, fieldSideReady,
 } from '../src/story/fieldSideStories';
 import { JOURNEY as J } from '../src/story/worldJourney';
 import { VALLEY_PROLOGUE as P } from '../src/story/valleyPrologue';
@@ -105,6 +105,30 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.equal(passage('KinkakuServiceWalk')?.enabled, false);
     [K.shore, K.upper, K.inspect].forEach(complete);
     assert.equal(passage('KinkakuServiceWalk').enabled, true);
+    assert.equal(passage('KyotoHandoffShutter')?.enabled, true);
+    complete(KP.register); choose(KP.choice, 'sealed');
+    assert.ok(w.done.has(KP.sealed));
+    assert.equal(passage('KyotoHandoffShutter').enabled, false);
+    assert.ok(w.scene.getObjectByName('KyotoWorkNumberPass').visible);
+
+    assert.equal(passage('KyotoPaperRoofShortcut')?.enabled, false);
+    complete(KL.shop);
+    for (const id of [KL.rooftop, KL.counterweight]) {
+      const [x, , z] = marker(id).p;
+      const distance = () => Math.hypot(w.player.pos.x - x, w.player.pos.z - z);
+      for (let i = 0; i < 500 && distance() > .28; i++) {
+        w.player.yaw = Math.atan2(w.player.pos.x - x, w.player.pos.z - z);
+        w.player.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
+      }
+      frame(25); tap(); finishDialogue();
+      assert.ok(w.done.has(id), `${id} blocked at ${w.player.pos.toArray()} toward ${marker(id).p}, ${d.getElementById('prompt')?.textContent}`);
+    }
+    assert.equal(passage('KyotoPaperRoofShortcut')?.enabled, true);
+    const carrier = w.scene.getObjectByName('KyotoPaperSampleCarrier');
+    assert.ok(carrier.visible);
+    const paperOrigin = carrier.position.clone();
+    frame(140);
+    assert.ok(carrier.position.distanceTo(paperOrigin) > 2, 'the paper travels on the overhead line');
     complete(V.desk);
     choose(V.repeater, 'late'); assert.equal(w.done.has(V.repeater), false);
     choose(V.repeater, 'match'); assert.ok(w.done.has(V.repeater));
@@ -148,7 +172,7 @@ test('field side quests accept actual inputs and restore their route rewards fro
     tap(); assert.ok(w.done.has(S.medicine)); assert.equal(w.combat.state.hp, full - 11);
     saved = window.localStorage.getItem(WORLD_PROGRESS_KEY)!;
     const flags: string[] = JSON.parse(saved).done;
-    for (const id of [B.launch, W.return, I.choose, I.camp, K.inspect, V.return, E.rack, O.bowl, Q.supplies, S.playback, S.repair, S.medicine, S.lookout]) assert.ok(flags.includes(id), id);
+    for (const id of [B.launch, W.return, I.choose, I.camp, K.inspect, KP.sealed, KL.counterweight, V.return, E.rack, O.bowl, Q.supplies, S.playback, S.repair, S.medicine, S.lookout]) assert.ok(flags.includes(id), id);
     assert.deepEqual(first.errors, []);
   } finally { await first.close(); }
 
@@ -158,6 +182,8 @@ test('field side quests accept actual inputs and restore their route rewards fro
     const { world } = restored;
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KinkakuServiceWalk')?.enabled, true);
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_NassauFoldingRamp')?.enabled, true);
+    assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoHandoffShutter')?.enabled, false);
+    assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoPaperRoofShortcut')?.enabled, true);
     assert.ok(world.done.has(I.camp));
     assert.ok(world.done.has(S.medicine));
     assert.equal(world.scene.getObjectByName('SkyReserveStatus')?.visible, false);

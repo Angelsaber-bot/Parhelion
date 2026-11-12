@@ -18,6 +18,14 @@ export const ICE_BELL = {
 export const KYOTO_REFLECTION = {
   shore: 'field_reflection_shore', upper: 'field_reflection_upper', inspect: 'field_reflection_inspect',
 } as const;
+export const KYOTO_PASS = {
+  register: 'field_kyoto_pass_register', choice: 'field_kyoto_pass_choice', sealed: 'field_kyoto_pass_sealed',
+  family: 'field_kyoto_pass_family', return: 'field_kyoto_pass_return',
+} as const;
+export const KYOTO_PAPERLINE = {
+  shop: 'field_kyoto_line_shop', rooftop: 'field_kyoto_line_rooftop', counterweight: 'field_kyoto_line_counterweight',
+  courier: 'field_kyoto_line_courier',
+} as const;
 export const VALLEY_RADIO = {
   desk: 'field_radio_desk', repeater: 'field_radio_repeater', return: 'field_radio_return', listen: 'field_radio_listen',
 } as const;
@@ -40,6 +48,7 @@ type Step = { id: string; label: Localized; hint: Localized; line: Localized; af
 type SideStory = { id: string; region: WorldRegionId; title: Localized; steps: readonly Step[]; available: (done: Flags) => boolean };
 const B = ROYAL_BOAT, W = HARBOR_WAGES, I = ICE_BELL, K = KYOTO_REFLECTION, V = VALLEY_RADIO, S = SKY_MAINTENANCE;
 const E = EGYPT_SEEDS, O = ORLEANS_SOUP, Q = QIN_QUIET_ROOM;
+const P = KYOTO_PASS, L = KYOTO_PAPERLINE;
 const ropeLoose = (done: Flags) => done.has(I.rope) || done.has(I.pin);
 export const harborCustomsGone = (done: Flags) => done.has('sea_core') || done.has(ADVENTURE.departed);
 
@@ -126,6 +135,34 @@ export const FIELD_SIDE_STORIES: readonly SideStory[] = [
         hint: ['从坡台靠近双面旗架，放下旁边的跨沟踏板。', 'Approach the flag frame from the high side and lower the maintenance deck.'],
         line: ['踏板落下，能直接回到池边。武藏：换个角度，旗还在原处，看到的可就不一样了。', 'The deck drops, opening a direct route to the bank. Musashi: Change your angle. The flag stays put, but what you see changes.'],
         after: done => done.has(K.upper) },
+    ],
+  },
+  {
+    id: 'unmarked-pass', region: 'kyoto', title: ['没有名字的通行纸', 'The Unmarked Pass'],
+    available: done => done.has('musashi_meet') || done.has('fire_core'),
+    steps: [
+      { id: P.register, label: ['河街民居 · 查看搬运名册', 'River street · Read the porters’ register'],
+        hint: ['沿鸭川西岸找工棚旁的临时名册。', 'Look for the temporary register beside the work shelter on the west bank.'],
+        line: ['阿纪：“健太怕家人被追责，同班的搬运工又怕没人能查到遇难者。我们可以封存实名，只让执勤的人认工号。你也可以帮健太一家先离开。”',
+          'Aki: “Kenta fears reprisals against his family. The other porters need a record of anyone lost. We can seal the names and show only work numbers, or help Kenta’s household leave first.”'] },
+      { id: P.choice, label: ['河街工棚 · 决定怎样交接', 'Work shelter · Decide how to proceed'],
+        hint: ['和阿纪确认通行牌或安全离开的安排。', 'Confirm a sealed pass or safe departure with Aki.'],
+        line: ['封存实名后，河街工棚能作受保护的交接点。若让一家人先走，名册不挂出去，工棚仍不放行。', 'A sealed register lets the work shelter serve as a protected handoff. If the family leaves first, the register stays private and the shelter stays closed.'] },
+    ],
+  },
+  {
+    id: 'kamo-paperline', region: 'kyoto', title: ['鸭川上方的晾纸绳', 'The Paper Line Above the Kamo'],
+    available: done => done.has('musashi_meet') || done.has('fire_core'),
+    steps: [
+      { id: L.shop, label: ['河边纸铺 · 检查旧滑轮', 'Riverside paper shop · Inspect the pulley'],
+        hint: ['沿河找挂着湿纸的屋棚，查看旧纸架。', 'Look for the canopy of damp sheets beside the river.'],
+        line: ['纸架已升起来，跨巷线却拉不动。沿屋边斜道上檐，走窄梁到对面，配重卡在吊架里。', 'The rack is up, but the line across the alley won’t move. Take the ramp up to the eaves and cross the beam to the jammed weight.'] },
+      { id: L.rooftop, label: ['屋檐 · 找配重的位置', 'Eaves · Locate the counterweight'],
+        hint: ['从纸铺斜道上屋顶，沿木梁到对面的滑轮。', 'Take the shop ramp onto the roof and follow the beam to the opposite pulley.'],
+        line: ['卡块压住了半截配重。拉开配重上的插销就能送纸。', 'A block has jammed against the weight. Pull the pin to run the paper carrier.'] },
+      { id: L.counterweight, label: ['配重架 · 拔掉卡住的销', 'Counterweight frame · Pull the jammed pin'],
+        hint: ['绕到滑轮外侧拔销，然后沿另一侧短路落地。', 'Go around the outside of the pulley, pull the pin, and take the far-side shortcut down.'],
+        line: ['配重落下来，纸样跨过小巷。对岸的纸工放下了短梯，以后可以从两边上来。', 'The weight drops and a test sheet crosses the alley. The paper workers lower the far-side access so the roofs can be reached from either end.'] },
     ],
   },
   {
@@ -232,6 +269,8 @@ export function fieldSideNext(story: SideStory, done: Flags) {
   return story.steps.find(step => !done.has(step.id) && (step.after?.(done) ?? true)) ?? null;
 }
 export function fieldSideReady(id: string, done: Flags) {
+  if (id === P.return) return done.has(P.choice);
+  if (id === L.courier) return done.has(L.counterweight);
   if (id === B.watch) return done.has(B.launch);
   if (id === V.listen) return done.has(V.return);
   if (id === I.test) return done.has(I.choose);
@@ -242,6 +281,8 @@ export function fieldSideReady(id: string, done: Flags) {
   return FIELD_SIDE_STORIES.some(story => fieldSideNext(story, done)?.id === id);
 }
 export const FIELD_SERVICE_LABELS = new Map<string, Localized>([
+  [P.return, ['河街 · 看交接安排', 'River street · Check the handoff']],
+  [L.courier, ['纸架 · 再送一份样张', 'Paper rack · Send another test sheet']],
   [B.watch, ['剑湖观景栈台 · 看木舟试航', 'Sword Lake viewing deck · Watch the trial launch']],
   [V.listen, ['生活馆电台 · 听居民播报', 'Residence radio · Listen to the residents']],
   [I.test, ['渡口铃 · 试响', 'Ferry bell · Ring it']],

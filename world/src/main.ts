@@ -5,7 +5,7 @@ import { FREIGHT_YARD as FY, MIST_RESCUE as MR, NEXT_SHIFT as NS, OLD_TICKET as 
 import { FIFTH_ROAD as FR, REPLAY_TEST as RT, WATERWORKS as WW, VALLEY_INVESTIGATION_STEPS, VALLEY_WATER_RESTORE, valleyInvestigationReady } from './story/valleyInvestigations';
 import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
-import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, fieldSideReady } from './story/fieldSideStories';
+import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, fieldSideReady } from './story/fieldSideStories';
 import { createOrleansShadowPlay, createQinCrookedEffigy } from './environment/realmCulturalScenes';
 import { CROOKED_EFFIGY as CE, CULTURAL_STEPS, SHADOW_PLAY as SP, culturalStepReady } from './story/realmCulturalStories';
 import { createEgyptGaugeScene } from './environment/egyptGaugeScene';
@@ -2491,6 +2491,17 @@ function interactValleyInvestigation(id: string) {
   else speakDialogue(item.result, item.label);
 }
 function interactFieldSide(id: string) {
+  if (id === KP.return) {
+    speakDialogue(done.has(KP.sealed)
+      ? ['阿纪把实名簿锁在柜里。交接台面上只放工号。', 'Aki keeps the register locked away. Only the work numbers are on the handoff table.']
+      : ['健太一家沿河去了下游。工棚封存，名册还由阿纪看管。', 'Kenta’s household left downstream. The shelter is shut and Aki still keeps the register.'],
+    ['鸭川交接点', 'Kamo handoff']);
+    return;
+  }
+  if (id === KL.courier) {
+    fieldSideSites?.sendPaper(); audio.explore('rotate');
+    return;
+  }
   if (id === RB.watch) {
     speakDialogue(['伊芙：“下一圈换我掌桨。你站在那儿，帮我看船有没有偏离木桩。”', 'Eve: “My turn to row next time. From there you can tell if I drift past the posts.”'],
       ['剑湖渡棚', 'Sword Lake ferry shelter']);
@@ -2538,6 +2549,23 @@ function interactFieldSide(id: string) {
   }
   const step = FIELD_SIDE_STEPS.get(id);
   if (!step) return;
+  if (id === KP.choice) {
+    clearInput();
+    narrative?.showChoices(step.line, ['抄写人阿纪', 'Aki the copyist'], [
+      { id: 'sealed', label: ['封存实名，公开工号', 'Seal the names and post work numbers'] },
+      { id: 'family', label: ['先送健太一家离开', 'Help Kenta’s household leave'] },
+    ], choice => {
+      const marker = markers.get(id);
+      if ((choice !== 'sealed' && choice !== 'family') || !marker || !fieldSideReady(id, done) ||
+        combat.defeated || !player.onGround || player.flying ||
+        player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2) || !canReachValleyPanel(marker)) return;
+      done.add(id); done.add(choice === 'sealed' ? KP.sealed : KP.family);
+      saveJourneyProgress(); audio.explore('solve');
+      toast(choice === 'sealed' ? bilingual('实名簿已入柜，工棚接应门打开了。', 'The names are secured and the handoff shelter is open.')
+        : bilingual('一家人已沿河离开，工棚继续封存。', 'The household takes the river route. The shelter stays sealed.'));
+    });
+    return;
+  }
   if (id === VR.repeater || id === IB.choose) {
     clearInput();
     const radio = id === VR.repeater;
@@ -2566,6 +2594,7 @@ function interactFieldSide(id: string) {
     return;
   }
   done.add(id);
+  if (id === KL.counterweight) fieldSideSites?.sendPaper();
   saveJourneyProgress();
   if (id === IB.raise || id === IB.hear) { fieldSideSites?.ring(); audio.bell(); }
   const title = id === SM.playback ? ['本地救援录音', 'Local rescue recording'] as [string, string]
@@ -3166,7 +3195,10 @@ function interact() {
     if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}
     const publicBell = typeof KYOTO_WITNESS !== 'undefined' && m.id === KYOTO_WITNESS.public && !done.has(m.id);
     adventureRuntime?.interact(m.id);
-    if (publicBell && done.has(m.id)) audio.bell();
+    if (publicBell && done.has(m.id)) {
+      audio.bell();
+      if (done.has(KL.counterweight)) fieldSideSites?.sendPaper();
+    }
     return;
   }
   if (kingdomGateMarkerIds.has(m.id)) {
