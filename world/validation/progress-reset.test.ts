@@ -36,7 +36,8 @@ const markers = new Map(alpha.markers.map(m => [m.id, m]));
 const source = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
 const startup = source.slice(source.indexOf('const player = new Player'), source.indexOf('// explorer character'));
 const reset = source.slice(source.indexOf('function resetProgress()'), source.indexOf('const keys ='));
-const interaction = source.slice(source.indexOf('function interact()'), source.indexOf('function checkDiscoveries()'));
+const interaction = source.slice(source.indexOf('function startCurrentAdventure()'), source.indexOf('function advancePrologue('))
+  + source.slice(source.indexOf('function interact()'), source.indexOf('function checkDiscoveries()'));
 function run(context: vm.Context, code: string) { vm.runInContext(transformSync(code, { loader: 'ts', format: 'cjs' }).code, context); }
 
 test('clean startup is unarmed at authored Alpha spawn; no gameplay method writes preferences', () => {

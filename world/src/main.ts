@@ -72,6 +72,8 @@ import { createTrackedStoryHud } from './ui/trackedStoryHud';
 import type { RegionId } from './settlements/types';
 import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './story/valleyStory';
 import { createValleyStoryScene } from './environment/valleyStoryScene';
+import { createValleyPrologueScene } from './environment/valleyPrologueScene';
+import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
 import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
 import { createEraStoryScene } from './story/eraStoryScenes';
@@ -463,7 +465,16 @@ world.add(armoryWorkshop.root);
 armoryWorkshop.root.traverse(o=>{if(o instanceof THREE.Mesh){o.material=toonMaterial(o.material as THREE.Material);o.geometry.computeBoundingSphere();culler.add(o,180,0);}});
 freezeStaticArt(armoryWorkshop.root);
 addEventListener('pagehide',event=>{if(!event.persisted)armoryWorkshop.dispose();});
-const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets(), ...egyptResidentSockets(), ...homeResidentSockets()]);
+const alphaResidence = settlements.placements.find(p => p.id === 'alpha');
+const valleyPrologueScene = alphaResidence ? createValleyPrologueScene(alphaResidence, (x, z) => grid.sampleHeight(x, z)) : null;
+if (valleyPrologueScene) {
+  scene.add(valleyPrologueScene.root);
+  colliders.push(...valleyPrologueScene.colliders);
+  layout.markers.push(...valleyPrologueScene.markers);
+  targets.push(...valleyPrologueScene.targets);
+}
+const settlementNpcs = createSettlementNpcs([...settlements.npcs, ...campaignSites.npcs, ...orleansResidentSockets(), ...qinResidentSockets(), ...egyptResidentSockets(), ...homeResidentSockets(), ...(valleyPrologueScene?.npcs ?? [])]);
+addEventListener('pagehide', event => { if (!event.persisted) valleyPrologueScene?.dispose(); });
 addEventListener('pagehide', event => { if (!event.persisted) settlementNpcs.dispose(); });
 scene.add(settlementNpcs.group);
 addEventListener('pagehide', event => { if (!event.persisted) campaignSites.dispose(); });
@@ -597,6 +608,7 @@ function applyExplorationGlide(level=explorationGlideLevel(done)){const g=explor
 const weaponFinishStore = new WeaponFinishStore(progressStorage);
 let weaponFinishControl: ReturnType<typeof createWeaponFinishControl> | undefined;
 const save = () => worldProgress.save();
+valleyPrologueScene?.apply(valleyPrologueStage(done), done, true);
 
 let actions: WorldActions | undefined;
 const fortCannon = new FortCannon();
@@ -643,7 +655,6 @@ for (const site of eraStoryScenes) {
   for (const marker of site.markers) { layout.markers.push(marker); markers.set(marker.id, marker); }
 }
 addEventListener('pagehide', event => { if (!event.persisted) for (const site of eraStoryScenes) site.dispose(); });
-const alphaResidence = settlements.placements.find(p => p.id === 'alpha');
 const valleyStoryScene = alphaResidence ? createValleyStoryScene(alphaResidence) : null;
 if (valleyStoryScene) {
   scene.add(valleyStoryScene.group); colliders.push(...valleyStoryScene.colliders);
@@ -661,6 +672,13 @@ function applyValleyStory() {
   }
 }
 addEventListener('pagehide', event => { if (!event.persisted) valleyStoryScene?.dispose(); });
+function prologueGuide() {
+  if (!valleyPrologueScene || regionAt(player.pos.x, player.pos.z).id !== 'alpha') return null;
+  const guide = valleyPrologueGuide(valleyPrologueStage(done));
+  if (!guide) return null;
+  const p = markers.get(guide.targetId)?.p ?? settlementNpcs.getPosition(guide.targetId);
+  return p ? { ...guide, p } : null;
+}
 function valleyGuide() {
   if (!valleyStoryScene || regionAt(player.pos.x, player.pos.z).id !== 'alpha') return null;
   const guide = getValleyStoryGuide(done); if (!guide) return null;
@@ -668,6 +686,9 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function interactionLabel(marker: Marker) {
+  if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(marker.id)) {
+    return bilingual(...PROLOGUE_LABELS[marker.id as keyof typeof PROLOGUE_LABELS]);
+  }
   const claim=modelClaimPoints.find(point=>point.marker.id===marker.id);if(claim)return bilingual(...claim.label);
   const townAction=HOME_CIVIC_ACTIONS.find(a=>a.id===marker.id);if(townAction)return bilingual(...townAction.label);
   const homeAction=HOME_ACTIONS.find(a=>a.id===marker.id);if(homeAction)return bilingual(homeAction.label[0],homeAction.label[1]);
@@ -703,6 +724,7 @@ function applyWorldState() {
   for (const entry of layout.objectives) if (isEraId(entry.region)) entry.objective = getEraObjective(entry.region, done, getLanguage() === 'zh' ? 0 : 1);
   for (const site of eraStoryScenes) { if (isEraId(site.region)) { const state = getEraStoryState(site.region, done); site.applyState({ ...state, complete: state.complete || (site.region === 'britain' && state.knightDefeated) }); } }
   applyValleyStory();
+  if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
   applyCampaignState();
   applyFalseDawnState();
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
@@ -718,6 +740,7 @@ function applyWorldState() {
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
     const id = t.userData.target as string;
+    if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
     t.visible = !hit;
     const c = collider(`COL_${t.name}`); if (c) c.enabled = !hit;
@@ -794,6 +817,8 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     }
   }
   if(adventureActive(done)&&optionalPin){if(optionalPinExpired(optionalPin,here,player.pos,done,found))optionalPin=null;else return{p:optionalPin.p,label:bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`,`Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`)};}
+  const opening = typeof prologueGuide === 'function' ? prologueGuide() : null;
+  if (opening) return { p: opening.p, label: bilingual(...opening.text) };
   const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
   if(adventureActive(done))return null;
   const intro = valleyGuide();
@@ -862,7 +887,7 @@ function renderMainObjective() {
     note.textContent=region==='home'?bilingual(`镇务 ${homeTown?.civicCount??0}/4 · 到广场公告栏接受或回报；日志可追踪设施与日常。${homeSaberReady(done)?' Saber 已入住。':' 公馆可邀请已缔约的 Saber。'}`,`Town jobs ${homeTown?.civicCount??0}/4 · Accept or report at the square; track activities in the journal.${homeSaberReady(done)?' Saber has moved in.':' Invite your contracted Saber at the guest book.'}`):region==='orleans'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 设施 ${works}/3 · 可向当地居民问路。`,`Landmarks ${discovered}/${localDiscoveries.length} · Works ${works}/3 · Ask the residents for directions.`):region==='egypt'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 太阳神殿中庭的铜镜可以引光。`,`Landmarks ${discovered}/${localDiscoveries.length} · The temple court's mirrors can lead the sunlight.`):region==='qin'?bilingual(`已发现 ${discovered}/${localDiscoveries.length} 处地标 · 可向驿丞和工匠问路；地宫军令台可转动兵俑阵列。`,`Landmarks ${discovered}/${localDiscoveries.length} · Command posts below turn the terracotta ranks.`):bilingual('当前可探索地形与路线；角色、主线、机关和 Boss 正在制作。','Terrain and routes are explorable; characters, story, mechanisms and bosses are in development.');
     $('objective').replaceChildren(title,text,note);return;
   }
-  const adventure=getCurrentAdventureGuide(region,done);
+  const adventure=(typeof prologueGuide === 'function' ? prologueGuide() : null) ?? getCurrentAdventureGuide(region,done);
   if(adventure){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual(...adventure.title);text.className='cur';text.textContent=bilingual(...adventure.text);$('objective').replaceChildren(title,text);return;}
   if(adventureActive(done)&&done.has(ADVENTURE.ending)){const title=document.createElement('h3'),text=document.createElement('div');title.textContent=bilingual('让明天继续 · 已完成','Let Tomorrow Continue · Complete');text.textContent=bilingual('归路仍然开放。可以回访居民、探索支路或自愿挑战旧敌。','Every return road remains open. Revisit the residents, explore side routes or choose a rematch.');$('objective').replaceChildren(title,text);return;}
   const intro = valleyGuide();
@@ -958,6 +983,11 @@ const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
 // URL starts are intentional debug entry points only. Reset always returns to the authored Alpha
 // camp, and subsequent defeat respawns in this session must not jump back to the old debug chapter.
 let spawn = markers.get(startRegion === 'alpha' ? INITIAL_SPAWN_ID : `${startRegion}_spawn_p1`) ?? initialSpawn;
+if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene && !params.has('region') && !params.has('spawn')) {
+  const stage = valleyPrologueStage(done);
+  if (stage === 'briefing' || stage === 'cart' || stage === 'armory') spawn = valleyPrologueScene.spawn;
+  else if (stage !== 'legacy' && stage !== 'complete') spawn = valleyPrologueScene.radioSpawn;
+}
 const spawnAt = (areaId?: string) => {
   actions?.cancel(); fortCannon.cancel(); hudRevision++;
   const a = layout.areas.find((x) => x.id === areaId);
@@ -1218,8 +1248,8 @@ function resetProgress() {
   const url = new URL(location.href); clearStartOverrides(url.searchParams);
   try { history.replaceState(history.state, '', url.href); } catch { /* Restricted embedding may prohibit URL writes. */ }
   companionRegroupUntil = 0; actions?.reset(); fortCannon.reset(); contract.reset(); combat.reset();
-  spawn = initialSpawn;
-  player.restartAt(initialSpawn.p[0], initialSpawn.p[1] + 1, initialSpawn.p[2], 0);
+  spawn = (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.spawn) || initialSpawn;
+  player.restartAt(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
   prevPos.copy(player.pos); rig.root.position.copy(player.pos);
   anim.reset(worldProgress.armed, player.yaw + Math.PI);
   inspectServant = false; thirdPerson = true; rig.root.visible = true;
@@ -1239,8 +1269,8 @@ function resetProgress() {
   $('crosshair').classList.remove('aiming', 'hit');
   $('movement-mode').textContent = ''; $('prompt').textContent = '';
   applyWorldState(); renderContract();
-  toast(saved ? bilingual('进度已重置 · 已空手返回初始营地', 'Progress reset · Returned unarmed to the starting camp')
-    : bilingual('已空手返回初始营地；浏览器无法保存重置，刷新可能恢复旧进度', 'Returned unarmed to the starting camp; reset could not be saved, so reloading may restore old progress'));
+  toast(saved ? bilingual('进度已重置 · 已空手回到起点', 'Progress reset · Returned unarmed to the starting point')
+    : bilingual('已空手回到起点；浏览器无法保存重置，刷新可能恢复旧进度', 'Returned unarmed to the starting point; reset could not be saved, so reloading may restore old progress'));
 }
 const keys = new Set<string>();
 const aim = new ShoulderAim();
@@ -1941,6 +1971,10 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) {
+      if (advancePrologue(id)) combat.flashHitMarker(.14);
+      combat.shot(muzzle, point, true); audio.shot(); return;
+    }
     if(typeof homeTown!=='undefined'&&homeTown?.activities.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(adventureRuntime?.hit(id)){const fun=[...adventureSites.fun.values()].find(f=>f.ids.includes(id));if(fun&&fun.ids.every(flag=>done.has(flag)))toast(bilingual(...fun.line));combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(id===KINGDOM_GATE.latch){kingdomGateRuntime?.unlock();combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
@@ -1986,6 +2020,10 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
+    if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) {
+      if (d < (m.radius ?? 3) && d < bd && valleyPrologueScene.markerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
+      continue;
+    }
     if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
@@ -2009,6 +2047,7 @@ function interactSettlementNpc() {
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
   if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+    if (typeof VALLEY_PROLOGUE !== 'undefined' && npc.id === VALLEY_PROLOGUE.steward && advancePrologue(npc.id)) return true;
     const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
     if (handleCampaignInteraction(npc.id)) return true;
     const closing = getCampaignResidentReaction(npc.id, done); if (closing) { speakDialogue(closing, npc.role); return true; }
@@ -2025,6 +2064,36 @@ function handleValleyInteraction(id: string, speaker: [string,string] = ['现场
   let saved = true;
   if (result.changed) { saved = save(); applyWorldState(); }
   if (result.dialogue) speakDialogue([result.dialogue[0]+(saved?'':'（本次进度暂未保存。）'),result.dialogue[1]+(saved?'':' (Progress could not be saved.)')],speaker);
+  return true;
+}
+function startCurrentAdventure() {
+  if (isKingdomGateOpen(done)) done.add(KINGDOM_GATE.open);
+  done.add(ADVENTURE.started);
+  done.add(JOURNEY_DRAMA.started);
+}
+function advancePrologue(id: string) {
+  if (!valleyPrologueScene) return false;
+  const P = VALLEY_PROLOGUE;
+  if (id === P.record && !valleyPrologueScene.workerClear()) {
+    toast(bilingual('等顾桥走出围栏。', 'Wait for Gu Qiao to clear the rail.'));
+    return true;
+  }
+  const line = advanceValleyPrologue(valleyPrologueStage(done), id, done);
+  if (!line) return false;
+  if (id === P.record) startCurrentAdventure();
+  const saved = save();
+  applyWorldState();
+  if (id === P.steward || id === P.cartStop || id === P.cartReturn) {
+    const speaker: [string, string] = id === P.steward ? ['孟槐', 'Meng Huai'] : ['阿舟', 'Azhou'];
+    settlementNpcs.gesture(id === P.steward ? P.steward : P.apprentice);
+    speakDialogue(line, speaker);
+  } else if (id === P.radio) {
+    speakDialogue(line, ['外勤电台', 'Field radio']);
+  } else {
+    if (id !== P.pin) audio.interaction();
+    toast(bilingual(...line));
+  }
+  if (!saved) toast(bilingual('本次进度未能保存，请在设置里重试。', 'Progress could not be saved. Retry in Settings.'));
   return true;
 }
 function handleEraInteraction(id: string, speaker: [string,string] = ['现场记录','Field notes']) {
@@ -2144,6 +2213,7 @@ function interactQinOrder() {
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) { advancePrologue(m.id); return; }
   const claim = modelClaimPoints.find(point => point.marker.id === m.id);
   if (claim) {
     // Claim markers sit at foot level. Aim the visibility ray above the ground,
@@ -2200,12 +2270,13 @@ function interact() {
     if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
   }
-  if(m.id===ARMORY_MARKER&&!done.has('summon_circle')&&!done.has('tower_console')&&!(['britain','blacksail','winter','kyoto'] as const).some(r=>done.has(`era_${r}_met`))){if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);}
+  const prologueArming = m.id === ARMORY_MARKER && typeof VALLEY_PROLOGUE !== 'undefined' && done.has(VALLEY_PROLOGUE.briefed) && !done.has(VALLEY_PROLOGUE.record);
+  if(m.id===ARMORY_MARKER&&!prologueArming&&!done.has('summon_circle')&&!done.has('tower_console')&&!(['britain','blacksail','winter','kyoto'] as const).some(r=>done.has(`era_${r}_met`))) startCurrentAdventure();
   done.add(m.id);
   if (m.id === FORT_CANNON.marker) { actions?.cancel(); fortCannon.toggle(player.pos, true); }
   if (m.id === ARMORY_MARKER) {
     // Offer the compact combat loop immediately; the original route remains one key away.
-    questTrackedId=adventureActive(done)?null:'main:compact-relay'; campaignTrackedRegion=null; falseDawnTracked=false; optionalPin=null; guideOn=true;
+    questTrackedId=prologueArming||adventureActive(done)?null:'main:compact-relay'; campaignTrackedRegion=null; falseDawnTracked=false; optionalPin=null; guideOn=true;
     // An old held trigger/ADS must not silently activate when the weapon is first collected.
     clearInput();
     anim.update(0, { speed: 0, onGround: player.onGround, swimming: player.swimming, vy: player.vel.y,
@@ -2250,6 +2321,10 @@ function interact() {
     const n = [1, 2, 3].filter((k) => done.has(`map_piece_${k}`)).length;
     return toast(n === 3 ? '藏宝图拼好了：骷髅礁上的 X 标记亮了起来' : `藏宝图残片 ${n}/3`);
   }
+  if (prologueArming) return speakDialogue([
+    `步枪和短刃已领取。${settings.label('fire')} 射击，${settings.label('melee')} 近战，${settings.label('evade')} 闪避。从工坊西门出去，绕到北侧收听外勤电台。`,
+    `Rifle and blade issued. ${settings.label('fire')} fires, ${settings.label('melee')} strikes, ${settings.label('evade')} dodges. Leave by the west door and round the north side to the field radio.`,
+  ], ['枪械工坊', 'Armory']);
   if(m.id===ARMORY_MARKER&&adventureActive(done))return speakDialogue([
     `步枪与短刃已领取。${settings.label('fire')} 射击 · ${settings.label('melee')} 近战连击 · ${settings.label('evade')} 闪避。六发连射后会散热；随身弹药 90 发，打空只能近战，击倒敌人、开宝箱、回据点都能补给；远距离威力降低，重卫收势时更容易被反击。\n先到工坊西侧服务庭院，接通最低外联。正面与维修侧路都能抵达机柜；完成后沿西路去圣剑湖。`,
     `Rifle and blade acquired. ${settings.label('fire')} Fire · ${settings.label('melee')} Melee combo · ${settings.label('evade')} Evade. Six rounds trigger a vent; you carry 90 rounds and must melee when empty (kills, chests and settlements resupply); range reduces damage, and heavy guards are vulnerable during recovery.\nRestore the minimum uplink in the service yard west of the workshop. Take front cover or the maintenance flank, then head west to Sword Lake.`,
@@ -2474,6 +2549,7 @@ function frame(now: number) {
   for (const site of eraStoryScenes) site.updateVisibility(player.pos);
   settlementNpcs.setSpeaking(narrative?.open?nearbySettlementNpc()?.id??null:null);
   settlementNpcs.update(gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  valleyPrologueScene?.update(gameplayActive() ? dt : 0, settlementNpcs.pose);
   if(typeof qinArmyOrder!=='undefined')qinArmyOrder.update(dt);
   if(typeof qinAtmosphere!=='undefined')qinAtmosphere.update(dt,player.pos);
   if(typeof egyptAtmosphere!=='undefined')egyptAtmosphere.update(dt,player.pos);
