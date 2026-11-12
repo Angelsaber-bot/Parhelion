@@ -31,14 +31,38 @@ function strikeAt(m:Match, tick:number) {
 }
 function expiry(m:Match,id='b') { return m.snapshot().players.find(p=>p.id===id)!.spawnProtectedUntilTick!; }
 
+describe('G02: attacking ends spawn immunity, nothing else does',()=>{
+  const fresh=(id:WeaponId='lumen')=>{ const m=fixture(id); expect(expiry(m,'a')).toBe(150); advance(m,10); return m; };
+  it('a shot that leaves the barrel ends it on that tick',()=>{
+    const m=fresh(); m.queueInputs('a',[input(1,{buttons:BTN.FIRE})]); m.step();
+    expect(m.snapshot().events.some(e=>e.t==='shot')).toBe(true); expect(expiry(m,'a')).toBeLessThanOrEqual(m.tick); expect(expiry(m,'a')).toBeLessThan(150);
+  });
+  it('a dry trigger pull with an empty magazine does not',()=>{
+    const m=fresh(), a=m.player('a')!; a.ammo[a.weapon]=0; a.reload=0;
+    m.queueInputs('a',[input(1,{buttons:BTN.FIRE})]); m.step();
+    expect(m.snapshot().events.some(e=>e.t==='shot')).toBe(false); expect(expiry(m,'a')).toBe(150);
+  });
+  it('a melee windup ends it when the swing starts, before the impact',()=>{
+    const m=fresh('blade'); m.queueInputs('a',[input(1,{buttons:BTN.FIRE,weapon:2})]); m.step();
+    expect(m.snapshot().events.some(e=>e.t==='meleeStart')).toBe(true); expect(expiry(m,'a')).toBeLessThanOrEqual(m.tick);
+  });
+  it('a thrown frag ends it; a smoke, a shield, moving and dashing do not',()=>{
+    const m=fresh(); m.queueInputs('a',[input(1,{buttons:BTN.THROW,pitch:.3})]); m.step(); expect(expiry(m,'a')).toBeLessThanOrEqual(m.tick);
+    const k=fresh(); k.player('a')!.utility='smoke';
+    k.queueInputs('a',[input(1,{buttons:BTN.THROW,pitch:.3}),input(2,{buttons:BTN.SHIELD}),input(3,{mz:1,buttons:BTN.DASH}),input(4,{mx:1,buttons:BTN.JUMP})]);
+    for(let i=0;i<4;i++)k.step();
+    expect(k.snapshot().events.some(e=>e.t==='throw')).toBe(true); expect(k.shields).toHaveLength(1); expect(expiry(k,'a')).toBe(150);
+  });
+});
+
 describe('full authoritative 2.5-second spawn immunity',()=>{
   it('is 150 world ticks and never changes the existing 180-tick death delay',()=>{
     expect(SPAWN_PROTECTION_TICKS).toBe(150); expect(SPAWN_PROTECTION_TICKS/TICK_HZ).toBe(2.5); expect(RESPAWN_TICKS).toBe(180);
   });
   for (const id of [...GUN_IDS,...MELEE_IDS]) for (const impact of [149,150]) it(`${id}: impact at tick ${impact} respects exact expiry for HP, events and score`,()=>{
     const m=fixture(id); expect(expiry(m)).toBe(150);
-    // A protected defender can fire; neither shooting nor an attack windup cancels immunity.
-    m.queueInputs('b',[input(1,{ yaw:Math.PI, buttons:BTN.FIRE })]); m.step(); m.snapshot();
+    // A protected defender who only reloads keeps immunity (G02: attacking would end it).
+    m.queueInputs('b',[input(1,{ yaw:Math.PI, buttons:BTN.RELOAD })]); m.step(); m.snapshot();
     strikeAt(m,impact); const snap=m.snapshot(), b=m.player('b')!;
     expect(snap.events.some(e=>e.t==='shot'||e.t==='meleeStrike')).toBe(true);
     if(impact<150){
@@ -67,7 +91,7 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
   it('uses world ticks without packets, ignores forged protection fields, and cannot be shortened by catch-up inputs',()=>{
     const m=fixture(); advance(m,20);
     const before=expiry(m,'a');
-    m.queueInputs('a',Array.from({length:8},(_,i)=>({...input(i+1,{buttons:BTN.FIRE}),spawnProtectedUntilTick:0,spawnProtection:0})));
+    m.queueInputs('a',Array.from({length:8},(_,i)=>({...input(i+1,{mz:1}),spawnProtectedUntilTick:0,spawnProtection:0})));
     m.step(); expect(m.player('a')!.lastSeq).toBe(8); expect(expiry(m,'a')).toBe(before); expect(m.tick).toBe(21);
     advance(m,149); expect(expiry(m,'a')-m.tick).toBe(1); m.step(); expect(expiry(m,'a')-m.tick).toBe(0);
   });
@@ -108,7 +132,8 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
       s.setPaused(true); const m=s.match!; expect(expiry(m,s.id)-m.tick).toBe(150);
       while(m.phase!=='live')m.step();
       expect(expiry(m,s.id)-m.tick).toBe(150);
-      const saved=expiry(m,s.id); s.send([input(1,{buttons:BTN.FIRE})]); m.step(); expect(expiry(m,s.id)).toBe(saved);
+      const saved=expiry(m,s.id); s.send([input(1,{mz:1})]); m.step(); expect(expiry(m,s.id)).toBe(saved);
+      s.send([input(2,{buttons:BTN.FIRE})]); m.step(); expect(expiry(m,s.id)).toBeLessThanOrEqual(m.tick); // G02: the first real shot ends it
     }finally{s.close();}
   });
 });

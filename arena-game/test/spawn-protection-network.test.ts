@@ -63,7 +63,7 @@ for(const transport of ['Colyseus','Worker JSON'] as const) it(`${transport}: fi
     await command(BTN.FIRE);snap=await read();
     expect(snap.events.some(e=>e.t==='shot')).toBe(true); expect(snap.players.find(p=>p.id===b.id)!.hp).toBe(150);
     expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false);
-    expect(snap.players.find(p=>p.id===a.id)!.spawnProtectedUntilTick).toBe(150);
+    expect(snap.players.find(p=>p.id===a.id)!.spawnProtectedUntilTick).toBeLessThanOrEqual(snap.tick); // G02: a's own shot ended a's immunity
     await cool();while(m.tick<149)m.step();
     snap=await read();expect(snap.players.find(p=>p.id===b.id)!.spawnProtectedUntilTick!-snap.tick).toBe(1);
     await command(BTN.FIRE);snap=await read();expect(snap.tick).toBe(150);

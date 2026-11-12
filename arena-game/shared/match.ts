@@ -361,7 +361,7 @@ export class Match {
   private handle(slot: Slot, ev: SimEvent): void {
     const id = slot.state.id;
     switch (ev.type) {
-      case 'fire': this.resolveFire(slot, ev); break;
+      case 'fire': this.endProtection(slot); this.resolveFire(slot, ev); break;
       case 'meleeStart': {
         const w = WEAPONS[ev.weapon];
         if (slot.melee || this.tick < slot.meleeReadyTick || this.phase === 'ended') {
@@ -369,6 +369,7 @@ export class Match {
           break;
         }
         slot.meleeReadyTick = this.tick + w.interval;
+        this.endProtection(slot);
         slot.melee = { weapon: ev.weapon, impactTick: this.tick + w.windup!, yaw: ev.yaw, pitch: ev.pitch };
         this.events.push({ t: 'meleeStart', id, w: ev.weapon, windup: w.windup!, yaw: ev.yaw, pitch: ev.pitch });
         break;
@@ -384,6 +385,7 @@ export class Match {
         break;
       case 'throw': {
         if (this.phase === 'ended') break;
+        if (ev.utility === 'frag') this.endProtection(slot);
         const g = launchGrenade(this.map, this.nextGrenade++, id, slot.state.team, ev.utility, ev.origin, ev.dir, ev.carry);
         this.grenades.push(g);
         this.events.push({ t: 'throw', id, gid: g.id, kind: g.kind });
@@ -531,6 +533,13 @@ export class Match {
     return out;
   }
 
+  /** G02 (2026-11 map report): spawn immunity ends the moment its owner attacks — a shot that
+   *  actually leaves the barrel, an accepted melee windup, or a frag leaving the hand. Moving,
+   *  reloading, dry trigger pulls, shields and smoke keep it. */
+  private endProtection(slot: Slot): void {
+    if (slot.spawnProtectedUntilTick > this.tick) slot.spawnProtectedUntilTick = this.tick;
+  }
+
   private spawnProtected(id: string): boolean {
     const slot = this.slots.get(id);
     return !!slot?.state.alive && this.tick < slot.spawnProtectedUntilTick;
@@ -584,8 +593,11 @@ export class Match {
     this.smokes = this.smokes.filter((s) => s.life > 0);
   }
 
-  /** A frag kills every enemy within its radius (walls and shields do not shelter them), spares
-   *  teammates and spawn-protected players, and the thrower takes a non-lethal share. */
+  /** A frag kills every enemy it reaches within its radius, spares teammates and spawn-protected
+   *  players, and the thrower takes a non-lethal share. G03 (2026-11 map report): solid walls and
+   *  floors shelter — a body is reached only through open air (doorways, windows, open edges),
+   *  tested at several points on the body so a corner or a raised arm still counts. Deployed
+   *  shields still do not shelter. */
   private blast(g: Grenade): void {
     const at: Vec3 = [g.x, g.y + .15, g.z];
     this.events.push({ t: 'blast', gid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
@@ -597,10 +609,18 @@ export class Match {
       if (!p.alive || (p.team === g.team && id !== g.owner)) continue;
       const h = playerHitbox(p.crouched);
       let best = Infinity;
-      for (const y of [h.bodyBottom + .1, (h.bodyBottom + h.bodyTop) / 2, h.headY]) {
-        const point: Vec3 = [p.x, p.y + y, p.z], d: Vec3 = [point[0] - at[0], point[1] - at[1], point[2] - at[2]], len = Math.hypot(...d);
-        // Nothing stops it: walls and shields do not shelter anyone inside the radius.
-        if (len <= FRAG.radius + h.bodyRadius) best = Math.min(best, Math.max(0, len - h.bodyRadius));
+      const hx = p.x - at[0], hz = p.z - at[2], hl = Math.hypot(hx, hz) || 1;
+      const sideX = -hz / hl * h.bodyRadius * .9, sideZ = hx / hl * h.bodyRadius * .9;
+      const mid = (h.bodyBottom + h.bodyTop) / 2;
+      const samples: Vec3[] = [
+        [p.x, p.y + h.bodyBottom + .1, p.z], [p.x, p.y + mid, p.z], [p.x, p.y + h.headY, p.z],
+        [p.x + sideX, p.y + mid, p.z + sideZ], [p.x - sideX, p.y + mid, p.z - sideZ],
+      ];
+      for (const point of samples) {
+        const d: Vec3 = [point[0] - at[0], point[1] - at[1], point[2] - at[2]], len = Math.hypot(...d);
+        if (len > FRAG.radius + h.bodyRadius) continue;
+        if (len > 1e-6 && raycastMap(this.map, at, [d[0] / len, d[1] / len, d[2] / len], len) !== Infinity) continue; // a wall or floor is in the way
+        best = Math.min(best, Math.max(0, len - h.bodyRadius));
       }
       if (!fragReaches(best)) continue;
       if (!this.spawnProtected(id)) {

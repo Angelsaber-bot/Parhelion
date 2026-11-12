@@ -172,10 +172,26 @@ describe('frag blasts', () => {
     expect(m.player('a')!.hp).toBeGreaterThanOrEqual(1); expect(m.player('a')!.alive).toBe(true);
     expect(events.some((e) => e.t === 'blast')).toBe(true);
   });
-  it('a wall between the blast and the enemy does not save them', () => {
-    const m = duel(true); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -8 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+  it('G03: a solid wall between the blast and the enemy shelters them; round its end it does not', () => {
+    const m = duel(true); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -8, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    const hp = m.player('b')!.hp, vz = m.player('b')!.vz;
     detonate(m, [0, GRENADE.radius, -4]);
-    expect(m.player('b')!.alive).toBe(false);
+    expect(m.player('b')!.alive).toBe(true); expect(m.player('b')!.hp).toBe(hp); expect(m.player('b')!.vz).toBe(vz); // no damage, no knockback
+    const edge = duel(true); Object.assign(edge.player('a')!, { x: 10, z: 10 }); Object.assign(edge.player('b')!, { x: 5.0, z: -8 }); Object.assign(edge.player('c')!, { x: 12, z: 10 });
+    detonate(edge, [3.5, GRENADE.radius, -4]);
+    expect(edge.player('b')!.alive).toBe(false); // a sliver of body past the wall's end is enough
+  });
+  it('G03: a floor shelters the room beneath it; an open stairwell does not', () => {
+    const slab = (hole: boolean) => buildMap({ ...data(false), objects: [box('floor', [0, -.1, 0], [60, .2, 60]),
+      ...(hole ? [box('slab_w', [-6.5, 3.1, 0], [11, .2, 12]), box('slab_e', [6.5, 3.1, 0], [11, .2, 12])] : [box('slab', [0, 3.1, 0], [24, .2, 12])])] as MapData['objects'] });
+    for (const hole of [false, true]) {
+      const m = new Match(slab(hole), '2v2');
+      for (const [id, team] of [['a', 'A'], ['b', 'B'], ['c', 'A']] as const) m.addPlayer(id, { name: id, team, char: 0, skins: [], bot: false });
+      m.phase = 'live'; for (const s of m.slots.values()) s.spawnProtectedUntilTick = 0;
+      Object.assign(m.player('a')!, { x: 20, z: 5 }); Object.assign(m.player('c')!, { x: 22, z: 5 }); Object.assign(m.player('b')!, { x: 0, y: 0, z: 0, hp: 150 });
+      detonate(m, [0, 3.2 + GRENADE.radius, 1.5]);
+      expect(m.player('b')!.alive, hole ? 'stairwell' : 'solid floor').toBe(!hole ? true : false);
+    }
   });
   it('a shield does not save the player behind it, and shields in range are blown apart', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -3 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
@@ -198,11 +214,11 @@ describe('frag blasts', () => {
     const kill = events.find((e): e is Extract<NetEvent, { t: 'kill' }> => e.t === 'kill');
     expect(kill).toMatchObject({ killer: 'a', victim: 'b', w: FRAG_KILL }); expect(m.score.A).toBe(1);
   });
-  it('100% lethal sweep: every enemy within the radius dies — any direction, crouched or airborne, behind walls or shields, any hp', () => {
+  it('100% lethal sweep: every enemy within the radius and in open air dies — any direction, crouched or airborne, behind shields, any hp', () => {
     let cases = 0;
     for (let ring = 0; ring <= 6; ring++) for (let k = 0; k < 12; k++) for (const crouched of [false, true]) for (const lift of [0, 1.2]) for (const cover of [false, true]) {
       const d = Math.min(FRAG.radius, ring * FRAG.radius / 6), ang = k / 12 * Math.PI * 2, cz = cover ? -3 : 0, bx = Math.sin(ang) * d, bz = cz - Math.cos(ang) * d;
-      const m = duel(cover); Object.assign(m.player('a')!, { x: 25, z: 25 }); Object.assign(m.player('c')!, { x: 27, z: 25 });
+      const m = duel(); Object.assign(m.player('a')!, { x: 25, z: 25 }); Object.assign(m.player('c')!, { x: 27, z: 25 });
       Object.assign(m.player('b')!, { x: bx, z: bz, y: lift, crouched, hp: 1 + (cases * 37) % 200 });
       if (cover) m.shields.push({ id: 50, team: 'B', owner: 'b', x: bx * .5, y: 0, z: (bz + cz) * .5, yaw: ang, hp: 300, life: 600 });
       detonate(m, [0, GRENADE.radius, cz]);
