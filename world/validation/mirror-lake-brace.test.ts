@@ -52,7 +52,7 @@ test('actual World input completes Mirror Lake, West Ridge, and the optional win
   } });
   const w = h.world, d = h.window.document;
   let now = 0;
-  const frame = (count: number) => { for (let i = 0; i < count; i++) h.frame(now += 1000 / 60); };
+  const frame = (count: number, step = 1000 / 60) => { for (let i = 0; i < count; i++) h.frame(now += step); };
   const interact = () => {
     const code = w.settings.bindingsFor('interact')[0];
     for (const type of ['keydown', 'keyup']) d.body.dispatchEvent(new h.window.KeyboardEvent(type, { code, bubbles: true }));
@@ -112,6 +112,14 @@ test('actual World input completes Mirror Lake, West Ridge, and the optional win
     approach(J.mealSketch);
     interact();
     assert.ok(w.done.has(J.mealSketch));
+    const cart = w.scene.getObjectByName('WinterReturnMedicineCart')!;
+    const crate = w.scene.getObjectByName('WinterReturnMedicineDelivered')!;
+    for (let i = 0; i < 65 && !crate.visible; i++) {
+      frame(1, 1000 / 12);
+      const p = cart.position.clone().add(new Vector3(0, .1, 0));
+      assert.ok(w.combat.geometry.clear(p, .32, .9), `medicine route blocked at ${p.toArray()}`);
+    }
+    assert.ok(crate.visible);
     assert.deepEqual(h.errors, []);
   } finally { await h.close(); }
 });
@@ -177,4 +185,30 @@ test('merged World fixture draws can be culled independently in each distant reg
       assert.deepEqual(visible, groups.map((_candidate, i) => i === index));
     }
   } finally { site.dispose(); }
+});
+
+test('winter medicine moves to the residence stock point and returns there on a completed save', () => {
+  const create = () => createWorldJourneySites({ position: [0, 5, 0] } as SettlementPlacement, () => 4.5, () => true);
+  const site = create(), restored = create();
+  const done = new Set([...initial, A.arrived, 'napoleon_contract', J.bridge, J.visitor]);
+  try {
+    site.apply(done);
+    const cart = site.root.getObjectByName('WinterReturnMedicineCart')!;
+    const crate = site.root.getObjectByName('WinterReturnMedicineDelivered')!;
+    const seat = site.markers.find(marker => marker.id === J.mealWindow)!;
+    const player = new Vector3(...seat.p);
+    const start = cart.position.clone();
+    assert.equal(crate.visible, false);
+    for (let i = 0; i < 30; i++) site.update(.1, player);
+    assert.ok(cart.position.distanceTo(start) > 2);
+    for (let i = 0; i < 50; i++) site.update(.1, player);
+    assert.equal(crate.visible, true);
+    assert.ok(commitJourneyStep(J.mealWindow, done));
+    restored.apply(done);
+    assert.equal(restored.root.getObjectByName('WinterReturnMedicineDelivered')!.visible, true);
+    assert.deepEqual(restored.root.getObjectByName('WinterReturnMedicineCart')!.position.toArray(), cart.position.toArray());
+  } finally {
+    site.dispose();
+    restored.dispose();
+  }
 });

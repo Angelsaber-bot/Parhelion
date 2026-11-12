@@ -1,4 +1,4 @@
-name: Validate World fixture culling
+name: Validate World medicine delivery
 on:
   pull_request:
     branches: [main]
