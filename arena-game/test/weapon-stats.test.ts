@@ -33,9 +33,10 @@ function fire(m: Match, id: string, dist: number, y: number, wait: number, yaw =
 
 it('records only the human shooter: shots, hits, heads, damage, kill distance and time-to-kill', () => {
   const m = liveMatch(true);
-  fire(m, 'you', 12, 2.1, 22); // just over the head: a miss, but still aimed at the visible bot
-  fire(m, 'you', 12, 0.9, 22); // body 52
-  fire(m, 'you', 12, 1.6, 22); // head 104 → 156 ≥ 150, dead
+  fire(m, 'you', 12, 2.1, 25); // just over the head: a miss, but still aimed at the visible bot
+  fire(m, 'you', 12, 0.9, 25); // body 52
+  fire(m, 'you', 12, 1.6, 25); // head 91 → 143, alive
+  fire(m, 'you', 12, 1.6, 25); // head 91 → dead
   // The bot shoots back after respawning; that shot is never measured as a bot weapon line.
   m.flushStats();
   const [rec] = m.stats.drain() as MatchRecord[];
@@ -45,16 +46,16 @@ it('records only the human shooter: shots, hits, heads, damage, kill distance an
   expect(rec.humans).toHaveLength(1);
   expect(rec.bots).toEqual([{ team: 'B', char: 0, loadout: ['lumen', 'corona', 'blade'] }]);
   const h = rec.humans[0], halo = h.weapons.halo;
-  expect(halo.shots).toBe(3);
-  expect(halo.hits).toBe(2);
-  expect(halo.heads).toBe(1);
+  expect(halo.shots).toBe(4);
+  expect(halo.hits).toBe(3);
+  expect(halo.heads).toBe(2);
   expect(halo.damage).toBe(150); // capped at the HP actually removed
   expect(halo.kills).toBe(1);
   expect(halo.headKills).toBe(1);
-  expect(halo.ttk).toEqual([23]); // first damage to kill: this helper fires every 1 + 22 ticks
+  expect(halo.ttk).toEqual([52]); // first damage to kill: this helper fires every 1 + 25 ticks
   expect(halo.killDist[distBucket(12)]).toBe(1);
-  expect(halo.aimed[distBucket(12)][0]).toBe(3);
-  expect(halo.aimed[distBucket(12)][1]).toBe(2);
+  expect(halo.aimed[distBucket(12)][0]).toBe(4);
+  expect(halo.aimed[distBucket(12)][1]).toBe(3);
   expect(halo.wild).toBe(0);
   expect(halo.idle).toBe(0);
   expect(halo.held).toBeGreaterThan(60);
@@ -128,11 +129,11 @@ it('the last human leaving a bot room closes the round before a bot refills the 
 
 it('shots while every enemy is dead count as idle, not as wild misses', () => {
   const m = liveMatch(true, ['halo', 'lumen', 'blade']);
-  fire(m, 'you', 12, 0.9, 22); fire(m, 'you', 12, 0.9, 22); fire(m, 'you', 12, 1.6, 22); // dead
+  fire(m, 'you', 12, 0.9, 25); fire(m, 'you', 12, 0.9, 25); fire(m, 'you', 12, 1.6, 25); // 52 + 52 + 91: dead
   expect(m.player('bot')!.alive).toBe(false);
-  fire(m, 'you', 12, 0.9, 22); // into the empty respawn wait
+  fire(m, 'you', 12, 0.9, 25); // into the empty respawn wait
   m.player('bot')!.alive = true; Object.assign(m.player('bot')!, { x: 20, z: 0 }); m.step();
-  fire(m, 'you', 12, 0.9, 22); // a living enemy, but off to the side
+  fire(m, 'you', 12, 0.9, 25); // a living enemy, but off to the side
   m.flushStats();
   const halo = m.stats.drain()[0].humans[0].weapons.halo;
   expect(halo.idle).toBe(1);

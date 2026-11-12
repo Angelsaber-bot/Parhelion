@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ARENA_MAP } from '../shared/arenaMap.ts';
 import { BOT_SKILL, Bot } from '../shared/bot.ts';
-import { DEFAULT_LOADOUT, MELEE_MOVE, SPAWN_PROTECTION_TICKS, GUN_IDS, MELEE_IDS, WEAPONS, botLoadout, isLoadout, loadoutWeapon, validateLoadout, weaponIndex, type Loadout, type MeleeId } from '../shared/content.ts';
+import { CHARACTERS, DEFAULT_LOADOUT, MELEE_MOVE, SPAWN_PROTECTION_TICKS, GUN_IDS, MELEE_IDS, WEAPONS, botLoadout, isLoadout, loadoutWeapon, validateLoadout, weaponIndex, type Loadout, type MeleeId } from '../shared/content.ts';
 import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, sanitize, type PlayerInfo } from '../shared/match.ts';
 import { RULES_VERSION } from '../shared/protocol.ts';
@@ -72,11 +72,18 @@ describe('validated two-gun one-melee loadouts', () => {
       expect(p.weapon).toBe(4); expect(p.loadout).toEqual(['longnight', 'firefly', 'hammer']);
     }
   });
-  it('firearms retain their cadence and magazines with the approved shotgun damage increase', () => {
-    expect(WEAPONS.slice(0, 3).map((w) => [w.damage, w.interval, w.mag, w.reload])).toEqual([[20, 6, 30, 114], [20, 39, 6, 138], [52, 22, 8, 126]]);
+  it('firearms retain their cadence and magazines with the approved shotgun and Halo changes', () => {
+    expect(WEAPONS.slice(0, 3).map((w) => [w.damage, w.interval, w.mag, w.reload])).toEqual([[20, 6, 30, 114], [20, 39, 6, 138], [52, 25, 8, 126]]);
     expect(WEAPONS.map((w) => w.id)).toEqual([...GUN_IDS, ...MELEE_IDS]);
     expect(WEAPONS.filter((w) => w.kind === 'gun')).toHaveLength(5);
     for (const w of WEAPONS.slice(5)) { expect(w.windup).toBeGreaterThanOrEqual(12); expect(w.interval).toBeGreaterThan(w.windup!); expect(w.headMul).toBe(1); }
+  });
+  it('Halo DMR breakpoints: head plus body kills Vega but not Aster; two heads or three bodies kill both', () => {
+    const halo = WEAPONS[weaponIndex('halo')], head = Math.round(halo.damage * halo.headMul), body = halo.damage;
+    const [aster, vega] = [CHARACTERS[0].hp, CHARACTERS[1].hp];
+    expect(head + body).toBeLessThan(aster); expect(head + body).toBeGreaterThanOrEqual(vega);
+    expect(2 * head).toBeGreaterThanOrEqual(aster); expect(3 * body).toBeGreaterThanOrEqual(aster);
+    expect(halo.spreadMove).toBe(0); // v13: precision rifles stay on-axis while moving
   });
   it('refuses clients with old catalogs, combat rules or airborne grenade effects', () => {
     const core = new RoomCore({});

@@ -171,8 +171,10 @@ export const WEAPONS: WeaponDef[] = [
     mag: 6, reload: Math.round(2.3 * TICK_HZ), range: 60,
     skins: [],
   },
+  // Halo (2026-11-12 play data): slower cadence and a smaller head bonus so the AR wins close body
+  // trades; a head plus a body no longer kills the 150 HP Aster (still kills 125 HP Vega).
   {
-    id: 'halo', kind: 'gun', name: 'Halo DMR', auto: false, interval: 22, damage: 52, pellets: 1, headMul: 2,
+    id: 'halo', kind: 'gun', name: 'Halo DMR', auto: false, interval: 25, damage: 52, pellets: 1, headMul: 1.75,
     spread: 0, spreadMove: 0, falloffStart: 60, falloffEnd: 120, falloffMin: 0.85,
     mag: 8, reload: Math.round(2.1 * TICK_HZ), range: 200,
     skins: [],
