@@ -561,9 +561,10 @@ export class WorldCombatState {
   /** Co-op guest: a host-side enemy contact landed on this player. */
   remoteHurt(amount: number) { this.applyExternalDamage(amount); }
   applyExternalDamage(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
-  private hurt(amount: number) {
-    if (this.hurtCooldown > 0 || this.defeated || this.invulnerable) return;
-    amount = Math.min(this.hp, Math.round(amount * this.guardMultiplier * 100) / 100);
+  applyFallDamage(amount: number) { if (Number.isFinite(amount) && amount > 0) this.hurt(amount, true); }
+  private hurt(amount: number, fromFall = false) {
+    if (this.defeated || (!fromFall && (this.hurtCooldown > 0 || this.invulnerable))) return;
+    amount = Math.min(this.hp, Math.round(amount * (fromFall ? 1 : this.guardMultiplier) * 100) / 100);
     this.hp = Math.max(0, this.hp - amount); this.hurtCooldown = 0.45; this.quietFor = 0;
     this.events.push({ type: 'hurt', damage: amount });
     if (!this.hp) {

@@ -10,6 +10,7 @@ import { EGYPT_MIRRORS } from '../src/map/egyptPlan';
 import { ORLEANS_WORKS, ORLEANS_WORK_ACTIONS } from '../src/map/orleansWorks';
 import { QIN_ARMY } from '../src/map/qinPlan';
 import { createHelionFight, SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS } from '../src/story/helionFight';
+import { SKY_SHUTTER_FLAGS, skySupportFlag } from '../src/story/skySupport';
 import { ADVENTURE as A } from '../src/story/openWorldCampaign';
 import { climaxCheckpoint, climaxCleared, climaxMarker, createRealmClimax, QIN_GENERAL_DOWN, type RealmClimaxId } from '../src/story/realmClimaxes';
 import { commitJourneyStep, JOURNEY as J, SKY_MARKERS as M, SKY_PHASES, journeyTowerReady, worldJourneyGuide } from '../src/story/worldJourney';
@@ -145,6 +146,24 @@ test('both Sky Crown approaches and side decks have continuous walkable collisio
   } finally { crown.dispose(); }
 });
 
+test('the repaired Lookback Bridge provides a walkable side crossing after the handover', async () => {
+  const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 120_000, initialStorage: {
+    [WORLD_PROGRESS_KEY]: JSON.stringify({ done: [A.started, A.online, J.finish, J.returnHome], found: [] }),
+  } });
+  try {
+    const w = h.world, anchor = w.layout.markers.find((m: { id: string }) => m.id === J.bridge);
+    assert.ok(anchor);
+    assert.ok(w.colliders.find(collider => collider.name === 'COL_LookbackRepairedWalk')?.enabled);
+    const [x, y, z] = anchor.p;
+    const floor = w.combat.geometry.ground(x - .9, z + 3.9, y + 2.1);
+    assert.ok(floor);
+    const walker = new Player(w.colliders, w.layout.world.waterLevel);
+    walker.teleport(x - .9, floor.point.y + .25, z + 3.9); walker.yaw = -Math.PI / 2;
+    for (let frame = 0; frame < 600 && walker.pos.x < x + 9.85; frame++) walker.step(1 / 120, { x: 0, z: 1, jump: false, sprint: false });
+    assert.ok(walker.pos.x >= x + 9.85 && walker.onGround, `crossing stopped at ${walker.pos.toArray()}`);
+  } finally { await h.close(); }
+});
+
 test('regional fights checkpoint engineering and accept Qin’s nonlethal or early-defeat routes', () => {
   const origin = { x: 0, y: 5, z: 0 }, player = { x: 0, y: 5, z: 8 };
   const done = new Set<string>();
@@ -224,6 +243,34 @@ test('Helion locks his aim, can be reflected by a late shutter, and checkpoints 
   run(3.35, x, z);
   assert.ok(fight.hit(185));
   assert.ok(done.has(J.phase3), 'a lethal attack ends the fight before the write');
+});
+
+test('Helion companion aid covers real damage, survives checkpoints, and never steals the final blow', () => {
+  const done = new Set(['saber_contract', 'musashi_contract']);
+  let damage = 0;
+  const fight = createHelionFight({ done, hurt: amount => { damage += amount; }, cue() {},
+    phaseCleared(id, allies, shutters) {
+      done.add(id); allies.forEach(ally => done.add(skySupportFlag(ally)));
+      SKY_SHUTTER_FLAGS.forEach((flag, i) => { if (shutters[i]) done.add(flag); });
+    },
+  });
+  const position = { x: SKY_ORIGIN[0], z: SKY_ORIGIN[2] - 8 };
+  const run = (seconds: number) => { for (let i = 0; i < Math.ceil(seconds / .025); i++) fight.update(.025, position); };
+  assert.ok(fight.start()); assert.equal(fight.totalHp, fight.maxTotalHp);
+  assert.equal(fight.support('qinShiHuang', position), false);
+  assert.ok(fight.support('saber', position)); assert.equal(fight.support('saber', position), false);
+  run(3.35); assert.equal(damage, 0); assert.equal(fight.guard, null);
+  const hp = fight.hp;
+  assert.ok(fight.support('musashi', position)); assert.ok(fight.hp < hp && fight.hp > 0);
+  fight.turn(0); assert.ok(fight.hit(1000));
+  assert.ok(done.has(J.phase1) && done.has(skySupportFlag('saber')) && done.has(skySupportFlag('musashi')));
+  assert.ok(fight.start()); assert.equal(fight.shutters[0], true); assert.equal(fight.canSupport('saber'), false);
+  assert.ok(fight.totalHp < fight.maxTotalHp);
+  fight.reset(); done.add(J.phase2); done.delete(skySupportFlag('musashi'));
+  assert.ok(fight.start()); run(3.35);
+  const writerHp = fight.hp;
+  assert.ok(fight.support('musashi', position)); assert.equal(fight.hp, writerHp);
+  assert.ok(fight.hit(writerHp)); assert.ok(done.has(J.phase3));
 });
 
 test('production quest stands, three regional handovers and the sky finale work with actual input', async () => {
@@ -359,6 +406,17 @@ test('production quest stands, three regional handovers and the sky finale work 
     interact(M.start);
     frame(2);
     assert.equal((d.getElementById('helion-status') as HTMLElement).hidden, false);
+    interact(M.westAmmo);
+    interact(M.aid); frame(2);
+    assert.ok(w.scene.getObjectByName('SkyCompanionCover')?.visible);
+    const hpBeforeFall = w.combat.state.hp;
+    w.combat.state.ammo -= 3;
+    const ammoBeforeFall = w.combat.state.ammo;
+    w.player.teleport(w.player.pos.x, SKY_ORIGIN[1] - 7, w.player.pos.z); frame(4);
+    assert.ok(w.player.pos.x < SKY_ORIGIN[0] && w.player.pos.y > SKY_ORIGIN[1] - 1);
+    assert.equal(w.combat.state.hp, hpBeforeFall - w.combat.state.maxHp * .1);
+    assert.equal(w.combat.state.ammo, ammoBeforeFall);
+    assert.ok(w.scene.getObjectByName('SkyCompanionCover')?.visible, 'fall recovery preserves committed actions within the phase');
     assert.equal(commitJourneyStep(J.finish, w.done), null);
     const hud = d.getElementById('helion-status')!;
     const shift = (x: number) => {
@@ -380,6 +438,7 @@ test('production quest stands, three regional handovers and the sky finale work 
       }
     }
     assert.ok(SKY_PHASES.every(phase => w.done.has(phase)), `all three phases cleared by input (${[...w.done].filter(id => id.startsWith('journey_helion'))})`);
+    assert.ok(w.done.has(skySupportFlag('saber')));
     interact(J.finish); assert.ok(w.done.has(J.finish));
     interact(SKY_UP_LIFT); assert.ok(w.player.pos.y < 160 && w.player.pos.y > 150);
     interact(J.returnHome); assert.ok(w.done.has(J.returnHome));

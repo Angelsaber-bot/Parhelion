@@ -72,6 +72,33 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const bridgeGateMaterial = new THREE.MeshStandardMaterial({ color: metal });
   const bridgeGate = new THREE.Mesh(bridgeGateGeometry, bridgeGateMaterial);
   bridgeGate.name = 'JourneyLookbackGate'; a.root.add(bridgeGate);
+  const repair = new SiteArt(), repairZ = bz + 3.9;
+  const repairGround = (x: number) => ground(x, repairZ, by + 2.1) ?? by;
+  const repairLeft = bx - 1, repairRight = bx + 10;
+  const repairHeight = Math.max(...[1.5, 3.5, 5.5, 7.5].map(offset => repairGround(bx + offset))) + .18;
+  const repairRoute: JourneyPoint[] = [
+    [repairLeft, repairGround(repairLeft), repairZ], [bx + 2, repairHeight, repairZ],
+    [bx + 7, repairHeight, repairZ], [repairRight, repairGround(repairRight), repairZ],
+  ];
+  for (let index = 1; index < repairRoute.length; index++) {
+    const from = new THREE.Vector3(...repairRoute[index - 1]), to = new THREE.Vector3(...repairRoute[index]);
+    const delta = to.clone().sub(from), mid = from.clone().lerp(to, .5);
+    const turn = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(1, 0, 0), delta.clone().normalize());
+    const angle = new THREE.Euler().setFromQuaternion(turn).toArray().slice(0, 3) as JourneyPoint;
+    const deck = new THREE.PlaneGeometry(delta.length() + .22, 3.45).rotateX(-Math.PI / 2).applyQuaternion(turn).translate(mid.x, mid.y, mid.z);
+    repair.solids.push(deck.toNonIndexed()); deck.dispose();
+    repair.box([mid.x, mid.y - .12, mid.z], [delta.length() + .05, .23, 3.45], '#98846d', false, 'body', angle);
+    for (const edge of [-1.59, 1.59]) {
+      repair.box([mid.x, mid.y + .79, repairZ + edge], [delta.length(), .16, .14], wood, true, 'body', angle);
+      for (const t of [.15, .85]) {
+        const p = from.clone().lerp(to, t);
+        repair.box([p.x, p.y + .42, p.z + edge], [.14, .83, .14], wood, true);
+      }
+    }
+  }
+  repair.finish('alpha'); repair.root.name = 'LookbackRepairedWalk'; a.root.add(repair.root);
+  const repairGeometry = mergeParts(repair.solids); repair.solids.forEach(g => g.dispose());
+  const repairCollider: Collider = { name: 'COL_LookbackRepairedWalk', bvh: new MeshBVH(repairGeometry), enabled: false };
 
   stand(J.meal, '生活馆 · 孟槐的热饭', [ox - 3, oy, oz - 5], false);
   const cargo = stand(J.cargoCall, '东渡口 · 扣货记录', [269, 5, 77]);
@@ -187,7 +214,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
 
   const solids = mergeParts(a.solids); a.solids.forEach(g => g.dispose());
   const bridgeCollider: Collider = { name: 'COL_JourneyLookbackGate', bvh: new MeshBVH(bridgeGateGeometry), enabled: false };
-  const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, ...gates.map(gate => gate.collider)];
+  const colliders: Collider[] = [{ name: 'COL_JourneyFixtures', bvh: new MeshBVH(solids), enabled: true }, bridgeCollider, repairCollider, ...gates.map(gate => gate.collider)];
   let bridgeOpen = false, visitTravel = 0, waterOpen = false, boatTravel = 0;
   let marchOrdered = false, halted = false, marchTravel = 0;
   let reliefMoving = false, reliefTravel = 0;
@@ -207,6 +234,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   function apply(done: ReadonlySet<string>) {
     bridgeCollider.enabled = journeyEnabled(done) && !done.has(J.bridge) && !done.has(J.finish);
     bridgeGate.visible = bridgeCollider.enabled;
+    repair.root.visible = repairCollider.enabled = done.has(J.finish);
     lakePin.visible = journeyStepReady(J.lakeWinch, done);
     tie.visible = journeyStepReady(J.egyptWeir, done);
     batteryBrace.visible = journeyStepReady(J.orleansBattery, done);
@@ -302,7 +330,8 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     residents.dispose();
     a.root.removeFromParent();
     a.root.traverse(node => { if (node instanceof THREE.Mesh) node.geometry.dispose(); });
-    solids.dispose(); Object.values(a.materials).forEach(material => material.dispose());
+    solids.dispose(); repairGeometry.dispose();
+    [...Object.values(a.materials), ...Object.values(repair.materials)].forEach(material => material.dispose());
     for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };

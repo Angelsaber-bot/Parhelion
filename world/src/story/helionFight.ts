@@ -1,17 +1,19 @@
 import { SKY_PHASES, type JourneyPoint } from './worldJourney';
+import { SKY_SHUTTER_FLAGS, SKY_SUPPORT, SKY_SUPPORT_RADIUS, skySupportFlag, type SkySupporter } from './skySupport';
 
 export const SKY_ORIGIN: JourneyPoint = [250, 212, 160];
 export const SKY_BOSS: JourneyPoint = [SKY_ORIGIN[0], SKY_ORIGIN[1] + 2.3, SKY_ORIGIN[2] - 28];
 export const SKY_SHUTTERS: JourneyPoint[] = [[SKY_ORIGIN[0] - 10, SKY_ORIGIN[1], SKY_ORIGIN[2] - 15], [SKY_ORIGIN[0] + 10, SKY_ORIGIN[1], SKY_ORIGIN[2] - 15]];
 export const SHUTTER_SPAN = 8;
 const PHASE_HP = [135, 170, 185];
+const TOTAL_HP = PHASE_HP.reduce((sum, value) => sum + value, 0);
 type Position = Pick<{ x: number; y: number; z: number }, 'x' | 'z'>;
 type Beat = 'waiting' | 'tracking' | 'locked' | 'recovering';
 type Shape = 'beam' | 'pulse' | 'write';
 export interface HelionTell { shape: Shape; from: JourneyPoint; x: number; z: number; width: number; }
 export interface HelionHooks {
   done: ReadonlySet<string>;
-  phaseCleared(id: string): void;
+  phaseCleared(id: string, supporters: readonly SkySupporter[], shutters: readonly boolean[]): void;
   hurt(damage: number): void;
   cue(beat: Beat, shape?: Shape): void;
 }
@@ -45,6 +47,8 @@ export function createHelionFight(h: HelionHooks) {
   let phase = -1, hp = 0, beat: Beat = 'waiting', clock = 0, cycle = 0;
   let tell: HelionTell | null = null, flash: HelionTell | null = null, flashLength = 0, flashFor = 0;
   let lastWrite = false, spentWriter = false;
+  const supporters = new Set<SkySupporter>();
+  let guard: { id: SkySupporter; position: Position; remaining: number } | null = null;
   const shutters = [false, false], changedAfterLock = [false, false];
   const emitters = [PHASE_HP[1] / 2, PHASE_HP[1] / 2];
   let attackingEmitter = 0;
@@ -56,6 +60,7 @@ export function createHelionFight(h: HelionHooks) {
   function reset() {
     phase = -1; hp = 0; beat = 'waiting'; clock = 0; cycle = 0; tell = null; flash = null; flashFor = 0;
     lastWrite = false; spentWriter = false; shutters.fill(false); changedAfterLock.fill(false);
+    supporters.clear(); guard = null;
     emitters.fill(PHASE_HP[1] / 2); attackingEmitter = 0;
   }
   function start() {
@@ -63,6 +68,7 @@ export function createHelionFight(h: HelionHooks) {
     const next = SKY_PHASES.findIndex(id => !h.done.has(id));
     if (next < 0) return false;
     phase = next; hp = PHASE_HP[next];
+    SKY_SHUTTER_FLAGS.forEach((id, index) => { shutters[index] = h.done.has(id); });
     setBeat('waiting', 1.25);
     return true;
   }
@@ -87,7 +93,13 @@ export function createHelionFight(h: HelionHooks) {
     const incoming = tell;
     flash = incoming; flashFor = .22; flashLength = stop;
     const damage = lastWrite ? 42 : phase === 0 ? 26 : phase === 1 ? 31 : 34;
-    if (helionAttackHits(incoming, p, stop)) h.hurt(damage);
+    if (helionAttackHits(incoming, p, stop)) {
+      const effect = guard ? SKY_SUPPORT[guard.id].effect : null;
+      const covered = guard && distance2D(guard.position, p) <= SKY_SUPPORT_RADIUS &&
+        (effect === 'cover' || (effect === 'beam' && incoming.shape !== 'pulse') || (effect === 'pulse' && incoming.shape === 'pulse'));
+      if (covered) guard = null;
+      else h.hurt(damage);
+    }
     const finalAttack = lastWrite;
     if (lastWrite) { lastWrite = false; spentWriter = true; }
     tell = null; cycle++;
@@ -110,17 +122,46 @@ export function createHelionFight(h: HelionHooks) {
       return true;
     }
     const cleared = SKY_PHASES[phase];
-    reset(); h.phaseCleared(cleared);
+    const used = [...supporters], poses = [...shutters];
+    reset(); h.phaseCleared(cleared, used, poses);
     return true;
+  }
+  function canSupport(id: SkySupporter) {
+    if (phase < 0 || supporters.has(id) || h.done.has(skySupportFlag(id)) || !h.done.has(SKY_SUPPORT[id].unlock)) return false;
+    const effect = SKY_SUPPORT[id].effect;
+    if (effect === 'opening') return beat === 'recovering';
+    if (effect === 'delay') return beat !== 'recovering';
+    return !guard;
   }
   return {
     get active() { return phase >= 0; }, get phase() { return phase; }, get hp() { return hp; },
     get maxHp() { return PHASE_HP[phase] ?? 1; }, get beat() { return beat; }, get exposedEmitter() { return attackingEmitter; },
+    get totalHp() { return phase >= 0 ? hp + PHASE_HP.slice(phase + 1).reduce((sum, value) => sum + value, 0) : 0; },
+    get maxTotalHp() { return TOTAL_HP; },
+    get guard() { return guard; },
     emitterOnline(index: number) { return phase === 1 && emitters[index] > 0; },
     get tell() { return tell; }, get flash() { return flashFor > 0 ? flash : null; }, get flashLength() { return flashLength; },
     get shutters() { return shutters as readonly boolean[]; },
     get vulnerable() { return beat === 'recovering'; },
     start, hit, reset,
+    recoverFall() {
+      if (phase < 0) return;
+      tell = flash = null; flashFor = 0; changedAfterLock.fill(false);
+      setBeat('waiting', 1.45);
+    },
+    canSupport,
+    support(id: SkySupporter, position: Position) {
+      if (!canSupport(id) || !Number.isFinite(position.x) || !Number.isFinite(position.z)) return false;
+      const aid = SKY_SUPPORT[id]; supporters.add(id);
+      if (aid.effect === 'delay' || aid.effect === 'opening') {
+        clock += aid.seconds;
+        if (aid.effect === 'opening' && phase !== 2) {
+          const reserve = phase === 1 ? emitters[attackingEmitter] : hp;
+          if (reserve > 1) hit(Math.min(22, reserve - 1));
+        }
+      } else guard = { id, position: { x: position.x, z: position.z }, remaining: aid.seconds };
+      return true;
+    },
     turn(index: number) {
       if (index !== 0 && index !== 1) return false;
       shutters[index] = !shutters[index];
@@ -130,6 +171,7 @@ export function createHelionFight(h: HelionHooks) {
     update(dt: number, p: Position) {
       if (phase < 0 || !Number.isFinite(dt) || dt <= 0) return;
       const elapsed = Math.min(.08, dt);
+      if (guard) { guard.remaining -= elapsed; if (guard.remaining <= 0) guard = null; }
       flashFor = Math.max(0, flashFor - elapsed);
       clock -= elapsed;
       if (beat === 'tracking' && tell) { tell.x = p.x; tell.z = p.z; }

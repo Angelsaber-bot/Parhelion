@@ -38,6 +38,7 @@ import { createKingdomWorksScene } from './environment/kingdomWorksScene';
 import { KINGDOM_WORKS as KW, KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORK_LABELS, KINGDOM_WORK_LINES, commitKingdomWork, kingdomWorkReady, type KingdomWork } from './story/kingdomWorks';
 import { harborReliefRequired } from './story/harborRelief';
 import { KYOTO_WITNESS, kyotoWitnessActionReady, type KyotoWitnessAction } from './story/kyotoWitness';
+import { SKY_SHUTTER_FLAGS, SKY_SUPPORT, SKY_SUPPORTERS, skySupportFlag, type SkySupporter } from './story/skySupport';
 import {createExploration} from './exploration/runtime';
 import {createAmbientLife} from './environment/ambientLife';
 import {createFieldHerbs} from './environment/fieldHerbs';
@@ -83,7 +84,7 @@ import { VALLEY_FIELD as F, VALLEY_FIELD_BY_ID, VALLEY_NIGHT_ENCOUNTER } from '.
 import type { StoryEncounterActor, StoryEncounterSpec } from './story/storyEncounters';
 import { createRealmClimaxSites } from './environment/realmClimaxSites';
 import { climaxMarker, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
-import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_LANDING } from './environment/skyCrownScene';
+import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_CROWN_RECOVERY, SKY_LANDING } from './environment/skyCrownScene';
 import { SKY_DOWN_LANDING, SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LANDING, SKY_UP_LIFT } from './environment/skyCrownApproach';
 import { createHelionFight } from './story/helionFight';
 import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, legacySkyApproach, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
@@ -785,6 +786,8 @@ function journeyMarkerActive(id: string) {
   if (id === JOURNEY_DISPATCH) return journeyDestinations(done).length > 0;
   if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT) return insideSkyCrown(player.pos) && done.has(JOURNEY.skyCourt) && !helionFight.active;
   if (id === SKY_MARKERS.cache) return insideSkyCrown(player.pos) && !helionFight.active;
+  if (id === SKY_MARKERS.westAmmo || id === SKY_MARKERS.eastAmmo) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate);
+  if (id === SKY_MARKERS.aid) return insideSkyCrown(player.pos) && !!availableSkySupport();
   if (id === SKY_MARKERS.start) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate) && (done.has(JOURNEY.skyCourt) || legacySkyApproach(done)) && skyPhase(done) >= 0 && !helionFight.active;
   if (id === SKY_MARKERS.left || id === SKY_MARKERS.right) return helionFight.active;
   if (id === JOURNEY.launch && done.has(JOURNEY.launch)) return !done.has(JOURNEY.returnHome);
@@ -806,6 +809,11 @@ function interactionLabel(marker: Marker) {
     if (step) return bilingual(marker.label, step.text[1]);
     if (marker.id === SKY_MARKERS.start) return bilingual(marker.label, 'Face Helion');
     if (marker.id === SKY_MARKERS.cache) return bilingual(marker.label, 'Resupply');
+    if (marker.id === SKY_MARKERS.westAmmo || marker.id === SKY_MARKERS.eastAmmo) return bilingual(marker.label, 'Repair cache · Refill ammunition');
+    if (marker.id === SKY_MARKERS.aid) {
+      const aid = availableSkySupport();
+      return aid ? bilingual(...SKY_SUPPORT[aid].title) : bilingual(marker.label, 'Support relay');
+    }
     return bilingual(marker.label, marker.id === SKY_MARKERS.left ? 'Turn west shutter' : 'Turn east shutter');
   }
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(marker.id)) {
@@ -2031,8 +2039,11 @@ Object.assign(helionHud.style, { top: '78px', left: '50%', transform: 'translate
 const helionName = document.createElement('div'), helionHealth = document.createElement('progress'), helionTell = document.createElement('div');
 helionHealth.style.width = '100%'; helionHud.append(helionName, helionHealth, helionTell); document.body.append(helionHud);
 const helionFight = createHelionFight({ done,
-  phaseCleared(id) {
-    done.add(id); saveJourneyProgress(); combat.refillAmmo(); combat.state.fieldHeal(22); audio.explore('solve');
+  phaseCleared(id, supporters, shutters) {
+    done.add(id);
+    for (const ally of supporters) done.add(skySupportFlag(ally));
+    SKY_SHUTTER_FLAGS.forEach((flag, index) => { if (shutters[index]) done.add(flag); else done.delete(flag); });
+    saveJourneyProgress(); combat.refillAmmo(); combat.state.fieldHeal(22); audio.explore('solve');
     if (skyPhase(done) >= 0) helionFight.start();
     else toast(bilingual('紧急写入臂已停机。现在可以完成交接。','The emergency writer is down. Complete the handover.'));
   },
@@ -2040,6 +2051,13 @@ const helionFight = createHelionFight({ done,
   cue: beat => { if (beat === 'locked') audio.interaction(); else if (beat === 'recovering') audio.bell(); },
 });
 addEventListener('pagehide', event => { if (!event.persisted) helionHud.remove(); });
+let crownRecoverySector: number | null = null;
+
+function availableSkySupport(): SkySupporter | undefined {
+  if (!helionFight.active) return;
+  const preferred = modelCompanion.selected ?? (contract.companionSummoned ? contract.selected : null);
+  return preferred && helionFight.canSupport(preferred) ? preferred : SKY_SUPPORTERS.find(id => helionFight.canSupport(id));
+}
 
 function skyJourneySpawn(): Marker {
   const point = done.has(JOURNEY.skyCourt) || (done.has(JOURNEY.isolate) && legacySkyApproach(done)) ? SKY_CHECKPOINT
@@ -2243,9 +2261,18 @@ function interactWorldJourney(id: string) {
     combat.refillAmmo(); combat.state.fieldHeal(100); audio.interaction();
     toast(bilingual('弹药与急救用品已补充。','Ammunition and first aid replenished.')); return;
   }
+  if (id === SKY_MARKERS.westAmmo || id === SKY_MARKERS.eastAmmo) {
+    const rounds = combat.refillAmmo(); audio.interaction();
+    toast(rounds ? bilingual('维修箱已补充弹药。', 'The repair cache replenishes ammunition.') : bilingual('弹药已满。', 'Ammunition is full.')); return;
+  }
+  if (id === SKY_MARKERS.aid) {
+    const ally = availableSkySupport();
+    if (ally && helionFight.support(ally, player.pos)) { audio.explore('solve'); toast(bilingual(...SKY_SUPPORT[ally].line)); }
+    return;
+  }
   if (id === SKY_MARKERS.start) {
     if (combat.bossStarted || combat.storyEncounter || combat.defeated) return;
-    combat.refillAmmo(); helionFight.start(); hudRevision++; return;
+    crownRecoverySector = null; combat.refillAmmo(); helionFight.start(); hudRevision++; return;
   }
   if (id === JOURNEY.launch || id === JOURNEY.returnHome) {
     if (!moveJourneyPlayer(id === JOURNEY.launch ? skyJourneySpawn() : journeyHomeSpawn())) {
@@ -2264,13 +2291,28 @@ function interactWorldJourney(id: string) {
 }
 function updateSkyJourney(dt: number, seconds: number) {
   const inSky = insideSkyCrown(player.pos);
+  const playing = gameplayActive() && !combat.defeated;
+  const atCrown = inSky && player.pos.y > SKY_CHECKPOINT[1] - 5 && player.pos.z < SKY_CHECKPOINT[2] + 6;
+  if (helionFight.active && playing && !player.flying) {
+    if (atCrown && player.onGround) {
+      const east = player.pos.x >= SKY_CHECKPOINT[0];
+      const far = player.pos.z < SKY_CHECKPOINT[2] - 30;
+      crownRecoverySector = Number(east) + 2 * Number(far);
+    } else if (crownRecoverySector !== null && player.pos.y <= SKY_CHECKPOINT[1] - 5) {
+      const previousSpawn = spawn;
+      if (moveJourneyPlayer({ ...previousSpawn, p: SKY_CROWN_RECOVERY[crownRecoverySector] })) {
+        spawn = previousSpawn; helionFight.recoverFall();
+        combat.state.applyFallDamage(combat.state.maxHp * .1);
+        toast(bilingual('维护回收带把你送回同一侧。交战进度和弹药保留。', 'The maintenance catch returns you to the same side. Fight progress and ammunition are preserved.'));
+        return;
+      }
+    }
+  }
   if (!inSky && spawn.id === JOURNEY.launch && done.has(JOURNEY.launch) && !done.has(JOURNEY.returnHome) && !player.flying) {
-    helionFight.reset(); moveJourneyPlayer(skyJourneySpawn()); combat.refillAmmo();
+    helionFight.reset(); moveJourneyPlayer(skyJourneySpawn());
     toast(bilingual('已返回最近的天穹检查点。','Returned to the last Sky Crown checkpoint.'));
   }
-  const playing = gameplayActive() && !combat.defeated;
   skyCrown.updateApproach(inSky && playing ? dt : 0, player.pos, damage => combat.state.applyExternalDamage(damage));
-  const atCrown = inSky && player.pos.y > SKY_CHECKPOINT[1] - 5 && player.pos.z < SKY_CHECKPOINT[2] + 6;
   if (helionFight.active && !atCrown) helionFight.reset();
   if (atCrown && playing) helionFight.update(dt, player.pos);
   if (inSky || skyCrown.targets.some(target => target.visible)) skyCrown.update(helionFight, reducedEffects() ? 0 : seconds);
@@ -2278,7 +2320,7 @@ function updateSkyJourney(dt: number, seconds: number) {
   if (helionHud.hidden) return;
   const phaseLabel = SKY_PHASE_LABELS[helionFight.phase];
   helionName.textContent = bilingual(`初号观测者 赫利昂 · ${phaseLabel[0]}`, `Helion, the First Observer · ${phaseLabel[1]}`);
-  helionHealth.max = helionFight.maxHp; helionHealth.value = helionFight.hp;
+  helionHealth.max = helionFight.maxTotalHp; helionHealth.value = helionFight.totalHp;
   helionTell.textContent = helionFight.beat === 'locked' ? bilingual('射界锁定 · 离开标线或转动遮板','Lane locked · Move clear or turn a shutter') : helionFight.vulnerable ? bilingual('核心暴露 · 射击','Core exposed · Shoot') : helionFight.phase === 1 ? bilingual('沿遮板之间推进 · 支架交替暴露','Advance between the shutters · emitters expose in turn') : bilingual('观测中 · 留意地面标线','Tracking · Watch the floor markers');
 }
 kingdomGateRuntime = createKingdomGateRuntime({

@@ -7,11 +7,13 @@ import { SiteArt } from '../story/campaignSites';
 import { SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS, SHUTTER_SPAN, helionBeamDirection, type createHelionFight } from '../story/helionFight';
 import { JOURNEY as J, SKY_MARKERS as M, type JourneyPoint } from '../story/worldJourney';
 import { addSkyCrownApproach, SKY_APPROACH_LANDING } from './skyCrownApproach';
+import { SKY_SUPPORT, SKY_SUPPORT_RADIUS } from '../story/skySupport';
 
 const [X, Y, Z] = SKY_ORIGIN;
 const p = (x: number, y: number, z: number): JourneyPoint => [X + x, Y + y, Z + z];
 export const SKY_LANDING = SKY_APPROACH_LANDING;
 export const SKY_CHECKPOINT = p(0, 0, 24);
+export const SKY_CROWN_RECOVERY: readonly JourneyPoint[] = [p(-14, 0, 7), p(14, 0, 7), p(-12, 0, -21), p(12, 0, -21)];
 export const insideSkyCrown = (position: { x: number; y: number; z: number }) => position.y > 129 && position.x > 19 && position.x < 347 && position.z > 105 && position.z < 350;
 
 export function createSkyCrownScene() {
@@ -78,6 +80,9 @@ export function createSkyCrownScene() {
   a.box(p(0, .015, 19), [1.1, .028, 10.5], glass, false, 'choiceB');
   post(M.start, '承日台 · 面对赫利昂', 0, 10);
   post(M.cache, '维修箱 · 战前补给', -3.4, 24);
+  post(M.westAmmo, '西侧维修箱 · 补充弹药', -20, 4.4);
+  post(M.eastAmmo, '东侧维修箱 · 补充弹药', 17, -22);
+  post(M.aid, '援助收讯台', -16.5, 4.6);
   post(M.left, '转动西侧遮板', -8.75, -12, false);
   post(M.right, '转动东侧遮板', 8.75, -12, false);
   post(J.finish, '交接台 · 锁住紧急写入臂', 4.5, -24);
@@ -125,6 +130,9 @@ export function createSkyCrownScene() {
   const tellBeam = new THREE.Mesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), beamMat);
   const pulse = new THREE.Mesh(new THREE.CircleGeometry(1, 42).rotateX(-Math.PI / 2), beamMat);
   tellBeam.visible = pulse.visible = false; a.root.add(tellBeam, pulse);
+  const coverMaterial = new THREE.MeshBasicMaterial({ color: '#9bbfff', opacity: .88, transparent: true, depthWrite: false, side: THREE.DoubleSide });
+  const cover = new THREE.Mesh(new THREE.RingGeometry(SKY_SUPPORT_RADIUS - .12, SKY_SUPPORT_RADIUS, 64).rotateX(-Math.PI / 2), coverMaterial);
+  cover.name = 'SkyCompanionCover'; cover.visible = false; a.root.add(cover);
 
   function apply(done: ReadonlySet<string>) {
     a.layers.get('briefed')!.visible = !done.has(J.phase2);
@@ -136,6 +144,13 @@ export function createSkyCrownScene() {
     approach.apply(done);
   }
   function update(fight: ReturnType<typeof createHelionFight>, seconds: number) {
+    const guard = fight.guard;
+    cover.visible = guard !== null;
+    if (guard) {
+      cover.position.set(guard.position.x, Y + .047, guard.position.z);
+      coverMaterial.color.setHex(SKY_SUPPORT[guard.id].color);
+      coverMaterial.opacity = Math.min(.86, guard.remaining * .65 + .19);
+    }
     shutters.forEach(({ node, variants }, i) => {
       const turned = fight.shutters[i];
       node.rotation.y = turned ? Math.PI / 2 : 0;
@@ -170,7 +185,7 @@ export function createSkyCrownScene() {
     const geometries = new Set<THREE.BufferGeometry>(colliders.map(collider => collider.bvh.geometry));
     a.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
     geometries.forEach(geometry => geometry.dispose());
-    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, ...approach.materials, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
+    [...Object.values(a.materials), shutterMat, slitMat, coreMat, frameMat, beamMat, gateMat, coverMaterial, ...approach.materials, ...emitters.map(emitter => emitter.material)].forEach(material => material.dispose());
     colliders.forEach(collider => { collider.enabled = false; }); a.root.removeFromParent();
   } };
 }

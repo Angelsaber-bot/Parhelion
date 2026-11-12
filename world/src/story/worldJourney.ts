@@ -32,7 +32,7 @@ export const JOURNEY = {
 const J = JOURNEY;
 export const SKY_PHASES = [J.phase1, J.phase2, J.phase3] as const;
 export const SKY_PHASE_LABELS: Localized[] = [['观测透镜', 'Observation Lens'], ['执行支架', 'Enforcement Rig'], ['紧急写入臂', 'Emergency Writer']];
-export const SKY_MARKERS = { start: 'journey_helion_start', left: 'journey_sky_shutter_left', right: 'journey_sky_shutter_right', target: 'journey_helion_target', cache: 'journey_sky_supply' } as const;
+export const SKY_MARKERS = { start: 'journey_helion_start', left: 'journey_sky_shutter_left', right: 'journey_sky_shutter_right', target: 'journey_helion_target', cache: 'journey_sky_supply', westAmmo: 'journey_helion_ammo_west', eastAmmo: 'journey_helion_ammo_east', aid: 'journey_helion_support' } as const;
 export const JOURNEY_DISPATCH = 'journey_dispatch';
 export const JOURNEY_DESTINATIONS = [
   { id: 'egypt', marker: J.egyptRead, name: ['埃及 · 商队绿洲', 'Egypt · Caravan Oasis'] as Localized },
