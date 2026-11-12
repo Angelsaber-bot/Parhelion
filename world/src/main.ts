@@ -37,6 +37,7 @@ import {createAdventureSites} from './story/adventureSites';
 import { createKingdomWorksScene } from './environment/kingdomWorksScene';
 import { KINGDOM_WORKS as KW, KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORK_LABELS, KINGDOM_WORK_LINES, commitKingdomWork, kingdomWorkReady, type KingdomWork } from './story/kingdomWorks';
 import { harborReliefRequired } from './story/harborRelief';
+import { KYOTO_WITNESS, kyotoWitnessActionReady, type KyotoWitnessAction } from './story/kyotoWitness';
 import {createExploration} from './exploration/runtime';
 import {createAmbientLife} from './environment/ambientLife';
 import {createFieldHerbs} from './environment/fieldHerbs';
@@ -866,6 +867,7 @@ function applyWorldState() {
     if(t.userData.homeTarget)continue;
     if(t.userData.realmClimax)continue;
     const id = t.userData.target as string;
+    if (typeof KYOTO_WITNESS !== 'undefined' && (id === KYOTO_WITNESS.cut || id === KYOTO_WITNESS.pin)) continue;
     if (typeof KW !== 'undefined' && id === KW.pin) continue;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
     if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.cargoPin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === JOURNEY.eastLatch || id === JOURNEY.skyScan || id === SKY_MARKERS.target)) continue;
@@ -2465,6 +2467,7 @@ function nearestInteract(): Marker | null {
   let best: Marker | null = null, bd = Infinity;
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
+    if (m.id.startsWith('adventure_kyoto_witness_') && typeof kyotoWitnessActionReady === 'function' && !kyotoWitnessActionReady(m.id as KyotoWitnessAction, done)) continue;
     if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
     if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
@@ -2703,7 +2706,13 @@ function interact() {
   if(typeof egyptMirrorMarkerIds!=="undefined"&&egyptMirrorMarkerIds.has(m.id)){if(!player.onGround||player.flying)return;turnEgyptMirror(done,m.id);save();applyWorldState();audio.interaction();toast(egyptMirrors.lit?bilingual('日光沿着铜镜一路照进了圣所。','The light now runs mirror to mirror into the sanctuary.'):bilingual('铜镜转了一格。看光束落在哪里。','The mirror turns a quarter. Watch where the beam falls.'));return;}
   if (typeof exploration !== 'undefined' && exploration.owns(m.id)) { exploration.interact(m.id); return; }
   if(residentEventMarkerIds.has(m.id)){residentEventRuntime?.interact(m.id);return;}
-  if(adventureMarkerIds.has(m.id)){if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}adventureRuntime?.interact(m.id);return;}
+  if(adventureMarkerIds.has(m.id)){
+    if(adventureSites.actions.get(m.id)?.seconds&&!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请在设置中把交互绑定到可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}
+    const publicBell = typeof KYOTO_WITNESS !== 'undefined' && m.id === KYOTO_WITNESS.public && !done.has(m.id);
+    adventureRuntime?.interact(m.id);
+    if (publicBell && done.has(m.id)) audio.bell();
+    return;
+  }
   if (kingdomGateMarkerIds.has(m.id)) {
     if(m.id===KINGDOM_GATE.winch&&!settings.bindingsFor('interact').some(binding=>!binding.startsWith('Wheel'))){toast(bilingual('绞盘需要按住交互键：请在设置中绑定键盘键或鼠标按钮。','The winch requires holding Interact: bind a keyboard key or mouse button in Settings.'));return;}
     kingdomGateRuntime?.interact(m.id); return;

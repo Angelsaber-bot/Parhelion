@@ -5,6 +5,8 @@ import {CONVOY_ROUTE} from './convoyRoute';
 import { MILL_CONVOY_ROUTE } from './millConvoyRoute';
 import { WINTER_WITHDRAWAL as W, WINTER_CART_PREFIX, WINTER_MILL_CART_PREFIX } from './winterWithdrawal';
 import { createWinterMillBridge } from '../environment/winterMillBridge';
+import { createKyotoWitnessScene } from '../environment/kyotoWitnessScene';
+import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LABELS } from './kyotoWitness';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
 import {SiteArt} from './campaignSites';
@@ -33,6 +35,13 @@ export const ADVENTURE_ACTIONS:readonly AdventureAction[]=[
  {id:'adventure_winter_convoy',region:'winter',label:['药车启程信号','Medicine convoy departure'],p:[40,5,-650],flag:A.convoy},
  {id:'adventure_winter_arrival',region:'winter',label:['渡口药车验收','Receive the medicine cart'],p:[36,5,-458],flag:A.arrived},
  {id:'adventure_kyoto_water',region:'kyoto',label:['水门检修栈道锁','Water-gate maintenance walkway latch'],p:[763,4,-1460],seconds:2,flag:A.water},
+ {id:Y.reel,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.reel],p:[750,4,-1455],flag:Y.reel},
+ {id:Y.stop,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.stop],p:[754,4,-1456],flag:Y.stop},
+ {id:Y.winch,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.winch],p:[753,4,-1465],flag:Y.winch},
+ {id:Y.testimony,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.testimony],p:[747,4,-1464],seconds:2,flag:Y.testimony},
+ {id:Y.public,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.public],p:[744,4,-1470],flag:Y.public},
+ {id:Y.private,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.private],p:[764.5,4,-1455.5],flag:Y.private},
+ {id:Y.gate,region:'kyoto',label:KYOTO_WITNESS_LABELS[Y.gate],p:[793,4.6,-1491],flag:Y.gate},
  {id:'adventure_kyoto_evidence',region:'kyoto',label:['焦黑的命令板','Charred command record'],p:[800,4.6,-1494],seconds:2,flag:A.evidence},
  ...([-1,1,0] as const).map((side,i):AdventureAction=>({id:A.emitters[i],region:'alpha',label:[`复制发射器 ${i+1}`,`Copying emitter ${i+1}`],p:[side*25,5,i===2?-110:-140],seconds:3,flag:A.emitters[i]})),
  {id:'adventure_guardian',region:'alpha',label:['塔前讯号源 · 守门者','Tower signal source · Warden'],p:[0,5,-105]},
@@ -137,6 +146,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
  const fun=new Map<string,{region:RegionId;line:Localized;ids:string[]}>();
  for(const item of ADVENTURE_LEISURE.filter(item=>item.region!=='winter'&&item.region!=='kyoto')){const base=at(item.p),ids:string[]=[];for(let i=0;i<3;i++){const id=`adventure_fun_${item.region}_${i+1}`;ids.push(id);target(id,[base[0]+(i-1)*1.1,base[1]+1.2,base[2]],[.3,.7,.3]);}fun.set(item.region,{...item,ids});}
  art.finish('alpha');root.add(art.root);const facilities=createAdventureFacilityArt(actions);root.add(facilities.root);colliders.push(...facilities.colliders);root.name='OpenWorldAdventure';
+ const kyotoWitness=createKyotoWitnessScene(actions);root.add(kyotoWitness.root);targets.push(...kyotoWitness.targets);markers.push(...kyotoWitness.markers);colliders.push(kyotoWitness.screenCollider);
  const homeLights:THREE.Mesh[]=[];for(let i=0;i<4;i++){const m=new THREE.Mesh(new THREE.SphereGeometry(.18,8,6),new THREE.MeshBasicMaterial({color:'#b4e2b7'}));m.position.set(-93+i*3,11.6,237);root.add(m);homeLights.push(m);}
 
  const priorCart=new THREE.Vector3();let cartInitialized=false;
@@ -146,6 +156,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   homeLights.forEach((m,i)=>{m.visible=adventureChapterComplete((['britain','blacksail','winter','kyoto'] as const)[i],done)||(i===1&&done.has(R.delivered));});
   const open=!done.has(A.started)||done.has(A.road)||done.has('winter_core');obstacle.visible=false;roadArt.root.visible=!open;debrisArt.root.visible=open&&done.has(A.road);roadCollider.enabled=!open;
   for(const t of targets)t.visible=!done.has(t.userData.target as string)&&(!(t.userData.target===A.brace1||t.userData.target===A.brace2)||!open);
+  kyotoWitness.apply(done,dt);
   kyotoRamp.art.root.visible=done.has(A.water);roofRamp.art.root.visible=done.has(A.water);for(const c of roofRamp.colliders)c.enabled=done.has(A.water);for(const c of kyotoRamp.colliders)c.enabled=done.has(A.water);
   abbeyRamp.art.root.visible=done.has('adventure_kingdom_abbey');for(const c of abbeyRamp.colliders)c.enabled=done.has('adventure_kingdom_abbey');
   const route=done.has(W.mill)?millConvoyPath:convoyPath, prefix=done.has(W.mill)?WINTER_MILL_CART_PREFIX:WINTER_CART_PREFIX;
@@ -160,6 +171,6 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
   cable.visible=done.has(R.reserve);span.position.y=done.has(R.crossing)?5.8:2;
  }
  return {root,markers,actions,targets,colliders,fun,convoyPath,millConvoyPath,abbeyRoute,roofRoute:passages.roofRoute,ship,cart,apply,
-  dispose(){facilities.dispose();winterMill.dispose();for(const a of [passages.abbey,passages.houses,roofRamp.art]){Object.values(a.materials).forEach(m=>m.dispose());a.solids.forEach(g=>g.dispose());}Object.values(roadArt.materials).forEach(m=>m.dispose());Object.values(debrisArt.materials).forEach(m=>m.dispose());root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});for(const m of materials)m.dispose();for(const g of[...art.solids,...privateGeos,...kyotoRamp.art.solids,...abbeyRamp.art.solids])g.dispose();Object.values(art.materials).forEach(m=>m.dispose());root.removeFromParent();},
+  dispose(){facilities.dispose();winterMill.dispose();kyotoWitness.dispose();for(const a of [passages.abbey,passages.houses,roofRamp.art]){Object.values(a.materials).forEach(m=>m.dispose());a.solids.forEach(g=>g.dispose());}Object.values(roadArt.materials).forEach(m=>m.dispose());Object.values(debrisArt.materials).forEach(m=>m.dispose());root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});for(const m of materials)m.dispose();for(const g of[...art.solids,...privateGeos,...kyotoRamp.art.solids,...abbeyRamp.art.solids])g.dispose();Object.values(art.materials).forEach(m=>m.dispose());root.removeFromParent();},
  };
 }

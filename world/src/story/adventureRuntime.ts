@@ -3,6 +3,7 @@ import {dramaActive,dramaReported,dramaDecision,JOURNEY_DRAMA} from './journeyDr
 import {ADVENTURE as A,adventureChapterComplete,harborBridgeReady,winterRouteReady,type AdventurePoint,getAdventureEndingText} from './openWorldCampaign';
 import { HARBOR_RELIEF as R, HARBOR_RELIEF_STAGE_SECONDS, harborReliefPassage, harborReliefReady, harborReliefRequired } from './harborRelief';
 import { WINTER_WITHDRAWAL as W, WINTER_CART_PREFIX, WINTER_MILL_CART_PREFIX, winterWithdrawalReady, winterWithdrawalRequired, winterWithdrawalSelected } from './winterWithdrawal';
+import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LINES, kyotoWitnessActionReady, kyotoWitnessGateReady, type KyotoWitnessAction } from './kyotoWitness';
 import type {AdventureAction} from './adventureSites';
 import type {Localized} from '../settlements/types';
 import type {StoryEncounterSpec} from './storyEncounters';
@@ -28,6 +29,8 @@ export function createAdventureRuntime(h:AdventureHooks){
  function blocked(action:AdventureAction):Localized|null{
   const id=action.id;
   const continuation=h.continuationBlock?.(id);if(continuation)return continuation;
+  if (id.startsWith('adventure_kyoto_witness_') && !kyotoWitnessActionReady(id as KyotoWitnessAction, h.done))
+   return ['先完成京都现场的上一步，再操作这里。','Complete the preceding Kyoto objective before using this station.'];
   if(id==='adventure_tomorrow'&&dramaActive(h.done)&&!dramaDecision(h.done))return ['先与岚决定频道今后的值守方式。','Decide the channel’s future with Lan first.'];
   if (id === A.records && !harborReliefReady(h.done)) return ['先从拿骚港把急救药送出去，等幻日谷回执再登舰。','Send the emergency medicine from Nassau and wait for the Valley’s receipt before boarding.'];
   if (id === R.reserve || id === R.lookout || id === R.crossing || id === R.launch) {
@@ -46,6 +49,7 @@ export function createAdventureRuntime(h:AdventureHooks){
   if(id==='adventure_winter_convoy'&&(!h.done.has(A.road)||(!h.done.has('winter_core')&&!h.done.has('napoleon_contract'))||!winterRouteReady(h.done)||!winterWithdrawalReady(h.done)))return ['先准备路线、清开拒马并解除红场命令，药车才会出发。','Prepare the route, clear the roadblock and end the Red Square orders before releasing the cart.'];
   if(id==='adventure_winter_arrival'&&(!h.done.has(A.convoy)||leg<path().length-1))return ['药车尚未抵达渡口。行程在世界运行时推进，途中检查点会保存；可以继续探索。','The cart has not reached the crossing. It travels while the world runs and saves transit checkpoints; you may keep exploring.'];
   if(id==='adventure_kyoto_evidence'&&(!h.done.has('fire_core')&&!h.done.has('musashi_contract')))return ['先解除本能寺的异常，再核对没有被覆盖的记录。','Resolve Honnō-ji’s anomaly before comparing the unaltered record.'];
+  if(id===A.evidence&&!kyotoWitnessGateReady(h.done))return ['先拉起外院防火屏，核对现场证人与收讯记录。','Raise the fire screen and compare the people on site with the incoming report.'];
   if((A.emitters as readonly string[]).includes(id)||id==='adventure_guardian'||id==='adventure_tower'||id==='adventure_exit'||id==='adventure_tomorrow'){
    if(!finalReady())return ['四区还有未完成的归路行动。先让当地居民与运输真正脱离循环。','A region still has an unfinished return journey. Free its people and transport from the loop first.'];
    if(id==='adventure_guardian'&&!A.emitters.every(f=>h.done.has(f)))return ['先切断塔外三处复制发射器。','Disable all three copying emitters first.'];
@@ -62,6 +66,10 @@ export function createAdventureRuntime(h:AdventureHooks){
   get cartPosition():AdventurePoint{const route=path();if(h.done.has(A.arrived))return [...route.at(-1)!];const a=route[Math.min(leg,route.length-1)],b=route[Math.min(leg+1,route.length-1)];return a.map((v,i)=>v+(b[i]-v)*fraction)as AdventurePoint;},
   get cartProgress(){return h.done.has(A.arrived)?1:(leg+fraction)/(path().length-1);},
   hit(id:string){
+   if (id === Y.cut || id === Y.pin) {
+    if (kyotoWitnessActionReady(id, h.done) && commit(id)) h.toast(KYOTO_WITNESS_LINES[id]);
+    return true;
+   }
    if(id===A.brace1||id===A.brace2){commit(id);if(h.done.has(A.brace1)&&h.done.has(A.brace2))commit(A.road);h.toast(h.done.has(A.road)?['拒马支架倒下，宽街已经清出。','The braces collapse; the wide road is clear.']:['一处支架已断；另一处仍在支撑拒马。','One brace is broken; the other still supports the roadblock.']);return true;}
    if(id.startsWith('adventure_fun_')){const changed=commit(id);if(changed)h.toast(['命中，成绩已经记录。','Hit. Your score is recorded.']);return true;}return false;
   },
@@ -82,7 +90,10 @@ export function createAdventureRuntime(h:AdventureHooks){
    }
    if(action.seconds&&current?.id===action.id)return true;
    if(action.seconds){current=action;channel=new RelayChannel(action.seconds);channel.reset(h.damage());h.toast([`${action.label[0]}：站稳，松开后按住交互键 ${action.seconds} 秒。`,`${action.label[1]}: stand still, release then hold Interact for ${action.seconds} seconds.`]);return true;}
+   if (id === Y.private) h.done.add(A.water);
    if(action.flag)commit(action.flag);
+   const witnessLine = KYOTO_WITNESS_LINES[id as KyotoWitnessAction];
+   if (witnessLine) { h.toast(witnessLine); return true; }
    if(id===W.retreat){h.toast(['撤离信号已经降下。拿破仑确认人都出了炮线，把高地留给仍在行军的空阵。','The withdrawal flag comes down. Napoleon confirms everyone is clear of the guns and leaves the high ground to the marching formation.']);return true;}
    if(id==='adventure_tomorrow'&&h.ending)h.ending(getAdventureEndingText());
    else if(id==='adventure_tomorrow')h.toast(['你记录了一个没有被预先写好的明天。所有归路仍然开放，可以继续探索、与从者同行或自愿重战。','You record a tomorrow that was not written in advance. Every return route remains open: explore, travel with your companion, or choose a rematch.']);
@@ -98,7 +109,9 @@ export function createAdventureRuntime(h:AdventureHooks){
     if(action.id==='adventure_harbor_records'&&!h.done.has('sea_core')&&!h.done.has('blackbeard_contract')&&!h.done.has('adventure_harbor_alarm_disabled')&&!h.done.has('adventure_harbor_alarm_cleared')){const spec:StoryEncounterSpec={id:'adventure_harbor_alarm',anchor:{x:action.p[0],y:action.p[1],z:action.p[2]},actors:[{role:'duelist',offset:[-3,-3],title:['船腹截击手','Hold Interceptor']},{role:'musketeer',offset:[1,-5],title:['舱口警戒手','Hatch Sentry']}]};const started=h.start(spec);if(!started.ok)h.toast(started.reason??['警报已响，断路器仍可关闭。','The alarm is sounding; the breaker is still accessible.']);}
     if(action.id==='adventure_harbor_alarm'&&h.encounter()==='adventure_harbor_alarm')h.cancel();
     if((A.emitters as readonly string[]).includes(action.id)&&h.encounter()===`adventure_guard_${action.id.slice(-1)}`)h.cancel();
-    if (action.id === W.mill) h.toast(['炮架已撑住磨坊桥。药车会从这里横过冰峡。','The gun carriage braces the mill bridge. The medicine cart will cross the gorge here.']);
+    const witnessLine = KYOTO_WITNESS_LINES[action.id as KyotoWitnessAction];
+    if (witnessLine) h.toast(witnessLine);
+    else if (action.id === W.mill) h.toast(['炮架已撑住磨坊桥。药车会从这里横过冰峡。','The gun carriage braces the mill bridge. The medicine cart will cross the gorge here.']);
     else if (action.id === W.redoubt) h.toast(['野战炮留在红堤，药车走原有大道。现在确认人员已经退出炮线。','The field gun stays on the redoubt. The cart takes the old road. Confirm that everyone has cleared the firing lane.']);
     else h.toast([`${action.label[0]}已完成，现场状态已经改变。`,`${action.label[1]} complete; the site has changed.`]);
    }

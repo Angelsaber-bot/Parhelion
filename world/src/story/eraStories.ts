@@ -3,6 +3,7 @@ import { KINGDOM_GATE, gateGuide } from './kingdomGate';
 import { KINGDOM_WORKS, kingdomWorksActive } from './kingdomWorks';
 import { HARBOR_RELIEF, harborReliefReady } from './harborRelief';
 import { WINTER_WITHDRAWAL, winterWithdrawalReady } from './winterWithdrawal';
+import { KYOTO_WITNESS, kyotoWitnessReady } from './kyotoWitness';
 import type { Localized, RegionId } from '../settlements/types';
 import type { Layout, Marker } from '../core/types';
 
@@ -182,6 +183,8 @@ export function getEraBossRequirements(core: string, done: ReadonlySet<string>):
     return [ADVENTURE.records, HARBOR_RELIEF.delivered];
   if (region === 'winter' && adventureActive(done) && !coreCleared(region, done) && !winterWithdrawalReady(done))
     return [ADVENTURE.road, WINTER_WITHDRAWAL.retreat];
+  if (region === 'kyoto' && adventureActive(done) && !coreCleared(region, done) && !kyotoWitnessReady(done))
+    return [...ERA_BOSS_REQUIREMENTS.fire_core, KYOTO_WITNESS.testimony, KYOTO_WITNESS.public];
   if(adventureActive(done)&&!coreCleared(region,done)&&!all(done,def.legacyRequires)){
    if(region==='britain')return ERA_BOSS_REQUIREMENTS.sun_core;
    if(region==='blacksail')return ['blackbeard_meet',...(harborBridgeReady(done)?[]:['adventure_harbor_rigging']),ADVENTURE.records,...(done.has('adventure_harbor_alarm_disabled')||done.has('adventure_harbor_alarm_cleared')?[]:['adventure_harbor_alarm_disabled'])];
