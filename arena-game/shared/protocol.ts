@@ -22,7 +22,8 @@ export const ROOM_NAME = 'arena';
 // v25: Halo DMR fires every 25 ticks (was 22) with a 1.75 head multiplier (was 2).
 // v26: v25's Halo change reverted (22 ticks, 2x head) and Halo made full-auto: hold to keep firing.
 // v27: Halo fires every 20 ticks (0.33 s, was 22).
-export const RULES_VERSION = 27;
+// v28: Halo fires every 15 ticks (0.25 s), a trial.
+export const RULES_VERSION = 28;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

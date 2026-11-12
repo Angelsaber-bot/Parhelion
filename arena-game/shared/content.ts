@@ -171,9 +171,9 @@ export const WEAPONS: WeaponDef[] = [
     mag: 6, reload: Math.round(2.3 * TICK_HZ), range: 60,
     skins: [],
   },
-  // Halo is full-auto (rules v26): holding the trigger repeats at its own cadence, 0.33 s since v27.
+  // Halo is full-auto (rules v26): holding the trigger repeats at its own cadence, 0.25 s since v28.
   {
-    id: 'halo', kind: 'gun', name: 'Halo DMR', auto: true, interval: 20, damage: 52, pellets: 1, headMul: 2,
+    id: 'halo', kind: 'gun', name: 'Halo DMR', auto: true, interval: 15, damage: 52, pellets: 1, headMul: 2,
     spread: 0, spreadMove: 0, falloffStart: 60, falloffEnd: 120, falloffMin: 0.85,
     mag: 8, reload: Math.round(2.1 * TICK_HZ), range: 200,
     skins: [],
