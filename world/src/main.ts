@@ -73,6 +73,10 @@ import type { RegionId } from './settlements/types';
 import { VALLEY_STORY, getValleyStoryState, getValleyStoryGuide, interactValleyStory } from './story/valleyStory';
 import { createValleyStoryScene } from './environment/valleyStoryScene';
 import { createValleyPrologueScene } from './environment/valleyPrologueScene';
+import { createWorldJourneySites } from './environment/worldJourneySites';
+import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_LANDING } from './environment/skyCrownScene';
+import { createHelionFight } from './story/helionFight';
+import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
 import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
 import { optionalPinExpired, type OptionalPin } from './story/optionalNavigation';
@@ -525,6 +529,16 @@ let cavalrySupport:LocalCavalrySupport|undefined;
 let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined;
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
+const worldJourneySites = alphaResidence ? createWorldJourneySites(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
+const skyCrown = createSkyCrownScene();
+const worldJourneyMarkerIds = new Set<string>();
+for (const site of [worldJourneySites, skyCrown]) {
+  if (!site) continue;
+  scene.add(site.root); colliders.push(...site.colliders); targets.push(...site.targets);
+  layout.markers.push(...site.markers);
+  site.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+}
+addEventListener('pagehide', event => { if (!event.persisted) { worldJourneySites?.dispose(); skyCrown.dispose(); } });
 const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 world.add(orleansWorksScene.root);colliders.push(orleansWorksScene.collider);layout.markers.push(...orleansWorksScene.markers);
 const orleansWorksMarkerIds=new Set(orleansWorksScene.markers.map(m=>m.id));
@@ -615,6 +629,10 @@ const fortCannon = new FortCannon();
 const audio = new WorldAudio();
 const travelStops = createSafeTravelStops(settlements.placements);
 travelStops.push({id:'travel_home',region:'home',name:['归乡广场 · 家','Homeward Square · Home'],position:[570,16.1,40],foundFlag:'travel_home',radius:12});
+for (const [region, id, name] of [['egypt', JOURNEY.egyptRead, ['埃及绿洲', 'Egyptian Oasis']], ['orleans', JOURNEY.orleansRead, ['奥尔良集市', 'Orleans Market']], ['qin', JOURNEY.qinRead, ['秦国工匠镇', 'Qin Workers’ Town']]] as const) {
+  const marker = markers.get(id);
+  if (marker) travelStops.push({ id: `travel_${region}`, region, name: [...name], position: [marker.p[0], marker.p[1] - .92, marker.p[2]], foundFlag: `travel_${region}`, radius: 10 });
+}
 travelStops.push({ id: 'compact_relay_outpost', region: 'alpha', name: ['前沿部署 · 前哨站南门外', 'Forward deployment · Outpost south gate'], position: [...compactRelaySites.arrival], foundFlag: 'compact_relay_outpost', radius: 3, requiredCompletionFlag: 'compact_relay_complete' });
 let compactRelayRuntime: ReturnType<typeof createCompactRelayRuntime> | undefined;
 let relayDamageRevision = 0;
@@ -685,7 +703,34 @@ function valleyGuide() {
   const point = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
   return point ? { ...guide, p: point } : null;
 }
+function journeyGuide() {
+  const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
+  const guide = worldJourneyGuide(here, done);
+  if (guide && here === 'alpha' && journeyDestinations(done).some(destination => destination.id === guide.region)) {
+    const p = markers.get(JOURNEY_DISPATCH)?.p;
+    if (p) return { ...guide, p, text: ['前往观测所出发台选择目的地，也可沿大陆道路自行前往。', 'Choose your destination at the Observatory dispatch post, or take the overland road.'] as [string, string] };
+  }
+  const p = guide && (here === 'sky' && typeof helionFight !== 'undefined' && helionFight.active
+    ? skyCrown.targets[0].position.toArray() : markers.get(guide.targetId)?.p);
+  return guide && p ? { ...guide, p } : null;
+}
+function journeyMarkerActive(id: string) {
+  if (id === JOURNEY_DISPATCH) return journeyDestinations(done).length > 0;
+  if (id === SKY_MARKERS.cache) return insideSkyCrown(player.pos) && !helionFight.active;
+  if (id === SKY_MARKERS.start) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate) && skyPhase(done) >= 0 && !helionFight.active;
+  if (id === SKY_MARKERS.left || id === SKY_MARKERS.right) return helionFight.active;
+  if (id === JOURNEY.launch && done.has(JOURNEY.launch)) return !done.has(JOURNEY.returnHome);
+  return journeyStepReady(id, done);
+}
 function interactionLabel(marker: Marker) {
+  if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    if (marker.id === JOURNEY_DISPATCH) return bilingual(marker.label, 'Dispatch · Egypt, Orleans and Qin');
+    const step = journeyStepById.get(marker.id);
+    if (step) return bilingual(marker.label, step.text[1]);
+    if (marker.id === SKY_MARKERS.start) return bilingual(marker.label, 'Face Helion');
+    if (marker.id === SKY_MARKERS.cache) return bilingual(marker.label, 'Resupply');
+    return bilingual(marker.label, marker.id === SKY_MARKERS.left ? 'Turn west shutter' : 'Turn east shutter');
+  }
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(marker.id)) {
     return bilingual(...PROLOGUE_LABELS[marker.id as keyof typeof PROLOGUE_LABELS]);
   }
@@ -725,6 +770,7 @@ function applyWorldState() {
   for (const site of eraStoryScenes) { if (isEraId(site.region)) { const state = getEraStoryState(site.region, done); site.applyState({ ...state, complete: state.complete || (site.region === 'britain' && state.knightDefeated) }); } }
   applyValleyStory();
   if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
+  if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
   applyCampaignState();
   applyFalseDawnState();
   compactRelaySites.applyState({active:compactRelayRuntime?.active??false,complete:done.has(COMPACT_RELAY.complete),progress:compactRelayRuntime?.progress??0});
@@ -741,6 +787,7 @@ function applyWorldState() {
     if(t.userData.homeTarget)continue;
     const id = t.userData.target as string;
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) continue;
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === SKY_MARKERS.target)) continue;
     const hit = done.has(id) || (id === KINGDOM_GATE.latch && (done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)));
     t.visible = !hit;
     const c = collider(`COL_${t.name}`); if (c) c.enabled = !hit;
@@ -795,8 +842,10 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     const p=isExpansionRegion(quest.region)?local:resolveTrackedStoryPoint(here,quest.region,done,local);
     if(p)return {p,label:bilingual(...quest.targetLabel)};
   }
-  // New domains have exploration guides, but no invented campaign or gates.
-  if(isExpansionRegion(here))return null;
+  if(isExpansionRegion(here)) {
+    const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
+    return journey ? { p: journey.p, label: bilingual(...journey.text) } : null;
+  }
   if (compactRelayRuntime?.active) { const guide=getCompactRelayGuide(done,{active:true,progress:compactRelayRuntime.progress*3});const point=guide&&markers.get(guide.targetId)?.p;if(point)return{p:point,label:bilingual(...guide!.title)}; }
   if (falseDawnTracked) {
     const guide = getFalseDawnGuide(done, { activeEncounter: combat.storyEncounter?.id ?? null });
@@ -819,6 +868,8 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   if(adventureActive(done)&&optionalPin){if(optionalPinExpired(optionalPin,here,player.pos,done,found))optionalPin=null;else return{p:optionalPin.p,label:bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`,`Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`)};}
   const opening = typeof prologueGuide === 'function' ? prologueGuide() : null;
   if (opening) return { p: opening.p, label: bilingual(...opening.text) };
+  const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
+  if (journey) return { p: journey.p, label: bilingual(...journey.text) };
   const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
   if(adventureActive(done))return null;
   const intro = valleyGuide();
@@ -876,6 +927,18 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
 function renderObjective() { renderMainObjective(); updateTrackedStoryHud(); }
 function renderMainObjective() {
   const region=regionAt(player.pos.x,player.pos.z).id;
+  const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
+  if (journey) {
+    const title = document.createElement('h3'), text = document.createElement('div');
+    title.textContent = bilingual(...journey.title); text.className = 'cur'; text.textContent = bilingual(...journey.text);
+    $('objective').replaceChildren(title, text); return;
+  }
+  if (typeof JOURNEY !== 'undefined' && done.has(JOURNEY.epilogue)) {
+    const title = document.createElement('h3'), text = document.createElement('div');
+    title.textContent = bilingual('让明天继续 · 主线完成', 'Let Tomorrow Continue · Story complete');
+    text.textContent = bilingual('回望桥和七域仍然开放，居民会继续自己的日子。', 'Lookback Bridge and the seven regions remain open. Their people carry on.');
+    $('objective').replaceChildren(title, text); return;
+  }
   if(isExpansionRegion(region)) {
     const plan=EXPANSION_PLANS.find(p=>p.id===region)!;
     const title=document.createElement('h3'),text=document.createElement('div'),note=document.createElement('div');
@@ -987,6 +1050,10 @@ if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene && !params
   const stage = valleyPrologueStage(done);
   if (stage === 'briefing' || stage === 'cart' || stage === 'armory') spawn = valleyPrologueScene.spawn;
   else if (stage !== 'legacy' && stage !== 'complete') spawn = valleyPrologueScene.radioSpawn;
+}
+if (typeof JOURNEY !== 'undefined' && !params.has('region') && !params.has('spawn')) {
+  if (done.has(JOURNEY.launch) && !done.has(JOURNEY.returnHome)) spawn = skyJourneySpawn();
+  else if (done.has(JOURNEY.returnHome) && !done.has(JOURNEY.epilogue)) spawn = journeyHomeSpawn();
 }
 const spawnAt = (areaId?: string) => {
   actions?.cancel(); fortCannon.cancel(); hudRevision++;
@@ -1242,6 +1309,7 @@ function resetProgress() {
   const saved = worldProgress.reset();
   if(typeof homeTown!=='undefined')homeTown?.activities.reset();
   campaignTrackedRegion = null; falseDawnTracked = false; questTrackedId = null; falseDawnRuntime?.invalidate(); compactRelayRuntime?.invalidate(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset();
+  if (typeof helionFight !== 'undefined') helionFight.reset();
   // Reset is a new game, not another debug start on the next reload. Keep all unrelated options
   // and the hash; replaceState changes no page and adds no browser-history entry.
   clearStartOverrides(params);
@@ -1465,6 +1533,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) { if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id); },
   onPlayerDefeated() { exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+    if (typeof helionFight !== 'undefined' && helionFight.active) { helionFight.reset(); combat.refillAmmo(); return; }
     // Co-op: get back up beside a partner who is still standing (not mid boss/story fight).
     if (typeof coop !== 'undefined' && coop.session.paired && (coop.avatar.track.latest?.hp ?? 0) > 0 && travelToPartner() === null) return;
     toast(bilingual('已回到安全地点 · 任务进度保留', 'Returned to safety · Quest progress kept')); },
@@ -1618,7 +1687,7 @@ audioGroup.append(volumeLabel,muteLabel,fxLabel);document.querySelector('#world-
 addEventListener('pagehide', event => { if (!event.persisted) { actions?.dispose(); actionHud.dispose(); } });
 function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
-  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active, threatened, quietSeconds: combat.state.quietFor,
+  return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
     carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
@@ -1764,7 +1833,7 @@ renderClaimsButton();const unsubscribeClaimsButton=onLanguageChange(renderClaims
 claimsOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show({region:'all',category:'side',search:'从者领取'});});start.append(claimsOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){claimsOpen.remove();unsubscribeClaimsButton();}});
 const adventureButton=document.createElement('button');adventureButton.type='button';adventureButton.id='world-adventure-continue';
-const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续五区新冒险 · 保留已有存档','Continue the five-region adventure · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
+const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续 World 主线 · 保留已有存档','Continue the World story · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
 adventureButton.onclick=event=>{event.stopPropagation();if(worldExited||bootFailed||graphicsRecovery?.blocked)return;if(isKingdomGateOpen(done))done.add(KINGDOM_GATE.open);done.add(ADVENTURE.started);done.add(JOURNEY_DRAMA.started);save();questTrackedId=null;campaignTrackedRegion=null;falseDawnTracked=false;optionalPin=null;guideOn=true;applyWorldState();toast(bilingual('主线人物篇已启用，原有进度保留。进入世界后跟随岚的指引。','Character chapters enabled. Progress kept. Enter World and follow Lan’s lead.'));};start.append(adventureButton);
 addEventListener('pagehide',event=>{if(!event.persisted){adventureButton.remove();unsubscribeAdventureButton();}});
 const relayTrackButton=document.createElement('button');relayTrackButton.type='button';relayTrackButton.id='world-compact-relay-track';
@@ -1849,11 +1918,115 @@ cavalrySupport=new LocalCavalrySupport({done,player:player.pos,actor:()=>napoleo
  toast:line=>toast(bilingual(...line)),save,changed:applyWorldState,
 });
 adventureRuntime=createAdventureRuntime({done,cavalry:()=>cavalrySupport!.request(),ending:line=>{if(dramaActive(done))line=journeyEnding(done);const voices:Record<ServantId,[string,string]>={saber:['Saber：“有些誓言，是为了让人能回家。”','Saber: “Some oaths exist so people can return home.”'],blackbeard:['黑胡子：“下一趟，航路由我们自己选。”','Blackbeard: “Next voyage, we choose the course.”'],napoleon:['拿破仑：“道路已经通了。现在，往前走。”','Napoleon: “The road is open. Now, onward.”'],musashi:['武藏：“明天还没来。今天的路，走得不错。”','Musashi: “Tomorrow is still ahead. We traveled well today.”']};const reaction=contract.companionSummoned&&contract.selected?voices[contract.selected]:null;speakDialogue(reaction?[line[0]+'\n'+reaction[0],line[1]+'\n'+reaction[1]]:line,['旅途记录','Journey record']);},supply:()=>{combat.refillAmmo(30);return combat.recoverAtSettlement(25);},actions:adventureSites.actions,path:adventureSites.convoyPath,save,changed:applyWorldState,damage:()=>relayDamageRevision,
+ continuationBlock:id=>{
+  if(id==='adventure_tomorrow'&&journeyEnabled(done)&&!done.has(JOURNEY.epilogue))return ['地面撤离已经完成。真正的交接在天穹观测冠。','The ground evacuation is complete. The final handover takes place at the Sky Crown.'];
+  if((id==='adventure_guardian'||id==='adventure_tower'||id==='adventure_exit'||(ADVENTURE.emitters as readonly string[]).includes(id))&&!journeyTowerReady(done))return ['先完成各地交接，再接通塔外的独立线路。','Complete the regional handovers and connect the independent circuits outside the tower first.'];
+  return null;
+ },
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const result=combat.startStoryEncounter(spec,{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated&&!player.flying&&!player.gliding&&!player.swimming});return{ok:result.ok,reason:FALSE_DAWN_START_HINTS[result.reason]};},
  encounter:()=>combat.storyEncounter?.id??null,cancel:()=>combat.cancelStoryEncounter(),toast:line=>toast(bilingual(...line)),
  moveCart:(from,to)=>medicineCartPathClear(combat.geometry.contactSurface({minX:Math.min(from[0],to[0])-3,maxX:Math.max(from[0],to[0])+3,minZ:Math.min(from[2],to[2])-3,maxZ:Math.max(from[2],to[2])+3}),from,to),
 });
+const helionHud = document.createElement('div');
+helionHud.className = 'hud'; helionHud.id = 'helion-status'; helionHud.hidden = true;
+Object.assign(helionHud.style, { top: '78px', left: '50%', transform: 'translateX(-50%)', width: 'min(420px, 80vw)', textAlign: 'center' });
+const helionName = document.createElement('div'), helionHealth = document.createElement('progress'), helionTell = document.createElement('div');
+helionHealth.style.width = '100%'; helionHud.append(helionName, helionHealth, helionTell); document.body.append(helionHud);
+const helionFight = createHelionFight({ done,
+  phaseCleared(id) {
+    done.add(id); saveJourneyProgress(); combat.refillAmmo(); combat.state.fieldHeal(22); audio.explore('solve');
+    if (skyPhase(done) >= 0) helionFight.start();
+    else toast(bilingual('紧急写入臂已停机。现在可以完成交接。','The emergency writer is down. Complete the handover.'));
+  },
+  hurt: damage => combat.state.applyExternalDamage(damage),
+  cue: beat => { if (beat === 'locked') audio.interaction(); else if (beat === 'recovering') audio.bell(); },
+});
+addEventListener('pagehide', event => { if (!event.persisted) helionHud.remove(); });
+
+function skyJourneySpawn(): Marker { return { id: JOURNEY.launch, type: 'spawn', label: '天穹观测冠', p: [...(done.has(JOURNEY.isolate) ? SKY_CHECKPOINT : SKY_LANDING)] }; }
+function journeyHomeSpawn(): Marker { return { id: JOURNEY.returnHome, type: 'spawn', label: '回望桥', p: worldJourneySites?.homecoming ?? initialSpawn.p }; }
+function moveJourneyPlayer(destination: Marker) {
+  const [x, y, z] = destination.p;
+  const ground = combat.geometry.ground(x, z, y + 1.7);
+  if (!ground || Math.abs(ground.point.y - y) > .8 || !combat.geometry.clear(ground.point, .38, 1.8)) return false;
+  clearInput(); player.teleport(x, ground.point.y + .2, z, destination.id === JOURNEY.returnHome ? -Math.PI / 2 : 0);
+  prevPos.copy(player.pos); rig.root.position.copy(player.pos); anim.reset(worldProgress.armed, player.yaw + Math.PI);
+  spawn = destination; camDist = 3.6; acc = 0; hudRevision++;
+  return true;
+}
+function saveJourneyProgress() {
+  if (!save()) toast(bilingual('本次进度未保存，请在设置里重试。','Progress could not be saved. Retry in Settings.'));
+  applyWorldState();
+}
+function interactWorldJourney(id: string) {
+  if (!journeyMarkerActive(id)) return;
+  if (id === JOURNEY_DISPATCH) {
+    clearInput();
+    const options = journeyDestinations(done).map(destination => ({ id: destination.id, label: destination.name }));
+    narrative?.showChoices(['选择出发方向。当地人的工作仍需你到现场完成。','Choose where to depart. The work still happens on the ground.'], ['观测所出发台','Observatory dispatch'], options, selected => {
+      const destination = journeyDestinations(done).find(candidate => candidate.id === selected);
+      const dispatch = markers.get(JOURNEY_DISPATCH), target = destination && markers.get(destination.marker);
+      if (!dispatch || !target || player.pos.distanceTo(new THREE.Vector3(...dispatch.p)) > (dispatch.radius ?? 2) || !canReachValleyPanel(dispatch)) return;
+      const blocked = getTravelSafetyBlock(travelContext());
+      if (blocked) { toast(bilingual(...TRAVEL_BLOCK_TEXT[blocked])); return; }
+      if (!moveJourneyPlayer({ ...target, type: 'spawn', p: [target.p[0], target.p[1] - .92, target.p[2]] })) {
+        toast(bilingual('落点暂不可用，请重试或沿大陆道路前往。','The landing is unavailable. Retry or use the overland road.')); return;
+      }
+      renderObjective();
+    });
+    return;
+  }
+  if (id === JOURNEY.visitor && !worldJourneySites?.visitorArrived()) {
+    toast(bilingual('访客正在过桥，在接应点等一下。','The visitor is crossing. Wait at the far side.')); return;
+  }
+  if (id === SKY_MARKERS.left || id === SKY_MARKERS.right) {
+    const index = id === SKY_MARKERS.left ? 0 : 1;
+    const shutter = skyCrown.root.getObjectByName(`SkyShutter_${index}`)!;
+    const dx = Math.abs(player.pos.x - shutter.position.x), dz = Math.abs(player.pos.z - shutter.position.z);
+    const next = !helionFight.shutters[index];
+    if (next ? dx < .56 && dz < 4.45 : dz < .56 && dx < 4.45) {
+      toast(bilingual('请离开遮板转动的轨迹。','Step out of the shutter’s swing.')); return;
+    }
+    helionFight.turn(index); audio.interaction(); return;
+  }
+  if (id === SKY_MARKERS.cache) {
+    combat.refillAmmo(); combat.state.fieldHeal(100); audio.interaction();
+    toast(bilingual('弹药与急救用品已补充。','Ammunition and first aid replenished.')); return;
+  }
+  if (id === SKY_MARKERS.start) {
+    if (combat.bossStarted || combat.storyEncounter || combat.defeated) return;
+    combat.refillAmmo(); helionFight.start(); hudRevision++; return;
+  }
+  if (id === JOURNEY.launch || id === JOURNEY.returnHome) {
+    if (!moveJourneyPlayer(id === JOURNEY.launch ? skyJourneySpawn() : journeyHomeSpawn())) {
+      toast(bilingual('接驳落点有障碍，请重试。','The cradle landing is blocked. Try again.')); return;
+    }
+    if (id === JOURNEY.launch && done.has(id)) { renderObjective(); return; }
+  }
+  const line = commitJourneyStep(id, done);
+  if (!line) return;
+  if (id === JOURNEY.lake && !contract.recruited) contract.recruit();
+  if (id === JOURNEY.isolate) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
+  saveJourneyProgress();
+  if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
+  else { toast(bilingual(...line)); audio.interaction(); }
+}
+function updateSkyJourney(dt: number, seconds: number) {
+  const inSky = insideSkyCrown(player.pos);
+  if (!inSky && spawn.id === JOURNEY.launch && done.has(JOURNEY.launch) && !done.has(JOURNEY.returnHome) && !player.flying) {
+    helionFight.reset(); moveJourneyPlayer(skyJourneySpawn()); combat.refillAmmo();
+    toast(bilingual('已返回最近的天穹检查点。','Returned to the last Sky Crown checkpoint.'));
+  }
+  if (inSky && gameplayActive() && !combat.defeated) helionFight.update(dt, player.pos);
+  if (inSky || skyCrown.targets.some(target => target.visible)) skyCrown.update(helionFight, reducedEffects() ? 0 : seconds);
+  helionHud.hidden = !inSky || !helionFight.active || !gameplayActive();
+  if (helionHud.hidden) return;
+  const phaseLabel = SKY_PHASE_LABELS[helionFight.phase];
+  helionName.textContent = bilingual(`初号观测者 赫利昂 · ${phaseLabel[0]}`, `Helion, the First Observer · ${phaseLabel[1]}`);
+  helionHealth.max = helionFight.maxHp; helionHealth.value = helionFight.hp;
+  helionTell.textContent = helionFight.beat === 'locked' ? bilingual('射界锁定 · 离开标线或转动遮板','Lane locked · Move clear or turn a shutter') : helionFight.vulnerable ? bilingual('核心暴露 · 射击','Core exposed · Shoot') : helionFight.phase === 1 ? bilingual('沿遮板之间推进 · 支架交替暴露','Advance between the shutters · emitters expose in turn') : bilingual('观测中 · 留意地面标线','Tracking · Watch the floor markers');
+}
 kingdomGateRuntime = createKingdomGateRuntime({
  done,save,changed:applyWorldState,supply:()=>{combat.refillAmmo();return combat.recoverAtSettlement(100);},damage:()=>relayDamageRevision,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&!combat.defeated&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
@@ -1971,6 +2144,12 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if (typeof JOURNEY !== 'undefined' && (id === JOURNEY.lakePin || id === JOURNEY.egyptTie || id === JOURNEY.orleansBrace || id === SKY_MARKERS.target)) {
+      const hit = id === SKY_MARKERS.target ? helionFight.hit(questHit.distance <= gun.range ? gun.damage : 0, questHit.object.userData.helionWeakPoint) : commitJourneyStep(id, done);
+      if (Array.isArray(hit)) { saveJourneyProgress(); toast(bilingual(...hit)); }
+      if (hit) combat.flashHitMarker(.14);
+      combat.shot(muzzle, point, !!hit); audio.shot(); return;
+    }
     if (typeof VALLEY_PROLOGUE !== 'undefined' && id === VALLEY_PROLOGUE.pin) {
       if (advancePrologue(id)) combat.flashHitMarker(.14);
       combat.shot(muzzle, point, true); audio.shot(); return;
@@ -2020,6 +2199,10 @@ function nearestInteract(): Marker | null {
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
+    if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) {
+      if (d < (m.radius ?? 3) && d < bd && journeyMarkerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
+      continue;
+    }
     if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) {
       if (d < (m.radius ?? 3) && d < bd && valleyPrologueScene.markerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
       continue;
@@ -2206,13 +2389,16 @@ function interactQinOrder() {
   if(!player.onGround||player.flying||player.swimming||player.gliding)return;
   if(qinArmyOrder.turning){toast(bilingual('阵列仍在转动。','The ranks are still turning.'));return;}
   if(qinTurnBlocked(player.pos)){toast(bilingual('有人站在转台上：离开兵俑转台和铜闸下方后再下令。','Someone is on a turntable: step clear of the ranks and the bronze gate first.'));return;}
-  const phase=toggleQinOrder(done);const crushed=qinSentinels.orderTurned(done);save();applyWorldState();audio.interaction();
+  const phase=toggleQinOrder(done);const crushed=qinSentinels.orderTurned(done);
+  if (typeof JOURNEY !== 'undefined' && phase === 'b') commitJourneyStep(JOURNEY.qinTurn, done);
+  save();applyWorldState();audio.interaction();
   if(crushed.length)setTimeout(()=>toast(bilingual(`转动的兵俑阵碾碎了 ${crushed.length} 尊守陵俑。`,`The turning ranks ground down ${crushed.length} tomb guardian${crushed.length>1?'s':''}.`)),1600);
   toast(phase==='b'?bilingual('军令：让道阵。西列兵俑转为横向让出通道，斜井铜闸升起；东列合拢封路。','Order: open ranks. The west row turns aside and the shaft gate rises; the east row closes.'):bilingual('军令：守陵阵。西列兵俑合拢封路，斜井铜闸落下；东列转向让出通道。','Order: guard ranks. The west row closes, the shaft gate falls, and the east row turns aside.'));
 }
 function interact() {
   const m = nearestInteract();
   if (!m) return;
+  if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) { interactWorldJourney(m.id); return; }
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) { advancePrologue(m.id); return; }
   const claim = modelClaimPoints.find(point => point.marker.id === m.id);
   if (claim) {
@@ -2495,6 +2681,8 @@ function frame(now: number) {
     if(allowed>.8){rig.root.visible=false;desired.copy(focus).addScaledVector(direction.normalize(),Math.min(distance,allowed));conversationBlend=reducedEffects()?1:THREE.MathUtils.damp(conversationBlend,1,7,dt);camera.position.lerp(desired,conversationBlend);const target=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(camera.position,focus,camera.up));camera.quaternion.slerp(target,conversationBlend);eye.copy(camera.position);}else conversationBlend=0;
   }else conversationBlend=0;
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
+  worldJourneySites?.update(gameplayActive() ? dt : 0, player.pos);
+  updateSkyJourney(dt, now / 1000);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
   relayLastPosition.copy(player.pos);
@@ -2589,7 +2777,7 @@ function frame(now: number) {
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
   const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
-    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || modelClaimPoints.some(point => point.marker.id === it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
+    !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || worldJourneyMarkerIds.has(it.id) || modelClaimPoints.some(point => point.marker.id === it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
     player.inUpdraft && player.onGround ? bilingual(`[${settings.label('jump')}] 跳入上升气流`, `[${settings.label('jump')}] Jump into the updraft`) : '';
 

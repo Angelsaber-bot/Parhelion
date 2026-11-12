@@ -559,7 +559,8 @@ export class WorldCombatState {
   /** Co-op guest: the host's fight ended without a win (reset, defeat, or the room closed). */
   leaveRemoteBoss() { if (!this.bossStarted) return false; this.bossStarted = false; this.events.push({ type: 'bossReset' }); return true; }
   /** Co-op guest: a host-side enemy contact landed on this player. */
-  remoteHurt(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
+  remoteHurt(amount: number) { this.applyExternalDamage(amount); }
+  applyExternalDamage(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
   private hurt(amount: number) {
     if (this.hurtCooldown > 0 || this.defeated || this.invulnerable) return;
     amount = Math.min(this.hp, Math.round(amount * this.guardMultiplier * 100) / 100);

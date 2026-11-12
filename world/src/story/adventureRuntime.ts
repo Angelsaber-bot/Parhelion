@@ -9,6 +9,7 @@ export interface AdventureHooks{
  reachable(id:string):boolean;save():boolean;changed():void;toast(line:Localized):void;
  encounter():string|null;start(spec:StoryEncounterSpec):{ok:boolean;reason?:Localized};cancel():void;damage():number;
  cavalry?():boolean;ending?(line:Localized):void;supply():boolean;moveCart(from:AdventurePoint,to:AdventurePoint):boolean;
+ continuationBlock?(id:string):Localized|null;
 }
 export function adventureEncounter(action:AdventureAction,guardian=false):StoryEncounterSpec{
  return{id:guardian?'adventure_guardian':`adventure_guard_${action.id.slice(-1)}`,anchor:{x:action.p[0],y:action.p[1],z:action.p[2]},actors:guardian?[{role:'breaker',offset:[5,1],pattern:'echo-warden',title:['预写守门者','Warden of the Written Dawn']}]:[{role:'musketeer',offset:action.id.endsWith('_2')?[-5,3]:action.id.endsWith('_3')?[-5,-1]:[-5,-5],title:['复制回路卫兵','Copying Circuit Guard']},{role:'lancer',offset:action.id.endsWith('_2')?[3,-5]:action.id.endsWith('_3')?[5,1]:[5,3],title:['转发哨兵','Relay Sentinel']}]};
@@ -22,6 +23,7 @@ export function createAdventureRuntime(h:AdventureHooks){
  const finalReady=()=>['britain','blacksail','winter','kyoto'].every(r=>adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',h.done))&&(!dramaActive(h.done)||(dramaReported(h.done).length===4&&h.done.has(JOURNEY_DRAMA.confession)));
  function blocked(action:AdventureAction):Localized|null{
   const id=action.id;
+  const continuation=h.continuationBlock?.(id);if(continuation)return continuation;
   if(id==='adventure_tomorrow'&&dramaActive(h.done)&&!dramaDecision(h.done))return ['先与岚决定频道今后的值守方式。','Decide the channel’s future with Lan first.'];
   if(id==='adventure_harbor_records'&&h.done.has('adventure_harbor_alarm_disabled'))return null;
   if(id==='adventure_harbor_exit'&&(!h.done.has(A.records)||(!h.done.has('sea_core')&&!h.done.has('blackbeard_contract'))))return ['先取得真实记录并解除提督的命令，再确认离舰。','Recover the true record and end the Admiral’s orders before confirming disembarkation.'];

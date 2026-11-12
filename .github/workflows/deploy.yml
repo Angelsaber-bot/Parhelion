@@ -1,5 +1,5 @@
-# Every push to main: build, then deploy the Arena Worker (parhelion-arena) and then the public site
-# (Cloudflare Pages project parhelion-game). Only these two Cloudflare projects are touched.
+# Every push to main builds and publishes Pages (parhelion-game). When Arena
+# inputs change, its Worker is deployed and checked before publishing Pages.
 # Needs repository secrets CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID; without them it builds only.
 # Full regression suites remain available through npm scripts, but are not a deployment gate.
 name: Deploy
@@ -28,6 +28,22 @@ jobs:
       ARENA_URL: wss://parhelion-arena.lejiazhang-us.workers.dev/arena
     steps:
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+      - name: Determine whether Arena Worker needs an update
+        id: scope
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -n "$BEFORE" ] && [ "$BEFORE" != 0000000000000000000000000000000000000000 ]; then
+            if git cat-file -e "$BEFORE^{commit}" 2>/dev/null || git fetch --no-tags --depth=1 origin "$BEFORE"; then
+              if git diff --quiet "$BEFORE" HEAD -- arena arena-game arena-maps shared-client; then
+                echo "worker=false" >> "$GITHUB_OUTPUT"
+                exit 0
+              fi
+            fi
+          fi
+          echo "worker=true" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -54,11 +70,11 @@ jobs:
 
       # Worker first: a rules change must be live on the server before clients that expect it.
       - name: Deploy Arena Worker
-        if: steps.secrets.outputs.ok == 'true'
+        if: steps.secrets.outputs.ok == 'true' && steps.scope.outputs.worker == 'true'
         working-directory: arena-game
         run: npm run worker:deploy
       - name: Smoke test public Arena server
-        if: steps.secrets.outputs.ok == 'true'
+        if: steps.secrets.outputs.ok == 'true' && steps.scope.outputs.worker == 'true'
         working-directory: arena-game
         run: |
           # A newly deployed Worker can take a few seconds to reach every edge.
