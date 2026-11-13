@@ -11,6 +11,7 @@ import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import { createSkyCrownScene } from '../src/environment/skyCrownScene';
 import { SKY_APPROACH_DECKS, skyApproachWaypoints, SKY_UP_LIFT } from '../src/environment/skyCrownApproach';
+import { SKY_LIFT } from '../src/environment/skyServiceLift';
 import { Player } from '../src/player/player';
 import { EGYPT_MIRRORS } from '../src/map/egyptPlan';
 import { ORLEANS_WORKS, ORLEANS_WORK_ACTIONS } from '../src/map/orleansWorks';
@@ -540,7 +541,11 @@ test('production handovers and sky finale work with completed middle-chapter che
     assert.ok(SKY_PHASES.every(phase => w.done.has(phase)), `all three phases cleared by input (${[...w.done].filter(id => id.startsWith('journey_helion'))})`);
     assert.ok(w.done.has(skySupportFlag('saber')));
     interact(J.finish); assert.ok(w.done.has(J.finish));
-    interact(SKY_UP_LIFT); assert.ok(w.player.pos.y < 160 && w.player.pos.y > 150);
+    // The service lift is a real 52 m hoist, not a teleport: call the car up to the court,
+    // board it, send it down and ride it to the observation hall.
+    interact(SKY_UP_LIFT); frame(60 * 15);
+    interact(SKY_LIFT.cabin); frame(60 * 16);
+    assert.ok(w.player.pos.y < 160 && w.player.pos.y > 150, `rode the service lift down to the hall (${w.player.pos.y.toFixed(2)})`);
     interact(J.returnHome); assert.ok(w.done.has(J.returnHome));
     assert.ok(w.player.pos.y < 50, 'the boarding cradle returns to the valley');
     interact(J.epilogue); assert.ok(w.done.has(J.epilogue));

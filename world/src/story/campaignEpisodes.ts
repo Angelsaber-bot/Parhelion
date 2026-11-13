@@ -64,7 +64,7 @@ export const CAMPAIGN_EPISODES: Readonly<Record<RegionId, CampaignEpisodeDefinit
     choices: [
       { id: 'families', label: ['先引旅客归港：让等候的人见面', 'Guide passengers first: reunite those waiting'], response: ['玛拉挂起短帆信号：“码头等人的，不该只听见货箱落地。”\n先在要塞炮位切断幽灵艇补给，再让旗舰的冷灯熄灭。暖灯不会替你开炮。', 'Mara raises the short-sail signal. “Those waiting on the quay deserve more than the sound of crates landing.”\nCut the ghost-boat supply from the fort cannon, then extinguish the flagship’s cold lamp. Our warm light cannot fire for you.'], ending: ['玛拉把第一班归港的位置留在客船栏：“后面的货也会进来。只是今天，先报人名。”', 'Mara gives the first return slot to a passenger boat. “The cargo will follow. Today, we call the names first.”'] },
       { id: 'supplies', label: ['先引补给靠岸：备好食水再迎人', 'Guide supplies first: prepare food and water'], response: ['玛拉挂起双结信号：“人回来了，总要有干净的水。”\n先在要塞炮位切断幽灵艇补给，再让旗舰的冷灯熄灭。暖灯不会替你开炮。', 'Mara raises the double-knot signal. “People will need clean water when they return.”\nCut the ghost-boat supply from the fort cannon, then extinguish the flagship’s cold lamp. Our warm light cannot fire for you.'], ending: ['玛拉把第一班归港的位置留给食水船：“等客船靠岸，杯子就不必空着了。”', 'Mara gives the first return slot to a provision boat. “When the passengers land, their cups need not be empty.”'] },
-    ], evidence: ['sea_core'], core: 'sea_core', evidenceText: ['操作原主线的要塞炮，切断幽灵补给并击败亡航提督。', 'Use the main-story fort cannon, cut the ghost supply, and defeat the Drowned Admiral.'], evidenceTarget: 'sea_core',
+    ], evidence: ['sea_core'], core: 'sea_core', evidenceText: ['操作原主线的要塞炮，切断幽灵补给并夺下梅瑞克的指挥台。', 'Use the main-story fort cannon, cut the ghost supply, and defeat Meyrick at the command deck.'], evidenceTarget: 'sea_core',
     report: ['冷灯已灭。返回玛拉的暖灯旁，确认第一班归港信号。', 'The cold lamp is out. Return to Mara’s warm light to confirm the first harbor signal.'],
     complete: ['暖灯照的是归港水道，不是宝藏。玛拉记得你选的顺序，也给后来的船留着位置。', 'The warm light marks passage home, not treasure. Mara remembers your order and keeps space for the boats that follow.'],
   }),
@@ -302,7 +302,7 @@ function getCampaignEvidenceLine(target: string, done: ReadonlySet<string>): Loc
     sun_core: ['到卡姆兰击败空位之王。', 'Defeat the Vacant King at Camlann.'],
     blackbeard_meet: ['先到拿骚酒馆找黑胡子。', 'Meet Blackbeard at Nassau tavern first.'],
     fort_cannon: ['启动要塞炮，在炮位上瞄准。', 'Ready the fort cannon and aim from its firing station.'],
-    sea_core: ['登上旗舰，击败亡航提督。', 'Board the flagship and defeat the Drowned Admiral.'],
+    sea_core: ['登上旗舰，夺下梅瑞克的指挥台。', 'Board the flagship and defeat Meyrick at the command deck.'],
     napoleon_meet: ['先在大军营地与拿破仑交谈。', 'Speak with Napoleon at the army camp first.'],
     musashi_meet: ['先到三条大桥与武藏交谈。', 'Meet Musashi at Sanjō Bridge first.'],
   };

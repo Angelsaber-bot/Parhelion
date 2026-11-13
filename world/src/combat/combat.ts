@@ -22,6 +22,8 @@ export interface Enemy extends SpawnPoint {
   attackCount: number; contactSequence: number; hitTime: number; role: EnemyRole; staggerCooldown: number; pacified: boolean; blinkCooldown?: number;
   /** An elite is performing its rarer signature move (see minibosses.ts). */
   signatureActive?: boolean;
+  /** W08 最后方阵: the square's shield wall turns slowly; only its front blocks rifle fire. */
+  squareYaw?: number;
   /** Toughness damage built up toward a daze break (elites and chapter bosses only). */
   daze?: number; dazeIdle?: number; dazedFor?: number;
 }
@@ -64,6 +66,22 @@ export const DAZE = Object.freeze({
   source: Object.freeze({ melee: 1, skill: .9, ultimate: .5, servant: .6, ranged: .3 }) as Readonly<Record<HitContext['source'], number>>,
   punish: 1.5, stun: 3, kingStun: 3.5, taken: 1.25, drainAfter: 4, drainPerSecond: .12,
 });
+/** W08 最后方阵: a formation that turns at marching pace, holds its facing through a volley, and
+ * blocks most rifle fire on its front. Flanking it is the counter, not waiting. */
+export const LAST_SQUARE = { id: 'boss_winter_warden', turn: [.7, .95], front: 1.0, block: .35, flank: 1.35 } as const;
+export function turnLastSquare(e: Enemy, toward: Point3, dt: number) {
+  const want = Math.atan2(toward.x - e.p.x, toward.z - e.p.z);
+  if (e.squareYaw === undefined || e.mode === 'idle') { e.squareYaw = want; return; }
+  if (e.mode === 'windup' || e.mode === 'recover') return;
+  let d = want - e.squareYaw; d = Math.atan2(Math.sin(d), Math.cos(d));
+  const step = LAST_SQUARE.turn[e.phase - 1] * dt;
+  e.squareYaw += Math.max(-step, Math.min(step, d));
+}
+export function lastSquareFront(e: Pick<Enemy, 'id' | 'p' | 'squareYaw'>, from: Point3) {
+  if (e.id !== LAST_SQUARE.id || e.squareYaw === undefined) return false;
+  const d = Math.atan2(from.x - e.p.x, from.z - e.p.z) - e.squareYaw;
+  return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) < LAST_SQUARE.front;
+}
 export function dazeCapable(e: Pick<Enemy, 'miniboss' | 'kind' | 'storyPattern'>) { return !e.storyPattern && (!!e.miniboss || e.kind === 'king'); }
 export function dazeThreshold(e: Pick<Enemy, 'maxHp' | 'kind'>) { return e.maxHp * (e.kind === 'king' ? DAZE.kingShare : DAZE.eliteShare); }
 /** 0–1 gauge fill for presentation; 1 while dazed. */
@@ -446,9 +464,10 @@ export class WorldCombatState {
     const ranged=!raw&&context?.source==='ranged';
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
-    const shielded=ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
+    const squareFront=ranged&&!!context?.origin&&lastSquareFront(e,context.origin);
+    const shielded=squareFront||ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
-    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (shielded ? WORLD_RIFLE.shieldBlock : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? LAST_SQUARE.block : shielded ? WORLD_RIFLE.shieldBlock : ranged && e.id === LAST_SQUARE.id && e.squareYaw !== undefined && context?.origin ? LAST_SQUARE.flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(raw ? { remote: true } : {}) });
     if (!raw && context?.source && dealt > 0) this.onLocalHit?.(id, dealt, context.source);
@@ -650,6 +669,7 @@ export class WorldCombatState {
       if (away && e.storyEncounter) continue;
       const player = this.partner && !e.storyEncounter && (away || distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer)) ? this.partner : localPlayer;
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
+      if (e.id === LAST_SQUARE.id && e.active && e.mode !== 'dead') turnLastSquare(e, e.mode === 'chase' ? player : e.target, dt);
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
         e.timer -= dt;

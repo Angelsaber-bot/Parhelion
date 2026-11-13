@@ -143,7 +143,8 @@ function drownedAdmiral() {
   };
 }
 
-/** 永冬之城 · 执冬者: ice grown around the officer's shako and over both shoulders, over a fur collar. */
+/** 永冬之城 · 最后方阵 (W08): the frozen officer at the centre of the last square, ranks marching with him.
+ * Ice grown around the shako and shoulders; the marching ranks are a separate view group (combatView). */
 function winterWarden() {
   const b = bin();
   const ring = b.g(new THREE.TorusGeometry(.152, .018, 8, 26)); ring.rotateX(Math.PI / 2);

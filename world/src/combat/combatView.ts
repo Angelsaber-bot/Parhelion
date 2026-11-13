@@ -15,7 +15,7 @@ import { makeCombatTerrain } from './combatTerrain';
 import { COMPACT_RELAY_ENCOUNTER } from '../story/compactRelayEncounter';
 import { EnemyVisuals, enemyModel, ENEMY_VISUAL_BUDGET, type EnemyModel } from './enemyVisuals';
 import { MINIBOSSES, makeMinibossSpawns } from './minibosses';
-import { enemyAttackRadius, enemyThrustLength, enemyAttackTiming, dazeCapable, dazeRatio, DAZE } from './combat';
+import { enemyAttackRadius, enemyThrustLength, enemyAttackTiming, dazeCapable, dazeRatio, DAZE, LAST_SQUARE } from './combat';
 import { ENEMY_ROLES } from './enemyRoles';
 import { collectStrikeTargets, type StrikeRequest, type StrikeResult } from './combatActions';
 import { authorEncounters, KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from '../story/authoredEncounters';
@@ -37,7 +37,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -75,23 +75,23 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
     colors: ['#3a3152', '#e57a3f', '#ffbe62'],
   },
   boss_drowned_admiral: {
-    name: ['亡航提督', 'THE DROWNED ADMIRAL'],
-    start: ['亡航提督迎战：躲开落点与横斩，装填时近身反击！', 'The Drowned Admiral engages: evade impacts and sweeps; punish the reload up close!'],
+    name: ['梅瑞克 · 指挥台', 'MEYRICK · THE COMMAND DECK'],
+    start: ['梅瑞克亲自接舷：躲开船炮落点与甲板横斩，他装填时近身反击！', 'Meyrick boards in person: evade the ship-gun impacts and deck sweeps; punish his reload up close!'],
     reset: ['战斗重置', 'Encounter reset'],
     phase: ['第二阶段 · 怒潮', 'Phase II · Raging Tide'],
-    victory: ['亡航提督已击败 · 获得「黑帆」纪念徽记', 'Drowned Admiral defeated · Black Sail keepsake earned'],
+    victory: ['指挥台已夺下 · 轮舵可用 · 获得「黑帆」纪念徽记', 'Command deck taken · the helm is free · Black Sail keepsake earned'],
     burst: ['舷炮齐射：离开红圈！', 'Broadside: leave the red circle!'],
     sweep: ['甲板横斩：退出近身圆圈！', 'Deck sweep: leave the close-range circle!'],
     colors: ['#24404a', '#5fe0c0', '#a8fff0'],
   },
   boss_winter_warden: {
-    name: ['执冬者', 'THE WINTER WARDEN'],
-    start: ['执冬者迎战：横移避开直刺，离开冰霜落点，再近身反击！', 'The Winter Warden engages: sidestep thrusts, leave frost impacts, then punish up close!'],
+    name: ['最后方阵', 'THE LAST SQUARE'],
+    start: ['最后方阵按鼓点推进：正面盾墙挡住大部分子弹，绕到侧翼打断编队，守住撤离通道！', 'The last square advances on the drum: its front wall stops most bullets. Flank it, break the formation, keep the crossing open!'],
     reset: ['战斗重置', 'Encounter reset'],
-    phase: ['第二阶段 · 暴风雪', 'Phase II · Blizzard'],
-    victory: ['执冬者已击败 · 获得「最后的鹰」纪念徽记', 'Winter Warden defeated · Last Eagle keepsake earned'],
-    burst: ['冰枪坠落：离开红圈！', 'Falling ice lances: leave the red circle!'],
-    sweep: ['寒霜横扫：拉开距离！', 'Frost sweep: move away!'],
+    phase: ['第二阶段 · 收拢转向', 'Phase II · Close Ranks and Wheel'],
+    victory: ['最后方阵已拆散 · 获得「最后的鹰」纪念徽记', 'The last square is broken · Last Eagle keepsake earned'],
+    burst: ['正面齐射：离开红圈！', 'Volley: leave the red circle!'],
+    sweep: ['刺刀横推：拉开距离！', 'Bayonet push: move away!'],
     colors: ['#3a4a66', '#9fd8ff', '#e8fbff'],
   },
   boss_hellfire_lord: {
@@ -211,7 +211,7 @@ export class WorldCombat {
   get storyEncounter() { return this.storyDirector.status; }
   startStoryEncounter(spec: StoryEncounterSpec, admission?: { position: Point3; playable: boolean }): StoryEncounterStartResult {
     if (this.disposed) return { ok: false, reason: 'unavailable' };
-    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: (spec.id.startsWith('adventure_')||spec.id.startsWith('orleans_main_')||spec.id.startsWith('chapter_egypt_campaign_')) ? (x,z)=>this.geometry.safeAdventureSpawn(spec,x,z) : spec.id === 'kingdom_gate_patrol' ? this.geometry.safeKingdomGateSpawn : spec.id === COMPACT_RELAY_ENCOUNTER ? this.geometry.safeCompactRelaySpawn : this.geometry.safeStorySpawn });
+    const result = this.storyDirector.start(spec, { state: this.state, player: admission?.position ?? this.player, playable: admission?.playable ?? this.playable, place: (spec.id.startsWith('adventure_')||spec.id.startsWith('orleans_main_')||spec.id.startsWith('chapter_')) ? (x,z)=>this.geometry.safeAdventureSpawn(spec,x,z) : spec.id === 'kingdom_gate_patrol' ? this.geometry.safeKingdomGateSpawn : spec.id === COMPACT_RELAY_ENCOUNTER ? this.geometry.safeCompactRelaySpawn : this.geometry.safeStorySpawn });
     if (!result.ok) return result;
     try {
       for (const enemy of this.state.enemies.filter(actor => actor.storyEncounter)) {
@@ -438,7 +438,8 @@ export class WorldCombat {
       v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
       // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
       const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover' || (this.state.remoteEnemies && e.mode === 'chase')) ? e.target : player;
-      v.body.rotation.y = Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
+      v.body.rotation.y = e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified ? e.squareYaw : Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
+      if (v.ranks) { const left = Math.ceil(v.ranks.length * Math.max(0, e.hp) / e.maxHp), beat = Math.max(0, Math.sin(this.time * 4.2)) * .025; v.ranks.forEach((r, n) => { r.visible = e.mode !== 'dead' && n < left; r.position.y = beat; }); }
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
       v.material.emissiveIntensity = e.pacified ? 0 : e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;
       const punishCue = active && !this.state.defeated && e.active && !e.pacified && isMeleePunishWindow(e);
@@ -626,6 +627,22 @@ export class WorldCombat {
     this.defeat.hidden = !this.state.defeated;
     this.defeat.textContent = bilingual('你倒下了\n即将回到安全地点 · 进度保留', 'You have fallen\nReturning to safety · Progress is kept');
   }
+  /** W08 最后方阵: nine soldiers in the body's (1.8x) local units; they leave the square as it is broken. */
+  private makeLastSquareRanks(body: THREE.Group) {
+    const mat = (color: number) => { const m = new THREE.MeshStandardMaterial({ color, roughness: .9 }); this.materials.push(m); return m; };
+    const geo = (g: THREE.BufferGeometry) => { this.shared.push(g); return g; };
+    const coat = mat(0x34466e), frost = mat(0xc8dde8), wood = mat(0x4c3a2a);
+    const torso = geo(new THREE.BoxGeometry(.2, .5, .14)), head = geo(new THREE.BoxGeometry(.11, .12, .11)), shako = geo(new THREE.CylinderGeometry(.06, .055, .15, 8));
+    const musket = geo(new THREE.BoxGeometry(.022, .58, .022)), leg = geo(new THREE.BoxGeometry(.07, .3, .08));
+    const ranks: THREE.Group[] = [];
+    const put = (g: THREE.BufferGeometry, m: THREE.Material, parent: THREE.Object3D, x: number, y: number, z: number, rx = 0) => { const mesh = new THREE.Mesh(g, m); mesh.position.set(x, y, z); mesh.rotation.x = rx; mesh.castShadow = true; parent.add(mesh); };
+    for (const [x, z] of [[-1.5, .95], [-.75, 1.05], [.75, 1.05], [1.5, .95], [-1.9, 0], [1.9, 0], [-1.3, -.9], [0, -1.05], [1.3, -.9]] as const) {
+      const s = new THREE.Group(); s.name = 'LastSquareSoldier'; s.position.set(x, 0, z); body.add(s); ranks.push(s);
+      put(leg, coat, s, -.05, .15, 0); put(leg, coat, s, .05, .15, 0); put(torso, coat, s, 0, .55, 0);
+      put(head, frost, s, 0, .87, 0); put(shako, coat, s, 0, 1, 0); put(musket, wood, s, .13, .7, .05, .12);
+    }
+    return ranks;
+  }
   private makeEnemy(e: Enemy): EnemyVisual {
     const king = e.kind === 'king', crystal = e.kind === 'crystal';
     const root = new VisibleEnemyRoot(), body = new THREE.Group(), fallback = new THREE.Group(); root.add(body); body.add(fallback); root.name = e.id;
@@ -660,9 +677,10 @@ export class WorldCombat {
     const updateCreature = fallback.userData.updateCreature as EnemyVisual['updateCreature'];
     // Region-specific champions replace every old procedural purple chapter boss.
     // Scale keeps the authored human champion near the existing king hit sphere/height.
-    let bodyCrown: THREE.Group | undefined;
+    let bodyCrown: THREE.Group | undefined, ranks: THREE.Group[] | undefined;
     if (king) {
       body.scale.setScalar(1.8);
+      if (e.id === LAST_SQUARE.id) ranks = this.makeLastSquareRanks(body);
       const crown = new THREE.Group(); crown.name = 'Champion_Gold_Crest'; crown.position.y = 2;
       const ringGeo = new THREE.TorusGeometry(.25,.025,4,12); this.shared.push(ringGeo);
       const ring = new THREE.Mesh(ringGeo,glow);ring.rotation.x=Math.PI/2;crown.add(ring);
@@ -762,7 +780,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {

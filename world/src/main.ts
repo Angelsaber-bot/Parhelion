@@ -5,6 +5,11 @@ import { EGYPT_CAMPAIGN as EC, egyptChapterById, egyptChapterReady, egyptChapter
 import { createEgyptCampaignScene } from './environment/egyptCampaignScene';
 import { createOrleansCampaign, orleansActionById, orleansCampaignGuide, orleansCampaignReady } from './story/orleansCampaign';
 import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
+import { createFieldChapters, fieldChapterGuide } from './story/fieldChapters';
+import { createFieldChapterScene } from './environment/fieldChapterScene';
+import { KINGDOM_K04 } from './story/kingdomBackPassage';
+import { WINTER_CHAPTERS } from './story/winterChapters';
+import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
@@ -26,7 +31,7 @@ import { EGYPT_WATER_PLAN, EGYPT_WATER_OPTIONS, EGYPT_WATER_IDS, egyptWaterFlag,
 import { createEgyptTempleMechanisms } from './environment/egyptTempleMechanisms';
 import { EGYPT_TEMPLE_WORKS_STATE as ETW, EGYPT_TEMPLE_WORK_LABELS } from './story/egyptTempleWorks';
 import { createEgyptTempleMaintenance } from './environment/egyptTempleMaintenance';
-import { clearLandscapeProps } from './map/landscapeClearance';
+import { clearLandscapeProps, removeComponentsInBox, editComponents, type ComponentBounds } from './map/landscapeClearance';
 import { createValleyTransportLandscape } from './environment/valleyTransportLandscape';
 import { VALLEY_TRANSPORT_CLEARANCE, VALLEY_TRANSPORT_ROUTES } from './map/valleyTransportPlan';
 import { carveValleyFoundation, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
@@ -380,12 +385,46 @@ const progress = (file: string) => (e: ProgressEvent) => {
   loaded.set(file, e.loaded / e.total);
   setLoading(`加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`);
 };
+// The valley's south seam once opened onto Kyoto; since the 2026-11-10 relayout nothing lies
+// south of the valley, so its torii, stone foxes, seam pylons and barrier are retired at load.
+const VALLEY_SOUTH_TORII: readonly [number, number, number, number] = [18, 286, 62, 366];
+const VALLEY_SOUTH_SEAM_PIECES = /^(Seams|Glow_Props|COL_Props|Valley_Exploration_Detail_(Metal|Brass|Ceramic))$/;
+function retireValleySouthSeam(name: string, geometry: THREE.BufferGeometry) {
+  if (/^(COL_)?Seam_south_(Veil|Gate)$/.test(name)) { const empty = geometry.clone(); empty.setIndex([]); return empty; }
+  return VALLEY_SOUTH_SEAM_PIECES.test(name) ? removeComponentsInBox(geometry, VALLEY_SOUTH_TORII) : null;
+}
+// The distant true capital was authored on a north-west ridge that the continental coast later
+// turned into open sea (ground -5 m). Move the whole set piece onto the ridge north of Camelot,
+// clearing trees, bushes and rocks from its new footprint. Britain-local coordinates.
+const FAR_CAMELOT_FROM: readonly [number, number, number, number] = [-345, -348, -268, -276];
+const FAR_CAMELOT_TO: readonly [number, number, number, number] = [-253, -362, -177, -290];
+const FAR_CAMELOT_OFFSET: readonly [number, number, number] = [91, 16, -14];
+const inside = (b: ComponentBounds, r: readonly [number, number, number, number]) => {
+  const x = (b.min[0] + b.max[0]) / 2, z = (b.min[2] + b.max[2]) / 2;
+  return x > r[0] && x < r[2] && z > r[1] && z < r[3];
+};
+const treeProxy = (b: ComponentBounds) => Math.abs(b.max[1] - b.min[1] - 4) < .08 && b.max[0] - b.min[0] < 1.4 && b.max[2] - b.min[2] < 1.4;
+function relocateFarCamelot(name: string, geometry: THREE.BufferGeometry) {
+  if (/^(Trees_\w+|Bushes|Rocks\w*)$/.test(name)) return editComponents(geometry, b => inside(b, FAR_CAMELOT_TO) ? 'remove' : null);
+  if (!/^(Britain_Physical_\w+|Glow_Props|COL_Props)$/.test(name)) return null;
+  return editComponents(geometry, b => {
+    if (name === 'COL_Props' && treeProxy(b)) return inside(b, FAR_CAMELOT_TO) ? 'remove' : null;
+    return inside(b, FAR_CAMELOT_FROM) ? FAR_CAMELOT_OFFSET : null;
+  });
+}
 function clearProductionLandscape(region: string, name: string, geometry: THREE.BufferGeometry) {
-  if (region === 'alpha') return clearLandscapeProps(name, geometry, [...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE], VALLEY_TRANSPORT_ROUTES);
+  if (region === 'alpha') {
+    const retired = retireValleySouthSeam(name, geometry);
+    return clearLandscapeProps(name, retired ?? geometry, [...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE], VALLEY_TRANSPORT_ROUTES) ?? retired;
+  }
   if (region === 'winter') return clearLandscapeProps(name, geometry, [[38, 89, 65, 122], ...WINTER_CIVIL_CLEARANCE], WINTER_CIVIL_PATHS);
   if (region === 'blacksail') return clearLandscapeProps(name, geometry, BLACKSAIL_CIVIL_CLEARANCE, BLACKSAIL_CIVIL_PATHS);
-  if (region === 'britain' && /^Trees_|^COL_Props$/.test(name)) return clearLandscapeProps(name, geometry, [],
-    [[[-120, -70], [-151, -30], [-151, 20], [-170, 60], [-176, 105], [-154, 144], [-120, 184]]]);
+  if (region === 'britain') {
+    const moved = relocateFarCamelot(name, geometry), source = moved ?? geometry;
+    if (!/^Trees_|^COL_Props$/.test(name)) return moved;
+    return clearLandscapeProps(name, source, [],
+      [[[-120, -70], [-151, -30], [-151, 20], [-170, 60], [-176, 105], [-154, 144], [-120, 184]]]) ?? moved;
+  }
   return carveCoreRing(region, name, geometry);
 }
 const parts = await Promise.all(REGIONS.map(async (def) => {
@@ -397,12 +436,16 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
   }
   bakeQuantized(gltf.scene);
-  gltf.scene.traverse(node => {
-    if (!(node instanceof THREE.Mesh)) return;
+  gltf.scene.traverse(object => {
+    // Duck-typed like region visual streaming: a second three.js copy (tests, tools) fails instanceof.
+    const node = object as THREE.Mesh; if (!node.isMesh) return;
     const carved = def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name) ? carveValleyFoundation(node.geometry) : clearProductionLandscape(def.id, node.name, node.geometry);
     if (carved) { node.geometry.dispose(); node.geometry = carved; }
   });
   placeRegion(gltf.scene, def);
+  if (def.id === 'alpha') lay.markers = lay.markers.filter(marker => marker.id !== 'seam_south');
+  // W08 and B08 replaced the old era bosses' identities; the reviewed map labels still carry the old names.
+  for (const marker of lay.markers) { if (marker.id === 'boss_winter_warden') marker.label = '最后方阵（Boss）'; if (marker.id === 'boss_drowned_admiral') marker.label = '梅瑞克（Boss）'; }
   return { def, layout: lay, root: gltf.scene };
 }));
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
@@ -1043,6 +1086,11 @@ function journeyGuide() {
    const a=egyptChapterGuide(done),p=a&&markers.get(a.id)?.p;
    if(a&&p)return {region:'egypt' as const,targetId:a.id,p,title:[a.chapter+' · 尼罗河的第二次黎明',a.chapter+' · The Nile’s Second Dawn'] as [string,string],text:a.label};
   }
+  {
+   const id=regionAt(player.pos.x,player.pos.z).id,content=FIELD_CHAPTER_CONTENT.find(c=>c.set.region===id);
+   const a=content&&fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
+   if(content&&a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};
+  }
   if(regionAt(player.pos.x,player.pos.z).id==='orleans'){
     const a=orleansCampaignGuide(done),p=a&&markers.get(a.id)?.p;
     if(a&&p)return {region:'orleans' as const,targetId:a.id,p,title:[a.chapter+' · 当旗帜离开她的手',a.chapter+' · When She Lets Go of the Flag'] as [string,string],text:a.label};
@@ -1184,6 +1232,7 @@ function interactionLabel(marker: Marker) {
   const qinAction=qinChapterById.get(marker.id);if(qinAction)return bilingual(...qinAction.label);
   const egyptAction=egyptChapterById.get(marker.id);if(egyptAction)return bilingual(...egyptAction.label);
   const chapterAction=orleansActionById.get(marker.id);if(chapterAction)return bilingual(...chapterAction.label);
+  const fieldAction=fieldChapters?.action(marker.id);if(fieldAction)return bilingual(...fieldAction.label);
   const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
   const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
@@ -2035,7 +2084,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
-    if(egyptCampaign?.victory(id)||orleansCampaign?.victory(id))return;
+    if(egyptCampaign?.victory(id)||orleansCampaign?.victory(id)||fieldChapters?.victory(id))return;
     if (id === HARBOR_WORKBOAT_ENCOUNTER) {
       done.add(HB.access); done.add(HB.fight); done.add(HB.fought);
       saveJourneyProgress();
@@ -2053,7 +2102,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
     }
     if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id);
   },
-  onPlayerDefeated() { qinCampaign?.reset();qinCrewTransit?.reset();egyptCampaign?.reset();orleansCampaign?.reset(); fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+  onPlayerDefeated() { qinCampaign?.reset();qinCrewTransit?.reset();egyptCampaign?.reset();orleansCampaign?.reset();fieldChapters?.reset(); fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
       const site = realmClimaxSites.sites[activeRealmClimax.id];
       stopRealmClimax(); player.teleport(site.start[0], site.start[1] + .3, site.start[2]); combat.refillAmmo();
@@ -2165,6 +2214,14 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  input:()=>({held:down('interact'),moving:!!(down('forward')||down('back')||down('left')||down('right')||down('jump'))||Math.hypot(player.vel.x,player.vel.z)>.2,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active),grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,unsafeMotion:player.flying||player.swimming||player.gliding,damage:relayDamageRevision}),
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
+// K04, Winter W01–W05/W08 and Black Sail B01–B09 field chapters stand on existing story markers.
+const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS] as const;
+const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
+ {anchors:['sea_core','disc_flagship','adventure_harbor_records','adventure_harbor_alarm','map_flagship_inner_lane','map_flagship_outer_lane'],offset:()=>flagshipNavigation.offset});
+if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:',fieldChapterScene.missing.join(', '));
+world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
+let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
+addEventListener('pagehide',e=>{if(!e.persisted)fieldChapterScene.dispose();});
 colliders.push(...homeTown.activities.colliders);targets.push(...homeTown.activities.targets);
 addEventListener('pagehide',e=>{if(!e.persisted)homeTown?.dispose();});
 function speakDialogue(line: [string,string], speaker: [string,string] = ['交谈','Conversation']) {
@@ -3683,6 +3740,11 @@ egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyp
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
 });
+fieldChapters=createFieldChapters({done,sets:FIELD_CHAPTER_CONTENT.map(c=>c.set),save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
+ position:id=>markers.get(id)?.p,
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+ start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
+});
 orleansCampaign=createOrleansCampaign({done,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
  position:id=>markers.get(id)?.p,encounter:()=>combat.storyEncounter?.id??null,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
@@ -3858,6 +3920,7 @@ function shoot() {
     if(questHit.distance<=gun.range&&qinCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(questHit.distance<=gun.range&&egyptCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(questHit.distance<=gun.range&&orleansCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
+    if(questHit.distance<=gun.range&&fieldChapters?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(adventureRuntime?.hit(id)){const fun=[...adventureSites.fun.values()].find(f=>f.ids.includes(id));if(fun&&fun.ids.every(flag=>done.has(flag)))toast(bilingual(...fun.line));combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(id===KINGDOM_GATE.latch){kingdomGateRuntime?.unlock();combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     done.add(id);
@@ -3929,6 +3992,7 @@ function nearestInteract(): Marker | null {
     if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
     if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
     if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
+    if(fieldChapters?.has(m.id)&&!fieldChapters.ready(m.id))continue;
     if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
@@ -4177,6 +4241,7 @@ function interact() {
    if(options.length>1||m.id===QC.locked){clearInput();narrative?.showChoices(a.line,['秦 · 编组与工符','Qin · Formation and tally'],options.map(b=>({id:b.id,label:b.label})),id=>{qinCampaign?.interact(id);});}else qinCampaign?.interact(m.id);return;
   }
   if(egyptChapterById.has(m.id)){egyptCampaign?.interact(m.id);return;}
+  if(fieldChapters?.has(m.id)){fieldChapters.interact(m.id);return;}
   if(orleansActionById.has(m.id)){
     const a=orleansActionById.get(m.id)!;
     const choices=[...orleansActionById.values()].filter(b=>b.at.every((v,i)=>v===a.at[i])&&orleansCampaignReady(b.id,done));
@@ -4251,7 +4316,7 @@ function interact() {
   if (servantByContract(m.id)) contract.recruit(m.id);
   save(); applyWorldState();
   const msg: Record<string, string> = {
-    tower_console: '幻日塔重启！光环点亮了整个山谷，四处时层断面同时显现',
+    tower_console: '幻日塔重启！光环点亮了整个山谷，三处时层断面同时显现',
     hq_terminal: '调查员身份已登记：世界地图与历史档案已开放',
     seam_west: '西部时层：约 537 年的不列颠，黄昏永远不会结束',
     seam_north: '北方冰海：1812 年的冬天没有尽头',
@@ -4607,6 +4672,7 @@ function frame(now: number) {
   qinCrewTransit?.update(dt,gameplayActive()&&!combat.defeated&&regionAt(player.pos.x,player.pos.z).id==='qin');qinCampaignScene.apply(done,qinCrewTransit?.progress()??0);qinCampaignScene.update(gameplayActive()?dt:0,player.pos);
   egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
+  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
   const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();
@@ -4787,7 +4853,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

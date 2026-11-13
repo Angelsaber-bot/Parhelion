@@ -11,9 +11,11 @@ export const SKY_LIFT = {
   cabin: 'journey_sky_lift_cabin',
 } as const;
 export const SKY_LIFT_FLOORS = [156, 208] as const;
-export const SKY_LIFT_CENTER = [263, 244] as const;
-export const SKY_LIFT_LOWER_ROUTE: [number, number, number][] = [[157, 156, 216], [181, 156, 231], [236, 156, 253], [263, 156, 253], [263, 156, 246.9]];
-export const SKY_LIFT_UPPER_ROUTE: [number, number, number][] = [[265.9, 208, 244], [274, 208, 244]];
+// Shifted 4 m east / 1 m north (2026-11-13) so the shaft clears the throat→back stair flight,
+// which used to catch a descending passenger at 182 m.
+export const SKY_LIFT_CENTER = [267, 245] as const;
+export const SKY_LIFT_LOWER_ROUTE: [number, number, number][] = [[157, 156, 216], [181, 156, 231], [236, 156, 253], [267, 156, 253], [267, 156, 247.9]];
+export const SKY_LIFT_UPPER_ROUTE: [number, number, number][] = [[269.9, 208, 245], [274, 208, 245]];
 
 /** The J–C service connection is a traversable 52 m hoist. Calling it never
  * moves the player: only a grounded passenger on the moving floor is carried. */

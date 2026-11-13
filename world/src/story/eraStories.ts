@@ -5,6 +5,9 @@ import { KINGDOM_WORKS, kingdomWorksActive } from './kingdomWorks';
 import { HARBOR_RELIEF, harborReliefReady } from './harborRelief';
 import { WINTER_WITHDRAWAL, winterWithdrawalReady } from './winterWithdrawal';
 import { KYOTO_WITNESS, kyotoWitnessReady } from './kyotoWitness';
+import { K04, kingdomBackPassageRequired } from './kingdomBackPassage';
+import { WC, winterChaptersRequired } from './winterChapters';
+import { BC, blacksailChaptersRequired } from './blacksailChapters';
 import type { Localized, RegionId } from '../settlements/types';
 import type { Layout, Marker } from '../core/types';
 
@@ -128,7 +131,7 @@ export const ERA_STORIES: Record<EraId, EraChapter> = {
       { id: 'cannon', flags: ['fort_cannon'], text: ['启动黑胡子要塞的炮台，站在炮位上瞄准幽灵小艇。', 'Ready the fort cannon and aim at the ghost boats from its firing station.'] },
       { id: 'boats', flags: ['ghost_boat_1', 'ghost_boat_2', 'ghost_boat_3'], text: ['在炮位击沉三艘幽灵小艇，切断冷灯补给并显露旗舰栈桥。', 'Sink all three ghost boats from the cannon station to cut the supply line and reveal the flagship bridge.'] },
     ],
-    challenge: ['沿幽灵栈桥登上旗舰，击败亡航提督。', 'Cross the ghost bridge to the flagship and defeat the Drowned Admiral.'],
+    challenge: ['沿幽灵栈桥登上旗舰，夺下梅瑞克的指挥台。', 'Cross the ghost bridge to the flagship and defeat Meyrick at the command deck.'],
     returnText: ['回到拿骚酒馆，与黑胡子缔结契约。', 'Return to Nassau tavern to seal your pact with Blackbeard.'],
     completeText: ['冷灯灭了。等潮水转向，船就能回港。黑胡子若还在酒馆，你最好趁他清醒时去。', 'The cold lamp is out. Ships can return with the tide. If Blackbeard is still at the tavern, catch him while he is sober.'],
     legacyRequires: ['shard_powder', 'shard_compass', 'shard_treasure'],
@@ -139,7 +142,7 @@ export const ERA_STORIES: Record<EraId, EraChapter> = {
       { id: 'commander', flags: ['napoleon_meet'], text: ['在大军营地找到拿破仑，确认雪路方向。', 'Meet Napoleon in the army camp and learn the snow-road route.'] },
       { id: 'warm-road', flags: ['beacon_1', 'beacon_2', 'beacon_3'], text: ['沿雪原点燃三座烽火，在已点燃的火旁取暖，接通救护暖路。', 'Light the three snowfield beacons, warming yourself beside lit fires to connect the aid route.'] },
     ],
-    challenge: ['沿撤离道路前往旧税关广场，挑战执冬者。', 'Follow the evacuation road to the old customs square and challenge the Winter Warden.'],
+    challenge: ['沿撤离道路前往旧税关广场，拆散最后方阵。', 'Follow the evacuation road to the old customs square and challenge the last square.'],
     returnText: ['回到皇帝帐篷，与拿破仑缔结契约。', 'Return to the emperor’s tent and seal your pact with Napoleon.'],
     completeText: ['旧税关安静下来了。把手套戴好，雪还没停；回程若看见落单的人，就陪他走到火边。', 'The old customs square has fallen quiet. Keep your gloves on; it is still snowing. If you find someone alone on the road, walk with them as far as a fire.'],
     legacyRequires: ['shard_eagle', 'shard_bell', 'shard_frost'],
@@ -174,7 +177,16 @@ export function isEraCoreCleared(core: string, done: ReadonlySet<string>): boole
   return region ? coreCleared(region, done) : undefined;
 }
 /** [] grandfathers old ready/finished saves without writing progress; undefined preserves unknown cores. */
+/** New regional chapters gate the old boss only for saves that started them, or had not yet passed that stretch. */
 export function getEraBossRequirements(core: string, done: ReadonlySet<string>): readonly string[] | undefined {
+  const base = baseEraBossRequirements(core, done);
+  if (!base) return base;
+  const extra = core === 'sun_core' && kingdomBackPassageRequired(done) ? [K04.complete]
+    : core === 'winter_core' && winterChaptersRequired(done) ? [WC.w05, WC.key]
+      : core === 'sea_core' && blacksailChaptersRequired(done) ? [BC.b07, BC.boarded] : [];
+  return extra.length ? [...base, ...extra.filter(flag => !base.includes(flag))] : base;
+}
+function baseEraBossRequirements(core: string, done: ReadonlySet<string>): readonly string[] | undefined {
   const region = chapterForCore(core);
   if (!region) return undefined;
   const def = ERA_STORIES[region];

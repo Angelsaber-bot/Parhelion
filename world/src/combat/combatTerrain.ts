@@ -42,6 +42,8 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
   const kingdomMarkers = new Set<string>([KINGDOM_GATE.entry,KINGDOM_GATE.latch,KINGDOM_GATE.winch,KINGDOM_GATE.service,
     KINGDOM_ROAD.front,KINGDOM_ROAD.side,KINGDOM_ROAD.start,KINGDOM_ROAD.finish]);
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
+  // Regional field-chapter markers (k04_/w0x_/b0x_) never veto spawns: they were added on top of
+  // already-reviewed encounter sites and carry their own spawn checks.
   // Wilderness placement ignores the exploration layer entirely (its markers and colliders), so the seeded
   // wild roster is identical whatever exploration content exists; story encounters still respect it.
   const exploration = (c: Collider) => !!c.name?.startsWith('COL_SunwardExploration');
@@ -55,7 +57,7 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
       return true;
     };
     if (!authoredHub && layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
-    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !m.id.startsWith('xpm_') && !(authoredHub && m.id.startsWith('valley_prologue_')) && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
+    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !m.id.startsWith('xpm_') && !/^(k04|w0[1-9]|b0[1-9])_/.test(m.id) && !(authoredHub && m.id.startsWith('valley_prologue_')) && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
     // A downward all-collider ray finds flat roofs before terrain. Their clearance can look
@@ -85,7 +87,7 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     return spec.actors.some(a=>Math.abs(x-spec.anchor.x-a.offset[0])<1e-6&&Math.abs(z-spec.anchor.z-a.offset[1])<1e-6)?placeEnemy(x,z,true,true,true):null;
   };
   const safeAdventureSpawn=(spec:StoryEncounterSpec,x:number,z:number):Point3|null=>{
-    const markerId=spec.id.startsWith('chapter_egypt_campaign_')?spec.id.slice(8):spec.id.startsWith('orleans_main_')?'orleans_campaign_'+spec.id.slice(13):spec.id===HARBOR_WORKBOAT_ENCOUNTER?HARBOR_WORKBOAT.fight:spec.id===VALLEY_RESCUE_ENCOUNTER?VALLEY_PROLOGUE.survey:spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
+    const markerId=spec.id.startsWith('chapter_')?spec.id.slice(8):spec.id.startsWith('orleans_main_')?'orleans_campaign_'+spec.id.slice(13):spec.id===HARBOR_WORKBOAT_ENCOUNTER?HARBOR_WORKBOAT.fight:spec.id===VALLEY_RESCUE_ENCOUNTER?VALLEY_PROLOGUE.survey:spec.id===KINGDOM_WATCH_ENCOUNTER?KINGDOM_WORKS.patrol:spec.id===VALLEY_NIGHT_ENCOUNTER?VALLEY_FIELD.nightPatrol:spec.id==='adventure_winter_breach'?'adventure_winter_support':spec.id==='adventure_harbor_alarm'?'adventure_harbor_records':spec.id==='adventure_guardian'?'adventure_guardian':/^adventure_guard_[1-3]$/.test(spec.id)?`adventure_emitter_${spec.id.slice(-1)}`:null;
     const marker=layout.markers.find(m=>m.id===markerId);
     const height = spec.id === VALLEY_RESCUE_ENCOUNTER ? VALLEY_SURVEY_HEIGHT : .9;
     if(!marker||Math.abs(spec.anchor.x-marker.p[0])>.01||Math.abs(spec.anchor.z-marker.p[2])>.01||Math.abs(spec.anchor.y-(marker.p[1]-height))>.01)return null;

@@ -42,7 +42,7 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
   });
   await t.test('production F opens readable dialogue, blocks damage/input, ignores repeat and closes on a new F',async()=>{
     const npc=world.scene.getObjectByName('Resident_alpha_archivist');assert.ok(npc);
-    const point=npc.getWorldPosition(new THREE.Vector3()),z=point.z+1;world.player.teleport(point.x,world.ground(point.x,z)+.02,z);
+    const point=npc.getWorldPosition(new THREE.Vector3()),z=point.z+1;world.player.teleport(point.x,(world.combat.geometry.ground(point.x,z,point.y+1.25)?.point.y??point.y)+.02,z);
     for(const state of [{onGround:false,swimming:false,gliding:false},{onGround:true,swimming:true,gliding:false},{onGround:true,swimming:false,gliding:true}]){
       Object.assign(world.player,state);key('KeyF');release('KeyF');assert.equal(world.done.has('valley_story_met'),false,'air/water/glide cannot start dialogue or advance progress');
       assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,true);
@@ -61,7 +61,7 @@ test('NON-GPU production boot initializes real DOM/assets/state and executes its
   });
   await t.test('map, settings, blur and pointer unlock clear dialogue and cannot leave a stuck modal',async()=>{
     const npc=world.scene.getObjectByName('Resident_alpha_archivist'),point=npc.getWorldPosition(new THREE.Vector3()),z=point.z+1;
-    const open=()=>{world.player.teleport(point.x,world.ground(point.x,z)+.02,z);for(let i=0;i<5;i++)frame();key('KeyF');release('KeyF');assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,false);};
+    const open=()=>{world.player.teleport(point.x,(world.combat.geometry.ground(point.x,z,point.y+1.25)?.point.y??point.y)+.02,z);for(let i=0;i<5;i++)frame();key('KeyF');release('KeyF');assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,false);};
     open();key('KeyM');assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,true);assert.ok(window.document.getElementById('bigmap')!.classList.contains('open'));key('KeyM');
     open();key('KeyO');assert.equal(world.settingsPanel.open,true);assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,true);await snapshot('03-settings');world.settingsPanel.close();
     await enter();open();window.dispatchEvent(new window.Event('blur'));assert.equal((window.document.getElementById('world-dialogue') as HTMLElement).hidden,true);assert.equal(world.audio.activeVoices,0);
