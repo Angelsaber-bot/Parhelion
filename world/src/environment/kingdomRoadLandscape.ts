@@ -63,6 +63,9 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   landscapeWalkway(front, frontPath, { width: 8, floor: wood, edge: iron, rails: true, continuousCorners: true,
     railOpenings: [{ p: gatePoint(0, -4), radius: 6 }, { p: gatePoint(0, 11), radius: 6 }], supports: (x, z) => ground(x, z) });
   const frontCollider = finish(front, 'COL_KingdomPermanentCartBridge', false);
+  // Only the finished front-gate plan builds the cart bridge: never solid before the first state apply,
+  // or anything placed at load (residents, chapter markers) can land on an invisible deck.
+  frontCollider.enabled = false; front.root.visible = false;
   const gantry = new SiteArt();
   for (const s of [-5, 5]) {
     gantry.box(gatePoint(s, 15, 4.3), [.8, 8.6, .8], stone, true);
@@ -83,6 +86,7 @@ export function createKingdomRoadLandscape(ground: (x: number, z: number) => num
   broken.box(gatePoint(5.8, 13, .3), [1.5, .6, 1.1], wood, true);
   broken.beam(gatePoint(5.2, 13, .6), gatePoint(6.7, 14, .15), .2, iron);
   const winchCollider = finish(winch, 'COL_KingdomIntactOuterWinch', false), brokenCollider = finish(broken, 'COL_KingdomBrokenOuterWinch', false);
+  brokenCollider.enabled = false; broken.root.visible = false;
 
   const junctionY = sidePath.find(p => Math.abs(p[2] + 109) < .01)![1];
   const abbeyApproach: Point[] = [[-169, junctionY, -109], [-179, 34, -110], [-186, 34, -110]];

@@ -2,7 +2,7 @@
   {
     "name": "COL_Terrain",
     "triangles": 259200,
-    "orderedPositionHash": "8d135fb94943627c35d49a14ca133a9df523279ac5a98627cc84d2ab5bd632e0",
+    "orderedPositionHash": "b7e05bb064f91c2a81331b8dab74ad18b9fa71f7009795c5f18039b727014631",
     "worldMatrix": [
       1,
       0,
@@ -114,8 +114,8 @@
   },
   {
     "name": "COL_Props",
-    "triangles": 35412,
-    "orderedPositionHash": "432e563aff49d2bfdb68d1eff0cc494de237859f21abecd67989552daeb6ee7a",
+    "triangles": 29832,
+    "orderedPositionHash": "efdc3876fd17ab4acad48d89a675265463677e8c6b9a0fb89e9a3b1af2479c35",
     "worldMatrix": [
       1,
       0,

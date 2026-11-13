@@ -16,10 +16,12 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
   const sourceRoots=sources.handles.length?sources.handles.map(h=>({name:h.node.name})):receipt?.roots;
   assert.ok(sourceRoots,'production detach must expose a numeric receipt');
   assert.equal(sourceRoots.filter((h:any)=>h.name==='COLLISION').length,9);assert.equal(sourceRoots.filter((h:any)=>h.name==='MARKERS').length,9);
-  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,332); /* Previous 311 + five additional physical home-town discovery markers + four Qin mausoleum and burial-pit discoveries + six Egypt second-ring discoveries. */}
+  if(!sources.handles.length){assert.equal(receipt.sharedArtGeometryReferences,0);assert.equal(receipt.sharedProtectedGeometryReferences,0);assert.equal(receipt.sharedProtectedBackingBuffers,0);assert.equal(receipt.objects,340); /* Previous 311 + five additional physical home-town discovery markers + four Qin mausoleum and burial-pit discoveries + six Egypt second-ring discoveries + eight Kyoto layout markers (33 → 41). */}
   // All original region-space JSON anchors must retain their authoritative world transform.
   const expectedLayout=mergeLayouts(REGIONS.map(def=>({def,layout:JSON.parse(readFileSync(new URL(`../public/assets/${def.file}.layout.json`,import.meta.url),'utf8'))})));
-  for(const marker of expectedLayout.markers){const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}
+  // The Valley south seam (torii) is retired at load; its marker is removed on purpose.
+  const retired=new Set(['seam_south']);
+  for(const marker of expectedLayout.markers){if(retired.has(marker.id)){assert.equal(w.layout.markers.find((m:any)=>m.id===marker.id),undefined,`${marker.id} stays retired`);continue;}const live=w.layout.markers.find((m:any)=>m.id===marker.id);assert.ok(live,marker.id);assert.deepEqual(Array.from(live.p),marker.p,`world-space quest/spawn anchor ${marker.id}`);}
   for(const area of expectedLayout.areas){const live=w.layout.areas.find((a:any)=>a.id===area.id);assert.ok(live,area.id);assert.deepEqual(Array.from(live.tp),area.tp,`teleport ${area.id}`);assert.deepEqual(Array.from(live.c),area.c,`area ${area.id}`);}
   for(const region of REGIONS){const id=region.id==='alpha'?'spawn_p1':`${region.id}_spawn_p1`;assert.ok(w.layout.markers.find((m:any)=>m.id===id),`${region.id} spawn retained`);}
   for(const boss of w.combat.state.bosses){const anchor=expectedLayout.markers.find(m=>m.id===boss.id)!;assert.ok(anchor,boss.id);assert.deepEqual({...boss.home},{x:anchor.p[0],y:anchor.p[1]+.05,z:anchor.p[2]},`boss world-space home ${boss.id}`);}
@@ -49,7 +51,9 @@ test('detaching consumed source COLLISION/MARKERS preserves production capsule, 
   const state=(done:string[])=>{w.done.clear();for(const id of done)w.done.add(id);refresh();};
   const exercise=()=>{
    const paths:any[]=[];
-   for(const [name,x,z,dx,dz]of [['west',-280,-30,-1,0],['east',280,30,1,0],['north',0,-280,0,-1],['south',40,280,0,1]] as [string,number,number,number,number][]){
+   // The south seam (torii) was retired at load: its gate keeps its name but holds no triangles.
+   const south=w.colliders.find((c:any)=>c.name==='COL_Seam_south_Gate');assert.ok(!south||(south.bvh.geometry.index?.count??0)===0,'retired south seam blocks nothing');
+   for(const [name,x,z,dx,dz]of [['west',-280,-30,-1,0],['east',280,30,1,0],['north',0,-280,0,-1]] as [string,number,number,number,number][]){
     for(const open of [false,true]){
      state(open?['summon_circle']:[]);const gate=w.colliders.find((c:any)=>c.name===`COL_Seam_${name}_Gate`);assert.equal(gate.enabled,!open);
      const ground=w.combat.geometry.ground(x,z);assert.ok(ground);w.player.teleport(x,ground.point.y+.2,z);for(let settle=0;settle<120;settle++)w.player.step(1/120,{x:0,z:0,jump:false,sprint:false});w.player.yaw=Math.atan2(-dx,-dz);

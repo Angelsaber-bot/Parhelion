@@ -10,8 +10,9 @@ test('actual-main native Saber executes bounded support and restores attack owne
     const frame = (count = 1) => { for (let i = 0; i < count; i++) h.frame(now += 1000 / 60); };
     w.done.add('armory_rack'); w.contract.recruit('saber_contract'); w.contract.select('saber');
     for (const enemy of w.combat.state.enemies) { enemy.mode = 'dead'; enemy.hp = 0; enemy.active = false; enemy.timer = Infinity; }
-    w.player.teleport(50, w.ground(50, -593.5) + .1, -593.5); w.player.yaw = Math.PI / 2;
-    (h.window.document.getElementById('start') as HTMLElement).click(); frame(2); await h.settleAssets(); frame(45);
+    // Start first: a fresh save is placed in the prologue room, so move to the outdoor slope afterwards.
+    (h.window.document.getElementById('start') as HTMLElement).click(); frame(2); await h.settleAssets();
+    w.player.teleport(50, w.ground(50, -593.5) + .1, -593.5); w.player.yaw = Math.PI / 2; frame(45);
     h.window.document.body.dispatchEvent(new h.window.KeyboardEvent('keydown', { code: 'KeyW', bubbles: true }));
     frame(120);
     h.window.document.body.dispatchEvent(new h.window.KeyboardEvent('keyup', { code: 'KeyW', bubbles: true })); frame(30);

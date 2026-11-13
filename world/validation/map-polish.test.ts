@@ -56,6 +56,19 @@ const edits:Record<string,{nodes:string[];triangles:number;bytes:number}>={
 for(const [region,allowed] of Object.entries(edits))test(`${region}: bounded detail whitelist preserves exact gameplay and all unrelated GLB content`,async()=>{
   // Join-band trees/rocks were re-seated vertically (join-band-seating.edits.json); compare them reversed.
   const old=before.regions[region],now=await snapshot(assets,region,{unseat:true});
+  // Rebuilt regions were re-baselined at a recorded commit (refresh-map-baselines.ts): from then on
+  // every node, material, layout byte and prepared chunk must stay exact. Alpha keeps the history below.
+  const refreshed=before.refreshed?.regions?.[region];
+  if(refreshed){
+    assert.equal(now.layoutSha256,refreshed.layoutSha256,'complete layout bytes since refresh');
+    assert.deepEqual(now.materials,refreshed.materials,'materials since refresh');
+    assert.deepEqual(Object.keys(now.nodes),Object.keys(refreshed.nodes),'node set since refresh');
+    for(const [name,node] of Object.entries(now.nodes))assert.deepEqual(node,refreshed.nodes[name],`${name}: exact since refresh`);
+    assert.equal(now.artTriangles,refreshed.artTriangles);assert.equal(now.artPrimitives,refreshed.artPrimitives);
+    assert.ok(now.bytes<25*1024*1024,'existing individual-file delivery ceiling');
+    assert.deepEqual(await countPreparedArt(assets,region),before.refreshed.chunks[region],'prepared chunks since refresh');
+    return;
+  }
   const currentIndices=await triangleIndexProof(readFileSync(`${assets}/world_${region}.glb`));
   assert.equal(before.baselineCommit,'a3096254ef0fff455a29932bc5fef2e57fa49f44');
   if (region === 'alpha') {

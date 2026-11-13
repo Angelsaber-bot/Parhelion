@@ -141,6 +141,7 @@ export class MountedCharge {
     if (this.plan && prey) {
       const shift = prey.position.clone().sub(this.plan.target.position);
       this.plan.start.add(shift); this.plan.end.add(shift); this.plan.target = { id: prey.id, position: prey.position.clone() };
+      { const seated = this.floor(this.plan.start.x, this.plan.start.z, Math.max(this.plan.start.y, root.position.y) + MOTION.stepHeight); if (seated !== null) this.plan.start.y = seated; }
       // A moving target cannot drag the planned run through a new wall, ledge or beyond the leash.
       const heading = Math.atan2(this.plan.direction.x, this.plan.direction.z);
       const check = this.planCheck <= 0 || shift.lengthSq() > .04;
@@ -200,6 +201,8 @@ export class MountedCharge {
     const side = new THREE.Vector3(direction.z, 0, -direction.x);
     for (const sign of [1, -1]) {
       const start = target.position.clone().addScaledVector(direction, -(mountedChargeDistance(contact, duration, contact) + contactLead)).addScaledVector(side, sign * MOTION.sideClearance);
+      // Seat the start on its own floor: on a slope the target's height is not the ground behind it.
+      const seated = this.floor(start.x, start.z, Math.max(start.y, actor.root.position.y) + MOTION.stepHeight); if (seated !== null) start.y = seated;
       const end = start.clone().addScaledVector(direction, mountedChargeDistance(duration, duration, contact));
       const heading = Math.atan2(direction.x, direction.z);
       const approach = start.clone().sub(actor.root.position), approachYaw = Math.atan2(approach.x, approach.z);

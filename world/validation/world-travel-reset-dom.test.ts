@@ -95,7 +95,8 @@ test('NON-GPU actual travel buttons and reset keys execute production handlers w
       assert.equal(world.done.size, 0); assert.equal(world.found.size, 0); assert.equal(world.contract.roster.length, 0);
       assert.equal(world.actions.skills.energy, 0); assert.equal(world.actions.skills.cooldown('skill'), 0);
       assert.equal(world.rig.joints.Gun.visible, false);
-      const spawn = world.layout.markers.find((marker: any) => marker.id === INITIAL_SPAWN_ID);
+      // A fresh save starts the Valley prologue in the residence room, not the old field spawn marker.
+      const spawn = world.valleyPrologueScene?.spawn ?? world.layout.markers.find((marker: any) => marker.id === INITIAL_SPAWN_ID);
       assert.deepEqual(world.player.pos.toArray(), [spawn.p[0], spawn.p[1] + 1, spawn.p[2]]);
       assert.deepEqual(JSON.parse(window.localStorage.getItem(WORLD_PROGRESS_KEY)!), { done: [], found: [] });
       assert.equal(window.localStorage.getItem('fixture-unrelated-preference'), 'keep');

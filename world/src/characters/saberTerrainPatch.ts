@@ -24,7 +24,8 @@ export class SaberTerrainPatch {
   private x = 0; private z = 0; private y = 0;
   constructor(private readonly colliders: Collider[]) {}
   beginFrame(x?: number, z?: number, baseY?: number) {
-    if (this.colliders.length > 256) { this.oversized = true; this.ready = true; this.valid = false; return; }
+    // 354 colliders in the current world (regional chapter scenes); the per-frame snapshot is a cheap identity check.
+    if (this.colliders.length > 512) { this.oversized = true; this.ready = true; this.valid = false; return; }
     if (this.oversized) { this.ready = false; this.oversized = false; }
     let changed = this.snapshot.length !== this.colliders.length;
     for (let i = 0; i < this.colliders.length; i++) {

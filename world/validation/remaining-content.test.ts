@@ -73,6 +73,10 @@ test('local cavalry uses the loaded Napoleon horse and a real contact while Sabe
  try{
   (d.getElementById('start')as HTMLElement).click();await Promise.resolve();frame(2);
   const m=w.layout.markers.find((m:any)=>m.id==='adventure_winter_support');w.player.teleport(m.p[0],m.p[1]+.3,m.p[2]);frame(70);const selected=w.contract.selected;await h.settleAssets();frame();
+  // The breach support is authored against the roadblock guards it summons. Since the map rebuild a
+  // frost-officer elite patrols this road and drags any charge line through the journey facility, so
+  // keep the roaming wild roster out of this check; the guards still move and fight for real.
+  for(const e of w.combat.state.enemies)if(!e.storyEncounter&&e.kind!=='king'&&Math.hypot(e.p.x-40,e.p.z+690)<40)e.pacified=true;
   assert.ok(w.cavalrySupport.request(),d.getElementById('toast')?.textContent);frame(2);await h.settleAssets();frame(2);
   const napoleon=w.__qaEraActors.find((a:any)=>a.servant==='napoleon');assert.ok(napoleon.actor);const actor=napoleon.actor;
 

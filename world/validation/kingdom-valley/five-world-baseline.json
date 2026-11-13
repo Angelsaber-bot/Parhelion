@@ -3,7 +3,7 @@
     "layout": {
       "world": {
         "id": "world_alpha_sundog_valley",
-        "name": "\u5e7b\u65e5\u8c37",
+        "name": "幻日谷",
         "nameEn": "Parhelion Valley",
         "version": 2,
         "seed": 20261026,
@@ -15,7 +15,7 @@
       "areas": [
         {
           "id": "camp",
-          "name": "\u521d\u59cb\u8425\u5730",
+          "name": "初始营地",
           "nameEn": "Landing Camp",
           "c": [
             5,
@@ -30,7 +30,7 @@
         },
         {
           "id": "hq",
-          "name": "\u5e7b\u65e5\u89c2\u6d4b\u6240",
+          "name": "幻日观测所",
           "nameEn": "Parhelion Observatory",
           "c": [
             -118,
@@ -45,7 +45,7 @@
         },
         {
           "id": "armory",
-          "name": "\u67aa\u68b0\u5de5\u574a",
+          "name": "枪械工坊",
           "nameEn": "Armory",
           "c": [
             -70,
@@ -60,7 +60,7 @@
         },
         {
           "id": "summon",
-          "name": "\u53ec\u5524\u5927\u5385",
+          "name": "召唤大厅",
           "nameEn": "Summoning Hall",
           "c": [
             -166,
@@ -75,7 +75,7 @@
         },
         {
           "id": "tower",
-          "name": "\u5e7b\u65e5\u5854",
+          "name": "幻日塔",
           "nameEn": "Parhelion Tower",
           "c": [
             0,
@@ -90,7 +90,7 @@
         },
         {
           "id": "lake",
-          "name": "\u955c\u6e56",
+          "name": "镜湖",
           "nameEn": "Mirror Lake",
           "c": [
             0,
@@ -105,7 +105,7 @@
         },
         {
           "id": "forest",
-          "name": "\u56de\u58f0\u68ee\u6797",
+          "name": "回声森林",
           "nameEn": "Echo Forest",
           "c": [
             110,
@@ -120,7 +120,7 @@
         },
         {
           "id": "station",
-          "name": "\u5e9f\u5f03\u524d\u54e8\u7ad9",
+          "name": "废弃前哨站",
           "nameEn": "Abandoned Outpost",
           "c": [
             -140,
@@ -135,7 +135,7 @@
         },
         {
           "id": "falls",
-          "name": "\u96fe\u7011",
+          "name": "雾瀑",
           "nameEn": "Mist Falls",
           "c": [
             158,
@@ -150,7 +150,7 @@
         },
         {
           "id": "ford",
-          "name": "\u897f\u5cb8\u6e21\u53e3",
+          "name": "西岸渡口",
           "nameEn": "West Ford",
           "c": [
             -95,
@@ -165,7 +165,7 @@
         },
         {
           "id": "seam_w",
-          "name": "\u897f\u90e8\u65f6\u5c42",
+          "name": "西部时层",
           "nameEn": "Western Era Seam",
           "c": [
             -304,
@@ -180,7 +180,7 @@
         },
         {
           "id": "seam_n",
-          "name": "\u5317\u65b9\u51b0\u6d77\u65ad\u9762",
+          "name": "北方冰海断面",
           "nameEn": "Northern Ice Seam",
           "c": [
             0,
@@ -195,7 +195,7 @@
         },
         {
           "id": "seam_s",
-          "name": "\u5357\u65b9\u9e1f\u5c45\u65ad\u9762",
+          "name": "南方鸟居断面",
           "nameEn": "Southern Torii Seam",
           "c": [
             40,
@@ -210,7 +210,7 @@
         },
         {
           "id": "pass",
-          "name": "\u4e1c\u90e8\u5c71\u53e3",
+          "name": "东部山口",
           "nameEn": "Eastern Pass",
           "c": [
             300,
@@ -526,7 +526,7 @@
         {
           "id": "spawn_p1",
           "type": "spawn",
-          "label": "\u73a9\u5bb61\u51fa\u751f\u70b9",
+          "label": "玩家1出生点",
           "p": [
             3,
             20,
@@ -536,7 +536,7 @@
         {
           "id": "spawn_p2",
           "type": "spawn",
-          "label": "\u73a9\u5bb62\u51fa\u751f\u70b9",
+          "label": "玩家2出生点",
           "p": [
             7,
             20,
@@ -546,7 +546,7 @@
         {
           "id": "camp_terminal",
           "type": "poi",
-          "label": "\u8425\u5730\u7ec8\u7aef\uff08\u5b58\u6863\u70b9\uff09",
+          "label": "营地终端（存档点）",
           "p": [
             -8,
             20,
@@ -556,7 +556,7 @@
         {
           "id": "station_cover_0",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -124,
             8,
@@ -567,7 +567,7 @@
         {
           "id": "station_cover_1",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -123,
             8,
@@ -578,7 +578,7 @@
         {
           "id": "station_cover_2",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -168,
             8,
@@ -589,7 +589,7 @@
         {
           "id": "station_cover_3",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -119,
             8,
@@ -600,7 +600,7 @@
         {
           "id": "station_cover_4",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -146,
             8,
@@ -611,7 +611,7 @@
         {
           "id": "station_cover_5",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -140,
             8,
@@ -622,7 +622,7 @@
         {
           "id": "station_cover_6",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -131,
             8,
@@ -633,7 +633,7 @@
         {
           "id": "station_cover_7",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -155,
             8,
@@ -644,7 +644,7 @@
         {
           "id": "station_cover_8",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -128,
             8,
@@ -655,7 +655,7 @@
         {
           "id": "station_cover_9",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -114,
             8,
@@ -666,7 +666,7 @@
         {
           "id": "station_cover_10",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -117,
             8,
@@ -677,7 +677,7 @@
         {
           "id": "station_cover_11",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -160,
             8,
@@ -688,7 +688,7 @@
         {
           "id": "station_cover_12",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -141,
             8,
@@ -699,7 +699,7 @@
         {
           "id": "station_cover_13",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -130,
             8,
@@ -710,7 +710,7 @@
         {
           "id": "station_cover_14",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -170,
             8,
@@ -721,7 +721,7 @@
         {
           "id": "station_cover_15",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -112,
             8,
@@ -732,7 +732,7 @@
         {
           "id": "station_cover_16",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -146,
             8,
@@ -743,7 +743,7 @@
         {
           "id": "station_cover_17",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -136,
             8,
@@ -754,7 +754,7 @@
         {
           "id": "station_cover_18",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -160,
             8,
@@ -765,7 +765,7 @@
         {
           "id": "station_cover_19",
           "type": "cover",
-          "label": "\u63a9\u4f53",
+          "label": "掩体",
           "p": [
             -128,
             8,
@@ -776,19 +776,19 @@
         {
           "id": "relay_b",
           "type": "interact",
-          "label": "\u4e2d\u7ee7\u5668 B\uff08\u524d\u54e8\u7ad9\uff09",
+          "label": "中继器 B（前哨站）",
           "p": [
             -148,
             8,
             -58
           ],
           "radius": 3,
-          "note": "\u6e05\u9664\u636e\u70b9\u540e\u542f\u52a8"
+          "note": "清除据点后启动"
         },
         {
           "id": "station_gate_s",
           "type": "poi",
-          "label": "\u6b63\u95e8",
+          "label": "正门",
           "p": [
             -140,
             8,
@@ -798,7 +798,7 @@
         {
           "id": "station_breach_e",
           "type": "poi",
-          "label": "\u4e1c\u4fa7\u7834\u5899\uff08\u4fa7\u7ffc\u5165\u53e3\uff09",
+          "label": "东侧破墙（侧翼入口）",
           "p": [
             -102,
             8,
@@ -808,7 +808,7 @@
         {
           "id": "station_door_n",
           "type": "poi",
-          "label": "\u5317\u4fa7\u540e\u95e8\uff08\u64a4\u79bb\u8def\u7ebf\uff09",
+          "label": "北侧后门（撤离路线）",
           "p": [
             -156,
             8,
@@ -818,7 +818,7 @@
         {
           "id": "station_enemy_0",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -140,
             12.9,
@@ -828,7 +828,7 @@
         {
           "id": "station_enemy_1",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -168,
             14.4,
@@ -838,7 +838,7 @@
         {
           "id": "station_enemy_2",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -112,
             14.4,
@@ -848,7 +848,7 @@
         {
           "id": "station_enemy_3",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -125,
             8,
@@ -858,7 +858,7 @@
         {
           "id": "station_enemy_4",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -150,
             8,
@@ -868,7 +868,7 @@
         {
           "id": "station_enemy_5",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -155,
             8,
@@ -878,7 +878,7 @@
         {
           "id": "station_enemy_6",
           "type": "enemy",
-          "label": "\u654c\u4eba\u5237\u65b0\u70b9",
+          "label": "敌人刷新点",
           "p": [
             -130,
             8,
@@ -888,7 +888,7 @@
         {
           "id": "ruin_target_1",
           "type": "objective",
-          "label": "\u673a\u5173\u9776 1",
+          "label": "机关靶 1",
           "p": [
             126.00631961798275,
             10.069876877451316,
@@ -898,7 +898,7 @@
         {
           "id": "ruin_target_2",
           "type": "objective",
-          "label": "\u673a\u5173\u9776 2",
+          "label": "机关靶 2",
           "p": [
             110.5901671120627,
             12.615710445307196,
@@ -908,7 +908,7 @@
         {
           "id": "ruin_target_3",
           "type": "objective",
-          "label": "\u673a\u5173\u9776 3",
+          "label": "机关靶 3",
           "p": [
             116,
             11.410106182098389,
@@ -918,7 +918,7 @@
         {
           "id": "relay_a",
           "type": "interact",
-          "label": "\u4e2d\u7ee7\u5668 A\uff08\u68ee\u6797\u9057\u8ff9\uff09",
+          "label": "中继器 A（森林遗迹）",
           "p": [
             116,
             5.910106182098389,
@@ -934,7 +934,7 @@
         {
           "id": "ruin_enemy_0",
           "type": "enemy",
-          "label": "\u5de1\u903b\u654c\u4eba",
+          "label": "巡逻敌人",
           "p": [
             124,
             5.910106182098389,
@@ -944,7 +944,7 @@
         {
           "id": "ruin_enemy_1",
           "type": "enemy",
-          "label": "\u5de1\u903b\u654c\u4eba",
+          "label": "巡逻敌人",
           "p": [
             110,
             5.910106182098389,
@@ -954,7 +954,7 @@
         {
           "id": "tower_console",
           "type": "interact",
-          "label": "\u5e7b\u65e5\u5854\u63a7\u5236\u53f0",
+          "label": "幻日塔控制台",
           "p": [
             0,
             30.5,
@@ -969,7 +969,7 @@
         {
           "id": "tower_enemy_0",
           "type": "enemy",
-          "label": "\u5b88\u536b\uff08\u7cbe\u82f1\uff09",
+          "label": "守卫（精英）",
           "p": [
             -6,
             30.5,
@@ -979,7 +979,7 @@
         {
           "id": "tower_enemy_1",
           "type": "enemy",
-          "label": "\u5b88\u536b",
+          "label": "守卫",
           "p": [
             7,
             30.5,
@@ -989,43 +989,43 @@
         {
           "id": "secret_cave",
           "type": "discovery",
-          "label": "\u7011\u5e03\u540e\u7684\u89c2\u6d4b\u65e5\u5fd7",
+          "label": "瀑布后的观测日志",
           "p": [
             186,
             2.4,
             -60
           ],
           "radius": 6,
-          "note": "\u5956\u52b1\uff1a\u6545\u4e8b\u788e\u7247 + \u6b66\u5668\u5916\u89c2"
+          "note": "奖励：故事碎片 + 武器外观"
         },
         {
           "id": "secret_pillar",
           "type": "discovery",
-          "label": "\u6e56\u5fc3\u77f3\u67f1\u5b9d\u7bb1",
+          "label": "湖心石柱宝箱",
           "p": [
             6,
             11.6,
             -16
           ],
           "radius": 2.5,
-          "note": "\u8df3\u53f0\u5c0f\u6311\u6218"
+          "note": "跳台小挑战"
         },
         {
           "id": "hq_terminal",
           "type": "interact",
-          "label": "\u89c2\u6d4b\u7ec8\u7aef\uff08\u5e7b\u65e5\u89c2\u6d4b\u6240\uff09",
+          "label": "观测终端（幻日观测所）",
           "p": [
             -118,
             10,
             229.6
           ],
           "radius": 3.5,
-          "note": "\u767b\u8bb0\u8c03\u67e5\u5458\u8eab\u4efd\uff0c\u6253\u5f00\u4e16\u754c\u5730\u56fe\u4e0e\u5386\u53f2\u6863\u6848"
+          "note": "登记调查员身份，打开世界地图与历史档案"
         },
         {
           "id": "hq_archive",
           "type": "poi",
-          "label": "\u5386\u53f2\u6863\u6848 \u00b7 \u4e16\u754c\u5730\u56fe\u5168\u606f\u53f0",
+          "label": "历史档案 · 世界地图全息台",
           "p": [
             -123,
             10,
@@ -1035,19 +1035,19 @@
         {
           "id": "armory_rack",
           "type": "interact",
-          "label": "\u6b66\u5668\u67b6\uff08\u67aa\u68b0\u5de5\u574a\uff09",
+          "label": "武器架（枪械工坊）",
           "p": [
             -65,
             10,
             250
           ],
           "radius": 3.5,
-          "note": "\u9886\u53d6 Lumen AR \u4e0e\u5f39\u836f"
+          "note": "领取 Lumen AR 与弹药"
         },
         {
           "id": "range_target_1",
           "type": "objective",
-          "label": "\u7ec3\u4e60\u9776 1",
+          "label": "练习靶 1",
           "p": [
             -81,
             12,
@@ -1057,7 +1057,7 @@
         {
           "id": "range_target_2",
           "type": "objective",
-          "label": "\u7ec3\u4e60\u9776 2",
+          "label": "练习靶 2",
           "p": [
             -75,
             12,
@@ -1067,7 +1067,7 @@
         {
           "id": "range_target_3",
           "type": "objective",
-          "label": "\u7ec3\u4e60\u9776 3",
+          "label": "练习靶 3",
           "p": [
             -69,
             12,
@@ -1077,7 +1077,7 @@
         {
           "id": "range_line",
           "type": "poi",
-          "label": "\u9776\u573a\u5c04\u51fb\u7ebf",
+          "label": "靶场射击线",
           "p": [
             -75,
             10,
@@ -1087,7 +1087,7 @@
         {
           "id": "summon_circle",
           "type": "interact",
-          "label": "\u53ec\u5524\u9635\uff08\u53ec\u5524\u5927\u5385\uff09",
+          "label": "召唤阵（召唤大厅）",
           "p": [
             -166,
             10.8,
@@ -1100,12 +1100,12 @@
             "seam_east",
             "seam_south"
           ],
-          "note": "\u7a33\u5b9a\u53ec\u5524\u9635\uff0c\u4e3a\u7b2c\u4e00\u4efd Servant \u5951\u7ea6\u505a\u51c6\u5907"
+          "note": "稳定召唤阵，为第一份 Servant 契约做准备"
         },
         {
           "id": "seam_west",
           "type": "interact",
-          "label": "\u897f\u90e8\u65f6\u5c42\u65ad\u9762 \u00b7 \u843d\u65e5\u738b\u56fd",
+          "label": "西部时层断面 · 落日王国",
           "p": [
             -306,
             3.673647880554199,
@@ -1115,12 +1115,12 @@
           "requires": [
             "tower_console"
           ],
-          "note": "\u7ea6 537 \u5e74 \u00b7 \u4e0d\u5217\u98a0\uff1a\u6c38\u6052\u9ec4\u660f"
+          "note": "约 537 年 · 不列颠：永恒黄昏"
         },
         {
           "id": "seam_north",
           "type": "interact",
-          "label": "\u5317\u65b9\u51b0\u6d77\u65ad\u9762 \u00b7 \u6c38\u51ac\u4e4b\u57ce",
+          "label": "北方冰海断面 · 永冬之城",
           "p": [
             0,
             1.12,
@@ -1130,12 +1130,12 @@
           "requires": [
             "tower_console"
           ],
-          "note": "1812 \u5e74 \u00b7 \u4fc4\u7f57\u65af\uff1a\u4e0d\u4f1a\u7ed3\u675f\u7684\u51ac\u5929"
+          "note": "1812 年 · 俄罗斯：不会结束的冬天"
         },
         {
           "id": "seam_east",
           "type": "interact",
-          "label": "\u4e1c\u90e8\u5c71\u53e3\u65ad\u9762 \u00b7 \u9ed1\u5e06\u5c3d\u5934",
+          "label": "东部山口断面 · 黑帆尽头",
           "p": [
             314,
             15.847418785095215,
@@ -1145,12 +1145,12 @@
           "requires": [
             "tower_console"
           ],
-          "note": "1718 \u5e74 \u00b7 \u52a0\u52d2\u6bd4\u6d77\uff1a\u6d77\u76d7\u9ec4\u91d1\u65f6\u4ee3\u7684\u6700\u540e\u4e00\u5e74"
+          "note": "1718 年 · 加勒比海：海盗黄金时代的最后一年"
         },
         {
           "id": "seam_south",
           "type": "interact",
-          "label": "\u5357\u65b9\u9e1f\u5c45\u65ad\u9762 \u00b7 \u4e1a\u706b\u4eac\u90fd",
+          "label": "南方鸟居断面 · 业火京都",
           "p": [
             40,
             10,
@@ -1160,30 +1160,30 @@
           "requires": [
             "tower_console"
           ],
-          "note": "1582 \u5e74 \u00b7 \u4eac\u90fd\uff1a\u672c\u80fd\u5bfa\u4e4b\u53d8\u7684\u90a3\u4e00\u591c"
+          "note": "1582 年 · 京都：本能寺之变的那一夜"
         }
       ],
       "objective": {
         "id": "restart_parhelion_tower",
-        "name": "\u5e7b\u65e5\u8c37\uff1a\u91cd\u542f\u5e7b\u65e5\u5854",
+        "name": "幻日谷：重启幻日塔",
         "steps": [
           {
             "id": "hq",
-            "text": "\u524d\u5f80\u5e7b\u65e5\u89c2\u6d4b\u6240\uff0c\u542f\u52a8\u89c2\u6d4b\u7ec8\u7aef",
+            "text": "前往幻日观测所，启动观测终端",
             "done": [
               "hq_terminal"
             ]
           },
           {
             "id": "armory",
-            "text": "\u5728\u67aa\u68b0\u5de5\u574a\u9886\u53d6\u88c5\u5907",
+            "text": "在枪械工坊领取装备",
             "done": [
               "armory_rack"
             ]
           },
           {
             "id": "range",
-            "text": "\u5728\u9776\u573a\u51fb\u4e2d 3 \u4e2a\u7ec3\u4e60\u9776",
+            "text": "在靶场击中 3 个练习靶",
             "done": [
               "range_target_1",
               "range_target_2",
@@ -1192,7 +1192,7 @@
           },
           {
             "id": "ruin_targets",
-            "text": "\u5728\u56de\u58f0\u68ee\u6797\u9057\u8ff9\u51fb\u4e2d 3 \u4e2a\u673a\u5173\u9776\uff0c\u6253\u5f00\u795e\u9f9b",
+            "text": "在回声森林遗迹击中 3 个机关靶，打开神龛",
             "done": [
               "ruin_target_1",
               "ruin_target_2",
@@ -1201,28 +1201,28 @@
           },
           {
             "id": "relay_a",
-            "text": "\u542f\u52a8\u4e2d\u7ee7\u5668 A\uff08\u68ee\u6797\u9057\u8ff9\uff09",
+            "text": "启动中继器 A（森林遗迹）",
             "done": [
               "relay_a"
             ]
           },
           {
             "id": "relay_b",
-            "text": "\u6e05\u9664\u5e9f\u5f03\u524d\u54e8\u7ad9\u5e76\u542f\u52a8\u4e2d\u7ee7\u5668 B",
+            "text": "清除废弃前哨站并启动中继器 B",
             "done": [
               "relay_b"
             ]
           },
           {
             "id": "tower",
-            "text": "\u524d\u5f80\u5e7b\u65e5\u5854\uff0c\u542f\u52a8\u63a7\u5236\u53f0",
+            "text": "前往幻日塔，启动控制台",
             "done": [
               "tower_console"
             ]
           },
           {
             "id": "seams",
-            "text": "\u8c03\u67e5\u56db\u5904\u65f6\u5c42\u65ad\u9762\uff08\u897f / \u5317 / \u4e1c / \u5357\uff09",
+            "text": "调查四处时层断面（西 / 北 / 东 / 南）",
             "done": [
               "seam_west",
               "seam_north",
@@ -1232,7 +1232,7 @@
           },
           {
             "id": "summon",
-            "text": "\u56de\u5230\u53ec\u5524\u5927\u5385\uff0c\u7a33\u5b9a\u53ec\u5524\u9635",
+            "text": "回到召唤大厅，稳定召唤阵",
             "done": [
               "summon_circle"
             ]
@@ -1245,7 +1245,7 @@
     "layout": {
       "world": {
         "id": "world_britain_sunset_kingdom",
-        "name": "\u843d\u65e5\u738b\u56fd",
+        "name": "落日王国",
         "nameEn": "Sunset Kingdom",
         "version": 1,
         "seed": 5370537,
@@ -1257,7 +1257,7 @@
       "areas": [
         {
           "id": "mistwood",
-          "name": "\u8ff7\u96fe\u68ee\u6797",
+          "name": "迷雾森林",
           "nameEn": "Mistwood",
           "c": [
             230,
@@ -1272,7 +1272,7 @@
         },
         {
           "id": "swordlake",
-          "name": "\u5723\u5251\u6e56",
+          "name": "圣剑湖",
           "nameEn": "Lake of the Sword",
           "c": [
             40,
@@ -1287,7 +1287,7 @@
         },
         {
           "id": "knights",
-          "name": "\u9a91\u58eb\u8425\u5730",
+          "name": "骑士营地",
           "nameEn": "Knights' Camp",
           "c": [
             170,
@@ -1302,7 +1302,7 @@
         },
         {
           "id": "camelot",
-          "name": "\u5361\u7f8e\u6d1b\u5916\u56f4",
+          "name": "卡美洛外围",
           "nameEn": "Camelot Outskirts",
           "c": [
             -190,
@@ -1317,7 +1317,7 @@
         },
         {
           "id": "roundtable",
-          "name": "\u5706\u684c\u5927\u5385",
+          "name": "圆桌大厅",
           "nameEn": "Round Table Hall",
           "c": [
             -215,
@@ -1332,7 +1332,7 @@
         },
         {
           "id": "camlann",
-          "name": "\u5361\u59c6\u5170\u6218\u573a",
+          "name": "卡姆兰战场",
           "nameEn": "Camlann",
           "c": [
             -200,
@@ -1424,39 +1424,39 @@
         {
           "id": "spawn_p1",
           "type": "spawn",
-          "label": "\u73a9\u5bb61\u51fa\u751f\u70b9\uff08\u897f\u90e8\u65f6\u5c42\uff09",
+          "label": "玩家1出生点（西部时层）",
           "p": [
             300,
-            10.2388916015625,
+            10.048018455505371,
             -30
           ]
         },
         {
           "id": "spawn_p2",
           "type": "spawn",
-          "label": "\u73a9\u5bb62\u51fa\u751f\u70b9\uff08\u897f\u90e8\u65f6\u5c42\uff09",
+          "label": "玩家2出生点（西部时层）",
           "p": [
             300,
-            10.276519775390625,
+            10.082747459411621,
             -26
           ]
         },
         {
           "id": "disc_seam_stones",
           "type": "discovery",
-          "label": "\u9ec4\u660f\u77f3\u73af",
+          "label": "黄昏石环",
           "p": [
             312,
-            9.38990306854248,
+            7.890171051025391,
             -30
           ],
           "radius": 6,
-          "note": "\u4ece\u5e7b\u65e5\u8c37\u8d70\u8fdb\u6765\u7684\u7b2c\u4e00\u6b65"
+          "note": "从幻日谷走进来的第一步"
         },
         {
           "id": "disc_mistwood_shrine",
           "type": "discovery",
-          "label": "\u9690\u58eb\u7684\u6797\u4e2d\u7960",
+          "label": "隐士的林中祠",
           "p": [
             252,
             11.960532188415527,
@@ -1467,7 +1467,7 @@
         {
           "id": "enemy_mist_-20",
           "type": "enemy",
-          "label": "\u96fe\u4e2d\u5e7d\u5f71\uff08\u5360\u4f4d\uff09",
+          "label": "雾中幽影（占位）",
           "p": [
             210,
             11.916028022766113,
@@ -1477,7 +1477,7 @@
         {
           "id": "enemy_mist_24",
           "type": "enemy",
-          "label": "\u96fe\u4e2d\u5e7d\u5f71\uff08\u5360\u4f4d\uff09",
+          "label": "雾中幽影（占位）",
           "p": [
             254,
             7.056891918182373,
@@ -1487,19 +1487,19 @@
         {
           "id": "saber_contract",
           "type": "interact",
-          "label": "\u6e56\u4e2d\u4e4b\u5251\uff08\u4e0e Saber \u7f14\u7ed3\u5951\u7ea6\uff09",
+          "label": "湖中之剑（与 Saber 缔结契约）",
           "p": [
             40,
             2.799999952316284,
             94.4
           ],
           "radius": 3.4,
-          "note": "Saber \u6210\u4e3a\u540c\u4f34"
+          "note": "Saber 成为同伴"
         },
         {
           "id": "disc_lake_lady",
           "type": "discovery",
-          "label": "\u6e56\u4e2d\u4ed9\u5973\u7684\u5012\u5f71",
+          "label": "湖中仙女的倒影",
           "p": [
             70,
             1.2790590524673462,
@@ -1510,7 +1510,7 @@
         {
           "id": "camp_dummy_1",
           "type": "objective",
-          "label": "\u8bd5\u70bc\u6728\u4eba 1",
+          "label": "试炼木人 1",
           "p": [
             191.6,
             9.155923175811768,
@@ -1520,7 +1520,7 @@
         {
           "id": "camp_dummy_2",
           "type": "objective",
-          "label": "\u8bd5\u70bc\u6728\u4eba 2",
+          "label": "试炼木人 2",
           "p": [
             194,
             9.155923175811768,
@@ -1530,7 +1530,7 @@
         {
           "id": "camp_dummy_3",
           "type": "objective",
-          "label": "\u8bd5\u70bc\u6728\u4eba 3",
+          "label": "试炼木人 3",
           "p": [
             196.4,
             9.155923175811768,
@@ -1540,7 +1540,7 @@
         {
           "id": "camp_line",
           "type": "poi",
-          "label": "\u8bd5\u70bc\u5c04\u51fb\u4f4d",
+          "label": "试炼射击位",
           "p": [
             182,
             7.355923175811768,
@@ -1550,7 +1550,7 @@
         {
           "id": "shard_camp",
           "type": "interact",
-          "label": "\u738b\u4e4b\u788e\u7247\u00b7\u8a93\u7ea6",
+          "label": "王之碎片·誓约",
           "p": [
             170,
             7.355923175811768,
@@ -1566,7 +1566,7 @@
         {
           "id": "enemy_camp_-6",
           "type": "enemy",
-          "label": "\u8ff7\u5931\u9a91\u58eb\uff08\u5360\u4f4d\uff09",
+          "label": "迷失骑士（占位）",
           "p": [
             164,
             7.355923175811768,
@@ -1576,7 +1576,7 @@
         {
           "id": "enemy_camp_10",
           "type": "enemy",
-          "label": "\u8ff7\u5931\u9a91\u58eb\uff08\u5360\u4f4d\uff09",
+          "label": "迷失骑士（占位）",
           "p": [
             180,
             7.355923175811768,
@@ -1586,7 +1586,7 @@
         {
           "id": "disc_camelot_well",
           "type": "discovery",
-          "label": "\u8bb8\u613f\u4e95",
+          "label": "许愿井",
           "p": [
             -190,
             34,
@@ -1597,7 +1597,7 @@
         {
           "id": "shard_tower",
           "type": "interact",
-          "label": "\u738b\u4e4b\u788e\u7247\u00b7\u738b\u5ea7",
+          "label": "王之碎片·王座",
           "p": [
             -160,
             60.8,
@@ -1608,19 +1608,19 @@
         {
           "id": "disc_keep_top",
           "type": "discovery",
-          "label": "\u4e3b\u5854\u4e4b\u5dc5",
+          "label": "主塔之巅",
           "p": [
             -152.4,
             60.8,
             -214
           ],
           "radius": 3,
-          "note": "\u8fdc\u5904\u7684\u5361\u7f8e\u6d1b\u5728\u5c71\u810a\u4e0a\u53d1\u5149"
+          "note": "远处的卡美洛在山脊上发光"
         },
         {
           "id": "hall_brazier_1",
           "type": "interact",
-          "label": "\u5706\u684c\u706b\u76c6 1",
+          "label": "圆桌火盆 1",
           "p": [
             -207.2890039957369,
             34,
@@ -1631,7 +1631,7 @@
         {
           "id": "hall_brazier_2",
           "type": "interact",
-          "label": "\u5706\u684c\u706b\u76c6 2",
+          "label": "圆桌火盆 2",
           "p": [
             -222.4953318805774,
             34,
@@ -1642,7 +1642,7 @@
         {
           "id": "hall_brazier_3",
           "type": "interact",
-          "label": "\u5706\u684c\u706b\u76c6 3",
+          "label": "圆桌火盆 3",
           "p": [
             -222.27327578345813,
             34,
@@ -1653,7 +1653,7 @@
         {
           "id": "shard_table",
           "type": "interact",
-          "label": "\u738b\u4e4b\u788e\u7247\u00b7\u5706\u684c",
+          "label": "王之碎片·圆桌",
           "p": [
             -215,
             34,
@@ -1669,19 +1669,19 @@
         {
           "id": "disc_siege_perilous",
           "type": "discovery",
-          "label": "\u5371\u9669\u5e2d",
+          "label": "危险席",
           "p": [
             -208.3,
             34,
             -165
           ],
           "radius": 2.2,
-          "note": "\u7a7a\u7740\u7684\u7b2c\u5341\u4e09\u4e2a\u5ea7\u4f4d"
+          "note": "空着的第十三个座位"
         },
         {
           "id": "enemy_camelot_20",
           "type": "enemy",
-          "label": "\u738b\u57ce\u5b88\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "王城守卫（占位）",
           "p": [
             -170,
             34,
@@ -1691,7 +1691,7 @@
         {
           "id": "enemy_camelot_-24",
           "type": "enemy",
-          "label": "\u738b\u57ce\u5b88\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "王城守卫（占位）",
           "p": [
             -214,
             34,
@@ -1701,7 +1701,7 @@
         {
           "id": "enemy_camelot_6",
           "type": "enemy",
-          "label": "\u738b\u57ce\u5b88\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "王城守卫（占位）",
           "p": [
             -184,
             34,
@@ -1711,7 +1711,7 @@
         {
           "id": "sun_core",
           "type": "interact",
-          "label": "\u843d\u65e5\u4e4b\u6838",
+          "label": "落日之核",
           "p": [
             -206,
             8.242422199249267,
@@ -1728,7 +1728,7 @@
         {
           "id": "boss_vacant_king",
           "type": "enemy",
-          "label": "\u7a7a\u4f4d\u4e4b\u738b\uff08Boss \u5360\u4f4d\uff09",
+          "label": "空位之王（Boss 占位）",
           "p": [
             -220,
             4.558267593383789,
@@ -1738,14 +1738,14 @@
         {
           "id": "disc_camlann_hill",
           "type": "discovery",
-          "label": "\u6700\u540e\u7684\u5c71\u4e18",
+          "label": "最后的山丘",
           "p": [
             -176,
             4.57041072845459,
             242
           ],
           "radius": 5,
-          "note": "\u738b\u5728\u8fd9\u91cc\u5012\u4e0b"
+          "note": "王在这里倒下"
         }
       ],
       "lights": [
@@ -1777,18 +1777,18 @@
       },
       "objective": {
         "id": "relight_the_sunset",
-        "name": "\u843d\u65e5\u738b\u56fd\uff1a\u70b9\u4eae\u843d\u65e5\u4e4b\u6838",
+        "name": "落日王国：点亮落日之核",
         "steps": [
           {
             "id": "contract",
-            "text": "\u5728\u5723\u5251\u6e56\u62d4\u51fa\u6e56\u4e2d\u4e4b\u5251\uff0c\u4e0e Saber \u7f14\u7ed3\u5951\u7ea6",
+            "text": "在圣剑湖拔出湖中之剑，与 Saber 缔结契约",
             "done": [
               "saber_contract"
             ]
           },
           {
             "id": "camp",
-            "text": "\u9a91\u58eb\u8425\u5730\u8bd5\u70bc\uff1a\u51fb\u5012 3 \u4e2a\u6728\u4eba\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u8a93\u7ea6",
+            "text": "骑士营地试炼：击倒 3 个木人，取得碎片·誓约",
             "done": [
               "camp_dummy_1",
               "camp_dummy_2",
@@ -1798,14 +1798,14 @@
           },
           {
             "id": "tower",
-            "text": "\u767b\u4e0a\u5361\u7f8e\u6d1b\u4e3b\u5854\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u738b\u5ea7",
+            "text": "登上卡美洛主塔，取得碎片·王座",
             "done": [
               "shard_tower"
             ]
           },
           {
             "id": "table",
-            "text": "\u70b9\u71c3\u5706\u684c\u5927\u5385\u7684 3 \u4e2a\u706b\u76c6\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u5706\u684c",
+            "text": "点燃圆桌大厅的 3 个火盆，取得碎片·圆桌",
             "done": [
               "hall_brazier_1",
               "hall_brazier_2",
@@ -1815,7 +1815,7 @@
           },
           {
             "id": "core",
-            "text": "\u5728\u5361\u59c6\u5170\u6218\u573a\u70b9\u4eae\u843d\u65e5\u4e4b\u6838",
+            "text": "在卡姆兰战场点亮落日之核",
             "done": [
               "sun_core"
             ]
@@ -1828,7 +1828,7 @@
     "layout": {
       "world": {
         "id": "world_blacksail_end",
-        "name": "\u9ed1\u5e06\u5c3d\u5934",
+        "name": "黑帆尽头",
         "nameEn": "Black Sail's End",
         "version": 1,
         "seed": 17181122,
@@ -1840,7 +1840,7 @@
       "areas": [
         {
           "id": "pass_trail",
-          "name": "\u5c71\u53e3\u6808\u9053",
+          "name": "山口栈道",
           "nameEn": "Pass Trail",
           "c": [
             -300,
@@ -1855,7 +1855,7 @@
         },
         {
           "id": "port",
-          "name": "\u62ff\u9a9a\u6e2f",
+          "name": "拿骚港",
           "nameEn": "Nassau Port",
           "c": [
             -120,
@@ -1870,7 +1870,7 @@
         },
         {
           "id": "smugglers",
-          "name": "\u8d70\u79c1\u8005\u8349\u539f",
+          "name": "走私者草原",
           "nameEn": "Smugglers' Downs",
           "c": [
             -50,
@@ -1885,7 +1885,7 @@
         },
         {
           "id": "fort",
-          "name": "\u9ed1\u80e1\u5b50\u8981\u585e",
+          "name": "黑胡子要塞",
           "nameEn": "Blackbeard's Fort",
           "c": [
             180,
@@ -1900,7 +1900,7 @@
         },
         {
           "id": "wrecks",
-          "name": "\u6d6e\u7a7a\u6c89\u8239\u7fa4",
+          "name": "浮空沉船群",
           "nameEn": "Sky Wrecks",
           "c": [
             -140,
@@ -1915,7 +1915,7 @@
         },
         {
           "id": "reef",
-          "name": "\u9ab7\u9ac5\u7901",
+          "name": "骷髅礁",
           "nameEn": "Skull Reef",
           "c": [
             160,
@@ -1930,7 +1930,7 @@
         },
         {
           "id": "lighthouse",
-          "name": "\u4ea1\u822a\u706f\u5854",
+          "name": "亡航灯塔",
           "nameEn": "Drowned Lighthouse",
           "c": [
             262,
@@ -2050,57 +2050,135 @@
             92,
             128
           ]
+        ],
+        [
+          [
+            -60,
+            30
+          ],
+          [
+            -60,
+            48
+          ],
+          [
+            -80,
+            48
+          ],
+          [
+            -80,
+            56
+          ]
+        ],
+        [
+          [
+            -70,
+            65
+          ],
+          [
+            -50,
+            65
+          ],
+          [
+            -44,
+            65
+          ]
+        ],
+        [
+          [
+            -80,
+            74
+          ],
+          [
+            -86,
+            87
+          ],
+          [
+            -86,
+            112
+          ],
+          [
+            -75,
+            112
+          ]
+        ],
+        [
+          [
+            -44,
+            72
+          ],
+          [
+            -44,
+            83
+          ],
+          [
+            -59,
+            100
+          ]
+        ],
+        [
+          [
+            -60,
+            124
+          ],
+          [
+            -70,
+            135
+          ],
+          [
+            -81,
+            140
+          ]
         ]
       ],
       "markers": [
         {
           "id": "spawn_p1",
           "type": "spawn",
-          "label": "\u73a9\u5bb61\u51fa\u751f\u70b9\uff08\u4e1c\u4fa7\u5c71\u53e3\uff09",
+          "label": "玩家1出生点（东侧山口）",
           "p": [
             -318,
-            15.91185188293457,
+            15.974991798400879,
             30
           ]
         },
         {
           "id": "spawn_p2",
           "type": "spawn",
-          "label": "\u73a9\u5bb62\u51fa\u751f\u70b9\uff08\u4e1c\u4fa7\u5c71\u53e3\uff09",
+          "label": "玩家2出生点（东侧山口）",
           "p": [
             -318,
-            15.911983966827393,
+            15.974991798400879,
             33
           ]
         },
         {
           "id": "disc_first_sea",
           "type": "discovery",
-          "label": "\u521d\u89c1\u9ed1\u5e06\u6d77",
+          "label": "初见黑帆海",
           "p": [
             -252,
-            15.116327285766602,
+            15.137690544128418,
             30
           ],
           "radius": 6,
-          "note": "\u8fdc\u5904\u706f\u5854\u5916\u6d77\u6cca\u7740\u4e00\u6392\u5e7d\u7075\u8239"
+          "note": "远处灯塔外海泊着一排幽灵船"
         },
         {
           "id": "blackbeard_meet",
           "type": "interact",
-          "label": "\u9ed1\u80e1\u5b50\uff08\u9152\u9986\uff09",
+          "label": "黑胡子（酒馆）",
           "p": [
             -128,
             3.4,
             126.1
           ],
           "radius": 3.4,
-          "note": "\u6d77\u76d7\u738b\u613f\u610f\u5e2e\u4f60\u6253\u7834\u8fd9\u7247\u6d77\u7684\u5faa\u73af"
+          "note": "海盗王愿意帮你打破这片海的循环"
         },
         {
           "id": "blackbeard_contract",
           "type": "interact",
-          "label": "\u4e0e\u9ed1\u80e1\u5b50\u7f14\u7ed3\u5951\u7ea6",
+          "label": "与黑胡子缔结契约",
           "p": [
             -125,
             3.4,
@@ -2110,12 +2188,12 @@
           "requires": [
             "sea_core"
           ],
-          "note": "Rider \u804c\u9636\u4ece\u8005 \u00b7 \u5b89\u59ae\u5973\u738b\u590d\u4ec7\u53f7\u7684\u8239\u957f"
+          "note": "Rider 职阶从者 · 安妮女王复仇号的船长"
         },
         {
           "id": "disc_tavern_cellar",
           "type": "discovery",
-          "label": "\u6717\u59c6\u9152\u7a96",
+          "label": "朗姆酒窖",
           "p": [
             -134,
             3.4,
@@ -2126,19 +2204,19 @@
         {
           "id": "disc_gallows",
           "type": "discovery",
-          "label": "\u7ede\u5211\u67b6\u5e7f\u573a",
+          "label": "绞刑架广场",
           "p": [
             -128,
             3.4,
             150
           ],
           "radius": 4,
-          "note": "1718 \u5e74\uff0c\u603b\u7763\u7684\u8d66\u514d\u4ee4\u5c31\u8d34\u5728\u8fd9\u91cc"
+          "note": "1718 年，总督的赦免令就贴在这里"
         },
         {
           "id": "map_piece_1",
           "type": "interact",
-          "label": "\u85cf\u5b9d\u56fe\u788e\u7247\u00b7\u5176\u4e00\uff08\u9020\u8239\u5382\uff09",
+          "label": "藏宝图碎片·其一（造船厂）",
           "p": [
             -204,
             7.744564056396484,
@@ -2149,7 +2227,7 @@
         {
           "id": "enemy_port_-30",
           "type": "enemy",
-          "label": "\u9189\u9152\u6c34\u624b\uff08\u5360\u4f4d\uff09",
+          "label": "醉酒水手（占位）",
           "p": [
             -150,
             3.4,
@@ -2159,7 +2237,7 @@
         {
           "id": "enemy_port_24",
           "type": "enemy",
-          "label": "\u9189\u9152\u6c34\u624b\uff08\u5360\u4f4d\uff09",
+          "label": "醉酒水手（占位）",
           "p": [
             -96,
             3.4,
@@ -2169,7 +2247,7 @@
         {
           "id": "map_piece_2",
           "type": "interact",
-          "label": "\u85cf\u5b9d\u56fe\u788e\u7247\u00b7\u5176\u4e8c\uff08\u98ce\u8f66\uff09",
+          "label": "藏宝图碎片·其二（风车）",
           "p": [
             -20,
             20.242259979248047,
@@ -2180,7 +2258,7 @@
         {
           "id": "disc_smugglers_cave",
           "type": "discovery",
-          "label": "\u8d70\u79c1\u8005\u6d1e\u53e3",
+          "label": "走私者洞口",
           "p": [
             2,
             15.678351402282715,
@@ -2191,19 +2269,19 @@
         {
           "id": "fort_cannon",
           "type": "interact",
-          "label": "\u8981\u585e\u5927\u70ae",
+          "label": "要塞大炮",
           "p": [
             203.5,
             32.6,
             -172
           ],
           "radius": 3,
-          "note": "\u88c5\u586b\u540e\uff0c\u5728\u70ae\u4f4d\u9644\u8fd1\u5c04\u51fb\u6d77\u9762\u4e0a\u7684\u5e7d\u7075\u5c0f\u8247"
+          "note": "装填后，在炮位附近射击海面上的幽灵小艇"
         },
         {
           "id": "cannon_post",
           "type": "poi",
-          "label": "\u70ae\u4f4d",
+          "label": "炮位",
           "p": [
             203.5,
             32.6,
@@ -2213,7 +2291,7 @@
         {
           "id": "ghost_boat_1",
           "type": "objective",
-          "label": "\u5e7d\u7075\u5c0f\u8247 1",
+          "label": "幽灵小艇 1",
           "p": [
             300,
             3,
@@ -2223,7 +2301,7 @@
         {
           "id": "ghost_boat_2",
           "type": "objective",
-          "label": "\u5e7d\u7075\u5c0f\u8247 2",
+          "label": "幽灵小艇 2",
           "p": [
             312,
             3,
@@ -2233,7 +2311,7 @@
         {
           "id": "ghost_boat_3",
           "type": "objective",
-          "label": "\u5e7d\u7075\u5c0f\u8247 3",
+          "label": "幽灵小艇 3",
           "p": [
             292,
             3,
@@ -2243,7 +2321,7 @@
         {
           "id": "shard_powder",
           "type": "interact",
-          "label": "\u6d77\u4e4b\u788e\u7247\u00b7\u706b\u836f",
+          "label": "海之碎片·火药",
           "p": [
             184,
             30,
@@ -2259,7 +2337,7 @@
         {
           "id": "disc_fort_tower",
           "type": "discovery",
-          "label": "\u8981\u585e\u77ad\u671b",
+          "label": "要塞瞭望",
           "p": [
             206.0873935394876,
             30,
@@ -2270,7 +2348,7 @@
         {
           "id": "enemy_fort_-20",
           "type": "enemy",
-          "label": "\u8981\u585e\u6d77\u76d7\uff08\u5360\u4f4d\uff09",
+          "label": "要塞海盗（占位）",
           "p": [
             160,
             30,
@@ -2280,7 +2358,7 @@
         {
           "id": "enemy_fort_6",
           "type": "enemy",
-          "label": "\u8981\u585e\u6d77\u76d7\uff08\u5360\u4f4d\uff09",
+          "label": "要塞海盗（占位）",
           "p": [
             186,
             30,
@@ -2290,7 +2368,7 @@
         {
           "id": "enemy_fort_-8",
           "type": "enemy",
-          "label": "\u8981\u585e\u6d77\u76d7\uff08\u5360\u4f4d\uff09",
+          "label": "要塞海盗（占位）",
           "p": [
             172,
             30,
@@ -2300,7 +2378,7 @@
         {
           "id": "shard_compass",
           "type": "interact",
-          "label": "\u6d77\u4e4b\u788e\u7247\u00b7\u7f57\u76d8",
+          "label": "海之碎片·罗盘",
           "p": [
             -160,
             68.4,
@@ -2311,19 +2389,19 @@
         {
           "id": "disc_vortex_eye",
           "type": "discovery",
-          "label": "\u98ce\u66b4\u4e4b\u773c",
+          "label": "风暴之眼",
           "p": [
             -140,
             6.000296115875244,
             -190
           ],
           "radius": 6,
-          "note": "\u8e29\u4e0a\u53d1\u5149\u7684\u6c14\u6d41\uff0c\u4e00\u8258\u63a5\u4e00\u8258\u5f80\u4e0a\u6ed1\u7fd4"
+          "note": "踩上发光的气流，一艘接一艘往上滑翔"
         },
         {
           "id": "wreck_w1",
           "type": "poi",
-          "label": "\u6d6e\u7a7a\u6c89\u8239 W1",
+          "label": "浮空沉船 W1",
           "p": [
             -112,
             26,
@@ -2333,7 +2411,7 @@
         {
           "id": "wreck_w2",
           "type": "poi",
-          "label": "\u6d6e\u7a7a\u6c89\u8239 W2",
+          "label": "浮空沉船 W2",
           "p": [
             -146,
             40,
@@ -2343,7 +2421,7 @@
         {
           "id": "wreck_w3",
           "type": "poi",
-          "label": "\u6d6e\u7a7a\u6c89\u8239 W3",
+          "label": "浮空沉船 W3",
           "p": [
             -178,
             54,
@@ -2353,7 +2431,7 @@
         {
           "id": "wreck_w4",
           "type": "poi",
-          "label": "\u6d6e\u7a7a\u6c89\u8239 W4",
+          "label": "浮空沉船 W4",
           "p": [
             -160,
             68,
@@ -2363,7 +2441,7 @@
         {
           "id": "wreck_w5",
           "type": "poi",
-          "label": "\u6d6e\u7a7a\u6c89\u8239 W5",
+          "label": "浮空沉船 W5",
           "p": [
             -108,
             46,
@@ -2373,7 +2451,7 @@
         {
           "id": "shard_treasure",
           "type": "interact",
-          "label": "\u6d77\u4e4b\u788e\u7247\u00b7\u85cf\u5b9d\uff08\u5728 X \u5904\u6316\u6398\uff09",
+          "label": "海之碎片·藏宝（在 X 处挖掘）",
           "p": [
             152,
             3.3621773719787598,
@@ -2389,7 +2467,7 @@
         {
           "id": "disc_skull_eyes",
           "type": "discovery",
-          "label": "\u9ab7\u9ac5\u4e4b\u773c",
+          "label": "骷髅之眼",
           "p": [
             164.91821773944469,
             3.5821021623276095,
@@ -2400,7 +2478,7 @@
         {
           "id": "map_piece_3",
           "type": "interact",
-          "label": "\u85cf\u5b9d\u56fe\u788e\u7247\u00b7\u5176\u4e09\uff08\u534a\u6c89\u5546\u8239\uff09",
+          "label": "藏宝图碎片·其三（半沉商船）",
           "p": [
             107.22108843618845,
             3.8,
@@ -2411,19 +2489,19 @@
         {
           "id": "disc_lighthouse_top",
           "type": "discovery",
-          "label": "\u51b7\u706f\u4e4b\u5dc5",
+          "label": "冷灯之巅",
           "p": [
             266,
             36.02726745605469,
             -18.6
           ],
           "radius": 3,
-          "note": "\u4ece\u8fd9\u91cc\u770b\u5f97\u89c1\u6574\u652f\u5e7d\u7075\u8230\u961f"
+          "note": "从这里看得见整支幽灵舰队"
         },
         {
           "id": "sea_core",
           "type": "interact",
-          "label": "\u6d77\u4e4b\u6838",
+          "label": "海之核",
           "p": [
             294.8044949402112,
             7,
@@ -2439,7 +2517,7 @@
         {
           "id": "boss_drowned_admiral",
           "type": "enemy",
-          "label": "\u4ea1\u822a\u63d0\u7763\uff08Boss\uff09",
+          "label": "亡航提督（Boss）",
           "p": [
             296.5977525298944,
             7,
@@ -2449,14 +2527,14 @@
         {
           "id": "disc_flagship",
           "type": "discovery",
-          "label": "\u5b89\u59ae\u5973\u738b\u590d\u4ec7\u53f7",
+          "label": "安妮女王复仇号",
           "p": [
             296,
             7,
             104
           ],
           "radius": 6,
-          "note": "\u5e7d\u7075\u8230\u961f\u7684\u65d7\u8230"
+          "note": "幽灵舰队的旗舰"
         }
       ],
       "updrafts": [
@@ -2529,18 +2607,18 @@
       },
       "objective": {
         "id": "quench_the_cold_lamp",
-        "name": "\u9ed1\u5e06\u5c3d\u5934\uff1a\u7184\u706d\u51b7\u706f",
+        "name": "黑帆尽头：熄灭冷灯",
         "steps": [
           {
             "id": "meet",
-            "text": "\u5728\u62ff\u9a9a\u6e2f\u7684\u9152\u9986\u627e\u5230\u9ed1\u80e1\u5b50",
+            "text": "在拿骚港的酒馆找到黑胡子",
             "done": [
               "blackbeard_meet"
             ]
           },
           {
             "id": "powder",
-            "text": "\u767b\u4e0a\u9ed1\u80e1\u5b50\u8981\u585e\uff0c\u7528\u70ae\u53f0\u51fb\u6c89 3 \u8258\u5e7d\u7075\u5c0f\u8247\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u706b\u836f",
+            "text": "登上黑胡子要塞，用炮台击沉 3 艘幽灵小艇，取得碎片·火药",
             "done": [
               "fort_cannon",
               "ghost_boat_1",
@@ -2551,14 +2629,14 @@
           },
           {
             "id": "compass",
-            "text": "\u4e58\u4e0a\u5347\u6c14\u6d41\u6500\u4e0a\u6d6e\u7a7a\u6c89\u8239\u7fa4\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u7f57\u76d8",
+            "text": "乘上升气流攀上浮空沉船群，取得碎片·罗盘",
             "done": [
               "shard_compass"
             ]
           },
           {
             "id": "treasure",
-            "text": "\u627e\u9f50 3 \u7247\u85cf\u5b9d\u56fe\uff0c\u5728\u9ab7\u9ac5\u7901\u6316\u51fa\u788e\u7247\u00b7\u85cf\u5b9d",
+            "text": "找齐 3 片藏宝图，在骷髅礁挖出碎片·藏宝",
             "done": [
               "map_piece_1",
               "map_piece_2",
@@ -2568,14 +2646,14 @@
           },
           {
             "id": "core",
-            "text": "\u8d70\u8fc7\u5e7d\u7075\u6808\u6865\u767b\u4e0a\u65d7\u8230\uff0c\u51fb\u8d25\u4ea1\u822a\u63d0\u7763\uff0c\u70b9\u4eae\u6d77\u4e4b\u6838",
+            "text": "走过幽灵栈桥登上旗舰，击败亡航提督，点亮海之核",
             "done": [
               "sea_core"
             ]
           },
           {
             "id": "contract",
-            "text": "\u56de\u5230\u9152\u9986\uff0c\u4e0e\u9ed1\u80e1\u5b50\u7f14\u7ed3\u5951\u7ea6",
+            "text": "回到酒馆，与黑胡子缔结契约",
             "done": [
               "blackbeard_contract"
             ]
@@ -2589,7 +2667,7 @@
     "layout": {
       "world": {
         "id": "world_everwinter",
-        "name": "\u6c38\u51ac\u4e4b\u57ce",
+        "name": "永冬之城",
         "nameEn": "Everwinter City",
         "version": 1,
         "seed": 18121126,
@@ -2601,7 +2679,7 @@
       "areas": [
         {
           "id": "crossing",
-          "name": "\u522b\u5217\u6d25\u7eb3\u6e21\u53e3",
+          "name": "别列津纳渡口",
           "nameEn": "Berezina Crossing",
           "c": [
             0,
@@ -2616,8 +2694,8 @@
         },
         {
           "id": "bivouac",
-          "name": "\u5927\u519b\u8425\u5730",
-          "nameEn": "Grande Arm\u00e9e Bivouac",
+          "name": "大军营地",
+          "nameEn": "Grande Armée Bivouac",
           "c": [
             -190,
             170
@@ -2631,7 +2709,7 @@
         },
         {
           "id": "snowfield",
-          "name": "\u70fd\u706b\u96ea\u539f",
+          "name": "烽火雪原",
           "nameEn": "Beacon Snowfield",
           "c": [
             -224,
@@ -2646,7 +2724,7 @@
         },
         {
           "id": "moscow",
-          "name": "\u71c3\u70e7\u7684\u83ab\u65af\u79d1",
+          "name": "燃烧的莫斯科",
           "nameEn": "Burning Moscow",
           "c": [
             40,
@@ -2661,7 +2739,7 @@
         },
         {
           "id": "kremlin",
-          "name": "\u514b\u91cc\u59c6\u6797\u5bab",
+          "name": "克里姆林宫",
           "nameEn": "The Kremlin",
           "c": [
             -6,
@@ -2676,7 +2754,7 @@
         },
         {
           "id": "redsquare",
-          "name": "\u7ea2\u573a",
+          "name": "红场",
           "nameEn": "Red Square",
           "c": [
             96,
@@ -2691,7 +2769,7 @@
         },
         {
           "id": "gorge",
-          "name": "\u51b0\u5c01\u5ce1\u8c37",
+          "name": "冰封峡谷",
           "nameEn": "Frozen Gorge",
           "c": [
             262,
@@ -2827,7 +2905,7 @@
         {
           "id": "warm_1",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             34,
             6.089764595031738,
@@ -2838,7 +2916,7 @@
         {
           "id": "spawn_p1",
           "type": "spawn",
-          "label": "\u73a9\u5bb61\u51fa\u751f\u70b9\uff08\u5317\u65b9\u51b0\u6d77\u65ad\u9762\uff09",
+          "label": "玩家1出生点（北方冰海断面）",
           "p": [
             0,
             1.12,
@@ -2848,7 +2926,7 @@
         {
           "id": "spawn_p2",
           "type": "spawn",
-          "label": "\u73a9\u5bb62\u51fa\u751f\u70b9\uff08\u5317\u65b9\u51b0\u6d77\u65ad\u9762\uff09",
+          "label": "玩家2出生点（北方冰海断面）",
           "p": [
             3,
             1.12,
@@ -2858,19 +2936,19 @@
         {
           "id": "disc_berezina",
           "type": "discovery",
-          "label": "\u65ad\u6865",
+          "label": "断桥",
           "p": [
             -4,
             1.12,
             228
           ],
           "radius": 6,
-          "note": "1812 \u5e74 11 \u6708\uff0c\u5927\u519b\u5728\u8fd9\u91cc\u6e21\u8fc7\u4e86\u522b\u5217\u6d25\u7eb3\u6cb3"
+          "note": "1812 年 11 月，大军在这里渡过了别列津纳河"
         },
         {
           "id": "warm_2",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -205,
             5.899458169937134,
@@ -2881,7 +2959,7 @@
         {
           "id": "warm_3",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -170,
             5.9710540771484375,
@@ -2892,7 +2970,7 @@
         {
           "id": "warm_4",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -222,
             6.0152268409729,
@@ -2903,7 +2981,7 @@
         {
           "id": "warm_5",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -186,
             5.904164791107178,
@@ -2914,7 +2992,7 @@
         {
           "id": "warm_6",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -150,
             5.906601905822754,
@@ -2925,7 +3003,7 @@
         {
           "id": "warm_7",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -180,
             6.198952078819275,
@@ -2936,7 +3014,7 @@
         {
           "id": "warm_tent",
           "type": "poi",
-          "label": "\u7687\u5e1d\u5e10\u7bf7\uff08\u53d6\u6696\uff09",
+          "label": "皇帝帐篷（取暖）",
           "p": [
             -176,
             6,
@@ -2947,19 +3025,19 @@
         {
           "id": "napoleon_meet",
           "type": "interact",
-          "label": "\u62ff\u7834\u4ed1\uff08\u7687\u5e1d\u5e10\u7bf7\uff09",
+          "label": "拿破仑（皇帝帐篷）",
           "p": [
             -176,
             6,
             132.5
           ],
           "radius": 3.4,
-          "note": "\u7687\u5e1d\u8bf4\uff1a\u70b9\u4eae\u51ac\u4e4b\u6838\uff0c\u6211\u7684\u5927\u519b\u5c31\u80fd\u56de\u5bb6"
+          "note": "皇帝说：点亮冬之核，我的大军就能回家"
         },
         {
           "id": "napoleon_contract",
           "type": "interact",
-          "label": "\u4e0e\u62ff\u7834\u4ed1\u7f14\u7ed3\u5951\u7ea6",
+          "label": "与拿破仑缔结契约",
           "p": [
             -173,
             6,
@@ -2969,24 +3047,24 @@
           "requires": [
             "winter_core"
           ],
-          "note": "Rider \u804c\u9636\u4ece\u8005 \u00b7 \u6cd5\u5170\u897f\u7687\u5e1d"
+          "note": "Rider 职阶从者 · 法兰西皇帝"
         },
         {
           "id": "disc_old_guard",
           "type": "discovery",
-          "label": "\u8001\u8fd1\u536b\u519b\u7684\u8425\u706b",
+          "label": "老近卫军的营火",
           "p": [
             -222,
             6.0152268409729,
             200
           ],
           "radius": 5,
-          "note": "\u300c\u8fd1\u536b\u519b\u53ef\u4ee5\u6b7b\uff0c\u4f46\u7edd\u4e0d\u6295\u964d\u300d"
+          "note": "「近卫军可以死，但绝不投降」"
         },
         {
           "id": "enemy_bivouac_40",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u5e7d\u5175\uff08\u5360\u4f4d\uff09",
+          "label": "冰封幽兵（占位）",
           "p": [
             -150,
             6.095426082611084,
@@ -2996,7 +3074,7 @@
         {
           "id": "enemy_bivouac_-50",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u5e7d\u5175\uff08\u5360\u4f4d\uff09",
+          "label": "冰封幽兵（占位）",
           "p": [
             -240,
             5.947950839996338,
@@ -3006,7 +3084,7 @@
         {
           "id": "warm_8",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -286,
             15.213158798217773,
@@ -3020,7 +3098,7 @@
         {
           "id": "beacon_1",
           "type": "interact",
-          "label": "\u70fd\u706b 1",
+          "label": "烽火 1",
           "p": [
             -286,
             15.213158798217773,
@@ -3031,7 +3109,7 @@
         {
           "id": "warm_9",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -168,
             15.45798749923706,
@@ -3045,7 +3123,7 @@
         {
           "id": "beacon_2",
           "type": "interact",
-          "label": "\u70fd\u706b 2",
+          "label": "烽火 2",
           "p": [
             -168,
             15.45798749923706,
@@ -3056,7 +3134,7 @@
         {
           "id": "warm_10",
           "type": "poi",
-          "label": "\u7bdd\u706b\uff08\u53d6\u6696\uff09",
+          "label": "篝火（取暖）",
           "p": [
             -262,
             16.029869270324706,
@@ -3070,7 +3148,7 @@
         {
           "id": "beacon_3",
           "type": "interact",
-          "label": "\u70fd\u706b 3",
+          "label": "烽火 3",
           "p": [
             -262,
             16.029869270324706,
@@ -3081,7 +3159,7 @@
         {
           "id": "shard_eagle",
           "type": "interact",
-          "label": "\u51ac\u4e4b\u788e\u7247\u00b7\u9e70\u65d7",
+          "label": "冬之碎片·鹰旗",
           "p": [
             -224,
             7.828937530517578,
@@ -3097,31 +3175,31 @@
         {
           "id": "disc_frozen_column",
           "type": "discovery",
-          "label": "\u51bb\u4f4f\u7684\u884c\u519b\u961f\u5217",
+          "label": "冻住的行军队列",
           "p": [
             -282,
             5.7777204513549805,
             140
           ],
           "radius": 6,
-          "note": "\u4ed6\u4eec\u505c\u4e0b\u6765\u4f11\u606f\uff0c\u5c31\u518d\u4e5f\u6ca1\u6709\u8d77\u6765"
+          "note": "他们停下来休息，就再也没有起来"
         },
         {
           "id": "disc_eagles",
           "type": "discovery",
-          "label": "\u9e70\u65d7\u51a2",
+          "label": "鹰旗冢",
           "p": [
             -224,
             7.828937530517578,
             22
           ],
           "radius": 7,
-          "note": "\u6bcf\u4e00\u9762\u519b\u65d7\u90fd\u5c5e\u4e8e\u4e00\u652f\u6ca1\u80fd\u56de\u5bb6\u7684\u56e2"
+          "note": "每一面军旗都属于一支没能回家的团"
         },
         {
           "id": "warm_ember_1",
           "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
+          "label": "余烬（取暖）",
           "p": [
             60.82322064554319,
             12,
@@ -3132,7 +3210,18 @@
         {
           "id": "warm_ember_2",
           "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
+          "label": "余烬（取暖）",
+          "p": [
+            52.88364319363609,
+            12.00584730813204,
+            -129.73561870399863
+          ],
+          "radius": 8
+        },
+        {
+          "id": "warm_ember_3",
+          "type": "poi",
+          "label": "余烬（取暖）",
           "p": [
             -68.89302708907053,
             11.865047807240954,
@@ -3141,20 +3230,9 @@
           "radius": 8
         },
         {
-          "id": "warm_ember_3",
-          "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
-          "p": [
-            145.77652325155213,
-            9.456828346036097,
-            -288.4504371834919
-          ],
-          "radius": 8
-        },
-        {
           "id": "warm_ember_4",
           "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
+          "label": "余烬（取暖）",
           "p": [
             79.68831221107394,
             10.547114015179798,
@@ -3165,7 +3243,7 @@
         {
           "id": "warm_ember_5",
           "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
+          "label": "余烬（取暖）",
           "p": [
             60.56335529545322,
             12,
@@ -3176,7 +3254,7 @@
         {
           "id": "warm_ember_6",
           "type": "poi",
-          "label": "\u4f59\u70ec\uff08\u53d6\u6696\uff09",
+          "label": "余烬（取暖）",
           "p": [
             -14.409857832361013,
             12.11559550499773,
@@ -3187,19 +3265,19 @@
         {
           "id": "disc_moscow_fire",
           "type": "discovery",
-          "label": "\u5927\u706b\u4e4b\u540e",
+          "label": "大火之后",
           "p": [
             40,
             11.314172744750977,
             -112
           ],
           "radius": 7,
-          "note": "1812 \u5e74 9 \u6708\uff0c\u83ab\u65af\u79d1\u70e7\u4e86\u6574\u6574\u516d\u5929"
+          "note": "1812 年 9 月，莫斯科烧了整整六天"
         },
         {
           "id": "enemy_moscow_20",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u5e7d\u5175\uff08\u5360\u4f4d\uff09",
+          "label": "冰封幽兵（占位）",
           "p": [
             20,
             11.990094184875488,
@@ -3209,7 +3287,7 @@
         {
           "id": "enemy_moscow_70",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u5e7d\u5175\uff08\u5360\u4f4d\uff09",
+          "label": "冰封幽兵（占位）",
           "p": [
             70,
             12,
@@ -3219,7 +3297,7 @@
         {
           "id": "enemy_moscow_-60",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u5e7d\u5175\uff08\u5360\u4f4d\uff09",
+          "label": "冰封幽兵（占位）",
           "p": [
             -60,
             12,
@@ -3229,31 +3307,31 @@
         {
           "id": "disc_tsar_bell",
           "type": "discovery",
-          "label": "\u6c99\u7687\u949f",
+          "label": "沙皇钟",
           "p": [
             10,
             12,
             -242
           ],
           "radius": 4,
-          "note": "\u4e16\u754c\u4e0a\u6700\u5927\u7684\u949f\uff0c\u4ece\u6765\u6ca1\u6709\u54cd\u8fc7"
+          "note": "世界上最大的钟，从来没有响过"
         },
         {
           "id": "disc_tsar_cannon",
           "type": "discovery",
-          "label": "\u6c99\u7687\u70ae",
+          "label": "沙皇炮",
           "p": [
             -30,
             12,
             -182
           ],
           "radius": 4,
-          "note": "\u4e16\u754c\u4e0a\u6700\u5927\u7684\u70ae\uff0c\u4ece\u6765\u6ca1\u6709\u5f00\u8fc7\u706b"
+          "note": "世界上最大的炮，从来没有开过火"
         },
         {
           "id": "shard_bell",
           "type": "interact",
-          "label": "\u51ac\u4e4b\u788e\u7247\u00b7\u949f\u58f0",
+          "label": "冬之碎片·钟声",
           "p": [
             -10,
             42,
@@ -3264,19 +3342,19 @@
         {
           "id": "disc_bell_view",
           "type": "discovery",
-          "label": "\u949f\u697c\u4e4b\u4e0a",
+          "label": "钟楼之上",
           "p": [
             -4,
             42,
             -206
           ],
           "radius": 3,
-          "note": "\u6574\u5ea7\u71c3\u70e7\u7684\u57ce\u5e02\u90fd\u5728\u811a\u4e0b"
+          "note": "整座燃烧的城市都在脚下"
         },
         {
           "id": "enemy_kremlin_20",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u8fd1\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "冰封近卫（占位）",
           "p": [
             14,
             12,
@@ -3286,7 +3364,7 @@
         {
           "id": "enemy_kremlin_-24",
           "type": "enemy",
-          "label": "\u51b0\u5c01\u8fd1\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "冰封近卫（占位）",
           "p": [
             -30,
             12,
@@ -3296,11 +3374,11 @@
         {
           "id": "winter_core",
           "type": "interact",
-          "label": "\u51ac\u4e4b\u6838",
+          "label": "冬之核",
           "p": [
-            96,
-            12,
-            -228
+            -67,
+            8.1,
+            258
           ],
           "radius": 3.6,
           "requires": [
@@ -3312,39 +3390,39 @@
         {
           "id": "boss_winter_warden",
           "type": "enemy",
-          "label": "\u6267\u51ac\u8005\uff08Boss\uff09",
+          "label": "执冬者（Boss）",
           "p": [
-            96,
-            12,
-            -204
+            -73,
+            8.1,
+            233
           ]
         },
         {
           "id": "disc_basil",
           "type": "discovery",
-          "label": "\u5723\u74e6\u897f\u91cc\u5927\u6559\u5802",
+          "label": "圣瓦西里大教堂",
           "p": [
             96,
             12,
             -238
           ],
           "radius": 6,
-          "note": "\u4e5d\u5ea7\u7a79\u9876\uff0c\u6ca1\u6709\u4e00\u5ea7\u989c\u8272\u76f8\u540c"
+          "note": "九座穹顶，没有一座颜色相同"
         },
         {
           "id": "frost_seal_1",
           "type": "objective",
-          "label": "\u51b0\u5c01\u5370 1",
+          "label": "冰封印 1",
           "p": [
             300.15934202290373,
-            29.881526692522296,
+            29.753832713031848,
             -29.773159004744905
           ]
         },
         {
           "id": "frost_seal_2",
           "type": "objective",
-          "label": "\u51b0\u5c01\u5370 2",
+          "label": "冰封印 2",
           "p": [
             248.26234835412208,
             6.087165008872756,
@@ -3354,7 +3432,7 @@
         {
           "id": "frost_seal_3",
           "type": "objective",
-          "label": "\u51b0\u5c01\u5370 3",
+          "label": "冰封印 3",
           "p": [
             272.44216903770257,
             16.12,
@@ -3364,7 +3442,7 @@
         {
           "id": "shard_frost",
           "type": "interact",
-          "label": "\u51ac\u4e4b\u788e\u7247\u00b7\u971c\u6676",
+          "label": "冬之碎片·霜晶",
           "p": [
             296,
             1.12,
@@ -3380,19 +3458,19 @@
         {
           "id": "disc_frozen_falls",
           "type": "discovery",
-          "label": "\u51bb\u7ed3\u7684\u7011\u5e03",
+          "label": "冻结的瀑布",
           "p": [
             298.16930457818654,
             1.12,
             -137.76187060183952
           ],
           "radius": 5,
-          "note": "\u6c34\u8fd8\u6ca1\u843d\u5730\u5c31\u7ed3\u6210\u4e86\u51b0"
+          "note": "水还没落地就结成了冰"
         },
         {
           "id": "enemy_gorge_230",
           "type": "enemy",
-          "label": "\u51b0\u6676\u5b88\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "冰晶守卫（占位）",
           "p": [
             230,
             1.12,
@@ -3402,7 +3480,7 @@
         {
           "id": "enemy_gorge_262",
           "type": "enemy",
-          "label": "\u51b0\u6676\u5b88\u536b\uff08\u5360\u4f4d\uff09",
+          "label": "冰晶守卫（占位）",
           "p": [
             262,
             1.12,
@@ -3413,9 +3491,9 @@
       "lights": [
         {
           "p": [
-            96,
+            -67,
             28,
-            -228
+            258
           ],
           "color": "#9fd8ff",
           "intensity": 140,
@@ -3449,18 +3527,18 @@
       },
       "objective": {
         "id": "end_the_long_winter",
-        "name": "\u6c38\u51ac\u4e4b\u57ce\uff1a\u7ed3\u675f\u6c38\u6052\u7684\u51ac\u5929",
+        "name": "永冬之城：结束永恒的冬天",
         "steps": [
           {
             "id": "meet",
-            "text": "\u5728\u5927\u519b\u8425\u5730\u7684\u7687\u5e1d\u5e10\u7bf7\u91cc\u627e\u5230\u62ff\u7834\u4ed1",
+            "text": "在大军营地的皇帝帐篷里找到拿破仑",
             "done": [
               "napoleon_meet"
             ]
           },
           {
             "id": "eagle",
-            "text": "\u70b9\u71c3\u96ea\u539f\u4e0a\u7684 3 \u5ea7\u70fd\u706b\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u9e70\u65d7\uff08\u79bb\u5f00\u706b\u5806\u592a\u4e45\u4f1a\u51bb\u50f5\uff09",
+            "text": "点燃雪原上的 3 座烽火，取得碎片·鹰旗（离开火堆太久会冻僵）",
             "done": [
               "beacon_1",
               "beacon_2",
@@ -3470,14 +3548,14 @@
           },
           {
             "id": "bell",
-            "text": "\u6cbf\u811a\u624b\u67b6\u722c\u4e0a\u4f0a\u51e1\u5927\u5e1d\u949f\u697c\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u949f\u58f0",
+            "text": "沿脚手架爬上伊凡大帝钟楼，取得碎片·钟声",
             "done": [
               "shard_bell"
             ]
           },
           {
             "id": "frost",
-            "text": "\u51fb\u788e\u51b0\u5c01\u5ce1\u8c37\u7684 3 \u679a\u51b0\u5c01\u5370\uff0c\u8fdb\u5165\u51b0\u7a9f\u53d6\u5f97\u788e\u7247\u00b7\u971c\u6676",
+            "text": "击碎冰封峡谷的 3 枚冰封印，进入冰窟取得碎片·霜晶",
             "done": [
               "frost_seal_1",
               "frost_seal_2",
@@ -3487,14 +3565,14 @@
           },
           {
             "id": "core",
-            "text": "\u5728\u7ea2\u573a\u70b9\u4eae\u51ac\u4e4b\u6838\uff0c\u51fb\u8d25\u6267\u51ac\u8005",
+            "text": "在旧税关广场点亮冬之核，击败执冬者",
             "done": [
               "winter_core"
             ]
           },
           {
             "id": "contract",
-            "text": "\u56de\u5230\u7687\u5e1d\u5e10\u7bf7\uff0c\u4e0e\u62ff\u7834\u4ed1\u7f14\u7ed3\u5951\u7ea6",
+            "text": "回到皇帝帐篷，与拿破仑缔结契约",
             "done": [
               "napoleon_contract"
             ]
@@ -3508,7 +3586,7 @@
     "layout": {
       "world": {
         "id": "world_kyoto",
-        "name": "\u4e1a\u706b\u4eac\u90fd",
+        "name": "业火京都",
         "nameEn": "Kyoto Ablaze",
         "version": 1,
         "seed": 15820621,
@@ -3520,7 +3598,7 @@
       "areas": [
         {
           "id": "inari",
-          "name": "\u5343\u672c\u9e1f\u5c45",
+          "name": "千本鸟居",
           "nameEn": "Senbon Torii",
           "c": [
             40,
@@ -3535,8 +3613,8 @@
         },
         {
           "id": "rakuchu",
-          "name": "\u6d1b\u4e2d\u4e09\u6761\u901a",
-          "nameEn": "Sanj\u014d Avenue",
+          "name": "洛中三条通",
+          "nameEn": "Sanjō Avenue",
           "c": [
             -15,
             -75
@@ -3550,8 +3628,8 @@
         },
         {
           "id": "kamo",
-          "name": "\u9e2d\u5ddd\u4e09\u6761\u5927\u6865",
-          "nameEn": "Sanj\u014d Bridge on the Kamo",
+          "name": "鸭川三条大桥",
+          "nameEn": "Sanjō Bridge on the Kamo",
           "c": [
             152,
             -75
@@ -3565,8 +3643,8 @@
         },
         {
           "id": "honnoji",
-          "name": "\u672c\u80fd\u5bfa",
-          "nameEn": "Honn\u014d-ji",
+          "name": "本能寺",
+          "nameEn": "Honnō-ji",
           "c": [
             -100,
             45
@@ -3580,7 +3658,7 @@
         },
         {
           "id": "higashiyama",
-          "name": "\u4e1c\u5c71\u6e05\u6c34\u5bfa",
+          "name": "东山清水寺",
           "nameEn": "Kiyomizu-dera, Higashiyama",
           "c": [
             260,
@@ -3595,7 +3673,7 @@
         },
         {
           "id": "kinkaku",
-          "name": "\u91d1\u9601\u5bfa",
+          "name": "金阁寺",
           "nameEn": "Kinkaku-ji",
           "c": [
             -215,
@@ -3610,7 +3688,7 @@
         },
         {
           "id": "akechi",
-          "name": "\u660e\u667a\u519b\u9635",
+          "name": "明智军阵",
           "nameEn": "Akechi Camp",
           "c": [
             -240,
@@ -3625,8 +3703,8 @@
         },
         {
           "id": "arashiyama",
-          "name": "\u5c9a\u5c71\u00b7\u6e21\u6708\u6865",
-          "nameEn": "Arashiyama \u00b7 Timber Crossing",
+          "name": "岚山·渡月桥",
+          "nameEn": "Arashiyama · Timber Crossing",
           "c": [
             -270,
             -8
@@ -3825,13 +3903,85 @@
             -218,
             65
           ]
+        ],
+        [
+          [
+            -105,
+            105
+          ],
+          [
+            -100,
+            105
+          ],
+          [
+            -100,
+            81
+          ]
+        ],
+        [
+          [
+            -200,
+            150
+          ],
+          [
+            -218,
+            148
+          ],
+          [
+            -232,
+            148
+          ],
+          [
+            -232,
+            166
+          ]
+        ],
+        [
+          [
+            120,
+            -97
+          ],
+          [
+            130,
+            -97
+          ],
+          [
+            130,
+            -67
+          ],
+          [
+            146,
+            -67
+          ],
+          [
+            146,
+            -75
+          ]
+        ],
+        [
+          [
+            188,
+            43
+          ],
+          [
+            184,
+            50
+          ],
+          [
+            184,
+            60
+          ],
+          [
+            188,
+            69
+          ]
         ]
       ],
       "markers": [
         {
           "id": "spawn_p1",
           "type": "spawn",
-          "label": "\u73a9\u5bb61\u51fa\u751f\u70b9\uff08\u5357\u65b9\u9e1f\u5c45\u65ad\u9762\uff09",
+          "label": "玩家1出生点（南方鸟居断面）",
           "p": [
             38.5,
             4.326560378074646,
@@ -3841,7 +3991,7 @@
         {
           "id": "spawn_p2",
           "type": "spawn",
-          "label": "\u73a9\u5bb62\u51fa\u751f\u70b9\uff08\u5357\u65b9\u9e1f\u5c45\u65ad\u9762\uff09",
+          "label": "玩家2出生点（南方鸟居断面）",
           "p": [
             41.5,
             4.3268715143203735,
@@ -3851,31 +4001,31 @@
         {
           "id": "disc_senbon",
           "type": "discovery",
-          "label": "\u5343\u672c\u9e1f\u5c45",
+          "label": "千本鸟居",
           "p": [
             46,
             6.258713722229004,
             -290
           ],
           "radius": 5,
-          "note": "\u6bcf\u4e00\u5ea7\u9e1f\u5c45\uff0c\u90fd\u662f\u6709\u4eba\u8bb8\u4e0b\u7684\u4e00\u4e2a\u613f\u671b"
+          "note": "每一座鸟居，都是有人许下的一个愿望"
         },
         {
           "id": "disc_sanjo_dori",
           "type": "discovery",
-          "label": "\u4e09\u6761\u901a",
+          "label": "三条通",
           "p": [
             15,
             4,
             -75
           ],
           "radius": 6,
-          "note": "\u5e73\u5b89\u4eac\u7684\u8857\u9053\u6a2a\u5e73\u7ad6\u76f4\uff0c\u50cf\u4e00\u5f20\u68cb\u76d8"
+          "note": "平安京的街道横平竖直，像一张棋盘"
         },
         {
           "id": "enemy_rakuchu_-15_-20",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             -15,
             4,
@@ -3885,7 +4035,7 @@
         {
           "id": "enemy_rakuchu_45_30",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             45,
             4,
@@ -3895,7 +4045,7 @@
         {
           "id": "enemy_rakuchu_-45_-45",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             -45,
             4,
@@ -3903,9 +4053,21 @@
           ]
         },
         {
+          "id": "disc_honnoji_service",
+          "type": "discovery",
+          "label": "本能寺南侧便门",
+          "p": [
+            -100,
+            4.72,
+            88
+          ],
+          "radius": 3,
+          "note": "窄桥通向寺院侧庭，正门的检验桌仍在东侧"
+        },
+        {
           "id": "fire_core",
           "type": "interact",
-          "label": "\u4eac\u4e4b\u6838",
+          "label": "京之核",
           "p": [
             -74,
             4.6,
@@ -3921,7 +4083,7 @@
         {
           "id": "boss_hellfire_lord",
           "type": "enemy",
-          "label": "\u4e1a\u706b\u4e4b\u4e3b\uff08Boss\uff09",
+          "label": "业火之主（Boss）",
           "p": [
             -86,
             4.6,
@@ -3931,19 +4093,19 @@
         {
           "id": "disc_honnoji",
           "type": "discovery",
-          "label": "\u672c\u80fd\u5bfa",
+          "label": "本能寺",
           "p": [
             -51,
             4,
             55
           ],
           "radius": 6,
-          "note": "\u300c\u654c\u5728\u672c\u80fd\u5bfa\uff01\u300d\u5929\u4eae\u4e4b\u524d\uff0c\u8fd9\u5ea7\u5bfa\u88ab\u5927\u706b\u541e\u6ca1"
+          "note": "「敌在本能寺！」天亮之前，这座寺被大火吞没"
         },
         {
           "id": "enemy_honnoji_-1",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             -45,
             4,
@@ -3953,7 +4115,7 @@
         {
           "id": "enemy_honnoji_1",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             -45,
             4,
@@ -3961,21 +4123,33 @@
           ]
         },
         {
+          "id": "disc_sanjo_wharf",
+          "type": "discovery",
+          "label": "三条桥下装卸道",
+          "p": [
+            130,
+            2.4,
+            -86
+          ],
+          "radius": 4,
+          "note": "从码头穿过桥下，沿侧坡返回桥面"
+        },
+        {
           "id": "musashi_meet",
           "type": "interact",
-          "label": "\u5bab\u672c\u6b66\u85cf\uff08\u4e09\u6761\u5927\u6865\uff09",
+          "label": "宫本武藏（三条大桥）",
           "p": [
             150,
             5.2,
             -75
           ],
           "radius": 3.4,
-          "note": "\u6b66\u85cf\u8bf4\uff1a\u70b9\u4eae\u4eac\u4e4b\u6838\uff0c\u6211\u5c31\u966a\u4f60\u6253\u5230\u5929\u4eae"
+          "note": "武藏说：点亮京之核，我就陪你打到天亮"
         },
         {
           "id": "musashi_contract",
           "type": "interact",
-          "label": "\u4e0e\u5bab\u672c\u6b66\u85cf\u7f14\u7ed3\u5951\u7ea6",
+          "label": "与宫本武藏缔结契约",
           "p": [
             154,
             5.2,
@@ -3985,48 +4159,60 @@
           "requires": [
             "fire_core"
           ],
-          "note": "Saber \u804c\u9636\u4ece\u8005 \u00b7 \u4e8c\u5929\u4e00\u6d41"
+          "note": "Saber 职阶从者 · 二天一流"
         },
         {
           "id": "disc_tobiishi",
           "type": "discovery",
-          "label": "\u9e2d\u5ddd\u8df3\u77f3",
+          "label": "鸭川跳石",
           "p": [
             150,
             1.9,
             60
           ],
           "radius": 4,
-          "note": "\u8e29\u7740\u4e4c\u9f9f\u5f62\u72b6\u7684\u77f3\u5934\u8fc7\u6cb3"
+          "note": "踩着乌龟形状的石头过河"
+        },
+        {
+          "id": "disc_kamo_paperhouse",
+          "type": "discovery",
+          "label": "河街纸铺休息庭",
+          "p": [
+            184,
+            6.25,
+            55
+          ],
+          "radius": 4,
+          "note": "晾纸的外廊、装订桌与一碗热食；两侧门都通向河街"
         },
         {
           "id": "disc_yasaka",
           "type": "discovery",
-          "label": "\u516b\u5742\u795e\u793e",
+          "label": "八坂神社",
           "p": [
             206,
             7.9587812423706055,
             -20
           ],
           "radius": 5,
-          "note": "\u7947\u56ed\u796d\u7684\u5c71\u927e\u4ece\u8fd9\u91cc\u51fa\u53d1"
+          "note": "祇园祭的山鉾从这里出发"
         },
         {
           "id": "disc_yasaka_pagoda",
           "type": "discovery",
-          "label": "\u516b\u5742\u5854",
+          "label": "八坂塔",
           "p": [
             207,
             8.810450553894043,
             6
           ],
           "radius": 5,
-          "note": "\u6cd5\u89c2\u5bfa\u4e94\u91cd\u5854\uff0c\u4e1c\u5c71\u7684\u5730\u6807"
+          "note": "法观寺五重塔，东山的地标"
         },
         {
           "id": "shard_kiyomizu",
           "type": "interact",
-          "label": "\u4eac\u4e4b\u788e\u7247\u00b7\u821e\u53f0",
+          "label": "京之碎片·舞台",
           "p": [
             257.5,
             34,
@@ -4037,31 +4223,31 @@
         {
           "id": "disc_kiyomizu_stage",
           "type": "discovery",
-          "label": "\u6e05\u6c34\u821e\u53f0",
+          "label": "清水舞台",
           "p": [
             266,
             34,
             64
           ],
           "radius": 5,
-          "note": "\u300c\u4ece\u6e05\u6c34\u821e\u53f0\u8df3\u4e0b\u53bb\u300d\uff0c\u610f\u601d\u662f\u4e0b\u4e86\u5929\u5927\u7684\u51b3\u5fc3"
+          "note": "「从清水舞台跳下去」，意思是下了天大的决心"
         },
         {
           "id": "disc_otowa",
           "type": "discovery",
-          "label": "\u97f3\u7fbd\u7011\u5e03",
+          "label": "音羽瀑布",
           "p": [
             262,
             14.01392650604248,
             80
           ],
           "radius": 5,
-          "note": "\u4e09\u9053\u6cc9\u6c34\uff1a\u5b66\u4e1a\u3001\u604b\u7231\u3001\u957f\u5bff"
+          "note": "三道泉水：学业、恋爱、长寿"
         },
         {
           "id": "enemy_higashiyama_214",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             214,
             10.169877052307129,
@@ -4071,7 +4257,7 @@
         {
           "id": "enemy_higashiyama_236",
           "type": "enemy",
-          "label": "\u71c3\u70e7\u7684\u4ea1\u6b66\u8005\uff08\u5360\u4f4d\uff09",
+          "label": "燃烧的亡武者（占位）",
           "p": [
             236,
             15.197733879089355,
@@ -4081,7 +4267,7 @@
         {
           "id": "shard_kinkaku",
           "type": "interact",
-          "label": "\u4eac\u4e4b\u788e\u7247\u00b7\u91d1\u9601",
+          "label": "京之碎片·金阁",
           "p": [
             -215,
             2,
@@ -4092,31 +4278,43 @@
         {
           "id": "disc_kinkaku",
           "type": "discovery",
-          "label": "\u91d1\u9601",
+          "label": "金阁",
           "p": [
             -215,
             2,
             -210.5
           ],
           "radius": 4,
-          "note": "\u4e0a\u9762\u4e24\u5c42\u8d34\u6ee1\u4e86\u91d1\u7b94\uff0c\u5012\u6620\u5728\u955c\u6e56\u6c60\u91cc"
+          "note": "上面两层贴满了金箔，倒映在镜湖池里"
         },
         {
           "id": "disc_kyokochi",
           "type": "discovery",
-          "label": "\u955c\u6e56\u6c60",
+          "label": "镜湖池",
           "p": [
             -222,
             1.7000000476837158,
             -148
           ],
           "radius": 5,
-          "note": "\u8e29\u7740\u6c60\u4e2d\u7684\u77f3\u5934\u8d70\u8fc7\u53bb"
+          "note": "踩着池中的石头走过去"
+        },
+        {
+          "id": "disc_akechi_baggage",
+          "type": "discovery",
+          "label": "桔梗军阵辎重侧道",
+          "p": [
+            -232,
+            14.211794967651366,
+            157
+          ],
+          "radius": 3,
+          "note": "沿粮箱与卷起的帷幕进入军阵；东侧是验函的正面通道"
         },
         {
           "id": "kikyo_banner_1",
           "type": "objective",
-          "label": "\u6854\u6897\u5927\u65d7 1",
+          "label": "桔梗大旗 1",
           "p": [
             -286,
             32.21525268554687,
@@ -4126,17 +4324,17 @@
         {
           "id": "kikyo_banner_2",
           "type": "objective",
-          "label": "\u6854\u6897\u5927\u65d7 2",
+          "label": "桔梗大旗 2",
           "p": [
             -292,
-            38.311663436889646,
+            36.015377807617185,
             187.8
           ]
         },
         {
           "id": "kikyo_banner_3",
           "type": "objective",
-          "label": "\u6854\u6897\u5927\u65d7 3",
+          "label": "桔梗大旗 3",
           "p": [
             -262,
             25.88913230895996,
@@ -4146,7 +4344,7 @@
         {
           "id": "shard_kikyo",
           "type": "interact",
-          "label": "\u4eac\u4e4b\u788e\u7247\u00b7\u6854\u6897",
+          "label": "京之碎片·桔梗",
           "p": [
             -230,
             14,
@@ -4162,19 +4360,19 @@
         {
           "id": "disc_akechi",
           "type": "discovery",
-          "label": "\u660e\u667a\u672c\u9635",
+          "label": "明智本阵",
           "p": [
             -224,
             14,
             174
           ],
           "radius": 5,
-          "note": "\u300c\u654c\u5728\u672c\u80fd\u5bfa\u300d\u2014\u2014\u660e\u667a\u5149\u79c0\u5728\u8fd9\u91cc\u8c03\u8f6c\u4e86\u9a6c\u5934"
+          "note": "「敌在本能寺」——明智光秀在这里调转了马头"
         },
         {
           "id": "enemy_akechi_30",
           "type": "enemy",
-          "label": "\u6854\u6897\u8db3\u8f7b\uff08\u5360\u4f4d\uff09",
+          "label": "桔梗足轻（占位）",
           "p": [
             -202,
             13.496166229248047,
@@ -4184,7 +4382,7 @@
         {
           "id": "enemy_akechi_26",
           "type": "enemy",
-          "label": "\u6854\u6897\u8db3\u8f7b\uff08\u5360\u4f4d\uff09",
+          "label": "桔梗足轻（占位）",
           "p": [
             -206,
             13.821352005004883,
@@ -4194,62 +4392,62 @@
         {
           "id": "disc_rashomon",
           "type": "discovery",
-          "label": "\u7f57\u57ce\u95e8\u9057\u8ff9",
+          "label": "罗城门遗迹",
           "p": [
             -15,
-            6.779728794097901,
+            -1.1915051698684693,
             284
           ],
           "radius": 6,
-          "note": "\u5e73\u5b89\u4eac\u7684\u6b63\u95e8\uff0c\u8fd9\u65f6\u53ea\u5269\u4e0b\u57fa\u77f3\u548c\u4e4c\u9e26"
+          "note": "平安京的正门，这时只剩下基石和乌鸦"
         },
         {
           "id": "disc_arashiyama",
           "type": "discovery",
-          "label": "\u5c9a\u5c71\u00b7\u6728\u6784\u6e21\u6708\u6865",
+          "label": "岚山·木构渡月桥",
           "p": [
             -267,
             6.77,
             35
           ],
           "radius": 6,
-          "note": "\u5c71\u5f71\u4e0e\u6842\u5ddd\u4e4b\u95f4\u7684\u6728\u6865\u3002\u6b64\u5904\u4e3a1582\u5e74\u6c1b\u56f4\u7684\u5730\u7406\u538b\u7f29\uff0c\u5e76\u975e\u73b0\u4ee3\u6e21\u6708\u6865\u590d\u539f\u3002"
+          "note": "山影与桂川之间的木桥。此处为1582年氛围的地理压缩，并非现代渡月桥复原。"
         },
         {
           "id": "disc_tenryu_garden",
           "type": "discovery",
-          "label": "\u5929\u9f99\u5bfa\u610f\u5883\u00b7\u501f\u666f\u5ead\u56ed",
+          "label": "天龙寺意境·借景庭园",
           "p": [
             -267,
             5.8118332624435425,
             -47
           ],
           "radius": 6,
-          "note": "\u6c60\u77f3\u4e0e\u897f\u5c71\u76f8\u6620\u7684\u7985\u5bfa\u5ead\u56ed\u610f\u5883\u3002\u6bbf\u5b87\u4e3a\u6e38\u620f\u5316\u6784\u4f5c\uff0c\u4e0d\u5192\u5145\u73b0\u5b58\u5efa\u7b51\u768416\u4e16\u7eaa\u539f\u8c8c\u3002"
+          "note": "池石与西山相映的禅寺庭园意境。殿宇为游戏化构作，不冒充现存建筑的16世纪原貌。"
         },
         {
           "id": "disc_arashiyama_bamboo",
           "type": "discovery",
-          "label": "\u5c9a\u5c71\u00b7\u7af9\u5f84",
+          "label": "岚山·竹径",
           "p": [
             -306,
-            6.851130485534668,
+            6.953961372375488,
             -66
           ],
           "radius": 6,
-          "note": "\u7af9\u8282\u3001\u758f\u53f6\u4e0e\u5c71\u95f4\u571f\u5f84\uff1b\u6b65\u9053\u4fdd\u6301\u5bbd\u9614\uff0c\u53ef\u4ece\u5bfa\u5ead\u73af\u884c\u56de\u5230\u6728\u6865\u3002"
+          "note": "竹节、疏叶与山间土径；步道保持宽阔，可从寺庭环行回到木桥。"
         },
         {
           "id": "disc_arashiyama_riverfront",
           "type": "discovery",
-          "label": "\u6842\u5ddd\u6cb3\u7554",
+          "label": "桂川河畔",
           "p": [
             -267,
             5.759408712387085,
             76
           ],
           "radius": 6,
-          "note": "\u8336\u68da\u3001\u821f\u5177\u5c0f\u5c4b\u4e0e\u571f\u85cf\u5404\u5faa\u5176\u7528\uff0c\u897f\u5c71\u811a\u4e0b\u4ecd\u6709\u672a\u88ab\u6218\u706b\u541e\u6ca1\u7684\u65e5\u5e38\u3002"
+          "note": "茶棚、舟具小屋与土藏各循其用，西山脚下仍有未被战火吞没的日常。"
         }
       ],
       "lights": [
@@ -4311,32 +4509,32 @@
       },
       "objective": {
         "id": "quench_the_hellfire",
-        "name": "\u4e1a\u706b\u4eac\u90fd\uff1a\u7184\u706d\u672c\u80fd\u5bfa\u7684\u4e1a\u706b",
+        "name": "业火京都：熄灭本能寺的业火",
         "steps": [
           {
             "id": "meet",
-            "text": "\u5728\u9e2d\u5ddd\u7684\u4e09\u6761\u5927\u6865\u4e0a\u627e\u5230\u5bab\u672c\u6b66\u85cf",
+            "text": "在鸭川的三条大桥上找到宫本武藏",
             "done": [
               "musashi_meet"
             ]
           },
           {
             "id": "kinkaku",
-            "text": "\u8e29\u7740\u955c\u6e56\u6c60\u91cc\u7684\u77f3\u5934\u8d70\u5230\u91d1\u9601\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u91d1\u9601",
+            "text": "踩着镜湖池里的石头走到金阁，取得碎片·金阁",
             "done": [
               "shard_kinkaku"
             ]
           },
           {
             "id": "kiyomizu",
-            "text": "\u767b\u4e0a\u4e09\u5e74\u5742\uff0c\u5728\u6e05\u6c34\u821e\u53f0\u4e0a\u53d6\u5f97\u788e\u7247\u00b7\u821e\u53f0",
+            "text": "登上三年坂，在清水舞台上取得碎片·舞台",
             "done": [
               "shard_kiyomizu"
             ]
           },
           {
             "id": "kikyo",
-            "text": "\u5c04\u843d\u660e\u667a\u519b\u9635\u7684 3 \u9762\u6854\u6897\u5927\u65d7\uff0c\u53d6\u5f97\u788e\u7247\u00b7\u6854\u6897",
+            "text": "射落明智军阵的 3 面桔梗大旗，取得碎片·桔梗",
             "done": [
               "kikyo_banner_1",
               "kikyo_banner_2",
@@ -4346,14 +4544,14 @@
           },
           {
             "id": "core",
-            "text": "\u5728\u672c\u80fd\u5bfa\u70b9\u4eae\u4eac\u4e4b\u6838\uff0c\u51fb\u8d25\u4e1a\u706b\u4e4b\u4e3b",
+            "text": "在本能寺点亮京之核，击败业火之主",
             "done": [
               "fire_core"
             ]
           },
           {
             "id": "contract",
-            "text": "\u56de\u5230\u4e09\u6761\u5927\u6865\uff0c\u4e0e\u5bab\u672c\u6b66\u85cf\u7f14\u7ed3\u5951\u7ea6",
+            "text": "回到三条大桥，与宫本武藏缔结契约",
             "done": [
               "musashi_contract"
             ]
@@ -4362,5 +4560,15 @@
       }
     },
     "glb_sha256": "e7a6009921b89872ba97c2e1d8a1db719ee099b1c099bdd7a4a039c63a4f730b"
+  },
+  "refreshed": {
+    "commit": "32edb5b",
+    "regions": [
+      "britain",
+      "blacksail",
+      "winter",
+      "kyoto"
+    ],
+    "reason": "continental rebuild and reviewed chapter redesigns superseded the 36936478 layouts"
   }
 }

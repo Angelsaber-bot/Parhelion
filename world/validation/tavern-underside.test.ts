@@ -11,7 +11,9 @@ import {tavernRoofUnderside} from '../tools/gen/blacksail/architecture.ts';
 // Compressed BIN offsets are not stable across a rebuild; protect the decoded
 // collider/layout contract and the old tavern's exact six-face shape instead.
 test('Nassau rebuild preserves all original decoded collision nodes and layout',async()=>{
- const baseline=JSON.parse(readFileSync(new URL('./map-polish/baseline.json',import.meta.url),'utf8')).regions.blacksail;
+ const polish=JSON.parse(readFileSync(new URL('./map-polish/baseline.json',import.meta.url),'utf8'));
+ // Black Sail was re-baselined after the Nassau rebuild (refresh-map-baselines.ts).
+ const baseline=polish.refreshed?.regions?.blacksail??polish.regions.blacksail;
  const now=await snapshot(fileURLToPath(new URL('../public/assets/',import.meta.url)),'blacksail',{unseat:true}); // join-band prop seating reversed
  assert.equal(now.layoutSha256,baseline.layoutSha256);
  for(const [name,node]of Object.entries(baseline.nodes))if(name.startsWith('COL_')&&name!=='COL_Terrain')assert.deepEqual(now.nodes[name],node,name);

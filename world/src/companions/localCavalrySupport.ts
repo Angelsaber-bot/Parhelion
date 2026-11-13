@@ -30,7 +30,13 @@ export class LocalCavalrySupport{
   if(!this.pending)return;
   if(this.h.player.distanceTo(new THREE.Vector3(40,this.h.player.y,-687))>25){this.cancel();return;}
   const actor=this.h.actor();if(!actor)return;const target=this.h.target();if(!target){this.pending=false;this.h.toast(['尚无可安全接触的目标。把阵地守卫引到已清出的宽街，再发信号。','No safely reachable target. Draw the guards onto the cleared wide road, then signal.']);return;}
-  const stage=new THREE.Vector3(40,0,-695),floor=this.h.ground(stage.x,stage.z);if(floor===null){this.pending=false;return;}stage.y=floor;
+  // Stage the horse a short run behind the chosen target, on the road side (south), so the charge
+  // reaches it within its contact distance; fall back to the authored rear-road point.
+  const road=new THREE.Vector3(40,0,-695),back=road.clone().sub(target.point).setY(0);
+  const candidates=back.lengthSq()>1?[target.point.clone().addScaledVector(back.normalize(),6),target.point.clone().addScaledVector(back,8),road]:[road];
+  let stage:THREE.Vector3|null=null;
+  for(const c of candidates){const floor=this.h.ground(c.x,c.z);if(floor===null)continue;const p=new THREE.Vector3(c.x,floor,c.z);if(Math.abs(floor-target.point.y)<1.5&&this.h.clear(p)){stage=p;break;}}
+  if(!stage){const floor=this.h.ground(road.x,road.z);if(floor===null){this.pending=false;return;}stage=new THREE.Vector3(road.x,floor,road.z);}
   if(!this.h.clear(stage)){this.pending=false;this.h.toast(['马匹的整队位置受阻，支援没有发动。','The horse staging position is blocked; support did not start.']);return;}
   actor.root.position.copy(stage);actor.root.visible=true;actor.root.rotation.y=Math.atan2(target.point.x-stage.x,target.point.z-stage.z);actor.root.updateMatrixWorld(true);
   const token=this.generation,direction=target.point.clone().sub(stage).setY(0).normalize();this.deployed=true;this.pending=false;

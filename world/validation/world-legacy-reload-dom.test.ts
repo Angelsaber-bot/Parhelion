@@ -57,7 +57,8 @@ test('NON-GPU actual legacy startup migrates once; confirmed new game remains em
     assert.equal(world.done.size, 0); assert.equal(world.found.size, 0);
     assert.equal(world.rig.joints.Gun.visible, false); assert.equal(world.contract.roster.length, 0); assert.equal(world.contract.companionSummoned, false);
     assert.equal(world.combat.state.isCleared('boss_drowned_admiral'), false);
-    const spawn = world.layout.markers.find((marker: any) => marker.id === INITIAL_SPAWN_ID);
+    // A fresh save starts the Valley prologue in the residence room, not the old field spawn marker.
+    const spawn = world.valleyPrologueScene?.spawn ?? world.layout.markers.find((marker: any) => marker.id === INITIAL_SPAWN_ID);
     assert.deepEqual(world.player.pos.toArray(), [spawn.p[0], spawn.p[1] + 1, spawn.p[2]]);
     assert.deepEqual(JSON.parse(window.localStorage.getItem(WORLD_PROGRESS_KEY)!), { done: [], found: [] });
     assert.equal(world.settings.action('ArrowUp'), 'forward'); assert.equal(world.audio.muted, true);

@@ -10,7 +10,9 @@ import { ADVENTURE as A, getAdventureGuide } from '../src/story/openWorldCampaig
 import { VALLEY_PROLOGUE } from '../src/story/valleyPrologue';
 import { bootWorldWithoutGpu } from './world-dom-boot.fixture';
 
-const flags = [A.started, A.online, 'armory_rack', 'musashi_meet', 'kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3', VALLEY_PROLOGUE.room];
+// The street-works chapter (letter, both cargo books) now precedes the witness flow.
+const flags = [A.started, A.online, 'armory_rack', 'musashi_meet', 'kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3', VALLEY_PROLOGUE.room,
+  'adventure_kyoto_street_envelope', 'adventure_kyoto_street_letter', 'adventure_kyoto_street_temple_record', 'adventure_kyoto_street_camp_record'];
 const frame = { dt: .05, held: false, playable: true, grounded: true, moving: false, attacking: false, inRange: true };
 
 test('Kyoto accepts manual rescue and a sealed handover, and protects existing victories', () => {
@@ -29,6 +31,11 @@ test('Kyoto accepts manual rescue and a sealed handover, and protects existing v
   assert.ok(done.has(Y.testimony));
   runtime.interact(Y.private); assert.ok(done.has(Y.private)); assert.ok(done.has(A.water));
   runtime.interact(Y.public); assert.ok(!done.has(Y.public));
+  // The decree court chapters (J03 lords, J07 fire night, J08 entry) also gate the boss for new runs;
+  // they are played in regional-field-chapters tests. With them done, the witness flow is the last gate.
+  const witnessOnly = getEraBossRequirements('fire_core', done)!.filter(id => !done.has(id));
+  assert.deepEqual(witnessOnly.filter(id => !/^j0[378]_/.test(id)), []);
+  for (const id of ['j03_complete', 'j07_complete', 'j08_offer', 'j08_entered']) done.add(id);
   assert.ok(getEraBossRequirements('fire_core', done)?.every(id => done.has(id)));
   done.add('fire_core'); assert.equal(getAdventureGuide('kyoto', done)?.targetId, Y.gate);
   assert.equal(getAdventureGuide('kyoto', new Set([...flags, 'fire_core']))?.targetId, A.evidence);

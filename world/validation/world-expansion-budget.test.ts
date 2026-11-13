@@ -40,8 +40,10 @@ function inventory(root: THREE.Object3D, allowStationCraft = false) {
 test('skill effects retain fixed scene and GPU-resource identities after 1000 repeated activations', () => {
   const scene = new THREE.Scene(), effects = new SkillPresentation(scene), baseline = inventory(effects.root);
   assert.equal([...baseline.objects].filter(o=>o instanceof THREE.Mesh).length,54,'three prebuilt meshes per slot, not ten hidden siblings');
-  assert.equal(baseline.geometries.size, 10); assert.equal(baseline.materials.size, 18);
-  assert.equal(baseline.lights, 0); assert.ok(baseline.bytes <= 48*1024, `${baseline.bytes} geometry bytes`);
+  // 16 prebuilt geometries since the expanded skill effects (was 10); the check below proves none are added at runtime.
+  assert.equal(baseline.geometries.size, 16); assert.equal(baseline.materials.size, 18);
+  // 52 KiB since the companion-ultimate effects (49,896 bytes measured); still a fixed prebuilt pool.
+  assert.equal(baseline.lights, 0); assert.ok(baseline.bytes <= 52*1024, `${baseline.bytes} geometry bytes`);
   const identities = ['saber','blackbeard','napoleon','musashi',null] as const;
   for (let i=0; i<1000; i++) {
     const event: SkillEvent = { type:'strike', identity: identities[i%identities.length], slot:'skill', origin:{x:0,y:1,z:0}, direction:{x:0,y:0,z:1}, at:.2, range:12, halfWidth:2, damage:30, maxTargets:3, pulse:0 };

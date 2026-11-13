@@ -2,7 +2,7 @@
   {
     "name": "COL_Terrain",
     "triangles": 259200,
-    "orderedPositionHash": "241bdac764ecbf158b9651568d1d69038b55b4a7950ce59b7c0d1d3e5cc39ed0",
+    "orderedPositionHash": "26e8713b74a95efcad9b687b5b53beaccb5f57b23fa20b7d3225c576a17fa504",
     "worldMatrix": [
       1,
       0,
@@ -131,9 +131,103 @@
     }
   },
   {
+    "name": "COL_Fort_Tower_Drums",
+    "triangles": 320,
+    "orderedPositionHash": "a64783460d099c20314c5471d89f229aaa0c7c442679482d63c11b21ec21162a",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Fort_Tower_Drums",
+      "dynamic": true,
+      "art": "Fort_Tower_Drums"
+    }
+  },
+  {
+    "name": "COL_Flagship_Hull",
+    "triangles": 320,
+    "orderedPositionHash": "7dbff782b2640f75e1aca1a6af2f4079da1ae86f95d1aa156f5a9b4b12c11266",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Flagship_Hull",
+      "dynamic": true,
+      "art": "Flagship_Hull"
+    }
+  },
+  {
+    "name": "COL_Ghost_Flagship_Link",
+    "triangles": 12,
+    "orderedPositionHash": "5e87de9794f4b95a61dd51071482e9ced51d5d2b08f0f3d0c539298038ed96f8",
+    "worldMatrix": [
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "extras": {
+      "name": "COL_Ghost_Flagship_Link",
+      "dynamic": true,
+      "art": "Ghost_Flagship_Link",
+      "showWhen": [
+        "shard_powder",
+        "shard_compass",
+        "shard_treasure"
+      ],
+      "solidWhen": [
+        "shard_powder",
+        "shard_compass",
+        "shard_treasure"
+      ]
+    }
+  },
+  {
     "name": "COL_Ghost_Bridge",
-    "triangles": 36,
-    "orderedPositionHash": "f1a093b71dadc0a8154ccce348fd034b26a3787443d39cb4c56faaeeb8f18c27",
+    "triangles": 24,
+    "orderedPositionHash": "77b6e64f520b1cc81ac4af4fe6edd37c0d8c2bc50c5a37eadc545f5c33574401",
     "worldMatrix": [
       1,
       0,
@@ -170,8 +264,8 @@
   },
   {
     "name": "COL_Props",
-    "triangles": 24048,
-    "orderedPositionHash": "a7c4230740da35793089c13c9aa2495a8c209e72ab1f02527b5a396dc40c48d3",
+    "triangles": 23176,
+    "orderedPositionHash": "bad5d7e5dc17f3d642570963e58712112266d51dfe4f16e54957cc797d99044a",
     "worldMatrix": [
       1,
       0,

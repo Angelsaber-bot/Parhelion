@@ -11,7 +11,9 @@ test('actual main quest browser only pins deliberately, advances saved steps, an
  const enter=async()=>{(d.getElementById('start')as HTMLElement).click();await Promise.resolve()};
  const open=()=>{if(d.pointerLockElement)d.exitPointerLock();const opener=d.getElementById('world-quest-journal-open')as HTMLElement;opener.focus();opener.click();return d.getElementById('world-quest-journal')!};
  try{
-  await enter();frames();const before=[...w.done],found=[...w.found],position=w.player.pos.clone();
+  // Let the spawn settle fully first: the check is that blocked keys never move the player, not spawn physics.
+  await enter();frames();for(let i=0,last=w.player.pos.clone();i<240;i++){frame();if(w.player.pos.distanceTo(last)<1e-6&&w.player.onGround)break;last.copy(w.player.pos);}
+  const before=[...w.done],found=[...w.found],position=w.player.pos.clone();
   const panel=open();assert.equal(panel.hidden,false);assert.equal(d.pointerLockElement,null);assert.equal(d.getElementById('world-tracked-story'),null,'opening is not tracking');
   for(const code of ['KeyW','KeyQ','KeyX','KeyB','Digit1'])key(code);frames();assert.deepEqual([...w.done],before);assert.deepEqual([...w.found],found);assert.equal(w.player.pos.x,position.x);assert.equal(w.player.pos.z,position.z);
   const select=panel.querySelector('select')!;select.value='all';select.dispatchEvent(new h.window.Event('change'));

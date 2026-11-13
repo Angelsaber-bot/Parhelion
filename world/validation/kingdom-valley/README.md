@@ -34,3 +34,12 @@ Boards add labels but never invent or retouch scene pixels.
 This proves offline PBR geometry/material fallback appearance only. It does not
 prove live WebGL shader compilation, toon surface details, controls, GPU memory,
 frame time or FPS. Browser acceptance and deployment are separate stages.
+
+## 2026-11-13 refresh of the four rebuilt regions
+
+The continental terrain rebuild and the reviewed chapter redesigns (Winter boss moved to the old
+customs square, Kyoto's added sites and routes, Nassau and Britain prop clearing) superseded the frozen
+`36936478`/`a3096254` contracts for britain, blacksail, winter and kyoto. `validation/refresh-map-baselines.ts`
+regenerated their layout, contract, collision and map-polish snapshots at commit `32edb5b`; no marker id or
+objective step was lost. Alpha keeps its historical baseline and approved-exception chain. From this point
+the four regions must match the refreshed state exactly; refresh again only for a reviewed rebuild.

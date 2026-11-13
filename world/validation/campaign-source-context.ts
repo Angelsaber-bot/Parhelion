@@ -11,12 +11,13 @@ import {FLAGSHIP_WORK_IDS} from '../src/story/flagshipWorks';
 import {KYOTO_STREET_IDS} from '../src/story/kyotoStreetWorks';
 import {EGYPT_SHIP_HINGE as EH} from '../src/story/fieldSideStories';
 import {EGYPT_SOLAR_BOAT as ESB} from '../src/environment/egyptSolarBoat';
+import {EGYPT_WHEEL as EWW, EGYPT_WHEEL_LABELS} from '../src/environment/egyptWaterwheel';
 /** Legacy exact-source slices do not instantiate new sites. Keep their tests
  * on the real old route while explicitly supplying the new optional adapter. */
 export const campaignSourceContext = {
   fieldSideSites: undefined,
   orleansShadowPlay: undefined, shadowPlayCue: null,
-  EH, ESB, egyptSolarBoat: { reset() {}, showRepairedShield() {} }, egyptWaterwheel: { reset() {}, apply() {} },
+  EH, ESB, EWW, EGYPT_WHEEL_LABELS, egyptSolarBoat: { reset() {}, showRepairedShield() {} }, egyptWaterwheel: { reset() {}, apply() {} },
   egyptTempleMechanisms: { resetSideDoor() {}, apply() {} },
   insideValleyFoundation, WCW, FLAGSHIP_WORK_IDS, KYOTO_STREET_IDS,
   modelClaimPoints: [],
@@ -40,4 +41,9 @@ export const campaignSourceContext = {
   applyCampaignState() {},
   applyWeaponFinish() {},
   applyFalseDawnState() {},
+  // Regional chapter workflows added after these legacy source slices: present, but owning no markers.
+  qinChapterById: new Map<string, never>(), qinChapterReady: () => false, qinCampaign: undefined, qinCrewTransit: undefined,
+  egyptChapterById: new Map<string, never>(), egyptChapterReady: () => false, egyptCampaign: undefined,
+  orleansActionById: new Map<string, never>(), orleansCampaignReady: () => false, orleansCampaign: undefined,
+  fieldChapters: undefined,
 };
