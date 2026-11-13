@@ -3,6 +3,7 @@ import test from 'node:test';
 import { Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import { getEraBossRequirements } from '../src/story/eraStories';
+import { KINGDOM_ROAD as R } from '../src/story/kingdomRoad';
 import { KINGDOM_GATE } from '../src/story/kingdomGate';
 import { KINGDOM_WORKS as K, KINGDOM_WATCH_ENCOUNTER, commitKingdomWork, kingdomWorksNext } from '../src/story/kingdomWorks';
 import { ADVENTURE, adventureChapterComplete } from '../src/story/openWorldCampaign';
@@ -38,8 +39,9 @@ test('the production kingdom can recall timber, shoot the hoist, repel guards, a
   const marker = (id: string) => w.layout.markers.find((m: { id: string }) => m.id === id);
   function approach(id: string) {
     const m = marker(id); assert.ok(m, id);
-    const floor = w.combat.geometry.ground(m.p[0], m.p[2], m.p[1] + 1.25);
-    assert.ok(floor && Math.abs(floor.point.y + .9 - m.p[1]) < .65 && w.combat.geometry.clear(floor.point, .34, 1.7), id);
+    const roadControl = Object.values(R).some(flag => flag === id);
+    const floor = w.combat.geometry.ground(m.p[0] + (roadControl ? .85 : 0), m.p[2], m.p[1] + 1.25);
+    assert.ok(floor && Math.abs(floor.point.y + .9 - m.p[1]) < (roadControl ? .8 : .65) && w.combat.geometry.clear(floor.point, .34, 1.7), id);
     w.player.teleport(floor.point.x, floor.point.y + .2, floor.point.z);
     frame(22);
   }
@@ -68,8 +70,13 @@ test('the production kingdom can recall timber, shoot the hoist, repel guards, a
     for (const enemy of [...w.combat.state.enemies].filter(e => e.storyEncounter === KINGDOM_WATCH_ENCOUNTER)) w.combat.damageEnemy(enemy.id, 1000);
     assert.ok(w.done.has(K.secure), K.secure);
     tap(K.lamp); assert.ok(w.done.has(K.lamp), K.lamp);
+    assert.ok(marker('sun_core').requires.includes(R.start));
+    tap(R.front); assert.ok(w.done.has(R.front));
+    tap(R.side); assert.ok(w.done.has(R.side)); assert.ok(!w.done.has(R.front));
+    tap(R.start); assert.ok(w.done.has(R.start));
     assert.ok(marker('sun_core').requires.every((flag: string) => w.done.has(flag)));
     w.done.add('sun_core');
+    tap(R.finish); assert.ok(w.done.has(R.finish));
     tap(K.bell); assert.ok(w.done.has(K.bell), K.bell);
     assert.equal(adventureChapterComplete('britain', w.done), true);
     assert.ok(JSON.parse(h.window.localStorage.getItem(WORLD_PROGRESS_KEY)!).done.includes(K.bell));

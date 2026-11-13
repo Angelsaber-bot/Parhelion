@@ -730,7 +730,7 @@ export function buildQin(plan: ExpansionPlan, heightAt: Height, access: RoutePoi
     for (let k = 0; k < 12; k++) { const a = k / 12 * Math.PI * 2; g.add(CYL8, Q.jade, T(cx + Math.cos(a) * 7.4, y + 1.6, cz + Math.sin(a) * 7.4, 0, .2, .5, .2), false); }
     // A city in miniature along the walls: halls, gate towers and que pairs, no two alike.
     for (let i = 0; i < 6; i++) for (const s of [-1, 1]) {
-      if (i === 2 || i === 3) continue; // aisles to the north and south burial-pit doors
+      if (i === 2 || i === 3 || (i === 0 && s < 0)) continue; // burial-pit doors and the west command-hall approach
       const x = 36 + i * 7.6, z = s < 0 ? cz - 21 : cz + 21, f = new Frame(b, x, y, z, s < 0 ? 0 : Math.PI), kind = (i + (s > 0 ? 3 : 0)) % 4;
       f.box(0, .4, 0, 5.4, .8, 3.2, Q.earth); f.box(0, .82, 0, 5.6, .06, 3.4, Q.stoneDark, false);
       if (kind === 0) { f.box(0, 1.5, 0, 3.6, 1.3, 2, Q.plaster, false); qinRoof(f, 3.6, 2, 2.2, .9, Q.tile, .5, false, { finScale: .3, rafters: false }); }

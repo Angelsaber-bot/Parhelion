@@ -9,6 +9,8 @@ import {
   EGYPT_MAIL as EM, EGYPT_REED_RACE as ER, EGYPT_SHIP_HINGE as EH, EGYPT_REVERSE_WHEEL as EW,
   EGYPT_HERD as EG, EGYPT_THRONE as ET,
 } from '../src/story/fieldSideStories';
+import { QIN_FIELD as QF } from '../src/story/qinFieldStories';
+import { ORLEANS_FIELD as OF } from '../src/story/orleansFieldStories';
 import { JOURNEY as J } from '../src/story/worldJourney';
 import { HARBOR_WORKBOAT as HB } from '../src/story/harborRelief';
 import { VALLEY_PROLOGUE as P } from '../src/story/valleyPrologue';
@@ -264,6 +266,61 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.equal(w.combat.state.hp, maxHealth - 9);
     assert.ok(w.done.has(O.bowl));
 
+    complete(OF.bell.listen); complete(OF.bell.roof); complete(OF.bell.flag);
+    assert.ok(w.scene.getObjectByName('OrleansBelfrySpareSignal').visible);
+    assert.equal(passage('OrleansChartLanding').enabled, false);
+    [OF.chart.read, OF.chart.upstream, OF.chart.turn, OF.chart.quay, OF.chart.shadow].forEach(complete);
+    assert.ok(passage('OrleansChartLanding').enabled);
+    complete(OF.rescue.approach);
+    choose(OF.rescue.help, 'call'); assert.ok(w.done.has(OF.rescue.medic));
+    approach(OF.rescue.exchange); tap(); assert.ok(!w.done.has(OF.rescue.exchange));
+    frame(500); complete(OF.rescue.exchange);
+    [OF.timber.inspect, OF.timber.sling].forEach(complete);
+    choose(OF.timber.trim, 'left'); assert.ok(!w.done.has(OF.timber.trim));
+    choose(OF.timber.trim, 'right'); assert.ok(!w.done.has(OF.timber.trim));
+    choose(OF.timber.trim, 'right'); assert.ok(w.done.has(OF.timber.trim));
+    assert.ok(passage('OrleansCarpentersDitchBridge').enabled);
+    complete(OF.timber.cross);
+    [OF.under.toolbag, OF.under.lower, OF.under.upper].forEach(complete);
+    assert.ok(passage('OrleansServiceEscapeDeck').enabled);
+    w.done.add(J.orleansBattery);
+    [OF.shields.repair, OF.shields.blue, OF.shields.red, OF.shields.mural].forEach(complete);
+
+    [QF.lists.people, QF.lists.tools, QF.lists.seats].forEach(complete);
+    assert.ok(w.scene.getObjectByName('QinReservedFamilySeats').visible);
+    [QF.cart.find, QF.cart.align, QF.cart.wheel].forEach(complete);
+    approach(QF.cart.push); tap();
+    const qinCart = w.scene.getObjectByName('QinRepairedSupplyCart');
+    for (let i = 0; i < 10 && !w.done.has(QF.cart.push); i++) {
+      frame(34);
+      const p = qinCart.position;
+      const floor = w.combat.geometry.ground(p.x, p.z, p.y + 1.5);
+      assert.ok(floor, 'cart siding supports the player');
+      w.player.teleport(p.x, floor.point.y + .08, p.z);
+    }
+    assert.ok(w.done.has(QF.cart.push));
+    approach(QF.cart.cache); w.combat.state.ammo = 10; tap();
+    assert.ok(w.done.has(QF.cart.cache));
+    complete(QF.stars.foot);
+    assert.equal(passage('QinAstronomerHingedDeck').enabled, false);
+    complete(QF.stars.latch);
+    assert.ok(passage('QinAstronomerHingedDeck').enabled);
+    complete(QF.stars.view);
+    [QF.oldRank.traces, QF.oldRank.first, QF.oldRank.second, QF.oldRank.exit].forEach(complete);
+    assert.equal(passage('QinOldRankSlidingPanel').enabled, false);
+    [QF.troupe.entry, QF.troupe.frame, QF.troupe.finish].forEach(complete);
+    assert.ok(passage('QinAcrobatJumpBoard').enabled);
+    complete(QF.range.read);
+    approach(QF.range.start); tap();
+    frame(122);
+    const [rx, ry, rz] = marker(QF.range.start).p;
+    w.player.teleport(rx + 1.85, ry - .82, rz);
+    frame(110);
+    w.player.teleport(rx, ry - .82, rz);
+    frame(130);
+    assert.ok(w.done.has(QF.range.start));
+    assert.ok(w.scene.getObjectByName('QinSealGeneralRangeMark').visible);
+
     assert.equal(passage('QinQuietRoomDoor').enabled, true);
     [Q.alcove, Q.door, Q.sketch].forEach(complete);
     assert.equal(passage('QinQuietRoomDoor').enabled, false);
@@ -298,6 +355,8 @@ test('field side quests accept actual inputs and restore their route rewards fro
     assert.ok(world.done.has(HK.memorial) && world.done.has(CC.repair));
     assert.ok(world.done.has(WB.leave) && world.done.has(WS.crossing) && world.done.has(WR.rails));
     assert.ok(world.done.has(EM.return) && world.done.has(ER.prize) && world.done.has(EH.brace) && world.done.has(EW.baffle));
+    assert.ok(world.done.has(QF.cart.cache) && world.done.has(QF.stars.view) && world.done.has(QF.range.start));
+    assert.ok(world.done.has(OF.bell.flag) && world.done.has(OF.rescue.medic) && world.done.has(OF.shields.mural));
     assert.ok(world.done.has(EG.settle) && world.done.has(ET.east) && world.done.has(ET.west));
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoHandoffShutter')?.enabled, false);
     assert.equal(world.colliders.find((c: { name: string }) => c.name === 'COL_KyotoPaperRoofShortcut')?.enabled, true);

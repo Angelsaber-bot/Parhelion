@@ -1,5 +1,6 @@
 // Structures, props and vegetation for 黑帆尽头 (Black Sail's End).
 import * as THREE from 'three';
+import { BLACKSAIL_CIVIL_CLEARANCE } from '../../../src/map/blackSailCivilPlan.js';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
@@ -136,7 +137,9 @@ export function buildBlacksail(heightAt: HeightAt) {
     const result=legacyShip(b,cx,cz,ry,len,deck,st);
     b.vis.length=n;
     if(st.sailBatch && sn!==undefined) st.sailBatch.vis.length=sn;
-    pieces.push(...buildMaritimeShip(`${b.name}_Ship_${cx}_${cz}`,cx,cz,ry,len,deck,st,WL));
+    const shipArt = buildMaritimeShip(`${b.name}_Ship_${cx}_${cz}`,cx,cz,ry,len,deck,st,WL);
+    if (b.name === 'Flagship_Hull') for (const p of shipArt) p.dynamic = true;
+    pieces.push(...shipArt);
     return result;
   };
   const mk = (m: Marker) => markers.push(m);
@@ -259,11 +262,16 @@ export function buildBlacksail(heightAt: HeightAt) {
     }
     // houses and warehouses on the terrace
     const homes: [number, number, number, string][] = [
-      [-160, 120, 0.05, C.roofTeal], [-146, 104, -0.1, C.roofRed], [-96, 108, 0.12, C.roofBlue], [-80, 126, -0.05, C.roofRed],
+      [-160, 120, 0.05, C.roofTeal], [-146, 104, -0.1, C.roofRed], [-96, 108, 0.12, C.roofBlue], [-98, 132, -0.05, C.roofRed],
       [-170, 150, 0.2, C.roofBlue], [-74, 150, -0.2, C.roofTeal], [-150, 172, 0, C.roofRed], [-96, 172, 0.1, C.roofTeal],
     ];
     homes.forEach(([x, z, ry, roof], i) => {
       const w = 7 + (i % 2) * 2, d = 6, h = 4 + (i % 3);
+      // Hillside homes use their own ground, not the pier's 3.4 m datum.
+      const samples = [-.5, 0, .5].flatMap(u => [-.5, 0, .5].map(v =>
+        heightAt(x + Math.cos(ry) * u * w + Math.sin(ry) * v * d, z - Math.sin(ry) * u * w + Math.cos(ry) * v * d)));
+      const y = Math.max(...samples) + .08, bottom = Math.min(...samples) - .15;
+      b.box(x, bottom, z, w + .12, y - bottom, d + .12, C.stoneDark, ry);
       const legacyVisualStart=b.vis.length, legacyGlowStart=glow.vis.length;
       b.add(BOX, i % 2 ? C.plaster : C.plasterB, T(x, y + h / 2, z, ry, w, h, d));
       b.add(ROOF, roof, T(x, y + h + 1.1, z, ry, 2.2, w + 1, (d + 1.6) / 1.732, 0, Math.PI / 2));
@@ -606,6 +614,10 @@ export function buildBlacksail(heightAt: HeightAt) {
 
     // dock at the tip of the headland, then the ghost fleet
     const fleet = new Batch('Ghost_Fleet');
+    const flagship = new Batch('Flagship_Hull');
+    const flagshipLights = new Batch('Flagship_Lights', 'M_Emissive');
+    pieces.push({ name: 'Flagship_Hull', material: 'M_Toon', batch: flagship, dynamic: true, outline: true },
+      { name: 'Flagship_Lights', material: 'M_Emissive', batch: flagshipLights, dynamic: true });
     const fsails = new Batch('Ghost_Sails', 'M_Beam');
     const ghost: ShipStyle = { hull: C.ghostDark, hullDark: '#2f5f6a', deck: C.ghost, sail: C.ghostSail, sailBatch: fsails };
     // a stone jetty runs from the headland road (north of the tower) out past the cliff to the bridge
@@ -616,44 +628,47 @@ export function buildBlacksail(heightAt: HeightAt) {
     const ends: { bow: V2; stern: V2; deck: number }[] = [];
     for (const g of FLEET) {
       const flag = g.id === 'flag';
-      const sh = ship(fleet, g.c[0], g.c[1], g.ry, g.len, WL + g.deck, { ...ghost, castle: flag, masts: flag ? 3 : 2 });
+      const sh = ship(flag ? flagship : fleet, g.c[0], g.c[1], g.ry, g.len, WL + g.deck, { ...ghost, castle: flag, masts: flag ? 3 : 2 });
       ends.push({ bow: sh.bow, stern: sh.stern, deck: WL + g.deck });
-      for (let k = 0; k < 4; k++) { const [lx, lz] = sh.at(-g.len * 0.25 + k * g.len * 0.2, (k % 2 ? 1 : -1) * (sh.W / 2 - 0.2)); glow.add(BOX, C.glowCyan, T(lx, WL + g.deck + 1.4, lz, 0, 0.3, 0.45, 0.3), false); }
+      for (let k = 0; k < 4; k++) { const [lx, lz] = sh.at(-g.len * 0.25 + k * g.len * 0.2, (k % 2 ? 1 : -1) * (sh.W / 2 - 0.2)); (flag ? flagshipLights : glow).add(BOX, C.glowCyan, T(lx, WL + g.deck + 1.4, lz, 0, 0.3, 0.45, 0.3), false); }
     }
     pieces.push({ name: 'Ghost_Fleet', material: 'M_Toon', batch: fleet, outline: true }, { name: 'Ghost_Sails', material: 'M_Beam', batch: fsails });
     // ghost-fire bridges: appear (and become solid) once all three sea shards are held
     const shards = ['shard_powder', 'shard_compass', 'shard_treasure'];
     const br = new Batch('Ghost_Bridge', 'M_Emissive');
+    const lastLink = new Batch('Ghost_Flagship_Link', 'M_Emissive');
     const links: [V2, number, V2, number][] = [
       [dock, dockY, ends[0].bow, ends[0].deck],
       [ends[0].stern, ends[0].deck, ends[1].bow, ends[1].deck],
       [ends[1].stern, ends[1].deck, ends[2].bow, ends[2].deck],
     ];
-    for (const [a, ya, c, yc] of links) {
-      bridge(br, a, ya, c, yc, 2.6, '#7ff7e8');
+    for (const [index, [a, ya, c, yc]] of links.entries()) {
+      const link = index === 2 ? lastLink : br;
+      bridge(link, a, ya, c, yc, 2.6, '#7ff7e8');
       const dx = c[0] - a[0], dz = c[1] - a[1], L = Math.hypot(dx, dz);
       for (let t = 4; t < L; t += 5) for (const s of [-1.6, 1.6]) {
         const x = a[0] + (dx * t) / L + (dz / L) * s, z = a[1] + (dz * t) / L - (dx / L) * s;
-        br.add(CONE8, '#b6fff5', T(x, ya + ((yc - ya) * t) / L + 0.5, z, 0, 0.15, 0.7, 0.15), false);
+        link.add(CONE8, '#b6fff5', T(x, ya + ((yc - ya) * t) / L + 0.5, z, 0, 0.15, 0.7, 0.15), false);
       }
     }
+    pieces.push({ name: 'Ghost_Flagship_Link', material: 'M_Emissive', batch: lastLink, dynamic: true, userData: { showWhen: shards, solidWhen: shards } });
     pieces.push({ name: 'Ghost_Bridge', material: 'M_Emissive', batch: br, dynamic: true, userData: { showWhen: shards, solidWhen: shards } });
     // flagship: the sea core on the quarterdeck, the boss in the waist
     const flagDef = FLEET.find((g) => g.id === 'flag')!;
     const fdeck = WL + flagDef.deck;
     const f: V2 = [Math.sin(flagDef.ry), Math.cos(flagDef.ry)];
     const coreP: V2 = [flagDef.c[0] - f[0] * 8, flagDef.c[1] - f[1] * 8];
-    fleet.add(CYL20, C.ghostDark, T(coreP[0], fdeck + 0.35, coreP[1], 0, 1.6, 0.7, 1.6));
+    flagship.add(CYL20, C.ghostDark, T(coreP[0], fdeck + 0.35, coreP[1], 0, 1.6, 0.7, 1.6));
     const core = new Batch('Sea_Core_Dark', 'M_Emissive');
     core.add(SPHERE, '#1f3a4a', T(coreP[0], fdeck + 3, coreP[1], 0, 1.4, 1.4, 1.4), false);
     core.add(new THREE.TorusGeometry(2, 0.12, 6, 40), C.glowCyan, T(coreP[0], fdeck + 3, coreP[1], 0, 1, 1, 1, Math.PI / 2 - 0.4), false);
-    pieces.push({ name: 'Sea_Core_Dark', material: 'M_Emissive', batch: core, userData: { hideWhen: 'sea_core', bob: true } });
+    pieces.push({ name: 'Sea_Core_Dark', dynamic: true, material: 'M_Emissive', batch: core, userData: { hideWhen: 'sea_core', bob: true } });
     const lit = new Batch('Sea_Core', 'M_Emissive');
     lit.add(SPHERE, C.lantern, T(coreP[0], fdeck + 3, coreP[1], 0, 1.6, 1.6, 1.6), false);
-    pieces.push({ name: 'Sea_Core', material: 'M_Emissive', batch: lit, userData: { showWhen: 'sea_core', bob: true } });
+    pieces.push({ name: 'Sea_Core', dynamic: true, material: 'M_Emissive', batch: lit, userData: { showWhen: 'sea_core', bob: true } });
     const cbeam = new Batch('Sea_Core_Beam', 'M_Beam');
     cbeam.add(new THREE.CylinderGeometry(1.2, 2.0, 160, 20, 1, true), C.lantern, T(coreP[0], fdeck + 80, coreP[1]), false);
-    pieces.push({ name: 'Sea_Core_Beam', material: 'M_Beam', batch: cbeam, userData: { showWhen: 'sea_core' } });
+    pieces.push({ name: 'Sea_Core_Beam', dynamic: true, material: 'M_Beam', batch: cbeam, userData: { showWhen: 'sea_core' } });
     mk({ id: 'sea_core', type: 'interact', label: '海之核', p: [coreP[0], fdeck, coreP[1]], radius: 3.6, requires: ['shard_powder', 'shard_compass', 'shard_treasure'] });
     mk({ id: 'boss_drowned_admiral', type: 'enemy', label: '亡航提督（Boss）', p: [flagDef.c[0] + f[0] * 4, fdeck, flagDef.c[1] + f[1] * 4] });
     mk({ id: 'disc_flagship', type: 'discovery', label: '安妮女王复仇号', p: [flagDef.c[0], fdeck, flagDef.c[1]], radius: 6, note: '幽灵舰队的旗舰' });
@@ -661,6 +676,7 @@ export function buildBlacksail(heightAt: HeightAt) {
 
   // ───────────────────────── Vegetation ─────────────────────────
   const blocked = (x: number, z: number) => {
+    if (BLACKSAIL_CIVIL_CLEARANCE.some(([x0, z0, x1, z1]) => x > x0 - 4 && x < x1 + 4 && z > z0 - 4 && z < z1 + 4)) return true;
     const near = (c: readonly [number, number], r: number) => Math.hypot(x - c[0], z - c[1]) < r;
     if (Math.hypot(x - PORT.c[0], (z - PORT.c[1]) * 1.3) < 66) return true;
     if (near(FORT.c, FORT.r + 8) || near(VORTEX.c, VORTEX.R + 2) || near(REEF.c, REEF.r - 2) || near(LIGHTHOUSE.c, 16)) return true;

@@ -4,7 +4,7 @@ import {distToSegment} from '../geo';
 import {distanceToLine,type ExpansionPlan,type MapPoint2} from '../../../src/map/worldPlan';
 import {ORLEANS_UNDERPASS_CUTS} from '../../../src/map/orleansWorks';
 import {ORLEANS_UNDERPASS} from '../../../src/map/orleansWorks';
-import {ORLEANS_SANDBARS,ORLEANS_SCORCH,fieldAt,laneDistance} from '../../../src/map/orleansOutskirts';
+import {ORLEANS_SANDBARS,ORLEANS_SCORCH,ORLEANS_EAST_MOAT,fieldAt,laneDistance} from '../../../src/map/orleansOutskirts';
 
 /** A spring in the eastern foothills flows past the city to the northwest estuary. */
 const riverCurve=new THREE.CatmullRomCurve3([
@@ -88,6 +88,9 @@ export function orleansAuthoredHeight(plan:ExpansionPlan,x:number,z:number):numb
     const a=line[i-1],b=line[i],dx=b[0]-a[0],dz=b[2]-a[2],t=THREE.MathUtils.clamp(((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1),0,1);
     y=lerp(y,Math.min(y,lerp(a[1],b[1],t)-.25),1-smoothstep(3.4,6.5,distToSegment(x,z,[a[0],a[2]],[b[0],b[2]])));
   }
+  const moat = ORLEANS_EAST_MOAT;
+  y -= moat.depth * (1 - smoothstep(moat.halfWidth - 4, moat.halfWidth + 4, Math.abs(x - moat.x)))
+    * (1 - smoothstep(moat.halfDepth - 3, moat.halfDepth + 4, Math.abs(z - moat.z)));
   return y;
 }
 export function orleansTerrainColor(plan:ExpansionPlan,x:number,y:number,z:number):THREE.Color {

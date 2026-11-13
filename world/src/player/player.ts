@@ -40,6 +40,10 @@ export class Player {
   pitch = 0;
   onGround = false;
   swimming = false;
+  /** Bounded inland water bodies can sit above the shared sea plane. */
+  waterSurfaceAt?: (position: THREE.Vector3) => number | null;
+  /** Enclosed dry galleries can sit below the outdoor sea surface. */
+  isDrySpace: ((position: THREE.Vector3) => boolean) | null = null;
   /** Glider upgrades from the exploration layer (Halo Statues). */
   glideSpeedScale = 1;
   glideSinkScale = 1;
@@ -112,8 +116,10 @@ export class Player {
 
     const jumpPressed = input.jump && !this.jumpHeld;
     this.jumpHeld = input.jump;
-    const feetDepth = this.waterLevel - this.pos.y;
-    this.swimming = feetDepth > 1.15;
+    const inlandWater = this.waterSurfaceAt?.(this.pos);
+    const surface = inlandWater != null && Number.isFinite(inlandWater) ? inlandWater : this.waterLevel;
+    const feetDepth = surface - this.pos.y;
+    this.swimming = feetDepth > 1.15 && !this.isDrySpace?.(this.pos);
     let speed = input.sprint ? PLAYER.sprint : PLAYER.walk;
     let lift = 0;
     this.inUpdraft = false;

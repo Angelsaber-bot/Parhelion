@@ -1,9 +1,7 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
-import type { Marker } from '../core/types';
-import type { Collider } from '../player/player';
+import { egyptToWorld } from '../map/egyptPlan';
 import { createSettlementNpcs } from '../settlements/npcs';
-import type { SiteArt } from '../story/campaignSites';
 import { climaxMarker } from '../story/realmClimaxes';
 import { JOURNEY } from '../story/worldJourney';
 import {
@@ -11,27 +9,8 @@ import {
   EGYPT_HERD as EG, EGYPT_THRONE as ET, FIELD_SIDE_STEPS, fieldSideReady,
 } from '../story/fieldSideStories';
 
+import type { FieldAuthoring } from './fieldSiteAuthoring';
 type Point = [number, number, number];
-type Region = Parameters<SiteArt['finish']>[0];
-type Apply = (done: ReadonlySet<string>, dt: number, player: THREE.Vector3) => void;
-type FieldAuthoring = {
-  place(guess: Point, range?: number): Point | null;
-  interact(id: string, point: Point): void;
-  scenery(name: string): SiteArt;
-  finish(art: SiteArt, region: Region, solid?: boolean): Collider | null;
-  table(art: SiteArt, p: Point, color?: string): void;
-  mesh(parent: THREE.Object3D, geometry: THREE.BufferGeometry, material: THREE.Material, p: Point, name?: string): THREE.Mesh;
-  group(parent: THREE.Object3D, p: Point, name: string): THREE.Group;
-  walkway(name: string, region: Region, points: [Point, Point], width: number, color: string, enabled: boolean, rails?: boolean): { art: SiteArt; collider: Collider };
-  ground(x: number, z: number, ceiling: number): number | null;
-  materials: Record<'wood' | 'dark' | 'red' | 'blue' | 'metal' | 'beacon', THREE.MeshStandardMaterial>;
-  prior: ReadonlyMap<string, Marker>;
-  markers: Marker[];
-  colliders: Collider[];
-  targets: THREE.Mesh[];
-  updates: Apply[];
-  actorCleanup: (() => void)[];
-};
 const offset = (p: Point, x = 0, y = 0, z = 0): Point => [p[0] + x, p[1] + y, p[2] + z];
 const wood = '#73513d', faded = '#9b7961', bronze = '#a78955';
 
@@ -134,7 +113,8 @@ export function createEgyptFieldSites({ place, interact, scenery, finish, table,
   }
 
   let shieldsWave = (_a: { x: number; y: number; z: number }, _b: THREE.Vector3) => false;
-  const hingeStall = place([173, 14, -1558], 13.5);
+  const [hingeX, hingeZ] = egyptToWorld(-173.5, 145.7);
+  const hingeStall = place([hingeX, 14, hingeZ], 5);
   const confluence = prior.get(climaxMarker('egypt', 'start'))?.p;
   const shieldStand = confluence && place(offset(confluence, 4.1, -.92, 4.4), 9);
   if (hingeStall && shieldStand) {
@@ -162,7 +142,8 @@ export function createEgyptFieldSites({ place, interact, scenery, finish, table,
     };
     updates.push((done, dt) => {
       pin.visible = fieldSideReady(EH.pin, done);
-      panel.rotation.z = THREE.MathUtils.damp(panel.rotation.z, done.has(EH.brace) ? 0 : .67, 6, dt);
+      panel.visible = !done.has(EH.brace);
+      panel.rotation.z = THREE.MathUtils.damp(panel.rotation.z, done.has(EH.pin) ? 0 : .67, 6, dt);
       shutter.visible = done.has(EH.brace);
       collider.enabled = shutter.visible && done.has(EH.coverOpen);
       shutter.rotation.x = collider.enabled ? 0 : -Math.PI / 2;

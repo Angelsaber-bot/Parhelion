@@ -1,9 +1,11 @@
 import type { Localized } from '../settlements/types';
 import type { WorldRegionId } from '../core/regionIdentity';
-import { JOURNEY } from './worldJourney';
+import { JOURNEY, journeyStepReady } from './worldJourney';
 import { ADVENTURE } from './openWorldCampaign';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
 import { HARBOR_WORKBOAT } from './harborRelief';
+import { QIN_FIELD, QIN_FIELD_STORIES } from './qinFieldStories';
+import { ORLEANS_FIELD, ORLEANS_FIELD_STORIES } from './orleansFieldStories';
 
 export const ROYAL_BOAT = {
   shed: 'field_boat_shed', haul: 'field_boat_haul', brace: 'field_boat_brace',
@@ -92,8 +94,8 @@ export const SKY_MAINTENANCE = {
 } as const;
 
 type Flags = ReadonlySet<string>;
-type Step = { id: string; label: Localized; hint: Localized; line: Localized; after?: (done: Flags) => boolean };
-type SideStory = { id: string; region: WorldRegionId; title: Localized; steps: readonly Step[]; available: (done: Flags) => boolean };
+export type FieldStep = { id: string; label: Localized; hint: Localized; line: Localized; after?: (done: Flags) => boolean };
+export type FieldSideStory = { id: string; region: WorldRegionId; title: Localized; steps: readonly FieldStep[]; available: (done: Flags) => boolean };
 const B = ROYAL_BOAT, W = HARBOR_WAGES, I = ICE_BELL, K = KYOTO_REFLECTION, V = VALLEY_RADIO, S = SKY_MAINTENANCE;
 const E = EGYPT_SEEDS, O = ORLEANS_SOUP, Q = QIN_QUIET_ROOM;
 const P = KYOTO_PASS, L = KYOTO_PAPERLINE, H = HARBOR_WORKBOAT;
@@ -104,7 +106,9 @@ const EG = EGYPT_HERD, ET = EGYPT_THRONE;
 const ropeLoose = (done: Flags) => done.has(I.rope) || done.has(I.pin);
 export const harborCustomsGone = (done: Flags) => done.has('sea_core') || done.has(ADVENTURE.departed);
 
-export const FIELD_SIDE_STORIES: readonly SideStory[] = [
+export const FIELD_SIDE_STORIES: readonly FieldSideStory[] = [
+  ...QIN_FIELD_STORIES,
+  ...ORLEANS_FIELD_STORIES,
   {
     id: 'the-royal-boat', region: 'britain', title: ['王室旧木舟', 'The Old Royal Boat'],
     available: done => done.has('saber_meet') || done.has('saber_contract') || done.has('sun_core'),
@@ -517,11 +521,14 @@ export const FIELD_SIDE_STORIES: readonly SideStory[] = [
   },
 ];
 export const FIELD_SIDE_STEPS = new Map(FIELD_SIDE_STORIES.flatMap(story => story.steps.map(step => [step.id, step] as const)));
-export function fieldSideNext(story: SideStory, done: Flags) {
+export function fieldSideNext(story: FieldSideStory, done: Flags) {
   if (!story.available(done) || done.has(story.steps.at(-1)!.id)) return null;
   return story.steps.find(step => !done.has(step.id) && (step.after?.(done) ?? true)) ?? null;
 }
 export function fieldSideReady(id: string, done: Flags) {
+  if (id === ORLEANS_FIELD.bell.handoff) return done.has(ORLEANS_FIELD.bell.flag) && journeyStepReady(JOURNEY.orleansFlag, done);
+  if (id === ORLEANS_FIELD.bell.shot) return fieldSideReady(ORLEANS_FIELD.bell.roof, done);
+  if (id === QIN_FIELD.cart.cache) return done.has(QIN_FIELD.cart.push) && !done.has(id);
   if (id === EG.supplies) return done.has(EG.settle) && !done.has(EG.supplies);
   if (id === ET.revisit) return done.has(ET.terrace);
   if (id === ER.again) return done.has(ER.prize);
@@ -544,6 +551,8 @@ export function fieldSideReady(id: string, done: Flags) {
   return FIELD_SIDE_STORIES.some(story => fieldSideNext(story, done)?.id === id);
 }
 export const FIELD_SERVICE_LABELS = new Map<string, Localized>([
+  [ORLEANS_FIELD.bell.handoff, ['备用窗 · 接应旗手', 'Spare window · Receive the flag bearer']],
+  [QIN_FIELD.cart.cache, ['陵道 · 取备用弹药', 'Tomb road · Take spare ammunition']],
   [EG.supplies, ['沿河支架 · 取备用水袋', 'Riverside stand · Take the spare waterskin']],
   [ET.revisit, ['王座外台 · 再看一侧远景', 'Throne terrace · View the other waterway']],
   [ER.again, ['双渠起点 · 再赛一次', 'Split channel · Race again']],

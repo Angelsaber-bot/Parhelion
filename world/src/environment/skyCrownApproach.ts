@@ -4,6 +4,9 @@ import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
 import { SiteArt } from '../story/campaignSites';
 import { JOURNEY as J, journeyStepReady, legacySkyApproach, type JourneyPoint } from '../story/worldJourney';
+import { addSkyCrownArchitecture } from './skyCrownArchitecture';
+import { landscapeWalkway } from './landscapeWalkway';
+import { SKY_LIFT } from './skyServiceLift';
 
 type Deck = { p: JourneyPoint; w: number; d: number };
 const DECK = {
@@ -23,7 +26,7 @@ export const SKY_APPROACH_DECKS = DECK;
 export const SKY_APPROACH_LANDING = DECK.dock.p;
 export const SKY_HALL_CHECKPOINT = DECK.hall.p;
 export const SKY_THROAT_CHECKPOINT: JourneyPoint = [DECK.throat.p[0] - 4, DECK.throat.p[1], DECK.throat.p[2] + 6];
-export const SKY_UP_LIFT = 'journey_sky_lift_upper', SKY_DOWN_LIFT = 'journey_sky_lift_lower';
+export const SKY_UP_LIFT = SKY_LIFT.upper, SKY_DOWN_LIFT = SKY_LIFT.lower;
 export const SKY_UP_LANDING: JourneyPoint = [286, 208, 240], SKY_DOWN_LANDING: JourneyPoint = [135, 156, 211];
 const slate = '#445c71', steel = '#2a3c51', bronze = '#bb9c66', bone = '#c6c6b5', teal = '#66b6ab';
 
@@ -71,49 +74,90 @@ export function addSkyCrownApproach(art: SiteArt) {
   }
   const list = Object.values(DECK).filter(item => item !== DECK.oldDock);
   list.forEach(deck);
+  const entrances = new Map<Deck, { dx: number; dz: number; width: number }[]>();
 
-  function connect(a: Deck, b: Deck, width: number, gate?: string) {
+  function connect(a: Deck, b: Deck, width: number, gate?: string, turn?: [number, number]) {
     const from = new THREE.Vector3(...a.p), to = new THREE.Vector3(...b.p);
-    const delta = to.clone().sub(from), horizontal = Math.hypot(delta.x, delta.z);
-    const dx = delta.x / horizontal, dz = delta.z / horizontal;
-    const edge = (deck: Deck) => Math.min(deck.w / 2 / Math.max(Math.abs(dx), .001), deck.d / 2 / Math.max(Math.abs(dz), .001));
-    const start = from.clone().add(new THREE.Vector3(dx, 0, dz).multiplyScalar(edge(a) + .45));
-    const end = to.clone().add(new THREE.Vector3(-dx, 0, -dz).multiplyScalar(edge(b) + .45));
-    const bridge = end.clone().sub(start), middle = start.clone().lerp(end, .5);
-    const yaw = Math.atan2(dx, dz), pitch = -Math.atan2(bridge.y, Math.hypot(bridge.x, bridge.z));
-    const rotation = new THREE.Euler().setFromQuaternion(new THREE.Quaternion().setFromEuler(new THREE.Euler(pitch, yaw, 0, 'YXZ')));
-    const r = [rotation.x, rotation.y, rotation.z] as JourneyPoint;
-    const span = bridge.length();
-    const normal = new THREE.Vector3(0, 1, 0).applyEuler(rotation);
-    const slab = middle.clone().addScaledVector(normal, -.24);
-    art.box(slab.toArray(), [width, .48, span + 1.8], slate, true, 'body', r);
-    for (const side of [-1, 1]) {
-      const offset = side * (width / 2 - .12), ex = dz * offset, ez = -dx * offset;
-      art.box([middle.x + ex, middle.y + .94, middle.z + ez], [.14, .12, span + .35], bronze, true, 'metal', r);
-      for (let length = 2; length < span - 1; length += 4.25) {
-        const p = start.clone().lerp(end, length / span);
-        art.box([p.x + ex, p.y + .46, p.z + ez], [.13, .92, .13], bone, true);
-      }
+    const corner = turn ? new THREE.Vector3(turn[0], 0, turn[1]) : null;
+    const startDirection = (corner ?? to).clone().sub(from).setY(0).normalize();
+    const endDirection = (corner ?? from).clone().sub(to).setY(0).normalize();
+    for (const [node, direction] of [[a, startDirection], [b, endDirection]] as const) {
+      const ports = entrances.get(node) ?? [];
+      ports.push({ dx: direction.x, dz: direction.z, width }); entrances.set(node, ports);
     }
+    const edge = (deck: Deck, direction: THREE.Vector3) => Math.min(
+      deck.w / 2 / Math.max(Math.abs(direction.x), .001), deck.d / 2 / Math.max(Math.abs(direction.z), .001));
+    // Overlap the top surface, without a solid end cap to catch the capsule.
+    const start = from.clone().addScaledVector(startDirection, edge(a, startDirection) - .6);
+    const end = to.clone().addScaledVector(endDirection, edge(b, endDirection) - .6);
+    const points = [start];
+    if (corner) {
+      // Two stair flights meet a level resting landing. Length is gained outside
+      // the decks, not by placing an unwalkable ramp across a tiny vertical gap.
+      const incoming = corner.clone().sub(start).setY(0).normalize();
+      const outgoing = end.clone().sub(corner).setY(0).normalize();
+      const landingA = corner.clone().addScaledVector(incoming, -width);
+      const landingB = corner.clone().addScaledVector(outgoing, width);
+      const firstRun = Math.hypot(landingA.x - start.x, landingA.z - start.z);
+      const lastRun = Math.hypot(end.x - landingB.x, end.z - landingB.z);
+      landingA.y = landingB.y = start.y + (end.y - start.y) * firstRun / (firstRun + lastRun);
+      points.push(landingA, landingB);
+      const support = corner.clone(); support.y = landingA.y - 9;
+      for (const landing of [landingA, landingB]) art.beam(
+        [support.x, support.y, support.z], [landing.x, landing.y - .35, landing.z], .5, steel);
+    }
+    points.push(end);
+    landscapeWalkway(art, points.map(p => p.toArray()), {
+      width, floor: slate, edge: bronze, rails: true, steps: true,
+    });
     if (gate) {
-      const c = start.clone().lerp(end, .3); c.y += 1.35;
+      const first = points[1], c = start.clone().lerp(first, .22); c.y += 1.35;
+      const yaw = Math.atan2(first.x - start.x, first.z - start.z);
       const geo = new THREE.BoxGeometry(width + .16, 2.7, .28).rotateY(yaw).translate(c.x, c.y, c.z);
       const node = new THREE.Mesh(geo, gateMaterial); node.name = `SkyApproachGate_${gate}`; art.root.add(node);
       const collider: Collider = { name: node.name, bvh: new MeshBVH(geo), enabled: true };
       colliders.push(collider); lockedGates.push({ node, collider, flag: gate });
     }
   }
-  connect(DECK.dock, DECK.range, 6);
-  connect(DECK.range, DECK.hall, 6.4, J.skyScan);
+  connect(DECK.dock, DECK.range, 6, undefined, [106, 294]);
+  connect(DECK.range, DECK.hall, 6.4, J.skyScan, [83, 207]);
+  connect(DECK.range, DECK.anchor, 4.7, J.skyAnchor);
   connect(DECK.hall, DECK.anchor, 4.7);
   connect(DECK.hall, DECK.light, 5.7, J.skyReview);
   connect(DECK.hall, DECK.service, 5.7, J.skyReview);
   connect(DECK.light, DECK.throat, 6.1);
-  connect(DECK.service, DECK.throat, 6.1);
+  connect(DECK.service, DECK.throat, 6.1, undefined, [204, 330]);
   connect(DECK.service, DECK.archive, 4.2);
-  connect(DECK.throat, DECK.back, 6, J.isolate);
-  connect(DECK.back, DECK.court, 6);
+  connect(DECK.archive, DECK.throat, 4.7);
+  connect(DECK.throat, DECK.back, 6, J.isolate, [281, 220]);
+  connect(DECK.back, DECK.court, 6, undefined, [338, 231]);
   connect(DECK.court, DECK.oldDock, 5.9);
+
+  // Service hoist landing mouths are openings in the same permanent rail system.
+  entrances.get(DECK.hall)!.push({ dx: 23 / Math.hypot(23, 13), dz: 13 / Math.hypot(23, 13), width: 6.2 });
+  entrances.get(DECK.court)!.push({ dx: -1, dz: 10 / 14.5, width: 7 });
+
+  // Real guardrails, interrupted at the actual bridge mouths. No invisible wall
+  // seals the optional loops or the diagonal approaches to the decks.
+  for (const node of list) {
+    const [x, y, z] = node.p;
+    const open = (px: number, pz: number) => (entrances.get(node) ?? []).some(port =>
+      px * port.dx + pz * port.dz > 0 && Math.abs(px * port.dz - pz * port.dx) < port.width / 2 + 1.1);
+    for (const side of [-1, 1]) for (const axis of ['x', 'z'] as const) {
+      const length = axis === 'x' ? node.w : node.d;
+      const fixed = side * ((axis === 'x' ? node.d : node.w) / 2 - .35);
+      const sections = Math.ceil(length / .8), step = length / sections;
+      for (let i = 0; i < sections; i++) {
+        const t = -length / 2 + (i + .5) * step;
+        const px = axis === 'x' ? t : fixed, pz = axis === 'x' ? fixed : t;
+        if (open(px, pz)) continue;
+        for (const height of [.56, 1.14]) art.box([x + px, y + height, z + pz],
+          axis === 'x' ? [step + .035, .12, .14] : [.14, .12, step + .035], bronze, true, 'metal');
+        if (i % 4 === 0) art.box([x + px, y + .57, z + pz], [.13, 1.14, .13], bone, true);
+      }
+    }
+  }
+  addSkyCrownArchitecture(art, DECK);
 
   post(J.returnHome, '升云泊台 · 回到幻日谷', DECK.dock, -4, 6);
   post(J.skyRanging, '外环测距 · 启动采样', DECK.range, 0, 4);
@@ -126,8 +170,6 @@ export function addSkyCrownApproach(art: SiteArt) {
   post(J.isolate, '配光喉 · 机械隔离锁', DECK.throat, 8, -6);
   post(J.skyReturnSight, '日背回廊 · 核验地面灯', DECK.back, -2, 2);
   post(J.skyCourt, '晴空庭 · 登记承日台检查点', DECK.court, 2, -3);
-  post(SKY_UP_LIFT, '晴空庭 · 返回下层观测厅', DECK.court, 2, 9, false);
-  post(SKY_DOWN_LIFT, '观测厅 · 前往晴空庭', DECK.hall, 1, 10, false);
   // Three state lights carry the life-support and enforcement readings through the throat.
   for (const x of [-10, 10]) {
     art.beam([DECK.throat.p[0] + x, DECK.throat.p[1] + .13, DECK.throat.p[2] - 13], [DECK.throat.p[0] + x, DECK.throat.p[1] + .13, DECK.throat.p[2] + 14], .12, teal, false, 'choiceA');

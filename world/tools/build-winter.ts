@@ -29,7 +29,7 @@ const layout = {
       { id: 'eagle', text: '点燃雪原上的 3 座烽火，取得碎片·鹰旗（离开火堆太久会冻僵）', done: ['beacon_1', 'beacon_2', 'beacon_3', 'shard_eagle'] },
       { id: 'bell', text: '沿脚手架爬上伊凡大帝钟楼，取得碎片·钟声', done: ['shard_bell'] },
       { id: 'frost', text: '击碎冰封峡谷的 3 枚冰封印，进入冰窟取得碎片·霜晶', done: ['frost_seal_1', 'frost_seal_2', 'frost_seal_3', 'shard_frost'] },
-      { id: 'core', text: '在红场点亮冬之核，击败执冬者', done: ['winter_core'] },
+      { id: 'core', text: '在旧税关广场点亮冬之核，击败执冬者', done: ['winter_core'] },
       { id: 'contract', text: '回到皇帝帐篷，与拿破仑缔结契约', done: ['napoleon_contract'] },
     ],
   },

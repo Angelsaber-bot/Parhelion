@@ -4,6 +4,7 @@ import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline } from '../geo.js';
 import { heightFn as alphaHeight, type TerrainOut } from '../terrain.js';
 import { WINTER, OFFSET, ICE_Y, RIVER, RIVER_W, BIVOUAC, BEACONS, EAGLE, CITY, KREMLIN, REDSQ, GORGE, CAVERN, PATHS } from './layout.js';
+import { WINTER_SCHOOL, WINTER_CUSTOMS } from '../../../src/map/winterCivilPlan';
 
 const S = WINTER.seed;
 const GORGE_LINE = RIVER.slice(GORGE.from, GORGE.to + 1);
@@ -69,6 +70,12 @@ export function heightFn(x: number, z: number): number {
       const ice = 1 - smoothstep(RIVER_W - 4, RIVER_W + 6, riverD(x, z));
       h = lerp(h, lerp(v, ICE_Y, ice), k);
     }
+  }
+  // The school yard and tax square are authored working floors. Blend their
+  // approaches into the snow instead of hiding hills inside raised boxes.
+  for (const site of [WINTER_SCHOOL, WINTER_CUSTOMS]) {
+    const dx = Math.max(0, Math.abs(x - site.x) - site.width / 2 - 1), dz = Math.max(0, Math.abs(z - site.z) - site.depth / 2 - 1);
+    h = lerp(site.ground, h, smoothstep(0, 12, Math.hypot(dx, dz)));
   }
   return continentalHeight('winter', x, z, h);
 }

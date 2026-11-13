@@ -9,6 +9,8 @@ import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_TEMPLE, EGYPT_MIRRORS, EGYPT_ROOMS, EGYP
 import { buildEgyptMonuments } from './monuments';
 import { E, EMAT, CYL8, batter, cornice, pylonTower, papyrusColumn, lotusColumn, obelisk, seatedColossus, criosphinx, palm, felucca, camel, shaduf, pyramid } from './craft';
 import { egyptLakeDistance, egyptRiver, egyptGreen, plateauDepth } from './landscape';
+import { polylineRibbon } from '../../../src/map/polylineRibbon';
+import { egyptRiverworksClearance } from '../../../src/map/egyptRiverworksPlan';
 
 type Height = (x: number, z: number) => number;
 const BOXG = new THREE.BoxGeometry(1, 1, 1);
@@ -25,8 +27,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
   const accessLine = access.map(p => [p[0], p[2]] as const);
   const minGround = (x0: number, x1: number, z0: number, z1: number) => { let y = Infinity; for (let x = x0; x <= x1 + .01; x += Math.max(1, (x1 - x0) / 6)) for (let z = z0; z <= z1 + .01; z += Math.max(1, (z1 - z0) / 6)) y = Math.min(y, heightAt(x, z)); return y; };
   const ribbon = (b: Batch, pts: EgyptPoint[], width: number, color: string) => {
-    const v: number[] = [];
-    for (let i = 1; i < pts.length; i++) { const a = pts[i - 1], q = pts[i], dx = q[0] - a[0], dz = q[2] - a[2], l = Math.hypot(dx, dz) || 1, ox = -dz / l * width / 2, oz = dx / l * width / 2; v.push(a[0] + ox, a[1], a[2] + oz, q[0] + ox, q[1], q[2] + oz, a[0] - ox, a[1], a[2] - oz, a[0] - ox, a[1], a[2] - oz, q[0] + ox, q[1], q[2] + oz, q[0] - ox, q[1], q[2] - oz); }
+    const v = polylineRibbon(pts, width);
     const g = new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(v, 3)); b.add(g, color, new THREE.Matrix4(), false); g.dispose();
   };
 
@@ -50,7 +51,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     if (houses.length >= 22) break;
     const w = 8 + Math.floor(rng() * 4), d = 7 + Math.floor(rng() * 3), rad = Math.hypot(w, d) / 2;
     if (distanceToLine(x, z, accessLine) < rad + 9.5 || plan.routes.filter(r => r.kind !== 'underground').some(r => distanceToLine(x, z, r.points.map(p => [p[0], p[2]] as const)) < rad + (r.kind === 'main' ? 5 : 4)) || laneDist(x, z) < rad + 1.4) continue;
-    if (egyptLakeDistance(x, z) < 1.25 + rad / 30 || egyptRiver(x, z).d < rad + 8 || houses.some(h => Math.hypot(h.position[0] - x, h.position[2] - z) < rad + Math.hypot(h.width, h.depth) / 2 + 2.5)) continue;
+    if (egyptRiverworksClearance(x, z, rad) || egyptLakeDistance(x, z) < 1.25 + rad / 30 || egyptRiver(x, z).d < rad + 8 || houses.some(h => Math.hypot(h.position[0] - x, h.position[2] - z) < rad + Math.hypot(h.width, h.depth) / 2 + 2.5)) continue;
     let best = { d: Infinity, x: 0, z: 0, y: 0 };
     for (const line of [...plan.routes.filter(r => r.kind !== 'underground').map(r => r.points), access, ...lanes]) for (let i = 1; i < line.length; i++) { const p = line[i - 1], q = line[i], dx = q[0] - p[0], dz = q[2] - p[2], t = THREE.MathUtils.clamp(((x - p[0]) * dx + (z - p[2]) * dz) / (dx * dx + dz * dz || 1), 0, 1), px = p[0] + dx * t, pz = p[2] + dz * t, dd = Math.hypot(px - x, pz - z); if (dd < best.d) best = { d: dd, x: px, z: pz, y: p[1] }; }
     if (best.d > 30) continue;
@@ -78,7 +79,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
   for (let i = 0; i < 900; i++) {
     const t = reed(), seg = Math.floor(t * (EGYPT_RIVER.length - 1)), a = EGYPT_RIVER[seg], b = EGYPT_RIVER[seg + 1], f = t * (EGYPT_RIVER.length - 1) - seg, side = reed() < .5 ? -1 : 1;
     const dx = b[0] - a[0], dz = b[2] - a[2], l = Math.hypot(dx, dz), off = 4.6 + reed() * 2.4, x = a[0] + dx * f - dz / l * off * side, z = a[2] + dz * f + dx / l * off * side;
-    if (roadDistance(x, z) < 6 || x > 70) continue; const y = heightAt(x, z);
+    if (roadDistance(x, z) < 6 || x > 70 || egyptRiverworksClearance(x, z, 1)) continue; const y = heightAt(x, z);
     if (i % 3) { leaves.add(CYL8, E.reed, T(x, y + .9, z, 0, .04, 1.8, .04), false); leaves.add(new THREE.ConeGeometry(.35, .35, 6), E.leaf, T(x, y + 1.9, z, 0, 1, 1, 1, Math.PI), false); }
   }
 
@@ -119,6 +120,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     const a = EGYPT_CANYON[i], c = EGYPT_CANYON[i + 1], len = Math.hypot(c[0] - a[0], c[2] - a[2]), nx = -(c[2] - a[2]) / len, nz = (c[0] - a[0]) / len;
     for (const t of [.3, .7]) {
       const side = (i + (t > .5 ? 1 : 0)) % 2 ? 1 : -1, x = a[0] + (c[0] - a[0]) * t + nx * side * 9.6, z = a[2] + (c[2] - a[2]) * t + nz * side * 9.6, y = a[1] + (c[1] - a[1]) * t;
+      if (egyptRiverworksClearance(x, z, 6)) continue;
       const f = new Frame(canyon, x, y, z, Math.atan2(-nx * side, -nz * side));
       f.box(0, 4.5, -.8, 9, 9, 2, E.sandstone); f.box(0, 2.1, .25, 3, 4.2, .2, E.black, false);
       for (const s of [-1, 1]) { f.box(s * 1.9, 2.4, .3, .5, 4.8, .5, E.sandstoneDark); f.box(s * 3.4, 2.6, .5, 1.3, 5.2, 1, E.sandstone); f.box(s * 3.4, 5.6, .5, 1.1, 1, .9, E.yellow); }
@@ -140,8 +142,14 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
       if (y < 2 || roadDistance(x, z) < 7 || houses.some(h => Math.hypot(h.position[0] - x, h.position[2] - z) < 8.5) || Math.abs(x) > 330 || Math.abs(z) > 330 || lake < 1.05 || egyptRiver(x, z).d < 6.5) continue;
       if (x > 25 && x < 135 && z > -205 && z < 50) continue;
       if (keep.some(([kx, kz, kr]) => Math.hypot(x - kx, z - kz) < kr)) continue;
-      if ((g > .35 || lake < 2.2) && palms < 170) { palm(trunks, leaves, x, y, z, 8 + r() * 6, .1 + r() * .25, r() * 6.28, i); palms++; }
-      else if (plateauDepth(x, z) < -25 && r() < .04 && acacias < 40) { trunks.add(CYL8, '#5e4a36', T(x, y + 1.6, z, 0, .25, 3.2, .25)); leaves.add(new THREE.CylinderGeometry(3, 2.2, .8, 10), '#748a46', T(x, y + 3.6, z), false); acacias++; }
+      if ((g > .35 || lake < 2.2) && palms < 170) {
+        const h = 8 + r() * 6, lean = .1 + r() * .25, dir = r() * 6.28;
+        if (!egyptRiverworksClearance(x, z, h * lean + 5.2)) palm(trunks, leaves, x, y, z, h, lean, dir, i);
+        palms++;
+      } else if (plateauDepth(x, z) < -25 && r() < .04 && acacias < 40) {
+        if (!egyptRiverworksClearance(x, z, 3.2)) { trunks.add(CYL8, '#5e4a36', T(x, y + 1.6, z, 0, .25, 3.2, .25)); leaves.add(new THREE.CylinderGeometry(3, 2.2, .8, 10), '#748a46', T(x, y + 3.6, z), false); }
+        acacias++;
+      }
     }
   }
 
@@ -174,7 +182,7 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     // exterior stair to the roof along one side
     for (let k = 0; k < 7; k++) f.box(w / 2 + .6, (k + .5) * h / 7, -d / 2 + 1 + k * .6, 1, h / 7, .6, E.brickDark, false);
     const P = (lx: number, ly: number, lz: number) => f.point(lx, ly, lz);
-    if (type === 0) { for (const s of [-1, 1]) f.box(s * (w / 2 + 2.2), 1, -d / 2 - .1 + 3, .5, 2, 6, wallC); const tree = P(w / 2 + 1, 0, -d / 2 + 2); palm(trunks, leaves, tree.x, y, tree.z, 6, .1, a, index); }
+    if (type === 0) { for (const s of [-1, 1]) f.box(s * (w / 2 + 2.2), 1, -d / 2 - .1 + 3, .5, 2, 6, wallC); const tree = P(w / 2 + 1, 0, -d / 2 + 2); if (!egyptRiverworksClearance(tree.x, tree.z, 5.8)) palm(trunks, leaves, tree.x, y, tree.z, 6, .1, a, index); }
     else if (type === 1) { const dv = P(w * .25, 0, -d * .2); b.add(new THREE.CylinderGeometry(1, 1.5, 3, 10), E.plaster, T(dv.x, y + h + 1.8, dv.z), false); b.add(new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), E.plaster, T(dv.x, y + h + 3.3, dv.z), false); for (let k = 0; k < 8; k++) b.add(BOXG, E.black, T(dv.x + Math.cos(k) * 1.25, y + h + 1.2 + (k % 3) * .7, dv.z + Math.sin(k) * 1.25, -k, .18, .14, .1), false); }
     else if (type === 2) { for (let k = 0; k < 6; k++) { const p = P(-w / 2 + .9 + k * .9, 0, d / 2 + 1); b.add(new THREE.SphereGeometry(.38 + (k % 2) * .1, 9, 7), k % 2 ? '#b86e45' : '#9c5c3a', T(p.x, y + .45, p.z, 0, 1, 1.3, 1), false); } f.box(0, 2.9, d / 2 + 1.3, w * .8, .08, 2.4, E.reed, false); for (const s of [-1, 1]) f.box(s * w * .38, 1.45, d / 2 + 2.4, .1, 2.9, .1, E.trunk, false); }
     else if (type === 3) { const ov = P(-w / 2 - 1.6, 0, 0); b.add(new THREE.SphereGeometry(1.5, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), E.brick, T(ov.x, y, ov.z), true); glow.add(new THREE.BoxGeometry(.6, .5, .1), E.ember, T(P(-w / 2 - 1.6, 0, 1.45).x, y + .45, P(-w / 2 - 1.6, 0, 1.45).z, a), false); for (let k = 0; k < 4; k++) { const p = P(-w / 2 - .4, 0, -1 + k * .5); b.add(new THREE.CylinderGeometry(.22, .22, .06, 10), '#d9a35a', T(p.x, y + 1.05, p.z), false); } f.box(-w / 2 - .4, .5, -.2, .8, 1, 2.6, E.wood, false); }

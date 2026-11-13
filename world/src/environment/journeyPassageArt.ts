@@ -86,6 +86,6 @@ export function createJourneyPassageArt(){
  houses.finish('kyoto');houses.root.name='Kyoto_TwoMachiyaPassage';
  // Authored in Kyoto's pre-relayout frame; Kyoto now stands turned half a circle in the north-east.
  houses.relocate(legacyFrameMatrix('kyoto'));
- const roofRoute:AdventurePoint[]=[[763,4.45,-1469],[773,12.8,-1469],[779,12.8,-1460],[797,8.7,-1460],[807,4.7,-1460]];
+ const roofRoute:AdventurePoint[]=[[763,4.45,-1469],[763,8.62,-1491],[770,8.62,-1491],[770,12.8,-1469],[773,12.8,-1469],[779,12.8,-1460],[797,8.7,-1460],[807,4.7,-1460]];
  return{abbey,houses,roofRoute};
 }

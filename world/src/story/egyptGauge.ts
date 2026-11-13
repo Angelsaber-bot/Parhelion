@@ -12,7 +12,7 @@ export const EGYPT_GAUGE_KEEPER: Localized = ['河工帕赫', 'Pahek, river keep
 const G = EGYPT_GAUGE;
 export const EGYPT_GAUGE_STEPS = [
   { id: G.trace, label: ['绿洲旧墙 · 查验湿痕', 'Oasis wall · Inspect the water stains'],
-    hint: ['到搁浅船旁找一道反常湿痕。', 'Look for a strange water stain near the stranded boat.'] },
+    hint: ['沿货运坡回芦苇市集，在旧墙上找一道反常湿痕。', 'Follow the freight ramp back to Reed Market and look for a strange stain on the old wall.'] },
   { id: G.align, label: ['低井 · 校准旧水尺', 'Low well · Align the old gauge'],
     hint: ['沿潮痕找到低井，把水尺对到仍在往上渗水的那条痕迹。', 'Follow the damp stones to the low well and align the gauge with the mark where water still creeps upward.'] },
   { id: G.report, label: ['河工帕赫 · 交接读数', 'Pahek · Share the reading'],

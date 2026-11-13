@@ -1,4 +1,6 @@
 import {gateGuide} from './kingdomGate';
+import { FLAGSHIP_WORKS as F, flagshipBridgeLowered } from './flagshipWorks';
+import { KYOTO_STREET as K, kyotoStreetReady } from './kyotoStreetWorks';
 import {kingdomWorksEnded,kingdomWorksNext} from './kingdomWorks';
 import {HARBOR_RELIEF as R,harborReliefReady} from './harborRelief';
 import {WINTER_WITHDRAWAL as W,winterWithdrawalReady,winterWithdrawalSelected} from './winterWithdrawal';
@@ -84,6 +86,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
   }
   if(!done.has(ADVENTURE.records))return at(region,title,['登上旗舰，从两处甲板舱口进入船腹记录室，取回真实航次。开门和撤离仍需你亲自完成。','Board the flagship and recover the true voyage record in the below-deck records room, reached through either hatch. You must still leave the ship yourself.'],'adventure_harbor_records');
   if(!done.has('sea_core')&&!done.has('blackbeard_contract')&&!done.has('adventure_harbor_alarm_disabled')&&!done.has('adventure_harbor_alarm_cleared'))return at(region,title,['取证触发了警报。可在船腹切断警报解除追击，或应对舱口守卫后上甲板挑战提督。','The record triggers an alarm. Disable its breaker in the hold to end pursuit, or defeat the hatch guards before challenging the Admiral.'],'adventure_harbor_alarm');
+  if(done.has(F.inspect)&&!flagshipBridgeLowered(done))return at(region,title,done.has(F.winch)?['承重索已经张紧。到前吊臂手动松开保险扣，或射断金色销，放下桅杆通路。','The load line is taut. Release the forward collar by hand or shoot its gold pin to lower the mast passage.']:['到吊装台后绞盘接住旧桅杆的重量，之后再松开保险扣。','Take the mast’s weight on the aft winch before releasing the safety collar.'],done.has(F.winch)?F.release:F.winch);
   if(!done.has('sea_core')&&!done.has('blackbeard_contract'))return at(region,title,['记录与广播不符。到甲板海之核挑战亡航提督，解除强制返航。','The record contradicts the broadcast. Challenge the Admiral at the Sea Core and end the forced return.'],'sea_core');
   if(!done.has(ADVENTURE.exited))return at(region,title,['带着记录离舰，沿栈桥回灯塔石码头；提前开的索具仍可使用。','Leave the flagship with the record and return along the bridges to the lighthouse jetty.'],'adventure_harbor_exit');
   if(done.has(ADVENTURE.sailing)&&!done.has(ADVENTURE.departed))return at(region,title,['商船正在驶离港口。你可以在信号台看它离开，或继续在当地探索；完成出港后才收束航次。','The merchant ship is leaving. Watch from the signal or keep exploring; the voyage resolves after it clears port.'],'adventure_harbor_depart');
@@ -99,7 +102,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
    if (!winterWithdrawalSelected(done)) return at(region,title,['走到岔路，选择保留红堤道路，或把弃置的炮架用于修好磨坊跨峡桥。两条路都通向同一渡口。','At the fork, keep the redoubt road or use the abandoned gun carriage to brace the mill bridge. Both lead to the same crossing.'],W.mill);
    return at(region,title,['在撤离信号站确认所有人退出炮线，再把高地让给空阵。','At the withdrawal signal, confirm everyone is out of the firing lane before abandoning the high ground.'],W.retreat);
   }
-  if(!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['沿清出的道路到红场，解除执冬者的命令。','Follow the cleared road to Red Square and end the Winter Warden’s orders.'],'winter_core');
+  if(!done.has('winter_core')&&!done.has('napoleon_contract'))return at(region,title,['沿撤离道路到旧税关广场，解除执冬者的命令。','Follow the evacuation road to the customs square and end the Winter Warden’s orders.'],'winter_core');
   if(!done.has(ADVENTURE.convoy))return at(region,title,['回救护棚信号台放行药车。出发、途中与抵达都会留在现场。','Release the medicine cart at the aid-post signal. Departure, transit and arrival remain visible.'],'adventure_winter_convoy');
   if(!done.has(ADVENTURE.arrived))return at(region,title,['药车已经启程。到渡口验收同一辆车抵达；不会因你离开而丢失。','The cart has departed. Confirm its arrival at the crossing; leaving the area does not erase the journey.'],'adventure_winter_arrival');
   if(!done.has('napoleon_contract'))return at(region,title,['药车已到渡口。回皇帝帐篷与拿破仑正式契约。','The cart is at the crossing. Return to the tent to make your pact with Napoleon.'],'napoleon_contract');
@@ -107,6 +110,12 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
  if(region==='kyoto'){
   const title:Localized=['业火京都 · 真假号令','Kyoto · Orders in the Fire'];
   if(!done.has('musashi_meet')&&!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,['在三条桥与武藏会面。观察火光与人群逃离方向的矛盾。','Meet Musashi at Sanjō Bridge. Compare the flames with the direction people flee.'],'musashi_meet');
+  if(!kyotoStreetReady(done)){
+   if(!done.has(K.envelope))return at(region,title,['从三条桥东端防水匣取回原函。吊货可降为掩体，桥下路线一直开放。','Recover the letter from the eastern bridge case. Lower the cargo for cover or use the always-open wharf bypass.'],K.envelope);
+   if(!done.has(K.letter))return at(region,title,['到河街纸铺灯桌核对装订孔和货号。热食和晾纸可以自由选择。','Compare binding holes and shipment numbers at the paper-shop light table. The meal and drying work are optional.'],K.letter);
+   const temple=!done.has(K.templeRecord),permit=temple?K.templePermit:K.campPermit,record=temple?K.templeRecord:K.campRecord,alert=temple?K.templeAlert:K.campAlert;
+   return at(region,title,['到本能寺与明智军阵核对两本货簿，顺序不限。正门出示原函可获放行；侧路可直接进入，但会留下警戒记录。','Check both the temple and camp cargo books in either order. Present the letter for front-gate clearance; the side paths allow entry but record an intrusion.'],done.has(permit)||done.has(alert)?record:permit);
+  }
   const banner=[1,2,3].find(i=>!done.has(`kikyo_banner_${i}`));
   if(banner&&!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,[`处理第 ${banner} 面桔梗旗。正面可远射；旅籠高地提供侧向观察，水门开启后增加内巷进路。`,`Break banner ${banner}. Fire from range, observe from the inn ledge, or open the water gate for another approach.`],`kikyo_banner_${banner}`);
   if (!kyotoWitnessReady(done)) {

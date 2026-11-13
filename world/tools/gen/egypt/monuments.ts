@@ -8,6 +8,7 @@ import {
 } from '../../../src/map/egyptPlan';
 import { E, CYL8, batter, cornice, lotusColumn, obelisk, criosphinx, camel, pyramid } from './craft';
 import { egyptRiver } from './landscape';
+import { egyptRiverworksClearance } from '../../../src/map/egyptRiverworksPlan';
 
 type V = [number, number, number];
 type Height = (x: number, z: number) => number;
@@ -117,6 +118,7 @@ function vault(f: Frame, x: number, z: number, y: number, w: number, len: number
 }
 
 function sycamore(trunks: Batch, leaves: Batch, x: number, y: number, z: number, s: number, seed: number) {
+  if (egyptRiverworksClearance(x, z, 3.9 * s)) return;
   const r = mulberry32(seed);
   trunks.add(CYL8, '#6b5238', T(x, y + 1.6 * s, z, 0, .45 * s, 3.2 * s, .45 * s));
   for (let k = 0; k < 3; k++) { const a = k * 2.1 + r(); trunks.add(CYL8, '#6b5238', T(x + Math.cos(a) * .9 * s, y + 3.4 * s, z + Math.sin(a) * .9 * s, 0, .22 * s, 1.6 * s, .22 * s, Math.sin(a) * .5, Math.cos(a) * .5), false); }
@@ -306,9 +308,11 @@ export function buildEgyptMonuments(k: MonumentKit): [number, number, number][] 
   // 拱顶仓库: twelve barrel-vaulted mudbrick storerooms behind the temple
   function magazines() {
     const b = make('Magazines'), g = new Frame(b, 0, 0, 0);
-    keep.push([15, -176, 26]);
+    // Retain the twelve working storerooms west of the excavated service court.
+    const shift = -44;
+    keep.push([15 + shift, -176, 26]);
     for (const [z0, z1, door] of [[-196, -178, 1], [-174, -156, -1]] as const) for (let i = 0; i < 6; i++) {
-      const x = 3.4 + i * 4.6, w = 4.2, base = minGround(x - w / 2, x + w / 2, z0, z1) - .6, top = maxGround(x - w / 2, x + w / 2, z0, z1) + 2.6;
+      const x = 3.4 + i * 4.6 + shift, w = 4.2, base = minGround(x - w / 2, x + w / 2, z0, z1) - .6, top = maxGround(x - w / 2, x + w / 2, z0, z1) + 2.6;
       blk(b, x - w / 2, x + w / 2, z0, z1, base, top, i % 2 ? E.brick : E.brickDark);
       vault(g, x, (z0 + z1) / 2, top, w, z1 - z0, E.brick);
       const dz = door > 0 ? z1 : z0;
@@ -317,8 +321,8 @@ export function buildEgyptMonuments(k: MonumentKit): [number, number, number][] 
       if (i % 2 === 0) for (let j = 0; j < 3; j++) b.add(new THREE.SphereGeometry(.35, 8, 6), '#b86e45', T(x - .9 + j * .9, heightAt(x, dz + door * 1.2) + .4, dz + door * 1.2, 0, 1, 1.3, 1), false);
     }
     // the open lane between the rows holds a scribe's table and stacked amphorae
-    const y = heightAt(12, -176); b.box(12, y, -176, 2.2, .8, 1, E.wood, 0, false); b.box(12, y + .82, -176, .5, .05, .7, E.linen, 0, false);
-    for (let j = 0; j < 8; j++) b.add(new THREE.CylinderGeometry(.22, .14, .9, 8), '#b86e45', T(18 + (j % 4) * .5, heightAt(18, -176) + .45 + Math.floor(j / 4) * .5, -175.4 - (j % 2) * .4), false);
+    const y = heightAt(12 + shift, -176); b.box(12 + shift, y, -176, 2.2, .8, 1, E.wood, 0, false); b.box(12 + shift, y + .82, -176, .5, .05, .7, E.linen, 0, false);
+    for (let j = 0; j < 8; j++) b.add(new THREE.CylinderGeometry(.22, .14, .9, 8), '#b86e45', T(18 + shift + (j % 4) * .5, heightAt(18 + shift, -176) + .45 + Math.floor(j / 4) * .5, -175.4 - (j % 2) * .4), false);
   }
 
   // 工匠村: a walled village of row houses on one street, a chapel at its end, granaries and tomb-chapels outside
@@ -326,13 +330,19 @@ export function buildEgyptMonuments(k: MonumentKit): [number, number, number][] 
     const b = make('Village'), V = EGYPT_VILLAGE, [x0, x1, z0, z1] = V.rect, y = V.ground, g = new Frame(b, 0, 0, 0), sz = V.gate[1];
     keep.push([(x0 + x1) / 2, (z0 + z1) / 2, 30]);
     const wb = minGround(x0, x1, z0, z1) - .5, wt = y + 3.4;
-    blk(b, x0, x1, z1, z1 + .8, wb, wt, E.brick); blk(b, x0, x1, z0 - .8, z0, wb, wt, E.brick); blk(b, x1, x1 + .8, z0 - .8, z1 + .8, wb, wt, E.brick);
+    // The hydraulic works have a real south service gate and a lane from the
+    // village street. Keep the wall and row houses out of that opening.
+    blk(b, x0, -60.5, z1, z1 + .8, wb, wt, E.brick);
+    blk(b, -51.5, x1, z1, z1 + .8, wb, wt, E.brick);
+    for (const x of [-60.5, -51.5]) b.box(x, y + 1.8, z1 + .4, .6, 3.6, 1.2, E.brickDark);
+    blk(b, x0, x1, z0 - .8, z0, wb, wt, E.brick); blk(b, x1, x1 + .8, z0 - .8, z1 + .8, wb, wt, E.brick);
     blk(b, x0 - .8, x0, z0 - .8, sz - 2.2, wb, wt, E.brick); blk(b, x0 - .8, x0, sz + 2.2, z1 + .8, wb, wt, E.brick);
     for (const s of [-1, 1]) blk(b, x0 - 1.2, x0 + .4, sz + s * 2.2 - .6, sz + s * 2.2 + .6, wb, wt + .8, E.brickDark);
     blk(b, x0 - 1.2, x0 + .4, sz - 2.8, sz + 2.8, wt + .2, wt + 1, E.brickDark);
     for (let x = x0 + .5; x < x1; x += 4) b.box(x, y + .01, sz, 3.95, .03, 3.9, '#cdb88a', 0, false);
     const rng = mulberry32(611);
     for (const [row, front, yaw] of [[1, sz + 2, Math.PI], [-1, sz - 2, 0]] as const) for (let i = 0; i < 7; i++) {
+      if (row === 1 && i === 4) continue;
       const cx = x0 + 3.5 + i * 5.4, d = 10.6, cz = front + row * d / 2, lime = (i + (row > 0 ? 0 : 1)) % 3 !== 1, wall = lime ? ((i % 2) ? E.plaster : '#e8d6b0') : E.brick, h = 3.1 + (i % 3) * .25;
       const f = new Frame(b, cx, y, cz, yaw);
       f.box(0, (h + 1) / 2 - 1, 0, 5, h + 1, d, wall);

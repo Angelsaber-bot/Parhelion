@@ -1,3 +1,4 @@
+import { KINGDOM_ROAD, kingdomRoadNext } from './kingdomRoad';
 import type { Localized } from '../settlements/types';
 import { KINGDOM_GATE as G } from './kingdomGate';
 import { VALLEY_PROLOGUE as P } from './valleyPrologue';
@@ -55,7 +56,7 @@ export function kingdomWorkReady(id: KingdomWork, done: ReadonlySet<string>) {
   if (!kingdomWorksActive(done) || !done.has(G.rescued) || done.has(id)) return false;
   if (id === K.bread || id === K.wheel) return true;
   if (id === K.recall) return done.has('hall_brazier_1') && !done.has('sun_core');
-  if (id === K.bell) return done.has(K.lamp) && done.has('sun_core');
+  if (id === K.bell) return done.has(K.lamp) && done.has('sun_core') && (!done.has(KINGDOM_ROAD.start) || done.has(KINGDOM_ROAD.finish));
   if (!done.has(K.recall) || done.has('sun_core')) return false;
   if (id === K.pin || id === K.release) return !hoistFree(done);
   if (id === K.market || id === K.abbey) return hoistFree(done) && !pointed(done);
@@ -64,6 +65,7 @@ export function kingdomWorkReady(id: KingdomWork, done: ReadonlySet<string>) {
 }
 
 export function kingdomWorksNext(done: ReadonlySet<string>) {
+  const road = kingdomRoadNext(done); if (road) return road;
   const id = [K.recall, K.release, K.market, K.patrol, K.lamp, K.bell].find(work => kingdomWorkReady(work, done));
   return id ? { id, text: KINGDOM_WORK_LABELS[id] } : null;
 }

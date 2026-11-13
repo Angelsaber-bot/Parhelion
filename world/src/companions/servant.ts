@@ -293,6 +293,7 @@ export class ContractServant {
     dt = Number.isFinite(dt) ? Math.max(0, Math.min(.1, dt)) : 0;
     this.brace?.restore();
     const { contract,marker } = this.options;
+    if (contract.following && contract.following !== 'saber') this.braceWeight = 0;
     const atLake = player.distanceTo(new THREE.Vector3().fromArray(marker.p)) < 80;
     const atHome=contract.recruited&&!!this.residence&&!contract.companionSummoned;
     const needed=!!brace||atLake||atHome||(contract.recruited&&contract.selected==='saber');

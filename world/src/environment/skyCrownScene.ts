@@ -8,6 +8,8 @@ import { SKY_BOSS, SKY_ORIGIN, SKY_SHUTTERS, SHUTTER_SPAN, helionBeamDirection, 
 import { JOURNEY as J, SKY_MARKERS as M, type JourneyPoint } from '../story/worldJourney';
 import { addSkyCrownApproach, SKY_APPROACH_LANDING } from './skyCrownApproach';
 import { createHelionCharacter } from './realmClimaxCharacters';
+import { createSkyServiceLift } from './skyServiceLift';
+import { landscapeWalkway } from './landscapeWalkway';
 import { SKY_SUPPORT, SKY_SUPPORT_RADIUS } from '../story/skySupport';
 
 const [X, Y, Z] = SKY_ORIGIN;
@@ -21,7 +23,9 @@ export function createSkyCrownScene() {
   const a = new SiteArt();
   const slate = '#384f68', ivory = '#c5c5b5', gold = '#d3a85f', steel = '#263c51', glass = '#66b8b7', red = '#a15143';
   const approach = addSkyCrownApproach(a);
-  const markers: Marker[] = [...approach.markers];
+  const serviceLift = createSkyServiceLift();
+  a.root.add(serviceLift.root);
+  const markers: Marker[] = [...approach.markers, ...serviceLift.markers];
   const post = (id: string, label: string, x: number, z: number, plate = true) => {
     markers.push({ id, label, p: p(x, 1, z), type: 'interact', radius: 2.25 });
     if (plate) {
@@ -36,9 +40,12 @@ export function createSkyCrownScene() {
   a.box(p(0, -.48, 45), [11, .96, 20], slate, true);
   a.box(p(0, -.55, 30), [37, 1.1, 13], slate, true);
   for (const x of [-15, 0, 15]) a.box(p(x, -.52, 19), [x === 0 ? 9 : 6, 1.04, 12], slate, true);
-  a.box(p(0, -.7, -10), [58, 1.4, 47], slate, true);
+  // 76 × 68 m outer envelope: a 64 m main deck and lower recovery ledges.
+  // Missing a sidestep drops onto the service floor, with two real return ramps.
+  a.box(p(0, -.7, -10), [64, 1.4, 64], slate, true);
+  a.box(p(0, -3.7, -10), [76, 1, 68], steel, true);
   a.box(p(0, -.64, -36), [37, 1.28, 5.1], slate, true);
-  a.box(p(0, -3.1, -10), [55, 4, 42], steel);
+  a.box(p(0, -6.1, -10), [73, 4, 64], steel);
   for (const x of [-22, -11, 0, 11, 22]) a.beam(p(x, -1.5, 13), p(x * .65, -12, -22), .32, ivory);
 
   const rail = (x: number, z: number, span: number, alongX = false) => {
@@ -50,11 +57,15 @@ export function createSkyCrownScene() {
     if (side < 0) rail(-10.3, 62, 17);
     else { rail(10.3, 56.25, 5.5); rail(10.3, 69.5, 2); }
     rail(side * 5.4, 45, 19); rail(side * 18.3, 30, 13);
-    rail(side * 28.8, -10, 46); rail(side * 18.35, -36, 4.8);
+    for (const height of [-2.7, -2.15]) a.box(p(side * 37.8, height, -10), [.14, .12, 67.6], gold, true);
+    for (let z = -42; z <= 22; z += 4) a.box(p(side * 37.8, -2.68, z), [.13, 1.04, .13], ivory, true);
+    landscapeWalkway(a, [p(side * 35, -3.2, -30), p(side * 35, 0, -12), p(side * 30, 0, -12)],
+      { width: 3.1, floor: slate, edge: gold, rails: true, steps: true, continuousCorners: true,
+        railOpenings: [{ p: p(side * 35, -3.2, -30), radius: 2.2 }, { p: p(side * 35, 0, -12), radius: 2.2 }] });
     for (const x of [side * 11.9, side * 18.0]) rail(x, 19.2, 10.6);
     for (const z of [39, 45, 51, 56]) a.box(p(side * 4.6, .014, z), [.42, .026, 1.4], ivory);
-    for (const z of [-26, -14, 1]) a.box(p(side * (z === -14 ? 20 : 24), .68, z), [3.8, 1.36, 1.6], steel, true);
-    for (const z of [-27, -6]) {
+    for (const z of [-26, 1]) a.box(p(side * 24, .68, z), [3.8, 1.36, 1.6], steel, true);
+    for (const z of [-6]) {
       a.cyl(p(side * 19, 3, z), .58, 6, slate, true, 'metal');
       a.box(p(side * 19, 6.1, z), [2.2, .24, 2.2], gold);
     }
@@ -62,8 +73,11 @@ export function createSkyCrownScene() {
     a.beam(p(side * 29, 11.8, -24), p(side * 29, 11.8, 4), .29, ivory);
     a.beam(p(side * 29, 11.8, 4), p(side * 13, 9.1, 14), .29, ivory);
   }
-  rail(0, -38.45, 36.6, true); rail(0, 70.35, 20.4, true);
-  for (const x of [-21, 21]) rail(x, 13.4, 14, true);
+  for (const height of [-2.7, -2.15]) {
+    a.box(p(0, height, -43.8), [75.6, .12, .14], gold, true);
+    for (const x of [-28.2, 28.2]) a.box(p(x, height, 23.8), [19.2, .12, .14], gold, true);
+  }
+  rail(0, 70.35, 20.4, true);
   for (const x of [-16, 16]) rail(x, 36.4, 4, true);
   for (const y of [7.2, 11.9]) a.ring(p(0, y, -10), y === 7.2 ? 21 : 27, .17, gold, 'metal', [Math.PI / 2, 0, 0]);
   a.ring(p(0, 4.2, -30), 4.6, .23, gold);
@@ -90,7 +104,7 @@ export function createSkyCrownScene() {
   a.finish('alpha'); a.root.name = 'SkyCrown';
 
   const solids = mergeParts(a.solids); a.solids.forEach(geometry => geometry.dispose());
-  const colliders: Collider[] = [{ name: 'COL_SkyCrownDecks', bvh: new MeshBVH(solids), enabled: true }, ...approach.colliders];
+  const colliders: Collider[] = [{ name: 'COL_SkyCrownDecks', bvh: new MeshBVH(solids), enabled: true }, ...approach.colliders, ...serviceLift.colliders];
   const gateMat = new THREE.MeshStandardMaterial({ color: steel, emissive: red, emissiveIntensity: .3 });
   const gates = [-15, 0, 15].map(x => {
     const geometry = new THREE.BoxGeometry(x === 0 ? 9 : 6, 2.8, .28).translate(...p(x, 1.4, 14));
@@ -165,6 +179,7 @@ export function createSkyCrownScene() {
     writerStopped = done.has(J.phase3);
     for (const { node, collider } of gates) node.visible = collider.enabled = !done.has(J.isolate);
     approach.apply(done);
+    serviceLift.unlock(done.has(J.skyCourt));
   }
   function update(fight: ReturnType<typeof createHelionFight>, seconds: number) {
     const guard = fight.guard;
@@ -209,7 +224,8 @@ export function createSkyCrownScene() {
     tellBeam.rotation.y = Math.atan2(d.x, d.z);
     tellBeam.scale.set(tell.width * 2, 1, distance);
   }
-  return { root: a.root, markers, targets: [core, ...emitters, ...approach.targets], colliders, apply, update, updateApproach: approach.update, dispose() {
+  return { root: a.root, markers, targets: [core, ...emitters, ...approach.targets], colliders, apply, update, updateApproach: approach.update, serviceLift, dispose() {
+    serviceLift.dispose();
     const geometries = new Set<THREE.BufferGeometry>(colliders.map(collider => collider.bvh.geometry));
     a.root.traverse(node => { if (node instanceof THREE.Mesh) geometries.add(node.geometry); });
     geometries.forEach(geometry => geometry.dispose());

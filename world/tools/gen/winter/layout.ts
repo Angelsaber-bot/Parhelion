@@ -42,7 +42,7 @@ export const KREMLIN = { c: [-6, -206] as V2, r: 52 };
 export const BELL = { c: [-8, -214] as V2, h: 40 };
 export const REDSQ = { c: [96, -200] as V2, w: 40, d: 76 };
 export const BASIL = { c: [96, -252] as V2 };
-export const CORE = { c: [96, -228] as V2 };
+export const CORE = { c: [-67, 258] as V2 };
 /** The gorge narrows where three frost seals hold an ice wall across the river; the cavern lies beyond. */
 export const GORGE = { from: 6, to: 9 }; // RIVER segment indices walled by cliffs
 export const ICE_GATE = { c: [272, -30] as V2, ry: 0.28 };

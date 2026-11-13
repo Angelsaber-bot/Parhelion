@@ -1,6 +1,6 @@
 // Structures, props and vegetation for 业火京都 (Kyoto Ablaze, 1582).
 import * as THREE from 'three';
-import { Batch, T, BOX, distToPolyline } from '../geo.js';
+import { Batch, T, BOX, distToPolyline, sealRoofSkin } from '../geo.js';
 import { addGroundFooting } from '../footings.js';
 import { mulberry32, range } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
@@ -71,7 +71,7 @@ export function buildKyoto(heightAt: HeightAt) {
   const bushes = new Batch('Bushes', 'M_Foliage');
   pieces.push({ name: 'Glow_Props', material: 'M_Emissive', batch: glow });
   // the fires of that night go out once the core is relit
-  pieces.push({ name: 'Kyoto_Flames', material: 'M_Emissive', batch: flames, userData: { hideWhen: 'fire_core' } });
+  pieces.push({ name: 'Kyoto_Flames', material: 'M_Emissive', batch: flames, userData: { showWhen: 'adventure_kyoto_witness_reel', hideWhen: 'fire_core' } });
 
   const slope = (x: number, z: number) => {
     const e = 1.5;
@@ -79,6 +79,20 @@ export function buildKyoto(heightAt: HeightAt) {
   };
   const lowest = (x: number, z: number, r: number) =>
     Math.min(heightAt(x, z), heightAt(x + r, z), heightAt(x - r, z), heightAt(x, z + r), heightAt(x, z - r));
+  // Continuous surfaces, including the sloping approaches: no stair-height lip at a gate.
+  const passage = (b: Batch, points: [number, number, number][], width: number, color: string) => {
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i - 1], c = points[i], dx = c[0] - a[0], dz = c[2] - a[2];
+      const length = Math.hypot(dx, dz), nx = dz / length * width / 2, nz = -dx / length * width / 2;
+      const al = [a[0] - nx, a[1], a[2] - nz], ar = [a[0] + nx, a[1], a[2] + nz];
+      const cl = [c[0] - nx, c[1], c[2] - nz], cr = [c[0] + nx, c[1], c[2] + nz];
+      const surface = new THREE.BufferGeometry();
+      surface.setAttribute('position', new THREE.Float32BufferAttribute([...al, ...cl, ...ar, ...ar, ...cl, ...cr], 3));
+      const slab = sealRoofSkin(surface, .16);
+      b.add(slab, color, new THREE.Matrix4());
+      slab.dispose(); surface.dispose();
+    }
+  };
   /** A paper lantern on a post. */
   const chochin = (x: number, z: number, y = heightAt(x, z)) => {
     lamps.add(CYL6, C.woodDark, T(x, y + 1.4, z, 0, 0.07, 2.8, 0.07));
@@ -253,7 +267,7 @@ export function buildKyoto(heightAt: HeightAt) {
   {
     const b = new Batch('Honnoji');
     const [hx, hz] = HONNOJI.c, H = HONNOJI.half, y = CITY_Y + 0.6;
-    // earthen walls (tsuijibei) on all four sides; the east side opens on a gate over the moat
+    // Formal east entrance and a separate southern service gate, both crossing the moat.
     const wall = (ax: number, az: number, bx: number, bz: number) => {
       const L = Math.hypot(bx - ax, bz - az), ry = Math.atan2(bx - ax, bz - az), mx = (ax + bx) / 2, mz = (az + bz) / 2;
       b.add(BOX, C.plaster, T(mx, y + 1.6, mz, ry, 1.3, 3.2, L));
@@ -262,7 +276,8 @@ export function buildKyoto(heightAt: HeightAt) {
     };
     const gateHalf = 3.5;
     wall(hx - H, hz - H, hx + H, hz - H);
-    wall(hx - H, hz + H, hx + H, hz + H);
+    wall(hx - H, hz + H, hx - 2.8, hz + H);
+    wall(hx + 2.8, hz + H, hx + H, hz + H);
     wall(hx - H, hz - H, hx - H, hz + H);
     wall(hx + H, hz - H, hx + H, hz - gateHalf);
     wall(hx + H, hz + gateHalf, hx + H, hz + H);
@@ -282,6 +297,24 @@ export function buildKyoto(heightAt: HeightAt) {
     }
     b.box(hx + H + HONNOJI.moat / 2, CITY_Y + 0.25, hz, HONNOJI.moat + 3, 0.35, 5, C.wood);
     for (const s of [-1, 1]) b.box(hx + H + HONNOJI.moat / 2, CITY_Y + 0.6, hz + s * 2.4, HONNOJI.moat + 2, 0.9, 0.15, C.woodDark);
+    // The service route lands inside the side court, clear of the priests' quarters.
+    passage(b, [[hx, 4.72, 81], [hx, 4.72, 99], [hx, 4.12, 105]], 4.4, C.wood);
+    passage(b, [[hx - 5, 4.12, 105], [hx, 4.12, 105]], 4.4, C.stoneLight);
+    for (const s of [-1, 1]) {
+      b.box(hx + s * 2.65, y, hz + H, .3, 3.7, .36, C.woodDark);
+      b.box(hx + s * 2.18, 4.72, 94.5, .14, 1.05, 7.4, C.woodDark);
+      for (const z of [91.4, 94.5, 97.6]) b.box(hx + s * 2.18, 4.72, z, .23, 1.18, .23, C.woodDark);
+      // Open doors fold against the wall rather than occupying the player path.
+      b.box(hx + s * 4.1, y, hz + H + .78, 2.3, 2.9, .16, C.woodDark);
+    }
+    b.box(hx, y + 3.5, hz + H, 6, .3, .45, C.woodDark);
+    gable(b, hx, y + 3.8, hz + H, 0, 7.2, 3.2, 1.15, C.tileDark);
+    for (let z = 82; z < 99; z += .65) b.box(hx, 4.72, z, 4.25, .018, .025, C.woodDark, 0, false);
+    toro(b, hx - 4.3, 100, CITY_Y);
+    // Cargo manifests mark the public inspection point at the main gate.
+    b.box(hx + H + 12, CITY_Y, hz + 5, 3, .9, 1.4, C.woodDark);
+    b.box(hx + H + 12, CITY_Y + .91, hz + 5, 1.4, .025, .8, C.cloth, 0, false);
+    mk({ id: 'disc_honnoji_service', type: 'discovery', label: '本能寺南侧便门', p: [hx, 4.72, 88], radius: 3, note: '窄桥通向寺院侧庭，正门的检验桌仍在东侧' });
     // corner watch platforms (yagura) with banners of the Oda: black on yellow
     for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]] as const) {
       const x = hx + sx * (H - 3), z = hz + sz * (H - 3);
@@ -371,7 +404,8 @@ export function buildKyoto(heightAt: HeightAt) {
     for (let x = deck0 + 2; x < deck1; x += 8)
       for (const s of [-1, 1]) b.add(CYL8, C.woodDark, T(x, y / 2 - 0.2, z + s * (W / 2 - 0.4), 0, 0.3, y + 0.4, 0.3), false);
     for (const s of [-1, 1]) {
-      b.box((deck0 + deck1) / 2, y, z + s * (W / 2 - 0.1), deck1 - deck0, 1.0, 0.2, C.wood);
+      const spans = s === 1 ? [[deck0, 144.3], [147.7, deck1]] : [[deck0, deck1]];
+      for (const [a, c] of spans) b.box((a + c) / 2, y, z + s * (W / 2 - 0.1), c - a, 1.0, .2, C.wood);
       for (let x = deck0; x <= deck1 + 0.1; x += (deck1 - deck0) / 6) {
         b.add(CYL8, C.woodDark, T(x, y + 0.6, z + s * (W / 2 - 0.1), 0, 0.16, 1.2, 0.16), false);
         b.add(SPHERE, '#b88a3a', T(x, y + 1.3, z + s * (W / 2 - 0.1), 0, 0.22, 0.26, 0.22), false); // giboshi
@@ -379,6 +413,40 @@ export function buildKyoto(heightAt: HeightAt) {
       }
     }
     for (const x of [deck0 - 2, deck1 + 2]) chochin(x, z + 4.2);
+    // J01's lower wharf bypass remains usable independently of the bridge cargo encounter.
+    // At x=130 the 2.4 m deck leaves 2.4 m clear below the original bridge slab.
+    passage(b, [[120, heightAt(120, -97) + .12, -97], [130, 2.4, -97]], 3, C.wood);
+    passage(b, [[130, 2.4, -97], [130, 2.4, -67]], 2.8, C.wood);
+    passage(b, [[130, 2.4, -67], [146, y, -67], [146, y, -75]], 3, C.wood);
+    b.box(137, 2.16, -97, 14, .24, 8, C.wood);
+    // Open rail ends at the lower passage and upper bridge entry; no invisible full-width barrier.
+    for (const side of [-1, 1]) {
+      const edgeZ = -67 + side * 1.42;
+      for (let i = 0; i <= 4; i++) {
+        const x = 130 + i * 4, py = 2.4 + (y - 2.4) * i / 4;
+        const ground = heightAt(x, edgeZ);
+        b.box(x, ground, edgeZ, .18, py + 1 - ground, .18, C.woodDark);
+      }
+      addBeam(b, [130, 3.4, edgeZ], [146, y + 1, edgeZ], .13, .13, C.woodDark);
+      b.box(146 + side * 1.42, y, -70.6, .14, 1, 7.2, C.woodDark);
+      const ground = heightAt(146 + side * 1.42, -70);
+      b.box(146 + side * 1.42, ground, -70, .2, y - ground, .2, C.woodDark);
+    }
+    b.box(130, 2.24, -67, 3, .16, 3, C.wood);
+    b.box(146, y - .16, -67, 3, .16, 3, C.wood);
+    for (const x of [130, 137, 144]) for (const zz of [-100, -94]) {
+      const ground = heightAt(x, zz);
+      b.add(CYL8, C.woodDark, T(x, (ground + 2.4) / 2, zz, 0, .17, 2.4 - ground, .17));
+    }
+    for (const x of [133, 136.5]) {
+      b.box(x, 2.4, -99, 2.2, 1.15, 1.5, C.wood);
+      b.box(x, 3.55, -99, 2.3, .1, 1.6, C.woodDark, 0, false);
+    }
+    // A small unloading derrick gives the pier a readable silhouette.
+    b.box(142.5, 2.4, -99.4, .3, 5, .3, C.woodDark);
+    addBeam(b, [142.5, 7.2, -99.4], [139.5, 6.7, -99.4], .25, .25, C.woodDark);
+    addBeam(b, [139.5, 6.7, -99.4], [139.5, 3.5, -99.4], .035, .035, '#443b32');
+    mk({ id: 'disc_sanjo_wharf', type: 'discovery', label: '三条桥下装卸道', p: [130, 2.4, -86], radius: 4, note: '从码头穿过桥下，沿侧坡返回桥面' });
     // the turtle stones (tobi-ishi): stepping stones straight across the stream
     for (let x = 126; x <= 176; x += 1.7) {
       if (kamoD(x, TOBI_Z) > KAMO_W + 1) continue;
@@ -406,6 +474,77 @@ export function buildKyoto(heightAt: HeightAt) {
     mk({ id: 'musashi_meet', type: 'interact', label: '宫本武藏（三条大桥）', p: [(deck0 + deck1) / 2 - 2, y, z], radius: 3.4, note: '武藏说：点亮京之核，我就陪你打到天亮' });
     mk({ id: 'musashi_contract', type: 'interact', label: '与宫本武藏缔结契约', p: [(deck0 + deck1) / 2 + 2, y, z], radius: 3, requires: ['fire_core'], note: 'Saber 职阶从者 · 二天一流' });
     mk({ id: 'disc_tobiishi', type: 'discovery', label: '鸭川跳石', p: [150, 1.9, TOBI_Z], radius: 4, note: '踩着乌龟形状的石头过河' });
+  }
+
+  // ───────────────────────── 河街纸铺: working room, warm food and an open drying porch ─────────────────────────
+  {
+    const b = new Batch('Kamo_PaperHouse'), x = 184, z = 55, floor = 6.25;
+    addGroundFooting(footings, x, floor - .2, z, 0, 12.4, 10.4, heightAt, '#929183');
+    b.box(x, floor - .2, z, 12, .2, 10, C.wood);
+    // Two 4 m doorways retain a through route across the paper room.
+    for (const zz of [50, 60]) for (const xx of [180, 188]) {
+      b.box(xx, floor, zz, 4, .65, .22, C.woodDark);
+      b.box(xx, floor + .65, zz, 4, 2.5, .12, C.cloth);
+      for (let i = 0; i < 8; i++) b.box(xx - 1.8 + i * .5, floor + .65, zz - .09, .045, 2.5, .08, C.woodDark, 0, false);
+      b.box(xx, floor + 1.85, zz - .09, 4, .055, .08, C.woodDark, 0, false);
+    }
+    b.box(190, floor, z, .22, 3.2, 10, C.plaster);
+    // The west side opens onto a drying gallery instead of a solid house block.
+    for (const xx of [178, 182, 186, 190]) for (const zz of [50, 60]) b.box(xx, floor, zz, .22, 3.65, .22, C.woodDark);
+    for (const zz of [50, 60]) b.box(x, floor + 3.4, zz, 12.4, .28, .3, C.woodDark);
+    // The same paper house survives all four street states. The roof is a
+    // separate structural piece so its fire damage and repair change collision.
+    const intact = new Batch('Kamo_PaperRoof_Intact');
+    addKyotoRoof(intact, x, floor + 3.65, z, 0, 14, 12, 2.4, C.tileDark, 'gable');
+    intact.addCol(intact.vis[0], new THREE.Matrix4());
+    addKyotoAttic(intact, x, floor + 3.65, z, 0, 12, 10, 14, 12, 2.4, C.woodDark, 'gable');
+    pieces.push({ name: intact.name, material: 'M_KyotoArchitecture', batch: intact, dynamic: true,
+      userData: { hideWhen: 'adventure_kyoto_witness_reel', opensWhen: ['adventure_kyoto_witness_reel'] } });
+    const repaired = new Batch('Kamo_PaperRoof_Repaired');
+    addKyotoRoof(repaired, x, floor + 3.65, z, 0, 14, 12, 2.4, '#687b7c', 'gable');
+    repaired.addCol(repaired.vis[0], new THREE.Matrix4());
+    addKyotoAttic(repaired, x, floor + 3.65, z, 0, 12, 10, 14, 12, 2.4, '#91734f', 'gable');
+    pieces.push({ name: repaired.name, material: 'M_KyotoArchitecture', batch: repaired, dynamic: true,
+      userData: { showWhen: 'map_kyoto_paper_roof_repaired', solidWhen: ['map_kyoto_paper_roof_repaired'] } });
+    const damaged = new Batch('Kamo_PaperRoof_Burned');
+    for (const zz of [50.2, 55, 59.8]) for (const side of [-1, 1])
+      addBeam(damaged, [x + side * 6.7, 9.9, zz], [x + side * .9, 12, zz], .18, .2, '#392f29');
+    damaged.box(x, 12.2, z, .25, .28, 11.5, '#46382d', 0, false);
+    pieces.push({ name: damaged.name, material: 'M_KyotoArchitecture', batch: damaged,
+      userData: { showWhen: 'adventure_kyoto_witness_reel' } });
+    b.box(175, floor - .2, z, 6, .2, 12, C.wood);
+    b.box(172, floor, z, .16, .9, 12, C.woodDark);
+    for (const zz of [50, 54, 58, 60]) {
+      const gy = heightAt(172.4, zz);
+      b.box(172.4, gy, zz, .22, floor + 1 - gy, .22, C.woodDark);
+    }
+    // Permanent return approaches connect to the existing pulley shop and riverside path.
+    passage(b, [[188, heightAt(188, 43) + .12, 43], [184, floor, 50]], 3.6, C.wood);
+    passage(b, [[184, floor, 60], [188, heightAt(188, 69) + .12, 69]], 3.6, C.wood);
+    for (const zz of [51.8, 55, 58.2]) {
+      for (const xx of [173.5, 176.5]) b.box(xx, floor, zz, .12, 2.2, .12, C.woodDark);
+      b.box(175, floor + 2.1, zz, 3.4, .12, .12, C.woodDark, 0, false);
+      for (let k = 0; k < 4; k++) b.box(173.8 + k * .75, floor + .65, zz, .64, 1.35, .025, k % 2 ? '#dfd3b9' : '#eee5cb', 0, false);
+    }
+    // Light table: paired pages, punched binding holes, ink stone and a folded transport wrapper.
+    b.box(180.2, floor, 53, 2.5, .85, 1.45, C.woodDark);
+    for (const xx of [179.6, 180.7]) {
+      b.box(xx, floor + .87, 53, .85, .025, 1.05, C.cloth, 0, false);
+      for (let k = 0; k < 4; k++) b.add(CYL8, C.black, T(xx - .32, floor + .897, 52.65 + k * .22, 0, .035, .008, .035), false);
+    }
+    b.box(181, floor + .88, 53.55, .3, .045, .23, C.black, 0, false);
+    b.box(180.1, floor, 58, 2.8, .62, 1.25, C.woodDark);
+    for (const zz of [56.9, 59.1]) b.box(180.1, floor, zz, 2.6, .38, .45, C.wood);
+    for (const xx of [179.4, 180.7]) {
+      b.add(new THREE.CylinderGeometry(.23, .14, .13, 12), '#c0c3ad', T(xx, floor + .7, 58), false);
+      b.add(CYL16, '#c78745', T(xx, floor + .77, 58, 0, .2, .012, .2), false);
+    }
+    b.box(188, floor, 58.3, 1.8, .9, 1.5, C.stone);
+    b.add(CYL16, C.black, T(188, floor + 1.08, 58.3, 0, .42, .36, .42));
+    b.add(CYL16, '#b68d61', T(188, floor + 1.27, 58.3, 0, .36, .035, .36), false);
+    chochin(182.5, 49.8, floor);
+    mk({ id: 'disc_kamo_paperhouse', type: 'discovery', label: '河街纸铺休息庭', p: [184, floor, 55], radius: 4, note: '晾纸的外廊、装订桌与一碗热食；两侧门都通向河街' });
+    pieces.push({ name: 'Kamo_PaperHouse', material: 'M_KyotoArchitecture', batch: b, outline: true });
   }
 
   // ───────────────────────── 东山: Yasaka, Sannenzaka, Kiyomizu ─────────────────────────
@@ -611,7 +750,7 @@ export function buildKyoto(heightAt: HeightAt) {
   {
     const b = new Batch('Akechi');
     const [ax, az] = AKECHI.c, y = AKECHI.y;
-    // the curtained HQ (jinmaku): white cloth with the bellflower crest, open to the east
+    // Public eastern checkpoint and a northern baggage passage through the jinmaku.
     const cw = 30, cd = 22;
     const curtain = (x0: number, z0: number, x1: number, z1: number) => {
       const L = Math.hypot(x1 - x0, z1 - z0), ry = Math.atan2(x1 - x0, z1 - z0);
@@ -623,11 +762,35 @@ export function buildKyoto(heightAt: HeightAt) {
         if (s > 0 && s < L) glow.add(CYL16, C.kikyo, T(x + ((x1 - x0) / L) * 2, y + 1.4, z + ((z1 - z0) / L) * 2, ry, 0.45, 0.02, 0.45, 0, Math.PI / 2), false);
       }
     };
-    curtain(ax - cw / 2, az - cd / 2, ax + cw / 2, az - cd / 2);
+    curtain(ax - cw / 2, az - cd / 2, ax - 2.4, az - cd / 2);
+    curtain(ax + 2.4, az - cd / 2, ax + cw / 2, az - cd / 2);
     curtain(ax - cw / 2, az + cd / 2, ax + cw / 2, az + cd / 2);
     curtain(ax - cw / 2, az - cd / 2, ax - cw / 2, az + cd / 2);
     curtain(ax + cw / 2, az - cd / 2, ax + cw / 2, az - 4);
     curtain(ax + cw / 2, az + 4, ax + cw / 2, az + cd / 2);
+    const baggageRoute: [number, number][] = [[-200, 150], [-218, 148], [-232, 148], [-232, 166]];
+    for (let i = 1; i < baggageRoute.length; i++) {
+      const a = baggageRoute[i - 1], c = baggageRoute[i], n = Math.ceil(Math.hypot(c[0] - a[0], c[1] - a[1]) / 2);
+      const points: [number, number, number][] = [];
+      for (let k = 0; k <= n; k++) {
+        const x = a[0] + (c[0] - a[0]) * k / n, z = a[1] + (c[1] - a[1]) * k / n;
+        points.push([x, heightAt(x, z) + .12, z]);
+      }
+      passage(b, points, 3.8, '#a89678');
+    }
+    // Rolled fabric keeps the second opening visibly distinct from an unbroken curtain.
+    for (const s of [-1, 1]) {
+      b.box(ax + s * 2.55, y, az - cd / 2, .15, 3, .15, C.woodDark);
+      b.add(CYL8, C.cloth, T(ax + s * 2.8, y + 1.65, az - cd / 2, 0, .24, 2.2, .24), false);
+    }
+    for (const [x, z] of [[-237, 151], [-238, 154]] as const) {
+      b.box(x, heightAt(x, z), z, 2.2, 1.15, 1.5, C.wood);
+      b.box(x, heightAt(x, z) + 1.15, z, 2.3, .1, 1.6, C.woodDark, 0, false);
+    }
+    b.box(ax + 19, heightAt(ax + 19, az - 5.5), az - 5.5, 2.6, .9, 1.3, C.woodDark);
+    b.box(ax + 19, heightAt(ax + 19, az - 5.5) + .91, az - 5.5, 1.2, .025, .75, C.cloth, 0, false);
+    chochin(ax - 4, az - cd / 2 - 3);
+    mk({ id: 'disc_akechi_baggage', type: 'discovery', label: '桔梗军阵辎重侧道', p: [ax, heightAt(ax, az - cd / 2) + .12, az - cd / 2], radius: 3, note: '沿粮箱与卷起的帷幕进入军阵；东侧是验函的正面通道' });
     b.box(ax - 4, y, az, 3.6, 0.9, 2, C.woodDark); // the field table
     b.add(BOX, C.canvas, T(ax - 4, y + 0.95, az, 0.1, 3.0, 0.02, 1.6), false);
     for (const s of [-1, 1]) b.add(CYL8, '#2a2a3a', T(ax - 4, y + 0.4, az + s * 2.2, 0, 0.35, 0.8, 0.35), false); // camp stools
@@ -693,6 +856,7 @@ export function buildKyoto(heightAt: HeightAt) {
   const inCity = (x: number, z: number, pad: number) => x > CITY_RECT[0] - pad && x < CITY_RECT[1] + pad && z > CITY_RECT[2] - pad && z < CITY_RECT[3] + pad;
   const onPath = (x: number, z: number, pad: number) => PATHS.some((p) => distToPolyline(x, z, p) < pad) || distToPolyline(x, z, TORII_PATH) < pad + 2 || sannen(x, z).d < pad + 8;
   const blocked = (x: number, z: number) =>
+    (x > 169 && x < 194 && z > 44 && z < 72) ||
     isArashiyamaReserved(x, z) || inCity(x, z, 4) || onPath(x, z, 4) || kamoD(x, z) < KAMO_BANK + 1 || pondD(x, z) < 1.25 ||
     Math.hypot(x - AKECHI.c[0], (z - AKECHI.c[1]) * 0.85) < 40 || Math.hypot(x - PAVILION.c[0], z - PAVILION.c[1]) < 16 ||
     (x > KIYOMIZU.terrace[0] - 22 && x < KIYOMIZU.terrace[1] + 2 && z > KIYOMIZU.terrace[2] - 4 && z < KIYOMIZU.terrace[3] + 22) ||

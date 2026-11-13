@@ -3,6 +3,8 @@ import { fbm, smoothstep, lerp } from '../rng';
 import { distToSegment } from '../geo';
 import type { ExpansionPlan } from '../../../src/map/worldPlan';
 import { EGYPT_LAKE, EGYPT_RIVER, EGYPT_PLATEAU, EGYPT_CANYON, EGYPT_TEMPLE, EGYPT_PADS, EGYPT_ROOMS, EGYPT_CORRIDORS, EGYPT_CAPS, EGYPT_MORTUARY, EGYPT_SACRED_LAKE, EGYPT_QUARRY, EGYPT_VILLAGE, egyptDistanceToPolyline } from '../../../src/map/egyptPlan';
+import { EGYPT_FIELD_TERRACES, EGYPT_FIELD_WORKSHOP, EGYPT_MAINTENANCE_DESCENT, EGYPT_OVERFLOW, EGYPT_STILLING_BASIN,
+  EGYPT_TEMPLE_STAIR_CUT, EGYPT_TEMPLE_WORKS, EGYPT_WEST_DIVERSION, EGYPT_WHEEL_TRENCH, EGYPT_WATER_LIFT_APPROACH } from '../../../src/map/egyptRiverworksPlan';
 
 const BASE = 14;
 function inside(x: number, z: number, poly: readonly [number, number][]) {
@@ -78,6 +80,36 @@ export function egyptAuthoredHeight(plan: ExpansionPlan, x: number, z: number): 
   for (const c of EGYPT_CORRIDORS) { const half = c.width / 2, zMin = Math.min(c.a[2], c.b[2]), zMax = Math.max(c.a[2], c.b[2]); if (Math.abs(x - c.a[0]) < half + 10 && z > zMin - 4 && z < zMax && z < c.a[2] - 12) y = Math.max(y, lerp(c.a[1] + c.height + 5, y, smoothstep(half + 3, half + 10, Math.abs(x - c.a[0])))); }
   // The cliff sanctuary is rock-cut: behind its facade the mountain closes over it.
   { const r = EGYPT_MORTUARY.sanctuary; if (z < r.z1 - 1) { const d = Math.hypot(Math.max(r.x0 - x, 0, x - r.x1), Math.max(r.z0 - z, 0)); if (d < 14) y = Math.max(y, lerp(r.floor + r.height + 6, y, smoothstep(5, 14, d))); } }
+  // Broad, shallow fields settle into the floodplain rather than sitting on
+  // multi-storey foundation boxes. Preserve the adjacent river's open bed.
+  if (egyptRiver(x, z).d > 7.5) for (const field of [...EGYPT_FIELD_TERRACES, EGYPT_FIELD_WORKSHOP]) {
+    const d = Math.hypot(Math.max(Math.abs(x - field.x) - field.width / 2 - .4, 0), Math.max(Math.abs(z - field.z) - field.depth / 2 - .4, 0));
+    y = lerp(field.floor - .12, y, smoothstep(0, 10, d));
+  }
+  // A cut spillway bypasses the central leaf and dissipates into an uninhabited
+  // basin. Cut after road grading so no old route fills the new watercourse.
+  const overflow = egyptDistanceToPolyline(x, z, EGYPT_OVERFLOW);
+  y = lerp(Math.min(y, overflow.y - 1), y, smoothstep(2.6, 7.5, overflow.d));
+  // The replaceable old causeway is authored at runtime over this cut. Choosing
+  // the west branch removes that road slab and installs the higher crossing.
+  const west = egyptDistanceToPolyline(x, z, EGYPT_WEST_DIVERSION);
+  y = lerp(Math.min(y, west.y - 2.1), y, smoothstep(5, 8.5, west.d));
+  const basin = EGYPT_STILLING_BASIN;
+  const bd = Math.hypot(Math.max(Math.abs(x - basin.x) - basin.width / 2, 0), Math.max(Math.abs(z - basin.z) - basin.depth / 2, 0));
+  y = lerp(Math.min(y, basin.floor - .18), y, smoothstep(0, 6, bd));
+  const descent = egyptDistanceToPolyline(x, z, EGYPT_MAINTENANCE_DESCENT);
+  const liftApproach = egyptDistanceToPolyline(x, z, EGYPT_WATER_LIFT_APPROACH);
+  y = lerp(Math.min(y, liftApproach.y - .35), y, smoothstep(2.5, 5, liftApproach.d));
+  y = lerp(Math.min(y, descent.y - .25), y, smoothstep(3.7, 6.3, descent.d));
+  const trench = EGYPT_WHEEL_TRENCH;
+  const trenchDistance = Math.hypot(Math.max(trench.x0 - x, 0, x - trench.x1), Math.max(trench.z0 - z, 0, z - trench.z1));
+  y = lerp(Math.min(y, trench.floor - .12), y, smoothstep(0, 1.4, trenchDistance));
+  const works = EGYPT_TEMPLE_WORKS;
+  const wd = Math.hypot(Math.max(works.x0 - x, 0, x - works.x1), Math.max(works.z0 - z, 0, z - works.z1));
+  y = lerp(Math.min(y, works.floor - .18), y, smoothstep(0, 2.5, wd));
+  const cut = EGYPT_TEMPLE_STAIR_CUT;
+  const stairDistance = Math.hypot(Math.max(cut.x0 - x, 0, x - cut.x1), Math.max(cut.z0 - z, 0, z - cut.z1));
+  y = lerp(Math.min(y, cut.floor - .18), y, smoothstep(0, 2.5, stairDistance));
   return y;
 }
 

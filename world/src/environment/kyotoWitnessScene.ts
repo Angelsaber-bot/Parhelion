@@ -6,6 +6,7 @@ import type { AdventureAction } from '../story/adventureSites';
 import { SiteArt } from '../story/campaignSites';
 import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LABELS, kyotoHoistLowered, kyotoOrdersDelivered, kyotoRollStopped, kyotoWitnessActionReady, kyotoWitnessActive } from '../story/kyotoWitness';
 import { createSettlementNpcs } from '../settlements/npcs';
+import { kyotoStreetReady, kyotoStreetPoint } from '../story/kyotoStreetWorks';
 
 export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAction>) {
   const art = new SiteArt(), root = art.root, targets: THREE.Mesh[] = [], markers: Marker[] = [];
@@ -84,6 +85,12 @@ export function createKyotoWitnessScene(actions: ReadonlyMap<string, AdventureAc
       platform.position.y = THREE.MathUtils.damp(platform.position.y, liftY, 2.5, dt);
       screen.position.y = THREE.MathUtils.damp(screen.position.y, screenY, 3, dt);
     }
+    // Aki is one resident: use the same model at the paper table before the
+    // two-source inquiry, then at the existing lift scene. Never clone her.
+    const atPaperShop = !kyotoStreetReady(done) && !done.has(Y.reel);
+    const parent = atPaperShop ? root : platform;
+    if (witness.group.parent !== parent) parent.add(witness.group);
+    witness.group.position.fromArray(atPaperShop ? kyotoStreetPoint(180, 6.25, 51.6) : [0, 0, 0]);
     witness.group.visible = !done.has(Y.testimony);
     survivors.group.visible = kyotoOrdersDelivered(done);
     notice.visible = done.has(Y.public); sealed.visible = done.has(Y.private);

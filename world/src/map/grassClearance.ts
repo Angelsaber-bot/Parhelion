@@ -6,7 +6,7 @@ import type {SettlementApproach} from './settlementApproaches';
  * for bare terrain. One cell of padding prevents linearly filtered grass leaks. */
 export function settlementGrassClearance(
  grid:Pick<WorldGrid,'nx'|'nz'|'x0'|'z0'|'cell'>,
- placements:readonly SettlementPlacement[], routes:readonly SettlementApproach[],
+ placements:readonly SettlementPlacement[], routes:readonly (Pick<SettlementApproach,'points'> & {width?:number})[],
  rectangles:readonly (readonly [number,number,number,number])[]=[],
  ellipses:readonly (readonly [number,number,number,number])[]=[],
 ){
@@ -24,7 +24,7 @@ export function settlementGrassClearance(
   fill(p.entry[0]-1.7-pad,p.entry[2]-pad,p.entry[0]+1.7+pad,p.entry[2]+9+pad,()=>true);
  }
  for(const route of routes)for(let i=1;i<route.points.length;i++){
-  const a=route.points[i-1],b=route.points[i],dx=b[0]-a[0],dz=b[2]-a[2],r=1.2+pad;
+  const a=route.points[i-1],b=route.points[i],dx=b[0]-a[0],dz=b[2]-a[2],r=(route.width ? route.width/2 : 1.2)+pad;
   fill(Math.min(a[0],b[0])-r,Math.min(a[2],b[2])-r,Math.max(a[0],b[0])+r,Math.max(a[2],b[2])+r,(x,z)=>{
    const t=Math.max(0,Math.min(1,((x-a[0])*dx+(z-a[2])*dz)/(dx*dx+dz*dz||1)));
    return Math.hypot(x-a[0]-t*dx,z-a[2]-t*dz)<=r;

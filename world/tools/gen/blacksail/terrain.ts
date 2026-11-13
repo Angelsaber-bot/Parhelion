@@ -1,4 +1,5 @@
 import { continentalHeight } from '../continent.js';
+import { BLACKSAIL_CIVIL_SITES } from '../../../src/map/blackSailCivilPlan.js';
 import * as THREE from 'three';
 import { fbm, lerp, smoothstep, clamp } from '../rng.js';
 import { distToPolyline, distToSegment } from '../geo.js';
@@ -96,6 +97,11 @@ export function heightFn(x: number, z: number): number {
   {
     const k = smoothstep(-316, -360, x);
     if (k > 0) h = lerp(h, alphaHeight(x + OFFSET[0], z + OFFSET[1]), k);
+  }
+  for (const site of Object.values(BLACKSAIL_CIVIL_SITES)) {
+    const dx = Math.max(0, Math.abs(x - site.x) - site.width / 2 - 1);
+    const dz = Math.max(0, Math.abs(z - site.z) - site.depth / 2 - 1);
+    h = lerp(site.ground, h, smoothstep(0, 9, Math.hypot(dx, dz)));
   }
   return continentalHeight('blacksail', x, z, h);
 }

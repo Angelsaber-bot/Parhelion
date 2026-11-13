@@ -11,6 +11,8 @@ import { mergeParts } from '../settlements/merge';
 import { SiteArt } from '../story/campaignSites';
 import { HARBOR_WORKBOAT as HB } from '../story/harborRelief';
 import { createEgyptFieldSites } from './egyptFieldSites';
+import { createQinFieldSites } from './qinFieldSites';
+import { createOrleansFieldSites } from './orleansFieldSites';
 import {
   FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as B, HARBOR_WAGES as W, ICE_BELL as I, KYOTO_REFLECTION as K,
   KYOTO_PASS as KP, KYOTO_PAPERLINE as KL,
@@ -1031,8 +1033,11 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
   }
 
   let seedTravel = 0;
-  const egypt = createEgyptFieldSites({ place, interact, scenery, finish, table, mesh, group, walkway, ground,
-    materials, prior, markers, colliders, targets, updates, actorCleanup });
+  const authoring = { place, interact, scenery, finish, table, mesh, group, walkway, ground,
+    materials, prior, markers, colliders, targets, updates, actorCleanup };
+  const egypt = createEgyptFieldSites(authoring);
+  const qin = createQinFieldSites(authoring);
+  const orleans = createOrleansFieldSites(authoring);
 
   const [ex, ez] = egyptToWorld(-178, 112);
   const seedYard = place([ex, 14.2, ez], 10.5);
@@ -1247,7 +1252,7 @@ export function createFieldSideSites(layout: readonly Marker[], residence: Point
     startChipToss(choice: 'left' | 'right', first: boolean) { return startChipToss?.(choice, first) ?? false; },
     readChipOutcome() { const result = chipOutcome; chipOutcome = null; return result; },
     smokeVolley() { rangeSmoke = 5; },
-    egypt,
+    egypt, qin, orleans,
     sendPaper() { paperLineT = 1; },
     ring() { bellRing = 1.25; },
     seedsArrived() { return seedTravel >= 1; },

@@ -1,19 +1,50 @@
+import { mergeParts } from '../settlements/merge';
 import * as THREE from 'three';
 import {MeshBVH} from 'three-mesh-bvh';
 import {SiteArt} from '../story/campaignSites';
 import {flagshipPoint as P,SHIP_INTERIOR} from '../map/shipInteriorCut';
 import type {Collider} from '../player/player';
 import type {Marker} from '../core/types';
+import {landscapeWalkway} from './landscapeWalkway';
 /** Built into the carved ship hull, with two dry, continuous stair-ramp exits.
  * The room has actual ceiling, ribs, furnishings and collision, not a teleport. */
 export function createFlagshipInterior(){
  const art=new SiteArt(),yaw=.15,rot:[number,number,number]=[0,yaw,0];
  const box=(u:number,v:number,y:number,w:number,h:number,d:number,color:string,solid=false)=>art.box(P(u,v,y),[w,h,d],color,solid,'body',rot);
- box(2,0,3.15,10.6,.5,30,'#65513c',true);
+ // The cargo floor surrounds two real maintenance hatches. Split geometry keeps
+ // the third level traversable instead of drawing stairs through a solid slab.
+ for(const [u0,u1,v0,v1]of[[-13,17,-5.3,-1.5],[-13,17,1.5,5.3],[-13,-10,-1.5,1.5],[-2,6,-1.5,1.5],[14,17,-1.5,1.5]])
+  box((u0+u1)/2,(v0+v1)/2,3.325,v1-v0,.15,u1-u0,'#65513c',true);
  // Sealed fore/aft bulkheads; the escape ramps are inside their footprint.
  for(const u of[-13.1,17.1])box(u,0,5,10.5,3.3,.28,'#514537',true);
  for(const v of[-5.15,5.15])box(2,v,5,.22,3.2,30,'#514537',true);
- for(let u=-12;u<17;u+=1.1)box(u,0,3.412,10.3,.025,.045,'#423a32');
+ for(let u=-12;u<17;u+=1.1){
+  const opening=(u>-10&&u<-2)||(u>6&&u<14);
+  if(opening)for(const v of[-3.35,3.35])box(u,v,3.412,3.7,.025,.045,'#423a32');
+  else box(u,0,3.412,10.3,.025,.045,'#423a32');
+ }
+ // Lowest service passage sits above sea level inside the hull. Wide cargo
+ // aisles remain on both sides; two stair flights avoid a dead-end crawlspace.
+ box(2,0,1.025,3,.25,24.4,'#5b4938',true);
+ for(const v of[-1.58,1.58])box(2,v,2.1,.16,2.1,24.5,'#4c4135',true);
+ for(const u of[-10.2,14.2])box(u,0,2.1,3.2,2.1,.16,'#4c4135',true);
+ const serviceRoute=[P(-10.6,0,3.4),P(-9.5,0,3.4),P(-2.5,0,1.15),P(6.5,0,1.15),P(13.5,0,3.4),P(14.6,0,3.4)];
+ landscapeWalkway(art,serviceRoute,{width:2.6,floor:'#8f7351',edge:'#b19a70',steps:true});
+ for(const [u0,u1]of[[-10,-2],[6,14]])for(const v of[-1.55,1.55]){
+  art.beam(P(u0,v,4.25),P(u1,v,4.25),.1,'#b19a70',true);
+  for(const u of[u0,u1])box(u,v,3.82,.12,.84,.12,'#765e42',true);
+ }
+ for(const u of[-1,2,5]){
+  for(const v of[-1.35,1.35]){
+   box(u,v,2.15,.12,1.9,.14,'#9b805a');
+   art.lantern(...P(u,v,2.45));
+  }
+  box(u,0,3.14,2.85,.1,.15,'#9b805a');
+ }
+ // Pump rods, repair plates and a narrow tool rack sit outside shoulder width.
+ for(const v of[-1.39,1.39])art.beam(P(-1.4,v,1.5),P(5.5,v,1.5),.075,'#748177');
+ for(const u of[0,3,5])box(u,-1.4,2.03,.08,.5,.42,'#67736a');
+ box(2,1.38,1.55,.15,.65,2.2,'#796447');
  // The shipped deck has an outward top skin, so its solid underside is invisible
  // from the cabin. Line only the intact deck; both authored hatch wells stay open.
  const [starboard,port]=SHIP_INTERIOR.hatches,ceilingY=6.675;
@@ -57,12 +88,13 @@ export function createFlagshipInterior(){
  // blocks a standing capsule; keep all support inside that same footprint.
  for(const v of[1.55,2.05]){box(-10,v,3.7,.1,.6,.22,'#725b40',true);box(-10,v,3.43,.16,.06,.28,'#514537',true);}
  art.finish('blacksail');art.root.name='Flagship_RecordsHold';
- const colliders:Collider[]=art.solids.map((g,i)=>({name:`COL_FlagshipHold_${i}`,bvh:new MeshBVH(g),enabled:true}));
+ const holdGeometry = mergeParts(art.solids); art.solids.forEach(g => g.dispose()); art.solids.length = 0;
+ const colliders:Collider[]=[{name:'COL_FlagshipHold',bvh:new MeshBVH(holdGeometry),enabled:true}];
  const markers:Marker[]=[{id:'adventure_harbor_alarm',type:'interact',label:'船腹警报断路器',p:P(-10,0,4.3),radius:2.1}];
  const alarm=new THREE.Mesh(new THREE.SphereGeometry(.18,10,8),new THREE.MeshBasicMaterial({color:'#b64c37'}));alarm.position.fromArray(P(-10.2,1.8,4.95));art.root.add(alarm);
  const lever=new THREE.Mesh(new THREE.BoxGeometry(.08,.42,.08),new THREE.MeshStandardMaterial({color:'#bc9c5e',metalness:.5,roughness:.45}));lever.position.fromArray(P(-10.25,1.8,4.45));art.root.add(lever);
- return{root:art.root,colliders,markers,recordStand:P(10,.7,3.4),rampRoutes:[-3.75,3.75].map(v=>[[-12,v,7],[-8,v,7],[4,v,3.45],[10,0,3.4]].map(p=>P(...p as[number,number,number]))),
+ return{root:art.root,colliders,markers,recordStand:P(8,-2.4,3.4),rampRoutes:[-3.75,3.75].map(v=>[[-12,v,7],[-8,v,7],[4,v,3.45],[5,v,3.4],[5,-3.5,3.4],[8,-2.4,3.4]].map(p=>P(...p as[number,number,number]))),
   apply(done:ReadonlySet<string>,time=0){const quiet=done.has('adventure_harbor_alarm_disabled')||done.has('adventure_harbor_alarm_cleared');lever.rotation.x=quiet?-.65:.65;(alarm.material as THREE.MeshBasicMaterial).color.set(quiet?'#6f9276':'#b64c37');alarm.visible=quiet||!done.has('adventure_harbor_records')||Math.sin(time*5)>0;},
-  dispose(){const materials=new Set<THREE.Material>();art.root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});for(const m of materials)m.dispose();for(const g of art.solids)g.dispose();art.root.removeFromParent();},
+  dispose(){const materials=new Set<THREE.Material>();art.root.traverse(o=>{if(o instanceof THREE.Mesh){o.geometry.dispose();for(const m of Array.isArray(o.material)?o.material:[o.material])materials.add(m);}});for(const m of materials)m.dispose();holdGeometry.dispose();art.root.removeFromParent();},
  };
 }

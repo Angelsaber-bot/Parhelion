@@ -14,7 +14,7 @@ export const worldToEgypt = (x: number, z: number): [number, number] => [EGYPT_O
 
 /** Spring lake at the oasis and the river it feeds, falling to the southern shore. */
 export const EGYPT_LAKE = { x: -205, z: 150, rx: 38, rz: 26, surface: 12.4 } as const;
-export const EGYPT_RIVER: readonly EgyptPoint[] = [[-178, 11.8, 168], [-140, 10.6, 182], [-95, 9.4, 176], [-48, 8.2, 158], [-5, 7, 152], [30, 5.6, 172], [52, 3.8, 210], [62, 1.2, 252], [66, -1.5, 300]];
+export const EGYPT_RIVER: readonly EgyptPoint[] = [[-178, 11.8, 168], [-140, 10.6, 182], [-95, 9.4, 176], [-48, 8.2, 158], [-5, 7, 152], [0, 6.7, 171], [26, 5.4, 193], [52, 3.8, 210], [62, 1.2, 252], [66, -1.5, 300]];
 
 /** Sandstone plateau: a polygon of the escarpment edge, top height and how sharp the cliffs are. */
 export const EGYPT_PLATEAU = {

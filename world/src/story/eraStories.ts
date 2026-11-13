@@ -1,5 +1,6 @@
 import {ADVENTURE,adventureActive,adventureChapterComplete,getAdventureGuide,harborBridgeReady,winterRouteReady} from './openWorldCampaign';
 import { KINGDOM_GATE, gateGuide } from './kingdomGate';
+import { KINGDOM_ROAD } from './kingdomRoad';
 import { KINGDOM_WORKS, kingdomWorksActive } from './kingdomWorks';
 import { HARBOR_RELIEF, harborReliefReady } from './harborRelief';
 import { WINTER_WITHDRAWAL, winterWithdrawalReady } from './winterWithdrawal';
@@ -138,9 +139,9 @@ export const ERA_STORIES: Record<EraId, EraChapter> = {
       { id: 'commander', flags: ['napoleon_meet'], text: ['在大军营地找到拿破仑，确认雪路方向。', 'Meet Napoleon in the army camp and learn the snow-road route.'] },
       { id: 'warm-road', flags: ['beacon_1', 'beacon_2', 'beacon_3'], text: ['沿雪原点燃三座烽火，在已点燃的火旁取暖，接通救护暖路。', 'Light the three snowfield beacons, warming yourself beside lit fires to connect the aid route.'] },
     ],
-    challenge: ['循烽火前往红场，挑战执冬者。', 'Follow the beacons to Red Square and challenge the Winter Warden.'],
+    challenge: ['沿撤离道路前往旧税关广场，挑战执冬者。', 'Follow the evacuation road to the old customs square and challenge the Winter Warden.'],
     returnText: ['回到皇帝帐篷，与拿破仑缔结契约。', 'Return to the emperor’s tent and seal your pact with Napoleon.'],
-    completeText: ['红场安静下来了。把手套戴好，雪还没停；回程若看见落单的人，就陪他走到火边。', 'Red Square has fallen quiet. Keep your gloves on; it is still snowing. If you find someone alone on the road, walk with them as far as a fire.'],
+    completeText: ['旧税关安静下来了。把手套戴好，雪还没停；回程若看见落单的人，就陪他走到火边。', 'The old customs square has fallen quiet. Keep your gloves on; it is still snowing. If you find someone alone on the road, walk with them as far as a fire.'],
     legacyRequires: ['shard_eagle', 'shard_bell', 'shard_frost'],
   },
   kyoto: {
@@ -178,7 +179,7 @@ export function getEraBossRequirements(core: string, done: ReadonlySet<string>):
   if (!region) return undefined;
   const def = ERA_STORIES[region];
   if (region === 'britain' && adventureActive(done) && !coreCleared(region, done) && kingdomWorksActive(done))
-    return [...ERA_BOSS_REQUIREMENTS.sun_core, KINGDOM_WORKS.lamp];
+    return [...ERA_BOSS_REQUIREMENTS.sun_core, KINGDOM_WORKS.lamp, KINGDOM_ROAD.start];
   if (region === 'blacksail' && adventureActive(done) && !coreCleared(region, done) && !harborReliefReady(done))
     return [ADVENTURE.records, HARBOR_RELIEF.delivered];
   if (region === 'winter' && adventureActive(done) && !coreCleared(region, done) && !winterWithdrawalReady(done))

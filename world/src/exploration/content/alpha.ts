@@ -3,8 +3,10 @@ import type { ChestDef, FeatherDef, StatueDef, PrismPuzzleDef, TrialDef, CampDef
 export const ALPHA_STATUES: readonly StatueDef[] = [
   { id: 'alpha', region: "alpha", p: [26, 148], yaw: 0, title: ["日晕神像 · 幻日谷","Halo Statue · Parhelion Valley"] },
 ];
+// The original refraction lesson now occupies the level quarry floor. Its beam
+// loop stays west of the entry stair; IDs and saved rewards are unchanged.
 export const ALPHA_PUZZLES: readonly PrismPuzzleDef[] = [
-  {"id":"tutorial","region":"alpha","title":["初次折光","First Refraction"],"range":30,"source":{"p":[-196,2],"dir":0},"prisms":[{"p":[-176,2],"start":5},{"p":[-176,26],"start":1}],"receiver":[-196,26],"blockers":[],"hint":["把两座棱镜依次转向，让日光拐两次弯落进晶座。","Turn both prisms so the sunlight bends twice into the receiver."]},
+  {"id":"tutorial","region":"alpha","title":["初次折光","First Refraction"],"range":30,"source":{"p":[-193,20],"dir":0},"prisms":[{"p":[-186,20],"start":5},{"p":[-186,39],"start":1}],"receiver":[-193,39],"blockers":[],"hint":["把两座棱镜依次转向，让日光拐两次弯落进晶座。","Turn both prisms so the sunlight bends twice into the receiver."]},
 ];
 export const ALPHA_TRIALS: readonly TrialDef[] = [
   { id: 'tower_glide', region: "alpha", title: ["塔顶滑翔","Tower Glide"], stele: [1, -141], seconds: 20, glide: true, orbs: [{"p":[1,-128],"y":23.2},{"p":[1,-115],"y":20.1},{"p":[1,-102],"y":16.9},{"p":[1,-89],"y":13.8},{"p":[1,-76],"y":10.7},{"p":[1,-63],"y":7.6},{"p":[1,-50],"y":4.5}], hint: ["从石碑前方起跳，空中再按跳跃展开滑翔翼，沿光圈下降。","Jump forward from the stele, press Jump again in mid-air to open the glider, and follow the rings."] },
@@ -21,7 +23,7 @@ export const ALPHA_CHESTS: readonly ChestDef[] = [
   { id: 'alpha_secret_pillar', region: 'alpha', p: [6, -16], y: 11.6, scale: 1.2, tier: 'precious' },
   { id: 'alpha_secret_cave', region: 'alpha', p: [188, -60], y: 2.4, scale: 1.6, tier: 'precious', yaw: -Math.PI / 2 },
   { id: 'alpha_camp_echo_ruins', region: "alpha", p: [150, -102], tier: 'precious', requires: 'xp_camp_echo_ruins' },
-  { id: 'alpha_puzzle_tutorial', region: "alpha", p: [-190,31], tier: 'precious', requires: 'xp_puzzle_tutorial' },
+  { id: 'alpha_puzzle_tutorial', region: "alpha", p: [-189,44], tier: 'precious', requires: 'xp_puzzle_tutorial' },
   { id: 'alpha_trial_tower_glide', region: "alpha", p: [4, -138], tier: 'exquisite', requires: 'xp_trial_tower_glide' },
   { id: 'alpha_camp_cliff', region: "alpha", p: [58, 204], tier: 'common' },
   { id: 'alpha_forest_glade', region: "alpha", p: [146, 38], tier: 'common' },

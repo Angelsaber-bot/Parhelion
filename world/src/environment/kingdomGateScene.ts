@@ -24,7 +24,7 @@ export function createKingdomGateScene(terrain:(x:number,z:number)=>number=()=>3
  const marker=(id:string,label:string,side:number,out:number):Marker=>({id,type:'interact',label,p:gatePoint(side,out,.9),radius:2.1});
  const markers=[marker(G.entry,'城门告示 · 打开归路',0,11),marker(G.latch,'金色旧锁 · 拆闩或射断',-4,5),marker(G.winch,'城门绞盘 · 按住交互',4,5),marker(G.service,'归人补给点',0,-8)];
  // Small tactical additions remain outside the old masonry; the gate uses the actual arch.
- for(const side of[-3,3]){art.box(gatePoint(side,10,.45),[2.5,.9,.65],'#8d8375',true,'body',[0,Math.PI/4,0]);}
+ for(const side of[-6.5,6.5]){art.box(gatePoint(side,10,.45),[2.5,.9,.65],'#8d8375',true,'body',[0,Math.PI/4,0]);}
  art.box(gatePoint(4,5,.6),[1.1,1.2,.8],'#695244');
  art.ring(gatePoint(4,5,1.1),.45,.07,'#b49a64');
  art.beam(gatePoint(-4,5,1.7),gatePoint(4,5,1.7),.045,'#b49a64');

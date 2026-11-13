@@ -99,7 +99,7 @@ test('the two hold entrances and exits remain continuously walkable on shipped c
 
 test('full-height capsule sweeps keep both hatch corridors visually clear across their width', () => {
   const f = fixture(), geometries: THREE.BufferGeometry[] = [];
-  for (const root of [f.hold.root, ...roots.map(root => root.getObjectByName('Ghost_Fleet_Ship_296_104_Timber')).filter(Boolean)] as THREE.Object3D[]) root.traverse(object => {
+  for (const root of [f.hold.root, ...roots.map(root => root.getObjectByName('Flagship_Hull_Ship_296_104_Timber')).filter(Boolean)] as THREE.Object3D[]) root.traverse(object => {
     const mesh = object as THREE.Mesh; if (!mesh.isMesh) return;
     let geometry = new THREE.BufferGeometry().setAttribute('position', mesh.geometry.attributes.position.clone());
     if (mesh.geometry.index) geometry.setIndex(mesh.geometry.index.clone());

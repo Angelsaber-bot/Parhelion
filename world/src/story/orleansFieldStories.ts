@@ -1,0 +1,96 @@
+import type { FieldSideStory, FieldStep } from './fieldSideStories';
+import { JOURNEY } from './worldJourney';
+
+export const ORLEANS_FIELD = {
+  bell: { listen: 'field_orleans_bell_listen', roof: 'field_orleans_bell_roof', shot: 'field_orleans_bell_wedge', flag: 'field_orleans_bell_flag', handoff: 'field_orleans_bell_handoff' },
+  chart: { read: 'field_orleans_chart_read', upstream: 'field_orleans_chart_upstream', turn: 'field_orleans_chart_turn', quay: 'field_orleans_chart_quay', shadow: 'field_orleans_chart_shadow' },
+  rescue: { approach: 'field_orleans_rescue_approach', help: 'field_orleans_rescue_help', medic: 'field_orleans_rescue_medic', beam: 'field_orleans_rescue_beam', exchange: 'field_orleans_rescue_exchange' },
+  timber: { inspect: 'field_orleans_timber_inspect', sling: 'field_orleans_timber_sling', trim: 'field_orleans_timber_trim', cross: 'field_orleans_timber_cross' },
+  under: { toolbag: 'field_orleans_under_toolbag', lower: 'field_orleans_under_lower', upper: 'field_orleans_under_upper' },
+  shields: { repair: 'field_orleans_shields_repair', blue: 'field_orleans_shields_blue', red: 'field_orleans_shields_red', mural: 'field_orleans_shields_mural' },
+} as const;
+
+const { bell, chart, rescue, timber, under, shields } = ORLEANS_FIELD;
+function story(id: string, title: FieldSideStory['title'], steps: FieldStep[], after?: (done: ReadonlySet<string>) => boolean): FieldSideStory {
+  return { id, region: 'orleans', title, available: done => done.has(JOURNEY.orleansRead) && (after?.(done) ?? true), steps };
+}
+export const ORLEANS_FIELD_STORIES = [
+  story('apprentice-in-the-belfry', ['钟楼的替班学徒', 'The Belfry Apprentice'], [
+    { id: bell.listen, label: ['钟楼外 · 听错拍的钟声', 'Below the belfry · Listen for the late bell'],
+      hint: ['到钟楼东面的木梯脚下，找等着替班的学徒。', 'Look for the apprentice at the foot of the timber stair on the east side.'],
+      line: ['罗班数着拍子：“每到第二声，木楔就卡住钟锤。可以到屋顶松开，也能从外廊射掉楔子。”', 'Robin counts the beats. “On the second toll the wedge catches the clapper. Loosen it on the roof or shoot it from the gallery.”'] },
+    { id: bell.roof, label: ['钟锤架 · 抽掉木楔', 'Clapper frame · Pull the wooden wedge'],
+      hint: ['登钟楼，从上层外廊瞄楔子，或走到钟锤边抽出。', 'Climb the tower, shoot the wedge from the upper gallery, or pull it out beside the clapper.'],
+      line: ['钟锤摆回中线，罗班终于跟上了拍子。', 'The clapper swings back to center. Robin finally catches the beat.'] },
+    { id: bell.flag, label: ['钟楼临河窗 · 约定备用接旗', 'Belfry river window · Set the spare flag signal'],
+      hint: ['在钟楼下层临河的窗口同罗班约好备用旗号。', 'Meet Robin at the lower river window to arrange a spare flag signal.'],
+      line: ['罗班挂出蓝旗。如果河门失守，旗手可以到这扇窗交班。', 'Robin hangs a blue flag. If the river gate falls, the flag bearer can hand over at this window.'] },
+  ]),
+  story('chart-nobody-can-read', ['没人会读的船图', 'The Chart Nobody Can Read'], [
+    { id: chart.read, label: ['河港 · 看玛戈的木片船图', 'Quay · Read Margot’s slat chart'],
+      hint: ['在河港长堤找挂着三色绳的歪木图。', 'Find a crooked wooden chart with three colored cords on the quay.'],
+      line: ['玛戈把图倒过来：“三根桩不是三条路。你沿岸找红头、横缺和白线，最后去桥影里核对。”', 'Margot turns the chart over. “Three posts don’t mean three routes. Find the red cap, the notch, and the white stripe. Then check the bridge shadow.”'] },
+    { id: chart.upstream, label: ['上游浅滩 · 辨红头桩', 'Upstream shallows · Find the red-cap post'],
+      hint: ['沿石岸向上游找水里的红头桩。', 'Follow the stone bank upstream to the red cap in the water.'],
+      line: ['红漆还在水线上。这根标的是浅滩边缘。', 'The red paint is still above water. This post marks the edge of the shallows.'] },
+    { id: chart.turn, label: ['码头转角 · 辨横缺桩', 'Quay bend · Find the notched post'],
+      hint: ['沿码头去转角，找顶端被船索勒出横缺的桩。', 'At the bend, find the post with a notch worn by the mooring ropes.'],
+      line: ['横缺的朝向指着出船的转弯半径。', 'The notch points along the turn boats take when they cast off.'] },
+    { id: chart.quay, label: ['下游泊位 · 辨白线桩', 'Downstream berth · Find the white stripe'],
+      hint: ['过搬运区沿岸走到白线水桩对面。', 'Follow the bank past the loading area to the post with the white stripe.'],
+      line: ['白线和石缝对齐时，船靠岸才不碰底。', 'The boat can come alongside without scraping when the white line aligns with the stone joint.'] },
+    { id: chart.shadow, label: ['桥侧阴影 · 标记安静泊位', 'Bridge shadow · Mark the sheltered berth'],
+      hint: ['沿岸到三根桩下游的低桥侧，找背光踏台。', 'Follow the bank below all three posts and find the landing in the bridge’s shade.'],
+      line: ['三处记号在这里才对得上。留下泊位标记，走河侧的人从下游这一侧靠岸。', 'The three marks line up here. Mark the berth so anyone taking the river approach can land from downstream.'] },
+  ]),
+  story('soldier-in-the-ditch', ['壕沟里的敌军伤兵', 'The Wounded Soldier in the Ditch'], [
+    { id: rescue.approach, label: ['壕沟 · 放低武器，回应敲盾声', 'Ditch · Lower your weapon and answer the shield taps'],
+      hint: ['在桥头外的壕沟听敲盾声。放开瞄准，别开枪。', 'Listen for taps in the ditch outside the bridgehead. Release aim and hold your fire.'],
+      line: ['一名伤兵用手敲了三下盾背。他试着抬腿，木梁却压得更低。', 'A wounded soldier taps the back of his shield three times. When he tries to lift his leg, the beam sinks lower.'] },
+    { id: rescue.help, label: ['壕沟边 · 移开木梁或叫医护', 'Ditch edge · Lift the beam or call a medic'],
+      hint: ['到木梁旁判断是就地抬梁，还是请医护带绳和夹板来。', 'At the beam, decide whether to lift it now or call the medics to bring rope and a splint.'],
+      line: ['他张开空手，向外翻两下，表示“撤到对岸”。医护在桥头能看见旗。', 'He opens an empty hand and rolls it outward twice: “withdraw across the river.” The medics can see a flag from the bridgehead.'] },
+    { id: rescue.exchange, label: ['临时接收棚 · 看担架过线', 'Receiving shelter · Watch the stretcher cross'],
+      hint: ['等双方医护把伤兵送到临时接收棚。', 'Wait for the medics from both sides to bring him to the receiving shelter.'],
+      line: ['他也回头敲了三下盾，给对岸知道人平安。桥头的人记住了空手撤离的动作。', 'He taps the shield three times in reply to tell the far bank he’s safe. The bridge crew remembers his empty-handed signal.'] },
+  ]),
+  story('carpenters-load-trial', ['木匠的承重试验', 'The Carpenter’s Load Trial'], [
+    { id: timber.inspect, label: ['木匠坡道 · 听吱呀的桥板', 'Carpenter’s ramp · Listen to the creaking deck'],
+      hint: ['找离桥头炮台有一段距离的木匠坡道和吊袋。', 'Find the carpenter’s ramp and hanging bags away from the bridgehead battery.'],
+      line: ['木匠往左板压了压：“先吊袋，后移砝码。中间两道白线相合才能落板。”', 'The carpenter tests the left board. “Hang the load, then shift the weights. Only lower the deck when both white lines meet.”'] },
+    { id: timber.sling, label: ['吊具 · 把试载袋挂上横梁', 'Sling · Hang the test load from the crossbeam'],
+      hint: ['在吊架脚下挂好试载袋。', 'Fasten the test sack at the foot of the hoist.'],
+      line: ['袋子离地，白线往左偏了两格。', 'The sack lifts off. The white line moves two notches to the left.'] },
+    { id: timber.trim, label: ['配重导轨 · 调到两线齐平', 'Weight rail · Bring the two lines level'],
+      hint: ['在配重台移动砝码，直到两道白线对齐。', 'Slide the weight until the two white marks line up.'],
+      line: ['左右的负荷对齐了。木板下落，跨到了壕沟对面。', 'The load balances. The deck lowers onto the opposite side of the ditch.'] },
+    { id: timber.cross, label: ['壕沟对面 · 检查落点', 'Far side · Inspect the deck bearing'],
+      hint: ['走过新板桥，看另一端有没有贴牢。', 'Walk across the new bridge to inspect its far bearing.'],
+      line: ['两块垫石都吃住了力。木匠把今天的调法画在栏上。', 'Both bearing stones carry the load. The carpenter draws today’s settings on the rail.'] },
+  ]),
+  story('bridge-service-ladders', ['桥底维修梯', 'The Ladders Under the Bridge'], [
+    { id: under.toolbag, label: ['桥侧护栏 · 发现旧工具包', 'Bridge rail · Spot the old toolbag'],
+      hint: ['在桥头河侧找挂在短桩上的工具包。', 'On the river side of the bridgehead, look for a bag hanging from a short post.'],
+      line: ['工具包的带子系向下层。绕河岸能登上第一层检修台。', 'The strap is tied down to the lower level. Follow the bank to the first service landing.'] },
+    { id: under.lower, label: ['下层检修台 · 拉出第二段梯架', 'Lower landing · Pull out the second ladder'],
+      hint: ['沿河岸阶梯下到桥底第一层，拉出收拢的第二段。', 'Follow the bank steps to the first platform, then pull out the second ladder.'],
+      line: ['第二段贴着桥墩落下来，可以爬上去。', 'The second flight drops against the pier. It can be climbed now.'] },
+    { id: under.upper, label: ['上层检修台 · 放下回头踏桥', 'Upper landing · Lower the return footbridge'],
+      hint: ['走到第二层打开回到桥面的短桥。', 'Reach the second landing and open the return footbridge.'],
+      line: ['回头桥伸到桥头护栏外。升桥时，这条路也能下到安全处。', 'The return bridge reaches beyond the bridgehead rail. It can also take you down to safety when the main bridge rises.'] },
+  ]),
+  story('shields-without-names', ['没写上姓名的盾', 'Shields Without Names'], [
+    { id: shields.repair, label: ['攻势后的盾架 · 看两种修补手迹', 'After the assault · Inspect two repairs on the shield rack'],
+      hint: ['炮台停火后回桥头的修盾架。', 'Once the battery has fallen silent, return to the bridgehead shield rack.'],
+      line: ['一面有三点靛蓝，另一面是红色交叉针。两处作坊还保留着同样的记号。', 'One has three indigo dots. The other has crossed red stitches. Both workshops still use those marks.'] },
+    { id: shields.blue, label: ['蓝记作坊 · 配对并归还圆盾', 'Indigo workshop · Match and return the round shield'],
+      hint: ['沿桥头侧街找三点靛蓝的布匠棚。', 'Find the clothworker’s awning marked with three indigo dots.'],
+      line: ['布匠认出了旧布，立刻把盾挂回门边。', 'The clothworker recognizes the old fabric and hangs the shield by the door.'] },
+    { id: shields.red, label: ['红记作坊 · 配对并归还方盾', 'Red-mark workshop · Match and return the square shield'],
+      hint: ['沿另一条短巷找红色交叉针记号。', 'Take the other lane and look for crossed red stitches.'],
+      line: ['学徒把盾放回桌旁，在手稿上临摹了那两道交叉线。', 'The apprentice returns the shield to the bench and copies the two crossed lines into a sketch.'] },
+    { id: shields.mural, label: ['墙画 · 查新增的盾纹', 'Mural · See the newly painted shield marks'],
+      hint: ['回到桥头修盾架后的墙画边。', 'Return to the mural behind the bridgehead shield rack.'],
+      line: ['墙画保留着两处修补。见过它的人知道有人曾在这里工作和生活。', 'Both repairs are painted on the wall. People who see it know someone worked and lived here.'] },
+  ], done => done.has(JOURNEY.orleansBattery)),
+] satisfies readonly FieldSideStory[];

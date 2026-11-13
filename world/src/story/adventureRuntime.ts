@@ -7,6 +7,8 @@ import { KYOTO_WITNESS as Y, KYOTO_WITNESS_LINES, kyotoWitnessActionReady, kyoto
 import type {AdventureAction} from './adventureSites';
 import type {Localized} from '../settlements/types';
 import type {StoryEncounterSpec} from './storyEncounters';
+import { FLAGSHIP_WORKS as F, FLAGSHIP_WORK_IDS, FLAGSHIP_WORK_LINES, flagshipWorkBlock } from './flagshipWorks';
+import { KYOTO_STREET as K, KYOTO_STREET_IDS, KYOTO_STREET_LINES, kyotoStreetBlock, kyotoCargoDown } from './kyotoStreetWorks';
 export interface AdventureHooks{
  done:Set<string>;actions:ReadonlyMap<string,AdventureAction>;path:readonly AdventurePoint[];millPath?:readonly AdventurePoint[];
  reachable(id:string):boolean;save():boolean;changed():void;toast(line:Localized):void;
@@ -24,11 +26,16 @@ export function createAdventureRuntime(h:AdventureHooks){
  let channel=new RelayChannel();let current:AdventureAction|null=null,shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_'),shipTime=0,reliefTime=0,leg=cartCheckpoint(h.done,path().length,cartPrefix()),fraction=0,guardianPending=false,pendingGuard:string|null=null;
  const guardId=(id:string)=>`adventure_guard_${id.slice(-1)}`;
  const guardsCleared=(id:string)=>h.done.has(`${guardId(id)}_cleared`);
- const commit=(id:string)=>{if(h.done.has(id))return false;h.done.add(id);if(!h.save())h.toast(['进度尚未写入存档，请重试保存或备份。','Progress has not been saved; retry saving or make a backup.']);h.changed();return true;};
+ const commit=(id:string)=>{if(h.done.has(id))return false;h.done.add(id);if(!h.save()){
+  if(FLAGSHIP_WORK_IDS.has(id)||KYOTO_STREET_IDS.has(id)){h.done.delete(id);h.changed();h.toast(['没有保存成功，本次操作未提交；请重试。','Save failed; this operation was not committed. Please retry.']);return false;}
+  h.toast(['进度尚未写入存档，请重试保存或备份。','Progress has not been saved; retry saving or make a backup.']);
+ }h.changed();return true;};
  const finalReady=()=>['britain','blacksail','winter','kyoto'].every(r=>adventureChapterComplete(r as 'britain'|'blacksail'|'winter'|'kyoto',h.done))&&(!dramaActive(h.done)||(dramaReported(h.done).length===4&&h.done.has(JOURNEY_DRAMA.confession)));
  function blocked(action:AdventureAction):Localized|null{
   const id=action.id;
   const continuation=h.continuationBlock?.(id);if(continuation)return continuation;
+  const lifting = flagshipWorkBlock(id, h.done); if (lifting) return lifting;
+  const street = kyotoStreetBlock(id, h.done); if (street) return street;
   if (id.startsWith('adventure_kyoto_witness_') && !kyotoWitnessActionReady(id as KyotoWitnessAction, h.done))
    return ['先完成京都现场的上一步，再操作这里。','Complete the preceding Kyoto objective before using this station.'];
   if(id==='adventure_tomorrow'&&dramaActive(h.done)&&!dramaDecision(h.done))return ['先与岚决定频道今后的值守方式。','Decide the channel’s future with Lan first.'];
@@ -66,6 +73,8 @@ export function createAdventureRuntime(h:AdventureHooks){
   get cartPosition():AdventurePoint{const route=path();if(h.done.has(A.arrived))return [...route.at(-1)!];const a=route[Math.min(leg,route.length-1)],b=route[Math.min(leg+1,route.length-1)];return a.map((v,i)=>v+(b[i]-v)*fraction)as AdventurePoint;},
   get cartProgress(){return h.done.has(A.arrived)?1:(leg+fraction)/(path().length-1);},
   hit(id:string){
+   if(id===K.pin){if(!kyotoCargoDown(h.done)&&commit(id))h.toast(KYOTO_STREET_LINES[id]);return true;}
+   if(id===F.pin){const reason=flagshipWorkBlock(id,h.done);if(reason)h.toast(reason);else if(!h.done.has(F.release)&&commit(id))h.toast(FLAGSHIP_WORK_LINES[id]);return true;}
    if (id === Y.cut || id === Y.pin) {
     if (kyotoWitnessActionReady(id, h.done) && commit(id)) h.toast(KYOTO_WITNESS_LINES[id]);
     return true;
@@ -92,7 +101,9 @@ export function createAdventureRuntime(h:AdventureHooks){
    if(action.seconds){current=action;channel=new RelayChannel(action.seconds);channel.reset(h.damage());h.toast([`${action.label[0]}：站稳，松开后按住交互键 ${action.seconds} 秒。`,`${action.label[1]}: stand still, release then hold Interact for ${action.seconds} seconds.`]);return true;}
    if (id === Y.private) h.done.add(A.water);
    if (id === R.launch && h.done.has(HARBOR_WORKBOAT.release)) h.done.add(R.extra);
-   if(action.flag)commit(action.flag);
+   if(action.flag&&!commit(action.flag)&&(FLAGSHIP_WORK_IDS.has(id)||KYOTO_STREET_IDS.has(id)))return true;
+   if(FLAGSHIP_WORK_LINES[id]){h.toast(FLAGSHIP_WORK_LINES[id]);return true;}
+   if(KYOTO_STREET_LINES[id]){if(id===K.meal)h.supply();h.toast(KYOTO_STREET_LINES[id]);return true;}
    const witnessLine = KYOTO_WITNESS_LINES[id as KyotoWitnessAction];
    if (witnessLine) { h.toast(witnessLine); return true; }
    if(id===W.retreat){h.toast(['撤离信号已经降下。拿破仑确认人都出了炮线，把高地留给仍在行军的空阵。','The withdrawal flag comes down. Napoleon confirms everyone is clear of the guns and leaves the high ground to the marching formation.']);return true;}
@@ -106,12 +117,15 @@ export function createAdventureRuntime(h:AdventureHooks){
    const result=channel.update({...frame,active:!!current,damageRevision:h.damage()});
    if(result.interrupted)h.toast(['操作中断，已提交的世界变化保留；松开交互后重新操作。','Interaction interrupted. Committed changes remain; release Interact and try again.']);
    if(current&&result.completedNow&&h.reachable(current.id)&&!blocked(current)){
-    const action=current;current=null;if(action.flag)commit(action.flag);
+    const action=current;current=null;
+    if(action.flag&&!commit(action.flag)&&(FLAGSHIP_WORK_IDS.has(action.id)||KYOTO_STREET_IDS.has(action.id)))return;
     if(action.id==='adventure_harbor_records'&&!h.done.has('sea_core')&&!h.done.has('blackbeard_contract')&&!h.done.has('adventure_harbor_alarm_disabled')&&!h.done.has('adventure_harbor_alarm_cleared')){const spec:StoryEncounterSpec={id:'adventure_harbor_alarm',anchor:{x:action.p[0],y:action.p[1],z:action.p[2]},actors:[{role:'duelist',offset:[-3,-3],title:['船腹截击手','Hold Interceptor']},{role:'musketeer',offset:[1,-5],title:['舱口警戒手','Hatch Sentry']}]};const started=h.start(spec);if(!started.ok)h.toast(started.reason??['警报已响，断路器仍可关闭。','The alarm is sounding; the breaker is still accessible.']);}
     if(action.id==='adventure_harbor_alarm'&&h.encounter()==='adventure_harbor_alarm')h.cancel();
     if((A.emitters as readonly string[]).includes(action.id)&&h.encounter()===`adventure_guard_${action.id.slice(-1)}`)h.cancel();
     const witnessLine = KYOTO_WITNESS_LINES[action.id as KyotoWitnessAction];
-    if (witnessLine) h.toast(witnessLine);
+    if (FLAGSHIP_WORK_LINES[action.id]) h.toast(FLAGSHIP_WORK_LINES[action.id]);
+    else if (KYOTO_STREET_LINES[action.id]) h.toast(KYOTO_STREET_LINES[action.id]);
+    else if (witnessLine) h.toast(witnessLine);
     else if (action.id === W.mill) h.toast(['炮架已撑住磨坊桥。药车会从这里横过冰峡。','The gun carriage braces the mill bridge. The medicine cart will cross the gorge here.']);
     else if (action.id === W.redoubt) h.toast(['野战炮留在红堤，药车走原有大道。现在确认人员已经退出炮线。','The field gun stays on the redoubt. The cart takes the old road. Confirm that everyone has cleared the firing lane.']);
     else h.toast([`${action.label[0]}已完成，现场状态已经改变。`,`${action.label[1]} complete; the site has changed.`]);
@@ -139,6 +153,10 @@ export function createAdventureRuntime(h:AdventureHooks){
    fraction=next;if(fraction>=1){leg++;fraction=0;commit(cartPrefix()+leg);if(leg===route.length-1)h.toast(['药车已到渡口，等待你验收。','The medicine cart has reached the crossing and awaits your confirmation.']);}
   },
   victory(id:string){if(id==='adventure_harbor_alarm'){commit('adventure_harbor_alarm_cleared');return true;}if(id===pendingGuard){pendingGuard=null;commit(`${id}_cleared`);h.toast(['发射器守卫已清除。回到装置，按住交互键关闭；守卫不会因操作中断而重生。','Emitter guards defeated. Return and hold Interact to shut it down; interrupted operation will not respawn the guards.']);return true;}if(id!=='adventure_guardian'||!guardianPending||!finalReady()||!A.emitters.every(flag=>h.done.has(flag)))return false;guardianPending=false;commit(A.guardian);h.toast(['守门者已解除。登塔手动接管，再沿照明出口撤离。','The Warden is defeated. Take manual control atop the tower, then follow the lit exit.']);return true;},
+  streetIntrusion(id:string){
+   if(id!==K.templeAlert&&id!==K.campAlert)return;
+   if(commit(id))h.toast(['你从未经放行的入口进入，警戒记录已保留。仍能核对公开货簿；之后补交原函不会抹去这次闯入。','You entered without clearance; the alert is recorded. Public cargo books remain accessible. Presenting the letter later will not erase the intrusion.']);
+  },
   interrupt(){current=null;channel.reset(h.damage());},
   reset(){this.interrupt();guardianPending=false;pendingGuard=null;leg=cartCheckpoint(h.done,path().length,cartPrefix());fraction=0;shipTime=0;reliefTime=0;shipLeg=cartCheckpoint(h.done,7,'adventure_ship_leg_');},
  };

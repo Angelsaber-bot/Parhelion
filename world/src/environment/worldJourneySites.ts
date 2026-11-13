@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import type { Marker } from '../core/types';
 import type { Collider } from '../player/player';
-import { egyptToWorld } from '../map/egyptPlan';
+import { EGYPT_RIVER, egyptToWorld } from '../map/egyptPlan';
 import { GATES } from '../map/regions';
 import { ORLEANS_WORKS } from '../map/orleansWorks';
 import { qinToWorld } from '../map/qinPlan';
@@ -280,23 +280,16 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     return { mesh, collider };
   });
 
-  stand(J.egyptRead, '绿洲 · 搁浅船只水尺', local(egyptToWorld, -164, 14.5, 114), regionalArt.Egypt);
+  stand(J.egyptRead, '搁浅渡口 · 核对船只水尺', local(egyptToWorld, -158.5, 13.8, 159.15), regionalArt.Egypt);
   const weir = stand(J.egyptWeir, '水道独立泄洪杆', local(egyptToWorld, -30, 11, 141), regionalArt.Egypt);
-  const river = stand(J.egyptDone, '下游水尺 · 验收渡航', local(egyptToWorld, 2, 9, 144), regionalArt.Egypt);
+  stand(J.egyptDone, '下游水尺 · 验收渡航', local(egyptToWorld, 2, 9, 144), regionalArt.Egypt);
   const tie = shotPin(J.egyptTie, [weir[0] + 5, weir[1] + 1.55, weir[2] - 2]);
-  const startWater = new THREE.Vector3(weir[0] + 3, weir[1] - .18, weir[2] - 1);
-  const endWater = new THREE.Vector3(river[0] - 2, river[1] - .18, river[2] - 1);
-  const wetMaterial = new THREE.MeshStandardMaterial({ color: '#39959c', transparent: true, opacity: .74, roughness: .24, side: THREE.DoubleSide });
-  const waterLength = startWater.distanceTo(endWater), angle = Math.atan2(startWater.z - endWater.z, endWater.x - startWater.x);
-  const waterGeometry = new THREE.PlaneGeometry(waterLength, 3.1, 16, 1).rotateX(-Math.PI / 2).rotateY(angle);
-  const middle = startWater.clone().lerp(endWater, .5), verts = waterGeometry.attributes.position;
-  for (let i = 0; i < verts.count; i++) {
-    const x = middle.x + verts.getX(i), z = middle.z + verts.getZ(i);
-    verts.setXYZ(i, x, (ground(x, z, Math.max(weir[1], river[1]) + 2) ?? middle.y) + .064, z);
-  }
-  waterGeometry.computeVertexNormals(); waterGeometry.computeBoundingSphere();
-  const water = new THREE.Mesh(waterGeometry, wetMaterial); water.name = 'JourneyEgyptIndependentWater';
-  a.root.add(water);
+  // The ferry follows the actual river surface upstream of the central gate.
+  // The old diagonal ground-following water decal made it sail across a bank.
+  const upstream = new THREE.Vector3(...local(egyptToWorld, EGYPT_RIVER[3][0], EGYPT_RIVER[3][1] - .35, EGYPT_RIVER[3][2]));
+  const downstream = new THREE.Vector3(...local(egyptToWorld, EGYPT_RIVER[4][0], EGYPT_RIVER[4][1] - .35, EGYPT_RIVER[4][2]));
+  const startWater = upstream.clone().lerp(downstream, .15), endWater = upstream.clone().lerp(downstream, .85);
+  const angle = Math.atan2(startWater.z - endWater.z, endWater.x - startWater.x);
   const boat = new THREE.Group(); boat.name = 'JourneyEgyptFerry';
   const ferryMaterials = [new THREE.MeshStandardMaterial({ color: wood }), new THREE.MeshStandardMaterial({ color: sandstone })];
   const hull = new THREE.Mesh(new THREE.BoxGeometry(3.4, .38, 1.22), ferryMaterials[0]); hull.position.y = .2;
@@ -418,7 +411,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
       visitTravel = 1;
       if (!visitorAtTown) residents.pose('journey_visitor_actor', [visitor[0] + .85, visitor[1], visitor[2]], Math.PI / 2);
     }
-    waterOpen = done.has(J.egyptWeir); water.visible = waterOpen;
+    waterOpen = done.has(J.egyptWeir);
     if (!waterOpen) boatTravel = 0;
     if (done.has(J.egyptDone)) { boatTravel = 1; placeBoat(); }
     marchOrdered = done.has(J.qinMarch); halted = done.has(J.qinHalt);
@@ -513,7 +506,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
   const boatPoint = new THREE.Vector3();
   function placeBoat() {
     boatPoint.copy(startWater).lerp(endWater, boatTravel);
-    boat.position.set(boatPoint.x, (ground(boatPoint.x, boatPoint.z, Math.max(weir[1], river[1]) + 2) ?? boatPoint.y) + .08, boatPoint.z);
+    boat.position.copy(boatPoint);
   }
   function placeRelief() {
     const x = orleans[0] + 1.5, z = orleans[2] + THREE.MathUtils.lerp(7, 2.1, reliefTravel);
@@ -595,7 +588,7 @@ export function createWorldJourneySites(residence: SettlementPlacement, ground: 
     solids.dispose(); repairGeometry.dispose();
     [...Object.values(a.materials), ...Object.values(repair.materials), ...Object.values(guide.materials), ...Object.values(bench.materials), ...Object.values(mealArt.materials),
       ...Object.values(regionalArt).flatMap(art => Object.values(art.materials))].forEach(material => material.dispose());
-    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, wetMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ceramic, soup, trolleyWood, trolleyMetal, medicalBoxMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
+    for (const material of new Set([pinMaterial, bridgeGateMaterial, plateMaterial, flagMaterial, lampMaterial, transmitterMaterial, ridgeLantern.material, ceramic, soup, trolleyWood, trolleyMetal, medicalBoxMaterial, ...cargoMaterials, ...ferryMaterials])) material.dispose();
     for (const collider of colliders) collider.enabled = false;
   } };
 }

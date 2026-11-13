@@ -3,10 +3,12 @@ import { MeshBVH } from 'three-mesh-bvh';
 import type { Collider } from '../player/player';
 import { SiteArt } from '../story/campaignSites';
 import { WINTER_MILL_BRIDGE as B, WINTER_WITHDRAWAL as W } from '../story/winterWithdrawal';
+import { createWinterMillArchitecture } from './winterMillArchitecture';
 
-export function createWinterMillBridge(rally: [number, number, number]) {
+export function createWinterMillBridge(rally: [number, number, number], ground: (x: number, z: number, ceiling?: number) => number | null = () => null) {
   const art = new SiteArt(), root = new THREE.Group();
   root.name = 'WinterWithdrawalWorks'; root.add(art.root);
+  const workshop = createWinterMillArchitecture(B.north, ground); root.add(workshop.root);
   const north = new THREE.Vector3(...B.north), south = new THREE.Vector3(...B.south);
   const forward = south.clone().sub(north).normalize(), side = new THREE.Vector3(forward.z, 0, -forward.x);
   const center = north.clone().lerp(south, .5), length = north.distanceTo(south);
@@ -53,8 +55,9 @@ export function createWinterMillBridge(rally: [number, number, number]) {
   }
   part(gun, new THREE.CylinderGeometry(.19, .24, 2.7, 12).rotateX(Math.PI / 2), metal, [0, 1.08, -.65]);
   return {
-    root, collider,
+    root, collider, workshopCollider: workshop.collider,
     apply(done: ReadonlySet<string>, dt: number) {
+      workshop.update(dt);
       art.root.visible = collider.enabled = done.has(W.mill);
       signal.visible = done.has(W.redoubt) || done.has(W.mill);
       gun.visible = done.has(W.redoubt);
@@ -65,6 +68,7 @@ export function createWinterMillBridge(rally: [number, number, number]) {
       gun.rotation.y = dt > 0 ? THREE.MathUtils.damp(gun.rotation.y, target, 3.1, dt) : target;
     },
     dispose() {
+      workshop.dispose();
       collider.enabled = false; deck.dispose();
       for (const mesh of art.layers.values()) mesh.geometry.dispose();
       for (const material of Object.values(art.materials)) material.dispose();

@@ -176,7 +176,9 @@ export function createExploration(host: ExplorationHost) {
   camlannArena(artFor('britain'), (x, z) => host.terrain(x, z));
   redSquareArena(artFor('winter'), (x, z) => host.terrain(x, z));
   honnojiArena(artFor('kyoto'), (x, z) => host.terrain(x, z));
-  flagshipDeckArena(artFor('blacksail'));
+  const flagshipArt = new SiteArt(); flagshipDeckArena(flagshipArt);
+  flagshipArt.finish('blacksail'); flagshipArt.root.name = 'FlagshipDeckDressing'; root.add(flagshipArt.root);
+  disposables.push({ dispose: () => disposeArt(flagshipArt) });
 
   // ───────────────────────── prism puzzles ─────────────────────────
   interface PuzzleRt { def: PrismPuzzleDef; orient: number[]; heads: THREE.Group[]; crystals: THREE.Mesh[]; shown: number[]; beam: THREE.Mesh; glow: THREE.Mesh; recv: THREE.Group; pillar: THREE.Mesh; heights: number[]; sourceY: number; recvY: number; solved: boolean }
@@ -780,7 +782,7 @@ export function createExploration(host: ExplorationHost) {
     hud.remove(); banner.remove(); challenge.remove(); parchment.remove(); signalHud.remove(); root.removeFromParent();
   }
   return {
-    root, colliders, markers,
+    root, colliders, markers, flagshipArt: flagshipArt.root,
     owns: (id: string) => ownership.has(id),
     interact: (id: string) => ownership.get(id)?.(),
     label: (id: string) => labels.get(id)?.() ?? null,

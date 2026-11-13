@@ -1,6 +1,8 @@
 import {createJourneyPassageArt} from '../environment/journeyPassageArt';
 import {createAdventureFacilityArt} from '../environment/adventureFacilityArt';
 import {flagshipPoint} from '../map/shipInteriorCut';
+import { FLAGSHIP_WORK_ACTIONS } from './flagshipWorks';
+import { KYOTO_STREET_ACTIONS } from './kyotoStreetWorks';
 import {CONVOY_ROUTE} from './convoyRoute';
 import { MILL_CONVOY_ROUTE } from './millConvoyRoute';
 import { WINTER_WITHDRAWAL as W, WINTER_CART_PREFIX, WINTER_MILL_CART_PREFIX } from './winterWithdrawal';
@@ -18,6 +20,8 @@ import {gatePoint} from './kingdomGate';
 import { HARBOR_RELIEF as R, HARBOR_MEDICINE_LANE, HARBOR_MERCHANT_LANE } from './harborRelief';
 export interface AdventureAction {id:string;region:RegionId;label:Localized;p:AdventurePoint;seconds?:number;flag?:string;hint?:Localized;}
 export const ADVENTURE_ACTIONS:readonly AdventureAction[]=[
+ ...FLAGSHIP_WORK_ACTIONS,
+ ...KYOTO_STREET_ACTIONS,
  ...(['britain','blacksail','winter','kyoto'] as const).map((region,i):AdventureAction=>({id:`adventure_home_${region}`,region:'alpha',label:[['归人工匠补给台','海港运补台','暖路药箱','京都归人茶席'][i],['Returner workshop','Harbor supply desk','Warmroad medicine chest','Kyoto travelers’ tea'][i]],p:[-94+i*3,10,237]})),
  {id:'adventure_harbor_rigging',region:'blacksail',label:['侧舷索具绞盘','Side rigging winch'],p:[1009,10.5,-724],seconds:3,flag:A.harborSide},
  {id:R.reserve,region:'blacksail',label:['码头药箱 · 查验封条','Quay medicine crate · Check the seals'],p:[598,3.4,-578],flag:R.reserve},
@@ -114,7 +118,7 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
  const aid=new THREE.Mesh(new THREE.BoxGeometry(.65,.15,1),new THREE.MeshStandardMaterial({color:'#ece2d0'}));aid.position.y=1.3;cart.add(aid);
  const convoyPath=CONVOY_ROUTE.map(p=>[...p] as AdventurePoint);
  const millConvoyPath=MILL_CONVOY_ROUTE;
- const winterMill=createWinterMillBridge(actions.get(W.retreat)!.p);root.add(winterMill.root);colliders.push(winterMill.collider);
+ const winterMill=createWinterMillBridge(actions.get(W.retreat)!.p,floor);root.add(winterMill.root);colliders.push(winterMill.collider,winterMill.workshopCollider);
  const ship=new THREE.Group();root.add(ship);ship.name='NassauMerchantDeparture';
  const hullOutline=new THREE.Shape();hullOutline.moveTo(-2.3,-5.8);for(const[x,z]of[[2.3,-5.8],[2.6,2.5],[1.4,5.8],[0,7],[-1.4,5.8],[-2.6,2.5]])hullOutline.lineTo(x,z);hullOutline.closePath();
  const hullGeo=new THREE.ExtrudeGeometry(hullOutline,{depth:1.5,bevelEnabled:true,bevelSegments:1,steps:1,bevelSize:.15,bevelThickness:.15});hullGeo.rotateX(Math.PI/2);

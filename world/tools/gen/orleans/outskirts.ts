@@ -12,6 +12,7 @@ import {T} from '../geo';
 type Height=(x:number,z:number)=>number;
 /** Ground already claimed by a second-ring landmark, field or lane (keeps scattered trees out). */
 export function outskirtsOccupied(x:number,z:number):boolean{
+  if (x > 261 && x < 313 && z > 20 && z < 80) return true;
   const near=(p:{x:number;z:number},r:number)=>Math.hypot(x-p.x,z-p.z)<r;
   if(near(TR,26)||near(VY,24)||near(GR,34)||near(WM,16)||near(BA,BA.half+12)||near(BM,16))return true;
   const k=ORLEANS_SCORCH,dx=x-k.x,dz=z-k.z,u=Math.cos(k.a)*dx-Math.sin(k.a)*dz,v=Math.sin(k.a)*dx+Math.cos(k.a)*dz;

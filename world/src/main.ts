@@ -1,10 +1,47 @@
+import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
+import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
+import { createEgyptReedMarket } from './environment/egyptReedMarket';
+import { createEgyptSolarBoat, EGYPT_SOLAR_BOAT as ESB, SOLAR_BOAT_LABELS, type SolarBoatRoute } from './environment/egyptSolarBoat';
+import { createEgyptWaterwheel, EGYPT_WHEEL as EWW, EGYPT_WHEEL_LABELS } from './environment/egyptWaterwheel';
+import { createEgyptConfluenceLandscape } from './environment/egyptConfluenceLandscape';
+import { createWinterCustomsWorks } from './environment/winterCustomsWorks';
+import { WINTER_CUSTOMS_WORKS as WCW, WINTER_CUSTOMS_LABELS, winterCustomsCartReleased } from './story/winterCustomsWorks';
+import { createWinterCivilLandscape } from './environment/winterCivilLandscape';
+import { WINTER_CIVIL_CLEARANCE, WINTER_CIVIL_PATHS } from './map/winterCivilPlan';
+import { KYOTO_CIVIL_CLEARANCE, KYOTO_CIVIL_PATHS } from './map/kyotoCivilPlan';
+import { createBlackSailCivilLandscape } from './environment/blackSailCivilLandscape';
+import { BLACKSAIL_CIVIL_CLEARANCE, BLACKSAIL_CIVIL_PATHS } from './map/blackSailCivilPlan';
+import { createEgyptWaterPlanLandscape } from './environment/egyptWaterPlanLandscape';
+import { createEgyptRiverConsequences } from './environment/egyptRiverConsequences';
+import { EGYPT_RIVERWORKS_CLEARANCE, EGYPT_RIVERWORKS_PATHS, EGYPT_WEST_DIVERSION } from './map/egyptRiverworksPlan';
+import { EGYPT_WATER_PLAN, EGYPT_WATER_OPTIONS, EGYPT_WATER_IDS, egyptWaterFlag, selectedEgyptWaterPlan, setEgyptWaterPlan, type EgyptWaterOption } from './story/egyptWaterPlan';
+import { createEgyptTempleMechanisms } from './environment/egyptTempleMechanisms';
+import { EGYPT_TEMPLE_WORKS_STATE as ETW, EGYPT_TEMPLE_WORK_LABELS } from './story/egyptTempleWorks';
+import { createEgyptTempleMaintenance } from './environment/egyptTempleMaintenance';
+import { clearLandscapeProps } from './map/landscapeClearance';
+import { createValleyTransportLandscape } from './environment/valleyTransportLandscape';
+import { VALLEY_TRANSPORT_CLEARANCE, VALLEY_TRANSPORT_ROUTES } from './map/valleyTransportPlan';
+import { carveValleyFoundation, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
+import { createValleyFoundationLandscape } from './environment/valleyFoundationLandscape';
+import { createKingdomRoadLandscape } from './environment/kingdomRoadLandscape';
+import { KINGDOM_ROAD_LABELS, KINGDOM_ROAD_LINES, kingdomRoadReady, commitKingdomRoad } from './story/kingdomRoad';
+import { createKingdomAqueductLandscape } from './environment/kingdomAqueductLandscape';
+import { createValleyCivilLandscape } from './environment/valleyCivilLandscape';
+import { createEgyptRiverworksLandscape } from './environment/egyptRiverworksLandscape';
 import { createValleyInvestigationSites } from './environment/valleyInvestigationSites';
+import { createOrleansSiegeLandscape } from './environment/orleansSiegeLandscape';
+import { createOrleansEastMoat, ORLEANS_MOAT_BRACE } from './environment/orleansEastMoat';
+import { createQinCommandLandscape, QIN_COMMAND_RETURN } from './environment/qinCommandLandscape';
+import { SKY_LIFT } from './environment/skyServiceLift';
+import { createQinSurveyGallery } from './environment/qinSurveyGallery';
 import { createValleyCommunitySites } from './environment/valleyCommunitySites';
 import { FREIGHT_YARD as FY, MIST_RESCUE as MR, NEXT_SHIFT as NS, OLD_TICKET as OT,
   VALLEY_COMMUNITY_STEPS, chooseFreightYard, valleyCommunityReady } from './story/valleyCommunity';
 import { FIFTH_ROAD as FR, REPLAY_TEST as RT, WATERWORKS as WW, VALLEY_INVESTIGATION_STEPS, VALLEY_WATER_RESTORE, valleyInvestigationReady } from './story/valleyInvestigations';
 import { strikeContains, type StrikeRequest } from './combat/combatActions';
 import { createFieldSideSites } from './environment/fieldSideSites';
+import { QIN_FIELD } from './story/qinFieldStories';
+import { ORLEANS_FIELD as OF } from './story/orleansFieldStories';
 import { FIELD_SIDE_STEPS, FIELD_SERVICE_LABELS, ROYAL_BOAT as RB, ICE_BELL as IB, EGYPT_SEEDS as ES, ORLEANS_SOUP as OS, QIN_QUIET_ROOM as QR, SKY_MAINTENANCE as SM, VALLEY_RADIO as VR, KYOTO_PASS as KP, KYOTO_PAPERLINE as KL, HARBOR_KEEPSAKES as HK, CAPTAINS_CHAIR as CC, fieldSideReady } from './story/fieldSideStories';
 import { WINTER_BREAD as WB, WINTER_SHOES as WS, WINTER_RANGE as WR } from './story/fieldSideStories';
 import { EGYPT_REED_RACE as ER, EGYPT_SHIP_HINGE as EH, EGYPT_REVERSE_WHEEL as EW, EGYPT_HERD as EG, EGYPT_THRONE as ET } from './story/fieldSideStories';
@@ -43,6 +80,11 @@ import {RESIDENT_ACTIONS,getResidentWorkGuide} from './story/residentEventRules'
 import {makeCombatTerrain} from './combat/combatTerrain';
 import {LocalCavalrySupport} from './companions/localCavalrySupport';
 import {createFlagshipInterior} from './environment/flagshipInterior';
+import { createFlagshipDockLandscape } from './environment/flagshipDockLandscape';
+import { createFlagshipMastBridge } from './environment/flagshipMastBridge';
+import { FLAGSHIP_WORK_IDS } from './story/flagshipWorks';
+import { createKyotoStreetLandscape, KYOTO_MAP_WORK } from './environment/kyotoStreetLandscape';
+import { KYOTO_STREET_IDS } from './story/kyotoStreetWorks';
 import {RegionVisualStreaming,streamedOutlineDistance} from './map/regionVisualStreaming';
 import {carveCoreRing} from './exploration/bossArenas';
 import { FarPropCuller } from './rendering/farPropCuller';
@@ -97,9 +139,9 @@ import { createValleyFieldScene } from './environment/valleyFieldScene';
 import { VALLEY_FIELD as F, VALLEY_FIELD_BY_ID, VALLEY_NIGHT_ENCOUNTER } from './story/valleyField';
 import type { StoryEncounterActor, StoryEncounterSpec } from './story/storyEncounters';
 import { createRealmClimaxSites } from './environment/realmClimaxSites';
-import { climaxMarker, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
+import { climaxMarker, climaxCheckpoint, climaxCleared, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
 import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_CROWN_RECOVERY, SKY_LANDING } from './environment/skyCrownScene';
-import { SKY_DOWN_LANDING, SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LANDING, SKY_UP_LIFT } from './environment/skyCrownApproach';
+import { SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LIFT } from './environment/skyCrownApproach';
 import { createHelionFight } from './story/helionFight';
 import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, legacySkyApproach, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
 import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, VALLEY_RESCUE_ENCOUNTER, VALLEY_SURVEY_HEIGHT, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
@@ -330,6 +372,14 @@ const progress = (file: string) => (e: ProgressEvent) => {
   loaded.set(file, e.loaded / e.total);
   setLoading(`加载地图… ${Math.round([...loaded.values()].reduce((a, b) => a + b, 0) / REGIONS.length * 100)}%`);
 };
+function clearProductionLandscape(region: string, name: string, geometry: THREE.BufferGeometry) {
+  if (region === 'alpha') return clearLandscapeProps(name, geometry, [...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE], VALLEY_TRANSPORT_ROUTES);
+  if (region === 'winter') return clearLandscapeProps(name, geometry, [[38, 89, 65, 122], ...WINTER_CIVIL_CLEARANCE], WINTER_CIVIL_PATHS);
+  if (region === 'blacksail') return clearLandscapeProps(name, geometry, BLACKSAIL_CIVIL_CLEARANCE, BLACKSAIL_CIVIL_PATHS);
+  if (region === 'britain' && /^Trees_|^COL_Props$/.test(name)) return clearLandscapeProps(name, geometry, [],
+    [[[-120, -70], [-151, -30], [-151, 20], [-170, 60], [-176, 105], [-154, 144], [-120, 184]]]);
+  return carveCoreRing(region, name, geometry);
+}
 const parts = await Promise.all(REGIONS.map(async (def) => {
   const [lay, gltf] = await Promise.all([
     loadLayout(`./assets/${def.file}.layout.json`),
@@ -339,6 +389,11 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     if (!gltf.scene.getObjectByName(name)) throw new Error(bilingual(`地图模型缺少 ${name} 节点`, `Map model is missing the ${name} node`));
   }
   bakeQuantized(gltf.scene);
+  gltf.scene.traverse(node => {
+    if (!(node instanceof THREE.Mesh)) return;
+    const carved = def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name) ? carveValleyFoundation(node.geometry) : clearProductionLandscape(def.id, node.name, node.geometry);
+    if (carved) { node.geometry.dispose(); node.geometry = carved; }
+  });
   placeRegion(gltf.scene, def);
   return { def, layout: lay, root: gltf.scene };
 }));
@@ -350,7 +405,7 @@ for (const p of parts) world.add(p.root);
 scene.add(world);
 world.updateMatrixWorld(true);
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
-const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:carveCoreRing,eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
+const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:clearProductionLandscape,eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
@@ -358,6 +413,7 @@ document.title = 'Parhelion · World';
 const localLights = new LocalLightPool([
   { p: [182, 6, -60], color: '#7ff6ff', intensity: 60, distance: 26, decay: 1.6 },
   ...(layout.lights ?? []),
+  ...VALLEY_FOUNDATION_LIGHTS,
 ], lowQ ? 3 : highQ ? 8 : 5);
 scene.add(localLights.root);
 const lightCensus = new PointLightCensus(scene, new Set(localLights.lights));
@@ -378,6 +434,16 @@ const waters = artMeshes.filter((m) => m.name === 'Water');
 const waterMesh = waters.reduce((a, b) => ((a.geometry.boundingSphere ?? (a.geometry.computeBoundingSphere(), a.geometry.boundingSphere!)).radius >=
   (b.geometry.boundingSphere ?? (b.geometry.computeBoundingSphere(), b.geometry.boundingSphere!)).radius ? a : b));
 for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
+// Dry entrance ramps have the same real opening in the sea sheet as in terrain.
+// Work in world coordinates because the retained water mesh belongs to Black Sail.
+{
+  const source = waterMesh.geometry.clone().applyMatrix4(waterMesh.matrixWorld);
+  const carved = carveValleyFoundation(source, VALLEY_FOUNDATION_WATER_CUTS); source.dispose();
+  if (carved) {
+    carved.applyMatrix4(waterMesh.matrixWorld.clone().invert());
+    waterMesh.geometry.dispose(); waterMesh.geometry = carved;
+  }
+}
 const culler = new DistanceCuller(lowQ ? 90 : 160);
 const DRAW_DIST: Record<string, number> = { Bushes: 180, Trees_Leaves: 380, Trees_Trunks: 260, Rocks: 320, Lamps: 240, Glow_Props: 500, Terrain: 760 };
 // Reuse conversion only for the same immutable authored source material.
@@ -431,6 +497,7 @@ const colliders: Collider[] = [];
 const gates: { name: string; opensWhen: string[] }[] = [];
 const solids: { name: string; solidWhen: string[] }[] = []; // e.g. the ghost bridge: walkable once it appears
 const staticGeos: THREE.BufferGeometry[] = [boundaryWalls()];
+const moatTerrainColliders: Collider[] = [];
 const existingPropGeos: THREE.BufferGeometry[] = [];
 const debugCol = new THREE.Group();
 const debugMat = new THREE.MeshBasicMaterial({ color: '#ff3d7f', wireframe: true, transparent: true, opacity: 0.35 });
@@ -442,6 +509,7 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
   if (m.geometry.index) g.setIndex(m.geometry.index.clone());
   g.applyMatrix4(m.matrixWorld);
   if (g.index) g = g.toNonIndexed();
+  if (p.def.id === 'orleans' && m.name === 'COL_Terrain') moatTerrainColliders.push({ name: m.name, bvh: new MeshBVH(g.clone()), enabled: true });
   if (m.name !== 'COL_Terrain') existingPropGeos.push(g);
   if (m.userData.dynamic) colliders.push({ name: m.name, bvh: new MeshBVH(g), enabled: true });
   else staticGeos.push(g);
@@ -450,6 +518,7 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
 });
 // Supplemental chapter buildings share the same authoritative collision BVH as the world.
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
+applyValleyFoundationGrid(grid);
 const existingPropGeo = mergeParts(existingPropGeos);
 const settlementBlockers = new MeshBVH(existingPropGeo);
 const settlements = installSettlements([
@@ -543,6 +612,12 @@ const staticBVH = new MeshBVH(staticGeo);
 colliders.unshift({ name: 'static', bvh: staticBVH, enabled: true });
 const flagshipInterior=createFlagshipInterior();world.add(flagshipInterior.root);colliders.push(...flagshipInterior.colliders);layout.markers.push(...flagshipInterior.markers);
 addEventListener('pagehide',e=>{if(!e.persisted)flagshipInterior.dispose();});
+const flagshipDockLandscape = createFlagshipDockLandscape();
+world.add(flagshipDockLandscape.root); colliders.push(flagshipDockLandscape.collider); layout.markers.push(...flagshipDockLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) flagshipDockLandscape.dispose(); });
+const flagshipMastBridge = createFlagshipMastBridge();
+world.add(flagshipMastBridge.root); colliders.push(...flagshipMastBridge.colliders); targets.push(...flagshipMastBridge.targets);
+addEventListener('pagehide', event => { if (!event.persisted) flagshipMastBridge.dispose(); });
 const adventureSites=createAdventureSites((x,z,ceiling=300)=>{const ray=new THREE.Ray(new THREE.Vector3(x,ceiling,z),new THREE.Vector3(0,-1,0));let y:number|null=null;for(const c of colliders)if(c.enabled){const hit=c.bvh.raycastFirst(ray,THREE.DoubleSide);if(hit&&(y===null||hit.point.y>y))y=hit.point.y;}return y;});
 world.add(adventureSites.root);colliders.push(...adventureSites.colliders);layout.markers.push(...adventureSites.markers);targets.push(...adventureSites.targets);
 const recordAction=adventureSites.actions.get('adventure_harbor_records')!;recordAction.p=[...flagshipInterior.recordStand];const recordMarker=adventureSites.markers.find(m=>m.id===recordAction.id)!;recordMarker.p=[recordAction.p[0],recordAction.p[1]+.9,recordAction.p[2]];
@@ -553,6 +628,9 @@ let cavalrySupport:LocalCavalrySupport|undefined;
 let residentEventRuntime:ReturnType<typeof createResidentEventRuntime>|undefined;
 addEventListener('pagehide',event=>{if(!event.persisted)adventureSites.dispose();});
 const residentQueries=makeCombatTerrain(colliders,layout);
+const kyotoStreetLandscape = createKyotoStreetLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(kyotoStreetLandscape.root); colliders.push(...kyotoStreetLandscape.colliders); targets.push(...kyotoStreetLandscape.targets); layout.markers.push(...kyotoStreetLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) kyotoStreetLandscape.dispose(); });
 const kingdomHearth = layout.markers.find(marker => marker.id === 'hall_brazier_1');
 const kingdomWorksScene = kingdomHearth ? createKingdomWorksScene(kingdomHearth.p,
   (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null,
@@ -562,10 +640,13 @@ if (kingdomWorksScene) {
   world.add(kingdomWorksScene.root); layout.markers.push(...kingdomWorksScene.markers); targets.push(kingdomWorksScene.target);
   addEventListener('pagehide', event => { if (!event.persisted) kingdomWorksScene.dispose(); });
 }
+const egyptReedMarket = createEgyptReedMarket((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptReedMarket.root); colliders.push(egyptReedMarket.collider); layout.markers.push(...egyptReedMarket.markers);
+addEventListener('pagehide', event => { if (!event.persisted) egyptReedMarket.dispose(); });
 const worldJourneySites = alphaResidence ? createWorldJourneySites(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const valleyFieldScene = alphaResidence ? createValleyFieldScene(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const skyCrown = createSkyCrownScene();
-const worldJourneyMarkerIds = new Set<string>();
+const worldJourneyMarkerIds = new Set<string>(Object.values(KYOTO_MAP_WORK));
 for (const site of [worldJourneySites, skyCrown]) {
   if (!site) continue;
   scene.add(site.root); colliders.push(...site.colliders); targets.push(...site.targets);
@@ -607,6 +688,79 @@ if (egyptGaugeScene) {
   addEventListener('pagehide', event => { if (!event.persisted) egyptGaugeScene.dispose(); });
 }
 let gaugeKeeperSpeaking = false;
+const valleyFoundationLandscape = createValleyFoundationLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(valleyFoundationLandscape.root); colliders.push(valleyFoundationLandscape.collider);
+addEventListener('pagehide', event => { if (!event.persisted) valleyFoundationLandscape.dispose(); });
+const kingdomAqueductLandscape = createKingdomAqueductLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(kingdomAqueductLandscape.root); colliders.push(kingdomAqueductLandscape.collider);
+addEventListener('pagehide', event => { if (!event.persisted) kingdomAqueductLandscape.dispose(); });
+const kingdomRoadLandscape = createKingdomRoadLandscape((x, z) => grid.sampleHeight(x, z));
+world.add(kingdomRoadLandscape.root); colliders.push(...kingdomRoadLandscape.colliders); layout.markers.push(...kingdomRoadLandscape.markers);
+Object.keys(KINGDOM_ROAD_LABELS).forEach(id => worldJourneyMarkerIds.add(id));
+addEventListener('pagehide', event => { if (!event.persisted) kingdomRoadLandscape.dispose(); });
+const valleyCivilLandscape = createValleyCivilLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(valleyCivilLandscape.root); colliders.push(valleyCivilLandscape.collider);
+addEventListener('pagehide', event => { if (!event.persisted) valleyCivilLandscape.dispose(); });
+const valleyMaintenanceLine = createValleyMaintenanceLine();
+world.add(valleyMaintenanceLine.root); colliders.push(...valleyMaintenanceLine.colliders); layout.markers.push(...valleyMaintenanceLine.markers);
+valleyMaintenanceLine.markers.forEach(m => worldJourneyMarkerIds.add(m.id));
+addEventListener('pagehide', event => { if (!event.persisted) valleyMaintenanceLine.dispose(); });
+const valleyTransportLandscape = createValleyTransportLandscape((x, z) => grid.sampleHeight(x, z));
+world.add(valleyTransportLandscape.root); colliders.push(valleyTransportLandscape.collider); layout.markers.push(...valleyTransportLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) valleyTransportLandscape.dispose(); });
+// Grade the ditch approaches against earth, not nearby barricade tops.
+const moatTerrainQueries = makeCombatTerrain(moatTerrainColliders, layout);
+addEventListener('pagehide', event => { if (!event.persisted) moatTerrainColliders.forEach(c => c.bvh.geometry.dispose()); });
+const orleansEastMoat = createOrleansEastMoat((x, z, ceiling) => moatTerrainQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(orleansEastMoat.root); colliders.push(...orleansEastMoat.colliders); layout.markers.push(...orleansEastMoat.markers); worldJourneyMarkerIds.add(ORLEANS_MOAT_BRACE);
+addEventListener('pagehide', event => { if (!event.persisted) orleansEastMoat.dispose(); });
+const orleansSiegeLandscape = createOrleansSiegeLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(orleansSiegeLandscape.root); colliders.push(...orleansSiegeLandscape.colliders);
+addEventListener('pagehide', event => { if (!event.persisted) orleansSiegeLandscape.dispose(); });
+const egyptRiverworksLandscape = createEgyptRiverworksLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptRiverworksLandscape.root); colliders.push(egyptRiverworksLandscape.collider);
+addEventListener('pagehide', event => { if (!event.persisted) egyptRiverworksLandscape.dispose(); });
+const egyptConfluenceLandscape = createEgyptConfluenceLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptConfluenceLandscape.root); colliders.push(...egyptConfluenceLandscape.colliders); layout.markers.push(...egyptConfluenceLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) egyptConfluenceLandscape.dispose(); });
+const egyptTempleMaintenance = createEgyptTempleMaintenance((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptTempleMaintenance.root); colliders.push(egyptTempleMaintenance.collider); layout.markers.push(...egyptTempleMaintenance.markers);
+addEventListener('pagehide', event => { if (!event.persisted) egyptTempleMaintenance.dispose(); });
+const egyptWaterwheel = createEgyptWaterwheel();
+world.add(egyptWaterwheel.root); colliders.push(...egyptWaterwheel.colliders); targets.push(egyptWaterwheel.pin);
+layout.markers.push(...egyptWaterwheel.markers); egyptWaterwheel.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) egyptWaterwheel.dispose(); });
+const egyptSolarBoat = createEgyptSolarBoat();
+world.add(egyptSolarBoat.root); colliders.push(egyptSolarBoat.collider, egyptSolarBoat.shieldCollider); layout.markers.push(...egyptSolarBoat.markers);
+egyptSolarBoat.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) egyptSolarBoat.dispose(); });
+const egyptTempleMechanisms = createEgyptTempleMechanisms();
+world.add(egyptTempleMechanisms.root); colliders.push(...egyptTempleMechanisms.colliders); layout.markers.push(...egyptTempleMechanisms.markers);
+egyptTempleMechanisms.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) egyptTempleMechanisms.dispose(); });
+const egyptWaterPlanLandscape = createEgyptWaterPlanLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptWaterPlanLandscape.root); colliders.push(...egyptWaterPlanLandscape.colliders); layout.markers.push(...egyptWaterPlanLandscape.markers);
+egyptWaterPlanLandscape.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) egyptWaterPlanLandscape.dispose(); });
+const egyptRiverConsequences = createEgyptRiverConsequences((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(egyptRiverConsequences.root); colliders.push(...egyptRiverConsequences.colliders);
+addEventListener('pagehide', event => { if (!event.persisted) egyptRiverConsequences.dispose(); });
+const winterCivilLandscape = createWinterCivilLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(winterCivilLandscape.root); colliders.push(winterCivilLandscape.collider); layout.markers.push(...winterCivilLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) winterCivilLandscape.dispose(); });
+const winterCustomsWorks = createWinterCustomsWorks();
+world.add(winterCustomsWorks.root); colliders.push(...winterCustomsWorks.colliders); targets.push(...winterCustomsWorks.targets); layout.markers.push(...winterCustomsWorks.markers);
+winterCustomsWorks.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
+addEventListener('pagehide', event => { if (!event.persisted) winterCustomsWorks.dispose(); });
+const blackSailCivilLandscape = createBlackSailCivilLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+world.add(blackSailCivilLandscape.root); colliders.push(blackSailCivilLandscape.collider); layout.markers.push(...blackSailCivilLandscape.markers);
+addEventListener('pagehide', event => { if (!event.persisted) blackSailCivilLandscape.dispose(); });
+const qinCommandLandscape = createQinCommandLandscape();
+world.add(qinCommandLandscape.root); colliders.push(...qinCommandLandscape.colliders); layout.markers.push(...qinCommandLandscape.markers);
+worldJourneyMarkerIds.add(QIN_COMMAND_RETURN);
+addEventListener('pagehide', event => { if (!event.persisted) qinCommandLandscape.dispose(); });
+const qinSurveyGallery = createQinSurveyGallery(); world.add(qinSurveyGallery.root); colliders.push(qinSurveyGallery.collider);
+addEventListener('pagehide', event => { if (!event.persisted) qinSurveyGallery.dispose(); });
 const culturalGround = (x: number, z: number, ceiling: number) => residentQueries.ground(x, z, ceiling)?.point.y ?? null;
 const culturalClear = (p: THREE.Vector3) => residentQueries.clear(p, .38, 1.8);
 const orleansShadowPlay = createOrleansShadowPlay(culturalGround, culturalClear);
@@ -677,7 +831,27 @@ if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world
 const homeGrassRoutes=HOME_ROUTES.map(r=>({region:'alpha' as const,length:0,points:r.points.map(p=>[p[0]+720,p[1],p[2]] as [number,number,number])}));
 const homeGrassBuildings=HOME_BUILDINGS.map(h=>[h.p[0]+720-h.w/2-1,h.p[2]-h.d/2-1,h.p[0]+720+h.w/2+1,h.p[2]+h.d/2+1] as const);
 const homeGrassCourts=HOME_SITES.filter(s=>['square','garden','practice','park'].includes(s.id)).map(s=>[s.position[0]+720,s.position[2],s.radius,s.radius] as const);
-const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway,...homeGrassRoutes],[...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE,...homeGrassBuildings],[...ORLEANS_PAVED_COURTS,...homeGrassCourts]) }) : null;
+const civilGrassPlans = [
+  { region: 'blacksail' as const, rectangles: BLACKSAIL_CIVIL_CLEARANCE, paths: BLACKSAIL_CIVIL_PATHS },
+  { region: 'winter' as const, rectangles: WINTER_CIVIL_CLEARANCE, paths: WINTER_CIVIL_PATHS },
+  { region: 'kyoto' as const, rectangles: KYOTO_CIVIL_CLEARANCE, paths: KYOTO_CIVIL_PATHS },
+  { region: 'egypt' as const, rectangles: EGYPT_RIVERWORKS_CLEARANCE, paths: EGYPT_RIVERWORKS_PATHS },
+];
+const civilGrassCourts = civilGrassPlans.flatMap(plan => {
+  const def = REGIONS.find(region => region.id === plan.region)!;
+  return plan.rectangles.map(([x0, z0, x1, z1]) => {
+    const a = regionToWorld(def, x0, z0), b = regionToWorld(def, x1, z1);
+    return [Math.min(a[0], b[0]), Math.min(a[1], b[1]), Math.max(a[0], b[0]), Math.max(a[1], b[1])] as const;
+  });
+});
+const civilGrassRoutes = civilGrassPlans.flatMap(plan => {
+  const def = REGIONS.find(region => region.id === plan.region)!;
+  return plan.paths.map(path => ({ region: plan.region, length: 0, points: path.map(([x, z]) => {
+    const p = regionToWorld(def, x, z); return [p[0], 0, p[1]] as [number, number, number];
+  }) }));
+});
+const westDiversionGrassRoute = { width: 12, points: EGYPT_WEST_DIVERSION.map(([x, y, z]): [number, number, number] => [-x, y, -1440 - z]) };
+const grass = !lowQ && !params.has('nograss') ? makeGrassField(grid, settlementBlockers, layout.world.waterLevel, { count: highQ ? 160000 : 80000, size: highQ ? 90 : 68, excluded: settlementGrassClearance(grid, settlements.placements, [...settlementApproaches.routes,kingdomGateScene.walkway,...valleyTransportLandscape.routes,...homeGrassRoutes,...civilGrassRoutes,westDiversionGrassRoute],[...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE, ...ARMORY_WORKSHOP.clearance, ...PARALLAX_CLEARANCE, ...EXPANSION_GRASS_CLEARANCE,...homeGrassBuildings,...civilGrassCourts],[...ORLEANS_PAVED_COURTS,...homeGrassCourts]) }) : null;
 if (grass) scene.add(grass.mesh);
 scene.add(makeUpdrafts(layout.updrafts ?? []));
 // 各时代的空气：幻日谷花粉、落日王国落叶、黑帆浪沫与雨线、永冬飘雪、京都余烬与落樱。
@@ -708,6 +882,22 @@ const exploration=createExploration({done,save:()=>save(),toast:text=>toast(text
 // 环境生灵：蝴蝶、飞鸟与萤火，按时代各不相同（3 次绘制，无碰撞，无玩法影响）。
 const ambientLife=createAmbientLife({terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel});world.add(ambientLife.root);addEventListener('pagehide',event=>{if(!event.persisted)ambientLife.dispose();});
 world.add(exploration.root);colliders.push(...exploration.colliders);layout.markers.push(...exploration.markers);
+const flagshipMovingArt: THREE.Object3D[] = [flagshipInterior.root, exploration.flagshipArt];
+parts.find(p => p.def.id === 'blacksail')!.root.getObjectByName('ART')!.traverse(node => {
+  if (node instanceof THREE.Mesh && (/^Flagship_/.test(node.name) || /^Sea_Core/.test(node.name))) flagshipMovingArt.push(node);
+});
+const flagshipGhostLink = { collider: colliders.find(c => c.name === 'COL_Ghost_Flagship_Link'),
+  art: parts.find(p => p.def.id === 'blacksail')!.root.getObjectByName('Ghost_Flagship_Link') };
+const flagshipMovingMarkers = layout.markers.filter(m => ['sea_core', 'boss_drowned_admiral', 'disc_flagship', 'adventure_harbor_records', 'adventure_harbor_alarm'].includes(m.id));
+const flagshipNavigation = createFlagshipNavigation({ world, art: flagshipMovingArt, link: flagshipGhostLink,
+  colliders: colliders.filter(c => c.name === 'COL_Flagship_Hull' || c.name === 'COL_FlagshipHold'),
+  points: [...flagshipMovingMarkers.map(m => m.p), recordAction.p, adventureSites.actions.get(alarmMarker.id)!.p], done,
+  commit(flag) { if (done.has(flag)) return true; done.add(flag); if (!save()) { done.delete(flag); return false; } hudRevision++; return true; },
+});
+colliders.push(...flagshipNavigation.colliders); layout.markers.push(...flagshipNavigation.markers);
+flagshipNavigation.markers.forEach(m => worldJourneyMarkerIds.add(m.id));
+addEventListener('pagehide', event => { if (!event.persisted) flagshipNavigation.dispose(); });
+
 // 野外草药：每个时代一种回复植物，长在据点、秘境、决斗场与精英巢穴附近；战斗中走过即回复 25 生命，90 秒后再生。
 const fieldHerbs=createFieldHerbs({terrain:(x,z)=>grid.sampleHeight(x,z)??0,waterLevel:layout.world.waterLevel,
   blocked:(x,z)=>{const hit=residentQueries.ground(x,z);return !!hit&&hit.point.y-(grid.sampleHeight(x,z)??0)>.45;},
@@ -738,7 +928,7 @@ const fortCannon = new FortCannon();
 const audio = new WorldAudio();
 const travelStops = createSafeTravelStops(settlements.placements);
 travelStops.push({id:'travel_home',region:'home',name:['归乡广场 · 家','Homeward Square · Home'],position:[570,16.1,40],foundFlag:'travel_home',radius:12});
-for (const [region, id, name] of [['egypt', JOURNEY.egyptRead, ['埃及绿洲', 'Egyptian Oasis']], ['orleans', JOURNEY.orleansRead, ['奥尔良集市', 'Orleans Market']], ['qin', JOURNEY.qinRead, ['秦国工匠镇', 'Qin Workers’ Town']]] as const) {
+for (const [region, id, name] of [['egypt', JOURNEY.egyptRead, ['埃及 · 搁浅渡口', 'Egypt · Stranded Landing']], ['orleans', JOURNEY.orleansRead, ['奥尔良集市', 'Orleans Market']], ['qin', JOURNEY.qinRead, ['秦国工匠镇', 'Qin Workers’ Town']]] as const) {
   const marker = markers.get(id);
   if (marker) travelStops.push({ id: `travel_${region}`, region, name: [...name], position: [marker.p[0], marker.p[1] - .92, marker.p[2]], foundFlag: `travel_${region}`, radius: 10 });
 }
@@ -833,6 +1023,19 @@ function journeyGuide() {
     if (p) return { region: fight.id, targetId, p, title: fight.definition.title,
       text: (station ? fight.stationText(station) : ['躲开标线，攻击战场上的目标。', 'Evade the marked attack and shoot the exposed target.']) as [string, string] };
   }
+  if (here === 'egypt' && needsEgyptWaterPlan() && !selectedEgyptWaterPlan(done)) {
+    const targetId = EGYPT_WATER_PLAN.marker, p = markers.get(targetId)?.p;
+    if (p) return { region: 'egypt' as const, targetId, p, title: ['分水工程', 'River engineering'] as [string, string],
+      text: ['返回绿洲工程台，查看两岸通路并选定分水方案。', 'Return to the oasis planning table to inspect and select the bank works.'] as [string, string] };
+  }
+  if (here === 'egypt' && done.has(JOURNEY.egyptRead) && !done.has(JOURNEY.egyptWeir) && !done.has(ESB.evidence)) {
+    const targetId = !done.has(EWW.sign) ? EWW.sign : !done.has(EWW.pin) ? EWW.lever : ESB.survey;
+    const p = markers.get(targetId)?.p;
+    if (p) return { region: 'egypt' as const, targetId, p, title: ['向下找到上游', 'Follow the river upstream'] as [string, string],
+      text: (targetId === EWW.sign ? ['沿旧水车旁的石阶下行，看检修牌上的水痕。', 'Descend the stone stairs by the old waterwheel and examine the watermarks.']
+        : targetId === EWW.lever ? ['用定流阀抬起踏板，或从外缘绕行。把反涌引入侧池。', 'Raise the crossing at the valve or take the rim path. Divert the reverse flow into the side basin.']
+          : ['沿检修步道或乘太阳舟去神庙栈台，记录向上流动的河水。', 'Take the inspection walk or solar boat to the temple landing to record the rising river.']) as [string, string] };
+  }
   const guide = worldJourneyGuide(here, done);
   if (guide && here === 'alpha' && journeyDestinations(done).some(destination => destination.id === guide.region)) {
     const p = markers.get(JOURNEY_DISPATCH)?.p;
@@ -843,6 +1046,34 @@ function journeyGuide() {
   return guide && p ? { ...guide, p } : null;
 }
 function journeyMarkerActive(id: string) {
+  if (KINGDOM_ROAD_LABELS[id]) return kingdomRoadReady(id, done);
+  if (valleyMaintenanceLine.markers.some(m => m.id === id)) return valleyLineAvailable(done);
+  if (flagshipNavigation.markers.some(m => m.id === id)) return flagshipNavigation.active(id);
+  if (id === QIN_COMMAND_RETURN || id === ORLEANS_MOAT_BRACE) return !done.has(id);
+  if (id === KYOTO_MAP_WORK.roof) return done.has('fire_core') && done.has(KYOTO_WITNESS.reel) && !done.has(id);
+  if (id === KYOTO_MAP_WORK.grain) return done.has(KYOTO_WITNESS.gate) && !done.has(id);
+  if (EGYPT_WHEEL_LABELS.has(id)) {
+    if (id === EWW.valve) return !done.has(EWW.latch);
+    if (id === EWW.latch) return egyptWaterwheel.raised && !done.has(EWW.latch);
+    if (id === EWW.lever) return !done.has(EWW.pin);
+    if (id === EWW.liftLow || id === EWW.liftHigh || id === EWW.liftDeck) return done.has(EWW.pin) && !egyptWaterwheel.liftMoving;
+    return true;
+  }
+  if (SOLAR_BOAT_LABELS.has(id)) {
+    if (id === ESB.survey) return !done.has(ESB.evidence);
+    if (id === ESB.shield) return done.has(EH.brace) && egyptSolarBoat.aboard(player);
+    if (id === ESB.helm) return egyptSolarBoat.sailing && egyptSolarBoat.aboard(player);
+    return !egyptSolarBoat.sailing && !egyptSolarBoat.aboard(player);
+  }
+  if (WINTER_CUSTOMS_LABELS.has(id)) return id !== WCW.cart || !winterCustomsCartReleased(done);
+  if (EGYPT_TEMPLE_WORK_LABELS.has(id)) {
+    if (id === ETW.specimen) return !egyptTempleMechanisms.demonstrating;
+    if (id === ETW.seepage) return !done.has(ETW.shortcut);
+    if (id === ETW.sideLatch) return !done.has(ETW.shortcut) && egyptTempleMechanisms.sideOpen;
+    return !egyptTempleMechanisms.moving;
+  }
+  if (id === EGYPT_WATER_PLAN.marker) return done.has(JOURNEY.egyptWeir) && !activeRealmClimax && !combat.storyEncounter && !combat.bossStarted
+    && (needsEgyptWaterPlan() || !!selectedEgyptWaterPlan(done));
   if (VALLEY_COMMUNITY_STEPS.has(id)) return valleyCommunityReady(id, done);
   if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) return valleyInvestigationReady(id, done);
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) return fieldSideReady(id, done);
@@ -853,7 +1084,7 @@ function journeyMarkerActive(id: string) {
   if (realm) return realm.station === 'start' ? !activeRealmClimax && journeyClimaxReady(realm.region, done)
     : activeRealmClimax?.id === realm.region && activeRealmClimax.stationReady(realm.station);
   if (id === JOURNEY_DISPATCH) return journeyDestinations(done).length > 0;
-  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT) return insideSkyCrown(player.pos) && done.has(JOURNEY.skyCourt) && !helionFight.active;
+  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT || id === SKY_LIFT.cabin) return insideSkyCrown(player.pos) && done.has(JOURNEY.skyCourt) && !helionFight.active;
   if (id === SKY_MARKERS.cache) return insideSkyCrown(player.pos) && !helionFight.active;
   if (id === SKY_MARKERS.westAmmo || id === SKY_MARKERS.eastAmmo) return insideSkyCrown(player.pos) && done.has(JOURNEY.isolate);
   if (id === SKY_MARKERS.aid) return insideSkyCrown(player.pos) && !!availableSkySupport();
@@ -863,8 +1094,19 @@ function journeyMarkerActive(id: string) {
   return journeyStepReady(id, done);
 }
 function interactionLabel(marker: Marker) {
+  if (KINGDOM_ROAD_LABELS[marker.id]) return bilingual(...KINGDOM_ROAD_LABELS[marker.id]);
+  if (marker.id === ESB.helm) {
+    if (egyptSolarBoat.atFork) return bilingual('太阳舟 · 选择岔路', 'Solar boat · Choose a channel');
+    return egyptSolarBoat.moored ? bilingual('太阳舟 · 松开制动，继续航行', 'Solar boat · Release the brake and continue')
+      : bilingual('太阳舟 · 拉住制动，停船', 'Solar boat · Pull the brake to stop');
+  }
+  const solarBoat = SOLAR_BOAT_LABELS.get(marker.id); if (solarBoat) return bilingual(...solarBoat);
+  const wheel = EGYPT_WHEEL_LABELS.get(marker.id); if (wheel) return bilingual(...wheel);
+  const customsWork = WINTER_CUSTOMS_LABELS.get(marker.id); if (customsWork) return bilingual(...customsWork);
+  const templeWork = EGYPT_TEMPLE_WORK_LABELS.get(marker.id); if (templeWork) return bilingual(...templeWork);
   if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(marker.id)) return bilingual(...KINGDOM_WORK_LABELS[marker.id as KingdomWork]);
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(marker.id)) {
+    if (marker.id === EGYPT_WATER_PLAN.marker) return bilingual('分水工程台 · 预览、修改与出发前存档', 'River works · Preview, revise and predeparture save');
     const community = VALLEY_COMMUNITY_STEPS.get(marker.id);
     if (community) return bilingual(...community.label);
     const investigation = VALLEY_INVESTIGATION_STEPS.get(marker.id)?.label ?? (marker.id === WW.restore ? VALLEY_WATER_RESTORE : undefined);
@@ -883,7 +1125,7 @@ function interactionLabel(marker: Marker) {
       return line ? bilingual(...line) : marker.label;
     }
     if (marker.id === JOURNEY_DISPATCH) return bilingual(marker.label, 'Dispatch · Egypt, Orleans and Qin');
-    if (marker.id === SKY_UP_LIFT || marker.id === SKY_DOWN_LIFT) return bilingual(marker.label, marker.id === SKY_UP_LIFT ? 'Service lift · Observation hall' : 'Service lift · Clear Sky Court');
+    if (marker.id === SKY_UP_LIFT || marker.id === SKY_DOWN_LIFT || marker.id === SKY_LIFT.cabin) return bilingual(marker.label, marker.id === SKY_LIFT.cabin ? 'Service lift · Travel to the other floor' : marker.id === SKY_UP_LIFT ? 'Service lift · Call upper floor' : 'Service lift · Call lower floor');
     const step = journeyStepById.get(marker.id);
     if (step) return bilingual(marker.label, step.text[1]);
     if (marker.id === SKY_MARKERS.start) return bilingual(marker.label, 'Face Helion');
@@ -941,10 +1183,21 @@ function applyWorldState() {
   if (typeof valleyPrologueScene !== 'undefined') valleyPrologueScene?.apply(valleyPrologueStage(done), done);
   if (typeof worldJourneySites !== 'undefined') { worldJourneySites?.apply(done); skyCrown.apply(done); }
   if (typeof valleyFieldScene !== 'undefined') valleyFieldScene?.apply(done);
+  if (typeof orleansEastMoat !== 'undefined') orleansEastMoat.apply(done);
+  if (typeof qinCommandLandscape !== 'undefined') qinCommandLandscape.apply(done);
+  if (typeof orleansSiegeLandscape !== 'undefined') orleansSiegeLandscape.apply(done);
+  if (typeof egyptConfluenceLandscape !== 'undefined') egyptConfluenceLandscape.apply(done);
+  if (typeof egyptWaterPlanLandscape !== 'undefined') egyptWaterPlanLandscape.apply(done);
+  egyptRiverConsequences.apply(done);
+  egyptTempleMechanisms.apply(done, 0);
+  if (typeof egyptWaterwheel !== 'undefined') egyptWaterwheel.apply(done, 0);
+  egyptSolarBoat.showRepairedShield(done.has(EH.brace), done.has(ESB.shieldRaised));
+  winterCustomsWorks.apply(done, 0);
   if (typeof fieldSideSites !== 'undefined' && typeof player !== 'undefined') fieldSideSites?.apply(done, 0, player.pos);
   if (typeof valleyInvestigations !== 'undefined') valleyInvestigations?.apply(done);
   if (typeof valleyCommunity !== 'undefined' && typeof player !== 'undefined') valleyCommunity?.update(done, 0, player.pos);
   if (typeof realmClimaxSites !== 'undefined') realmClimaxSites?.apply(done);
+  if (typeof kingdomRoadLandscape !== 'undefined') kingdomRoadLandscape.apply(done);
   if (typeof kingdomWorksScene !== 'undefined') kingdomWorksScene?.apply(done);
   applyCampaignState();
   applyFalseDawnState();
@@ -957,9 +1210,15 @@ function applyWorldState() {
   if(typeof egyptMirrors!=='undefined')egyptMirrors.apply(done);
   if(typeof homeTown!=='undefined')homeTown?.apply();
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress,adventureRuntime?.reliefProgress);
+  valleyMaintenanceLine.apply(done);
+  flagshipNavigation.update(0, player, true);
+  flagshipMastBridge.apply(done, 0, undefined, 0, flagshipNavigation.floating);
+  kyotoStreetLandscape.apply(done, 0);
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
+    if (t.userData.target === WCW.pin) continue;
+    if (FLAGSHIP_WORK_IDS.has(t.userData.target) || KYOTO_STREET_IDS.has(t.userData.target)) continue;
     if(t.userData.realmClimax || (typeof IB !== 'undefined' && t.userData.target === IB.pin) || (typeof EH !== 'undefined' && t.userData.target === EH.pin)) continue;
     const id = t.userData.target as string;
     if (typeof KYOTO_WITNESS !== 'undefined' && (id === KYOTO_WITNESS.cut || id === KYOTO_WITNESS.pin)) continue;
@@ -1218,6 +1477,8 @@ function updateCold(dt: number) {
 
 // ───────────── player / input ─────────────
 const player = new Player(colliders, layout.world.waterLevel);
+player.isDrySpace = insideValleyFoundation;
+player.waterSurfaceAt = position => egyptRiverConsequences.waterSurfaceAt(position);
 if (typeof applyExplorationGlide === 'function') applyExplorationGlide(); // guarded: validation runs isolated slices of this file
 player.updrafts = layout.updrafts ?? [];
 const initialSpawn = markers.get(INITIAL_SPAWN_ID)!;
@@ -1520,7 +1781,7 @@ function resetProgress() {
   clearStartOverrides(params);
   const url = new URL(location.href); clearStartOverrides(url.searchParams);
   try { history.replaceState(history.state, '', url.href); } catch { /* Restricted embedding may prohibit URL writes. */ }
-  companionRegroupUntil = 0; actions?.reset(); fortCannon.reset(); contract.reset(); combat.reset();
+  companionRegroupUntil = 0; actions?.reset(); fortCannon.reset(); egyptSolarBoat.reset(); egyptWaterwheel.reset(); egyptTempleMechanisms.resetSideDoor(); contract.reset(); combat.reset();
   spawn = (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.spawn) || initialSpawn;
   player.restartAt(spawn.p[0], spawn.p[1] + 1, spawn.p[2], 0);
   prevPos.copy(player.pos); rig.root.position.copy(player.pos);
@@ -1920,7 +2181,7 @@ function travelContext(): TravelContext {
   const threatened = combat.state.enemies.some(e => e.active && !e.pacified && e.mode !== 'dead' && Math.hypot(e.p.x-player.pos.x,e.p.z-player.pos.z)<28);
   return { sessionReady: !bootFailed && !worldExited && !graphicsRecovery?.blocked, defeated: combat.defeated, combatActive: combat.bossStarted || !!combat.storyEncounter || !!compactRelayRuntime?.active || (typeof helionFight !== 'undefined' && helionFight.active) || (typeof activeRealmClimax !== 'undefined' && !!activeRealmClimax), threatened, quietSeconds: combat.state.quietFor,
     flying: player.flying, gliding: player.gliding, swimming: player.swimming, onGround: player.onGround,
-    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding, actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
+    carrying: !!residentEventRuntime?.carrying||!!homeTown?.activities.carrying, mounted: fortCannon.mounted || !!fieldSideSites?.royalFerry?.riding || egyptSolarBoat.aboard(player), actionActive: !!(actions?.skills.casting || actions?.melee.active || actions?.evade.active) };
 }
 function executeSafeTravel(id: string) {
   if (bootFailed || worldExited || graphicsRecovery?.blocked) return false;
@@ -2241,7 +2502,73 @@ function stopRealmClimax() {
   fight.reset(); realmClimaxSites?.sites[fight.id].update(fight);
   activeRealmClimax = null; realmClimaxHud.hidden = true; hudRevision++;
 }
-function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'start') {
+// Existing chapter checkpoints keep their original configuration. New runs
+// choose physical works before committing their departure snapshot.
+function needsEgyptWaterPlan() {
+  return done.has(JOURNEY.egyptWeir) && !done.has(climaxCheckpoint('egypt', 0))
+    && !done.has(climaxCleared('egypt')) && !done.has(JOURNEY.egyptDone);
+}
+function atEgyptPlanInteraction(id: string) {
+  const marker = markers.get(id);
+  return !!marker && !combat.defeated && player.onGround && !player.flying && !player.swimming && !player.gliding
+    && !activeRealmClimax && !combat.storyEncounter && !combat.bossStarted && !helionFight.active
+    && player.pos.distanceTo(new THREE.Vector3(...marker.p)) <= (marker.radius ?? 3) && canReachValleyPanel(marker);
+}
+function interactEgyptWaterPlan() {
+  const id = EGYPT_WATER_PLAN.marker, speaker: [string, string] = ['分水工程台', 'River planning table'];
+  if (!atEgyptPlanInteraction(id)) return;
+  clearInput();
+  const current = selectedEgyptWaterPlan(done);
+  if (done.has(EGYPT_WATER_PLAN.locked)) {
+    let backup: string | null = null;
+    try {
+      const raw = progressStorage?.getItem(EGYPT_WATER_PLAN.backup);
+      const checkpoint = raw ? JSON.parse(raw) : null;
+      if (typeof checkpoint?.snapshot === 'string' && typeof checkpoint?.token === 'string' && done.has(checkpoint.token)) backup = checkpoint.snapshot;
+    } catch { /* Never offer an unreadable checkpoint or another playthrough's save. */ }
+    const expected = worldProgress.captureStoredSnapshot();
+    narrative?.showChoices([
+      `已出发，工程固定为「${current ? EGYPT_WATER_OPTIONS[current].label[0] : '原方案'}」。恢复出发前存档会撤销出发后的所有世界进度，并重新载入。`,
+      `The works are locked to “${current ? EGYPT_WATER_OPTIONS[current].label[1] : 'the original plan'}”. Restoring the predeparture save replaces ALL world progress since departure and reloads the game.`,
+    ], speaker, [
+      { id: 'keep', label: ['保留当前进度', 'Keep current progress'] },
+      ...(backup && expected ? [{ id: 'restore', label: ['恢复出发前存档', 'Restore predeparture save'] as [string, string] }] : []),
+    ], choice => {
+      if (choice !== 'restore' || !backup || !expected || !atEgyptPlanInteraction(id)) return;
+      if (worldProgress.restoreSnapshot(backup, expected) !== 'restored') {
+        toast(bilingual('未能恢复存档，当前进度未替换。', 'Restore failed; current progress was not replaced.')); return;
+      }
+      const url = new URL(location.href); clearStartOverrides(url.searchParams); location.replace(url.href);
+    });
+    return;
+  }
+  const choose = () => {
+    if (!atEgyptPlanInteraction(id) || done.has(EGYPT_WATER_PLAN.locked)) return;
+    egyptWaterPlanLandscape.preview(selectedEgyptWaterPlan(done));
+    narrative?.showChoices(['先看工程模型和代价，再确认施工。出发前可回来修改，公共准备不重置。',
+      'Inspect the model and tradeoffs before commissioning. You may revise before departure without losing shared preparation.'], speaker,
+    [...EGYPT_WATER_IDS.map(option => ({ id: option, label: EGYPT_WATER_OPTIONS[option].label })), { id: 'cancel', label: ['暂不修改', 'Leave unchanged'] }], choice => {
+      if (!atEgyptPlanInteraction(id) || done.has(EGYPT_WATER_PLAN.locked) || !EGYPT_WATER_IDS.includes(choice as EgyptWaterOption)) return;
+      const option = choice as EgyptWaterOption;
+      egyptWaterPlanLandscape.preview(option);
+      narrative?.showChoices(EGYPT_WATER_OPTIONS[option].description, EGYPT_WATER_OPTIONS[option].label,
+        [{ id: 'build', label: ['确认施工并保存', 'Commission and save'] }, { id: 'back', label: ['返回比较', 'Compare again'] }], action => {
+          if (!atEgyptPlanInteraction(id) || done.has(EGYPT_WATER_PLAN.locked)) { egyptWaterPlanLandscape.apply(done); return; }
+          if (action !== 'build') { choose(); return; }
+          const previous = EGYPT_WATER_IDS.filter(candidate => done.has(egyptWaterFlag(candidate)));
+          setEgyptWaterPlan(done, option);
+          if (!save()) {
+            for (const candidate of EGYPT_WATER_IDS) done.delete(egyptWaterFlag(candidate));
+            for (const candidate of previous) done.add(egyptWaterFlag(candidate));
+            toast(bilingual('方案未保存，保留原工程。请在设置中处理存档。', 'Plan not saved. Original works retained; check your save in Settings.'));
+          } else { audio.explore('solve'); toast(bilingual('两岸工程已更新，可前往现场查看。', 'Bank works updated. Visit the sites to inspect them.')); }
+          applyWorldState(); renderObjective();
+        });
+    });
+  };
+  choose();
+}
+function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'start', confirmedDeparture = false) {
   const site = realmClimaxSites?.sites[region];
   if (!site) return;
   if (station !== 'start') {
@@ -2251,6 +2578,33 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
     return;
   }
   if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || helionFight.active || activeRealmClimax) return;
+  if (region === 'egypt' && needsEgyptWaterPlan() && !done.has(EGYPT_WATER_PLAN.locked)) {
+    const option = selectedEgyptWaterPlan(done);
+    if (!option) {
+      toast(bilingual('先回绿洲工程台选定两岸方案。', 'Select the bank works at the oasis planning table first.')); renderObjective(); return;
+    }
+    if (!confirmedDeparture) {
+      clearInput();
+      narrative?.showChoices([
+        `${EGYPT_WATER_OPTIONS[option].description[0]} 出发将固定工程，并保留独立的出发前存档。`,
+        `${EGYPT_WATER_OPTIONS[option].description[1]} Departure locks the works and keeps a separate predeparture save.`,
+      ], ['汇水台 · 出发确认', 'Confluence · Confirm departure'],
+      [{ id: 'return', label: ['返回准备', 'Return to preparation'] }, { id: 'depart', label: ['保存方案并出发', 'Save plan and depart'] }], choice => {
+        if (choice === 'depart' && atEgyptPlanInteraction(climaxMarker('egypt', 'start')) && journeyClimaxReady('egypt', done)
+          && selectedEgyptWaterPlan(done) === option) operateRealmClimax('egypt', 'start', true);
+      });
+      return;
+    }
+    if (!atEgyptPlanInteraction(climaxMarker('egypt', 'start')) || worldProgress.saveBlocked || !progressStorage) return;
+    const departureToken = `egypt_water_departure_${crypto.randomUUID()}`;
+    try { progressStorage.setItem(EGYPT_WATER_PLAN.backup, JSON.stringify({ token: departureToken, snapshot: worldProgress.exportSnapshot() })); }
+    catch { toast(bilingual('无法保存出发前进度，尚未出发。', 'Could not save the predeparture checkpoint. Departure cancelled.')); return; }
+    done.add(EGYPT_WATER_PLAN.locked); done.add(departureToken);
+    if (!save()) {
+      done.delete(EGYPT_WATER_PLAN.locked); done.delete(departureToken); toast(bilingual('出发方案未保存，请重试。', 'Departure plan could not be saved. Please retry.')); return;
+    }
+    applyWorldState();
+  }
   const fight = createRealmClimax(region, site.origin, { done,
     save(flag) {
       done.add(flag); saveJourneyProgress(); hudRevision++; audio.explore('solve');
@@ -2260,7 +2614,7 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
       } else combat.refillAmmo();
     },
     hurt: damage => {
-      if (region === 'egypt' && fieldSideSites?.egypt.shieldBlocksWater(site.origin, player.pos)) {
+      if (region === 'egypt' && (fieldSideSites?.egypt.shieldBlocksWater(site.origin, player.pos) || egyptWaterPlanLandscape.blocksSurge(site.origin, player.pos))) {
         audio.explore('rotate');
         toast(bilingual('折板把水压推向侧渠。', 'The shield diverts the surge into the side channel.'));
         return;
@@ -2560,6 +2914,57 @@ const winterFieldChoices: Readonly<Record<string, readonly { id: string; flag: s
   ],
 };
 function interactFieldSide(id: string) {
+  if (id === OF.bell.handoff) {
+    const handoff = commitJourneyStep(JOURNEY.orleansFlag, done);
+    if (handoff) { saveJourneyProgress(); audio.bell(); toast(bilingual(...handoff)); }
+    return;
+  }
+  if (id === OF.rescue.approach && (down('aim') || down('fire') || combat.state.quietFor < 1.2)) {
+    toast(bilingual('把枪口放低，等壕沟里再次敲盾。', 'Lower your weapon and wait for another tap from the ditch.'));
+    return;
+  }
+  if (id === OF.rescue.help || id === OF.timber.trim) {
+    const step = FIELD_SIDE_STEPS.get(id)!;
+    const rescue = id === OF.rescue.help;
+    const options: { id: string; label: [string, string] }[] = rescue
+      ? [{ id: 'lift', label: ['抬梁救人', 'Lift the beam'] }, { id: 'call', label: ['举旗叫医护', 'Signal the medics'] }]
+      : [{ id: 'left', label: ['砝码向左一格', 'Slide the weight left one notch'] },
+        { id: 'right', label: ['砝码向右一格', 'Slide the weight right one notch'] }];
+    clearInput();
+    narrative?.showChoices(rescue ? step.line : ['看白线的位置，再移动一格。', 'Watch the white marks and move one notch.'], step.label, options, choice => {
+      if (!canCommitFieldChoice(id) || !options.some(option => option.id === choice)) return;
+      if (!rescue && !fieldSideSites?.orleans.moveWeight(choice === 'right' ? 1 : -1)) {
+        toast(bilingual('白线仍未合拢，再调一格。', 'The marks still do not line up. Move another notch.'));
+        return;
+      }
+      if (rescue) done.add(choice === 'call' ? OF.rescue.medic : OF.rescue.beam);
+      done.add(id); saveJourneyProgress(); audio.explore('solve');
+      toast(bilingual(...step.line));
+    });
+    return;
+  }
+  if (id === OF.rescue.exchange && !fieldSideSites?.orleans.stretcherArrived) {
+    toast(bilingual('等担架到达接收棚。', 'Wait for the stretcher to reach the shelter.'));
+    return;
+  }
+  if (id === QIN_FIELD.range.start) {
+    if (fieldSideSites?.qin.startRange())
+      toast(bilingual('第一令开始。看地面的亮线。', 'First order. Watch the lit line on the floor.'));
+    return;
+  }
+  if (id === QIN_FIELD.cart.push) {
+    if (fieldSideSites?.qin.startCart())
+      toast(bilingual('跟在车边，把小车送到轨道尽头。', 'Stay beside the cart until it reaches the end of the rail.'));
+    return;
+  }
+  if (id === QIN_FIELD.cart.cache) {
+    if (!worldProgress.armed || combat.refillAmmo(24) <= 0) {
+      toast(bilingual('弹药留给需要的时候。', 'Leave the ammunition until you need it.'));
+      return;
+    }
+    done.add(id); saveJourneyProgress(); audio.explore('pickup');
+    return;
+  }
   if (id === EG.settle && !fieldSideSites?.egypt.herdSafe) {
     toast(bilingual('最后一只羊还在上坡。', 'The last goat is still on its way uphill.'));
     return;
@@ -2843,8 +3248,245 @@ function interactFieldSide(id: string) {
     : step.line;
   speakDialogue(line, title);
 }
+const winterCustomsAmmoAt = new Map<string, number>();
+function releaseWinterCustomsCart(id: string) {
+  if (winterCustomsCartReleased(done)) return;
+  done.add(id);
+  if (!save()) { done.delete(id); toast(bilingual('保存失败，粮车保持原位，请重试。', 'Save failed. The cart stays in place; please retry.')); return; }
+  applyWorldState(); audio.interaction();
+  toast(bilingual('空粮车开始滑向广场。离开车头，让它成为侧向掩体；两条渡口路仍然开放。',
+    'The empty cart rolls into the square. Clear its front and use it as cover; both crossing routes remain open.'));
+}
+function interactWinterCustoms(id: string) {
+  const marker = markers.get(id);
+  if (!marker || player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2.3) || !canReachValleyPanel(marker)) return;
+  if (id === WCW.cart) { releaseWinterCustomsCart(id); return; }
+  const now = performance.now(), elapsed = now - (winterCustomsAmmoAt.get(id) ?? -Infinity);
+  if (elapsed < 20000) { toast(bilingual('正在整理下一盒弹药，稍后再来。', 'The next ammunition box is being prepared. Return shortly.')); return; }
+  const rounds = combat.refillAmmo(30);
+  if (rounds > 0) { winterCustomsAmmoAt.set(id, now); audio.interaction(); toast(bilingual(`基础弹药 +${rounds}。此处不补充手雷。`, `Basic ammunition +${rounds}. This cache does not replenish grenades.`)); }
+  else toast(bilingual('基础弹药已充足。', 'Basic ammunition is already full.'));
+}
+function interactEgyptTempleWorks(id: string) {
+  const marker = markers.get(id);
+  if (!marker || player.pos.distanceTo(new THREE.Vector3(...marker.p)) > (marker.radius ?? 2.3) || !canReachValleyPanel(marker)) return;
+  if (id === ETW.specimen) {
+    if (egyptTempleMechanisms.demonstrate()) toast(bilingual('看两侧石翼先落入承接槽，再看中央门下沉。两种动作各有自己的机构。',
+      'Watch the wings settle into their channels before the center gate sinks. They have separate mechanisms.'));
+    return;
+  }
+  if (id === ETW.seepage) {
+    egyptTempleMechanisms.drainSeepage(); audio.interaction();
+    toast(bilingual('渗水停了。穿过抬起的侧门，到另一侧插上止回销。',
+      'The seepage stops. Cross under the raised gate and set the pin on the other side.'));
+    return;
+  }
+  if (id === ETW.sideLatch) {
+    done.add(ETW.shortcut);
+    if (!save()) {
+      done.delete(ETW.shortcut);
+      toast(bilingual('止回销未保存，请重试。', 'The side-gate pin could not be saved. Please retry.'));
+      return;
+    }
+    applyWorldState(); audio.explore('solve');
+    toast(bilingual('止回销已锁定。外侧楼梯现在连通下层工作院和上层柱廊。',
+      'The pin holds. The outer stairs now connect the lower court and upper gallery.'));
+    return;
+  }
+  if (egyptTempleMechanisms.moving) return;
+  const wasRaised = done.has(ETW.raised);
+  if (wasRaised) done.delete(ETW.raised); else done.add(ETW.raised);
+  if (!save()) {
+    if (wasRaised) done.add(ETW.raised); else done.delete(ETW.raised);
+    toast(bilingual('没有保存成功，浮架保持原位。请重试。', 'Save failed. The barge remains in its previous position; please retry.')); return;
+  }
+  applyWorldState(); audio.interaction();
+  toast(wasRaised ? bilingual('祭舟正在降下，落稳后可从下层侧坡登舟；有人在船底时会停止下降。',
+    'The barge is lowering. Board from the lower gangway once it settles. It stops if someone is underneath.')
+    : bilingual('祭舟正在升起，落稳后两端连接上层柱廊。原有双楼梯仍然可走。',
+      'The barge is rising. Once secured, its ends join the upper gallery. Both permanent stairs remain open.'));
+}
+function saveEgyptWheelAction(id: string) {
+  if (done.has(id)) return false;
+  done.add(id);
+  if (!save()) {
+    done.delete(id);
+    toast(bilingual('机关状态未保存，请重试。', 'The mechanism state could not be saved. Please retry.'));
+    return false;
+  }
+  applyWorldState();
+  return true;
+}
+function divertEgyptWheel() {
+  if (!saveEgyptWheelAction(EWW.pin)) return false;
+  toast(bilingual('反涌已改走侧池，引水浮架恢复工作。沿石阶到浮架，登上后扳动牵索即可升到高渠；旁边的楼梯也可通行。',
+    'The reverse flow now powers the water lift. Follow the stairs to its lower landing, board, then work the rope to rise to the high channel. The permanent stairs also remain open.'));
+  return true;
+}
+function interactEgyptWheel(id: string) {
+  const marker = markers.get(id);
+  if (!marker || player.pos.distanceTo(new THREE.Vector3(...marker.p)) >= (marker.radius ?? 2.2) || !canReachValleyPanel(marker)) return;
+  if (id === EWW.liftLow || id === EWW.liftHigh || id === EWW.liftDeck) {
+    if (!done.has(EWW.pin) || egyptWaterwheel.liftMoving) return;
+    const previous = done.has(EWW.liftRaised);
+    // Shore controls call an absent lift; a control beside a settled lift sends
+    // it to the other landing, just like the control on the deck.
+    const raised = !previous;
+    if (raised) done.add(EWW.liftRaised); else done.delete(EWW.liftRaised);
+    if (!save()) {
+      if (previous) done.add(EWW.liftRaised); else done.delete(EWW.liftRaised);
+      toast(bilingual('浮架状态未保存，保持原位。请重试。', 'The lift state could not be saved. It remains in place; please retry.')); return;
+    }
+    applyWorldState(); audio.interaction();
+    toast(raised ? bilingual('浮架正在升往高渠。落稳后北侧护栏打开。', 'The lift is rising to the high channel. The north barrier opens once it settles.')
+      : bilingual('浮架正在返回下层；下方有人时会停止下降。', 'The lift is returning to the lower landing. It stops if someone stands underneath.'));
+  } else if (id === EWW.valve) {
+    egyptWaterwheel.hold(); audio.interaction();
+    toast(bilingual('踏板正在升起。过渠后插上止回销；失足可沿槽底斜坡返回。',
+      'The crossing is rising. Set the pin on the far bank. If you slip, the ramp at the bottom leads back.'));
+  } else if (id === EWW.latch && egyptWaterwheel.raised) {
+    if (saveEgyptWheelAction(id)) {
+      audio.explore('solve'); toast(bilingual('止回销已固定，过渠踏板保持高位。', 'The locking pin holds the crossing in its raised position.'));
+    }
+  } else if (id === EWW.lever) {
+    if (divertEgyptWheel()) audio.interaction();
+  } else if (id === EWW.sign && (done.has(id) || saveEgyptWheelAction(id))) {
+    speakDialogue(['牌上刻着“泄水时向低处撤”。墙上的浅泥痕却越走越高。顺着低渠找到上游。',
+      'The sign reads “Retreat downhill during release.” The pale mud line climbs the wall. Follow the low channel to find what feeds it.'],
+    ['旧水车检修牌', 'Old waterwheel maintenance sign']);
+  }
+}
+function interactEgyptSolarBoat(id: string) {
+  const marker = markers.get(id);
+  const reachable = () => !!marker && journeyMarkerActive(id) && player.onGround && !player.flying && !player.swimming && !player.gliding && !combat.defeated
+    && player.pos.distanceTo(new THREE.Vector3(...marker.p)) < (marker.radius ?? 2.8) && canReachValleyPanel(marker);
+  if (!reachable()) return;
+  if (id === ESB.survey) { recordEgyptUpperWater(); return; }
+  if (id === ESB.shield) {
+    const previous = done.has(ESB.shieldRaised);
+    if (previous) done.delete(ESB.shieldRaised); else done.add(ESB.shieldRaised);
+    if (!save()) {
+      if (previous) done.add(ESB.shieldRaised); else done.delete(ESB.shieldRaised);
+      toast(bilingual('侧板状态未保存，请重试。', 'The panel state could not be saved. Please retry.')); return;
+    }
+    applyWorldState(); audio.interaction();
+    toast(previous ? bilingual('侧板已收在船舷外，侧向视野恢复。', 'The panel folds against the outer hull, clearing your side view.')
+      : bilingual('侧板已立起，可挡住这一侧的射击；船首和另一侧仍可射击。', 'The raised panel blocks shots from this side. The bow and opposite side remain clear.'));
+    return;
+  }
+  if (id === ESB.helm) {
+    if (egyptSolarBoat.atFork) {
+      clearInput();
+      narrative?.showChoices(['金色航标指向正渠，蓝色航标指向柱影水路。两条航线在下一段共用水渠汇合。',
+        'The gold beacon marks the main channel. The blue beacon marks the shaded channel. Both rejoin the shared channel.'], ['太阳舟', 'Solar boat'], [
+        { id: 'main', label: ['正渠 · 经过高架水堤', 'Main channel · Past the aqueduct'] },
+        { id: 'columns', label: ['柱影 · 穿过旧柱廊', 'Shaded channel · Through the colonnade'] },
+        { id: 'wait', label: ['暂留在分流口', 'Stay at the junction'] },
+      ], choice => {
+        if ((choice === 'main' || choice === 'columns') && reachable() && egyptSolarBoat.chooseRoute(choice)) audio.interaction();
+      });
+      return;
+    }
+    const stopped = egyptSolarBoat.workHelm(); audio.interaction();
+    toast(stopped ? bilingual('太阳舟已停。可从蓝色标记处跳上检修步道，或再次操作舵柄继续。', 'The solar boat has stopped. Jump to the inspection walk at a blue landing mark, or work the tiller to continue.')
+      : bilingual('制动已松开，太阳舟继续前行。', 'Brake released. The solar boat continues.'));
+    return;
+  }
+  const side = id === ESB.lower ? 0 : 1;
+  const blocked = getTravelSafetyBlock(travelContext());
+  if (blocked) { toast(bilingual(...TRAVEL_BLOCK_TEXT[blocked])); return; }
+  const result = egyptSolarBoat.board(side);
+  if (result === 'busy') return;
+  audio.interaction();
+  if (result === 'called') {
+    toast(bilingual('牵索已拉动。太阳舟正驶向这里。', 'The towline is moving. The solar boat is coming over.'));
+    return;
+  }
+  clearInput(); actions?.cancel();
+  const { x, y, z } = egyptSolarBoat.seat;
+  player.teleport(x, y, z); player.onGround = true; prevPos.copy(player.pos);
+  toast(bilingual('太阳舟已出发。到分流口后操作舵柄选航线。', 'The solar boat has departed. Work the tiller at the junction to pick a channel.'));
+}
+function recordEgyptUpperWater(route?: SolarBoatRoute) {
+  const flags = [ESB.evidence, ...(route ? [ESB.arrived, `${ESB.arrived}_${route}`] : [])].filter(flag => !done.has(flag));
+  if (!flags.length) return;
+  for (const flag of flags) done.add(flag);
+  if (!save()) {
+    for (const flag of flags) done.delete(flag);
+    toast(bilingual('逆流记录未能保存。可在栈台旁的观景台重新记录。', 'The flow observation could not be saved. Record it again at the overlook next to the landing.'));
+  } else if (flags.includes(ESB.evidence)) {
+    audio.explore('solve'); hudRevision++;
+    toast(bilingual('已记录：地面河水沿倒置的水道升入天河。', 'Recorded: the ground river rises into the sky along the inverted channel.'));
+  }
+}
+function finishSolarBoatRide(arrival: { point: THREE.Vector3; side: 0 | 1; route: SolarBoatRoute }) {
+  const { x, y, z } = arrival.point;
+  const floor = combat.geometry.ground(x, z, y + .8);
+  if (!floor || Math.abs(floor.point.y - y) > .45 || !combat.geometry.clear(floor.point, .38, 1.8)) {
+    toast(bilingual('太阳舟已靠岸。跳到旁边的栈台即可下船。', 'The solar boat has arrived. Jump onto the landing to disembark.'));
+    if (arrival.side === 1) recordEgyptUpperWater(arrival.route);
+    return;
+  }
+  player.teleport(x, floor.point.y + .06, z); prevPos.copy(player.pos);
+  toast(arrival.side === 1 ? bilingual('已到神庙后场。前方楼梯通往检修柱廊。', 'You reached the temple landing. The stairs lead to the maintenance galleries.')
+    : bilingual('已返回高渠栈台。沿检修梯回到地面。', 'You reached the lower landing. Take the maintenance stairs back to ground level.'));
+  if (arrival.side === 1) recordEgyptUpperWater(arrival.route);
+}
 function interactWorldJourney(id: string) {
+  if (KINGDOM_ROAD_LABELS[id]) {
+    if (!player.onGround || player.flying || combat.bossStarted || combat.storyEncounter || combat.defeated) return;
+    const before = new Set(done);
+    if (!commitKingdomRoad(id, done)) return;
+    if (!save()) { done.clear(); before.forEach(flag => done.add(flag)); toast(bilingual('施工令未保存，请重试。', 'The works order was not saved. Please retry.')); return; }
+    applyWorldState(); audio.interaction(); toast(bilingual(...KINGDOM_ROAD_LINES[id])); renderObjective(); return;
+  }
+  if (valleyMaintenanceLine.markers.some(m => m.id === id)) {
+    if (!valleyLineAvailable(done) || combat.bossStarted || combat.storyEncounter || combat.defeated || player.flying) return;
+    if (!done.has(VALLEY_LINE.restored)) {
+      done.add(VALLEY_LINE.restored); if (!save()) { done.delete(VALLEY_LINE.restored); return; }
+      valleyMaintenanceLine.apply(done);
+    }
+    if (valleyMaintenanceLine.operate(id)) { audio.interaction(); toast(bilingual('维护线已接通。到站后进入轿厢，操作车内摇柄前往另一站。', 'The maintenance line is connected. Board at the landing and use the cabin handle to travel.')); }
+    return;
+  }
+  if (flagshipNavigation.markers.some(m => m.id === id)) {
+    if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || combat.defeated || player.flying) return;
+    if (flagshipNavigation.operate(id, player)) {
+      audio.interaction();
+      toast(id === FLAGSHIP_NAV.fixed ? bilingual('旗舰留作固定渡港，舱内开放货仓。', 'The flagship stays as a fixed harbor with a public hold.')
+        : id === FLAGSHIP_NAV.shared ? bilingual('共同领航班次已经公开，两条航线可从轮舵启航。', 'Shared pilot schedules are posted. Both routes can be sailed from the wheel.')
+        : id === FLAGSHIP_NAV.stop ? bilingual('轮舵制动已切换。', 'The wheel brake has been toggled.')
+        : id === FLAGSHIP_NAV.recall ? bilingual('旗舰沿原航道返港。', 'The flagship is returning along its channel.')
+        : bilingual('旗舰出坞。甲板与下层船舱仍可走动；到礁口后沿原线返港。', 'The flagship leaves the dock. Both deck and hold remain walkable; it returns after reaching the reef mouth.'));
+    }
+    return;
+  }
   if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (id === KYOTO_MAP_WORK.roof || id === KYOTO_MAP_WORK.grain) {
+    done.add(id);
+    if (!save()) { done.delete(id); toast(bilingual('修复状态未保存，请重试。', 'The repair was not saved. Please retry.')); return; }
+    applyWorldState(); audio.interaction();
+    toast(id === KYOTO_MAP_WORK.roof ? bilingual('新瓦补住烧穿的屋顶，晾纸廊重新挂起了布帘。', 'New tiles close the burned roof and cloth hangs over the drying porch again.')
+      : bilingual('钥匙由两方副官与街坊共同封存，民粮已移到公开交接位。', 'The officers and residents jointly seal the keys. The grain is at the public handover point.')); return;
+  }
+  if (id === ORLEANS_MOAT_BRACE) {
+    done.add(id);
+    if (!save()) { done.delete(id); toast(bilingual('承重索状态未保存，请重试。', 'The bracing was not saved. Please retry.')); return; }
+    applyWorldState(); audio.interaction();
+    toast(bilingual('承重索已张紧。等护栏打开后通过倒树，西侧土坡仍可绕行。', 'The bracing is taut. Cross the trunk once the rails open, or use the west flank.')); return;
+  }
+  if (id === QIN_COMMAND_RETURN) {
+    done.add(id);
+    if (!save()) { done.delete(id); toast(bilingual('工道状态未保存，请重试。', 'The passage state was not saved. Please retry.')); return; }
+    applyWorldState(); audio.interaction();
+    toast(bilingual('铜闸已从内侧解开。沿工道可返回采石场，途中可进入军阵西侧静室。', 'The bronze gate is unlatched from inside. The service passage returns to the quarry, with a turn into the quiet room west of the ranks.')); return;
+  }
+  if (!journeyMarkerActive(id) || !player.onGround || player.flying || player.swimming || player.gliding || combat.defeated) return;
+  if (EGYPT_WHEEL_LABELS.has(id)) { interactEgyptWheel(id); return; }
+  if (SOLAR_BOAT_LABELS.has(id)) { interactEgyptSolarBoat(id); return; }
+  if (WINTER_CUSTOMS_LABELS.has(id)) { interactWinterCustoms(id); return; }
+  if (EGYPT_TEMPLE_WORK_LABELS.has(id)) { interactEgyptTempleWorks(id); return; }
+  if (id === EGYPT_WATER_PLAN.marker) { interactEgyptWaterPlan(); return; }
   if (VALLEY_COMMUNITY_STEPS.has(id)) { interactValleyCommunity(id); return; }
   if (VALLEY_INVESTIGATION_STEPS.has(id) || id === WW.restore) { interactValleyInvestigation(id); return; }
   if (FIELD_SIDE_STEPS.has(id) || FIELD_SERVICE_LABELS.has(id)) { interactFieldSide(id); return; }
@@ -2859,9 +3501,9 @@ function interactWorldJourney(id: string) {
   if (id === F.drillDone && !valleyFieldScene?.drillReady()) {
     toast(bilingual('地面班组正在把两边带到广场。你也可以沿林线协助一处。','The crew is bringing both groups to the square. You can also help one along the forest route.')); return;
   }
-  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT) {
-    const checkpoint = skyJourneySpawn();
-    if (moveJourneyPlayer({ ...checkpoint, p: [...(id === SKY_UP_LIFT ? SKY_DOWN_LANDING : SKY_UP_LANDING)] })) spawn = checkpoint;
+  if (id === SKY_UP_LIFT || id === SKY_DOWN_LIFT || id === SKY_LIFT.cabin) {
+    if (skyCrown.serviceLift.operate(id)) audio.interaction();
+    else toast(bilingual('升降机正在运行，请在平台内等候。', 'The lift is moving. Wait inside the cabin.'));
     return;
   }
   if (id === JOURNEY_DISPATCH) {
@@ -2944,7 +3586,12 @@ function interactWorldJourney(id: string) {
   saveJourneyProgress();
   if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
   else if (id === JOURNEY.visitorDesk) speakDialogue(line, ['王城访客','Kingdom visitor']);
-  else { toast(bilingual(...line)); audio.interaction(); }
+  else {
+    const familyRoll = id === JOURNEY.qinHalt && done.has(QIN_FIELD.lists.seats);
+    toast(familyRoll ? bilingual('周弭确认：留给家属的座位已登记。工人都离开了转台。', 'Zhou Mi confirms the family seats are on the roll. All workers are clear of the turntables.')
+      : bilingual(...line));
+    audio.interaction();
+  }
 }
 function updateSkyJourney(dt: number, seconds: number) {
   const inSky = insideSkyCrown(player.pos);
@@ -2969,6 +3616,7 @@ function updateSkyJourney(dt: number, seconds: number) {
     helionFight.reset(); moveJourneyPlayer(skyJourneySpawn());
     toast(bilingual('已返回最近的天穹检查点。','Returned to the last Sky Crown checkpoint.'));
   }
+  skyCrown.serviceLift.update(inSky && playing ? dt : 0, player);
   skyCrown.updateApproach(inSky && playing ? dt : 0, player.pos, damage => combat.state.applyExternalDamage(damage));
   if (helionFight.active && !atCrown) helionFight.reset();
   if (atCrown && playing) helionFight.update(dt, player.pos);
@@ -3047,7 +3695,9 @@ function shootCannon() {
   else if (validTarget) {
     const id = validTarget.object.userData.target as string;
     const required = validTarget.object.userData.needs as string | undefined;
-    if (id && (!required || done.has(required))) { done.add(id); save(); applyWorldState(); const reaction = getEraProgressReaction(id, done); if (reaction) toast(bilingual(...reaction)); }
+    if (id === WCW.pin) releaseWinterCustomsCart(id);
+    else if (FLAGSHIP_WORK_IDS.has(id) || KYOTO_STREET_IDS.has(id)) adventureRuntime?.hit(id);
+    else if (id && (!required || done.has(required))) { done.add(id); save(); applyWorldState(); const reaction = getEraProgressReaction(id, done); if (reaction) toast(bilingual(...reaction)); }
   }
   combat.shot(muzzle, point, !!(blocked || enemy || validTarget)); audio.cannon();
   hudRevision++;
@@ -3098,6 +3748,14 @@ function shoot() {
     toast(bilingual('回到炮位，用大炮瞄准幽灵小艇', 'Return to the gun deck and aim the cannon at the ghost boats'));
   } else if (questHit) {
     const id = questHit.object.userData.target as string;
+    if (typeof OF !== 'undefined' && id === OF.bell.shot) {
+      const hit = questHit.distance <= gun.range && fieldSideReady(id, done);
+      if (hit) {
+        done.add(OF.bell.roof); saveJourneyProgress(); combat.flashHitMarker(.14);
+        toast(bilingual(...FIELD_SIDE_STEPS.get(OF.bell.roof)!.line));
+      }
+      combat.shot(muzzle, point, hit); audio.shot(); return;
+    }
     if ((typeof IB !== 'undefined' && id === IB.pin) || (typeof EH !== 'undefined' && id === EH.pin)) {
       const hit = questHit.distance <= gun.range && fieldSideReady(id, done);
       if (hit) {
@@ -3134,6 +3792,12 @@ function shoot() {
       combat.shot(muzzle, point, true); audio.shot(); return;
     }
     if(typeof homeTown!=='undefined'&&homeTown?.activities.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
+    if (id === EWW.pin) {
+      const hit = questHit.distance <= Math.min(gun.range, 24) && divertEgyptWheel();
+      if (hit) combat.flashHitMarker(.14);
+      combat.shot(muzzle, point, hit); audio.shot(); return;
+    }
+    if (id === WCW.pin) { releaseWinterCustomsCart(id); combat.flashHitMarker(.14); combat.shot(muzzle,point,true); audio.shot(); return; }
     if(adventureRuntime?.hit(id)){const fun=[...adventureSites.fun.values()].find(f=>f.ids.includes(id));if(fun&&fun.ids.every(flag=>done.has(flag)))toast(bilingual(...fun.line));combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(id===KINGDOM_GATE.latch){kingdomGateRuntime?.unlock();combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     done.add(id);
@@ -3472,6 +4136,7 @@ function interact() {
   const missing = done.has(m.id) && bossCore ? [] : (m.requires ?? []).filter((r) => !done.has(r));
   if (missing.length) return toast(bilingual(`${m.label}：还需要 ${missing.map((r) => markers.get(r)?.label ?? r).join('、')}`, `${localizeText(m.label)}: requires ${missing.map((r) => localizeText(markers.get(r)?.label ?? '尚未完成的任务')).join(', ')}`));
   if (bossCore) {
+    if (m.id === 'sea_core' && flagshipNavigation.moving) return toast(bilingual('先等旗舰靠稳，再发起甲板挑战。', 'Wait for the flagship to dock before starting the deck challenge.'));
     if (typeof coop !== 'undefined' && coop.guest && !combat.bossStarted) return toast(bilingual('联机时由房主发起首领战，靠近首领场地即可一起加入。', 'In co-op the host starts boss fights; stay near the arena to join.'));
     if (!combat.beginBoss(m.id)) toast(bilingual('挑战正在进行 · 射击核心并闪避预警', 'Challenge active · Shoot the core and dodge the tells'));
     return;
@@ -3623,6 +4288,17 @@ function frame(now: number) {
   const ferry = fieldSideSites?.royalFerry;
   fieldSideSites?.setWorkboatBattle(combat.storyEncounter?.id === HARBOR_WORKBOAT_ENCOUNTER);
   fieldSideSites?.apply(done, gameplayActive() || narrative?.open ? dt : 0, player.pos);
+  const qinRange = fieldSideSites?.qin.readRangeResult();
+  const qinCartArrived = fieldSideSites?.qin.readCartArrival();
+  if (qinRange === 'success' || qinCartArrived) {
+    if (qinRange === 'success') done.add(QIN_FIELD.range.start);
+    if (qinCartArrived) done.add(QIN_FIELD.cart.push);
+    saveJourneyProgress(); audio.explore('solve');
+    toast(bilingual(...FIELD_SIDE_STEPS.get(qinCartArrived ? QIN_FIELD.cart.push : QIN_FIELD.range.start)!.line));
+  }
+  if (qinRange === 'hit' || qinRange === 'left')
+    toast(qinRange === 'hit' ? bilingual('练习箭击中，回起步线重试。', 'The practice bolt hit. Return to the start to try again.')
+      : bilingual('离开了校弩区，回起步线重试。', 'You left the gallery. Return to the start to try again.'));
   const chipOutcome = fieldSideSites?.readChipOutcome();
   if (chipOutcome) {
     if (chipOutcome.first && !done.has(CC.throw)) {
@@ -3668,6 +4344,20 @@ function frame(now: number) {
     if (combat.defeated) { input.x = input.z = 0; input.jump = input.sprint = false; }
     input.evade = active && actions?.evade.active ? { x: actions.evade.x, z: actions.evade.z, strength: Math.min(actions.evade.remaining, STEP) / STEP } : undefined;
     combat.setDefense({ guard: active && actions?.skills.guarding ? .55 : 1, invulnerable: !!(active && actions && actions.evade.remaining > .10) });
+    egyptSolarBoat.update(active ? STEP : 0, player);
+    const solarArrival = egyptSolarBoat.arrival;
+    if (solarArrival) finishSolarBoatRide(solarArrival);
+    egyptTempleMechanisms.apply(done, active ? STEP : 0, player);
+    egyptWaterwheel.apply(done, active ? STEP : 0, player);
+    winterCustomsWorks.apply(done, active ? STEP : 0, player);
+    valleyMaintenanceLine.update(STEP, player);
+    flagshipNavigation.update(STEP, player, !!combat.storyEncounter || combat.bossStarted);
+    const flagshipBoss = combat.state.enemies.find(e => e.id === 'boss_drowned_admiral');
+    const flagshipBossMarker = layout.markers.find(m => m.id === 'boss_drowned_admiral')!;
+    if (flagshipBoss && !combat.bossStarted) {
+      Object.assign(flagshipBoss.home, { x: flagshipBossMarker.p[0], y: flagshipBossMarker.p[1], z: flagshipBossMarker.p[2] });
+      if (flagshipNavigation.moving) Object.assign(flagshipBoss.p, flagshipBoss.home);
+    }
     if (!ferry?.riding) player.step(STEP, input);
     combat.simulate(STEP, player.pos, gameplayActive() && !player.flying);
     actions?.update(STEP);
@@ -3770,6 +4460,31 @@ function frame(now: number) {
   }
   updateSkyJourney(dt, now / 1000);
   valleyFieldScene?.update(gameplayActive() ? dt : 0, player.pos);
+  orleansEastMoat.apply(done, gameplayActive() ? dt : 0); orleansEastMoat.update(player.pos);
+  orleansSiegeLandscape.update(gameplayActive() ? dt : 0, player.pos);
+  qinSurveyGallery.update(player.pos); qinCommandLandscape.update(player.pos);
+  egyptRiverworksLandscape.update(player.pos);
+  egyptConfluenceLandscape.update(gameplayActive() ? dt : 0, player.pos);
+  egyptReedMarket.update(player.pos);
+  egyptTempleMaintenance.update(gameplayActive() ? dt : 0, player.pos);
+  egyptWaterwheel.update(gameplayActive() ? dt : 0, player.pos, done.has(EWW.pin));
+  egyptTempleMechanisms.root.visible = egyptTempleMaintenance.root.visible;
+  if (egyptTempleMechanisms.takeDemonstrationResult() && !done.has(ETW.learned)) {
+    done.add(ETW.learned);
+    if (!save()) { done.delete(ETW.learned); toast(bilingual('试件已演示，但记录未保存；可重新操作。', 'The demonstration finished, but its record was not saved. You can repeat it.')); }
+    else toast(bilingual('两翼成为护岸，中门收进床下，水从中央贯通。试件记录已保存。',
+      'The wings become banks; the center gate retracts below the bed and water passes through. Observation saved.'));
+    applyWorldState();
+  }
+  egyptWaterPlanLandscape.update(player.pos);
+  winterCivilLandscape.update(player.pos);
+  winterCustomsWorks.root.visible = winterCivilLandscape.root.visible;
+  blackSailCivilLandscape.update(player.pos);
+  valleyCivilLandscape.update(player.pos);
+  valleyTransportLandscape.update(player.pos);
+  valleyFoundationLandscape.update(player.pos);
+  kingdomAqueductLandscape.update(player.pos);
+  kingdomRoadLandscape.update(player.pos); kingdomRoadLandscape.apply(done, gameplayActive() ? dt : 0);
   updateRealmClimax(dt);
   // Drain authoritative hurt/victory events before deciding a channel completion.
   compactRelayRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!ultimateDirector?.active,inRange:compactRelayReachable(COMPACT_RELAY.controller),grounded:player.onGround&&!player.flying&&!player.gliding&&!player.swimming,moving:!!(input.x||input.z||input.jump)||relayLastPosition.distanceToSquared(player.pos)>.0004,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
@@ -3779,7 +4494,8 @@ function frame(now: number) {
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   homeTown?.update(dt,player.pos,gameplayActive(),regionVisuals.ready('home'));
-  servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive(), worldJourneySites?.lakeBrace(player.pos));
+  const lakeBrace = !contract.following || contract.following === 'saber' ? worldJourneySites?.lakeBrace(player.pos) : undefined;
+  servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive(), lakeBrace);
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
   updateEraActors(dt);
   modelCompanion.update(dt, player.pos, anim.facing - Math.PI, !!modelCompanion.selected && contract.isFollowing(modelCompanion.selected) && companionEnabled(), !gameplayActive());
@@ -3815,6 +4531,11 @@ function frame(now: number) {
   fieldHerbs.update(gameplayActive()?dt:0,player.pos,campaignField?fieldRegion:'alpha',campaignField&&gameplayActive()&&!combat.defeated);
   if(typeof fieldAmmo==='function')fieldAmmo();
   flagshipInterior.apply(done,now/1000);
+  flagshipDockLandscape.update(player.pos);
+  flagshipMastBridge.apply(done, gameplayActive() ? dt : 0, activeAdventure?.id, adventureRuntime?.progress, flagshipNavigation.floating);
+  kyotoStreetLandscape.apply(done, gameplayActive() ? dt : 0, player.pos);
+  const streetIntrusion = kyotoStreetLandscape.enteredWithoutPermit(player.pos, gameplayActive() && !combat.defeated && !player.flying, done);
+  if (streetIntrusion) adventureRuntime?.streetIntrusion(streetIntrusion);
   if(activeAdventure&&gameplayActive()){gateChannelHud.hidden=false;gateChannelHud.textContent=bilingual(`${activeAdventure.label[0]} ${Math.round((adventureRuntime?.progress??0)*100)}%`,`${activeAdventure.label[1]} ${Math.round((adventureRuntime?.progress??0)*100)}%`);}
   residentEventRuntime?.update(player.pos,player.gliding,gameplayActive()&&!combat.defeated);
   residentEventScene.apply(done,player.pos,now/1000,residentEventRuntime?.carrying??null,residentEventRuntime?.dial??0);
@@ -3973,7 +4694,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

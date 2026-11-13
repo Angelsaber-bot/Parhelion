@@ -1,5 +1,6 @@
 // Sunset Kingdom: authored Romance-Camelot art over unchanged gameplay collision and layout.
 import * as THREE from 'three';
+import { KINGDOM_SIDE_GATE_ANGLE, KINGDOM_SIDE_ROUTE, KINGDOM_ABBEY_ROUTE } from '../../../src/map/kingdomRoadPlan';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
@@ -247,7 +248,7 @@ export function buildBritain(heightAt: HeightAt) {
     const angDiff = (a: number, b2: number) => Math.abs(Math.atan2(Math.sin(a - b2), Math.cos(a - b2)));
     for (let i = 0; i < nSeg; i++) {
       const a = ((i + 0.5) / nSeg) * Math.PI * 2;
-      if (angDiff(a, CASTLE.gateA) < gateHalf) continue;
+      if (angDiff(a, CASTLE.gateA) < gateHalf || angDiff(a, KINGDOM_SIDE_GATE_ANGLE) < .055) continue;
       const x = cx + Math.cos(a) * R, z = cz + Math.sin(a) * R;
       const g = Math.min(y, lowest(x, z, 1.5));
       b.add(BOX, i % 2 ? C.wall : C.wallDark, T(x, (g - 2 + y + wallH) / 2, z, -a, 2.4, y + wallH - g + 2, segLen));
@@ -295,6 +296,7 @@ export function buildBritain(heightAt: HeightAt) {
       const a = range(rng, 0, Math.PI * 2), d = range(rng, 14, R - 9);
       const x = cx + Math.cos(a) * d, z = cz + Math.sin(a) * d;
       if (Math.hypot(x - KEEP.c[0], z - KEEP.c[1]) < 18 || Math.hypot(x - HALL.c[0], z - HALL.c[1]) < HALL.r + 8) continue;
+      if (distToPolyline(x, z, KINGDOM_SIDE_ROUTE) < 8 || distToPolyline(x, z, KINGDOM_ABBEY_ROUTE) < 8) continue;
       if (Math.hypot(x - cx, z - cz) < 12) continue; // market square
       // keep the gate street clear: distance to the line gate -> centre
       const gx = cx + Math.cos(CASTLE.gateA) * R, gz = cz + Math.sin(CASTLE.gateA) * R;
@@ -531,7 +533,7 @@ export function buildBritain(heightAt: HeightAt) {
     if (near(CASTLE.c, CASTLE.r + 6) || near(KCAMP.c, KCAMP.r + 4) || near(ISLET.c, ISLET.r + 2)) return true;
     if (near(CAMELOT_FAR.c, 44) || near([312, SEAM_Z], 18)) return true;
     if (Math.abs(x - ISLET.c[0]) < 4 && z > LAKE.c[1] - LAKE.r - 14 && z < ISLET.c[1]) return true;
-    for (const p of PATHS) if (distToPolyline(x, z, p) < 3.5) return true;
+    for (const p of [...PATHS, KINGDOM_SIDE_ROUTE, KINGDOM_ABBEY_ROUTE]) if (distToPolyline(x, z, p) < 5) return true;
     return false;
   };
   let nTree = 0;

@@ -18,6 +18,8 @@ export const ORLEANS_GRANGE={x:150,z:306} as const;
 /** The tower mill faces the town; the sails turn in a plane across that heading. */
 export const ORLEANS_WINDMILL={x:238,z:-204,yaw:Math.atan2(-.86,.5),hub:13.4,reach:4.4,sail:9.5} as const;
 export const ORLEANS_BASTILLE={x:292,z:-6,half:21} as const;
+/** Saint-Loup approach: excavated ditch and an independent west flank. */
+export const ORLEANS_EAST_MOAT = { x: 292, z: 46, halfWidth: 15, halfDepth: 8, depth: 3.6 } as const;
 
 /** Unpaved country lanes draped on the ground; they join the graded roads at grade. */
 export const ORLEANS_COUNTRY_LANES:readonly {id:string;name:readonly [string,string];points:readonly OutskirtsPoint2[]}[]=[

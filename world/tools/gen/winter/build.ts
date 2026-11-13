@@ -5,6 +5,7 @@ import { addGroundFooting } from '../footings.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
 import { conifer } from '../vegetation.js';
+import { winterCivilClearance, WINTER_CUSTOMS } from '../../../src/map/winterCivilPlan';
 import type { Marker, V2 } from '../layout.js';
 import {
   WINTER, ICE_Y, RIVER, RIVER_W, CROSSING, BIVOUAC, IMPERIAL_TENT, BEACONS, EAGLE, CITY, KREMLIN, BELL, REDSQ, BASIL,
@@ -463,18 +464,18 @@ export function buildWinter(heightAt: HeightAt) {
     // A low supply stack occupies the legacy gameplay obstacle, not a later monument.
     b.box(qx - 10, y, qz + 30, 3, 3, 5, C.logs, 0, false);
     b.add(BOX, C.snowShade, T(qx - 10, y + 3.06, qz + 30, 0, 2.9, .12, 4.9), false);
-    // the winter core in front of the cathedral
-    const [cx, cz] = CORE.c;
-    b.add(CYL16, '#7f8fa8', T(cx, y + 0.35, cz, 0, 2.2, 0.7, 2.2));
+    // Chapter finale sits at the evacuation customs square. Red Square remains a city landmark.
+    const [cx, cz] = CORE.c, coreY = WINTER_CUSTOMS.floor;
+    b.add(CYL16, '#7f8fa8', T(cx, coreY + 0.35, cz, 0, 2.2, 0.7, 2.2));
     const core = new Batch('Winter_Core_Dark', 'M_Emissive');
-    core.add(SPHERE, '#7fb8e8', T(cx, y + 3, cz, 0, 1.4, 1.4, 1.4), false);
-    for (const a of [0, 1.1, 2.2]) core.add(new THREE.TorusGeometry(2, 0.1, 6, 40), C.iceGlow, T(cx, y + 3, cz, a, 1, 1, 1, Math.PI / 2 - 0.4), false);
+    core.add(SPHERE, '#7fb8e8', T(cx, coreY + 3, cz, 0, 1.4, 1.4, 1.4), false);
+    for (const a of [0, 1.1, 2.2]) core.add(new THREE.TorusGeometry(2, 0.1, 6, 40), C.iceGlow, T(cx, coreY + 3, cz, a, 1, 1, 1, Math.PI / 2 - 0.4), false);
     pieces.push({ name: 'Winter_Core_Dark', material: 'M_Emissive', batch: core, userData: { hideWhen: 'winter_core', bob: true } });
     const lit = new Batch('Winter_Core', 'M_Emissive');
-    lit.add(SPHERE, '#ffd27a', T(cx, y + 3, cz, 0, 1.6, 1.6, 1.6), false);
+    lit.add(SPHERE, '#ffd27a', T(cx, coreY + 3, cz, 0, 1.6, 1.6, 1.6), false);
     pieces.push({ name: 'Winter_Core', material: 'M_Emissive', batch: lit, userData: { showWhen: 'winter_core', bob: true } });
     const beam = new Batch('Winter_Core_Beam', 'M_Beam');
-    beam.add(new THREE.CylinderGeometry(1.2, 2.0, 160, 20, 1, true), '#ffd27a', T(cx, y + 80, cz), false);
+    beam.add(new THREE.CylinderGeometry(1.2, 2.0, 160, 20, 1, true), '#ffd27a', T(cx, coreY + 80, cz), false);
     pieces.push({ name: 'Winter_Core_Beam', material: 'M_Beam', batch: beam, userData: { showWhen: 'winter_core' } });
     // frozen braziers around the square: warm once the core is lit
     for (const [dx, dz] of [[-16, -30], [16, -30], [-16, 20], [16, 20]]) {
@@ -482,8 +483,8 @@ export function buildWinter(heightAt: HeightAt) {
       b.add(CYL8, C.iron, T(x, y + 0.8, z, 0, 0.5, 1.6, 0.5));
       glow.add(CRYSTAL, C.iceGlow, T(x, y + 1.9, z, 0, 0.5, 0.6, 0.5), false);
     }
-    mk({ id: 'winter_core', type: 'interact', label: '冬之核', p: [cx, y, cz], radius: 3.6, requires: ['shard_eagle', 'shard_bell', 'shard_frost'] });
-    mk({ id: 'boss_winter_warden', type: 'enemy', label: '执冬者（Boss）', p: [REDSQ.c[0], y, REDSQ.c[1] - 4] });
+    mk({ id: 'winter_core', type: 'interact', label: '冬之核', p: [cx, coreY, cz], radius: 3.6, requires: ['shard_eagle', 'shard_bell', 'shard_frost'] });
+    mk({ id: 'boss_winter_warden', type: 'enemy', label: '执冬者（Boss）', p: [WINTER_CUSTOMS.x, WINTER_CUSTOMS.floor, WINTER_CUSTOMS.z - 12] });
     mk({ id: 'disc_basil', type: 'discovery', label: '圣瓦西里大教堂', p: [qx, y, qz + 14], radius: 6, note: '九座穹顶，没有一座颜色相同' });
     pieces.push({ name: 'Red_Square', material: 'M_Toon', batch: b, outline: true });
   }
@@ -557,7 +558,7 @@ export function buildWinter(heightAt: HeightAt) {
 
   // ───────────────────────── Vegetation: snowy firs and bare birches ─────────────────────────
   const blocked = (x: number, z: number) =>
-    riverD(x, z) < RIVER_W + 3 || onPath(x, z, 4) || Math.hypot(x - BIVOUAC.c[0], (z - BIVOUAC.c[1]) * 0.9) < 56 ||
+    winterCivilClearance(x, z, 3.5) || riverD(x, z) < RIVER_W + 3 || onPath(x, z, 4) || Math.hypot(x - BIVOUAC.c[0], (z - BIVOUAC.c[1]) * 0.9) < 56 ||
     inKremlin(x, z, 10) || onSquare(x, z, 10) || Math.hypot(Math.max(0, Math.abs(x - 30) - 92), Math.max(0, Math.abs(z + 206) - 70)) < 6 ||
     BEACONS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 10) || Math.hypot(x - EAGLE.c[0], z - EAGLE.c[1]) < 10 ||
     Math.hypot(x - CAVERN.c[0], z - CAVERN.c[1]) < CAVERN.r + 10 || Math.hypot(x - CROSSING.c[0], z - 260) < 30;

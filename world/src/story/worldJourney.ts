@@ -39,7 +39,7 @@ export const SKY_PHASE_LABELS: Localized[] = [['观测透镜', 'Observation Lens
 export const SKY_MARKERS = { start: 'journey_helion_start', left: 'journey_sky_shutter_left', right: 'journey_sky_shutter_right', target: 'journey_helion_target', cache: 'journey_sky_supply', westAmmo: 'journey_helion_ammo_west', eastAmmo: 'journey_helion_ammo_east', aid: 'journey_helion_support' } as const;
 export const JOURNEY_DISPATCH = 'journey_dispatch';
 export const JOURNEY_DESTINATIONS = [
-  { id: 'egypt', marker: J.egyptRead, name: ['埃及 · 商队绿洲', 'Egypt · Caravan Oasis'] as Localized },
+  { id: 'egypt', marker: J.egyptRead, name: ['埃及 · 搁浅渡口', 'Egypt · Stranded Landing'] as Localized },
   { id: 'orleans', marker: J.orleansRead, name: ['奥尔良 · 守城集市', 'Orleans · Defenders Market'] as Localized },
   { id: 'qin', marker: J.qinRead, name: ['秦 · 工匠镇', 'Qin · Workers’ Town'] as Localized },
 ] as const;

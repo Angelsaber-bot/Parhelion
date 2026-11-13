@@ -1,5 +1,6 @@
 import type { Localized } from '../settlements/types';
 import { VALLEY_PROLOGUE } from './valleyPrologue';
+import { kyotoStreetReady } from './kyotoStreetWorks';
 
 export const KYOTO_WITNESS = {
   reel: 'adventure_kyoto_witness_reel',
@@ -50,7 +51,7 @@ export function kyotoWitnessActionReady(id: KyotoWitnessAction, done: ReadonlySe
   if (!kyotoWitnessActive(done) || done.has(id) || !done.has('musashi_meet')) return false;
   if (id === Y.gate) return kyotoOrdersDelivered(done) && done.has('fire_core');
   if (done.has('fire_core') || done.has('musashi_contract')) return false;
-  if (id === Y.reel) return [1, 2, 3].every(n => done.has('kikyo_banner_' + n));
+  if (id === Y.reel) return kyotoStreetReady(done) && [1, 2, 3].every(n => done.has('kikyo_banner_' + n));
   if (!done.has(Y.reel)) return false;
   if (id === Y.stop || id === Y.cut) return !kyotoRollStopped(done);
   if (id === Y.winch || id === Y.pin) return kyotoRollStopped(done) && !kyotoHoistLowered(done);

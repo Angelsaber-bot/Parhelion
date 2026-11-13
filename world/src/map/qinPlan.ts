@@ -66,6 +66,11 @@ export const QIN_ROOMS: readonly QinRoom[] = [
   { id: 'chariot-pit', x0: 87, x1: 125, z0: -187, z1: -165, floor: 10, height: 8 },
   { id: 'armour-pit', x0: 36, x1: 74, z0: -146, z1: -128, floor: 10, height: 7 },
   { id: 'waterfowl-pit', x0: 34, x1: 76, z0: -234, z1: -210, floor: 10, height: 8 },
+  { id: 'quiet-room', x0: -95, x1: -77, z0: -174, z1: -150, floor: 28, height: 5.5 },
+  { id: 'west-service-turn', x0: -129.5, x1: -120.5, z0: -168.5, z1: -159.5, floor: 28, height: 5.5 },
+  { id: 'north-service-turn', x0: -129.5, x1: -120.5, z0: -224.5, z1: -215.5, floor: 28, height: 5.5 },
+  { id: 'command-landing', x0: 16, x1: 28, z0: -204, z1: -192, floor: 10, height: 6 },
+  { id: 'command-hall', x0: -10, x1: 22, z0: -244, z1: -208, floor: 10, height: 13 },
 ];
 export const QIN_CORRIDORS: readonly QinCorridor[] = [
   // 斜道: palace rear court into the mountain, then down to the foundry.
@@ -82,6 +87,16 @@ export const QIN_CORRIDORS: readonly QinCorridor[] = [
   { id: 'chariot-door', a: [79, 10, -176], b: [87, 10, -176], width: 6, height: 6 },
   { id: 'armour-door', a: [55, 10, -154], b: [55, 10, -146], width: 6, height: 6 },
   { id: 'waterfowl-door', a: [55, 10, -202], b: [55, 10, -210], width: 6, height: 6 },
+  // Human-scale rest room bypasses the west rank and reconnects to the quarry.
+  { id: 'quiet-east', a: [-77, 28, -156], b: [-60, 28, -156], width: 3.2, height: 4 },
+  { id: 'quiet-west', a: [-120.5, 28, -164], b: [-95, 28, -164], width: 3.2, height: 4 },
+  { id: 'west-service', a: [-125, 28, -159.5], b: [-125, 28, -119.5], width: 3.6, height: 4.5 },
+  { id: 'command-entry', a: [28, 10, -198], b: [31, 10, -198], width: 4.2, height: 5 },
+  { id: 'command-stair', a: [19, 10, -204], b: [19, 10, -208], width: 4.2, height: 5 },
+  // A return circuit opened from the command hall, without a teleport or a
+  // wall-crossing corridor. Each bend has its own explicitly connected room.
+  { id: 'command-return', a: [-120.5, 28, -220], b: [-10, 10, -220], width: 4.2, height: 5 },
+  { id: 'north-service', a: [-125, 28, -215.5], b: [-125, 28, -168.5], width: 3.6, height: 4.5 },
 ];
 
 /**

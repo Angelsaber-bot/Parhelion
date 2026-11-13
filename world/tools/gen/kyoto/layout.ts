@@ -8,6 +8,7 @@
 // valley's south edge; the region sits at world offset (0, 720).
 
 import type { V2, Area } from '../layout.js';
+import { KYOTO_CIVIL_PATHS } from '../../../src/map/kyotoCivilPlan.js';
 
 export const KYOTO = {
   id: 'world_kyoto',
@@ -94,6 +95,8 @@ export const PATHS: V2[][] = [
   [[-15, 45], [-15, 135], [-165, 135], [-200, 150]],
   // Suzaku south -> Rashōmon
   [[-15, 135], [-15, 280]],
+  // Honnō-ji service bridge and Akechi baggage entrance, separate from their front gates.
+  ...KYOTO_CIVIL_PATHS.map(path => path.map(([x, z]): V2 => [x, z])),
 ];
 
 /** Compressed western excursion: a historical-inspired Arashiyama landscape, not a survey reconstruction.

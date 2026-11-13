@@ -7,6 +7,7 @@
 // south and east. The west edge (x = -360) meets the valley.
 
 import type { V2, Area } from '../layout.js';
+import { BLACKSAIL_CIVIL_PATHS } from '../../../src/map/blackSailCivilPlan.js';
 
 export const BLACKSAIL = {
   id: 'world_blacksail_end',
@@ -101,4 +102,5 @@ export const PATHS: V2[][] = [
   [[-30, 20], [60, 6], [140, -6], [200, -12]],
   // Nassau east shore -> sandbar to Skull Reef
   [[-70, 160], [0, 150], [60, 128], [92, 128]],
+  ...BLACKSAIL_CIVIL_PATHS.map(path => path.map(([x, z]): V2 => [x, z])),
 ];
