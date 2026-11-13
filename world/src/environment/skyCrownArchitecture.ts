@@ -60,24 +60,26 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
     }
     for (const sign of [-1, 1]) a.beam(at(d, x - w / 2, height, z + sign * depth / 2), at(d, x + w / 2, height, z + sign * depth / 2), .23, C.steel);
   }
-  function enclosure(d: CrownDeck, x: number, z: number, width: number, depth: number, height: number, door = 5) {
+  function enclosure(d: CrownDeck, x: number, z: number, width: number, depth: number, height: number, door = 5, sideDoorOffset = 0) {
     // Four open doorways preserve circulation around the instrument desks.
     // The windows are actual openings with sills and mullions, not painted walls.
     for (const axis of [0, 1]) for (const side of [-1, 1]) {
-      const length = axis === 0 ? width : depth, span = (length - door) / 2;
+      const length = axis === 0 ? width : depth, opening = axis === 0 ? 0 : sideDoorOffset;
       const face = (offset: number, y: number, w: number, h: number, thickness: number, color: string, solid = false) =>
         box(d, axis === 0 ? x + offset : x + side * width / 2, y, axis === 0 ? z + side * depth / 2 : z + offset,
           axis === 0 ? w : thickness, h, axis === 0 ? thickness : w, color, solid);
       for (const end of [-1, 1]) {
-        const center = end * (door / 2 + span / 2);
+        const inner = opening + end * door / 2, outer = end * length / 2;
+        const span = Math.abs(outer - inner), center = (inner + outer) / 2;
+        if (span < .01) continue;
         face(center, .65, span, 1.3, .32, C.blue, true);
         face(center, height - 1, span, 2, .32, C.plate, true);
         face(center, 1.35, span + .1, .15, .45, C.edge);
         const posts = Math.ceil(span / 3);
-        for (let i = 0; i <= posts; i++) face(end * (door / 2 + i * span / posts), height / 2, .18, height, .38, C.steel, true);
+        for (let i = 0; i <= posts; i++) face(inner + end * i * span / posts, height / 2, .18, height, .38, C.steel, true);
         face(center, height / 2, span, .13, .19, C.edge);
       }
-      face(0, height - .4, door, .8, .45, C.plate, true);
+      face(opening, height - .4, door, .8, .45, C.plate, true);
     }
   }
 
@@ -174,7 +176,8 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
   // C: a roofed observation hall with open circulation and paired recorded/live desks.
   const hall = decks.hall;
   canopy(hall, 0, -7, 35, 21, 9.4);
-  enclosure(hall, 0, -7, 35, 21, 8.8, 7);
+  // Align side doors with the deck's crosswalk, south of the telescope axis.
+  enclosure(hall, 0, -7, 35, 21, 8.8, 7, 7);
   // Observatory crown: a segmented porcelain dome, open sighting slit and
   // raised optical tube. It is visible from the arrival deck and valley floor.
   const dome = new THREE.SphereGeometry(8.7, 32, 12, .16, Math.PI * 2 - .32, 0, Math.PI / 2);
@@ -283,7 +286,7 @@ export function addSkyCrownArchitecture(a: SiteArt, decks: Decks) {
 
   // J: low camp furniture leaves a quiet, unobstructed view of the final arena.
   const court = decks.court;
-  canopy(court, 6.7, -5, 10, 9, 4.6);
+  canopy(court, 6.7, -9, 10, 9, 4.6);
   bench(court, 7, -8, 5);
   cabinet(court, 9, -2, C.plate, 2);
   for (const x of [-8, 10]) {

@@ -87,15 +87,26 @@ export function createAdventureSites(floor:(x:number,z:number,ceiling?:number)=>
  const roadCollider:Collider={name:'COL_AdventureWinterRoad',bvh:new MeshBVH(obstacleGeometry),enabled:true};colliders.push(roadCollider);
  // Actual sloped collision creates a second entrance over the existing temple wall.
  function ramp(name:string,route:AdventurePoint[],width:number){
+  // Share a mitered cross-section at each bend. Overlapping rectangular
+  // segments leave the next deck's end wall across the ascending route.
+  const cross = route.map((p, i) => {
+   const a = route[Math.max(0, i - 1)], b = route[Math.min(route.length - 1, i + 1)];
+   const incoming = new THREE.Vector2(p[0] - a[0], p[2] - a[2]).normalize();
+   const outgoing = new THREE.Vector2(b[0] - p[0], b[2] - p[2]).normalize();
+   if (!i) incoming.copy(outgoing); if (i === route.length - 1) outgoing.copy(incoming);
+   const normal = new THREE.Vector2(incoming.y + outgoing.y, -incoming.x - outgoing.x).normalize();
+   return normal.multiplyScalar(width / 2 / Math.max(.25, normal.dot(new THREE.Vector2(outgoing.y, -outgoing.x))));
+  });
   const a=new SiteArt();for(let i=1;i<route.length;i++){
    const p=route[i-1],q=route[i],dx=q[0]-p[0],dz=q[2]-p[2],length=Math.hypot(dx,dz),sx=dz/length*width/2,sz=-dx/length*width/2,bottom=Math.min(p[1],q[1])-2,pb=name==='kyoto-roofs'?p[1]-.18:bottom,qb=name==='kyoto-roofs'?q[1]-.18:bottom;
-   const vertices=[p[0]-sx,p[1],p[2]-sz,p[0]+sx,p[1],p[2]+sz,q[0]+sx,q[1],q[2]+sz,q[0]-sx,q[1],q[2]-sz,p[0]-sx,pb,p[2]-sz,p[0]+sx,pb,p[2]+sz,q[0]+sx,qb,q[2]+sz,q[0]-sx,qb,q[2]-sz];
+   const startCross=name==='kyoto-roofs'?cross[i-1]:new THREE.Vector2(sx,sz), endCross=name==='kyoto-roofs'?cross[i]:new THREE.Vector2(sx,sz);
+   const vertices=[p[0]-startCross.x,p[1],p[2]-startCross.y,p[0]+startCross.x,p[1],p[2]+startCross.y,q[0]+endCross.x,q[1],q[2]+endCross.y,q[0]-endCross.x,q[1],q[2]-endCross.y,p[0]-startCross.x,pb,p[2]-startCross.y,p[0]+startCross.x,pb,p[2]+startCross.y,q[0]+endCross.x,qb,q[2]+endCross.y,q[0]-endCross.x,qb,q[2]-endCross.y];
    const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));geo.setIndex([0,2,1,0,3,2,0,1,5,0,5,4,1,2,6,1,6,5,2,3,7,2,7,6,3,0,4,3,4,7,4,5,6,4,6,7]);geo.computeVertexNormals();
    a.add(geo,'#897052',[0,0,0],[1,1,1],true);geo.dispose();
-   for(let d=0;d<=length;d+=.55){const t=d/length,h=p[1]+(q[1]-p[1])*t;const center=new THREE.Vector3(p[0]+dx*t,h+.025,p[2]+dz*t);const across=new THREE.Vector3(sx*.97,.0,sz*.97);a.beam(center.clone().sub(across).toArray() as AdventurePoint,center.clone().add(across).toArray() as AdventurePoint,.08,'#b49a70');}
-   for(const side of[-1,1]){const offx=sx*side,offz=sz*side;a.beam([p[0]+offx,p[1]-.16,p[2]+offz],[q[0]+offx,q[1]-.16,q[2]+offz],.16,'#5f4b34');
-    for(let d=1;d<length;d+=3){const t=d/length,h=p[1]+(q[1]-p[1])*t,x=p[0]+dx*t+offx,z=p[2]+dz*t+offz;a.beam([x,bottom,z],[x,h+.85,z],.09,'#786247');}
-    a.beam([p[0]+offx,p[1]+.85,p[2]+offz],[q[0]+offx,q[1]+.85,q[2]+offz],.065,'#bba37a');}
+   for(let d=0;d<=length;d+=.55){const t=d/length,h=p[1]+(q[1]-p[1])*t;const center=new THREE.Vector3(p[0]+dx*t,h+.025,p[2]+dz*t);const across=new THREE.Vector3(THREE.MathUtils.lerp(startCross.x,endCross.x,t)*.97,0,THREE.MathUtils.lerp(startCross.y,endCross.y,t)*.97);a.beam(center.clone().sub(across).toArray() as AdventurePoint,center.clone().add(across).toArray() as AdventurePoint,.08,'#b49a70');}
+   for(const side of[-1,1]){const offx=startCross.x*side,offz=startCross.y*side,endx=endCross.x*side,endz=endCross.y*side;a.beam([p[0]+offx,p[1]-.16,p[2]+offz],[q[0]+endx,q[1]-.16,q[2]+endz],.16,'#5f4b34');
+    for(let d=1;d<length;d+=3){const t=d/length,h=p[1]+(q[1]-p[1])*t,x=p[0]+dx*t+THREE.MathUtils.lerp(offx,endx,t),z=p[2]+dz*t+THREE.MathUtils.lerp(offz,endz,t);a.beam([x,bottom,z],[x,h+.85,z],.09,'#786247');}
+    a.beam([p[0]+offx,p[1]+.85,p[2]+offz],[q[0]+endx,q[1]+.85,q[2]+endz],.065,'#bba37a');}
 
   }a.finish(name==='kyoto'?'kyoto':'britain');root.add(a.root);
   const bvs=a.solids.map((g,i)=>({name:`COL_AdventureRamp_${name}_${i}`,bvh:new MeshBVH(g),enabled:false}));colliders.push(...bvs);return{art:a,colliders:bvs};

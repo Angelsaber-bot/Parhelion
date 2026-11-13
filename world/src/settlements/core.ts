@@ -4,11 +4,12 @@ import { mergeParts } from './merge';
 import type { WorldGrid } from '../map/grid';
 import type { Layout } from '../core/types';
 import { REGIONS, regionToWorld } from '../map/regions';
+import { SETTLEMENT_SITES } from '../map/settlementSites';
 import type { SettlementKit, SettlementPlacement, PlacedNpcSocket, RegionId } from './types';
 
-const PREFERRED: Record<RegionId, [number, number]> = {
-  alpha: [-166, 212], britain: [-108, -135], blacksail: [-160, 76], winter: [10, 180], kyoto: [-42, 100],
-};
+// The sites the hubs settled on with the reviewed 2026-11-10 maps. Pinning the search start
+// keeps a regenerated map (new props, trees or terrain detail) from relocating a town.
+const PREFERRED = Object.fromEntries(Object.entries(SETTLEMENT_SITES).map(([id, site]) => [id, site.c])) as Record<RegionId, readonly [number, number]>;
 const FOUNDATION: Record<RegionId, string> = {
   alpha: '#6f899b', britain: '#8c8170', blacksail: '#756c56', winter: '#8c939a', kyoto: '#827b70',
 };

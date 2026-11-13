@@ -6,6 +6,7 @@ import { SiteArt } from '../story/campaignSites';
 import { mergeParts } from '../settlements/merge';
 import { flagshipPoint as P, SHIP_INTERIOR } from '../map/shipInteriorCut';
 import { FLAGSHIP_WORKS as F, flagshipBridgeLowered } from '../story/flagshipWorks';
+import { ghostBridgeOpen } from '../story/eraStories';
 import { landscapeWalkway } from './landscapeWalkway';
 
 type Point = [number, number, number];
@@ -140,7 +141,8 @@ export function createFlagshipNavigation(host: {
     shoreGate.root.visible = shoreCollider.enabled = !open;
     boatGate.root.visible = boatCollider.enabled = !open;
     fleetGate.root.visible = fleetGateCollider.enabled = !open || offset.y > 0;
-    const linkOpen = open && offset.y === 0 && ['shard_powder', 'shard_compass', 'shard_treasure'].every(id => host.done.has(id));
+    // Same rule as the ghost bridge it continues (the adventure campaign never collects shards).
+    const linkOpen = open && offset.y === 0 && ghostBridgeOpen(host.done);
     if (host.link?.art) host.link.art.visible = linkOpen;
     if (host.link?.collider) host.link.collider.enabled = linkOpen;
     publicBoard.root.visible = host.done.has(FLAGSHIP_NAV.shared) || host.done.has(FLAGSHIP_NAV.fixed);

@@ -1,5 +1,13 @@
 /** Authored game text. Entries are Chinese source + English translation, not user-generated strings. */
 export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
+  ['本能寺南侧便门', 'Honnō-ji south postern'],
+  ['窄桥通向寺院侧庭，正门的检验桌仍在东侧', 'The narrow bridge leads to the temple side court; the main inspection desk remains to the east'],
+  ['三条桥下装卸道', 'Sanjō Bridge loading path'],
+  ['从码头穿过桥下，沿侧坡返回桥面', 'Pass beneath the bridge from the quay and follow the side ramp back to the bridge deck'],
+  ['河街纸铺休息庭', 'River-street paper shop courtyard'],
+  ['晾纸的外廊、装订桌与一碗热食；两侧门都通向河街', 'A drying gallery, binding table and hot meal; both doors open onto the river street'],
+  ['桔梗军阵辎重侧道', 'Kikyō camp supply path'],
+  ['沿粮箱与卷起的帷幕进入军阵；东侧是验函的正面通道', 'Enter the camp past grain crates and rolled curtains; the eastern entrance checks letters'],
   ['请输入你的名字', 'Enter your name'],
 
   ['安全据点旅行','Safe settlement travel'], ['返回主线指引','Track main story'], ['战技','Skill'], ['终结技','Ultimate'], ['近战连击','Melee combo'], ['闪避','Evade'], ['下一把枪','Next gun'], ['上一把枪','Previous gun'], ['切换近战武器','Switch melee weapon'],
@@ -249,7 +257,9 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['点燃雪原上的 3 座烽火，取得碎片·鹰旗（离开火堆太久会冻僵）', 'Light the 3 beacons on the snowfield and take the Eagle shard (stay away from fire too long and you freeze)'],
   ['沿脚手架爬上伊凡大帝钟楼，取得碎片·钟声', 'Climb the scaffold up the Ivan the Great bell tower and take the Bell shard'],
   ['击碎冰封峡谷的 3 枚冰封印，进入冰窟取得碎片·霜晶', 'Shatter the 3 frost seals in the Frozen Gorge and take the Frost shard from the ice cavern'],
-  ['在红场点亮冬之核，击败执冬者', 'Light the Winter Core on Red Square and defeat the Winter Warden'], ['回到皇帝帐篷，与拿破仑缔结契约', "Return to the emperor's tent and form a contract with Napoleon"],
+  ['在红场点亮冬之核，击败执冬者', 'Light the Winter Core on Red Square and defeat the Winter Warden'],
+  ['在旧税关广场点亮冬之核，击败执冬者', 'Light the Winter Core in the old customs square and defeat the Winter Warden'],
+  ['回到皇帝帐篷，与拿破仑缔结契约', "Return to the emperor's tent and form a contract with Napoleon"],
   ['别列津纳渡口', 'Berezina Crossing'], ['大军营地', 'Grande Armée Bivouac'], ['烽火雪原', 'Beacon Snowfield'], ['燃烧的莫斯科', 'Burning Moscow'], ['克里姆林宫', 'The Kremlin'], ['红场', 'Red Square'], ['冰封峡谷', 'Frozen Gorge'],
   ['篝火（取暖）', 'Campfire (warmth)'], ['断桥', 'Broken bridge'], ['1812 年 11 月，大军在这里渡过了别列津纳河', 'In November 1812 the Grande Armée crossed the Berezina here'],
   ['皇帝帐篷（取暖）', "Emperor's tent (warmth)"], ['拿破仑（皇帝帐篷）', "Napoleon (emperor's tent)"], ['皇帝说：点亮冬之核，我的大军就能回家', 'The emperor says: light the Winter Core and my army can go home'],

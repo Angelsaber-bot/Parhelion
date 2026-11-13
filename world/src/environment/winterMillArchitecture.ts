@@ -9,7 +9,10 @@ import type { Collider } from '../player/player';
  * withdrawal route. Its workshop and rear door are actual walk-in spaces. */
 export function createWinterMillArchitecture(north: Point, ground: (x: number, z: number, ceiling?: number) => number | null) {
   const a = new SiteArt(), root = a.root;
-  const x = north[0] - 15, z = north[2] - 9;
+  // West of the shared x = 40 convoy road: both withdrawal carts need 1.6 m of body
+  // clearance along x = 40, z = -620 and z = -609, so the workshop stands beside the
+  // fork instead of on it (rules: millConvoyRoute.ts, convoyRoute.ts).
+  const x = north[0] - 32, z = north[2] - 9;
   const y = ground(x, z, north[1] + 4) ?? north[1];
   const stone = '#8e9295', timber = '#746255', dark = '#4c4b4d', snow = '#d5e4ed', plaster = '#b6b0a1';
   const at = (dx: number, dy: number, dz: number): Point => [x + dx, y + dy, z + dz];
@@ -58,11 +61,12 @@ export function createWinterMillArchitecture(north: Point, ground: (x: number, z
   for (const dz of [1, 2, 3]) box(-3.7, 1.02, dz, .8, .12, .4, stone);
   a.paper(...at(-3.7, .96, 2), .75, .55);
   for (const dz of [-5.7, -1, 4.6]) a.lantern(...at(-5.1, 3.4, dz));
-  // A usable loading porch links both the road and the bridge's north landing.
+  // A usable loading porch leads north to the road. The river door keeps a short stoop that
+  // stops before the convoy road; the bridge's north landing is a short walk across open ground.
   const front: Point = at(0, 0, 10.8), road: Point = [x, ground(x, z + 20, y + 4) ?? y, z + 20];
   landscapeWalkway(a, [at(0, 0, 6.7), front, road], { width: 3.4, floor: timber, edge: dark, supports: (px, pz, c) => ground(px, pz, c) });
-  landscapeWalkway(a, [at(5.3, 0, 0), at(9.4, 0, 0), [north[0], north[1], north[2] - 4], north],
-    { width: 3.6, floor: timber, edge: dark, rails: true, supports: (px, pz, c) => ground(px, pz, c) });
+  landscapeWalkway(a, [at(5.3, 0, 0), at(7.6, 0, 0)],
+    { width: 3.6, floor: timber, edge: dark, supports: (px, pz, c) => ground(px, pz, c) });
 
   // A wheel with open spokes, rim bands, paddles and a visible axle to the millstones.
   const wheel = new THREE.Group(); wheel.name = 'WinterMillWaterwheel'; wheel.position.fromArray(at(-7.1, 2.1, -1.5));

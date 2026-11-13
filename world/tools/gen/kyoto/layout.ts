@@ -95,8 +95,6 @@ export const PATHS: V2[][] = [
   [[-15, 45], [-15, 135], [-165, 135], [-200, 150]],
   // Suzaku south -> Rashōmon
   [[-15, 135], [-15, 280]],
-  // Honnō-ji service bridge and Akechi baggage entrance, separate from their front gates.
-  ...KYOTO_CIVIL_PATHS.map(path => path.map(([x, z]): V2 => [x, z])),
 ];
 
 /** Compressed western excursion: a historical-inspired Arashiyama landscape, not a survey reconstruction.
@@ -118,3 +116,6 @@ PATHS.push(
   [[-267, -100], [-286, -100], [-304, -91], ...ARASHIYAMA.bambooPath.slice(1)],
   [[-267, 76], [-238, 76], [-218, 65]],
 );
+// Honnō-ji service bridge, Akechi baggage entrance, Sanjō wharf and a pagoda lane: appended
+// after the Arashiyama routes so indices 0–8 keep their meaning.
+PATHS.push(...KYOTO_CIVIL_PATHS.map(path => path.map(([x, z]): V2 => [x, z])));

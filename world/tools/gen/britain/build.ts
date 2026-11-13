@@ -1,6 +1,7 @@
 // Sunset Kingdom: authored Romance-Camelot art over unchanged gameplay collision and layout.
 import * as THREE from 'three';
 import { KINGDOM_SIDE_GATE_ANGLE, KINGDOM_SIDE_ROUTE, KINGDOM_ABBEY_ROUTE } from '../../../src/map/kingdomRoadPlan';
+import { insideSettlementSite } from '../../../src/map/settlementSites';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
@@ -537,6 +538,7 @@ export function buildBritain(heightAt: HeightAt) {
     return false;
   };
   let nTree = 0;
+  const trunkBatch = trunks, leafBatch = leaves, hubDiscard = new Batch('Hub_Site_Discard');
   const STEP = 6;
   const mistC = AREAS[0].c;
   for (let gz = -BRITAIN.half; gz < BRITAIN.half; gz += STEP)
@@ -552,7 +554,11 @@ export function buildBritain(heightAt: HeightAt) {
       const inCam = Math.hypot(x - CAMLANN.c[0], z - CAMLANN.c[1]) < CAMLANN.r;
       const dens = inCam ? 0.012 : inMist ? 0.42 : h > 50 ? 0.03 : 0.06 + Math.max(0, n) * 0.22;
       if (roll > dens) continue;
-      nTree++;
+      // A tree inside the settlement hub's site still draws its random numbers (so every
+      // other tree keeps its place) but is drawn into a discarded batch.
+      const site = insideSettlementSite('britain', x, z);
+      const trunks = site ? hubDiscard : trunkBatch, leaves = site ? hubDiscard : leafBatch;
+      if (!site) nTree++;
       const y = h - 0.3;
       if (inCam) {
         // dead, leafless trunk

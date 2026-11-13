@@ -37,7 +37,7 @@ export const KYOTO_STREET_LINES: Record<string, Localized> = {
 export const KYOTO_STREET_ACTIONS: readonly AdventureAction[] = [
   { id: K.cargo, region: 'kyoto', label: ['三条桥 · 缓降吊货作掩体', 'Sanjō Bridge · Lower cargo into cover'], p: P(134, 5.2, -75), seconds: 2, flag: K.cargo },
   { id: K.envelope, region: 'kyoto', label: ['桥东防水匣 · 取回原函', 'Eastern waterproof case · Recover the letter'], p: P(174, 5.2, -75), flag: K.envelope },
-  { id: K.letter, region: 'kyoto', label: ['纸铺灯桌 · 核对装订孔与货号', 'Paper-shop light table · Compare binding and cargo number'], p: P(181.8, 6.25, 53), seconds: 2, flag: K.letter },
+  { id: K.letter, region: 'kyoto', label: ['纸铺灯桌 · 核对装订孔与货号', 'Paper-shop light table · Compare binding and cargo number'], p: P(182.3, 6.25, 53), seconds: 2, flag: K.letter },
   { id: K.dry, region: 'kyoto', label: ['纸铺外廊 · 晾好浸水纸页', 'Drying porch · Hang the wet pages'], p: P(177, 6.25, 55), seconds: 2, flag: K.dry },
   { id: K.meal, region: 'kyoto', label: ['纸铺热食 · 坐下休息', 'Paper-shop meal · Take a rest'], p: P(181.9, 6.25, 58), flag: K.meal },
   { id: K.templePermit, region: 'kyoto', label: ['本能寺东门 · 出示原函', 'Honnō-ji east gate · Present the letter'], p: P(-43, 4.6, 48), flag: K.templePermit },

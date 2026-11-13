@@ -232,10 +232,16 @@ export function applyEraMarkerRequirements(markers: Marker[], done: ReadonlySet<
     if (requires) marker.requires = [...requires];
   }
 }
+/** The ghost bridge and its last link onto the (separately moving) flagship open together. */
+const GHOST_BRIDGE_PIECES = new Set(['Ghost_Bridge', 'COL_Ghost_Bridge', 'Ghost_Flagship_Link', 'COL_Ghost_Flagship_Link']);
 /** Use for BOTH Ghost_Bridge showWhen and solidWhen; unrelated doors stay untouched. */
 export function getEraPieceRequirements(name: string, done: ReadonlySet<string>): readonly string[] | undefined {
-  if(adventureActive(done)&&(name==='Ghost_Bridge'||name==='COL_Ghost_Bridge'))return harborBridgeReady(done)?[]:['adventure_harbor_rigging'];
-  return name === 'Ghost_Bridge' || name === 'COL_Ghost_Bridge' ? getEraBossRequirements('sea_core', done) : undefined;
+  if (!GHOST_BRIDGE_PIECES.has(name)) return undefined;
+  if (adventureActive(done)) return harborBridgeReady(done) ? [] : ['adventure_harbor_rigging'];
+  return getEraBossRequirements('sea_core', done);
+}
+export function ghostBridgeOpen(done: ReadonlySet<string>): boolean {
+  return (getEraPieceRequirements('COL_Ghost_Bridge', done) ?? []).every(flag => done.has(flag));
 }
 /** Existing saved repair flags drive both scene changes and personal recollections.
  * Reading dialogue never completes a task or gives a repeat reward. */

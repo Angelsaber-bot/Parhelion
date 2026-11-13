@@ -6,7 +6,7 @@ import { Vector3 } from 'three';
 import { WORLD_PROGRESS_KEY } from '../src/core/progress';
 import { createWorldJourneySites } from '../src/environment/worldJourneySites';
 import { createSkyCrownScene } from '../src/environment/skyCrownScene';
-import { SKY_APPROACH_DECKS, SKY_UP_LIFT } from '../src/environment/skyCrownApproach';
+import { SKY_APPROACH_DECKS, skyApproachWaypoints, SKY_UP_LIFT } from '../src/environment/skyCrownApproach';
 import { Player } from '../src/player/player';
 import { EGYPT_MIRRORS } from '../src/map/egyptPlan';
 import { ORLEANS_WORKS, ORLEANS_WORK_ACTIONS } from '../src/map/orleansWorks';
@@ -131,13 +131,18 @@ test('both Sky Crown approaches and side decks have continuous walkable collisio
   const walk = (decks: readonly (keyof typeof D)[]) => {
     const p = new Player(crown.colliders, 0), start = D[decks[0]].p;
     p.teleport(start[0], start[1] + .25, start[2]);
-    for (const id of decks.slice(1)) {
-      const [x, y, z] = D[id].p;
+    const go = (x: number, z: number) => {
       let frames = 0;
       while (Math.hypot(x - p.pos.x, z - p.pos.z) > .85 && frames++ < 3500 && p.pos.y > 129) {
         p.yaw = Math.atan2(p.pos.x - x, p.pos.z - z);
         p.step(1 / 120, { x: 0, z: 1, jump: false, sprint: true });
       }
+    };
+    for (let i = 1; i < decks.length; i++) {
+      const id = decks[i], [x, y, z] = D[id].p;
+      // Follow the authored walkway: its deck seams and any resting landing between stair flights.
+      for (const [wx, , wz] of skyApproachWaypoints(decks[i - 1], id)) go(wx, wz);
+      go(x, z);
       assert.ok(Math.hypot(x - p.pos.x, z - p.pos.z) < .9 && Math.abs(y - p.pos.y) < .65, `${id}: ${p.pos.toArray()}`);
     }
   };

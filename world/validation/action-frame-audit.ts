@@ -16,7 +16,7 @@ const prefix = frame.slice(frame.indexOf('  const frameSeconds ='), frame.indexO
 const combatCall = frame.match(/^  combat\.update\([^\n]+/m)?.[0] ?? '';
 const productionTick = new vm.Script(transformSync(`(()=>{${prefix}\n${combatCall}\n})()`, { loader: 'ts', format: 'cjs' }).code);
 
-export function auditEvadeFrame(fps: number) {
+export function auditEvadeFrame(fps: number, playable = true) {
   const floor = new THREE.BoxGeometry(100, 1, 100).translate(0, -.5, 0);
   const player = new Player([{ name: 'floor', enabled: true, bvh: new MeshBVH(floor) }], -10);
   player.teleport(0, .01, 0);
@@ -37,16 +37,25 @@ export function auditEvadeFrame(fps: number) {
     combatAcc += dt;
     while (combatAcc >= .05) { if (defense.invulnerable) combatProtectedTicks++; state.step(.05, player.pos, true, { walk: () => null, lineOfSight: () => true }); combatAcc -= .05; }
   }};
+  Object.assign(combat, { state });
+  const machinerySeconds = { valley: 0, flagship: 0 };
   // This audit starts in an already-active visible frame (clock valid). Resume boundaries
   // are exercised by time-discontinuity-dom.test.ts against actual main.
   const context = vm.createContext({ perfectEvadeSlow: 0, hitStop: 0, HIT_STOP: { scale: 1 }, PERFECT_EVADE, frameClockInvalid: false, frameUltimate: () => false, deferredCombatToast: null, now: 0, last: 0, acc: 0, STEP, actions, player, combat,
-    gameplayActive: () => true, down: () => false, cold: { frozen: false }, camera: {},
+    gameplayActive: () => playable, down: () => false, cold: { frozen: false }, camera: {},
     keys: { clear() {} }, aim: { clear() {} }, audio: { setActive() {} }, fortCannon: { update() {} },
     locked: true, dragLook: false, narrative: { open: false }, document: { visibilityState: 'visible', hasFocus: () => true },
+    // This flat-floor audit has no regional machinery or ferry. Keep those
+    // dependencies explicit while executing the unchanged production tick.
+    fieldSideSites: null, done: new Set<string>(), HARBOR_WORKBOAT_ENCOUNTER: 'harbor_workboat',
+    egyptSolarBoat: { update() {}, arrival: null },
+    egyptTempleMechanisms: { apply() {} }, egyptWaterwheel: { apply() {} },
+    winterCustomsWorks: { apply() {} }, valleyMaintenanceLine: { update(dt: number) { machinerySeconds.valley += dt; } },
+    flagshipNavigation: { update(dt: number) { machinerySeconds.flagship += dt; }, moving: false }, layout: { markers: [] },
   });
   actions.press('evade');
   for (let f = 1; f <= fps; f++) { context.now = f / fps * 1000; productionTick.runInContext(context); }
-  const result = { fps, distance: player.pos.distanceTo(start), horizontalDistance: Math.hypot(player.pos.x - start.x, player.pos.z - start.z), evadeSeconds, iframeSeconds, combatProtectedTicks };
+  const result = { fps, distance: player.pos.distanceTo(start), horizontalDistance: Math.hypot(player.pos.x - start.x, player.pos.z - start.z), evadeSeconds, iframeSeconds, combatProtectedTicks, machinerySeconds };
   actions.dispose(); floor.dispose(); return result;
 }
 

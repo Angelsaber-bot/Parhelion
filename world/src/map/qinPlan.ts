@@ -69,7 +69,8 @@ export const QIN_ROOMS: readonly QinRoom[] = [
   { id: 'quiet-room', x0: -95, x1: -77, z0: -174, z1: -150, floor: 28, height: 5.5 },
   { id: 'west-service-turn', x0: -129.5, x1: -120.5, z0: -168.5, z1: -159.5, floor: 28, height: 5.5 },
   { id: 'north-service-turn', x0: -129.5, x1: -120.5, z0: -224.5, z1: -215.5, floor: 28, height: 5.5 },
-  { id: 'command-landing', x0: 16, x1: 28, z0: -204, z1: -192, floor: 10, height: 6 },
+  // North edge stops at -195.8 so the 2.4 m shell (-193.4) stays clear of the royal-descent ramp (z -193.15..-186.85).
+  { id: 'command-landing', x0: 16, x1: 28, z0: -204, z1: -195.8, floor: 10, height: 6 },
   { id: 'command-hall', x0: -10, x1: 22, z0: -244, z1: -208, floor: 10, height: 13 },
 ];
 export const QIN_CORRIDORS: readonly QinCorridor[] = [

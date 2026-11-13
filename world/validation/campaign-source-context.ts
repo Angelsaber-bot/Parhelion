@@ -5,9 +5,20 @@ import * as drama from '../src/story/journeyDrama';
 import * as campaignEpisodes from '../src/story/campaignEpisodes';
 import { COMPACT_RELAY } from '../src/story/compactRelayCampaign';
 import {ORLEANS_WORK_ACTIONS} from '../src/map/orleansWorks';
+import {insideValleyFoundation} from '../src/map/valleyFoundationPlan';
+import {WINTER_CUSTOMS_WORKS as WCW} from '../src/story/winterCustomsWorks';
+import {FLAGSHIP_WORK_IDS} from '../src/story/flagshipWorks';
+import {KYOTO_STREET_IDS} from '../src/story/kyotoStreetWorks';
+import {EGYPT_SHIP_HINGE as EH} from '../src/story/fieldSideStories';
+import {EGYPT_SOLAR_BOAT as ESB} from '../src/environment/egyptSolarBoat';
 /** Legacy exact-source slices do not instantiate new sites. Keep their tests
  * on the real old route while explicitly supplying the new optional adapter. */
 export const campaignSourceContext = {
+  fieldSideSites: undefined,
+  orleansShadowPlay: undefined, shadowPlayCue: null,
+  EH, ESB, egyptSolarBoat: { reset() {}, showRepairedShield() {} }, egyptWaterwheel: { reset() {}, apply() {} },
+  egyptTempleMechanisms: { resetSideDoor() {}, apply() {} },
+  insideValleyFoundation, WCW, FLAGSHIP_WORK_IDS, KYOTO_STREET_IDS,
   modelClaimPoints: [],
   ...drama,
   ORLEANS_WORK_ACTIONS, orleansWorksMarkerIds:new Set<string>(), orleansWorksRuntime:undefined, orleansWorksScene:{apply(){}},

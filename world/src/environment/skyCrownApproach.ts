@@ -30,6 +30,60 @@ export const SKY_UP_LIFT = SKY_LIFT.upper, SKY_DOWN_LIFT = SKY_LIFT.lower;
 export const SKY_UP_LANDING: JourneyPoint = [286, 208, 240], SKY_DOWN_LANDING: JourneyPoint = [135, 156, 211];
 const slate = '#445c71', steel = '#2a3c51', bronze = '#bb9c66', bone = '#c6c6b5', teal = '#66b6ab';
 
+type DeckKey = keyof typeof DECK;
+/** Each authored link: deck pair, walkway width and an optional turning corner (two stair flights). */
+const LINKS: [DeckKey, DeckKey, number, string | undefined, [number, number] | undefined][] = [
+  ['dock', 'range', 6, undefined, [106, 294]],
+  ['range', 'hall', 6.4, J.skyScan, [83, 207]],
+  ['range', 'anchor', 4.7, J.skyAnchor, undefined],
+  ['hall', 'anchor', 4.7, undefined, undefined],
+  ['hall', 'light', 5.7, J.skyReview, [134, 125]],
+  ['hall', 'service', 5.7, J.skyReview, undefined],
+  ['light', 'throat', 6.1, undefined, undefined],
+  ['service', 'throat', 6.1, undefined, [204, 330]],
+  ['service', 'archive', 4.2, undefined, undefined],
+  ['archive', 'throat', 4.7, undefined, undefined],
+  ['throat', 'back', 6, J.isolate, [281, 220]],
+  ['back', 'court', 6, undefined, [338, 231]],
+  ['court', 'oldDock', 5.9, undefined, undefined],
+];
+/** Walkway polyline of one link: the deck-edge start, any resting landings, and the deck-edge end. */
+function linkPath(a: Deck, b: Deck, width: number, turn?: [number, number]) {
+  const from = new THREE.Vector3(...a.p), to = new THREE.Vector3(...b.p);
+  const corner = turn ? new THREE.Vector3(turn[0], 0, turn[1]) : null;
+  const startDirection = (corner ?? to).clone().sub(from).setY(0).normalize();
+  const endDirection = (corner ?? from).clone().sub(to).setY(0).normalize();
+  const edge = (deck: Deck, direction: THREE.Vector3) => Math.min(
+    deck.w / 2 / Math.max(Math.abs(direction.x), .001), deck.d / 2 / Math.max(Math.abs(direction.z), .001));
+  // Overlap the top surface, without a solid end cap to catch the capsule.
+  const start = from.clone().addScaledVector(startDirection, edge(a, startDirection) - .6);
+  const end = to.clone().addScaledVector(endDirection, edge(b, endDirection) - .6);
+  const points = [start];
+  let support: THREE.Vector3 | null = null;
+  if (corner) {
+    // Two stair flights meet a level resting landing. Length is gained outside
+    // the decks, not by placing an unwalkable ramp across a tiny vertical gap.
+    const incoming = corner.clone().sub(start).setY(0).normalize();
+    const outgoing = end.clone().sub(corner).setY(0).normalize();
+    const landingA = corner.clone().addScaledVector(incoming, -width);
+    const landingB = corner.clone().addScaledVector(outgoing, width);
+    const firstRun = Math.hypot(landingA.x - start.x, landingA.z - start.z);
+    const lastRun = Math.hypot(end.x - landingB.x, end.z - landingB.z);
+    landingA.y = landingB.y = start.y + (end.y - start.y) * firstRun / (firstRun + lastRun);
+    points.push(landingA, landingB);
+    support = corner.clone(); support.y = landingA.y - 9;
+  }
+  points.push(end);
+  return { startDirection, endDirection, points, support };
+}
+/** Points to walk between two linked decks (deck-edge seams and landings), in walking order. */
+export function skyApproachWaypoints(from: DeckKey, to: DeckKey): JourneyPoint[] {
+  const link = LINKS.find(([a, b]) => (a === from && b === to) || (a === to && b === from));
+  if (!link) throw new Error(`no Sky Crown link ${from} -> ${to}`);
+  const path = linkPath(DECK[link[0]], DECK[link[1]], link[2], link[4]).points.map(p => p.toArray() as JourneyPoint);
+  return link[0] === from ? path : path.reverse();
+}
+
 export function addSkyCrownApproach(art: SiteArt) {
   const markers: Marker[] = [], colliders: Collider[] = [];
   const gateMaterial = new THREE.MeshStandardMaterial({ color: steel, emissive: '#8d4934', emissiveIntensity: .5 });
@@ -77,38 +131,18 @@ export function addSkyCrownApproach(art: SiteArt) {
   const entrances = new Map<Deck, { dx: number; dz: number; width: number }[]>();
 
   function connect(a: Deck, b: Deck, width: number, gate?: string, turn?: [number, number]) {
-    const from = new THREE.Vector3(...a.p), to = new THREE.Vector3(...b.p);
-    const corner = turn ? new THREE.Vector3(turn[0], 0, turn[1]) : null;
-    const startDirection = (corner ?? to).clone().sub(from).setY(0).normalize();
-    const endDirection = (corner ?? from).clone().sub(to).setY(0).normalize();
+    const { startDirection, endDirection, points, support } = linkPath(a, b, width, turn);
     for (const [node, direction] of [[a, startDirection], [b, endDirection]] as const) {
       const ports = entrances.get(node) ?? [];
       ports.push({ dx: direction.x, dz: direction.z, width }); entrances.set(node, ports);
     }
-    const edge = (deck: Deck, direction: THREE.Vector3) => Math.min(
-      deck.w / 2 / Math.max(Math.abs(direction.x), .001), deck.d / 2 / Math.max(Math.abs(direction.z), .001));
-    // Overlap the top surface, without a solid end cap to catch the capsule.
-    const start = from.clone().addScaledVector(startDirection, edge(a, startDirection) - .6);
-    const end = to.clone().addScaledVector(endDirection, edge(b, endDirection) - .6);
-    const points = [start];
-    if (corner) {
-      // Two stair flights meet a level resting landing. Length is gained outside
-      // the decks, not by placing an unwalkable ramp across a tiny vertical gap.
-      const incoming = corner.clone().sub(start).setY(0).normalize();
-      const outgoing = end.clone().sub(corner).setY(0).normalize();
-      const landingA = corner.clone().addScaledVector(incoming, -width);
-      const landingB = corner.clone().addScaledVector(outgoing, width);
-      const firstRun = Math.hypot(landingA.x - start.x, landingA.z - start.z);
-      const lastRun = Math.hypot(end.x - landingB.x, end.z - landingB.z);
-      landingA.y = landingB.y = start.y + (end.y - start.y) * firstRun / (firstRun + lastRun);
-      points.push(landingA, landingB);
-      const support = corner.clone(); support.y = landingA.y - 9;
-      for (const landing of [landingA, landingB]) art.beam(
-        [support.x, support.y, support.z], [landing.x, landing.y - .35, landing.z], .5, steel);
-    }
-    points.push(end);
+    const start = points[0];
+    if (support) for (const landing of points.slice(1, -1)) art.beam(
+      [support.x, support.y, support.z], [landing.x, landing.y - .35, landing.z], .5, steel);
+    // A continuous ribbon: round joint pads sit at landing height and would leave a ~0.6 m lip
+    // where a stair flight arrives at its resting landing.
     landscapeWalkway(art, points.map(p => p.toArray()), {
-      width, floor: slate, edge: bronze, rails: true, steps: true,
+      width, floor: slate, edge: bronze, rails: true, steps: true, continuousCorners: true,
     });
     if (gate) {
       const first = points[1], c = start.clone().lerp(first, .22); c.y += 1.35;
@@ -119,19 +153,7 @@ export function addSkyCrownApproach(art: SiteArt) {
       colliders.push(collider); lockedGates.push({ node, collider, flag: gate });
     }
   }
-  connect(DECK.dock, DECK.range, 6, undefined, [106, 294]);
-  connect(DECK.range, DECK.hall, 6.4, J.skyScan, [83, 207]);
-  connect(DECK.range, DECK.anchor, 4.7, J.skyAnchor);
-  connect(DECK.hall, DECK.anchor, 4.7);
-  connect(DECK.hall, DECK.light, 5.7, J.skyReview);
-  connect(DECK.hall, DECK.service, 5.7, J.skyReview);
-  connect(DECK.light, DECK.throat, 6.1);
-  connect(DECK.service, DECK.throat, 6.1, undefined, [204, 330]);
-  connect(DECK.service, DECK.archive, 4.2);
-  connect(DECK.archive, DECK.throat, 4.7);
-  connect(DECK.throat, DECK.back, 6, J.isolate, [281, 220]);
-  connect(DECK.back, DECK.court, 6, undefined, [338, 231]);
-  connect(DECK.court, DECK.oldDock, 5.9);
+  for (const [a, b, width, gate, turn] of LINKS) connect(DECK[a], DECK[b], width, gate, turn);
 
   // Service hoist landing mouths are openings in the same permanent rail system.
   entrances.get(DECK.hall)!.push({ dx: 23 / Math.hypot(23, 13), dz: 13 / Math.hypot(23, 13), width: 6.2 });

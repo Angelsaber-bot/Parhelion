@@ -5,6 +5,7 @@ import {createArmoryWorkshop,ARMORY_WORKSHOP} from '../src/story/armoryWorkshop'
 import {settlementGrassClearance} from '../src/map/grassClearance';
 import {bootWorldWithoutGpu} from './world-dom-boot.fixture';
 import {WORLD_PROGRESS_KEY} from '../src/core/progress';
+import {VALLEY_PROLOGUE as P} from '../src/story/valleyPrologue';
 
 test('fitted workshop has bounded static batches, an open entry and actual circulation aisles',()=>{
  const kit=createArmoryWorkshop();kit.root.updateMatrixWorld(true);
@@ -29,7 +30,9 @@ test('the original workshop, its paved west entrance and range exclude grass, su
 });
 
 test('production grounded input still claims and persists equipment at the original rack',async()=>{
- const h=await bootWorldWithoutGpu({deterministic:true}),w=h.world,d=h.window.document;let now=0;
+ // Authored field preparation is the prerequisite; this test isolates the
+ // subsequent physical rack interaction and its persistence.
+ const h=await bootWorldWithoutGpu({deterministic:true,initialStorage:{[WORLD_PROGRESS_KEY]:JSON.stringify({done:[P.room,P.briefed,P.cartReturn,P.workshop],found:[]})}}),w=h.world,d=h.window.document;let now=0;
  const frame=(n=1)=>{for(let i=0;i<n;i++)h.frame(now+=1000/60);};
  const key=()=>{for(const type of['keydown','keyup'])d.body.dispatchEvent(new h.window.KeyboardEvent(type,{code:w.settings.bindingsFor('interact')[0],bubbles:true}));};
  try{

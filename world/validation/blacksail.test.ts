@@ -209,9 +209,10 @@ test('blacksail: the ghost bridge carries the player from the dock across the fl
     bow(g2), side(g2, -g2.len * 0.2), side(g2, g2.len * 0.3), stern(g2),
     bow(flag), side(flag, -flag.len * 0.25), side(flag, -10)];
   // without the three shards the bridge is not there: the player ends up in the sea
-  const off = walk(W(214, -14), route, [], { jump: false });
+  // The flagship hull is its own moving collider (always present); its last link appears with the bridge.
+  const off = walk(W(214, -14), route, ['COL_Flagship_Hull'], { jump: false });
   assert.ok(off.k < route.length, 'no bridge before the shards');
-  const { p, k } = walk(W(214, -14), route, ['COL_Ghost_Bridge'], { jump: false });
+  const { p, k } = walk(W(214, -14), route, ['COL_Ghost_Bridge', 'COL_Ghost_Flagship_Link', 'COL_Flagship_Hull'], { jump: false });
   assert.equal(k, route.length, `stuck at ${where(p)} heading for ${route[k]}`);
   assert.ok(!p.swimming, 'stayed out of the water');
   for (let i = 0; i < 240 && !reach(p, 'sea_core'); i++) { face(p, ...at('sea_core')); p.step(1 / 120, { ...idle, z: 1 }); }

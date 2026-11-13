@@ -1188,11 +1188,11 @@ function applyWorldState() {
   if (typeof orleansSiegeLandscape !== 'undefined') orleansSiegeLandscape.apply(done);
   if (typeof egyptConfluenceLandscape !== 'undefined') egyptConfluenceLandscape.apply(done);
   if (typeof egyptWaterPlanLandscape !== 'undefined') egyptWaterPlanLandscape.apply(done);
-  egyptRiverConsequences.apply(done);
-  egyptTempleMechanisms.apply(done, 0);
+  if (typeof egyptRiverConsequences !== 'undefined') egyptRiverConsequences.apply(done);
+  if (typeof egyptTempleMechanisms !== 'undefined') egyptTempleMechanisms.apply(done, 0);
   if (typeof egyptWaterwheel !== 'undefined') egyptWaterwheel.apply(done, 0);
-  egyptSolarBoat.showRepairedShield(done.has(EH.brace), done.has(ESB.shieldRaised));
-  winterCustomsWorks.apply(done, 0);
+  if (typeof egyptSolarBoat !== 'undefined') egyptSolarBoat.showRepairedShield(done.has(EH.brace), done.has(ESB.shieldRaised));
+  if (typeof winterCustomsWorks !== 'undefined') winterCustomsWorks.apply(done, 0);
   if (typeof fieldSideSites !== 'undefined' && typeof player !== 'undefined') fieldSideSites?.apply(done, 0, player.pos);
   if (typeof valleyInvestigations !== 'undefined') valleyInvestigations?.apply(done);
   if (typeof valleyCommunity !== 'undefined' && typeof player !== 'undefined') valleyCommunity?.update(done, 0, player.pos);
@@ -1210,10 +1210,10 @@ function applyWorldState() {
   if(typeof egyptMirrors!=='undefined')egyptMirrors.apply(done);
   if(typeof homeTown!=='undefined')homeTown?.apply();
   adventureSites.apply(done,0,adventureRuntime?.cartPosition,adventureRuntime?.departureProgress,adventureRuntime?.reliefProgress);
-  valleyMaintenanceLine.apply(done);
-  flagshipNavigation.update(0, player, true);
-  flagshipMastBridge.apply(done, 0, undefined, 0, flagshipNavigation.floating);
-  kyotoStreetLandscape.apply(done, 0);
+  if (typeof valleyMaintenanceLine !== 'undefined') valleyMaintenanceLine.apply(done);
+  if (typeof flagshipNavigation !== 'undefined' && typeof player !== 'undefined') flagshipNavigation.update(0, player, true);
+  if (typeof flagshipMastBridge !== 'undefined' && typeof flagshipNavigation !== 'undefined') flagshipMastBridge.apply(done, 0, undefined, 0, flagshipNavigation.floating);
+  if (typeof kyotoStreetLandscape !== 'undefined') kyotoStreetLandscape.apply(done, 0);
   applyWeaponFinish();
   for (const t of targets) {
     if(t.userData.homeTarget)continue;
@@ -4350,8 +4350,8 @@ function frame(now: number) {
     egyptTempleMechanisms.apply(done, active ? STEP : 0, player);
     egyptWaterwheel.apply(done, active ? STEP : 0, player);
     winterCustomsWorks.apply(done, active ? STEP : 0, player);
-    valleyMaintenanceLine.update(STEP, player);
-    flagshipNavigation.update(STEP, player, !!combat.storyEncounter || combat.bossStarted);
+    valleyMaintenanceLine.update(active ? STEP : 0, player);
+    flagshipNavigation.update(active ? STEP : 0, player, !!combat.storyEncounter || combat.bossStarted);
     const flagshipBoss = combat.state.enemies.find(e => e.id === 'boss_drowned_admiral');
     const flagshipBossMarker = layout.markers.find(m => m.id === 'boss_drowned_admiral')!;
     if (flagshipBoss && !combat.bossStarted) {

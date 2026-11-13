@@ -11,7 +11,7 @@ interface BossTitle { name: Line; epithet: Line; place: Line; act: Line; color: 
 export const BOSS_TITLES: Readonly<Record<string, BossTitle>> = Object.freeze({
   boss_vacant_king: { name: ['空位之王', 'The Vacant King'], epithet: ['无人加冕的王座之影', 'Shadow of an Uncrowned Throne'], place: ['落日王国 · 537 · 卡姆兰', 'Sunset Kingdom · 537 · Camlann'], act: ['第二幕 · 誓剑雨', 'Act II · Oath Blade Rain'], color: '#ffbe62' },
   boss_drowned_admiral: { name: ['亡航提督', 'The Drowned Admiral'], epithet: ['永不靠岸的航令', 'The Order That Never Makes Port'], place: ['黑帆尽头 · 1718 · 拿骚', "Black Sail's End · 1718 · Nassau"], act: ['第二幕 · 侧舷齐射', 'Act II · Broadside'], color: '#a8fff0' },
-  boss_winter_warden: { name: ['执冬者', 'The Winter Warden'], epithet: ['冻结退路的守夜人', 'Night Watch of the Frozen Retreat'], place: ['永冬之城 · 1812 · 红场', 'City of Eternal Winter · 1812 · Red Square'], act: ['第二幕 · 冻土绽放', 'Act II · Frost Bloom'], color: '#bfeaff' },
+  boss_winter_warden: { name: ['执冬者', 'The Winter Warden'], epithet: ['冻结退路的守夜人', 'Night Watch of the Frozen Retreat'], place: ['永冬之城 · 1812 · 旧税关广场', 'City of Eternal Winter · 1812 · Old Customs Square'], act: ['第二幕 · 冻土绽放', 'Act II · Frost Bloom'], color: '#bfeaff' },
   boss_hellfire_lord: { name: ['业火之主', 'The Hellfire Lord'], epithet: ['改写结局的火', 'The Fire That Rewrites Endings'], place: ['业火京都 · 1582 · 本能寺', 'Hellfire Kyoto · 1582 · Honnō-ji'], act: ['第二幕 · 业火追迹', 'Act II · Hellfire Trail'], color: '#ff8a6a' },
 });
 

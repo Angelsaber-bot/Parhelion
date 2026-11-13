@@ -72,9 +72,9 @@ export function createSkyServiceLift() {
     return { ...g, art, collider, attr, base: Float32Array.from(attr.array) };
   });
   const markers: Marker[] = [
-    { id: SKY_LIFT.lower, p: [x - 1.5, low + 1, z + 4.5], type: 'interact', radius: 2.2, label: '观测厅维修升降机 · 呼叫下层' },
-    { id: SKY_LIFT.upper, p: [x + 4.5, high + 1, z + 1.5], type: 'interact', radius: 2.2, label: '晴空庭维修升降机 · 呼叫上层' },
-    { id: SKY_LIFT.cabin, p: [x - 2.25, low + 1, z - 1.8], type: 'interact', radius: 2.2, label: '维修升降机 · 前往另一层' },
+    { id: SKY_LIFT.lower, p: [x - .6, low + 1, z + 4.5], type: 'interact', radius: 2.2, label: '观测厅维修升降机 · 呼叫下层' },
+    { id: SKY_LIFT.upper, p: [x + 4.5, high + 1, z + .6], type: 'interact', radius: 2.2, label: '晴空庭维修升降机 · 呼叫上层' },
+    { id: SKY_LIFT.cabin, p: [x - 1.35, low + 1, z - 1.8], type: 'interact', radius: 2.2, label: '维修升降机 · 前往另一层' },
   ];
   let y: number = low, target: number = low, unlocked = false;
   const moving = () => Math.abs(y - target) > .001;

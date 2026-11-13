@@ -1,6 +1,7 @@
 import { VALLEY_PROLOGUE, VALLEY_RESCUE_ENCOUNTER, VALLEY_SURVEY_HEIGHT } from '../story/valleyPrologue';
 import type {StoryEncounterSpec} from '../story/storyEncounters';
 import { gateEncounter, KINGDOM_GATE } from '../story/kingdomGate';
+import { KINGDOM_ROAD } from '../story/kingdomRoad';
 import * as THREE from 'three';
 import type { Collider } from '../player/player';
 import type { Layout } from '../core/types';
@@ -36,7 +37,10 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     }
     return true;
   };
-  const kingdomMarkers = new Set<string>([KINGDOM_GATE.entry,KINGDOM_GATE.latch,KINGDOM_GATE.winch,KINGDOM_GATE.service]);
+  // The gate works tables sit 7-11 m inside the arch and are only used after the opening patrol,
+  // so they must not veto the patrol's two authored landing points.
+  const kingdomMarkers = new Set<string>([KINGDOM_GATE.entry,KINGDOM_GATE.latch,KINGDOM_GATE.winch,KINGDOM_GATE.service,
+    KINGDOM_ROAD.front,KINGDOM_ROAD.side,KINGDOM_ROAD.start,KINGDOM_ROAD.finish]);
   const hubs = new Set(['camp', 'hq', 'armory', 'summon', 'tower', 'knights', 'camelot', 'roundtable', 'swordlake', 'camlann', 'pass_trail', 'port', 'fort', 'reef', 'lighthouse', 'crossing', 'bivouac', 'kremlin', 'redsquare', 'inari', 'kamo', 'honnoji']);
   // Wilderness placement ignores the exploration layer entirely (its markers and colliders), so the seeded
   // wild roster is identical whatever exploration content exists; story encounters still respect it.

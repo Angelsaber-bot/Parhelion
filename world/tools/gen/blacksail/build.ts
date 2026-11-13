@@ -1,6 +1,7 @@
 // Structures, props and vegetation for 黑帆尽头 (Black Sail's End).
 import * as THREE from 'three';
 import { BLACKSAIL_CIVIL_CLEARANCE } from '../../../src/map/blackSailCivilPlan.js';
+import { insideSettlementSite } from '../../../src/map/settlementSites.js';
 import { Batch, T, BOX, distToPolyline } from '../geo.js';
 import { mulberry32, range, fbm } from '../rng.js';
 import { PAL, type Piece } from '../structures.js';
@@ -688,6 +689,7 @@ export function buildBlacksail(heightAt: HeightAt) {
   };
   let nPalm = 0, nTree = 0;
   const STEP = 6;
+  const trunkBatch = trunks, leafBatch = leaves, hubDiscard = new Batch('Hub_Site_Discard');
   for (let gz = -BLACKSAIL.half; gz < BLACKSAIL.half; gz += STEP)
     for (let gx = -BLACKSAIL.half; gx < BLACKSAIL.half; gx += STEP) {
       const x = gx + range(rng, 0, STEP), z = gz + range(rng, 0, STEP);
@@ -695,12 +697,16 @@ export function buildBlacksail(heightAt: HeightAt) {
       if (Math.abs(x) > BLACKSAIL.playHalf + 12 || Math.abs(z) > BLACKSAIL.playHalf + 12) continue;
       const h = heightAt(x, z);
       if (h < WL + 0.8 || blocked(x, z) || slope(x, z) > 0.8) continue;
+      // A palm or tree inside the settlement hub's site still draws its random numbers (so every
+      // other one keeps its place) but is drawn into a discarded batch.
+      const site = insideSettlementSite('blacksail', x, z);
+      const trunks = site ? hubDiscard : trunkBatch, leaves = site ? hubDiscard : leafBatch;
       const d = coastD(x, z);
       const n = fbm(x * 0.02, z * 0.02, 3, BLACKSAIL.seed + 40);
       const y = h - 0.3;
       if (d > 3 && d < 50 && h < 10) {
         if (roll > 0.12 + Math.max(0, n) * 0.22) continue;
-        nPalm++;
+        if (!site) nPalm++;
         const lean = range(rng, 0.12, 0.32), segs = 6, segH = 1.05 * s;
         let px = x, py = y, pz = z;
         for (let k = 0; k < segs; k++) {
@@ -722,7 +728,7 @@ export function buildBlacksail(heightAt: HeightAt) {
       }
       const dens = h > 50 ? 0.03 : h > 24 ? 0.2 + n * 0.2 : 0.05 + Math.max(0, n) * 0.28;
       if (roll > dens) continue;
-      nTree++;
+      if (!site) nTree++;
       if (h > 24 || rng() < 0.3) {
         const th = 2.6 * s;
         trunks.add(new THREE.CylinderGeometry(0.22, 0.34, 1, 6), C.woodDark, T(x, y + th / 2, z, ry, s, th, s), false);

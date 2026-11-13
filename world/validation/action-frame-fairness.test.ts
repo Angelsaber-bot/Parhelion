@@ -13,6 +13,15 @@ for (const fps of AUDIT_FPS) test(`actual main frame at ${fps}FPS preserves exac
   assert.equal(result.combatProtectedTicks, 2, 'same20Hz impact samples at all display rates');
 });
 
+test('production frame freezes the valley cable car and flagship during pause', () => {
+  for (const fps of AUDIT_FPS) {
+    assert.deepEqual(auditEvadeFrame(fps, false).machinerySeconds, { valley: 0, flagship: 0 });
+    const active = auditEvadeFrame(fps).machinerySeconds;
+    assert.ok(Math.abs(active.valley - 1) < 1e-8);
+    assert.ok(Math.abs(active.flagship - 1) < 1e-8);
+  }
+});
+
 test('held fire preserves long-run cadence and6-round vent across27/30/60/120FPS', () => {
   const runs = AUDIT_FPS.map(fps => auditHeatFrame(fps, 60));
   assert.equal(new Set(runs.map(r => r.shots)).size, 1, JSON.stringify(runs));

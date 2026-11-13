@@ -14,6 +14,8 @@ import {
 import { kamoD, pondD, inHonnoji, sannen, CITY_RECT } from './terrain.js';
 import { addGateCraft, addKitsune, addPagodaLevelCraft, addKiyomizuCraft, addKinkakuCraft, addBurntCraft, addHonnojiCraft } from './landmark-craft.js';
 import { buildArashiyama, isArashiyamaReserved } from './arashiyama.js';
+import { EXPANSION_CONNECTIONS, distanceToLine } from '../../../src/map/worldPlan';
+import { REGIONS, regionToWorld } from '../../../src/map/regions';
 import { addKyotoRoof, addKyotoAttic, addMachiyaCraft, addBeam, addCityBlock } from './architecture.js';
 
 type HeightAt = (x: number, z: number) => number;
@@ -417,18 +419,23 @@ export function buildKyoto(heightAt: HeightAt) {
     // At x=130 the 2.4 m deck leaves 2.4 m clear below the original bridge slab.
     passage(b, [[120, heightAt(120, -97) + .12, -97], [130, 2.4, -97]], 3, C.wood);
     passage(b, [[130, 2.4, -97], [130, 2.4, -67]], 2.8, C.wood);
-    passage(b, [[130, 2.4, -67], [146, y, -67], [146, y, -75]], 3, C.wood);
+    // The climb tops out before the corner so the turning landing is level with it (no lip).
+    passage(b, [[130, 2.4, -67], [143.5, y, -67], [146, y, -67], [146, y, -75]], 3, C.wood);
     b.box(137, 2.16, -97, 14, .24, 8, C.wood);
     // Open rail ends at the lower passage and upper bridge entry; no invisible full-width barrier.
     for (const side of [-1, 1]) {
       const edgeZ = -67 + side * 1.42;
-      for (let i = 0; i <= 4; i++) {
+      // The south rail starts past the lower wharf passage, which arrives along x = 130.
+      const first = side < 0 ? 1 : 0;
+      for (let i = first; i <= 4; i++) {
         const x = 130 + i * 4, py = 2.4 + (y - 2.4) * i / 4;
         const ground = heightAt(x, edgeZ);
         b.box(x, ground, edgeZ, .18, py + 1 - ground, .18, C.woodDark);
       }
-      addBeam(b, [130, 3.4, edgeZ], [146, y + 1, edgeZ], .13, .13, C.woodDark);
-      b.box(146 + side * 1.42, y, -70.6, .14, 1, 7.2, C.woodDark);
+      addBeam(b, [130 + first * 4, 3.4 + (y - 2.4) * first / 4, edgeZ], [146, y + 1, edgeZ], .13, .13, C.woodDark);
+      // The west rail stops short of the corner where the ramp from x = 130 turns south.
+      if (side < 0) b.box(146 + side * 1.42, y, -71.35, .14, 1, 5.7, C.woodDark);
+      else b.box(146 + side * 1.42, y, -70.6, .14, 1, 7.2, C.woodDark);
       const ground = heightAt(146 + side * 1.42, -70);
       b.box(146 + side * 1.42, ground, -70, .2, y - ground, .2, C.woodDark);
     }
@@ -855,7 +862,14 @@ export function buildKyoto(heightAt: HeightAt) {
   // ───────────────────────── Vegetation: cedars on the hills, maples, bamboo groves ─────────────────────────
   const inCity = (x: number, z: number, pad: number) => x > CITY_RECT[0] - pad && x < CITY_RECT[1] + pad && z > CITY_RECT[2] - pad && z < CITY_RECT[3] + pad;
   const onPath = (x: number, z: number, pad: number) => PATHS.some((p) => distToPolyline(x, z, p) < pad) || distToPolyline(x, z, TORII_PATH) < pad + 2 || sannen(x, z).d < pad + 8;
+  const kyotoRegion = REGIONS.find(region => region.id === 'kyoto')!;
+  const caravanRoads = EXPANSION_CONNECTIONS.filter(link => link.from === 'kyoto');
+  const onCaravanRoad = (x: number, z: number) => {
+    const [wx, wz] = regionToWorld(kyotoRegion, x, z);
+    return caravanRoads.some(link => distanceToLine(wx, wz, link.points) < link.width / 2 + 5);
+  };
   const blocked = (x: number, z: number) =>
+    onCaravanRoad(x, z) ||
     (x > 169 && x < 194 && z > 44 && z < 72) ||
     isArashiyamaReserved(x, z) || inCity(x, z, 4) || onPath(x, z, 4) || kamoD(x, z) < KAMO_BANK + 1 || pondD(x, z) < 1.25 ||
     Math.hypot(x - AKECHI.c[0], (z - AKECHI.c[1]) * 0.85) < 40 || Math.hypot(x - PAVILION.c[0], z - PAVILION.c[1]) < 16 ||
