@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
 import { mergeParts } from '../settlements/merge';
+import { settlementPoint, settlementMatrix } from '../settlements/frame';
 import type { SettlementPlacement } from '../settlements/types';
 import type { Collider } from '../player/player';
 import type { Marker } from '../core/types';
@@ -99,10 +100,10 @@ function kyoto(a:Art){
  a.box('wood',[0,.42,.1],[1.25,.13,.65],true);for(const x of[-.46,.46])a.box('wood',[x,.22,.1],[.1,.4,.45],true);
 }
 export function createEraStoryScene(placement:SettlementPlacement){
- if(placement.id==='alpha')throw new Error('Valley has its own scene');const region=placement.id,spec=ERA_OPTIONALS[region],origin=placement.position.map((v,i)=>v+ERA_SCENE_LOCAL[region][i]) as V3;
- const art=new Art(region);({britain,blacksail,winter,kyoto}[region])(art);art.finish(origin,region);
- const collisionGeometry=mergeParts(art.solids);art.solids.forEach(g=>g.dispose());art.solids.length=0;collisionGeometry.translate(...origin);const colliders:Collider[]=[{name:`EraStation_${region}`,enabled:true,bvh:new MeshBVH(collisionGeometry)}];
- const markers:Marker[]=[{id:spec.id,type:'interact',label:spec.label[0],p:[origin[0],origin[1]+1.15,origin[2]+.9],radius:2.35}];let disposed=false;
+ if(placement.id==='alpha')throw new Error('Valley has its own scene');const region=placement.id,spec=ERA_OPTIONALS[region],origin=settlementPoint(placement,ERA_SCENE_LOCAL[region]);
+ const art=new Art(region);({britain,blacksail,winter,kyoto}[region])(art);art.finish(origin,region);art.group.rotation.y=placement.yaw??0;art.group.updateMatrixWorld(true);
+ const collisionGeometry=mergeParts(art.solids);art.solids.forEach(g=>g.dispose());art.solids.length=0;collisionGeometry.applyMatrix4(settlementMatrix({...placement,position:origin}));const colliders:Collider[]=[{name:`EraStation_${region}`,enabled:true,bvh:new MeshBVH(collisionGeometry)}];
+ const markers:Marker[]=[{id:spec.id,type:'interact',label:spec.label[0],p:settlementPoint({...placement,position:origin},[0,1.15,.9]),radius:2.35}];let disposed=false;
  function applyState(state:Pick<EraStoryState,'routeReady'|'complete'|'discovered'>){if(disposed)return;art.materials.signal.emissiveIntensity=state.discovered?1.25:0;art.materials.signal.color.setHex(state.discovered?0xffd58c:0x9a947e);art.materials.complete.emissiveIntensity=state.complete?.4:0;art.materials.complete.color.setHex(state.complete?0xf4d797:state.discovered?0xb7a178:0x8d8b79);art.materials.cloth.color.setHex(state.routeReady||state.complete?({britain:0x6e91ca,blacksail:0x4eac9b,winter:0x7d9db7,kyoto:0xc76644}[region]):({britain:0x657da2,blacksail:0x398585,winter:0x66839c,kyoto:0xa24b3c}[region]));art.group.userData.state={...state};}
  applyState({routeReady:false,complete:false,discovered:false});
  return {group:art.group,markers,colliders,applyState,updateVisibility(player:Pick<THREE.Vector3,'x'|'z'>){if(!disposed)art.group.visible=Math.hypot(player.x-origin[0],player.z-origin[2])<180;},dispose(){if(disposed)return;disposed=true;colliders.forEach(c=>c.enabled=false);art.group.traverse(o=>{if(o instanceof THREE.Mesh)o.geometry.dispose();});collisionGeometry.dispose();Object.values(art.materials).forEach(m=>{m.map?.dispose();m.dispose();});art.group.removeFromParent();art.group.clear();}};

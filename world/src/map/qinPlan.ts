@@ -2,7 +2,7 @@
  * Qin Empire: one complete Mount Li with the palace on its southern spur and a
  * buried city that grows out of the mountain's interior. Shared by the
  * generator (terrain/architecture), the runtime army-order mechanism and tests.
- * All coordinates are region-local (world = local + [720, -720]); -Z is north.
+ * All coordinates are region-local; the frame rotates 180° at [-720, -720].
  */
 export type QinPoint = readonly [number, number, number];
 export const QIN_OFFSET = [-720, -720] as const;

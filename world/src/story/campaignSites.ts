@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { mergeParts } from '../settlements/merge';
 import type { RegionId, SettlementPlacement, PlacedNpcSocket, Localized } from '../settlements/types';
 import type { Marker } from '../core/types';
+import { settlementPoint, settlementMatrix } from '../settlements/frame';
 import { CAMPAIGN_EPISODES } from './campaignEpisodes';
 
 type V3 = [number, number, number];
@@ -242,11 +243,12 @@ export function buildCampaignSite(region: RegionId) {
 export function createCampaignSites(placements:readonly SettlementPlacement[]) {
   const root=new THREE.Group();root.name='Campaign_Working_Spaces';
   const sites=placements.map(p=>{
-    const site=buildCampaignSite(p.id),origin=p.position.map((v,i)=>v+site.local[i]) as V3;
-    site.root.position.set(...origin);root.add(site.root);
-    for(const g of site.collisionGeometries)g.translate(...origin);
-    const npc={...site.npc,position:site.npc.position.map((v,i)=>v+origin[i]) as V3};
-    const markers=site.interactions.map((socket,i):Marker=>({id:`campaign_${p.id}_${i===0?'work':'decision'}`,type:'interact',label:CAMPAIGN_EPISODES[p.id][i===0?'workLabel':'decisionLabel'][0],p:socket.map((v,j)=>v+origin[j]) as V3,radius:1.65}));
+    const site=buildCampaignSite(p.id),origin=settlementPoint(p,site.local);
+    const frame=settlementMatrix({...p,position:origin});
+    site.root.applyMatrix4(frame);root.add(site.root);
+    for(const g of site.collisionGeometries)g.applyMatrix4(frame);
+    const npc={...site.npc,position:settlementPoint({...p,position:origin},site.npc.position),yaw:(site.npc.yaw??0)+(p.yaw??0)};
+    const markers=site.interactions.map((socket,i):Marker=>({id:`campaign_${p.id}_${i===0?'work':'decision'}`,type:'interact',label:CAMPAIGN_EPISODES[p.id][i===0?'workLabel':'decisionLabel'][0],p:settlementPoint({...p,position:origin},socket),radius:1.65}));
     return{...site,origin,npc,markers};
   });
   let disposed=false;

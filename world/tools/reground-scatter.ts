@@ -19,6 +19,7 @@ import {TILE_JOINS,toTile} from './gen/continent';
 import {REGIONS,regionToWorld} from '../src/map/regions';
 import {EXPANSION_CONNECTIONS,distanceToLine} from '../src/map/worldPlan';
 import {applySeating,type SeatingEdits} from '../validation/join-band-seating';
+import {scatterFingerprint} from './scatter-seating-record';
 
 const TARGET=/^(Trees_Trunks|Trees_Leaves|Rocks|Bushes|COL_Props)/,BAND=220,WATER=.25;
 const EDITS=new URL('../validation/join-band-seating.edits.json',import.meta.url);
@@ -33,6 +34,8 @@ for(const id of ['alpha','britain','winter','kyoto','blacksail'].filter(r=>!sele
   const url=new URL(`../public/assets/world_${id}.glb`,import.meta.url),bytes=readFileSync(url);
   const doc=await io.readBinary(bytes);
   const nodes=doc.getRoot().listNodes().filter(n=>TARGET.test(n.getName()));
+  const expected=record.appliedHashes?.[id];
+  if(expected&&expected!==scatterFingerprint(nodes))throw new Error(`${id}: seating ledger belongs to another mesh export; regenerate this region before seating it`);
   // back to the reviewed bytes first, so repeated runs never stack shifts
   applySeating(record.regions[id]??{},nodes,-1);
   const {scene}=await regionLoader().parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
@@ -96,6 +99,9 @@ for(const id of ['alpha','britain','winter','kyoto','blacksail'].filter(r=>!sele
   record.regions[id]=region;
   applySeating(region,nodes,1);
   doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({method:EXTMeshoptCompression.EncoderMethod.QUANTIZE});
-  writeFileSync(url,await io.writeBinary(doc));
+  const packed=await io.writeBinary(doc);
+  writeFileSync(url,packed);
+  const saved=await io.readBinary(packed);
+  (record.appliedHashes??={})[id]=scatterFingerprint(saved.getRoot().listNodes());
 }
 if(!dry)writeFileSync(EDITS,JSON.stringify(record));

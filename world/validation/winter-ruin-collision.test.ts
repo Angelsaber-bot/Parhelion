@@ -39,8 +39,10 @@ const walk=(p:Player,to:THREE.Vector3,seconds=4)=>{
  }
 };
 
-test('all 13 burned-open houses pass shots through the real opening but retain visible low/side-wall cover',()=>{
- assert.equal(ruins.length,13);
+test('all authored burned-open houses pass shots through the real opening but retain visible low/side-wall cover',()=>{
+ const houses=gltf.scene.getObjectByName('Moscow_WinterTimber')!.userData.architectureManifest as {id:number;burnt:boolean;family:string}[];
+ assert.deepEqual(ruins.map(h=>h.id),houses.filter(h=>h.burnt&&['timber_izba','warehouse'].includes(h.family)).map(h=>h.id));
+ assert.ok(ruins.length>=10,'retain a substantial burned quarter');
  for(const h of ruins){
   const [w,,d]=h.size;
   for(const side of [-1,1]){
@@ -89,7 +91,7 @@ test('actual Player settles on each ruin visible interior and exits both open en
  }
 });
 
-test('raised rubble is not a false walk-in door: actual capsule remains outside all 13 solid plinths',()=>{
+test('raised rubble is not a false walk-in door: actual capsule remains outside all authored solid plinths',()=>{
  for(const h of ruins)for(const side of [-1,1]){
   const start=local(h,0,h.size[1]+1,side*(h.size[2]/2+1.2));
   const ground=ray(collision,start,local(h,0,-3,side*(h.size[2]/2+1.2)));
@@ -124,5 +126,14 @@ test('every exported ruin collision vertex matches its authored solid, within on
  for(let i=0;i<expected.attributes.position.count;i++){
   vertex.fromBufferAttribute(positions,index?index.getX(i):i).applyMatrix4(actual.matrixWorld);
   assert.ok(vertex.distanceTo(new THREE.Vector3().fromBufferAttribute(expected.attributes.position,i))<.004,`exported shell vertex ${i} follows the actual art solid`);
+ }
+});
+
+ test('Moscow houses leave clearance between rotated footprints',()=>{
+ const houses=gltf.scene.getObjectByName('Moscow_WinterTimber')!.userData.architectureManifest as House[];
+ assert.ok(houses.length>=35,'retain the inhabited district');
+ for(let i=0;i<houses.length;i++)for(let j=i+1;j<houses.length;j++){
+ const a=houses[i],b=houses[j],distance=Math.hypot(a.p[0]-b.p[0],a.p[2]-b.p[2]);
+ assert.ok(distance>=Math.hypot(a.size[0],a.size[2])/2+Math.hypot(b.size[0],b.size[2])/2+2,`houses ${a.id}/${b.id}: overlapping footprint or blocked gap`);
  }
 });

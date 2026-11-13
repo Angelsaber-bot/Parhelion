@@ -17,6 +17,7 @@ import { winterMaterialProfile } from '../../src/environment/winterMaterialProfi
 import { blackSailMaterialProfile } from '../../src/environment/blackSailMaterialProfiles.js';
 import { britainMaterialProfile } from '../../src/environment/britainMaterialProfiles.js';
 import { valleyMaterialProfile } from '../../src/environment/valleyMaterialProfiles.js';
+import { invalidateScatterSeating } from '../scatter-seating-record.js';
 
 // GLTFExporter uses FileReader to pack the binary buffer; Node only has Blob.
 (globalThis as any).FileReader ??= class {
@@ -151,6 +152,9 @@ export async function writeRegion(r: RegionOut) {
   mkdirSync(outDir, { recursive: true });
   const packed = await compress(new Uint8Array(glb), r.file === 'world_kyoto' || r.file === 'world_winter' || r.file === 'world_blacksail' || r.file === 'world_britain' || r.file === 'world_alpha');
   writeFileSync(resolve(outDir, `${r.file}.glb`), packed);
+  // Regeneration replaces vertex order/counts: old per-vertex offsets would tear
+  // unrelated new trees, rocks and buildings when the seating pass undoes them.
+  invalidateScatterSeating(regionId);
   writeFileSync(resolve(outDir, `${r.file}.layout.json`), JSON.stringify(r.layout, null, 1));
   return { bytes: packed.byteLength, tris };
 }

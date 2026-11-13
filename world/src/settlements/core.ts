@@ -62,7 +62,7 @@ export function findSettlementPlacement(kit: SettlementKit, ctx: PlacementContex
     if (ctx.blockers.intersectsBox(box,new THREE.Matrix4())) {rejected.props++;continue;}
     box.set(new THREE.Vector3(ex-2,Math.min(y,approach)+.12,Math.min(ez,ez+s*10)),new THREE.Vector3(ex+2,y+3,Math.max(ez,ez+s*10)));
     if (ctx.blockers.intersectsBox(box,new THREE.Matrix4())) {rejected.ramp++;continue;}
-    return { id:kit.id,name:kit.name,position:[x,y,z],entry:[ex,y,ez],footprint:kit.footprint,groundRange:range };
+    return { id:kit.id,name:kit.name,yaw:region.rotated?Math.PI:0,position:[x,y,z],entry:[ex,y,ez],footprint:kit.footprint,groundRange:range };
   }
   throw new Error(`No safe terrain slot found for ${kit.id} settlement: ${JSON.stringify(rejected)}`);
 }

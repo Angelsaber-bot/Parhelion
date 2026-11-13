@@ -1,3 +1,4 @@
+import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
 import { createEgyptReedMarket } from './environment/egyptReedMarket';
@@ -578,7 +579,7 @@ addEventListener('pagehide', event => { if (!event.persisted) campaignSites.disp
 // One contextual place per chapter, never one marker per NPC or furniture item.
 for (const p of settlements.placements) layout.areas.push({
   id: `${p.id}_living_hub`, name: p.name[0], nameEn: p.name[1], c: [p.position[0],p.position[2]],
-  r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: [p.entry[0],p.entry[2]+8], region:p.id,
+  r: Math.hypot(...p.footprint)/2, color: '#c4ced6', tp: settlementEntryApproach(p,8), region:p.id,
 });
 const traversalRepairs = createTraversalRepairs(); scene.add(traversalRepairs.root); freezeStaticArt(traversalRepairs.root);
 staticGeos.push(...traversalRepairs.collisionGeometries);

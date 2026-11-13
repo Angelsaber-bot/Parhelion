@@ -2,7 +2,7 @@
  * Solar Egypt: an oasis and its river in the west, a sandstone plateau across the north
  * cut by the Sunrift canyon, the colossi and the Sun Temple on the plateau's lip, a pyramid
  * beyond, dunes and a warm coast to the south and east. Region-local coordinates
- * (world = local + [720, 720]); -Z is north. Shared by generator, runtime and tests.
+ * (180° rotation at [0, -1440]). Shared by generator, runtime and tests.
  */
 export type EgyptPoint = readonly [number, number, number];
 export const EGYPT_OFFSET = [0, -1440] as const;

@@ -288,6 +288,9 @@ export function buildWinter(heightAt: HeightAt) {
       const x = range(rng, -80, 150), z = range(rng, -290, -110);
       if (inKremlin(x, z, 14) || onSquare(x, z, 12) || onPath(x, z, 7) || Math.hypot(x - BASIL.c[0], z - BASIL.c[1]) < 24) continue;
       if (Math.abs(heightAt(x, z) - CITY.y) > 3 || slope(x, z) > 0.25) continue;
+      // Reserve room for both rotated footprints and a walkable gap. Previously
+      // independently sampled houses could put a neighbour's roof over a door.
+      if (architectureManifest.some(h => Math.hypot(x-h.p[0],z-h.p[2]) < Math.hypot(h.size[0],h.size[2])/2 + Math.hypot(8,7)/2 + 2)) continue;
       const burnt = rng() < 0.7;
       izba(b, x, z, range(rng, -0.3, 0.3) + (rng() < 0.5 ? 0 : Math.PI / 2), burnt);
       if (burnt && w < 6 && rng() < 0.35) { mk({ id: `warm_ember_${++w}`, type: 'poi', label: '余烬（取暖）', p: [x, heightAt(x, z), z], radius: 8 }); }
@@ -558,6 +561,9 @@ export function buildWinter(heightAt: HeightAt) {
 
   // ───────────────────────── Vegetation: snowy firs and bare birches ─────────────────────────
   const blocked = (x: number, z: number) =>
+    // The old district rectangle missed outlying houses. Reserve each actual
+    // footprint plus the widest tree crown / rock radius, including its doors.
+    architectureManifest.some(h => Math.hypot(x-h.p[0],z-h.p[2]) < Math.hypot(h.size[0],h.size[2])/2+4.5) ||
     winterCivilClearance(x, z, 3.5) || riverD(x, z) < RIVER_W + 3 || onPath(x, z, 4) || Math.hypot(x - BIVOUAC.c[0], (z - BIVOUAC.c[1]) * 0.9) < 56 ||
     inKremlin(x, z, 10) || onSquare(x, z, 10) || Math.hypot(Math.max(0, Math.abs(x - 30) - 92), Math.max(0, Math.abs(z + 206) - 70)) < 6 ||
     BEACONS.some(([bx, bz]) => Math.hypot(x - bx, z - bz) < 10) || Math.hypot(x - EAGLE.c[0], z - EAGLE.c[1]) < 10 ||

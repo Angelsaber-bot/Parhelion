@@ -1,3 +1,4 @@
+import { settlementEntryApproach } from '../settlements/frame';
 import type {WorldGrid} from './grid';
 import type {SettlementPlacement} from '../settlements/types';
 import type {SettlementApproach} from './settlementApproaches';
@@ -21,7 +22,8 @@ export function settlementGrassClearance(
  for(const p of placements){
   const [x,,z]=p.position,[w,d]=p.footprint;
   fill(x-w/2-pad,z-d/2-pad,x+w/2+pad,z+d/2+pad,()=>true);
-  fill(p.entry[0]-1.7-pad,p.entry[2]-pad,p.entry[0]+1.7+pad,p.entry[2]+9+pad,()=>true);
+  const [ex,ez]=settlementEntryApproach(p,9);
+  fill(Math.min(p.entry[0],ex)-1.7-pad,Math.min(p.entry[2],ez)-pad,Math.max(p.entry[0],ex)+1.7+pad,Math.max(p.entry[2],ez)+pad,()=>true);
  }
  for(const route of routes)for(let i=1;i<route.points.length;i++){
   const a=route.points[i-1],b=route.points[i],dx=b[0]-a[0],dz=b[2]-a[2],r=(route.width ? route.width/2 : 1.2)+pad;

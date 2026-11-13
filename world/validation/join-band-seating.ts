@@ -3,7 +3,7 @@
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import type {Node} from '@gltf-transform/core';
-export type SeatingEdits={reason:string;band:number;regions:Record<string,Record<string,[number,[number,number][]][]>>};
+export type SeatingEdits={reason:string;band:number;regions:Record<string,Record<string,[number,[number,number][]][]>>;appliedHashes?:Record<string,string>};
 export const seating:SeatingEdits=JSON.parse(readFileSync(new URL('./join-band-seating.edits.json',import.meta.url),'utf8'));
 /** Shift the listed Y values of int16 POSITION arrays (sign -1 restores the reviewed bytes). */
 export function shiftPositions(edits:[number,[number,number][]][],array:Int16Array,sign:1|-1) {

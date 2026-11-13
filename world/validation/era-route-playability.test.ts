@@ -184,11 +184,13 @@ test('era routes: Britain lake oath and first hearth are physically reachable wi
   p=make(W(2,58));follow(p,[...path('britain',2),W(-166,-166),W(-180,-182),W(-203,-177),W(-208,-172),W(-204,-166),at('hall_brazier_1')]);reachable(p,'hall_brazier_1');
 });
 
-test('era routes: Winter commander, three heat beacons and red-square core use normal Player traversal',()=>{
+test('era routes: Winter commander, three heat beacons and customs-square core use normal Player traversal',()=>{
   progress(['summon_circle']);const W=(x:number,z:number)=>world('winter',x,z);
   let p=make(W(-140,186));follow(p,[W(-160,150),W(-176,142),at('napoleon_meet')]);reachable(p,'napoleon_meet');
   for(const id of ['beacon_1','beacon_2','beacon_3']){p=make(W(-160,74));follow(p,[...path('winter',1),at(id)]);reachable(p,id);}
-  p=make(W(40,-100));follow(p,[...path('winter',4),at('winter_core')]);reachable(p,'winter_core');
+  // The finale moved to the evacuation customs square. Return along Smolensk
+  // road and its authored customs approach, not a straight line through Moscow.
+  p=make(W(40,-100));follow(p,[...path('winter',2).reverse(),W(-40,214),W(-73,215),W(-73,226),at('winter_core')]);reachable(p,'winter_core');
 });
 
 test('era routes: Britain mainline reaches Camlann core without optional shards',()=>{

@@ -24,6 +24,8 @@ export interface SettlementKit {
   npcs: NpcSocket[];
 }
 export interface SettlementPlacement {
+  /** World yaw of the authored settlement, shared by its annexes and entrances. */
+  yaw?: number;
   id: RegionId;
   name: Localized;
   position: [number, number, number];
