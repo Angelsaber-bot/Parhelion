@@ -1,3 +1,4 @@
+import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
 import { EGYPT_GAUGE } from './egyptGauge';
 import type { Localized } from '../settlements/types';
 
@@ -158,7 +159,8 @@ export function createRealmClimax(id: RealmClimaxId, origin: ClimaxPoint, hooks:
         if (!quenched && tell && Math.abs(player.y - origin.y) < 5 && climaxTellHits(tell, player)) hooks.hurt(data().damage ?? 20);
         quenched = false; tell = null; mode = 'recovering'; time = 4.25;
       } else {
-        const shape = data().attack!;
+        // The independently intercepted gun removes the crossing lane in Vale's second phase.
+        const shape = id === 'orleans' && phase === 1 && hooks.done.has(OC.cannon) ? 'line' : data().attack!;
         const x = player.x === origin.x && player.z === origin.z ? player.x + 1 : player.x;
         tell = { shape, from: origin, x, z: player.z, width: shape === 'circle' ? 4.3 : 1.55, length: 28 };
         mode = 'locked'; time = id === 'egypt' && hooks.done.has(EGYPT_GAUGE.report) ? 2.15 : 1.35; hooks.warn();

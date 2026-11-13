@@ -1,3 +1,6 @@
+import { QIN_CAMPAIGN as QC } from './qinCampaign';
+import { EGYPT_CAMPAIGN as EC } from './egyptCampaign';
+import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
 import { EGYPT_WATER_RECORD } from './egyptGauge';
 import { QIN_ARMY } from '../map/qinPlan';
 import { EGYPT_MIRRORS } from '../map/egyptPlan';
@@ -129,11 +132,15 @@ export const journeyDestinations = (done: ReadonlySet<string>) => dispatchReady(
 export const journeyTowerReady = (done: ReadonlySet<string>) => !journeyEnabled(done) || done.has(J.groundWatch);
 export const REALM_HANDOVER = { egypt: J.egyptDone, orleans: J.orleansDone, qin: J.qinDone } as const;
 export function journeyClimaxReady(region: RealmClimaxId, done: ReadonlySet<string>) {
+  if(region==='qin'&&(done.has(QC.started)||done.has('qin_campaign_required'))&&!done.has(QC.complete))return false;
+  if(region==='egypt'&&(done.has(EC.started)||done.has('egypt_campaign_required'))&&!done.has(EC.ready))return false;
+  if(region==='orleans'&&(done.has(OC.started)||done.has('orleans_campaign_required'))&&!done.has(OC.complete))return false;
   if (!journeyEnabled(done) || done.has(REALM_HANDOVER[region]) || done.has(climaxCleared(region))) return false;
   return region === 'egypt' ? done.has(J.egyptWeir) : region === 'orleans' ? done.has(J.orleansBattery) : reached(done, J.qinTurn, QIN_ARMY.flag);
 }
 
 export function journeyStepReady(id: string, done: ReadonlySet<string>) {
+  if(id===J.egyptDone&&done.has(EC.started)&&!done.has(EC.complete))return false;
   const entry = journeyStepById.get(id);
   if (!entry || !journeyEnabled(done) || done.has(id) || !reached(done, ...entry.after ?? [])) return false;
   if (id === J.lake) return done.has(A.online);
@@ -183,6 +190,9 @@ export function commitJourneyStep(id: string, done: Set<string>): Localized | nu
   if (!journeyStepReady(actual, done)) return null;
   if (id !== actual) done.add(id);
   done.add(actual);
+  if(actual===J.orleansRead)done.add('orleans_campaign_required');
+  if(actual===J.egyptRead)done.add('egypt_campaign_required');
+  if(actual===J.qinRead)done.add('qin_campaign_required');
   if (id === J.bridgeSouth || id === J.bridgeRear) done.add(J.bridge);
   if (id === J.mealWindow) done.add(J.meal);
   if (actual === J.qinHalt && done.has(QIN_ARMY.flag)) done.add(J.qinTurn);

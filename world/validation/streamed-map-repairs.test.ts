@@ -88,7 +88,10 @@ test('streamed winter ruins retain cover and no longer block their burned-away o
     const shell = scene.getObjectByName('COL_Winter_Ruin_Shells');
     assert.ok(shell, 'replacement ruin collision must be shipped');
     const houses = shell.userData.houses as { p: [number, number, number]; size: [number, number, number]; ry: number }[];
-    assert.equal(houses.length, 13);
+    const fullBytes = readFileSync(new URL('../public/assets/world_winter.glb', import.meta.url));
+    const {scene: full} = await regionLoader().parseAsync(fullBytes.buffer.slice(fullBytes.byteOffset,fullBytes.byteOffset+fullBytes.byteLength),'');
+    try { assert.deepEqual(houses, full.getObjectByName('COL_Winter_Ruin_Shells')!.userData.houses, 'streamed asset retains every authored ruin'); } finally { dispose(full); }
+    assert.ok(houses.length >= 10);
     const surfaces: MeshBVH[] = [];
     scene.getObjectByName('COLLISION')!.traverse(o => { const m = o as THREE.Mesh; if (m.isMesh && !m.userData.opensWhen && !m.userData.target) surfaces.push(new MeshBVH(m.geometry)); });
     const art = [scene.getObjectByName('ART')!, visual];

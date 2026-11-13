@@ -1,3 +1,10 @@
+import { QIN_CAMPAIGN as QC, qinChapterById, qinChapterReady, qinChapterGuide, commitQinChapter, qinTallyBorrowed, createQinCrewTransit } from './story/qinCampaign';
+import { createQinCampaignScene } from './environment/qinCampaignScene';
+import { createChapterWorkRuntime } from './story/chapterWorkRuntime';
+import { EGYPT_CAMPAIGN as EC, egyptChapterById, egyptChapterReady, egyptChapterGuide, commitEgyptChapter } from './story/egyptCampaign';
+import { createEgyptCampaignScene } from './environment/egyptCampaignScene';
+import { createOrleansCampaign, orleansActionById, orleansCampaignGuide, orleansCampaignReady } from './story/orleansCampaign';
+import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
@@ -61,7 +68,7 @@ import {createOrleansAtmosphere} from './environment/orleansAtmosphere';
 import {createOrleansWorksRuntime} from './story/orleansWorks';
 import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/regionIdentity';
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
-import {HOME_BUILDINGS,HOME_ROUTES,HOME_SITES,HOME_ACTIONS} from './map/homePlan';
+import {HOME_BUILDINGS,HOME_SITES,HOME_ACTIONS,HOME_GRASS_PATHS} from './map/homePlan';
 import {createHomeTown,homeResidentSockets,homeSaberReady} from './story/homeTown';
 import {HOME_CIVIC_ACTIONS} from './map/homeActivities';
 import {createHomeResidentLife} from './map/homeResidents';
@@ -663,6 +670,10 @@ addEventListener('pagehide', event => { if (!event.persisted) { worldJourneySite
 const orleansWorksScene=createOrleansWorksScene((x,z,ceiling)=>residentQueries.ground(x,z,ceiling)?.point.y??null);
 world.add(orleansWorksScene.root);colliders.push(orleansWorksScene.collider);layout.markers.push(...orleansWorksScene.markers);
 const orleansWorksMarkerIds=new Set(orleansWorksScene.markers.map(m=>m.id));
+const orleansCampaignScene=createOrleansCampaignScene((x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
+world.add(orleansCampaignScene.root);layout.markers.push(...orleansCampaignScene.markers);colliders.push(...orleansCampaignScene.colliders);targets.push(...orleansCampaignScene.targets);
+let orleansCampaign:ReturnType<typeof createOrleansCampaign>|undefined;
+addEventListener('pagehide',e=>{if(!e.persisted)orleansCampaignScene.dispose();});
 const realmClimaxSites = worldJourneySites ? createRealmClimaxSites({
   egypt: worldJourneySites.markers.find(m => m.id === REALM_HANDOVER.egypt)!,
   orleans: worldJourneySites.markers.find(m => m.id === REALM_HANDOVER.orleans)!,
@@ -744,6 +755,15 @@ world.add(egyptWaterPlanLandscape.root); colliders.push(...egyptWaterPlanLandsca
 egyptWaterPlanLandscape.markers.forEach(marker => worldJourneyMarkerIds.add(marker.id));
 addEventListener('pagehide', event => { if (!event.persisted) egyptWaterPlanLandscape.dispose(); });
 const egyptRiverConsequences = createEgyptRiverConsequences((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
+const qinCampaignScene=createQinCampaignScene((x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
+world.add(qinCampaignScene.root);layout.markers.push(...qinCampaignScene.markers);targets.push(...qinCampaignScene.targets);colliders.push(...qinCampaignScene.colliders);
+let qinCampaign:ReturnType<typeof createChapterWorkRuntime>|undefined;
+let qinCrewTransit:ReturnType<typeof createQinCrewTransit>|undefined;
+addEventListener('pagehide',e=>{if(!e.persisted)qinCampaignScene.dispose();});
+const egyptCampaignScene=createEgyptCampaignScene((x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8));
+world.add(egyptCampaignScene.root);layout.markers.push(...egyptCampaignScene.markers);targets.push(...egyptCampaignScene.targets);
+let egyptCampaign:ReturnType<typeof createChapterWorkRuntime>|undefined;
+addEventListener('pagehide',e=>{if(!e.persisted)egyptCampaignScene.dispose();});
 world.add(egyptRiverConsequences.root); colliders.push(...egyptRiverConsequences.colliders);
 addEventListener('pagehide', event => { if (!event.persisted) egyptRiverConsequences.dispose(); });
 const winterCivilLandscape = createWinterCivilLandscape((x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null);
@@ -829,7 +849,7 @@ staticGeos.length = 0; existingPropGeos.length = 0;
 const consumedSourceReceipt = detachConsumedSourceNodes(world, colliders.map(collider => collider.bvh.geometry));
 
 if (!lowQ) enhanceWater(waterMesh.material as THREE.Material, grid, layout.world.waterLevel);
-const homeGrassRoutes=HOME_ROUTES.map(r=>({region:'alpha' as const,length:0,points:r.points.map(p=>[p[0]+720,p[1],p[2]] as [number,number,number])}));
+const homeGrassRoutes=HOME_GRASS_PATHS;
 const homeGrassBuildings=HOME_BUILDINGS.map(h=>[h.p[0]+720-h.w/2-1,h.p[2]-h.d/2-1,h.p[0]+720+h.w/2+1,h.p[2]+h.d/2+1] as const);
 const homeGrassCourts=HOME_SITES.filter(s=>['square','garden','practice','park'].includes(s.id)).map(s=>[s.position[0]+720,s.position[2],s.radius,s.radius] as const);
 const civilGrassPlans = [
@@ -1015,6 +1035,18 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function journeyGuide() {
+  if(regionAt(player.pos.x,player.pos.z).id==='qin'){
+   const a=qinChapterGuide(done),p=a&&markers.get(a.id)?.p;
+   if(a&&p)return{region:'qin' as const,targetId:a.id,p,title:[a.chapter+' · 未葬之人',a.chapter+' · The Unburied'] as [string,string],text:a.label};
+  }
+  if(regionAt(player.pos.x,player.pos.z).id==='egypt'){
+   const a=egyptChapterGuide(done),p=a&&markers.get(a.id)?.p;
+   if(a&&p)return {region:'egypt' as const,targetId:a.id,p,title:[a.chapter+' · 尼罗河的第二次黎明',a.chapter+' · The Nile’s Second Dawn'] as [string,string],text:a.label};
+  }
+  if(regionAt(player.pos.x,player.pos.z).id==='orleans'){
+    const a=orleansCampaignGuide(done),p=a&&markers.get(a.id)?.p;
+    if(a&&p)return {region:'orleans' as const,targetId:a.id,p,title:[a.chapter+' · 当旗帜离开她的手',a.chapter+' · When She Lets Go of the Flag'] as [string,string],text:a.label};
+  }
   const here = insideSkyCrown(player.pos) ? 'sky' : regionAt(player.pos.x, player.pos.z).id;
   if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax) {
     const fight = activeRealmClimax;
@@ -1149,6 +1181,9 @@ function interactionLabel(marker: Marker) {
   }
   const townAction=HOME_CIVIC_ACTIONS.find(a=>a.id===marker.id);if(townAction)return bilingual(...townAction.label);
   const homeAction=HOME_ACTIONS.find(a=>a.id===marker.id);if(homeAction)return bilingual(homeAction.label[0],homeAction.label[1]);
+  const qinAction=qinChapterById.get(marker.id);if(qinAction)return bilingual(...qinAction.label);
+  const egyptAction=egyptChapterById.get(marker.id);if(egyptAction)return bilingual(...egyptAction.label);
+  const chapterAction=orleansActionById.get(marker.id);if(chapterAction)return bilingual(...chapterAction.label);
   const localWork=ORLEANS_WORK_ACTIONS.find(a=>a.id===marker.id);if(localWork)return bilingual(...localWork.label);
   const explorationLabel=typeof exploration!=='undefined'?exploration.label(marker.id):null;if(explorationLabel)return explorationLabel;
   const resident=RESIDENT_ACTIONS.find(a=>a.id===marker.id);if(resident)return bilingual(...resident.label);
@@ -2000,6 +2035,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
   onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
+    if(egyptCampaign?.victory(id)||orleansCampaign?.victory(id))return;
     if (id === HARBOR_WORKBOAT_ENCOUNTER) {
       done.add(HB.access); done.add(HB.fight); done.add(HB.fought);
       saveJourneyProgress();
@@ -2017,7 +2053,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
     }
     if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id);
   },
-  onPlayerDefeated() { fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+  onPlayerDefeated() { qinCampaign?.reset();qinCrewTransit?.reset();egyptCampaign?.reset();orleansCampaign?.reset(); fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
       const site = realmClimaxSites.sites[activeRealmClimax.id];
       stopRealmClimax(); player.teleport(site.start[0], site.start[1] + .3, site.start[2]); combat.refillAmmo();
@@ -2578,6 +2614,7 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
     }
     return;
   }
+  if(region==='egypt'&&done.has(EC.started)&&!done.has(EC.ready)){toast(bilingual('先完成独立试洪、旁路验证与人员清点。','Complete the independent flood trial, bypass test and muster first.'));return;}
   if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || helionFight.active || activeRealmClimax) return;
   if (region === 'egypt' && needsEgyptWaterPlan() && !done.has(EGYPT_WATER_PLAN.locked)) {
     const option = selectedEgyptWaterPlan(done);
@@ -3636,6 +3673,25 @@ kingdomGateRuntime = createKingdomGateRuntime({
  cancel:()=>combat.cancelStoryEncounter(),encounter:()=>combat.storyEncounter?.id??null,
  toast:line=>toast(bilingual(...line)),
 });
+qinCrewTransit=createQinCrewTransit(done,save,applyWorldState);
+qinCampaign=createChapterWorkRuntime({done,actions:qinChapterById,ready:qinChapterReady,
+ commit:(id,d)=>{if(id===QC.locked){if(!progressStorage||worldProgress.saveBlocked)return false;try{const token='qin_departure_'+crypto.randomUUID();progressStorage.setItem(QC.backup,JSON.stringify({token,snapshot:worldProgress.exportSnapshot()}));d.add(token);}catch{toast(bilingual('无法保存出发前进度，尚未出发。','Could not save preparation. Departure cancelled.'));return false;}}return commitQinChapter(id,d);},
+ save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),position:id=>markers.get(id)?.p,start:()=>false,
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+});
+egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyptChapterReady,commit:commitEgyptChapter,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),position:id=>markers.get(id)?.p,
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+ start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
+});
+orleansCampaign=createOrleansCampaign({done,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
+ position:id=>markers.get(id)?.p,encounter:()=>combat.storyEncounter?.id??null,
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+ start:spec=>{
+  const slots: [number,number][]=[];for(const r of [5,7,9])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);
+  const actors=selectStoryPositions(spec,spec.actors,slots);if(actors.length!==spec.actors.length)return false;
+  return combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;
+ },
+});
 orleansWorksRuntime=createOrleansWorksRuntime({done,save,changed:applyWorldState,damage:()=>relayDamageRevision,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
  toast:line=>toast(bilingual(...line)),ring:()=>{orleansWorksScene.ring();audio.bell();},sound:()=>audio.explore('solve'),
@@ -3799,6 +3855,9 @@ function shoot() {
       combat.shot(muzzle, point, hit); audio.shot(); return;
     }
     if (id === WCW.pin) { releaseWinterCustomsCart(id); combat.flashHitMarker(.14); combat.shot(muzzle,point,true); audio.shot(); return; }
+    if(questHit.distance<=gun.range&&qinCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
+    if(questHit.distance<=gun.range&&egyptCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
+    if(questHit.distance<=gun.range&&orleansCampaign?.hit(id)){combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(adventureRuntime?.hit(id)){const fun=[...adventureSites.fun.values()].find(f=>f.ids.includes(id));if(fun&&fun.ids.every(flag=>done.has(flag)))toast(bilingual(...fun.line));combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     if(id===KINGDOM_GATE.latch){kingdomGateRuntime?.unlock();combat.flashHitMarker(.14);combat.shot(muzzle,point,true);audio.shot();return;}
     done.add(id);
@@ -3846,18 +3905,30 @@ function nearestInteract(): Marker | null {
     if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
     if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
-      if (d < (m.radius ?? 3) && d < bd && kingdomWorkReady(m.id as KingdomWork, done) &&
+      if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
+    if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
+    if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
+    if (d < (m.radius ?? 3) && d < bd && kingdomWorkReady(m.id as KingdomWork, done) &&
           (m.id !== KW.patrol || combat.storyEncounter?.id !== KINGDOM_WATCH_ENCOUNTER) && canReachValleyPanel(m)) { bd = d; best = m; }
       continue;
     }
     if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) {
-      if (d < (m.radius ?? 3) && d < bd && journeyMarkerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
+      if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
+    if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
+    if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
+    if (d < (m.radius ?? 3) && d < bd && journeyMarkerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
       continue;
     }
     if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) {
-      if (d < (m.radius ?? 3) && d < bd && valleyPrologueScene.markerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
+      if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
+    if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
+    if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
+    if (d < (m.radius ?? 3) && d < bd && valleyPrologueScene.markerActive(m.id) && canReachValleyPanel(m)) { bd = d; best = m; }
       continue;
     }
+    if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
+    if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
+    if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
     if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
@@ -4055,6 +4126,7 @@ function interactQinLift() {
   toast(to==='bottom'?bilingual('绞盘松开，升降台沉入竖井，落向军阵中轴。','The winch pays out; the cage sinks down the shaft toward the garrison avenue.'):bilingual('绞盘收紧，升降台升向山脊井架。','The winch hauls in; the cage rises toward the ridge headframe.'));
 }
 function interactQinOrder() {
+  if(qinTallyBorrowed(done)){toast(bilingual('蔺禾持符：先到接应点当面取回。','Lin He holds the tally. Receive it in person at the landing first.'));return;}
   if(!player.onGround||player.flying||player.swimming||player.gliding)return;
   if(qinArmyOrder.turning){toast(bilingual('阵列仍在转动。','The ranks are still turning.'));return;}
   if(qinTurnBlocked(player.pos)){toast(bilingual('有人站在转台上：离开兵俑转台和铜闸下方后再下令。','Someone is on a turntable: step clear of the ranks and the bronze gate first.'));return;}
@@ -4095,6 +4167,22 @@ function interact() {
     return;
   }
   if(typeof homeTown!=='undefined'&&homeTown?.interact(m.id))return;
+  if(qinChapterById.has(m.id)){
+   if(m.id===QC.restore){
+    let backup:string|null=null;try{const b=JSON.parse(progressStorage?.getItem(QC.backup)??'null');if(typeof b?.snapshot==='string'&&typeof b?.token==='string'&&done.has(b.token))backup=b.snapshot;}catch{}
+    const expected=worldProgress.captureStoredSnapshot();clearInput();
+    narrative?.showChoices(['恢复会撤销出发后的所有世界进度，并重新载入。','Restoring replaces ALL world progress since departure and reloads the game.'],['秦 · 出发前存档','Qin · Preparation save'],[{id:'keep',label:['保留当前进度','Keep current progress']},...(backup&&expected?[{id:'restore',label:['恢复出发前存档','Restore preparation save'] as [string,string]}]:[])],id=>{if(id!=='restore'||!backup||!expected)return;if(!qinChapterReady(QC.restore,done)||!player.onGround||player.flying||player.swimming||player.gliding||combat.defeated||player.pos.distanceTo(new THREE.Vector3(...m.p))>=(m.radius??3)||!canReachValleyPanel(m)){toast(bilingual('请回到出发前存档处再恢复。','Return to the preparation checkpoint to restore.'));return;}if(worldProgress.restoreSnapshot(backup,expected)!=='restored'){toast(bilingual('恢复失败，当前进度保留。','Restore failed. Current progress kept.'));return;}const url=new URL(location.href);clearStartOverrides(url.searchParams);location.replace(url.href);});return;
+   }
+   const a=qinChapterById.get(m.id)!;const options=[...qinChapterById.values()].filter(b=>b.id!==QC.restore&&b.local.every((v,i)=>v===a.local[i])&&qinChapterReady(b.id,done));
+   if(options.length>1||m.id===QC.locked){clearInput();narrative?.showChoices(a.line,['秦 · 编组与工符','Qin · Formation and tally'],options.map(b=>({id:b.id,label:b.label})),id=>{qinCampaign?.interact(id);});}else qinCampaign?.interact(m.id);return;
+  }
+  if(egyptChapterById.has(m.id)){egyptCampaign?.interact(m.id);return;}
+  if(orleansActionById.has(m.id)){
+    const a=orleansActionById.get(m.id)!;
+    const choices=[...orleansActionById.values()].filter(b=>b.at.every((v,i)=>v===a.at[i])&&orleansCampaignReady(b.id,done));
+    if(choices.length>1){clearInput();narrative?.showChoices(a.line,['奥尔良 · 现场工作','Orleans · Field work'],choices.map(b=>({id:b.id,label:b.label})),id=>{orleansCampaign?.interact(id);});}
+    else orleansCampaign?.interact(m.id);return;
+  }
   if(orleansWorksMarkerIds.has(m.id)){if(!settings.bindingsFor('interact').some(b=>!b.startsWith('Wheel'))){toast(bilingual('请为交互绑定一个可按住的键盘键或鼠标按钮。','Bind Interact to a keyboard key or mouse button that can be held.'));return;}orleansWorksRuntime?.interact(m.id);return;}
   if(parallaxMarkerIds.has(m.id)){interactParallax(m.id);return;}
   if(typeof qinOrderMarkerIds!=="undefined"&&qinOrderMarkerIds.has(m.id)){interactQinOrder();return;}
@@ -4516,6 +4604,10 @@ function frame(now: number) {
   });
   kingdomGateScene.apply(done,kingdomGateRuntime?.escort??0,dt,player.pos);
   orleansWorksRuntime?.update({dt,held:down('interact'),playable:gameplayActive()&&!combat.defeated&&!ultimateDirector?.active,inRange:nearestInteract()?.id===orleansWorksRuntime?.active,grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,moving:hs>.15||!!(input.x||input.z||input.jump),attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active)});
+  qinCrewTransit?.update(dt,gameplayActive()&&!combat.defeated&&regionAt(player.pos.x,player.pos.z).id==='qin');qinCampaignScene.apply(done,qinCrewTransit?.progress()??0);qinCampaignScene.update(gameplayActive()?dt:0,player.pos);
+  egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
+  orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
+  orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
   const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();
   if(working){const release=orleansWorksRuntime?.requiresRelease;orleansWorkHud.textContent=bilingual(`${working.label[0]} ${Math.round((orleansWorksRuntime?.progress??0)*100)}% · ${release?'松开，再按住':'按住'} ${settings.label('interact')}`,`${working.label[1]} ${Math.round((orleansWorksRuntime?.progress??0)*100)}% · ${release?'Release, then hold':'Hold'} ${settings.label('interact')}`);}

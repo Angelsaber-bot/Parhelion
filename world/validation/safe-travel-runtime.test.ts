@@ -32,7 +32,7 @@ function fixture() {
   // Existing travel assertions exercise the ordinary (non-cinematic) action gates.
   const context = vm.createContext({...campaignSourceContext,bootFailed:false,worldExited:false,graphicsRecovery:undefined, ultimateDirector: undefined, ...travel, player, combat, actions, fortCannon, done, found, travelStops: stops,
     optionalPin:{sentinel:true}, hudRevision:0, camDist:3.6, acc:1, inspectServant:false, travelOpenState:false,campaignJournalOpen:false,campaignTrackedRegion:null,falseDawnTracked:false,falseDawnRuntime:undefined,
-    homeTown:{activities:{carrying:false}},
+    homeTown:{activities:{carrying:false}}, egyptSolarBoat:{aboard:()=>false},
     createTravelPanel:(options:unknown)=>options, document:{pointerLockElement:{},exitPointerLock(){}},
     spawn:{id:'old_spawn'}, prevPos:new THREE.Vector3(), rig:{root:{position:new THREE.Vector3()}}, worldProgress:{armed:true},
     anim:{reset(){animationResets++;}},

@@ -11,6 +11,7 @@ import { E, EMAT, CYL8, batter, cornice, pylonTower, papyrusColumn, lotusColumn,
 import { egyptLakeDistance, egyptRiver, egyptGreen, plateauDepth } from './landscape';
 import { polylineRibbon } from '../../../src/map/polylineRibbon';
 import { egyptRiverworksClearance } from '../../../src/map/egyptRiverworksPlan';
+import { addGroundFooting } from '../footings';
 
 type Height = (x: number, z: number) => number;
 const BOXG = new THREE.BoxGeometry(1, 1, 1);
@@ -182,12 +183,26 @@ export function buildEgypt(plan: ExpansionPlan, heightAt: Height, access: RouteP
     // exterior stair to the roof along one side
     for (let k = 0; k < 7; k++) f.box(w / 2 + .6, (k + .5) * h / 7, -d / 2 + 1 + k * .6, 1, h / 7, .6, E.brickDark, false);
     const P = (lx: number, ly: number, lz: number) => f.point(lx, ly, lz);
-    if (type === 0) { for (const s of [-1, 1]) f.box(s * (w / 2 + 2.2), 1, -d / 2 - .1 + 3, .5, 2, 6, wallC); const tree = P(w / 2 + 1, 0, -d / 2 + 2); if (!egyptRiverworksClearance(tree.x, tree.z, 5.8)) palm(trunks, leaves, tree.x, y, tree.z, 6, .1, a, index); }
+    // Exterior annexes sit outside the house foundation. On sloping streets
+    // their shared indoor datum otherwise leaves walls, ovens and looms in air.
+    const footing = (lx: number, lz: number, width: number, depth: number) => {
+      const p = P(lx, 0, lz);
+      addGroundFooting(b, p.x, y, p.z, a, width, depth, heightAt, E.brickDark);
+    };
+    footing(w / 2 + .6, -d / 2 + 2.8, 1, 4.2);
+    if (type === 0) for (const s of [-1, 1]) footing(s * (w / 2 + 2.2), -d / 2 + 2.9, .5, 6);
+    if (type === 3) { footing(-w / 2 - 1.6, 0, 3, 3); footing(-w / 2 - .4, -.2, .8, 2.6); }
+    if (type === 4) footing(w / 2 + 1.6, 0, 1.9, 1.2);
+    if (type === 5) {
+      for (const s of [-1, 1]) footing(s * (w / 2 + 4), 0, .6, d + 6);
+      footing(0, -d / 2 - 3, w + 8.6, .6);
+    }
+    if (type === 0) { for (const s of [-1, 1]) f.box(s * (w / 2 + 2.2), 1, -d / 2 - .1 + 3, .5, 2, 6, wallC); const tree = P(w / 2 + 1, 0, -d / 2 + 2); if (!egyptRiverworksClearance(tree.x, tree.z, 5.8)) palm(trunks, leaves, tree.x, heightAt(tree.x, tree.z) - .08, tree.z, 6, .1, a, index); }
     else if (type === 1) { const dv = P(w * .25, 0, -d * .2); b.add(new THREE.CylinderGeometry(1, 1.5, 3, 10), E.plaster, T(dv.x, y + h + 1.8, dv.z), false); b.add(new THREE.SphereGeometry(1, 10, 6, 0, Math.PI * 2, 0, Math.PI / 2), E.plaster, T(dv.x, y + h + 3.3, dv.z), false); for (let k = 0; k < 8; k++) b.add(BOXG, E.black, T(dv.x + Math.cos(k) * 1.25, y + h + 1.2 + (k % 3) * .7, dv.z + Math.sin(k) * 1.25, -k, .18, .14, .1), false); }
     else if (type === 2) { for (let k = 0; k < 6; k++) { const p = P(-w / 2 + .9 + k * .9, 0, d / 2 + 1); b.add(new THREE.SphereGeometry(.38 + (k % 2) * .1, 9, 7), k % 2 ? '#b86e45' : '#9c5c3a', T(p.x, y + .45, p.z, 0, 1, 1.3, 1), false); } f.box(0, 2.9, d / 2 + 1.3, w * .8, .08, 2.4, E.reed, false); for (const s of [-1, 1]) f.box(s * w * .38, 1.45, d / 2 + 2.4, .1, 2.9, .1, E.trunk, false); }
     else if (type === 3) { const ov = P(-w / 2 - 1.6, 0, 0); b.add(new THREE.SphereGeometry(1.5, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), E.brick, T(ov.x, y, ov.z), true); glow.add(new THREE.BoxGeometry(.6, .5, .1), E.ember, T(P(-w / 2 - 1.6, 0, 1.45).x, y + .45, P(-w / 2 - 1.6, 0, 1.45).z, a), false); for (let k = 0; k < 4; k++) { const p = P(-w / 2 - .4, 0, -1 + k * .5); b.add(new THREE.CylinderGeometry(.22, .22, .06, 10), '#d9a35a', T(p.x, y + 1.05, p.z), false); } f.box(-w / 2 - .4, .5, -.2, .8, 1, 2.6, E.wood, false); }
     else if (type === 4) { f.box(w / 2 + 1.6, 1, 0, 1.8, .15, 1.2, E.wood, false); for (const s of [-1, 1]) f.box(w / 2 + 1.6 + s * .8, 1.2, 0, .1, 2.4, .1, E.wood, false); for (let k = 0; k < 3; k++) f.box(-w * .3 + k * w * .3, 2.2, d / 2 + .8, w * .25, 1.6, .03, [E.linen, E.blue, E.red][k], false); f.beam([-w / 2, 3, d / 2 + .8], [w / 2, 3, d / 2 + .8], .05, E.wood); }
-    else { for (const s of [-1, 1]) f.box(s * (w / 2 + 4), 1.4, 0, .6, 2.8, d + 6, wallC); f.box(0, 1.4, -d / 2 - 3, w + 8.6, 2.8, .6, wallC); const cm = P(w / 2 + 2, 0, d / 2 + .5); camel(b, cm.x, y - .3, cm.z, a + 1.2, true); }
+    else { for (const s of [-1, 1]) f.box(s * (w / 2 + 4), 1.4, 0, .6, 2.8, d + 6, wallC); f.box(0, 1.4, -d / 2 - 3, w + 8.6, 2.8, .6, wallC); const cm = P(w / 2 + 2, 0, d / 2 + .5); camel(b, cm.x, heightAt(cm.x, cm.z) - .05, cm.z, a + 1.2, true); }
     // interior: mat bed, chest, jars and a hanging lamp
     f.box(-w / 2 + 1.5, .2, -d / 2 + 1.6, 2.2, .4, 2.6, E.linen); f.box(w / 2 - 1.2, .4, -d / 2 + 1.1, 1.2, .8, .8, E.wood);
     for (let k = 0; k < 2; k++) { const p = P(w / 2 - 1, 0, d / 2 - 1.6 - k * .8); b.add(new THREE.SphereGeometry(.3, 8, 6), '#b86e45', T(p.x, y + .35, p.z, 0, 1, 1.3, 1), false); }

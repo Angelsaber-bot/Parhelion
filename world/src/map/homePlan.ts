@@ -40,6 +40,14 @@ export const HOME_ROUTES:ExpansionPlan['routes']=[
  {id:'coastwalk',name:'南岸散步道',kind:'flank',points:[[0,16,130],[30,14,185],[70,12,185],[110,10,185],[160,9,170]]},
  {id:'northlane',name:'北街',kind:'flank',points:[[-208,16,-90],[-165,16,-90],[-122,16,-90],[-90,16,-80]]},
 ];
+/** Match the generated 7m/5m streets and each 3.5m threshold ramp. */
+export const HOME_GRASS_PATHS = [
+ ...HOME_ROUTES.map(r=>({width:r.kind==='main'?7:5,points:r.points.map(homeWorld)})),
+ ...HOME_BUILDINGS.map(h=>{
+  const point=(z:number):[number,number,number]=>[h.p[0]+Math.sin(h.yaw)*z+720,h.p[1]+.12,h.p[2]+Math.cos(h.yaw)*z];
+  return {width:3.5,points:[homeWorld(h.approach),point(h.d/2+2.5),point(h.d/2-1)]};
+ }),
+];
 /** Actual room/corridor/doorway waypoints: do not interpolate through bedroom walls. */
 export const SABER_HOME_WALK:RoutePoint[]=[[-47,16.12,-36],[-39,16.12,-36],[-35,16.12,-36],[-35,16.12,-18],[-35,16.12,-10],[-35,16.12,10],[0,16.12,10],[20,16.12,-25],[0,16.12,10],[-35,16.12,10],[-35,16.12,-18],[-24,16.12,-18],[-35,16.12,-18],[-35,16.12,-36],[-47,16.12,-36]];
 export const HOME_ACTIONS=[

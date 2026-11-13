@@ -1,3 +1,7 @@
+import {EGYPT_WATER_PLAN} from '../src/story/egyptWaterPlan';
+import {EGYPT_CAMPAIGN as EC} from '../src/story/egyptCampaign';
+import {QIN_CAMPAIGN as QC} from '../src/story/qinCampaign';
+import {ORLEANS_CAMPAIGN as OC} from '../src/story/orleansCampaign';
 import { CROOKED_EFFIGY as CE, SHADOW_PLAY as SP } from '../src/story/realmCulturalStories';
 import { EGYPT_GAUGE as G } from '../src/story/egyptGauge';
 import assert from 'node:assert/strict';
@@ -298,8 +302,9 @@ test('Helion companion aid covers real damage, survives checkpoints, and never s
   assert.ok(fight.hit(writerHp)); assert.ok(done.has(J.phase3));
 });
 
-test('production quest stands, three regional handovers and the sky finale work with actual input', async () => {
-  const seed = [...four.filter(flag => flag !== 'saber_contract'), VALLEY_PROLOGUE.record, A.takeover];
+test('production handovers and sky finale work with completed middle-chapter checkpoints and actual input', async () => {
+  // Middle-chapter inputs/encounters are exercised in chapter-production.test.ts.
+  const seed = [...four.filter(flag => flag !== 'saber_contract'), VALLEY_PROLOGUE.record, A.takeover, EC.ready, OC.complete, QC.complete];
   const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 120_000, initialStorage: { [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }) } });
   const w = h.world, d = h.window.document;
   let time = 0;
@@ -337,6 +342,7 @@ test('production quest stands, three regional handovers and the sky finale work 
   };
   const station = (region: RealmClimaxId, which: 'start' | 'west' | 'east') => {
     interact(climaxMarker(region, which));
+    if(region==='egypt'&&which==='start'&&w.narrative.choosing){const departure=d.querySelector<HTMLButtonElement>('[data-choice="depart"]');assert.ok(departure);departure.click();}
     if (which === 'start' && w.narrative.open) {
       assert.ok(w.done.has(`journey_${region}_climax_entrance`));
       const hp = w.combat.state.hp;
@@ -417,6 +423,8 @@ test('production quest stands, three regional handovers and the sky finale work 
     frame(2);
     assert.ok(w.done.has(EGYPT_MIRRORS.solved));
     interact(J.egyptWeir); assert.ok(w.done.has(J.egyptWeir));
+    interact(EGYPT_WATER_PLAN.marker);assert.ok(w.narrative.choosing);
+    d.querySelector<HTMLButtonElement>('[data-choice="balanced"]')!.click();d.querySelector<HTMLButtonElement>('[data-choice="build"]')!.click();
     station('egypt', 'start'); station('egypt', 'west');
     const jaw = w.scene.getObjectByName('TideEaterJaw');
     const restingJaw = jaw.rotation.x;
