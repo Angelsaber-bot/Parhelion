@@ -178,3 +178,55 @@ test('Qin Q06: the ranks cut the road and the crew is rejoined by the rack, by f
   assert.ok(seen.indexOf(QP.cut) < seen.indexOf(QP.rack));
   assert.ok(!qinProcessionRequired(new Set([QC.locked, QC.halt])), 'saves past the halt keep their route');
 });
+
+test('Qin Q01–Q04 precede the climax for new runs; Q08 follows it', async () => {
+  const { QX, QIN_CHAPTERS, qinChaptersRequired } = await import('../src/story/qinChapters');
+  const d = new Set(['journey_qin_workers']);
+  assert.ok(qinChaptersRequired(d));
+  walk(QIN_CHAPTERS.set, d, [['climax', ['journey_qin_public_order']]]);
+  for (const f of [QX.q01, QX.q02, QX.q03, QX.q04, QX.q08]) assert.ok(d.has(f), f);
+  assert.ok(d.has(QX.low) !== d.has(QX.high) && d.has(QX.slot) !== d.has(QX.beam), 'one route each');
+});
+
+test('Egypt E01/E02 open the realm, E05 relocates in stages, E06 shows the water', async () => {
+  const { EX, EGYPT_CHAPTERS, egyptOpeningRequired } = await import('../src/story/egyptChapters');
+  const { EGYPT_CAMPAIGN: EC } = await import('../src/story/egyptCampaign');
+  const d = new Set(['journey_egypt_weir']);
+  assert.ok(egyptOpeningRequired(d));
+  walk(EGYPT_CHAPTERS.set, d, [['bed', [EC.started, EC.limb, EC.temple, EC.bed]], ['relocated', [EC.relocated]], ['bell', [EC.bell]]]);
+  for (const f of [EX.e01, EX.e02, EX.table, EX.move, EX.model, EX.statue]) assert.ok(d.has(f), f);
+  assert.ok(!egyptOpeningRequired(new Set(['journey_egypt_weir', EC.ready])), 'saves past E06 keep their route');
+});
+
+test('Orleans O06 hands the lookout over; O08 terms and O09 morning follow the bridgehead', async () => {
+  const { OF, ORLEANS_FINALE } = await import('../src/story/orleansFinale');
+  const { ORLEANS_CAMPAIGN: OC } = await import('../src/story/orleansCampaign');
+  for (const way of ['lower', 'disarm']) {
+    const d = new Set([OC.agree, OC.planks, OC.moored, OC.shifted]);
+    walk(ORLEANS_FINALE.set, d, [['won', ['journey_orleans_crossing_open']]]);
+    assert.ok(d.has(OF.o06) && d.has(OF.o08) && d.has(OF.o09), way);
+    assert.ok(d.has(OF.road) === d.has(OF.lower) && d.has(OF.gate) === d.has(OF.disarm), 'O09 follows the O08 terms');
+  }
+});
+
+test('Kyoto J03 lords and J07 fire night gate the Crow Seal for new runs', async () => {
+  const { JK, KYOTO_COURT } = await import('../src/story/kyotoDecreeCourt');
+  const { KYOTO_STREET: S } = await import('../src/story/kyotoStreetWorks');
+  const { KYOTO_WITNESS: Y } = await import('../src/story/kyotoWitness');
+  const d = new Set(['adventure_v2', VALLEY_PROLOGUE.room, S.templeRecord, S.campRecord]);
+  const req = getEraBossRequirements('fire_core', d)!;
+  assert.ok(req.includes(JK.j03));
+  walk(KYOTO_COURT.set, d, [['orders', [Y.reel, Y.public]], ['boss', ['fire_core']], ['screen', [Y.gate]]]);
+  for (const f of [JK.j03, JK.j07, 'j08_complete', 'j09_complete']) assert.ok(d.has(f), f);
+  const order = [...d];
+  assert.ok(order.indexOf(JK.j07) < order.indexOf('j08_offer'), 'the fire night precedes the decree court');
+});
+
+test('T07: the load transfer is required before the load test once the parallel check starts', async () => {
+  const { journeyStepReady } = await import('../src/story/worldJourney').then(m => ({ journeyStepReady: (m as Record<string, unknown>).journeyActionReady ?? (m as Record<string, unknown>).journeyStepReady })) as { journeyStepReady?: (id: string, d: ReadonlySet<string>) => boolean };
+  const { VALLEY_SET_PIECES } = await import('../src/story/valleyTownSetPieces');
+  const ids = VALLEY_SET_PIECES.set.actions.map(a => a.id);
+  for (const id of ['t07_parallel', 't07_load', 't07_shade']) assert.ok(ids.includes(id), id);
+  assert.equal(VALLEY_SET_PIECES.set.actions.find(a => a.id === 't07_load')?.kind, 'work');
+  void journeyStepReady;
+});

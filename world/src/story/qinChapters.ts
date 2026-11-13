@@ -1,0 +1,122 @@
+import type { FieldAction, FieldChapterContent } from './fieldChapters';
+import { QIN_CAMPAIGN as QC } from './qinCampaign';
+
+/** Qin Q01–Q04 and Q08 around the existing works-town register, army avenue and Q05/Q06 workflow. */
+export const QX = {
+  crate: 'q01_crate', patrol: 'q01_patrol', halt: 'q01_halt', turn: 'q01_turn', cross: 'q01_cross', q01: 'q01_complete',
+  bridge: 'q02_bridge', stop: 'q02_stop', low: 'q02_low', high: 'q02_high', shaft: 'q02_shaft', batches: 'q02_batches', q02: 'q02_complete',
+  watch: 'q03_watch', slot: 'q03_slot', beam: 'q03_beam', target: 'q03_target', hole: 'q03_hole', q03: 'q03_complete',
+  lend: 'q04_lend', bowls: 'q04_bowls', roster: 'q04_roster', guide: 'q04_guide', names: 'q04_names', bench: 'q04_bench', q04: 'q04_complete',
+  door: 'q08_door', board: 'q08_board', q08: 'q08_complete',
+} as const;
+const X = QX;
+const done = (d: ReadonlySet<string>) => d.has('journey_qin_public_order') || d.has('realm_qin_phase_1');
+const before = (d: ReadonlySet<string>) => d.has('journey_qin_workers') && !done(d);
+/** Saves that already set out (Q06) before these chapters existed keep their route. */
+export const qinChaptersRequired = (d: ReadonlySet<string>) => before(d) && (d.has(X.crate) || !d.has(QC.locked) && !d.has(QC.complete));
+const a = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter'>): FieldAction => ({ region: 'qin', chapter, gate: before, ...x });
+export const QIN_CHAPTER_EXTRA: readonly FieldAction[] = [
+  // Q01 城门只开向里面
+  a('Q01', { id: X.crate, near: 'qin_worktown', off: [9, 6], label: ['陵门边 · 帮居民拉回饭碗箱', 'Tomb gate · Help pull back the bowl crate'],
+    line: ['一队工俑抬着门板往陵里走，木箱差点被一起带进去。目标只有一个：让这条工道停下来。', 'A file of figures carries door panels into the tomb and nearly takes the crate with them. One goal: stop this works road.'] }),
+  a('Q01', { id: X.patrol, near: 'qin_pass', off: [8, 4], kind: 'fight', after: [X.crate],
+    foes: [['lancer', ['巡逻戟俑', 'Halberd patrol figure']], ['lancer', ['巡逻戟俑', 'Halberd patrol figure']]],
+    label: ['货架隔开的街 · 击退戟俑巡逻', 'Shelf-blocked street · Drive off the halberd patrol'],
+    line: ['戟俑退了。秦始皇递来工符：“载墙的那一队，认这个。”', 'The halberds fall back. The First Emperor hands you a tally: “The wall-bearing crew answers to this.”'] }),
+  a('Q01', { id: X.halt, near: 'qin_pass', off: [-4, 6], after: [X.patrol],
+    label: ['工符 · 让载墙工俑驻定', 'Tally · Halt the wall-bearing figures'],
+    line: ['载墙工俑停住了。远处守将回话：“陵兵认符。”门上旧诏的署名是他自己。他说：“是朕所定。”', 'The wall-bearers halt. A distant commander answers: “Tomb soldiers obey the tally.” The old edict on the gate bears his own name. He says: “I decreed it.”'] }),
+  a('Q01', { id: X.turn, near: 'qin_pass', off: [-8, 2], after: [X.halt],
+    label: ['工符 · 转向，留出横向通路', 'Tally · Turn them to open a cross street'],
+    line: ['同一队工俑转了向，在路中间搭出一个横向路口。', 'The same crew turns and forms a crossing in the middle of the road.'] }),
+  a('Q01', { id: X.cross, near: 'qin_pass', off: [-2, 10], kind: 'work', seconds: 8, after: [X.turn], adds: [X.q01],
+    label: ['横向路口 · 看蔺禾带居民穿过', 'The crossing · Watch Lin He lead the residents through'],
+    line: ['蔺禾一组一组带人过去，不用你喊。陵里还有工匠没出来。', 'Lin He takes them across group by group without a word from you. There are still craftsmen inside the tomb.'] }),
+  // Q02 朕认得此城
+  a('Q02', { id: X.bridge, near: 'qin_quarry', off: [5, 5], after: [X.q01],
+    label: ['外工道桥口 · 送上载梁队，站上梁后发行令', 'Outer works bridge · Board the beam crew and order March'],
+    line: ['梁动了。前面是一个看得清的铜制停靠点。', 'The beam moves. Ahead is a clearly visible bronze berth.'] }),
+  a('Q02', { id: X.stop, near: 'qin_quarry', off: [-5, 8], after: [X.bridge],
+    label: ['铜制停靠点 · 驻定、转动盾面', 'Bronze berth · Halt and turn the shield face'],
+    line: ['刚驻定，侧面弩兵进了射线——盾面正好挡住。现在选低槽还是高架。', 'You halt just as side crossbows enter the line; the shield face takes it. Now choose the low trench or the high trestle.'] }),
+  a('Q02', { id: X.low, near: 'qin_quarry', off: [-9, 12], kind: 'fight', alt: 'q02_route', after: [X.stop],
+    foes: [['breaker', ['维修槽阻截俑', 'Trench blocker']], ['lancer', ['槽口戟俑', 'Trench halberd']]],
+    label: ['低层维修槽 · 近身打穿', 'Low maintenance trench · Break through up close'],
+    line: ['低槽打通了，通向检修窄井。', 'The trench is clear to the service shaft.'] }),
+  a('Q02', { id: X.high, near: 'qin_quarry', off: [2, 14], kind: 'shot', alt: 'q02_route', after: [X.stop],
+    label: ['高架 · 跨过去先击破弩手', 'High trestle · Cross and break the crossbow first'],
+    line: ['弩手落下，高架连到检修窄井。', 'The crossbow falls and the trestle connects to the service shaft.'] }),
+  a('Q02', { id: X.shaft, near: 'field_qin_stars_foot', off: [4, -4], any: [X.low, X.high], adds: [X.q02],
+    label: ['检修窄井 · 侧身攀到万俑廊上缘', 'Service shaft · Squeeze up to the gallery rim'],
+    line: ['井窄得只能侧身，担架绝对过不去。这条井以后是你和能自己爬的人的捷径，不是群众出口。', 'The shaft is so narrow you must turn sideways; no stretcher will ever pass. From now on it is a shortcut for you and anyone who can climb, not a way out for everyone.'] }),
+  a('Q02', { id: X.batches, near: 'field_qin_stars_foot', off: [-3, 3], optional: true, after: [X.q02],
+    label: ['井壁 · 最后的出入批次', 'Shaft wall · The last entry batches'],
+    line: ['蔺禾认出一个名字：已经离开工役的老人，还在内层等家属。', 'Lin He recognises a name: an old man long released from labour, still waiting inside for his family.'] }),
+  // Q03 万军无声
+  a('Q03', { id: X.watch, near: 'qin_army', off: [-9, 6], after: [X.q02],
+    label: ['俑阵厅 · 先安静看一会儿', 'The great hall of figures · Watch quietly first'],
+    line: ['远处尘土扬起，第一次齐步。脚步和转阵之间有间隔。', 'Dust rises far off: the first step in unison. There is a gap between the step and the wheel.'] }),
+  a('Q03', { id: X.slot, near: 'qin_army', off: [-12, 10], alt: 'q03_way', after: [X.watch],
+    label: ['维修槽 · 读着脚步间隔穿过去', 'Maintenance trench · Cross on the gap between steps'],
+    line: ['你踩着间隔过去。一列驻定，另一列横转，原来的安全通道成了火线。', 'You cross on the gap. One column halts, another wheels across, and the safe lane becomes a firing line.'] }),
+  a('Q03', { id: X.beam, near: 'qin_army', off: [12, 10], kind: 'fight', alt: 'q03_way', after: [X.watch],
+    foes: [['musketeer', ['侧梁弩俑', 'Side-beam crossbow']], ['jaeger', ['高位弩俑', 'High crossbow']]],
+    label: ['侧梁 · 先清弩手再穿越', 'Side beam · Clear the crossbows, then cross'],
+    line: ['侧梁清了。暴露也不过是一场可控的枪战。', 'The side beam is clear. Being seen only turned into a manageable firefight.'] }),
+  a('Q03', { id: X.target, near: 'qin_army', off: [0, 12], kind: 'shot', any: [X.slot, X.beam],
+    label: ['侧面目标 · 打断一次转阵', 'Side target · Break one wheel'],
+    line: ['转阵断了一拍，你得到一个短短的穿越窗口。', 'The wheel misses a beat and gives you a short window to cross.'] }),
+  a('Q03', { id: X.hole, near: 'qin_army', off: [6, 16], after: [X.target], adds: [X.q03],
+    label: ['侧墙观阵孔 · 看铜制令牌翻转', 'Wall spy-hole · Watch the bronze tokens turn'],
+    line: ['高处令牌一块块翻过来，鼓点跟着报“转、驻、行”，眼前的军阵照令变换。将军本人不在这里——他在校令台等。', 'High above the tokens flip one by one; the drum calls “Turn, Halt, March”, and the ranks below obey. The general himself is not here. He waits at the command court.'] }),
+  // Q04 留在俑底的名字
+  a('Q04', { id: X.lend, near: 'qin_workshop', off: [6, 4], after: [X.q03],
+    label: ['造像坊 · 驻定编组，把工符暂交蔺禾', 'Figure workshop · Halt the crew and lend Lin He the tally'],
+    line: ['提示变成“蔺禾持符”。她自己复位工架、修通内部短路，调俑去接行动不便的老师傅。', 'The prompt reads “Lin He holds the tally.” She resets the frames, repairs the inner path and sends figures for the old master who cannot walk.'] }),
+  a('Q04', { id: X.bowls, near: 'qin_workshop', off: [-5, 5], after: [X.lend],
+    label: ['热饭的灶 · 看谁的碗还没动', 'Warming stove · See whose bowls are untouched'],
+    line: ['两只碗没人动。补鞋的人说，那两家人的名字不在表上。', 'Two bowls are untouched. The cobbler says those two families are not on the list.'] }),
+  a('Q04', { id: X.roster, near: 'qin_workshop', off: [-8, 1], after: [X.bowls],
+    label: ['人员表 · 找出漏登的家属', 'Roster · Find the families left off'],
+    line: ['补上了漏登的两家。谁能自己爬出去、谁要担架，现在一清二楚。', 'The two missing families are added. Who can climb out and who needs a stretcher is now clear.'] }),
+  a('Q04', { id: X.guide, near: 'qin_workshop', off: [-2, -6], kind: 'work', seconds: 6, after: [X.roster],
+    label: ['安全点 · 亲自把漏登的人带过去', 'Safe point · Walk the missed families over yourself'],
+    line: ['他们到了安全点。周弭把名字记在担架位旁边。', 'They reach the safe point. Zhou Mi writes their names beside the stretcher places.'] }),
+  a('Q04', { id: X.names, near: 'qin_workshop', off: [3, -7], after: [X.guide], adds: [X.q04],
+    label: ['俑底刻名 · 听蔺禾说', 'Names under the figures · Hear Lin He out'],
+    line: ['每个刻名都对应做它的人。蔺禾：“我要的不是指挥陵军，是管自己的工道。我会修门。”木牌翻成“出发名册已核”。', 'Each carved name belongs to the person who made the figure. Lin He: “I do not want to command the tomb army. I want to run our own works road. I can mend doors.” The board turns to “Departure roll checked.”'] }),
+  a('Q04', { id: X.bench, near: 'qin_workshop', off: [8, -3], optional: true, after: [X.lend],
+    label: ['工凳 · 看一尊歪脸俑', 'Workbench · Look at a crooked-faced figure'],
+    line: ['秦始皇看了半天：“此俑面歪，倒像朕的某位丞相。”', 'The First Emperor studies it a while: “Its face is crooked. It rather resembles one of my chancellors.”'] }),
+  // Q08 第一次自己开门
+  a('Q08', { id: X.door, near: 'map_qin_command_return', off: [4, 4], gate: done,
+    label: ['回程闩 · 看工匠自己开门', 'Return bolt · Watch the craftsmen open it themselves'],
+    line: ['工匠没等你，自己拉开了门闩。门开向外面。', 'The craftsmen do not wait for you; they draw the bolt themselves. The door opens outward.'] }),
+  a('Q08', { id: X.board, near: 'qin_worktown', off: [-6, 6], gate: done, after: [X.door], adds: [X.q08],
+    label: ['工匠镇 · 新的工道轮值表', 'Works town · The new works-road rota'],
+    line: ['蔺禾把轮值表钉在镇口。工道归他们自己管了。', 'Lin He nails the rota up at the town gate. The works road is theirs to run now.'] }),
+];
+export const QIN_CHAPTERS: FieldChapterContent = {
+  set: { region: 'qin', title: ['秦帝陵 · 未葬之人', 'Qin Mausoleum · The Unburied'], actions: QIN_CHAPTER_EXTRA },
+  props: [
+    { at: X.crate, off: [1.2, .35, 0], size: [.9, .6, .6], color: 0x7a5a38, moved: { when: X.crate, off: [1.2, .35, 2.4] } },
+    ...[-3, -1.5, 0, 1.5, 3].map(x => ({ at: X.halt, off: [x, .9, -4] as const, size: [.6, 1.8, .6] as const, color: 0x89876d, rot: [0, 0, 0] as const,
+      moved: { when: X.turn, off: [-4, .9, x] as const } })),
+    { at: X.halt, off: [0, 1.6, -5], size: [4.5, 2.2, .2], color: 0x7a6a4a, moved: { when: X.turn, off: [-5.5, 1.6, 0], rot: [0, Math.PI / 2, 0] } },
+    { at: X.stop, off: [0, .1, -2], size: [2, .2, 2], color: 0xb08a4a },
+    { at: X.high, off: [0, 4.5, -3], size: [.6, 1.4, .6], color: 0x89876d, target: X.high },
+    { at: X.target, off: [0, 2.2, -4], size: [.8, .8, .3], color: 0xc2a462, target: X.target },
+    { at: X.hole, off: [0, 1.6, -1], size: [.4, .4, .2], color: 0x111111 },
+    { at: X.bowls, off: [1, .9, 0], size: [1.4, .1, .8], color: 0x8a6a42 },
+    { at: X.roster, off: [1, 1, 0], size: [1, 1.2, .1], color: 0xd8c8a0 },
+    { at: X.names, off: [1, .5, 0], size: [.7, 1, .7], color: 0x9a8a6a },
+    { at: X.board, off: [1, 1.4, 0], size: [1.4, 1, .1], color: 0x7a5a38, show: d => d.has(X.door) },
+  ],
+  actors: [
+    { id: 'q_town_resident', role: ['工匠镇居民', 'Works-town resident'], coat: 0x8a6a52,
+      place: d => d.has(X.q01) ? [X.cross, 3, 2] : d.has(X.turn) ? [X.cross, -2, -2] : [X.crate, 1.5, 1] },
+    { id: 'q_cobbler', role: ['补鞋的人', 'Cobbler'], coat: 0x6a5a48, place: d => d.has(X.lend) ? [X.bowls, 2, -1] : null },
+    { id: 'q_old_master', role: ['行动不便的老师傅', 'Old master who cannot walk'], coat: 0x9a8a72, place: d => d.has(X.guide) ? [X.guide, 2, 2] : d.has(X.lend) ? [X.names, -2, 1] : null },
+    { id: 'q_craftsman_door', role: ['开门的工匠', 'Craftsman at the door'], coat: 0x7a6a4a, place: d => done(d) ? [X.door, 1.5, 1] : null },
+  ],
+};

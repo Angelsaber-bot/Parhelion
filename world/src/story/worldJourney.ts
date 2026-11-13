@@ -151,6 +151,8 @@ export function journeyStepReady(id: string, done: ReadonlySet<string>) {
   if (id === J.cargoSwitch) return !done.has(J.cargoPin) && !done.has(J.cargoParked);
   if (id === J.signalLamp) return !done.has(J.signal);
   if (id === J.compare) return originalFourReady(done);
+  // T07: once the parallel check has started, the load test waits for the on-site load transfer.
+  if (id === J.test && done.has('t07_parallel') && !done.has('t07_load')) return false;
   if (id === J.cutoff || id === J.bypass) return !valleyRouteOpen(done);
   if (id === J.egyptRead || id === J.orleansRead) return dispatchReady(done);
   if (id === J.qinRead) return reached(done, J.egyptDone, J.orleansDone);

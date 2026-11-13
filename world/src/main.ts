@@ -15,6 +15,9 @@ import { ORLEANS_ENTRIES, OE, orleansEntryRequired } from './story/orleansEntrie
 import { EGYPT_APPROACH, EA, egyptApproachRequired } from './story/egyptApproach';
 import { QIN_PROCESSION, QP, qinProcessionRequired } from './story/qinProcession';
 import { VALLEY_SET_PIECES } from './story/valleyTownSetPieces';
+import { QIN_CHAPTERS, QX, qinChaptersRequired } from './story/qinChapters';
+import { EGYPT_CHAPTERS, EX, egyptOpeningRequired } from './story/egyptChapters';
+import { ORLEANS_FINALE } from './story/orleansFinale';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
@@ -1084,9 +1087,10 @@ function valleyGuide() {
 }
 function journeyGuide() {
   {
-   const id=regionAt(player.pos.x,player.pos.z).id,content=FIELD_CHAPTER_CONTENT.find(c=>c.set.region===id);
-   const a=content&&fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
-   if(content&&a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};
+   const id=regionAt(player.pos.x,player.pos.z).id;
+   for(const content of FIELD_CHAPTER_CONTENT.filter(c=>c.set.region===id)){
+   const a=fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
+   if(a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};}
   }
   if(regionAt(player.pos.x,player.pos.z).id==='qin'){
    const a=qinChapterGuide(done),p=a&&markers.get(a.id)?.p;
@@ -2220,7 +2224,7 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
 // K04, Winter W01–W05/W08 and Black Sail B01–B09 field chapters stand on existing story markers.
-const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES] as const;
+const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES,QIN_CHAPTERS,EGYPT_CHAPTERS,ORLEANS_FINALE] as const;
 const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
  {anchors:['sea_core','disc_flagship','adventure_harbor_records','adventure_harbor_alarm','map_flagship_inner_lane','map_flagship_outer_lane'],offset:()=>flagshipNavigation.offset});
 if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:',fieldChapterScene.missing.join(', '));
@@ -2236,11 +2240,13 @@ const meyrickCovers=[-4.5,4.5].map(dx=>{
  return{dx,art,shape,base,collider,rise:0,at:''};
 });
 // B06: when the last cable parts the hull drops into its dock: a wave ring and a heavy view nudge, control kept.
-let flagshipDropped=done.has('b06_complete'),mastDown=done.has('b07_foremast');const dropSplash={mesh:new THREE.Mesh(new THREE.RingGeometry(.8,1.6,48),new THREE.MeshBasicMaterial({color:0xe8f6f4,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})),t:-1};
+let flagshipDropped=done.has('b06_complete'),mastDown=done.has('b07_foremast');
+/** B06 短镜头: for ~2 s the view leans toward the falling hull, then returns; movement stays live. */
+let dropShot:{t:number;at:THREE.Vector3}|null=null;const dropLook=new THREE.Matrix4(),dropQuat=new THREE.Quaternion();const dropSplash={mesh:new THREE.Mesh(new THREE.RingGeometry(.8,1.6,48),new THREE.MeshBasicMaterial({color:0xe8f6f4,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})),t:-1};
 dropSplash.mesh.rotation.x=-Math.PI/2;dropSplash.mesh.visible=false;dropSplash.mesh.name='FlagshipDropSplash';world.add(dropSplash.mesh);
 function updateFlagshipDrop(dt:number){
  if(!mastDown&&done.has('b07_foremast')){mastDown=true;cameraKick=Math.max(cameraKick,.7);}
- if(!flagshipDropped&&done.has('b06_complete')){flagshipDropped=true;const p=markers.get('disc_flagship')?.p;if(p){dropSplash.t=0;dropSplash.mesh.position.set(p[0],layout.world.waterLevel+.15,p[2]);cameraKick=1;}}
+ if(!flagshipDropped&&done.has('b06_complete')){flagshipDropped=true;const p=markers.get('disc_flagship')?.p;if(p){dropSplash.t=0;dropSplash.mesh.position.set(p[0],layout.world.waterLevel+.15,p[2]);cameraKick=1;if(Math.hypot(player.pos.x-p[0],player.pos.z-p[2])<160)dropShot={t:2.2,at:new THREE.Vector3(p[0],p[1]+2,p[2])};}}
  if(dropSplash.t<0)return;dropSplash.t+=dt;const k=dropSplash.t/2.6;
  if(k>=1){dropSplash.t=-1;dropSplash.mesh.visible=false;return;}
  dropSplash.mesh.visible=true;dropSplash.mesh.scale.setScalar(1+k*22);(dropSplash.mesh.material as THREE.MeshBasicMaterial).opacity=.75*(1-k);
@@ -2707,8 +2713,10 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
     }
     return;
   }
+  if(region==='qin'&&qinChaptersRequired(done)&&!done.has(QX.q04)){toast(bilingual('先完成工匠镇横路、外工道窄井、俑阵厅与造像坊。','Finish the works-town crossing, the outer shaft, the hall of figures and the workshop first.'));return;}
   if(region==='qin'&&qinProcessionRequired(done)&&!done.has(QP.q06)){toast(bilingual('先带队逆着葬仪走过交错军道，接回自己的队伍。','First lead the crew against the funeral through the crossing ranks and rejoin them.'));return;}
   if(region==='orleans'&&orleansEntryRequired(done)&&!done.has(OE.o07)){toast(bilingual('先按所选方案打开终战入口，让阿莉克斯随前锋持旗。','Open the final-assault entry for your chosen plan and let Alix take the forward standard first.'));return;}
+  if(region==='egypt'&&egyptOpeningRequired(done)&&!done.has(EX.e02)){toast(bilingual('先完成渡口救援与芦苇市集。','Finish the landing rescue and the reed market first.'));return;}
   if(region==='egypt'&&egyptApproachRequired(done)&&!done.has(EA.arrived)){toast(bilingual('先在工程台正式出发，乘太阳舟或走高位检修路到汇水台。','Set out from the engineering table first, then reach the confluence by sun-boat or the high service path.'));return;}
   if(region==='egypt'&&done.has(EC.started)&&!done.has(EC.ready)){toast(bilingual('先完成独立试洪、旁路验证与人员清点。','Complete the independent flood trial, bypass test and muster first.'));return;}
   if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || helionFight.active || activeRealmClimax) return;
@@ -4603,6 +4611,10 @@ function frame(now: number) {
     eye.copy(camera.position);
   } else camera.position.copy(eye);
   // Heavy contacts nudge the view for a few frames (weight, not shake): a damped two-axis wobble.
+  if (dropShot) {
+    dropShot.t -= dt; const w = dropShot.t > 0 ? Math.min(1, dropShot.t / .4, (2.2 - dropShot.t) / .3) * .7 : 0;
+    if (w > 0) { dropLook.lookAt(camera.position, dropShot.at, camera.up); dropQuat.setFromRotationMatrix(dropLook); camera.quaternion.slerp(dropQuat, w); } else dropShot = null;
+  }
   if (cameraKick > 0) {
     const t = performance.now() / 1000, k = cameraKick * cameraKick;
     camera.position.addScaledVector(camRight.set(rx, 0, rz), Math.sin(t * 61) * k * .05).y += Math.sin(t * 47 + 1.3) * k * .06;

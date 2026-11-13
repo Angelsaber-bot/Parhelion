@@ -8,7 +8,7 @@ import { KYOTO_WITNESS, kyotoWitnessReady } from './kyotoWitness';
 import { K01, K04, kingdomBackPassageRequired, kingdomOpeningRequired } from './kingdomBackPassage';
 import { WC, winterChaptersRequired } from './winterChapters';
 import { BC, blacksailChaptersRequired } from './blacksailChapters';
-import { JC, kyotoCourtRequired } from './kyotoDecreeCourt';
+import { JC, kyotoCourtRequired, kyotoExtraBossFlags } from './kyotoDecreeCourt';
 import type { Localized, RegionId } from '../settlements/types';
 import type { Layout, Marker } from '../core/types';
 
@@ -185,7 +185,7 @@ export function getEraBossRequirements(core: string, done: ReadonlySet<string>):
   const extra = core === 'sun_core' ? [...(kingdomOpeningRequired(done) ? [K01.k01, K01.k02, K01.k03] : []), ...(kingdomBackPassageRequired(done) || kingdomOpeningRequired(done) ? [K04.complete] : [])]
     : core === 'winter_core' && winterChaptersRequired(done) ? [WC.w05, WC.key]
       : core === 'sea_core' && blacksailChaptersRequired(done) ? [BC.b07, BC.boarded]
-        : core === 'fire_core' && kyotoCourtRequired(done) ? [JC.offer, JC.entered] : [];
+        : core === 'fire_core' ? [...(kyotoCourtRequired(done) ? [JC.offer, JC.entered] : []), ...kyotoExtraBossFlags(done)] : [];
   return extra.length ? [...base, ...extra.filter(flag => !base.includes(flag))] : base;
 }
 function baseEraBossRequirements(core: string, done: ReadonlySet<string>): readonly string[] | undefined {

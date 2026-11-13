@@ -37,7 +37,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { decoys?: THREE.Mesh[]; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { crowFx?: { dark: THREE.Mesh; glint: THREE.Mesh; curtain: THREE.Mesh; burn: number; lastCount: number }; decoys?: THREE.Mesh[]; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -439,6 +439,21 @@ export class WorldCombat {
       // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
       const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover' || (this.state.remoteEnemies && e.mode === 'chase')) ? e.target : player;
       v.body.rotation.y = e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified ? e.squareYaw : Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
+      if (v.crowFx) {
+        const fx = v.crowFx, f = e.hp / e.maxHp, alive = e.mode !== 'dead' && e.active;
+        // Every fourth beat in phase two he smashes a lamp: one local dark patch, feet and blade still read.
+        const lampOut = alive && e.phase === 2 && f > .3 && e.attackCount % 4 === 0 && (e.mode === 'windup' || e.mode === 'recover');
+        fx.dark.visible = fx.glint.visible = lampOut;
+        (fx.dark.material as THREE.MeshBasicMaterial).opacity = lampOut ? .45 : 0;
+        (fx.glint.material as THREE.MeshBasicMaterial).opacity = lampOut ? .5 + .5 * Math.sin(this.time * 18) : 0;
+        fx.glint.position.set(e.p.x - v.root.position.x + .35, 1.4, e.p.z - v.root.position.z + .6);
+        fx.dark.position.set(e.p.x - v.root.position.x, 1.6, e.p.z - v.root.position.z);
+        // Below 30 % each new attack sets a curtain alight across his retreat; it burns out in ~3 s.
+        if (alive && f <= .3 && e.mode === 'windup' && e.attackCount !== fx.lastCount) { fx.lastCount = e.attackCount; fx.burn = 3; fx.curtain.position.set(e.p.x - v.root.position.x, 0, e.p.z - v.root.position.z); fx.curtain.rotation.y = (e.squareYaw ?? 0) + Math.PI / 2; }
+        fx.burn = Math.max(0, fx.burn - (active ? dt : 0)); fx.curtain.visible = fx.burn > 0;
+        (fx.curtain.material as THREE.MeshBasicMaterial).opacity = fx.burn > 2 ? .85 : fx.burn > 1 ? .6 : fx.burn * .5;
+        (fx.curtain.material as THREE.MeshBasicMaterial).color.setHex(fx.burn > 2 ? 0xffa040 : fx.burn > 1 ? 0xff6a2a : 0x3a2a22);
+      }
       if (v.decoys) { const show = e.phase === 2 && (e.mode === 'windup' || e.mode === 'chase'); v.decoys.forEach((d, n) => { d.visible = show && (n === 0) === (Math.sin(this.time * .9) > 0); d.rotation.z = Math.sin(this.time * 2.3 + n) * .12; }); }
       if (v.ranks) {
         // Front rank (first four) falls to frontal fire; the rest leave as the square is worn down.
@@ -447,6 +462,10 @@ export class WorldCombat {
         v.ranks.forEach((r, n) => {
           r.visible = e.mode !== 'dead' && (n < LAST_SQUARE.frontRank ? n < front : n - LAST_SQUARE.frontRank < rest);
           r.position.y = beat; r.position.x = (r.userData.homeX ??= r.position.x) * closing;
+          // 正面齐射: the front rank levels muskets through the volley tell and flashes as it lands.
+          const volley = n < LAST_SQUARE.frontRank && e.attack === 'burst', aiming = volley && e.mode === 'windup', firing = volley && e.mode === 'recover' && e.timer > 1.0;
+          if (r.userData.musket) r.userData.musket.rotation.x = aiming || firing ? 1.45 : .12;
+          if (r.userData.flash) r.userData.flash.visible = firing && Math.sin(this.time * 40 + n) > 0;
         });
       }
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
@@ -643,12 +662,15 @@ export class WorldCombat {
     const coat = mat(0x34466e), frost = mat(0xc8dde8), wood = mat(0x4c3a2a);
     const torso = geo(new THREE.BoxGeometry(.2, .5, .14)), head = geo(new THREE.BoxGeometry(.11, .12, .11)), shako = geo(new THREE.CylinderGeometry(.06, .055, .15, 8));
     const musket = geo(new THREE.BoxGeometry(.022, .58, .022)), leg = geo(new THREE.BoxGeometry(.07, .3, .08));
+    const flashGeo = geo(new THREE.SphereGeometry(.07, 8, 6)), flash = new THREE.MeshBasicMaterial({ color: 0xffd27a }); this.materials.push(flash);
     const ranks: THREE.Group[] = [];
     const put = (g: THREE.BufferGeometry, m: THREE.Material, parent: THREE.Object3D, x: number, y: number, z: number, rx = 0) => { const mesh = new THREE.Mesh(g, m); mesh.position.set(x, y, z); mesh.rotation.x = rx; mesh.castShadow = true; parent.add(mesh); };
     for (const [x, z] of [[-1.5, .95], [-.75, 1.05], [.75, 1.05], [1.5, .95], [-1.9, 0], [1.9, 0], [-1.3, -.9], [0, -1.05], [1.3, -.9]] as const) {
       const s = new THREE.Group(); s.name = 'LastSquareSoldier'; s.position.set(x, 0, z); body.add(s); ranks.push(s);
       put(leg, coat, s, -.05, .15, 0); put(leg, coat, s, .05, .15, 0); put(torso, coat, s, 0, .55, 0);
       put(head, frost, s, 0, .87, 0); put(shako, coat, s, 0, 1, 0); put(musket, wood, s, .13, .7, .05, .12);
+      s.userData.musket = s.children[s.children.length - 1];
+      const muzzle = new THREE.Mesh(flashGeo, flash); muzzle.position.set(.13, .82, .42); muzzle.visible = false; muzzle.raycast = () => {}; s.add(muzzle); s.userData.flash = muzzle;
     }
     return ranks;
   }
@@ -658,6 +680,19 @@ export class WorldCombat {
     const m = new THREE.MeshBasicMaterial({ color: 0x0b0b10, transparent: true, opacity: .55, side: THREE.DoubleSide, depthWrite: false }); this.materials.push(m);
     const g = new THREE.PlaneGeometry(.55, 1.05).translate(0, .55, 0); this.shared.push(g);
     return [-1.7, 1.7].map(x => { const d = new THREE.Mesh(g, m); d.name = 'CrowSealFalseShadow'; d.position.set(x, 0, .4); d.visible = false; d.raycast = () => {}; body.add(d); return d; });
+  }
+  /** J08 鸦印 招式四「灭灯近身」 and 招式五「烧幕逃走」: a single local dark patch with a blade glint
+   * (edges keep their light), and a curtain that burns through fixed stages and is gone — never full dark. */
+  private makeCrowSealFx(root: THREE.Group) {
+    const darkMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0, depthWrite: false, side: THREE.BackSide }); this.materials.push(darkMat);
+    const glintMat = new THREE.MeshBasicMaterial({ color: 0xfff2c0, transparent: true, opacity: 0 }); this.materials.push(glintMat);
+    const curtainMat = new THREE.MeshBasicMaterial({ color: 0xff7a2a, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false }); this.materials.push(curtainMat);
+    const darkGeo = new THREE.SphereGeometry(4.2, 18, 12), glintGeo = new THREE.BoxGeometry(.05, .05, 1.1), curtainGeo = new THREE.PlaneGeometry(3.4, 3).translate(0, 1.5, 0);
+    this.shared.push(darkGeo, glintGeo, curtainGeo);
+    const dark = new THREE.Mesh(darkGeo, darkMat), glint = new THREE.Mesh(glintGeo, glintMat), curtain = new THREE.Mesh(curtainGeo, curtainMat);
+    for (const m of [dark, glint, curtain]) { m.raycast = () => {}; m.visible = false; m.renderOrder = 3; root.add(m); }
+    dark.position.y = 1.6; glint.position.set(.35, 1.4, .6);
+    return { dark, glint, curtain, burn: 0, lastCount: -1 };
   }
   private makeEnemy(e: Enemy): EnemyVisual {
     const king = e.kind === 'king', crystal = e.kind === 'crystal';
@@ -693,11 +728,11 @@ export class WorldCombat {
     const updateCreature = fallback.userData.updateCreature as EnemyVisual['updateCreature'];
     // Region-specific champions replace every old procedural purple chapter boss.
     // Scale keeps the authored human champion near the existing king hit sphere/height.
-    let bodyCrown: THREE.Group | undefined, ranks: THREE.Group[] | undefined, decoys: THREE.Mesh[] | undefined;
+    let bodyCrown: THREE.Group | undefined, ranks: THREE.Group[] | undefined, decoys: THREE.Mesh[] | undefined, crowFx: EnemyVisual['crowFx'];
     if (king) {
       body.scale.setScalar(1.8);
       if (e.id === LAST_SQUARE.id) ranks = this.makeLastSquareRanks(body);
-      if (e.id === 'boss_hellfire_lord') decoys = this.makeCurtainDecoys(body);
+      if (e.id === 'boss_hellfire_lord') { decoys = this.makeCurtainDecoys(body); crowFx = this.makeCrowSealFx(root); }
       const crown = new THREE.Group(); crown.name = 'Champion_Gold_Crest'; crown.position.y = 2;
       const ringGeo = new THREE.TorusGeometry(.25,.025,4,12); this.shared.push(ringGeo);
       const ring = new THREE.Mesh(ringGeo,glow);ring.rotation.x=Math.PI/2;crown.add(ring);
@@ -797,7 +832,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { decoys, ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { crowFx, decoys, ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {
