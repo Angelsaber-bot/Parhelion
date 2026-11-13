@@ -5,7 +5,7 @@ import type { StoryEncounterSpec } from './storyEncounters';
 /** Regional main-story chapters authored as real field actions on the existing maps.
  * Every action is a physical marker: talk/operate, a story fight, a shot target, or timed work
  * that only advances while the player stays at the site. Progress lives in the ordinary `done` set. */
-export type FieldRegion = 'britain' | 'winter' | 'blacksail';
+export type FieldRegion = 'alpha' | 'britain' | 'winter' | 'blacksail' | 'kyoto' | 'egypt' | 'orleans' | 'qin';
 export interface FieldAction {
   readonly id: string;
   readonly region: FieldRegion;
@@ -153,7 +153,7 @@ export interface FieldProp {
   readonly color: number;
   readonly rot?: V3;
   readonly show?: (d: ReadonlySet<string>) => boolean;
-  readonly moved?: { readonly when: string; readonly off: V3; readonly rot?: V3 };
+  readonly moved?: { readonly when: string | ((d: ReadonlySet<string>) => boolean); readonly off: V3; readonly rot?: V3 };
   readonly target?: string;
 }
 /** A named resident or companion whose work station follows the story: [action id, dx, dz] or hidden. */

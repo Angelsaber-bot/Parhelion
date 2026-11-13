@@ -24,6 +24,8 @@ export interface Enemy extends SpawnPoint {
   signatureActive?: boolean;
   /** W08 最后方阵: the square's shield wall turns slowly; only its front blocks rifle fire. */
   squareYaw?: number;
+  /** 最后方阵: hits the front rank can still absorb (four soldiers), and the drum-step clock. */
+  squareGuard?: number; squareDrum?: number;
   /** Toughness damage built up toward a daze break (elites and chapter bosses only). */
   daze?: number; dazeIdle?: number; dazedFor?: number;
 }
@@ -68,19 +70,25 @@ export const DAZE = Object.freeze({
 });
 /** W08 最后方阵: a formation that turns at marching pace, holds its facing through a volley, and
  * blocks most rifle fire on its front. Flanking it is the counter, not waiting. */
-export const LAST_SQUARE = { id: 'boss_winter_warden', turn: [.7, .95], front: 1.0, block: .35, flank: 1.35 } as const;
+export const LAST_SQUARE = { id: 'boss_winter_warden', turn: [.7, .95], front: 1.0, block: .5, flank: 1.35, frontRank: 4, soldierHits: 3, drum: 4.2 } as const;
+/** Bosses whose facing lags and whose front is armoured: W08 最后方阵 and J08 鸦印 (front plate, open flanks). */
+export const BOSS_FRONTS: Readonly<Record<string, { turn: readonly [number, number]; front: number; block: number; flank: number }>> = {
+  [LAST_SQUARE.id]: LAST_SQUARE,
+  boss_hellfire_lord: { turn: [1.7, 2.2], front: .8, block: .6, flank: 1.15 },
+};
 export function turnLastSquare(e: Enemy, toward: Point3, dt: number) {
   const want = Math.atan2(toward.x - e.p.x, toward.z - e.p.z);
-  if (e.squareYaw === undefined || e.mode === 'idle') { e.squareYaw = want; return; }
+  const spec = BOSS_FRONTS[e.id]; if (!spec) return;
+  if (e.squareYaw === undefined || e.mode === 'idle') { e.squareYaw = want; if (e.id === LAST_SQUARE.id) { e.squareGuard = LAST_SQUARE.frontRank * LAST_SQUARE.soldierHits; e.squareDrum = 0; } return; }
   if (e.mode === 'windup' || e.mode === 'recover') return;
   let d = want - e.squareYaw; d = Math.atan2(Math.sin(d), Math.cos(d));
-  const step = LAST_SQUARE.turn[e.phase - 1] * dt;
+  const step = spec.turn[e.phase - 1] * dt;
   e.squareYaw += Math.max(-step, Math.min(step, d));
 }
 export function lastSquareFront(e: Pick<Enemy, 'id' | 'p' | 'squareYaw'>, from: Point3) {
-  if (e.id !== LAST_SQUARE.id || e.squareYaw === undefined) return false;
+  const spec = BOSS_FRONTS[e.id]; if (!spec || e.squareYaw === undefined) return false;
   const d = Math.atan2(from.x - e.p.x, from.z - e.p.z) - e.squareYaw;
-  return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) < LAST_SQUARE.front;
+  return Math.abs(Math.atan2(Math.sin(d), Math.cos(d))) < spec.front;
 }
 export function dazeCapable(e: Pick<Enemy, 'miniboss' | 'kind' | 'storyPattern'>) { return !e.storyPattern && (!!e.miniboss || e.kind === 'king'); }
 export function dazeThreshold(e: Pick<Enemy, 'maxHp' | 'kind'>) { return e.maxHp * (e.kind === 'king' ? DAZE.kingShare : DAZE.eliteShare); }
@@ -271,6 +279,8 @@ export class WorldCombatState {
   maxHp: number = COMBAT.playerHp;
   defeatedFor = 0;
   bossStarted = false;
+  /** J08: a broken decree press sends 鸦印 into his close-range phase at the first hit. */
+  earlySecondPhase = new Set<string>();
   shotCooldown = 0;
   gunHeat = 0;
   gunVent = 0;
@@ -465,9 +475,15 @@ export class WorldCombatState {
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
     const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const squareFront=ranged&&!!context?.origin&&lastSquareFront(e,context.origin);
+    // A front-rank soldier takes the round instead of the officer; every third hit drops one.
+    if (squareFront && e.id === LAST_SQUARE.id && (e.squareGuard ?? 0) > 0) {
+      e.squareGuard! -= 1; e.hitTime = .11;
+      this.events.push({ type: 'hit', id, damage: 0, source: context?.source, punish: false, blocked: true });
+      return true;
+    }
     const shielded=squareFront||ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
-    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? LAST_SQUARE.block : shielded ? WORLD_RIFLE.shieldBlock : ranged && e.id === LAST_SQUARE.id && e.squareYaw !== undefined && context?.origin ? LAST_SQUARE.flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? BOSS_FRONTS[e.id].block : shielded ? WORLD_RIFLE.shieldBlock : ranged && BOSS_FRONTS[e.id] && e.squareYaw !== undefined && context?.origin ? BOSS_FRONTS[e.id].flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
     this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(raw ? { remote: true } : {}) });
     if (!raw && context?.source && dealt > 0) this.onLocalHit?.(id, dealt, context.source);
@@ -497,7 +513,7 @@ export class WorldCombatState {
         e.phase = 2; e.mode = 'recover'; e.timer = ELITE_RALLY.opening; e.signatureActive = false;
         this.events.push({ type: 'eliteRally', id: e.id, name: rallyName });
       }
-      if (e === this.boss && e.phase === 1 && e.hp <= e.maxHp / 2) {
+      if (e === this.boss && e.phase === 1 && (e.hp <= e.maxHp / 2 || this.earlySecondPhase.has(e.id))) {
         e.phase = 2; e.contactSequence = 0; e.mode = 'recover'; e.timer = 1.2;
         this.events.push({ type: 'phase' });
       }
@@ -669,7 +685,7 @@ export class WorldCombatState {
       if (away && e.storyEncounter) continue;
       const player = this.partner && !e.storyEncounter && (away || distanceXZ(e.p, this.partner) < distanceXZ(e.p, localPlayer)) ? this.partner : localPlayer;
       if (this.bosses.includes(e) && !(this.bossStarted && e === this.boss)) { e.active = false; continue; }
-      if (e.id === LAST_SQUARE.id && e.active && e.mode !== 'dead') turnLastSquare(e, e.mode === 'chase' ? player : e.target, dt);
+      if (BOSS_FRONTS[e.id] && e.active && e.mode !== 'dead') turnLastSquare(e, e.mode === 'chase' ? player : e.target, dt);
       const dist = distanceXZ(e.p, player);
       if (e.mode === 'dead') {
         e.timer -= dt;
@@ -758,7 +774,9 @@ export class WorldCombatState {
       const spacing = enemyRangedSpacing(e);
       const retreat = spacing > 0 && dist < spacing && e.timer > 0;
       if ((dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
-        const speed = isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed;
+        // 最后方阵 advances on the drum: a step on each beat, a held line between beats.
+        const drum = e.id === LAST_SQUARE.id ? .35 + 1.3 * Math.max(0, Math.sin((e.squareDrum = (e.squareDrum ?? 0) + dt) * LAST_SQUARE.drum)) : 1;
+        const speed = (isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed) * drum;
         const step = Math.min(speed * dt, retreat ? spacing - dist : Math.max(0, dist - 1.7));
         const angle = Math.atan2(player.z - e.p.z, player.x - e.p.x) + (retreat ? Math.PI : 0);
         // A few local alternatives let the king skirt ruined pillars; never phase through them.

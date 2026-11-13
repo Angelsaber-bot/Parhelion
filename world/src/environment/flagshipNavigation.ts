@@ -106,7 +106,9 @@ export function createFlagshipNavigation(host: {
 
   const offset = new THREE.Vector3(), previous = new THREE.Vector3();
   let initialized = false, lane: FlagshipLane | null = null, leg = 0, returning = false, paused = false, lastY = NaN;
-  const desiredHeight = () => host.done.has(F.inspect) && !flagshipBridgeLowered(host.done) && !host.done.has('sea_core') ? 6 : 0;
+  // B05→B06: Meyrick's crane holds the whole ship up in its dock until the last cable is cut.
+  const craneHeld = () => host.done.has('b05_complete') && !host.done.has('b06_complete') && !host.done.has('sea_core');
+  const desiredHeight = () => craneHeld() || host.done.has(F.inspect) && !flagshipBridgeLowered(host.done) && !host.done.has('sea_core') ? 6 : 0;
   const moving = () => !!lane || Math.abs(offset.y - desiredHeight()) > .001;
   const atDock = () => Math.hypot(offset.x, offset.z) < .001;
   function refit(entry: typeof owned[number]) {
@@ -176,7 +178,8 @@ export function createFlagshipNavigation(host: {
     update(dt: number, player: Pick<Player, 'pos' | 'vel' | 'onGround' | 'flying' | 'swimming'>, blocked = false) {
       if (dt <= 0 || blocked) { sync(); return; }
       const aboard = supported(player), before = offset.clone(), step = Math.min(dt, .05);
-      if (!lane) offset.y += Math.sign(desiredHeight() - offset.y) * Math.min(Math.abs(desiredHeight() - offset.y), step * .8);
+      // A released crane drops the hull fast (about one second); ordinary hoisting stays slow.
+      if (!lane) offset.y += Math.sign(desiredHeight() - offset.y) * Math.min(Math.abs(desiredHeight() - offset.y), step * (host.done.has('b06_complete') && offset.y > desiredHeight() ? 6 : .8));
       else if (!paused) {
         const path = FLAGSHIP_LANES[lane], target = new THREE.Vector3(...path[returning ? Math.max(0, leg - 1) : leg]);
         const delta = target.sub(offset), distance = delta.length(), speed = 3.5;

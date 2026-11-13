@@ -12,7 +12,7 @@ export const BOSS_TITLES: Readonly<Record<string, BossTitle>> = Object.freeze({
   boss_vacant_king: { name: ['空位之王', 'The Vacant King'], epithet: ['无人加冕的王座之影', 'Shadow of an Uncrowned Throne'], place: ['落日王国 · 537 · 卡姆兰', 'Sunset Kingdom · 537 · Camlann'], act: ['第二幕 · 誓剑雨', 'Act II · Oath Blade Rain'], color: '#ffbe62' },
   boss_drowned_admiral: { name: ['梅瑞克', 'Meyrick'], epithet: ['最后一个船长', 'The Last Captain'], place: ['黑帆尽头 · 1718 · 拿骚', "Black Sail's End · 1718 · Nassau"], act: ['第二幕 · 侧舷齐射', 'Act II · Broadside'], color: '#a8fff0' },
   boss_winter_warden: { name: ['最后方阵', 'The Last Square'], epithet: ['仍在执行旧命令的队伍', 'A Column Still Obeying an Old Order'], place: ['永冬之城 · 1812 · 旧税关广场', 'City of Eternal Winter · 1812 · Old Customs Square'], act: ['第二幕 · 冻土绽放', 'Act II · Frost Bloom'], color: '#bfeaff' },
-  boss_hellfire_lord: { name: ['业火之主', 'The Hellfire Lord'], epithet: ['改写结局的火', 'The Fire That Rewrites Endings'], place: ['业火京都 · 1582 · 本能寺', 'Hellfire Kyoto · 1582 · Honnō-ji'], act: ['第二幕 · 业火追迹', 'Act II · Hellfire Trail'], color: '#ff8a6a' },
+  boss_hellfire_lord: { name: ['鸦印', 'The Crow Seal'], epithet: ['无人签过的战报', 'The Report Nobody Signed'], place: ['业火京都 · 1582 · 本能寺外誊令庭', 'Hellfire Kyoto · 1582 · Decree Court, Honnō-ji'], act: ['第二幕 · 业火追迹', 'Act II · Hellfire Trail'], color: '#ff8a6a' },
 });
 
 export type TitleMoment = 'rise' | 'act' | 'fall';

@@ -37,7 +37,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { decoys?: THREE.Mesh[]; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -95,11 +95,11 @@ const BOSS_TEXT: Record<string, { name: Line; start: Line; reset: Line; phase: L
     colors: ['#3a4a66', '#9fd8ff', '#e8fbff'],
   },
   boss_hellfire_lord: {
-    name: ['业火之主', 'THE LORD OF HELLFIRE'],
-    start: ['业火之主迎战：留意连续横斩与直刺，抓住收招破绽！', 'The Lord of Hellfire engages: watch for chained sweeps and thrusts; punish the recovery!'],
+    name: ['鸦印', 'THE CROW SEAL'],
+    start: ['鸦印退进帘后：帘上的影子不一定是他，看脚步和枪口；正面有护甲，绕到侧面打！', 'The Crow Seal slips behind the curtains: the shadow may not be him. Watch the feet and the muzzle; his front is armoured, so flank him!'],
     reset: ['战斗重置', 'Encounter reset'],
-    phase: ['第二阶段 · 天魔焚城', 'Phase II · Demon Fire'],
-    victory: ['业火之主已击败 · 获得「二天」纪念徽记', 'Lord of Hellfire defeated · Two Heavens keepsake earned'],
+    phase: ['第二阶段 · 假影与灭灯', 'Phase II · False Shadows, Dark Lamps'],
+    victory: ['鸦印已被制住 · 枪线解除 · 获得「二天」纪念徽记', 'The Crow Seal is down · the gun line is lifted · Two Heavens keepsake earned'],
     burst: ['火雨坠落：离开红圈！', 'Rain of fire: leave the red circle!'],
     sweep: ['烈焰横扫：拉开距离！', 'Flame sweep: move away!'],
     colors: ['#3a1a1a', '#ff6a3d', '#ffd27a'],
@@ -439,7 +439,16 @@ export class WorldCombat {
       // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
       const facing = e.pacified ? e.home : (e.mode === 'windup' || e.mode === 'recover' || (this.state.remoteEnemies && e.mode === 'chase')) ? e.target : player;
       v.body.rotation.y = e.squareYaw !== undefined && e.mode !== 'idle' && !e.pacified ? e.squareYaw : Math.atan2(facing.x - e.p.x, facing.z - e.p.z);
-      if (v.ranks) { const left = Math.ceil(v.ranks.length * Math.max(0, e.hp) / e.maxHp), beat = Math.max(0, Math.sin(this.time * 4.2)) * .025; v.ranks.forEach((r, n) => { r.visible = e.mode !== 'dead' && n < left; r.position.y = beat; }); }
+      if (v.decoys) { const show = e.phase === 2 && (e.mode === 'windup' || e.mode === 'chase'); v.decoys.forEach((d, n) => { d.visible = show && (n === 0) === (Math.sin(this.time * .9) > 0); d.rotation.z = Math.sin(this.time * 2.3 + n) * .12; }); }
+      if (v.ranks) {
+        // Front rank (first four) falls to frontal fire; the rest leave as the square is worn down.
+        const front = Math.ceil((e.squareGuard ?? LAST_SQUARE.frontRank * LAST_SQUARE.soldierHits) / LAST_SQUARE.soldierHits), rest = Math.ceil((v.ranks.length - LAST_SQUARE.frontRank) * Math.max(0, e.hp) / e.maxHp);
+        const beat = Math.max(0, Math.sin((e.squareDrum ?? this.time) * LAST_SQUARE.drum)) * .025, closing = e.mode === 'windup' || e.mode === 'recover' ? .78 : 1;
+        v.ranks.forEach((r, n) => {
+          r.visible = e.mode !== 'dead' && (n < LAST_SQUARE.frontRank ? n < front : n - LAST_SQUARE.frontRank < rest);
+          r.position.y = beat; r.position.x = (r.userData.homeX ??= r.position.x) * closing;
+        });
+      }
       if (v.sword) v.sword.rotation.z = e.mode === 'windup' ? -1.8 : e.mode === 'recover' ? 0.6 : -0.2;
       v.material.emissiveIntensity = e.pacified ? 0 : e.hitTime > 0 ? 2.5 : e.phase === 2 ? 0.6 : 0.12;
       const punishCue = active && !this.state.defeated && e.active && !e.pacified && isMeleePunishWindow(e);
@@ -643,6 +652,13 @@ export class WorldCombat {
     }
     return ranks;
   }
+  /** J08 鸦印 招式一「影子先到」: two flat shadow figures thrown on the curtains beside him.
+   * Visual only — no collider, no hit feedback — and they sway, while the real man's feet move. */
+  private makeCurtainDecoys(body: THREE.Group) {
+    const m = new THREE.MeshBasicMaterial({ color: 0x0b0b10, transparent: true, opacity: .55, side: THREE.DoubleSide, depthWrite: false }); this.materials.push(m);
+    const g = new THREE.PlaneGeometry(.55, 1.05).translate(0, .55, 0); this.shared.push(g);
+    return [-1.7, 1.7].map(x => { const d = new THREE.Mesh(g, m); d.name = 'CrowSealFalseShadow'; d.position.set(x, 0, .4); d.visible = false; d.raycast = () => {}; body.add(d); return d; });
+  }
   private makeEnemy(e: Enemy): EnemyVisual {
     const king = e.kind === 'king', crystal = e.kind === 'crystal';
     const root = new VisibleEnemyRoot(), body = new THREE.Group(), fallback = new THREE.Group(); root.add(body); body.add(fallback); root.name = e.id;
@@ -677,10 +693,11 @@ export class WorldCombat {
     const updateCreature = fallback.userData.updateCreature as EnemyVisual['updateCreature'];
     // Region-specific champions replace every old procedural purple chapter boss.
     // Scale keeps the authored human champion near the existing king hit sphere/height.
-    let bodyCrown: THREE.Group | undefined, ranks: THREE.Group[] | undefined;
+    let bodyCrown: THREE.Group | undefined, ranks: THREE.Group[] | undefined, decoys: THREE.Mesh[] | undefined;
     if (king) {
       body.scale.setScalar(1.8);
       if (e.id === LAST_SQUARE.id) ranks = this.makeLastSquareRanks(body);
+      if (e.id === 'boss_hellfire_lord') decoys = this.makeCurtainDecoys(body);
       const crown = new THREE.Group(); crown.name = 'Champion_Gold_Crest'; crown.position.y = 2;
       const ringGeo = new THREE.TorusGeometry(.25,.025,4,12); this.shared.push(ringGeo);
       const ring = new THREE.Mesh(ringGeo,glow);ring.rotation.x=Math.PI/2;crown.add(ring);
@@ -780,7 +797,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { decoys, ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {

@@ -10,7 +10,58 @@ export const K04 = {
   open: 'k04_open', residents: 'k04_residents', ada: 'k04_ada', complete: 'k04_complete',
 } as const;
 const K = K04;
-const open = (d: ReadonlySet<string>) => adventureActive(d) && d.has(KINGDOM_GATE.rescued) && !d.has('sun_core');
+/** K01–K03: the gate's crossfire, the lake outpost with Artoria, and a street still cooking dinner. */
+export const K01 = {
+  crossbows: 'k01_crossbows', tunnel: 'k01_tunnel', portcullis: 'k01_portcullis', ada: 'k01_ada', k01: 'k01_complete',
+  outpost: 'k02_outpost', crossbow: 'k02_crossbow', latch: 'k02_latch', rest: 'k02_rest', k02: 'k02_complete',
+  bread: 'k03_bread', practice: 'k03_practice', wheel: 'k03_wheel', bell: 'k03_bell', k03: 'k03_complete',
+} as const;
+const O = K01;
+const kingdomOpen = (d: ReadonlySet<string>) => adventureActive(d) && !d.has('sun_core');
+/** A save already past the Round Table hearth before these chapters existed keeps its old route. */
+export const kingdomOpeningRequired = (d: ReadonlySet<string>) => kingdomOpen(d) && (d.has(O.crossbows) || d.has(O.tunnel) || !d.has('hall_brazier_1'));
+const open = (d: ReadonlySet<string>) => adventureActive(d) && d.has(KINGDOM_GATE.rescued) && !d.has('sun_core') && (d.has(O.k03) || !kingdomOpeningRequired(d));
+const o = (chapter: string, x: Omit<FieldAction, 'region' | 'chapter' | 'gate'>): FieldAction => ({ region: 'britain', chapter, gate: kingdomOpen, ...x });
+export const KINGDOM_OPENING_ACTIONS: readonly FieldAction[] = [
+  o('K01', { id: O.crossbows, near: '@-856,31.9,-132', off: [0, 0], kind: 'fight', alt: 'k01_way',
+    foes: [['musketeer', ['暮影弩手', 'Dusk crossbowman']], ['lancer', ['暮影攻城兵', 'Dusk besieger']]],
+    label: ['门外 · 清掉暮影弩手', 'Outside the gate · Clear the dusk crossbows'],
+    line: ['重演旧攻势的暮影弩手倒下了。门两边的人还在交叉火力里，外闸还开着。', 'The dusk crossbows replaying the old siege fall. People on both sides are still in the crossfire, and the outer portcullis is still up.'] }),
+  o('K01', { id: O.tunnel, near: 'kingdom_gate_notice', off: [-6, 14], alt: 'k01_way',
+    label: ['城墙后方 · 走维修洞绕过战线', 'Behind the wall · Take the maintenance tunnel'],
+    line: ['维修洞从城墙下穿过去，你不用在同一条战线上走两遍。弩手看不见你。', 'The maintenance tunnel runs under the wall; you need not cross the same line twice. The crossbows never see you.'] }),
+  o('K01', { id: O.portcullis, near: 'kingdom_gate_notice', off: [4, -6], any: [O.crossbows, O.tunnel],
+    label: ['外闸 · 落下', 'Outer portcullis · Drop it'],
+    line: ['外闸落下，暮影的攻势被隔在外面。罗恩的活卫队在门内收拢——他们是来保护人的，不是你的敌人。', 'The portcullis drops and the dusk assault is shut outside. Rowan’s living guard gathers inside; they are protectors, not your enemy.'] }),
+  o('K01', { id: O.ada, near: 'kingdom_gate_notice', off: [12, 3], after: [O.portcullis], adds: [O.k01],
+    label: ['侧梯外侧 · 和艾妲会合', 'Down the side stair · Meet Ada outside'],
+    line: ['艾妲没事。她把名册抱在怀里：“还有一条路——湖边。”防守有用，但还不够。', 'Ada is unhurt, holding her register. “There is another way back — by the lake.” The defence helped, but it is not enough.'] }),
+  o('K02', { id: O.outpost, near: '@-617,7.9,74', off: [0, 0], kind: 'fight', after: [O.k01],
+    foes: [['shieldbearer', ['空甲哨卡', 'Empty-armour sentry']], ['lancer', ['空甲枪兵', 'Empty-armour lancer']]],
+    label: ['林间出口 · 和阿尔托莉雅击退哨卡', 'Forest exit · Break the sentry post with Artoria'],
+    line: ['阿尔托莉雅先迎上近敌，替你挡下冲来的一枪。她指向远处：“弩架交给你。”', 'Artoria meets the close enemies first and turns aside a lance aimed at you. She points ahead: “The crossbow rack is yours.”'] }),
+  o('K02', { id: O.crossbow, near: '@-630,4.9,84', off: [0, 0], kind: 'shot', after: [O.outpost],
+    label: ['远处弩架 · 射断', 'Distant crossbow rack · Shoot it'],
+    line: ['弩架断了，她借这个空当冲过去。', 'The rack breaks and she uses the opening to charge through.'] }),
+  o('K02', { id: O.latch, near: '@-620,6.9,96', off: [0, 0], after: [O.crossbow], adds: [O.k02],
+    label: ['哨卡门闩 · 近身拉开', 'Sentry bolt · Draw it up close'],
+    line: ['林间出口通了。她回头听了一会儿：“城里的钟，好久没响完了。”', 'The forest exit is open. She listens for a moment: “The city bell has not finished ringing in a long time.”'] }),
+  o('K02', { id: O.rest, near: '@-612,7.9,80', off: [0, 0], optional: true, after: [O.outpost],
+    label: ['湖边 · 安全休整点', 'Lakeside · Safe rest point'],
+    line: ['湖边多了一处能歇脚的地方，从这里也能回林间支路。', 'There is now a place to rest by the lake, with a way back to the forest path.'] }),
+  o('K03', { id: O.bread, near: 'kingdom_works_bread_window', off: [-3, 3], optional: true, after: [O.k02],
+    label: ['面包铺 · 帮忙抬起挡窗木板', 'Bakery · Help lift the board off the window'],
+    line: ['窗口亮了。面包比昨天小一圈。阿尔托莉雅接过递来的一块。', 'The window lights up. The loaves are a little smaller than yesterday. Artoria takes the piece she is handed.'] }),
+  o('K03', { id: O.practice, near: 'kingdom_works_lamp_market', off: [4, -3], kind: 'shot', optional: true, after: [O.k02],
+    label: ['木剑练习 · 朝转错方向的靶子开一枪', 'Wooden-sword practice · Shoot the target facing the wrong way'],
+    line: ['靶子转了回来。几个孩子盯着你的枪看了好久。', 'The target swings back round. A few children stare at your gun for a long time.'] }),
+  o('K03', { id: O.wheel, near: 'kingdom_works_waterwheel', off: [-3, 3], optional: true, after: [O.k02],
+    label: ['水车 · 转到下一挡', 'Waterwheel · Turn it to the next notch'],
+    line: ['水车咔一声进了下一挡，磨坊又转起来。', 'The wheel clicks into the next notch and the mill turns again.'] }),
+  o('K03', { id: O.bell, near: 'kingdom_works_evening_bell', off: [-3, 3], after: [O.k02], adds: [O.k03],
+    label: ['钟楼维修入口 · 看艾妲试钟', 'Bell tower service door · Watch Ada test the bell'],
+    line: ['齿轮完好。每当钟锤快碰到钟身，就被什么扯回原位。不是坏了——是有东西不让它响完。', 'The gears are whole. Each time the hammer nears the bell, something pulls it back. It is not broken; something will not let it finish ringing.'] }),
+];
 const a = (x: Omit<FieldAction, 'region' | 'chapter' | 'gate'>): FieldAction => ({ region: 'britain', chapter: 'K04', gate: open, ...x });
 export const K04_ACTIONS: readonly FieldAction[] = [
   a({ id: K.overlook, near: 'kingdom_gate_notice', off: [-2, 7], label: ['城垛 · 看清两个入口', 'Battlement · Read both entrances'],
@@ -42,10 +93,16 @@ export const K04_ACTIONS: readonly FieldAction[] = [
     label: ['钟楼脚下 · 看艾妲开工', 'Bell tower foot · Watch Ada start work'],
     line: ['艾妲没有等谁来交任务，已经开始把钟楼的工具搬下来。街区重新连上了。', 'Ada does not wait to be handed a task; she is already carrying the bell tower tools down. The districts are connected again.'] }),
 ];
-export const kingdomBackPassageRequired = (d: ReadonlySet<string>) => open(d) && (d.has(K.overlook) || !d.has('hall_brazier_1'));
+export const kingdomBackPassageRequired = (d: ReadonlySet<string>) => adventureActive(d) && d.has(KINGDOM_GATE.rescued) && !d.has('sun_core') && (d.has(K.overlook) || !d.has('hall_brazier_1'));
 export const KINGDOM_K04: FieldChapterContent = {
-  set: { region: 'britain', title: ['落日王国 · 打开自己关上的门', 'Sunset Kingdom · Open the Door You Closed'], actions: K04_ACTIONS },
+  set: { region: 'britain', title: ['落日王国 · 守住旧誓之前', 'Sunset Kingdom · Before the Old Oath'], actions: [...KINGDOM_OPENING_ACTIONS, ...K04_ACTIONS] },
   props: [
+    { at: O.portcullis, off: [0, 4.2, -3], size: [4, 3.4, .3], color: 0x3a342c, moved: { when: O.portcullis, off: [0, 1.7, -3] } },
+    { at: O.crossbow, off: [0, 1.2, -2], size: [1.6, .3, .5], color: 0x5d4a35, target: O.crossbow },
+    { at: O.latch, off: [0, 1.1, -1.2], size: [2.6, .25, .25], color: 0x4a3a2a, moved: { when: O.latch, off: [-1.3, 1.8, -1.2], rot: [0, 0, 1.3] } },
+    { at: O.practice, off: [0, 1, -4], size: [.7, 1.2, .12], color: 0xb08a5a, rot: [0, Math.PI, 0], target: O.practice },
+    { at: O.practice, off: [0, 1, -4], size: [.7, 1.2, .12], color: 0xb08a5a, show: d => d.has(O.practice) },
+    { at: O.bread, off: [0, 1.4, -1.2], size: [1.6, 1, .08], color: 0x6e5135, moved: { when: O.bread, off: [0, 2.4, -1.2], rot: [-1.2, 0, 0] } },
     { at: K.street, off: [0, 3.2, 5], size: [1.8, .45, .7], color: 0x5d4a35, moved: { when: K.street, off: [0, .25, 5], rot: [0, 0, 1.2] } },
     { at: K.street, off: [-2.5, .9, 4], size: [.9, 1.8, .2], color: 0x8a8f96 },
     { at: K.winch, off: [1.2, .7, 0], size: [.8, .8, 1.2], color: 0x6f5636 },
@@ -56,6 +113,10 @@ export const KINGDOM_K04: FieldChapterContent = {
     { at: K.ada, off: [1.4, .35, .6], size: [1.1, .7, .7], color: 0x8b6b44, show: d => d.has(K.complete) },
   ],
   actors: [
+    { id: 'k01_living_guard', role: ['罗恩的活卫队', 'Rowan’s living guard'], coat: 0x7a5a3a,
+      place: d => d.has(O.portcullis) ? [O.portcullis, -2, -2] : d.has(O.crossbows) || d.has(O.tunnel) ? [O.portcullis, 2, -4] : null },
+    { id: 'k03_baker', role: ['面包师', 'Baker'], coat: 0xb48a5a, place: d => d.has(O.k02) ? [O.bread, 1.5, -.5] : null },
+    { id: 'k03_child', role: ['好奇的孩子', 'Curious child'], coat: 0x6a8ab0, place: d => d.has(O.k02) ? [O.practice, -1.5, 1] : null },
     { id: 'k04_resident_a', role: ['下城居民 · 面包师', 'Lower-town baker'], coat: 0xa47d52,
       place: d => d.has(K.complete) ? [K.ada, -2, 2] : d.has(K.residents) ? [K.residents, 2, 1] : d.has(K.open) ? [K.residents, -1, -2] : [K.open, 2, 3] },
     { id: 'k04_resident_b', role: ['下城居民 · 送信人', 'Lower-town messenger'], coat: 0x56708a,

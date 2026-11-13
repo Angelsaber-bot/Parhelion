@@ -5,9 +5,10 @@ import { KINGDOM_WORKS, kingdomWorksActive } from './kingdomWorks';
 import { HARBOR_RELIEF, harborReliefReady } from './harborRelief';
 import { WINTER_WITHDRAWAL, winterWithdrawalReady } from './winterWithdrawal';
 import { KYOTO_WITNESS, kyotoWitnessReady } from './kyotoWitness';
-import { K04, kingdomBackPassageRequired } from './kingdomBackPassage';
+import { K01, K04, kingdomBackPassageRequired, kingdomOpeningRequired } from './kingdomBackPassage';
 import { WC, winterChaptersRequired } from './winterChapters';
 import { BC, blacksailChaptersRequired } from './blacksailChapters';
+import { JC, kyotoCourtRequired } from './kyotoDecreeCourt';
 import type { Localized, RegionId } from '../settlements/types';
 import type { Layout, Marker } from '../core/types';
 
@@ -153,7 +154,7 @@ export const ERA_STORIES: Record<EraId, EraChapter> = {
       { id: 'swordsman', flags: ['musashi_meet'], text: ['在三条大桥找到宫本武藏，确认明智军阵的位置。', 'Meet Musashi at Sanjō Bridge and locate the Akechi encampment.'] },
       { id: 'banners', flags: ['kikyo_banner_1', 'kikyo_banner_2', 'kikyo_banner_3'], text: ['射落军阵的三面桔梗旗，打断包围本能寺的号令。', 'Shoot down the three bellflower banners to break the orders encircling Honnō-ji.'] },
     ],
-    challenge: ['穿过失去旗号的军阵，到本能寺挑战业火之主。', 'Pass the army’s broken signal line and challenge the Lord of Hellfire at Honnō-ji.'],
+    challenge: ['穿过失去旗号的军阵，到本能寺在誊令庭制住鸦印。', 'Pass the army’s broken signal line and challenge the Crow Seal at Honnō-ji.'],
     returnText: ['回到三条大桥，与宫本武藏缔结契约。', 'Return to Sanjō Bridge and seal your pact with Musashi.'],
     completeText: ['本能寺那边总算静了。旅籠还有热茶，刀先收起来吧。桥上的约定，也记得去赴。', 'It is finally quiet toward Honnō-ji. There is tea at the inn; put your blade away for a while. Remember your promise at the bridge, too.'],
     legacyRequires: ['shard_kinkaku', 'shard_kiyomizu', 'shard_kikyo'],
@@ -181,9 +182,10 @@ export function isEraCoreCleared(core: string, done: ReadonlySet<string>): boole
 export function getEraBossRequirements(core: string, done: ReadonlySet<string>): readonly string[] | undefined {
   const base = baseEraBossRequirements(core, done);
   if (!base) return base;
-  const extra = core === 'sun_core' && kingdomBackPassageRequired(done) ? [K04.complete]
+  const extra = core === 'sun_core' ? [...(kingdomOpeningRequired(done) ? [K01.k01, K01.k02, K01.k03] : []), ...(kingdomBackPassageRequired(done) || kingdomOpeningRequired(done) ? [K04.complete] : [])]
     : core === 'winter_core' && winterChaptersRequired(done) ? [WC.w05, WC.key]
-      : core === 'sea_core' && blacksailChaptersRequired(done) ? [BC.b07, BC.boarded] : [];
+      : core === 'sea_core' && blacksailChaptersRequired(done) ? [BC.b07, BC.boarded]
+        : core === 'fire_core' && kyotoCourtRequired(done) ? [JC.offer, JC.entered] : [];
   return extra.length ? [...base, ...extra.filter(flag => !base.includes(flag))] : base;
 }
 function baseEraBossRequirements(core: string, done: ReadonlySet<string>): readonly string[] | undefined {

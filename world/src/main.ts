@@ -10,6 +10,11 @@ import { createFieldChapterScene } from './environment/fieldChapterScene';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
+import { KYOTO_COURT, JC } from './story/kyotoDecreeCourt';
+import { ORLEANS_ENTRIES, OE, orleansEntryRequired } from './story/orleansEntries';
+import { EGYPT_APPROACH, EA, egyptApproachRequired } from './story/egyptApproach';
+import { QIN_PROCESSION, QP, qinProcessionRequired } from './story/qinProcession';
+import { VALLEY_SET_PIECES } from './story/valleyTownSetPieces';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
@@ -445,7 +450,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
   placeRegion(gltf.scene, def);
   if (def.id === 'alpha') lay.markers = lay.markers.filter(marker => marker.id !== 'seam_south');
   // W08 and B08 replaced the old era bosses' identities; the reviewed map labels still carry the old names.
-  for (const marker of lay.markers) { if (marker.id === 'boss_winter_warden') marker.label = '最后方阵（Boss）'; if (marker.id === 'boss_drowned_admiral') marker.label = '梅瑞克（Boss）'; }
+  for (const marker of lay.markers) { if (marker.id === 'boss_winter_warden') marker.label = '最后方阵（Boss）'; if (marker.id === 'boss_drowned_admiral') marker.label = '梅瑞克（Boss）'; if (marker.id === 'boss_hellfire_lord') marker.label = '鸦印（Boss）'; }
   return { def, layout: lay, root: gltf.scene };
 }));
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
@@ -1078,6 +1083,11 @@ function valleyGuide() {
   return point ? { ...guide, p: point } : null;
 }
 function journeyGuide() {
+  {
+   const id=regionAt(player.pos.x,player.pos.z).id,content=FIELD_CHAPTER_CONTENT.find(c=>c.set.region===id);
+   const a=content&&fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
+   if(content&&a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};
+  }
   if(regionAt(player.pos.x,player.pos.z).id==='qin'){
    const a=qinChapterGuide(done),p=a&&markers.get(a.id)?.p;
    if(a&&p)return{region:'qin' as const,targetId:a.id,p,title:[a.chapter+' · 未葬之人',a.chapter+' · The Unburied'] as [string,string],text:a.label};
@@ -1085,11 +1095,6 @@ function journeyGuide() {
   if(regionAt(player.pos.x,player.pos.z).id==='egypt'){
    const a=egyptChapterGuide(done),p=a&&markers.get(a.id)?.p;
    if(a&&p)return {region:'egypt' as const,targetId:a.id,p,title:[a.chapter+' · 尼罗河的第二次黎明',a.chapter+' · The Nile’s Second Dawn'] as [string,string],text:a.label};
-  }
-  {
-   const id=regionAt(player.pos.x,player.pos.z).id,content=FIELD_CHAPTER_CONTENT.find(c=>c.set.region===id);
-   const a=content&&fieldChapterGuide(content.set,done),p=a&&markers.get(a.id)?.p;
-   if(content&&a&&p)return{region:content.set.region,targetId:a.id,p,title:[`${a.chapter} · ${content.set.title[0]}`,`${a.chapter} · ${content.set.title[1]}`] as [string,string],text:a.label};
   }
   if(regionAt(player.pos.x,player.pos.z).id==='orleans'){
     const a=orleansCampaignGuide(done),p=a&&markers.get(a.id)?.p;
@@ -2215,12 +2220,43 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
 // K04, Winter W01–W05/W08 and Black Sail B01–B09 field chapters stand on existing story markers.
-const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS] as const;
+const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES] as const;
 const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
  {anchors:['sea_core','disc_flagship','adventure_harbor_records','adventure_harbor_alarm','map_flagship_inner_lane','map_flagship_outer_lane'],offset:()=>flagshipNavigation.offset});
 if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:',fieldChapterScene.missing.join(', '));
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
 let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
+// B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),
+// ride with the flagship, and sink back when the fight is not running.
+const meyrickCovers=[-4.5,4.5].map(dx=>{
+ const geometry=new THREE.BoxGeometry(2.4,1.5,.4),art=new THREE.Mesh(geometry,new THREE.MeshStandardMaterial({color:0x5a4430,roughness:.9}));
+ art.name='MeyrickLiftCover';art.visible=false;world.add(art);
+ const shape=geometry.clone(),base=Float32Array.from(shape.getAttribute('position').array as Float32Array);
+ const collider:Collider={name:'MeyrickLiftCover',enabled:false,bvh:new MeshBVH(shape)};colliders.push(collider);
+ return{dx,art,shape,base,collider,rise:0,at:''};
+});
+// B06: when the last cable parts the hull drops into its dock: a wave ring and a heavy view nudge, control kept.
+let flagshipDropped=done.has('b06_complete'),mastDown=done.has('b07_foremast');const dropSplash={mesh:new THREE.Mesh(new THREE.RingGeometry(.8,1.6,48),new THREE.MeshBasicMaterial({color:0xe8f6f4,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false})),t:-1};
+dropSplash.mesh.rotation.x=-Math.PI/2;dropSplash.mesh.visible=false;dropSplash.mesh.name='FlagshipDropSplash';world.add(dropSplash.mesh);
+function updateFlagshipDrop(dt:number){
+ if(!mastDown&&done.has('b07_foremast')){mastDown=true;cameraKick=Math.max(cameraKick,.7);}
+ if(!flagshipDropped&&done.has('b06_complete')){flagshipDropped=true;const p=markers.get('disc_flagship')?.p;if(p){dropSplash.t=0;dropSplash.mesh.position.set(p[0],layout.world.waterLevel+.15,p[2]);cameraKick=1;}}
+ if(dropSplash.t<0)return;dropSplash.t+=dt;const k=dropSplash.t/2.6;
+ if(k>=1){dropSplash.t=-1;dropSplash.mesh.visible=false;return;}
+ dropSplash.mesh.visible=true;dropSplash.mesh.scale.setScalar(1+k*22);(dropSplash.mesh.material as THREE.MeshBasicMaterial).opacity=.75*(1-k);
+}
+function updateMeyrickCovers(dt:number){
+ const boss=combat.state.bossStarted?combat.state.boss:null,anchor=markers.get('boss_drowned_admiral')?.p;
+ const up=!!boss&&boss.id==='boss_drowned_admiral'&&boss.hp<=boss.maxHp*2/3;
+ for(const c of meyrickCovers){
+  c.rise=Math.max(0,Math.min(1,c.rise+(up?dt:-dt)/1.2));
+  if(!anchor||c.rise<=0){c.art.visible=false;c.collider.enabled=false;continue;}
+  const x=anchor[0]+c.dx,z=anchor[2]+3,floor=combat.geometry.ground(x,z,anchor[1]+2)?.point.y??anchor[1]-.9,y=floor-.75+1.5*c.rise;
+  c.art.position.set(x,y,z);c.art.visible=true;c.collider.enabled=c.rise>.6;
+  const key=`${x.toFixed(2)},${y.toFixed(2)},${z.toFixed(2)}`;if(key===c.at)continue;c.at=key;
+  const attr=c.shape.getAttribute('position') as THREE.BufferAttribute;for(let i=0;i<attr.count;i++)attr.setXYZ(i,c.base[i*3]+x,c.base[i*3+1]+y,c.base[i*3+2]+z);attr.needsUpdate=true;c.collider.bvh.refit();
+ }
+}
 addEventListener('pagehide',e=>{if(!e.persisted)fieldChapterScene.dispose();});
 colliders.push(...homeTown.activities.colliders);targets.push(...homeTown.activities.targets);
 addEventListener('pagehide',e=>{if(!e.persisted)homeTown?.dispose();});
@@ -2671,6 +2707,9 @@ function operateRealmClimax(region: RealmClimaxId, station: ClimaxStation | 'sta
     }
     return;
   }
+  if(region==='qin'&&qinProcessionRequired(done)&&!done.has(QP.q06)){toast(bilingual('先带队逆着葬仪走过交错军道，接回自己的队伍。','First lead the crew against the funeral through the crossing ranks and rejoin them.'));return;}
+  if(region==='orleans'&&orleansEntryRequired(done)&&!done.has(OE.o07)){toast(bilingual('先按所选方案打开终战入口，让阿莉克斯随前锋持旗。','Open the final-assault entry for your chosen plan and let Alix take the forward standard first.'));return;}
+  if(region==='egypt'&&egyptApproachRequired(done)&&!done.has(EA.arrived)){toast(bilingual('先在工程台正式出发，乘太阳舟或走高位检修路到汇水台。','Set out from the engineering table first, then reach the confluence by sun-boat or the high service path.'));return;}
   if(region==='egypt'&&done.has(EC.started)&&!done.has(EC.ready)){toast(bilingual('先完成独立试洪、旁路验证与人员清点。','Complete the independent flood trial, bypass test and muster first.'));return;}
   if (!worldProgress.armed || combat.bossStarted || combat.storyEncounter || helionFight.active || activeRealmClimax) return;
   if (region === 'egypt' && needsEgyptWaterPlan() && !done.has(EGYPT_WATER_PLAN.locked)) {
@@ -3736,9 +3775,14 @@ qinCampaign=createChapterWorkRuntime({done,actions:qinChapterById,ready:qinChapt
  save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),position:id=>markers.get(id)?.p,start:()=>false,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
 });
+// E03/E04 field fights get their own casts: the Tide-Eater limb with its jet shell, and the stone-armoured pack.
+const EGYPT_FIGHT_CASTS:Record<string,StoryEncounterSpec['actors']>={
+ chapter_egypt_campaign_limb:[{role:'breaker',offset:[-4,6],title:['吞潮肢体','Tide-Eater limb']},{role:'powder',offset:[4,6],title:['喷口甲壳','Jet shell']}],
+ chapter_egypt_campaign_temple:[{role:'breaker',offset:[-4,6],title:['石甲','Stone armour']},{role:'breaker',offset:[4,6],title:['石甲','Stone armour']},{role:'shieldbearer',offset:[0,8],title:['石甲头群','Stone-armour lead']}],
+};
 egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyptChapterReady,commit:commitEgyptChapter,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),position:id=>markers.get(id)?.p,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
- start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
+ start:spec=>{const cast=EGYPT_FIGHT_CASTS[spec.id];if(cast)spec={...spec,actors:cast};const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
 });
 fieldChapters=createFieldChapters({done,sets:FIELD_CHAPTER_CONTENT.map(c=>c.set),save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
  position:id=>markers.get(id)?.p,
@@ -4672,6 +4716,8 @@ function frame(now: number) {
   qinCrewTransit?.update(dt,gameplayActive()&&!combat.defeated&&regionAt(player.pos.x,player.pos.z).id==='qin');qinCampaignScene.apply(done,qinCrewTransit?.progress()??0);qinCampaignScene.update(gameplayActive()?dt:0,player.pos);
   egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
+  if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
+  updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
   fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);

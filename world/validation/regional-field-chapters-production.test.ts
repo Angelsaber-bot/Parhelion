@@ -8,7 +8,7 @@ import { BC } from '../src/story/blacksailChapters';
 import { KINGDOM_GATE } from '../src/story/kingdomGate';
 
 test('K04, W03 and B02 play through production input, real encounters, on-site work, real targets and saves', async () => {
-  const seed = ['armory_rack', 'adventure_v2', 'adventure_started', 'adventure_online', KINGDOM_GATE.rescued, WC.w02, BC.b01];
+  const seed = ['armory_rack', 'adventure_v2', 'adventure_started', 'adventure_online', KINGDOM_GATE.rescued, 'k03_complete', WC.w02, BC.b01];
   const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 120000, initialStorage: { [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }) } });
   const w = h.world, d = h.window.document; let time = 0;
   const frame = (n = 1) => { for (let i = 0; i < n; i++) h.frame(time += 1000 / 60); };

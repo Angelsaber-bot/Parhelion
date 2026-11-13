@@ -122,7 +122,7 @@ export function getAdventureGuide(region:RegionId,done:ReadonlySet<string>):Adve
    const next = !done.has(Y.reel) ? Y.reel : !kyotoRollStopped(done) ? Y.stop : !kyotoHoistLowered(done) ? Y.winch : !done.has(Y.testimony) ? Y.testimony : Y.public;
    return at(region,title,KYOTO_WITNESS_LABELS[next],next);
   }
-  if(!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,['三旗号令已断。可走正门，或打开东侧水门进寺，挑战业火之主。','Banner orders are broken. Take the main entrance or open the eastern water gate, then challenge the Hellfire Lord.'],'fire_core');
+  if(!done.has('fire_core')&&!done.has('musashi_contract'))return at(region,title,['三旗号令已断。可走正门，或打开东侧水门进寺，在誊令庭制住鸦印。','Banner orders are broken. Take the main entrance or open the eastern water gate, then challenge the Crow Seal.'],'fire_core');
   if (!kyotoWitnessGateReady(done)) return at(region,title,KYOTO_WITNESS_LABELS[Y.gate],Y.gate);
   if(!done.has(ADVENTURE.evidence))return at(region,title,['在本能寺核对焦黑的命令板。相同命令覆盖了不同的结果，这份证据指向谷地观测所。','Read the charred orders at Honnō-ji. Identical commands overwrite different outcomes; this evidence points to the Valley Observatory.'],'adventure_kyoto_evidence');
   if(!done.has('musashi_contract'))return at(region,title,['回三条桥与武藏正式契约。你可以继续带着原来的从者。','Return to the bridge and make your pact with Musashi. You may keep your original companion.'],'musashi_contract');

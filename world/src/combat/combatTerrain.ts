@@ -57,7 +57,7 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
       return true;
     };
     if (!authoredHub && layout.areas.some(a => (hubs.has(a.id) || a.id.endsWith('_living_hub')) && Math.hypot(x - a.c[0], z - a.c[1]) < a.r + 12)) return null;
-    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !m.id.startsWith('xpm_') && !/^(k04|w0[1-9]|b0[1-9])_/.test(m.id) && !(authoredHub && m.id.startsWith('valley_prologue_')) && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
+    if (layout.markers.some(m => !(kingdomGate && (kingdomMarkers.has(m.id)||m.id.startsWith('resident_britain_witness_'))) && !m.id.startsWith('xpm_') && !/^(k0[1-9]|w0[1-9]|b0[1-9]|j0[1-9]|o0[1-9]|e0[1-9]|q0[1-9]|h[01][0-9])_/.test(m.id) && !(authoredHub && m.id.startsWith('valley_prologue_')) && !(story && (m.id.startsWith('false_dawn_') || ['compact_relay_entry', 'compact_relay_controller', 'compact_relay_deployment'].includes(m.id))) && ['spawn', 'interact', 'discovery'].includes(m.type) && Math.hypot(x - m.p[0], z - m.p[2]) < Math.max(14, (m.radius ?? 3) + 9))) return null;
     const g = ground(x, z);
     if (!g || Math.abs(g.face?.normal.y ?? 0) < 0.78 || g.point.y < layout.world.waterLevel + 0.45 || g.point.y > 75) return null;
     // A downward all-collider ray finds flat roofs before terrain. Their clearance can look

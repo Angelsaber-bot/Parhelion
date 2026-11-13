@@ -26,10 +26,26 @@ function walk(set: FieldChapterSet, d: Set<string>, milestones: readonly (readon
   return seen;
 }
 
+function walkUntil(set: FieldChapterSet, d: Set<string>, last: string) {
+  for (let i = 0; i < 100 && !d.has(last); i++) { const next = fieldChapterGuide(set, d); assert.ok(next, `stalled before ${last}`); commitFieldAction(next, d, set.actions); }
+}
+
+test('K01–K03 come before K04 for new runs and gate the Vacant King', async () => {
+  const { K01 } = await import('../src/story/kingdomBackPassage');
+  const d = new Set(['adventure_v2']);
+  const seen = walk(KINGDOM_K04.set, d, [['gate', [KINGDOM_GATE.rescued]]]);
+  for (const f of [K01.k01, K01.k02, K01.k03, K04.complete]) assert.ok(d.has(f), `${f} (${seen.join(' > ')})`);
+  assert.ok(seen.indexOf(K01.bell) < seen.indexOf(K04.overlook), 'K03 before K04');
+  assert.ok(!d.has(K01.bread) && !d.has(K01.practice), 'street errands stay optional');
+  const req = getEraBossRequirements('sun_core', new Set(['adventure_v2']))!;
+  for (const f of [K01.k01, K01.k02, K01.k03, K04.complete]) assert.ok(req.includes(f), f);
+  assert.ok(!getEraBossRequirements('sun_core', new Set(['adventure_v2', 'hall_brazier_1']))!.includes(K01.k01), 'legacy saves keep their route');
+});
+
 test('K04 is a full chapter with two real entrances and gates the Vacant King for new runs', () => {
   for (const route of [K04.street, K04.ladder]) {
     const d = new Set(['adventure_v2', KINGDOM_GATE.rescued]);
-    if (route === K04.ladder) { commitFieldAction(KINGDOM_K04.set.actions[0], d, KINGDOM_K04.set.actions); commitFieldAction(KINGDOM_K04.set.actions.find(a => a.id === K04.ladder)!, d, KINGDOM_K04.set.actions); }
+    if (route === K04.ladder) { walkUntil(KINGDOM_K04.set, d, K04.overlook); commitFieldAction(KINGDOM_K04.set.actions.find(a => a.id === K04.ladder)!, d, KINGDOM_K04.set.actions); }
     const seen = walk(KINGDOM_K04.set, d, []);
     assert.ok(d.has(K04.complete), `${route} route completes (${seen.join(' > ')})`);
     assert.equal(d.has(K04.street) && d.has(K04.ladder), false, 'the two entrances are alternatives, Artoria takes the other');
@@ -94,7 +110,7 @@ test('B03 routes stay switchable until the heist starts', () => {
 });
 
 test('runtime: fights only count their own victory, failed saves roll back, work needs presence', () => {
-  const done = new Set(['adventure_v2', KINGDOM_GATE.rescued, K04.overlook]);
+  const done = new Set(['adventure_v2', KINGDOM_GATE.rescued, 'k03_complete', K04.overlook]);
   let ok = true, started = '';
   const at: Record<string, [number, number, number]> = { [K04.street]: [0, 1, 0], [K04.winch]: [20, 1, 0] };
   const rt = createFieldChapters({ done, sets: [KINGDOM_K04.set], save: () => ok, changed() {}, toast() {}, reachable: () => true,
@@ -109,4 +125,56 @@ test('runtime: fights only count their own victory, failed saves roll back, work
   assert.ok(!done.has(K04.winch), 'no progress from 40 m away');
   for (let i = 0; i < 80; i++) rt.update(.1, true, [20, 1, 1]);
   assert.ok(done.has(K04.winch), 'six seconds on site finish the winch');
+});
+
+test('J08 decree court: refuse the offer, one entry by branch, the Crow Seal gates fire_core, J09 opens the gate', async () => {
+  const { JC, KYOTO_COURT } = await import('../src/story/kyotoDecreeCourt');
+  const { KYOTO_WITNESS: Y } = await import('../src/story/kyotoWitness');
+  for (const branch of [Y.public, Y.private]) {
+    const d = new Set(['adventure_v2', VALLEY_PROLOGUE.room, branch]);
+    assert.ok(getEraBossRequirements('fire_core', d)!.includes(JC.entered));
+    walk(KYOTO_COURT.set, d, [['boss', ['fire_core']], ['screen', [Y.gate]]]);
+    for (const f of [JC.offer, JC.entered, JC.j08, JC.j09]) assert.ok(d.has(f), `${branch}: ${f}`);
+    assert.equal(d.has(JC.publicEntry), branch === Y.public);
+    assert.ok(!d.has(JC.device), 'breaking the press early stays optional');
+  }
+});
+
+test('Orleans: Alix relays alone in O02; each O07 plan opens its own battle entry before the climax', async () => {
+  const { OE, ORLEANS_ENTRIES, orleansEntryRequired } = await import('../src/story/orleansEntries');
+  const { ORLEANS_CAMPAIGN: OC } = await import('../src/story/orleansCampaign');
+  const early = new Set(['journey_orleans_muster', OC.started, OC.relay]);
+  assert.equal(fieldChapterGuide(ORLEANS_ENTRIES.set, early)?.id, OE.alix);
+  for (const plan of [OC.bridge, OC.ferry]) {
+    const d = new Set(['journey_orleans_muster', OC.relay, OE.alix, plan, OC.locked, OC.complete]);
+    assert.ok(orleansEntryRequired(d));
+    const seen = walk(ORLEANS_ENTRIES.set, d, []);
+    assert.ok(d.has(OE.o07), `${plan}: ${seen.join(' > ')}`);
+    assert.equal(d.has(OE.push), plan === OC.bridge); assert.equal(d.has(OE.float), plan === OC.ferry);
+  }
+});
+
+test('Egypt: the limb can be diverted instead of fought, the rig choice precedes the temple, E07 needs an approach', async () => {
+  const { EA, EGYPT_APPROACH, egyptApproachRequired } = await import('../src/story/egyptApproach');
+  const { EGYPT_CAMPAIGN: EC } = await import('../src/story/egyptCampaign');
+  const d = new Set(['journey_egypt_weir', EC.started]);
+  assert.equal(fieldChapterGuide(EGYPT_APPROACH.set, d)?.id, EA.shell);
+  walk(EGYPT_APPROACH.set, d, []);
+  assert.ok(d.has(EC.limb) && d.has(EA.divert), 'diverting the limb counts as clearing E03');
+  assert.ok(d.has(EA.high) !== d.has(EA.low), 'one rig position');
+  const ready = new Set([EC.ready, EC.bypass]);
+  assert.ok(egyptApproachRequired(ready));
+  walk(EGYPT_APPROACH.set, ready, []);
+  assert.ok(ready.has(EA.arrived) && ready.has(EA.launch));
+});
+
+test('Qin Q06: the ranks cut the road and the crew is rejoined by the rack, by fight or by ladder', async () => {
+  const { QP, QIN_PROCESSION, qinProcessionRequired } = await import('../src/story/qinProcession');
+  const { QIN_CAMPAIGN: QC } = await import('../src/story/qinCampaign');
+  const d = new Set([QC.locked]);
+  assert.ok(qinProcessionRequired(d));
+  const seen = walk(QIN_PROCESSION.set, d, [['observe', [QC.observe]]]);
+  assert.ok(d.has(QP.q06), seen.join(' > '));
+  assert.ok(seen.indexOf(QP.cut) < seen.indexOf(QP.rack));
+  assert.ok(!qinProcessionRequired(new Set([QC.locked, QC.halt])), 'saves past the halt keep their route');
 });

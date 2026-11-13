@@ -305,7 +305,8 @@ test('Helion companion aid covers real damage, survives checkpoints, and never s
 
 test('production handovers and sky finale work with completed middle-chapter checkpoints and actual input', async () => {
   // Middle-chapter inputs/encounters are exercised in chapter-production.test.ts.
-  const seed = [...four.filter(flag => flag !== 'saber_contract'), VALLEY_PROLOGUE.record, A.takeover, EC.ready, OC.complete, QC.complete];
+  // Completed middle chapters include the E07 approach and the O07 battle entry that now precede each climax.
+  const seed = [...four.filter(flag => flag !== 'saber_contract'), VALLEY_PROLOGUE.record, A.takeover, EC.ready, 'e07_arrived', OC.complete, 'o07_complete', QC.complete];
   const h = await bootWorldWithoutGpu({ deterministic: true, bootTimeoutMs: 120_000, initialStorage: { [WORLD_PROGRESS_KEY]: JSON.stringify({ done: seed, found: [] }) } });
   const w = h.world, d = h.window.document;
   let time = 0;

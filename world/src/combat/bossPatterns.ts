@@ -18,8 +18,17 @@ export function bossAttackTiming(e: Enemy): Timing {
   if (e.id === 'boss_hellfire_lord') return (e.attack === 'thrust' || e.attack === 'burst' ? FIRE_THRUST : e.attackCount % 3 === 1 ? FIRE_FIRST : FIRE_SECOND)[phase];
   return KING[phase];
 }
+/** 1–3: Meyrick's command-deck stage from remaining strength. */
+export function meyrickStage(e: Pick<Enemy, 'hp' | 'maxHp'>): 1 | 2 | 3 { const f = e.hp / e.maxHp; return f > 2 / 3 ? 1 : f > 1 / 3 ? 2 : 3; }
 export function chooseBossAttack(e: Enemy, distance: number): Enemy['attack'] {
-  if (e.id === 'boss_drowned_admiral' && distance >= 6 && e.attackCount % 3 === 2) return 'shot';
+  // B08 梅瑞克 at the command deck, three stages by strength: (1) reads as a firing rhythm,
+  // (2) lift covers rise and boarders press, so he fires every other beat, (3) cornered at the helm:
+  // no more cannon, only close sweeps and thrusts in the narrowed space.
+  if (e.id === 'boss_drowned_admiral') {
+    const stage = meyrickStage(e);
+    if (stage < 3 && distance >= 6 && e.attackCount % (stage === 2 ? 2 : 3) === (stage === 2 ? 1 : 2)) return 'shot';
+    if (stage === 3 && distance <= 7.5 && e.attackCount % 2 === 1) return 'thrust';
+  }
   // An 8m thrust remains a real mid-range threat, not a melee-only animation.
   // Keep a .5m reach margin: targets beyond it receive the existing distant tell instead.
   // Selection happens before attackCount increments; the next beat keeps its full windup.
