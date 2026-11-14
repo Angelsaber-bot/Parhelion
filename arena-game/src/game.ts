@@ -136,7 +136,7 @@ export class Game {
   private onEvent(e: NetEvent) {
     const myId = this.session.id;
     this.rangeStats?.event(e, myId, performance.now() / 1000);
-    const name = (id: string) => this.names.get(id)?.name ?? id;
+    const name = (id: string) => this.latest?.roster?.find(p => p.id === id)?.name ?? this.names.get(id)?.name ?? id;
     switch (e.t) {
       case 'shot': {
         if (e.id === myId) break; // already shown by prediction
@@ -214,7 +214,7 @@ export class Game {
       case 'smoke': this.scene.smokePop(e.at); sfx.smoke(this.distance(e.at)); break;
       case 'kill': {
         const k = this.names.get(e.killer), v = this.names.get(e.victim);
-        this.hud.kill(name(e.killer), name(e.victim), e.w, e.head, k?.team ?? 'A', v?.team ?? 'B');
+        this.hud.kill(name(e.killer), name(e.victim), e.w, e.head, this.latest?.roster?.find(p => p.id === e.killer)?.team ?? k?.team ?? 'A', this.latest?.roster?.find(p => p.id === e.victim)?.team ?? v?.team ?? 'B');
         if (e.killer === myId && e.victim !== myId) { this.hud.hit(e.head, true); sfx.kill(e.head); this.hud.killPop(e.head, ++this.streak); }
         if (e.victim === myId) { this.hud.deathBy(name(e.killer)); this.streak = 0; }
         // The killer's finish signs the kill with its own emblem where the victim fell.
@@ -393,7 +393,9 @@ export class Game {
     const latest = this.latest!;
     for (const p of latest.players) {
       if (p.id === this.session.id) continue;
-      const pa = a.players.find((q) => q.id === p.id) ?? p, pb = b.players.find((q) => q.id === p.id) ?? p;
+      const reappeared = snaps.some(s => s.tick >= a.tick && s.tick <= latest.tick && !s.players.some(q => q.id === p.id));
+      const pa = reappeared ? p : a.players.find((q) => q.id === p.id) ?? p;
+      const pb = reappeared ? p : b.players.find((q) => q.id === p.id) ?? p;
       // don't interpolate across a respawn teleport
       const jump = Math.hypot(pb.x - pa.x, pb.z - pa.z) > 4;
       const g = jump ? 1 : f;
@@ -415,7 +417,7 @@ export class Game {
       this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
     }
     this.scene.endAvatars();
-    this.scene.pruneAvatars(ids);
+    this.scene.pruneAvatars(ids, this.latest?.roster ? new Set(this.latest.roster.map(p => p.id)) : undefined);
     if (this.latest) { this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
 
     const me = this.me;

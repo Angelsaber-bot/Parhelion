@@ -70,7 +70,10 @@ export interface PlayerSnap extends PlayerState {
   spawnProtectedUntilTick?: number;
 }
 
+export type RosterEntry = Pick<PlayerSnap, 'id' | 'name' | 'team' | 'char' | 'bot' | 'kills' | 'deaths'>;
+
 export interface Snapshot {
+  roster?: RosterEntry[];
   rulesVersion: number;
   tick: number;
   layout: TeamLayout;
@@ -108,6 +111,8 @@ const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a sta
 const SPAWN_REUSE_TICKS = 4 * TICK_HZ;
 
 export class Match {
+  /** Server-only observation hook; never changes hit resolution or trusts client hit reports. */
+  onAppliedInput?: (player: PlayerState, input: Input, events: SimEvent[]) => void;
   tick = 0;
   phase: Phase = 'waiting';
   /** After a match ends: false (default) holds on the results until rematch(); true restarts by itself. */
@@ -212,6 +217,7 @@ export class Match {
         const inp = slot.queue.shift()!;
         slot.credits--;
         const events = applyInput(this.map, slot.state, inp, this.foesOf(slot.state));
+        if (!slot.info.bot) this.onAppliedInput?.(slot.state, inp, events);
         // A swap cancels the armed hit immediately, even if a catch-up batch swaps back.
         if (slot.melee && slot.melee.weapon !== slot.state.weapon) slot.melee = null;
         for (const ev of events) this.handle(slot, ev);

@@ -463,8 +463,13 @@ export class ArenaScene {
   /** Call once per frame after all syncAvatar calls. */
   endAvatars() { this.lastAnim = performance.now() / 1000; }
 
-  pruneAvatars(ids: Set<string>) {
-    for (const [id, a] of this.avatars) if (!ids.has(id)) { a.dispose(this.scene); this.avatars.delete(id); }
+  pruneAvatars(ids: Set<string>, roster?: Set<string>) {
+    for (const [id, a] of this.avatars) if (!ids.has(id)) {
+      // Conceal cached models without rebuilding geometry on every corner peek.
+      // They retain only the last disclosed pose; departures still release resources.
+      if (roster?.has(id)) a.root.visible = false;
+      else { a.dispose(this.scene); this.avatars.delete(id); }
+    }
   }
 
   /** World-space muzzle of a remote avatar, for its tracers. */

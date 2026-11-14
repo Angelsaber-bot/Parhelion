@@ -51,8 +51,8 @@ describe('ArenaRoom', () => {
     b.onMessage('snap', () => {});
     // Start the movement assertion after the real countdown, so CPU contention cannot
     // cause startLive's intentional spawn/ammo reset halfway through the input stream.
-    const snap = await observed.waitFor((s) => s.phase === 'live' && s.players.length === 2, 'a live 1v1 snapshot', 6000);
-    expect(snap.players.map((p) => p.team).sort()).toEqual(['A', 'B']);
+    const snap = await observed.waitFor((s) => s.phase === 'live' && s.roster?.length === 2, 'a live 1v1 snapshot', 6000);
+    expect(snap.roster!.map((p) => p.team).sort()).toEqual(['A', 'B']);
     // a third client asking for team A in this full 1v1 room lands in a new room instead
     const c = await new Client(url).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '1v1', team: 'A', name: 'C', char: 0, skins: [] });
     expect(c.roomId).not.toBe(a.roomId);
@@ -77,9 +77,9 @@ describe('ArenaRoom', () => {
     const r = await new Client(`ws://127.0.0.1:${PORT}`).joinOrCreate('arena', { rulesVersion: RULES_VERSION, layout: '2v2', team: 'B', name: 'H', char: 0, skins: [], bots: true });
     const observed = snapshots();
     r.onMessage('snap', observed.receive);
-    const s = await observed.waitFor((snap) => snap.players.length === 4 && snap.players.some((p) => p.id === r.sessionId), 'four occupied bot-fill seats');
-    expect(s.players.length).toBe(4);
-    expect(s.players.filter((p) => p.bot).length).toBe(3);
+    const s = await observed.waitFor((snap) => snap.roster?.length === 4 && snap.players.some((p) => p.id === r.sessionId), 'four occupied bot-fill seats');
+    expect(s.roster!.length).toBe(4);
+    expect(s.roster!.filter((p) => p.bot).length).toBe(3);
     expect(s.players.find((p) => p.id === r.sessionId)!.team).toBe('B');
     await r.leave();
   });
