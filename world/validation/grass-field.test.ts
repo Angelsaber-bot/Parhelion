@@ -59,3 +59,15 @@ test('snow glitter: small round grains on cool white terrain only, close by and 
   assert.ok(SNOW_GLITTER.far <= 20 && SNOW_GLITTER.share < .05, 'sparse and near: no shimmering noise at range');
   terrain.dispose(); wall.dispose();
 });
+
+test('wet shore: terrain within reach of the waterline darkens, with a lapping edge; ice at the waterline stays dry', async () => {
+  const { toonMaterial, WET_SHORE, seaLevelUniform } = await import('../src/rendering/look');
+  const terrain = toonMaterial(new THREE.MeshStandardMaterial({ name: 'M_Terrain' }));
+  const sh = { uniforms: {} as Record<string, unknown>, vertexShader: '#include <common>\n#include <begin_vertex>\n#include <project_vertex>', fragmentShader: '#include <common>\n#include <color_fragment>\n#include <opaque_fragment>' };
+  terrain.onBeforeCompile(sh as never, {} as never);
+  assert.equal(sh.uniforms.uSea, seaLevelUniform, 'one shared sea level, set from the layout');
+  for (const need of ['Wet shore', 'uniform float uSea;', '(1.0 - icy)', 'lapEdge']) assert.ok(sh.fragmentShader.includes(need), need);
+  assert.ok(sh.fragmentShader.indexOf('uniform float uSea;') < sh.fragmentShader.indexOf('lapEdge ='));
+  assert.ok(WET_SHORE.height < 1 && WET_SHORE.lap < WET_SHORE.height && Math.min(...WET_SHORE.tint) > .5, 'a damp band, not a black stripe');
+  terrain.dispose();
+});

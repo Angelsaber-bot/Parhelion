@@ -223,7 +223,7 @@ import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './ren
 import { settlementGrassClearance } from './map/grassClearance';
 import {createArmoryWorkshop,ARMORY_WORKSHOP} from './story/armoryWorkshop';
 import { makeRegionWeather } from './map/regionWeather';
-import { toonMaterial, addOutline, outlineColorFor, makeSky, timeUniform, cloudShadowUniform } from './rendering/look';
+import { toonMaterial, addOutline, outlineColorFor, makeSky, timeUniform, cloudShadowUniform, seaLevelUniform } from './rendering/look';
 import { Player, PLAYER, type Collider } from './player/player';
 import { WorldMap } from './map/map';
 import type { Layout, Marker } from './core/types';
@@ -499,6 +499,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
 }));
 if (worldExited || !(await graphicsRecovery.whenContextAvailable())) return;
 const layout = mergeLayouts(parts);
+seaLevelUniform.value = layout.world.waterLevel;
 const world = new THREE.Group();
 world.name = 'World';
 for (const p of parts) world.add(p.root);

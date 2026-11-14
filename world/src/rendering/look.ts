@@ -15,6 +15,10 @@ export const SUN_DIR = new THREE.Vector3(-0.45, 0.62, 0.64).normalize(); // from
 
 /** Shared clock for animated shaders (wind, water, clouds); main loop advances it. */
 export const timeUniform = { value: 0 };
+/** Sea level (world Y) for shore effects on terrain; the main loop sets it from the layout. */
+export const seaLevelUniform = { value: 1 };
+/** Wet band above the waterline on terrain: its height (m), how far the lapping edge moves, and its tint. */
+export const WET_SHORE = Object.freeze({ height: .55, lap: .12, tint: [.68, .72, .78] as const });
 /** Drifting cloud shadows over the land (0 = off). Low quality turns them off; only lit faces dim. */
 export const cloudShadowUniform = { value: 1 };
 
@@ -53,7 +57,7 @@ type Kind = 'default' | 'terrain' | 'foliage' | 'water';
 /** Cel shading on top of MeshToonMaterial: cool hue-shifted shadows, warm key, fresnel rim, world-space colour breakup. */
 function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
   mat.onBeforeCompile = (sh) => {
-    sh.uniforms.uTime = timeUniform; sh.uniforms.uCloud = cloudShadowUniform;
+    sh.uniforms.uTime = timeUniform; sh.uniforms.uCloud = cloudShadowUniform; sh.uniforms.uSea = seaLevelUniform;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nuniform float uTime;\nvarying vec3 vWPos;`)
       .replace('#include <begin_vertex>', kind === 'foliage' ? `#include <begin_vertex>
@@ -66,7 +70,7 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
         }` : '#include <begin_vertex>')
       .replace('#include <project_vertex>', `#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uCloud;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform float uCloud;\nuniform float uSea;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         ${kind === 'terrain' ? `{
           float n = fbm(vWPos.xz * 0.045);
@@ -74,6 +78,12 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
           diffuseColor.rgb *= 0.86 + 0.26 * n;
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.08, 1.12, 0.82), smoothstep(0.55, 0.75, g) * 0.6);
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(0.9, 0.95, 1.1), smoothstep(0.4, 0.2, g) * 0.35);
+          // Wet shore: ground within reach of the waterline darkens and cools, with a lapping upper edge.
+          // Snow and ice at the waterline (cool near-white paint) stay dry-looking.
+          float icy = smoothstep(0.5, 0.68, min(diffuseColor.r, min(diffuseColor.g, diffuseColor.b))) * step(diffuseColor.r * 0.97, diffuseColor.b);
+          float lapEdge = uSea + ${WET_SHORE.height.toFixed(2)} + sin(uTime * 0.9 + vnoise(vWPos.xz * 0.35) * 6.0) * ${WET_SHORE.lap.toFixed(2)};
+          float wet = (1.0 - smoothstep(uSea + 0.03, lapEdge, vWPos.y)) * (1.0 - icy);
+          diffuseColor.rgb *= mix(vec3(1.0), vec3(${WET_SHORE.tint.map(v => v.toFixed(2)).join(', ')}), wet);
         }` : kind === 'foliage' ? `{
           float n = fbm(vWPos.xz * 0.12 + vWPos.y * 0.2);
           diffuseColor.rgb *= 0.88 + 0.24 * n;
