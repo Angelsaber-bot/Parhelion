@@ -57,3 +57,16 @@ test('water reads the same baked height: shallows and shore foam, deep water off
   assert.equal(water.customProgramCacheKey(), 'cel-water');
   water.dispose();
 });
+
+test('characters get a rim light, static art gets faint weathering, and neither reaches stock programs', async () => {
+  const { SURFACE_DETAIL } = await import('../src/rendering/groundGrime');
+  const chunks = { ...(THREE.ShaderChunk as unknown as Record<string, string>) };
+  installGroundGrime(chunks);
+  const glsl = chunks.lights_fragment_begin, pars = chunks.lights_pars_begin;
+  const skinned = glsl.slice(glsl.indexOf('#ifdef USE_SKINNING\n\t\t\t// Rim light'), glsl.indexOf('// Weathering on upright faces'));
+  assert.ok(skinned.includes('reflectedLight.directDiffuse += pgRim') && skinned.includes('directionalLights[ 0 ].direction'), 'rim from sky and sun on skinned meshes');
+  assert.ok(glsl.includes('float pgWear = 1.0 + pgVertical') && glsl.includes('material.diffuseColor *= pgWear; diffuseColor.rgb *= pgWear;'), 'weathering only on upright faces');
+  assert.ok(pars.indexOf('float pgNoise') > pars.indexOf('#ifdef PARHELION_GROUND') && pars.indexOf('float pgNoise') < pars.indexOf('#endif'), 'helpers exist only in adopted programs');
+  assert.ok(!pars.includes('float vnoise'), 'no clash with the cel materials\' own noise helpers');
+  assert.ok(SURFACE_DETAIL.streak <= .05 && SURFACE_DETAIL.blot <= .05 && SURFACE_DETAIL.rim <= .4, 'a few per cent of plaster variation and a thin edge, not a glow');
+});

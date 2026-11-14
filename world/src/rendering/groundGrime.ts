@@ -19,6 +19,12 @@ export const GROUND_GRIME = Object.freeze({
   tint: [.6, .54, .48] as const, skinnedBand: .22,
 });
 
+/** Detail added with the grime to adopted materials: characters' rim light (strength and falloff power), and
+ * wall weathering (half-amplitudes of the rain streaks and tonal patches, and the lift towards the top). */
+export const SURFACE_DETAIL = Object.freeze({ rim: .3, rimPower: 3, streak: .035, blot: .03, lift: .04 });
+/** Value noise for the weathering (prefixed: cel materials already declare their own noise helpers). */
+const PG_NOISE = 'float pgHash( vec2 p ) { vec3 q = fract( vec3( p.xyx ) * 0.1031 ); q += dot( q, q.yzx + 33.33 ); return fract( ( q.x + q.y ) * q.z ); }\n'
+  + 'float pgNoise( vec2 p ) { vec2 i = floor( p ), f = fract( p ); f = f * f * ( 3.0 - 2.0 * f ); return mix( mix( pgHash( i ), pgHash( i + vec2( 1.0, 0.0 ) ), f.x ), mix( pgHash( i + vec2( 0.0, 1.0 ) ), pgHash( i + vec2( 1.0, 1.0 ) ), f.x ), f.y ); }';
 const DECL = 'parhelionGroundGrime';
 const VIEW_DIR = 'vec3 geometryViewDir = ( isOrthographic ) ? vec3( 0, 0, 1 ) : normalize( vViewPosition );';
 
@@ -44,6 +50,27 @@ export const GROUND_GRIME_GLSL = /* glsl */ `
 		float pgGrime = parhelionGroundOn * pgInside * ( pgVertical * ( pgBandW * 0.72 + pgContact * 0.28 ) + ( 1.0 - pgVertical ) * pgContact * 0.4 );
 		vec3 pgTint = mix( vec3( 1.0 ), vec3( ${GROUND_GRIME.tint.map(v => v.toFixed(3)).join(', ')} ), clamp( pgGrime, 0.0, 1.0 ) );
 		material.diffuseColor *= pgTint; diffuseColor.rgb *= pgTint;
+		#ifdef USE_SKINNING
+			// Rim light: characters pick up a thin edge of sky and sun, so dark clothes and hair separate from a
+			// shaded street behind them. Strongest on edges that face up and towards the sun.
+			float pgFres = pow( 1.0 - saturate( dot( geometryNormal, geometryViewDir ) ), ${SURFACE_DETAIL.rimPower.toFixed(1)} );
+			float pgSky = 0.55 + 0.45 * dot( geometryNormal, normalize( ( viewMatrix * vec4( 0.0, 1.0, 0.0, 0.0 ) ).xyz ) );
+			vec3 pgRim = vec3( 0.78, 0.87, 1.0 );
+			#if NUM_DIR_LIGHTS > 0
+				pgSky *= 0.6 + 0.4 * saturate( dot( geometryNormal, directionalLights[ 0 ].direction ) );
+				vec3 pgSunTint = directionalLights[ 0 ].color;
+				pgRim = mix( pgRim, pgSunTint / max( max( pgSunTint.r, pgSunTint.g ), max( pgSunTint.b, 0.001 ) ), 0.45 );
+			#endif
+			reflectedLight.directDiffuse += pgRim * pgFres * pgSky * ${SURFACE_DETAIL.rim.toFixed(2)} * parhelionGroundOn;
+		#else
+			// Weathering on upright faces: long faint rain streaks and broad tonal patches in world space, and a
+			// slight lift towards the top of tall walls. A few per cent only: plaster, not camouflage.
+			float pgAlong = pgWorld.x * 0.83 + pgWorld.z * 0.56;
+			float pgStreak = pgNoise( vec2( pgAlong * 1.1, pgWorld.y * 0.09 ) ) - 0.5;
+			float pgBlot = pgNoise( vec2( pgAlong * 0.17, pgWorld.y * 0.21 + 7.0 ) ) - 0.5;
+			float pgWear = 1.0 + pgVertical * parhelionGroundOn * ( pgStreak * ${(SURFACE_DETAIL.streak * 2).toFixed(3)} + pgBlot * ${(SURFACE_DETAIL.blot * 2).toFixed(3)} + ${SURFACE_DETAIL.lift.toFixed(3)} * smoothstep( 1.5, 7.0, pgAbove ) * pgInside );
+			material.diffuseColor *= pgWear; diffuseColor.rgb *= pgWear;
+		#endif
 	}
 #endif
 `;
@@ -55,7 +82,7 @@ export function installGroundGrime(chunks: Record<string, string> = THREE.Shader
   if (!lights.includes(VIEW_DIR)) return false;
   // Declared only where a material opted in: an unset sampler would share texture unit 0 with another
   // sampler type and fail the draw (GL_INVALID_OPERATION), so stock programs never see these lines.
-  chunks.lights_pars_begin = `#ifdef PARHELION_GROUND\nuniform sampler2D parhelionGround;\nuniform vec4 parhelionGroundBox;\nuniform float parhelionGroundOn;\n#endif\n${pars}`;
+  chunks.lights_pars_begin = `#ifdef PARHELION_GROUND\nuniform sampler2D parhelionGround;\nuniform vec4 parhelionGroundBox;\nuniform float parhelionGroundOn;\n${PG_NOISE}\n#endif\n${pars}`;
   chunks.lights_fragment_begin = lights.replace(VIEW_DIR, `${VIEW_DIR}\n${GROUND_GRIME_GLSL}`);
   return true;
 }
