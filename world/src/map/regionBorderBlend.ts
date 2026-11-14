@@ -18,10 +18,13 @@ export function regionBorders(regions: readonly { offset: readonly [number, numb
   return { xs: mids(regions.map(r => r.offset[0])), zs: mids(regions.map(r => r.offset[1])) };
 }
 
-/** Blend `grid.col` across the given borders in place. Returns a mask of the cells that changed band (1 = inside a band). */
-export function blendGridBorders(grid: GridLike, borders: { xs: readonly number[]; zs: readonly number[] }, band: number = BORDER_BLEND.band) {
+/** Blend `grid.col` across the given borders in place. Returns a mask of the cells that changed band (1 = inside a band).
+ * Pass `waterLevel` so submerged ground takes no part. */
+export function blendGridBorders(grid: GridLike, borders: { xs: readonly number[]; zs: readonly number[] }, band: number = BORDER_BLEND.band, waterLevel = -Infinity) {
   const { nx, nz, cell } = grid, N = nx * nz, mask = new Uint8Array(N), reach = Math.ceil(band / cell);
-  const covered = (q: number) => grid.h[q] > -11.5; // cells no terrain vertex reached keep the sea default: never average those in
+  // Cells no terrain vertex reached keep the sea default, and ground under water is painted for the lake or
+  // sea bed (often near black, never seen): neither is averaged in, and neither is repainted.
+  const covered = (q: number) => grid.h[q] > -11.5 && grid.h[q] >= waterLevel - .05;
   const pass = (lines: readonly number[], alongX: boolean) => {
     const src = grid.col.slice();
     for (const line of lines) {

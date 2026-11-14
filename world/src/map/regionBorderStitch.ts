@@ -9,6 +9,10 @@ import * as THREE from 'three';
  * offset for its position, so nothing is left floating or buried.
  */
 export const BORDER_STITCH = Object.freeze({ band: 24, cell: 2, smooth: 3, min: .02 });
+/** What rides with the ground when a border is stitched: the terrain, its collision, and things that grow or
+ * lie on it. Built structures (platforms, ice sheets, walls, gates) are rigid and keep their authored shape:
+ * shearing a slab that spans the border warped it into a raised lip. */
+export const ridesWithGround = (name: string) => /^(COL_)?Terrain$|^Trees(_|$)|^Leaves$|^Rocks$|^Bushes$|^COL_Props$/.test(name);
 
 type Line = { axis: 'x' | 'z'; at: number; t0: number; low: Float32Array; high: Float32Array };
 const fall = (d: number, band: number) => { const k = Math.min(1, Math.max(0, d / band)); return 1 - k * k * (3 - 2 * k); };

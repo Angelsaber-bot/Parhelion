@@ -196,7 +196,8 @@ import { WorldAudio } from './rendering/worldAudio';
 import { installGeometricShadowFacing } from './rendering/geometricShadowFacing';
 import { installHeightMist } from './rendering/heightMist';
 import { regionBorders, blendGridBorders, applyBorderBlend } from './map/regionBorderBlend';
-import { planBorderStitch } from './map/regionBorderStitch';
+import { planBorderStitch, ridesWithGround } from './map/regionBorderStitch';
+import { planIceFloes, createIceFloes } from './environment/iceFloes';
 import { isSeamVeil, seamVeilMaterial } from './rendering/seamVeil';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
@@ -509,14 +510,14 @@ const borderStitch = planBorderStitch(parts.flatMap(p => { let terrain: THREE.Me
 if (borderStitch.samples && !params.has('nostitch')) {
   const stitched = new Set<THREE.BufferGeometry>();
   for (const p of parts) p.root.traverse(o => {
-    const mesh = o as THREE.Mesh; if (!mesh.isMesh || !mesh.geometry || stitched.has(mesh.geometry)) return;
+    const mesh = o as THREE.Mesh; if (!mesh.isMesh || !mesh.geometry || stitched.has(mesh.geometry) || !ridesWithGround(mesh.name)) return;
     stitched.add(mesh.geometry); const e = mesh.matrixWorld.elements;
     const moved = borderStitch.apply(mesh.geometry, (x, z) => [e[0] * x + e[8] * z + e[12], e[2] * x + e[10] * z + e[14]], p.def.offset);
     if (moved && /^(COL_)?Terrain$/.test(mesh.name)) mesh.geometry.computeVertexNormals();
   });
 }
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
-const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch'))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
+const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch')&&ridesWithGround(name))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
@@ -637,7 +638,11 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
 // Region tiles are painted separately: run their terrain colours into each other across every interior
 // border instead of changing along a straight line (grass and maps read the same blended grid).
-if (!params.has('noblend')) applyBorderBlend(terrains, grid, blendGridBorders(grid, regionBorders(REGIONS)));
+if (!params.has('noblend')) applyBorderBlend(terrains, grid, blendGridBorders(grid, regionBorders(REGIONS), undefined, layout.world.waterLevel));
+// Broken ice drifting off the winter city's frozen crossings into its neighbours' open water.
+const WINTER_TILE = REGIONS.find(r => r.id === 'winter')!.offset;
+const iceFloes = createIceFloes(planIceFloes(regionBorders(REGIONS), GRID, (x, z) => grid.sampleHeight(x, z), (x, z) => Math.abs(x - WINTER_TILE[0]) <= 360 && Math.abs(z - WINTER_TILE[1]) <= 360, layout.world.waterLevel), layout.world.waterLevel);
+scene.add(iceFloes.mesh); addEventListener('pagehide', e => { if (!e.persisted) iceFloes.dispose(); });
 applyValleyFoundationGrid(grid);
 const existingPropGeo = mergeParts(existingPropGeos);
 const settlementBlockers = new MeshBVH(existingPropGeo);
@@ -4859,6 +4864,7 @@ function frame(now: number) {
    // A teleport or respawn must not read as a 300 m stride or a landing.
    if(player.pos.distanceToSquared(footDustLast)>36)footDust.clear();footDustLast.copy(player.pos);
    footDust.update(dt,player,dustSurface(regionAt(player.pos.x,player.pos.z).id,surface-player.pos.y),gameplayActive()&&!reducedEffects()&&rig.root.visible&&!(ferry?.riding));}
+  iceFloes.update(dt,player.pos);
   flagshipSplash.update(dt);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);

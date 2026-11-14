@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { planBorderStitch, BORDER_STITCH } from '../src/map/regionBorderStitch';
+import { planBorderStitch, BORDER_STITCH, ridesWithGround } from '../src/map/regionBorderStitch';
 
 /** A flat strip of terrain on a 2 m grid from x0 to x1 (z 0..40) at height `y(x, z)`. */
 function tile(x0: number, x1: number, y: (x: number, z: number) => number, center: [number, number]) {
@@ -53,4 +53,9 @@ test('borders along z work the same way, and a point on the line takes its own t
   const s = planBorderStitch([south, north], { xs: [], zs: [0] }, { x0: -60, z0: -20, span: 120, spanZ: 40 });
   assert.equal(s.worst, 8);
   assert.ok(Math.abs(s.offsetAt(10, 0, south.center) - 4) < 1e-5); assert.ok(Math.abs(s.offsetAt(10, 0, north.center) + 4) < 1e-5);
+});
+
+test('only the ground and what grows on it is stitched; built structures keep their shape', () => {
+  for (const name of ['Terrain', 'COL_Terrain', 'Trees_Leaves', 'Trees_Trunks', 'Trees', 'Leaves', 'Rocks', 'Bushes', 'COL_Props']) assert.equal(ridesWithGround(name), true, name);
+  for (const name of ['Seams', 'Seam_north_Gate', 'Water', 'Ice_Gate', 'Glow_Props', 'COL_Seams', 'Lamps', 'Britain_Physical_Walls', 'Rocks_Cliff_Wall']) assert.equal(ridesWithGround(name), false, name);
 });

@@ -48,3 +48,14 @@ test('terrain vertices in the band take the blended colour; heights and far vert
   assert.ok(c.getX(2) > c.getX(0)); assert.equal(geo.getAttribute('position').getY(0), 5);
   assert.ok(BORDER_BLEND.band >= 20 && BORDER_BLEND.band <= 40);
 });
+
+test('ground under water is never averaged onto the shore (a dark lake bed must not stain the ice beside it)', () => {
+  const g = twoTiles();
+  // East of x = 6 the white tile drops under a lake and its bed is painted near black.
+  for (let q = 0; q < g.nx * g.nz; q++) { const x = g.x0 + (q % g.nx) * g.cell; if (x >= 6) { g.h[q] = -2; g.col[q * 3] = g.col[q * 3 + 1] = g.col[q * 3 + 2] = .02; } }
+  const mask = blendGridBorders(g, { xs: [0], zs: [] }, 30, 1);
+  const q = (x: number) => 2 * g.nx + Math.round((x - g.x0) / g.cell);
+  // A mix of the two land palettes (0.2 and 1), never pulled below them towards the 0.02 bed.
+  for (const x of [-10, -2, 0, 2, 4]) assert.ok(g.col[q(x) * 3] >= .2 - 1e-6, `the shore keeps a land colour at x=${x}: ${g.col[q(x) * 3]}`);
+  assert.equal(mask[q(20)], 0, 'the bed itself is not repainted'); assert.equal(g.col[q(20) * 3], Math.fround(.02));
+});
