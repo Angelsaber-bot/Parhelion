@@ -132,7 +132,7 @@ export const WINTER_CHAPTERS: FieldChapterContent = {
     { at: W.flag, off: [2.2, 4.2, 0], size: [1.4, .9, .04], color: 0x3354a0, show: d => d.has(W.flag) },
     { at: W.beam, off: [0, 4.5, 0], size: [.4, .4, 3.5], color: 0x4a3828, target: W.beam },
     { at: W.beam, off: [0, .25, 1], size: [.4, .4, 3.5], color: 0x3a2c20, rot: [0, .5, 0], show: d => d.has(W.beam) },
-    { at: W.door, off: [0, 1.2, -1.2], size: [1.6, 2.4, .2], color: 0x8fa3b0, moved: { when: W.door, off: [-.9, 1.2, -.4], rot: [0, 1.4, 0] } },
+    { at: W.door, off: [0, 1.2, -1.2], size: [1.6, 2.4, .2], color: 0x8fa3b0, moved: { when: W.door, off: [-.9, 1.2, -.4], rot: [0, 1.4, 0] }, glide: W.door },
     { at: W.rope, off: [0, 6, 0], size: [.12, 3, .12], color: 0xb8a67c, target: W.rope },
     { at: W.rope, off: [0, 3, 2], size: [4, 3, .06], color: 0xb5a98a, moved: { when: W.rope, off: [0, .5, 4], rot: [-1.3, 0, 0] } },
     { at: W.drum, off: [0, 1.1, 0], size: [.9, .9, .9], color: 0x8b2d2a, target: W.drum },
@@ -140,7 +140,7 @@ export const WINTER_CHAPTERS: FieldChapterContent = {
     { at: W.seal, off: [2, .7, 0], size: [1, .9, 2.2], color: 0x3b3d3a, rot: [0, .2, 0], moved: { when: W.seal, off: [2, .7, 0], rot: [0, Math.PI, 0] } },
     { at: W.seal, off: [2, 1.25, -.3], size: [.5, .05, .5], color: 0xe9e2c8, show: d => d.has(W.seal) && !d.has(W.broke) },
     { at: W.crate, off: [0, .3, 1], size: [.8, .55, .55], color: 0x8a6a42, show: d => d.has(W.crate) },
-    { at: W.stretcher, off: [0, .55, 0], size: [.7, .15, 2], color: 0xc9bfa5, moved: { when: W.stretcher, off: [0, .55, 6] } },
+    { at: W.stretcher, off: [0, .55, 0], size: [.7, .15, 2], color: 0xc9bfa5, moved: { when: W.stretcher, off: [0, .55, 6] }, glide: W.stretcher },
     { at: W.pole, off: [1.5, .2, 0], size: [.09, .09, 4.4], color: 0x5b4632, moved: { when: W.pole, off: [1.5, .9, 0], rot: [0, 0, 0] } },
   ],
   actors: [

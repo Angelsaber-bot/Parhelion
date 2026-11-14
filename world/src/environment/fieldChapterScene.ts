@@ -87,7 +87,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
         actors.pose(actor.id, [x, y, z], Math.atan2(at[0] - x, at[2] - z) || 0);
       }
     },
-    update(dt: number, viewer: THREE.Vector3) {
+    update(dt: number, viewer: THREE.Vector3, progress?: (id: string) => number) {
       const o = follow?.offset();
       if (o && Math.hypot(o.x - shipX, o.y - shipY, o.z - shipZ) > .01) {
         shipX = o.x; shipY = o.y; shipZ = o.z;
@@ -101,6 +101,15 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
       root.visible = [...points.values()].some(p => Math.abs(viewer.x - p[0]) < 260 && Math.abs(viewer.z - p[2]) < 260);
       actors.update(dt, viewer);
       clock += dt; if (root.visible) for (const o of animated) if (o.visible) (o.userData.animate as (t: number) => void)(clock);
+      // Gliding props follow their work action's progress between the start and moved positions.
+      if (progress && root.visible) for (const { prop, mesh } of props) {
+        if (!prop.glide || !prop.moved || !mesh.visible) continue;
+        const at = points.get(prop.at); if (!at) continue;
+        const k = Math.min(1, Math.max(0, progress(prop.glide))), a = prop.off, b = prop.moved.off;
+        mesh.position.set(at[0] + a[0] + (b[0] - a[0]) * k, at[1] + a[1] + (b[1] - a[1]) * k, at[2] + a[2] + (b[2] - a[2]) * k);
+        const r0 = prop.rot ?? [0, 0, 0], r1 = prop.moved.rot ?? r0;
+        mesh.rotation.set(r0[0] + (r1[0] - r0[0]) * k, r0[1] + (r1[1] - r0[1]) * k, r0[2] + (r1[2] - r0[2]) * k);
+      }
     },
     dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); modelMaterials.forEach(m => m.dispose()); root.removeFromParent(); },
   };

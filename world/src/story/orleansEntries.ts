@@ -45,7 +45,7 @@ export const ORLEANS_ENTRIES: FieldChapterContent = {
   props: [
     { at: E.alix, off: [-3, 3.2, 6], size: [.05, 1.4, .05], color: 0x6a5232 },
     { at: E.alix, off: [-2.6, 3.6, 6], size: [.7, .45, .03], color: 0xe9e0c8, model: 'pennant' },
-    { at: E.push, off: [0, 1.2, 3], size: [3.4, 2.2, .35], color: 0x7b5c3a, moved: { when: E.push, off: [0, 1.2, -6] } },
+    { at: E.push, off: [0, 1.2, 3], size: [3.4, 2.2, .35], color: 0x7b5c3a, moved: { when: E.push, off: [0, 1.2, -6] }, glide: E.push },
     { at: E.float, off: [-2, -.3, 2], size: [3.5, .4, 5], color: 0x6e5238, show: d => d.has(OC.ferry) },
     { at: E.bell, off: [0, 4, -2], size: [.08, 2.2, .08], color: 0xb7a578, target: E.bell },
     { at: E.standard, off: [1.2, 1.8, 0], size: [.07, 3.6, .07], color: 0x5b4632, show: d => d.has(E.entered) },

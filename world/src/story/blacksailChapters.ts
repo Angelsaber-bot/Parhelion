@@ -186,7 +186,7 @@ export const BLACKSAIL_CHAPTERS: FieldChapterContent = {
     { at: B.rigging, off: [0, 5, 0], size: [.12, 2.6, .12], color: 0xb7a578, target: B.rigging },
     { at: B.treasure, off: [0, 4.6, 0], size: [.1, 1.8, .1], color: 0xb7a578, target: B.treasure },
     { at: B.treasure, off: [0, 3.4, 0], size: [.9, .6, .6], color: 0x6b4a1e, moved: { when: B.treasure, off: [0, -3, 3] } },
-    { at: B.mast, off: [0, 4, -2], size: [.5, 8, .5], color: 0x5a4430, moved: { when: B.mast, off: [0, 1.6, -4], rot: [1.2, 0, 0] } },
+    { at: B.mast, off: [0, 4, -2], size: [.5, 8, .5], color: 0x5a4430, moved: { when: B.mast, off: [0, 1.6, -4], rot: [1.2, 0, 0] }, glide: B.mast },
     { at: B.tow, off: [0, 2.2, 0], size: [.14, .14, 6], color: 0xb7a578, target: B.tow },
     { at: B.hooks, off: [-1.5, 1.3, 0], size: [.3, .5, .3], color: 0x6f6b62, target: B.hooks },
     // B07 chase: port chaser on grapples, starboard chaser with its foremast; both ride beside the flagship.

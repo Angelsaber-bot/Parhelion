@@ -157,6 +157,8 @@ export interface FieldProp {
   readonly target?: string;
   /** Draw a modelled object of this size instead of a plain block (visual only). */
   readonly model?: 'chaser' | 'pennant' | 'standard' | 'shell';
+  /** Slide from `off` to `moved.off` as this work action progresses (instead of jumping on completion). */
+  readonly glide?: string;
 }
 /** A named resident or companion whose work station follows the story: [action id, dx, dz] or hidden. */
 export interface FieldActor {

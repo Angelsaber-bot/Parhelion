@@ -106,7 +106,7 @@ export const KINGDOM_K04: FieldChapterContent = {
     { at: K.street, off: [0, 3.2, 5], size: [1.8, .45, .7], color: 0x5d4a35, moved: { when: K.street, off: [0, .25, 5], rot: [0, 0, 1.2] } },
     { at: K.street, off: [-2.5, .9, 4], size: [.9, 1.8, .2], color: 0x8a8f96 },
     { at: K.winch, off: [1.2, .7, 0], size: [.8, .8, 1.2], color: 0x6f5636 },
-    { at: K.winch, off: [0, 1.1, -3], size: [4, 2.2, .25], color: 0x4c3b2a, moved: { when: K.winch, off: [0, 3.6, -3] } },
+    { at: K.winch, off: [0, 1.1, -3], size: [4, 2.2, .25], color: 0x4c3b2a, moved: { when: K.winch, off: [0, 3.6, -3] }, glide: K.winch },
     { at: K.ladder, off: [1, 3.6, 0], size: [.5, 4, .12], color: 0x7b5c3a, moved: { when: K.ladder, off: [1, 1.6, .7], rot: [-.35, 0, 0] } },
     { at: K.shelf, off: [1.6, .8, 0], size: [2, 1.6, .55], color: 0x6e5135, moved: { when: K.shelf, off: [0, .8, 2.2], rot: [0, Math.PI / 2, 0] } },
     { at: K.open, off: [0, 1.5, -2.2], size: [3.2, 3, .3], color: 0x3f3328, moved: { when: K.open, off: [0, 4.4, -2.2] } },
