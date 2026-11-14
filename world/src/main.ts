@@ -28,6 +28,7 @@ import { ORLEANS_FINALE, OF as ORLEANS_FINALE_FLAGS } from './story/orleansFinal
 import { createOrleansCrossingTeams } from './environment/orleansCrossingTeams';
 import { createWalkingColumn } from './environment/walkingColumn';
 import { createSplashWave } from './environment/splashWave';
+import { StoryBeatShot } from './cinematics/storyBeatShot';
 import { egyptToWorld } from './map/egyptPlan';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
@@ -2289,6 +2290,11 @@ scene.add(egyptMigration.root);addEventListener('pagehide',e=>{if(!e.persisted)e
 // B06: when the last tow cable parts, the whole flagship drops into the water and the wave slaps the pier.
 const flagshipSplash=createSplashWave();scene.add(flagshipSplash.root);addEventListener('pagehide',e=>{if(!e.persisted)flagshipSplash.dispose();});
 let flagshipSplashArmed=!done.has('b06_tow');
+// Chapter completions get a short story shot over the place they closed (any key skips it).
+const storyShot=new StoryBeatShot();addEventListener('pagehide',e=>{if(!e.persisted)storyShot.dispose();});
+const storyShotBeats=new Map<string,{at:string;line:readonly [string,string]}>();
+for(const c of FIELD_CHAPTER_CONTENT)for(const a of c.set.actions)for(const flag of [a.id,...(a.adds??[])])if(/_complete$/.test(flag)&&!storyShotBeats.has(flag))storyShotBeats.set(flag,{at:a.id,line:a.line});
+const storyShotSeen=new Set([...storyShotBeats.keys()].filter(f=>done.has(f)));
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
 let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 // B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),
@@ -4945,6 +4951,9 @@ function frame(now: number) {
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;
+  for(const [flag,beat] of storyShotBeats){if(storyShotSeen.has(flag)||!done.has(flag))continue;storyShotSeen.add(flag);
+    const at=fieldChapterScene.point(beat.at);if(at&&gameplayActive()&&!reducedEffects()&&!combat.bossStarted&&!storyShot.active)storyShot.start(new THREE.Vector3(at[0],at[1],at[2]),bilingual(...beat.line),camera,(from,to)=>{const d=to.clone().sub(from),len=d.length();return !!combat.geometry.cast(from,d.clone().normalize(),len-.3)||!!combat.geometry.cast(to,d.clone().negate().normalize(),len-.3);});}
+  storyShot.update(gameplayActive()?dt:0,camera);
   // Companions that crowd the lens or stand in the line of sight step out of the shot (render only).
   cameraClearance.update([servant.root, ...eraActors.map(e => e.actor?.root), modelCompanion.actor?.root], camera.position, clearanceFocus.set(player.pos.x, player.pos.y + 1.5, player.pos.z), thirdPerson);
   localLights.update(camera.position, dt);
