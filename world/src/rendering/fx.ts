@@ -79,14 +79,14 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
     fog: true,
     uniforms,
     vertexShader: /* glsl */ `
-      uniform float uTime, uSize;
+      uniform float uTime, uSize, uCloud;
       uniform vec2 uOrigin, uSpan, uN;
       uniform vec3 uCam, uPlayer;
       uniform sampler2D tH, tC;
       attribute vec4 aRand;
       varying vec2 vUv;
       varying vec3 vCol;
-      varying vec2 vWxz;
+      varying float vCloud;
       varying vec3 vLook; // x: gust front for the wind sheen, y: sun-facing shade, z: seed-head blade
       ${NOISE_GLSL}
       #include <fog_pars_vertex>
@@ -104,8 +104,9 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         float sc = keep * smoothstep(0.7, 2.3, dist);
         // A meadow, not a carpet: metres-wide patches run taller or shorter and greener or drier,
         // and a few blades in a hundred are tall seed heads.
-        float patchTall = vnoise(wxz * ${GRASS_BLADE.patch.toFixed(3)});
-        float patchDry = vnoise(wxz * 0.31 + 17.0);
+        // (Cheap rolling patches: two bent sine fields each, no hashing in this hot vertex path.)
+        float patchTall = 0.5 + 0.5 * sin(wxz.x * ${GRASS_BLADE.patch.toFixed(3)} + sin(wxz.y * 0.083) * 1.9) * sin(wxz.y * ${(GRASS_BLADE.patch * .86).toFixed(3)} + sin(wxz.x * 0.061) * 1.7 + 1.3);
+        float patchDry = 0.5 + 0.5 * sin(wxz.x * 0.27 + sin(wxz.y * 0.19) * 2.1 + 4.0) * sin(wxz.y * 0.23 + sin(wxz.x * 0.17) * 1.6);
         float seed = step(${(1 - GRASS_BLADE.seedShare).toFixed(3)}, fract(aRand.z * 31.7)) * step(0.45, patchTall);
         float len = ${GRASS_BLADE.length.toFixed(2)} * mix(0.55, 1.2, patchTall) * mix(0.7, 1.25, fract(aRand.w * 13.7)) * (1.0 + 0.55 * seed) * sc;
         float wide = mix(0.8, 1.35, fract(aRand.z * 7.13)) * sc * (1.0 - 0.35 * seed);
@@ -117,7 +118,7 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         p.xz = mat2(ca, -sa, sa, ca) * p.xz;
         vec3 wp = vec3(wxz.x, h - 0.04, wxz.y) + p;
         // Wind: broad gust fronts roll across the field, with a quicker flutter on top.
-        float gust = sin(uTime * 0.7 + wxz.x * 0.045 + wxz.y * 0.035 + vnoise(wxz * 0.05) * 3.0);
+        float gust = sin(uTime * 0.7 + wxz.x * 0.045 + wxz.y * 0.035 + sin(wxz.x * 0.031 - wxz.y * 0.027) * 2.4);
         float flutter = sin(uTime * 2.2 + wxz.x * 0.7 + wxz.y * 0.45);
         wp.xz += vec2(1.0, 0.35) * (gust * 0.2 + flutter * 0.07) * t2 * len * 1.5;
         wp.y -= abs(gust) * 0.05 * t2 * len;
@@ -128,19 +129,19 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         wp.y -= push * 0.4 * t * len;
         vUv = uv;
         vCol = mix(cm.rgb, cm.rgb * vec3(1.14, 1.05, 0.7), smoothstep(0.45, 0.8, patchDry) * 0.55) * mix(1.0, 0.9, patchTall);
-        vWxz = wxz;
+        // The land's drifting cloud shadow (look.ts celify), taken once at the blade's root: it is far too broad
+        // to vary along a blade, and doing it per pixel paid for the noise on every overdrawn fragment.
+        vCloud = smoothstep(0.5, 0.68, fbm(wxz * 0.0105 + vec2(uTime * 0.016, uTime * 0.008))) * uCloud;
         vLook = vec3(gust, 0.92 + 0.14 * abs(ca * ${SUN_XZ[0].toFixed(3)} + sa * ${SUN_XZ[1].toFixed(3)}), seed);
         vec4 mvPosition = viewMatrix * vec4(wp, 1.0);
         gl_Position = projectionMatrix * mvPosition;
         #include <fog_vertex>
       }`,
     fragmentShader: /* glsl */ `
-      uniform float uTime, uCloud;
       varying vec2 vUv;
       varying vec3 vCol;
-      varying vec2 vWxz;
+      varying float vCloud;
       varying vec3 vLook;
-      ${NOISE_GLSL}
       #include <fog_pars_fragment>
       void main() {
         vec3 base = vCol * 0.6;
@@ -150,9 +151,8 @@ export function makeGrassField(grid: WorldGrid, builtBvh: MeshBVH, waterLevel: n
         c = mix(c, vec3(0.93, 0.86, 0.6), vLook.z * smoothstep(0.78, 1.0, vUv.y) * 0.8);
         // Wind sheen: the upper blade catches the light as a gust front passes.
         c += vec3(0.11, 0.12, 0.05) * smoothstep(0.55, 1.0, vLook.x) * vUv.y * vUv.y;
-        // The same drifting cloud shadows as the land under it (look.ts celify).
-        float cloud = smoothstep(0.5, 0.68, fbm(vWxz * 0.0105 + vec2(uTime * 0.016, uTime * 0.008))) * uCloud;
-        c *= mix(vec3(1.0), vec3(0.74, 0.78, 0.9), cloud);
+        // The same drifting cloud shadows as the land under it (computed at the blade's root).
+        c *= mix(vec3(1.0), vec3(0.74, 0.78, 0.9), vCloud);
         gl_FragColor = vec4(c, 1.0);
         #include <fog_fragment>
       }`,

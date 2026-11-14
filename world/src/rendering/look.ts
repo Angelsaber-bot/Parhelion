@@ -45,6 +45,9 @@ export const NOISE_GLSL = /* glsl */ `
   float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 4; i++) { v += a * vnoise(p); p *= 2.03; a *= 0.5; } return v; }
 `;
 
+/** Snow glitter on cool near-white terrain: grain cells per metre, the share of cells that can glint, how
+ * white the paint must be (linear, min channel), and the distance band over which it fades out. */
+export const SNOW_GLITTER = Object.freeze({ cellsPerMetre: 34, share: .022, white: [.55, .72] as const, near: 5, far: 16, strength: .55 });
 type Kind = 'default' | 'terrain' | 'foliage' | 'water';
 
 /** Cel shading on top of MeshToonMaterial: cool hue-shifted shadows, warm key, fresnel rim, world-space colour breakup. */
@@ -91,6 +94,21 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
           vec3 vd = normalize(vViewPosition);
           float fres = pow(1.0 - clamp(dot(normal, vd), 0.0, 1.0), 3.5);
           outgoingLight += vec3(1.0, 0.96, 0.88) * fres * ${kind === 'terrain' ? '0.08' : '0.32'} * (1.0 - 0.6 * sh);
+          ${kind === 'terrain' ? `{
+            // Snow glitter: cool, near-white ground throws tiny glints in the sun that wink on and off as the
+            // view turns. Only close by (they would shimmer as noise at range) and only on the lit side.
+            float snowy = smoothstep(${SNOW_GLITTER.white[0].toFixed(2)}, ${SNOW_GLITTER.white[1].toFixed(2)}, min(base.r, min(base.g, base.b))) * step(base.r * 0.97, base.b);
+            if (snowy > 0.0) {
+              float dist = length(vViewPosition);
+              vec2 grain = vWPos.xz * ${SNOW_GLITTER.cellsPerMetre.toFixed(1)}, cell = floor(grain);
+              float seed = hash12(cell);
+              // A round grain in the middle of its cell, not the whole square.
+              float dot2 = 1.0 - smoothstep(0.12, 0.34, length(fract(grain) - 0.5));
+              float wink = fract(seed * 43.0 + dot(vd.xy, vec2(5.3, 3.7)) + vd.z * 2.9);
+              float glint = dot2 * step(${(1 - SNOW_GLITTER.share).toFixed(3)}, seed) * smoothstep(0.55, 0.9, wink) * (1.0 - smoothstep(${SNOW_GLITTER.near.toFixed(1)}, ${SNOW_GLITTER.far.toFixed(1)}, dist));
+              outgoingLight += vec3(0.9, 0.97, 1.0) * glint * snowy * (1.0 - sh) * ${SNOW_GLITTER.strength.toFixed(2)};
+            }
+          }` : ''}
         }
         #include <opaque_fragment>`);
   };
