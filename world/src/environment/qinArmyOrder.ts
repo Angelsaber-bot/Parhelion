@@ -46,19 +46,25 @@ function bake(parts: Part[]) {
 }
 /** One rank on its turntable, built along local Z (the closed orientation): a rammed plinth
  * with a bronze kerb, two files of seven figures facing out, kneeling archers at the head. */
-function rankGeometry(seed: number) {
+/** Each of the four rank positions has its own role, so the hall reads as an army, not four copies:
+ * 0 kneeling crossbowmen, 1 spearmen, 2 heavy infantry under an officer, 3 the command rank with a drum. */
+function rankGeometry(seed: number, role = 1) {
   const parts: Part[] = [], L = QIN_ARMY.rankLength, W = QIN_ARMY.rankWidth;
   piece(parts, [W, .42, L], [0, .21, 0], '#8c7356');
   for (const s of [-1, 1]) { piece(parts, [.14, .46, L], [s * (W / 2 - .07), .23, 0], '#5f7c66'); piece(parts, [W, .46, .14], [0, .23, s * (L / 2 - .07)], '#5f7c66'); }
   for (let i = 0; i < 7; i++) for (const s of [-1, 1]) {
     const z = -L / 2 + 1.25 + i * (L - 2.5) / 6, x = s * 1.25, head = i === 6;
-    const kind = (head ? 4 : (i + seed + (s > 0 ? 1 : 0)) % 3 === 0 ? 0 : (i + seed) % 3 === 1 ? 2 : 1) as WarriorKind;
+    const mixed = (head ? 4 : (i + seed + (s > 0 ? 1 : 0)) % 3 === 0 ? 0 : (i + seed) % 3 === 1 ? 2 : 1) as WarriorKind;
+    const kind = (role === 0 ? 4 : role === 2 ? (head ? 3 : 2) : role === 3 ? (i % 2 ? 3 : 1) : mixed) as WarriorKind;
     placeFigure(warriorPrims(kind, i * 2 + (s > 0 ? 1 : 0) + seed), x, .42, z, s * Math.PI / 2, (geo, color, m) => { const g = geo.toNonIndexed().applyMatrix4(m); parts.push({ geo: g, color }); });
   }
-  // standard-bearer's pole at the rank's head with a black, cinnabar-edged banner
+  // standard-bearer's pole at the rank's head; each role flies its own banner
   piece(parts, [.12, 4.6, .12], [0, 2.7, L / 2 - .5], '#5c4532');
-  piece(parts, [.08, 1.5, 1.9], [0, 4.2, L / 2 - 1.45], '#201e1d');
-  piece(parts, [.1, .12, 1.9], [0, 4.98, L / 2 - 1.45], '#c0452f');
+  if (role === 0) { piece(parts, [.08, 2.2, .7], [0, 3.85, L / 2 - .9], '#201e1d'); piece(parts, [.1, .1, .7], [0, 4.98, L / 2 - .9], '#c0452f'); }
+  else if (role === 2) { piece(parts, [.08, 1.2, 1.6], [0, 4.35, L / 2 - 1.3], '#5a1f1a'); piece(parts, [.1, 1.2, .1], [0, 4.35, L / 2 - 2.1], '#c9a25a'); }
+  else if (role === 3) { piece(parts, [.08, 1.5, 1.9], [0, 4.2, L / 2 - 1.45], '#c0452f'); piece(parts, [.1, .12, 1.9], [0, 4.98, L / 2 - 1.45], '#201e1d');
+    piece(parts, [.9, .7, .9], [0, .77, 0], '#7a3a2a'); piece(parts, [.95, .08, .95], [0, 1.15, 0], '#d9c9a0'); }
+  else { piece(parts, [.08, 1.5, 1.9], [0, 4.2, L / 2 - 1.45], '#201e1d'); piece(parts, [.1, .12, 1.9], [0, 4.98, L / 2 - 1.45], '#c0452f'); }
   return bake(parts);
 }
 
@@ -73,7 +79,7 @@ export function createQinArmyOrder(convert: (m: THREE.Material) => THREE.Materia
   const ranks: { mesh: THREE.Mesh; row: (typeof QIN_ARMY.rows)[number]; angle: number }[] = [];
   const geometries: THREE.BufferGeometry[] = [];
   for (const row of QIN_ARMY.rows) for (const [i, zc] of QIN_ARMY.rankCenters.entries()) {
-    const geo = rankGeometry(i + (row.id === 'g1' ? 0 : 2)); geometries.push(geo);
+    const geo = rankGeometry(i + (row.id === 'g1' ? 0 : 2), i); geometries.push(geo);
     const mesh = new THREE.Mesh(geo, material); mesh.name = `QinRank_${row.id}_${i}`;
     mesh.position.set(row.x + ox, floor, zc + oz); mesh.castShadow = mesh.receiveShadow = true; root.add(mesh);
     ranks.push({ mesh, row, angle: 0 });

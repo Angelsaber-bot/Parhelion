@@ -10,7 +10,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
   follow?: { anchors: readonly string[]; offset: () => { x: number; y: number; z: number } }) {
   const root = new THREE.Group(); root.name = 'RegionalFieldChapters';
   const markers: Marker[] = [], targets: THREE.Mesh[] = [], missing: string[] = [];
-  const geo = new Set<THREE.BufferGeometry>(), mat = new Map<number, THREE.MeshStandardMaterial>();
+  const geo = new Set<THREE.BufferGeometry>(), mat = new Map<string, THREE.MeshStandardMaterial>();
   const points = new Map<string, P>(), riders = new Map<string, P>();
   const start = follow?.offset();
   let shipX = start?.x ?? 0, shipY = start?.y ?? 0, shipZ = start?.z ?? 0;
@@ -29,14 +29,19 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
     if (follow?.anchors.includes(a.near)) { const o = follow.offset(); riders.set(a.id, [p[0] - o.x, p[1] - o.y, p[2] - o.z]); }
     markers.push({ id: a.id, type: 'interact', label: `${a.chapter} · ${a.label[0]}`, p: [p[0], p[1] + .9, p[2]], radius: 2.8 });
   }
-  function box(size: readonly number[], color: number) {
+  // Each realm grades its props toward its own palette (and finish), so a crate or post in Winter
+  // does not look like the same object in Kyoto or Black Sail.
+  const PALETTE: Record<string, [number, number, number]> = { britain: [0x8e8a82, .22, .88], winter: [0xb8d0e0, .28, .7], blacksail: [0x4f6b66, .25, .9],
+    kyoto: [0xa8452f, .18, .6], egypt: [0xd8b98a, .25, .85], orleans: [0x9a8566, .18, .86], qin: [0x8c7356, .25, .92], alpha: [0xe0dccf, .1, .78] };
+  function box(size: readonly number[], color: number, region = 'alpha') {
     const g = new THREE.BoxGeometry(size[0], size[1], size[2]); geo.add(g);
-    let m = mat.get(color); if (!m) { m = new THREE.MeshStandardMaterial({ color, roughness: .82 }); mat.set(color, m); }
+    const [tint, amount, roughness] = PALETTE[region] ?? PALETTE.alpha, key = `${color}:${region}`;
+    let m = mat.get(key); if (!m) { m = new THREE.MeshStandardMaterial({ color: new THREE.Color(color).lerp(new THREE.Color(tint), amount), roughness }); mat.set(key, m); }
     const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; mesh.receiveShadow = true; root.add(mesh); return mesh;
   }
-  const props = content.flatMap(({ props: list }) => list.flatMap(prop => {
+  const props = content.flatMap(({ set, props: list }) => list.flatMap(prop => {
     const at = points.get(prop.at); if (!at) return [];
-    const mesh = box(prop.size, prop.color); mesh.name = `FieldProp_${prop.at}`;
+    const mesh = box(prop.size, prop.color, set.region); mesh.name = `FieldProp_${prop.at}`;
     if (prop.target) { mesh.userData.target = prop.target; targets.push(mesh); }
     return [{ prop, mesh }];
   }));

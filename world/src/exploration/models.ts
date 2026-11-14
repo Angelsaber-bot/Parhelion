@@ -129,9 +129,17 @@ export function chestLid(tier: ChestTier): { group: THREE.Group; art: SiteArt } 
 
 // ─────────────────────────────────────── prism puzzle parts ───────────────────────────────────────
 const STONE = '#9a9384', STONE_DARK = '#6f6a60', BRONZE = '#b8874a', RUNE = '#8fe3ff';
-export function prismPedestal(f: Frame, height = 0) {
+/** Prism pedestal: the rune ring is shared; the plinth around it follows the realm. */
+export function prismPedestal(f: Frame, height = 0, region: RegionId = 'alpha') {
   if (height > 0) ruinTower(f, height);
   const y = height;
+  if (region !== 'alpha') {
+    const ring = () => { f.torus([0, y + .62, 0], .64, .028, RUNE, 'glow', [Math.PI / 2, 0, 0]); for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4 + Math.PI / 8; f.box([Math.cos(a) * .625, y + .78, Math.sin(a) * .625], [.06, .12, .02], RUNE, 'glow', [0, Math.PI / 2 - a, 0]); } };
+    if (region === 'britain') { f.box([0, y + .15, 0], [1.9, .3, 1.9], '#77736b', 'body', [0, 0, 0], true); for (const [x, z] of [[-.55, -.55], [.55, -.55], [-.55, .55], [.55, .55]]) f.cyl([x, y + .55, z], .16, .8, '#a9a397', 'body', 8, [0, 0, 0], true); f.box([0, y + .98, 0], [1.6, .14, 1.6], '#8e8a82', 'body', [0, 0, 0], true); ring(); return; }
+    if (region === 'blacksail') { f.cyl([0, y + .12, 0], .95, .24, '#59544c', 'body', 12, [0, 0, 0], true); f.cyl([0, y + .55, 0], .5, .66, '#5f6b66', 'body', 12, [0, 0, 0], true); for (let i = 0; i < 6; i++) { const a = i * Math.PI / 3; f.box([Math.cos(a) * .7, y + .55, Math.sin(a) * .7], [.5, .1, .1], '#7a5a38', 'body', [0, -a, 0]); } f.cyl([0, y + .94, 0], .74, .14, '#43504d', 'body', 12, [0, 0, 0], true); ring(); return; }
+    if (region === 'winter') { f.cyl([0, y + .12, 0], .95, .24, '#7d8696', 'body', 8, [0, 0, 0], true); f.taper([0, y + .55, 0], .7, .5, .66, '#bcd6e6', 'body', 6, true); f.cyl([0, y + .94, 0], .78, .14, '#93b6cc', 'body', 8, [0, 0, 0], true); ring(); return; }
+    if (region === 'kyoto') { f.box([0, y + .12, 0], [1.7, .24, 1.7], '#6f7a5e', 'body', [0, 0, 0], true); f.box([0, y + .55, 0], [.9, .66, .9], '#8a857a', 'body', [0, Math.PI / 4, 0], true); f.box([0, y + .94, 0], [1.5, .14, 1.5], '#8a857a', 'body', [0, 0, 0], true); for (const [x, z] of [[-.7, 0], [.7, 0]]) f.box([x, y + 1.06, z], [.1, .1, 1.5], '#b8402f'); ring(); return; }
+  }
   f.cyl([0, y + .12, 0], .95, .24, STONE_DARK, 'body', 8, [0, 0, 0], true);
   f.cyl([0, y + .55, 0], .62, .66, STONE, 'body', 8, [0, Math.PI / 8, 0], true);
   f.cyl([0, y + .94, 0], .78, .14, STONE_DARK, 'body', 8, [0, 0, 0], true);
@@ -225,7 +233,24 @@ export function steppingStone(f: Frame, top: number, bottom: number, r = 1.05) {
 }
 
 // ─────────────────────────────────────────── statue ───────────────────────────────────────────
-export function haloStatue(f: Frame) {
+/** The halo crown and offering bowl are shared so every realm's statue reads as the same shrine. */
+function haloCrown(f: Frame, y: number, z = .05) {
+  const gold = '#e9c063';
+  f.torus([0, y, z], .48, .07, gold, 'metal', [0, 0, 0]);
+  f.cyl([0, y, z], .32, .06, '#fff1b0', 'glow', 20, [Math.PI / 2, 0, 0]);
+  for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; f.box([Math.cos(a) * .7, y + Math.sin(a) * .7, z], [i % 2 ? .22 : .34, .05, .03], '#ffd875', 'glow', [0, 0, a]); }
+}
+function haloOffering(f: Frame, y: number, z = 1.45) {
+  f.cyl([0, y - .15, z], .1, .3, '#a59e8d', 'body', 8);
+  f.lathe([[0, 0], [.32, .02], [.42, .18], [.38, .2], [0, .06]], [0, y, z], '#e9c063', 'metal', 14);
+  f.cyl([0, y + .12, z], .28, .03, '#bff3ff', 'glow', 12);
+}
+/** 日晕神像: one shrine across the world, built in each realm's own manner. */
+export function haloStatue(f: Frame, region: RegionId = 'alpha') {
+  if (region === 'britain') return knightStatue(f);
+  if (region === 'blacksail') return figureheadStatue(f);
+  if (region === 'winter') return sentinelStatue(f);
+  if (region === 'kyoto') return lanternStatue(f);
   const marble = '#e6e0d2', shade = '#bdb5a2', gold = '#e9c063';
   f.box([0, .2, 0], [4.2, .4, 4.2], '#8f8878', 'body', [0, 0, 0], true);
   f.box([0, .6, 0], [3.4, .4, 3.4], '#a59e8d', 'body', [0, 0, 0], true);
@@ -253,7 +278,79 @@ export function haloStatue(f: Frame) {
 }
 
 // ─────────────────────────────────────────── trial stele ───────────────────────────────────────────
-export function trialStele(f: Frame) {
+/** 落日王国：a knight kneels on a round-table stone, both hands on a planted sword; the halo above the helm. */
+function knightStatue(f: Frame) {
+  const granite = '#8e8a82', slab = '#a9a397', bronze = '#9c7a4a';
+  f.cyl([0, .25, 0], 2.3, .5, '#77736b', 'body', 20, [0, 0, 0], true);
+  f.cyl([0, .62, 0], 1.7, .25, granite, 'body', 20, [0, 0, 0], true);
+  for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; f.box([Math.cos(a) * 1.95, .52, Math.sin(a) * 1.95], [.5, .08, .2], bronze, 'metal', [0, -a, 0]); }
+  f.box([0, 1.15, -.15], [1.1, .7, .9], slab, 'body', [0, 0, 0], true);
+  f.lathe([[0, 0], [.55, 0], [.5, .5], [.42, 1.1], [.3, 1.35], [0, 1.4]], [0, 1.45, -.2], slab, 'body', 14, true);
+  f.sphere([0, 3.05, -.15], [.3, .34, .3], granite); f.box([0, 3.1, .05], [.36, .08, .12], '#5d5a54');
+  for (const x of [-1, 1]) f.box([x * .32, 2.35, .25], [.16, .62, .18], slab, 'body', [-.7, 0, x * .2]);
+  f.box([0, 1.95, .62], [.08, 1.9, .05], '#c9ccd2', 'metal'); f.box([0, 2.55, .62], [.5, .08, .08], bronze, 'metal');
+  haloCrown(f, 3.75, -.15); haloOffering(f, 1.0, 1.6);
+}
+/** 黑帆：a weathered ship's prow rising from rope-bound timber; the figurehead leans out, arms open. */
+function figureheadStatue(f: Frame) {
+  const timber = '#5f6b66', wet = '#43504d', rope = '#b6a17a', brass = '#b08d4c';
+  f.box([0, .3, 0], [3.6, .6, 3.6], '#59544c', 'body', [0, 0, 0], true);
+  for (const s of [-1, 1]) f.box([s * .75, 1.4, 0], [.35, 2.2, 3.2], timber, 'body', [0, 0, s * -.18], true);
+  f.box([0, 2.45, .9], [.5, .5, 2], wet, 'body', [-.35, 0, 0]);
+  for (let i = 0; i < 3; i++) f.torus([0, .75 + i * .55, 0], 1.05 - i * .1, .06, rope, 'metal', [Math.PI / 2, 0, 0]);
+  f.lathe([[0, 0], [.42, 0], [.36, .7], [.28, 1.3], [0, 1.5]], [0, 2.3, .95], '#d9d2bf', 'body', 14);
+  f.sphere([0, 4.05, 1.1], [.24, .28, .24], '#d9d2bf');
+  for (const x of [-1, 1]) f.box([x * .55, 3.55, 1.15], [.7, .12, .14], '#d9d2bf', 'body', [0, 0, x * .45]);
+  f.box([1.4, .9, 1.3], [.12, 1.2, .12], brass, 'metal'); f.torus([1.4, .45, 1.3], .35, .06, brass, 'metal', [0, 0, 0]);
+  haloCrown(f, 4.75, 1.05); haloOffering(f, 1.0, 2.1);
+}
+/** 永冬：a cloaked sentinel on a hexagonal ice plinth, spear grounded, eagle wings spread behind. */
+function sentinelStatue(f: Frame) {
+  const ice = '#cfe4f0', iceDeep = '#93b6cc', stone = '#7d8696';
+  f.cyl([0, .3, 0], 1.9, .6, stone, 'body', 8, [0, Math.PI / 8, 0], true);
+  f.taper([0, 1.25, 0], 1.25, .9, 1.3, iceDeep, 'body', 6, true);
+  f.lathe([[0, 0], [.62, 0], [.66, .6], [.48, 1.5], [.34, 2], [0, 2.1]], [0, 1.9, 0], ice, 'body', 6, true);
+  f.sphere([0, 4.25, 0], [.25, .3, .25], ice); f.cone([0, 4.6, 0], .3, .4, iceDeep, 'body', 8);
+  f.box([.55, 3.2, .2], [.07, 3.6, .07], '#3b3d42', 'metal'); f.cone([.55, 5.1, .2], .1, .35, '#c9d6e2', 'metal', 4);
+  for (const x of [-1, 1]) f.box([x * 1.1, 3.6, -.45], [1.6, .9, .06], iceDeep, 'body', [0, 0, x * .35]);
+  haloCrown(f, 5.2, -.2); haloOffering(f, 1.55, 1.5);
+}
+/** 业火京都：a tiered stone lantern shrine; a seated figure in its window, a vermilion roof above. */
+function lanternStatue(f: Frame) {
+  const stone = '#8a857a', moss = '#6f7a5e', red = '#b8402f', dark = '#3d3a37';
+  f.box([0, .2, 0], [3.2, .4, 3.2], moss, 'body', [0, 0, 0], true);
+  f.box([0, .7, 0], [2.4, .6, 2.4], stone, 'body', [0, 0, 0], true);
+  f.cyl([0, 1.45, 0], .55, .9, stone, 'body', 8, [0, Math.PI / 8, 0], true);
+  f.box([0, 2.05, 0], [2, .3, 2], stone, 'body', [0, 0, 0], true);
+  f.box([0, 2.85, 0], [1.6, 1.3, 1.6], dark);
+  f.lathe([[0, 0], [.4, 0], [.36, .35], [.24, .7], [0, .78]], [0, 2.2, .1], '#d8d0bb', 'body', 12);
+  f.sphere([0, 3.1, .12], [.17, .2, .17], '#d8d0bb');
+  f.cone([0, 4, 0], 1.6, .9, red, 'body', 4, [0, Math.PI / 4, 0]); f.cone([0, 4.6, 0], .3, .5, stone, 'body', 4, [0, Math.PI / 4, 0]);
+  haloCrown(f, 5.35, 0); haloOffering(f, 1.1, 1.8);
+}
+/** Glide-trial stele: the hourglass rune is shared; the stone around it belongs to its realm. */
+export function trialStele(f: Frame, region: RegionId = 'alpha') {
+  const rune = (y: number, z: number) => {
+    f.cone([0, y + .35, z], .32, .45, '#9ff0ff', 'glow', 4, [Math.PI, 0, 0]); f.cone([0, y - .35, z], .32, .45, '#9ff0ff', 'glow', 4);
+    f.box([0, y + .75, z], [.7, .05, .02], '#9ff0ff', 'glow'); f.box([0, y - .75, z], [.7, .05, .02], '#9ff0ff', 'glow');
+  };
+  if (region === 'britain') {
+    f.cyl([0, .2, 0], 1.3, .4, '#77736b', 'body', 8, [0, 0, 0], true); f.box([0, 1.7, 0], [1.2, 3, .6], '#8e8a82', 'body', [0, 0, .05], true);
+    f.box([0, 3.35, 0], [1.9, .25, .35], '#9c7a4a', 'metal'); rune(1.6, .32); return;
+  }
+  if (region === 'blacksail') {
+    f.box([0, .2, 0], [2.2, .4, 2.2], '#59544c', 'body', [0, 0, 0], true); f.cyl([0, 1.9, 0], .32, 3.4, '#5f6b66', 'body', 12, [0, 0, 0], true);
+    f.box([0, 2.1, .4], [1.6, 2, .08], '#d8ccae', 'body', [.05, 0, 0]); f.torus([0, .6, 0], .45, .06, '#b6a17a', 'metal', [Math.PI / 2, 0, 0]); rune(2.1, .47); return;
+  }
+  if (region === 'winter') {
+    f.cyl([0, .2, 0], 1.2, .4, '#7d8696', 'body', 8, [0, 0, 0], true); f.box([0, 1.7, 0], [1.4, 3, .5], '#bcd6e6', 'body', [0, 0, .08], true);
+    for (const x of [-1, 1]) f.box([x * .5, 3.35, 0], [.9, .3, .1], '#93b6cc', 'body', [0, 0, x * .4]); rune(1.7, .28); return;
+  }
+  if (region === 'kyoto') {
+    for (const x of [-.85, .85]) f.box([x, 1.3, 0], [.18, 2.6, .18], '#6b4a30', 'body', [0, 0, 0], true);
+    f.box([0, 1.55, 0], [1.7, 1.9, .1], '#c9ad7f'); f.cone([0, 2.95, 0], 1.3, .6, '#b8402f', 'body', 4, [0, Math.PI / 4, 0]); rune(1.55, .08); return;
+  }
+
   f.box([0, .15, 0], [2.4, .3, 1.4], '#7c7568', 'body', [0, 0, 0], true);
   f.box([0, 1.5, 0], [1.6, 2.4, .42], '#a19a89', 'body', [0, 0, 0], true);
   f.cone([0, 3.0, 0], 1.14, .6, '#8d8676', 'body', 4, [0, Math.PI / 4, 0]);

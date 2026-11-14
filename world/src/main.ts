@@ -8,6 +8,7 @@ import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
 import { createFieldChapters, fieldChapterGuide } from './story/fieldChapters';
 import { createFieldChapterScene } from './environment/fieldChapterScene';
 import { createValleyTownArchitecture } from './environment/valleyTownArchitecture';
+import { applyBuildingVariety, createBuildingOrnaments } from './map/buildingVariety';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
@@ -421,7 +422,14 @@ function relocateFarCamelot(name: string, geometry: THREE.BufferGeometry) {
     return inside(b, FAR_CAMELOT_FROM) ? FAR_CAMELOT_OFFSET : null;
   });
 }
+/** Map edits at load, then per-copy colour variety for repeated buildings (tools/building-variety.ts). */
 function clearProductionLandscape(region: string, name: string, geometry: THREE.BufferGeometry) {
+  const edited = clearProductionLandscapeBase(region, name, geometry);
+  const varied = applyBuildingVariety(region, name, edited ?? geometry);
+  if (varied && edited && edited !== geometry) edited.dispose();
+  return varied ?? edited;
+}
+function clearProductionLandscapeBase(region: string, name: string, geometry: THREE.BufferGeometry) {
   if (region === 'alpha') {
     // Streamed visual terrain follows the same Lookback stream bed as the core terrain and collision.
     if (name === 'Terrain') { const copy = geometry.clone(); return lowerLookbackChannel(copy) ? copy : (copy.dispose(), null); }
@@ -2228,6 +2236,7 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
+const buildingOrnaments=createBuildingOrnaments();world.add(buildingOrnaments);
 const valleyTownArchitecture=createValleyTownArchitecture((x,z)=>grid.sampleHeight(x,z)??0);
 world.add(valleyTownArchitecture.root);colliders.push(...valleyTownArchitecture.colliders);valleyTownArchitecture.apply(done);
 addEventListener('pagehide',e=>{if(!e.persisted)valleyTownArchitecture.dispose();});

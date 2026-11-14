@@ -97,7 +97,7 @@ export function createExploration(host: ExplorationHost) {
   // ───────────────────────── statues ─────────────────────────
   for (const s of STATUES) {
     const y = host.terrain(...s.p), f = new Frame(artFor(s.region), [s.p[0], y - .05, s.p[1]], s.yaw);
-    haloStatue(f);
+    haloStatue(f, s.region);
     const front = [s.p[0] + Math.sin(s.yaw) * 2.6, y + 1, s.p[1] + Math.cos(s.yaw) * 2.6] as V3;
     addMarker(markerStatue(s.id), front, L(s.title), 3, () => { if (!awakenResonance()) offerFeathers(s.title); }, () => {
       const lvl = glideLevel(done), spare = feathersSpare(done), rl = resonanceLevel(done), crystals = totalCrystals(done);
@@ -212,7 +212,7 @@ export function createExploration(host: ExplorationHost) {
     const heads: THREE.Group[] = [], crystals: THREE.Mesh[] = [];
     def.prisms.forEach((prism, i) => {
       const base = heights[i] - (prism.raise ? prism.raise : 0);
-      prismPedestal(new Frame(art, [prism.p[0], prism.raise ? base : heights[i], prism.p[1]]), prism.raise ?? 0);
+      prismPedestal(new Frame(art, [prism.p[0], prism.raise ? base : heights[i], prism.p[1]]), prism.raise ?? 0, def.region);
       const { group, art: headArt, crystal } = prismHead(); disposables.push({ dispose: () => disposeArt(headArt) });
       group.position.set(prism.p[0], heights[i] + .1, prism.p[1]);
       dyn(group, 160); heads.push(group); crystals.push(crystal);
@@ -330,7 +330,7 @@ export function createExploration(host: ExplorationHost) {
     const y = host.terrain(...def.stele);
     // face the first orb
     const yaw = Math.atan2(def.orbs[0].p[0] - def.stele[0], def.orbs[0].p[1] - def.stele[1]);
-    trialStele(new Frame(artFor(def.region), [def.stele[0], y - .05, def.stele[1]], yaw));
+    trialStele(new Frame(artFor(def.region), [def.stele[0], y - .05, def.stele[1]], yaw), def.region);
     const heights = trialFlightHeights(def, glideLevel(done), host.terrain);
     const orbs = def.orbs.map((o, i) => { const g = orbMesh(); g.position.set(o.p[0], heights[i], o.p[1]); g.visible = false; root.add(g); return g; });
     const rt: TrialRt = { def, orbs, got: orbs.map(() => false), time: 0, active: false };
