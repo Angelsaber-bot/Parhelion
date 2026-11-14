@@ -195,6 +195,9 @@ import { createActionHud } from './ui/actionHud';
 import { WorldAudio } from './rendering/worldAudio';
 import { installGeometricShadowFacing } from './rendering/geometricShadowFacing';
 import { installHeightMist } from './rendering/heightMist';
+import { regionBorders, blendGridBorders, applyBorderBlend } from './map/regionBorderBlend';
+import { planBorderStitch } from './map/regionBorderStitch';
+import { isSeamVeil, seamVeilMaterial } from './rendering/seamVeil';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
@@ -500,8 +503,20 @@ world.name = 'World';
 for (const p of parts) world.add(p.root);
 scene.add(world);
 world.updateMatrixWorld(true);
+// Tile edges authored or carved at different heights met as a straight cliff on the border line. Stitch
+// them before anything is built on the terrain (chunks, colliders, the world grid, the height bake).
+const borderStitch = planBorderStitch(parts.flatMap(p => { let terrain: THREE.Mesh | undefined; p.root.traverse(o => { if (!terrain && (o as THREE.Mesh).isMesh && o.name === 'Terrain') terrain = o as THREE.Mesh; }); return terrain ? [{ terrain, center: p.def.offset }] : []; }), regionBorders(REGIONS), GRID);
+if (borderStitch.samples && !params.has('nostitch')) {
+  const stitched = new Set<THREE.BufferGeometry>();
+  for (const p of parts) p.root.traverse(o => {
+    const mesh = o as THREE.Mesh; if (!mesh.isMesh || !mesh.geometry || stitched.has(mesh.geometry)) return;
+    stitched.add(mesh.geometry); const e = mesh.matrixWorld.elements;
+    const moved = borderStitch.apply(mesh.geometry, (x, z) => [e[0] * x + e[8] * z + e[12], e[2] * x + e[10] * z + e[14]], p.def.offset);
+    if (moved && /^(COL_)?Terrain$/.test(mesh.name)) mesh.geometry.computeVertexNormals();
+  });
+}
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
-const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:clearProductionLandscape,eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
+const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch'))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
@@ -562,6 +577,8 @@ for (const m of artMeshes) {
   m.receiveShadow = true;
   m.castShadow = !['Terrain', 'Water', 'Waterfall', 'Bushes', 'Glow_Props'].includes(m.name) && (m.material as THREE.Material).name !== 'M_Beam';
   if ((m.material as THREE.Material).name === 'M_Beam') m.receiveShadow = false;
+  // Region gates: a rising curtain of light instead of a flat translucent wall across the sky.
+  if (isSeamVeil(m.name) && (m.material as THREE.Material).name === 'M_Beam') { (m.material as THREE.Material).dispose(); m.material = seamVeilMaterial(m); }
   if (m.name.startsWith('TGT_')) {
     targets.push(m);
     // a target that must be shot from a spot (the fort cannon): that spot is region-local, make it world
@@ -618,6 +635,9 @@ for (const p of parts) p.root.getObjectByName('COLLISION')!.traverse((o) => {
 });
 // Supplemental chapter buildings share the same authoritative collision BVH as the world.
 const grid = new WorldGrid(terrains, GRID.x0, GRID.z0, GRID.span, GRID.cell, '#4f8fa8', GRID.spanZ);
+// Region tiles are painted separately: run their terrain colours into each other across every interior
+// border instead of changing along a straight line (grass and maps read the same blended grid).
+if (!params.has('noblend')) applyBorderBlend(terrains, grid, blendGridBorders(grid, regionBorders(REGIONS)));
 applyValleyFoundationGrid(grid);
 const existingPropGeo = mergeParts(existingPropGeos);
 const settlementBlockers = new MeshBVH(existingPropGeo);
