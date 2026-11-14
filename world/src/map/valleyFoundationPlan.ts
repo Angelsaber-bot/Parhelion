@@ -108,3 +108,33 @@ export function carveValleyFoundation(geometry: THREE.BufferGeometry, cuts: read
   result.computeBoundingBox(); result.computeBoundingSphere(); return result;
 }
 
+
+/** V01 回望桥: a shallow stream bed under the Lookback decks, so the bridge actually crosses water.
+ * Banks are gentle (0.9 m over 0.8 m beside a 4 m bed) and end in tapers, so every existing route
+ * stays walkable; only Terrain/COL_Terrain heights change, and the height grid is built afterwards. */
+export const LOOKBACK_CHANNEL = { x: -271.6, halfWidth: 2, bank: .8, depth: .9, z0: -52, z1: -6, taper: 3 } as const;
+export function lookbackChannelDepth(x: number, z: number) {
+  const c = LOOKBACK_CHANNEL, d = Math.abs(x - c.x);
+  if (d >= c.halfWidth + c.bank || z <= c.z0 || z >= c.z1) return 0;
+  const across = d <= c.halfWidth ? 1 : 1 - (d - c.halfWidth) / c.bank;
+  const along = Math.min(1, (z - c.z0) / c.taper, (c.z1 - z) / c.taper);
+  return c.depth * across * along;
+}
+export function lowerLookbackChannel(geometry: THREE.BufferGeometry) {
+  const pos = geometry.getAttribute('position'), normal = geometry.getAttribute('normal');
+  if (!pos) return false;
+  let changed = false;
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i), z = pos.getZ(i), depth = lookbackChannelDepth(x, z);
+    if (depth <= 0) continue;
+    pos.setY(i, pos.getY(i) - depth); changed = true;
+    if (normal) {
+      // Analytic bank slope: tilt the normal toward the bed across x.
+      const c = LOOKBACK_CHANNEL, d = x - c.x, onBank = Math.abs(d) > c.halfWidth;
+      const slope = onBank ? Math.sign(d) * c.depth / c.bank : 0, n = new THREE.Vector3(normal.getX(i) - slope, normal.getY(i), normal.getZ(i)).normalize();
+      normal.setXYZ(i, n.x, n.y, n.z);
+    }
+  }
+  if (changed) { pos.needsUpdate = true; if (normal) normal.needsUpdate = true; geometry.computeBoundingBox(); geometry.computeBoundingSphere(); }
+  return changed;
+}

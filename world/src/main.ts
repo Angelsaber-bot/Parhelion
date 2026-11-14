@@ -7,6 +7,7 @@ import { createOrleansCampaign, orleansActionById, orleansCampaignGuide, orleans
 import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
 import { createFieldChapters, fieldChapterGuide } from './story/fieldChapters';
 import { createFieldChapterScene } from './environment/fieldChapterScene';
+import { createValleyTownArchitecture } from './environment/valleyTownArchitecture';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
 import { BLACKSAIL_CHAPTERS } from './story/blacksailChapters';
@@ -42,7 +43,7 @@ import { createEgyptTempleMaintenance } from './environment/egyptTempleMaintenan
 import { clearLandscapeProps, removeComponentsInBox, editComponents, type ComponentBounds } from './map/landscapeClearance';
 import { createValleyTransportLandscape } from './environment/valleyTransportLandscape';
 import { VALLEY_TRANSPORT_CLEARANCE, VALLEY_TRANSPORT_ROUTES } from './map/valleyTransportPlan';
-import { carveValleyFoundation, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
+import { carveValleyFoundation, lowerLookbackChannel, insideValleyFoundation, applyValleyFoundationGrid, VALLEY_FOUNDATION_CLEARANCE, VALLEY_FOUNDATION_LIGHTS, VALLEY_FOUNDATION_WATER_CUTS } from './map/valleyFoundationPlan';
 import { createValleyFoundationLandscape } from './environment/valleyFoundationLandscape';
 import { createKingdomRoadLandscape } from './environment/kingdomRoadLandscape';
 import { KINGDOM_ROAD_LABELS, KINGDOM_ROAD_LINES, kingdomRoadReady, commitKingdomRoad } from './story/kingdomRoad';
@@ -422,6 +423,8 @@ function relocateFarCamelot(name: string, geometry: THREE.BufferGeometry) {
 }
 function clearProductionLandscape(region: string, name: string, geometry: THREE.BufferGeometry) {
   if (region === 'alpha') {
+    // Streamed visual terrain follows the same Lookback stream bed as the core terrain and collision.
+    if (name === 'Terrain') { const copy = geometry.clone(); return lowerLookbackChannel(copy) ? copy : (copy.dispose(), null); }
     const retired = retireValleySouthSeam(name, geometry);
     return clearLandscapeProps(name, retired ?? geometry, [...VALLEY_FOUNDATION_CLEARANCE, ...VALLEY_TRANSPORT_CLEARANCE], VALLEY_TRANSPORT_ROUTES) ?? retired;
   }
@@ -449,6 +452,7 @@ const parts = await Promise.all(REGIONS.map(async (def) => {
     const node = object as THREE.Mesh; if (!node.isMesh) return;
     const carved = def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name) ? carveValleyFoundation(node.geometry) : clearProductionLandscape(def.id, node.name, node.geometry);
     if (carved) { node.geometry.dispose(); node.geometry = carved; }
+    if (def.id === 'alpha' && /^(Terrain|COL_Terrain)$/.test(node.name)) lowerLookbackChannel(node.geometry);
   });
   placeRegion(gltf.scene, def);
   if (def.id === 'alpha') lay.markers = lay.markers.filter(marker => marker.id !== 'seam_south');
@@ -2223,6 +2227,10 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  input:()=>({held:down('interact'),moving:!!(down('forward')||down('back')||down('left')||down('right')||down('jump'))||Math.hypot(player.vel.x,player.vel.z)>.2,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active),grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,unsafeMotion:player.flying||player.swimming||player.gliding,damage:relayDamageRevision}),
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
+// Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
+const valleyTownArchitecture=createValleyTownArchitecture((x,z)=>grid.sampleHeight(x,z)??0);
+world.add(valleyTownArchitecture.root);colliders.push(...valleyTownArchitecture.colliders);valleyTownArchitecture.apply(done);
+addEventListener('pagehide',e=>{if(!e.persisted)valleyTownArchitecture.dispose();});
 // K04, Winter W01–W05/W08 and Black Sail B01–B09 field chapters stand on existing story markers.
 const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES,QIN_CHAPTERS,EGYPT_CHAPTERS,ORLEANS_FINALE] as const;
 const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
@@ -4729,7 +4737,7 @@ function frame(now: number) {
   egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
-  updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
+  valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
   fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
