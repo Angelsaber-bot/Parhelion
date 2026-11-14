@@ -5,7 +5,6 @@ import { BTN } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
 import { GRENADE, loadoutWeapon, WEAPONS, type Loadout, type UtilityId } from '../shared/content.ts';
 import { ARENA_MAP } from '../shared/arenaMap.ts';
-import { canSeePlayer } from '../shared/visibility.ts';
 import { groundAt } from '../shared/map.ts';
 const url = process.argv[2] ?? 'ws://127.0.0.1:8787/arena';
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -53,40 +52,36 @@ try {
   const a = await join('A', 'SmokeA', choice), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm'], RULES_VERSION, 'smoke');
   await wait(500);
   const first = a.snaps.at(-1)!;
-  if (!first?.roster?.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
-  for (const [snapshots, remoteId] of [[a.snaps, a.id], [b.snaps, b.id]] as const) {
+  if (!first?.players.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
+  for (const [snapshots, remoteId] of [[a.snaps, b.id], [b.snaps, a.id]] as const) {
     const remote = snapshots.at(-1)?.players.find(player => player.id === remoteId);
     if (!remote || JSON.stringify(remote.skins) !== JSON.stringify(releaseSkins)) throw new Error('new finish indices were lost or clamped in the remote snapshot');
   }
-  const selfA = first.players.find(p => p.id === a.id)!;
-  const selfB = b.snaps.at(-1)!.players.find(p => p.id === b.id)!;
-  if (!canSeePlayer(ARENA_MAP, selfA, selfB, first) && first.players.some(p => p.id === b.id)) throw new Error('concealed opponent pose leaked');
-  if (first.roster?.some(p => 'x' in p || 'yaw' in p || 'hp' in p)) throw new Error('spatial/combat state leaked in roster');
   let seq = 0;
   for (const slot of [0, 1, 2]) {
     a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: slot, view: 0 }] }));
     await wait(200);
-    const p = a.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+    const p = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
     if (!p.crouched || p.weaponSlot !== slot || p.weapon !== loadoutWeapon(choice, slot) || JSON.stringify(p.loadout) !== JSON.stringify(choice)) throw new Error('remote selected loadout/crouch snapshot mismatch');
   }
   a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 20 }, () => ({ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 2, view: 0 })) }));
   await wait(450); // let the normal 15-input equip recovery finish before starting the strike
   a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.FIRE, weapon: 2, view: 0 }] }));
   await wait(850); // hammer windup is 500ms; scheduled impact must occur with no extra packets
-  const events = a.snaps.flatMap((s) => s.events);
+  const events = b.snaps.flatMap((s) => s.events);
   if (!events.some((e) => e.t === 'meleeStart' && e.id === a.id && e.w === 7) || !events.some((e) => e.t === 'meleeStrike' && e.id === a.id && e.w === 7)) throw new Error('authoritative melee telegraph/impact missing');
-  const before = a.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+  const before = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
   for (let batch = 0; batch < 6; batch++) {
     a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 10 }, () => ({ seq: ++seq, mx: 0, mz: 1, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 })) })); await wait(170);
   }
   await wait(250);
-  const after = a.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
+  const after = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
   if (!after.crouched || Math.hypot(after.x - before.x, after.z - before.z) < .1) throw new Error('movement or crouch missing remotely');
-  // Each thrower receives authoritative flight/effects; concealed peers must not receive these coordinates.
+  // Both throws travel through the real room; peers must see flight and effects on supported ground.
   for (const [client, inputSeq] of [[a, ++seq], [b, 1]] as const) {
     client.ws.send(JSON.stringify({ t: 'input', d: [{ seq: inputSeq, mx: 0, mz: 0, yaw: 0, pitch: 1.45, buttons: BTN.THROW, weapon: 0, view: 0 }] }));
   }
-  for (const [thrower, peer, kind, effect] of [[a, a, 'frag', 'blast'], [b, b, 'smoke', 'smoke']] as const) {
+  for (const [thrower, peer, kind, effect] of [[a, b, 'frag', 'blast'], [b, a, 'smoke', 'smoke']] as const) {
     const deadline = Date.now() + 7000;
     for (;;) {
       const events = peer.snaps.flatMap(s => s.events);
@@ -107,5 +102,5 @@ try {
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
   await refused(['lumen', 'corona', 'blade'], RULES_VERSION - 1);
-  console.log(`OK: v${RULES_VERSION} finish indices, private roster/visibility, two-client authoritative slot/loadout/crouch/movement, scheduled melee, grounded frag and smoke, forged/duplicate/old-version rejection`);
+  console.log(`OK: v${RULES_VERSION} finish indices, two-client slot/loadout/crouch/movement, scheduled melee, grounded frag and smoke, forged/duplicate/old-version rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

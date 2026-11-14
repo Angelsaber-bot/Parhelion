@@ -3,7 +3,6 @@
 // the client's prediction/reconciliation code identical for online and offline play.
 // The public site uses the same RoomCore inside a Cloudflare Durable Object (worker/index.ts).
 
-import { ANTI_CHEAT_CLOSE, ANTI_CHEAT_REASON } from '../shared/antiCheat.ts';
 import { appendFile } from 'node:fs/promises';
 import { Room, type Client } from '@colyseus/core';
 import { TICK_HZ, validateLoadout } from '../shared/content.ts';
@@ -24,14 +23,11 @@ export class ArenaRoom extends Room {
     this.maxClients = core.capacity;
     // Colyseus 0.18 replaces metadata; keep every declared matchmaking filter.
     this.setMetadata({ layout: core.layout, map: core.mapId, bots: core.fillBots });
-    const enforce = (client: Client, allowed: boolean) => {
-      if (!allowed) { core.leave(client.sessionId); client.leave(ANTI_CHEAT_CLOSE, ANTI_CHEAT_REASON); }
-    };
-    this.onMessage('rematch', (client: Client) => enforce(client, core.requestRematch(client.sessionId)));
-    this.onMessage('input', (client: Client, inputs: unknown) => enforce(client, core.input(client.sessionId, inputs)));
+    this.onMessage('rematch', () => core.rematch());
+    this.onMessage('input', (client: Client, inputs: unknown) => core.input(client.sessionId, inputs));
     this.setSimulationInterval(() => {
       const snap = core.step();
-      if (snap) for (const client of this.clients) client.send('snap', core.snapshotFor(client.sessionId, snap));
+      if (snap) this.broadcast('snap', snap);
       this.saveStats();
     }, 1000 / TICK_HZ);
   }

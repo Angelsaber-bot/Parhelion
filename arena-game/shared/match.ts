@@ -70,10 +70,7 @@ export interface PlayerSnap extends PlayerState {
   spawnProtectedUntilTick?: number;
 }
 
-export type RosterEntry = Pick<PlayerSnap, 'id' | 'name' | 'team' | 'char' | 'bot' | 'kills' | 'deaths'>;
-
 export interface Snapshot {
-  roster?: RosterEntry[];
   rulesVersion: number;
   tick: number;
   layout: TeamLayout;

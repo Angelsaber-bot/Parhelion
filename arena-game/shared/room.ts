@@ -2,11 +2,9 @@
 // (server/ArenaRoom.ts) and the public Cloudflare Durable Object (worker/index.ts) both wrap it,
 // so online rules are identical wherever the server runs.
 
-import { snapshotForViewer } from './visibility.ts';
-import { ArenaTrafficGuard } from './antiCheat.ts';
 import { getMap, mapIdOf } from './arenaMap.ts';
 import { Bot, BOT_SKILL } from './bot.ts';
-import { SNAPSHOT_EVERY, TEAM_CAPACITY, TICK_HZ, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
+import { SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
 import { LAYOUTS, RULES_VERSION, assertRulesVersion, type JoinOptions } from './protocol.ts';
 import type { StatsSource } from './weaponStats.ts';
@@ -14,7 +12,6 @@ import type { StatsSource } from './weaponStats.ts';
 let botSeed = 1;
 
 export class RoomCore {
-  private readonly guards = new Map<string, ArenaTrafficGuard>();
   readonly match: Match;
   readonly layout: TeamLayout;
   readonly mapId: string;
@@ -59,13 +56,10 @@ export class RoomCore {
       skins: Array.isArray(options.skins) ? options.skins.map(Number) : [],
       bot: false, loadout, utility,
     });
-    // Refill by authoritative simulation time, never client timestamps.
-    this.guards.set(id, new ArenaTrafficGuard(() => this.match.tick * 1000 / TICK_HZ));
     return { id, tick: m.tick, map: this.mapId, rulesVersion: RULES_VERSION };
   }
 
   leave(id: string) {
-    this.guards.delete(id);
     // The last human leaving closes the round's telemetry before a bot takes the seat.
     const m = this.match, slot = m.slots.get(id);
     if (slot && !slot.info.bot && ![...m.slots.values()].some((s) => s !== slot && !s.info.bot)) m.flushStats();
@@ -73,23 +67,8 @@ export class RoomCore {
     if (this.fillBots) this.topUpBots();
   }
 
-  /** False means the transport must disconnect this session, never other players. */
-  input(id: string, inputs: unknown): boolean {
-    const guard = this.guards.get(id);
-    if (!guard || !guard.message()) return false;
-    if (guard.batch(inputs)) this.match.queueInputs(id, inputs);
-    return !guard.blocked;
-  }
-
-  requestRematch(id: string): boolean {
-    const guard = this.guards.get(id);
-    if (!guard || !guard.message()) return false;
-    this.rematch();
-    return true;
-  }
-
-  snapshotFor(id: string, snapshot: Snapshot): Snapshot {
-    return snapshotForViewer(this.match.map, snapshot, id);
+  input(id: string, inputs: unknown) {
+    if (Array.isArray(inputs)) this.match.queueInputs(id, inputs.slice(0, 16));
   }
 
   rematch() { this.match.rematch(); }

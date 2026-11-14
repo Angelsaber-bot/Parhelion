@@ -178,10 +178,6 @@ it('updates the real HUD using new player state without overwriting remapped key
     p.meleeWindup = 30; p.fireCd = 72; hud.update(1 / 60, p, snap, p.id, false, 'local');
     expect(el('ammo').textContent).toBe('蓄势'); expect(el('mag').textContent).toContain('0.5s');
     expect(slots[0].attributes.get('aria-label')).toContain('P · 狙击步枪');
-    snap.roster = [self, { id: 'hidden', name: 'Hidden opponent', team: 'B', char: 0, bot: false, kills: 3, deaths: 1 }];
-    hud.update(1 / 60, p, snap, p.id, true, 'local');
-    expect(el('scoreboard').innerHTML).toContain('Hidden opponent');
-    expect(snap.players.some(player => player.id === 'hidden')).toBe(false);
     el('scoreA').textContent = '7'; el('scoreB').textContent = '4'; el('clock').textContent = '2:45';
     el('scoreboard').innerHTML = 'old scores';
     hud.resetRound();

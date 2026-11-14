@@ -24,9 +24,7 @@ export const ROOM_NAME = 'arena';
 // v27: Halo fires every 20 ticks (0.33 s, was 22).
 // v28: Halo fires every 15 ticks (0.25 s), a trial.
 // v29: Firefly SMG reload 1.65 s -> 2.2 s, longer than both rifles.
-// v30: online input validation and per-session abuse limits on both server transports.
-// v31: per-viewer visibility snapshots and a non-spatial scoreboard roster.
-export const RULES_VERSION = 31;
+export const RULES_VERSION = 29;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

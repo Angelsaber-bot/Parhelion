@@ -52,12 +52,11 @@ for (const transport of ['Colyseus', 'Worker JSON'] as const) it(`${transport}: 
       const nextA = waitSnapshot(a, (s) => s.phase === 'countdown'), nextB = waitSnapshot(b, (s) => s.phase === 'countdown');
       if (transport === 'Worker JSON') a.send([{ seq: 999 + round, mx: 1, mz: 1, yaw: 0, pitch: 0, buttons: 1, weapon: 0, view: 0 }]);
       a.rematch(); a.rematch(); b.rematch();
-      for (const [index, snap] of (await Promise.all([nextA,nextB])).entries()) {
+      for (const snap of await Promise.all([nextA,nextB])) {
         expect(snap.score).toEqual({ A: 0, B: 0 }); expect(snap.phaseT).toBeLessThanOrEqual(COUNTDOWN_TICKS);
         expect(snap.players.every((p) => p.kills === 0 && p.deaths === 0 && p.alive && p.respawn === 0)).toBe(true);
-        const self = snap.players.find(p => p.id === (index === 0 ? a.id : b.id))!;
-        expect(self.loadout).toEqual(index === 0 ? ['longnight','firefly','hammer'] : ['halo','lumen','blade']);
-        expect(self.name).toBe(index === 0 ? 'Keep me' : 'Opponent');
+        expect(snap.players.find((p) => p.id === a.id)!.loadout).toEqual(['longnight','firefly','hammer']);
+        expect(snap.players.find((p) => p.id === a.id)!.name).toBe('Keep me');
         if (transport === 'Worker JSON') expect(snap.players.find((p) => p.id === a.id)!.lastSeq).toBe(0); // pending old-round batch was discarded before rematch
         expect(snap.events.filter((e) => e.t === 'phase' && e.phase === 'countdown').length).toBeLessThanOrEqual(1);
       }

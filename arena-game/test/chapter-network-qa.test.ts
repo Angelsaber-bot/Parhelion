@@ -33,7 +33,7 @@ it('all eight chapters pair only with their own map and acknowledge authoritativ
       b.onMessage('snap',()=>{});
       const acknowledged=next<Snapshot>(a,'snap',s=>s.players.some(p=>p.id===a.sessionId&&p.lastSeq===1));
       a.send('input',[{seq:1,mx:0,mz:0,yaw:0,pitch:0,buttons:BTN.CROUCH,weapon:0,view:0}]);
-      const snap=await acknowledged;expect(snap.roster ?? snap.players).toHaveLength(2);expect(snap.players.find(p=>p.id===a.sessionId)!.crouched).toBe(true);
+      const snap=await acknowledged;expect(snap.players).toHaveLength(2);expect(snap.players.find(p=>p.id===a.sessionId)!.crouched).toBe(true);
       a.onMessage('snap',()=>{});
     }
     expect(ids.size).toBe(8);
@@ -77,7 +77,7 @@ it('all eight chapter IDs and inputs cross actual Worker-style JSON sockets usin
       expect(wa.map).toBe(info.id);expect(wa.rulesVersion).toBe(RULES_VERSION);
       const b=open('B');sockets.push(b);expect((await jsonMessage<{map:string}>(b,'welcome')).map).toBe(info.id);
       const acknowledged=jsonMessage<Snapshot>(a,'snap');a.send(JSON.stringify({t:'input',d:[{seq:1,mx:0,mz:0,yaw:0,pitch:0,buttons:BTN.CROUCH,weapon:0,view:0}]}));
-      const snap=await acknowledged;expect(snap.roster ?? snap.players).toHaveLength(2);
+      const snap=await acknowledged;expect(snap.players).toHaveLength(2);
       expect(snap.players.find(p=>p.id===wa.id)!.lastSeq).toBe(1);expect(snap.players.find(p=>p.id===wa.id)!.crouched).toBe(true);
     }
   }finally{sockets.forEach(ws=>ws.close());}
@@ -102,10 +102,10 @@ it('the actual online session normalizes omitted bots to false and does not join
   try{
     const options={map:'camlann',layout:'2v2' as const,team:'A' as const,name:'Client QA',char:0,skins:[]};
     const filled=await joinOnline(`ws://127.0.0.1:${port}`,{...options,bots:true});sessions.push(filled);
-    expect((await observe(filled)).roster!.filter(p=>p.bot)).toHaveLength(3);
+    expect((await observe(filled)).players.filter(p=>p.bot)).toHaveLength(3);
     const empty=await joinOnline(`ws://127.0.0.1:${port}`,options);sessions.push(empty);
     const snapshot=await observe(empty);expect(snapshot.players).toHaveLength(1);expect(snapshot.players[0].id).toBe(empty.id);expect(snapshot.players[0].bot).toBe(false);
     const second=await joinOnline(`ws://127.0.0.1:${port}`,{...options,team:'B',bots:false});sessions.push(second);
-    const paired=await observe(empty);expect(paired.roster!.map(p=>p.id).sort()).toEqual([empty.id,second.id].sort());
+    const paired=await observe(empty);expect(paired.players.map(p=>p.id).sort()).toEqual([empty.id,second.id].sort());
   }finally{sessions.forEach(session=>session.close());}
 });

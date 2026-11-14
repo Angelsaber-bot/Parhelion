@@ -3,7 +3,7 @@ import { bilingual, getLanguage, localizeText } from '../../../shared-client/i18
 // DOM HUD. Reads state, never changes it.
 
 import { CHARACTERS, DASH, FRAG_KILL, GRENADE, SHIELD, TICK_HZ, WEAPONS, type Team } from '../../shared/content.ts';
-import type { RosterEntry, Snapshot } from '../../shared/match.ts';
+import type { PlayerSnap, Snapshot } from '../../shared/match.ts';
 import type { PlayerState } from '../../shared/sim.ts';
 import { displayWeaponName, weaponHud } from './loadout.ts';
 import { ScopeOverlay, type ScopeFrame } from './scopeOverlay.ts';
@@ -131,9 +131,9 @@ export class Hud {
   private renderBoard(snap: Snapshot, myId: string) {
     $('scoreboard').setAttribute('aria-label', bilingual('计分板', 'Scoreboard'));
     $('scoreboard').setAttribute('role', 'region');
-    const rows = (team: Team) => (snap.roster ?? snap.players).filter((p) => p.team === team)
+    const rows = (team: Team) => snap.players.filter((p) => p.team === team)
       .sort((a, b) => b.kills - a.kills)
-      .map((p: RosterEntry) => `<tr class="${p.id === myId ? 'me' : ''}"><td>${esc(p.name)}${p.bot ? ' <i>BOT</i>' : ''}</td><td>${CHARACTERS[p.char].name}</td><td>${p.kills}</td><td>${p.deaths}</td></tr>`)
+      .map((p: PlayerSnap) => `<tr class="${p.id === myId ? 'me' : ''}"><td>${esc(p.name)}${p.bot ? ' <i>BOT</i>' : ''}</td><td>${CHARACTERS[p.char].name}</td><td>${p.kills}</td><td>${p.deaths}</td></tr>`)
       .join('');
     const markup = (snap.phase === 'ended' ? `<div class="scores-close"><button type="button" data-close-scores>${bilingual('关闭计分板 (S / Esc)', 'Close scoreboard (S / Esc)')}</button></div>` : '') + (['A', 'B'] as Team[]).map((t) =>
       `<div class="team t${t}"><h3>${localizeText(TEAM_NAME[t])} <b>${snap.score[t]}</b></h3><table><tr><th>${bilingual('玩家', 'Player')}</th><th>${bilingual('角色', 'Character')}</th><th>${bilingual('击杀', 'Kills')}</th><th>${bilingual('死亡', 'Deaths')}</th></tr>${rows(t)}</table></div>`,

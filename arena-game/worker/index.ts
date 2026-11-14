@@ -8,7 +8,6 @@
 //   GET  /stats?since=<ms>&limit=<n>  → {records: MatchRecord[]} oldest first
 //   POST /stats  (offline browser rounds; online rooms write server-side)
 
-import { ArenaTrafficGuard, ANTI_CHEAT_CLOSE, ANTI_CHEAT_REASON, MAX_ARENA_MESSAGE } from '../shared/antiCheat.ts';
 import { DurableObject } from 'cloudflare:workers';
 import { TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
 import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
@@ -150,25 +149,11 @@ export class ArenaRoomDO extends DurableObject<Env> {
       void this.report();
       return new Response(null, { status: 101, webSocket: client });
     }
-    const traffic = new ArenaTrafficGuard();
-    const reject = () => {
-      // Remove the slot immediately: close events can be delayed by a hostile peer.
-      this.drop(id);
-      ws.close(ANTI_CHEAT_CLOSE, ANTI_CHEAT_REASON);
-    };
     ws.addEventListener('message', (ev) => {
-      if (!this.sockets.has(id)) return;
-      if (!traffic.message()) { reject(); return; }
-      if (typeof ev.data !== 'string' || ev.data.length > MAX_ARENA_MESSAGE) { reject(); return; }
-      let msg: unknown;
-      try { msg = JSON.parse(ev.data); } catch { traffic.invalid(); if (traffic.blocked) reject(); return; }
-      if (!msg || typeof msg !== 'object' || Array.isArray(msg)) {
-        traffic.invalid(); if (traffic.blocked) reject(); return;
-      }
-      const packet = msg as { t?: unknown; d?: unknown };
-      if (packet.t === 'input') { if (!this.core?.input(id, packet.d)) reject(); }
-      else if (packet.t === 'rematch') { if (!this.core?.requestRematch(id)) reject(); }
-      else { traffic.invalid(); if (traffic.blocked) reject(); }
+      let msg: { t?: string; d?: unknown };
+      try { msg = JSON.parse(typeof ev.data === 'string' ? ev.data : ''); } catch { return; }
+      if (msg.t === 'input') this.core?.input(id, msg.d);
+      else if (msg.t === 'rematch') this.core?.rematch();
     });
     const gone = () => this.drop(id);
     ws.addEventListener('close', gone);
@@ -193,9 +178,8 @@ export class ArenaRoomDO extends DurableObject<Env> {
         acc -= dt;
         const snap = core.step();
         if (snap) {
-          for (const [id, ws] of this.sockets) {
-            try { ws.send(JSON.stringify({ t: 'snap', d: core.snapshotFor(id, snap) })); } catch { /* closing */ }
-          }
+          const data = JSON.stringify({ t: 'snap', d: snap });
+          for (const ws of this.sockets.values()) { try { ws.send(data); } catch { /* closing */ } }
         }
       }
       this.saveStats(core);
