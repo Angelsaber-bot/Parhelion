@@ -4987,7 +4987,7 @@ function frame(now: number) {
   localLights.update(camera.position, dt);
   localLights.yieldSlots(lightCensus.active(camera));
   if (composer && !lowQ) shafts.update(camera, twilight.direction);
-  grass?.update(camera.position);
+  grass?.update(camera.position, player.flying || player.gliding || player.swimming ? undefined : player.pos);
   ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id, dt, renderer.domElement.height);
   renderer.info.reset();
   if (composer) composer.render(); else renderer.render(scene, camera);
