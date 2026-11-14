@@ -126,6 +126,7 @@ import {createAmbientLife} from './environment/ambientLife';
 import {createFieldHerbs} from './environment/fieldHerbs';
 import {drawExplorationIcons} from './exploration/mapIcons';
 import { HIT_STOP, hitStopSeconds } from './combat/hitStop';
+import { FINISHER, finisherSeconds } from './combat/combatFeedback';
 import {glideLevel as explorationGlideLevel, glideScale as explorationGlideScale} from './exploration/catalog';
 import {createAdventureRuntime} from './story/adventureRuntime';
 import { WORLD_RIFLE } from './core/worldBalance';
@@ -2106,9 +2107,10 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
   onHurt() { relayDamageRevision++; audio.hurt(); },
+  feedbackCues: { precise: () => audio.precise(), chain: n => audio.chain(n), heartbeat: () => audio.heartbeat() },
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
-  onKill(id) { audio.kill(); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
+  onKill(id) { audio.kill(); if (typeof finisherBeat === 'function') finisherBeat(id); if (typeof exploration !== 'undefined') { exploration.eliteDefeated(id); exploration.enemyDefeated(id); } if (id === 'elite_oath_knight') { if (optionalPin?.kind === 'trial') { optionalPin = null; hudRevision++; } save(); applyWorldState(); } },
   onStoryEncounterVictory(id) {
     if(egyptCampaign?.victory(id)||orleansCampaign?.victory(id)||fieldChapters?.victory(id))return;
     if (id === HARBOR_WORKBOAT_ENCOUNTER) {
@@ -3934,7 +3936,7 @@ function shoot() {
   if (blockedMount || blocked) {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
   } else if (enemy) {
-    combat.damageEnemy(enemy.id, gun.damage);
+    combat.damageEnemy(enemy.id, gun.damage, { precise: enemy.precise });
   } else if (questHit && questHit.object.userData.needs === FORT_CANNON.marker) {
     toast(bilingual(`幽灵艇需要要塞炮：到炮位按 ${settings.label('interact')} 操作，再开火。`, 'Ghost boats need the fort cannon: interact at the station, then fire.'));
   } else if (questHit && questHit.object.userData.needs && !done.has(questHit.object.userData.needs as string)) {
@@ -4031,7 +4033,7 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
     // each pellet's own muzzle path so a central obstruction doesn't erase clear side pellets.
     const path = end.clone().sub(muzzle);
     const blocked = combat.geometry.cast(muzzle, path, Math.max(0, path.length() - .06));
-    if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage);
+    if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage, { precise: hit.precise });
     combat.shot(muzzle, blocked ? blocked.point : end, !!(blocked || hit || wall), false);
   }
 }
@@ -4479,7 +4481,16 @@ if (params.has('lit')) done.add('tower_console');
 camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
-let perfectEvadeSlow = 0, hitStop = 0;
+let perfectEvadeSlow = 0, hitStop = 0, finisherSlow = 0;
+const finisherAt = new THREE.Vector3();
+/** Boss, elite and fight-ending kills hold the world in slow motion for a breath. */
+function finisherBeat(id: string) {
+  if (reducedEffects()) return;
+  const fallen = combat.state.enemies.find(e => e.id === id); if (!fallen) return;
+  const engaged = combat.state.enemies.filter(e => e.id !== id && e.active && !e.pacified && e.mode !== 'dead' && e.mode !== 'idle' && Math.hypot(e.p.x - fallen.p.x, e.p.z - fallen.p.z) < 40).length;
+  const seconds = finisherSeconds(fallen, engaged);
+  if (seconds > 0) { finisherSlow = Math.max(finisherSlow, seconds); finisherAt.copy(player.pos); kickCamera(fallen.kind === 'king' ? 1.1 : .7); }
+}
 /** This player's pose for the co-op partner's screen. */
 function coopWireState(speed: number, ads: number): PlayerWireState {
   const melee = actions?.melee.active ? [actions.melee.phase, actions.melee.combo, actions.melee.style?.id ?? equippedMeleeId] as [number, number, WorldMeleeId] : undefined;
@@ -4508,7 +4519,11 @@ function frame(now: number) {
   // Hit-stop: a landed blade or skill nearly freezes the world for a few hundredths of a second.
   const stopped = hitStop > 0 && gameplayActive();
   hitStop = Math.max(0, hitStop - Math.min(0.1, frameSeconds));
-  const dt = Math.min(0.1, frameSeconds) * (slowed ? PERFECT_EVADE.slowScale : 1) * (stopped ? HIT_STOP.scale : 1);
+  // Travel or a respawn ends the beat at once; it belongs to the place the kill happened.
+  if (finisherSlow > 0 && player.pos.distanceToSquared(finisherAt) > 30 * 30) finisherSlow = 0;
+  const finishing = finisherSlow > 0 && gameplayActive();
+  finisherSlow = Math.max(0, finisherSlow - Math.min(0.1, frameSeconds));
+  const dt = Math.min(0.1, frameSeconds) * (slowed ? PERFECT_EVADE.slowScale : 1) * (stopped ? HIT_STOP.scale : finishing ? FINISHER.scale : 1);
   last = now;
   if (frameUltimate(dt)) { requestAnimationFrame(frame); return; }
   if (deferredCombatToast && gameplayActive()) { const message = deferredCombatToast; deferredCombatToast = null; toast(message); }

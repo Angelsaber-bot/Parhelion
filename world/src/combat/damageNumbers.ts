@@ -5,17 +5,18 @@
  */
 import * as THREE from 'three';
 
-export type DamageKind = 'melee' | 'ranged' | 'skill' | 'servant' | 'ultimate' | 'counter' | 'punish' | 'blocked';
+export type DamageKind = 'melee' | 'ranged' | 'skill' | 'servant' | 'ultimate' | 'counter' | 'punish' | 'blocked' | 'precise';
 interface Label { el: HTMLElement; p: THREE.Vector3; age: number; life: number; drift: number; stack: number; on: boolean }
 
 const POOL = 24, LIFE = .85;
 const scratch = new THREE.Vector3();
 
 /** How a hit reads, most important first: a punish beats a counter, a block beats both. */
-export function damageKind(hit: { source?: string; punish?: boolean; counter?: boolean; blocked?: boolean }): DamageKind {
+export function damageKind(hit: { source?: string; punish?: boolean; counter?: boolean; blocked?: boolean; precise?: boolean }): DamageKind {
   if (hit.blocked) return 'blocked';
   if (hit.punish) return 'punish';
   if (hit.counter) return 'counter';
+  if (hit.precise) return 'precise';
   const s = hit.source;
   return s === 'melee' || s === 'ranged' || s === 'skill' || s === 'servant' || s === 'ultimate' ? s : 'melee';
 }
@@ -46,7 +47,7 @@ export class DamageNumbers {
     const label = this.labels[this.next]; this.next = (this.next + 1) % this.labels.length;
     label.stack = Math.min(4, stack);
     label.p.copy(at); label.age = 0; label.on = true; label.drift = (Math.random() - .5) * 46;
-    label.life = kind === 'punish' || kind === 'counter' ? LIFE * 1.2 : LIFE;
+    label.life = kind === 'punish' || kind === 'counter' || kind === 'precise' ? LIFE * 1.2 : LIFE;
     label.el.className = `dn-${kind}${damage >= 30 ? ' dn-heavy' : ''}`;
     label.el.textContent = kind === 'blocked' ? `${Math.round(damage)}` : String(Math.round(damage));
     label.el.hidden = false;

@@ -120,6 +120,12 @@ export class WorldAudio {
   contact(){this.voice('noise',.04,3100,.10);this.voice('triangle',.06,1050,.045,.75);}
   hurt(){this.voice('noise',.11,380,.13);this.voice('sine',.13,165,.10,.6);}
   kill(){this.voice('triangle',.16,660,.065,1.5);this.voice('sine',.2,1320,.035,1.1);}
+  /** Weak-spot hit: a bright, short ping above the ordinary contact tick. */
+  precise(){this.voice('triangle',.08,1760,.05,1.15);this.voice('sine',.11,2640,.025,.92);}
+  /** Kill chain: each link rises a step, so a long chain is heard as well as seen. */
+  chain(count:number){const f=440*Math.pow(2,Math.min(count,7)*2/12);this.voice('triangle',.18,f,.06,1.25);this.voice('sine',.24,f*1.5,.03,1.02,.02);}
+  /** Low health: a soft two-beat pulse. */
+  heartbeat(){this.voice('sine',.12,62,.09,.8);this.voice('sine',.1,58,.06,.8,.14);}
   skill(){this.voice('triangle',.22,330,.075,2);this.voice('noise',.16,1600,.06);}
   /** Cast anticipation and authored release cues; never implies that a target was hit. */
   skillEvent(event: SkillEvent) {

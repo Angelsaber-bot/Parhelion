@@ -4,6 +4,7 @@ import { BossHazardView } from './bossHazardView';
 import { BossTitleCard } from './bossTitleCard';
 import { DamageNumbers, damageKind } from './damageNumbers';
 import { DefeatEffects } from './defeatEffects';
+import { CombatFeedback } from './combatFeedback';
 import { StoryEncounterDirector, type StoryEncounterSpec, type StoryEncounterStartResult } from '../story/storyEncounters';
 import type { Collider } from '../player/player';
 import type { Layout } from '../core/types';
@@ -32,6 +33,8 @@ export interface WorldCombatOptions {
   reducedEffects?: () => boolean;
   onStoryEncounterVictory?: (id: string) => void;
   onHurt?: (damage: number) => void;
+  /** Audio for weak-spot hits, kill-chain links and the low-health heartbeat. */
+  feedbackCues?: { precise?: () => void; chain?: (count: number) => void; heartbeat?: () => void };
   /** Co-op host: an enemy attack landed on the partner; their game applies the damage. */
   onPartnerHurt?: (damage: number) => void;
   groundHeight?: (x: number, z: number) => number | null;
@@ -160,6 +163,8 @@ export class WorldCombat {
   private readonly hazardView: BossHazardView;
   private readonly titleCard: BossTitleCard;
   private readonly damageNumbers = new DamageNumbers();
+  private readonly feedback: CombatFeedback;
+  private readonly remoteFinish = new Set<string>();
   private readonly defeatEffects: DefeatEffects;
   private readonly effectFacing = new THREE.Quaternion();
   private readonly thrustTellGeo = new THREE.PlaneGeometry(2, 1);
@@ -185,6 +190,7 @@ export class WorldCombat {
     this.hazardView = new BossHazardView(this.effectGroup, this.geometry);
     this.titleCard = new BossTitleCard(() => this.options.reducedEffects?.() ?? false);
     this.defeatEffects = new DefeatEffects(this.effectGroup);
+    this.feedback = new CombatFeedback({ chain: n => options.feedbackCues?.chain?.(n), heartbeat: () => options.feedbackCues?.heartbeat?.() });
     // every era boss whose marker is in this world (a single-region layout may hold just one)
     this.bossDefs = BOSSES.filter(b => options.layout.markers.some(m => m.id === b.id));
     const bosses = this.bossDefs.map(b => {
@@ -266,7 +272,7 @@ export class WorldCombat {
     this.sparks.length = 0;
     for (const [id, v] of this.visuals) { this.enemyAssets.release(id); v.lastMode = undefined; v.root.visible = false; v.tell.visible = false; }
     this.impact.textContent = ''; this.hurt.style.opacity = '0'; this.counterGlowFor = 0; this.counterGlow.style.opacity = '0';
-    this.clearHitMarker();
+    this.clearHitMarker(); this.feedback.reset(); this.remoteFinish.clear();
     this.renderHud();
   }
   syncWorldProgress(done: ReadonlySet<string>) { this.state.syncWorldFlags(done); }
@@ -286,8 +292,10 @@ export class WorldCombat {
     this.hitMarkerFor = 0;
     document.getElementById('crosshair')?.classList.remove('hit');
   }
+  /** Current kill-chain length (0 when the window has lapsed). */
+  get killChain() { return this.feedback.chainCount; }
   raycast(origin: Point3, direction: Point3, maxDistance: number) { return this.state.raycast(origin, direction, maxDistance); }
-  damageEnemy(id: string, amount: number = COMBAT.shotDamage, context: HitContext = { source: 'ranged', origin: this.player }) { const hit = this.state.hitEnemy(id, amount, context); this.events(); return hit; }
+  damageEnemy(id: string, amount: number = COMBAT.shotDamage, context: Partial<HitContext> = {}) { const hit = this.state.hitEnemy(id, amount, { source: 'ranged', origin: this.player, ...context }); this.events(); return hit; }
   /** Co-op host: apply a hit the partner's game reported. */
   remoteHit(id: string, amount: number, source: HitContext['source']) { const hit = this.state.remoteHit(id, amount, source); this.events(); return hit; }
   /** Co-op guest: apply the host's enemy snapshot and a hit an enemy landed on this player. */
@@ -413,6 +421,7 @@ export class WorldCombat {
     this.defeatEffects.update(active ? dt : 0, typeof innerHeight === 'number' ? innerHeight * Math.min(devicePixelRatio || 1, 2) : undefined);
     this.events();
     this.damageNumbers.update(Number.isFinite(dt) && dt > 0 ? dt : 0, camera, typeof innerWidth === 'number' ? innerWidth : 0, typeof innerHeight === 'number' ? innerHeight : 0);
+    this.feedback.update(Number.isFinite(dt) && dt > 0 ? dt : 0, player, this.state.hp / this.state.maxHp, active && !this.state.defeated, camera, this.options.reducedEffects?.() ?? false);
     // Visibility is not combat activation: paused/free-flight scouting must show living encounters.
     const visible = (e: Enemy) => e.mode !== 'dead' && distanceXZ(e.p, player) <= COMBAT.activeRange &&
       (e.kind !== 'king' || this.state.bossStarted && e.id === this.state.boss.id);
@@ -554,7 +563,9 @@ export class WorldCombat {
         const struck = this.playable ? this.state.enemies.find(e => e.id === event.id) : undefined;
         if (struck) this.damageNumbers.add(new THREE.Vector3(struck.p.x, struck.p.y + (struck.kind === 'king' ? 3.4 : struck.miniboss ? 2.5 : 2.1), struck.p.z), event.damage, damageKind(event));
         if (event.source && !event.remote) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
-        this.impact.textContent = `${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
+        if (event.remote) this.remoteFinish.add(event.id); else this.remoteFinish.delete(event.id);
+        if (event.precise && !event.remote && struck) { this.feedback.precise(); this.options.feedbackCues?.precise?.(); }
+        this.impact.textContent = `${event.precise ? bilingual('要害 ', 'WEAK SPOT ') : ''}${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
         this.flashHitMarker();
       } else if (event.type === 'explode') {
         for (const [dx, dz] of [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]]) this.spark(new THREE.Vector3(event.at.x + dx, event.at.y + .8, event.at.z + dz), .5);
@@ -592,6 +603,11 @@ export class WorldCombat {
           const color = elite ? parseInt(elite.colors[2].slice(1), 16) : fallen.kind === 'king' ? 0xffd27a : 0xffe3a0;
           this.defeatEffects.emit(fallen.p, color, fallen.kind === 'king' ? 1.7 : elite ? 1.3 : 1, this.options.reducedEffects?.() ?? false);
         }
+        // Kills chain: from the third link each kill restores a little health and ammo.
+        if (this.playable && !this.remoteFinish.delete(event.id)) {
+          const reward = this.feedback.kill();
+          if (reward) { this.state.fieldHeal(reward.heal); this.state.refillAmmo(reward.rounds); }
+        }
         if (event.id === KNIGHT_TRIAL_ID) this.options.done.add(KNIGHT_TRIAL_CLEAR);
         this.options.onKill?.(event.id);
       }
@@ -603,7 +619,7 @@ export class WorldCombat {
           : bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!'));
       }
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
-      } else if (event.type === 'hurt') { this.hurtFor = 0.4; this.options.onHurt?.(event.damage); }
+      } else if (event.type === 'hurt') { this.hurtFor = 0.4; if (event.from) this.feedback.hurtFrom(event.from); this.options.onHurt?.(event.damage); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
       else if (event.type === 'bossStart') this.titleCard.show(this.state.boss.id, 'rise'); // the title card names the boss; no advice toast
       else if (event.type === 'bossReset') this.hazardView.clear(), this.titleCard.hide(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
@@ -843,7 +859,7 @@ export class WorldCombat {
     for (const s of this.shots) this.removeShot(s);
     this.enemyAssets.dispose();
     this.contactEffects.dispose();
-    this.defeatEffects.dispose(); this.titleCard.dispose(); this.damageNumbers.dispose();
+    this.defeatEffects.dispose(); this.titleCard.dispose(); this.damageNumbers.dispose(); this.feedback.dispose();
     this.effectGroup.removeFromParent(); this.shared.forEach(g => g.dispose()); this.materials.forEach(m => m.dispose()); this.textures.forEach(t => t.dispose());
     this.boltGeo.dispose(); this.sparkGeo.dispose(); this.sparkMat.dispose(); this.boltMat.dispose(); this.lineMat.dispose();
     for (const el of [this.hud, this.bossHud, this.impact, this.hurt, this.counterGlow, this.defeat]) el.remove();

@@ -33,7 +33,7 @@ const MODES = new Set(['idle', 'chase', 'windup', 'recover', 'stagger', 'dead'])
 const ATTACKS = new Set(['sweep', 'burst', 'shot', 'thrust']);
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
-  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean; precise?: boolean }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
@@ -48,7 +48,7 @@ export type CombatEvent =
   | { type: 'hazardBurst'; id: number; hit: boolean; at: Point3 }
   | { type: 'hazardClear' }
   | { type: 'stagger' | 'storyPhase'; id: string }
-  | { type: 'hurt'; damage: number }
+  | { type: 'hurt'; damage: number; from?: Point3 }
   | { type: 'victory'; id: string; firstClear: boolean }
   | { type: 'bossStart' | 'bossReset' | 'phase' | 'death' | 'revive' };
 export interface CombatTerrain {
@@ -232,7 +232,9 @@ export function enemyAttackRadius(e: Enemy): number {
 const ELITE_PAIRED_TIMING = { windup: 1, recovery: .55 } as const;
 const DUELIST_FIRST_TIMING = { windup: .85, recovery: .45 } as const;
 const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
-export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3 }
+export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3; precise?: boolean }
+/** Gun rounds that strike the upper body count as weak-spot hits; shotgun pellets get a smaller bonus. */
+export const PRECISION = Object.freeze({ multiplier: 1.5, pellet: 1.2, band: .35 });
 
 /** Thrust tells and impact share a forward rectangle, never a tracking/homing hit. */
 export function enemyThrustLength(e: Enemy): number { return e.storyPattern === 'echo-warden' ? ECHO_WARDEN.thrustLength : activeSignature(e)?.length ?? (e.kind === 'king' ? 8 : ENEMY_ROLES[e.role].range + 1); }
@@ -483,9 +485,10 @@ export class WorldCombatState {
     }
     const shielded=squareFront||ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
-    const dealt = Math.min(e.hp, Math.round(damage * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? BOSS_FRONTS[e.id].block : shielded ? WORLD_RIFLE.shieldBlock : ranged && BOSS_FRONTS[e.id] && e.squareYaw !== undefined && context?.origin ? BOSS_FRONTS[e.id].flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const precise = ranged && !!context?.precise && !shielded, weakSpot = precise ? (this.gun.pellets > 1 ? PRECISION.pellet : PRECISION.multiplier) : 1;
+    const dealt = Math.min(e.hp, Math.round(damage * weakSpot * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? BOSS_FRONTS[e.id].block : shielded ? WORLD_RIFLE.shieldBlock : ranged && BOSS_FRONTS[e.id] && e.squareYaw !== undefined && context?.origin ? BOSS_FRONTS[e.id].flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(raw ? { remote: true } : {}) });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(precise ? { precise: true } : {}), ...(raw ? { remote: true } : {}) });
     if (!raw && context?.source && dealt > 0) this.onLocalHit?.(id, dealt, context.source);
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
@@ -531,7 +534,7 @@ export class WorldCombatState {
   }
   /** Ray-sphere intersections use world metres. maxDistance must include every wall/quest-target occluder. */
   raycast(origin: Point3, direction: Point3, maxDistance: number = COMBAT.shotRange) {
-    let best: { id: string; distance: number; point: Point3 } | null = null;
+    let best: { id: string; distance: number; point: Point3; precise: boolean } | null = null;
     const length = Math.hypot(direction.x, direction.y, direction.z);
     if (!length || !Number.isFinite(length)) return best;
     const d = { x: direction.x / length, y: direction.y / length, z: direction.z / length };
@@ -545,7 +548,8 @@ export class WorldCombatState {
       if (disc < 0) continue;
       const distance = Math.max(0, -b - Math.sqrt(disc));
       if (-b + Math.sqrt(disc) < 0 || distance >= maxDistance || best && distance >= best.distance) continue;
-      best = { id: e.id, distance, point: { x: origin.x + d.x * distance, y: origin.y + d.y * distance, z: origin.z + d.z * distance } };
+      const hitY = origin.y + d.y * distance;
+      best = { id: e.id, distance, point: { x: origin.x + d.x * distance, y: hitY, z: origin.z + d.z * distance }, precise: hitY > center.y + radius * PRECISION.band };
     }
     return best;
   }
@@ -597,11 +601,11 @@ export class WorldCombatState {
   remoteHurt(amount: number) { this.applyExternalDamage(amount); }
   applyExternalDamage(amount: number) { if (Number.isFinite(amount) && amount > 0 && amount <= 200) this.hurt(amount); }
   applyFallDamage(amount: number) { if (Number.isFinite(amount) && amount > 0) this.hurt(amount, true); }
-  private hurt(amount: number, fromFall = false) {
+  private hurt(amount: number, fromFall = false, from?: Point3) {
     if (this.defeated || (!fromFall && (this.hurtCooldown > 0 || this.invulnerable))) return;
     amount = Math.min(this.hp, Math.round(amount * (fromFall ? 1 : this.guardMultiplier) * 100) / 100);
     this.hp = Math.max(0, this.hp - amount); this.hurtCooldown = 0.45; this.quietFor = 0;
-    this.events.push({ type: 'hurt', damage: amount });
+    this.events.push({ type: 'hurt', damage: amount, ...(from ? { from: clone(from) } : {}) });
     if (!this.hp) {
       this.defeatedFor = 2.5; this.counterFor = 0; this.setDefense({ guard: 1, invulnerable: false }); this.resetBoss();
       for (const e of this.enemies) if (!this.bosses.includes(e) && e.mode !== 'dead') this.resetEnemy(e);
@@ -641,7 +645,7 @@ export class WorldCombatState {
       if (!inside) continue;
       // evading through a burst is read like any other attack: a perfect evade
       if (this.invulnerable) { this.counterFor = PERFECT_EVADE.counter; this.events.push({ type: 'perfectEvade', id: boss.id }); }
-      else { this.hurt(h.damage); if (this.defeated) return; }
+      else { this.hurt(h.damage, false, h.at); if (this.defeated) return; }
     }
   }
   step(dt: number, localPlayer: Point3, active: boolean, terrain: CombatTerrain) {
@@ -726,7 +730,7 @@ export class WorldCombatState {
           if (evaded) { this.counterFor = PERFECT_EVADE.counter; this.events.push({ type: 'perfectEvade', id: e.id }); }
           if (enemyAttackContains(e, player) && sees) {
             const damage = e.storyPattern === 'echo-warden' ? echoWardenDamage(e) : e === this.boss ? bossAttackDamage(e) : activeSignature(e)?.damage ?? minibossProfile(e)?.damage ?? ENEMY_ROLES[e.role].damage;
-            if (player === localPlayer) this.hurt(damage); else this.events.push({ type: 'partnerHurt', id: e.id, damage });
+            if (player === localPlayer) this.hurt(damage, false, e.p); else this.events.push({ type: 'partnerHurt', id: e.id, damage });
           }
           // hurt() can reset every actor on defeat. Never overwrite that terminal reset
           // or let later actors acquire the defeated player within this same tick.
