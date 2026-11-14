@@ -23,7 +23,8 @@ import { createQinProcessionScene } from './environment/qinProcessionScene';
 import { VALLEY_SET_PIECES } from './story/valleyTownSetPieces';
 import { QIN_CHAPTERS, QX, qinChaptersRequired } from './story/qinChapters';
 import { EGYPT_CHAPTERS, EX, egyptOpeningRequired } from './story/egyptChapters';
-import { ORLEANS_FINALE } from './story/orleansFinale';
+import { ORLEANS_FINALE, OF as ORLEANS_FINALE_FLAGS } from './story/orleansFinale';
+import { createOrleansCrossingTeams } from './environment/orleansCrossingTeams';
 import { settlementEntryApproach } from './settlements/frame';
 import { createValleyMaintenanceLine, VALLEY_LINE, valleyLineAvailable } from './environment/valleyMaintenanceLine';
 import { createFlagshipNavigation, FLAGSHIP_NAV } from './environment/flagshipNavigation';
@@ -2270,6 +2271,9 @@ if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:
 // Q06: the funeral ranks march as a real procession (two crossing columns) instead of blocks.
 const qinProcessionScene=createQinProcessionScene(()=>fieldChapterScene.point(QP.cut),(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null);
 scene.add(qinProcessionScene.root);addEventListener('pagehide',e=>{if(!e.persisted)qinProcessionScene.dispose();});
+// O08: engineers, boatmen and crossbowmen move at once at the Orleans bridge (deck, river and bank).
+const orleansCrossingTeams=createOrleansCrossingTeams({deckFrom:[-737,14.3,-1176],deckMark:[-743,14.3,-1204],boatFrom:[-712,1,-1219],boatPier:[-733,1,-1210],coverFrom:[-721,14,-1167],coverTo:[-728,14.3,-1177]},(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null);
+scene.add(orleansCrossingTeams.root);addEventListener('pagehide',e=>{if(!e.persisted)orleansCrossingTeams.dispose();});
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
 let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 // B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),
@@ -4786,7 +4790,7 @@ function frame(now: number) {
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
   valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
-  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
+  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
   const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();

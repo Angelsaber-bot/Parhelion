@@ -34,9 +34,13 @@ export class FarPropCuller {
       // Disposed / detached props leave the list for good.
       if (!object.parent) { this.items.splice(this.cursor, 1); if (!this.items.length) return; continue; }
       this.cursor++;
-      const geometry = (object as THREE.Mesh).geometry as THREE.BufferGeometry;
-      if (!geometry.boundingSphere) geometry.computeBoundingSphere();
-      const bounds = geometry.boundingSphere; if (!bounds) continue;
+      // Instanced meshes are measured by their instances, not the template: ambient birds and
+      // butterflies keep their template at the origin while their instances follow the player.
+      const instanced = object as THREE.InstancedMesh;
+      let bounds: THREE.Sphere | null;
+      if (instanced.isInstancedMesh) { instanced.computeBoundingSphere(); bounds = instanced.boundingSphere; }
+      else { const geometry = (object as THREE.Mesh).geometry as THREE.BufferGeometry; if (!geometry.boundingSphere) geometry.computeBoundingSphere(); bounds = geometry.boundingSphere; }
+      if (!bounds) continue;
       this.sphere.copy(bounds).applyMatrix4(object.matrixWorld);
       const far = this.sphere.center.distanceTo(eye) - this.sphere.radius > farPropDistance(this.sphere.radius, scale);
       object.layers.set(far ? FAR_PROP_LAYER : 0);

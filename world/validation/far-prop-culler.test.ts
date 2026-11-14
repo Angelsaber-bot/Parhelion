@@ -37,3 +37,16 @@ test('work is spread over slices and detached props leave the list', () => {
   assert.equal(culler.items.length, 15);
   culler.reset(); assert.ok(props.every(p => p.layers.test(camera.layers)));
 });
+
+test('instanced props are culled by where their instances are, not where the template sits', async () => {
+  const THREE = await import('three');
+  const { FarPropCuller, FAR_PROP_LAYER } = await import('../src/rendering/farPropCuller');
+  const flock = new THREE.InstancedMesh(new THREE.SphereGeometry(.2), new THREE.MeshBasicMaterial(), 3);
+  const m = new THREE.Matrix4(); for (let i = 0; i < 3; i++) flock.setMatrixAt(i, m.makeTranslation(900 + i, 5, 900));
+  const root = new THREE.Group(); root.add(flock); root.updateMatrixWorld(true);
+  const culler = new FarPropCuller(); culler.add(root);
+  culler.update(new THREE.Vector3(905, 5, 905), 1, 1);
+  assert.equal(flock.layers.mask, 1, 'a flock around the player stays drawn although its template is at the origin');
+  culler.update(new THREE.Vector3(0, 5, 0), 1, 1);
+  assert.equal(flock.layers.isEnabled(FAR_PROP_LAYER), true, 'and is culled once the player is far from the instances');
+});
