@@ -185,6 +185,7 @@ import { FortCannon, FORT_CANNON } from './environment/fortCannon';
 import { createTraversalRepairs } from './map/traversalRepairs';
 import { createActionHud } from './ui/actionHud';
 import { WorldAudio } from './rendering/worldAudio';
+import { installGeometricShadowFacing } from './rendering/geometricShadowFacing';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
 import { createNarrativePanel } from './ui/narrativePanel';
@@ -230,6 +231,7 @@ import { regionLoader, bakeQuantized } from './rendering/glb';
 import { KingdomTwilight } from './map/twilight';
 import { COMPANIONS, FirstContract, SERVANTS, servantByContract, type CompanionId, type ServantId } from './companions/contracts';
 import { KitCompanion } from './companions/kitCompanion';
+import { CameraClearance } from './companions/cameraClearance';
 import { medicineCartPathClear } from './story/medicineCartNavigation';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { ContractServant } from './companions/servant';
@@ -292,6 +294,7 @@ async function boot() {
 
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
+installGeometricShadowFacing();
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 // Shipped builds never read shader logs: that read forces each new program to finish compiling on the spot
 // (a visible hitch the first time an era, effect or enemy appears). Dev builds keep the checks.
@@ -1450,6 +1453,12 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   return null;
 }
 const _gv = new THREE.Vector3();
+/** Normalised screen position for the guide: on screen as is, otherwise on the HUD-safe ellipse. */
+function guideEdgePosition(sx: number, sy: number, behind: boolean): [boolean, number, number] {
+  const a = 0.86, b = sy >= 0 ? 0.68 : 0.6, r = Math.hypot(sx / a, sy / b);
+  if (!behind && r <= 1.05) return [false, sx, sy];
+  const k = 1 / Math.max(r, 1e-3); return [true, sx * k, sy * k];
+}
 function updateGuide(t: { p: [number, number, number]; label: string } | null, now: number) {
   const el = $('guide');
   guideBeam.visible = !!t;
@@ -1464,9 +1473,11 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
   const behind = _gv.z > 1;
   let sx = _gv.x, sy = _gv.y;
   if (behind) { sx = -sx; sy = -sy; }
-  const m = Math.max(Math.abs(sx), Math.abs(sy));
-  const edge = behind || m > 0.92;
-  if (edge) { const k = 0.88 / Math.max(m, 1e-3); sx *= k; sy *= k; if (behind && Math.abs(sy) < 0.5) sy = -0.88; }
+  // Off-screen targets ride an ellipse inside the HUD corners (minimap, realm panel, skill bar)
+  // and above the health bar, instead of a square that parked them on top of those.
+  if (behind && Math.abs(sy) < 0.5) sy = -1;
+  const [edge, ex, ey] = guideEdgePosition(sx, sy, behind);
+  sx = ex; sy = ey;
   el.classList.toggle('edge', edge);
   (el.querySelector('.arrow') as HTMLElement).style.transform = `rotate(${Math.atan2(sx, sy)}rad)`;
   el.style.left = `${(sx * 0.5 + 0.5) * innerWidth}px`;
@@ -4482,6 +4493,7 @@ camera.fov = baseFov; camera.updateProjectionMatrix();
 applyWorldState();
 
 let perfectEvadeSlow = 0, hitStop = 0, finisherSlow = 0;
+const cameraClearance = new CameraClearance(), clearanceFocus = new THREE.Vector3();
 const finisherAt = new THREE.Vector3();
 /** Boss, elite and fight-ending kills hold the world in slow motion for a breath. */
 function finisherBeat(id: string) {
@@ -4908,6 +4920,8 @@ function frame(now: number) {
   } // big map stays readable: no monster dots
 
   timeUniform.value = now / 1000;
+  // Companions that crowd the lens or stand in the line of sight step out of the shot (render only).
+  cameraClearance.update([servant.root, ...eraActors.map(e => e.actor?.root), modelCompanion.actor?.root], camera.position, clearanceFocus.set(player.pos.x, player.pos.y + 1.5, player.pos.z), thirdPerson);
   localLights.update(camera.position, dt);
   localLights.yieldSlots(lightCensus.active(camera));
   if (composer && !lowQ) shafts.update(camera, twilight.direction);

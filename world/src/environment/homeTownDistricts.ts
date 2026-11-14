@@ -106,6 +106,29 @@ export function createHomeTownDistricts(ground: (x: number, z: number) => number
     for (const x of [-68, -58]) s.box([W(x, 196), sy + .45, 196], [3, .12, .5], timber, true);
     finish(s, 'HomeSouthSlope'); }
 
+  // T10 公馆餐厅陈设: the shared dining hall at the lodge's south end had bare 5 m walls. Wainscoting,
+  // framed pictures, warm sconces, lamps over both tables, rugs and corner plants (visual only).
+  { const a = new SiteArt(), fy = 16.12, L = (x: number, z: number) => W(-35 + x, -40 + z), at = (x: number, y: number, z: number): V3 => [L(x, z), fy + y, -40 + z];
+    const wood = '#8d6a4a', rail = '#5e4430', frameGold = '#b08a4a';
+    for (const side of [-1, 1]) {
+      const x = side * 18.84; a.box(at(x, .55, 16.5), [.06, 1.1, 16.6], wood); a.box(at(x - side * .03, 1.14, 16.5), [.1, .08, 16.6], rail);
+      // Two small landscapes per wall: sky, a far hill line, the near field and a sun (or moon).
+      for (const [z, sky, hill, field, orb] of [[18.5, '#9cc3dc', '#6f8f86', '#9aa86a', '#fff1c4'], [22.2, '#d9a184', '#7d6a8a', '#8a6f4f', '#ffe08a']] as const) {
+        const d = (k: number) => x - side * (.05 + k * .006);
+        a.box(at(x - side * .02, 2.75, z), [.06, 1.3, 1.7], frameGold);
+        a.box(at(d(0), 2.86, z), [.03, .86, 1.48], sky); a.box(at(d(1), 2.5, z + .2), [.03, .3, 1.1], hill); a.box(at(d(2), 2.34, z), [.03, .3, 1.48], field);
+        a.box(at(d(3), 3.0, z - .4), [.03, .18, .18], orb);
+      }
+      for (const z of [10, 16, 24]) { a.box(at(x - side * .1, 2.2, z), [.18, .28, .18], rail); a.box(at(x - side * .16, 2.42, z), [.2, .22, .2], '#ffd28a', false, 'glow'); }
+    }
+    for (const [x0, x1] of [[-18.6, -2.4], [2.4, 18.6]]) { const cx = (x0 + x1) / 2, len = x1 - x0; a.box(at(cx, .55, 24.84), [len, 1.1, .06], wood); a.box(at(cx, 1.14, 24.81), [len, .08, .1], rail); }
+    for (const x of [-12, 11]) {
+      a.box(at(x, .125, 19), [6.2, .01, 4.2], x < 0 ? '#7a3f3a' : '#3f5a7a'); a.box(at(x, .132, 19), [5.6, .01, 3.6], x < 0 ? '#c99b6a' : '#b7c3cf');
+      a.box(at(x, 4.35, 19), [.03, 1.1, .03], rail); a.cyl(at(x, 3.7, 19), .42, .32, rail); a.cyl(at(x, 3.48, 19), .3, .14, '#ffe0a3', false, 'glow');
+    }
+    for (const [x, z] of [[-17.9, 23.9], [17.9, 23.9], [-17.9, 9]]) { a.cyl(at(x, .35, z), .38, .7, '#a7643e'); a.cyl(at(x, 1.05, z), .55, .8, '#5f8a52'); a.cyl(at(x, 1.6, z), .35, .5, '#6f9d5d'); }
+    finish(a, 'HomeLodgeDiningDressing'); }
+
   // Street lamps beside every town route (offset off the walking width) and rooftop water tanks.
   { const lamps = new SiteArt();
     for (const r of HOME_ROUTES) { const half = (r.kind === 'main' ? 7 : 5) / 2 + 1.3;

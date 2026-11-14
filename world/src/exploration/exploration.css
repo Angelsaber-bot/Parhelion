@@ -45,3 +45,5 @@ body.world-dialogue-open :is(#xp-hud,#xp-challenge){visibility:hidden}
 @keyframes xp-ping { from { filter: brightness(1.8); } to { filter: none; } }
 /* The ID rules above set display:flex, which would otherwise override the hidden attribute (empty pills on screen). */
 #xp-challenge[hidden],#xp-signal[hidden]{display:none}
+/* A realm banner and a place name can arrive together on entry: the place name drops below the banner. */
+body:has(#xp-banner.xp-region:not([hidden])) #area{top:29%;transition:opacity .6s,top .4s}
