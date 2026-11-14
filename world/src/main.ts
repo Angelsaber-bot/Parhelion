@@ -28,6 +28,7 @@ import { ORLEANS_FINALE, OF as ORLEANS_FINALE_FLAGS } from './story/orleansFinal
 import { createOrleansCrossingTeams } from './environment/orleansCrossingTeams';
 import { createWalkingColumn } from './environment/walkingColumn';
 import { createSplashWave } from './environment/splashWave';
+import { FootDust, dustSurface } from './player/footDust';
 import { StoryBeatShot } from './cinematics/storyBeatShot';
 import { egyptToWorld } from './map/egyptPlan';
 import { settlementEntryApproach } from './settlements/frame';
@@ -193,6 +194,7 @@ import { createTraversalRepairs } from './map/traversalRepairs';
 import { createActionHud } from './ui/actionHud';
 import { WorldAudio } from './rendering/worldAudio';
 import { installGeometricShadowFacing } from './rendering/geometricShadowFacing';
+import { installHeightMist } from './rendering/heightMist';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
@@ -304,6 +306,7 @@ async function boot() {
 const canvas = $<HTMLCanvasElement>('view');
 installGeometricShadowFacing();
 installGroundGrime();
+if (!params.has('nomist')) installHeightMist();
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 // Shipped builds never read shader logs: that read forces each new program to finish compiling on the spot
 // (a visible hitch the first time an era, effect or enemy appears). Dev builds keep the checks.
@@ -2302,6 +2305,8 @@ scene.add(egyptMigration.root);addEventListener('pagehide',e=>{if(!e.persisted)e
 // B06: when the last tow cable parts, the whole flagship drops into the water and the wave slaps the pier.
 const flagshipSplash=createSplashWave();scene.add(flagshipSplash.root);addEventListener('pagehide',e=>{if(!e.persisted)flagshipSplash.dispose();});
 let flagshipSplashArmed=!done.has('b06_tow');
+// Footstep dust, landing rings and wading splashes under the protagonist (one instanced draw).
+const footDust=new FootDust(),footDustLast=new THREE.Vector3(Infinity,0,0);scene.add(footDust.mesh);addEventListener('pagehide',e=>{if(!e.persisted)footDust.dispose();});
 // Chapter completions get a short story shot over the place they closed (any key skips it).
 const storyShot=new StoryBeatShot();addEventListener('pagehide',e=>{if(!e.persisted)storyShot.dispose();});
 const storyShotBeats=new Map<string,{at:string;line:readonly [string,string]}>();
@@ -4068,9 +4073,13 @@ function shoot() {
     combat.flashHitMarker(.14);
   }
   combat.shot(blockedMount ? shoulder : muzzle,point,hitSomething); audio.shot();
+  // A round that ends on the world (not on an enemy) chips dust back off the surface it struck.
+  // (Test fixtures run this function in isolation without the effect.)
+  if (typeof footDust !== 'undefined' && (wall || blocked || blockedMount) && !(enemy && !blocked && !blockedMount) && !reducedEffects()) footDust.impact(point, impactBack.copy(look).negate(), dustSurface(regionAt(point.x, point.z).id, -1), 4);
   // Shotgun: the remaining pellets fan out around the aim ray; each can hit an enemy or a wall.
   if (gun.pellets > 1 && !blockedMount) firePellets(origin, look, muzzle, gun);
 }
+const impactBack = new THREE.Vector3();
 const pelletDir = new THREE.Vector3(), pelletSide = new THREE.Vector3(), pelletUp = new THREE.Vector3();
 function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.Vector3, gun: typeof combat.state.gun) {
   pelletSide.crossVectors(look, THREE.Object3D.DEFAULT_UP).normalize(); pelletUp.crossVectors(pelletSide, look).normalize();
@@ -4086,6 +4095,7 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
     const path = end.clone().sub(muzzle);
     const blocked = combat.geometry.cast(muzzle, path, Math.max(0, path.length() - .06));
     if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage, { precise: hit.precise, decoy: hit.decoy });
+    else if (typeof footDust !== 'undefined' && (blocked || wall) && !reducedEffects()) footDust.impact(blocked ? blocked.point : end, impactBack.copy(pelletDir).negate(), dustSurface(regionAt(end.x, end.z).id, -1), 2);
     combat.shot(muzzle, blocked ? blocked.point : end, !!(blocked || hit || wall), false);
   }
 }
@@ -4825,6 +4835,10 @@ function frame(now: number) {
   valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
   fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos,id=>fieldChapters?.progress(id)??0);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);qinStarCeiling?.update(dt,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
   if(flagshipSplashArmed&&done.has('b06_tow')){flagshipSplashArmed=false;const at=fieldChapterScene.point('b07_hooks');if(at){flagshipSplash.trigger(new THREE.Vector3(at[0]+4,layout.world.waterLevel+.05,at[2]),9);audio.cannon();kickCamera(.8);}}
+  {const inland=player.waterSurfaceAt?.(player.pos),surface=inland!=null&&Number.isFinite(inland)?inland:player.waterLevel;
+   // A teleport or respawn must not read as a 300 m stride or a landing.
+   if(player.pos.distanceToSquared(footDustLast)>36)footDust.clear();footDustLast.copy(player.pos);
+   footDust.update(dt,player,dustSurface(regionAt(player.pos.x,player.pos.z).id,surface-player.pos.y),gameplayActive()&&!reducedEffects()&&rig.root.visible&&!(ferry?.riding));}
   flagshipSplash.update(dt);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
