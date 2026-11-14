@@ -20,6 +20,7 @@ import { ORLEANS_ENTRIES, OE, orleansEntryRequired } from './story/orleansEntrie
 import { EGYPT_APPROACH, EA, egyptApproachRequired } from './story/egyptApproach';
 import { QIN_PROCESSION, QP, qinProcessionRequired } from './story/qinProcession';
 import { createQinProcessionScene } from './environment/qinProcessionScene';
+import { createQinStarCeiling } from './environment/qinStarCeiling';
 import { VALLEY_SET_PIECES } from './story/valleyTownSetPieces';
 import { QIN_CHAPTERS, QX, qinChaptersRequired } from './story/qinChapters';
 import { EGYPT_CHAPTERS, EX, egyptOpeningRequired } from './story/egyptChapters';
@@ -2274,6 +2275,10 @@ if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:
 // Q06: the funeral ranks march as a real procession (two crossing columns) instead of blocks.
 const qinProcessionScene=createQinProcessionScene(()=>fieldChapterScene.point(QP.cut),(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null);
 scene.add(qinProcessionScene.root);addEventListener('pagehide',e=>{if(!e.persisted)qinProcessionScene.dispose();});
+// 星官穹顶: a painted night sky under the hall roof above the Q06 viewpoint (roof at y 39).
+const qinDomeAt=fieldChapterScene.point(QP.dome);
+const qinStarCeiling=qinDomeAt?createQinStarCeiling([qinDomeAt[0]-1,38.82,qinDomeAt[2]+10],[26,36]):null;
+if(qinStarCeiling){scene.add(qinStarCeiling.root);addEventListener('pagehide',e=>{if(!e.persisted)qinStarCeiling.dispose();});}
 // O08: engineers, boatmen and crossbowmen move at once at the Orleans bridge (deck, river and bank).
 const orleansCrossingTeams=createOrleansCrossingTeams({deckFrom:[-737,14.3,-1176],deckMark:[-743,14.3,-1204],boatFrom:[-712,1,-1219],boatPier:[-733,1,-1210],coverFrom:[-721,14,-1167],coverTo:[-728,14.3,-1177]},(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null);
 scene.add(orleansCrossingTeams.root);addEventListener('pagehide',e=>{if(!e.persisted)orleansCrossingTeams.dispose();});
@@ -4800,7 +4805,7 @@ function frame(now: number) {
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
   valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
-  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
+  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);qinStarCeiling?.update(dt,player.pos);orleansCrossingTeams.apply(done.has(ORLEANS_FINALE_FLAGS.run)?(done.has(ORLEANS_FINALE_FLAGS.o09)?'hidden':'done'):done.has('journey_orleans_crossing_open')?'rehearsing':'hidden');orleansCrossingTeams.update(gameplayActive()?dt:0,player.pos);egyptMigration.apply(done.has(EC.relocated)&&!done.has(EC.bell)?'walking':done.has(EC.bell)&&!done.has(EC.meal)?'gathered':'hidden');egyptMigration.update(gameplayActive()?dt:0,player.pos);
   if(flagshipSplashArmed&&done.has('b06_tow')){flagshipSplashArmed=false;const at=fieldChapterScene.point('b07_hooks');if(at){flagshipSplash.trigger(new THREE.Vector3(at[0]+4,layout.world.waterLevel+.05,at[2]),9);audio.cannon();kickCamera(.8);}}
   flagshipSplash.update(dt);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
