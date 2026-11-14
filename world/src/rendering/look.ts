@@ -4,6 +4,7 @@ import {egyptToonMaterial} from '../environment/egyptMaterials';
 // Toon look: banded lighting, inverted-hull outlines, and a sky with a 22° halo + sundogs
 // (the "parhelion" the game is named after).
 import * as THREE from 'three';
+import { groundGrimeUniforms } from './groundGrime';
 import { kyotoToonMaterial } from '../environment/kyotoMaterials.js';
 import { winterToonMaterial } from '../environment/winterMaterials.js';
 import { blackSailToonMaterial } from '../environment/blackSailMaterials.js';
@@ -97,17 +98,37 @@ function celify(mat: THREE.MeshToonMaterial, kind: Kind) {
   return mat;
 }
 
-/** Stylised water: banded depth colour, scrolling caustic glints, foam-ish fresnel edge. */
+/** Water depth bands (m): the shallow tint fades out by `shallow`, shore foam lives within `foam`. */
+export const WATER_DEPTH = Object.freeze({ shallow: 3.2, foam: .45 });
+/** Stylised water: banded depth colour, scrolling caustic glints, foam-ish fresnel edge, real-depth shallows and shore foam. */
 function waterMaterial(name: string) {
   const mat = new THREE.MeshToonMaterial({ color: '#3fc4e4', transparent: true, opacity: 0.84, gradientMap: toonGradient(), emissive: '#1580b0', emissiveIntensity: 0.3 });
   mat.onBeforeCompile = (sh) => {
     sh.uniforms.uTime = timeUniform;
+    // The baked terrain height (groundGrime.ts) gives the water its real depth: shallows, shore foam.
+    sh.uniforms.uGround = groundGrimeUniforms.parhelionGround; sh.uniforms.uGroundBox = groundGrimeUniforms.parhelionGroundBox;
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', `#include <common>\nvarying vec3 vWPos;`)
       .replace('#include <project_vertex>', `#include <project_vertex>\nvWPos = (modelMatrix * vec4(transformed, 1.0)).xyz;`);
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', `#include <common>\nuniform float uTime;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
+      .replace('#include <common>', `#include <common>\nuniform float uTime;\nuniform sampler2D uGround;\nuniform vec4 uGroundBox;\nvarying vec3 vWPos;\n${NOISE_GLSL}`)
       .replace('#include <opaque_fragment>', `
+        {
+          // Depth below the surface from the baked terrain (off the map or no terrain: deep water).
+          vec2 guv = (vWPos.xz - uGroundBox.xy) / uGroundBox.zw;
+          float gy = texture2D(uGround, clamp(guv, 0.0, 1.0)).r;
+          float depth = (gy < -5000.0 || guv.x < 0.0 || guv.y < 0.0 || guv.x > 1.0 || guv.y > 1.0) ? 99.0 : max(vWPos.y - gy, 0.0);
+          float shallow = 1.0 - smoothstep(0.0, ${WATER_DEPTH.shallow.toFixed(2)}, depth);
+          // Shallows run lighter and more turquoise; deep water keeps the banded sea colour. Opacity is
+          // unchanged: the seabed is grass-painted terrain and must not show through as a lawn.
+          outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.86, 1.04, 1.06) + vec3(0.03, 0.09, 0.1), shallow * 0.6);
+          // Shore foam: a broken, slowly breathing band where the water meets the land.
+          float lap = sin(uTime * 1.1 + vnoise(vWPos.xz * 0.35) * 6.0) * 0.5 + 0.5;
+          float foamEdge = 1.0 - smoothstep(0.0, ${WATER_DEPTH.foam.toFixed(2)} * (0.6 + 0.6 * lap), depth);
+          float foam = foamEdge * smoothstep(0.35, 0.6, vnoise(vWPos.xz * 1.6 + vec2(uTime * 0.12, -uTime * 0.08)) + foamEdge * 0.35);
+          outgoingLight = mix(outgoingLight, vec3(0.95, 0.99, 1.0), foam * 0.85);
+          diffuseColor.a = mix(diffuseColor.a, 0.95, foam);
+        }
         {
           vec2 p = vWPos.xz * 0.18;
           float a = vnoise(p + vec2(uTime * 0.25, uTime * 0.1));
@@ -176,12 +197,17 @@ export function toonMaterial(src: THREE.Material): THREE.Material {
   }
 }
 
+/** Depth push for every inverted-hull ink line (world and characters). */
+export const OUTLINE_DEPTH_PUSH = Object.freeze({ factor: 2, units: 4 });
 const outlineMats = new Map<number, THREE.MeshBasicMaterial>();
 function outlineMat(width: number, color: THREE.ColorRepresentation) {
   const key = Math.round(width * 1e4) + new THREE.Color(color).getHex() * 1e5;
   let m = outlineMats.get(key);
   if (!m) {
-    m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide });
+    // The hull must always lose a depth tie against the model it outlines. Without the offset, thin
+    // slabs and distant pieces (where depth precision is coarser than the 4.5 cm hull) let the dark
+    // hull win on some pixels and not others: black speckle that crawls over the model as you move.
+    m = new THREE.MeshBasicMaterial({ color, side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: OUTLINE_DEPTH_PUSH.factor, polygonOffsetUnits: OUTLINE_DEPTH_PUSH.units });
     m.onBeforeCompile = (sh) => {
       sh.vertexShader = sh.vertexShader.replace(
         '#include <begin_vertex>',

@@ -11,7 +11,8 @@ export function preservePlayerMaterial(source: THREE.Material): THREE.Material {
 
 /** A real skinned inverted hull, sharing immutable geometry and the actor's skeleton/morph array. */
 export function addPlayerOutline(mesh: THREE.SkinnedMesh, width = .002): THREE.SkinnedMesh {
-  const material = new THREE.MeshBasicMaterial({ color: '#302931', side: THREE.BackSide });
+  // Pushed back in depth like the world's ink lines (look.ts OUTLINE_DEPTH_PUSH): the hull never speckles over the body.
+  const material = new THREE.MeshBasicMaterial({ color: '#302931', side: THREE.BackSide, polygonOffset: true, polygonOffsetFactor: 2, polygonOffsetUnits: 4 });
   material.name = `${mesh.name}:outline`;
   material.onBeforeCompile = shader => {
     // objectNormal has already passed through morphnormal/skinnormal. Extruding before skinning

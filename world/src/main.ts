@@ -193,6 +193,7 @@ import { createTraversalRepairs } from './map/traversalRepairs';
 import { createActionHud } from './ui/actionHud';
 import { WorldAudio } from './rendering/worldAudio';
 import { installGeometricShadowFacing } from './rendering/geometricShadowFacing';
+import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
 import { createNarrativePanel } from './ui/narrativePanel';
@@ -302,6 +303,7 @@ async function boot() {
 // ───────────── renderer / scene ─────────────
 const canvas = $<HTMLCanvasElement>('view');
 installGeometricShadowFacing();
+installGroundGrime();
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: params.has('nopost'), preserveDrawingBuffer: params.has('shot') });
 // Shipped builds never read shader logs: that read forces each new program to finish compiling on the spot
 // (a visible hitch the first time an era, effect or enemy appears). Dev builds keep the checks.
@@ -325,7 +327,10 @@ renderer.toneMappingExposure = 0.98;
 
 const scene = new THREE.Scene();
 scene.fog = new THREE.Fog('#c4e2f6', 120, 720);
-const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, 0.1, 1300);
+// Near plane 0.2 m: the spring arm keeps the lens ≥ 0.3 m from walls, and doubling depth precision
+// over 0.1 m removes distant z-fighting (coplanar trims, ink lines on thin slabs flickering dark).
+const CAMERA_NEAR = 0.2;
+const camera = new THREE.PerspectiveCamera(75, innerWidth / innerHeight, CAMERA_NEAR, 1300);
 const sky = makeSky();
 scene.add(sky);
 const hemisphere = new THREE.HemisphereLight('#d6ecff', '#9aa98a', 1.15);
@@ -339,6 +344,7 @@ sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 const shadowCenter = new THREE.Vector3(), lastShadowCenter = new THREE.Vector3(), shadowBasis = new THREE.Matrix4(), shadowInverse = new THREE.Matrix4();
+let groundGrimeSweep = 0;
 let shadowTick = 0;
 const farProps = new FarPropCuller(), lastFarEye = new THREE.Vector3();
 let cameraKick = 0; const camRight = new THREE.Vector3();
@@ -379,6 +385,8 @@ renderer.info.autoReset = false; // count the whole frame, including shadows and
  * the scene renders into the composer's linear, untonemapped buffer, and a program compiled for the
  * screen would not match (and would be compiled again on the frame the art first appears). */
 function warmShaders(root: THREE.Object3D): Promise<unknown> | void {
+  // Hand ground-contact grime to new art before its programs compile, so nothing recompiles later.
+  adoptGroundGrime(root);
   if (typeof renderer.compileAsync !== 'function') return;
   const previous = renderer.getRenderTarget();
   if (composer) renderer.setRenderTarget(composer.readBuffer);
@@ -529,6 +537,10 @@ for (const w of waters) if (w !== waterMesh) w.parent?.remove(w);
     waterMesh.geometry.dispose(); waterMesh.geometry = carved;
   }
 }
+// Ground contact: bake the terrain's height once (topmost surface, ~2 m texels) for the grime band on
+// every wall, post and prop. Without float render targets the map simply has no grime.
+try { bakeGroundHeights(renderer, artMeshes.filter(m => m.name === 'Terrain')); } catch (error) { console.warn('ground grime unavailable', error); }
+if (params.has('nogrime')) groundGrimeUniforms.parhelionGroundOn.value = 0;
 const culler = new DistanceCuller(lowQ ? 90 : 160);
 const DRAW_DIST: Record<string, number> = { Bushes: 180, Trees_Leaves: 380, Trees_Trunks: 260, Rocks: 320, Lamps: 240, Glow_Props: 500, Terrain: 760 };
 // Reuse conversion only for the same immutable authored source material.
@@ -3976,7 +3988,7 @@ function shoot() {
   if (blockedMount || blocked) {
     point = (blockedMount ?? blocked)!.point.clone(); hitSomething = true;
   } else if (enemy) {
-    combat.damageEnemy(enemy.id, gun.damage, { precise: enemy.precise });
+    combat.damageEnemy(enemy.id, gun.damage, { precise: enemy.precise, decoy: enemy.decoy });
   } else if (questHit && questHit.object.userData.needs === FORT_CANNON.marker) {
     toast(bilingual(`幽灵艇需要要塞炮：到炮位按 ${settings.label('interact')} 操作，再开火。`, 'Ghost boats need the fort cannon: interact at the station, then fire.'));
   } else if (questHit && questHit.object.userData.needs && !done.has(questHit.object.userData.needs as string)) {
@@ -4073,7 +4085,7 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
     // each pellet's own muzzle path so a central obstruction doesn't erase clear side pellets.
     const path = end.clone().sub(muzzle);
     const blocked = combat.geometry.cast(muzzle, path, Math.max(0, path.length() - .06));
-    if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage, { precise: hit.precise });
+    if (hit && !blocked) combat.damageEnemy(hit.id, gun.damage, { precise: hit.precise, decoy: hit.decoy });
     combat.shot(muzzle, blocked ? blocked.point : end, !!(blocked || hit || wall), false);
   }
 }
@@ -4901,6 +4913,8 @@ function frame(now: number) {
   sun.position.copy(shadowCenter).addScaledVector(twilight.direction, 200);
   sun.target.position.copy(shadowCenter);
   shadowTick = (shadowTick + 1) % 2;
+  // Art created after load (characters, chapter props, effects) picks up ground grime every few seconds.
+  groundGrimeSweep += dt; if (groundGrimeSweep > 3) { groundGrimeSweep = 0; adoptGroundGrime(scene); }
   renderer.shadowMap.needsUpdate = highQ || shadowTick === 0 || shadowCenter.distanceToSquared(lastShadowCenter) > 4;
   if (renderer.shadowMap.needsUpdate) lastShadowCenter.copy(shadowCenter);
 
@@ -4999,7 +5013,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { composer, groundGrime: groundGrimeUniforms, get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

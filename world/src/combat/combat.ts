@@ -38,6 +38,7 @@ export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
   | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean; precise?: boolean; plated?: boolean }
   | { type: 'shellBreak'; id: string }
+  | { type: 'crowShadowTorn'; id: string; at: Point3 }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
@@ -111,6 +112,22 @@ export interface CrowCurtain { x: number; z: number; yaw: number; burn: number; 
 export function inCrowCurtain(c: Pick<CrowCurtain, 'x' | 'z' | 'yaw'>, p: Point3) {
   const dx = p.x - c.x, dz = p.z - c.z, along = dx * Math.cos(c.yaw) - dz * Math.sin(c.yaw), across = dx * Math.sin(c.yaw) + dz * Math.cos(c.yaw);
   return Math.abs(along) <= CROW_CURTAIN.halfLength && Math.abs(across) <= CROW_CURTAIN.depth;
+}
+/** J08 鸦印 second phase. 假影「影子先到」: one flat shadow of him is thrown on a curtain beside him each beat
+ * (alternating sides). It is solid to bullets — a round through it tears the shadow and is wasted — but never to
+ * blades. 灭灯「灭灯近身」: every fourth beat above 30 % he smashes a lamp; the beat's ground tell dims to a blade
+ * glint, and he stumbles in his own dark afterwards, so the punish window after it is longer. */
+export const CROW_SHADOWS = Object.freeze({ id: 'boss_hellfire_lord', side: 2.8, forward: .4, radius: .95, height: 1.5, torn: 4, lampEvery: 4, lampRecover: .6 });
+export interface CrowShadow { x: number; y: number; z: number; yaw: number; side: -1 | 1 }
+/** Whether the Crow Seal is mid lamp-out (the beat's windup and its recovery). */
+export function crowLampOut(e: Pick<Enemy, 'id' | 'phase' | 'hp' | 'maxHp' | 'attackCount' | 'mode' | 'active'>) {
+  return e.id === CROW_SHADOWS.id && e.active && e.phase === 2 && e.hp / e.maxHp > CROW_CURTAIN.below
+    && e.attackCount % CROW_SHADOWS.lampEvery === 0 && (e.mode === 'windup' || e.mode === 'recover');
+}
+/** Where this beat's shadow stands: beside him, on the side the beat alternates to, facing as he faces. */
+export function crowShadowAt(e: Pick<Enemy, 'p' | 'attackCount'>, yaw: number): CrowShadow {
+  const side: -1 | 1 = e.attackCount % 2 ? 1 : -1, x = side * CROW_SHADOWS.side, z = CROW_SHADOWS.forward;
+  return { x: e.p.x + x * Math.cos(yaw) + z * Math.sin(yaw), y: e.p.y, z: e.p.z - x * Math.sin(yaw) + z * Math.cos(yaw), yaw, side };
 }
 export const BOSS_REQUIREMENTS = ERA_BOSS_REQUIREMENTS.sun_core;
 export const BOSS_REWARD = 'reward_sunset_oath';
@@ -254,7 +271,7 @@ export function enemyAttackRadius(e: Enemy): number {
 const ELITE_PAIRED_TIMING = { windup: 1, recovery: .55 } as const;
 const DUELIST_FIRST_TIMING = { windup: .85, recovery: .45 } as const;
 const BOSS_TURNS = [0, .8, -.8, 1.3, -1.3] as const;
-export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3; precise?: boolean }
+export interface HitContext { source: 'ranged' | 'melee' | 'servant' | 'skill' | 'ultimate'; origin?: Point3; precise?: boolean; /** The round struck the Crow Seal's false shadow (see raycast). */ decoy?: boolean }
 /** Gun rounds that strike the upper body count as weak-spot hits; shotgun pellets get a smaller bonus. */
 export const PRECISION = Object.freeze({ multiplier: 1.5, pellet: 1.2, band: .35 });
 
@@ -409,6 +426,17 @@ export class WorldCombatState {
   }
   /** The Crow Seal's current burning curtain, if any (read by the view to draw it). */
   crowCurtain: CrowCurtain | null = null;
+  /** The Crow Seal's false shadow this beat, if one stands (solid to bullets; read by the view). */
+  crowShadow: CrowShadow | null = null;
+  /** Seconds before a torn shadow can be thrown again. */
+  crowShadowTorn = 0;
+  private stepCrowSeal(dt: number, player: Point3) {
+    const b = this.bossStarted ? this.boss : null;
+    this.crowShadowTorn = Math.max(0, this.crowShadowTorn - dt);
+    const throwing = !!b && b.id === CROW_SHADOWS.id && b.active && b.mode !== 'dead' && b.phase === 2 && (b.mode === 'windup' || b.mode === 'chase');
+    this.crowShadow = throwing && !this.crowShadowTorn ? crowShadowAt(b!, b!.squareYaw ?? Math.atan2(player.x - b!.p.x, player.z - b!.p.z)) : null;
+    this.stepCrowCurtain(dt, player);
+  }
   private stepCrowCurtain(dt: number, player: Point3) {
     const b = this.bossStarted ? this.boss : null;
     if (!b || b.id !== CROW_CURTAIN.id || b.mode === 'dead') { this.crowCurtain = null; return; }
@@ -422,7 +450,7 @@ export class WorldCombatState {
     if (c.burn > CROW_CURTAIN.hot && !this.invulnerable && inCrowCurtain(c, player)) this.hurt(CROW_CURTAIN.damage, false, { x: c.x, y: player.y, z: c.z });
   }
   resetBoss() {
-    this.crowCurtain = null;
+    this.crowCurtain = null; this.crowShadow = null; this.crowShadowTorn = 0;
     if (!this.bossStarted) return;
     this.bossStarted = false; this.resetEnemy(this.boss); this.events.push({ type: 'bossReset' });
   }
@@ -507,6 +535,13 @@ export class WorldCombatState {
     if (!e || !e.active || e.mode === 'dead' || e.pacified || this.defeated || !Number.isFinite(damage) || damage <= 0) return false;
     const raw = this.rawHit;
     if(!raw&&context?.source==='ranged'&&context.origin&&distanceXZ(context.origin,e.p)>this.gun.range)return false;
+    // A round into the false shadow tears it and is spent: no damage, no daze, no refund.
+    if (!raw && context?.decoy && context.source === 'ranged' && e.id === CROW_SHADOWS.id && this.crowShadow) {
+      const at = { x: this.crowShadow.x, y: this.crowShadow.y + CROW_SHADOWS.height, z: this.crowShadow.z };
+      this.crowShadow = null; this.crowShadowTorn = CROW_SHADOWS.torn;
+      this.events.push({ type: 'crowShadowTorn', id, at });
+      return true;
+    }
     // Melee earns a real punish window, not inflated enemy HP. Legacy raw damage stays exact.
     const melee = context?.source === 'melee';
     const punish = !raw && melee && isMeleePunishWindow(e);
@@ -579,7 +614,7 @@ export class WorldCombatState {
   }
   /** Ray-sphere intersections use world metres. maxDistance must include every wall/quest-target occluder. */
   raycast(origin: Point3, direction: Point3, maxDistance: number = COMBAT.shotRange) {
-    let best: { id: string; distance: number; point: Point3; precise: boolean } | null = null;
+    let best: { id: string; distance: number; point: Point3; precise: boolean; decoy?: boolean } | null = null;
     const length = Math.hypot(direction.x, direction.y, direction.z);
     if (!length || !Number.isFinite(length)) return best;
     const d = { x: direction.x / length, y: direction.y / length, z: direction.z / length };
@@ -596,6 +631,17 @@ export class WorldCombatState {
       if (-b + Math.sqrt(disc) < 0 || distance >= maxDistance || best && distance >= best.distance) continue;
       const hitY = origin.y + d.y * distance;
       best = { id: e.id, distance, point: { x: origin.x + d.x * distance, y: hitY, z: origin.z + d.z * distance }, precise: hitY > center.y + radius * PRECISION.band };
+    }
+    // The Crow Seal's false shadow stops a round that reaches it before anything real.
+    const s = this.crowShadow, seal = s && this.boss?.id === CROW_SHADOWS.id && this.boss.active && this.boss.mode !== 'dead' ? this.boss : null;
+    if (s && seal) {
+      const x = origin.x - s.x, y = origin.y - (s.y + CROW_SHADOWS.height), z = origin.z - s.z, r = CROW_SHADOWS.radius;
+      const b = x * d.x + y * d.y + z * d.z, disc = b * b - (x * x + y * y + z * z - r * r);
+      if (disc >= 0 && -b + Math.sqrt(disc) >= 0) {
+        const distance = Math.max(0, -b - Math.sqrt(disc));
+        if (distance < maxDistance && (!best || distance < best.distance))
+          best = { id: seal.id, distance, point: { x: origin.x + d.x * distance, y: origin.y + d.y * distance, z: origin.z + d.z * distance }, precise: false, decoy: true };
+      }
     }
     return best;
   }
@@ -785,7 +831,7 @@ export class WorldCombatState {
           if (e.role === 'powder' && !e.miniboss && e.kind !== 'king' && !e.storyPattern) this.events.push({ type: 'explode', id: e.id, at: clone(e.p) });
           // A powder warden's phase-2 barrage bursts where it landed.
           else if (e.role === 'powder' && e.storyPattern === 'echo-warden' && e.phase === 2 && e.attack === 'burst') this.events.push({ type: 'explode', id: e.id, at: clone(e.target) });
-          e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery + (evaded ? PERFECT_EVADE.opening : 0);
+          e.mode = 'recover'; e.timer = enemyAttackTiming(e).recovery + (evaded ? PERFECT_EVADE.opening : 0) + (crowLampOut(e) ? CROW_SHADOWS.lampRecover : 0);
         }
         continue;
       }
@@ -838,7 +884,7 @@ export class WorldCombatState {
       }
     }
     this.stepHazards(dt, localPlayer);
-    if (!this.remoteEnemies) this.stepCrowCurtain(dt, localPlayer);
+    if (!this.remoteEnemies) this.stepCrowSeal(dt, localPlayer);
     if (this.defeated) return;
     this.quietFor = threatened ? 0 : this.quietFor + dt;
     if (this.quietFor > 5) this.hp = Math.min(this.maxHp, this.hp + dt * 10);

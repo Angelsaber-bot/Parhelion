@@ -38,7 +38,10 @@ test('combat visual pools are capped, reset releases shots/tells, and dispose is
   const persistent = [...internals.effectGroup.children] as THREE.Object3D[];
   const defeatCloud = persistent.find(child => child.name === 'DefeatEffects');
   assert.ok(defeatCloud, 'defeat dissolve pool is allocated once up front');
-  const contactSlots = persistent.filter(child => child !== defeatCloud) as THREE.Mesh[];
+  // The Crow Seal's false-shadow screen and its torn-paper shreds are two more fixed, hidden slots.
+  const crowSlots = persistent.filter(child => child.name === 'CrowSealFalseShadow' || child.name === 'CrowShadowShreds');
+  assert.equal(crowSlots.length, 2); assert.ok(crowSlots.every(slot => !slot.visible));
+  const contactSlots = persistent.filter(child => child !== defeatCloud && !crowSlots.includes(child)) as THREE.Mesh[];
   assert.equal(contactSlots.length, ENEMY_CONTACT_EFFECT_BUDGET.slots);
   assert.ok(contactSlots.every(slot => slot.name.startsWith('echo-warden-contact-') && !slot.visible));
   assert.equal(internals.contactEffects.diagnostics.bytes, ENEMY_CONTACT_EFFECT_BUDGET.slots * ENEMY_CONTACT_EFFECT_BUDGET.vertices * 12);

@@ -50,6 +50,8 @@ export class BossTitleCard {
       root.className = `bt-${moment}${this.reduced() ? ' bt-reduced' : ''}`;
       // restart the CSS animation even when a card is already up
       root.hidden = true; void root.offsetWidth; root.hidden = false;
+      // The card owns the top of the screen while it is up: an area or reward banner arriving with it would overlap.
+      const banner = document.getElementById('xp-banner'); if (banner) banner.hidden = true;
       this.left = this.reduced() ? Math.min(1.6, SECONDS[moment]) : SECONDS[moment];
     } catch { this.root = null; } // presentation only: a minimal DOM simply shows no card
   }
