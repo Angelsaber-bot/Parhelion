@@ -46,13 +46,13 @@ export const EGYPT_APPROACH_ACTIONS: readonly FieldAction[] = [
 export const EGYPT_APPROACH: FieldChapterContent = {
   set: { region: 'egypt', title: ['埃及 · 尼罗河的第二次黎明', 'Egypt · The Nile’s Second Dawn'], actions: EGYPT_APPROACH_ACTIONS },
   props: [
-    { at: A.shell, off: [0, 1.2, -2], size: [1.4, 1.1, .6], color: 0x2f3a3a, target: A.shell },
+    { at: A.shell, off: [0, 1.2, -2], size: [1.4, 1.1, .6], color: 0x2f3a3a, target: A.shell, model: 'shell' },
     { at: A.shell, off: [1.5, .2, 1], size: [.6, .15, .4], color: 0x3f4a48, show: d => d.has(A.shell) },
     { at: A.divert, off: [1, .7, 0], size: [.5, .9, .5], color: 0xc2a462 },
     { at: A.high, off: [0, 3, -3], size: [3.4, .35, 2.2], color: 0x8a6a3e, show: d => !d.has(A.low), moved: { when: A.high, off: [0, 3.8, -3] } },
     { at: A.low, off: [0, .5, -3], size: [3.4, 1, .4], color: 0x8a6a3e, show: d => d.has(A.low) },
-    { at: A.boatShotA, off: [0, 1, 0], size: [1, .8, .8], color: 0x2f3a3a, target: A.boatShotA },
-    { at: A.boatShotB, off: [0, 1, 0], size: [1, .8, .8], color: 0x2f3a3a, target: A.boatShotB },
+    { at: A.boatShotA, off: [0, 1, 0], size: [1, .8, .8], color: 0x2f3a3a, target: A.boatShotA, model: 'shell' },
+    { at: A.boatShotB, off: [0, 1, 0], size: [1, .8, .8], color: 0x2f3a3a, target: A.boatShotB, model: 'shell' },
     { at: A.launch, off: [1.2, .9, 0], size: [1.4, .12, 1], color: 0x9b7b4b },
   ],
   actors: [

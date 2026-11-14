@@ -155,6 +155,8 @@ export interface FieldProp {
   readonly show?: (d: ReadonlySet<string>) => boolean;
   readonly moved?: { readonly when: string | ((d: ReadonlySet<string>) => boolean); readonly off: V3; readonly rot?: V3 };
   readonly target?: string;
+  /** Draw a modelled object of this size instead of a plain block (visual only). */
+  readonly model?: 'chaser' | 'pennant' | 'standard' | 'shell';
 }
 /** A named resident or companion whose work station follows the story: [action id, dx, dz] or hidden. */
 export interface FieldActor {

@@ -4,6 +4,7 @@
  */
 import { RESONANCE, flagResonance, resonanceLevel, resonanceMaxHp, resonanceReady, nextResonanceCost } from '../story/resonance';
 import * as THREE from 'three';
+import { RewardBurst } from './rewardBurst';
 import { MeshBVH } from 'three-mesh-bvh';
 import { WORLD_RIFLE } from '../core/worldBalance';
 import { bilingual } from '../../../shared-client/i18n';
@@ -59,8 +60,10 @@ const L = (t: Localized) => bilingual(t[0], t[1]);
 
 export function createExploration(host: ExplorationHost) {
   const root = new THREE.Group(); root.name = 'SunwardExploration';
+  const rewardBurst = new RewardBurst(); root.add(rewardBurst.root);
   const markers: Marker[] = [], ownership = new Map<string, () => void>(), labels = new Map<string, () => string>();
   const dynamic: Dyn[] = [], disposables: { dispose(): void }[] = [];
+  disposables.push(rewardBurst);
   const done = host.done;
   const arts = new Map<RegionId, SiteArt>();
   const artFor = (region: RegionId) => { let a = arts.get(region); if (!a) { a = new SiteArt(); arts.set(region, a); } return a; };
@@ -309,6 +312,8 @@ export function createExploration(host: ExplorationHost) {
     if (c.requires && !done.has(c.requires)) { host.toast(bilingual(`宝箱被封印了：需要先${requirementText(c.requires)}。`, `The chest is sealed: first ${requirementText(c.requires)}.`)); return; }
     done.add(flagChest(c.id)); host.save(); host.sound('open');
     const n = CHEST_CRYSTALS[c.tier], ex = regionExploration(c.region, done), rounds = host.refillAmmo?.(WORLD_RIFLE.ammoChest) ?? 0;
+    // The crystals fly up out of the lid and into the player.
+    rewardBurst.emit(rt.holder.getWorldPosition(new THREE.Vector3()).add(new THREE.Vector3(0, .8, 0)), n, c.tier === 'luxurious' ? '#ffd76a' : c.tier === 'precious' ? '#ffb27a' : c.tier === 'exquisite' ? '#9fe7ff' : '#d9f3ff');
     showBanner(bilingual(`获得 日晕晶 ×${n}` + (rounds ? ` · 弹药 +${rounds}` : ''), `Halo Crystal ×${n}` + (rounds ? ` · Ammo +${rounds}` : '')), bilingual(`${CHEST_NAMES[c.tier][0]} · ${REGION_NAMES[c.region]?.[0] ?? ''} 探索度 ${ex.percent}%`, `${CHEST_NAMES[c.tier][1]} · ${REGION_NAMES[c.region]?.[1] ?? ''} explored ${ex.percent}%`));
   }
 
@@ -633,10 +638,12 @@ export function createExploration(host: ExplorationHost) {
   }
 
   // ───────────────────────── per-frame ─────────────────────────
+  const burstTarget = new THREE.Vector3();
   let lastRegion: RegionId | null = null, time = 0, hudRev = '', hudPeekUntil = 0;
   function update(dt: number, player: PlayerView, region: RegionId, active: boolean) {
     time += dt;
     const pp = player.pos;
+    rewardBurst.update(dt, burstTarget.set(pp.x, pp.y + 1.2, pp.z));
     for (const d of dynamic) d.obj.visible = d.obj.userData.hidden ? false : Math.hypot(pp.x - d.p.x, pp.z - d.p.z) < d.range;
     // chests: lid + seal + sparkle
     for (const rt of chests.values()) {

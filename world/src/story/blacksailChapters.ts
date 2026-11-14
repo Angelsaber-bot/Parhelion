@@ -190,9 +190,9 @@ export const BLACKSAIL_CHAPTERS: FieldChapterContent = {
     { at: B.tow, off: [0, 2.2, 0], size: [.14, .14, 6], color: 0xb7a578, target: B.tow },
     { at: B.hooks, off: [-1.5, 1.3, 0], size: [.3, .5, .3], color: 0x6f6b62, target: B.hooks },
     // B07 chase: port chaser on grapples, starboard chaser with its foremast; both ride beside the flagship.
-    { at: B.hooks, off: [-10, -.4, 0], size: [3.2, 1.6, 10], color: 0x2e2a26, show: d => d.has(B.b06) && !d.has(B.b07), moved: { when: B.hooks, off: [-20, -.4, 9], rot: [0, .35, 0] } },
+    { at: B.hooks, off: [-10, -.4, 0], size: [3.2, 1.6, 10], color: 0x2e2a26, model: 'chaser', show: d => d.has(B.b06) && !d.has(B.b07), moved: { when: B.hooks, off: [-20, -.4, 9], rot: [0, .35, 0] } },
     { at: B.hooks, off: [-5.5, .9, 0], size: [8, .06, .06], color: 0xb7a578, show: d => d.has(B.b06) && !d.has(B.hooks) && !d.has(B.b07) },
-    { at: B.foremast, off: [10, -.4, 0], size: [3.2, 1.6, 10], color: 0x2e2a26, show: d => d.has(B.b06) && !d.has(B.b07), moved: { when: B.foremast, off: [13, -.6, 7], rot: [.08, -.3, .12] } },
+    { at: B.foremast, off: [10, -.4, 0], size: [3.2, 1.6, 10], color: 0x2e2a26, model: 'chaser', show: d => d.has(B.b06) && !d.has(B.b07), moved: { when: B.foremast, off: [13, -.6, 7], rot: [.08, -.3, .12] } },
     { at: B.foremast, off: [10, 4.2, 2], size: [.35, 8, .35], color: 0x5a4430, show: d => d.has(B.b06) && !d.has(B.b07), moved: { when: B.foremast, off: [12, 1.2, 7], rot: [0, 0, 1.25] } },
     { at: B.board, off: [9, 2, 10], size: [4, 2.5, 3], color: 0x4a4038, show: d => d.has(B.foremast) && !d.has(B.b07) },
     { at: B.cast, off: [1, .4, 0], size: [.25, .8, .25], color: 0x4a3a2a },

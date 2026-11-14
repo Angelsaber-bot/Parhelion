@@ -1,3 +1,4 @@
+import { makeChaserShip, makeLungingShell, makeRelayPennant, makeWavingStandard } from './chaserShip';
 import * as THREE from 'three';
 import type { Marker } from '../core/types';
 import type { FieldChapterContent } from '../story/fieldChapters';
@@ -33,6 +34,7 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
   // does not look like the same object in Kyoto or Black Sail.
   const PALETTE: Record<string, [number, number, number]> = { britain: [0x8e8a82, .22, .88], winter: [0xb8d0e0, .28, .7], blacksail: [0x4f6b66, .25, .9],
     kyoto: [0xa8452f, .18, .6], egypt: [0xd8b98a, .25, .85], orleans: [0x9a8566, .18, .86], qin: [0x8c7356, .25, .92], alpha: [0xe0dccf, .1, .78] };
+  const modelMaterials: THREE.Material[] = [], animated: THREE.Object3D[] = []; let clock = 0;
   function box(size: readonly number[], color: number, region = 'alpha') {
     const g = new THREE.BoxGeometry(size[0], size[1], size[2]); geo.add(g);
     const [tint, amount, roughness] = PALETTE[region] ?? PALETTE.alpha, key = `${color}:${region}`;
@@ -41,9 +43,20 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
   }
   const props = content.flatMap(({ set, props: list }) => list.flatMap(prop => {
     const at = points.get(prop.at); if (!at) return [];
-    const mesh = box(prop.size, prop.color, set.region); mesh.name = `FieldProp_${prop.at}`;
-    if (prop.target) { mesh.userData.target = prop.target; targets.push(mesh); }
-    return [{ prop, mesh }];
+    let mesh: THREE.Object3D;
+    let hitBox: THREE.Mesh | undefined;
+    if (prop.model) {
+      let model: THREE.Object3D;
+      if (prop.model === 'shell') { const shell = makeLungingShell(prop.size, geo, modelMaterials); model = shell.group; hitBox = shell.hit; }
+      else model = prop.model === 'chaser' ? makeChaserShip(prop.size, geo, modelMaterials) : prop.model === 'pennant' ? makeRelayPennant(prop.size, geo, modelMaterials) : makeWavingStandard(prop.size, geo, modelMaterials);
+      root.add(model); mesh = model; animated.push(model);
+    }
+    else mesh = box(prop.size, prop.color, set.region);
+    mesh.name = `FieldProp_${prop.at}`;
+    // A modelled target is shot through its invisible hit box; the model hides with it.
+    const shootable = hitBox ?? (mesh instanceof THREE.Mesh ? mesh : undefined);
+    if (prop.target && shootable) { shootable.userData.target = prop.target; targets.push(shootable); }
+    return [{ prop, mesh, hitBox }];
   }));
   const actors = createSettlementNpcs(content.flatMap(({ set, actors: list }) => list.map(actor => ({
     id: actor.id, role: actor.role, ...(['alpha', 'britain', 'winter', 'blacksail', 'kyoto'].includes(set.region) ? { region: set.region as 'alpha' } : { region: 'alpha' as const, worldRegion: set.region as 'egypt' }), position: [0, -500, 0] as P, appearance: { coat: actor.coat }, lines: [],
@@ -59,12 +72,13 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
       const key = `${d.size}:${watched.map(f => d.has(f) ? '1' : '0').join('')}`;
       if (key === lastKey) return;
       lastKey = key;
-      for (const { prop, mesh } of props) {
+      for (const { prop, mesh, hitBox } of props) {
         const at = points.get(prop.at)!;
         const moved = prop.moved && (typeof prop.moved.when === 'string' ? d.has(prop.moved.when) : prop.moved.when(d)) ? prop.moved : null, off = moved?.off ?? prop.off, rot = moved?.rot ?? prop.rot ?? [0, 0, 0];
         mesh.position.set(at[0] + off[0], at[1] + off[1], at[2] + off[2]); mesh.rotation.set(rot[0], rot[1], rot[2]);
         mesh.visible = prop.show ? prop.show(d) : true;
         if (prop.target) mesh.visible &&= !d.has(prop.target);
+        if (hitBox) hitBox.visible = mesh.visible;
       }
       for (const { actors: list } of content) for (const actor of list) {
         const where = actor.place(d), at = where && points.get(where[0]);
@@ -86,7 +100,8 @@ export function createFieldChapterScene(content: readonly FieldChapterContent[],
       // Visible near any chapter site (sites span several regions, including Homeward Town).
       root.visible = [...points.values()].some(p => Math.abs(viewer.x - p[0]) < 260 && Math.abs(viewer.z - p[2]) < 260);
       actors.update(dt, viewer);
+      clock += dt; if (root.visible) for (const o of animated) if (o.visible) (o.userData.animate as (t: number) => void)(clock);
     },
-    dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); root.removeFromParent(); },
+    dispose() { actors.dispose(); geo.forEach(g => g.dispose()); mat.forEach(m => m.dispose()); modelMaterials.forEach(m => m.dispose()); root.removeFromParent(); },
   };
 }
