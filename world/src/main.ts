@@ -223,7 +223,7 @@ import { makeGrassField, makeSunShafts, enhanceWater, makeUpdrafts } from './ren
 import { settlementGrassClearance } from './map/grassClearance';
 import {createArmoryWorkshop,ARMORY_WORKSHOP} from './story/armoryWorkshop';
 import { makeRegionWeather } from './map/regionWeather';
-import { toonMaterial, addOutline, makeSky, timeUniform, cloudShadowUniform } from './rendering/look';
+import { toonMaterial, addOutline, outlineColorFor, makeSky, timeUniform, cloudShadowUniform } from './rendering/look';
 import { Player, PLAYER, type Collider } from './player/player';
 import { WorldMap } from './map/map';
 import type { Layout, Marker } from './core/types';
@@ -602,7 +602,7 @@ for (const m of artMeshes) {
   // 128 m cells cut it to a quarter while frustum culling stays effective. Props keep 64 m cells.
   const pieces = !special && tris > 4000 ? chunkMesh(m, m.name === 'Terrain' ? 128 : 64) : [m];
   for (const c of pieces) {
-    if (m.userData.outline && !params.has('noline')) addOutline(c);
+    if (m.userData.outline && !params.has('noline')) addOutline(c, undefined, outlineColorFor(m.name));
     if (pieces.length > 1) culler.add(c, DRAW_DIST[m.name] ?? 1e9, streamedOutlineDistance(m.name));
     // Static art transforms do not change; shader foliage sway remains fully active.
     // Never freeze stateful, spinning, bobbing, target or other dynamic gameplay art.

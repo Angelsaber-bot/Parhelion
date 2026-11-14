@@ -25,3 +25,15 @@ test('material: additive, never writes depth, measured from the mesh\'s own base
   assert.ok(SEAM_VEIL.opacity < .5);
   m.dispose(); mesh.geometry.dispose();
 });
+
+test('foliage is inked in leaf green, everything else keeps the default ink', async () => {
+  const { outlineColorFor, OUTLINE_INK, addOutline } = await import('../src/rendering/look');
+  for (const name of ['Trees_Leaves', 'Leaves', 'Bushes', 'Trees', 'Kyoto_Foliage']) assert.equal(outlineColorFor(name), OUTLINE_INK.foliage, name);
+  for (const name of ['Trees_Trunks', 'Rocks', 'Houses', 'Terrain', 'Seams']) assert.equal(outlineColorFor(name), OUTLINE_INK.default, name);
+  const mesh = new THREE.Mesh(new THREE.ConeGeometry(1, 2, 6)); mesh.name = 'Trees_Leaves';
+  addOutline(mesh, undefined, outlineColorFor(mesh.name));
+  const hull = mesh.children[0] as THREE.Mesh, ink = hull.material as THREE.MeshBasicMaterial;
+  assert.equal(`#${ink.color.getHexString()}`, OUTLINE_INK.foliage); assert.equal(ink.side, THREE.BackSide); assert.equal(ink.polygonOffset, true, 'still pushed behind the model');
+  const g = new THREE.Color(OUTLINE_INK.foliage); assert.ok(g.g > g.r && g.g > g.b, 'a green, and darker than any leaf');
+  mesh.geometry.dispose();
+});

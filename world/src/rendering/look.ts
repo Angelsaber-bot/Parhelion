@@ -220,6 +220,11 @@ function outlineMat(width: number, color: THREE.ColorRepresentation) {
   return m;
 }
 
+/** Ink colour for a piece of map art. Foliage is open underneath (cone tiers, bush shells), so the inside of
+ * its hull shows as a large patch from below: a deep leaf green reads as the shaded underside of the canopy,
+ * where the default ink read as a black-blue disc under every tree. */
+export const OUTLINE_INK = Object.freeze({ default: '#2b2f45', foliage: '#1e3b2a' });
+export function outlineColorFor(name: string): string { return /Leaves|Bushes|Foliage|^Trees$/.test(name) ? OUTLINE_INK.foliage : OUTLINE_INK.default; }
 /** Inverted-hull outline sharing the mesh's geometry. */
 export function addOutline(mesh: THREE.Mesh, width = 0.045, color: THREE.ColorRepresentation = '#2b2f45') {
   const o = new THREE.Mesh(mesh.geometry, outlineMat(width, color));
