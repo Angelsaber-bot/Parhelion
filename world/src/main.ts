@@ -3823,8 +3823,8 @@ qinCampaign=createChapterWorkRuntime({done,actions:qinChapterById,ready:qinChapt
 });
 // E03/E04 field fights get their own casts: the Tide-Eater limb with its jet shell, and the stone-armoured pack.
 const EGYPT_FIGHT_CASTS:Record<string,StoryEncounterSpec['actors']>={
- chapter_egypt_campaign_limb:[{role:'breaker',offset:[-4,6],title:['吞潮肢体','Tide-Eater limb']},{role:'powder',offset:[4,6],title:['喷口甲壳','Jet shell']}],
- chapter_egypt_campaign_temple:[{role:'breaker',offset:[-4,6],title:['石甲','Stone armour']},{role:'breaker',offset:[4,6],title:['石甲','Stone armour']},{role:'shieldbearer',offset:[0,8],title:['石甲头群','Stone-armour lead']}],
+ chapter_egypt_campaign_limb:[{role:'breaker',offset:[-4,6],title:['吞潮肢体','Tide-Eater limb'],creature:'tide-limb'},{role:'powder',offset:[4,6],title:['喷口甲壳','Jet shell'],creature:'stone-armour'}],
+ chapter_egypt_campaign_temple:[{role:'breaker',offset:[-4,6],title:['石甲','Stone armour'],creature:'stone-armour'},{role:'lancer',offset:[4,6],title:['石甲','Stone armour'],creature:'stone-armour'},{role:'breaker',offset:[0,8],title:['石甲头群','Stone-armour lead'],creature:'stone-armour'}],
 };
 egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyptChapterReady,commit:commitEgyptChapter,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),position:id=>markers.get(id)?.p,
  reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},

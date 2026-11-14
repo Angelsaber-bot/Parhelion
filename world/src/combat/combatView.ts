@@ -22,6 +22,7 @@ import { collectStrikeTargets, type StrikeRequest, type StrikeResult } from './c
 import { authorEncounters, KNIGHT_TRIAL_ID, KNIGHT_TRIAL_CLEAR } from '../story/authoredEncounters';
 import { getEraBossRequirements, isEraCoreCleared } from '../story/eraStories';
 import { makeValleySentinel } from './valleySentinel';
+import { makeStoneArmour, makeTideLimb } from './egyptCreatures';
 import { VisibleEnemyRoot } from './visibleEnemyRoot';
 
 export interface WorldCombatOptions {
@@ -40,7 +41,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { crowFx?: { dark: THREE.Mesh; glint: THREE.Mesh; curtain: THREE.Mesh; burn: number; lastCount: number }; decoys?: THREE.Mesh[]; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { crowFx?: { dark: THREE.Mesh; glint: THREE.Mesh; curtain: THREE.Mesh; burn: number; lastCount: number }; decoys?: THREE.Mesh[]; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean, mode?: Enemy['mode']) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -442,7 +443,10 @@ export class WorldCombat {
       if (v.peaceMarker) v.peaceMarker.visible = e.pacified && distance < 24;
       if (v.roleLabel) v.roleLabel.visible = !e.pacified && distance < 24 && (e.mode !== 'idle' || distance < 12);
       const moving = e.mode === 'chase';
-      v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup');
+      v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup', e.mode);
+      // The limb's shell follows the simulation, including a reset that grows it back.
+      const shellKit = v.fallback.userData.creature as { shellBroken?: boolean; breakShell?: () => void; restoreShell?: () => void } | undefined;
+      if (shellKit?.breakShell && shellKit.shellBroken !== !!e.shellBroken) { if (e.shellBroken) shellKit.breakShell(); else shellKit.restoreShell?.(); }
       v.body.position.y = skinned || v.updateCreature ? 0 : 0.025 * Math.sin(this.time * (moving ? 10 : 3));
       v.body.rotation.z = !skinned && !v.updateCreature && moving ? Math.sin(this.time * 9) * 0.04 : 0;
       // A co-op guest's enemies chase whichever player the host's game chose (sent as the target).
@@ -457,9 +461,10 @@ export class WorldCombat {
         (fx.glint.material as THREE.MeshBasicMaterial).opacity = lampOut ? .5 + .5 * Math.sin(this.time * 18) : 0;
         fx.glint.position.set(e.p.x - v.root.position.x + .35, 1.4, e.p.z - v.root.position.z + .6);
         fx.dark.position.set(e.p.x - v.root.position.x, 1.6, e.p.z - v.root.position.z);
-        // Below 30 % each new attack sets a curtain alight across his retreat; it burns out in ~3 s.
-        if (alive && f <= .3 && e.mode === 'windup' && e.attackCount !== fx.lastCount) { fx.lastCount = e.attackCount; fx.burn = 3; fx.curtain.position.set(e.p.x - v.root.position.x, 0, e.p.z - v.root.position.z); fx.curtain.rotation.y = (e.squareYaw ?? 0) + Math.PI / 2; }
-        fx.burn = Math.max(0, fx.burn - (active ? dt : 0)); fx.curtain.visible = fx.burn > 0;
+        // Below 30 % each new attack sets a curtain alight across his retreat (simulated: CROW_CURTAIN).
+        const lit = alive ? this.state.crowCurtain : null;
+        fx.burn = lit?.burn ?? 0; fx.curtain.visible = fx.burn > 0;
+        if (lit) { fx.curtain.position.set(lit.x - v.root.position.x, 0, lit.z - v.root.position.z); fx.curtain.rotation.y = lit.yaw; }
         (fx.curtain.material as THREE.MeshBasicMaterial).opacity = fx.burn > 2 ? .85 : fx.burn > 1 ? .6 : fx.burn * .5;
         (fx.curtain.material as THREE.MeshBasicMaterial).color.setHex(fx.burn > 2 ? 0xffa040 : fx.burn > 1 ? 0xff6a2a : 0x3a2a22);
       }
@@ -561,12 +566,17 @@ export class WorldCombat {
         }
       } else if (event.type === 'hit') {
         const struck = this.playable ? this.state.enemies.find(e => e.id === event.id) : undefined;
-        if (struck) this.damageNumbers.add(new THREE.Vector3(struck.p.x, struck.p.y + (struck.kind === 'king' ? 3.4 : struck.miniboss ? 2.5 : 2.1), struck.p.z), event.damage, damageKind(event));
+        if (struck) this.damageNumbers.add(new THREE.Vector3(struck.p.x, struck.p.y + (struck.kind === 'king' ? 3.4 : struck.creature === 'tide-limb' ? 4.4 : struck.miniboss ? 2.5 : 2.1), struck.p.z), event.damage, damageKind(event.plated ? { ...event, blocked: true } : event));
         if (event.source && !event.remote) this.options.onDamage?.({ id: event.id, damage: event.damage, source: event.source, eligible: true });
         if (event.remote) this.remoteFinish.add(event.id); else this.remoteFinish.delete(event.id);
         if (event.precise && !event.remote && struck) { this.feedback.precise(); this.options.feedbackCues?.precise?.(); }
-        this.impact.textContent = `${event.precise ? bilingual('要害 ', 'WEAK SPOT ') : ''}${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${event.damage}`; this.impactFor = 0.35;
+        const hide = event.plated ? struck?.creature === 'tide-limb' ? bilingual('甲壳挡住 · 打关节 ', 'SHELL · hit the joints ') : bilingual('石甲弹开 · 打接缝 ', 'PLATES · hit the seams ') : '';
+        this.impact.textContent = `${hide}${event.precise ? bilingual('要害 ', 'WEAK SPOT ') : ''}${event.blocked ? bilingual('盾挡 ', 'BLOCKED ') : ''}${event.counter ? bilingual('反击 ', 'COUNTER ') : ''}${event.punish ? bilingual('破绽 ×2 ', 'PUNISH ×2 ') : ''}−${Math.round(event.damage)}`; this.impactFor = 0.35;
         this.flashHitMarker();
+      } else if (event.type === 'shellBreak') {
+        const limb = this.state.enemies.find(e => e.id === event.id);
+        if (limb) for (let k = 0; k < 7; k++) this.spark(new THREE.Vector3(limb.p.x + Math.cos(k) * .8, limb.p.y + 1 + k * .45, limb.p.z + Math.sin(k) * .8), .45);
+        this.impact.textContent = bilingual('甲壳碎裂！ · 伤害恢复', 'SHELL CRACKED! · full damage'); this.impactFor = 1.2;
       } else if (event.type === 'explode') {
         for (const [dx, dz] of [[0, 0], [1.2, 0], [-1.2, 0], [0, 1.2], [0, -1.2]]) this.spark(new THREE.Vector3(event.at.x + dx, event.at.y + .8, event.at.z + dz), .5);
         this.impact.textContent = bilingual('火药桶 · 轰！', 'POWDER KEG · BOOM!'); this.impactFor = .8;
@@ -736,6 +746,12 @@ export class WorldCombat {
       if (model === 'sunward_guard') mesh(new THREE.BoxGeometry(0.45, 0.65, 0.08), material, [-0.4, 1.1, 0.2]);
       const weaponSide = model === 'deck_raider' ? -1 : 1;
       mesh(new THREE.BoxGeometry(0.055, model === 'ashigaru' ? 2.2 : 0.85, 0.055), material, [weaponSide * 0.42, 1.12, 0.15]);
+    } else if (e.creature === 'tide-limb' || e.creature === 'stone-armour') {
+      // Egypt's anomalous-water creatures replace the soldier silhouette entirely.
+      const creature = e.creature === 'tide-limb' ? makeTideLimb(this.shared, this.materials)
+        : makeStoneArmour(this.shared, this.materials, /lead/i.test(e.displayName?.[1] ?? ''));
+      fallback.add(creature.root);
+      fallback.userData.updateCreature = creature.update; fallback.userData.creature = creature;
     } else {
       const creature = makeValleySentinel(this.shared, this.materials, !!e.miniboss);
       fallback.add(creature.root);
@@ -761,7 +777,7 @@ export class WorldCombat {
       bodyCrown = crown;
     }
     const sword = undefined;
-    const bar = new THREE.Group(); bar.position.y = king ? 4.1 : 2.25; root.add(bar);
+    const bar = new THREE.Group(); bar.position.y = king ? 4.1 : e.creature === 'tide-limb' ? 5.7 : e.creature === 'stone-armour' ? 1.95 : 2.25; root.add(bar);
     const width = king ? 1.5 : 0.8;
     const barGeo = new THREE.PlaneGeometry(width, 0.09), backMat = new THREE.MeshBasicMaterial({ color: '#171c29', depthTest: true });
     const fillMat = new THREE.MeshBasicMaterial({ color: e.miniboss ? '#ffd36a' : '#ffb26f', depthTest: true });
@@ -782,7 +798,7 @@ export class WorldCombat {
     if (e.miniboss || e.displayName) {
       const emblemGeo = new THREE.OctahedronGeometry(0.12), emblemMat = new THREE.MeshBasicMaterial({ color: '#ffd36a', toneMapped: false });
       this.shared.push(emblemGeo); this.materials.push(emblemMat);
-      const emblem = new THREE.Mesh(emblemGeo, emblemMat); emblem.position.y = 2.55; root.add(emblem);
+      const emblem = new THREE.Mesh(emblemGeo, emblemMat); emblem.position.y = bar.position.y + .3; root.add(emblem);
       const name = e.displayName ?? MINIBOSSES.find(m => m.id === e.miniboss)?.name;
       root.userData.minibossName = name;
       if (name) {
@@ -800,7 +816,7 @@ export class WorldCombat {
           };
           const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.push(texture); updateLabel();
           const labelMat = new THREE.SpriteMaterial({ map: texture, depthWrite: false }); this.materials.push(labelMat);
-          const label = new THREE.Sprite(labelMat); label.position.y = 2.9; label.scale.set(3, 0.375, 1); root.add(label);
+          const label = new THREE.Sprite(labelMat); label.position.y = bar.position.y + .65; label.scale.set(3, 0.375, 1); root.add(label);
         }
       }
     }

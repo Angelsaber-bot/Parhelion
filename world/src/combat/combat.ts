@@ -15,7 +15,8 @@ import { ENEMY_ROLES, SHINOBI_BLINK, selectEnemyRole, type EnemyRole } from './e
 export interface Point3 { x: number; y: number; z: number }
 export type EnemyKind = 'shade' | 'crystal' | 'king';
 export type EnemyMode = 'idle' | 'chase' | 'windup' | 'recover' | 'stagger' | 'pacified' | 'dead';
-export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string; role?: EnemyRole; encounter?: 'akechi'; storyEncounter?: string; storyPattern?: 'echo-warden'; displayName?: readonly [string,string]; appearance?: 'samurai'|'ashigaru'|'musketeer'|'officer'|'sunward_guard'|'deck_raider' }
+export type CreatureKind = 'tide-limb' | 'stone-armour';
+export interface SpawnPoint { id: string; kind: EnemyKind; p: Point3; miniboss?: string; role?: EnemyRole; creature?: CreatureKind; encounter?: 'akechi'; storyEncounter?: string; storyPattern?: 'echo-warden'; displayName?: readonly [string,string]; appearance?: 'samurai'|'ashigaru'|'musketeer'|'officer'|'sunward_guard'|'deck_raider' }
 export interface Enemy extends SpawnPoint {
   home: Point3; hp: number; maxHp: number; mode: EnemyMode; timer: number;
   active: boolean; phase: 1 | 2; attack: 'sweep' | 'burst' | 'shot' | 'thrust'; target: Point3;
@@ -28,12 +29,15 @@ export interface Enemy extends SpawnPoint {
   squareGuard?: number; squareDrum?: number;
   /** Toughness damage built up toward a daze break (elites and chapter bosses only). */
   daze?: number; dazeIdle?: number; dazedFor?: number;
+  /** Tide-Eater limb: its shell has cracked off and no longer halves damage. */
+  shellBroken?: boolean;
 }
 const MODES = new Set(['idle', 'chase', 'windup', 'recover', 'stagger', 'dead']);
 const ATTACKS = new Set(['sweep', 'burst', 'shot', 'thrust']);
 export type CombatEvent =
   | { type: 'attackContact'; id: string; attack: Enemy['attack']; sequence: number; origin: Point3; target: Point3; radius: number; storyPattern?: 'echo-warden'; length?: number }
-  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean; precise?: boolean }
+  | { type: 'hit'; id: string; damage: number; source?: HitContext['source']; punish?: boolean; blocked?: boolean; counter?: boolean; remote?: boolean; precise?: boolean; plated?: boolean }
+  | { type: 'shellBreak'; id: string }
   | { type: 'kill'; id: string }
   | { type: 'blink'; id: string; from: Point3; to: Point3 }
   | { type: 'signature'; id: string; name: readonly [string, string]; counter: readonly [string, string] }
@@ -99,6 +103,15 @@ export const COMBAT = {
   wildernessCap: 160, activeRange: 82, hideRange: 120, aggroRange: 20,
   leash: 35, respawn: 35, bossLeash: 68, bossHp: 1800,
 } as const;
+/** J08 鸦印 烧幕: below 30 % health each new attack sets a curtain alight behind him, across his retreat. It burns
+ * bright for two seconds (crossing it hurts), then smoulders for one (safe) and is gone. */
+export const CROW_CURTAIN = Object.freeze({ id: 'boss_hellfire_lord', below: .3, life: 3, hot: 1, halfLength: 1.7, depth: .55, damage: 12, behind: 2.2 });
+export interface CrowCurtain { x: number; z: number; yaw: number; burn: number; count: number }
+/** Whether `p` stands in the burning band of a curtain (a 3.4 m line, ±0.55 m deep). */
+export function inCrowCurtain(c: Pick<CrowCurtain, 'x' | 'z' | 'yaw'>, p: Point3) {
+  const dx = p.x - c.x, dz = p.z - c.z, along = dx * Math.cos(c.yaw) - dz * Math.sin(c.yaw), across = dx * Math.sin(c.yaw) + dz * Math.cos(c.yaw);
+  return Math.abs(along) <= CROW_CURTAIN.halfLength && Math.abs(across) <= CROW_CURTAIN.depth;
+}
 export const BOSS_REQUIREMENTS = ERA_BOSS_REQUIREMENTS.sun_core;
 export const BOSS_REWARD = 'reward_sunset_oath';
 /** One sun-core boss per era: the marker it stands on, the core that starts it, what it needs and grants. */
@@ -209,8 +222,16 @@ export function makeWildernessSpawns(seed: number, place: (x: number, z: number)
   return points.slice(0, COMBAT.wildernessCap);
 }
 
+/** Egypt's anomalous-water creatures (E03/E04). The Tide-Eater limb is rooted in the riverbed and
+ * swings far; its shell halves damage until it cracks off at 55% health. Stone armour sheds most of
+ * a blow on its plates; weak-spot rounds (the seams, best from above), melee punishes, counters and
+ * a broken stance go through. */
+export const CREATURES = Object.freeze({
+  'tide-limb': { hp: 150, reach: 5.2, radius: 4.8, shellUntil: .55, shellTaken: .5, shellStagger: 1.4 },
+  'stone-armour': { hp: 96, plateTaken: .45 },
+});
 function makeEnemy(s: SpawnPoint): Enemy {
-  const maxHp = s.storyPattern === 'echo-warden' ? ECHO_WARDEN.hp : s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
+  const maxHp = s.creature ? CREATURES[s.creature].hp : s.storyPattern === 'echo-warden' ? ECHO_WARDEN.hp : s.kind === 'king' ? COMBAT.bossHp : minibossProfile(s)?.hp ?? (s.kind === 'crystal' ? 88 : 66);
   return { ...s, p: clone(s.p), home: clone(s.p), maxHp, hp: maxHp, mode: 'idle', timer: 0,
     active: false, phase: 1, attack: 'sweep', target: clone(s.p), attackCount: 0, contactSequence: 0, hitTime: 0, role: s.role ?? selectEnemyRole({ ...s, home: s.p }), staggerCooldown: 0, pacified: false };
 }
@@ -226,6 +247,7 @@ export function enemyAttackRadius(e: Enemy): number {
   if (e.attack === 'shot') return 1.4;
   if (e.attack === 'thrust') return e.kind === 'king' ? 1.2 : ENEMY_ROLES[e.role].radius;
   if (e.kind === 'king') return e.attack === 'burst' ? (e.phase === 2 ? 6.2 : 4.8) : 5.5;
+  if (e.creature === 'tide-limb') return CREATURES['tide-limb'].radius;
   return minibossProfile(e)?.radius ?? ENEMY_ROLES[e.role].radius;
 }
 
@@ -383,9 +405,24 @@ export class WorldCombatState {
     Object.assign(e.p, e.home); e.hp = e.maxHp; e.mode = e.pacified ? 'pacified' : 'idle'; e.timer = 0; e.active = false;
     Object.assign(e.target, e.home); e.attack = 'sweep';
     e.phase = 1; e.attackCount = 0; e.contactSequence = 0; e.hitTime = 0; e.staggerCooldown = 0; if (e.role === 'shinobi') e.blinkCooldown = SHINOBI_BLINK.first; e.signatureActive = false;
-    e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0;
+    e.daze = 0; e.dazeIdle = 0; e.dazedFor = 0; e.shellBroken = false;
+  }
+  /** The Crow Seal's current burning curtain, if any (read by the view to draw it). */
+  crowCurtain: CrowCurtain | null = null;
+  private stepCrowCurtain(dt: number, player: Point3) {
+    const b = this.bossStarted ? this.boss : null;
+    if (!b || b.id !== CROW_CURTAIN.id || b.mode === 'dead') { this.crowCurtain = null; return; }
+    // A new windup below the threshold lights a fresh curtain across his line of retreat.
+    if (b.hp / b.maxHp <= CROW_CURTAIN.below && b.mode === 'windup' && b.attackCount !== this.crowCurtain?.count)
+    { const face = b.squareYaw ?? 0; // he faces the player; the curtain hangs behind him, blocking pursuit
+      this.crowCurtain = { x: b.p.x - Math.sin(face) * CROW_CURTAIN.behind, z: b.p.z - Math.cos(face) * CROW_CURTAIN.behind, yaw: face, burn: CROW_CURTAIN.life, count: b.attackCount }; }
+    const c = this.crowCurtain; if (!c) return;
+    c.burn -= dt;
+    if (c.burn <= 0) { this.crowCurtain = { ...c, burn: 0 }; return; }
+    if (c.burn > CROW_CURTAIN.hot && !this.invulnerable && inCrowCurtain(c, player)) this.hurt(CROW_CURTAIN.damage, false, { x: c.x, y: player.y, z: c.z });
   }
   resetBoss() {
+    this.crowCurtain = null;
     if (!this.bossStarted) return;
     this.bossStarted = false; this.resetEnemy(this.boss); this.events.push({ type: 'bossReset' });
   }
@@ -475,7 +512,7 @@ export class WorldCombatState {
     const punish = !raw && melee && isMeleePunishWindow(e);
     const ranged=!raw&&context?.source==='ranged';
     const opening=ranged&&e.mode==='recover'?WORLD_RIFLE.recoveryBonus:1;
-    const armor=ranged&&e.role==='breaker'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
+    const armor=ranged&&e.role==='breaker'&&!e.creature&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&!e.storyPattern?WORLD_RIFLE.breakerArmor:1;
     const squareFront=ranged&&!!context?.origin&&lastSquareFront(e,context.origin);
     // A front-rank soldier takes the round instead of the officer; every third hit drops one.
     if (squareFront && e.id === LAST_SQUARE.id && (e.squareGuard ?? 0) > 0) {
@@ -483,13 +520,21 @@ export class WorldCombatState {
       this.events.push({ type: 'hit', id, damage: 0, source: context?.source, punish: false, blocked: true });
       return true;
     }
-    const shielded=squareFront||ranged&&e.role==='shieldbearer'&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
+    const shielded=squareFront||ranged&&e.role==='shieldbearer'&&!e.creature&&e.mode!=='recover'&&e.mode!=='stagger'&&e.kind!=='king'&&!e.miniboss&&(!e.storyPattern||e.phase===2);
     const counter = this.counterFor > 0, dazed = (e.dazedFor ?? 0) > 0;
     const precise = ranged && !!context?.precise && !shielded, weakSpot = precise ? (this.gun.pellets > 1 ? PRECISION.pellet : PRECISION.multiplier) : 1;
-    const dealt = Math.min(e.hp, Math.round(damage * weakSpot * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? BOSS_FRONTS[e.id].block : shielded ? WORLD_RIFLE.shieldBlock : ranged && BOSS_FRONTS[e.id] && e.squareYaw !== undefined && context?.origin ? BOSS_FRONTS[e.id].flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
+    const plates = !raw && e.creature === 'stone-armour' && !precise && !punish && !counter && !dazed && context?.source !== 'ultimate';
+    const shell = !raw && e.creature === 'tide-limb' && !e.shellBroken && !precise && !punish && !counter;
+    const hide = plates ? CREATURES['stone-armour'].plateTaken : shell ? CREATURES['tide-limb'].shellTaken : 1;
+    const dealt = Math.min(e.hp, Math.round(damage * weakSpot * hide * (counter ? PERFECT_EVADE.bonus : 1) * (dazed ? DAZE.taken : 1) * opening * armor * (squareFront ? BOSS_FRONTS[e.id].block : shielded ? WORLD_RIFLE.shieldBlock : ranged && BOSS_FRONTS[e.id] && e.squareYaw !== undefined && context?.origin ? BOSS_FRONTS[e.id].flank : 1) * (punish ? COMBAT.meleePunish : 1) * (context?.source === 'ranged' && context.origin ? gunDistanceMultiplier(this.gun, distanceXZ(context.origin, e.p)) : 1) * 100) / 100);
     e.hp -= dealt; e.hitTime = 0.11;
-    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(precise ? { precise: true } : {}), ...(raw ? { remote: true } : {}) });
+    this.events.push({ type: 'hit', id, damage: dealt, source: context?.source, punish, ...(shielded ? { blocked: true } : {}), ...(counter ? { counter: true } : {}), ...(precise ? { precise: true } : {}), ...(hide < 1 ? { plated: true } : {}), ...(raw ? { remote: true } : {}) });
     if (!raw && context?.source && dealt > 0) this.onLocalHit?.(id, dealt, context.source);
+    // The limb's shell cracks off once: a long stagger, then full damage for the rest of the fight.
+    if (e.creature === 'tide-limb' && !e.shellBroken && e.hp > 0 && e.hp <= e.maxHp * CREATURES['tide-limb'].shellUntil) {
+      e.shellBroken = true; e.mode = 'stagger'; e.timer = CREATURES['tide-limb'].shellStagger; e.contactSequence = 0;
+      this.events.push({ type: 'shellBreak', id });
+    }
     if (e.hp <= 0) {
       e.mode = 'dead'; e.timer = e.storyEncounter || e.id === KNIGHT_TRIAL_ID ? Infinity : e.miniboss ? 120 : COMBAT.respawn; e.active = false;
       if (e.id === KNIGHT_TRIAL_ID) this.trialReplay = false;
@@ -540,8 +585,9 @@ export class WorldCombatState {
     const d = { x: direction.x / length, y: direction.y / length, z: direction.z / length };
     for (const e of this.enemies) {
       if (!e.active || e.mode === 'dead' || e.pacified) continue;
-      const radius = e.kind === 'king' ? 1.45 : 0.8;
-      const center = { x: e.p.x, y: e.p.y + (e.kind === 'king' ? 1.8 : 1.05), z: e.p.z };
+      // Hit volumes follow the silhouette: the limb is tall, stone armour low and broad.
+      const radius = e.kind === 'king' ? 1.45 : e.creature === 'tide-limb' ? 1.35 : e.creature === 'stone-armour' ? .85 : 0.8;
+      const center = { x: e.p.x, y: e.p.y + (e.kind === 'king' ? 1.8 : e.creature === 'tide-limb' ? 2.4 : e.creature === 'stone-armour' ? .75 : 1.05), z: e.p.z };
       const x = origin.x - center.x, y = origin.y - center.y, z = origin.z - center.z;
       const b = x * d.x + y * d.y + z * d.z, c = x * x + y * y + z * z - radius * radius;
       const disc = b * b - c;
@@ -746,7 +792,7 @@ export class WorldCombatState {
       if (e.mode === 'recover' || e.mode === 'stagger') { if (e.timer <= 0) { e.mode = 'chase'; e.timer = enemyRangedSpacing(e) ? ENEMY_TACTICS.rangedReset : .25; } continue; }
       const isBoss = e === this.boss, elite = minibossProfile(e);
       const role = ENEMY_ROLES[e.role];
-      const meleeRange = e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
+      const meleeRange = e.creature === 'tide-limb' ? CREATURES['tide-limb'].reach : e.storyPattern === 'echo-warden' ? ECHO_WARDEN.range : isBoss ? 6 : elite?.range ?? role.range;
       if (e.role === 'shinobi' && !isBoss && !elite && (!e.storyPattern || e.phase === 2) && sees && e.timer <= 0 && !e.blinkCooldown && dist > SHINOBI_BLINK.min && dist < SHINOBI_BLINK.max && hasEnemyPressureSlot(e, this.enemies, player)) {
         // Vanish and reappear behind the player (far side of the approach), then a readable cut.
         const p = terrain.walk(player, player.x + (player.x - e.p.x) / dist * SHINOBI_BLINK.behind, player.z + (player.z - e.p.z) / dist * SHINOBI_BLINK.behind);
@@ -777,7 +823,8 @@ export class WorldCombatState {
       }
       const spacing = enemyRangedSpacing(e);
       const retreat = spacing > 0 && dist < spacing && e.timer > 0;
-      if ((dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
+      // The Tide-Eater limb is rooted in the riverbed: it turns and swings, never walks.
+      if (e.creature !== 'tide-limb' && (dist > 1.7 || retreat) && (sees || isBoss && heightOk)) {
         // 最后方阵 advances on the drum: a step on each beat, a held line between beats.
         const drum = e.id === LAST_SQUARE.id ? .35 + 1.3 * Math.max(0, Math.sin((e.squareDrum = (e.squareDrum ?? 0) + dt) * LAST_SQUARE.drum)) : 1;
         const speed = (isBoss ? e.phase === 2 ? 5.0 : 3.8 : elite ? elite.speed * (e.phase === 2 ? ELITE_RALLY.speed : 1) : role.speed) * drum;
@@ -791,6 +838,7 @@ export class WorldCombatState {
       }
     }
     this.stepHazards(dt, localPlayer);
+    if (!this.remoteEnemies) this.stepCrowCurtain(dt, localPlayer);
     if (this.defeated) return;
     this.quietFor = threatened ? 0 : this.quietFor + dt;
     if (this.quietFor > 5) this.hp = Math.min(this.maxHp, this.hp + dt * 10);

@@ -10,6 +10,8 @@ export interface StoryEncounterActor {
   readonly offset: readonly [number, number];
   readonly title?: readonly [string, string];
   readonly pattern?: 'echo-warden';
+  /** Egypt's dedicated creatures replace the soldier silhouette and add their own armour rules. */
+  readonly creature?: 'tide-limb' | 'stone-armour';
 }
 /** Narrative owns stage/catalog lookup. Combat receives geometry + ordinary role data,
  * never save flags, reward grants, arbitrary stats or externally loaded assets.
@@ -35,7 +37,7 @@ const valid = (spec: StoryEncounterSpec) => !!spec && typeof spec.id === 'string
   && Array.isArray(spec.actors) && spec.actors.length > 0 && spec.actors.length <= STORY_ENCOUNTER_LIMITS.actors
   && spec.actors.every(actor => !!actor && Object.hasOwn(ENEMY_ROLES, actor.role) && Array.isArray(actor.offset) && actor.offset.length === 2
     && actor.offset.every(Number.isFinite) && Math.hypot(...actor.offset) <= STORY_ENCOUNTER_LIMITS.actorOffset
-    && (!actor.pattern || actor.pattern === 'echo-warden')
+    && (!actor.pattern || actor.pattern === 'echo-warden') && (!actor.creature || actor.creature === 'tide-limb' || actor.creature === 'stone-armour')
     && (!actor.title || Array.isArray(actor.title) && actor.title.length === 2 && actor.title.every((text: unknown) => typeof text === 'string' && text.length > 0 && text.length <= 96)));
 const appearances = { stalker: 'deck_raider', duelist: 'samurai', breaker: 'sunward_guard', bombardier: 'deck_raider', musketeer: 'musketeer', lancer: 'ashigaru', shieldbearer: 'sunward_guard', shinobi: 'samurai', powder: 'deck_raider', jaeger: 'musketeer' } as const;
 
@@ -62,7 +64,7 @@ export class StoryEncounterDirector {
         || spawns.some(other => distance(other.p,point)<2)
         || state.enemies.some(other => other.mode !== 'dead' && !other.pacified && distance(other.p,point)<5 && Math.abs(other.p.y-point.y)<2.6)) return { ok: false, reason: 'blocked' };
       spawns.push({ id: `story_${spec.id}_${this.generation + 1}_${index}`, kind: actor.role === 'bombardier' || actor.pattern ? 'crystal' : 'shade', p: { ...point }, role: actor.role,
-        storyEncounter: spec.id, storyPattern: actor.pattern, displayName: actor.title, appearance: spec.id === VALLEY_RESCUE_ENCOUNTER ? undefined : appearances[actor.role] });
+        storyEncounter: spec.id, storyPattern: actor.pattern, displayName: actor.title, ...(actor.creature ? { creature: actor.creature } : {}), appearance: spec.id === VALLEY_RESCUE_ENCOUNTER || actor.creature ? undefined : appearances[actor.role] });
     }
     const actors = state.replaceStoryEnemies(spawns); this.generation++;
     this.current = { id: spec.id, anchor: { ...spec.anchor }, actors };
