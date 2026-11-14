@@ -1,5 +1,5 @@
 #!/bin/bash
-# User-run release: both Arena anti-cheat changes, preserving unrelated World edits.
+# User-run release: Arena updates, preserving unrelated World edits.
 set -euo pipefail
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$repo"
@@ -13,7 +13,7 @@ git merge --ff-only origin/main
 git diff --check -- arena-game
 git add -- arena-game
 if ! git diff --cached --quiet; then
-  git commit -m "Protect Arena inputs and conceal enemy positions with aim review evidence"
+  git commit -m "Update Arena online protection"
 fi
 release_sha=$(git rev-parse HEAD)
 release_dir=$(mktemp -d /tmp/parhelion-arena-release.XXXXXX)

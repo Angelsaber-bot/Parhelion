@@ -2,7 +2,6 @@
 // (server/ArenaRoom.ts) and the public Cloudflare Durable Object (worker/index.ts) both wrap it,
 // so online rules are identical wherever the server runs.
 
-import { AimAudit } from './aimAudit.ts';
 import { snapshotForViewer } from './visibility.ts';
 import { ArenaTrafficGuard } from './antiCheat.ts';
 import { getMap, mapIdOf } from './arenaMap.ts';
@@ -15,7 +14,6 @@ import type { StatsSource } from './weaponStats.ts';
 let botSeed = 1;
 
 export class RoomCore {
-  readonly aimAudit = new AimAudit();
   private readonly guards = new Map<string, ArenaTrafficGuard>();
   readonly match: Match;
   readonly layout: TeamLayout;
@@ -28,7 +26,6 @@ export class RoomCore {
     this.layout = LAYOUTS.includes(options.layout as TeamLayout) ? options.layout as TeamLayout : '1v1';
     this.mapId = mapIdOf(options.map);
     this.match = new Match(getMap(this.mapId), this.layout);
-    this.match.onAppliedInput = (player, input, events) => this.aimAudit.observe(this.match, player, input, events);
     this.fillBots = !!options.bots;
     const cap = TEAM_CAPACITY[this.layout];
     this.capacity = cap.A + cap.B;
@@ -69,7 +66,6 @@ export class RoomCore {
 
   leave(id: string) {
     this.guards.delete(id);
-    this.aimAudit.leave(id);
     // The last human leaving closes the round's telemetry before a bot takes the seat.
     const m = this.match, slot = m.slots.get(id);
     if (slot && !slot.info.bot && ![...m.slots.values()].some((s) => s !== slot && !s.info.bot)) m.flushStats();

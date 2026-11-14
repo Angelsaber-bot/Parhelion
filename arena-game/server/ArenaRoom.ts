@@ -32,7 +32,6 @@ export class ArenaRoom extends Room {
     this.setSimulationInterval(() => {
       const snap = core.step();
       if (snap) for (const client of this.clients) client.send('snap', core.snapshotFor(client.sessionId, snap));
-      for (const report of core.aimAudit.drain()) console.warn(JSON.stringify(report));
       this.saveStats();
     }, 1000 / TICK_HZ);
   }

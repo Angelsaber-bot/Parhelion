@@ -12,12 +12,6 @@ A separate allowlisted roster carries identity, team and scores only. Hidden ene
 
 This reduces position-based ESP and hidden-target acquisition. It cannot erase last-known positions, prevent inference from public effects or teammates, or stop image-based aiming at visible enemies. Sampling and network delay can cause reveal delay at cover edges; live corner-peek validation remains a release check. Concealed positional shot sounds/effects are also suppressed rather than exposing exact hidden coordinates.
 
-## Suspicious aim evidence
-
-`AimAudit` observes actual server-processed inputs and fire events. Repeated rapid, highly precise snap-to-head shots can generate a bounded `aim-review` JSON log. Reports include session ID, target ID, server tick, input sequence and angle measurements; they are not sent to opponents. They require review and never automatically ban, kick or alter damage. A single flick or high accuracy alone is not a cheating verdict. This heuristic is not a complete aimbot detector and can produce false positives or miss smoothed/vision-based aim assistance.
-
-Reports are drained to the local server console or Cloudflare Worker logs. They are not an account-level ban system or a durable moderation database. Disconnecting clears that session's detector state.
-
 ## Release checks
 
 - Run Arena typecheck and all Arena tests, including real-socket suites.

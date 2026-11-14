@@ -198,7 +198,6 @@ export class ArenaRoomDO extends DurableObject<Env> {
           }
         }
       }
-      for (const report of core.aimAudit.drain()) console.warn(JSON.stringify(report));
       this.saveStats(core);
     }, dt);
   }
