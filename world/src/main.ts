@@ -19,6 +19,7 @@ import { KYOTO_COURT, JC } from './story/kyotoDecreeCourt';
 import { ORLEANS_ENTRIES, OE, orleansEntryRequired } from './story/orleansEntries';
 import { EGYPT_APPROACH, EA, egyptApproachRequired } from './story/egyptApproach';
 import { QIN_PROCESSION, QP, qinProcessionRequired } from './story/qinProcession';
+import { createQinProcessionScene } from './environment/qinProcessionScene';
 import { VALLEY_SET_PIECES } from './story/valleyTownSetPieces';
 import { QIN_CHAPTERS, QX, qinChaptersRequired } from './story/qinChapters';
 import { EGYPT_CHAPTERS, EX, egyptOpeningRequired } from './story/egyptChapters';
@@ -2117,7 +2118,7 @@ const reducedEffects = () => reducedOverride ?? reducedMotion.matches;
 const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatToast, reducedEffects, groundHeight: (x, z) => grid.sampleHeight(x, z),
   onVictory(core) { done.add(core); save(); applyWorldState(); },
   onDamage(hit) { actions?.recordDamage(hit); audio.contact(); },
-  onHurt() { relayDamageRevision++; audio.hurt(); },
+  onHurt(damage, from) { relayDamageRevision++; audio.hurt(); if (from) anim.flinch(Math.atan2(from.x - player.pos.x, from.z - player.pos.z), Math.min(1, .45 + damage / 30)); },
   feedbackCues: { precise: () => audio.precise(), chain: n => audio.chain(n), heartbeat: () => audio.heartbeat() },
   onPartnerHurt(damage) { if (typeof coop !== 'undefined') coop.partnerHurt(damage); },
   onPerfectEvade() { perfectEvadeSlow = PERFECT_EVADE.slow; if (actions) actions.evade.cooldown = 0; audio.perfectEvade(); },
@@ -2266,6 +2267,9 @@ const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOT
 const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
  {anchors:['sea_core','disc_flagship','adventure_harbor_records','adventure_harbor_alarm','map_flagship_inner_lane','map_flagship_outer_lane'],offset:()=>flagshipNavigation.offset});
 if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:',fieldChapterScene.missing.join(', '));
+// Q06: the funeral ranks march as a real procession (two crossing columns) instead of blocks.
+const qinProcessionScene=createQinProcessionScene(()=>fieldChapterScene.point(QP.cut),(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null);
+scene.add(qinProcessionScene.root);addEventListener('pagehide',e=>{if(!e.persisted)qinProcessionScene.dispose();});
 world.add(fieldChapterScene.root);layout.markers.push(...fieldChapterScene.markers);for(const marker of fieldChapterScene.markers)markers.set(marker.id,marker);targets.push(...fieldChapterScene.targets);
 let fieldChapters:ReturnType<typeof createFieldChapters>|undefined;
 // B08: two lift covers on Meyrick's command deck. They rise from his second stage (real colliders),
@@ -4782,7 +4786,7 @@ function frame(now: number) {
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
   valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
-  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
+  fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);qinProcessionScene.apply(done.has(QP.bridge)&&!done.has(QP.rejoin)?'cutting':done.has(QP.rejoin)&&!done.has('realm_qin_phase_1')&&!done.has('journey_qin_public_order')?'moved':'hidden');qinProcessionScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
   const working=ORLEANS_WORK_ACTIONS.find(a=>a.id===orleansWorksRuntime?.active);orleansWorkHud.hidden=!working||!gameplayActive();

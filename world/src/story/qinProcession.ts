@@ -39,9 +39,7 @@ export const QIN_PROCESSION_ACTIONS: readonly FieldAction[] = [
 export const QIN_PROCESSION: FieldChapterContent = {
   set: { region: 'qin', title: ['秦帝陵 · 未葬之人', 'Qin Mausoleum · The Unburied'], actions: QIN_PROCESSION_ACTIONS },
   props: [
-    // The inward procession: a column of figures that crosses and cuts the road, then moves on.
-    ...[-6, -3, 0, 3, 6].flatMap(x => [0, 1.6].map(z => ({ at: P.cut, off: [x, .9, -3 - z] as const, size: [.6, 1.8, .6] as const, color: 0x89876d,
-      show: (d: ReadonlySet<string>) => d.has(P.bridge), moved: { when: P.rejoin, off: [x + 14, .9, -3 - z] as const } }))),
+    // The inward procession itself is drawn by environment/qinProcessionScene.ts (two marching columns).
     { at: P.rack, off: [0, 1.2, -1.5], size: [2.4, .3, 1.4], color: 0x7a6a4a },
     { at: P.ladder, off: [0, 3, -1], size: [.5, 6, .12], color: 0x6f6b5a },
     { at: P.dome, off: [0, 6, 0], size: [4, .2, 4], color: 0x2a3550 },

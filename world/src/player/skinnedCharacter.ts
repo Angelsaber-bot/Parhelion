@@ -316,8 +316,21 @@ function twoHandedArc(style: 'polearm' | 'hammer', cut: number, phase: number, s
   return { point: V(-.28 + .30 * s, shoulderY - .20 + .18 * raise - .20 * s, .14 + .12 * s), dir: V(-.35, .85, .35).lerp(V(.30, -.40, 1), s).normalize() };
 }
 
+/** A hit flinch: the torso snaps away from the blow in 70 ms and settles over ~0.3 s. */
+export const FLINCH = Object.freeze({ attack: .07, settle: .31, back: .26, side: .16, twist: .1 });
+export function flinchWeight(t: number) {
+  if (!(t >= 0) || t >= FLINCH.attack + FLINCH.settle) return 0;
+  return t < FLINCH.attack ? Math.sin(t / FLINCH.attack * Math.PI / 2) : (1 - (t - FLINCH.attack) / FLINCH.settle) ** 2;
+}
 export class SkinnedCharacterAnimator {
   facing = 0;
+  private flinchT = Infinity; private flinchRel = 0; private flinchK = 0;
+  /** React to a blow arriving from world heading `fromYaw` (+Z forward); `strength` 0–1. */
+  flinch(fromYaw: number, strength = 1) {
+    if (!Number.isFinite(fromYaw)) return;
+    this.flinchT = 0; this.flinchK = THREE.MathUtils.clamp(strength, 0, 1);
+    this.flinchRel = Math.atan2(Math.sin(fromYaw - this.facing), Math.cos(fromYaw - this.facing));
+  }
   private phase = 0; private time = 0; private air = 0; private glide = 0; private ready = 1; private bank = 0; private fireAim = 0; private adsPose = 0; private carry = 0; private strideSpeed = 0; private residentCarry=0;
   private jumpLead = 1;
   /** Water: `swim` eases the body in and out of the water; `crawl` blends treading into the front crawl. */
@@ -476,14 +489,17 @@ export class SkinnedCharacterAnimator {
     const bodyLean = ((run * .15 + sprint * .17) * (1 - aim) * (1 - g)) + sw * .12 * (1 - this.crawl) + g * .17
       + (weightTransfer.compression * 1.3 + (weightTransfer.descent * .035 + weightTransfer.gather * .06) * this.air) * (1 - aim) * (1 - g);
     rotation('Hips', meleeLean * .2 + cr * 1.36, -swing * (.035 + .035 * sprint) * move * (1 - aim) * (1 - g) * (1 - sw) + meleeTwist * .35 + cr * roll * .26, this.bank * .25 - weightTransfer.turn * .35);
-    rotation('Spine', bodyLean * .25 + meleeLean * .25, swing * (.025 + .05 * sprint) * move * (1 - aim) + meleeTwist * .2, -weightTransfer.turn * .3);
-    rotation('Chest', bodyLean * .35 + meleeLean * .35 - cr * .06, meleeTwist * .5 + cr * roll * .2 + swing * .06 * sprint * move * (1 - aim), -weightTransfer.turn * .35);
+    // Hit flinch (model space: +x leans forward, +z rolls toward −X, +y turns toward +X).
+    this.flinchT += dt;
+    const fw = flinchWeight(this.flinchT) * this.flinchK, fBack = -Math.cos(this.flinchRel) * fw * FLINCH.back, fSide = Math.sin(this.flinchRel) * fw * FLINCH.side, fTwist = -Math.sin(this.flinchRel) * fw * FLINCH.twist;
+    rotation('Spine', bodyLean * .25 + meleeLean * .25 + fBack * .4, swing * (.025 + .05 * sprint) * move * (1 - aim) + meleeTwist * .2 + fTwist * .4, -weightTransfer.turn * .3 + fSide * .4);
+    rotation('Chest', bodyLean * .35 + meleeLean * .35 - cr * .06 + fBack * .6, meleeTwist * .5 + cr * roll * .2 + swing * .06 * sprint * move * (1 - aim) + fTwist * .6, -weightTransfer.turn * .35 + fSide * .6);
     rotation('UpperChest', bodyLean * .40 + meleeLean * .2, meleeTwist * .15);
     // A small real clavicle protraction keeps the support arm reachable at steep cross-body aim.
     rotation('Shoulder_L', 0, -(.24 + .08 * aim * extreme) * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (armed ? carry : 1 - g));
     rotation('Shoulder_R', 0, .05 * r * (1 - carry) + Math.cos(this.phase) * .025 * move * (!armed ? 1 - g : 0));
     // Camera may look almost vertically; a human neck must not inherit that entire rotation.
-    rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim - cr * .42, -cr * roll * .12 - meleeTwist * .35); // eyes stay on the target while the body coils
+    rotation('Neck', -bodyLean * .30 - meleeLean * .25 + THREE.MathUtils.clamp(-pitch * .18, -.20, .20) * aim - cr * .42 + fBack * .5, -cr * roll * .12 - meleeTwist * .35); // eyes stay on the target while the body coils
     rotation('Head', -bodyLean * .55 - meleeLean * .4 + THREE.MathUtils.clamp(-pitch * .55, -.65, .65) * aim + Math.sin(this.time * 1.1) * .008 * (1 - aim) - cr * .5, -cr * (roll * .18 + breath * .75), weightTransfer.turn * .55);
     const thighAngles: Record<Side, number> = { R: 0, L: 0 };
     for (const [side, sign] of [['L', 1], ['R', -1]] as const) {

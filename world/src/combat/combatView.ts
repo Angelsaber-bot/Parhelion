@@ -33,7 +33,7 @@ export interface WorldCombatOptions {
   onPerfectEvade?: (id: string) => void;
   reducedEffects?: () => boolean;
   onStoryEncounterVictory?: (id: string) => void;
-  onHurt?: (damage: number) => void;
+  onHurt?: (damage: number, from?: Point3) => void;
   /** Audio for weak-spot hits, kill-chain links and the low-health heartbeat. */
   feedbackCues?: { precise?: () => void; chain?: (count: number) => void; heartbeat?: () => void };
   /** Co-op host: an enemy attack landed on the partner; their game applies the damage. */
@@ -629,7 +629,7 @@ export class WorldCombat {
           : bilingual('回声守卫 · 讯号失稳：姿态破绽，可近身反击！', 'Echo Warden · Signal destabilized: its stance is open—close in and counter!'));
       }
       else if (event.type === 'stagger') { this.impact.textContent = bilingual('打断！', 'INTERRUPTED'); this.impactFor = .55;
-      } else if (event.type === 'hurt') { this.hurtFor = 0.4; if (event.from) this.feedback.hurtFrom(event.from); this.options.onHurt?.(event.damage); }
+      } else if (event.type === 'hurt') { this.hurtFor = 0.4; if (event.from) this.feedback.hurtFrom(event.from); this.options.onHurt?.(event.damage, event.from); }
       else if (event.type === 'partnerHurt') this.options.onPartnerHurt?.(event.damage);
       else if (event.type === 'bossStart') this.titleCard.show(this.state.boss.id, 'rise'); // the title card names the boss; no advice toast
       else if (event.type === 'bossReset') this.hazardView.clear(), this.titleCard.hide(), this.options.toast(bilingual(...bossText(this.state.boss.id).reset));
