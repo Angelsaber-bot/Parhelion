@@ -5,7 +5,7 @@ import type { StoryEncounterSpec } from './storyEncounters';
 /** Regional main-story chapters authored as real field actions on the existing maps.
  * Every action is a physical marker: talk/operate, a story fight, a shot target, or timed work
  * that only advances while the player stays at the site. Progress lives in the ordinary `done` set. */
-export type FieldRegion = 'alpha' | 'britain' | 'winter' | 'blacksail' | 'kyoto' | 'egypt' | 'orleans' | 'qin';
+export type FieldRegion = 'alpha' | 'britain' | 'winter' | 'blacksail' | 'kyoto' | 'egypt' | 'orleans' | 'qin' | 'home';
 export interface FieldAction {
   readonly id: string;
   readonly region: FieldRegion;

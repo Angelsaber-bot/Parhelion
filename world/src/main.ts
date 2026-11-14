@@ -8,6 +8,9 @@ import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
 import { createFieldChapters, fieldChapterGuide } from './story/fieldChapters';
 import { createFieldChapterScene } from './environment/fieldChapterScene';
 import { createValleyTownArchitecture } from './environment/valleyTownArchitecture';
+import { createHomeTownDistricts } from './environment/homeTownDistricts';
+import { createSkyCrownLandmarks } from './environment/skyCrownLandmarks';
+import { HOME_DISTRICTS } from './story/homeTownDistrictActions';
 import { applyBuildingVariety, createBuildingOrnaments } from './map/buildingVariety';
 import { KINGDOM_K04 } from './story/kingdomBackPassage';
 import { WINTER_CHAPTERS } from './story/winterChapters';
@@ -717,6 +720,8 @@ addEventListener('pagehide', event => { if (!event.persisted) egyptReedMarket.di
 const worldJourneySites = alphaResidence ? createWorldJourneySites(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const valleyFieldScene = alphaResidence ? createValleyFieldScene(alphaResidence, (x, z, ceiling) => residentQueries.ground(x, z, ceiling)?.point.y ?? null, p => residentQueries.clear(p, .38, 1.8)) : null;
 const skyCrown = createSkyCrownScene();
+const skyCrownLandmarks = createSkyCrownLandmarks(); scene.add(skyCrownLandmarks.root);
+addEventListener('pagehide', event => { if (!event.persisted) skyCrownLandmarks.dispose(); });
 const worldJourneyMarkerIds = new Set<string>(Object.values(KYOTO_MAP_WORK));
 for (const site of [worldJourneySites, skyCrown]) {
   if (!site) continue;
@@ -2237,11 +2242,14 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
 const buildingOrnaments=createBuildingOrnaments();world.add(buildingOrnaments);
+const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z)=>residentQueries.ground(x,z,80)?.point.y??null);
+world.add(homeTownDistricts.root);colliders.push(...homeTownDistricts.colliders);
+addEventListener('pagehide',e=>{if(!e.persisted)homeTownDistricts.dispose();});
 const valleyTownArchitecture=createValleyTownArchitecture((x,z)=>grid.sampleHeight(x,z)??0);
 world.add(valleyTownArchitecture.root);colliders.push(...valleyTownArchitecture.colliders);valleyTownArchitecture.apply(done);
 addEventListener('pagehide',e=>{if(!e.persisted)valleyTownArchitecture.dispose();});
 // K04, Winter W01–W05/W08 and Black Sail B01–B09 field chapters stand on existing story markers.
-const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES,QIN_CHAPTERS,EGYPT_CHAPTERS,ORLEANS_FINALE] as const;
+const FIELD_CHAPTER_CONTENT=[KINGDOM_K04,WINTER_CHAPTERS,BLACKSAIL_CHAPTERS,KYOTO_COURT,ORLEANS_ENTRIES,EGYPT_APPROACH,QIN_PROCESSION,VALLEY_SET_PIECES,QIN_CHAPTERS,EGYPT_CHAPTERS,ORLEANS_FINALE,HOME_DISTRICTS] as const;
 const fieldChapterScene=createFieldChapterScene(FIELD_CHAPTER_CONTENT,id=>(markers.get(id)??layout.markers.find(m=>m.id===id))?.p,(x,z,y)=>residentQueries.ground(x,z,y)?.point.y??null,p=>residentQueries.clear(p,.38,1.8),
  {anchors:['sea_core','disc_flagship','adventure_harbor_records','adventure_harbor_alarm','map_flagship_inner_lane','map_flagship_outer_lane'],offset:()=>flagshipNavigation.offset});
 if(fieldChapterScene.missing.length)console.warn('Field chapter anchors missing:',fieldChapterScene.missing.join(', '));
@@ -4746,7 +4754,7 @@ function frame(now: number) {
   egyptCampaignScene.apply(done);egyptCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansCampaign?.update(dt,gameplayActive()&&!combat.defeated,regionAt(player.pos.x,player.pos.z).id==='orleans');
   if(done.has(JC.device))combat.state.earlySecondPhase.add('boss_hellfire_lord');else combat.state.earlySecondPhase.delete('boss_hellfire_lord');
-  valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
+  valleyTownArchitecture.apply(done);valleyTownArchitecture.update(player.pos);homeTownDistricts.update(player.pos);skyCrownLandmarks.apply(done.has(JOURNEY.finish));updateMeyrickCovers(gameplayActive()?dt:0);updateFlagshipDrop(dt);
   fieldChapterScene.apply(done);fieldChapterScene.update(gameplayActive()?dt:0,player.pos);fieldChapters?.update(dt,gameplayActive()&&player.onGround&&!combat.defeated,[player.pos.x,player.pos.y,player.pos.z]);
   orleansCampaignScene.apply(done,f=>orleansCampaign?.progress(f)??0);orleansCampaignScene.update(gameplayActive()?dt:0,player.pos);
   orleansWorksScene.apply(done,orleansWorksRuntime?.active,orleansWorksRuntime?.progress);orleansWorksScene.update(gameplayActive()?dt:0,player.pos);
@@ -4928,7 +4936,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

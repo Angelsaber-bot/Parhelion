@@ -64,7 +64,9 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
 
   // T02: kitchen annex north of the residence hall (back door on the west), the protagonist's room,
   // and the small yard. Walls are solid; door gaps are real openings; roofs are visual.
-  const annex = new SiteArt(), floor = ground(-179.5, 190);
+  // The ground falls ~2 m toward the north; a stone plinth carries the annex level with the hall floor.
+  const annex = new SiteArt(), floor = Math.max(...[[-183, 183.3], [-171.3, 183.3], [-183, 196.6], [-171.3, 196.6], [-177, 190]].map(([x, z]) => ground(x, z)));
+  { const low = Math.min(ground(-183, 183.3), ground(-171.3, 183.3)) - .3; annex.box([-177.25, (floor + low) / 2, 189.95], [12.1, floor - low, 13.4], '#8a8578', true); }
   const wall = (x0: number, z0: number, x1: number, z1: number) => { const len = Math.hypot(x1 - x0, z1 - z0); annex.box([(x0 + x1) / 2, floor + 1.5, (z0 + z1) / 2], [Math.abs(x1 - x0) > .01 ? len : .2, 3, Math.abs(z1 - z0) > .01 ? len : .2], plaster, true); };
   wall(-183, 183.5, -176, 183.5); wall(-183, 196.5, -176, 196.5);                 // south (hall side) and north
   wall(-183, 183.5, -183, 193.6); wall(-183, 195.2, -183, 196.5);                 // west wall with the kitchen back door
@@ -80,9 +82,11 @@ export function createValleyTownArchitecture(ground: (x: number, z: number) => n
   annex.box([-177.2, floor + .38, 188.4], [1.4, .76, .7], timber, true); annex.box([-177.2, floor + .23, 187.6], [.5, .46, .5], darkTimber, true);
   annex.box([-182.4, floor + .3, 188.5], [.9, .6, .6], darkTimber, true); annex.box([-182.85, floor + 1.6, 187], [.25, .08, 1.4], timber);
   // Yard: low fence with a gate toward the hall path, a bench and a clothesline.
-  for (let z = 183.7; z <= 196.3; z += 1.4) annex.box([-171.6, floor + .45, z], [.1, .9, .1], darkTimber, true);
-  annex.box([-171.6, floor + .75, 190], [.08, .08, 12.6], timber, true);
-  for (const x of [-176, -175.2, -172.6, -171.8]) annex.box([x, floor + .45, 183.3], [.1, .9, .1], darkTimber, true);
+  // East fence with its gate near the hall end (level ground); the north edge is a closed fence above the drop.
+  for (let z = 183.7; z <= 196.3; z += 1.4) if (z < 193.4 || z > 195.6) annex.box([-171.6, floor + .45, z], [.1, .9, .1], darkTimber, true);
+  annex.box([-171.6, floor + .75, 188.4], [.08, .08, 9.4], timber, true);
+  for (let x = -175.8; x <= -171.8; x += 1) annex.box([x, floor + .45, 183.4], [.1, .9, .1], darkTimber, true);
+  annex.box([-173.8, floor + .75, 183.4], [4.2, .08, .08], timber, true);
   annex.box([-173.5, floor + .25, 194.8], [2.2, .5, .5], timber, true); annex.beam([-175.6, floor + 2, 185.2], [-172, floor + 2, 192], .02, '#d9d2c0');
   finish(annex, 'ValleyCanteenAnnex');
 
