@@ -199,6 +199,7 @@ import { regionBorders, blendGridBorders, applyBorderBlend } from './map/regionB
 import { planBorderStitch, ridesWithGround } from './map/regionBorderStitch';
 import { planIceFloes, createIceFloes } from './environment/iceFloes';
 import { isSeamVeil, seamVeilMaterial } from './rendering/seamVeil';
+import { guideBeamLook } from './ui/guideBeamLook';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
@@ -1513,7 +1514,9 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
   el.classList.toggle('on', !!t && !$('bigmap').classList.contains('open'));
   if (!t) return;
   guideBeam.position.set(t.p[0], t.p[1], t.p[2]);
-  (guideBeam.material as THREE.MeshBasicMaterial).opacity = 0.16 + 0.06 * Math.sin(now / 300);
+  // A beacon for finding the objective from afar; up close it slims, fades and finally steps aside.
+  { const look = typeof guideBeamLook === 'function' ? guideBeamLook(Math.hypot(t.p[0] - player.pos.x, t.p[2] - player.pos.z), now / 1000) : { opacity: 0.16 + 0.06 * Math.sin(now / 300), width: 1, visible: true };
+    (guideBeam.material as THREE.MeshBasicMaterial).opacity = look.opacity; guideBeam.scale.set(look.width, 1, look.width); guideBeam.visible = look.visible; }
   const d = Math.hypot(t.p[0] - player.pos.x, t.p[1] - player.pos.y, t.p[2] - player.pos.z);
   (el.querySelector('.dist') as HTMLElement).textContent = `${Math.round(d)} m`;
   (el.querySelector('.label') as HTMLElement).textContent = localizeText(t.label);

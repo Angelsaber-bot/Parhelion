@@ -20,3 +20,14 @@ test('travel panel: heading and close button stay in view on short windows, only
   assert.match(css, /\.travel-card>h2,\.travel-card>p,\.travel-card>button\{flex:none\}/);
   assert.match(css, /\.travel-card>div\{flex:1 1 auto;min-height:0;overflow-y:auto/);
 });
+
+test('quest beacon: full at range, slimmer and fainter on approach, gone within a few steps', async () => {
+  const { guideBeamLook, GUIDE_BEAM } = await import('../src/ui/guideBeamLook');
+  const far = guideBeamLook(120, 0), mid = guideBeamLook(11, 0), near = guideBeamLook(2, 0);
+  assert.equal(far.width, 1); assert.ok(Math.abs(far.opacity - GUIDE_BEAM.base) < 1e-9); assert.equal(far.visible, true);
+  assert.ok(mid.opacity > 0 && mid.opacity < far.opacity && mid.width < 1 && mid.width > GUIDE_BEAM.slim);
+  assert.equal(near.visible, false); assert.equal(near.opacity, 0); assert.equal(near.width, GUIDE_BEAM.slim, 'no drum over the desk it marks');
+  for (let d = 0; d < 60; d += 1) assert.ok(guideBeamLook(d + 1, 0).opacity >= guideBeamLook(d, 0).opacity - 1e-12, 'never pops as you walk up');
+  assert.ok(guideBeamLook(200, .15).opacity !== guideBeamLook(200, 0).opacity, 'still breathes');
+  assert.equal(guideBeamLook(NaN, 0).visible, true, 'an unknown distance shows the beacon rather than hiding the objective');
+});
