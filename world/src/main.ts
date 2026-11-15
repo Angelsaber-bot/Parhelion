@@ -29,6 +29,7 @@ import { createOrleansCrossingTeams } from './environment/orleansCrossingTeams';
 import { createWalkingColumn } from './environment/walkingColumn';
 import { createSplashWave } from './environment/splashWave';
 import { FootDust, dustSurface } from './player/footDust';
+import { CONVERSATION_SHOT, conversationShot, type ConversationShot } from './player/conversationShot';
 import { StoryBeatShot } from './cinematics/storyBeatShot';
 import { egyptToWorld } from './map/egyptPlan';
 import { settlementEntryApproach } from './settlements/frame';
@@ -200,6 +201,7 @@ import { planBorderStitch, ridesWithGround } from './map/regionBorderStitch';
 import { planIceFloes, createIceFloes } from './environment/iceFloes';
 import { isSeamVeil, seamVeilMaterial } from './rendering/seamVeil';
 import { guideBeamLook } from './ui/guideBeamLook';
+import { shouldAnnounceArea, type AreaAnnounced } from './ui/areaBanner';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
 import { createTravelPanel } from './ui/travelPanel';
@@ -1422,8 +1424,16 @@ guideBeam.raycast = () => {};
 scene.add(guideBeam);
 // Quest and help panels remember whether they are hidden.
 type HudPanel = 'help' | 'objective' | 'minimap' | 'contract-card';
+/** Toasts share the lower-left of a narrow window with the open controls panel: tell the stylesheet where the
+ * panel's top is so they sit just above it instead of underneath (see `--world-help-top` in worldInterface.css). */
+function syncHelpClearance() {
+  const help = $('help'), open = help.style.display !== 'none' && !!help.textContent;
+  const rect = open ? help.getBoundingClientRect?.() : null;
+  document.body?.style?.setProperty?.('--world-help-top', rect && rect.height > 0 ? `${Math.round(innerHeight - rect.top + 12)}px` : '0px');
+}
 function togglePanel(id: HudPanel, hidden = $(id).style.display !== 'none') {
   $(id).style.display = hidden ? 'none' : '';
+  if (id === 'help' && typeof syncHelpClearance === 'function') syncHelpClearance();
   try { localStorage.setItem(`parhelion.world.hide.${id}`, hidden ? '1' : '0'); } catch { /* memory-only */ }
   const box = document.querySelector?.(`[data-hud-panel="${id}"]`) as HTMLInputElement | null;
   if (box) box.checked = !hidden;
@@ -1611,6 +1621,7 @@ function toast(text: string) {
 
 let areaTimer = 0;
 let currentArea = '';
+let areaAnnounced: AreaAnnounced | null = null;
 function showArea(a: Layout['areas'][number]) {
   const el = $('area');
   (el.querySelector('.zh') as HTMLElement).textContent = localizeText(a.name);
@@ -2033,7 +2044,8 @@ function renderControlHints() {
     `${moves} Move · ${k('sprint')} Sprint · ${k('jump')} Jump / glide in air\n${k('fire')} Fire · ${k('aim')} Hold shoulder aim · ${k('interact')} Interact\n${k('melee')} Melee · ${k('evade')} Evade · ${k('skill')} Skill · ${k('ultimate')} Ultimate · ${k('travel')} Safe travel\n${k('summon')} Summon / recall Servant · ${k('switchServant')} Switch servant · ${k('inspectServant')} View servant model · ${k('map')} World map · ${k('guide')} Quest guide · ${k('objectives')} Quest panel · ${k('help')} Help · ${k('settings')} Settings · Esc Release mouse\nSummoned: skills/ultimates come from your companion; recalled: from you. Your ultimate follows your facing and can miss.`);
 
 }
-settings.subscribe(() => { clearInput(); renderControlHints(); }); renderControlHints();
+settings.subscribe(() => { clearInput(); renderControlHints(); if (typeof syncHelpClearance === 'function') syncHelpClearance(); }); renderControlHints();
+if (typeof syncHelpClearance === 'function') { syncHelpClearance(); addEventListener('resize', syncHelpClearance); }
 const lockError = () => {
   if (bootFailed || worldExited || graphicsRecovery?.blocked || locked) return;
   clearInput();dragEntry.hidden=false;
@@ -4190,6 +4202,7 @@ function interactSettlementNpc() {
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
   if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+    if (typeof noteTalk === 'function') noteTalk(npc.id);
     if (typeof VALLEY_PROLOGUE !== 'undefined' && npc.id === VALLEY_PROLOGUE.steward && advancePrologue(npc.id)) return true;
     const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
     if (handleCampaignInteraction(npc.id)) return true;
@@ -4248,6 +4261,7 @@ function advancePrologue(id: string) {
     const speaker: [string, string] = id === P.steward ? ['孟槐', 'Meng Huai'] : ['阿舟', 'Azhou'];
     settlementNpcs.gesture(id === P.steward ? P.steward : P.apprentice);
     speakDialogue(line, speaker);
+    if (typeof noteTalk === 'function') noteTalk(id === P.steward ? P.steward : P.apprentice);
   } else if (id === P.radio) {
     speakDialogue(line, ['外勤电台', 'Field radio']);
   } else {
@@ -4566,6 +4580,14 @@ let last = performance.now(), acc = 0, frames = 0, fpsT = 0, fps = 0;
 const STEP = 1 / 120;
 let lastRegion = '';
 let conversationBlend=0;
+// Ordinary talk with a resident: an over-the-shoulder two-shot (see conversationShot). `talkWith` is set by the
+// interaction that opened the dialogue and cleared when it closes; the blend eases the view in and back out.
+let talkWith: string | null = null, talkBlend = 0, talkCandidate: { id: string; at: number } | null = null;
+/** Called by the interaction that addresses a resident; the frame loop adopts it only if a dialogue actually opened. */
+function noteTalk(id: string) { talkCandidate = { id, at: performance.now() }; }
+const talkShot: ConversationShot = { position: new THREE.Vector3(), target: new THREE.Vector3(), side: 1 };
+const talkQuat = new THREE.Quaternion(), talkLook = new THREE.Matrix4(), talkPlayerHead = new THREE.Vector3(), talkNpcHead = new THREE.Vector3();
+const talkCast = (from: THREE.Vector3, direction: THREE.Vector3, max: number) => combat.geometry.cast(from, direction, max)?.distance ?? null;
 
 // screenshot / fixed-camera mode: ?cam=x,y,z,yawDeg,pitchDeg&clean
 const camParam = params.get('cam')?.split(',').map(Number);
@@ -4713,7 +4735,7 @@ function frame(now: number) {
     : player.swimming ? bilingual(`游泳 · ${settings.label('jump')} 出水`, `Swimming · ${settings.label('jump')} Leave water`)
     : player.gliding ? bilingual(`滑翔 · ${settings.label('jump')} 收翼 · 上升气流可抬升`, `Gliding · ${settings.label('jump')} Fold glider · Updrafts provide lift`)
     : '';
-  const fov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads;
+  const aimFov = baseFov + (Math.max(30, baseFov * 2 / 3) - baseFov) * ads, fov = aimFov + (Math.min(aimFov, CONVERSATION_SHOT.fov) - aimFov) * (typeof talkBlend === 'number' ? talkBlend * talkBlend * (3 - 2 * talkBlend) : 0);
   if (Math.abs(camera.fov - fov) > 0.01) { camera.fov = fov; camera.updateProjectionMatrix(); }
   $('crosshair').classList.toggle('aiming', ads > 0.7);
   player.eyePos(eye);
@@ -4725,7 +4747,9 @@ function frame(now: number) {
   prevPos.copy(player.pos);
   rig.root.position.copy(player.pos);
   rig.root.visible = thirdPerson;
-  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying??(typeof homeTown!=='undefined'&&homeTown?.activities.carrying?'blanket':undefined), armed: worldProgress.armed&&!residentEventRuntime?.carrying&&(typeof homeTown==='undefined'||!homeTown?.activities.carrying), aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
+  // Talking with a resident: the protagonist turns to them as well.
+  const talkAt = talkWith ? settlementNpcs.getPosition(talkWith) : null, talkYaw = talkAt ? Math.atan2(talkAt[0] - player.pos.x, talkAt[2] - player.pos.z) : null;
+  anim.update(dt, { speed: Math.min(hs, 12), onGround: player.onGround, swimming: player.swimming, vy: player.vel.y, moveYaw: ads > 0.05 ? player.yaw + Math.PI : wx || wz ? Math.atan2(wx, wz) : typeof talkYaw === 'number' ? talkYaw : null, gliding: player.gliding, carrying:residentEventRuntime?.carrying??(typeof homeTown!=='undefined'&&homeTown?.activities.carrying?'blanket':undefined), armed: worldProgress.armed&&!residentEventRuntime?.carrying&&(typeof homeTown==='undefined'||!homeTown?.activities.carrying), aim: ads, pitch: player.pitch, firing: worldProgress.armed && down('fire') && !actions?.melee.active && !(actions?.skills.casting && actions.skills.selected === null), lookYaw: player.yaw + Math.PI, melee: actions?.melee.active ? { phase: actions.melee.phase, combo: actions.melee.combo, yaw: actions.melee.yaw, style: actions.melee.style?.id } : undefined });
   coop.update(dt, camera, gameplayActive() || coop.session.paired ? coopWireState(Math.min(hs, 12), ads) : null, player.pos, now, gameplayActive() && !player.flying);
   if (thirdPerson) {
     // over-the-shoulder spring arm that pulls in when terrain/walls are in the way
@@ -4799,6 +4823,16 @@ function frame(now: number) {
     }
     conversationBlend = 0;
   } else conversationBlend=0;
+  // Ordinary talk: slip out to one side so the speaker is never hidden behind the protagonist's back.
+  if (talkCandidate && (narrative?.open || performance.now() - talkCandidate.at > 400)) { if (narrative?.open) talkWith = talkCandidate.id; talkCandidate = null; }
+  if (talkWith && !narrative?.open) talkWith = null;
+  settlementNpcs.setAttending(talkWith);
+  const talkActor = talkWith && thirdPerson && locked && !inspectServant && !portrait && !conversationActor ? settlementNpcs.group.getObjectByName(`Resident_${talkWith}`) : null;
+  const talkHead = talkActor?.visible ? talkActor.getObjectByName('ResidentHead') : null;
+  const talkFramed = !!talkHead && !!conversationShot(talkPlayerHead.set(player.pos.x, player.pos.y + 1.55, player.pos.z), talkHead.getWorldPosition(talkNpcHead), talkBlend > .02 ? talkShot.position : camera.position, talkCast, talkShot);
+  if (talkFramed) talkQuat.setFromRotationMatrix(talkLook.lookAt(talkShot.position, talkShot.target, camera.up));
+  talkBlend = talkFramed ? (reducedEffects() ? 1 : THREE.MathUtils.damp(talkBlend, 1, CONVERSATION_SHOT.in, dt)) : talkBlend < .01 || reducedEffects() ? 0 : THREE.MathUtils.damp(talkBlend, 0, CONVERSATION_SHOT.out, dt);
+  if (talkBlend > 0) { const k = talkBlend * talkBlend * (3 - 2 * talkBlend); camera.position.lerp(talkShot.position, k); camera.quaternion.slerp(talkQuat, k); eye.copy(camera.position); }
   combat.present(dt, player.pos, gameplayActive() && !player.flying, camera);
   if (worldJourneySites?.update(gameplayActive() ? dt : 0, player.pos)) {
     done.add(JOURNEY.cargoParked); saveJourneyProgress();
@@ -4974,7 +5008,7 @@ function frame(now: number) {
   checkDiscoveries();
   if (gameplayActive() && discoverTravelStops(travelStops,player.pos.toArray(),travelContext(),found).length) { save(); hudRevision++; toast(bilingual(`已登记安全据点 · ${settings.label('travel')} 打开快速旅行。`,`Safe settlement registered · ${settings.label('travel')} opens fast travel.`)); }
   const area = layout.areas.find((a) => Math.hypot(player.pos.x - a.c[0], player.pos.z - a.c[1]) < a.r);
-  if (area && area.id !== currentArea) showArea(area);
+  if (area && shouldAnnounceArea(area.id, currentArea, areaAnnounced, now)) { showArea(area); areaAnnounced = { id: area.id, at: now }; }
   currentArea = area?.id ?? '';
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
@@ -5035,7 +5069,7 @@ function frame(now: number) {
   requestAnimationFrame(frame);
 }
 refreshWorldLocale = () => {
-  hudRevision++; applyWorldState(); renderControlHints(); renderContract();
+  hudRevision++; applyWorldState(); renderControlHints(); if (typeof syncHelpClearance === 'function') syncHelpClearance(); renderContract();
   const area = layout.areas.find((a) => a.id === currentArea);
   if (area) { $('area').querySelector('.zh')!.textContent = localizeText(area.name); $('area').querySelector('.en')!.textContent = bilingual(area.nameEn.toUpperCase(), 'PARHELION WORLD'); }
   // Transient combat/toast messages expire rather than retain a previous language.

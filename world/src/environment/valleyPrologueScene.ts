@@ -65,6 +65,36 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
     art.box(bay(x, 2.58, -.85), [.34, .16, 6.2], cream);
   }
   art.box(bay(0, 1.25, -3.9), [6.2, 2.5, .22], slate, true);
+  // The outside of the bay is what you see first when you round the workshop: ribbed, panelled plate with
+  // a kick plinth, a hand rail and a service hatch instead of three blank slabs. Nothing here is solid, and
+  // nothing is striped amber: the shear pin stays the only yellow-and-black thing on the east side.
+  const plate = '#86a3af', plateLow = '#5b7682';
+  art.box(bay(0, 2.58, -3.9), [6.54, .16, .34], cream);
+  art.box(bay(0, .14, -4.04), [6.4, .28, .1], dark);
+  art.box(bay(0, 1.3, -4.06), [6.2, .07, .06], steel, false, 'metal');
+  for (let i = 0; i < 6; i++) {
+    const x = -3 + i * 1.2;
+    art.box(bay(x, 1.38, -4.045), [.1, 2.2, .09], steel, false, 'metal');
+    if (i === 5) break;
+    art.box(bay(x + .6, 1.86, -4.02), [1, .86, .03], plate);
+    if (i !== 3) art.box(bay(x + .6, .8, -4.02), [1, .8, .03], plateLow);
+  }
+  art.box(bay(1.2, .86, -4.03), [.96, 1.12, .05], plate);
+  art.box(bay(1.2, 1.45, -4.04), [1.04, .06, .07], cream);
+  art.box(bay(1.52, .9, -4.07), [.06, .2, .04], steel, false, 'metal');
+  art.box(bay(-1.8, 1.9, -4.045), [.72, .3, .03], cream);
+  for (const [dy, w] of [[.06, .5], [-.05, .34]] as const) art.box(bay(-1.8 - (.5 - w) / 2, 1.9 + dy, -4.065), [w, .045, .012], dark);
+  for (const side of [-1, 1]) {
+    art.box(bay(side * 3.14, .14, -.85), [.1, .28, 6.2], dark);
+    art.box(bay(side * 3.16, 1.3, -.85), [.06, .07, 6.1], steel, false, 'metal');
+    const ribs = [-3.75, -2.6, -.55, .5, 1.55];
+    for (const z of ribs) art.box(bay(side * 3.145, 1.38, z), [.09, 2.2, .1], steel, false, 'metal');
+    for (let i = 0; i < ribs.length - 1; i++) {
+      const z = (ribs[i] + ribs[i + 1]) / 2, span = ribs[i + 1] - ribs[i] - .2;
+      art.box(bay(side * 3.12, 1.86, z), [.03, .86, span], plate);
+      if (!(side === 1 && i === 1)) art.box(bay(side * 3.12, .8, z), [.03, .8, span], plateLow); // the pin housing keeps its own panel
+    }
+  }
   for (const side of [-1, 1]) {
     for (const x of [1.17, 1.57, 1.97, 2.37, 2.77]) art.box(bay(x * side, 1.18, 2.2), [.075, 2.36, .12], steel, true);
     art.box(bay(side * 1.98, .48, 2.2), [2.08, .96, .14], slate, true);
@@ -131,13 +161,16 @@ export function createValleyPrologueScene(residence: SettlementPlacement, ground
   const gateCollider: Collider = { name: 'VALLEY_PrologueEscapeGate', bvh: new MeshBVH(gateSolid), enabled: true };
   const colliders: Collider[] = [{ name: 'VALLEY_PrologueFixtures', bvh: new MeshBVH(solid), enabled: true }, gateCollider];
 
+  const ERRAND_REACH = 2.25;
   function marker(id: keyof typeof PROLOGUE_LABELS, p: Point, radius = 1.85): Marker {
     return { id, type: 'interact', label: PROLOGUE_LABELS[id][0], p, radius };
   }
-  const cartReturn = marker(P.cartReturn, [...cartStart]);
-  const markers = [marker(P.room, court(-7.25, 1.5, -10.55)), marker(P.workshop, [mx, my + .91, mz]),
-    marker(P.cartStop, court(8.25, 1.08, 9.77)), cartReturn,
-    marker(P.radio, [rx, ry + 1.1, rz]), marker(P.survey, bay(0, VALLEY_SURVEY_HEIGHT, 3.5)),
+  // The everyday errands answer from a comfortable step away (reach is measured from the feet to a panel at
+  // chest height, so 1.85 only left about 1.5 m on the ground). The rescue controls keep the tight reach.
+  const cartReturn = marker(P.cartReturn, [...cartStart], ERRAND_REACH);
+  const markers = [marker(P.room, court(-7.25, 1.5, -10.55), ERRAND_REACH), marker(P.workshop, [mx, my + .91, mz], ERRAND_REACH),
+    marker(P.cartStop, court(8.25, 1.08, 9.77), ERRAND_REACH), cartReturn,
+    marker(P.radio, [rx, ry + 1.1, rz], ERRAND_REACH), marker(P.survey, bay(0, VALLEY_SURVEY_HEIGHT, 3.5)),
     marker(P.breaker, bay(-1.72, 1.13, 2.89)), marker(P.ratchet, bay(1.73, 1.13, 2.92)),
     marker(P.record, bay(2.64, 1.12, 4.81), 1.95)];
   const targets = [pin];

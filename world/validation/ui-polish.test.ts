@@ -31,3 +31,13 @@ test('quest beacon: full at range, slimmer and fainter on approach, gone within 
   assert.ok(guideBeamLook(200, .15).opacity !== guideBeamLook(200, 0).opacity, 'still breathes');
   assert.equal(guideBeamLook(NaN, 0).visible, true, 'an unknown distance shows the beacon rather than hiding the objective');
 });
+
+test('controls panel and toasts never share the same spot: toasts lift above the open panel on narrow windows', () => {
+  assert.match(css, /@media\(max-width:1572px\)\{#toast\{bottom:max\(190px,var\(--world-help-top,0px\)\)\}\}/, 'desktop: only where the two can overlap (panel right edge 464 + toast half-width 310)');
+  assert.match(css, /#toast\{bottom:max\(215px,var\(--world-help-top,0px\)\);max-width:90vw;font-size:11px\}/, 'phone layout follows the same variable');
+  assert.ok(css.indexOf('@media(max-width:1572px){#toast') < css.indexOf('#toast{bottom:max(215px'), 'the phone rule comes later and wins there');
+  const sync = main.slice(main.indexOf('function syncHelpClearance()'), main.indexOf('function togglePanel('));
+  assert.ok(sync.includes("help.style.display !== 'none' && !!help.textContent") && sync.includes("'--world-help-top'") && sync.includes(": '0px'"), 'closed or empty panel clears the lift');
+  assert.ok(main.includes("if (id === 'help' && typeof syncHelpClearance === 'function') syncHelpClearance();") && main.includes("addEventListener('resize', syncHelpClearance);"));
+  assert.ok(main.includes("renderControlHints(); if (typeof syncHelpClearance === 'function') syncHelpClearance(); renderContract();"), 'a language switch re-measures the panel');
+});
