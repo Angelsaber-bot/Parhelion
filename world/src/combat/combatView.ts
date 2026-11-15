@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { nameplateScale } from './nameplate';
 import { EnemyContactEffects } from './enemyContactEffects';
 import { BossHazardView } from './bossHazardView';
 import { BossTitleCard } from './bossTitleCard';
@@ -43,7 +44,7 @@ export interface WorldCombatOptions {
   groundHeight?: (x: number, z: number) => number | null;
   toast: (message: string) => void; onVictory: (core: string) => void; onPlayerDefeated: () => void;
 }
-interface EnemyVisual { crowFx?: { dark: ReturnType<typeof createLampOutSoot>; glint: THREE.Mesh; curtain: THREE.Mesh; burn: number; lastCount: number }; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean, mode?: Enemy['mode']) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
+interface EnemyVisual { crowFx?: { dark: ReturnType<typeof createLampOutSoot>; glint: THREE.Mesh; curtain: THREE.Mesh; burn: number; lastCount: number }; ranks?: THREE.Group[]; crown?: THREE.Group; peaceMarker?: THREE.Group; roleLabel?: THREE.Sprite; nameLabel?: THREE.Sprite; applyPacified?: (pacified: boolean) => void; root: THREE.Group; body: THREE.Group; fallback: THREE.Group; model: EnemyModel | null; lastMode?: Enemy['mode']; updateCreature?: (time: number, moving: boolean, attacking: boolean, mode?: Enemy['mode']) => void; updateLabel?: () => void; sword?: THREE.Mesh; bar: THREE.Group; fill: THREE.Mesh; daze?: THREE.Mesh; tell: THREE.Mesh; material: THREE.MeshStandardMaterial }
 interface ShotVisual { line: THREE.Line; bolt: THREE.Mesh; flash: THREE.Mesh; from: THREE.Vector3; to: THREE.Vector3; age: number; duration: number }
 interface Spark { mesh: THREE.Mesh; left: number; full: number }
 /** Six tapered, camera-facing spark streaks; 0.28m maximum width, never a body shell. */
@@ -447,6 +448,13 @@ export class WorldCombat {
       v.applyPacified?.(e.pacified);
       if (v.peaceMarker) v.peaceMarker.visible = e.pacified && distance < 24;
       if (v.roleLabel) v.roleLabel.visible = !e.pacified && distance < 24 && (e.mode !== 'idle' || distance < 12);
+      // Name plates are sized in metres so they read across a field; in a brawl the same plate filled half the
+      // screen. Inside a few metres of the lens they hold the size they had at that range.
+      if (camera && (v.roleLabel || v.nameLabel)) {
+        const k = nameplateScale(Math.hypot(camera.position.x - e.p.x, camera.position.z - e.p.z));
+        if (v.roleLabel && v.roleLabel.scale.x !== 2.6 * k) { v.roleLabel.scale.set(2.6 * k, .325 * k, 1); v.roleLabel.updateMatrix(); }
+        if (v.nameLabel) v.nameLabel.scale.set(3 * k, .375 * k, 1);
+      }
       const moving = e.mode === 'chase';
       v.updateCreature?.(e.pacified ? 0 : this.time, moving, e.mode === 'windup', e.mode);
       // The limb's shell follows the simulation, including a reset that grows it back.
@@ -796,6 +804,7 @@ export class WorldCombat {
     const tell = new THREE.Mesh(tellGeo, tellMat); tell.name = `${e.id}:tell`; tell.userData.circle = tellGeo; tell.rotation.x = -Math.PI / 2; tell.visible = false;
     this.options.scene.add(root, tell); root.visible = false;
     let updateLabel: (() => void) | undefined;
+    let nameLabel: THREE.Sprite | undefined;
     if (e.miniboss || e.displayName) {
       const emblemGeo = new THREE.OctahedronGeometry(0.12), emblemMat = new THREE.MeshBasicMaterial({ color: '#ffd36a', toneMapped: false });
       this.shared.push(emblemGeo); this.materials.push(emblemMat);
@@ -817,7 +826,7 @@ export class WorldCombat {
           };
           const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace; this.textures.push(texture); updateLabel();
           const labelMat = new THREE.SpriteMaterial({ map: texture, depthWrite: false }); this.materials.push(labelMat);
-          const label = new THREE.Sprite(labelMat); label.position.y = bar.position.y + .65; label.scale.set(3, 0.375, 1); root.add(label);
+          const label = new THREE.Sprite(labelMat); label.position.y = bar.position.y + .65; label.scale.set(3, 0.375, 1); root.add(label); nameLabel = label;
         }
       }
     }
@@ -865,7 +874,7 @@ export class WorldCombat {
         for (const item of original) { item.material.color.copy(item.color).multiplyScalar(pacified ? .55 : 1); item.material.emissiveIntensity = pacified ? 0 : item.emissive; }
       };
     }
-    return { crowFx, ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, applyPacified, peaceMarker };
+    return { crowFx, ranks, crown: bodyCrown, root, body, fallback, model, updateLabel, updateCreature, sword, bar, fill, daze, tell, material, roleLabel, nameLabel, applyPacified, peaceMarker };
   }
   private removeShot(s: ShotVisual) { s.line.removeFromParent(); s.line.geometry.dispose(); s.bolt.removeFromParent(); s.flash.removeFromParent(); }
   dispose() {

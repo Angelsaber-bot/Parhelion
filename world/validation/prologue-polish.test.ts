@@ -63,3 +63,33 @@ test('a place name announces an arrival once, not every time you cross its edge'
   assert.ok(main.includes('if (area && shouldAnnounceArea(area.id, currentArea, areaAnnounced, now)) { showArea(area); areaAnnounced = { id: area.id, at: now }; }'));
   assert.ok(main.includes("if (typeof noteTalk === 'function') noteTalk(id === P.steward ? P.steward : P.apprentice);"), 'the cart thanks come from Azhou on screen');
 });
+
+test('enemy name plates read across a field and hold their on-screen size in a brawl', async () => {
+  const { nameplateScale, NAMEPLATE } = await import('../src/combat/nameplate');
+  assert.equal(nameplateScale(30), 1); assert.equal(nameplateScale(NAMEPLATE.fullBeyond), 1);
+  // Constant on-screen size inside the range: world size shrinks in step with distance.
+  assert.ok(Math.abs(nameplateScale(3.5) / 3.5 - nameplateScale(5) / 5) < 1e-9);
+  assert.equal(nameplateScale(.2), NAMEPLATE.min, 'never collapses to nothing at point-blank');
+  assert.equal(nameplateScale(NaN), 1);
+  const view = readFileSync(new URL('../src/combat/combatView.ts', import.meta.url), 'utf8');
+  assert.ok(view.includes('v.roleLabel.scale.set(2.6 * k, .325 * k, 1); v.roleLabel.updateMatrix();'), 'role labels have frozen matrices: rescaling refreshes them');
+  assert.ok(view.includes('if (v.nameLabel) v.nameLabel.scale.set(3 * k, .375 * k, 1);'));
+});
+
+test('the dodge and punish cue under the health bar is readable, and still hides when empty', () => {
+  const css = readFileSync(new URL('../src/ui/combat.css', import.meta.url), 'utf8'), ui = readFileSync(new URL('../src/ui/worldInterface.css', import.meta.url), 'utf8');
+  const rule = /body\.world-interface #world-vitals small\.combat-counter \{([^}]*)\}/.exec(css)?.[1] ?? '';
+  assert.match(rule, /font-size: 12px/); assert.match(rule, /background: #10212cc4/); assert.match(rule, /white-space: nowrap/);
+  assert.ok(!/display\s*:/.test(rule), 'leaves display alone so the :empty rule keeps hiding it');
+  assert.ok(ui.includes('body.world-interface #world-vitals small:empty{display:none}'));
+});
+
+test('falling in the prologue fight gets you up a few strides short of the bay, not on the survey spot', () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  const start = main.slice(main.indexOf('function startPrologueMachines()'), main.indexOf('function advancePrologue('));
+  assert.ok(main.includes('const PROLOGUE_RESPAWN_BACK = 7.5;'));
+  assert.ok(start.includes('const back = z + PROLOGUE_RESPAWN_BACK, backY = combat.geometry.ground(x, back, y + 2)?.point.y;'));
+  assert.ok(start.includes('Math.abs(backY - (y - VALLEY_SURVEY_HEIGHT)) < 1.5 ? [x, backY, back] : [x, y - VALLEY_SURVEY_HEIGHT, z]'), 'falls back to the old spot when there is no level ground behind');
+  // The survey marker is 3.5 m in front of the bay and Gu Qiao's safe spot is 4.1 m: the new point clears both.
+  assert.ok(3.5 + 7.5 - 4.1 > 5);
+});

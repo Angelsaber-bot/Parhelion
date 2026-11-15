@@ -26,6 +26,9 @@ body.clean .combat-hud, body.clean #world-hurt, body.clean #world-counter { disp
 .combat-counter { line-height: 1.35; }
 .combat-counter--punish { color: #a1f8e8; font-weight: 750; }
 #world-vitals .combat-counter { display: block; margin-top: 4px; }
+/* The dodge and punish cue under the health bar is the one line that teaches a fight; it was 8 px text. */
+body.world-interface #world-vitals small.combat-counter { justify-self: center; margin-top: 7px; padding: 3px 11px; border-radius: 6px; background: #10212cc4; font-size: 12px; font-weight: 600; letter-spacing: .02em; white-space: nowrap; text-shadow: 0 1px 2px #000a; }
+body.world-interface #world-vitals small.combat-counter--punish { background: #0f2f33d9; }
 #world-vitals[data-ammo="low"] span { color: #ffd27a; }
 #world-vitals[data-ammo="empty"] span { color: #ff8a7a; }
 /* Boss toughness gauge: fills with pressure, flashes white while the stance is broken. */

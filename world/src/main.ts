@@ -4227,6 +4227,7 @@ function startCurrentAdventure() {
   done.add(ADVENTURE.started);
   done.add(JOURNEY_DRAMA.started);
 }
+const PROLOGUE_RESPAWN_BACK = 7.5;
 function startPrologueMachines() {
   const marker = markers.get(VALLEY_PROLOGUE.survey);
   if (!marker || !worldProgress.armed || combat.storyEncounter || combat.bossStarted || done.has(VALLEY_PROLOGUE.machinesCleared)) return;
@@ -4239,7 +4240,10 @@ function startPrologueMachines() {
   const actors = selectStoryPositions(spec, machines, [[-7, -2], [7, -1], [-7, 6], [7, 6], [0, 9], [9, -2]]);
   if (actors.length !== machines.length) return;
   const result = combat.startStoryEncounter({ ...spec, actors }, { position: player.pos, playable: gameplayActive() && player.onGround });
-  if (result.ok) spawn = { ...marker, type: 'spawn', p: [x, y - VALLEY_SURVEY_HEIGHT, z] };
+  // A fall here brings you back a few strides short of the bay, facing it: the survey spot itself is between the
+  // two machines and is where Gu Qiao stands once he is out, so getting up there meant standing inside him.
+  const back = z + PROLOGUE_RESPAWN_BACK, backY = combat.geometry.ground(x, back, y + 2)?.point.y;
+  if (result.ok) spawn = { ...marker, type: 'spawn', p: backY !== undefined && Math.abs(backY - (y - VALLEY_SURVEY_HEIGHT)) < 1.5 ? [x, backY, back] : [x, y - VALLEY_SURVEY_HEIGHT, z] };
 }
 function advancePrologue(id: string) {
   if (!valleyPrologueScene) return false;
