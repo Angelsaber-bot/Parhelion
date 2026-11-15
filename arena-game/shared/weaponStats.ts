@@ -1,3 +1,5 @@
+import { RULES_VERSION } from './protocol.ts';
+import { HERO_RULESET } from './content.ts';
 // Human-only weapon telemetry for balance work. The authoritative Match feeds this collector;
 // nothing here changes rules, snapshots or the wire protocol. Bots are never measured as
 // shooters (they only appear as context and as killers in a human's deathsBy). Records carry no
@@ -47,6 +49,8 @@ export interface WeaponLine {
 }
 
 export interface HumanLine {
+  heroId?:string;
+  ability?:Record<string,number>;
   team: Team;
   char: number;
   loadout: Loadout;
@@ -70,6 +74,8 @@ export interface StatsMeta {
 }
 
 export interface MatchRecord {
+  rulesVersion?:number;
+  ruleset?:string;
   v: number;
   at: number;
   source: StatsSource;
@@ -107,7 +113,7 @@ export interface ShotStat {
   enemyAlive: boolean;
 }
 
-const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? 'frag';
+const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? (({101:'barrage',102:'wind',103:'broadside',104:'solar'} as Record<number,string>)[wi]??'frag');
 
 function newWeaponLine(): WeaponLine {
   return {
@@ -144,11 +150,13 @@ export class StatsCollector {
     if (p.bot) this.bots.set(p.id, { team: p.team, char: p.char, loadout: [...p.loadout] as Loadout });
     else if (!this.humans.has(p.id)) {
       this.humans.set(p.id, {
-        team: p.team, char: p.char, loadout: [...p.loadout] as Loadout, utility: p.utility,
+        heroId:CHARACTERS[p.char].id, ability:{}, team: p.team, char: p.char, loadout: [...p.loadout] as Loadout, utility: p.utility,
         kills: 0, deaths: 0, fragKills: 0, damageTaken: 0, deathsBy: {}, weapons: {},
       });
     }
   }
+
+  abilityEvent(id:string,action:string,amount=1) {const h=this.on?this.humans.get(id):undefined;if(h){h.ability??={};h.ability[action]=(h.ability[action]??0)+amount;}}
 
   private weapon(id: string, wi: number): WeaponLine | null {
     const h = this.on ? this.humans.get(id) : undefined;
@@ -197,8 +205,9 @@ export class StatsCollector {
     if (v) v.damageTaken += applied;
     const w = this.weapon(attacker, wi);
     if (w) w.damage += applied;
+    if(wi>=101&&wi<=104)this.abilityEvent(attacker,'damage',applied);
     if (!killed) return;
-    if (a) { a.kills++; if (!WEAPONS[wi]) a.fragKills++; }
+    if (a) { a.kills++; if (wi===100) a.fragKills++; }
     if (w) {
       w.kills++;
       if (head) w.headKills++;
@@ -223,7 +232,7 @@ export class StatsCollector {
     if (!humans.some((h) => Object.values(h.weapons).some((w) => w.shots > 0 || w.held > 0))) return;
     const m = this.meta!;
     this.done.push({
-      v: STATS_VERSION, at: Date.now(), source: m.source, ...(m.host ? { host: m.host } : {}), map, layout, botSkill: m.botSkill,
+      v: STATS_VERSION, rulesVersion:RULES_VERSION, ruleset:HERO_RULESET, at: Date.now(), source: m.source, ...(m.host ? { host: m.host } : {}), map, layout, botSkill: m.botSkill,
       ticks: tick - this.startTick, result, winner, score: { ...score }, humans, bots: [...this.bots.values()],
     });
   }
@@ -243,7 +252,7 @@ const str = (v: unknown, max: number): string => typeof v === 'string' ? v.slice
 const team = (v: unknown): Team => v === 'B' ? 'B' : 'A';
 const ints = (v: unknown, n: number): number[] => Array.from({ length: n }, (_, i) => int(Array.isArray(v) ? v[i] : 0));
 const KNOWN_WEAPONS = new Set<string>([...GUN_IDS, ...MELEE_IDS]);
-const KNOWN_DEATHS = new Set<string>([...KNOWN_WEAPONS, 'frag']);
+const KNOWN_DEATHS = new Set<string>([...KNOWN_WEAPONS, 'frag', 'barrage', 'wind', 'broadside', 'solar']);
 
 function cleanWeapon(raw: unknown): WeaponLine {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -272,6 +281,8 @@ export function sanitizeRecord(raw: unknown, source: StatsSource): MatchRecord |
     const deathsBy: Record<string, number> = {};
     if (h.deathsBy && typeof h.deathsBy === 'object') for (const [k, n] of Object.entries(h.deathsBy)) if (KNOWN_DEATHS.has(k)) deathsBy[k] = int(n);
     return {
+      heroId:CHARACTERS[Math.min(CHARACTERS.length-1,int(h.char))].id,
+      ability:Object.fromEntries(['accepted','spawn','break','pulse','cancel','heal','trigger','blocked','rejected','damage'].map(k=>[k,int((h.ability as Record<string,unknown>|undefined)?.[k])])),
       team: team(h.team), char: Math.min(CHARACTERS.length - 1, int(h.char)), loadout: cleanLoadout(h.loadout),
       utility: UTILITY_IDS.includes(h.utility as UtilityId) ? h.utility as UtilityId : 'frag',
       kills: int(h.kills), deaths: int(h.deaths), fragKills: int(h.fragKills), damageTaken: int(h.damageTaken), deathsBy, weapons,
@@ -284,7 +295,7 @@ export function sanitizeRecord(raw: unknown, source: StatsSource): MatchRecord |
   const score = (r.score && typeof r.score === 'object' ? r.score : {}) as Record<string, unknown>;
   const host = str(r.host, 64);
   return {
-    v: STATS_VERSION, at: int(r.at, 1e14) || Date.now(), source, ...(host ? { host } : {}), map: str(r.map, 40),
+    v: STATS_VERSION, rulesVersion:int(r.rulesVersion,100000), ruleset:str(r.ruleset,32), at: int(r.at, 1e14) || Date.now(), source, ...(host ? { host } : {}), map: str(r.map, 40),
     layout: r.layout === '1v2' || r.layout === '2v2' ? r.layout : '1v1', botSkill: str(r.botSkill, 12) || 'none',
     ticks: int(r.ticks, 1e7), result: r.result === 'finished' ? 'finished' : 'abandoned',
     winner: r.winner === 'A' || r.winner === 'B' || r.winner === 'draw' ? r.winner : null,

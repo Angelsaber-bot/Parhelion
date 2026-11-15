@@ -24,7 +24,12 @@
   },
   "symmetry": "mirror x -> -x",
   "presentation": {
-    "preset": "dusk"
+    "preset": "shrine"
+  },
+  "artPipeline": {
+    "embeddedMaterialTextures": true,
+    "surfaceRecipes": 6,
+    "collisionSource": "runtime/map.json"
   },
   "palette": {
     "floor": "#d9c9ad",

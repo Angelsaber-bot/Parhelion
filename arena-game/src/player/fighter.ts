@@ -39,7 +39,7 @@ const cyl = (rt: number, rb: number, h: number, s = 10) => new THREE.CylinderGeo
 const cone = (r: number, h: number, s = 6) => new THREE.ConeGeometry(r, h, s);
 const box = () => new THREE.BoxGeometry(1, 1, 1);
 
-const DESIGNS = [
+export const FIGHTER_PALETTES = [
   { // Aster
     skin: '#ffe3d2', hair: '#d8ecff', hairTip: '#7fc8ff', coat: '#f4f1ea', inner: '#2c3550', pants: '#3a4560',
     boots: '#e8e4dc', eye: '#24345c', iris: '#5fb8ff',
@@ -48,6 +48,13 @@ const DESIGNS = [
     skin: '#ffe0cc', hair: '#ffb347', hairTip: '#ff7a3d', coat: '#2a3146', inner: '#1b2030', pants: '#2a3146',
     boots: '#1b2030', eye: '#3a2440', iris: '#ff8a3d',
   },
+  {skin:'#ffe1cf',hair:'#e5c76e',hairTip:'#e9dc9d',coat:'#355eaa',inner:'#dce5ec',pants:'#f2e8d9',boots:'#b9c9d9',eye:'#29413c',iris:'#72b78d'},
+  {skin:'#c89878',hair:'#30252a',hairTip:'#473034',coat:'#7a3036',inner:'#252833',pants:'#3b3641',boots:'#2c2932',eye:'#30272b',iris:'#e8bd6e'},
+  {skin:'#ffe2d2',hair:'#9b5049',hairTip:'#cf7e6a',coat:'#e9e4d4',inner:'#833443',pants:'#353b66',boots:'#554254',eye:'#34344a',iris:'#8ba9ee'},
+  {skin:'#eac3a3',hair:'#4b3440',hairTip:'#705058',coat:'#254f76',inner:'#f1e2c4',pants:'#e2d5bb',boots:'#263443',eye:'#3e3436',iris:'#8cbdc3'},
+  {skin:'#ffe4d4',hair:'#e4c580',hairTip:'#f0dba4',coat:'#9aa6c0',inner:'#7e6eaa',pants:'#4f497b',boots:'#c5ccdc',eye:'#343a59',iris:'#a3a4ed'},
+  {skin:'#bc835c',hair:'#262c42',hairTip:'#40516e',coat:'#e6cc78',inner:'#213b67',pants:'#eee6cd',boots:'#c6a755',eye:'#4b3530',iris:'#f6c961'},
+  {skin:'#f3d8ca',hair:'#d9e0db',hairTip:'#4b9993',coat:'#eee9da',inner:'#283843',pants:'#273b43',boots:'#b3c4b6',eye:'#345355',iris:'#70d5bc'},
 ];
 
 export interface FighterRig {
@@ -58,7 +65,7 @@ export interface FighterRig {
 }
 
 export function buildFighter(char: number, team: number): FighterRig {
-  const P = DESIGNS[char] ?? DESIGNS[0];
+  const P = FIGHTER_PALETTES[char] ?? FIGHTER_PALETTES[0];
   const TEAM = '#' + team.toString(16).padStart(6, '0');
   const material = celMaterial({ color: 0xffffff, vertexColors: true }, 0.35);
   const joints: Record<string, THREE.Object3D> = {};
@@ -85,7 +92,7 @@ export function buildFighter(char: number, team: number): FighterRig {
     [cyl(0.178 * slim, 0.178 * slim, 0.06, 14), TEAM, T(0, 0.08, 0, 1, 1, 0.82)],
     [box(), '#f4c95d', T(0, 0.08, -0.145, 0.07, 0.05, 0.02)],
   ]);
-  if (char === 0) {
+  if (char !== 1) {
     part(hips, [ // coat tails
       [box(), P.coat, T(-0.1, -0.26, 0.12, 0.17, 0.48, 0.03, -0.12)],
       [box(), P.coat, T(0.1, -0.26, 0.12, 0.17, 0.48, 0.03, -0.12)],
@@ -150,7 +157,7 @@ export function buildFighter(char: number, team: number): FighterRig {
       hair.push([cone(0.018, 0.07, 5), P.hairTip, T(0.137 * s, -0.13, -0.025, 1, 1, 0.7, Math.PI + 0.1, 0, -0.12 * s)]);
     }
     hair.push([cone(0.012, 0.12, 4), P.hair, T(0.01, 0.31, -0.02, 1, 1, 1, 0.5, 0, 0.3)]);
-  } else {
+  } else if (char === 1) {
     // fin ears in team colour; twin-tails hang from joints so they swing
     for (const s of [-1, 1]) {
       hair.push([cone(0.05, 0.2, 4), TEAM, T(0.13 * s, 0.27, 0.02, 1, 1, 0.5, 0, 0, -0.45 * s)]);
@@ -167,13 +174,63 @@ export function buildFighter(char: number, team: number): FighterRig {
         [cone(0.03, 0.1, 6), P.hairTip, T(0.06 * s, -0.46, 0.09, 1, 1, 0.8, Math.PI - 0.2, 0, 0.12 * s)],
       ]);
     }
-  } else {
+  } else if (char === 0) {
     // parhelion halo floats above the head and catches the bloom
     const halo = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.016, 6, 32), celMaterial({ color: 0xfff2b0, emissive: 0xffe58a, emissiveIntensity: 1.6 }));
     halo.rotation.x = Math.PI / 2 - 0.2;
     halo.position.set(0, 0.42, 0.02);
     head.add(halo);
     joints.Halo = halo;
+  }
+
+  // Competitive identity pieces remain cosmetic: one common head and shoulder hit volume.
+  const gold='#e6c16a',silver='#d7e0eb';
+  const blade=(parent:THREE.Object3D,x:number,y:number,z:number,roll:number,color=gold)=>part(parent,[
+    [box(),color,T(x,y,z,.035,.62,.028,0,0,roll)], [box(),silver,T(x,y-.22,z,.05,.42,.018,0,0,roll)],
+    [box(),color,T(x,y+.15,z,.18,.035,.05,0,0,roll)]
+  ]);
+  const badge=(parent:THREE.Object3D,color:string,x=0,y=.25,z=-.17)=>part(parent,[[sphere(1),color,T(x,y,z,.06,.06,.018)]]);
+  if(char===2){ // Saber: coiled bun, blue ribbon, breastplate, fitted skirt armour, sheathed holy blade.
+    part(head,[[sphere(2),P.hair,T(0,.12,.17,.105,.1,.065)],[box(),P.coat,T(0,.12,.21,.2,.06,.025)],[cone(.012,.11,4),P.hair,T(.02,.31,-.01,1,1,1,.5,0,.3)]]);
+    part(spine,[[sphere(2),silver,T(0,.25,-.09,.19,.19,.075)],[box(),gold,T(0,.25,-.169,.02,.24,.015)]]);
+    for(const side of [-1,1])part(hips,[[box(),silver,T(side*.17,-.14,0,.1,.3,.2,0,0,side*.15)]]);
+    blade(spine,-.19,.14,.22,-.25);badge(spine,gold);
+  }
+  if(char===3){ // Blackbeard: tricorn, dense beard, brass coat buttons and powder sash.
+    part(head,[[box(),P.hair,T(0,.27,0,.42,.07,.28)],[cone(.22,.16,3),'#2b2734',T(0,.34,0,1,1,.85,0,Math.PI/2)],[cone(.09,.2,8),P.hair,T(0,-.02,-.1,1,1,.7,Math.PI)],[box(),gold,T(0,.31,-.14,.07,.05,.015)]]);
+    part(spine,[[box(),gold,T(0,.23,-.15,.025,.39,.025,0,0,-.6)]]);
+    for(const side of [-1,1])for(let i=0;i<4;i++)badge(spine,gold,side*.1,.08+i*.09,-.15);
+  }
+  if(char===4){ // Musashi: ponytail, short kimono sleeves, waist knot and twin scabbards.
+    const tail=joint('Tail_R',head,0,.19,.14);
+    part(tail,[[cone(.07,.4,8),P.hair,T(0,-.16,.05,1,1,.75,Math.PI-.3)],[box(),P.inner,T(0,0,.015,.13,.07,.06)]]);
+    part(spine,[[box(),P.inner,T(-.06,.24,-.15,.07,.38,.025,0,0,-.32)],[box(),P.pants,T(.07,.22,-.15,.07,.35,.025,0,0,.32)]]);
+    part(hips,[[sphere(1),P.inner,T(-.18,.04,-.13,.08,.055,.04)]]);
+    blade(hips,-.23,-.2,.12,.35,'#435382');blade(hips,.22,-.19,.13,-.35,'#81364c');
+  }
+  if(char===5){ // Napoleon: bicorne, gold epaulettes, double-breasted coat; always on foot.
+    part(head,[[sphere(1),'#253447',T(0,.3,0,.27,.11,.13)],[box(),gold,T(0,.26,-.12,.38,.025,.025)],[sphere(1),'#c95b52',T(.08,.29,-.13,.04,.04,.015)]]);
+    for(const side of [-1,1])part(spine,[[box(),gold,T(side*.22,.42,0,.13,.055,.19)]]);
+    for(const side of [-1,1])for(let i=0;i<4;i++)badge(spine,gold,side*.075,.08+i*.09,-.15);
+    part(spine,[[box(),P.inner,T(0,.29,-.17,.21,.035,.02,0,0,-.55)]]);
+  }
+  if(char===6){ // Jeanne: silver circlet, twin braids, plate shoulders and furled back flag.
+    part(head,[[box(),silver,T(0,.2,-.12,.29,.045,.035)],[sphere(1),'#8f7dd7',T(0,.2,-.145,.03,.035,.015)]]);
+    for(const side of [-1,1])for(let i=0;i<5;i++)part(head,[[sphere(1),P.hair,T(side*.13,-.02-i*.055,.08,.035,.045,.035)]]);
+    part(spine,[[sphere(2),silver,T(0,.25,-.08,.19,.19,.08)],[box(),P.inner,T(.16,.15,.25,.09,.65,.06)],[cyl(.012,.012,.9,6),gold,T(.19,.19,.24)]]);
+    badge(spine,'#8d7bc9');
+  }
+  if(char===7){ // Ozymandias: gold crown, dark side locks and lapis collar; no broad wings.
+    part(head,[[cyl(.155,.155,.045,12),gold,T(0,.23,0)],[cone(.04,.12,4),gold,T(0,.31,-.1)]]);
+    for(const side of [-1,1])part(head,[[box(),P.hair,T(side*.13,-.015,.04,.05,.25,.08)],[box(),gold,T(side*.13,-.12,.04,.055,.03,.09)]]);
+    part(spine,[[cyl(.21,.16,.1,12),gold,T(0,.37,0,1,1,.8)],[box(),P.inner,T(0,.22,-.15,.17,.26,.025)]]);
+    badge(spine,'#59b5d1');
+  }
+  if(char===8){ // Qin: compact crown, white robe, jade shoulder motifs and close-set back fan.
+    part(head,[[box(),'#263c43',T(0,.29,0,.3,.025,.23)],[box(),gold,T(0,.31,-.1,.31,.018,.03)],[box(),P.hair,T(0,-.08,.12,.23,.38,.045)]]);
+    for(let i=0;i<5;i++)part(head,[[cyl(.006,.006,.1,5),gold,T(-.11+i*.055,.23,-.12)]]);
+    for(const side of [-1,1])part(spine,[[sphere(1),'#69aaa0',T(side*.22,.38,.02,.09,.065,.12)],[box(),gold,T(side*.12,.17,.22,.035,.48,.03,0,0,side*.22)]]);
+    part(spine,[[box(),'#69aaa0',T(0,.23,-.15,.055,.3,.02)]]);badge(spine,gold);
   }
 
   // arms reach for the gun: right hand on the grip, left hand under the barrel
@@ -230,6 +287,14 @@ export class FighterAnimator {
     J.Forearm_R.rotation.x = .45 + Math.max(0, pitch) * .25;
     J.Arm_L.rotation.set(1.25 + pitch * (twoHanded ? .5 : .1), yaw * (twoHanded ? .32 : -.15), .62 + roll * (twoHanded ? .25 : -.15));
     J.Forearm_L.rotation.x = .7 + Math.max(0, pitch) * (twoHanded ? .25 : .04);
+  }
+
+  ability(kind:string,phase:string) {
+    if(phase==='idle'||phase==='recovery')return;
+    const J=this.rig.joints;
+    J.Arm_L.rotation.set(kind==='guard'?1.7:kind==='prayer'?1.4:1.8,0,.25);
+    J.Forearm_L.rotation.x=kind==='guard'?1.1:.55;
+    if(kind==='prayer'||kind==='guard'){J.Arm_R.rotation.x=1.55;J.Forearm_R.rotation.x=.9;}
   }
 
   update(dt: number, speed: number, vy: number, crouched = false, grounded = true, forward = speed, strafe = 0) {

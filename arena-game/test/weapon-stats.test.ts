@@ -101,7 +101,7 @@ it('rebuilds network records from known fields only', () => {
   expect(r.host).toBe('localscripthost');
   expect(r.layout).toBe('1v1');
   expect(r.ticks).toBe(0);
-  expect(r.humans[0].char).toBe(1);
+  expect(r.humans[0].char).toBe(7); // Ozymandias is a valid v30 hero
   expect(r.humans[0].loadout).toEqual(['lumen', 'corona', 'blade']);
   expect(Object.keys(r.humans[0].weapons)).toEqual(['halo']);
   expect(r.humans[0].weapons.halo.shots).toBe(4);

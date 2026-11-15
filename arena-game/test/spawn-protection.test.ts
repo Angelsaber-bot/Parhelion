@@ -31,7 +31,7 @@ function strikeAt(m:Match, tick:number) {
 }
 function expiry(m:Match,id='b') { return m.snapshot().players.find(p=>p.id===id)!.spawnProtectedUntilTick!; }
 
-describe('G02: attacking ends spawn immunity, nothing else does',()=>{
+describe('G02/v30: attacks and accepted hero abilities end spawn immunity',()=>{
   const fresh=(id:WeaponId='lumen')=>{ const m=fixture(id); expect(expiry(m,'a')).toBe(150); advance(m,10); return m; };
   it('a shot that leaves the barrel ends it on that tick',()=>{
     const m=fresh(); m.queueInputs('a',[input(1,{buttons:BTN.FIRE})]); m.step();
@@ -46,12 +46,12 @@ describe('G02: attacking ends spawn immunity, nothing else does',()=>{
     const m=fresh('blade'); m.queueInputs('a',[input(1,{buttons:BTN.FIRE,weapon:2})]); m.step();
     expect(m.snapshot().events.some(e=>e.t==='meleeStart')).toBe(true); expect(expiry(m,'a')).toBeLessThanOrEqual(m.tick);
   });
-  it('a thrown frag ends it; a smoke, a shield, moving and dashing do not',()=>{
+  it('a frag or accepted hero cast ends it; smoke, moving and dashing do not',()=>{
     const m=fresh(); m.queueInputs('a',[input(1,{buttons:BTN.THROW,pitch:.3})]); m.step(); expect(expiry(m,'a')).toBeLessThanOrEqual(m.tick);
     const k=fresh(); k.player('a')!.utility='smoke';
     k.queueInputs('a',[input(1,{buttons:BTN.THROW,pitch:.3}),input(2,{buttons:BTN.SHIELD}),input(3,{mz:1,buttons:BTN.DASH}),input(4,{mx:1,buttons:BTN.JUMP})]);
     for(let i=0;i<4;i++)k.step();
-    expect(k.snapshot().events.some(e=>e.t==='throw')).toBe(true); expect(k.shields).toHaveLength(1); expect(expiry(k,'a')).toBe(150);
+    expect(k.snapshot().events.some(e=>e.t==='throw')).toBe(true); expect(expiry(k,'a')).toBeLessThan(150); advance(k,30); expect(k.shields).toHaveLength(1);
   });
 });
 
@@ -71,22 +71,14 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
       expect(snap.score).toEqual({A:0,B:0}); expect(snap.players.every(p=>p.kills===0&&p.deaths===0)).toBe(true);
     }else{ expect(b.hp).toBeLessThan(150); expect(snap.events.some(e=>e.t==='hit'&&e.victim==='b')).toBe(true); }
   });
-  for (const id of [...GUN_IDS,...MELEE_IDS]) it(`${id}: deployed shield HP also stays intact until its owner's immunity expires`,()=>{
-    for(const impact of [149,150]){
-      const m=fixture(id);
-      m.queueInputs('b',[input(1,{yaw:Math.PI,buttons:BTN.SHIELD})]); m.step();
-      expect(m.shields).toHaveLength(1); expect(m.shields[0].hp).toBe(SHIELD.hp); m.snapshot();
-      strikeAt(m,impact); const snap=m.snapshot();
-      const melee=(MELEE_IDS as readonly string[]).includes(id);
-      // Melee passes through shields (v18): once immunity ends the swing reaches b, not the shield.
-      if(!(melee&&impact>=150)) expect(m.player('b')!.hp).toBe(150);
-      if(impact<150){ expect(m.shields[0].hp).toBe(SHIELD.hp); expect(snap.events.some(e=>e.t==='hit'||e.t==='kill'||e.t==='shieldBreak')).toBe(false); }
-      else if(melee){ expect(m.player('b')!.hp).toBeLessThan(150); expect(m.shields[0].hp).toBe(SHIELD.hp); }
-      else if(id==='corona'){
-        expect(m.shields).toHaveLength(0);
-        expect(snap.events.filter(e=>e.t==='shieldBreak')).toHaveLength(1);
-      }else expect(m.shields[0].hp).toBeLessThan(SHIELD.hp);
-    }
+  for (const id of [...GUN_IDS,...MELEE_IDS]) it(`${id}: hero barrier durability is independent of owner spawn immunity`,()=>{
+    const m=fixture(id);m.queueInputs('b',[input(1,{yaw:Math.PI,buttons:BTN.SHIELD})]);m.step();advance(m,30);
+    expect(m.shields).toHaveLength(1);expect(expiry(m)).toBe(1);
+    // Artificially re-protect the owner to isolate the deployed object's own damage contract.
+    m.slots.get('b')!.spawnProtectedUntilTick=500;
+    strikeAt(m,149);const melee=(MELEE_IDS as readonly string[]).includes(id);
+    expect(m.player('b')!.hp).toBe(150);
+    if(!melee) expect(m.shields[0]?.hp??0).toBeLessThan(SHIELD.hp);
   });
   it('uses world ticks without packets, ignores forged protection fields, and cannot be shortened by catch-up inputs',()=>{
     const m=fixture(); advance(m,20);

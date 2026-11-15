@@ -52,6 +52,9 @@ function startChild(root, port) {
 export async function launch({ root = fileURLToPath(new URL('..', import.meta.url)), ports = portsFrom(process.env.PARHELION_PORT), browser = true } = {}) {
   if (Number(process.versions.node.split('.')[0]) < 22) throw new Error('需要 Node.js 22 或更新版本；建议安装 Node.js 24 LTS。不会自动安装任何依赖。');
   root = await fs.realpath(root);
+  const arenaGuard=path.join(root,'..','arena-game/scripts/local-install.mjs');
+  let hasArenaGuard=false;try{await fs.access(arenaGuard);hasArenaGuard=true;}catch{}
+  if(hasArenaGuard){const {pathToFileURL}=await import('node:url');const {ensureLocalArena}=await import(pathToFileURL(arenaGuard).href);await ensureLocalArena(root);}
   let build;
   try {
     build = JSON.parse(await fs.readFile(path.join(root, 'dist/build.json'), 'utf8'));

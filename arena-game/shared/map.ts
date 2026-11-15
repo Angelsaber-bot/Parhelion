@@ -26,6 +26,8 @@ export interface MapAnchor {
   position: Vec3;
   team?: string;
   height?: number;
+  /** Optional spawn facing in radians: yaw 0 faces -Z, -PI/2 faces +X. */
+  facingYaw?: number;
   [k: string]: unknown;
 }
 
@@ -39,6 +41,7 @@ export interface MapData {
   player: { radius: number; height: number; eyeHeight: number; walkSpeed: number; stepHeight: number };
   /** Optional lighting mood for the client (see src/rendering/atmosphere.ts and src/rendering/chapterEffects.ts). */
   presentation?: MapPresentation;
+  tactical?: { spawnZones: {team:'A'|'B';min:[number,number];max:[number,number];padding?:number}[]; callouts:{name:string;min:[number,number];max:[number,number];surface:'stone'|'wood'|'metal'}[] };
 }
 
 /** Client-only light dressing; never read by collision, bots or the server rules. */
@@ -361,3 +364,6 @@ export function spawnAnchors(m: ArenaMap, team: 'A' | 'B'): MapAnchor[] {
   const side = team === 'A' ? 'west' : 'east';
   return m.data.anchors.filter((a) => a.kind === 'spawn' && a.team === side);
 }
+
+/** The same authored tactical zones drive HUD names and material footsteps. */
+export function tacticalArea(map:ArenaMap,x:number,z:number){return map.data.tactical?.callouts.find(a=>x>=a.min[0]&&x<=a.max[0]&&z>=a.min[1]&&z<=a.max[1]);}

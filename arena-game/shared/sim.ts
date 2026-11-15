@@ -1,9 +1,10 @@
+import { freshAbility, type AbilityState } from './heroState.ts';
 // Shared deterministic player rules: applyInput(map, state, input) -> events.
 // Runs identically on the server (authoritative) and on the client (prediction + replay).
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { CHARACTERS, CROUCH, DASH, DT, GRENADE, MELEE_MOVE, MOVE, SHIELD, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
+import { HERO_COMBAT, abilityAllowsGunplay, CHARACTERS, CROUCH, DASH, DT, GRENADE, MELEE_MOVE, MOVE, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
 export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, THROW: 64 } as const;
@@ -43,7 +44,12 @@ export interface PlayerState {
   dashQueue: (readonly [number, number])[]; // directions captured at each press
   dashT: number;
   dashX: number; dashZ: number;
-  shieldCd: number;
+  shieldCd: number; // compatibility HUD alias of the authoritative ability clock
+  lifeId: number;
+  abilityTick: number;
+  ability: AbilityState;
+  lastDamageTick: number;
+  slowUntil: number; dashSealedUntil: number;
   utility: UtilityId;
   utilityCd: number; // ticks until the next spent charge returns
   utilityCharges: number;
@@ -75,6 +81,7 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, dashX: 0, dashZ: 0,
+    lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0,
     shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }
@@ -87,7 +94,7 @@ export function playerEye(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number
 }
 
 export function clonePlayer(p: PlayerState): PlayerState {
-  return { ...p, ammo: p.ammo.slice(), loadout: [...p.loadout], dashQueue: p.dashQueue.slice() };
+  return { ...p, ability: { ...p.ability, dodgeTarget:p.ability.dodgeTarget?[...p.ability.dodgeTarget]:undefined, target: p.ability.target ? [...p.ability.target] : undefined }, ammo: p.ammo.slice(), loadout: [...p.loadout], dashQueue: p.dashQueue.slice() };
 }
 
 /** Forward unit vector for yaw (Three.js camera convention: yaw 0 looks down -Z). */
@@ -205,12 +212,19 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
     p.dashCharges++;
     if (p.dashCharges < DASH.charges) p.dashCd = DASH.cooldown;
   }
-  if (p.shieldCd > 0) p.shieldCd--;
+  p.abilityTick++;
+  p.shieldCd = Math.max(0, p.ability.readyAt - p.abilityTick);
   if (p.utilityLock > 0) p.utilityLock--;
   // One spent charge returns per cooldown, then the next starts recharging.
   if (p.utilityCharges < GRENADE.charges && p.utilityCd > 0 && --p.utilityCd === 0 && ++p.utilityCharges < GRENADE.charges) p.utilityCd = GRENADE.cooldown;
   if (!p.alive) { p.meleeWindup = 0; return events; }
 
+  const locked = !abilityAllowsGunplay(p.char) && p.abilityTick < p.ability.lockUntil;
+  const guard = p.ability.phase === 'guard' || (p.ability.phase === 'windup' && CHARACTERS[p.char].ability === 'guard');
+  const channel = p.ability.phase === 'channel';
+  if (locked) inp = { ...inp, buttons: inp.buttons & ~(BTN.FIRE | BTN.RELOAD | BTN.THROW | (guard || p.ability.phase === 'return' ? BTN.DASH | BTN.JUMP : 0)), weapon:p.weaponSlot };
+  if (CHARACTERS[p.char].ability==='decoy' && p.ability.phase==='windup') inp={...inp,buttons:inp.buttons & ~(BTN.DASH|BTN.JUMP)};
+  if (p.ability.phase === 'return') inp = {...inp, mx:0, mz:0, buttons:inp.buttons & ~(BTN.DASH|BTN.JUMP)};
   // --- movement ---
   const wantsCrouch = !!(inp.buttons & BTN.CROUCH);
   if (wantsCrouch) p.crouched = true;
@@ -223,7 +237,8 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   const height = playerHeight(m, p);
   const char = CHARACTERS[p.char];
   const speed = char.speed * (p.crouched ? CROUCH.speedMultiplier : 1)
-    * (WEAPONS[p.weapon]?.kind === 'melee' ? MELEE_MOVE.speedMultiplier : 1);
+    * (WEAPONS[p.weapon]?.kind === 'melee' ? MELEE_MOVE.speedMultiplier : 1)
+    * (guard ? .8 : channel ? .65 : 1) * (p.slowUntil > p.abilityTick ? HERO_COMBAT.edict.speed : 1);
   let mx = Math.max(-1, Math.min(1, inp.mx)), mz = Math.max(-1, Math.min(1, inp.mz));
   const len = Math.hypot(mx, mz);
   if (len > 1) { mx /= len; mz /= len; }
@@ -233,12 +248,12 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   const moving = len > 0.01;
 
   if (!p.crouched) {
-    if (pressed & BTN.DASH && p.dashQueue.length < p.dashCharges) {
+    if (p.dashSealedUntil <= p.abilityTick && inp.buttons & pressed & BTN.DASH && p.dashQueue.length < p.dashCharges) {
       const dx = moving ? wishX : fx, dz = moving ? wishZ : fz;
       const length = Math.hypot(dx, dz);
       p.dashQueue.push([dx / length, dz / length]);
     }
-    if (p.dashT === 0 && p.dashQueue.length > 0) {
+    if (p.dashSealedUntil <= p.abilityTick && p.dashT === 0 && p.dashQueue.length > 0) {
       [p.dashX, p.dashZ] = p.dashQueue.shift()!;
       p.dashT = DASH.ticks;
       p.dashCharges--;
@@ -270,7 +285,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
     if (horizontal > speed) { p.vx *= speed / horizontal; p.vz *= speed / horizontal; }
   }
 
-  if (pressed & BTN.JUMP && p.grounded) {
+  if (inp.buttons & pressed & BTN.JUMP && p.grounded) {
     p.vy = MOVE.jump;
     p.grounded = false;
     events.push({ type: 'jump' });
@@ -298,14 +313,7 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   recover(m, p, height);
   constrainToBounds(m, p);
 
-  // --- abilities ---
-  if (pressed & BTN.SHIELD && p.shieldCd === 0) {
-    p.shieldCd = SHIELD.cooldown;
-    events.push({
-      type: 'shield',
-      x: quant(p.x + fx * SHIELD.distance), y: quant(p.y), z: quant(p.z + fz * SHIELD.distance), yaw: p.yaw,
-    });
-  }
+  if (locked) { p.x=quant(p.x); p.y=quant(p.y); p.z=quant(p.z); return events; }
 
   // Utility: the grenade itself is a server projectile; the shared rule only spends the charge.
   if (pressed & BTN.THROW && p.utilityCharges > 0 && p.utilityLock === 0 && p.meleeWindup === 0) {

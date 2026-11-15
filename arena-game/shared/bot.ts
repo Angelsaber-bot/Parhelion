@@ -1,3 +1,4 @@
+import {strikePoint} from './heroes.ts';
 // Rule-based baseline bot. Produces the same Input a human client sends, so it goes through the
 // identical server rules. This is the scripted baseline the trained cover-choice AI will be
 // evaluated against; a learned policy can replace it by implementing Controller.
@@ -143,15 +144,15 @@ export class Bot implements Controller {
     // --- perception: nearest enemy it can see inside its view cone (or that just hit it / is very close) ---
     let target: PlayerState | null = null;
     let bestD = Infinity;
-    for (const [oid, slot] of match.slots) {
-      const o = slot.state;
+    for (const o of [...match.slots.values()].map(s=>s.state).concat(match.heroes.decoys())) {
+      const oid=o.id;
       if (oid === id || o.team === me.team || !o.alive) continue;
       const d = Math.hypot(o.x - me.x, o.y - me.y, o.z - me.z);
       const off = Math.abs(wrap(Math.atan2(-(o.x - me.x), -(o.z - me.z)) - this.yaw));
       if (off > 1.3 && !tookDamage && d > 3 && oid !== this.targetId) continue;
       const h = playerHitbox(o.crouched);
       const chest: Vec3 = [o.x, o.y + (o.crouched ? 0.65 : 1.1), o.z], head: Vec3 = [o.x, o.y + h.headY, o.z];
-      const sees = (point: Vec3) => lineOfSight(match.map, eye, point) && !smokeBlocks(match.smokes, eye, point);
+      const sees = (point: Vec3) => match.heroes.visible(eye,point) && !smokeBlocks(match.smokes, eye, point);
       if ((sees(chest) || sees(head)) && d < bestD) {
         bestD = d; target = o;
       }
@@ -175,6 +176,8 @@ export class Bot implements Controller {
       this.seenFor = 0;
       this.trackT = Math.max(0, this.trackT - 3);
     }
+    // Team scan marks are sampled positions, never a live target behind cover.
+    if(!target){const mark=match.heroes.marks.find(m=>m.team===me.team&&m.expires>match.tick);if(mark){this.lastSeen=[mark.x,mark.y,mark.z];this.chase=true;}}
     // the reaction time grows with distance; being shot makes it react a bit faster
     const reaction = this.skill.reaction * (1 + Math.min(bestD, 40) / 35) * (tookDamage ? 0.75 : 1);
     const engaged = !!target && this.seenFor > reaction * 0.5;
@@ -219,11 +222,11 @@ export class Bot implements Controller {
     if (!goal) { this.path = []; this.goal = null; }
 
     let moveX = 0, moveZ = 0;
-    while (this.path.length && Math.hypot(this.path[0].x - me.x, this.path[0].z - me.z) < 0.45) this.path.shift();
+    while (this.path.length && Math.hypot(this.path[0].x - me.x, this.path[0].z - me.z) < 0.24 && Math.abs(this.path[0].y-me.y)<.6) this.path.shift();
     if (this.holdT > 0) {
       this.holdT--; // holding an angle at a cover point
     } else if (this.path.length) {
-      const look = this.path[Math.min(2, this.path.length - 1)];
+      const look = this.path[0]; // Never cut a cabinet corner or skip a stair landing.
       moveX = look.x - me.x; moveZ = look.z - me.z;
     } else if (this.goal && this.lastSeen === this.goal) {
       this.lastSeen = null; // reached the last known position: nothing here, look around a moment
@@ -258,6 +261,13 @@ export class Bot implements Controller {
       if (gd < FRAG.radius + .8) { moveX = gd > .05 ? gx / gd : 1; moveZ = gd > .05 ? gz / gd : 0; break; }
     }
 
+    // React only to a visible, public warning after the bot's normal reaction delay.
+    for(const e of match.heroes.entities){
+      if(e.kind!=='barrage'||e.team===me.team||match.tick-e.created<this.skill.reaction)continue;
+      const next=strikePoint(e,Math.min(2,e.pulse));const dx=me.x-next[0],dz=me.z-next[2],d=Math.hypot(dx,dz);
+      if(d<3.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;break;}
+    }
+
     // stuck detection: try jumping and re-pathing
     if (Math.hypot(me.x - this.lastPos[0], me.z - this.lastPos[1]) < 0.02 && (moveX || moveZ)) {
       if (++this.stuckT > 20) { inp.buttons |= BTN.JUMP; this.strafe = -this.strafe; this.repath = 0; this.stuckT = 0; }
@@ -271,8 +281,8 @@ export class Bot implements Controller {
       const [fx, fz] = forward(this.yaw);
       const wx = moveX / l, wz = moveZ / l;
       const f = wx * fx + wz * fz, r = wx * -fz + wz * fx;
-      inp.mz = Math.abs(f) > 0.38 ? Math.sign(f) : 0;
-      inp.mx = Math.abs(r) > 0.38 ? Math.sign(r) : 0;
+      inp.mz = f;
+      inp.mx = r;
     }
 
     // --- aim ---
@@ -355,7 +365,17 @@ export class Bot implements Controller {
 
     // --- abilities, used sparingly ---
     if (target && tookDamage && me.dashCharges > 0 && me.dashT === 0 && this.rand() < 0.12 + this.aggression * 0.1) inp.buttons |= BTN.DASH;
-    if (target && hurt && me.shieldCd === 0 && bestD > 6 && this.rand() < 0.05) inp.buttons |= BTN.SHIELD;
+    const kind=CHARACTERS[me.char].ability;
+    if(me.ability.phase==='guard') inp.buttons|=BTN.SHIELD;
+    if(me.ability.phase==='channel') {inp.buttons&=~(BTN.FIRE|BTN.RELOAD|BTN.DASH|BTN.JUMP);inp.mx=inp.mz=0;}
+    const anchor=match.heroes.entities.find(e=>e.owner===id&&e.kind==='anchor');
+    if(anchor&&hurt&&target&&me.ability.phase==='idle'&&!(me.prevButtons&BTN.SHIELD))inp.buttons|=BTN.SHIELD;
+    const command=match.heroes.entities.find(e=>e.owner===me.id&&e.kind==='curtain'&&e.commandedAt===undefined&&match.tick-e.created>25);
+    if(command&&engaged&&me.ability.phase==='idle'&&!(me.prevButtons&BTN.SHIELD))inp.buttons|=BTN.SHIELD;
+    if(me.shieldCd===0&&me.ability.phase==='idle'&&me.dashT===0&&!(me.prevButtons&BTN.SHIELD)&&this.rand()<.055) {
+      const wants=kind==='prayer'?(hurt):kind==='guard'?(engaged&&bestD<16):kind==='barrier'?(engaged&&hurt&&bestD>5):kind==='anchor'?(engaged&&bestD>6):kind==='curtain'?(engaged&&hurt):kind==='decoy'?(engaged&&bestD>5):kind==='barrage'?(engaged&&bestD<15):kind==='edict'?(engaged&&bestD<12):(engaged&&bestD<18||!target&&!!this.lastSeen);
+      if(wants)inp.buttons|=BTN.SHIELD;
+    }
     return inp;
   }
 

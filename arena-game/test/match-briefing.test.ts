@@ -56,6 +56,6 @@ it('production UI refreshes on locale, mode, layout, team and Bot changes withou
 
 it('page-exit effect cleanup preserves BFCache and ordinary rematches', () => {
   const main=readFileSync(new URL('../src/main.ts',import.meta.url),'utf8');
-  expect(main).toContain("addEventListener('pagehide', (event) => { if (!event.persisted) scene.disposeCombatEffects(); });");
+  expect(main).toMatch(/addEventListener\('pagehide', \(event\) => \{ if \(!event.persisted\) \{scene\.disposeCombatEffects\(\);heroPreview\?\.dispose\(\);\} \}\);/);
   expect(main.match(/scene\.disposeCombatEffects\(\)/g)).toHaveLength(1);
 });

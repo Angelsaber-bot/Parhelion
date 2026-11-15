@@ -51,8 +51,8 @@ it('non-PBR materials retain their original authored shader rather than being re
 });
 
 it('crafted chapter rendering is explicitly scoped and excludes every protected/legacy map',()=>{
-  expect([...CRAFTED_CHAPTERS].sort()).toEqual(['blackflag','camlann','frostcourt','lishan','orleans','suntemple']);
-  for(const id of ['aster','sakura'])expect(CRAFTED_CHAPTERS.has(id)).toBe(false);
+  expect([...CRAFTED_CHAPTERS].sort()).toEqual(['blackflag','camlann','frostcourt','homeward','lishan','orleans','sakura','suntemple']);
+  for(const id of ['aster'])expect(CRAFTED_CHAPTERS.has(id)).toBe(false);
   const scene=readFileSync(new URL('../src/rendering/scene.ts',import.meta.url),'utf8');
   expect(scene).toMatch(/CRAFTED_CHAPTERS\.has\(id\)\s*\?\s*toChapterMaterial\s*:\s*toCel/);
 });
@@ -83,7 +83,7 @@ it('crafted hook applies exactly once to the actual PBR ShaderLib and expands al
   expect(material.customProgramCacheKey()).toBe('parhelion-crafted-chapter-pbr-v1');expect(material.customProgramCacheKey()).not.toBe(baseline.cacheKey);material.dispose();
 });
 
-for(const id of ['blackflag','frostcourt','camlann'])it(`${id} actual GLTFLoader material/UV parsing survives crafted conversion`,async()=>{
+for(const id of ['blackflag','frostcourt','camlann','sakura'])it(`${id} actual GLTFLoader material/UV parsing survives crafted conversion`,async()=>{
   // Only browser image decoding is replaced with a header-sized bitmap; PNG pixels
   // are decoded independently by verify_glb_materials.py. No WebGL context is used.
   vi.stubGlobal('self',globalThis);

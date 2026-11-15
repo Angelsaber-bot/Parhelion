@@ -1,0 +1,10 @@
+{
+  "map": "camlann",
+  "runtimeUnchanged": true,
+  "collisionUnchanged": true,
+  "oldBytes": 8384780,
+  "newBytes": 8401200,
+  "triangles": 86060,
+  "meshes": 20,
+  "landingMarkers": "Route landing frames: 6"
+}

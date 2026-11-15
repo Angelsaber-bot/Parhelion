@@ -1,3 +1,10 @@
+import {PLAYABLE_HERO_INDICES,abilityAllowsGunplay} from '../../shared/content.ts';
+import type {HeroEvent} from '../../shared/heroState.ts';
+import { HeroEffects, HeroHands } from './heroEffects.ts';
+import type { Snapshot } from '../../shared/match.ts';
+import type { ArenaMap } from '../../shared/map.ts';
+import type { PlayerState } from '../../shared/sim.ts';
+import homewardGlb from '../../../arena-maps/homeward/assets/homeward_visual.glb?url';
 import {disposeTree,combatArt,artPoint} from '../weapons/weaponArt.ts';
 import type {SkinEffect} from '../cosmetics/skinEffects.ts';
 import {skinEffect} from '../cosmetics/skinEffects.ts';
@@ -27,7 +34,7 @@ import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { atmosphereFor, type Atmosphere } from './atmosphere.ts';
-import { buildFighter, FighterAnimator } from '../player/fighter.ts';
+import { ArenaCharacter } from '../player/worldHero.ts';
 import { AvatarMotion, ViewmodelStride, motionDt } from '../player/characterMotion.ts';
 import { OutlinePass } from './outline.ts';
 import { celMaterial, toCel, makeSky } from './cel.ts';
@@ -50,7 +57,7 @@ import {firearmIdlePose} from '../weapons/weaponPose.ts';
 import {renderTelemetry} from './renderTelemetry.ts';
 import {worldRenderVisible} from './renderScheduling.ts';
 
-const MAP_GLB: Record<string, string> = { aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb, lishan: lishanGlb, suntemple: suntempleGlb, orleans: orleansGlb, range: rangeGlb };
+const MAP_GLB: Record<string, string> = { homeward:homewardGlb, aster: asterGlb, sakura: sakuraGlb, blackflag: blackflagGlb, frostcourt: frostcourtGlb, camlann: camlannGlb, lishan: lishanGlb, suntemple: suntempleGlb, orleans: orleansGlb, range: rangeGlb };
 /** Extra decorative layers drawn over a map's own art (ASTER's original model stays untouched). */
 const MAP_OVERLAY: Record<string, string> = { aster: asterOverlayGlb };
 
@@ -68,6 +75,7 @@ export class ArenaScene {
   private weaponFx: WeaponFx | null = null;
   private killFinishers!: KillFinishers;
   private grenadeView!: GrenadeView;
+  private heroEffects: HeroEffects;
   private muzzleLight = new THREE.PointLight(0xffd79a, 0, 9, 2);
   private flashT = 0;
   private baseFov = 78;
@@ -97,6 +105,7 @@ export class ArenaScene {
     this.weaponFx = new WeaponFx(this.scene, quality);
     this.killFinishers = new KillFinishers(this.scene);
     this.grenadeView = new GrenadeView(this.scene);
+    this.heroEffects = new HeroEffects(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -257,7 +266,8 @@ export class ArenaScene {
         this.vmScene.add(held.group);this.scene.add(remote.group);
       }
       // Whole avatars (team ring, contact shadow, nameplate) and a barrier, exactly as the match draws them.
-      for(const char of [0,1]){const avatar=new Avatar({char,team:'A'} as PlayerSnap);avatars.push(avatar);this.scene.add(avatar.root);}
+      for(const char of PLAYABLE_HERO_INDICES){const avatar=new Avatar({char,team:'A'} as PlayerSnap);avatars.push(avatar);this.scene.add(avatar.root);}
+      await Promise.all(avatars.map(a=>a.ready));
       const shield=makeShield(TEAM_COLOR.A);fighters.push(shield);this.scene.add(shield);
       this.combatEffects.tracer([0,-1000,0],[0,-1000,-1],0xffffff);
       this.combatEffects.burst([0,-1000,0],0xffffff,.01,.1,0);
@@ -422,7 +432,7 @@ export class ArenaScene {
 
   get combatEffectInventory() { return this.combatEffects.inventory; }
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
-  disposeCombatEffects() { this.combatEffects.dispose(); this.weaponFx?.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); }
+  disposeCombatEffects() { this.combatEffects.dispose(); this.weaponFx?.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); this.heroEffects.dispose();this.viewmodel.hands.dispose(); }
   private smokes: readonly Smoke[] = [];
   syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.smokes = smokes; this.grenadeView?.sync(grenades, smokes, since); }
   /** Frag detonation: flash, shockwave, smoke, plus sparks from the shared effect pool. */
@@ -433,6 +443,8 @@ export class ArenaScene {
 
   // ---------- players ----------
 
+  heroEvent(e:HeroEvent,tick:number,yaw:number){this.heroEffects.event(e,tick,yaw);}
+  syncHeroes(s:Snapshot,myId:string,map:ArenaMap,p:PlayerState|null) {this.heroEffects.sync(s,myId);this.heroEffects.placement(map,p);}
   syncAvatar(p: PlayerSnap, pos: Vec3, yaw: number, pitch: number, ally: boolean) {
     let a = this.avatars.get(p.id);
     if (!a || a.char !== p.char || a.team !== p.team) {
@@ -446,14 +458,16 @@ export class ArenaScene {
     a.setAlly(ally);
     // Smoke hides an enemy completely: no nameplate or health bar through or inside a cloud.
     const head: Vec3 = [pos[0], pos[1] + 1.6, pos[2]], eye = this.camera.position;
-    a.conceal(!ally && this.smokes.length > 0 && (insideSmoke(this.smokes, head) || smokeBlocks(this.smokes, [eye.x, eye.y, eye.z], head)));
+    const obscured=!ally&&this.smokes.length>0&&(insideSmoke(this.smokes,head)||smokeBlocks(this.smokes,[eye.x,eye.y,eye.z],head));
+    a.conceal(obscured);a.root.visible=p.alive&&!obscured;
     const now = performance.now() / 1000;
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     const facing = p.meleeWindup > 0 ? p.meleeYaw : yaw;
-    a.animate(pos, now - this.lastAnim, p.crouched, p.meleeWindup, p.grounded, facing);
+    if(p.ability)a.ability(CHARACTERS[p.char].ability,p.ability.phase);
     a.root.position.set(pos[0], pos[1], pos[2]);
     a.root.rotation.y = facing;
     a.aim.rotation.x = p.meleeWindup > 0 ? p.meleePitch : pitch;
+    a.animate(pos, now - this.lastAnim, p.crouched, p.meleeWindup, p.grounded, facing);
     a.setHp(p.hp / CHARACTERS[p.char].hp, p.name);
   }
 
@@ -506,7 +520,7 @@ export class ArenaScene {
 
   /** Round boundaries clear transient effects without reloading maps or equipped models. */
   clearCombatEffects() {
-    this.combatEffects.clear(); this.weaponFx?.clear(); this.killFinishers?.clear(); this.grenadeView?.clear();
+    this.combatEffects.clear(); this.weaponFx?.clear(); this.killFinishers?.clear(); this.grenadeView?.clear(); this.heroEffects.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
@@ -635,6 +649,7 @@ export function buildGun(weapon: number, skin: number, firstPerson = false): Gun
 
 export class Viewmodel {
   readonly root = new THREE.Group();
+  readonly hands = new HeroHands(this.root);
   private gun: THREE.Group | null = null;
   private presentation: GunPresentation | null = null;
   private muzzle: THREE.Object3D | null = null;
@@ -699,6 +714,7 @@ export class Viewmodel {
     this.presentation?.dispose();
     const { group, muzzle } = this.presentation = buildGun(weapon, skin, true);
     group.scale.setScalar(weapon === 6 ? .6 : .72);
+    group.name = 'Equipped weapon';
     this.gun = group;
     this.muzzle = muzzle;
     this.root.add(group);
@@ -911,7 +927,8 @@ class Avatar {
   private plate: THREE.Sprite;
   private plateCtx: CanvasRenderingContext2D;
   private plateKey = '';
-  private anim: FighterAnimator;
+  private anim: ArenaCharacter;
+  get ready(){return this.anim.ready;}
   private motion = new AvatarMotion();
   private weapon = 0;
   private meleeHit = 0;
@@ -920,9 +937,9 @@ class Avatar {
     this.char = p.char;
     this.team = p.team;
     const teamCol = TEAM_COLOR[p.team];
-    const rig = buildFighter(p.char, teamCol);
+    const rig = new ArenaCharacter(p.char, teamCol);
     this.aim = rig.aim;
-    this.anim = new FighterAnimator(rig);
+    this.anim = rig;
     this.root.add(rig.root);
 
     const ring = new THREE.Mesh(new THREE.RingGeometry(0.36, 0.44, 28), new THREE.MeshBasicMaterial({ color: teamCol, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
@@ -950,6 +967,7 @@ class Avatar {
   conceal(hidden: boolean) { this.plate.visible = !hidden; }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
+  ability(kind:string,phase:string){this.anim.ability(kind,phase);if(this.gun)this.gun.visible=abilityAllowsGunplay(this.char)||phase==='idle'||phase==='recovery';}
   strike() { this.meleeHit = 1; }
 
   resetMotion(crouched = false, grounded = true) {
@@ -970,7 +988,7 @@ class Avatar {
       this.anim.melee(windup, this.meleeHit, this.weapon);
       this.presentation?.animate(Math.max(windup, this.meleeHit), 0); // sculpted rotors speed up through the swing
       this.meleeHit = Math.max(0, this.meleeHit - dt / meleeRecoverySeconds(this.weapon));
-    } else { this.anim.melee(0, 0); this.presentation?.animate(0, 0); }
+    } else { this.anim.melee(0, 0, this.weapon); this.presentation?.animate(0, 0); }
   }
 
   setWeapon(weapon: number, skin: number) {
@@ -981,6 +999,7 @@ class Avatar {
     const { group, muzzle } = this.presentation = buildGun(weapon, skin);
     group.position.set(0.16, -0.08, -0.32);
     group.scale.setScalar(1.15);
+    group.name = 'Equipped weapon';
     this.gun = group;
     this.muzzle = muzzle;
     this.aim.add(group);
@@ -1007,7 +1026,9 @@ class Avatar {
 
   dispose(scene: THREE.Scene) {
     this.presentation?.dispose();
+    this.anim.dispose();
     this.plate.material.map?.dispose(); this.plate.material.dispose();
+    for (const child of this.root.children) if (child instanceof THREE.Mesh) {child.geometry.dispose(); for (const mat of Array.isArray(child.material)?child.material:[child.material]) mat.dispose();}
     scene.remove(this.root);
   }
 }

@@ -1,0 +1,10 @@
+{
+  "map": "suntemple",
+  "runtimeUnchanged": true,
+  "collisionUnchanged": true,
+  "oldBytes": 5292748,
+  "newBytes": 5348744,
+  "triangles": 64764,
+  "meshes": 13,
+  "landingMarkers": "Route landing frames: 16"
+}

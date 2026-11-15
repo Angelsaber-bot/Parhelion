@@ -6,6 +6,7 @@
   <link rel="icon" href="data:," />
   <title>Parhelion · Arena</title>
   <link rel="stylesheet" href="./src/ui/style.css" />
+  <link rel="stylesheet" href="./src/ui/arena-shell.css" />
 </head>
 <body>
   <canvas id="view"></canvas>
@@ -25,13 +26,13 @@
     <div id="banner" class="hidden"></div>
     <div id="vitals">
       <div id="hpbar"><div id="hpfill"></div></div>
-      <div id="hptext">150</div>
+      <div class="health-number"><small>HP</small><div id="hptext">150</div></div>
     </div>
     <div id="spawn-protection" class="hidden" role="status"></div>
     <div id="range-stats" class="rangeOnly" data-no-i18n aria-live="off"></div>
     <div id="skills">
       <div class="skill" id="dash"><span>冲刺</span><kbd>Shift</kbd><b></b></div>
-      <div class="skill" id="shield"><span>护盾</span><kbd>Q</kbd><b></b></div>
+      <div class="skill" id="shield"><span>角色技能</span><kbd>Q</kbd><b></b></div>
       <div class="skill" id="utility"><span>手雷</span><kbd>G</kbd><b></b></div>
     </div>
     <div id="weapon">
@@ -46,7 +47,7 @@
 
   <div id="pause" class="overlay hidden">
     <div class="card small">
-      <h2 id="pause-title" data-no-i18n>已暂停</h2>
+      <div class="eyebrow">PARHELION / PAUSE</div><h2 id="pause-title" data-no-i18n>已暂停</h2>
       <p class="muted onlineOnly" id="pausenote">联机对局仍在继续。</p>
       <div id="range-panel" class="rangeOnly" data-no-i18n></div>
       <button id="resume" class="primary">继续</button>
@@ -67,48 +68,69 @@
   </div>
 
   <div id="lobby" class="overlay">
-    <div class="card lobby">
-      <section class="lobby-main">
-        <div class="eyebrow">ARENA</div>
-        <h1 id="title">ASTER 研究站</h1>
-        <h4 class="notRange">战场</h4>
-        <div id="maps" class="maps notRange"></div>
-        <h4>角色</h4>
-        <div id="chars" class="chars"></div>
-        <h4>出战配装</h4>
-        <div id="loadout" class="loadout" aria-label="出战配装"></div>
-        <p id="loadout-status" class="muted" role="status" aria-live="polite"></p>
-      </section>
-      <section class="lobby-side">
-        <div class="tabs">
-          <button data-mode="offline" class="tab on">单机 vs Bot</button>
-          <button data-mode="online" class="tab">联机</button>
-          <button data-mode="range" class="tab">训练场</button>
-        </div>
-        <div class="grid">
-          <label>名字<input id="name" maxlength="16" placeholder="请输入你的名字" autocomplete="off" required /></label>
-          <label class="notRange">对局<select id="layout"><option>1v1</option><option>1v2</option><option selected>2v2</option></select></label>
-          <label class="notRange">队伍<select id="team"><option value="A">西 · 青</option><option value="B">东 · 橙</option><option value="auto" class="onlineOnly">自动</option></select></label>
-          <label class="offlineOnly notRange">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
-          <label class="onlineOnly">服务器<input id="server" /></label>
-          <label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
-        </div>
-        <div id="match-briefing" data-no-i18n>
-          <p id="match-rules" class="muted"></p>
-          <p id="match-teams" class="muted"></p>
-          <p id="match-connection" class="muted"></p>
-        </div>
-        <h4>外观</h4>
-        <div id="skins" class="grid skins"></div>
-        <button id="armory" type="button" data-i18n-ignore>皮肤工坊</button>
-        <button id="settings-lobby" type="button">操作设置</button>
-        <div id="error" class="error hidden"></div>
-        <button id="play" class="primary"><span>开始战斗</span></button>
-        <p id="control-hints" class="muted keys">读取操作设置…</p>
-      </section>
+    <div class="card lobby arena-shell">
+      <header class="arena-header">
+        <a class="arena-brand" href="/" aria-label="Parhelion 首页"><i aria-hidden="true"></i><span>PARHELION<small>ARENA / FRONTLINE</small></span></a>
+        <nav class="arena-nav" role="tablist" aria-label="整备区域" data-no-i18n>
+          <button id="tab-battlefield" role="tab" aria-controls="pane-battlefield" aria-selected="true" data-pane="battlefield"><small>01</small><span data-ui-zh="战场" data-ui-en="BATTLEFIELD">战场</span></button>
+          <button id="tab-heroes" role="tab" aria-controls="pane-heroes" aria-selected="false" tabindex="-1" data-pane="heroes"><small>02</small><span data-ui-zh="从者" data-ui-en="HEROES">从者</span></button>
+          <button id="tab-equipment" role="tab" aria-controls="pane-equipment" aria-selected="false" tabindex="-1" data-pane="equipment"><small>03</small><span data-ui-zh="配装" data-ui-en="LOADOUT">配装</span></button>
+        </nav>
+        <div class="arena-tools"><div id="lobby-language"></div><button id="settings-lobby" type="button" aria-label="操作设置">⚙ <span data-ui-zh="设置" data-ui-en="Settings">设置</span></button></div>
+      </header>
+      <div class="arena-workspace">
+        <main class="lobby-main">
+          <section id="pane-battlefield" class="arena-pane" role="tabpanel" aria-labelledby="tab-battlefield" tabindex="0">
+            <div class="pane-heading"><span class="eyebrow" data-ui-zh="战场档案" data-ui-en="FIELD DOSSIER">战场档案</span><span class="folio">01 / 03</span></div>
+            <div class="field-feature">
+              <img id="field-image" alt="" />
+              <div class="field-lines" aria-hidden="true"></div>
+              <div class="field-caption"><span id="field-chapter" class="field-tag"></span><h1 id="title">ASTER 研究站</h1><p id="field-description"></p></div>
+              <div class="field-stamp" aria-hidden="true">P / A<span>FIELD OPERATIONS</span></div>
+            </div>
+            <div class="range-intro rangeOnly" data-no-i18n><b data-ui-zh="先找到你的节奏。" data-ui-en="Find your rhythm.">先找到你的节奏。</b><p data-ui-zh="固定靶、移动靶与无限弹药。在暂停菜单中调整训练内容。" data-ui-en="Static and moving targets, with unlimited ammo. Customize drills in the pause menu."></p></div>
+            <div class="section-line notRange"><h4 data-ui-zh="选择战场" data-ui-en="SELECT A FIELD">选择战场</h4><span id="field-count"></span></div>
+            <div id="maps" class="maps notRange"></div>
+          </section>
+          <section id="pane-heroes" class="arena-pane" role="tabpanel" aria-labelledby="tab-heroes" tabindex="0" hidden>
+            <div class="pane-heading"><span class="eyebrow" data-ui-zh="从者档案" data-ui-en="HERO DOSSIER">从者档案</span><span class="folio">02 / 03</span></div>
+            <div class="hero-dossier">
+              <div class="hero-stage"><div class="hero-heading"><span id="hero-role"></span><h2 id="hero-name"></h2><div id="hero-fundamentals"></div></div><div id="hero-preview"></div><div class="stage-caption" aria-hidden="true">PARHELION / HERO ARCHIVE</div></div>
+              <div class="hero-roster"><h4 data-ui-zh="选择出战从者" data-ui-en="CHOOSE YOUR HERO">选择出战从者</h4><div id="chars" class="chars"></div></div>
+            </div>
+            <div class="ability-dossier"><div id="hero-detail"></div><button id="hero-lesson-start" type="button"></button></div>
+          </section>
+          <section id="pane-equipment" class="arena-pane" role="tabpanel" aria-labelledby="tab-equipment" tabindex="0" hidden>
+            <div class="pane-heading"><span class="eyebrow" data-ui-zh="武器整备" data-ui-en="EQUIPMENT BAY">武器整备</span><span class="folio">03 / 03</span></div>
+            <h2 class="pane-title" data-ui-zh="为下一场交火做好准备。" data-ui-en="Ready for the next encounter.">为下一场交火做好准备。</h2>
+            <p class="pane-intro" data-ui-zh="两把枪械，一件近战，一种投掷物。" data-ui-en="Two firearms. One melee weapon. One utility.">两把枪械，一件近战，一种投掷物。</p>
+            <div id="loadout" class="loadout" aria-label="出战配装"></div><p id="loadout-status" class="muted" role="status" aria-live="polite"></p>
+            <div class="section-line"><h4 data-ui-zh="武器外观" data-ui-en="WEAPON FINISHES">武器外观</h4><button id="armory" type="button">皮肤工坊</button></div>
+            <div id="skins" class="grid skins"></div>
+          </section>
+        </main>
+        <aside class="lobby-side" aria-label="出战准备">
+          <div class="side-heading"><span class="eyebrow" data-ui-zh="出战准备" data-ui-en="DEPLOYMENT">出战准备</span><span id="mode-badge"></span></div>
+          <div class="tabs" aria-label="游戏模式">
+            <button data-mode="offline" class="tab on">单机 vs Bot</button><button data-mode="online" class="tab">联机</button><button data-mode="range" class="tab">训练场</button>
+          </div>
+          <div class="grid match-options">
+            <label class="name-field">名字<input id="name" maxlength="16" placeholder="请输入你的名字" autocomplete="off" required /></label>
+            <label class="notRange">对局<select id="layout"><option>1v1</option><option>1v2</option><option selected>2v2</option></select></label>
+            <label class="notRange">队伍<select id="team"><option value="A">西 · 青</option><option value="B">东 · 橙</option><option value="auto" class="onlineOnly">自动</option></select></label>
+            <label class="offlineOnly notRange">Bot 难度<select id="difficulty"><option value="easy">简单</option><option value="normal" selected>普通</option><option value="hard">困难</option></select></label>
+            <label class="onlineOnly server-field">服务器<input id="server" /></label><label class="onlineOnly check"><input type="checkbox" id="bots" /> 空位用 Bot 补齐</label>
+          </div>
+          <button id="deployment-hero" class="deployment-hero" type="button" data-no-i18n><span class="deploy-glyph" aria-hidden="true"></span><span><small data-ui-zh="出战从者" data-ui-en="YOUR HERO">出战从者</small><b id="deploy-name"></b><em id="deploy-ability"></em></span><i aria-hidden="true">↗</i></button>
+          <button id="deployment-loadout" type="button" data-no-i18n><span data-ui-zh="当前配装" data-ui-en="YOUR LOADOUT">当前配装</span><strong id="deploy-loadout"></strong><i aria-hidden="true">↗</i></button>
+          <div id="match-briefing" data-no-i18n><p id="match-rules" class="muted"></p><details><summary data-ui-zh="对局与连接说明" data-ui-en="Match & connection details">对局与连接说明</summary><p id="match-teams" class="muted"></p><p id="match-connection" class="muted"></p></details></div>
+          <div class="deploy-action"><div id="error" class="error hidden" role="alert"></div><button id="play" class="primary"><span>开始战斗</span></button><span class="deploy-caption" data-ui-zh="选择好装备，进入战场。" data-ui-en="Choose your gear. Enter the arena.">选择好装备，进入战场。</span></div>
+        </aside>
+      </div>
+      <footer class="arena-footer"><span id="arena-version" data-no-i18n></span><details class="control-reference"><summary data-ui-zh="操作速查" data-ui-en="Controls">操作速查</summary><p id="control-hints" class="muted keys">读取操作设置…</p></details><span class="footer-wordmark" aria-hidden="true">A WORLD / IN CONFLICT</span></footer>
     </div>
   </div>
-  <div id="loading" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="loading-status"><div class="card small" data-no-i18n><p id="loading-status" role="status">加载地图…</p><p id="loading-note" class="muted"></p><button id="cancel-start" type="button">取消并返回大厅</button></div></div>
+  <div id="loading" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="loading-status"><div class="card small" data-no-i18n><div class="loading-orbit" aria-hidden="true"></div><p id="loading-status" role="status">加载地图…</p><p id="loading-note" class="muted"></p><button id="cancel-start" type="button">取消并返回大厅</button></div></div>
   <script type="module" src="./src/main.ts"></script>
 </body>
 </html>

@@ -1,0 +1,77 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis (erakit.synth_materials); no external imagery, scans, textures or AI image inputs.",
+  "seed": 20261115,
+  "size": [
+    128,
+    128
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "recipes": {
+    "gravel": {
+      "kind": "plaster",
+      "contrast": 20,
+      "grain": 0.8,
+      "rough": 248,
+      "bump": 0.65
+    },
+    "granite": {
+      "kind": "blocks",
+      "rows": 3,
+      "cols": 2,
+      "joint": 0.035,
+      "contrast": 15,
+      "rough": 236,
+      "bump": 0.45
+    },
+    "cedar": {
+      "kind": "wood",
+      "rows": 17,
+      "cols": 3,
+      "contrast": 17,
+      "rough": 218,
+      "bump": 0.35
+    },
+    "lime": {
+      "kind": "plaster",
+      "contrast": 8,
+      "rough": 242,
+      "bump": 0.2
+    },
+    "kawara": {
+      "kind": "tile",
+      "rows": 6,
+      "cols": 5,
+      "contrast": 19,
+      "rough": 211,
+      "bump": 0.7
+    },
+    "lacquer": {
+      "kind": "wood",
+      "rows": 21,
+      "cols": 1,
+      "contrast": 7,
+      "rough": 175,
+      "bump": 0.12
+    }
+  },
+  "files": {
+    "cedar_basecolor.png": "8c851a84d20a73b29b6861c3d9c0f647ec784c1836873e929fe67ca71323418a",
+    "cedar_normal.png": "1e9f775c00663df5c1e9600042f8dc8e28d0abb47ec457178b4d5a0609a3654d",
+    "cedar_orm.png": "5766c663da2b6d0b8290fa6071c6a5bf35c3d17292cf1067f7e344bf328d67a2",
+    "granite_basecolor.png": "29907f7189b1a0e42fd3e7aed1e173b5d2a8e994f861b971dd3fb44852011ffc",
+    "granite_normal.png": "d3be0083e402791e4815dfa7bbc4b623bfe93bf8d36e5508f10d92e819aa2708",
+    "granite_orm.png": "3998e06f9d629e45d84e24bd4dde8193cfa2dc929a2786becce353e1e15faa70",
+    "gravel_basecolor.png": "81019cf1a7832024b588b1b0d9b77176a17c79ba384fc50bbb224833531f2fe8",
+    "gravel_normal.png": "e985879e59d9b6e04a9ba943be70c4ae3b0d79962f95cc6cf594b947f3fa4abf",
+    "gravel_orm.png": "7b27f79c73046eb87ff775b02bb8ff886c0c423e53e912c5c90e7dbc058199b4",
+    "kawara_basecolor.png": "8ad585e0514f128bf0c61ace89fce58d7183a2587c59885ec726ff2d91222345",
+    "kawara_normal.png": "f61d8d9b9aa10402ea8afed206d7f21837cdb449f0f7f460269051be54da3a46",
+    "kawara_orm.png": "16ce9d79d5fe3bb80ab7cf59ec45c3a6af8fb57501727bbd4cff7e853fdee373",
+    "lacquer_basecolor.png": "e2ab77f5451b0e94926ec9703142b6ae7613a0d7f366743848eab740d81207b8",
+    "lacquer_normal.png": "8d6c2121ea0585d88003ae86af380ab40a9e2234f07cec384e0df20642311d07",
+    "lacquer_orm.png": "bb012fec87dc2a08960ead91351fbb1bf7ee2d0c02871cda1b4b0bdf74bf5928",
+    "lime_basecolor.png": "def4595a95976b86627796033647a463214f89e143b0b3a4547dab454af32b65",
+    "lime_normal.png": "bdfedd06b04c733684adb8ecdf3329ea2e6f1e4d942dadc772936297fed4cc69",
+    "lime_orm.png": "e91e25468e6024ad4c9e39032b2bdb35a9396a10ead2340609e452bca45cc522"
+  }
+}

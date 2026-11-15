@@ -18,12 +18,12 @@
 
 ## 氛围
 
-`map.json` 里 `presentation.preset = "dusk"`：低角度的橙色夕阳、粉紫色天空、暖色雾、更强的辉光（Bloom），空中飘着樱花瓣。纸灯笼、石灯笼的火口和队伍灯带自发光，在辉光下会亮起来。
+`map.json` 里 `presentation.preset = "shrine"`：低角度的橙色夕阳、粉紫色天空、暖色雾、克制的辉光（Bloom），空中飘着樱花瓣。纸灯笼、石灯笼的火口和队伍灯带自发光，在辉光下会亮起来。
 
 ## 文件
 
 - `source/make_map.py`：游戏布局 → `runtime/map.json`。
-- `source/build_glb.py`：用共享工具 `../_lib/glbkit.py` 生成 `assets/sakura_visual.glb`（约 2.2 万三角形，1.7 MB，纯因子材质）和 `assets/sakura_collision.glb`。纯 Python 3，不需要 Blender。
+- `source/build_glb.py`：用共享工具 `../_lib/glbkit.py` 生成 `assets/sakura_visual.glb`（29,114 三角形，2.62 MB，嵌入原创表面材质）和 `assets/sakura_collision.glb`。Python 3 + Pillow，不需要 Blender。
 - `validation/check_glb.py`：调用 `../_lib/check_glb.py`，检查模型与 `map.json` 一致。
 - `previews/`：游戏内截图。
 
@@ -48,3 +48,11 @@ cd ../../arena-game && npx vitest run test/maps.test.ts
 ### 2026-11-03 墙脚稳定性修复
 
 四面外墙的灰墙与木墙脚原来在 y=0..0.5 使用重叠侧面，视角移动时会产生深度争抢条纹。灰墙现在从 y=0.5 开始，木墙脚继续占据 y=0..0.5。`validation/fix_wall_footings.py` 仅修改四个灰墙 primitive 的 POSITION.y 与对应 bounds，二进制只变动 32 字节；不重新生成远山、樱树或其它装饰，不改变碰撞、布局和配色。审计见 `validation/wall-footing-fix.json`。
+
+## 场景打磨
+
+增加六组可复现的原创表面：砂砾、花岗岩、杉木、灰泥、瓦片、朱漆，含 baseColor、ORM、normal（共 18 张嵌入纹理，134KB）。大殿墙身增加格栅和木构接合，鸟居增加上翘笠木端部，木掩体和赛钱箱增加木缝、金属带与箱口细节；新增点缀沿墙脚和花池布置。
+
+四面外墙从旧的 3.2 米可见墙体改为与既有 6 米碰撞体一致，消除看不见的上半墙。维持 82 个布局物体、79 个碰撞体、31 个锚点和四条路线不变。630 项 GLB 验证通过。材质来源与可复现配方在 `assets/materials/provenance.json`。
+
+远景通过独立 `SCENERY_grounded_landscape` 节点构建：四块场外地形裙边衔接外墙，低矮树林连接樱树与两层连续山脊。山体采用无自发光的灰绿和雾紫，不再使用孤立三角锥形剪影。五重塔坐落在三级可见石台上。全部 11,698 个新增远景顶点在可玩边界外；82 个 `VIS_` 物体几何保持逐字节一致，运行时地图及碰撞 GLB 的 SHA256 均不变。保留原随机数流，场内落花细节也保持原位。

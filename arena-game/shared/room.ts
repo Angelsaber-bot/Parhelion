@@ -1,10 +1,11 @@
+import {CONTENT_MANIFEST,assertContentManifest} from './manifest.ts';
 // Transport-agnostic Arena room: seating, bots, inputs, stepping. The local Colyseus room
 // (server/ArenaRoom.ts) and the public Cloudflare Durable Object (worker/index.ts) both wrap it,
 // so online rules are identical wherever the server runs.
 
 import { getMap, mapIdOf } from './arenaMap.ts';
 import { Bot, BOT_SKILL } from './bot.ts';
-import { SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
+import { CHARACTERS, PLAYABLE_HERO_INDICES, abilityFor, heroIndex, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
 import { LAYOUTS, RULES_VERSION, assertRulesVersion, type JoinOptions } from './protocol.ts';
 import type { StatsSource } from './weaponStats.ts';
@@ -31,32 +32,38 @@ export class RoomCore {
   }
 
   /** Seat a human; throws 'Room is full' when every seat holds a human. */
-  join(id: string, options: Partial<JoinOptions>): { id: string; tick: number; map: string; rulesVersion: number } {
-    assertRulesVersion(options.rulesVersion);
+  join(id: string, options: Partial<JoinOptions>): { id: string; tick: number; map: string; rulesVersion: number; contentManifest:string } {
+    assertRulesVersion(options.rulesVersion);assertContentManifest(options.contentManifest);
     const loadout = validateLoadout(options.loadout), utility = validateUtility(options.utility);
+    const char = heroIndex(options.heroId, options.char ?? 2);
     const m = this.match;
-    let team: Team | null = options.team === 'A' || options.team === 'B' ? options.team : null;
-    if (team && !m.hasRoom(team)) {
-      const bot = m.botOn(team);
-      if (bot) m.removePlayer(bot);
+    if(m.slots.has(id))throw new Error('Player already seated');
+    let team:Team|null=options.team==='A'||options.team==='B'?options.team:null;
+    // Decide and validate the complete seat change before touching a running match.
+    if(!team||(!m.hasRoom(team)&&!m.botOn(team))) {
+      team=m.autoTeam();
+      if(!team){const bot=m.botOn('A')??m.botOn('B');team=bot?m.slots.get(bot)!.info.team:null;}
     }
-    if (!team || !m.hasRoom(team)) {
-      // requested team is full of humans: seat the player on the other side rather than refuse
-      team = m.autoTeam();
-      if (!team) {
-        const bot = m.botOn('A') ?? m.botOn('B');
-        if (bot) { m.removePlayer(bot); team = m.autoTeam(); }
-      }
-      if (!team) throw new Error('Room is full');
+    if(!team)throw new Error('Room is full');
+    const duplicate=this.layout==='2v2'?[...m.slots.values()].find(s=>s.info.team===team&&s.state.char===char):undefined;
+    if(duplicate&&!duplicate.info.bot)throw new Error('同队已有此角色，请选择另一名 / Hero already selected by teammate');
+    const evict=m.hasRoom(team)?null:duplicate?.state.id??m.botOn(team);
+    if(!m.hasRoom(team)&&!evict)throw new Error('Room is full');
+    if(evict)m.removePlayer(evict);
+    if(duplicate&&duplicate.state.id!==evict) {
+      const free=PLAYABLE_HERO_INDICES.find(i=>i!==char&&![...m.slots.values()].some(s=>s.info.team===team&&s.state.char===i))!;
+      m.heroes.clearLife(duplicate.state.id);duplicate.state.lifeId++;
+      duplicate.state.char=duplicate.info.char=free;duplicate.info.heroId=CHARACTERS[free].id;
+      duplicate.state.ability.readyAt=m.tick+abilityFor(free).cooldown;
     }
     m.addPlayer(id, {
       name: String(options.name ?? 'Player').slice(0, 16) || 'Player',
       team,
-      char: Number(options.char) || 0,
+      char, heroId: CHARACTERS[char].id,
       skins: Array.isArray(options.skins) ? options.skins.map(Number) : [],
       bot: false, loadout, utility,
     });
-    return { id, tick: m.tick, map: this.mapId, rulesVersion: RULES_VERSION };
+    return { id, tick: m.tick, map: this.mapId, rulesVersion: RULES_VERSION,contentManifest:CONTENT_MANIFEST };
   }
 
   leave(id: string) {
@@ -84,7 +91,7 @@ export class RoomCore {
     for (const team of ['A', 'B'] as Team[]) {
       while (m.hasRoom(team)) {
         const n = botSeed++;
-        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL.normal));
+        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: PLAYABLE_HERO_INDICES.map((_,i)=>PLAYABLE_HERO_INDICES[(i+n)%PLAYABLE_HERO_INDICES.length]).find(i=>![...m.slots.values()].some(s=>s.info.team===team&&s.state.char===i))!, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL.normal));
       }
     }
   }

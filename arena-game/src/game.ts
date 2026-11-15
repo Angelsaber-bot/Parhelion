@@ -1,11 +1,15 @@
+import {rayTactical} from '../shared/heroes.ts';
+import {predictAbility} from './player/abilityPrediction.ts';
+import type { HeroLesson } from './ui/heroLesson.ts';
+import { smokeBlocks } from '../shared/grenade.ts';
 import { bilingual } from '../../shared-client/i18n.ts';
 // Client game loop: fixed 60 Hz input ticks with local prediction of the own player, server
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
 
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
-import { rayPlayer } from '../shared/hit.ts';
-import { raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
-import { spawnYaw, type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
+import { rayPlayer, rayShield } from '../shared/hit.ts';
+import { tacticalArea, raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
+import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
 import { aimDir, applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './rendering/audio.ts';
 import type { Controls } from './player/controls.ts';
@@ -22,6 +26,7 @@ import { AIM_FOV } from './player/aim.ts';
 const wrap = (a: number) => Math.atan2(Math.sin(a), Math.cos(a));
 
 export class Game {
+  lesson:HeroLesson|null=null;
   private me: PlayerState | null = null;
   private pending: Input[] = [];
   private outbox: Input[] = [];
@@ -51,6 +56,7 @@ export class Game {
   onRestart: () => void = () => {};
   private streak = 0;
   private lastLook = [0, 0];
+  private stepDistance=0;
   private rematchPending = false;
 
   constructor(
@@ -72,6 +78,7 @@ export class Game {
   }
 
   stop(reason = '') {
+    this.lesson?.dispose();this.lesson=null;
     if (!this.running) return;
     this.running = false;
     cancelAnimationFrame(this.raf);
@@ -112,7 +119,7 @@ export class Game {
       const next = clonePlayer(mine);
       this.pending = this.pending.filter((i) => i.seq > mine.lastSeq);
       const foes = this.foes(next);
-      for (const i of this.pending) applyInput(this.map, next, i, foes);
+      for (const i of this.pending) {predictAbility(this.map,next,i,s);applyInput(this.map, next, i, foes);}
       if (before && before.alive && next.alive) {
         const dx = before.x - next.x, dy = before.y - next.y, dz = before.z - next.z;
         if (Math.hypot(dx, dy, dz) < 2) {
@@ -136,8 +143,13 @@ export class Game {
   private onEvent(e: NetEvent) {
     const myId = this.session.id;
     this.rangeStats?.event(e, myId, performance.now() / 1000);
+    this.lesson?.event(e);
     const name = (id: string) => this.names.get(id)?.name ?? id;
     switch (e.t) {
+      case 'ability':
+        this.scene.heroEvent(e,this.latest?.tick??0,this.latest?.players.find(p=>p.id===e.id)?.yaw??0);
+        sfx.ability(e.kind,e.action,this.distance(e.at));
+        break;
       case 'shot': {
         if (e.id === myId) break; // already shown by prediction
         const from = this.scene.muzzleOf(e.id) ?? e.from;
@@ -225,7 +237,12 @@ export class Game {
       case 'spawn':
         if (e.id === myId) {
           const mine = this.latest?.players.find((p) => p.id === myId);
-          if (mine) { this.controls.yaw = spawnYaw(mine.x, mine.z); this.controls.pitch = 0; }
+          if (mine) {
+            // The spawn event keeps the authored exit/practice heading if a later input has
+            // already replaced mine.yaw in this snapshot. Older events use the snapshot yaw.
+            this.controls.yaw = typeof e.yaw === 'number' && Number.isFinite(e.yaw) ? e.yaw : mine.yaw;
+            this.controls.pitch = 0;
+          }
           this.smooth = [0, 0, 0];
         }
         break;
@@ -324,7 +341,7 @@ export class Game {
       weapon: c.weapon,
       view: Math.round(this.renderTick * 100) / 100,
     };
-    if (this.me) for (const e of applyInput(this.map, this.me, inp, this.foes(this.me))) this.onLocal(e);
+    if (this.me) {predictAbility(this.map,this.me,inp,this.latest);for (const e of applyInput(this.map, this.me, inp, this.foes(this.me))) this.onLocal(e);}
     this.pending.push(inp);
     if (this.pending.length > 240) this.pending.shift();
     this.outbox.push(inp);
@@ -350,6 +367,8 @@ export class Game {
         for (const d of e.dirs) {
           let t = raycastMap(this.map, e.origin, d, w.range);
           if (t === Infinity) t = w.range;
+          for(const shield of this.latest?.shields??[])t=Math.min(t,rayShield(e.origin,d,shield.x,shield.y,shield.z,shield.yaw));
+          for(const entity of this.latest?.entities??[]){const hit=rayTactical(e.origin,d,entity);if(hit)t=Math.min(t,hit.t);}
           let onPlayer = false;
           for (const p of this.remotes) {
             if (p.snap.team === this.me?.team || !p.snap.alive) continue;
@@ -408,15 +427,21 @@ export class Game {
   }
 
   private draw(dt: number) {
+    if(this.latest)this.lesson?.update(this.latest,this.me);
     this.remotes = this.interpolate();
     const ids = new Set<string>();
     for (const r of this.remotes) {
       ids.add(r.snap.id);
       this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
     }
+    for(const e of this.latest?.entities??[])if(e.kind==='decoy') {
+      const owner=this.latest!.players.find(p=>p.id===e.owner);if(!owner)continue;
+      const fake={...owner,id:`echo-${e.id}`,x:e.x,y:e.y,z:e.z,hp:e.shownHp,alive:true,weapon:e.weapon,char:e.char,ability:{...owner.ability,phase:'idle' as const},name:e.team===this.me?.team?`${e.name} ◇`:e.name};
+      ids.add(fake.id);this.scene.syncAvatar(fake,[e.x,e.y,e.z],e.yaw,0,fake.team===this.me?.team);
+    }
     this.scene.endAvatars();
     this.scene.pruneAvatars(ids);
-    if (this.latest) { this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
+    if (this.latest) { this.scene.syncHeroes(this.latest,this.session.id,this.map,this.me?{...this.me,yaw:this.controls.yaw,pitch:this.controls.pitch}:null); this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
 
     const me = this.me;
     if (me) {
@@ -431,13 +456,14 @@ export class Game {
       if (isScopedWeapon(me.weapon) && aim > .7 && me.alive) {
         const eyeAt: Vec3 = [me.x, me.y + playerEye(this.map, me), me.z], dir = aimDir(this.controls.yaw, this.controls.pitch);
         let range = raycastMap(this.map, eyeAt, dir, 400);
-        for (const p of this.latest?.players ?? []) { if (p.id === this.session.id || !p.alive) continue; const h = rayPlayer(eyeAt, dir, p.x, p.y, p.z, p.crouched); if (h && h.t < range) range = h.t; }
+        for (const p of this.latest?.players ?? []) { if (p.id === this.session.id || !p.alive || smokeBlocks(this.latest?.smokes??[],eyeAt,[p.x,p.y+1,p.z])) continue; const h = rayPlayer(eyeAt, dir, p.x, p.y, p.z, p.crouched); if (h && h.t < range) range = h.t; }
         const skin = WEAPONS[me.weapon]?.skins[this.names.get(this.session.id)?.skins[me.weapon] ?? 0];
         this.hud.scope({ open: (aim - .7) / .3, kind: me.weapon === 4 ? 'sniper' : 'dmr', accent: skin?.accent ?? 0xff4a3a, range: Number.isFinite(range) ? range : null,
           zoom: Math.tan(78 * Math.PI / 360) / Math.tan((AIM_FOV[me.weapon] ?? 78) * Math.PI / 360), label: me.weapon === 4 ? 'LONGNIGHT · MIL-DOT' : 'HALO · BDC', theme: skin?.id, time: performance.now() / 1000 });
       } else this.hud.scope(null);
       const eye = me.alive ? playerEye(this.map, me) : 0.5; // drop the camera when dead
       const speed = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 1;
+      if(me.alive&&me.grounded&&this.controls.locked){this.stepDistance+=Math.hypot(me.vx,me.vz)*dt;if(this.stepDistance>1.6){this.stepDistance=0;sfx.footstep(tacticalArea(this.map,me.x,me.z)?.surface??'stone',me.crouched);}}else this.stepDistance=0;
       this.feel.update(dt, this.controls, speed);
       const [op, oy, roll] = this.feel.offsets();
       this.scene.setView(me.x + this.smooth[0], me.y + this.smooth[1] + eye, me.z + this.smooth[2], this.controls.yaw + oy * (1 - aim), this.controls.pitch + op * (1 - aim), roll * (1 - aim), this.aim.fov(me.weapon) - 78 + this.feel.fov * (1 - aim));
@@ -448,6 +474,7 @@ export class Game {
       const vm = this.scene.viewmodel;
       vm.set(me.weapon, snapMe?.skins[me.weapon] ?? 0);
       const w = WEAPONS[me.weapon];
+      vm.hands.update(me,aim);
       vm.aim = aim;
       vm.meleeWindup = me.meleeWindup;
       vm.reloading = me.reload > 0 ? 1 - me.reload / w.reload : 0;
@@ -457,6 +484,6 @@ export class Game {
     this.scene.render(!!me?.alive);
     const ping = this.session.online ? bilingual(`快照间隔 ${Math.round(this.snapGap)} ms`, `Snapshot interval ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');
     if (this.rangeStats && performance.now() - this.rangeStatsAt > 200) { this.rangeStatsAt = performance.now(); const panel = document.getElementById('range-stats'); if (panel) panel.innerHTML = this.rangeStats.render(performance.now() / 1000); }
-    this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping);
+    this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping, this.map);
   }
 }

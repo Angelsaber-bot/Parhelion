@@ -1,0 +1,156 @@
+{
+  "version": "1.2.0-homecoming",
+  "assetBytes": 2646036,
+  "visualTriangles": 24134,
+  "nodes": 84,
+  "materials": 23,
+  "embeddedImages": 36,
+  "objects": 79,
+  "colliders": 78,
+  "anchors": 15,
+  "routes": 10,
+  "anchorsUnchanged": true,
+  "routesUnchanged": true,
+  "collisionChanges": [
+    {
+      "id": "south_occluder-1",
+      "before": {
+        "id": "south_occluder-1",
+        "type": "box",
+        "position": [
+          -4,
+          1.8,
+          10
+        ],
+        "size": [
+          2,
+          3.6,
+          3
+        ],
+        "material": "plaster",
+        "collision": true,
+        "role": "wall"
+      },
+      "after": {
+        "id": "south_occluder-1",
+        "type": "box",
+        "position": [
+          -4,
+          1.8,
+          10
+        ],
+        "size": [
+          2,
+          3.6,
+          5
+        ],
+        "material": "plaster",
+        "collision": true,
+        "role": "wall"
+      }
+    },
+    {
+      "id": "south_occluder1",
+      "before": {
+        "id": "south_occluder1",
+        "type": "box",
+        "position": [
+          4,
+          1.8,
+          10
+        ],
+        "size": [
+          2,
+          3.6,
+          3
+        ],
+        "material": "plaster",
+        "collision": true,
+        "role": "wall"
+      },
+      "after": {
+        "id": "south_occluder1",
+        "type": "box",
+        "position": [
+          4,
+          1.8,
+          10
+        ],
+        "size": [
+          2,
+          3.6,
+          5
+        ],
+        "material": "plaster",
+        "collision": true,
+        "role": "wall"
+      }
+    },
+    {
+      "id": "radio_service_cabinet",
+      "before": null,
+      "after": {
+        "id": "radio_service_cabinet",
+        "type": "box",
+        "position": [
+          0,
+          1.8,
+          -15.6
+        ],
+        "size": [
+          2.6,
+          3.6,
+          2.2
+        ],
+        "material": "plaster",
+        "collision": true,
+        "role": "wall"
+      }
+    }
+  ],
+  "presentation": {
+    "preset": "homecoming",
+    "glows": [
+      [
+        -11,
+        3.65,
+        -10,
+        1.3,
+        "#ffcf84",
+        0.08
+      ]
+    ],
+    "pools": [
+      [
+        -11,
+        0.025,
+        -10,
+        2,
+        "#ffc875",
+        0.3
+      ]
+    ]
+  },
+  "tests": {
+    "command": "npm test --prefix arena-game -- test/homeward.test.ts",
+    "passed": 14,
+    "failed": 0
+  },
+  "artSafety": [
+    "Facade details are shallow and backed by solid geometry.",
+    "All benches, trees, canal, clock station and skyline architecture lie beyond the hard perimeter.",
+    "New yard paving lies less than 2 cm above original floor.",
+    "Cargo canopy finish lies on the existing roof collider.",
+    "OOB terrain covers the full skyline base."
+  ],
+  "denseAudit": {
+    "connectivity": "passed",
+    "spawnSafety": "passed",
+    "fixedCardinalRays": [
+      58.35,
+      57.85
+    ],
+    "remainingExhaustiveMaximum": 53.03,
+    "note": "The remaining thin diagonal is retained for precision weapons; no universal40m sightlinecap is claimed."
+  }
+}

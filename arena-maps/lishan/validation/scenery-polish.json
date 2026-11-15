@@ -1,0 +1,10 @@
+{
+  "map": "lishan",
+  "runtimeUnchanged": true,
+  "collisionUnchanged": true,
+  "oldBytes": 9206480,
+  "newBytes": 9290156,
+  "triangles": 107136,
+  "meshes": 31,
+  "landingMarkers": "Route landing frames: 20"
+}

@@ -15,18 +15,31 @@
       "maxBoundsErrorMetres": 8.106231632609706e-07
     },
     {
-      "name": "station_collision.glb",
-      "bytes": 56796,
-      "sha256": "a86c356aad05e3db774ad2851462ad363d0d950f94f8fbe7b450bf310658fc90",
-      "nodes": 36,
-      "triangles": 432,
-      "materialCount": 6,
+      "name": "../../arena-maps/aster/assets/aster_overlay.glb",
+      "bytes": 2239504,
+      "sha256": "97b183f8a5cd9a455fe2c5aae79182a05a15b5cbb365c6f91abf00bf610ae475",
+      "nodes": 4,
+      "triangles": 29532,
+      "materialCount": 14,
       "embeddedBuffers": true,
       "allBoundsMatch": true,
       "rampNormalsPass": true,
-      "maxBoundsErrorMetres": 8.106231632609706e-07
+      "maxBoundsErrorMetres": 0.0
+    },
+    {
+      "name": "station_collision.glb",
+      "bytes": 53072,
+      "sha256": "009efc41e1d39385b9ab75404b6b349d35e26e6d7879c33453a7ae332bf14d7f",
+      "nodes": 38,
+      "triangles": 438,
+      "materialCount": 1,
+      "embeddedBuffers": true,
+      "allBoundsMatch": true,
+      "rampNormalsPass": true,
+      "maxBoundsErrorMetres": 0.0
     }
   ],
+  "visualCoverage": "station_visual.glb + aster_overlay.glb; original Blender art retained",
   "blend": {
     "name": "aster_research_station.blend",
     "bytes": 1544625,

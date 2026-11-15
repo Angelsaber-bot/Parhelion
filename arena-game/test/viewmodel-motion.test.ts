@@ -16,7 +16,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(
 it('full ADS remains exactly centred through movement, sway, shot kick and reload cosmetics', () => {
   const vm = new Viewmodel(); vm.set(0, 0); vm.aim = 1; vm.moving = 1; vm.reloading = .4;
   vm.look(.2, -.1); vm.fire(); vm.update(1 / 60);
-  const gun = vm.root.children.find((o) => o instanceof THREE.Group)!;
+  const gun = vm.root.getObjectByName('Equipped weapon')!;
   const sight = new THREE.Vector3(0, .088, .02);
   gun.updateWorldMatrix(true, true); sight.applyMatrix4(gun.matrixWorld);
   expect(sight.x).toBeCloseTo(0, 12); expect(sight.y).toBeCloseTo(0, 12); expect(sight.z).toBeCloseTo(-.34, 12);
@@ -25,7 +25,7 @@ it('full ADS remains exactly centred through movement, sway, shot kick and reloa
 });
 it('first shot still flashes immediately and recoil is visible on its first update; reset clears transient state', () => {
   const vm = new Viewmodel(); vm.set(0, 0); vm.resetMotion(); vm.update(0);
-  const gun = vm.root.children.find((o) => o instanceof THREE.Group)!;
+  const gun = vm.root.getObjectByName('Equipped weapon')!;
   const restZ = gun.position.z; vm.fire();
   expect(vm.root.children.some((o) => o instanceof THREE.Sprite && o.visible)).toBe(true);
   vm.update(1 / 60); expect(gun.position.z).toBeGreaterThan(restZ);
@@ -38,10 +38,10 @@ it('first shot still flashes immediately and recoil is visible on its first upda
 });
 it('scoped visibility resets and melee contact poses are not altered by smoothed walking bob', () => {
   const vm = new Viewmodel(); vm.set(4, 0); vm.aim = 1; vm.update(0);
-  let gun = vm.root.children.find((o) => o instanceof THREE.Group)!;
+  let gun = vm.root.getObjectByName('Equipped weapon')!;
   expect(gun.visible).toBe(false); vm.resetMotion(); vm.update(0); expect(gun.visible).toBe(true);
   vm.set(5, 0); vm.meleeWindup = WEAPONS[5].windup! / 2; vm.update(0);
-  gun = vm.root.children.find((o) => o instanceof THREE.Group)!;
+  gun = vm.root.getObjectByName('Equipped weapon')!;
   const pose = [...gun.position.toArray(), ...gun.quaternion.toArray()];
   vm.moving = 1; for (let i = 0; i < 30; i++) vm.update(1 / 60);
   expect([...gun.position.toArray(), ...gun.quaternion.toArray()]).toEqual(pose);
@@ -78,7 +78,7 @@ it('the muzzle flash lasts two frames of time at any frame rate', () => {
 });
 it('inspect turns the weapon and any shot cancels it at once', () => {
   const vm = new Viewmodel(); vm.set(0, 0); for (let i = 0; i < 30; i++) vm.update(1 / 60);
-  const gun = vm.root.children.find((o) => o instanceof THREE.Group)!, rest = gun.rotation.y;
+  const gun = vm.root.getObjectByName('Equipped weapon')!, rest = gun.rotation.y;
   vm.inspect(); for (let i = 0; i < 50; i++) vm.update(1 / 60);
   expect(vm.inspecting).toBe(true); expect(Math.abs(gun.rotation.y - rest)).toBeGreaterThan(.5);
   vm.fire(); vm.update(1 / 60); expect(vm.inspecting).toBe(false); vm.clear();

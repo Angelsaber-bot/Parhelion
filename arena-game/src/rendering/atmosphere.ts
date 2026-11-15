@@ -19,6 +19,20 @@ export interface Atmosphere {
 }
 
 export const ATMOSPHERES: Record<string, Atmosphere> = {
+  homecoming: {
+    background:0xb4c5c8, fog:[0xb8c9c8,75,210], exposure:1.0,
+    hemi:[0xc6dde5,0x665745,1.2], environment:.42,
+    sun:{color:0xffd4a0,intensity:2.8,pos:[-28,32,20]},
+    sky:{horizon:0xf1ddbc,mid:0x9dbecb,top:0x486b8a,sun:0xffe8bd,cloudLit:0xf4dfc3,cloudShade:0x9baab6,night:0},
+    particles:'none',bloom:.22,bloomThreshold:1.5,
+  },
+  shrine: {
+    background:0xc9a9a7, fog:[0xd1b1a9,65,200], exposure:1.0,
+    hemi:[0xc7c5e4,0x5c4b4c,1.25], environment:.42,
+    sun:{color:0xffc28c,intensity:2.9,pos:[-38,24,16]},
+    sky:{horizon:0xffcf9e,mid:0xd6a0ae,top:0x555f91,sun:0xffe5bc,cloudLit:0xfbdac1,cloudShade:0x9989ad,night:.12},
+    particles:'petals',bloom:.3,bloomThreshold:1.4,
+  },
   seabreeze: {
     background: 0x9cbbc8, fog: [0xaac8d2, 90, 240], exposure: 1.0, hemi: [0xcbe1e8, 0x69656b, 1.7],
     sun: { color: 0xffe5bd, intensity: 2.7, pos: [-28, 36, 18] },

@@ -46,6 +46,7 @@ const PUFFS = 44, BLAST_LIFE = 1.1;
 export class GrenadeView {
   private live = new Map<number, { model: THREE.Group; warn: THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>; kind: Grenade['kind'] }>();
   private clouds = new Map<number, Cloud>();
+  private curtains = new Map<number, THREE.Mesh>();
   private blasts: Blast[] = [];
   private smokeTex = softTexture('rgba(235,240,245,1)', 'rgba(200,208,218,.7)');
   private fireTex = softTexture('rgba(255,250,220,1)', 'rgba(255,150,60,.8)');
@@ -80,8 +81,15 @@ export class GrenadeView {
       }
     }
     for (const [id, v] of this.live) if (!seen.has(id)) { this.drop(v.model); this.drop(v.warn); this.live.delete(id); }
-    const clouds = new Set<number>();
+    const clouds = new Set<number>(), curtains=new Set<number>();
     for (const s of smokes) {
+      if(s.box){
+        curtains.add(s.id);let curtain=this.curtains.get(s.id);
+        if(!curtain){curtain=new THREE.Mesh(new THREE.BoxGeometry(s.box.width,s.box.height,s.box.depth),new THREE.ShaderMaterial({uniforms:{time:{value:0},warmup:{value:0}},vertexShader:'varying vec3 vP; void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 vP;uniform float time;uniform float warmup;void main(){float n=sin(vP.x*8.+time)*sin(vP.y*7.-time*.7)+sin(vP.z*13.+vP.y*4.+time*.5);vec3 c=mix(vec3(.27,.33,.39),vec3(.57,.62,.65),.5+n*.12);gl_FragColor=vec4(c,warmup);}',transparent:true,depthWrite:false,side:THREE.DoubleSide}));curtain.name='Black sail smoke volume';this.parent.add(curtain);this.curtains.set(s.id,curtain);}
+        curtain.position.set(s.x,s.y+s.box.height/2,s.z);curtain.rotation.y=s.box.yaw;
+        const material=curtain.material as THREE.ShaderMaterial;material.uniforms.time.value=this.time;material.uniforms.warmup.value=(s.delay??0)>0?.15:1;
+        continue;
+      }
       clouds.add(s.id);
       let c = this.clouds.get(s.id);
       if (!c) c = this.makeCloud(s);
@@ -93,6 +101,7 @@ export class GrenadeView {
         p.sprite.material.opacity = .93 * k; p.sprite.material.rotation = p.phase + this.time * .05;
       }
     }
+    for(const [id,c] of this.curtains)if(!curtains.has(id)){this.drop(c);this.curtains.delete(id);}
     for (const [id, c] of this.clouds) if (!clouds.has(id)) { for (const p of c.puffs) { p.sprite.material.dispose(); } this.drop(c.group, false); this.clouds.delete(id); }
   }
   private makeCloud(s: Smoke): Cloud {
@@ -137,6 +146,7 @@ export class GrenadeView {
     this.blasts = this.blasts.filter(b => b.life > 0);
   }
   clear() {
+    for(const c of this.curtains.values())this.drop(c);this.curtains.clear();
     for (const v of this.live.values()) { this.drop(v.model); this.drop(v.warn); } this.live.clear();
     for (const c of this.clouds.values()) { for (const p of c.puffs) p.sprite.material.dispose(); this.drop(c.group, false); } this.clouds.clear();
     for (const b of this.blasts) for (const o of [b.flash, b.ring, ...b.puffs]) this.drop(o); this.blasts = [];

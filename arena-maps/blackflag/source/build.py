@@ -45,6 +45,23 @@ def beam(m, material, a, b, radius, sides=6):
             I.extend((start,start+j,start+j+1) if end else (start,start+j+1,start+j))
 
 
+def deck_steps(m, o):
+    """Gripped companionway treads, inside the unchanged authoritative ramp bounds."""
+    (x,y,z),(w,h,d)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']
+    length=w if axis=='x' else d; count=max(2,round(h/.175)); direction=-low
+    end=(x if axis=='x' else z)+low*length/2
+    for i in range(count):
+        a,b=sorted((end+direction*length*i/count,end+direction*length*(i+1)/count))
+        top=y+(i+.5)*h/count
+        if axis=='x':
+            m.box('deck' if i%2 else 'plank',(a,y,z-d/2),(b,top,z+d/2))
+            # Dark grip insert and a narrow brass edge stay flush with the tread.
+            m.box('tar',(a+.03,top-.01,z-d/2+.13),(b-.03,top,z+d/2-.13))
+            m.box('brass',(a+.02,top-.008,z-d/2+.08),(a+.045,top,z+d/2-.08))
+        else:
+            m.box('deck' if i%2 else 'plank',(x-w/2,y,a),(x+w/2,top,b))
+            m.box('tar',(x-w/2+.13,top-.01,a+.03),(x+w/2-.13,top,b-.03))
+
 class ShipChapter(Chapter):
     """Blackflag-only visual groups; physics export stays byte-identical."""
     def save(self, render_object=None):
@@ -64,7 +81,7 @@ class ShipChapter(Chapter):
         nodes=[];cols=[];batches={}
         for o in self.objects:
             visual=Mesh();collision=Mesh();custom=render_object and render_object(visual,o)
-            if o['type']=='ramp':visual.wedge(o['material'],o);collision.wedge('collision',o)
+            if o['type']=='ramp':deck_steps(visual,o);collision.wedge('collision',o)
             else:
                 if not custom:visual.cbox(o['material'],o['position'],o['size'])
                 collision.cbox('collision',o['position'],o['size'])
@@ -582,10 +599,24 @@ for side in (-1,1):
                 width=(.08+.19*math.sin(math.pi*(j+.5)/8))*(1 if not band else .5)
                 D.quad('foam' if not band else 'deepSea',a,b,(b[0],b[1],b[2]+side*width),(a[0],a[1],a[2]+side*width))
 
-# Sidelit island contours lift the horizon; low-poly silhouette deliberately kept background scale.
-for x,z,w,h in [(-100,-130,38,20),(-45,-145,25,13),(95,-150,46,24),(145,105,35,16),(-120,105,40,20)]:
-    D.tri('farRock',(x-w,-6,z),(x+w,-6,z),(x,h,z-9))
-    D.tri('distant',(x+w,-6,z),(x+6,-6,z-28),(x,h,z-9))
+# Restrained, fully volumetric rocky islets sit in the water instead of triangular billboards.
+def rocky_islet(x,z,rx,rz,h,phase):
+    rings=[]; n=14
+    for level,scale,yy in ((0,1,-6.15),(1,.76,-6+h*.34),(2,.37,-6+h*.78)):
+        pts=[]
+        for i in range(n):
+            a=i*math.tau/n
+            jag=1+.11*math.sin(a*3+phase)+.07*math.cos(a*5-phase)
+            pts.append((x+rx*scale*jag*math.cos(a)+level*.7,yy+(0 if not level else h*.12*math.sin(a*2+phase)),z+rz*scale*jag*math.sin(a)))
+        rings.append(pts)
+    for level,(low,high) in enumerate(zip(rings,rings[1:])):
+        for i in range(n):
+            j=(i+1)%n
+            D.quad('distant' if i%4 else 'farRock',low[j],low[i],high[i],high[j])
+    cap=(x+rx*.13,-6+h,z-rz*.1)
+    for i in range(n):D.tri('distant' if i%3 else 'farRock',rings[-1][(i+1)%n],rings[-1][i],cap)
+for x,z,rx,rz,h,phase in [(-104,-137,25,12,7,.2),(-75,-146,16,9,5,1.3),(112,-158,31,15,8,2.2),(148,121,24,11,6,.7),(-132,122,26,13,7,1.8)]:
+    rocky_islet(x,z,rx,rz,h,phase)
 # Distant brig is a hull-shaped silhouette, not a cube, with two staggered sails.
 for x,z,s in [(64,-92,1),(-73,96,.55)]:
     shape=[(-18,0),(-13,-4),(12,-4.5),(17,-2),(17,2),(12,4.5),(-13,4)]
@@ -809,4 +840,28 @@ for x,z in [(-16,-6),(-17,2.5),(-4,-11),(-4,12),(4,11),(4,-12),(16,6),(17,-2.5),
 c.data['presentation'].update(
     glows=[[round(x,3),round(y,3),round(z,3),round(1.7*s,2),'#ffd08a',.3] for x,y,z,s in LANTERNS],
     pools=[[round(x,3),2.4 if (abs(x)>22 or y>2.5) else 1.43+G if abs(x)<3.5 and abs(z)<3 else G,round(z,3),2.2,'#ffb36a',.35] for x,y,z,s in LANTERNS if y<6])
+
+# Playable route craft: Brass-bound landing boards identify the four gun-deck companionways.
+# A marker is drawn only where an existing solid floor supports the landing at its
+# actual elevation. All pieces are under 2 cm tall, flush with the walking surface.
+landing_frames=0
+for o in c.objects:
+    if o['type']!='ramp': continue
+    (rx,ry,rz),(rw,rh,rd)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']; length=rw if axis=='x' else rd
+    for edge in (-1,1):
+        yy=ry+(rh if edge==-low else 0)
+        x=rx+edge*(length/2+.28) if axis=='x' else rx
+        z=rz+edge*(length/2+.28) if axis=='z' else rz
+        supported=any(q['type']=='box' and q.get('collision') and abs(q['position'][1]+q['size'][1]/2-yy)<.055 and abs(x-q['position'][0])<q['size'][0]/2 and abs(z-q['position'][2])<q['size'][2]/2 for q in c.objects)
+        if not supported: continue
+        span=min(1.75,(rd if axis=='x' else rw)-.24)
+        width,depth=(.34,span) if axis=='x' else (span,.34)
+        D.cbox('tar',[x,yy+.008,z],[width,.012,depth])
+        for side in (-1,1):
+            xx=x+side*(width/2-.035) if axis=='z' else x
+            zz=z+side*(depth/2-.035) if axis=='x' else z
+            D.cbox('brass',[xx,yy+.015,zz],[width-.08 if axis=='x' else .045,.006,depth-.08 if axis=='z' else .045])
+        landing_frames+=1
+print('Route landing frames:',landing_frames)
+
 c.save(render_object=crafted)

@@ -1,0 +1,12 @@
+{
+  "map": "blackflag",
+  "runtimeUnchanged": true,
+  "collisionUnchanged": true,
+  "oldBytes": 3706056,
+  "newBytes": 3944848,
+  "triangles": 56325,
+  "meshes": 5,
+  "landingMarkers": "Route landing frames: 8",
+  "backgroundPolishPhysicsUnchanged": true,
+  "backgroundPolish": "Volumetric low rocky islets grounded at sea level"
+}

@@ -133,6 +133,7 @@ describe('lobby and combat equipment presentation', () => {
 
 it('updates the real HUD using new player state without overwriting remapped keys on repeated weapon swaps', () => {
   class Element {
+    dataset: Record<string,string> = {};
     textContent = ''; innerHTML = ''; attributes = new Map<string, string>();
     private children = new Map<string, Element>();
     private classes = new Set<string>();

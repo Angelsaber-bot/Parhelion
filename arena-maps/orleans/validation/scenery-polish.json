@@ -1,0 +1,12 @@
+{
+  "map": "orleans",
+  "runtimeUnchanged": true,
+  "collisionUnchanged": true,
+  "oldBytes": 2988932,
+  "newBytes": 3069248,
+  "triangles": 36987,
+  "meshes": 17,
+  "landingMarkers": "Route landing frames: 20",
+  "backgroundPolishPhysicsUnchanged": true,
+  "backgroundPolish": "OOB terrain, cathedral precinct paving, distant outer-town rooftops and extended riverbanks"
+}

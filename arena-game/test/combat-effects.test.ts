@@ -15,7 +15,7 @@ function fixture(quality: 'high' | 'low' = 'high') {
 }
 it('reuses actual scene resources across 100 full shotgun bursts', () => {
   const f = fixture(); const materials = new Set<string>(), geometries = new Set<string>(); let peak = 0;
-  const state = Object.assign(Object.create(ArenaScene.prototype), { scene: f.scene, combatEffects: f.effects, flashT: 0, muzzleLight: new THREE.PointLight(), avatars: new Map(), shields: new Map(), camera: new THREE.PerspectiveCamera(), viewmodel: { update() {}, resetMotion() {} }, particles: null, blackflagEffects: null, chapterEffects: null }) as ArenaScene;
+  const state = Object.assign(Object.create(ArenaScene.prototype), { scene: f.scene, combatEffects: f.effects, flashT: 0, muzzleLight: new THREE.PointLight(), avatars: new Map(), shields: new Map(), camera: new THREE.PerspectiveCamera(), viewmodel: { update() {}, resetMotion() {}, hands: {dispose() {}} }, heroEffects: {clear() {}, dispose() {}}, particles: null, blackflagEffects: null, chapterEffects: null }) as ArenaScene;
   try {
     for (let shot = 0; shot < 100; shot++) {
       for (let pellet = 0; pellet < WEAPONS[1].pellets; pellet++) { state.tracer([0, 1, 0], [pellet * .05, 1, -10], 0xfff4c0, .5); state.impact([pellet * .05, 1, -10], false); }

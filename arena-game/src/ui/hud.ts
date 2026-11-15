@@ -1,8 +1,11 @@
+import {heroReadout} from './heroStatus.ts';
+import {tacticalArea,type ArenaMap} from '../../shared/map.ts';
+import { HERO_KILL_NAMES } from '../../shared/heroes.ts';
 import { arenaLimitLabel } from './matchBriefing.ts';
 import { bilingual, getLanguage, localizeText } from '../../../shared-client/i18n.ts';
 // DOM HUD. Reads state, never changes it.
 
-import { CHARACTERS, DASH, FRAG_KILL, GRENADE, SHIELD, TICK_HZ, WEAPONS, type Team } from '../../shared/content.ts';
+import { CHARACTERS, DASH, FRAG_KILL, GRENADE, abilityFor, TICK_HZ, WEAPONS, type Team } from '../../shared/content.ts';
 import type { PlayerSnap, Snapshot } from '../../shared/match.ts';
 import type { PlayerState } from '../../shared/sim.ts';
 import { displayWeaponName, weaponHud } from './loadout.ts';
@@ -57,7 +60,7 @@ export class Hud {
     $('hitmarker').style.opacity = '0'; $('hurt').style.opacity = '0';
   }
 
-  update(dt: number, me: PlayerState | null, snap: Snapshot | null, myId: string, scoreboard: boolean, ping: string) {
+  update(dt: number, me: PlayerState | null, snap: Snapshot | null, myId: string, scoreboard: boolean, ping: string, map?:ArenaMap) {
     if (this.language !== getLanguage()) {
       this.language = getLanguage();
       this.banner.textContent = localizeText(this.bannerText);
@@ -94,6 +97,7 @@ export class Hud {
     const self = snap.players.find((p) => p.id === myId);
     if (me && self) {
       const maxHp = CHARACTERS[me.char].hp;
+      document.getElementById('vitals')?.classList.toggle('low',me.hp/maxHp<=0.3);
       ($('hpfill') as HTMLElement).style.width = `${(100 * me.hp) / maxHp}%`;
       $('hptext').textContent = `${Math.ceil(me.hp)}`;
       const equipment = weaponHud(me, self.skins);
@@ -113,7 +117,22 @@ export class Hud {
       const dashLabel = dash.querySelector('span')!;
       const dashName = `${bilingual('冲刺', 'Dash')} ×${me.dashCharges}`;
       if (dashLabel.textContent !== dashName) dashLabel.textContent = dashName;
-      cooldown($('shield'), me.shieldCd / SHIELD.cooldown, me.shieldCd);
+      const ability=abilityFor(me.char), a=me.ability, remaining=Math.max(0,a.readyAt-Math.max(snap.tick,me.abilityTick));
+      const readout=heroReadout(map,me,snap);
+      const command=readout.returnAvailable,kind=CHARACTERS[me.char].ability;
+      $('shield').classList.toggle('ability-blocked',readout.tone==='blocked');
+      $('shield').classList.toggle('ability-ready',readout.tone==='ready');
+      cooldown($('shield'), command?0:remaining/ability.cooldown,command?0:remaining);
+      $('shield').querySelector('span')!.textContent=command?(kind==='curtain'?bilingual('舰炮齐射','Fire broadside'):kind==='lens'?bilingual('转向日轮','Redirect sun'):bilingual('再次回位','Return again')):bilingual(ability.name,ability.en);
+      $('shield').title=bilingual(ability.description,ability.english).replace(/\bQ\b/g,$('shield').querySelector('kbd')!.textContent||'Q');
+      let status=document.getElementById('hero-status');if(!status){status=document.createElement('div');status.id='hero-status';$('hud').append(status);}
+      const area=map?tacticalArea(map,me.x,me.z):undefined;
+      const callout=area?(getLanguage()==='en'?area.name.split(' · ')[1]:area.name.split(' · ')[0]):bilingual(CHARACTERS[me.char].name.split(' · ')[0],CHARACTERS[me.char].name.split(' · ')[1]??CHARACTERS[me.char].name);
+      status.dataset.tone=readout.tone;status.style.setProperty('--cast-progress',`${readout.progress*100}%`);
+      status.textContent=(readout.text||callout).replace(/\bQ\b/g,$('shield').querySelector('kbd')!.textContent||'Q');
+      const teammate=snap.players.find(p=>p.id!==myId&&p.team===me.team);
+      if(teammate)status.textContent+=' · '+teammate.name+' Q '+(!teammate.alive?bilingual('等待复活','Respawning'):teammate.ability.readyAt<=snap.tick?bilingual('就绪','Ready'):`${Math.ceil((teammate.ability.readyAt-snap.tick)/60)}s`);
+      const marked=snap.marks?.some(m=>m.victim===myId&&m.lifeId===me.lifeId&&m.expires>snap.tick);if(marked)status.textContent+=' · '+bilingual('已被扫描','Scanned');
       // Charges first: the dial only greys out once both grenades are spent.
       cooldown($('utility'), me.utilityCharges > 0 ? 0 : me.utilityCd / GRENADE.cooldown, me.utilityCharges > 0 ? 0 : me.utilityCd);
       const utilityName = `${me.utility === 'smoke' ? bilingual('烟雾', 'Smoke') : bilingual('手雷', 'Frag')} ×${me.utilityCharges}`;
@@ -155,7 +174,7 @@ export class Hud {
   hurt() { this.hurtT = 0.5; }
 
   private renderKill(row: typeof this.feedRows[number]) {
-    row.element.innerHTML = `<span class="t${row.kTeam}" data-no-i18n>${esc(row.killer)}</span> <em>${row.weapon === FRAG_KILL ? bilingual('破片手雷', 'Frag grenade') : displayWeaponName(WEAPONS[row.weapon]?.id ?? '')}${row.head ? ' ◎' : ''}</em> <span class="t${row.vTeam}" data-no-i18n>${esc(row.victim)}</span>`;
+    row.element.innerHTML = `<span class="t${row.kTeam}" data-no-i18n>${esc(row.killer)}</span> <em>${HERO_KILL_NAMES[row.weapon] ? bilingual(...HERO_KILL_NAMES[row.weapon]) : row.weapon === FRAG_KILL ? bilingual('破片手雷', 'Frag grenade') : displayWeaponName(WEAPONS[row.weapon]?.id ?? '')}${row.head ? ' ◎' : ''}</em> <span class="t${row.vTeam}" data-no-i18n>${esc(row.victim)}</span>`;
   }
   kill(killer: string, victim: string, weapon: number, head: boolean, kTeam: Team, vTeam: Team) {
     const row = { element: document.createElement('div'), killer, victim, weapon, head, kTeam, vTeam };

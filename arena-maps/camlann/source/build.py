@@ -777,4 +777,28 @@ c.data['designNotes']=['Early-medieval-inspired fictional ruined town, not a dat
     'Point-symmetric: each side has a two-storey roofless hall, a watch tower on a rubble slope, cottage lanes, a chapel and a barn.',
     'Close quarters in the lanes and hall, mid range across the market square; the towers are the only high ground.',
     'Town walls are batched per material into BATCH_town; chapterkit checks each piece stays inside its collider before merging.']
+
+# Playable route craft: Worn flagstone thresholds identify the hall and tower climbs.
+# A marker is drawn only where an existing solid floor supports the landing at its
+# actual elevation. All pieces are under 2 cm tall, flush with the walking surface.
+landing_frames=0
+for o in c.objects:
+    if o['type']!='ramp': continue
+    (rx,ry,rz),(rw,rh,rd)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']; length=rw if axis=='x' else rd
+    for edge in (-1,1):
+        yy=ry+(rh if edge==-low else 0)
+        x=rx+edge*(length/2+.28) if axis=='x' else rx
+        z=rz+edge*(length/2+.28) if axis=='z' else rz
+        supported=any(q['type']=='box' and q.get('collision') and abs(q['position'][1]+q['size'][1]/2-yy)<.055 and abs(x-q['position'][0])<q['size'][0]/2 and abs(z-q['position'][2])<q['size'][2]/2 for q in c.objects)
+        if not supported: continue
+        span=min(1.75,(rd if axis=='x' else rw)-.24)
+        width,depth=(.34,span) if axis=='x' else (span,.34)
+        D.cbox('stoneShade',[x,yy+.008,z],[width,.012,depth])
+        for side in (-1,1):
+            xx=x+side*(width/2-.035) if axis=='z' else x
+            zz=z+side*(depth/2-.035) if axis=='x' else z
+            D.cbox('stoneLight',[xx,yy+.015,zz],[width-.08 if axis=='x' else .045,.006,depth-.08 if axis=='z' else .045])
+        landing_frames+=1
+print('Route landing frames:',landing_frames)
+
 c.save(render_object=crafted)

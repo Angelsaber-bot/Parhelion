@@ -1,6 +1,6 @@
 # Parhelion · ASTER 研究站 美化层
 
-ASTER 是第一张 Arena 地图，地图本体（`arena/`，ChatGPT 的 Blender 流程）**一个文件都没改**。本目录只放一层纯装饰的叠加模型 `assets/aster_overlay.glb`，游戏加载 ASTER 时把它叠在原模型上，加上 `arena-game` 里 ASTER 专属的 `aurora` 氛围，让它和 SAKURA 樱庭一样有鲜明的主题：
+ASTER 是第一张 Arena 地图，原有 Blender 场景模型 `arena/assets/station_visual.glb` 保留；2026-11-14 增加了两块有真实碰撞的出生区挡风板，匹配模型放入叠加层。本目录包含 `assets/aster_overlay.glb`，游戏加载 ASTER 时把它叠在原模型上，加上 `arena-game` 里 ASTER 专属的 `aurora` 氛围，让它和 SAKURA 樱庭一样有鲜明的主题：
 
 **极光下的极地研究站**
 - 冷色暮光天空，两道动态极光（绿青到紫）、星星和飘雪
@@ -9,8 +9,16 @@ ASTER 是第一张 Arena 地图，地图本体（`arena/`，ChatGPT 的 Blender 
 - 地标：东北方的射电望远镜，以及从中央 HELIOS 反应堆直冲天空的青色光柱和两道悬浮光环（都在可玩空间上方）
 - 外墙内侧的青色灯带，在辉光下会发亮
 
-叠加层没有任何碰撞，玩法、碰撞和视线和原版完全一样（`arena-game/test/maps.test.ts` 照常通过）。
+新增挡风板使用 `arena/runtime/map.json` 的权威碰撞，材质和边界一致；其余细节是贴附既有实心表面或放置在边界外的装饰。南北各保留 2.25 米出口；出生路线改走真实转角。中央可达区域的双出生点锁定角度和高台出生压制通过独立射线检查。
 
 ```sh
-python3 source/build_overlay.py   # 读 ../../arena/runtime/map.json，写 assets/aster_overlay.glb
+python3 ../../arena/source/make_map.py
+python3 source/build_overlay.py   # 生成叠加层和完整 station_collision.glb
+python3 ../../arena/validation/check_exports.py # 合并验证基础模型与叠加层
 ```
+
+## 场景打磨
+
+出生挡风板与原研究站一致，带面板接缝和出口灯。实验舱增加散热格栅、仪器屏和金属护角，中庭掩体增加加固条；高台地面嵌线帮助区分长廊与实验区，中央采集环增加机械节点，边界外增加有暖光窗的研究附楼。新增几何不会侵入通路。
+
+叠加层 29,532 三角形、约 2.24MB；38 个碰撞体通过实际 GLB 导出检查。构建器会读取原站体节点，若日后用 Blender 重建站体并已包含挡风板，叠加层不会重复生成其实体。

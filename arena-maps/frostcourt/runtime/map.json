@@ -90,7 +90,7 @@
         0.25
       ],
       [
-        -24,
+        -23,
         4.0,
         -3.6,
         1.7,
@@ -98,7 +98,7 @@
         0.8
       ],
       [
-        -24,
+        -23,
         4.0,
         3.6,
         1.7,
@@ -106,7 +106,7 @@
         0.8
       ],
       [
-        24,
+        23,
         4.0,
         -3.6,
         1.7,
@@ -114,7 +114,7 @@
         0.8
       ],
       [
-        24,
+        23,
         4.0,
         3.6,
         1.7,
@@ -348,7 +348,7 @@
         0.5
       ],
       [
-        -22.4,
+        -21.4,
         0,
         -3.6,
         2.4,
@@ -356,7 +356,7 @@
         0.35
       ],
       [
-        -22.4,
+        -21.4,
         0,
         3.6,
         2.4,
@@ -364,7 +364,7 @@
         0.35
       ],
       [
-        22.4,
+        21.4,
         0,
         -3.6,
         2.4,
@@ -372,7 +372,7 @@
         0.35
       ],
       [
-        22.4,
+        21.4,
         0,
         3.6,
         2.4,
@@ -454,25 +454,25 @@
     ],
     "embers": [
       [
-        -24,
+        -23,
         3.9160000000000004,
         -3.6,
         0.3
       ],
       [
-        -24,
+        -23,
         3.9160000000000004,
         3.6,
         0.3
       ],
       [
-        24,
+        23,
         3.9160000000000004,
         -3.6,
         0.3
       ],
       [
-        24,
+        23,
         3.9160000000000004,
         3.6,
         0.3
@@ -789,14 +789,14 @@
       "id": "spawn_screen_west",
       "type": "box",
       "position": [
-        -24,
-        1.7,
+        -23,
+        1.25,
         0
       ],
       "size": [
-        0.65,
-        3.4,
-        10
+        0.6,
+        4.3,
+        13
       ],
       "material": "limestone",
       "collision": true,
@@ -804,17 +804,88 @@
       "batch": "court"
     },
     {
-      "id": "spawn_mark_west",
+      "id": "spawn_baffle_west_-1",
+      "type": "box",
+      "position": [
+        -27.5,
+        1.7,
+        -4.5
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_baffle_west_0",
+      "type": "box",
+      "position": [
+        -27.5,
+        1.7,
+        0.0
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_baffle_west_1",
+      "type": "box",
+      "position": [
+        -27.5,
+        1.7,
+        4.5
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_mark_west_-1",
       "type": "box",
       "position": [
         -28,
         0.025,
-        0
+        -2
       ],
       "size": [
         1.4,
         0.05,
-        5
+        2.5
+      ],
+      "material": "blue",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_west_1",
+      "type": "box",
+      "position": [
+        -28,
+        0.025,
+        2
+      ],
+      "size": [
+        1.4,
+        0.05,
+        2.5
       ],
       "material": "blue",
       "collision": false,
@@ -824,14 +895,14 @@
       "id": "spawn_screen_east",
       "type": "box",
       "position": [
-        24,
-        1.7,
+        23,
+        1.25,
         0
       ],
       "size": [
-        0.65,
-        3.4,
-        10
+        0.6,
+        4.3,
+        13
       ],
       "material": "limestone",
       "collision": true,
@@ -839,17 +910,88 @@
       "batch": "court"
     },
     {
-      "id": "spawn_mark_east",
+      "id": "spawn_baffle_east_-1",
+      "type": "box",
+      "position": [
+        27.5,
+        1.7,
+        -4.5
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_baffle_east_0",
+      "type": "box",
+      "position": [
+        27.5,
+        1.7,
+        0.0
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_baffle_east_1",
+      "type": "box",
+      "position": [
+        27.5,
+        1.7,
+        4.5
+      ],
+      "size": [
+        4.4,
+        3.4,
+        0.5
+      ],
+      "material": "limestone",
+      "collision": true,
+      "role": "structure",
+      "batch": "court"
+    },
+    {
+      "id": "spawn_mark_east_-1",
       "type": "box",
       "position": [
         28,
         0.025,
-        0
+        -2
       ],
       "size": [
         1.4,
         0.05,
-        5
+        2.5
+      ],
+      "material": "amber",
+      "collision": false,
+      "role": "wayfinding"
+    },
+    {
+      "id": "spawn_mark_east_1",
+      "type": "box",
+      "position": [
+        28,
+        0.025,
+        2
+      ],
+      "size": [
+        1.4,
+        0.05,
+        2.5
       ],
       "material": "amber",
       "collision": false,
@@ -2233,6 +2375,7 @@
         -2
       ],
       "yaw": 1.5708,
+      "facingYaw": -1.5707963267948966,
       "team": "west"
     },
     {
@@ -2244,13 +2387,14 @@
         2
       ],
       "yaw": 1.5708,
+      "facingYaw": -1.5707963267948966,
       "team": "west"
     },
     {
       "id": "cover_screen_west",
       "kind": "cover",
       "position": [
-        -26,
+        -24.3,
         0,
         0
       ],
@@ -2265,6 +2409,7 @@
         -2
       ],
       "yaw": -1.5708,
+      "facingYaw": 1.5707963267948966,
       "team": "east"
     },
     {
@@ -2276,13 +2421,14 @@
         2
       ],
       "yaw": -1.5708,
+      "facingYaw": 1.5707963267948966,
       "team": "east"
     },
     {
       "id": "cover_screen_east",
       "kind": "cover",
       "position": [
-        26,
+        24.3,
         0,
         0
       ],
@@ -2470,6 +2616,21 @@
           -2
         ],
         [
+          -24.3,
+          0,
+          -2
+        ],
+        [
+          -24.3,
+          0,
+          -7.5
+        ],
+        [
+          -27.5,
+          0,
+          -9
+        ],
+        [
           -27.5,
           0,
           -18
@@ -2502,6 +2663,21 @@
         [
           27.5,
           0,
+          -9
+        ],
+        [
+          24.3,
+          0,
+          -7.5
+        ],
+        [
+          24.3,
+          0,
+          -2
+        ],
+        [
+          27.5,
+          0,
           -2
         ]
       ]
@@ -2516,9 +2692,14 @@
           2
         ],
         [
-          -27.5,
+          -24.3,
           0,
-          4
+          2
+        ],
+        [
+          -24.3,
+          0,
+          5.4
         ],
         [
           -26.5,
@@ -2566,9 +2747,14 @@
           7.75
         ],
         [
-          27.5,
+          24.3,
           0,
-          4
+          5.4
+        ],
+        [
+          24.3,
+          0,
+          2
         ],
         [
           27.5,

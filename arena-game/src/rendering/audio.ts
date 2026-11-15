@@ -93,6 +93,13 @@ function tone(freq: number, dur: number, gain: number, type: OscillatorType = 's
 }
 
 export const sfx = {
+  ability(kind:string,action:string,dist=0) {
+    const base:Record<string,number>={barrier:540,anchor:760,guard:420,curtain:160,decoy:920,barrage:110,prayer:660,lens:1040,edict:330};
+    const v=Math.max(0,1-dist/26)*.09;if(!v)return;
+    const f=base[kind]??440;
+    tone(action==='break'?f*.55:f,action==='accepted'?.18:.12,v,'sine',action==='cancel'?.55:1.2);
+    if(action==='pulse'||action==='trigger')noise(.12,kind==='barrage'?180:1800,v*.7);
+  },
   unlock: () => ac(),
   /** dist in metres; 0 = your own gun. */
   shot(weapon: number, near: boolean, dist = 0) {
@@ -152,6 +159,11 @@ export const sfx = {
     if (head) tone(1980, 0.3, 0.16, 'sine', 1, { delay: 0.16, send: 0.6 });
   },
   hurt() { tone(160, 0.15, 0.25, 'sawtooth', 0.6); noise(0.06, 400, 0.3, 1); },
+  footstep(surface:'stone'|'wood'|'metal',crouched=false) {
+    const v=crouched?.025:.065;
+    noise(.045,surface==='wood'?650:surface==='metal'?2800:1800,v,1.1);
+    tone(surface==='wood'?140:surface==='metal'?620:95,.06,v*.6,'triangle',.7);
+  },
   dash() { noise(0.2, 3000, 0.25, 0.4, { send: 0.3 }); },
   shield() { tone(420, 0.35, 0.18, 'sine', 2, { send: 0.5 }); },
   shieldBreak() { noise(0.3, 2500, 0.4, 2, { send: 0.6 }); tone(900, 0.25, 0.12, 'triangle', 0.3); },

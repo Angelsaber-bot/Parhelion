@@ -10,11 +10,11 @@ import { localizeText, setLanguage } from '../../shared-client/i18n.ts';
 
 afterEach(() => { setLanguage('zh'); vi.useRealTimers(); });
 
-it('the active chapter selector has exactly eight unique maps, ending with the three era battlefields', () => {
+it('the active chapter selector has exactly nine unique maps, ending with the three era battlefields', () => {
   const ids = MAPS.map(m => m.id);
-  expect(ids).toHaveLength(8);
-  expect(new Set(ids).size).toBe(8);
-  expect(ids).toEqual(['aster', 'camlann', 'blackflag', 'frostcourt', 'sakura', 'lishan', 'suntemple', 'orleans']);
+  expect(ids).toHaveLength(9);
+  expect(new Set(ids).size).toBe(9);
+  expect(ids).toEqual(['homeward', 'aster', 'camlann', 'blackflag', 'frostcourt', 'sakura', 'lishan', 'suntemple', 'orleans']);
 });
 
 it('active menu names and blurbs have complete English translations without changing stable IDs', () => {
@@ -22,7 +22,7 @@ it('active menu names and blurbs have complete English translations without chan
   setLanguage('en');
   for (const map of MAPS) {
     for (const source of [map.name, map.blurb]) {
-      const en = localizeText(source);
+      const en = source===map.name&&map.englishName?map.englishName:source===map.blurb&&map.englishBlurb?map.englishBlurb:localizeText(source);
       expect(en, `${map.id}: ${source}`).not.toMatch(/[\u3400-\u9fff]/);
       expect(en.length).toBeGreaterThan(3);
     }

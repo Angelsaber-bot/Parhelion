@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 
 /** The authored chapters with embedded surfaces use this channel-preserving material path.
- * ASTER/SAKURA/legacy maps retain toCel unchanged. Embedded surfaces are the same
+ * ASTER/legacy maps retain toCel unchanged. Embedded surfaces are the same
  * baseColor / ORM / tangent normal maps inspected in exported-GLB previews.
  */
-export const CRAFTED_CHAPTERS = new Set(['camlann', 'blackflag', 'frostcourt', 'lishan', 'suntemple', 'orleans']);
+export const CRAFTED_CHAPTERS = new Set(['homeward', 'sakura', 'camlann', 'blackflag', 'frostcourt', 'lishan', 'suntemple', 'orleans']);
 
 export function toChapterMaterial(source: THREE.Material): THREE.Material {
   if (!(source as THREE.MeshStandardMaterial).isMeshStandardMaterial) return source;

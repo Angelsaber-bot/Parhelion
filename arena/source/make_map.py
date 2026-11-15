@@ -1,6 +1,6 @@
 """Original Arena revision 0.2: roomier route spacing, metre-scale player unchanged."""
 from pathlib import Path
-import json
+import json, math
 ROOT=Path(__file__).resolve().parents[1]
 objects,anchors=[],[]
 palette=dict(floor='#c1cbd1',wall='#8796a6',dark='#27394b',cover='#dae1df',cyan='#63d9db',amber='#efb76a',white='#eaf0ee',red='#d98282')
@@ -15,12 +15,16 @@ box('wall_north',[0,2.5,-28],[72,5,.5]);box('wall_south',[0,2.5,28],[72,5,.5])
 for side in (-1,1):
     label='west' if side<0 else 'east';mat='cyan' if side<0 else 'amber'
     box(f'{label}_spawn_screen',[side*26,2.2,0],[.6,4.4,16],'dark')
+    # Inner windbreak prevents one neutral gallery/outer-lane angle seeing both spawns.
+    # Two 2.25m-wide exits remain between its ends and the pocket return walls.
+    box(f'{label}_spawn_windbreak',[side*30,2.3,0],[.5,4.6,10],'white')
     for sign in (-1,1):
         box(f'{label}_pocket_{sign}',[side*33.7,2.2,sign*7.5],[4.4,4.4,.5])
         box(f'{label}_door_trim_{sign}',[side*26,.04,sign*9],[3,.08,4],mat,False,'wayfinding')
     box(f'{label}_spawn_pad',[side*32,.025,0],[4,.05,5],mat,False,'wayfinding')
-    anchor(f'spawn_{label}_01','spawn',[side*32,0,-1.5],yaw=1.5708 if side<0 else -1.5708,team=label)
-    anchor(f'spawn_{label}_02','spawn',[side*33,0,1.5],yaw=1.5708 if side<0 else -1.5708,team=label)
+    # Face the two open pocket exits, rather than the protective windbreak.
+    anchor(f'spawn_{label}_01','spawn',[side*32,0,-1.5],yaw=1.5708 if side<0 else -1.5708,facingYaw=0,team=label)
+    anchor(f'spawn_{label}_02','spawn',[side*33,0,1.5],yaw=1.5708 if side<0 else -1.5708,facingYaw=math.pi,team=label)
     anchor(f'dash_lane_{label}','reserved_dash',[side*21,0,7],length=10,width=5)
 # 6 m clear side entries. North wall no longer crowds the side ramp bodies.
 for z in (-9,11):
@@ -58,11 +62,11 @@ anchor('shield_socket_lab','reserved_shield',[5,0,16],width=2.4,height=2,remaini
 for x in (-10,10):
     for z in (-7,9):box(f'entry_marker_{x}_{z}',[x,.03,z],[.18,.06,3],'cyan' if z<0 else 'amber',False,'wayfinding')
 routes=[
- dict(id='direct_west_objective',name='Court / objective',points=[[-32,0,-1.5],[-29,0,-1.5],[-29,0,9],[-22,0,9],[-16,0,9],[-10,0,8],[-5,0,7],[0,0,7]]),
- dict(id='south_flank',name='Lab / ground flank',points=[[-32,0,-1.5],[-29,0,-1.5],[-29,0,9],[-24,0,18],[-18,0,24],[18,0,24],[24,0,18],[29,0,9],[29,0,-1.5],[32,0,-1.5]]),
- dict(id='north_gallery',name='Gallery / high ground',points=[[-32,0,-1.5],[-29,0,-1.5],[-29,0,-9],[-24,0,-18],[-22.3,0,-18],[-12,3,-18],[12,3,-18],[22.3,0,-18],[24,0,-18],[29,0,-9],[29,0,-1.5],[32,0,-1.5]]),
+ dict(id='direct_west_objective',name='Court / objective',points=[[-32,0,-1.5],[-32,0,6.1],[-29,0,6.1],[-29,0,9],[-22,0,9],[-16,0,9],[-10,0,8],[-5,0,7],[0,0,7]]),
+ dict(id='south_flank',name='Lab / ground flank',points=[[-32,0,-1.5],[-32,0,6.1],[-29,0,6.1],[-29,0,9],[-24,0,18],[-18,0,24],[18,0,24],[24,0,18],[29,0,9],[29,0,6.1],[32,0,6.1],[32,0,-1.5]]),
+ dict(id='north_gallery',name='Gallery / high ground',points=[[-32,0,-1.5],[-32,0,-6.1],[-29,0,-6.1],[-29,0,-9],[-24,0,-18],[-22.3,0,-18],[-12,3,-18],[12,3,-18],[22.3,0,-18],[24,0,-18],[29,0,-9],[29,0,-6.1],[32,0,-6.1],[32,0,-1.5]]),
  dict(id='gallery_counter',name='Court to gallery counter ramp',points=[[0,0,7],[-5,0,5],[-5,0,-4.8],[0,0,-4.8],[0,3,-14],[0,3,-18]]),
- dict(id='east_objective',name='East court entry',points=[[32,0,-1.5],[29,0,-1.5],[29,0,9],[22,0,9],[16,0,9],[10,0,8],[5,0,7],[0,0,7]])]
-data=dict(mapId='aster_research_station',version='0.3.0-art-pass',mode='arena',supportedTeamLayouts=['1v1','1v2','2v2'],units='metres',upAxis='Y',bounds=dict(min=[-36,0,-28],max=[36,7,28]),palette=palette,objects=objects,anchors=anchors,routes=routes,player=dict(radius=.32,height=1.8,eyeHeight=1.65,walkSpeed=4.2,stepHeight=.28),planning=dict(hoursPerWeek=70,testingReserveHours=14,note='Planning budget only; map prototype, no AI, networking, weapons or abilities.'),clearances=dict(spawnTurn=5.2,sideEntries=6,rampFrontLane=4.775,labFrontLane=4.275,labRearLane=7.25,reactorCoverBypass=5.2))
+ dict(id='east_objective',name='East court entry',points=[[32,0,-1.5],[32,0,6.1],[29,0,6.1],[29,0,9],[22,0,9],[16,0,9],[10,0,8],[5,0,7],[0,0,7]])]
+data=dict(mapId='aster_research_station',version='0.3.0-art-pass',mode='arena',supportedTeamLayouts=['1v1','1v2','2v2'],units='metres',upAxis='Y',bounds=dict(min=[-36,0,-28],max=[36,7,28]),palette=palette,objects=objects,anchors=anchors,routes=routes,player=dict(radius=.32,height=1.8,eyeHeight=1.65,walkSpeed=4.2,stepHeight=.28),planning=dict(hoursPerWeek=70,testingReserveHours=14,note='Planning budget only; map prototype, no AI, networking, weapons or abilities.'),clearances=dict(spawnTurn=5.2,windbreakExit=2.25,sideEntries=6,rampFrontLane=4.775,labFrontLane=4.275,labRearLane=7.25,reactorCoverBypass=5.2))
 (ROOT/'runtime/map.json').write_text(json.dumps(data,indent=2)+'\n')
 print(f'Wrote {len(objects)} objects, {len(anchors)} anchors; 72 x 56 m Arena')

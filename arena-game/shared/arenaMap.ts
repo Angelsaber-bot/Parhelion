@@ -1,3 +1,4 @@
+import homeward from '../../arena-maps/homeward/runtime/map.json';
 // Arena maps, read in place from their map pipelines (never copied):
 //   aster  ../arena/runtime/map.json                 (ASTER research station, the first map)
 //   <id>   ../arena-maps/<id>/runtime/map.json       (the other chapter arenas)
@@ -21,9 +22,11 @@ export interface MapInfo {
   preset?: string;
   /** Chapter number shown in the lobby. */
   chapter: number;
+  englishName?: string; englishBlurb?: string;
 }
 
 export const MAPS: MapInfo[] = [
+  { id:'homeward', englishName:'HOMEWARD Circuit', englishBlurb:'Homeward town training grounds · Two courts · Shared passage', name:'HOMEWARD 归灯回街', blurb:'归灯镇演练场 · 双院换线 · 公共穿堂', data:homeward as unknown as MapData, preset:'day', chapter:0 },
   { id: 'aster', name: 'ASTER 研究站', blurb: '极光研究站 · 长廊高台', data: aster as unknown as MapData, preset: 'aurora', chapter: 1 },
   { id: 'camlann', name: 'CAM LANN 誓约荒原', blurb: '亚瑟王 · 石垒废墟', data: camlann as unknown as MapData, chapter: 2 },
   { id: 'blackflag', name: 'BLACKFLAG 黑帆战舰', blurb: '黑胡子 · 双舷甲板', data: blackflag as unknown as MapData, chapter: 3 },

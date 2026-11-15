@@ -1,10 +1,11 @@
+import {CONTENT_MANIFEST,assertContentManifest} from '../../shared/manifest.ts';
 // A Session is "the server" from the game's point of view. Online it is a Colyseus room; offline
 // it is the same shared Match running in the browser with bots. The game code is identical.
 
 import { Client } from '@colyseus/sdk';
 import { getMap } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
-import { DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
+import { PLAYABLE_HERO_INDICES, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
 import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../../shared/trainingRange.ts';
@@ -39,7 +40,7 @@ export interface PracticeControls {
 
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
   // An absent false filter matches rooms of either bot policy; always send a boolean.
-  opts = { ...opts, rulesVersion: RULES_VERSION, bots: opts.bots === true };
+  opts = { ...opts, rulesVersion: RULES_VERSION, contentManifest:CONTENT_MANIFEST, bots: opts.bots === true };
   if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
   const room = await client.joinOrCreate(ROOM_NAME, opts);
@@ -72,10 +73,10 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   // Old servers accept unknown join fields but advertise no current rules version: fail before starting prediction.
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => { closeRoom(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
-    room.onMessage('welcome', (welcome: { rulesVersion?: number }) => {
+    room.onMessage('welcome', (welcome: { rulesVersion?: number;contentManifest?:string }) => {
       if (closed) return;
       clearTimeout(timeout);
-      try { assertRulesVersion(welcome.rulesVersion); resolve(); }
+      try { assertRulesVersion(welcome.rulesVersion);assertContentManifest(welcome.contentManifest); resolve(); }
       catch (error) { closeRoom(); reject(error); }
     });
     room.onLeave(() => { clearTimeout(timeout); reject(new Error('服务器在版本确认前断开连接')); });
@@ -120,7 +121,7 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
       }
       else if (msg.t === 'welcome' && !s) {
         clearTimeout(timeout);
-        try { assertRulesVersion((msg.d as { rulesVersion?: number }).rulesVersion); }
+        try { assertRulesVersion((msg.d as { rulesVersion?: number }).rulesVersion);assertContentManifest((msg.d as {contentManifest?:string}).contentManifest); }
         catch (error) { failJoin(error); return; }
         s = {
           id: (msg.d as { id: string }).id,
@@ -156,13 +157,13 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   navFor(match); // build the nav grid up front so the first bot tick doesn't hitch
   const team: Team = opts.team === 'B' ? 'B' : 'A';
   const id = 'you';
-  match.addPlayer(id, { name: opts.name || 'You', team, char: opts.char, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
+  match.addPlayer(id, { name: opts.name || 'You', team, char: opts.char, heroId:opts.heroId, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
   const kit = () => ({ loadout: randomBotLoadout(rand), utility: randomBotUtility(rand) });
   let seed = 7;
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: n % 2, skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: PLAYABLE_HERO_INDICES.map((_,i)=>PLAYABLE_HERO_INDICES[(i+n)%PLAYABLE_HERO_INDICES.length]).find(i=>![...match.slots.values()].some(s=>s.info.team===t&&s.state.char===i))!, skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
   match.botKit = kit;
@@ -175,7 +176,7 @@ export function startRange(opts: JoinOptions): Session {
   const match = new Match(getRangeMap(), '1v1');
   setupRange(match);
   const id = 'you';
-  match.addPlayer(id, { name: opts.name || 'You', team: 'A', char: opts.char, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
+  match.addPlayer(id, { name: opts.name || 'You', team: 'A', char: opts.char, heroId:opts.heroId, skins: opts.skins, loadout: opts.loadout, utility: opts.utility, bot: false });
   const s = runLocal(match, id);
   s.practice = { apply: (choice) => applyPracticeLoadout(match, id, choice), resetDummies: () => resetDummies(match) };
   return s;

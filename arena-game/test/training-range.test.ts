@@ -66,7 +66,7 @@ describe('a practice match', () => {
   });
   it('the shield dummy keeps a shield up', () => {
     const m = range(); let seen = 0; for (let i = 0; i < 900; i++) { m.step(); if (m.shields.some((s) => s.owner === 'dummy-shield-25')) seen++; }
-    expect(seen).toBeGreaterThanOrEqual(600); // a 10 s shield on a 14 s cooldown: up about 70% of the time
+    expect(seen).toBeGreaterThanOrEqual(290); // a 5 s shield on a 16 s cooldown: up about 70% of the time
   });
   it('weapons, finishes and grenade swap live; invalid choices are refused; reset returns every dummy', () => {
     const m = range(), skins = WEAPONS.map((w) => w.skins.length - 1);

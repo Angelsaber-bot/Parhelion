@@ -3,11 +3,12 @@ ChatGPT's original station (arena/assets/station_visual.glb, untouched). It turn
 polar research station at aurora twilight: snow on every cover and wall top, a snowy plateau with
 pines and peaks around the station, a radio-telescope landmark, the HELIOS light pillar rising
 from the reactor with a floating collector ring, and cyan light strips along the outer walls.
-Nothing here has collision; the game still collides only against arena/runtime/map.json.
+The two spawn windbreak meshes match colliders authored in arena/runtime/map.json.
+All other new detailing stays on solid surfaces or outside the playable boundary.
 Run: python3 source/build_overlay.py
 """
 from pathlib import Path
-import json, math, sys
+import json, math, sys, struct
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent / '_lib'))
@@ -123,7 +124,91 @@ for hx, hz in ((-44, -10), (44, 12)):
     for k in range(3):
         D.box('window', (hx - 3 + k * 2.4, -.6, hz + (3.02 if hz > 0 else -3.08)), (hx - 2 + k * 2.4, .4, hz + (3.08 if hz > 0 else -3.02)))
 
-nodes = [('DETAIL_overlay', D, dict(decorative=True, collision=False, role='detail_batch')),
+
+# Matched inner windbreaks close the gallery-to-spawn diagonals. Geometry is derived
+# from the same runtime entries as movement/raycast collision; north/south exits stay 2.25m.
+base_bytes=(ROOT.parents[1]/'arena/assets/station_visual.glb').read_bytes()
+base_json=json.loads(base_bytes[20:20+struct.unpack_from('<I',base_bytes,12)[0]])
+base_visual_names={n.get('name') for n in base_json['nodes']}
+windbreak_nodes=[]
+for o in data['objects']:
+    if not o['id'].endswith('_spawn_windbreak'):continue
+    x,y,z=o['position'];w,h,d=o['size'];m=Mesh()
+    m.cbox('white',o['position'],o['size'])
+    # Flush panel seams and corner reinforcement do not widen the collision silhouette.
+    for face in (-1,1):
+        xx=x+face*(w/2+.008)
+        for zz in (-4.5,-1.5,1.5,4.5):
+            D.box('steel_dark',(xx-.008,.15,zz-.018),(xx+.008,4.4,zz+.018))
+        for yy in (.16,1.1,3.9):D.box('steel_dark',(xx-.008,yy-.035,-4.8),(xx+.008,yy+.035,4.8))
+        for zz in (-4.7,4.7):D.box('light_cyan',(xx-.012,1.6,zz-.045),(xx+.012,2.3,zz+.045))
+    if 'VIS_'+o['id'] not in base_visual_names:
+        windbreak_nodes.append(('VIS_'+o['id'],m,dict(source_id=o['id'],role='structure',collision=True,decorative=False)))
+
+# Instrument cabinets replace anonymous flat cover faces with flush service architecture.
+# New geometry is at most 2cm proud of an already solid wall; it never creates false cover.
+for o in data['objects']:
+    x,y,z=o['position'];w,h,d=o['size']
+    if o['id'].startswith('lab_pod_') and not o['id'].startswith('lab_pod_band'):
+        for face in (-1,1):
+            zz=z+face*(d/2+.012)
+            D.box('steel_dark',(x-w*.36,.4,zz-.01),(x+w*.36,2.45,zz+.01))
+            for k in range(8):
+                yy=.55+k*.16
+                D.box('steel',(x-w*.30,yy,zz-.012),(x+w*.30,yy+.045,zz+.012))
+            D.box('light_cyan',(x-w*.27,2.1,zz-.015),(x+w*.27,2.28,zz+.015))
+            for xx in (x-w*.43,x+w*.43):D.box('steel_dark',(xx-.03,.15,zz-.012),(xx+.03,2.55,zz+.012))
+    if o['id'].startswith('court_cover_') and not o['id'].endswith('_cap'):
+        for face in (-1,1):
+            zz=z+face*(d/2+.01)
+            for xx in (x-w*.36,x+w*.36):D.box('steel_dark',(xx-.025,.12,zz-.01),(xx+.025,h-.12,zz+.01))
+            D.box('steel_dark',(x-w*.2,h*.38,zz-.01),(x+w*.2,h*.38+.07,zz+.01))
+            D.box('gold',(x-w*.16,h*.7,zz-.012),(x+w*.16,h*.7+.065,zz+.012))
+
+# Inlaid deck lines distinguish the upper gallery from the lab circulation at a glance.
+# The strips are paint-height details, not obstacles or claimed walkable structures.
+for x in range(-10,11,2):
+    for z in (-20.5,-15.5):
+        D.box('white',(x-.32,3.012,z-.035),(x+.32,3.022,z+.035),skip_bottom=True)
+for side in (-1,1):
+    for z in range(-24,26,2):
+        if abs(z)<10:continue
+        D.box('steel_dark',(side*24-.025,.006,z-.65),(side*24+.025,.016,z+.65),skip_bottom=True)
+    # Entry/exit chevrons are inside the two existing door-apron routes.
+    for sign in (-1,1):
+        x,z=side*28.2,sign*6
+        D.tri('white',(x-.3,.023,z-sign*.32),(x+.3,.023,z-sign*.32),(x,.023,z+sign*.25))
+
+# The overhead collector is a machine rather than a featureless emissive disc.
+for i in range(16):
+    a=i*math.tau/16
+    x,z=rx+5.75*math.cos(a),rz+5.75*math.sin(a)
+    D.box('steel_dark',(x-.14,13.88,z-.14),(x+.14,14.22,z+.14))
+    D.box('gold',(x-.07,14.22,z-.07),(x+.07,14.3,z+.07))
+
+# Distant annex / snow canopy is well outside the 72 x 56m combat bounds.
+ax,az=-47,-43
+D.box('steel_dark',(ax-7,-2.5,az-5),(ax+7,5.5,az+5))
+D.box('snow',(ax-7.35,5.5,az-5.35),(ax+7.35,5.75,az+5.35))
+for k in range(5):
+    xx=ax-5.6+k*2.8
+    D.box('white',(xx-.7,-1.6,az+5.01),(xx+.7,4.7,az+5.09))
+    D.box('window',(xx-.5,2.4,az+5.1),(xx+.5,3.4,az+5.12))
+for zz in (az-3,az+3):
+    D.prism('steel',(ax,0,zz),1.15,.6,n=16,y0=5.75)
+    D.prism('steel_dark',(ax,0,zz),.95,.07,n=16,y0=6.35)
+
+nodes = windbreak_nodes + [('DETAIL_overlay', D, dict(decorative=True, collision=False, role='detail_batch')),
          ('DETAIL_helios_beam', B, dict(decorative=True, collision=False, role='detail_batch'))]
 used = [n for n in MATS if any(n in m.prims for _, m, _ in nodes)]
 print(json.dumps(write_glb(ROOT / 'assets/aster_overlay.glb', nodes, used, MATS)))
+
+# Re-export the collision proxy without Blender; all existing shapes are unchanged.
+collision=[]
+for o in data['objects']:
+    if not o['collision']:continue
+    m=Mesh()
+    if o['type']=='ramp':m.wedge('steel',o)
+    else:m.cbox('steel',o['position'],o['size'])
+    collision.append(('COL_'+o['id'],m,dict(source_id=o['id'],role=o['role'],collision=True,decorative=False)))
+print(json.dumps(write_glb(ROOT.parents[1]/'arena/assets/station_collision.glb',collision,['steel'],MATS)))

@@ -197,7 +197,7 @@ describe('frag blasts', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -3 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
     m.shields.push({ id: 9, team: 'B', owner: 'b', x: 0, y: 0, z: -1.5, yaw: 0, hp: 300, life: 600 }, { id: 10, team: 'B', owner: 'b', x: 0, y: 0, z: -15, yaw: 0, hp: 300, life: 600 });
     detonate(m, [0, GRENADE.radius, 0]);
-    expect(m.player('b')!.alive).toBe(false); expect(m.shields[0].hp).toBeLessThanOrEqual(0); expect(m.shields[1].hp).toBe(300); // out of range
+    expect(m.player('b')!.alive).toBe(false); expect(m.shields).toHaveLength(0); // owner death clears all of their barriers
   });
   it('the blast throws enemies away from it and off their feet', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
@@ -256,7 +256,7 @@ describe('frag blasts', () => {
 });
 
 describe('smoke', () => {
-  it('is cover: shots from outside into the cloud deal less, shots from inside do not', () => {
+  it('obscures perception without reducing bullet damage from either side', () => {
     const shoot = (smokeAt: number) => {
       const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 8, yaw: 0 }); Object.assign(m.player('b')!, { x: 0, z: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 10, z: 10 });
       m.smokes = [{ id: 1, owner: 'b', x: 0, y: 0, z: smokeAt, life: 600 }];
@@ -265,7 +265,7 @@ describe('smoke', () => {
       return 150 - m.player('b')!.hp;
     };
     const open = shoot(60), covered = shoot(0), shooterInside = shoot(6);
-    expect(open).toBeGreaterThan(0); expect(covered).toBeLessThan(open); expect(covered).toBeCloseTo(open * SMOKE.cover, 0);
+    expect(open).toBeGreaterThan(0); expect(covered).toBe(open); expect(covered).toBeCloseTo(open * SMOKE.cover, 0);
     expect(shooterInside).toBe(open);
   });
   it('deploys on landing, blocks sight lines through it for its lifetime, then clears', () => {

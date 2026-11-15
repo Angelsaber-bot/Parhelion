@@ -685,4 +685,36 @@ bind_textures(c, ROOT, dict(rammed=(.85, .45, ['rammed', 'rammedDark', 'rammedLi
     brick=(.5, .5, ['brick', 'brickDark', 'brickLight']), terracotta=(1.4, .3, ['terracotta', 'terracottaDark', 'terracottaPale']),
     lacquer=(1, .25, ['lacquer', 'lacquerDark']), timber=(.8, .45, ['timber', 'timberLight']), tile=(1, .5, ['tile', 'tileLight']),
     bronze=(1.2, .3, ['bronze', 'bronzeDark'])))
+
+# Playable route craft: Jade and patinated bronze landing seals distinguish gallery returns from pit corridors.
+# A marker is drawn only where an existing solid floor supports the landing at its
+# actual elevation. All pieces are under 2 cm tall, flush with the walking surface.
+landing_frames=0
+for o in c.objects:
+    if o['type']!='ramp': continue
+    (rx,ry,rz),(rw,rh,rd)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']; length=rw if axis=='x' else rd
+    for edge in (-1,1):
+        yy=ry+(rh if edge==-low else 0)
+        x=rx+edge*(length/2+.28) if axis=='x' else rx
+        z=rz+edge*(length/2+.28) if axis=='z' else rz
+        supported=any(q['type']=='box' and q.get('collision') and abs(q['position'][1]+q['size'][1]/2-yy)<.055 and abs(x-q['position'][0])<q['size'][0]/2 and abs(z-q['position'][2])<q['size'][2]/2 for q in c.objects)
+        if not supported: continue
+        span=min(1.75,(rd if axis=='x' else rw)-.24)
+        width,depth=(.34,span) if axis=='x' else (span,.34)
+        D.cbox('bronzeDark',[x,yy+.008,z],[width,.012,depth])
+        for side in (-1,1):
+            xx=x+side*(width/2-.035) if axis=='z' else x
+            zz=z+side*(depth/2-.035) if axis=='x' else z
+            D.cbox('jade',[xx,yy+.015,zz],[width-.08 if axis=='x' else .045,.006,depth-.08 if axis=='z' else .045])
+        landing_frames+=1
+print('Route landing frames:',landing_frames)
+
+# Bronze riveted straps on the four plank bridges separate the upper catwalk
+# crossing from the earthen corridors below. Geometry remains on existing deck tops.
+for sx in (-1,1):
+    for sz in (-1,1):
+        for xx in (sx*6.75,sx*9.25):
+            D.cbox('bronzeDark',[xx,.018,sz*5.5],[.09,.018,1.85])
+            for zz in (sz*4.7,sz*5.1,sz*5.5,sz*5.9,sz*6.3):
+                D.cbox('gold',[xx,.029,zz],[.045,.012,.045])
 c.save(render_object=c.renderer(KINDS))

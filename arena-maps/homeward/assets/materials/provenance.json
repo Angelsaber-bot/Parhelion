@@ -1,0 +1,127 @@
+{
+  "provenance": "Original deterministic mathematical material synthesis (erakit.synth_materials); no external imagery, scans, textures or AI image inputs.",
+  "seed": 1472,
+  "size": [
+    256,
+    256
+  ],
+  "colour": "basecolor sRGB relative multiplier; ORM and normal linear data",
+  "recipes": {
+    "paving": {
+      "kind": "paving",
+      "rows": 5,
+      "cols": 3,
+      "contrast": 30,
+      "bump": 1.2
+    },
+    "plaster": {
+      "kind": "plaster",
+      "contrast": 30
+    },
+    "stone": {
+      "kind": "blocks",
+      "rows": 4,
+      "cols": 2,
+      "contrast": 32,
+      "bump": 1.5
+    },
+    "timber": {
+      "kind": "wood",
+      "rows": 18,
+      "cols": 5,
+      "contrast": 32,
+      "bump": 0.65
+    },
+    "roof": {
+      "kind": "tile",
+      "rows": 8,
+      "cols": 6,
+      "contrast": 28,
+      "bump": 0.8
+    },
+    "metal": {
+      "kind": "metal",
+      "contrast": 24,
+      "metal": 200,
+      "rough": 160
+    },
+    "courtyard": {
+      "kind": "paving",
+      "rows": 4,
+      "cols": 3,
+      "contrast": 16,
+      "bump": 0.65
+    },
+    "hall_tile": {
+      "kind": "tile",
+      "rows": 4,
+      "cols": 4,
+      "contrast": 12,
+      "bump": 0.4
+    },
+    "street_tile": {
+      "kind": "brick",
+      "rows": 6,
+      "cols": 3,
+      "contrast": 20,
+      "bump": 0.6
+    },
+    "cobble": {
+      "kind": "paving",
+      "rows": 6,
+      "cols": 5,
+      "contrast": 24,
+      "bump": 0.75
+    },
+    "brick": {
+      "kind": "brick",
+      "rows": 7,
+      "cols": 3,
+      "contrast": 24,
+      "bump": 0.6
+    },
+    "canvas": {
+      "kind": "cloth",
+      "contrast": 13,
+      "bump": 0.3
+    }
+  },
+  "files": {
+    "brick_basecolor.png": "883fdbe4d19dbc1d150f81e5e367880de10169497e1b3a2544602b79b894031e",
+    "brick_normal.png": "b13cbd037e5e3656c1130170cef936af9cc69b510b1d01d0af47a8c467bae0ee",
+    "brick_orm.png": "9ec52d382901b71c4a352e491cd579e306989e0d51ebbd664265c4f61307c203",
+    "canvas_basecolor.png": "46a93da000264eac7b373382d97c76e586f1e80c81bcc9303be57099021e87d1",
+    "canvas_normal.png": "59117f24588b2cfd5889e0d78899185cbd3203b488e5026a9972f1fb8e971436",
+    "canvas_orm.png": "f517c06807870d1391a0a09086b35c07cea76678caf9afa6d45c8cea4303e706",
+    "cobble_basecolor.png": "da61cb97b27ed853d535fecbe8e70b422e52619c67edc4097dbb570bf89876ae",
+    "cobble_normal.png": "bd6c30aced098bfb985ca3ba1f9d4dbcbee40c7b3ae3e0575b67dbcb902c0c55",
+    "cobble_orm.png": "729b54ef9923d7b7fc08f62270ec0a1ffd6f28007d1a9f28badedaa6acfdc999",
+    "courtyard_basecolor.png": "de05c935e0cad5a98acd9da76b3a04bbf776920291bb738404baf70560a49fd8",
+    "courtyard_normal.png": "04abbcef081c75766afd7ea174f8e8043ef29f46c8ac97c5448fb3537faddfb8",
+    "courtyard_orm.png": "9805e8da7833d4613115df0593ab2bba26f5dd7ca4a460bc12ca4f64dedca0aa",
+    "hall_tile_basecolor.png": "3c5f169722c0ee2e56037dcb50c8fa5ed828ad5cbe5523db7a374c0b29eade66",
+    "hall_tile_normal.png": "41024b8a03b7f02d5f86fc506dd619c91792886897c9b2cf723774b17b7846c1",
+    "hall_tile_orm.png": "a68865e36569e03293b5d8133c14aa29f45051b3d494b5804121ee5700420c7f",
+    "metal_basecolor.png": "a5c76c9660ba6498ff976b8683b136662bd6d4194fbf5f5b708d4c7999bfe3a4",
+    "metal_normal.png": "66d13308bd489ccb4586155458e8d1f9deb1263b5d2cefd3ed821483ec65e8ff",
+    "metal_orm.png": "6017f7f7938c6a2ca530fc28b34ec4473ec4edec710e5cdb2d1a829304049fea",
+    "paving_basecolor.png": "99bb51d4b5ab550fff0f76662fd84717fb951afafb71810db288f344b6e5820e",
+    "paving_normal.png": "4360bc0e44b1e929153fe0a8d9135afe853f5fd2a96860bf021b94703bf4d626",
+    "paving_orm.png": "68cf916895f4253e9c3444b1e38cc1db36a00a1eb009b0da50a707bb5908b23f",
+    "plaster_basecolor.png": "665bacf3b00931f732e916969a5645a62a73bb52e1399e0ec97492849e79bdbd",
+    "plaster_normal.png": "f5a7f7a6f91c82e36808bc46e2bd56e911651e05e8a3ed7dd2180a649b9cdd92",
+    "plaster_orm.png": "5afaa443de22bfaa13a2e2d8ad316fa5d3b97f8bd3b3e81a82724eb424b75ce6",
+    "roof_basecolor.png": "277c7a941305193e7a664f8befa0a693c895248a14a48eafdc386e582dacc5a5",
+    "roof_normal.png": "39cf963afd1c2815a3bb13152c18f2f1d17c4a648a6841e6418e677981d5a9eb",
+    "roof_orm.png": "62c26682fc03dc6916040f178fcff903d7ec7b2aed33a7a9924475722098834b",
+    "stone_basecolor.png": "2bc9ba895289a5c2b0971870636d5c72e2d4a9e9588b3dcb15c8640c6dee9df3",
+    "stone_normal.png": "8fe96c1a310293ef28aeae3c4937bf25c9df34446e8f61aedb301f808a9276cc",
+    "stone_orm.png": "0adab07ca2a5f159aebd2b2e10a742ffe218caf1b1fc8a885854c851196af3ce",
+    "street_tile_basecolor.png": "3117b44c42476ceab39c826ada404313721a63c5167ceab4d4669505508bbc76",
+    "street_tile_normal.png": "7e38776a285cbae97caf710b1498ffd72bbf26b40be76b27e6ab327e669030ca",
+    "street_tile_orm.png": "ed621bf5ec5f9976fc0b3ff5dfdd60b8c754d1528c919348c3b3664386fb2f47",
+    "timber_basecolor.png": "bc19bbba796923fbeffcb6869f4928c7a8a84cbd3ebab4599ab7ec4d7ebd7d66",
+    "timber_normal.png": "b0e9d982b694eb0039ee69abce98e9e0710e67d8f77b0941a344cc55e12a5796",
+    "timber_orm.png": "a9c7dc1305845d62165903cc9bf328fff49cedec722b834818b927d640423eec"
+  }
+}

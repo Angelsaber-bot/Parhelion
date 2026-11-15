@@ -665,8 +665,23 @@ beam(D, 'timber', (0, QUAY + 2.4, 16.5), (0, QUAY + 6.2, 16.5), .14, 6); beam(D,
 rope(D, 'rope', (0, QUAY + 7.55, 23.2), (0, QUAY + 2.6, 23.2), 0, .025, 2); D.box('oakLight', (-.5, QUAY + 1.7, 22.7), (.5, QUAY + 2.6, 23.7))
 for (x, z) in ((-12.5, 21.2), (12.5, 21.2), (-20, 16.4), (20, 16.4)):
     for k in range(4): lathe(D, 'rope', x, z, [(.36 - k * .03, QUAY + k * .06), (.36 - k * .03, QUAY + k * .06 + .06), (.2, QUAY + k * .06 + .06)], 10, cap=False)
+# Exterior terrain is separate from the collision town: foundations now meet real ground.
+# The river remains open at z>22; all continuation paving is beyond the arena walls.
+D.box('bank',(-180,-3,-180),(180,-.10,-22))
+for side in (-1,1):
+    xa,xb=sorted((side*30,side*180))
+    D.box('bank',(xa,-3,-22),(xb,-.10,22))
+    xa,xb=sorted((side*30,side*44))
+    D.box('cobbleWarm',(xa,-.10,-46),(xb,-.015,22))
+D.box('cobbleWarm',(-84,-.10,-84),(84,-.02,-22))
+D.box('cobbleDark',(-16,-.02,-82),(29,-.012,-23))
+# Low-contrast outer quarters: modest roofs behind the established cathedral silhouette.
+for i in range(17):
+    x=-128+i*16; z=-104-(i%3)*7; w=8+(i%4); h=4.5+(i%3)*.7
+    D.box('farShade',(x-w/2,-.1,z-9),(x+w/2,h,z))
+    hiproof(D,'farRoof',x-w/2,x+w/2,z-9,z,h,h+2.4)
 # The Loire: water, two moored barges, the far bank with houses, the old bridge and the cathedral.
-D.quad('water', (-120, QUAY - .5, 22), (120, QUAY - .5, 22), (120, QUAY - .5, 95), (-120, QUAY - .5, 95))
+D.quad('water', (-180, QUAY - .5, 22), (180, QUAY - .5, 22), (180, QUAY - .5, 95), (-180, QUAY - .5, 95))
 D.box('limestoneShade', (-30, QUAY - 1.4, 22), (30, QUAY, 22.3))
 def barge(x, z, yaw, L=7.5):
     b = Mesh(); secs = []
@@ -679,7 +694,8 @@ def barge(x, z, yaw, L=7.5):
     b.quad('canvas', (L * .12, 4.9, -.02), (L * .12, 1.5, -1.6), (L * .12, 1.5, 1.6), (L * .12, 4.9, .02))
     place(D, b, x, QUAY - .75, z, yaw)
 barge(-16, 24.2, .04); barge(15, 24.6, -.05); barge(-52, 46, .5, 6); barge(40, 58, -.3, 6)
-D.quad('bank', (-120, QUAY - .3, 95), (120, QUAY - .3, 95), (120, 1.5, 125), (-120, 1.5, 125))
+D.quad('bank', (-180, QUAY - .3, 95), (180, QUAY - .3, 95), (180, 1.5, 125), (-180, 1.5, 125))
+D.box('bank',(-180,-3,125),(180,1.5,190))
 for i in range(22):
     x = -105 + i * 10 + rng.uniform(-2, 2); w = rng.uniform(5, 8); hh = rng.uniform(4, 7)
     D.box('farStone' if i % 3 else 'farShade', (x - w / 2, 0, 100), (x + w / 2, hh, 108)); gable(D, 'farRoof', 'farShade', x - w / 2, x + w / 2, 100, 108, hh, hh + rng.uniform(2.5, 4), 'x', .2, .1)
@@ -733,4 +749,28 @@ if '--materials' in sys.argv or not (ROOT / 'assets/materials/limestone_basecolo
 bind_textures(c, ROOT, dict(limestone=(.5, .45, ['limestone', 'limestoneShade', 'limestoneLight']), cobble=(.45, .6, ['cobble', 'cobbleDark', 'cobbleWarm']),
     plaster=(.9, .3, ['plaster', 'plasterWarm', 'plasterRose']), timber=(1.2, .4, ['timber', 'timberDark']), oak=(.8, .45, ['oak', 'oakLight']),
     slate=(.9, .5, ['slate', 'slateLight', 'slateDark']), bronze=(1.3, .3, ['bronze', 'bronzeDark']), canvas=(1.6, .3, ['canvas', 'canvasShade', 'white'])))
+
+# Playable route craft: Pale cobble landing frames distinguish river, rampart and upper-room access.
+# A marker is drawn only where an existing solid floor supports the landing at its
+# actual elevation. All pieces are under 2 cm tall, flush with the walking surface.
+landing_frames=0
+for o in c.objects:
+    if o['type']!='ramp': continue
+    (rx,ry,rz),(rw,rh,rd)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']; length=rw if axis=='x' else rd
+    for edge in (-1,1):
+        yy=ry+(rh if edge==-low else 0)
+        x=rx+edge*(length/2+.28) if axis=='x' else rx
+        z=rz+edge*(length/2+.28) if axis=='z' else rz
+        supported=any(q['type']=='box' and q.get('collision') and abs(q['position'][1]+q['size'][1]/2-yy)<.055 and abs(x-q['position'][0])<q['size'][0]/2 and abs(z-q['position'][2])<q['size'][2]/2 for q in c.objects)
+        if not supported: continue
+        span=min(1.75,(rd if axis=='x' else rw)-.24)
+        width,depth=(.34,span) if axis=='x' else (span,.34)
+        D.cbox('cobbleDark',[x,yy+.008,z],[width,.012,depth])
+        for side in (-1,1):
+            xx=x+side*(width/2-.035) if axis=='z' else x
+            zz=z+side*(depth/2-.035) if axis=='x' else z
+            D.cbox('limestoneLight',[xx,yy+.015,zz],[width-.08 if axis=='x' else .045,.006,depth-.08 if axis=='z' else .045])
+        landing_frames+=1
+print('Route landing frames:',landing_frames)
+
 c.save(render_object=c.renderer(KINDS))

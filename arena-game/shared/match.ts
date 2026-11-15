@@ -1,3 +1,6 @@
+import { HeroSystem } from './heroes.ts';
+import { HERO_COMBAT, abilityFor, heroIndex } from './content.ts';
+import type { HeroEvent, TacticalEntity, ReconMark } from './heroState.ts';
 // Authoritative match simulation. Transport-agnostic: the Colyseus room and the offline
 // in-browser host both drive this same class. Owns players, input queues, hit resolution with
 // lag compensation, shields, scoring, respawns and match phases.
@@ -7,7 +10,7 @@ import {
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
   DASH, FRAG, FRAG_KILL, GRENADE, SMOKE, TICK_HZ, validateUtility, type UtilityId,
 } from './content.ts';
-import { fragReaches, insideSmoke, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
+import { fragReaches, smokeBlocks, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { lineOfSight, raycastMap, spawnAnchors, type ArenaMap, type MapAnchor, type Vec3 } from './map.ts';
@@ -15,8 +18,7 @@ import { aimDir, applyInput, clonePlayer, newPlayer, playerEye, quant, type Inpu
 import { AIM_CONE, StatsCollector, type StatsPlayer } from './weaponStats.ts';
 
 export type Phase = 'waiting' | 'countdown' | 'live' | 'ended';
-/** Spawn facing: toward the map centre. Clients derive it from the spawn position, because later
- * inputs in the same snapshot window may already have replaced the authoritative yaw. */
+/** Fallback spawn facing for maps without an authored exit direction: toward the map centre. */
 export const spawnYaw = (x: number, z: number) => Math.atan2(x, z);
 
 export interface Controller {
@@ -31,9 +33,11 @@ export interface Shield {
   x: number; y: number; z: number; yaw: number;
   hp: number;
   life: number;
+  created?: number; expires?: number;
 }
 
-export type NetEvent =
+export type NetEvent = HeroEvent
+
   | { t: 'shot'; id: string; w: number; from: Vec3; to: Vec3[] }
   | { t: 'meleeStart'; id: string; w: number; windup: number; yaw: number; pitch: number }
   | { t: 'meleeStrike'; id: string; w: number; from: Vec3; to: Vec3 }
@@ -41,7 +45,8 @@ export type NetEvent =
   | { t: 'kill'; killer: string; victim: string; w: number; head: boolean }
   | { t: 'shieldUp'; sid: number; owner: string }
   | { t: 'shieldBreak'; sid: number }
-  | { t: 'spawn'; id: string }
+  // Preserve the birth heading even when later inputs change player yaw before the snapshot.
+  | { t: 'spawn'; id: string; yaw?: number }
   | { t: 'phase'; phase: Phase; winner?: Team | 'draw' }
   | { t: 'fx'; id: string; kind: 'dash' | 'jump' | 'reload' }
   | { t: 'throw'; id: string; gid: number; kind: UtilityId }
@@ -53,6 +58,7 @@ export interface PlayerInfo {
   name: string;
   team: Team;
   char: number;
+  heroId?: string;
   skins: number[]; // skin index per catalog weapon
   loadout?: Loadout;
   utility?: UtilityId;
@@ -82,6 +88,8 @@ export interface Snapshot {
   /** Additive in v14: live grenades and smoke clouds. */
   grenades?: Grenade[];
   smokes?: Smoke[];
+  entities?: TacticalEntity[];
+  marks?: ReconMark[];
   events: NetEvent[];
 }
 
@@ -100,7 +108,7 @@ interface Slot {
   melee: { weapon: number; impactTick: number; yaw: number; pitch: number; struck?: boolean } | null;
 }
 
-type HistoricalPose = [number, number, number, boolean, boolean]; // x, y, z, alive, crouched
+type HistoricalPose = [number, number, number, boolean, boolean, number, number, number, boolean, number]; // x, y, z, alive, crouched
 const HISTORY = 64;
 const MAX_QUEUE = 30;
 const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a stall
@@ -109,6 +117,9 @@ const SPAWN_REUSE_TICKS = 4 * TICK_HZ;
 
 export class Match {
   tick = 0;
+  readonly heroes = new HeroSystem(this);
+  emit(event: NetEvent) { this.events.push(event); if(event.t==='ability')this.stats.abilityEvent(event.id,event.action,event.amount??1); }
+  heroDamage(owner:string, team:Team, victim:string, damage:number, weapon:number) { this.damage(this.slots.get(owner) ?? {state:{id:owner,team},kills:0},victim,damage,false,weapon); }
   phase: Phase = 'waiting';
   /** After a match ends: false (default) holds on the results until rematch(); true restarts by itself. */
   autoRestart = false;
@@ -156,7 +167,7 @@ export class Match {
   addPlayer(id: string, info: PlayerInfo, controller?: Controller): void {
     if (this.slots.has(id)) throw new Error('duplicate player');
     if (!this.hasRoom(info.team)) throw new Error(`team ${info.team} is full`);
-    const char = Math.max(0, Math.min(CHARACTERS.length - 1, info.char | 0));
+    const char = heroIndex(info.heroId, info.char);
     const skins = WEAPONS.map((w, i) => Math.max(0, Math.min(w.skins.length - 1, info.skins[i] | 0)));
     const loadout = validateLoadout(info.loadout), utility = validateUtility(info.utility);
     const slot: Slot = {
@@ -167,12 +178,14 @@ export class Match {
     this.slots.set(id, slot);
     this.stats.join(statsPlayer(slot));
     this.spawn(slot);
+    if (this.phase === 'live') slot.state.ability.readyAt = this.tick + abilityFor(char).cooldown;
   }
 
   /** Training range: return a seated player to its post immediately. */
   respawnNow(id: string): void { const slot = this.slots.get(id); if (slot) this.spawn(slot); }
 
   removePlayer(id: string): void {
+    this.heroes.clearLife(id);
     this.slots.delete(id);
     this.shields = this.shields.filter((s) => s.owner !== id);
     // Grenades already thrown stay live: a frag still goes off after its thrower leaves.
@@ -205,12 +218,16 @@ export class Match {
 
   step(): void {
     this.tick++;
+    this.shields=this.shields.filter(s=>s.hp>0&&s.life>0&&(s.expires===undefined||s.expires>this.tick));
+    this.heroes.begin();
+    const previous = new Map([...this.slots].filter(([,s])=>s.state.alive).map(([id,s])=>[id,[s.state.x,s.state.y,s.state.z] as Vec3]));
     for (const [id, slot] of this.slots) {
       if (slot.controller) slot.queue.push(slot.controller.think(this, id));
       slot.credits = Math.min(slot.credits + 1, MAX_CREDITS);
       while (slot.credits >= 1 && slot.queue.length) {
         const inp = slot.queue.shift()!;
         slot.credits--;
+        this.heroes.input(slot.state, inp);
         const events = applyInput(this.map, slot.state, inp, this.foesOf(slot.state));
         // A swap cancels the armed hit immediately, even if a catch-up batch swaps back.
         if (slot.melee && slot.melee.weapon !== slot.state.weapon) slot.melee = null;
@@ -238,9 +255,11 @@ export class Match {
     for (const slot of this.slots.values()) {
       if (!slot.state.alive && slot.respawn > 0 && --slot.respawn === 0) this.spawn(slot);
     }
-    for (const sh of this.shields) sh.life--;
+    for (const sh of this.shields) sh.life=sh.expires===undefined?sh.life-1:Math.max(0,sh.expires-this.tick);
     this.shields = this.shields.filter((s) => s.life > 0 && s.hp > 0);
     this.stepGrenades();
+    this.heroes.effects(previous);
+    this.heroes.heal();
 
     this.stepPhase();
     this.record();
@@ -306,6 +325,7 @@ export class Match {
   private resetRound(): void {
     // Keep world tick and acknowledged sequence monotonic, but never replay a prior round.
     this.events = []; this.history = [];
+    this.heroes.reset();
     this.score = { A: 0, B: 0 };
     this.shields = []; this.grenades = []; this.smokes = [];
     for (const s of this.slots.values()) {
@@ -353,6 +373,7 @@ export class Match {
       for (const g of this.grenades) {
         if (g.kind === 'frag' && g.team !== team && Math.hypot(g.x - ax, g.y - ay, g.z - az) <= FRAG.radius + 1.5) threats++;
       }
+      for (const e of this.heroes.entities) if (e.team !== team && (e.kind === 'barrage' || e.kind === 'edict') && Math.hypot(e.x-ax,e.z-az)<4) threats+=2;
       let nearest = 40, total = 0;
       for (const e of enemies) {
         const d = Math.min(40, Math.hypot(e.state.x - ax, e.state.z - az));
@@ -369,22 +390,24 @@ export class Match {
 
   private spawn(slot: Slot): void {
     const p = slot.state;
-    const [x, y, z] = this.pickSpawn(slot).position;
+    this.heroes.clearLife(p.id); p.lifeId++;
+    const anchor = this.pickSpawn(slot);
+    const [x, y, z] = anchor.position;
     Object.assign(p, {
       x, y, z, vx: 0, vy: 0, vz: 0,
-      yaw: spawnYaw(x, z), // face the map centre
+      yaw: typeof anchor.facingYaw === 'number' && Number.isFinite(anchor.facingYaw) ? anchor.facingYaw : spawnYaw(x, z),
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
       dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0,
-      shieldCd: 0, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0,
+      shieldCd: Math.max(0,p.ability.readyAt-this.tick), abilityTick:this.tick, lastDamageTick:-10000, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0,
     });
     const home = this.practice?.homes.get(p.id);
     if (home) Object.assign(p, { x: home.x, y: home.y, z: home.z, yaw: home.yaw });
     slot.spawnProtectedUntilTick = home ? this.tick : this.tick + SPAWN_PROTECTION_TICKS;
     slot.respawn = 0; slot.melee = null; slot.meleeReadyTick = 0;
     this.stats.forgetVictim(p.id);
-    this.events.push({ t: 'spawn', id: p.id });
+    this.events.push({ t: 'spawn', id: p.id, yaw: p.yaw });
   }
 
   private handle(slot: Slot, ev: SimEvent): void {
@@ -430,7 +453,7 @@ export class Match {
   /** Other players' positions as the shooter saw them (interpolated history, clamped). */
   private rewound(view: number): Map<string, HistoricalPose> {
     const now = new Map<string, HistoricalPose>();
-    for (const [id, s] of this.slots) now.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched]);
+    for (const [id, s] of this.slots) now.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched, s.state.lifeId, s.state.yaw, s.state.pitch, s.state.ability.phase==='guard', s.state.ability.castSeq]);
     const v = Math.max(this.tick - MAX_REWIND_TICKS, Math.min(this.tick - 1, view));
     if (!(v < this.tick - 1) || !Number.isFinite(v)) return now;
     const a = this.history[Math.floor(v) % HISTORY], b = this.history[Math.ceil(v) % HISTORY];
@@ -440,7 +463,8 @@ export class Match {
     for (const [id, cur] of now) {
       const pa = a.get(id), pb = b.get(id);
       if (!pa || !pb || !cur[3]) { out.set(id, cur); continue; }
-      out.set(id, [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f, pa[2] + (pb[2] - pa[2]) * f, cur[3], f < 0.5 ? pa[4] : pb[4]]);
+      if (pa[5] !== cur[5] || pb[5] !== cur[5]) { out.set(id, [...cur.slice(0,3),false,...cur.slice(4)] as HistoricalPose); continue; }
+      out.set(id, [pa[0] + (pb[0] - pa[0]) * f, pa[1] + (pb[1] - pa[1]) * f, pa[2] + (pb[2] - pa[2]) * f, cur[3], f < 0.5 ? pa[4] : pb[4], cur[5], pa[6], pa[7], pa[8], pa[9]]);
     }
     return out;
   }
@@ -459,7 +483,7 @@ export class Match {
       if (best === Infinity) best = w.range;
       let target: { kind: 'player'; id: string; head: boolean } | { kind: 'shield'; sh: Shield } | null = null;
       for (const sh of this.shields) {
-        if (sh.team === shooter.team) continue;
+        if (sh.hp <= 0 || sh.life <= 0 || (sh.created !== undefined && sh.created > Math.max(this.tick-MAX_REWIND_TICKS,ev.view))) continue;
         const t = rayShield(ev.origin, d, sh.x, sh.y, sh.z, sh.yaw);
         if (t < best) { best = t; target = { kind: 'shield', sh }; }
       }
@@ -470,11 +494,11 @@ export class Match {
         const h = rayPlayer(ev.origin, d, p[0], p[1], p[2], p[4]);
         if (h && h.t < best) { best = h.t; target = { kind: 'player', id, head: h.head }; }
       }
+      const device = this.heroes.shoot(ev.origin,d,best,t=>w.damage*falloff(w,t));
+      if(device<best) {best=device; target=null;}
       ends.push([quant(ev.origin[0] + d[0] * best), quant(ev.origin[1] + d[1] * best), quant(ev.origin[2] + d[2] * best)]);
       if (!target) continue;
       let dmg = w.damage * falloff(w, best);
-      // Smoke is cover: blind fire from outside into a cloud lands for less.
-      if (target.kind === 'player') { const v = pos.get(target.id)!; if (insideSmoke(this.smokes, [v[0], v[1] + 1, v[2]]) && !insideSmoke(this.smokes, ev.origin)) dmg *= SMOKE.cover; }
       if (target.kind === 'shield') {
         shieldHit = true;
         this.damageShield(target.sh, dmg);
@@ -494,7 +518,11 @@ export class Match {
       this.stats.shot(shooter.id, ev.weapon, { pellets: ev.dirs.length, pelletHits, head, shield: shieldHit, hitDist, aimDist: aim!.dist, enemyAlive: aim!.enemyAlive });
     }
     if (this.phase === 'ended') return;
-    for (const [vid, { dmg, head, t }] of damage) this.damage(slot, vid, Math.round(dmg), head, ev.weapon, t);
+    for (const [vid, { dmg, head, t }] of damage) {
+      const v=this.player(vid)!,h=pos.get(vid)!;
+      const raw=this.spawnProtected(vid)?0:this.heroes.absorb(v,dmg,ev.origin,{x:h[0],y:h[1],z:h[2],life:h[5],yaw:h[6],pitch:h[7],guard:h[8],guardSeq:h[9]});
+      this.damage(slot,vid,Math.round(raw),head,ev.weapon,t);
+    }
   }
 
   /** Telemetry only: distance to the visible enemy nearest the aim line, inside AIM_CONE. */
@@ -513,7 +541,7 @@ export class Match {
       const len = Math.hypot(d[0], d[1], d[2]);
       if (len < 1e-6) continue;
       const cos = (d[0] * aim[0] + d[1] * aim[1] + d[2] * aim[2]) / len;
-      if (cos < bestCos || !lineOfSight(this.map, origin, chest)) continue;
+      if (cos < bestCos || !lineOfSight(this.map, origin, chest) || smokeBlocks(this.smokes,origin,chest)) continue;
       bestCos = cos; best = len;
     }
     return { dist: best, enemyAlive };
@@ -569,7 +597,7 @@ export class Match {
       }
       // With nobody in reach, a directly aimed shield can still be struck (and broken).
       if (!victim) for (const sh of this.shields) {
-        if (sh.team === p.team || sh.hp <= 0) continue;
+        if (sh.hp <= 0) continue;
         const t = rayShield(origin, aim, sh.x, sh.y, sh.z, sh.yaw);
         if (t < nearest && raycastMap(this.map, origin, aim, t + .001) > t + .001) {
           nearest = t; victim = null; shield = sh;
@@ -579,6 +607,7 @@ export class Match {
       if (victim || shield) break; // the most recent heading that connects wins
     }
     // The swing is shown once at impact; a later contact inside the active window only adds the hit.
+    if (!attack.struck) this.heroes.melee(p,w.range,w.arc!,w.damage);
     if (!attack.struck) this.events.push({ t: 'meleeStrike', id: p.id, w: attack.weapon, from: origin.map(quant) as Vec3, to: end.map(quant) as Vec3 });
     attack.struck = true;
     if (this.phase === 'ended') return !!(victim || shield);
@@ -590,7 +619,7 @@ export class Match {
     }
     if (victim) {
       if (human) this.stats.swingHit(p.id, attack.weapon, 'player');
-      this.damage(slot, victim, w.damage, false, attack.weapon, nearest);
+      this.damage(slot, victim, this.spawnProtected(victim)?0:this.heroes.absorb(this.player(victim)!,w.damage,origin), false, attack.weapon, nearest);
       return true;
     }
     return false;
@@ -614,9 +643,9 @@ export class Match {
     return !!slot?.state.alive && this.tick < slot.spawnProtectedUntilTick;
   }
 
-  private damageShield(shield: Shield, dmg: number): void {
+  damageShield(shield: Shield, dmg: number): void {
     // The same authoritative clock protects both the player and their deployed shield.
-    if (shield.hp <= 0 || this.spawnProtected(shield.owner)) return;
+    if (shield.hp <= 0) return;
     shield.hp -= dmg;
     if (shield.hp <= 0) this.events.push({ t: 'shieldBreak', sid: shield.id });
   }
@@ -627,12 +656,15 @@ export class Match {
     const v = this.slots.get(victimId);
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
     if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
+    if (WEAPONS[weapon]?.kind === 'gun' && this.heroes.protectedByBanner(v.state)) dmg = Math.max(1, Math.round(dmg * HERO_COMBAT.prayer.resist));
+    this.heroes.damaged(v.state);
     const applied = Math.min(v.state.hp, dmg);
     v.state.hp = Math.max(0, v.state.hp - dmg);
     this.stats.damage(from.state.id, victimId, weapon, applied, head, v.state.hp <= 0, this.tick, dist);
     this.events.push({ t: 'hit', shooter: from.state.id, victim: victimId, dmg, head });
     if (v.state.hp > 0) return;
     v.state.alive = false;
+    this.heroes.clearLife(victimId);
     v.state.dashT = 0; v.state.dashQueue.length = 0; v.state.meleeWindup = 0; v.melee = null;
     v.respawn = this.practice?.homes.has(victimId) ? this.practice.respawnTicks : RESPAWN_TICKS;
     v.deaths++;
@@ -660,7 +692,7 @@ export class Match {
       live.push(g);
     }
     this.grenades = live;
-    for (const s of this.smokes) s.life--;
+    for (const s of this.smokes) { s.life--; if(s.delay && s.delay>0)s.delay--; }
     this.smokes = this.smokes.filter((s) => s.life > 0);
   }
 
@@ -703,16 +735,17 @@ export class Match {
       if (id === g.owner) {
         if (this.spawnProtected(id)) continue;
         const self = Math.min(p.hp - 1, FRAG.selfDamage);
-        if (self > 0) { p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
+        if (self > 0) { this.heroes.damaged(p); p.hp -= self; this.events.push({ t: 'hit', shooter: id, victim: id, dmg: self, head: false }); }
       } else this.damage(owner, id, p.hp, false, FRAG_KILL); // reached = dead
     }
+    this.heroes.blast(at,FRAG.radius);
     // Enemy shields caught in the radius are blown apart too.
-    for (const sh of this.shields) if (sh.team !== g.team && sh.hp > 0 && Math.hypot(sh.x - at[0], sh.y + SHIELD.height / 2 - at[1], sh.z - at[2]) <= FRAG.radius) this.damageShield(sh, SHIELD.hp);
+    for (const sh of this.shields) if (sh.hp > 0 && Math.hypot(sh.x - at[0], sh.y + SHIELD.height / 2 - at[1], sh.z - at[2]) <= FRAG.radius) this.damageShield(sh, SHIELD.hp);
   }
 
   private record(): void {
     const frame = new Map<string, HistoricalPose>();
-    for (const [id, s] of this.slots) frame.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched]);
+    for (const [id, s] of this.slots) frame.set(id, [s.state.x, s.state.y, s.state.z, s.state.alive, s.state.crouched, s.state.lifeId, s.state.yaw, s.state.pitch, s.state.ability.phase==='guard', s.state.ability.castSeq]);
     this.history[this.tick % HISTORY] = frame;
   }
 
@@ -730,6 +763,7 @@ export class Match {
     return {
       rulesVersion: RULES_VERSION, tick: this.tick, layout: this.layout, phase: this.phase, phaseT: this.phaseT,
       score: { ...this.score }, players, shields: this.shields.map((s) => ({ ...s })),
+      entities: this.heroes.entities.map(e=>({...e})), marks: this.heroes.marks.map(e=>({...e})),
       grenades: this.grenades.map((g) => ({ ...g })), smokes: this.smokes.map((s) => ({ ...s })), events,
     };
   }

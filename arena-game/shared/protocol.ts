@@ -24,7 +24,11 @@ export const ROOM_NAME = 'arena';
 // v27: Halo fires every 20 ticks (0.33 s, was 22).
 // v28: Halo fires every 15 ticks (0.25 s), a trial.
 // v29: Firefly SMG reload 1.65 s -> 2.2 s, longer than both rifles.
-export const RULES_VERSION = 29;
+// v30: nine equal-stat heroes, authoritative Q abilities, visual-only smoke and HOMEWARD.
+// v31: seven active World heroes; counter-slash, sidestep, broadside, advancing artillery, banner and domain.
+// v32: off-hand quick casts preserve gunplay; tuned role-specific ability budgets.
+// v34: Arena spawn sightline screens, Homeward crossing cover, authored exit facing and routes.
+export const RULES_VERSION = 34;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
@@ -42,6 +46,8 @@ export interface JoinOptions {
   team: 'A' | 'B' | 'auto';
   name: string;
   char: number;
+  heroId?: string;
+  contentManifest?: string;
   skins: number[];
   loadout?: Loadout;
   /** Utility slot choice (v14); omitted means the default frag. */
@@ -58,7 +64,7 @@ export interface ClientMessages {
 }
 
 export interface ServerMessages {
-  welcome: { id: string; tick: number; map: string; rulesVersion: number };
+  welcome: { id: string; tick: number; map: string; rulesVersion: number; contentManifest?: string };
   snap: Snapshot;
 }
 

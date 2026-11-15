@@ -1,0 +1,24 @@
+{
+  "map": "frostcourt",
+  "runtimeUnchanged": false,
+  "collisionUnchanged": false,
+  "oldBytes": 4009600,
+  "newBytes": 4143508,
+  "triangles": 49496,
+  "meshes": 12,
+  "landingMarkers": "Route landing frames: 18",
+  "spawnExitClearanceMetres": 2.0,
+  "spawnScreenHeightMetres": 3.4,
+  "spawnScreenFoundationMetres": -0.9,
+  "spawnPartitions": 6,
+  "validationTests": 44,
+  "spawnExposureAudit": {
+    "beforeElevatedSamples": 309,
+    "afterElevatedSamples": 0,
+    "neutralAllSpawnLocks": 0,
+    "directedNavigationTraps": 0,
+    "maxObjectiveArrivalGapSeconds": 0.19
+  },
+  "backgroundPolishPhysicsUnchanged": true,
+  "backgroundPolish": "OOB snowfield, continuous rolling ridge and braziers aligned to shifted spawn-screen coping"
+}

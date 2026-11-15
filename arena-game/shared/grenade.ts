@@ -12,7 +12,7 @@ export interface Grenade {
   fuse: number; // frag ticks left, zero while waiting for contact; smoke has no fuse
   rest: boolean;
 }
-export interface Smoke { id: number; owner: string; x: number; y: number; z: number; life: number }
+export interface Smoke { id: number; owner: string; x: number; y: number; z: number; life: number; delay?:number; box?:{yaw:number;width:number;depth:number;height:number} }
 
 /** Spawn just ahead of the hand, never inside a wall the thrower is touching. */
 export function launchGrenade(m: ArenaMap, id: number, owner: string, team: Team, kind: UtilityId, origin: Vec3, dir: Vec3, carry: readonly [number, number]): Grenade {
@@ -74,17 +74,20 @@ export function fragReaches(distance: number): boolean { return distance >= 0 &&
 /** Smoke is a sphere around the cloud's centre, a little above where the can landed. */
 export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + 1.3, s.z];
 export function insideSmoke(smokes: readonly Smoke[], p: readonly number[]): boolean {
-  for (const s of smokes) { if (s.life <= 0) continue; const c = smokeCentre(s); if ((p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2 < SMOKE.radius * SMOKE.radius) return true; }
+  for (const s of smokes) { if (s.life <= 0 || (s.delay??0)>0) continue; if(s.box){const a=smokeLocal(s,p);if(Math.abs(a[0])<=s.box.width/2&&a[1]>=0&&a[1]<=s.box.height&&Math.abs(a[2])<=s.box.depth/2)return true;continue;} const c = smokeCentre(s); if ((p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2 < SMOKE.radius * SMOKE.radius) return true; }
   return false;
 }
 /** True when the segment a→b passes through any live smoke volume (vision; bullets only lose damage). */
 export function smokeBlocks(smokes: readonly Smoke[], a: Vec3, b: Vec3): boolean {
   const d: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
   for (const s of smokes) {
-    if (s.life <= 0) continue;
+    if (s.life <= 0 || (s.delay??0)>0) continue;
+    if(s.box){const aa=smokeLocal(s,a),bb=smokeLocal(s,b);let lo=0,hi=1;const mins=[-s.box.width/2,0,-s.box.depth/2],maxs=[s.box.width/2,s.box.height,s.box.depth/2];for(let i=0;i<3;i++){const delta=bb[i]-aa[i];if(Math.abs(delta)<1e-9){if(aa[i]<mins[i]||aa[i]>maxs[i]){hi=-1;break;}}else{const x=(mins[i]-aa[i])/delta,y=(maxs[i]-aa[i])/delta;lo=Math.max(lo,Math.min(x,y));hi=Math.min(hi,Math.max(x,y));}}if(lo<=hi)return true;continue;}
     const c = smokeCentre(s), t = len2 > 0 ? Math.max(0, Math.min(1, ((c[0] - a[0]) * d[0] + (c[1] - a[1]) * d[1] + (c[2] - a[2]) * d[2]) / len2)) : 0;
     const q: Vec3 = [a[0] + d[0] * t - c[0], a[1] + d[1] * t - c[1], a[2] + d[2] * t - c[2]];
     if (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] < SMOKE.radius * SMOKE.radius) return true;
   }
   return false;
 }
+
+function smokeLocal(s:Smoke,p:readonly number[]):Vec3{const yaw=s.box!.yaw,x=p[0]-s.x,z=p[2]-s.z;return [x*Math.cos(yaw)-z*Math.sin(yaw),p[1]-s.y,x*Math.sin(yaw)+z*Math.cos(yaw)];}

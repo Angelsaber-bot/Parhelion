@@ -11,6 +11,7 @@ import json, math, sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent / '_lib'))
 from glbkit import Mesh, write_glb  # noqa: E402
+from erakit import synth_materials
 
 data = json.loads((ROOT / 'runtime/map.json').read_text())
 objs = {o['id']: o for o in data['objects']}
@@ -27,7 +28,8 @@ MATS = {
     'blossom2': ('#ff9fbf', 0, .85, .18, 1), 'trunk': ('#5b3b35', 0, .9, 0, 1), 'rope': ('#e8d8a8', 0, .9, 0, 1),
     'shide': ('#ffffff', 0, .9, .3, 1), 'cyan': ('#5fd0d8', .2, .4, 0, 1), 'amber': ('#f2b25c', .2, .4, 0, 1),
     'light_cyan': ('#9cf1f2', .1, .3, 1.6, 1), 'light_amber': ('#ffc27a', .1, .3, 1.6, 1),
-    'mountain': ('#7c6a9a', 0, 1, .15, 1), 'mountain2': ('#a385a8', 0, 1, .2, 1), 'pagoda': ('#4a3a5a', 0, .9, 0, 1),
+    'mountain': ('#7b8a86', 0, 1, 0, 1), 'mountain2': ('#9b9ca9', 0, 1, 0, 1), 'pagoda': ('#4a3a5a', 0, .9, 0, 1),
+    'forest_ground': ('#798374', 0, 1, 0, 1), 'forest_leaf': ('#667d71', 0, 1, 0, 1),
 }
 
 seed = 11
@@ -81,7 +83,7 @@ for o in data['objects']:
         m.box('gravel', lo, hi)
     elif o['id'].startswith('wall_'):
         # The timber occupies y=0..0.5: overlapping side faces caused visible z-fighting.
-        m.box('plaster', (lo[0], .5, lo[2]), (hi[0], 3.2, hi[2]), skip_bottom=True)
+        m.box('plaster', (lo[0], .5, lo[2]), (hi[0], hi[1], hi[2]), skip_bottom=True)
         m.box('woodDark', (lo[0], 0, lo[2]), (hi[0], .5, hi[2]))
     elif o['id'] == 'hall_roof':
         m.box('roof_edge', lo, hi)
@@ -117,13 +119,13 @@ for i in range(30):
 for wid in ('wall_west', 'wall_east', 'wall_north', 'wall_south'):
     o = objs[wid]; x, y, z = o['position']; w, h, d = o['size']
     x0, x1, z0, z1 = x - w / 2, x + w / 2, z - d / 2, z + d / 2
-    hip_roof(D, x0 - .5, x1 + .5, z0 - .5, z1 + .5, 3.2, 3.75, 'roof')
+    hip_roof(D, x0 - .3, x1 + .3, z0 - .3, z1 + .3, y + h / 2, y + h / 2 + .45, 'roof')
     along_x = w > d
     L = w if along_x else d
     for i in range(int(L // 3) + 1):
         t = -L / 2 + i * 3
         cx, cz = (x + t, z) if along_x else (x, z + t)
-        D.box('woodDark', (cx - .16, 0, cz - .16), (cx + .16, 3.2, cz + .16))
+        D.box('woodDark', (cx - .16, 0, cz - .16), (cx + .16, y + h / 2, cz + .16))
 for i in range(22):
     a = i / 22 * 6.283
     # Exact legacy-byte patch/rebuild caveat: validation/relocate_edge_tree.py.
@@ -272,27 +274,129 @@ for o in data['objects']:
             D.prism('rope', (xx, 0, z), .02, .4, n=4, y0=h + .1)
             D.blob('paper', (xx, h - .15, z + (.5 if z > 0 else -.5)), .22, squash=1.3)
 
-# far scenery: layered mountains and a pagoda silhouette (the sky shader draws the clouds)
-for i in range(26):
-    a = i / 26 * 6.283 + rnd() * .2
-    r = 110 + rnd() * 50
-    hgt = 25 + rnd() * 35
-    cx, cz = math.cos(a) * r, math.sin(a) * r
-    w_ = 28 + rnd() * 20
-    tx, tz = -math.sin(a) * w_, math.cos(a) * w_
-    D.tri('mountain' if i % 2 else 'mountain2', (cx - tx, -6, cz - tz), (cx + tx, -6, cz + tz), (cx, hgt, cz))
-    D.tri('mountain' if i % 2 else 'mountain2', (cx + tx, -6, cz + tz), (cx - tx, -6, cz - tz), (cx, hgt, cz))
-px, pz = -70, -55
+# Grounded scenery lies entirely beyond the hard perimeter. Continuous, low ridges
+# replace the old isolated emissive triangular billboards, preserving a quiet skyline.
+B = Mesh()
+for side in (-1, 1):
+    B.cbox('forest_ground', (side * (X + 230) / 2, -.34, 0), (230 - X, .56, 460))
+    B.cbox('forest_ground', (0, -.34, side * (Z + 230) / 2), (2 * X, .56, 230 - Z))
+
+def ridge_ring(inner, crest, outer, height, phase, mat):
+    steps = 96
+    def point(r, a, y):
+        return (math.cos(a) * r, y, math.sin(a) * r)
+    def summit(a):
+        return height + 2.8 * math.sin(3 * a + phase) + 1.6 * math.sin(7 * a - phase) + .8 * math.sin(11 * a)
+    for i in range(steps):
+        a, b = math.tau * i / steps, math.tau * (i + 1) / steps
+        # Winding points the near slope upward and toward the playable courtyard.
+        B.quad(mat, point(inner, a, -.06), point(inner, b, -.06), point(crest, b, summit(b)), point(crest, a, summit(a)))
+        B.quad(mat, point(crest, a, summit(a)), point(crest, b, summit(b)), point(outer, b, 1.2), point(outer, a, 1.2))
+
+ridge_ring(85, 126, 154, 13, .4, 'mountain')
+ridge_ring(148, 187, 228, 24, 1.7, 'mountain2')
+# Low groves connect the perimeter cherry trees with the wider landscape.
+for i in range(28):
+    a = math.tau * i / 28 + .13
+    r = 53 + 7 * math.sin(i * 2.3)
+    tx, tz = math.cos(a) * r, math.sin(a) * r
+    h = 4.8 + .8 * math.sin(i * 1.7)
+    B.prism('trunk', (tx, 0, tz), .23, h, n=6, y0=-.06)
+    for k in range(3):
+        B.blob('forest_leaf', (tx + math.sin(k * 2.1) * 1.0, h - .5 + k * .8, tz + math.cos(k * 2.1) * 1.0), 2.1, squash=.9)
+
+px, pz = -62, -45
+base = 2.2
+# Three visible stone terraces make the landmark meet the terrain, rather than float.
+B.box('stone_dark', (px - 7.5, -.06, pz - 7.5), (px + 7.5, .8, pz + 7.5))
+B.box('stone', (px - 5.6, .8, pz - 5.6), (px + 5.6, 1.5, pz + 5.6))
+B.box('stone_dark', (px - 4.2, 1.5, pz - 4.2), (px + 4.2, base, pz + 4.2))
 for lvl in range(5):
-    y0 = lvl * 5.5
-    D.box('pagoda', (px - 3 + lvl * .4, y0, pz - 3 + lvl * .4), (px + 3 - lvl * .4, y0 + 4, pz + 3 - lvl * .4))
-    hip_roof(D, px - 5.2 + lvl * .5, px + 5.2 - lvl * .5, pz - 5.2 + lvl * .5, pz + 5.2 - lvl * .5, y0 + 4, y0 + 5.5, 'roof_edge')
-D.prism('gold', (px, 0, pz), .25, 6, n=6, y0=27.5)
+    y0 = base + lvl * 4.6
+    B.box('pagoda', (px - 3 + lvl * .4, y0, pz - 3 + lvl * .4), (px + 3 - lvl * .4, y0 + 3.2, pz + 3 - lvl * .4))
+    hip_roof(B, px - 5.2 + lvl * .5, px + 5.2 - lvl * .5, pz - 5.2 + lvl * .5, pz + 5.2 - lvl * .5, y0 + 3.2, y0 + 4.6, 'roof_edge')
+B.prism('gold', (px, 0, pz), .2, 3.8, n=6, y0=base + 23)
+nodes.append(('SCENERY_grounded_landscape', B, dict(decorative=True, collision=False, role='backdrop')))
+# Keep the original random stream for all later courtyard petals unchanged.
+for _ in range(26 * 4):
+    rnd()
+
+
+# Architectural joinery is surface-mounted on existing colliders. Door openings stay clear.
+for o in data['objects']:
+    x,y,z=o['position'];w,h,d=o['size'];top=y+h/2
+    if o['id'].startswith('hall_wall'):
+        # Solid plaster panels sit behind the lattice: it is never false walk-through cover.
+        if w>d:
+            for face in (-1,1):
+                zz=z+face*(d/2+.012)
+                for k in range(max(2,int(w/.42))):
+                    xx=x-w/2+.18+k*(w-.36)/max(1,int(w/.42)-1)
+                    D.box('woodDark',(xx-.025,1.45,zz-.012),(xx+.025,2.9,zz+.012))
+                for yy in (1.45,2.18,2.9):D.box('woodDark',(x-w/2,yy-.035,zz-.016),(x+w/2,yy+.035,zz+.016))
+        else:
+            for face in (-1,1):
+                xx=x+face*(w/2+.012)
+                for k in range(max(2,int(d/.42))):
+                    zz=z-d/2+.18+k*(d-.36)/max(1,int(d/.42)-1)
+                    D.box('woodDark',(xx-.012,1.45,zz-.025),(xx+.012,2.9,zz+.025))
+                for yy in (1.45,2.18,2.9):D.box('woodDark',(xx-.016,yy-.035,z-d/2),(xx+.016,yy+.035,z+d/2))
+    if o['id'].startswith(('court_crate','saisen_box','sando_bench')):
+        # Dark joints and bands give actual wooden cover a legible edge at running speed.
+        for side in (-1,1):
+            zz=z+side*(d/2+.008)
+            for yy in (max(.08,y-h/2+.08),top-.08):
+                D.box('woodDark',(x-w/2,yy-.035,zz-.008),(x+w/2,yy+.035,zz+.008))
+            for xx in (x-w*.32,x+w*.32):
+                D.box('gold',(xx-.025,y-h/2+.07,zz-.012),(xx+.025,top-.07,zz+.012))
+    if o['id'].startswith('saisen_box'):
+        for k in range(7):
+            xx=x-w/2+.15+k*(w-.3)/6
+            D.box('woodDark',(xx-.028,top+.006,z-d/2+.08),(xx+.028,top+.018,z+d/2-.08))
+
+# Curved kasagi tips and metal ties give each torii its shrine-specific silhouette.
+for x in torii_x:
+    for side in (-1,1):
+        for k in range(3):
+            za=-17+side*(4.4+k*.28);zb=-17+side*(4.4+(k+1)*.28)
+            loz,hiz=min(za,zb),max(za,zb);rise=.06+k*.09
+            D.box('roof_edge',(x-.38,4.3+rise,loz),(x+.38,4.55+rise,hiz))
+        for zz in (-19.6,-14.4):
+            D.box('gold',(x-.365,2.94,zz-.355),(x+.365,3.01,zz+.355))
+
+# A continuous timber grain belongs only on the actual bridge deck, with flush edge inlay.
+for zz in (15.36,17.64):D.box('gold',(-1,1.205,zz-.022),(1,1.215,zz+.022))
+# Small fallen-petal clusters hug wall/planter bases, never the aiming lanes.
+for side in (-1,1):
+    for x,z in [(side*10.5,8.7),(side*10.5,-8.7),(side*25.1,5.8),(side*25.1,-5.8)]:
+        for k in range(13):
+            px=x+(rnd()-.5)*1.7;pz=z+(rnd()-.5)*.5;r=.025+rnd()*.035
+            D.quad('blossom',(px-r,.025,pz),(px,.025,pz+r),(px+r,.025,pz),(px,.025,pz-r))
 
 nodes.append(('DETAIL_batch', D, dict(decorative=True, collision=False, role='detail_batch')))
 
+
+# Six restrained original surface recipes, embedded with metre-projected UVs.
+recipes={
+    'gravel':dict(kind='plaster',contrast=20,grain=.8,rough=248,bump=.65),
+    'granite':dict(kind='blocks',rows=3,cols=2,joint=.035,contrast=15,rough=236,bump=.45),
+    'cedar':dict(kind='wood',rows=17,cols=3,contrast=17,rough=218,bump=.35),
+    'lime':dict(kind='plaster',contrast=8,rough=242,bump=.2),
+    'kawara':dict(kind='tile',rows=6,cols=5,contrast=19,rough=211,bump=.7),
+    'lacquer':dict(kind='wood',rows=21,cols=1,contrast=7,rough=175,bump=.12),
+}
+synth_materials(ROOT/'assets/materials',recipes,seed=20261115,size=128)
+textures={}
+for name,scale,nscale,materials in [
+    ('gravel',.65,.38,['gravel','floor']),('granite',.7,.35,['stone','stone_dark','path']),
+    ('cedar',.7,.28,['wood','woodDark','trunk']),('lime',.65,.2,['plaster']),
+    ('kawara',.6,.55,['roof','roof_edge']),('lacquer',.7,.12,['red'])]:
+    for material in materials:
+        base=ROOT/'assets/materials'
+        textures[material]=dict(baseColor=base/f'{name}_basecolor.png',orm=base/f'{name}_orm.png',normal=base/f'{name}_normal.png',scale=scale,normalScale=nscale)
+
 used = [n for n in MATS if any(n in mesh.prims for _, mesh, _ in nodes)]
-vis = write_glb(ROOT / 'assets/sakura_visual.glb', nodes, used, MATS)
+vis = write_glb(ROOT / 'assets/sakura_visual.glb', nodes, used, MATS,textures=textures)
 col_nodes = []
 for o in data['objects']:
     if not o['collision']:

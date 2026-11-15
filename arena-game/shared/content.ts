@@ -21,7 +21,7 @@ export const MATCH_TICKS = 5 * 60 * TICK_HZ;
 export const COUNTDOWN_TICKS = 3 * TICK_HZ;
 export const END_TICKS = 6 * TICK_HZ;
 export const RESPAWN_TICKS = 3 * TICK_HZ;
-/** Full protection after every spawn; firing never cancels it. Separate from death delay. */
+/** Protection after spawn; accepted attacks and hero abilities end it. Separate from death delay. */
 export const SPAWN_PROTECTION_TICKS = 2.5 * TICK_HZ;
 
 export const MOVE = {
@@ -43,12 +43,12 @@ export const MELEE_MOVE = {
 };
 
 export const SHIELD = {
-  hp: 300,
+  hp: 180,
   width: 2.4,
   height: 2.0,
   distance: 1.4, // placed this far in front of the caster
-  life: 10 * TICK_HZ,
-  cooldown: 14 * TICK_HZ,
+  life: 5 * TICK_HZ,
+  cooldown: 16 * TICK_HZ,
 };
 
 /** Utility slot: one grenade per life, chosen before the match, recharging on a cooldown.
@@ -79,8 +79,8 @@ export const GRENADE = {
 /** Lethal to every enemy within `radius`: walls and shields do not stop it (shields in range break),
  * teammates are spared, and the thrower takes a fixed, never-fatal `selfDamage`. Throws people back. */
 export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
-/** Blocks sight; anyone inside takes `cover` of the damage from shooters outside it. */
-export const SMOKE = { radius: 5, life: 12 * TICK_HZ, cover: 0.75 };
+/** Smoke blocks perception only; bullets retain their full damage. */
+export const SMOKE = { radius: 5, life: 12 * TICK_HZ, cover: 1 };
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
 export const FRAG_KILL = 100;
 
@@ -89,13 +89,53 @@ export interface CharacterDef {
   name: string;
   hp: number;
   speed: number; // m/s
-  color: number; // accent used by the placeholder avatar
+  color: number; // identity accent
+  ability: AbilityId;
 }
 
+export type AbilityId = 'barrier' | 'anchor' | 'guard' | 'curtain' | 'decoy' | 'barrage' | 'prayer' | 'lens' | 'edict';
+export const HERO_RULESET = 'heroes-v4-tempo';
+/** Stable legacy indices 0/1 remain readable, but are retired from new lobbies. */
+export const PLAYABLE_HERO_INDICES = [2,3,4,5,6,7,8] as const;
+export const playableHero = (char:number):number => (PLAYABLE_HERO_INDICES as readonly number[]).includes(char) ? char : 2;
+export const ABILITIES: Record<AbilityId, { name: string; en: string; icon: string; cooldown: number; windup: number; recovery: number; range: number; description: string; english: string }> = {
+  barrier: { name:'折光掩盾', en:'Refraction barrier', icon:'◇', cooldown:960, windup:15, recovery:12, range:1.4, description:'180 耐久 · 5 秒 · 阻挡双方枪弹，近战和爆炸可穿过。', english:'180 HP · 5s · Stops both teams’ bullets; melee and blasts pass.' },
+  anchor: { name:'回位锚', en:'Return anchor', icon:'△', cooldown:1080, windup:9, recovery:9, range:5, description:'40 耐久 · 2.5 秒内再次按 Q 沿无遮挡直线回位，最多 5 米。', english:'40 HP · Press again within 2.5s to return up to 5m along a clear line.' },
+  guard: { name:'风王铁槌', en:'Wind king’s hammer', icon:'♜', cooldown:540, windup:3, recovery:6, range:0, description:'轻点 Q：10 米、90° 风斩 70 伤害；按住最多 0.6 秒格挡 150 伤害，吸收后风斩增强至 95。9 秒冷却。', english:'Tap Q: 70 damage slash over 10m / 90°. Hold up to 0.6s to guard 150 damage and empower the slash to 95. 9s cooldown.' },
+  curtain: { name:'复仇女王号', en:'Queen Anne’s broadside', icon:'▥', cooldown:660, windup:6, recovery:6, range:8, description:'一次 Q 展开黑帆烟墙并自动齐射，0.35 秒预警后对烟墙前方造成 80 伤害；重叠不重复伤害。施放中可开枪。', english:'One Q raises smoke and automatically fires a broadside after a 0.35s warning: 80 damage beyond the sail, no overlap stacking. Keep firing while casting.' },
+  decoy: { name:'二天一流·错身', en:'Twin heavens sidestep', icon:'♊', cooldown:450, windup:3, recovery:3, range:0.65, description:'沿移动方向 0.2 秒错身 5 米，留下向前冲出的残像。保持开枪、开镜和换弹；全程可受伤。7.5 秒冷却。', english:'Sidestep 5m in 0.2s along movement, leaving a forward-running echo. Keep firing, aiming and reloading; remain vulnerable. 7.5s cooldown.' },
+  barrage: { name:'凯旋炮列', en:'Triumphal barrage', icon:'◎', cooldown:660, windup:6, recovery:6, range:16, description:'一次 Q 向前推进三轮炮击：按下后 0.5 / 0.8 / 1.1 秒落地，每轮 60 伤害、半径 2.8 米。施放中继续射击。', english:'Three advancing strikes land 0.5 / 0.8 / 1.1s after Q: 60 damage each, 2.8m radius. Keep firing during the cast.' },
+  prayer: { name:'吾主在此', en:'Luminosité Eternelle', icon:'✦', cooldown:720, windup:6, recovery:6, range:6, description:'0.1 秒立旗，6 米内可见友军立即恢复 30 HP，随后 3 秒每 0.25 秒回 5 HP，枪伤降低 25%。圣旗 100 耐久；不能复活或超额治疗。', english:'Plant in 0.1s: visible allies within 6m instantly heal 30 HP, then 5 HP every 0.25s for 3s with 25% gun resistance. 100 HP banner; no revive or overheal.' },
+  lens: { name:'日轮审判', en:'Solar judgement', icon:'☼', cooldown:720, windup:6, recovery:6, range:8, description:'日轮在 0.25 秒预警后快速发出四次审判，间隔 0.4 秒；16 米 / 100°，每次 30 伤害。Q 可转向，墙烟可挡；日轮 80 耐久。', english:'After a 0.25s warning, four judgements fire 0.4s apart over 16m / 100°, dealing 30 each. Q redirects; walls and smoke block it. 80 HP disc.' },
+  edict: { name:'御令·定疆', en:'Imperial domain', icon:'⌁', cooldown:660, windup:6, recovery:6, range:7, description:'0.15 秒预警后震出 30 伤害，展开 4.2 米疆域：敌人减速 35%，无法发起冲刺，持续 3 秒。双端各 90 耐久，击碎任一端可解。', english:'After a 0.15s warning, deal 30 damage and create a 4.2m domain for 3s: 35% slow and no new dashes. Two 90 HP seals; breaking either ends it.' },
+};
+/** Shared by authority, prediction and visual telegraphs (all time values are ticks). */
+export const HERO_COMBAT = {
+  guard:{budget:150,hold:36,damage:70,bonus:25,range:10,halfAngle:Math.PI/4},
+  curtain:{warning:21,damage:80,radius:2.2,life:255},
+  decoy:{distance:5,speed:25,travel:12},
+  barrage:{warning:24,interval:18,damage:60,radius:2.8,life:61},
+  prayer:{hp:100,radius:6,instant:30,heal:5,interval:15,life:181,resist:.75},
+  lens:{hp:80,range:16,halfAngle:50*Math.PI/180,warning:15,interval:24,pulses:4,damage:30,life:96,mark:30},
+  edict:{hp:90,radius:4.2,arm:9,life:189,damage:30,speed:.65},
+} as const;
 export const CHARACTERS: CharacterDef[] = [
-  { id: 'aster', name: 'Aster', hp: 150, speed: 5.2, color: 0x63d9db },
-  { id: 'vega', name: 'Vega', hp: 125, speed: 5.7, color: 0xefb76a },
+  { id:'aster', name:'Aster', hp:150, speed:5.2, color:0x63d9db, ability:'barrier' },
+  { id:'vega', name:'Vega', hp:150, speed:5.2, color:0xefb76a, ability:'anchor' },
+  { id:'saber', name:'阿尔托莉雅 · Artoria', hp:150, speed:5.2, color:0x6489ed, ability:'guard' },
+  { id:'blackbeard', name:'黑胡子 · Blackbeard', hp:150, speed:5.2, color:0xb55f50, ability:'curtain' },
+  { id:'musashi', name:'宫本武藏 · Musashi', hp:150, speed:5.2, color:0xe96b8e, ability:'decoy' },
+  { id:'napoleon', name:'拿破仑 · Napoleon', hp:150, speed:5.2, color:0x547db2, ability:'barrage' },
+  { id:'jeanne', name:'贞德 · Jeanne', hp:150, speed:5.2, color:0xab96e2, ability:'prayer' },
+  { id:'ozymandias', name:'奥斯曼迪斯 · Ozymandias', hp:150, speed:5.2, color:0xe3b953, ability:'lens' },
+  { id:'qin', name:'秦始皇 · Qin Shi Huang', hp:150, speed:5.2, color:0x72c7ae, ability:'edict' },
 ];
+export function heroIndex(id: unknown, legacy: unknown = 0): number {
+  const n = id === undefined ? legacy : CHARACTERS.findIndex(c => c.id === id);
+  if (typeof n !== 'number' || !Number.isInteger(n) || !CHARACTERS[n]) throw new Error('无效角色 / Unknown hero');
+  return n;
+}
+export const abilityFor = (char: number) => ABILITIES[CHARACTERS[char].ability];
 
 export const GUN_IDS = ['lumen', 'corona', 'halo', 'firefly', 'longnight'] as const;
 export const MELEE_IDS = ['blade', 'polearm', 'hammer'] as const;
@@ -238,3 +278,6 @@ export const CROUCH = {
   speedMultiplier: 0.55,
   hitbox: { bodyRadius: 0.3, bodyBottom: 0.18, bodyTop: 0.85, headY: 1.0, headRadius: 0.18 },
 };
+
+/** Deployments are off-hand commands; defensive guard and travel still trade away shooting. */
+export const abilityAllowsGunplay = (char:number):boolean => ['curtain','decoy','barrage','prayer','lens','edict'].includes(CHARACTERS[char].ability);

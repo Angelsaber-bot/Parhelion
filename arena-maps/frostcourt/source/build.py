@@ -36,10 +36,17 @@ c.box('canal_ice',[0,-1.2,7.75],[48,.6,3.5],'ice','floor')
 for x in (-30,30): c.box('boundary_x_'+str(x),[x,2.5,0],[.6,5,48],'limestone','structure')
 for z in (-24,24): c.box('boundary_z_'+str(z),[0,2.5 if z<0 else 1.4,z],[60,5 if z<0 else 2.8,.6],'limestone','structure')
 for side,team in [(-1,'west'),(1,'east')]:
-    c.box('spawn_screen_'+team,[side*24,1.7,0],[.65,3.4,10],'limestone','structure')
-    for i,z in enumerate((-2,2)): c.anchor(f'spawn_{team}_{i}','spawn',[side*27.5,0,z],yaw=-side*1.5708,team=team)
-    c.box('spawn_mark_'+team,[side*28,.025,0],[1.4,.05,5],'blue' if side<0 else 'amber','wayfinding',False)
-    c.anchor('cover_screen_'+team,'cover',[side*26,0,0],height=3.4)
+    c.box('spawn_screen_'+team,[side*23,1.25,0],[.6,4.3,13],'limestone','structure')
+    # Offset wings interrupt northern/southern oblique shots into the two spawn
+    # pockets. The 2 m passage alongside the front screen remains a fast exit.
+    # Its sunken footing follows the canal edge; the wings overlap oblique rays.
+    # The middle partition stops cross-pocket diagonals without lengthening exits.
+    for end in (-1,0,1):
+        c.box(f'spawn_baffle_{team}_{end}',[side*27.5,1.7,end*4.5],[4.4,3.4,.5],'limestone','structure')
+    for i,z in enumerate((-2,2)): c.anchor(f'spawn_{team}_{i}','spawn',[side*27.5,0,z],yaw=-side*1.5708,facingYaw=side*math.pi/2,team=team)
+    for end in (-1,1):
+        c.box(f'spawn_mark_{team}_{end}',[side*28,.025,end*2],[1.4,.05,2.5],'blue' if side<0 else 'amber','wayfinding',False)
+    c.anchor('cover_screen_'+team,'cover',[side*24.3,0,0],height=3.4)
 # A single roofed northern arcade contrasts an open southern park-edge route.
 c.box('arcade_terrace',[0,.65,-18],[38,1.3,8],'stone','floor')
 for side in (-1,1): c.ramp('terrace_ramp_'+str(side),[side*22,0,-18],[6,1.3,5],'x',side,'pavement')
@@ -108,8 +115,8 @@ c.anchor('objective_bridge','objective',[0,0,7.75],radius=2)
 for bx_ in (-13.5,0,13.5):
     for dx in (-1.85,1.85):
         x=bx_+dx; Bc(f'bridge_lamp_{int(x*10)}',x-.15,x+.15,0,3.2,5.45,5.75,'iron','structure',dict(kind='lamppost'))
-c.route('covered_arcade',[[-27.5,0,-2],[-27.5,0,-18],[-25.5,0,-18],[-18,1.3,-18],[18,1.3,-18],[25.5,0,-18],[27.5,0,-18],[27.5,0,-2]])
-c.route('park_loop',[[-27.5,0,2],[-27.5,0,4],[-26.5,0,7.75],[-26,0,12],[-20,0,15],[-12,0,16.5],[0,0,16.5],[12,0,16.5],[20,0,15],[26,0,12],[26.5,0,7.75],[27.5,0,4],[27.5,0,2]])
+c.route('covered_arcade',[[-27.5,0,-2],[-24.3,0,-2],[-24.3,0,-7.5],[-27.5,0,-9],[-27.5,0,-18],[-25.5,0,-18],[-18,1.3,-18],[18,1.3,-18],[25.5,0,-18],[27.5,0,-18],[27.5,0,-9],[24.3,0,-7.5],[24.3,0,-2],[27.5,0,-2]])
+c.route('park_loop',[[-27.5,0,2],[-24.3,0,2],[-24.3,0,5.4],[-26.5,0,7.75],[-26,0,12],[-20,0,15],[-12,0,16.5],[0,0,16.5],[12,0,16.5],[20,0,15],[26,0,12],[26.5,0,7.75],[24.3,0,5.4],[24.3,0,2],[27.5,0,2]])
 c.route('fountain_breach',[[-22,0,-8],[-15,0,-10],[-6,0,-8],[6,0,-8],[20,0,-8],[22,0,0],[22,0,4.4],[13.5,0,5.2],[13.5,0,10.5],[0,0,11],[-13.5,0,10.5],[-13.5,0,5.2],[-22,0,4.4],[-22,0,0],[-22,0,-8]])
 c.route('arcade_to_terrace',[[4.5,1.3,-18],[19.5,1.3,-18],[26,0,-18],[26,0,-8],[20,0,-8],[20,0,0],[13.5,0,5.2],[13.5,0,10.5],[15.5,0,11],[15,0,16.5],[8,0,20.5],[15.2,2.4,20.5],[19.7,2.4,19]])
 c.route('canal_trench',[[-26.5,0,7.75],[-22.5,-.45,7.75],[-16,-.9,7.75]])
@@ -323,10 +330,17 @@ for o in c.objects:
     if 'spawn_screen' in o['id']:
         for yy in (.65,1.3,1.95,2.6): D.cbox('stone',[x,yy,z],[w+.035,.025,d])
         D.cbox('stoneLight',[x,3.35,z],[w+.25,.15,d+.18])
-        for zz in (-4.7,0,4.7): D.cbox('stone',[x,1.7,zz],[w+.1,3.4,.28])
+        for zz in (-6.2,0,6.2): D.cbox('stone',[x,1.7,zz],[w+.1,3.4,.28])
         for sign in (-1,1):
             D.cbox('blue',[x+sign*(w/2+.03),2,z],[.04,1.5,1.3]);D.cbox('gold',[x+sign*(w/2+.06),2,z],[.02,.045,1.05])
-        for zz in [z-d/2+i*.9 for i in range(12)]: D.blob('snow',(x,3.48,zz),.52,.09)
+        for zz in [z-d/2+i*.9 for i in range(int(d/.9)+1)]: D.blob('snow',(x,3.48,zz),.52,.09)
+    if 'spawn_baffle' in o['id']:
+        # The new cover is visibly a dressed garden wall, not an invisible patch.
+        D.cbox('stoneLight',[x,3.34,z],[w+.08,.12,d+.08])
+        for yy in (.65,1.3,1.95,2.6): D.cbox('stoneDark',[x,yy,z],[w,.025,d+.015])
+        for xx in (x-w/2+.1,x+w/2-.1): D.cbox('stone',[xx,1.7,z],[.20,3.4,d+.06])
+        D.cbox('blue' if x<0 else 'amber',[x,2,z-.27],[.95,1.2,.035])
+        snowline(D,x-w/2,x+w/2,3.43,z-.27,.54,int(x*10+500))
     if 'park_low_wall' in o['id']:
         for yy in (.45,.95): D.cbox('stoneDark',[x,yy,z],[w,.024,d+.025])
         for xx in [x-w/2+i*1.0 for i in range(9)]: D.cbox('stoneDark',[xx,.72,z],[.025,1.4,d+.025])
@@ -430,6 +444,17 @@ for tid,(x,z,h) in enumerate([(-29,28,7.2),(-12,31,6.5),(17,31,7.6),(29,28,6.9)]
             aa=(x+(a[0]-x)*.88,a[1]+rise*.16+.045,z+(a[2]-z)*.88)
             bb=(x+(b[0]-x)*.88,b[1]+rise*.16+.045,z+(b[2]-z)*.88)
             D.tri('snow' if i%4 else 'snowShade',aa,bb,(x,yy+rise+.08,z))
+# Continuous snow skirts ground the garden trees and fences beyond the play boundary.
+for x0,x1,z0,z1 in ((-180,180,-180,-24),(-180,180,24,180),(-180,-30,-24,24),(30,180,-24,24)):
+    D.box('snowShade',(x0,-3,z0),(x1,-.025,z1))
+# A broad, subdued ridge has depth and an irregular rounded crest, never isolated peaks.
+for i in range(36):
+    xa=-180+i*10; xb=xa+10
+    ha=5+1.7*math.sin(i*.31)+1.0*math.cos(i*.81)
+    hb=5+1.7*math.sin((i+1)*.31)+1.0*math.cos((i+1)*.81)
+    za=-144+4*math.sin(i*.2);zb=-144+4*math.sin((i+1)*.2)
+    D.quad('distant',(xa,-.02,-96),(xb,-.02,-96),(xb,hb,zb),(xa,ha,za))
+    D.quad('snowBlue',(xa,ha,za),(xb,hb,zb),(xb,1.0,-180),(xa,1.0,-180))
 # Background tree silhouettes branch naturally; entirely beyond the authoritative boundary.
 for i,x in enumerate((-26,-15,-4,8,21)):
     z=29+(i%2)*3;h=7+(i%3);beam(D,'timberDark',(x,0,z),(x+.35,h,z),.21,7)
@@ -438,7 +463,6 @@ for i,x in enumerate((-26,-15,-4,8,21)):
         beam(D,'timberDark',a,b,.075,5)
         beam(D,'timberDark',b,(b[0]+side*.7,b[1]+1.1,b[2]-.4),.032,5)
         beam(D,'snow',(a[0],a[1]+.06,a[2]),(b[0],b[1]+.06,b[2]),.045,5)
-for i in range(10): mountain(D,'distant',-100+i*23,-95,25,12+(i*7%13))
 # ---------------------------------------------------------------- 2026-10-28 light & winter dressing
 # Warm lamplight against blue snow (SAKURA's lantern contrast, in a winter key), icicles
 # and drifts for texture, and a burning city on the northern horizon for depth and story.
@@ -457,9 +481,9 @@ for x in (-13.5,-4.5,4.5,13.5):
 # Warming braziers on the spawn screens' coping (unreachable 3.4 m tops).
 for side in (-1,1):
     for zz in (-3.6,3.6):
-        fx,fy,fz=brazier(D,side*24,3.42,zz,.8,legs=False)
+        fx,fy,fz=brazier(D,side*23,3.42,zz,.8,legs=False)
         GLOWS.append([fx,round(fy+.08,2),fz,1.7,'#ffa34d',.8]); EMBERS.append([fx,fy,fz,.3])
-        POOLS.append([side*24-side*1.6,0,zz,2.4,'#ff9b4a',.35])
+        POOLS.append([side*23-side*1.6,0,zz,2.4,'#ff9b4a',.35])
 # Icicles along every eave the player sees: arcade roof edges and the palace cornice.
 for z in (-22.75,-13.25):
     for i in range(80):
@@ -480,7 +504,7 @@ for z in range(-20,21,3):
 for x in (-18,-9,0,9,18):
     for z in (-21.5,-14.5): D.blob('snowShade',(x,1.32,z),.7,.1)
 for side in (-1,1):
-    for zz in (-5,5): D.blob('snow',(side*24-side*.5,.02,zz),.9,.16)
+    for zz in (-5,5): D.blob('snow',(side*23-side*.5,.02,zz),.9,.16)
 # Sled and boot tracks pressed into the southern park snow.
 for k,(z0,dz) in enumerate([(17.2,.3),(18.8,-.25)]):
     for i in range(40):
@@ -656,4 +680,28 @@ for group,names,scale in [
 # material). Floors and wayfinding stay separate nodes so they keep out of the shadow pass.
 for o in c.objects:
     if not o.get('batch') and o['role'] not in ('floor','wayfinding'): o['batch']='court'
+
+# Playable route craft: Dark blue landing inlays distinguish canal exits and terrace climbs from the snow.
+# A marker is drawn only where an existing solid floor supports the landing at its
+# actual elevation. All pieces are under 2 cm tall, flush with the walking surface.
+landing_frames=0
+for o in c.objects:
+    if o['type']!='ramp': continue
+    (rx,ry,rz),(rw,rh,rd)=o['position'],o['size']; axis=o['axis']; low=o['lowAt']; length=rw if axis=='x' else rd
+    for edge in (-1,1):
+        yy=ry+(rh if edge==-low else 0)
+        x=rx+edge*(length/2+.28) if axis=='x' else rx
+        z=rz+edge*(length/2+.28) if axis=='z' else rz
+        supported=any(q['type']=='box' and q.get('collision') and abs(q['position'][1]+q['size'][1]/2-yy)<.055 and abs(x-q['position'][0])<q['size'][0]/2 and abs(z-q['position'][2])<q['size'][2]/2 for q in c.objects)
+        if not supported: continue
+        span=min(1.75,(rd if axis=='x' else rw)-.24)
+        width,depth=(.34,span) if axis=='x' else (span,.34)
+        D.cbox('blue',[x,yy+.008,z],[width,.012,depth])
+        for side in (-1,1):
+            xx=x+side*(width/2-.035) if axis=='z' else x
+            zz=z+side*(depth/2-.035) if axis=='x' else z
+            D.cbox('gold',[xx,yy+.015,zz],[width-.08 if axis=='x' else .045,.006,depth-.08 if axis=='z' else .045])
+        landing_frames+=1
+print('Route landing frames:',landing_frames)
+
 c.save(render_object=crafted)
