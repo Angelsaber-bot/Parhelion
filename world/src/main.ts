@@ -2128,7 +2128,10 @@ function press(binding: string, repeat = false) {
 function release(binding: string) { keys.delete(binding); if (settings.action(binding) === 'aim') aim.held = down('aim'); }
 addEventListener('keydown', (e) => {
   audio.unlock(e);
-  if(dragLook&&e.code==='Escape'){dragLook=false;locked=false;clearInput();start.classList.remove('hidden');$('settings-open').classList.remove('hidden');languageToggle.hidden=false;return;}
+  // Drag-look has no pointer lock for Escape to release: the first press closes the big map if it is open,
+  // and leaving to the menu never leaves the map (or the servant inspection) up behind it.
+  if(dragLook&&e.code==='Escape'&&$('bigmap').classList.contains('open')){e.preventDefault();clearInput();$('bigmap').classList.remove('open');return;}
+  if(dragLook&&e.code==='Escape'){dragLook=false;locked=false;clearInput();inspectServant=false;$('bigmap').classList.remove('open');start.classList.remove('hidden');$('settings-open').classList.remove('hidden');languageToggle.hidden=false;return;}
   if(dragLook&&/^Arrow(Left|Right|Up|Down)$/.test(e.code)&&!narrative?.open&&!settingsPanel.open){e.preventDefault();keys.add(e.code);return;}
   if (e.metaKey || e.ctrlKey || e.altKey) { clearInput(); return; }
   if (narrative?.choosing && settings.action(e.code) !== 'interact' && locked && !settingsPanel.open && document.visibilityState === 'visible' && document.hasFocus()) {

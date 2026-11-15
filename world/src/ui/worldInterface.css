@@ -146,3 +146,10 @@ body.world-interface #world-vitals small:empty{display:none}
 body.world-interface #world-boss small:empty{display:none}
 
 .world-menu-navigation:has(#world-servant-claims-open){grid-template-columns:repeat(2,minmax(0,1fr))}
+/* Travel panel on short windows: the heading and the close button stay in view and only the list of
+   stops scrolls. Before, the whole card scrolled and focus on the button at the end pushed the title
+   off the top. */
+.travel-card{display:flex;flex-direction:column;overflow:hidden;max-height:min(90vh,calc(100vh - 24px))}
+.travel-card>h2,.travel-card>p,.travel-card>button{flex:none}
+.travel-card>div{flex:1 1 auto;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding-right:4px}
+.travel-card>button{align-self:flex-start;margin-top:10px}
