@@ -353,6 +353,7 @@ scene.add(sun, sun.target);
 renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
 const shadowCenter = new THREE.Vector3(), lastShadowCenter = new THREE.Vector3(), shadowBasis = new THREE.Matrix4(), shadowInverse = new THREE.Matrix4();
 let groundGrimeSweep = 0;
+let weatherShelterTick = 0, weatherSheltered = false;
 let shadowTick = 0;
 const farProps = new FarPropCuller(), lastFarEye = new THREE.Vector3();
 let cameraKick = 0; const camRight = new THREE.Vector3();
@@ -5021,7 +5022,9 @@ function frame(now: number) {
   localLights.yieldSlots(lightCensus.active(camera));
   if (composer && !lowQ) shafts.update(camera, twilight.direction);
   grass?.update(camera.position, player.flying || player.gliding || player.swimming ? undefined : player.pos);
-  ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id, dt, renderer.domElement.height);
+  // Weather stays outdoors: a roof within reach above the lens clears the air (checked a few times a second).
+  if (ambient && (weatherShelterTick = (weatherShelterTick + 1) % 8) === 0) weatherSheltered = !!combat.geometry.cast({ x: camera.position.x, y: camera.position.y + .2, z: camera.position.z }, { x: 0, y: 1, z: 0 }, 14);
+  ambient?.update(camera.position, regionAt(player.pos.x, player.pos.z).id, dt, renderer.domElement.height, weatherSheltered);
   renderer.info.reset();
   if (composer) composer.render(); else renderer.render(scene, camera);
   frames++; fpsT += frameSeconds;

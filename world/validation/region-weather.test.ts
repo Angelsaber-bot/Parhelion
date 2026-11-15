@@ -51,3 +51,19 @@ test('returning to the current region during fade-out cancels the stale destinat
     assert.ok(weather.alpha > .99);
   } finally { weather.dispose(); }
 });
+
+test('under a roof the air clears quickly and comes back gently outside', async () => {
+  const { makeRegionWeather, SHELTER_FADE, REGION_WEATHER } = await import('../src/map/regionWeather');
+  const THREE = await import('three');
+  const weather = makeRegionWeather(64), cam = new THREE.Vector3();
+  for (let i = 0; i < 120; i++) weather.update(cam, 'alpha', 1 / 60);
+  const outdoors = weather.alpha; assert.ok(Math.abs(outdoors - REGION_WEATHER.alpha.opacity) < 1e-6);
+  weather.update(cam, 'alpha', .1, undefined, true); assert.ok(weather.alpha < outdoors && weather.alpha > 0, 'fades, does not pop');
+  for (let i = 0; i < 6; i++) weather.update(cam, 'alpha', .1, undefined, true);
+  assert.equal(weather.alpha, 0, 'no petals drifting through a bedroom');
+  weather.update(cam, 'alpha', .1); assert.ok(weather.alpha > 0 && weather.alpha < outdoors);
+  for (let i = 0; i < 12; i++) weather.update(cam, 'alpha', .1);
+  assert.ok(Math.abs(weather.alpha - outdoors) < 1e-6);
+  assert.ok(SHELTER_FADE.out < SHELTER_FADE.back);
+  weather.dispose();
+});

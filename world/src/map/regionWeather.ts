@@ -34,6 +34,8 @@ export const REGION_WEATHER: Readonly<Record<RegionId, WeatherPreset>> = Object.
 
 function mulberry32(a: number) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
+/** Seconds for the air to clear on stepping under a roof, and to return on stepping out. */
+export const SHELTER_FADE = Object.freeze({ out: .35, back: .9 });
 export function makeRegionWeather(count = 1600, size = 70) {
   const g = new THREE.BufferGeometry();
   const rng = mulberry32(23), seed = new Float32Array(count * 4);
@@ -99,13 +101,15 @@ export function makeRegionWeather(count = 1600, size = 70) {
     uniforms.uSizes.value.set(w.a.size, w.b.size); uniforms.uSplit.value = w.split; uniforms.uDensity.value = w.density;
     current = region;
   }
+  let open = 1;
   return {
     points,
     get region() { return current; },
     get alpha() { return uniforms.uAlpha.value; },
     uniforms,
-    /** `pixels` is the drawing-buffer height in device pixels, so motes keep their size on retina screens. */
-    update(cam: THREE.Vector3, region: RegionId, dtRaw = 1 / 60, pixels?: number) {
+    /** `pixels` is the drawing-buffer height in device pixels, so motes keep their size on retina screens.
+     * `sheltered`: the camera is under a roof, so the air clears (no petals or snow drifting through a bedroom). */
+    update(cam: THREE.Vector3, region: RegionId, dtRaw = 1 / 60, pixels?: number, sheltered = false) {
       if (pixels && Number.isFinite(pixels)) uniforms.uScale.value = pixels * .5;
       const dt = Number.isFinite(dtRaw) ? Math.max(0, Math.min(.1, dtRaw)) : 0;
       elapsed += dt; uniforms.uTime.value = elapsed; uniforms.uCam.value.copy(cam);
@@ -116,7 +120,8 @@ export function makeRegionWeather(count = 1600, size = 70) {
       if (pending && pending !== current) { fade = Math.max(0, fade - dt / .8); if (fade === 0) { apply(pending); pending = null; } }
       else { pending = null; fade = Math.min(1, fade + dt / 1.2); }
       const w = REGION_WEATHER[current!];
-      uniforms.uAlpha.value = fade * w.opacity;
+      open = sheltered ? Math.max(0, open - dt / SHELTER_FADE.out) : Math.min(1, open + dt / SHELTER_FADE.back);
+      uniforms.uAlpha.value = fade * w.opacity * open;
       drift.x += w.wind[0] * dt; drift.z += w.wind[1] * dt; drift.y += w.a.fall * dt; drift.w += w.b.fall * dt;
       // Keep the integrators small; the shader wraps positions anyway.
       const wrap = size * 64;
