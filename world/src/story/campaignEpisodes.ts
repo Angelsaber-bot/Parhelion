@@ -126,6 +126,12 @@ export function getCampaignEpisodeState(region: RegionId, done: ReadonlySet<stri
     : workDone ? 'decision' : done.has(flags.met) ? 'work' : 'briefing';
   return { region, stage, choice, evidenceReady, completed, workDone, workProgress: workDone ? 2 : done.has(flags.workFirst) ? 1 : 0, visualStage: completed ? 3 : choice ? 2 : stage === 'briefing' ? 0 : 1 };
 }
+/** A work or decision panel has nothing to offer before its keeper has explained the job. While that keeper is
+ * within reach, the Interact key belongs to them even if the panel happens to be the nearer of the two. */
+export function campaignMarkerAwaitsKeeper(markerId: string, npcId: string, done: ReadonlySet<string>): boolean {
+  const def = Object.values(CAMPAIGN_EPISODES).find(value => value.npc === npcId && (value.work === markerId || value.decision === markerId));
+  return !!def && getCampaignEpisodeState(def.region, done).stage === 'briefing';
+}
 export interface CampaignEpisodeGuide { title: Localized; text: Localized; targetId: string; targetKind: 'npc' | 'marker'; }
 /** Opt-in pin/journal only. Never silently replaces the actual main-story guide. */
 export function getCampaignEpisodeGuide(region: RegionId, done: ReadonlySet<string>, carrying: import('./residentEventRules').ResidentCarry = null): CampaignEpisodeGuide | null {

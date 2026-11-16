@@ -93,3 +93,24 @@ test('falling in the prologue fight gets you up a few strides short of the bay, 
   // The survey marker is 3.5 m in front of the bay and Gu Qiao's safe spot is 4.1 m: the new point clears both.
   assert.ok(3.5 + 7.5 - 4.1 > 5);
 });
+
+test('a keeper within reach takes the Interact key from the job they have not explained yet', async () => {
+  const { campaignMarkerAwaitsKeeper, CAMPAIGN_EPISODES, campaignEpisodeFlags } = await import('../src/story/campaignEpisodes');
+  const alpha = CAMPAIGN_EPISODES.alpha, done = new Set<string>();
+  assert.equal(campaignMarkerAwaitsKeeper(alpha.work, alpha.npc, done), true, 'not met yet: the receiver would only say "talk to Lan first"');
+  assert.equal(campaignMarkerAwaitsKeeper(alpha.decision, alpha.npc, done), true);
+  assert.equal(campaignMarkerAwaitsKeeper(alpha.work, 'alpha_steward', done), false, 'only their own keeper');
+  assert.equal(campaignMarkerAwaitsKeeper('armory_rack', alpha.npc, done), false, 'unrelated markers keep the nearest-wins rule');
+  done.add(campaignEpisodeFlags('alpha').met);
+  assert.equal(campaignMarkerAwaitsKeeper(alpha.work, alpha.npc, done), false, 'once briefed the panel is theirs to use');
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.equal(main.split("(typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(").length - 1, 2, 'the prompt and the key press agree');
+});
+
+test('the pact at the lake cuts to Saber at the guide frame, with the plain dialogue as the fallback', () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.ok(main.includes('const LAKE_PACT_SHOT = Object.freeze({ height: 1.25, width: 8, distance: 2.1, reach: 30 });'), 'wide to her front side: the winch stand sits on the line to the player');
+  const step = main.slice(main.indexOf('const line = commitJourneyStep(id, done);'), main.indexOf("else if (id === JOURNEY.visitorDesk) speakDialogue("));
+  assert.ok(step.includes("if (id === JOURNEY.lake && typeof servant !== 'undefined' && servant.root.visible && servant.root.position.distanceTo(player.pos) < LAKE_PACT_SHOT.reach) showJourneyPortrait(servant.root,"));
+  assert.ok(step.includes("else if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line,"), 'no Saber on screen: the old dialogue, unchanged');
+});

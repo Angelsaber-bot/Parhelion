@@ -163,7 +163,7 @@ import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalse
 import { createFalseDawnRuntime } from './story/falseDawnRuntime';
 import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './story/falseDawnEncounterCatalog';
 import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
-import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './story/campaignEpisodes';
+import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, campaignMarkerAwaitsKeeper, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './story/campaignEpisodes';
 import { createCampaignJournal } from './ui/campaignJournal';
 import { createTrackedStoryHud } from './ui/trackedStoryHud';
 import type { RegionId } from './settlements/types';
@@ -201,6 +201,7 @@ import { planBorderStitch, ridesWithGround } from './map/regionBorderStitch';
 import { planIceFloes, createIceFloes } from './environment/iceFloes';
 import { isSeamVeil, seamVeilMaterial } from './rendering/seamVeil';
 import { guideBeamLook } from './ui/guideBeamLook';
+import { guideEdgePosition } from './ui/guideEdge';
 import { shouldAnnounceArea, type AreaAnnounced } from './ui/areaBanner';
 import { installGroundGrime, bakeGroundHeights, adoptGroundGrime, groundGrimeUniforms } from './rendering/groundGrime';
 import { worldBootFailure } from './core/bootFailure';
@@ -1513,12 +1514,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   return null;
 }
 const _gv = new THREE.Vector3();
-/** Normalised screen position for the guide: on screen as is, otherwise on the HUD-safe ellipse. */
-function guideEdgePosition(sx: number, sy: number, behind: boolean): [boolean, number, number] {
-  const a = 0.86, b = sy >= 0 ? 0.68 : 0.6, r = Math.hypot(sx / a, sy / b);
-  if (!behind && r <= 1.05) return [false, sx, sy];
-  const k = 1 / Math.max(r, 1e-3); return [true, sx * k, sy * k];
-}
+let guideSide: -1 | 0 | 1 = 0;
 function updateGuide(t: { p: [number, number, number]; label: string } | null, now: number) {
   const el = $('guide');
   guideBeam.visible = !!t;
@@ -1538,8 +1534,9 @@ function updateGuide(t: { p: [number, number, number]; label: string } | null, n
   // Off-screen targets ride an ellipse inside the HUD corners (minimap, realm panel, skill bar)
   // and above the health bar, instead of a square that parked them on top of those.
   if (behind && Math.abs(sy) < 0.5) sy = -1;
-  const [edge, ex, ey] = guideEdgePosition(sx, sy, behind);
-  sx = ex; sy = ey;
+  // On screen as is; otherwise on the HUD-safe ellipse, held to one side of the toast and prompt column (guideEdge.ts).
+  const placed = guideEdgePosition(sx, sy, behind, innerWidth, guideSide), edge = placed.edge;
+  sx = placed.x; sy = placed.y; guideSide = placed.side;
   el.classList.toggle('edge', edge);
   (el.querySelector('.arrow') as HTMLElement).style.transform = `rotate(${Math.atan2(sx, sy)}rad)`;
   el.style.left = `${(sx * 0.5 + 0.5) * innerWidth}px`;
@@ -2755,6 +2752,7 @@ const realmEntrance = {
   },
 } satisfies Record<RealmClimaxId, { height: number; width: number; distance: number; lines: [string, string] }>;
 
+const LAKE_PACT_SHOT = Object.freeze({ height: 1.25, width: 8, distance: 2.1, reach: 30 });
 function showJourneyPortrait(actor: THREE.Object3D | undefined, height: number, width: number, distance: number,
   line: [string, string], speaker: [string, string]) {
   journeyPortrait = actor ? { actor, height, width, distance, elapsed: 0 } : null;
@@ -3855,7 +3853,10 @@ function interactWorldJourney(id: string) {
   if (id === JOURNEY.skyReview || id === JOURNEY.isolate || id === JOURNEY.skyCourt) { spawn = skyJourneySpawn(); combat.refillAmmo(); }
   if (id === JOURNEY.skyAnchor) combat.refillAmmo(24);
   saveJourneyProgress();
-  if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
+  // The pact at the lake is the first time Saber speaks: the camera goes to her at the guide frame rather than
+  // staying on the protagonist's back (same portrait shot as the realm entrances, and the same fallbacks).
+  if (id === JOURNEY.lake && typeof servant !== 'undefined' && servant.root.visible && servant.root.position.distanceTo(player.pos) < LAKE_PACT_SHOT.reach) showJourneyPortrait(servant.root, LAKE_PACT_SHOT.height, LAKE_PACT_SHOT.width, LAKE_PACT_SHOT.distance, line, ['镜湖的约定','Mirror Lake pact']);
+  else if (id === JOURNEY.lake || id === JOURNEY.epilogue) speakDialogue(line, id === JOURNEY.lake ? ['镜湖的约定','Mirror Lake pact'] : ['回望桥','Lookback Bridge']);
   else if (id === JOURNEY.visitorDesk) speakDialogue(line, ['王城访客','Kingdom visitor']);
   else {
     const familyRoll = id === JOURNEY.qinHalt && done.has(QIN_FIELD.lists.seats);
@@ -3963,10 +3964,20 @@ compactRelayRuntime = createCompactRelayRuntime({
   choices:(line,speaker,choices,select)=>{if(graphicsRecovery?.blocked||bootFailed||worldExited)return;clearInput();audio.interaction();narrative!.showChoices(line,speaker,choices,select);},
   deploy:()=>executeSafeTravel('compact_relay_outpost'),
 });
-const gateChannelHud=document.createElement('div');gateChannelHud.id='kingdom-gate-channel';Object.assign(gateChannelHud.style,{position:'fixed',left:'50%',bottom:'25%',transform:'translateX(-50%)',padding:'8px 14px',background:'#241f19e8',color:'#f4dfae',borderRadius:'6px',pointerEvents:'none'});gateChannelHud.hidden=true;document.body.append(gateChannelHud);
+const gateChannelHud=document.createElement('div');gateChannelHud.id='kingdom-gate-channel';Object.assign(gateChannelHud.style,{position:'fixed',left:'50%',bottom:'max(25%, 176px)',transform:'translateX(-50%)',padding:'8px 14px',background:'#241f19e8',color:'#f4dfae',borderRadius:'6px',pointerEvents:'none'});gateChannelHud.hidden=true;document.body.append(gateChannelHud);
 const relayChannelHud=document.createElement('div');relayChannelHud.id='compact-relay-channel';
-Object.assign(relayChannelHud.style,{position:'fixed',left:'50%',bottom:'18%',transform:'translateX(-50%)',maxWidth:'440px',padding:'10px 14px',border:'1px solid #8aa7b8',borderRadius:'6px',background:'#12252ee8',color:'#edf6fa',textAlign:'center',pointerEvents:'none',zIndex:'8'});
+Object.assign(relayChannelHud.style,{position:'fixed',left:'50%',bottom:'max(18%, 176px)',transform:'translateX(-50%)',maxWidth:'440px',padding:'10px 14px',border:'1px solid #8aa7b8',borderRadius:'6px',background:'#12252ee8',color:'#edf6fa',textAlign:'center',pointerEvents:'none',zIndex:'8'});
 const relayChannelText=document.createElement('div'),relayChannelBar=document.createElement('progress');relayChannelBar.max=3;relayChannelBar.value=0;relayChannelBar.style.width='100%';relayChannelHud.append(relayChannelText,relayChannelBar);relayChannelHud.hidden=true;document.body.append(relayChannelHud);
+// The two progress panels sit in the lower middle, where toasts appear and (on short windows) where the
+// interaction prompt is. They keep clear of the prompt by their own `bottom`, and tell the stylesheet where
+// their top is so a toast lands just above them instead of on top (`--world-channel-top`).
+let channelClearance = '';
+function syncChannelClearance() {
+  let top = 0;
+  for (const hud of [gateChannelHud, relayChannelHud]) { if (hud.hidden) continue; const rect = hud.getBoundingClientRect?.(); if (rect && rect.height > 0) top = Math.max(top, innerHeight - rect.top + 10); }
+  const value = `${Math.round(top)}px`;
+  if (value !== channelClearance) { channelClearance = value; document.body?.style?.setProperty?.('--world-channel-top', value); }
+}
 function renderCompactRelayHud(){
   const active=!!compactRelayRuntime?.active;relayChannelHud.hidden=!active||!gameplayActive();if(!active)return;
   const seconds=(compactRelayRuntime?.progress??0)*3;
@@ -4152,6 +4163,8 @@ function nearestInteract(): Marker | null {
     if (m.type !== 'interact') continue;
     if (m.id.startsWith('adventure_kyoto_witness_') && typeof kyotoWitnessActionReady === 'function' && !kyotoWitnessActionReady(m.id as KyotoWitnessAction, done)) continue;
     if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
+    // The uplink cabinet only does something while the exercise is running; otherwise its prompt just said "start at the entrance".
+    if (m.id === 'compact_relay_controller' && typeof compactRelayRuntime !== 'undefined' && !compactRelayRuntime?.active) continue;
     const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
     if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
       if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
@@ -4201,7 +4214,7 @@ function interactSettlementNpc() {
   const m = nearestInteract();
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
-  if (npc && (!m || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+  if (npc && (!m || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(m.id, npc.id, done)) || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
     if (typeof noteTalk === 'function') noteTalk(npc.id);
     if (typeof VALLEY_PROLOGUE !== 'undefined' && npc.id === VALLEY_PROLOGUE.steward && advancePrologue(npc.id)) return true;
     const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
@@ -4884,7 +4897,7 @@ function frame(now: number) {
   updateEraActors(dt);
   modelCompanion.update(dt, player.pos, anim.facing - Math.PI, !!modelCompanion.selected && contract.isFollowing(modelCompanion.selected) && companionEnabled(), !gameplayActive());
   actions?.flush(); actions?.present(dt); blade.update(!!actions?.melee.active);
-  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); }
+  if (hudBudget.due(now, {active: true, revision: hudRevision})) { renderContract(); actionHud.update(actions!, gameplayActive() && !inspectServant); updateTrackedStoryHud(); renderCompactRelayHud(); if (typeof syncChannelClearance === 'function') syncChannelClearance(); }
   settlements.update(player.pos);
   settlementApproaches.update(player.pos);
   const escortPoint=gateEscortPosition(kingdomGateRuntime?.escort??0);
@@ -5016,7 +5029,7 @@ function frame(now: number) {
   currentArea = area?.id ?? '';
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
-  const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
+  const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(it.id, nearbyNpc.id, done)) || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
     !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || worldJourneyMarkerIds.has(it.id) || modelClaimPoints.some(point => point.marker.id === it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
