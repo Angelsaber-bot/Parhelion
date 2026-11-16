@@ -23,3 +23,28 @@ test('direct-region saves can track local work but cannot be guided across a sti
   const copy = resolveTrackedStoryPoint('winter', 'alpha', done)!; copy[0] = 999;
   assert.notEqual(GATES.winter.p[0], 999);
 });
+
+import { gateGuidePoint, GATE_LEAD } from '../src/story/trackedStoryNavigation';
+import { readFileSync } from 'node:fs';
+test('a reached seam marker leads on into the next region instead of sitting under the player', () => {
+  const gate = GATES.britain.p, toward: [number, number] = [-720, 0];
+  assert.deepEqual(gateGuidePoint(gate, toward), [...gate], 'no player position: the marker itself');
+  assert.deepEqual(gateGuidePoint(gate, toward, [3, 20, 159]), [...gate], 'from across the valley: the marker itself');
+  assert.deepEqual(gateGuidePoint(gate, toward, [gate[0] + 60, 4, gate[2]]), [...gate], 'still walking up to it');
+  const at = gateGuidePoint(gate, toward, [gate[0], 4, gate[2]]);
+  assert.ok(Math.abs(Math.hypot(at[0] - gate[0], at[2] - gate[2]) - GATE_LEAD.ahead) < 1e-6 && at[0] < gate[0], `standing on it: ${GATE_LEAD.ahead} m further west`);
+  // Walking on: the guide stays the same stretch ahead (no snapping back behind you), all the way to the border.
+  let last = at[0];
+  for (let x = gate[0] - 5; x > gate[0] - 60; x -= 5) { const p = gateGuidePoint(gate, toward, [x, 4, gate[2] + 2]); assert.ok(p[0] < last && Math.hypot(p[0] - x, p[2] - gate[2] - 2) > GATE_LEAD.ahead - 3, `ahead of x=${x}`); last = p[0]; }
+  // A few strides short of the marker it already leads on, so the beacon never sits within arm's reach.
+  const short = gateGuidePoint(gate, toward, [gate[0] + GATE_LEAD.near - 2, 4, gate[2]]); assert.ok(short[0] < gate[0] - GATE_LEAD.ahead + 1);
+  // Far off to the side of the route, or with a broken position, the marker stands.
+  assert.deepEqual(gateGuidePoint(gate, toward, [gate[0] - 10, 4, gate[2] + GATE_LEAD.corridor + 30]), [...gate]);
+  assert.deepEqual(gateGuidePoint(gate, toward, [NaN, 4, 0]), [...gate]);
+  assert.deepEqual(gateGuidePoint(gate, [gate[0], gate[2]], [gate[0], 4, gate[2]]), [...gate], 'no direction to lead in');
+  const copy = gateGuidePoint(gate, toward); copy[0] = 999; assert.notEqual(GATES.britain.p[0], 999, 'never hands out the shared tuple');
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
+  assert.ok(main.includes('const y = grid.sampleHeight(q[0], q[2]);') && main.includes('return y === null ? q : [q[0], y, q[2]];'), 'shown on the ground, wherever it was authored');
+  assert.equal(main.split('resolveTrackedStoryPoint(here').length - 1, 1, 'every tracked story goes through the one seam-aware helper');
+  assert.ok(main.includes('if (gate) return { p: seamGuidePoint(gate.p, here, o.region), label:'));
+});

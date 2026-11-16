@@ -5,7 +5,7 @@ import { EGYPT_CAMPAIGN as EC, egyptChapterById, egyptChapterReady, egyptChapter
 import { createEgyptCampaignScene } from './environment/egyptCampaignScene';
 import { createOrleansCampaign, orleansActionById, orleansCampaignGuide, orleansCampaignReady } from './story/orleansCampaign';
 import { createOrleansCampaignScene } from './environment/orleansCampaignScene';
-import { createFieldChapters, fieldChapterGuide } from './story/fieldChapters';
+import { createFieldChapters, fieldChapterGuide, fieldEncounterId } from './story/fieldChapters';
 import { createFieldChapterScene } from './environment/fieldChapterScene';
 import { createValleyTownArchitecture } from './environment/valleyTownArchitecture';
 import { createHomeTownDistricts } from './environment/homeTownDistricts';
@@ -162,7 +162,7 @@ import { createFalseDawnSites } from './story/falseDawnSites';
 import { getFalseDawnState, getFalseDawnGuide, getFalseDawnMarkerLabel, getFalseDawnCompanionReaction, getFalseDawnObjective } from './story/falseDawnCampaign';
 import { createFalseDawnRuntime } from './story/falseDawnRuntime';
 import { getFalseDawnEncounterSpec, FALSE_DAWN_START_HINTS } from './story/falseDawnEncounterCatalog';
-import { resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
+import { gateGuidePoint, resolveTrackedStoryPoint, trackedStoryRouteBlocked } from './story/trackedStoryNavigation';
 import { CAMPAIGN_EPISODES, CAMPAIGN_REGIONS, campaignMarkerAwaitsKeeper, getCampaignEpisodeState, getCampaignEpisodeGuide, getCampaignEpisodeObjective, interactCampaignEpisode, chooseCampaignEpisode, type CampaignEpisodeInteraction } from './story/campaignEpisodes';
 import { createCampaignJournal } from './ui/campaignJournal';
 import { createTrackedStoryHud } from './ui/trackedStoryHud';
@@ -1446,13 +1446,25 @@ function toggleGuide() {
 }
 /** Next objective marker: current region first; another region's goal routes through its gate via 幻日谷. */
 const REGION_NAME: Record<string, string> = { alpha: '幻日谷', britain: '落日王国', blacksail: '黑帆尽头', winter: '永冬之城', kyoto: '业火京都' };
+/** A seam marker as the guide shows it: on the ground (one was authored 4 m under the ridge), and led on into
+ * the next region once the player has reached it. `destination` is where the story is heading. */
+function seamGuidePoint(p: [number, number, number], here: string, destination: string): [number, number, number] {
+  const toward = REGIONS.find(region => region.id === (here === 'alpha' ? destination : 'alpha'))?.offset;
+  const q = toward ? gateGuidePoint(p, toward, [player.pos.x, player.pos.y, player.pos.z]) : p;
+  const y = grid.sampleHeight(q[0], q[2]);
+  return y === null ? q : [q[0], y, q[2]];
+}
+function trackedStoryPoint(here: string, destination: string, local?: readonly [number, number, number] | null) {
+  const p = resolveTrackedStoryPoint(here, destination, done, local);
+  return p && here !== destination ? seamGuidePoint(p, here, destination) : p;
+}
 function guideTarget(): { p: [number, number, number]; label: string } | null {
   const here = regionAt(player.pos.x, player.pos.z).id;
   const quest=trackedQuest();
   if(quest){
     const enemy = quest.targetKind === 'enemy' ? combat.state.enemies.find(enemy=>enemy.id===quest.targetId && enemy.active && enemy.hp>0) : undefined;
     const local: [number,number,number] = quest.targetKind==='npc' ? settlementNpcs.getPosition(quest.targetId) ?? quest.position : enemy ? [enemy.p.x,enemy.p.y,enemy.p.z] : quest.position;
-    const p=isExpansionRegion(quest.region)?local:resolveTrackedStoryPoint(here,quest.region,done,local);
+    const p=isExpansionRegion(quest.region)?local:trackedStoryPoint(here,quest.region,local);
     if(p)return {p,label:bilingual(...quest.targetLabel)};
   }
   if(isExpansionRegion(here)) {
@@ -1466,7 +1478,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     else {
       const label = bilingual(`伪晓回声 · ${settings.label('mainRoute')}返回原主线`, `False Dawn · ${settings.label('mainRoute')} for original story`);
       const local = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
-      const p = resolveTrackedStoryPoint(here, guide.region, done, local); if (p) return { p, label };
+      const p = trackedStoryPoint(here, guide.region, local); if (p) return { p, label };
     }
   }
   if (campaignTrackedRegion) {
@@ -1475,7 +1487,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
     else {
       const label = bilingual(`可选纪事：${CAMPAIGN_EPISODES[campaignTrackedRegion].speaker[0]} · ${settings.label('mainRoute')}返回主线`, `Chronicle: ${CAMPAIGN_EPISODES[campaignTrackedRegion].speaker[1]} · ${settings.label('mainRoute')} for story`);
       const local = guide.targetKind === 'npc' ? settlementNpcs.getPosition(guide.targetId) : markers.get(guide.targetId)?.p;
-      const p = resolveTrackedStoryPoint(here, campaignTrackedRegion, done, local); if (p) return { p, label };
+      const p = trackedStoryPoint(here, campaignTrackedRegion, local); if (p) return { p, label };
     }
   }
   if(adventureActive(done)&&optionalPin){if(optionalPinExpired(optionalPin,here,player.pos,done,found))optionalPin=null;else return{p:optionalPin.p,label:bilingual(`可选：${optionalPin.label[0]} · ${settings.label('mainRoute')}返回主线`,`Optional: ${optionalPin.label[1]} · ${settings.label('mainRoute')} for story`)};}
@@ -1483,7 +1495,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
   if (opening) return { p: opening.p, label: bilingual(...opening.text) };
   const journey = typeof journeyGuide === 'function' ? journeyGuide() : null;
   if (journey) return { p: journey.p, label: bilingual(...journey.text) };
-  const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&resolveTrackedStoryPoint(here,adventure.region,done,local);if(p)return{p,label:bilingual(...adventure.text)};}
+  const adventure=isCampaignRegion(here)?getCurrentAdventureGuide(here,done):null;if(adventure){const local=adventure.targetKind==='npc'?settlementNpcs.getPosition(adventure.targetId):markers.get(adventure.targetId)?.p;const p=local&&trackedStoryPoint(here,adventure.region,local);if(p)return{p,label:bilingual(...adventure.text)};}
   if(adventureActive(done))return null;
   const intro = valleyGuide();
   if (intro) return { p: intro.p, label: bilingual(...intro.text) };
@@ -1504,7 +1516,7 @@ function guideTarget(): { p: [number, number, number]; label: string } | null {
         // leave through this region's own gate, or from 幻日谷 head for the target region's gate
         const gate = here === 'alpha' ? GATES[o.region] : GATES[here];
         const to = here === 'alpha' ? o.region : 'alpha';
-        if (gate) return { p: gate.p, label: bilingual(`前往${REGION_NAME[to] ?? to}（${gate.via}）`, `Travel to ${localizeText(REGION_NAME[to] ?? to)} (${localizeText(gate.via)})`) };
+        if (gate) return { p: seamGuidePoint(gate.p, here, o.region), label: bilingual(`前往${REGION_NAME[to] ?? to}（${gate.via}）`, `Travel to ${localizeText(REGION_NAME[to] ?? to)} (${localizeText(gate.via)})`) };
       }
       // markers that can be used now come first (e.g. the dummies before the shard they unlock)
       const ready = (m: Marker) => (m.requires ?? []).every((r) => done.has(r)) ? 0 : 1;
@@ -4192,6 +4204,11 @@ function nearestInteract(): Marker | null {
     if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
     if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
     if(fieldChapters?.has(m.id)&&!fieldChapters.ready(m.id))continue;
+    // A field fight starts on Interact; once it is running the marker has nothing more to give, and its "[F] clear the
+    // crossbows" prompt only answered "another fight is active". Same for a timed job already under way.
+    if(fieldChapters?.has(m.id)&&(combat.storyEncounter?.id===fieldEncounterId(m.id)||fieldChapters.working()===m.id))continue;
+    // The gate's gold latch is gone once it is unlocked (its target hides too); its prompt outlived it.
+    if(m.id===KINGDOM_GATE.latch&&(done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)))continue;
     if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
   return best;
