@@ -51,7 +51,7 @@ export function createKingdomGateRuntime(h:GateHooks){
    }else if(id===KINGDOM_GATE.latch)this.unlock();
    else if(id===KINGDOM_GATE.winch){
     channeling=!h.done.has(KINGDOM_GATE.open)&&h.done.has(KINGDOM_GATE.unlocked);
-    h.toast(channeling?['松开后按住交互键三秒转动绞盘。','Release, then hold Interact for three seconds to turn the winch.']:['先解除金色锁扣；已打开的城门会保持开放。','Release the gold latch first; an open gate stays open.']);
+    h.toast(channeling?['站稳，按住交互键三秒转动绞盘。','Stand still and hold Interact for three seconds to turn the winch.']:['先解除金色锁扣；已打开的城门会保持开放。','Release the gold latch first; an open gate stays open.']);
    }else if(id===KINGDOM_GATE.service&&h.done.has(KINGDOM_GATE.rescued)){const healed=h.supply();h.toast(healed?['归人递来补给，体力已恢复。','The returners offer supplies; health restored.']:['归路仍然开放。脱离战斗并稍作休息后，可以在这里补给。','The way remains open. Leave combat and rest briefly to resupply here.']);}
   },
   update(frame:Omit<RelayChannelFrame,'active'|'damageRevision'>,escortSafe:boolean,advance:(fraction:number)=>boolean){

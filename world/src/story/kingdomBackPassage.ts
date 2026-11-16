@@ -89,7 +89,8 @@ export const K04_ACTIONS: readonly FieldAction[] = [
   a({ id: K.residents, near: 'kingdom_gate_latch', off: [1, 11], kind: 'work', seconds: 9, after: [K.open],
     label: ['安全锚点 · 让居民分段过街', 'Safe anchors · Move residents in stages'],
     line: ['居民一段一段走到有掩体的锚点，危险时就停在檐下。没有人需要跟着一辆慢车走完整张地图。', 'Residents move from one covered anchor to the next and wait under eaves when it is dangerous. Nobody has to follow a slow cart across the map.'] }),
-  a({ id: K.ada, near: 'kingdom_works_evening_bell', off: [3, -3], after: [K.residents], adds: [K.complete],
+  // Off the square side of the tower: [3, -3] landed inside the tower itself (roof 2.5 m up, walls on two sides).
+  a({ id: K.ada, near: 'kingdom_works_evening_bell', off: [-2, -3], after: [K.residents], adds: [K.complete],
     label: ['钟楼脚下 · 看艾妲开工', 'Bell tower foot · Watch Ada start work'],
     line: ['艾妲没有等谁来交任务，已经开始把钟楼的工具搬下来。街区重新连上了。', 'Ada does not wait to be handed a task; she is already carrying the bell tower tools down. The districts are connected again.'] }),
 ];

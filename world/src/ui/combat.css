@@ -96,4 +96,5 @@ body.world-dialogue-open #world-combat-feedback{visibility:hidden}
 .story-shot-top{top:0}.story-shot-bottom{bottom:0;transform:translateY(100%)}
 .story-shot-line{position:fixed;left:50%;bottom:13vh;transform:translateX(-50%);max-width:min(860px,86vw);z-index:8;pointer-events:none;opacity:0;
   font:500 17px/1.6 system-ui,-apple-system,'PingFang SC',sans-serif;color:#f6f1e6;text-align:center;text-shadow:0 1px 3px #000c}
-body.story-shot-on :is(#objective,#minimap,#guide,#world-vitals,#world-boss,#world-action-bar,#world-shortcuts,#elite-hint,#xp-hud,#crosshair,#prompt,#world-combat-feedback,#world-damage-numbers){visibility:hidden}
+/* The shot's own subtitle is the chapter's closing line, which is also what the toast says: show it once. */
+body.story-shot-on :is(#objective,#minimap,#guide,#world-vitals,#world-boss,#world-action-bar,#world-shortcuts,#elite-hint,#xp-hud,#crosshair,#prompt,#toast,#world-combat-feedback,#world-damage-numbers){visibility:hidden}

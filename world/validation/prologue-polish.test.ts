@@ -122,3 +122,14 @@ test('prompts leave once their marker has nothing left to give: a running field 
   assert.ok(nearest.includes('if(m.id===KINGDOM_GATE.latch&&(done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)))continue;'), 'the latch prompt outlived the latch');
   assert.ok(nearest.indexOf('fieldEncounterId(m.id)') < nearest.indexOf('const d = Math.hypot(') || nearest.indexOf('fieldEncounterId(m.id)') > 0);
 });
+
+test('kingdom: the winch says what it does, its prompt and the latch prompt leave once the gate is open, Ada stands outside the tower', async () => {
+  const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8'), gate = readFileSync(new URL('../src/story/kingdomGate.ts', import.meta.url), 'utf8');
+  assert.ok(!main.includes('站稳，松开后按住 ${settings.label') && !gate.includes('松开后按住交互键三秒转动绞盘'), 'the first press already turns the winch: no "release, then hold"');
+  assert.ok(main.includes('站稳，继续按住 ${settings.label(\'interact\')}') && gate.includes("['站稳，按住交互键三秒转动绞盘。'"));
+  assert.ok(main.includes('if(m.id===KINGDOM_GATE.winch&&done.has(KINGDOM_GATE.open))continue;'));
+  const { K04_ACTIONS, K04 } = await import('../src/story/kingdomBackPassage');
+  assert.deepEqual(K04_ACTIONS.find(a => a.id === K04.ada)!.off, [-2, -3], 'off the square side: [3, -3] put the step inside the bell tower');
+  const css = readFileSync(new URL('../src/ui/combat.css', import.meta.url), 'utf8');
+  assert.match(css, /body\.story-shot-on :is\([^)]*#toast[^)]*\)\{visibility:hidden\}/, 'the closing line shows once, as the subtitle');
+});
