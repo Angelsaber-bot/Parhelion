@@ -117,7 +117,7 @@ test('the pact at the lake cuts to Saber at the guide frame, with the plain dial
 
 test('prompts leave once their marker has nothing left to give: a running field fight or job, an unlocked gate latch', () => {
   const main = readFileSync(new URL('../src/main.ts', import.meta.url), 'utf8');
-  const nearest = main.slice(main.indexOf('function nearestInteract()'), main.indexOf('function canReachValleyPanel('));
+  const nearest = main.slice(main.indexOf('function nearestInteract('), main.indexOf('function canReachValleyPanel('));
   assert.ok(nearest.includes('if(fieldChapters?.has(m.id)&&(combat.storyEncounter?.id===fieldEncounterId(m.id)||fieldChapters.working()===m.id))continue;'), 'K01 "[F] clear the crossbows" stayed up through the fight it had started');
   assert.ok(nearest.includes('if(m.id===KINGDOM_GATE.latch&&(done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)))continue;'), 'the latch prompt outlived the latch');
   assert.ok(nearest.indexOf('fieldEncounterId(m.id)') < nearest.indexOf('const d = Math.hypot(') || nearest.indexOf('fieldEncounterId(m.id)') > 0);

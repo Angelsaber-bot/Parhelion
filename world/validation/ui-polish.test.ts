@@ -72,6 +72,6 @@ test('off-screen objective marker rides the HUD-safe ellipse but stays out of th
 });
 
 test('the uplink cabinet offers its prompt only while the exercise is running', () => {
-  const nearest = main.slice(main.indexOf('function nearestInteract()'), main.indexOf('function canReachValleyPanel('));
+  const nearest = main.slice(main.indexOf('function nearestInteract('), main.indexOf('function canReachValleyPanel('));
   assert.ok(nearest.includes("if (m.id === 'compact_relay_controller' && typeof compactRelayRuntime !== 'undefined' && !compactRelayRuntime?.active) continue;"));
 });

@@ -1,4 +1,5 @@
 import { MountedIdleTurn } from '../companions/mountedIdleTurn';
+import { clampUvChannels } from '../rendering/uvChannels';
 import { attachCaptainCavalryArt } from '../cinematics/captainCavalryArt';
 import { remasterCaptainCavalryClip } from '../cinematics/captainCavalryClip';
 import * as THREE from 'three';
@@ -63,6 +64,7 @@ export async function loadCharacterKit(definition: CharacterKitDefinition, optio
   const bytes = await decodeCharacterAsset(transport.buffer);
   options.signal?.throwIfAborted();
   const gltf = await new GLTFLoader().parseAsync(bytes, '');
+  clampUvChannels(gltf.scene);
   try {
     options.signal?.throwIfAborted();
     return new CharacterKit(gltf, definition, options);

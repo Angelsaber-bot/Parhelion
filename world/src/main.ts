@@ -3936,7 +3936,7 @@ egyptCampaign=createChapterWorkRuntime({done,actions:egyptChapterById,ready:egyp
 });
 fieldChapters=createFieldChapters({done,sets:FIELD_CHAPTER_CONTENT.map(c=>c.set),save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
  position:id=>markers.get(id)?.p,
- reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachValleyPanel(m);},
+ reachable:id=>{const m=markers.get(id);return !!m&&gameplayActive()&&!combat.defeated&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??3)&&canReachFieldMarker(m);},
  start:spec=>{const slots:[number,number][]=[];for(const r of [4,6,8])for(let i=0;i<12;i++)slots.push([Math.cos(i*Math.PI/6)*r,Math.sin(i*Math.PI/6)*r]);const actors=selectStoryPositions(spec,spec.actors,slots);return actors.length===spec.actors.length&&combat.startStoryEncounter({...spec,actors},{position:player.pos,playable:gameplayActive()&&player.onGround&&!combat.defeated}).ok;},
 });
 orleansCampaign=createOrleansCampaign({done,save,changed:applyWorldState,toast:line=>toast(bilingual(...line)),
@@ -4169,10 +4169,22 @@ function firePellets(origin: THREE.Vector3, look: THREE.Vector3, muzzle: THREE.V
 }
 
 // ───────────── interaction / discovery ─────────────
-function nearestInteract(): Marker | null {
+/** Markers that only answer a side question: locked ones ("still needs …"), a beaten boss's core (rechallenge)
+ * and a servant's invitation point once they have joined (Orleans' arrival square: Jeanne's 7 m invitation ring
+ * covered the market contact, so F kept re-inviting her). */
+function secondaryMarker(m: Marker) {
+  if ((m.requires ?? []).some(r => !done.has(r))) return true;
+  if (!done.has(m.id)) return false;
+  return BOSSES.some(b => b.core === m.id) || (typeof modelClaimPoints !== 'undefined' && modelClaimPoints.some(point => point.marker.id === m.id));
+}
+/** A locked marker (its `requires` unmet) only answers "still needs …". When an unlocked one is also in reach, the
+ * unlocked one gets the key: Kyoto's bellflower shard sits 3 m from the Akechi ledger and took the prompt from it. */
+function nearestInteract(skipLocked = false): Marker | null {
   let best: Marker | null = null, bd = Infinity;
+  let fieldStep: Marker | null = null, fieldStepD = Infinity;
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
+    if (skipLocked && typeof secondaryMarker === 'function' && secondaryMarker(m)) continue;
     if (m.id.startsWith('adventure_kyoto_witness_') && typeof kyotoWitnessActionReady === 'function' && !kyotoWitnessActionReady(m.id as KyotoWitnessAction, done)) continue;
     if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
     // The uplink cabinet only does something while the exercise is running; otherwise its prompt just said "start at the entrance".
@@ -4207,12 +4219,26 @@ function nearestInteract(): Marker | null {
     // A field fight starts on Interact; once it is running the marker has nothing more to give, and its "[F] clear the
     // crossbows" prompt only answered "another fight is active". Same for a timed job already under way.
     if(fieldChapters?.has(m.id)&&(combat.storyEncounter?.id===fieldEncounterId(m.id)||fieldChapters.working()===m.id))continue;
+    if(fieldChapters?.has(m.id)&&typeof canReachFieldMarker==='function'&&!canReachFieldMarker(m))continue;
     // The gate's gold latch is gone once it is unlocked (its target hides too); its prompt outlived it.
     if(m.id===KINGDOM_GATE.latch&&(done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)))continue;
     if(m.id===KINGDOM_GATE.winch&&done.has(KINGDOM_GATE.open))continue;
+    // The chapter's own next step beats an optional resident errand standing on the same spot (W05's stretcher
+    // and the "pad the stretcher" errand share a square metre; the errand won and the chapter could not advance).
+    if(fieldChapters?.has(m.id)&&!fieldChapters.action(m.id)?.optional&&d<(m.radius??3)){fieldStep=fieldStep&&fieldStepD<=d?fieldStep:m;fieldStepD=Math.min(fieldStepD,d);}
     if (d < (m.radius ?? 3) && (d < bd || (adventureActive(done)&&residentEventMarkerIds.has(m.id)&&d<bd+.12)) && ((m.id !== VALLEY_STORY.discovery && !eraOptionalIds.has(m.id) && !campaignMarkerIds.has(m.id) && !falseDawnMarkerIds.has(m.id) && !compactRelayMarkerIds.has(m.id) && !kingdomGateMarkerIds.has(m.id) && !adventureMarkerIds.has(m.id) && !residentEventMarkerIds.has(m.id) && !parallaxMarkerIds.has(m.id) && !orleansWorksMarkerIds.has(m.id)) || canReachValleyPanel(m))) { bd = d; best = m; }
   }
+  // Same for a beaten boss's core: "[F] rechallenge" sat a step from J09's latch and restarted the fight instead.
+  if (best && fieldStep && best !== fieldStep && ((typeof residentEventMarkerIds !== 'undefined' && residentEventMarkerIds.has(best.id)) || (done.has(best.id) && BOSSES.some(b => b.core === best!.id)))) return fieldStep;
+  if (!skipLocked && best && typeof secondaryMarker === 'function' && secondaryMarker(best)) return nearestInteract(true) ?? best;
   return best;
+}
+/** Field chapter steps often sit on the thing you work on (a boat's thwart, a crate lid). A clear line to the
+ * step itself or to a point just above it counts as reachable: the hull or lid it rests on no longer hides it,
+ * a wall still does. The prompt and the key press use the same test, so a prompt never shows for a press that
+ * would silently do nothing (B05's boat did exactly that). */
+function canReachFieldMarker(marker: Marker) {
+  return canReachValleyPanel(marker) || canReachValleyPanel({ ...marker, p: [marker.p[0], marker.p[1] + .8, marker.p[2]] });
 }
 function canReachValleyPanel(marker: Marker) {
   const from = player.pos.clone().add(new THREE.Vector3(0, 1.2, 0));
@@ -4228,11 +4254,17 @@ function nearbySettlementNpc() {
   if (distance > .05 && combat.geometry.cast(from, delta, Math.max(0,distance-.25))) return null;
   return npc;
 }
+/** The person the quest beacon stands on gets the Interact key over a marker beside them (Orleans: the market
+ * contact stood next to Jeanne's invitation point, and F kept inviting Jeanne instead of talking to him). */
+function guidedToNpc(position: readonly [number, number, number]) {
+  // The beam itself fades out within a few metres; the guide marker's `on` state says a target is set.
+  return typeof guideBeam !== 'undefined' && !!document.getElementById('guide')?.classList.contains('on') && Math.hypot(guideBeam.position.x - position[0], guideBeam.position.z - position[2]) < .75;
+}
 function interactSettlementNpc() {
   const m = nearestInteract();
   const npc = nearbySettlementNpc();
   // Quest targets retain priority whenever nearer; dialog never marks quest progress complete.
-  if (npc && (!m || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(m.id, npc.id, done)) || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
+  if (npc && (!m || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(m.id, npc.id, done)) || (typeof guidedToNpc === 'function' && guidedToNpc(npc.position)) || player.pos.distanceTo(new THREE.Vector3(...npc.position)) < player.pos.distanceTo(new THREE.Vector3(...m.p)))) {
     if (typeof noteTalk === 'function') noteTalk(npc.id);
     if (typeof VALLEY_PROLOGUE !== 'undefined' && npc.id === VALLEY_PROLOGUE.steward && advancePrologue(npc.id)) return true;
     const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
@@ -5047,7 +5079,7 @@ function frame(now: number) {
   currentArea = area?.id ?? '';
   const it = nearestInteract();
   const nearbyNpc = gameplayActive() && !player.flying ? nearbySettlementNpc() : null;
-  const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(it.id, nearbyNpc.id, done)) || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
+  const npcPrompt = !fortCannon.mounted && nearbyNpc && (!it || (typeof campaignMarkerAwaitsKeeper === 'function' && campaignMarkerAwaitsKeeper(it.id, nearbyNpc.id, done)) || (typeof guidedToNpc === 'function' && guidedToNpc(nearbyNpc.position)) || player.pos.distanceTo(new THREE.Vector3(...nearbyNpc.position)) < player.pos.distanceTo(new THREE.Vector3(...it.p)));
   let interactionPrompt = fortCannon.mounted ? bilingual(`[${settings.label('fire')}] 炮击 · ${fortCannon.reload > 0 ? `装填 ${fortCannon.reload.toFixed(1)} 秒` : '就绪'} · [${settings.label('interact')}] 离开炮位`, `[${settings.label('fire')}] Cannon · ${fortCannon.reload > 0 ? `Reload ${fortCannon.reload.toFixed(1)}s` : 'Ready'} · [${settings.label('interact')}] Leave`) : npcPrompt ? bilingual(`[${settings.label('interact')}] 与${nearbyNpc.role[0]}交谈`, `[${settings.label('interact')}] Talk to ${nearbyNpc.role[1]}`) :
     !gameplayActive() ? '' : !player.flying && it && (!done.has(it.id) || worldJourneyMarkerIds.has(it.id) || modelClaimPoints.some(point => point.marker.id === it.id) || parallaxMarkerIds.has(it.id) || eraOptionalIds.has(it.id) || it.id === FORT_CANNON.marker || (it.id === CAMPAIGN_CLOSURE.terminal && !!getCampaignClosureGuide('alpha',done)) || BOSSES.some(b => b.core === it.id)) ?
       `[${settings.label('interact')}] ${done.has(it.id) && BOSSES.some(b => b.core === it.id) ? bilingual('再次挑战 Boss（不重复领取首通奖励）', 'Rechallenge Boss (no repeat first-clear reward)') : interactionLabel(it)}` :
@@ -5132,7 +5164,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { composer, groundGrime: groundGrimeUniforms, get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { get helionFight() { return typeof helionFight !== 'undefined' ? helionFight : null; }, composer, groundGrime: groundGrimeUniforms, get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

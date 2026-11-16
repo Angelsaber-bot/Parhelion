@@ -4,6 +4,7 @@ import { ORLEANS_CAMPAIGN as OC } from './orleansCampaign';
 import { EGYPT_WATER_RECORD } from './egyptGauge';
 import { QIN_ARMY } from '../map/qinPlan';
 import { EGYPT_MIRRORS } from '../map/egyptPlan';
+import { egyptMirrorToTurn } from '../environment/egyptSunMirrors';
 import { ORLEANS_WORKS as O } from '../map/orleansWorks';
 import type { WorldRegionId } from '../core/regionIdentity';
 import type { Localized } from '../settlements/types';
@@ -271,7 +272,7 @@ export function worldJourneyGuide(here: JourneyRegion, done: ReadonlySet<string>
       return regionalHandover('orleans', done);
     }
     if (!done.has(J.egyptRead)) return at(J.egyptRead);
-    if (!done.has(EGYPT_MIRRORS.solved)) return objective('egypt', EGYPT_MIRRORS.mirrors[0].id, ['将三面铜镜的光路接入圣所。', 'Guide the light through three bronze mirrors into the sanctuary.']);
+    if (!done.has(EGYPT_MIRRORS.solved)) return objective('egypt', egyptMirrorToTurn(done), ['将三面铜镜的光路接入圣所。光停在哪面镜子，就转哪一面。', 'Guide the light through three bronze mirrors into the sanctuary. Turn the mirror where the light stops.']);
     return done.has(J.egyptWeir) ? regionalHandover('egypt', done) : at(J.egyptWeir);
   }
   const fresh = done.has(VALLEY_PROLOGUE.record);

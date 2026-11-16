@@ -119,3 +119,16 @@ export function createEgyptSunMirrors(convert: (m: THREE.Material) => THREE.Mate
     dispose() { if (disposed) return; disposed = true; doorCollider.enabled = false; root.removeFromParent(); [mirrorGeo, doorGeo, discGeo, doorCollisionGeo, unitCyl, halo.geometry].forEach(g => g.dispose()); [bronze, stone, beamMat, coreMat, haloMat].forEach(m => m.dispose()); },
   };
 }
+
+/** The mirror to turn next: the one the light last reached (where it now stops or goes astray). Pointing the
+ * guide at the first mirror sent players back to turn a mirror that was already right. */
+export function egyptMirrorToTurn(done: ReadonlySet<string>): string {
+  const { points, lit } = traceSunlight(done);
+  if (lit) return EGYPT_MIRRORS.mirrors[EGYPT_MIRRORS.mirrors.length - 1].id;
+  for (let i = points.length - 1; i >= 0; i--) {
+    const hit = EGYPT_MIRRORS.mirrors.find(m => Math.hypot(m.p[0] - points[i][0], m.p[1] - points[i][1]) < 1);
+    if (hit) return hit.id;
+  }
+  return EGYPT_MIRRORS.mirrors[0].id;
+}
+

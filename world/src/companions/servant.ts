@@ -1,4 +1,5 @@
 import { createSaberLiveExpression } from '../cinematics/saberLiveExpression';
+import { clampUvChannels } from '../rendering/uvChannels';
 import { skillAnimationProfile, skillAnimationSample } from '../combat/skillAnimationProfile';
 import * as THREE from 'three';
 import { validSkillPose, type SkillPoseCommand } from '../combat/skillPose';
@@ -38,7 +39,9 @@ export async function decodeServantModel(bytes: ArrayBuffer): Promise<ArrayBuffe
 export async function loadServantGltf(url: string): Promise<GLTF> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Artoria asset HTTP ${response.status}`);
-  return new GLTFLoader().parseAsync(await decodeServantModel(await response.arrayBuffer()), '');
+  const gltf = await new GLTFLoader().parseAsync(await decodeServantModel(await response.arrayBuffer()), '');
+  clampUvChannels(gltf.scene);
+  return gltf;
 }
 export const SERVANT_CLIPS = ['Idle', 'Walk', 'Run', 'Attack'] as const;
 // Authored runtime_revision1 timing (30fps); movement and gait share the same speed budget.
