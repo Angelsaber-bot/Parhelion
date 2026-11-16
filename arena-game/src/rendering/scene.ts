@@ -49,7 +49,8 @@ import { flashTexture } from './fxShapes.ts';
 import { signatureFx, SWING_STYLES, type GunFx, type MeleeFx } from '../cosmetics/signatureFx.ts';
 import { KillFinishers } from './killFinishers.ts';
 import { GrenadeView } from './grenades.ts';
-import { insideSmoke, smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
+import { smokeBlocks, type Grenade, type Smoke } from '../../shared/grenade.ts';
+import { SmokeVolumePass, SmokeNameplate } from './smokeVolume.ts';
 import { BLACKFLAG_ATMOSPHERE, BlackflagEffects, blackflagCastsShadow } from './blackflagPresentation.ts';
 import {graphicsPixelRatio,type GraphicsQuality} from './graphics.ts';
 import {lightWeaponScene,renderHeldWeapon} from '../weapons/weaponLighting.ts';
@@ -91,6 +92,7 @@ export class ArenaScene {
   private bloom: UnrealBloomPass | null = null;
   private outline: OutlinePass | null = null;
   private fxaa: ShaderPass | null = null;
+  private smokeVolume: SmokeVolumePass | null = null;
   private telemetry: ReturnType<typeof renderTelemetry> = null;
   private mapPresentation: MapPresentation | undefined;
   private shownMapId='';
@@ -104,7 +106,7 @@ export class ArenaScene {
     this.combatEffects = new ArenaCombatEffects(this.scene, this.sparkTex, quality);
     this.weaponFx = new WeaponFx(this.scene, quality);
     this.killFinishers = new KillFinishers(this.scene);
-    this.grenadeView = new GrenadeView(this.scene);
+    this.grenadeView = new GrenadeView(this.scene, true);
     this.heroEffects = new HeroEffects(this.scene);
     const r = new THREE.WebGLRenderer({ canvas, antialias: true });
     r.setPixelRatio(graphicsPixelRatio(quality,devicePixelRatio,innerWidth,innerHeight));
@@ -163,14 +165,18 @@ export class ArenaScene {
     r.shadowMap.enabled=true;r.shadowMap.needsUpdate=true;
     const shadowSize=this.quality==='high'?2048:1024;
     if(this.sun.shadow.mapSize.x!==shadowSize){this.sun.shadow.map?.dispose();this.sun.shadow.map=null;this.sun.shadow.mapSize.set(shadowSize,shadowSize);}
+    // Both quality modes need actual scene depth while smoke is active.
+    const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:0});
+    this.composer=new EffectComposer(r,rt);this.composer.addPass(new RenderPass(this.scene,this.camera));
     if(this.quality==='high'){
-      // Single-sample HDR + one lightweight edge pass, never HDR MSAA × supersampling.
-      const rt=new THREE.WebGLRenderTarget(1,1,{type:THREE.HalfFloatType,depthTexture:new THREE.DepthTexture(1,1),samples:0});
-      this.composer=new EffectComposer(r,rt);this.composer.addPass(new RenderPass(this.scene,this.camera));
       this.outline=new OutlinePass(this.camera);this.composer.addPass(this.outline);
-      this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold);this.composer.addPass(this.bloom);this.composer.addPass(new OutputPass());
-      this.fxaa=new ShaderPass(FXAAShader);this.composer.addPass(this.fxaa);
     }
+    this.smokeVolume=new SmokeVolumePass(this.camera);this.smokeVolume.sync(this.smokes,0);this.composer.addPass(this.smokeVolume);
+    if(this.quality==='high'){
+      this.bloom=new UnrealBloomPass(new THREE.Vector2(256,256),this.atmo.bloom,.55,this.atmo.bloomThreshold);this.composer.addPass(this.bloom);
+    }
+    this.composer.addPass(new OutputPass());
+    this.fxaa=new ShaderPass(FXAAShader);this.composer.addPass(this.fxaa);
   }
   /** Live quality changes do not replace the match, map or weapon selection. */
   setQuality(quality:GraphicsQuality){
@@ -434,7 +440,7 @@ export class ArenaScene {
   /** Page teardown only; ordinary rounds retain the bounded reusable resources. */
   disposeCombatEffects() { this.combatEffects.dispose(); this.weaponFx?.dispose(); this.killFinishers?.dispose(); this.grenadeView?.dispose(); this.heroEffects.dispose();this.viewmodel.hands.dispose(); }
   private smokes: readonly Smoke[] = [];
-  syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.smokes = smokes; this.grenadeView?.sync(grenades, smokes, since); }
+  syncGrenades(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) { this.smokes = smokes; this.smokeVolume?.sync(smokes, since); this.grenadeView?.sync(grenades, smokes, since); }
   /** Frag detonation: flash, shockwave, smoke, plus sparks from the shared effect pool. */
   grenadeBlast(at: Vec3) { this.grenadeView?.blast(at); for (let i = 0; i < 10; i++) this.combatEffects.burst([at[0], at[1] + .3, at[2]], i % 2 ? 0xffd27a : 0xff7a3a, .12, .45, 7, 'ember'); }
   smokePop(at: Vec3) { for (let i = 0; i < 6; i++) this.combatEffects.burst([at[0], at[1] + .2, at[2]], 0xdfe6ee, .4, .6, 2.2); }
@@ -453,14 +459,16 @@ export class ArenaScene {
       this.avatars.set(p.id, a);
       this.scene.add(a.root);
     }
-    if (a.root.visible !== p.alive) a.resetMotion(p.crouched, p.grounded);
+    if (a.alive !== p.alive) a.resetMotion(p.crouched, p.grounded);
+    a.alive = p.alive;
     a.root.visible = p.alive;
     a.setAlly(ally);
-    // Smoke hides an enemy completely: no nameplate or health bar through or inside a cloud.
-    const head: Vec3 = [pos[0], pos[1] + 1.6, pos[2]], eye = this.camera.position;
-    const obscured=!ally&&this.smokes.length>0&&(insideSmoke(this.smokes,head)||smokeBlocks(this.smokes,[eye.x,eye.y,eye.z],head));
-    a.conceal(obscured);a.root.visible=p.alive&&!obscured;
+    // Only HUD labels use a binary visibility test. Body/weapon pixels are depth-clipped
+    // by the smoke pass, including when either player is inside the volume.
+    const head: Vec3 = [pos[0], pos[1] + (p.crouched ? 1.05 : 1.6), pos[2]], eye = this.camera.position;
+    const obscured=!ally&&smokeBlocks(this.smokes,[eye.x,eye.y,eye.z],head);
     const now = performance.now() / 1000;
+    a.conceal(obscured, now);
     a.setWeapon(p.weapon, p.skins[p.weapon] ?? 0);
     const facing = p.meleeWindup > 0 ? p.meleeYaw : yaw;
     if(p.ability)a.ability(CHARACTERS[p.char].ability,p.ability.phase);
@@ -522,6 +530,7 @@ export class ArenaScene {
   clearCombatEffects() {
     this.combatEffects.clear(); this.weaponFx?.clear(); this.killFinishers?.clear(); this.grenadeView?.clear(); this.heroEffects.clear();
     this.flashT = 0; this.muzzleLight.intensity = 0;
+    this.smokes = []; this.smokeVolume?.sync([], 0);
     this.syncShields([]); this.viewmodel.resetMotion();
     for (const avatar of this.avatars.values()) avatar.resetMotion();
   }
@@ -555,7 +564,7 @@ export class ArenaScene {
     const r = this.renderer;
     r.clear();
     this.chapterEffects?.sync(this.camera, r.getDrawingBufferSize(this.bufferSize).y, this.scene.fog as THREE.Fog);
-    if (this.composer) this.composer.render();
+    if (this.composer && (this.quality === 'high' || this.smokeVolume?.enabled)) this.composer.render();
     else r.render(this.scene, this.camera);
     if (showViewmodel) {
       renderHeldWeapon(r,this.vmScene,this.vmCamera);
@@ -917,6 +926,7 @@ export class Viewmodel {
 
 class Avatar {
   readonly root = new THREE.Group();
+  alive = false;
   readonly aim: THREE.Group;
   muzzle = new THREE.Object3D();
   readonly char: number;
@@ -932,6 +942,7 @@ class Avatar {
   private motion = new AvatarMotion();
   private weapon = 0;
   private meleeHit = 0;
+  private smokeNameplate = new SmokeNameplate();
 
   constructor(p: PlayerSnap) {
     this.char = p.char;
@@ -964,7 +975,7 @@ class Avatar {
   setAlly(ally: boolean) {
     this.plate.material.depthTest = !ally;
   }
-  conceal(hidden: boolean) { this.plate.visible = !hidden; }
+  conceal(hidden: boolean, now: number) { this.plate.visible = !this.smokeNameplate.update(hidden, now); }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
   ability(kind:string,phase:string){this.anim.ability(kind,phase);if(this.gun)this.gun.visible=abilityAllowsGunplay(this.char)||phase==='idle'||phase==='recovery';}

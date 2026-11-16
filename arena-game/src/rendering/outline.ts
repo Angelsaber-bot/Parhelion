@@ -29,6 +29,7 @@ const OutlineShader = {
     }
     void main() {
       vec4 col = texture2D(tDiffuse, vUv);
+      gl_FragDepth = texture2D(tDepth, vUv).x;
       vec2 px = thickness / resolution;
       float c = lin(vUv);
       if (c > cameraFar * 0.9) { gl_FragColor = col; return; } // sky
@@ -46,6 +47,10 @@ const OutlineShader = {
 export class OutlinePass extends ShaderPass {
   constructor(private camera: THREE.PerspectiveCamera) {
     super(OutlineShader);
+    // The following smoke pass needs the original geometry depth after this buffer swap.
+    this.material.depthTest = true;
+    this.material.depthWrite = true;
+    this.material.depthFunc = THREE.AlwaysDepth;
   }
 
   render(renderer: THREE.WebGLRenderer, writeBuffer: THREE.WebGLRenderTarget, readBuffer: THREE.WebGLRenderTarget, deltaTime: number, maskActive: boolean) {

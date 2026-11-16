@@ -429,18 +429,6 @@ export class Game {
   private draw(dt: number) {
     if(this.latest)this.lesson?.update(this.latest,this.me);
     this.remotes = this.interpolate();
-    const ids = new Set<string>();
-    for (const r of this.remotes) {
-      ids.add(r.snap.id);
-      this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
-    }
-    for(const e of this.latest?.entities??[])if(e.kind==='decoy') {
-      const owner=this.latest!.players.find(p=>p.id===e.owner);if(!owner)continue;
-      const fake={...owner,id:`echo-${e.id}`,x:e.x,y:e.y,z:e.z,hp:e.shownHp,alive:true,weapon:e.weapon,char:e.char,ability:{...owner.ability,phase:'idle' as const},name:e.team===this.me?.team?`${e.name} ◇`:e.name};
-      ids.add(fake.id);this.scene.syncAvatar(fake,[e.x,e.y,e.z],e.yaw,0,fake.team===this.me?.team);
-    }
-    this.scene.endAvatars();
-    this.scene.pruneAvatars(ids);
     if (this.latest) { this.scene.syncHeroes(this.latest,this.session.id,this.map,this.me?{...this.me,yaw:this.controls.yaw,pitch:this.controls.pitch}:null); this.scene.syncShields(this.latest.shields); this.scene.syncGrenades(this.latest.grenades ?? [], this.latest.smokes ?? [], (performance.now() - this.latestAt) / 1000); }
 
     const me = this.me;
@@ -480,6 +468,19 @@ export class Game {
       vm.reloading = me.reload > 0 ? 1 - me.reload / w.reload : 0;
       vm.moving = me.grounded ? Math.min(1, Math.hypot(me.vx, me.vz) / 5) : 0;
     }
+    // Resolve avatar labels against this frame's camera and smoke snapshot.
+    const ids = new Set<string>();
+    for (const r of this.remotes) {
+      ids.add(r.snap.id);
+      this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
+    }
+    for(const e of this.latest?.entities??[])if(e.kind==='decoy') {
+      const owner=this.latest!.players.find(p=>p.id===e.owner);if(!owner)continue;
+      const fake={...owner,id:`echo-${e.id}`,x:e.x,y:e.y,z:e.z,hp:e.shownHp,alive:true,weapon:e.weapon,char:e.char,ability:{...owner.ability,phase:'idle' as const},name:e.team===this.me?.team?`${e.name} ◇`:e.name};
+      ids.add(fake.id);this.scene.syncAvatar(fake,[e.x,e.y,e.z],e.yaw,0,fake.team===this.me?.team);
+    }
+    this.scene.endAvatars();
+    this.scene.pruneAvatars(ids);
     this.scene.update(dt);
     this.scene.render(!!me?.alive);
     const ping = this.session.online ? bilingual(`快照间隔 ${Math.round(this.snapGap)} ms`, `Snapshot interval ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');

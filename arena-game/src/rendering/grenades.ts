@@ -51,7 +51,7 @@ export class GrenadeView {
   private smokeTex = softTexture('rgba(235,240,245,1)', 'rgba(200,208,218,.7)');
   private fireTex = softTexture('rgba(255,250,220,1)', 'rgba(255,150,60,.8)');
   private time = 0;
-  constructor(private parent: THREE.Object3D) {}
+  constructor(private parent: THREE.Object3D, private volumeSmoke = false) {}
 
   /** `since` = seconds elapsed after the snapshot these states came from (for smooth flight). */
   sync(grenades: readonly Grenade[], smokes: readonly Smoke[], since: number) {
@@ -83,6 +83,9 @@ export class GrenadeView {
     for (const [id, v] of this.live) if (!seen.has(id)) { this.drop(v.model); this.drop(v.warn); this.live.delete(id); }
     const clouds = new Set<number>(), curtains=new Set<number>();
     for (const s of smokes) {
+      // The gameplay camera uses continuous depth-clipped volumes. The standalone
+      // loadout preview retains its lightweight billboards and curtain demonstration.
+      if (this.volumeSmoke && (s.delay ?? 0) <= 0) continue;
       if(s.box){
         curtains.add(s.id);let curtain=this.curtains.get(s.id);
         if(!curtain){curtain=new THREE.Mesh(new THREE.BoxGeometry(s.box.width,s.box.height,s.box.depth),new THREE.ShaderMaterial({uniforms:{time:{value:0},warmup:{value:0}},vertexShader:'varying vec3 vP; void main(){vP=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',fragmentShader:'varying vec3 vP;uniform float time;uniform float warmup;void main(){float n=sin(vP.x*8.+time)*sin(vP.y*7.-time*.7)+sin(vP.z*13.+vP.y*4.+time*.5);vec3 c=mix(vec3(.27,.33,.39),vec3(.57,.62,.65),.5+n*.12);gl_FragColor=vec4(c,warmup);}',transparent:true,depthWrite:false,side:THREE.DoubleSide}));curtain.name='Black sail smoke volume';this.parent.add(curtain);this.curtains.set(s.id,curtain);}
