@@ -28,7 +28,15 @@ export function dramaChapterReady(region:RegionId,done:ReadonlySet<string>){
 }
 export type DramaBeat='opening'|'brief'|'report'|'confession'|'decision'|'revisit';
 export interface DramaScene{region:RegionId;beat:DramaBeat;speaker:Localized;text:Localized;choices:readonly NarrativeChoice[];}
-const accept:readonly NarrativeChoice[]=[{id:'accept',label:['我会亲自去看。','I will see it for myself.']},{id:'later',label:['先留着，等我回来。','Keep it for me. I will return.']}];
+/** The same two answers everywhere ("I'll see for myself" / "keep it for me") read oddly after Ada asks you to walk
+ * people through a gate or Misha says someone must take the cart by hand. Same ids, so nothing else changes. */
+const BRIEF_REPLY:Record<RegionId,readonly NarrativeChoice[]>={
+ alpha:[{id:'accept',label:['我去接通线路。','I will get the line through.']},{id:'later',label:['先留着，等我回来。','Keep it for me. I will return.']}],
+ britain:[{id:'accept',label:['我带他们穿过门。','I will walk them through the gate.']},{id:'later',label:['等我准备好再来。','I will come back when I am ready.']}],
+ blacksail:[{id:'accept',label:['我会让船真的开出去。','I will see the ship actually leave.']},{id:'later',label:['等我回来再出发。','Wait for me before it sails.']}],
+ winter:[{id:'accept',label:['渡口我来接。','I will take it at the crossing.']},{id:'later',label:['先走着，我随后赶上。','Go on; I will catch up.']}],
+ kyoto:[{id:'accept',label:['我去看原来的命令。','I will read the original order.']},{id:'later',label:['纸先压着，我会回来。','Keep it weighted down; I will be back.']}],
+};
 const acknowledge:readonly NarrativeChoice[]=[{id:'accept',label:['把这件事记下来。','Put that in the record.']},{id:'later',label:['我还想再看看现场。','I want another look at the site.']}];
 const BRIEF:Record<RegionId,Localized>={
  alpha:['岚把耳机递给你。杂音里，一个声音重复报着同一个坐标。\n“终端说撤离已经完成。可完成的事情，不该还在求救。”她指了指你空着的枪套，“先到工坊领装备。那不是让你替我打一场胜仗——我要你去看看，路的另一头到底还有谁。”\n岚把回执翻了过去，拇指停在落款的位置。‘回来以后，先叫我的名字。’','Lan hands you the headphones. A voice in the static keeps repeating the same coordinates.\n“The terminal says the evacuation is complete. Completed evacuations should not still be calling for help.” She glances at your empty holster. “Get your equipment. I am not asking you to win a war. I need you to see who is still at the other end of the road.”\nShe turns the receipt face down, keeping her thumb over the signature. “When you return, say my name first.”'],
@@ -52,12 +60,12 @@ export function journeyScene(npc:string,done:ReadonlySet<string>):DramaScene|nul
  if(region==='alpha'){
   if(!done.has(JOURNEY_DRAMA.opening))return {...base,beat:'opening',text:done.has(VALLEY_PROLOGUE.record)
     ? ['岚把你带回的两个人名抄在回执背面。“外联还断着。到工坊北面的服务庭院，把线路接通。等那边的人自己回答，我们再写谁已经到家。”', 'Lan copies both names onto the back of the receipt. “The uplink is still down. Reconnect it in the service yard north of the armory. We’ll write down who’s home when they answer for themselves.”']
-    : BRIEF.alpha,choices:accept};
+    : BRIEF.alpha,choices:BRIEF_REPLY.alpha};
   if(dramaReported(done).length>=2&&!done.has(JOURNEY_DRAMA.confession))return {...base,beat:'confession',text:['岚看完两份回执，把自己的签名盖在掌心下面。\n“是我签的。那天频道只肯接受‘已到达’。我怕通道一关，后面的人就出不来了。我以为，先让系统相信他们到了，再慢慢找。”\n“后来，通道开始反复执行最后一条命令。只要记录说所有人安全，任何求救都会被当成杂音。”\n她松开手：“我不是要你替我原谅这件事。塔里的三个转发器还在复制那张回执。先把真的人带回来，再来关掉它们。”','Lan covers her signature with her palm.\n“I signed it. That day the channel would accept only Arrived. I was afraid closing it would trap everyone behind us. I thought we could tell the system they were safe, then find them.”\n“Instead, the channel kept executing the last order. If the record says everyone is safe, every call for help becomes noise.”\nShe lifts her hand. “I am not asking forgiveness. Three tower transmitters still copy that receipt. Bring the real people home, then shut them down.”'],choices:[{id:'accept',label:['把原始记录留下。我们一起处理。','Keep the original record. We will deal with this together.']},{id:'later',label:['我需要再想想。','I need time to think.']}]};
   if(done.has('adventure_escaped')&&dramaReported(done).length===4&&done.has(JOURNEY_DRAMA.confession)&&!dramaDecision(done))return {...base,beat:'decision',text:['塔不再替所有人回答。岚把值守牌和频率表摆在你面前。\n“这一次，我不能再替所有人签字。你想让这个频道变成什么？”\n开放频道，让每个地区留下自己的原始呼叫；或者保留一盏值守灯，让五地轮班的人亲口确认每一次抵达。两条路都不再用沉默证明安全。','The tower no longer answers for everyone. Lan places the watch roster beside the frequency list.\n“This time, I cannot sign for all of them. What should this channel become?”\nOpen it so each region keeps its own calls, or keep a watch light staffed in turns by all five regions. Neither choice treats silence as proof of safety.'],choices:[{id:'open',label:['开放频道，各地保留自己的声音。','Open the channel. Let each region keep its own voice.']},{id:'watch',label:['保留值守，五地轮班确认抵达。','Keep the watch. Take turns confirming each arrival.']}]};
   return {...base,beat:'revisit',text:dramaReported(done).length?['岚把频率表往你这边推了推：“别只带回终端的答案。告诉我，你见到了谁。”','Lan slides the frequency list toward you. “Bring more than the terminal’s answer. Tell me who you met.”']:REPORT.alpha,choices:[{id:'personal',label:['先聊聊收讯台。','Tell me about your receiver.']},{id:'later',label:['我会再来。','I will return.']}]};
  }
- if(!done.has(JOURNEY_DRAMA.brief(region)))return {...base,beat:'brief',text:BRIEF[region],choices:accept};
+ if(!done.has(JOURNEY_DRAMA.brief(region)))return {...base,beat:'brief',text:BRIEF[region],choices:BRIEF_REPLY[region]};
  if(dramaChapterReady(region,done)&&!done.has(JOURNEY_DRAMA.report(region)))return {...base,beat:'report',text:REPORT[region],choices:acknowledge};
  return null;
 }

@@ -178,7 +178,7 @@ import { createRealmClimaxSites } from './environment/realmClimaxSites';
 import { climaxMarker, climaxCheckpoint, climaxCleared, createRealmClimax, REALM_CLIMAX_IDS, REALM_CLIMAXES, type ClimaxStation, type RealmClimaxId } from './story/realmClimaxes';
 import { createSkyCrownScene, insideSkyCrown, SKY_CHECKPOINT, SKY_CROWN_RECOVERY, SKY_LANDING } from './environment/skyCrownScene';
 import { SKY_DOWN_LIFT, SKY_HALL_CHECKPOINT, SKY_THROAT_CHECKPOINT, SKY_UP_LIFT } from './environment/skyCrownApproach';
-import { createHelionFight } from './story/helionFight';
+import { createHelionFight, SKY_SHUTTERS, SHUTTER_SPAN } from './story/helionFight';
 import { commitJourneyStep, JOURNEY, JOURNEY_DISPATCH, journeyClimaxReady, journeyDestinations, journeyEnabled, journeyStepById, journeyStepReady, journeyTowerReady, legacySkyApproach, REALM_HANDOVER, SKY_MARKERS, SKY_PHASE_LABELS, skyPhase, worldJourneyGuide } from './story/worldJourney';
 import { advanceValleyPrologue, PROLOGUE_LABELS, VALLEY_PROLOGUE, VALLEY_RESCUE_ENCOUNTER, VALLEY_SURVEY_HEIGHT, valleyPrologueGuide, valleyPrologueStage } from './story/valleyPrologue';
 import { isEraId, ERA_STORIES, ERA_OPTIONALS, getEraStoryState, getEraStoryGuide, getEraObjective, applyEraMarkerRequirements, getEraPieceRequirements, interactEraStory, getEraProgressReaction } from './story/eraStories';
@@ -4044,6 +4044,10 @@ function shoot() {
   const wallDist = wall?.distance ?? 150;
   const target = ray.intersectObjects(targets.filter((t) => t.visible), false)[0];
   const questHit = target && target.distance <= wallDist + .04 ? target : undefined;
+  // Helion's weak points can sit squarely behind a shutter from where the player stands. A shot that would have
+  // reached one but met the shutter first says so, once in a while, instead of vanishing without a trace.
+  if (!questHit && target && wall && typeof helionFight !== 'undefined' && helionFight.active && target.object.userData.target === SKY_MARKERS.target
+    && typeof helionShutterHint === 'function') helionShutterHint(wall.point);
   // Fixtures that execute this function in isolation may provide a combat facade without state.
   const gun = combat.state?.gun ?? { range: WORLD_RIFLE.enemyRange, damage: WORLD_RIFLE.damage, pellets: 1, spread: 0 } as typeof combat.state.gun;
   const enemy = combat.raycast(origin,look,Math.min(gun.range,wallDist,questHit?.distance ?? 150));
@@ -4179,6 +4183,25 @@ function secondaryMarker(m: Marker) {
 }
 /** A locked marker (its `requires` unmet) only answers "still needs …". When an unlocked one is also in reach, the
  * unlocked one gets the key: Kyoto's bellflower shard sits 3 m from the Akechi ledger and took the prompt from it. */
+const CAMERA_WATER_CLEARANCE = .35;
+function cameraAboveWater(p: THREE.Vector3) {
+  const inland = player.waterSurfaceAt?.(p), surface = inland != null && Number.isFinite(inland) ? inland : player.waterLevel;
+  if (p.y >= surface + CAMERA_WATER_CLEARANCE) return false;
+  // The real ground (carved shores and ponds sit below the height grid), probed from just above the surface.
+  const floor = combat.geometry.ground(p.x, p.z, surface + 2)?.point.y ?? grid.sampleHeight(p.x, p.z);
+  if (floor == null || floor >= surface) return false;
+  p.y = surface + CAMERA_WATER_CLEARANCE; return true;
+}
+let helionHintAt = -Infinity;
+/** Toast (at most every 8 s) when a shot at Helion met one of the shutters. */
+function helionShutterHint(point: THREE.Vector3) {
+  const behindShutter = SKY_SHUTTERS.some(p => Math.abs(point.x - p[0]) <= SHUTTER_SPAN / 2 + .6 && Math.abs(point.z - p[2]) < 1.5 && point.y > p[1] - .5 && point.y < p[1] + 7);
+  const now = performance.now();
+  if (!behindShutter || now - helionHintAt < 8000) return false;
+  helionHintAt = now;
+  toast(bilingual('遮板挡住了射线：横移到遮板外侧，或转动遮板再射击。', 'A shutter is in the way: step out past its edge, or turn the shutter, then fire.'));
+  return true;
+}
 function nearestInteract(skipLocked = false): Marker | null {
   let best: Marker | null = null, bd = Infinity;
   let fieldStep: Marker | null = null, fieldStepD = Infinity;
@@ -4835,6 +4858,9 @@ function frame(now: number) {
     const want = shoulderArmLength(ads, player.gliding, hit?.distance);
     camDist = want < camDist ? want : THREE.MathUtils.damp(camDist, want, 6, dt);
     camera.position.copy(pivot).addScaledVector(back, camDist);
+    // Swimming, the arm used to dip under the surface: the view became a flat pale sheet (the water's back face)
+    // with the protagonist half cut off. Over open water the lens stays a hand's width above the surface.
+    if (typeof cameraAboveWater === 'function') cameraAboveWater(camera.position);
     eye.copy(camera.position);
   } else camera.position.copy(eye);
   // Heavy contacts nudge the view for a few frames (weight, not shake): a damped two-axis wobble.

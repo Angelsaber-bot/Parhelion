@@ -43,3 +43,21 @@ test('Egypt mirrors: the guide points at the mirror where the light stops, not a
   const journey = readFileSync(new URL('../src/story/worldJourney.ts', import.meta.url), 'utf8');
   assert.ok(journey.includes("objective('egypt', egyptMirrorToTurn(done),"));
 });
+
+test('helion: a shot that meets a shutter says how to get past it; swimming never puts the lens under the surface', () => {
+  const fire = main.slice(main.indexOf('const questHit = target && target.distance <= wallDist + .04'), main.indexOf('const enemy = combat.raycast(origin,look'));
+  assert.ok(fire.includes("target.object.userData.target === SKY_MARKERS.target") && fire.includes('helionShutterHint(wall.point)'));
+  const hint = main.slice(main.indexOf('function helionShutterHint('), main.indexOf('function nearestInteract('));
+  assert.ok(hint.includes('now - helionHintAt < 8000') && hint.includes('SKY_SHUTTERS.some('), 'only for the shutters, and not every shot');
+  const water = main.slice(main.indexOf('function cameraAboveWater('), main.indexOf('let helionHintAt'));
+  assert.ok(water.includes('floor >= surface') && water.includes('combat.geometry.ground(p.x, p.z, surface + 2)') && water.includes('p.y = surface + CAMERA_WATER_CLEARANCE'), 'only over open water, judged by the real ground');
+  assert.ok(main.includes("if (typeof cameraAboveWater === 'function') cameraAboveWater(camera.position);"));
+});
+
+test('each regional brief answers in its own words, with the same two choice ids', async () => {
+  const { journeyScene } = await import('../src/story/journeyDrama');
+  const src = readFileSync(new URL('../src/story/journeyDrama.ts', import.meta.url), 'utf8');
+  assert.ok(!src.includes("'我会亲自去看。'"), 'the generic reply is gone');
+  for (const region of ['alpha', 'britain', 'blacksail', 'winter', 'kyoto']) assert.ok(src.includes(` ${region}:[{id:'accept',label:[`), region);
+  assert.equal(typeof journeyScene, 'function');
+});
