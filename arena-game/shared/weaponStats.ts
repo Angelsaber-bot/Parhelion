@@ -113,7 +113,7 @@ export interface ShotStat {
   enemyAlive: boolean;
 }
 
-const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? (({101:'barrage',102:'wind',103:'broadside',104:'solar'} as Record<number,string>)[wi]??'frag');
+const weaponId = (wi: number): string => WEAPONS[wi]?.id ?? (({101:'barrage',102:'wind',103:'hook',104:'solar',105:'edict',106:'swallow'} as Record<number,string>)[wi]??'frag');
 
 function newWeaponLine(): WeaponLine {
   return {
@@ -205,7 +205,7 @@ export class StatsCollector {
     if (v) v.damageTaken += applied;
     const w = this.weapon(attacker, wi);
     if (w) w.damage += applied;
-    if(wi>=101&&wi<=104)this.abilityEvent(attacker,'damage',applied);
+    if(wi>=101&&wi<=106)this.abilityEvent(attacker,'damage',applied);
     if (!killed) return;
     if (a) { a.kills++; if (wi===100) a.fragKills++; }
     if (w) {
@@ -252,7 +252,7 @@ const str = (v: unknown, max: number): string => typeof v === 'string' ? v.slice
 const team = (v: unknown): Team => v === 'B' ? 'B' : 'A';
 const ints = (v: unknown, n: number): number[] => Array.from({ length: n }, (_, i) => int(Array.isArray(v) ? v[i] : 0));
 const KNOWN_WEAPONS = new Set<string>([...GUN_IDS, ...MELEE_IDS]);
-const KNOWN_DEATHS = new Set<string>([...KNOWN_WEAPONS, 'frag', 'barrage', 'wind', 'broadside', 'solar']);
+const KNOWN_DEATHS = new Set<string>([...KNOWN_WEAPONS, 'frag', 'barrage', 'wind', 'broadside', 'hook', 'solar', 'edict', 'swallow']);
 
 function cleanWeapon(raw: unknown): WeaponLine {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;

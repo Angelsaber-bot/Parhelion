@@ -399,7 +399,7 @@ export class Match {
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
-      dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0,
+      dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, rootUntil: 0, exposedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
       shieldCd: Math.max(0,p.ability.readyAt-this.tick), abilityTick:this.tick, lastDamageTick:-10000, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0,
     });
     const home = this.practice?.homes.get(p.id);
@@ -638,7 +638,7 @@ export class Match {
     if (slot.spawnProtectedUntilTick > this.tick) slot.spawnProtectedUntilTick = this.tick;
   }
 
-  private spawnProtected(id: string): boolean {
+  spawnProtected(id: string): boolean {
     const slot = this.slots.get(id);
     return !!slot?.state.alive && this.tick < slot.spawnProtectedUntilTick;
   }
@@ -657,6 +657,7 @@ export class Match {
     if (!v || !v.state.alive || dmg <= 0 || this.spawnProtected(victimId)) return;
     if (WEAPONS[weapon]?.kind === 'gun' && WEAPONS[v.state.weapon]?.kind === 'melee') dmg = Math.max(1, Math.round(dmg * MELEE_MOVE.gunDamageTaken));
     if (WEAPONS[weapon]?.kind === 'gun' && this.heroes.protectedByBanner(v.state)) dmg = Math.max(1, Math.round(dmg * HERO_COMBAT.prayer.resist));
+    if (v.state.exposedUntil > this.tick) dmg = Math.round(dmg * HERO_COMBAT.edict.vulnerable);
     this.heroes.damaged(v.state);
     const applied = Math.min(v.state.hp, dmg);
     v.state.hp = Math.max(0, v.state.hp - dmg);

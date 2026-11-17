@@ -123,7 +123,7 @@ export class Hud {
       $('shield').classList.toggle('ability-blocked',readout.tone==='blocked');
       $('shield').classList.toggle('ability-ready',readout.tone==='ready');
       cooldown($('shield'), command?0:remaining/ability.cooldown,command?0:remaining);
-      $('shield').querySelector('span')!.textContent=command?(kind==='curtain'?bilingual('舰炮齐射','Fire broadside'):kind==='lens'?bilingual('转向日轮','Redirect sun'):bilingual('再次回位','Return again')):bilingual(ability.name,ability.en);
+      $('shield').querySelector('span')!.textContent=command?(kind==='lens'?bilingual('转向日轮','Redirect sun'):bilingual('再次回位','Return again')):bilingual(ability.name,ability.en);
       $('shield').title=bilingual(ability.description,ability.english).replace(/\bQ\b/g,$('shield').querySelector('kbd')!.textContent||'Q');
       let status=document.getElementById('hero-status');if(!status){status=document.createElement('div');status.id='hero-status';$('hud').append(status);}
       const area=map?tacticalArea(map,me.x,me.z):undefined;

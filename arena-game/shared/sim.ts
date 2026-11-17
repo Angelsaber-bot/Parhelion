@@ -50,6 +50,10 @@ export interface PlayerState {
   ability: AbilityState;
   lastDamageTick: number;
   slowUntil: number; dashSealedUntil: number;
+  /** Edict of stillness: no movement, dash or jump before rootUntil; extra damage taken before exposedUntil. */
+  rootUntil: number; exposedUntil: number;
+  /** Boarding hook: ticks of forced drag left and its velocity (m/s). */
+  pullT: number; pullX: number; pullZ: number;
   utility: UtilityId;
   utilityCd: number; // ticks until the next spent charge returns
   utilityCharges: number;
@@ -81,7 +85,7 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, dashX: 0, dashZ: 0,
-    lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0,
+    lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0, rootUntil: 0, exposedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
     shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }
@@ -94,7 +98,7 @@ export function playerEye(m: ArenaMap, p: Pick<PlayerState, 'crouched'>): number
 }
 
 export function clonePlayer(p: PlayerState): PlayerState {
-  return { ...p, ability: { ...p.ability, dodgeTarget:p.ability.dodgeTarget?[...p.ability.dodgeTarget]:undefined, target: p.ability.target ? [...p.ability.target] : undefined }, ammo: p.ammo.slice(), loadout: [...p.loadout], dashQueue: p.dashQueue.slice() };
+  return { ...p, ability: { ...p.ability, struck:p.ability.struck?.slice(), dodgeTarget:p.ability.dodgeTarget?[...p.ability.dodgeTarget]:undefined, target: p.ability.target ? [...p.ability.target] : undefined }, ammo: p.ammo.slice(), loadout: [...p.loadout], dashQueue: p.dashQueue.slice() };
 }
 
 /** Forward unit vector for yaw (Three.js camera convention: yaw 0 looks down -Z). */
@@ -225,6 +229,9 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   if (locked) inp = { ...inp, buttons: inp.buttons & ~(BTN.FIRE | BTN.RELOAD | BTN.THROW | (guard || p.ability.phase === 'return' ? BTN.DASH | BTN.JUMP : 0)), weapon:p.weaponSlot };
   if (CHARACTERS[p.char].ability==='decoy' && p.ability.phase==='windup') inp={...inp,buttons:inp.buttons & ~(BTN.DASH|BTN.JUMP)};
   if (p.ability.phase === 'return') inp = {...inp, mx:0, mz:0, buttons:inp.buttons & ~(BTN.DASH|BTN.JUMP)};
+  // Rooted or being dragged by a hook: no steering, dash or jump (shooting stays available).
+  const held = p.rootUntil > p.abilityTick || p.pullT > 0;
+  if (held) { inp = {...inp, mx:0, mz:0, buttons:inp.buttons & ~(BTN.DASH|BTN.JUMP)}; p.dashQueue.length = 0; }
   // --- movement ---
   const wantsCrouch = !!(inp.buttons & BTN.CROUCH);
   if (wantsCrouch) p.crouched = true;
@@ -262,7 +269,14 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
     }
   }
 
-  if (p.dashT > 0) {
+  if (p.pullT > 0) {
+    p.pullT--;
+    p.dashT = 0;
+    p.vx = p.pullX; p.vz = p.pullZ;
+  } else if (p.pullX || p.pullZ) {
+    // The drag is over: drop its speed so an airborne catch does not keep sliding.
+    p.pullX = p.pullZ = 0; p.vx = wishX; p.vz = wishZ;
+  } else if (p.dashT > 0) {
     p.dashT--;
     p.vx = p.dashX * DASH.speed;
     p.vz = p.dashZ * DASH.speed;

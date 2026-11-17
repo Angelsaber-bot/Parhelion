@@ -1,5 +1,5 @@
 import {abilityFor,CHARACTERS} from '../../shared/content.ts';
-import {quickAbilityPlacement,returnPathClear} from '../../shared/heroes.ts';
+import {edictPlacement,quickAbilityPlacement,returnPathClear} from '../../shared/heroes.ts';
 import type {ArenaMap} from '../../shared/map.ts';
 import type {Snapshot} from '../../shared/match.ts';
 import type {PlayerState} from '../../shared/sim.ts';
@@ -13,7 +13,7 @@ export function heroReadout(map:ArenaMap|undefined,p:PlayerState,snap:Snapshot):
   if(a.phase!=='idle'){
     out.tone='busy';const seconds=Math.max(0,(a.endTick-tick)/60).toFixed(1);
     out.progress=Math.max(0,Math.min(1,(tick-a.startTick)/Math.max(1,a.endTick-a.startTick)));
-    out.text=a.phase==='guard'?bilingual(`护势 ${Math.ceil(a.guardBudget)}/150 · ${seconds}s`,`Guard ${Math.ceil(a.guardBudget)}/150 · ${seconds}s`):a.phase==='channel'?bilingual(`引导 ${seconds}s · 受伤会打断`,`Channeling ${seconds}s · Damage interrupts`):a.phase==='return'?kind==='decoy'?bilingual('错身突进 · 可受伤','Sidestepping · Vulnerable'):bilingual('正在回位','Returning'):a.phase==='windup'?bilingual(`施放 ${seconds}s`,`Casting ${seconds}s`):bilingual(`恢复 ${seconds}s`,`Recovering ${seconds}s`);
+    out.text=a.phase==='guard'?bilingual(`护势 ${Math.ceil(a.guardBudget)}/150 · ${seconds}s`,`Guard ${Math.ceil(a.guardBudget)}/150 · ${seconds}s`):a.phase==='channel'?bilingual(`引导 ${seconds}s · 受伤会打断`,`Channeling ${seconds}s · Damage interrupts`):a.phase==='return'?kind==='decoy'?bilingual('燕返突进 · 斩杀刷新冷却','Swallow cut · A kill resets it'):bilingual('正在回位','Returning'):a.phase==='windup'?bilingual(`施放 ${seconds}s`,`Casting ${seconds}s`):bilingual(`恢复 ${seconds}s`,`Recovering ${seconds}s`);
   }
   const anchor=snap.entities?.find(e=>e.owner===p.id&&e.kind==='anchor'&&e.lifeId===p.lifeId&&e.hp>0&&e.expires>tick);
   if(anchor&&a.phase==='idle'){
@@ -24,14 +24,16 @@ export function heroReadout(map:ArenaMap|undefined,p:PlayerState,snap:Snapshot):
   const active=snap.entities?.find(e=>e.owner===p.id&&e.lifeId===p.lifeId&&e.kind===kind&&e.hp>0&&e.expires>tick);
   if(active&&a.phase==='idle'){
     const seconds=((active.expires-tick)/60).toFixed(1);
-    if(kind==='curtain')out.text=active.pulse===0?bilingual('舰炮已锁定 · 自动齐射','Broadside committed · Firing automatically'):bilingual(`黑帆烟墙 ${seconds}s · 继续射击或换线`,`Black sail ${seconds}s · Keep firing or reposition`);
+    if(kind==='curtain')out.text=active.victim?bilingual('钩中 · 正在拽回','Hooked · Dragging them in'):bilingual('钩索飞行中','Hook in flight');
+    if(kind==='barrage')out.text=bilingual('炮弹飞行中','Cannonball in flight');
     if(kind==='lens'){out.tone='ready';out.text=bilingual(`日轮 ${seconds}s · Q 转向准星方向`,`Sun disc ${seconds}s · Q to redirect`);out.returnAvailable=true;}
     if(kind==='prayer')out.text=bilingual(`圣旗 ${Math.ceil(active.hp)}/100 · ${seconds}s · 光环内减伤与恢复`,`Banner ${Math.ceil(active.hp)}/100 · ${seconds}s · Protection and healing nearby`);
-    if(kind==='edict')out.text=bilingual(`疆域 ${seconds}s · 敌人不能发起冲刺`,`Domain ${seconds}s · Enemies cannot start a dash`);
+    if(kind==='edict')out.text=active.pulse===0?bilingual('御令落下中','Edict falling'):bilingual(`定身生效 · 被定住的敌人受到伤害 +25%`,`Edict landed · Rooted enemies take +25% damage`);
   }
-  if(p.dashSealedUntil>tick){out.tone='blocked';out.text=bilingual('身处敌方疆域 · 冲刺受限，离开光圈或击碎玉印','Enemy domain · Dash sealed; leave the circle or destroy a seal');}
-  if(!out.text&&map&&!remaining&&['barrier','curtain','barrage','lens','edict'].includes(kind)){
-    const placement=quickAbilityPlacement(map,p,kind);if(placement.error){out.tone='blocked';out.text=placement.error.split(' / ')[getLanguage()==='en'?1:0]??placement.error;}
+  if((p.rootUntil??0)>tick){out.tone='blocked';out.text=bilingual(`被定身 ${((p.rootUntil-tick)/60).toFixed(1)}s · 仍可开枪`,`Rooted ${((p.rootUntil-tick)/60).toFixed(1)}s · You can still shoot`);}
+  else if((p.pullT??0)>0){out.tone='blocked';out.text=bilingual('被钩索拽住','Caught by a hook');}
+  if(!out.text&&map&&!remaining&&['barrier','lens','edict'].includes(kind)){
+    const placement=kind==='edict'?edictPlacement(map,p,snap.players,snap.smokes??[]):quickAbilityPlacement(map,p,kind);if(placement.error){out.tone='blocked';out.text=placement.error.split(' / ')[getLanguage()==='en'?1:0]??placement.error;}
   }
   if(!out.text&&remaining)out.text=bilingual(`${abilityFor(p.char).name} · ${(remaining/60).toFixed(1)}s`,`${abilityFor(p.char).en} · ${(remaining/60).toFixed(1)}s`);
   return out;

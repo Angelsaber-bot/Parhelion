@@ -20,7 +20,7 @@ function softTexture(inner: string, outer: string) {
 
 /** An irregular, cloudy puff (white, tinted per sprite): overlapping soft blobs instead of one perfect disc,
  * so a crowd of puffs reads as billowing smoke and not as a stack of round stickers. */
-function puffTexture(seed: number, core = 1) {
+export function puffTexture(seed: number, core = 1) {
   const size = 128, canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
   if (!canvas?.getContext) return new THREE.Texture();
   canvas.width = canvas.height = size;

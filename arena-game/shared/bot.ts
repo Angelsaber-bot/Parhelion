@@ -1,4 +1,3 @@
-import {strikePoint} from './heroes.ts';
 // Rule-based baseline bot. Produces the same Input a human client sends, so it goes through the
 // identical server rules. This is the scripted baseline the trained cover-choice AI will be
 // evaluated against; a learned policy can replace it by implementing Controller.
@@ -12,7 +11,7 @@ import {strikePoint} from './heroes.ts';
 // - personality (from the seed): rusher, holder or flanker, which changes where it roams, how
 //   long it holds an angle, how close it wants to fight and when it backs off.
 
-import { CHARACTERS, FRAG, GRENADE, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
+import { CHARACTERS, FRAG, GRENADE, HERO_COMBAT, TICK_HZ, WEAPONS, falloff, loadoutWeapon, type WeaponDef } from './content.ts';
 import { smokeBlocks } from './grenade.ts';
 /** Melee reach including most of the windup lunge. */
 const meleeReach = (w: WeaponDef) => w.range + (w.lunge ?? 0) * (w.windup ?? 0) / TICK_HZ * .7;
@@ -263,9 +262,9 @@ export class Bot implements Controller {
 
     // React only to a visible, public warning after the bot's normal reaction delay.
     for(const e of match.heroes.entities){
-      if(e.kind!=='barrage'||e.team===me.team||match.tick-e.created<this.skill.reaction)continue;
-      const next=strikePoint(e,Math.min(2,e.pulse));const dx=me.x-next[0],dz=me.z-next[2],d=Math.hypot(dx,dz);
-      if(d<3.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;break;}
+      if(e.kind!=='edict'||e.team===me.team||e.pulse>0||match.tick-e.created<Math.min(this.skill.reaction,HERO_COMBAT.edict.arm-4))continue;
+      const dx=me.x-e.x,dz=me.z-e.z,d=Math.hypot(dx,dz);
+      if(d<HERO_COMBAT.edict.radius+.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;break;}
     }
 
     // stuck detection: try jumping and re-pathing
@@ -370,10 +369,8 @@ export class Bot implements Controller {
     if(me.ability.phase==='channel') {inp.buttons&=~(BTN.FIRE|BTN.RELOAD|BTN.DASH|BTN.JUMP);inp.mx=inp.mz=0;}
     const anchor=match.heroes.entities.find(e=>e.owner===id&&e.kind==='anchor');
     if(anchor&&hurt&&target&&me.ability.phase==='idle'&&!(me.prevButtons&BTN.SHIELD))inp.buttons|=BTN.SHIELD;
-    const command=match.heroes.entities.find(e=>e.owner===me.id&&e.kind==='curtain'&&e.commandedAt===undefined&&match.tick-e.created>25);
-    if(command&&engaged&&me.ability.phase==='idle'&&!(me.prevButtons&BTN.SHIELD))inp.buttons|=BTN.SHIELD;
     if(me.shieldCd===0&&me.ability.phase==='idle'&&me.dashT===0&&!(me.prevButtons&BTN.SHIELD)&&this.rand()<.055) {
-      const wants=kind==='prayer'?(hurt):kind==='guard'?(engaged&&bestD<16):kind==='barrier'?(engaged&&hurt&&bestD>5):kind==='anchor'?(engaged&&bestD>6):kind==='curtain'?(engaged&&hurt):kind==='decoy'?(engaged&&bestD>5):kind==='barrage'?(engaged&&bestD<15):kind==='edict'?(engaged&&bestD<12):(engaged&&bestD<18||!target&&!!this.lastSeen);
+      const wants=kind==='prayer'?(hurt):kind==='guard'?(engaged&&bestD<16):kind==='barrier'?(engaged&&hurt&&bestD>5):kind==='anchor'?(engaged&&bestD>6):kind==='curtain'?(engaged&&bestD>4&&bestD<13):kind==='decoy'?(engaged&&bestD<5.5):kind==='barrage'?(engaged&&bestD<30):kind==='edict'?(engaged&&bestD<11):(engaged&&bestD<18||!target&&!!this.lastSeen);
       if(wants)inp.buttons|=BTN.SHIELD;
     }
     return inp;
