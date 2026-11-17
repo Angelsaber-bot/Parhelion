@@ -5,7 +5,7 @@ import {CONTENT_MANIFEST,assertContentManifest} from './manifest.ts';
 
 import { getMap, mapIdOf } from './arenaMap.ts';
 import { Bot, BOT_SKILL } from './bot.ts';
-import { CHARACTERS, PLAYABLE_HERO_INDICES, abilityFor, heroIndex, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
+import { CHARACTERS, randomBotHero, abilityFor, heroIndex, SNAPSHOT_EVERY, TEAM_CAPACITY, botLoadout, botUtility, validateLoadout, validateUtility, type Team, type TeamLayout } from './content.ts';
 import { Match, type Snapshot } from './match.ts';
 import { LAYOUTS, RULES_VERSION, assertRulesVersion, type JoinOptions } from './protocol.ts';
 import type { StatsSource } from './weaponStats.ts';
@@ -51,7 +51,7 @@ export class RoomCore {
     if(!m.hasRoom(team)&&!evict)throw new Error('Room is full');
     if(evict)m.removePlayer(evict);
     if(duplicate&&duplicate.state.id!==evict) {
-      const free=PLAYABLE_HERO_INDICES.find(i=>i!==char&&![...m.slots.values()].some(s=>s.info.team===team&&s.state.char===i))!;
+      const free=randomBotHero([...[...m.slots.values()].filter(s=>s!==duplicate).map(s=>({team:s.info.team,char:s.state.char})),{team,char}],team);
       m.heroes.clearLife(duplicate.state.id);duplicate.state.lifeId++;
       duplicate.state.char=duplicate.info.char=free;duplicate.info.heroId=CHARACTERS[free].id;
       duplicate.state.ability.readyAt=m.tick+abilityFor(free).cooldown;
@@ -91,7 +91,7 @@ export class RoomCore {
     for (const team of ['A', 'B'] as Team[]) {
       while (m.hasRoom(team)) {
         const n = botSeed++;
-        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: PLAYABLE_HERO_INDICES.map((_,i)=>PLAYABLE_HERO_INDICES[(i+n)%PLAYABLE_HERO_INDICES.length]).find(i=>![...m.slots.values()].some(s=>s.info.team===team&&s.state.char===i))!, skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL.normal));
+        m.addPlayer(`bot-${n}`, { name: `Bot ${n}`, team, char: randomBotHero([...m.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), team), skins: [n % 2, n % 2, n % 2], loadout: botLoadout(n), utility: botUtility(n), bot: true }, new Bot(n, BOT_SKILL.normal));
       }
     }
   }

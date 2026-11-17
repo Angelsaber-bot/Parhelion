@@ -97,3 +97,25 @@ describe('seven heroes: distinctive actions and counterplay',()=>{
  it('damaging an unborn, dead or spawn-protected target cannot award skill damage',()=>{const m=fixture(2),enemy=m.player('b')!;enemy.z=-5;m.slots.get('b')!.spawnProtectedUntilTick=200;cast(m);step(m,6);input(m);expect(enemy.hp).toBe(150);});
  it('failed duplicate joins preserve the previous seats and bots',()=>{const core=new RoomCore({map:'homeward',layout:'2v2',bots:true});core.join('one',{rulesVersion:RULES_VERSION,team:'A',char:2});const before=[...core.match.slots].map(([id,s])=>[id,s.state.char]);expect(()=>core.join('two',{rulesVersion:RULES_VERSION,team:'A',char:2})).toThrow();expect([...core.match.slots].map(([id,s])=>[id,s.state.char])).toEqual(before);});
 });
+
+import { randomBotHero, PLAYABLE_HERO_INDICES as ROSTER } from '../shared/content.ts';
+import { startOffline } from '../src/network/session.ts';
+describe('bots draw their heroes at random', () => {
+  it('stays inside the playable roster, never doubles a teammate and prefers heroes nobody plays', () => {
+    const seen = new Set<number>();
+    for (let k = 0; k < 200; k++) { const h = randomBotHero([{ team: 'A', char: 3 }], 'B', () => k / 200); seen.add(h); expect(ROSTER).toContain(h); expect(h).not.toBe(3); }
+    expect(seen.size).toBe(ROSTER.length - 1);
+    expect(randomBotHero(ROSTER.map(char => ({ team: 'A', char })), 'B', () => .5)).toBeGreaterThanOrEqual(2);
+    const team = ROSTER.map(char => ({ team: 'B', char })).slice(0, -1);
+    expect(randomBotHero(team, 'B', () => .99)).toBe(ROSTER.at(-1));
+    expect(ROSTER).toContain(randomBotHero([], 'A', () => NaN));
+  });
+  it('a 1v1 offline Bot is not always the same fighter', () => {
+    const heroes = new Set<number>();
+    for (let k = 0; k < 7; k++) {
+      let x = k / 7 + .01; const session = startOffline({ name: 'me', layout: '1v1', team: 'A', char: 2, map: 'homeward', loadout: ['lumen', 'corona', 'blade'], utility: 'frag', skins: [] } as never, 'normal', () => { const v = x; x = (x + .37) % 1; return v; });
+      const bot = [...session.match!.slots.values()].find(s => s.info.bot)!; heroes.add(bot.state.char); expect(bot.state.char).not.toBe(2); session.close();
+    }
+    expect(heroes.size).toBeGreaterThan(3);
+  });
+});

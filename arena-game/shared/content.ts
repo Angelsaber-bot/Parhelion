@@ -98,6 +98,16 @@ export const HERO_RULESET = 'heroes-v4-tempo';
 /** Stable legacy indices 0/1 remain readable, but are retired from new lobbies. */
 export const PLAYABLE_HERO_INDICES = [2,3,4,5,6,7,8] as const;
 export const playableHero = (char:number):number => (PLAYABLE_HERO_INDICES as readonly number[]).includes(char) ? char : 2;
+/** A Bot's hero, drawn at random from the playable roster: never a hero its own team already fields, and
+ * preferably one nobody in the match is playing yet, so a 1v1 Bot is not the same fighter every time. */
+export function randomBotHero(seated: Iterable<{ team: string; char: number }>, team: string, rand: () => number = Math.random): number {
+  const list = [...seated], roster = PLAYABLE_HERO_INDICES as readonly number[];
+  const free = roster.filter(i => !list.some(s => s.char === i));
+  const open = roster.filter(i => !list.some(s => s.team === team && s.char === i));
+  const pool = free.length ? free : open.length ? open : roster;
+  const r = rand(), k = Number.isFinite(r) ? Math.min(pool.length - 1, Math.max(0, Math.floor(r * pool.length))) : 0;
+  return pool[k];
+}
 export const ABILITIES: Record<AbilityId, { name: string; en: string; icon: string; cooldown: number; windup: number; recovery: number; range: number; description: string; english: string }> = {
   barrier: { name:'折光掩盾', en:'Refraction barrier', icon:'◇', cooldown:960, windup:15, recovery:12, range:1.4, description:'180 耐久 · 5 秒 · 阻挡双方枪弹，近战和爆炸可穿过。', english:'180 HP · 5s · Stops both teams’ bullets; melee and blasts pass.' },
   anchor: { name:'回位锚', en:'Return anchor', icon:'△', cooldown:1080, windup:9, recovery:9, range:5, description:'40 耐久 · 2.5 秒内再次按 Q 沿无遮挡直线回位，最多 5 米。', english:'40 HP · Press again within 2.5s to return up to 5m along a clear line.' },

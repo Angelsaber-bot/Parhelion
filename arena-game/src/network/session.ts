@@ -5,7 +5,7 @@ import {CONTENT_MANIFEST,assertContentManifest} from '../../shared/manifest.ts';
 import { Client } from '@colyseus/sdk';
 import { getMap } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
-import { PLAYABLE_HERO_INDICES, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
+import { randomBotHero, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
 import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../../shared/trainingRange.ts';
@@ -163,7 +163,7 @@ export function startOffline(opts: JoinOptions, difficulty: keyof typeof BOT_SKI
   for (const t of ['A', 'B'] as Team[]) {
     for (let i = match.teamCount(t); i < TEAM_CAPACITY[opts.layout][t]; i++) {
       const n = seed++, k = kit();
-      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: PLAYABLE_HERO_INDICES.map((_,i)=>PLAYABLE_HERO_INDICES[(i+n)%PLAYABLE_HERO_INDICES.length]).find(i=>![...match.slots.values()].some(s=>s.info.team===t&&s.state.char===i))!, skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
+      match.addPlayer(`bot-${n}`, { name: `Bot ${n - 6}`, team: t, char: randomBotHero([...match.slots.values()].map(s => ({ team: s.info.team, char: s.state.char })), t, rand), skins: [n % 2, n % 2, n % 2], loadout: k.loadout, utility: k.utility, bot: true }, new Bot(n, BOT_SKILL[difficulty]));
     }
   }
   match.botKit = kit;
