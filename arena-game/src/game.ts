@@ -42,7 +42,10 @@ export class Game {
   private raf = 0;
   private running = true;
   private pausedFrames=new FrameGate(10);
-  private snapGap = 50; // ms between snapshots, smoothed (shown as a rough link-quality hint)
+  private snapGap = 50; // ms between snapshots, smoothed
+  /** Round trip from pressing a key to the server's snapshot confirming it (smoothed), and when each input left. */
+  private rtt = 0;
+  private sentAt = new Map<number, number>();
   private names = new Map<string, PlayerSnap>();
   private readonly map: ArenaMap;
   private feel = new Feel();
@@ -97,7 +100,7 @@ export class Game {
     const previousPhase = this.latest?.phase;
     if ((previousPhase === 'ended' && s.phase !== 'ended') || (s.phase === 'live' && previousPhase !== 'live')) {
       const wasEnded = this.ended;
-      this.pending = []; this.outbox = []; this.snaps = []; this.remotes = [];
+      this.pending = []; this.outbox = []; this.snaps = []; this.remotes = []; this.sentAt.clear(); this.rtt = 0;
       this.smooth = [0, 0, 0]; this.renderTick = 0; this.acc = 0; this.streak = 0;
       this.feel = new Feel(); this.controls.clearAll(); this.controls.resultsScoreboard = false;
       this.controls.weapon = 0; this.aimWeapon = -1; this.resetAim(); this.hud.resetRound(); this.scene.clearCombatEffects();
@@ -117,6 +120,9 @@ export class Game {
     if (mine) {
       const before = this.me;
       const next = clonePlayer(mine);
+      const sent = this.sentAt.get(mine.lastSeq);
+      if (sent !== undefined) { const sample = now - sent; this.rtt = this.rtt ? this.rtt + (sample - this.rtt) * .15 : sample; }
+      for (const seq of this.sentAt.keys()) if (seq <= mine.lastSeq) this.sentAt.delete(seq);
       this.pending = this.pending.filter((i) => i.seq > mine.lastSeq);
       const foes = this.foes(next);
       for (const i of this.pending) {predictAbility(this.map,next,i,s);applyInput(this.map, next, i, foes);}
@@ -345,6 +351,8 @@ export class Game {
     this.pending.push(inp);
     if (this.pending.length > 240) this.pending.shift();
     this.outbox.push(inp);
+    this.sentAt.set(inp.seq, performance.now());
+    if (this.sentAt.size > 600) this.sentAt.delete(this.sentAt.keys().next().value!);
   }
 
   /** Latest authoritative enemy positions, so a predicted melee lunge stops where the server's does. */
@@ -483,7 +491,7 @@ export class Game {
     this.scene.pruneAvatars(ids);
     this.scene.update(dt);
     this.scene.render(!!me?.alive);
-    const ping = this.session.online ? bilingual(`快照间隔 ${Math.round(this.snapGap)} ms`, `Snapshot interval ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');
+    const ping = this.session.online ? bilingual(`延迟 ${this.rtt ? Math.round(this.rtt) : '—'} ms · 快照 ${Math.round(this.snapGap)} ms`, `Latency ${this.rtt ? Math.round(this.rtt) : '—'} ms · Snapshots ${Math.round(this.snapGap)} ms`) : bilingual('单机', 'Offline');
     if (this.rangeStats && performance.now() - this.rangeStatsAt > 200) { this.rangeStatsAt = performance.now(); const panel = document.getElementById('range-stats'); if (panel) panel.innerHTML = this.rangeStats.render(performance.now() / 1000); }
     this.hud.update(dt, me, this.latest, this.session.id, this.ended ? this.controls.resultsScoreboard : this.controls.scoreboard, ping, this.map);
   }

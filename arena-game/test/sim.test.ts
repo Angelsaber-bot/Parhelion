@@ -182,3 +182,20 @@ describe('match end', () => {
     expect(match.phase).toBe('countdown');
   }, 60000);
 });
+
+describe('input backlog from clock drift', () => {
+  const room = () => { const match = new Match(m, '1v1'); match.addPlayer('a', { team: 'A', char: 2, name: 'a', skins: [], bot: false }); return match; };
+  const queued = (match: Match) => (match as unknown as { slots: Map<string, { queue: Input[] }> }).slots.get('a')!.queue.length;
+  it('a backlog left by a slightly fast client drains instead of adding latency for the rest of the match', () => {
+    const match = room(); let seq = 0;
+    match.queueInputs('a', Array.from({ length: 20 }, () => inp(++seq)));
+    for (let t = 0; t < 30 * 20; t++) { match.queueInputs('a', [inp(++seq)]); match.step(); }
+    expect(queued(match)).toBeLessThanOrEqual(7);
+  });
+  it('the drain is too small to be a speed hack: twice the input rate buys at most ~3.5% more inputs', () => {
+    const match = room(); let seq = 0, applied = 0;
+    const input = match.heroes.input.bind(match.heroes); match.heroes.input = (p, i) => { if (p.id === 'a') applied++; input(p, i); };
+    for (let t = 0; t < 600; t++) { match.queueInputs('a', [inp(++seq), inp(++seq)]); match.step(); }
+    expect(applied).toBeLessThanOrEqual(Math.ceil(600 * (1 + 1 / 30)) + 8);
+  });
+});

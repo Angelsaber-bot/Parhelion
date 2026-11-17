@@ -112,6 +112,10 @@ type HistoricalPose = [number, number, number, boolean, boolean, number, number,
 const HISTORY = 64;
 const MAX_QUEUE = 30;
 const MAX_CREDITS = 8; // inputs a client may "catch up" in one tick after a stall
+/** A client whose clock runs a hair fast builds a backlog that adds input latency for the rest of the match (and
+ * finally drops inputs at MAX_QUEUE). While more than BACKLOG inputs wait, one extra input is applied every
+ * DRAIN_EVERY ticks: about 3%, ample for clock drift and far too little to be a speed advantage. */
+const BACKLOG = 6, DRAIN_EVERY = 30;
 /** A spawn anchor used this recently by anyone is a slightly worse pick (G01 recent-use rule). */
 const SPAWN_REUSE_TICKS = 4 * TICK_HZ;
 
@@ -224,6 +228,7 @@ export class Match {
     for (const [id, slot] of this.slots) {
       if (slot.controller) slot.queue.push(slot.controller.think(this, id));
       slot.credits = Math.min(slot.credits + 1, MAX_CREDITS);
+      if (slot.queue.length > BACKLOG && this.tick % DRAIN_EVERY === 0) slot.credits++;
       while (slot.credits >= 1 && slot.queue.length) {
         const inp = slot.queue.shift()!;
         slot.credits--;
