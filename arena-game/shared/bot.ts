@@ -370,7 +370,7 @@ export class Bot implements Controller {
     const anchor=match.heroes.entities.find(e=>e.owner===id&&e.kind==='anchor');
     if(anchor&&hurt&&target&&me.ability.phase==='idle'&&!(me.prevButtons&BTN.SHIELD))inp.buttons|=BTN.SHIELD;
     if(me.shieldCd===0&&me.ability.phase==='idle'&&me.dashT===0&&!(me.prevButtons&BTN.SHIELD)&&this.rand()<.055) {
-      const wants=kind==='prayer'?(hurt):kind==='guard'?(engaged&&bestD<16):kind==='barrier'?(engaged&&hurt&&bestD>5):kind==='anchor'?(engaged&&bestD>6):kind==='curtain'?(engaged&&bestD>4&&bestD<13):kind==='decoy'?(engaged&&bestD<5.5):kind==='barrage'?(engaged&&bestD<30):kind==='edict'?(engaged&&bestD<11):(engaged&&bestD<18||!target&&!!this.lastSeen);
+      const wants=kind==='prayer'?(hurt):kind==='guard'?(engaged&&bestD<16):kind==='barrier'?(engaged&&hurt&&bestD>5):kind==='anchor'?(engaged&&bestD>6):kind==='curtain'?(engaged&&bestD>4&&bestD<22):kind==='decoy'?(engaged&&bestD<5.5):kind==='barrage'?(engaged&&bestD<30):kind==='edict'?(engaged&&bestD<11):(engaged&&bestD<18||!target&&!!this.lastSeen);
       if(wants)inp.buttons|=BTN.SHIELD;
     }
     return inp;
