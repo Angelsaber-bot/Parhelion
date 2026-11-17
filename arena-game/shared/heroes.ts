@@ -186,7 +186,12 @@ export class HeroSystem {
   private windSlash(p:PlayerState){
     const amount=H.guard.damage+Math.round((H.guard.budget-p.ability.guardBudget)/H.guard.budget*H.guard.bonus),origin:Vec3=[p.x,p.y+1.1,p.z];
     this.recover(p,abilityFor(p.char).recovery);this.emit(p,'pulse',at(p),amount);
-    for(const {state:enemy} of this.m.slots.values())if(enemy.alive&&enemy.team!==p.team&&distance(at(p),at(enemy))<=H.guard.range&&Math.abs(angle(Math.atan2(-(enemy.x-p.x),-(enemy.z-p.z))-p.ability.yaw))<=H.guard.halfAngle&&this.visible(origin,[enemy.x,enemy.y+1.1,enemy.z]))this.m.heroDamage(p.id,p.team,enemy.id,amount,WIND_KILL);
+    for(const {state:enemy} of this.m.slots.values())if(enemy.alive&&enemy.team!==p.team&&distance(at(p),at(enemy))<=H.guard.range&&Math.abs(angle(Math.atan2(-(enemy.x-p.x),-(enemy.z-p.z))-p.ability.yaw))<=H.guard.halfAngle&&this.visible(origin,[enemy.x,enemy.y+1.1,enemy.z])){
+      this.m.heroDamage(p.id,p.team,enemy.id,amount,WIND_KILL);
+      // The wind throws survivors straight away from her.
+      const dx=enemy.x-p.x,dz=enemy.z-p.z,len=Math.hypot(dx,dz)||1,v=H.guard.push/H.guard.pushTicks*60;
+      if(enemy.alive&&!this.m.spawnProtected(enemy.id))Object.assign(enemy,{pullT:H.guard.pushTicks,pullX:dx/len*v,pullZ:dz/len*v,dashT:0,dashQueue:[]});
+    }
   }
   protectedByBanner(p:PlayerState){return this.entities.some(e=>e.kind==='prayer'&&e.team===p.team&&e.hp>0&&e.expires>this.m.tick&&distance(at(e),at(p))<=H.prayer.radius&&this.visible([e.x,e.y+1,e.z],[p.x,p.y+1.1,p.z]));}
 
@@ -277,13 +282,23 @@ export class HeroSystem {
     for(const {state:p} of this.m.slots.values()){
       if(!p.alive||p.team===e.team||struck.includes(p.id))continue;
       const box=playerHitbox(p.crouched);if(rayCapsule(o,d,p.x,p.z,p.y+box.bodyBottom+box.bodyRadius,p.y+box.headY,box.bodyRadius+spec.ball)>stop)continue;
-      struck.push(p.id);this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:[p.x,p.y+1.1,p.z]});
+      struck.push(p.id);
+      if(this.guardStops(e,p,spec.damage,o))return;
+      this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:[p.x,p.y+1.1,p.z]});
       this.m.heroDamage(e.owner,e.team,p.id,spec.damage,BARRAGE_KILL);
       if(p.alive&&!this.m.spawnProtected(p.id)){p.vx+=d[0]/l*spec.knockback;p.vz+=d[2]/l*spec.knockback;p.vy=Math.max(p.vy,spec.lift);p.grounded=false;p.dashT=0;p.dashQueue=[];}
     }
     e.x=o[0]+d[0]*stop;e.y=o[1]+d[1]*stop;e.z=o[2]+d[2]*stop;e.travelled+=stop;
     if(hitWall){this.strike(e,[e.x,e.y,e.z],spec.radius,spec.splash,BARRAGE_KILL,new Set(struck));e.hp=0;}
     else if(e.travelled>=spec.range-1e-6)e.hp=0;
+  }
+  /** Artoria's guard: a cannonball or hook meeting her from the front is absorbed into the guard and stops there. */
+  private guardStops(e:TacticalEntity,p:PlayerState,damage:number,from:Vec3):boolean{
+    if(p.ability.phase!=='guard')return false;
+    const left=this.absorb(p,damage,from);if(left>=damage)return false;
+    if(left>0)this.m.heroDamage(e.owner,e.team,p.id,left,e.kind==='barrage'?BARRAGE_KILL:BROADSIDE_KILL);
+    e.x=p.x;e.y=p.y+1.1;e.z=p.z;e.hp=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'break',at:[p.x,p.y+1.1,p.z]});
+    return true;
   }
   /** One tick of hook flight: the first wall, shield, device or enemy along the way stops it. */
   private fly(e:TacticalEntity){
@@ -302,6 +317,7 @@ export class HeroSystem {
     const point:Vec3=[e.x,e.y,e.z];
     if(!hit){if(e.travelled>=spec.range-1e-6)this.miss(e,point);return;}
     if(hit!=='player'||!victim){if(device)this.hit(device,H.curtain.damage);this.miss(e,point);return;}
+    if(this.guardStops(e,victim,H.curtain.damage,o))return;
     this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'pulse',at:[victim.x,victim.y+1.1,victim.z]});
     this.m.heroDamage(e.owner,e.team,victim.id,H.curtain.damage,BROADSIDE_KILL);
     const owner=this.m.player(e.owner);

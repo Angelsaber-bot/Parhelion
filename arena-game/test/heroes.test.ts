@@ -90,8 +90,16 @@ it('solid devices shelter echoes and bullet falloff is evaluated at the device h
 });
 
 describe('seven heroes: distinctive actions and counterplay',()=>{
+ it('the wind slash throws a survivor three metres back',()=>{const m=fixture(2),enemy=m.player('b')!;enemy.z=-6;cast(m);step(m,4);input(m);expect(enemy.hp).toBe(70);expect(enemy.pullT).toBeGreaterThan(0);for(let i=0;i<12;i++)input(m,'b',0);expect(enemy.z).toBeCloseTo(-9,1);});
+ it('a front guard stops a cannonball and a hook; the shot never reaches the teammate behind her',()=>{
+  for(const shooter of [5,3]){const m=new Match(buildMap(structuredClone(data)),'2v2');m.addPlayer('a',{team:'A',char:shooter,name:'a',skins:[],bot:false});m.addPlayer('b',{team:'B',char:2,name:'b',skins:[],bot:false});m.addPlayer('d',{team:'B',char:6,name:'d',skins:[],bot:false});m.phase='live';m.phaseT=10000;for(const s of m.slots.values())s.spawnProtectedUntilTick=0;
+   Object.assign(m.player('a')!,{x:0,y:0,z:0,yaw:0});Object.assign(m.player('b')!,{x:0,y:0,z:-8,yaw:Math.PI});Object.assign(m.player('d')!,{x:0,y:0,z:-12,yaw:Math.PI});
+   input(m,'b',BTN.SHIELD,{yaw:Math.PI,pitch:0});for(let i=0;i<4;i++)input(m,'b',BTN.SHIELD,{yaw:Math.PI,pitch:0});expect(m.player('b')!.ability.phase).toBe('guard');
+   input(m,'a',BTN.SHIELD,{yaw:0,pitch:-Math.atan2(.4,8)});for(let i=0;i<12;i++){input(m,'b',BTN.SHIELD,{yaw:Math.PI,pitch:0});}
+   expect(m.player('b')!.hp).toBe(150);expect(m.player('b')!.pullT).toBe(0);expect(m.player('b')!.z).toBeCloseTo(-8,1);expect(m.player('d')!.hp).toBe(150);expect(m.heroes.entities.filter(e=>e.kind==='barrage'||e.kind==='curtain')).toHaveLength(0);}
+ });
  it('wind guard releases a stronger slash after absorbing damage, never through a wall',()=>{
-  for(const wall of [false,true]){const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);step(m,6);m.heroes.absorb(p,60,[0,1,-5]);if(wall)m.shields.push({id:9,owner:'b',team:'B',x:0,y:0,z:-2,yaw:0,hp:180,life:300});input(m);expect(enemy.hp).toBe(wall?150:70);expect(p.ability.phase).toBe('recovery');}
+  for(const wall of [false,true]){const m=fixture(2),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-5;cast(m);step(m,6);m.heroes.absorb(p,60,[0,1,-5]);if(wall)m.shields.push({id:9,owner:'b',team:'B',x:0,y:0,z:-2,yaw:0,hp:180,life:300});input(m);expect(enemy.hp).toBe(wall?150:58);expect(p.ability.phase).toBe('recovery');}
  });
  it('Musashi dashes six metres along the aim, not the movement keys, and stays vulnerable',()=>{const m=fixture(4),p=m.player('a')!;input(m,'a',BTN.SHIELD,{yaw:0,pitch:0,mx:1});step(m,15);expect(p.x).toBeCloseTo(0,2);expect(p.z).toBeCloseTo(-6,1);m.heroDamage('b','B','a',20,0);expect(p.hp).toBe(130);});
  it('Blackbeard hooks an enemy, drags them to 2.5 m in front and slows them; a second Q does nothing',()=>{const m=fixture(3),p=m.player('a')!,enemy=m.player('b')!;enemy.z=-7;cast(m,-Math.atan2(.4,7));const ready=p.ability.readyAt;step(m,12);expect(enemy.hp).toBe(120);expect(enemy.pullT).toBeGreaterThan(0);for(let i=0;i<20;i++)input(m,'b',0);expect(enemy.z).toBeCloseTo(-2.5,1);expect(enemy.slowUntil).toBeGreaterThan(m.tick-20);input(m);input(m,'a',BTN.SHIELD);expect(p.ability.readyAt).toBe(ready);expect(p.ability.castSeq).toBe(1);});
