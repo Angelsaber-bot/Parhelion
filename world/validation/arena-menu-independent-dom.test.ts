@@ -1,6 +1,7 @@
 /** Actual Arena main/index menu logic. Rendering, game/session creation and audio
  * are explicit boundary spies: no WebGL/network/simulation acceptance claim. */
 import test from'node:test';import assert from'node:assert/strict';import{readFileSync}from'node:fs';import{resolve}from'node:path';import{build}from'esbuild';import{JSDOM}from'jsdom';
+import { arenaAssetStub, arenaHeroStub } from './arenaAssetStub';
 test('Arena actual menu mode/team/Bot/locale/custom-key edits update truthful brief without starting a session',async()=>{
  const root=resolve(process.env.ARENA_SOURCE_QA_ROOT??'../arena-game');const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
  const calls={scene:0,map:0,render:0,offline:0,online:0,game:0,network:0,dispose:0};(w as any).__calls=calls;
@@ -12,7 +13,7 @@ test('Arena actual menu mode/team/Bot/locale/custom-key edits update truthful br
   'audio.ts':`export const sfx={unlock(){}}`,
   'armory.ts':`export function openArmory(){throw Error('not under test')}`,
  };
- const output=await build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'menu-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'qa-menu-boundary'}));b.onLoad({filter:/.*/,namespace:'qa-menu-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
+ const output=await build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',define:{'import.meta.url':'"http://localhost/arena-game/src/main.ts"'},platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[arenaAssetStub,arenaHeroStub,{name:'menu-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'qa-menu-boundary'}));b.onLoad({filter:/.*/,namespace:'qa-menu-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
  try{w.eval(output.outputFiles[0].text);await Promise.resolve();
   const change=(id:string,value:string|boolean)=>{const el=d.getElementById(id)as HTMLInputElement;if(typeof value==='boolean')el.checked=value;else el.value=value;el.dispatchEvent(new w.Event('change',{bubbles:true}));};
   const locale=d.querySelector<HTMLSelectElement>('.parhelion-language select')!;const language=(value:string)=>{locale.value=value;locale.dispatchEvent(new w.Event('change',{bubbles:true}));};

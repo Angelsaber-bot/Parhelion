@@ -138,7 +138,7 @@ if (['1v1', '1v2', '2v2'].includes(saved.layout)) $<HTMLSelectElement>('layout')
 
 const lobbyShell=mountLobbyShell();
 let lessonRequested=false;
-let heroPreview:HeroPreview|null=null;
+let heroPreview:HeroPreview|null=null,heroPreviewFailed=false;
 function renderChars() {
   const focusedHero=(document.activeElement as HTMLElement|null)?.closest<HTMLButtonElement>('#chars .char')?.dataset.i;
   let version=document.getElementById('arena-version');if(!version){version=document.createElement('small');version.id='arena-version';$('chars').before(version);}version.textContent=`ARENA v${RULES_VERSION} / FRONTLINE UI`;
@@ -146,8 +146,10 @@ function renderChars() {
   let detail=document.getElementById('hero-detail');if(!detail){detail=document.createElement('div');detail.id='hero-detail';$('chars').after(detail);}
   const selected=ABILITIES[CHARACTERS[char].ability];
   detail.innerHTML=`<div class="ability-heading"><kbd>${settings.label('shield')}</kbd><div><small>${bilingual('专属技能','SIGNATURE ABILITY')}</small><h3>${bilingual(selected.name,selected.en)}</h3></div><span>${selected.cooldown/60}<small>SEC</small></span></div><p data-ability-description="${CHARACTERS[char].ability}">${bilingual(selected.description,selected.english).replace(/\bQ\b/g,settings.label('shield'))}</p><details><summary>${bilingual('施放与枪战规则','Casting & gunplay rules')}</summary><p>${bilingual('技能键快速施放，无需低头瞄地。布设技能和武藏错身可同时射击、开镜、换弹。技能跨死亡冷却，施放结束出生保护。','Quick-cast with the ability key without aiming at the floor. Deployments and Musashi’s sidestep preserve fire, aim and reload. Cooldowns survive death; casting ends spawn protection.')}</p></details>`;
-  if(!heroPreview)heroPreview=new HeroPreview($('hero-preview'));
-  heroPreview.choose(char,weaponIndex(loadoutStore.value[0]),skins[weaponIndex(loadoutStore.value[0])]);
+  // The 3D preview needs its own WebGL context; where that cannot be created (a browser out of contexts, a
+  // headless test DOM) the lobby still works and simply shows no model.
+  if(!heroPreview&&!heroPreviewFailed){try{heroPreview=new HeroPreview($('hero-preview'));}catch(error){heroPreviewFailed=true;console.warn('Hero preview unavailable',error);$('hero-preview').textContent=bilingual('角色预览不可用','Hero preview unavailable');}}
+  heroPreview?.choose(char,weaponIndex(loadoutStore.value[0]),skins[weaponIndex(loadoutStore.value[0])]);
   $('hero-lesson-start').onclick=()=>{lessonRequested=true;setMode('offline');pickMap('homeward');$<HTMLSelectElement>('layout').value='1v1';$('play').click();};
   $('hero-lesson-start').textContent=bilingual('进入技能练习 ↗','Practice this ability ↗');
   heroShell(char,loadoutStore.value);

@@ -1,6 +1,7 @@
 /** Production Arena startup UI; renderer and session creation are controllable
  * async boundaries. No real sockets, WebGL or gameplay simulation are exercised. */
 import test from 'node:test';
+import { arenaAssetStub, arenaHeroStub } from './arenaAssetStub';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
@@ -13,7 +14,7 @@ const mocks:Record<string,string>={
  'session.ts':`export function startRange(){throw Error('unexpected training range start')}export function startOffline(opts){window.__qa.offline++;window.__qa.offlineInputs.push(opts);return window.__qa.session(opts)}export function joinOnline(url,opts){return window.__qa.join(url,opts)}`,
  'audio.ts':`export const sfx={unlock(){}}`, 'armory.ts':`export function openArmory(options){window.__qa.armory=options}`,
 };
-const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[{name:'startup-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
+const bundle=build({entryPoints:[resolve(root,'src/main.ts')],bundle:true,write:false,format:'iife',define:{'import.meta.url':'"http://localhost/arena-game/src/main.ts"'},platform:'browser',target:'es2022',loader:{'.webp':'dataurl','.css':'empty'},plugins:[arenaAssetStub,arenaHeroStub,{name:'startup-boundaries',setup(b){b.onResolve({filter:/^\.\/(?:(?:rendering|network|weapons)\/)?(scene|game|session|audio|armory)\.ts$/},a=>({path:a.path.split('/').at(-1)!,namespace:'startup-boundary'}));b.onLoad({filter:/.*/,namespace:'startup-boundary'},a=>({contents:mocks[a.path],loader:'js'}));}}]});
 function deferred(){let resolve!:(value?:any)=>void,reject!:(error:Error)=>void;const promise=new Promise<any>((a,b)=>{resolve=a;reject=b});return{promise,resolve,reject};}
 async function boot(saved:unknown={name:'Startup QA'}){
  const dom=new JSDOM(readFileSync(resolve(root,'index.html'),'utf8'),{url:'https://arena.test/',pretendToBeVisual:true,runScripts:'outside-only'}),w=dom.window,d=w.document;
@@ -112,7 +113,7 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  assert.equal(h.d.querySelectorAll('#wslots .wslot').length,3);assert.ok(h.d.getElementById('loadout')!.getAttribute('aria-label'));
  change('[data-slot="0"]','firefly');change('[data-slot="1"]','halo');change('[data-slot="2"]','hammer');
  change('#layout','1v2');change('#team','B');(h.d.getElementById('name')as HTMLInputElement).value='Selected fighter';
- h.click('[data-i="1"]');h.click('[data-id="blackflag"]');h.click(`[data-mode="${mode}"]`);
+ h.click('[data-i="3"]');h.click('[data-id="blackflag"]');h.click(`[data-mode="${mode}"]`);
  const server=h.d.getElementById('server')as HTMLInputElement;server.value='ws://192.168.1.44:2567';(h.d.getElementById('bots')as HTMLInputElement).checked=true;
  const skinSnapshot:Record<number,number>={};for(const i of[3,2,7]){const select=h.d.querySelector<HTMLSelectElement>(`[data-w="${i}"]`)!;skinSnapshot[i]=Number(select.options[select.options.length-1].value);change(`[data-w="${i}"]`,String(skinSnapshot[i]));}
  const settings=(h.w as any).arena.controls.settings;assert.equal(settings.bind('weapon1','KeyI',true),null);assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
@@ -121,7 +122,7 @@ for(const mode of['offline','online'])test(`production ${mode} startup snapshots
  change('[data-slot="0"]','lumen');(h.d.getElementById('name')as HTMLInputElement).value='Later edit';server.value='ws://later.invalid:2567';
  h.qa.maps[1].task.resolve();await h.flush();
  const requests=mode==='online'?h.qa.joins.map(j=>j.opts):h.qa.offlineInputs;assert.equal(requests.length,1);
- const opts=requests[0];assert.deepEqual(Array.from(opts.loadout),['firefly','halo','hammer']);assert.equal(opts.map,'blackflag');assert.equal(opts.layout,'1v2');assert.equal(opts.team,'B');assert.equal(opts.char,1);assert.equal(opts.name,'Selected fighter');assert.equal(opts.bots,true);
+ const opts=requests[0];assert.deepEqual(Array.from(opts.loadout),['firefly','halo','hammer']);assert.equal(opts.map,'blackflag');assert.equal(opts.layout,'1v2');assert.equal(opts.team,'B');assert.equal(opts.char,3);assert.equal(opts.name,'Selected fighter');assert.equal(opts.bots,true);
  for(const i of[3,2,7])assert.equal(opts.skins[i],skinSnapshot[i]); assert.equal(h.d.querySelector('#wslots kbd')!.textContent,'I');
  if(mode==='online'){assert.equal(h.qa.joins[0].url,'ws://192.168.1.44:2567');h.qa.joins[0].task.resolve(h.qa.session(opts));await h.flush();}
  assert.equal(h.qa.games,1);h.click('#play');await h.flush();assert.equal(h.qa.offline+h.qa.joins.length,1,'active game rejects another start');
