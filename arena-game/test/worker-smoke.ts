@@ -60,7 +60,9 @@ try {
   let seq = 0;
   for (const slot of [0, 1, 2]) {
     a.ws.send(JSON.stringify({ t: 'input', d: [{ seq: ++seq, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: slot, view: 0 }] }));
-    await wait(200);
+    // Poll the other client's view instead of a fixed wait: edge latency varies between runs.
+    const ok = (q: Snapshot['players'][number] | undefined) => !!q && q.crouched && q.weaponSlot === slot && q.weapon === loadoutWeapon(choice, slot);
+    for (let t = 0; t < 30 && !ok(b.snaps.at(-1)!.players.find((p) => p.id === a.id)); t++) await wait(100);
     const p = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
     if (!p.crouched || p.weaponSlot !== slot || p.weapon !== loadoutWeapon(choice, slot) || JSON.stringify(p.loadout) !== JSON.stringify(choice)) throw new Error('remote selected loadout/crouch snapshot mismatch');
   }

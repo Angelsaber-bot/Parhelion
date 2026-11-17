@@ -18,6 +18,8 @@ export interface TacticalEntity {
   dx?:number; dy?:number; dz?:number; ox?:number; oy?:number; oz?:number;
   /** Hook: the enemy it caught and is dragging. */
   victim?:string;
+  /** Round shot: enemies it has already passed through. */
+  struck?:string[];
 }
 export interface ReconMark { id:string; source:number; team:Team; victim:string; lifeId:number; x:number; y:number; z:number; expires:number }
 export interface HeroEvent { t:'ability'; id:string; castSeq:number; kind:AbilityId; action:'accepted'|'spawn'|'break'|'pulse'|'cancel'|'heal'|'trigger'|'blocked'; at:Vec3; amount?:number }

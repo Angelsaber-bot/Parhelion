@@ -121,8 +121,9 @@ export class HeroEffects {
     return g;
   }
   event(event:HeroEvent,tick:number,yaw=0){
-    if(event.action!=='pulse'&&event.action!=='heal'&&event.action!=='break'&&!(event.action==='trigger'&&event.kind==='edict'))return;
+    if(event.action!=='pulse'&&event.action!=='heal'&&event.action!=='break'&&!(event.action==='trigger'&&(event.kind==='edict'||event.kind==='barrage')))return;
     if(event.action==='break'&&event.kind==='barrage')return;
+    if(event.action==='trigger'&&event.kind==='barrage'){const group=new THREE.Group();group.position.set(...event.at);this.puffs??=[puffTexture(11),puffTexture(29),puffTexture(47,1.6)];const flash=new THREE.Sprite(new THREE.SpriteMaterial({map:this.puffs[2],color:0xffb15e,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending}));flash.scale.setScalar(1.5);group.add(flash);this.parent.add(group);this.bursts.push({object:group,start:tick,life:12,kind:event.kind});return;}
     const group=new THREE.Group();group.position.set(...event.at);group.rotation.y=yaw;let life=24;
     if(event.kind==='guard'){const points=Array.from({length:33},(_,i)=>{const angle=(i/32-.5)*H.guard.halfAngle*2;return new THREE.Vector3(Math.sin(angle)*H.guard.range*.62,1.1,-Math.cos(angle)*H.guard.range*.62);});const arc=mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),32,.065,5,false),0xc4e8ff,.8);group.add(arc);for(const offset of [-.17,.17]){const ribbon=arc.clone();ribbon.material=arc.material.clone();ribbon.position.y=offset;ribbon.scale.setScalar(.92);group.add(ribbon);}life=20;}
     else if(event.kind==='decoy'){

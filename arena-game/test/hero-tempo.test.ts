@@ -3,7 +3,7 @@ import {HeroDemo} from '../src/ui/heroDemo.ts';
 import {BTN,type Input} from '../shared/sim.ts';
 import {abilityFor} from '../shared/content.ts';
 function input(seq:number,buttons=0,mx=0):Input{return {seq,mx,mz:0,yaw:0,pitch:0,buttons,weapon:0,view:0};}
-for(const [char,z,damage,maxTicks] of [[2,-7,70,5],[3,-7,30,12],[4,-3,70,8],[5,-7,75,11],[7,-10,30,22]])it(`hero ${char}: a single tap produces an opening in the first firefight`,()=>{
+for(const [char,z,damage,maxTicks] of [[2,-7,70,5],[3,-7,30,12],[4,-3,70,8],[5,-7,70,11],[7,-10,30,22]])it(`hero ${char}: a single tap produces an opening in the first firefight`,()=>{
  const m=new HeroDemo(char).match,enemy=m.player('target')!;enemy.z=z;let first=0;
  for(let i=0;i<maxTicks;i++){m.queueInputs('hero',[input(i+1,i===0?BTN.SHIELD:0)]);m.step();if(enemy.hp<150&&!first)first=i+1;}
  expect(first).toBeGreaterThan(0);expect(first).toBeLessThanOrEqual(maxTicks);expect(enemy.hp).toBe(150-damage);expect(m.player('hero')!.ability.castSeq).toBe(1);

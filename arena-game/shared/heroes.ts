@@ -16,6 +16,8 @@ export function swallowTarget(map:ArenaMap,p:PlayerState,yaw:number):Vec3|null {
   let result:Vec3|null=null;for(let d=.1;d<=H.decoy.distance+.001;d+=.1){const dest:Vec3=[p.x+dx*d,p.y,p.z+dz*d];if(!returnPathClear(map,p,dest,H.decoy.distance))break;result=dest;}
   return result&&distance(at(p),result)>=.5?result:null;
 }
+/** Napoleon's recoil: the shot throws the gunner straight back, the same way on the server and in prediction. */
+export function applyRecoil(p:PlayerState){const [fx,fz]=forward(p.yaw),v=H.barrage.recoil/H.barrage.recoilTicks*60;Object.assign(p,{pullT:H.barrage.recoilTicks,pullX:-fx*v,pullZ:-fz*v,dashT:0,dashQueue:[]});}
 /** Horizontal distance from a point to the segment a-b. */
 function segmentDistance(a:Vec3,b:Vec3,x:number,z:number){const sx=b[0]-a[0],sz=b[2]-a[2],l=sx*sx+sz*sz,k=l>1e-9?Math.max(0,Math.min(1,((x-a[0])*sx+(z-a[2])*sz)/l)):0;return Math.hypot(a[0]+sx*k-x,a[2]+sz*k-z);}
 /** Edict of stillness: an enemy close to the aim line within reach takes the edict at their feet; otherwise it lands where the aim meets the ground. */
@@ -223,6 +225,7 @@ export class HeroSystem {
       // Cannonball and hook leave from the eye along the current aim, so they go where the crosshair is.
       const eye:Vec3=[p.x,p.y+playerEye(this.m.map,p)-.12,p.z],dir=aimDir(p.yaw,p.pitch),spec=kind==='barrage'?H.barrage:H.curtain;
       this.entities.push({id:this.serial++,kind,owner:p.id,lifeId:p.lifeId,team:p.team,castSeq:a.castSeq,x:eye[0],y:eye[1],z:eye[2],yaw:p.yaw,hp:1,created:tick,expires:tick+Math.ceil(spec.range/spec.speed*60)+2,pulse:0,travelled:0,char:p.char,weapon:p.weapon,name:this.m.slots.get(p.id)!.info.name,shownHp:p.hp,dx:dir[0],dy:dir[1],dz:dir[2],ox:eye[0],oy:eye[1],oz:eye[2]});
+      if(kind==='barrage')applyRecoil(p);
     } else {
       const life:Partial<Record<AbilityId,number>>={anchor:150,lens:H.lens.life,edict:H.edict.arm+H.edict.life,prayer:H.prayer.life};
       const e:TacticalEntity={id:this.serial++,kind,owner:p.id,lifeId:p.lifeId,team:p.team,castSeq:a.castSeq,x:point[0],y:point[1],z:point[2],yaw:a.yaw,hp:kind==='prayer'?H.prayer.hp:kind==='lens'?H.lens.hp:kind==='edict'?1:40,created:tick,expires:tick+(life[kind]??1),pulse:0,travelled:0,char:p.char,weapon:p.weapon,name:this.m.slots.get(p.id)!.info.name,shownHp:p.hp};
@@ -236,7 +239,8 @@ export class HeroSystem {
     for(const e of this.entities) {
       if(e.hp<=0||e.expires<=tick)continue;
       const age=tick-e.created;
-      if((e.kind==='barrage'||e.kind==='curtain')&&e.victim===undefined)this.fly(e);
+      if(e.kind==='barrage')this.roll(e);
+      else if(e.kind==='curtain'&&e.victim===undefined)this.fly(e);
       else if(e.kind==='curtain'){const v=this.m.player(e.victim!);if(!v?.alive||v.pullT<=0)e.hp=0;else{e.x=v.x;e.y=v.y+1.1;e.z=v.z;}}
       if(e.kind==='lens'&&e.pulse<H.lens.pulses&&age>=H.lens.warning+H.lens.interval*e.pulse) {
         e.pulse++;this.entityEvent(e,'pulse');
@@ -262,13 +266,32 @@ export class HeroSystem {
       if(!v.alive){a.readyAt=this.m.tick;this.emit(p,'trigger',at(p));}
     }
   }
-  /** One tick of cannonball or hook flight: the first wall, shield, device or enemy along the way stops it. */
+  /** One tick of the round shot: it passes through every enemy (70 each, knocked back), shatters shields and
+   *  devices on the way, and bursts against the first wall. */
+  private roll(e:TacticalEntity){
+    const spec=H.barrage,o:Vec3=[e.x,e.y,e.z],d:Vec3=[e.dx??0,e.dy??0,e.dz??-1],struck=e.struck??=[];
+    const len=Math.min(spec.speed/60,spec.range-e.travelled),wall=raycastMap(this.m.map,o,d,len),hitWall=Number.isFinite(wall)&&wall<=len,stop=hitWall?wall:len;
+    for(const s of this.m.shields)if(s.hp>0&&s.life>0&&rayShield(o,d,s.x,s.y,s.z,s.yaw)<=stop)this.m.damageShield(s,s.hp);
+    for(const other of this.entities){const key=`device:${other.id}`;if(other===e||other.team===e.team||!this.destructible(other)||struck.includes(key))continue;const h=rayTactical(o,d,other);if(h&&h.t<=stop){struck.push(key);this.hit(other,spec.damage);}}
+    const l=Math.hypot(d[0],d[2])||1;
+    for(const {state:p} of this.m.slots.values()){
+      if(!p.alive||p.team===e.team||struck.includes(p.id))continue;
+      const box=playerHitbox(p.crouched);if(rayCapsule(o,d,p.x,p.z,p.y+box.bodyBottom+box.bodyRadius,p.y+box.headY,box.bodyRadius+spec.ball)>stop)continue;
+      struck.push(p.id);this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:[p.x,p.y+1.1,p.z]});
+      this.m.heroDamage(e.owner,e.team,p.id,spec.damage,BARRAGE_KILL);
+      if(p.alive&&!this.m.spawnProtected(p.id)){p.vx+=d[0]/l*spec.knockback;p.vz+=d[2]/l*spec.knockback;p.vy=Math.max(p.vy,spec.lift);p.grounded=false;p.dashT=0;p.dashQueue=[];}
+    }
+    e.x=o[0]+d[0]*stop;e.y=o[1]+d[1]*stop;e.z=o[2]+d[2]*stop;e.travelled+=stop;
+    if(hitWall){this.strike(e,[e.x,e.y,e.z],spec.radius,spec.splash,BARRAGE_KILL,new Set(struck));e.hp=0;}
+    else if(e.travelled>=spec.range-1e-6)e.hp=0;
+  }
+  /** One tick of hook flight: the first wall, shield, device or enemy along the way stops it. */
   private fly(e:TacticalEntity){
-    const spec=e.kind==='barrage'?H.barrage:H.curtain,o:Vec3=[e.x,e.y,e.z],d:Vec3=[e.dx??0,e.dy??0,e.dz??-1];
+    const spec=H.curtain,o:Vec3=[e.x,e.y,e.z],d:Vec3=[e.dx??0,e.dy??0,e.dz??-1];
     const len=Math.min(spec.speed/60,spec.range-e.travelled);
-    let t=raycastMap(this.m.map,o,d,len),hit:'wall'|'shield'|'device'|'player'|null=Number.isFinite(t)&&t<=len?'wall':null,victim:PlayerState|null=null,shield:typeof this.m.shields[number]|null=null,device:TacticalEntity|null=null;
+    let t=raycastMap(this.m.map,o,d,len),hit:'wall'|'shield'|'device'|'player'|null=Number.isFinite(t)&&t<=len?'wall':null,victim:PlayerState|null=null,device:TacticalEntity|null=null;
     if(!hit)t=len;
-    for(const s of this.m.shields){if(s.hp<=0||s.life<=0)continue;const ts=rayShield(o,d,s.x,s.y,s.z,s.yaw);if(ts<t){t=ts;hit='shield';shield=s;}}
+    for(const s of this.m.shields){if(s.hp<=0||s.life<=0)continue;const ts=rayShield(o,d,s.x,s.y,s.z,s.yaw);if(ts<t){t=ts;hit='shield';}}
     for(const other of this.entities){if(other===e||other.team===e.team||!this.destructible(other))continue;const h=rayTactical(o,d,other);if(h&&h.t<t){t=h.t;hit='device';device=other;}}
     for(const {state:p} of this.m.slots.values()){
       if(!p.alive||p.team===e.team)continue;
@@ -278,14 +301,6 @@ export class HeroSystem {
     e.x=o[0]+d[0]*t;e.y=o[1]+d[1]*t;e.z=o[2]+d[2]*t;e.travelled+=t;
     const point:Vec3=[e.x,e.y,e.z];
     if(!hit){if(e.travelled>=spec.range-1e-6)this.miss(e,point);return;}
-    if(e.kind==='barrage'){
-      const damaged=new Set<string>();
-      if(victim){damaged.add(victim.id);this.m.heroDamage(e.owner,e.team,victim.id,H.barrage.damage,BARRAGE_KILL);
-        if(victim.alive&&!this.m.spawnProtected(victim.id)){const l=Math.hypot(d[0],d[2])||1;victim.vx+=d[0]/l*H.barrage.knockback;victim.vz+=d[2]/l*H.barrage.knockback;victim.vy=Math.max(victim.vy,H.barrage.lift);victim.grounded=false;victim.dashT=0;victim.dashQueue=[];}}
-      if(shield)this.m.damageShield(shield,H.barrage.damage);
-      if(device)this.hit(device,H.barrage.damage);
-      this.strike(e,point,H.barrage.radius,H.barrage.splash,BARRAGE_KILL,damaged,shield??device);e.hp=0;return;
-    }
     if(hit!=='player'||!victim){if(device)this.hit(device,H.curtain.damage);this.miss(e,point);return;}
     this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'pulse',at:[victim.x,victim.y+1.1,victim.z]});
     this.m.heroDamage(e.owner,e.team,victim.id,H.curtain.damage,BROADSIDE_KILL);

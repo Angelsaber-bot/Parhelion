@@ -114,24 +114,25 @@ export const ABILITIES: Record<AbilityId, { name: string; en: string; icon: stri
   guard: { name:'风王铁槌', en:'Wind king’s hammer', icon:'♜', cooldown:540, windup:3, recovery:6, range:0, description:'轻点 Q：10 米、90° 风斩 70 伤害；按住最多 0.6 秒格挡 150 伤害，吸收后风斩增强至 95。9 秒冷却。', english:'Tap Q: 70 damage slash over 10m / 90°. Hold up to 0.6s to guard 150 damage and empower the slash to 95. 9s cooldown.' },
   curtain: { name:'接舷钩', en:'Boarding hook', icon:'⚓', cooldown:600, windup:3, recovery:6, range:24, description:'沿准星射出钩索，24 米内钩中敌人造成 30 伤害，并把对方拽到身前 2.5 米，随后减速 0.5 秒。墙和护盾会挡住钩索；空钩返还 40% 冷却。10 秒冷却。', english:'Fire a hook along your aim: within 24m it deals 30 damage, drags the enemy to 2.5m in front of you and slows them for 0.5s. Walls and shields stop it; a miss refunds 40% of the cooldown. 10s cooldown.' },
   decoy: { name:'燕返', en:'Swallow cut', icon:'♊', cooldown:480, windup:3, recovery:3, range:6, description:'沿准星方向 0.15 秒突进 6 米，双刀斩中沿途敌人各 70 伤害；斩杀立即刷新冷却。突进中可开枪，全程可受伤。8 秒冷却。', english:'Dash 6m along your aim in 0.15s; both blades deal 70 to every enemy on the way. A kill resets the cooldown at once. Keep firing during the dash; you remain vulnerable. 8s cooldown.' },
-  barrage: { name:'战争之神', en:'God of war', icon:'◎', cooldown:660, windup:3, recovery:6, range:45, description:'沿准星直射一发炮弹（70 m/s）：直接命中 75 伤害并击退，2.5 米内其他敌人受 35 溅射伤害。墙和护盾会挡住炮弹。11 秒冷却。', english:'Fire a cannonball along your aim (70 m/s): a direct hit deals 75 and knocks back, other enemies within 2.5m take 35 splash. Walls and shields stop it. 11s cooldown.' },
+  barrage: { name:'战争之神', en:'God of war', icon:'◎', cooldown:660, windup:3, recovery:6, range:45, description:'沿准星轰出一发贯穿实心弹（70 m/s）：穿过路径上的每个敌人各造成 70 伤害并击退，直接击碎护盾，撞墙时炸开 2.5 米 35 伤害。开炮后坐力把自己向后推 3 米。11 秒冷却。', english:'Fire a piercing round shot along your aim (70 m/s): every enemy in its path takes 70 and is knocked back, shields shatter, and it bursts for 35 within 2.5m when it hits a wall. The recoil throws you 3m back. 11s cooldown.' },
   prayer: { name:'吾主在此', en:'Luminosité Eternelle', icon:'✦', cooldown:720, windup:6, recovery:6, range:6, description:'0.1 秒立旗，6 米内可见友军立即恢复 30 HP，随后 3 秒每 0.25 秒回 5 HP，枪伤降低 25%。圣旗 100 耐久；不能复活或超额治疗。', english:'Plant in 0.1s: visible allies within 6m instantly heal 30 HP, then 5 HP every 0.25s for 3s with 25% gun resistance. 100 HP banner; no revive or overheal.' },
   lens: { name:'日轮审判', en:'Solar judgement', icon:'☼', cooldown:720, windup:6, recovery:6, range:8, description:'日轮在 0.25 秒预警后快速发出四次审判，间隔 0.4 秒；16 米 / 100°，每次 30 伤害。Q 可转向，墙烟可挡；日轮 80 耐久。', english:'After a 0.25s warning, four judgements fire 0.4s apart over 16m / 100°, dealing 30 each. Q redirects; walls and smoke block it. 80 HP disc.' },
-  edict: { name:'定身令', en:'Edict of stillness', icon:'⌁', cooldown:660, windup:6, recovery:6, range:12, description:'在准星处（12 米内，可自动对准敌人）落下御令，0.2 秒预警后 3.5 米内的敌人定身 0.7 秒，并在 2 秒内受到的伤害提高 25%。定身中仍可开枪。11 秒冷却。', english:'Drop an edict where you aim (within 12m, snaps to an enemy): after a 0.2s warning, enemies within 3.5m are rooted for 0.7s and take 25% more damage for 2s. Rooted players can still shoot. 11s cooldown.' },
+  edict: { name:'定身令', en:'Edict of stillness', icon:'⌁', cooldown:660, windup:6, recovery:6, range:18, description:'在准星处（18 米内，可自动对准敌人）落下御令，0.2 秒预警后 5 米内的敌人定身 0.7 秒，并在 2 秒内受到的伤害提高 25%。定身中仍可开枪。11 秒冷却。', english:'Drop an edict where you aim (within 18m, snaps to an enemy): after a 0.2s warning, enemies within 5m are rooted for 0.7s and take 25% more damage for 2s. Rooted players can still shoot. 11s cooldown.' },
 };
 /** Shared by authority, prediction and visual telegraphs (all time values are ticks). */
 export const HERO_COMBAT = {
   guard:{budget:150,hold:36,damage:70,bonus:25,range:10,halfAngle:Math.PI/4},
   /** Hook: projectile speed (m/s), reach, damage, where the catch lands in front of the caster, drag speed and after-slow. */
-  curtain:{speed:80,range:24,radius:.3,damage:30,pullTo:2.5,pullSpeed:40,slow:30,refund:.4,maxPull:30},
+  curtain:{speed:80,range:24,radius:.7,damage:30,pullTo:2.5,pullSpeed:40,slow:30,refund:.4,maxPull:30},
   /** Swallow cut: dash length/speed (m/s) and duration, half-width of the blade sweep, damage per enemy. */
   decoy:{distance:6,speed:40,travel:9,width:1.15,damage:70},
-  /** Cannon: projectile speed (m/s), reach, ball radius, direct and splash damage, splash radius and knockback. */
-  barrage:{speed:70,range:45,ball:.22,damage:75,splash:35,radius:2.5,knockback:7,lift:3},
+  /** Cannon: projectile speed (m/s), reach, ball radius, damage to each enemy pierced, wall-burst splash and radius,
+   *  knockback, and the recoil that throws the gunner back (metres over ticks). */
+  barrage:{speed:70,range:45,ball:.3,damage:70,splash:35,radius:2.5,knockback:7,lift:3,recoil:3,recoilTicks:9},
   prayer:{hp:100,radius:6,instant:30,heal:5,interval:15,life:181,resist:.75},
   lens:{hp:80,range:16,halfAngle:50*Math.PI/180,warning:15,interval:24,pulses:4,damage:30,life:96,mark:30},
   /** Edict: snap cone half-width (m), radius, warning, root and exposure (ticks), damage taken while exposed, slow after a hook. */
-  edict:{snap:1.4,radius:3.5,arm:12,life:30,root:42,exposed:120,vulnerable:1.25,speed:.65},
+  edict:{snap:2,radius:5,arm:12,life:30,root:42,exposed:120,vulnerable:1.25,speed:.65},
 } as const;
 export const CHARACTERS: CharacterDef[] = [
   { id:'aster', name:'Aster', hp:150, speed:5.2, color:0x63d9db, ability:'barrier' },
