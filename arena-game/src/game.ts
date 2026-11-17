@@ -10,6 +10,7 @@ import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
 import { tacticalArea, raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
+import { BackgroundTicker } from './network/backgroundTicker.ts';
 import { aimDir, applyInput, clonePlayer, playerEye, quantAngle, type Input, type PlayerState, type SimEvent } from '../shared/sim.ts';
 import { sfx } from './rendering/audio.ts';
 import type { Controls } from './player/controls.ts';
@@ -38,6 +39,7 @@ export class Game {
   private renderTick = 0;
   private acc = 0;
   private last = performance.now();
+  private background = new BackgroundTicker((seconds) => { if (this.running && !this.paused) this.advance(Math.min(.25, seconds)); });
   private smooth: Vec3 = [0, 0, 0];
   private raf = 0;
   private running = true;
@@ -78,6 +80,8 @@ export class Game {
     session.onSnapshot = (s) => this.onSnapshot(s);
     session.onClose = (r) => this.stop(r);
     this.raf = requestAnimationFrame((t) => this.frame(t));
+    // Online only: a background window keeps sending its moves instead of freezing its player.
+    if (session.online) this.background.start();
   }
 
   stop(reason = '') {
@@ -85,6 +89,7 @@ export class Game {
     if (!this.running) return;
     this.running = false;
     cancelAnimationFrame(this.raf);
+    this.background.stop();
     this.resetAim();
     this.scene.viewmodel.clear();
     this.scene.clearCombatEffects();
@@ -313,12 +318,8 @@ export class Game {
       return;
     }
 
-    this.acc = Math.min(this.acc + dt, DT * 6);
-    while (this.acc >= DT) {
-      this.acc -= DT;
-      this.tickInput();
-    }
-    if (this.outbox.length) { this.session.send(this.outbox); this.outbox = []; }
+    this.background.frame(t);
+    this.advance(dt);
 
     // advance the remote render clock, steering toward (newest snapshot - interpolation delay)
     if (this.latest) {
@@ -331,6 +332,16 @@ export class Game {
     const k = Math.exp(-dt * 12);
     this.smooth = [this.smooth[0] * k, this.smooth[1] * k, this.smooth[2] * k];
     this.draw(dt);
+  }
+
+  /** Fixed-step input clock, from animation frames or (in a background window) the worker heartbeat. */
+  private advance(seconds: number) {
+    this.acc = Math.min(this.acc + seconds, DT * 6);
+    while (this.acc >= DT) {
+      this.acc -= DT;
+      this.tickInput();
+    }
+    if (this.outbox.length) { this.session.send(this.outbox); this.outbox = []; }
   }
 
   private tickInput() {
