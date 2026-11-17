@@ -72,6 +72,9 @@ try {
   await wait(850); // hammer windup is 500ms; scheduled impact must occur with no extra packets
   const events = b.snaps.flatMap((s) => s.events);
   if (!events.some((e) => e.t === 'meleeStart' && e.id === a.id && e.w === 7) || !events.some((e) => e.t === 'meleeStrike' && e.id === a.id && e.w === 7)) throw new Error('authoritative melee telegraph/impact missing');
+  // Going live respawns everyone: measure movement only after the countdown, or a late respawn reads as no movement.
+  for (let t = 0; t < 60 && b.snaps.at(-1)!.phase !== 'live'; t++) await wait(100);
+  await wait(250);
   const before = b.snaps.at(-1)!.players.find((p) => p.id === a.id)!;
   for (let batch = 0; batch < 6; batch++) {
     a.ws.send(JSON.stringify({ t: 'input', d: Array.from({ length: 10 }, () => ({ seq: ++seq, mx: 0, mz: 1, yaw: 0, pitch: 0, buttons: BTN.CROUCH, weapon: 0, view: 0 })) })); await wait(170);
