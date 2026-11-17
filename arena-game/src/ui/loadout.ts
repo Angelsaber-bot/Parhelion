@@ -1,5 +1,5 @@
 import { bilingual, localizeText } from '../../../shared-client/i18n.ts';
-import { DEFAULT_LOADOUT, DEFAULT_UTILITY, FRAG, GRENADE, GUN_IDS, MELEE_IDS, MELEE_MOVE, SMOKE, TICK_HZ, UTILITY_IDS, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type UtilityId, type WeaponDef, type WeaponId } from '../../shared/content.ts';
+import { DEFAULT_LOADOUT, DEFAULT_UTILITY, FRAG, GRENADE, GUN_IDS, MELEE_IDS, MELEE_MOVE, SMOKE, TICK_HZ, UTILITY_CHARGES, UTILITY_IDS, WEAPONS, isLoadout, validateLoadout, weaponIndex, type Loadout, type UtilityId, type WeaponDef, type WeaponId } from '../../shared/content.ts';
 
 export interface LoadoutStorage { getItem(key: string): string | null; setItem(key: string, value: string): void }
 export const LOADOUT_KEY = 'parhelion-loadout-v1';
@@ -82,10 +82,10 @@ export function weaponStats(w: WeaponDef): string {
 
 export const UTILITY_INFO: Record<UtilityId, { name: [string, string]; role: [string, string] }> = {
   frag: { name: ['破片手雷', 'Frag grenade'], role: [`${FRAG.fuse / TICK_HZ}s 引信，到时若仍在空中则等触地再炸。半径 ${FRAG.radius}m 内、未被实墙或楼板隔开的敌人必死；门窗和开口挡不住，护盾也挡不住，不伤队友`, `After a ${FRAG.fuse / TICK_HZ}s fuse, explodes on ground contact. Every enemy within ${FRAG.radius}m dies unless a solid wall or floor is in the way; doorways, windows and shields do not stop it, teammates are safe`] },
-  smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`触地后 1 秒内涌出半径 ${SMOKE.radius}m、高 ${SMOKE.height}m 的烟幕，持续 ${SMOKE.life / TICK_HZ}s；遇墙贴墙填满、不穿墙。遮挡双方视线和名牌，子弹正常穿过。破片手雷在烟里爆炸会炸开约 ${SMOKE.hole.life / TICK_HZ}s 的空洞`, `Within a second of landing it billows into a ${SMOKE.radius}m wide, ${SMOKE.height}m tall cloud for ${SMOKE.life / TICK_HZ}s that fills up against walls instead of passing through them. Hides both teams’ sight and nameplates; bullets pass at full damage. A frag going off inside blows a hole for about ${SMOKE.hole.life / TICK_HZ}s`] },
+  smoke: { name: ['烟雾弹', 'Smoke grenade'], role: [`每条命 ${UTILITY_CHARGES.smoke} 颗（手雷 ${UTILITY_CHARGES.frag} 颗）。触地后 1 秒内涌出半径 ${SMOKE.radius}m、高 ${SMOKE.height}m 的烟幕，持续 ${SMOKE.life / TICK_HZ}s；遇墙贴墙填满、不穿墙。遮挡双方视线和名牌，子弹正常穿过。破片手雷在烟里爆炸会炸开约 ${SMOKE.hole.life / TICK_HZ}s 的空洞`, `${UTILITY_CHARGES.smoke} per life (frags: ${UTILITY_CHARGES.frag}). Within a second of landing it billows into a ${SMOKE.radius}m wide, ${SMOKE.height}m tall cloud for ${SMOKE.life / TICK_HZ}s that fills up against walls instead of passing through them. Hides both teams’ sight and nameplates; bullets pass at full damage. A frag going off inside blows a hole for about ${SMOKE.hole.life / TICK_HZ}s`] },
 };
 export const utilityCooldownSeconds = () => GRENADE.cooldown / TICK_HZ;
-export const utilityCharges = () => GRENADE.charges;
+export const utilityCharges = (kind: UtilityId = 'frag') => UTILITY_CHARGES[kind];
 
 export function loadoutCards(loadout: Loadout, keyLabel: (action: string) => string) {
   return loadout.map((id, slot) => {

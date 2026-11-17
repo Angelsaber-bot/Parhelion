@@ -82,12 +82,24 @@ export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + SMOKE.height * .4, s.
 /** Settled shape of a new cloud: walls stop it in each direction, and what they take spills into the open sides,
  * keeping roughly the same floor area, the way a real cloud fills a corridor instead of seeping through stone. */
 export function settleSmoke(m: ArenaMap, s: Smoke): Smoke {
-  const n = SMOKE.rays, origin: Vec3 = [s.x, s.y + 1, s.z], walls: number[] = [];
-  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, d = raycastMap(m, origin, [Math.cos(a), 0, Math.sin(a)], SMOKE.radius * SMOKE.stretch); walls.push(Number.isFinite(d) ? Math.max(.6, d + .25) : SMOKE.radius * SMOKE.stretch); }
+  // Every collider counts, including invisible "air walls" around buildings, and so does the map's outer boundary.
+  // Each direction is probed at three heights and three side offsets and keeps the most open: smoke spills over
+  // low cover and past a thin pillar, but a real wall (or an air wall) stops it at every height.
+  const n = SMOKE.rays, far = SMOKE.radius * SMOKE.stretch, b = m.movementBounds, walls: number[] = [];
+  for (let i = 0; i < n; i++) {
+    const a = i / n * Math.PI * 2, dx = Math.cos(a), dz = Math.sin(a);
+    const edge = Math.min(dx > 1e-6 ? (b.maxX - s.x) / dx : dx < -1e-6 ? (b.minX - s.x) / dx : Infinity, dz > 1e-6 ? (b.maxZ - s.z) / dz : dz < -1e-6 ? (b.minZ - s.z) / dz : Infinity);
+    let open = 0;
+    for (const h of [.4, 1.6, 2.8]) for (const side of [-.6, 0, .6]) {
+      const d = raycastMap(m, [s.x - dz * side, s.y + h, s.z + dx * side], [dx, 0, dz], far);
+      open = Math.max(open, Number.isFinite(d) ? d + .25 : far);
+    }
+    walls.push(Math.max(.6, Math.min(open, Math.max(0, edge) + .25)));
+  }
   const area = (r: number[]) => r.reduce((sum, v) => sum + v * v, 0);
   let reach = walls.map(w => Math.min(w, SMOKE.radius));
-  for (let k = 0; k < 6; k++) { const scale = Math.sqrt(n * SMOKE.radius ** 2 / Math.max(1e-6, area(reach))); if (scale < 1.005) break; reach = walls.map((w, i) => Math.min(w, reach[i] * scale, SMOKE.radius * SMOKE.stretch)); }
-  const ceiling = raycastMap(m, origin, [0, 1, 0], SMOKE.height);
+  for (let k = 0; k < 6; k++) { const scale = Math.sqrt(n * SMOKE.radius ** 2 / Math.max(1e-6, area(reach))); if (scale < 1.005) break; reach = walls.map((w, i) => Math.min(w, reach[i] * scale, far)); }
+  const ceiling = raycastMap(m, [s.x, s.y + 1, s.z], [0, 1, 0], SMOKE.height);
   return { ...s, reach: reach.map(quant), top: quant(Number.isFinite(ceiling) ? Math.max(1.9, ceiling + .9) : SMOKE.height) };
 }
 /** Size of the cloud over its life: it blooms from 40% in SMOKE.bloom ticks and sinks a little as it thins. */

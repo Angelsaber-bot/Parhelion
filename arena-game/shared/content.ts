@@ -71,21 +71,23 @@ export const GRENADE = {
   gravity: 18,
   restitution: 0.42,
   friction: 0.62, // horizontal speed kept per ground contact
-  charges: 2, // grenades carried per life
+  charges: 2, // frags carried per life (see UTILITY_CHARGES)
   cooldown: 14 * TICK_HZ, // to recharge one spent charge
   throwGap: 24, // ticks between two throws
   throwLock: 12, // ticks before the held weapon can fire again
 };
+/** Grenades carried per life: smoke is lighter and plentiful, frags are scarce. Each recharges on GRENADE.cooldown. */
+export const UTILITY_CHARGES: Record<UtilityId, number> = { frag: 2, smoke: 3 };
 /** Lethal to every enemy within `radius`: walls and shields do not stop it (shields in range break),
  * teammates are spared, and the thrower takes a fixed, never-fatal `selfDamage`. Throws people back. */
 export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
 /** Smoke blocks perception only; bullets retain their full damage. Modelled on current tactical shooters
- * (Valorant ~4-4.5 m radius, CS2 ~18-20 s, both settling as a dome that hugs walls): a 4.2 m cloud 4 m tall with steep, billowing sides that
+ * (Valorant ~4-4.5 m radius, CS2 ~18-20 s, both settling as a dome that hugs walls): a 5.2 m cloud 5.5 m tall with steep, billowing sides that
  * blooms in `bloom` ticks, presses against walls and spills further into open directions (up to `stretch`) instead
  * of passing through them, and thins over the last `fade` ticks (sight returns `clear` ticks before it is gone).
  * A frag going off in or beside it blows a `hole` open for a moment, then the cloud closes again. */
 export const SMOKE = {
-  radius: 4.2, height: 4, life: 16 * TICK_HZ, bloom: 48, fade: 90, clear: 30, stretch: 1.3, rays: 16, cover: 1,
+  radius: 5.2, height: 5.5, life: 16 * TICK_HZ, bloom: 48, fade: 90, clear: 30, stretch: 1.3, rays: 16, cover: 1,
   hole: { radius: 3.2, life: 3 * TICK_HZ, open: 72 },
 };
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */

@@ -4,7 +4,7 @@ import { freshAbility, type AbilityState } from './heroState.ts';
 // Anything that needs other players (hit resolution, shields in the world) is returned as an
 // event and handled by Match on the server.
 
-import { HERO_COMBAT, abilityAllowsGunplay, CHARACTERS, CROUCH, DASH, DT, GRENADE, MELEE_MOVE, MOVE, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
+import { HERO_COMBAT, abilityAllowsGunplay, CHARACTERS, CROUCH, DASH, DT, GRENADE, UTILITY_CHARGES, MELEE_MOVE, MOVE, WEAPONS, loadoutWeapon, validateLoadout, validateUtility, type Loadout, type Team, type UtilityId } from './content.ts';
 import { blockedAt, ceilingAt, constrainToBounds, groundAt, recover, type ArenaMap, type Vec3 } from './map.ts';
 
 export const BTN = { FIRE: 1, JUMP: 2, DASH: 4, SHIELD: 8, RELOAD: 16, CROUCH: 32, THROW: 64 } as const;
@@ -86,7 +86,7 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, dashX: 0, dashZ: 0,
     lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0, rootUntil: 0, exposedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
-    shieldCd: 0, utility, utilityCd: 0, utilityCharges: GRENADE.charges, utilityLock: 0, prevButtons: 0, lastSeq: -1,
+    shieldCd: 0, utility, utilityCd: 0, utilityCharges: UTILITY_CHARGES[utility], utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }
 
@@ -220,7 +220,8 @@ export function applyInput(m: ArenaMap, p: PlayerState, inp: Input, foes: readon
   p.shieldCd = Math.max(0, p.ability.readyAt - p.abilityTick);
   if (p.utilityLock > 0) p.utilityLock--;
   // One spent charge returns per cooldown, then the next starts recharging.
-  if (p.utilityCharges < GRENADE.charges && p.utilityCd > 0 && --p.utilityCd === 0 && ++p.utilityCharges < GRENADE.charges) p.utilityCd = GRENADE.cooldown;
+  const carry = UTILITY_CHARGES[p.utility] ?? GRENADE.charges;
+  if (p.utilityCharges < carry && p.utilityCd > 0 && --p.utilityCd === 0 && ++p.utilityCharges < carry) p.utilityCd = GRENADE.cooldown;
   if (!p.alive) { p.meleeWindup = 0; return events; }
 
   const locked = !abilityAllowsGunplay(p.char) && p.abilityTick < p.ability.lockUntil;

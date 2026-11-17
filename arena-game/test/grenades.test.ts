@@ -323,12 +323,12 @@ it('the client view follows snapshots: models appear and disappear, clouds fade 
 
 describe('smoke modelled on current tactical shooters', () => {
   const landed = (m = open, x = 0, z = 0, age = 120): Smoke => settleSmoke(m, { id: 1, owner: 'a', x, y: 0, z, life: SMOKE.life - age });
-  it('settles as a 4.2 m cloud about 4 m tall: sight is cut low and high inside it, and clear above and beside it', () => {
+  it('settles as a 5.2 m cloud about 5.5 m tall: sight is cut low and high inside it, and clear above and beside it', () => {
     const s = landed();
-    expect(smokeBlocks([s], [-10, 1.6, 3.9], [10, 1.6, 3.9])).toBe(true);
-    expect(smokeBlocks([s], [-10, 3.4, 0], [10, 3.4, 0])).toBe(true);
-    expect(smokeBlocks([s], [-10, 4.4, 0], [10, 4.4, 0])).toBe(false);
-    expect(smokeBlocks([s], [-10, 1.6, 4.6], [10, 1.6, 4.6])).toBe(false);
+    expect(smokeBlocks([s], [-10, 1.6, 4.9], [10, 1.6, 4.9])).toBe(true);
+    expect(smokeBlocks([s], [-10, 4.9, 0], [10, 4.9, 0])).toBe(true);
+    expect(smokeBlocks([s], [-10, 6, 0], [10, 6, 0])).toBe(false);
+    expect(smokeBlocks([s], [-10, 1.6, 5.6], [10, 1.6, 5.6])).toBe(false);
   });
   it('presses against a wall instead of passing through it, and spills further into the open', () => {
     const s = landed(map, 0, -4.5);
@@ -337,11 +337,29 @@ describe('smoke modelled on current tactical shooters', () => {
     expect(Math.max(...s.reach!)).toBeGreaterThan(SMOKE.radius);
     expect(insideSmoke([s], [0, 1.6, -4.5 + SMOKE.radius + .3])).toBe(true);
   });
+  it('fills against invisible air walls and the map edge, but spills over low cover and past a thin pillar', () => {
+    const air = buildMap({ ...data(false), objects: [...data(false).objects, box('air', [3, 2, 0], [.2, 4, 20]), box('crate', [-2.5, .4, 0], [.6, .8, 6]), box('pillar', [0, 2, -3], [.3, 4, .3])] as MapData['objects'] });
+    const s = landed(air, 0, 0);
+    expect(insideSmoke([s], [3.4, 1.6, 0])).toBe(false);
+    expect(insideSmoke([s], [-3.5, 1.6, 0])).toBe(true);
+    expect(insideSmoke([s], [0, 1.6, -3.8])).toBe(true);
+    const edge = landed(open, 28, 0);
+    expect(insideSmoke([edge], [30.5, 1.6, 0])).toBe(false);
+  });
   it('blooms out from the can in under a second and thins away, giving sight back half a second before it is gone', () => {
     expect(smokeBlocks([landed(open, 0, 0, 6)], [-10, 1.6, 3.6], [10, 1.6, 3.6])).toBe(false);
     expect(smokeBlocks([landed(open, 0, 0, SMOKE.bloom)], [-10, 1.6, 3.6], [10, 1.6, 3.6])).toBe(true);
     expect(smokeBlocks([{ ...landed(), life: SMOKE.clear + 1 }], [-10, 1.6, 0], [10, 1.6, 0])).toBe(true);
     expect(smokeBlocks([{ ...landed(), life: SMOKE.clear }], [-10, 1.6, 0], [10, 1.6, 0])).toBe(false);
+  });
+  it('smoke carries three charges a life and frags two, each recharging one at a time', () => {
+    for (const [kind, count] of [['smoke', 3], ['frag', 2]] as const) {
+      const p = newPlayer('a', 'A', 2, undefined, kind); expect(p.utilityCharges).toBe(count);
+      const m = new Match(open, '1v1'); m.addPlayer('a', { team: 'A', char: 2, name: 'a', skins: [], bot: false, utility: kind }); expect(m.player('a')!.utilityCharges).toBe(count);
+      const q = m.player('a')!; q.utilityCharges = 0; q.utilityCd = 1; q.abilityTick = 0;
+      applyInput(open, q, { seq: q.lastSeq + 1, mx: 0, mz: 0, yaw: 0, pitch: 0, buttons: 0, weapon: 0, view: 0 });
+      expect(q.utilityCharges).toBe(1); expect(q.utilityCd).toBe(GRENADE.cooldown);
+    }
   });
   it('a frag going off in the cloud blows it open for a moment, then the smoke rolls back', () => {
     const m = new Match(open, '1v1'); m.smokes.push(landed());
