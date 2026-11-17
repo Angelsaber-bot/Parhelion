@@ -35,7 +35,8 @@ it('records only the human shooter: shots, hits, heads, damage, kill distance an
   const m = liveMatch(true);
   fire(m, 'you', 12, 2.1, 22); // just over the head: a miss, but still aimed at the visible bot
   fire(m, 'you', 12, 0.9, 22); // body 52
-  fire(m, 'you', 12, 1.6, 22); // head 104 → 156 ≥ 150, dead
+  fire(m, 'you', 12, 0.9, 22); // body 52 → 104
+  fire(m, 'you', 12, 1.6, 22); // head 104 → 208 ≥ 200, dead
   // The bot shoots back after respawning; that shot is never measured as a bot weapon line.
   m.flushStats();
   const [rec] = m.stats.drain() as MatchRecord[];
@@ -45,16 +46,16 @@ it('records only the human shooter: shots, hits, heads, damage, kill distance an
   expect(rec.humans).toHaveLength(1);
   expect(rec.bots).toEqual([{ team: 'B', char: 0, loadout: ['lumen', 'corona', 'blade'] }]);
   const h = rec.humans[0], halo = h.weapons.halo;
-  expect(halo.shots).toBe(3);
-  expect(halo.hits).toBe(2);
+  expect(halo.shots).toBe(4);
+  expect(halo.hits).toBe(3);
   expect(halo.heads).toBe(1);
-  expect(halo.damage).toBe(150); // capped at the HP actually removed
+  expect(halo.damage).toBe(200); // capped at the HP actually removed
   expect(halo.kills).toBe(1);
   expect(halo.headKills).toBe(1);
-  expect(halo.ttk).toEqual([23]); // first damage to kill: this helper fires every 1 + 22 ticks
+  expect(halo.ttk).toEqual([46]); // first damage to kill: this helper fires every 1 + 22 ticks
   expect(halo.killDist[distBucket(12)]).toBe(1);
-  expect(halo.aimed[distBucket(12)][0]).toBe(3);
-  expect(halo.aimed[distBucket(12)][1]).toBe(2);
+  expect(halo.aimed[distBucket(12)][0]).toBe(4);
+  expect(halo.aimed[distBucket(12)][1]).toBe(3);
   expect(halo.wild).toBe(0);
   expect(halo.idle).toBe(0);
   expect(halo.held).toBeGreaterThan(60);
@@ -73,7 +74,7 @@ it('bot fire counts against the human (damage taken, deaths by weapon) but never
   m.flushStats();
   const [rec] = m.stats.drain();
   const h = rec.humans[0];
-  expect(h.damageTaken).toBe(150);
+  expect(h.damageTaken).toBe(200);
   expect(h.deaths).toBe(1);
   expect(h.deathsBy).toEqual({ lumen: 1 });
   expect(Object.keys(h.weapons)).toEqual(['halo']); // only what the human held

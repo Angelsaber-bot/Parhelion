@@ -145,15 +145,15 @@ export const HERO_COMBAT = {
   edict:{snap:2,radius:5,arm:12,life:30,root:42,exposed:120,vulnerable:1.25,speed:.65},
 } as const;
 export const CHARACTERS: CharacterDef[] = [
-  { id:'aster', name:'Aster', hp:150, speed:5.2, color:0x63d9db, ability:'barrier' },
-  { id:'vega', name:'Vega', hp:150, speed:5.2, color:0xefb76a, ability:'anchor' },
-  { id:'saber', name:'阿尔托莉雅 · Artoria', hp:150, speed:5.2, color:0x6489ed, ability:'guard' },
-  { id:'blackbeard', name:'黑胡子 · Blackbeard', hp:150, speed:5.2, color:0xb55f50, ability:'curtain' },
-  { id:'musashi', name:'宫本武藏 · Musashi', hp:150, speed:5.2, color:0xe96b8e, ability:'decoy' },
-  { id:'napoleon', name:'拿破仑 · Napoleon', hp:150, speed:5.2, color:0x547db2, ability:'barrage' },
-  { id:'jeanne', name:'贞德 · Jeanne', hp:150, speed:5.2, color:0xab96e2, ability:'prayer' },
-  { id:'ozymandias', name:'奥斯曼迪斯 · Ozymandias', hp:150, speed:5.2, color:0xe3b953, ability:'lens' },
-  { id:'qin', name:'秦始皇 · Qin Shi Huang', hp:150, speed:5.2, color:0x72c7ae, ability:'edict' },
+  { id:'aster', name:'Aster', hp:200, speed:5.2, color:0x63d9db, ability:'barrier' },
+  { id:'vega', name:'Vega', hp:200, speed:5.2, color:0xefb76a, ability:'anchor' },
+  { id:'saber', name:'阿尔托莉雅 · Artoria', hp:200, speed:5.2, color:0x6489ed, ability:'guard' },
+  { id:'blackbeard', name:'黑胡子 · Blackbeard', hp:200, speed:5.2, color:0xb55f50, ability:'curtain' },
+  { id:'musashi', name:'宫本武藏 · Musashi', hp:200, speed:5.2, color:0xe96b8e, ability:'decoy' },
+  { id:'napoleon', name:'拿破仑 · Napoleon', hp:200, speed:5.2, color:0x547db2, ability:'barrage' },
+  { id:'jeanne', name:'贞德 · Jeanne', hp:200, speed:5.2, color:0xab96e2, ability:'prayer' },
+  { id:'ozymandias', name:'奥斯曼迪斯 · Ozymandias', hp:200, speed:5.2, color:0xe3b953, ability:'lens' },
+  { id:'qin', name:'秦始皇 · Qin Shi Huang', hp:200, speed:5.2, color:0x72c7ae, ability:'edict' },
 ];
 export function heroIndex(id: unknown, legacy: unknown = 0): number {
   const n = id === undefined ? legacy : CHARACTERS.findIndex(c => c.id === id);
@@ -251,7 +251,7 @@ export const WEAPONS: WeaponDef[] = [
     skins: [],
   },
   {
-    id: 'longnight', kind: 'gun', name: 'Longnight Sniper · 长夜', auto: false, interval: 78, damage: 90, pellets: 1, headMul: 1.7,
+    id: 'longnight', kind: 'gun', name: 'Longnight Sniper · 长夜', auto: false, interval: 78, damage: 110, pellets: 1, headMul: 200 / 110, // 110 body, 200 head: a headshot kills from full health
     spread: 0, spreadMove: 0, falloffStart: 80, falloffEnd: 180, falloffMin: 0.9,
     mag: 5, reload: Math.round(2.7 * TICK_HZ), range: 240,
     skins: [],

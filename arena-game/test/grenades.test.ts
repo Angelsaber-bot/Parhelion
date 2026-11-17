@@ -158,11 +158,11 @@ describe('frag blasts', () => {
   });
   it('any full-health enemy the blast reaches dies, even at the edge of the radius', () => {
     for (const d of [.5, 3, FRAG.radius - .6]) {
-      const m = duel(); Object.assign(m.player('a')!, { x: 20, z: 20 }); Object.assign(m.player('b')!, { x: 0, z: -d, hp: 150 }); Object.assign(m.player('c')!, { x: 22, z: 20 });
+      const m = duel(); Object.assign(m.player('a')!, { x: 20, z: 20 }); Object.assign(m.player('b')!, { x: 0, z: -d, hp: 200 }); Object.assign(m.player('c')!, { x: 22, z: 20 });
       detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.alive, `at ${d} m`).toBe(false);
     }
-    const far = duel(); Object.assign(far.player('a')!, { x: 20, z: 20 }); Object.assign(far.player('b')!, { x: 0, z: -(FRAG.radius + 1.5), hp: 150 }); Object.assign(far.player('c')!, { x: 22, z: 20 });
-    detonate(far, [0, GRENADE.radius, 0]); expect(far.player('b')!.hp).toBe(150);
+    const far = duel(); Object.assign(far.player('a')!, { x: 20, z: 20 }); Object.assign(far.player('b')!, { x: 0, z: -(FRAG.radius + 1.5), hp: 200 }); Object.assign(far.player('c')!, { x: 22, z: 20 });
+    detonate(far, [0, GRENADE.radius, 0]); expect(far.player('b')!.hp).toBe(200);
   });
   it('hurts an enemy in the open, spares a teammate, and hurts the thrower only a little and never fatally', () => {
     const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 2, hp: 10 }); Object.assign(m.player('b')!, { x: 0, z: -1.5 }); Object.assign(m.player('c')!, { x: 1, z: 0 });
@@ -173,7 +173,7 @@ describe('frag blasts', () => {
     expect(events.some((e) => e.t === 'blast')).toBe(true);
   });
   it('G03: a solid wall between the blast and the enemy shelters them; round its end it does not', () => {
-    const m = duel(true); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -8, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    const m = duel(true); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -8, hp: 200 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
     const hp = m.player('b')!.hp, vz = m.player('b')!.vz;
     detonate(m, [0, GRENADE.radius, -4]);
     expect(m.player('b')!.alive).toBe(true); expect(m.player('b')!.hp).toBe(hp); expect(m.player('b')!.vz).toBe(vz); // no damage, no knockback
@@ -188,7 +188,7 @@ describe('frag blasts', () => {
       const m = new Match(slab(hole), '2v2');
       for (const [id, team] of [['a', 'A'], ['b', 'B'], ['c', 'A']] as const) m.addPlayer(id, { name: id, team, char: 0, skins: [], bot: false });
       m.phase = 'live'; for (const s of m.slots.values()) s.spawnProtectedUntilTick = 0;
-      Object.assign(m.player('a')!, { x: 20, z: 5 }); Object.assign(m.player('c')!, { x: 22, z: 5 }); Object.assign(m.player('b')!, { x: 0, y: 0, z: 0, hp: 150 });
+      Object.assign(m.player('a')!, { x: 20, z: 5 }); Object.assign(m.player('c')!, { x: 22, z: 5 }); Object.assign(m.player('b')!, { x: 0, y: 0, z: 0, hp: 200 });
       detonate(m, [0, 3.2 + GRENADE.radius, 1.5]);
       expect(m.player('b')!.alive, hole ? 'stairwell' : 'solid floor').toBe(!hole ? true : false);
     }
@@ -200,12 +200,12 @@ describe('frag blasts', () => {
     expect(m.player('b')!.alive).toBe(false); expect(m.shields).toHaveLength(0); // owner death clears all of their barriers
   });
   it('the blast throws enemies away from it and off their feet', () => {
-    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -2.5, vx: 0, vz: 0, hp: 200 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
     detonate(m, [0, GRENADE.radius, 0]);
     const b = m.player('b')!; expect(b.vz).toBeLessThan(-2); expect(b.vy).toBeGreaterThan(1); expect(b.grounded).toBe(false);
   });
   it('a full-health enemy at the centre of a frag dies', () => {
-    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -.4, hp: 150 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
+    const m = duel(); Object.assign(m.player('a')!, { x: 10, z: 10 }); Object.assign(m.player('b')!, { x: 0, z: -.4, hp: 200 }); Object.assign(m.player('c')!, { x: 12, z: 10 });
     detonate(m, [0, GRENADE.radius, 0]); expect(m.player('b')!.alive).toBe(false);
   });
   it('a lethal blast credits the thrower with a grenade kill', () => {
@@ -228,7 +228,7 @@ describe('frag blasts', () => {
     expect(cases).toBe(672);
   });
   it('a thrower who left the match before the fuse ran out still kills with it', () => {
-    const m = duel(); Object.assign(m.player('b')!, { x: 0, z: -2, hp: 150 }); Object.assign(m.player('c')!, { x: 20, z: 20 });
+    const m = duel(); Object.assign(m.player('b')!, { x: 0, z: -2, hp: 200 }); Object.assign(m.player('c')!, { x: 20, z: 20 });
     m.grenades.push(nade({ x: 0, y: GRENADE.radius, z: 0, owner: 'a', team: 'A', fuse: 1, rest: true }));
     m.removePlayer('a');
     (m as unknown as { stepGrenades(): void }).stepGrenades();
@@ -258,11 +258,11 @@ describe('frag blasts', () => {
 describe('smoke', () => {
   it('obscures perception without reducing bullet damage from either side', () => {
     const shoot = (smokeAt: number) => {
-      const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 8, yaw: 0 }); Object.assign(m.player('b')!, { x: 0, z: 0, hp: 150 }); Object.assign(m.player('c')!, { x: 10, z: 10 });
+      const m = duel(); Object.assign(m.player('a')!, { x: 0, z: 8, yaw: 0 }); Object.assign(m.player('b')!, { x: 0, z: 0, hp: 200 }); Object.assign(m.player('c')!, { x: 10, z: 10 });
       m.smokes = [{ id: 1, owner: 'b', x: 0, y: 0, z: smokeAt, life: 600 }];
       m.queueInputs('a', [{ seq: 1, mx: 0, mz: 0, yaw: 0, pitch: -.04, buttons: BTN.FIRE, weapon: 0, view: 0 }]);
       for (let i = 0; i < 20; i++) m.step();
-      return 150 - m.player('b')!.hp;
+      return 200 - m.player('b')!.hp;
     };
     const open = shoot(60), covered = shoot(0), shooterInside = shoot(6);
     expect(open).toBeGreaterThan(0); expect(covered).toBe(open); expect(covered).toBeCloseTo(open * SMOKE.cover, 0);
@@ -282,7 +282,7 @@ describe('smoke', () => {
     m.addPlayer('b', { name: 'b', team: 'B', char: 0, skins: [], bot: false });
     m.phase = 'live';
     const look = (smoke: boolean) => {
-      Object.assign(m.player('bot')!, { x: 0, z: 0, yaw: 0, hp: 150 }); Object.assign(m.player('b')!, { x: 0, z: -12 });
+      Object.assign(m.player('bot')!, { x: 0, z: 0, yaw: 0, hp: 200 }); Object.assign(m.player('b')!, { x: 0, z: -12 });
       m.smokes = smoke ? [{ id: 1, owner: 'b', x: 0, y: 0, z: -6, life: 400 }] : [];
       const bot = new Bot(3, BOT_SKILL.hard); let fired = false;
       for (let i = 0; i < 90; i++) { const inp = bot.think(m, 'bot'); if (inp.buttons & BTN.FIRE) fired = true; }

@@ -35,6 +35,6 @@ it('the actual game draw loop keeps ADS held, FOV and sensitivity stable through
 });
 it('one hook press lands in the first fifth of a second and is still single-shot after repeated Q',()=>{
  const m=new HeroDemo(3).match,p=m.player('hero')!,enemy=m.player('target')!;enemy.z=-7;
- for(let i=0;i<120;i++){m.queueInputs('hero',[{seq:i+1,mx:0,mz:0,yaw:0,pitch:0,buttons:i%2===0?BTN.SHIELD:0,weapon:0,view:m.tick}]);m.step();if(i===12)expect(enemy.hp).toBe(120);}
- expect(enemy.hp).toBe(120);expect(p.ability.castSeq).toBe(1);
+ for(let i=0;i<120;i++){m.queueInputs('hero',[{seq:i+1,mx:0,mz:0,yaw:0,pitch:0,buttons:i%2===0?BTN.SHIELD:0,weapon:0,view:m.tick}]);m.step();if(i===12)expect(enemy.hp).toBe(170);}
+ expect(enemy.hp).toBe(170);expect(p.ability.castSeq).toBe(1);
 });

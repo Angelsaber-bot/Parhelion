@@ -61,7 +61,7 @@ for(const transport of ['Colyseus','Worker JSON'] as const) it(`${transport}: fi
     // The clear south lane avoids ASTER's central cover at z=18.5.
     Object.assign(m.player(a.id)!,{x:0,y:0,z:20});Object.assign(m.player(b.id)!,{x:0,y:0,z:26});
     await command(BTN.FIRE);snap=await read();
-    expect(snap.events.some(e=>e.t==='shot')).toBe(true); expect(snap.players.find(p=>p.id===b.id)!.hp).toBe(150);
+    expect(snap.events.some(e=>e.t==='shot')).toBe(true); expect(snap.players.find(p=>p.id===b.id)!.hp).toBe(200);
     expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false);
     expect(snap.players.find(p=>p.id===a.id)!.spawnProtectedUntilTick).toBeLessThanOrEqual(snap.tick); // G02: a's own shot ended a's immunity
     await cool();while(m.tick<149)m.step();
@@ -73,7 +73,7 @@ for(const transport of ['Colyseus','Worker JSON'] as const) it(`${transport}: fi
     snap=await read();expect(snap.players.find(p=>p.id===b.id)!.spawnProtectedUntilTick).toBe(born+150);
     Object.assign(m.player(b.id)!,{x:0,y:0,z:26});
     await cool();await command(BTN.FIRE);snap=await read();
-    expect(snap.players.find(p=>p.id===b.id)!.hp).toBe(150);expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false);expect(snap.score.A).toBe(1);
+    expect(snap.players.find(p=>p.id===b.id)!.hp).toBe(200);expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false);expect(snap.score.A).toBe(1);
     m.phase='ended';a.rematch();await until(()=>m.phase==='countdown');snap=await read();
     expect(snap.players.every(p=>p.spawnProtectedUntilTick===snap.tick+150)).toBe(true);expect(snap.score).toEqual({A:0,B:0});
     for(let i=0;i<COUNTDOWN_TICKS;i++)m.step();snap=await read();expect(snap.phase).toBe('live');

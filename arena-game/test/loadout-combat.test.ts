@@ -107,7 +107,7 @@ describe('all five firearms use shared real ammunition, shots, hits and reload',
     for (let i = 0; i < SPAWN_PROTECTION_TICKS; i++) m.step();
     const a = m.player('a')!, b = m.player('b')!, wi = weaponIndex(id), w = WEAPONS[wi];
     Object.assign(b, { z: -5 }); m.queueInputs('a', [input(1, { buttons: BTN.FIRE })]); m.step();
-    expect(a.ammo[wi]).toBe(w.mag - 1); expect(b.hp).toBeLessThan(150);
+    expect(a.ammo[wi]).toBe(w.mag - 1); expect(b.hp).toBeLessThan(200);
     expect(m.snapshot().events.some((e) => e.t === 'shot' && e.w === wi)).toBe(true);
     a.ammo[wi] = 0;
     m.queueInputs('a', [input(2)]); m.step(); expect(a.reload).toBe(w.reload);
@@ -120,23 +120,23 @@ describe('fair authoritative melee', () => {
   it.each(MELEE_IDS)('%s has a visible windup, one impact, no ammunition/reload or headshot bonus', (id) => {
     const m = arena(id), p = m.player('a')!, target = m.player('b')!, w = WEAPONS[p.weapon];
     command(m, BTN.FIRE);
-    expect(target.hp).toBe(150); expect(p.meleeWindup).toBe(w.windup);
+    expect(target.hp).toBe(200); expect(p.meleeWindup).toBe(w.windup);
     expect(m.snapshot().events).toContainEqual({ t: 'meleeStart', id: 'a', w: p.weapon, windup: w.windup, yaw: 0, pitch: 0 });
-    for (let i = 1; i < w.windup!; i++) { command(m, BTN.FIRE); expect(target.hp).toBe(150); }
-    command(m, BTN.FIRE); expect(target.hp).toBe(150 - w.damage);
+    for (let i = 1; i < w.windup!; i++) { command(m, BTN.FIRE); expect(target.hp).toBe(200); }
+    command(m, BTN.FIRE); expect(target.hp).toBe(200 - w.damage);
     const events = m.snapshot().events;
     expect(events.filter((e) => e.t === 'meleeStrike')).toHaveLength(1);
     expect(events.find((e) => e.t === 'hit')).toMatchObject({ dmg: w.damage, head: false });
     for (let i = 0; i < w.interval * 2; i++) command(m, BTN.FIRE | BTN.RELOAD);
-    expect(target.hp).toBe(150 - w.damage); expect(p.ammo[p.weapon]).toBe(0); expect(p.reload).toBe(0);
+    expect(target.hp).toBe(200 - w.damage); expect(p.ammo[p.weapon]).toBe(0); expect(p.reload).toBe(0);
   });
   it('a queued catch-up burst cannot compress windup or cooldown, and server ticks finish it without more packets', () => {
     const m = arena('hammer'), p = m.player('a')!, b = m.player('b')!, w = WEAPONS[p.weapon];
     for (let i = 0; i < 20; i++) m.step(); // maximum eight catch-up credits
     m.queueInputs('a', Array.from({ length: 8 }, (_, i) => input(i + 1, { weapon: 2, buttons: i % 2 ? 0 : BTN.FIRE })));
     m.step(); const start = m.tick; expect(p.meleeWindup).toBe(w.windup);
-    while (m.tick < start + w.windup! - 1) { m.step(); expect(b.hp).toBe(150); }
-    m.step(); expect(b.hp).toBe(150 - w.damage);
+    while (m.tick < start + w.windup! - 1) { m.step(); expect(b.hp).toBe(200); }
+    m.step(); expect(b.hp).toBe(200 - w.damage);
     m.queueInputs('a', Array.from({ length: 16 }, (_, i) => input(i + 9, { weapon: 2, buttons: i % 2 ? 0 : BTN.FIRE })));
     m.step(); expect(m.snapshot().events.filter((e) => e.t === 'meleeStart')).toHaveLength(1);
     expect(p.fireCd).toBeGreaterThanOrEqual(start + w.interval - m.tick);
@@ -144,24 +144,24 @@ describe('fair authoritative melee', () => {
   it('turning during the swing steers the lunge and the hit; turning away carries it away', () => {
     const behind = arena(); Object.assign(behind.player('b')!, { z: 2 }); command(behind, BTN.FIRE);
     for (let i = 0; i < 12; i++) command(behind, 0, { yaw: Math.PI });
-    expect(behind.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
+    expect(behind.player('b')!.hp).toBe(200 - WEAPONS[weaponIndex('blade')].damage);
     const away = arena(); Object.assign(away.player('b')!, { z: -2.5 }); command(away, BTN.FIRE);
     for (let i = 0; i < 12; i++) command(away, 0, { yaw: Math.PI });
-    expect(away.player('b')!.hp).toBe(150);
+    expect(away.player('b')!.hp).toBe(200);
   });
   it('a target the attacker turns onto inside the short active window is still hit, once', () => {
     const m = arena(); Object.assign(m.player('b')!, { x: 2.2, z: 0 }); attack(m);
-    expect(m.player('b')!.hp).toBe(150);
+    expect(m.player('b')!.hp).toBe(200);
     command(m, 0, { yaw: -Math.PI / 2 }); command(m, 0, { yaw: -Math.PI / 2 });
-    expect(m.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
+    expect(m.player('b')!.hp).toBe(200 - WEAPONS[weaponIndex('blade')].damage);
     for (let i = 0; i < 10; i++) command(m, 0, { yaw: -Math.PI / 2 });
-    expect(m.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
+    expect(m.player('b')!.hp).toBe(200 - WEAPONS[weaponIndex('blade')].damage);
   });
   it('lunge closes distance, stops at the target instead of passing through, and guns do less to melee holders', () => {
     const m = arena(); Object.assign(m.player('b')!, { z: -4.5 }); attack(m);
     const a = m.player('a')!;
     expect(a.z).toBeLessThan(-1.5); expect(a.z).toBeGreaterThan(-4.5 + .2);
-    expect(m.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
+    expect(m.player('b')!.hp).toBe(200 - WEAPONS[weaponIndex('blade')].damage);
     const shot = (melee: boolean) => {
       const g = arena(); const gunner = g.player('b')!, target = g.player('a')!;
       if (!melee) { target.weaponSlot = 0; target.weapon = loadoutWeapon(target.loadout, 0); }
@@ -174,28 +174,28 @@ describe('fair authoritative melee', () => {
   });
   it('range, horizontal/vertical arcs and current-time position all reject invalid targets', () => {
     for (const pos of [{ x: 0, y: 0, z: -6 }, { x: 3.5, y: 0, z: 0 }, { x: 0, y: 3, z: -1 }]) {
-      const m = arena(); Object.assign(m.player('b')!, pos); attack(m); expect(m.player('b')!.hp).toBe(150);
+      const m = arena(); Object.assign(m.player('b')!, pos); attack(m); expect(m.player('b')!.hp).toBe(200);
     }
     const m = arena(); command(m, BTN.FIRE, { view: 0 }); Object.assign(m.player('b')!, { z: -10 });
-    for (let i = 0; i < 12; i++) command(m, 0, { view: 0 }); expect(m.player('b')!.hp).toBe(150);
+    for (let i = 0; i < 12; i++) command(m, 0, { view: 0 }); expect(m.player('b')!.hp).toBe(200);
   });
   it('a level swing reaches close targets below the eye line, and the spear reaches 4 m', () => {
     for (const [id, pos] of [['blade', { x: 0, y: 0, z: -1 }], ['hammer', { x: .5, y: 0, z: -1.2 }], ['polearm', { x: 0, y: 0, z: -1.2 }], ['polearm', { x: .6, y: 0, z: -3.9 }]] as const) {
       const m = arena(id); Object.assign(m.player('b')!, pos); attack(m);
-      expect(m.player('b')!.hp, `${id} at ${JSON.stringify(pos)}`).toBe(150 - WEAPONS[weaponIndex(id)].damage);
+      expect(m.player('b')!.hp, `${id} at ${JSON.stringify(pos)}`).toBe(200 - WEAPONS[weaponIndex(id)].damage);
     }
     const crouched = arena('blade'); Object.assign(crouched.player('b')!, { z: -1.2, crouched: true }); attack(crouched);
-    expect(crouched.player('b')!.hp).toBe(150 - WEAPONS[weaponIndex('blade')].damage);
-    const far = arena('polearm'); Object.assign(far.player('b')!, { z: -7.5 }); attack(far); expect(far.player('b')!.hp).toBe(150);
+    expect(crouched.player('b')!.hp).toBe(200 - WEAPONS[weaponIndex('blade')].damage);
+    const far = arena('polearm'); Object.assign(far.player('b')!, { z: -7.5 }); attack(far); expect(far.player('b')!.hp).toBe(200);
   });
   it('map walls block all melee, including a target inside the broad hammer arc', () => {
     const wall = buildMap({ ...data, objects: [...data.objects, { id: 'wall', type: 'box', position: [0, 1.5, -1], size: [5, 3, .15], material: '', collision: true, role: 'wall' }] });
-    for (const id of MELEE_IDS) { const m = arena(id, wall); attack(m); expect(m.player('b')!.hp).toBe(150); }
+    for (const id of MELEE_IDS) { const m = arena(id, wall); attack(m); expect(m.player('b')!.hp).toBe(200); }
   });
   it('shields do not block melee: every melee weapon hits the player behind a hostile shield', () => {
     for (const id of MELEE_IDS) {
       const m = arena(id); m.shields.push({ id: 1, owner: 'b', team: 'B', x: 0, y: 0, z: -1, yaw: 0, hp: 300, life: 600 });
-      attack(m); expect(m.player('b')!.hp, id).toBe(150 - WEAPONS[weaponIndex(id)].damage); expect(m.shields[0].hp).toBe(300);
+      attack(m); expect(m.player('b')!.hp, id).toBe(200 - WEAPONS[weaponIndex(id)].damage); expect(m.shields[0].hp).toBe(300);
     }
   });
   it('with nobody in reach, a swing straight at a shield still damages it', () => {
@@ -212,7 +212,7 @@ describe('fair authoritative melee', () => {
     const m = arena('blade'); command(m, BTN.FIRE); const cd = m.player('a')!.fireCd;
     command(m, 0, { weapon: 0 }); command(m, 0, { weapon: 2 });
     for (let i = 0; i < 12; i++) command(m);
-    expect(m.player('b')!.hp).toBe(150); expect(m.player('a')!.fireCd).toBeGreaterThan(0);
+    expect(m.player('b')!.hp).toBe(200); expect(m.player('a')!.fireCd).toBeGreaterThan(0);
     expect(m.player('a')!.fireCd).toBeLessThan(cd);
     expect(m.snapshot().events.some((e) => e.t === 'meleeStrike')).toBe(false);
   });
@@ -220,7 +220,7 @@ describe('fair authoritative melee', () => {
     const m = arena(); command(m, BTN.FIRE); const p = m.player('a')!;
     p.alive = false; p.crouched = true; m.slots.get('a')!.respawn = 2;
     for (let i = 0; i < 20; i++) m.step();
-    expect(m.player('b')!.hp).toBe(150); expect(p.alive).toBe(true); expect(p.crouched).toBe(false);
+    expect(m.player('b')!.hp).toBe(200); expect(p.alive).toBe(true); expect(p.crouched).toBe(false);
     expect(p.weaponSlot).toBe(0); expect(p.weapon).toBe(0); expect(p.meleeWindup).toBe(0);
   });
   it('prediction replay is deterministic across all eight catalogs and JSON-cloned states', () => {

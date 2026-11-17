@@ -105,11 +105,11 @@ describe('authoritative crouch', () => {
     b.crouched = true; match.step(); // tick 2: below standing head ray
     b.crouched = false; match.step();
     match.queueInputs('a', [input(1, { buttons: BTN.FIRE, weapon: 0, view: base + 2 })]); match.step();
-    expect(b.hp).toBe(150);
+    expect(b.hp).toBe(200);
     b.crouched = true; match.step();
     a.fireCd = 0; a.prevButtons = 0;
     match.queueInputs('a', [input(2, { buttons: BTN.FIRE, weapon: 0, view: base + 3 })]); match.step();
-    expect(b.hp).toBeLessThan(150); // tick 3 was standing, despite current crouch
+    expect(b.hp).toBeLessThan(200); // tick 3 was standing, despite current crouch
     b.alive = false; match.slots.get('b')!.respawn = 1; match.step();
     expect(b.alive).toBe(true); expect(b.crouched).toBe(false); expect(b.prevButtons).toBe(0);
   });

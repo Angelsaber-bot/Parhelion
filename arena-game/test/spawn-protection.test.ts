@@ -66,10 +66,10 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
     strikeAt(m,impact); const snap=m.snapshot(), b=m.player('b')!;
     expect(snap.events.some(e=>e.t==='shot'||e.t==='meleeStrike')).toBe(true);
     if(impact<150){
-      expect(b.hp).toBe(150); expect(b.alive).toBe(true);
+      expect(b.hp).toBe(200); expect(b.alive).toBe(true);
       expect(snap.events.filter(e=>e.t==='hit'||e.t==='kill')).toEqual([]);
       expect(snap.score).toEqual({A:0,B:0}); expect(snap.players.every(p=>p.kills===0&&p.deaths===0)).toBe(true);
-    }else{ expect(b.hp).toBeLessThan(150); expect(snap.events.some(e=>e.t==='hit'&&e.victim==='b')).toBe(true); }
+    }else{ expect(b.hp).toBeLessThan(200); expect(snap.events.some(e=>e.t==='hit'&&e.victim==='b')).toBe(true); }
   });
   for (const id of [...GUN_IDS,...MELEE_IDS]) it(`${id}: hero barrier durability is independent of owner spawn immunity`,()=>{
     const m=fixture(id);m.queueInputs('b',[input(1,{yaw:Math.PI,buttons:BTN.SHIELD})]);m.step();advance(m,30);
@@ -77,7 +77,7 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
     // Artificially re-protect the owner to isolate the deployed object's own damage contract.
     m.slots.get('b')!.spawnProtectedUntilTick=500;
     strikeAt(m,149);const melee=(MELEE_IDS as readonly string[]).includes(id);
-    expect(m.player('b')!.hp).toBe(150);
+    expect(m.player('b')!.hp).toBe(200);
     if(!melee) expect(m.shields[0]?.hp??0).toBeLessThan(SHIELD.hp);
   });
   it('uses world ticks without packets, ignores forged protection fields, and cannot be shortened by catch-up inputs',()=>{
@@ -113,7 +113,7 @@ describe('full authoritative 2.5-second spawn immunity',()=>{
       const a=m.player('a')!,b=m.player('b')!;
       Object.assign(b,{x:a.x-Math.sin(a.yaw)*1.5,y:a.y,z:a.z-Math.cos(a.yaw)*1.5});
       m.queueInputs('a',[bot.think(m,'a')]); m.step(); const snap=m.snapshot();
-      if(m.tick<150){ expect(b.hp).toBe(150); expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false); protectedAttacks+=snap.events.filter(e=>e.t==='shot'||e.t==='meleeStrike').length; }
+      if(m.tick<150){ expect(b.hp).toBe(200); expect(snap.events.some(e=>e.t==='hit'||e.t==='kill')).toBe(false); protectedAttacks+=snap.events.filter(e=>e.t==='shot'||e.t==='meleeStrike').length; }
       else laterHit=snap.events.some(e=>e.t==='hit'&&e.victim==='b');
     }
     expect(protectedAttacks).toBeGreaterThan(0); expect(laterHit).toBe(true);

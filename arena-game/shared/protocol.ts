@@ -31,7 +31,8 @@ export const ROOM_NAME = 'arena';
 // v35: instant hero abilities: Musashi's swallow cut, Napoleon's cannonball, Blackbeard's boarding hook, Qin's edict of stillness (root).
 // v36: smoke settles as a 4.2 m x 4 m cloud that hugs walls, blooms and thins; a frag blows a hole in it.
 // v37: smoke 5.2 m wide and 5.5 m tall, filling against air walls and the map edge; smoke carries 3 charges, frags 2.
-export const RULES_VERSION = 37;
+// v38: every hero has 200 HP; the Longnight sniper deals 110 to the body and 200 to the head.
+export const RULES_VERSION = 38;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

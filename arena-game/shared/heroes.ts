@@ -337,7 +337,7 @@ export class HeroSystem {
   }
   heal() {
     for(const e of this.entities){if(e.kind!=='prayer'||!this.destructible(e)||this.m.tick-e.created<H.prayer.interval*e.pulse)continue;const burst=e.pulse===0;e.pulse++;
-      for(const {state:p} of this.m.slots.values())if(p.alive&&p.team===e.team&&distance(at(e),at(p))<=H.prayer.radius&&this.visible([e.x,e.y+1,e.z],[p.x,p.y+1.1,p.z])){const amount=Math.min(burst?H.prayer.instant:H.prayer.heal,150-p.hp);if(amount>0){p.hp+=amount;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'heal',at:at(p),amount});}}
+      for(const {state:p} of this.m.slots.values())if(p.alive&&p.team===e.team&&distance(at(e),at(p))<=H.prayer.radius&&this.visible([e.x,e.y+1,e.z],[p.x,p.y+1.1,p.z])){const amount=Math.min(burst?H.prayer.instant:H.prayer.heal,CHARACTERS[p.char].hp-p.hp);if(amount>0){p.hp+=amount;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'heal',at:at(p),amount});}}
     }
   }
   private strike(e:TacticalEntity,point:Vec3,radius:number,damage:number,weapon:number,damaged=new Set<string>(),spared:unknown=null){
