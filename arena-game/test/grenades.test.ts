@@ -312,7 +312,11 @@ it('the client view follows snapshots: models appear and disappear, clouds fade 
   expect(view.counts).toMatchObject({ grenades: 1, clouds: 1 });
   expect(scene.getObjectByName('Frag warning ring')!.visible).toBe(true);
   view.blast([0, 0, 0]); view.update(.5); expect(view.counts.blasts).toBe(1);
-  view.update(1); expect(view.counts.blasts).toBe(0);
+  // The smoke column and dust linger for a few seconds; the scorch mark a little longer. All of it cleans up.
+  view.update(1); expect(view.counts.blasts).toBe(1);
+  expect(scene.getObjectByName('Frag grenade')).toBeDefined();
+  view.update(5); expect(view.counts.blasts).toBe(0);
+  view.update(4);
   view.sync([], [], 0); expect(view.counts).toMatchObject({ grenades: 0, clouds: 0 });
   expect(scene.children).toHaveLength(0); view.dispose();
 });
