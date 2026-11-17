@@ -29,7 +29,8 @@ export const ROOM_NAME = 'arena';
 // v32: off-hand quick casts preserve gunplay; tuned role-specific ability budgets.
 // v34: Arena spawn sightline screens, Homeward crossing cover, authored exit facing and routes.
 // v35: instant hero abilities: Musashi's swallow cut, Napoleon's cannonball, Blackbeard's boarding hook, Qin's edict of stillness (root).
-export const RULES_VERSION = 35;
+// v36: smoke settles as a 4.2 m x 4 m cloud that hugs walls, blooms and thins; a frag blows a hole in it.
+export const RULES_VERSION = 36;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

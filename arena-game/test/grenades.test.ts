@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FRAG, FRAG_KILL, GRENADE, SMOKE, SPAWN_PROTECTION_TICKS, TICK_HZ, validateUtility } from '../shared/content.ts';
-import { fragReaches, launchGrenade, smokeBlocks, stepGrenade, type Grenade } from '../shared/grenade.ts';
+import { fragReaches, insideSmoke, launchGrenade, settleSmoke, smokeBlocks, stepGrenade, type Grenade, type Smoke } from '../shared/grenade.ts';
 import { buildMap, type MapData } from '../shared/map.ts';
 import { Match, type NetEvent } from '../shared/match.ts';
 import { RoomCore } from '../shared/room.ts';
@@ -319,4 +319,39 @@ it('the client view follows snapshots: models appear and disappear, clouds fade 
   view.update(4);
   view.sync([], [], 0); expect(view.counts).toMatchObject({ grenades: 0, clouds: 0 });
   expect(scene.children).toHaveLength(0); view.dispose();
+});
+
+describe('smoke modelled on current tactical shooters', () => {
+  const landed = (m = open, x = 0, z = 0, age = 120): Smoke => settleSmoke(m, { id: 1, owner: 'a', x, y: 0, z, life: SMOKE.life - age });
+  it('settles as a 4.2 m cloud about 4 m tall: sight is cut low and high inside it, and clear above and beside it', () => {
+    const s = landed();
+    expect(smokeBlocks([s], [-10, 1.6, 3.9], [10, 1.6, 3.9])).toBe(true);
+    expect(smokeBlocks([s], [-10, 3.4, 0], [10, 3.4, 0])).toBe(true);
+    expect(smokeBlocks([s], [-10, 4.4, 0], [10, 4.4, 0])).toBe(false);
+    expect(smokeBlocks([s], [-10, 1.6, 4.6], [10, 1.6, 4.6])).toBe(false);
+  });
+  it('presses against a wall instead of passing through it, and spills further into the open', () => {
+    const s = landed(map, 0, -4.5);
+    expect(insideSmoke([s], [0, 1.6, -6.6])).toBe(false);
+    expect(smokeBlocks([s], [-10, 1.6, -7], [10, 1.6, -7])).toBe(false);
+    expect(Math.max(...s.reach!)).toBeGreaterThan(SMOKE.radius);
+    expect(insideSmoke([s], [0, 1.6, -4.5 + SMOKE.radius + .3])).toBe(true);
+  });
+  it('blooms out from the can in under a second and thins away, giving sight back half a second before it is gone', () => {
+    expect(smokeBlocks([landed(open, 0, 0, 6)], [-10, 1.6, 3.6], [10, 1.6, 3.6])).toBe(false);
+    expect(smokeBlocks([landed(open, 0, 0, SMOKE.bloom)], [-10, 1.6, 3.6], [10, 1.6, 3.6])).toBe(true);
+    expect(smokeBlocks([{ ...landed(), life: SMOKE.clear + 1 }], [-10, 1.6, 0], [10, 1.6, 0])).toBe(true);
+    expect(smokeBlocks([{ ...landed(), life: SMOKE.clear }], [-10, 1.6, 0], [10, 1.6, 0])).toBe(false);
+  });
+  it('a frag going off in the cloud blows it open for a moment, then the smoke rolls back', () => {
+    const m = new Match(open, '1v1'); m.smokes.push(landed());
+    const frag = { id: 9, owner: 'a', team: 'A', kind: 'frag', x: 0, y: .09, z: 0, vx: 0, vy: 0, vz: 0, fuse: 0, rest: true } as Grenade;
+    (m as unknown as { blast(g: Grenade): void }).blast(frag);
+    const line = (): boolean => smokeBlocks(m.smokes, [-10, 1.2, 0], [10, 1.2, 0]);
+    expect(m.smokes[0].hole).toBeTruthy();
+    for (let i = 0; i < 40; i++) m.step();
+    expect(smokeBlocks(m.smokes, [-2, 1.2, 0], [2, 1.2, 0])).toBe(false);
+    for (let i = 0; i < SMOKE.hole.life; i++) m.step();
+    expect(m.smokes[0].hole).toBeUndefined(); expect(line()).toBe(true);
+  });
 });

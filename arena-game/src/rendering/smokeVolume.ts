@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { SMOKE, TICK_HZ } from '../../shared/content.ts';
-import { smokeCentre, type Smoke } from '../../shared/grenade.ts';
+import { smokeHoleRadius, smokeScale, type Smoke } from '../../shared/grenade.ts';
 
 export function smokeEnvelope(s: Smoke, since = 0): number {
   if (s.life <= 0 || (s.delay ?? 0) > 0) return 0;
@@ -23,8 +23,10 @@ uniform sampler2D tDiffuse, tDepth;
 uniform mat4 inverseProjection, cameraWorld;
 uniform int count;
 uniform vec4 centres[SMOKE_CAPACITY]; // xyz centre, density envelope
-uniform vec4 shapes[SMOKE_CAPACITY]; // half extents, yaw (zero extents = sphere)
-uniform float time, radius;
+uniform vec4 shapes[SMOKE_CAPACITY]; // box: half extents, yaw; cloud: 0, scale, height, widest reach
+uniform vec4 reach[SMOKE_CAPACITY*4]; // cloud: reach along 16 horizontal directions (walls stop it)
+uniform vec4 holes[SMOKE_CAPACITY]; // frag-blown hole: centre, radius (0 = none)
+uniform float time;
 varying vec2 vUv;
 
 vec3 localPoint(vec3 p, float yaw) {
@@ -37,6 +39,15 @@ float vnoise(vec3 x) {
   vec3 i = floor(x), f = fract(x); f = f*f*(3.-2.*f);
   return mix(mix(mix(hash3(i), hash3(i+vec3(1,0,0)), f.x), mix(hash3(i+vec3(0,1,0)), hash3(i+vec3(1,1,0)), f.x), f.y),
              mix(mix(hash3(i+vec3(0,0,1)), hash3(i+vec3(1,0,1)), f.x), mix(hash3(i+vec3(0,1,1)), hash3(i+vec3(1,1,1)), f.x), f.y), f.z);
+}
+float reachValue(int i, int j) {
+  vec4 v = reach[i*4 + j/4]; int m = j - (j/4)*4;
+  return m == 0 ? v.x : m == 1 ? v.y : m == 2 ? v.z : v.w;
+}
+float reachAt(int i, vec3 rel) {
+  float f = fract(atan(rel.z, rel.x) / 6.2831853) * 16.;
+  int j = int(floor(f)); j = j - (j/16)*16; int k = j + 1; k = k - (k/16)*16;
+  return mix(reachValue(i, j), reachValue(i, k), f - floor(f));
 }
 float billows(vec3 p) { return vnoise(p)*.55 + vnoise(p*2.03+3.1)*.3 + vnoise(p*4.11+7.7)*.15; }
 bool slab(float o, float d, float extent, inout float lo, inout float hi) {
@@ -69,15 +80,18 @@ void main() {
           !slab(o.z,d.z,shapes[i].z,lo,hi)) continue;
       density = (hi-lo)*6.;
     } else {
-      float along = dot(offset,ray);
-      float perpendicular2 = max(0., dot(offset,offset)-along*along);
-      float radial = 1.-perpendicular2/(radius*radius);
-      if (radial <= 0.) continue;
-      float halfChord = radius*sqrt(radial);
-      lo = max(0., -along-halfChord);
-      float far = -along+halfChord;
+      // A dome sitting on the floor: its bounding ellipsoid gives the chord, then each sample reads how far the
+      // cloud reaches in its own direction (walls stop it, open sides take the rest).
+      float scale = shapes[i].y, top = max(.01, shapes[i].z*scale), widest = max(.01, shapes[i].w*scale);
+      vec3 inv = vec3(1./widest, 1./top, 1./widest), o2 = offset*inv, d2 = ray*inv;
+      float A = dot(d2,d2), B = dot(o2,d2), C = dot(o2,o2)-1., disc = B*B-A*C;
+      if (disc <= 0.) continue;
+      float root = sqrt(disc);
+      lo = max(0., (-B-root)/A);
+      float far = (-B+root)/A;
       hi = min(distanceToSurface, far);
       if (hi <= lo) continue;
+      vec4 hole = holes[i];
       // March the visible chord through a billowing cloud instead of a perfect ball. The core keeps the
       // gameplay density (1-r^2/R^2, so nothing shows through the middle); only the outer shell is eaten
       // into rolling lobes and wisps, more so while the cloud is still blooming or already thinning.
@@ -89,8 +103,12 @@ void main() {
       for (int k=0; k<12; k++) {
         float t = lo + (float(k)+.5)*step;
         vec3 p = origin + ray*t;
-        vec3 q = (p-c)/radius;
-        float r2 = dot(q,q);
+        vec3 rel = p-c;
+        if (rel.y < -.3) continue;
+        float R = max(.01, reachAt(i, rel)*scale);
+        vec3 q = vec3(rel.x/R, rel.y/top, rel.z/R);
+        // Same profile as the gameplay volume (smokeShape): steep sides, rounded top.
+        float h2 = dot(q.xz,q.xz), r2 = .6*h2*h2 + .4*h2 + q.y*q.y;
         if (r2 >= 1.) continue;
         // Rising, slowly turning smoke: the noise field drifts up and swirls about the cloud's axis.
         float turn = time*.035, cs = cos(turn), sn = sin(turn);
@@ -102,15 +120,17 @@ void main() {
         // Lumpy, cauliflower boundary, kept close to the gameplay sphere (bots and aim help treat the whole sphere as
         // cover, so the visible cloud must not shrink away from it). The middle (r < .55) always keeps the full
         // gameplay density, so the bulges only ever add cover at the rim, never open a window in the core.
-        float r = sqrt(r2), re = length(vec3(q.x, q.y*1.12, q.z)) / (.82 + (.3 + .16*max(q.y, 0.))*b);
+        float r = sqrt(r2), re = sqrt(r2 + .25*q.y*q.y) / (.82 + (.3 + .16*max(q.y, 0.))*b);
         float edge = mix(.42, .74, w), shell = smoothstep(edge, edge+.26, re);
         float d = 3.*(1.-r2) * max(1.-shell, 1.-smoothstep(.45, .55, r));
         // Fine wisps tear at the rim only.
         d *= 1. - smoothstep(.72, 1., re) * fine * .85;
+        // A frag-blown hole: clear inside, a ragged wall of smoke at its edge.
+        if (hole.w > 0.) d *= smoothstep(hole.w*(.72 + .2*fine), hole.w*1.08, length(p-hole.xyz));
         density += d*clamp((hi-(t-.5*step))/step, 0., 1.)*step;
         // Lit from above; a lobe sitting under denser smoke is shaded by it (one extra look upward).
         float above = core ? b : vnoise(n1+vec3(0.,.45,0.))*.9 + .05;
-        float lit = mix(.36, .98, smoothstep(-.65, .85, q.y)) * mix(.6, 1.1, clamp(.5 + (b-above)*2.4, 0., 1.));
+        float lit = mix(.36, .98, smoothstep(-.3, 1., q.y)) * mix(.6, 1.1, clamp(.5 + (b-above)*2.4, 0., 1.));
         float front = 1.-smoothstep(1., 2.5, t-lo);
         shade += lit*d*front; weight += d*front;
         // Opaque already (the final blend is fully solid past 6) and past the coloured front: stop marching.
@@ -144,7 +164,9 @@ export class SmokeVolumePass extends ShaderPass {
         inverseProjection: { value: new THREE.Matrix4() }, cameraWorld: { value: new THREE.Matrix4() },
         centres: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) },
         shapes: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) },
-        count: { value: 0 }, time: { value: 0 }, radius: { value: SMOKE.radius },
+        reach: { value: Array.from({ length: 32 }, () => new THREE.Vector4()) },
+        holes: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) },
+        count: { value: 0 }, time: { value: 0 },
       }, vertexShader, fragmentShader,
     });
     this.enabled = false;
@@ -157,8 +179,9 @@ export class SmokeVolumePass extends ShaderPass {
     // Grow for unusually crowded matches instead of silently dropping an active cloud.
     if (smokes.length > this.capacity) {
       while (smokes.length > this.capacity) this.capacity *= 2;
-      for (const key of ['centres', 'shapes'])
+      for (const key of ['centres', 'shapes', 'holes'])
         this.uniforms[key].value = Array.from({ length: this.capacity }, () => new THREE.Vector4());
+      this.uniforms.reach.value = Array.from({ length: this.capacity * 4 }, () => new THREE.Vector4());
       this.material.defines.SMOKE_CAPACITY = this.capacity;
       this.material.needsUpdate = true;
     }
@@ -166,10 +189,16 @@ export class SmokeVolumePass extends ShaderPass {
     for (const s of smokes) {
       const envelope = smokeEnvelope(s, since);
       if (envelope <= 0) continue;
-      const centre = s.box ? [s.x, s.y+s.box.height/2, s.z] : smokeCentre(s);
-      this.uniforms.centres.value[count].set(...centre, envelope);
       const box = s.box;
-      this.uniforms.shapes.value[count].set(box ? box.width/2 : 0, box ? box.height/2 : 0, box ? box.depth/2 : 0, box?.yaw ?? 0);
+      this.uniforms.centres.value[count].set(s.x, box ? s.y+box.height/2 : s.y, s.z, envelope);
+      if (box) this.uniforms.shapes.value[count].set(box.width/2, box.height/2, box.depth/2, box.yaw);
+      else {
+        const reach = s.reach?.length === SMOKE.rays ? s.reach : Array(SMOKE.rays).fill(SMOKE.radius);
+        this.uniforms.shapes.value[count].set(0, smokeScale(s), s.top ?? SMOKE.height, Math.max(...reach));
+        for (let j = 0; j < 4; j++) this.uniforms.reach.value[count*4+j].set(reach[j*4], reach[j*4+1], reach[j*4+2], reach[j*4+3]);
+        const hole = smokeHoleRadius(s.hole);
+        this.uniforms.holes.value[count].set(s.hole?.x ?? 0, s.hole?.y ?? 0, s.hole?.z ?? 0, hole);
+      }
       count++;
     }
     this.uniforms.count.value = count;

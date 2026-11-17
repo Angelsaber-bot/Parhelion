@@ -79,8 +79,15 @@ export const GRENADE = {
 /** Lethal to every enemy within `radius`: walls and shields do not stop it (shields in range break),
  * teammates are spared, and the thrower takes a fixed, never-fatal `selfDamage`. Throws people back. */
 export const FRAG = { fuse: Math.round(1.6 * TICK_HZ), radius: 6, selfDamage: 50, knockback: 9, lift: 4.5 };
-/** Smoke blocks perception only; bullets retain their full damage. */
-export const SMOKE = { radius: 5, life: 12 * TICK_HZ, cover: 1 };
+/** Smoke blocks perception only; bullets retain their full damage. Modelled on current tactical shooters
+ * (Valorant ~4-4.5 m radius, CS2 ~18-20 s, both settling as a dome that hugs walls): a 4.2 m cloud 4 m tall with steep, billowing sides that
+ * blooms in `bloom` ticks, presses against walls and spills further into open directions (up to `stretch`) instead
+ * of passing through them, and thins over the last `fade` ticks (sight returns `clear` ticks before it is gone).
+ * A frag going off in or beside it blows a `hole` open for a moment, then the cloud closes again. */
+export const SMOKE = {
+  radius: 4.2, height: 4, life: 16 * TICK_HZ, bloom: 48, fade: 90, clear: 30, stretch: 1.3, rays: 16, cover: 1,
+  hole: { radius: 3.2, life: 3 * TICK_HZ, open: 72 },
+};
 /** Kill-feed weapon index for grenade kills, outside the WEAPONS catalog on purpose. */
 export const FRAG_KILL = 100;
 

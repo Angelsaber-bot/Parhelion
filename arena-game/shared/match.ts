@@ -10,7 +10,7 @@ import {
   MELEE_MOVE, SHIELD, SPAWN_PROTECTION_TICKS, TEAM_CAPACITY, WEAPONS, falloff, validateLoadout, loadoutWeapon, type Loadout, type Team, type TeamLayout,
   DASH, FRAG, FRAG_KILL, GRENADE, SMOKE, TICK_HZ, validateUtility, type UtilityId,
 } from './content.ts';
-import { fragReaches, smokeBlocks, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
+import { fragReaches, settleSmoke, smokeBlocks, launchGrenade, stepGrenade, type Grenade, type Smoke } from './grenade.ts';
 import { RULES_VERSION } from './protocol.ts';
 import { playerHitbox, rayPlayer, rayShield } from './hit.ts';
 import { lineOfSight, raycastMap, spawnAnchors, type ArenaMap, type MapAnchor, type Vec3 } from './map.ts';
@@ -681,7 +681,7 @@ export class Match {
       const { loud, landed } = stepGrenade(this.map, g);
       if (loud) this.events.push({ t: 'bounce', gid: g.id, at: [g.x, g.y, g.z] });
       if (g.kind === 'smoke' && landed) {
-        this.smokes.push({ id: g.id, owner: g.owner, x: g.x, y: quant(g.y - GRENADE.radius), z: g.z, life: SMOKE.life });
+        this.smokes.push(settleSmoke(this.map, { id: g.id, owner: g.owner, x: g.x, y: quant(g.y - GRENADE.radius), z: g.z, life: SMOKE.life }));
         this.events.push({ t: 'smoke', sid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
         continue;
       }
@@ -693,7 +693,7 @@ export class Match {
       live.push(g);
     }
     this.grenades = live;
-    for (const s of this.smokes) { s.life--; if(s.delay && s.delay>0)s.delay--; }
+    for (const s of this.smokes) { s.life--; if(s.delay && s.delay>0)s.delay--; if (s.hole && --s.hole.life <= 0) delete s.hole; }
     this.smokes = this.smokes.filter((s) => s.life > 0);
   }
 
@@ -705,6 +705,9 @@ export class Match {
   private blast(g: Grenade): void {
     const at: Vec3 = [g.x, g.y + .15, g.z];
     this.events.push({ t: 'blast', gid: g.id, owner: g.owner, at: [g.x, g.y, g.z] });
+    // The blast throws open any cloud it goes off in or beside (CS2-style), for a few seconds.
+    for (const s of this.smokes) if (!s.box && Math.hypot(s.x - at[0], s.z - at[2]) < SMOKE.radius * SMOKE.stretch + SMOKE.hole.radius * .5 && Math.abs(s.y - at[1]) < SMOKE.height)
+      s.hole = { x: quant(at[0]), y: quant(at[1] + 1), z: quant(at[2]), life: SMOKE.hole.life };
     if (this.phase !== 'live') return;
     // A thrower who already left still owns the blast: it kills, credited to their team.
     const owner = this.slots.get(g.owner) ?? { state: { id: g.owner, team: g.team }, kills: 0 };

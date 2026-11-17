@@ -12,7 +12,13 @@ export interface Grenade {
   fuse: number; // frag ticks left, zero while waiting for contact; smoke has no fuse
   rest: boolean;
 }
-export interface Smoke { id: number; owner: string; x: number; y: number; z: number; life: number; delay?:number; box?:{yaw:number;width:number;depth:number;height:number} }
+export interface Smoke {
+  id: number; owner: string; x: number; y: number; z: number; life: number; delay?:number; box?:{yaw:number;width:number;depth:number;height:number};
+  /** How far the cloud reaches along SMOKE.rays even horizontal directions (walls stop it; open sides take the rest), and how tall it may rise. */
+  reach?: number[]; top?: number;
+  /** A frag blew this open: centre and ticks left. */
+  hole?: { x: number; y: number; z: number; life: number };
+}
 
 /** Spawn just ahead of the hand, never inside a wall the thrower is touching. */
 export function launchGrenade(m: ArenaMap, id: number, owner: string, team: Team, kind: UtilityId, origin: Vec3, dir: Vec3, carry: readonly [number, number]): Grenade {
@@ -71,23 +77,68 @@ export function stepGrenade(m: ArenaMap, g: Grenade): { loud: boolean; landed: b
 /** True when a blast this far away reaches you (it is then lethal to enemies). */
 export function fragReaches(distance: number): boolean { return distance >= 0 && distance <= FRAG.radius; }
 
-/** Smoke is a sphere around the cloud's centre, a little above where the can landed. */
-export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + 1.3, s.z];
+/** Where the billboard fallback centres a cloud: low in the dome, above where the can landed. */
+export const smokeCentre = (s: Smoke): Vec3 => [s.x, s.y + SMOKE.height * .4, s.z];
+/** Settled shape of a new cloud: walls stop it in each direction, and what they take spills into the open sides,
+ * keeping roughly the same floor area, the way a real cloud fills a corridor instead of seeping through stone. */
+export function settleSmoke(m: ArenaMap, s: Smoke): Smoke {
+  const n = SMOKE.rays, origin: Vec3 = [s.x, s.y + 1, s.z], walls: number[] = [];
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, d = raycastMap(m, origin, [Math.cos(a), 0, Math.sin(a)], SMOKE.radius * SMOKE.stretch); walls.push(Number.isFinite(d) ? Math.max(.6, d + .25) : SMOKE.radius * SMOKE.stretch); }
+  const area = (r: number[]) => r.reduce((sum, v) => sum + v * v, 0);
+  let reach = walls.map(w => Math.min(w, SMOKE.radius));
+  for (let k = 0; k < 6; k++) { const scale = Math.sqrt(n * SMOKE.radius ** 2 / Math.max(1e-6, area(reach))); if (scale < 1.005) break; reach = walls.map((w, i) => Math.min(w, reach[i] * scale, SMOKE.radius * SMOKE.stretch)); }
+  const ceiling = raycastMap(m, origin, [0, 1, 0], SMOKE.height);
+  return { ...s, reach: reach.map(quant), top: quant(Number.isFinite(ceiling) ? Math.max(1.9, ceiling + .9) : SMOKE.height) };
+}
+/** Size of the cloud over its life: it blooms from 40% in SMOKE.bloom ticks and sinks a little as it thins. */
+export function smokeScale(s: Smoke): number {
+  if (s.life <= 0 || (s.delay ?? 0) > 0) return 0;
+  const age = Math.max(0, SMOKE.life - s.life), grow = Math.min(1, age / SMOKE.bloom), ease = 1 - (1 - grow) ** 3;
+  return (.4 + .6 * ease) * (s.life < SMOKE.fade ? .7 + .3 * s.life / SMOKE.fade : 1);
+}
+/** Radius of a frag-blown hole: wide open for SMOKE.hole.open ticks, then the smoke rolls back in. */
+export function smokeHoleRadius(h: Smoke['hole']): number {
+  if (!h || h.life <= 0) return 0;
+  const closing = SMOKE.hole.life - SMOKE.hole.open;
+  return SMOKE.hole.radius * Math.min(1, h.life / closing);
+}
+/** The cloud's profile: steep sides and a rounded top (between a cylinder and a dome); the shader uses the same. */
+export const smokeShape = (horizontal: number, vertical: number) => { const h2 = horizontal * horizontal; return .6 * h2 * h2 + .4 * h2 + vertical * vertical; };
+function reachAt(s: Smoke, dx: number, dz: number): number {
+  const r = s.reach; if (!r?.length) return SMOKE.radius;
+  const f = ((Math.atan2(dz, dx) / (Math.PI * 2)) % 1 + 1) % 1 * r.length, i = Math.floor(f) % r.length, j = (i + 1) % r.length, t = f - Math.floor(f);
+  return r[i] + (r[j] - r[i]) * t;
+}
+/** Inside the gameplay volume: the dome (per-direction reach, its height), minus a blown hole. Sight returns
+ * SMOKE.clear ticks before the cloud is gone. */
+function inCloud(s: Smoke, k: number, p: readonly number[]): boolean {
+  const dx = p[0] - s.x, dy = p[1] - s.y, dz = p[2] - s.z;
+  if (dy < -.3) return false;
+  const R = reachAt(s, dx, dz) * k, H = (s.top ?? SMOKE.height) * k, h = Math.hypot(dx, dz);
+  if (smokeShape(h / R, Math.max(0, dy) / H) >= 1) return false;
+  const hole = smokeHoleRadius(s.hole);
+  return !(hole > 0 && (p[0] - s.hole!.x) ** 2 + (p[1] - s.hole!.y) ** 2 + (p[2] - s.hole!.z) ** 2 < hole * hole);
+}
+const live = (s: Smoke) => s.life > SMOKE.clear && (s.delay ?? 0) <= 0;
 export function insideSmoke(smokes: readonly Smoke[], p: readonly number[]): boolean {
-  for (const s of smokes) { if (s.life <= 0 || (s.delay??0)>0) continue; if(s.box){const a=smokeLocal(s,p);if(Math.abs(a[0])<=s.box.width/2&&a[1]>=0&&a[1]<=s.box.height&&Math.abs(a[2])<=s.box.depth/2)return true;continue;} const c = smokeCentre(s); if ((p[0] - c[0]) ** 2 + (p[1] - c[1]) ** 2 + (p[2] - c[2]) ** 2 < SMOKE.radius * SMOKE.radius) return true; }
+  for (const s of smokes) { if (!live(s)) continue; if(s.box){const a=smokeLocal(s,p);if(Math.abs(a[0])<=s.box.width/2&&a[1]>=0&&a[1]<=s.box.height&&Math.abs(a[2])<=s.box.depth/2)return true;continue;} if (inCloud(s, smokeScale(s), p)) return true; }
   return false;
 }
 /** True when the segment a→b passes through any live smoke volume (vision; bullets only lose damage). */
 export function smokeBlocks(smokes: readonly Smoke[], a: Vec3, b: Vec3): boolean {
-  const d: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2];
+  const d: Vec3 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], len2 = d[0] * d[0] + d[1] * d[1] + d[2] * d[2], len = Math.sqrt(len2);
   for (const s of smokes) {
-    if (s.life <= 0 || (s.delay??0)>0) continue;
+    if (!live(s)) continue;
     if(s.box){const aa=smokeLocal(s,a),bb=smokeLocal(s,b);let lo=0,hi=1;const mins=[-s.box.width/2,0,-s.box.depth/2],maxs=[s.box.width/2,s.box.height,s.box.depth/2];for(let i=0;i<3;i++){const delta=bb[i]-aa[i];if(Math.abs(delta)<1e-9){if(aa[i]<mins[i]||aa[i]>maxs[i]){hi=-1;break;}}else{const x=(mins[i]-aa[i])/delta,y=(maxs[i]-aa[i])/delta;lo=Math.max(lo,Math.min(x,y));hi=Math.min(hi,Math.max(x,y));}}if(lo<=hi)return true;continue;}
-    const c = smokeCentre(s), t = len2 > 0 ? Math.max(0, Math.min(1, ((c[0] - a[0]) * d[0] + (c[1] - a[1]) * d[1] + (c[2] - a[2]) * d[2]) / len2)) : 0;
-    const q: Vec3 = [a[0] + d[0] * t - c[0], a[1] + d[1] * t - c[1], a[2] + d[2] * t - c[2]];
-    if (q[0] * q[0] + q[1] * q[1] + q[2] * q[2] < SMOKE.radius * SMOKE.radius) return true;
+    // Bounding sphere first, then sample the part of the sight line inside it every 0.2 m.
+    const k = smokeScale(s), bound = Math.max(SMOKE.radius * SMOKE.stretch, s.top ?? SMOKE.height) * k, c: Vec3 = [s.x, s.y, s.z];
+    const t = len2 > 0 ? Math.max(0, Math.min(1, ((c[0] - a[0]) * d[0] + (c[1] - a[1]) * d[1] + (c[2] - a[2]) * d[2]) / len2)) : 0;
+    const q: Vec3 = [a[0] + d[0] * t - c[0], a[1] + d[1] * t - c[1], a[2] + d[2] * t - c[2]], miss2 = q[0] * q[0] + q[1] * q[1] + q[2] * q[2];
+    if (miss2 >= bound * bound) continue;
+    if (len < 1e-6) { if (inCloud(s, k, a)) return true; continue; }
+    const half = Math.sqrt(bound * bound - miss2) / len, from = Math.max(0, t - half), to = Math.min(1, t + half), steps = Math.max(1, Math.ceil((to - from) * len / .2));
+    for (let i = 0; i <= steps; i++) { const u = from + (to - from) * i / steps; if (inCloud(s, k, [a[0] + d[0] * u, a[1] + d[1] * u, a[2] + d[2] * u])) return true; }
   }
   return false;
 }
-
 function smokeLocal(s:Smoke,p:readonly number[]):Vec3{const yaw=s.box!.yaw,x=p[0]-s.x,z=p[2]-s.z;return [x*Math.cos(yaw)-z*Math.sin(yaw),p[1]-s.y,x*Math.sin(yaw)+z*Math.cos(yaw)];}
