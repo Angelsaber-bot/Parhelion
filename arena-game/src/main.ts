@@ -1,3 +1,4 @@
+import { cameFromWorld, heroFromWorld, WORLD_RETURN_HREF } from './worldLink.ts';
 import {heroIcon} from './ui/heroIcon.ts';
 import {mountLobbyShell,heroShell,modeShell} from './ui/lobbyShell.ts';
 import { prepareWorldHeroes } from './player/worldHero.ts';
@@ -120,8 +121,12 @@ settings.subscribe(renderControlHints); renderControlHints();
 
 const saved = (() => { try { const raw = JSON.parse(localStorage.getItem('arena-lobby') ?? '{}'); return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}; } catch { return {}; } })();
 let char = typeof saved.heroId==='string' && CHARACTERS.some(c=>c.id===saved.heroId) ? CHARACTERS.findIndex(c=>c.id===saved.heroId) : Number.isInteger(saved.char) && CHARACTERS[saved.char] ? saved.char : 0;
-char = playableHero(char);
+char = playableHero(heroFromWorld(params) ?? char);
 let mapId = mapIdOf(params.get('map') ?? saved.map);
+// Opened from the World's Echo Hall: offer the way back in the lobby, pause menu and results.
+const fromWorld = cameFromWorld(params);
+for (const id of ['to-world', 'pause-world', 'end-world']) document.getElementById(id)?.classList.toggle('hidden', !fromWorld);
+for (const id of ['pause-world', 'end-world']) { const b = document.getElementById(id); if (b) b.onclick = () => { game?.stop(); location.assign(WORLD_RETURN_HREF); }; }
 const skins = readSkinSelection(saved);
 const nameInput = $<HTMLInputElement>('name');
 nameInput.value = typeof saved.name === 'string' ? saved.name.trim() : '';

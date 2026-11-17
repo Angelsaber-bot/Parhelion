@@ -53,6 +53,7 @@
       <button id="resume" class="primary">继续</button>
       <button id="settings-pause" type="button">操作设置</button>
       <button id="leave">退出到大厅</button>
+      <button id="pause-world" type="button" class="hidden">返回世界</button>
     </div>
   </div>
 
@@ -64,6 +65,7 @@
       <button id="endscores" type="button">查看计分板 (S)</button>
       <button id="rematch" class="primary">再来一局</button>
       <button id="endleave">返回大厅</button>
+      <button id="end-world" type="button" class="hidden">返回世界</button>
     </div>
   </div>
 
@@ -76,7 +78,7 @@
           <button id="tab-heroes" role="tab" aria-controls="pane-heroes" aria-selected="false" tabindex="-1" data-pane="heroes"><small>02</small><span data-ui-zh="从者" data-ui-en="HEROES">从者</span></button>
           <button id="tab-equipment" role="tab" aria-controls="pane-equipment" aria-selected="false" tabindex="-1" data-pane="equipment"><small>03</small><span data-ui-zh="配装" data-ui-en="LOADOUT">配装</span></button>
         </nav>
-        <div class="arena-tools"><div id="lobby-language"></div><button id="settings-lobby" type="button" aria-label="操作设置">⚙ <span data-ui-zh="设置" data-ui-en="Settings">设置</span></button></div>
+        <div class="arena-tools"><a id="to-world" class="to-world hidden" href="/world/?from=arena"><span data-ui-zh="← 返回世界" data-ui-en="← Back to World">← 返回世界</span></a><div id="lobby-language"></div><button id="settings-lobby" type="button" aria-label="操作设置">⚙ <span data-ui-zh="设置" data-ui-en="Settings">设置</span></button></div>
       </header>
       <div class="arena-workspace">
         <main class="lobby-main">

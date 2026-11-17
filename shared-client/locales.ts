@@ -69,7 +69,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['操作已更新：', 'Controls updated: '], ['均可按住瞄准；自定义按键已保留。', 'both hold aim; custom bindings are preserved.'],
   ['已移除手动飞行升降，跳跃、滑翔和上升气流保留。自定义按键已保留。', 'Separate flight altitude keys were removed; jump, glide, and updrafts remain. Custom bindings are preserved.'],
   ['已暂停', 'Paused'], ['单机对局已完全暂停；联机对局在服务器上仍会继续。', 'Offline matches are fully paused. Online matches continue on the server.'],
-  ['继续', 'Resume'], ['退出到大厅', 'Leave for lobby'], ['胜利', 'Victory'], ['再来一局', 'Play again'], ['返回大厅', 'Back to lobby'],
+  ['继续', 'Resume'], ['退出到大厅', 'Leave for lobby'], ['返回世界', 'Return to World'], ['英灵演武场', 'Echo Hall'], ['胜利', 'Victory'], ['再来一局', 'Play again'], ['返回大厅', 'Back to lobby'],
   ['取消并返回大厅', 'Cancel and return to lobby'],
   ['读取计分板按键…', 'Loading scoreboard controls…'],
   // Arena lobby v34 (tabs and dossier headings; the page shows its own English through data-ui-en).

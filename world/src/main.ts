@@ -97,6 +97,7 @@ import { isCampaignRegion, isExpansionRegion, type WorldRegionId } from './core/
 import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from './map/worldPlan';
 import {HOME_BUILDINGS,HOME_SITES,HOME_ACTIONS,HOME_GRASS_PATHS} from './map/homePlan';
 import {createHomeTown,homeResidentSockets,homeSaberReady} from './story/homeTown';
+import {createEchoHall,takeEchoReturn} from './story/echoHall';
 import {HOME_CIVIC_ACTIONS} from './map/homeActivities';
 import {createHomeResidentLife} from './map/homeResidents';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
@@ -276,7 +277,9 @@ const requestedFov = Number(params.get('fov'));
 const baseFov = THREE.MathUtils.clamp(params.has('fov') && Number.isFinite(requestedFov) ? requestedFov : 75, 40, 110);
 // One open world: 幻日谷 + 落日王国 (west seam) + 黑帆尽头 (east pass) + 永冬之城 (north ice seam) +
 // 业火京都 (south torii seam). ?region=britain|blacksail|winter|kyoto starts there.
-const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? 'alpha';
+// Back from Arena through Homeward's Echo Hall: start in Homeward, then stand on the hall's steps.
+const echoReturn = takeEchoReturn(params);
+const startRegion = REGIONS.find((r) => r.id === params.get('region'))?.id ?? (echoReturn ? 'home' : 'alpha');
 // Quality: ?q=low | med (default) | high. high adds GTAO + 4x MSAA + denser grass.
 const quality = (['low', 'med', 'high'] as const).find((q) => q === params.get('q')) ?? 'med';
 const lowQ = quality === 'low', highQ = quality === 'high';
@@ -525,7 +528,7 @@ if (borderStitch.samples && !params.has('nostitch')) {
 const streamStatus=document.createElement('div');streamStatus.id='world-region-loading';Object.assign(streamStatus.style,{position:'fixed',top:'18px',left:'50%',transform:'translateX(-50%)',padding:'8px 12px',background:'#172e3de8',color:'#edf5e8',borderRadius:'6px',zIndex:'30'});streamStatus.hidden=true;const streamText=document.createElement('span'),streamRetry=document.createElement('button');streamRetry.textContent=bilingual('重试地区加载','Retry region loading');streamRetry.hidden=true;streamStatus.append(streamText,streamRetry);document.body.append(streamStatus);let streamFailure='';
 const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch')&&ridesWithGround(name))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
-const initialVisualRegion=params.get('region')??'alpha';if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
+const initialVisualRegion=params.get('region')??(typeof echoReturn!=='undefined'&&echoReturn?'home':'alpha');if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
 document.title = 'Parhelion · World';
 // Every lit fragment loops over every point light, so the pool size is a direct per-pixel cost.
 const localLights = new LocalLightPool([
@@ -1086,6 +1089,7 @@ let hudRevision = 0;
 let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
 let homeTown:ReturnType<typeof createHomeTown>|undefined;
+let echoHall:ReturnType<typeof createEchoHall>|undefined;
 let ultimateDirector: UltimateDirector | undefined;
 let ultimateStage: UltimateStage | undefined;
 let ultimateSource: { identity: CompanionId | null; root: THREE.Object3D } | null = null;
@@ -2329,6 +2333,15 @@ homeTown=createHomeTown({scene,done,contract,servant,dialogue:narrative,save,cha
  input:()=>({held:down('interact'),moving:!!(down('forward')||down('back')||down('left')||down('right')||down('jump'))||Math.hypot(player.vel.x,player.vel.z)>.2,attacking:down('fire')||!!(actions?.skills.casting||actions?.melee.active||actions?.evade.active),grounded:player.onGround&&!player.flying&&!player.swimming&&!player.gliding,unsafeMotion:player.flying||player.swimming||player.gliding,damage:relayDamageRevision}),
  toast:line=>toast(bilingual(...line)),prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();}});
 layout.markers.push(...homeTown.markers);for(const marker of homeTown.markers)markers.set(marker.id,marker);
+echoHall=createEchoHall({scene,dialogue:narrative,prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
+ canInteract:id=>{const m=echoHall?.markers.find(m=>m.id===id);return !!m&&player.onGround&&!player.flying&&!player.swimming&&!player.gliding&&player.pos.distanceTo(new THREE.Vector3(...m.p))<(m.radius??2.6);},
+ safe:()=>!getTravelSafetyBlock({...travelContext(),carrying:!!residentEventRuntime?.carrying})&&!ultimateDirector?.active,
+ toast:line=>toast(bilingual(...line)),servant:()=>contract.selected,
+ servantName:id=>{const n=servantName(id);return [n.zh,n.en];},ground:(x,z)=>grid.sampleHeight(x,z)??null,
+ save:()=>!bootFailed&&!worldExited&&!graphicsRecovery?.blocked&&!!save(),navigate:href=>location.assign(href)});
+layout.markers.push(...echoHall.markers);for(const marker of echoHall.markers)markers.set(marker.id,marker);colliders.push(...echoHall.colliders);
+addEventListener('pagehide',e=>{if(!e.persisted)echoHall?.dispose();});
+if(echoReturn){const pose=echoHall.returnPose();player.teleport(pose.p.x,pose.p.y+.2,pose.p.z,pose.yaw);}
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
 const buildingOrnaments=createBuildingOrnaments();world.add(buildingOrnaments);
 const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z)=>residentQueries.ground(x,z,80)?.point.y??null);
@@ -4508,6 +4521,7 @@ function interact() {
     });
     return;
   }
+  if(typeof echoHall!=='undefined'&&echoHall?.interact(m.id))return;
   if(typeof homeTown!=='undefined'&&homeTown?.interact(m.id))return;
   if(qinChapterById.has(m.id)){
    if(m.id===QC.restore){
@@ -4967,6 +4981,7 @@ function frame(now: number) {
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   homeTown?.update(dt,player.pos,gameplayActive(),regionVisuals.ready('home'));
+  if(typeof echoHall!=='undefined')echoHall?.update(dt);
   const lakeBrace = !contract.following || contract.following === 'saber' ? worldJourneySites?.lakeBrace(player.pos) : undefined;
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive(), lakeBrace);
   cavalrySupport?.update(dt,gameplayActive()&&!combat.defeated);
