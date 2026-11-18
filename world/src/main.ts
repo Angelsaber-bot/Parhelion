@@ -537,6 +537,8 @@ const streamStatus=document.createElement('div');streamStatus.id='world-region-l
 const regionVisuals=new RegionVisualStreaming({parent:world,warm:root=>warmShaders(root),uploadBudget:(lowQ?3:6)*1048576,carve:(id,name,geometry)=>{const carved=clearProductionLandscape(id,name,geometry),def=REGIONS.find(r=>r.id===id);if(def&&borderStitch.samples&&!params.has('nostitch')&&ridesWithGround(name))borderStitch.apply(carved??geometry,(x,z)=>regionToWorld(def,x,z),def.offset);return carved;},eager:params.has('eager'),outlines:!params.has('noline'),lowQuality:lowQ,status:(id,error)=>{streamFailure=error?id:'';streamStatus.hidden=!id;streamText.textContent=error?bilingual('地区画面暂时未能加载，道路与进度已保留。','Region art could not load; routes and progress are retained.'):bilingual('正在载入前方地区…','Loading the region ahead…');streamRetry.hidden=!error;}});streamRetry.onclick=e=>{e.stopPropagation();if(streamFailure)void regionVisuals.retry(streamFailure);};
 addEventListener('pagehide',e=>{if(!e.persisted){regionVisuals.dispose();streamStatus.remove();}});
 const initialVisualRegion=params.get('region')??(typeof echoReturn!=='undefined'&&echoReturn?'home':'alpha');if(params.has('eager'))await Promise.all(REGIONS.map(r=>regionVisuals.ensure(r.id)));else if(!(await regionVisuals.ensure(REGIONS.some(r=>r.id===initialVisualRegion)?initialVisualRegion:'alpha')))throw Error(bilingual('起始地区画面加载失败，请重新载入。','Starting region art failed to load; reload to retry.'));
+// From here on, newly entered regions install a few milliseconds per frame instead of freezing on arrival.
+regionVisuals.sliceMs=8;
 document.title = 'Parhelion · World';
 // Every lit fragment loops over every point light, so the pool size is a direct per-pixel cost.
 const localLights = new LocalLightPool([

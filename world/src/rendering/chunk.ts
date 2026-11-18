@@ -9,11 +9,14 @@ export function chunkMesh(mesh: THREE.Mesh, cell: number): THREE.Mesh[] {
   const index = g.index;
   const tris = index ? index.count / 3 : pos.count / 3;
   const vid = (t: number, k: number) => (index ? index.getX(t * 3 + k) : t * 3 + k);
-  const buckets = new Map<string, number[]>();
+  // Integer cell keys (exact for |cell index| < 2^20): same buckets, in the same first-seen order, as
+  // "ix,iz" string keys, without building a string per triangle (256k-triangle foliage took ~190 ms).
+  const buckets = new Map<number | string, number[]>();
   for (let t = 0; t < tris; t++) {
     const a = vid(t, 0), b = vid(t, 1), c = vid(t, 2);
     const x = (pos.getX(a) + pos.getX(b) + pos.getX(c)) / 3, z = (pos.getZ(a) + pos.getZ(b) + pos.getZ(c)) / 3;
-    const key = `${Math.floor(x / cell)},${Math.floor(z / cell)}`;
+    const ix = Math.floor(x / cell), iz = Math.floor(z / cell);
+    const key = Math.abs(ix) < 1048576 && Math.abs(iz) < 1048576 ? (ix + 1048576) * 2097152 + (iz + 1048576) : `${ix},${iz}`;
     let list = buckets.get(key);
     if (!list) buckets.set(key, (list = []));
     list.push(a, b, c);

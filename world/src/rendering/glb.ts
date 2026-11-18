@@ -14,37 +14,55 @@ export function regionLoader() {
  * (chunking, pivots and the terrain grid all expect that).
  */
 export function bakeQuantized(root: THREE.Object3D) {
-  // identical quantized meshes (same-shaped gates, targets) can share one geometry: give each its own
-  // copy before baking, or the shared one would take every node's transform in turn
-  const seen = new Set<THREE.BufferGeometry>();
+  for (const mesh of unshareGeometries(root)) bakeQuantizedMesh(mesh);
+  root.updateMatrixWorld(true);
+}
+/** bakeQuantized, yielding through `slice` between meshes so a large region does not hold one frame. */
+export async function bakeQuantizedSliced(root: THREE.Object3D, slice: () => Promise<void>) {
+  for (const mesh of unshareGeometries(root)) { bakeQuantizedMesh(mesh); await slice(); }
+  root.updateMatrixWorld(true);
+}
+/** Identical quantized meshes (same-shaped gates, targets) can share one geometry: give each its own
+ * copy before baking, or the shared one would take every node's transform in turn. */
+function unshareGeometries(root: THREE.Object3D) {
+  const seen = new Set<THREE.BufferGeometry>(), meshes: THREE.Mesh[] = [];
   root.traverse((o) => {
     const m = o as THREE.Mesh;
     if (!m.isMesh) return;
     if (seen.has(m.geometry)) m.geometry = m.geometry.clone();
-    seen.add(m.geometry);
+    seen.add(m.geometry); meshes.push(m);
   });
-  root.traverse((o) => {
-    const m = o as THREE.Mesh;
-    if (!m.isMesh) return;
-    const g = m.geometry as THREE.BufferGeometry;
-    for (const [name, attr] of Object.entries(g.attributes) as [string, THREE.BufferAttribute][]) {
-      // Color is not transformed by applyMatrix4. Keep authored normalized byte
-      // storage (including its interleaved stride) rather than tripling it.
-      const interleaved = attr as unknown as THREE.InterleavedBufferAttribute;
-      const storage = interleaved.isInterleavedBufferAttribute ? interleaved.data.array : attr.array;
-      if (name === 'color' && attr.normalized && storage instanceof Uint8Array) continue;
-      if (attr.array instanceof Float32Array && !attr.normalized) continue;
-      const out = new Float32Array(attr.count * attr.itemSize);
-      for (let i = 0; i < attr.count; i++) for (let c = 0; c < attr.itemSize; c++) out[i * attr.itemSize + c] = attr.getComponent(i, c);
-      g.setAttribute(name, new THREE.BufferAttribute(out, attr.itemSize));
-    }
+  return meshes;
+}
+function bakeQuantizedMesh(m: THREE.Mesh) {
+  const g = m.geometry as THREE.BufferGeometry;
+  for (const [name, attr] of Object.entries(g.attributes) as [string, THREE.BufferAttribute][]) {
+    // Color is not transformed by applyMatrix4. Keep authored normalized byte
+    // storage (including its interleaved stride) rather than tripling it.
+    const interleaved = attr as unknown as THREE.InterleavedBufferAttribute;
+    const storage = interleaved.isInterleavedBufferAttribute ? interleaved.data.array : attr.array;
+    if (name === 'color' && attr.normalized && storage instanceof Uint8Array) continue;
+    if (attr.array instanceof Float32Array && !attr.normalized) continue;
+    const out = new Float32Array(attr.count * attr.itemSize);
+    for (let i = 0; i < attr.count; i++) for (let c = 0; c < attr.itemSize; c++) out[i * attr.itemSize + c] = attr.getComponent(i, c);
+    g.setAttribute(name, new THREE.BufferAttribute(out, attr.itemSize));
+  }
+  m.updateMatrix();
+  if (!m.matrix.equals(new THREE.Matrix4())) {
+    g.applyMatrix4(m.matrix);
+    m.position.set(0, 0, 0); m.quaternion.identity(); m.scale.set(1, 1, 1);
     m.updateMatrix();
-    if (!m.matrix.equals(new THREE.Matrix4())) {
-      g.applyMatrix4(m.matrix);
-      m.position.set(0, 0, 0); m.quaternion.identity(); m.scale.set(1, 1, 1);
-      m.updateMatrix();
-    }
-    g.computeBoundingBox(); g.computeBoundingSphere();
-  });
-  root.updateMatrixWorld(true);
+  }
+  g.computeBoundingBox(); g.computeBoundingSphere();
+}
+
+/** Yields to the event loop (so a frame can be drawn) once a stretch of main-thread work passes `budgetMs`.
+ * A budget of 0 never yields. setTimeout keeps it independent of animation frames (hidden tabs, test hosts). */
+export function frameSlicer(budgetMs: number, now: () => number = () => performance.now()) {
+  let start = now();
+  return async () => {
+    if (!(budgetMs > 0) || now() - start < budgetMs) return;
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+    start = now();
+  };
 }

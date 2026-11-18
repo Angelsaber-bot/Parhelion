@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {regionLoader,bakeQuantized} from '../rendering/glb';
+import {regionLoader,bakeQuantizedSliced,frameSlicer} from '../rendering/glb';
 import {REGIONS,regionAt,regionDistance,placeRegion} from './regions';
 import {chunkMesh,DistanceCuller,freezeStaticArt} from '../rendering/chunk';
 import {toonMaterial,addOutline,outlineColorFor} from '../rendering/look';
@@ -30,6 +30,8 @@ export class RegionVisualStreaming{
  private residents=new Map<string,Resident>();private requests=new Map<string,{controller:AbortController;promise:Promise<boolean>}>();
  private failures=new Map<string,{retryAt:number;error:unknown}>();private disposed=false;private position=new THREE.Vector3();private clock:()=>number;
  readonly counters={downloads:0,installs:0,evictions:0,disposedGeometries:0,disposedMaterials:0};
+ /** Milliseconds of install work per frame; 0 (boot) installs straight through. */
+ sliceMs=0;
  constructor(private options:RegionStreamingOptions){this.clock=options.now??(()=>performance.now()/1000);}
  ready(id:string){return this.residents.has(id);}
  get diagnostics(){return{resident:[...this.residents.keys()],pending:[...this.requests.keys()],failed:[...this.failures.keys()],...this.counters};}
@@ -45,12 +47,16 @@ export class RegionVisualStreaming{
    // source resources, while outlines use global materials owned by look.ts.
    root.traverse(o=>{const mesh=o as THREE.Mesh;if(mesh.isMesh){geometries.add(mesh.geometry);for(const m of Array.isArray(mesh.material)?mesh.material:[mesh.material])materials.add(m);}});
    if(this.disposed||controller.signal.aborted){this.releaseResources(root,geometries,materials);return false;}
-   bakeQuantized(root);root.traverse(o=>{if((o as THREE.Mesh).isMesh)geometries.add((o as THREE.Mesh).geometry);});root.name=`Streamed_${id}`;placeRegion(root,def);
+   // After boot, install in slices of sliceMs so arriving in a large region never holds one frame for long.
+   const slice=frameSlicer(this.sliceMs),gone=()=>this.disposed||controller.signal.aborted;
+   await bakeQuantizedSliced(root,slice);if(gone()){this.releaseResources(root,geometries,materials);return false;}
+   root.traverse(o=>{if((o as THREE.Mesh).isMesh)geometries.add((o as THREE.Mesh).geometry);});root.name=`Streamed_${id}`;placeRegion(root,def);
    const cache=new Map<THREE.Material,THREE.Material>(),culler=new DistanceCuller(this.options.lowQuality?90:160);
    const meshes:THREE.Mesh[]=[];root.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
    for(const mesh of meshes){const carved=this.options.carve?.(id,mesh.name,mesh.geometry);if(carved&&carved!==mesh.geometry){const original=mesh.geometry;mesh.geometry=carved;geometries.delete(original);original.dispose();this.counters.disposedGeometries++;}geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);
     const count=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;const pieces=count>4000?chunkMesh(mesh,64):[mesh];
-    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece,undefined,outlineColorFor(piece.name));culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));}
+    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece,undefined,outlineColorFor(piece.name));culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));await slice();}
+    if(gone()){this.releaseResources(root,geometries,materials);return false;}
    }
    // Shaders compile in parallel before the art is shown, so crossing into an era never stalls a frame on them.
    // A renderer without async compile returns nothing, and the install continues in the same tick.
