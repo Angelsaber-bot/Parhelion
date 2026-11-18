@@ -1,6 +1,6 @@
 // Actual local/production Worker smoke. Intentionally opens temporary 1v1 clients, then leaves.
 // npx tsx test/worker-smoke.ts wss://parhelion-arena.lejiazhang-us.workers.dev/arena
-import { RULES_VERSION, type JoinOptions } from '../shared/protocol.ts';
+import { RULES_VERSION, newRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { BTN } from '../shared/sim.ts';
 import type { Snapshot } from '../shared/match.ts';
 import { GRENADE, loadoutWeapon, WEAPONS, type Loadout, type UtilityId } from '../shared/content.ts';
@@ -23,18 +23,18 @@ const releaseSkins = WEAPONS.map(weapon => {
   if (index < 0) throw new Error(`release finish missing from catalog: ${id}`);
   return index;
 });
-function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION, utility: UtilityId = 'frag') {
-  return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[] }>((resolve, reject) => {
-    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout, utility };
+function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULES_VERSION, utility: UtilityId = 'frag', extra: Partial<JoinOptions> = {}) {
+  return new Promise<{ ws: WebSocket; id: string; snaps: Snapshot[]; map: string }>((resolve, reject) => {
+    const opts: JoinOptions = { rulesVersion: version, layout: '1v1', team, name, char: 0, skins: releaseSkins, map: 'aster', loadout, utility, ...extra };
     const ws = new WebSocket(`${url}?o=${encodeURIComponent(JSON.stringify(opts))}`); sockets.push(ws);
-    const client = { ws, id: '', snaps: [] as Snapshot[] };
+    const client = { ws, id: '', snaps: [] as Snapshot[], map: '' };
     const timer = setTimeout(() => { ws.close(); reject(new Error('join timeout')); }, 10000);
     ws.onmessage = (e) => {
       const msg = JSON.parse(String(e.data));
       if (msg.t === 'welcome') {
         clearTimeout(timer);
         if (msg.d.rulesVersion !== RULES_VERSION) { ws.close(); reject(new Error('rules version mismatch')); return; }
-        client.id = msg.d.id; resolve(client);
+        client.id = msg.d.id; client.map = msg.d.map; resolve(client);
       } else if (msg.t === 'snap') client.snaps.push(msg.d);
       else if (msg.t === 'error') { clearTimeout(timer); ws.close(); reject(new Error(String(msg.d))); }
     };
@@ -42,17 +42,21 @@ function join(team: 'A' | 'auto', name: string, loadout: Loadout, version = RULE
     ws.onclose = () => { clearTimeout(timer); if (!client.id) reject(new Error('closed before welcome')); };
   });
 }
-async function refused(choice: Loadout, version = RULES_VERSION) {
+async function refused(choice: Loadout, version = RULES_VERSION, extra: Partial<JoinOptions> = {}) {
   let accepted = false;
-  try { await join('auto', 'InvalidSmoke', choice, version); accepted = true; } catch { /* expected handshake refusal */ }
+  try { await join('auto', 'InvalidSmoke', choice, version, 'frag', extra); accepted = true; } catch { /* expected handshake refusal */ }
   if (accepted) throw new Error('server accepted invalid rules/loadout');
 }
 try {
   const choice: Loadout = ['firefly', 'longnight', 'hammer'];
-  const a = await join('A', 'SmokeA', choice), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm'], RULES_VERSION, 'smoke');
+  // A fresh private room: strangers' quick-match games can never land in it. The second player picked
+  // another map and must still join the first player's room and map.
+  const code = newRoomCode();
+  const a = await join('A', 'SmokeA', choice, RULES_VERSION, 'frag', { room: code }), b = await join('auto', 'SmokeB', ['halo', 'corona', 'polearm'], RULES_VERSION, 'smoke', { room: code, map: 'sakura' });
   await wait(500);
   const first = a.snaps.at(-1)!;
-  if (!first?.players.some((p) => p.id === b.id)) throw new Error('clients are not in the same room');
+  if (!first?.players.some((p) => p.id === b.id)) throw new Error(`private room ${code}: clients are not in the same room`);
+  if (a.map !== 'aster' || b.map !== 'aster') throw new Error(`private room ${code}: the second player did not get the room's map (${b.map})`);
   for (const [snapshots, remoteId] of [[a.snaps, b.id], [b.snaps, a.id]] as const) {
     const remote = snapshots.at(-1)?.players.find(player => player.id === remoteId);
     if (!remote || JSON.stringify(remote.skins) !== JSON.stringify(releaseSkins)) throw new Error('new finish indices were lost or clamped in the remote snapshot');
@@ -103,9 +107,15 @@ try {
     }
   }
   a.ws.close(); b.ws.close(); await wait(250);
+  // Quick match: two players asking for the same game meet in one room.
+  const qa = await join('A', 'QuickA', choice, RULES_VERSION, 'frag', { layout: '2v2', map: 'frostcourt' }), qb = await join('auto', 'QuickB', choice, RULES_VERSION, 'frag', { layout: '2v2', map: 'frostcourt' });
+  await wait(500);
+  if (!qa.snaps.at(-1)?.players.some((p) => p.id === qb.id)) throw new Error('quick match: clients are not in the same room');
+  qa.ws.close(); qb.ws.close(); await wait(250);
+  await refused(['lumen', 'corona', 'blade'], RULES_VERSION, { room: 'ABCD0' });
   await refused(['lumen', 'lumen', 'blade']);
   await refused(['lumen', 'corona', 'admin'] as unknown as Loadout);
   await refused(['lumen', 'corona', 'blade'], 2);
   await refused(['lumen', 'corona', 'blade'], RULES_VERSION - 1);
-  console.log(`OK: v${RULES_VERSION} finish indices, two-client slot/loadout/crouch/movement, scheduled melee, grounded frag and smoke, forged/duplicate/old-version rejection`);
+  console.log(`OK: v${RULES_VERSION} private room (map from its first player), quick match, finish indices, two-client slot/loadout/crouch/movement, scheduled melee, grounded frag and smoke, forged/duplicate/old-version/bad-code rejection`);
 } finally { for (const ws of sockets) if (ws.readyState < WebSocket.CLOSING) ws.close(); }

@@ -12,7 +12,7 @@ import { bilingual, getLanguage, createLanguageToggle, localizeDom, localizeText
 import { ResultsBoard, syncResultsBoardLayers } from './ui/resultsBoard.ts';
 import { getMap, MAPS, mapIdOf } from '../shared/arenaMap.ts';
 import { CHARACTERS, PLAYABLE_HERO_INDICES, playableHero, ABILITIES, WEAPONS, weaponIndex, type TeamLayout } from '../shared/content.ts';
-import { DEFAULT_PORT, PUBLIC_SERVER, RULES_VERSION, type JoinOptions } from '../shared/protocol.ts';
+import { DEFAULT_PORT, PUBLIC_SERVER, RULES_VERSION, newRoomCode, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { sfx } from './rendering/audio.ts';
 import { Controls } from './player/controls.ts';
 import { ACTIONS, SettingsStore, createSettingsPanel } from '../../shared-client/settings.ts';
@@ -139,6 +139,9 @@ nameInput.addEventListener('input', () => {
 const localHost = /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|\[?::1)|\.local$/.test(location.hostname) || !location.hostname;
 const savedServer = location.protocol === 'https:' && String(saved.server ?? '').startsWith('ws://') ? undefined : saved.server;
 $<HTMLInputElement>('server').value = params.get('server') ?? savedServer ?? (localHost ? `ws://${location.hostname || 'localhost'}:${DEFAULT_PORT}` : PUBLIC_SERVER);
+// Private rooms: ?room=ABCDE in a shared link, or the last code used; "新建" makes a fresh one.
+$<HTMLInputElement>('room-code').value = normalizeRoomCode(params.get('room')) ?? normalizeRoomCode(saved.room) ?? '';
+$('room-new').onclick = () => { $<HTMLInputElement>('room-code').value = newRoomCode(); showError(''); };
 if (['1v1', '1v2', '2v2'].includes(saved.layout)) $<HTMLSelectElement>('layout').value = saved.layout;
 
 const lobbyShell=mountLobbyShell();
@@ -301,6 +304,12 @@ $('play').onclick = async () => {
     nameInput.focus();
     return;
   }
+  const roomText = $<HTMLInputElement>('room-code').value.trim(), roomCode = normalizeRoomCode(roomText);
+  if (mode === 'online' && roomText && !roomCode) {
+    showError(() => bilingual('房间号应为 5 位字母或数字（不含 O、0、I、1），或留空快速匹配。', 'A room code is 5 letters or digits (no O, 0, I or 1); leave it empty for quick match.'));
+    $('room-code').focus();
+    return;
+  }
   // A deliberate new Start retries a rejected asset load; an unresolved load is reused.
   if (mapState === 'failed') pickMap(mapId);
   const attempt = { id: ++attemptGeneration, phase: 'map' as StartPhase, mode };
@@ -316,11 +325,12 @@ $('play').onclick = async () => {
     bots: $<HTMLInputElement>('bots').checked || undefined,
   };
   const server = $<HTMLInputElement>('server').value.trim();
+  if (attempt.mode === 'online' && roomCode) opts.room = roomCode;
   const difficulty = $<HTMLSelectElement>('difficulty').value as 'easy' | 'normal' | 'hard';
   const current = () => activeStart?.id === attempt.id && !pageExited;
   let ownedSession: Session | null = null;
   const closeOwned = () => { const session = ownedSession; ownedSession = null; try { session?.close(); } catch { /* best effort for a failed/stale startup */ } };
-  try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, heroId:CHARACTERS[char].id, server, map: mapId },skins))); } catch { /* private mode */ }
+  try { localStorage.setItem('arena-lobby', JSON.stringify(withSkinSelection({ name: opts.name, layout: opts.layout, char, heroId:CHARACTERS[char].id, server, map: mapId, room: roomCode ?? '' },skins))); } catch { /* private mode */ }
   try {
     sfx.unlock();
     await (attempt.mode === 'range' ? scene.loadMap(RANGE_MAP_ID, 'day') : mapReady);
@@ -335,6 +345,13 @@ $('play').onclick = async () => {
     ownedSession = attempt.mode === 'online' ? await joinOnline(server, opts) : attempt.mode === 'range' ? startRange(opts) : startOffline(opts, difficulty);
     if (attempt.mode === 'offline' && !localHost) ownedSession.onStats = postStats;
     if (!current()) { closeOwned(); return; }
+    // A private room plays the map its first player chose: show that one.
+    if (ownedSession.mapId && ownedSession.mapId !== mapId) {
+      mapId = ownedSession.mapId; renderMaps(); attempt.phase = 'map'; renderStartupStatus();
+      mapReady = scene.loadMap(mapId, getMap(mapId).data.presentation?.preset ?? MAPS.find((m) => m.id === mapId)?.preset, getMap(mapId).data.presentation);
+      await mapReady; mapState = 'ready';
+      if (!current()) { closeOwned(); return; }
+    }
     attempt.phase = 'game'; renderStartupStatus();
     const session = ownedSession;
     rangeSession = session.practice ? session : null;

@@ -10,8 +10,9 @@
 
 import { DurableObject } from 'cloudflare:workers';
 import { TICK_HZ, validateLoadout, validateUtility } from '../shared/content.ts';
-import { RULES_VERSION, RULES_MISMATCH, type JoinOptions } from '../shared/protocol.ts';
+import { RULES_VERSION, RULES_MISMATCH, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
+import { assignRoom, reportRoom, ROOM_HEARTBEAT_MS, type OpenRoom } from './lobbyRooms.ts';
 import { WorldRelayCore, WORLD_COOP_VERSION, validWorldRoomCode } from './worldRelay.ts';
 import { sanitizeRecord, type MatchRecord } from '../shared/weaponStats.ts';
 
@@ -73,6 +74,14 @@ export default {
     const opts = parseOptions(url);
     if (opts.rulesVersion !== RULES_VERSION) return new Response(RULES_MISMATCH, { status: 426, headers: CORS });
     try { validateLoadout(opts.loadout); validateUtility(opts.utility); } catch (e) { return new Response((e as Error).message, { status: 400, headers: CORS }); }
+    if (opts.room !== undefined) {
+      // Private room: everyone with the code shares one room; no matchmaking.
+      const code = normalizeRoomCode(opts.room);
+      if (!code) return new Response('bad room code', { status: 400, headers: CORS });
+      const fwd = new URL(req.url);
+      fwd.searchParams.set('room', `code:v${RULES_VERSION}:${code}`);
+      return env.ROOM.get(env.ROOM.idFromName(`code:v${RULES_VERSION}:${code}`)).fetch(new Request(fwd, req));
+    }
     const key = roomKey(opts);
     const lobby = env.LOBBY.get(env.LOBBY.idFromName('lobby'));
     const room = await lobby.assign(key, new RoomCore(opts).capacity);
@@ -83,7 +92,7 @@ export default {
   },
 };
 
-interface OpenRoom { name: string; key: string; humans: number; cap: number; at: number }
+
 
 /** Matchmaking: hands out a room with a free human seat (or a new one) per key. */
 export class Lobby extends DurableObject<Env> {
@@ -97,28 +106,15 @@ export class Lobby extends DurableObject<Env> {
 
   async assign(key: string, cap: number): Promise<string> {
     const rooms = await this.load();
-    const now = Date.now();
-    // a seat reserved but never confirmed by the room (lost socket) expires after 2 minutes
-    for (const r of Object.values(rooms)) if (r.humans <= 0 && now - r.at > 120_000) delete rooms[r.name];
-    let room = Object.values(rooms).find((r) => r.key === key && r.humans < r.cap);
-    if (!room) {
-      room = { name: `${key}#${crypto.randomUUID().slice(0, 8)}`, key, humans: 0, cap, at: now };
-      rooms[room.name] = room;
-    }
-    room.humans++;
-    room.at = now;
+    const name = assignRoom(rooms, key, cap, Date.now(), () => crypto.randomUUID().slice(0, 8));
     await this.save();
-    return room.name;
+    return name;
   }
 
-  /** Called by a room whenever its human count changes (0 closes it). */
+  /** Called by a room whenever its human count changes (0 closes it) and as a heartbeat. */
   async report(name: string, humans: number) {
     const rooms = await this.load();
-    const r = rooms[name];
-    if (!r) return;
-    if (humans <= 0) delete rooms[name];
-    else { r.humans = humans; r.at = Date.now(); }
-    await this.save();
+    if (reportRoom(rooms, name, humans, Date.now())) await this.save();
   }
 }
 
@@ -129,6 +125,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
   private sockets = new Map<string, WebSocket>();
   private timer: ReturnType<typeof setInterval> | null = null;
   private seq = 0;
+  private reportedAt = 0;
 
   async fetch(req: Request): Promise<Response> {
     const url = new URL(req.url);
@@ -183,6 +180,7 @@ export class ArenaRoomDO extends DurableObject<Env> {
         }
       }
       this.saveStats(core);
+      if (now - this.reportedAt > ROOM_HEARTBEAT_MS) void this.report().catch(() => {});
     }, dt);
   }
 
@@ -206,7 +204,9 @@ export class ArenaRoomDO extends DurableObject<Env> {
     void this.report();
   }
 
-  private report() {
+  private async report() {
+    this.reportedAt = Date.now();
+    if (!this.name || this.name.startsWith('code:')) return; // private rooms are not matchmade
     const lobby = this.env.LOBBY.get(this.env.LOBBY.idFromName('lobby'));
     return lobby.report(this.name, this.sockets.size);
   }

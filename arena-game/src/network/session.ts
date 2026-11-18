@@ -3,14 +3,14 @@ import {CONTENT_MANIFEST,assertContentManifest} from '../../shared/manifest.ts';
 // it is the same shared Match running in the browser with bots. The game code is identical.
 
 import { Client } from '@colyseus/sdk';
-import { getMap } from '../../shared/arenaMap.ts';
+import { getMap, mapIdOf } from '../../shared/arenaMap.ts';
 import { Bot, BOT_SKILL, navFor } from '../../shared/bot.ts';
 import { randomBotHero, DT, SNAPSHOT_EVERY, TEAM_CAPACITY, randomBotLoadout, randomBotUtility, type Team } from '../../shared/content.ts';
 import type { ArenaMap } from '../../shared/map.ts';
 import { Match, type Snapshot } from '../../shared/match.ts';
 import { applyPracticeLoadout, getRangeMap, resetDummies, setupRange } from '../../shared/trainingRange.ts';
 import type { Loadout, UtilityId } from '../../shared/content.ts';
-import { isWorkerUrl, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../../shared/protocol.ts';
+import { isWorkerUrl, normalizeRoomCode, PRIVATE_ROOM_NAME, ROOM_NAME, RULES_VERSION, assertRulesVersion, type JoinOptions } from '../../shared/protocol.ts';
 import type { Input } from '../../shared/sim.ts';
 import type { MatchRecord } from '../../shared/weaponStats.ts';
 
@@ -18,6 +18,10 @@ export interface Session {
   readonly id: string;
   readonly online: boolean;
   readonly map: ArenaMap;
+  /** The room's map id when the server chose it (a private room keeps its first player's map). */
+  readonly mapId?: string;
+  /** Private room code, shown in the HUD so friends can join. */
+  readonly roomCode?: string;
   send(inputs: Input[]): void;
   onSnapshot: (s: Snapshot) => void;
   onClose: (reason: string) => void;
@@ -41,9 +45,14 @@ export interface PracticeControls {
 export async function joinOnline(url: string, opts: JoinOptions): Promise<Session> {
   // An absent false filter matches rooms of either bot policy; always send a boolean.
   opts = { ...opts, rulesVersion: RULES_VERSION, contentManifest:CONTENT_MANIFEST, bots: opts.bots === true };
+  if (opts.room !== undefined) {
+    const code = normalizeRoomCode(opts.room);
+    if (!code) throw new Error('房间号应为 5 位字母或数字（不含 O、0、I、1）');
+    opts.room = code;
+  }
   if (isWorkerUrl(url)) return joinWorker(url, opts);
   const client = new Client(url);
-  const room = await client.joinOrCreate(ROOM_NAME, opts);
+  const room = await client.joinOrCreate(opts.room ? PRIVATE_ROOM_NAME : ROOM_NAME, opts);
   // ArenaRoom removes disconnected players and has no allowReconnection path.
   // Do not let the SDK silently retry a session that the server cannot restore.
   room.reconnection.enabled = false;
@@ -57,6 +66,8 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
     id: room.sessionId,
     online: true,
     map: getMap(opts.map),
+    mapId: mapIdOf(opts.map),
+    roomCode: opts.room,
     send: (inputs) => { if (!closed) room.send('input', inputs); },
     onSnapshot: () => {},
     onClose: () => {},
@@ -73,9 +84,11 @@ export async function joinOnline(url: string, opts: JoinOptions): Promise<Sessio
   // Old servers accept unknown join fields but advertise no current rules version: fail before starting prediction.
   await new Promise<void>((resolve, reject) => {
     const timeout = setTimeout(() => { closeRoom(); reject(new Error('服务器版本握手超时，请更新客户端与服务器到同一版本。')); }, 5000);
-    room.onMessage('welcome', (welcome: { rulesVersion?: number;contentManifest?:string }) => {
+    room.onMessage('welcome', (welcome: { rulesVersion?: number;contentManifest?:string;map?:string }) => {
       if (closed) return;
       clearTimeout(timeout);
+      // A private room plays its first player's map, whatever this player had selected.
+      if (typeof welcome.map === 'string') Object.assign(s, { map: getMap(welcome.map), mapId: mapIdOf(welcome.map) });
       try { assertRulesVersion(welcome.rulesVersion);assertContentManifest(welcome.contentManifest); resolve(); }
       catch (error) { closeRoom(); reject(error); }
     });
@@ -126,7 +139,10 @@ function joinWorker(url: string, opts: JoinOptions): Promise<Session> {
         s = {
           id: (msg.d as { id: string }).id,
           online: true,
-          map: getMap(opts.map),
+          // A private room plays its first player's map, whatever this player had selected.
+          map: getMap((msg.d as { map?: string }).map ?? opts.map),
+          mapId: mapIdOf((msg.d as { map?: string }).map ?? opts.map),
+          roomCode: opts.room,
           send: (inputs) => {
             if (ws.readyState !== WebSocket.OPEN) return;
             outbox.push(...inputs);

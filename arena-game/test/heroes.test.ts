@@ -1,11 +1,11 @@
 import {predictAbility} from '../src/player/abilityPrediction.ts';
 import {describe,it,expect} from 'vitest';
-import {ABILITIES,CHARACTERS,heroIndex,SHIELD,WEAPONS,abilityAllowsGunplay} from '../shared/content.ts';
+import {ABILITIES,CHARACTERS,heroIndex,SHIELD,WEAPONS,abilityAllowsGunplay,SMOKE} from '../shared/content.ts';
 import {abilityPlacement,guardFaces,returnPathClear,BARRAGE_KILL} from '../shared/heroes.ts';
 import {Match} from '../shared/match.ts';
 import {buildMap,type MapData} from '../shared/map.ts';
 import {BTN,applyInput,clonePlayer,type Input} from '../shared/sim.ts';
-import {smokeBlocks,insideSmoke} from '../shared/grenade.ts';
+import {smokeBlocks,insideSmoke,settleSmoke} from '../shared/grenade.ts';
 import {RoomCore} from '../shared/room.ts';
 import {getMap} from '../shared/arenaMap.ts';
 import {RULES_VERSION} from '../shared/protocol.ts';
@@ -81,7 +81,7 @@ describe('lens, boundary and shared authority',()=>{
   const dead=fixture(8),victim=dead.player('b')!;victim.z=-6;cast(dead,targetPitch(6));step(dead,19);expect(victim.revealedUntil).toBeGreaterThan(dead.tick);
   dead.heroDamage('a','A','b',999,0);step(dead,200);expect(victim.alive).toBe(true);expect(victim.revealedUntil).toBe(0);void outside;
  });
- it('the edict roots and slows through walls, buildings and smoke, but not another floor',()=>{
+ it('the edict roots and slows through walls, buildings, smoke and other floors',()=>{
   const walled=structuredClone(data);walled.objects.push({id:'wall',type:'box',position:[0,1.5,-9],size:[24,3,.4],collision:true,role:'wall',material:'stone'} as never,
    {id:'deck',type:'box',position:[6,2.4,-6],size:[3,.4,3],collision:true,role:'floor',material:'stone'} as never);
   const m=fixture(8,false,walled),hidden=m.player('b')!;Object.assign(hidden,{x:0,z:-11.5});
@@ -90,8 +90,16 @@ describe('lens, boundary and shared authority',()=>{
   cast(m,targetPitch(6));step(m,19);
   const edict=m.heroes.entities.find(e=>e.kind==='edict')!;expect(edict.z).toBeCloseTo(-6,0);
   expect(hidden.rootUntil).toBeGreaterThan(m.tick);expect(hidden.exposedUntil).toBe(edict.expires);expect(hidden.revealedUntil).toBe(edict.expires);
-  expect(above.rootUntil).toBe(0);
+  expect(above.rootUntil).toBeGreaterThan(m.tick);expect(above.revealedUntil).toBe(edict.expires);
   step(m,45);expect(hidden.slowUntil).toBeGreaterThan(m.tick);
+ });
+ it('an enemy who walks into the zone later is rooted once, exposed and revealed until it ends',()=>{
+  const m=fixture(8),enemy=m.player('b')!;Object.assign(enemy,{x:0,z:-20});cast(m,targetPitch(6));step(m,19);
+  const edict=m.heroes.entities.find(e=>e.kind==='edict')!;expect(edict.pulse).toBe(1);expect(enemy.rootUntil).toBe(0);
+  step(m,60);Object.assign(enemy,{x:0,z:-9});step(m,1);
+  expect(enemy.rootUntil).toBeGreaterThan(m.tick);expect(enemy.exposedUntil).toBe(edict.expires);expect(enemy.revealedUntil).toBe(edict.expires);
+  const firstRoot=enemy.rootUntil;step(m,50);Object.assign(enemy,{z:-20});step(m,5);Object.assign(enemy,{z:-9});step(m,1);
+  expect(enemy.rootUntil).toBe(firstRoot);expect(enemy.slowUntil).toBeGreaterThan(m.tick);
  });
  it('the edict zone does not slow its own team or players who were never inside it',()=>{
   const m=fixture(8,true),enemy=m.player('b')!,mate=m.player('c')!;enemy.z=-6;Object.assign(mate,{x:1,z:-6});cast(m,targetPitch(6));step(m,40);
@@ -99,6 +107,12 @@ describe('lens, boundary and shared authority',()=>{
   const far=fixture(8),other=far.player('b')!;Object.assign(other,{x:12,z:-6});cast(far,targetPitch(6));step(far,40);expect(other.slowUntil).toBeLessThanOrEqual(far.tick);
  });
  it('the edict reaches 18 m and catches an enemy 4.5 m from where it lands',()=>{const m=fixture(8),enemy=m.player('b')!;Object.assign(enemy,{x:4.5,z:-16});cast(m,targetPitch(16));step(m,19);expect(enemy.rootUntil).toBeGreaterThan(m.tick);});
+ it('the edict snaps to an enemy inside smoke and roots them',()=>{
+  const m=fixture(8),enemy=m.player('b')!;Object.assign(enemy,{x:.4,z:-12});
+  m.smokes.push(settleSmoke(m.map,{id:5,owner:'b',x:0,y:0,z:-9,life:SMOKE.life-120}));
+  expect(smokeBlocks(m.smokes,[0,1.62,0],[.4,.9,-12])).toBe(true);
+  cast(m,0);step(m,19);const e=m.heroes.entities.find(x=>x.kind==='edict')!;expect(e.z).toBeCloseTo(-12,0);expect(enemy.rootUntil).toBeGreaterThan(m.tick);
+ });
  it('the edict snaps to an enemy near the crosshair and lands at their feet',()=>{const m=fixture(8),enemy=m.player('b')!;Object.assign(enemy,{x:.4,z:-8});cast(m,0);step(m,6);const e=m.heroes.entities[0];expect(e.kind).toBe('edict');expect(e.x).toBeCloseTo(.4,1);expect(e.z).toBeCloseTo(-8,1);});
  it('Homeward denies enemy sustained skill footprints in spawn buffers',()=>{const map=getMap('homeward'),m=fixture(8),p=m.player('a')!;Object.assign(p,{x:20,y:0,z:4,yaw:-Math.PI/2,pitch:targetPitch(6)});expect(abilityPlacement(map,p,'edict').error).not.toBe('');});
  it('snapshot state is cloned, so client prediction cannot mutate authority',()=>{const m=fixture(1);cast(m);const snap=m.snapshot();snap.players[0].ability.readyAt=0;snap.players[0].ability.target![0]=123;expect(m.player('a')!.ability.readyAt).toBe(1081);expect(m.player('a')!.ability.target![0]).toBe(0);const copy=clonePlayer(m.player('a')!);copy.ability.castSeq=999;expect(m.player('a')!.ability.castSeq).toBe(1);});

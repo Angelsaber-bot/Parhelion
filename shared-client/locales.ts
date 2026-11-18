@@ -82,7 +82,7 @@ export const TEXT_PAIRS: ReadonlyArray<readonly [string, string]> = [
   ['战场', 'Battlefield'], ['角色技能', 'Fighter skill'], ['角色', 'Fighter'], ['出战配装', 'Loadout'],
   ['单机 vs Bot', 'Offline vs Bot'], ['联机', 'Online'], ['名字', 'Name'], ['对局', 'Match'], ['队伍', 'Team'],
   ['西 · 青', 'West · Cyan'], ['东 · 橙', 'East · Orange'], ['自动', 'Auto'], ['Bot 难度', 'Bot difficulty'],
-  ['简单', 'Easy'], ['普通', 'Normal'], ['困难', 'Hard'], ['服务器', 'Server'], ['空位用 Bot 补齐', 'Fill empty slots with Bots'],
+  ['简单', 'Easy'], ['普通', 'Normal'], ['困难', 'Hard'], ['服务器', 'Server'], ['空位用 Bot 补齐', 'Fill empty slots with Bots'], ['房间号', 'Room code'], ['新建', 'New'], ['留空即快速匹配', 'Empty = quick match'], ['同一房间号的玩家进入同一房间，地图和对局以先进入的人为准。', 'Everyone with the same code joins one room; the first player in picks the map and match.'],
   ['外观', 'Appearance'], ['联机对局仍在继续。', 'Online matches keep running.'],
   ['开始战斗', 'Enter battle'], ['MATCH OVER', 'MATCH OVER'], ['秒后重生', 'seconds to respawn'], ['被 ', 'Defeated by '], [' 击败', ''],
   ['ASTER 研究站', 'ASTER Research Station'], ['SAKURA 樱庭', 'SAKURA Shrine'],

@@ -20,8 +20,9 @@ export function swallowTarget(map:ArenaMap,p:PlayerState,yaw:number):Vec3|null {
 export function applyRecoil(p:PlayerState){const [fx,fz]=forward(p.yaw),v=H.barrage.recoil/H.barrage.recoilTicks*60;Object.assign(p,{pullT:H.barrage.recoilTicks,pullX:-fx*v,pullZ:-fz*v,dashT:0,dashQueue:[]});}
 /** Horizontal distance from a point to the segment a-b. */
 function segmentDistance(a:Vec3,b:Vec3,x:number,z:number){const sx=b[0]-a[0],sz=b[2]-a[2],l=sx*sx+sz*sz,k=l>1e-9?Math.max(0,Math.min(1,((x-a[0])*sx+(z-a[2])*sz)/l)):0;return Math.hypot(a[0]+sx*k-x,a[2]+sz*k-z);}
-/** Edict of stillness: an enemy close to the aim line within reach takes the edict at their feet; otherwise it lands where the aim meets the ground. */
-export function edictPlacement(map:ArenaMap,p:PlayerState,enemies:readonly PlayerState[],smokes:readonly Smoke[]=[]):{point:Vec3;error:string} {
+/** Edict of stillness: an enemy close to the aim line within reach takes the edict at their feet; otherwise it lands where the aim meets the ground.
+ *  Smoke never stops the snap (the edict reaches through smoke); a wall still does, so it cannot lock onto unseen enemies. */
+export function edictPlacement(map:ArenaMap,p:PlayerState,enemies:readonly PlayerState[],_smokes:readonly Smoke[]=[]):{point:Vec3;error:string} {
   const eye:Vec3=[p.x,p.y+playerEye(map,p),p.z],dir=aimDir(p.yaw,p.pitch),reach=abilityFor(p.char).range;
   let best:PlayerState|null=null,score=Infinity;
   for(const e of enemies){
@@ -29,7 +30,7 @@ export function edictPlacement(map:ArenaMap,p:PlayerState,enemies:readonly Playe
     const c:Vec3=[e.x,e.y+.9,e.z],d=c.map((v,i)=>v-eye[i]) as Vec3,along=d[0]*dir[0]+d[1]*dir[1]+d[2]*dir[2];
     if(along<=0||Math.hypot(e.x-p.x,e.z-p.z)>reach)continue;
     const off=Math.sqrt(Math.max(0,d[0]*d[0]+d[1]*d[1]+d[2]*d[2]-along*along));
-    if(off>H.edict.snap||!lineOfSight(map,eye,c)||smokeBlocks(smokes,eye,c))continue;
+    if(off>H.edict.snap||!lineOfSight(map,eye,c))continue;
     if(off+along*.02<score){score=off+along*.02;best=e;}
   }
   if(best){const dx=best.x-eye[0],dy=best.y-.01-eye[1],dz=best.z-eye[2];const snapped=abilityPlacement(map,{...p,yaw:Math.atan2(-dx,-dz),pitch:Math.atan2(dy,Math.hypot(dx,dz))},'edict');if(!snapped.error)return snapped;}
@@ -115,8 +116,8 @@ export function quickAbilityPlacement(map:ArenaMap,p:PlayerState,kind:AbilityId)
   }
   return failure!;
 }
-/** The edict's circle reaches through walls, buildings and smoke; only another floor (1.8 m above or below) is out of it. */
-export function domainContains(_map:ArenaMap,e:Pick<TacticalEntity,'x'|'y'|'z'|'team'>,p:PlayerState){return p.alive&&p.team!==e.team&&Math.hypot(p.x-e.x,p.z-e.z)<=H.edict.radius&&Math.abs(p.y-e.y)<1.8;}
+/** The edict's circle reaches through walls, buildings, smoke and every floor above or below it. */
+export function domainContains(_map:ArenaMap,e:Pick<TacticalEntity,'x'|'y'|'z'|'team'>,p:PlayerState){return p.alive&&p.team!==e.team&&Math.hypot(p.x-e.x,p.z-e.z)<=H.edict.radius;}
 export function guardFaces(yaw:number,pitch:number,origin:Vec3,target:Vec3):boolean {
   const dx=origin[0]-target[0],dy=origin[1]-target[1],dz=origin[2]-target[2];
   return Math.abs(angle(Math.atan2(-dx,-dz)-yaw))<=70*Math.PI/180+1e-8 && Math.abs(Math.atan2(dy,Math.hypot(dx,dz))-pitch)<=50*Math.PI/180+1e-8;
@@ -257,9 +258,20 @@ export class HeroSystem {
           this.marks.push({id:`${e.id}:${e.pulse}:${p.id}:${p.lifeId}`,source:e.id,team:e.team,victim:p.id,lifeId:p.lifeId,x:p.x,y:p.y,z:p.z,expires:tick+H.lens.mark});
         }
       }
-      // After its root pulse the edict stays as a slowing zone until it expires.
-      if(e.kind==='edict'&&e.pulse>0)for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id))p.slowUntil=Math.max(p.slowUntil,tick+H.edict.linger);
-      if(e.kind==='edict'&&age>=H.edict.arm&&e.pulse===0){e.pulse=1;this.entityEvent(e,'pulse');for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id)){p.rootUntil=tick+H.edict.root;p.exposedUntil=tick+H.edict.exposed;p.revealedUntil=tick+H.edict.reveal;p.dashT=0;p.dashQueue=[];p.pullT=0;p.vx=p.vz=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:at(p)});}}
+      // Once it lands the edict is a zone until it expires: everyone inside is slowed, and every enemy
+      // life that is inside at the pulse or walks in later is rooted once, then exposed and revealed
+      // until the zone ends.
+      if(e.kind==='edict'&&age>=H.edict.arm){
+        if(e.pulse===0){e.pulse=1;this.entityEvent(e,'pulse');}
+        const struck=e.struck??=[];
+        for(const {state:p} of this.m.slots.values()){
+          if(!domainContains(this.m.map,e,p)||this.m.spawnProtected(p.id))continue;
+          p.slowUntil=Math.max(p.slowUntil,tick+H.edict.linger);
+          const life=`${p.id}:${p.lifeId}`;if(struck.includes(life))continue;struck.push(life);
+          p.rootUntil=tick+H.edict.root;p.exposedUntil=e.expires;p.revealedUntil=e.expires;p.dashT=0;p.dashQueue=[];p.pullT=0;p.vx=p.vz=0;
+          this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:at(p)});
+        }
+      }
     }
     this.entities=this.entities.filter(e=>e.hp>0&&e.expires>tick);
   }

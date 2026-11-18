@@ -7,7 +7,7 @@ import { appendFile } from 'node:fs/promises';
 import { Room, type Client } from '@colyseus/core';
 import { TICK_HZ, validateLoadout } from '../shared/content.ts';
 import type { Match } from '../shared/match.ts';
-import { assertRulesVersion, type JoinOptions } from '../shared/protocol.ts';
+import { assertRulesVersion, normalizeRoomCode, type JoinOptions } from '../shared/protocol.ts';
 import { RoomCore } from '../shared/room.ts';
 
 /** Human-only weapon telemetry of local-server matches, one JSON record per line. */
@@ -22,7 +22,7 @@ export class ArenaRoom extends Room {
     const core = this.core = new RoomCore(options, 'local');
     this.maxClients = core.capacity;
     // Colyseus 0.18 replaces metadata; keep every declared matchmaking filter.
-    this.setMetadata({ layout: core.layout, map: core.mapId, bots: core.fillBots });
+    this.setMetadata({ layout: core.layout, map: core.mapId, bots: core.fillBots, ...(typeof options.room === 'string' ? { room: options.room } : {}) });
     this.onMessage('rematch', () => core.rematch());
     this.onMessage('input', (client: Client, inputs: unknown) => core.input(client.sessionId, inputs));
     this.setSimulationInterval(() => {
@@ -43,6 +43,7 @@ export class ArenaRoom extends Room {
 
   onAuth(_client: Client, options: Partial<JoinOptions>) {
     assertRulesVersion(options.rulesVersion);
+    if (options.room !== undefined && !normalizeRoomCode(options.room)) throw new Error('bad room code');
     validateLoadout(options.loadout);
     return true;
   }

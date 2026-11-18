@@ -35,7 +35,8 @@ export const ROOM_NAME = 'arena';
 // v39: Qin's edict roots within 8 m (was 5); rooted enemies take +25% damage for 3 s (was 2) and are revealed through walls
 //      to the caster's team for 3 s; the zone stays 5 s and slows enemies inside by 35%. Player state gains revealedUntil.
 // v40: Qin's edict roots and slows through walls, buildings and smoke; damage boost and reveal last 5 s, as long as the zone.
-export const RULES_VERSION = 40;
+// v41: the edict reaches every floor and roots enemies who walk into the zone later (once per life); private room codes.
+export const RULES_VERSION = 41;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);
@@ -63,6 +64,9 @@ export interface JoinOptions {
   map?: string;
   /** Fill empty slots with bots (room creator decides). */
   bots?: boolean;
+  /** Private room code (see normalizeRoomCode): everyone with the same code joins one room, whose first
+   *  player chose its map, layout and bots. Absent means quick match. */
+  room?: string;
 }
 
 export interface ClientMessages {
@@ -76,3 +80,18 @@ export interface ServerMessages {
 }
 
 export const LAYOUTS: TeamLayout[] = ['1v1', '1v2', '2v2'];
+
+/** Private rooms use the same 5-character codes as World co-op: no O/0/I/1 to misread. */
+export const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+export const PRIVATE_ROOM_NAME = 'arena_private';
+export function newRoomCode(random: () => number = Math.random) {
+  let code = '';
+  for (let i = 0; i < 5; i++) code += ROOM_CODE_CHARS[Math.floor(random() * ROOM_CODE_CHARS.length) % ROOM_CODE_CHARS.length];
+  return code;
+}
+/** Accepts what a person types (lowercase, spaces, dashes); null when it is not a valid code. */
+export function normalizeRoomCode(text: unknown): string | null {
+  if (typeof text !== 'string') return null;
+  const code = text.toUpperCase().replace(/[\s-]/g, '');
+  return /^[A-HJ-NP-Z2-9]{5}$/.test(code) ? code : null;
+}
