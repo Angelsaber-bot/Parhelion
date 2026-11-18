@@ -1,0 +1,129 @@
+{
+  "artoria": {
+    "char": 2,
+    "sources": [
+      "artoria_refined/runtime_revision2/armor/artoria_armor.glb.gz"
+    ],
+    "source_sha256": "8ce48d4dc30e07f2f805839fd42be7e1b27ad74e21a9700ffbc25bcf36efbcfe",
+    "source_bytes": 45982904,
+    "source_triangles": 917370,
+    "output": "artoria_refined/runtime_revision2/armor/artoria_armor.arena.glb",
+    "output_sha256": "48e3784f4b44877f8dab80c82d6fadf5e6e6e030e75343dc7778fbade73c9b32",
+    "output_bytes": 4753188,
+    "output_triangles": 127907,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "blackbeard": {
+    "char": 3,
+    "sources": [
+      "blackbeard/remaster_v2/Blackbeard_Captain_Remaster.glb.gz"
+    ],
+    "source_sha256": "ab5516f9792a5989d54afbf6fbce0a9e381bf9dcfe71d6e7d63d6bc12b4a41ab",
+    "source_bytes": 19161548,
+    "source_triangles": 407633,
+    "output": "blackbeard/remaster_v2/Blackbeard_Captain_Remaster.arena.glb",
+    "output_sha256": "173d4f98d60c12db4784d06f7b77a0b7c9aa5abc0328003c862dd57e40b5f098",
+    "output_bytes": 3417440,
+    "output_triangles": 124754,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "musashi": {
+    "char": 4,
+    "sources": [
+      "musashi/remaster_v2/Musashi_Runtime.glb.gz"
+    ],
+    "source_sha256": "8a7213975e5e71819f02037a2d311573fb5832bfbfedd0f3a5eea6d276e66213",
+    "source_bytes": 14497360,
+    "source_triangles": 203994,
+    "output": "musashi/remaster_v2/Musashi_Runtime.arena.glb",
+    "output_sha256": "6bac006e93801747276d1eb29895e5b97bbdaaad7cba36eb74a5062e2bc2b809",
+    "output_bytes": 5919388,
+    "output_triangles": 120866,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "napoleon": {
+    "char": 5,
+    "sources": [
+      "napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.glb.gz"
+    ],
+    "source_sha256": "598cacfe5ee35f1c1ad5e6b35ff6b711ff8f8660d8f305efd2c05d2017bb9ec1",
+    "source_bytes": 29748900,
+    "source_triangles": 278008,
+    "output": "napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.arena.glb",
+    "output_sha256": "0fecc967997244b55b00dc2c7d6b33d157fdb05dfce0560c9916491f515c392e",
+    "output_bytes": 3481040,
+    "output_triangles": 121383,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "jeanne": {
+    "char": 6,
+    "sources": [
+      "jeanne/final_20261110/runtime.part1.bin",
+      "jeanne/final_20261110/runtime.part2.bin"
+    ],
+    "source_sha256": "691822500ea47356a3d950835a72e97404311810702dd904bac5aaa10304b035",
+    "source_bytes": 31932584,
+    "source_triangles": 335236,
+    "output": "jeanne/final_20261110/runtime.arena.glb",
+    "output_sha256": "c71755f07c2955727d00e6d2d8cddaf6d3c70f8eed4242a3c2a24e0bf896da3a",
+    "output_bytes": 5705168,
+    "output_triangles": 122938,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "ozymandias": {
+    "char": 7,
+    "sources": [
+      "ozymandias/final_20261110/runtime.glb.gz"
+    ],
+    "source_sha256": "cfd20e12ecaa03d79b38d7963e0b1c9e9df354cff30496d2f4cc34e9e0e406bb",
+    "source_bytes": 11525848,
+    "source_triangles": 155436,
+    "output": "ozymandias/final_20261110/runtime.arena.glb",
+    "output_sha256": "01ac73516abea916721853f5f01c43ca0bfb0c686871669890744014f05b452f",
+    "output_bytes": 7192356,
+    "output_triangles": 119987,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  },
+  "qin": {
+    "char": 8,
+    "sources": [
+      "qin-shi-huang/final_20261110/runtime.glb.gz"
+    ],
+    "source_sha256": "9f1049088932b5515fce985536f8f6d2464bce07a1c1281478fa6da2a38af922",
+    "source_bytes": 14490800,
+    "source_triangles": 119477,
+    "output": "qin-shi-huang/final_20261110/runtime.arena.glb",
+    "output_sha256": "91bac66f6ba355aab53bdcc7322a1c744eb7d6ae778f9874b497e4f00532a380",
+    "output_bytes": 8177364,
+    "output_triangles": 119477,
+    "settings": {
+      "triangles": 120000,
+      "error": 0.002,
+      "texture": 1024
+    }
+  }
+}

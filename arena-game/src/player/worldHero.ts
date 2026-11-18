@@ -1,18 +1,22 @@
 import {abilityAllowsGunplay} from '../../shared/content.ts';
 import * as THREE from 'three';
 import {GLTFLoader,type GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
+import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {buildFighter,FighterAnimator} from './fighter.ts';
 
-/** Byte-identical World art. Arena owns only the adapter, aim pose and collision scale. */
+/** World heroes, as their Arena match copies (assets/characters/ARENA_HEROES_MANIFEST.json, built by
+ * world/tools/build-arena-heroes.ts): same skeleton, clips, morphs and materials as the World masters,
+ * simplified to about 120k triangles with textures capped at 1024 px. Arena owns only the adapter,
+ * aim pose and collision scale. */
 export const WORLD_HERO_ASSETS:Record<number,{urls:string[];idle:string;walk:string;run:string;action:string}>={
-  2:{urls:[new URL('../../../assets/characters/artoria_refined/runtime_revision2/armor/artoria_armor.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
-  3:{urls:[new URL('../../../assets/characters/blackbeard/remaster_v2/Blackbeard_Captain_Remaster.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
-  4:{urls:[new URL('../../../assets/characters/musashi/remaster_v2/Musashi_Runtime.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
-  5:{urls:[new URL('../../../assets/characters/napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
-  6:{urls:[new URL('../../.scratch/hero-assets/jeanne-runtime.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk_Draped',run:'Run_Draped',action:'Jeanne_Resolve'},
-  7:{urls:[new URL('../../../assets/characters/ozymandias/final_20261110/runtime.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Ozy_Regal'},
-  8:{urls:[new URL('../../../assets/characters/qin-shi-huang/final_20261110/runtime.glb.gz',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'RegalHover'},
+  2:{urls:[new URL('../../../assets/characters/artoria_refined/runtime_revision2/armor/artoria_armor.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
+  3:{urls:[new URL('../../../assets/characters/blackbeard/remaster_v2/Blackbeard_Captain_Remaster.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
+  4:{urls:[new URL('../../../assets/characters/musashi/remaster_v2/Musashi_Runtime.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
+  5:{urls:[new URL('../../../assets/characters/napoleon/remaster_v2/Napoleon_WhiteHorse_Remaster.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Attack'},
+  6:{urls:[new URL('../../../assets/characters/jeanne/final_20261110/runtime.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk_Draped',run:'Run_Draped',action:'Jeanne_Resolve'},
+  7:{urls:[new URL('../../../assets/characters/ozymandias/final_20261110/runtime.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'Ozy_Regal'},
+  8:{urls:[new URL('../../../assets/characters/qin-shi-huang/final_20261110/runtime.arena.glb',import.meta.url).href],idle:'Idle',walk:'Walk',run:'Run',action:'RegalHover'},
 };
 /** World exports may use UV sets above Three's built-in uv0..uv3 declarations. */
 export function prepareWorldUVs(root:THREE.Object3D){
@@ -41,7 +45,7 @@ export function loadWorldHero(char:number):Promise<GLTF>{
   let entry=cache.get(char);if(entry)return entry;
   entry=(async()=>{const definition=WORLD_HERO_ASSETS[char];if(!definition)throw Error('No World model for this hero');
     const parts=await Promise.all(definition.urls.map(async url=>{const response=await fetch(url);if(!response.ok)throw Error(`Character asset HTTP ${response.status}`);return new Uint8Array(await response.arrayBuffer());}));
-    const gltf=await new GLTFLoader().parseAsync(await decodeWorldHero(parts),'');prepareWorldUVs(gltf.scene);
+    const gltf=await new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).parseAsync(await decodeWorldHero(parts),'');prepareWorldUVs(gltf.scene);
     if(char===5){const captain=await loadWorldHero(3);gltf.animations=captain.animations.map(c=>c.clone());}
     return gltf;
   })().catch(error=>{cache.delete(char);throw error;});cache.set(char,entry);return entry;
