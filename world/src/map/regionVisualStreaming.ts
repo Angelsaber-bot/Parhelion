@@ -55,7 +55,7 @@ export class RegionVisualStreaming{
    const meshes:THREE.Mesh[]=[];root.traverse(o=>{if((o as THREE.Mesh).isMesh)meshes.push(o as THREE.Mesh);});
    for(const mesh of meshes){const carved=this.options.carve?.(id,mesh.name,mesh.geometry);if(carved&&carved!==mesh.geometry){const original=mesh.geometry;mesh.geometry=carved;geometries.delete(original);original.dispose();this.counters.disposedGeometries++;}geometries.add(mesh.geometry);const source=mesh.material as THREE.Material;materials.add(source);let material=cache.get(source);if(!material){material=toonMaterial(source);cache.set(source,material);materials.add(material);}mesh.material=material;mesh.receiveShadow=true;mesh.castShadow=!/Terrain|Water|Bushes|Glow_Props/.test(mesh.name);
     const count=(mesh.geometry.index?.count??mesh.geometry.attributes.position.count)/3;const pieces=count>4000?chunkMesh(mesh,64):[mesh];
-    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece,undefined,outlineColorFor(piece.name));culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));await slice();}
+    for(const piece of pieces){geometries.add(piece.geometry);if(this.options.outlines&&piece.userData.outline)addOutline(piece,undefined,outlineColorFor(piece.name));culler.add(piece,streamedDrawDistance(piece.name),streamedOutlineDistance(piece.name));const pause=slice();if(pause)await pause;}
     if(gone()){this.releaseResources(root,geometries,materials);return false;}
    }
    // Shaders compile in parallel before the art is shown, so crossing into an era never stalls a frame on them.

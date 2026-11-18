@@ -20,15 +20,16 @@ const dump=(root:THREE.Object3D)=>{const out:unknown[]=[];root.traverse(o=>{cons
 
 test('sliced baking produces exactly the same geometry as the one-shot bake',async()=>{
  const a=quantizedScene(),b=quantizedScene();bakeQuantized(a);
- let yields=0;await bakeQuantizedSliced(b,async()=>{yields++;});
+ let yields=0;await bakeQuantizedSliced(b,()=>{yields++;return undefined;});
  assert.equal(dump(b),dump(a));assert.equal(yields,6,'one yield opportunity per mesh');
 });
 
-test('frame slicer yields only after its budget, and never with a zero budget',async()=>{
+test('frame slicer continues synchronously within budget and pauses only after it',async()=>{
  let t=0;const clock=()=>t,slice=frameSlicer(8,clock);
- let resumed=false;t=5;const early=slice().then(()=>{resumed=true;});await early;assert.equal(resumed,true);
- t=20;let waited=false;const p=slice().then(()=>{waited=true;});assert.equal(waited,false,'past the budget it waits for the next task');await p;assert.equal(waited,true);
- const never=frameSlicer(0,clock);t=1e9;let immediate=false;void never().then(()=>{immediate=true;});await Promise.resolve();assert.equal(immediate,true);
+ t=5;assert.equal(slice(),undefined,'within budget: no pause, no microtask hop');
+ t=20;const pause=slice();assert.ok(pause instanceof Promise,'past the budget it hands back a pause');let resumed=false;void pause!.then(()=>{resumed=true;});await Promise.resolve();assert.equal(resumed,false,'the pause lasts until the next task');await pause;assert.equal(resumed,true);
+ assert.equal(slice(),undefined,'the budget restarts after a pause');
+ const never=frameSlicer(0,clock);t=1e9;assert.equal(never(),undefined);
 });
 
 function tinyGlb(){

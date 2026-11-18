@@ -18,8 +18,8 @@ export function bakeQuantized(root: THREE.Object3D) {
   root.updateMatrixWorld(true);
 }
 /** bakeQuantized, yielding through `slice` between meshes so a large region does not hold one frame. */
-export async function bakeQuantizedSliced(root: THREE.Object3D, slice: () => Promise<void>) {
-  for (const mesh of unshareGeometries(root)) { bakeQuantizedMesh(mesh); await slice(); }
+export async function bakeQuantizedSliced(root: THREE.Object3D, slice: FrameSlice) {
+  for (const mesh of unshareGeometries(root)) { bakeQuantizedMesh(mesh); const pause = slice(); if (pause) await pause; }
   root.updateMatrixWorld(true);
 }
 /** Identical quantized meshes (same-shaped gates, targets) can share one geometry: give each its own
@@ -56,13 +56,15 @@ function bakeQuantizedMesh(m: THREE.Mesh) {
   g.computeBoundingBox(); g.computeBoundingSphere();
 }
 
+/** A pause to await when the slice's budget is spent, or undefined to keep going in the same task. */
+export type FrameSlice = () => Promise<void> | undefined;
 /** Yields to the event loop (so a frame can be drawn) once a stretch of main-thread work passes `budgetMs`.
- * A budget of 0 never yields. setTimeout keeps it independent of animation frames (hidden tabs, test hosts). */
-export function frameSlicer(budgetMs: number, now: () => number = () => performance.now()) {
+ * Within budget it returns undefined, so callers continue synchronously (no microtask hop); a budget of 0
+ * never yields. setTimeout keeps it independent of animation frames (hidden tabs, test hosts). */
+export function frameSlicer(budgetMs: number, now: () => number = () => performance.now()): FrameSlice {
   let start = now();
-  return async () => {
-    if (!(budgetMs > 0) || now() - start < budgetMs) return;
-    await new Promise<void>(resolve => setTimeout(resolve, 0));
-    start = now();
+  return () => {
+    if (!(budgetMs > 0) || now() - start < budgetMs) return undefined;
+    return new Promise<void>(resolve => setTimeout(resolve, 0)).then(() => { start = now(); });
   };
 }
