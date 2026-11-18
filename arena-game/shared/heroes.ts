@@ -115,7 +115,8 @@ export function quickAbilityPlacement(map:ArenaMap,p:PlayerState,kind:AbilityId)
   }
   return failure!;
 }
-export function domainContains(map:ArenaMap,e:Pick<TacticalEntity,'x'|'y'|'z'|'team'>,p:PlayerState){return p.alive&&p.team!==e.team&&Math.hypot(p.x-e.x,p.z-e.z)<=H.edict.radius&&Math.abs(p.y-e.y)<1.8&&lineOfSight(map,[e.x,e.y+.5,e.z],[p.x,p.y+.5,p.z]);}
+/** The edict's circle reaches through walls, buildings and smoke; only another floor (1.8 m above or below) is out of it. */
+export function domainContains(_map:ArenaMap,e:Pick<TacticalEntity,'x'|'y'|'z'|'team'>,p:PlayerState){return p.alive&&p.team!==e.team&&Math.hypot(p.x-e.x,p.z-e.z)<=H.edict.radius&&Math.abs(p.y-e.y)<1.8;}
 export function guardFaces(yaw:number,pitch:number,origin:Vec3,target:Vec3):boolean {
   const dx=origin[0]-target[0],dy=origin[1]-target[1],dz=origin[2]-target[2];
   return Math.abs(angle(Math.atan2(-dx,-dz)-yaw))<=70*Math.PI/180+1e-8 && Math.abs(Math.atan2(dy,Math.hypot(dx,dz))-pitch)<=50*Math.PI/180+1e-8;

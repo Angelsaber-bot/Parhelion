@@ -34,7 +34,8 @@ export const ROOM_NAME = 'arena';
 // v38: every hero has 200 HP; the Longnight sniper deals 110 to the body and 200 to the head.
 // v39: Qin's edict roots within 8 m (was 5); rooted enemies take +25% damage for 3 s (was 2) and are revealed through walls
 //      to the caster's team for 3 s; the zone stays 5 s and slows enemies inside by 35%. Player state gains revealedUntil.
-export const RULES_VERSION = 39;
+// v40: Qin's edict roots and slows through walls, buildings and smoke; damage boost and reveal last 5 s, as long as the zone.
+export const RULES_VERSION = 40;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {
   if (version !== RULES_VERSION) throw new Error(RULES_MISMATCH);

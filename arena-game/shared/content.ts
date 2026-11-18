@@ -126,7 +126,7 @@ export const ABILITIES: Record<AbilityId, { name: string; en: string; icon: stri
   barrage: { name:'战争之神', en:'God of war', icon:'◎', cooldown:660, windup:3, recovery:6, range:45, description:'沿准星轰出一发贯穿实心弹（70 m/s）：穿过路径上的每个敌人各造成 70 伤害并击退，直接击碎护盾，撞墙时炸开 2.5 米 35 伤害。开炮后坐力把自己向后推 3 米。11 秒冷却。', english:'Fire a piercing round shot along your aim (70 m/s): every enemy in its path takes 70 and is knocked back, shields shatter, and it bursts for 35 within 2.5m when it hits a wall. The recoil throws you 3m back. 11s cooldown.' },
   prayer: { name:'吾主在此', en:'Luminosité Eternelle', icon:'✦', cooldown:720, windup:6, recovery:6, range:6, description:'0.1 秒立旗，6 米内可见友军立即恢复 30 HP，随后 3 秒每 0.25 秒回 5 HP，枪伤降低 25%。圣旗 100 耐久；不能复活或超额治疗。', english:'Plant in 0.1s: visible allies within 6m instantly heal 30 HP, then 5 HP every 0.25s for 3s with 25% gun resistance. 100 HP banner; no revive or overheal.' },
   lens: { name:'日轮审判', en:'Solar judgement', icon:'☼', cooldown:720, windup:6, recovery:6, range:8, description:'日轮在 0.25 秒预警后快速发出四次审判，间隔 0.4 秒；16 米 / 100°，每次 30 伤害。Q 可转向，墙烟可挡；日轮 80 耐久。', english:'After a 0.25s warning, four judgements fire 0.4s apart over 16m / 100°, dealing 30 each. Q redirects; walls and smoke block it. 80 HP disc.' },
-  edict: { name:'定身令', en:'Edict of stillness', icon:'⌁', cooldown:660, windup:6, recovery:6, range:18, description:'在准星处（18 米内，可自动对准敌人）落下御令，0.2 秒预警后 8 米内的敌人定身 0.7 秒，3 秒内受到的伤害提高 25%，并在 3 秒内被我方透视。御令区域保留 5 秒，区域内的敌人减速 35%。定身中仍可开枪。11 秒冷却。', english:'Drop an edict where you aim (within 18m, snaps to an enemy): after a 0.2s warning, enemies within 8m are rooted for 0.7s, take 25% more damage for 3s and are revealed to your team through walls for 3s. The edict zone stays for 5s and slows enemies inside by 35%. Rooted players can still shoot. 11s cooldown.' },
+  edict: { name:'定身令', en:'Edict of stillness', icon:'⌁', cooldown:660, windup:6, recovery:6, range:18, description:'在准星处（18 米内，可自动对准敌人）落下御令，0.2 秒预警后 8 米内的敌人定身 0.7 秒（穿墙、穿建筑、透烟），5 秒内受到的伤害提高 25% 并被我方透视。御令区域保留 5 秒，区域内的敌人减速 35%。定身中仍可开枪。11 秒冷却。', english:'Drop an edict where you aim (within 18m, snaps to an enemy): after a 0.2s warning, enemies within 8m are rooted for 0.7s, even through walls, buildings and smoke, then take 25% more damage and are revealed to your team for 5s. The edict zone stays for 5s and slows enemies inside by 35%. Rooted players can still shoot. 11s cooldown.' },
 };
 /** Shared by authority, prediction and visual telegraphs (all time values are ticks). */
 export const HERO_COMBAT = {
@@ -144,7 +144,7 @@ export const HERO_COMBAT = {
   /** Edict: snap cone half-width (m), radius, warning, how long the slowing zone stays after it lands, root, exposure and
    *  reveal (ticks), damage taken while exposed, movement speed inside the zone (also the hook's after-slow) and how long
    *  that slow outlasts leaving the zone (ticks). Rooted enemies are revealed through walls to the caster's team. */
-  edict:{snap:2,radius:8,arm:12,life:300,root:42,exposed:180,reveal:180,vulnerable:1.25,speed:.65,linger:6},
+  edict:{snap:2,radius:8,arm:12,life:300,root:42,exposed:300,reveal:300,vulnerable:1.25,speed:.65,linger:6},
 } as const;
 export const CHARACTERS: CharacterDef[] = [
   { id:'aster', name:'Aster', hp:200, speed:5.2, color:0x63d9db, ability:'barrier' },

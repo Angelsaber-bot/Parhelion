@@ -10,7 +10,7 @@ import {RoomCore} from '../shared/room.ts';
 import {getMap} from '../shared/arenaMap.ts';
 import {RULES_VERSION} from '../shared/protocol.ts';
 const data:MapData={mapId:'heroes-test',version:'1',bounds:{min:[-30,-1,-30],max:[30,10,30]},objects:[{id:'floor',type:'box',position:[0,-.2,0],size:[60,.4,60],collision:true,role:'floor',material:'stone'}],anchors:[{id:'a',kind:'spawn',team:'west',position:[0,0,0]},{id:'b',kind:'spawn',team:'east',position:[0,0,-10]}],routes:[],player:{radius:.32,height:1.8,eyeHeight:1.62,walkSpeed:5.2,stepHeight:.32}};
-function fixture(char=0,mate=false){const m=new Match(buildMap(structuredClone(data)),'2v2');m.addPlayer('a',{team:'A',char,name:'a',skins:[],bot:false});m.addPlayer('b',{team:'B',char:0,name:'b',skins:[],bot:false});if(mate)m.addPlayer('c',{team:'A',char:1,name:'c',skins:[],bot:false});m.phase='live';m.phaseT=10000;for(const s of m.slots.values())s.spawnProtectedUntilTick=0;m.snapshot();return m;}
+function fixture(char=0,mate=false,map:MapData=data){const m=new Match(buildMap(structuredClone(map)),'2v2');m.addPlayer('a',{team:'A',char,name:'a',skins:[],bot:false});m.addPlayer('b',{team:'B',char:0,name:'b',skins:[],bot:false});if(mate)m.addPlayer('c',{team:'A',char:1,name:'c',skins:[],bot:false});m.phase='live';m.phaseT=10000;for(const s of m.slots.values())s.spawnProtectedUntilTick=0;m.snapshot();return m;}
 function step(m:Match,n=1){for(let i=0;i<n;i++)m.step();}
 function input(m:Match,id='a',buttons=0,extra:Partial<Input>={}){const p=m.player(id)!;m.queueInputs(id,[{seq:p.lastSeq+1,mx:0,mz:0,yaw:p.yaw,pitch:p.pitch,buttons,weapon:p.weaponSlot,view:m.tick,...extra}]);m.step();}
 function cast(m:Match,pitch=0){input(m,'a',BTN.SHIELD,{yaw:0,pitch});}
@@ -58,28 +58,40 @@ describe('lens, boundary and shared authority',()=>{
  it('lens makes four static, expiring marks; walls, smoke and shields obstruct scans',()=>{for(const occluder of ['none','smoke','shield']){const m=fixture(7);cast(m,targetPitch(4));if(occluder==='smoke')m.smokes.push({id:3,owner:'b',x:0,y:0,z:-7,life:300});if(occluder==='shield')m.shields.push({id:4,owner:'b',team:'B',x:0,y:0,z:-7,yaw:0,hp:180,life:300});step(m,21);expect(m.heroes.marks.length).toBe(occluder==='none'?1:0);if(occluder==='none'){const mark={...m.heroes.marks[0]};m.player('b')!.x=25;step(m,5);expect(m.heroes.marks[0].x).toBe(mark.x);step(m,40);expect(m.heroes.marks).toHaveLength(0);}}});
  it('a destroyed lens cannot pulse on that tick',()=>{const m=fixture(7);cast(m,targetPitch(4));step(m,20);const lens=m.heroes.entities[0];m.heroes.hit(lens,80);m.step();expect(m.heroes.marks).toHaveLength(0);});
  it('the edict roots an enemy: no steps, dash or jump, but shooting works and damage taken rises 25%',()=>{const m=fixture(8),enemy=m.player('b')!;enemy.z=-6;cast(m,targetPitch(6));step(m,19);expect(enemy.rootUntil).toBeGreaterThan(m.tick);const charges=enemy.dashCharges,z=enemy.z;input(m,'b',BTN.DASH|BTN.JUMP,{mz:1});input(m,'b',BTN.FIRE,{mz:1});expect(enemy.z).toBe(z);expect(enemy.dashT).toBe(0);expect(enemy.dashCharges).toBe(charges);expect(enemy.y).toBe(0);m.heroDamage('a','A','b',40,0);expect(enemy.hp).toBe(150);step(m,45);input(m,'b',0,{mz:1});expect(enemy.z).not.toBe(z);});
- it('the landed edict stays 5 s as a zone that slows enemies inside by 35%; exposure lasts 3 s',()=>{
+ it('the landed edict stays 5 s as a zone that slows enemies inside by 35%; exposure lasts as long as the zone',()=>{
   const m=fixture(8),enemy=m.player('b')!;enemy.z=-6;cast(m,targetPitch(6));step(m,19);
   const edict=m.heroes.entities.find(e=>e.kind==='edict')!;expect(edict.pulse).toBe(1);expect(edict.expires-edict.created).toBe(12+300);
-  expect(enemy.exposedUntil-m.tick).toBeGreaterThan(165);expect(enemy.exposedUntil-m.tick).toBeLessThanOrEqual(180);
+  expect(enemy.exposedUntil).toBe(edict.expires);
   step(m,45);expect(enemy.rootUntil).toBeLessThan(m.tick);expect(enemy.slowUntil).toBeGreaterThan(m.tick);
   const walk=(n:number)=>{const x=enemy.x,z=enemy.z;for(let i=0;i<n;i++)input(m,'b',0,{mz:1});return Math.hypot(enemy.x-x,enemy.z-z);};
   walk(6);const slowed=walk(12);expect(Math.hypot(enemy.x-edict.x,enemy.z-edict.z)).toBeLessThan(6);
   step(m,edict.expires-m.tick+10);expect(m.heroes.entities.some(e=>e.kind==='edict')).toBe(false);expect(enemy.slowUntil).toBeLessThan(m.tick);
   walk(6);const free=walk(12);expect(slowed/free).toBeCloseTo(.65,1);
  });
- it('the edict roots within 8 m and reveals only rooted enemies, to the caster team, for 3 s; respawn clears it',()=>{
+ it('the edict roots within 8 m and reveals only rooted enemies, to the caster team, until the zone ends; respawn clears it',()=>{
   const m=fixture(8,true),enemy=m.player('b')!,mate=m.player('c')!;enemy.z=-6;Object.assign(mate,{x:1,z:-6});
   m.addPlayer('d',{team:'B',char:0,name:'d',skins:[],bot:false});const far=m.player('d')!;Object.assign(far,{x:7.6,z:-6});m.slots.get('d')!.spawnProtectedUntilTick=0;
   const outside=m.player('d')!;cast(m,targetPitch(6));step(m,19);
-  expect(enemy.revealedUntil-m.tick).toBeGreaterThan(165);expect(enemy.revealedUntil-m.tick).toBeLessThanOrEqual(180);
+  expect(enemy.revealedUntil).toBe(m.heroes.entities.find(e=>e.kind==='edict')!.expires);
   expect(far.rootUntil).toBeGreaterThan(m.tick);expect(far.revealedUntil).toBeGreaterThan(m.tick);
   expect(mate.revealedUntil).toBe(0);expect(m.player('a')!.revealedUntil).toBe(0);
   const snap=m.snapshot();expect(snap.players.find(p=>p.id==='b')!.revealedUntil).toBe(enemy.revealedUntil);
-  step(m,181);expect(enemy.revealedUntil).toBeLessThan(m.tick);
+  step(m,301);expect(enemy.revealedUntil).toBeLessThan(m.tick);
   const again=fixture(8),beyond=again.player('b')!;Object.assign(beyond,{x:8.6,z:-6});cast(again,targetPitch(6));step(again,19);expect(beyond.revealedUntil).toBe(0);expect(beyond.rootUntil).toBe(0);
   const dead=fixture(8),victim=dead.player('b')!;victim.z=-6;cast(dead,targetPitch(6));step(dead,19);expect(victim.revealedUntil).toBeGreaterThan(dead.tick);
   dead.heroDamage('a','A','b',999,0);step(dead,200);expect(victim.alive).toBe(true);expect(victim.revealedUntil).toBe(0);void outside;
+ });
+ it('the edict roots and slows through walls, buildings and smoke, but not another floor',()=>{
+  const walled=structuredClone(data);walled.objects.push({id:'wall',type:'box',position:[0,1.5,-9],size:[24,3,.4],collision:true,role:'wall',material:'stone'} as never,
+   {id:'deck',type:'box',position:[6,2.4,-6],size:[3,.4,3],collision:true,role:'floor',material:'stone'} as never);
+  const m=fixture(8,false,walled),hidden=m.player('b')!;Object.assign(hidden,{x:0,z:-11.5});
+  m.addPlayer('d',{team:'B',char:0,name:'d',skins:[],bot:false});m.slots.get('d')!.spawnProtectedUntilTick=0;const above=m.player('d')!;Object.assign(above,{x:6,y:2.6,z:-6});
+  m.smokes.push({id:9,owner:'b',x:0,y:0,z:-7.5,life:300} as never);
+  cast(m,targetPitch(6));step(m,19);
+  const edict=m.heroes.entities.find(e=>e.kind==='edict')!;expect(edict.z).toBeCloseTo(-6,0);
+  expect(hidden.rootUntil).toBeGreaterThan(m.tick);expect(hidden.exposedUntil).toBe(edict.expires);expect(hidden.revealedUntil).toBe(edict.expires);
+  expect(above.rootUntil).toBe(0);
+  step(m,45);expect(hidden.slowUntil).toBeGreaterThan(m.tick);
  });
  it('the edict zone does not slow its own team or players who were never inside it',()=>{
   const m=fixture(8,true),enemy=m.player('b')!,mate=m.player('c')!;enemy.z=-6;Object.assign(mate,{x:1,z:-6});cast(m,targetPitch(6));step(m,40);
