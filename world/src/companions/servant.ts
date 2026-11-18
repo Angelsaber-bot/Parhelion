@@ -19,6 +19,7 @@ import { SaberGroundedLocomotion } from '../characters/saberGroundedLocomotion';
 import { SaberIdleCarry } from '../characters/saberLocomotion';
 import { COMPANION_MOTION, companionGait, turnCompanion } from '../characters/companionMotion';
 import { createSaberBrace, type SaberBraceCue } from './saberBrace';
+import { rimLightCharacter } from '../../../shared-client/rimLight';
 
 // Only accepted, project-authored outfits; the rejected v1 model is never requested.
 export const SERVANT_MODELS: Record<ServantOutfit, string> = {
@@ -40,7 +41,7 @@ export async function loadServantGltf(url: string): Promise<GLTF> {
   const response = await fetch(url);
   if (!response.ok) throw new Error(`Artoria asset HTTP ${response.status}`);
   const gltf = await new GLTFLoader().parseAsync(await decodeServantModel(await response.arrayBuffer()), '');
-  clampUvChannels(gltf.scene);
+  clampUvChannels(gltf.scene); rimLightCharacter(gltf.scene);
   return gltf;
 }
 export const SERVANT_CLIPS = ['Idle', 'Walk', 'Run', 'Attack'] as const;

@@ -4,6 +4,7 @@ import {GLTFLoader,type GLTF} from 'three/examples/jsm/loaders/GLTFLoader.js';
 import {MeshoptDecoder} from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import {clone as cloneSkeleton} from 'three/examples/jsm/utils/SkeletonUtils.js';
 import {buildFighter,FighterAnimator} from './fighter.ts';
+import {rimLightCharacter} from '../../../shared-client/rimLight.ts';
 
 /** World heroes, as their Arena match copies (assets/characters/ARENA_HEROES_MANIFEST.json, built by
  * world/tools/build-arena-heroes.ts): same skeleton, clips, morphs and materials as the World masters,
@@ -84,7 +85,7 @@ export class ArenaCharacter {
   private pitch=0;private attack=false;private crouch=0;
   constructor(readonly char:number,team:number,load:()=>Promise<GLTF>=()=>loadWorldHero(char)){
     this.root.name=`Arena World hero ${char}`;this.aim.position.y=1.35;this.root.add(this.aim,this.normalizedRoot);
-    if(char<2){const rig=buildFighter(char,team);this.root.remove(this.aim);this.aim=rig.aim;this.legacyRoot=rig.root;this.root.add(rig.root);this.legacy=new FighterAnimator(rig);this.state='ready';this.ready=Promise.resolve();return;}
+    if(char<2){const rig=buildFighter(char,team);this.root.remove(this.aim);this.aim=rig.aim;this.legacyRoot=rig.root;rimLightCharacter(rig.root);this.root.add(rig.root);this.legacy=new FighterAnimator(rig);this.state='ready';this.ready=Promise.resolve();return;}
     this.ready=load().then(gltf=>{if(this.dead)return;this.install(gltf);this.state='ready';}).catch(error=>{this.state='failed';throw error;});
     // Consumers surface readiness before entering a match; this prevents an unhandled stale preview load.
     void this.ready.catch(()=>{});
@@ -103,6 +104,8 @@ export class ArenaCharacter {
     for(const side of ['L','R']){const long=side==='L'?'Left':'Right';const upper=find(model,`${long}Arm`,`UpperArm${side}`,`upper_arm.${side}`),lower=find(model,`${long}ForeArm`,`Forearm${side}`),hand=find(model,`${long}Hand`,`Hand${side}`);this.arms.push(upper&&lower&&hand?{upper,lower,hand}:null);}
     for(const name of ['WeaponSocket_R','Attachment_LeftHand_Katana','Attachment_RightHand_Katana']){const bone=model.getObjectByName(name);if(bone)this.weaponBones.push(bone);}
     // Captain's World firearm is a separate mesh; the public Arena loadout supplies the held gun.
+    // Soft light edge on every hero (shared materials are changed once; see shared-client/rimLight.ts).
+    rimLightCharacter(model);
     model.traverse(o=>{if(o.name.startsWith('Blackbeard_firearm'))o.visible=false;const mesh=o as THREE.Mesh;if(mesh.isMesh){mesh.castShadow=true;mesh.receiveShadow=true;mesh.frustumCulled=false;}});
     for(const bone of [this.head,...this.arms.flatMap(arm=>arm?[arm.upper,arm.lower]:[])])if(bone)this.restPose.set(bone,bone.quaternion.clone());
     this.root.userData.source='World';this.root.userData.nativeMeshes=true;

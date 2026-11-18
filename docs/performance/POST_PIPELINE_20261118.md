@@ -105,6 +105,13 @@ Left over:
 ### P5: visuals
 Arena map textures now use up to 8× anisotropic filtering, so distant floor tile seams stay crisp. World terrain is mostly vertex-coloured, so this matters less there.
 
+Four style candidates were compared on frozen frames (comparison page shared with the owner):
+- **Chosen:** B, the character rim light (`shared-client/rimLight.ts`). It is a fresnel edge added at load time to lit character materials in both games: World player, companions and character kits, and every Arena hero. It costs nothing measurable, and in World it eases to 45% at full night.
+- **Not chosen, code removed:**
+  - A: colour grade, +0.3–0.5 ms in World.
+  - C: vignette.
+  - D: Arena half-resolution AO, +0.8–2 ms. The stock GTAOPass would swap away the depth Arena's outline and smoke passes read, and it counted transparent effects as occluders.
+
 ### Measurement caveats
 - On ANGLE Metal, a JS frame that blocks on the GPU looks like CPU time. Separate the two by shrinking the viewport, as in the P4 profile above.
 - Heavy benchmarks running alongside the World DOM tests slow them enough to time out: two graphics-recovery tests failed that way and pass alone (about 14 s each).

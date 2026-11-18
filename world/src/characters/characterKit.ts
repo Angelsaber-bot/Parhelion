@@ -8,6 +8,7 @@ import { mountedChargeClip } from './mountedChargeMotion';
 import { musashiLocomotionClip } from './musashiLocomotion';
 import { ActionBlend } from './actionBlend';
 import { COMPANION_MOTION } from './companionMotion';
+import { rimLightCharacter } from '../../../shared-client/rimLight';
 
 export type Axis = readonly [number, number, number];
 export interface KitEvent { at: number; kind: 'fire' | 'hit'; socket?: string; }
@@ -64,7 +65,7 @@ export async function loadCharacterKit(definition: CharacterKitDefinition, optio
   const bytes = await decodeCharacterAsset(transport.buffer);
   options.signal?.throwIfAborted();
   const gltf = await new GLTFLoader().parseAsync(bytes, '');
-  clampUvChannels(gltf.scene);
+  clampUvChannels(gltf.scene); rimLightCharacter(gltf.scene);
   try {
     options.signal?.throwIfAborted();
     return new CharacterKit(gltf, definition, options);

@@ -65,6 +65,8 @@ export class KingdomTwilight {
   private snow = 0;
   private fire = 0;
   private night = 0;
+  /** 0 by day, 1 at full night (the evening chapters in the valley and Britain). */
+  get nightAmount() { return this.night; }
   private expansionWeights = [0,0,0];
   private readonly uniforms: Record<string, THREE.IUniform>;
   constructor(sky: THREE.Mesh, private sun: THREE.DirectionalLight,

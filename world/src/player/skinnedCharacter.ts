@@ -7,6 +7,7 @@ import { addPlayerOutline, disposePlayerObject, preservePlayerMaterial, wantsPla
 import { makePlayerGlider, type GliderEquipment } from '../weapons/playerEquipment';
 import { PlayerInertia } from './playerInertia';
 import { advancePlayerStride, playerStride, samplePlayerFoot, posePlayerGroundLeg, sprintWeight } from './playerLocomotion';
+import { applyRimLight } from '../../../shared-client/rimLight';
 
 export const PLAYER_V2_URL = new URL('../../../assets/characters/player_v2/player_v2.glb', import.meta.url).href;
 export const DAWN_PHYSICAL_SCALE = .7873802602519613;
@@ -89,6 +90,7 @@ export function buildSkinnedCharacter(model: THREE.Group, options: { outlines?: 
   });
   if (!meshes.length) throw new Error('Player v2 has no skinned surfaces');
   materials.forEach((_replacement, original) => original.dispose());
+  for (const replacement of materials.values()) applyRimLight(replacement as never);
   const required = (name: string) => { const bone = bones[name]; if (!bone) throw new Error(`Player v2 bone missing: ${name}`); return bone; };
   const joints: Record<string, THREE.Object3D> = {
     Hips: required('J_Bip_C_Hips'), Spine: required('J_Bip_C_Spine'), Chest: required('J_Bip_C_Chest'),

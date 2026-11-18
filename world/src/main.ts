@@ -218,6 +218,7 @@ import { detachConsumedSourceNodes } from './rendering/consumedSourceNodes';
 import './ui/actions.css';
 import { AdaptiveResolution, POST_SCALE, targetDpr } from './rendering/renderQuality';
 import { scalePassResolution } from '../../shared-client/postScale';
+import { RIM_STRENGTH, RIM_UNIFORMS } from '../../shared-client/rimLight';
 import { readResolutionMode, attachRenderSettings } from './rendering/renderSettings';
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
@@ -5144,6 +5145,8 @@ function frame(now: number) {
   shadowTick = (shadowTick + 1) % 2;
   // Art created after load (characters, chapter props, effects) picks up ground grime every few seconds.
   groundGrimeSweep += dt; if (groundGrimeSweep > 3) { groundGrimeSweep = 0; adoptGroundGrime(scene); }
+  // Character rim light follows the light: full by day, softer once night falls.
+  RIM_UNIFORMS.rimStrength.value = RIM_STRENGTH * (1 - .55 * twilight.nightAmount);
   renderer.shadowMap.needsUpdate = highQ || shadowTick === 0 || shadowCenter.distanceToSquared(lastShadowCenter) > 4;
   if (renderer.shadowMap.needsUpdate) lastShadowCenter.copy(shadowCenter);
 

@@ -23,6 +23,7 @@ describe('original World characters in Arena',()=>{
   const height=visual.root.worldToLocal(head!.getWorldPosition(new THREE.Vector3())).y;expect(height).toBeGreaterThan(1);expect(height).toBeLessThan(1.85);
   const mesh=(root:THREE.Object3D)=>{let found:THREE.SkinnedMesh|undefined;root.traverse(o=>{if(o instanceof THREE.SkinnedMesh&&!found)found=o;});return found!;};
   expect(mesh(visual.root).geometry).toBe(mesh(other.root).geometry);expect(mesh(visual.root).skeleton).not.toBe(mesh(other.root).skeleton);
+  const lit=(mesh(visual.root).material as THREE.Material);if(lit.type!=='MeshBasicMaterial')expect(lit.userData.rimLight,'heroes carry the rim light').toBe(true);
   expect(source.animations.some(a=>a.name===WORLD_HERO_ASSETS[char].run)).toBe(true);
   visual.dispose();other.update(1/60,5.2,0);expect(other.state).toBe('ready');other.dispose();
  },30000);
