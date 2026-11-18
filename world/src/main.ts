@@ -4238,12 +4238,14 @@ function nearestInteract(skipLocked = false): Marker | null {
   let fieldStep: Marker | null = null, fieldStepD = Infinity;
   for (const m of layout.markers) {
     if (m.type !== 'interact') continue;
+    // Every branch below picks a marker only inside its radius: skip the rest before any other test.
+    const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
+    if (!(d < (m.radius ?? 3))) continue;
     if (skipLocked && typeof secondaryMarker === 'function' && secondaryMarker(m)) continue;
     if (m.id.startsWith('adventure_kyoto_witness_') && typeof kyotoWitnessActionReady === 'function' && !kyotoWitnessActionReady(m.id as KyotoWitnessAction, done)) continue;
     if (m.id.startsWith('adventure_harbor_relief_') && typeof harborReliefRequired === 'function' && (!harborReliefRequired(done) || done.has(m.id))) continue;
     // The uplink cabinet only does something while the exercise is running; otherwise its prompt just said "start at the entrance".
     if (m.id === 'compact_relay_controller' && typeof compactRelayRuntime !== 'undefined' && !compactRelayRuntime?.active) continue;
-    const d = Math.hypot(player.pos.x - m.p[0], player.pos.y - m.p[1], player.pos.z - m.p[2]);
     if (typeof kingdomWorkMarkers !== 'undefined' && kingdomWorkMarkers.has(m.id)) {
       if(qinChapterById.has(m.id)&&!qinChapterReady(m.id,done))continue;
     if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
@@ -4274,7 +4276,8 @@ function nearestInteract(skipLocked = false): Marker | null {
     // A field fight starts on Interact; once it is running the marker has nothing more to give, and its "[F] clear the
     // crossbows" prompt only answered "another fight is active". Same for a timed job already under way.
     if(fieldChapters?.has(m.id)&&(combat.storyEncounter?.id===fieldEncounterId(m.id)||fieldChapters.working()===m.id))continue;
-    if(fieldChapters?.has(m.id)&&typeof canReachFieldMarker==='function'&&!canReachFieldMarker(m))continue;
+    // Only a marker within reach can be chosen below, so only then pay for its line-of-sight rays.
+    if(fieldChapters?.has(m.id)&&d<(m.radius??3)&&typeof canReachFieldMarker==='function'&&!canReachFieldMarker(m))continue;
     // The gate's gold latch is gone once it is unlocked (its target hides too); its prompt outlived it.
     if(m.id===KINGDOM_GATE.latch&&(done.has(KINGDOM_GATE.unlocked)||done.has(KINGDOM_GATE.open)))continue;
     if(m.id===KINGDOM_GATE.winch&&done.has(KINGDOM_GATE.open))continue;

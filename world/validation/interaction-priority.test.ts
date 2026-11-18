@@ -15,7 +15,7 @@ test('the step the story needs wins the Interact key over side questions standin
   assert.ok(secondary.includes('modelClaimPoints.some(point => point.marker.id === m.id)'), 'a servant already invited (Jeanne at the Orleans market)');
   assert.ok(nearest.includes("if (skipLocked && typeof secondaryMarker === 'function' && secondaryMarker(m)) continue;") && nearest.includes("if (!skipLocked && best && typeof secondaryMarker === 'function' && secondaryMarker(best)) return nearestInteract(true) ?? best;"), 'falls back to the side marker when it is the only one');
   assert.ok(nearest.includes("residentEventMarkerIds.has(best.id)) || (done.has(best.id) && BOSSES.some(b => b.core === best!.id)))) return fieldStep;"), 'a chapter step beats a resident errand (W05 stretcher)');
-  assert.ok(nearest.includes("if(fieldChapters?.has(m.id)&&typeof canReachFieldMarker==='function'&&!canReachFieldMarker(m))continue;"), 'prompt and press share one reach test (B05 boat)');
+  assert.ok(nearest.includes("if(fieldChapters?.has(m.id)&&d<(m.radius??3)&&typeof canReachFieldMarker==='function'&&!canReachFieldMarker(m))continue;"), 'prompt and press share one reach test (B05 boat), paid only within reach');
   const reach = main.slice(main.indexOf('function canReachFieldMarker('), main.indexOf('function canReachValleyPanel('));
   assert.ok(reach.includes('canReachValleyPanel({ ...marker, p: [marker.p[0], marker.p[1] + .8, marker.p[2]] })'));
   assert.ok(main.includes("(typeof guidedToNpc === 'function' && guidedToNpc(npc.position))") && main.includes("(typeof guidedToNpc === 'function' && guidedToNpc(nearbyNpc.position))"), 'the person the beacon stands on is talked to, prompt and press alike');

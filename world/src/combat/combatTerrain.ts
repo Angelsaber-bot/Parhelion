@@ -11,6 +11,42 @@ import { VALLEY_FIELD, VALLEY_NIGHT_ENCOUNTER } from '../story/valleyField';
 import { KINGDOM_WATCH_ENCOUNTER, KINGDOM_WORKS } from '../story/kingdomWorks';
 import { HARBOR_WORKBOAT, HARBOR_WORKBOAT_ENCOUNTER } from '../story/harborRelief';
 
+type Bvh = Collider['bvh'];
+/** Root bounds of each BVH, read live from its node buffers (refit() updates them in place). */
+const rootBounds = new WeakMap<Bvh, { roots: unknown; views: Float32Array[] } | null>();
+const BOUNDS_PAD = 1e-3;
+function boundsOf(bvh: Bvh): Float32Array[] | null {
+  const roots = (bvh as unknown as { _roots?: ArrayBuffer[] })._roots;
+  let cached = rootBounds.get(bvh);
+  if (cached === undefined || (cached && cached.roots !== roots)) {
+    cached = Array.isArray(roots) && roots.length && roots.every(r => r instanceof ArrayBuffer && r.byteLength >= 24)
+      ? { roots, views: roots.map(r => new Float32Array(r, 0, 6)) } : null;
+    rootBounds.set(bvh, cached);
+  }
+  return cached ? cached.views : null;
+}
+/** Whether the ray's [0, max] segment enters any root box of `bvh` (padded); true when bounds are unknown. */
+export function segmentMayHit(bvh: Bvh, ray: THREE.Ray, max: number): boolean {
+  const views = boundsOf(bvh);
+  if (!views) return true;
+  const o = ray.origin, d = ray.direction;
+  for (const b of views) {
+    let near = 0, far = max, miss = false;
+    for (let axis = 0; axis < 3 && !miss; axis++) {
+      const origin = axis === 0 ? o.x : axis === 1 ? o.y : o.z, dir = axis === 0 ? d.x : axis === 1 ? d.y : d.z;
+      const lo = b[axis] - BOUNDS_PAD, hi = b[axis + 3] + BOUNDS_PAD;
+      if (Math.abs(dir) < 1e-12) { if (origin < lo || origin > hi) miss = true; continue; }
+      let t0 = (lo - origin) / dir, t1 = (hi - origin) / dir;
+      if (t0 > t1) { const t = t0; t0 = t1; t1 = t; }
+      if (t0 > near) near = t0;
+      if (t1 < far) far = t1;
+      if (near > far) miss = true;
+    }
+    if (!miss) return true;
+  }
+  return false;
+}
+
 /** Collision queries are shared with player and include closed gates/quest targets, not just terrain. */
 export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundHeight?: (x: number, z: number) => number | null) {
   const castAgainst = (subset: readonly Collider[], origin: Point3, direction: Point3, max = Infinity, ignore?: (collider: Collider) => boolean) => {
@@ -22,6 +58,8 @@ export function makeCombatTerrain(colliders: Collider[], layout: Layout, groundH
     const ray = new THREE.Ray(new THREE.Vector3(origin.x, origin.y, origin.z), new THREE.Vector3(direction.x, direction.y, direction.z).normalize());
     let best: ReturnType<Collider['bvh']['raycastFirst']> = null;
     for (const c of subset) if (c.enabled && !ignore?.(c)) {
+      // Broad phase: skip a collider whose BVH bounds the segment never enters (it cannot report a hit there).
+      if (!segmentMayHit(c.bvh, ray, best ? Math.min(max, best.distance) : max)) continue;
       const hit = c.bvh.raycastFirst(ray, THREE.DoubleSide, 0, max);
       if (hit && hit.distance < max && (!best || hit.distance < best.distance)) best = hit;
     }
