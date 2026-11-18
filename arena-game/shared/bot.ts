@@ -262,7 +262,7 @@ export class Bot implements Controller {
 
     // React only to a visible, public warning after the bot's normal reaction delay.
     for(const e of match.heroes.entities){
-      if(e.kind!=='edict'||e.team===me.team||e.pulse>0||match.tick-e.created<Math.min(this.skill.reaction,HERO_COMBAT.edict.arm-4))continue;
+      if(e.kind!=='edict'||e.team===me.team||match.tick-e.created<Math.min(this.skill.reaction,HERO_COMBAT.edict.arm-4))continue;
       const dx=me.x-e.x,dz=me.z-e.z,d=Math.hypot(dx,dz);
       if(d<HERO_COMBAT.edict.radius+.6&&lineOfSight(match.map,eye,[e.x,e.y+.1,e.z])&&!smokeBlocks(match.smokes,eye,[e.x,e.y+.1,e.z])){moveX=d>.05?dx/d:1;moveZ=d>.05?dz/d:0;break;}
     }

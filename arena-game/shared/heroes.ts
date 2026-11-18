@@ -256,6 +256,8 @@ export class HeroSystem {
           this.marks.push({id:`${e.id}:${e.pulse}:${p.id}:${p.lifeId}`,source:e.id,team:e.team,victim:p.id,lifeId:p.lifeId,x:p.x,y:p.y,z:p.z,expires:tick+H.lens.mark});
         }
       }
+      // After its root pulse the edict stays as a slowing zone until it expires.
+      if(e.kind==='edict'&&e.pulse>0)for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id))p.slowUntil=Math.max(p.slowUntil,tick+H.edict.linger);
       if(e.kind==='edict'&&age>=H.edict.arm&&e.pulse===0){e.pulse=1;this.entityEvent(e,'pulse');for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id)){p.rootUntil=tick+H.edict.root;p.exposedUntil=tick+H.edict.exposed;p.dashT=0;p.dashQueue=[];p.pullT=0;p.vx=p.vz=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:at(p)});}}
     }
     this.entities=this.entities.filter(e=>e.hp>0&&e.expires>tick);

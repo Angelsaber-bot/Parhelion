@@ -28,7 +28,7 @@ export function heroReadout(map:ArenaMap|undefined,p:PlayerState,snap:Snapshot):
     if(kind==='barrage')out.text=bilingual('炮弹飞行中','Cannonball in flight');
     if(kind==='lens'){out.tone='ready';out.text=bilingual(`日轮 ${seconds}s · Q 转向准星方向`,`Sun disc ${seconds}s · Q to redirect`);out.returnAvailable=true;}
     if(kind==='prayer')out.text=bilingual(`圣旗 ${Math.ceil(active.hp)}/100 · ${seconds}s · 光环内减伤与恢复`,`Banner ${Math.ceil(active.hp)}/100 · ${seconds}s · Protection and healing nearby`);
-    if(kind==='edict')out.text=active.pulse===0?bilingual('御令落下中','Edict falling'):bilingual(`定身生效 · 被定住的敌人受到伤害 +25%`,`Edict landed · Rooted enemies take +25% damage`);
+    if(kind==='edict')out.text=active.pulse===0?bilingual('御令落下中','Edict falling'):bilingual(`御令生效 · 被定住的敌人受到伤害 +25% · 区域内减速 35%`,`Edict landed · Rooted enemies take +25% damage · Zone slows by 35%`);
   }
   if((p.rootUntil??0)>tick){out.tone='blocked';out.text=bilingual(`被定身 ${((p.rootUntil-tick)/60).toFixed(1)}s · 仍可开枪`,`Rooted ${((p.rootUntil-tick)/60).toFixed(1)}s · You can still shoot`);}
   else if((p.pullT??0)>0){out.tone='blocked';out.text=bilingual('被钩索拽住','Caught by a hook');}
