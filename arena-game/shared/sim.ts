@@ -50,8 +50,9 @@ export interface PlayerState {
   ability: AbilityState;
   lastDamageTick: number;
   slowUntil: number; dashSealedUntil: number;
-  /** Edict of stillness: no movement, dash or jump before rootUntil; extra damage taken before exposedUntil. */
-  rootUntil: number; exposedUntil: number;
+  /** Edict of stillness: no movement, dash or jump before rootUntil; extra damage taken before exposedUntil;
+   *  shown through walls to the other team before revealedUntil. */
+  rootUntil: number; exposedUntil: number; revealedUntil: number;
   /** Boarding hook: ticks of forced drag left and its velocity (m/s). */
   pullT: number; pullX: number; pullZ: number;
   utility: UtilityId;
@@ -85,7 +86,7 @@ export function newPlayer(id: string, team: Team, char: number, choice?: Loadout
     hp: CHARACTERS[char].hp, alive: false, grounded: true, crouched: false,
     weapon: loadoutWeapon(loadout, 0), weaponSlot: 0, loadout, meleeWindup: 0, meleeYaw: 0, meleePitch: 0, ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
     dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, dashX: 0, dashZ: 0,
-    lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0, rootUntil: 0, exposedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
+    lifeId: 0, abilityTick: 0, ability: freshAbility(), lastDamageTick: -10000, slowUntil: 0, dashSealedUntil: 0, rootUntil: 0, exposedUntil: 0, revealedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
     shieldCd: 0, utility, utilityCd: 0, utilityCharges: UTILITY_CHARGES[utility], utilityLock: 0, prevButtons: 0, lastSeq: -1,
   };
 }

@@ -404,7 +404,7 @@ export class Match {
       pitch: 0, hp: CHARACTERS[p.char].hp, alive: true, grounded: true, crouched: false, prevButtons: 0,
       weapon: loadoutWeapon(p.loadout, 0), weaponSlot: 0, meleeWindup: 0, meleeYaw: 0, meleePitch: 0,
       ammo: WEAPONS.map((w) => w.mag), reload: 0, fireCd: 0,
-      dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, rootUntil: 0, exposedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
+      dashCd: 0, dashCharges: DASH.charges, dashQueue: [], dashT: 0, rootUntil: 0, exposedUntil: 0, revealedUntil: 0, pullT: 0, pullX: 0, pullZ: 0,
       shieldCd: Math.max(0,p.ability.readyAt-this.tick), abilityTick:this.tick, lastDamageTick:-10000, utilityCd: 0, utilityCharges: UTILITY_CHARGES[p.utility], utilityLock: 0,
     });
     const home = this.practice?.homes.get(p.id);

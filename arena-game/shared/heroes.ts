@@ -132,7 +132,7 @@ export class HeroSystem {
     this.entities=this.entities.filter(e=>e.owner!==id||e.kind==='barrage');
     this.m.shields=this.m.shields.filter(e=>e.owner!==id);
     for(const key of this.guardSpent.keys())if(key.startsWith(id+':'))this.guardSpent.delete(key);
-    const p=this.m.player(id);if(p){p.ability={...freshAbility(),readyAt:p.ability.readyAt,castSeq:p.ability.castSeq};p.slowUntil=0;p.dashSealedUntil=0;p.rootUntil=0;p.exposedUntil=0;p.pullT=0;}
+    const p=this.m.player(id);if(p){p.ability={...freshAbility(),readyAt:p.ability.readyAt,castSeq:p.ability.castSeq};p.slowUntil=0;p.dashSealedUntil=0;p.rootUntil=0;p.revealedUntil=0;p.exposedUntil=0;p.pullT=0;}
   }
   private fail(p:PlayerState,message:string) {this.m.stats.abilityEvent(p.id,'rejected');p.ability.failure=message;p.ability.failureUntil=this.m.tick+100;}
   input(p:PlayerState,inp:Input) {
@@ -258,7 +258,7 @@ export class HeroSystem {
       }
       // After its root pulse the edict stays as a slowing zone until it expires.
       if(e.kind==='edict'&&e.pulse>0)for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id))p.slowUntil=Math.max(p.slowUntil,tick+H.edict.linger);
-      if(e.kind==='edict'&&age>=H.edict.arm&&e.pulse===0){e.pulse=1;this.entityEvent(e,'pulse');for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id)){p.rootUntil=tick+H.edict.root;p.exposedUntil=tick+H.edict.exposed;p.dashT=0;p.dashQueue=[];p.pullT=0;p.vx=p.vz=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:at(p)});}}
+      if(e.kind==='edict'&&age>=H.edict.arm&&e.pulse===0){e.pulse=1;this.entityEvent(e,'pulse');for(const {state:p} of this.m.slots.values())if(domainContains(this.m.map,e,p)&&!this.m.spawnProtected(p.id)){p.rootUntil=tick+H.edict.root;p.exposedUntil=tick+H.edict.exposed;p.revealedUntil=tick+H.edict.reveal;p.dashT=0;p.dashQueue=[];p.pullT=0;p.vx=p.vz=0;this.m.emit({t:'ability',id:e.owner,castSeq:e.castSeq,kind:e.kind,action:'trigger',at:at(p)});}}
     }
     this.entities=this.entities.filter(e=>e.hp>0&&e.expires>tick);
   }

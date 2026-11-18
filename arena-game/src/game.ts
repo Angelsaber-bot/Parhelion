@@ -7,6 +7,7 @@ import { bilingual } from '../../shared-client/i18n.ts';
 // reconciliation (replay unacknowledged inputs), and ~100 ms interpolation of everyone else.
 
 import { DT, INTERP_TICKS, TICK_HZ, WEAPONS } from '../shared/content.ts';
+import { hiddenFromView } from './rendering/edictReveal.ts';
 import { rayPlayer, rayShield } from '../shared/hit.ts';
 import { tacticalArea, raycastMap, type ArenaMap, type Vec3 } from '../shared/map.ts';
 import { type NetEvent, type PlayerSnap, type Snapshot } from '../shared/match.ts';
@@ -491,7 +492,9 @@ export class Game {
     const ids = new Set<string>();
     for (const r of this.remotes) {
       ids.add(r.snap.id);
-      this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, r.snap.team === this.me?.team);
+      const ally = r.snap.team === this.me?.team, revealed = !ally && r.snap.alive && (r.snap.revealedUntil ?? 0) > (this.latest?.tick ?? 0);
+      const eye = this.scene.camera.position;
+      this.scene.syncAvatar(r.snap, r.pos, r.yaw, r.pitch, ally, revealed && hiddenFromView(this.map, [eye.x, eye.y, eye.z], r.pos, r.snap.crouched, this.latest?.smokes ?? []) ? 1 : 0);
     }
     for(const e of this.latest?.entities??[])if(e.kind==='decoy') {
       const owner=this.latest!.players.find(p=>p.id===e.owner);if(!owner)continue;

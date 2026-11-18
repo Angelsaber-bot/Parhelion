@@ -26,6 +26,18 @@ describe('original World characters in Arena',()=>{
   expect(source.animations.some(a=>a.name===WORLD_HERO_ASSETS[char].run)).toBe(true);
   visual.dispose();other.update(1/60,5.2,0);expect(other.state).toBe('ready');other.dispose();
  },30000);
+ it('the edict reveal overlays share geometry and skeleton, draw over walls and clean up',async()=>{
+  const source=await read(8),visual=new ArenaCharacter(8,0xffffff,async()=>source);await visual.ready;
+  expect(visual.revealMeshes).toHaveLength(0);visual.reveal(0);expect(visual.revealMeshes).toHaveLength(0);
+  visual.reveal(1);const overlays=[...visual.revealMeshes];expect(overlays.length).toBeGreaterThan(0);
+  for(const overlay of overlays){const mesh=overlay.userData.xraySource as THREE.Mesh,material=overlay.material as THREE.MeshBasicMaterial;
+   expect(overlay.geometry).toBe(mesh.geometry);expect(overlay.parent).toBe(mesh.parent);expect(material.depthTest).toBe(false);expect(material.depthWrite).toBe(false);
+   if((mesh as THREE.SkinnedMesh).isSkinnedMesh)expect((overlay as THREE.SkinnedMesh).skeleton).toBe((mesh as THREE.SkinnedMesh).skeleton);expect(overlay.visible).toBe(mesh.visible);}
+  visual.reveal(1);expect(visual.revealMeshes).toHaveLength(overlays.length);
+  visual.reveal(0);expect(overlays.every(o=>!o.visible)).toBe(true);
+  visual.dispose();expect(overlays.every(o=>!o.parent)).toBe(true);
+  const legacy=new ArenaCharacter(0,0xffffff);legacy.reveal(.5);expect(legacy.revealMeshes.length).toBeGreaterThan(0);legacy.dispose();
+ },30000);
  it('declares and binds the fifth UV set used by Jeanne metal maps',async()=>{
   const source=await read(6);let checked=0;
   source.scene.traverse(object=>{const mesh=object as THREE.Mesh;if(!mesh.isMesh)return;for(const mat of Array.isArray(mesh.material)?mesh.material:[mesh.material]){const material=mat as THREE.MeshStandardMaterial;if(material.normalMap?.channel!==4)continue;checked++;expect(mesh.geometry.getAttribute('uv4')).toBe(mesh.geometry.getAttribute('texcoord_4'));const shader={vertexShader:'void main(){}'} as Parameters<THREE.Material['onBeforeCompile']>[0];material.onBeforeCompile(shader,{} as THREE.WebGLRenderer);expect(shader.vertexShader).toContain('attribute vec2 uv4;');}});expect(checked).toBeGreaterThan(0);

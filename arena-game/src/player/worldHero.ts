@@ -122,5 +122,28 @@ export class ArenaCharacter {
   ability(kind:string,phase:string){this.abilityPhase=phase;this.legacy?.ability(kind,phase);}
   melee(windup:number,hit:number,weapon=0){this.attack=windup>0||hit>0;this.legacy?.melee(windup,hit,weapon);}
   reset(crouched=false,grounded=true){this.abilityPhase='idle';this.attack=false;this.legacy?.reset(crouched,grounded);}
-  dispose(){this.dead=true;this.mixer?.stopAllAction();if(this.model){this.mixer?.uncacheRoot(this.model);const skeletons=new Set<THREE.Skeleton>();this.model.traverse(o=>{const skin=o as THREE.SkinnedMesh;if(skin.isSkinnedMesh)skeletons.add(skin.skeleton);});for(const skeleton of skeletons)skeleton.dispose();}if(this.legacyRoot){const materials=new Set<THREE.Material>();this.legacyRoot.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.geometry.dispose();for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);}});materials.forEach(m=>m.dispose());}this.root.removeFromParent();}
+  private xray?:{material:THREE.MeshBasicMaterial;meshes:THREE.Mesh[]};
+  /** Qin's edict reveal: above 0 the body is drawn as a flat silhouette over everything (callers show it only while
+   *  walls hide the player, see rendering/edictReveal.ts). Overlays share each mesh's geometry, skeleton and morph weights. */
+  reveal(amount:number,color=0xff6a4d){
+    const source=this.model??this.legacyRoot;
+    if(!(amount>0)||!source){if(this.xray)for(const mesh of this.xray.meshes)mesh.visible=false;return;}
+    if(!this.xray){
+      const material=new THREE.MeshBasicMaterial({color,depthTest:false,depthWrite:false,fog:false,toneMapped:false});
+      material.name='Edict reveal';
+      const sources:THREE.Mesh[]=[];source.traverse(o=>{const mesh=o as THREE.Mesh;if(mesh.isMesh&&!mesh.userData.xraySource)sources.push(mesh);});
+      const meshes=sources.map(mesh=>{
+        const skinned=mesh as THREE.SkinnedMesh;let overlay:THREE.Mesh;
+        if(skinned.isSkinnedMesh){const o=new THREE.SkinnedMesh(mesh.geometry,material);o.bindMode=skinned.bindMode;o.bind(skinned.skeleton,skinned.bindMatrix);overlay=o;}
+        else overlay=new THREE.Mesh(mesh.geometry,material);
+        if(mesh.morphTargetInfluences)overlay.morphTargetInfluences=mesh.morphTargetInfluences;
+        overlay.name=`${mesh.name}__reveal`;overlay.userData.xraySource=mesh;overlay.position.copy(mesh.position);overlay.quaternion.copy(mesh.quaternion);overlay.scale.copy(mesh.scale);
+        overlay.frustumCulled=false;overlay.renderOrder=20;overlay.castShadow=overlay.receiveShadow=false;overlay.raycast=()=>{};mesh.parent!.add(overlay);return overlay;
+      });
+      this.xray={material,meshes};
+    }
+    for(const mesh of this.xray.meshes)mesh.visible=(mesh.userData.xraySource as THREE.Mesh).visible;
+  }
+  get revealMeshes():readonly THREE.Mesh[]{return this.xray?.meshes??[];}
+  dispose(){if(this.xray){for(const mesh of this.xray.meshes)mesh.removeFromParent();this.xray.material.dispose();this.xray=undefined;}this.dead=true;this.mixer?.stopAllAction();if(this.model){this.mixer?.uncacheRoot(this.model);const skeletons=new Set<THREE.Skeleton>();this.model.traverse(o=>{const skin=o as THREE.SkinnedMesh;if(skin.isSkinnedMesh)skeletons.add(skin.skeleton);});for(const skeleton of skeletons)skeleton.dispose();}if(this.legacyRoot){const materials=new Set<THREE.Material>();this.legacyRoot.traverse(o=>{const m=o as THREE.Mesh;if(m.isMesh){m.geometry.dispose();for(const mat of Array.isArray(m.material)?m.material:[m.material])materials.add(mat);}});materials.forEach(m=>m.dispose());}this.root.removeFromParent();}
 }

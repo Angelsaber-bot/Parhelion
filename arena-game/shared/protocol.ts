@@ -32,7 +32,8 @@ export const ROOM_NAME = 'arena';
 // v36: smoke settles as a 4.2 m x 4 m cloud that hugs walls, blooms and thins; a frag blows a hole in it.
 // v37: smoke 5.2 m wide and 5.5 m tall, filling against air walls and the map edge; smoke carries 3 charges, frags 2.
 // v38: every hero has 200 HP; the Longnight sniper deals 110 to the body and 200 to the head.
-// v39: Qin's edict roots within 6 m (was 5), exposure lasts 3 s (was 2), and the zone stays 2.5 s slowing enemies inside by 35%.
+// v39: Qin's edict roots within 8 m (was 5); rooted enemies take +25% damage for 3 s (was 2) and are revealed through walls
+//      to the caster's team for 3 s; the zone stays 5 s and slows enemies inside by 35%. Player state gains revealedUntil.
 export const RULES_VERSION = 39;
 export const RULES_MISMATCH = '竞技场客户端与服务器版本不匹配；请使用同一版本。请刷新游戏后重试。';
 export function assertRulesVersion(version: unknown): void {

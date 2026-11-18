@@ -453,7 +453,8 @@ export class ArenaScene {
 
   heroEvent(e:HeroEvent,tick:number,yaw:number){this.heroEffects.event(e,tick,yaw);}
   syncHeroes(s:Snapshot,myId:string,map:ArenaMap,p:PlayerState|null) {this.heroEffects.sync(s,myId);this.heroEffects.placement(map,p);}
-  syncAvatar(p: PlayerSnap, pos: Vec3, yaw: number, pitch: number, ally: boolean) {
+  /** `reveal` above 0 draws an enemy's silhouette through walls (Qin's edict; only while walls hide them). */
+  syncAvatar(p: PlayerSnap, pos: Vec3, yaw: number, pitch: number, ally: boolean, reveal = 0) {
     let a = this.avatars.get(p.id);
     if (!a || a.char !== p.char || a.team !== p.team) {
       a?.dispose(this.scene);
@@ -465,6 +466,7 @@ export class ArenaScene {
     a.alive = p.alive;
     a.root.visible = p.alive;
     a.setAlly(ally);
+    a.reveal(ally || !p.alive ? 0 : reveal);
     // Only HUD labels use a binary visibility test. Body/weapon pixels are depth-clipped
     // by the smoke pass, including when either player is inside the volume.
     const head: Vec3 = [pos[0], pos[1] + (p.crouched ? 1.05 : 1.6), pos[2]], eye = this.camera.position;
@@ -977,6 +979,7 @@ class Avatar {
   setAlly(ally: boolean) {
     this.plate.material.depthTest = !ally;
   }
+  reveal(amount: number) { this.anim.reveal(amount); }
   conceal(hidden: boolean, now: number) { this.plate.visible = !this.smokeNameplate.update(hidden, now); }
 
   /** Drive the run cycle from how far the interpolated position moved since last frame. */
