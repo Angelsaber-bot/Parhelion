@@ -98,6 +98,7 @@ import { EXPANSION_PLANS, EXPANSION_GRASS_CLEARANCE, ORLEANS_PAVED_COURTS } from
 import {HOME_BUILDINGS,HOME_SITES,HOME_ACTIONS,HOME_GRASS_PATHS} from './map/homePlan';
 import {createHomeTown,homeResidentSockets,homeSaberReady} from './story/homeTown';
 import {createEchoHall,takeEchoReturn} from './story/echoHall';
+import {createServantPacts} from './story/servantPactRuntime';
 import {HOME_CIVIC_ACTIONS} from './map/homeActivities';
 import {createHomeResidentLife} from './map/homeResidents';
 import { weaponDryFireHint } from './weapons/weaponReadiness';
@@ -1012,7 +1013,7 @@ scene.add(debugCol);
 
 const collider = (name: string) => colliders.find((c) => c.name === name);
 const markers = new Map<string, Marker>(layout.markers.map((m) => [m.id, m]));
-// Fast-play claim points for the recovered three-servant World assets.
+// Meeting points of the three pact servants (Jeanne, Ozymandias, Qin Shi Huang); see story/servantPacts.ts.
 // Positions are existing region hubs, not new terrain or map boundaries.
 const modelClaimPoints = MODEL_CLAIM_POINTS;
 for (const point of modelClaimPoints) { layout.markers.push(point.marker); markers.set(point.marker.id, point.marker); }
@@ -1090,6 +1091,7 @@ let travelOpenState = false;
 let narrative: ReturnType<typeof createNarrativePanel> | undefined;
 let homeTown:ReturnType<typeof createHomeTown>|undefined;
 let echoHall:ReturnType<typeof createEchoHall>|undefined;
+let servantPacts:ReturnType<typeof createServantPacts>|undefined;
 let ultimateDirector: UltimateDirector | undefined;
 let ultimateStage: UltimateStage | undefined;
 let ultimateSource: { identity: CompanionId | null; root: THREE.Object3D } | null = null;
@@ -1308,6 +1310,7 @@ function interactionLabel(marker: Marker) {
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(marker.id)) {
     return bilingual(...PROLOGUE_LABELS[marker.id as keyof typeof PROLOGUE_LABELS]);
   }
+  const pactLabel=typeof servantPacts!=='undefined'?servantPacts?.label(marker.id):null;if(pactLabel)return bilingual(...pactLabel);
   const claim=modelClaimPoints.find(point=>point.marker.id===marker.id);
   if (claim) {
     if (!done.has(marker.id)) return bilingual(...claim.label);
@@ -2221,7 +2224,7 @@ const combat = new WorldCombat({ scene, colliders, layout, done, toast: combatTo
     }
     if(typeof exploration!=='undefined'&&exploration.victory(id))return; if(adventureRuntime?.victory(id))return; if (id === KINGDOM_GATE.encounter) { toast(bilingual('守卫已清除；仍需操作绞盘并护送居民。','Guards cleared; work the winch and escort the residents.')); return; } if (!compactRelayRuntime?.victory(id)) falseDawnRuntime?.victory(id);
   },
-  onPlayerDefeated() { qinCampaign?.reset();qinCrewTransit?.reset();egyptCampaign?.reset();orleansCampaign?.reset();fieldChapters?.reset(); fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
+  onPlayerDefeated() { if(typeof servantPacts!=='undefined')servantPacts?.interrupt(); qinCampaign?.reset();qinCrewTransit?.reset();egyptCampaign?.reset();orleansCampaign?.reset();fieldChapters?.reset(); fieldSideSites?.royalFerry?.cancel(); exploration.reset(); kingdomGateRuntime?.reset(); adventureRuntime?.reset(); cavalrySupport?.reset(); residentEventRuntime?.reset(); compactRelayRuntime?.invalidate(); spawnAt(); clearInput();
     if (typeof activeRealmClimax !== 'undefined' && activeRealmClimax && realmClimaxSites) {
       const site = realmClimaxSites.sites[activeRealmClimax.id];
       stopRealmClimax(); player.teleport(site.start[0], site.start[1] + .3, site.start[2]); combat.refillAmmo();
@@ -2342,6 +2345,14 @@ echoHall=createEchoHall({scene,dialogue:narrative,prepareDialogue:()=>{clearInpu
 layout.markers.push(...echoHall.markers);for(const marker of echoHall.markers)markers.set(marker.id,marker);colliders.push(...echoHall.colliders);
 addEventListener('pagehide',e=>{if(!e.persisted)echoHall?.dispose();});
 if(echoReturn){const pose=echoHall.returnPose();player.teleport(pose.p.x,pose.p.y+.2,pose.p.z,pose.yaw);}
+// Jeanne, Ozymandias and Qin Shi Huang: each now joins through a contract arc of its own (servantPacts.ts).
+servantPacts=createServantPacts({scene,done,dialogue:narrative,prepareDialogue:()=>{clearInput();hudRevision++;audio.interaction();},
+ toast:line=>toast(bilingual(...line)),save:()=>!!save(),changed:()=>{applyWorldState();renderObjective();hudRevision++;},
+ player:()=>player.pos,ground:(x,z)=>grid.sampleHeight(x,z)??null,marker:id=>{const m=markers.get(id);return m?[...m.p] as [number,number,number]:null;},
+ // A conversation, not a journey: nearby enemies do not forbid talking (fast travel's rule did, in Orleans).
+ seal:id=>bindPactServant(id),safe:()=>!combat.defeated&&!player.swimming&&!player.flying&&!player.gliding&&!ultimateDirector?.active&&!residentEventRuntime?.carrying});
+layout.markers.push(...servantPacts.markers);for(const marker of servantPacts.markers)markers.set(marker.id,marker);
+addEventListener('pagehide',e=>{if(!e.persisted)servantPacts?.dispose();});
 // Valley/Homeward formal set pieces (real collision) go in before the chapter markers are placed on them.
 const buildingOrnaments=createBuildingOrnaments();world.add(buildingOrnaments);
 const homeTownDistricts=createHomeTownDistricts((x,z)=>grid.sampleHeight(x,z)??0,(x,z)=>residentQueries.ground(x,z,80)?.point.y??null);
@@ -2607,9 +2618,9 @@ const renderQuestButton=()=>{questOpen.textContent=bilingual('任务指引 · �
 renderQuestButton();const unsubscribeQuestButton=onLanguageChange(renderQuestButton);
 questOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show();});start.append(questOpen);
 const claimsOpen=document.createElement('button');claimsOpen.type='button';claimsOpen.id='world-servant-claims-open';
-const renderClaimsButton=()=>{claimsOpen.textContent=bilingual('从者领取','Claim servants');};
+const renderClaimsButton=()=>{claimsOpen.textContent=bilingual('从者契约','Servant pacts');};
 renderClaimsButton();const unsubscribeClaimsButton=onLanguageChange(renderClaimsButton);
-claimsOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show({region:'all',category:'side',search:'从者领取'});});start.append(claimsOpen);
+claimsOpen.addEventListener('click',event=>{event.stopPropagation();questJournal?.show({region:'all',category:'main',search:'契约'});});start.append(claimsOpen);
 addEventListener('pagehide',event=>{if(!event.persisted){claimsOpen.remove();unsubscribeClaimsButton();}});
 const adventureButton=document.createElement('button');adventureButton.type='button';adventureButton.id='world-adventure-continue';
 const renderAdventureButton=()=>{adventureButton.textContent=bilingual('继续 World 主线 · 保留已有存档','Continue the World story · Keep progress');};renderAdventureButton();const unsubscribeAdventureButton=onLanguageChange(renderAdventureButton);
@@ -4252,6 +4263,7 @@ function nearestInteract(skipLocked = false): Marker | null {
     if(egyptChapterById.has(m.id)&&!egyptChapterReady(m.id,done))continue;
     if(orleansActionById.has(m.id)&&!orleansCampaignReady(m.id,done))continue;
     if(fieldChapters?.has(m.id)&&!fieldChapters.ready(m.id))continue;
+    if(typeof servantPacts!=='undefined'&&servantPacts?.owns(m.id)&&!servantPacts.ready(m.id))continue;
     // A field fight starts on Interact; once it is running the marker has nothing more to give, and its "[F] clear the
     // crossbows" prompt only answered "another fight is active". Same for a timed job already under way.
     if(fieldChapters?.has(m.id)&&(combat.storyEncounter?.id===fieldEncounterId(m.id)||fieldChapters.working()===m.id))continue;
@@ -4304,6 +4316,7 @@ function interactSettlementNpc() {
     if (typeof noteTalk === 'function') noteTalk(npc.id);
     if (typeof VALLEY_PROLOGUE !== 'undefined' && npc.id === VALLEY_PROLOGUE.steward && advancePrologue(npc.id)) return true;
     const homeLine=typeof homeTown!=='undefined'?homeTown?.residentLine(npc.id):null;if(homeLine){speakDialogue(homeLine,npc.role);return true;}
+    if(typeof servantPacts!=='undefined'&&servantPacts?.talk(npc.id,npc.role))return true;
     if (handleCampaignInteraction(npc.id)) return true;
     const closing = getCampaignResidentReaction(npc.id, done); if (closing) { speakDialogue(closing, npc.role); return true; }
     if (handleValleyInteraction(npc.id,npc.role) || handleEraInteraction(npc.id,npc.role)) return true;
@@ -4491,6 +4504,18 @@ function interactQinOrder() {
   if(crushed.length)setTimeout(()=>toast(bilingual(`转动的兵俑阵碾碎了 ${crushed.length} 尊守陵俑。`,`The turning ranks ground down ${crushed.length} tomb guardian${crushed.length>1?'s':''}.`)),1600);
   toast(phase==='b'?bilingual('军令：让道阵。西列兵俑转为横向让出通道，斜井铜闸升起；东列合拢封路。','Order: open ranks. The west row turns aside and the shaft gate rises; the east row closes.'):bilingual('军令：守陵阵。西列兵俑合拢封路，斜井铜闸落下；东列转向让出通道。','Order: guard ranks. The west row closes, the shaft gate falls, and the east row turns aside.'));
 }
+/** The contract at the end of a servant pact: the same binding the old claim used, with a pact toast. */
+function bindPactServant(markerId: string) {
+  const claim = modelClaimPoints.find(point => point.marker.id === markerId); if (!claim) return;
+  if (!contract.has(claim.id)) { contract.recruit(markerId); saveJourneyProgress(); } else contract.select(claim.id);
+  const loading = modelCompanion.state === 'failed' ? modelCompanion.retry() : modelCompanion.select(claim.id);
+  void loading.then(() => {
+    const name = servantName(claim.id);
+    if (contract.isFollowing(claim.id) && modelCompanion.selected === claim.id && modelCompanion.state === 'ready') { audio.interaction(); toast(bilingual(`与${name.zh}的契约已缔结`, `Contract with ${name.en} sealed`)); }
+    else if (modelCompanion.state === 'failed') toast(bilingual('契约已缔结，但从者模型加载失败；到契约地点再次交互可重试。', 'The contract is sealed, but the servant failed to load; interact at the meeting point again to retry.'));
+    servantPanel.render();
+  });
+}
 function interact() {
   const m = nearestInteract();
   if (!m) return;
@@ -4500,12 +4525,13 @@ function interact() {
   }
   if (typeof worldJourneyMarkerIds !== 'undefined' && worldJourneyMarkerIds.has(m.id)) { interactWorldJourney(m.id); return; }
   if (typeof valleyPrologueScene !== 'undefined' && valleyPrologueScene?.ownsMarker(m.id)) { advancePrologue(m.id); return; }
+  if (typeof servantPacts !== 'undefined' && servantPacts?.interact(m.id)) return;
   const claim = modelClaimPoints.find(point => point.marker.id === m.id);
   if (claim) {
     // Claim markers sit at foot level. Aim the visibility ray above the ground,
     // just as nearby residents do, and never fall through to generic activation.
     const reachable = canReachValleyPanel({ ...m, p: [m.p[0], m.p[1] + 1.2, m.p[2]] });
-    if (!reachable) { toast(bilingual('请走近领取点，避开中间的障碍。', 'Move closer to the claim point with a clear path.')); return; }
+    if (!reachable) { toast(bilingual('请走近契约地点，避开中间的障碍。', 'Move closer to the meeting point with a clear path.')); return; }
     if (!contract.has(claim.id)) {
       contract.recruit(claim.marker.id);
       saveJourneyProgress();
@@ -4515,7 +4541,7 @@ function interact() {
       if (!contract.isFollowing(claim.id) || modelCompanion.selected !== claim.id) return;
       if (modelCompanion.state === 'ready') {
         audio.interaction();
-        toast(bilingual(`${m.label}：已领取`, `${localizeText(m.label)}: claimed`));
+        toast(bilingual(`${m.label}：与你同行`, `${localizeText(m.label)}: travelling with you`));
       } else toast(bilingual('从者加载失败，请再次交互重试。', 'Servant failed to load. Interact again to retry.'));
       servantPanel.render();
     });
@@ -4981,6 +5007,7 @@ function frame(now: number) {
   $('elite-hint').textContent = elite ? bilingual(`附近精英：${elite.name[0]} · ${elite.direction[0]} · ${Math.round(elite.distance)} 米`, `Nearby elite: ${elite.name[1]} · ${elite.direction[1]} · ${Math.round(elite.distance)} m`) : '';
   if (down('fire')) shoot();
   homeTown?.update(dt,player.pos,gameplayActive(),regionVisuals.ready('home'));
+  if(typeof servantPacts!=='undefined')servantPacts?.update(dt);
   if(typeof echoHall!=='undefined')echoHall?.update(dt);
   const lakeBrace = !contract.following || contract.following === 'saber' ? worldJourneySites?.lakeBrace(player.pos) : undefined;
   servant.update(dt, player.pos, anim.facing - Math.PI, companionEnabled(), !gameplayActive(), lakeBrace);
@@ -5205,7 +5232,7 @@ const ground = (x: number, z: number) =>
   staticBVH.raycastFirst(new THREE.Ray(new THREE.Vector3(x, 300, z), new THREE.Vector3(0, -1, 0)), THREE.DoubleSide)?.point.y ?? 0;
 // debug/test hook
 worldInterface.ready();
-(window as any).__world = { get helionFight() { return typeof helionFight !== 'undefined' ? helionFight : null; }, composer, groundGrime: groundGrimeUniforms, get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
+(window as any).__world = { get helionFight() { return typeof helionFight !== 'undefined' ? helionFight : null; }, get servantPacts() { return typeof servantPacts !== 'undefined' ? servantPacts : null; }, get echoHall() { return typeof echoHall !== 'undefined' ? echoHall : null; }, composer, groundGrime: groundGrimeUniforms, get valleyPrologueScene() { return valleyPrologueScene; }, get fieldChapters() { return fieldChapters; }, fieldChapterScene, homeTown, arsenal: { equip: equipGun, cycle: cycleEquippedGun, get equipped() { return equippedGunId; }, get art() { return rifle; }, equipMelee, get melee() { return equippedMeleeId; }, get meleeArt() { return blade; } }, exploration, parallaxGarden, qinArmyOrder, qinAtmosphere, qinLift, qinSentinels, egyptMirrors, egyptAtmosphere, orleansOutskirts, orleansAtmosphere, ambientLife, fieldHerbs, orleansResidentLife, qinResidentLife, egyptResidentLife, orleansWorksScene,orleansWorksRuntime,settlementNpcs, grid, THREE, renderer, graphicsRecovery, rig, anim, aim, settings, settingsPanel, thirdPerson, player, scene, camera, layout, done, found, colliders, ground, contract, servant, combat, coop, actions, ultimateDirector, ultimateStage, travelStops, travelPanel, executeSafeTravel, audio, eraStoryScenes, campaignSites, campaignJournal, narrative, falseDawnSites, falseDawnRuntime, compactRelaySites, compactRelayRuntime, regionVisuals, cavalrySupport, residentEventRuntime, residentEventScene, kingdomRoadLandscape, valleyMaintenanceLine, orleansEastMoat, kyotoStreetLandscape, qinCommandLandscape, skyCrown, skyCrownLandmarks, homeTownDistricts, flagshipNavigation, flagshipInterior, adventureSites, adventureRuntime, kingdomGateScene, kingdomGateRuntime, localLights, consumedSourceReceipt, worldProgress, weaponFinishStore, weaponFinishControl, rifle, blade, valleyStory: { state: () => getValleyStoryState(done), scene: valleyStoryScene }, ready: true };
 }
 
 void boot().catch((error: unknown) => {

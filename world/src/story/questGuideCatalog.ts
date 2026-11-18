@@ -4,6 +4,7 @@ import { FIELD_SIDE_STEPS, FIELD_SIDE_STORIES, fieldSideNext } from './fieldSide
 import { CULTURAL_STEPS, CULTURAL_STORIES, culturalStoryNext } from './realmCulturalStories';
 import { EGYPT_GAUGE, EGYPT_GAUGE_BY_ID, EGYPT_GAUGE_STEPS, EGYPT_GAUGE_TITLE, EGYPT_WATER_RECORD, egyptGaugeNext } from './egyptGauge';
 import { MODEL_CLAIM_POINTS } from '../companions/modelClaimPoints';
+import { PACT_TITLE, pactOfClaim, pactStep } from './servantPacts';
 import { PARALLAX, PARALLAX_LABELS, parallaxGuide } from './parallaxSurvey';
 import {RESIDENT_ACTIONS} from './residentEventRules';
 import {adventureActive,getAdventureGuide} from './openWorldCampaign';
@@ -142,12 +143,14 @@ export function createQuestGuideCatalog(input:QuestCatalogInput){
     add(`main:${region}`,region,'main',title,!next,next?guide(title,next.text,next.targetId,done,context):null);
    }
   }
+  // Jeanne, Ozymandias and Qin Shi Huang join through contract arcs of their own (servantPacts.ts), on the main line.
   for(const claim of MODEL_CLAIM_POINTS){
-   if(!markers.has(claim.marker.id))continue;
-   const complete=done.has(claim.marker.id);
-   const next=complete?null:guide(claim.title,claim.hint,claim.marker.id,done,context);
-   entries.push({id:`side:${claim.marker.id}`,region:claim.region,category:'side',title:claim.title,
-    complete,guide:next,trackLabel:['前往领取点','Go to claim point'],...(!next&&!complete?{unavailable}:{})});
+   const pact=pactOfClaim(claim.marker.id);
+   if(!pact||!markers.has(claim.marker.id))continue;
+   const step=pactStep(pact,done),complete=!step,title=PACT_TITLE[pact];
+   const next=step?.target?guide(title,step.text,step.target,done,context):null;
+   entries.push({id:`main:pact-${pact}`,region:claim.region,category:'main',title,
+    complete,guide:complete?null:next,...(!next&&!complete?{unavailable:step!.text}:{})});
   }
   if (done.has(EGYPT_WATER_RECORD) && markers.has(EGYPT_GAUGE.trace)) {
    const step = egyptGaugeNext(done);

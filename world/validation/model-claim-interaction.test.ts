@@ -54,7 +54,7 @@ for (let index = 0; index < MODEL_CLAIM_POINTS.length; index++) test(`${MODEL_CL
   assert.equal(state.contract.summoned, false);
   assert.ok(state.done.has(MODEL_CLAIM_POINTS[index].marker.id));
   assert.equal(state.saves(), 1);
-  assert.match(state.messages[0], /: claimed$/);
+  assert.match(state.messages[0], /: travelling with you$/);
 });
 
 test('obstructed claim never falls through into generic quest activation', () => {
@@ -76,5 +76,5 @@ test('failed model claim reports failure and a second physical interaction retri
   assert.equal(state.calls(), 1);
   assert.equal(state.retries(), 1);
   assert.equal(state.saves(), 1, 'retry does not record a second contract');
-  assert.match(state.messages[1], /: claimed$/);
+  assert.match(state.messages[1], /: travelling with you$/);
 });

@@ -50,7 +50,7 @@ export function installWorldInterface(options:InterfaceOptions){
   navigation.setAttribute('aria-label',bilingual('旅途菜单','Journey menu'));
   const labels:Record<string,[string,string]>={
    'world-quest-journal-open':['任务指引','Quests'],
-   'world-servant-claims-open':['从者领取','Claim servants'],
+   'world-servant-claims-open':['从者契约','Servant pacts'],
    'world-travel-open':['据点旅行','Travel'],
    'settings-open':['设置','Settings'],
    'world-adventure-continue':['主线 · 人物篇','Story · Character chapters'],
