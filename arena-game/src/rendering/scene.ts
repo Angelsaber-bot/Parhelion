@@ -67,6 +67,7 @@ export const TEAM_COLOR: Record<Team, number> = { A: 0x4fd6e0, B: 0xf09a4a };
 
 export class ArenaScene {
   readonly renderer: THREE.WebGLRenderer;
+  private anisotropy = 1;
   readonly scene = new THREE.Scene();
   readonly camera = new THREE.PerspectiveCamera(78, 1, 0.15, 260);
   private vmScene = new THREE.Scene();
@@ -118,6 +119,8 @@ export class ArenaScene {
     r.shadowMap.type = THREE.PCFShadowMap;
     r.autoClear = false;
     this.renderer = r;
+    // Floors and walls seen at a glancing angle stay sharp (map art only; capped at the device limit).
+    this.anisotropy = Math.min(8, r.capabilities.getMaxAnisotropy?.() ?? 1);
     this.telemetry=renderTelemetry(r);
     const room = new RoomEnvironment(), pmrem = new THREE.PMREMGenerator(r);
     const environment = pmrem.fromScene(room);
@@ -244,6 +247,7 @@ export class ArenaScene {
           const role = m.userData.role as string | undefined;
           const convert = CRAFTED_CHAPTERS.has(id) ? toChapterMaterial : toCel;
           m.material = Array.isArray(m.material) ? m.material.map(convert) : convert(m.material);
+          for (const material of Array.isArray(m.material) ? m.material : [m.material]) sharpenTextures(material, this.anisotropy);
           m.receiveShadow = true;
           m.castShadow = id === 'blackflag' ? blackflagCastsShadow(m) : !decorative && role !== 'floor' && role !== 'wayfinding';
         });
@@ -1154,4 +1158,12 @@ class Particles {
     this.points.geometry.dispose();
     (this.points.material as THREE.Material).dispose();
   }
+}
+
+const TEXTURE_SLOTS = ['map', 'normalMap', 'roughnessMap', 'metalnessMap', 'emissiveMap', 'aoMap', 'alphaMap', 'bumpMap', 'specularMap'] as const;
+/** Anisotropic filtering for a material's textures (set before their first upload). */
+export function sharpenTextures(material: THREE.Material, anisotropy: number) {
+  if (!(anisotropy > 1)) return;
+  const slots = material as unknown as Partial<Record<(typeof TEXTURE_SLOTS)[number], THREE.Texture | null>>;
+  for (const slot of TEXTURE_SLOTS) { const texture = slots[slot]; if (texture?.isTexture && texture.anisotropy < anisotropy) { texture.anisotropy = anisotropy; texture.needsUpdate = true; } }
 }
